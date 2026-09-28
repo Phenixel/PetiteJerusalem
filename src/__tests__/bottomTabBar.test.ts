@@ -6,7 +6,8 @@ import { createMemoryHistory, createRouter, type Router } from "vue-router";
 /**
  * La barre basse de l'app native : le bouton rond des horaires est une
  * bascule. Un appui ouvre la page (en surcouche, voir App.vue), un second
- * appui la referme et rend la page qu'elle recouvrait. Et l'onglet profil
+ * appui la referme et rend la page qu'elle recouvrait. L'onglet profil reste
+ * allumé sur les sous-pages du profil. Et l'onglet profil
  * s'annonce « Réglages » tant que personne n'est connecté.
  */
 
@@ -144,5 +145,20 @@ describe("BottomTabBar", () => {
     authCallbacks.forEach((callback) => callback(null));
     await nextTick();
     expect(bar.profileTab().textContent).toContain("Réglages");
+  });
+
+  it("l'onglet profil reste allumé sur ses sous-pages", async () => {
+    // Les sous-pages du profil de l'app (/profile/appearance...) sont des
+    // routes à part : sans `activeOn`, l'onglet s'éteignait dès qu'on en
+    // ouvrait une, alors qu'on est toujours dans le profil.
+    const bar = mount();
+    await bar.router.push("/profile/appearance");
+    await bar.router.isReady();
+    await nextTick();
+    expect(bar.profileTab().classList).toContain("tab-item-active");
+
+    await bar.router.push("/bibliotheque");
+    await nextTick();
+    expect(bar.profileTab().classList).not.toContain("tab-item-active");
   });
 });

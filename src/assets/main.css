@@ -420,6 +420,28 @@ button,
     box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--color-primary) 55%, transparent);
   }
 
+  /* Ligne des réglages de l'app (SettingsRow, la liste des langues) : une
+     cible d'un pouce (52 px au moins), et un fond qui répond au toucher, car
+     sur un téléphone il n'y a pas de survol pour dire qu'on a bien appuyé. */
+  .settings-row {
+    display: flex;
+    width: 100%;
+    min-height: 3.25rem;
+    align-items: center;
+    gap: 0.875rem;
+    padding: 0.75rem 1rem;
+    text-align: start;
+    transition: background-color 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .settings-row:active {
+    background-color: color-mix(in srgb, var(--color-text-primary) 6%, transparent);
+  }
+  .settings-row:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: -2px;
+  }
+
   /* Quiet back / breadcrumb link at the top of detail pages. */
   .back-link {
     display: inline-flex;

@@ -28,7 +28,7 @@ import { isNativeApp } from "./useNativeApp";
  *  - chaque astuce ne se montre qu'une fois : l'appareil retient celles
  *    qu'il a vues, dans les deux stockages (voir devicePreference), car une
  *    astuce qui reviendrait à chaque vidage de cache finirait par agacer.
- *    « Revoir les astuces » (onglet À propos) efface cette mémoire ;
+ *    « Revoir les astuces » (profil de l'app) efface cette mémoire ;
  *  - une seule astuce par ouverture de l'app : quatre bulles à la suite en
  *    changeant de page, c'est un tutoriel qu'on n'a pas demandé. La suivante
  *    attend la prochaine ouverture (voir `launchSpent`) ;

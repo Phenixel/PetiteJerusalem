@@ -69,7 +69,7 @@ watch(readingPassage, (passage) => {
   if (passage) selectionMounted.value = true;
 });
 
-// Le formulaire de support (pied de page, onglet À propos, bas de l'accueil) :
+// Le formulaire de support (pied de page, profil de l'app, bas de l'accueil) :
 // son chunk ne se charge qu'à la première ouverture, puis la fenêtre reste
 // montée pour que sa fermeture s'anime et rende le clavier à qui l'avait.
 const FeedbackModal = defineAsyncComponent(() => import("./components/FeedbackModal.vue"));
@@ -197,7 +197,7 @@ authService.onAuthChanged((user) => {
     </RouterView>
     <RouterView v-else />
     <!-- App native : pas de footer de site ; l'essentiel (à propos, mentions
-         légales…) vit dans l'onglet À propos du profil. -->
+         légales…) vit en bas du profil de l'app. -->
     <SiteFooter v-if="!isHome && !isNativeApp" />
     <ScrollToTop />
     <AutoScrollPill />

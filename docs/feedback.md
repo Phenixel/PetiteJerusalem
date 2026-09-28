@@ -26,7 +26,7 @@ Ce que l'app joint d'elle-même, et qu'elle annonce sous le formulaire :
 ## Où il s'ouvre
 
 - sur le site, le lien « Nous écrire » du pied de page ;
-- dans l'app, la ligne « Nous écrire » de l'onglet À propos du profil ;
+- dans l'app, la ligne « Nous écrire » du groupe Aide du profil ;
 - en bas de l'accueil, site et app, une ligne discrète sous la dédicace.
 
 Une seule fenêtre (`src/components/FeedbackModal.vue`), montée dans App.vue à

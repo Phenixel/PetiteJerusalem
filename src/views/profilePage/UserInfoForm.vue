@@ -9,9 +9,14 @@ import AppIcon from "../../components/icons/AppIcon.vue";
 
 const { t } = useI18n();
 
-const props = defineProps<{
-  user: User;
-}>();
+const props = withDefaults(
+  defineProps<{
+    user: User;
+    /** Le titre de la section. La sous-page de l'app porte déjà le sien. */
+    showTitle?: boolean;
+  }>(),
+  { showTitle: true },
+);
 
 // Le parent tient l'utilisateur affiché (le titre de la page en vit) : il
 // reçoit celui que Firebase renvoie une fois le nom enregistré.
@@ -90,8 +95,11 @@ const save = async () => {
 
 <template>
   <div class="animate-[fadeIn_0.3s_ease]">
-    <div class="flex items-center justify-between mb-8">
-      <h2 class="text-2xl font-bold text-text-primary">
+    <div
+      class="flex items-center gap-3"
+      :class="showTitle ? 'justify-between mb-8' : 'justify-end mb-4'"
+    >
+      <h2 v-if="showTitle" class="text-2xl font-bold text-text-primary">
         {{ t("profile.myInformation") }}
       </h2>
       <button v-if="!isEditing" @click="startEdit" class="btn btn-soft">
@@ -124,7 +132,7 @@ const save = async () => {
       {{ errorMessage }}
     </p>
 
-    <div class="card p-8 max-w-2xl">
+    <div class="card p-6 sm:p-8 max-w-2xl">
       <form @submit.prevent="save" class="space-y-6">
         <div>
           <label

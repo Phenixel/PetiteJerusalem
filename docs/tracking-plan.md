@@ -124,3 +124,30 @@ de `gestures`, la seule page qu'on puisse passer. `wants_daily_reading` garde so
 
 Inchangés : le choix des textes à emporter reste une page de l'introduction
 (51 téléchargements lancés sur la même période).
+
+## Profil
+
+Le site et l'app n'ont pas le même profil (voir docs/design.md, « Le profil
+de l'app est une liste, pas un menu ») : un menu latéral sur le site, une
+liste de lignes et des sous-pages dans l'app. Les deux posent les mêmes
+événements, avec les mêmes valeurs ; `app_platform` les sépare.
+
+### `profile_tab_opened` (existant)
+
+Sur le site, un onglet du menu ; dans l'app, l'arrivée sur une sous-page
+(`/profile/<section>`), y compris par un retour ou un lien direct.
+
+| Propriété | Valeurs                                                                                           | Statut              |
+| --------- | ------------------------------------------------------------------------------------------------- | ------------------- |
+| `tab`     | `my-info`, `security`, `appearance`, `preferences`, `notifications`, `about`                      | existant, conservé  |
+| `tab`     | `language` (app seulement : la langue y a sa sous-page ; sur le site, elle est dans `appearance`) | **nouvelle valeur** |
+
+`notifications` et `about` ne venaient que de l'app. `about` n'y part plus :
+ce qu'il ouvrait (pages d'information, support, cookies) est désormais en
+lignes sur la page du profil elle-même, sans sous-page à compter.
+
+### `profile_shortcut_clicked` (existant)
+
+Un raccourci du profil vers ce qui y vivait autrefois : `shortcut` vaut
+`daily_reading` ou `my_sessions`, sur le site comme dans l'app (groupe « Mes
+lectures »).

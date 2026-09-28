@@ -34,8 +34,18 @@ const props = withDefaults(
     withDescriptions?: boolean;
     /** Langue, apparence et thème seulement (introduction de première ouverture). */
     essentials?: boolean;
+    /**
+     * La langue en tête. Les réglages de l'app lui donnent sa propre ligne
+     * (on la change rarement, et elle se lit mieux en liste) : ils l'ôtent ici.
+     */
+    withLanguage?: boolean;
+    /**
+     * Le titre du choix clair ou sombre. « Apparence » par défaut ; sur la
+     * sous-page de l'app qui s'appelle déjà ainsi, il se dirait deux fois.
+     */
+    schemeTitle?: string;
   }>(),
-  { withDescriptions: false, essentials: false },
+  { withDescriptions: false, essentials: false, withLanguage: true, schemeTitle: undefined },
 );
 
 const { t } = useI18n();
@@ -121,41 +131,43 @@ onUnmounted(() => {
 <template>
   <div>
     <!-- Langue -->
-    <h2 v-if="withDescriptions" class="text-2xl font-bold mb-2 text-text-primary">
-      {{ t("profile.languageTitle") }}
-    </h2>
-    <h2 v-else class="text-sm font-semibold text-text-secondary mb-3">
-      {{ t("profile.languageTitle") }}
-    </h2>
-    <p v-if="withDescriptions" class="text-text-secondary mb-6">
-      {{ t("profile.languageDescription") }}
-    </p>
+    <template v-if="withLanguage">
+      <h2 v-if="withDescriptions" class="text-2xl font-bold mb-2 text-text-primary">
+        {{ t("profile.languageTitle") }}
+      </h2>
+      <h2 v-else class="text-sm font-semibold text-text-secondary mb-3">
+        {{ t("profile.languageTitle") }}
+      </h2>
+      <p v-if="withDescriptions" class="text-text-secondary mb-6">
+        {{ t("profile.languageDescription") }}
+      </p>
 
-    <div class="grid grid-cols-3 gap-3" :class="essentials ? 'mb-6' : 'mb-10'">
-      <button
-        v-for="locale in availableLocales"
-        :key="locale.code"
-        type="button"
-        class="card p-3 text-center transition-all duration-300"
-        :class="currentLocale === locale.code ? 'ring-2 ring-primary' : 'card-hover'"
-        @click="setLocale(locale.code)"
-      >
-        <span class="block text-2xl mb-1">{{ locale.flag }}</span>
-        <span
-          class="block text-xs font-semibold leading-tight text-text-primary sm:text-sm"
-          :dir="locale.dir"
+      <div class="grid grid-cols-3 gap-3" :class="essentials ? 'mb-6' : 'mb-10'">
+        <button
+          v-for="locale in availableLocales"
+          :key="locale.code"
+          type="button"
+          class="card p-3 text-center transition-all duration-300"
+          :class="currentLocale === locale.code ? 'ring-2 ring-primary' : 'card-hover'"
+          @click="setLocale(locale.code)"
         >
-          {{ locale.label }}
-        </span>
-      </button>
-    </div>
+          <span class="block text-2xl mb-1">{{ locale.flag }}</span>
+          <span
+            class="block text-xs font-semibold leading-tight text-text-primary sm:text-sm"
+            :dir="locale.dir"
+          >
+            {{ locale.label }}
+          </span>
+        </button>
+      </div>
+    </template>
 
     <!-- Apparence claire ou sombre -->
     <h2 v-if="withDescriptions" class="text-2xl font-bold mb-2 text-text-primary">
-      {{ t("profile.appearanceTitle") }}
+      {{ schemeTitle ?? t("profile.appearanceTitle") }}
     </h2>
     <h2 v-else class="text-sm font-semibold text-text-secondary mb-3">
-      {{ t("profile.appearanceTitle") }}
+      {{ schemeTitle ?? t("profile.appearanceTitle") }}
     </h2>
     <p v-if="withDescriptions" class="text-text-secondary mb-6">
       {{ t("profile.appearanceDescription") }}
