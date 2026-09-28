@@ -124,8 +124,8 @@ avec un leurre qui se comporte comme le vrai proxy, `then` compris.
   `src/datas/bundledTexts.json` :
   - `authoritative` : `tehilim.json` (~370 Ko) et `talmud-chapters.json`
     (~40 Ko), lus dans le binaire, qui fait foi pour eux ;
-  - `fallback` : Cha'harit, Min'ha et Arvit
-    (`tefila/{chaharit,minha,arvit}.json`, ~950 Ko), demandées d'abord au
+  - `fallback` : le Sidour, les trois offices et les quatre textes qui les
+    accompagnent (`tefila/`, ~1 Mo), demandés d'abord au
     site, qui fait foi (une correction de tefila n'attend pas une version de
     l'app), avec cinq secondes de délai ; la copie du binaire ne sert que
     quand le site ne répond pas.

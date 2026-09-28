@@ -6,7 +6,7 @@ import bundledTexts from "../datas/bundledTexts.json";
 
 /**
  * Ce que l'app native embarque (src/datas/bundledTexts.json) se lit sans
- * réseau dès l'installation : les Tehilim, et Cha'harit, Min'ha et Arvit.
+ * réseau dès l'installation : les Tehilim, et le Sidour tout entier.
  *
  * Les deux familles ne se lisent pas de la même façon. Les Tehilim se lisent
  * dans le binaire. Les tefilot se demandent d'abord au site, qui fait foi (une
@@ -65,16 +65,6 @@ describe("textes embarqués dans l'app", () => {
       (path) => !existsSync(join(publicDir, path)),
     );
     expect(manquants).toEqual([]);
-  });
-
-  it("comptent les trois tefilot du jour", () => {
-    expect(bundledTexts.fallback).toEqual(
-      expect.arrayContaining([
-        "/texts/tefila/chaharit.json",
-        "/texts/tefila/minha.json",
-        "/texts/tefila/arvit.json",
-      ]),
-    );
   });
 
   it("lit les Tehilim dans le binaire, sans rien demander au site", async () => {

@@ -24,8 +24,8 @@ const TALMUD_CHAPTERS_PATH = "/texts/talmud-chapters.json";
 
 /**
  * Fichiers embarqués dans le binaire natif : ils sont lisibles hors ligne sans
- * rien télécharger, dès l'installation (les Tehilim, Cha'harit, Min'ha et
- * Arvit, le découpage du Talmud). Les corpus volumineux, eux, sont retirés du
+ * rien télécharger, dès l'installation (les Tehilim, le Sidour, le découpage
+ * du Talmud). Les corpus volumineux, eux, sont retirés du
  * bundle par scripts/prune-native-bundle.mjs, qui lit la même liste
  * (`src/datas/bundledTexts.json`).
  */
@@ -85,8 +85,8 @@ export interface OfflineCorpus {
   books: OfflineBook[];
   /**
    * Poids approximatif de ce que le corpus télécharge, en octets : ses livres
-   * embarqués n'en font pas partie (0 pour les Tehilim, tout entiers dans
-   * l'app).
+   * embarqués n'en font pas partie (0 pour les Tehilim et le Sidour, tout
+   * entiers dans l'app).
    */
   approxBytes: number;
   /** Déjà dans le binaire natif : lisible hors ligne sans rien télécharger. */
@@ -98,7 +98,7 @@ const CORPUS_META: { key: string; labelKey: string; approxBytes: number }[] = [
   { key: "Mishna", labelKey: "study.types.mishna", approxBytes: 3_000_000 },
   { key: "Talmud Bavli", labelKey: "study.types.talmud", approxBytes: 29_900_000 },
   { key: "Tanakh", labelKey: "study.types.tanakh", approxBytes: 6_800_000 },
-  { key: "Sidour", labelKey: "study.types.sidour", approxBytes: 76_000 },
+  { key: "Sidour", labelKey: "study.types.sidour", approxBytes: 0 },
   { key: "Moadim", labelKey: "study.types.moadim", approxBytes: 560_000 },
   { key: "Brahot", labelKey: "study.types.brahot", approxBytes: 132_000 },
 ];

@@ -34,7 +34,8 @@ const MANIFEST_KEY = "offline-texts:manifest";
 const WEB_CACHE_NAME = "pj-texts-v1";
 
 /**
- * Textes embarqués dont le site fait foi : Cha'harit, Min'ha et Arvit. Une
+ * Textes embarqués dont le site fait foi : le Sidour (les trois offices, le
+ * Kaddich, le Chema du coucher, le tikoun 'hatsot, la havdala). Une
  * correction de tefila doit atteindre les lecteurs sans attendre une version
  * de l'app, le binaire ne les porte donc que pour qu'on puisse prier sans
  * réseau, dès l'installation. Les autres fichiers embarqués (Tehilim,

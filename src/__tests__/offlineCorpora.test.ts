@@ -41,7 +41,7 @@ describe("poids annoncés des corpus téléchargeables", () => {
     const drifted: string[] = [];
     for (const corpus of offlineCorpora) {
       // Seul compte ce qui se télécharge : un livre embarqué dans l'app (les
-      // Tehilim, les trois tefilot du jour) n'a rien à peser.
+      // Tehilim, le Sidour) n'a rien à peser.
       const books = downloadableBooksOfCorpus(corpus);
       if (books.length === 0) {
         if (corpus.approxBytes !== 0) {

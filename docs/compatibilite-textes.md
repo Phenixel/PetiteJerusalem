@@ -14,7 +14,7 @@ l'appareil veuille bien se mettre à jour. Une version installée peut rester
 des mois en arrière (c'est la raison d'être de `appUpdateService`).
 
 Pendant ce temps, l'app native ne lit pas les textes de son bundle : elle
-n'embarque que Cha'harit, Min'ha et Arvit, et encore, pour qu'on puisse prier
+n'embarque que le Sidour, et encore, pour qu'on puisse prier
 sans réseau (`src/datas/bundledTexts.json`) ; tout le reste de
 `texts/tefila/` est retiré par `scripts/prune-native-bundle.mjs`. Elle les
 demande au site (`offlineTextStore.fetchTextResponse`), avec une empreinte qui

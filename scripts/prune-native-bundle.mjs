@@ -3,8 +3,8 @@
 // 1. Les corpus téléchargeables à la demande : l'app mobile ne doit pas
 //    embarquer les ~38 Mo de public/texts. Elle garde seulement ce qu'on doit
 //    pouvoir lire sans réseau dès l'installation, listé dans
-//    src/datas/bundledTexts.json : les Tehilim (~370 Ko), Cha'harit, Min'ha et
-//    Arvit (~950 Ko), le découpage du Talmud (~40 Ko). Le reste se télécharge
+//    src/datas/bundledTexts.json : les Tehilim (~370 Ko), le Sidour (~1 Mo),
+//    le découpage du Talmud (~40 Ko). Le reste se télécharge
 //    depuis le site via offlineTextStore.
 //
 // 2. Les pages HTML prérendues pour les moteurs de recherche (accueil SEO,
@@ -113,8 +113,8 @@ for (const file of PRUNED_FILES) {
   console.log(`prune-native-bundle: ${file} retiré (web uniquement)`);
 }
 
-// Un corpus s'en va entier, sauf les fichiers que l'app embarque (les trois
-// tefilot du jour, dans texts/tefila) ; ses dossiers vides partent ensuite.
+// Un corpus s'en va entier, sauf les fichiers que l'app embarque (le Sidour,
+// dans texts/tefila) ; ses dossiers vides partent ensuite.
 for (const dir of PRUNED_DIRS) {
   if (!existsSync(dir)) continue;
   const kept = allFiles(dir).filter((path) => KEPT_FILES.has(path));

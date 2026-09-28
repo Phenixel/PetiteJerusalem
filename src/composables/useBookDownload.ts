@@ -26,7 +26,7 @@ import { analyticsService } from "../services/analyticsService";
 /**
  * L'état d'un livre à l'écran : "none" quand il n'y a rien à télécharger
  * (web, entrée sans livre, ou livre embarqué dans l'app comme les Tehilim et
- * les trois tefilot du jour), "idle" quand il ne l'est pas encore.
+ * le Sidour), "idle" quand il ne l'est pas encore.
  */
 export type BookState = "none" | "downloading" | "downloaded" | "idle";
 

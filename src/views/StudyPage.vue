@@ -379,7 +379,7 @@ const tabCorpusBooks = computed<OfflineBook[]>(() => {
 });
 
 // Ce qui se télécharge : les livres embarqués dans l'app (les Tehilim, les
-// trois tefilot du jour) y sont déjà, la page des Tehilim n'a donc rien à
+// Sidour) y sont déjà, leurs pages n'ont donc rien à
 // proposer.
 const tabBooks = computed(() => tabCorpusBooks.value.filter((b) => !isBookBundled(b)));
 

@@ -9,7 +9,7 @@ const OnboardingOfflinePicker = defineAsyncComponent(() => import("./OnboardingO
 /**
  * Ce qu'on emporte sur l'appareil.
  *
- * Les Tehilim et les trois offices du jour voyagent avec l'app
+ * Les Tehilim et le Sidour voyagent avec l'app
  * (src/datas/bundledTexts.json) ; les autres corpus se téléchargent, et
  * personne ne le devinait avant d'être dans le métro. Le seul réglage de
  * l'introduction qui fasse quelque chose, et l'un des plus suivis : on le

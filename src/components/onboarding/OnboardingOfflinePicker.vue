@@ -63,7 +63,7 @@ function remainingBytes(corpus: OfflineCorpus): number {
   return Math.round((corpus.approxBytes * missing) / downloadable);
 }
 
-// Un corpus tout entier dans l'app (les Tehilim) n'a rien à cocher : la page
+// Un corpus tout entier dans l'app (Tehilim, Sidour) n'a rien à cocher : la page
 // le dit dans sa phrase d'ouverture, une ligne de plus ne ferait que pousser le
 // bouton sous le pli.
 const rows = computed(() =>
