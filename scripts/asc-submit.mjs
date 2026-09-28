@@ -190,10 +190,12 @@ try {
       `asc-submit: Apple refuse d'ajouter la version ${versionString} à la soumission.\n` +
         `  ${error.message}\n` +
         "  La version reste sur TestFlight, rien n'est perdu ; c'est la fiche App Store\n" +
-        "  qui manque de quelque chose. La cause la plus courante est un jeu de captures\n" +
-        "  d'écran incomplet pour un appareil que le binaire vise désormais (Apple Watch\n" +
-        "  depuis que l'app de montre existe, cf. docs/app-watch.md). App Store Connect\n" +
-        "  l'affiche en clair sur la page de la version.",
+        "  qui manque de quelque chose, et les raisons d'Apple sont listées ci-dessus.\n" +
+        "  Les deux causes connues : les « Nouveautés » vides, quand l'étape « Mettre à\n" +
+        "  jour la fiche App Store » du job iOS a échoué (voir son avertissement,\n" +
+        "  tag v3.10.8), ou un jeu de captures incomplet pour un appareil que le binaire\n" +
+        "  vise désormais (Apple Watch, cf. docs/app-watch.md). App Store Connect\n" +
+        "  l'affiche aussi en clair sur la page de la version.",
     );
     process.exit(1);
   }

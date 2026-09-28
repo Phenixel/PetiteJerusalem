@@ -142,8 +142,27 @@ tient :
   profil fait exception, mais relit d'abord le profil par son nom, Apple le
   fabriquant parfois avant d'échouer à le renvoyer.
 
+La même règle vaut pour le client partagé par la fiche, les captures et la
+soumission (`scripts/lib/asc-api.mjs`, tenu par `src/__tests__/ascApi.test.ts`),
+depuis le tag v3.10.8 : un 500 sur une simple lecture y avait coupé
+`appstore-listing.mjs` juste après la création de la version, avant qu'il en
+écrive les « Nouveautés ». L'étape, non bloquante, n'a laissé qu'un
+avertissement, et la soumission a échoué ensuite sur un 409 « not in valid
+state » : Apple refuse une version dont un champ obligatoire est vide. Ce
+client affiche désormais aussi les raisons détaillées qu'Apple range dans
+`meta.associatedErrors`, là où le journal ne disait que « please check
+associated errors to see why ».
+
 Un run qui échoue quand même sur ce message n'a rien à corriger dans le repo :
-il se relance.
+il se relance. Quand c'est l'étape « Mettre à jour la fiche App Store » qui a
+flanché, relancer le seul job `submit` ne suffit pas, il ne réécrit pas la
+fiche. Deux façons de reprendre la version restée en plan :
+
+- remplir ce qui manque dans App Store Connect (les « Nouveautés » de chaque
+  langue), puis relancer le job `submit` (« Re-run failed jobs ») ;
+- ou pousser un nouveau tag (patch + 1) : `appstore-listing.mjs` renomme la
+  version modifiable restée en plan et la reprend depuis le début. Le tag
+  republie aussi le site et l'app Android.
 
 ### Le quota de trois certificats de distribution
 
