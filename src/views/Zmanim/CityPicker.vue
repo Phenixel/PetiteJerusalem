@@ -8,10 +8,12 @@
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import citiesJson from "../../datas/cities.json";
+import { CITY_ALIASES } from "../../datas/cityAliases";
 import type { City } from "../../services/zmanimService";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import AppModal from "../../components/AppModal.vue";
 import { liveValue } from "../../composables/liveInput";
+import { searchItems } from "../../services/fuzzySearch";
 
 const props = defineProps<{ show: boolean; current: string | null }>();
 const emit = defineEmits<{
@@ -23,37 +25,16 @@ const { t } = useI18n();
 
 const cities = citiesJson as City[];
 
-/**
- * Clé de comparaison : sans accents ni ponctuation, et « st » ramené à
- * « saint ». On tape « st etienne » ou « ste foy » aussi souvent que la forme
- * longue, et « Saint-Étienne » doit sortir dans les deux cas.
- */
-const normalize = (value: string): string =>
-  value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/\bst(e?)\b\.?/g, "saint$1")
-    .replace(/[^a-z0-9]/g, "");
-
-const searchIndex = cities.map((city) => normalize(city.name));
-
 const query = ref("");
 
-const results = computed(() => {
-  const needle = normalize(query.value);
-  if (!needle) return cities;
-  // Les villes dont le nom *commence* par la recherche d'abord : taper
-  // « par » doit donner Paris avant Sarreguemines.
-  const starts: City[] = [];
-  const contains: City[] = [];
-  for (let i = 0; i < cities.length; i++) {
-    const name = searchIndex[i];
-    if (name.startsWith(needle)) starts.push(cities[i]);
-    else if (name.includes(needle)) contains.push(cities[i]);
-  }
-  return [...starts, ...contains];
-});
+// La recherche commune (voir fuzzySearch) : sans accents ni ponctuation,
+// « st etienne » pour Saint-Étienne, une faute de frappe pardonnée, et les
+// autres noms de la ville (« London », « ירושלים », voir cityAliases). Les
+// villes dont le nom *commence* par la recherche passent devant : « lon »
+// donne Londres avant Toulon.
+const results = computed(() =>
+  searchItems(cities, query.value, (city) => [city.name, ...(CITY_ALIASES[city.name] ?? [])]),
+);
 
 // Chaque ouverture repart d'une recherche vide ; le clavier arrive dans le
 // champ par AppModal (data-autofocus).

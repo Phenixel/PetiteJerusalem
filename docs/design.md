@@ -390,6 +390,48 @@ de tout ce qui part sans retour, et seulement de cela : ce qu'on peut refaire
 d'un geste, une case cochée, un rappel posé, ne se fait pas confirmer, sans
 quoi la question ne voudrait plus rien dire.
 
+### Une recherche trouve ce qu'on voulait dire
+
+Un même nom s'écrit de dix façons : « Chabbat », « Shabbat », « Shabat » ;
+« Berakhot », « Brakhot », « Brahot » ; « Pessa'him », « Pesachim ». Le
+catalogue lui-même mélange l'anglais de Sefaria et le français. Une barre de
+recherche qui ne rend que la graphie exacte ne trouve donc que ceux qui ont
+deviné la nôtre, et répond « aucun résultat » à tous les autres.
+
+Toutes les barres du site (bibliothèque, lecture du jour, chaînes de lecture
+et leurs textes, chiourim, villes des horaires, invités, administration)
+passent par la même recherche, `services/fuzzySearch`, qui répond en trois
+rangs :
+
+1. le texte tel quel, sans casse, accents, apostrophes ni voyelles
+   hébraïques ;
+2. sa clé phonétique, où les graphies d'un même son se confondent (ch, sh,
+   kh et h ; tz et ts ; b et v ; k, c et q ; le e du chva qu'on écrit ou
+   non ; les lettres doublées) ;
+3. la même clé à une ou deux fautes de frappe près, selon sa longueur.
+
+Le troisième rang ne parle que faute de mieux : dès qu'un résultat répond aux
+deux premiers, les approchants se taisent. Sans quoi « bava » ramènerait
+« Shabbat », à une lettre près, et la liste perdrait sa franchise.
+
+Plusieurs mots se cherchent chacun de leur côté, dans n'importe quel ordre, et
+tous doivent répondre ; un nombre se cherche comme un nombre (« 23 » trouve
+le Tehilim 23, jamais le 123 ni le 24). Deux lettres ne comptent qu'en début
+de mot, et une description ne s'explore que par débuts de mots, sans fautes :
+sur une phrase entière, tout répondrait à tout.
+
+Ce que la phonétique ne devine pas s'écrit : « Genèse » pour Berechit,
+« Maariv » pour Arvit, « Psaume 23 », les noms hébreux des parachiot
+(`datas/catalogAliases`), « London » ou « ירושלים » pour les villes
+(`datas/cityAliases`). Ces autres noms ne s'affichent jamais, ils ne servent
+qu'à trouver. Quand quelqu'un ne trouve pas un texte qu'il cherchait, c'est
+là qu'on ajoute le mot qu'il a tapé.
+
+La bibliothèque garde l'ordre du catalogue, ses résultats se rangeant par
+corpus et par livre ; les autres listes rangent du plus pertinent au moins
+pertinent, le nom qui commence par la recherche en tête (« lon » : Londres
+avant Toulon).
+
 ### Trois onglets de réglages, trois questions
 
 Les réglages ne font pas une seule liste. **Apparence** répond à « à quoi

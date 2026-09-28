@@ -22,6 +22,7 @@ import { seoService } from "../../services/seoService";
 import { authService, type User } from "../../services/authService";
 import { analyticsService } from "../../services/analyticsService";
 import { moderationService } from "../../services/moderationService";
+import { searchItems } from "../../services/fuzzySearch";
 import { isNativeApp } from "../../composables/useNativeApp";
 import PageTabs from "../../components/PageTabs.vue";
 import { LIBRARY_TABS } from "../../config/pageTabs";
@@ -202,20 +203,19 @@ const availableTypes = computed(() => {
 });
 
 const filteredSessions = computed(() => {
-  const term = searchTerm.value.trim().toLowerCase();
   // Modération : les sessions masquées et celles des créateurs bloqués par
   // le visiteur ne figurent pas dans la liste publique.
   const blockedCreators = new Set(moderationService.getBlockedCreatorIds());
-  return sessions.value.filter((s) => {
+  const visible = sessions.value.filter((s) => {
     if (s.hidden === true || blockedCreators.has(s.personId)) return false;
-    if (selectedType.value && s.type !== selectedType.value) return false;
-    if (!term) return true;
-    return (
-      s.name.toLowerCase().includes(term) ||
-      (s.creatorName || "").toLowerCase().includes(term) ||
-      (s.description || "").toLowerCase().includes(term)
-    );
+    return !selectedType.value || s.type === selectedType.value;
   });
+  // Par nom, créateur ou description, graphies et fautes comprises.
+  return searchItems(visible, searchTerm.value, (s) => [
+    s.name,
+    s.creatorName,
+    { text: s.description, long: true },
+  ]);
 });
 
 const hasActiveFilter = computed(() => searchTerm.value.trim() !== "" || selectedType.value !== "");
