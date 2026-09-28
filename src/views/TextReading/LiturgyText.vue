@@ -32,6 +32,8 @@ import { openNaanouimCompass } from "../../composables/useNaanouimCompass";
 import { halakhotHidden } from "../../composables/useHalakhot";
 import { entryByCorpusSlug, hubPath } from "../../content/etudeTexts";
 import { stripQuery } from "../../composables/readingBack";
+import { scrollToBlockAnchor } from "../../composables/useReadingNav";
+import { analyticsService } from "../../services/analyticsService";
 import TefilaZman from "./TefilaZman.vue";
 
 /**
@@ -439,6 +441,35 @@ const sections = computed<SectionEntry[]>(() => {
 });
 
 /**
+ * La 'hazara : à la fin d'une 'Amida que le 'hazan répète (`hazara`), un
+ * bouton ramène au début de cette 'Amida, le titre qui porte la boussole du
+ * Kotel (`kotel`), et déplie en chemin les passages du 'hazan (Kedoucha,
+ * Modim dérabanan, Birkat kohanim), repliés tant qu'on prie à voix basse.
+ * Il ne se pose que sur le texte de la page, le seul à porter les ancres où
+ * l'on remonte, et seulement s'il trouve la 'Amida au-dessus de lui.
+ */
+function hazaraStart(index: number): SectionEntry | undefined {
+  for (let i = index; i >= 0; i -= 1) {
+    if (sections.value[i].block.kotel) return sections.value[i];
+  }
+  return undefined;
+}
+const offersHazara = (text: TextBlock, index: number): boolean =>
+  props.anchored && !!text.hazara && hazaraStart(index) !== undefined;
+function startHazara(index: number): void {
+  const start = hazaraStart(index);
+  if (!start) return;
+  const next = new Map(decided.value);
+  for (const { block } of sections.value.slice(start.index, index + 1)) {
+    if (block.fold === "hazan") next.set(block.offset, true);
+  }
+  decided.value = next;
+  analyticsService.capture("hazara_opened");
+  // Les encadrés qui s'ouvrent sont sous le titre visé : sa place ne bouge pas.
+  scrollToBlockAnchor(start.block.anchor ?? String(start.block.offset), "smooth");
+}
+
+/**
  * Un appui sur un paragraphe le choisit, et la page en fait un passage (son
  * endroit, son adresse, ses commandes). Seule la première écriture d'un
  * passage répété porte le choix : les reprises n'ont pas d'ancre à elles, et
@@ -671,6 +702,18 @@ const phoneticOf = computed(() => {
               {{ say(text.link!.label) }}
             </a>
           </RouterLink>
+          <!-- La fin de la 'Amida : la répétition du 'hazan reprend du début,
+               ses passages dépliés. -->
+          <button
+            v-if="offersHazara(text, index)"
+            type="button"
+            class="title-action reading-link"
+            :title="t('textReading.hazara.hint')"
+            @click="startHazara(index)"
+          >
+            <AppIcon name="arrow-up" :size="15" class="flex-shrink-0" />
+            {{ t("textReading.hazara.open") }}
+          </button>
         </div>
       </CollapseTransition>
     </section>

@@ -94,7 +94,9 @@ publiées, parce que le site s'était mis à écrire `!tisha-beav` et
 9. **Un champ nouveau ne porte que du nouveau.** Le renvoi d'un bloc vers un
    autre texte (`link`) et le repère qui le reçoit (`anchor`) sont ignorés
    par les versions publiées : le bloc des Hochanot de Cha'harit y garde son
-   premier verset et la halakha qui dit où lire la suite.
+   premier verset et la halakha qui dit où lire la suite. De même pour la fin
+   d'une 'Amida répétée (`hazara`) : une version publiée n'affiche pas le
+   bouton de la 'hazara, et rien du texte ne manque.
 
 Les points 1, 2, 5 et 6 sont tenus par un test
 (`src/__tests__/sidourCompatibilite.test.ts`) ; les clés employées sont

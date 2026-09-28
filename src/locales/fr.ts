@@ -1387,6 +1387,10 @@ const fr = {
         "L'accès à la caméra a été refusé. Vous pouvez l'autoriser dans les réglages de votre appareil, puis rouvrir le miroir.",
       unavailable: "Cet appareil ne donne pas accès à sa caméra frontale.",
     },
+    hazara: {
+      open: "'Hazara",
+      hint: "Remonter au début de la 'Amida, les passages de la répétition du 'hazan dépliés",
+    },
     kotel: {
       open: "Direction du Kotel",
       title: "Direction du Kotel",

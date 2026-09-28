@@ -402,6 +402,9 @@ function buildBlock(spec, sections) {
   if (spec.zman) block.zman = spec.zman;
   if (spec.torahWeekly) block.torahWeekly = true;
   if (spec.kotel) block.kotel = true;
+  // La fin d'une 'Amida que le 'hazan répète : le lecteur y pose le bouton
+  // qui remonte à son début, les passages de la répétition dépliés.
+  if (spec.hazara) block.hazara = true;
   if (spec.naanouim) block.naanouim = true;
   if (spec.mirror) block.mirror = true;
   if (spec.numbered) block.numbered = true;
@@ -1136,9 +1139,12 @@ function amidaBlocks(src, ix, opts = {}) {
     });
   }
 
-  // 'Ossé chalom, « 'ossé hachalom » aux dix jours de techouva.
+  // 'Ossé chalom, « 'ossé hachalom » aux dix jours de techouva. C'est la fin
+  // de la 'Amida : le 'hazan la répète alors à Cha'harit et à Min'ha, pas à
+  // Arvit, qui n'a pas de répétition.
   blocks.push({
     src,
+    ...(opts.soir ? {} : { hazara: true }),
     lines: [
       {
         parts: [
@@ -2759,7 +2765,10 @@ function chaharitRecipe() {
           // paragraphe d'avant plutôt que d'ouvrir le sien, qui porte deux
           // fois le verset : elle vaut pour les deux.
           {
-            parts: [{ seg: 19, mode: "full" }, { rubric: RUBRIC_NAANOUIM_ANA, when: "loulav" }],
+            parts: [
+              { seg: 19, mode: "full" },
+              { rubric: RUBRIC_NAANOUIM_ANA, when: "loulav" },
+            ],
           },
           // La source écrit déjà chaque verset deux fois : c'est ce que dit
           // chacun (le 'hazan le dit, l'assemblée le redit, deux fois chacun).
@@ -3371,6 +3380,8 @@ function chaharitRecipe() {
           { seg: 38, tight: true },
           { seg: 39 },
         ],
+        // La fin de Moussaf, que le 'hazan répète.
+        hazara: true,
       },
       // Le Moussaf de 'Hol haMoed. Les jours intermédiaires ont leur Moussaf
       // comme les jours de fête, et c'est la même 'Amida : la source la donne
@@ -3514,6 +3525,7 @@ function chaharitRecipe() {
           { seg: 55 },
           { seg: 56 },
         ],
+        hazara: true,
       },
       // La fin de l'office de 'Hol haMoed, dans l'ordre que la source donne
       // après la répétition (« בחול המועד אחרי החזרה אומרים יהי שם, ואחריו

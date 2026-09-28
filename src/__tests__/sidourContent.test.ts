@@ -380,6 +380,30 @@ describe.each(sidourEntries.map((entry) => [resolveFilePath(entry), entry] as co
       expect(amida[0].kotel).toBe(true);
     });
 
+    it("pose la 'hazara à la fin de chaque 'Amida que le 'hazan répète", () => {
+      // Le bouton « 'Hazara » (LiturgyText) remonte au dernier titre `kotel`
+      // et déplie les passages du 'hazan d'ici là : chaque 'Amida répétée
+      // (Cha'harit, Min'ha, les deux Moussaf) a donc sa fin marquée, sur le
+      // bloc de 'Ossé chalom, avec au moins un passage du 'hazan entre les
+      // deux. Arvit n'a pas de répétition, et pas de bouton.
+      const hazara = blocks.flatMap((b, i) => (b.hazara ? [i] : []));
+      if (resolveFilePath(entry).includes("arvit")) {
+        expect(hazara).toEqual([]);
+        return;
+      }
+      const kotel = blocks.flatMap((b, i) => (b.kotel ? [i] : []));
+      expect(hazara).toHaveLength(kotel.length);
+      kotel.forEach((debut, k) => {
+        const fin = hazara[k];
+        expect(fin).toBeGreaterThan(debut);
+        expect(fin).toBeLessThan(kotel[k + 1] ?? Infinity);
+        const entre = blocks.slice(debut, fin + 1);
+        expect(entre.some((b) => b.fold === "hazan")).toBe(true);
+        expect(blocks[fin].when).toBe(blocks[debut].when);
+        expect(sansSignes(blocks[fin].lines.join(" "))).toContain("במרומיו");
+      });
+    });
+
     it("revêt le talit et les téfilines avant d'entrer dans la prière", () => {
       // À Cha'harit seulement, et à leur place : après les bénédictions du
       // matin, avant 'Akédat Its'hak. On ne prie pas d'abord pour s'en revêtir

@@ -151,3 +151,13 @@ lignes sur la page du profil elle-même, sans sous-page à compter.
 Un raccourci du profil vers ce qui y vivait autrefois : `shortcut` vaut
 `daily_reading` ou `my_sessions`, sur le site comme dans l'app (groupe « Mes
 lectures »).
+
+## Lecture de la tefila
+
+### `hazara_opened` (nouveau)
+
+Le bouton « 'Hazara », à la fin d'une 'Amida que le 'hazan répète : il
+remonte au début de la 'Amida, les passages du 'hazan dépliés (voir
+docs/design.md, « La 'hazara repart du début de la 'Amida »). Sans propriété
+à lui : `$current_url` dit l'office. Il dit si le bouton est trouvé, et s'il
+sert à l'office en communauté plutôt qu'à la prière seul.
