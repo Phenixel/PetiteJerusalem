@@ -42,3 +42,11 @@ Display pour les titres, Manrope pour le reste), et ce qui ne s'emploie pas,
 Les commentaires et la documentation sont en français. Les identifiants de code
 suivent le fichier où ils vivent : l'anglais pour les noms techniques, le
 français pour le domaine liturgique.
+
+## Commits
+
+Un commit appartient au propriétaire du dépôt, pas à Claude : l'auteur et le
+committeur sont `Phenixel <yonathancardoso@outlook.fr>`. Avant de commiter,
+on règle l'identité du dépôt (`git config user.name "Phenixel"` et
+`git config user.email "yonathancardoso@outlook.fr"`) ou l'on passe
+`--author`. Claude n'y figure qu'en co-auteur, par la ligne `Co-Authored-By`.
