@@ -92,14 +92,59 @@ pour le Play Store, au moins 2 sinon elles ne sont pas envoyées) : voir
   `scripts/prepare-whatsnew.mjs` :
   1. **si une release GitHub existe pour le tag** (créée depuis l'interface
      GitHub avec son texte), c'est ce texte qui part sur le Play Store
-     (markdown allégé, tronqué à 500 caractères), en français, les autres
-     langues retombent sur la langue par défaut dans la console ;
+     (markdown allégé, tronqué à 500 caractères par langue). Écrit en trois
+     sections, chaque langue de la fiche reçoit la sienne (voir
+     « Notes de version en trois langues » ci-dessous) ; sans ces titres,
+     il ne va qu'au français, et une langue sans texte retombe sur la
+     langue par défaut dans la console ;
   2. **sinon**, la phrase par défaut de `scripts/release-notes.mjs`
      (« Correction de bugs mineurs. », traduite par langue), il n'y a plus
      de `changelogs/default.txt` dans le repo.
 
   La release GitHub est de toute façon créée/complétée par la CI avec l'AAB
   signé ; si elle existe déjà, son texte n'est pas touché.
+
+### Notes de version en trois langues
+
+Le texte de la release GitHub peut porter une section par langue, chacune
+sous un titre au nom de la langue. Le Play Store (fr-FR, en-US, iw-IL) et
+l'App Store (fr-FR, en-US, he) reçoivent alors, dans chaque langue, le texte
+écrit pour elle :
+
+```markdown
+## Français
+Nouveautés
+- …
+
+Corrections
+- …
+
+## English
+What's new
+- …
+
+Fixes
+- …
+
+## עברית
+חדש
+- …
+
+תיקונים
+- …
+```
+
+- Les titres de langue se reconnaissent sans casse ni accent, et aussi sous
+  leur nom français ou leur code (`## Anglais`, `## Hébreu`, `## en`…). Un
+  autre titre (`## Nouveautés`) reste du texte de la section.
+- Ce qui précède le premier titre de langue est ignoré.
+- Sans aucun titre de langue, le texte entier est du français : les
+  releases écrites avant continuent de marcher.
+- Une langue sans section reçoit, côté App Store, la phrase par défaut ;
+  côté Play, la langue par défaut de la console.
+
+`splitReleaseNotes` dans `scripts/release-notes.mjs` porte la règle,
+`src/__tests__/releaseNotes.test.ts` la tient.
 - La fiche est envoyée par `node scripts/play-listing.mjs` (API Android
   Publisher, même compte de service). `node scripts/play-listing.mjs --check`
   vérifie les limites de caractères en local, sans réseau.

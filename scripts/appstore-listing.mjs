@@ -21,9 +21,11 @@
  * Les notes de version (« Nouveautés ») ne viennent pas d'un fichier du repo :
  * la CI passe le corps de la release GitHub du tag via --release-notes, et à
  * défaut c'est la phrase par défaut de scripts/release-notes.mjs qui part
- * même logique que le Play Store (scripts/prepare-whatsnew.mjs). Le corps,
- * rédigé en français, n'alimente que fr-FR ; les autres langues reçoivent la
- * phrase par défaut. Apple refuse `whatsNew` sur la toute première version :
+ * même logique que le Play Store (scripts/prepare-whatsnew.mjs). Chaque
+ * langue reçoit la section du corps écrite pour elle (`## Français`,
+ * `## English`, `## עברית`, voir splitReleaseNotes) ; un corps sans ces
+ * titres est du français, et une langue sans section reçoit la phrase par
+ * défaut. Apple refuse `whatsNew` sur la toute première version :
  * le script réessaie alors sans.
  *
  * Usage :
@@ -43,7 +45,7 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { createAscClient, EDITABLE_STATES, versionState } from "./lib/asc-api.mjs";
-import { defaultReleaseNotes, markdownToPlain, releaseBodyApplies } from "./release-notes.mjs";
+import { defaultReleaseNotes, releaseNotesFor, splitReleaseNotes } from "./release-notes.mjs";
 
 const BUNDLE_ID = "fr.petitejerusalem.app";
 const metadataDir = join(import.meta.dirname, "../store-assets/metadata/ios");
@@ -159,22 +161,23 @@ const wantedVersion = versionArg !== -1 ? process.argv[versionArg + 1] : null;
 const WHATS_NEW_LIMIT = 4000;
 const notesArg = process.argv.indexOf("--release-notes");
 const notesFile = notesArg !== -1 ? process.argv[notesArg + 1] : null;
-const releaseBody =
-  notesFile && existsSync(notesFile) ? markdownToPlain(readFileSync(notesFile, "utf8")) : "";
+const releaseNotes = splitReleaseNotes(
+  notesFile && existsSync(notesFile) ? readFileSync(notesFile, "utf8") : "",
+);
 function whatsNewFor(locale) {
-  if (releaseBody && releaseBodyApplies(locale)) {
-    const chars = [...releaseBody];
-    if (chars.length <= WHATS_NEW_LIMIT) return releaseBody;
-    console.warn(
-      `appstore-listing: notes de la release GitHub tronquées à ${WHATS_NEW_LIMIT} caractères (${chars.length})`,
-    );
-    return `${chars.slice(0, WHATS_NEW_LIMIT - 1).join("").trimEnd()}…`;
-  }
-  return defaultReleaseNotes(locale);
+  const notes = releaseNotesFor(releaseNotes, locale);
+  if (!notes) return defaultReleaseNotes(locale);
+  const chars = [...notes];
+  if (chars.length <= WHATS_NEW_LIMIT) return notes;
+  console.warn(
+    `appstore-listing: notes de la release GitHub (${locale}) tronquées à ${WHATS_NEW_LIMIT} caractères (${chars.length})`,
+  );
+  return `${chars.slice(0, WHATS_NEW_LIMIT - 1).join("").trimEnd()}…`;
 }
+const notesLangs = Object.keys(releaseNotes);
 console.log(
-  releaseBody
-    ? "appstore-listing: notes de version prises depuis la release GitHub (fr-FR), phrase par défaut ailleurs"
+  notesLangs.length > 0
+    ? `appstore-listing: notes de version prises depuis la release GitHub (${notesLangs.join(", ")}), phrase par défaut ailleurs`
     : "appstore-listing: pas de texte de release GitHub, notes de version = phrase par défaut",
 );
 // Mode de mise en vente. Par défaut AFTER_APPROVAL : la version part en vente

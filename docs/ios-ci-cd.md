@@ -276,8 +276,11 @@ store-assets/metadata/ios/<locale>/   # fr-FR, en-US, he
   script le corps de la release GitHub du tag (`--release-notes`), et à
   défaut c'est la phrase par défaut de `scripts/release-notes.mjs`
   (« Correction de bugs mineurs. », traduite par langue) qui part, même
-  logique que le Play Store. Le corps, rédigé en français, n'alimente que
-  fr-FR ; les autres langues reçoivent la phrase par défaut.
+  logique que le Play Store. Écrit en trois sections (`## Français`,
+  `## English`, `## עברית`), chaque langue reçoit la sienne ; sans ces
+  titres, le corps ne va qu'à fr-FR, et une langue sans texte reçoit la
+  phrase par défaut. Le format est décrit dans
+  [android-ci-cd.md](android-ci-cd.md#notes-de-version-en-trois-langues).
 - `node scripts/appstore-listing.mjs --check` vérifie en local, sans réseau,
   les limites de caractères **et** l'absence de caractères refusés par l'API
   App Store Connect (émojis, symboles hors BMP…) : la CI le fait en début de

@@ -7,9 +7,12 @@
  * 1. Le fichier passé en argument, que la CI remplit avec le texte écrit à la
  *    main pour ce tag : celui de la release GitHub si elle existe déjà, sinon
  *    le message du tag annoté (`git tag -a`, la source la plus commode : les
- *    notes s'écrivent au moment même où la release part). Français →
- *    whatsnew-fr-FR uniquement, les autres langues retombent sur la langue par
- *    défaut dans la Play Console.
+ *    notes s'écrivent au moment même où la release part). Chaque langue de
+ *    la fiche reçoit la section écrite pour elle (`## Français`,
+ *    `## English`, `## עברית`, voir splitReleaseNotes dans
+ *    scripts/release-notes.mjs) ; un texte sans ces titres est du français.
+ *    Une langue sans section n'a pas de fichier : la Play Console lui montre
+ *    celles de la langue par défaut.
  * 2. Sinon, la phrase par défaut de scripts/release-notes.mjs
  *    (« Correction de bugs mineurs. », traduite par langue).
  *
@@ -29,7 +32,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
-import { defaultReleaseNotes, markdownToPlain } from "./release-notes.mjs";
+import { defaultReleaseNotes, releaseNotesFor, splitReleaseNotes } from "./release-notes.mjs";
 
 const LIMIT = 500;
 const root = join(import.meta.dirname, "..");
@@ -51,21 +54,29 @@ function truncate(text, label) {
 }
 
 const bodyFile = process.argv[2];
-const releaseBody =
-  bodyFile && existsSync(bodyFile) ? markdownToPlain(readFileSync(bodyFile, "utf8")) : "";
+const releaseNotes = splitReleaseNotes(
+  bodyFile && existsSync(bodyFile) ? readFileSync(bodyFile, "utf8") : "",
+);
+const hasReleaseBody = Object.keys(releaseNotes).length > 0;
+const locales = readdirSync(metadataDir, { withFileTypes: true })
+  .filter((entry) => entry.isDirectory())
+  .map((entry) => entry.name);
 
-if (releaseBody) {
-  writeFileSync(
-    join(outDir, "whatsnew-fr-FR"),
-    truncate(releaseBody, "le texte de la release GitHub"),
-  );
+if (hasReleaseBody) {
+  const written = [];
+  for (const locale of locales) {
+    const notes = releaseNotesFor(releaseNotes, locale);
+    if (!notes) continue;
+    writeFileSync(
+      join(outDir, `whatsnew-${locale}`),
+      truncate(notes, `le texte de la release GitHub (${locale})`),
+    );
+    written.push(locale);
+  }
   console.log(
-    "prepare-whatsnew: notes prises depuis la release GitHub (fr-FR, les autres langues retombent sur la langue par défaut)",
+    `prepare-whatsnew: notes prises depuis la release GitHub (${written.join(", ")}), les autres langues retombent sur la langue par défaut`,
   );
 } else {
-  const locales = readdirSync(metadataDir, { withFileTypes: true })
-    .filter((entry) => entry.isDirectory())
-    .map((entry) => entry.name);
   for (const locale of locales) {
     writeFileSync(join(outDir, `whatsnew-${locale}`), defaultReleaseNotes(locale));
   }
@@ -75,5 +86,5 @@ if (releaseBody) {
 }
 
 if (process.env.GITHUB_OUTPUT) {
-  appendFileSync(process.env.GITHUB_OUTPUT, `has_release_body=${Boolean(releaseBody)}\n`);
+  appendFileSync(process.env.GITHUB_OUTPUT, `has_release_body=${hasReleaseBody}\n`);
 }

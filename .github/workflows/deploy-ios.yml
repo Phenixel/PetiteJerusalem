@@ -403,8 +403,9 @@ jobs:
 
       # Fiche App Store (nom, sous-titre, description, mots-clés, nouveautés)
       # synchronisée depuis store-assets/metadata/ios/. Les « Nouveautés »
-      # viennent du corps de la release GitHub du tag (sinon phrase par
-      # défaut), même logique que deploy-android.yml. Non bloquant : la
+      # viennent du corps de la release GitHub du tag, une section par
+      # langue (sinon phrase par défaut), même logique que
+      # deploy-android.yml. Non bloquant : la
       # version cible n'existe dans App Store Connect qu'une fois créée à la
       # main, et le binaire est déjà envoyé à ce stade.
       # Non bloquant, mais PAS silencieux : `continue-on-error` affichait
