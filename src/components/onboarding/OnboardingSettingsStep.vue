@@ -1,17 +1,12 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
 import AppearanceSettings from "../settings/AppearanceSettings.vue";
-import AppIcon from "../icons/AppIcon.vue";
 
 /**
- * Deuxième page : l'apparence, en une seule page et sans défilement caché.
- * Les langues, les apparences claire et sombre, les thèmes et les polices de
- * chaque écriture sont côte à côte : on les compare d'un regard, au lieu de
- * les découvrir les uns après les autres.
- *
- * Les réglages sont exactement ceux de l'onglet Préférences du profil
- * (AppearanceSettings), sans les explications de la page de réglages : ici,
- * c'est le titre de la page qui les porte.
+ * Les réglages qu'on veut dès la première minute : la langue, clair ou
+ * sombre, le thème. Les polices et les thèmes des fêtes attendent dans le
+ * profil, onglet Préférences : ils ne changent rien au premier jour, et la
+ * page d'avant, qui les proposait tous, était celle qu'on passait le plus.
  */
 
 defineProps<{ userId: string | null }>();
@@ -24,15 +19,10 @@ const { t } = useI18n();
     <h1 class="text-3xl sm:text-4xl font-bold text-text-primary mb-3">
       {{ t("onboarding.settings.title") }}
     </h1>
-    <p class="text-text-secondary text-lg mb-8">
+    <p class="text-text-secondary text-lg mb-6">
       {{ t("onboarding.settings.intro") }}
     </p>
 
-    <AppearanceSettings :user-id="userId" />
-
-    <p class="text-sm text-text-secondary mt-8 flex items-start gap-1.5">
-      <AppIcon name="info" :size="14" class="mt-0.5" />
-      {{ t("onboarding.settings.hint") }}
-    </p>
+    <AppearanceSettings :user-id="userId" essentials />
   </div>
 </template>

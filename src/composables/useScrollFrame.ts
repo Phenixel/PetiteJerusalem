@@ -99,11 +99,3 @@ export function useScrollFrame(): Readonly<Ref<ScrollFrame>> {
   }
   return readonly(frame) as Readonly<Ref<ScrollFrame>>;
 }
-
-/**
- * Redemande une mesure sans attendre un défilement : pour une page dont le
- * contenu vient de changer de hauteur (texte chargé, bloc replié).
- */
-export function refreshScrollFrame(): void {
-  if (subscribers > 0) schedule();
-}

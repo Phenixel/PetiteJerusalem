@@ -33,15 +33,23 @@ const TOLERANCE = 0.2;
 
 describe("poids annoncés des corpus téléchargeables", () => {
   it("reste proche de ce que pèsent vraiment les fichiers de public/texts", async () => {
-    const { offlineCorpora } = await import("../services/offlineLibraryService");
+    const { downloadableBooksOfCorpus, offlineCorpora } = await import(
+      "../services/offlineLibraryService"
+    );
     expect(offlineCorpora.length).toBeGreaterThan(0);
 
     const drifted: string[] = [];
     for (const corpus of offlineCorpora) {
-      const real = corpus.books.reduce(
-        (sum, book) => sum + statSync(join(publicDir, book.path)).size,
-        0,
-      );
+      // Seul compte ce qui se télécharge : un livre embarqué dans l'app (les
+      // Tehilim, le Sidour) n'a rien à peser.
+      const books = downloadableBooksOfCorpus(corpus);
+      if (books.length === 0) {
+        if (corpus.approxBytes !== 0) {
+          drifted.push(`${corpus.key} : tout est embarqué, annoncer 0 octet`);
+        }
+        continue;
+      }
+      const real = books.reduce((sum, book) => sum + statSync(join(publicDir, book.path)).size, 0);
       const drift = Math.abs(corpus.approxBytes - real) / real;
       if (drift > TOLERANCE) {
         drifted.push(

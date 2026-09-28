@@ -3,6 +3,7 @@ import { Capacitor, CapacitorHttp } from "@capacitor/core";
 import { Directory, Filesystem } from "@capacitor/filesystem";
 import { FileTransfer } from "@capacitor/file-transfer";
 import { Preferences } from "@capacitor/preferences";
+import bundledTexts from "../datas/bundledTexts.json";
 
 /**
  * Stockage local des fichiers de textes (`/texts/**`).
@@ -10,7 +11,8 @@ import { Preferences } from "@capacitor/preferences";
  * L'app native n'embarque pas les corpus volumineux (talmud, mishna, tanakh
  * retirés du bundle par `scripts/prune-native-bundle.mjs`) : ils se
  * téléchargent à la demande depuis le site, ce qui garde le binaire léger
- * pendant que la bibliothèque grandit.
+ * pendant que la bibliothèque grandit. Ce qu'elle embarque est listé dans
+ * `src/datas/bundledTexts.json`, en deux familles (voir `fetchTextResponse`).
  *
  * Deux backends selon la plateforme :
  * - natif : fichiers dans `Directory.Data` (téléchargés via FileTransfer,
@@ -30,6 +32,22 @@ import { Preferences } from "@capacitor/preferences";
 const REMOTE_TEXTS_BASE = "https://petite-jerusalem.fr";
 const MANIFEST_KEY = "offline-texts:manifest";
 const WEB_CACHE_NAME = "pj-texts-v1";
+
+/**
+ * Textes embarqués que le site peut corriger : le Sidour (les trois offices,
+ * le Kaddich, le Chema du coucher, le tikoun 'hatsot, la havdala).
+ *
+ * La copie du binaire s'ouvre tout de suite, sans rien attendre du réseau :
+ * dans une synagogue en sous-sol, il répond mal plutôt que pas du tout, et
+ * l'attendre, c'est rater le début de l'office. Derrière, l'app demande au
+ * site s'il sert une autre version (une correction de tefila n'attend pas
+ * une version de l'app) et la télécharge : copie à jour, c'est elle qui
+ * s'ouvrira la fois suivante, et la synchronisation la tiendra à jour.
+ *
+ * Les autres fichiers embarqués (Tehilim, découpage du Talmud) sont lus dans
+ * le binaire, qui fait foi pour eux.
+ */
+const BUNDLED_REVALIDATED = new Set(bundledTexts.revalidated);
 
 /**
  * Version des données `/texts/**` : à incrémenter quand le format des fichiers
@@ -279,6 +297,60 @@ async function readLocalCopy(webPath: string): Promise<Response | null> {
   }
 }
 
+/** Copie embarquée dans le binaire natif, null si le fichier n'y est pas. */
+async function readBundledCopy(webPath: string): Promise<Response | null> {
+  try {
+    const res = await fetch(webPath);
+    return res.ok ? res : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Empreintes des copies embarquées, calculées une fois par lancement. */
+const bundledHashes = new Map<string, Promise<string | null>>();
+
+/** Les vérifications en cours : une seule par texte, même ouvert deux fois. */
+const revalidating = new Set<string>();
+
+/**
+ * Le site sert-il une autre version que la copie embarquée ? Alors on la
+ * télécharge, pour la prochaine ouverture (voir BUNDLED_REVALIDATED).
+ *
+ * Tâche de fond, et silencieuse : injoignable, le site ne décide de rien, et
+ * la copie embarquée reste ce qu'on lit. Ce qui arrive est vérifié à
+ * l'empreinte par downloadFile : un portail captif qui répond par sa page de
+ * connexion laisse une copie « périmée », que la lecture ne sert jamais.
+ */
+async function revalidateBundled(webPath: string, bundledText: Promise<string>): Promise<void> {
+  if (revalidating.has(webPath)) return;
+  revalidating.add(webPath);
+  try {
+    await loadRemoteHashes();
+    const attendue = remoteHashes?.[webPath];
+    if (!attendue) return;
+    if (!bundledHashes.has(webPath)) {
+      bundledHashes.set(
+        webPath,
+        bundledText.then(hashOf).catch(() => null),
+      );
+    }
+    const embarquee = await bundledHashes.get(webPath);
+    if (embarquee === null || embarquee === attendue) return;
+    if (isDownloaded(webPath) && isDownloadCurrent(webPath)) return;
+    await downloadFile(webPath);
+  } catch (error) {
+    console.warn(`Vérification de ${webPath} impossible:`, error);
+  } finally {
+    revalidating.delete(webPath);
+  }
+}
+
+/** La copie téléchargée même périmée (ancien format, dégradé mais lisible) vaut mieux qu'une erreur. */
+async function staleCopy(webPath: string): Promise<Response | null> {
+  return isDownloaded(webPath) ? await readLocalCopy(webPath) : null;
+}
+
 export async function fetchTextResponse(webPath: string): Promise<Response> {
   await ensureManifestLoaded();
 
@@ -291,13 +363,15 @@ export async function fetchTextResponse(webPath: string): Promise<Response> {
 
   try {
     if (isNative) {
-      // Les petits fichiers (tehilim, talmud-chapters) restent embarqués dans
-      // le binaire : on tente d'abord l'asset local, puis le site.
-      try {
-        const local = await fetch(webPath);
-        if (local.ok) return local;
-      } catch {
-        // Asset absent du bundle (corpus retiré) : réseau.
+      // Les petits fichiers et le Sidour voyagent dans le binaire : on tente
+      // d'abord l'asset local, puis le site. Le Sidour se vérifie ensuite
+      // auprès du site, sans faire attendre la lecture.
+      const bundled = await readBundledCopy(webPath);
+      if (bundled) {
+        if (BUNDLED_REVALIDATED.has(webPath)) {
+          void revalidateBundled(webPath, bundled.clone().text());
+        }
+        return bundled;
       }
       // HTTP natif (pas la fetch de la webview) : l'origine de l'app
       // (https://localhost) n'est pas autorisée par CORS sur le site, une
@@ -315,9 +389,8 @@ export async function fetchTextResponse(webPath: string): Promise<Response> {
         });
       }
       // Réseau en échec : la copie périmée vaut mieux que rien.
-      const stale = isDownloaded(webPath) ? await readLocalCopy(webPath) : null;
       return (
-        stale ??
+        (await staleCopy(webPath)) ??
         new Response(body, { status: res.status, headers: { "Content-Type": "application/json" } })
       );
     }
@@ -328,12 +401,10 @@ export async function fetchTextResponse(webPath: string): Promise<Response> {
     if (!remoteHashes) await loadRemoteHashes();
     const res = await fetch(versionedUrl(webPath, remoteHashes?.[webPath]));
     if (res.ok) return res;
-    const stale = isDownloaded(webPath) ? await readLocalCopy(webPath) : null;
-    return stale ?? res;
+    return (await staleCopy(webPath)) ?? res;
   } catch (error) {
-    // Hors ligne : une copie périmée (ancien format, dégradé mais lisible)
-    // vaut mieux qu'une erreur.
-    const stale = isDownloaded(webPath) ? await readLocalCopy(webPath) : null;
+    // Hors ligne : une copie périmée vaut mieux qu'une erreur.
+    const stale = await staleCopy(webPath);
     if (stale) return stale;
     throw error;
   }

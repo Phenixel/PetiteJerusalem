@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import {
   downloadBook,
+  downloadableBooksOfCorpus,
   formatDownloadSize,
   missingBooksOfCorpus,
   offlineCorpora,
@@ -55,17 +56,23 @@ onMounted(async () => {
 
 /** Poids approximatif de ce qui reste à télécharger dans un corpus. */
 function remainingBytes(corpus: OfflineCorpus): number {
-  if (corpus.bundled || corpus.books.length === 0) return 0;
+  const downloadable = downloadableBooksOfCorpus(corpus).length;
+  if (downloadable === 0) return 0;
   const missing = missingBooksOfCorpus(corpus).length;
-  return Math.round((corpus.approxBytes * missing) / corpus.books.length);
+  return Math.round((corpus.approxBytes * missing) / downloadable);
 }
 
+// Un corpus tout entier dans l'app (Tehilim, Sidour) n'a rien à cocher : la page
+// le dit dans sa phrase d'ouverture, une ligne de plus ne ferait que pousser le
+// bouton sous le pli.
 const rows = computed(() =>
-  offlineCorpora.map((corpus) => ({
-    corpus,
-    missing: corpus.bundled ? 0 : missingBooksOfCorpus(corpus).length,
-    bytes: remainingBytes(corpus),
-  })),
+  offlineCorpora
+    .filter((corpus) => !corpus.bundled)
+    .map((corpus) => ({
+      corpus,
+      missing: missingBooksOfCorpus(corpus).length,
+      bytes: remainingBytes(corpus),
+    })),
 );
 
 const selectionBytes = computed(() =>
@@ -128,7 +135,7 @@ async function downloadSelection(): Promise<void> {
       <li v-for="row in rows" :key="row.corpus.key">
         <button
           type="button"
-          class="w-full card p-4 flex items-center gap-4 text-left transition-all duration-300"
+          class="w-full card px-4 py-3 flex items-center gap-4 text-left transition-all duration-300"
           :class="[
             selected.has(row.corpus.key) ? 'ring-2 ring-primary' : 'card-hover',
             row.missing === 0 ? 'opacity-70' : '',
@@ -154,10 +161,7 @@ async function downloadSelection(): Promise<void> {
               {{ t(row.corpus.labelKey) }}
             </span>
             <span class="block text-sm text-text-secondary">
-              <template v-if="row.corpus.bundled">
-                {{ t("onboarding.library.bundled") }}
-              </template>
-              <template v-else-if="row.missing === 0">
+              <template v-if="row.missing === 0">
                 {{ t("onboarding.library.alreadyDownloaded") }}
               </template>
               <template v-else>

@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeAll, beforeEach } from "vitest";
 import type { ReservationRecord } from "../models/models";
 
 vi.mock("../services/firestoreService");
+vi.mock("../services/analyticsService", () => ({ analyticsService: { capture: vi.fn() } }));
 
 /**
  * Le document de session, en mémoire : ces tests portent sur ce que la
@@ -47,6 +48,9 @@ beforeAll(() => {
 });
 
 import { reservationService, ReservationGoneError } from "../services/reservationService";
+import { firestoreService } from "../services/firestoreService";
+import { AccountGuestRenameError, SessionMissingError } from "../services/appError";
+import type { Session } from "../models/models";
 
 const past = () => new Date(Date.now() - 60_000).toISOString();
 const future = () => new Date(Date.now() + 60 * 60_000).toISOString();
@@ -259,6 +263,84 @@ describe("deleteReservation", () => {
 
     // Les règles n'acceptent qu'une suppression qui retire vraiment un
     // élément : écrire ici ne produirait qu'un refus de permission.
+    expect(written).toBeNull();
+  });
+
+  it("signale une session disparue", async () => {
+    exists = false;
+    await expect(reservationService.deleteReservation("s1", "r1")).rejects.toBeInstanceOf(
+      SessionMissingError,
+    );
+  });
+});
+
+describe("deleteReservations", () => {
+  it("retire le lot coché, et lui seul", async () => {
+    store.reservations = [record(), record({ id: "r2" }), record({ id: "r3" })];
+
+    await reservationService.deleteReservations("s1", ["r1", "r3"]);
+
+    expect(written?.reservations.map((r) => r.id)).toEqual(["r2"]);
+  });
+});
+
+describe("renameGuest", () => {
+  it("renomme toutes les réservations du même invité, pas celles des autres", async () => {
+    store.reservations = [
+      record(),
+      record({ id: "r2", section: 2 }),
+      record({ id: "r3", chosenByGuestId: "guest-2" }),
+    ];
+
+    expect(await reservationService.renameGuest("s1", "r1", "  Sarah ")).toBe(2);
+
+    expect(written?.reservations.map((r) => r.chosenByName)).toEqual(["Sarah", "Sarah", "Anonyme"]);
+  });
+
+  it("refuse de renommer une réservation rattachée à un compte", async () => {
+    store.reservations = [record({ chosenById: "u1", chosenByGuestId: undefined })];
+
+    await expect(reservationService.renameGuest("s1", "r1", "Sarah")).rejects.toBeInstanceOf(
+      AccountGuestRenameError,
+    );
+    expect(written).toBeNull();
+  });
+});
+
+describe("migrateGuestReservations", () => {
+  const session = { id: "s1", reservations: [record()] } as unknown as Session;
+
+  it("rattache au compte les réservations de l'invité, échéance comprise", async () => {
+    const expiresAt = future();
+    store.reservations = [record({ expiresAt }), record({ id: "r2", chosenByGuestId: "autre" })];
+    vi.mocked(firestoreService.getSessions).mockResolvedValue([session]);
+
+    const migrated = await reservationService.migrateGuestReservations(
+      "sarah@example.com",
+      "u1",
+      "Sarah",
+      "guest-1",
+    );
+
+    expect(migrated).toBe(1);
+    const [rattachee, autre] = written!.reservations;
+    expect(rattachee).toMatchObject({ chosenById: "u1", chosenByName: "Sarah", expiresAt });
+    expect(rattachee.chosenByGuestId).toBeUndefined();
+    expect(autre.chosenByGuestId).toBe("autre");
+  });
+
+  it("passe sur une session supprimée entre-temps, sans erreur", async () => {
+    exists = false;
+    vi.mocked(firestoreService.getSessions).mockResolvedValue([session]);
+
+    expect(
+      await reservationService.migrateGuestReservations(
+        "sarah@example.com",
+        "u1",
+        "Sarah",
+        "guest-1",
+      ),
+    ).toBe(0);
     expect(written).toBeNull();
   });
 });

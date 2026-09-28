@@ -145,8 +145,7 @@ fait. Quatre règles la tiennent :
 - **la commande reste vivante sous le projecteur.** Le voile n'est pas peint
   à cet endroit : la toucher fait ce qu'elle fait d'habitude, et l'astuce
   passe au pas suivant ou s'en va, on a compris. Elle **montre** aussi quand
-  elle le peut : sur les horaires, un doigt dessiné (le même que dans les
-  captures de l'introduction) se pose sur la première ligne, la tire vers la
+  elle le peut : sur les horaires, un doigt dessiné (`MockTouch`) se pose sur la première ligne, la tire vers la
   gauche jusqu'à sa cloche et la lâche, le temps du pas, puis le nom de la
   ville, qui est le bouton qui la change, prend le projecteur ; sur une
   lecture, l'astuce ouvre le panneau pour éclairer le téléchargement du
@@ -155,7 +154,7 @@ fait. Quatre règles la tiennent :
   Android. « Suivant » ou « Compris » la mènent au bout. Jamais plus de deux
   ou trois pas. Un pas sans commande à éclairer (pincer le texte, le double
   appui) pose la bulle au milieu et **montre** le geste dans une capture
-  dessinée (`src/components/mock`), la même que dans l'introduction ;
+  dessinée (`src/components/mock`) ;
 - **une fois par appareil, et une seule par ouverture de l'app.** Close, elle
   est notée vue (dans les deux stockages, voir docs/app-native.md), même si
   l'on quitte la page au milieu : une astuce qui revient n'est plus une aide.
@@ -194,6 +193,31 @@ une page précise et une bulle en travers de ce qu'il vient lire serait une
 gêne. `?tips` dans l'adresse les force partout où la commande existe (ou
 `?tips=reading-gestures` pour une seule), pour les montrer et les essayer sur
 les canaux de preview.
+
+### L'introduction règle d'abord, les gestes viennent en dernier
+
+L'introduction de première ouverture (`OnboardingFlow.vue`) pose quelques
+réglages, dit ce que l'app contient, puis montre les gestes à qui veut les
+voir. Elle comptait six pages, consentement compris, avec des captures
+animées dès la troisième : près de la moitié des gens la passaient, presque
+tous dès la première page après le consentement. Elle en compte cinq, chacune
+courte :
+
+- **le consentement**, en trois lignes, parce qu'il demande un choix ;
+- **les réglages** : la langue, clair ou sombre, le thème, rien de plus
+  (`AppearanceSettings essentials`). Les polices et les thèmes des fêtes
+  attendent dans le profil ;
+- **les textes à emporter**, le seul réglage qui fasse quelque chose ;
+- **l'essentiel** : la bibliothèque, les horaires, la lecture du jour, une
+  ligne chacun, et le bouton qui compose la lecture du jour ;
+- **les gestes** : le menu de lecture, le pincement, le double appui, en
+  captures, avec les textes des astuces du lecteur.
+
+Les quatre premières n'ont pas de « Passer » : on tient à ce qu'elles soient
+lues, et elles sont courtes pour qu'on les lise. Seuls les gestes se passent
+(le bouton, Échap), sans dommage : les mêmes reviennent en astuces sur la
+page de lecture. Une page nouvelle doit gagner sa place contre les autres,
+et ce qui s'apprend en le faisant va avec les gestes, pas avant.
 
 ### Deux pages, un jeu d'onglets
 
@@ -631,7 +655,9 @@ Trois choses changent, pas une de plus :
   pied de page ; en blanc sur le bandeau du profil ; et, sur toutes les autres
   pages, en filigrane dans les coins hauts (`HolidayBackdrop`), là où le mur
   de pierre se voit, jamais sur une page de lecture. Toujours à même le fond,
-  jamais en carte : c'est une parure, pas une réponse ;
+  jamais en carte : c'est une parure, pas une réponse. Un ornement qui se
+  pose à l'arrivée s'écrit dans `OrnamentPose`, qui porte le trait, la seconde
+  couleur (`.accent`) et l'animation : il n'y met que son dessin ;
 - **le bouton rond des horaires** de l'app native, dont le rond prend la forme
   d'un objet de la fête (une pomme, une soucca, `HolidayFabShape`), l'horloge
   restant au milieu : c'est toujours le bouton des horaires, il a seulement
