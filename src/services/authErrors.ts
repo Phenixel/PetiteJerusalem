@@ -22,6 +22,9 @@ const CANCELLED_AUTH_CODES = new Set([
 // stables d'une langue à l'autre.
 const APPLE_CANCELLED = /AuthenticationServices\.AuthorizationError\D*1001\b/;
 
+/** Les fournisseurs de connexion tiers, pour les vues comme pour ce module. */
+export type SocialProvider = "google" | "apple";
+
 function messageOf(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
@@ -56,6 +59,12 @@ export function isAuthBrowserUnavailable(error: unknown): boolean {
  * (ASAuthorizationErrorUnknown) : l'appareil ne peut pas la présenter, le
  * plus souvent parce qu'aucun compte Apple n'y est connecté. Message
  * localisé par l'appareil, comme le 1001.
+ *
+ * Le même code sort aussi d'un build mal configuré (entitlement « Sign in
+ * with Apple » absent du profil, capability retirée de l'identifiant). Cette
+ * panne-là touche tout le monde d'un coup, sans passer par l'Error tracking :
+ * elle se lit dans le funnel, `apple_signin_failed` avec la raison
+ * `unavailable` qui prend soudain toute la place des `signed_in` Apple.
  */
 export function isAppleSignInUnavailable(error: unknown): boolean {
   return /AuthenticationServices\.AuthorizationError\D*1000\b/.test(messageOf(error));
@@ -68,8 +77,19 @@ export function isAppleSignInUnavailable(error: unknown): boolean {
  * Les appelants affichent quoi vérifier, comptent le décrochage dans le
  * funnel, mais ne remontent pas ces échecs à l'Error tracking.
  */
-export function isAuthProviderUnavailable(provider: "google" | "apple", error: unknown): boolean {
-  return provider === "google" ? isAuthBrowserUnavailable(error) : isAppleSignInUnavailable(error);
+export function isAuthProviderUnavailable(provider: SocialProvider, error: unknown): boolean {
+  switch (provider) {
+    case "google":
+      return isAuthBrowserUnavailable(error);
+    case "apple":
+      return isAppleSignInUnavailable(error);
+    default: {
+      // Un fournisseur ajouté au type sans sa règle ne compile pas, plutôt
+      // que de tomber en silence sur celle d'Apple.
+      const unhandled: never = provider;
+      return unhandled;
+    }
+  }
 }
 
 /**

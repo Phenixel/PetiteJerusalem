@@ -4,7 +4,11 @@ import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { Capacitor } from "@capacitor/core";
 import { authService, type User } from "../services/authService";
-import { isAuthCancellation, isAuthProviderUnavailable } from "../services/authErrors";
+import {
+  isAuthCancellation,
+  isAuthProviderUnavailable,
+  type SocialProvider,
+} from "../services/authErrors";
 import { reservationService } from "../services/reservationService";
 import { guestService } from "../services/guestService";
 import { seoService } from "../services/seoService";
@@ -30,6 +34,11 @@ const errorMessage = ref<string | null>(null);
 // i18n : indispensable pour diagnostiquer à distance les échecs de connexion
 // Google/Apple remontés par les testeurs (l'erreur varie selon l'appareil).
 const errorDetail = ref<string | null>(null);
+// Le fournisseur dont la feuille native est ouverte. Tant qu'elle l'est, un
+// second tap (le même bouton, ou l'autre fournisseur) ne lance rien : deux
+// présentations concurrentes échouent en « Unable to open Safari » ou en
+// code Apple 1000, que l'écran prendrait pour une limite de l'appareil.
+const socialPending = ref<SocialProvider | null>(null);
 
 function setMode(newMode: "login" | "signup") {
   mode.value = newMode;
@@ -96,13 +105,21 @@ async function submitForm() {
   }
 }
 
+// Les messages de chaque fournisseur : l'appareil hors d'état, ou la panne.
+const SOCIAL_ERROR_KEYS: Record<SocialProvider, { unavailable: string; error: string }> = {
+  google: { unavailable: "login.authBrowserUnavailable", error: "login.googleError" },
+  apple: { unavailable: "login.appleSignInUnavailable", error: "login.appleError" },
+};
+
 /**
  * Connexion par un tiers (Google, Apple) : le même parcours pour les deux, le
  * même funnel (`<provider>_signin_clicked` puis `signed_in`, ou en route
  * `_cancelled` / `_failed`), suivi du bug « bouton inerte » sur Google et de
  * la feuille Apple qui ne s'ouvre pas.
  */
-async function socialSignIn(provider: "google" | "apple", signIn: () => Promise<User>) {
+async function socialSignIn(provider: SocialProvider, signIn: () => Promise<User>) {
+  if (socialPending.value || loading.value) return;
+  socialPending.value = provider;
   errorMessage.value = null;
   errorDetail.value = null;
   analyticsService.capture(`${provider}_signin_clicked`);
@@ -142,12 +159,11 @@ async function socialSignIn(provider: "google" | "apple", signIn: () => Promise<
       reason: unavailable ? "unavailable" : "error",
       error_message: e instanceof Error ? e.message : String(e),
     });
-    if (provider === "google") {
-      errorMessage.value = unavailable ? t("login.authBrowserUnavailable") : t("login.googleError");
-    } else {
-      errorMessage.value = unavailable ? t("login.appleSignInUnavailable") : t("login.appleError");
-    }
+    const keys = SOCIAL_ERROR_KEYS[provider];
+    errorMessage.value = t(unavailable ? keys.unavailable : keys.error);
     errorDetail.value = e instanceof Error ? e.message : String(e);
+  } finally {
+    socialPending.value = null;
   }
 }
 
@@ -197,14 +213,19 @@ onMounted(async () => {
       </div>
 
       <div class="mb-8">
-        <button class="btn btn-soft w-full" @click="loginWithGoogle">
+        <button
+          class="btn btn-soft w-full"
+          :disabled="socialPending !== null || loading"
+          @click="loginWithGoogle"
+        >
           <AppIcon name="google" :size="16" />
           {{ t("login.signInWithGoogle") }}
         </button>
 
         <button
           v-if="isApplePlatform"
-          class="w-full mt-3 py-3 px-6 bg-black hover:bg-gray-900 rounded-btn font-semibold text-white shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-3"
+          class="w-full mt-3 py-3 px-6 bg-black hover:bg-gray-900 rounded-btn font-semibold text-white shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-3 disabled:opacity-60"
+          :disabled="socialPending !== null || loading"
           @click="loginWithApple"
         >
           <AppIcon name="apple" :size="18" />
