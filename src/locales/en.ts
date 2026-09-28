@@ -104,99 +104,51 @@ const en: LocaleMessages = {
     back: "Back",
     next: "Continue",
     finish: "Finish",
-    finishToDaily: "Finish and build my list",
     replay: "Replay the introduction",
     consent: {
       welcome: "Welcome",
-      title: "Petite Jérusalem and your data",
-      intro:
-        "First, a question about privacy. It is asked once, and your answer applies to the whole app.",
+      title: "One question before we start",
+      intro: "May we measure how the app is used? It helps us improve it.",
       whatTitle: "What we measure",
-      whatText:
-        "Pages opened, the paths followed through the app and the technical errors encountered. Nothing of what you read, nothing of what you write.",
-      whyTitle: "What it is for",
-      whyText:
-        "Seeing what gets in the way, fixing breakages and knowing what is really used, so the app improves where it matters.",
-      neverTitle: "What we will never do",
-      neverText: "No advertising, no data resale, no profile handed to anyone.",
+      whatText: "Pages opened and errors. Never what you read or write.",
+      whyTitle: "Why",
+      whyText: "To fix what gets in the way and improve what is used.",
+      neverTitle: "Never",
+      neverText: "No advertising, no data resale.",
       accept: "Accept",
       decline: "Decline",
-      changeHint:
-        "Declining takes nothing away: the whole app stays available. You can change your mind whenever you like.",
+      changeHint: "Declining takes nothing away, and you can change your mind at any time.",
       learnMore: "Learn more",
     },
     settings: {
-      title: "Set the app up your way",
-      intro: "Language, colours and fonts. Every choice applies right away, everywhere in the app.",
-      hint: "These settings live in your profile, under Preferences.",
-    },
-    daily: {
-      title: "Your reading of the day",
-      intro:
-        "Pick once the texts you read every day: the app gathers them for you each morning and remembers where you left off.",
-      composeTitle: "A list of your own",
-      composeText:
-        "Some Tehilim, a mishna, a daf, the weekly parasha: build the list that matches your days.",
-      trackTitle: "Tracking takes care of itself",
-      trackText:
-        "Each text is ticked as you read it, the list resets the next day, and your progress follows you across devices.",
-      remindTitle: "A reminder, if you want one",
-      remindText:
-        "A notification at the time you choose, and a last call before shkia as long as the reading is not done.",
-      cta: "Build my daily reading",
-      ctaChosen: "We will head there at the end",
-      ctaChosenHint:
-        "The last button of the tour will take you there. Tap again to change your mind.",
-      accountHint: "A free account is all it takes: it keeps your list and your progress.",
-      laterHint:
-        "No rush: the reading of the day waits for you in the library, whenever you feel like building it.",
+      title: "Your settings",
+      intro: "Language and look. You will find them again in your profile.",
     },
     library: {
-      title: "The library",
-      intro:
-        "Every text lives in one place: Tehilim, Mishna, Talmud, Tanakh, Siddur, Selihot and blessings. One search runs through them all, and your bookmarks bring you back to the right verse.",
-      corpusTitle: "Seven corpora, one reader",
-      corpusText:
-        "Tap a volume to open it. The search at the top runs through the whole library: a tractate, a parasha, a berakha.",
-      readingTitle: "While reading",
-      readingIntro: "Three gestures worth knowing, the same on every text.",
-      pinchTitle: "Pinch to enlarge",
-      pinchText:
-        "Two fingers on the text change its size without distorting the page. The A− and A+ buttons in the menu do the same.",
       pinchSample1: "Bereshit bara Elohim",
       pinchSample2: "et hashamayim ve-et ha'aretz",
-      menuTitle: "The menu, bottom right",
-      menuText:
-        "The round button on the text opens the size, Hebrew or transliteration, and the text's landmarks: sections of a service, aliyot of a parasha, dafim of a tractate.",
-      scrollTitle: "Double tap to scroll",
-      scrollText:
-        "A double tap on the text sends it down on its own; the badge at the bottom sets the pace, and stops it.",
-      offlineTitle: "What should stay on this device?",
+      offlineTitle: "Without a connection",
       offlineIntro:
-        "A downloaded text reads without a connection, on the underground as much as on a trip; the others need the internet. Tick what you want to take along, the rest can be downloaded later in one gesture.",
-      bundled: "Already in the app",
+        "Tehilim, Shacharit, Minha and Arvit are already in the app. Tick what else you want to take along.",
       alreadyDownloaded: "Already on this device",
       booksCount: "{count} book to download | {count} books to download",
       selection: "About {size} to download",
       download: "Download my selection",
       downloading: "Downloading… {done} of {total}",
       downloadDone: "Done: these texts now read without a connection.",
-      changeHint:
-        "Nothing is set in stone: every text can be downloaded or removed from the library, whenever you want.",
+      changeHint: "Everything can also be downloaded later, from the library.",
     },
-    zmanim: {
-      title: "Times, worked out where you are",
-      intro:
-        "Dawn, shema, minha, shkia, candle lighting and the end of Shabbat, for wherever you happen to be.",
-      deviceTitle: "Worked out on your device",
-      deviceText:
-        "Nothing is asked of the network, your location is sent nowhere, and the times stay readable without a connection.",
-      placeTitle: "Your location, or the town you choose",
-      placeText: "Paris by default; your location if you allow it, or a town from the list.",
-      shabbatTitle: "Shabbat and festivals",
-      shabbatText:
-        "Candle lighting and the end of Shabbat, the weekly parasha, and the year's festival calendar.",
-      hint: "The round button in the middle of the bottom bar opens the times over the current page; a second tap closes them.",
+    essentials: {
+      title: "You are all set",
+      intro: "Three things to know. The rest you will discover along the way.",
+      libraryTitle: "The library",
+      libraryText:
+        "Tehilim, Siddur, Mishna, Talmud, Tanakh, festivals and blessings, with one search.",
+      zmanimTitle: "The times",
+      zmanimText: "The round button at the bottom of the screen: today's times, where you are.",
+      dailyTitle: "The reading of the day",
+      dailyText: "Your daily texts in one list, ticked off as you read.",
+      compose: "Build my daily reading",
     },
   },
   tips: {

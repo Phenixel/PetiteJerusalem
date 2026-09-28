@@ -81,3 +81,44 @@ seconde page.
 
 Le bouton de téléchargement vit à plusieurs endroits ; sans `source`,
 l'événement ne disait pas lequel rapporte.
+
+## Introduction de première ouverture
+
+L'introduction de l'app native (`OnboardingFlow.vue`). Elle est passée de six
+pages à trois (quatre avec le consentement) en septembre 2026 : sur les 90
+jours d'avant, 69 des 148 fins étaient un « Passer », dont 55 dès la première
+ou la deuxième page après le consentement. `app_version` sépare les deux
+formes pour mesurer l'effet.
+
+### `onboarding_started` (existant)
+
+| Propriété | Valeurs                                                     |
+| --------- | ----------------------------------------------------------- |
+| `steps`   | nombre de pages : 4, ou 3 si le consentement est déjà donné |
+
+### `onboarding_step_viewed` (existant)
+
+| Propriété | Valeurs                                        | Statut                   |
+| --------- | ---------------------------------------------- | ------------------------ |
+| `step`    | `consent`, `settings`, `offline`, `essentials` | `essentials` **nouveau** |
+| `index`   | rang de la page, à partir de 0                 | existant                 |
+
+`daily`, `library` et `zmanim` ne partent plus : ces trois pages sont réunies
+dans `essentials`.
+
+### `onboarding_finished` (existant)
+
+| Propriété             | Valeurs                                           | Statut              |
+| --------------------- | ------------------------------------------------- | ------------------- |
+| `via`                 | `finish`, `skip`, `escape`, `daily`               | `daily` **nouveau** |
+| `step`                | la page où l'introduction s'est terminée          | existant            |
+| `wants_daily_reading` | vrai quand elle se termine sur la lecture du jour | existant            |
+
+`daily` : le bouton « Composer ma lecture du jour » de la dernière page, qui
+termine l'introduction et y conduit. `wants_daily_reading` garde son sens
+(l'introduction mène à la lecture du jour), il vaut maintenant `via = daily`.
+
+### `onboarding_offline_download_started`, `onboarding_offline_download_finished` (existants)
+
+Inchangés : le choix des textes à emporter reste une page de l'introduction
+(51 téléchargements lancés sur la même période).

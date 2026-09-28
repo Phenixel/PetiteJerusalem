@@ -145,8 +145,7 @@ fait. Quatre règles la tiennent :
 - **la commande reste vivante sous le projecteur.** Le voile n'est pas peint
   à cet endroit : la toucher fait ce qu'elle fait d'habitude, et l'astuce
   passe au pas suivant ou s'en va, on a compris. Elle **montre** aussi quand
-  elle le peut : sur les horaires, un doigt dessiné (le même que dans les
-  captures de l'introduction) se pose sur la première ligne, la tire vers la
+  elle le peut : sur les horaires, un doigt dessiné (`MockTouch`) se pose sur la première ligne, la tire vers la
   gauche jusqu'à sa cloche et la lâche, le temps du pas, puis le nom de la
   ville, qui est le bouton qui la change, prend le projecteur ; sur une
   lecture, l'astuce ouvre le panneau pour éclairer le téléchargement du
@@ -155,7 +154,7 @@ fait. Quatre règles la tiennent :
   Android. « Suivant » ou « Compris » la mènent au bout. Jamais plus de deux
   ou trois pas. Un pas sans commande à éclairer (pincer le texte, le double
   appui) pose la bulle au milieu et **montre** le geste dans une capture
-  dessinée (`src/components/mock`), la même que dans l'introduction ;
+  dessinée (`src/components/mock`) ;
 - **une fois par appareil, et une seule par ouverture de l'app.** Close, elle
   est notée vue (dans les deux stockages, voir docs/app-native.md), même si
   l'on quitte la page au milieu : une astuce qui revient n'est plus une aide.
@@ -194,6 +193,26 @@ une page précise et une bulle en travers de ce qu'il vient lire serait une
 gêne. `?tips` dans l'adresse les force partout où la commande existe (ou
 `?tips=reading-gestures` pour une seule), pour les montrer et les essayer sur
 les canaux de preview.
+
+### L'introduction règle, elle n'enseigne pas
+
+L'introduction de première ouverture (`OnboardingFlow.vue`) pose quelques
+réglages, dit ce que l'app contient, et laisse découvrir le reste. Elle
+comptait six pages, chacune avec ses captures animées (le pincement, le menu
+de lecture, la liste du jour, les horaires) : près de la moitié des gens la
+passaient, presque tous dès la première page après le consentement. Il en
+reste trois, quatre avec le consentement, et chacune tient sur un écran :
+
+- **le consentement**, en trois lignes courtes, parce qu'il demande un choix ;
+- **les réglages** : la langue, clair ou sombre, le thème, rien de plus
+  (`AppearanceSettings essentials`). Les polices et les thèmes des fêtes
+  attendent dans le profil ;
+- **les textes à emporter**, le seul réglage qui fasse quelque chose ;
+- **l'essentiel** : la bibliothèque, les horaires, la lecture du jour, une
+  ligne chacun, et le bouton qui compose la lecture du jour.
+
+Un geste ne s'y explique pas : c'est le rôle des astuces, sur la page où il
+sert (ci-dessus). Une page nouvelle doit y gagner sa place contre les autres.
 
 ### Deux pages, un jeu d'onglets
 

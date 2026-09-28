@@ -9,7 +9,8 @@ import fr from "../locales/fr";
  *
  * Trois promesses tiennent cet écran : elle pose le choix de consentement
  * elle-même (et la bannière du bas se tait pendant ce temps), elle ne repose
- * pas une question déjà tranchée, et elle ne s'affiche qu'une fois.
+ * pas une question déjà tranchée, et elle ne s'affiche qu'une fois. Et elle
+ * reste courte : trois pages après le consentement, sans tutoriel.
  */
 
 // L'introduction ne s'ouvre que dans l'app native : c'est la plateforme que
@@ -101,25 +102,22 @@ describe("introduction de première ouverture", () => {
     );
     const { isOnboardingOpen } = await import("../composables/useOnboarding");
 
-    // Six pages, et aucune porte de sortie tant que le choix n'est pas fait.
-    expect(host.querySelectorAll("header span").length).toBe(6);
+    // Quatre pages, et aucune porte de sortie tant que le choix n'est pas fait.
+    expect(host.querySelectorAll("header span").length).toBe(4);
     expect(button(host, fr.onboarding.skip)).toBeNull();
     expect(button(host, fr.onboarding.consent.decline)).not.toBeNull();
 
     await click(button(host, fr.onboarding.consent.accept));
     expect(localStorage.getItem(CONSENT_KEY)).toBe("granted");
 
-    // Réglages, lecture du jour, bibliothèque, hors ligne, puis horaires.
+    // Réglages, textes à emporter, puis l'essentiel.
     expect(button(host, fr.onboarding.skip)).not.toBeNull();
-    await click(button(host, fr.onboarding.next));
-    expect(button(host, fr.onboarding.daily.cta)).not.toBeNull();
-    await click(button(host, fr.onboarding.next));
-    expect(host.textContent).toContain(fr.onboarding.library.readingTitle);
+    expect(host.textContent).toContain(fr.onboarding.settings.title);
     await click(button(host, fr.onboarding.next));
     // Le sélecteur des textes à emporter est chargé à la demande.
     await vi.waitFor(() => expect(button(host, fr.onboarding.library.download)).not.toBeNull());
     await click(button(host, fr.onboarding.next));
-    expect(host.textContent).toContain(fr.onboarding.zmanim.title);
+    expect(host.textContent).toContain(fr.onboarding.essentials.title);
 
     await click(button(host, fr.onboarding.finish));
     expect(localStorage.getItem(SEEN_KEY)).toBe("1");
@@ -127,11 +125,12 @@ describe("introduction de première ouverture", () => {
   });
 
   /**
-   * Le bouton de la lecture du jour emmenait vers la page de composition, qui
-   * demande un compte : le visiteur partait vers la connexion, l'introduction
-   * était notée comme vue au passage, et sa fin ne revenait jamais.
+   * La lecture du jour se propose sur la dernière page, et son bouton termine
+   * l'introduction avant d'y conduire. Proposé plus tôt, il emmenait vers la
+   * connexion (la page demande un compte) et l'introduction, notée comme vue
+   * au passage, ne montrait jamais sa fin.
    */
-  it("garde pour la fin le souhait de composer sa lecture du jour", async () => {
+  it("termine l'introduction avant de conduire à la lecture du jour", async () => {
     const { host, router } = await mountComponent(
       () => import("../components/onboarding/OnboardingFlow.vue"),
     );
@@ -139,24 +138,23 @@ describe("introduction de première ouverture", () => {
 
     await click(button(host, fr.onboarding.consent.accept));
     await click(button(host, fr.onboarding.next));
-
-    // Le souhait est pris, mais l'introduction reste à l'écran.
-    await click(button(host, fr.onboarding.daily.cta));
-    expect(button(host, fr.onboarding.daily.ctaChosen)).not.toBeNull();
-    expect(isOnboardingOpen.value).toBe(true);
-    expect(router.currentRoute.value.path).toBe("/");
-
-    // Bibliothèque, hors ligne, horaires : le parcours va jusqu'au bout, et le
-    // dernier bouton annonce la destination.
     await click(button(host, fr.onboarding.next));
-    await click(button(host, fr.onboarding.next));
-    await click(button(host, fr.onboarding.next));
-    const last = button(host, fr.onboarding.finishToDaily);
-    expect(last).not.toBeNull();
 
-    await click(last);
+    await click(button(host, fr.onboarding.essentials.compose));
     expect(isOnboardingOpen.value).toBe(false);
+    expect(localStorage.getItem(SEEN_KEY)).toBe("1");
     expect(router.currentRoute.value.path).toBe("/bibliotheque/lecture-du-jour");
+  });
+
+  it("ne propose, dans les réglages, que la langue, l'apparence et le thème", async () => {
+    const { host } = await mountComponent(
+      () => import("../components/onboarding/OnboardingFlow.vue"),
+    );
+    await click(button(host, fr.onboarding.consent.accept));
+
+    // Les polices et les thèmes des fêtes attendent dans le profil.
+    expect(host.textContent).not.toContain(fr.profile.fontsTitle);
+    expect(host.textContent).not.toContain(fr.profile.holidayThemesTitle);
   });
 
   it("ne repose pas la question du consentement à qui y a déjà répondu", async () => {
@@ -165,7 +163,7 @@ describe("introduction de première ouverture", () => {
       () => import("../components/onboarding/OnboardingFlow.vue"),
     );
 
-    expect(host.querySelectorAll("header span").length).toBe(5);
+    expect(host.querySelectorAll("header span").length).toBe(3);
     expect(button(host, fr.onboarding.consent.accept)).toBeNull();
     expect(button(host, fr.onboarding.next)).not.toBeNull();
     // Le choix d'avant tient, l'introduction n'y touche pas.
