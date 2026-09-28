@@ -677,6 +677,44 @@ la flamme qui grandit, le nouveau nombre, et ce que la journée a de plus (un
 palier, un siyoum, un joker gagné). C'est la seule animation « de récompense »
 de l'app ; elle ne revient pas tant que la journée n'a pas changé.
 
+### L'accueil se compose
+
+L'accueil connecté est fait de widgets, et chacun choisit les siens et leur
+ordre : la lecture du jour et les horaires pour qui n'a rien réglé (l'accueil
+d'avant), puis, à ajouter, la reprise de lecture, le mois de la lecture du
+jour, la date hébraïque du jour et ses hiloulot, la prochaine fête, les
+Tehilim du jour, la paracha de la semaine et le Daf hayomi
+(`src/services/homeWidgets.ts`, composants dans `src/components/homeWidgets/`).
+Le choix suit le compte (`homeWidgets` dans les préférences) : on retrouve son
+accueil sur chaque appareil.
+
+Un widget est une carte du tableau de bord comme les autres, et en suit les
+règles : il répond à une question, porte une chose en grand au plus, au même
+endroit, et mène là où l'on continue (le mois, qui porte ses propres flèches,
+est la seule surface non cliquable ; c'est son titre qui mène). Un widget
+choisi ne disparaît pas quand il n'a rien à dire : « Reprendre ma lecture »
+sans lecture en cours le dit et mène à la bibliothèque. Les raccourcis du
+moment (l'office en cours, la bénédiction de la lune, l'Omer, mes dates)
+restent à côté de la salutation et hors du choix : ils ne paraissent qu'à
+leur heure, et c'est ce qui les rend utiles.
+
+On règle l'accueil par « Personnaliser l'accueil », un petit bouton qui porte
+son dessin et son nom sous les widgets, là où l'on finit de les lire. Il
+ouvre une fenêtre à deux listes : ce qui est sur l'accueil, dans l'ordre, avec
+de quoi monter, descendre et retirer ; puis ce qu'on peut ajouter, chacun avec
+une phrase qui dit ce qu'il montre. Des flèches plutôt qu'un glisser-déposer :
+elles se touchent au pouce sans viser, se lisent au lecteur d'écran et ne se
+disputent pas le défilement. Rien ne change avant « Sauvegarder », et
+l'accueil d'origine se rétablit d'un geste.
+
+Deux règles de compatibilité, tenues par `homeWidgets.test.ts` :
+
+- tant que rien n'est réglé, le champ reste absent et l'accueil suit la
+  composition d'origine ; une liste vide, elle, est un choix et se respecte ;
+- une clé inconnue (écrite par une version plus récente de l'app) est ignorée
+  à l'affichage mais jamais effacée à l'enregistrement : elle se range à la fin
+  de la liste, et la version à jour la retrouve.
+
 ## 2. Les couleurs de thème
 
 Trois duos au choix, dans cet ordre. Le premier est celui d'origine.

@@ -125,6 +125,42 @@ de `gestures`, la seule page qu'on puisse passer. `wants_daily_reading` garde so
 Inchangés : le choix des textes à emporter reste une page de l'introduction
 (51 téléchargements lancés sur la même période).
 
+## Accueil
+
+L'accueil connecté se compose de widgets choisis par chacun (voir
+docs/design.md, « L'accueil se compose »).
+
+### `home_card_clicked` (existant)
+
+| Propriété | Valeurs                                                                                                | Statut                |
+| --------- | ------------------------------------------------------------------------------------------------------ | --------------------- |
+| `card`    | `daily_reading`, `zmanim`, `signup_cta`, `login_cta`, `feature_<route>`                                | existant, conservé    |
+| `card`    | `resume_reading`, `month`, `today`, `next_holiday`, `tehilim_day`, `parasha`, `daf_yomi` (les widgets) | **nouvelles valeurs** |
+| `variant` | `dashboard`, `landing`                                                                                 | existant              |
+
+La valeur de `card` est la clé du widget : `daily_reading` et `zmanim` gardent
+la leur.
+
+### `home_widgets_editor_opened` (nouveau)
+
+L'ouverture de « Personnaliser l'accueil ».
+
+| Propriété | Valeurs                                       |
+| --------- | --------------------------------------------- |
+| `count`   | nombre de widgets sur l'accueil à l'ouverture |
+
+### `home_widgets_saved` (nouveau)
+
+Une composition enregistrée (rien ne part si elle n'a pas changé).
+
+| Propriété    | Valeurs                                                           |
+| ------------ | ----------------------------------------------------------------- |
+| `widgets`    | les clés des widgets, dans l'ordre choisi                         |
+| `count`      | leur nombre                                                       |
+| `is_default` | vrai quand la composition est celle d'origine (un retour arrière) |
+
+Ils disent quels widgets servent, et si l'on garde l'accueil proposé.
+
 ## Profil
 
 Le site et l'app n'ont pas le même profil (voir docs/design.md, « Le profil

@@ -18,14 +18,23 @@ import { localeOfPath, sectionPath } from "../content/seoLocales";
 import { localDayKey } from "../services/dateService";
 import { activeActionKeys } from "../services/dailyActions";
 import { streakStatus, type StreakStatus } from "../services/dailyStreak";
-import { recentDays, type DayCell } from "../services/dailyHistory";
+import { recentDays, type DailyHistory, type DayCell } from "../services/dailyHistory";
 import { analyticsService } from "../services/analyticsService";
 import { authService, type User } from "../services/authService";
 import {
   countDailyProgress,
+  isOfflineWriteError,
   userPreferencesService,
   type UserPreferences,
 } from "../services/userPreferencesService";
+import {
+  DEFAULT_HOME_WIDGETS,
+  homeWidgetsToSave,
+  resolveHomeWidgets,
+  type HomeWidgetKey,
+} from "../services/homeWidgets";
+import { useToast } from "../composables/useToast";
+import AppIcon from "../components/icons/AppIcon.vue";
 import { isNativeApp } from "../composables/useNativeApp";
 import { useHomeAccountCta } from "../composables/useHomeAccountCta";
 import { openFeedback } from "../composables/useFeedback";
@@ -53,6 +62,30 @@ const OccasionsBanner = defineAsyncComponent(() => import("../components/Occasio
 // Le raccourci du sidour : pendant la plage horaire d'un office, l'accueil
 // mène au texte. Même moteur d'horaires, même chargement à la demande.
 const SidourNowCard = defineAsyncComponent(() => import("../components/SidourNowCard.vue"));
+// Les widgets que chacun ajoute à son accueil (voir services/homeWidgets) :
+// chargés seulement quand ils y sont. Plusieurs tirent le moteur des horaires
+// ou le catalogue des textes, qui n'ont rien à faire dans le premier
+// chargement.
+const ResumeReadingWidget = defineAsyncComponent(
+  () => import("../components/homeWidgets/ResumeReadingWidget.vue"),
+);
+const MonthWidget = defineAsyncComponent(() => import("../components/homeWidgets/MonthWidget.vue"));
+const TodayWidget = defineAsyncComponent(() => import("../components/homeWidgets/TodayWidget.vue"));
+const NextHolidayWidget = defineAsyncComponent(
+  () => import("../components/homeWidgets/NextHolidayWidget.vue"),
+);
+const TehilimDayWidget = defineAsyncComponent(
+  () => import("../components/homeWidgets/TehilimDayWidget.vue"),
+);
+const ParashaWidget = defineAsyncComponent(
+  () => import("../components/homeWidgets/ParashaWidget.vue"),
+);
+const DafYomiWidget = defineAsyncComponent(
+  () => import("../components/homeWidgets/DafYomiWidget.vue"),
+);
+const HomeWidgetsEditor = defineAsyncComponent(
+  () => import("../components/homeWidgets/HomeWidgetsEditor.vue"),
+);
 
 const router = useRouter();
 const { t, locale } = useI18n();
@@ -131,6 +164,55 @@ const readingTotal = ref(0);
 const readingDone = ref(0);
 const readingStreak = ref<StreakStatus | null>(null);
 const readingWeek = ref<DayCell[]>([]);
+// Pour le widget « Mon mois » : l'historique déjà lu pour la carte du jour.
+const readingToday = ref(localDayKey());
+const readingHistory = ref<DailyHistory>({});
+const readingIsPause = ref<(key: string) => boolean>(() => false);
+
+// --- Les widgets de l'accueil : ce que chacun y veut, dans son ordre. ---
+const toast = useToast();
+/** La liste telle que le compte la porte (absente tant que rien n'est réglé). */
+const storedWidgets = ref<unknown>(undefined);
+const widgets = computed<HomeWidgetKey[]>(() => resolveHomeWidgets(storedWidgets.value));
+const editorOpen = ref(false);
+const savingWidgets = ref(false);
+
+function openWidgetsEditor() {
+  editorOpen.value = true;
+  analyticsService.capture("home_widgets_editor_opened", { count: widgets.value.length });
+}
+
+/**
+ * Enregistre la composition choisie. L'accueil suit tout de suite ; si le
+ * serveur refuse (hors connexion, réseau tombé), il revient à ce qu'il était
+ * et le dit.
+ */
+async function saveWidgets(next: HomeWidgetKey[]) {
+  const u = user.value;
+  if (!u) return;
+  const previous = storedWidgets.value;
+  const toSave = homeWidgetsToSave(next, previous);
+  savingWidgets.value = true;
+  storedWidgets.value = toSave;
+  try {
+    await userPreferencesService.savePreferences(u.id, { homeWidgets: toSave });
+    editorOpen.value = false;
+    analyticsService.capture("home_widgets_saved", {
+      widgets: next,
+      count: next.length,
+      is_default:
+        next.length === DEFAULT_HOME_WIDGETS.length &&
+        next.every((key, i) => key === DEFAULT_HOME_WIDGETS[i]),
+    });
+  } catch (error) {
+    storedWidgets.value = previous;
+    toast.error(
+      isOfflineWriteError(error) ? t("home.widgets.offline") : t("home.widgets.saveError"),
+    );
+  } finally {
+    savingWidgets.value = false;
+  }
+}
 
 const firstName = computed(
   () => (user.value?.name ?? "").split(" ")[0] || user.value?.name || t("common.anonymousUser"),
@@ -156,6 +238,9 @@ function applyDashboardCounts(prefs: UserPreferences) {
   });
   readingTotal.value = counts.total;
   readingDone.value = counts.done;
+  readingToday.value = today;
+  readingHistory.value = progress?.history ?? {};
+  storedWidgets.value = prefs.homeWidgets;
   // Les jours de pause (Chabbat, Yom Tov) demandent hebcal, qui n'a rien à
   // faire dans le premier chargement : chargé à la demande, comme les
   // horaires. En attendant, la série se lit sans pause.
@@ -165,6 +250,7 @@ function applyDashboardCounts(prefs: UserPreferences) {
     const rules = { isPause: pauseRule(prefs.dailyRestDays !== false) };
     readingStreak.value = streakStatus(progress?.streak, today, rules);
     readingWeek.value = recentDays(today, progress?.history ?? {}, rules.isPause);
+    readingIsPause.value = rules.isPause;
   });
 }
 
@@ -255,6 +341,7 @@ onMounted(() => {
     } else {
       readingTotal.value = 0;
       readingDone.value = 0;
+      storedWidgets.value = undefined;
     }
   });
   applyHomeMeta();
@@ -309,7 +396,10 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <div class="w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6 mb-10">
+      <!-- Les widgets : ce que chacun a choisi de voir, dans son ordre (voir
+           services/homeWidgets). Sans réglage, la lecture du jour et les
+           horaires, comme avant. -->
+      <div class="w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
         <!-- Squelettes pendant le chargement -->
         <template v-if="dashLoading">
           <div class="card p-6 h-36 animate-pulse"></div>
@@ -317,23 +407,109 @@ onUnmounted(() => {
         </template>
 
         <template v-else>
-          <!-- Lecture quotidienne : où j'en suis aujourd'hui (carte partagée
-               avec la bibliothèque) -->
-          <DailyReadingCard
-            :done="readingDone"
-            :total="readingTotal"
-            :streak="readingStreak"
-            :week="readingWeek"
-            class="dash-card"
-            @click="trackCard('daily_reading')"
-          />
+          <template v-for="(key, index) in widgets" :key="key">
+            <!-- Lecture quotidienne : où j'en suis aujourd'hui (carte partagée
+                 avec la bibliothèque) -->
+            <DailyReadingCard
+              v-if="key === 'daily_reading'"
+              :done="readingDone"
+              :total="readingTotal"
+              :streak="readingStreak"
+              :week="readingWeek"
+              class="dash-card"
+              :style="{ '--enter-delay': `${index * 0.1}s` }"
+              @click="trackCard(key)"
+            />
 
-          <!-- Horaires du jour : calculés sur l'appareil, rien à charger.
-               Le partage de lectures reste à un clic (navbar, footer, cartes
-               de découverte plus bas). -->
-          <ZmanimCard class="dash-card" style="--enter-delay: 0.1s" @click="trackCard('zmanim')" />
+            <!-- Horaires du jour : calculés sur l'appareil, rien à charger. -->
+            <ZmanimCard
+              v-else-if="key === 'zmanim'"
+              class="dash-card"
+              :style="{ '--enter-delay': `${index * 0.1}s` }"
+              @click="trackCard(key)"
+            />
+
+            <ResumeReadingWidget
+              v-else-if="key === 'resume_reading'"
+              class="dash-card"
+              :style="{ '--enter-delay': `${index * 0.1}s` }"
+              @click="trackCard(key)"
+            />
+
+            <MonthWidget
+              v-else-if="key === 'month'"
+              :history="readingHistory"
+              :today="readingToday"
+              :is-pause="readingIsPause"
+              class="dash-card"
+              :style="{ '--enter-delay': `${index * 0.1}s` }"
+              @open="trackCard(key)"
+            />
+
+            <TodayWidget
+              v-else-if="key === 'today'"
+              class="dash-card"
+              :style="{ '--enter-delay': `${index * 0.1}s` }"
+              @click="trackCard(key)"
+            />
+
+            <NextHolidayWidget
+              v-else-if="key === 'next_holiday'"
+              class="dash-card"
+              :style="{ '--enter-delay': `${index * 0.1}s` }"
+              @click="trackCard(key)"
+            />
+
+            <TehilimDayWidget
+              v-else-if="key === 'tehilim_day'"
+              class="dash-card"
+              :style="{ '--enter-delay': `${index * 0.1}s` }"
+              @click="trackCard(key)"
+            />
+
+            <ParashaWidget
+              v-else-if="key === 'parasha'"
+              class="dash-card"
+              :style="{ '--enter-delay': `${index * 0.1}s` }"
+              @click="trackCard(key)"
+            />
+
+            <DafYomiWidget
+              v-else-if="key === 'daf_yomi'"
+              class="dash-card"
+              :style="{ '--enter-delay': `${index * 0.1}s` }"
+              @click="trackCard(key)"
+            />
+          </template>
         </template>
       </div>
+
+      <!-- Tout retiré : l'accueil le dit, plutôt qu'un trou sous la salutation. -->
+      <p
+        v-if="!dashLoading && widgets.length === 0"
+        class="w-full max-w-6xl mx-auto text-center text-text-secondary"
+      >
+        {{ t("home.widgets.emptyHome") }}
+      </p>
+
+      <!-- Personnaliser : sous les widgets, là où l'on finit de les lire. Une
+           commande avec son dessin et son nom, pas une icône seule (voir
+           docs/design.md, « Une commande posée dans un texte porte son nom »). -->
+      <div v-if="!dashLoading" class="w-full max-w-6xl mx-auto mt-5 mb-10 flex justify-center">
+        <button type="button" class="btn btn-soft btn-sm" @click="openWidgetsEditor">
+          <AppIcon name="layout-grid" :size="14" />
+          {{ t("home.widgets.customize") }}
+        </button>
+      </div>
+      <div v-else class="mb-10"></div>
+
+      <HomeWidgetsEditor
+        :open="editorOpen"
+        :widgets="widgets"
+        :saving="savingWidgets"
+        @close="editorOpen = false"
+        @save="saveWidgets"
+      />
     </template>
 
     <!-- ===== Non connecté : invitation à gauche, horaires du jour à droite,

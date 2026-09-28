@@ -138,6 +138,13 @@ export interface UserPreferences {
    * pas imposer un défaut à l'appareil suivant. Voir useZmanimOpinion.
    */
   zmanimOpinion: string;
+  /**
+   * Les widgets de l'accueil, dans l'ordre choisi (voir homeWidgets). Absent
+   * tant que la personne n'y a pas touché : l'accueil garde alors sa
+   * composition d'origine. Pas de valeur par défaut ici, pour que « rien
+   * réglé » ne se confonde pas avec « tout retiré ».
+   */
+  homeWidgets?: string[];
 }
 
 const DEFAULT_PREFERENCES: UserPreferences = {

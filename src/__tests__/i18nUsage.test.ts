@@ -124,6 +124,9 @@ describe("i18n usage", () => {
       // Le souhait de la fête en cours sur l'accueil (voir HolidayGreeting).
       "home.holiday.",
       "home.sidourNow.names.",
+      // Les widgets de l'accueil : leur nom et leur description, dans la
+      // fenêtre qui les range (voir services/homeWidgets).
+      "home.widgets.catalog.",
       "moderation.reasons.",
       "occasions.kinds.",
       "occasions.notify.",

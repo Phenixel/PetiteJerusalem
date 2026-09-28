@@ -258,7 +258,11 @@ service cloud.firestore {
         && (!('hebrewOccasions' in request.resource.data) || (request.resource.data.hebrewOccasions is list && request.resource.data.hebrewOccasions.size() <= 60))
         // Opinion suivie pour les horaires (voir services/zmanimOpinions) :
         // une clé courte, « posen » ou « ovadia ».
-        && (!('zmanimOpinion' in request.resource.data) || (request.resource.data.zmanimOpinion is string && request.resource.data.zmanimOpinion.size() <= 20));
+        && (!('zmanimOpinion' in request.resource.data) || (request.resource.data.zmanimOpinion is string && request.resource.data.zmanimOpinion.size() <= 20))
+        // Les widgets de l'accueil, dans l'ordre choisi (voir
+        // services/homeWidgets) : le client en garde 20 au plus
+        // (MAX_HOME_WIDGETS), borne large ici.
+        && (!('homeWidgets' in request.resource.data) || (request.resource.data.homeWidgets is list && request.resource.data.homeWidgets.size() <= 30));
       allow delete: if isAuthenticated() && request.auth.uid == userId;
     }
 

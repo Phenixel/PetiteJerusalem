@@ -298,6 +298,79 @@ const fr = {
         arvit: "Arvit",
       },
     },
+    // Les widgets de l'accueil connecté (voir services/homeWidgets) : ce que
+    // chacun y veut voir, et dans quel ordre.
+    widgets: {
+      customize: "Personnaliser l'accueil",
+      editorIntro:
+        "Choisissez ce que l'accueil vous montre, et dans quel ordre. Vos choix suivent votre compte sur tous vos appareils.",
+      shown: "Sur l'accueil",
+      available: "À ajouter",
+      noneShown: "Rien pour l'instant. Ajoutez ce qui vous sert, juste en dessous.",
+      allShown: "Tout est déjà sur l'accueil.",
+      moveUp: "Monter {name}",
+      moveDown: "Descendre {name}",
+      remove: "Retirer {name}",
+      add: "Ajouter",
+      addNamed: "Ajouter {name}",
+      reset: "Revenir à l'accueil d'origine",
+      saveError: "L'accueil n'a pas pu être enregistré. Réessayez dans un instant.",
+      offline: "Hors connexion, l'accueil ne se modifie pas. Réessayez une fois en ligne.",
+      emptyHome: "Votre accueil est vide. Composez-le à votre goût.",
+      catalog: {
+        daily_reading: {
+          name: "Ma lecture quotidienne",
+          description: "Où vous en êtes aujourd'hui, et votre série de jours.",
+        },
+        zmanim: {
+          name: "Prochain horaire",
+          description: "L'heure qui vient, ou l'entrée et la sortie du Chabbat.",
+        },
+        resume_reading: {
+          name: "Reprendre ma lecture",
+          description: "Le dernier texte ouvert dans la bibliothèque, au verset près.",
+        },
+        month: {
+          name: "Mon mois",
+          description: "Vos journées de lecture du mois, d'un coup d'oeil.",
+        },
+        today: {
+          name: "Aujourd'hui",
+          description: "La date hébraïque, ce que le jour a de particulier et ses hiloulot.",
+        },
+        next_holiday: {
+          name: "Prochaine fête",
+          description: "La prochaine fête ou le prochain jeûne, et dans combien de jours.",
+        },
+        tehilim_day: {
+          name: "Tehilim du jour",
+          description: "Les psaumes du jour du mois hébraïque, à lire d'une traite.",
+        },
+        parasha: {
+          name: "Paracha de la semaine",
+          description: "La paracha lue ce Chabbat, pour le chnei mikra.",
+        },
+        daf_yomi: {
+          name: "Daf hayomi",
+          description: "Le daf du jour, et où il en est dans son traité.",
+        },
+      },
+      resume: {
+        verse: "Verset {n}",
+        empty: "Aucune lecture en cours pour l'instant.",
+        emptyCta: "Ouvrir la bibliothèque",
+      },
+      today: {
+        hiloulot: "Hiloulot du jour",
+        more: "et {n} autre | et {n} autres",
+      },
+      nextHoliday: {
+        days: "jour | jours",
+      },
+      daf: {
+        progress: "Daf {index} sur {count} du traité",
+      },
+    },
     memorial: {
       title: "À la mémoire de",
       dedication:

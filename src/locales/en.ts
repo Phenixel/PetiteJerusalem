@@ -296,6 +296,79 @@ const en: LocaleMessages = {
         arvit: "Arvit",
       },
     },
+    // The signed-in home page widgets (see services/homeWidgets): what each
+    // person wants to see there, in their order.
+    widgets: {
+      customize: "Customize home",
+      editorIntro:
+        "Choose what your home page shows, and in which order. Your choices follow your account on all your devices.",
+      shown: "On your home page",
+      available: "Add",
+      noneShown: "Nothing yet. Add what helps you, just below.",
+      allShown: "Everything is already on your home page.",
+      moveUp: "Move {name} up",
+      moveDown: "Move {name} down",
+      remove: "Remove {name}",
+      add: "Add",
+      addNamed: "Add {name}",
+      reset: "Back to the original home page",
+      saveError: "Your home page could not be saved. Try again in a moment.",
+      offline: "You're offline, so your home page can't be changed. Try again once online.",
+      emptyHome: "Your home page is empty. Make it your own.",
+      catalog: {
+        daily_reading: {
+          name: "My daily reading",
+          description: "Where you stand today, and your streak.",
+        },
+        zmanim: {
+          name: "Next zman",
+          description: "The coming time, or when Shabbat starts and ends.",
+        },
+        resume_reading: {
+          name: "Resume my reading",
+          description: "The last text you opened in the library, down to the verse.",
+        },
+        month: {
+          name: "My month",
+          description: "Your reading days this month, at a glance.",
+        },
+        today: {
+          name: "Today",
+          description: "The Hebrew date, what makes the day special, and its hilloulot.",
+        },
+        next_holiday: {
+          name: "Next holiday",
+          description: "The next holiday or fast, and how many days away it is.",
+        },
+        tehilim_day: {
+          name: "Today's Tehillim",
+          description: "The psalms for this day of the Hebrew month, read in one go.",
+        },
+        parasha: {
+          name: "Weekly parasha",
+          description: "The parasha read this Shabbat, for shnayim mikra.",
+        },
+        daf_yomi: {
+          name: "Daf Yomi",
+          description: "Today's daf, and how far along its tractate it is.",
+        },
+      },
+      resume: {
+        verse: "Verse {n}",
+        empty: "No reading in progress yet.",
+        emptyCta: "Open the library",
+      },
+      today: {
+        hiloulot: "Today's hilloulot",
+        more: "and {n} more | and {n} more",
+      },
+      nextHoliday: {
+        days: "day | days",
+      },
+      daf: {
+        progress: "Daf {index} of {count} in the tractate",
+      },
+    },
     memorial: {
       title: "In memory of",
       dedication:
