@@ -631,7 +631,9 @@ Trois choses changent, pas une de plus :
   pied de page ; en blanc sur le bandeau du profil ; et, sur toutes les autres
   pages, en filigrane dans les coins hauts (`HolidayBackdrop`), là où le mur
   de pierre se voit, jamais sur une page de lecture. Toujours à même le fond,
-  jamais en carte : c'est une parure, pas une réponse ;
+  jamais en carte : c'est une parure, pas une réponse. Un ornement qui se
+  pose à l'arrivée s'écrit dans `OrnamentPose`, qui porte le trait, la seconde
+  couleur (`.accent`) et l'animation : il n'y met que son dessin ;
 - **le bouton rond des horaires** de l'app native, dont le rond prend la forme
   d'un objet de la fête (une pomme, une soucca, `HolidayFabShape`), l'horloge
   restant au milieu : c'est toujours le bouton des horaires, il a seulement

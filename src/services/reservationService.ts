@@ -179,6 +179,33 @@ class ReservationService {
     return record;
   }
 
+  /**
+   * Relit les réservations d'une session dans une transaction : `change` les
+   * reçoit à jour, et n'écrit (`write`) que s'il a quelque chose à changer.
+   * Une session disparue lève SessionMissingError, sauf si `ifMissing` dit
+   * quoi rendre à la place.
+   *
+   * Le rappel peut être rejoué en cas de contention : ce qu'il compte, il le
+   * rend, il ne l'accumule jamais au-dehors.
+   */
+  private updateReservations<T>(
+    sessionId: string,
+    change: (reservations: ReservationRecord[], write: (next: ReservationRecord[]) => void) => T,
+    ifMissing?: () => T,
+  ): Promise<T> {
+    const sfDocRef = doc(db, "sessions", sessionId);
+    return runTransaction(db, async (transaction) => {
+      const sfDoc = await transaction.get(sfDocRef);
+      if (!sfDoc.exists()) {
+        if (ifMissing) return ifMissing();
+        throw new SessionMissingError();
+      }
+      const data = sfDoc.data() as { reservations?: ReservationRecord[] };
+      const reservations = Array.isArray(data.reservations) ? data.reservations : [];
+      return change(reservations, (next) => transaction.update(sfDocRef, { reservations: next }));
+    });
+  }
+
   async createReservation(
     sessionId: string,
     textStudyId: string,
@@ -197,35 +224,23 @@ class ReservationService {
     moderationService.assertClean(guestName);
 
     const reservationId = crypto.randomUUID();
-    const sfDocRef = doc(db, "sessions", sessionId);
 
-    await runTransaction(db, (transaction) => {
-      return transaction.get(sfDocRef).then((sfDoc) => {
-        if (!sfDoc.exists()) {
-          throw new SessionMissingError();
-        }
+    await this.updateReservations(sessionId, (existing, write) => {
+      if (this.findConflictingReservation(existing, textStudyId, section) !== undefined) {
+        throw new SlotTakenError();
+      }
 
-        const data = sfDoc.data() as { reservations?: ReservationRecord[] };
-        const existing: ReservationRecord[] = Array.isArray(data.reservations)
-          ? data.reservations
-          : [];
+      // Un tirage aléatoire abandonné sur cet emplacement cède sa place.
+      const reservations = this.pruneExpiredForSlots(existing, [{ textStudyId, section }], 2);
 
-        if (this.findConflictingReservation(existing, textStudyId, section) !== undefined) {
-          throw new SlotTakenError();
-        }
-
-        // Un tirage aléatoire abandonné sur cet emplacement cède sa place.
-        const reservations = this.pruneExpiredForSlots(existing, [{ textStudyId, section }], 2);
-
-        reservations.push(
-          this.buildRecord(
-            reservationId,
-            { textStudyId, section },
-            { userId, guestId, name: userName || guestName, expiresAt: options?.expiresAt },
-          ),
-        );
-        transaction.update(sfDocRef, { reservations });
-      });
+      reservations.push(
+        this.buildRecord(
+          reservationId,
+          { textStudyId, section },
+          { userId, guestId, name: userName || guestName, expiresAt: options?.expiresAt },
+        ),
+      );
+      write(reservations);
     });
 
     firestoreService.invalidateSessionsCache();
@@ -250,39 +265,27 @@ class ReservationService {
     if (items.length === 0) return [];
 
     const reservationIds = items.map(() => crypto.randomUUID());
-    const sfDocRef = doc(db, "sessions", sessionId);
 
-    await runTransaction(db, (transaction) => {
-      return transaction.get(sfDocRef).then((sfDoc) => {
-        if (!sfDoc.exists()) {
-          throw new SessionMissingError();
+    await this.updateReservations(sessionId, (existing, write) => {
+      // Les emplacements demandés dont le tirage a expiré sont libérés.
+      const reservations = this.pruneExpiredForSlots(existing, items, items.length + 1);
+
+      const newReservations = items.map((item, index) => {
+        if (
+          this.findConflictingReservation(reservations, item.textStudyId, item.section) !==
+          undefined
+        ) {
+          throw new SlotTakenError();
         }
-
-        const data = sfDoc.data() as { reservations?: ReservationRecord[] };
-        const existing: ReservationRecord[] = Array.isArray(data.reservations)
-          ? data.reservations
-          : [];
-
-        // Les emplacements demandés dont le tirage a expiré sont libérés.
-        const reservations = this.pruneExpiredForSlots(existing, items, items.length + 1);
-
-        const newReservations = items.map((item, index) => {
-          if (
-            this.findConflictingReservation(reservations, item.textStudyId, item.section) !==
-            undefined
-          ) {
-            throw new SlotTakenError();
-          }
-          return this.buildRecord(reservationIds[index], item, {
-            userId,
-            guestId,
-            name: userName || guestName,
-          });
+        return this.buildRecord(reservationIds[index], item, {
+          userId,
+          guestId,
+          name: userName || guestName,
         });
-
-        reservations.push(...newReservations);
-        transaction.update(sfDocRef, { reservations });
       });
+
+      reservations.push(...newReservations);
+      write(reservations);
     });
 
     firestoreService.invalidateSessionsCache();
@@ -290,23 +293,13 @@ class ReservationService {
   }
 
   async deleteReservation(sessionId: string, reservationId: string): Promise<void> {
-    const sfDocRef = doc(db, "sessions", sessionId);
-    await runTransaction(db, (transaction) => {
-      return transaction.get(sfDocRef).then((sfDoc) => {
-        if (!sfDoc.exists()) {
-          throw new SessionMissingError();
-        }
-        const data = sfDoc.data() as { reservations?: ReservationRecord[] };
-        const reservations: ReservationRecord[] = Array.isArray(data.reservations)
-          ? data.reservations
-          : [];
-        const filtered = reservations.filter((r: ReservationRecord) => r.id !== reservationId);
-        // Déjà partie (emplacement repris après expiration, ménage du
-        // créateur) : les règles n'acceptent qu'une suppression qui retire
-        // vraiment un élément, écrire ici ne ferait qu'une erreur de plus.
-        if (filtered.length === reservations.length) return;
-        transaction.update(sfDocRef, { reservations: filtered });
-      });
+    await this.updateReservations(sessionId, (reservations, write) => {
+      const filtered = reservations.filter((r) => r.id !== reservationId);
+      // Déjà partie (emplacement repris après expiration, ménage du
+      // créateur) : les règles n'acceptent qu'une suppression qui retire
+      // vraiment un élément, écrire ici ne ferait qu'une erreur de plus.
+      if (filtered.length === reservations.length) return;
+      write(filtered);
     });
     firestoreService.invalidateSessionsCache();
   }
@@ -320,20 +313,9 @@ class ReservationService {
     if (reservationIds.length === 0) return;
 
     const idsToRemove = new Set(reservationIds);
-    const sfDocRef = doc(db, "sessions", sessionId);
 
-    await runTransaction(db, (transaction) => {
-      return transaction.get(sfDocRef).then((sfDoc) => {
-        if (!sfDoc.exists()) {
-          throw new SessionMissingError();
-        }
-        const data = sfDoc.data() as { reservations?: ReservationRecord[] };
-        const reservations: ReservationRecord[] = Array.isArray(data.reservations)
-          ? data.reservations
-          : [];
-        const filtered = reservations.filter((r) => !idsToRemove.has(r.id));
-        transaction.update(sfDocRef, { reservations: filtered });
-      });
+    await this.updateReservations(sessionId, (reservations, write) => {
+      write(reservations.filter((r) => !idsToRemove.has(r.id)));
     });
 
     firestoreService.invalidateSessionsCache();
@@ -356,46 +338,31 @@ class ReservationService {
     }
     moderationService.assertClean(trimmedName);
 
-    const sfDocRef = doc(db, "sessions", sessionId);
+    const renamedCount = await this.updateReservations(sessionId, (reservations, write) => {
+      const target = reservations.find((r) => r.id === reservationId);
+      if (!target) {
+        throw new ReservationGoneError();
+      }
+      if (target.chosenById) {
+        throw new AccountGuestRenameError();
+      }
 
-    const renamedCount = await runTransaction(db, (transaction) => {
-      return transaction.get(sfDocRef).then((sfDoc) => {
-        if (!sfDoc.exists()) {
-          throw new SessionMissingError();
-        }
+      // Sans `chosenByGuestId` (donnée héritée), seule la réservation ciblée
+      // peut être rattachée à l'invité de façon fiable.
+      const shouldRename = (r: ReservationRecord) =>
+        target.chosenByGuestId
+          ? !r.chosenById && r.chosenByGuestId === target.chosenByGuestId
+          : r.id === reservationId;
 
-        const data = sfDoc.data() as { reservations?: ReservationRecord[] };
-        const reservations: ReservationRecord[] = Array.isArray(data.reservations)
-          ? data.reservations
-          : [];
-
-        const target = reservations.find((r) => r.id === reservationId);
-        if (!target) {
-          throw new ReservationGoneError();
-        }
-        if (target.chosenById) {
-          throw new AccountGuestRenameError();
-        }
-
-        // Sans `chosenByGuestId` (donnée héritée), seule la réservation ciblée
-        // peut être rattachée à l'invité de façon fiable.
-        const shouldRename = (r: ReservationRecord) =>
-          target.chosenByGuestId
-            ? !r.chosenById && r.chosenByGuestId === target.chosenByGuestId
-            : r.id === reservationId;
-
-        let count = 0;
-        const updated = reservations.map((r) => {
-          if (!shouldRename(r)) return r;
-          count++;
-          return { ...r, chosenByName: trimmedName };
-        });
-
-        if (count > 0) {
-          transaction.update(sfDocRef, { reservations: updated });
-        }
-        return count;
+      let count = 0;
+      const updated = reservations.map((r) => {
+        if (!shouldRename(r)) return r;
+        count++;
+        return { ...r, chosenByName: trimmedName };
       });
+
+      if (count > 0) write(updated);
+      return count;
     });
 
     if (renamedCount > 0) {
@@ -581,31 +548,19 @@ class ReservationService {
     reservationId: string,
     isCompleted: boolean,
   ): Promise<void> {
-    const sfDocRef = doc(db, "sessions", sessionId);
-    await runTransaction(db, (transaction) => {
-      return transaction.get(sfDocRef).then((sfDoc) => {
-        if (!sfDoc.exists()) {
-          throw new SessionMissingError();
-        }
+    await this.updateReservations(sessionId, (reservations, write) => {
+      const reservationIndex = reservations.findIndex((r) => r.id === reservationId);
+      if (reservationIndex === -1) {
+        throw new ReservationGoneError();
+      }
 
-        const data = sfDoc.data() as { reservations?: ReservationRecord[] };
-        const reservations: ReservationRecord[] = Array.isArray(data.reservations)
-          ? data.reservations
-          : [];
-
-        const reservationIndex = reservations.findIndex((r) => r.id === reservationId);
-        if (reservationIndex === -1) {
-          throw new ReservationGoneError();
-        }
-
-        const target = { ...reservations[reservationIndex], isCompleted };
-        // Lue, la réservation devient définitive : son échéance n'a plus lieu
-        // d'être. La garder rendrait le texte immédiatement prenable si le
-        // lecteur se ravisait plus tard (« remettre en non lu » après l'heure).
-        if (isCompleted) delete target.expiresAt;
-        reservations[reservationIndex] = target;
-        transaction.update(sfDocRef, { reservations });
-      });
+      const target = { ...reservations[reservationIndex], isCompleted };
+      // Lue, la réservation devient définitive : son échéance n'a plus lieu
+      // d'être. La garder rendrait le texte immédiatement prenable si le
+      // lecteur se ravisait plus tard (« remettre en non lu » après l'heure).
+      if (isCompleted) delete target.expiresAt;
+      reservations[reservationIndex] = target;
+      write(reservations);
     });
     firestoreService.invalidateSessionsCache();
   }
@@ -624,28 +579,16 @@ class ReservationService {
     reservationId: string,
     expiresAt: string,
   ): Promise<void> {
-    const sfDocRef = doc(db, "sessions", sessionId);
-    await runTransaction(db, (transaction) => {
-      return transaction.get(sfDocRef).then((sfDoc) => {
-        if (!sfDoc.exists()) {
-          throw new SessionMissingError();
-        }
+    await this.updateReservations(sessionId, (reservations, write) => {
+      const index = reservations.findIndex((r) => r.id === reservationId);
+      if (index === -1) {
+        throw new ReservationGoneError();
+      }
+      // Une réservation déjà lue n'a plus d'échéance : rien à repousser.
+      if (reservations[index].isCompleted || reservations[index].expiresAt === undefined) return;
 
-        const data = sfDoc.data() as { reservations?: ReservationRecord[] };
-        const reservations: ReservationRecord[] = Array.isArray(data.reservations)
-          ? data.reservations
-          : [];
-
-        const index = reservations.findIndex((r) => r.id === reservationId);
-        if (index === -1) {
-          throw new ReservationGoneError();
-        }
-        // Une réservation déjà lue n'a plus d'échéance : rien à repousser.
-        if (reservations[index].isCompleted || reservations[index].expiresAt === undefined) return;
-
-        reservations[index] = { ...reservations[index], expiresAt };
-        transaction.update(sfDocRef, { reservations });
-      });
+      reservations[index] = { ...reservations[index], expiresAt };
+      write(reservations);
     });
     firestoreService.invalidateSessionsCache();
   }
@@ -673,19 +616,11 @@ class ReservationService {
     const candidates = sessions.filter((s) => (s.reservations ?? []).some(isOwnGuestReservation));
 
     for (const candidate of candidates) {
-      const sfDocRef = doc(db, "sessions", candidate.id);
-
       // Le compteur est retourné par la transaction (le callback peut être
       // rejoué en cas de contention : ne jamais accumuler à l'intérieur).
-      const sessionMigrated = await runTransaction(db, (transaction) => {
-        return transaction.get(sfDocRef).then((sfDoc) => {
-          if (!sfDoc.exists()) return 0;
-
-          const freshData = sfDoc.data() as { reservations?: ReservationRecord[] };
-          const freshReservations = Array.isArray(freshData.reservations)
-            ? freshData.reservations
-            : [];
-
+      const sessionMigrated = await this.updateReservations(
+        candidate.id,
+        (freshReservations, write) => {
           let count = 0;
           const updatedReservations = freshReservations.map((r) => {
             if (isOwnGuestReservation(r)) {
@@ -711,12 +646,12 @@ class ReservationService {
             return r;
           });
 
-          if (count > 0) {
-            transaction.update(sfDocRef, { reservations: updatedReservations });
-          }
+          if (count > 0) write(updatedReservations);
           return count;
-        });
-      });
+        },
+        // Session supprimée entre-temps : rien à rattacher.
+        () => 0,
+      );
 
       migratedCount += sessionMigrated;
     }
