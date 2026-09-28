@@ -7,6 +7,7 @@ import { useToast } from "../../composables/useToast";
 import AppSelect from "../../components/AppSelect.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import { liveValue } from "../../composables/liveInput";
+import { searchItems } from "../../services/fuzzySearch";
 
 const { t } = useI18n();
 const toast = useToast();
@@ -37,16 +38,9 @@ const filtered = computed(() => {
   if (filter.value === "published") list = list.filter((c) => c.published);
   if (filter.value === "noAuteur") list = list.filter((c) => !c.auteurId);
   if (filter.value === "noSerie") list = list.filter((c) => !c.serieId);
-  const term = search.value.trim().toLowerCase();
-  if (term) {
-    list = list.filter(
-      (c) =>
-        c.name.toLowerCase().includes(term) ||
-        (c.auteur?.toLowerCase().includes(term) ?? false) ||
-        c.categories.some((cat) => cat.toLowerCase().includes(term)),
-    );
-  }
-  return list;
+  return searchItems(list, search.value, (c) => [c.name, c.auteur, ...c.categories], {
+    keepOrder: true,
+  });
 });
 
 const seriesForBatchAuteur = computed(() =>
