@@ -229,8 +229,9 @@ Sur [appstoreconnect.apple.com](https://appstoreconnect.apple.com) → Mes apps
   - **iPad 13 pouces** : 2064 × 2752 ou 2048 × 2732.
 
   PNG ou JPEG sRGB **sans transparence**. Apple redimensionne pour les
-  appareils plus petits de chaque famille. Désormais régénérées et envoyées
-  automatiquement à chaque tag (`scripts/asc-screenshots.mjs`), voir
+  appareils plus petits de chaque famille. Désormais régénérées (le même jeu
+  que la fiche Play) et envoyées automatiquement à chaque tag
+  (`scripts/asc-screenshots.mjs`), voir
   [ios-ci-cd.md](ios-ci-cd.md#captures-décran).
 
 ## Étape 6. CI/CD

@@ -1,0 +1,71 @@
+name: Récupérer les captures des fiches
+description: >-
+  Remplace store-assets/screenshots/ par les captures que le workflow
+  store-screenshots.yml a générées pour ce commit, en attendant la fin de son
+  run s'il tourne encore ; sans run réussi, laisse les captures committées.
+
+# Partagée par deploy-android.yml (job `listing`) et deploy-ios.yml (job
+# `screenshots`) : les deux fiches reçoivent ainsi les MÊMES fichiers,
+# produits une seule fois. Jamais bloquante : un run absent (lancement manuel
+# d'un deploy sur un commit sans captures), échoué ou trop long laisse en
+# place les captures committées, et la fiche est synchronisée quand même.
+#
+# Le job appelant doit accorder `actions: read` (lecture des runs et de leurs
+# artifacts) et avoir fait son checkout.
+
+inputs:
+  github-token:
+    description: Jeton de lecture des runs (github.token suffit).
+    required: true
+  timeout-minutes:
+    description: Attente maximale du run de captures encore en cours.
+    default: "20"
+
+outputs:
+  source:
+    description: « generated » (captures du run) ou « committed » (celles du repo).
+    value: ${{ steps.fetch.outputs.source }}
+
+runs:
+  using: composite
+  steps:
+    - id: fetch
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        TIMEOUT_MINUTES: ${{ inputs.timeout-minutes }}
+      run: |
+        set -euo pipefail
+        dir=store-assets/screenshots
+        deadline=$((SECONDS + TIMEOUT_MINUTES * 60))
+        keep_committed() {
+          echo "::warning::$1 : les fiches reçoivent les captures committées dans $dir."
+          echo "source=committed" >> "$GITHUB_OUTPUT"
+          exit 0
+        }
+
+        # Le run le plus récent du workflow de captures pour CE commit : celui
+        # du tag, parti en même temps que les deploy, ou un lancement manuel.
+        while :; do
+          run="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow store-screenshots.yml \
+            --commit "$GITHUB_SHA" --limit 1 --json databaseId,status,conclusion \
+            --jq '.[0] // empty')"
+          [ -z "$run" ] && keep_committed "Aucune génération de captures pour le commit $GITHUB_SHA"
+          id="$(jq -r .databaseId <<< "$run")"
+          [ "$(jq -r .status <<< "$run")" = completed ] && break
+          [ "$SECONDS" -ge "$deadline" ] &&
+            keep_committed "Captures du run $id toujours en cours après $TIMEOUT_MINUTES minutes"
+          echo "Run de captures $id en cours, nouvel essai dans 20 secondes…"
+          sleep 20
+        done
+
+        conclusion="$(jq -r .conclusion <<< "$run")"
+        [ "$conclusion" = success ] || keep_committed "Le run de captures $id a fini en « $conclusion »"
+
+        # Le jeu généré remplace ENTIÈREMENT celui du repo : un fichier
+        # committé qui resterait à côté partirait en doublon sur les fiches.
+        find "$dir" -mindepth 2 -type f \( -name '*.jpg' -o -name '*.png' \) -delete
+        gh run download "$id" --repo "$GITHUB_REPOSITORY" --name store-screenshots --dir "$dir"
+        echo "Captures du run $id :"
+        find "$dir" -mindepth 2 -type f | sort
+        echo "source=generated" >> "$GITHUB_OUTPUT"

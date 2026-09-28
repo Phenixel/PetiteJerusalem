@@ -20,8 +20,7 @@ const config: CapacitorConfig = {
   // pour que la règle reste explicite au prochain passage.
   zoomEnabled: false,
   // CAP_SERVER_URL : charge l'app depuis un serveur de dev au lieu du bundle
-  // (itération rapide, et captures d'écran natives, scripts/store-screenshots.mjs
-  // le pointe sur son Vite : `adb reverse` rend le localhost du device = la machine).
+  // (itération rapide, voir docs/app-native.md).
   ...(process.env.CAP_SERVER_URL
     ? { server: { url: process.env.CAP_SERVER_URL, cleartext: true } }
     : {}),

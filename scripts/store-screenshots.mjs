@@ -1,53 +1,51 @@
 #!/usr/bin/env node
 /**
- * Génère les captures d'écran des fiches Play Store et App Store de façon
- * reproductible : émulateurs Firebase éphémères + données de démo fixes,
- * puis trois modes de rendu :
+ * Génère les captures d'écran des fiches Play Store et App Store, les mêmes
+ * pour les deux, en un seul passage reproductible : émulateurs Firebase
+ * éphémères, données de démo fixes, puis Chrome headless qui rend l'app.
  *
- *   (défaut)  l'app **native** (Capacitor) sur un émulateur Android dédié
- *             (1080×1920, le 9:16 exact attendu par le Play Store), pilotée
- *             par Playwright à travers sa webview, capturée par
- *             `adb screencap` (barre de statut et barre d'onglets incluses,
- *             comme sur un vrai téléphone) ;
- *   --web     variante rapide pour la fiche Play : Chrome mobile 360×640@3x
- *             (1080×1920, sans barre d'onglets native) ;
- *   --ios     fiche App Store : Chrome aux dimensions exactes exigées par
- *             Apple, iPhone 6,9" (440×956@3x, soit 1320×2868) et iPad 13"
- *             (1032×1376@2x, soit 2064×2752), en JPEG donc sans canal alpha.
- *             L'envoi dans App Store Connect est fait ensuite par
- *             scripts/asc-screenshots.mjs.
+ * L'app, pas le site : chaque page se charge avec une plateforme Capacitor
+ * « maison » (window.CapacitorCustomPlatform, prévue par @capacitor/core),
+ * si bien que `Capacitor.isNativePlatform()` répond vrai et que l'interface
+ * est celle de l'app installée (barre d'onglets du bas, pas d'en-tête ni de
+ * pied de page de site). Les plugins natifs retombent sur leur implémentation
+ * web, ou échouent proprement quand ils n'en ont pas : rien n'attend une
+ * réponse native qui ne viendrait jamais. Ni émulateur Android ni simulateur
+ * iOS : un runner Linux suffit, en quelques minutes, et aucune barre système
+ * d'une plateforme ne se retrouve dans la fiche de l'autre.
  *
- * Pages capturées (dans l'ordre des fiches) :
- *   01 accueil connecté (tableau de bord)   05 lecture quotidienne
- *   02 session de partage de lecture        06 détail d'un chiour
- *   03 bibliothèque                         07 accueil visiteur
+ * Un seul jeu d'écrans, rendu dans trois formats, parce que les deux stores
+ * n'acceptent pas les mêmes proportions (le Play Store refuse un côté plus de
+ * deux fois plus long que l'autre, Apple exige du 6,9" au pixel près) :
+ *   phone   fiche Play, téléphone : 360×640 @3x, soit 1080×1920 (9:16)
+ *   iphone  fiche App Store, iPhone 6,9" : 440×956 @3x, soit 1320×2868
+ *   ipad    fiche App Store, iPad 13" : 1032×1376 @2x, soit 2064×2752
+ * En JPEG, sans canal alpha : Apple le refuse, Google l'accepte.
+ *
+ * Écrans capturés (dans l'ordre des fiches, SCREENS plus bas) :
+ *   01 accueil connecté (tableau de bord)   05 bibliothèque
+ *   02 horaires du jour (Paris)             06 lecture quotidienne
+ *   03 session de partage de lecture        07 détail d'un chiour
  *   04 lecteur de texte (Tehilim 1)
+ * Le Play Store en prend huit au plus par format, l'App Store dix.
  *
  * Usage :
- *   npm run store:screenshots           captures Play depuis l'app native
- *   npm run store:screenshots -- --web  variante web rapide (fiche Play)
- *   npm run store:screenshots -- --ios  captures App Store (iPhone + iPad)
+ *   npm run store:screenshots                      les trois formats
+ *   npm run store:screenshots -- --device iphone   un seul (itération locale)
  *
- * Prérequis : CLI firebase + JDK 21 ; en mode natif, le SDK Android (l'AVD
- * « pj-store » est créé automatiquement, l'image système doit être installée,
- * voir le job « screenshots » de deploy-android.yml pour la CI). Les
- * émulateurs de dev (npm run dev:local) doivent être arrêtés : le script
- * démarre les siens, vides, sur les mêmes ports, et n'écrit jamais dans
- * .emulator-data.
+ * Prérequis : CLI firebase + JDK 21 (émulateurs), Chrome de préférence (voir
+ * launchBrowser). Les émulateurs de dev (npm run dev:local) doivent être
+ * arrêtés : le script démarre les siens, vides, sur les mêmes ports, et
+ * n'écrit jamais dans .emulator-data.
  *
- * En CI, l'émulateur n'est pas ouvert par ce script : le job « screenshots »
- * de deploy-android.yml le confie à l'action android-emulator-runner, qui
- * sait le démarrer et l'attendre sur un runner sans écran, et pose
- * ANDROID_SERIAL pour que le script s'y branche. Les captures de la fiche
- * App Store, elles, ne demandent aucun émulateur (mode --ios, Chrome).
- *
- * Sorties :
- *   store-assets/metadata/android/fr-FR/images/phoneScreenshots/*.png
- *   store-assets/metadata/ios/screenshots/fr-FR/{iphone,ipad}-*.jpg
+ * Sortie, partagée par les deux fiches (voir store-assets/screenshots/) :
+ *   store-assets/screenshots/fr-FR/{phone,iphone,ipad}-NN-nom.jpg
+ * lue par scripts/play-listing.mjs (phone-*) et scripts/asc-screenshots.mjs
+ * (iphone-*, ipad-*). En CI, le workflow store-screenshots.yml la produit
+ * une fois par tag pour deploy-android.yml et deploy-ios.yml.
  */
 import { execFileSync, spawn, spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, openSync, readFileSync, readdirSync, rmSync } from "node:fs";
-import { homedir, tmpdir } from "node:os";
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import {
   AUTH_PORT,
@@ -58,47 +56,33 @@ import {
 } from "./lib/firebase-emulator.mjs";
 
 const root = join(import.meta.dirname, "..");
-const androidOutDir = join(root, "store-assets/metadata/android/fr-FR/images/phoneScreenshots");
-const iosOutDir = join(root, "store-assets/metadata/ios/screenshots/fr-FR");
+const outDir = join(root, "store-assets/screenshots/fr-FR");
 
 // Ports des émulateurs : scripts/lib/firebase-emulator.mjs (même plage que
 // firebase.json et src/firebase/*.ts).
 const VITE_PORT = 5273; // hors du 5173 par défaut pour ne pas gêner un dev en cours
 
-const WEB_MODE = process.argv.includes("--web");
-const IOS_MODE = process.argv.includes("--ios");
-const BROWSER_MODE = WEB_MODE || IOS_MODE; // rendu Chrome, pas d'émulateur Android
-// Machine sans écran (GitHub Actions pose CI=true) : l'émulateur que LE SCRIPT
-// lance tourne alors hors fenêtre. Sans effet sur un émulateur fourni.
-const HEADLESS = Boolean(process.env.CI);
+// Formats de rendu : taille CSS × densité = dimensions exactes exigées par
+// chaque store (store-assets/screenshots/README.md).
+const DEVICES = {
+  phone: { viewport: { width: 360, height: 640 }, deviceScaleFactor: 3 }, // 1080×1920, Play
+  iphone: { viewport: { width: 440, height: 956 }, deviceScaleFactor: 3 }, // 1320×2868, 6,9"
+  ipad: { viewport: { width: 1032, height: 1376 }, deviceScaleFactor: 2 }, // 2064×2752, 13"
+};
 
-// Émulateur Android dédié : profil pixel_2 = 1080×1920 @ 420 dpi, le 9:16
-// exact attendu par le Play Store, capturé tel quel sans retaille.
-const AVD_NAME = "pj-store";
-// android-36 : sa WebView récente rend correctement les textes en dégradé
-// (background-clip: text), que la WebView d'android-34 affiche en bloc plein.
-// L'ABI suit la machine : arm64 en local (Apple Silicon), x86_64 en CI. La
-// variante playstore (celle du dev local) est un build user qui refuse
-// `pm disable-user` ; en x86_64 on prend google_apis, même WebView, qui
-// laisse neutraliser le Bluetooth.
-const AVD_ABI = process.arch === "arm64" ? "arm64-v8a" : "x86_64";
-const AVD_FLAVOR = process.arch === "arm64" ? "google_apis_playstore" : "google_apis";
-const AVD_IMAGE = `system-images;android-36;${AVD_FLAVOR};${AVD_ABI}`;
-const EMULATOR_PORT = 5584; // pair, hors du 5554 par défaut d'un émulateur déjà ouvert
-// ANDROID_SERIAL (la variable que reconnaît adb lui-même) désigne un émulateur
-// DÉJÀ démarré, auquel se brancher au lieu d'en lancer un : c'est ce que fait
-// la CI, où l'émulateur est ouvert par l'action android-emulator-runner (elle
-// sait le démarrer et l'attendre sur un runner sans écran, ce qui demande plus
-// que trois options de ligne de commande). Sans elle, le script lance le sien,
-// sur son port dédié, et le referme en partant.
-const PROVIDED_SERIAL = process.env.ANDROID_SERIAL?.trim() || null;
-const SERIAL = PROVIDED_SERIAL ?? `emulator-${EMULATOR_PORT}`;
-const APP_ID = "fr.petitejerusalem.app";
-
-const sdkDir = process.env.ANDROID_HOME ?? join(homedir(), "Library/Android/sdk");
-const adbBin = join(sdkDir, "platform-tools/adb");
-const emulatorBin = join(sdkDir, "emulator/emulator");
-const avdmanagerBin = join(sdkDir, "cmdline-tools/latest/bin/avdmanager");
+// --device iphone (répétable) : un format seulement, pour itérer vite en local.
+const wantedDevices = process.argv
+  .flatMap((arg, i, argv) => (arg === "--device" ? [argv[i + 1]] : []))
+  .filter(Boolean);
+for (const device of wantedDevices) {
+  if (!(device in DEVICES)) {
+    console.error(
+      `store-screenshots: format inconnu « ${device} » (attendus : ${Object.keys(DEVICES).join(", ")})`,
+    );
+    process.exit(1);
+  }
+}
+const devices = wantedDevices.length > 0 ? wantedDevices : Object.keys(DEVICES);
 
 const DEMO_EMAIL = "demo@petite-jerusalem.fr";
 const DEMO_PASSWORD = "demo-petite-jerusalem";
@@ -106,25 +90,41 @@ const DEMO_NAME = "Sarah Levy";
 const SESSION_SLUG = "tehilim-pour-la-communaute";
 const CHIOUR_SLUG = "la-force-de-la-priere";
 
-// Dimensions des contextes navigateur : la fiche Play recommande le 9:16
-// (1080×1920), Apple exige des dimensions au pixel près par famille
-// d'appareils (docs/ios-ci-cd.md).
-const BROWSER_DEVICES = {
-  phone: { viewport: { width: 360, height: 640 }, deviceScaleFactor: 3 }, // 1080×1920
-  iphone: { viewport: { width: 440, height: 956 }, deviceScaleFactor: 3 }, // 1320×2868 (6,9")
-  ipad: { viewport: { width: 1032, height: 1376 }, deviceScaleFactor: 2 }, // 2064×2752 (13")
-};
+// Position de l'appareil simulé : Paris, la ville des horaires capturés. Sans
+// elle, la géolocalisation demandée par l'accueil n'aboutirait jamais.
+const PARIS = { latitude: 48.8566, longitude: 2.3522 };
+
+// Les astuces de première visite (useFeatureTips) se montrent dans l'app
+// native à qui n'a pas encore vu la page : toutes marquées vues, sans quoi
+// une bulle recouvrirait les captures. La liste est relue dans le code de
+// l'app pour qu'une astuce ajoutée plus tard soit couverte d'office.
+const TIP_IDS = (() => {
+  const source = readFileSync(join(root, "src/composables/useFeatureTips.ts"), "utf8");
+  const list = source.match(/export const TIP_IDS[^=]*=\s*\[([^\]]*)\]/)?.[1];
+  const ids = list ? [...list.matchAll(/"([a-z-]+)"/g)].map((m) => m[1]) : [];
+  if (ids.length === 0) {
+    throw new Error("TIP_IDS introuvable dans src/composables/useFeatureTips.ts");
+  }
+  return ids;
+})();
+
+// Même raison pour l'introduction de première ouverture (useOnboarding) : elle
+// se remontre quand sa version change, la version vue est donc relue aussi.
+const ONBOARDING_VERSION = (() => {
+  const source = readFileSync(join(root, "src/composables/useOnboarding.ts"), "utf8");
+  const version = source.match(/const ONBOARDING_VERSION = "([^"]+)"/)?.[1];
+  if (!version) {
+    throw new Error("ONBOARDING_VERSION introuvable dans src/composables/useOnboarding.ts");
+  }
+  return version;
+})();
 
 // --- Préparation de l'environnement -----------------------------------------
 
-// Émulateurs Firebase, Gradle et avdmanager exigent Java >= 21, mais le JDK
-// 21 exact de préférence : Gradle (AGP de Capacitor 8) ne supporte pas les
-// class files des JDK plus récents (« Unsupported class file major version »).
+// Les émulateurs Firebase exigent Java >= 21. Sur macOS, le JDK de Homebrew
+// est keg-only, invisible pour qui ne le cherche pas.
 if (process.platform === "darwin") {
-  const candidates = [
-    // Keg-only Homebrew : invisible pour java_home, d'où le chemin direct.
-    "/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home",
-  ];
+  const candidates = ["/opt/homebrew/opt/openjdk@21/libexec/openjdk.jdk/Contents/Home"];
   try {
     candidates.push(
       execFileSync("/usr/libexec/java_home", ["-v", "21+"], {
@@ -158,19 +158,11 @@ for (const port of [FIRESTORE_PORT, AUTH_PORT, VITE_PORT]) {
   }
 }
 
-function adb(...args) {
-  const res = spawnSync(adbBin, ["-s", SERIAL, ...args], { encoding: "utf8" });
-  if (res.status !== 0) {
-    throw new Error(`adb ${args.join(" ")} : ${res.stderr || res.stdout}`);
-  }
-  return res.stdout.trim();
-}
-
 const children = [];
 
 /**
- * Lance un serveur de longue durée (émulateurs Firebase, Vite, émulateur
- * Android) en le rendant tuable pour de bon.
+ * Lance un serveur de longue durée (émulateurs Firebase, Vite) en le rendant
+ * tuable pour de bon.
  *
  * Deux précautions, apprises du tag v3.8.1 : le job de captures y est resté
  * suspendu 42 minutes après la mort du script, jusqu'à l'annulation à la main.
@@ -197,15 +189,6 @@ function spawnChild(command, args, options = {}) {
 }
 
 function cleanup() {
-  // Un émulateur fourni (CI) ne nous appartient pas : c'est l'action qui l'a
-  // ouvert et qui le refermera.
-  if (!BROWSER_MODE && !PROVIDED_SERIAL) {
-    try {
-      spawnSync(adbBin, ["-s", SERIAL, "emu", "kill"], { timeout: 10000 });
-    } catch {
-      /* émulateur déjà arrêté */
-    }
-  }
   for (const child of children) {
     if (child.exitCode !== null || child.signalCode !== null) continue;
     try {
@@ -226,6 +209,34 @@ process.on("exit", cleanup);
 process.on("SIGINT", () => process.exit(130));
 process.on("SIGTERM", () => process.exit(143));
 
+/**
+ * Arrêt gracieux, avant de sortir : SIGINT, puis attente de la fin de chaque
+ * enfant (20 secondes au plus). La CLI firebase lance les JVM des émulateurs
+ * dans leur propre session, hors de portée du SIGKILL de groupe de cleanup() :
+ * seul son propre arrêt les referme, et un émulateur Firestore resté en vie
+ * garde son port, qui bloque le lancement suivant.
+ */
+async function stopChildren() {
+  const alive = children.filter((child) => child.exitCode === null && child.signalCode === null);
+  await Promise.all(
+    alive.map(
+      (child) =>
+        new Promise((resolve) => {
+          const timer = setTimeout(resolve, 20000);
+          child.once("exit", () => {
+            clearTimeout(timer);
+            resolve();
+          });
+          try {
+            process.kill(-child.pid, "SIGINT");
+          } catch {
+            clearTimeout(timer);
+            resolve();
+          }
+        }),
+    ),
+  );
+}
 
 // --- Émulateurs Firebase éphémères (vides : ni --import ni --export-on-exit) --
 
@@ -299,6 +310,9 @@ await seedDoc("sessions", "demo-session-tehilim", {
 
 await seedDoc("userPreferences", uid, {
   theme: "sunset",
+  // Sans le décor de la fête du jour : une fiche générée pendant Souccot le
+  // garderait jusqu'au tag suivant, en plein hiver.
+  holidayThemes: false,
   fontLatin: "manrope",
   fontHebrew: "frank",
   dailyReadingIds: [103, 104, 105], // Tehilim 1, 2, 3
@@ -377,70 +391,43 @@ spawnChild("npx", ["vite", "--port", String(VITE_PORT), "--strictPort"], {
 const baseUrl = `http://localhost:${VITE_PORT}`;
 await waitFor(baseUrl, "le serveur Vite");
 
-// --- Scénario de capture (commun aux trois modes) ----------------------------
+// --- Écrans ------------------------------------------------------------------
 
 /**
- * Déroule les 7 écrans des fiches : accueil visiteur, connexion du compte de
- * démo, puis les 6 écrans connectés. `shoot(name)` reçoit le nom de base de
- * la capture (sans extension), l'appelant décide du fichier et du support
- * (adb screencap ou page.screenshot).
+ * Les écrans des fiches, dans leur ordre d'affichage. `readyText` est un texte
+ * que l'écran montre une fois chargé (pas un spinner attrapé trop tôt),
+ * `beforeShot` un dernier geste avant la capture.
  */
-async function runScenario(page, shoot) {
-  async function capture(path, name, { readyText, beforeShot } = {}) {
-    // Pas de "networkidle" : Firestore garde une connexion ouverte en
-    // permanence une fois connecté, l'événement n'arriverait jamais.
-    await page.goto(`${baseUrl}${path}`, { waitUntil: "load" });
-    await page.evaluate(() => document.fonts.ready);
-    // Attend le contenu (pas un spinner « Chargement… » attrapé trop tôt).
-    // `visible=true` : sans lui, `first()` peut se figer sur une occurrence
-    // cachée du texte (le même libellé vit aussi dans le menu replié de
-    // l'en-tête, « Bibliothèque » par exemple) et ne jamais la voir devenir
-    // visible.
-    if (readyText) {
-      await page.locator(`text=${readyText} >> visible=true`).first().waitFor({ timeout: 20000 });
-    }
-    if (beforeShot) await beforeShot();
-    // Laisse finir les chargements Firestore, les animations d'apparition et
-    // l'estompage des barres de défilement.
-    await page.waitForTimeout(2500);
-    await shoot(name);
-  }
-
-  // 07 d'abord : l'accueil visiteur se capture avant la connexion.
-  await capture("/", "07-accueil-visiteur", { readyText: "Créer un compte" });
-
-  console.log("store-screenshots: connexion du compte de démo…");
-  await page.goto(`${baseUrl}/login`, { waitUntil: "load" });
-  await page.waitForSelector('input[type="email"]');
-  await page.fill('input[type="email"]', DEMO_EMAIL);
-  await page.fill('input[type="password"]', DEMO_PASSWORD);
-  await page.click('button[type="submit"]');
-  await page.waitForURL((url) => !url.pathname.startsWith("/login"), { timeout: 15000 });
-
-  await capture("/", "01-accueil-connecte", { readyText: "Ma lecture quotidienne" });
-  await capture(`/share-reading/session/${SESSION_SLUG}`, "02-partage-session", {
+const SCREENS = [
+  { name: "01-accueil", path: "/", readyText: "Ma lecture quotidienne" },
+  // Les horaires d'une ville nommée plutôt que ceux de « ma position » : la
+  // capture dit Paris en toutes lettres, où que tourne le script.
+  { name: "02-horaires", path: "/horaires/paris", readyText: "Paris" },
+  {
+    name: "03-partage-session",
+    path: `/share-reading/session/${SESSION_SLUG}`,
     readyText: "Participe",
-  });
-  await capture("/bibliotheque", "03-bibliotheque", { readyText: "Bibliothèque" });
+  },
   // URL canonique de Tehilim 1 (/lire/103 hors session redirige vers elle).
-  await capture("/bibliotheque/tehilim/1", "04-lecture-tehilim", { readyText: "Phonétique" });
-  // La lecture quotidienne a quitté le profil pour sa page de la
-  // bibliothèque : c'est elle que montre l'écran 05.
-  await capture("/bibliotheque/lecture-du-jour", "05-lecture-quotidienne", {
+  { name: "04-lecture-tehilim", path: "/bibliotheque/tehilim/1", readyText: "Phonétique" },
+  { name: "05-bibliotheque", path: "/bibliotheque", readyText: "Bibliothèque" },
+  {
+    name: "06-lecture-quotidienne",
+    path: "/bibliotheque/lecture-du-jour",
     readyText: "Tehilim 1",
-    // On cale le titre de la section en haut de l'écran pour montrer le
-    // suivi du jour (et laisser le lien de retour hors champ).
-    beforeShot: async () => {
-      await page
+    // Le titre de la section calé en haut de l'écran montre le suivi du jour
+    // (et laisse le lien de retour hors champ). Une marge au-dessus : collé
+    // au bord, le haut des lettres serait rogné.
+    beforeShot: (page) =>
+      page
         .locator("text=Ma lecture quotidienne >> visible=true")
         .first()
-        .evaluate((el) => el.scrollIntoView({ block: "start" }));
-    },
-  });
-  await capture(`/chiourim/${CHIOUR_SLUG}`, "06-chiour", { readyText: "Description" });
-}
+        .evaluate((el) => window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY - 24)),
+  },
+  { name: "07-chiour", path: `/chiourim/${CHIOUR_SLUG}`, readyText: "Description" },
+];
 
-// --- Navigateur (modes --web / --ios) ou app native sur émulateur Android ----
+// --- Navigateur --------------------------------------------------------------
 
 /**
  * Chrome installé de préférence : le Chromium headless de Playwright n'a pas
@@ -459,271 +446,109 @@ async function launchBrowser() {
   }
 }
 
-/** Contexte mobile fr-FR sur les dimensions d'un appareil de BROWSER_DEVICES. */
-async function newDeviceContext(browser, device) {
+/** Contexte « app native » fr-FR aux dimensions d'un format de DEVICES. */
+async function newAppContext(browser, device) {
   const context = await browser.newContext({
-    ...BROWSER_DEVICES[device],
+    ...DEVICES[device],
     isMobile: true,
     hasTouch: true,
     locale: "fr-FR",
     timezoneId: "Europe/Paris",
     reducedMotion: "reduce",
+    geolocation: PARIS,
+    permissions: ["geolocation"],
   });
-  // L'app suit la locale de l'appareil : on force le français comme le ferait
-  // le sélecteur de langue (localStorage), avant tout script de page. Le
-  // consentement analytics est posé sur « denied » : la bannière (PostHog)
-  // recouvrirait sinon le bas de chaque capture, et une session de captures
-  // n'a rien à mesurer.
-  await context.addInitScript(() => {
-    localStorage.setItem("petite-jerusalem-locale", "fr");
-    localStorage.setItem("pj_analytics_consent", "denied");
-  });
+  await context.addInitScript(
+    ({ tipIds, onboardingVersion }) => {
+      // Avant @capacitor/core : c'est ce qui fait de la page l'app native (voir
+      // l'en-tête). Le nom n'est ni « ios » ni « android », pour qu'aucun
+      // chemin propre à l'une des deux ne s'y trompe.
+      window.CapacitorCustomPlatform = { name: "store-screenshots" };
+      // Français forcé comme le ferait le sélecteur de langue. Consentement
+      // analytics sur « denied » : la bannière recouvrirait le bas de chaque
+      // capture, et une session de captures n'a rien à mesurer. Introduction
+      // de première ouverture et astuces marquées vues : elles prendraient
+      // l'écran (useOnboarding, useFeatureTips).
+      localStorage.setItem("petite-jerusalem-locale", "fr");
+      localStorage.setItem("pj_analytics_consent", "denied");
+      localStorage.setItem("pj_onboarding_seen", onboardingVersion);
+      localStorage.setItem("pj_tips_seen", JSON.stringify(tipIds));
+    },
+    { tipIds: TIP_IDS, onboardingVersion: ONBOARDING_VERSION },
+  );
   return context;
 }
 
-if (IOS_MODE) {
-  // Les jeux iPhone/iPad remplacent l'existant : un fichier orphelin d'une
-  // exécution précédente partirait sinon en trop dans App Store Connect.
-  mkdirSync(iosOutDir, { recursive: true });
-  for (const file of readdirSync(iosOutDir)) {
-    if (/^(iphone|ipad)-.*\.(png|jpe?g)$/i.test(file)) rmSync(join(iosOutDir, file));
-  }
+/** Charge un écran et attend qu'il soit prêt à être capturé. */
+async function openScreen(page, { path, readyText, beforeShot }) {
+  // Pas de "networkidle" : Firestore garde une connexion ouverte en
+  // permanence une fois connecté, l'événement n'arriverait jamais.
+  await page.goto(`${baseUrl}${path}`, { waitUntil: "load" });
+  await page.evaluate(() => document.fonts.ready);
+  // `visible=true` : sans lui, `first()` peut se figer sur une occurrence
+  // cachée du texte et ne jamais la voir devenir visible.
+  await page.locator(`text=${readyText} >> visible=true`).first().waitFor({ timeout: 20000 });
+  if (beforeShot) await beforeShot(page);
+  // Laisse finir les chargements Firestore, les animations d'apparition et
+  // l'estompage des barres de défilement.
+  await page.waitForTimeout(2500);
+}
 
-  const browser = await launchBrowser();
-  let count = 0;
-  for (const device of ["iphone", "ipad"]) {
-    console.log(`store-screenshots: captures ${device} (App Store)…`);
-    const context = await newDeviceContext(browser, device);
-    const page = await context.newPage();
-    await runScenario(page, async (name) => {
-      const file = `${device}-${name}.jpg`;
-      // JPEG : Apple refuse le canal alpha des PNG de Playwright.
-      await page.screenshot({ path: join(iosOutDir, file), type: "jpeg", quality: 90 });
+/** Connexion du compte de démo par le formulaire, comme un utilisateur. */
+async function signIn(page) {
+  await page.goto(`${baseUrl}/login`, { waitUntil: "load" });
+  await page.waitForSelector('input[type="email"]');
+  await page.fill('input[type="email"]', DEMO_EMAIL);
+  await page.fill('input[type="password"]', DEMO_PASSWORD);
+  await page.click('button[type="submit"]');
+  await page.waitForURL((url) => !url.pathname.startsWith("/login"), { timeout: 15000 });
+}
+
+/** Déroule tous les écrans dans un format ; rend les fichiers écrits. */
+async function captureDevice(browser, device) {
+  const context = await newAppContext(browser, device);
+  const page = await context.newPage();
+  const files = [];
+  try {
+    await signIn(page);
+    for (const screen of SCREENS) {
+      await openScreen(page, screen);
+      const file = `${device}-${screen.name}.jpg`;
+      await page.screenshot({ path: join(outDir, file), type: "jpeg", quality: 90 });
       console.log(`store-screenshots: ${file}`);
-      count++;
-    });
+      files.push(file);
+    }
+  } finally {
     await context.close();
   }
-  await browser.close();
-  console.log(`store-screenshots: ${count} captures écrites dans ${iosOutDir}`);
-  process.exit(0);
+  return files;
 }
 
-mkdirSync(androidOutDir, { recursive: true });
-
-if (WEB_MODE) {
-  const browser = await launchBrowser();
-  const context = await newDeviceContext(browser, "phone");
-  const page = await context.newPage();
-  let count = 0;
-  await runScenario(page, async (name) => {
-    const file = `${name}.png`;
-    await page.screenshot({ path: join(androidOutDir, file) });
-    console.log(`store-screenshots: ${file}`);
-    count++;
-  });
-  await browser.close();
-  console.log(`store-screenshots: ${count} captures écrites dans ${androidOutDir}`);
-  process.exit(0);
+// Le jeu d'un format remplace l'existant : un fichier orphelin d'une
+// exécution précédente (écran retiré, renommé) partirait sinon en trop.
+mkdirSync(outDir, { recursive: true });
+for (const file of readdirSync(outDir)) {
+  const device = file.split("-")[0];
+  if (devices.includes(device) && /\.(png|jpe?g)$/i.test(file)) rmSync(join(outDir, file));
 }
 
-// --- Mode natif : app Capacitor sur l'émulateur Android ----------------------
-
-// 6 minutes : un premier boot x86_64 sur un runner CI peut dépasser les 4
-// minutes qui suffisent en local.
-const BOOT_TIMEOUT = 360000;
-
-/** Vrai quand le device répond « 1 » ; faux tant qu'adb ne le voit pas. */
-function bootCompleted() {
-  try {
-    return adb("shell", "getprop", "sys.boot_completed") === "1";
-  } catch {
-    return false;
-  }
-}
-
-if (PROVIDED_SERIAL) {
-  console.log(`store-screenshots: émulateur ${SERIAL} fourni par l'environnement.`);
-  const start = Date.now();
-  let ready = bootCompleted();
-  while (!ready && Date.now() - start < BOOT_TIMEOUT) {
-    await new Promise((r) => setTimeout(r, 2000));
-    ready = bootCompleted();
-  }
-  if (!ready) {
-    throw new Error(
-      `ANDROID_SERIAL désigne ${SERIAL}, qu'adb ne voit pas démarré : vérifier que l'émulateur est bien ouvert avant d'appeler ce script (adb devices).`,
-    );
-  }
-} else {
-  // L'AVD dédié (1080×1920) est créé au premier lancement.
-  const avdList = spawnSync(emulatorBin, ["-list-avds"], { encoding: "utf8" });
-  if (!avdList.stdout?.split("\n").includes(AVD_NAME)) {
-    console.log(`store-screenshots: création de l'AVD ${AVD_NAME} (1080×1920)…`);
-    const created = spawnSync(
-      avdmanagerBin,
-      ["create", "avd", "-n", AVD_NAME, "-k", AVD_IMAGE, "-d", "pixel_2"],
-      { input: "no\n", encoding: "utf8" },
-    );
-    if (created.status !== 0) {
-      throw new Error(`Création de l'AVD impossible : ${created.stderr}`);
-    }
-  }
-
-  console.log("store-screenshots: démarrage de l'émulateur Android…");
-  // L'émulateur dit ses refus (accélération matérielle absente, image
-  // introuvable, mémoire…) sur sa SORTIE STANDARD, pas sur l'erreur standard :
-  // la jeter, c'était ne plus rien savoir d'un démarrage manqué. Elle part
-  // donc dans un journal, relu et affiché si le boot n'aboutit pas.
-  const emulatorLog = join(tmpdir(), `${AVD_NAME}-emulator.log`);
-  const emulatorLogFd = openSync(emulatorLog, "w");
-  const emulator = spawnChild(
-    emulatorBin,
-    [
-      "-avd",
-      AVD_NAME,
-      "-port",
-      String(EMULATOR_PORT),
-      "-no-boot-anim",
-      "-no-audio",
-      // Sans émulation Bluetooth : son crash en boucle affiche une boîte
-      // « Bluetooth keeps stopping » par-dessus les captures.
-      "-feature",
-      "-BluetoothEmulation",
-      // Sans affichage : rendu logiciel hors écran (le screencap, lui, capture
-      // le framebuffer, fenêtre ou pas), et pas de snapshot à charger ni à
-      // écrire sur une machine jetable.
-      ...(HEADLESS ? ["-no-window", "-gpu", "swiftshader_indirect", "-no-snapshot"] : []),
-    ],
-    { stdio: ["ignore", emulatorLogFd, emulatorLogFd] },
-  );
-
-  // Un émulateur qui refuse de démarrer rend la main tout de suite : le
-  // guetter évite d'attendre six minutes un device déjà mort.
-  let emulatorExit = null;
-  emulator.on("exit", (code, signal) => {
-    emulatorExit = signal ?? `code ${code}`;
-  });
-  const journal = () => {
-    const log = existsSync(emulatorLog) ? readFileSync(emulatorLog, "utf8").trim() : "";
-    return log ? `Journal de l'émulateur :\n${log.split("\n").slice(-40).join("\n")}` : "";
-  };
-
-  const start = Date.now();
-  let ready = false;
-  while (!ready && Date.now() - start < BOOT_TIMEOUT) {
-    if (emulatorExit !== null) {
-      throw new Error(`L'émulateur s'est arrêté (${emulatorExit}) avant d'avoir démarré.\n${journal()}`);
-    }
-    ready = bootCompleted();
-    if (!ready) await new Promise((r) => setTimeout(r, 2000));
-  }
-  if (!ready) {
-    throw new Error(
-      `L'émulateur Android n'a pas fini de démarrer après ${BOOT_TIMEOUT / 60000} minutes.\n${journal()}`,
-    );
-  }
-}
-
-// Le localhost du device = la machine : Vite et les émulateurs Firebase
-// (firebase.ts pointe sur localhost:8470/8471 en mode DEV).
-for (const port of [VITE_PORT, FIRESTORE_PORT, AUTH_PORT]) {
-  adb("reverse", `tcp:${port}`, `tcp:${port}`);
-}
-
-// Config Capacitor pointée sur Vite (CAP_SERVER_URL), puis build + install.
-console.log("store-screenshots: build et installation de l'app (gradle)…");
-const capCopy = spawnSync("npx", ["cap", "copy", "android"], {
-  cwd: root,
-  stdio: "inherit",
-  env: { ...process.env, CAP_SERVER_URL: `http://localhost:${VITE_PORT}` },
-});
-if (capCopy.status !== 0) throw new Error("npx cap copy android a échoué");
-// `:app:` et non `installDebug` tout court : depuis l'app de montre
-// (docs/app-watch.md), le projet a deux modules d'application, et la tâche non
-// qualifiée les installerait tous les deux. Ils partagent l'applicationId :
-// l'APK Wear remplacerait purement et simplement celui du téléphone sur
-// l'émulateur, et les captures seraient prises d'une app de montre.
-const gradle = spawnSync("./gradlew", [":app:installDebug", "--no-daemon"], {
-  cwd: join(root, "android"),
-  stdio: "inherit",
-});
-if (gradle.status !== 0) throw new Error("gradlew :app:installDebug a échoué");
-
-// Barre de statut « propre » (mode démo SystemUI) : 12:00, wifi plein,
-// batterie 100 %, pas d'icônes de notification.
-adb("shell", "settings", "put", "global", "sysui_demo_allowed", "1");
-const demo = (...pairs) =>
-  adb("shell", "am", "broadcast", "-a", "com.android.systemui.demo", ...pairs);
-demo("-e", "command", "enter");
-demo("-e", "command", "clock", "-e", "hhmm", "1200");
-demo("-e", "command", "network", "-e", "wifi", "show", "-e", "level", "4", "-e", "fully", "true");
-demo("-e", "command", "battery", "-e", "level", "100", "-e", "plugged", "false");
-demo("-e", "command", "notifications", "-e", "visible", "false");
-
-// Neutralise le Bluetooth de l'émulateur (crash en boucle → dialogue
-// « Bluetooth keeps stopping » par-dessus l'app).
+// Les formats en parallèle, chacun dans son contexte (sa session, son
+// stockage) : le passage entier tient dans le temps du plus lent.
+let exitCode = 0;
 try {
-  adb("shell", "pm", "disable-user", "--user", "0", "com.android.bluetooth");
-} catch {
-  console.warn("store-screenshots: impossible de désactiver le Bluetooth (image playstore ?)");
+  const browser = await launchBrowser();
+  try {
+    const written = (
+      await Promise.all(devices.map((device) => captureDevice(browser, device)))
+    ).flat();
+    console.log(`store-screenshots: ${written.length} captures écrites dans ${outDir}`);
+  } finally {
+    await browser.close();
+  }
+} catch (error) {
+  console.error(error);
+  exitCode = 1;
+} finally {
+  await stopChildren();
 }
-
-// Évite la demande de permission notifications au premier lancement.
-adb("shell", "pm", "grant", APP_ID, "android.permission.POST_NOTIFICATIONS");
-adb("shell", "am", "start", "-n", `${APP_ID}/.MainActivity`);
-
-console.log("store-screenshots: connexion Playwright à la webview…");
-const { _android } = await import("playwright");
-const devices = await _android.devices();
-const device = devices.find((d) => d.serial() === SERIAL);
-if (!device) throw new Error(`Device ${SERIAL} introuvable par Playwright`);
-const webview = await device.webView({ pkg: APP_ID }, { timeout: 60000 });
-const page = await webview.page();
-
-// L'app suit la locale de l'appareil : on force le français comme le ferait
-// le sélecteur de langue (localStorage), avant la première navigation. Même
-// geste pour le consentement analytics : la bannière (PostHog) recouvrirait
-// sinon le bas de chaque capture, et pour l'introduction de première
-// ouverture, qui prendrait tout l'écran de l'app (voir useOnboarding).
-await page.evaluate(() => {
-  localStorage.setItem("petite-jerusalem-locale", "fr");
-  localStorage.setItem("pj_analytics_consent", "denied");
-  localStorage.setItem("pj_onboarding_seen", "1");
-  // Les astuces des pages (horaires, lecture) non plus : elles ne se montrent
-  // qu'à qui n'a pas encore vu la page, pas sur une capture.
-  localStorage.setItem(
-    "pj_tips_seen",
-    JSON.stringify([
-      "home-settings",
-      "zmanim-reminder",
-      "calendar-occasions",
-      "reading-menu",
-      "reading-gestures",
-      "share-reading",
-      "daily-reading",
-    ]),
-  );
-});
-
-let count = 0;
-await runScenario(page, async (name) => {
-  const file = `${name}.png`;
-  await device.screenshot({ path: join(androidOutDir, file) });
-  console.log(`store-screenshots: ${file}`);
-  count++;
-});
-
-adb("shell", "am", "broadcast", "-a", "com.android.systemui.demo", "-e", "command", "exit");
-// Remet la config Capacitor normale (sans server.url) dans android/ pour ne
-// pas laisser une app locale branchée sur un serveur de dev éteint.
-if (existsSync(join(root, "dist"))) {
-  spawnSync("npx", ["cap", "copy", "android"], { cwd: root, stdio: "ignore" });
-} else {
-  console.warn(
-    "store-screenshots: dist/ absent, lancer `npm run app:build` pour remettre android/ en config bundle.",
-  );
-}
-await device.close();
-console.log(`store-screenshots: ${count} captures écrites dans ${androidOutDir}`);
-process.exit(0);
+process.exit(exitCode);

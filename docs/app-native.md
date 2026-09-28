@@ -62,8 +62,7 @@ la variable d'environnement `CAP_SERVER_URL` : rien à éditer dans le fichier.
 
 Sans la variable, `cap sync` revient au bundle embarqué : il n'y a rien à
 retirer avant un build destiné à un store, `npm run app:build` sans
-`CAP_SERVER_URL` suffit. (`scripts/store-screenshots.mjs` utilise la même
-variable pour pointer l'app native sur son propre Vite.)
+`CAP_SERVER_URL` suffit.
 
 ## Scripts
 
@@ -73,7 +72,7 @@ variable pour pointer l'app native sur son propre Vite.)
 | `npm run cap:sync` | synchronise web + plugins vers les projets natifs |
 | `npm run cap:android` | build + ouvre Android Studio |
 | `npm run cap:ios` | build + ouvre Xcode |
-| `npm run store:screenshots` | régénère les captures de la fiche Play Store (voir `docs/android-ci-cd.md`) ; `-- --ios` produit celles de l'App Store (voir `docs/ios-ci-cd.md`) |
+| `npm run store:screenshots` | régénère les captures des fiches Play Store et App Store, les mêmes pour les deux (voir `store-assets/screenshots/README.md`) |
 
 ## Un plugin ne traverse jamais une promesse
 

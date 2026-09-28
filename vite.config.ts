@@ -76,8 +76,8 @@ export default defineConfig({
   server: {
     port: 5473,
   },
-  // Le badge flottant Vue DevTools polluerait les captures d'écran de la
-  // fiche Play Store (scripts/store-screenshots.mjs).
+  // Le badge flottant Vue DevTools polluerait les captures d'écran des
+  // fiches (scripts/store-screenshots.mjs).
   plugins: [
     vue(),
     ...(process.env.STORE_SCREENSHOTS ? [] : [vueDevTools()]),
