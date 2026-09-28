@@ -46,3 +46,21 @@ export function removeReadingMenu(): void {
 
 /** Un menu de lecture est à l'écran : il tient lieu de bouton de remontée. */
 export const readingNavActive = computed(() => mounted.value > 0);
+
+/** La hauteur de l'en-tête : le titre d'un bloc vient se poser juste dessous. */
+const HEADER_OFFSET = 84;
+
+/**
+ * Descend jusqu'au bloc qui porte ce repère (`data-block-anchor`), son titre
+ * posé sous l'en-tête. Le menu de lecture s'en sert, et la page qui s'ouvre
+ * sur un renvoi (#repère, voir TextLink). Faux si le bloc n'est pas à l'écran.
+ */
+export function scrollToBlockAnchor(anchor: string, behavior: ScrollBehavior = "auto"): boolean {
+  const el = document.querySelector(`[data-block-anchor="${CSS.escape(anchor)}"]`);
+  if (!(el instanceof HTMLElement)) return false;
+  window.scrollTo({
+    top: window.scrollY + el.getBoundingClientRect().top - HEADER_OFFSET,
+    behavior,
+  });
+  return true;
+}

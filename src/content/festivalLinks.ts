@@ -74,7 +74,9 @@ const LINKS: Record<string, FestivalLink> = {
     "The Hoshanot, day by day",
     "ההושענות, יום אחר יום",
   ]),
-  hochanotRabba: library("hochanotRabba", "/bibliotheque/moadim/hochanot", [
+  // Le livre des Hochanot s'ouvre sur le jour du calendrier : ce lien, qui
+  // promet Hochana Rabba, le nomme dans l'adresse.
+  hochanotRabba: library("hochanotRabba", "/bibliotheque/moadim/hochanot?jour=hoshana-rabba", [
     "Les Hochanot de Hochaana Rabba, et ses sept hakafot",
     "The Hoshanot of Hoshana Rabbah, and its seven hakafot",
     "הושענות הושענא רבה ושבע ההקפות",

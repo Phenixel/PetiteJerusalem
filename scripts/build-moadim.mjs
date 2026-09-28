@@ -332,7 +332,8 @@ const leilSouccot = {
  * après le Hallel, et leur fin ramène à Cha'harit, au Kaddich Titkabal.
  *
  * Les dinim que le sidour imprime une fois, en tête du premier jour, ouvrent
- * chaque jour : on lit celui qu'il est, pas le premier.
+ * le livre, une fois, avant le texte du jour : on lit celui qu'il est, pas le
+ * premier. Le Chabbat, qui a sa propre note, ne les montre pas.
  *
  * Hochana Rabba tient en trois modules, coupés aux pages du sidour : une
  * hakafa commencée dans l'un s'achève dans le suivant, sous le même titre
@@ -443,11 +444,20 @@ const JOURS = [
   },
 ];
 
-/** Les blocs d'un jour : ses modules recousus, ouverts par les dinim. */
-function blocsDuJour(jour) {
-  const blocs = raccorder(jour.modules.flatMap((module) => module.blocks));
-  return jour.sansDinim ? blocs : avecDinim(blocs);
-}
+/** Les blocs d'un jour : ses modules recousus. */
+const blocsDuJour = (jour) => raccorder(jour.modules.flatMap((module) => module.blocks));
+
+/**
+ * Les dinim, une seule fois en tête du livre : des halakhot sans texte à
+ * dire. Tout jour les montre, sauf le Chabbat (`unless`), dont la première
+ * halakha dit l'usage propre ; sa clé n'est parmi les occasions que le jour
+ * où on le lit (voir occasionsForDay dans textService).
+ */
+const DINIM_DU_LIVRE = {
+  label: "Les dinim des Hochanot",
+  unless: "chabbat-souccot",
+  halakha: DINIM_HOCHANOT,
+};
 
 /**
  * La fin des Hochanot ramène à Cha'harit, au Kaddich Titkabal qui les suit
@@ -478,6 +488,7 @@ const hochanot = {
   src: () => [],
   days: JOURS.map(({ when, unless, label }) => ({ when, ...(unless ? { unless } : {}), label })),
   blocks: [
+    DINIM_DU_LIVRE,
     // `plain` : le texte du jour n'est pas un ajout à signaler, il est tout le
     // livre, et se lit à la couleur du texte.
     ...JOURS.flatMap((jour) =>
@@ -498,7 +509,8 @@ const PAGES_DU_JOUR = JOURS.map((jour) => ({
   file: jour.page[0],
   title: jour.page[1],
   src: () => [],
-  blocks: blocsDuJour(jour),
+  // Chaque page portait les dinim en tête, dans la halakha de son premier bloc.
+  blocks: jour.sansDinim ? blocsDuJour(jour) : avecDinim(blocsDuJour(jour)),
 }));
 
 const RECIPES = [ataratNedarim, netilatLoulav, leilSouccot, hochanot, ...PAGES_DU_JOUR];

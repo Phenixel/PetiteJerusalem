@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
+import { rubricText } from "../../services/textService";
 import type { Rubric, TextDay } from "../../services/textService";
-import type { SupportedLocale } from "../../i18n";
 
 /**
  * Les jours d'un texte qui change avec le jour (les Hochanot, une suite par
@@ -21,7 +21,7 @@ const emit = defineEmits<{ pick: [when: string] }>();
 
 const { t, locale } = useI18n();
 
-const say = (label: Rubric): string => label[locale.value as SupportedLocale] || label.fr;
+const say = (label: Rubric): string => rubricText(label, locale.value);
 </script>
 
 <template>

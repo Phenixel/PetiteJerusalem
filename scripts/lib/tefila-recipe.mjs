@@ -191,7 +191,11 @@ export function buildBlock(spec, segs) {
   // textService) ; un bloc peut n'avoir que lui.
   if (spec.link) block.link = spec.link;
   block.lines = (spec.lines ?? []).map((line) => buildLine(line, segs));
-  if (block.lines.length === 0 && !block.link) throw new Error(`Bloc vide : ${spec.label ?? "?"}`);
+  // Un bloc sans texte à dire se justifie par un renvoi, ou par ses
+  // halakhot (les dinim des Hochanot, en tête du livre).
+  if (block.lines.length === 0 && !block.link && !block.halakha) {
+    throw new Error(`Bloc vide : ${spec.label ?? "?"}`);
+  }
   return block;
 }
 

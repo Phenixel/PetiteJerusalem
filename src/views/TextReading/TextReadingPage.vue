@@ -18,6 +18,7 @@ import {
   MissingTextFileError,
   occasionsForDay,
   placeLabel as describePlace,
+  rubricText,
   saidOn,
 } from "../../services/textService";
 import type { TextBlock, TextContent, TextDay, TextSection } from "../../services/textService";
@@ -82,8 +83,8 @@ import { readingProgressService } from "../../services/readingProgressService";
 import type { Bookmark, ReadingPosition } from "../../services/readingProgressService";
 import { isNativeApp } from "../../composables/useNativeApp";
 import { ensureManifestLoaded } from "../../services/offlineTextStore";
+import { scrollToBlockAnchor } from "../../composables/useReadingNav";
 import type { ReadingNavSection } from "../../composables/useReadingNav";
-import type { SupportedLocale } from "../../i18n";
 import { useReadingPinch } from "../../composables/useReadingPinch";
 import { useAutoScroll } from "../../composables/useAutoScroll";
 import { isSansTahanoun } from "../../composables/useSansTahanoun";
@@ -260,11 +261,17 @@ const calendarOccasions = computed(() => {
 
 // Un texte à jours (les Hochanot, une suite par jour de Souccot) s'ouvre sur
 // le jour du calendrier, et sur le premier hors de la fête ; le lecteur peut
-// en lire un autre (voir TefilaDays). Le choix ne vaut que pour le texte
-// ouvert : le rouvrir, c'est retrouver le jour qu'il est.
+// en lire un autre (voir TefilaDays). Une adresse peut aussi nommer le jour
+// (?jour=hoshana-rabba) : le lien de la page de Hochaana Rabba, les
+// anciennes pages d'un jour, un passage partagé. Le choix ne vaut que pour le
+// texte ouvert : le rouvrir, c'est retrouver le jour qu'il est.
 const textDays = computed<TextDay[]>(() => currentSection.value?.days ?? []);
 const pickedDay = ref<string | null>(null);
-watch(textId, () => (pickedDay.value = null));
+watch(
+  [textId, () => route.query.jour],
+  ([, jour]) => (pickedDay.value = typeof jour === "string" ? jour : null),
+  { immediate: true },
+);
 const todayDay = computed(() => calendarDay(textDays.value, calendarOccasions.value));
 const shownDay = computed<TextDay | null>(
   () =>
@@ -416,9 +423,7 @@ const navSections = computed<ReadingNavSection[]>(() => {
     return visibleBlocks.value
       .filter((b) => !b.zman && !b.fold && (b.labelText || b.label))
       .map((b) => {
-        const label = b.labelText
-          ? b.labelText[locale.value as SupportedLocale] || b.labelText.fr
-          : b.label;
+        const label = b.labelText ? rubricText(b.labelText, locale.value) : b.label;
         // Le titre hébreu accompagne le traduit, sauf à le répéter.
         const hebrew = b.labelText?.he;
         return {
@@ -788,10 +793,8 @@ watch([content, sectionParam, () => route.query.verset], ([loaded, , verset]) =>
 watch([content, () => route.hash], async ([loaded, hash]) => {
   if (!loaded || !hash) return;
   await nextTick();
-  const el = document.querySelector(`[data-block-anchor="${CSS.escape(hash.slice(1))}"]`);
-  if (!(el instanceof HTMLElement)) return;
   markProgrammaticScroll();
-  window.scrollTo({ top: window.scrollY + el.getBoundingClientRect().top - 84 });
+  scrollToBlockAnchor(hash.slice(1));
 });
 
 // --- Suivi de la position (sauvegarde silencieuse au scroll) ---
@@ -922,7 +925,10 @@ onBeforeUnmount(clearPassage);
 
 /** L'adresse publique qui ramène à ce passage, et à lui seul. */
 function passageUrl(line: number): string {
-  return `${SITE_URL}${canonicalReadingPath.value}?verset=${line}`;
+  // Dans un texte à jours, le passage n'existe que sous son jour : l'adresse
+  // le nomme, pour que celui qui la reçoit ne tombe pas sur un autre.
+  const jour = shownDay.value ? `&jour=${encodeURIComponent(shownDay.value.when)}` : "";
+  return `${SITE_URL}${canonicalReadingPath.value}?verset=${line}${jour}`;
 }
 
 /**

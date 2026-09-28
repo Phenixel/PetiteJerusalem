@@ -39,6 +39,14 @@ export interface Rubric {
 }
 
 /**
+ * Une didascalie dans la langue du lecteur, le français en dernier recours :
+ * c'est la langue dans laquelle toutes sont écrites d'abord.
+ */
+export function rubricText(rubric: Rubric, locale: string): string {
+  return rubric[locale as keyof Rubric] || rubric.fr;
+}
+
+/**
  * Une halakha qui accompagne un passage (« en cas d'oubli, on reprend… »),
  * dans les trois langues. Avec un `when`, elle ne s'affiche que les jours où
  * elle sert : la règle de Hamélekh hakadoch n'a rien à dire hors des dix
@@ -819,12 +827,11 @@ export function parseTefilaBlocks(rawBlocks: unknown): TextBlock[] {
     // Les marqueurs (horaire, Torah de la semaine) n'ont pas de texte à eux :
     // ils passent quand même, c'est le lecteur qui les remplit. L'option d'un
     // choix peut être vide elle aussi : « pas de haftara » est un choix. Un
-    // renvoi aussi se suffit : la fin des Hochanot n'est que le chemin du
-    // retour à Cha'harit.
+    // renvoi aussi se suffit (la fin des Hochanot n'est que le chemin du
+    // retour à Cha'harit), et des halakhot (les dinim en tête des Hochanot).
     const link = parseLink(raw?.link);
-    if (paragraphs.length === 0 && !raw?.zman && !raw?.torahWeekly && !raw?.choice && !link) {
-      return;
-    }
+    const bare = !raw?.zman && !raw?.torahWeekly && !raw?.choice && !link && !raw?.halakha;
+    if (paragraphs.length === 0 && bare) return;
     const block: TextBlock = {
       label: raw.label ?? "",
       lines: paragraphs.map(paragraphText),

@@ -121,10 +121,16 @@ describe("didascalies des textes de tefila", () => {
       // Les jours d'un texte à jours (les Hochanot, voir TextDay) : le lecteur
       // lit celui qu'il choisit, pas seulement celui du calendrier. La note
       // qui ouvre les Hochanot du Chabbat (on ne les dit pas, sauf à Tunis)
-      // se lit donc aussi un autre jour, au moment où elle compte.
-      const jours = new Set(
-        ((contenu as { days?: { when: string }[] }).days ?? []).map((day) => day.when),
+      // se lit donc aussi un autre jour, au moment où elle compte. Seule
+      // passe la phrase qui nomme le jour de son propre bloc : « pas à
+      // Hochana Rabba » écrit sous le troisième jour reste une faute.
+      const jours = new Map(
+        (
+          (contenu as { days?: { when: string; label: { fr: string; en: string } }[] }).days ?? []
+        ).map((day) => [day.when, [day.label.fr, day.label.en]]),
       );
+      const nommeSonJour = (when: string, texte: string): boolean =>
+        (jours.get(when) ?? []).some((nom) => texte.includes(nom));
       const walk = (node: unknown): void => {
         if (Array.isArray(node)) {
           for (const item of node) walk(item);
@@ -132,10 +138,11 @@ describe("didascalies des textes de tefila", () => {
         }
         if (!node || typeof node !== "object") return;
         const bloc = node as Node;
-        if (typeof bloc.when === "string" && !jours.has(bloc.when)) {
+        if (typeof bloc.when === "string") {
+          const when = bloc.when;
           for (const texte of consignes({ ...bloc, blocks: undefined })) {
             const vise = OCCASIONS.some((jour) => texte.includes(jour));
-            if (vise && OMISSION.test(texte)) {
+            if (vise && OMISSION.test(texte) && !nommeSonJour(when, texte)) {
               offenders.push(`${name} (when: ${bloc.when}) → ${texte}`);
             }
           }

@@ -110,9 +110,44 @@
         "destination": "/bibliotheque/moadim/nerot-hanouka"
       },
       {
-        "source": "/bibliotheque/moadim/hochanot-*",
+        "source": "/bibliotheque/moadim/hochanot-yom-richon",
         "type": 301,
-        "destination": "/bibliotheque/moadim/hochanot"
+        "destination": "/bibliotheque/moadim/hochanot?jour=souccot-1"
+      },
+      {
+        "source": "/bibliotheque/moadim/hochanot-yom-cheni",
+        "type": 301,
+        "destination": "/bibliotheque/moadim/hochanot?jour=souccot-2"
+      },
+      {
+        "source": "/bibliotheque/moadim/hochanot-yom-chelichi",
+        "type": 301,
+        "destination": "/bibliotheque/moadim/hochanot?jour=souccot-3"
+      },
+      {
+        "source": "/bibliotheque/moadim/hochanot-yom-revii",
+        "type": 301,
+        "destination": "/bibliotheque/moadim/hochanot?jour=souccot-4"
+      },
+      {
+        "source": "/bibliotheque/moadim/hochanot-yom-hamichi",
+        "type": 301,
+        "destination": "/bibliotheque/moadim/hochanot?jour=souccot-5"
+      },
+      {
+        "source": "/bibliotheque/moadim/hochanot-yom-chichi",
+        "type": 301,
+        "destination": "/bibliotheque/moadim/hochanot?jour=souccot-6"
+      },
+      {
+        "source": "/bibliotheque/moadim/hochanot-hochana-rabba",
+        "type": 301,
+        "destination": "/bibliotheque/moadim/hochanot?jour=hoshana-rabba"
+      },
+      {
+        "source": "/bibliotheque/moadim/hochanot-chabbat",
+        "type": 301,
+        "destination": "/bibliotheque/moadim/hochanot?jour=chabbat-souccot"
       }
     ],
     "rewrites": [

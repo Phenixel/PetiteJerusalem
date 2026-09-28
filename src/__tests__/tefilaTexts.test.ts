@@ -128,6 +128,25 @@ describe("fichiers de tefila", () => {
     expect(content.sections[0].he.length).toBe(offset);
   });
 
+  it("Birkat Hamazon : Souccot dit « ביום מקרא קדש הזה » à 'Hol haMoed, « ביום טוב » le Yom Tov", () => {
+    const paragraphs = (load("brahot", "birkat-hamazon").sections[0].blocks ?? []).flatMap(
+      (b) => b.paragraphs ?? [],
+    );
+    // Le fragment de la fête tel qu'il se dit un jour donné, sans ses signes.
+    const souccotLe = (jour: number) => {
+      const occ = activeOccasions(new HDate(jour, "Tishrei", 5787), false);
+      const ligne = paragraphs.find((p) => p.when === "sukkot" && saidOn(p.when, occ, p.unless))!;
+      return ligne.runs
+        .filter((r) => r.kind === "he" && saidOn(r.when, occ, r.unless))
+        .map((r) => (r.kind === "he" ? r.text.replace(/[\u0591-\u05C7]/g, "") : ""))
+        .join(" ");
+    };
+    // 17 Tichri, 'Hol haMoed.
+    expect(souccotLe(17)).toBe("חג הסכות הזה, ביום מקרא קדש הזה,");
+    // 16 Tichri, Yom Tov en diaspora.
+    expect(souccotLe(16)).toBe("חג הסכות הזה, ביום טוב מקרא קדש הזה,");
+  });
+
   it("Birkat Hamazon : le zimoun porte ses didascalies dans les trois langues", () => {
     const content = load("brahot", "birkat-hamazon");
     const zimun = (content.sections[0].blocks ?? []).find((b) => b.label === "Zimoun")!;
@@ -575,22 +594,28 @@ describe("fichiers de tefila", () => {
       "hoshana-rabba",
       "chabbat-souccot",
     ]);
-    // Chaque bloc de texte appartient à un jour, et à un seul.
+    // Chaque bloc de texte appartient à un jour, et à un seul ; les dinim et
+    // le retour à Cha'harit, qui n'ont rien à dire, à aucun.
     const keys = new Set((hochanot().days ?? []).map((day) => day.when));
     for (const block of hochanot().blocks ?? []) {
-      if (block.link) continue;
+      if (block.lines.length === 0) continue;
       expect(keys.has(block.when ?? "")).toBe(true);
       expect(block.plain).toBe(true);
     }
   });
 
-  it("Hochanot : chaque jour ouvert par les dinim du sidour", () => {
+  it("Hochanot : chaque jour ouvert par les dinim du sidour, écrits une fois", () => {
+    // Les cinq dinim de la page 674, dans un seul bloc en tête du livre.
+    const dinim = (hochanot().blocks ?? []).filter((b) =>
+      (b.halakhot ?? []).some((h) => h.he.includes("ולהקיף את הבימה")),
+    );
+    expect(dinim).toHaveLength(1);
     for (const jour of [1, 2, 3, 4, 5, 6].map((n) => `souccot-${n}`).concat("hoshana-rabba")) {
       const blocks = blocsDuJour(jour);
       expect(blocks.length).toBeGreaterThan(5);
-      // Les cinq dinim de la page 674 d'abord, puis ce que le bloc a de propre.
       const halakhot = blocks[0].halakhot ?? [];
-      expect(halakhot.length).toBeGreaterThanOrEqual(5);
+      expect(blocks[0].lines).toEqual([]);
+      expect(halakhot).toHaveLength(5);
       expect(halakhot[0].he).toContain("ולהקיף את הבימה");
       expect(halakhot[3].he).toContain("בשבת אין מקיפין");
       // L'usage de Djerba ouvre chaque jour : le verset « Vessoukka tihyé »
@@ -628,6 +653,7 @@ describe("fichiers de tefila", () => {
   });
 
   it("Hochanot du Chabbat : la halakha dit que seul l'usage de Tunis les dit", () => {
+    // Le Chabbat a sa propre note : les dinim des autres jours n'y sont pas.
     const blocks = blocsDuJour("chabbat-souccot");
     const halakha = (blocks[0].halakhot ?? [])[0];
     expect(halakha.he).toContain("בשבת אין מקיפין");

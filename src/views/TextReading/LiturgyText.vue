@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onUnmounted, ref, watch } from "vue";
+import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import type {
   Rubric,
@@ -8,9 +9,8 @@ import type {
   TextParagraph,
   TextRun,
 } from "../../services/textService";
-import { saidOn } from "../../services/textService";
+import { rubricText, saidOn } from "../../services/textService";
 import { transliterate } from "../../services/hebrewTransliteration";
-import type { SupportedLocale } from "../../i18n";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import CollapseTransition from "../../components/CollapseTransition.vue";
 import KlafViewer from "../../components/KlafViewer.vue";
@@ -31,6 +31,7 @@ import {
 import { openNaanouimCompass } from "../../composables/useNaanouimCompass";
 import { halakhotHidden } from "../../composables/useHalakhot";
 import { entryByCorpusSlug, hubPath } from "../../content/etudeTexts";
+import { stripQuery } from "../../composables/readingBack";
 import TefilaZman from "./TefilaZman.vue";
 
 /**
@@ -98,11 +99,10 @@ const emit = defineEmits<{
 }>();
 
 const { t, locale } = useI18n();
+const router = useRouter();
 
 /** Une didascalie dans la langue du lecteur (français en dernier recours). */
-function say(rubric: Rubric): string {
-  return rubric[locale.value as SupportedLocale] || rubric.fr;
-}
+const say = (rubric: Rubric): string => rubricText(rubric, locale.value);
 
 function blockTitle(block: TextBlock): string {
   return block.labelText ? say(block.labelText) : block.label;
@@ -366,6 +366,24 @@ function linkTarget(block: TextBlock): string | null {
   return block.link.anchor ? `${hubPath(entry)}#${block.link.anchor}` : hubPath(entry);
 }
 
+/**
+ * Suivre un renvoi. Quand le texte visé est celui d'où l'on vient (la fin des
+ * Hochanot, ouvertes depuis Cha'harit), on y revient plutôt que de l'empiler
+ * une seconde fois : le bouton « précédent » ferait sinon la navette entre
+ * les deux textes. Le retour rend aussi la position où l'on avait quitté
+ * Cha'harit, juste au-dessus du Kaddich Titkabal. Arrivé autrement (lien
+ * direct, onglet rouvert), le renvoi mène au repère qu'il nomme.
+ */
+function followLink(event: MouseEvent, block: TextBlock): void {
+  const target = linkTarget(block);
+  // Un clic modifié (nouvel onglet, nouvelle fenêtre) reste au navigateur.
+  if (!target || event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
+  event.preventDefault();
+  const back = router.options.history.state.back;
+  if (typeof back === "string" && stripQuery(back) === stripQuery(target)) router.back();
+  else void router.push(target);
+}
+
 /** Les paragraphes d'un bloc qui se disent aujourd'hui, avec leur ligne. */
 const paragraphsOf = (block: TextBlock): ParagraphEntry[] =>
   (block.paragraphs ?? plainParagraphs(block))
@@ -410,11 +428,11 @@ const sections = computed<SectionEntry[]>(() => {
     // Un marqueur resté vide (la Torah de la semaine qui n'a pas pu se
     // charger) ou un bloc dont aucune ligne ne se dit aujourd'hui (les fêtes
     // du Mé'ein chaloch) ne laisse pas un titre orphelin dans le fil. Un
-    // choix reste, même vide : « pas de haftara » se choisit aussi, et un
-    // renvoi seul mène quelque part.
-    if (!block.zman && options.length === 0 && paragraphs.length === 0 && !linkTarget(text)) {
-      continue;
-    }
+    // choix reste, même vide : « pas de haftara » se choisit aussi ; un
+    // renvoi seul mène quelque part, et des halakhot seules (les dinim en
+    // tête des Hochanot) se lisent, tant qu'on ne les a pas masquées.
+    const empty = paragraphs.length === 0 && !linkTarget(text) && halakhotOf(text).length === 0;
+    if (!block.zman && options.length === 0 && empty) continue;
     out.push({ block, text, options, paragraphs, index: out.length });
   }
   return out;
@@ -647,9 +665,11 @@ const phoneticOf = computed(() => {
           <!-- Le renvoi vers le texte où la prière continue (les Hochanot du
                jour depuis Cha'harit, le retour à Cha'harit à leur fin) : une
                pastille qui porte son nom, sous le texte qu'elle prolonge. -->
-          <RouterLink v-if="linkTarget(text)" :to="linkTarget(text)!" class="reading-link">
-            <AppIcon name="book-open" :size="15" class="flex-shrink-0" />
-            {{ say(text.link!.label) }}
+          <RouterLink v-if="linkTarget(text)" v-slot="{ href }" :to="linkTarget(text)!" custom>
+            <a :href="href" class="title-action reading-link" @click="followLink($event, text)">
+              <AppIcon name="book-open" :size="15" class="flex-shrink-0" />
+              {{ say(text.link!.label) }}
+            </a>
           </RouterLink>
         </div>
       </CollapseTransition>
@@ -852,32 +872,13 @@ const phoneticOf = computed(() => {
   outline-offset: 2px;
 }
 
-/* Le renvoi vers un autre texte : la pastille des commandes de titre, posée
-   sous le texte du bloc. C'est une commande de l'interface, sa taille ne suit
-   pas celle du texte lu. */
+/* Le renvoi vers un autre texte : la pastille des commandes de titre
+   (`.title-action`, portée avec elle), posée sous le texte du bloc, un peu
+   plus grande puisqu'elle y est seule. */
 .reading-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
   margin-top: 1.25rem;
   padding: 0.45rem 0.95rem;
-  border-radius: var(--radius-pill);
-  font-family: var(--font-sans);
   font-size: 0.875rem;
-  font-weight: 600;
-  line-height: 1.3;
-  color: var(--color-primary);
-  background-color: color-mix(in srgb, var(--color-primary) 10%, transparent);
-  transition: background-color 0.2s ease;
-}
-
-.reading-link:hover {
-  background-color: color-mix(in srgb, var(--color-primary) 16%, transparent);
-}
-
-.reading-link:focus-visible {
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
 }
 
 /* Sous une didascalie, la pastille la suit de près, et le texte la suit. */

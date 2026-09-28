@@ -2,6 +2,21 @@ import HomeView from "../views/HomeView.vue";
 import NotFound from "../views/NotFound.vue";
 import { isNativeApp } from "../composables/useNativeApp";
 
+/**
+ * Les anciennes pages d'un jour des Hochanot → la clé du jour dans le livre
+ * (voir TextDay) ; firebase.json porte les mêmes redirections côté serveur.
+ */
+const HOCHANOT_JOURS: Record<string, string> = {
+  "yom-richon": "souccot-1",
+  "yom-cheni": "souccot-2",
+  "yom-chelichi": "souccot-3",
+  "yom-revii": "souccot-4",
+  "yom-hamichi": "souccot-5",
+  "yom-chichi": "souccot-6",
+  "hochana-rabba": "hoshana-rabba",
+  chabbat: "chabbat-souccot",
+};
+
 // Toutes les autres vues sont lazy-loadées : Vite génère un chunk par vue,
 // le bundle initial ne contient que la home (et la 404, minuscule).
 const LoginView = () => import("../views/loginView.vue");
@@ -26,7 +41,7 @@ const TehilimPage = () => import("../views/TehilimPage.vue");
 const SeoGuidePage = () => import("../views/SeoGuidePage.vue");
 const ParashaPage = () => import("../views/Library/ParashaPage.vue");
 
-import type { NavigationGuardWithThis, RouteRecordSingleView } from "vue-router";
+import type { NavigationGuardWithThis, RouteLocation, RouteRecordSingleView } from "vue-router";
 import {
   DEFAULT_SEO_LOCALE,
   SEO_LOCALES,
@@ -215,10 +230,14 @@ export default [
     redirect: "/bibliotheque/moadim/nerot-hanouka",
   },
   // Les Hochanot avaient une page par jour, et le Chabbat la sienne : elles
-  // tiennent désormais en un livre, qui s'ouvre sur le jour.
+  // tiennent désormais en un livre, qui s'ouvre sur le jour. L'ancienne page
+  // nommait son jour, l'adresse du livre le garde (?jour=).
   {
-    path: "/bibliotheque/moadim/hochanot-:jour(yom-richon|yom-cheni|yom-chelichi|yom-revii|yom-hamichi|yom-chichi|hochana-rabba|chabbat)",
-    redirect: "/bibliotheque/moadim/hochanot",
+    path: `/bibliotheque/moadim/hochanot-:jour(${Object.keys(HOCHANOT_JOURS).join("|")})`,
+    redirect: (to: RouteLocation) => ({
+      path: "/bibliotheque/moadim/hochanot",
+      query: { jour: HOCHANOT_JOURS[String(to.params.jour)] },
+    }),
   },
   // L'ancienne page « Hors ligne » a été fusionnée dans la bibliothèque
   // (boutons de téléchargement sur chaque carte + « Tout télécharger »).

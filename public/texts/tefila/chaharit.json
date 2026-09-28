@@ -158,11 +158,19 @@
       },
       "when": "sans-tisha-beav",
       "plain": true,
-      "halakha": {
-        "fr": "Avant de bénir, on vérifie les fils du tsitsit et on les sépare. On s'enveloppe la tête, puis on rabat le talit sur le corps.",
-        "en": "Before blessing, check the tzitzit threads and separate them. Wrap the head, then draw the talit down over the body.",
-        "he": "לפני הברכה בודקים את חוטי הציצית ומפרידים אותם. מתעטפים בטלית על הראש, ואחר כך מורידים אותה על הגוף."
-      },
+      "halakha": [
+        {
+          "fr": "Avant de bénir, on vérifie les fils du tsitsit et on les sépare. On s'enveloppe la tête, puis on rabat le talit sur le corps.",
+          "en": "Before blessing, check the tzitzit threads and separate them. Wrap the head, then draw the talit down over the body.",
+          "he": "לפני הברכה בודקים את חוטי הציצית ומפרידים אותם. מתעטפים בטלית על הראש, ואחר כך מורידים אותה על הגוף."
+        },
+        {
+          "fr": "À 'Hol haMoed, selon l'usage séfarade, on ne met pas les téfilines : on ne se revêt que du talit.",
+          "en": "On Chol HaMoed, by Sephardic custom, tefillin are not worn: only the talit is put on.",
+          "he": "בחול המועד נוהגים הספרדים שלא להניח תפילין, ומתעטפים בטלית בלבד.",
+          "when": "hol-hamoed"
+        }
+      ],
       "mirror": true,
       "lines": [
         {
@@ -203,6 +211,7 @@
     },
     {
       "when": "sans-tisha-beav",
+      "unless": "hol-hamoed",
       "plain": true,
       "halakha": {
         "fr": "On pose d'abord les téfilines du bras, sur le biceps face au cœur, puis ceux de la tête. On ne parle pas entre les deux.",
@@ -2319,11 +2328,39 @@
       "when": "hallel",
       "plain": true,
       "halakha": {
-        "fr": "Le Hallel se dit debout. Selon l'usage séfarade, l'individuel le dit sans bénédiction.",
-        "en": "Hallel is said standing. By Sephardic custom, an individual says it without a blessing.",
-        "he": "אומרים הלל מעומד. למנהג הספרדים היחיד אומרו בלא ברכה."
+        "fr": "Le Hallel se dit debout. Les jours où on le dit en entier ('Hanouka, 'Hol haMoed de Souccot), il s'ouvre sur sa bénédiction ; les jours où on l'abrège (Roch Hodech, 'Hol haMoed de Pessah), l'usage séfarade le dit sans bénédiction.",
+        "en": "Hallel is said standing. On days when the whole Hallel is said (Hanukkah, Chol HaMoed Sukkot), it opens with its blessing; on days when it is shortened (Rosh Hodesh, Chol HaMoed Pesach), Sephardic custom says it without a blessing.",
+        "he": "אומרים הלל מעומד. בימים שגומרים את ההלל מברכים עליו, ובימים שמדלגים (ראש חודש וחול המועד פסח) נוהגים הספרדים לאומרו בלא ברכה."
       },
       "lines": [
+        {
+          "rubric": {
+            "fr": "Les jours où l'on dit le Hallel en entier, le 'hazan dit :",
+            "en": "On days when the whole Hallel is said, the chazan says:",
+            "he": "בימים שגומרים את ההלל אומר החזן:"
+          },
+          "he": "בִּרְשׁוּת מוֹרַי וְרַבּוֹתַי.",
+          "when": "hallel-complet"
+        },
+        {
+          "rubric": {
+            "fr": "L'assemblée répond :",
+            "en": "The congregation answers:",
+            "he": "ועונים הקהל:"
+          },
+          "he": "שָׁמַיִם.",
+          "when": "hallel-complet",
+          "tight": true
+        },
+        {
+          "rubric": {
+            "fr": "Le 'hazan bénit, puis l'assemblée :",
+            "en": "The chazan says the blessing, then the congregation:",
+            "he": "והחזן מברך ואחר כך הציבור מברכים:"
+          },
+          "he": "בָּרוּךְ אַתָּה יְהֹוָה, אֱלֹהֵינוּ מֶלֶךְ הָעוֹלָם, אֲשֶׁר קִדְּשָׁנוּ בְּמִצְוֹתָיו, וְצִוָּנוּ לִגְמוֹר אֶת הַהַלֵּל:",
+          "when": "hallel-complet"
+        },
         "הַ֥לְלוּיָ֨הּ ׀ הַ֭לְלוּ עַבְדֵ֣י יְהֹוָ֑ה הַֽ֝לְל֗וּ אֶת־שֵׁ֥ם יְהֹוָֽה׃ יְהִ֤י שֵׁ֣ם יְהֹוָ֣ה מְבֹרָ֑ךְ מֵ֝עַתָּ֗ה וְעַד־עוֹלָֽם׃ מִמִּזְרַח־שֶׁ֥מֶשׁ עַד־מְבוֹא֑וֹ מְ֝הֻלָּ֗ל שֵׁ֣ם יְהֹוָֽה׃ רָ֖ם עַל־כׇּל־גּוֹיִ֥ם ׀ יְהֹוָ֑ה עַ֖ל הַשָּׁמַ֣יִם כְּבוֹדֽוֹ׃ מִ֭י כַּיהֹוָ֣ה אֱלֹהֵ֑ינוּ הַֽמַּגְבִּיהִ֥י לָשָֽׁבֶת׃ הַֽמַּשְׁפִּילִ֥י לִרְא֑וֹת בַּשָּׁמַ֥יִם וּבָאָֽרֶץ׃ מְקִ֥ימִ֣י מֵעָפָ֣ר דָּ֑ל מֵ֝אַשְׁפֹּ֗ת יָרִ֥ים אֶבְיֽוֹן׃ לְהוֹשִׁיבִ֥י עִם־נְדִיבִ֑ים עִ֗֝ם נְדִיבֵ֥י עַמּֽוֹ׃ מֽוֹשִׁיבִ֨י ׀ עֲקֶ֬רֶת הַבַּ֗יִת אֵֽם־הַבָּנִ֥ים שְׂמֵחָ֗ה הַֽלְלוּיָֽהּ׃",
         "בְּצֵ֣את יִ֭שְׂרָאֵל מִמִּצְרָ֑יִם בֵּ֥ית יַ֝עֲקֹ֗ב מֵעַ֥ם לֹעֵֽז׃ הָיְתָ֣ה יְהוּדָ֣ה לְקׇדְשׁ֑וֹ יִ֝שְׂרָאֵ֗ל מַמְשְׁלוֹתָֽיו׃ הַיָּ֣ם רָ֭אָה וַיָּנֹ֑ס הַ֝יַּרְדֵּ֗ן יִסֹּ֥ב לְאָחֽוֹר׃ הֶ֭הָרִים רָקְד֣וּ כְאֵילִ֑ים גְּ֝בָע֗וֹת כִּבְנֵי־צֹֽאן׃ מַה־לְּךָ֣ הַ֭יָּם כִּ֣י תָנ֑וּס הַ֝יַּרְדֵּ֗ן תִּסֹּ֥ב לְאָחֽוֹר׃ הֶ֭הָרִים תִּרְקְד֣וּ כְאֵילִ֑ים גְּ֝בָע֗וֹת כִּבְנֵי־צֹֽאן׃ מִלִּפְנֵ֣י אָ֭דוֹן ח֣וּלִי אָ֑רֶץ מִ֝לִּפְנֵ֗י אֱל֣וֹהַּ יַעֲקֹֽב׃ הַהֹפְכִ֣י הַצּ֣וּר אֲגַם־מָ֑יִם חַ֝לָּמִ֗ישׁ לְמַעְיְנוֹ־מָֽיִם׃",
         {
@@ -2540,8 +2577,8 @@
       "when": "loulav",
       "plain": true,
       "halakha": {
-        "fr": "On sort un séfer Torah et on le pose sur la téva. Loulav en main, on en fait le tour en disant les Hochanot du jour : une fois chaque jour, sept fois à Hochana Rabba, et deux fois le dimanche qui suit un Chabbat, où l'on n'a pas fait le tour. Leur texte est dans le livre Moadim, sous Souccot : il s'ouvre sur le jour, et ramène ici à la fin.",
-        "en": "A Torah scroll is taken out and placed on the teva. Lulav in hand, one circles it while saying the Hoshanot of the day: once each day, seven times on Hoshana Rabba, and twice on the Sunday after a Shabbat, when no circuit was made. Their text is in the Moadim book, under Sukkot: it opens on the day, and leads back here at the end.",
+        "fr": "On sort un séfer Torah et on le pose sur la téva. Loulav en main, on en fait le tour en disant les Hochanot du jour : une fois chaque jour, sept fois à Hochana Rabba, et deux fois le dimanche qui suit un Chabbat, où l'on n'a pas fait le tour. Leur texte est dans le livre Moadim, sous Souccot.",
+        "en": "A Torah scroll is taken out and placed on the teva. Lulav in hand, one circles it while saying the Hoshanot of the day: once each day, seven times on Hoshana Rabba, and twice on the Sunday after a Shabbat, when no circuit was made. Their text is in the Moadim book, under Sukkot.",
         "he": "מוציאים ספר תורה ומניחים אותו על התיבה, ומקיפים את התיבה עם הלולב ואומרים ההושענות של אותו היום: פעם אחת בכל יום, שבע פעמים בהושענא רבה, ושתי הקפות ביום ראשון שלאחר השבת. ההושענות בספר המועדים, בסוכות."
       },
       "link": {
