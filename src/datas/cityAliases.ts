@@ -1,0 +1,111 @@
+/**
+ * Les autres noms des villes du sélecteur de la page Horaires (CityPicker),
+ * pour la recherche : la liste (cities.json) les nomme en français, on les
+ * cherche aussi en anglais, dans la langue du pays ou en hébreu.
+ *
+ * Seulement ce que la clé phonétique ne rattrape pas seule
+ * (services/fuzzySearch) : « Achdod » trouve déjà « Ashdod », « Petach
+ * Tikva » déjà « Petah Tikva ». « London » et « Londres », « Tsfat » et
+ * « Safed » sont d'autres mots.
+ *
+ * Clé : le nom affiché de la ville, tel qu'il est dans cities.json. Un test
+ * (cityAliases.test.ts) vérifie que chaque clé y figure.
+ */
+export const CITY_ALIASES: Record<string, string[]> = {
+  // Israël
+  Jérusalem: ["Jerusalem", "Yerushalayim", "Yeroushalaim", "ירושלים"],
+  "Tel Aviv": ["Tel Aviv-Yafo", "Jaffa", "Yafo", "תל אביב"],
+  "Bnei Brak": ["בני ברק"],
+  "Ramat Gan": ["רמת גן"],
+  Guivatayim: ["גבעתיים"],
+  Holon: ["חולון"],
+  "Bat Yam": ["בת ים"],
+  "Rishon LeZion": ["Rishon Letsion", "ראשון לציון"],
+  "Petah Tikva": ["פתח תקווה"],
+  Netanya: ["Natanya", "נתניה"],
+  Herzliya: ["הרצליה"],
+  Raanana: ["רעננה"],
+  "Kfar Saba": ["כפר סבא"],
+  "Hod HaSharon": ["הוד השרון"],
+  Rehovot: ["רחובות"],
+  "Ness Ziona": ["Nes Tziona", "נס ציונה"],
+  Ashdod: ["אשדוד"],
+  Ashkelon: ["אשקלון"],
+  "Beer Sheva": ["Beersheba", "Beercheva", "באר שבע"],
+  Haïfa: ["חיפה"],
+  Netivot: ["נתיבות"],
+  Modiin: ["מודיעין"],
+  "Beit Shemesh": ["בית שמש"],
+  Tibériade: ["Tiberias", "Tveria", "טבריה"],
+  Safed: ["Tsfat", "Tzfat", "Zefat", "צפת"],
+  Eilat: ["אילת"],
+  Nahariya: ["נהריה"],
+  Acre: ["Akko", "Acco", "Saint-Jean-d'Acre", "עכו"],
+  Lod: ["Lydda", "לוד"],
+  Ramla: ["רמלה"],
+  Yavné: ["יבנה"],
+  "Kiryat Gat": ["קריית גת"],
+  "Kiryat Shmona": ["קריית שמונה"],
+  Arad: ["ערד"],
+  Dimona: ["דימונה"],
+
+  // Les grandes communautés, en hébreu
+  Paris: ["פריז"],
+  Marseille: ["מרסיי"],
+  Lyon: ["ליון"],
+  Nice: ["ניס"],
+  Strasbourg: ["שטרסבורג"],
+  "New York": ["NYC", "ניו יורק"],
+  "Los Angeles": ["לוס אנג'לס"],
+  Miami: ["מיאמי"],
+  Lakewood: ["לייקווד"],
+  Montréal: ["מונטריאול"],
+  Toronto: ["טורונטו"],
+  Casablanca: ["קזבלנקה"],
+  "Buenos Aires": ["בואנוס איירס"],
+  Manchester: ["מנצ'סטר"],
+  Gateshead: ["גייטסהד"],
+  Berlin: ["ברלין"],
+  Rome: ["Roma", "רומא"],
+
+  // Europe : les noms anglais et locaux
+  Bruxelles: ["Brussels", "Brussel", "בריסל"],
+  Anvers: ["Antwerp", "Antwerpen", "אנטוורפן"],
+  Gand: ["Gent", "Ghent"],
+  Genève: ["Geneva", "Genf", "ז'נבה"],
+  Bâle: ["Basel"],
+  Londres: ["London", "לונדון"],
+  Édimbourg: ["Edinburgh"],
+  "La Haye": ["The Hague", "Den Haag"],
+  Francfort: ["Frankfurt"],
+  Munich: ["München"],
+  Cologne: ["Köln"],
+  Hambourg: ["Hamburg"],
+  Vienne: ["Vienna", "Wien"],
+  Milan: ["Milano"],
+  Turin: ["Torino"],
+  Florence: ["Firenze"],
+  Venise: ["Venice", "Venezia"],
+  Naples: ["Napoli"],
+  Barcelone: ["Barcelona"],
+  Séville: ["Sevilla", "Seville"],
+  Lisbonne: ["Lisbon", "Lisboa"],
+  Athènes: ["Athens"],
+  Thessalonique: ["Thessaloniki", "Salonique"],
+  Varsovie: ["Warsaw", "Warszawa"],
+  Cracovie: ["Krakow", "Cracow"],
+  Prague: ["Praha"],
+  Bucarest: ["Bucharest"],
+  Copenhague: ["Copenhagen", "København"],
+  Moscou: ["Moscow", "Moskva", "מוסקבה"],
+  Kiev: ["Kyiv"],
+
+  // Ailleurs
+  Fès: ["Fez"],
+  Tanger: ["Tangier"],
+  Alger: ["Algiers"],
+  Philadelphie: ["Philadelphia"],
+  "Le Cap": ["Cape Town"],
+  Bombay: ["Mumbai"],
+  Singapour: ["Singapore"],
+};

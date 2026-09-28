@@ -13,7 +13,7 @@ npm run test:unit          # vitest, mode interactif
 npx vitest run             # une seule passe, ce que fait `npm run verify`
 ```
 
-Les 99 fichiers vivent dans `src/__tests__/*.test.ts`. La configuration
+Les 142 fichiers vivent dans `src/__tests__/*.test.ts`. La configuration
 (`vitest.config.ts`) prend l'environnement `jsdom` par défaut ; les tests qui
 n'ont pas besoin du DOM (ceux qui lisent le dépôt ou lancent un script)
 commencent par `// @vitest-environment node`. Les dossiers `e2e/`, `android/`,
@@ -30,6 +30,9 @@ avec ce que chacun attend :
 | --- | --- |
 | `typography.test.ts` | Aucun tiret long (U+2014) ni demi-cadratin (U+2013) dans les fichiers versionnés, code et contenus compris (CLAUDE.md) ; seules exceptions, les corpus importés sous `public/texts/` et la licence. |
 | `frenchTypography.test.ts` | Dans `src/locales/fr`, une espace insécable avant `!`, `?`, `;` (fine, U+202F), avant `:` et dans les guillemets « » (U+00A0), sans quoi le signe part seul à la ligne sur un téléphone ; le bloc `seo` est hors jeu. |
+| `searchInputs.test.ts` | Les barres de recherche lisent la frappe par `liveValue`, pas par `v-model` (qui attend la fin du mot sur un clavier à prédiction), et aucune ne filtre par un `toLowerCase().includes(…)` écrit sur place : toute recherche passe par `services/fuzzySearch`, qui trouve les autres graphies et pardonne les fautes (`docs/design.md`, « Une recherche trouve ce qu'on voulait dire »). |
+| `catalogSearch.test.ts` | Chaque clé des autres noms du catalogue (`src/datas/catalogAliases.ts`) désigne un texte ou un livre de `textStudies.json` : un texte renommé rendrait ses alias muets. Le même fichier rejoue sur le vrai catalogue ce que les gens tapent (« chabbat », « kidouchin », « psaume 23 », « genèse »). |
+| `cityAliases.test.ts` | Chaque ville des autres noms (`src/datas/cityAliases.ts`) figure dans `cities.json`, et « london », « ירושלים », « st etienne » trouvent leur ville en premier. |
 | `i18nUsage.test.ts` | Toute clé passée à `t("…")` ou `$t("…")` dans `src/` existe dans la locale française. |
 | `appLinks.test.ts` | La liste des chemins que l'app installée s'approprie (`scripts/lib/app-links.mjs`, servie sous `/.well-known/`) couvre les routes du routeur et n'attrape aucun chemin technique, `/__/auth/` en premier. |
 | `widgetParity.test.ts` | Les deux plateformes proposent les mêmes widgets : les noms du sélecteur iOS et Android coïncident, et le câblage Android est complet (provider, `appwidget-provider`, gabarit, libellés). |
