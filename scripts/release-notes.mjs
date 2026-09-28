@@ -22,6 +22,47 @@ const DEFAULT_NOTES = {
 };
 
 /**
+ * Longueur maximale des « Nouveautés » d'une langue sur le Play Store, en
+ * caractères Unicode. L'App Store en accepte 4000 : c'est le Play Store qui
+ * fixe la taille d'une note écrite pour les deux.
+ */
+export const PLAY_NOTES_LIMIT = 500;
+
+/** Les langues qu'une note de version doit couvrir, celles des deux fiches. */
+export const RELEASE_NOTES_LANGS = ["fr", "en", "he"];
+
+/**
+ * Ce qui empêcherait une note de version de partir telle quelle, langue par
+ * langue : une langue absente, un texte trop long pour le Play Store (il le
+ * couperait), un tiret long (règle du dépôt, CLAUDE.md), un émoji (refusé
+ * par App Store Connect). Une liste vide veut dire que la note est prête.
+ *
+ * @returns {{ lang: string, problem: string }[]}
+ */
+export function checkReleaseNotes(body) {
+  const notes = splitReleaseNotes(body);
+  const problems = [];
+  for (const lang of RELEASE_NOTES_LANGS) {
+    const text = notes[lang];
+    if (!text) {
+      problems.push({ lang, problem: "section absente" });
+      continue;
+    }
+    const length = [...text].length;
+    if (length > PLAY_NOTES_LIMIT) {
+      problems.push({ lang, problem: `${length} caractères, ${PLAY_NOTES_LIMIT} au plus` });
+    }
+    if (/[\u2013\u2014]/.test(text)) {
+      problems.push({ lang, problem: "tiret long (cadratin ou demi-cadratin)" });
+    }
+    if (/\p{Extended_Pictographic}/u.test(text)) {
+      problems.push({ lang, problem: "émoji, refusé par App Store Connect" });
+    }
+  }
+  return problems;
+}
+
+/**
  * Phrase par défaut pour une locale de store (« fr-FR », « en-US », « he »,
  * « iw-IL »…, Play utilise encore l'ancien code ISO « iw » pour l'hébreu).
  */

@@ -32,9 +32,13 @@ import {
   writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
-import { defaultReleaseNotes, releaseNotesFor, splitReleaseNotes } from "./release-notes.mjs";
+import {
+  PLAY_NOTES_LIMIT as LIMIT,
+  defaultReleaseNotes,
+  releaseNotesFor,
+  splitReleaseNotes,
+} from "./release-notes.mjs";
 
-const LIMIT = 500;
 const root = join(import.meta.dirname, "..");
 const metadataDir = join(root, "store-assets/metadata/android");
 const outDir = join(root, "whatsnew");

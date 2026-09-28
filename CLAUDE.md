@@ -50,3 +50,11 @@ committeur sont `Phenixel <yonathancardoso@outlook.fr>`. Avant de commiter,
 on règle l'identité du dépôt (`git config user.name "Phenixel"` et
 `git config user.email "yonathancardoso@outlook.fr"`) ou l'on passe
 `--author`. Claude n'y figure qu'en co-auteur, par la ligne `Co-Authored-By`.
+
+## Notes de version
+
+« Rédige la note de patch » suffit : la marche à suivre (ce qui change
+depuis le dernier tag, format en trois langues, 500 caractères par langue,
+nouveautés puis corrections, vérification par
+`scripts/check-release-notes.mjs`) est dans `docs/notes-de-version.md`,
+à suivre à la lettre.

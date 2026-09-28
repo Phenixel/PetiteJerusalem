@@ -1,6 +1,8 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
 import {
+  PLAY_NOTES_LIMIT,
+  checkReleaseNotes,
   defaultReleaseNotes,
   releaseNotesFor,
   splitReleaseNotes,
@@ -85,5 +87,32 @@ describe("defaultReleaseNotes", () => {
     expect(defaultReleaseNotes("fr-FR")).toBe("Correction de bugs mineurs.");
     expect(defaultReleaseNotes("iw-IL")).toBe("תיקוני באגים קלים.");
     expect(defaultReleaseNotes("pt-BR")).toBe("Minor bug fixes.");
+  });
+});
+
+describe("checkReleaseNotes", () => {
+  it("tient pour prête une note en trois langues, courte et sans émoji", () => {
+    expect(checkReleaseNotes(TRILINGUAL)).toEqual([]);
+  });
+
+  it("signale une langue absente", () => {
+    expect(checkReleaseNotes("## Français\nA\n## English\nB")).toEqual([
+      { lang: "he", problem: "section absente" },
+    ]);
+  });
+
+  it("signale une langue que le Play Store couperait", () => {
+    const long = `## Français\n${"a".repeat(PLAY_NOTES_LIMIT + 1)}\n## English\nB\n## עברית\nC`;
+    expect(checkReleaseNotes(long)).toEqual([
+      { lang: "fr", problem: `${PLAY_NOTES_LIMIT + 1} caractères, ${PLAY_NOTES_LIMIT} au plus` },
+    ]);
+  });
+
+  it("signale un tiret long et un émoji", () => {
+    const body = "## Français\nA \u2014 B\n## English\nNew 🎉\n## עברית\nC";
+    expect(checkReleaseNotes(body)).toEqual([
+      { lang: "fr", problem: "tiret long (cadratin ou demi-cadratin)" },
+      { lang: "en", problem: "émoji, refusé par App Store Connect" },
+    ]);
   });
 });

@@ -145,6 +145,13 @@ Fixes
 
 `splitReleaseNotes` dans `scripts/release-notes.mjs` porte la règle,
 `src/__tests__/releaseNotes.test.ts` la tient.
+
+Une note se vérifie avant de la coller, avec
+`node scripts/check-release-notes.mjs note.md` : trois langues présentes,
+500 caractères au plus chacune (au-delà, le Play Store coupe), ni tiret long
+ni émoji (App Store Connect les refuse). Pour la faire rédiger par Claude,
+« rédige la note de patch » suffit : la marche à suivre est dans
+[notes-de-version.md](notes-de-version.md).
 - La fiche est envoyée par `node scripts/play-listing.mjs` (API Android
   Publisher, même compte de service). `node scripts/play-listing.mjs --check`
   vérifie les limites de caractères en local, sans réseau.
