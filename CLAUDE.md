@@ -36,6 +36,9 @@ L'apparence du site et de l'app suit `docs/design.md` : couleurs des trois
 thèmes, rayons (surfaces franches, commandes rondes), polices (Playfair
 Display pour les titres, Manrope pour le reste), et ce qui ne s'emploie pas,
 à commencer par les dégradés. Toute décision de design nouvelle s'y ajoute.
+Pour une page ou un composant nouveau, la section 8 de ce document nomme les
+styles à ne pas employer : c'est elle qui fait la différence, bien plus
+qu'une consigne générale du genre « éviter un rendu générique ».
 
 ## Langue
 
@@ -56,5 +59,6 @@ on règle l'identité du dépôt (`git config user.name "Phenixel"` et
 « Rédige la note de patch » suffit : la marche à suivre (ce qui change
 depuis le dernier tag, format en trois langues, 500 caractères par langue,
 nouveautés puis corrections, vérification par
-`scripts/check-release-notes.mjs`) est dans `docs/notes-de-version.md`,
-à suivre à la lettre.
+`scripts/check-release-notes.mjs`) est dans `docs/notes-de-version.md`.
+Le format y est fixe parce que la CI découpe la note par langue et que les
+stores en coupent ou en refusent une partie.

@@ -9,7 +9,7 @@ en envoie chaque section à la langue du même nom, sur le Play Store (fr-FR,
 en-US, iw-IL) et sur l'App Store (fr-FR, en-US, he). Voir
 `docs/android-ci-cd.md`, section « Notes de version en trois langues ».
 
-Le résultat attendu est UN bloc de texte prêt à coller, rien d'autre à
+Le résultat attendu est un seul bloc de texte prêt à coller, rien d'autre à
 faire pour le propriétaire du dépôt que le copier.
 
 ## 1. Trouver ce qui a changé
@@ -56,10 +56,10 @@ Fixes
 ```
 
 - **Court.** Le Play Store coupe à 500 caractères par langue (puces et
-  intitulés compris) : viser 3 ou 4 nouveautés et autant de corrections au
-  plus, une phrase courte chacune, la plus importante d'abord. Si tout ne
-  tient pas, regrouper (« Sidour : quatre lectures corrigées ») ou retirer
-  le moins visible, jamais tronquer une phrase.
+  intitulés compris) : une phrase courte par point, la plus importante
+  d'abord. Si tout ne tient pas, regrouper (« Sidour : quatre lectures
+  corrigées ») ou retirer le moins visible, plutôt que tronquer une phrase
+  que le store couperait au milieu.
 - **Du point de vue de l'utilisateur**, au présent : ce qu'il voit ou peut
   faire désormais, pas comment c'est fait. Ni numéro de PR, ni nom de
   fichier, ni jargon technique.
@@ -97,6 +97,6 @@ jusqu'à « note prête ».
 - Sous le bloc, en une ligne : la longueur de chaque langue (sortie du
   vérificateur), et le numéro de version suivant proposé (dernier tag,
   patch + 1, sauf si les changements appellent plus).
-- Le rappel : créer la release GitHub avec ce texte AVANT de pousser le
+- Le rappel : créer la release GitHub avec ce texte avant de pousser le
   tag, puisque c'est au tag que la CI lit la description.
 - Ne rien publier soi-même (ni release, ni tag) sans qu'on le demande.

@@ -1112,11 +1112,22 @@ fond, qui suffit.
   une étiquette de groupe s'écrit en bas de casse, au corps d'un texte
   secondaire (« Mon compte », pas « MON COMPTE »).
 - Playfair sur autre chose qu'un titre ou une mise en avant.
+- Un mot mis en italique pour accentuer un titre. L'italique sert à une
+  translittération, à une note, à la dédicace de l'accueil : à une ligne
+  entière qui a une autre voix, jamais à un effet dans un titre.
+- Les sections numérotées « 01 », « 02 », « 03 » : une page se lit par ses
+  titres, pas par un sommaire.
+- La chasse fixe pour une étiquette ou un intitulé. Elle ne sert qu'à un
+  identifiant qu'on recopie (l'identifiant du compte, dans le profil).
 - Une couleur codée en dur là où un jeton existe.
 - Le zoom au double appui du navigateur, sur le site comme dans l'app : le
   pincement fait ce travail et reste entier. Le double appui, lui, est un geste
   à nous (il lance le défilement automatique sur un texte) ; là où le navigateur
   zoomait en même temps, les deux se disputaient la page.
+
+Le fond beige et les commandes rondes, eux, sont des choix de cette charte
+(sections 1 et 3), pas des habitudes à corriger : une page nouvelle les
+reprend.
 
 ## 9. Ce qui reste à faire
 
