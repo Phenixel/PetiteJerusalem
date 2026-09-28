@@ -116,6 +116,40 @@ onMounted(async () => {
 });
 
 /**
+ * Les champs obligatoires, dans l'ordre du formulaire : l'intitulé que porte
+ * leur étiquette, et l'identifiant de la commande à l'écran.
+ *
+ * Le nom et la description sont des champs natifs marqués `required` : le
+ * navigateur les retient avant même que le formulaire parte. Le type et la
+ * date limite sont des commandes de la maison (AppSelect, AppDateField), donc
+ * sans validation native ; c'est ici qu'on les retient, et il faut dire lequel
+ * manque. Observé en production : un formulaire rempli, cinq livres choisis,
+ * et « Veuillez remplir tous les champs » pour seule réponse ; aucune de ces
+ * chaînes n'a été créée.
+ */
+const requiredFields = computed(() => [
+  { id: "name", label: t("newSession.sessionTitle"), filled: sessionData.name.trim() !== "" },
+  {
+    id: "description",
+    label: t("newSession.sessionDescription"),
+    filled: sessionData.description.trim() !== "",
+  },
+  { id: "type", label: t("newSession.textType"), filled: sessionData.type !== "" },
+  { id: "dateLimit", label: t("common.dateLimit"), filled: sessionData.dateLimit !== "" },
+]);
+
+/**
+ * Le message d'erreur s'affiche sous le formulaire : sur un téléphone, le
+ * champ en cause est presque toujours hors de l'écran. On y amène donc le
+ * regard, puis le curseur.
+ */
+const focusField = (id: string) => {
+  const element = document.getElementById(id);
+  element?.scrollIntoView?.({ behavior: "smooth", block: "center" });
+  element?.focus({ preventScroll: true });
+};
+
+/**
  * Sortie négative du funnel de création, jusqu'ici totalement muette :
  * `session_created` n'avait aucune contrepartie. Un formulaire abandonné sur
  * une validation, un terme refusé par la modération ou une écriture Firestore
@@ -143,14 +177,16 @@ const createSession = async () => {
     return;
   }
 
-  if (
-    !sessionData.name ||
-    !sessionData.description ||
-    !sessionData.type ||
-    !sessionData.dateLimit
-  ) {
-    trackCreateFailed("validation", "missing_fields");
-    message.value = t("newSession.fillAllFields");
+  // Un seul champ à la fois : celui que le formulaire attend en premier. Deux
+  // reproches d'un coup se lisent moins bien qu'un seul, et le second se pose
+  // de lui-même au clic suivant.
+  const missing = requiredFields.value.find((field) => !field.filled);
+  if (missing) {
+    // Le détail nomme le champ (`missing_dateLimit`) : un `missing_fields`
+    // global ne disait pas lequel, et c'est tout ce qu'on voulait savoir.
+    trackCreateFailed("validation", `missing_${missing.id}`);
+    message.value = t("newSession.fieldRequired", { field: missing.label });
+    focusField(missing.id);
     return;
   }
 
