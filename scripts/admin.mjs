@@ -932,6 +932,13 @@ try {
 } catch (error) {
   if (error instanceof BackofficeInputError) fail(error.message);
   const message = String(error?.message ?? error);
+  // Identifiants valides mais sans les droits : un rôle manquant, ou tout
+  // juste accordé (Google met quelques minutes à l'appliquer).
+  if (error?.code === 7 || /PERMISSION_DENIED|insufficient permissions/i.test(message)) {
+    fail(
+      "accès refusé : le compte utilisé n'a pas les droits (roles/datastore.user, et roles/storage.objectAdmin pour les audios). Un rôle tout juste accordé met quelques minutes à s'appliquer (voir docs/backoffice-cli.md).",
+    );
+  }
   // Firestore injoignable : émulateurs éteints, ou réseau filtré (une
   // session cloud de Claude Code qui n'autorise pas *.googleapis.com).
   if (error?.code === 14 || /ECONNREFUSED|ENOTFOUND|EAI_AGAIN|UNAVAILABLE/.test(message)) {
