@@ -1,0 +1,964 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Petite Jérusalem, le film</title>
+<style>
+  @font-face { font-family: "Manrope"; src: url(fonts/manrope-latin.woff2) format("woff2"); font-weight: 200 800; }
+  @font-face { font-family: "Playfair Display"; src: url(fonts/playfair-latin.woff2) format("woff2"); font-weight: 400 900; }
+  :root { --stage: #f4f1ea; --ink: #35312a; }
+  html, body { margin: 0; background: var(--stage); color: var(--ink); font-family: Manrope, sans-serif; }
+  main { display: grid; place-items: center; gap: 12px; padding: 16px; }
+  canvas { display: block; width: min(92vw, 82vh); height: auto; box-shadow: 0 10px 40px rgba(53, 49, 42, .12); }
+  .bar { display: flex; align-items: center; gap: 12px; width: min(92vw, 82vh); }
+  .bar input { flex: 1; accent-color: #DE4F17; }
+  .bar button { font: 600 14px Manrope, sans-serif; border: 0; border-radius: 999px; padding: 8px 16px; background: var(--ink); color: #fff; cursor: pointer; }
+  .bar output { font: 500 14px Manrope, sans-serif; font-variant-numeric: tabular-nums; min-width: 64px; text-align: right; }
+  body.render main { padding: 0; }
+  body.render canvas { width: 1440px; box-shadow: none; }
+  body.render .bar { display: none; }
+</style>
+</head>
+<body>
+<main>
+  <canvas id="c" width="1440" height="1440"></canvas>
+  <div class="bar">
+    <button id="play" type="button">Lecture</button>
+    <input id="scrub" type="range" min="0" max="22" step="0.001" value="0" aria-label="Position">
+    <output id="clock">0,00 s</output>
+  </div>
+</main>
+<!-- Seuil de la goutte : l'alpha flouté repasse en bord net autour de 0,5. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="thr" color-interpolation-filters="sRGB">
+    <feComponentTransfer><feFuncA type="linear" slope="14" intercept="-6.5"/></feComponentTransfer>
+  </filter>
+</svg>
+<script>
+"use strict";
+/*
+ * Petite Jérusalem, boucle de 22 s en 1440 x 1440.
+ * Tout est fonction du temps : seek(t) dessine l'image de l'instant t, sans
+ * minuterie ni état d'une image à l'autre. La carte des temps est dans
+ * beat-map.md ; les couleurs et les polices suivent docs/design.md.
+ */
+
+// ---------------------------------------------------------------- réglages
+const SIZE = 1440, HALF = SIZE / 2, FPS = 60, DUR = 22;
+const BPM = 110, BEAT = 60 / BPM;
+
+// Jetons (docs/design.md) : aucune couleur n'est écrite ailleurs qu'ici.
+const C = {
+  stage: "#f4f1ea",        // --color-bg-beige
+  surface: "#ffffff",      // --color-surface
+  ink: "#35312a",          // --color-text-primary
+  primary: "#DE4F17",      // sunset, l'unique accent
+  night: "#111827",        // fond sombre
+  nightDeep: "#0b0f17",    // la toile autour de l'écran
+  shadow: "53, 49, 42",    // ombres chaudes, en r, g, b
+  // Logo (public/favicon.svg)
+  gold: "#C79A3B", mortar: "#F1E7CF",
+  bookL: "#1D6FDB", bookR: "#2E7BE6", spine: "#16467e", pageLine: "#CFE1FB",
+};
+// Les deux pochettes : Souccot (vert loulav) et Sim'hat Torah (rouge pomme).
+const TRACKS = [
+  { title: "Les lois de Souccot", sub: "Chiour · Moadim", tint: "#4E8A2E", at: 0.34, total: 2290 },
+  { title: "La joie de Sim'hat Torah", sub: "Chiour · Moadim", tint: "#B8322A", at: 0.02, total: 1935 },
+];
+// Textes (espaces insécables : U+202F avant ?, U+00A0 avant :).
+const QUESTION = "On se partage les Tehilim ?";
+const ANSWER = "150 psaumes à douze : fini ce soir.";
+const PILL_START = "Créer une chaîne";
+const PILL_END = "Ouvrir Petite Jérusalem";
+
+// ------------------------------------------------------------ carte des temps
+const T = {
+  click: 1 * BEAT,          // le curseur clique « Créer une chaîne »
+  toSpin: 0.62,             // la pastille devient un sablier
+  toCheck: 4 * BEAT,        // le sablier devient une coche
+  split: 6 * BEAT,          // la coche se scinde en trois points
+  qFly: 8 * BEAT,           // le point gauche monte en question
+  aFly: 10 * BEAT,          // le point droit descend en réponse
+  merge: 13.5 * BEAT,       // les bulles reviennent au point du milieu
+  tri: 15 * BEAT,           // le point se plie en triangle de lecture
+  drop: 18 * BEAT,          // l'appui, sur le drop
+  pull: 10.0,               // la caméra recule sur l'écran du lecteur
+  heart: 20 * BEAT,         // le coeur se remplit
+  swipe: 21 * BEAT,         // la pochette glisse, le chiour suivant arrive
+  retint: 11.95,            // l'app prend la couleur de la nouvelle pochette
+  toVol: 23 * BEAT,         // la caméra descend sur le volume
+  drag1: 13.5,              // le volume monte au maximum
+  drag2: 14.1,              // ... et le curseur continue de tirer
+  bend: 14.95,              // la ligne se plie en courbe
+  click2: 30 * BEAT,        // clic sur le dernier point
+  dive: 16.38,              // plongée dans le point
+  ask: 17.2,                // « Ouvrir Petite Jérusalem » sort de la lumière
+  thin: 18.1,               // la pastille s'amincit en trait
+  fan: 18.9,                // le trait se déploie en logo
+  fold: 20.4,               // le logo se replie en trait
+  thicken: 21.2,            // le trait s'épaissit en « Créer une chaîne »
+};
+const GLIDE = 0.8;
+
+// ------------------------------------------------------------------ courbes
+function cubicBezier(x1, y1, x2, y2) {
+  const cx = 3 * x1, bx = 3 * (x2 - x1) - cx, ax = 1 - cx - bx;
+  const cy = 3 * y1, by = 3 * (y2 - y1) - cy, ay = 1 - cy - by;
+  const X = (s) => ((ax * s + bx) * s + cx) * s;
+  const Y = (s) => ((ay * s + by) * s + cy) * s;
+  return (x) => {
+    if (x <= 0) return 0;
+    if (x >= 1) return 1;
+    let lo = 0, hi = 1, s = x;
+    for (let i = 0; i < 48; i++) {
+      if (X(s) < x) lo = s; else hi = s;
+      s = (lo + hi) / 2;
+    }
+    return Y(s);
+  };
+}
+const EASE = cubicBezier(0.45, 0, 0.15, 1);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, u) => a + (b - a) * u;
+const lin = (t, t0, d = GLIDE) => clamp((t - t0) / d);
+const glide = (t, t0, d = GLIDE) => EASE(lin(t, t0, d));
+/** Sous-fenêtre [a, b] d'une progression linéaire, adoucie par la courbe. */
+const sub = (p, a, b) => EASE(clamp((p - a) / (b - a)));
+/** Le contenu part dans la première moitié, arrive dans la seconde. */
+const outHalf = (u) => 1 - clamp(u / 0.5);
+const inHalf = (u) => clamp((u - 0.5) / 0.5);
+/** Temps calé sur l'image : un compteur ne change pas entre deux sous-images. */
+const frameTime = (t) => Math.floor(t * FPS + 1e-6) / FPS;
+
+function hex(h) {
+  const n = parseInt(h.slice(1), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+function mix(a, b, u) {
+  const A = hex(a), B = hex(b);
+  const c = A.map((v, i) => Math.round(lerp(v, B[i], u)));
+  return "#" + c.map((v) => v.toString(16).padStart(2, "0")).join("");
+}
+function rgba(h, a) {
+  const [r, g, b] = hex(h);
+  return `rgba(${r}, ${g}, ${b}, ${a})`;
+}
+
+// ------------------------------------------------------------------ caméra
+const CAM = {
+  chat: { x: 0, y: 0, z: 1.35 },
+  tri: { x: 0, y: 0, z: 2.5 },
+  app: { x: 0, y: -370, z: 1.15 },
+  vol: { x: 0, y: 110, z: 2.1 },
+  land: { x: 1760, y: -140, z: 1 },
+};
+function camLerp(a, b, u) {
+  return { x: lerp(a.x, b.x, u), y: lerp(a.y, b.y, u), z: Math.exp(lerp(Math.log(a.z), Math.log(b.z), u)) };
+}
+const toScreen = (cam, p) => ({ x: (p.x - cam.x) * cam.z + HALF, y: (p.y - cam.y) * cam.z + HALF });
+
+// Graphique : huit points, le dernier est le bouton du volume.
+const CHART_X = Array.from({ length: 8 }, (_, i) => 1380 + (i * 920) / 7);
+const CHART_V = [0, 9, 24, 46, 71, 98, 127, 150];
+const BASE_Y = 110, CHART_H = 540;
+const CHART_Y = CHART_V.map((v) => BASE_Y - (v / 150) * CHART_H);
+const KNOB_R = 15;
+const DIVE_Z = 95;
+
+function chartE(t, i) {
+  return sub(lin(t, T.bend), 0.025 * i, 0.825 + 0.025 * i);
+}
+function knobPos(t) {
+  let x = -240 + 480 * 0.55, y = BASE_Y;
+  if (t >= T.drag1) x = lerp(x, 240, glide(t, T.drag1, 0.6));
+  if (t >= T.drag2) x = lerp(240, CHART_X[7], glide(t, T.drag2));
+  if (t >= T.bend) y = lerp(BASE_Y, CHART_Y[7], chartE(t, 7));
+  return { x, y };
+}
+
+function camAt(t) {
+  if (t >= T.ask - 0.02) return CAM.chat;
+  let c = camLerp(CAM.chat, CAM.tri, glide(t, T.tri));
+  if (t >= T.pull) c = camLerp(c, CAM.app, glide(t, T.pull));
+  if (t >= T.toVol) c = camLerp(c, CAM.vol, glide(t, T.toVol));
+  if (t >= T.drag2) c = camLerp(CAM.vol, CAM.land, glide(t, T.drag2));
+  if (t >= T.dive) {
+    // Plongée : le point glisse au centre pendant que le zoom monte, en log.
+    const e = glide(t, T.dive);
+    const K = { x: CHART_X[7], y: CHART_Y[7] };
+    const s0 = toScreen(CAM.land, K);
+    const z = Math.exp(lerp(0, Math.log(DIVE_Z), e));
+    const sx = lerp(s0.x, HALF, e), sy = lerp(s0.y, HALF, e);
+    c = { x: K.x - (sx - HALF) / z, y: K.y - (sy - HALF) / z, z };
+  }
+  return c;
+}
+
+// ------------------------------------------------------------------ dessin
+const canvas = document.getElementById("c");
+const ctx = canvas.getContext("2d");
+// Calques de la goutte : des canvas du document, pour que le filtre url(#thr) s'y applique.
+const layer = () => Object.assign(document.createElement("canvas"), { width: SIZE, height: SIZE });
+const gooA = layer(), gA = gooA.getContext("2d");
+const gooB = layer(), gB = gooB.getContext("2d");
+
+function setCam(g, cam) {
+  g.setTransform(cam.z, 0, 0, cam.z, HALF - cam.x * cam.z, HALF - cam.y * cam.z);
+}
+/** Ombres douces en trois couches, qui grandissent avec la hauteur de la forme. */
+function softShadow(g, h, z, draw, strength = 1) {
+  const layers = [[0.015, 0.04, 0.10], [0.06, 0.16, 0.08], [0.14, 0.40, 0.07]];
+  for (const [oy, bl, a] of layers) {
+    g.save();
+    g.shadowColor = `rgba(${C.shadow}, ${a * strength})`;
+    g.shadowOffsetY = oy * h * z;
+    g.shadowBlur = bl * h * z;
+    draw();
+    g.restore();
+  }
+}
+function capsule(g, cx, cy, w, h, r = Math.min(w, h) / 2) {
+  g.beginPath();
+  g.roundRect(cx - w / 2, cy - h / 2, w, h, Math.min(r, w / 2, h / 2));
+}
+function font(weight, size, family = "Manrope") {
+  return `${weight} ${size}px "${family}"`;
+}
+
+// ---------------------------------------------------------- la pastille
+const PILL = { w: 460, h: 120 };
+function pressAmt(t) {
+  // Appuis du curseur : [début, fin] ; la pression monte et descend en 70 ms.
+  const presses = [[T.click, T.click + 0.12], [T.click + DUR, T.click + DUR + 0.12], [T.drop, T.drop + 0.12],
+    [T.swipe - 0.05, T.swipe + GLIDE], [T.drag1 - 0.05, T.drag2 + GLIDE], [T.click2, T.click2 + 0.12]];
+  let a = 0;
+  for (const [s, e] of presses) a = Math.max(a, Math.min(clamp((t - s) / 0.07), clamp((e + 0.07 - t) / 0.07)));
+  return EASE(a);
+}
+function pillShape(g, t, cam, w, h, cy, label, labelAlpha, dip) {
+  const s = 1 - 0.03 * dip;
+  softShadow(g, h * s, cam.z, () => { capsule(g, 0, cy, w * s, h * s); g.fillStyle = C.ink; g.fill(); });
+  if (labelAlpha > 0.001) {
+    g.save();
+    g.globalAlpha = labelAlpha;
+    g.fillStyle = "#ffffff";
+    g.font = font(600, 38 * s);
+    g.textAlign = "center";
+    g.textBaseline = "middle";
+    g.fillText(label, 0, cy + 1);
+    g.restore();
+  }
+}
+
+// ---------------------------------------------- génération : sablier, coche
+function drawGenerate(g, t, cam) {
+  setCam(g, cam);
+  const dip = t < 2 ? pressAmt(t) : 0;
+  const u = lin(t, T.toSpin), e = EASE(u);
+  if (u <= 0) { pillShape(g, t, cam, PILL.w, PILL.h, 0, PILL_START, 1, dip); return; }
+
+  const w = lerp(PILL.w, 96, e), h = lerp(PILL.h, 96, e);
+  const uc = lin(t, T.toCheck), ec = EASE(uc);
+  // Anneau : le trou s'ouvre dans la seconde moitié du glissé, se referme pour la coche.
+  const ri = 34 * inHalf(u) * (1 - ec);
+  const gap = Math.PI * 1.15 * inHalf(u) * (1 - ec);
+  const rot = 2 * Math.PI * 1.2 * (t - T.toSpin) - Math.PI / 2;
+  const draw = () => {
+    g.save();
+    if (gap > 0.001) {
+      const ro = h / 2, rm = (ro + ri) / 2, cap = (ro - ri) / 2;
+      g.beginPath();
+      g.moveTo(0, 0);
+      g.arc(0, 0, 400, rot + gap, rot + 2 * Math.PI);
+      g.closePath();
+      g.moveTo(Math.cos(rot + gap) * rm + cap, Math.sin(rot + gap) * rm);
+      g.arc(Math.cos(rot + gap) * rm, Math.sin(rot + gap) * rm, cap, 0, 2 * Math.PI);
+      g.moveTo(Math.cos(rot) * rm + cap, Math.sin(rot) * rm);
+      g.arc(Math.cos(rot) * rm, Math.sin(rot) * rm, cap, 0, 2 * Math.PI);
+      g.clip();
+    }
+    capsule(g, 0, 0, w, h);
+    if (ri > 0.01) { g.moveTo(ri, 0); g.arc(0, 0, ri, 0, 2 * Math.PI); }
+    g.fillStyle = C.ink;
+    g.fill("evenodd");
+    g.restore();
+  };
+  softShadow(g, h, cam.z, draw);
+  // Libellé : il part dans la première moitié.
+  if (outHalf(u) > 0) {
+    g.save();
+    g.globalAlpha = outHalf(u);
+    g.fillStyle = "#ffffff";
+    g.font = font(600, 38);
+    g.textAlign = "center";
+    g.textBaseline = "middle";
+    g.beginPath(); g.roundRect(-w / 2, -h / 2, w, h, h / 2); g.clip();
+    g.fillText(PILL_START, 0, 1);
+    g.restore();
+  }
+  drawCheck(g, t);
+}
+function drawCheck(g, t) {
+  const draw = inHalf(lin(t, T.toCheck));
+  const fade = 1 - clamp(lin(t, T.split) / 0.35);
+  if (draw <= 0 || fade <= 0) return;
+  const pts = [[-19, 2], [-6, 15], [20, -13]];
+  const l1 = Math.hypot(13, 13), l2 = Math.hypot(26, 28), L = (l1 + l2) * EASE(draw);
+  g.save();
+  g.globalAlpha = fade;
+  g.strokeStyle = "#ffffff";
+  g.lineWidth = 9;
+  g.lineCap = "round";
+  g.lineJoin = "round";
+  g.beginPath();
+  g.moveTo(pts[0][0], pts[0][1]);
+  if (L <= l1) g.lineTo(lerp(pts[0][0], pts[1][0], L / l1), lerp(pts[0][1], pts[1][1], L / l1));
+  else {
+    g.lineTo(pts[1][0], pts[1][1]);
+    const k = (L - l1) / l2;
+    g.lineTo(lerp(pts[1][0], pts[2][0], k), lerp(pts[1][1], pts[2][1], k));
+  }
+  g.stroke();
+  g.restore();
+}
+
+// --------------------------------------------------------------- la discussion
+const DOT_R = 16, DOT_GAP = 52, MERGED_R = DOT_R * Math.sqrt(3);
+const BUBBLE_H = 84;
+let Q_BOX = null, A_BOX = null;
+function layoutBubbles() {
+  ctx.font = font(500, 34);
+  const qw = ctx.measureText(QUESTION).width + 68, aw = ctx.measureText(ANSWER).width + 68;
+  Q_BOX = { x: -400 + qw / 2, y: -170, w: qw, h: BUBBLE_H };
+  A_BOX = { x: 400 - aw / 2, y: 170, w: aw, h: BUBBLE_H };
+}
+function bob(t, i) {
+  const amp = 7 * clamp((t - 3.95) / 0.25) * (1 - glide(t, T.merge));
+  const ph = (2 * Math.PI * (t - 3.95)) / 0.66 - i * 0.8;
+  const s = Math.max(0, Math.sin(ph));
+  return -amp * s * s;
+}
+/** Formes de la goutte, en coordonnées du monde. */
+function chatShapes(t) {
+  const es = glide(t, T.split);
+  const em = glide(t, T.merge), um = lin(t, T.merge);
+  const shapes = [];
+  // Le point du milieu, qui recueille les deux autres.
+  const midR = lerp(lerp(48, DOT_R, es), MERGED_R, inHalf(um) > 0 ? EASE(inHalf(um)) : 0);
+  shapes.push({ x: 0, y: bob(t, 1), w: midR * 2, h: midR * 2, r: midR, white: 0 });
+  // Les deux points qui volent en bulles.
+  for (const side of [-1, 1]) {
+    const box = side < 0 ? Q_BOX : A_BOX;
+    const tf = side < 0 ? T.qFly : T.aFly;
+    const ef = glide(t, tf), uf = lin(t, tf);
+    const r0 = lerp(30, DOT_R, es);
+    let x = lerp(0, side * DOT_GAP, es), y = bob(t, side < 0 ? 0 : 2);
+    let w = r0 * 2, h = r0 * 2;
+    x = lerp(x, box.x, ef); y = lerp(y, box.y, ef);
+    w = lerp(w, box.w, ef); h = lerp(h, box.h, ef);
+    let white = side > 0 ? inHalf(uf) : 0;
+    if (um > 0) {
+      // Retour : la bulle se contracte en point en glissant vers le milieu.
+      const shrink = EASE(clamp(um / 0.6));
+      w = lerp(box.w, DOT_R * 2, shrink); h = lerp(box.h, DOT_R * 2, shrink);
+      x = lerp(box.x, 0, em); y = lerp(box.y, 0, em);
+      if (side > 0) white = outHalf(um);
+    }
+    shapes.push({ x, y, w, h, r: Math.min(w, h) / 2, white });
+  }
+  return shapes;
+}
+function drawChat(g, t, cam) {
+  const shapes = chatShapes(t);
+  gA.setTransform(1, 0, 0, 1, 0, 0);
+  gA.clearRect(0, 0, SIZE, SIZE);
+  setCam(gA, cam);
+  gA.fillStyle = C.ink;
+  for (const s of shapes) { capsule(gA, s.x, s.y, s.w + 0.8, s.h + 0.8, s.r + 0.4); gA.fill(); }
+  gB.setTransform(1, 0, 0, 1, 0, 0);
+  gB.clearRect(0, 0, SIZE, SIZE);
+  gB.filter = `blur(${(7 * cam.z).toFixed(2)}px) url(#thr)`;
+  gB.drawImage(gooA, 0, 0);
+  gB.filter = "none";
+  // La réponse blanchit à l'intérieur de la goutte seulement.
+  const reply = shapes[2];
+  if (reply.white > 0.001) {
+    setCam(gB, cam);
+    gB.globalCompositeOperation = "source-atop";
+    gB.fillStyle = rgba(C.surface, reply.white);
+    capsule(gB, reply.x, reply.y, reply.w + 14, reply.h + 14, reply.r + 7);
+    gB.fill();
+    gB.globalCompositeOperation = "source-over";
+  }
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  softShadow(g, 84 * 0.8, cam.z, () => g.drawImage(gooB, 0, 0), 0.9);
+  // Le texte se tape, lettre par lettre, une fois la bulle posée.
+  drawTyped(g, t, cam, Q_BOX, QUESTION, T.qFly + GLIDE, 0.55, "#ffffff");
+  drawTyped(g, t, cam, A_BOX, ANSWER, T.aFly + GLIDE, 0.6, C.ink);
+  // Coche qui s'efface au début de la scission.
+  setCam(g, cam);
+  drawCheck(g, t);
+}
+function drawTyped(g, t, cam, box, text, t0, d, color) {
+  const tq = frameTime(t);
+  const n = Math.round(text.length * clamp((tq - t0) / d));
+  const um = lin(t, T.merge);
+  const alpha = 1 - clamp(um / 0.3);
+  if (n <= 0 || alpha <= 0) return;
+  setCam(g, cam);
+  g.save();
+  g.globalAlpha = alpha;
+  g.fillStyle = color;
+  g.font = font(500, 34);
+  g.textBaseline = "middle";
+  g.textAlign = "left";
+  g.fillText(text.slice(0, n), box.x - box.w / 2 + 34, box.y + 1);
+  g.restore();
+}
+
+// ------------------------------------------------------ le triangle de lecture
+const N_TRI = 180;
+const TRI_R = [];
+(function buildTriangle() {
+  // Triangle arrondi pointé vers la droite, décalé pour le centre optique.
+  const R = 30, rc = 5, off = 4;
+  const V = [0, 1, 2].map((k) => ({ x: R * Math.cos((k * 2 * Math.PI) / 3) + off, y: R * Math.sin((k * 2 * Math.PI) / 3) }));
+  const G = { x: off, y: 0 };
+  const pts = [];
+  for (let k = 0; k < 3; k++) {
+    const P = V[k], A = V[(k + 2) % 3], Bn = V[(k + 1) % 3];
+    const ua = { x: (A.x - P.x) / Math.hypot(A.x - P.x, A.y - P.y), y: (A.y - P.y) / Math.hypot(A.x - P.x, A.y - P.y) };
+    const ub = { x: (Bn.x - P.x) / Math.hypot(Bn.x - P.x, Bn.y - P.y), y: (Bn.y - P.y) / Math.hypot(Bn.x - P.x, Bn.y - P.y) };
+    const dG = { x: G.x - P.x, y: G.y - P.y }, lg = Math.hypot(dG.x, dG.y);
+    const Cc = { x: P.x + (dG.x / lg) * 2 * rc, y: P.y + (dG.y / lg) * 2 * rc };
+    const ta = { x: P.x + ua.x * rc * Math.sqrt(3), y: P.y + ua.y * rc * Math.sqrt(3) };
+    const tb = { x: P.x + ub.x * rc * Math.sqrt(3), y: P.y + ub.y * rc * Math.sqrt(3) };
+    let a0 = Math.atan2(ta.y - Cc.y, ta.x - Cc.x), a1 = Math.atan2(tb.y - Cc.y, tb.x - Cc.x);
+    while (a1 < a0) a1 += 2 * Math.PI;
+    for (let i = 0; i <= 40; i++) { const a = lerp(a0, a1, i / 40); pts.push({ x: Cc.x + rc * Math.cos(a), y: Cc.y + rc * Math.sin(a) }); }
+    const nb = V[(k + 1) % 3];
+    const next = { x: nb.x - ub.x * rc * Math.sqrt(3), y: nb.y - ub.y * rc * Math.sqrt(3) };
+    for (let i = 1; i < 60; i++) pts.push({ x: lerp(tb.x, next.x, i / 60), y: lerp(tb.y, next.y, i / 60) });
+  }
+  const polar = pts.map((p) => ({ a: Math.atan2(p.y, p.x), r: Math.hypot(p.x, p.y) })).sort((p, q) => p.a - q.a);
+  for (let j = 0; j < N_TRI; j++) {
+    const a = -Math.PI + (j * 2 * Math.PI) / N_TRI;
+    let k = polar.findIndex((p) => p.a >= a);
+    if (k <= 0) k = k < 0 ? 0 : polar.length;
+    const p0 = polar[(k - 1 + polar.length) % polar.length], p1 = polar[k % polar.length];
+    let da = p1.a - p0.a; if (da <= 0) da += 2 * Math.PI;
+    let dd = a - p0.a; if (dd < 0) dd += 2 * Math.PI;
+    TRI_R.push(lerp(p0.r, p1.r, clamp(dd / da)));
+  }
+})();
+function trianglePath(g, t, scale = 1) {
+  // Point par point : chaque sommet du cercle part un peu après son voisin.
+  const p = lin(t, T.tri);
+  g.beginPath();
+  for (let j = 0; j < N_TRI; j++) {
+    const a = -Math.PI + (j * 2 * Math.PI) / N_TRI;
+    const order = ((j + N_TRI / 2) % N_TRI) / N_TRI;
+    const e = sub(p, 0.28 * order, 0.72 + 0.28 * order);
+    const r = lerp(MERGED_R, TRI_R[j], e) * scale;
+    const x = Math.cos(a) * r, y = Math.sin(a) * r;
+    if (j === 0) g.moveTo(x, y); else g.lineTo(x, y);
+  }
+  g.closePath();
+}
+
+// ------------------------------------------------------------- les pochettes
+function coverSouccot(g, x, y, s) {
+  g.save();
+  g.translate(x, y); g.scale(s, s);
+  g.fillStyle = "#4E8A2E"; g.fillRect(0, 0, 1, 1);
+  g.fillStyle = "#D9B324"; g.beginPath(); g.arc(0.7, 0.3, 0.13, 0, 7); g.fill();
+  g.fillStyle = "#3F7625";
+  g.beginPath(); g.moveTo(0, 0.66); g.quadraticCurveTo(0.35, 0.56, 0.62, 0.64); g.quadraticCurveTo(0.84, 0.7, 1, 0.6); g.lineTo(1, 1); g.lineTo(0, 1); g.fill();
+  // La soucca : ses murs, son entrée éclairée, son toit de branches.
+  g.fillStyle = "#2B561A"; g.fillRect(0.12, 0.5, 0.46, 0.5);
+  g.fillStyle = "#E9C45A"; g.fillRect(0.27, 0.64, 0.15, 0.36);
+  g.fillStyle = "#1E4212";
+  for (let i = 0; i < 9; i++) {
+    const cx = 0.1 + i * 0.062;
+    g.beginPath(); g.ellipse(cx, 0.49, 0.05, 0.022, (i % 2 ? 0.35 : -0.35), 0, 7); g.fill();
+  }
+  g.fillRect(0.12, 0.5, 0.46, 0.018);
+  g.fillStyle = "#23491A"; g.fillRect(0, 0.93, 1, 0.07);
+  g.restore();
+}
+function coverSimhat(g, x, y, s) {
+  g.save();
+  g.translate(x, y); g.scale(s, s);
+  g.fillStyle = "#B8322A"; g.fillRect(0, 0, 1, 1);
+  g.fillStyle = "#C9432F"; g.beginPath(); g.arc(0.5, 0.46, 0.34, 0, 7); g.fill();
+  // Le rouleau ouvert : deux bois, le parchemin, ses colonnes.
+  g.fillStyle = "#F1E7CF"; g.fillRect(0.34, 0.27, 0.32, 0.46);
+  g.fillStyle = "#C9B38E";
+  for (let c = 0; c < 2; c++) for (let l = 0; l < 8; l++) g.fillRect(0.37 + c * 0.15, 0.31 + l * 0.05, 0.11, 0.012);
+  g.fillStyle = "#5A1712";
+  for (const rx of [0.28, 0.66]) {
+    g.beginPath(); g.roundRect(rx, 0.21, 0.06, 0.58, 0.03); g.fill();
+    g.fillRect(rx + 0.022, 0.15, 0.016, 0.08); g.fillRect(rx + 0.022, 0.77, 0.016, 0.07);
+  }
+  g.fillStyle = "#D9A21B";
+  for (const rx of [0.31, 0.69]) { g.beginPath(); g.arc(rx, 0.14, 0.035, Math.PI, 0); g.fill(); g.fillRect(rx - 0.035, 0.14, 0.07, 0.015); }
+  g.fillStyle = "#8E2520"; g.fillRect(0, 0.88, 1, 0.12);
+  g.restore();
+}
+const COVERS = [coverSouccot, coverSimhat];
+
+// ------------------------------------------------------------- l'app sombre
+const PANEL = { x: -380, y: -940, w: 760, h: 1140 };
+const COVER = { x: -300, y: -830, s: 600 };
+const panelColor = (tint) => mix(C.night, tint, 0.22);
+const canvasColor = (tint) => mix(C.nightDeep, tint, 0.1);
+
+function paintAppBackground(g, cam, tint) {
+  setCam(g, cam);
+  const hw = HALF / cam.z;
+  g.fillStyle = canvasColor(tint);
+  g.fillRect(cam.x - hw - 2, cam.y - hw - 2, hw * 2 + 4, hw * 2 + 4);
+  // La toile pointillée : elle donne la mesure du chemin parcouru.
+  if (cam.z > 0.3) {
+    const s = 44, r = 2.2;
+    g.fillStyle = "rgba(255, 255, 255, 0.075)";
+    g.beginPath();
+    for (let x = Math.floor((cam.x - hw) / s) * s; x <= cam.x + hw + s; x += s)
+      for (let y = Math.floor((cam.y - hw) / s) * s; y <= cam.y + hw + s; y += s) { g.moveTo(x + r, y); g.arc(x, y, r, 0, 2 * Math.PI); }
+    g.fill();
+  }
+  g.save();
+  g.shadowColor = "rgba(0, 0, 0, 0.45)";
+  g.shadowBlur = 70 * cam.z;
+  g.shadowOffsetY = 24 * cam.z;
+  g.fillStyle = panelColor(tint);
+  g.beginPath(); g.roundRect(PANEL.x, PANEL.y, PANEL.w, PANEL.h, 8); g.fill();
+  g.restore();
+}
+function floodRadius(t, t0, cam, cx, cy) {
+  // Le cercle atteint le coin le plus éloigné de l'image en 0,4 s.
+  const hw = HALF / cam.z;
+  let far = 0;
+  for (const sx of [-1, 1]) for (const sy of [-1, 1]) far = Math.max(far, Math.hypot(cam.x + sx * hw - cx, cam.y + sy * hw - cy));
+  return far * 1.02 * EASE(lin(t, t0, 0.4));
+}
+function speaker(g, x, y, waves, alpha) {
+  g.save();
+  g.globalAlpha = alpha;
+  g.fillStyle = "#ffffff"; g.strokeStyle = "#ffffff"; g.lineWidth = 3.2; g.lineCap = "round";
+  g.beginPath(); g.moveTo(x - 14, y - 6); g.lineTo(x - 7, y - 6); g.lineTo(x + 2, y - 14); g.lineTo(x + 2, y + 14); g.lineTo(x - 7, y + 6); g.lineTo(x - 14, y + 6); g.closePath(); g.fill();
+  for (let i = 0; i < waves; i++) { g.beginPath(); g.arc(x + 2, y, 9 + i * 7, -0.8, 0.8); g.stroke(); }
+  g.restore();
+}
+const HEART = new Path2D("M12 21s-7.5-4.6-9.6-9.2C.9 8.6 2.9 4.5 6.6 4.5c2.2 0 3.9 1.2 5.4 3.1 1.5-1.9 3.2-3.1 5.4-3.1 3.7 0 5.7 4.1 4.2 7.3C19.5 16.4 12 21 12 21z");
+function heart(g, x, y, size, fill, outlineAlpha) {
+  g.save();
+  g.translate(x - size / 2, y - size / 2);
+  g.scale(size / 24, size / 24);
+  if (fill > 0) {
+    g.save();
+    g.clip(HEART);
+    g.fillStyle = C.primary;
+    g.beginPath(); g.arc(12, 13, 13 * fill, 0, 2 * Math.PI); g.fill();
+    g.restore();
+  }
+  g.strokeStyle = `rgba(255, 255, 255, ${outlineAlpha})`;
+  g.lineWidth = 1.8;
+  g.lineJoin = "round";
+  g.stroke(HEART);
+  g.restore();
+}
+function skipIcon(g, x, y, label, dir) {
+  // Cercle ouvert en haut, flèche dans le sens du saut (dir : -1 recule, 1 avance).
+  g.save();
+  g.translate(x, y);
+  g.scale(dir, 1);
+  g.strokeStyle = "#ffffff"; g.fillStyle = "#ffffff"; g.lineWidth = 3.4; g.lineCap = "round";
+  g.beginPath(); g.arc(0, 0, 22, -Math.PI / 2 + 0.35, -Math.PI / 2 + 2 * Math.PI - 0.9); g.stroke();
+  g.beginPath(); g.moveTo(9, -22); g.lineTo(-2, -30); g.lineTo(-2, -14); g.closePath(); g.fill();
+  g.scale(dir, 1);
+  g.font = font(700, 15); g.textAlign = "center"; g.textBaseline = "middle";
+  g.fillText(label, 0, 2);
+  g.restore();
+}
+function trackIcon(g, x, y, dir) {
+  g.save();
+  g.fillStyle = "#ffffff";
+  g.beginPath(); g.moveTo(x - dir * 12, y - 16); g.lineTo(x + dir * 12, y); g.lineTo(x - dir * 12, y + 16); g.closePath(); g.fill();
+  g.beginPath(); g.roundRect(x + dir * 13 - 2.5, y - 16, 5, 32, 2.5); g.fill();
+  g.restore();
+}
+function clock(sec) {
+  const s = Math.floor(sec), m = Math.floor(s / 60);
+  return `${m}:${String(s % 60).padStart(2, "0")}`;
+}
+
+function drawAppContent(g, t, cam) {
+  setCam(g, cam);
+  const us = lin(t, T.swipe), es = glide(t, T.swipe);
+  const off = -760 * es;
+  // En-tête.
+  g.save();
+  g.fillStyle = "rgba(255, 255, 255, 0.8)";
+  g.font = font(600, 24); g.textAlign = "center"; g.textBaseline = "middle";
+  g.fillText("En écoute", 0, -880);
+  g.strokeStyle = "rgba(255, 255, 255, 0.8)"; g.lineWidth = 3.2; g.lineCap = "round"; g.lineJoin = "round";
+  g.beginPath(); g.moveTo(-340, -886); g.lineTo(-330, -876); g.lineTo(-320, -886); g.stroke();
+  g.fillStyle = "rgba(255, 255, 255, 0.8)";
+  for (const dx of [-9, 0, 9]) { g.beginPath(); g.arc(330 + dx, -880, 2.6, 0, 7); g.fill(); }
+  g.restore();
+  // Pochettes, dans l'écran : l'une sort, l'autre entre.
+  g.save();
+  g.beginPath(); g.roundRect(PANEL.x, PANEL.y, PANEL.w, PANEL.h, 8); g.clip();
+  for (let i = 0; i < 2; i++) {
+    const x = COVER.x + i * 760 + off;
+    if (x > PANEL.x + PANEL.w || x + COVER.s < PANEL.x) continue;
+    g.save();
+    g.shadowColor = "rgba(0, 0, 0, 0.35)"; g.shadowBlur = 40 * cam.z; g.shadowOffsetY = 14 * cam.z;
+    g.beginPath(); g.roundRect(x, COVER.y, COVER.s, COVER.s, 8); g.fillStyle = "#000"; g.fill();
+    g.restore();
+    g.save();
+    g.beginPath(); g.roundRect(x, COVER.y, COVER.s, COVER.s, 8); g.clip();
+    COVERS[i](g, x, COVER.y, COVER.s);
+    g.restore();
+  }
+  g.restore();
+  // Titre, sous-titre, coeur : l'ancien part, le nouveau arrive.
+  for (let i = 0; i < 2; i++) {
+    const a = i === 0 ? outHalf(us) : inHalf(us);
+    if (a <= 0) continue;
+    const dx = i === 0 ? -40 * es : 40 * (1 - es);
+    g.save();
+    g.globalAlpha = a;
+    g.fillStyle = "#ffffff"; g.textBaseline = "alphabetic"; g.textAlign = "left";
+    g.font = font(600, 44, "Playfair Display");
+    g.fillText(TRACKS[i].title, -300 + dx, -158);
+    g.fillStyle = "rgba(255, 255, 255, 0.6)";
+    g.font = font(500, 25);
+    g.fillText(TRACKS[i].sub, -300 + dx, -120);
+    const fill = i === 0 ? EASE(lin(t, T.heart, 0.35)) : 0;
+    heart(g, 282, -150, 46, fill, fill > 0.99 ? 0 : 0.75);
+    g.restore();
+  }
+  // Avancement : l'écoute continue, seconde par seconde.
+  const played = Math.max(0, t - T.drop);
+  const pA = TRACKS[0].at + played / TRACKS[0].total, pB = TRACKS[1].at + Math.max(0, t - T.swipe - 0.4) / TRACKS[1].total;
+  const p = lerp(pA, pB, es);
+  g.save();
+  g.lineCap = "round";
+  g.strokeStyle = "rgba(255, 255, 255, 0.18)"; g.lineWidth = 6;
+  g.beginPath(); g.moveTo(-300, -76); g.lineTo(300, -76); g.stroke();
+  g.strokeStyle = C.primary;
+  g.beginPath(); g.moveTo(-300, -76); g.lineTo(-300 + 600 * p, -76); g.stroke();
+  g.fillStyle = "#ffffff"; g.beginPath(); g.arc(-300 + 600 * p, -76, 9, 0, 7); g.fill();
+  g.font = font(500, 19); g.fillStyle = "rgba(255, 255, 255, 0.55)"; g.textBaseline = "middle";
+  for (let i = 0; i < 2; i++) {
+    const a = i === 0 ? outHalf(us) : inHalf(us);
+    if (a <= 0) continue;
+    g.globalAlpha = a;
+    const tr = TRACKS[i], pos = (i === 0 ? pA : pB) * tr.total;
+    g.textAlign = "left"; g.fillText(clock(pos), -300, -48);
+    g.textAlign = "right"; g.fillText(clock(tr.total), 300, -48);
+  }
+  g.restore();
+  // Commandes.
+  trackIcon(g, -165, 0, -1);
+  trackIcon(g, 165, 0, 1);
+  skipIcon(g, -295, 0, "15", -1);
+  skipIcon(g, 295, 0, "30", 1);
+}
+
+function drawVolumeAndChart(g, t, cam) {
+  setCam(g, cam);
+  const k = knobPos(t);
+  speaker(g, -300, BASE_Y, 0, 0.75);
+  speaker(g, 300, BASE_Y, 2, 0.75 * (1 - clamp((k.x - 190) / 60)));
+  const th = 8 * clamp(Math.sqrt(480 / (k.x + 240)), 0.7, 1);
+  g.save();
+  g.lineCap = "round"; g.lineJoin = "round";
+  if (k.x < 240.5) {
+    g.strokeStyle = "rgba(255, 255, 255, 0.18)"; g.lineWidth = 8;
+    g.beginPath(); g.moveTo(-240, BASE_Y); g.lineTo(240, BASE_Y); g.stroke();
+  }
+  // La barre, puis l'élastique, puis la courbe : une seule ligne.
+  g.strokeStyle = C.primary; g.lineWidth = th;
+  g.beginPath(); g.moveTo(-240, BASE_Y);
+  if (t < T.bend) g.lineTo(k.x, BASE_Y);
+  else {
+    const P = CHART_X.map((x, i) => ({ x, y: lerp(BASE_Y, CHART_Y[i], chartE(t, i)) }));
+    g.lineTo(P[0].x, P[0].y);
+    for (let i = 0; i < P.length - 1; i++) {
+      const p0 = P[Math.max(0, i - 1)], p1 = P[i], p2 = P[i + 1], p3 = P[Math.min(P.length - 1, i + 2)];
+      g.bezierCurveTo(p1.x + (p2.x - p0.x) / 6, p1.y + (p2.y - p0.y) / 6, p2.x - (p3.x - p1.x) / 6, p2.y - (p3.y - p1.y) / 6, p2.x, p2.y);
+    }
+  }
+  g.stroke();
+  g.restore();
+  if (t >= T.bend) drawChartDecor(g, t);
+  // Le bouton : la couleur de la scène, pour qu'on puisse y plonger.
+  g.save();
+  g.shadowColor = "rgba(0, 0, 0, 0.35)"; g.shadowBlur = 12 * cam.z; g.shadowOffsetY = 4 * cam.z;
+  g.fillStyle = C.stage;
+  g.beginPath(); g.arc(k.x, k.y, KNOB_R, 0, 2 * Math.PI); g.fill();
+  g.restore();
+}
+function drawChartDecor(g, t) {
+  const u = lin(t, T.bend);
+  g.save();
+  // Repères, qui arrivent dans la seconde moitié.
+  g.globalAlpha = inHalf(u);
+  g.strokeStyle = "rgba(255, 255, 255, 0.08)"; g.lineWidth = 2;
+  for (const v of [50, 100, 150]) {
+    const y = BASE_Y - (v / 150) * CHART_H;
+    g.beginPath(); g.moveTo(CHART_X[0], y); g.lineTo(CHART_X[7] + 40, y); g.stroke();
+  }
+  g.globalAlpha = 1;
+  for (let i = 1; i < 7; i++) {
+    const a = inHalf(chartE(t, i));
+    if (a <= 0) continue;
+    const y = lerp(BASE_Y, CHART_Y[i], chartE(t, i));
+    g.globalAlpha = a;
+    g.fillStyle = C.primary; g.beginPath(); g.arc(CHART_X[i], y, 8, 0, 7); g.fill();
+  }
+  // Le compteur : des valeurs entières, calées sur l'image.
+  const tq = frameTime(t);
+  const n = Math.round(150 * EASE(clamp((tq - T.bend) / 1.0)));
+  g.globalAlpha = EASE(lin(t, T.bend, 0.35));
+  g.fillStyle = "#ffffff"; g.textAlign = "left"; g.textBaseline = "alphabetic";
+  g.font = font(700, 190, "Playfair Display");
+  g.fillText(String(n), 1166, -470);
+  g.fillStyle = "rgba(255, 255, 255, 0.62)";
+  g.font = font(500, 40);
+  g.fillText("Tehilim lus ce soir", 1174, -408);
+  g.restore();
+}
+
+function drawApp(g, t, cam) {
+  const P = { x: 0, y: 0 };
+  g.save();
+  if (t < T.drop + 0.5) {
+    setCam(g, cam);
+    g.beginPath(); g.arc(P.x, P.y, floodRadius(t, T.drop + 0.03, cam, P.x, P.y), 0, 2 * Math.PI); g.clip();
+  }
+  const A = TRACKS[0].tint, Bt = TRACKS[1].tint;
+  paintAppBackground(g, cam, A);
+  if (t >= T.retint) {
+    const cc = { x: 0, y: COVER.y + COVER.s / 2 };
+    g.save();
+    setCam(g, cam);
+    if (t < T.retint + 0.45) { g.beginPath(); g.arc(cc.x, cc.y, floodRadius(t, T.retint, cam, cc.x, cc.y), 0, 2 * Math.PI); g.clip(); }
+    paintAppBackground(g, cam, Bt);
+    g.restore();
+  }
+  drawAppContent(g, t, cam);
+  drawVolumeAndChart(g, t, cam);
+  g.restore();
+}
+function drawPlayButton(g, t, cam) {
+  setCam(g, cam);
+  const dip = 1 - 0.04 * (Math.abs(t - T.drop) < 0.3 ? pressAmt(t) : 0);
+  const pop = EASE(lin(t, T.drop, 0.3));
+  if (pop > 0) {
+    const r = 58 * pop * dip;
+    const shadowK = glide(t, T.pull);
+    g.save();
+    softShadow(g, r * 2, cam.z, () => { g.beginPath(); g.arc(0, 0, r, 0, 2 * Math.PI); g.fillStyle = C.surface; g.fill(); }, 1 - 0.5 * shadowK);
+    g.restore();
+  }
+  g.save();
+  g.scale(dip, dip);
+  trianglePath(g, t);
+  g.fillStyle = mix(C.ink, C.night, glide(t, T.pull));
+  g.fill();
+  g.restore();
+}
+
+// ------------------------------------------------------------------- le logo
+const LOGO = {
+  tower: new Path2D("M22 34h8v20h-8z M22 32h2v2.5h-2z M25 32h2v2.5h-2z M28 32h2v2.5h-2z"),
+  wall: new Path2D("M21.5 44h57a1.5 1.5 0 0 1 1.5 1.5v13a1.5 1.5 0 0 1-1.5 1.5h-57a1.5 1.5 0 0 1-1.5-1.5v-13a1.5 1.5 0 0 1 1.5-1.5z"),
+  dome: new Path2D("M59 44a9 9 0 0 1 18 0z"),
+  spire: new Path2D("M68 30.5l1.3 5h-2.6z"),
+  cy1: new Path2D("M49 34.5c1.3 2.4 1.8 5 1.8 7.8 0 .8-3.6.8-3.6 0 0-2.8.5-5.4 1.8-7.8z M48.4 41.6h1.2v2.4h-1.2z"),
+  cy2: new Path2D("M54.4 36c1.05 2 1.5 4 1.5 6 0 .7-3 .7-3 0 0-2 .45-4 1.5-6z M53.9 41.9h1v2.1h-1z"),
+  bookL: new Path2D("M50 62C40 57 27 58 15 63v13c12-5 25-6 35-1z"),
+  bookR: new Path2D("M50 62C60 57 73 58 85 63v13c-12-5-25-6-35-1z"),
+  mortar: [[20, 49.3, 80, 49.3], [20, 54.6, 80, 54.6], [33, 44, 33, 49.3], [47, 44, 47, 49.3], [61, 44, 61, 49.3],
+    [27, 49.3, 27, 54.6], [40, 49.3, 40, 54.6], [54, 49.3, 54, 54.6], [68, 49.3, 68, 54.6], [33, 54.6, 33, 60], [47, 54.6, 47, 60], [61, 54.6, 61, 60]],
+  pageLines: new Path2D("M22 65.5c8-2.5 17-2.7 25 .6 M22 69.5c8-2.5 17-2.7 25 .6 M53 66.1c8-3.3 17-3.1 25-.6 M53 70.1c8-3.3 17-3.1 25-.6"),
+};
+const LOGO_K = 10, LINE_Y = 85, LINE_W = 720, SEAM = 61;
+function drawLogo(g, p) {
+  // p : 0 = le trait seul, 1 = le logo entier. Chaque pièce sort du trait à son tour.
+  g.save();
+  g.translate(-50 * LOGO_K, LINE_Y - SEAM * LOGO_K);
+  g.scale(LOGO_K, LOGO_K);
+  const grow = (path, color, e, ax, ay, mode) => {
+    if (e <= 0.001) return;
+    g.save();
+    g.translate(ax, ay);
+    if (mode === "y") g.scale(1, e); else g.scale(e, e);
+    g.translate(-ax, -ay);
+    g.fillStyle = color;
+    g.fill(path);
+    g.restore();
+  };
+  const eBook = sub(p, 0, 0.7), eWall = sub(p, 0.02, 0.72);
+  grow(LOGO.bookL, C.bookL, eBook, 50, 62, "y");
+  grow(LOGO.bookR, C.bookR, eBook, 50, 62, "y");
+  grow(LOGO.tower, C.gold, sub(p, 0.25, 0.9), 26, 44, "s");
+  grow(LOGO.cy1, C.gold, sub(p, 0.3, 0.95), 49, 44, "s");
+  grow(LOGO.cy2, C.gold, sub(p, 0.34, 1), 54.4, 44, "s");
+  grow(LOGO.dome, C.gold, sub(p, 0.28, 0.92), 68, 44, "s");
+  grow(LOGO.spire, C.gold, sub(p, 0.45, 1), 68, 35.5, "s");
+  grow(LOGO.wall, C.gold, eWall, 50, 60, "y");
+  const lines = inHalf(p);
+  if (lines > 0) {
+    g.globalAlpha = lines;
+    g.strokeStyle = C.mortar; g.lineWidth = 1;
+    g.beginPath();
+    for (const [x1, y1, x2, y2] of LOGO.mortar) { g.moveTo(x1, y1); g.lineTo(x2, y2); }
+    g.stroke();
+    g.strokeStyle = C.pageLine; g.lineWidth = 1.1;
+    g.stroke(LOGO.pageLines);
+    g.globalAlpha = 1;
+  }
+  if (eBook > 0.001) {
+    g.save();
+    g.translate(50, 62); g.scale(1, eBook); g.translate(-50, -62);
+    g.strokeStyle = C.spine; g.lineWidth = 2; g.lineCap = "round";
+    g.beginPath(); g.moveTo(50, 62); g.lineTo(50, 76); g.stroke();
+    g.restore();
+  }
+  g.restore();
+}
+function drawEnding(g, t, cam) {
+  setCam(g, cam);
+  if (t < T.thin) {
+    const e = glide(t, T.ask), u = lin(t, T.ask);
+    const w = lerp(120, 640, e), h = lerp(0, 120, e), r = h / 2;
+    if (h < 0.5) return;
+    softShadow(g, h, cam.z, () => { capsule(g, 0, 0, w * EASE(clamp(u * 1.6)), h, r); g.fillStyle = C.ink; g.fill(); });
+    labelIn(g, PILL_END, 0, inHalf(u));
+    return;
+  }
+  if (t < T.fan) {
+    const e = glide(t, T.thin), u = lin(t, T.thin);
+    const w = lerp(640, LINE_W, e), h = lerp(120, 6, e), cy = lerp(0, LINE_Y, e);
+    softShadow(g, h, cam.z, () => { capsule(g, 0, cy, w, h); g.fillStyle = C.ink; g.fill(); });
+    labelIn(g, PILL_END, cy, outHalf(u));
+    return;
+  }
+  if (t < T.thicken) {
+    // Déploiement puis repli : le trait s'efface quand le logo sort de lui.
+    const p = t < T.fold ? lin(t, T.fan) : 1 - lin(t, T.fold);
+    const lineA = 1 - clamp(p / 0.4);
+    if (lineA > 0) {
+      g.save(); g.globalAlpha = lineA;
+      softShadow(g, 6, cam.z, () => { capsule(g, 0, LINE_Y, LINE_W, 6); g.fillStyle = C.ink; g.fill(); });
+      g.restore();
+    }
+    drawLogo(g, p);
+    return;
+  }
+  const e = glide(t, T.thicken), u = lin(t, T.thicken);
+  const w = lerp(LINE_W, PILL.w, e), h = lerp(6, PILL.h, e), cy = lerp(LINE_Y, 0, e);
+  softShadow(g, h, cam.z, () => { capsule(g, 0, cy, w, h); g.fillStyle = C.ink; g.fill(); });
+  labelIn(g, PILL_START, cy, inHalf(u));
+}
+function labelIn(g, text, cy, a) {
+  if (a <= 0.001) return;
+  g.save();
+  g.globalAlpha = a;
+  g.fillStyle = "#ffffff";
+  g.font = font(600, 38);
+  g.textAlign = "center"; g.textBaseline = "middle";
+  g.fillText(text, 0, cy + 1);
+  g.restore();
+}
+
+// ------------------------------------------------------------------ le curseur
+const POINTER = new Path2D("M0 0L0 16.6L3.9 12.9L6.4 18.8L9.1 17.7L6.7 12L12 12Z");
+const OFF = { x: 1580, y: 1660 };
+function cursorAt(t, cam) {
+  // Les cibles sont évaluées à chaque image : le curseur reste sur ce qu'il tient.
+  const tt = t < 1.8 ? t + DUR : t;
+  const on = (w) => () => toScreen(cam, w);
+  const K = [
+    [8.9, on({ x: 5, y: 6 })],
+    [10.35, () => toScreen(cam, { x: 110 - 760 * glide(t, T.swipe), y: -440 })],
+    [12.5, () => { const k = knobPos(t); return toScreen(cam, { x: k.x + 2, y: k.y + 2 }); }],
+    [16.6, () => OFF],
+    [21.75, on({ x: 70, y: 22 })],
+    [22.75, () => OFF],
+  ];
+  let p = OFF;
+  for (const [t0, target] of K) {
+    if (tt < t0) break;
+    const q = target();
+    const e = glide(tt, t0);
+    p = { x: lerp(p.x, q.x, e), y: lerp(p.y, q.y, e) };
+  }
+  return p;
+}
+function drawCursor(g, t, cam) {
+  const p = cursorAt(t, cam);
+  if (p.x > SIZE + 10 || p.y > SIZE + 10) return;
+  const s = 2.5 * (1 - 0.1 * pressAmt(t));
+  g.save();
+  g.setTransform(s, 0, 0, s, p.x, p.y);
+  g.shadowColor = "rgba(0, 0, 0, 0.32)"; g.shadowBlur = 5; g.shadowOffsetY = 2;
+  g.lineJoin = "round";
+  g.strokeStyle = "#ffffff"; g.lineWidth = 1.7;
+  g.stroke(POINTER);
+  g.shadowColor = "transparent";
+  g.fillStyle = "#000000";
+  g.fill(POINTER);
+  g.restore();
+}
+
+// ------------------------------------------------------------------- seek(t)
+function seek(time) {
+  const t = ((time % DUR) + DUR) % DUR;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = C.stage;
+  ctx.fillRect(0, 0, SIZE, SIZE);
+  const cam = camAt(t);
+  if (t >= T.ask - 0.02) {
+    drawEnding(ctx, t, cam);
+  } else {
+    if (t < T.split) drawGenerate(ctx, t, cam);
+    else if (t < T.tri) drawChat(ctx, t, cam);
+    if (t >= T.drop) drawApp(ctx, t, cam);
+    if (t >= T.tri) drawPlayButton(ctx, t, cam);
+  }
+  drawCursor(ctx, t, cam);
+}
+
+// --------------------------------------------------------------- démarrage
+const ready = (async () => {
+  await Promise.all([document.fonts.load(font(500, 34)), document.fonts.load(font(600, 38)),
+    document.fonts.load(font(700, 190, "Playfair Display")), document.fonts.load(font(600, 44, "Playfair Display"))]);
+  layoutBubbles();
+  seek(0);
+})();
+Object.assign(window, { seek, ready, DUR, FPS, T, BEAT });
+
+if (new URLSearchParams(location.search).has("render")) document.body.classList.add("render");
+else ready.then(() => {
+  // Aperçu : un lecteur qui ne fait qu'appeler seek(t).
+  const play = document.getElementById("play"), scrub = document.getElementById("scrub"), out = document.getElementById("clock");
+  let playing = false, t0 = 0, base = 0;
+  const show = (t) => { seek(t); scrub.value = t; out.value = `${t.toFixed(2).replace(".", ",")} s`; };
+  const loop = (now) => { if (!playing) return; show((base + (now - t0) / 1000) % DUR); requestAnimationFrame(loop); };
+  play.onclick = () => {
+    playing = !playing; play.textContent = playing ? "Pause" : "Lecture";
+    if (playing) { base = +scrub.value; t0 = performance.now(); requestAnimationFrame(loop); }
+  };
+  scrub.oninput = () => { playing = false; play.textContent = "Lecture"; show(+scrub.value); };
+});
+</script>
+</body>
+</html>

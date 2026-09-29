@@ -777,6 +777,17 @@ ne porte jamais un texte de lecture : des libellés courts, en demi-gras, et
 des titres. Le jour où il en portera un, c'est le jeton d'encre ci-dessus qu'il
 faudra, pas un thème plus terne.
 
+### Le film de présentation parle la langue de l'app
+
+Le film de présentation (`store-assets/film/`, carte des temps dans
+`beat-map.md`) suit cette charte plutôt qu'un habillage de bande-annonce :
+Manrope et Playfair, un seul accent (`primary` du thème par défaut), la scène
+en beige à plat, aucun dégradé. L'app sombre y part du fond sombre
+(`#111827`), teinté à 22 % par la pochette du chiour en cours, pour que
+changer de chiour se voie sur tout l'écran. Les pochettes sont dessinées en
+aplats, aux couleurs des thèmes de fête ci-dessous, et le logo sort pièce par
+pièce du dessin de `public/favicon.svg`.
+
 ### Les thèmes des fêtes
 
 Le temps d'une fête, l'app change d'habit, puis retrouve le thème choisi. Un
