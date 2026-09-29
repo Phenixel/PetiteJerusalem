@@ -73,6 +73,7 @@ const OPTIONS = {
   tag: { type: "string" },
   fichier: { type: "string" },
   brouillon: { type: "boolean" },
+  date: { type: "string" },
   // Chiourim
   description: { type: "string" },
   auteur: { type: "string" },
@@ -155,6 +156,7 @@ function firebase() {
   admin = {
     db: firestore.getFirestore(),
     FieldValue: firestore.FieldValue,
+    Timestamp: firestore.Timestamp,
     bucket: storage.getStorage().bucket(STORAGE_BUCKET),
   };
   return admin;
@@ -234,19 +236,37 @@ function announcementInput(existing = null) {
 }
 
 /**
+ * `--date` : la date de publication à poser au lieu de maintenant, pour
+ * reprendre un historique (les notes des versions passées). Une date à venir
+ * est refusée : l'information serait cachée sous les autres jusque-là.
+ */
+function publicationDate() {
+  if (!opts.date) return null;
+  const date = new Date(opts.date);
+  if (Number.isNaN(date.getTime()))
+    fail(`--date illisible : ${opts.date} (AAAA-MM-JJ ou date ISO).`);
+  if (date.getTime() > Date.now()) fail("--date ne peut pas être dans le futur.");
+  // Une information antidatée est de l'historique : elle ne réveille personne.
+  if (opts.notifier)
+    fail("--date et --notifier ne vont pas ensemble : on ne notifie pas un historique.");
+  return date;
+}
+
+/**
  * Écrit une information comme le backoffice (adminService.saveAnnouncement) :
- * `publishedAt` posé à la première publication seulement, `notifiedAt` jamais
- * touché (il appartient à la Cloud Function onAnnouncementWritten).
+ * `publishedAt` posé à la première publication seulement (ou, avec --date,
+ * à la date donnée), `notifiedAt` jamais touché (il appartient à la Cloud
+ * Function onAnnouncementWritten).
  */
 async function saveAnnouncement(id, fields, existing) {
-  const { db, FieldValue } = firebase();
+  const { db, FieldValue, Timestamp } = firebase();
+  const date = publicationDate();
+  const publishedAt = date ? Timestamp.fromDate(date) : FieldValue.serverTimestamp();
   const data = {
     ...fields,
     updatedAt: FieldValue.serverTimestamp(),
     updatedVia: VIA,
-    ...(fields.published && !existing?.publishedAt
-      ? { publishedAt: FieldValue.serverTimestamp() }
-      : {}),
+    ...(fields.published && (date || !existing?.publishedAt) ? { publishedAt } : {}),
   };
   if (existing) {
     await db.collection("announcements").doc(id).update(data);
@@ -255,11 +275,17 @@ async function saveAnnouncement(id, fields, existing) {
   const ref = id ? db.collection("announcements").doc(id) : db.collection("announcements").doc();
   await ref.set({
     ...data,
-    publishedAt: fields.published ? FieldValue.serverTimestamp() : null,
+    publishedAt: fields.published ? publishedAt : null,
     notifiedAt: null,
     createdAt: FieldValue.serverTimestamp(),
   });
   return ref.id;
+}
+
+/** « , datée du 2026-07-21 » dans le résumé d'un essai, si --date est passé. */
+function dateNote() {
+  const date = publicationDate();
+  return date ? `, datée du ${date.toISOString().slice(0, 16).replace("T", " ")}` : "";
 }
 
 /** Ce que l'écriture déclenchera : la même règle que la Cloud Function. */
@@ -321,7 +347,7 @@ commands["info:voir"] = async ([id]) => {
 
 commands["info:creer"] = async () => {
   const fields = announcementFields(announcementInput());
-  const summary = `Créer l'information « ${fields.title.fr} » (${fields.kind}, ${fields.published ? "publiée" : "brouillon"}). ${notifyNote(fields, null)}`;
+  const summary = `Créer l'information « ${fields.title.fr} » (${fields.kind}, ${fields.published ? "publiée" : "brouillon"}${dateNote()}). ${notifyNote(fields, null)}`;
   let id = null;
   if (await write(summary, async () => (id = await saveAnnouncement(null, fields, null)))) {
     out([`Information créée : ${id}`, notifyNote(fields, null)], { id, ...fields });
@@ -464,7 +490,7 @@ commands["info:depuis-release"] = async () => {
     notify: opts.notifier === true || existing?.notify === true,
   });
   const verb = existing ? "Mettre à jour" : "Créer";
-  const summary = `${verb} l'information ${id} (« ${fields.title.fr} », ${fields.published ? "publiée" : "brouillon"}, langues : ${Object.keys(fields.body).join(", ")}). ${notifyNote(fields, existing)}`;
+  const summary = `${verb} l'information ${id} (« ${fields.title.fr} », ${fields.published ? "publiée" : "brouillon"}${dateNote()}, langues : ${Object.keys(fields.body).join(", ")}). ${notifyNote(fields, existing)}`;
   if (await write(summary, () => saveAnnouncement(id, fields, existing))) {
     out([`${existing ? "Mise à jour" : "Créée"} : ${id}`, notifyNote(fields, existing)], {
       id,
@@ -949,11 +975,11 @@ Informations
   info:creer --type nouveaute|mise-a-jour|incident|question --titre … --texte …
              [--texte-fichier f.md] [--titre-en … --texte-en …] [--titre-he … --texte-he …]
              [--lien /page|https://… --lien-texte …] [--version X.Y.Z]
-             [--publier] [--notifier]
+             [--publier] [--notifier] [--date AAAA-MM-JJ]
   info:modifier <id> [mêmes options] [--publier|--depublier] [--resolu|--en-cours] [--notifier]
   info:resoudre <id>
   info:supprimer <id>
-  info:depuis-release --tag vX.Y.Z [--brouillon] [--notifier]
+  info:depuis-release --tag vX.Y.Z [--brouillon] [--notifier] [--date …]
   info:depuis-release --version X.Y.Z --fichier note.md
 
 Chiourim
