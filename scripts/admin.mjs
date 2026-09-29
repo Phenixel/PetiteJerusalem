@@ -384,12 +384,20 @@ async function releaseBody(version) {
     if (error?.code !== "ENOENT") fail(`release GitHub v${version} introuvable (gh api).`);
   }
   const token = process.env.GH_TOKEN ?? process.env.GITHUB_TOKEN;
-  const response = await fetch(`https://api.github.com/${path}`, {
-    headers: {
-      Accept: "application/vnd.github+json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-  }).catch(() => null);
+  const get = (withToken) =>
+    fetch(`https://api.github.com/${path}`, {
+      headers: {
+        Accept: "application/vnd.github+json",
+        ...(withToken ? { Authorization: `Bearer ${token}` } : {}),
+      },
+    }).catch(() => null);
+  let response = await get(Boolean(token));
+  // Un jeton refusé : en session cloud, GH_TOKEN vaut « proxy-injected », une
+  // valeur que seul le relais GitHub de la session remplace. Le dépôt étant
+  // public, on relit sans jeton.
+  if (token && (response?.status === 401 || response?.status === 403)) {
+    response = await get(false);
+  }
   if (!response) fail("api.github.com injoignable.");
   if (response.status === 404) fail(`release GitHub v${version} introuvable.`);
   if (!response.ok) fail(`api.github.com a répondu ${response.status}.`);
