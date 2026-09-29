@@ -24,7 +24,9 @@ export interface DafBlock {
 export type SectionHeading =
   | { kind: "chapter"; n: number }
   | { kind: "daf"; daf: string }
-  | { kind: "chapterDaf"; n: number; from: string; to: string };
+  | { kind: "chapterDaf"; n: number; from: string; to: string }
+  /** Une strophe du psaume 119 : sa lettre, et son nom en lettres latines. */
+  | { kind: "letter"; letter: string; name: string };
 
 /**
  * Didascalie : la consigne de lecture qui accompagne un texte de tefila
@@ -531,17 +533,62 @@ function chaptersToSections(heChapters: unknown[]): TextSection[] {
     .filter((s) => s.he.length > 0);
 }
 
+/**
+ * Le psaume 119 est un acrostiche : vingt-deux strophes de huit versets, une
+ * par lettre de l'alphabet, dans l'ordre. On y cherche une lettre (celles du
+ * nom d'un défunt, pour une ascension de l'âme) : chaque strophe devient un
+ * bloc titré par sa lettre.
+ */
+const ACROSTICHE_119 = [
+  ["א", "Aleph"],
+  ["ב", "Beth"],
+  ["ג", "Guimel"],
+  ["ד", "Daleth"],
+  ["ה", "Hé"],
+  ["ו", "Vav"],
+  ["ז", "Zaïn"],
+  ["ח", "'Heth"],
+  ["ט", "Teth"],
+  ["י", "Youd"],
+  ["כ", "Kaf"],
+  ["ל", "Lamed"],
+  ["מ", "Mem"],
+  ["נ", "Noun"],
+  ["ס", "Samekh"],
+  ["ע", "'Ayin"],
+  ["פ", "Pé"],
+  ["צ", "Tsadi"],
+  ["ק", "Qof"],
+  ["ר", "Rech"],
+  ["ש", "Chin"],
+  ["ת", "Tav"],
+] as const;
+const VERSETS_PAR_LETTRE = 8;
+
+/** Les strophes du psaume 119, ou rien si le texte n'a pas sa forme attendue. */
+function acrosticheBlocks(lines: string[]): TextBlock[] | undefined {
+  if (lines.length !== ACROSTICHE_119.length * VERSETS_PAR_LETTRE) return undefined;
+  return ACROSTICHE_119.map(([letter, name], i) => {
+    const offset = i * VERSETS_PAR_LETTRE;
+    return {
+      label: `${letter} · ${name}`,
+      heading: { kind: "letter", letter, name },
+      lines: lines.slice(offset, offset + VERSETS_PAR_LETTRE),
+      offset,
+    };
+  });
+}
+
 function loadTehilim(
   textStudy: TextStudyJsonEntry,
   data: Record<string, { he?: unknown }>,
 ): TextContent {
   const psalmNum = String(textStudy.link).split(".").pop() ?? "1";
   const psalm = data[psalmNum] ?? { he: [] };
-  return {
-    title: textStudy.name,
-    type: "Tehilim",
-    sections: [buildSection(1, textStudy.name, normalizeLines(psalm.he))],
-  };
+  const section = buildSection(1, textStudy.name, normalizeLines(psalm.he));
+  const blocks = psalmNum === "119" ? acrosticheBlocks(section.he) : undefined;
+  if (blocks) section.blocks = blocks;
+  return { title: textStudy.name, type: "Tehilim", sections: [section] };
 }
 
 function parseTalmud(

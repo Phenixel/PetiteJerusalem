@@ -382,9 +382,12 @@ function blockLabelClass(index: number): string {
 // Verse numbers for chaptered texts, and within each chapter / montée block.
 // Whole short texts without blocks (a single psalm) stay unnumbered, and the
 // liturgy (Sli'hot, Brahot) too: on ne cite pas une bénédiction par numéro.
+// Un psaume reste sans numéros même découpé : les strophes du psaume 119
+// recommenceraient chacune à 1.
 const showVerseNumbers = computed(
   () =>
     !(textEntry.value && isLiturgy(textEntry.value)) &&
+    String(textEntry.value?.type) !== "Tehilim" &&
     ((textEntry.value?.totalSections ?? 1) > 1 || (currentSection.value?.blocks?.length ?? 0) > 0),
 );
 
@@ -1938,8 +1941,21 @@ watch(textId, (_, previousTextId) => {
              chapter / montée with a marker at each block start -->
         <div v-else :style="{ '--reading-scale': readingSize.scale.value }">
           <template v-for="(block, blockIndex) in verseBlocks" :key="anchorOf(block)">
+            <!-- Une strophe du psaume 119 : sa lettre en grand et en gras,
+                 qu'on repère d'un coup d'œil en cherchant celles d'un nom. -->
             <p
-              v-if="block.label"
+              v-if="block.heading?.kind === 'letter'"
+              :data-block-anchor="anchorOf(block)"
+              :class="blockLabelClass(blockIndex)"
+              class="flex items-baseline gap-3"
+            >
+              <span dir="rtl" class="font-hebrew text-3xl font-bold leading-none">
+                {{ block.heading.letter }}
+              </span>
+              <span v-if="locale !== 'he'">{{ block.heading.name }}</span>
+            </p>
+            <p
+              v-else-if="block.label"
               :data-block-anchor="anchorOf(block)"
               :class="blockLabelClass(blockIndex)"
             >
