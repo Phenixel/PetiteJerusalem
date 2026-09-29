@@ -59,6 +59,12 @@ nouveautés puis corrections, vérification par
 `scripts/check-release-notes.mjs`) est dans `docs/notes-de-version.md`,
 à suivre à la lettre.
 
+« Publie la version » (ou « mets en prod ») : la note va dans
+`releases/vX.Y.Z.md` par une PR ; sa fusion crée la release et lance tous
+les déploiements (`.github/workflows/release.yml`, section 5 de
+`docs/notes-de-version.md`). C'est la mise en production : ne fusionner
+qu'après un oui explicite du propriétaire pour cette version précise.
+
 ## Backoffice sans l'interface
 
 Publier une information (nouveauté, incident, question), clore un incident,

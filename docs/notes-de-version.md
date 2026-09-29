@@ -103,3 +103,27 @@ jusqu'à « note prête ».
 - Le rappel : créer la release GitHub avec ce texte AVANT de pousser le
   tag, puisque c'est au tag que la CI lit la description.
 - Ne rien publier soi-même (ni release, ni tag) sans qu'on le demande.
+
+## 5. Publier la version (sur demande)
+
+Quand le propriétaire demande de publier (« publie la 3.11.0 », « mets en
+prod »), la mise en production passe par une PR, ce qui marche aussi depuis
+une session cloud (qui ne peut ni pousser un tag, ni écrire sur main) :
+
+1. La note, vérifiée comme au 3, dans `releases/vX.Y.Z.md`, sur une
+   branche, puis une PR vers main. Rien d'autre dans cette PR.
+2. Montrer la version, la note et le commit de main qui partira, et
+   attendre un oui explicite pour CETTE version : la fusion est la mise en
+   production (site, stores, information de version).
+3. Fusionner la PR. `.github/workflows/release.yml` vérifie la note
+   (check-release-notes), refuse un tag déjà pris ou une version qui ne
+   suit pas la dernière, crée la release `vX.Y.Z` avec ce texte, puis lance
+   deploy.yml, deploy-android.yml, deploy-ios.yml et release-info.yml sur
+   le tag.
+4. Donner le lien du run « Publier une version » (onglet Actions).
+
+Pour tout vérifier sans rien publier : onglet Actions, « Publier une
+version », « Run workflow » avec la version et « Essai » coché (le
+défaut). La release créée depuis l'interface GitHub reste possible et
+déclenche tout comme avant ; les deux chemins ne se mélangent pas pour une
+même version (le workflow refuse un tag qui existe déjà).

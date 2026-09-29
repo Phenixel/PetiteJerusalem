@@ -1,0 +1,130 @@
+name: Publier une version
+
+# Mettre en production par une PR, depuis une session cloud de Claude ou
+# n'importe où : la PR ajoute la note de version `releases/vX.Y.Z.md` (trois
+# sections, docs/notes-de-version.md) ; sa fusion dans main crée le tag et la
+# release GitHub vX.Y.Z avec ce texte, puis lance les déploiements (site,
+# Android, iOS) et l'information de version. Fusionner la PR, c'est donner
+# le feu vert à la mise en production.
+#
+# Pourquoi les lancer à la main ici : une release créée avec le GITHUB_TOKEN
+# ne déclenche aucun workflow (ni `push: tags`, ni `release`). Ce workflow les
+# appelle donc lui-même (workflow_dispatch, sur le tag), sans jeton personnel
+# à stocker. Une release créée depuis l'interface GitHub, elle, continue de
+# tout déclencher comme avant.
+#
+# Voir docs/notes-de-version.md, « Publier la version ».
+on:
+  push:
+    branches: [main]
+    paths: ["releases/v*.md"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version à publier (X.Y.Z), dont releases/vX.Y.Z.md est sur main"
+        required: true
+      essai:
+        description: "Essai : tout vérifier, ne rien publier"
+        type: boolean
+        default: true
+
+concurrency:
+  group: publier-une-version
+  cancel-in-progress: false
+
+jobs:
+  publier:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # créer le tag et la release
+      actions: write # lancer les workflows de déploiement
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Trouver la version à publier
+        id: version
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then
+            files="releases/v${INPUT_VERSION#v}.md"
+          else
+            # Seulement les notes AJOUTÉES par ce push : corriger une note
+            # déjà publiée ne republie rien.
+            files=$(git diff --name-only --diff-filter=A "$BEFORE" "$GITHUB_SHA" -- 'releases/v*.md')
+          fi
+          count=$(printf '%s\n' "$files" | grep -c . || true)
+          if [ "$count" -eq 0 ]; then
+            echo "Aucune nouvelle note de version : rien à publier."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ "$count" -gt 1 ]; then
+            echo "::error::Plusieurs notes de version ajoutées d'un coup ($files) : une version à la fois."
+            exit 1
+          fi
+          file="$files"
+          version=$(basename "$file" .md)
+          version="${version#v}"
+          if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::$file : le nom doit être vX.Y.Z.md."
+            exit 1
+          fi
+          if [ ! -f "$file" ]; then
+            echo "::error::$file absent de main."
+            exit 1
+          fi
+          echo "file=$file" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+
+      - name: Vérifier la note et la version
+        if: steps.version.outputs.skip == 'false'
+        env:
+          FILE: ${{ steps.version.outputs.file }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          node scripts/check-release-notes.mjs "$FILE"
+          if git ls-remote --exit-code --tags origin "refs/tags/v$VERSION" >/dev/null; then
+            echo "::error::Le tag v$VERSION existe déjà : cette version est publiée."
+            exit 1
+          fi
+          latest=$(git tag -l 'v[0-9]*' --sort=-v:refname | head -1)
+          highest=$(printf '%s\n%s\n' "${latest#v}" "$VERSION" | sort -V | tail -1)
+          if [ -n "$latest" ] && [ "$highest" != "$VERSION" ]; then
+            echo "::error::v$VERSION n'est pas après la dernière version publiée ($latest)."
+            exit 1
+          fi
+          echo "v$VERSION après ${latest:-aucune version} : prête."
+
+      - name: Créer la release et lancer les déploiements
+        if: steps.version.outputs.skip == 'false' && !(github.event_name == 'workflow_dispatch' && inputs.essai)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FILE: ${{ steps.version.outputs.file }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          tag="v$VERSION"
+          gh release create "$tag" --target "$GITHUB_SHA" --title "$tag" --notes-file "$FILE"
+          # Site, puis applications, puis l'information de version : chacun
+          # sur le tag, comme l'aurait fait le push du tag.
+          gh workflow run deploy.yml --ref "$tag"
+          gh workflow run deploy-android.yml --ref "$tag"
+          gh workflow run deploy-ios.yml --ref "$tag"
+          gh workflow run release-info.yml --ref main -f tag="$tag"
+          {
+            echo "### $tag publiée"
+            echo ""
+            echo "Release : https://github.com/$GITHUB_REPOSITORY/releases/tag/$tag"
+            echo ""
+            echo "Déploiements lancés : site (deploy.yml), Android, iOS, information de version."
+          } >> "$GITHUB_STEP_SUMMARY"

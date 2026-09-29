@@ -7,11 +7,15 @@ name: Deploy Release
 #   web-vX.Y.Z  le site seul : correctif front, contenu, SEO… sans release
 #               mobile ni release GitHub. Le motif v* ne matche pas web-v*,
 #               les workflows mobiles ne se lancent donc pas.
+#   à la main   workflow_dispatch SUR UN TAG (sélecteur « Use workflow from »
+#               → Tags) ; c'est ainsi que release.yml le lance après avoir
+#               créé la release d'une note fusionnée (docs/notes-de-version.md).
 on:
   push:
     tags:
       - "v*"
       - "web-v*"
+  workflow_dispatch:
 
 # Jamais en même temps que le rafraîchissement hebdomadaire (refresh-seo.yml) :
 # deux déploiements hosting entrelacés se disputeraient la version active.
@@ -21,6 +25,9 @@ concurrency:
 
 jobs:
   deploy:
+    # Lancé à la main, seulement sur un tag : jamais la production depuis une
+    # branche.
+    if: github.event_name == 'push' || github.ref_type == 'tag'
     runs-on: ubuntu-latest
     permissions:
       contents: read
