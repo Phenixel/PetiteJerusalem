@@ -107,6 +107,32 @@ const VIA = process.env.GITHUB_ACTIONS
 
 // ---- Firebase ------------------------------------------------------------------
 
+/**
+ * Une clé de compte de service passée par l'environnement, pour les machines
+ * sans gcloud (sessions cloud de Claude Code) : `PJ_ADMIN_SERVICE_ACCOUNT`,
+ * le JSON de la clé tel quel ou encodé en base64. Sans elle, les
+ * identifiants par défaut de Google (ADC). Voir docs/backoffice-cli.md.
+ */
+let parsedKey;
+function serviceAccount() {
+  if (parsedKey !== undefined) return parsedKey;
+  const raw = process.env.PJ_ADMIN_SERVICE_ACCOUNT?.trim();
+  parsedKey = null;
+  if (!raw || opts.emulateur) return parsedKey;
+  try {
+    const json = raw.startsWith("{") ? raw : Buffer.from(raw, "base64").toString("utf8");
+    parsedKey = JSON.parse(json);
+  } catch {
+    fail("PJ_ADMIN_SERVICE_ACCOUNT illisible : le JSON de la clé, tel quel ou en base64.");
+  }
+  if (parsedKey.project_id !== PROJECT_ID) {
+    fail(
+      `PJ_ADMIN_SERVICE_ACCOUNT est une clé du projet ${parsedKey.project_id}, pas ${PROJECT_ID}.`,
+    );
+  }
+  return parsedKey;
+}
+
 // Le SDK admin des functions : pas de dépendance de plus à la racine, et la
 // CI l'installe déjà pour déployer (npm ci --prefix functions).
 const requireFromFunctions = createRequire(new URL("../functions/package.json", import.meta.url));
@@ -121,7 +147,11 @@ function firebase() {
   } catch {
     fail("firebase-admin introuvable : lancer d'abord `npm ci --prefix functions`.");
   }
-  app.initializeApp({ projectId: PROJECT_ID, storageBucket: STORAGE_BUCKET });
+  app.initializeApp({
+    projectId: PROJECT_ID,
+    storageBucket: STORAGE_BUCKET,
+    ...(serviceAccount() ? { credential: app.cert(serviceAccount()) } : {}),
+  });
   admin = {
     db: firestore.getFirestore(),
     FieldValue: firestore.FieldValue,
@@ -902,9 +932,20 @@ try {
 } catch (error) {
   if (error instanceof BackofficeInputError) fail(error.message);
   const message = String(error?.message ?? error);
+  // Firestore injoignable : émulateurs éteints, ou réseau filtré (une
+  // session cloud de Claude Code qui n'autorise pas *.googleapis.com).
+  if (error?.code === 14 || /ECONNREFUSED|ENOTFOUND|EAI_AGAIN|UNAVAILABLE/.test(message)) {
+    fail(
+      opts.emulateur
+        ? "émulateurs injoignables : lancer `npm run dev:local` (ou `npm run emulators`)."
+        : "Firestore injoignable : pas de réseau, ou accès à *.googleapis.com bloqué (session cloud : voir docs/backoffice-cli.md).",
+    );
+  }
   if (/Could not load the default credentials|invalid_grant|reauth/i.test(message)) {
     fail(
-      "identifiants Google absents ou expirés : `gcloud auth application-default login` avec admin@phenixel.fr (voir docs/backoffice-cli.md).",
+      process.env.PJ_ADMIN_SERVICE_ACCOUNT
+        ? "la clé PJ_ADMIN_SERVICE_ACCOUNT est refusée (révoquée ou sans les droits ?), voir docs/backoffice-cli.md."
+        : "identifiants Google absents ou expirés : `gcloud auth application-default login` avec admin@phenixel.fr, ou PJ_ADMIN_SERVICE_ACCOUNT (voir docs/backoffice-cli.md).",
     );
   }
   throw error;

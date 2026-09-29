@@ -56,6 +56,58 @@ compte qui fait foi.
   `google-github-actions/auth`. Il lui faut `roles/datastore.user` pour
   écrire dans Firestore (voir `docs/firebase-ci-cd.md`).
 
+### Dans une session cloud de Claude Code
+
+Une session cloud (claude.ai/code) tourne sur une machine distante, sans le
+gcloud du poste : elle s'identifie par une **clé de compte de service**,
+passée dans la variable `PJ_ADMIN_SERVICE_ACCOUNT` (le JSON de la clé, tel
+quel ou en base64). Le réseau par défaut des environnements cloud
+(« Trusted ») autorise déjà `*.googleapis.com` : rien à ouvrir.
+
+Mise en place, une fois, par le propriétaire du projet :
+
+1. Un compte de service dédié, aux droits limités à ce que fait le script
+   (documents Firestore, fichiers du bucket ; ni règles, ni functions, ni
+   IAM) :
+
+   ```bash
+   gcloud iam service-accounts create claude-backoffice --project petite-jerusalem-dev --display-name "Backoffice (sessions cloud de Claude)"
+   gcloud projects add-iam-policy-binding petite-jerusalem-dev --member="serviceAccount:claude-backoffice@petite-jerusalem-dev.iam.gserviceaccount.com" --role="roles/datastore.user"
+   gcloud storage buckets add-iam-policy-binding gs://petite-jerusalem-dev.firebasestorage.app --member="serviceAccount:claude-backoffice@petite-jerusalem-dev.iam.gserviceaccount.com" --role="roles/storage.objectAdmin"
+   gcloud iam service-accounts keys create ~/claude-backoffice.json --iam-account claude-backoffice@petite-jerusalem-dev.iam.gserviceaccount.com
+   base64 -i ~/claude-backoffice.json | tr -d '\n' | pbcopy
+   ```
+
+   (Ces commandes demandent le compte admin@phenixel.fr :
+   `gcloud auth login admin@phenixel.fr` d'abord.)
+
+2. Dans claude.ai/code, réglages de l'environnement du dépôt, **variables
+   d'environnement** : une ligne `PJ_ADMIN_SERVICE_ACCOUNT=` suivie de ce qui
+   vient d'être copié. Puis supprimer `~/claude-backoffice.json` du poste.
+
+3. Facultatif, dans le **script d'installation** de l'environnement, pour ne
+   pas attendre l'installation à chaque session et mesurer la durée des
+   audios :
+
+   ```bash
+   npm ci --prefix functions
+   apt-get install -y ffmpeg
+   ```
+
+   Sans lui, la session lance `npm ci --prefix functions` quand le script le
+   demande, et `chiour:ajouter` veut `--duree <secondes>`.
+
+À savoir :
+
+- la variable est lisible par toute personne qui utilise cet environnement
+  cloud : elle vaut un accès en écriture à Firestore et au bucket de
+  production. Pour la couper à tout moment :
+  `gcloud iam service-accounts keys list --iam-account claude-backoffice@petite-jerusalem-dev.iam.gserviceaccount.com`,
+  puis `gcloud iam service-accounts keys delete <id> --iam-account …` ;
+- les garde-fous ne changent pas (`--confirmer`, `--notifier`) ;
+- `gh` est déjà connecté dans une session cloud : `info:depuis-release --tag`
+  y fonctionne.
+
 ## Les commandes
 
 Toutes acceptent `--confirmer`, `--emulateur` et `--json` (sortie lisible par

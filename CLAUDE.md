@@ -74,7 +74,10 @@ pages `/admin`. Mode d'emploi complet dans `docs/backoffice-cli.md`.
   notification part vers tous les téléphones et ne se rattrape pas.
 - Un texte d'information suit la typographie ci-dessus (pas de tiret long,
   espaces insécables en français) ; l'anglais et l'hébreu sont facultatifs.
-- Identifiants expirés : le script le dit ; c'est au propriétaire de lancer
-  `gcloud auth application-default login` (compte admin@phenixel.fr).
+- Identifiants : en local, l'ADC du poste (s'il a expiré, le script le dit ;
+  c'est au propriétaire de lancer `gcloud auth application-default login`,
+  compte admin@phenixel.fr). En session cloud, la clé
+  `PJ_ADMIN_SERVICE_ACCOUNT` de l'environnement ; si le script dit que
+  firebase-admin manque, lancer `npm ci --prefix functions`.
 - Les notes de version deviennent seules une information à la publication
   de la release GitHub (`.github/workflows/release-info.yml`).
