@@ -28,10 +28,14 @@
       <path d="M24 22h9" stroke-width="2" />
       <path d="M24 47h9" stroke-width="2" />
     </g>
-    <!-- leaning book (accent) -->
+    <!-- Le livre penché (accent) repose sur son coin inférieur droit, (49, 53) :
+         il pivote autour de ce coin, en attribut comme dans les animations
+         (.tome-3), pour que rien ne passe jamais sous la planche. Pivoté
+         autour du milieu de sa base, un coin s'y enfonçait, et le livre
+         redressé au survol descendait sous elle. -->
     <g class="tome tome-3 accent">
-      <rect x="40" y="21" width="9" height="32" rx="1.5" transform="rotate(9 44.5 53)" />
-      <path d="M40 27h9" stroke-width="2" transform="rotate(9 44.5 53)" />
+      <rect x="40" y="21" width="9" height="32" rx="1.5" transform="rotate(9 49 53)" />
+      <path d="M40 27h9" stroke-width="2" transform="rotate(9 49 53)" />
     </g>
   </svg>
 </template>
@@ -66,8 +70,11 @@
   animation-delay: 0.5s;
 }
 .tome-3 {
-  transform-box: fill-box;
-  transform-origin: bottom center;
+  /* Le coin sur lequel le livre repose, en coordonnées du dessin : le même
+     pivot que sa pente, pour que le balancement et le redressement le
+     gardent posé sur la planche. */
+  transform-box: view-box;
+  transform-origin: 49px 53px;
   /* Boucle d'attente FINIE (2 balancements puis repos) : les animations
      décoratives infinies gardent le rendu éveillé en permanence, coûteux
      sous Firefox (cf. audit de performance). Le survol relance tout. */
@@ -114,8 +121,11 @@
   animation: tome-hop 0.5s ease 0.12s 1 both;
 }
 /* the leaning book springs upright (cancels its baked-in 9° tilt),
-   with a small overshoot, and stays straight while hovered */
+   with a small overshoot, and stays straight while hovered. Il se redresse
+   sur le coin où il repose (voir .tome-3), pas sur le bas de sa boîte. */
 :global(.feature-link:hover .illu-biblio .tome-3) {
+  transform-box: view-box;
+  transform-origin: 49px 53px;
   animation: tome-straighten 0.7s ease-out 0.2s both;
 }
 

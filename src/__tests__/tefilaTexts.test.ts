@@ -298,6 +298,25 @@ describe("fichiers de tefila", () => {
     expect(texte(1).replace(/[()]/g, "").replace(/\s+/g, " ")).toBe(texte(0));
   });
 
+  it("Chema al hamita : « Hiné mitato » se dit trois fois", () => {
+    const content = load("sidour", "chema-al-hamita");
+    const hine = (content.sections[0].blocks ?? [])
+      .flatMap((b) => b.paragraphs ?? [])
+      .find((p) => p.runs.some((run) => run.kind === "he" && run.text.startsWith("הִנֵּ")))!;
+    expect(hine.repeat).toBe(3);
+    expect(hine.rubric?.fr).toContain("trois fois");
+  });
+
+  it("Chema al hamita : pas de vidouy les nuits sans tahanoun", () => {
+    const content = load("sidour", "chema-al-hamita");
+    const vidouy = (content.sections[0].blocks ?? []).find((b) => b.label === "Vidouy")!;
+    // `unless`, pas `when` : une version qui ne connaît pas la clé l'affiche.
+    expect(vidouy.when).toBeUndefined();
+    expect(vidouy.unless).toBe("sans-tahanoun-nuit");
+    expect(saidOn(vidouy.when, new Set(), vidouy.unless)).toBe(true);
+    expect(saidOn(vidouy.when, new Set(["sans-tahanoun-nuit"]), vidouy.unless)).toBe(false);
+  });
+
   it("Chema al hamita : le verset de Yeshayahou est celui du Tanakh servi", () => {
     // « Nafshi ivitikha balayla » (Yeshayahou 26,9) s'ajoute avant « Ata
     // takoum » : il est recopié dans le fichier de tefila, il doit rester
@@ -563,14 +582,28 @@ describe("fichiers de tefila", () => {
   it("Netilat loulav : le cadran des six côtés, et les côtés nommés en clair", () => {
     const blocks = load("moadim", "netilat-loulav").sections[0].blocks ?? [];
     // Ce qui se dit avant de prendre le loulav, puis ses brahot.
+    // Les dinim d'abord, puis ce qui se dit avant de prendre le loulav, et
+    // ses brahot.
     expect(blocks.map((b) => b.label)).toEqual([
+      "Les dinim du loulav",
       "Avant de prendre le loulav",
       "Les brahot du loulav",
     ]);
-    expect(blocks[1].naanouim).toBe(true);
-    const cotes = (blocks[1].paragraphs ?? []).at(-1)!.rubric!;
+    expect(blocks[2].naanouim).toBe(true);
+    const cotes = (blocks[2].paragraphs ?? []).at(-1)!.rubric!;
     expect(cotes.fr).toContain("sud, nord, est, haut, bas, ouest");
     expect(cotes.en).toContain("south, north, east, up, down, west");
+  });
+
+  it("Netilat loulav : les dinim, dans les trois langues, avec l'ordre des six côtés", () => {
+    const dinim = load("moadim", "netilat-loulav").sections[0].blocks![0];
+    expect(dinim.lines).toEqual([]);
+    const halakhot = dinim.halakhot ?? [];
+    expect(halakhot.length).toBeGreaterThanOrEqual(5);
+    for (const halakha of halakhot) {
+      for (const lang of ["fr", "en", "he"] as const) expect(halakha[lang]).not.toBe("");
+    }
+    expect(halakhot.map((h) => h.fr).join(" ")).toContain("sud, nord, est, haut, bas, ouest");
   });
 
   // Les Hochanot : un seul livre, dont le lecteur ne montre qu'un jour (voir

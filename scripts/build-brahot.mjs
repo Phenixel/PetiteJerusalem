@@ -113,9 +113,32 @@ const chemaAlHamita = {
         },
       ],
     },
-    { lines: [{ seg: 14 }, { seg: 15 }, { seg: 16 }, { seg: 17 }] },
+    {
+      lines: [
+        { seg: 14 },
+        // « Hiné mitato chélichlomo » se dit trois fois : la source le note
+        // en petit à la fin du verset (« ג' פעמים »).
+        {
+          seg: 15,
+          repeat: 3,
+          rubric: {
+            fr: "On dit ce verset trois fois :",
+            en: "This verse is said three times:",
+            he: "ג' פעמים",
+          },
+        },
+        { seg: 16 },
+        { seg: 17 },
+      ],
+    },
     {
       label: "Vidouy",
+      // Pas de vidouy les nuits sans tahanoun : la nuit de Chabbat, celles
+      // des jours où le tahanoun tombe, la sortie de Chabbat jusqu'à hatsot,
+      // la sortie d'une fête ou de Roch Hodech (voir nightWithoutTachanun).
+      // `unless` : une version qui ne connaît pas la clé affiche le vidouy,
+      // comme avant (voir docs/compatibilite-textes.md).
+      unless: "sans-tahanoun-nuit",
       halakha: {
         fr: "Debout, la tête inclinée. Il ne se dit pas les soirs où l'on ne dit pas tahanoun.",
         en: "Standing, head bowed. It is not said on evenings when tahanun is omitted.",

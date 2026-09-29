@@ -112,6 +112,9 @@ const KNOWN_WHEN = new Set([
   // « sans-tahanoun »), elle change au milieu de la nuit sans que le jour
   // hébraïque bouge.
   "apres-hatsot",
+  // La nuit sans tahanoun, posée par le lecteur (voir nightWithoutTachanun) :
+  // elle dépend de hatsot à la sortie de Chabbat.
+  "sans-tahanoun-nuit",
   "motsae-yom-tov",
   ...Array.from({ length: 7 }, (_, day) => `jour-${day}`),
 ]);
@@ -939,6 +942,17 @@ describe("Cha'harit : 'Hol haMoed et le loulav de Souccot", () => {
     const cotes = (bloc.paragraphs ?? []).at(-1)!.rubric!;
     expect(cotes.fr).toContain("sud, nord, est, haut, bas, ouest");
     expect(cotes.en).toContain("south, north, east, up, down, west");
+  });
+
+  it("pose le cadran des six côtés à chaque na'anou'a du Hallel", () => {
+    // Les deux « Hodou » et « Ana Hachem hochia na » : la didascalie qui dit
+    // où agiter porte le cadran, les jours où l'on prend le loulav.
+    const hallel = blocks.find((b) => b.labelText?.fr === "Hallel")!;
+    const consignes = (hallel.paragraphs ?? [])
+      .flatMap((p) => p.runs)
+      .filter((run) => run.kind === "rubric" && run.naanouim);
+    expect(consignes).toHaveLength(3);
+    for (const run of consignes) expect(run.when).toBe("loulav");
   });
 
   it("ne met pas les téfilines à 'Hol haMoed, et le dit au talit", () => {

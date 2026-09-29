@@ -110,8 +110,7 @@ export function saidTachanun(hd: HDate, il: boolean): TachanunSaid {
     const next = hd.next();
     return {
       shacharit: true,
-      mincha:
-        hd.getDay() !== 5 && (saidTachanun(next, il).shacharit || keepsPreviousMincha(next)),
+      mincha: hd.getDay() !== 5 && (saidTachanun(next, il).shacharit || keepsPreviousMincha(next)),
     };
   }
   const said = tachanun(hd, il);
@@ -149,4 +148,29 @@ export function withoutTachanun(occasions: Set<string>): Set<string> {
   }
   for (const key of WITH_TACHANUN_ONLY) result.delete(key);
   return result;
+}
+
+/**
+ * La nuit du Chema du coucher est-elle sans tahanoun ? Son vidouy tombe alors
+ * (la clé « sans-tahanoun-nuit » le retire, voir chema-al-hamita.json).
+ *
+ * Le sidour le dit ainsi : pas de vidouy la nuit de Chabbat, ni les jours où
+ * l'on ne dit pas le tahanoun ; ni à la sortie de Chabbat jusqu'à hatsot
+ * halayla, ni à la sortie d'une fête ou de Roch Hodech, « et ce qui leur
+ * ressemble » : la sortie de tout jour sans tahanoun.
+ *
+ * `hd` est le jour hébraïque de la nuit, commencé à la chkia (voir
+ * tefilaHebrewDay) ; `occasions` ses occasions, le réglage « sans tahanoun »
+ * du lecteur compris.
+ */
+export function nightWithoutTachanun(
+  hd: HDate,
+  il: boolean,
+  occasions: Set<string>,
+  pastChatzot: boolean,
+): boolean {
+  if (occasions.has("shabbat") || occasions.has("sans-tahanoun")) return true;
+  const veille = hd.prev();
+  if (veille.getDay() === 6) return !pastChatzot;
+  return !saidTachanun(veille, il).shacharit;
 }

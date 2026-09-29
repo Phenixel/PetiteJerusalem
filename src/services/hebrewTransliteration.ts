@@ -151,6 +151,51 @@ function mapPunct(ch: string): string {
   }
 }
 
+// Le Nom ne se lit pas comme il s'écrit : יְהֹוָה (ou יְהוָֹה, יְיָ) se dit
+// « Adonaï », et « Elohim » quand il suit Adonaï (יֱהֹוִה, un hiriq sous le
+// vav). Lettre à lettre, il sortait « yehova » ou « yeo ». Les préfixes
+// (לַ, בַּ, וַ, מֵ…) se lisent devant : לַיהֹוָה se dit « ladonaï ». Les
+// combinaisons de méditation, dont chaque lettre porte la même voyelle
+// (יִהִוִהִ), ne se disent pas : elles gardent leur lecture lettre à lettre,
+// reconnues à la voyelle posée sous leur dernier hé.
+const HIRIQ = "ִ";
+const QAMATS = "ָ";
+const NAME_PREFIX = new Set(["ו", "ב", "כ", "ל", "מ", "ש", "ה"]);
+
+interface Cluster {
+  letter: string;
+  marks: Set<string>;
+}
+
+/** La lecture du Nom quand ce mot en est un (préfixes compris), sinon null. */
+function readName(clusters: Cluster[]): string | null {
+  const letters = clusters.map((c) => c.letter).join("");
+  let core: Cluster[];
+  let reading: string;
+  if (letters.endsWith("יהוה")) {
+    core = clusters.slice(-4);
+    if (core[3].marks.size > 0) return null;
+    reading = core[2].marks.has(HIRIQ) ? "elohim" : "adonaï";
+  } else if (letters.endsWith("יי")) {
+    core = clusters.slice(-2);
+    if (!core[1].marks.has(QAMATS)) return null;
+    reading = "adonaï";
+  } else {
+    return null;
+  }
+  const prefix = clusters.slice(0, clusters.length - core.length);
+  if (!prefix.every((c) => NAME_PREFIX.has(c.letter))) return null;
+  if (prefix.length === 0) return reading === "adonaï" ? "Adonaï" : "Elohim";
+  let out = "";
+  let prevHadSheva = false;
+  prefix.forEach((c, i) => {
+    out += renderCluster(c.letter, c.marks, i === 0, prevHadSheva);
+    prevHadSheva = c.marks.has(SHEVA);
+  });
+  // לַיהֹוָה : le patah du préfixe est déjà le « a » d'Adonaï.
+  return out.endsWith("a") && reading === "adonaï" ? `${out}donaï` : out + reading;
+}
+
 /**
  * Transliterate one line of vocalized Hebrew into Latin phonetics.
  * Returns the input unchanged when it has no niqqud.
@@ -166,6 +211,26 @@ export function transliterate(input: string): string {
 
   while (i < text.length) {
     const ch = text[i];
+    if (isLetter(ch) && wordStart) {
+      // Le mot entier d'abord : le Nom se lit d'un bloc.
+      const clusters: Cluster[] = [];
+      let j = i;
+      while (j < text.length && isLetter(text[j])) {
+        const marks = new Set<string>();
+        let k = j + 1;
+        while (k < text.length && isMark(text[k])) marks.add(text[k++]);
+        clusters.push({ letter: text[j], marks });
+        j = k;
+      }
+      const name = readName(clusters);
+      if (name !== null) {
+        out += name;
+        wordStart = false;
+        prevHadSheva = false;
+        i = j;
+        continue;
+      }
+    }
     if (isLetter(ch)) {
       const marks = new Set<string>();
       let j = i + 1;
@@ -173,7 +238,14 @@ export function transliterate(input: string): string {
         marks.add(text[j]);
         j++;
       }
-      out += renderCluster(ch, marks, wordStart, prevHadSheva);
+      // Le yod muet qui ferme un mot après un « a » se fait entendre :
+      // אֲדֹנָי se dit « adonaï », שְׂפָתַי « sefataï ».
+      const wordEnd = j >= text.length || !isLetter(text[j]);
+      if (ch === "י" && marks.size === 0 && !wordStart && wordEnd && out.endsWith("a")) {
+        out += "ï";
+      } else {
+        out += renderCluster(ch, marks, wordStart, prevHadSheva);
+      }
       prevHadSheva = marks.has(SHEVA);
       wordStart = false;
       i = j;

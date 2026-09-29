@@ -88,7 +88,7 @@ import type { ReadingNavSection } from "../../composables/useReadingNav";
 import { useReadingPinch } from "../../composables/useReadingPinch";
 import { useAutoScroll } from "../../composables/useAutoScroll";
 import { isSansTahanoun } from "../../composables/useSansTahanoun";
-import { withoutTachanun } from "../../services/tachanun";
+import { nightWithoutTachanun, withoutTachanun } from "../../services/tachanun";
 import { pastChatzotNight } from "../../services/zmanimService";
 import { useKeepAwake } from "../../composables/useKeepAwake";
 import { analyticsService } from "../../services/analyticsService";
@@ -249,14 +249,22 @@ const occasionsDay = computed(() => new HDate(occasionsDayAbs.value));
 // l'assemblée. Le réglage ne vaut que le jour où il est posé ; c'est l'heure
 // du rendu qui en décide, comme des occasions elles-mêmes.
 const calendarOccasions = computed(() => {
-  const today = activeOccasions(occasionsDay.value, zmanimPlace.value.tzid === "Asia/Jerusalem");
+  const il = zmanimPlace.value.tzid === "Asia/Jerusalem";
+  const today = activeOccasions(occasionsDay.value, il);
   const jour = isLiturgyText.value && isSansTahanoun(now.value) ? withoutTachanun(today) : today;
+  if (!isLiturgyText.value) return jour;
   // Hatsot halayla ne se lit pas sur le calendrier : c'est une heure, elle
   // change au milieu de la nuit sans que le jour hébraïque bouge. Le Chema du
   // coucher s'en sert pour la bénédiction Hamapil, dont le Nom se pense au
-  // lieu de se dire une fois hatsot passé.
-  if (!isLiturgyText.value || !pastChatzotNight(zmanimPlace.value, now.value)) return jour;
-  return new Set([...jour, "apres-hatsot"]);
+  // lieu de se dire une fois hatsot passé, et pour son vidouy, qui ne se dit
+  // pas à la sortie de Chabbat avant hatsot.
+  const pastChatzot = pastChatzotNight(zmanimPlace.value, now.value);
+  const nuit = new Set(jour);
+  if (pastChatzot) nuit.add("apres-hatsot");
+  if (nightWithoutTachanun(occasionsDay.value, il, jour, pastChatzot)) {
+    nuit.add("sans-tahanoun-nuit");
+  }
+  return nuit;
 });
 
 // Un texte à jours (les Hochanot, une suite par jour de Souccot) s'ouvre sur

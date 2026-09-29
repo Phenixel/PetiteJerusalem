@@ -81,7 +81,18 @@ export type TextRun =
       /** Fragment que cette occasion retire (voir TextBlock.unless). */
       unless?: string;
     }
-  | { kind: "rubric"; rubric: Rubric; when?: string; unless?: string };
+  | {
+      kind: "rubric";
+      rubric: Rubric;
+      when?: string;
+      unless?: string;
+      /**
+       * Souccot : la didascalie dit où agiter le loulav (les « Hodou » et
+       * « Ana » du Hallel). Le lecteur pose à côté d'elle le cadran des six
+       * côtés, comme au titre des brahot du loulav (TextBlock.naanouim).
+       */
+      naanouim?: boolean;
+    };
 
 /**
  * Une condition tient-elle parmi les occasions du jour ?
@@ -694,6 +705,8 @@ interface TefilaRun {
   when?: string;
   /** Occasion qui retire le fragment (voir saidOn). */
   unless?: string;
+  /** Didascalie des na'anou'im : elle porte le cadran des six côtés. */
+  naanouim?: boolean;
 }
 
 interface TefilaFileLine {
@@ -789,7 +802,12 @@ function parseTefilaLine(raw: string | TefilaFileLine): TextParagraph | null {
       const text = cleanText(part.he);
       if (text) runs.push({ kind: "he", text, ...when });
     } else if (part.r) {
-      runs.push({ kind: "rubric", rubric: part.r, ...when });
+      runs.push({
+        kind: "rubric",
+        rubric: part.r,
+        ...when,
+        ...(part.naanouim ? { naanouim: true } : {}),
+      });
     }
   }
   if (!runs.some((run) => run.kind === "he")) return null;
