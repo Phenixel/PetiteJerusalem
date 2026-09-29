@@ -115,6 +115,16 @@ publiées, parce que le site s'était mis à écrire `!tisha-beav` et
     qui suivent désormais Moussaf, comme elle les voyait déjà à 'Hol haMoed :
     deux encadrés repliés du 'hazan, pas un mot de la prière en double.
 
+11. **Un passage qui tombe certains soirs se retire par `unless` et une clé
+    nouvelle.** Le vidouy du Chema du coucher ne se dit pas les nuits sans
+    tahanoun : il porte `unless: "sans-tahanoun-nuit"`, clé que le lecteur
+    pose (`nightWithoutTachanun`, tenu par `tachanun.test.ts`) puisqu'elle
+    dépend de hatsot à la sortie de Chabbat. Une version publiée ignore
+    `unless` et affiche le vidouy tous les soirs, comme avant. De même, le
+    cadran des six côtés que portent les didascalies des na'anou'im du Hallel
+    (`naanouim` sur un fragment `r`) est un champ ignoré : une version
+    publiée garde la didascalie, sans le bouton.
+
 Les points 1, 2, 5 et 6 sont tenus par un test
 (`src/__tests__/sidourCompatibilite.test.ts`) ; les clés employées sont
 vérifiées contre celles que pose le calendrier

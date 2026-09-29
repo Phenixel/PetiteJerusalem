@@ -280,10 +280,26 @@ watch(offersKotel, syncKotelOffer, { immediate: true });
 onUnmounted(() => syncKotelOffer(false));
 
 /**
- * Le cadran des na'anou'im : les brahot du loulav le portent à leur titre.
- * Rien à signaler au menu de lecture, il ne sert qu'à ce passage-là.
+ * Le cadran des na'anou'im : les brahot du loulav le portent à leur titre, et
+ * les didascalies du Hallel qui disent où agiter le loulav (les « Hodou » et
+ * « Ana ») à côté d'elles. Rien à signaler au menu de lecture, il ne sert
+ * qu'à ces passages-là.
  */
-const offersNaanouim = computed(() => props.blocks.some((block) => block.naanouim));
+const naanouimRun = (run: TextRun): boolean => run.kind === "rubric" && Boolean(run.naanouim);
+const offersNaanouim = computed(() =>
+  props.blocks.some(
+    (block) =>
+      block.naanouim ||
+      (block.paragraphs ?? []).some((paragraph) => paragraph.runs.some(naanouimRun)),
+  ),
+);
+
+/**
+ * En phonétique, les didascalies glissées dans le texte ne se lisent pas : le
+ * cadran d'un paragraphe qui en porte une se pose alors au-dessus de lui.
+ */
+const naanouimAbove = (paragraph: TextParagraph): boolean =>
+  props.showPhonetic && visibleRuns(paragraph).some(naanouimRun);
 
 /**
  * Le miroir des téfilines, sur le même modèle que la boussole : le passage qui
@@ -658,6 +674,17 @@ const phoneticOf = computed(() => {
                   <AppIcon :name="KLAF_ICONS[paragraph.klaf]" :size="14" />
                   {{ t(KLAF_LABELS[paragraph.klaf].open) }}
                 </button>
+                <!-- Le cadran des six côtés, au-dessus du paragraphe quand la
+                     phonétique masque la didascalie qui le porte. -->
+                <button
+                  v-if="naanouimAbove(paragraph)"
+                  type="button"
+                  class="reading-klaf"
+                  @click.stop="openNaanouimCompass()"
+                >
+                  <AppIcon name="compass" :size="14" />
+                  {{ t("textReading.naanouim.open") }}
+                </button>
                 <div
                   v-for="copy in copiesOf(paragraph)"
                   :key="copy"
@@ -680,9 +707,21 @@ const phoneticOf = computed(() => {
                     :class="paragraphTone(text, paragraph)"
                   >
                     <template v-for="(run, r) in visibleRuns(paragraph)" :key="r">
-                      <span v-if="run.kind === 'rubric'" class="reading-rubric-inline">{{
-                        say(run.rubric)
-                      }}</span>
+                      <template v-if="run.kind === 'rubric'">
+                        <span class="reading-rubric-inline">{{ say(run.rubric) }}</span>
+                        <!-- Où agiter le loulav, dans le Hallel : le cadran des
+                             six côtés, à côté de la consigne qui les nomme. -->
+                        <button
+                          v-if="run.naanouim"
+                          type="button"
+                          class="reading-klaf reading-naanouim"
+                          dir="ltr"
+                          @click.stop="openNaanouimCompass()"
+                        >
+                          <AppIcon name="compass" :size="14" />
+                          {{ t("textReading.naanouim.open") }}
+                        </button>
+                      </template>
                       <span v-else :class="runClass(run)">{{ runText(run.text, r) }}</span>
                     </template>
                   </p>
@@ -922,6 +961,15 @@ const phoneticOf = computed(() => {
   margin-top: 1.25rem;
   padding: 0.45rem 0.95rem;
   font-size: 0.875rem;
+}
+
+/* Le cadran des na'anou'im, glissé dans le fil du Hallel juste après la
+   consigne qui le porte : la pastille du parchemin, à la hauteur de la
+   ligne plutôt qu'au-dessus du paragraphe. */
+.reading-naanouim {
+  margin: 0 0.35em;
+  vertical-align: middle;
+  unicode-bidi: isolate;
 }
 
 /* Sous une didascalie, la pastille la suit de près, et le texte la suit. */

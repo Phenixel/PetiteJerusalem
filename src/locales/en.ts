@@ -1525,6 +1525,11 @@ const en: LocaleMessages = {
     sections: "{count} sections",
     textsCount: "{count} text | {count} texts",
     range: "{from} to {to}",
+    moadimNow: {
+      label: "{fete}, right now",
+      title: "The festival texts, in Moadim",
+      current: "Right now",
+    },
     types: {
       all: "All",
       tehilim: "Tehilim",

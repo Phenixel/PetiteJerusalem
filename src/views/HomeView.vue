@@ -322,7 +322,38 @@ onUnmounted(() => {
       v-else
       class="w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-8 items-center mb-10"
     >
-      <div class="space-y-4 text-center md:text-start">
+      <!-- App native : une salutation, comme connecté, et rien de plus. On a
+           déjà installé l'app, l'accroche du site n'a plus rien à vendre, et
+           elle repoussait les horaires et les portes sous le pli. -->
+      <div v-if="isNativeApp" class="space-y-3">
+        <h1 class="text-3xl font-bold text-text-primary tracking-tight enter-rise">
+          {{ greeting }}
+        </h1>
+        <div
+          v-if="!accountCtaDismissed"
+          class="flex flex-wrap items-center gap-2 enter-rise"
+          style="--enter-delay: 0.1s"
+        >
+          <RouterLink
+            to="/login?mode=signup"
+            class="btn btn-primary"
+            @click="trackCard('signup_cta')"
+          >
+            {{ t("accountCta.signup") }}
+          </RouterLink>
+          <RouterLink to="/login" class="btn btn-soft" @click="trackCard('login_cta')">
+            {{ t("accountCta.login") }}
+          </RouterLink>
+          <button
+            type="button"
+            class="px-2 py-2 text-sm font-medium text-text-secondary transition-colors hover:text-primary"
+            @click="dismissAccountCta"
+          >
+            {{ t("accountCta.dismiss") }}
+          </button>
+        </div>
+      </div>
+      <div v-else class="space-y-4 text-center md:text-start">
         <h1
           class="text-4xl md:text-6xl font-bold text-text-primary tracking-tight leading-[1.05] enter-rise"
         >

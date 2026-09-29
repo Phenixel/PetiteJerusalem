@@ -161,3 +161,16 @@ remonte au début de la 'Amida, les passages du 'hazan dépliés (voir
 docs/design.md, « La 'hazara repart du début de la 'Amida »). Sans propriété
 à lui : `$current_url` dit l'office. Il dit si le bouton est trouvé, et s'il
 sert à l'office en communauté plutôt qu'à la prière seul.
+
+## Bibliothèque
+
+### `moadim_now_opened` (nouveau)
+
+L'encart posé en tête du sidour le temps d'une fête (`MoadimNowBanner`), qui
+mène aux textes de la fête dans Moadim. Il dit si l'on cherche ces textes
+depuis le sidour.
+
+| Propriété  | Valeurs                                                   | Statut      |
+| ---------- | --------------------------------------------------------- | ----------- |
+| `source`   | `library_sidour`                                          | **nouveau** |
+| `festival` | le livre de la fête, `Souccot`, `Yamim Noraim`, `Hanouka` | **nouveau** |

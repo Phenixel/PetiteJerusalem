@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { HDate, months } from "@hebcal/core";
-import { saidTachanun } from "../services/tachanun";
+import { activeOccasions } from "../services/dailyCycles";
+import { nightWithoutTachanun, saidTachanun } from "../services/tachanun";
 
 /**
  * Les jours où hebcal se trompe sur le tahanoun, et que `saidTachanun` reprend
@@ -95,5 +96,50 @@ describe("ce que hebcal disait déjà juste", () => {
     // reprend le matin, mais le Chabbat qui vient retient sa Min'ha.
     expect(saidTachanun(new HDate(13, months.SIVAN, 5787), false)).toEqual(morningOnly);
     expect(saidTachanun(new HDate(28, months.ELUL, 5787), false).mincha).toBe(true);
+  });
+});
+
+/**
+ * Le vidouy du Chema du coucher (voir chema-al-hamita.json) tombe les nuits
+ * sans tahanoun. `hd` est le jour hébraïque de la nuit, commencé à la chkia.
+ */
+describe("nightWithoutTachanun : la nuit du Chema du coucher", () => {
+  const nuit = (day: HDate, pastChatzot = false) =>
+    nightWithoutTachanun(day, false, activeOccasions(day, false), pastChatzot);
+
+  it("dit le vidouy une nuit ordinaire", () => {
+    // 20 Tévet 5787, mercredi : la veille, mardi, est un jour ordinaire.
+    const day = new HDate(20, months.TEVET, 5787);
+    expect(day.getDay()).toBe(3);
+    expect(nuit(day)).toBe(false);
+  });
+
+  it("le retire la nuit de Chabbat et les jours sans tahanoun", () => {
+    const chabbat = new HDate(23, months.TEVET, 5787);
+    expect(chabbat.getDay()).toBe(6);
+    expect(nuit(chabbat)).toBe(true);
+    // La nuit de Roch Hodech Chevat.
+    expect(nuit(new HDate(1, months.SHVAT, 5787))).toBe(true);
+  });
+
+  it("le retire à la sortie de Chabbat jusqu'à hatsot seulement", () => {
+    const dimanche = new HDate(24, months.TEVET, 5787);
+    expect(dimanche.getDay()).toBe(0);
+    expect(nuit(dimanche, false)).toBe(true);
+    expect(nuit(dimanche, true)).toBe(false);
+  });
+
+  it("le retire toute la nuit à la sortie de Roch Hodech", () => {
+    // 1 Tamouz 5787 est un mardi : le 2, mercredi, est la sortie de Roch
+    // Hodech, un jour où le tahanoun se dit.
+    const lendemain = new HDate(2, months.TAMUZ, 5787);
+    expect(lendemain.getDay()).toBe(3);
+    expect(activeOccasions(lendemain, false).has("tahanoun")).toBe(true);
+    expect(nuit(lendemain, true)).toBe(true);
+  });
+
+  it("suit le réglage « sans tahanoun » du lecteur", () => {
+    const day = new HDate(20, months.TEVET, 5787);
+    expect(nightWithoutTachanun(day, false, new Set(["sans-tahanoun"]), false)).toBe(true);
   });
 });

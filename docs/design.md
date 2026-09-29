@@ -277,6 +277,15 @@ partage, comme sur les pages d'un corpus (`activeOn` dans `BottomTabBar.vue`,
 le `active-class` de RouterLink comparant les routes déclarées et non les
 adresses).
 
+### L'accueil de l'app salue, il ne présente pas
+
+Dans l'app, l'accueil d'un visiteur non connecté s'ouvre sur une salutation
+(« Bonjour », « Bonsoir »), alignée à gauche comme celle d'un visiteur
+connecté, et sur les boutons du compte en taille ordinaire. L'accroche du site
+(grand titre et paragraphe de présentation) n'y paraît pas : qui a installé
+l'app n'a plus à être convaincu, et ces lignes repoussaient les horaires et
+les trois portes sous le pli. Le site, lui, garde son accroche centrée.
+
 ### Une ligne de liste peut devenir une commande
 
 Dans l'app, une ligne d'horaire n'est plus seulement du texte : la toucher pose

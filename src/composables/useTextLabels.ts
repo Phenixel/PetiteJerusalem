@@ -11,7 +11,7 @@ import { formatNumberWithHebrew } from "../services/hebrewNumerals";
  * pas de forme structurée (le nom d'un psaume, une montée nommée).
  */
 export function useTextLabels() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   function dafLabel(daf: string): string {
     return t("textReading.labels.daf", { daf });
@@ -32,6 +32,9 @@ export function useTextLabels() {
             : t("textReading.labels.dafRange", { from: heading.from, to: heading.to });
         return t("textReading.labels.chapterDaf", { chapter, daf });
       }
+      // Une strophe du psaume 119 : la lettre suffit à qui lit l'hébreu.
+      case "letter":
+        return locale.value === "he" ? heading.letter : `${heading.letter} · ${heading.name}`;
     }
   }
 

@@ -240,7 +240,10 @@ function condition(spec) {
 function partRuns(spec, segs) {
   // Un fragment qui n'est qu'une didascalie : rien à prendre à la source.
   if (spec.rubric && spec.he === undefined && spec.seg === undefined) {
-    return [{ r: spec.rubric, ...condition(spec) }];
+    // Une didascalie des na'anou'im (les « Hodou » et « Ana » du Hallel)
+    // porte le cadran des six côtés à côté d'elle (voir TextRun dans
+    // textService) ; les versions publiées ignorent le champ.
+    return [{ r: spec.rubric, ...condition(spec), ...(spec.naanouim ? { naanouim: true } : {}) }];
   }
   const text = lineText(spec, segs);
   if (!text) throw new Error(`Fragment vide : ${JSON.stringify(spec)}`);
@@ -2816,7 +2819,9 @@ function chaharitRecipe() {
           // Le premier « Hodou » : c'est là que le loulav s'agite, un côté
           // par mot. La didascalie n'entre dans le paragraphe que les jours
           // où on le porte ; le verset y reste sans condition.
-          { parts: [{ rubric: RUBRIC_NAANOUIM_HODOU, when: "loulav" }, { seg: 14 }] },
+          {
+            parts: [{ rubric: RUBRIC_NAANOUIM_HODOU, when: "loulav", naanouim: true }, { seg: 14 }],
+          },
           { seg: 15, tight: true },
           { seg: 16, tight: true },
           { seg: 17, tight: true },
@@ -2826,7 +2831,10 @@ function chaharitRecipe() {
           // paragraphe d'avant plutôt que d'ouvrir le sien, qui porte deux
           // fois le verset : elle vaut pour les deux.
           {
-            parts: [{ seg: 19, mode: "full" }, { rubric: RUBRIC_NAANOUIM_ANA, when: "loulav" }],
+            parts: [
+              { seg: 19, mode: "full" },
+              { rubric: RUBRIC_NAANOUIM_ANA, when: "loulav", naanouim: true },
+            ],
           },
           // La source écrit déjà chaque verset deux fois : c'est ce que dit
           // chacun (le 'hazan le dit, l'assemblée le redit, deux fois chacun).
@@ -2839,7 +2847,7 @@ function chaharitRecipe() {
           {
             parts: [
               { seg: 22, mode: "full", until: "הודו ליהוה כי־טוב" },
-              { rubric: RUBRIC_NAANOUIM_HODOU_FIN, when: "loulav" },
+              { rubric: RUBRIC_NAANOUIM_HODOU_FIN, when: "loulav", naanouim: true },
               { seg: 22, mode: "full", from: "הודו ליהוה כי־טוב" },
             ],
           },

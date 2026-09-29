@@ -152,3 +152,42 @@ export const LIGNES_AVANT_LOULAV = [
   { he: "רִבּוֹן עָלְמָא כַּמָּה עִלָּאִין עוֹבָדָךְ. דְּהָא בְּאִנּוּן עוֹבָדֵי דְּעָבַדְתְּ לְתַתָּא, דְּאִנּוּן לוּלָב וַהֲדַס וַעֲרָבָה וְאֶתְרוֹג. כֻּלְּהוּ אֲחִידָן בִּשְׁמָא קַדִּישָׁא, וְכַד נַטְלִין לוֹן יִשְׂרָאֵל לְתַתָּא וְעַבְדֵי בְּהוּ עוֹבָדָא. אִתְּעַר הַהוּא עוֹבָדָא דִּלְעֵלָּא דְּקָטִיר בְּהוּ. וְעַל דָּא בָּעֵינָן לְאַחָדָא לוֹן וּלְמֶעְבַּד בְּהוּ עוֹבָדָא. בְּגִין לְאִתְעָרָא בְּהוּ חֵילָא דִּלְעֵלָּא:" },
   { he: "רִבּוֹן עָלְמָא אַנָּן בָּעֵינָן לְאִשְׁתַּדְּלָא בִּיקָרָךְ. יְהֵא רַעֲוָא קַמָּךְ לְמֵיהַב לָן חֵילָא לְאִתְעָרָא בִּיקָרָךְ, וּלְמֶעְבַּד רְעוּתָךְ וּלְסַדָּרָא כֹלָא כִּדְקָא יֵאוּת. וְאַף עַל גַּב דְּלֵית אַנָּן יַדְעֵי לְשַׁוָּאָה רְעוּתָא וְלִבָּא לְתַקָּנָא כֹּלָּא, יְהֵא רַעֲוָא קַמָּךְ דְּתִתְרְעֵי בְּעוֹבָדָא דִּילָן, וּתְתַקֵן תִּקּוּנָא דִּלְעֵלָּא כִּדְקָא יֵאוּת. וְתַחְשִׁיב לָן כְּאִלוּ אִשְׁתַּדַּלְנָא בִּיקָרָךְ כִּרְעוּתָךְ לְסַדָּרָא כֹּלָּא כִּדְקָא יֵאוּת. וְעַל דָּא צַלֵּי קֳדָמָךְ דָּוִד עַבְדָּךְ וְאָמַר. וִיהִי נֹעַם ה' אֱלֹקֵינוּ עָלֵינוּ, דְּהָא לֵית כׇּל בַּר נָשׁ חַכִּים לְשַׁוָּאָה רְעוּתָא וְלִבָּא לְתַקָּנָא כֹּלָּא וְיַעֲבִיד עוֹבָדָא דְּמִצְוָה. עַל דָּא צַלֵּי צְלוֹתָא דָא וּמַעֲשֵׂה יָדֵינוּ כּוֹנְנָה עָלֵינוּ. כּוֹנְנָה וְאַתְקִין תִּקּוּנָא לְעֵלָּא כִּדְקָא יֵאוּת. עָלֵינוּ אַף עַל גַּב דְּלֵית אַנָּן יַדְעֵי לְשַׁוָּאָה רְעוּתָא אֶלָּא עוֹבָדָא בִּלְחוֹדוֹי. מַעֲשֵׂה יָדֵינוּ כּוֹנְנֵהוּ לְמָאן לְהַהוּא דַּרְגָּא דְּאִצְטְרִיךְ לְאִתְתַּקְּנָא, כּוֹנְנָה בְּחִבּוּרָא חֲדָא, אַבָּהָן לְמֶהֱוֵי מִתְתַּקְּנָא בְּהוֹן בְּהַאי עוֹבָדָא כִּדְקָא יָאוּת, וִיהִי נֹעַם ה' אֱלֹהֵינוּ עָלֵינוּ וּמַעֲשֵׂה יָדֵינוּ כּוֹנְנָה עָלֵינוּ וּמַעֲשֵׂה יָדֵינוּ כּוֹנְנֵהוּ, בָּרוּךְ ה' לְעוֹלָם אָמֵן וְאָמֵן:" },
 ];
+
+/**
+ * Les dinim du loulav, en tête de sa page du livre Moadim (build-moadim.mjs) :
+ * des halakhot sans texte à dire, comme celles des Hochanot. Rédigées ici,
+ * chacune avec sa source dans le Choul'han Aroukh ; l'ordre des six côtés
+ * est celui du cadran du lecteur (NaanouimCompass).
+ */
+export const DINIM_LOULAV = [
+  {
+    fr: "Chaque jour de Souccot, sauf le Chabbat, on prend les quatre espèces : un loulav, trois branches de myrte (hadassim), deux branches de saule (aravot) et un étrog. Le premier jour, c'est une mitsva de la Torah ; les autres jours, une institution des sages en souvenir du Temple.",
+    en: "Every day of Sukkot except Shabbat, the four species are taken: a lulav, three myrtle branches (hadassim), two willow branches (aravot) and an etrog. On the first day it is a Torah commandment; on the other days, a rabbinic institution in memory of the Temple.",
+    he: 'מצות עשה ליטול ארבעה מינים בכל יום מימי החג חוץ משבת: לולב, שלשה הדסים, שתי ערבות ואתרוג. ביום הראשון מן התורה, ובשאר הימים מדרבנן זכר למקדש. (שו"ע סי\' תרנ"א ס"א, וסי\' תרנ"ח ס"א וס"ב)',
+  },
+  {
+    fr: "On lie ensemble le loulav, les hadassim et les aravot : le dos du loulav face à soi, les hadassim à sa droite, les aravot à sa gauche, les hadassim un peu plus haut que les aravot.",
+    en: "The lulav, hadassim and aravot are bound together: the spine of the lulav facing you, the hadassim on its right, the aravot on its left, the hadassim a little higher than the aravot.",
+    he: 'אוגד הלולב וההדסים והערבות יחד, שדרת הלולב כנגד פניו, ההדסים מימין הלולב והערבות משמאלו, ויהיו ההדסים גבוהים מן הערבות. (שו"ע סי\' תרנ"א ס"א, וכה"ח שם)',
+  },
+  {
+    fr: "Le loulav se prend de jour, dès le lever du soleil, et a posteriori dès l'aube, jusqu'au coucher du soleil. On ne mange pas avant de l'avoir pris.",
+    en: "The lulav is taken by day, from sunrise, and after the fact from dawn, until sunset. One does not eat before taking it.",
+    he: 'זמן נטילת לולב ביום, מהנץ החמה, ובדיעבד מעלות השחר, עד שקיעת החמה. ואסור לאכול קודם שיטול לולב. (שו"ע סי\' תרנ"ב ס"א וס"ב)',
+  },
+  {
+    fr: "Le premier jour, le loulav doit appartenir à celui qui le prend : on ne s'acquitte pas avec un loulav emprunté. Qui n'en a pas le reçoit en cadeau, à condition de le rendre. Ce jour-là, on ne donne pas son loulav à un enfant avant d'avoir soi-même accompli la mitsva : un enfant peut l'acquérir, mais ne peut pas le rendre.",
+    en: "On the first day, the lulav must belong to the one who takes it: a borrowed lulav does not fulfil the obligation. One who has none receives it as a gift, on condition that it be returned. On that day, one does not give one's lulav to a child before fulfilling the mitzvah oneself: a child can acquire it, but cannot give it back.",
+    he: 'ביום ראשון צריך שיהיה הלולב שלו, ואינו יוצא בשאול. ומי שאין לו, יקבלנו במתנה על מנת להחזיר. ולא יתן אדם לולבו ביום ראשון לקטן קודם שיצא בו, מפני שהקטן קונה ואינו מקנה. (שו"ע סי\' תרנ"ח ס"ג, ס"ד וס"ו)',
+  },
+  {
+    fr: "Les espèces se tiennent dans le sens où elles ont poussé, la pointe vers le haut. On agite pendant la bénédiction, puis dans le Hallel, au premier « Hodou », à « Ana Hachem hochia na » et au « Hodou » de la fin : chaque fois trois fois de chaque côté, en éloignant puis en ramenant vers la poitrine, dans l'ordre sud, nord, est, haut, bas, ouest, le visage tourné vers l'est. Pour le bas, on abaisse les mains, la pointe du loulav restant vers le haut.",
+    en: "The species are held the way they grew, tip upwards. They are waved during the blessing, then in the Hallel, at the first “Hodu”, at “Ana Hashem hoshia na” and at the final “Hodu”: each time three times on each side, away and back towards the chest, in the order south, north, east, up, down, west, facing east. For down, the hands are lowered, the tip of the lulav still pointing up.",
+    he: "נוטלם דרך גדילתן. ומנענע בשעת הברכה, ובהלל בהודו לה' הראשון, באנא ה' הושיעה נא, ובהודו לה' שבסוף: בכל פעם ג' פעמים לכל צד בהולכה והובאה אל החזה, כסדר דרום צפון מזרח מעלה מטה מערב, ופניו למזרח. ולמטה משפיל ידיו, וראש הלולב למעלה. (שו\"ע סי' תרנ\"א ס\"ה וס\"ט, וכה\"ח שם)",
+  },
+  {
+    fr: "Les femmes sont dispensées du loulav, une mitsva liée au temps. Selon Maran, si elles le prennent, elles ne disent pas la bénédiction.",
+    en: "Women are exempt from the lulav, a time-bound mitzvah. According to Maran, if they take it, they do not say the blessing.",
+    he: 'נשים פטורות מלולב, שהיא מצות עשה שהזמן גרמא. ואם באו ליטול, לא יברכו. (שו"ע סי\' תקפ"ט ס"ו)',
+  },
+];

@@ -2414,7 +2414,8 @@
                 "en": "Lulav in hand, one side per word: “Hodu” to the south, “ki” to the north, “tov” to the east, straight ahead, “ki” up, “le'olam” down, “hasdo” to the west. Nothing on the Name.",
                 "he": "וינענע בלולב כך: הוֹדוּ : לצד דרום. לַה' : אסור לנענע. כִּי : לצד צפון. טוֹב : לצד מזרח לנוכח. כִּי : למעלה. לְעוֹלָם : למטה. חַסְדּוֹ : לצד מערב."
               },
-              "when": "loulav"
+              "when": "loulav",
+              "naanouim": true
             },
             "הוֹד֣וּ לַיהֹוָ֣ה כִּי־ט֑וֹב כִּ֖י לְעוֹלָ֣ם חַסְדּֽוֹ׃"
           ]
@@ -2441,7 +2442,8 @@
                 "en": "One syllable per side: “A” to the south, “na” to the north, “ho” to the east, straight ahead, “shi” up, “a” down, “na” to the west. Nothing on the Name. Each word is said in a single breath: never stop for breath in the middle of a word, so “A” and “na” are not split across two breaths. Then turn to the right and wave the same way at the second “Ana Hashem hoshia na”; in Djerba each word is waved on both sides. “Ana Hashem hatzlicha na” is said twice, without waving.",
                 "he": "וינענע בלולב כך: אָ : לצד דרום. נָּא : לצד צפון. ה' : אסור לנענע. הוֹ : לצד מזרח לנוכח. שִׁי : למעלה. עָה : למטה. נָּא : לצד מערב. ויסתובב לצד ימין וינענע שוב כנ\"ל (ובג'רבא נוהגים בכל מלה לנענע לשני צדדים), ואחר כך יאמר אנא ה' הצליחה נא, ב\"פ."
               },
-              "when": "loulav"
+              "when": "loulav",
+              "naanouim": true
             }
           ]
         },
@@ -2459,7 +2461,8 @@
                 "en": "Wave once more, as at the first “Hodu”: one side per word, south, north, east, up, down, west.",
                 "he": "וינענע שוב פעם אחת כנ\"ל בהודו לה' וגו'"
               },
-              "when": "loulav"
+              "when": "loulav",
+              "naanouim": true
             },
             "הוֹד֣וּ לַיהֹוָ֣ה כִּי־ט֑וֹב כִּ֖י לְעוֹלָ֣ם חַסְדּֽוֹ׃ הוֹד֣וּ לַיהֹוָ֣ה כִּי־ט֑וֹב כִּ֖י לְעוֹלָ֣ם חַסְדּֽוֹ׃"
           ]

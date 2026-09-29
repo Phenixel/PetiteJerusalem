@@ -1584,6 +1584,13 @@ const fr = {
     sections: "{count} sections",
     textsCount: "{count} texte | {count} textes",
     range: "{from} à {to}",
+    // Le temps d'une fête, sa place dans Moadim (voir MoadimNowBanner) : le
+    // renvoi depuis le sidour, et le livre de la fête en tête de Moadim.
+    moadimNow: {
+      label: "{fete}, en ce moment",
+      title: "Les textes de la fête, dans Moadim",
+      current: "En ce moment",
+    },
     types: {
       all: "Tout",
       tehilim: "Tehilim",

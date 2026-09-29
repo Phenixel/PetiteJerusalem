@@ -41,6 +41,8 @@ import { useFoldedBooks } from "../composables/useFoldedBooks";
 import { useCatalogSearch } from "../composables/useCatalogSearch";
 import { useBookDownload, type BookState } from "../composables/useBookDownload";
 import { analyticsService } from "../services/analyticsService";
+import { useNow } from "../composables/useNow";
+import { currentMoadimBook, withCurrentFirst } from "../content/moadimNow";
 import AppIcon from "../components/icons/AppIcon.vue";
 import AccountCta from "../components/AccountCta.vue";
 import DailyReadingCard from "../components/DailyReadingCard.vue";
@@ -55,6 +57,7 @@ import { SITE_URL } from "../config/site";
 // jour, qui coiffent les Tehilim.
 const ChneiMikraBanner = defineAsyncComponent(() => import("../components/ChneiMikraBanner.vue"));
 const TehilimDayBanner = defineAsyncComponent(() => import("../components/TehilimDayBanner.vue"));
+const MoadimNowBanner = defineAsyncComponent(() => import("../components/MoadimNowBanner.vue"));
 // Ce qu'on dit avant de lire des Tehilim et après : les textes et leur rendu
 // liturgique pèsent, et ne servent qu'à ce livre.
 const BookEncadrement = defineAsyncComponent(() => import("../components/BookEncadrement.vue"));
@@ -260,6 +263,19 @@ const showChneiMikra = computed(() => browsingBook("tanakh"));
 
 // Les psaumes du jour (cycle mensuel) coiffent les Tehilim, de la même façon.
 const showTehilimDay = computed(() => browsingBook("tehilim"));
+
+// Le temps d'une fête, le sidour renvoie à ses textes dans Moadim (le loulav,
+// les Hochanot à Souccot), et Moadim ouvre sa liste sur le livre de la fête.
+const showMoadimNow = computed(() => browsingBook("sidour"));
+const now = useNow();
+const moadimBookNow = computed(() =>
+  currentCorpus.value?.corpus === "moadim" && !hasSearch.value
+    ? currentMoadimBook(now.value)
+    : null,
+);
+function orderedGroups<T>(groups: Record<string, T>): Record<string, T> {
+  return withCurrentFirst(groups, moadimBookNow.value);
+}
 
 // Le Yehi ratson des Tehilim se dit à l'ouverture du livre, une fois pour les
 // psaumes qu'on va y lire : sa place est ici, pas sur chacun des cent
@@ -661,6 +677,9 @@ onUnmounted(() => {
          traite sur leur page. -->
     <TehilimDayBanner v-if="showTehilimDay" class="max-w-5xl mx-auto mb-10" />
 
+    <!-- Sidour : le temps d'une fête, le renvoi vers ses textes dans Moadim. -->
+    <MoadimNowBanner v-if="showMoadimNow" class="max-w-5xl mx-auto mb-10" />
+
     <!-- Tehilim : ce qu'on dit avant d'en lire, et ce qu'on dit après. -->
     <BookEncadrement v-if="showBookEncadrement" corpus="tehilim" class="max-w-5xl mx-auto mb-10" />
 
@@ -722,7 +741,7 @@ onUnmounted(() => {
           <h2 v-if="!currentCorpus" class="text-2xl font-bold text-text-primary">
             {{ t(typeGroup.labelKey) }}
           </h2>
-          <section v-for="(texts, livre) in typeGroup.groups" :key="livre">
+          <section v-for="(texts, livre) in orderedGroups(typeGroup.groups)" :key="livre">
             <!-- Les Tehilim : le titre du sefer replie et rouvre sa liste. -->
             <button
               v-if="foldableBooks"
@@ -743,8 +762,15 @@ onUnmounted(() => {
                 class="shrink-0 text-text-secondary"
               />
             </button>
-            <h3 v-else class="text-xl font-bold text-text-primary mb-4">
+            <h3 v-else class="text-xl font-bold text-text-primary mb-4 flex items-center gap-3">
               {{ formatBookName(String(livre)) }}
+              <!-- Moadim : le livre de la fête en cours, en tête de la liste. -->
+              <span
+                v-if="livre === moadimBookNow"
+                class="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary"
+              >
+                {{ t("study.moadimNow.current") }}
+              </span>
             </h3>
             <!-- Une seule colonne sur téléphone : les noms restent lisibles en entier.
                  Un sefer replié ne pose pas ses cartes du tout (`v-if`) : c'est

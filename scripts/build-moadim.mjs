@@ -37,6 +37,7 @@ import {
   HALAKHA_LOULAV,
   LIGNES_AVANT_LOULAV,
   LIGNES_LOULAV,
+  DINIM_LOULAV,
 } from "./lib/loulav.mjs";
 import {
   AVINOU,
@@ -239,6 +240,17 @@ const netilatLoulav = {
   title: "נטילת לולב (Netilat Loulav)",
   src: () => [],
   blocks: [
+    // Les dinim du loulav d'abord, des halakhot sans texte à dire, comme en
+    // tête des Hochanot : ce qu'on prend, quand, et comment on l'agite.
+    {
+      label: "Les dinim du loulav",
+      labelText: {
+        fr: "Les dinim du loulav",
+        en: "The laws of the lulav",
+        he: "דיני נטילת לולב",
+      },
+      halakha: DINIM_LOULAV,
+    },
     // Avant de prendre les quatre espèces : le Léchem yihoud, la kavana des
     // six côtés, le Yehi ratson et « Ribon 'alma », comme le sidour les
     // donne avant la bénédiction.
