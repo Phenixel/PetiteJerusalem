@@ -1,0 +1,66 @@
+name: Information de version
+
+# La note de version d'une release devient une information « Mise à jour »
+# de l'app et du site (collection `announcements`, voir docs/backoffice-cli.md).
+# Même texte que celui qui part sur les stores : celui de la release GitHub
+# du tag, en trois sections (docs/notes-de-version.md).
+#
+# - `published` : la release est publiée depuis l'interface GitHub ;
+# - `edited` : son texte est corrigé, l'information suit (même identifiant,
+#   `release-vX.Y.Z`, sa date de publication ne bouge pas) ;
+# - à la main (workflow_dispatch) pour rattraper une version.
+#
+# Jamais de notification d'ici : l'information se publie en silence, et
+# l'app ne l'annonce qu'une fois la version installée. Pour notifier, le
+# faire exprès : `node scripts/admin.mjs info:modifier release-vX.Y.Z --notifier --confirmer`.
+#
+# Une release créée par la CI elle-même (sans texte) ne déclenche rien :
+# GitHub ne relance pas de workflow pour un événement du GITHUB_TOKEN, et
+# le script ignore de toute façon une release sans texte français.
+on:
+  release:
+    types: [published, edited]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag de la version (vX.Y.Z)"
+        required: true
+
+concurrency:
+  group: release-info-${{ github.event.release.tag_name || inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  information:
+    # Seulement les versions de l'app (vX.Y.Z), ni les brouillons ni les
+    # préversions ; les tags web-v* n'ont pas de release.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (startsWith(github.event.release.tag_name, 'v') &&
+       !github.event.release.draft && !github.event.release.prerelease)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # scripts/admin.mjs se sert du firebase-admin des functions.
+      - name: Install Functions dependencies
+        run: npm ci --prefix functions
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}"
+
+      - name: Publier l'information de version
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name || inputs.tag }}
+        run: node scripts/admin.mjs info:depuis-release --tag "$TAG" --confirmer

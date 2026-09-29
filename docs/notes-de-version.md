@@ -8,6 +8,9 @@ La note part de la description de la release GitHub du tag `vX.Y.Z` : la CI
 en envoie chaque section à la langue du même nom, sur le Play Store (fr-FR,
 en-US, iw-IL) et sur l'App Store (fr-FR, en-US, he). Voir
 `docs/android-ci-cd.md`, section « Notes de version en trois langues ».
+Le même texte devient une information « Mise à jour » dans l'app et sur le
+site, à la publication de la release (`.github/workflows/release-info.yml`,
+voir `docs/backoffice-cli.md`).
 
 Le résultat attendu est UN bloc de texte prêt à coller, rien d'autre à
 faire pour le propriétaire du dépôt que le copier.
