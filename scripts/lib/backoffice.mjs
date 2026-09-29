@@ -7,6 +7,7 @@
  * exactement celle qu'écrirait AdminAnnouncementEditPage, un chiour ajouté
  * ici est celui que déposerait le studio d'un auteur. Voir docs/backoffice-cli.md.
  */
+import { createHmac } from "node:crypto";
 import { splitReleaseNotes } from "../release-notes.mjs";
 
 /** Les natures d'une information, et les mots acceptés pour chacune. */
@@ -182,6 +183,24 @@ export function parseList(value) {
 /** L'adresse publique du studio d'un auteur, pour un lien secret. */
 export function studioLink(token) {
   return `https://petite-jerusalem.fr/studio/${token}`;
+}
+
+/**
+ * Le lien qui relie un auteur au bot Telegram : le jeton de son lien studio
+ * passé à /start (64 caractères hexadécimaux, le maximum que Telegram
+ * transmet). Voir docs/telegram.md.
+ */
+export function telegramLink(botUsername, token) {
+  return `https://t.me/${botUsername}?start=${token}`;
+}
+
+/**
+ * Le secret du webhook Telegram, dérivé du jeton du bot. La même dérivation
+ * est dans functions/src/telegramFlow.ts (webhookSecret), qui le vérifie à
+ * chaque appel ; src/__tests__/telegramFlow.test.ts tient l'accord des deux.
+ */
+export function telegramWebhookSecret(botToken) {
+  return createHmac("sha256", "petite-jerusalem/telegram-webhook").update(botToken).digest("hex");
 }
 
 /**

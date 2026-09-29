@@ -13,7 +13,7 @@ npm run test:unit          # vitest, mode interactif
 npx vitest run             # une seule passe, ce que fait `npm run verify`
 ```
 
-Les 142 fichiers vivent dans `src/__tests__/*.test.ts`. La configuration
+Les 149 fichiers vivent dans `src/__tests__/*.test.ts`. La configuration
 (`vitest.config.ts`) prend l'environnement `jsdom` par défaut ; les tests qui
 n'ont pas besoin du DOM (ceux qui lisent le dépôt ou lancent un script)
 commencent par `// @vitest-environment node`. Les dossiers `e2e/`, `android/`,
@@ -47,6 +47,7 @@ avec ce que chacun attend :
 | `lastmod.test.ts` | Le `lastmod` du sitemap vient de git (`scripts/lib/lastmod.mjs`) : la date du dernier commit qui a touché le fichier de la page, vérifiée sur un dépôt jetable. |
 | `ignoredExceptions.test.ts` | Le filtre du bruit connu de l'Error tracking (`src/config/ignoredExceptions`) reconnaît les messages réellement observés dans PostHog, et seulement eux. |
 | `analyticsAudience.test.ts` | `resolveUserType` classe l'équipe, le compte de démonstration remis à Google et les testeurs du test fermé à part des vrais utilisateurs, quelle que soit la casse de l'email. |
+| `telegramFlow.test.ts` | Les textes du bot Telegram des auteurs (`functions/src/telegramFlow.ts`, qui ne passent pas par `src/locales`) ont leurs espaces insécables et aucun tiret long, et le script (`telegram:installer`) et la function dérivent le même secret de webhook : sinon Telegram serait refusé en 401 à chaque message. Voir `docs/telegram.md`. |
 | `adminAccess.test.ts` | `isAdminEmail` n'accepte que le compte admin, et `generateStudioToken` produit un jeton de 64 caractères hexadécimaux jamais répété. |
 | `zmanimDeviceTimezone.test.ts` | Les horaires d'un lieu sont les mêmes instants quel que soit le fuseau de la MACHINE (`process.env.TZ` changé sous les pieds du calcul) : c'est le test qui tient le correctif posé sur `@hebcal/core`, décrit plus bas. |
 | `zmanimMatrice.test.ts` | La matrice de l'audit rejouée : 59 lieux, 30 dates, deux avis, sous trois fuseaux d'appareil. Plus de cent cinquante mille lignes, qui doivent toutes rendre le MÊME instant quel que soit le fuseau de la machine. |

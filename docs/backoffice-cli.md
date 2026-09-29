@@ -176,6 +176,19 @@ insécables du français (U+202F avant ! ? ;, U+00A0 avant : et dans « »).
 | `auteur:creer "Nom"`           | Crée l'auteur et son lien studio, affiché une seule fois : le transmettre à l'auteur. |
 | `auteur:lien <id>`             | Nouveau lien studio ; l'ancien cesse de fonctionner.                                  |
 | `serie:creer <auteurId> "Nom"` | Crée une série de cet auteur.                                                         |
+| `auteur:telegram <id>`         | Son lien vers le bot Telegram, tiré de son lien studio actif (voir plus bas).         |
+
+### Bot Telegram (voir `docs/telegram.md`)
+
+Un auteur peut déposer ses cours en envoyant l'audio au bot Telegram, qui lui
+pose les questions du studio ; le cours arrive en brouillon comme un envoi du
+studio. Une fois le bot installé, `auteur:creer` et `auteur:lien` affichent
+aussi le lien Telegram.
+
+| Commande             | Ce qu'elle fait                                                                                                                         |
+| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `telegram:installer` | Relie le bot à sa Cloud Function (webhook et son secret, commandes, description) et garde son nom dans `config/telegram`. `TELEGRAM_BOT_TOKEN` dans l'environnement ; `--url` pour un autre webhook. |
+| `telegram:etat`      | Conversations reliées, derniers dépôts et leur statut ; avec `TELEGRAM_BOT_TOKEN`, l'état du webhook chez Telegram.                    |
 
 ### Sessions (modération)
 

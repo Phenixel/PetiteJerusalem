@@ -264,5 +264,7 @@ service cloud.firestore {
     }
 
     // Toute autre collection : accès refusé par défaut (pas de règle catch-all).
+    // C'est le cas du bot Telegram des auteurs (telegramChats,
+    // telegramSubmissions, config) : SDK admin seulement, voir docs/telegram.md.
   }
 }

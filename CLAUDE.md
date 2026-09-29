@@ -62,9 +62,11 @@ nouveautés puis corrections, vérification par
 ## Backoffice sans l'interface
 
 Publier une information (nouveauté, incident, question), clore un incident,
-publier ou ajouter un chiour, créer un auteur et son lien studio, modérer
-une session : tout se fait par `node scripts/admin.mjs`, sans passer par les
-pages `/admin`. Mode d'emploi complet dans `docs/backoffice-cli.md`.
+publier ou ajouter un chiour, créer un auteur et son lien studio (et son
+lien vers le bot Telegram, `auteur:telegram`), modérer une session : tout se
+fait par `node scripts/admin.mjs`, sans passer par les pages `/admin`. Mode
+d'emploi complet dans `docs/backoffice-cli.md` ; le bot Telegram des auteurs
+dans `docs/telegram.md`.
 
 - Toujours lancer d'abord **sans** `--confirmer` (essai), montrer ce qui
   sera écrit, puis relancer avec `--confirmer`.

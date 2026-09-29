@@ -38,6 +38,8 @@ import {
   releaseAnnouncementId,
   slugify,
   studioLink,
+  telegramLink,
+  telegramWebhookSecret,
   versionOf,
 } from "./lib/backoffice.mjs";
 
@@ -45,6 +47,8 @@ const PROJECT_ID = "petite-jerusalem-dev";
 const STORAGE_BUCKET = "petite-jerusalem-dev.firebasestorage.app";
 const REPO = "Phenixel/PetiteJerusalem";
 const EMULATORS = { firestore: "localhost:8470", storage: "localhost:8472" };
+/** La Cloud Function qui reçoit les messages du bot (functions/src/telegram.ts). */
+const TELEGRAM_WEBHOOK_URL = `https://us-central1-${PROJECT_ID}.cloudfunctions.net/telegramWebhook`;
 
 // ---- Options -----------------------------------------------------------------
 
@@ -84,6 +88,8 @@ const OPTIONS = {
   duree: { type: "string" },
   filtre: { type: "string" },
   recherche: { type: "string" },
+  // Telegram
+  url: { type: "string" },
 };
 
 const { values: opts, positionals } = parseArgs({
@@ -770,12 +776,19 @@ commands["auteur:creer"] = async (words) => {
     token = await createStudioToken(slug, name);
   });
   if (done) {
+    const bot = await telegramBot();
     out(
       [
         `Auteur créé : ${slug}`,
         `Lien studio (à transmettre à l'auteur, il ne se remontre pas) : ${studioLink(token)}`,
+        ...(bot ? [`Lien Telegram (même secret) : ${telegramLink(bot, token)}`] : []),
       ],
-      { id: slug, name, studioLink: studioLink(token) },
+      {
+        id: slug,
+        name,
+        studioLink: studioLink(token),
+        telegramLink: bot ? telegramLink(bot, token) : null,
+      },
     );
   }
 };
@@ -797,8 +810,54 @@ commands["auteur:lien"] = async ([auteurId]) => {
     },
   );
   if (done) {
-    out([`Nouveau lien studio : ${studioLink(token)}`], { studioLink: studioLink(token) });
+    const bot = await telegramBot();
+    out(
+      [
+        `Nouveau lien studio : ${studioLink(token)}`,
+        ...(bot ? [`Lien Telegram (même secret) : ${telegramLink(bot, token)}`] : []),
+      ],
+      { studioLink: studioLink(token), telegramLink: bot ? telegramLink(bot, token) : null },
+    );
   }
+};
+
+/**
+ * Le lien Telegram d'un auteur, tiré de son lien studio actif (le même
+ * secret : révoquer l'un coupe l'autre). Rien n'est écrit.
+ */
+commands["auteur:telegram"] = async ([auteurId]) => {
+  if (!auteurId) fail("usage : auteur:telegram <id>");
+  const auteur = await getAuteur(auteurId);
+  const bot = await telegramBot();
+  if (!bot)
+    fail("le bot Telegram n'est pas installé : voir telegram:installer (docs/telegram.md).");
+  const { db } = firebase();
+  const [tokens, linkedChats] = await Promise.all([
+    db
+      .collection("studioTokens")
+      .where("auteurId", "==", auteurId)
+      .where("active", "==", true)
+      .get(),
+    db.collection("telegramChats").where("auteurId", "==", auteurId).get(),
+  ]);
+  if (tokens.empty) {
+    fail(`${auteur.name} n'a pas de lien studio actif : en créer un avec auteur:lien ${auteurId}.`);
+  }
+  const links = tokens.docs.map((d) => telegramLink(bot, d.id));
+  const people = linkedChats.docs.map((d) => {
+    const user = d.data().telegramUser ?? {};
+    return user.username ? `@${user.username}` : (user.firstName ?? d.id);
+  });
+  out(
+    [
+      `Lien Telegram de ${auteur.name} (à lui transmettre ; il ouvre la conversation avec le bot) :`,
+      ...links.map((l) => `  ${l}`),
+      people.length
+        ? `Déjà relié depuis Telegram : ${people.join(", ")}`
+        : "Pas encore relié depuis Telegram.",
+    ],
+    { telegramLinks: links, linkedChats: linkedChats.docs.map((d) => d.id) },
+  );
 };
 
 commands["serie:creer"] = async ([auteurId, ...words]) => {
@@ -823,6 +882,152 @@ commands["serie:creer"] = async ([auteurId, ...words]) => {
   ) {
     out([`Série créée : ${serieId}`], { id: serieId, name });
   }
+};
+
+// ---- Bot Telegram (docs/telegram.md) -------------------------------------------
+
+/** Le nom du bot, enregistré par telegram:installer ; null tant qu'il n'est pas installé. */
+async function telegramBot() {
+  const snap = await firebase().db.collection("config").doc("telegram").get();
+  return snap.exists ? (snap.data().botUsername ?? null) : null;
+}
+
+/** Le jeton du bot, que BotFather donne : dans l'environnement, jamais en argument. */
+function botToken() {
+  const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
+  if (!token) {
+    fail(
+      "TELEGRAM_BOT_TOKEN requis dans l'environnement : le jeton que BotFather a donné (voir docs/telegram.md).",
+    );
+  }
+  return token;
+}
+
+async function telegramApi(token, method, params = {}) {
+  const response = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(params),
+    signal: AbortSignal.timeout(15_000),
+  }).catch(() => null);
+  if (!response) fail("api.telegram.org injoignable (réseau filtré ?) : lancer depuis le poste.");
+  const body = await response.json().catch(() => null);
+  if (!body?.ok) fail(`Telegram refuse ${method} : ${body?.description ?? response.status}.`);
+  return body.result;
+}
+
+// Ce que Telegram montre du bot, en français (espaces insécables comprises).
+const BOT_COMMANDS = [
+  { command: "aide", description: "Comment déposer un cours" },
+  { command: "passer", description: "Sauter une question facultative" },
+  { command: "annuler", description: "Abandonner le cours en cours" },
+];
+const BOT_DESCRIPTION =
+  "Déposez vos cours pour Petite Jérusalem\u00a0: envoyez l'audio, répondez à quelques questions (titre, description, série), et l'équipe le relit avant de le publier.\n\nPour commencer, ouvrez le lien Telegram que l'équipe vous a transmis.";
+const BOT_SHORT_DESCRIPTION = "Le dépôt des cours des auteurs de Petite Jérusalem.";
+
+/**
+ * Relie le bot à sa Cloud Function : webhook (avec son secret), commandes,
+ * description, et son nom dans `config/telegram` pour les liens des auteurs.
+ */
+commands["telegram:installer"] = async () => {
+  const token = botToken();
+  const me = await telegramApi(token, "getMe");
+  const url = opts.url ?? TELEGRAM_WEBHOOK_URL;
+  const { db, FieldValue } = firebase();
+  const done = await write(
+    `Relier le bot @${me.username} au webhook ${url}, poser ses commandes et sa description, et l'enregistrer dans config/telegram.`,
+    async () => {
+      await telegramApi(token, "setWebhook", {
+        url,
+        secret_token: telegramWebhookSecret(token),
+        allowed_updates: ["message", "callback_query"],
+        max_connections: 10,
+      });
+      await telegramApi(token, "setMyCommands", { commands: BOT_COMMANDS });
+      await telegramApi(token, "setMyDescription", { description: BOT_DESCRIPTION });
+      await telegramApi(token, "setMyShortDescription", {
+        short_description: BOT_SHORT_DESCRIPTION,
+      });
+      await db.collection("config").doc("telegram").set({
+        botUsername: me.username,
+        webhookUrl: url,
+        updatedAt: FieldValue.serverTimestamp(),
+        updatedVia: VIA,
+      });
+    },
+  );
+  if (done) {
+    out(
+      [
+        `Bot @${me.username} installé, webhook ${url}.`,
+        "Lien d'un auteur : node scripts/admin.mjs auteur:telegram <auteurId>",
+      ],
+      { botUsername: me.username, webhookUrl: url },
+    );
+  }
+};
+
+/** Le bot vu d'ici : conversations reliées, derniers dépôts, et le webhook si le jeton est là. */
+commands["telegram:etat"] = async () => {
+  const { db } = firebase();
+  const [bot, linkedChats, recent] = await Promise.all([
+    telegramBot(),
+    db.collection("telegramChats").get(),
+    db.collection("telegramSubmissions").orderBy("createdAt", "desc").limit(15).get(),
+  ]);
+  const webhook = process.env.TELEGRAM_BOT_TOKEN?.trim()
+    ? await telegramApi(botToken(), "getWebhookInfo")
+    : null;
+  const chatsRows = linkedChats.docs.map((d) => {
+    const c = d.data();
+    const user = c.telegramUser ?? {};
+    return {
+      chatId: d.id,
+      auteurId: c.auteurId,
+      who: user.username ? `@${user.username}` : (user.firstName ?? "?"),
+      draft: c.state?.draft?.name ?? (c.state?.draft ? "(titre à venir)" : null),
+      queued: c.state?.queue?.length ?? 0,
+    };
+  });
+  const subs = recent.docs.map((d) => {
+    const s = d.data();
+    return {
+      id: d.id,
+      createdAt: day(s.createdAt),
+      auteurId: s.auteurId,
+      name: s.draft?.name ?? "",
+      status: s.status,
+      slug: s.slug ?? null,
+      error: s.error ?? null,
+    };
+  });
+  out(
+    [
+      `Bot : ${bot ? `@${bot}` : "pas installé (telegram:installer)"}`,
+      ...(webhook
+        ? [
+            `Webhook : ${webhook.url || "(aucun)"}, ${webhook.pending_update_count} message(s) en attente` +
+              (webhook.last_error_message
+                ? `, dernière erreur ${new Date(webhook.last_error_date * 1000).toISOString().slice(0, 16)} : ${webhook.last_error_message}`
+                : ", pas d'erreur"),
+          ]
+        : ["Webhook : passer TELEGRAM_BOT_TOKEN pour le voir."]),
+      `Conversations reliées : ${chatsRows.length}`,
+      ...chatsRows.map(
+        (c) =>
+          `  ${c.who} (${c.auteurId})${c.draft ? `, cours en cours « ${c.draft} »` : ""}${c.queued ? `, ${c.queued} audio(s) en attente` : ""}`,
+      ),
+      "Derniers dépôts :",
+      ...(subs.length
+        ? subs.map(
+            (s) =>
+              `  ${s.createdAt}  ${s.status}  ${s.auteurId}  « ${s.name} »${s.slug ? `  → ${s.slug}` : ""}${s.error ? `  (${s.error})` : ""}`,
+          )
+        : ["  (aucun)"]),
+    ],
+    { bot, webhook, chats: chatsRows, submissions: subs },
+  );
 };
 
 // ---- Sessions (modération) -----------------------------------------------------
@@ -970,7 +1175,12 @@ Auteurs et séries
   auteur:voir <id>
   auteur:creer "Nom"
   auteur:lien <id>           (nouveau lien studio, l'ancien cesse de marcher)
+  auteur:telegram <id>       (son lien vers le bot Telegram, tiré du lien studio)
   serie:creer <auteurId> "Nom de la série"
+
+Bot Telegram (docs/telegram.md)
+  telegram:installer [--url …]   (TELEGRAM_BOT_TOKEN dans l'environnement)
+  telegram:etat
 
 Sessions
   session:signalements

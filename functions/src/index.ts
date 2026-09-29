@@ -43,6 +43,8 @@ export { onSessionReported } from "./moderation";
 export { submitFeedback } from "./feedback";
 // Informations de l'équipe : notification par canal FCM à la publication.
 export { onAnnouncementWritten } from "./announcements";
+// Bot Telegram des auteurs : dépôt d'un cours par la conversation (docs/telegram.md).
+export { telegramWebhook, onTelegramSubmission } from "./telegram";
 
 const SITE_URL = "https://petite-jerusalem.fr";
 const OG_IMAGE = `${SITE_URL}/og-image.jpg`;

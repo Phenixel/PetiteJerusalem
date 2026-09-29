@@ -34,11 +34,11 @@ const AUDIO_EXTENSIONS = ["mp3", "m4a", "wav", "ogg", "aac"];
 // .appspot.com), notamment sous l'émulateur.
 const STORAGE_BUCKET = "petite-jerusalem-dev.firebasestorage.app";
 
-function bucket() {
+export function bucket() {
   return getStorage().bucket(STORAGE_BUCKET);
 }
 
-type StudioAuthor = { auteurId: string; auteurName: string };
+export type StudioAuthor = { auteurId: string; auteurName: string };
 
 type ChiourMetadata = {
   name: string;
@@ -142,7 +142,7 @@ function parseStagingPath(stagingPath: unknown, token: string): { path: string; 
 }
 
 /** Crée (ou retrouve) une série de l'auteur à partir de son nom. */
-async function createSerieForAuthor(name: string, author: StudioAuthor): Promise<string> {
+export async function createSerieForAuthor(name: string, author: StudioAuthor): Promise<string> {
   const db = getFirestore();
   const slug = generateSlug(name);
   if (!slug) throw new HttpsError("invalid-argument", "Nom de série invalide.");
@@ -219,7 +219,17 @@ async function promoteAudio(
   }
 
   await source.move(audioPath);
+  return { audioPath, ...(await grantDownloadUrl(audioPath)) };
+}
 
+/**
+ * Pose un token de download permanent sur un fichier déjà à sa place et rend
+ * son URL publique et sa taille. Partagé avec le bot Telegram (telegram.ts).
+ */
+export async function grantDownloadUrl(
+  audioPath: string,
+): Promise<{ mediaUrl: string; fileSize: number | null }> {
+  const files = bucket();
   const file = files.file(audioPath);
   const downloadToken = randomUUID();
   await file.setMetadata({ metadata: { firebaseStorageDownloadTokens: downloadToken } });
@@ -234,11 +244,11 @@ async function promoteAudio(
     : "https://firebasestorage.googleapis.com";
   const mediaUrl = `${base}/v0/b/${files.name}/o/${encodeURIComponent(audioPath)}?alt=media&token=${downloadToken}`;
 
-  return { audioPath, mediaUrl, fileSize: Number.isFinite(size) ? size : null };
+  return { mediaUrl, fileSize: Number.isFinite(size) ? size : null };
 }
 
 /** Génère un slug de doc chiourim libre (suffixe -2, -3… en cas de collision). */
-async function availableChiourSlug(name: string): Promise<string> {
+export async function availableChiourSlug(name: string): Promise<string> {
   const db = getFirestore();
   const base = generateSlug(name);
   if (!base) throw new HttpsError("invalid-argument", "Titre invalide.");
