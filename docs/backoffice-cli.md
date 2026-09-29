@@ -71,15 +71,20 @@ Mise en place, une fois, par le propriétaire du projet :
    IAM) :
 
    ```bash
-   gcloud iam service-accounts create claude-backoffice --project petite-jerusalem-dev --display-name "Backoffice (sessions cloud de Claude)"
-   gcloud projects add-iam-policy-binding petite-jerusalem-dev --member="serviceAccount:claude-backoffice@petite-jerusalem-dev.iam.gserviceaccount.com" --role="roles/datastore.user"
-   gcloud storage buckets add-iam-policy-binding gs://petite-jerusalem-dev.firebasestorage.app --member="serviceAccount:claude-backoffice@petite-jerusalem-dev.iam.gserviceaccount.com" --role="roles/storage.objectAdmin"
-   gcloud iam service-accounts keys create ~/claude-backoffice.json --iam-account claude-backoffice@petite-jerusalem-dev.iam.gserviceaccount.com
+   gcloud iam service-accounts create claude-backoffice --project petite-jerusalem-dev --account=admin@phenixel.fr --display-name "Backoffice (sessions cloud de Claude)"
+   gcloud projects add-iam-policy-binding petite-jerusalem-dev --account=admin@phenixel.fr --member="serviceAccount:claude-backoffice@petite-jerusalem-dev.iam.gserviceaccount.com" --role="roles/datastore.user"
+   gcloud storage buckets add-iam-policy-binding gs://petite-jerusalem-dev.firebasestorage.app --account=admin@phenixel.fr --member="serviceAccount:claude-backoffice@petite-jerusalem-dev.iam.gserviceaccount.com" --role="roles/storage.objectAdmin"
+   gcloud iam service-accounts keys create ~/claude-backoffice.json --iam-account claude-backoffice@petite-jerusalem-dev.iam.gserviceaccount.com --account=admin@phenixel.fr
    base64 -i ~/claude-backoffice.json | tr -d '\n' | pbcopy
    ```
 
-   (Ces commandes demandent le compte admin@phenixel.fr :
-   `gcloud auth login admin@phenixel.fr` d'abord.)
+   `--account=admin@phenixel.fr` : le gcloud du poste a un autre compte par
+   défaut, sans accès au projet (il demanderait son mot de passe). Si
+   admin@phenixel.fr n'est pas dans `gcloud auth list`,
+   `gcloud auth login admin@phenixel.fr` d'abord.
+
+   Fait le 2026-09-29 : le compte `claude-backoffice` existe, avec ces deux
+   rôles. Pour une nouvelle clé, seule la dernière commande est à relancer.
 
 2. Dans claude.ai/code, réglages de l'environnement du dépôt, **variables
    d'environnement** : une ligne `PJ_ADMIN_SERVICE_ACCOUNT=` suivie de ce qui
