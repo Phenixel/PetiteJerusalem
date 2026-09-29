@@ -368,6 +368,33 @@ commands["info:supprimer"] = async ([id]) => {
 };
 
 /**
+ * Un GET HTTP par curl, qui suit le relais réseau de la machine
+ * (HTTPS_PROXY) : le `fetch` de Node l'ignore, et dans une session cloud de
+ * Claude il sort alors en direct, depuis une adresse partagée dont le quota
+ * GitHub anonyme est épuisé (403). `fetch` seulement si curl manque.
+ * Rend { status, text }, status 0 si rien n'a répondu.
+ */
+async function httpGet(url, headers) {
+  const args = ["-s", "-L", "-w", "\n%{http_code}"];
+  for (const [name, value] of Object.entries(headers)) args.push("-H", `${name}: ${value}`);
+  try {
+    const raw = execFileSync("curl", [...args, url], {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+      maxBuffer: 10 * 1024 * 1024,
+    });
+    const cut = raw.lastIndexOf("\n");
+    return { status: Number(raw.slice(cut + 1)) || 0, text: raw.slice(0, cut) };
+  } catch (error) {
+    if (error?.code !== "ENOENT") return { status: 0, text: "" };
+  }
+  const response = await fetch(url, { headers }).catch(() => null);
+  return response
+    ? { status: response.status, text: await response.text() }
+    : { status: 0, text: "" };
+}
+
+/**
  * Le texte de la release GitHub d'une version : par `gh` s'il est là (CI,
  * poste), sinon par l'API REST de GitHub, que le dépôt public ouvre sans
  * jeton (une session cloud de Claude n'a pas `gh`). GH_TOKEN est passé s'il
@@ -383,25 +410,26 @@ async function releaseBody(version) {
   } catch (error) {
     if (error?.code !== "ENOENT") fail(`release GitHub v${version} introuvable (gh api).`);
   }
+  const url = `https://api.github.com/${path}`;
+  const accept = { Accept: "application/vnd.github+json" };
   const token = process.env.GH_TOKEN ?? process.env.GITHUB_TOKEN;
-  const get = (withToken) =>
-    fetch(`https://api.github.com/${path}`, {
-      headers: {
-        Accept: "application/vnd.github+json",
-        ...(withToken ? { Authorization: `Bearer ${token}` } : {}),
-      },
-    }).catch(() => null);
-  let response = await get(Boolean(token));
+  let response = await httpGet(
+    url,
+    token ? { ...accept, Authorization: `Bearer ${token}` } : accept,
+  );
   // Un jeton refusé : en session cloud, GH_TOKEN vaut « proxy-injected », une
   // valeur que seul le relais GitHub de la session remplace. Le dépôt étant
   // public, on relit sans jeton.
-  if (token && (response?.status === 401 || response?.status === 403)) {
-    response = await get(false);
+  if (token && (response.status === 401 || response.status === 403)) {
+    response = await httpGet(url, accept);
   }
-  if (!response) fail("api.github.com injoignable.");
+  if (response.status === 0) fail("api.github.com injoignable.");
   if (response.status === 404) fail(`release GitHub v${version} introuvable.`);
-  if (!response.ok) fail(`api.github.com a répondu ${response.status}.`);
-  return (await response.json()).body ?? "";
+  if (response.status !== 200) {
+    const reason = /rate limit/i.test(response.text) ? " (quota de requêtes GitHub épuisé)" : "";
+    fail(`api.github.com a répondu ${response.status}${reason}.`);
+  }
+  return JSON.parse(response.text).body ?? "";
 }
 
 /**
