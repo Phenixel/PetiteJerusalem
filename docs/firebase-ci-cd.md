@@ -34,6 +34,7 @@ ici pour être rejoués tels quels si le compte est un jour recréé.
 | `roles/firebaserules.admin` | Compiler, tester et publier les règles Firestore **et** Storage. Le compte n'avait aucune permission `firebaserules` : la CI échouait dès l'appel de test (`firebaserules.googleapis.com/…:test`). |
 | `roles/datastore.indexAdmin` | Créer les index déclarés dans `firestore.indexes.json`. Le compte n'avait que `roles/datastore.viewer`, en lecture seule. |
 | `roles/firebase.developViewer` | Lire le bucket par défaut (`firebasestorage.defaultBucket.get`), que firebase-tools consulte avant de déployer les règles Storage. Choisi délibérément à la place de `roles/firebase.developAdmin` ou `roles/firebase.admin` : l'écriture des règles passe déjà par `firebaserules.admin`, un droit de lecture suffit donc ici. |
+| `roles/datastore.user` | Écrire dans Firestore : l'information de chaque version, publiée par `.github/workflows/release-info.yml` (`scripts/admin.mjs info:depuis-release`, voir `docs/backoffice-cli.md`). Lecture et écriture des documents seulement, ni règles ni index. |
 
 ## Rôles des agents de service
 

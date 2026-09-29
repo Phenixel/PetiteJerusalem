@@ -21,6 +21,7 @@
     "prerender": "node scripts/prerender-seo.mjs",
     "well-known": "node scripts/well-known.mjs",
     "indexnow": "node scripts/indexnow.mjs",
+    "admin": "node scripts/admin.mjs",
     "type-check": "vue-tsc --build",
     "lint": "eslint . --fix",
     "format": "prettier --write src/",

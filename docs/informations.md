@@ -28,6 +28,13 @@ Corriger une annonce publiée ne la renvoie pas et ne la fait pas remonter :
 sa date de publication est fixée à la première publication. Pour clore un
 incident, rouvrir l'annonce, cocher « Incident résolu », enregistrer.
 
+## Sans l'interface
+
+Tout ce qui précède se fait aussi en ligne de commande, par Claude, par la CI
+ou à la main : `node scripts/admin.mjs info:creer …` (voir
+`docs/backoffice-cli.md`). Les notes de version deviennent d'elles-mêmes une
+information « Mise à jour » à la publication de la release GitHub.
+
 ## Ce que voient les utilisateurs
 
 - **La page Informations** (`/informations`), de la plus récente à la plus

@@ -58,3 +58,23 @@ depuis le dernier tag, format en trois langues, 500 caractères par langue,
 nouveautés puis corrections, vérification par
 `scripts/check-release-notes.mjs`) est dans `docs/notes-de-version.md`,
 à suivre à la lettre.
+
+## Backoffice sans l'interface
+
+Publier une information (nouveauté, incident, question), clore un incident,
+publier ou ajouter un chiour, créer un auteur et son lien studio, modérer
+une session : tout se fait par `node scripts/admin.mjs`, sans passer par les
+pages `/admin`. Mode d'emploi complet dans `docs/backoffice-cli.md`.
+
+- Toujours lancer d'abord **sans** `--confirmer` (essai), montrer ce qui
+  sera écrit, puis relancer avec `--confirmer`.
+- La cible par défaut est la **production** ; `--emulateur` pour les
+  émulateurs locaux.
+- **Jamais `--notifier` sans l'accord explicite du propriétaire** : une
+  notification part vers tous les téléphones et ne se rattrape pas.
+- Un texte d'information suit la typographie ci-dessus (pas de tiret long,
+  espaces insécables en français) ; l'anglais et l'hébreu sont facultatifs.
+- Identifiants expirés : le script le dit ; c'est au propriétaire de lancer
+  `gcloud auth application-default login` (compte admin@phenixel.fr).
+- Les notes de version deviennent seules une information à la publication
+  de la release GitHub (`.github/workflows/release-info.yml`).
