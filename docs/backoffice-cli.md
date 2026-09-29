@@ -151,7 +151,11 @@ Options d'une information :
 - `--lien /page` ou `--lien https://…`, `--lien-texte` : le bouton ;
 - `--version X.Y.Z` : pour une mise à jour (l'app ne l'annonce qu'une fois
   cette version installée) ;
-- `--publier`, `--notifier`.
+- `--publier`, `--notifier` ;
+- `--date AAAA-MM-JJ` (ou une date ISO) : la date de publication, au lieu
+  de maintenant, pour reprendre un historique. Refusée dans le futur, et
+  jamais avec `--notifier` : on ne notifie pas un historique. Vaut aussi
+  pour `info:depuis-release`.
 
 Le texte suit la typographie du dépôt : pas de tiret long, et les espaces
 insécables du français (U+202F avant ! ? ;, U+00A0 avant : et dans « »).
@@ -201,6 +205,11 @@ langue présente. Une release corrigée met l'information à jour sans changer
 sa date. Une release sans texte n'en crée pas. Pour la rattraper à la main :
 onglet Actions, « Information de version », avec le tag ; ou la même commande
 depuis un terminal.
+
+L'historique des versions 3.x a été repris ainsi le 2026-09-29, chaque note
+à la date de sa release (`info:depuis-release --tag vX.Y.Z --date …`), en
+sautant les releases sans texte, celles qui répétaient le texte d'une
+version précédente et les « Correction de bugs mineurs. ».
 
 Pour notifier une version en plus (rarement : l'app annonce déjà la note une
 fois la version installée) :
