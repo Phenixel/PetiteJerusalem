@@ -104,7 +104,14 @@ describe("i18n usage", () => {
   it("n'a aucune clé de fr.ts sans lecteur dans les sources", () => {
     const DYNAMIC_PREFIXES = [
       "admin.chiourim.filters.",
+      "admin.chiourim.sort.",
       "admin.sessions.filters.",
+      // Les informations de l'équipe : leur nature, et les langues de leurs
+      // traductions (voir services/announcements, AdminAnnouncementEditPage).
+      "admin.announcements.filters.",
+      "admin.announcements.kindHint.",
+      "admin.announcements.lang.",
+      "announcements.kinds.",
       // Codes d'erreur des services (useToast.errorFromException).
       "errors.",
       // Le formulaire de support : type de demande et contexte joint.

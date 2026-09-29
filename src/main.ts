@@ -1,6 +1,6 @@
 import "./assets/main.css";
 
-import { createApp } from "vue";
+import { createApp, watch } from "vue";
 import App from "./App.vue";
 import router from "./router";
 import i18n from "./i18n";
@@ -179,6 +179,16 @@ if (isNativeApp) {
       import("./services/zmanReminderService").then(({ zmanReminderService }) =>
         zmanReminderService.init(router),
       );
+      // Informations de l'équipe : abonnement au canal de la langue, refait à
+      // chaque lancement et à chaque changement de langue.
+      import("./services/announcementTopics").then(({ syncAnnouncementTopic }) => {
+        const locale = i18n.global.locale as unknown as { value: string };
+        void syncAnnouncementTopic(locale.value);
+        watch(
+          () => locale.value,
+          (next) => void syncAnnouncementTopic(next),
+        );
+      });
     }),
   );
   // Bandeau de mise à jour : compare le binaire installé à la version publiée

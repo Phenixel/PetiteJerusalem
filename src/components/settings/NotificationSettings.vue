@@ -24,8 +24,9 @@ import {
 } from "../../composables/useZmanReminders";
 import AppIcon from "../icons/AppIcon.vue";
 import ToggleSwitch from "../ToggleSwitch.vue";
+import { announcementsPushEnabled, setAnnouncementsPush } from "../../services/announcementTopics";
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const { reminders, restEnabled, permission, exactAlarms, clearReminder, setRestEnabled } =
   useZmanReminders();
 
@@ -43,6 +44,16 @@ async function toggleRest(value: boolean): Promise<void> {
   // permission au système, jamais avant.
   if (value && !(await ensureNotificationPermission(true))) return;
   setRestEnabled(value);
+}
+
+/**
+ * Les informations de l'équipe (nouveautés, incidents) : actives par défaut,
+ * elles se coupent ici. Les rallumer demande la permission si le système ne
+ * l'a jamais posée, comme pour le Chabbat.
+ */
+async function toggleAnnouncements(value: boolean): Promise<void> {
+  if (value) await ensureNotificationPermission(true);
+  await setAnnouncementsPush(value, String(locale.value));
 }
 
 function delayLabel(minutes: number): string {
@@ -81,6 +92,23 @@ function delayLabel(minutes: number): string {
             </span>
           </span>
           <ToggleSwitch :model-value="restEnabled" @update:model-value="toggleRest" />
+        </label>
+      </li>
+      <!-- Informations de l'équipe : nouveautés, incidents, questions -->
+      <li>
+        <label class="flex cursor-pointer items-center justify-between gap-3 py-3">
+          <span class="min-w-0">
+            <span class="block font-semibold text-text-primary">
+              {{ t("announcements.settings.option") }}
+            </span>
+            <span class="block text-sm text-text-secondary leading-relaxed">
+              {{ t("announcements.settings.hint") }}
+            </span>
+          </span>
+          <ToggleSwitch
+            :model-value="announcementsPushEnabled"
+            @update:model-value="toggleAnnouncements"
+          />
         </label>
       </li>
     </ul>

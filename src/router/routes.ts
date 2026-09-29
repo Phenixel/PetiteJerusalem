@@ -42,6 +42,8 @@ const CalendarPage = () => import("../views/Zmanim/CalendarPage.vue");
 const TehilimPage = () => import("../views/TehilimPage.vue");
 const SeoGuidePage = () => import("../views/SeoGuidePage.vue");
 const ParashaPage = () => import("../views/Library/ParashaPage.vue");
+const AnnouncementsPage = () => import("../views/Announcements/AnnouncementsPage.vue");
+const AnnouncementDetailPage = () => import("../views/Announcements/AnnouncementDetailPage.vue");
 
 import type { NavigationGuardWithThis, RouteLocation, RouteRecordSingleView } from "vue-router";
 import {
@@ -53,11 +55,14 @@ import {
 } from "../content/seoLocales";
 const StudioPage = () => import("../views/Studio/StudioPage.vue");
 const AdminLayout = () => import("../views/Admin/AdminLayout.vue");
+const AdminDashboardPage = () => import("../views/Admin/AdminDashboardPage.vue");
 const AdminChiourimPage = () => import("../views/Admin/AdminChiourimPage.vue");
 const AdminChiourEditPage = () => import("../views/Admin/AdminChiourEditPage.vue");
 const AdminAuteursPage = () => import("../views/Admin/AdminAuteursPage.vue");
 const AdminAuteurDetailPage = () => import("../views/Admin/AdminAuteurDetailPage.vue");
 const AdminSessionsPage = () => import("../views/Admin/AdminSessionsPage.vue");
+const AdminAnnouncementsPage = () => import("../views/Admin/AdminAnnouncementsPage.vue");
+const AdminAnnouncementEditPage = () => import("../views/Admin/AdminAnnouncementEditPage.vue");
 
 /**
  * /lire/:textId sans chaîne : vers la bibliothèque. Le catalogue et ses
@@ -340,6 +345,18 @@ export default [
     name: "detail-chiour",
     component: DetailChiour,
   },
+  // Informations de l'équipe (nouveautés, incidents, questions). Les
+  // notifications ouvrent /informations/:id (voir functions/src/announcements.ts).
+  {
+    path: "/informations",
+    name: "announcements",
+    component: AnnouncementsPage,
+  },
+  {
+    path: "/informations/:id",
+    name: "announcement",
+    component: AnnouncementDetailPage,
+  },
   // Studio auteurs : accès par lien secret distribué par l'admin (pas de
   // compte). Page volontairement absente de toute navigation, et noindex.
   {
@@ -354,13 +371,20 @@ export default [
     component: AdminLayout,
     meta: { requiresAuth: true, requiresAdmin: true },
     children: [
-      { path: "", redirect: "/admin/chiourim" },
+      { path: "", name: "admin-dashboard", component: AdminDashboardPage },
       { path: "chiourim", name: "admin-chiourim", component: AdminChiourimPage },
       { path: "chiourim/:slug", name: "admin-chiour-edit", component: AdminChiourEditPage },
       { path: "auteurs", name: "admin-auteurs", component: AdminAuteursPage },
       { path: "auteurs/:auteurId", name: "admin-auteur-detail", component: AdminAuteurDetailPage },
       // Modération des sessions signalées (exigence App Store 1.2).
       { path: "sessions", name: "admin-sessions", component: AdminSessionsPage },
+      // Informations de l'équipe : écrire, publier, notifier.
+      { path: "informations", name: "admin-announcements", component: AdminAnnouncementsPage },
+      {
+        path: "informations/:id",
+        name: "admin-announcement-edit",
+        component: AdminAnnouncementEditPage,
+      },
     ],
   },
   // Un lien public /lire (sans chaîne de lecture) est renvoyé vers la page

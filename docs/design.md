@@ -661,6 +661,60 @@ attend quelques secondes après l'arrivée, se retire dès qu'on lui répond
 (« Tout va bien » ou le formulaire) et n'insiste pas : au plus trois fois, à
 une semaine d'écart, puis plus jamais.
 
+### L'équipe prend la parole quand elle a quelque chose à dire
+
+Les informations de l'équipe (une nouveauté, un incident, une question, voir
+`docs/informations.md`) n'ont pas de place réservée sur l'accueil. Une carte
+n'y apparaît que lorsqu'il y a du nouveau, et elle se range en tête des
+raccourcis du moment, à côté de la salutation : un incident explique
+peut-être ce qui ne marche pas plus bas, il se lit avant.
+
+Elle a deux formes. Pas encore lue, l'annonce se montre en aperçu : sa nature
+en pastille, « Nouveau » en pastille pleine, le titre en gras et deux lignes du
+texte, de quoi savoir de quoi il s'agit sans l'ouvrir, puis « Lire la suite ».
+Lue, elle se réduit pendant une semaine à la forme des autres raccourcis (un
+dessin, une ligne, une précision en petit) : on sait que l'équipe a parlé, et
+elle ne prend plus la place d'une nouvelle. Son dessin est une cloche, ou,
+pour un incident, le triangle ambré des avertissements.
+
+Le reste du temps, la liste reste à un lien, en bas de l'accueil, juste
+au-dessus de « Écrivez-nous » : l'une donne des nouvelles, l'autre en
+demande, les deux vivent à la fin du parcours. Sur la page elle-même, chaque
+annonce est une carte (elle répond à « qu'est-ce qui a changé ? »), avec sa
+nature en pastille et « Nouveau » en pastille pleine, calculé sur la visite
+précédente.
+
+### Le backoffice est un outil, et il se lit comme un tableau de bord
+
+Le backoffice (`/admin`) ne sert qu'à l'équipe, sur un écran d'ordinateur le
+plus souvent. Il garde la charte (le beige, les surfaces sans bordure, les
+commandes rondes, Playfair pour les titres de section) mais pas la mise en
+page des pages publiques : ses titres sont alignés à gauche, ses listes sont
+denses, et il va droit à ce qui attend une décision.
+
+- **Il s'ouvre sur une vue d'ensemble** : quatre chiffres (chiourim en ligne,
+  écoutes, sessions, auteurs), puis « À traiter », une liste de lignes qui
+  mènent chacune à la liste déjà filtrée (`?filtre=draft`). Quand il n'y a
+  rien à traiter, la page le dit en une phrase, avec une coche verte.
+- **Les onglets comptent ce qui attend** : une pastille couleur du thème pour
+  un travail en attente (chiourim à relire), rouge pour un problème
+  (sessions signalées, incident en cours).
+- **Une liste est un seul panneau** de lignes séparées d'un filet, et non une
+  pile de cartes : on la parcourt d'un regard. Ses filtres sont des pastilles
+  qui portent leur compte ; le filtre actif prend la couleur pleine.
+- **Les états ont cinq tons, toujours les mêmes** (`AdminStatus`) : vert pour
+  ce qui est en ligne, ambre pour ce qui attend (brouillon, à relire), rouge
+  pour ce qui est retiré ou signalé, la couleur du thème pour une nature, gris
+  pour un détail. Une pastille d'état énonce ; elle ne se touche pas.
+- **Le geste courant est un bouton, pas la pastille** : « Publier » à côté
+  d'un brouillon. Dépublier, plus rare et plus lourd, reste sur la fiche ou
+  dans le traitement en masse, derrière une confirmation.
+- **Une sélection fait apparaître sa barre en bas de l'écran**, qui reste à
+  portée pendant qu'on coche, et disparaît quand on la vide.
+- **Une fiche met en tête ce qu'on vient vérifier** : pour un chiour, le
+  lecteur audio, puis le contenu à gauche et le rangement à droite. Ce qui
+  supprime est en bas, en rouge, jamais à côté d'« Enregistrer ».
+
 ## 2. Les couleurs de thème
 
 Trois duos au choix, dans cet ordre. Le premier est celui d'origine.

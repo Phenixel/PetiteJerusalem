@@ -41,6 +41,8 @@ export {
 export { onSessionReported } from "./moderation";
 // Formulaire de support : dépôt des messages dans la base Notion.
 export { submitFeedback } from "./feedback";
+// Informations de l'équipe : notification par canal FCM à la publication.
+export { onAnnouncementWritten } from "./announcements";
 
 const SITE_URL = "https://petite-jerusalem.fr";
 const OG_IMAGE = `${SITE_URL}/og-image.jpg`;
