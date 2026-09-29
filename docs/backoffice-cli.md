@@ -111,8 +111,10 @@ Mise en place, une fois, par le propriétaire du projet :
   puis `gcloud iam service-accounts keys delete <id> --iam-account …` ;
 - les garde-fous ne changent pas (`--confirmer`, `--notifier`) ;
 - une session cloud n'a pas `gh` : `info:depuis-release --tag` y lit la
-  release par l'API publique de GitHub (le dépôt est public), sans rien à
-  configurer. Elle ne peut en revanche ni créer de release, ni pousser de
+  release par l'API publique de GitHub (le dépôt est public), avec `curl`,
+  qui passe par le relais réseau de la session, sans rien à configurer (le
+  `fetch` de Node l'ignorerait et se heurterait au quota GitHub anonyme
+  d'une adresse partagée). Elle ne peut en revanche ni créer de release, ni pousser de
   tag (son `git push` ne vise que sa branche de travail) : les versions se
   publient depuis le poste.
 
