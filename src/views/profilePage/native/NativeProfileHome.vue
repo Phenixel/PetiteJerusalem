@@ -109,6 +109,7 @@ function replayTips(): void {
 }
 
 const infoPages = [
+  { to: "/informations", labelKey: "announcements.title", icon: "bell" },
   { to: "/a-propos", labelKey: "footer.about", icon: "info" },
   { to: "/mentions-legales", labelKey: "footer.legal", icon: "align-left" },
   { to: "/confidentialite", labelKey: "footer.privacy", icon: "eye" },

@@ -65,6 +65,7 @@ export const APP_LINK_PATHS = [
   "/confidentialite",
   "/finir-le-chass",
   "/horaires",
+  "/informations",
   "/lire",
   "/login",
   "/mentions-legales",

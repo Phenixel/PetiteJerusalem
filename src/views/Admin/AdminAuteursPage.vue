@@ -2,16 +2,31 @@
 import { ref, computed, onMounted } from "vue";
 import { useI18n } from "vue-i18n";
 import type { ChiourDoc } from "../../models/models";
-import { adminService, type AuteurWithId } from "../../services/adminService";
+import { adminService, type AuteurWithId, type TokenWithId } from "../../services/adminService";
 import { useToast } from "../../composables/useToast";
+import { refreshAdminSummary } from "../../composables/useAdminSummary";
 import AppIcon from "../../components/icons/AppIcon.vue";
+import AdminSectionHeader from "../../components/admin/AdminSectionHeader.vue";
+import AdminStatus from "../../components/admin/AdminStatus.vue";
+import AdminEmpty from "../../components/admin/AdminEmpty.vue";
+import AdminSkeleton from "../../components/admin/AdminSkeleton.vue";
+import AdminStudioLink from "../../components/admin/AdminStudioLink.vue";
+import { liveValue } from "../../composables/liveInput";
+import { searchItems } from "../../services/fuzzySearch";
 
+/**
+ * Les auteurs de chiourim. Chacun dépose par un lien studio secret : la carte
+ * dit s'il en a un actif, combien de ses chiourim sont en ligne et combien
+ * attendent d'être relus.
+ */
 const { t } = useI18n();
 const toast = useToast();
 
 const isLoading = ref(true);
 const auteurs = ref<AuteurWithId[]>([]);
 const chiourim = ref<ChiourDoc[]>([]);
+const tokens = ref<TokenWithId[]>([]);
+const search = ref("");
 
 const newName = ref("");
 const isCreating = ref(false);
@@ -19,24 +34,48 @@ const isCreating = ref(false);
 // montré ensuite : il reste lisible dans Firestore par l'admin si besoin).
 const freshLink = ref<{ auteurName: string; url: string } | null>(null);
 
-const countByAuteur = computed(() => {
-  const map = new Map<string, number>();
-  chiourim.value.forEach((c) => {
-    if (c.auteurId) map.set(c.auteurId, (map.get(c.auteurId) ?? 0) + 1);
-  });
+const statsByAuteur = computed(() => {
+  const map = new Map<string, { published: number; drafts: number }>();
+  for (const c of chiourim.value) {
+    if (!c.auteurId) continue;
+    const entry = map.get(c.auteurId) ?? { published: 0, drafts: 0 };
+    if (c.published) entry.published += 1;
+    else entry.drafts += 1;
+    map.set(c.auteurId, entry);
+  }
   return map;
 });
 
+const linked = computed(
+  () => new Set(tokens.value.filter((tok) => tok.active).map((tok) => tok.auteurId)),
+);
+
+const filtered = computed(() =>
+  searchItems(auteurs.value, search.value, (a) => [a.name], { keepOrder: true }),
+);
+
+const initials = (name: string) =>
+  name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
+
 async function refresh() {
-  [auteurs.value, chiourim.value] = await Promise.all([
+  [auteurs.value, chiourim.value, tokens.value] = await Promise.all([
     adminService.listAuteurs(),
     adminService.listAllChiourim(),
+    adminService.listAllTokens(),
   ]);
 }
 
 onMounted(async () => {
   try {
     await refresh();
+  } catch (error) {
+    console.error("Erreur lors du chargement des auteurs:", error);
+    toast.error(t("admin.error"));
   } finally {
     isLoading.value = false;
   }
@@ -52,6 +91,7 @@ async function create() {
     newName.value = "";
     toast.success(t("admin.auteurs.created"));
     await refresh();
+    void refreshAdminSummary(true);
   } catch (error) {
     console.error("Erreur lors de la création de l'auteur:", error);
     toast.error(
@@ -63,30 +103,25 @@ async function create() {
     isCreating.value = false;
   }
 }
-
-async function copyLink() {
-  if (!freshLink.value) return;
-  try {
-    await navigator.clipboard.writeText(freshLink.value.url);
-    toast.success(t("admin.auteurs.linkCopied"));
-  } catch {
-    toast.error(t("admin.error"));
-  }
-}
 </script>
 
 <template>
-  <div v-if="isLoading" class="text-center py-24 text-text-secondary">
-    <AppIcon name="spinner" :size="24" class="animate-spin mx-auto mb-4" />
-    {{ t("common.loading") }}
-  </div>
+  <AdminSkeleton v-if="isLoading" />
 
-  <div v-else class="space-y-6 animate-[fadeIn_0.3s_ease]">
-    <!-- Création d'un auteur -->
-    <div class="card p-5 md:p-6">
-      <h2 class="text-lg font-bold text-text-primary mb-4">{{ t("admin.auteurs.addTitle") }}</h2>
-      <form @submit.prevent="create" class="flex flex-col sm:flex-row gap-3">
+  <div v-else class="animate-[fadeIn_0.3s_ease]">
+    <AdminSectionHeader
+      :title="t('admin.nav.auteurs')"
+      :description="t('admin.auteurs.summary', { n: auteurs.length }, auteurs.length)"
+    />
+
+    <!-- Ajouter un auteur : son lien studio est créé avec lui -->
+    <section class="card mb-6 p-5">
+      <form class="flex flex-col gap-3 sm:flex-row sm:items-center" @submit.prevent="create">
+        <label for="new-auteur" class="font-semibold text-text-primary sm:shrink-0">
+          {{ t("admin.auteurs.addTitle") }}
+        </label>
         <input
+          id="new-auteur"
           v-model="newName"
           type="text"
           :placeholder="t('admin.auteurs.namePlaceholder')"
@@ -100,50 +135,79 @@ async function copyLink() {
         </button>
       </form>
 
-      <!-- Lien studio du nouvel auteur, montré une seule fois -->
-      <div
+      <AdminStudioLink
         v-if="freshLink"
-        class="mt-4 rounded-lg bg-primary/5 border border-primary/20 p-4 space-y-2"
-      >
-        <p class="font-semibold text-text-primary">
-          {{ t("admin.auteurs.linkReady", { name: freshLink.auteurName }) }}
-        </p>
-        <p class="text-xs text-text-secondary">{{ t("admin.auteurs.linkOnce") }}</p>
-        <div class="flex flex-wrap items-center gap-2">
-          <code
-            class="text-xs bg-black/[0.05] rounded px-2 py-1.5 break-all flex-1 min-w-0 dark:bg-white/10"
-          >
-            {{ freshLink.url }}
-          </code>
-          <button class="btn btn-soft shrink-0" @click="copyLink">
-            <AppIcon name="copy" :size="14" />
-            {{ t("admin.auteurs.copy") }}
-          </button>
-        </div>
-      </div>
+        class="mt-4"
+        :url="freshLink.url"
+        :title="t('admin.auteurs.linkReady', { name: freshLink.auteurName })"
+      />
+    </section>
+
+    <div class="relative mb-4 sm:w-72">
+      <AppIcon
+        name="search"
+        :size="14"
+        class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary"
+      />
+      <input
+        :value="search"
+        type="search"
+        :placeholder="t('admin.chiourim.searchPlaceholder')"
+        class="field pl-9"
+        @input="search = liveValue($event)"
+      />
     </div>
 
-    <!-- Liste des auteurs -->
-    <p v-if="auteurs.length === 0" class="card p-8 text-center text-text-secondary">
-      {{ t("admin.auteurs.empty") }}
-    </p>
-    <ul v-else class="space-y-2">
-      <li v-for="auteur in auteurs" :key="auteur.id">
+    <AdminEmpty
+      v-if="filtered.length === 0"
+      icon="users"
+      :message="auteurs.length === 0 ? t('admin.auteurs.empty') : t('admin.auteurs.noMatch')"
+    />
+
+    <ul v-else class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <li v-for="auteur in filtered" :key="auteur.id">
         <router-link
           :to="`/admin/auteurs/${auteur.id}`"
-          class="card card-hover p-4 flex items-center gap-3"
+          class="card card-hover group flex h-full items-start gap-3 p-4"
         >
-          <div
-            class="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 text-primary shrink-0"
+          <span
+            class="flex h-11 w-11 shrink-0 items-center justify-center rounded-pill bg-primary/10 font-bold text-primary"
           >
-            <AppIcon name="teacher" :size="18" />
-          </div>
-          <div class="flex-1 min-w-0">
-            <p class="font-semibold text-text-primary truncate">{{ auteur.name }}</p>
-            <p class="text-sm text-text-secondary">
-              {{ t("admin.auteurs.chiourimCount", { count: countByAuteur.get(auteur.id) ?? 0 }) }}
-            </p>
-          </div>
+            {{ initials(auteur.name) }}
+          </span>
+          <span class="min-w-0 flex-1">
+            <span class="block truncate font-semibold text-text-primary group-hover:text-primary">
+              {{ auteur.name }}
+            </span>
+            <span class="block text-sm text-text-secondary">
+              {{
+                t("admin.auteurs.chiourimCount", {
+                  count: statsByAuteur.get(auteur.id)?.published ?? 0,
+                })
+              }}
+            </span>
+            <span class="mt-2 flex flex-wrap gap-1.5">
+              <AdminStatus
+                v-if="statsByAuteur.get(auteur.id)?.drafts"
+                tone="warning"
+                :label="
+                  t(
+                    'admin.auteurs.draftsCount',
+                    { n: statsByAuteur.get(auteur.id)?.drafts ?? 0 },
+                    statsByAuteur.get(auteur.id)?.drafts ?? 0,
+                  )
+                "
+              />
+              <AdminStatus
+                :tone="linked.has(auteur.id) ? 'neutral' : 'danger'"
+                :label="
+                  linked.has(auteur.id)
+                    ? t('admin.auteurDetail.linkActive')
+                    : t('admin.auteurDetail.linkInactive')
+                "
+              />
+            </span>
+          </span>
         </router-link>
       </li>
     </ul>

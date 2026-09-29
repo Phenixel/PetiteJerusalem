@@ -4,7 +4,7 @@
 // supprimer, résoudre les signalements. Les sessions signalées remontent en
 // tête de liste ; au 3e signalement distinct la Cloud Function les a déjà
 // masquées automatiquement.
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import type { Session } from "../../models/models";
 import { adminService, type ReportWithId } from "../../services/adminService";
@@ -14,9 +14,16 @@ import { useToast } from "../../composables/useToast";
 import { useSessionEditing, type SessionEditData } from "../../composables/useSessionEditing";
 import EditSessionModal from "../../components/EditSessionModal.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
-import { liveValue } from "../../composables/liveInput";
 import { searchItems } from "../../services/fuzzySearch";
 import { useConfirm } from "../../composables/useConfirm";
+import { useAdminQueryFilter } from "../../composables/useAdminQueryFilter";
+import { refreshAdminSummary } from "../../composables/useAdminSummary";
+import { formatCount } from "../../services/adminFormat";
+import AdminSectionHeader from "../../components/admin/AdminSectionHeader.vue";
+import AdminFilterBar from "../../components/admin/AdminFilterBar.vue";
+import AdminStatus from "../../components/admin/AdminStatus.vue";
+import AdminEmpty from "../../components/admin/AdminEmpty.vue";
+import AdminSkeleton from "../../components/admin/AdminSkeleton.vue";
 
 const { t } = useI18n();
 const { confirm } = useConfirm();
@@ -27,10 +34,15 @@ const isLoading = ref(true);
 const sessions = ref<Session[]>([]);
 const reports = ref<ReportWithId[]>([]);
 
-type Filter = "all" | "reported" | "hidden";
-const filters: Filter[] = ["all", "reported", "hidden"];
-const filter = ref<Filter>("all");
+const FILTERS = ["all", "reported", "hidden"] as const;
+type Filter = (typeof FILTERS)[number];
+const filter = useAdminQueryFilter<Filter>(FILTERS, "all");
 const search = ref("");
+
+/** Au-delà, « Afficher plus » : les sessions se comptent par centaines. */
+const PAGE = 40;
+const shown = ref(PAGE);
+watch([filter, search], () => (shown.value = PAGE));
 
 // Session dont les signalements sont dépliés.
 const expandedSessionId = ref<string | null>(null);
@@ -52,10 +64,22 @@ const reportsBySession = computed(() => {
 const openReportsFor = (sessionId: string) =>
   (reportsBySession.value.get(sessionId) ?? []).filter((r) => r.status === "open");
 
+const matches: Record<Filter, (s: Session) => boolean> = {
+  all: () => true,
+  reported: (s) => openReportsFor(s.id).length > 0,
+  hidden: (s) => s.hidden === true,
+};
+
+const filterItems = computed(() =>
+  FILTERS.map((id) => ({
+    id,
+    label: t(`admin.sessions.filters.${id}`),
+    count: sessions.value.filter(matches[id]).length,
+  })),
+);
+
 const filtered = computed(() => {
-  let list = sessions.value;
-  if (filter.value === "reported") list = list.filter((s) => openReportsFor(s.id).length > 0);
-  if (filter.value === "hidden") list = list.filter((s) => s.hidden === true);
+  let list = sessions.value.filter(matches[filter.value]);
 
   list = searchItems(list, search.value, (s) => [
     s.name,
@@ -73,11 +97,20 @@ const filtered = computed(() => {
   });
 });
 
+const visible = computed(() => filtered.value.slice(0, shown.value));
+
+/** Personnes distinctes qui ont réservé au moins un texte. */
+const participants = (session: Session) =>
+  new Set(
+    (session.reservations ?? []).map((r) => r.chosenById || r.chosenByGuestId || r.chosenByName),
+  ).size;
+
 async function refresh() {
   [sessions.value, reports.value] = await Promise.all([
     adminService.listAllSessions(),
     adminService.listReports(),
   ]);
+  void refreshAdminSummary(true);
 }
 
 onMounted(async () => {
@@ -171,75 +204,81 @@ const formatDate = (date: Date | undefined) => (date ? DateService.formatDate(da
 </script>
 
 <template>
-  <div v-if="isLoading" class="text-center py-24 text-text-secondary">
-    <AppIcon name="spinner" :size="24" class="animate-spin mx-auto mb-4" />
-    {{ t("common.loading") }}
-  </div>
+  <AdminSkeleton v-if="isLoading" />
 
-  <div v-else class="space-y-5 animate-[fadeIn_0.3s_ease]">
-    <!-- Filtres + recherche -->
-    <div class="flex flex-wrap items-center gap-2">
-      <button
-        v-for="f in filters"
-        :key="f"
-        class="chip cursor-pointer transition-colors"
-        :class="
-          filter === f ? 'bg-primary/15 text-primary font-semibold' : 'opacity-70 hover:opacity-100'
-        "
-        @click="filter = f"
+  <div v-else class="animate-[fadeIn_0.3s_ease]">
+    <AdminSectionHeader
+      :title="t('admin.nav.sessions')"
+      :description="t('admin.sessions.summary')"
+    />
+
+    <AdminFilterBar
+      v-model:filter="filter"
+      v-model:search="search"
+      :filters="filterItems"
+      :search-placeholder="t('admin.sessions.searchPlaceholder')"
+    />
+
+    <AdminEmpty
+      v-if="filtered.length === 0"
+      :icon="filter === 'reported' ? 'circle-check' : 'search'"
+      :message="
+        filter === 'reported' && !search ? t('admin.sessions.noReports') : t('admin.sessions.empty')
+      "
+    />
+
+    <ul v-else class="card divide-y divide-line overflow-hidden">
+      <li
+        v-for="session in visible"
+        :key="session.id"
+        class="p-3 md:p-4"
+        :class="{ 'bg-red-600/[0.03]': openReportsFor(session.id).length > 0 }"
       >
-        {{ t(`admin.sessions.filters.${f}`) }}
-      </button>
-      <div class="relative ml-auto">
-        <AppIcon
-          name="search"
-          :size="14"
-          class="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none"
-        />
-        <input
-          :value="search"
-          @input="search = liveValue($event)"
-          type="search"
-          :placeholder="t('admin.sessions.searchPlaceholder')"
-          class="field pl-9 w-56"
-        />
-      </div>
-    </div>
-
-    <!-- Liste -->
-    <p v-if="filtered.length === 0" class="card p-8 text-center text-text-secondary">
-      {{ t("admin.sessions.empty") }}
-    </p>
-
-    <ul v-else class="space-y-2">
-      <li v-for="session in filtered" :key="session.id" class="card p-3 md:p-4">
-        <div class="flex items-start gap-3">
-          <div class="flex-1 min-w-0">
-            <router-link
-              :to="`/share-reading/session/${session.slug || session.id}`"
-              class="font-semibold text-text-primary hover:text-primary break-words block"
+        <div class="flex flex-col gap-3 md:flex-row md:items-center">
+          <div class="min-w-0 flex-1">
+            <a
+              :href="`/share-reading/session/${session.slug || session.id}`"
+              target="_blank"
+              rel="noopener"
+              class="inline-flex items-center gap-1.5 break-words font-semibold text-text-primary hover:text-primary"
             >
               {{ session.name }}
-            </router-link>
-            <p class="text-sm text-text-secondary truncate">
-              {{ session.creatorName }} · {{ formatDate(session.createdAt) }}
+              <AppIcon name="external-link" :size="12" class="shrink-0 opacity-60" />
+            </a>
+            <p class="mt-0.5 text-sm text-text-secondary">
+              {{ session.creatorName }} · {{ formatDate(session.createdAt) }} ·
+              {{
+                t(
+                  "admin.sessions.participants",
+                  { n: formatCount(participants(session)) },
+                  participants(session),
+                )
+              }}
             </p>
-
-            <div class="flex flex-wrap items-center gap-2 mt-2.5">
-              <span class="chip bg-primary/10 text-primary">
-                {{ TextTypeService.formatType(session.type) }}
-              </span>
-              <span v-if="session.hidden" class="chip bg-red-600/10 text-red-700 dark:text-red-300">
-                {{
-                  session.hiddenReason === "reports"
-                    ? t("admin.sessions.hiddenAuto")
-                    : t("admin.sessions.hiddenByAdmin")
-                }}
-              </span>
-              <!-- Signalements ouverts : le bouton déplie le détail -->
+            <div class="mt-2 flex flex-wrap items-center gap-1.5">
+              <AdminStatus tone="primary" :label="TextTypeService.formatType(session.type)" />
+              <AdminStatus
+                v-if="session.hidden"
+                tone="danger"
+                icon="eye"
+                :label="
+                  session.hiddenReason === 'reports'
+                    ? t('admin.sessions.hiddenAuto')
+                    : t('admin.sessions.hiddenByAdmin')
+                "
+              />
+              <AdminStatus
+                v-if="session.isEnded"
+                tone="neutral"
+                :label="t('admin.sessions.ended')"
+              />
+              <!-- Signalements ouverts : la pastille porte une icône, elle
+                   déplie leur détail. -->
               <button
                 v-if="openReportsFor(session.id).length > 0"
-                class="chip bg-amber-500/15 text-amber-700 dark:text-amber-300 cursor-pointer"
+                type="button"
+                class="chip cursor-pointer bg-red-600/10 text-red-700 transition-colors hover:bg-red-600/20 dark:text-red-300"
+                :aria-expanded="expandedSessionId === session.id"
                 @click="toggleReports(session.id)"
               >
                 <AppIcon name="flag" :size="12" />
@@ -251,66 +290,76 @@ const formatDate = (date: Date | undefined) => (date ? DateService.formatDate(da
                   :class="expandedSessionId === session.id ? 'rotate-180' : ''"
                 />
               </button>
-
-              <button
-                class="btn btn-soft !px-3 !py-1.5 !text-sm"
-                :disabled="busySessionId === session.id"
-                @click="toggleHidden(session)"
-              >
-                <AppIcon
-                  v-if="busySessionId === session.id"
-                  name="spinner"
-                  :size="14"
-                  class="animate-spin"
-                />
-                <AppIcon v-else name="eye" :size="14" />
-                {{ session.hidden ? t("admin.sessions.unhide") : t("admin.sessions.hide") }}
-              </button>
-              <button
-                class="icon-btn"
-                :title="t('common.edit')"
-                :aria-label="t('common.edit')"
-                @click="openEdit(session)"
-              >
-                <AppIcon name="pencil" :size="15" />
-              </button>
-              <button
-                class="icon-btn hover:!bg-red-600/10 hover:!text-red-600 dark:hover:!text-red-400"
-                :title="t('common.delete')"
-                :aria-label="t('common.delete')"
-                :disabled="busySessionId === session.id"
-                @click="deleteSession(session)"
-              >
-                <AppIcon name="trash" :size="15" />
-              </button>
             </div>
+          </div>
+
+          <div class="flex shrink-0 items-center gap-1">
+            <button
+              type="button"
+              class="btn btn-soft btn-sm"
+              :disabled="busySessionId === session.id"
+              @click="toggleHidden(session)"
+            >
+              <AppIcon
+                v-if="busySessionId === session.id"
+                name="spinner"
+                :size="13"
+                class="animate-spin"
+              />
+              <AppIcon v-else name="eye" :size="13" />
+              {{ session.hidden ? t("admin.sessions.unhide") : t("admin.sessions.hide") }}
+            </button>
+            <button
+              type="button"
+              class="icon-btn"
+              :title="t('common.edit')"
+              :aria-label="t('common.edit')"
+              @click="openEdit(session)"
+            >
+              <AppIcon name="pencil" :size="15" />
+            </button>
+            <button
+              type="button"
+              class="icon-btn hover:!bg-red-600/10 hover:!text-red-600 dark:hover:!text-red-400"
+              :title="t('common.delete')"
+              :aria-label="t('common.delete')"
+              :disabled="busySessionId === session.id"
+              @click="deleteSession(session)"
+            >
+              <AppIcon name="trash" :size="15" />
+            </button>
           </div>
         </div>
 
         <!-- Détail des signalements ouverts -->
         <ul
           v-if="expandedSessionId === session.id && openReportsFor(session.id).length > 0"
-          class="mt-3 space-y-2 border-t border-line pt-3"
+          class="mt-3 space-y-2 rounded-control bg-surface-soft p-3"
         >
           <li
             v-for="report in openReportsFor(session.id)"
             :key="report.id"
             class="flex items-start gap-3 text-sm"
           >
-            <AppIcon name="flag" :size="13" class="mt-0.5 shrink-0 text-amber-600" />
-            <div class="flex-1 min-w-0">
+            <AppIcon
+              name="flag"
+              :size="13"
+              class="mt-0.5 shrink-0 text-red-600 dark:text-red-400"
+            />
+            <div class="min-w-0 flex-1">
               <p class="font-medium text-text-primary">
                 {{ t(`moderation.reasons.${report.reason}`) }}
                 <span class="font-normal text-text-secondary">
                   · {{ formatDate(report.createdAt) }}
                 </span>
               </p>
-              <p v-if="report.details" class="text-text-secondary break-words">
+              <p v-if="report.details" class="break-words text-text-secondary">
                 {{ report.details }}
               </p>
             </div>
             <button
-              class="btn btn-soft !px-3 !py-1.5 !text-xs shrink-0"
+              type="button"
+              class="btn btn-soft btn-sm shrink-0"
               :disabled="busySessionId === session.id"
               @click="resolveReport(report)"
             >
@@ -321,6 +370,12 @@ const formatDate = (date: Date | undefined) => (date ? DateService.formatDate(da
         </ul>
       </li>
     </ul>
+
+    <div v-if="filtered.length > shown" class="mt-4 text-center">
+      <button type="button" class="btn btn-soft" @click="shown += PAGE">
+        {{ t("admin.showMore", { n: filtered.length - shown }) }}
+      </button>
+    </div>
 
     <EditSessionModal
       v-model:show="showEditModal"

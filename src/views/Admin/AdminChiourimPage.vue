@@ -1,60 +1,125 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import type { ChiourDoc } from "../../models/models";
 import { adminService, type AuteurWithId, type SerieWithId } from "../../services/adminService";
 import { useToast } from "../../composables/useToast";
+import { useConfirm } from "../../composables/useConfirm";
+import { useAdminQueryFilter } from "../../composables/useAdminQueryFilter";
+import { refreshAdminSummary } from "../../composables/useAdminSummary";
 import AppSelect from "../../components/AppSelect.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
-import { liveValue } from "../../composables/liveInput";
+import AdminSectionHeader from "../../components/admin/AdminSectionHeader.vue";
+import AdminFilterBar from "../../components/admin/AdminFilterBar.vue";
+import AdminChiourRow from "../../components/admin/AdminChiourRow.vue";
+import AdminEmpty from "../../components/admin/AdminEmpty.vue";
+import AdminSkeleton from "../../components/admin/AdminSkeleton.vue";
 import { searchItems } from "../../services/fuzzySearch";
 
+/**
+ * Le catalogue des chiourim, brouillons compris. Les auteurs déposent par
+ * leur lien studio : leurs envois arrivent ici en brouillon, et « À relire »
+ * les range du plus récent au plus ancien. Le reste sert au rattrapage :
+ * sans auteur, sans série, et le traitement en masse d'une sélection.
+ */
 const { t } = useI18n();
 const toast = useToast();
+const { confirm } = useConfirm();
+const route = useRoute();
+const router = useRouter();
 
 const isLoading = ref(true);
 const chiourim = ref<ChiourDoc[]>([]);
 const auteurs = ref<AuteurWithId[]>([]);
 const series = ref<SerieWithId[]>([]);
 
-type Filter = "all" | "draft" | "published" | "noAuteur" | "noSerie";
-const filter = ref<Filter>("all");
+const FILTERS = ["all", "draft", "published", "noAuteur", "noSerie"] as const;
+type Filter = (typeof FILTERS)[number];
+const filter = useAdminQueryFilter<Filter>(FILTERS, "all");
 const search = ref("");
 
-// Sélection multiple pour le rattrapage en masse
+const SORTS = ["recent", "name", "views"] as const;
+type Sort = (typeof SORTS)[number];
+const initialSort = route.query.tri;
+const sort = ref<Sort>(
+  typeof initialSort === "string" && (SORTS as readonly string[]).includes(initialSort)
+    ? (initialSort as Sort)
+    : "recent",
+);
+watch(sort, (value) => {
+  const query = { ...route.query };
+  if (value === "recent") delete query.tri;
+  else query.tri = value;
+  void router.replace({ query });
+});
+const sortOptions = computed(() =>
+  SORTS.map((s) => ({ value: s, label: t(`admin.chiourim.sort.${s}`) })),
+);
+
+/** Au-delà, « Afficher plus » : une liste de 400 lignes ne se parcourt pas. */
+const PAGE = 50;
+const shown = ref(PAGE);
+watch([filter, search, sort], () => (shown.value = PAGE));
+
 const selected = ref<Set<string>>(new Set());
 const batchAuteurId = ref("");
 const batchSerieId = ref("");
 const isBatchSaving = ref(false);
-const togglingSlug = ref<string | null>(null);
-
-const filters: Filter[] = ["all", "draft", "published", "noAuteur", "noSerie"];
+const busySlug = ref<string | null>(null);
 
 const serieNameById = computed(() => new Map(series.value.map((s) => [s.id, s.name])));
 
-const filtered = computed(() => {
-  let list = chiourim.value;
-  if (filter.value === "draft") list = list.filter((c) => !c.published);
-  if (filter.value === "published") list = list.filter((c) => c.published);
-  if (filter.value === "noAuteur") list = list.filter((c) => !c.auteurId);
-  if (filter.value === "noSerie") list = list.filter((c) => !c.serieId);
-  return searchItems(list, search.value, (c) => [c.name, c.auteur, ...c.categories], {
-    keepOrder: true,
-  });
-});
+const matches: Record<Filter, (c: ChiourDoc) => boolean> = {
+  all: () => true,
+  draft: (c) => !c.published,
+  published: (c) => c.published,
+  noAuteur: (c) => !c.auteurId,
+  noSerie: (c) => !c.serieId,
+};
 
-const seriesForBatchAuteur = computed(() =>
-  batchAuteurId.value ? series.value.filter((s) => s.auteurId === batchAuteurId.value) : [],
+const filterItems = computed(() =>
+  FILTERS.map((id) => ({
+    id,
+    label: t(`admin.chiourim.filters.${id}`),
+    count: chiourim.value.filter(matches[id]).length,
+  })),
 );
 
-// Voir AdminChiourEditPage : les options se calculent, elles ne se remappent
-// pas à chaque rendu.
+const filtered = computed(() => {
+  const list = searchItems(
+    chiourim.value.filter(matches[filter.value]),
+    search.value,
+    (c) => [c.name, c.auteur, ...c.categories],
+    { keepOrder: true },
+  );
+  const sorted = [...list];
+  if (sort.value === "recent") {
+    sorted.sort((a, b) => (b.createdAt?.getTime() ?? 0) - (a.createdAt?.getTime() ?? 0));
+  } else if (sort.value === "views") {
+    sorted.sort((a, b) => (b.views ?? 0) - (a.views ?? 0));
+  }
+  return sorted;
+});
+
+const visible = computed(() => filtered.value.slice(0, shown.value));
+
+const description = computed(() =>
+  t("admin.chiourim.summary", {
+    total: chiourim.value.length,
+    drafts: chiourim.value.filter((c) => !c.published).length,
+  }),
+);
+
 const auteurOptions = computed(() =>
   auteurs.value.map((auteur) => ({ value: auteur.id, label: auteur.name })),
 );
 const batchSerieOptions = computed(() =>
-  seriesForBatchAuteur.value.map((serie) => ({ value: serie.id, label: serie.name })),
+  series.value
+    .filter((s) => s.auteurId === batchAuteurId.value)
+    .map((serie) => ({ value: serie.id, label: serie.name })),
 );
+watch(batchAuteurId, () => (batchSerieId.value = ""));
 
 async function refresh() {
   [chiourim.value, auteurs.value, series.value] = await Promise.all([
@@ -84,212 +149,199 @@ function toggleSelect(slug: string) {
   selected.value = next;
 }
 
+const allVisibleSelected = computed(
+  () => visible.value.length > 0 && visible.value.every((c) => selected.value.has(c.slug)),
+);
+
 function toggleSelectAll() {
-  selected.value =
-    selected.value.size === filtered.value.length
-      ? new Set()
-      : new Set(filtered.value.map((c) => c.slug));
+  const next = new Set(selected.value);
+  if (allVisibleSelected.value) visible.value.forEach((c) => next.delete(c.slug));
+  else visible.value.forEach((c) => next.add(c.slug));
+  selected.value = next;
 }
 
-async function applyBatch() {
-  if (selected.value.size === 0 || (!batchAuteurId.value && !batchSerieId.value)) return;
+function clearSelection() {
+  selected.value = new Set();
+  batchAuteurId.value = "";
+  batchSerieId.value = "";
+}
+
+async function runBatch(fields: Record<string, unknown>, doneKey: string) {
+  const count = selected.value.size;
   isBatchSaving.value = true;
   try {
-    const fields: Record<string, unknown> = {};
-    if (batchAuteurId.value) {
-      const auteur = auteurs.value.find((a) => a.id === batchAuteurId.value);
-      fields.auteurId = batchAuteurId.value;
-      fields.auteur = auteur?.name ?? null;
-    }
-    if (batchSerieId.value) fields.serieId = batchSerieId.value;
     await adminService.batchUpdateChiourim([...selected.value], fields);
-    toast.success(t("admin.chiourim.batchDone", { count: selected.value.size }));
-    selected.value = new Set();
-    batchAuteurId.value = "";
-    batchSerieId.value = "";
+    toast.success(t(doneKey, { count }));
+    clearSelection();
     await refresh();
+    void refreshAdminSummary(true);
   } catch (error) {
-    console.error("Erreur lors du rattrapage en masse:", error);
+    console.error("Erreur lors du traitement en masse:", error);
     toast.error(t("admin.error"));
   } finally {
     isBatchSaving.value = false;
   }
 }
 
-async function togglePublished(chiour: ChiourDoc) {
-  togglingSlug.value = chiour.slug;
+async function applyAttach() {
+  if (!batchAuteurId.value) return;
+  const auteur = auteurs.value.find((a) => a.id === batchAuteurId.value);
+  const fields: Record<string, unknown> = {
+    auteurId: batchAuteurId.value,
+    auteur: auteur?.name ?? null,
+  };
+  if (batchSerieId.value) fields.serieId = batchSerieId.value;
+  await runBatch(fields, "admin.chiourim.batchDone");
+}
+
+async function batchPublish(published: boolean) {
+  const accepted = await confirm({
+    title: t(
+      published ? "admin.chiourim.batchPublishConfirm" : "admin.chiourim.batchUnpublishConfirm",
+      { count: selected.value.size },
+      selected.value.size,
+    ),
+    confirmLabel: published ? t("admin.chiourim.publish") : t("admin.chiourim.unpublish"),
+    danger: !published,
+  });
+  if (!accepted) return;
+  await runBatch({ published }, "admin.chiourim.batchDone");
+}
+
+async function publish(chiour: ChiourDoc) {
+  busySlug.value = chiour.slug;
   try {
-    await adminService.setPublished(chiour.slug, !chiour.published);
-    chiour.published = !chiour.published;
-    toast.success(
-      chiour.published ? t("admin.chiourim.publishedOk") : t("admin.chiourim.unpublishedOk"),
-    );
+    await adminService.setPublished(chiour.slug, true);
+    chiour.published = true;
+    toast.success(t("admin.chiourim.publishedOk"));
+    void refreshAdminSummary(true);
   } catch (error) {
-    console.error("Erreur lors du changement de publication:", error);
+    console.error("Erreur lors de la publication:", error);
     toast.error(t("admin.error"));
   } finally {
-    togglingSlug.value = null;
+    busySlug.value = null;
   }
 }
 </script>
 
 <template>
-  <div v-if="isLoading" class="text-center py-24 text-text-secondary">
-    <AppIcon name="spinner" :size="24" class="animate-spin mx-auto mb-4" />
-    {{ t("common.loading") }}
-  </div>
+  <AdminSkeleton v-if="isLoading" />
 
-  <div v-else class="space-y-5 animate-[fadeIn_0.3s_ease]">
-    <!-- Filtres + recherche -->
-    <div class="flex flex-wrap items-center gap-2">
-      <button
-        v-for="f in filters"
-        :key="f"
-        class="chip cursor-pointer transition-colors"
-        :class="
-          filter === f ? 'bg-primary/15 text-primary font-semibold' : 'opacity-70 hover:opacity-100'
-        "
-        @click="filter = f"
-      >
-        {{ t(`admin.chiourim.filters.${f}`) }}
-      </button>
-      <div class="relative ml-auto">
-        <AppIcon
-          name="search"
-          :size="14"
-          class="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none"
-        />
-        <input
-          :value="search"
-          @input="search = liveValue($event)"
-          type="search"
-          :placeholder="t('admin.chiourim.searchPlaceholder')"
-          class="field pl-9 w-56"
-        />
-      </div>
-    </div>
+  <div v-else class="animate-[fadeIn_0.3s_ease]" :class="{ 'pb-28': selected.size > 0 }">
+    <AdminSectionHeader :title="t('admin.nav.chiourim')" :description="description" />
 
-    <!-- Barre de rattrapage en masse -->
-    <div v-if="selected.size > 0" class="card p-4 flex flex-wrap items-center gap-3">
-      <span class="font-semibold text-text-primary">
-        {{ t("admin.chiourim.selectedCount", { count: selected.size }) }}
-      </span>
-      <AppSelect
-        v-model="batchAuteurId"
-        class="w-56"
-        :options="auteurOptions"
-        :placeholder="t('admin.chiourim.batchAuteur')"
-      />
-      <AppSelect
-        v-model="batchSerieId"
-        class="w-56"
-        :options="batchSerieOptions"
-        :placeholder="t('admin.chiourim.batchSerie')"
-        :disabled="!batchAuteurId"
-      />
-      <button
-        class="btn btn-primary"
-        :disabled="isBatchSaving || (!batchAuteurId && !batchSerieId)"
-        @click="applyBatch"
-      >
-        <AppIcon v-if="isBatchSaving" name="spinner" :size="15" class="animate-spin" />
-        {{ t("admin.chiourim.applyBatch") }}
-      </button>
-    </div>
+    <AdminFilterBar
+      v-model:filter="filter"
+      v-model:search="search"
+      :filters="filterItems"
+      :search-placeholder="t('admin.chiourim.searchPlaceholder')"
+    >
+      <AppSelect v-model="sort" class="w-44" :options="sortOptions" />
+    </AdminFilterBar>
 
-    <!-- Liste -->
-    <p v-if="filtered.length === 0" class="card p-8 text-center text-text-secondary">
-      {{ t("admin.chiourim.empty") }}
-    </p>
+    <AdminEmpty
+      v-if="filtered.length === 0"
+      :icon="filter === 'draft' ? 'circle-check' : 'search'"
+      :message="
+        filter === 'draft' && !search ? t('admin.chiourim.noDrafts') : t('admin.chiourim.empty')
+      "
+    />
 
     <template v-else>
-      <label class="inline-flex items-center gap-2 cursor-pointer text-sm text-text-secondary">
+      <label
+        class="mb-2 inline-flex cursor-pointer items-center gap-2 px-1 text-sm text-text-secondary"
+      >
         <input
           type="checkbox"
-          class="w-4 h-4 rounded accent-primary cursor-pointer"
-          :checked="selected.size === filtered.length && filtered.length > 0"
+          class="h-4 w-4 cursor-pointer rounded accent-primary"
+          :checked="allVisibleSelected"
           @change="toggleSelectAll"
         />
         {{ t("admin.chiourim.selectAll") }}
       </label>
 
-      <ul class="space-y-2">
-        <!-- Titre pleine largeur ; statut et actions en dessous, pour rester
-             lisible sur mobile (même disposition que le studio). -->
-        <li
-          v-for="chiour in filtered"
-          :key="chiour.slug"
-          class="card p-3 md:p-4 flex items-start gap-3"
-        >
-          <input
-            type="checkbox"
-            class="w-4 h-4 mt-1 rounded accent-primary cursor-pointer shrink-0"
-            :checked="selected.has(chiour.slug)"
-            @change="toggleSelect(chiour.slug)"
+      <ul class="card divide-y divide-line overflow-hidden">
+        <li v-for="chiour in visible" :key="chiour.slug">
+          <AdminChiourRow
+            :chiour="chiour"
+            :serie-name="chiour.serieId ? serieNameById.get(chiour.serieId) : null"
+            selectable
+            :selected="selected.has(chiour.slug)"
+            :busy="busySlug === chiour.slug"
+            @toggle-select="toggleSelect(chiour.slug)"
+            @toggle-published="publish(chiour)"
           />
-          <div class="flex-1 min-w-0">
-            <router-link
-              :to="`/admin/chiourim/${chiour.slug}`"
-              class="font-semibold text-text-primary hover:text-primary break-words block"
-            >
-              {{ chiour.name }}
-            </router-link>
-            <p class="text-sm text-text-secondary truncate">
-              <span v-if="chiour.auteur">{{ chiour.auteur }}</span>
-              <span v-else class="text-amber-700 dark:text-amber-300">{{
-                t("admin.chiourim.noAuteur")
-              }}</span>
-              <template v-if="chiour.serieId && serieNameById.get(chiour.serieId)">
-                · {{ serieNameById.get(chiour.serieId) }}
-                <template v-if="chiour.episode">({{ chiour.episode }})</template>
-              </template>
-            </p>
-
-            <div class="flex flex-wrap items-center gap-2 mt-2.5">
-              <span
-                class="chip"
-                :class="
-                  chiour.published
-                    ? 'bg-green-600/10 text-green-700 dark:text-green-300'
-                    : 'bg-amber-500/10 text-amber-700 dark:text-amber-300'
-                "
-              >
-                {{
-                  chiour.published
-                    ? t("admin.chiourim.statusPublished")
-                    : t("admin.chiourim.statusDraft")
-                }}
-              </span>
-
-              <span
-                v-if="chiour.published"
-                class="inline-flex items-center gap-1 text-sm text-text-secondary"
-              >
-                <AppIcon name="eye" :size="14" />
-                {{ t("common.viewsCount", { count: chiour.views ?? 0 }) }}
-              </span>
-
-              <button
-                class="btn btn-soft"
-                :disabled="togglingSlug === chiour.slug"
-                @click="togglePublished(chiour)"
-              >
-                <AppIcon
-                  v-if="togglingSlug === chiour.slug"
-                  name="spinner"
-                  :size="14"
-                  class="animate-spin"
-                />
-                {{ chiour.published ? t("admin.chiourim.unpublish") : t("admin.chiourim.publish") }}
-              </button>
-
-              <router-link :to="`/admin/chiourim/${chiour.slug}`" class="btn btn-soft">
-                <AppIcon name="pencil" :size="14" />
-              </router-link>
-            </div>
-          </div>
         </li>
       </ul>
+
+      <div v-if="filtered.length > shown" class="mt-4 text-center">
+        <button type="button" class="btn btn-soft" @click="shown += PAGE">
+          {{ t("admin.showMore", { n: filtered.length - shown }) }}
+        </button>
+      </div>
     </template>
+
+    <!-- Traitement en masse : une barre posée en bas de l'écran tant qu'une
+         sélection existe, pour rester à portée pendant qu'on coche. -->
+    <div
+      v-if="selected.size > 0"
+      class="fixed inset-x-0 bottom-0 z-30 px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)]"
+    >
+      <div
+        class="mx-auto flex max-w-6xl flex-wrap items-center gap-2 rounded-card bg-surface p-3 shadow-pop md:p-4"
+      >
+        <span class="mr-1 font-semibold text-text-primary">
+          {{ t("admin.chiourim.selectedCount", { count: selected.size }) }}
+        </span>
+        <AppSelect
+          v-model="batchAuteurId"
+          class="w-60"
+          :options="auteurOptions"
+          :placeholder="t('admin.chiourim.batchAuteur')"
+        />
+        <AppSelect
+          v-if="batchAuteurId && batchSerieOptions.length"
+          v-model="batchSerieId"
+          class="w-56"
+          :options="batchSerieOptions"
+          :placeholder="t('admin.chiourim.batchSerie')"
+        />
+        <button
+          type="button"
+          class="btn btn-soft btn-sm"
+          :disabled="isBatchSaving || !batchAuteurId"
+          @click="applyAttach"
+        >
+          {{ t("admin.chiourim.applyBatch") }}
+        </button>
+        <span class="hidden h-6 w-px bg-line md:block"></span>
+        <button
+          type="button"
+          class="btn btn-primary btn-sm"
+          :disabled="isBatchSaving"
+          @click="batchPublish(true)"
+        >
+          <AppIcon v-if="isBatchSaving" name="spinner" :size="13" class="animate-spin" />
+          {{ t("admin.chiourim.publish") }}
+        </button>
+        <button
+          type="button"
+          class="btn btn-soft btn-sm"
+          :disabled="isBatchSaving"
+          @click="batchPublish(false)"
+        >
+          {{ t("admin.chiourim.unpublish") }}
+        </button>
+        <button
+          type="button"
+          class="icon-btn ml-auto"
+          :aria-label="t('admin.clearSelection')"
+          :title="t('admin.clearSelection')"
+          @click="clearSelection"
+        >
+          <AppIcon name="x" :size="16" />
+        </button>
+      </div>
+    </div>
   </div>
 </template>

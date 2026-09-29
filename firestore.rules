@@ -205,6 +205,16 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
+    // Informations de l'équipe (nouveautés, incidents, questions) : lecture
+    // publique des annonces publiées, les brouillons ne se lisent que depuis
+    // le backoffice. Une requête publique doit donc filtrer sur
+    // `published == true`. Écriture admin ; `notifiedAt` est posé par la
+    // Cloud Function onAnnouncementWritten (SDK admin).
+    match /announcements/{announcementId} {
+      allow read: if resource.data.published == true || isAdmin();
+      allow create, update, delete: if isAdmin();
+    }
+
     // Préférences utilisateur (thème, lectures quotidiennes…) : privées
     match /userPreferences/{userId} {
       allow read: if isAuthenticated() && request.auth.uid == userId;

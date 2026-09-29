@@ -1,4 +1,5 @@
 import {
+  addDoc,
   collection,
   doc,
   getDoc,
@@ -6,6 +7,7 @@ import {
   setDoc,
   updateDoc,
   deleteDoc,
+  getCountFromServer,
   query,
   where,
   writeBatch,
@@ -31,6 +33,8 @@ import { chiourService } from "./chiourService";
 import { serieService } from "./serieService";
 import { firestoreService } from "./firestoreService";
 import { studioService } from "./studioService";
+import { announcementService, parseAnnouncement } from "./announcementService";
+import { sortAnnouncements, type Announcement, type LocalizedText } from "./announcements";
 
 /**
  * Backoffice admin : CRUD direct Firestore/Storage, autorisé par les règles
@@ -63,6 +67,32 @@ function slugify(name: string): string {
   return chiourService.generateAuteurSlug(name);
 }
 
+/** Champs d'une information écrits depuis le backoffice (le reste est calculé). */
+export interface AnnouncementAdminFields {
+  kind: Announcement["kind"];
+  title: LocalizedText;
+  body: LocalizedText;
+  link: Announcement["link"];
+  version: string | null;
+  resolved: boolean;
+  published: boolean;
+  notify: boolean;
+}
+
+/**
+ * Les dates d'un chiour arrivent de Firestore en Timestamp, alors que le
+ * modèle les annonce en Date : le backoffice les trie et les affiche, il les
+ * convertit donc à la lecture.
+ */
+function withDates(chiour: ChiourDoc): ChiourDoc {
+  const toDate = (value: unknown): Date | undefined => {
+    const maybe = value as { toDate?: () => Date } | Date | null | undefined;
+    if (maybe instanceof Date) return maybe;
+    return typeof maybe?.toDate === "function" ? maybe.toDate() : undefined;
+  };
+  return { ...chiour, createdAt: toDate(chiour.createdAt), updatedAt: toDate(chiour.updatedAt) };
+}
+
 /** Token de lien studio : 32 octets aléatoires en hexadécimal (64 caractères). */
 export function generateStudioToken(): string {
   const bytes = crypto.getRandomValues(new Uint8Array(32));
@@ -71,6 +101,19 @@ export function generateStudioToken(): string {
 
 class AdminService {
   // --- Sessions (modération) ----------------------------------------------
+
+  /**
+   * Nombre de sessions, et de sessions masquées, pour le tableau de bord :
+   * des requêtes d'agrégat, sans rapatrier les sessions et leurs réservations.
+   */
+  async countSessions(): Promise<{ total: number; hidden: number }> {
+    const base = collection(db, "sessions");
+    const [total, hidden] = await Promise.all([
+      getCountFromServer(base),
+      getCountFromServer(query(base, where("hidden", "==", true))),
+    ]);
+    return { total: total.data().count, hidden: hidden.data().count };
+  }
 
   /** Toutes les sessions, masquées comprises, sans passer par le cache. */
   async listAllSessions(): Promise<Session[]> {
@@ -150,14 +193,14 @@ class AdminService {
   /** Tous les chiourim, brouillons inclus, sans cache. */
   async listAllChiourim(): Promise<ChiourDoc[]> {
     const snap = await getDocs(collection(db, "chiourim"));
-    const docs = snap.docs.map((d) => d.data() as ChiourDoc);
+    const docs = snap.docs.map((d) => withDates(d.data() as ChiourDoc));
     docs.sort((a, b) => a.name.localeCompare(b.name, "fr"));
     return docs;
   }
 
   async getChiour(slug: string): Promise<ChiourDoc | null> {
     const snap = await getDoc(doc(db, "chiourim", slug));
-    return snap.exists() ? (snap.data() as ChiourDoc) : null;
+    return snap.exists() ? withDates(snap.data() as ChiourDoc) : null;
   }
 
   async updateChiour(slug: string, fields: ChiourAdminFields): Promise<void> {
@@ -308,6 +351,12 @@ class AdminService {
 
   // --- Tokens (liens studio) ----------------------------------------------
 
+  /** Tous les liens studio, pour savoir d'un coup d'œil quels auteurs en ont un. */
+  async listAllTokens(): Promise<TokenWithId[]> {
+    const snap = await getDocs(collection(db, "studioTokens"));
+    return snap.docs.map((d) => ({ ...(d.data() as StudioTokenDoc), id: d.id }));
+  }
+
   async listTokens(auteurId: string): Promise<TokenWithId[]> {
     const snap = await getDocs(
       query(collection(db, "studioTokens"), where("auteurId", "==", auteurId)),
@@ -341,6 +390,62 @@ class AdminService {
 
   studioLinkFor(token: string): string {
     return `${window.location.origin}/studio/${token}`;
+  }
+
+  // --- Informations de l'équipe -------------------------------------------
+
+  /** Toutes les informations, brouillons compris (règles : admin seulement). */
+  async listAnnouncements(): Promise<Announcement[]> {
+    const snap = await getDocs(collection(db, "announcements"));
+    return sortAnnouncements(snap.docs.map((d) => parseAnnouncement(d.id, d.data())));
+  }
+
+  async getAnnouncement(id: string): Promise<Announcement | null> {
+    const snap = await getDoc(doc(db, "announcements", id));
+    return snap.exists() ? parseAnnouncement(snap.id, snap.data()) : null;
+  }
+
+  /**
+   * Crée ou met à jour une information ; rend son identifiant. La date de
+   * publication se pose à la première publication et ne bouge plus : corriger
+   * une annonce ne la fait pas remonter en tête ni repasser pour nouvelle.
+   * `notifiedAt` n'est jamais écrit d'ici, il appartient à la Cloud Function.
+   */
+  async saveAnnouncement(
+    id: string | null,
+    fields: AnnouncementAdminFields,
+    previous: Announcement | null,
+  ): Promise<string> {
+    const data = {
+      ...fields,
+      updatedAt: serverTimestamp(),
+      ...(fields.published && !previous?.publishedAt ? { publishedAt: serverTimestamp() } : {}),
+    };
+    let savedId = id;
+    if (savedId) {
+      await updateDoc(doc(db, "announcements", savedId), data);
+    } else {
+      const created = await addDoc(collection(db, "announcements"), {
+        ...data,
+        publishedAt: fields.published ? serverTimestamp() : null,
+        notifiedAt: null,
+        createdAt: serverTimestamp(),
+      });
+      savedId = created.id;
+    }
+    announcementService.invalidate();
+    return savedId;
+  }
+
+  /** Clôt un incident depuis la liste, sans rien toucher d'autre. */
+  async resolveIncident(id: string): Promise<void> {
+    await updateDoc(doc(db, "announcements", id), { resolved: true, updatedAt: serverTimestamp() });
+    announcementService.invalidate();
+  }
+
+  async deleteAnnouncement(id: string): Promise<void> {
+    await deleteDoc(doc(db, "announcements", id));
+    announcementService.invalidate();
   }
 
   // --- Séries -------------------------------------------------------------

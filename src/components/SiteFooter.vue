@@ -58,6 +58,9 @@
         class="flex flex-col md:flex-row gap-2 md:gap-4 items-center justify-center"
         :aria-label="t('footer.about')"
       >
+        <RouterLink class="hover:text-primary transition-colors" to="/informations">
+          {{ t("announcements.title") }}
+        </RouterLink>
         <RouterLink class="hover:text-primary transition-colors" :to="localePath('aPropos')">
           {{ t("footer.about") }}
         </RouterLink>
