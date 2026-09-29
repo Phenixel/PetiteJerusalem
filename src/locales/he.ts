@@ -1479,6 +1479,11 @@ const he: LocaleMessages = {
     sections: "{count} פרקים",
     textsCount: "טקסט אחד | {count} טקסטים",
     range: "{from} עד {to}",
+    moadimNow: {
+      label: "{fete}, עכשיו",
+      title: "תפילות החג, במועדים",
+      current: "עכשיו",
+    },
     types: {
       all: "הכול",
       tehilim: "תהילים",
