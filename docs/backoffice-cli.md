@@ -110,8 +110,11 @@ Mise en place, une fois, par le propriétaire du projet :
   `gcloud iam service-accounts keys list --iam-account claude-backoffice@petite-jerusalem-dev.iam.gserviceaccount.com`,
   puis `gcloud iam service-accounts keys delete <id> --iam-account …` ;
 - les garde-fous ne changent pas (`--confirmer`, `--notifier`) ;
-- `gh` est déjà connecté dans une session cloud : `info:depuis-release --tag`
-  y fonctionne.
+- une session cloud n'a pas `gh` : `info:depuis-release --tag` y lit la
+  release par l'API publique de GitHub (le dépôt est public), sans rien à
+  configurer. Elle ne peut en revanche ni créer de release, ni pousser de
+  tag (son `git push` ne vise que sa branche de travail) : les versions se
+  publient depuis le poste.
 
 ## Les commandes
 

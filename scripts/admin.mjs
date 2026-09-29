@@ -368,6 +368,35 @@ commands["info:supprimer"] = async ([id]) => {
 };
 
 /**
+ * Le texte de la release GitHub d'une version : par `gh` s'il est là (CI,
+ * poste), sinon par l'API REST de GitHub, que le dépôt public ouvre sans
+ * jeton (une session cloud de Claude n'a pas `gh`). GH_TOKEN est passé s'il
+ * existe, pour la limite de requêtes.
+ */
+async function releaseBody(version) {
+  const path = `repos/${REPO}/releases/tags/v${version}`;
+  try {
+    return execFileSync("gh", ["api", path, "--jq", '.body // ""'], {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    });
+  } catch (error) {
+    if (error?.code !== "ENOENT") fail(`release GitHub v${version} introuvable (gh api).`);
+  }
+  const token = process.env.GH_TOKEN ?? process.env.GITHUB_TOKEN;
+  const response = await fetch(`https://api.github.com/${path}`, {
+    headers: {
+      Accept: "application/vnd.github+json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+  }).catch(() => null);
+  if (!response) fail("api.github.com injoignable.");
+  if (response.status === 404) fail(`release GitHub v${version} introuvable.`);
+  if (!response.ok) fail(`api.github.com a répondu ${response.status}.`);
+  return (await response.json()).body ?? "";
+}
+
+/**
  * La note de version d'un tag en information « Mise à jour ». Idempotent :
  * l'information s'appelle `release-vX.Y.Z`, une release modifiée la met à
  * jour (texte, traductions) sans toucher à sa date ni à sa publication.
@@ -379,15 +408,7 @@ commands["info:depuis-release"] = async () => {
   if (opts.fichier) {
     body = readFileSync(opts.fichier, "utf8");
   } else {
-    try {
-      body = execFileSync(
-        "gh",
-        ["api", `repos/${REPO}/releases/tags/v${version}`, "--jq", '.body // ""'],
-        { encoding: "utf8" },
-      );
-    } catch {
-      fail(`release GitHub v${version} introuvable (gh api).`);
-    }
+    body = await releaseBody(version);
   }
   const input = releaseAnnouncement(version, body);
   if (!input) {
