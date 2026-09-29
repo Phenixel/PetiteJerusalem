@@ -1942,17 +1942,20 @@ watch(textId, (_, previousTextId) => {
         <div v-else :style="{ '--reading-scale': readingSize.scale.value }">
           <template v-for="(block, blockIndex) in verseBlocks" :key="anchorOf(block)">
             <!-- Une strophe du psaume 119 : sa lettre en grand et en gras,
-                 qu'on repère d'un coup d'œil en cherchant celles d'un nom. -->
+                 qu'on repère d'un coup d'œil en cherchant celles d'un nom.
+                 Elle se pose du côté où les versets commencent : à droite
+                 au-dessus de l'hébreu, à gauche au-dessus de la phonétique. -->
             <p
               v-if="block.heading?.kind === 'letter'"
               :data-block-anchor="anchorOf(block)"
+              :dir="showPhonetic ? 'ltr' : 'rtl'"
               :class="blockLabelClass(blockIndex)"
               class="flex items-baseline gap-3"
             >
               <span dir="rtl" class="font-hebrew text-3xl font-bold leading-none">
                 {{ block.heading.letter }}
               </span>
-              <span v-if="locale !== 'he'">{{ block.heading.name }}</span>
+              <span v-if="locale !== 'he'" dir="ltr">{{ block.heading.name }}</span>
             </p>
             <p
               v-else-if="block.label"
