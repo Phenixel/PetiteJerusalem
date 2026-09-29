@@ -41,18 +41,27 @@ const search = ref("");
 
 const SORTS = ["recent", "name", "views"] as const;
 type Sort = (typeof SORTS)[number];
-const initialSort = route.query.tri;
-const sort = ref<Sort>(
-  typeof initialSort === "string" && (SORTS as readonly string[]).includes(initialSort)
-    ? (initialSort as Sort)
-    : "recent",
-);
+const sortFromQuery = (): Sort => {
+  const value = route.query.tri;
+  return typeof value === "string" && (SORTS as readonly string[]).includes(value)
+    ? (value as Sort)
+    : "recent";
+};
+const sort = ref<Sort>(sortFromQuery());
 watch(sort, (value) => {
   const query = { ...route.query };
   if (value === "recent") delete query.tri;
   else query.tri = value;
   void router.replace({ query });
 });
+// Le lien « Chiourim » du menu retire `?tri=` : le tri affiché suit l'adresse.
+watch(
+  () => route.query.tri,
+  () => {
+    const next = sortFromQuery();
+    if (next !== sort.value) sort.value = next;
+  },
+);
 const sortOptions = computed(() =>
   SORTS.map((s) => ({ value: s, label: t(`admin.chiourim.sort.${s}`) })),
 );
@@ -60,8 +69,6 @@ const sortOptions = computed(() =>
 /** Au-delà, « Afficher plus » : une liste de 400 lignes ne se parcourt pas. */
 const PAGE = 50;
 const shown = ref(PAGE);
-watch([filter, search, sort], () => (shown.value = PAGE));
-
 const selected = ref<Set<string>>(new Set());
 const batchAuteurId = ref("");
 const batchSerieId = ref("");
@@ -103,6 +110,17 @@ const filtered = computed(() => {
 });
 
 const visible = computed(() => filtered.value.slice(0, shown.value));
+
+// Changer de filtre, de recherche ou de tri repart des premières lignes, et
+// la sélection ne garde que ce qui est encore à l'écran : sinon « Publier »
+// emporterait des brouillons cochés sous un autre filtre, que l'on ne voit
+// plus.
+watch([filter, search, sort], () => {
+  shown.value = PAGE;
+  const onScreen = new Set(visible.value.map((c) => c.slug));
+  const kept = [...selected.value].filter((slug) => onScreen.has(slug));
+  if (kept.length !== selected.value.size) selected.value = new Set(kept);
+});
 
 const description = computed(() =>
   t("admin.chiourim.summary", {
@@ -166,11 +184,20 @@ function clearSelection() {
   batchSerieId.value = "";
 }
 
+/**
+ * Les chiourim cochés ET encore affichés : la sélection est déjà réduite à
+ * chaque changement de filtre, mais un traitement en masse ne doit jamais
+ * toucher une ligne qu'on n'a pas sous les yeux.
+ */
+const selectedOnScreen = computed(() => visible.value.filter((c) => selected.value.has(c.slug)));
+
 async function runBatch(fields: Record<string, unknown>, doneKey: string) {
-  const count = selected.value.size;
+  const slugs = selectedOnScreen.value.map((c) => c.slug);
+  const count = slugs.length;
+  if (count === 0) return;
   isBatchSaving.value = true;
   try {
-    await adminService.batchUpdateChiourim([...selected.value], fields);
+    await adminService.batchUpdateChiourim(slugs, fields);
     toast.success(t(doneKey, { count }));
     clearSelection();
     await refresh();
@@ -198,8 +225,8 @@ async function batchPublish(published: boolean) {
   const accepted = await confirm({
     title: t(
       published ? "admin.chiourim.batchPublishConfirm" : "admin.chiourim.batchUnpublishConfirm",
-      { count: selected.value.size },
-      selected.value.size,
+      { count: selectedOnScreen.value.length },
+      selectedOnScreen.value.length,
     ),
     confirmLabel: published ? t("admin.chiourim.publish") : t("admin.chiourim.unpublish"),
     danger: !published,
@@ -276,7 +303,7 @@ async function publish(chiour: ChiourDoc) {
 
       <div v-if="filtered.length > shown" class="mt-4 text-center">
         <button type="button" class="btn btn-soft" @click="shown += PAGE">
-          {{ t("admin.showMore", { n: filtered.length - shown }) }}
+          {{ t("admin.showMore", { n: Math.min(PAGE, filtered.length - shown) }) }}
         </button>
       </div>
     </template>

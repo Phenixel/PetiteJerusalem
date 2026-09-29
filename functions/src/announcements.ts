@@ -5,6 +5,9 @@
  * au lancement. Pas de jetons à parcourir : un envoi par langue touche tous
  * les appareils abonnés, avec ou sans compte.
  *
+ * Seulement quand l'annonce devient publiée avec la case cochée (voir
+ * isNotifyTransition) : une autre modification n'envoie rien.
+ *
  * Une seule fois par annonce : `notifiedAt` est posé dans une transaction
  * AVANT l'envoi. Un trigger rejoué, ou l'écriture de `notifiedAt` elle-même
  * qui relance ce trigger, trouve le champ rempli et s'arrête. Mieux vaut une
@@ -17,13 +20,15 @@ import { onDocumentWritten } from "firebase-functions/v2/firestore";
 import { logger } from "firebase-functions/v2";
 import { FieldValue, getFirestore } from "firebase-admin/firestore";
 import { getMessaging } from "firebase-admin/messaging";
-import { buildAnnouncementMessages, shouldNotify } from "./announcementPush";
+import { buildAnnouncementMessages, isNotifyTransition, shouldNotify } from "./announcementPush";
 
 export const onAnnouncementWritten = onDocumentWritten(
   "announcements/{announcementId}",
   async (event) => {
+    const before = event.data?.before;
     const after = event.data?.after;
-    if (!after?.exists || !shouldNotify(after.data())) return;
+    if (!after?.exists) return;
+    if (!isNotifyTransition(before?.exists ? before.data() : undefined, after.data())) return;
 
     const id = event.params.announcementId;
     const ref = getFirestore().collection("announcements").doc(id);

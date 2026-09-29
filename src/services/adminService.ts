@@ -82,13 +82,19 @@ export interface AnnouncementAdminFields {
 /**
  * Les dates d'un chiour arrivent de Firestore en Timestamp, alors que le
  * modèle les annonce en Date : le backoffice les trie et les affiche, il les
- * convertit donc à la lecture.
+ * convertit donc à la lecture. Un document ancien peut aussi en porter une en
+ * texte ISO ou en millisecondes : elle est lue de même, plutôt que perdue.
  */
 function withDates(chiour: ChiourDoc): ChiourDoc {
   const toDate = (value: unknown): Date | undefined => {
-    const maybe = value as { toDate?: () => Date } | Date | null | undefined;
-    if (maybe instanceof Date) return maybe;
-    return typeof maybe?.toDate === "function" ? maybe.toDate() : undefined;
+    if (value instanceof Date) return value;
+    const maybe = value as { toDate?: () => Date } | null | undefined;
+    if (typeof maybe?.toDate === "function") return maybe.toDate();
+    if (typeof value === "string" || typeof value === "number") {
+      const date = new Date(value);
+      return Number.isNaN(date.getTime()) ? undefined : date;
+    }
+    return undefined;
   };
   return { ...chiour, createdAt: toDate(chiour.createdAt), updatedAt: toDate(chiour.updatedAt) };
 }

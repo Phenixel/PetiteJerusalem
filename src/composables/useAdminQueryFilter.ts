@@ -37,3 +37,15 @@ export function useAdminQueryFilter<F extends string>(allowed: readonly F[], fal
 
   return filter;
 }
+
+/**
+ * Où revenir depuis une fiche : la liste telle qu'on l'a quittée (son filtre,
+ * son tri), si c'est d'elle que l'on vient, sinon la liste nue. vue-router
+ * garde l'adresse précédente dans `history.state.back`.
+ */
+export function useAdminReturnTo(listPath: string): string {
+  const back = (window.history.state as { back?: unknown } | null)?.back;
+  if (typeof back !== "string") return listPath;
+  const path = back.split(/[?#]/)[0];
+  return path === listPath ? back : listPath;
+}

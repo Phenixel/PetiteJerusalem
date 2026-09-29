@@ -24,9 +24,6 @@ export const ANNOUNCEMENT_ICONS: Record<AnnouncementKind, IconName> = {
   question: "help",
 };
 
-export type AnnouncementLocale = "fr" | "en" | "he";
-export const ANNOUNCEMENT_LOCALES: AnnouncementLocale[] = ["fr", "en", "he"];
-
 /** Un texte par langue ; seul le français est obligatoire, il sert de repli. */
 export type LocalizedText = { fr: string } & Partial<Record<"en" | "he", string>>;
 

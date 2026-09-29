@@ -36,6 +36,22 @@ export function shouldNotify(data: AnnouncementPushData | undefined): boolean {
   return data.published === true && data.notify === true && data.notifiedAt == null;
 }
 
+/**
+ * L'écriture qui déclenche l'envoi : celle où l'annonce DEVIENT publiée avec
+ * la case cochée (création, publication d'un brouillon, case cochée sur une
+ * annonce publiée). Une autre modification, « Marquer résolu » par exemple,
+ * ne fait jamais partir une notification que personne n'a confirmée, même si
+ * une annonce était restée sans envoi (publiée avant le déploiement de la
+ * fonction).
+ */
+export function isNotifyTransition(
+  before: AnnouncementPushData | undefined,
+  after: AnnouncementPushData | undefined,
+): boolean {
+  if (!shouldNotify(after)) return false;
+  return !before || before.published !== true || before.notify !== true;
+}
+
 /** Le texte d'une langue, le français à défaut : il est le seul obligatoire. */
 function pick(text: unknown, locale: AnnouncementLocale): string {
   if (!text || typeof text !== "object") return "";

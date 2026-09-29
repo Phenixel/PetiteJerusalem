@@ -50,11 +50,24 @@ export function topicFor(locale: string): string {
 export const announcementsPushEnabled = ref(read(OPT_OUT_KEY) !== "1");
 
 /**
+ * Les synchronisations passent l'une après l'autre. Deux en même temps (le
+ * lancement, puis un changement de langue aussitôt) liraient le même ancien
+ * canal : l'appareil resterait abonné aux deux langues, et recevrait chaque
+ * annonce deux fois.
+ */
+let chain: Promise<void> = Promise.resolve();
+
+/**
  * Met l'abonnement en accord avec le réglage et la langue. Silencieux en cas
  * d'échec (hors ligne, jeton pas encore là) : le prochain lancement reprend.
  */
-export async function syncAnnouncementTopic(locale: string): Promise<void> {
-  if (!isNativeApp) return;
+export function syncAnnouncementTopic(locale: string): Promise<void> {
+  if (!isNativeApp) return Promise.resolve();
+  chain = chain.then(() => applyTopic(locale));
+  return chain;
+}
+
+async function applyTopic(locale: string): Promise<void> {
   const wanted = announcementsPushEnabled.value ? topicFor(locale) : null;
   const previous = read(TOPIC_KEY);
   try {

@@ -10,6 +10,7 @@ import { formatAgo, formatDay, formatDuration, formatSize } from "../../services
 import { useToast } from "../../composables/useToast";
 import { useConfirm } from "../../composables/useConfirm";
 import { refreshAdminSummary } from "../../composables/useAdminSummary";
+import { useAdminReturnTo } from "../../composables/useAdminQueryFilter";
 import AppSelect from "../../components/AppSelect.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import ProgressBar from "../../components/ProgressBar.vue";
@@ -27,6 +28,9 @@ const router = useRouter();
 const { t } = useI18n();
 const { confirm } = useConfirm();
 const toast = useToast();
+
+// Retour à la liste telle qu'on l'a quittée (filtre, tri), voir useAdminReturnTo.
+const returnTo = useAdminReturnTo("/admin/chiourim");
 
 const slug = computed(() => String(route.params.slug ?? ""));
 
@@ -172,7 +176,7 @@ async function save() {
     });
     toast.success(t("admin.chiourEdit.saved"));
     void refreshAdminSummary(true);
-    router.push("/admin/chiourim");
+    router.push(returnTo);
   } catch (error) {
     console.error("Erreur lors de l'enregistrement du chiour:", error);
     errorMessage.value = t("admin.error");
@@ -194,7 +198,7 @@ async function remove() {
     await adminService.deleteChiour(chiour.value);
     toast.success(t("admin.chiourEdit.deleted"));
     void refreshAdminSummary(true);
-    router.push("/admin/chiourim");
+    router.push(returnTo);
   } catch (error) {
     console.error("Erreur lors de la suppression du chiour:", error);
     toast.error(t("admin.error"));
@@ -212,7 +216,7 @@ async function remove() {
 
   <form v-else class="animate-[fadeIn_0.3s_ease]" @submit.prevent="save">
     <router-link
-      to="/admin/chiourim"
+      :to="returnTo"
       class="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-text-secondary hover:text-primary"
     >
       <AppIcon name="arrow-left" :size="14" class="rtl:rotate-180" />
@@ -425,7 +429,7 @@ async function remove() {
         <AppIcon v-else name="trash" :size="14" />
         {{ t("common.delete") }}
       </button>
-      <router-link to="/admin/chiourim" class="btn btn-soft w-full sm:ml-auto sm:w-auto">
+      <router-link :to="returnTo" class="btn btn-soft w-full sm:ml-auto sm:w-auto">
         {{ t("common.cancel") }}
       </router-link>
       <button type="submit" class="btn btn-primary w-full sm:w-auto" :disabled="isSaving">

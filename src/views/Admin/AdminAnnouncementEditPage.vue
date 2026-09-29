@@ -17,6 +17,7 @@ import { dateTimeFormat } from "../../services/intlCache";
 import { useConfirm } from "../../composables/useConfirm";
 import { useToast } from "../../composables/useToast";
 import { refreshAdminSummary } from "../../composables/useAdminSummary";
+import { useAdminReturnTo } from "../../composables/useAdminQueryFilter";
 import AdminSkeleton from "../../components/admin/AdminSkeleton.vue";
 
 /**
@@ -32,6 +33,9 @@ const router = useRouter();
 const { t } = useI18n();
 const { confirm } = useConfirm();
 const toast = useToast();
+
+// Retour à la liste telle qu'on l'a quittée (filtre, tri), voir useAdminReturnTo.
+const returnTo = useAdminReturnTo("/admin/informations");
 
 const NEW_ID = "nouvelle";
 const routeId = computed(() => String(route.params.id ?? ""));
@@ -116,7 +120,15 @@ const preview = computed<Announcement>(() => ({
 }));
 
 /** Cette sauvegarde déclenchera-t-elle l'envoi ? */
-const willNotify = computed(() => published.value && notify.value && !existing.value?.notifiedAt);
+// Même règle que la Cloud Function (isNotifyTransition) : l'envoi part quand
+// l'annonce DEVIENT publiée avec la case cochée, jamais sur une correction.
+const willNotify = computed(
+  () =>
+    published.value &&
+    notify.value &&
+    !existing.value?.notifiedAt &&
+    !(existing.value?.published && existing.value?.notify),
+);
 
 async function save(): Promise<void> {
   errorMessage.value = "";
@@ -146,7 +158,7 @@ async function save(): Promise<void> {
     );
     toast.success(t("admin.announcements.saved"));
     void refreshAdminSummary(true);
-    router.push("/admin/informations");
+    router.push(returnTo);
   } catch (error) {
     console.error("Erreur lors de l'enregistrement de l'information:", error);
     errorMessage.value = t("admin.error");
@@ -168,7 +180,7 @@ async function remove(): Promise<void> {
     await adminService.deleteAnnouncement(existing.value.id);
     toast.success(t("admin.announcements.deleted"));
     void refreshAdminSummary(true);
-    router.push("/admin/informations");
+    router.push(returnTo);
   } catch (error) {
     console.error("Erreur lors de la suppression de l'information:", error);
     toast.error(t("admin.error"));
@@ -186,7 +198,7 @@ async function remove(): Promise<void> {
 
   <div v-else class="animate-[fadeIn_0.3s_ease]">
     <router-link
-      to="/admin/informations"
+      :to="returnTo"
       class="mb-4 inline-flex items-center gap-1.5 text-sm font-medium text-text-secondary hover:text-primary"
     >
       <AppIcon name="arrow-left" :size="14" class="rtl:rotate-180" />
@@ -383,7 +395,7 @@ async function remove(): Promise<void> {
             <AppIcon v-else name="trash" :size="14" />
             {{ t("common.delete") }}
           </button>
-          <router-link to="/admin/informations" class="btn btn-soft w-full sm:w-auto sm:ml-auto">
+          <router-link :to="returnTo" class="btn btn-soft w-full sm:w-auto sm:ml-auto">
             {{ t("common.cancel") }}
           </router-link>
           <button type="submit" class="btn btn-primary w-full sm:w-auto" :disabled="isSaving">

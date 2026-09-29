@@ -373,7 +373,7 @@ const formatDate = (date: Date | undefined) => (date ? DateService.formatDate(da
 
     <div v-if="filtered.length > shown" class="mt-4 text-center">
       <button type="button" class="btn btn-soft" @click="shown += PAGE">
-        {{ t("admin.showMore", { n: filtered.length - shown }) }}
+        {{ t("admin.showMore", { n: Math.min(PAGE, filtered.length - shown) }) }}
       </button>
     </div>
 

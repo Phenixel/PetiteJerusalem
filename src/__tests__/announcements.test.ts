@@ -16,6 +16,7 @@ import {
   announcementTopic,
   buildAnnouncementMessages,
   excerpt,
+  isNotifyTransition,
   shouldNotify,
 } from "../../functions/src/announcementPush";
 import { topicFor } from "../services/announcementTopics";
@@ -172,6 +173,16 @@ describe("notification d'une annonce", () => {
     expect(shouldNotify({ published: true, notify: false })).toBe(false);
     expect(shouldNotify({ published: true, notify: true, notifiedAt: new Date() })).toBe(false);
     expect(shouldNotify(undefined)).toBe(false);
+  });
+
+  it("ne part qu'au moment où l'annonce devient publiée avec la case cochée", () => {
+    const ready = { published: true, notify: true, notifiedAt: null };
+    expect(isNotifyTransition(undefined, ready)).toBe(true);
+    expect(isNotifyTransition({ published: false, notify: true }, ready)).toBe(true);
+    expect(isNotifyTransition({ published: true, notify: false }, ready)).toBe(true);
+    // Déjà publiée et cochée : « Marquer résolu » ou une correction n'envoie rien.
+    expect(isNotifyTransition(ready, { ...ready, resolved: true } as never)).toBe(false);
+    expect(isNotifyTransition(undefined, { ...ready, notifiedAt: new Date() })).toBe(false);
   });
 
   it("un message par langue, le français à défaut de traduction", () => {

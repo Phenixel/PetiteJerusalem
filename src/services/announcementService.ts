@@ -90,16 +90,22 @@ class AnnouncementService {
     this.list.invalidate();
   }
 
-  /** Une annonce, depuis la liste si elle y est, sinon lue seule (lien de notification). */
+  /**
+   * Une annonce, depuis la liste si elle y est et encore fraîche, sinon lue
+   * seule (lien de notification). `null` : elle n'existe pas, ou plus pour le
+   * public (brouillon, retirée : les règles refusent la lecture). Une autre
+   * erreur (hors ligne) remonte : l'annonce existe peut-être, la page ne doit
+   * pas dire le contraire.
+   */
   async get(id: string): Promise<Announcement | null> {
-    const known = this.list.peek()?.find((a) => a.id === id);
+    const known = this.list.isStale() ? null : this.list.peek()?.find((a) => a.id === id);
     if (known) return known;
     try {
       const snap = await getDoc(doc(db, "announcements", id));
       return snap.exists() ? parseAnnouncement(snap.id, snap.data()) : null;
-    } catch {
-      // Brouillon ou annonce retirée : les règles refusent la lecture.
-      return null;
+    } catch (error) {
+      if ((error as { code?: string }).code === "permission-denied") return null;
+      throw error;
     }
   }
 }

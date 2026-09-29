@@ -21,7 +21,7 @@ const { t, locale } = useI18n();
 const { markSeenUpTo } = useAnnouncements();
 
 const announcement = ref<Announcement | null>(null);
-const status = ref<"loading" | "ready" | "missing">("loading");
+const status = ref<"loading" | "ready" | "missing" | "error">("loading");
 
 const id = computed(() => String(route.params.id ?? ""));
 const linkLabel = computed(() => {
@@ -34,8 +34,18 @@ watch(
   id,
   async (value) => {
     status.value = "loading";
-    const { announcementService } = await import("../../services/announcementService");
-    const found = await announcementService.get(value);
+    let found: Announcement | null;
+    try {
+      const { announcementService } = await import("../../services/announcementService");
+      found = await announcementService.get(value);
+    } catch (error) {
+      // Hors ligne, typiquement : l'annonce existe peut-être, on ne dit pas
+      // qu'elle a disparu.
+      console.warn("Information indisponible:", error);
+      announcement.value = null;
+      status.value = "error";
+      return;
+    }
     announcement.value = found;
     status.value = found ? "ready" : "missing";
     if (!found) return;
@@ -66,6 +76,11 @@ function reply(): void {
 <template>
   <main class="mx-auto w-full max-w-3xl px-6 py-12">
     <div v-if="status === 'loading'" class="card h-48 animate-pulse"></div>
+
+    <p v-else-if="status === 'error'" class="card p-8 text-center text-text-secondary">
+      <AppIcon name="alert-circle" :size="20" class="mx-auto mb-3" />
+      {{ t("announcements.loadError") }}
+    </p>
 
     <p v-else-if="status === 'missing'" class="card p-8 text-center text-text-secondary">
       {{ t("announcements.notFound") }}

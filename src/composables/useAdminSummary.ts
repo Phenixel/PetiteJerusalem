@@ -35,8 +35,21 @@ let inflight: Promise<void> | null = null;
 
 const FRESH_MS = 15_000;
 
+/** Relecture demandée après une action, pendant qu'une autre était en vol. */
+let queued: Promise<void> | null = null;
+
 export function refreshAdminSummary(force = false): Promise<void> {
-  if (inflight) return inflight;
+  if (inflight) {
+    if (!force) return inflight;
+    // La lecture en vol a pu partir avant l'action (publier, résoudre) : ses
+    // comptes seraient déjà périmés. Une seule relecture la suit, quel que
+    // soit le nombre d'actions faites entre-temps.
+    queued ??= inflight.then(() => {
+      queued = null;
+      return refreshAdminSummary(true);
+    });
+    return queued;
+  }
   if (!force && data.value && Date.now() - loadedAt < FRESH_MS) return Promise.resolve();
   if (!data.value) status.value = "loading";
   inflight = (async () => {
@@ -99,17 +112,14 @@ export function useAdminSummary() {
 
   return {
     status,
-    chiourim,
     drafts,
     published,
     noAuteur,
     totalViews,
     recent,
-    openReports,
     reportedSessions,
     auteurs,
     auteursWithoutLink,
-    announcements,
     incident,
     announcementDrafts,
     latestAnnouncement,

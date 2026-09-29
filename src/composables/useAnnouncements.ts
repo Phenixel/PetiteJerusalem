@@ -1,6 +1,6 @@
 import { computed, ref } from "vue";
 import { isNativeApp } from "./useNativeApp";
-import { homeHighlights, unreadAnnouncements, type Announcement } from "../services/announcements";
+import { homeHighlights, type Announcement } from "../services/announcements";
 
 /**
  * L'état partagé des informations de l'équipe : la liste, ce qui est nouveau
@@ -95,13 +95,11 @@ function markSeenUpTo(date: Date | null): void {
 }
 
 export function useAnnouncements() {
-  const unread = computed(() => unreadAnnouncements(items.value, seenAt.value, installed.value));
   const highlights = computed(() => homeHighlights(items.value, seenAt.value, installed.value));
   return {
     items,
     status,
     seenAt,
-    unread,
     highlights,
     load,
     markAllSeen,
