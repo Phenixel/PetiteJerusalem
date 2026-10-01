@@ -174,3 +174,14 @@ depuis le sidour.
 | ---------- | --------------------------------------------------------- | ----------- |
 | `source`   | `library_sidour`                                          | **nouveau** |
 | `festival` | le livre de la fête, `Souccot`, `Yamim Noraim`, `Hanouka` | **nouveau** |
+
+### `sidour_brahot_opened` (nouveau)
+
+Le lien « Vous cherchez le Birkat Hamazon ou une autre brakha ? », en tête du
+sidour (`SidourBrahotLink`), qui mène au livre des Brahot. Il dit combien de
+lecteurs viennent chercher le Birkat Hamazon ou une brakha dans le sidour.
+
+| Propriété    | Valeurs                                            | Statut      |
+| ------------ | -------------------------------------------------- | ----------- |
+| `source`     | `library_sidour`                                   | **nouveau** |
+| `had_search` | booléen : une recherche était tapée dans le sidour | **nouveau** |

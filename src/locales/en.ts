@@ -1525,6 +1525,11 @@ const en: LocaleMessages = {
     sections: "{count} sections",
     textsCount: "{count} text | {count} texts",
     range: "{from} to {to}",
+    // Le renvoi du sidour vers les Brahot (voir SidourBrahotLink).
+    sidourBrahot: {
+      question: "Looking for Birkat Hamazon or another blessing?",
+      link: "The Brahot book",
+    },
     moadimNow: {
       label: "{fete}, right now",
       title: "The festival texts, in Moadim",

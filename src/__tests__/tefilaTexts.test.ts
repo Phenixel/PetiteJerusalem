@@ -220,6 +220,35 @@ describe("fichiers de tefila", () => {
     expect(accented.length).toBeGreaterThanOrEqual(6);
   });
 
+  it("Mé'ein chaloch : « béyom 'hag hasoukot hazé », et « béyom mikra kodech » à 'Hol haMoed", () => {
+    // Le sidour écrit « 'hag » devant Souccot, comme devant Pessah, et
+    // 'Hol haMoed ajoute « béyom mikra kodech hazé » (sans « tov », réservé
+    // au Yom Tov), comme dans le Yaalé véyavo du Birkat Hamazon.
+    const content = load("brahot", "brakha-aharona");
+    const paragraphs = (content.sections[0].blocks ?? []).flatMap((b) => b.paragraphs ?? []);
+    const stripNiqqud = (s: string) => s.normalize("NFC").replace(/[֑-ׇ]/g, "");
+    const lu = (when: string, occasions: Set<string>) => {
+      const paragraph = paragraphs.find((p) => p.when === when)!;
+      return stripNiqqud(
+        paragraph.runs
+          .map((run) =>
+            run.kind === "he" && saidOn(run.when, occasions, run.unless) ? run.text : "",
+          )
+          .filter(Boolean)
+          .join(" "),
+      );
+    };
+    // Mardi 29 septembre 2026 : 18 Tichri, 'Hol haMoed Souccot.
+    const holHamoed = activeOccasions(hd(2026, 9, 29), false);
+    expect(lu("sukkot", holHamoed)).toBe("ושמחנו ביום חג הסכות הזה, ביום מקרא קדש הזה.");
+    // Samedi 26 septembre 2026 : 15 Tichri, premier jour de Souccot.
+    const yomTov = activeOccasions(hd(2026, 9, 26), false);
+    expect(lu("sukkot", yomTov)).toBe("ושמחנו ביום חג הסכות הזה, ביום טוב מקרא קדש הזה.");
+    // Pessah suit la même règle : lundi 6 avril 2026, 19 Nissan, 'Hol haMoed.
+    const holHamoedPessah = activeOccasions(hd(2026, 4, 6), false);
+    expect(lu("pesach", holHamoedPessah)).toBe("ושמחנו ביום חג המצות הזה, ביום מקרא קדש הזה.");
+  });
+
   it("Brakha A'harona : le Mé'ein chaloch complet puis Boré nefachot", () => {
     const content = load("brahot", "brakha-aharona");
     const blocks = content.sections[0].blocks ?? [];
@@ -315,6 +344,33 @@ describe("fichiers de tefila", () => {
     expect(vidouy.unless).toBe("sans-tahanoun-nuit");
     expect(saidOn(vidouy.when, new Set(), vidouy.unless)).toBe(true);
     expect(saidOn(vidouy.when, new Set(["sans-tahanoun-nuit"]), vidouy.unless)).toBe(false);
+  });
+
+  it("Chema al hamita : la prière sur nos fautes de « Ribono chel olam » tombe avec le vidouy", () => {
+    // Les « petites lettres » du sidour (« Yehi ratson... chélo ehéta od »,
+    // jusqu'à « vé'holayim raïm ») ne se disent pas les soirs sans tahanoun,
+    // 'Hol haMoed compris ; le pardon accordé et « Yihyou lératson » restent.
+    const content = load("sidour", "chema-al-hamita");
+    const paragraphs = (content.sections[0].blocks ?? []).flatMap((b) => b.paragraphs ?? []);
+    const commence = (debut: string) =>
+      paragraphs.find((p) =>
+        p.runs.some(
+          (run) =>
+            run.kind === "he" && run.text.normalize("NFC").replace(/[֑-ׇ]/g, "").startsWith(debut),
+        ),
+      )!;
+    const ribono = commence("רבונו של עולם");
+    const fautes = commence("יהי רצון מלפניך");
+    const yihyou = commence("יהיו לרצון");
+    expect(fautes.unless).toBe("sans-tahanoun-nuit");
+    expect(ribono.unless).toBeUndefined();
+    expect(yihyou.unless).toBeUndefined();
+    const sansTahanoun = new Set(["sans-tahanoun-nuit"]);
+    expect(saidOn(fautes.when, sansTahanoun, fautes.unless)).toBe(false);
+    expect(saidOn(fautes.when, new Set(), fautes.unless)).toBe(true);
+    // Le passage continue la phrase : pas de nouveau paragraphe à l'écran.
+    expect(fautes.tight).toBe(true);
+    expect(yihyou.tight).toBe(true);
   });
 
   it("Chema al hamita : le verset de Yeshayahou est celui du Tanakh servi", () => {
