@@ -60,15 +60,31 @@ const chemaAlHamita = {
       lines: [{ seg: 2 }],
     },
     {
+      // « Ribono chel olam » se dit tous les soirs, mais la prière sur nos
+      // propres fautes (« Yehi ratson... chélo ehéta od », jusqu'à « vé'holayim
+      // raïm ») est en petites lettres dans le sidour : elle tombe les soirs
+      // où l'on ne dit pas le vidouy, Chabbat, fêtes, 'Hol haMoed et autres
+      // jours sans tahanoun. Sefaria ne garde pas ces petites lettres : on
+      // coupe le segment à la main, et la partie retirée porte la même clé
+      // que le vidouy (`unless`, voir docs/compatibilite-textes.md).
       lines: [
         {
           seg: 4,
+          until: "יְהִי רָצוֹן",
           rubric: {
             fr: "Avant la bénédiction Hamapil, on pardonne à qui nous a fait du tort :",
             en: "Before the Hamapil blessing, forgive whoever wronged you:",
           },
           rubricSeg: 3,
         },
+        {
+          seg: 4,
+          from: "יְהִי רָצוֹן",
+          until: "יִהְיוּ לְרָצוֹן",
+          tight: true,
+          unless: "sans-tahanoun-nuit",
+        },
+        { seg: 4, from: "יִהְיוּ לְרָצוֹן", tight: true },
       ],
     },
     {

@@ -5,10 +5,11 @@
  *
  * - android/local.properties : chemin du SDK Android
  * - AndroidManifest.xml : permissions POST_NOTIFICATIONS (rappel de lecture,
- *   Android 13+) et ACCESS_COARSE/FINE_LOCATION (horaires calculés pour la
- *   position de l'appareil, le plugin @capacitor/geolocation livre un
- *   manifest vide, l'app doit donc les déclarer elle-même), et la petite
- *   icône des notifications push
+ *   Android 13+), ACCESS_COARSE/FINE_LOCATION (horaires calculés pour la
+ *   position de l'appareil) et READ/WRITE_EXTERNAL_STORAGE (téléchargement
+ *   d'un livre hors ligne sous Android 11) : ces plugins livrent un manifest
+ *   vide, l'app doit donc les déclarer elle-même. Et la petite icône des
+ *   notifications push
  * - android/app/google-services.json : copié depuis la racine s'il s'y trouve
  *   (fichier téléchargé depuis la console Firebase, git-ignoré)
  * - android/app/build.gradle : signingConfigs.release (lit android/keystore.properties,
@@ -63,7 +64,9 @@ if (!existsSync(localProps)) {
 //    Le manifest d'un plugin Capacitor est fusionné dans celui de l'app, mais
 //    celui de @capacitor/geolocation est vide : sans les deux lignes
 //    ACCESS_*_LOCATION ci-dessous, requestPermissions() est refusé d'office et
-//    la page Horaires reste bloquée sur Paris.
+//    la page Horaires reste bloquée sur Paris. @capacitor/file-transfer livre
+//    le même manifest vide, avec la même conséquence sur les deux permissions
+//    de stockage : c'est à l'app de déclarer ce dont ses plugins ont besoin.
 const manifestPath = join(androidDir, "app/src/main/AndroidManifest.xml");
 let manifest = readFileSync(manifestPath, "utf8");
 const PERMISSIONS = [
@@ -85,10 +88,21 @@ const PERMISSIONS = [
     name: "android.permission.CAMERA",
     comment: "Miroir des téfilines (caméra frontale, rien n'est enregistré)",
   },
+  {
+    name: "android.permission.READ_EXTERNAL_STORAGE",
+    comment:
+      "Téléchargement d'un livre hors ligne : sous Android 11, @capacitor/file-transfer\n         exige que ces deux permissions soient déclarées avant tout transfert, et son\n         propre manifest est vide. Sans elles, Capacitor refuse le téléchargement d'office\n         (« Missing the following permissions in AndroidManifest.xml ») et la bibliothèque\n         reste inaccessible hors ligne. maxSdkVersion=29 : à partir d'Android 11 le plugin\n         ne les consulte plus, et les fichiers vivent de toute façon dans l'espace privé de\n         l'app (Directory.Data). Voir src/__tests__/androidStoragePermissions.test.ts",
+    attributes: 'android:maxSdkVersion="29"',
+  },
+  {
+    name: "android.permission.WRITE_EXTERNAL_STORAGE",
+    attributes: 'android:maxSdkVersion="29"',
+  },
 ];
-for (const { name, comment } of [...PERMISSIONS].reverse()) {
+for (const { name, comment, attributes } of [...PERMISSIONS].reverse()) {
   if (manifest.includes(name)) continue;
-  const line = `${comment ? `\n    <!-- ${comment} -->` : ""}\n    <uses-permission android:name="${name}" />`;
+  const extra = attributes ? ` ${attributes}` : "";
+  const line = `${comment ? `\n    <!-- ${comment} -->` : ""}\n    <uses-permission android:name="${name}"${extra} />`;
   manifest = manifest.replace(
     /(<uses-permission android:name="android\.permission\.INTERNET"\s*\/>)/,
     `$1${line}`,

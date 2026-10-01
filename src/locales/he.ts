@@ -1579,6 +1579,11 @@ const he: LocaleMessages = {
     sections: "{count} פרקים",
     textsCount: "טקסט אחד | {count} טקסטים",
     range: "{from} עד {to}",
+    // Le renvoi du sidour vers les Brahot (voir SidourBrahotLink).
+    sidourBrahot: {
+      question: "מחפשים את ברכת המזון או ברכה אחרת?",
+      link: "ספר הברכות",
+    },
     moadimNow: {
       label: "{fete}, עכשיו",
       title: "תפילות החג, במועדים",
