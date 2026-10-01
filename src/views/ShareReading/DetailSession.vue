@@ -6,7 +6,7 @@ import { sessionService } from "../../services/sessionService";
 import { reservationService, ReservationGoneError } from "../../services/reservationService";
 import { SlotTakenError } from "../../services/appError";
 import { SearchService } from "../../services/searchService";
-import type { Session, TextStudy } from "../../models/models";
+import type { PrayerName, Session, TextStudy } from "../../models/models";
 import { authService, type User } from "../../services/authService";
 import GuestForm from "../../components/GuestForm.vue";
 import ShareModal from "../../components/ShareModal.vue";
@@ -27,6 +27,13 @@ const SessionInstructionsModal = defineAsyncComponent(
 );
 import TextStudiesList from "./detailSession/TextStudiesList.vue";
 import RandomTehilimCard from "./detailSession/RandomTehilimCard.vue";
+import PerpetualStatsCard from "./detailSession/PerpetualStatsCard.vue";
+import PrayerNamesCard from "./detailSession/PrayerNamesCard.vue";
+// La fenêtre d'un nom emporte le calendrier hébraïque (date du décès) : elle
+// ne se charge qu'à la première ouverture.
+const PrayerNameModal = defineAsyncComponent(() => import("../../components/PrayerNameModal.vue"));
+import { prayerNameService } from "../../services/prayerNameService";
+import { isPerpetual as isPerpetualSession } from "../../services/perpetualChain";
 import { EnumTypeTextStudy } from "../../models/typeTextStudy";
 import { isOffline } from "../../services/userPreferencesService";
 import { useToast } from "../../composables/useToast";
@@ -552,6 +559,93 @@ const clearSearch = () => {
   searchTerm.value = "";
 };
 
+// --- Chaîne perpétuelle (voir docs/chaine-perpetuelle.md) ---
+
+const isPerpetual = computed(() => isPerpetualSession(session.value));
+
+/** Tous les noms de la chaîne, tels que Firestore les rend. */
+const prayerNames = ref<PrayerName[]>([]);
+/** Ceux qu'on lit aujourd'hui, et tous ceux du lecteur. */
+const listedNames = ref<PrayerName[]>([]);
+const myNames = ref<PrayerName[]>([]);
+const namesLoadError = ref(false);
+
+const showPrayerNameModal = ref(false);
+const prayerNameModalMounted = ref(false);
+const editedName = ref<PrayerName | null>(null);
+const showNameAuthPrompt = ref(false);
+
+/** Range les noms pour la page (le lecteur d'abord, les défunts dans leur semaine). */
+const arrangeNames = async () => {
+  const board = await prayerNameService.arrange(prayerNames.value, currentUser.value?.id ?? null);
+  listedNames.value = board.listed;
+  myNames.value = board.mine;
+};
+
+const loadPrayerNames = async () => {
+  const current = session.value;
+  if (!current || !isPerpetualSession(current)) return;
+  try {
+    namesLoadError.value = false;
+    prayerNames.value = await prayerNameService.list(current.id);
+    await arrangeNames();
+  } catch (err) {
+    console.error("Erreur lors du chargement des noms:", err);
+    namesLoadError.value = true;
+  }
+};
+
+/**
+ * Proposer un nom demande un compte : c'est lui qui permet d'y revenir pour
+ * le prolonger, le corriger ou le retirer. Sans compte, l'invitation à se
+ * connecter, qui ramène ici.
+ */
+const openPrayerNameForm = (source: "session_page" | "new_session", name: PrayerName | null) => {
+  analyticsService.capture("prayer_name_form_opened", {
+    session_id: session.value?.id,
+    mode: name ? "edit" : "add",
+    source,
+    is_authenticated: currentUser.value != null,
+  });
+  if (!currentUser.value) {
+    showNameAuthPrompt.value = true;
+    return;
+  }
+  editedName.value = name;
+  prayerNameModalMounted.value = true;
+  showPrayerNameModal.value = true;
+};
+
+const onPrayerNameSaved = (saved: PrayerName) => {
+  const others = prayerNames.value.filter((name) => name.id !== saved.id);
+  prayerNames.value = [...others, saved];
+  // La fenêtre reste ouverte après une prolongation : elle montre le nom à jour.
+  if (editedName.value?.id === saved.id) editedName.value = saved;
+  void arrangeNames();
+};
+
+const onPrayerNameRemoved = (id: string) => {
+  prayerNames.value = prayerNames.value.filter((name) => name.id !== id);
+  void arrangeNames();
+};
+
+/**
+ * Tout est lu : la Cloud Function remet la chaîne à zéro dans la seconde. La
+ * page le dit, puis se recharge une fois pour montrer le tour suivant.
+ */
+const isRoundDone = computed(
+  () =>
+    isPerpetual.value &&
+    progressStats.value.total > 0 &&
+    progressStats.value.read >= progressStats.value.total,
+);
+let hasReloadedAfterRound = false;
+watch(isRoundDone, (done) => {
+  if (!done || hasReloadedAfterRound) return;
+  hasReloadedAfterRound = true;
+  setTimeout(() => void loadSessionData(), 5000);
+});
+
 // --- Tirage aléatoire (sessions Tehilim uniquement) ---
 
 const isTehilimSession = computed(() => session.value?.type === EnumTypeTextStudy.Tehilim);
@@ -713,8 +807,17 @@ onMounted(async () => {
   // sans rechargement.
   unsubscribeAuth = authService.onAuthChanged((user) => {
     currentUser.value = user;
+    // Les noms du lecteur passent en tête, et à sa couleur.
+    if (prayerNames.value.length) void arrangeNames();
   });
   await loadSessionData();
+  await loadPrayerNames();
+  // Arrivée depuis la création d'une session (« Proposer son nom ») : la
+  // fenêtre s'ouvre d'elle-même, une fois l'adresse nettoyée.
+  if (isPerpetual.value && route.query.proposer === "1") {
+    void router.replace({ query: { ...route.query, proposer: undefined } });
+    openPrayerNameForm("new_session", null);
+  }
 
   // Point d'entrée du funnel de réservation. Pas de nom de session dans les
   // propriétés : les intitulés portent souvent des noms de personnes.
@@ -745,7 +848,10 @@ watch(
   (slug) => {
     if (!slug || slug === session.value?.slug || slug === session.value?.id) return;
     selectedItems.value.clear();
-    void loadSessionData();
+    prayerNames.value = [];
+    listedNames.value = [];
+    myNames.value = [];
+    void loadSessionData().then(loadPrayerNames);
   },
 );
 
@@ -865,6 +971,31 @@ watch(session, (s) => applySessionSeo(s));
         "
         @instructions="openInstructions"
       />
+
+      <!-- Chaîne perpétuelle : son compteur, puis pour qui l'on lit, avant de
+           tirer son Téhilim. -->
+      <div v-if="isPerpetual" class="mb-8 flex flex-col gap-8">
+        <p
+          v-if="isRoundDone"
+          class="max-w-3xl mx-auto w-full rounded-card bg-green-600/10 px-4 py-3 text-sm font-semibold text-green-700 dark:text-green-300"
+          role="status"
+        >
+          {{ t("perpetual.roundDone") }}
+        </p>
+        <PerpetualStatsCard
+          :session="session"
+          :read="progressStats.read"
+          :total="progressStats.total"
+        />
+        <PrayerNamesCard
+          :listed="listedNames"
+          :mine="myNames"
+          :current-user-id="currentUser?.id ?? null"
+          :load-error="namesLoadError"
+          @propose="openPrayerNameForm('session_page', null)"
+          @edit="(name) => openPrayerNameForm('session_page', name)"
+        />
+      </div>
 
       <!-- Tirage aléatoire : recevoir un Tehilim disponible en un clic,
            avec ou sans compte. Plus rien à tirer, plus de carte : elle ne
@@ -1007,6 +1138,20 @@ watch(session, (s) => applySessionSeo(s));
 
     <!-- Modal d'incitation à la création de compte -->
     <SignupPromptModal v-model:show="showSignupPrompt" :guest-email="reservationForm.email" />
+
+    <!-- Chaîne perpétuelle : proposer un nom demande un compte. -->
+    <SignupPromptModal v-model:show="showNameAuthPrompt" variant="prayer_name" />
+    <PrayerNameModal
+      v-if="prayerNameModalMounted && session && currentUser"
+      :open="showPrayerNameModal"
+      :session-id="session.id"
+      :owner-id="currentUser.id"
+      :name="editedName"
+      :owned-count="myNames.length"
+      @close="showPrayerNameModal = false"
+      @saved="onPrayerNameSaved"
+      @removed="onPrayerNameRemoved"
+    />
 
     <!-- Comment réserver, à la demande : la pastille « Instructions » du
          bandeau l'ouvre. -->

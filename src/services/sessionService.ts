@@ -599,11 +599,14 @@ class SessionService {
    */
   isSessionFinished(session: Session): boolean {
     if (session.isEnded) return true;
+    // La chaîne perpétuelle ne finit pas : sa date limite lointaine n'est là
+    // que pour les versions de l'app qui ne la connaissent pas.
+    if (session.perpetual) return false;
     return Date.now() > endOfLocalDay(new Date(session.dateLimit)).getTime();
   }
 
   canEndSession(session: Session): boolean {
-    return !session.isEnded;
+    return !session.isEnded && !session.perpetual;
   }
 
   // === MÉTHODES DE GESTION POUR LES CRÉATEURS ===

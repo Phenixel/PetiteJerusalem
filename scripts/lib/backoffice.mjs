@@ -196,3 +196,79 @@ export function downloadUrl(bucketName, path, token, emulatorHost = null) {
   const base = emulatorHost ? `http://${emulatorHost}` : "https://firebasestorage.googleapis.com";
   return `${base}/v0/b/${bucketName}/o/${encodeURIComponent(path)}?alt=media&token=${token}`;
 }
+
+// ---- Chaîne perpétuelle (voir docs/chaine-perpetuelle.md) ------------------------
+
+/** L'identifiant de la chaîne perpétuelle, qui est aussi son slug, donc son adresse. */
+export const PERPETUAL_SESSION_ID = "chaine-perpetuelle";
+
+/**
+ * La date limite que liront les versions de l'app qui ne connaissent pas la
+ * chaîne perpétuelle : assez lointaine pour qu'elle ne s'y ferme jamais.
+ */
+export const PERPETUAL_DATE_LIMIT = new Date("2100-01-01T00:00:00Z");
+
+/**
+ * Le document de la chaîne, tel que `chaine:creer` l'écrit : une session de
+ * Tehilim ordinaire pour les anciennes versions, plus ce que la Cloud
+ * Function onPerpetualSessionUpdated lit (`perpetual`, `slotCount`).
+ *
+ * Un tour finit quand chaque texte a une réservation lue (perpetualRound.ts) :
+ * cela ne vaut que pour des textes d'une seule section, ce que les Tehilim
+ * sont tous. Un catalogue qui changerait ce fait doit d'abord changer la règle.
+ *
+ * @param {{ type: string, totalSections: number }[]} textStudies
+ * @param {Date} now
+ */
+export function perpetualChainSession(textStudies, now) {
+  const tehilim = textStudies.filter((text) => text.type === "Tehilim");
+  if (tehilim.length === 0) {
+    throw new BackofficeInputError("aucun Tehilim dans src/datas/textStudies.json");
+  }
+  if (tehilim.some((text) => text.totalSections !== 1)) {
+    throw new BackofficeInputError(
+      "un Tehilim du catalogue a plusieurs sections : la règle du tour ne le compterait pas",
+    );
+  }
+  return {
+    name: "Chaîne perpétuelle de Tehilim",
+    description: `Les ${tehilim.length} Tehilim, lus à plusieurs pour ceux qui en ont besoin. Quand le dernier est lu, la chaîne repart du premier.`,
+    type: "Tehilim",
+    dateLimit: PERPETUAL_DATE_LIMIT,
+    createdAt: now,
+    updatedAt: now,
+    // Aucun compte ne la possède : l'admin la tient par ce script et le backoffice.
+    personId: "petite-jerusalem",
+    creatorName: "Petite Jérusalem",
+    slug: PERPETUAL_SESSION_ID,
+    reservations: [],
+    guestEmailRequired: false,
+    perpetual: true,
+    slotCount: tehilim.length,
+    cycle: 1,
+    completedCycles: 0,
+    cycleStartedAt: now,
+  };
+}
+
+const dayOf = (value) => {
+  const date = value?.toDate?.() ?? (value instanceof Date ? value : null);
+  return date ? date.toISOString().slice(0, 10) : "-";
+};
+
+/**
+ * Une ligne de `chaine:noms` : de quoi reconnaître un nom signalé et le
+ * retirer par son identifiant.
+ *
+ * @param {string} id
+ * @param {Record<string, any>} data
+ */
+export function describePrayerName(id, data) {
+  const connector = data.gender === "female" ? "bat" : "ben";
+  const kind = data.kind === "leilouy" ? "leilouy nichmat" : "refoua chelema";
+  const timing =
+    data.deathDay && data.deathMonth
+      ? `chaque année, décès le ${data.deathDay} du mois ${data.deathMonth}`
+      : `jusqu'au ${dayOf(data.expiresAt)}`;
+  return `${id}  ${data.firstName} ${connector} ${data.motherName}  ${kind}, ${timing}  (compte ${data.ownerId})`;
+}

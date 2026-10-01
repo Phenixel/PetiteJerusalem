@@ -185,7 +185,16 @@ const goToSession = (session: Session) => {
                        ne vient pas du thème : une urgence ne change pas de couleur
                        avec les goûts, et resterait indistincte de la puce voisine
                        sous le thème orange. -->
+                  <!-- La chaîne perpétuelle n'a pas d'échéance : elle le dit. -->
                   <span
+                    v-if="session.perpetual"
+                    class="chip shrink-0 bg-black/5 text-text-secondary dark:bg-white/10"
+                  >
+                    <AppIcon name="rotate" :size="11" />
+                    {{ t("perpetual.continuous") }}
+                  </span>
+                  <span
+                    v-else
                     class="chip shrink-0"
                     :class="
                       daysLeft(session) <= 3

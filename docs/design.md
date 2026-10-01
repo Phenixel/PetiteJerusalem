@@ -684,6 +684,60 @@ annonce est une carte (elle répond à « qu'est-ce qui a changé ? »), avec sa
 nature en pastille et « Nouveau » en pastille pleine, calculé sur la visite
 précédente.
 
+### La chaîne perpétuelle se confie un nom, elle ne se crée pas
+
+La chaîne perpétuelle de Tehilim (`docs/chaine-perpetuelle.md`) est la seule
+chaîne qu'on peut toujours rejoindre. Sur l'accueil du partage, elle se
+pose sous le bouton de création (`PerpetualChainCard`), dans une carte comme
+celles des autres chaînes : un cadre blanc, cliquable tout entier, dont le
+titre prend la couleur au survol. Elle ne prend pas la couleur du thème en
+aplat : sur une page de chaînes, une carte pleine se lisait comme une
+publicité au milieu des autres. La couleur ne marque que ce qui la distingue,
+« Toujours ouverte », le chiffre en avant et la barre d'avancement. Ce
+chiffre, au bout de la ligne, est le nombre de fois qu'elle a été terminée ;
+au premier tour, il n'y a rien à compter, et il ne paraît pas.
+
+La carte ne nomme personne : « On y lit pour 5 personnes ». Les noms sont
+ceux de malades et de défunts ; ils se lisent sur la page de la chaîne, où
+l'on vient pour eux, et non en passant sur l'accueil.
+
+Sur sa page, l'en-tête dit « Lecture continue » et le tour en cours là où une
+chaîne ordinaire dit sa date limite et son créateur. Viennent ensuite le
+compteur (un seul chiffre en grand, trois en dessous qui le servent), puis
+« Pour qui l'on lit », avant le tirage : on dit les noms avant de lire.
+
+Les noms courent à la suite, séparés d'un point médian, comme une dédicace,
+et non en lignes : vingt lignes auraient repoussé la lecture sous trois
+écrans. Huit par groupe, le reste se déplie. Deux groupes, que le dessin
+distingue : le cœur pour une refoua chelema, la bougie pour un leilouy
+nichmat (celle des dates du calendrier). Un nom ne se coupe pas d'une ligne à
+l'autre (`whitespace-nowrap`).
+
+Les noms du lecteur sont des pastilles à la couleur du thème, avec un crayon,
+en tête de leur groupe : ce sont les seuls qui s'ouvrent, et c'est la règle
+des pastilles (« une pastille énonce, sauf celle qui porte une icône, qui
+ouvre »). Ceux qui ne sont pas lus en ce moment (échus, ou un défunt hors de
+la semaine de son anniversaire) restent à portée de leur auteur, en pastilles
+grises sous la liste.
+
+La fenêtre « Proposer un nom » compose le nom comme on le dit : les deux
+prénoms côte à côte, et entre eux « ben » ou « bat », qui suit le choix homme
+ou femme sous les yeux. Un aperçu montre la ligne telle qu'elle paraîtra. Pour
+un leilouy nichmat, la date du décès se choisit comme une date du calendrier
+(jour, mois hébraïque), et la phrase sous les champs dit, avant même qu'on
+la choisisse, ce que la date change : sans elle, le nom est lu trente jours ;
+avec elle, il revient tous les ans, la semaine qui précède l'anniversaire.
+
+Dans le lecteur, « Vous lisez pour » garde les deux groupes de la page de la
+chaîne, chacun avec son dessin : on ne dit pas de la même façon une refoua
+chelema et un leilouy nichmat (`PrayerNamesLine`). Retirer un nom pose la
+question, avec le nom (`useConfirm`) ; le prolonger, non : cela se refait
+d'un geste.
+
+À la création d'une session de Tehilim, la chaîne perpétuelle se propose en
+une ligne discrète sous le type, en petit : elle ne détourne pas de la
+création, et ne promet pas de chiffre de lecteurs qu'on ne connaît pas.
+
 ### Le backoffice est un outil, et il se lit comme un tableau de bord
 
 Le backoffice (`/admin`) ne sert qu'à l'équipe, sur un écran d'ordinateur le
@@ -1133,6 +1187,17 @@ haut**, hors d'atteinte : le bouton « Envoyer » d'un formulaire un peu long
 devenait introuvable sur un petit téléphone. Avec les marges, il est centré
 tant qu'il tient et défile dès qu'il déborde ; c'est vrai du formulaire de
 support, de la modification d'une chaîne et de tout ce qui viendra.
+
+### Une confirmation passe devant la fenêtre qui la demande
+
+La question de `useConfirm` (« Retirer ce nom de la liste ? ») se pose
+souvent depuis une fenêtre déjà ouverte. Sa boîte (`ConfirmDialog`) est
+montée une fois pour toutes dans `App.vue`, donc avant toutes les autres :
+au même rang (60), la fenêtre ouverte ensuite la recouvrait, et la question
+restait invisible sous elle. Elle se pose donc un cran au-dessus (65), sous
+l'accueil du premier lancement (90) et les toasts (100). Le test de bout en
+bout de la chaîne perpétuelle (`e2e/firebase/perpetualChain.spec.ts`, le
+retrait d'un nom) la tient.
 
 ## 7. Le bandeau de navigation
 

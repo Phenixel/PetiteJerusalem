@@ -185,3 +185,60 @@ lecteurs viennent chercher le Birkat Hamazon ou une brakha dans le sidour.
 | ------------ | -------------------------------------------------- | ----------- |
 | `source`     | `library_sidour`                                   | **nouveau** |
 | `had_search` | booléen : une recherche était tapée dans le sidour | **nouveau** |
+
+## Chaîne perpétuelle de Tehilim
+
+La chaîne toujours ouverte, et les noms qu'on lui confie (voir
+`docs/chaine-perpetuelle.md`). Aucun nom ne part dans un événement : ce sont
+des personnes, malades ou disparues ; on ne mesure que les gestes.
+
+### `perpetual_chain_opened` (nouveau)
+
+L'entrée dans la chaîne par ses deux portes : la carte en tête du partage, et
+la ligne qui la propose à la création d'une session de Tehilim. Il dit si la
+chaîne attire depuis l'accueil, et si la ligne de la création détourne vers
+elle ceux qui cherchaient des lecteurs.
+
+| Propriété | Valeurs                     | Statut      |
+| --------- | --------------------------- | ----------- |
+| `source`  | `share_home`, `new_session` | **nouveau** |
+
+### `prayer_name_form_opened` (nouveau)
+
+« Proposer un nom », ou un nom du lecteur touché pour le modifier. Sans
+compte, la fenêtre ne s'ouvre pas : l'invitation à se connecter la remplace
+(`signup_prompt_shown`, variante `prayer_name`). C'est le dénominateur de
+`prayer_name_saved`.
+
+| Propriété          | Valeurs                       | Statut      |
+| ------------------ | ----------------------------- | ----------- |
+| `session_id`       | identifiant de la chaîne      | **nouveau** |
+| `mode`             | `add`, `edit`                 | **nouveau** |
+| `source`           | `session_page`, `new_session` | **nouveau** |
+| `is_authenticated` | booléen                       | **nouveau** |
+
+### `prayer_name_saved` (nouveau)
+
+Un nom ajouté, corrigé ou prolongé. Les prolongations disent si l'on revient
+sur ses noms au bout de trente jours.
+
+| Propriété        | Valeurs                        | Statut      |
+| ---------------- | ------------------------------ | ----------- |
+| `session_id`     | identifiant de la chaîne       | **nouveau** |
+| `action`         | `added`, `updated`, `renewed`  | **nouveau** |
+| `kind`           | `refoua`, `leilouy`            | **nouveau** |
+| `has_death_date` | booléen (leilouy nichmat daté) | **nouveau** |
+
+### `prayer_name_removed` (nouveau)
+
+Un nom retiré par son auteur (une guérison, une erreur).
+
+| Propriété    | Valeurs                  | Statut      |
+| ------------ | ------------------------ | ----------- |
+| `session_id` | identifiant de la chaîne | **nouveau** |
+| `kind`       | `refoua`, `leilouy`      | **nouveau** |
+
+### `signup_prompt_shown`, `signup_prompt_clicked` (existants)
+
+Une valeur de plus pour `variant` : `prayer_name`, l'invitation à se
+connecter posée devant « Proposer un nom ».
