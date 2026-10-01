@@ -90,3 +90,19 @@ export class SessionFieldsRequiredError extends AppError {
     this.name = "SessionFieldsRequiredError";
   }
 }
+
+/** Nom de la chaîne perpétuelle sans prénom, ou sans celui de la mère. */
+export class PrayerNameIncompleteError extends AppError {
+  constructor() {
+    super("prayerNameIncomplete", "Le prénom et celui de la mère sont obligatoires");
+    this.name = "PrayerNameIncompleteError";
+  }
+}
+
+/** Un compte qui tient déjà le nombre de noms permis dans la chaîne perpétuelle. */
+export class PrayerNameLimitError extends AppError {
+  constructor() {
+    super("prayerNameLimit", "Nombre maximal de noms atteint pour ce compte");
+    this.name = "PrayerNameLimitError";
+  }
+}

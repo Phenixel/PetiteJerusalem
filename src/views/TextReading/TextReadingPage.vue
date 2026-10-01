@@ -6,6 +6,7 @@ import type { RouteLocationRaw } from "vue-router";
 import { useI18n } from "vue-i18n";
 import textStudiesJson from "../../datas/textStudies.json";
 import type {
+  PrayerName,
   Session,
   TextStudyReservation,
   TextStudiesJson,
@@ -74,6 +75,7 @@ import { tipsOffered } from "../../composables/useFeatureTips";
 import ReadingSizeControl from "../../components/ReadingSizeControl.vue";
 import ReadingProgressBar from "../../components/ReadingProgressBar.vue";
 import SessionReservationCard from "./SessionReservationCard.vue";
+import PrayerNamesLine from "./PrayerNamesLine.vue";
 import ReadingNav from "../../components/ReadingNav.vue";
 import TalmudDafText from "../../components/TalmudDafText.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
@@ -998,6 +1000,8 @@ function refreshProgressState() {
 
 // --- Reservation (session mode) ---
 const session = ref<Session | null>(null);
+/** Chaîne perpétuelle : les noms pour lesquels on lit (voir PrayerNamesLine). */
+const prayerNames = ref<PrayerName[]>([]);
 const currentUser = ref<User | null>(null);
 const reservationForm = ref({ name: "", email: "" });
 
@@ -1620,6 +1624,19 @@ onMounted(async () => {
     } catch (e) {
       console.error("Chaîne de lecture indisponible:", e);
     }
+    // Chaîne perpétuelle : pour qui l'on lit. Le service ne se charge que là ;
+    // sans les noms, la lecture se fait quand même.
+    const chain = session.value;
+    if (chain?.perpetual) {
+      void import("../../services/prayerNameService")
+        .then(({ prayerNameService }) =>
+          prayerNameService.board(chain.id, currentUser.value?.id ?? null),
+        )
+        .then((board) => {
+          prayerNames.value = board.listed;
+        })
+        .catch((e) => console.error("Noms de la chaîne indisponibles:", e));
+    }
     // Arrivée par le tirage : la réservation se pose ici, maintenant que le
     // texte est à l'écran. Uniquement au montage : la navigation latérale
     // (texte suivant, précédent) ne réserve rien, et « Un autre Téhilim » pose
@@ -1824,7 +1841,9 @@ watch(textId, (_, previousTextId) => {
           class="mb-8"
           v-bind="reservationCardProps"
           v-model:reservation-form="reservationForm"
-        />
+        >
+          <PrayerNamesLine v-if="prayerNames.length" :names="prayerNames" />
+        </SessionReservationCard>
 
         <!-- Top navigation -->
         <ReadingNav v-if="!isSingleSection" v-bind="sectionNavProps" class="mb-8" />

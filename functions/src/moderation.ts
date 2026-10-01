@@ -63,7 +63,15 @@ export const onSessionReported = onDocumentCreated("reports/{reportId}", async (
   }
 
   const updates: Record<string, unknown> = { reportsCount: reporters.size };
-  if (accountReporters.size >= AUTO_HIDE_THRESHOLD && sessionSnap.data()?.hidden !== true) {
+  // La chaîne perpétuelle ne se masque pas d'elle-même : trois comptes
+  // suffiraient à retirer à tout le monde la chaîne de l'app, alors qu'un
+  // signalement y vise un nom, que l'admin retire seul (`chaine:retirer-nom`).
+  const isPerpetual = sessionSnap.data()?.perpetual === true;
+  if (
+    !isPerpetual &&
+    accountReporters.size >= AUTO_HIDE_THRESHOLD &&
+    sessionSnap.data()?.hidden !== true
+  ) {
     updates.hidden = true;
     updates.hiddenAt = FieldValue.serverTimestamp();
     updates.hiddenReason = "reports";

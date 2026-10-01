@@ -34,6 +34,20 @@ déclenche à chaque document créé dans `reports` :
    (`hiddenReason: "reports"`), et la session disparaît de l'app publique
    jusqu'à l'intervention de l'admin.
 
+## La chaîne perpétuelle
+
+Les noms confiés à la chaîne perpétuelle (`docs/chaine-perpetuelle.md`) sont
+du contenu public : le filtre de termes interdits s'applique au prénom et à
+celui de la mère, et seul un compte peut en proposer. Un nom signalé (par le
+bouton « Signaler » de la chaîne, le motif le nomme) se retire en ligne de
+commande : `node scripts/admin.mjs chaine:noms`, puis
+`chaine:retirer-nom <id>`.
+
+La chaîne n'est **pas masquée automatiquement** au troisième signalement
+(`onSessionReported` la saute) : trois comptes suffiraient à la retirer à tout
+le monde, alors qu'un signalement y vise un nom. Le compteur `reportsCount`
+monte comme ailleurs, et `session:signalements` la liste.
+
 ## Backoffice
 
 `/admin/sessions` (onglet « Sessions » du backoffice) :

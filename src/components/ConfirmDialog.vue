@@ -13,9 +13,14 @@ const { request, answer } = useConfirmHost();
 </script>
 
 <template>
+  <!-- Au-dessus des autres fenêtres (60) : une confirmation se demande
+       souvent depuis l'une d'elles (retirer un nom de la chaîne perpétuelle),
+       et cette boîte, montée la première, passait dessous. Sous l'accueil du
+       premier lancement (90) et les toasts (100). -->
   <AppModal
     :open="request !== null"
     role="alertdialog"
+    overlay-class="modal-overlay z-[65]"
     labelledby="confirm-dialog-title"
     :describedby="request?.message ? 'confirm-dialog-message' : undefined"
     @close="answer(false)"

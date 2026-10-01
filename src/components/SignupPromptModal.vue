@@ -17,7 +17,9 @@ interface Props {
   // "reservation": shown after a guest reserves (default).
   // "auth": shown when a visitor must sign in/up to perform an action
   //         (e.g. create a session).
-  variant?: "reservation" | "auth";
+  // "prayer_name": the same, to suggest a name to the perpetual chain (the
+  //         account is what lets one come back to it).
+  variant?: "reservation" | "auth" | "prayer_name";
 }
 
 interface Emits {
@@ -31,19 +33,24 @@ const emit = defineEmits<Emits>();
 
 // Header + body adapt to the variant. Defaults keep the original
 // "reservation confirmed" appearance so existing usage is unchanged.
-const isAuth = computed(() => props.variant === "auth");
+const isAuth = computed(() => props.variant === "auth" || props.variant === "prayer_name");
+const isPrayerName = computed(() => props.variant === "prayer_name");
 const headerIcon = computed<IconName>(() => (isAuth.value ? "circle-plus" : "check"));
 const headerIconWrapClass = computed(() =>
   isAuth.value
     ? "bg-primary/10 text-primary"
     : "bg-green-600/10 text-green-600 dark:text-green-400",
 );
-const title = computed(() =>
-  isAuth.value ? t("signupPrompt.createSessionTitle") : t("signupPrompt.reservationConfirmed"),
-);
-const subtitle = computed(() =>
-  isAuth.value ? t("signupPrompt.createSessionSubtitle") : t("signupPrompt.subtitle"),
-);
+const title = computed(() => {
+  if (isPrayerName.value) return t("signupPrompt.prayerNameTitle");
+  return isAuth.value
+    ? t("signupPrompt.createSessionTitle")
+    : t("signupPrompt.reservationConfirmed");
+});
+const subtitle = computed(() => {
+  if (isPrayerName.value) return t("signupPrompt.prayerNameSubtitle");
+  return isAuth.value ? t("signupPrompt.createSessionSubtitle") : t("signupPrompt.subtitle");
+});
 // The benefits list is reservation-specific; keep the auth prompt compact.
 const showBenefits = computed(() => !isAuth.value);
 const footerNote = computed(() =>

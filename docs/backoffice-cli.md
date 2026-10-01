@@ -189,6 +189,14 @@ insécables du français (U+202F avant ! ? ;, U+00A0 avant : et dans « »).
 | `session:masquer <id>`   | Retire une session du public.                                                      |
 | `session:demasquer <id>` | La rend au public et résout ses signalements ouverts (le compteur repart de zéro). |
 
+### Chaîne perpétuelle (voir `docs/chaine-perpetuelle.md`)
+
+| Commande                  | Ce qu'elle fait                                                                                                       |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `chaine:creer`            | Crée la chaîne perpétuelle de Tehilim (`sessions/chaine-perpetuelle`), une seule fois ; refuse si elle existe déjà.   |
+| `chaine:noms`             | Son tour, ses tours terminés, et chaque nom avec son identifiant, son intention, son échéance ou sa date, son compte. |
+| `chaine:retirer-nom <id>` | Retire un nom (signalé, ou à la demande de son auteur).                                                               |
+
 ## Les notes de version, automatiquement
 
 Quand une release `vX.Y.Z` est publiée sur GitHub (ou son texte corrigé),

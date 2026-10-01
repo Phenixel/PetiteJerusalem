@@ -34,12 +34,24 @@ const emit = defineEmits<{
       <span class="chip bg-primary/10 text-primary">{{
         TextTypeService.formatType(session.type)
       }}</span>
-      <span class="chip bg-black/5 text-text-secondary dark:bg-white/10">{{
-        t("common.dateLimitValue", { date: DateService.formatDate(session.dateLimit) })
-      }}</span>
-      <span class="chip bg-black/5 text-text-secondary dark:bg-white/10">{{
-        t("common.createdByValue", { name: session.creatorName })
-      }}</span>
+      <!-- La chaîne perpétuelle n'a ni date limite ni créateur à nommer : elle
+           dit qu'elle ne s'arrête pas, et où elle en est. -->
+      <template v-if="session.perpetual">
+        <span class="chip bg-black/5 text-text-secondary dark:bg-white/10">{{
+          t("perpetual.continuous")
+        }}</span>
+        <span class="chip bg-black/5 text-text-secondary dark:bg-white/10">{{
+          t("perpetual.cycle", { n: session.cycle ?? (session.completedCycles ?? 0) + 1 })
+        }}</span>
+      </template>
+      <template v-else>
+        <span class="chip bg-black/5 text-text-secondary dark:bg-white/10">{{
+          t("common.dateLimitValue", { date: DateService.formatDate(session.dateLimit) })
+        }}</span>
+        <span class="chip bg-black/5 text-text-secondary dark:bg-white/10">{{
+          t("common.createdByValue", { name: session.creatorName })
+        }}</span>
+      </template>
       <!-- Comment on réserve : une pastille parmi celles qui décrivent la
            chaîne, plutôt qu'un bloc qui repousse les textes vers le bas. Seule
            de la rangée à porter une icône : les autres énoncent, celle-ci

@@ -51,6 +51,9 @@ class FirestoreService {
       endedAt: data.endedAt?.toDate() || undefined,
       updatedAt: data.updatedAt?.toDate() || undefined,
       hiddenAt: data.hiddenAt?.toDate() || undefined,
+      cycleStartedAt: data.cycleStartedAt?.toDate() || undefined,
+      lastCycleStartedAt: data.lastCycleStartedAt?.toDate() || undefined,
+      lastCycleEndedAt: data.lastCycleEndedAt?.toDate() || undefined,
     } as Session;
   }
 

@@ -116,3 +116,33 @@ export async function seedTehilimSession(
   });
   return { id: `session-${id}`, slug, name };
 }
+
+/**
+ * Pose une chaîne perpétuelle, telle que `chaine:creer` l'écrirait
+ * (scripts/lib/backoffice.mjs), sous un identifiant unique : plusieurs tests
+ * peuvent en poser une en même temps. Voir docs/chaine-perpetuelle.md.
+ */
+export async function seedPerpetualChain(): Promise<SeededSession> {
+  const id = uniqueId();
+  const slug = `chaine-perpetuelle-${id}`;
+  const name = `Chaîne perpétuelle ${id}`;
+  await seedDoc("sessions", slug, {
+    name,
+    type: "Tehilim",
+    description: "Chaîne perpétuelle posée par la suite de bout en bout.",
+    dateLimit: new Date("2100-01-01T00:00:00Z"),
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    personId: "petite-jerusalem",
+    creatorName: "Petite Jérusalem",
+    slug,
+    reservations: [],
+    guestEmailRequired: false,
+    perpetual: true,
+    slotCount: 150,
+    cycle: 1,
+    completedCycles: 0,
+    cycleStartedAt: new Date(),
+  });
+  return { id: slug, slug, name };
+}
