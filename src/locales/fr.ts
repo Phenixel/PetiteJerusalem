@@ -1586,6 +1586,11 @@ const fr = {
     range: "{from} à {to}",
     // Le temps d'une fête, sa place dans Moadim (voir MoadimNowBanner) : le
     // renvoi depuis le sidour, et le livre de la fête en tête de Moadim.
+    // Le renvoi du sidour vers les Brahot (voir SidourBrahotLink).
+    sidourBrahot: {
+      question: "Vous cherchez le Birkat Hamazon ou une autre brakha ?",
+      link: "Le livre des Brahot",
+    },
     moadimNow: {
       label: "{fete}, en ce moment",
       title: "Les textes de la fête, dans Moadim",
