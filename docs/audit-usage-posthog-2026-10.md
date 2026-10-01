@@ -303,3 +303,79 @@ pas ce que voient ceux qui en repartent aussitôt (3, motif 3). À ajouter :
   (calendrier, introduction, profil, quelques autres) : la recherche, les
   chaînes, la connexion ou le hors ligne n'y figurent pas. Les compléter au
   fil des ajouts ci-dessus.
+
+## 6. Trois questions du propriétaire
+
+### 6.1 La bibliothèque : trouve-t-on ce qu'on cherche ?
+
+Sur 724 sessions de l'app passées par la bibliothèque :
+
+- **81 % ouvrent un texte**, en 5 à 8 secondes (médiane) ; le chemin
+  étagère, rayon, texte suffit dans 68 % des cas. 34 sessions ont eu besoin
+  de cinq pages de bibliothèque ou plus.
+- **19 % n'ouvrent rien**, mais la plupart n'ont fait que passer sur
+  l'étagère (100 sur 120 s'y arrêtent, souvent pour aller ailleurs dans
+  l'app). Une quarantaine de sessions (6 %) parcourent trois pages ou plus
+  sans rien ouvrir : ce sont les vraies recherches infructueuses.
+- **Un mauvais texte ouvert** (retour à la liste en moins de 15 secondes) :
+  40 % des ouvertures de Michna, 31 % du Talmud, 25 % du Tanakh, environ
+  20 % de Moadim et Slihot, contre 10 % du sidour et 9 % des Tehilim.
+- **Les Tehilim se parcourent un par un** : 39 % des psaumes ouverts cèdent
+  la place au suivant en moins de 15 secondes ; 21 enchaînements de trois
+  psaumes ou plus, dont 4 de dix ou plus. Même motif que les jours des
+  horaires (2.3) : on avance pas à pas vers un numéro.
+- **La recherche sert peu** : 5 % des sessions de bibliothèque, 29 des 176
+  utilisateurs de la bibliothèque de l'app en un mois, 9 depuis l'étagère.
+
+### 6.2 Les autres fonctionnalités
+
+Personnes distinctes sur trente jours (environ 217 dans l'app, 430 sur le
+site), et parmi elles celles qui y reviennent un autre jour.
+
+| Fonctionnalité            | Site | App | Revenues un autre jour |
+| ------------------------- | ---: | --: | ---------------------: |
+| Calendrier des fêtes      |  308 |  30 |                     45 |
+| Chiourim (liste)          |    5 | 152 |                     49 |
+| Horaires                  |   19 | 115 |                     42 |
+| Chaînes (vues)            |   30 |  59 |                     27 |
+| Lecture du jour (page)    |    1 |  55 |                     17 |
+| Chiour écouté             |    4 |  36 |                      5 |
+| Boussole du Kotel         |    0 |  18 |                      6 |
+| Rappels d'horaires        |    0 |  12 |                      1 |
+| Chnei mikra               |    0 |  12 |                      1 |
+| Miroir des tefilin        |    0 |  11 |                      3 |
+| Marque-pages              |    1 |  10 |                      2 |
+| Tehilim du jour           |    0 |   7 |                      0 |
+
+- Les **horaires** sont bien utilisés : la moitié des utilisateurs de l'app,
+  dont 17 cinq jours ou plus. Widgets et montre n'envoient rien : l'usage
+  réel est plus haut.
+- Le **calendrier** vit sur le site (trafic des moteurs) ; dans l'app,
+  14 % des utilisateurs l'ouvrent.
+- La **lecture du jour** : 56 personnes ont vu la page, 24 l'ont composée,
+  9 ont marqué au moins une lecture, 5 ont fini au moins une journée (22
+  journées complètes en tout).
+- Les **chiourim** attirent (70 % des utilisateurs de l'app ouvrent la
+  liste) mais retiennent peu : 17 % écoutent un cours.
+
+### 6.3 Les chaînes de lecture
+
+Lu dans Firestore (lecture seule) le 1er octobre : 28 chaînes depuis
+février, 9 créées depuis le 1er septembre.
+
+- Sur ces 9 : une remplie (11 sections sur 11, en quelques heures), une
+  partiellement (18 psaumes sur 150, tous lus), trois à 2 sections, quatre
+  vides.
+- La dernière vraie réussite date du 24 août : 150 psaumes sur 150
+  réservés, 140 lus, 14 participants.
+- **Aucune chaîne n'a été close par son créateur depuis juillet** (une
+  seule dans toute l'histoire) : elles finissent en expirant, même pleines.
+- **Une chaîne se remplit quand elle circule** : celles qui réussissent ont
+  de 6 à 24 visiteurs distincts dans PostHog, les vides jamais plus de 2.
+  Le bouton de partage de l'app n'a servi que pour 6 chaînes en deux mois.
+- 3 des 9 chaînes récentes avaient pour date limite le jour même de leur
+  création ; deux sont restées vides.
+- Six chaînes créées le même jour de juillet (Talmud et Michna, jusqu'en
+  2027) n'ont aucune ou une seule réservation, et restent affichées en
+  cours. Les grandes chaînes de Michna sont réservées de 83 à 99 % mais
+  lues à 3 ou 4 % : on réserve, on ne marque pas la lecture.
