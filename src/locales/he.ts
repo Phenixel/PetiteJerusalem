@@ -1047,8 +1047,7 @@ const he: LocaleMessages = {
     homeText: "ברגע שהפרק האחרון נקרא, היא מתחילה מחדש מהראשון.",
     timesCompleted: "פעמים הושלמה",
     roundProgress: "{read} נקראו מתוך {total}",
-    readingFor: "קוראים לזכות {names}.",
-    readingForMore: "קוראים לזכות {names} ועוד {count}.",
+    readingForCount: "קוראים לזכות {n} אנשים.",
     noNamesYet: "הציעו את השם הראשון שלזכותו יקראו.",
     roundDone: "הסבב הושלם! השרשרת מתחילה מחדש מהפרק הראשון בעוד רגע.",
     stats: {
@@ -1096,7 +1095,8 @@ const he: LocaleMessages = {
       month: "חודש",
       dayOfMonth: "{day} ב{month}",
       datedHint: "השם יופיע בכל שנה בשבוע שלפני {date}, עד היום עצמו.",
-      undatedHint: "בלי תאריך, השם נקרא {days} ימים; אפשר להאריך.",
+      undatedHint:
+        "בלי תאריך, השם נקרא {days} ימים; אפשר להאריך. עם התאריך, הוא חוזר בכל שנה, בשבוע שלפני יום השנה, עד היום עצמו.",
       clearDate: "בלי תאריך",
       preview: "כך יופיע ברשימה",
       previewFirstName: "שם",

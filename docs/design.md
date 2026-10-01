@@ -687,13 +687,19 @@ précédente.
 ### La chaîne perpétuelle se confie un nom, elle ne se crée pas
 
 La chaîne perpétuelle de Tehilim (`docs/chaine-perpetuelle.md`) est la seule
-chaîne qu'on peut toujours rejoindre. Sur l'accueil du partage, elle prend
-donc la couleur du thème, pleine, sous le bouton de création
-(`PerpetualChainCard`) : c'est la seule carte colorée de la page (voir « Ce
-qu'on vient chercher prend la couleur, pleine »), et le blanc y descend en
-trois tons, comme sur la carte de la prochaine fête. Le chiffre en avant, au
-bout de la ligne, est le nombre de fois qu'elle a été terminée ; au premier
-tour, il n'y a rien à compter, et il ne paraît pas.
+chaîne qu'on peut toujours rejoindre. Sur l'accueil du partage, elle se
+pose sous le bouton de création (`PerpetualChainCard`), dans une carte comme
+celles des autres chaînes : un cadre blanc, cliquable tout entier, dont le
+titre prend la couleur au survol. Elle ne prend pas la couleur du thème en
+aplat : sur une page de chaînes, une carte pleine se lisait comme une
+publicité au milieu des autres. La couleur ne marque que ce qui la distingue,
+« Toujours ouverte », le chiffre en avant et la barre d'avancement. Ce
+chiffre, au bout de la ligne, est le nombre de fois qu'elle a été terminée ;
+au premier tour, il n'y a rien à compter, et il ne paraît pas.
+
+La carte ne nomme personne : « On y lit pour 5 personnes ». Les noms sont
+ceux de malades et de défunts ; ils se lisent sur la page de la chaîne, où
+l'on vient pour eux, et non en passant sur l'accueil.
 
 Sur sa page, l'en-tête dit « Lecture continue » et le tour en cours là où une
 chaîne ordinaire dit sa date limite et son créateur. Viennent ensuite le
@@ -718,8 +724,13 @@ La fenêtre « Proposer un nom » compose le nom comme on le dit : les deux
 prénoms côte à côte, et entre eux « ben » ou « bat », qui suit le choix homme
 ou femme sous les yeux. Un aperçu montre la ligne telle qu'elle paraîtra. Pour
 un leilouy nichmat, la date du décès se choisit comme une date du calendrier
-(jour, mois hébraïque), et la phrase sous les champs dit ce qu'elle change :
-le nom reviendra chaque année, la semaine qui précède. Retirer un nom pose la
+(jour, mois hébraïque), et la phrase sous les champs dit, avant même qu'on
+la choisisse, ce que la date change : sans elle, le nom est lu trente jours ;
+avec elle, il revient tous les ans, la semaine qui précède l'anniversaire.
+
+Dans le lecteur, « Vous lisez pour » garde les deux groupes de la page de la
+chaîne, chacun avec son dessin : on ne dit pas de la même façon une refoua
+chelema et un leilouy nichmat (`PrayerNamesLine`). Retirer un nom pose la
 question, avec le nom (`useConfirm`) ; le prolonger, non : cela se refait
 d'un geste.
 

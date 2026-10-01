@@ -11,9 +11,10 @@ leurs règles d'apparence sont dans `docs/design.md`, « La chaîne perpétuelle
 
 ## Ce que voit le lecteur
 
-- **Sur l'accueil du partage**, la chaîne a sa carte en tête, à la couleur
-  du thème, sous le bouton de création (`PerpetualChainCard`). Elle ne figure
-  pas dans « Sessions en cours » : elle ne s'y répète pas.
+- **Sur l'accueil du partage**, la chaîne a sa carte en tête, sous le bouton
+  de création (`PerpetualChainCard`), un cadre comme les autres chaînes. Elle
+  dit pour combien de personnes on lit, sans les nommer. Elle ne figure pas
+  dans « Sessions en cours » : elle ne s'y répète pas.
 - **Sur sa page**, la même que celle d'une session (`DetailSession`), avec
   trois différences : l'en-tête dit « Lecture continue » et le numéro du tour
   au lieu de la date limite et du créateur ; le compteur des tours
@@ -21,7 +22,8 @@ leurs règles d'apparence sont dans `docs/design.md`, « La chaîne perpétuelle
   (`PrayerNamesCard`). Le tirage, la barre d'avancement, la réservation sans
   compte et la liste des 150 Tehilim sont ceux de toute chaîne.
 - **Dans le lecteur**, sous la réservation d'un Téhilim de la chaîne : « Vous
-  lisez pour », et les noms (`PrayerNamesLine`).
+  lisez pour », et les noms en deux groupes, refoua chelema et leilouy
+  nichmat (`PrayerNamesLine`).
 - **À la création d'une session**, dès que le type Tehilim est choisi, une
   ligne discrète propose aussi d'y confier le nom
   (`?proposer=1` ouvre la fenêtre en arrivant). Elle ne promet pas de chiffre

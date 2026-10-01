@@ -1068,9 +1068,7 @@ const en: LocaleMessages = {
     homeText: "As soon as the last Tehilim is read, it starts again from the first.",
     timesCompleted: "times completed",
     roundProgress: "{read} read out of {total}",
-    readingFor: "We read for {names}.",
-    readingForMore:
-      "We read for {names} and {count} other. | We read for {names} and {count} others.",
+    readingForCount: "We read for {n} person. | We read for {n} people.",
     noNamesYet: "Suggest the first name to be read for.",
     roundDone: "Round completed! The chain starts again from the first Tehilim in a moment.",
     stats: {
@@ -1121,7 +1119,8 @@ const en: LocaleMessages = {
       dayOfMonth: "{day} {month}",
       datedHint:
         "The name will appear every year during the week before {date}, up to the day itself.",
-      undatedHint: "Without a date, the name is read for {days} days; you can extend it.",
+      undatedHint:
+        "Without a date, the name is read for {days} days; you can extend it. With the date, it comes back every year, during the week before the anniversary, up to the day itself.",
       clearDate: "No date",
       preview: "It will appear in the list as",
       previewFirstName: "First name",

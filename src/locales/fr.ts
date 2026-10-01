@@ -1105,9 +1105,7 @@ const fr = {
     homeText: "Dès que le dernier Téhilim est lu, elle repart du premier.",
     timesCompleted: "fois terminée",
     roundProgress: "{read} lus sur {total}",
-    readingFor: "On y lit pour {names}.",
-    readingForMore:
-      "On y lit pour {names} et {count} autre. | On y lit pour {names} et {count} autres.",
+    readingForCount: "On y lit pour {n} personne. | On y lit pour {n} personnes.",
     noNamesYet: "Proposez le premier nom pour lequel on y lira.",
     roundDone: "Tour terminé ! La chaîne repart du premier Téhilim dans un instant.",
     stats: {
@@ -1158,7 +1156,8 @@ const fr = {
       dayOfMonth: "{day} {month}",
       datedHint:
         "Le nom paraîtra chaque année la semaine qui précède le {date}, jusqu'au jour même.",
-      undatedHint: "Sans date, le nom est lu {days} jours ; vous pourrez le prolonger.",
+      undatedHint:
+        "Sans date, le nom est lu {days} jours ; vous pourrez le prolonger. Avec la date, il revient tous les ans, la semaine qui précède l'anniversaire, jusqu'au jour même.",
       clearDate: "Sans date",
       preview: "Il paraîtra ainsi dans la liste",
       previewFirstName: "Prénom",
