@@ -139,6 +139,17 @@ avec un leurre qui se comporte comme le vrai proxy, `then` compris.
   (`@capacitor/file-transfer` + `@capacitor/filesystem`), Cache Storage sur le
   web ; index dans `@capacitor/preferences` (`src/services/offlineTextStore.ts`
   et `offlineLibraryService.ts`).
+- Android : le manifest déclare `READ_EXTERNAL_STORAGE` et
+  `WRITE_EXTERNAL_STORAGE`, bornées à `maxSdkVersion="29"`. Les fichiers vont
+  dans l'espace privé de l'app, qui n'exige aucune permission, mais
+  `@capacitor/file-transfer` les consulte avant tout transfert sous Android 11
+  et livre un manifest vide : non déclarées, Capacitor lève « Missing the
+  following permissions in AndroidManifest.xml » et plus un seul livre ne se
+  télécharge sous Android 10. Au-delà d'Android 10, le plugin ne les consulte
+  plus, et la borne évite de demander un accès large au stockage sur un
+  appareil récent. Ajoutées par `scripts/setup-android.mjs` (le dossier
+  `android/` est régénéré à chaque publication) ; test :
+  `src/__tests__/androidStoragePermissions.test.ts`.
 - `textService.loadText` passe par `fetchTextResponse` : copie téléchargée à
   jour d'abord, puis copie embarquée (et pour le Sidour, la vérification de
   fond décrite plus haut), puis réseau (`https://petite-jerusalem.fr`), puis,
