@@ -16,7 +16,7 @@ import { analyticsService } from "../../services/analyticsService";
 import { seoService } from "../../services/seoService";
 import { SITE_URL } from "../../config/site";
 import { isNativeApp } from "../../composables/useNativeApp";
-import { useZmanimLocation } from "../../composables/useZmanimLocation";
+import { locationOutcome, useZmanimLocation } from "../../composables/useZmanimLocation";
 import { useZmanimPlaceLabel } from "../../composables/useZmanimPlaceLabel";
 import { useZmanCountdown } from "../../composables/useZmanCountdown";
 import { useNow } from "../../composables/useNow";
@@ -58,6 +58,7 @@ import ChametzTimes from "./ChametzTimes.vue";
 import ZmanRow from "./ZmanRow.vue";
 import ZmanReminderModal from "./ZmanReminderModal.vue";
 import FeatureTour, { type TourStep } from "../../components/FeatureTour.vue";
+import { tipsOffered, useFeatureTips } from "../../composables/useFeatureTips";
 import { useZmanimOpinion } from "../../composables/useZmanimOpinion";
 
 // Chargés à la demande : la liste des hiloulot pèse 75 Ko, et la fenêtre de
@@ -128,8 +129,43 @@ const dayKey = computed({
     const today = new Date(now.value.getFullYear(), now.value.getMonth(), now.value.getDate());
     // Arrondi : les changements d'heure font des journées de 23 ou 25 heures.
     dayOffset.value = Math.round((picked.getTime() - today.getTime()) / 86_400_000);
+    trackDayChange("picker");
+    // Qui a trouvé le calendrier tout seul n'a pas besoin qu'on le lui montre.
+    markTipSeen("zmanim-date");
   },
 });
+
+/**
+ * Changer de jour : une flèche, le calendrier, ou « Revenir à aujourd'hui ».
+ * `arrow_streak` compte les flèches touchées à la suite : on en a vu jusqu'à
+ * 37 pour atteindre une date lointaine, le calendrier restant ignoré sous le
+ * titre de la date (docs/audit-usage-posthog-2026-10.md, 2.3). Au troisième
+ * appui de suite, l'astuce qui le montre est appelée (`dateTipWanted`).
+ */
+const DATE_TIP_AFTER_ARROWS = 3;
+let arrowStreak = 0;
+const dateTipWanted = ref(false);
+const { markTipSeen } = useFeatureTips();
+
+function trackDayChange(via: "arrow" | "picker" | "today"): void {
+  arrowStreak = via === "arrow" ? arrowStreak + 1 : 0;
+  analyticsService.capture("zmanim_day_changed", {
+    via,
+    offset_days: dayOffset.value,
+    arrow_streak: arrowStreak,
+  });
+  if (arrowStreak >= DATE_TIP_AFTER_ARROWS) dateTipWanted.value = true;
+}
+
+function stepDay(delta: 1 | -1): void {
+  dayOffset.value += delta;
+  trackDayChange("arrow");
+}
+
+function backToToday(): void {
+  dayOffset.value = 0;
+  trackDayChange("today");
+}
 
 const times = computed(() => computeZmanim(place.value, day.value));
 const upcoming = computed(() => (isToday.value ? nextZman(times.value, now.value) : null));
@@ -303,6 +339,24 @@ const zmanimTip = computed<TourStep[]>(() => [
   },
 ]);
 
+/**
+ * L'astuce du calendrier, appelée par les flèches (trackDayChange) : trois
+ * jours parcourus un par un, c'est qu'on en cherche un plus loin. Le
+ * projecteur se pose sur la date, qui EST le bouton du calendrier ; la
+ * toucher l'ouvre, comme d'habitude.
+ */
+const dateButton = ref<HTMLElement | null>(null);
+const dateTip = computed<TourStep[]>(() => [
+  {
+    key: "date",
+    icon: "calendar",
+    title: t("tips.zmanim.date.title"),
+    text: t("tips.zmanim.date.text"),
+    target: () => dateButton.value,
+    radius: 12,
+  },
+]);
+
 function onTipStep(index: number): void {
   demoZman.value = index === 0 ? (byPeriod.value[0]?.zmanim[0]?.key ?? null) : null;
 }
@@ -434,8 +488,12 @@ const coordinates = computed(() =>
 );
 
 async function locateMe() {
+  const startedAt = Date.now();
   const granted = await locateDevice();
-  analyticsService.capture("zmanim_location_requested", { granted });
+  analyticsService.capture("zmanim_location_requested", {
+    granted,
+    ...locationOutcome(granted, status.value, startedAt),
+  });
   if (granted) leaveCityPage();
 }
 
@@ -676,12 +734,13 @@ onMounted(() => {
         type="button"
         class="icon-btn shrink-0"
         :aria-label="t('zmanim.previousDay')"
-        @click="dayOffset--"
+        @click="stepDay(-1)"
       >
         <AppIcon name="chevron-left" :size="18" class="rtl:rotate-180" />
       </button>
 
       <button
+        ref="dateButton"
         type="button"
         class="min-w-0 flex-1 rounded-control px-3 py-1 text-center transition-colors hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
         :aria-label="t('common.chooseDate')"
@@ -697,7 +756,7 @@ onMounted(() => {
         type="button"
         class="icon-btn shrink-0"
         :aria-label="t('zmanim.nextDay')"
-        @click="dayOffset++"
+        @click="stepDay(1)"
       >
         <AppIcon name="chevron-right" :size="18" class="rtl:rotate-180" />
       </button>
@@ -729,7 +788,7 @@ onMounted(() => {
     </div>
 
     <div v-if="!isToday" class="mt-3 text-center">
-      <button type="button" class="btn btn-soft" @click="dayOffset = 0">
+      <button type="button" class="btn btn-soft" @click="backToToday">
         {{ t("zmanim.backToToday") }}
       </button>
     </div>
@@ -883,6 +942,14 @@ onMounted(() => {
       :steps="zmanimTip"
       @step="onTipStep"
       @finish="onTipFinish"
+    />
+    <!-- Le calendrier sous la date, montré à qui enchaîne les flèches. Le
+         calendrier existe aussi sur le site : `?tips` l'y force (preview). -->
+    <FeatureTour
+      v-if="tipsOffered && dateTipWanted"
+      tip="zmanim-date"
+      :steps="dateTip"
+      :delay="400"
     />
     <ZmanReminderModal
       v-if="reminderZman"

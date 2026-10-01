@@ -17,6 +17,7 @@ import { useI18n } from "vue-i18n";
 import { HDate } from "@hebcal/core";
 import { useOverlay } from "../../composables/useOverlayStack";
 import { useConfirm } from "../../composables/useConfirm";
+import { analyticsService } from "../../services/analyticsService";
 import { useHebrewOccasions, type OccasionDraft } from "../../composables/useHebrewOccasions";
 import {
   MAX_OCCASION_DAY,
@@ -148,6 +149,12 @@ const canSave = computed(() => draft.value.name.trim().length > 0);
 
 function save(): void {
   if (!canSave.value) return;
+  // Le nom reste sur l'appareil ou le compte : il nomme une personne.
+  analyticsService.capture("occasion_saved", {
+    kind: draft.value.kind,
+    is_new: draft.value.id === undefined,
+    on_account: syncedToAccount.value,
+  });
   saveOccasion(draft.value);
   view.value = "list";
 }
@@ -169,6 +176,9 @@ async function remove(id: string): Promise<void> {
     danger: true,
   });
   if (!accepted) return;
+  analyticsService.capture("occasion_removed", {
+    kind: occasions.value.find((occasion) => occasion.id === id)?.kind ?? null,
+  });
   removeOccasion(id);
   view.value = "list";
 }

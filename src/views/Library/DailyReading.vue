@@ -468,13 +468,29 @@ async function loadPreferences(initial = false, resync = false) {
 }
 
 onMounted(async () => {
+  let loaded = false;
   try {
     // L'index des téléchargements doit être lu avant de savoir quels textes
     // manquent sur l'appareil (no-op hors app native).
     if (isNativeApp) await ensureManifestLoaded();
     await loadPreferences(true);
+    loaded = true;
   } finally {
     loading.value = false;
+    // Ce que la page montre à l'arrivée : on en repartait parfois aussitôt
+    // sans que rien ne dise si elle était vide, déjà faite ou à faire
+    // (docs/audit-usage-posthog-2026-10.md, 3).
+    analyticsService.capture("daily_reading_viewed", {
+      state: !loaded
+        ? "error"
+        : totalCount.value === 0
+          ? "empty"
+          : allDone.value
+            ? "all_done"
+            : "in_progress",
+      total_count: totalCount.value,
+      done_count: completedCount.value,
+    });
   }
   // Fichiers téléchargés dans un format antérieur : remis à jour en tâche de
   // fond. Aucun nouveau livre n'est téléchargé sans l'accord de l'utilisateur.

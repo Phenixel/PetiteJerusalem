@@ -5,10 +5,16 @@ import { useI18n } from "vue-i18n";
 import { Capacitor } from "@capacitor/core";
 import { authService, type User } from "../services/authService";
 import {
+  authErrorCode,
+  describeEmailAuthError,
   isAuthCancellation,
   isAuthProviderUnavailable,
+  type EmailAuthHelp,
   type SocialProvider,
 } from "../services/authErrors";
+import { ModerationError } from "../services/moderationService";
+import { lastAuthMethod, restoreLastAuthMethod, type AuthMethod } from "../services/lastAuthMethod";
+import { loginReason } from "../services/loginReason";
 import { reservationService } from "../services/reservationService";
 import { guestService } from "../services/guestService";
 import { seoService } from "../services/seoService";
@@ -30,20 +36,37 @@ const confirmPassword = ref("");
 const displayName = ref("");
 const loading = ref(false);
 const errorMessage = ref<string | null>(null);
-// Message brut de l'erreur Firebase/plugin, affiché en petit sous le message
-// i18n : indispensable pour diagnostiquer à distance les échecs de connexion
-// Google/Apple remontés par les testeurs (l'erreur varie selon l'appareil).
-const errorDetail = ref<string | null>(null);
+// La sortie que propose l'erreur email (voir describeEmailAuthError) : créer
+// un compte, se connecter, ou le bouton de la dernière méthode utilisée. Le
+// message brut de Firebase ne s'affiche plus : il part avec `*_failed`
+// (`error_message`) et l'Error tracking, où il sert à quelque chose.
+const errorHelp = ref<EmailAuthHelp | null>(null);
+// L'erreur email qui a appelé l'aide, pour la mesure (`login_help_clicked`).
+let errorReason: string | null = null;
+
+/**
+ * La dernière façon de se connecter sur cet appareil (lastAuthMethod) : son
+ * bouton porte « Dernière utilisation », et une erreur email la rappelle.
+ */
+const lastMethod = ref<AuthMethod | null>(lastAuthMethod());
+
+/** Les essais de chaque fournisseur depuis l'arrivée sur l'écran. */
+const attempts: Record<SocialProvider, number> = { google: 0, apple: 0 };
 // Le fournisseur dont la feuille native est ouverte. Tant qu'elle l'est, un
 // second tap (le même bouton, ou l'autre fournisseur) ne lance rien : deux
 // présentations concurrentes échouent en « Unable to open Safari » ou en
 // code Apple 1000, que l'écran prendrait pour une limite de l'appareil.
 const socialPending = ref<SocialProvider | null>(null);
 
+function clearError() {
+  errorMessage.value = null;
+  errorHelp.value = null;
+  errorReason = null;
+}
+
 function setMode(newMode: "login" | "signup") {
   mode.value = newMode;
-  errorMessage.value = null;
-  errorDetail.value = null;
+  clearError();
 }
 
 const buttonText = computed(() => {
@@ -51,20 +74,32 @@ const buttonText = computed(() => {
   return mode.value === "login" ? t("login.signIn") : t("login.register");
 });
 
+/** L'échec d'une connexion par email, compté puis dit en clair. */
+function failEmailAuth(reason: string, message: string, help: EmailAuthHelp | null = null) {
+  analyticsService.capture("email_auth_failed", {
+    mode: mode.value,
+    reason,
+    last_method: lastMethod.value,
+  });
+  errorMessage.value = message;
+  errorHelp.value = help;
+  errorReason = reason;
+}
+
 async function submitForm() {
-  errorMessage.value = null;
-  errorDetail.value = null;
+  clearError();
   // Troisième chemin de connexion, et le seul dont les échecs étaient muets :
   // `signed_in`/`signed_up {method: email}` n'avaient pas de contrepartie. Un
   // mot de passe oublié, une adresse déjà prise ou un mot de passe trop court
   // ressortaient tous comme une visite de /login sans suite.
   analyticsService.capture("email_auth_submitted", { mode: mode.value });
+  if (mode.value === "signup" && password.value !== confirmPassword.value) {
+    failEmailAuth("password_mismatch", t("login.passwordsDoNotMatch"));
+    return;
+  }
   loading.value = true;
   try {
     if (mode.value === "signup") {
-      if (password.value !== confirmPassword.value) {
-        throw new Error(t("login.passwordsDoNotMatch"));
-      }
       await authService.signUpWithEmail(
         email.value.trim(),
         password.value,
@@ -93,13 +128,14 @@ async function submitForm() {
     // erreurs utilisateur (mauvais mot de passe), pas des bugs. L'événement
     // funnel, lui, a sa place : c'est le décrochage qu'il mesure, pas le bug.
     // Un code Firebase (`auth/...`) plutôt que le message, qui est traduit.
-    const code = (e as { code?: unknown } | null)?.code;
-    analyticsService.capture("email_auth_failed", {
-      mode: mode.value,
-      reason: typeof code === "string" ? code : "error",
-    });
-    const msg = e instanceof Error ? e.message : t("login.loginError");
-    errorMessage.value = msg;
+    if (e instanceof ModerationError) {
+      // Le nom affiché refusé : le message dit quel terme, il est déjà traduit.
+      failEmailAuth("moderation", e.message);
+      return;
+    }
+    const code = authErrorCode(e);
+    const view = describeEmailAuthError(code, shownLastMethod.value);
+    failEmailAuth(code ?? "error", t(view.key), view.help);
   } finally {
     loading.value = false;
   }
@@ -120,9 +156,11 @@ const SOCIAL_ERROR_KEYS: Record<SocialProvider, { unavailable: string; error: st
 async function socialSignIn(provider: SocialProvider, signIn: () => Promise<User>) {
   if (socialPending.value || loading.value) return;
   socialPending.value = provider;
-  errorMessage.value = null;
-  errorDetail.value = null;
-  analyticsService.capture(`${provider}_signin_clicked`);
+  clearError();
+  attempts[provider] += 1;
+  // `attempt` : le rang de l'essai depuis l'arrivée. Il dit combien d'échecs
+  // cèdent au deuxième essai (l'erreur Apple 1000, notamment).
+  analyticsService.capture(`${provider}_signin_clicked`, { attempt: attempts[provider] });
   try {
     const redirectPath = (router.currentRoute.value.query.redirect as string) || "/profile";
 
@@ -143,11 +181,12 @@ async function socialSignIn(provider: SocialProvider, signIn: () => Promise<User
       return;
     }
     console.error(`Connexion ${provider} échouée:`, e);
-    // Ce que l'appareil ne peut pas faire, et que réessayer ne changera pas :
-    // Safari indisponible pour Google (restrictions Temps d'écran), la feuille
-    // Apple sans compte Apple connecté (code 1000). On dit quoi vérifier, et
-    // vers quoi se replier, plutôt qu'une erreur générique observée en prod
-    // (trois tentatives puis abandon).
+    // Ce que l'appareil ne sait pas faire : Safari indisponible pour Google
+    // (restrictions Temps d'écran), la feuille Apple sans compte Apple
+    // connecté (code 1000). On dit quoi vérifier, et vers quoi se replier,
+    // plutôt qu'une erreur générique observée en prod (trois tentatives puis
+    // abandon). Le code 1000 cède pourtant parfois au deuxième essai (deux
+    // cas sur six en septembre 2026) : le message invite d'abord à réessayer.
     const unavailable = isAuthProviderUnavailable(provider, e);
     // Cet appareil-là ne peut pas, et aucun correctif n'y changera rien : comme
     // pour un mot de passe refusé plus haut, l'Error tracking n'a rien à en
@@ -158,10 +197,10 @@ async function socialSignIn(provider: SocialProvider, signIn: () => Promise<User
     analyticsService.capture(`${provider}_signin_failed`, {
       reason: unavailable ? "unavailable" : "error",
       error_message: e instanceof Error ? e.message : String(e),
+      attempt: attempts[provider],
     });
     const keys = SOCIAL_ERROR_KEYS[provider];
     errorMessage.value = t(unavailable ? keys.unavailable : keys.error);
-    errorDetail.value = e instanceof Error ? e.message : String(e);
   } finally {
     socialPending.value = null;
   }
@@ -174,6 +213,53 @@ const loginWithGoogle = () => socialSignIn("google", () => authService.signInWit
 const isApplePlatform = computed(() => Capacitor.getPlatform() === "ios");
 
 const loginWithApple = () => socialSignIn("apple", () => authService.signInWithApple());
+
+/**
+ * La dernière méthode, telle que cet écran peut la proposer : Apple n'a de
+ * bouton que sur iOS, et une connexion Apple faite ailleurs ne se rappelle
+ * pas ici, où l'on ne pourrait pas y donner suite.
+ */
+const shownLastMethod = computed<AuthMethod | null>(() =>
+  lastMethod.value === "apple" && !isApplePlatform.value ? null : lastMethod.value,
+);
+
+/** Le fournisseur que l'aide propose : celui de la dernière connexion. */
+const helpProvider = computed<SocialProvider>(() =>
+  shownLastMethod.value === "apple" ? "apple" : "google",
+);
+
+/** Le libellé de la sortie proposée sous l'erreur. */
+const helpLabel = computed(() => {
+  switch (errorHelp.value) {
+    case "signup":
+      return t("login.help.signup");
+    case "login":
+      return t("login.help.login");
+    case "provider":
+      return helpProvider.value === "apple"
+        ? t("login.signInWithApple")
+        : t("login.signInWithGoogle");
+    default:
+      return null;
+  }
+});
+
+/**
+ * La sortie proposée par l'erreur : basculer vers l'inscription ou la
+ * connexion en gardant l'adresse saisie, ou lancer le bon fournisseur.
+ */
+function followHelp() {
+  const help = errorHelp.value;
+  if (!help) return;
+  analyticsService.capture("login_help_clicked", { help, reason: errorReason });
+  if (help === "signup") setMode("signup");
+  else if (help === "login") setMode("login");
+  else if (helpProvider.value === "apple") void loginWithApple();
+  else void loginWithGoogle();
+}
+
+/** « Dernière utilisation » sur ce bouton-là ? */
+const isLastMethod = (method: AuthMethod) => shownLastMethod.value === method;
 
 onMounted(async () => {
   const currentUser = await authService.getCurrentUser();
@@ -191,6 +277,19 @@ onMounted(async () => {
   if (queryMode === "signup") {
     mode.value = "signup";
   }
+
+  // Le `localStorage` vidé (webview sous pression mémoire) : le natif s'en
+  // souvient encore.
+  if (lastMethod.value === null) lastMethod.value = await restoreLastAuthMethod();
+
+  // L'arrivée sur l'écran, et ce qui y a mené : la lecture du jour, une
+  // chaîne, le profil... (`reason`, voir loginReason). Sans elle, on ne savait
+  // pas quelle fonction perdait les gens à la connexion.
+  analyticsService.capture("login_viewed", {
+    reason: loginReason(router.currentRoute.value.query.redirect),
+    mode: mode.value,
+    last_method: lastMethod.value,
+  });
 
   const url = SITE_URL + "/login";
   seoService.setMeta({
@@ -212,25 +311,43 @@ onMounted(async () => {
         <p class="text-text-secondary">{{ t("login.connectToContinue") }}</p>
       </div>
 
+      <!-- « Dernière utilisation » : posé sur le bord du bouton de la méthode
+           employée la dernière fois sur cet appareil (lastAuthMethod), hors
+           du bouton, dont le libellé reste celui de la commande. -->
       <div class="mb-8">
-        <button
-          class="btn btn-soft w-full"
-          :disabled="socialPending !== null || loading"
-          @click="loginWithGoogle"
-        >
-          <AppIcon name="google" :size="16" />
-          {{ t("login.signInWithGoogle") }}
-        </button>
+        <div class="relative">
+          <span
+            v-if="isLastMethod('google')"
+            class="pointer-events-none absolute -top-2.5 end-3 z-10 rounded-full border border-primary/30 bg-surface px-2.5 py-0.5 text-[11px] font-semibold leading-tight text-primary"
+          >
+            {{ t("login.lastUsed") }}
+          </span>
+          <button
+            class="btn btn-soft w-full"
+            :disabled="socialPending !== null || loading"
+            @click="loginWithGoogle"
+          >
+            <AppIcon name="google" :size="16" />
+            {{ t("login.signInWithGoogle") }}
+          </button>
+        </div>
 
-        <button
-          v-if="isApplePlatform"
-          class="w-full mt-3 py-3 px-6 bg-black hover:bg-gray-900 rounded-btn font-semibold text-white shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-3 disabled:opacity-60"
-          :disabled="socialPending !== null || loading"
-          @click="loginWithApple"
-        >
-          <AppIcon name="apple" :size="18" />
-          {{ t("login.signInWithApple") }}
-        </button>
+        <div v-if="isApplePlatform" class="relative mt-3">
+          <span
+            v-if="isLastMethod('apple')"
+            class="pointer-events-none absolute -top-2.5 end-3 z-10 rounded-full border border-primary/30 bg-surface px-2.5 py-0.5 text-[11px] font-semibold leading-tight text-primary"
+          >
+            {{ t("login.lastUsed") }}
+          </span>
+          <button
+            class="w-full py-3 px-6 bg-black hover:bg-gray-900 rounded-btn font-semibold text-white shadow-sm hover:shadow-md transition-all flex items-center justify-center gap-3 disabled:opacity-60"
+            :disabled="socialPending !== null || loading"
+            @click="loginWithApple"
+          >
+            <AppIcon name="apple" :size="18" />
+            {{ t("login.signInWithApple") }}
+          </button>
+        </div>
       </div>
 
       <p class="text-center text-sm text-text-secondary/60 font-medium mb-8">
@@ -285,9 +402,18 @@ onMounted(async () => {
         </Transition>
 
         <div class="mb-5">
-          <label class="block text-sm font-semibold text-text-primary mb-2" for="email">{{
-            t("common.email")
-          }}</label>
+          <label
+            class="flex items-center gap-2 text-sm font-semibold text-text-primary mb-2"
+            for="email"
+          >
+            {{ t("common.email") }}
+            <span
+              v-if="isLastMethod('email')"
+              class="rounded-full bg-primary/10 px-2 py-0.5 text-[11px] font-semibold leading-tight text-primary"
+            >
+              {{ t("login.lastUsed") }}
+            </span>
+          </label>
           <input
             id="email"
             v-model="email"
@@ -330,14 +456,32 @@ onMounted(async () => {
           </div>
         </Transition>
 
-        <div v-if="errorMessage" class="mb-4">
-          <p class="flex items-center gap-2 text-sm text-red-600 dark:text-red-400">
-            <AppIcon name="alert-circle" :size="14" />
+        <div v-if="errorMessage" class="mb-4" role="alert">
+          <p class="flex items-start gap-2 text-sm text-red-600 dark:text-red-400">
+            <AppIcon name="alert-circle" :size="14" class="mt-0.5 shrink-0" />
             {{ errorMessage }}
           </p>
-          <p v-if="errorDetail" class="mt-1 text-xs text-text-secondary/70 break-words">
-            {{ errorDetail }}
-          </p>
+          <!-- La sortie qui va avec l'erreur : créer le compte, s'y connecter,
+               ou le bouton de la dernière méthode utilisée. -->
+          <button
+            v-if="helpLabel"
+            type="button"
+            class="btn btn-soft btn-sm mt-3"
+            :disabled="socialPending !== null || loading"
+            @click="followHelp"
+          >
+            <AppIcon
+              :name="
+                errorHelp === 'provider'
+                  ? helpProvider
+                  : errorHelp === 'signup'
+                    ? 'circle-plus'
+                    : 'login'
+              "
+              :size="14"
+            />
+            {{ helpLabel }}
+          </button>
         </div>
 
         <button class="btn btn-primary w-full" type="submit" :disabled="loading">

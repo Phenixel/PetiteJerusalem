@@ -186,6 +186,10 @@ const he: LocaleMessages = {
         title: "מקום הזמנים",
         text: 'שם העיר הוא הכפתור שמחליף אותה. "המיקום שלי" קורא את מיקום המכשיר, בלי לשלוח אותו לאיש.',
       },
+      date: {
+        title: "בחירת תאריך",
+        text: "הקישו על התאריך כדי לפתוח את לוח השנה: שבת או חג רחוקים במרחק נגיעה, בלי לעבור דרך החצים.",
+      },
     },
     reading: {
       menu: {
@@ -309,19 +313,40 @@ const he: LocaleMessages = {
     pleaseWait: "אנא המתינו…",
     register: "הרשמה",
     passwordsDoNotMatch: "הסיסמאות אינן תואמות",
-    loginError: "שגיאת התחברות",
-    googleError: "שגיאת Google",
-    appleError: "שגיאת Apple",
+    loginError: "ההתחברות לא הצליחה. נסו שוב בעוד רגע.",
+    googleError: "ההתחברות עם Google לא הצליחה. נסו שוב, או בחרו שיטה אחרת.",
+    appleError: "ההתחברות עם Apple לא הצליחה. נסו שוב, או בחרו שיטה אחרת.",
     authBrowserUnavailable:
       "לא ניתן לפתוח את חלון ההתחברות במכשיר זה (Safari מוגבל או לא זמין). נסו להתחבר עם אימייל למטה.",
     appleSignInUnavailable:
-      "ההתחברות עם Apple אינה זמינה במכשיר זה. ודאו בהגדרות שחשבון Apple מחובר, או התחברו עם אימייל.",
+      "לא ניתן היה לפתוח את ההתחברות עם Apple. נסו שוב; אם זה חוזר, ודאו בהגדרות שחשבון Apple מחובר למכשיר, או השתמשו בשיטה אחרת.",
     displayNamePlaceholder: "לדוגמה: דוד כהן",
     emailPlaceholder: "example{'@'}email.com",
     termsNotice: "בהתחברות או ביצירת חשבון, אתם מסכימים ל",
     termsLink: "תנאי השימוש",
     termsAnd: "ול",
     privacyLink: "מדיניות הפרטיות",
+    lastUsed: "שימוש אחרון",
+    help: {
+      signup: "יצירת חשבון עם כתובת זו",
+      login: "התחברות עם כתובת זו",
+    },
+    errors: {
+      invalidCredential:
+        "אימייל או סיסמה שגויים. אם יצרתם את החשבון עם Google או Apple, השתמשו בכפתור שלהם; אחרת, בדקו את הסיסמה, או צרו חשבון.",
+      invalidCredentialGoogle:
+        "אימייל או סיסמה שגויים. במכשיר זה, ההתחברות האחרונה נעשתה עם Google: נסו את הכפתור הזה.",
+      invalidCredentialApple:
+        "אימייל או סיסמה שגויים. במכשיר זה, ההתחברות האחרונה נעשתה עם Apple: נסו את הכפתור הזה.",
+      emailInUse:
+        "כבר קיים חשבון עם כתובת זו. התחברו עם הסיסמה שלו, או עם Google או Apple אם כך יצרתם אותו.",
+      weakPassword: "הסיסמה צריכה להכיל לפחות 6 תווים.",
+      invalidEmail: "כתובת האימייל אינה נראית תקינה.",
+      missingPassword: "הזינו את הסיסמה.",
+      tooManyRequests: "יותר מדי ניסיונות ברצף: המתינו כמה דקות לפני שתנסו שוב.",
+      network: "אין חיבור לאינטרנט: בדקו את הרשת ונסו שוב.",
+      userDisabled: "החשבון הזה הושבת. כתבו לנו אם לדעתכם מדובר בטעות.",
+    },
   },
   profile: {
     loadingProfile: "טוען את הפרופיל שלך...",
@@ -878,6 +903,13 @@ const he: LocaleMessages = {
     createError: "שגיאה ביצירת הסשן. אנא נסה שוב.",
     requireGuestEmail: "לדרוש אימייל מהאורחים",
     requireGuestEmailHint: "כשהאפשרות לא מסומנת, אורחים יכולים להזמין עם שמם בלבד.",
+    shortDeadline: {
+      title: "שימו לב, התאריך שבחרתם קרוב מאוד להיום",
+      today: "הסשן יסתיים הערב. האם אתם בטוחים שאתם רוצים סשן קצר כל כך?",
+      tomorrow: "הסשן יסתיים מחר בערב. האם אתם בטוחים שאתם רוצים סשן קצר כל כך?",
+      confirm: "כן, ליצור את הסשן",
+      change: "שינוי התאריך",
+    },
   },
   detailSession: {
     loadingSession: "טוען סשן...",
@@ -1025,6 +1057,8 @@ const he: LocaleMessages = {
     inviteText: "קראו « {name} » 📖 טקסט לפתוח בפטיט ירושלים:",
     titlePassage: "שיתוף הקטע",
     invitePassage: "« {name} » 📖 הקטע נפתח כאן, בפטיט ירושלים:",
+    titleCreated: "הסשן שלכם מוכן",
+    introCreated: "זכרו לשתף את הסשן עם הסובבים אתכם, כדי שיוכלו להשתתף איתכם.",
   },
   batchSelection: {
     textsSelected: "טקסט אחד נבחר | {count} טקסטים נבחרו",

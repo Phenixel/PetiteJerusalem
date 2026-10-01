@@ -23,6 +23,7 @@ import type { User } from "../models/models";
 import { clearPreferencesCache, userPreferencesService } from "./userPreferencesService";
 import { analyticsService } from "./analyticsService";
 import { moderationService } from "./moderationService";
+import { authMethodOfProvider, lastAuthMethod, rememberAuthMethod } from "./lastAuthMethod";
 
 export type { User };
 
@@ -104,6 +105,12 @@ class AuthService {
       // Le verdict fait référence : il devient le compte servi au prochain
       // lancement (et une déconnexion purge le cache).
       writeLastKnownUser(firebaseUser ? toUser(firebaseUser) : null);
+      // Un compte connecté avant que l'appareil ne retienne la méthode : on
+      // la lit dans le compte, pour que la prochaine connexion la rappelle.
+      if (firebaseUser && lastAuthMethod() === null) {
+        const method = authMethodOfProvider(firebaseUser.providerData?.[0]?.providerId);
+        if (method) rememberAuthMethod(method);
+      }
     });
   }
 
@@ -173,6 +180,7 @@ class AuthService {
     }
 
     analyticsService.capture("signed_up", { method: "email" });
+    rememberAuthMethod("email");
     return {
       id: cred.user.uid,
       name: displayName || cred.user.displayName || cred.user.email || "",
@@ -183,6 +191,7 @@ class AuthService {
   async signInWithEmail(email: string, password: string): Promise<User> {
     const cred = await signInWithEmailAndPassword(auth, email, password);
     analyticsService.capture("signed_in", { method: "email" });
+    rememberAuthMethod("email");
     return {
       id: cred.user.uid,
       name: cred.user.displayName || cred.user.email || "",
@@ -196,6 +205,7 @@ class AuthService {
     }
     const result = await signInWithPopup(auth, googleAuthProvider);
     analyticsService.capture("signed_in", { method: "google" });
+    rememberAuthMethod("google");
     return toUser(result.user);
   }
 
@@ -212,6 +222,7 @@ class AuthService {
     const credential = GoogleAuthProvider.credential(idToken, result.credential?.accessToken);
     const cred = await signInWithCredential(auth, credential);
     analyticsService.capture("signed_in", { method: "google" });
+    rememberAuthMethod("google");
     return toUser(cred.user);
   }
 
@@ -259,6 +270,7 @@ class AuthService {
       });
       const cred = await signInWithCredential(auth, credential);
       analyticsService.capture("signed_in", { method: "apple" });
+      rememberAuthMethod("apple");
       return toUser(cred.user);
     }
 
@@ -266,6 +278,7 @@ class AuthService {
     provider.addScope("name");
     const result = await signInWithPopup(auth, provider);
     analyticsService.capture("signed_in", { method: "apple" });
+    rememberAuthMethod("apple");
     return toUser(result.user);
   }
 

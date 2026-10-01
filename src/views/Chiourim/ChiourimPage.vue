@@ -4,6 +4,7 @@ import { useI18n } from "vue-i18n";
 import { chiourService } from "../../services/chiourService";
 import type { Chiour } from "../../models/models";
 import ChiourCard from "../../components/ChiourCard.vue";
+import { useSearchTracking } from "../../composables/useSearchTracking";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import AccountCta from "../../components/AccountCta.vue";
 import CollapseTransition from "../../components/CollapseTransition.vue";
@@ -93,6 +94,18 @@ watch(searchTerm, (value) => {
   if (!value.trim() || hasTrackedSearch) return;
   hasTrackedSearch = true;
   analyticsService.capture("chiourim_search_used", { category: selectedCategory.value });
+});
+
+// La recherche posée, avec son terme et ce qu'elle trouve (useSearchTracking).
+// Un cours ouvert l'envoie aussitôt : c'est elle qui y a mené.
+const searchTracking = useSearchTracking({
+  term: searchTerm,
+  resultsCount: () => chiourimCount.value,
+  track: (search) =>
+    analyticsService.capture("chiourim_search_performed", {
+      category: selectedCategory.value,
+      ...search,
+    }),
 });
 
 onMounted(() => {
@@ -256,6 +269,7 @@ onMounted(() => {
               :key="chiour.slug"
               :chiour="chiour"
               class="h-full"
+              @click="searchTracking.flush()"
             />
           </div>
 

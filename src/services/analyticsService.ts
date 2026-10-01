@@ -242,6 +242,13 @@ class AnalyticsService {
         // Core Web Vitals (LCP, INP, CLS, FCP) → onglet Web vitals de Web
         // analytics : mesure terrain des performances réelles, page par page.
         capture_performance: { web_vitals: true },
+        // Clics morts ($dead_click) : un appui qui ne change rien à l'écran.
+        // Ils montrent ce qu'on prend pour une commande et qui n'en est pas
+        // une, ou une commande qui ne répond pas (voir
+        // docs/audit-usage-posthog-2026-10.md, 5.8). Les corps de texte de la
+        // lecture en sont exclus (`ph-no-deadclick`) : on y appuie sans rien
+        // demander.
+        capture_dead_clicks: true,
         // Session replay : les saisies sont masquées par défaut, on ne relâche
         // pas ce masquage (mots de passe, emails...).
         session_recording: {

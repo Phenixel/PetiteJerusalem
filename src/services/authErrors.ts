@@ -141,3 +141,79 @@ export function authErrorCode(error: unknown): string | null {
   const code = (error as { code?: unknown } | null | undefined)?.code;
   return typeof code === "string" ? code : null;
 }
+
+/**
+ * Ce que l'écran de connexion dit d'un échec par email ou mot de passe.
+ *
+ * Il affichait le message brut de Firebase (« Firebase: Error
+ * (auth/invalid-credential). »), en anglais dans une app en français. Chaque
+ * code connu reçoit sa phrase (`login.errors.*`), et l'écran propose la sortie
+ * qui va avec (`help`) :
+ *
+ *  - `signup` : la connexion refuse une adresse qui n'a peut-être pas de
+ *    compte ; on propose de le créer avec elle ;
+ *  - `provider` : sur cet appareil, la dernière connexion s'est faite avec
+ *    Google ou Apple (voir lastAuthMethod) ; on propose ce bouton-là ;
+ *  - `login` : l'inscription refuse une adresse déjà inscrite ; on propose de
+ *    s'y connecter.
+ *
+ * Firebase ne sait pas dire si l'adresse existe (protection contre
+ * l'énumération des comptes) : la phrase couvre donc les deux cas, compte
+ * absent ou créé avec Google, sans prétendre savoir lequel.
+ */
+export type EmailAuthHelp = "signup" | "login" | "provider";
+
+export interface EmailAuthErrorView {
+  /** La clé du message, dans `login`. */
+  key: string;
+  /** La sortie proposée, ou null. */
+  help: EmailAuthHelp | null;
+}
+
+/** Les codes d'un couple adresse et mot de passe refusé, selon l'âge du SDK. */
+const INVALID_CREDENTIAL_CODES = new Set([
+  "auth/invalid-credential",
+  "auth/invalid-login-credentials",
+  "auth/wrong-password",
+  "auth/user-not-found",
+]);
+
+const EMAIL_AUTH_MESSAGE_KEYS: Record<string, string> = {
+  "auth/email-already-in-use": "login.errors.emailInUse",
+  "auth/weak-password": "login.errors.weakPassword",
+  "auth/invalid-email": "login.errors.invalidEmail",
+  "auth/missing-email": "login.errors.invalidEmail",
+  "auth/missing-password": "login.errors.missingPassword",
+  "auth/too-many-requests": "login.errors.tooManyRequests",
+  "auth/network-request-failed": "login.errors.network",
+  "auth/user-disabled": "login.errors.userDisabled",
+};
+
+/** Toutes les clés que `describeEmailAuthError` peut rendre (tenues par un test). */
+export const EMAIL_AUTH_ERROR_KEYS: readonly string[] = [
+  "login.errors.invalidCredential",
+  "login.errors.invalidCredentialGoogle",
+  "login.errors.invalidCredentialApple",
+  ...new Set(Object.values(EMAIL_AUTH_MESSAGE_KEYS)),
+  "login.loginError",
+];
+
+export function describeEmailAuthError(
+  code: string | null,
+  lastMethod: "google" | "apple" | "email" | null,
+): EmailAuthErrorView {
+  if (code !== null && INVALID_CREDENTIAL_CODES.has(code)) {
+    if (lastMethod === "google") {
+      return { key: "login.errors.invalidCredentialGoogle", help: "provider" };
+    }
+    if (lastMethod === "apple") {
+      return { key: "login.errors.invalidCredentialApple", help: "provider" };
+    }
+    return { key: "login.errors.invalidCredential", help: "signup" };
+  }
+  if (code === "auth/email-already-in-use") {
+    return { key: "login.errors.emailInUse", help: "login" };
+  }
+  const key = code !== null ? EMAIL_AUTH_MESSAGE_KEYS[code] : undefined;
+  return { key: key ?? "login.loginError", help: null };
+}

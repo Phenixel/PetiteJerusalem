@@ -189,6 +189,10 @@ const en: LocaleMessages = {
         title: "Where the times are for",
         text: 'The city name is the button that changes it. "My location" reads the device\'s position, without sending it anywhere.',
       },
+      date: {
+        title: "Pick a date",
+        text: "Tap the date to open the calendar: a Shabbat or a holiday further away is a single tap away, without the arrows.",
+      },
     },
     reading: {
       menu: {
@@ -314,19 +318,40 @@ const en: LocaleMessages = {
     pleaseWait: "Please wait…",
     register: "Register",
     passwordsDoNotMatch: "Passwords do not match",
-    loginError: "Login error",
-    googleError: "Google error",
-    appleError: "Apple error",
+    loginError: "Sign-in didn't go through. Try again in a moment.",
+    googleError: "Signing in with Google didn't go through. Try again, or choose another method.",
+    appleError: "Signing in with Apple didn't go through. Try again, or choose another method.",
     authBrowserUnavailable:
       "The sign-in window could not open on this device (Safari restricted or unavailable). Try signing in with your email below.",
     appleSignInUnavailable:
-      "Apple sign-in is unavailable on this device. Make sure an Apple account is signed in under Settings, or sign in with your email.",
+      "Apple sign-in couldn't open. Try again; if it happens again, make sure an Apple account is signed in under Settings, or use another method.",
     displayNamePlaceholder: "Ex: David Cohen",
     emailPlaceholder: "example{'@'}email.com",
     termsNotice: "By signing in or creating an account, you agree to the",
     termsLink: "terms of use",
     termsAnd: "and the",
     privacyLink: "privacy policy",
+    lastUsed: "Last used",
+    help: {
+      signup: "Create an account with this email",
+      login: "Sign in with this email",
+    },
+    errors: {
+      invalidCredential:
+        "Incorrect email or password. If you created your account with Google or Apple, use that button instead; otherwise, check your password, or create an account.",
+      invalidCredentialGoogle:
+        "Incorrect email or password. On this device, the last sign-in was with Google: try that button instead.",
+      invalidCredentialApple:
+        "Incorrect email or password. On this device, the last sign-in was with Apple: try that button instead.",
+      emailInUse:
+        "An account already exists with this email. Sign in with its password, or with Google or Apple if that is how you created it.",
+      weakPassword: "The password must be at least 6 characters long.",
+      invalidEmail: "This email address doesn't look valid.",
+      missingPassword: "Enter your password.",
+      tooManyRequests: "Too many attempts in a row: wait a few minutes before trying again.",
+      network: "No internet connection: check the network and try again.",
+      userDisabled: "This account has been disabled. Write to us if you think this is a mistake.",
+    },
   },
   profile: {
     loadingProfile: "Loading your profile...",
@@ -895,6 +920,13 @@ const en: LocaleMessages = {
     createError: "Error creating session. Please try again.",
     requireGuestEmail: "Require guests' email",
     requireGuestEmailHint: "When unchecked, guests can reserve by entering their name only.",
+    shortDeadline: {
+      title: "Careful, your date looks very close to today",
+      today: "The session will end tonight. Are you sure you want such a short session?",
+      tomorrow: "The session will end tomorrow night. Are you sure you want such a short session?",
+      confirm: "Yes, create the session",
+      change: "Change the date",
+    },
   },
   detailSession: {
     loadingSession: "Loading session...",
@@ -1045,6 +1077,9 @@ const en: LocaleMessages = {
     inviteText: "Read « {name} » 📖 A text to open on Petite Jerusalem:",
     titlePassage: "Share this passage",
     invitePassage: "« {name} » 📖 This passage opens here, on Petite Jerusalem:",
+    titleCreated: "Your session is ready",
+    introCreated:
+      "Remember to share the session with the people around you, so they can take part with you.",
   },
   batchSelection: {
     textsSelected: "{count} text selected | {count} texts selected",

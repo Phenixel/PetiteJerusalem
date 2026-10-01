@@ -205,6 +205,16 @@ Replays qui illustrent ces constats (conservés trente jours) :
 
 ## 5. Ce qui manque au suivi
 
+**Mis en place le 1er octobre 2026** (même branche) : 5.2 à 5.8, sauf
+trois points. `trigger` sur le défilement automatique n'a pas lieu d'être :
+le double appui en est la seule porte d'entrée, et
+`auto_scroll_stopped.duration_ms` dit déjà les départs involontaires.
+`password_reset_requested` attend le parcours de mot de passe oublié, qui
+n'existe pas encore. L'adresse des replays de l'app (`https://localhost/`)
+reste à réécrire. Le détail des événements est dans `docs/tracking-plan.md`,
+« Ajouts d'octobre 2026 ». Reste aussi 5.1, qui se règle dans PostHog et non
+dans le code.
+
 Les règles du plan de suivi (`docs/tracking-plan.md`) valent pour chaque
 ajout : rien n'est renommé ni supprimé, une propriété mal nommée reçoit sa
 remplaçante à côté, et chaque événement ou propriété ajouté s'y documente

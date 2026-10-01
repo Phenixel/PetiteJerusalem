@@ -45,6 +45,7 @@ import { isNativeApp } from "./useNativeApp";
 export type FeatureTipId =
   | "home-settings"
   | "zmanim-reminder"
+  | "zmanim-date"
   | "calendar-occasions"
   | "reading-menu"
   | "reading-gestures"
@@ -56,6 +57,7 @@ const STORAGE_KEY = "pj_tips_seen";
 export const TIP_IDS: readonly FeatureTipId[] = [
   "home-settings",
   "zmanim-reminder",
+  "zmanim-date",
   "calendar-occasions",
   "reading-menu",
   "reading-gestures",

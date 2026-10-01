@@ -30,6 +30,24 @@ const DENIED_KEY = "pj_zmanim_geo_denied";
 export type GeoStatus = "idle" | "loading" | "denied" | "unavailable";
 
 /**
+ * L'issue d'une demande de position, pour `zmanim_location_requested`.
+ * `granted` seul confondait le refus de l'utilisateur et la panne (pas de
+ * signal, délai dépassé), alors que les deux ne se corrigent pas de la même
+ * façon ; `duration_ms` dit l'attente, celle qui fait tapoter le bouton.
+ */
+export function locationOutcome(
+  granted: boolean,
+  status: GeoStatus,
+  startedAt: number,
+  now = Date.now(),
+): { outcome: "granted" | "denied" | "unavailable"; duration_ms: number } {
+  return {
+    outcome: granted ? "granted" : status === "denied" ? "denied" : "unavailable",
+    duration_ms: Math.max(0, Math.round(now - startedAt)),
+  };
+}
+
+/**
  * Refus mémorisé : qui a dit non une fois ne doit pas se voir redemander la
  * position à chaque page de tefila. Les demandes automatiques s'en tiennent
  * là ; le bouton de la page des horaires, geste explicite, redemande

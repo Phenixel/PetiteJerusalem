@@ -107,6 +107,19 @@ const { occasions } = useHebrewOccasions();
 const occasionsOpen = ref(false);
 
 /**
+ * « Mes dates » est le bouton le plus touché des pages du calendrier, et la
+ * fenêtre n'envoyait rien (docs/audit-usage-posthog-2026-10.md, 5.8).
+ * `occasions_count` : combien de dates la personne a déjà inscrites.
+ */
+function openOccasions(source: "calendar_button" | "calendar_row"): void {
+  occasionsOpen.value = true;
+  analyticsService.capture("occasions_opened", {
+    source,
+    occasions_count: occasions.value.length,
+  });
+}
+
+/**
  * L'astuce du calendrier (voir FeatureTour) : ses propres dates. Le bouton
  * se voit, mais peu de gens savent ce qu'une date posée là fait ensuite
  * (elle revient sur l'accueil la semaine venue, et l'app la rappelle).
@@ -437,7 +450,7 @@ onMounted(() => {
         ref="occasionsButton"
         type="button"
         class="btn btn-soft"
-        @click="occasionsOpen = true"
+        @click="openOccasions('calendar_button')"
       >
         <AppIcon name="calendar" :size="16" class="text-primary" />
         {{ t("occasions.open") }}
@@ -545,7 +558,7 @@ onMounted(() => {
           type="button"
           class="flex w-full items-start gap-2.5 text-start"
           :aria-label="t('occasions.editAria', { name: row.occasion.name })"
-          @click="occasionsOpen = true"
+          @click="openOccasions('calendar_row')"
         >
           <AppIcon
             :name="KIND_ICONS[row.occasion.kind]"

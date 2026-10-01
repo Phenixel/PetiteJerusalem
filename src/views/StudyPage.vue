@@ -39,6 +39,8 @@ import { useConfirm } from "../composables/useConfirm";
 import { useSearchMode } from "../composables/useSearchMode";
 import { useFoldedBooks } from "../composables/useFoldedBooks";
 import { useCatalogSearch } from "../composables/useCatalogSearch";
+import { useSearchTracking } from "../composables/useSearchTracking";
+import { markReadingEntry } from "../services/readingEntry";
 import { useBookDownload, type BookState } from "../composables/useBookDownload";
 import { analyticsService } from "../services/analyticsService";
 import { useNow } from "../composables/useNow";
@@ -183,7 +185,9 @@ const searchPlaceholder = computed(() =>
 // dans le corpus.
 const {
   term: searchTerm,
+  debouncedTerm,
   hasSearch,
+  filtered: searchResults,
   groupedByType,
   hasResults,
   reset: resetSearch,
@@ -304,6 +308,7 @@ const resumeLink = computed(() =>
 
 function trackResume() {
   if (!lastReading.value) return;
+  markReadingEntry("resume");
   analyticsService.capture("reading_resumed", {
     text_id: lastReading.value.textId,
     source: "library",
@@ -382,6 +387,35 @@ function trackLibrarySearchUsed() {
     // l'attend : « all » depuis l'étagère (toute la bibliothèque), le corpus
     // courant sur sa page (la recherche y reste dans le corpus).
     scope: currentCorpus.value?.corpus ?? "all",
+  });
+}
+
+/** La portée de la recherche, comme `library_search_used` la nomme. */
+const searchScope = () => currentCorpus.value?.corpus ?? "all";
+
+// La recherche posée, avec son terme et ce qu'elle trouve (useSearchTracking) ;
+// `library_search_used`, lui, continue de partir à la première frappe.
+const searchTracking = useSearchTracking({
+  term: debouncedTerm,
+  resultsCount: () => searchResults.value.length,
+  track: (search) =>
+    analyticsService.capture("library_search_performed", { scope: searchScope(), ...search }),
+});
+
+/**
+ * Un résultat ouvert : la recherche part d'abord (celle qui a mené quelque
+ * part), puis le résultat et son rang ; la lecture qui s'ouvre saura qu'elle
+ * vient de la recherche (`text_opened.entry`).
+ */
+function trackSearchResultOpened(text: TextStudyJsonEntry): void {
+  if (!hasSearch.value) return;
+  searchTracking.flush();
+  markReadingEntry("search");
+  analyticsService.capture("library_search_result_opened", {
+    scope: searchScope(),
+    rank: searchResults.value.indexOf(text) + 1,
+    corpus: text.type,
+    text_id: String(text.id),
   });
 }
 
@@ -785,6 +819,7 @@ onUnmounted(() => {
                   :key="text.id"
                   :to="hubPath(text)"
                   class="card card-hover p-4 flex items-center justify-between gap-2 group"
+                  @click="trackSearchResultOpened(text)"
                 >
                   <span class="min-w-0">
                     <span class="block font-medium text-text-primary">
