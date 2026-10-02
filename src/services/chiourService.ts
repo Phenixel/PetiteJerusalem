@@ -12,6 +12,17 @@ function generateChiourSlug(name: string): string {
     .replace(/[/'"""''`?#]/g, "");
 }
 
+/**
+ * Les catégories d'un ensemble de chiourim, sans doublon, dans l'ordre du
+ * français : « Émouna » avant « Halakha ». Un `sort()` nu rangeait par code
+ * Unicode, et les initiales accentuées partaient en fin de liste.
+ */
+export function sortedCategories(chiourim: Chiour[]): string[] {
+  const set = new Set<string>();
+  chiourim.forEach((c) => c.categories.forEach((cat) => set.add(cat)));
+  return [...set].sort((a, b) => a.localeCompare(b, "fr"));
+}
+
 // Cache court : les chiourim viennent de Firestore (URLs audio permanentes).
 // On rafraîchit surtout pour voir les nouveaux chiourim ajoutés via l'admin.
 const CACHE_TTL = 60 * 60 * 1000; // 1h
@@ -20,12 +31,9 @@ class ChiourService {
   private readonly chiourim = cached(CACHE_TTL, () => chiourFirestoreRepository.fetchAll());
 
   // Catégories dérivées des chiourim (plus de source séparée).
-  private readonly categories = cached(CACHE_TTL, async () => {
-    const chiourim = await this.getAllChiourim();
-    const set = new Set<string>();
-    chiourim.forEach((c) => c.categories.forEach((cat) => set.add(cat)));
-    return [...set].sort((a, b) => a.localeCompare(b, "fr"));
-  });
+  private readonly categories = cached(CACHE_TTL, async () =>
+    sortedCategories(await this.getAllChiourim()),
+  );
 
   getAllChiourim(): Promise<Chiour[]> {
     return this.chiourim.get();
