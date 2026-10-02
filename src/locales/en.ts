@@ -1877,6 +1877,8 @@ const en: LocaleMessages = {
     reportTitle: "Report this session",
     reportSubtitle:
       "Tell us what the problem is. The session will be reviewed by moderation, and hidden automatically after 3 reports.",
+    reportSubtitlePerpetual:
+      "Tell us which name is a problem. Moderation will review it and remove it from the list if needed; you can report another one afterwards.",
     reasonLabel: "Reason for the report",
     reasons: {
       inappropriate: "Inappropriate content",
@@ -1886,6 +1888,7 @@ const en: LocaleMessages = {
     },
     detailsLabel: "Details",
     detailsPlaceholder: "Describe the problem…",
+    detailsPlaceholderPerpetual: "The name you are reporting, and what the problem is…",
     reporting: "Sending…",
     reportSuccess: "Thank you, your report has been submitted.",
     reportError: "The report failed. Please try again.",

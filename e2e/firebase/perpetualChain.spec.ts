@@ -113,6 +113,36 @@ async function writeSession(
   return res.status;
 }
 
+/** Les précisions des signalements d'une session, dans l'ordre d'arrivée. */
+async function reportsOf(sessionId: string): Promise<string[]> {
+  const res = await fetch(`http://localhost:${FIRESTORE_PORT}/v1/${DOCUMENTS}:runQuery`, {
+    method: "POST",
+    headers: { Authorization: "Bearer owner", "Content-Type": "application/json" },
+    body: JSON.stringify({
+      structuredQuery: {
+        from: [{ collectionId: "reports" }],
+        where: {
+          fieldFilter: {
+            field: { fieldPath: "sessionId" },
+            op: "EQUAL",
+            value: { stringValue: sessionId },
+          },
+        },
+      },
+    }),
+  });
+  if (!res.ok) throw new Error(`Signalements : ${res.status} ${await res.text()}`);
+  const rows = (await res.json()) as {
+    document?: { fields: Record<string, { stringValue?: string; timestampValue?: string }> };
+  }[];
+  return rows
+    .flatMap((row) => (row.document ? [row.document.fields] : []))
+    .sort((a, b) =>
+      (a.createdAt?.timestampValue ?? "").localeCompare(b.createdAt?.timestampValue ?? ""),
+    )
+    .map((fields) => fields.details?.stringValue ?? "");
+}
+
 /**
  * La date hébraïque d'un jour à venir, telle que la fenêtre la garde. Adar I
  * d'une année à treize mois ne se dit pas dans ce modèle (un décès d'Adar
@@ -170,6 +200,29 @@ test.describe("chaîne perpétuelle", () => {
       .click();
     await page.getByRole("alertdialog").getByRole("button", { name: "Retirer" }).click();
     await expect(mine).toHaveCount(0);
+  });
+
+  test("on y signale un nom après l'autre, sans bloquer son créateur", async ({ page }) => {
+    const chain = await seedPerpetualChain();
+    await gotoApp(page, `/share-reading/session/${chain.slug}`);
+
+    for (const name of ["Premier Nom", "Second Nom"]) {
+      const report = page.getByRole("button", { name: "Signaler", exact: true });
+      await expect(report).toBeEnabled({ timeout: 20_000 });
+      await report.click();
+      const form = page.locator("form", { has: page.locator("#report-details") });
+      await expect(form).toBeVisible();
+      // Bloquer le créateur retirait toute la chaîne de l'appareil.
+      await expect(page.getByText("Bloquer ce créateur")).toHaveCount(0);
+      await form.locator("#report-details").fill(name);
+      await form.getByRole("button", { name: "Signaler" }).click();
+      await expect(page.getByText("Merci, votre signalement a bien été transmis.")).toBeVisible();
+      await expect(form).toHaveCount(0);
+    }
+
+    await expect
+      .poll(() => reportsOf(chain.id), { timeout: 10_000 })
+      .toEqual(["Premier Nom", "Second Nom"]);
   });
 
   test("un défunt daté ne paraît que la semaine de son anniversaire", async ({ page }) => {
@@ -258,9 +311,7 @@ test.describe("chaîne perpétuelle", () => {
     expect(await writeSession(uid, own, session)).toBe(200);
     // Son créateur la modifie, mais n'en fait pas une chaîne perpétuelle après coup.
     expect(await writeSession(uid, own, { ...session, name: "Renommée" }, ["name"])).toBe(200);
-    expect(
-      await writeSession(uid, own, { ...session, perpetual: true }, ["perpetual"]),
-    ).toBe(403);
+    expect(await writeSession(uid, own, { ...session, perpetual: true }, ["perpetual"])).toBe(403);
     expect(
       await writeSession(uid, own, { ...session, completedCycles: 40 }, ["completedCycles"]),
     ).toBe(403);

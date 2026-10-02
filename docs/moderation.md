@@ -14,10 +14,11 @@ en place et comment s'en servir.
   liste : ajouter le mot en minuscules sans accents dans ce fichier.
 - **Bouton « Signaler »** sur la page d'une session (visible pour tout le
   monde sauf le créateur, invités compris) : motif + précisions optionnelles.
-  Un appareil ne peut signaler une session qu'une fois (mémorisé localement).
+  Un appareil ne peut signaler une session qu'une fois (mémorisé localement),
+  sauf la chaîne perpétuelle (voir plus bas).
 - **Blocage d'un créateur** (case à cocher dans la modale de signalement) :
   ses sessions disparaissent des listes sur cet appareil, déblocage possible
-  depuis la page de la session.
+  depuis la page de la session. Pas proposé sur la chaîne perpétuelle.
 - **Session masquée** : le public voit un écran « Session masquée » ; le
   créateur voit encore sa session, avec un bandeau d'explication et un badge
   « Masquée » dans « Créées par moi ».
@@ -42,6 +43,23 @@ celui de la mère, et seul un compte peut en proposer. Un nom signalé (par le
 bouton « Signaler » de la chaîne, le motif le nomme) se retire en ligne de
 commande : `node scripts/admin.mjs chaine:noms`, puis
 `chaine:retirer-nom <id>`.
+
+Sur la chaîne, le signalement suit cette nature (`moderationService`,
+tenu par `src/__tests__/reportPerpetualChain.test.ts` et
+`e2e/firebase/perpetualChain.spec.ts`) :
+
+- **on peut signaler de nouveau** (`isReportLocked`) : la chaîne reçoit des
+  noms sans fin, et chaque signalement en vise un ; le bouton ne s'éteint pas
+  après le premier. La fenêtre le dit, et ses précisions demandent le nom
+  visé ;
+- **le blocage du créateur n'est pas proposé** (`canBlockCreator`) : son
+  créateur est l'équipe (`petite-jerusalem`), et la case retirait toute la
+  chaîne de l'appareil. Un blocage posé avant ne la cache plus
+  (`isBlockedForViewer`), ni sur sa page, ni sur l'accueil du partage. Pour
+  écarter un nom, c'est le signalement, puis le retrait par l'admin.
+
+Les sessions ordinaires ne changent pas : un signalement par appareil, la
+case de blocage, le masquage au troisième signaleur.
 
 La chaîne n'est **pas masquée automatiquement** au troisième signalement
 (`onSessionReported` la saute) : trois comptes suffiraient à la retirer à tout
