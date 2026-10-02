@@ -125,10 +125,19 @@ class FirestoreService {
     try {
       const q = query(collection(db, "sessions"), where("slug", "==", slug));
       const querySnapshot = await getDocs(q);
-      if (!querySnapshot.empty) {
-        return this.convertToSession(querySnapshot.docs[0]);
-      }
-      return null;
+      if (querySnapshot.empty) return null;
+      // Rien n'empêche une session d'en reprendre le slug d'une autre (les
+      // règles ne voient pas les autres documents) : le premier résultat
+      // venu, dans l'ordre des identifiants, pouvait alors capter ses liens
+      // de partage, ceux de la chaîne perpétuelle compris. Le lien reste à
+      // la session dont c'est l'identifiant, sinon à la plus ancienne.
+      const sessions = querySnapshot.docs.map((d) => this.convertToSession(d));
+      return (
+        sessions.find((session) => session.id === slug) ??
+        sessions.reduce((oldest, session) =>
+          session.createdAt.getTime() < oldest.createdAt.getTime() ? session : oldest,
+        )
+      );
     } catch (error) {
       this.handleFirestoreError(error, "récupération de la session par slug");
     }

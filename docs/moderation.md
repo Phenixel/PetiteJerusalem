@@ -74,6 +74,11 @@ monte comme ailleurs, et `session:signalements` la liste.
   l'admin.
 - Les aperçus sociaux (`socialPreview`, `ogImage`) ne servent plus les
   sessions masquées.
+- Un slug repris par une autre session ne lui donne pas les liens de
+  l'original : les règles ne peuvent pas comparer deux documents, c'est donc
+  la lecture (`firestoreService.getSessionBySlug`) qui tranche, en faveur de
+  la session dont c'est l'identifiant (la chaîne perpétuelle), sinon de la
+  plus ancienne (test : `sessionSlugCollision.test.ts`).
 
 ## Conditions d'utilisation et contact
 
