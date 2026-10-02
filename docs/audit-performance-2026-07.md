@@ -149,6 +149,7 @@ Ajout fait : `capture_performance: { web_vitals: true }` → l'onglet
 | `src/views/HomeView.vue:55`, `ProfilePage.vue:74` | Tout est chargé puis filtré côté client pour trouver les 2-3 sessions de l'utilisateur. Fix : champ dénormalisé `participantIds` + `array-contains`, ou requête `where("personId", "==", uid)`. |
 | `src/services/reservationService.ts:379` | `migrateGuestReservations` fait un **scan complet à chaque login** (appelé 3× depuis `loginView.vue`), même sans réservation invitée. Fix : ne lancer que si un id invité local existe + requête ciblée. |
 | `src/views/Chiourim/DetailChiour.vue:116` | Un visiteur qui ouvre un lien de chiour partagé télécharge tout le catalogue pour trouver un document. Fix : `getDoc(doc(db, "chiourim", slug))`. |
+| `src/views/ShareReading/NewSession.vue` | **Corrigé (octobre 2026)** : choisir Tehilim lisait toute la collection pour proposer la chaîne perpétuelle. Une requête `where("perpetual", "==", true)` suffit (`sessionService.getPerpetualSession`, tenu par `perpetualSessionQuery.test.ts`). |
 | `src/services/sessionService.ts:243` | `generateUniqueSlug` : une requête Firestore par itération jusqu'à trouver un slug libre. Fix : suffixe aléatoire court. |
 
 ### Priorité 2. Functions : `socialPreview` devant le trafic humain

@@ -107,6 +107,21 @@ class FirestoreService {
     return this.sessionsCachePromise;
   }
 
+  /**
+   * Les sessions marquées perpétuelles (une seule en pratique), sans
+   * télécharger toute la collection et ses réservations.
+   */
+  async getPerpetualSessions(): Promise<Session[]> {
+    try {
+      const snapshot = await getDocs(
+        query(collection(db, "sessions"), where("perpetual", "==", true)),
+      );
+      return snapshot.docs.map((doc) => this.convertToSession(doc));
+    } catch (error) {
+      this.handleFirestoreError(error, "récupération de la chaîne perpétuelle");
+    }
+  }
+
   async getSessionById(sessionId: string): Promise<Session | null> {
     try {
       const docRef = doc(db, "sessions", sessionId);
