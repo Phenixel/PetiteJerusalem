@@ -781,6 +781,12 @@ un leilouy nichmat, la date du décès se choisit comme une date du calendrier
 la choisisse, ce que la date change : sans elle, le nom est lu trente jours ;
 avec elle, il revient tous les ans, la semaine qui précède l'anniversaire.
 
+Sans réseau, la fenêtre d'un nom ne se fige pas : elle dit ce qui se passe
+et garde ce qui a été saisi. Hors ligne, rien ne part. Si l'appareil se croit
+en ligne mais que le serveur se tait, elle rend la main au bout de dix
+secondes : la demande partira d'elle-même au retour de la connexion, il est
+inutile de la refaire, et le nom rejoint la liste quand il arrive.
+
 Dans le lecteur, « Vous lisez pour » garde les deux groupes de la page de la
 chaîne, chacun avec son dessin : on ne dit pas de la même façon une refoua
 chelema et un leilouy nichmat (`PrayerNamesLine`). Retirer un nom pose la

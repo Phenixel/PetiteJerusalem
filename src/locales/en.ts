@@ -46,6 +46,10 @@ const en: LocaleMessages = {
   },
   errors: {
     prayerNameIncomplete: "The first name and the mother's first name are both needed.",
+    prayerNameOffline:
+      "No connection: the list has not changed. Try again once you're back online.",
+    prayerNamePending:
+      "The server is not responding: your request will go through by itself once the connection is back, no need to repeat it.",
     prayerNameLimit:
       "You have suggested as many names as an account can: remove one to add another.",
     permissionDenied: "You don't have permission to perform this action.",

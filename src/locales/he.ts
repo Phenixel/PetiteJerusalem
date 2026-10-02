@@ -46,6 +46,8 @@ const he: LocaleMessages = {
   },
   errors: {
     prayerNameIncomplete: "יש למלא את השם ואת שם האם.",
+    prayerNameOffline: "אין חיבור: הרשימה לא השתנתה. נסו שוב כשתחזרו לרשת.",
+    prayerNamePending: "השרת אינו מגיב: הבקשה תישלח מעצמה כשהחיבור יחזור, אין צורך לחזור עליה.",
     prayerNameLimit: "הצעתם את מספר השמות המרבי לחשבון: הסירו אחד כדי להוסיף אחר.",
     permissionDenied: "אין לך הרשאה לבצע פעולה זו.",
     unavailable: "השירות אינו זמין כרגע. בדקו את החיבור ונסו שוב.",
