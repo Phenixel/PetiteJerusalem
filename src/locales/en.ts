@@ -857,7 +857,7 @@ const en: LocaleMessages = {
       barOn: "Bar mitzvah",
       batOn: "Bat mitzvah",
       fromNightfall: "From nightfall the evening before ({eve}).",
-      firstShabbat: "First Shabbat, {date}: parashah",
+      firstShabbat: "First parashah, {date}:",
       pickBirth: "Pick the date of birth.",
       note: "The calculation follows the rule of the Hebrew birthday. In practice, your rabbi's ruling comes first.",
     },
@@ -1144,6 +1144,8 @@ const en: LocaleMessages = {
     readingForCount: "We read for {n} person. | We read for {n} people.",
     noNamesYet: "Suggest the first name to be read for.",
     roundDone: "Round completed! The chain starts again from the first Tehilim in a moment.",
+    holdNote:
+      "A reserved Tehilim is to be read within 24 hours. After that, it becomes free for another reader.",
     stats: {
       label: "Chain counter",
       title: "Completed since it opened",

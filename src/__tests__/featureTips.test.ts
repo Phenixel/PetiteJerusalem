@@ -122,6 +122,32 @@ describe("astuces des pages", () => {
     expect(await useFeatureTips().shouldShowTip("reading-menu")).toBe(true);
   });
 
+  it("ne prend pas pour un refus l'appui qui tombe sur le voile quand elle paraît", async () => {
+    const menu = commande();
+    const onFinish = vi.fn();
+    await monte([{ key: "menu", title: "Le menu", text: "Un.", target: () => menu }], {
+      onFinish,
+    });
+    const voile = () => document.querySelector<SVGPathElement>(".veil-path");
+    expect(bulle()).not.toBeNull();
+
+    // Le geste d'avant qui continue (la flèche des horaires touchée une fois
+    // de plus) : l'astuce reste, et n'est pas comptée vue.
+    voile()?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    await nextTick();
+    expect(bulle()).not.toBeNull();
+    expect(onFinish).not.toHaveBeenCalled();
+    expect(JSON.parse(localStorage.getItem(SEEN_KEY) ?? "[]")).toEqual([]);
+
+    // L'astuce lue, un appui à côté la ferme comme avant.
+    await vi.advanceTimersByTimeAsync(1000);
+    voile()?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    await nextTick();
+    expect(bulle()).toBeNull();
+    expect(onFinish).toHaveBeenCalledWith("backdrop", 0);
+    expect(JSON.parse(localStorage.getItem(SEEN_KEY) ?? "[]")).toEqual(["reading-menu"]);
+  });
+
   it("éclaire la commande, avance au pas suivant et note l'astuce vue", async () => {
     const menu = commande();
     const reglages = commande();

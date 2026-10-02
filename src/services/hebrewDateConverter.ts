@@ -87,10 +87,16 @@ export function civilToHebrew(date: Date, afterSunset: boolean): HDate {
  * hebrewOccasions) fait revenir une date d'Adar en Adar II les années à
  * treize mois, et en Adar les autres. Garder ADAR_II n'y changerait rien, et
  * le formulaire, qui ne propose qu'un Adar, ne saurait pas l'afficher.
+ *
+ * Adar I d'une année à treize mois, lui, se retient (`firstAdar`) : sans
+ * cela la date reviendrait en Adar II, un mois après son jour. Le champ est
+ * toujours rendu, vrai ou faux, pour qu'une date choisie ensuite hors
+ * d'Adar I l'efface du brouillon qui la reçoit.
  */
-export function occasionDayOf(hd: HDate): HebrewDayOfYear {
+export function occasionDayOf(hd: HDate): Required<HebrewDayOfYear> {
+  const firstAdar = hd.getMonth() === months.ADAR_I && HDate.isLeapYear(hd.getFullYear());
   const month = hd.getMonth() === months.ADAR_II ? months.ADAR_I : hd.getMonth();
-  return { day: hd.getDate(), month };
+  return { day: hd.getDate(), month, firstAdar };
 }
 
 /** L'âge de la bar-mitsvah (garçon) et de la bat-mitsvah (fille). */

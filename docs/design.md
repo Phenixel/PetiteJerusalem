@@ -151,10 +151,13 @@ fait. Quatre règles la tiennent :
   lecture, l'astuce ouvre le panneau pour éclairer le téléchargement du
   texte, puis le rond des réglages ;
 - **elle se passe d'un geste** : « Passer », le voile, Échap ou le retour
-  Android. « Suivant » ou « Compris » la mènent au bout. Jamais plus de deux
-  ou trois pas. Un pas sans commande à éclairer (pincer le texte, le double
-  appui) pose la bulle au milieu et **montre** le geste dans une capture
-  dessinée (`src/components/mock`) ;
+  Android. Le voile n'écoute qu'une fois l'astuce posée (`VEIL_GRACE_MS`) : un
+  appui dans l'instant où elle paraît est le geste d'avant qui continue (la
+  flèche des horaires touchée une fois de plus), et il la fermait pour de bon
+  avant qu'on l'ait lue. « Suivant » ou « Compris » la mènent au bout. Jamais
+  plus de deux ou trois pas. Un pas sans commande à éclairer (pincer le
+  texte, le double appui) pose la bulle au milieu et **montre** le geste dans
+  une capture dessinée (`src/components/mock`) ;
 - **une fois par appareil, et une seule par ouverture de l'app.** Close, elle
   est notée vue (dans les deux stockages, voir docs/app-native.md), même si
   l'on quitte la page au milieu : une astuce qui revient n'est plus une aide.
@@ -424,6 +427,14 @@ Une date civile ne donne pas sa date hébraïque à coup sûr : le jour hébraï
 commence au coucher du soleil. Toute saisie dans ce sens porte donc un
 interrupteur « Après le coucher du soleil », éteint par défaut, plutôt que de
 laisser un leilouy nichmat se graver avec un jour d'écart.
+
+La date civile sait aussi ce que la date hébraïque seule ne dit pas : l'année.
+Une date tombée en Adar I d'une année à treize mois s'enregistre comme telle
+(`firstAdar`), et revient en Adar I ces années-là, non en Adar II, un mois
+après son jour. Le choix du mois ne propose toujours qu'un Adar, celui de la
+date qu'on pose ; « Adar I » ne s'y ajoute que pour la date qui en vient, et
+la liste la nomme de même (`hebrewDateConverter.test.ts`,
+`occasionCivilEntry.test.ts`).
 
 Pour un leilouy nichmat, une ligne sous l'intitulé de la date dit laquelle
 poser : celle du décès, d'où se comptent les années. Seule la première fait
@@ -743,7 +754,10 @@ l'on vient pour eux, et non en passant sur l'accueil.
 Sur sa page, l'en-tête dit « Lecture continue » et le tour en cours là où une
 chaîne ordinaire dit sa date limite et son créateur. Viennent ensuite le
 compteur (un seul chiffre en grand, trois en dessous qui le servent), puis
-« Pour qui l'on lit », avant le tirage : on dit les noms avant de lire.
+« Pour qui l'on lit », avant le tirage : on dit les noms avant de lire. Une
+ligne les suit, en petit : un Téhilim réservé se lit dans les 24 heures, puis
+redevient libre. Personne ne possède la chaîne pour libérer une place
+oubliée ; autant le dire à qui réserve.
 
 Les noms courent à la suite, séparés d'un point médian, comme une dédicace,
 et non en lignes : vingt lignes auraient repoussé la lecture sous trois

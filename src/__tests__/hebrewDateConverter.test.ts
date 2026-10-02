@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { HDate, months } from "@hebcal/core";
+import { HDate, HebrewCalendar, months } from "@hebcal/core";
 import {
   civilToHebrew,
   civilYearsOf,
@@ -85,15 +85,37 @@ describe("occasionDayOf", () => {
   it("garde le jour et le mois, que la date personnelle fait revenir chaque année", () => {
     const day = occasionDayOf(civilToHebrew(new Date(1999, 11, 20), false));
 
-    expect(day).toEqual({ day: 11, month: months.TEVET });
+    expect(day).toEqual({ day: 11, month: months.TEVET, firstAdar: false });
     expect(occasionDateIn(day, 5787).getDate()).toBe(11);
   });
 
   it("range Adar II sous Adar, le seul que le formulaire propose", () => {
     const day = occasionDayOf(new HDate(10, months.ADAR_II, 5784));
 
-    expect(day).toEqual({ day: 10, month: months.ADAR_I });
+    expect(day).toEqual({ day: 10, month: months.ADAR_I, firstAdar: false });
     // La règle des dates personnelles la ramène en Adar II les années à treize mois.
+    expect(occasionDateIn(day, 5787).getMonth()).toBe(months.ADAR_II);
+  });
+
+  it("retient Adar I d'une année à treize mois : la date y revient", () => {
+    // Le 24 février 2024 est le 15 Adar I 5784.
+    const day = occasionDayOf(civilToHebrew(new Date(2024, 1, 24), false));
+
+    expect(day).toEqual({ day: 15, month: months.ADAR_I, firstAdar: true });
+    // 5787 a deux Adar : le 15 Adar I y tombe le 22 février 2027, et non un
+    // mois plus tard, le 24 mars (15 Adar II).
+    expect(occasionDateIn(day, 5787).greg()).toEqual(new Date(2027, 1, 22));
+    // Comme le yahrzeit de hebcal, qui fait foi.
+    const yahrzeit = HebrewCalendar.getYahrzeit(5787, new HDate(15, months.ADAR_I, 5784));
+    expect(occasionDateIn(day, 5787).abs()).toBe(yahrzeit?.abs());
+    // Une année ordinaire n'a qu'un Adar.
+    expect(occasionDateIn(day, 5788).greg()).toEqual(new Date(2028, 2, 13));
+  });
+
+  it("ne voit pas d'Adar I dans l'Adar d'une année ordinaire", () => {
+    const day = occasionDayOf(new HDate(15, months.ADAR_I, 5786));
+
+    expect(day.firstAdar).toBe(false);
     expect(occasionDateIn(day, 5787).getMonth()).toBe(months.ADAR_II);
   });
 });

@@ -3,6 +3,7 @@ import {
   test,
   expect,
   createAccount,
+  readDoc,
   seedDoc,
   seedPerpetualChain,
   seedTehilimSession,
@@ -10,7 +11,11 @@ import {
   uniqueId,
 } from "../support/firebase";
 import { gotoApp } from "../support/fixtures";
-import { PROJECT_ID, FIRESTORE_PORT } from "../../scripts/lib/firebase-emulator.mjs";
+import {
+  PROJECT_ID,
+  FIRESTORE_PORT,
+  toFirestoreFields,
+} from "../../scripts/lib/firebase-emulator.mjs";
 
 /**
  * La chaîne perpétuelle de Tehilim (docs/chaine-perpetuelle.md) : sa carte en
@@ -70,6 +75,37 @@ async function writeName(uid: string, sessionId: string, fields: NameFields): Pr
             { fieldPath: "updatedAt", setToServerValue: "REQUEST_TIME" },
           ],
           currentDocument: { exists: false },
+        },
+      ],
+    }),
+  });
+  return res.status;
+}
+
+/**
+ * Écrit une session au nom de `uid`, comme le ferait un client qui parlerait à
+ * Firestore sans passer par l'app, et rend le statut HTTP : 200 si les règles
+ * l'acceptent, 403 sinon. Avec `only`, l'écriture ne touche que ces champs
+ * d'une session qui existe déjà.
+ */
+async function writeSession(
+  uid: string,
+  sessionId: string,
+  fields: Record<string, unknown>,
+  only?: string[],
+): Promise<number> {
+  const res = await fetch(`http://localhost:${FIRESTORE_PORT}/v1/${DOCUMENTS}:commit`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${fakeIdToken(uid)}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      writes: [
+        {
+          update: {
+            name: `${DOCUMENTS}/sessions/${sessionId}`,
+            fields: toFirestoreFields(fields),
+          },
+          ...(only ? { updateMask: { fieldPaths: only } } : {}),
+          currentDocument: { exists: only !== undefined },
         },
       ],
     }),
@@ -193,5 +229,41 @@ test.describe("chaîne perpétuelle", () => {
     expect(await writeName(uid, chain.id, dated)).toBe(403);
     // Le même, en leilouy nichmat : accepté, sans échéance.
     expect(await writeName(uid, chain.id, { ...dated, kind: "leilouy" })).toBe(200);
+  });
+
+  test("les règles réservent le drapeau et le compteur de la chaîne à l'admin", async () => {
+    const uid = `compte-${uniqueId()}`;
+    const session = {
+      name: "Chaîne d'un compte",
+      description: "Posée sans passer par l'app.",
+      type: "Tehilim",
+      dateLimit: new Date(Date.now() + 7 * DAY),
+      createdAt: new Date(),
+      personId: uid,
+      creatorName: "Quelqu'un",
+      slug: `chaine-d-un-compte-${uniqueId()}`,
+      guestEmailRequired: false,
+      reservations: [],
+    };
+
+    // Un compte ne se fait pas passer pour la chaîne perpétuelle : elle
+    // prendrait sa carte en tête du partage, et la modération ne la masquerait
+    // plus au troisième signalement.
+    const forged = `session-${uniqueId()}`;
+    expect(await writeSession(uid, forged, { ...session, perpetual: true })).toBe(403);
+    expect(await writeSession(uid, forged, { ...session, slotCount: 1, cycle: 9 })).toBe(403);
+
+    // La même, sans ces champs : c'est une session ordinaire, acceptée.
+    const own = `session-${uniqueId()}`;
+    expect(await writeSession(uid, own, session)).toBe(200);
+    // Son créateur la modifie, mais n'en fait pas une chaîne perpétuelle après coup.
+    expect(await writeSession(uid, own, { ...session, name: "Renommée" }, ["name"])).toBe(200);
+    expect(
+      await writeSession(uid, own, { ...session, perpetual: true }, ["perpetual"]),
+    ).toBe(403);
+    expect(
+      await writeSession(uid, own, { ...session, completedCycles: 40 }, ["completedCycles"]),
+    ).toBe(403);
+    expect((await readDoc("sessions", own))?.perpetual).toBeUndefined();
   });
 });

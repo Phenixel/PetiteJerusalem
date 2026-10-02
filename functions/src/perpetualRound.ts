@@ -1,6 +1,7 @@
 /**
  * La règle du tour de la chaîne perpétuelle, sans Firestore : quand un tour
- * est-il fini, et que devient la session quand il l'est. La Cloud Function
+ * est-il fini, que devient la session quand il l'est, et combien de temps une
+ * place réservée tient sans être lue. La Cloud Function
  * onPerpetualSessionUpdated (perpetualChain.ts) l'applique ;
  * src/__tests__/perpetualChain.test.ts la tient.
  */
@@ -11,6 +12,40 @@ export interface RoundReservation {
   isCompleted?: unknown;
   chosenById?: unknown;
   chosenByGuestId?: unknown;
+  expiresAt?: unknown;
+}
+
+/**
+ * Le temps qu'un Téhilim réservé à la main reste tenu sans être lu. Personne
+ * ne possède la chaîne : sans échéance, une seule place réservée puis oubliée
+ * arrêterait le tour à 149 sur 150, pour de bon. Un jour laisse le temps de
+ * lire le soir ce qu'on a pris le matin.
+ */
+export const PERPETUAL_HOLD_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Les réservations de la chaîne, chacune avec son échéance, ou null si
+ * aucune n'en manque. Une réservation non lue et sans échéance en reçoit une,
+ * à `PERPETUAL_HOLD_MS` de maintenant ; les autres ne bougent pas : un tirage
+ * garde la sienne (une heure, que l'app repousse tant qu'on lit), une place
+ * lue n'en a plus besoin.
+ *
+ * L'échéance est celle que l'app connaît déjà (`expiresAt`, une date ISO) :
+ * passée, la réservation est ignorée de tous les affichages et cède sa place
+ * à la suivante, dans les versions déjà installées comme dans celle-ci.
+ */
+export function withHoldExpiry(reservations: unknown, now: Date): unknown[] | null {
+  if (!Array.isArray(reservations)) return null;
+  const expiresAt = new Date(now.getTime() + PERPETUAL_HOLD_MS).toISOString();
+  let stamped = false;
+  const next = (reservations as (RoundReservation | null)[]).map((r) => {
+    if (!r || typeof r !== "object" || r.isCompleted === true || r.expiresAt !== undefined) {
+      return r;
+    }
+    stamped = true;
+    return { ...r, expiresAt };
+  });
+  return stamped ? next : null;
 }
 
 /**

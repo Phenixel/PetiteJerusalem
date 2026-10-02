@@ -894,7 +894,7 @@ const fr = {
       barOn: "Bar-mitsvah",
       batOn: "Bat-mitsvah",
       fromNightfall: "À partir de la tombée de la nuit, la veille ({eve}).",
-      firstShabbat: "Premier Chabbat, {date}\u00a0: paracha",
+      firstShabbat: "Première paracha, {date}\u00a0:",
       pickBirth: "Choisissez la date de naissance.",
       note: "Le calcul suit la règle de l'anniversaire hébraïque. Pour la pratique, l'avis d'un rav prime.",
     },
@@ -1188,6 +1188,8 @@ const fr = {
     readingForCount: "On y lit pour {n} personne. | On y lit pour {n} personnes.",
     noNamesYet: "Proposez le premier nom pour lequel on y lira.",
     roundDone: "Tour terminé ! La chaîne repart du premier Téhilim dans un instant.",
+    holdNote:
+      "Un Téhilim réservé se lit dans les 24 heures. Passé ce délai, il redevient libre pour un autre lecteur.",
     stats: {
       label: "Compteur de la chaîne",
       title: "Terminée depuis l'ouverture",

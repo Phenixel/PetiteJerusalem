@@ -68,6 +68,21 @@ service cloud.firestore {
         .hasAny(['hidden', 'hiddenAt', 'hiddenReason', 'reportsCount']);
     }
 
+    // Champs de la chaîne perpétuelle (voir docs/chaine-perpetuelle.md) :
+    // écrits par `chaine:creer` et la Cloud Function onPerpetualSessionUpdated
+    // (SDK admin) UNIQUEMENT. L'accueil du partage tient pour « la chaîne » la
+    // session qui porte `perpetual`, et la modération ne la masque pas d'elle-
+    // même : un compte qui poserait ce drapeau sur sa session prendrait sa
+    // place et échapperait au masquage du troisième signalement.
+    function perpetualFields() {
+      return ['perpetual', 'slotCount', 'cycle', 'completedCycles', 'cycleStartedAt',
+              'lastCycleStartedAt', 'lastCycleEndedAt', 'lastCycleParticipants'];
+    }
+
+    function perpetualFieldsUntouched() {
+      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(perpetualFields());
+    }
+
     // Une session masquée par la modération n'accepte plus de réservations.
     function sessionNotHidden() {
       return resource.data.get('hidden', false) != true;
@@ -99,19 +114,22 @@ service cloud.firestore {
     match /sessions/{sessionId} {
       allow read: if true;
       // Création : utilisateur connecté, qui ne peut créer que SES sessions,
-      // sans champs de modération pré-remplis.
+      // sans champs de modération pré-remplis, ni ceux de la chaîne perpétuelle.
       allow create: if isAuthenticated()
         && request.resource.data.personId == request.auth.uid
         && validSessionFields()
-        && !request.resource.data.keys().hasAny(['hidden', 'hiddenAt', 'hiddenReason', 'reportsCount']);
+        && !request.resource.data.keys().hasAny(['hidden', 'hiddenAt', 'hiddenReason', 'reportsCount'])
+        && !request.resource.data.keys().hasAny(perpetualFields());
 
-      // Mise à jour : propriétaire (hors champs de modération)/admin, ou
+      // Mise à jour : propriétaire (hors champs de modération et de la chaîne
+      // perpétuelle)/admin, ou
       // opérations bornées sur le seul champ 'reservations' (réservation,
       // annulation, statut de lecture, ouvertes aux invités non connectés,
       // voir plus haut), refusées sur une session masquée
       // Le propriétaire ne transfère pas sa session (personId figé).
       allow update: if (isSessionOwner()
             && moderationFieldsUntouched()
+            && perpetualFieldsUntouched()
             && validSessionFields()
             && request.resource.data.personId == resource.data.personId)
         || isAdmin()

@@ -25,11 +25,12 @@ import fr from "../locales/fr";
 
 const STORAGE_KEY = "pj_hebrew_occasions";
 
-function stored(): { name: string; day: number; month: number }[] {
+function stored(): { name: string; day: number; month: number; firstAdar?: boolean }[] {
   return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "[]") as {
     name: string;
     day: number;
     month: number;
+    firstAdar?: boolean;
   }[];
 }
 
@@ -70,11 +71,11 @@ async function formulaireCivil(host: HTMLElement): Promise<void> {
   await settle();
 }
 
-/** Choisit le 2 octobre 2026 dans le calendrier de la maison. */
-async function choisitLe2Octobre(host: HTMLElement): Promise<void> {
+/** Choisit un jour du mois affiché (AAAA-MM-JJ) dans le calendrier de la maison. */
+async function choisit(host: HTMLElement, day: string): Promise<void> {
   host.querySelector<HTMLButtonElement>("#occasion-civil")!.click();
   await settle();
-  const cell = document.querySelector<HTMLButtonElement>('[data-day="2026-10-02"]');
+  const cell = document.querySelector<HTMLButtonElement>(`[data-day="${day}"]`);
   if (!cell) throw new Error("Jour introuvable dans le calendrier");
   cell.click();
   await settle();
@@ -82,6 +83,8 @@ async function choisitLe2Octobre(host: HTMLElement): Promise<void> {
   button(picker, "Confirmer").click();
   await settle();
 }
+
+const choisitLe2Octobre = (host: HTMLElement) => choisit(host, "2026-10-02");
 
 describe("saisir une date personnelle par sa date civile", () => {
   beforeEach(() => {
@@ -113,6 +116,46 @@ describe("saisir une date personnelle par sa date civile", () => {
     await settle();
 
     expect(stored()).toMatchObject([{ name: "Sarah", day: 21, month: months.TISHREI }]);
+    // Hors d'Adar I, rien de plus ne se garde.
+    expect(stored()[0]).not.toHaveProperty("firstAdar");
+  });
+
+  it("garde Adar I d'une année à treize mois : la date y revient, pas en Adar II", async () => {
+    // Le 22 février 2027 est le 15 Adar I 5787.
+    vi.setSystemTime(new Date(2027, 1, 22, 12));
+    const host = await ouvre();
+    await formulaireCivil(host);
+    await choisit(host, "2027-02-22");
+
+    expect(host.textContent).toContain("Date hébraïque : 15 Adar I 5787");
+    button(host, "Confirmer").click();
+    await settle();
+
+    expect(stored()).toMatchObject([
+      { name: "Sarah", day: 15, month: months.ADAR_I, firstAdar: true },
+    ]);
+    // La liste la nomme comme elle a été trouvée, et la fait revenir le même jour.
+    expect(host.textContent).toContain("15 Adar I");
+    expect(host.textContent).toContain("lundi 22 février 2027");
+    expect(host.textContent).not.toContain("Adar II");
+  });
+
+  it("montre Adar I dans la saisie hébraïque, où Adar ne figure sinon qu'une fois", async () => {
+    vi.setSystemTime(new Date(2027, 1, 22, 12));
+    const host = await ouvre();
+    await formulaireCivil(host);
+    await choisit(host, "2027-02-22");
+    button(host, "Saisir la date hébraïque").click();
+    await settle();
+
+    // Le mois affiché est celui qu'on a trouvé : Adar I, et non Adar.
+    expect(host.textContent).toContain("Adar I");
+    button(host, "Saisir la date civile").click();
+    await settle();
+    button(host, "Confirmer").click();
+    await settle();
+
+    expect(stored()[0]).toMatchObject({ month: months.ADAR_I, firstAdar: true });
   });
 
   it("passe au lendemain hébraïque après le coucher du soleil", async () => {
