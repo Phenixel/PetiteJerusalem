@@ -36,6 +36,25 @@ describe("sans tahanoun", () => {
     expect(isSansTahanoun()).toBe(false);
   });
 
+  it("l'interrupteur s'éteint au lendemain, l'app restée ouverte, et se rallume", async () => {
+    // En natif, la page vit des jours en arrière-plan : l'état gardé de la
+    // veille laissait l'interrupteur allumé, et chaque appui (« éteindre »)
+    // était ignoré puisqu'il l'était déjà.
+    const { isSansTahanoun, sansTahanoun, setSansTahanoun } = await import(
+      "../composables/useSansTahanoun"
+    );
+    setSansTahanoun(true);
+    expect(sansTahanoun.value).toBe(true);
+
+    vi.setSystemTime(new Date(2026, 8, 15, 7, 0));
+    expect(sansTahanoun.value).toBe(false);
+
+    // Une brit mila ce mardi : l'appui l'allume pour ce jour-là.
+    setSansTahanoun(true);
+    expect(isSansTahanoun()).toBe(true);
+    expect(sansTahanoun.value).toBe(true);
+  });
+
   it("survit au rechargement de la page le jour même, pas après", async () => {
     let mod = await import("../composables/useSansTahanoun");
     mod.setSansTahanoun(true);
