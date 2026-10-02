@@ -19,8 +19,12 @@ Ce que l'application et le site envoient à PostHog, et pourquoi. Le projet est
   `isTrackedSurface`). `localStorage.setItem('ph_debug', '1')` force le
   chargement n'importe où pour vérifier une instrumentation ; les événements
   partent alors avec `env: 'preview'` et s'excluent de toute analyse.
-- **Rien ne part sans consentement** (ePrivacy/RGPD). Avant l'accord, les
-  événements attendent dans une file bornée et sont rejoués au chargement.
+- **Rien ne part sans consentement** (ePrivacy/RGPD). Avant toute réponse,
+  les événements attendent dans une file bornée et sont rejoués au
+  chargement ; pendant un refus, rien ne s'y garde, et un accord donné
+  ensuite n'envoie que ce qui suit. Un nouvel accord, même dans une session
+  qui suit un refus, rétablit la capture (posthog-js garde le refus et le
+  relirait). Tenu par `src/__tests__/analyticsConsent.test.ts`.
 - **Toute nouvelle propriété est documentée ici**, dans la section de son
   événement.
 

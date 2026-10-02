@@ -274,6 +274,11 @@ class AnalyticsService {
       // taguées). `stampPlatform` rattrape le reste, voir son commentaire.
       posthog.register(SUPER_PROPERTIES);
       this.posthog = posthog;
+      // On ne charge qu'après un accord. Un refus d'une session précédente
+      // reste pourtant gardé par posthog-js (opt_out_capturing persiste) :
+      // sans ceci, accepter de nouveau après avoir relancé l'app ne
+      // rétablissait jamais la capture.
+      if (posthog.has_opted_out_capturing()) posthog.opt_in_capturing();
 
       // Dégradation détectée APRÈS le chargement (sonde FPS de useDevicePerf) :
       // on arrête l'enregistrement en cours de session. Le verdict étant
@@ -314,6 +319,11 @@ class AnalyticsService {
       this.posthog.capture(event, properties);
       return;
     }
+    // Refus explicite : rien ne se garde pour plus tard. La file ne sert
+    // qu'en attendant une réponse ou le chargement du SDK ; sans cette
+    // garde, un accord donné ensuite envoyait ce qui avait été capturé
+    // pendant le refus.
+    if (getConsentChoice() === "denied") return;
     if (this.queue.length >= QUEUE_LIMIT) this.queue.shift();
     this.queue.push({ event, properties, timestamp: new Date() });
   }
