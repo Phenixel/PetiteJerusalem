@@ -19,18 +19,20 @@
  */
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import { HDate } from "@hebcal/core";
+import { HDate, months } from "@hebcal/core";
 import { useOverlay } from "../../composables/useOverlayStack";
 import { useConfirm } from "../../composables/useConfirm";
 import { analyticsService } from "../../services/analyticsService";
 import { useHebrewOccasions, type OccasionDraft } from "../../composables/useHebrewOccasions";
 import {
+  isFirstAdar,
   MAX_OCCASION_DAY,
   MAX_OCCASION_NAME,
   nextOccurrence,
   OCCASION_KINDS,
   OCCASION_MONTHS,
   OCCASION_REMINDERS,
+  type HebrewDayOfYear,
   type HebrewOccasion,
   type OccasionKind,
   type OccasionReminder,
@@ -101,10 +103,25 @@ const KIND_ICONS: Record<OccasionKind, IconName> = {
   other: "calendar",
 };
 
+/** Une année ordinaire et une année à treize mois, pour nommer Adar sans l'année en cours. */
+const ORDINARY_YEAR = 5786;
+const LEAP_YEAR = 5787;
+
+/**
+ * Le nom du mois d'une date posée : celui d'une année ORDINAIRE, « Adar » et
+ * non « Adar I », parce que c'est la date qu'on pose, pas l'année en cours.
+ * Seule une date née en Adar I d'une année à treize mois s'appelle « Adar I »
+ * (`firstAdar`) : elle y revient.
+ */
+function monthLabel(date: Pick<HebrewDayOfYear, "month" | "firstAdar">): string {
+  if (isFirstAdar(date)) return hebrewMonthName(months.ADAR_I, LEAP_YEAR, locale.value);
+  const month = date.month === months.ADAR_II ? months.ADAR_I : date.month;
+  return hebrewMonthName(month, ORDINARY_YEAR, locale.value);
+}
+
 /** « 12 Kislev », sans l'année : la date revient, elle n'appartient à aucune. */
 function dayAndMonth(occasion: HebrewOccasion): string {
-  const name = hebrewMonthName(occasion.month, props.today.getFullYear(), locale.value);
-  return t("occasions.dayOfMonth", { day: occasion.day, month: name });
+  return t("occasions.dayOfMonth", { day: occasion.day, month: monthLabel(occasion) });
 }
 
 /** La prochaine fois que la date revient, en date civile et hébraïque. */
@@ -126,13 +143,20 @@ const dayOptions = computed(() =>
   })),
 );
 
+/** La valeur d'« Adar I » dans le choix du mois : le mois d'Adar, et `firstAdar`. */
+const FIRST_ADAR = "adar-1";
+
+/**
+ * Adar n'y figure qu'une fois (voir `monthLabel`). « Adar I » ne s'ajoute,
+ * devant lui, que pour la date qui en vient : celle que la saisie civile a
+ * trouvée en Adar I d'une année à treize mois. Choisir un autre mois le retire.
+ */
 const monthOptions = computed(() =>
-  OCCASION_MONTHS.map((month) => ({
-    value: String(month),
-    // Le nom du mois est celui d'une année ORDINAIRE : « Adar », et non
-    // « Adar I ». C'est la date qu'on pose, pas l'année en cours.
-    label: hebrewMonthName(month, 5786, locale.value),
-  })),
+  OCCASION_MONTHS.flatMap((month) => {
+    const option = { value: String(month), label: monthLabel({ month }) };
+    if (month !== months.ADAR_I || !isFirstAdar(draft.value)) return [option];
+    return [{ value: FIRST_ADAR, label: monthLabel({ month, firstAdar: true }) }, option];
+  }),
 );
 
 const dayModel = computed({
@@ -143,9 +167,10 @@ const dayModel = computed({
 });
 
 const monthModel = computed({
-  get: () => String(draft.value.month),
+  get: () => (isFirstAdar(draft.value) ? FIRST_ADAR : String(draft.value.month)),
   set: (value: string) => {
-    draft.value.month = Number(value);
+    draft.value.firstAdar = value === FIRST_ADAR;
+    draft.value.month = value === FIRST_ADAR ? months.ADAR_I : Number(value);
   },
 });
 

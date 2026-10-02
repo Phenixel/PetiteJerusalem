@@ -11,7 +11,9 @@ import { HDate, months } from "@hebcal/core";
  *
  *  - **Adar.** Une année sur trois environ en compte deux. Une date d'Adar
  *    posée dans une année ordinaire revient alors en Adar II, l'usage séfarade
- *    que suit le reste du site (voir saysBirkatHalevana, slihotWindow).
+ *    que suit le reste du site (voir saysBirkatHalevana, slihotWindow). Une
+ *    date tombée en Adar I d'une année à treize mois (`firstAdar`) revient,
+ *    elle, en Adar I ces années-là, et en Adar les autres.
  *  - **Le 30 du mois.** 'Hechvan et Kislev ont 29 jours certaines années. La
  *    date revient alors le 29, dernier jour du mois, plutôt que de sauter une
  *    année ou de déborder sur le mois suivant. Pour la pratique, l'avis d'un
@@ -51,6 +53,12 @@ export interface HebrewOccasion {
   day: number;
   /** Mois hebcal. Adar est gardé en ADAR_I, le nom qu'il porte hors année à treize mois. */
   month: number;
+  /**
+   * Vrai pour une date tombée en Adar I d'une année à treize mois : elle y
+   * revient, au lieu de passer en Adar II. Seule la saisie par la date civile
+   * le sait, elle connaît l'année ; absent partout ailleurs.
+   */
+  firstAdar?: boolean;
   reminder: OccasionReminder;
 }
 
@@ -76,23 +84,29 @@ export const OCCASION_MONTHS: number[] = [
   months.ELUL,
 ];
 
-/** Le mois tel qu'il existe dans cette année-là (voir la règle d'Adar en tête). */
-function monthIn(month: number, year: number): number {
-  const leap = HDate.isLeapYear(year);
-  if (month === months.ADAR_I && leap) return months.ADAR_II;
-  if (month === months.ADAR_II && !leap) return months.ADAR_I;
-  return month;
+/**
+ * Ce qui suffit à placer une date dans une année : son jour, son mois, et
+ * pour Adar lequel des deux. Le nom d'un défunt dans la chaîne perpétuelle
+ * revient par la même règle.
+ */
+export type HebrewDayOfYear = Pick<HebrewOccasion, "day" | "month" | "firstAdar">;
+
+/** La date est-elle d'Adar I, celui d'une année à treize mois ? */
+export function isFirstAdar(date: Pick<HebrewDayOfYear, "month" | "firstAdar">): boolean {
+  return date.firstAdar === true && date.month === months.ADAR_I;
 }
 
-/**
- * Ce qui suffit à placer une date dans une année : son jour et son mois. Le
- * nom d'un défunt dans la chaîne perpétuelle revient par la même règle.
- */
-export type HebrewDayOfYear = Pick<HebrewOccasion, "day" | "month">;
+/** Le mois tel qu'il existe dans cette année-là (voir la règle d'Adar en tête). */
+function monthIn(date: HebrewDayOfYear, year: number): number {
+  const { month } = date;
+  if (month !== months.ADAR_I && month !== months.ADAR_II) return month;
+  if (!HDate.isLeapYear(year)) return months.ADAR_I;
+  return isFirstAdar(date) ? months.ADAR_I : months.ADAR_II;
+}
 
 /** La date, placée dans l'année hébraïque demandée. */
 export function occasionDateIn(occasion: HebrewDayOfYear, year: number): HDate {
-  const month = monthIn(occasion.month, year);
+  const month = monthIn(occasion, year);
   const day = Math.min(occasion.day, HDate.daysInMonth(month, year));
   return new HDate(day, month, year);
 }
@@ -188,6 +202,7 @@ export function parseOccasion(value: unknown): HebrewOccasion | null {
     kind: OCCASION_KINDS.includes(raw.kind as OccasionKind) ? (raw.kind as OccasionKind) : "other",
     day,
     month,
+    ...(isFirstAdar({ month, firstAdar: raw.firstAdar }) ? { firstAdar: true } : {}),
     reminder: OCCASION_REMINDERS.includes(raw.reminder as OccasionReminder)
       ? (raw.reminder as OccasionReminder)
       : "none",

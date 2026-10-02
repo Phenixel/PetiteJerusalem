@@ -50,6 +50,23 @@ describe("occasionDateIn", () => {
     expect(occasionDateIn(purim, 5787).getMonth()).toBe(months.ADAR_II);
   });
 
+  it("garde en Adar I la date qui en vient, et la rend à Adar les années ordinaires", () => {
+    const date = occasion({ day: 15, month: months.ADAR_I, firstAdar: true });
+
+    // 5787 a deux Adar : la date revient dans le premier, pas un mois plus tard.
+    expect(occasionDateIn(date, 5787).getMonth()).toBe(months.ADAR_I);
+    expect(occasionDateIn(date, 5787).greg()).toEqual(new Date(2027, 1, 22));
+    // 5786 n'en a qu'un.
+    expect(occasionDateIn(date, 5786).getMonth()).toBe(months.ADAR_I);
+    expect(HDate.getMonthName(months.ADAR_I, 5786)).toBe("Adar");
+  });
+
+  it("ne tient compte d'Adar I que pour une date d'Adar", () => {
+    const date = occasion({ day: 12, month: months.KISLEV, firstAdar: true });
+
+    expect(occasionDateIn(date, 5787).getMonth()).toBe(months.KISLEV);
+  });
+
   it("ramène le 30 au dernier jour d'un mois qui n'en compte que 29", () => {
     const date = occasion({ day: 30, month: months.CHESHVAN });
 
@@ -166,6 +183,18 @@ describe("parseOccasion", () => {
 
     expect(parsed).toMatchObject({ name: "Papy Élie", kind: "other", reminder: "none" });
     expect(parsed?.id).toBeTruthy();
+  });
+
+  it("garde Adar I, et seulement sur une date d'Adar", () => {
+    const adar = { name: "X", day: 15, month: months.ADAR_I };
+
+    expect(parseOccasion({ ...adar, firstAdar: true })?.firstAdar).toBe(true);
+    expect(parseOccasion(adar)).not.toHaveProperty("firstAdar");
+    expect(parseOccasion({ ...adar, firstAdar: false })).not.toHaveProperty("firstAdar");
+    expect(parseOccasion({ ...adar, firstAdar: "oui" })).not.toHaveProperty("firstAdar");
+    expect(parseOccasion({ ...adar, month: months.AV, firstAdar: true })).not.toHaveProperty(
+      "firstAdar",
+    );
   });
 });
 

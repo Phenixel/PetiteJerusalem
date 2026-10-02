@@ -425,6 +425,14 @@ commence au coucher du soleil. Toute saisie dans ce sens porte donc un
 interrupteur « Après le coucher du soleil », éteint par défaut, plutôt que de
 laisser un leilouy nichmat se graver avec un jour d'écart.
 
+La date civile sait aussi ce que la date hébraïque seule ne dit pas : l'année.
+Une date tombée en Adar I d'une année à treize mois s'enregistre comme telle
+(`firstAdar`), et revient en Adar I ces années-là, non en Adar II, un mois
+après son jour. Le choix du mois ne propose toujours qu'un Adar, celui de la
+date qu'on pose ; « Adar I » ne s'y ajoute que pour la date qui en vient, et
+la liste la nomme de même (`hebrewDateConverter.test.ts`,
+`occasionCivilEntry.test.ts`).
+
 Pour un leilouy nichmat, une ligne sous l'intitulé de la date dit laquelle
 poser : celle du décès, d'où se comptent les années. Seule la première fait
 exception : quand le décès vient d'arriver, la première année se compte du

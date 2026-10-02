@@ -1,6 +1,7 @@
 import { computed, ref, watch, type Ref } from "vue";
 import {
   cleanOccasionName,
+  isFirstAdar,
   mergeOccasions,
   newOccasionId,
   parseOccasion,
@@ -181,6 +182,10 @@ export function useHebrewOccasions() {
     const name = cleanOccasionName(draft.name);
     if (!name) return;
     const entry: HebrewOccasion = { ...draft, name, id: draft.id ?? newOccasionId() };
+    // Le brouillon porte `firstAdar` vrai ou faux ; la date gardée ne le porte
+    // que s'il dit quelque chose, comme celle qu'on relit (parseOccasion).
+    if (isFirstAdar(entry)) entry.firstAdar = true;
+    else delete entry.firstAdar;
     const index = occasions.value.findIndex((known) => known.id === entry.id);
     if (index === -1) {
       if (full.value) return;
