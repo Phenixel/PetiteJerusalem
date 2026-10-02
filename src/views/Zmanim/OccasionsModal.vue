@@ -11,6 +11,11 @@
  * Les particularités du calendrier (Adar, le 30 d'un mois qui n'en a que 29)
  * sont tranchées dans hebrewOccasions ; la note du bas les dit, plutôt que de
  * laisser l'utilisateur découvrir un jour que sa date a bougé.
+ *
+ * Qui ne connaît pas la date hébraïque (une naissance, un décès dont on n'a
+ * gardé que la date civile) la saisit par sa date civile, année comprise : la
+ * date hébraïque se calcule (voir hebrewDateConverter) et c'est elle qui
+ * s'enregistre. Le formulaire ne change pas de nature, il gagne un chemin.
  */
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
@@ -31,10 +36,14 @@ import {
   type OccasionReminder,
 } from "../../services/hebrewOccasions";
 import { formatHebrewDate, hebrewMonthName } from "../../services/zmanimService";
+import { civilToHebrew, occasionDayOf } from "../../services/hebrewDateConverter";
+import { localDayFrom } from "../../services/dateService";
 import { dateTimeFormat } from "../../services/intlCache";
 import { isNativeApp } from "../../composables/useNativeApp";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import AppSelect from "../../components/AppSelect.vue";
+import AppDateField from "../../components/AppDateField.vue";
+import ToggleSwitch from "../../components/ToggleSwitch.vue";
 import type { IconName } from "../../components/icons/registry";
 
 const props = defineProps<{
@@ -140,12 +149,47 @@ const monthModel = computed({
   },
 });
 
+/**
+ * Comment la date se saisit : par sa date hébraïque (le jour et le mois,
+ * l'usage), ou par sa date civile, année comprise, dont on tire la date
+ * hébraïque. Seule cette dernière s'enregistre, dans les deux cas.
+ */
+const dateEntry = ref<"hebrew" | "civil">("hebrew");
+const civilDay = ref("");
+/** Le jour hébraïque commence au coucher du soleil : après, c'est déjà le lendemain. */
+const civilAfterSunset = ref(false);
+
+const civilHebrew = computed(() => {
+  const date = localDayFrom(civilDay.value);
+  return date ? civilToHebrew(date, civilAfterSunset.value) : null;
+});
+
+// La date civile choisie devient le jour et le mois du brouillon : revenir à
+// la saisie hébraïque les montre, déjà réglés.
+watch(civilHebrew, (hd) => {
+  if (hd && dateEntry.value === "civil") Object.assign(draft.value, occasionDayOf(hd));
+});
+
+function switchDateEntry(): void {
+  dateEntry.value = dateEntry.value === "hebrew" ? "civil" : "hebrew";
+  if (dateEntry.value === "civil" && civilHebrew.value) {
+    Object.assign(draft.value, occasionDayOf(civilHebrew.value));
+  }
+}
+
 function openForm(occasion?: HebrewOccasion): void {
   draft.value = occasion ? { ...occasion } : blankDraft();
+  dateEntry.value = "hebrew";
+  civilDay.value = "";
+  civilAfterSunset.value = false;
   view.value = "form";
 }
 
-const canSave = computed(() => draft.value.name.trim().length > 0);
+const canSave = computed(
+  () =>
+    draft.value.name.trim().length > 0 &&
+    (dateEntry.value === "hebrew" || civilHebrew.value !== null),
+);
 
 function save(): void {
   if (!canSave.value) return;
@@ -158,6 +202,9 @@ function save(): void {
       kind: draft.value.kind,
       is_new: isNew,
       on_account: syncedToAccount.value,
+      // La date saisie par sa date civile, ou directement en hébreu : ce que
+      // le bouton de la date civile rapporte.
+      date_entry: dateEntry.value,
     });
   }
   saveOccasion(draft.value);
@@ -333,15 +380,52 @@ useOverlay(
           </button>
         </div>
 
-        <p class="mt-4 text-sm font-medium text-text-primary">{{ t("occasions.date") }}</p>
-        <div class="mt-1.5 flex gap-3">
-          <div class="w-24 shrink-0">
-            <AppSelect v-model="dayModel" :options="dayOptions" />
+        <!-- La date hébraïque d'abord, c'est elle qui revient chaque année.
+             Qui ne la connaît pas passe par la date civile, année comprise. -->
+        <template v-if="dateEntry === 'hebrew'">
+          <p class="mt-4 text-sm font-medium text-text-primary">{{ t("occasions.date") }}</p>
+          <div class="mt-1.5 flex gap-3">
+            <div class="w-24 shrink-0">
+              <AppSelect v-model="dayModel" :options="dayOptions" />
+            </div>
+            <div class="min-w-0 flex-1">
+              <AppSelect v-model="monthModel" :options="monthOptions" />
+            </div>
           </div>
-          <div class="min-w-0 flex-1">
-            <AppSelect v-model="monthModel" :options="monthOptions" />
-          </div>
-        </div>
+        </template>
+        <template v-else>
+          <label class="mt-4 block text-sm font-medium text-text-primary" for="occasion-civil">
+            {{ t("occasions.civilDate") }}
+          </label>
+          <AppDateField
+            id="occasion-civil"
+            v-model="civilDay"
+            class="mt-1.5"
+            :first-year="1900"
+            :label="t('occasions.civilDate')"
+          />
+          <label class="mt-3 flex items-center justify-between gap-3">
+            <span class="min-w-0">
+              <span class="block text-sm font-medium text-text-primary">
+                {{ t("converter.afterSunset") }}
+              </span>
+              <span class="block text-xs text-text-secondary">
+                {{ t("converter.afterSunsetHint") }}
+              </span>
+            </span>
+            <ToggleSwitch v-model="civilAfterSunset" />
+          </label>
+          <p class="mt-2 text-sm" aria-live="polite">
+            <span v-if="civilHebrew" class="font-medium text-text-primary">
+              {{ t("occasions.civilResult", { hebrew: formatHebrewDate(civilHebrew, locale) }) }}
+            </span>
+            <span v-else class="text-text-secondary">{{ t("occasions.pickCivil") }}</span>
+          </p>
+        </template>
+        <button type="button" class="btn btn-soft btn-sm mt-2" @click="switchDateEntry">
+          <AppIcon name="rotate" :size="14" />
+          {{ dateEntry === "hebrew" ? t("occasions.useCivil") : t("occasions.useHebrew") }}
+        </button>
 
         <!-- Le rappel est programmé par le téléphone : un navigateur n'a rien
              à programmer, le réglage n'y paraît donc pas (voir

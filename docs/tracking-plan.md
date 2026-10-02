@@ -82,6 +82,27 @@ seconde page.
 Le bouton de téléchargement vit à plusieurs endroits ; sans `source`,
 l'événement ne disait pas lequel rapporte.
 
+### `date_converter_opened` (nouveau)
+
+L'ouverture du convertisseur de dates, depuis le bouton « Convertir une date »
+du calendrier (`DateConverterModal.vue`).
+
+| Propriété | Valeurs                                               |
+| --------- | ----------------------------------------------------- |
+| `source`  | `calendar_button` (le seul point d'entrée, à ce jour) |
+
+### `date_converted` (nouveau)
+
+Un outil du convertisseur réellement servi : posé au premier réglage que fait
+la personne, une fois par outil et par ouverture. À chaque chiffre changé,
+l'événement ne dirait plus rien.
+
+| Propriété | Valeurs                                             |
+| --------- | --------------------------------------------------- |
+| `tool`    | `hebrew_to_civil`, `civil_to_hebrew`, `bar_mitzvah` |
+
+Ni la date ni l'année : une date de naissance désigne une personne.
+
 ## Introduction de première ouverture
 
 L'introduction de l'app native (`OnboardingFlow.vue`). Elle est passée de six
@@ -394,7 +415,7 @@ ce que le second rapporte au premier.
 | Événement | Propriétés |
 | --- | --- |
 | `occasions_opened` (nouveau) | `source` (`calendar_button`, `calendar_row`), `occasions_count` (les dates déjà inscrites) |
-| `occasion_saved` (nouveau) | `kind` (`yahrzeit`, `birthday`, `other`), `is_new`, `on_account` (la date suit le compte, ou reste sur l'appareil) |
+| `occasion_saved` (nouveau) | `kind` (`yahrzeit`, `birthday`, `other`), `is_new`, `on_account` (la date suit le compte, ou reste sur l'appareil), `date_entry` (**nouveau** : `hebrew` pour une date saisie en hébreu, `civil` pour une date saisie par sa date civile et convertie) |
 | `occasion_removed` (nouveau) | `kind` |
 
 Ni le nom ni la date : ils désignent une personne.

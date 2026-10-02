@@ -24,6 +24,8 @@ defineProps<{
   disabled?: boolean;
   /** Ce que la fenêtre annonce, à défaut « Choisir une date ». */
   label?: string;
+  /** Première année proposée par le calendrier (voir DayPicker). */
+  firstYear?: number;
 }>();
 
 const model = defineModel<string>({ required: true });
@@ -60,6 +62,7 @@ const buttonLabel = computed(() =>
       :open="open"
       :min="min"
       :label="label ?? t('common.chooseDate')"
+      :first-year="firstYear"
       @close="open = false"
     />
   </div>

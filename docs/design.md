@@ -409,6 +409,29 @@ de tout ce qui part sans retour, et seulement de cela : ce qu'on peut refaire
 d'un geste, une case cochée, un rappel posé, ne se fait pas confirmer, sans
 quoi la question ne voudrait plus rien dire.
 
+### Une date se saisit comme on la connaît
+
+Une date personnelle revient à sa date hébraïque, et c'est elle qu'on demande
+d'abord : le jour et le mois, sans année. Mais beaucoup ne connaissent que la
+date civile d'une naissance ou d'un décès. Un bouton sous les deux listes,
+« Saisir la date civile », ouvre le calendrier de la maison, année comprise
+(la liste des années remonte jusqu'en 1900, une date de naissance va plus
+loin qu'une date limite) ; la date hébraïque se calcule et s'affiche sous le
+champ, et c'est elle seule qui s'enregistre. Le formulaire ne change pas de
+nature, il gagne un chemin, et l'on en revient d'un geste par le même bouton.
+
+Une date civile ne donne pas sa date hébraïque à coup sûr : le jour hébraïque
+commence au coucher du soleil. Toute saisie dans ce sens porte donc un
+interrupteur « Après le coucher du soleil », éteint par défaut, plutôt que de
+laisser un leilouy nichmat se graver avec un jour d'écart.
+
+Le même calcul sert le convertisseur du calendrier, à côté de « Mes dates » :
+une fenêtre, trois onglets nommés par ce qu'on connaît déjà (une date
+hébraïque, une date civile, la naissance d'un enfant pour sa bar-mitsvah). La
+réponse se lit dans un bloc de surface douce, sous le formulaire, sans bouton
+à presser : elle change avec chaque réglage. Ce n'est pas une page de plus,
+c'est une question qu'on se pose devant le calendrier, et elle s'y pose.
+
 ### Une recherche trouve ce qu'on voulait dire
 
 Un même nom s'écrit de dix façons : « Chabbat », « Shabbat », « Shabat » ;

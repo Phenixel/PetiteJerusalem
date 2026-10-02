@@ -6,7 +6,7 @@
 // Comme la page des horaires, tout est calculé sur l'appareil (voir
 // zmanimService) : les flèches parcourent les années sans rien charger, et la
 // page continue de servir sans connexion.
-import { computed, nextTick, onMounted, ref, watch } from "vue";
+import { computed, defineAsyncComponent, nextTick, onMounted, ref, watch } from "vue";
 import type { HDate } from "@hebcal/core";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
@@ -46,6 +46,11 @@ import AppDownloadButton from "../../components/AppDownloadButton.vue";
 import { zmanimTabs } from "../../config/pageTabs";
 import { isNativeApp } from "../../composables/useNativeApp";
 import { useLocalePath } from "../../composables/useLocalePath";
+
+// Le convertisseur ne se charge qu'à la première ouverture : pour nommer la
+// paracha d'une bar-mitsvah, il tire le catalogue des textes, dont la page n'a
+// pas besoin pour s'afficher.
+const DateConverterModal = defineAsyncComponent(() => import("./DateConverterModal.vue"));
 
 /** Les pages traduites suivent l'espace de langue de l'URL ouverte. */
 const { localePath } = useLocalePath();
@@ -117,6 +122,20 @@ function openOccasions(source: "calendar_button" | "calendar_row"): void {
     source,
     occasions_count: occasions.value.length,
   });
+}
+
+/**
+ * Le convertisseur de dates : une date hébraïque en date civile, l'inverse,
+ * et le jour d'une bar-mitsvah. Monté à la première ouverture, puis gardé,
+ * pour que la fenêtre se referme en fondu et retrouve ce qu'on y avait réglé.
+ */
+const converterOpen = ref(false);
+const converterLoaded = ref(false);
+
+function openConverter(): void {
+  converterLoaded.value = true;
+  converterOpen.value = true;
+  analyticsService.capture("date_converter_opened", { source: "calendar_button" });
 }
 
 /**
@@ -444,8 +463,10 @@ onMounted(() => {
     </p>
 
     <!-- Ses propres dates : anniversaires, leilouy nichmat. Elles se posent
-         ici parce qu'elles se lisent ici, au milieu des fêtes de l'année. -->
-    <div class="mt-4 flex justify-center">
+         ici parce qu'elles se lisent ici, au milieu des fêtes de l'année. À
+         côté, le convertisseur : d'une date hébraïque à la date civile, et
+         retour, la question qu'on se pose devant un calendrier. -->
+    <div class="mt-4 flex flex-wrap justify-center gap-2">
       <button
         ref="occasionsButton"
         type="button"
@@ -454,6 +475,10 @@ onMounted(() => {
       >
         <AppIcon name="calendar" :size="16" class="text-primary" />
         {{ t("occasions.open") }}
+      </button>
+      <button type="button" class="btn btn-soft" @click="openConverter">
+        <AppIcon name="rotate" :size="16" class="text-primary" />
+        {{ t("converter.open") }}
       </button>
     </div>
 
@@ -605,6 +630,13 @@ onMounted(() => {
     </p>
 
     <OccasionsModal v-model:show="occasionsOpen" :today="todayHd" />
+    <DateConverterModal
+      v-if="converterLoaded"
+      :open="converterOpen"
+      :today="todayHd"
+      :place="place"
+      @close="converterOpen = false"
+    />
 
     <!-- L'astuce des dates à soi, une fois (occasionsTip). -->
     <FeatureTour v-if="tipsOffered" tip="calendar-occasions" :steps="occasionsTip" />
