@@ -17,6 +17,7 @@ import { useI18n } from "vue-i18n";
 import { HDate } from "@hebcal/core";
 import { useOverlay } from "../../composables/useOverlayStack";
 import { useConfirm } from "../../composables/useConfirm";
+import { analyticsService } from "../../services/analyticsService";
 import { useHebrewOccasions, type OccasionDraft } from "../../composables/useHebrewOccasions";
 import {
   MAX_OCCASION_DAY,
@@ -148,6 +149,17 @@ const canSave = computed(() => draft.value.name.trim().length > 0);
 
 function save(): void {
   if (!canSave.value) return;
+  const isNew = draft.value.id === undefined;
+  // Une date de plus dans une liste pleine n'est pas enregistrée
+  // (saveOccasion) : elle ne se compte pas. Ni le nom ni la date ne partent,
+  // ils désignent une personne.
+  if (!(isNew && full.value)) {
+    analyticsService.capture("occasion_saved", {
+      kind: draft.value.kind,
+      is_new: isNew,
+      on_account: syncedToAccount.value,
+    });
+  }
   saveOccasion(draft.value);
   view.value = "list";
 }
@@ -169,6 +181,9 @@ async function remove(id: string): Promise<void> {
     danger: true,
   });
   if (!accepted) return;
+  analyticsService.capture("occasion_removed", {
+    kind: occasions.value.find((occasion) => occasion.id === id)?.kind ?? null,
+  });
   removeOccasion(id);
   view.value = "list";
 }

@@ -68,6 +68,9 @@ const searchTerm = ref("");
 const showOnlyAvailable = ref(false);
 
 const showShareModal = ref(false);
+// La fenêtre ouverte d'elle-même, juste après la création : elle porte alors
+// un mot (`intro`) et se compte à part (`trigger`).
+const shareAfterCreate = ref(false);
 const showEditModal = ref(false);
 const shareUrl = ref("");
 
@@ -701,12 +704,13 @@ function openInstructions(): void {
   showInstructionsModal.value = true;
 }
 
-const openShareModal = () => {
+const openShareModal = (afterCreate = false) => {
   // Domaine canonique plutôt que window.location.href : ce dernier vaut
   // localhost (ou capacitor://localhost) en dev et dans l'app native, ce qui
   // produirait un lien de partage inutilisable.
   const s = session.value;
   shareUrl.value = s ? `${SITE_URL}/share-reading/session/${s.slug || s.id}` : SITE_URL;
+  shareAfterCreate.value = afterCreate;
   showShareModal.value = true;
 };
 
@@ -810,6 +814,9 @@ onMounted(async () => {
     // Les noms du lecteur passent en tête, et à sa couleur.
     if (prayerNames.value.length) void arrangeNames();
   });
+  // Arrivée depuis la création (`?partager=1`, voir NewSession) : lu avant le
+  // chargement, dont la redirection vers le slug efface la requête.
+  const justCreated = route.query.partager === "1";
   await loadSessionData();
   await loadPrayerNames();
   // Arrivée depuis la création d'une session (« Proposer son nom ») : la
@@ -817,6 +824,21 @@ onMounted(async () => {
   if (isPerpetual.value && route.query.proposer === "1") {
     void router.replace({ query: { ...route.query, proposer: undefined } });
     openPrayerNameForm("new_session", null);
+  }
+  if (justCreated && session.value) {
+    // Retiré de l'adresse : un rechargement ne rouvrirait pas la fenêtre. Le
+    // chemin est donné en entier : la redirection vers le slug, partie avec
+    // la requête, est peut-être encore en route, et celle-ci la remplace.
+    const query = { ...route.query };
+    delete query.partager;
+    void router.replace({
+      path: `/share-reading/session/${session.value.slug || session.value.id}`,
+      query,
+    });
+    // Une chaîne que personne ne voit reste vide : en septembre 2026, les
+    // chaînes remplies avaient eu de 6 à 24 visiteurs, les vides jamais plus
+    // de deux. Le partage se propose donc tout de suite, avec la raison.
+    openShareModal(true);
   }
 
   // Point d'entrée du funnel de réservation. Pas de nom de session dans les
@@ -959,7 +981,7 @@ watch(session, (s) => applySessionSeo(s));
         :session="session"
         :is-owner="isOwner"
         :has-reported="hasReported"
-        @share="openShareModal"
+        @share="openShareModal()"
         @manage="goToManagement"
         @edit="
           trackEditStarted();
@@ -1169,6 +1191,9 @@ watch(session, (s) => applySessionSeo(s));
       :session-type="session?.type"
       content-type="session"
       :content-id="session?.id ?? null"
+      :title-key="shareAfterCreate ? 'shareModal.titleCreated' : undefined"
+      :intro="shareAfterCreate ? t('shareModal.introCreated') : null"
+      :trigger="shareAfterCreate ? 'after_create' : 'button'"
     />
 
     <!-- Modification de la session, réservée à son créateur -->

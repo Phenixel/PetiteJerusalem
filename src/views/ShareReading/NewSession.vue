@@ -5,7 +5,8 @@ import { useI18n } from "vue-i18n";
 import { EnumTypeTextStudy } from "../../models/typeTextStudy";
 import { sessionService } from "../../services/sessionService";
 import { TextTypeService } from "../../services/textTypeService";
-import { endOfLocalDay, localDayKey } from "../../services/dateService";
+import { localDayKey } from "../../services/dateService";
+import { deadlineDays, isShortDeadline } from "../../services/sessionDeadline";
 import { authService } from "../../services/authService";
 import { ModerationError } from "../../services/moderationService";
 import type { User } from "../../services/authService";
@@ -16,6 +17,7 @@ import AppSelect from "../../components/AppSelect.vue";
 import AppDateField from "../../components/AppDateField.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import { useToast } from "../../composables/useToast";
+import { useConfirm } from "../../composables/useConfirm";
 import { SITE_URL } from "../../config/site";
 import { findPerpetualSession } from "../../services/perpetualChain";
 import type { Session } from "../../models/models";
@@ -23,6 +25,7 @@ import type { Session } from "../../models/models";
 const router = useRouter();
 const { t } = useI18n();
 const toast = useToast();
+const { confirm } = useConfirm();
 
 const isLoading = ref(false);
 const message = ref("");
@@ -227,6 +230,25 @@ const createSession = async () => {
     return;
   }
 
+  // Une date limite ce soir ou demain soir : on demande si c'est bien voulu
+  // (voir services/sessionDeadline). Refuser ramène au champ de la date.
+  if (isShortDeadline(sessionData.dateLimit)) {
+    const days = deadlineDays(sessionData.dateLimit);
+    const confirmed = await confirm({
+      title: t("newSession.shortDeadline.title"),
+      message: t(
+        days <= 1 ? "newSession.shortDeadline.today" : "newSession.shortDeadline.tomorrow",
+      ),
+      confirmLabel: t("newSession.shortDeadline.confirm"),
+      cancelLabel: t("newSession.shortDeadline.change"),
+    });
+    analyticsService.capture("session_deadline_warned", { deadline_days: days, confirmed });
+    if (!confirmed) {
+      focusField("dateLimit");
+      return;
+    }
+  }
+
   isLoading.value = true;
   message.value = "";
 
@@ -253,15 +275,15 @@ const createSession = async () => {
       guest_email_required: sessionData.guestEmailRequired,
       // Fin de journée locale, comme la date limite enregistrée : lue en
       // minuit UTC, la date reculait d'un jour à l'ouest de Greenwich.
-      deadline_days: Math.ceil(
-        (endOfLocalDay(sessionData.dateLimit).getTime() - Date.now()) / (24 * 3600 * 1000),
-      ),
+      deadline_days: deadlineDays(sessionData.dateLimit),
     });
 
     // Le toast est monté au niveau de l'app : il survit à la redirection et
-    // reste visible sur la page de la session nouvellement créée.
+    // reste visible sur la page de la session nouvellement créée. `partager`
+    // y ouvre la fenêtre de partage, avec un mot pour dire pourquoi : une
+    // chaîne que personne ne voit reste vide (voir DetailSession).
     toast.success(t("newSession.createdSuccess"));
-    router.push(`/share-reading/session/${sessionId}`);
+    router.push({ path: `/share-reading/session/${sessionId}`, query: { partager: "1" } });
   } catch (error) {
     console.error("Erreur lors de la création de la session:", error);
     if (error instanceof ModerationError) {

@@ -34,7 +34,8 @@ import {
   tefilaHebrewDay,
   tefilaOf,
 } from "../../services/sidourService";
-import { useZmanimLocation } from "../../composables/useZmanimLocation";
+import { locationOutcome, useZmanimLocation } from "../../composables/useZmanimLocation";
+import { takeReadingEntry } from "../../services/readingEntry";
 import { resolveBackNavigation, stripQuery } from "../../composables/readingBack";
 import { useNow } from "../../composables/useNow";
 import { useScrollFrame } from "../../composables/useScrollFrame";
@@ -156,7 +157,12 @@ const gesturesTip = computed<TourStep[]>(() => {
 });
 // Lieu des horaires : donne le jour hébraïque (sensible à la chkia) qui
 // conditionne les ajouts de calendrier des textes de tefila.
-const { place: zmanimPlace, deniedBefore, locateDevice } = useZmanimLocation();
+const {
+  place: zmanimPlace,
+  status: locationStatus,
+  deniedBefore,
+  locateDevice,
+} = useZmanimLocation();
 
 // This view serves two URL shapes with the SAME UI: the in-session reader
 // (/lire/:textId, numeric id) and the public, indexable reading pages
@@ -368,8 +374,13 @@ watch(
   () => (tefilaOf(textEntry.value ?? null) ? textId.value : null),
   (id) => {
     if (!id || zmanimPlace.value.source === "city" || deniedBefore.value) return;
+    const startedAt = Date.now();
     void locateDevice().then((granted) => {
-      analyticsService.capture("zmanim_location_requested", { granted, source: "sidour" });
+      analyticsService.capture("zmanim_location_requested", {
+        granted,
+        source: "sidour",
+        ...locationOutcome(granted, locationStatus.value, startedAt),
+      });
     });
   },
   { immediate: true },
@@ -517,6 +528,11 @@ async function loadContent() {
     // porte l'URL, donc la seule clé disponible ici. C'est aussi celle que
     // `session_text_read_clicked` emporte, pour recoller les deux.
     session_slug: sessionSlug.value,
+    // D'où l'on arrive, plus finement que `source` (voir readingEntry) :
+    // recherche, accueil, lecture du jour, autre texte, lien de l'extérieur...
+    entry: takeReadingEntry(router.options.history.state.back as string | null, {
+      session: sessionSlug.value !== null,
+    }),
   });
   loading.value = true;
   error.value = false;
@@ -1930,9 +1946,14 @@ watch(textId, (_, previousTextId) => {
           @pick="pickedDay = $event"
         />
 
-        <!-- Talmud: continuous text with a marker at each daf change -->
+        <!-- Talmud: continuous text with a marker at each daf change.
+             `ph-no-deadclick` sur les trois corps de texte : un appui sur le
+             texte (double appui du défilement, lecture du doigt) ne change
+             rien à l'écran sans être une commande en panne, et noierait les
+             clics morts de PostHog. -->
         <div
           v-if="content.type === 'Talmud Bavli'"
+          class="ph-no-deadclick"
           :style="{ '--reading-scale': readingSize.scale.value }"
         >
           <TalmudDafText
@@ -1946,6 +1967,7 @@ watch(textId, (_, previousTextId) => {
              calendrier et encadrés des dix jours de pénitence. -->
         <LiturgyText
           v-else-if="isLiturgyText"
+          class="ph-no-deadclick"
           :style="{ '--reading-scale': readingSize.scale.value }"
           :blocks="visibleBlocks"
           :show-phonetic="showPhonetic"
@@ -1958,7 +1980,7 @@ watch(textId, (_, previousTextId) => {
 
         <!-- Verses / mishnayot (numbered for reference texts), grouped by
              chapter / montée with a marker at each block start -->
-        <div v-else :style="{ '--reading-scale': readingSize.scale.value }">
+        <div v-else class="ph-no-deadclick" :style="{ '--reading-scale': readingSize.scale.value }">
           <template v-for="(block, blockIndex) in verseBlocks" :key="anchorOf(block)">
             <!-- Une strophe du psaume 119 : sa lettre en grand et en gras,
                  qu'on repère d'un coup d'œil en cherchant celles d'un nom.

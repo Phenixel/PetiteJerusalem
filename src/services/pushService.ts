@@ -7,6 +7,7 @@ import { db } from "../firebase/firestore";
 import { auth } from "../firebase/core";
 import { isNativeApp } from "../composables/useNativeApp";
 import { analyticsService } from "./analyticsService";
+import { markReadingEntry } from "./readingEntry";
 import { isOffline, userPreferencesService } from "./userPreferencesService";
 import type { ReminderPlace } from "./zmanimService";
 
@@ -228,6 +229,7 @@ class PushService {
       const url = (event.notification.data as { url?: string } | undefined)?.url;
       // Efficacité du rappel quotidien : combien de retours viennent des push.
       analyticsService.capture("push_notification_opened", { url: url ?? null });
+      if (url) markReadingEntry("push");
       if (url) router.push(url);
     });
 
@@ -260,6 +262,7 @@ class PushService {
       if (extra?.source !== PUSH_SOURCE) return;
       const url = extra.url;
       analyticsService.capture("push_notification_opened", { url: url ?? null });
+      if (url) markReadingEntry("push");
       if (url) router.push(url);
     });
   }

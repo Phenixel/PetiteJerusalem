@@ -193,6 +193,10 @@ const fr = {
         title: "Le lieu des horaires",
         text: "Le nom de la ville est le bouton qui la change. « Ma position » relève celle de l'appareil, sans rien envoyer à personne.",
       },
+      date: {
+        title: "Choisir une date",
+        text: "Touchez la date pour ouvrir le calendrier : un Chabbat ou une fête lointaine s'atteint d'un geste, sans passer par les flèches.",
+      },
     },
     reading: {
       menu: {
@@ -319,19 +323,44 @@ const fr = {
     pleaseWait: "Veuillez patienter…",
     register: "S'inscrire",
     passwordsDoNotMatch: "Les mots de passe ne correspondent pas",
-    loginError: "Erreur de connexion",
-    googleError: "Erreur Google",
-    appleError: "Erreur Apple",
+    loginError: "La connexion n'a pas abouti. Réessayez dans un instant.",
+    googleError:
+      "La connexion avec Google n'a pas abouti. Réessayez, ou choisissez une autre méthode.",
+    appleError:
+      "La connexion avec Apple n'a pas abouti. Réessayez, ou choisissez une autre méthode.",
     authBrowserUnavailable:
       "Impossible d'ouvrir la fenêtre de connexion sur cet appareil (Safari restreint ou indisponible). Essayez la connexion par email ci-dessous.",
     appleSignInUnavailable:
-      "La connexion Apple est indisponible sur cet appareil. Vérifiez dans les Réglages qu'un compte Apple y est connecté, ou utilisez la connexion par email.",
+      "La connexion Apple n'a pas pu s'ouvrir. Réessayez ; si cela se reproduit, vérifiez dans les Réglages qu'un compte Apple est connecté à l'appareil, ou utilisez une autre méthode.",
     displayNamePlaceholder: "Ex: David Cohen",
     emailPlaceholder: "exemple{'@'}email.com",
     termsNotice: "En vous connectant ou en créant un compte, vous acceptez les",
     termsLink: "conditions d'utilisation",
     termsAnd: "et la",
     privacyLink: "politique de confidentialité",
+    lastUsed: "Dernière utilisation",
+    help: {
+      signup: "Créer un compte avec cette adresse",
+      login: "Me connecter avec cette adresse",
+    },
+    errors: {
+      invalidCredential:
+        "Adresse email ou mot de passe incorrect. Si vous avez créé votre compte avec Google ou Apple, utilisez plutôt ce bouton ; sinon, vérifiez le mot de passe, ou créez un compte.",
+      invalidCredentialGoogle:
+        "Adresse email ou mot de passe incorrect. Sur cet appareil, la dernière connexion s'est faite avec Google : essayez plutôt ce bouton.",
+      invalidCredentialApple:
+        "Adresse email ou mot de passe incorrect. Sur cet appareil, la dernière connexion s'est faite avec Apple : essayez plutôt ce bouton.",
+      emailInUse:
+        "Un compte existe déjà avec cette adresse. Connectez-vous avec son mot de passe, ou avec Google ou Apple si c'est ainsi que vous l'avez créé.",
+      weakPassword: "Le mot de passe doit compter au moins 6 caractères.",
+      invalidEmail: "Cette adresse email ne semble pas valide.",
+      missingPassword: "Saisissez votre mot de passe.",
+      tooManyRequests:
+        "Trop de tentatives d'affilée : patientez quelques minutes avant de réessayer.",
+      network: "Pas de connexion à internet : vérifiez le réseau et réessayez.",
+      userDisabled:
+        "Ce compte a été désactivé. Écrivez-nous si vous pensez qu'il s'agit d'une erreur.",
+    },
   },
   profile: {
     loadingProfile: "Chargement de votre profil...",
@@ -933,6 +962,14 @@ const fr = {
     requireGuestEmail: "Exiger l'email des invités",
     requireGuestEmailHint:
       "Décochée, cette option permet aux invités de réserver en indiquant seulement leur nom.",
+    shortDeadline: {
+      title: "Attention, votre date semble proche d'aujourd'hui",
+      today: "La session se terminera ce soir. Êtes-vous sûr de vouloir une session aussi courte ?",
+      tomorrow:
+        "La session se terminera demain soir. Êtes-vous sûr de vouloir une session aussi courte ?",
+      confirm: "Oui, créer la session",
+      change: "Changer la date",
+    },
   },
   detailSession: {
     loadingSession: "Chargement de la session...",
@@ -1085,6 +1122,9 @@ const fr = {
     // Un passage choisi dans un texte : le lien ouvre le texte à cet endroit.
     titlePassage: "Partager ce passage",
     invitePassage: "« {name} » 📖 Ce passage s'ouvre ici, sur Petite Jérusalem :",
+    titleCreated: "Votre session est prête",
+    introCreated:
+      "Pensez à partager la session autour de vous, pour que vos proches puissent y participer avec vous.",
   },
   batchSelection: {
     textsSelected: "{count} texte sélectionné | {count} textes sélectionnés",

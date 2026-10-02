@@ -242,3 +242,169 @@ Un nom retiré par son auteur (une guérison, une erreur).
 
 Une valeur de plus pour `variant` : `prayer_name`, l'invitation à se
 connecter posée devant « Proposer un nom ».
+
+## Ajouts d'octobre 2026
+
+Les ajouts qui suivent répondent à l'audit d'usage
+(`docs/audit-usage-posthog-2026-10.md`, section 5) : rien n'y est renommé ni
+retiré, chaque propriété nouvelle se pose à côté des anciennes.
+
+### Clics morts (`$dead_click`, nouveau)
+
+Activés dans le SDK (`capture_dead_clicks`, `analyticsService.ts`) : un
+appui qui ne change rien à l'écran (ni défilement, ni sélection, ni
+changement du DOM). Ils montrent ce qu'on prend pour une commande sans en
+être une, ou une commande qui ne répond pas. Les corps de texte de la lecture
+en sont exclus par la classe `ph-no-deadclick` (`TextReadingPage.vue`) : on y
+appuie sans rien demander (double appui du défilement, lecture du doigt).
+
+### Lecture : `text_opened` (existant)
+
+| Propriété | Valeurs | Statut |
+| --- | --- | --- |
+| `source` | `library`, `session` | existant, conservé |
+| `entry` | `search`, `resume`, `push`, `home`, `library`, `daily_reading`, `chnei_mikra`, `tehilim_day`, `reading`, `zmanim`, `calendar`, `session`, `direct`, `other` | **nouveau** |
+
+`entry` dit d'où l'on arrive (`services/readingEntry.ts`) : un indice laissé
+juste avant la navigation quand l'adresse ne peut pas le dire (un résultat de
+recherche, « Reprendre ma lecture », une notification), sinon la page
+précédente. `reading` : depuis un autre texte (psaume suivant, office
+suivant) ; `direct` : sans page précédente (widget, lien partagé, moteur de
+recherche, page rechargée).
+
+### Recherche
+
+`library_search_used` et `chiourim_search_used` (existants) continuent de
+partir à la première frappe. À côté, la recherche **posée**
+(`composables/useSearchTracking.ts`) : le terme n'a plus bougé depuis 1,2 s,
+un résultat s'ouvre, ou l'on quitte la page. Jamais deux fois de suite le
+même terme, jamais un terme vide.
+
+#### `library_search_performed` (nouveau)
+
+| Propriété | Valeurs |
+| --- | --- |
+| `scope` | `all` depuis l'étagère, sinon le rayon (`tehilim`, `sidour`...) |
+| `query` | le terme, en minuscules, espaces resserrées, 40 caractères au plus |
+| `query_length` | sa longueur |
+| `results_count` | le nombre de textes trouvés |
+
+#### `library_search_result_opened` (nouveau)
+
+| Propriété | Valeurs |
+| --- | --- |
+| `scope` | comme ci-dessus |
+| `rank` | le rang du texte dans les résultats tels qu'ils s'affichent (par rayon, puis par livre), à partir de 1 |
+| `corpus` | le type du texte (`Tehilim`, `Sidour`...) |
+| `text_id` | son identifiant dans le catalogue |
+
+#### `chiourim_search_performed` (nouveau)
+
+`category` (le filtre en cours), `query`, `query_length`, `results_count`,
+comme pour la bibliothèque.
+
+### Horaires
+
+#### `zmanim_day_changed` (nouveau)
+
+| Propriété | Valeurs |
+| --- | --- |
+| `via` | `arrow`, `picker` (le calendrier sous la date), `today` (« Revenir à aujourd'hui ») |
+| `offset_days` | l'écart avec aujourd'hui après le changement |
+| `arrow_streak` | les flèches touchées à la suite, 0 hors flèche |
+
+Au troisième appui de suite sur une flèche, l'astuce `zmanim-date` est
+appelée (voir docs/design.md, « Une astuce se joue sur la page, une fois »).
+
+#### `zmanim_location_requested` (existant)
+
+| Propriété | Valeurs | Statut |
+| --- | --- | --- |
+| `granted` | booléen | existant, conservé |
+| `source` | `sidour`, ou absent sur la page des horaires | existant, conservé |
+| `outcome` | `granted`, `denied` (refus de l'utilisateur), `unavailable` (pas de signal, délai dépassé) | **nouveau** |
+| `duration_ms` | l'attente de la réponse | **nouveau** |
+
+### Connexion
+
+#### `login_viewed` (nouveau)
+
+| Propriété | Valeurs |
+| --- | --- |
+| `reason` | ce qui y a mené (`services/loginReason.ts`) : `direct`, `daily_reading`, `share_reading`, `profile`, `admin`, `other` |
+| `mode` | `login` ou `signup` à l'arrivée |
+| `last_method` | la dernière méthode de connexion de l'appareil : `google`, `apple`, `email`, ou `null` |
+
+#### `email_auth_failed` (existant)
+
+| Propriété | Valeurs | Statut |
+| --- | --- | --- |
+| `mode` | `login`, `signup` | existant |
+| `reason` | le code Firebase (`auth/...`), ou `error` | existant |
+| `reason` | `password_mismatch` (les deux mots de passe diffèrent), `moderation` (nom affiché refusé) | **nouvelles valeurs** ; elles partaient jusqu'ici sous `error` |
+| `last_method` | comme `login_viewed` | **nouveau** |
+
+#### `google_signin_clicked`, `apple_signin_clicked`, `*_signin_failed` (existants)
+
+`attempt` (**nouveau**) : le rang de l'essai depuis l'arrivée sur l'écran. Il
+dit combien d'échecs cèdent au deuxième essai (l'erreur Apple 1000).
+
+#### `login_help_clicked` (nouveau)
+
+La sortie proposée sous une erreur email (docs/design.md, « L'écran de
+connexion dit quoi faire »).
+
+| Propriété | Valeurs |
+| --- | --- |
+| `help` | `signup` (créer le compte), `login` (s'y connecter), `provider` (le bouton de la dernière méthode) |
+| `reason` | la raison de l'échec qui l'a proposée, comme `email_auth_failed.reason` |
+
+### Lecture du jour : `daily_reading_viewed` (nouveau)
+
+À l'arrivée sur `/bibliotheque/lecture-du-jour`, une fois la liste chargée.
+
+| Propriété | Valeurs |
+| --- | --- |
+| `state` | `empty` (rien de composé), `in_progress`, `all_done`, `error` (chargement en échec) |
+| `total_count` | les lectures du jour (le chnei mikra hebdomadaire n'y compte pas) |
+| `done_count` | celles déjà faites |
+
+### Chaînes
+
+#### `session_deadline_warned` (nouveau)
+
+La confirmation demandée quand la date limite tombe ce soir ou demain soir
+(`services/sessionDeadline.ts`).
+
+| Propriété | Valeurs |
+| --- | --- |
+| `deadline_days` | 1 (ce soir) ou 2 (demain soir), le même calcul que `session_created.deadline_days` |
+| `confirmed` | vrai si la chaîne est créée telle quelle, faux si l'on revient à la date |
+
+#### `share_modal_opened`, `share_channel_selected` (existants)
+
+`trigger` (**nouveau**) : `button` (le bouton Partager) ou `after_create` (la
+fenêtre ouverte d'elle-même juste après la création d'une chaîne). Il mesure
+ce que le second rapporte au premier.
+
+### Mes dates
+
+`occasion_opened` (existant, le bandeau de l'accueil) est conservé. À côté :
+
+| Événement | Propriétés |
+| --- | --- |
+| `occasions_opened` (nouveau) | `source` (`calendar_button`, `calendar_row`), `occasions_count` (les dates déjà inscrites) |
+| `occasion_saved` (nouveau) | `kind` (`yahrzeit`, `birthday`, `other`), `is_new`, `on_account` (la date suit le compte, ou reste sur l'appareil) |
+| `occasion_removed` (nouveau) | `kind` |
+
+Ni le nom ni la date : ils désignent une personne.
+
+### Page introuvable : `not_found_viewed` (nouveau)
+
+`path` : le chemin demandé, sans la requête (elle peut porter un email ou un
+jeton). `$referrer` dit d'où venait le lien mort.
+
+### Astuces : `feature_tip_shown`, `feature_tip_finished` (existants)
+
+`tip` reçoit une **nouvelle valeur**, `zmanim-date` : le calendrier sous la
+date des horaires.

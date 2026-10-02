@@ -4,10 +4,15 @@ import { useI18n } from "vue-i18n";
 import { seoService } from "../services/seoService";
 import AppIcon from "../components/icons/AppIcon.vue";
 import { SITE_URL } from "../config/site";
+import { analyticsService } from "../services/analyticsService";
 
 const { t } = useI18n();
 
 onMounted(() => {
+  // Un lien mort, d'où qu'il vienne : le chemin demandé, et la page ou le
+  // site qui y a mené (`$referrer` part déjà avec chaque événement). Le
+  // chemin seul, sans la requête : elle peut porter un email ou un jeton.
+  analyticsService.capture("not_found_viewed", { path: window.location.pathname });
   const url = SITE_URL + window.location.pathname;
   seoService.setMeta({
     title: t("seo.notFoundTitle"),

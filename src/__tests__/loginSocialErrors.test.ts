@@ -67,7 +67,8 @@ async function mount() {
   return {
     google: () => button(fr.login.signInWithGoogle),
     apple: () => button(fr.login.signInWithApple),
-    text: () => (host.textContent ?? "").replace(/\s+/g, " "),
+    // Les blancs ASCII seuls : les espaces insécables des messages restent.
+    text: () => (host.textContent ?? "").replace(/[ \t\n\r]+/g, " "),
   };
 }
 

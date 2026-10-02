@@ -32,6 +32,16 @@ interface Props {
    * (comme `chiour_slug` du lecteur audio).
    */
   contentId?: string | null;
+  /**
+   * Une phrase posée au-dessus des canaux, quand la fenêtre s'ouvre d'elle-même
+   * (juste après la création d'une chaîne) : elle dit pourquoi partager.
+   */
+  intro?: string | null;
+  /**
+   * Ce qui a ouvert la fenêtre : le bouton Partager, ou l'app d'elle-même
+   * (`after_create`). Mesure ce que le second rapporte au premier.
+   */
+  trigger?: "button" | "after_create";
 }
 
 interface Emits {
@@ -100,6 +110,7 @@ const trackChannel = (channel: "whatsapp" | "sms" | "facebook" | "copy") => {
     channel,
     content_type: props.contentType ?? "session",
     content_id: props.contentId ?? null,
+    trigger: props.trigger ?? "button",
   });
 };
 
@@ -147,6 +158,7 @@ watch(
       analyticsService.capture("share_modal_opened", {
         content_type: props.contentType ?? "session",
         content_id: props.contentId ?? null,
+        trigger: props.trigger ?? "button",
       });
       nextTick(() => {
         generateQRCode();
@@ -167,6 +179,10 @@ watch(
           <AppIcon name="x" :size="18" />
         </button>
       </div>
+
+      <p v-if="intro" class="mb-5 text-sm text-text-secondary leading-relaxed">
+        {{ intro }}
+      </p>
 
       <div class="grid grid-cols-2 gap-4 mb-8">
         <button

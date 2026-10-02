@@ -188,6 +188,16 @@ du jour (composer sa liste, la cloche du rappel). Une astuce ne présente que
 ce que la page propose : pas de rappel sur le site, pas de téléchargement
 quand le texte n'en a pas.
 
+Une astuce peut aussi être **appelée par un geste** plutôt que par
+l'arrivée sur la page : celle du calendrier des horaires (`zmanim-date`) ne
+se montre qu'au troisième appui de suite sur une flèche de jour. On en a vu
+toucher la flèche jusqu'à 37 fois pour atteindre un Chabbat ou une fête, le
+calendrier restant ignoré sous le titre de la date
+(`docs/audit-usage-posthog-2026-10.md`, 2.3). Le projecteur se pose sur la
+date, qui est le bouton du calendrier ; qui l'a ouvert de lui-même ne la
+verra jamais. Les règles des autres valent pour elle : une fois par appareil,
+une seule par ouverture de l'app.
+
 App native seulement, comme l'introduction : un visiteur du site arrive par
 une page précise et une bulle en travers de ce qu'il vient lire serait une
 gêne. `?tips` dans l'adresse les force partout où la commande existe (ou
@@ -768,6 +778,52 @@ denses, et il va droit à ce qui attend une décision.
 - **Une fiche met en tête ce qu'on vient vérifier** : pour un chiour, le
   lecteur audio, puis le contenu à gauche et le rangement à droite. Ce qui
   supprime est en bas, en rouge, jamais à côté d'« Enregistrer ».
+
+### Une chaîne courte se confirme
+
+Une date limite qui tombe ce soir ou demain soir (`services/sessionDeadline.ts`)
+ne s'interdit pas : une veillée, une refoua chelema urgente tiennent en un
+jour. Mais en septembre 2026, trois chaînes sur neuf avaient pour date
+limite le jour même de leur création, et deux sont restées vides. Le bouton
+« Créer » pose donc d'abord la question (`useConfirm`) : « Attention, votre
+date semble proche d'aujourd'hui », la fin dite en clair (ce soir, demain
+soir). « Oui, créer la session » crée ; « Changer la date » ramène au champ.
+Au-delà de demain, rien ne s'interpose. Tenu par
+`src/__tests__/newSessionDeadline.test.ts` et `sessionDeadline.test.ts`.
+
+### Une chaîne se partage dès sa création
+
+Une chaîne que personne ne voit reste vide : celles qui se sont remplies
+avaient eu de 6 à 24 visiteurs, les vides jamais plus de deux. À la création,
+la page de la chaîne s'ouvre donc sur la fenêtre de partage qui existe déjà
+(`ShareModal.vue`), titrée « Votre session est prête » et précédée d'une
+phrase : penser à la partager autour de soi, pour que d'autres y participent.
+Le signal passe par l'adresse (`?partager=1`), retiré aussitôt : un
+rechargement ne rouvre pas la fenêtre.
+
+### L'écran de connexion dit quoi faire
+
+Un échec ne montre jamais l'erreur brute de Firebase (« Firebase: Error
+(auth/invalid-credential). », en anglais dans une app en français) : chaque
+code connu a sa phrase (`describeEmailAuthError`, `services/authErrors.ts`),
+et le message brut part seulement vers PostHog, où il sert. Sous la phrase,
+**la sortie qui va avec**, une commande avec son dessin et son nom :
+
+- l'adresse ou le mot de passe refusés : « Créer un compte avec cette
+  adresse », en gardant ce qui a été saisi. Firebase ne dit pas si l'adresse
+  existe ; la phrase couvre donc aussi le compte créé avec Google ou Apple ;
+- l'adresse déjà inscrite : « Me connecter avec cette adresse » ;
+- la dernière connexion de l'appareil s'est faite avec Google ou Apple : la
+  phrase le rappelle, et la sortie est ce bouton-là.
+
+La dernière méthode employée sur l'appareil (`services/lastAuthMethod.ts`)
+porte aussi une pastille, **« Dernière utilisation »**, posée sur le bord haut
+de son bouton, hors du bouton dont le libellé reste celui de la commande ;
+pour l'email, à côté de l'étiquette du champ. Elle survit à la déconnexion :
+c'est justement après qu'on en a besoin. Le piège qu'elle évite était le plus
+courant de l'écran : un compte créé d'un toucher avec Google, puis, des
+semaines plus tard, une adresse et un mot de passe qui n'ont jamais existé.
+Tenu par `src/__tests__/loginEmailErrors.test.ts` et `emailAuthErrors.test.ts`.
 
 ## 2. Les couleurs de thème
 
