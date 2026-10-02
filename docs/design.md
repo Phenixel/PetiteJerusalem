@@ -559,6 +559,15 @@ garde le sien, qui lui convient.
 Le test `nativeProfile.test.ts` tient la page : ce qui paraît avec et sans
 compte, les sous-pages où mène chaque ligne, l'état porté au bout.
 
+### Ce qui ne se modifie pas n'a pas l'air d'un champ
+
+Un cadre de champ (`.field`) promet qu'on peut écrire dedans. Dans le profil,
+l'adresse email et l'identifiant du compte en portaient un sans pouvoir se
+modifier, et ils étaient touchés à répétition (audit PostHog d'octobre 2026,
+2.7). Ils se lisent désormais comme un texte, sous leur étiquette ; seul le
+nom affiché garde son champ, puisqu'il se modifie. L'identifiant se
+sélectionne d'un appui, pour qui doit le copier en écrivant à l'équipe.
+
 ### Un geste qui surprend doit pouvoir se couper
 
 Le double appui qui lance le défilement automatique se fait tout seul : deux
