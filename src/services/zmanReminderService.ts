@@ -18,7 +18,7 @@ import {
   dayInPlace,
   formatHebrewDate,
   formatZmanTime,
-  getSunset,
+  occasionEntryAt,
   restPeriodAt,
   ZMAN_KEYS,
   type ZmanimPlace,
@@ -176,16 +176,14 @@ function planRestReminders(place: ZmanimPlace, locale: string, now: Date): Plann
 function occasionReminderAt(
   place: ZmanimPlace,
   reminder: OccasionReminder,
-  civilDay: Date,
+  date: HDate,
+  locale: string,
 ): Date | null {
-  if (reminder === "nightfall") {
-    // Le jour hébraïque commence au coucher du soleil de la veille : c'est là
-    // qu'il entre, et c'est le moment d'allumer une bougie.
-    const eve = new Date(civilDay);
-    eve.setDate(eve.getDate() - 1);
-    return getSunset(place, eve);
-  }
-  const at = new Date(civilDay);
+  // Le jour hébraïque commence la veille au soir : c'est là qu'il entre, et
+  // le moment d'allumer une bougie, avant le Chabbat ou une fête s'ils s'en
+  // mêlent (voir occasionEntryAt).
+  if (reminder === "nightfall") return occasionEntryAt(place, date, locale);
+  const at = date.greg();
   if (reminder === "weekBefore") at.setDate(at.getDate() - 7);
   at.setHours(OCCASION_REMINDER_HOUR, 0, 0, 0);
   return at;
@@ -207,10 +205,10 @@ function planOccasionReminders(
   for (const [index, occasion] of occasions.slice(0, OCCASION_LIMIT).entries()) {
     if (occasion.reminder === "none") continue;
     let date = nextOccurrence(occasion, today);
-    let at = occasionReminderAt(place, occasion.reminder, date.greg());
+    let at = occasionReminderAt(place, occasion.reminder, date, locale);
     if (at && at.getTime() <= now.getTime()) {
       date = occasionDateIn(occasion, date.getFullYear() + 1);
-      at = occasionReminderAt(place, occasion.reminder, date.greg());
+      at = occasionReminderAt(place, occasion.reminder, date, locale);
     }
     if (!at || at.getTime() <= now.getTime()) continue;
     planned.push({

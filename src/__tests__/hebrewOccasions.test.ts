@@ -217,7 +217,9 @@ describe("rappels des dates personnelles", () => {
   });
 
   it("part au coucher du soleil de la veille pour l'entrée du jour", () => {
-    const [reminder] = plan([occasion({ reminder: "nightfall" })]);
+    // Le 13 Kislev 5787, un lundi : la veille est un jour ordinaire. (Le 12,
+    // un dimanche, se rappelle à la sortie du Chabbat : occasionEntry.test.ts.)
+    const [reminder] = plan([occasion({ reminder: "nightfall", day: 13 })]);
     const eve = new Date(reminder.target);
     eve.setDate(eve.getDate() - 1);
 
