@@ -9,7 +9,9 @@
 import { initializeApp } from "firebase/app";
 import {
   GoogleAuthProvider,
-  getAuth,
+  browserLocalPersistence,
+  browserPopupRedirectResolver,
+  browserSessionPersistence,
   initializeAuth,
   indexedDBLocalPersistence,
   connectAuthEmulator,
@@ -38,9 +40,23 @@ export const app = initializeApp(firebaseConfig);
 // squelettes). La connexion native passe par @capacitor-firebase/authentication
 // puis signInWithCredential : le resolver popup/redirect est inutile sur natif.
 // C'est la configuration recommandée par @capacitor-firebase/authentication.
+//
+// Sur le site, ce que fait getAuth(), à un détail près : le compte se garde
+// d'abord dans localStorage, plus dans IndexedDB. La persistance IndexedDB
+// sonde sa base toutes les 800 ms pour suivre les autres onglets, sur toutes
+// les pages et tant que l'onglet reste ouvert (25 transactions en 20 s sur
+// l'accueil au repos) ; localStorage suit les autres onglets par l'événement
+// `storage`, sans sonder (sauf sur navigateur mobile, où Firebase relit
+// localStorage chaque seconde, une lecture synchrone bien plus légère qu'une
+// transaction). Un compte déjà gardé dans IndexedDB y est retrouvé au
+// lancement suivant et déplacé dans localStorage (PersistenceUserManager de
+// Firebase) : personne n'est déconnecté.
 export const auth = isNativeApp
   ? initializeAuth(app, { persistence: indexedDBLocalPersistence })
-  : getAuth(app);
+  : initializeAuth(app, {
+      persistence: [browserLocalPersistence, indexedDBLocalPersistence, browserSessionPersistence],
+      popupRedirectResolver: browserPopupRedirectResolver,
+    });
 
 export const googleAuthProvider = new GoogleAuthProvider();
 googleAuthProvider.setCustomParameters({
