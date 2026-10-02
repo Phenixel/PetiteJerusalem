@@ -754,7 +754,10 @@ l'on vient pour eux, et non en passant sur l'accueil.
 Sur sa page, l'en-tête dit « Lecture continue » et le tour en cours là où une
 chaîne ordinaire dit sa date limite et son créateur. Viennent ensuite le
 compteur (un seul chiffre en grand, trois en dessous qui le servent), puis
-« Pour qui l'on lit », avant le tirage : on dit les noms avant de lire.
+« Pour qui l'on lit », avant le tirage : on dit les noms avant de lire. Une
+ligne les suit, en petit : un Téhilim réservé se lit dans les 24 heures, puis
+redevient libre. Personne ne possède la chaîne pour libérer une place
+oubliée ; autant le dire à qui réserve.
 
 Les noms courent à la suite, séparés d'un point médian, comme une dédicace,
 et non en lignes : vingt lignes auraient repoussé la lecture sous trois

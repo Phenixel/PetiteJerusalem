@@ -1,7 +1,8 @@
 /**
  * La chaîne perpétuelle de Tehilim (voir docs/chaine-perpetuelle.md) : dès que
  * la dernière place d'un tour est marquée lue, la session repart à zéro et son
- * compteur avance d'un tour.
+ * compteur avance d'un tour. D'ici là, chaque place réservée à la main reçoit
+ * une échéance : personne ne possède la chaîne pour libérer une place oubliée.
  *
  * Le trigger tourne avec le SDK admin : les règles Firestore ne laissent
  * personne d'autre vider les réservations d'une chaîne ni toucher à son
@@ -12,7 +13,7 @@
  */
 import { onDocumentUpdated } from "firebase-functions/v2/firestore";
 import { getFirestore, Timestamp } from "firebase-admin/firestore";
-import { isRoundComplete, nextRound } from "./perpetualRound";
+import { isRoundComplete, nextRound, withHoldExpiry } from "./perpetualRound";
 
 export const onPerpetualSessionUpdated = onDocumentUpdated(
   "sessions/{sessionId}",
@@ -20,14 +21,26 @@ export const onPerpetualSessionUpdated = onDocumentUpdated(
     const after = event.data?.after;
     const data = after?.data();
     if (!after || data?.perpetual !== true) return;
-    if (!isRoundComplete(data.reservations, data.slotCount)) return;
+    if (
+      !isRoundComplete(data.reservations, data.slotCount) &&
+      withHoldExpiry(data.reservations, new Date()) === null
+    ) {
+      return;
+    }
 
     const db = getFirestore();
     await db.runTransaction(async (transaction) => {
       const snap = await transaction.get(after.ref);
       const current = snap.data();
       if (!current || current.perpetual !== true) return;
-      if (!isRoundComplete(current.reservations, current.slotCount)) return;
+      if (!isRoundComplete(current.reservations, current.slotCount)) {
+        // Le tour continue : les places réservées sans échéance en reçoivent
+        // une. Rien d'autre ne change, et un second passage n'a plus rien à
+        // poser : cette écriture ne se relance pas elle-même.
+        const held = withHoldExpiry(current.reservations, new Date());
+        if (held) transaction.update(after.ref, { reservations: held });
+        return;
+      }
 
       const update = nextRound<Timestamp>(current, Timestamp.now());
       transaction.update(after.ref, { ...update });

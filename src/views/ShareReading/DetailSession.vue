@@ -1017,6 +1017,11 @@ watch(session, (s) => applySessionSeo(s));
           @propose="openPrayerNameForm('session_page', null)"
           @edit="(name) => openPrayerNameForm('session_page', name)"
         />
+        <!-- Personne ne possède la chaîne pour libérer une place oubliée : une
+             place réservée ne tient qu'un jour (functions/src/perpetualRound.ts). -->
+        <p class="max-w-3xl mx-auto w-full text-center text-sm text-text-secondary">
+          {{ t("perpetual.holdNote") }}
+        </p>
       </div>
 
       <!-- Tirage aléatoire : recevoir un Tehilim disponible en un clic,

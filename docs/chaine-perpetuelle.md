@@ -108,6 +108,19 @@ vaut une chaîne qui ne repart pas qu'une chaîne vidée par erreur.
 La page qui voit tout lu le dit (« Tour terminé ! ») et se recharge une fois,
 cinq secondes plus tard, pour montrer le tour suivant.
 
+## Une place réservée tient un jour
+
+Sur une chaîne ordinaire, le créateur libère une place réservée puis oubliée.
+Personne ne possède la chaîne perpétuelle : une seule place abandonnée
+arrêterait le tour à 149 sur 150, pour de bon. La même fonction donne donc une
+échéance à toute réservation non lue qui n'en porte pas (`withHoldExpiry`,
+24 heures, `PERPETUAL_HOLD_MS`). C'est l'échéance que l'app connaît déjà pour
+le tirage (`expiresAt`) : passée, la réservation est ignorée de tous les
+affichages et cède sa place à la suivante, dans les versions déjà installées
+comme dans celle-ci, et quelle que soit celle qui a réservé. Un tirage garde
+son heure, que l'app repousse tant qu'on lit ; une place lue n'a plus
+d'échéance. La page de la chaîne le dit en une ligne (`perpetual.holdNote`).
+
 La règle compte une place par texte : elle ne vaut que pour des textes d'une
 seule section, ce que les 150 Tehilim sont. `chaine:creer` refuse un catalogue
 qui changerait ce fait.
@@ -135,5 +148,11 @@ monde, alors qu'un signalement y vise un nom.
 `src/__tests__/perpetualChain.test.ts` : la forme d'un nom (ben, bat), quand
 un nom est lu (échéance, semaine de l'anniversaire, passage d'une année à
 l'autre), l'ordre de la liste, le compteur, la règle de fin de tour et la
-remise à zéro, le document écrit par `chaine:creer`, et la présence des
-textes `perpetual.*` dans les trois langues.
+remise à zéro, l'échéance d'une place réservée, le document écrit par
+`chaine:creer`, et la présence des textes `perpetual.*` dans les trois
+langues.
+
+`e2e/firebase/perpetualChain.spec.ts`, contre les émulateurs : la carte, les
+noms, et les règles Firestore (un nom ne s'écrit qu'en son nom et sur la
+chaîne ; le drapeau et le compteur de la chaîne ne s'écrivent pas depuis un
+compte).

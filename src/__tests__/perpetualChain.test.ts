@@ -16,7 +16,13 @@ import {
   spokenDuration,
 } from "../services/perpetualChain";
 import { daysUntilNext } from "../services/hebrewOccasions";
-import { isRoundComplete, nextRound, roundParticipants } from "../../functions/src/perpetualRound";
+import {
+  PERPETUAL_HOLD_MS,
+  isRoundComplete,
+  nextRound,
+  roundParticipants,
+  withHoldExpiry,
+} from "../../functions/src/perpetualRound";
 import {
   PERPETUAL_DATE_LIMIT,
   PERPETUAL_SESSION_ID,
@@ -230,6 +236,63 @@ describe("la fin d'un tour (Cloud Function)", () => {
       lastCycleParticipants: 3,
       updatedAt: now,
     });
+  });
+});
+
+describe("une place réservée ne tient pas sans fin (Cloud Function)", () => {
+  const now = new Date("2026-10-02T10:00:00.000Z");
+  const reserved = (id: number, over: Record<string, unknown> = {}) => ({
+    id: `r${id}`,
+    textStudyId: String(id),
+    isCompleted: false,
+    createdAt: "2026-10-02T09:59:00.000Z",
+    chosenByGuestId: `g${id}`,
+    ...over,
+  });
+
+  it("donne un jour à une place réservée à la main, et ne touche pas aux autres", () => {
+    const draw = reserved(2, { expiresAt: "2026-10-02T11:00:00.000Z" });
+    const done = reserved(3, { isCompleted: true });
+    const held = withHoldExpiry([reserved(1), draw, done], now);
+
+    expect(held).toEqual([
+      { ...reserved(1), expiresAt: "2026-10-03T10:00:00.000Z" },
+      // Le tirage garde son heure, que l'app repousse tant qu'on lit.
+      draw,
+      // Une place lue n'a plus d'échéance à tenir.
+      done,
+    ]);
+    expect(PERPETUAL_HOLD_MS).toBe(24 * 3600 * 1000);
+  });
+
+  it("n'écrit rien quand chaque place a déjà son échéance", () => {
+    const held = withHoldExpiry([reserved(1), reserved(2)], now);
+
+    // La fonction se déclenche sur sa propre écriture : elle ne doit plus rien
+    // y trouver à poser, sans quoi elle tournerait sans fin.
+    expect(withHoldExpiry(held, new Date(now.getTime() + 1000))).toBeNull();
+    expect(withHoldExpiry([], now)).toBeNull();
+    expect(withHoldExpiry(undefined, now)).toBeNull();
+    expect(withHoldExpiry([reserved(1, { isCompleted: true })], now)).toBeNull();
+  });
+
+  it("pose l'échéance que l'app sait lire : passé le jour, la place est reprise", () => {
+    const [held] = withHoldExpiry([reserved(1)], now) as {
+      expiresAt: string;
+      isCompleted: boolean;
+    }[];
+
+    vi.useFakeTimers({ toFake: ["Date"] });
+    try {
+      vi.setSystemTime(new Date(now.getTime() + PERPETUAL_HOLD_MS - 60_000));
+      expect(sessionService.isReservationExpired(held)).toBe(false);
+      vi.setSystemTime(new Date(now.getTime() + PERPETUAL_HOLD_MS + 60_000));
+      expect(sessionService.isReservationExpired(held)).toBe(true);
+      // Lue entre-temps, elle ne tombe plus.
+      expect(sessionService.isReservationExpired({ ...held, isCompleted: true })).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 
