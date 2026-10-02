@@ -15,6 +15,7 @@ import {
 import "@hebcal/locales/fr";
 import { dateTimeFormat, displayNames } from "./intlCache";
 import { devicePreference } from "./devicePreference";
+import { haversineKm } from "./geo";
 import { saidTachanun } from "./tachanun";
 import {
   DEFAULT_ZMANIM_OPINION,
@@ -230,10 +231,20 @@ const ZMAN_DEFS = [
   // jour civil a changé, mais le milieu de sa nuit, souvent vers 1 h, n'est
   // pas forcément passé, et c'est lui qu'on vient vérifier à cette heure-là.
   { key: "chatzotNightDawn", period: "dawn", round: "up", at: (z: Zmanim) => z.chatzotNight() },
-  { key: "alotHaShachar", period: "dawn", round: "down", at: (z, _n, o, c) => o.alotHaShachar(z, c) },
+  {
+    key: "alotHaShachar",
+    period: "dawn",
+    round: "down",
+    at: (z, _n, o, c) => o.alotHaShachar(z, c),
+  },
   { key: "misheyakir", period: "dawn", round: "up", at: (z, _n, o, c) => o.misheyakir(z, c) },
   { key: "sunrise", period: "dawn", round: "up", at: (z: Zmanim) => z.sunrise() },
-  { key: "sofZmanShmaMGA", period: "morning", round: "down", at: (z, _n, o, c) => o.sofZmanShmaMGA(z, c) },
+  {
+    key: "sofZmanShmaMGA",
+    period: "morning",
+    round: "down",
+    at: (z, _n, o, c) => o.sofZmanShmaMGA(z, c),
+  },
   { key: "sofZmanShma", period: "morning", round: "down", at: (z: Zmanim) => z.sofZmanShma() },
   {
     key: "sofZmanTfillaMGA",
@@ -243,9 +254,19 @@ const ZMAN_DEFS = [
   },
   { key: "sofZmanTfilla", period: "morning", round: "down", at: (z: Zmanim) => z.sofZmanTfilla() },
   { key: "chatzot", period: "afternoon", round: "down", at: (z: Zmanim) => z.chatzot() },
-  { key: "minchaGedola", period: "afternoon", round: "up", at: (z, _n, o, c) => o.minchaGedola(z, c) },
+  {
+    key: "minchaGedola",
+    period: "afternoon",
+    round: "up",
+    at: (z, _n, o, c) => o.minchaGedola(z, c),
+  },
   { key: "minchaKetana", period: "afternoon", round: "up", at: (z: Zmanim) => z.minchaKetana() },
-  { key: "plagHaMincha", period: "afternoon", round: "up", at: (z, _n, o, c) => o.plagHaMincha(z, c) },
+  {
+    key: "plagHaMincha",
+    period: "afternoon",
+    round: "up",
+    at: (z, _n, o, c) => o.plagHaMincha(z, c),
+  },
   { key: "sunset", period: "evening", round: "down", at: (z: Zmanim) => z.sunset() },
   { key: "tzeit", period: "evening", round: "up", at: (z, _n, o, c) => o.tzeit(z, c) },
   // Milieu de la nuit qui suit le jour affiché : lu sur le lendemain, dont la
@@ -735,6 +756,28 @@ export function hebrewDateFor(place: ZmanimPlace, day: Date, now: Date = new Dat
  */
 export const isIsraelPlace = (place: ZmanimPlace): boolean => place.tzid === "Asia/Jerusalem";
 
+/** Jérusalem au catalogue des villes (src/datas/cities.json). */
+const JERUSALEM = { lat: 31.769, lon: 35.2163 };
+
+/**
+ * Jusqu'où une position compte pour Jérusalem : les quartiers (Gilo, Ramot,
+ * Pisgat Zeev), pas Maalé Adoumim ni Mevasseret, qui fêtent Pourim le 14.
+ */
+const JERUSALEM_RADIUS_KM = 7;
+
+/**
+ * Le lieu fête-t-il Pourim le 15 Adar (Chouchan Pourim), en ville entourée
+ * d'une muraille depuis Josué ? En pratique, Jérusalem seule.
+ */
+export function isWalledCityPlace(place: ZmanimPlace): boolean {
+  if (!isIsraelPlace(place)) return false;
+  if (place.city === "Jérusalem") return true;
+  return (
+    haversineKm(place.latitude, place.longitude, JERUSALEM.lat, JERUSALEM.lon) <=
+    JERUSALEM_RADIUS_KM
+  );
+}
+
 /** hebcal ne porte que trois catalogues : en, he et fr (voir l'import en tête). */
 const hebcalLocale = (locale: string): string =>
   locale === "he" || locale === "fr" ? locale : "en";
@@ -1120,10 +1163,7 @@ export function nightfallOf(place: ZmanimPlace, hd: HDate): Date | null {
   const zmanim = new Zmanim(geoLocationOf(place), day, false);
   // Une FIN, comme la sortie des étoiles de la liste du jour : minute
   // supérieure, pour que les deux annoncent la même (voir ZmanRounding).
-  return roundUsable(
-    opinionZmanim(currentOpinion).tzeit(zmanim, opinionContext(place, day)),
-    "up",
-  );
+  return roundUsable(opinionZmanim(currentOpinion).tzeit(zmanim, opinionContext(place, day)), "up");
 }
 
 /**
