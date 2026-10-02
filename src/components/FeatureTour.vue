@@ -207,9 +207,24 @@ async function startStep(next: number): Promise<void> {
   measureSoon();
 }
 
+/**
+ * Un appui sur le voile dans l'instant où l'astuce paraît n'est pas un refus :
+ * c'est le geste d'avant qui continue (la flèche des horaires touchée une
+ * fois de plus), et il fermerait pour de bon une astuce que personne n'a lue.
+ * Le voile n'écoute donc qu'une fois ce délai passé.
+ */
+const VEIL_GRACE_MS = 800;
+let shownAt = 0;
+
+function onVeilClick(): void {
+  if (Date.now() - shownAt < VEIL_GRACE_MS) return;
+  finish("backdrop");
+}
+
 async function show(): Promise<void> {
   if (!claimTip(props.tip)) return;
   visible.value = true;
+  shownAt = Date.now();
   analyticsService.capture("feature_tip_shown", { tip: props.tip, steps: props.steps.length });
   // La page derrière ne bouge pas pendant l'astuce : le projecteur est posé
   // sur une commande, il ne doit pas la perdre au premier défilement.
@@ -419,7 +434,7 @@ watch(index, async () => {
       <!-- Le voile percé : seul ce qui est peint reçoit les touchers, le
            projecteur laisse passer vers la commande. -->
       <svg class="veil" :width="viewport.width" :height="viewport.height" aria-hidden="true">
-        <path :d="maskPath" fill-rule="evenodd" class="veil-path" @click="finish('backdrop')" />
+        <path :d="maskPath" fill-rule="evenodd" class="veil-path" @click="onVeilClick" />
       </svg>
 
       <div class="ring" :style="ringStyle" aria-hidden="true"></div>

@@ -151,10 +151,13 @@ fait. Quatre règles la tiennent :
   lecture, l'astuce ouvre le panneau pour éclairer le téléchargement du
   texte, puis le rond des réglages ;
 - **elle se passe d'un geste** : « Passer », le voile, Échap ou le retour
-  Android. « Suivant » ou « Compris » la mènent au bout. Jamais plus de deux
-  ou trois pas. Un pas sans commande à éclairer (pincer le texte, le double
-  appui) pose la bulle au milieu et **montre** le geste dans une capture
-  dessinée (`src/components/mock`) ;
+  Android. Le voile n'écoute qu'une fois l'astuce posée (`VEIL_GRACE_MS`) : un
+  appui dans l'instant où elle paraît est le geste d'avant qui continue (la
+  flèche des horaires touchée une fois de plus), et il la fermait pour de bon
+  avant qu'on l'ait lue. « Suivant » ou « Compris » la mènent au bout. Jamais
+  plus de deux ou trois pas. Un pas sans commande à éclairer (pincer le
+  texte, le double appui) pose la bulle au milieu et **montre** le geste dans
+  une capture dessinée (`src/components/mock`) ;
 - **une fois par appareil, et une seule par ouverture de l'app.** Close, elle
   est notée vue (dans les deux stockages, voir docs/app-native.md), même si
   l'on quitte la page au milieu : une astuce qui revient n'est plus une aide.
