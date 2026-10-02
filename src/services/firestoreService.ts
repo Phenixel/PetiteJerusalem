@@ -37,6 +37,8 @@ class FirestoreOperationError extends Error {
 class FirestoreService {
   private sessionsCache: { data: Session[]; fetchedAt: number } | null = null;
   private sessionsCachePromise: Promise<Session[]> | null = null;
+  /** Avance à chaque invalidation : voir `getSessions`. */
+  private sessionsCacheGeneration = 0;
 
   // === MÉTHODES UTILITAIRES ===
 
@@ -67,6 +69,7 @@ class FirestoreService {
   invalidateSessionsCache(): void {
     this.sessionsCache = null;
     this.sessionsCachePromise = null;
+    this.sessionsCacheGeneration++;
   }
 
   // === MÉTHODES SESSION ===
@@ -92,16 +95,22 @@ class FirestoreService {
     if (this.sessionsCachePromise) {
       return this.sessionsCachePromise;
     }
+    // Une lecture partie avant une écriture rapporte l'état d'avant : elle
+    // ne remplit le cache (ni n'efface la lecture suivante) que si aucune
+    // invalidation n'est passée entre-temps.
+    const generation = this.sessionsCacheGeneration;
     this.sessionsCachePromise = (async () => {
       try {
         const querySnapshot = await getDocs(collection(db, "sessions"));
         const sessions = querySnapshot.docs.map((doc) => this.convertToSession(doc));
-        this.sessionsCache = { data: sessions, fetchedAt: Date.now() };
+        if (generation === this.sessionsCacheGeneration) {
+          this.sessionsCache = { data: sessions, fetchedAt: Date.now() };
+        }
         return sessions;
       } catch (error) {
         this.handleFirestoreError(error, "récupération des sessions");
       } finally {
-        this.sessionsCachePromise = null;
+        if (generation === this.sessionsCacheGeneration) this.sessionsCachePromise = null;
       }
     })();
     return this.sessionsCachePromise;
