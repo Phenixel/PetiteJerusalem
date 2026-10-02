@@ -335,8 +335,13 @@ class AuthService {
     // vérifie AVANT la purge : sinon les préférences, la progression et les
     // marque-pages partaient, puis le compte restait, vidé. Le même code
     // d'erreur que Firebase, pour que l'écran propose de se reconnecter.
-    const { authTime } = await user.getIdTokenResult(true);
-    if (Date.now() - new Date(authTime).getTime() > RECENT_LOGIN_MS) {
+    //
+    // Les deux instants viennent du serveur (le jeton est rafraîchi à
+    // l'instant) : l'horloge de l'appareil n'y entre pas. En retard, elle
+    // laissait passer une connexion trop ancienne, la purge partait, et
+    // Firebase refusait ensuite la suppression du compte, resté vide.
+    const { authTime, issuedAtTime } = await user.getIdTokenResult(true);
+    if (new Date(issuedAtTime).getTime() - new Date(authTime).getTime() > RECENT_LOGIN_MS) {
       throw new RecentLoginRequiredError();
     }
 
@@ -357,6 +362,11 @@ class AuthService {
     // Après le deleteUser (une suppression qui échoue ne doit pas compter),
     // mais avant tout reset : l'événement reste rattaché au compte supprimé.
     analyticsService.capture("account_deleted");
+    // Comme à la déconnexion : les événements suivants repartent anonymes, et
+    // la couche native oublie le compte (sinon le prochain login Google
+    // resauterait le sélecteur de compte vers un compte qui n'existe plus).
+    analyticsService.reset();
+    if (isNativeApp) await FirebaseAuthentication.signOut().catch(() => {});
   }
 
   async reauthenticateWithGoogle(): Promise<void> {
