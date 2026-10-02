@@ -230,10 +230,20 @@ const ZMAN_DEFS = [
   // jour civil a changé, mais le milieu de sa nuit, souvent vers 1 h, n'est
   // pas forcément passé, et c'est lui qu'on vient vérifier à cette heure-là.
   { key: "chatzotNightDawn", period: "dawn", round: "up", at: (z: Zmanim) => z.chatzotNight() },
-  { key: "alotHaShachar", period: "dawn", round: "down", at: (z, _n, o, c) => o.alotHaShachar(z, c) },
+  {
+    key: "alotHaShachar",
+    period: "dawn",
+    round: "down",
+    at: (z, _n, o, c) => o.alotHaShachar(z, c),
+  },
   { key: "misheyakir", period: "dawn", round: "up", at: (z, _n, o, c) => o.misheyakir(z, c) },
   { key: "sunrise", period: "dawn", round: "up", at: (z: Zmanim) => z.sunrise() },
-  { key: "sofZmanShmaMGA", period: "morning", round: "down", at: (z, _n, o, c) => o.sofZmanShmaMGA(z, c) },
+  {
+    key: "sofZmanShmaMGA",
+    period: "morning",
+    round: "down",
+    at: (z, _n, o, c) => o.sofZmanShmaMGA(z, c),
+  },
   { key: "sofZmanShma", period: "morning", round: "down", at: (z: Zmanim) => z.sofZmanShma() },
   {
     key: "sofZmanTfillaMGA",
@@ -243,9 +253,19 @@ const ZMAN_DEFS = [
   },
   { key: "sofZmanTfilla", period: "morning", round: "down", at: (z: Zmanim) => z.sofZmanTfilla() },
   { key: "chatzot", period: "afternoon", round: "down", at: (z: Zmanim) => z.chatzot() },
-  { key: "minchaGedola", period: "afternoon", round: "up", at: (z, _n, o, c) => o.minchaGedola(z, c) },
+  {
+    key: "minchaGedola",
+    period: "afternoon",
+    round: "up",
+    at: (z, _n, o, c) => o.minchaGedola(z, c),
+  },
   { key: "minchaKetana", period: "afternoon", round: "up", at: (z: Zmanim) => z.minchaKetana() },
-  { key: "plagHaMincha", period: "afternoon", round: "up", at: (z, _n, o, c) => o.plagHaMincha(z, c) },
+  {
+    key: "plagHaMincha",
+    period: "afternoon",
+    round: "up",
+    at: (z, _n, o, c) => o.plagHaMincha(z, c),
+  },
   { key: "sunset", period: "evening", round: "down", at: (z: Zmanim) => z.sunset() },
   { key: "tzeit", period: "evening", round: "up", at: (z, _n, o, c) => o.tzeit(z, c) },
   // Milieu de la nuit qui suit le jour affiché : lu sur le lendemain, dont la
@@ -1115,15 +1135,43 @@ function isYomTov(hd: HDate, il: boolean): boolean {
 }
 
 /** La sortie des étoiles d'un jour hébraïque, en ce lieu, ou null aux latitudes extrêmes. */
+/**
+ * L'instant où une date personnelle commence, pour y allumer la bougie d'une
+ * hazkara : au coucher du soleil de la veille, sauf quand le Chabbat ou une
+ * fête s'en mêle.
+ *
+ *  - La date ouvre un temps de repos (un décès au 29 Tichri, un samedi) : la
+ *    bougie s'allume avant l'entrée du Chabbat, à l'heure de l'allumage. Au
+ *    coucher du soleil, le Chabbat est déjà entré.
+ *  - La date tombe au milieu d'un temps de repos (le second jour d'une fête,
+ *    un Chabbat qui suit une fête) : l'allumage de ce jour-là, à la nuit ou à
+ *    la sortie du Chabbat, celui du cadre des horaires.
+ *  - La date suit un temps de repos (un décès au 30 Tichri, un dimanche) :
+ *    à sa sortie. Au coucher du soleil, le Chabbat dure encore.
+ *
+ * La veille se prend à midi, dans le calendrier du lieu (civilNoon) : passer
+ * par minuit de l'appareil décalait d'un jour un lieu à l'ouest de lui (un
+ * appareil à Paris pour Montréal recevait le rappel la veille de la veille).
+ */
+export function occasionEntryAt(place: ZmanimPlace, hd: HDate, locale: string): Date | null {
+  const period = restPeriodAt(place, hd, locale);
+  if (period) {
+    if (period.first.abs() === hd.abs()) return period.start;
+    const lighting = period.lightings.find((l) => l.day.abs() === hd.abs());
+    if (lighting && isUsable(lighting.at)) return lighting.at;
+  }
+  const before = restPeriodAt(place, hd.prev(), locale);
+  if (before && !period) return before.end;
+  const sunset = new Zmanim(geoLocationOf(place), civilNoon(hd.prev()), false).sunset();
+  return isUsable(sunset) ? sunset : null;
+}
+
 export function nightfallOf(place: ZmanimPlace, hd: HDate): Date | null {
   const day = civilNoon(hd);
   const zmanim = new Zmanim(geoLocationOf(place), day, false);
   // Une FIN, comme la sortie des étoiles de la liste du jour : minute
   // supérieure, pour que les deux annoncent la même (voir ZmanRounding).
-  return roundUsable(
-    opinionZmanim(currentOpinion).tzeit(zmanim, opinionContext(place, day)),
-    "up",
-  );
+  return roundUsable(opinionZmanim(currentOpinion).tzeit(zmanim, opinionContext(place, day)), "up");
 }
 
 /**

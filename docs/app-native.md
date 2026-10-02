@@ -312,6 +312,13 @@ une bougie), le matin du jour civil, ou une semaine avant. Les deux derniers
 partent à 9 h du fuseau de l'**appareil**, là où vit celui qui les reçoit, et
 non du lieu des horaires.
 
+L'entrée du jour s'efface devant le Chabbat et les fêtes (`occasionEntryAt`) :
+une date qui tombe un samedi se rappelle à l'allumage du vendredi (au coucher
+du soleil, le Chabbat est déjà entré) ; une date qui suit un Chabbat, à sa
+sortie ; une date au milieu d'une fête, à l'allumage de ce jour-là. La veille
+se prend dans le calendrier du lieu, quel que soit le fuseau de l'appareil.
+Tenu par `src/__tests__/occasionEntry.test.ts`.
+
 Une date qui arrive dans les sept jours paraît aussi sur l'**accueil**
 (`OccasionsBanner.vue`, chargé à la demande comme les autres cartes du moment :
 il tire le calendrier hébraïque, qui n'a rien à faire dans le premier rendu).
