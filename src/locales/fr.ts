@@ -1947,6 +1947,8 @@ const fr = {
     reportTitle: "Signaler cette session",
     reportSubtitle:
       "Dites-nous ce qui pose problème. La session sera examinée par la modération, et masquée automatiquement à partir de 3 signalements.",
+    reportSubtitlePerpetual:
+      "Dites-nous quel nom pose problème. La modération l'examine et le retire de la liste s'il le faut ; vous pourrez en signaler un autre.",
     reasonLabel: "Motif du signalement",
     reasons: {
       inappropriate: "Contenu inapproprié",
@@ -1956,6 +1958,7 @@ const fr = {
     },
     detailsLabel: "Précisions",
     detailsPlaceholder: "Décrivez le problème…",
+    detailsPlaceholderPerpetual: "Le nom que vous signalez, et ce qui pose problème…",
     reporting: "Envoi…",
     reportSuccess: "Merci, votre signalement a bien été transmis.",
     reportError: "Le signalement a échoué. Veuillez réessayer.",

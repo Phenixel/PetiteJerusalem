@@ -137,7 +137,9 @@ nouveaux et les noms.
 
 Les noms sont du contenu public écrit par les utilisateurs (règle 1.2 de
 l'App Store, voir `docs/moderation.md`) : filtre de termes à la saisie,
-signalement par le bouton « Signaler » de la chaîne (le motif nomme le nom),
+signalement par le bouton « Signaler » de la chaîne (les précisions nomment
+le nom ; on peut en signaler un autre ensuite, et le créateur, l'équipe, ne
+s'y bloque pas),
 retrait par l'admin (`node scripts/admin.mjs chaine:noms`, puis
 `chaine:retirer-nom <id>`). La chaîne elle-même ne se masque pas toute seule
 au troisième signalement : trois comptes suffiraient à la retirer à tout le
