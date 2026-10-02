@@ -204,6 +204,15 @@ Ajout fait : `capture_performance: { web_vitals: true }` → l'onglet
   `DetailChiour` et `ProfilePage` **juste pour la constante `SITE_URL`**.
   Fix : déplacer `SITE_URL` dans un petit `src/config/site.ts`.
 
+- **Corrigé (octobre 2026) :** l'accueil du site tirait le SDK Firestore
+  complet (671 kB, 173 kB gzip, un canal d'écoute, IndexedDB relu toutes les
+  quatre secondes) pour les seules informations de l'équipe. Sur le site,
+  elles se lisent par Firestore Lite (`src/firebase/firestoreLite.ts`) ;
+  l'app native garde le SDK complet et son cache hors ligne. Le petit module
+  que les deux partagent a désormais son propre chunk (`firebase-bloom`, dans
+  `vite.config.ts`) ; resté dans `firebase-firestore`, il y faisait charger
+  tout le SDK. Tenu par `src/__tests__/announcementsFirestoreLite.test.ts`.
+
 ### Priorité 5. Rendu des grandes listes
 
 - `TextStudiesList.vue` : `isReserved()` / `getReservation()` etc. sont des
