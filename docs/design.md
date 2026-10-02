@@ -853,6 +853,17 @@ phrase : penser à la partager autour de soi, pour que d'autres y participent.
 Le signal passe par l'adresse (`?partager=1`), retiré aussitôt : un
 rechargement ne rouvre pas la fenêtre.
 
+### « Complet » veut dire qu'il ne reste aucune place
+
+Le pourcentage d'une chaîne (`getSessionReservationStats`) s'arrondit à
+l'unité, sauf qu'il ne dit jamais 100 % tant qu'une place reste libre : il
+plafonne alors à 99. Sur le Talmud (327 places), 326 réservées affichaient
+« 100 % » et « Complet » en rouge, et la dernière place ne trouvait plus
+personne. La carte décide de « Complet » d'après les places elles-mêmes,
+plus d'après le pourcentage. Tenu par
+`src/__tests__/reservationHelpers.test.ts` (« ne dit pas 100 % tant qu'il
+reste une place »).
+
 ### L'écran de connexion dit quoi faire
 
 Un échec ne montre jamais l'erreur brute de Firebase (« Firebase: Error

@@ -140,7 +140,13 @@ class SessionService {
       if (who) participants.add(who);
     }
 
-    const percent = (count: number) => (total > 0 ? Math.round((count / total) * 100) : 0);
+    // L'arrondi ne dit jamais « 100 % » tant qu'il reste une place : sur le
+    // Talmud (327 places), 326 réservées donnaient 100 et la carte « Complet ».
+    const percent = (count: number) => {
+      if (total <= 0) return 0;
+      const rounded = Math.round((count / total) * 100);
+      return count < total ? Math.min(rounded, 99) : rounded;
+    };
     return {
       total,
       reserved,
