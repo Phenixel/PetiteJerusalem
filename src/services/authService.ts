@@ -33,11 +33,17 @@ const RECENT_LOGIN_MS = 5 * 60 * 1000;
 // Sans nom ni email, le nom reste vide : c'est à la vue de dire
 // « Utilisateur » dans sa langue (common.anonymousUser), pas au service de
 // figer un mot français dans le compte gardé sur l'appareil.
+//
+// Sans nom affiché (inscription par email, champ facultatif), le nom n'est
+// jamais l'adresse entière : il part tel quel dans les données publiques
+// (créateur d'une chaîne, nom d'une réservation), lisibles par tous. On
+// garde ce qui précède « @ ».
 function toUser(firebaseUser: FirebaseUser): User {
+  const email = firebaseUser.email || "";
   return {
     id: firebaseUser.uid,
-    name: firebaseUser.displayName || firebaseUser.email || "",
-    email: firebaseUser.email || "",
+    name: firebaseUser.displayName || email.split("@")[0] || "",
+    email,
   };
 }
 
