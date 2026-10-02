@@ -359,7 +359,9 @@ en porte un, l'appareil décide sinon.
 
 Changer d'avis reprogramme les rappels d'horaires : ils sont posés sur des
 instants calculés, et ces instants viennent de bouger (voir
-`zmanReminderService`).
+`zmanReminderService`). Changer l'écart d'allumage aussi : l'entrée du
+Chabbat et des fêtes, et son rappel une heure avant, se lisent sur lui (test :
+`zmanReminderCandleLighting.test.ts`).
 
 Les **astuces vues** (`useFeatureTips`, clé `pj_tips_seen`) aussi : une
 astuce qui reviendrait à chaque vidage de cache finirait par agacer, et
