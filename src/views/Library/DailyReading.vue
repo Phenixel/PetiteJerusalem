@@ -9,6 +9,7 @@ import {
   userPreferencesService,
   type UserPreferences,
 } from "../../services/userPreferencesService";
+import { downloadErrorKey } from "../../composables/useBookDownload";
 import {
   downloadBooks,
   missingBooksForEntries,
@@ -636,8 +637,9 @@ async function downloadForOffline(books: OfflineBook[]): Promise<void> {
     books_count: books.length,
   });
   try {
-    const failed = await downloadBooks(books);
-    if (failed.length > 0) toast.error(t("downloads.error"));
+    let cause: unknown = null;
+    const failed = await downloadBooks(books, (e) => (cause = e));
+    if (failed.length > 0) toast.error(t(downloadErrorKey(cause)));
     else toast.success(t("dailyReading.offline.downloadDone"));
     const succeeded = books.length - failed.length;
     // Échec total : la lecture du jour reste illisible hors connexion, ce que
