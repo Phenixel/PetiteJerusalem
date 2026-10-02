@@ -202,6 +202,12 @@ Ajout fait : `capture_performance: { web_vitals: true }` → l'onglet
 - `seoPages.ts` (94 kB) est tiré dans les chunks de `DetailSession`,
   `DetailChiour` et `ProfilePage` **juste pour la constante `SITE_URL`**.
   Fix : déplacer `SITE_URL` dans un petit `src/config/site.ts`.
+- **Corrigé (octobre 2026) :** depuis que les locales arrivent par
+  `import()`, l'app montait sans attendre la sienne : en `en-US`, premier
+  affichage à 396 ms encore en français, l'anglais à 482 ms ; en `he-IL`, du
+  français de droite à gauche puis toute la page recomposée. Hors français,
+  `main.ts` attend `localeReady` (une seconde au plus) avant `app.mount`.
+  Tenu par `src/__tests__/localeBeforeFirstRender.test.ts`.
 
 ### Priorité 5. Rendu des grandes listes
 
