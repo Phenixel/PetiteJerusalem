@@ -55,7 +55,11 @@ export const auth = isNativeApp
   ? initializeAuth(app, { persistence: indexedDBLocalPersistence })
   : initializeAuth(app, {
       persistence: [browserLocalPersistence, indexedDBLocalPersistence, browserSessionPersistence],
-      popupRedirectResolver: browserPopupRedirectResolver,
+      // Une classe dans le navigateur ; la build Node de firebase/auth (celle
+      // des tests) n'en a pas, et initializeAuth refuse ce qu'elle y exporte.
+      ...(typeof browserPopupRedirectResolver === "function" && {
+        popupRedirectResolver: browserPopupRedirectResolver,
+      }),
     });
 
 export const googleAuthProvider = new GoogleAuthProvider();
