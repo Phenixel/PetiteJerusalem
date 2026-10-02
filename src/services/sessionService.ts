@@ -20,7 +20,7 @@ import type {
 } from "../models/models";
 import { EnumTypeTextStudy } from "../models/typeTextStudy";
 import { TextTypeService } from "./textTypeService";
-import { endOfLocalDay } from "./dateService";
+import { deadlineOf, endOfLocalDay } from "./dateService";
 import textStudiesJson from "../datas/textStudies.json";
 
 /**
@@ -473,6 +473,7 @@ class SessionService {
       type,
       // Champ `date` (YYYY-MM-DD) : la chaîne court jusqu'à la fin de ce jour-là.
       dateLimit: endOfLocalDay(dateLimit),
+      dateLimitDay: dateLimit,
       personId,
       creatorName,
       slug,
@@ -574,6 +575,7 @@ class SessionService {
         // modale donne un jour (YYYY-MM-DD), que `new Date` aurait lu à minuit
         // UTC, soit la veille au soir à l'ouest de Greenwich.
         dateLimit: endOfLocalDay(sessionData.dateLimit),
+        dateLimitDay: sessionData.dateLimit,
         slug,
         updatedAt: new Date(),
         ...(sessionData.guestEmailRequired !== undefined && {
@@ -612,7 +614,7 @@ class SessionService {
     // La chaîne perpétuelle ne finit pas : sa date limite lointaine n'est là
     // que pour les versions de l'app qui ne la connaissent pas.
     if (session.perpetual) return false;
-    return Date.now() > endOfLocalDay(new Date(session.dateLimit)).getTime();
+    return Date.now() > deadlineOf(session).getTime();
   }
 
   canEndSession(session: Session): boolean {

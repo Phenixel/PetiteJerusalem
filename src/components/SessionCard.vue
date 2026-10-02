@@ -3,7 +3,7 @@ import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import type { Session } from "../models/models";
 import { TextTypeService } from "../services/textTypeService";
-import { DateService } from "../services/dateService";
+import { DateService, deadlineOf } from "../services/dateService";
 import { sessionService } from "../services/sessionService";
 import AppIcon from "./icons/AppIcon.vue";
 import ProgressBar from "./ProgressBar.vue";
@@ -63,7 +63,7 @@ const isFull = computed(() => reservationStats.value.percentage >= 100);
 
     <span class="text-sm text-text-secondary flex items-center gap-2 mt-auto">
       <AppIcon name="calendar" :size="15" />
-      {{ t("common.dateLimitValue", { date: DateService.formatDate(session.dateLimit) }) }}
+      {{ t("common.dateLimitValue", { date: DateService.formatDate(deadlineOf(session)) }) }}
     </span>
   </div>
 </template>

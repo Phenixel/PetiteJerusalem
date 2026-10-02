@@ -5,7 +5,7 @@ import type { Session } from "../models/models";
 import type { SessionEditData } from "../composables/useSessionEditing";
 import { useOverlay } from "../composables/useOverlayStack";
 import { useToast } from "../composables/useToast";
-import { localDayKey } from "../services/dateService";
+import { deadlineDayOf } from "../services/dateService";
 import AppIcon from "./icons/AppIcon.vue";
 import AppDateField from "./AppDateField.vue";
 
@@ -85,11 +85,10 @@ const resetForm = () => {
   editForm.value = {
     name: session.name,
     description: session.description || "",
-    // Le jour LOCAL (localDayKey), jamais toISOString : la date lue en UTC
-    // recule d'un jour à l'ouest de Greenwich, et la date limite se décalait
-    // du fuseau à chaque enregistrement.
-    dateLimit:
-      session.dateLimit instanceof Date ? localDayKey(session.dateLimit) : session.dateLimit,
+    // Le jour choisi par le créateur (deadlineDayOf), jamais toISOString ni
+    // l'instant relu dans le fuseau de l'appareil : la date limite se décalait
+    // d'un jour à chaque enregistrement, même pour une correction du titre.
+    dateLimit: deadlineDayOf(session),
     guestEmailRequired: session.guestEmailRequired === true,
   };
 };
