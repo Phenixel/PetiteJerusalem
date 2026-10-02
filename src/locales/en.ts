@@ -1626,6 +1626,8 @@ const en: LocaleMessages = {
     deleteAllDone: "Downloads deleted.",
     deleteError: "Could not delete. Please try again.",
     error: "Download failed. Check your connection.",
+    permissionDenied:
+      "Download failed: the app has no access to storage. Allow it in the app's Android settings, then try again.",
   },
   offline: {
     title: "No connection",

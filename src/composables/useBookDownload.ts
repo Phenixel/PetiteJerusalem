@@ -11,6 +11,16 @@ import {
   removeBook,
 } from "../services/offlineLibraryService";
 import { analyticsService } from "../services/analyticsService";
+import { isStoragePermissionDenied } from "../services/offlineTextStore";
+
+/**
+ * Le message d'un téléchargement en échec. Sous Android 10 et moins, un refus
+ * de la permission de stockage disait « Vérifiez votre connexion », qui
+ * envoyait chercher ailleurs : il a son message, qui dit où l'autoriser.
+ */
+export function downloadErrorKey(error: unknown): "downloads.permissionDenied" | "downloads.error" {
+  return isStoragePermissionDenied(error) ? "downloads.permissionDenied" : "downloads.error";
+}
 
 /**
  * Le téléchargement d'un livre pour le lire sans connexion (app native), tel
@@ -71,7 +81,7 @@ export function useBookDownload() {
         is_online: navigator.onLine,
         error_message: e instanceof Error ? e.message : String(e),
       });
-      toast.error(t("downloads.error"));
+      toast.error(t(downloadErrorKey(e)));
     }
   }
 

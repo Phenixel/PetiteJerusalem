@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
+import { downloadErrorKey } from "../../composables/useBookDownload";
 import {
   downloadBook,
   downloadableBooksOfCorpus,
@@ -111,11 +112,13 @@ async function downloadSelection(): Promise<void> {
   done.value = 0;
   total.value = books.length;
   let failed = 0;
+  let lastError: unknown = null;
   for (const book of books) {
     try {
       await downloadBook(book);
-    } catch {
+    } catch (e) {
       failed++;
+      lastError = e;
     }
     done.value++;
   }
@@ -124,7 +127,7 @@ async function downloadSelection(): Promise<void> {
     books_count: books.length,
     books_failed: failed,
   });
-  if (failed > 0) toast.error(t("downloads.error"));
+  if (failed > 0) toast.error(t(downloadErrorKey(lastError)));
   else toast.success(t("onboarding.library.downloadDone"));
 }
 </script>
