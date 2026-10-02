@@ -98,15 +98,22 @@ let manifestLoaded: Promise<void> | null = null;
 
 export function ensureManifestLoaded(): Promise<void> {
   if (!manifestLoaded) {
-    manifestLoaded = Preferences.get({ key: MANIFEST_KEY }).then(({ value }) => {
-      if (!value) return;
-      try {
-        downloadManifest.value = JSON.parse(value) as DownloadManifest;
-      } catch {
-        // Manifest corrompu : on repart d'un index vide, les fichiers
-        // seront simplement re-téléchargeables.
-      }
-    });
+    manifestLoaded = Preferences.get({ key: MANIFEST_KEY })
+      .then(({ value }) => {
+        if (!value) return;
+        try {
+          downloadManifest.value = JSON.parse(value) as DownloadManifest;
+        } catch {
+          // Manifest corrompu : on repart d'un index vide, les fichiers
+          // seront simplement re-téléchargeables.
+        }
+      })
+      .catch(() => {
+        // Stockage inaccessible (sur le web, données de site bloquées : le
+        // plugin lit localStorage, qui lève) : un index vide, et la lecture
+        // passe par le réseau. Sans ce filet, la promesse rejetée restait en
+        // place pour la session, et plus aucun texte ne se chargeait.
+      });
   }
   return manifestLoaded;
 }
@@ -445,7 +452,35 @@ export async function downloadFile(webPath: string): Promise<void> {
     if (!res.ok) throw new Error(`Téléchargement échoué (${res.status})`);
     ecrit = await res.clone().text();
     size = new TextEncoder().encode(ecrit).length;
+    // Une page à la place d'un texte (voir plus bas) ne remplace pas la copie
+    // en place.
+    if (webPath.endsWith(".json") && !isJson(ecrit)) {
+      throw new Error(`Téléchargement illisible : ${webPath}`);
+    }
     await cache.put(webPath, res);
+  }
+
+  // Un texte est du JSON. Un portail captif (hôtel, train) répond 200 avec
+  // sa page de connexion, et un fichier absent du site renvoie la coquille
+  // de l'app, en 200 aussi : inscrit, le livre passait pour lisible hors
+  // ligne, et la lecture échouait au moment d'en avoir besoin. Ce qui ne se
+  // lit pas comme un texte n'est donc ni gardé ni inscrit.
+  //
+  // Sur l'appareil, le transfert a déjà écrit par-dessus l'ancienne copie :
+  // elle est perdue, le fichier et son entrée de l'index s'en vont avec.
+  if (isNative && webPath.endsWith(".json") && ecrit !== null && !isJson(ecrit)) {
+    await Filesystem.deleteFile({ directory: Directory.Data, path: localPath(webPath) }).catch(
+      () => {
+        // Rien à retirer.
+      },
+    );
+    if (isDownloaded(webPath)) {
+      const files = { ...downloadManifest.value.files };
+      delete files[webPath];
+      downloadManifest.value = { files };
+      await saveManifest();
+    }
+    throw new Error(`Téléchargement illisible : ${webPath}`);
   }
 
   // L'empreinte inscrite est celle de ce qui a été écrit, et non celle qu'on
@@ -468,6 +503,15 @@ export async function downloadFile(webPath: string): Promise<void> {
     },
   };
   await saveManifest();
+}
+
+function isJson(text: string): boolean {
+  try {
+    JSON.parse(text);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /** Supprime la copie locale d'un fichier. */
