@@ -23,6 +23,7 @@ import {
   ZMAN_KEYS,
   type ZmanimPlace,
   type ZmanKey,
+  placeDayAfter,
 } from "./zmanimService";
 import { useHebrewOccasions } from "../composables/useHebrewOccasions";
 import { useZmanimOpinion } from "../composables/useZmanimOpinion";
@@ -272,8 +273,7 @@ export function planZmanReminders(options: {
   // Le jour à l'extérieur, les rappels à l'intérieur : les horaires d'une
   // journée ne se calculent qu'une fois, quel que soit le nombre de rappels.
   for (let offset = 0; offset <= days && reminders.length > 0; offset++) {
-    const day = new Date(now.getTime());
-    day.setDate(day.getDate() + offset);
+    const day = placeDayAfter(place, now, offset);
     const times = computeZmanim(place, day);
     for (const reminder of reminders) {
       const done = counts.get(reminder.key) ?? 0;
