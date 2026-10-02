@@ -425,6 +425,12 @@ commence au coucher du soleil. Toute saisie dans ce sens porte donc un
 interrupteur « Après le coucher du soleil », éteint par défaut, plutôt que de
 laisser un leilouy nichmat se graver avec un jour d'écart.
 
+Pour un leilouy nichmat, une ligne sous l'intitulé de la date dit laquelle
+poser : celle du décès, d'où se comptent les années. Seule la première fait
+exception : quand le décès vient d'arriver, la première année se compte du
+jour de l'enterrement. La ligne ne paraît que pour ce choix ; elle ne dit
+rien à qui inscrit un anniversaire (`occasionCivilEntry.test.ts`).
+
 Le même calcul sert le convertisseur du calendrier, à côté de « Mes dates » :
 une fenêtre, trois onglets nommés par ce qu'on connaît déjà (une date
 hébraïque, une date civile, la naissance d'un enfant pour sa bar-mitsvah). La

@@ -8,6 +8,9 @@ import { HDate, months } from "@hebcal/core";
  * connaît pas la date hébraïque. Ce test tient ce qui compte : c'est la date
  * HÉBRAÏQUE qui s'enregistre, calculée du jour civil choisi, et le coucher du
  * soleil la fait passer au lendemain.
+ *
+ * Il tient aussi le conseil posé sous la date d'un leilouy nichmat : poser la
+ * date du décès, la première année seule se comptant de l'enterrement.
  */
 
 vi.mock("../services/analyticsService", () => ({
@@ -124,5 +127,40 @@ describe("saisir une date personnelle par sa date civile", () => {
     await settle();
 
     expect(stored()).toMatchObject([{ name: "Sarah", day: 22, month: months.TISHREI }]);
+  });
+});
+
+describe("le conseil de la date d'un leilouy nichmat", () => {
+  const CONSEIL = "Indiquez la date du décès";
+
+  beforeEach(() => {
+    vi.resetModules();
+    localStorage.clear();
+    document.body.innerHTML = "";
+  });
+
+  it("dit de poser la date du décès, et l'exception de la première année", async () => {
+    const host = await ouvre();
+    button(host, "Ajouter une date").click();
+    await settle();
+
+    // Leilouy nichmat est le choix par défaut d'une date nouvelle.
+    expect(host.textContent).toContain(CONSEIL);
+    expect(host.textContent).toContain("la première année se compte du jour de l'enterrement");
+
+    // Il suit la saisie civile.
+    button(host, "Saisir la date civile").click();
+    await settle();
+    expect(host.textContent).toContain(CONSEIL);
+  });
+
+  it("ne paraît pas pour un anniversaire", async () => {
+    const host = await ouvre();
+    button(host, "Ajouter une date").click();
+    await settle();
+    button(host, "Anniversaire").click();
+    await settle();
+
+    expect(host.textContent).not.toContain(CONSEIL);
   });
 });

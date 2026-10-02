@@ -823,6 +823,8 @@ const en: LocaleMessages = {
     removeConfirmHint: "The date and its reminder go with it, with no way back.",
     removeAria: "Delete {name}",
     editAria: "Edit {name}",
+    yahrzeitHint:
+      "Enter the date of death: the years are counted from it. Only the first is different: if the death is recent, the first year is counted from the day of the burial.",
     civilDate: "Gregorian date",
     useCivil: "Enter the Gregorian date",
     useHebrew: "Enter the Hebrew date",

@@ -858,6 +858,8 @@ const fr = {
     removeConfirmHint: "La date et son rappel s'en vont, sans retour en arrière.",
     removeAria: "Supprimer {name}",
     editAria: "Modifier {name}",
+    yahrzeitHint:
+      "Indiquez la date du décès\u00a0: c'est d'elle que se comptent les années. Seule la première fait exception\u00a0: si le décès vient d'arriver, la première année se compte du jour de l'enterrement.",
     civilDate: "Date civile",
     useCivil: "Saisir la date civile",
     useHebrew: "Saisir la date hébraïque",

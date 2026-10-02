@@ -381,9 +381,18 @@ useOverlay(
         </div>
 
         <!-- La date hébraïque d'abord, c'est elle qui revient chaque année.
-             Qui ne la connaît pas passe par la date civile, année comprise. -->
+             Qui ne la connaît pas passe par la date civile, année comprise.
+             Pour un leilouy nichmat, une ligne sous l'intitulé dit laquelle
+             poser : celle du décès, d'où se comptent les années, la première
+             exceptée, qui se compte de l'enterrement. -->
         <template v-if="dateEntry === 'hebrew'">
           <p class="mt-4 text-sm font-medium text-text-primary">{{ t("occasions.date") }}</p>
+          <p
+            v-if="draft.kind === 'yahrzeit'"
+            class="mt-1 text-xs leading-relaxed text-text-secondary"
+          >
+            {{ t("occasions.yahrzeitHint") }}
+          </p>
           <div class="mt-1.5 flex gap-3">
             <div class="w-24 shrink-0">
               <AppSelect v-model="dayModel" :options="dayOptions" />
@@ -397,6 +406,12 @@ useOverlay(
           <label class="mt-4 block text-sm font-medium text-text-primary" for="occasion-civil">
             {{ t("occasions.civilDate") }}
           </label>
+          <p
+            v-if="draft.kind === 'yahrzeit'"
+            class="mt-1 text-xs leading-relaxed text-text-secondary"
+          >
+            {{ t("occasions.yahrzeitHint") }}
+          </p>
           <AppDateField
             id="occasion-civil"
             v-model="civilDay"
