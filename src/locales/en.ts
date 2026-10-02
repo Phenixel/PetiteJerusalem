@@ -335,6 +335,16 @@ const en: LocaleMessages = {
     termsAnd: "and the",
     privacyLink: "privacy policy",
     lastUsed: "Last used",
+    reset: {
+      link: "Forgot password?",
+      title: "Forgot password",
+      intro:
+        "Enter your account's email address: we will send a link there to choose a new password.",
+      send: "Send the link",
+      sent: "If an account exists for {email}, an email is on its way with a link to choose a new password. Remember to check your spam folder too.",
+      back: "Back to sign in",
+      error: "The email could not be sent. Try again in a moment.",
+    },
     help: {
       signup: "Create an account with this email",
       login: "Sign in with this email",

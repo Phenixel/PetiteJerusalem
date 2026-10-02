@@ -339,6 +339,16 @@ const fr = {
     termsAnd: "et la",
     privacyLink: "politique de confidentialité",
     lastUsed: "Dernière utilisation",
+    reset: {
+      link: "Mot de passe oublié ?",
+      title: "Mot de passe oublié",
+      intro:
+        "Indiquez l'adresse de votre compte : nous y enverrons un lien pour choisir un nouveau mot de passe.",
+      send: "Envoyer le lien",
+      sent: "Si un compte existe avec l'adresse {email}, un email vient d'y partir, avec un lien pour choisir un nouveau mot de passe. Pensez à regarder aussi dans les indésirables.",
+      back: "Retour à la connexion",
+      error: "L'email n'a pas pu partir. Réessayez dans un instant.",
+    },
     help: {
       signup: "Créer un compte avec cette adresse",
       login: "Me connecter avec cette adresse",
