@@ -43,8 +43,14 @@ class ChiourService {
    */
   async getChiourBySlug(slug: string): Promise<Chiour | null> {
     const fresh = this.chiourim.isStale() ? null : this.chiourim.peek();
-    if (fresh) return fresh.find((c) => c.slug === slug) ?? null;
-    return chiourFirestoreRepository.fetchBySlug(slug);
+    const known = fresh?.find((c) => c.slug === slug);
+    if (known) return known;
+    // Absent d'un catalogue pourtant frais : il a pu être publié depuis son
+    // chargement. Le dire introuvable une heure durant serait faux ; on lit
+    // le document seul, et s'il existe, le catalogue est périmé.
+    const single = await chiourFirestoreRepository.fetchBySlug(slug);
+    if (single && fresh) this.invalidateCache();
+    return single;
   }
 
   /** À appeler après toute mutation admin pour refléter le changement sans attendre le TTL. */
