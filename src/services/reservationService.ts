@@ -373,14 +373,20 @@ class ReservationService {
 
   /**
    * L'identité invité du navigateur courant : l'email saisi dans le
-   * formulaire (identifiant historique) et l'UUID local. L'un ou l'autre
-   * peut correspondre au `chosenByGuestId` d'une réservation.
+   * formulaire (identifiant historique), l'UUID local et les emails déjà
+   * saisis sur cet appareil. L'un ou l'autre peut correspondre au
+   * `chosenByGuestId` d'une réservation.
    */
   getGuestIdentifiers(guestEmail?: string): string[] {
     const ids: string[] = [];
     if (guestEmail?.trim()) ids.push(guestEmail.trim());
     const localId = guestService.getLocalGuestId();
     if (localId) ids.push(localId);
+    // Les emails déjà saisis sur cet appareil : le formulaire, lui, se vide
+    // au rechargement.
+    for (const email of guestService.getGuestEmails()) {
+      if (!ids.includes(email)) ids.push(email);
+    }
     return ids;
   }
 
@@ -495,7 +501,10 @@ class ReservationService {
    * navigateur (créé à la volée).
    */
   resolveGuestId(reservationForm: ReservationForm): string {
-    return reservationForm.email.trim() || guestService.getOrCreateLocalGuestId();
+    const email = reservationForm.email.trim();
+    if (!email) return guestService.getOrCreateLocalGuestId();
+    guestService.rememberGuestEmail(email);
+    return email;
   }
 
   /** Valide le formulaire invité selon l'exigence d'email de la session. */
