@@ -380,6 +380,27 @@ connexion dit quoi faire »).
 | `help` | `signup` (créer le compte), `login` (s'y connecter), `provider` (le bouton de la dernière méthode) |
 | `reason` | la raison de l'échec qui l'a proposée, comme `email_auth_failed.reason` |
 
+#### `password_reset_opened` (nouveau)
+
+« Mot de passe oublié ? » touché sous le champ du mot de passe (docs/design.md,
+« L'écran de connexion dit quoi faire »).
+
+| Propriété | Valeurs |
+| --- | --- |
+| `after_error` | la raison de l'échec affiché à ce moment, comme `email_auth_failed.reason` (`auth/invalid-credential` le plus souvent), ou `null` |
+| `last_method` | comme `login_viewed` |
+
+#### `password_reset_requested` (nouveau)
+
+L'envoi de l'email de réinitialisation. Ni l'adresse, ni le fait qu'elle ait un
+compte : Firebase ne le dit pas, et une adresse sans compte compte comme
+`sent`.
+
+| Propriété | Valeurs |
+| --- | --- |
+| `outcome` | `sent`, `failed` |
+| `reason` | le code Firebase d'un échec (`auth/too-many-requests`, `auth/invalid-email`, `auth/network-request-failed`...), `error` sans code, `null` pour `sent` |
+
 ### Lecture du jour : `daily_reading_viewed` (nouveau)
 
 À l'arrivée sur `/bibliotheque/lecture-du-jour`, une fois la liste chargée.
