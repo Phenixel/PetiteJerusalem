@@ -192,6 +192,12 @@ sans réseau, elle s'ouvre et se lit, à partir de deux copies locales.
   passé minuit), le plus récent l'emporte ; le chnei mikra se fusionne à part,
   à la semaine. Conséquence assumée : décocher hors ligne quelque chose que le
   serveur sait déjà lu ne tient pas au retour du réseau.
+- **Les marque-pages et positions de lecture s'écrivent après lecture du
+  compte.** `readingProgressService` les fusionne avec ceux du compte à la
+  connexion, et n'écrit rien au compte tant qu'il ne l'a pas lu : un échec de
+  lecture n'est pas un compte vide, et pousser l'état de l'appareil seul
+  effacerait les marque-pages posés ailleurs. L'écriture suivante retente la
+  fusion. Test : `readingProgressSyncFailure.test.ts`.
 
 Vérification : composer une liste, mode avion, rouvrir la lecture du jour (les
 textes téléchargés s'affichent, les autres disent qu'ils ne sont pas
