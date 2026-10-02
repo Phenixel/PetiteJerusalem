@@ -630,47 +630,58 @@ class ReservationService {
     // chaque connexion, trois fois par page de connexion. La transaction relit
     // chaque candidate à jour avant d'écrire.
     const sessions = await firestoreService.getSessions();
-    const candidates = sessions.filter((s) => (s.reservations ?? []).some(isOwnGuestReservation));
+    // Une session masquée par la modération refuse toute écriture sur ses
+    // réservations (règle sessionNotHidden) : la tenter levait, et la boucle
+    // s'arrêtait là, laissant à l'invité les réservations des suivantes.
+    const candidates = sessions.filter(
+      (s) => !s.hidden && (s.reservations ?? []).some(isOwnGuestReservation),
+    );
 
     for (const candidate of candidates) {
-      // Le compteur est retourné par la transaction (le callback peut être
-      // rejoué en cas de contention : ne jamais accumuler à l'intérieur).
-      const sessionMigrated = await this.updateReservations(
-        candidate.id,
-        (freshReservations, write) => {
-          let count = 0;
-          const updatedReservations = freshReservations.map((r) => {
-            if (isOwnGuestReservation(r)) {
-              count++;
-              const updated: ReservationRecord = {
-                id: r.id,
-                textStudyId: r.textStudyId,
-                chosenByName: userName,
-                chosenById: userId,
-                isCompleted: r.isCompleted,
-                createdAt: r.createdAt,
-              };
-              if (r.section !== undefined) {
-                updated.section = r.section;
+      // Une session en échec (refus, réseau) ne prive pas les suivantes ; la
+      // prochaine connexion la reprendra.
+      try {
+        // Le compteur est retourné par la transaction (le callback peut être
+        // rejoué en cas de contention : ne jamais accumuler à l'intérieur).
+        const sessionMigrated = await this.updateReservations(
+          candidate.id,
+          (freshReservations, write) => {
+            let count = 0;
+            const updatedReservations = freshReservations.map((r) => {
+              if (isOwnGuestReservation(r)) {
+                count++;
+                const updated: ReservationRecord = {
+                  id: r.id,
+                  textStudyId: r.textStudyId,
+                  chosenByName: userName,
+                  chosenById: userId,
+                  isCompleted: r.isCompleted,
+                  createdAt: r.createdAt,
+                };
+                if (r.section !== undefined) {
+                  updated.section = r.section;
+                }
+                // Un tirage en cours garde son échéance : le compte reprend la
+                // réservation telle quelle, sans la rendre définitive.
+                if (r.expiresAt !== undefined) {
+                  updated.expiresAt = r.expiresAt;
+                }
+                return updated;
               }
-              // Un tirage en cours garde son échéance : le compte reprend la
-              // réservation telle quelle, sans la rendre définitive.
-              if (r.expiresAt !== undefined) {
-                updated.expiresAt = r.expiresAt;
-              }
-              return updated;
-            }
-            return r;
-          });
+              return r;
+            });
 
-          if (count > 0) write(updatedReservations);
-          return count;
-        },
-        // Session supprimée entre-temps : rien à rattacher.
-        () => 0,
-      );
+            if (count > 0) write(updatedReservations);
+            return count;
+          },
+          // Session supprimée entre-temps : rien à rattacher.
+          () => 0,
+        );
 
-      migratedCount += sessionMigrated;
+        migratedCount += sessionMigrated;
+      } catch (error) {
+        console.warn(`Réservations invité de la session ${candidate.id} non rattachées:`, error);
+      }
     }
 
     if (migratedCount > 0) {
