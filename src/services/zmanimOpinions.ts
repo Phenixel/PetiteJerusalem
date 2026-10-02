@@ -225,7 +225,7 @@ const POSEN: OpinionZmanim = {
   minchaGedola: (z) => z.minchaGedola(),
   plagHaMincha: (z) => z.plagHaMincha(),
   tzeit: (z) => z.tzeit(), // 8,5°, trois petites étoiles selon le Ohr Meïr
-  rabbenouTam: (z) => z.sunsetOffset(RABBENOU_TAM_MINUTES, true),
+  rabbenouTam: (z) => rabbenouTamFixed(z),
   restEnd: (z) => z.tzeit(),
   fastEnd: (z) => z.tzeit(POSEN_FAST_END_DEGREES),
   // Le deuxième soir d'un Yom Tov s'allume à la nuit : cette opinion n'a
@@ -238,6 +238,17 @@ const POSEN: OpinionZmanim = {
 
 /** Minutes après la chkia de la sortie selon Rabbénou Tam, en minutes fixes. */
 const RABBENOU_TAM_MINUTES = 72;
+
+/**
+ * Rabbénou Tam à 72 minutes fixes, à la seconde. `sunsetOffset(72, true)`
+ * arrondissait à la minute la plus PROCHE : 21:07:11 devenait 21:07, et
+ * l'arrondi vers le haut qui suit (roundUsable, une sortie monte toujours)
+ * n'avait plus rien à corriger. L'heure s'affichait jusqu'à 29 secondes trop
+ * tôt ; c'est l'arrondi de l'appelant qui la porte désormais à 21:08.
+ */
+function rabbenouTamFixed(z: Zmanim): Date {
+  return new Date(z.sunset().getTime() + RABBENOU_TAM_MINUTES * 60_000);
+}
 
 /** Les degrés du jour du Maguen Avraham de cette opinion, matin et soir. */
 const POSEN_MGA_DEGREES = 16.1;
@@ -463,7 +474,7 @@ const OVADIA: OpinionZmanim = {
     // Hors d'Israël, l'Amudei Horaah imprime la plus TÔT des deux : au nord,
     // l'été, 72 minutes zmaniyot repoussent Rabbénou Tam bien au-delà de ce
     // que les poskim demandent d'attendre.
-    const fixed = z.sunsetOffset(RABBENOU_TAM_MINUTES, true);
+    const fixed = rabbenouTamFixed(z);
     if (Number.isNaN(zmaniyot.getTime())) return fixed;
     if (Number.isNaN(fixed.getTime())) return zmaniyot;
     return fixed.getTime() < zmaniyot.getTime() ? fixed : zmaniyot;
