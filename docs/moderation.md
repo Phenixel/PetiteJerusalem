@@ -67,7 +67,10 @@ monte comme ailleurs, et `session:signalements` la liste.
 - Le créateur ne peut pas toucher aux champs de modération de sa session
   (`hidden`, `hiddenAt`, `hiddenReason`, `reportsCount`) : seuls l'admin et la
   Cloud Function (SDK admin) le peuvent.
-- Une session masquée n'accepte plus de réservations.
+- Une session masquée n'accepte plus de réservations, ni d'écriture sur
+  celles qu'elle porte. Le rattachement des réservations d'invité à la
+  connexion la passe donc, et une session refusée ne bloque pas les
+  suivantes (test : `guestMigrationHidden.test.ts`).
 - `reports` : création ouverte à tous mais strictement bornée (champs imposés,
   motif dans une liste fermée, session cible existante, identité du signaleur
   cohérente avec l'authentification) ; lecture et traitement réservés à
