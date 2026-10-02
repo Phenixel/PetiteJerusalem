@@ -56,6 +56,27 @@ prolonger ou le retirer. Un compte tient dix noms au plus
 (`MAX_NAMES_PER_OWNER`) ; un prénom, 40 caractères. Le filtre de termes
 interdits s'y applique, comme aux noms d'invités.
 
+### Sans réseau
+
+Écrire un nom (l'ajouter, le corriger, le prolonger, le retirer) demande le
+serveur. Le cache persistant de Firestore ne rend la main qu'une fois
+l'écriture confirmée : sans garde, la fenêtre restait figée, sans message,
+et l'écriture partait seule au retour du réseau, d'où un doublon si l'on
+avait réessayé entre-temps. `prayerNameService` reprend donc la parade de
+`userPreferencesService` (`OfflineWriteError`) :
+
+- **appareil hors ligne** (`navigator.onLine` faux) : rien ne part, la
+  fenêtre le dit (`errors.prayerNameOffline`) et garde ce qui a été saisi.
+  En pratique, la page de la chaîne laisse alors place à « Connexion
+  impossible » ; la garde tient pour l'instant où l'événement n'est pas
+  encore arrivé ;
+- **appareil qui se croit en ligne, serveur muet** : la fenêtre rend la main
+  au bout de dix secondes (`SERVER_ACK_TIMEOUT_MS`) et dit que la demande
+  partira d'elle-même (`errors.prayerNamePending`). Firestore ne sait pas
+  annuler une écriture : elle reste en file. Un ajout réessayé pendant ce
+  temps reprend l'écriture en route au lieu d'en lancer une seconde, et quand
+  il arrive, le nom rejoint la liste comme un ajout ordinaire.
+
 ## Les données
 
 La chaîne est une session ordinaire, `sessions/chaine-perpetuelle` (son slug
@@ -145,6 +166,10 @@ monde, alors qu'un signalement y vise un nom.
 
 ## Ce qui est tenu par un test
 
+`src/__tests__/prayerNameOffline.test.ts` : un nom ne s'écrit pas hors
+ligne, la main revient quand le serveur se tait, et un ajout réessayé ne
+s'écrit qu'une fois.
+
 `src/__tests__/perpetualChain.test.ts` : la forme d'un nom (ben, bat), quand
 un nom est lu (échéance, semaine de l'anniversaire, passage d'une année à
 l'autre), l'ordre de la liste, le compteur, la règle de fin de tour et la
@@ -153,6 +178,6 @@ remise à zéro, l'échéance d'une place réservée, le document écrit par
 langues.
 
 `e2e/firebase/perpetualChain.spec.ts`, contre les émulateurs : la carte, les
-noms, et les règles Firestore (un nom ne s'écrit qu'en son nom et sur la
+noms (un ajout sur un réseau muet n'arrive qu'une fois), et les règles Firestore (un nom ne s'écrit qu'en son nom et sur la
 chaîne ; le drapeau et le compteur de la chaîne ne s'écrivent pas depuis un
 compte).
