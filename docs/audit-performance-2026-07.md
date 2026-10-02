@@ -174,6 +174,13 @@ Ajout fait : `capture_performance: { web_vitals: true }` → l'onglet
 - Fix : pré-découper les corpus par chapitre/daf au build
   (`scripts/download-texts.mjs`) et ne récupérer que la section demandée ;
   charger les items du profil à l'ouverture (accordéon/IntersectionObserver).
+- **Corrigé (octobre 2026) :** un même fichier partagé par plusieurs textes
+  ne se lit plus qu'une fois. Les 150 psaumes vivent dans `tehilim.json`
+  (1,2 Mo) ; le Tehilim du jour (jusqu'à neuf psaumes) le relisait et le
+  reparsait neuf fois, environ 690 ms sur un ordinateur de bureau, et le
+  lecteur une fois de plus à chaque psaume suivant. `loadText` garde les deux
+  derniers fichiers lus, déjà parsés ; un échec ne se garde pas. Tenu par
+  `src/__tests__/textFileCache.test.ts`.
 
 ### Priorité 4. Bundle initial et rendu
 
