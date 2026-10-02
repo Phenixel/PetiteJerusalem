@@ -416,9 +416,14 @@ function trackSearchResultOpened(text: TextStudyJsonEntry): void {
   if (!hasSearch.value) return;
   searchTracking.flush();
   markReadingEntry("search");
+  // Le rang à l'écran : les résultats s'y rangent par rayon puis par livre
+  // (le livre de la fête en tête), pas dans l'ordre du catalogue.
+  const shown = groupedByType.value.flatMap((group) =>
+    Object.values(orderedGroups(group.groups)).flat(),
+  );
   analyticsService.capture("library_search_result_opened", {
     scope: searchScope(),
-    rank: searchResults.value.indexOf(text) + 1,
+    rank: shown.indexOf(text) + 1,
     corpus: text.type,
     text_id: String(text.id),
   });

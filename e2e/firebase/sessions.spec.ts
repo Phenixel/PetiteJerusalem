@@ -39,7 +39,18 @@ test.describe("chaînes de lecture", () => {
     await pickDate(page, "dateLimit", tomorrow);
     await page.getByRole("button", { name: "Créer la session" }).click();
 
+    // Une date limite si proche se confirme (docs/design.md, « Une chaîne
+    // courte se confirme »).
+    const confirmation = page.getByRole("alertdialog");
+    await expect(confirmation).toContainText("Attention, votre date semble proche d'aujourd'hui");
+    await confirmation.getByRole("button", { name: "Oui, créer la session" }).click();
+
     await expect(page).toHaveURL(/\/share-reading\/session\//, { timeout: 20_000 });
+    // La chaîne créée s'ouvre sur la fenêtre de partage, qui dit pourquoi.
+    await expect(page.getByText("Votre session est prête")).toBeVisible();
+    await expect(page.getByText("Pensez à partager la session autour de vous")).toBeVisible();
+    await expect(page).not.toHaveURL(/partager=/);
+    await page.locator(".modal-panel").getByRole("button", { name: "Fermer" }).click();
     await expect(page.getByRole("heading", { level: 1 })).toContainText(title);
     await expect(page.getByText("Tehilim 1", { exact: false }).first()).toBeVisible();
   });

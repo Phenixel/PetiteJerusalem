@@ -294,7 +294,7 @@ même terme, jamais un terme vide.
 | Propriété | Valeurs |
 | --- | --- |
 | `scope` | comme ci-dessus |
-| `rank` | le rang du texte dans les résultats, à partir de 1 |
+| `rank` | le rang du texte dans les résultats tels qu'ils s'affichent (par rayon, puis par livre), à partir de 1 |
 | `corpus` | le type du texte (`Tehilim`, `Sidour`...) |
 | `text_id` | son identifiant dans le catalogue |
 

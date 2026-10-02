@@ -149,12 +149,17 @@ const canSave = computed(() => draft.value.name.trim().length > 0);
 
 function save(): void {
   if (!canSave.value) return;
-  // Le nom reste sur l'appareil ou le compte : il nomme une personne.
-  analyticsService.capture("occasion_saved", {
-    kind: draft.value.kind,
-    is_new: draft.value.id === undefined,
-    on_account: syncedToAccount.value,
-  });
+  const isNew = draft.value.id === undefined;
+  // Une date de plus dans une liste pleine n'est pas enregistrée
+  // (saveOccasion) : elle ne se compte pas. Ni le nom ni la date ne partent,
+  // ils désignent une personne.
+  if (!(isNew && full.value)) {
+    analyticsService.capture("occasion_saved", {
+      kind: draft.value.kind,
+      is_new: isNew,
+      on_account: syncedToAccount.value,
+    });
+  }
   saveOccasion(draft.value);
   view.value = "list";
 }
