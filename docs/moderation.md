@@ -60,7 +60,10 @@ monte comme ailleurs, et `session:signalements` la liste.
   remet le compteur à zéro (sinon le signalement suivant re-masquerait la
   session aussitôt) ;
 - **Modifier** (corriger un titre/une description problématique sans masquer)
-  et **Supprimer** (la session et ses signalements).
+  et **Supprimer** (la session et ses signalements, relus au moment de
+  supprimer : un signalement arrivé depuis le chargement de la page restait
+  sinon orphelin, compté par la pastille du tableau de bord sans ligne pour
+  le traiter ; tenu par `src/__tests__/adminDeleteSessionReports.test.ts`).
 
 ## Sécurité (règles Firestore)
 
