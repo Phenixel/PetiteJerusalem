@@ -1309,7 +1309,10 @@ bandeau publie sa hauteur réelle dans `--navbar-height`, dont dépendent les
 barres collantes des pages.
 
 L'app native n'a pas de bandeau : la navigation y passe par la barre du bas
-(`BottomTabBar`).
+(`BottomTabBar`). Comme sur iOS et Android, toucher l'onglet de la page où
+l'on est la remonte en haut (en douceur, sauf si le système demande moins
+d'animations) ; depuis une sous-page, il ramène à la page de l'onglet. Tenu
+par `src/__tests__/bottomTabBar.test.ts`.
 
 ### Le haut de l'app n'a pas de bord
 
