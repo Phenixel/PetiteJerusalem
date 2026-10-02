@@ -85,8 +85,9 @@ const longCivil = (date: Date): string =>
 const shortCivil = (date: Date): string =>
   dateTimeFormat(locale.value, { weekday: "long", day: "numeric", month: "long" }).format(date);
 
-/** Les fêtes du jour, au calendrier du lieu (Israël ou diaspora). */
-const festivalsOf = (hd: HDate): string => holidayNamesOn(props.place, hd, locale.value).join(", ");
+/** Les fêtes du jour, au calendrier du lieu (Israël ou diaspora), ou "". */
+const festivalsOf = (hd: HDate | null): string =>
+  hd ? holidayNamesOn(props.place, hd, locale.value).join(", ") : "";
 
 // ---- Date hébraïque vers date civile ----------------------------------------
 
@@ -157,6 +158,7 @@ const yearSpan = computed(() => {
 const hebrewResult = computed(() =>
   yearValid.value ? hebrewDate(hDay.value, hMonth.value, typedYear.value) : null,
 );
+const hebrewFestivals = computed(() => festivalsOf(hebrewResult.value));
 
 // ---- Date civile vers date hébraïque ----------------------------------------
 
@@ -167,6 +169,7 @@ const civilResult = computed(() => {
   const date = localDayFrom(civilDay.value);
   return date ? civilToHebrew(date, civilAfterSunset.value) : null;
 });
+const civilFestivals = computed(() => festivalsOf(civilResult.value));
 
 // ---- Bar-mitsvah ------------------------------------------------------------
 
@@ -341,8 +344,8 @@ watch(
         <p class="mt-0.5 text-xs text-text-secondary">
           {{ t("converter.startsEve", { eve: shortCivil(hebrewResult.prev().greg()) }) }}
         </p>
-        <p v-if="festivalsOf(hebrewResult)" class="mt-1.5 text-sm text-primary">
-          {{ festivalsOf(hebrewResult) }}
+        <p v-if="hebrewFestivals" class="mt-1.5 text-sm text-primary">
+          {{ hebrewFestivals }}
         </p>
       </div>
     </template>
@@ -380,8 +383,8 @@ watch(
         <p v-if="locale !== 'he'" class="mt-0.5 text-sm text-text-secondary" lang="he" dir="rtl">
           {{ civilResult.renderGematriya() }}
         </p>
-        <p v-if="festivalsOf(civilResult)" class="mt-1.5 text-sm text-primary">
-          {{ festivalsOf(civilResult) }}
+        <p v-if="civilFestivals" class="mt-1.5 text-sm text-primary">
+          {{ civilFestivals }}
         </p>
       </div>
     </template>
