@@ -481,6 +481,21 @@ class SessionService {
     });
   }
 
+  /**
+   * Les types des chaînes que la liste publique « En cours » montre : ni
+   * masquées, ni d'un créateur bloqué, ni terminées, ni la chaîne perpétuelle.
+   */
+  listedTypes(sessions: Session[], blockedCreatorIds: string[] = []): EnumTypeTextStudy[] {
+    const blocked = new Set(blockedCreatorIds);
+    const types = new Set<EnumTypeTextStudy>();
+    for (const s of sessions) {
+      if (s.hidden === true || blocked.has(s.personId)) continue;
+      if (s.perpetual === true || this.isSessionFinished(s)) continue;
+      types.add(s.type);
+    }
+    return Array.from(types);
+  }
+
   sortSessionsByDate(sessions: Session[]): Session[] {
     return [...sessions].sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
