@@ -27,11 +27,8 @@ const props = defineProps<{
   textStudiesMap: Map<string, TextStudy>;
 }>();
 
-const myReservations = (session: Session): TextStudyReservation[] => {
-  if (!props.currentUser) return [];
-  const user = props.currentUser;
-  return (session.reservations ?? []).filter((r) => reservationService.isOwnReservation(r, user));
-};
+const myReservations = (session: Session): TextStudyReservation[] =>
+  reservationService.ownActiveReservations(session.reservations, props.currentUser);
 
 const readCount = (session: Session) => {
   const mine = myReservations(session);

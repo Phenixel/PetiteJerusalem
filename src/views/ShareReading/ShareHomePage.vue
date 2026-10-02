@@ -111,7 +111,7 @@ const participatedSessions = computed(() => {
     (s) =>
       !isSessionFinished(s) &&
       s.hidden !== true &&
-      s.reservations?.some((r) => reservationService.isOwnReservation(r, u)),
+      reservationService.ownActiveReservations(s.reservations, u).length > 0,
   );
 });
 

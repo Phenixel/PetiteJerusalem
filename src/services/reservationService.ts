@@ -401,6 +401,23 @@ class ReservationService {
     return this.getGuestIdentifiers(user?.email).includes(reservation.chosenByGuestId);
   }
 
+  /**
+   * Les réservations encore valables d'un compte dans une chaîne. Une
+   * réservation expirée (un tirage abandonné, une place de la chaîne
+   * perpétuelle non lue en 24 heures) n'est plus la sienne nulle part
+   * ailleurs : « Je participe » la comptait encore, et la cocher faisait
+   * revivre une place libre, ou échouait si elle avait été reprise.
+   */
+  ownActiveReservations<T extends TextStudyReservation>(
+    reservations: readonly T[] | undefined,
+    user: { id: string; email: string } | null,
+  ): T[] {
+    if (!user) return [];
+    return this.activeReservations(reservations ?? []).filter((r) =>
+      this.isOwnReservation(r, user),
+    );
+  }
+
   canUserDeleteReservation(
     reservation: TextStudyReservation,
     currentUser: { id: string; email: string } | null,
