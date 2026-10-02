@@ -86,9 +86,13 @@ défunt daté `deathDay` (1 à 30) et `deathMonth` (mois hebcal, Adar gardé en
   leur auteur, suppression aussi par l'admin. Les champs sont fermés et
   bornés (`validPrayerName`) : soit une échéance à 31 jours au plus, soit un
   leilouy nichmat daté sans échéance.
-- Session : rien de nouveau. Les lecteurs n'y écrivent que le tableau des
-  réservations, comme partout ; le compteur et la remise à zéro ne sont
-  écrits que par la Cloud Function (SDK admin).
+- Session : les lecteurs n'y écrivent que le tableau des réservations, comme
+  partout. Le drapeau `perpetual`, `slotCount` et le compteur sont réservés à
+  `chaine:creer` et à la Cloud Function (SDK admin) : aucun compte ne les pose
+  à la création d'une session ni ne les change sur la sienne
+  (`perpetualFields`). Sans cela, une session quelconque portant `perpetual`
+  prendrait la carte de la chaîne sur l'accueil et échapperait au masquage du
+  troisième signalement.
 
 ## La fin d'un tour
 
