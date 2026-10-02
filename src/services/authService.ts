@@ -434,6 +434,14 @@ class AuthService {
     // déconnexion) : si l'app se ferme en plein logout, le prochain
     // lancement ne fera pas semblant d'être connecté.
     writeLastKnownUser(null);
+    if (isNativeApp && uid) {
+      // L'appareil ne reçoit plus les rappels du compte qui part (voir
+      // pushService.detachDevice) ; avant signOut, que l'écriture soit encore
+      // permise. Chargé à la demande : Firestore n'est pas du premier
+      // chargement.
+      const { pushService } = await import("./pushService");
+      await pushService.detachDevice(uid).catch(() => {});
+    }
     if (isNativeApp) {
       // Déconnecte aussi la couche native (sinon le prochain login Google
       // resauterait le sélecteur de compte).

@@ -42,6 +42,9 @@ export interface ReminderSettings {
   place: ReminderPlace | null;
 }
 
+/** Ce que la déconnexion attend, au plus, pour retirer le jeton du compte. */
+const DETACH_TIMEOUT_MS = 3000;
+
 /** Dernier jeton FCM connu de cet appareil, pour le retirer à la rotation. */
 const LAST_TOKEN_KEY = "pj_fcm_token";
 
@@ -116,6 +119,43 @@ class PushService {
       // on coupe quand même le rappel ; le token mort sera purgé par la
       // Cloud Function au premier envoi en échec.
       await setDoc(doc(db, "userPreferences", userId), off, { merge: true });
+    }
+    await FirebaseMessaging.deleteToken().catch(() => {});
+  }
+
+  /**
+   * À la déconnexion : l'appareil cesse de recevoir les rappels du compte qui
+   * part. Sans cela, le jeton restait dans `fcmTokens` de ce compte, et le
+   * téléphone recevait ses rappels (avec ses lectures restantes) une fois
+   * quelqu'un d'autre connecté ; le compte suivant, en activant les siens,
+   * ajoutait le même jeton, et l'appareil recevait les deux.
+   *
+   * Le jeton est retiré du compte, sans toucher `pushReminderEnabled` : ses
+   * autres appareils gardent leurs rappels. L'écriture est bornée (la
+   * déconnexion n'attend pas un réseau absent) ; le jeton est ensuite effacé
+   * de l'appareil, si bien qu'un jeton resté dans le document ne mène plus
+   * nulle part et sera purgé par la Cloud Function au premier envoi.
+   */
+  async detachDevice(userId: string): Promise<void> {
+    if (!this.isAvailable) return;
+    let token: string | null = null;
+    try {
+      token = localStorage.getItem(LAST_TOKEN_KEY);
+    } catch {
+      // Stockage indisponible : l'effacement du jeton suffit.
+    }
+    if (token && !isOffline()) {
+      const write = setDoc(
+        doc(db, "userPreferences", userId),
+        { fcmTokens: arrayRemove(token) },
+        { merge: true },
+      ).catch(() => {});
+      await Promise.race([write, new Promise((resolve) => setTimeout(resolve, DETACH_TIMEOUT_MS))]);
+    }
+    try {
+      localStorage.removeItem(LAST_TOKEN_KEY);
+    } catch {
+      // Rien à retirer.
     }
     await FirebaseMessaging.deleteToken().catch(() => {});
   }

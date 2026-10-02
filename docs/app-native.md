@@ -249,6 +249,15 @@ chkia est recalculée côté serveur dans `functions/src/sunsetReminder.ts`
 `@hebcal/core`, qui la donne dans l'application, est publié en ESM seul quand
 `functions/` compile en CommonJS.
 
+À la déconnexion, l'appareil se détache du compte qui part
+(`pushService.detachDevice`) : son jeton est retiré de `fcmTokens`, sans
+toucher `pushReminderEnabled` (les autres appareils du compte gardent leurs
+rappels), puis effacé de l'appareil. Sans cela, le téléphone recevait les
+rappels du compte parti une fois quelqu'un d'autre connecté. L'écriture
+n'attend pas plus de trois secondes ; un jeton resté dans le document ne mène
+plus nulle part et la Cloud Function le purge au premier envoi. Tenu par
+`src/__tests__/pushDetachOnLogout.test.ts`.
+
 ## Rappels d'horaires (notifications locales)
 
 Posés depuis la page **Horaires**, en touchant l'horaire voulu, ou en tirant sa
