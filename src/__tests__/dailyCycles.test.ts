@@ -1,11 +1,14 @@
 import { describe, it, expect } from "vitest";
 import {
   adjacentParasha,
+  getChneiMikraForShabbat,
   getWeekdayTorahParasha,
   getWeeklyParasha,
   getParashaForShabbat,
   getTehilimOfDay,
+  isVezotHaberakha,
   shabbatOfWeek,
+  simhatTorahAfter,
   TEHILIM_MONTHLY,
 } from "../services/dailyCycles";
 
@@ -127,12 +130,48 @@ describe("adjacentParasha", () => {
   });
 
   it("enjambe les Chabbats de fête, qui n'ont pas de paracha ordinaire", () => {
-    // Chabbat 26 septembre 2026 : premier jour de Souccot. Le suivant
-    // (3 octobre) est Chemini Atseret, la paracha d'après est Berechit, le 10.
+    // Chabbat 12 septembre 2026 : Roch Hachana. Ha'azinou est lue le 19.
+    expect(adjacentParasha("2026-09-05", 1)?.weekKey).toBe("2026-09-19");
+    expect(adjacentParasha("2026-09-19", -1)?.weekKey).toBe("2026-09-05");
+  });
+
+  it("passe par Vezot Haberakha, rangée sur le Chabbat avant Simhat Torah", () => {
+    // Vezot Haberakha n'a pas de Chabbat : on la lit à Simhat Torah, et son
+    // chnei mikra se fait la semaine de Souccot. Ha'azinou (19 septembre
+    // 2026), puis le Chabbat de Souccot (26 septembre) enjambé, puis Vezot
+    // Haberakha sur Chemini Atseret (3 octobre), puis Berechit (10 octobre).
     expect(getParashaForShabbat(new Date(2026, 9, 3, 12))).toBeNull();
-    const next = adjacentParasha("2026-09-26", 1);
+    const vezot = adjacentParasha("2026-09-19", 1);
+    expect(vezot?.names).toEqual(["Vezot Haberakhah"]);
+    expect(vezot?.weekKey).toBe("2026-10-03");
+    expect(isVezotHaberakha(vezot)).toBe(true);
+    const next = adjacentParasha("2026-10-03", 1);
     expect(next?.names).toEqual(["Bereshit"]);
     expect(next?.weekKey).toBe("2026-10-10");
+    expect(adjacentParasha("2026-10-10", -1)?.weekKey).toBe("2026-10-03");
+    expect(getChneiMikraForShabbat(new Date(2026, 8, 26, 12))).toBeNull();
+  });
+
+  it("date Vezot Haberakha de Simhat Torah, au calendrier du lieu", () => {
+    expect(simhatTorahAfter("2026-10-03").getDate()).toBe(4);
+    expect(simhatTorahAfter("2026-10-03", true).getDate()).toBe(3);
+  });
+
+  it("trouve Vezot Haberakha chaque année, entre Ha'azinou et Berechit", () => {
+    // Quel que soit le jour de Roch Hachana, y compris Kippour un Chabbat.
+    for (let year = 2025; year <= 2032; year++) {
+      let week = getWeeklyParasha(new Date(year, 7, 1, 12))!.weekKey;
+      const seen: string[] = [];
+      for (let step = 0; step < 12; step++) {
+        const next = adjacentParasha(week, 1)!;
+        seen.push(next.names.join("-"));
+        week = next.weekKey;
+      }
+      const at = seen.indexOf("Vezot Haberakhah");
+      expect(at).toBeGreaterThan(0);
+      expect(seen[at - 1]).toMatch(/Ha'azinu$/);
+      expect(seen[at + 1]).toBe("Bereshit");
+    }
   });
 
   it("revient sur ses pas : avancer puis reculer ramène au point de départ", () => {

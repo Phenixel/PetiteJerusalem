@@ -1692,6 +1692,7 @@ const fr = {
     pageDescription:
       "La paracha de la semaine, montée par montée, chaque verset suivi de son Targoum Onkelos.",
     shabbatOn: "Lue Chabbat {date}",
+    simhatTorahOn: "Lue à Simhat Torah, le {date}",
     hint: "Chaque verset avec le Targoum Onkelos en dessous.",
     previous: "Paracha précédente",
     next: "Paracha suivante",

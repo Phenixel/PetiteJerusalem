@@ -114,6 +114,19 @@ describe("ChneiMikraPage", () => {
     expect(page.text()).toContain("Revenir à la paracha de cette semaine");
   });
 
+  it("ouvre Vezot Haberakha, datée de Simhat Torah", async () => {
+    // Elle n'a pas de Chabbat : le feuilletage la range sur celui d'avant
+    // Simhat Torah (Chemini Atseret, 3 octobre 2026), et la page donne le
+    // jour où on la lit.
+    const page = mount(ChneiMikraPage);
+    await page.router.push("/bibliotheque/chnei-mikra?semaine=2026-10-03");
+    await page.router.isReady();
+    await nextTick();
+
+    expect(page.text()).toContain("Lue à Simhat Torah, le 4 octobre");
+    expect(page.text()).not.toContain("Lue Chabbat");
+  });
+
   it("propose les options de lecture et les retient", async () => {
     const page = mount(ChneiMikraPage);
     await page.router.push("/bibliotheque/chnei-mikra");
@@ -148,7 +161,7 @@ describe("ChneiMikraPage", () => {
   it("retombe sur la semaine en cours quand l'URL ne vaut rien", async () => {
     // Lien tronqué, ou Chabbat de fête sans paracha ordinaire : une page utile
     // vaut mieux qu'une erreur.
-    for (const asked of ["n-importe-quoi", "2026-10-03"]) {
+    for (const asked of ["n-importe-quoi", "2026-09-26"]) {
       const page = mount(ChneiMikraPage);
       await page.router.push(`/bibliotheque/chnei-mikra?semaine=${asked}`);
       await page.router.isReady();

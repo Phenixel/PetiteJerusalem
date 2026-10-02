@@ -1629,6 +1629,7 @@ const en: LocaleMessages = {
     pageDescription:
       "The weekly parasha, aliyah by aliyah, each verse followed by its Targum Onkelos.",
     shabbatOn: "Read on Shabbat {date}",
+    simhatTorahOn: "Read on Simchat Torah, {date}",
     hint: "Each verse with Targum Onkelos underneath.",
     previous: "Previous parasha",
     next: "Next parasha",

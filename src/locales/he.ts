@@ -1579,6 +1579,7 @@ const he: LocaleMessages = {
     bannerParasha: "פרשת השבוע: {parasha}",
     pageDescription: "פרשת השבוע, עלייה אחר עלייה, כל פסוק ואחריו תרגום אונקלוס.",
     shabbatOn: "נקראת בשבת {date}",
+    simhatTorahOn: "נקראת בשמחת תורה, {date}",
     hint: "כל פסוק עם תרגום אונקלוס מתחתיו.",
     previous: "הפרשה הקודמת",
     next: "הפרשה הבאה",
