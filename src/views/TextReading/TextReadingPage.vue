@@ -92,7 +92,7 @@ import { useReadingPinch } from "../../composables/useReadingPinch";
 import { useAutoScroll } from "../../composables/useAutoScroll";
 import { isSansTahanoun } from "../../composables/useSansTahanoun";
 import { nightWithoutTachanun, withoutTachanun } from "../../services/tachanun";
-import { pastChatzotNight } from "../../services/zmanimService";
+import { isWalledCityPlace, pastChatzotNight } from "../../services/zmanimService";
 import { useKeepAwake } from "../../composables/useKeepAwake";
 import { analyticsService } from "../../services/analyticsService";
 import { useLocalePath } from "../../composables/useLocalePath";
@@ -258,7 +258,7 @@ const occasionsDay = computed(() => new HDate(occasionsDayAbs.value));
 // du rendu qui en décide, comme des occasions elles-mêmes.
 const calendarOccasions = computed(() => {
   const il = zmanimPlace.value.tzid === "Asia/Jerusalem";
-  const today = activeOccasions(occasionsDay.value, il);
+  const today = activeOccasions(occasionsDay.value, il, isWalledCityPlace(zmanimPlace.value));
   const jour = isLiturgyText.value && isSansTahanoun(now.value) ? withoutTachanun(today) : today;
   if (!isLiturgyText.value) return jour;
   // Hatsot halayla ne se lit pas sur le calendrier : c'est une heure, elle
