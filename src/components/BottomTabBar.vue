@@ -118,6 +118,20 @@ function popIcon(to: string) {
   });
 }
 
+/**
+ * Toucher l'onglet de la page où l'on est déjà la remonte en haut, comme sur
+ * iOS et Android. Il ne faisait rien : 129 appuis sur « Accueil » depuis
+ * l'accueil en septembre 2026 (docs/audit-usage-posthog-2026-10.md, 2.7).
+ * Depuis une sous-page (un corpus de la bibliothèque), le lien ramène à la
+ * page de l'onglet, comme avant.
+ */
+function onTabClick(tab: Tab) {
+  popIcon(tab.to);
+  if (route.path !== tab.to) return;
+  const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  window.scrollTo({ top: 0, behavior: reduced ? "auto" : "smooth" });
+}
+
 // La page des horaires se comporte en surcouche (voir App.vue) : le bouton
 // rond l'ouvre en cercle depuis lui-même, et la referme si elle est déjà là.
 const onZmanim = computed(() => isSectionPath(route.path, "horaires"));
@@ -159,7 +173,7 @@ function toggleZmanim(event: MouseEvent) {
           "
           :exact-active-class="tab.exact ? 'tab-item-active' : 'tab-item-noop'"
           :active-class="tab.exact ? 'tab-item-noop' : 'tab-item-active'"
-          @click="popIcon(tab.to)"
+          @click="onTabClick(tab)"
         >
           <span
             class="tab-icon"
