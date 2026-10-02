@@ -124,6 +124,7 @@ watch([() => props.session, () => props.show], resetForm, { immediate: true });
             class="field"
             type="text"
             required
+            maxlength="300"
             :placeholder="t('editModal.sessionNamePlaceholder')"
           />
         </div>
@@ -135,6 +136,7 @@ watch([() => props.session, () => props.show], resetForm, { immediate: true });
           <textarea
             v-model="editForm.description"
             class="field resize-y"
+            maxlength="5000"
             :placeholder="t('editModal.descriptionPlaceholder')"
             rows="3"
           ></textarea>
