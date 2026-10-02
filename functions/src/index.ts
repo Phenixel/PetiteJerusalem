@@ -43,6 +43,8 @@ export { onSessionReported } from "./moderation";
 export { submitFeedback } from "./feedback";
 // Informations de l'équipe : notification par canal FCM à la publication.
 export { onAnnouncementWritten } from "./announcements";
+// Chaîne perpétuelle de Tehilim : un tour fini, elle repart à zéro.
+export { onPerpetualSessionUpdated } from "./perpetualChain";
 
 const SITE_URL = "https://petite-jerusalem.fr";
 const OG_IMAGE = `${SITE_URL}/og-image.jpg`;

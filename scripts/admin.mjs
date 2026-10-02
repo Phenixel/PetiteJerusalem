@@ -28,6 +28,9 @@ import { parseArgs } from "node:util";
 import {
   AUDIO_CONTENT_TYPES,
   BackofficeInputError,
+  PERPETUAL_SESSION_ID,
+  describePrayerName,
+  perpetualChainSession,
   announcementFields,
   audioExtension,
   downloadUrl,
@@ -916,6 +919,64 @@ commands["session:demasquer"] = async ([sessionId]) => {
   }
 };
 
+// ---- Chaîne perpétuelle (voir docs/chaine-perpetuelle.md) ------------------------
+
+function perpetualRef() {
+  return firebase().db.collection("sessions").doc(PERPETUAL_SESSION_ID);
+}
+
+commands["chaine:creer"] = async () => {
+  const ref = perpetualRef();
+  const snap = await ref.get();
+  if (snap.exists) {
+    fail(
+      `la chaîne perpétuelle existe déjà : ${PERPETUAL_SESSION_ID} (tour ${snap.data().cycle ?? 1})`,
+    );
+  }
+  const catalog = JSON.parse(
+    readFileSync(new URL("../src/datas/textStudies.json", import.meta.url), "utf8"),
+  );
+  const fields = perpetualChainSession(catalog.textStudies, new Date());
+  if (
+    await write(
+      `Créer la chaîne perpétuelle ${PERPETUAL_SESSION_ID} (« ${fields.name} », ${fields.slotCount} places).`,
+      () => ref.set(fields),
+    )
+  ) {
+    out([`Chaîne créée : /share-reading/session/${PERPETUAL_SESSION_ID}`], {
+      id: PERPETUAL_SESSION_ID,
+      slotCount: fields.slotCount,
+    });
+  }
+};
+
+commands["chaine:noms"] = async () => {
+  const ref = perpetualRef();
+  const [snap, names] = await Promise.all([ref.get(), ref.collection("names").get()]);
+  if (!snap.exists) fail("la chaîne perpétuelle n'existe pas encore : chaine:creer");
+  const chain = snap.data();
+  const lines = [
+    `Tour ${chain.cycle ?? 1}, ${chain.completedCycles ?? 0} tour(s) terminé(s), ${names.size} nom(s)`,
+    ...names.docs.map((d) => describePrayerName(d.id, d.data())),
+  ];
+  out(lines, {
+    cycle: chain.cycle ?? 1,
+    completedCycles: chain.completedCycles ?? 0,
+    names: names.docs.map((d) => ({ id: d.id, ...d.data() })),
+  });
+};
+
+/** Retire un nom signalé : seul l'admin le peut, en plus de son auteur. */
+commands["chaine:retirer-nom"] = async ([nameId]) => {
+  if (!nameId) fail("usage : chaine:retirer-nom <id>   (les identifiants : chaine:noms)");
+  const ref = perpetualRef().collection("names").doc(nameId);
+  const snap = await ref.get();
+  if (!snap.exists) fail(`nom introuvable : ${nameId}`);
+  if (await write(`Retirer ${describePrayerName(nameId, snap.data())}.`, () => ref.delete())) {
+    out([`Nom retiré : ${nameId}`], { id: nameId, removed: true });
+  }
+};
+
 // ---- État ----------------------------------------------------------------------
 
 /** Ce que la vue d'ensemble du backoffice met dans « À traiter ». */
@@ -1000,7 +1061,12 @@ Auteurs et séries
 
 Sessions
   session:signalements
-  session:masquer <id>       session:demasquer <id>`);
+  session:masquer <id>       session:demasquer <id>
+
+Chaîne perpétuelle
+  chaine:creer
+  chaine:noms
+  chaine:retirer-nom <id>`);
 };
 
 // ---- Lancement -----------------------------------------------------------------

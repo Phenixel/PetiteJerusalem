@@ -148,5 +148,9 @@ defineEmits<{
         {{ t("textReading.reserve") }}
       </button>
     </div>
+
+    <!-- Ce que la chaîne ajoute sous sa réservation (les noms de la chaîne
+         perpétuelle, voir PrayerNamesLine). -->
+    <slot />
   </div>
 </template>

@@ -19,6 +19,8 @@ import AppIcon from "../../components/icons/AppIcon.vue";
 import { useToast } from "../../composables/useToast";
 import { useConfirm } from "../../composables/useConfirm";
 import { SITE_URL } from "../../config/site";
+import { findPerpetualSession } from "../../services/perpetualChain";
+import type { Session } from "../../models/models";
 
 const router = useRouter();
 const { t } = useI18n();
@@ -57,6 +59,35 @@ const typeValue = computed({
     sessionData.type = value as EnumTypeTextStudy | "";
   },
 });
+
+/**
+ * Une chaîne de Tehilim pour un malade ou un défunt a souvent du mal à
+ * trouver 150 lecteurs. Dès que le type Tehilim est choisi, une ligne
+ * discrète propose aussi la chaîne perpétuelle, qui lit pour les noms qu'on
+ * lui confie ; elle ne détourne pas de la création, qui reste possible.
+ */
+const perpetualSession = ref<Session | null>(null);
+const showPerpetualHint = computed(
+  () => sessionData.type === EnumTypeTextStudy.Tehilim && perpetualSession.value !== null,
+);
+const perpetualLink = computed(() => {
+  const chain = perpetualSession.value;
+  return chain ? `/share-reading/session/${chain.slug || chain.id}?proposer=1` : "";
+});
+watch(
+  () => sessionData.type,
+  async (type) => {
+    if (type !== EnumTypeTextStudy.Tehilim || perpetualSession.value) return;
+    try {
+      perpetualSession.value = findPerpetualSession(await sessionService.getAllSessions());
+    } catch {
+      // Sans la liste, pas de suggestion : la création suit son cours.
+    }
+  },
+);
+const trackPerpetualHint = () => {
+  analyticsService.capture("perpetual_chain_opened", { source: "new_session" });
+};
 
 const availableBooks = ref<string[]>([]);
 const selectedBooks = ref<string[]>([]);
@@ -330,6 +361,24 @@ const goBack = () => {
             :options="typeOptions"
             :placeholder="t('newSession.selectType')"
           />
+          <!-- Tehilim : la chaîne perpétuelle, en une ligne discrète sous le
+               type. Elle ne promet pas de chiffre de lecteurs. -->
+          <p
+            v-if="showPerpetualHint"
+            class="mt-2.5 flex items-start gap-2 text-xs leading-relaxed text-text-secondary animate-[fadeIn_0.3s_ease]"
+          >
+            <AppIcon name="rotate" :size="13" class="mt-0.5 shrink-0 text-primary" />
+            <span>
+              {{ t("perpetual.creation.text") }}
+              <RouterLink
+                :to="perpetualLink"
+                class="font-semibold text-primary hover:underline"
+                @click="trackPerpetualHint"
+              >
+                {{ t("perpetual.creation.link") }}
+              </RouterLink>
+            </span>
+          </p>
         </div>
 
         <!-- Sélection des parties/livres (s'affiche uniquement si des livres sont disponibles) -->

@@ -8,6 +8,10 @@ import { TextTypeService } from "../../services/textTypeService";
 import type { Session, TextStudy } from "../../models/models";
 import type { EnumTypeTextStudy } from "../../models/typeTextStudy";
 import SessionCard from "../../components/SessionCard.vue";
+import PerpetualChainCard from "../../components/PerpetualChainCard.vue";
+import { findPerpetualSession, isPerpetual } from "../../services/perpetualChain";
+import { prayerNameService } from "../../services/prayerNameService";
+import type { PrayerName } from "../../models/models";
 import SignupPromptModal from "../../components/SignupPromptModal.vue";
 import AccountCta from "../../components/AccountCta.vue";
 import FeatureTour, { type TourStep } from "../../components/FeatureTour.vue";
@@ -220,7 +224,31 @@ const filteredSessions = computed(() => {
 
 const hasActiveFilter = computed(() => searchTerm.value.trim() !== "" || selectedType.value !== "");
 
-const ongoingSessions = computed(() => filteredSessions.value.filter((s) => !isSessionFinished(s)));
+// --- La chaîne perpétuelle : sa carte en tête, hors de la liste publique. ---
+
+const perpetualSession = computed(() => {
+  const found = findPerpetualSession(sessions.value);
+  // Un visiteur qui a bloqué son créateur ne la voit pas plus qu'ailleurs.
+  if (!found || moderationService.getBlockedCreatorIds().includes(found.personId)) return null;
+  return found;
+});
+const perpetualNames = ref<PrayerName[]>([]);
+
+watch([perpetualSession, currentUser], async ([chain, user]) => {
+  if (!chain) return;
+  try {
+    const board = await prayerNameService.board(chain.id, user?.id ?? null);
+    perpetualNames.value = board.listed;
+  } catch (err) {
+    // La carte se passe des noms : elle dit alors seulement la chaîne.
+    console.error("Erreur lors du chargement des noms de la chaîne:", err);
+  }
+});
+
+// La chaîne perpétuelle a sa carte en tête : elle ne se répète pas ici.
+const ongoingSessions = computed(() =>
+  filteredSessions.value.filter((s) => !isSessionFinished(s) && !isPerpetual(s)),
+);
 
 const clearFilters = () => {
   searchTerm.value = "";
@@ -329,6 +357,15 @@ const handleCreateClick = () => {
         {{ t("shareReading.createSession") }}
       </button>
     </div>
+
+    <!-- La chaîne perpétuelle, toujours ouverte : la seule carte colorée de
+         la page, juste sous le bouton de création (voir PerpetualChainCard). -->
+    <PerpetualChainCard
+      v-if="perpetualSession"
+      :session="perpetualSession"
+      :names="perpetualNames"
+      class="max-w-3xl mx-auto mb-12 md:mb-16 animate-[fadeIn_0.5s_ease]"
+    />
 
     <!-- Invitation à se connecter pour les visiteurs sans compte -->
     <SignupPromptModal v-model:show="showAuthPrompt" variant="auth" />

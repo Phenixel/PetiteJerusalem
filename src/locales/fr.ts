@@ -45,6 +45,9 @@ const fr = {
     read: "Lu",
   },
   errors: {
+    prayerNameIncomplete: "Le prénom et celui de la mère sont nécessaires.",
+    prayerNameLimit:
+      "Vous avez proposé autant de noms qu'un compte le peut : retirez-en un pour en ajouter un autre.",
     permissionDenied: "Vous n'avez pas les droits nécessaires pour effectuer cette action.",
     unavailable: "Service momentanément indisponible. Vérifiez votre connexion et réessayez.",
     slotTaken: "Cette section vient d'être réservée par quelqu'un d'autre.",
@@ -1134,6 +1137,107 @@ const fr = {
     dateLimitRequired: "La date limite est requise",
     sessionName: "Nom de la session",
   },
+  /* La chaîne perpétuelle de Tehilim (voir docs/chaine-perpetuelle.md). */
+  perpetual: {
+    alwaysOpen: "Toujours ouverte",
+    continuous: "Lecture continue",
+    cycle: "Tour n° {n}",
+    homeText: "Dès que le dernier Téhilim est lu, elle repart du premier.",
+    timesCompleted: "fois terminée",
+    roundProgress: "{read} lus sur {total}",
+    readingForCount: "On y lit pour {n} personne. | On y lit pour {n} personnes.",
+    noNamesYet: "Proposez le premier nom pour lequel on y lira.",
+    roundDone: "Tour terminé ! La chaîne repart du premier Téhilim dans un instant.",
+    stats: {
+      label: "Compteur de la chaîne",
+      title: "Terminée depuis l'ouverture",
+      times: "fois",
+      lastRound: "Le tour {n} s'est fini le {date}, en {duration}.",
+      firstRoundTitle: "Premier tour",
+      firstRoundText:
+        "Quand les {total} Tehilim seront lus, la chaîne repartira du premier, et ce compteur avancera.",
+      totalRead: "Tehilim lus",
+      readers: "lecteurs au dernier tour",
+      average: "par tour, en moyenne",
+      hours: "{n} h",
+      days: "{n} jour | {n} jours",
+    },
+    names: {
+      title: "Pour qui l'on lit",
+      count: "{n} nom | {n} noms",
+      refoua: "Refoua chelema",
+      leilouy: "Leilouy nichmat",
+      seeMore: "Voir l'autre | Voir les {n} autres",
+      seeLess: "Réduire",
+      propose: "Proposer un nom",
+      empty:
+        "Aucun nom pour l'instant. Tous ceux qui prennent un Téhilim dans la chaîne liront pour le premier que vous proposerez.",
+      edit: "Modifier {name}",
+      waiting: "Vos noms qui ne sont pas lus en ce moment",
+      loadError: "Les noms n'ont pas pu être chargés.",
+    },
+    form: {
+      addTitle: "Proposer un nom",
+      editTitle: "Votre nom dans la liste",
+      intro: "Tous ceux qui prennent un Téhilim dans la chaîne liront pour lui ou pour elle.",
+      for: "Pour",
+      male: "Un homme",
+      female: "Une femme",
+      firstName: "Son prénom",
+      motherName: "Sa mère",
+      motherNameLabel: "Le prénom de sa mère",
+      firstNamePlaceholder: "David",
+      motherNamePlaceholder: "Sarah",
+      hebrewHint: "Les prénoms hébraïques, quand ils en ont un.",
+      prayer: "La prière",
+      deathDate: "Date du décès, en hébreu (facultatif)",
+      day: "Jour",
+      month: "Mois",
+      dayOfMonth: "{day} {month}",
+      datedHint:
+        "Le nom paraîtra chaque année la semaine qui précède le {date}, jusqu'au jour même.",
+      undatedHint:
+        "Sans date, le nom est lu {days} jours ; vous pourrez le prolonger. Avec la date, il revient tous les ans, la semaine qui précède l'anniversaire, jusqu'au jour même.",
+      clearDate: "Sans date",
+      preview: "Il paraîtra ainsi dans la liste",
+      previewFirstName: "Prénom",
+      previewMotherName: "prénom de la mère",
+      ttlNote:
+        "Le nom reste {days} jours dans la liste. Vous le retrouverez ici, à votre couleur : le toucher permet de le prolonger, de le corriger ou de le retirer.",
+      datedNote:
+        "Vous le retrouverez ici, à votre couleur : le toucher permet de le corriger ou de le retirer.",
+      add: "Ajouter le nom",
+      save: "Enregistrer",
+      remove: "Retirer",
+      removeConfirm: "Retirer {name} de la liste ?",
+      removeMessage: "Il ne sera plus lu dans la chaîne.",
+      expiresOn: "Lu jusqu'au {date}",
+      expiresIn:
+        "Encore {n} jour, puis il quitte la liste. | Encore {n} jours, puis il quitte la liste.",
+      expired: "Plus lu depuis le {date}",
+      expiredHint: "Prolongez-le pour qu'on lise de nouveau pour lui.",
+      renew: "Prolonger",
+      datedOn: "Lu chaque année avant le {date}",
+      datedNow: "Lu en ce moment, jusqu'au {date}.",
+      datedLater: "Il paraîtra la semaine qui précède.",
+      added: "{name} est dans la liste.",
+      saved: "Le nom est enregistré.",
+      renewed: "Le nom est lu {days} jours de plus.",
+      removed: "Le nom a quitté la liste.",
+      saveError: "Le nom n'a pas pu être enregistré.",
+      removeError: "Le nom n'a pas pu être retiré.",
+      close: "Fermer",
+      cancel: "Annuler",
+    },
+    reading: {
+      readingFor: "Vous lisez pour",
+      more: "et {n} autre | et {n} autres",
+    },
+    creation: {
+      text: "Pour un malade, ou un proche disparu ? Son nom peut aussi être lu dans la chaîne perpétuelle.",
+      link: "Proposer son nom",
+    },
+  },
   progressBar: {
     participants: "Participe",
     participantsTitle: "Les participants",
@@ -1229,6 +1333,9 @@ const fr = {
     goToChiour: "Ouvrir la page du cours",
   },
   signupPrompt: {
+    prayerNameTitle: "Connectez-vous pour proposer un nom",
+    prayerNameSubtitle:
+      "Le compte vous permet d'y revenir : prolonger le nom, le corriger ou le retirer.",
     reservationConfirmed: "Réservation confirmée !",
     createSessionTitle: "Connectez-vous pour créer une session",
     createSessionSubtitle: "Inscrivez-vous ou connectez-vous pour lancer votre partage de lecture",
@@ -1626,6 +1733,11 @@ const fr = {
     range: "{from} à {to}",
     // Le temps d'une fête, sa place dans Moadim (voir MoadimNowBanner) : le
     // renvoi depuis le sidour, et le livre de la fête en tête de Moadim.
+    // Le renvoi du sidour vers les Brahot (voir SidourBrahotLink).
+    sidourBrahot: {
+      question: "Vous cherchez le Birkat Hamazon ou une autre brakha ?",
+      link: "Le livre des Brahot",
+    },
     moadimNow: {
       label: "{fete}, en ce moment",
       title: "Les textes de la fête, dans Moadim",

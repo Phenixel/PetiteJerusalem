@@ -84,8 +84,14 @@ function monthIn(month: number, year: number): number {
   return month;
 }
 
+/**
+ * Ce qui suffit à placer une date dans une année : son jour et son mois. Le
+ * nom d'un défunt dans la chaîne perpétuelle revient par la même règle.
+ */
+export type HebrewDayOfYear = Pick<HebrewOccasion, "day" | "month">;
+
 /** La date, placée dans l'année hébraïque demandée. */
-export function occasionDateIn(occasion: HebrewOccasion, year: number): HDate {
+export function occasionDateIn(occasion: HebrewDayOfYear, year: number): HDate {
   const month = monthIn(occasion.month, year);
   const day = Math.min(occasion.day, HDate.daysInMonth(month, year));
   return new HDate(day, month, year);
@@ -96,7 +102,7 @@ export function occasionDateIn(occasion: HebrewOccasion, year: number): HDate {
  * celle de cette année-ci si elle n'est pas passée, celle de l'an prochain
  * sinon.
  */
-export function nextOccurrence(occasion: HebrewOccasion, from: HDate): HDate {
+export function nextOccurrence(occasion: HebrewDayOfYear, from: HDate): HDate {
   const thisYear = occasionDateIn(occasion, from.getFullYear());
   if (thisYear.abs() >= from.abs()) return thisYear;
   return occasionDateIn(occasion, from.getFullYear() + 1);
@@ -186,4 +192,14 @@ export function parseOccasion(value: unknown): HebrewOccasion | null {
       ? (raw.reminder as OccasionReminder)
       : "none",
   };
+}
+
+/**
+ * Jours civils jusqu'au prochain retour de la date, 0 le jour même. Le jour
+ * hébraïque est celui de la date civile donnée (le calendrier de l'année fait
+ * de même : la chkia n'y entre pas).
+ */
+export function daysUntilNext(date: HebrewDayOfYear, today: Date): number {
+  const from = new HDate(today);
+  return nextOccurrence(date, from).abs() - from.abs();
 }

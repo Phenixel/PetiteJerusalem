@@ -52,6 +52,62 @@ export interface Session {
   hiddenReason?: "reports" | "admin";
   /** Signalements ouverts distincts, dénormalisé par la Cloud Function. */
   reportsCount?: number;
+
+  // === CHAÎNE PERPÉTUELLE (voir docs/chaine-perpetuelle.md) ===
+  // Une session ordinaire pour les versions de l'app qui ne connaissent pas
+  // ces champs : elles l'affichent avec sa date limite lointaine et y
+  // réservent comme ailleurs.
+
+  /** Toujours ouverte : un tour fini, la Cloud Function la remet à zéro. */
+  perpetual?: boolean;
+  /** Places d'un tour (150 pour les Tehilim) : ce que la Cloud Function compte. */
+  slotCount?: number;
+  /** Le tour en cours, à partir de 1. */
+  cycle?: number;
+  /** Tours terminés depuis l'ouverture. */
+  completedCycles?: number;
+  /** Début du tour en cours. */
+  cycleStartedAt?: Date;
+  /** Début et fin du dernier tour terminé. */
+  lastCycleStartedAt?: Date;
+  lastCycleEndedAt?: Date;
+  /** Lecteurs distincts du dernier tour terminé (comptes et invités). */
+  lastCycleParticipants?: number;
+}
+
+// === NOMS DE LA CHAÎNE PERPÉTUELLE ===
+
+/** « ben » ou « bat » devant le nom de la mère. */
+export type PrayerNameGender = "male" | "female";
+
+/** Ce pour quoi l'on prie : une guérison, ou l'élévation d'une âme. */
+export type PrayerNameKind = "refoua" | "leilouy";
+
+/**
+ * Un nom pour lequel la chaîne perpétuelle lit, dans la sous-collection
+ * `sessions/{id}/names`. Il appartient au compte qui l'a proposé (lui seul le
+ * corrige, le prolonge ou le retire).
+ *
+ * Deux façons d'être lu :
+ *  - sans date : jusqu'à `expiresAt` (30 jours, renouvelables) ;
+ *  - un leilouy nichmat avec la date hébraïque du décès : chaque année, de la
+ *    semaine qui précède l'anniversaire jusqu'au jour même, sans échéance
+ *    (`expiresAt` vaut alors null).
+ */
+export interface PrayerName {
+  id: string;
+  ownerId: string;
+  gender: PrayerNameGender;
+  firstName: string;
+  motherName: string;
+  kind: PrayerNameKind;
+  createdAt: Date;
+  updatedAt: Date;
+  expiresAt: Date | null;
+  /** Jour hébraïque du décès (1 à 30), leilouy nichmat seulement. */
+  deathDay?: number;
+  /** Mois hebcal du décès ; Adar gardé en ADAR_I, comme les dates du calendrier. */
+  deathMonth?: number;
 }
 
 // === MODÉRATION (exigence App Store 1.2) ===

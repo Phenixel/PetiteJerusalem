@@ -60,6 +60,7 @@ import { SITE_URL } from "../config/site";
 const ChneiMikraBanner = defineAsyncComponent(() => import("../components/ChneiMikraBanner.vue"));
 const TehilimDayBanner = defineAsyncComponent(() => import("../components/TehilimDayBanner.vue"));
 const MoadimNowBanner = defineAsyncComponent(() => import("../components/MoadimNowBanner.vue"));
+const SidourBrahotLink = defineAsyncComponent(() => import("../components/SidourBrahotLink.vue"));
 // Ce qu'on dit avant de lire des Tehilim et après : les textes et leur rendu
 // liturgique pèsent, et ne servent qu'à ce livre.
 const BookEncadrement = defineAsyncComponent(() => import("../components/BookEncadrement.vue"));
@@ -271,6 +272,10 @@ const showTehilimDay = computed(() => browsingBook("tehilim"));
 // Le temps d'une fête, le sidour renvoie à ses textes dans Moadim (le loulav,
 // les Hochanot à Souccot), et Moadim ouvre sa liste sur le livre de la fête.
 const showMoadimNow = computed(() => browsingBook("sidour"));
+// Le Birkat Hamazon et les brahot ne sont pas dans le sidour, et l'on vient
+// pourtant les y chercher : le renvoi reste affiché pendant une recherche,
+// c'est souvent là qu'on s'aperçoit qu'ils n'y sont pas.
+const showSidourBrahot = computed(() => currentCorpus.value?.corpus === "sidour");
 const now = useNow();
 const moadimBookNow = computed(() =>
   currentCorpus.value?.corpus === "moadim" && !hasSearch.value
@@ -713,6 +718,13 @@ onUnmounted(() => {
 
     <!-- Sidour : le temps d'une fête, le renvoi vers ses textes dans Moadim. -->
     <MoadimNowBanner v-if="showMoadimNow" class="max-w-5xl mx-auto mb-10" />
+
+    <!-- Sidour : le renvoi vers les Brahot, où vit le Birkat Hamazon. -->
+    <SidourBrahotLink
+      v-if="showSidourBrahot"
+      :searching="hasSearch"
+      class="max-w-5xl mx-auto mb-8"
+    />
 
     <!-- Tehilim : ce qu'on dit avant d'en lire, et ce qu'on dit après. -->
     <BookEncadrement v-if="showBookEncadrement" corpus="tehilim" class="max-w-5xl mx-auto mb-10" />
