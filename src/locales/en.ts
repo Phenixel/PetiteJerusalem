@@ -925,7 +925,7 @@ const en: LocaleMessages = {
     allSessions: "All sessions",
     readCount: "{done}/{total} read",
     allRead: "All read",
-    daysLeftChip: "{count}d left",
+    daysLeftChip: "Last day | 1d left | {count}d left",
     showFinished: "Show finished sessions ({count})",
     hideFinished: "Hide finished sessions",
     openSession: "Open session",

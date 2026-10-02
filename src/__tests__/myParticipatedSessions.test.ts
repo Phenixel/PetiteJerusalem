@@ -78,3 +78,59 @@ describe("Je participe", () => {
     host.remove();
   });
 });
+
+describe("Je participe : jours restants", () => {
+  async function chip(dateKey: string, locale: "fr" | "he") {
+    const { default: MyParticipatedSessions } = await import(
+      "../views/ShareReading/MyParticipatedSessions.vue"
+    );
+    const { endOfLocalDay } = await import("../services/dateService");
+    const he = (await import("../locales/he")).default;
+    const session: Session = {
+      id: "s1",
+      name: "Chaîne",
+      type: EnumTypeTextStudy.Tehilim,
+      description: "",
+      dateLimit: endOfLocalDay(dateKey),
+      createdAt: new Date(),
+      personId: "autre",
+      creatorName: "Quelqu'un",
+      reservations: [mine({ id: "a" })],
+    };
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [{ path: "/:rest(.*)", component: { render: () => null } }],
+    });
+    const host = document.createElement("div");
+    const app = createApp({
+      render: () =>
+        h(MyParticipatedSessions, {
+          sessions: [session],
+          currentUser: user,
+          textStudiesMap: new Map(),
+        }),
+    })
+      .use(createI18n({ legacy: false, locale, messages: { fr, he } }))
+      .use(router);
+    app.mount(host);
+    await nextTick();
+    const text = [...host.querySelectorAll(".chip.shrink-0")].at(-1)?.textContent?.trim();
+    app.unmount();
+    return text;
+  }
+
+  it("compte en jours du calendrier : « Jour J » le jour même, « J-1 » la veille", async () => {
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date(2026, 9, 5, 10, 0));
+    try {
+      expect(await chip("2026-10-05", "fr")).toBe("Jour J");
+      expect(await chip("2026-10-06", "fr")).toBe("J-1");
+      expect(await chip("2026-10-08", "fr")).toBe("J-3");
+      // L'hébreu accorde : un jour au singulier.
+      expect(await chip("2026-10-06", "he")).toBe("עוד יום אחד");
+      expect(await chip("2026-10-08", "he")).toBe("עוד 3 ימים");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});

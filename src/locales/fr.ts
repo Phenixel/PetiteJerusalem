@@ -964,7 +964,7 @@ const fr = {
     allSessions: "Toutes les sessions",
     readCount: "{done}/{total} lues",
     allRead: "Tout lu",
-    daysLeftChip: "J-{count}",
+    daysLeftChip: "Jour J | J-1 | J-{count}",
     showFinished: "Afficher les sessions terminées ({count})",
     hideFinished: "Masquer les sessions terminées",
     openSession: "Ouvrir la session",

@@ -907,7 +907,7 @@ const he: LocaleMessages = {
     allSessions: "כל הסשנים",
     readCount: "{done}/{total} נקראו",
     allRead: "הכול נקרא",
-    daysLeftChip: "עוד {count} ימים",
+    daysLeftChip: "היום האחרון | עוד יום אחד | עוד {count} ימים",
     showFinished: "הצגת סשנים שהסתיימו ({count})",
     hideFinished: "הסתרת סשנים שהסתיימו",
     openSession: "פתיחת הסשן",
