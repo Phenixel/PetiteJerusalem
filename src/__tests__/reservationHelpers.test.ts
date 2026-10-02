@@ -285,3 +285,39 @@ describe("isReservationShape", () => {
     expect(isReservationShape(reservation())).toBe(true);
   });
 });
+
+/**
+ * « Je participe » et la liste des sessions suivies ne comptent que les
+ * réservations encore valables : une expirée (tirage abandonné, place de la
+ * chaîne perpétuelle non lue en 24 heures) n'est plus la sienne ailleurs, et
+ * la cocher faisait revivre une place libre ou échouait si elle était reprise.
+ */
+describe("ownActiveReservations", () => {
+  const user = { id: "u1", email: "u1@exemple.fr" };
+
+  it("ne garde que les réservations du compte, et pas les expirées", () => {
+    const mine = reservation({ id: "a", chosenById: "u1", chosenByGuestId: undefined });
+    const expired = reservation({
+      id: "b",
+      chosenById: "u1",
+      chosenByGuestId: undefined,
+      expiresAt: past(),
+    });
+    const running = reservation({
+      id: "c",
+      chosenById: "u1",
+      chosenByGuestId: undefined,
+      expiresAt: future(),
+    });
+    const other = reservation({ id: "d", chosenById: "u2", chosenByGuestId: undefined });
+    const ids = reservationService
+      .ownActiveReservations([mine, expired, running, other], user)
+      .map((r) => r.id);
+    expect(ids).toEqual(["a", "c"]);
+  });
+
+  it("ne rend rien sans compte ni réservations", () => {
+    expect(reservationService.ownActiveReservations(undefined, user)).toEqual([]);
+    expect(reservationService.ownActiveReservations([reservation()], null)).toEqual([]);
+  });
+});

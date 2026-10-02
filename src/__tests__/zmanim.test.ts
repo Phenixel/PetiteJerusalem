@@ -217,9 +217,11 @@ describe("restPeriodsNear : le Chabbat d'une semaine ordinaire", () => {
     // 22:13. L'afficher 22:12 relâcherait le Chabbat trente-neuf secondes
     // trop tôt (voir ZmanRounding).
     expect(at(DEFAULT_PLACE, shabbat.end!)).toBe("22:13");
-    // Sortie selon Rabbénou Tam : 72 minutes après la chkia (21 h 18 ce
-    // samedi-là), après la sortie ordinaire.
-    expect(at(DEFAULT_PLACE, shabbat.endRabbenouTam!)).toBe("22:30");
+    // Sortie selon Rabbénou Tam : 72 minutes après la chkia (21:18:15 ce
+    // samedi-là), soit 22:30:15, après la sortie ordinaire. Une FIN encore :
+    // 22:31. L'arrondi à la minute la plus proche de hebcal (sunsetOffset)
+    // donnait 22:30, quinze secondes trop tôt.
+    expect(at(DEFAULT_PLACE, shabbat.endRabbenouTam!)).toBe("22:31");
     expect(shabbat.endRabbenouTam!.getTime()).toBeGreaterThan(shabbat.end!.getTime());
   });
 

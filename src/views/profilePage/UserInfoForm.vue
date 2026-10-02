@@ -151,25 +151,27 @@ const save = async () => {
           />
         </div>
 
+        <!-- L'adresse et l'identifiant ne se modifient pas : ils se lisent
+             comme un texte, pas comme un champ. Encadrés, ils étaient touchés
+             à répétition (docs/design.md, « Ce qui ne se modifie pas n'a pas
+             l'air d'un champ »). -->
         <div>
-          <label class="block text-sm font-semibold text-text-secondary mb-2">{{
-            t("common.emailAddress")
-          }}</label>
-          <div class="field text-text-secondary">
-            {{ user.email }}
-          </div>
+          <p class="block text-sm font-semibold text-text-secondary mb-1">
+            {{ t("common.emailAddress") }}
+          </p>
+          <p class="text-text-primary break-all">{{ user.email }}</p>
           <p class="text-xs text-text-secondary mt-1">
             {{ t("profile.emailReadOnly") }}
           </p>
         </div>
 
         <div>
-          <label class="block text-sm font-semibold text-text-secondary mb-2">{{
-            t("profile.userId")
-          }}</label>
-          <div class="field font-mono text-sm text-text-secondary">
+          <p class="block text-sm font-semibold text-text-secondary mb-1">
+            {{ t("profile.userId") }}
+          </p>
+          <p class="font-mono text-sm text-text-secondary break-all select-all">
             {{ user.id }}
-          </div>
+          </p>
         </div>
 
         <!-- Bouton caché : il donne à la touche Entrée de quoi valider. -->
