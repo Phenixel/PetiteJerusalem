@@ -156,6 +156,34 @@ function exceptionValues(bag: Properties | undefined): unknown[] {
   return Array.isArray(list) ? list.map((item: { value?: unknown }) => item?.value) : [];
 }
 
+/**
+ * Les paramètres d'adresse qui portent une donnée personnelle. L'invitation à
+ * créer un compte ouvrait `/login?email=<l'adresse de l'invité>` : le
+ * `$pageview` et chaque événement de la page l'emportaient dans
+ * `$current_url`. L'adresse passe désormais par l'état de la navigation (voir
+ * SignupPromptModal) ; ce filtre retire en plus le paramètre de toute URL
+ * envoyée, site comme app, pour les liens anciens ou venus d'ailleurs.
+ */
+const PERSONAL_PARAMS = ["email"];
+
+export function withoutPersonalParams(url: string): string {
+  if (!PERSONAL_PARAMS.some((param) => url.includes(`${param}=`))) return url;
+  try {
+    const parsed = new URL(url);
+    for (const param of PERSONAL_PARAMS) parsed.searchParams.delete(param);
+    return parsed.toString();
+  } catch {
+    return url;
+  }
+}
+
+function stripPersonalParams(bag: Properties | undefined): void {
+  if (!bag) return;
+  for (const key of URL_KEYS) {
+    if (typeof bag[key] === "string") bag[key] = withoutPersonalParams(bag[key]);
+  }
+}
+
 const stampPlatform: BeforeSendFn = (event) => {
   if (!event) return event;
   if (INTERNAL_PATHS.test(window.location.pathname)) return null;
@@ -169,6 +197,9 @@ const stampPlatform: BeforeSendFn = (event) => {
   // compris les $pageview automatiques (mêmes raisons que app_platform).
   event.properties.is_logged_in = isLoggedIn;
   event.properties.locale = i18n.global.locale.value;
+  stripPersonalParams(event.properties);
+  stripPersonalParams(event.$set);
+  stripPersonalParams(event.$set_once);
   if (isNativeApp) {
     rewriteNativeUrls(event.properties);
     rewriteNativeUrls(event.$set);
