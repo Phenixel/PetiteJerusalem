@@ -51,8 +51,8 @@ describe("une chaîne au titre long", () => {
       "src/components/EditSessionModal.vue",
     ]) {
       const source = readFileSync(file, "utf8");
-      expect(source, file).toContain('maxlength="300"');
-      expect(source, file).toContain('maxlength="5000"');
+      expect(source).toContain('maxlength="300"');
+      expect(source).toContain('maxlength="5000"');
     }
   });
 });
