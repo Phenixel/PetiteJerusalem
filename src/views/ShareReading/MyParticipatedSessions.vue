@@ -8,7 +8,7 @@ import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { reservationService, ReservationGoneError } from "../../services/reservationService";
 import { TextTypeService } from "../../services/textTypeService";
-import { endOfLocalDay } from "../../services/dateService";
+import { deadlineOf } from "../../services/dateService";
 import { appendHebrewNumeral, formatNumberWithHebrew } from "../../services/hebrewNumerals";
 import type { Session, TextStudy, TextStudyReservation } from "../../models/models";
 import type { User } from "../../services/authService";
@@ -81,7 +81,7 @@ function toggleExpand(id: string) {
  * donnait « J-1 » le jour même et « J-2 » la veille.
  */
 const daysLeft = (session: Session): number => {
-  const limit = endOfLocalDay(new Date(session.dateLimit));
+  const limit = deadlineOf(session);
   const today = new Date();
   const limitDay = new Date(limit.getFullYear(), limit.getMonth(), limit.getDate());
   const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());

@@ -23,6 +23,12 @@ export interface Session {
   type: EnumTypeTextStudy;
   description: string;
   dateLimit: Date;
+  /**
+   * Le jour limite choisi par le créateur (YYYY-MM-DD), le même dans tous les
+   * fuseaux : voir `deadlineDayOf` (services/dateService.ts). Absent des
+   * chaînes créées avant octobre 2026.
+   */
+  dateLimitDay?: string;
   createdAt: Date;
   personId: string;
   creatorName: string;
