@@ -66,12 +66,12 @@ retirer avant un build destiné à un store, `npm run app:build` sans
 
 ## Scripts
 
-| Script                      | Rôle                                                                                                                          |
-| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `npm run app:build`         | build web + retrait des corpus volumineux (`app:prune`) + retrait des SDK OAuth inutilisés (`app:prune-spm`) + `cap sync`     |
-| `npm run cap:sync`          | synchronise web + plugins vers les projets natifs                                                                             |
-| `npm run cap:android`       | build + ouvre Android Studio                                                                                                  |
-| `npm run cap:ios`           | build + ouvre Xcode                                                                                                           |
+| Script | Rôle |
+|---|---|
+| `npm run app:build` | build web + retrait des corpus volumineux (`app:prune`) + retrait des SDK OAuth inutilisés (`app:prune-spm`) + `cap sync` |
+| `npm run cap:sync` | synchronise web + plugins vers les projets natifs |
+| `npm run cap:android` | build + ouvre Android Studio |
+| `npm run cap:ios` | build + ouvre Xcode |
 | `npm run store:screenshots` | régénère les captures des fiches Play Store et App Store, les mêmes pour les deux (voir `store-assets/screenshots/README.md`) |
 
 ## Un plugin ne traverse jamais une promesse
@@ -133,7 +133,6 @@ avec un leurre qui se comporte comme le vrai proxy, `then` compris.
   Un livre embarqué n'a ni bouton « Télécharger » ni place dans « Tout
   télécharger ». Tests : `src/__tests__/bundledTexts.test.ts` (ordre de
   lecture), `pruneNativeBundle.test.ts` (ce que le binaire garde).
-
 - Les livres se téléchargent depuis la bibliothèque (bouton sur chaque carte,
   « Tout télécharger » par corpus) ou sur proposition de la lecture du jour
   (voir plus bas). Stockage : `Directory.Data` en natif
@@ -229,7 +228,7 @@ l'app, adapter ce script en même temps que `capacitor.config.ts`.
 Étapes **hors-code** à faire une fois pour iOS (détaillées dans
 `docs/ios-release-plan.md`) : activer le fournisseur **Apple** dans la console
 Firebase, et cocher la capacité **Sign in with Apple** sur l'App ID Apple
-Developer. Le _Service ID_ et la _Sign in with Apple Key_ ne servent qu'au
+Developer. Le *Service ID* et la *Sign in with Apple Key* ne servent qu'au
 flux web. Côté projet Xcode, `scripts/setup-ios.mjs` écrit l'entitlement.
 
 ## Notifications push
@@ -441,12 +440,12 @@ Les deux systèmes savent adapter l'icône d'une app au thème du téléphone, �
 condition qu'on leur en donne les variantes ; sinon ils laissent l'icône en
 couleurs telle quelle.
 
-| Variante     | Où elle sert                                                             |
-| ------------ | ------------------------------------------------------------------------ |
-| claire       | l'icône d'origine, les boutiques, l'écran de lancement                   |
-| sombre       | mode sombre d'iOS 18                                                     |
-| teintée      | iOS 18, teintée par la couleur choisie pour l'écran d'accueil            |
-| monochrome   | icônes thématiques d'Android 13+, teintées par le fond d'écran           |
+| Variante | Où elle sert |
+|---|---|
+| claire | l'icône d'origine, les boutiques, l'écran de lancement |
+| sombre | mode sombre d'iOS 18 |
+| teintée | iOS 18, teintée par la couleur choisie pour l'écran d'accueil |
+| monochrome | icônes thématiques d'Android 13+, teintées par le fond d'écran |
 | notification | petite icône de toutes les notifications Android, teintée par le système |
 
 C'est pour ça que le noir et blanc est nécessaire : les variantes teintée et
@@ -543,11 +542,11 @@ laisse simplement le bandeau masqué, jamais de faux positif.
 
 Un tag `vX.Y.Z` publie tout d'un coup :
 
-| Workflow             | Cible      | Résultat                                                                |
-| -------------------- | ---------- | ----------------------------------------------------------------------- |
-| `deploy.yml`         | site       | mise en ligne de `petite-jerusalem.fr`                                  |
+| Workflow | Cible | Résultat |
+|---|---|---|
+| `deploy.yml` | site | mise en ligne de `petite-jerusalem.fr` |
 | `deploy-android.yml` | Play Store | AAB signé + fiche + notes de version, publiés (`docs/android-ci-cd.md`) |
-| `deploy-ios.yml`     | App Store  | IPA signé envoyé sur **TestFlight** + fiche (`docs/ios-ci-cd.md`)       |
+| `deploy-ios.yml` | App Store | IPA signé envoyé sur **TestFlight** + fiche (`docs/ios-ci-cd.md`) |
 
 Côté iOS, le tag envoie le binaire, soumet la version à l'examen et la met en
 vente dès l'accord d'Apple, sans clic dans App Store Connect. Le seul délai qui
