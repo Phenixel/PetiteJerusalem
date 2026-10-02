@@ -37,6 +37,11 @@ const props = defineProps<{
   min?: string;
   /** Ce que la fenêtre annonce, à défaut « Choisir une date ». */
   label?: string;
+  /**
+   * Première année de la liste, à défaut vingt ans avant aujourd'hui. Une date
+   * de naissance ou de décès remonte plus loin qu'une date limite.
+   */
+  firstYear?: number;
 }>();
 
 const emit = defineEmits<{ close: [] }>();
@@ -170,11 +175,12 @@ const weeks = computed(() => {
 /**
  * Les années proposées : vingt ans de part et d'autre d'aujourd'hui, et jamais
  * avant le premier jour choisissable. Assez pour une date limite comme pour
- * remonter un calendrier ; au-delà, les flèches du mois restent là.
+ * remonter un calendrier ; au-delà, les flèches du mois restent là. Une date
+ * de naissance demande davantage : `firstYear` ouvre la liste plus tôt.
  */
 const years = computed(() => {
   const thisYear = new Date().getFullYear();
-  const minYear = props.min ? Number(props.min.slice(0, 4)) : thisYear - 20;
+  const minYear = props.min ? Number(props.min.slice(0, 4)) : (props.firstYear ?? thisYear - 20);
   const start = minYear;
   const end = Math.max(thisYear + 20, cursor.value.getFullYear() + 1);
   return Array.from({ length: end - start + 1 }, (_, index) => start + index);

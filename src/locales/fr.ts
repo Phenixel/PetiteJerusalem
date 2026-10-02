@@ -858,6 +858,46 @@ const fr = {
     removeConfirmHint: "La date et son rappel s'en vont, sans retour en arrière.",
     removeAria: "Supprimer {name}",
     editAria: "Modifier {name}",
+    yahrzeitHint:
+      "Indiquez la date du décès\u00a0: c'est d'elle que se comptent les années. Seule la première fait exception\u00a0: si le décès vient d'arriver, la première année se compte du jour de l'enterrement.",
+    civilDate: "Date civile",
+    useCivil: "Saisir la date civile",
+    useHebrew: "Saisir la date hébraïque",
+    civilResult: "Date hébraïque\u00a0: {hebrew}",
+    pickCivil: "Choisissez le jour, avec son année\u00a0: la date hébraïque se calcule seule.",
+  },
+  /* Le convertisseur du calendrier : date hébraïque, date civile, bar-mitsvah.
+     Voir DateConverterModal. */
+  converter: {
+    open: "Convertir une date",
+    title: "Convertir une date",
+    tabs: {
+      hebrew: "Hébraïque",
+      civil: "Civile",
+      mitzvah: "Bar-mitsvah",
+    },
+    hebrewDate: "Date hébraïque",
+    year: "Année hébraïque",
+    yearSpan: "L'année {year} s'étend sur {from} et {to}.",
+    invalidYear: "Indiquez une année hébraïque, entre {min} et {max}.",
+    startsEve: "Le jour commence la veille, {eve}, au coucher du soleil.",
+    civilDate: "Date civile",
+    afterSunset: "Après le coucher du soleil",
+    afterSunsetHint: "Le jour hébraïque suivant avait déjà commencé.",
+    mitzvah: {
+      kinds: {
+        bar: "Garçon, 13 ans",
+        bat: "Fille, 12 ans",
+      },
+      birthDate: "Date de naissance",
+      born: "Naissance\u00a0: {hebrew}",
+      barOn: "Bar-mitsvah",
+      batOn: "Bat-mitsvah",
+      fromNightfall: "À partir de la tombée de la nuit, la veille ({eve}).",
+      firstShabbat: "Premier Chabbat, {date}\u00a0: paracha",
+      pickBirth: "Choisissez la date de naissance.",
+      note: "Le calcul suit la règle de l'anniversaire hébraïque. Pour la pratique, l'avis d'un rav prime.",
+    },
   },
   security: {
     title: "Sécurité",
