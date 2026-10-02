@@ -148,6 +148,42 @@ export function getWeekdayTorahParasha(date: Date, il = false): WeeklyParasha | 
   return getWeeklyParasha(date, il);
 }
 
+/**
+ * La paracha du chnei mikra pour un Chabbat donné : celle de ce Chabbat
+ * (`getParashaForShabbat`), plus Vezot Haberakha.
+ *
+ * Vezot Haberakha n'a pas de Chabbat : on la lit à Sim'hat Torah, et son
+ * chnei mikra se fait la semaine de Souccot, avant la fête. On la range donc
+ * sur le dernier Chabbat avant Sim'hat Torah, celui du 16 au 22 Tichri
+ * (toujours un Chabbat de fête, sans paracha ordinaire), pour que le
+ * feuilletage passe de Ha'azinou à elle, puis à Berechit. En Israël, quand le
+ * 22 Tichri tombe un Chabbat, c'est même le jour où on la lit.
+ */
+export function getChneiMikraForShabbat(saturday: Date, il = false): WeeklyParasha | null {
+  const parasha = getParashaForShabbat(saturday, il);
+  if (parasha) return parasha;
+  const hd = new HDate(saturday);
+  if (hd.getMonth() === months.TISHREI && hd.getDate() >= 16 && hd.getDate() <= 22) {
+    const entry = parashaByKey.get(HEBCAL_ALIASES.vezothaberakhah);
+    if (entry) return { names: ["Vezot Haberakhah"], entries: [entry], weekKey: dateKey(saturday) };
+  }
+  return null;
+}
+
+/** Vrai pour Vezot Haberakha, qui se lit à Sim'hat Torah et non un Chabbat. */
+export function isVezotHaberakha(parasha: WeeklyParasha | null): boolean {
+  return parasha?.names.length === 1 && parasha.names[0] === "Vezot Haberakhah";
+}
+
+/**
+ * Sim'hat Torah qui suit le Chabbat d'une `weekKey` : le 22 Tichri en Israël,
+ * le 23 en diaspora.
+ */
+export function simhatTorahAfter(weekKey: string, il = false): Date {
+  const year = new HDate(shabbatOfWeek(weekKey)).getFullYear();
+  return new HDate(il ? 22 : 23, months.TISHREI, year).greg();
+}
+
 /** Le Chabbat d'une `weekKey` ("2026-08-08"), dans le repère local. */
 export function shabbatOfWeek(weekKey: string): Date {
   const [year, month, day] = weekKey.split("-").map(Number);
@@ -155,11 +191,12 @@ export function shabbatOfWeek(weekKey: string): Date {
 }
 
 /**
- * La paracha du Chabbat ordinaire qui suit (`direction` = 1) ou précède (-1)
- * celui de `weekKey` : de quoi feuilleter les parachiot une à une.
+ * La paracha du Chabbat qui suit (`direction` = 1) ou précède (-1) celui de
+ * `weekKey` : de quoi feuilleter les parachiot une à une, Vezot Haberakha
+ * comprise (voir getChneiMikraForShabbat).
  *
- * Les Chabbats de fête n'ont pas de paracha ordinaire (`getParashaForShabbat`
- * renvoie null) ; on les enjambe plutôt que de s'arrêter sur une semaine vide.
+ * Les autres Chabbats de fête n'ont pas de paracha ordinaire ; on les enjambe
+ * plutôt que de s'arrêter sur une semaine vide.
  * Deux Chabbats de fête ne se suivent jamais de plus de deux crans, la borne
  * est large.
  *
@@ -173,7 +210,7 @@ export function adjacentParasha(
   const saturday = shabbatOfWeek(weekKey);
   for (let step = 0; step < 8; step++) {
     saturday.setDate(saturday.getDate() + direction * 7);
-    const parasha = getParashaForShabbat(saturday, il);
+    const parasha = getChneiMikraForShabbat(saturday, il);
     if (parasha) return parasha;
   }
   return null;

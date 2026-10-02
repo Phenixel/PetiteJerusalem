@@ -4,9 +4,11 @@ import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import {
   adjacentParasha,
-  getParashaForShabbat,
+  getChneiMikraForShabbat,
+  isVezotHaberakha,
   parashaTitle,
   shabbatOfWeek,
+  simhatTorahAfter,
   type WeeklyParasha,
 } from "../../services/dailyCycles";
 import { localeMessagesReady } from "../../i18n";
@@ -67,7 +69,7 @@ const il = computed(() => isIsraelPlace(place.value));
 const parasha = computed<WeeklyParasha | null>(() => {
   const asked = route.query[WEEK_PARAM];
   if (typeof asked !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(asked)) return currentWeek.value;
-  return getParashaForShabbat(shabbatOfWeek(asked), il.value) ?? currentWeek.value;
+  return getChneiMikraForShabbat(shabbatOfWeek(asked), il.value) ?? currentWeek.value;
 });
 
 // Double appui sur le texte : la page descend toute seule, à l'allure choisie
@@ -83,13 +85,16 @@ const isCurrentWeek = computed(() => parasha.value?.weekKey === currentWeek.valu
 
 const title = computed(() => parashaTitle(parasha.value));
 
-/** « Chabbat 8 août », le Chabbat où la paracha affichée est lue. */
+/** « Chabbat 8 août », le Chabbat où la paracha affichée est lue ; pour
+ * Vezot Haberakha, qui n'a pas de Chabbat, le jour de Sim'hat Torah. */
 const shabbatLabel = computed(() => {
   if (!parasha.value) return "";
-  const date = dateTimeFormat(locale.value, { day: "numeric", month: "long" }).format(
-    shabbatOfWeek(parasha.value.weekKey),
-  );
-  return t("chneiMikra.shabbatOn", { date });
+  const format = dateTimeFormat(locale.value, { day: "numeric", month: "long" });
+  if (isVezotHaberakha(parasha.value)) {
+    const date = format.format(simhatTorahAfter(parasha.value.weekKey, il.value));
+    return t("chneiMikra.simhatTorahOn", { date });
+  }
+  return t("chneiMikra.shabbatOn", { date: format.format(shabbatOfWeek(parasha.value.weekKey)) });
 });
 
 /** Les parachiot voisines : une flèche sans destination est désactivée. */
@@ -143,7 +148,8 @@ watch([title, locale, localeMessagesReady], applySeoMeta, { immediate: true });
       <p class="mt-2 text-text-secondary">{{ t("chneiMikra.hint") }}</p>
 
       <template v-if="parasha">
-        <!-- Feuilleter les parachiot : les Chabbats de fête sont enjambés. -->
+        <!-- Feuilleter les parachiot : les Chabbats de fête sont enjambés, sauf
+             celui de Souccot, qui porte Vezot Haberakha. -->
         <div class="mt-8 flex items-center justify-between gap-3">
           <button
             type="button"
