@@ -28,6 +28,8 @@ import {
 const STORAGE_KEY = "pj_hebrew_occasions";
 /** Le compte dont les dates ont déjà été adoptées sur cet appareil. */
 const ADOPTED_KEY = "pj_hebrew_occasions_adopted";
+/** Le dernier compte dont l'appareil a pris les dates, voir adoptAccount. */
+const OWNER_KEY = "pj_hebrew_occasions_owner";
 
 /** Au-delà, la liste ne se lit plus, et les notifications ne suivraient pas. */
 export const MAX_OCCASIONS = 40;
@@ -93,6 +95,22 @@ function rememberAdopted(userId: string): void {
   }
 }
 
+function readOwner(): string | null {
+  try {
+    return localStorage.getItem(OWNER_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function rememberOwner(userId: string): void {
+  try {
+    localStorage.setItem(OWNER_KEY, userId);
+  } catch {
+    // Stockage indisponible : l'appareil se fiera aux comptes adoptés.
+  }
+}
+
 const sameList = (a: HebrewOccasion[], b: HebrewOccasion[]): boolean =>
   JSON.stringify(a) === JSON.stringify(b);
 
@@ -121,8 +139,16 @@ async function adoptAccount(userId: string): Promise<void> {
     if (accountId.value !== userId) return; // Déconnecté entre-temps.
     const remote = parseList(prefs.hebrewOccasions);
     const first = !adoptedAccounts().includes(userId);
-    const next = first ? mergeOccasions(remote, occasions.value, MAX_OCCASIONS) : remote;
+    // Les dates d'un autre compte, restées sur l'appareil à sa déconnexion
+    // (anniversaires, hazkarot de sa famille), ne rejoignent pas celui-ci :
+    // seules celles saisies sans compte sont adoptées. Avant que l'appareil
+    // ne retienne ce dernier compte, un compte déjà adopté en tient lieu.
+    const owner = readOwner() ?? adoptedAccounts().slice(-1)[0] ?? null;
+    const foreign = owner !== null && owner !== userId;
+    const next =
+      first && !foreign ? mergeOccasions(remote, occasions.value, MAX_OCCASIONS) : remote;
     rememberAdopted(userId);
+    rememberOwner(userId);
     if (!sameList(next, occasions.value)) occasions.value = next;
     if (!sameList(next, remote)) await pushToAccount(userId, next);
   } catch {
