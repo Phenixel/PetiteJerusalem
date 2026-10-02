@@ -66,6 +66,11 @@ const POSITIONS_KEY = "pj-reading-positions";
 const RESUME_DISMISSED_KEY = "pj-reading-resume-dismissed";
 const BOOKMARKS_KEY = "pj-bookmarks";
 const TOMBSTONES_KEY = "pj-bookmark-tombstones";
+/**
+ * Le compte dont l'appareil garde les positions et marque-pages (absent :
+ * saisis sans compte). Ce qu'un compte a laissé ne rejoint pas le suivant.
+ */
+const OWNER_KEY = "pj-reading-owner";
 const MAX_POSITIONS = 50;
 const MAX_BOOKMARKS = 200;
 const MAX_TOMBSTONES = 300;
@@ -316,6 +321,16 @@ class ReadingProgressService {
   /** Fusionne local ↔ cloud (position la plus récente par texte, union des marque-pages). */
   private async syncWithCloud(userId: string): Promise<void> {
     const prefs = await userPreferencesService.getPreferences(userId);
+    // Un autre compte s'est servi de cet appareil : ses positions et
+    // marque-pages y sont restés à la déconnexion. La fusion les aurait
+    // versés dans ce compte-ci ; ils cèdent la place à ceux du compte.
+    const owner = readJson<string | null>(OWNER_KEY, null);
+    if (owner !== null && owner !== userId) {
+      writeJson(POSITIONS_KEY, {});
+      writeJson(BOOKMARKS_KEY, []);
+      writeJson(TOMBSTONES_KEY, {});
+    }
+    writeJson(OWNER_KEY, userId);
     const local = this.positions();
     const cloud = prefs.readingPositions ?? {};
     const merged: Record<string, ReadingPosition> = { ...cloud };

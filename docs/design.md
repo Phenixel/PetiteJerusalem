@@ -877,6 +877,20 @@ courant de l'écran : un compte créé d'un toucher avec Google, puis, des
 semaines plus tard, une adresse et un mot de passe qui n'ont jamais existé.
 Tenu par `src/__tests__/loginEmailErrors.test.ts` et `emailAuthErrors.test.ts`.
 
+### Ce qu'un compte laisse sur l'appareil ne rejoint pas le suivant
+
+À la déconnexion, marque-pages, positions de lecture et dates personnelles
+restent sur l'appareil : ils y ont autant leur place qu'avant la connexion.
+Mais à la connexion d'un autre compte (téléphone de famille, ordinateur de la
+synagogue), la fusion les versait dans le sien, hazkarot et anniversaires
+d'une autre famille compris. L'appareil retient donc à quel compte ils
+appartiennent (`pj-reading-owner`, `pj_hebrew_occasions_owner`) : un autre
+compte qui se connecte retrouve les siens à la place, et seul ce qui a été
+saisi sans compte rejoint le compte. Le même compte qui revient retrouve
+tout. Pour les dates, un appareil d'avant cette règle prend pour propriétaire
+le dernier compte adopté. Tenu par
+`src/__tests__/accountSwitchLocalData.test.ts`.
+
 ## 2. Les couleurs de thème
 
 Trois duos au choix, dans cet ordre. Le premier est celui d'origine.
