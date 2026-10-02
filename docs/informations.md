@@ -57,7 +57,12 @@ comptent comme nouvelles.
 Les notes d'une version ne s'annoncent sur l'accueil de l'app qu'une fois
 cette version installée : publiées pendant la revue des stores, elles
 décriraient ce que l'app ne fait pas encore. Elles restent visibles dans la
-liste.
+liste, sans pastille « Nouveau » tant que la version n'est pas là. Une note
+vue dans la liste avant l'installation redevient nouvelle une fois la version
+installée : l'appareil retient la version de sa dernière visite
+(`pj_announcements_seen_version`), et une note d'une version plus récente,
+désormais installée, est nouvelle quelle que soit sa date. Test :
+`announcements.test.ts` (« une note de version vue avant son installation »).
 
 ## Comment ça marche
 

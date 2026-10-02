@@ -12,6 +12,8 @@ import { homeHighlights, type Announcement } from "../services/announcements";
  */
 
 const SEEN_KEY = "pj_announcements_seen";
+/** La version de l'app installée lors de la dernière visite de la liste. */
+const SEEN_VERSION_KEY = "pj_announcements_seen_version";
 
 function readSeen(): number | null {
   try {
@@ -23,9 +25,18 @@ function readSeen(): number | null {
   }
 }
 
+function readSeenVersion(): string | null {
+  try {
+    return localStorage.getItem(SEEN_VERSION_KEY);
+  } catch {
+    return null;
+  }
+}
+
 const items = ref<Announcement[]>([]);
 const status = ref<"idle" | "loading" | "ready" | "error">("idle");
 const seenAt = ref<number | null>(readSeen());
+const seenVersion = ref<string | null>(readSeenVersion());
 /** Version de l'app installée (notes de version), nulle sur le site. */
 const installed = ref<string | null>(null);
 
@@ -80,9 +91,21 @@ function saveSeen(time: number): void {
   }
 }
 
-/** La liste a été vue : plus rien n'est nouveau jusqu'à la prochaine annonce. */
+/**
+ * La liste a été vue : plus rien n'est nouveau jusqu'à la prochaine annonce,
+ * ou jusqu'à l'installation d'une version dont la note attendait (voir
+ * unreadAnnouncements).
+ */
 function markAllSeen(): void {
   saveSeen(items.value.reduce((max, a) => Math.max(max, a.publishedAt?.getTime() ?? 0), 0));
+  if (installed.value && installed.value !== seenVersion.value) {
+    seenVersion.value = installed.value;
+    try {
+      localStorage.setItem(SEEN_VERSION_KEY, installed.value);
+    } catch {
+      // Stockage indisponible : la note reviendra, rien de plus grave.
+    }
+  }
 }
 
 /**
@@ -95,11 +118,15 @@ function markSeenUpTo(date: Date | null): void {
 }
 
 export function useAnnouncements() {
-  const highlights = computed(() => homeHighlights(items.value, seenAt.value, installed.value));
+  const highlights = computed(() =>
+    homeHighlights(items.value, seenAt.value, installed.value, Date.now(), seenVersion.value),
+  );
   return {
     items,
     status,
     seenAt,
+    seenVersion,
+    installed,
     highlights,
     load,
     markAllSeen,
