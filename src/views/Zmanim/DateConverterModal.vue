@@ -32,6 +32,7 @@ import {
   type ZmanimPlace,
 } from "../../services/zmanimService";
 import {
+  chosenMonthOf,
   civilToHebrew,
   civilYearsOf,
   hebrewDate,
@@ -39,8 +40,8 @@ import {
   MAX_CONVERTER_YEAR,
   MIN_CONVERTER_YEAR,
   mitzvahDate,
-  monthInYear,
   monthsOfYear,
+  shownDayAndMonth,
   type MitzvahKind,
 } from "../../services/hebrewDateConverter";
 import { getWeeklyParasha, shabbatOfWeek } from "../../services/dailyCycles";
@@ -91,8 +92,14 @@ const festivalsOf = (hd: HDate | null): string =>
 
 // ---- Date hébraïque vers date civile ----------------------------------------
 
+/**
+ * Le jour et le mois CHOISIS, gardés à part de ce qui s'affiche pour l'année
+ * en cours (`shown`) : une année qui n'a pas ce mois ou ce jour montre le plus
+ * proche, sans oublier le choix. Les ramener sur place faisait du 14 Adar II
+ * un 14 Adar I après une année ordinaire, et du 30 'Hechvan un 29 pour de bon.
+ */
 const hDay = ref(props.today.getDate());
-const hMonth = ref(props.today.getMonth());
+const hMonth = ref(chosenMonthOf(props.today.getMonth(), props.today.getFullYear()));
 const hYear = ref<number | string>(props.today.getFullYear());
 
 /** L'année tapée, si elle en est une ; la dernière valable sinon, pour les listes. */
@@ -103,10 +110,7 @@ watch(typedYear, (year) => {
   if (isConverterYear(year)) lastValidYear.value = year;
 });
 
-/** Adar II n'existe que dans les années à treize mois : on le ramène à Adar. */
-watch(lastValidYear, (year) => {
-  hMonth.value = monthInYear(hMonth.value, year);
-});
+const shown = computed(() => shownDayAndMonth(hDay.value, hMonth.value, lastValidYear.value));
 
 const monthOptions = computed(() =>
   monthsOfYear(lastValidYear.value).map((month) => ({
@@ -116,9 +120,7 @@ const monthOptions = computed(() =>
 );
 
 /** Les jours du mois choisi, cette année-là : 'Hechvan et Kislev en ont 29 ou 30. */
-const daysInMonth = computed(() =>
-  HDate.daysInMonth(monthInYear(hMonth.value, lastValidYear.value), lastValidYear.value),
-);
+const daysInMonth = computed(() => HDate.daysInMonth(shown.value.month, lastValidYear.value));
 
 const dayOptions = computed(() =>
   Array.from({ length: daysInMonth.value }, (_, index) => ({
@@ -127,21 +129,17 @@ const dayOptions = computed(() =>
   })),
 );
 
-watch(daysInMonth, (last) => {
-  if (hDay.value > last) hDay.value = last;
-});
-
 const hDayModel = computed({
-  get: () => String(hDay.value),
+  get: () => String(shown.value.day),
   set: (value: string) => {
     hDay.value = Number(value);
   },
 });
 
 const hMonthModel = computed({
-  get: () => String(hMonth.value),
+  get: () => String(shown.value.month),
   set: (value: string) => {
-    hMonth.value = Number(value);
+    hMonth.value = chosenMonthOf(Number(value), lastValidYear.value);
   },
 });
 

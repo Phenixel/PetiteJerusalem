@@ -449,6 +449,20 @@ réponse se lit dans un bloc de surface douce, sous le formulaire, sans bouton
 à presser : elle change avec chaque réglage. Ce n'est pas une page de plus,
 c'est une question qu'on se pose devant le calendrier, et elle s'y pose.
 
+### Un choix ne s'oublie pas d'une année à l'autre
+
+Le convertisseur garde le jour et le mois **choisis** à part de ce qu'il
+montre pour l'année en cours. Une année qui n'a pas ce mois ou ce jour montre
+le plus proche (Adar II devient Adar une année ordinaire, le 30 'Hechvan
+devient le 29 quand le mois n'en a que 29), et l'année suivante retrouve le
+choix : le 14 Adar II revient en Adar II, le 30 au 30. Ramener le choix sur
+place l'effaçait ; trois flèches plus loin, Pourim était devenu Pourim Katan.
+
+Adar choisi dans une année ordinaire se lit comme Adar II les années à treize
+mois : c'est la règle des dates personnelles et de hebcal pour les
+anniversaires, et Pourim y tombe. Adar I choisi dans une année à treize mois
+reste Adar I. Tenu par `src/__tests__/dateConverterChoice.test.ts`.
+
 ### Une recherche trouve ce qu'on voulait dire
 
 Un même nom s'écrit de dix façons : « Chabbat », « Shabbat », « Shabat » ;
