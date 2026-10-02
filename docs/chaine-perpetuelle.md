@@ -105,8 +105,19 @@ relit la session : sa propre écriture, ou une relance, ne compte jamais deux
 fois le même tour. Sans `slotCount` valide, le tour ne finit jamais : mieux
 vaut une chaîne qui ne repart pas qu'une chaîne vidée par erreur.
 
-La page qui voit tout lu le dit (« Tour terminé ! ») et se recharge une fois,
-cinq secondes plus tard, pour montrer le tour suivant.
+La page qui voit tout lu le dit (« Tour terminé ! »), puis relit la chaîne
+jusqu'à voir le tour suivant (`waitForNextRound`, `services/perpetualChain`) :
+cinq essais, de plus en plus espacés, une quarantaine de secondes en tout
+(`NEXT_ROUND_RETRY_DELAYS_MS`). La fonction répond d'habitude dans la seconde,
+mais un démarrage à froid peut prendre plusieurs secondes : un seul
+rechargement, cinq secondes après, laissait alors la page figée sans carte de
+tirage. L'attente est bornée, et se coupe quand on quitte la page.
+
+Le lecteur fait de même. « Un autre Téhilim » tire dans la copie de la chaîne
+chargée à l'ouverture du texte ; quand elle n'a plus de place libre, il relit
+la chaîne avant de dire qu'il n'y a plus rien. Si le tour y est entièrement
+lu (le lecteur vient de lire le dernier Téhilim), il le dit et attend le tour
+suivant de la même façon, puis tire dans celui-ci.
 
 ## Une place réservée tient un jour
 
@@ -148,11 +159,12 @@ monde, alors qu'un signalement y vise un nom.
 `src/__tests__/perpetualChain.test.ts` : la forme d'un nom (ben, bat), quand
 un nom est lu (échéance, semaine de l'anniversaire, passage d'une année à
 l'autre), l'ordre de la liste, le compteur, la règle de fin de tour et la
-remise à zéro, l'échéance d'une place réservée, le document écrit par
-`chaine:creer`, et la présence des textes `perpetual.*` dans les trois
+remise à zéro, l'échéance d'une place réservée, l'attente bornée du tour suivant
+(`waitForNextRound`), le document écrit par `chaine:creer`, et la présence des textes `perpetual.*` dans les trois
 langues.
 
 `e2e/firebase/perpetualChain.spec.ts`, contre les émulateurs : la carte, les
-noms, et les règles Firestore (un nom ne s'écrit qu'en son nom et sur la
+noms, la fin d'un tour (la page et le lecteur attendent le tour suivant quand
+la fonction tarde), et les règles Firestore (un nom ne s'écrit qu'en son nom et sur la
 chaîne ; le drapeau et le compteur de la chaîne ne s'écrivent pas depuis un
 compte).

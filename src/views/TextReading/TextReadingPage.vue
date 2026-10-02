@@ -46,6 +46,7 @@ import { localeMessagesReady } from "../../i18n";
 import { transliterate, hasNiqqud } from "../../services/hebrewTransliteration";
 import { appendHebrewNumeral } from "../../services/hebrewNumerals";
 import { sessionService } from "../../services/sessionService";
+import { isPerpetual, isRoundFinished, waitForNextRound } from "../../services/perpetualChain";
 import { ReservationGoneError, SlotTakenError } from "../../services/appError";
 import { isOffline } from "../../services/userPreferencesService";
 import { pageTitle as siteTitle, seoService } from "../../services/seoService";
@@ -1415,6 +1416,9 @@ async function renewDrawIfNeeded() {
   }
 }
 
+/** Coupe l'attente du tour suivant quand le lecteur quitte la page. */
+const nextRoundWait = new AbortController();
+
 onMounted(() => {
   window.addEventListener("pointerdown", noteReadingActivity, { passive: true });
   window.addEventListener("keydown", noteReadingActivity, { passive: true });
@@ -1423,6 +1427,7 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
+  nextRoundWait.abort();
   window.removeEventListener("pointerdown", noteReadingActivity);
   window.removeEventListener("keydown", noteReadingActivity);
   document.removeEventListener("visibilitychange", onVisibilityChange);
@@ -1432,8 +1437,29 @@ onBeforeUnmount(() => {
   }
 });
 
+/**
+ * Chaîne perpétuelle : la copie locale de la chaîne date du montage. Quand
+ * elle n'a plus de place libre, la chaîne a pu repartir entre-temps, et c'est
+ * le cas quand le lecteur vient de lire le dernier Téhilim du tour. On la
+ * relit donc ; si le tour y est entièrement lu, la Cloud Function ne l'a pas
+ * encore remise à zéro (démarrage à froid) : on le dit, et on attend le tour
+ * suivant par quelques essais bornés (waitForNextRound). Renvoie la chaîne
+ * relue, ou null si le tour suivant n'est pas venu.
+ */
+async function refreshPerpetualChain(s: Session): Promise<Session | null> {
+  const load = () => sessionService.getSessionById(s.id);
+  let latest = await load();
+  if (latest && isRoundFinished(latest)) {
+    toast.info(t("perpetual.roundDone"));
+    latest = await waitForNextRound(latest, load, { signal: nextRoundWait.signal });
+  }
+  if (!latest || nextRoundWait.signal.aborted) return null;
+  if (!Array.isArray(latest.reservations)) latest.reservations = [];
+  return latest;
+}
+
 async function drawAnother() {
-  const s = session.value;
+  let s = session.value;
   if (!s || isDrawingAnother.value) return;
   const from = textId.value;
   // La réservation d'arrivée peut être encore en vol : sans cette attente, on
@@ -1450,13 +1476,25 @@ async function drawAnother() {
   }
   isDrawingAnother.value = true;
   try {
-    const result = await sessionService.reserveRandomAvailableText(
-      s,
-      sessionService.getSessionTextStudies(s),
-      currentUser.value,
-      reservationForm.value,
-      t("detailSession.randomDraw.anonymous"),
-    );
+    const reserve = (chain: Session) =>
+      sessionService.reserveRandomAvailableText(
+        chain,
+        sessionService.getSessionTextStudies(chain),
+        currentUser.value,
+        reservationForm.value,
+        t("detailSession.randomDraw.anonymous"),
+      );
+    let result = await reserve(s);
+    if (!result && isPerpetual(s)) {
+      const latest = await refreshPerpetualChain(s);
+      // Page quittée pendant l'attente : rien à dire, ni à tirer.
+      if (nextRoundWait.signal.aborted) return;
+      if (latest) {
+        session.value = latest;
+        s = session.value;
+        result = await reserve(s);
+      }
+    }
     if (!result) {
       toast.info(t("detailSession.randomDraw.noneAvailable"));
       return;
