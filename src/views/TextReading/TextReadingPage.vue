@@ -804,6 +804,9 @@ function dismissResume() {
 }
 
 function scrollToLine(line: number) {
+  // Un placement, pas une lecture : rien ne s'enregistre avant que le lecteur
+  // ne touche à la page (voir awaitingReaderGesture).
+  awaitingReaderGesture = true;
   scrollTo(positionSection.value, line, () => document.querySelector(`[data-line="${line}"]`));
 }
 
@@ -838,6 +841,20 @@ let programmaticScrollAt = 0;
 
 function markProgrammaticScroll() {
   programmaticScrollAt = Date.now();
+}
+
+/**
+ * Placé sur un verset (reprise, marque-page, lien partagé), le lecteur n'a
+ * encore rien lu. Le défilement doux qui l'y amène dure plus que la garde
+ * ci-dessus : il était pris pour un geste, et l'on enregistrait la ligne du
+ * haut de l'écran, une demi-page avant le verset centré. Rouvrir sans lire
+ * faisait reculer la reprise à chaque fois, et un lien partagé écrasait la
+ * position du lecteur. Rien ne s'enregistre plus avant un vrai geste.
+ */
+let awaitingReaderGesture = false;
+const READER_GESTURES = ["pointerdown", "keydown", "wheel", "touchstart"] as const;
+function onReaderGesture() {
+  awaitingReaderGesture = false;
 }
 
 function scrollTopProgrammatic() {
@@ -897,7 +914,7 @@ function onScroll() {
   // Un scroll est un signe de présence : il sert au renouvellement du tirage
   // (voir renewDrawIfNeeded), même quand la capture de position s'abstient.
   noteReadingActivity();
-  if (Date.now() - programmaticScrollAt < 300) return;
+  if (Date.now() - programmaticScrollAt < 300 || awaitingReaderGesture) return;
   if (scrollSaveTimer !== null || !currentSection.value || showSectionList.value) return;
   scrollSaveTimer = window.setTimeout(() => {
     scrollSaveTimer = null;
@@ -1418,6 +1435,9 @@ async function renewDrawIfNeeded() {
 onMounted(() => {
   window.addEventListener("pointerdown", noteReadingActivity, { passive: true });
   window.addEventListener("keydown", noteReadingActivity, { passive: true });
+  for (const gesture of READER_GESTURES) {
+    window.addEventListener(gesture, onReaderGesture, { passive: true });
+  }
   document.addEventListener("visibilitychange", onVisibilityChange);
   renewTimer = setInterval(() => void renewDrawIfNeeded(), RENEW_CHECK_MS);
 });
@@ -1425,6 +1445,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
   window.removeEventListener("pointerdown", noteReadingActivity);
   window.removeEventListener("keydown", noteReadingActivity);
+  for (const gesture of READER_GESTURES) window.removeEventListener(gesture, onReaderGesture);
   document.removeEventListener("visibilitychange", onVisibilityChange);
   if (renewTimer !== null) {
     clearInterval(renewTimer);

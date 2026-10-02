@@ -99,4 +99,36 @@ test.describe("lecteur", () => {
     await expect(page.getByRole("heading", { level: 1 })).toContainText("Tehilim 1");
     await expect(page.locator('[dir="rtl"].reading-he').first()).toBeVisible();
   });
+
+  test("« Reprendre » amène au verset d'un autre chapitre, et ne déplace pas la reprise", async ({
+    page,
+  }) => {
+    // Shir Hashirim (id 331), une lecture laissée au chapitre 3, verset 9.
+    // Le chapitre est dans le même fichier que la liste : le défilement du
+    // routeur vers le haut annulait celui vers le verset, et le défilement
+    // doux, pris pour un geste, enregistrait le haut de l'écran à sa place.
+    const saved = {
+      textId: "331",
+      section: 3,
+      line: 8,
+      path: "/bibliotheque/tanakh/shir-hashirim/3",
+      label: "Shir Hashirim · Chapitre 3",
+      at: Date.now(),
+    };
+    await page.addInitScript((position) => {
+      localStorage.setItem("pj-reading-positions", JSON.stringify({ "331": position }));
+    }, saved);
+    await gotoApp(page, "/bibliotheque/tanakh/shir-hashirim");
+    await page.getByRole("button", { name: "Reprendre", exact: true }).click();
+
+    await expect(page).toHaveURL(/\/shir-hashirim\/3\?verset=8$/);
+    await expect(page.locator('[data-line="8"]').first()).toBeInViewport({ timeout: 5_000 });
+    // Le temps que le défilement doux finisse et que la capture (600 ms
+    // après le dernier défilement) ait pu passer : c'est elle qui écrasait.
+    await page.evaluate(() => new Promise((resolve) => setTimeout(resolve, 2_000)));
+    const stored = await page.evaluate(
+      () => JSON.parse(localStorage.getItem("pj-reading-positions") ?? "{}")["331"],
+    );
+    expect(stored).toMatchObject({ section: 3, line: 8 });
+  });
 });
