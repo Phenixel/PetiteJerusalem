@@ -26,6 +26,12 @@ export interface DevicePreference<T> {
   /** Écrit la valeur dans les deux stockages. */
   write(value: T): void;
   /**
+   * Efface la valeur des deux stockages : l'appareil n'a plus rien à dire, le
+   * défaut reprend. Sans cela, revenir au défaut ne tenait que jusqu'au
+   * lancement suivant, qui relisait l'ancien choix.
+   */
+  clear(): void;
+  /**
    * Ce que le natif garde, quand le `localStorage` n'a rien à dire (il a été
    * vidé, ou l'app vient d'être réinstallée par-dessus). La valeur retrouvée
    * y est remise au passage, pour que la prochaine ouverture la lise sans
@@ -68,6 +74,20 @@ export function devicePreference<T>(
       });
   }
 
+  function clear(): void {
+    try {
+      localStorage.removeItem(key);
+    } catch {
+      // Stockage indisponible : rien n'y était.
+    }
+    if (!isNativeApp) return;
+    void import("@capacitor/preferences")
+      .then(({ Preferences }) => Preferences.remove({ key }))
+      .catch(() => {
+        // Plugin absent (vieux binaire) : rien n'y était.
+      });
+  }
+
   async function restore(): Promise<T | null> {
     if (!isNativeApp) return null;
     try {
@@ -81,5 +101,5 @@ export function devicePreference<T>(
     }
   }
 
-  return { read, write, restore };
+  return { read, write, clear, restore };
 }
