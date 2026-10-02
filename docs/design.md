@@ -853,6 +853,15 @@ phrase : penser à la partager autour de soi, pour que d'autres y participent.
 Le signal passe par l'adresse (`?partager=1`), retiré aussitôt : un
 rechargement ne rouvre pas la fenêtre.
 
+### Les jours restants se comptent sur le calendrier
+
+La pastille de « Je participe » compte les jours du calendrier jusqu'à la
+date limite, pas les heures arrondies : « J-1 » la veille, et le jour même
+**« Jour J »** (« Last day », « היום האחרון ») plutôt qu'un « J-0 » qui se lit
+mal. Chaque langue a ses trois formes, l'hébreu accordant le singulier
+(« עוד יום אחד »). Tenu par `src/__tests__/myParticipatedSessions.test.ts`
+(« Je participe : jours restants »).
+
 ### L'écran de connexion dit quoi faire
 
 Un échec ne montre jamais l'erreur brute de Firebase (« Firebase: Error
