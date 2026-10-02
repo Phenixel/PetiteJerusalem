@@ -274,6 +274,19 @@ describe("endOfLocalDay", () => {
 });
 
 /**
+ * Les règles ne contrôlent que la taille du tableau des réservations : une
+ * entrée null, un nombre ou un objet sans texte y entrent. Le client ne
+ * parcourt que celles qui ont la forme d'une réservation.
+ */
+describe("isReservationShape", () => {
+  it("écarte ce qui n'a pas la forme d'une réservation", async () => {
+    const { isReservationShape } = await import("../services/reservationShape");
+    expect([null, 7, "x", {}, { textStudyId: 103 }].filter(isReservationShape)).toEqual([]);
+    expect(isReservationShape(reservation())).toBe(true);
+  });
+});
+
+/**
  * « Je participe » et la liste des sessions suivies ne comptent que les
  * réservations encore valables : une expirée (tirage abandonné, place de la
  * chaîne perpétuelle non lue en 24 heures) n'est plus la sienne ailleurs, et
