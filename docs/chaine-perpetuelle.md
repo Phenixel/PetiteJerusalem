@@ -121,6 +121,10 @@ comme dans celle-ci, et quelle que soit celle qui a réservé. Un tirage garde
 son heure, que l'app repousse tant qu'on lit ; une place lue n'a plus
 d'échéance. La page de la chaîne le dit en une ligne (`perpetual.holdNote`).
 
+Une échéance ne désigne donc plus un tirage, sur cette chaîne. Le lecteur ne
+rend, quand on le quitte sans lire, que ce qu'il a lui-même tiré, jamais une
+place réservée à la main (`e2e/firebase/perpetualDraw.spec.ts`).
+
 La règle compte une place par texte : elle ne vaut que pour des textes d'une
 seule section, ce que les 150 Tehilim sont. `chaine:creer` refuse un catalogue
 qui changerait ce fait.

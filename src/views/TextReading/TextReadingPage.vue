@@ -46,6 +46,7 @@ import { localeMessagesReady } from "../../i18n";
 import { transliterate, hasNiqqud } from "../../services/hebrewTransliteration";
 import { appendHebrewNumeral } from "../../services/hebrewNumerals";
 import { sessionService } from "../../services/sessionService";
+import { isPerpetual } from "../../services/perpetualChain";
 import { ReservationGoneError, SlotTakenError } from "../../services/appError";
 import { isOffline } from "../../services/userPreferencesService";
 import { pageTitle as siteTitle, seoService } from "../../services/seoService";
@@ -1276,6 +1277,27 @@ const isDrawingAnother = ref(false);
 let pendingClaim: Promise<void> | null = null;
 
 /**
+ * Les réservations posées par un tirage depuis cette page. Seules elles se
+ * libèrent quand on repart sans lire : sur la chaîne perpétuelle, une place
+ * réservée à la main porte aussi une échéance (24 heures, posée par la Cloud
+ * Function), et la seule échéance ne distingue plus un tirage d'un choix.
+ */
+const drawnReservationIds = new Set<string>();
+
+/**
+ * Un tirage de ce lecteur, à rendre s'il repart sans lire. Hors chaîne
+ * perpétuelle, seule une réservation tirée porte une échéance : c'est ce qui
+ * laisse libérer aussi un tirage d'une visite précédente, rouvert ici.
+ */
+function isOwnUnreadDraw(s: Session, r: TextStudyReservation): boolean {
+  if (r.isCompleted || sessionService.isReservationExpired(r)) return false;
+  if (!sessionService.canUserDeleteReservation(r, currentUser.value, reservationForm.value.email)) {
+    return false;
+  }
+  return drawnReservationIds.has(r.id) || (!isPerpetual(s) && r.expiresAt !== undefined);
+}
+
+/**
  * Le lecteur est-il toujours devant le texte d'où l'action est partie ? Une
  * réservation part sans retenir la navigation : quand elle revient, la page a
  * pu être quittée, et remplacer la route ramènerait le lecteur de force.
@@ -1320,6 +1342,7 @@ async function claimDrawnText() {
       return;
     }
 
+    drawnReservationIds.add(result.reservation.id);
     s.reservations = [...s.reservations, result.reservation];
     analyticsService.capture("reservation_completed", {
       session_id: s.id,
@@ -1463,19 +1486,29 @@ async function drawAnother() {
     }
 
     // Le nouveau tirage d'abord, la libération ensuite : si plus rien n'était
-    // disponible, le lecteur garde au moins son texte actuel.
+    // disponible, le lecteur garde au moins son texte actuel. Il entre dans
+    // l'état local avant la libération : si celle-ci échoue (réseau coupé),
+    // il n'en reste pas moins à lui, et suivi. Seul un tirage se libère ; une
+    // place choisie à la main ne se rend pas pour en tirer une autre.
+    drawnReservationIds.add(result.reservation.id);
     const previous = currentReservation.value;
-    if (previous && !previous.isCompleted && isMine.value) {
-      await sessionService.deleteReservation(s.id, previous.id);
-      s.reservations = s.reservations.filter((x) => x.id !== previous.id);
-      analyticsService.capture("reservation_cancelled", {
-        session_id: s.id,
-        is_guest: currentUser.value == null,
-        source: "random_redraw",
-      });
+    s.reservations = [...s.reservations, result.reservation];
+    if (previous && isMine.value && isOwnUnreadDraw(s, previous)) {
+      try {
+        await sessionService.deleteReservation(s.id, previous.id);
+        s.reservations = s.reservations.filter((x) => x.id !== previous.id);
+        drawnReservationIds.delete(previous.id);
+        analyticsService.capture("reservation_cancelled", {
+          session_id: s.id,
+          is_guest: currentUser.value == null,
+          source: "random_redraw",
+        });
+      } catch (e) {
+        // Le précédent expirera de lui-même dans l'heure.
+        console.error("Libération du tirage précédent impossible :", e);
+      }
     }
 
-    s.reservations = [...s.reservations, result.reservation];
     analyticsService.capture("reservation_completed", {
       session_id: s.id,
       text_type: s.type,
@@ -1525,17 +1558,13 @@ async function releaseUnreadRandomDraw(forTextId: string = textId.value) {
   // ce qui n'est pas encore posé.
   await pendingClaim;
 
-  const r = s.reservations.find(
-    (x) =>
-      x.textStudyId === forTextId &&
-      x.expiresAt !== undefined &&
-      !x.isCompleted &&
-      sessionService.canUserDeleteReservation(x, currentUser.value, reservationForm.value.email),
-  );
+  // Le tirage de ce texte, et lui seul : ni une place choisie à la main, ni
+  // un ancien tirage expiré du même texte, que le serveur a déjà retiré
+  // (libérer celui-là laisserait le nouveau pris une heure).
+  const r = s.reservations.find((x) => x.textStudyId === forTextId && isOwnUnreadDraw(s, x));
   if (!r) return;
-  // L'état local d'abord : la libération part sans retenir la navigation, et
-  // la chaîne qu'on rejoint ne doit pas réafficher le texte comme pris.
   s.reservations = s.reservations.filter((x) => x.id !== r.id);
+  drawnReservationIds.delete(r.id);
   try {
     await sessionService.deleteReservation(s.id, r.id);
     analyticsService.capture("reservation_cancelled", {
@@ -1550,11 +1579,25 @@ async function releaseUnreadRandomDraw(forTextId: string = textId.value) {
   }
 }
 
+/** Ce que le retour à la chaîne attend, au plus, la libération du tirage. */
+const RELEASE_BEFORE_CHAIN_MS = 1500;
+
 // Quitter la page (retour à la chaîne, navigation ailleurs) sans avoir lu : le
-// texte tiré est libéré pour que quelqu'un d'autre puisse le prendre. La
-// suppression n'est pas attendue, elle ne doit pas retarder la navigation.
-onBeforeRouteLeave(() => {
-  void releaseUnreadRandomDraw();
+// texte tiré est libéré pour que quelqu'un d'autre puisse le prendre.
+//
+// Vers la page de la chaîne, la navigation attend la libération, une seconde
+// et demie au plus : la page relit la chaîne en arrivant, et la lisait entre
+// la pose du tirage et son retrait. Elle montrait alors le texte comme réservé
+// par le lecteur, avec son interrupteur « Lu », qui répondait « Réservation
+// introuvable » (section_mark_read_failed, septembre 2026). Ailleurs, la
+// libération ne retarde rien.
+onBeforeRouteLeave((to) => {
+  const releasing = releaseUnreadRandomDraw();
+  if (to.name !== "detail-session") return;
+  return Promise.race([
+    releasing,
+    new Promise((resolve) => setTimeout(resolve, RELEASE_BEFORE_CHAIN_MS)),
+  ]).then(() => undefined);
 });
 
 // --- SEO ---
