@@ -19,7 +19,6 @@ import AppIcon from "../../components/icons/AppIcon.vue";
 import { useToast } from "../../composables/useToast";
 import { useConfirm } from "../../composables/useConfirm";
 import { SITE_URL } from "../../config/site";
-import { findPerpetualSession } from "../../services/perpetualChain";
 import type { Session } from "../../models/models";
 
 const router = useRouter();
@@ -79,7 +78,7 @@ watch(
   async (type) => {
     if (type !== EnumTypeTextStudy.Tehilim || perpetualSession.value) return;
     try {
-      perpetualSession.value = findPerpetualSession(await sessionService.getAllSessions());
+      perpetualSession.value = await sessionService.getPerpetualSession();
     } catch {
       // Sans la liste, pas de suggestion : la création suit son cours.
     }
