@@ -176,8 +176,11 @@ sans réseau, elle s'ouvre et se lit, à partir de deux copies locales.
   **déjà** téléchargés.
   Un livre supprimé pendant que cette mise à jour le reprend reste supprimé :
   `downloadFile` compte les suppressions demandées pour son chemin, et celle
-  survenue en cours de route l'emporte (copie retirée, rien d'inscrit). Test :
-  `offlineRemoveDuringDownload.test.ts`.
+  survenue en cours de route l'emporte (copie retirée, rien d'inscrit). Les
+  livres suivants de la passe, retirés eux aussi entre-temps, ne sont pas
+  repris : la boucle vérifie qu'un livre est toujours sur l'appareil avant
+  son tour. Tests : `offlineRemoveDuringDownload.test.ts`,
+  `offlineRemoveDuringSync.test.ts`.
 
 **Synchronisation.** Deux règles, selon ce qu'on touche :
 

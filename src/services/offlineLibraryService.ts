@@ -293,7 +293,10 @@ async function syncDownloads(): Promise<void> {
     // Par chemin, et non par livre du catalogue : le découpage en chapitres du
     // Talmud n'est le livre de personne, et se corrige comme les autres.
     for (const path of await outdatedDownloads()) {
-      if (downloadingPaths.has(path)) continue;
+      // La liste date du départ : un livre retiré depuis (« Tout supprimer »
+      // pendant la reprise du précédent) n'est plus à reprendre, sans quoi il
+      // revenait sur l'appareil.
+      if (!isDownloaded(path) || downloadingPaths.has(path)) continue;
       downloadingPaths.add(path);
       try {
         await downloadFile(path);
