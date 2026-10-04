@@ -92,6 +92,63 @@ const availableBooks = ref<string[]>([]);
 const selectedBooks = ref<string[]>([]);
 const isBookSelectionEnabled = ref(false);
 
+/**
+ * Brouillon de la saisie, le temps d'aller se connecter. Le visiteur qui
+ * remplit tout puis clique « Créer » sans compte part vers /login ; au retour,
+ * le formulaire était vide. Gardé pour l'onglet seulement (sessionStorage),
+ * effacé à la création.
+ */
+const DRAFT_KEY = "pj_new_session_draft";
+interface NewSessionDraft {
+  name: string;
+  description: string;
+  type: EnumTypeTextStudy | "";
+  dateLimit: string;
+  guestEmailRequired: boolean;
+  selectedBooks: string[];
+}
+/** Livres du brouillon, appliqués quand la liste du type est chargée. */
+let draftBooks: string[] | null = null;
+
+function saveDraft(): void {
+  const draft: NewSessionDraft = { ...sessionData, selectedBooks: [...selectedBooks.value] };
+  try {
+    sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+  } catch {
+    // Stockage indisponible : la saisie sera à refaire, comme avant.
+  }
+}
+
+function clearDraft(): void {
+  try {
+    sessionStorage.removeItem(DRAFT_KEY);
+  } catch {
+    // Stockage indisponible : rien à effacer.
+  }
+}
+
+function restoreDraft(): void {
+  let draft: Partial<NewSessionDraft> | null = null;
+  try {
+    draft = JSON.parse(sessionStorage.getItem(DRAFT_KEY) ?? "null");
+  } catch {
+    draft = null;
+  }
+  if (!draft || typeof draft !== "object") return;
+  if (typeof draft.name === "string") sessionData.name = draft.name;
+  if (typeof draft.description === "string") sessionData.description = draft.description;
+  if (typeof draft.dateLimit === "string") sessionData.dateLimit = draft.dateLimit;
+  if (typeof draft.guestEmailRequired === "boolean") {
+    sessionData.guestEmailRequired = draft.guestEmailRequired;
+  }
+  // Sans type, le brouillon n'a pas de livres : sa liste vide ne doit pas
+  // décocher ceux du type choisi ensuite.
+  if (typeof draft.type === "string" && draft.type) {
+    if (Array.isArray(draft.selectedBooks)) draftBooks = draft.selectedBooks.map(String);
+    sessionData.type = draft.type;
+  }
+}
+
 const buttonText = computed(() => {
   return isLoading.value ? t("newSession.creating") : t("newSession.create");
 });
@@ -108,9 +165,13 @@ watch(
         const books = await sessionService.getBooksByType(newType as EnumTypeTextStudy);
         if (books.length > 0) {
           availableBooks.value = books;
-          selectedBooks.value = [...books];
+          // Les livres d'un brouillon retrouvé, sinon tous.
+          selectedBooks.value = draftBooks
+            ? books.filter((book) => draftBooks!.includes(book))
+            : [...books];
           isBookSelectionEnabled.value = true;
         }
+        draftBooks = null;
       } catch (error) {
         console.error("Erreur lors du chargement des livres:", error);
       }
@@ -131,6 +192,7 @@ const formatBookName = (bookName: string) => {
 };
 
 onMounted(async () => {
+  restoreDraft();
   currentUser.value = await authService.getCurrentUser();
   // Entrée du funnel de création (session_created en est la sortie).
   analyticsService.capture("session_create_started", {
@@ -206,6 +268,7 @@ const createSession = async () => {
     // Le visiteur a rempli le formulaire puis découvre qu'il faut un compte :
     // c'est une friction, pas une simple validation.
     trackCreateFailed("validation", "not_authenticated");
+    saveDraft();
     showAuthPrompt.value = true;
     return;
   }
@@ -281,6 +344,7 @@ const createSession = async () => {
     // reste visible sur la page de la session nouvellement créée. `partager`
     // y ouvre la fenêtre de partage, avec un mot pour dire pourquoi : une
     // chaîne que personne ne voit reste vide (voir DetailSession).
+    clearDraft();
     toast.success(t("newSession.createdSuccess"));
     router.push({ path: `/share-reading/session/${sessionId}`, query: { partager: "1" } });
   } catch (error) {

@@ -862,6 +862,16 @@ soir). « Oui, créer la session » crée ; « Changer la date » ramène au cha
 Au-delà de demain, rien ne s'interpose. Tenu par
 `src/__tests__/newSessionDeadline.test.ts` et `sessionDeadline.test.ts`.
 
+### La saisie d'une chaîne survit à la connexion
+
+Créer une chaîne demande un compte, mais le formulaire s'ouvre sans : le
+visiteur remplit tout, clique « Créer », et l'invite l'envoie se connecter.
+Au retour, le formulaire était vide. La saisie (titre, description, type,
+livres retenus, date, email des invités) se garde donc à ce moment-là, pour
+l'onglet seulement (`sessionStorage`, rien ne part au serveur), se remet en
+place au retour et s'efface à la création. Tenu par
+`src/__tests__/newSessionDraft.test.ts`.
+
 ### Une chaîne se partage dès sa création
 
 Une chaîne que personne ne voit reste vide : celles qui se sont remplies
