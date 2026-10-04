@@ -79,14 +79,38 @@ export function isNew(a: Announcement, seenAt: number | null, now = Date.now()):
   return a.publishedAt.getTime() > since;
 }
 
+/**
+ * Une note de version publiée pendant la revue des stores est souvent vue
+ * (la liste visitée) avant que sa version ne soit installée : la date de la
+ * visite la dépassait, et la note ne revenait jamais comme nouvelle une fois
+ * la version là. `seenVersion` est la version installée lors de la dernière
+ * visite de la liste : une note d'une version plus récente, désormais
+ * installée, est nouvelle quelle que soit sa date.
+ */
+function newSinceInstall(a: Announcement, installed: string | null, seenVersion: string | null) {
+  return (
+    a.kind === "release" &&
+    !!a.version &&
+    !!installed &&
+    !!seenVersion &&
+    isOutdated(seenVersion, a.version) &&
+    appliesToInstalled(a, installed)
+  );
+}
+
 /** Les annonces nouvelles pour cet appareil, la plus récente d'abord. */
 export function unreadAnnouncements(
   items: Announcement[],
   seenAt: number | null,
   installed: string | null,
   now = Date.now(),
+  seenVersion: string | null = null,
 ): Announcement[] {
-  return items.filter((a) => isNew(a, seenAt, now) && appliesToInstalled(a, installed));
+  return items.filter(
+    (a) =>
+      (isNew(a, seenAt, now) && appliesToInstalled(a, installed)) ||
+      newSinceInstall(a, installed, seenVersion),
+  );
 }
 
 /**
@@ -126,9 +150,10 @@ export function homeHighlights(
   seenAt: number | null,
   installed: string | null,
   now = Date.now(),
+  seenVersion: string | null = null,
 ): HomeHighlight[] {
   const age = (a: Announcement) => now - (a.publishedAt?.getTime() ?? 0);
-  const unread = unreadAnnouncements(items, seenAt, installed, now).filter(
+  const unread = unreadAnnouncements(items, seenAt, installed, now, seenVersion).filter(
     (a) => age(a) <= HOME_PREVIEW_MAX_AGE_MS,
   );
   const unreadCount = unread.length;

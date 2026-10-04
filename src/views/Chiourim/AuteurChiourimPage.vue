@@ -2,7 +2,7 @@
 import { ref, onMounted, computed, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
-import { chiourService } from "../../services/chiourService";
+import { chiourService, sortedCategories } from "../../services/chiourService";
 import { serieService, type Serie } from "../../services/serieService";
 import type { Chiour } from "../../models/models";
 import ChiourCard from "../../components/ChiourCard.vue";
@@ -47,13 +47,7 @@ const horsSerie = computed(() =>
   ),
 );
 
-const categories = computed(() => {
-  const cats = new Set<string>();
-  for (const c of chiourim.value) {
-    for (const cat of c.categories) cats.add(cat);
-  }
-  return Array.from(cats).sort();
-});
+const categories = computed(() => sortedCategories(chiourim.value));
 
 // `applyAuteur` passe deux fois sur le même auteur (cache puis catalogue
 // frais) : un seul événement par auteur réellement ouvert.

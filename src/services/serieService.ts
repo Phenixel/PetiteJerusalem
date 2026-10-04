@@ -23,6 +23,24 @@ export function byEpisode(
   return a.name.localeCompare(b.name, "fr");
 }
 
+/**
+ * Le numéro proposé pour un nouvel épisode : le plus grand déjà pris, plus
+ * un. Le nombre d'épisodes plus un doublait un numéro dès qu'un épisode du
+ * milieu avait été supprimé (1, 3 : on proposait 3).
+ */
+export function nextEpisodeNumber(episodes: { episode?: number | null }[]): number {
+  return episodes.reduce((max, e) => Math.max(max, e.episode ?? 0), 0) + 1;
+}
+
+/**
+ * Le numéro d'épisode tel que le champ du formulaire le rend. Vidé, un champ
+ * `v-model.number` donne la chaîne vide, que le serveur refusait : l'auteur
+ * ne pouvait plus retirer un numéro. Vide veut dire « sans numéro ».
+ */
+export function episodeFromField(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
 class SerieService {
   private readonly series = cached(CACHE_TTL, async () => {
     const snap = await getDocs(collection(db, "series"));
@@ -37,7 +55,12 @@ class SerieService {
 
   async getSerie(serieId: string): Promise<Serie | null> {
     const series = await this.getAllSeries();
-    return series.find((s) => s.id === serieId) ?? null;
+    const known = series.find((s) => s.id === serieId);
+    if (known) return known;
+    // Créée depuis le chargement de la liste (le cache tient une heure) : on
+    // relit une fois avant de la dire introuvable.
+    this.series.invalidate();
+    return (await this.getAllSeries()).find((s) => s.id === serieId) ?? null;
   }
 
   invalidateCache(): void {

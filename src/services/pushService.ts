@@ -1,12 +1,15 @@
 import { FirebaseMessaging } from "@capacitor-firebase/messaging";
 import { Capacitor } from "@capacitor/core";
 import { LocalNotifications } from "@capacitor/local-notifications";
+import { onAuthStateChanged } from "firebase/auth";
 import { arrayRemove, arrayUnion, doc, setDoc } from "firebase/firestore";
 import type { Router } from "vue-router";
 import { db } from "../firebase/firestore";
 import { auth } from "../firebase/core";
 import { isNativeApp } from "../composables/useNativeApp";
+import { i18n } from "../i18n";
 import { analyticsService } from "./analyticsService";
+import { syncAnnouncementTopic } from "./announcementTopics";
 import { markReadingEntry } from "./readingEntry";
 import { isOffline, userPreferencesService } from "./userPreferencesService";
 import type { ReminderPlace } from "./zmanimService";
@@ -42,8 +45,41 @@ export interface ReminderSettings {
   place: ReminderPlace | null;
 }
 
+/** Ce que la déconnexion attend, au plus, pour retirer le jeton du compte. */
+const DETACH_TIMEOUT_MS = 3000;
+
 /** Dernier jeton FCM connu de cet appareil, pour le retirer à la rotation. */
 const LAST_TOKEN_KEY = "pj_fcm_token";
+
+/**
+ * Le compte dont la déconnexion a détaché cet appareil. S'il revient, ses
+ * rappels reprennent ici (reattachDevice) ; un autre compte efface le repère.
+ */
+const DETACHED_FROM_KEY = "pj_fcm_detached_from";
+
+/**
+ * Posé quand le jeton est resté dans le document d'un compte parti
+ * (déconnexion sans réseau) : il est à effacer de l'appareil dès que le
+ * réseau le permet (dropStaleToken).
+ */
+const STALE_TOKEN_KEY = "pj_fcm_token_stale";
+
+function readLocal(key: string): string | null {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writeLocal(key: string, value: string | null): void {
+  try {
+    if (value === null) localStorage.removeItem(key);
+    else localStorage.setItem(key, value);
+  } catch {
+    // Stockage indisponible : rien à retenir.
+  }
+}
 
 /**
  * Marqueur des notifications locales rejouées ici (voir `init`) : le plugin de
@@ -118,6 +154,106 @@ class PushService {
       await setDoc(doc(db, "userPreferences", userId), off, { merge: true });
     }
     await FirebaseMessaging.deleteToken().catch(() => {});
+  }
+
+  /**
+   * À la déconnexion : l'appareil cesse de recevoir les rappels du compte qui
+   * part. Sans cela, le jeton restait dans `fcmTokens` de ce compte, et le
+   * téléphone recevait ses rappels (avec ses lectures restantes) une fois
+   * quelqu'un d'autre connecté ; le compte suivant, en activant les siens,
+   * ajoutait le même jeton, et l'appareil recevait les deux.
+   *
+   * Le jeton est retiré du compte, sans toucher `pushReminderEnabled` : ses
+   * autres appareils gardent leurs rappels. L'écriture est bornée (la
+   * déconnexion n'attend pas un réseau absent).
+   *
+   * Retiré, le jeton ne mène plus au compte : l'appareil le garde, les
+   * informations de l'équipe y sont abonnées. Resté dans le document (hors
+   * ligne, serveur muet), il est effacé de l'appareil, pour ne plus mener
+   * nulle part ; la Cloud Function le purgera au premier envoi.
+   *
+   * Dans les deux cas l'appareil retient le compte parti : s'il revient, ses
+   * rappels reprennent ici (reattachDevice). Sans cela ils restaient affichés
+   * comme actifs sans plus arriver sur ce téléphone.
+   */
+  async detachDevice(userId: string): Promise<void> {
+    if (!this.isAvailable) return;
+    writeLocal(DETACHED_FROM_KEY, userId);
+    const token = readLocal(LAST_TOKEN_KEY);
+    let removed = false;
+    if (token && !isOffline()) {
+      const write = setDoc(
+        doc(db, "userPreferences", userId),
+        { fcmTokens: arrayRemove(token) },
+        { merge: true },
+      ).then(
+        () => true,
+        () => false,
+      );
+      const timeout = new Promise<boolean>((resolve) =>
+        setTimeout(() => resolve(false), DETACH_TIMEOUT_MS),
+      );
+      removed = await Promise.race([write, timeout]);
+    }
+    if (removed) return;
+    writeLocal(LAST_TOKEN_KEY, null);
+    writeLocal(STALE_TOKEN_KEY, "1");
+    await this.dropStaleToken();
+  }
+
+  /**
+   * Efface de l'appareil un jeton resté dans le document d'un compte parti.
+   * L'effacement demande le réseau : sans lui, il est rejoué au retour du
+   * réseau et au lancement suivant (voir init), sinon le jeton restait vivant
+   * et l'appareil recevait toujours les rappels de ce compte. Les
+   * informations de l'équipe, abonnées à l'ancien jeton, se réabonnent.
+   */
+  async dropStaleToken(): Promise<void> {
+    if (!this.isAvailable || readLocal(STALE_TOKEN_KEY) === null || isOffline()) return;
+    try {
+      await FirebaseMessaging.deleteToken();
+    } catch {
+      // Effacement manqué : le repère reste, la prochaine occasion retentera.
+      return;
+    }
+    writeLocal(STALE_TOKEN_KEY, null);
+    await syncAnnouncementTopic(i18n.global.locale.value);
+  }
+
+  /**
+   * Le compte que la déconnexion avait détaché de cet appareil y revient :
+   * ses rappels reprennent, s'ils sont toujours actifs et que le système
+   * laisse notifier. Un autre compte efface le repère : l'appareil ne
+   * s'inscrit pour lui que s'il active ses rappels ici.
+   */
+  async reattachDevice(userId: string): Promise<void> {
+    if (!this.isAvailable) return;
+    const detachedFrom = readLocal(DETACHED_FROM_KEY);
+    if (detachedFrom === null) return;
+    if (detachedFrom !== userId) {
+      writeLocal(DETACHED_FROM_KEY, null);
+      return;
+    }
+    // Sans réseau, le repère reste : le prochain lancement retentera.
+    if (isOffline()) return;
+    try {
+      const prefs = await userPreferencesService.getPreferencesOrThrow(userId);
+      if (prefs.pushReminderEnabled) {
+        const permission = await FirebaseMessaging.checkPermissions();
+        if (permission.receive === "granted") {
+          const token = await this.obtainToken();
+          rememberToken(token);
+          await setDoc(
+            doc(db, "userPreferences", userId),
+            { fcmTokens: arrayUnion(token) },
+            { merge: true },
+          );
+        }
+      }
+      writeLocal(DETACHED_FROM_KEY, null);
+    } catch (e) {
+      console.warn("Rappels pas encore repris sur cet appareil:", e);
+    }
   }
 
   /**
@@ -218,10 +354,19 @@ class PushService {
       void this.onTokenRotated(token);
     });
     // Rotation restée en attente (coupure au moment du renouvellement) :
-    // elle repart avec le réseau.
+    // elle repart avec le réseau. De même un jeton resté à effacer après une
+    // déconnexion sans réseau (voir dropStaleToken).
     window.addEventListener("online", () => {
       const rotation = this.pendingRotation;
       if (rotation) void this.syncRotatedToken(rotation);
+      void this.dropStaleToken();
+    });
+    void this.dropStaleToken();
+    // Le compte qui revient sur l'appareil y retrouve ses rappels (voir
+    // detachDevice). L'écouteur répond aussi à chaque lancement : une reprise
+    // manquée (réseau, jeton pas encore là) se retente d'elle-même.
+    onAuthStateChanged(auth, (user) => {
+      if (user) void this.reattachDevice(user.uid);
     });
 
     // Deep-link quand l'utilisateur touche une notification push (`data.url`).

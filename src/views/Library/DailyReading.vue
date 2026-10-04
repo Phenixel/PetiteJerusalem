@@ -9,6 +9,7 @@ import {
   userPreferencesService,
   type UserPreferences,
 } from "../../services/userPreferencesService";
+import { downloadErrorKey } from "../../composables/useBookDownload";
 import {
   downloadBooks,
   missingBooksForEntries,
@@ -286,10 +287,13 @@ watch(
       !!week &&
       storedParashaProgress.value?.week === week &&
       storedParashaProgress.value.completed === true;
+    // La nouvelle paracha, pas encore lue, se montre ouverte.
+    setCollapsed("parasha", parashaCompleted.value);
   },
 );
 
 async function toggleParashaCompleted() {
+  await ensureSameDay();
   if (!weeklyParasha.value) return;
   parashaCompleted.value = !parashaCompleted.value;
   storedParashaProgress.value = {
@@ -356,6 +360,7 @@ async function toggleOption(key: DailyOptionKey) {
 }
 
 async function toggleOptionCompleted(key: DailyOptionKey) {
+  await ensureSameDay();
   const next = new Set(completedOptions.value);
   const nowRead = !next.has(key);
   if (nowRead) next.add(key);
@@ -399,23 +404,41 @@ async function applyPreferences(prefs: UserPreferences, initial: boolean) {
   // indépendamment de la remise à zéro quotidienne.
   storedParashaProgress.value = progress?.parashaProgress ?? null;
   const currentWeek = weeklyParasha.value?.weekKey;
+  const parashaWasCompleted = parashaCompleted.value;
   parashaCompleted.value =
     !!currentWeek &&
     progress?.parashaProgress?.week === currentWeek &&
     progress.parashaProgress.completed === true;
-  if (parashaCompleted.value) setCollapsed("parasha", true);
+  // Au retour à l'écran, la paracha ne se replie que si elle vient d'être lue
+  // ailleurs : rouverte ici pour la relire, elle reste ouverte.
+  if (parashaCompleted.value && !(resyncing && parashaWasCompleted)) {
+    setCollapsed("parasha", true);
+  }
 
   if (progress && progress.date === localDayKey()) {
+    const before = new Set([...completedIds.value, ...completedOptions.value]);
     completedIds.value = new Set(progress.completedIds.map(String));
     completedSections.value = { ...(progress.completedSections ?? {}) };
     completedOptions.value = new Set(progress.completedOptions ?? []);
-    // Texts already read today start folded so unread ones stand out.
-    collapsedIds.value = new Set([...completedIds.value, ...completedOptions.value]);
+    const read = [...completedIds.value, ...completedOptions.value];
+    if (resyncing) {
+      // Resynchronisation (retour à l'écran) : seul ce qui vient d'être lu
+      // ailleurs se replie ; un texte rouvert ici pour le relire reste ouvert.
+      for (const id of read) if (!before.has(id)) setCollapsed(id, true);
+    } else {
+      // Texts already read today start folded so unread ones stand out.
+      collapsedIds.value = new Set([...read, ...(parashaCompleted.value ? ["parasha"] : [])]);
+    }
   } else {
     // New day (or never tracked): start fresh and persist the reset once.
     completedIds.value = new Set();
     completedSections.value = {};
     completedOptions.value = new Set();
+    // Ce qui était lu hier se rouvre : rien n'est lu aujourd'hui (le chnei
+    // mikra, à la semaine, garde son état). Pas au retour à l'écran : tant
+    // que rien n'est coché aujourd'hui, le suivi du compte reste daté de la
+    // veille, et un texte replié à la main se rouvrait à chaque retour.
+    if (!resyncing) collapsedIds.value = new Set(parashaCompleted.value ? ["parasha"] : []);
     if (
       progress &&
       (progress.completedIds.length > 0 ||
@@ -453,8 +476,15 @@ async function ensureSameDay(): Promise<boolean> {
   return false;
 }
 
-function onVisibilityChange() {
-  if (document.visibilityState === "visible") void ensureSameDay();
+/**
+ * Retour à l'écran : le suivi a pu changer ailleurs (une coche sur le site
+ * pendant que l'app dormait). Chaque coche réécrit tout le suivi du jour :
+ * sans relecture, la suivante effaçait celle de l'autre appareil.
+ */
+async function onVisibilityChange() {
+  if (document.visibilityState !== "visible") return;
+  if (!(await ensureSameDay())) return;
+  await loadPreferences(false, true).catch(() => {});
 }
 
 async function loadPreferences(initial = false, resync = false) {
@@ -647,8 +677,9 @@ async function downloadForOffline(books: OfflineBook[]): Promise<void> {
     books_count: books.length,
   });
   try {
-    const failed = await downloadBooks(books);
-    if (failed.length > 0) toast.error(t("downloads.error"));
+    let cause: unknown = null;
+    const failed = await downloadBooks(books, (e) => (cause = e));
+    if (failed.length > 0) toast.error(t(downloadErrorKey(cause)));
     else toast.success(t("dailyReading.offline.downloadDone"));
     const succeeded = books.length - failed.length;
     // Échec total : la lecture du jour reste illisible hors connexion, ce que
@@ -728,6 +759,10 @@ async function toggleSelect(entry: TextStudyJsonEntry) {
 }
 
 async function toggleCompleted(id: string) {
+  // Minuit passé depuis le chargement : on recharge le jour d'abord, puis le
+  // geste s'y applique. Sans quoi la coche s'affichait, puis s'effaçait au
+  // rechargement sans avoir été enregistrée.
+  await ensureSameDay();
   const next = new Set(completedIds.value);
   const nowRead = !next.has(id);
   if (nowRead) next.add(id);
@@ -753,6 +788,7 @@ async function toggleCompleted(id: string) {
 
 /** Coche/décoche un chapitre ; le texte bascule « lu » quand tout y est. */
 async function toggleSection(id: string, sectionIndex: number) {
+  await ensureSameDay();
   const current = new Set(completedSections.value[id] ?? []);
   const nowRead = !current.has(sectionIndex);
   if (nowRead) current.add(sectionIndex);

@@ -12,6 +12,17 @@ function generateChiourSlug(name: string): string {
     .replace(/[/'"""''`?#]/g, "");
 }
 
+/**
+ * Les catégories d'un ensemble de chiourim, sans doublon, dans l'ordre du
+ * français : « Émouna » avant « Halakha ». Un `sort()` nu rangeait par code
+ * Unicode, et les initiales accentuées partaient en fin de liste.
+ */
+export function sortedCategories(chiourim: Chiour[]): string[] {
+  const set = new Set<string>();
+  chiourim.forEach((c) => c.categories.forEach((cat) => set.add(cat)));
+  return [...set].sort((a, b) => a.localeCompare(b, "fr"));
+}
+
 // Cache court : les chiourim viennent de Firestore (URLs audio permanentes).
 // On rafraîchit surtout pour voir les nouveaux chiourim ajoutés via l'admin.
 const CACHE_TTL = 60 * 60 * 1000; // 1h
@@ -20,12 +31,9 @@ class ChiourService {
   private readonly chiourim = cached(CACHE_TTL, () => chiourFirestoreRepository.fetchAll());
 
   // Catégories dérivées des chiourim (plus de source séparée).
-  private readonly categories = cached(CACHE_TTL, async () => {
-    const chiourim = await this.getAllChiourim();
-    const set = new Set<string>();
-    chiourim.forEach((c) => c.categories.forEach((cat) => set.add(cat)));
-    return [...set].sort((a, b) => a.localeCompare(b, "fr"));
-  });
+  private readonly categories = cached(CACHE_TTL, async () =>
+    sortedCategories(await this.getAllChiourim()),
+  );
 
   getAllChiourim(): Promise<Chiour[]> {
     return this.chiourim.get();
@@ -43,8 +51,14 @@ class ChiourService {
    */
   async getChiourBySlug(slug: string): Promise<Chiour | null> {
     const fresh = this.chiourim.isStale() ? null : this.chiourim.peek();
-    if (fresh) return fresh.find((c) => c.slug === slug) ?? null;
-    return chiourFirestoreRepository.fetchBySlug(slug);
+    const known = fresh?.find((c) => c.slug === slug);
+    if (known) return known;
+    // Absent d'un catalogue pourtant frais : il a pu être publié depuis son
+    // chargement. Le dire introuvable une heure durant serait faux ; on lit
+    // le document seul, et s'il existe, le catalogue est périmé.
+    const single = await chiourFirestoreRepository.fetchBySlug(slug);
+    if (single && fresh) this.invalidateCache();
+    return single;
   }
 
   /** À appeler après toute mutation admin pour refléter le changement sans attendre le TTL. */
