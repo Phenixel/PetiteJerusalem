@@ -53,6 +53,21 @@ export interface SessionParticipant {
 }
 
 /**
+ * Les règles Firestore bornent le slug à 200 caractères : un titre long
+ * (250 caractères latins) était refusé à la création, avec un message
+ * générique. On coupe au dernier mot entier avant 180, ce qui laisse la
+ * place d'un suffixe de doublon (« -3 », « -k3x9qz »).
+ */
+export const SLUG_BASE_MAX_LENGTH = 180;
+export function truncateSlug(slug: string): string {
+  if (slug.length <= SLUG_BASE_MAX_LENGTH) return slug;
+  const cut = slug.slice(0, SLUG_BASE_MAX_LENGTH + 1);
+  const lastHyphen = cut.lastIndexOf("-");
+  const head = lastHyphen > 0 ? cut.slice(0, lastHyphen) : cut.slice(0, SLUG_BASE_MAX_LENGTH);
+  return head.replace(/-+$/, "");
+}
+
+/**
  * Qui tient cette réservation : un compte, un invité, ou personne de
  * nommable. Les deux comptages de participants (le nombre, puis les noms)
  * partagent cette règle, sinon la liste et le chiffre finiraient par diverger.
@@ -150,7 +165,13 @@ class SessionService {
       if (who) participants.add(who);
     }
 
-    const percent = (count: number) => (total > 0 ? Math.round((count / total) * 100) : 0);
+    // L'arrondi ne dit jamais « 100 % » tant qu'il reste une place : sur le
+    // Talmud (327 places), 326 réservées donnaient 100 et la carte « Complet ».
+    const percent = (count: number) => {
+      if (total <= 0) return 0;
+      const rounded = Math.round((count / total) * 100);
+      return count < total ? Math.min(rounded, 99) : rounded;
+    };
     return {
       total,
       reserved,
@@ -432,7 +453,7 @@ class SessionService {
     // Un nom écrit entièrement en alphabet non latin (hébreu…) donne un slug
     // vide une fois les caractères hors a-z0-9 supprimés : sans base de repli,
     // la session serait stockée avec slug "" et les liens ?session= seraient vides.
-    const base = generateSlug(baseName) || "session";
+    const base = truncateSlug(generateSlug(baseName)) || "session";
     const existing = await firestoreService.getSessionBySlug(base);
     if (!existing || existing.id === excludeSessionId) return base;
 
@@ -480,6 +501,21 @@ class SessionService {
       selectedBooks,
       guestEmailRequired,
     });
+  }
+
+  /**
+   * Les types des chaînes que la liste publique « En cours » montre : ni
+   * masquées, ni d'un créateur bloqué, ni terminées, ni la chaîne perpétuelle.
+   */
+  listedTypes(sessions: Session[], blockedCreatorIds: string[] = []): EnumTypeTextStudy[] {
+    const blocked = new Set(blockedCreatorIds);
+    const types = new Set<EnumTypeTextStudy>();
+    for (const s of sessions) {
+      if (s.hidden === true || blocked.has(s.personId)) continue;
+      if (s.perpetual === true || this.isSessionFinished(s)) continue;
+      types.add(s.type);
+    }
+    return Array.from(types);
   }
 
   sortSessionsByDate(sessions: Session[]): Session[] {

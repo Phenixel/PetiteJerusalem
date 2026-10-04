@@ -46,6 +46,10 @@ const fr = {
   },
   errors: {
     prayerNameIncomplete: "Le prénom et celui de la mère sont nécessaires.",
+    prayerNameOffline:
+      "Pas de connexion : la liste n'a pas changé. Réessayez une fois de retour en ligne.",
+    prayerNamePending:
+      "Le serveur ne répond pas : votre demande partira d'elle-même au retour de la connexion, inutile de la refaire.",
     prayerNameLimit:
       "Vous avez proposé autant de noms qu'un compte le peut : retirez-en un pour en ajouter un autre.",
     permissionDenied: "Vous n'avez pas les droits nécessaires pour effectuer cette action.",
@@ -339,6 +343,16 @@ const fr = {
     termsAnd: "et la",
     privacyLink: "politique de confidentialité",
     lastUsed: "Dernière utilisation",
+    reset: {
+      link: "Mot de passe oublié ?",
+      title: "Mot de passe oublié",
+      intro:
+        "Indiquez l'adresse de votre compte : nous y enverrons un lien pour choisir un nouveau mot de passe.",
+      send: "Envoyer le lien",
+      sent: "Si un compte existe avec l'adresse {email}, un email vient d'y partir, avec un lien pour choisir un nouveau mot de passe. Pensez à regarder aussi dans les indésirables.",
+      back: "Retour à la connexion",
+      error: "L'email n'a pas pu partir. Réessayez dans un instant.",
+    },
     help: {
       signup: "Créer un compte avec cette adresse",
       login: "Me connecter avec cette adresse",
@@ -1690,6 +1704,8 @@ const fr = {
     deleteAllDone: "Téléchargements supprimés.",
     deleteError: "Suppression impossible. Réessayez.",
     error: "Téléchargement impossible. Vérifiez votre connexion.",
+    permissionDenied:
+      "Téléchargement impossible : l'app n'a pas accès au stockage. Autorisez-le dans les réglages de l'app sur Android, puis réessayez.",
   },
   offline: {
     title: "Connexion impossible",
@@ -1947,6 +1963,8 @@ const fr = {
     reportTitle: "Signaler cette session",
     reportSubtitle:
       "Dites-nous ce qui pose problème. La session sera examinée par la modération, et masquée automatiquement à partir de 3 signalements.",
+    reportSubtitlePerpetual:
+      "Dites-nous quel nom pose problème. La modération l'examine et le retire de la liste s'il le faut ; vous pourrez en signaler un autre.",
     reasonLabel: "Motif du signalement",
     reasons: {
       inappropriate: "Contenu inapproprié",
@@ -1956,6 +1974,7 @@ const fr = {
     },
     detailsLabel: "Précisions",
     detailsPlaceholder: "Décrivez le problème…",
+    detailsPlaceholderPerpetual: "Le nom que vous signalez, et ce qui pose problème…",
     reporting: "Envoi…",
     reportSuccess: "Merci, votre signalement a bien été transmis.",
     reportError: "Le signalement a échoué. Veuillez réessayer.",

@@ -4,6 +4,7 @@ import bundledTexts from "../datas/bundledTexts.json";
 import type { TextStudiesJson, TextStudyJsonEntry } from "../models/models";
 import { resolveFilePath } from "./textService";
 import {
+  backgroundDownloadAllowed,
   downloadFile,
   downloadManifest,
   ensureManifestLoaded,
@@ -236,9 +237,13 @@ export function missingBooksForEntries(entries: TextStudyJsonEntry[]): OfflineBo
  * Télécharge une liste de livres, l'un après l'autre (les téléchargements
  * proposés à l'utilisateur : lecture quotidienne, paracha de la semaine).
  * Renvoie les livres qui n'ont pas pu être récupérés, l'appelant décide quoi
- * en dire ; rien n'est perdu, ils restent proposés au prochain passage.
+ * en dire (`onError` lui donne la cause) ; rien n'est perdu, ils restent
+ * proposés au prochain passage.
  */
-export async function downloadBooks(books: OfflineBook[]): Promise<OfflineBook[]> {
+export async function downloadBooks(
+  books: OfflineBook[],
+  onError?: (error: unknown) => void,
+): Promise<OfflineBook[]> {
   const failed: OfflineBook[] = [];
   for (const book of books) {
     try {
@@ -246,6 +251,7 @@ export async function downloadBooks(books: OfflineBook[]): Promise<OfflineBook[]
     } catch (error) {
       console.warn(`Téléchargement de ${book.path} impossible:`, error);
       failed.push(book);
+      onError?.(error);
     }
   }
   return failed;
@@ -289,11 +295,17 @@ async function syncDownloads(): Promise<void> {
     // Hors connexion, chaque téléchargement échouerait : on attend le retour du
     // réseau, la page relance la synchro à ce moment-là.
     if (typeof navigator !== "undefined" && navigator.onLine === false) return;
+    // Android 10 et moins sans la permission de stockage : une mise à jour de
+    // fond ne la demande pas (voir backgroundDownloadAllowed).
+    if (!(await backgroundDownloadAllowed())) return;
 
     // Par chemin, et non par livre du catalogue : le découpage en chapitres du
     // Talmud n'est le livre de personne, et se corrige comme les autres.
     for (const path of await outdatedDownloads()) {
-      if (downloadingPaths.has(path)) continue;
+      // La liste date du départ : un livre retiré depuis (« Tout supprimer »
+      // pendant la reprise du précédent) n'est plus à reprendre, sans quoi il
+      // revenait sur l'appareil.
+      if (!isDownloaded(path) || downloadingPaths.has(path)) continue;
       downloadingPaths.add(path);
       try {
         await downloadFile(path);

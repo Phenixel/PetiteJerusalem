@@ -135,6 +135,12 @@ class ReadingProgressService {
   private cloudSaveTimer: ReturnType<typeof setTimeout> | null = null;
   private syncPromise: Promise<void> | null = null;
   private authStarted = false;
+  /**
+   * Le compte dont l'état a été lu et fusionné. Tant qu'il ne l'a pas été,
+   * l'état local n'est qu'une partie du tout : l'écrire tel quel effacerait
+   * du compte les marque-pages posés sur les autres appareils.
+   */
+  private syncedUserId: string | null = null;
 
   /**
    * Démarre l'écoute d'authentification (une fois) et, à la connexion,
@@ -148,6 +154,7 @@ class ReadingProgressService {
         let first = true;
         authService.onAuthChanged((user) => {
           this.user = user;
+          if (user?.id !== this.syncedUserId) this.syncedUserId = null;
           const done = user ? this.syncWithCloud(user.id).catch(() => {}) : Promise.resolve();
           if (first) {
             first = false;
@@ -301,6 +308,12 @@ class ReadingProgressService {
       clearTimeout(this.cloudSaveTimer);
       this.cloudSaveTimer = null;
     }
+    // Compte pas encore lu (serveur injoignable à la connexion) : on retente
+    // la fusion, qui écrira elle-même ce qui manque au compte.
+    if (this.syncedUserId !== this.user.id) {
+      await this.syncWithCloud(this.user.id).catch(() => {});
+      return;
+    }
     try {
       await userPreferencesService.savePreferences(this.user.id, {
         readingPositions: this.positions(),
@@ -315,7 +328,12 @@ class ReadingProgressService {
 
   /** Fusionne local ↔ cloud (position la plus récente par texte, union des marque-pages). */
   private async syncWithCloud(userId: string): Promise<void> {
-    const prefs = await userPreferencesService.getPreferences(userId);
+    // Du serveur, ou rien : getPreferences rendrait des préférences vides sur
+    // un échec de lecture, et getPreferencesOrThrow la copie locale d'hier
+    // (hors ligne, réseau capricieux). Dans les deux cas la fusion pousserait
+    // par-dessus le compte un état qui ignore ce qui a été posé ailleurs
+    // depuis. L'échec remonte, rien n'est écrit, la fusion sera retentée.
+    const prefs = await userPreferencesService.getPreferencesFromServer(userId);
     const local = this.positions();
     const cloud = prefs.readingPositions ?? {};
     const merged: Record<string, ReadingPosition> = { ...cloud };
@@ -363,6 +381,7 @@ class ReadingProgressService {
       sortedById(this.bookmarksAll()),
       prunedTombstones,
     ]);
+    this.syncedUserId = userId;
     if (cloudState !== mergedState) await this.pushToCloud();
   }
 }

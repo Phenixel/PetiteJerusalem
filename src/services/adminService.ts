@@ -183,12 +183,22 @@ class AdminService {
     firestoreService.invalidateSessionsCache();
   }
 
-  /** Supprime une session et tous ses signalements. */
+  /**
+   * Supprime une session et tous ses signalements : ceux de la liste affichée,
+   * et ceux arrivés depuis son chargement, relus au moment de supprimer. Sans
+   * cette relecture, un signalement arrivé entre-temps restait orphelin et
+   * gonflait la pastille « sessions signalées » du tableau de bord, sans ligne
+   * pour le traiter.
+   */
   async deleteSessionWithReports(sessionId: string, reports: ReportWithId[]): Promise<void> {
+    const current = await getDocs(
+      query(collection(db, "reports"), where("sessionId", "==", sessionId)),
+    );
+    const reportIds = new Set([...reports.map((r) => r.id), ...current.docs.map((d) => d.id)]);
     const batch = writeBatch(db);
     batch.delete(doc(db, "sessions", sessionId));
-    for (const report of reports) {
-      batch.delete(doc(db, "reports", report.id));
+    for (const reportId of reportIds) {
+      batch.delete(doc(db, "reports", reportId));
     }
     await batch.commit();
     firestoreService.invalidateSessionsCache();

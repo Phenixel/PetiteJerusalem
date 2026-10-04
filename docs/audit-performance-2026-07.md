@@ -77,6 +77,16 @@ Pour objectiver tout ça : les Core Web Vitals sont désormais capturés
 (INP en particulier mesure la lenteur d'interaction réelle, par page et
 par appareil), PostHog → Web analytics → Web vitals après déploiement.
 
+- **Corrigé (octobre 2026), sur le site :** Firebase Auth gardait le compte
+  dans IndexedDB, dont la persistance sonde sa base toutes les 800 ms (25
+  transactions en 20 s sur l'accueil au repos). `src/firebase/core.ts` met
+  localStorage en tête, qui suit les autres onglets par l'événement `storage`
+  (sur navigateur mobile, Firebase relit localStorage chaque seconde, une
+  lecture synchrone bien plus légère) ; IndexedDB reste dans la liste, et un
+  compte qu'il garde encore y est retrouvé puis déplacé. Tenu par
+  `src/__tests__/authPersistence.test.ts` et l'e2e « un compte gardé dans
+  IndexedDB par une version précédente reste connecté ».
+
 ## 1. L'écran blanc : cache HTML + chunks hashés (corrigé)
 
 **PostHog n'est pas en cause.** Le mécanisme :
@@ -203,6 +213,21 @@ Ajout fait : `capture_performance: { web_vitals: true }` → l'onglet
 - `seoPages.ts` (94 kB) est tiré dans les chunks de `DetailSession`,
   `DetailChiour` et `ProfilePage` **juste pour la constante `SITE_URL`**.
   Fix : déplacer `SITE_URL` dans un petit `src/config/site.ts`.
+- **Corrigé (octobre 2026) :** depuis que les locales arrivent par
+  `import()`, l'app montait sans attendre la sienne : en `en-US`, premier
+  affichage à 396 ms encore en français, l'anglais à 482 ms ; en `he-IL`, du
+  français de droite à gauche puis toute la page recomposée. Hors français,
+  `main.ts` attend `localeReady` (une seconde au plus) avant `app.mount`.
+  Tenu par `src/__tests__/localeBeforeFirstRender.test.ts`.
+
+- **Corrigé (octobre 2026) :** l'accueil du site tirait le SDK Firestore
+  complet (671 kB, 173 kB gzip, un canal d'écoute, IndexedDB relu toutes les
+  quatre secondes) pour les seules informations de l'équipe. Sur le site,
+  elles se lisent par Firestore Lite (`src/firebase/firestoreLite.ts`) ;
+  l'app native garde le SDK complet et son cache hors ligne. Le petit module
+  que les deux partagent a désormais son propre chunk (`firebase-bloom`, dans
+  `vite.config.ts`) ; resté dans `firebase-firestore`, il y faisait charger
+  tout le SDK. Tenu par `src/__tests__/announcementsFirestoreLite.test.ts`.
 
 ### Priorité 5. Rendu des grandes listes
 

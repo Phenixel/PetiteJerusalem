@@ -27,6 +27,12 @@ const passwordForm = ref({
 const isChangingPassword = ref(false);
 const isDeletingAccount = ref(false);
 const showDeleteConfirmation = ref(false);
+/**
+ * Compte à mot de passe : Firebase exige une connexion de moins de cinq
+ * minutes pour supprimer le compte. Le mot de passe saisi ici en tient lieu ;
+ * sans lui, il fallait se déconnecter et se reconnecter.
+ */
+const deletePassword = ref("");
 const successMessage = ref("");
 const errorMessage = ref("");
 
@@ -40,6 +46,7 @@ const needsGoogleReauth = computed(() => isGoogleUser.value && !hasPasswordProvi
 const needsAppleReauth = computed(
   () => isAppleUser.value && !isGoogleUser.value && !hasPasswordProvider.value,
 );
+const needsPasswordReauth = computed(() => hasPasswordProvider.value);
 
 onMounted(() => {
   isGoogleUser.value = authService.isGoogleUser();
@@ -128,13 +135,20 @@ const confirmDeleteAccount = () => {
 
 const cancelDelete = () => {
   showDeleteConfirmation.value = false;
+  deletePassword.value = "";
 };
 
-const trackDeleteFailed = (reason: "requires_recent_login" | "reauth_cancelled" | "error") => {
+const trackDeleteFailed = (
+  reason: "requires_recent_login" | "reauth_cancelled" | "wrong_password" | "error",
+) => {
   analyticsService.capture("account_delete_failed", { reason });
 };
 
 const deleteAccount = async () => {
+  // La touche Entrée du champ n'est pas éteinte comme le bouton : sans cette
+  // garde, deux appuis lançaient deux suppressions, et la seconde échouait
+  // en comptant un `account_delete_failed` à côté de `account_deleted`.
+  if (isDeletingAccount.value) return;
   clearMessages();
 
   try {
@@ -146,7 +160,8 @@ const deleteAccount = async () => {
       await authService.reauthenticateWithApple();
     }
 
-    await authService.deleteAccount();
+    await authService.deleteAccount(needsPasswordReauth.value ? deletePassword.value : undefined);
+    deletePassword.value = "";
     router.push("/");
   } catch (error) {
     console.error("Erreur lors de la suppression du compte:", error);
@@ -154,6 +169,9 @@ const deleteAccount = async () => {
     if (code === "auth/requires-recent-login") {
       trackDeleteFailed("requires_recent_login");
       errorMessage.value = t("security.deleteRecentLogin");
+    } else if (code === "auth/wrong-password" || code === "auth/invalid-credential") {
+      trackDeleteFailed("wrong_password");
+      errorMessage.value = t("security.wrongPassword");
     } else if (isAuthCancellation(error)) {
       trackDeleteFailed("reauth_cancelled");
       errorMessage.value = t("security.authCancelled");
@@ -317,10 +335,26 @@ const deleteAccount = async () => {
             <span v-else> {{ t("security.deleteConfirmPassword") }} </span>
           </p>
 
+          <div v-if="needsPasswordReauth">
+            <label
+              for="delete-account-password"
+              class="block text-sm font-semibold text-text-secondary mb-2"
+              >{{ t("security.currentPassword") }}</label
+            >
+            <input
+              id="delete-account-password"
+              v-model="deletePassword"
+              class="field"
+              type="password"
+              autocomplete="current-password"
+              @keydown.enter.prevent="deletePassword && deleteAccount()"
+            />
+          </div>
+
           <div class="flex gap-3">
             <button
               @click="deleteAccount"
-              :disabled="isDeletingAccount"
+              :disabled="isDeletingAccount || (needsPasswordReauth && !deletePassword)"
               class="btn btn-danger flex-1"
             >
               <AppIcon v-if="isDeletingAccount" name="spinner" :size="15" class="animate-spin" />

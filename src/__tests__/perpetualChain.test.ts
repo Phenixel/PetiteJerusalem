@@ -6,17 +6,21 @@ import {
   ANNIVERSARY_WINDOW_DAYS,
   findPerpetualSession,
   formatPrayerName,
+  hasNextRoundStarted,
   isDated,
   isPrayerNameListed,
+  isRoundFinished,
   normalizeNamePart,
   perpetualStats,
   prayerNameExpiry,
   PRAYER_NAME_TTL_DAYS,
   sortPrayerNames,
   spokenDuration,
+  waitForNextRound,
 } from "../services/perpetualChain";
 import { daysUntilNext } from "../services/hebrewOccasions";
 import {
+  PERPETUAL_FIRST_TEXT_ID,
   PERPETUAL_HOLD_MS,
   isRoundComplete,
   nextRound,
@@ -187,9 +191,11 @@ describe("le compteur de la chaîne", () => {
 });
 
 describe("la fin d'un tour (Cloud Function)", () => {
+  // La place `id` (de 1 à 150) est le Tehilim du catalogue qui porte
+  // l'identifiant 102 + id.
   const read = (id: number, over: Record<string, unknown> = {}) => ({
     id: `r${id}`,
-    textStudyId: String(id),
+    textStudyId: String(102 + id),
     section: 1,
     isCompleted: true,
     chosenById: `u${id % 3}`,
@@ -212,6 +218,28 @@ describe("la fin d'un tour (Cloud Function)", () => {
     expect(isRoundComplete(all, undefined)).toBe(false);
     expect(isRoundComplete(all, 0)).toBe(false);
     expect(isRoundComplete(undefined, 150)).toBe(false);
+  });
+
+  it("ne compte que les places de la chaîne", () => {
+    // Les règles laissent chacun ajouter des réservations : cent cinquante
+    // identifiants inventés, marqués lus, finissaient le tour.
+    const forged = Array.from({ length: 150 }, (_, i) => read(i + 1, { textStudyId: `x${i}` }));
+    expect(isRoundComplete(forged, 150)).toBe(false);
+    const outside = Array.from({ length: 150 }, (_, i) =>
+      read(i + 1, { textStudyId: String(i + 1) }),
+    );
+    expect(isRoundComplete(outside, 150)).toBe(false);
+    // Un identifiant écrit autrement (« 0103 », « 103.0 ») n'est pas une place.
+    expect(isRoundComplete([...all.slice(1), read(1, { textStudyId: "0103" })], 150)).toBe(false);
+  });
+
+  it("suit le catalogue : les Tehilim se suivent à partir du premier", () => {
+    const ids = textStudiesJson.textStudies
+      .filter((text) => text.type === "Tehilim")
+      .map((text) => Number(text.id))
+      .sort((a, b) => a - b);
+    expect(ids[0]).toBe(PERPETUAL_FIRST_TEXT_ID);
+    expect(ids).toEqual(ids.map((_, i) => PERPETUAL_FIRST_TEXT_ID + i));
   });
 
   it("compte les lecteurs distincts, comptes et invités", () => {
@@ -263,6 +291,20 @@ describe("une place réservée ne tient pas sans fin (Cloud Function)", () => {
       done,
     ]);
     expect(PERPETUAL_HOLD_MS).toBe(24 * 3600 * 1000);
+  });
+
+  it("ramène à un jour une échéance plus lointaine, ou illisible", () => {
+    // Posée à la main, une échéance lointaine tenait la place sans fin, et le
+    // tour ne finissait plus.
+    const far = reserved(1, { expiresAt: "2030-01-01T00:00:00.000Z" });
+    const garbage = reserved(2, { expiresAt: "jamais" });
+    const notString = reserved(3, { expiresAt: 4102444800000 });
+
+    expect(withHoldExpiry([far, garbage, notString], now)).toEqual([
+      { ...far, expiresAt: "2026-10-03T10:00:00.000Z" },
+      { ...garbage, expiresAt: "2026-10-03T10:00:00.000Z" },
+      { ...notString, expiresAt: "2026-10-03T10:00:00.000Z" },
+    ]);
   });
 
   it("n'écrit rien quand chaque place a déjà son échéance", () => {
@@ -342,5 +384,65 @@ describe("les textes de la chaîne perpétuelle", () => {
     const expected = keys((fr as unknown as Messages).perpetual as Messages).sort();
     expect(keys((en as unknown as Messages).perpetual as Messages).sort()).toEqual(expected);
     expect(keys((he as unknown as Messages).perpetual as Messages).sort()).toEqual(expected);
+  });
+});
+
+describe("la fin d'un tour, vue de l'app", () => {
+  const read = (count: number) =>
+    Array.from({ length: count }, (_, i) => ({
+      id: `r${i}`,
+      textStudyId: String(103 + i),
+      section: 1,
+      chosenByGuestId: "g",
+      isCompleted: true,
+      createdAt: NOW,
+    }));
+  const finished = chain({ cycle: 3, reservations: read(150) });
+  const nextRound = chain({ cycle: 4, reservations: [] });
+  const noDelay = { delays: [0, 0, 0] };
+
+  it("voit le tour fini comme la Cloud Function, et jamais sans slotCount", () => {
+    expect(isRoundFinished(finished)).toBe(true);
+    expect(isRoundFinished(chain({ reservations: read(149) }))).toBe(false);
+    expect(isRoundFinished({ ...finished, slotCount: undefined })).toBe(false);
+    expect(isRoundComplete(finished.reservations, 150)).toBe(true);
+  });
+
+  it("reconnaît le tour suivant au compteur, ou à la chaîne qui n'est plus finie", () => {
+    expect(hasNextRoundStarted(finished, finished)).toBe(false);
+    expect(hasNextRoundStarted(finished, nextRound)).toBe(true);
+    expect(hasNextRoundStarted(finished, { ...nextRound, cycle: undefined })).toBe(true);
+  });
+
+  it("relit jusqu'au tour suivant, même si la fonction est en retard", async () => {
+    const load = vi
+      .fn<() => Promise<Session | null>>()
+      .mockResolvedValueOnce(finished)
+      .mockRejectedValueOnce(new Error("réseau"))
+      .mockResolvedValueOnce(nextRound);
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    await expect(waitForNextRound(finished, load, noDelay)).resolves.toBe(nextRound);
+    expect(load).toHaveBeenCalledTimes(3);
+  });
+
+  it("s'arrête au bout des essais prévus, sans boucle sans fin", async () => {
+    const load = vi.fn(async () => finished);
+    await expect(waitForNextRound(finished, load, noDelay)).resolves.toBeNull();
+    expect(load).toHaveBeenCalledTimes(3);
+  });
+
+  it("ne relit plus rien une fois la page quittée", async () => {
+    vi.useFakeTimers();
+    try {
+      const load = vi.fn(async () => nextRound);
+      const leave = new AbortController();
+      const waiting = waitForNextRound(finished, load, { delays: [5000], signal: leave.signal });
+      leave.abort();
+      await expect(waiting).resolves.toBeNull();
+      expect(load).not.toHaveBeenCalled();
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

@@ -3,6 +3,7 @@ import {
   type User as FirebaseUser,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  sendPasswordResetEmail,
   signInWithPopup,
   signInWithCredential,
   reauthenticateWithPopup,
@@ -17,7 +18,13 @@ import {
 } from "firebase/auth";
 import { FirebaseAuthentication } from "@capacitor-firebase/authentication";
 import { auth, googleAuthProvider } from "../firebase/core";
-import { AuthFlowError, RecentLoginRequiredError, isAuthCancellation } from "./authErrors";
+import {
+  AuthFlowError,
+  RecentLoginRequiredError,
+  authErrorCode,
+  isAuthCancellation,
+  isPasswordResetSilent,
+} from "./authErrors";
 import { appPlatform, isNativeApp } from "../composables/useNativeApp";
 import type { User } from "../models/models";
 import { clearPreferencesCache, userPreferencesService } from "./userPreferencesService";
@@ -33,11 +40,17 @@ const RECENT_LOGIN_MS = 5 * 60 * 1000;
 // Sans nom ni email, le nom reste vide : c'est à la vue de dire
 // « Utilisateur » dans sa langue (common.anonymousUser), pas au service de
 // figer un mot français dans le compte gardé sur l'appareil.
+//
+// Sans nom affiché (inscription par email, champ facultatif), le nom n'est
+// jamais l'adresse entière : il part tel quel dans les données publiques
+// (créateur d'une chaîne, nom d'une réservation), lisibles par tous. On
+// garde ce qui précède « @ ».
 function toUser(firebaseUser: FirebaseUser): User {
+  const email = firebaseUser.email || "";
   return {
     id: firebaseUser.uid,
-    name: firebaseUser.displayName || firebaseUser.email || "",
-    email: firebaseUser.email || "",
+    name: firebaseUser.displayName || email.split("@")[0] || "",
+    email,
   };
 }
 
@@ -199,6 +212,27 @@ class AuthService {
     };
   }
 
+  /**
+   * L'email de réinitialisation du mot de passe, par Firebase Auth. Comme la
+   * connexion par email, il passe par le SDK web, même dans l'app native
+   * (skipNativeAuth) ; le lien mène à la page d'action de Firebase, que l'app
+   * ne s'approprie pas (voir scripts/lib/app-links.mjs, `/__/auth/`).
+   *
+   * `languageCode` : la langue de l'interface, pour que l'email parte dans la
+   * même. Une adresse sans compte ne se distingue pas d'une autre : avec la
+   * protection contre l'énumération, Firebase ne le dit pas, et sans elle, son
+   * `auth/user-not-found` est tu ici (isPasswordResetSilent).
+   */
+  async sendPasswordReset(email: string, languageCode: string): Promise<void> {
+    auth.languageCode = languageCode;
+    try {
+      await sendPasswordResetEmail(auth, email);
+    } catch (error) {
+      if (isPasswordResetSilent(authErrorCode(error))) return;
+      throw error;
+    }
+  }
+
   async signInWithGooglePopup(): Promise<User> {
     if (isNativeApp) {
       return this.signInWithGoogleNative();
@@ -335,8 +369,13 @@ class AuthService {
     // vérifie AVANT la purge : sinon les préférences, la progression et les
     // marque-pages partaient, puis le compte restait, vidé. Le même code
     // d'erreur que Firebase, pour que l'écran propose de se reconnecter.
-    const { authTime } = await user.getIdTokenResult(true);
-    if (Date.now() - new Date(authTime).getTime() > RECENT_LOGIN_MS) {
+    //
+    // Les deux instants viennent du serveur (le jeton est rafraîchi à
+    // l'instant) : l'horloge de l'appareil n'y entre pas. En retard, elle
+    // laissait passer une connexion trop ancienne, la purge partait, et
+    // Firebase refusait ensuite la suppression du compte, resté vide.
+    const { authTime, issuedAtTime } = await user.getIdTokenResult(true);
+    if (new Date(issuedAtTime).getTime() - new Date(authTime).getTime() > RECENT_LOGIN_MS) {
       throw new RecentLoginRequiredError();
     }
 
@@ -357,6 +396,11 @@ class AuthService {
     // Après le deleteUser (une suppression qui échoue ne doit pas compter),
     // mais avant tout reset : l'événement reste rattaché au compte supprimé.
     analyticsService.capture("account_deleted");
+    // Comme à la déconnexion : les événements suivants repartent anonymes, et
+    // la couche native oublie le compte (sinon le prochain login Google
+    // resauterait le sélecteur de compte vers un compte qui n'existe plus).
+    analyticsService.reset();
+    if (isNativeApp) await FirebaseAuthentication.signOut().catch(() => {});
   }
 
   async reauthenticateWithGoogle(): Promise<void> {
@@ -434,6 +478,14 @@ class AuthService {
     // déconnexion) : si l'app se ferme en plein logout, le prochain
     // lancement ne fera pas semblant d'être connecté.
     writeLastKnownUser(null);
+    if (isNativeApp && uid) {
+      // L'appareil ne reçoit plus les rappels du compte qui part (voir
+      // pushService.detachDevice) ; avant signOut, que l'écriture soit encore
+      // permise. Chargé à la demande : Firestore n'est pas du premier
+      // chargement.
+      const { pushService } = await import("./pushService");
+      await pushService.detachDevice(uid).catch(() => {});
+    }
     if (isNativeApp) {
       // Déconnecte aussi la couche native (sinon le prochain login Google
       // resauterait le sélecteur de compte).
