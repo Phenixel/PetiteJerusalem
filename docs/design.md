@@ -582,6 +582,16 @@ modifier, et ils étaient touchés à répétition (audit PostHog d'octobre 2026
 nom affiché garde son champ, puisqu'il se modifie. L'identifiant se
 sélectionne d'un appui, pour qui doit le copier en écrivant à l'équipe.
 
+### Supprimer son compte se confirme avec ce qui l'a ouvert
+
+Firebase n'accepte la suppression d'un compte qu'après une connexion de
+moins de cinq minutes. Google et Apple se confirment par leur propre fenêtre ;
+un compte à mot de passe n'avait, lui, aucun moyen de le faire depuis l'écran,
+et devait se déconnecter puis se reconnecter. La confirmation de suppression
+lui demande donc son mot de passe (« Mot de passe actuel »), et le bouton
+reste éteint tant qu'il est vide. Tenu par
+`src/__tests__/accountDeletion.test.ts`.
+
 ### Un geste qui surprend doit pouvoir se couper
 
 Le double appui qui lance le défilement automatique se fait tout seul : deux

@@ -434,6 +434,16 @@ compte : Firebase ne le dit pas, et une adresse sans compte compte comme
 | `outcome` | `sent`, `failed` |
 | `reason` | le code Firebase d'un échec (`auth/too-many-requests`, `auth/invalid-email`, `auth/network-request-failed`...), `error` sans code, `null` pour `sent` |
 
+#### `account_delete_failed` (existant)
+
+| Propriété | Valeurs | Statut |
+| --- | --- | --- |
+| `reason` | `requires_recent_login`, `reauth_cancelled`, `error` | existant |
+| `reason` | `wrong_password` : le mot de passe saisi dans la confirmation (compte à mot de passe) est faux | **nouvelle valeur**, avec le champ de mot de passe de la confirmation |
+
+Après `account_deleted`, le suivi est remis à zéro comme à la déconnexion
+(`signed_out`) : les événements suivants repartent anonymes.
+
 ### Lecture du jour : `daily_reading_viewed` (nouveau)
 
 À l'arrivée sur `/bibliotheque/lecture-du-jour`, une fois la liste chargée.
