@@ -130,6 +130,10 @@ qui ne se lit pas comme une date, revient à un jour : sans quoi elle tenait la
 place sans fin. Test : « ramène à un jour une échéance plus lointaine, ou
 illisible ».
 
+Une échéance ne désigne donc plus un tirage, sur cette chaîne. Le lecteur ne
+rend, quand on le quitte sans lire, que ce qu'il a lui-même tiré, jamais une
+place réservée à la main (`e2e/firebase/perpetualDraw.spec.ts`).
+
 La règle compte une place par texte : elle ne vaut que pour des textes d'une
 seule section, ce que les 150 Tehilim sont. `chaine:creer` refuse un catalogue
 qui changerait ce fait.
