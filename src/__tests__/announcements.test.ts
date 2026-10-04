@@ -89,6 +89,31 @@ describe("appliesToInstalled", () => {
   });
 });
 
+describe("une note de version vue avant son installation", () => {
+  // Publiée pendant la revue des stores, la note est vue (liste visitée) en
+  // 3.11 : la date de visite la dépasse. Installée la 3.12, elle ne revenait
+  // jamais comme nouvelle.
+  const note = make({ id: "release-v3.12.0", kind: "release", version: "3.12.0" });
+  const seenAt = NOW - DAY / 2;
+
+  it("revient comme nouvelle une fois la version installée", () => {
+    expect(unreadAnnouncements([note], seenAt, "3.12.0", NOW, "3.11.0")).toEqual([note]);
+    expect(homeHighlights([note], seenAt, "3.12.0", NOW, "3.11.0")[0]?.announcement).toBe(note);
+  });
+
+  it("ne revient pas une fois vue avec sa version installée", () => {
+    expect(unreadAnnouncements([note], seenAt, "3.12.0", NOW, "3.12.0")).toEqual([]);
+  });
+
+  it("n'est pas nouvelle tant que la version n'est pas là", () => {
+    expect(unreadAnnouncements([note], null, "3.11.0", NOW, "3.11.0")).toEqual([]);
+  });
+
+  it("sans version retenue (avant ce correctif), la date seule décide", () => {
+    expect(unreadAnnouncements([note], seenAt, "3.12.0", NOW, null)).toEqual([]);
+  });
+});
+
 describe("homeHighlights", () => {
   it("une annonce non lue se montre en aperçu, avec le nombre de nouveautés", () => {
     const recent = make({ id: "r", publishedAt: new Date(NOW - DAY) });

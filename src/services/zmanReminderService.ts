@@ -18,11 +18,12 @@ import {
   dayInPlace,
   formatHebrewDate,
   formatZmanTime,
-  getSunset,
+  occasionEntryAt,
   restPeriodAt,
   ZMAN_KEYS,
   type ZmanimPlace,
   type ZmanKey,
+  placeDayAfter,
 } from "./zmanimService";
 import { useHebrewOccasions } from "../composables/useHebrewOccasions";
 import { useZmanimOpinion } from "../composables/useZmanimOpinion";
@@ -177,16 +178,14 @@ function planRestReminders(place: ZmanimPlace, locale: string, now: Date): Plann
 function occasionReminderAt(
   place: ZmanimPlace,
   reminder: OccasionReminder,
-  civilDay: Date,
+  date: HDate,
+  locale: string,
 ): Date | null {
-  if (reminder === "nightfall") {
-    // Le jour hébraïque commence au coucher du soleil de la veille : c'est là
-    // qu'il entre, et c'est le moment d'allumer une bougie.
-    const eve = new Date(civilDay);
-    eve.setDate(eve.getDate() - 1);
-    return getSunset(place, eve);
-  }
-  const at = new Date(civilDay);
+  // Le jour hébraïque commence la veille au soir : c'est là qu'il entre, et
+  // le moment d'allumer une bougie, avant le Chabbat ou une fête s'ils s'en
+  // mêlent (voir occasionEntryAt).
+  if (reminder === "nightfall") return occasionEntryAt(place, date, locale);
+  const at = date.greg();
   if (reminder === "weekBefore") at.setDate(at.getDate() - 7);
   at.setHours(OCCASION_REMINDER_HOUR, 0, 0, 0);
   return at;
@@ -208,10 +207,10 @@ function planOccasionReminders(
   for (const [index, occasion] of occasions.slice(0, OCCASION_LIMIT).entries()) {
     if (occasion.reminder === "none") continue;
     let date = nextOccurrence(occasion, today);
-    let at = occasionReminderAt(place, occasion.reminder, date.greg());
+    let at = occasionReminderAt(place, occasion.reminder, date, locale);
     if (at && at.getTime() <= now.getTime()) {
       date = occasionDateIn(occasion, date.getFullYear() + 1);
-      at = occasionReminderAt(place, occasion.reminder, date.greg());
+      at = occasionReminderAt(place, occasion.reminder, date, locale);
     }
     if (!at || at.getTime() <= now.getTime()) continue;
     planned.push({
@@ -273,8 +272,7 @@ export function planZmanReminders(options: {
   // Le jour à l'extérieur, les rappels à l'intérieur : les horaires d'une
   // journée ne se calculent qu'une fois, quel que soit le nombre de rappels.
   for (let offset = 0; offset <= days && reminders.length > 0; offset++) {
-    const day = new Date(now.getTime());
-    day.setDate(day.getDate() + offset);
+    const day = placeDayAfter(place, now, offset);
     const times = computeZmanim(place, day);
     for (const reminder of reminders) {
       const done = counts.get(reminder.key) ?? 0;

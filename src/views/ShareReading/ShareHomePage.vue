@@ -229,8 +229,8 @@ const hasActiveFilter = computed(() => searchTerm.value.trim() !== "" || selecte
 
 const perpetualSession = computed(() => {
   const found = findPerpetualSession(sessions.value);
-  // Un visiteur qui a bloqué son créateur ne la voit pas plus qu'ailleurs.
-  if (!found || moderationService.getBlockedCreatorIds().includes(found.personId)) return null;
+  // Son créateur est l'équipe : un blocage ne la cache pas (isBlockedForViewer).
+  if (!found || moderationService.isBlockedForViewer(found)) return null;
   return found;
 });
 const perpetualNames = ref<PrayerName[]>([]);

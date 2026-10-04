@@ -149,10 +149,22 @@ class FirestoreService {
     try {
       const q = query(collection(db, "sessions"), where("slug", "==", slug));
       const querySnapshot = await getDocs(q);
-      if (!querySnapshot.empty) {
-        return this.convertToSession(querySnapshot.docs[0]);
-      }
-      return null;
+      if (querySnapshot.empty) return null;
+      // Rien n'empêche une session d'en reprendre le slug d'une autre (les
+      // règles ne voient pas les autres documents) : le premier résultat
+      // venu, dans l'ordre des identifiants, pouvait alors capter ses liens
+      // de partage, ceux de la chaîne perpétuelle compris. Le lien reste à
+      // la chaîne perpétuelle, sinon à la session la plus ancienne. C'est le
+      // drapeau `perpetual` qui désigne la chaîne, réservé à l'admin par les
+      // règles ; un identifiant, lui, se choisit à la création, et une copie
+      // nommée comme le slug aurait pris le lien de n'importe quelle session.
+      const sessions = querySnapshot.docs.map((d) => this.convertToSession(d));
+      return (
+        sessions.find((session) => session.perpetual === true) ??
+        sessions.reduce((oldest, session) =>
+          session.createdAt.getTime() < oldest.createdAt.getTime() ? session : oldest,
+        )
+      );
     } catch (error) {
       this.handleFirestoreError(error, "récupération de la session par slug");
     }

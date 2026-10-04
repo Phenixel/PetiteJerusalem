@@ -335,6 +335,16 @@ const en: LocaleMessages = {
     termsAnd: "and the",
     privacyLink: "privacy policy",
     lastUsed: "Last used",
+    reset: {
+      link: "Forgot password?",
+      title: "Forgot password",
+      intro:
+        "Enter your account's email address: we will send a link there to choose a new password.",
+      send: "Send the link",
+      sent: "If an account exists for {email}, an email is on its way with a link to choose a new password. Remember to check your spam folder too.",
+      back: "Back to sign in",
+      error: "The email could not be sent. Try again in a moment.",
+    },
     help: {
       signup: "Create an account with this email",
       login: "Sign in with this email",
@@ -1879,6 +1889,8 @@ const en: LocaleMessages = {
     reportTitle: "Report this session",
     reportSubtitle:
       "Tell us what the problem is. The session will be reviewed by moderation, and hidden automatically after 3 reports.",
+    reportSubtitlePerpetual:
+      "Tell us which name is a problem. Moderation will review it and remove it from the list if needed; you can report another one afterwards.",
     reasonLabel: "Reason for the report",
     reasons: {
       inappropriate: "Inappropriate content",
@@ -1888,6 +1900,7 @@ const en: LocaleMessages = {
     },
     detailsLabel: "Details",
     detailsPlaceholder: "Describe the problem…",
+    detailsPlaceholderPerpetual: "The name you are reporting, and what the problem is…",
     reporting: "Sending…",
     reportSuccess: "Thank you, your report has been submitted.",
     reportError: "The report failed. Please try again.",

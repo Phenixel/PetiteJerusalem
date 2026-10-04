@@ -18,6 +18,7 @@ import { setGlobalOptions } from "firebase-functions/v2";
 import { initializeApp } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 import type { OgCardOptions } from "./ogCard";
+import { slugOwnerIndex } from "./sessionSlug";
 
 initializeApp();
 const db = getFirestore();
@@ -249,10 +250,33 @@ async function getChiourim(): Promise<ChiourPreview[]> {
 
 type SessionDoc = { name?: string; description?: string; type?: string; hidden?: boolean };
 
-/** Fetch a session by slug (then by document id), like the client does. */
+/**
+ * Sessions lues pour un même slug. Une collision en compte deux ; au-delà de
+ * cette borne, ce n'est plus une collision, et l'aperçu n'a pas à tout lire.
+ */
+const SLUG_CANDIDATES = 20;
+
+/**
+ * Fetch a session by slug (then by document id), like the client does.
+ *
+ * Un slug repris par une autre session ne lui donne pas l'aperçu de
+ * l'original (voir sessionSlug.ts). La session dont le slug est l'identifiant
+ * est lue à part : la chaîne perpétuelle se trouve ainsi quel que soit le
+ * nombre de copies, et c'est aussi le repli quand aucun slug ne répond.
+ */
 async function fetchSession(slug: string): Promise<SessionDoc | null> {
-  const bySlug = await db.collection("sessions").where("slug", "==", slug).limit(1).get();
-  const docSnap = bySlug.empty ? await db.collection("sessions").doc(slug).get() : bySlug.docs[0];
+  const [bySlug, byId] = await Promise.all([
+    db.collection("sessions").where("slug", "==", slug).limit(SLUG_CANDIDATES).get(),
+    // Un slug n'est pas toujours un identifiant de document valide : ce
+    // n'est alors celui d'aucune session, sans faire échouer la recherche.
+    Promise.resolve()
+      .then(() => db.collection("sessions").doc(slug).get())
+      .catch(() => null),
+  ]);
+  const docSnap =
+    (byId?.exists && byId.get("perpetual") === true) || bySlug.empty
+      ? byId
+      : bySlug.docs[slugOwnerIndex(bySlug.docs.map((d) => d.data()))];
   if (!docSnap || !docSnap.exists) return null;
   const data = docSnap.data() as SessionDoc | undefined;
   // Session masquée par la modération : pas d'aperçu social ni de carte OG.
