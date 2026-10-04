@@ -24,7 +24,10 @@ import { planZmanReminders } from "../services/zmanReminderService";
 
 const ORIGINAL_TZ = process.env.TZ;
 afterEach(() => {
-  process.env.TZ = ORIGINAL_TZ;
+  // Affecter `undefined` écrirait la chaîne « undefined » : l'horloge
+  // passerait en UTC pour la suite du fichier.
+  if (ORIGINAL_TZ === undefined) delete process.env.TZ;
+  else process.env.TZ = ORIGINAL_TZ;
 });
 
 const montreal: ZmanimPlace = {
@@ -33,6 +36,14 @@ const montreal: ZmanimPlace = {
   longitude: -73.5673,
   tzid: "America/Toronto",
   city: "Montréal",
+};
+
+const stockholm: ZmanimPlace = {
+  source: "city",
+  latitude: 59.3293,
+  longitude: 18.0686,
+  tzid: "Europe/Stockholm",
+  city: "Stockholm",
 };
 
 /** Le jour civil d'un instant, dans le fuseau du lieu. */
@@ -54,6 +65,17 @@ describe("l'entrée d'une date personnelle", () => {
     const shabbat = restPeriodAt(DEFAULT_PLACE, hd.prev(), "fr")!;
     expect(at.getTime()).toBe(shabbat.end!.getTime());
     expect(dayIn(DEFAULT_PLACE, at)).toBe("2026-10-10");
+  });
+
+  it("un dimanche d'été à Stockholm : sans sortie du Chabbat calculable, le coucher du soleil", () => {
+    // 15 Sivan 5787, dimanche 20 juin 2027 : la nuit ne tombe pas assez pour
+    // que la sortie du Chabbat se calcule. Le rappel ne se perd pas pour autant.
+    const hd = new HDate(15, months.SIVAN, 5787);
+    expect(hd.getDay()).toBe(0);
+    expect(restPeriodAt(stockholm, hd.prev(), "fr")!.end).toBeNull();
+    const at = occasionEntryAt(stockholm, hd, "fr");
+    expect(at).not.toBeNull();
+    expect(dayIn(stockholm, at!)).toBe("2027-06-19");
   });
 
   it("le second jour d'une fête : à l'allumage de ce jour-là", () => {

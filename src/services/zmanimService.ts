@@ -1134,7 +1134,6 @@ function isYomTov(hd: HDate, il: boolean): boolean {
   return holidaysOn(hd, il).some((ev) => (ev.getFlags() & flags.CHAG) !== 0);
 }
 
-/** La sortie des étoiles d'un jour hébraïque, en ce lieu, ou null aux latitudes extrêmes. */
 /**
  * L'instant où une date personnelle commence, pour y allumer la bougie d'une
  * hazkara : au coucher du soleil de la veille, sauf quand le Chabbat ou une
@@ -1152,6 +1151,10 @@ function isYomTov(hd: HDate, il: boolean): boolean {
  * La veille se prend à midi, dans le calendrier du lieu (civilNoon) : passer
  * par minuit de l'appareil décalait d'un jour un lieu à l'ouest de lui (un
  * appareil à Paris pour Montréal recevait le rappel la veille de la veille).
+ *
+ * Aux hautes latitudes, l'été, la sortie du Chabbat ne se calcule pas
+ * toujours (`end` nul) : le coucher du soleil de la veille reste alors le
+ * repère, plutôt que de ne rien rappeler.
  */
 export function occasionEntryAt(place: ZmanimPlace, hd: HDate, locale: string): Date | null {
   const period = restPeriodAt(place, hd, locale);
@@ -1161,11 +1164,12 @@ export function occasionEntryAt(place: ZmanimPlace, hd: HDate, locale: string): 
     if (lighting && isUsable(lighting.at)) return lighting.at;
   }
   const before = restPeriodAt(place, hd.prev(), locale);
-  if (before && !period) return before.end;
+  if (before && !period && before.end) return before.end;
   const sunset = new Zmanim(geoLocationOf(place), civilNoon(hd.prev()), false).sunset();
   return isUsable(sunset) ? sunset : null;
 }
 
+/** La sortie des étoiles d'un jour hébraïque, en ce lieu, ou null aux latitudes extrêmes. */
 export function nightfallOf(place: ZmanimPlace, hd: HDate): Date | null {
   const day = civilNoon(hd);
   const zmanim = new Zmanim(geoLocationOf(place), day, false);

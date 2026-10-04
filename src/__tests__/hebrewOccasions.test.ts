@@ -220,8 +220,9 @@ describe("rappels des dates personnelles", () => {
     // Le 13 Kislev 5787, un lundi : la veille est un jour ordinaire. (Le 12,
     // un dimanche, se rappelle à la sortie du Chabbat : occasionEntry.test.ts.)
     const [reminder] = plan([occasion({ reminder: "nightfall", day: 13 })]);
-    const eve = new Date(reminder.target);
-    eve.setDate(eve.getDate() - 1);
+    // La veille, dimanche 22 novembre 2026, prise à midi UTC : passer par
+    // minuit de la machine la décalait d'un jour à l'est de Paris.
+    const eve = new Date(Date.UTC(2026, 10, 22, 12));
 
     // Le jour hébraïque commence la veille au soir : c'est là qu'on allume.
     expect(reminder.at.getTime()).toBe(getSunset(DEFAULT_PLACE, eve)!.getTime());
