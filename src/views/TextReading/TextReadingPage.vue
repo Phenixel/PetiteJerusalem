@@ -1288,13 +1288,18 @@ const drawnReservationIds = new Set<string>();
  * Un tirage de ce lecteur, à rendre s'il repart sans lire. Hors chaîne
  * perpétuelle, seule une réservation tirée porte une échéance : c'est ce qui
  * laisse libérer aussi un tirage d'une visite précédente, rouvert ici.
+ *
+ * L'échéance est exigée dans tous les cas : marquée lue, la réservation
+ * devient définitive et la perd (voir toggleRead). Remise en non lu, elle
+ * reste au lecteur, même tirée d'ici ; il ne la rend pas en repartant.
  */
 function isOwnUnreadDraw(s: Session, r: TextStudyReservation): boolean {
   if (r.isCompleted || sessionService.isReservationExpired(r)) return false;
+  if (r.expiresAt === undefined) return false;
   if (!sessionService.canUserDeleteReservation(r, currentUser.value, reservationForm.value.email)) {
     return false;
   }
-  return drawnReservationIds.has(r.id) || (!isPerpetual(s) && r.expiresAt !== undefined);
+  return drawnReservationIds.has(r.id) || !isPerpetual(s);
 }
 
 /**
