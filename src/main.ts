@@ -3,7 +3,7 @@ import "./assets/main.css";
 import { createApp, watch } from "vue";
 import App from "./App.vue";
 import router from "./router";
-import i18n from "./i18n";
+import i18n, { localeReady, waitsForLocale } from "./i18n";
 import { isNativeApp } from "./composables/useNativeApp";
 import { closeTopOverlay } from "./composables/useOverlayStack";
 import { chunkNameFrom, isChunkLoadError } from "./config/chunkErrors";
@@ -130,7 +130,18 @@ app.config.errorHandler = (err, _instance, info) => {
   );
 };
 
-app.mount("#app");
+// Hors français, le premier rendu attend les messages de la langue (un
+// chunk d'environ 25 kB gzip), une seconde au plus : un réseau qui traîne ne
+// doit pas laisser la page blanche, le repli français s'affiche alors.
+const LOCALE_WAIT_MS = 1_000;
+if (waitsForLocale) {
+  void Promise.race([
+    localeReady,
+    new Promise<void>((resolve) => setTimeout(resolve, LOCALE_WAIT_MS)),
+  ]).then(() => app.mount("#app"));
+} else {
+  app.mount("#app");
+}
 
 // Suivi produit + traque d'erreurs (PostHog, prod uniquement). Import
 // dynamique et best-effort : jamais bloquant pour le démarrage.
