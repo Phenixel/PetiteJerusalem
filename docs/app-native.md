@@ -234,6 +234,11 @@ Implémentées côté client (`src/services/pushService.ts`,
 être uploadée dans la console Firebase et la capability Push Notifications
 ajoutée dans Xcode.
 
+La fonction relit les profils abonnés toutes les cinq minutes ; elle n'en
+demande que les champs qu'elle lit (`REMINDER_FIELDS`, projection `select`),
+pas les marque-pages ni les positions de lecture. Un champ lu doit y figurer,
+sans quoi il vaudrait `undefined` : `dailyReminderFields.test.ts` y veille.
+
 Côté iOS, `scripts/setup-ios.mjs` pose l'entitlement `aps-environment` (sandbox
 en Debug, production en Release), le background mode `remote-notification` et
 les trois hooks APNs dans `AppDelegate.swift` ; la clé APNs doit être importée
