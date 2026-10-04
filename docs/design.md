@@ -956,6 +956,22 @@ et ils comptent dans l'identité de l'invité (`getGuestIdentifiers`). Même
 portée que l'identité locale : ce navigateur, pas un autre appareil. Tenu par
 `src/__tests__/guestEmailIdentity.test.ts`.
 
+### La date limite d'une chaîne est la même dans tous les fuseaux
+
+Le créateur choisit un jour ; la chaîne finit à la fin de ce jour-là, là où
+se trouve qui la regarde. On l'enregistrait comme un instant (fin de journée
+dans le fuseau du créateur), relu dans le fuseau du lecteur : créée à Paris
+pour le 5 octobre, une chaîne se lisait « 6 octobre » à Jérusalem, et la
+modale de modification la réenregistrait au 6 à qui ne corrigeait que le
+titre, de Montréal à Paris. Les chaînes portent donc aussi le jour choisi
+(`dateLimitDay`, « YYYY-MM-DD »), que les versions publiées ignorent ;
+l'affichage, la fin de la chaîne, les jours restants et la modale le lisent
+par `deadlineDayOf` (`services/dateService.ts`). Il ne fait foi que s'il
+concorde avec l'instant : une ancienne version qui déplace la date réécrit
+l'instant sans le connaître, et c'est alors l'instant qui compte. Les
+chaînes créées avant gardent leur lecture d'avant. Tenu par
+`src/__tests__/deadlineAcrossTimezones.test.ts`.
+
 ### L'écran de connexion dit quoi faire
 
 Un échec ne montre jamais l'erreur brute de Firebase (« Firebase: Error

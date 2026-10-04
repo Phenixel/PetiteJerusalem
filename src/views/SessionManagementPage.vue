@@ -12,7 +12,7 @@ import {
 import { SearchService } from "../services/searchService";
 import { searchItems } from "../services/fuzzySearch";
 import { TextTypeService } from "../services/textTypeService";
-import { DateService } from "../services/dateService";
+import { DateService, deadlineOf } from "../services/dateService";
 import { authService } from "../services/authService";
 import { appendHebrewNumeral, formatNumberWithHebrew } from "../services/hebrewNumerals";
 import type { Session, TextStudy, TextStudyReservation } from "../models/models";
@@ -673,7 +673,7 @@ onMounted(() => {
                 TextTypeService.formatType(session.type)
               }}</span>
               <span class="chip bg-black/5 text-text-secondary dark:bg-white/10">{{
-                t("common.dateLimitValue", { date: DateService.formatDate(session.dateLimit) })
+                t("common.dateLimitValue", { date: DateService.formatDate(deadlineOf(session)) })
               }}</span>
               <span
                 v-if="session.isEnded"

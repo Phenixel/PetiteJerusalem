@@ -2,7 +2,7 @@
 import { useI18n } from "vue-i18n";
 import { sessionService } from "../../../services/sessionService";
 import { TextTypeService } from "../../../services/textTypeService";
-import { DateService } from "../../../services/dateService";
+import { DateService, deadlineOf } from "../../../services/dateService";
 import type { Session } from "../../../models/models";
 import AppIcon from "../../../components/icons/AppIcon.vue";
 
@@ -46,7 +46,7 @@ const emit = defineEmits<{
       </template>
       <template v-else>
         <span class="chip bg-black/5 text-text-secondary dark:bg-white/10">{{
-          t("common.dateLimitValue", { date: DateService.formatDate(session.dateLimit) })
+          t("common.dateLimitValue", { date: DateService.formatDate(deadlineOf(session)) })
         }}</span>
         <span class="chip bg-black/5 text-text-secondary dark:bg-white/10">{{
           t("common.createdByValue", { name: session.creatorName })

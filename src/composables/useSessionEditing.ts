@@ -1,7 +1,7 @@
 import { useI18n } from "vue-i18n";
 import type { Session, TextStudy } from "../models/models";
 import { sessionService } from "../services/sessionService";
-import { endOfLocalDay } from "../services/dateService";
+import { deadlineDayOf, endOfLocalDay } from "../services/dateService";
 import { analyticsService } from "../services/analyticsService";
 import { useConfirm } from "./useConfirm";
 import { useToast } from "./useToast";
@@ -40,10 +40,9 @@ export function useSessionEditing(source: string) {
         session_id: session.id,
         text_type: session.type,
         guest_email_required: data.guestEmailRequired,
-        deadline_changed:
-          session.dateLimit instanceof Date
-            ? endOfLocalDay(data.dateLimit).getTime() !== session.dateLimit.getTime()
-            : null,
+        // Comparé au jour choisi, pas à l'instant : relu dans un autre fuseau,
+        // l'instant donnait « changée » à qui ne corrigeait que le titre.
+        deadline_changed: deadlineDayOf(session) !== data.dateLimit,
         source,
       });
       toast.success(t("profile.sessionUpdatedSuccess"));
@@ -67,6 +66,7 @@ export function useSessionEditing(source: string) {
       name: data.name,
       description: data.description,
       dateLimit: endOfLocalDay(data.dateLimit),
+      dateLimitDay: data.dateLimit,
       guestEmailRequired: data.guestEmailRequired,
       updatedAt: new Date(),
     };
