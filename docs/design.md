@@ -867,6 +867,16 @@ mal. Chaque langue a ses trois formes, l'hébreu accordant le singulier
 (« עוד יום אחד »). Tenu par `src/__tests__/myParticipatedSessions.test.ts`
 (« Je participe : jours restants »).
 
+### Un nom public n'est jamais une adresse email
+
+Un compte créé par email sans « Nom affiché » (le champ est facultatif)
+prenait son adresse pour nom, et ce nom part tel quel dans les données
+lisibles par tous : « Créée par jean.dupont@exemple.fr » sur la carte d'une
+chaîne, le nom d'une réservation. Sans nom affiché, le nom du compte est
+désormais ce qui précède « @ » (« jean.dupont »). Les chaînes et réservations
+déjà enregistrées gardent ce qu'elles portent. Tenu par
+`src/__tests__/publicNameWithoutEmail.test.ts`.
+
 ### L'écran de connexion dit quoi faire
 
 Un échec ne montre jamais l'erreur brute de Firebase (« Firebase: Error
