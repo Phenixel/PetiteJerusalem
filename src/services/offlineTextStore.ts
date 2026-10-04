@@ -91,6 +91,97 @@ interface DownloadManifest {
 
 const isNative = Capacitor.isNativePlatform();
 
+/**
+ * Le code du refus de la permission de stockage par `@capacitor/file-transfer`.
+ * Sous Android 10 et moins, le plugin la demande avant tout transfert, même
+ * vers l'espace privé de l'app (voir docs/app-native.md) ; refusée, il rejette
+ * avec ce code.
+ */
+export const STORAGE_PERMISSION_DENIED = "OS-PLUG-FLTR-0006";
+
+/** Le téléchargement a-t-il échoué parce que la permission de stockage est refusée ? */
+export function isStoragePermissionDenied(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const { code, message } = error as { code?: unknown; message?: unknown };
+  return (
+    code === STORAGE_PERMISSION_DENIED ||
+    (typeof message === "string" && message.includes("user denied permission request"))
+  );
+}
+
+/** La version majeure d'Android lue dans l'agent utilisateur, null ailleurs. */
+export function androidMajorVersion(userAgent: string): number | null {
+  const match = /Android (\d+)/.exec(userAgent);
+  return match ? Number(match[1]) : null;
+}
+
+/**
+ * L'agent utilisateur réduit des webviews récentes : « Android 10; K », quel
+ * que soit l'appareil et sa version d'Android. La vraie version ne se lit
+ * alors que dans les indications du client (`userAgentData`).
+ */
+const REDUCED_ANDROID_UA = /Android 10; K[;)]/;
+
+type ClientHints = {
+  getHighEntropyValues?(hints: string[]): Promise<{ platformVersion?: string }>;
+};
+
+/**
+ * La version majeure d'Android de l'appareil, null si elle ne se lit pas.
+ *
+ * Les indications du client d'abord. L'agent utilisateur seul ne suffit
+ * plus : réduit, il annonce Android 10 sur un téléphone récent, où la
+ * permission de stockage ne peut jamais être accordée (le manifeste la borne
+ * au SDK 29). S'y fier coupait pour de bon les mises à jour de fond sur ces
+ * appareils. Réduit et sans indications, la version est tenue pour inconnue.
+ */
+export async function deviceAndroidMajor(userAgent: string): Promise<number | null> {
+  const hints =
+    typeof navigator === "undefined"
+      ? undefined
+      : (navigator as Navigator & { userAgentData?: ClientHints }).userAgentData;
+  try {
+    const version = (await hints?.getHighEntropyValues?.(["platformVersion"]))?.platformVersion;
+    const major = version ? Number.parseInt(version, 10) : NaN;
+    if (Number.isFinite(major) && major > 0) return major;
+  } catch {
+    // Indications refusées : l'agent utilisateur reste le repli.
+  }
+  if (REDUCED_ANDROID_UA.test(userAgent)) return null;
+  return androidMajorVersion(userAgent);
+}
+
+/**
+ * Une tâche de fond (mise à jour d'un texte embarqué ou téléchargé) peut-elle
+ * télécharger sans faire surgir le dialogue de permission ? Sous Android 10
+ * et moins, `@capacitor/file-transfer` demande la permission de stockage
+ * avant tout transfert : sans elle déjà accordée, une mise à jour silencieuse
+ * l'aurait demandée à l'ouverture d'un office, sans que personne n'ait rien
+ * demandé. Elle attend alors un téléchargement voulu, qui la demandera.
+ *
+ * Au-delà d'Android 10, le plugin ne la consulte plus : rien à vérifier, et
+ * surtout rien à attendre, la permission n'y étant jamais accordée. La
+ * version vient de deviceAndroidMajor ; inconnue, la tâche part comme avant.
+ */
+export async function backgroundDownloadAllowed(
+  userAgent: string = typeof navigator === "undefined" ? "" : navigator.userAgent,
+): Promise<boolean> {
+  if (!isNative || Capacitor.getPlatform() !== "android") return true;
+  const major = await deviceAndroidMajor(userAgent);
+  if (major === null || major > 10) return true;
+  try {
+    // checkPermissions vient de Capacitor, pour tout plugin qui déclare des
+    // permissions : il lit l'état sans rien demander.
+    const plugin = FileTransfer as unknown as {
+      checkPermissions(): Promise<Record<string, string>>;
+    };
+    const states = await plugin.checkPermissions();
+    return states.publicStorage === "granted";
+  } catch {
+    return false;
+  }
+}
+
 /** Manifest réactif : l'UI (page Téléchargements, boutons) s'y abonne. */
 export const downloadManifest = ref<DownloadManifest>({ files: {} });
 
@@ -98,15 +189,22 @@ let manifestLoaded: Promise<void> | null = null;
 
 export function ensureManifestLoaded(): Promise<void> {
   if (!manifestLoaded) {
-    manifestLoaded = Preferences.get({ key: MANIFEST_KEY }).then(({ value }) => {
-      if (!value) return;
-      try {
-        downloadManifest.value = JSON.parse(value) as DownloadManifest;
-      } catch {
-        // Manifest corrompu : on repart d'un index vide, les fichiers
-        // seront simplement re-téléchargeables.
-      }
-    });
+    manifestLoaded = Preferences.get({ key: MANIFEST_KEY })
+      .then(({ value }) => {
+        if (!value) return;
+        try {
+          downloadManifest.value = JSON.parse(value) as DownloadManifest;
+        } catch {
+          // Manifest corrompu : on repart d'un index vide, les fichiers
+          // seront simplement re-téléchargeables.
+        }
+      })
+      .catch(() => {
+        // Stockage inaccessible (sur le web, données de site bloquées : le
+        // plugin lit localStorage, qui lève) : un index vide, et la lecture
+        // passe par le réseau. Sans ce filet, la promesse rejetée restait en
+        // place pour la session, et plus aucun texte ne se chargeait.
+      });
   }
   return manifestLoaded;
 }
@@ -338,6 +436,8 @@ async function revalidateBundled(webPath: string, bundledText: Promise<string>):
     const embarquee = await bundledHashes.get(webPath);
     if (embarquee === null || embarquee === attendue) return;
     if (isDownloaded(webPath) && isDownloadCurrent(webPath)) return;
+    // Personne n'a rien demandé : pas de dialogue de permission pour cela.
+    if (!(await backgroundDownloadAllowed())) return;
     await downloadFile(webPath);
   } catch (error) {
     console.warn(`Vérification de ${webPath} impossible:`, error);
@@ -412,6 +512,7 @@ export async function fetchTextResponse(webPath: string): Promise<Response> {
 
 /** Télécharge un fichier et l'enregistre localement (natif : disque, web : Cache API). */
 export async function downloadFile(webPath: string): Promise<void> {
+  const removalsAtStart = removals.get(webPath) ?? 0;
   await ensureManifestLoaded();
   // L'empreinte sert deux fois : dans l'URL, pour qu'aucun cache HTTP ne
   // rende l'ancien fichier, et dans l'index, pour reconnaître plus tard que
@@ -445,7 +546,35 @@ export async function downloadFile(webPath: string): Promise<void> {
     if (!res.ok) throw new Error(`Téléchargement échoué (${res.status})`);
     ecrit = await res.clone().text();
     size = new TextEncoder().encode(ecrit).length;
+    // Une page à la place d'un texte (voir plus bas) ne remplace pas la copie
+    // en place.
+    if (webPath.endsWith(".json") && !isJson(ecrit)) {
+      throw new Error(`Téléchargement illisible : ${webPath}`);
+    }
     await cache.put(webPath, res);
+  }
+
+  // Un texte est du JSON. Un portail captif (hôtel, train) répond 200 avec
+  // sa page de connexion, et un fichier absent du site renvoie la coquille
+  // de l'app, en 200 aussi : inscrit, le livre passait pour lisible hors
+  // ligne, et la lecture échouait au moment d'en avoir besoin. Ce qui ne se
+  // lit pas comme un texte n'est donc ni gardé ni inscrit.
+  //
+  // Sur l'appareil, le transfert a déjà écrit par-dessus l'ancienne copie :
+  // elle est perdue, le fichier et son entrée de l'index s'en vont avec.
+  if (isNative && webPath.endsWith(".json") && ecrit !== null && !isJson(ecrit)) {
+    await Filesystem.deleteFile({ directory: Directory.Data, path: localPath(webPath) }).catch(
+      () => {
+        // Rien à retirer.
+      },
+    );
+    if (isDownloaded(webPath)) {
+      const files = { ...downloadManifest.value.files };
+      delete files[webPath];
+      downloadManifest.value = { files };
+      await saveManifest();
+    }
+    throw new Error(`Téléchargement illisible : ${webPath}`);
   }
 
   // L'empreinte inscrite est celle de ce qui a été écrit, et non celle qu'on
@@ -461,6 +590,15 @@ export async function downloadFile(webPath: string): Promise<void> {
   // l'atteindraient pas.
   const hash = ecrit === null ? undefined : ((await hashOf(ecrit)) ?? attendue);
 
+  // Retiré pendant le téléchargement (la mise à jour de fond reprend un livre
+  // que l'on supprime au même moment) : la suppression est la dernière
+  // volonté, la copie qui vient d'arriver s'en va et n'est pas inscrite.
+  // Sans cela, le livre réapparaissait comme téléchargé.
+  if ((removals.get(webPath) ?? 0) !== removalsAtStart) {
+    await discardLocalCopy(webPath);
+    return;
+  }
+
   downloadManifest.value = {
     files: {
       ...downloadManifest.value.files,
@@ -470,10 +608,34 @@ export async function downloadFile(webPath: string): Promise<void> {
   await saveManifest();
 }
 
+/**
+ * Suppressions demandées, par chemin : un téléchargement en cours les compare
+ * à son départ pour savoir qu'il a été désavoué entre-temps.
+ */
+const removals = new Map<string, number>();
+
+function isJson(text: string): boolean {
+  try {
+    JSON.parse(text);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** Supprime la copie locale d'un fichier. */
 export async function removeFile(webPath: string): Promise<void> {
+  removals.set(webPath, (removals.get(webPath) ?? 0) + 1);
   await ensureManifestLoaded();
+  await discardLocalCopy(webPath);
 
+  const files = { ...downloadManifest.value.files };
+  delete files[webPath];
+  downloadManifest.value = { files };
+  await saveManifest();
+}
+
+async function discardLocalCopy(webPath: string): Promise<void> {
   if (isNative) {
     await Filesystem.deleteFile({ directory: Directory.Data, path: localPath(webPath) }).catch(
       () => {
@@ -484,9 +646,4 @@ export async function removeFile(webPath: string): Promise<void> {
     const cache = await webCache();
     await cache?.delete(webPath);
   }
-
-  const files = { ...downloadManifest.value.files };
-  delete files[webPath];
-  downloadManifest.value = { files };
-  await saveManifest();
 }

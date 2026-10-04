@@ -115,6 +115,26 @@ function toSlot(minute: number): number {
   return Math.floor(minute / SLOT_MINUTES) * SLOT_MINUTES;
 }
 
+/**
+ * Les seuls champs que lit `remindProfile`. Le profil entier porte aussi les
+ * marque-pages, les positions de lecture et tous les réglages : relu toutes
+ * les cinq minutes pour chaque abonné, il ne sert qu'à charger la fonction.
+ * Un champ lu sans figurer ici vaudrait `undefined` : le test
+ * `dailyReminderFields.test.ts` y veille.
+ */
+const REMINDER_FIELDS = [
+  "pushReminderPlace",
+  "pushReminderHour",
+  "pushReminderMinute",
+  "pushReminderDailyEnabled",
+  "pushSunsetReminderEnabled",
+  "fcmTokens",
+  "dailyReadingIds",
+  "dailyReadingOptions",
+  "dailyReadingProgress",
+  "pushLocale",
+];
+
 export const dailyReadingReminder = onSchedule(
   // Cinq minutes de marge : au créneau de 18 h, le plus choisi, quelques
   // centaines de profils dépassaient les 60 s par défaut, et les suivants
@@ -125,6 +145,7 @@ export const dailyReadingReminder = onSchedule(
     const snap = await db
       .collection("userPreferences")
       .where("pushReminderEnabled", "==", true)
+      .select(...REMINDER_FIELDS)
       .get();
     if (snap.empty) return;
 

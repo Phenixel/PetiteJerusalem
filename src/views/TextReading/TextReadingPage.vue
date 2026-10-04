@@ -46,6 +46,7 @@ import { localeMessagesReady } from "../../i18n";
 import { transliterate, hasNiqqud } from "../../services/hebrewTransliteration";
 import { appendHebrewNumeral } from "../../services/hebrewNumerals";
 import { sessionService } from "../../services/sessionService";
+import { isPerpetual, isRoundFinished, waitForNextRound } from "../../services/perpetualChain";
 import { ReservationGoneError, SlotTakenError } from "../../services/appError";
 import { isOffline } from "../../services/userPreferencesService";
 import { pageTitle as siteTitle, seoService } from "../../services/seoService";
@@ -92,7 +93,7 @@ import { useReadingPinch } from "../../composables/useReadingPinch";
 import { useAutoScroll } from "../../composables/useAutoScroll";
 import { isSansTahanoun } from "../../composables/useSansTahanoun";
 import { nightWithoutTachanun, withoutTachanun } from "../../services/tachanun";
-import { pastChatzotNight } from "../../services/zmanimService";
+import { isWalledCityPlace, pastChatzotNight } from "../../services/zmanimService";
 import { useKeepAwake } from "../../composables/useKeepAwake";
 import { analyticsService } from "../../services/analyticsService";
 import { useLocalePath } from "../../composables/useLocalePath";
@@ -258,7 +259,7 @@ const occasionsDay = computed(() => new HDate(occasionsDayAbs.value));
 // du rendu qui en décide, comme des occasions elles-mêmes.
 const calendarOccasions = computed(() => {
   const il = zmanimPlace.value.tzid === "Asia/Jerusalem";
-  const today = activeOccasions(occasionsDay.value, il);
+  const today = activeOccasions(occasionsDay.value, il, isWalledCityPlace(zmanimPlace.value));
   const jour = isLiturgyText.value && isSansTahanoun(now.value) ? withoutTachanun(today) : today;
   if (!isLiturgyText.value) return jour;
   // Hatsot halayla ne se lit pas sur le calendrier : c'est une heure, elle
@@ -804,7 +805,18 @@ function dismissResume() {
 }
 
 function scrollToLine(line: number) {
-  scrollTo(positionSection.value, line, () => document.querySelector(`[data-line="${line}"]`));
+  // Un placement, pas une lecture : rien ne s'enregistre avant que le lecteur
+  // ne touche à la page (voir awaitingReaderGesture).
+  awaitingReaderGesture = true;
+  scrollTo(positionSection.value, line, () => {
+    const verse = document.querySelector(`[data-line="${line}"]`);
+    // Pas de tel verset dans ce chapitre (un traité de Guemara n'a pas de
+    // lignes repérées, sa reprise vaut toujours 0) : le chapitre s'ouvre en
+    // haut. Le routeur ne remonte plus pour une arrivée sur un verset, et la
+    // page restait à la hauteur où l'on avait laissé la liste des chapitres.
+    if (!verse) scrollTopProgrammatic();
+    return verse;
+  });
 }
 
 // Arrivée avec ?verset=N (reprise, marque-page, lien partagé) : on scrolle au
@@ -838,6 +850,20 @@ let programmaticScrollAt = 0;
 
 function markProgrammaticScroll() {
   programmaticScrollAt = Date.now();
+}
+
+/**
+ * Placé sur un verset (reprise, marque-page, lien partagé), le lecteur n'a
+ * encore rien lu. Le défilement doux qui l'y amène dure plus que la garde
+ * ci-dessus : il était pris pour un geste, et l'on enregistrait la ligne du
+ * haut de l'écran, une demi-page avant le verset centré. Rouvrir sans lire
+ * faisait reculer la reprise à chaque fois, et un lien partagé écrasait la
+ * position du lecteur. Rien ne s'enregistre plus avant un vrai geste.
+ */
+let awaitingReaderGesture = false;
+const READER_GESTURES = ["pointerdown", "keydown", "wheel", "touchstart"] as const;
+function onReaderGesture() {
+  awaitingReaderGesture = false;
 }
 
 function scrollTopProgrammatic() {
@@ -897,7 +923,7 @@ function onScroll() {
   // Un scroll est un signe de présence : il sert au renouvellement du tirage
   // (voir renewDrawIfNeeded), même quand la capture de position s'abstient.
   noteReadingActivity();
-  if (Date.now() - programmaticScrollAt < 300) return;
+  if (Date.now() - programmaticScrollAt < 300 || awaitingReaderGesture) return;
   if (scrollSaveTimer !== null || !currentSection.value || showSectionList.value) return;
   scrollSaveTimer = window.setTimeout(() => {
     scrollSaveTimer = null;
@@ -1276,6 +1302,32 @@ const isDrawingAnother = ref(false);
 let pendingClaim: Promise<void> | null = null;
 
 /**
+ * Les réservations posées par un tirage depuis cette page. Seules elles se
+ * libèrent quand on repart sans lire : sur la chaîne perpétuelle, une place
+ * réservée à la main porte aussi une échéance (24 heures, posée par la Cloud
+ * Function), et la seule échéance ne distingue plus un tirage d'un choix.
+ */
+const drawnReservationIds = new Set<string>();
+
+/**
+ * Un tirage de ce lecteur, à rendre s'il repart sans lire. Hors chaîne
+ * perpétuelle, seule une réservation tirée porte une échéance : c'est ce qui
+ * laisse libérer aussi un tirage d'une visite précédente, rouvert ici.
+ *
+ * L'échéance est exigée dans tous les cas : marquée lue, la réservation
+ * devient définitive et la perd (voir toggleRead). Remise en non lu, elle
+ * reste au lecteur, même tirée d'ici ; il ne la rend pas en repartant.
+ */
+function isOwnUnreadDraw(s: Session, r: TextStudyReservation): boolean {
+  if (r.isCompleted || sessionService.isReservationExpired(r)) return false;
+  if (r.expiresAt === undefined) return false;
+  if (!sessionService.canUserDeleteReservation(r, currentUser.value, reservationForm.value.email)) {
+    return false;
+  }
+  return drawnReservationIds.has(r.id) || !isPerpetual(s);
+}
+
+/**
  * Le lecteur est-il toujours devant le texte d'où l'action est partie ? Une
  * réservation part sans retenir la navigation : quand elle revient, la page a
  * pu être quittée, et remplacer la route ramènerait le lecteur de force.
@@ -1320,6 +1372,7 @@ async function claimDrawnText() {
       return;
     }
 
+    drawnReservationIds.add(result.reservation.id);
     s.reservations = [...s.reservations, result.reservation];
     analyticsService.capture("reservation_completed", {
       session_id: s.id,
@@ -1415,16 +1468,24 @@ async function renewDrawIfNeeded() {
   }
 }
 
+/** Coupe l'attente du tour suivant quand le lecteur quitte la page. */
+const nextRoundWait = new AbortController();
+
 onMounted(() => {
   window.addEventListener("pointerdown", noteReadingActivity, { passive: true });
   window.addEventListener("keydown", noteReadingActivity, { passive: true });
+  for (const gesture of READER_GESTURES) {
+    window.addEventListener(gesture, onReaderGesture, { passive: true });
+  }
   document.addEventListener("visibilitychange", onVisibilityChange);
   renewTimer = setInterval(() => void renewDrawIfNeeded(), RENEW_CHECK_MS);
 });
 
 onBeforeUnmount(() => {
+  nextRoundWait.abort();
   window.removeEventListener("pointerdown", noteReadingActivity);
   window.removeEventListener("keydown", noteReadingActivity);
+  for (const gesture of READER_GESTURES) window.removeEventListener(gesture, onReaderGesture);
   document.removeEventListener("visibilitychange", onVisibilityChange);
   if (renewTimer !== null) {
     clearInterval(renewTimer);
@@ -1432,8 +1493,29 @@ onBeforeUnmount(() => {
   }
 });
 
+/**
+ * Chaîne perpétuelle : la copie locale de la chaîne date du montage. Quand
+ * elle n'a plus de place libre, la chaîne a pu repartir entre-temps, et c'est
+ * le cas quand le lecteur vient de lire le dernier Téhilim du tour. On la
+ * relit donc ; si le tour y est entièrement lu, la Cloud Function ne l'a pas
+ * encore remise à zéro (démarrage à froid) : on le dit, et on attend le tour
+ * suivant par quelques essais bornés (waitForNextRound). Renvoie la chaîne
+ * relue, ou null si le tour suivant n'est pas venu.
+ */
+async function refreshPerpetualChain(s: Session): Promise<Session | null> {
+  const load = () => sessionService.getSessionById(s.id);
+  let latest = await load();
+  if (latest && isRoundFinished(latest)) {
+    toast.info(t("perpetual.roundDone"));
+    latest = await waitForNextRound(latest, load, { signal: nextRoundWait.signal });
+  }
+  if (!latest || nextRoundWait.signal.aborted) return null;
+  if (!Array.isArray(latest.reservations)) latest.reservations = [];
+  return latest;
+}
+
 async function drawAnother() {
-  const s = session.value;
+  let s = session.value;
   if (!s || isDrawingAnother.value) return;
   const from = textId.value;
   // La réservation d'arrivée peut être encore en vol : sans cette attente, on
@@ -1450,32 +1532,54 @@ async function drawAnother() {
   }
   isDrawingAnother.value = true;
   try {
-    const result = await sessionService.reserveRandomAvailableText(
-      s,
-      sessionService.getSessionTextStudies(s),
-      currentUser.value,
-      reservationForm.value,
-      t("detailSession.randomDraw.anonymous"),
-    );
+    const reserve = (chain: Session) =>
+      sessionService.reserveRandomAvailableText(
+        chain,
+        sessionService.getSessionTextStudies(chain),
+        currentUser.value,
+        reservationForm.value,
+        t("detailSession.randomDraw.anonymous"),
+      );
+    let result = await reserve(s);
+    if (!result && isPerpetual(s)) {
+      const latest = await refreshPerpetualChain(s);
+      // Page quittée pendant l'attente : rien à dire, ni à tirer.
+      if (nextRoundWait.signal.aborted) return;
+      if (latest) {
+        session.value = latest;
+        s = session.value;
+        result = await reserve(s);
+      }
+    }
     if (!result) {
       toast.info(t("detailSession.randomDraw.noneAvailable"));
       return;
     }
 
     // Le nouveau tirage d'abord, la libération ensuite : si plus rien n'était
-    // disponible, le lecteur garde au moins son texte actuel.
+    // disponible, le lecteur garde au moins son texte actuel. Il entre dans
+    // l'état local avant la libération : si celle-ci échoue (réseau coupé),
+    // il n'en reste pas moins à lui, et suivi. Seul un tirage se libère ; une
+    // place choisie à la main ne se rend pas pour en tirer une autre.
+    drawnReservationIds.add(result.reservation.id);
     const previous = currentReservation.value;
-    if (previous && !previous.isCompleted && isMine.value) {
-      await sessionService.deleteReservation(s.id, previous.id);
-      s.reservations = s.reservations.filter((x) => x.id !== previous.id);
-      analyticsService.capture("reservation_cancelled", {
-        session_id: s.id,
-        is_guest: currentUser.value == null,
-        source: "random_redraw",
-      });
+    s.reservations = [...s.reservations, result.reservation];
+    if (previous && isMine.value && isOwnUnreadDraw(s, previous)) {
+      try {
+        await sessionService.deleteReservation(s.id, previous.id);
+        s.reservations = s.reservations.filter((x) => x.id !== previous.id);
+        drawnReservationIds.delete(previous.id);
+        analyticsService.capture("reservation_cancelled", {
+          session_id: s.id,
+          is_guest: currentUser.value == null,
+          source: "random_redraw",
+        });
+      } catch (e) {
+        // Le précédent expirera de lui-même dans l'heure.
+        console.error("Libération du tirage précédent impossible :", e);
+      }
     }
 
-    s.reservations = [...s.reservations, result.reservation];
     analyticsService.capture("reservation_completed", {
       session_id: s.id,
       text_type: s.type,
@@ -1525,17 +1629,13 @@ async function releaseUnreadRandomDraw(forTextId: string = textId.value) {
   // ce qui n'est pas encore posé.
   await pendingClaim;
 
-  const r = s.reservations.find(
-    (x) =>
-      x.textStudyId === forTextId &&
-      x.expiresAt !== undefined &&
-      !x.isCompleted &&
-      sessionService.canUserDeleteReservation(x, currentUser.value, reservationForm.value.email),
-  );
+  // Le tirage de ce texte, et lui seul : ni une place choisie à la main, ni
+  // un ancien tirage expiré du même texte, que le serveur a déjà retiré
+  // (libérer celui-là laisserait le nouveau pris une heure).
+  const r = s.reservations.find((x) => x.textStudyId === forTextId && isOwnUnreadDraw(s, x));
   if (!r) return;
-  // L'état local d'abord : la libération part sans retenir la navigation, et
-  // la chaîne qu'on rejoint ne doit pas réafficher le texte comme pris.
   s.reservations = s.reservations.filter((x) => x.id !== r.id);
+  drawnReservationIds.delete(r.id);
   try {
     await sessionService.deleteReservation(s.id, r.id);
     analyticsService.capture("reservation_cancelled", {
@@ -1550,11 +1650,25 @@ async function releaseUnreadRandomDraw(forTextId: string = textId.value) {
   }
 }
 
+/** Ce que le retour à la chaîne attend, au plus, la libération du tirage. */
+const RELEASE_BEFORE_CHAIN_MS = 1500;
+
 // Quitter la page (retour à la chaîne, navigation ailleurs) sans avoir lu : le
-// texte tiré est libéré pour que quelqu'un d'autre puisse le prendre. La
-// suppression n'est pas attendue, elle ne doit pas retarder la navigation.
-onBeforeRouteLeave(() => {
-  void releaseUnreadRandomDraw();
+// texte tiré est libéré pour que quelqu'un d'autre puisse le prendre.
+//
+// Vers la page de la chaîne, la navigation attend la libération, une seconde
+// et demie au plus : la page relit la chaîne en arrivant, et la lisait entre
+// la pose du tirage et son retrait. Elle montrait alors le texte comme réservé
+// par le lecteur, avec son interrupteur « Lu », qui répondait « Réservation
+// introuvable » (section_mark_read_failed, septembre 2026). Ailleurs, la
+// libération ne retarde rien.
+onBeforeRouteLeave((to) => {
+  const releasing = releaseUnreadRandomDraw();
+  if (to.name !== "detail-session") return;
+  return Promise.race([
+    releasing,
+    new Promise((resolve) => setTimeout(resolve, RELEASE_BEFORE_CHAIN_MS)),
+  ]).then(() => undefined);
 });
 
 // --- SEO ---

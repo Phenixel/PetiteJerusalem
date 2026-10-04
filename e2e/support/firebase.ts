@@ -120,9 +120,12 @@ export async function seedTehilimSession(
 /**
  * Pose une chaîne perpétuelle, telle que `chaine:creer` l'écrirait
  * (scripts/lib/backoffice.mjs), sous un identifiant unique : plusieurs tests
- * peuvent en poser une en même temps. Voir docs/chaine-perpetuelle.md.
+ * peuvent en poser une en même temps. `fields` remplace ou complète ses
+ * champs (un tour déjà avancé, par exemple). Voir docs/chaine-perpetuelle.md.
  */
-export async function seedPerpetualChain(): Promise<SeededSession> {
+export async function seedPerpetualChain(
+  fields: Record<string, unknown> = {},
+): Promise<SeededSession> {
   const id = uniqueId();
   const slug = `chaine-perpetuelle-${id}`;
   const name = `Chaîne perpétuelle ${id}`;
@@ -143,6 +146,7 @@ export async function seedPerpetualChain(): Promise<SeededSession> {
     cycle: 1,
     completedCycles: 0,
     cycleStartedAt: new Date(),
+    ...fields,
   });
   return { id: slug, slug, name };
 }

@@ -1,3 +1,4 @@
+import type { Page } from "playwright/test";
 import { HDate, months } from "@hebcal/core";
 import {
   test,
@@ -8,6 +9,7 @@ import {
   seedPerpetualChain,
   seedTehilimSession,
   signIn,
+  tehilimId,
   uniqueId,
 } from "../support/firebase";
 import { gotoApp } from "../support/fixtures";
@@ -20,8 +22,9 @@ import {
 /**
  * La chaîne perpétuelle de Tehilim (docs/chaine-perpetuelle.md) : sa carte en
  * tête du partage, les noms qu'on lui confie, et les règles Firestore qui les
- * gardent. La remise à zéro d'un tour fini (Cloud Function) est tenue par
- * src/__tests__/perpetualChain.test.ts.
+ * gardent, et ce que la page et le lecteur font d'un tour fini. La remise à
+ * zéro elle-même (Cloud Function) est tenue par
+ * src/__tests__/perpetualChain.test.ts ; ici, le test la joue à sa place.
  */
 
 const DAY = 24 * 3600 * 1000;
@@ -113,6 +116,101 @@ async function writeSession(
   return res.status;
 }
 
+/** Les Téhilim `from` à `to` du tour, lus par d'autres. */
+function readSlots(from: number, to: number) {
+  return Array.from({ length: to - from + 1 }, (_, i) => ({
+    id: `lu-${from + i}`,
+    textStudyId: tehilimId(from + i),
+    section: 1,
+    chosenByGuestId: "autre-lecteur",
+    chosenByName: "Un autre lecteur",
+    isCompleted: true,
+    createdAt: new Date(),
+  }));
+}
+
+/**
+ * Ce que fait la Cloud Function d'un tour fini (nextRound) : les
+ * réservations vidées, le tour suivant. Les émulateurs ne la font pas
+ * tourner ; le test la joue lui-même, quand il veut.
+ */
+async function startNextRound(chainId: string): Promise<void> {
+  const mask = ["reservations", "cycle", "completedCycles"]
+    .map((field) => `updateMask.fieldPaths=${field}`)
+    .join("&");
+  const res = await fetch(
+    `http://localhost:${FIRESTORE_PORT}/v1/${DOCUMENTS}/sessions/${chainId}?${mask}`,
+    {
+      method: "PATCH",
+      headers: { Authorization: "Bearer owner", "Content-Type": "application/json" },
+      body: JSON.stringify({
+        fields: toFirestoreFields({ reservations: [], cycle: 2, completedCycles: 1 }),
+      }),
+    },
+  );
+  if (!res.ok) throw new Error(`Tour suivant : ${res.status} ${await res.text()}`);
+}
+
+/**
+ * Le retard d'une Cloud Function au démarrage à froid. C'est le scénario même
+ * du test, pas une attente de confort : la page qui ne relisait la chaîne
+ * qu'une fois, cinq secondes après la fin du tour, restait figée quand la
+ * fonction arrivait plus tard.
+ */
+const coldStart = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** Les précisions des signalements d'une session, dans l'ordre d'arrivée. */
+async function reportsOf(sessionId: string): Promise<string[]> {
+  const res = await fetch(`http://localhost:${FIRESTORE_PORT}/v1/${DOCUMENTS}:runQuery`, {
+    method: "POST",
+    headers: { Authorization: "Bearer owner", "Content-Type": "application/json" },
+    body: JSON.stringify({
+      structuredQuery: {
+        from: [{ collectionId: "reports" }],
+        where: {
+          fieldFilter: {
+            field: { fieldPath: "sessionId" },
+            op: "EQUAL",
+            value: { stringValue: sessionId },
+          },
+        },
+      },
+    }),
+  });
+  if (!res.ok) throw new Error(`Signalements : ${res.status} ${await res.text()}`);
+  const rows = (await res.json()) as {
+    document?: { fields: Record<string, { stringValue?: string; timestampValue?: string }> };
+  }[];
+  return rows
+    .flatMap((row) => (row.document ? [row.document.fields] : []))
+    .sort((a, b) =>
+      (a.createdAt?.timestampValue ?? "").localeCompare(b.createdAt?.timestampValue ?? ""),
+    )
+    .map((fields) => fields.details?.stringValue ?? "");
+}
+
+/**
+ * Coupe ou rend le réseau de Firestore, sans que l'appareil le sache :
+ * `navigator.onLine` reste vrai, comme sur un réseau qui ne répond plus. (Un
+ * appareil qui se sait hors ligne voit « Connexion impossible » à la place de
+ * la page, fenêtre comprise.)
+ */
+async function muteFirestore(page: Page, muted: boolean): Promise<void> {
+  const firestore = new RegExp(`localhost:${FIRESTORE_PORT}`);
+  if (muted) await page.route(firestore, (route) => route.abort("timedout"));
+  else await page.unroute(firestore);
+}
+
+/** Les noms d'une chaîne, tels que Firestore les garde. */
+async function namesOf(chainId: string): Promise<unknown[]> {
+  const res = await fetch(
+    `http://localhost:${FIRESTORE_PORT}/v1/${DOCUMENTS}/sessions/${chainId}/names`,
+    { headers: { Authorization: "Bearer owner" } },
+  );
+  if (!res.ok) throw new Error(`Noms : ${res.status} ${await res.text()}`);
+  return ((await res.json()) as { documents?: unknown[] }).documents ?? [];
+}
+
 /**
  * La date hébraïque d'un jour à venir, telle que la fenêtre la garde. Adar I
  * d'une année à treize mois ne se dit pas dans ce modèle (un décès d'Adar
@@ -170,6 +268,61 @@ test.describe("chaîne perpétuelle", () => {
       .click();
     await page.getByRole("alertdialog").getByRole("button", { name: "Retirer" }).click();
     await expect(mine).toHaveCount(0);
+  });
+
+  test("on y signale un nom après l'autre, sans bloquer son créateur", async ({ page }) => {
+    const chain = await seedPerpetualChain();
+    await gotoApp(page, `/share-reading/session/${chain.slug}`);
+
+    for (const name of ["Premier Nom", "Second Nom"]) {
+      const report = page.getByRole("button", { name: "Signaler", exact: true });
+      await expect(report).toBeEnabled({ timeout: 20_000 });
+      await report.click();
+      const form = page.locator("form", { has: page.locator("#report-details") });
+      await expect(form).toBeVisible();
+      // Bloquer le créateur retirait toute la chaîne de l'appareil.
+      await expect(page.getByText("Bloquer ce créateur")).toHaveCount(0);
+      await form.locator("#report-details").fill(name);
+      await form.getByRole("button", { name: "Signaler" }).click();
+      await expect(page.getByText("Merci, votre signalement a bien été transmis.")).toBeVisible();
+      await expect(form).toHaveCount(0);
+    }
+
+    await expect
+      .poll(() => reportsOf(chain.id), { timeout: 10_000 })
+      .toEqual(["Premier Nom", "Second Nom"]);
+  });
+
+  test("serveur muet : la fenêtre rend la main, et le nom n'arrive qu'une fois", async ({
+    page,
+  }) => {
+    const account = await createAccount("reseau-muet");
+    const chain = await seedPerpetualChain();
+    await signIn(page, account, `/share-reading/session/${chain.slug}`);
+
+    const names = page.locator("[data-prayer-names]");
+    await names.getByRole("button", { name: "Proposer un nom" }).click();
+    const dialog = page.getByRole("dialog", { name: "Proposer un nom" });
+    await dialog.locator("#prayer-first-name").fill("Yossef");
+    await dialog.locator("#prayer-mother-name").fill("Rahel");
+
+    // L'appareil se croit en ligne, mais Firestore ne répond plus.
+    await muteFirestore(page, true);
+    const add = dialog.getByRole("button", { name: "Ajouter le nom" });
+    await add.click();
+    const pending = page.getByText(/Le serveur ne répond pas/).first();
+    await expect(pending).toBeVisible({ timeout: 20_000 });
+    // La fenêtre reste ouverte, avec ce qui a été saisi, et le bouton répond.
+    await expect(dialog.locator("#prayer-first-name")).toHaveValue("Yossef");
+    await expect(add).toBeEnabled();
+    // On réessaie quand même : c'est le même ajout qui reste en route.
+    await add.click();
+
+    await muteFirestore(page, false);
+    await expect(names.getByRole("button", { name: "Modifier Yossef ben Rahel" })).toBeVisible({
+      timeout: 90_000,
+    });
+    await expect.poll(() => namesOf(chain.id), { timeout: 10_000 }).toHaveLength(1);
   });
 
   test("un défunt daté ne paraît que la semaine de son anniversaire", async ({ page }) => {
@@ -258,12 +411,57 @@ test.describe("chaîne perpétuelle", () => {
     expect(await writeSession(uid, own, session)).toBe(200);
     // Son créateur la modifie, mais n'en fait pas une chaîne perpétuelle après coup.
     expect(await writeSession(uid, own, { ...session, name: "Renommée" }, ["name"])).toBe(200);
-    expect(
-      await writeSession(uid, own, { ...session, perpetual: true }, ["perpetual"]),
-    ).toBe(403);
+    expect(await writeSession(uid, own, { ...session, perpetual: true }, ["perpetual"])).toBe(403);
     expect(
       await writeSession(uid, own, { ...session, completedCycles: 40 }, ["completedCycles"]),
     ).toBe(403);
     expect((await readDoc("sessions", own))?.perpetual).toBeUndefined();
+  });
+  test("un tour fini : la page relit la chaîne jusqu'au tour suivant", async ({ page }) => {
+    const chain = await seedPerpetualChain({ reservations: readSlots(1, 150) });
+    await gotoApp(page, `/share-reading/session/${chain.slug}`);
+    await expect(page.getByText("Tour terminé !")).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByRole("button", { name: "Tirer un Téhilim" })).toHaveCount(0);
+
+    // La fonction arrive après le seul rechargement que faisait la page.
+    await coldStart(7_000);
+    await startNextRound(chain.id);
+
+    await expect(page.getByRole("button", { name: "Tirer un Téhilim" })).toBeVisible({
+      timeout: 30_000,
+    });
+    await expect(page.getByText("Tour terminé !")).toHaveCount(0);
+  });
+
+  test("un tour fini dans le lecteur : « Un autre Téhilim » attend le tour suivant", async ({
+    page,
+  }) => {
+    // Un seul Téhilim libre : le tirage tombe sur lui, et sa lecture finit le tour.
+    const chain = await seedPerpetualChain({ reservations: readSlots(1, 149) });
+    await gotoApp(page, `/share-reading/session/${chain.slug}`);
+    await page.getByRole("button", { name: "Tirer un Téhilim" }).click();
+    await expect(page).toHaveURL(new RegExp(`/lire/${tehilimId(150)}\\?`), { timeout: 20_000 });
+
+    // La carte de réservation est en tête et au pied du texte : la première suffit.
+    const markRead = page.getByRole("button", { name: "Marquer comme lu" }).first();
+    await expect(markRead).toBeVisible({ timeout: 20_000 });
+    await markRead.click();
+    await expect(page.getByRole("button", { name: "Remettre en non lu" }).first()).toBeVisible();
+
+    await page.getByRole("button", { name: "Un autre Téhilim" }).first().click();
+    // La copie locale dit tout pris ; la chaîne relue dit le tour fini.
+    await expect(page.getByText("Tour terminé !")).toBeVisible({ timeout: 10_000 });
+    await coldStart(3_000);
+    await startNextRound(chain.id);
+
+    await expect(page).not.toHaveURL(new RegExp(`/lire/${tehilimId(150)}\\?`), {
+      timeout: 30_000,
+    });
+    await expect(
+      page.getByText("Tous les Téhilim de cette session sont déjà réservés."),
+    ).toHaveCount(0);
+    await expect
+      .poll(async () => ((await readDoc("sessions", chain.id))?.reservations as unknown[]).length)
+      .toBe(1);
   });
 });

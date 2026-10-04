@@ -60,6 +60,34 @@ export function monthInYear(month: number, year: number): number {
 }
 
 /**
+ * Le mois choisi dans le formulaire, tel qu'on le garde d'une année à
+ * l'autre. Adar d'une année ordinaire est retenu comme Adar II (que
+ * `monthInYear` affiche « Adar » les années ordinaires) : c'est la règle des
+ * dates personnelles et de hebcal pour les anniversaires, et celle de Pourim,
+ * qui tombe en Adar II les années à treize mois. Adar I choisi dans une année
+ * à treize mois reste Adar I.
+ */
+export function chosenMonthOf(month: number, year: number): number {
+  return month === months.ADAR_I && !HDate.isLeapYear(year) ? months.ADAR_II : month;
+}
+
+/**
+ * Ce que le formulaire montre pour un jour et un mois choisis, une année
+ * donnée : le mois qui existe cette année-là (`monthInYear`), le jour ramené
+ * au dernier du mois. Le choix, lui, ne change pas : le 14 Adar II revient en
+ * Adar II après une année ordinaire, le 30 'Hechvan revient au 30 après une
+ * année où 'Hechvan n'en a que 29.
+ */
+export function shownDayAndMonth(
+  day: number,
+  month: number,
+  year: number,
+): { day: number; month: number } {
+  const inYear = monthInYear(month, year);
+  return { day: Math.min(day, HDate.daysInMonth(inYear, year)), month: inYear };
+}
+
+/**
  * La date hébraïque donnée, en HDate. Le mois est ramené à l'année (voir
  * `monthInYear`), le jour au dernier du mois : le 30 'Hechvan d'une année où
  * 'Hechvan n'en compte que 29 se lit le 29, sans déborder sur Kislev.

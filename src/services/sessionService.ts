@@ -10,6 +10,7 @@ import { SearchService } from "./searchService";
 import { authService, type User } from "./authService";
 import { moderationService } from "./moderationService";
 import { generateSlug } from "./slugService";
+import { findPerpetualSession } from "./perpetualChain";
 import type {
   Session,
   TextStudy,
@@ -65,6 +66,15 @@ function participantKey(reservation: TextStudyReservation): string | null {
 class SessionService {
   async getAllSessions(): Promise<Session[]> {
     return await firestoreService.getSessions();
+  }
+
+  /**
+   * La chaîne perpétuelle ouverte au public, par une requête sur le seul
+   * champ `perpetual` : lire toute la collection (réservations comprises)
+   * pour une chaîne coûtait autant de documents qu'il y a de sessions.
+   */
+  async getPerpetualSession(): Promise<Session | null> {
+    return findPerpetualSession(await firestoreService.getPerpetualSessions());
   }
 
   async getSessionById(sessionId: string): Promise<Session | null> {
@@ -475,6 +485,21 @@ class SessionService {
       selectedBooks,
       guestEmailRequired,
     });
+  }
+
+  /**
+   * Les types des chaînes que la liste publique « En cours » montre : ni
+   * masquées, ni d'un créateur bloqué, ni terminées, ni la chaîne perpétuelle.
+   */
+  listedTypes(sessions: Session[], blockedCreatorIds: string[] = []): EnumTypeTextStudy[] {
+    const blocked = new Set(blockedCreatorIds);
+    const types = new Set<EnumTypeTextStudy>();
+    for (const s of sessions) {
+      if (s.hidden === true || blocked.has(s.personId)) continue;
+      if (s.perpetual === true || this.isSessionFinished(s)) continue;
+      types.add(s.type);
+    }
+    return Array.from(types);
   }
 
   sortSessionsByDate(sessions: Session[]): Session[] {

@@ -9,8 +9,22 @@ import {
   isBookBundled,
   isBookDownloaded,
   removeBook,
+  type OfflineBook,
 } from "../services/offlineLibraryService";
 import { analyticsService } from "../services/analyticsService";
+import { isStoragePermissionDenied } from "../services/offlineTextStore";
+
+/**
+ * Le message d'un téléchargement en échec. Sous Android 10 et moins, un refus
+ * de la permission de stockage disait « Vérifiez votre connexion », qui
+ * envoyait chercher ailleurs : il a son message, qui dit où l'autoriser.
+ */
+export function downloadErrorKey(error: unknown): "downloads.permissionDenied" | "downloads.error" {
+  return isStoragePermissionDenied(error) ? "downloads.permissionDenied" : "downloads.error";
+}
+
+/** Échecs de suite au-delà desquels « Tout télécharger » renonce au reste du lot. */
+export const MAX_CONSECUTIVE_FAILURES = 3;
 
 /**
  * Le téléchargement d'un livre pour le lire sans connexion (app native), tel
@@ -71,9 +85,83 @@ export function useBookDownload() {
         is_online: navigator.onLine,
         error_message: e instanceof Error ? e.message : String(e),
       });
-      toast.error(t("downloads.error"));
+      toast.error(t(downloadErrorKey(e)));
     }
   }
 
-  return { bookStateOf, toggleDownload };
+  /**
+   * « Tout télécharger » : les livres d'un onglet de la bibliothèque (ou
+   * toute la bibliothèque depuis l'accueil), l'un après l'autre.
+   *
+   * Un échec n'abandonne que le livre en cause. Avant, il abandonnait le lot
+   * entier, en supposant l'appareil hors connexion ; l'Error tracking a
+   * montré le contraire (un « Tout télécharger » coupé au 182e livre le
+   * 2 octobre 2026, `is_online` vrai, sur un simple « Error during file
+   * transfer »), et un transfert raté en chemin coûtait toute la fin de la
+   * bibliothèque. Hors connexion, on s'arrête toujours : les suivants
+   * échoueraient tous. De même quand la permission de stockage est refusée,
+   * ou après plusieurs échecs de suite. En ligne, sinon, on continue et l'on
+   * dit à la fin ce qui manque, comme le font déjà l'introduction
+   * (OnboardingOfflinePicker) et `downloadBooks`.
+   */
+  async function downloadAll(books: OfflineBook[], tab: string): Promise<void> {
+    const pending = books.filter((book) => !isBookDownloaded(book));
+    analyticsService.capture("offline_download_started", {
+      scope: "all",
+      tab,
+      books_count: pending.length,
+    });
+    let downloaded = 0;
+    let failed = 0;
+    let consecutiveFailures = 0;
+    for (const book of pending) {
+      try {
+        await downloadBook(book);
+        downloaded++;
+        consecutiveFailures = 0;
+      } catch (e) {
+        failed++;
+        // Sortie négative du lot : `offline_download_started` restait sans
+        // suite, exactement comme un utilisateur qui quitte la page. Ces deux
+        // cas ne se distinguaient pas, alors qu'un « Tout télécharger » coupé
+        // en route est le pire moment pour perdre quelqu'un.
+        const online = navigator.onLine;
+        analyticsService.capture("offline_download_failed", {
+          scope: "all",
+          tab,
+          book: book.path,
+          // Le rang dit si le lot a échoué d'emblée ou s'est interrompu près
+          // du but : les deux n'appellent pas la même correction.
+          books_done: downloaded,
+          is_online: online,
+          error_message: e instanceof Error ? e.message : String(e),
+        });
+        consecutiveFailures++;
+        // Ce qui ferait échouer tous les suivants arrête le lot : hors
+        // connexion, la permission de stockage refusée (Android 10 et moins,
+        // où chaque livre rouvrirait le dialogue), ou plusieurs échecs de
+        // suite (place épuisée, site injoignable). Un échec isolé, lui,
+        // n'abandonne que son livre.
+        if (
+          !online ||
+          isStoragePermissionDenied(e) ||
+          consecutiveFailures >= MAX_CONSECUTIVE_FAILURES
+        ) {
+          toast.error(t(downloadErrorKey(e)));
+          return;
+        }
+      }
+    }
+    analyticsService.capture("offline_download_completed", {
+      scope: "all",
+      tab,
+      books_count: downloaded,
+      // Ce qui manque à la fin : `books_count` seul ne disait pas si le lot
+      // est complet (voir docs/tracking-plan.md).
+      books_failed: failed,
+    });
+    if (failed > 0) toast.error(t("downloads.error"));
+  }
+
+  return { bookStateOf, toggleDownload, downloadAll };
 }

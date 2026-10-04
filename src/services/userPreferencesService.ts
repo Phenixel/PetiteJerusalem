@@ -223,6 +223,9 @@ export function isOffline(): boolean {
  * appareil. Le serveur ayant toujours raison, on refuse l'écriture tout de
  * suite, pour que l'appelant le dise à l'utilisateur.
  */
+/** Des préférences lues, et d'où : le serveur à l'instant, ou une copie locale. */
+type PreferencesRead = { prefs: UserPreferences; fromServer: boolean };
+
 class OfflineWriteError extends Error {
   readonly isOffline = true;
   constructor() {
@@ -385,7 +388,7 @@ class UserPreferencesService {
   // demandent chacun les préférences en même temps : on partage la requête en
   // vol au lieu de lire trois fois le même document. Pas de cache durable
   // (l'entrée est retirée dès la résolution) : aucune donnée périmée possible.
-  private inflight = new Map<string, Promise<UserPreferences>>();
+  private inflight = new Map<string, Promise<PreferencesRead>>();
 
   getPreferences(userId: string): Promise<UserPreferences> {
     return this.getPreferencesOrThrow(userId).catch((error) => {
@@ -454,6 +457,23 @@ class UserPreferencesService {
    * avec des préférences par défaut qui ne sont qu'un échec de lecture.
    */
   getPreferencesOrThrow(userId: string): Promise<UserPreferences> {
+    return this.readPreferences(userId).then((read) => read.prefs);
+  }
+
+  /**
+   * Les préférences telles que le serveur vient de les rendre, ou une
+   * erreur : jamais une copie locale, ni la nôtre ni celle du cache de
+   * Firestore. Pour qui s'apprête à réécrire un champ entier d'après ce
+   * qu'il lit (la fusion des marque-pages) : une copie d'hier prise pour le
+   * compte effacerait ce qui a été posé depuis sur un autre appareil.
+   */
+  async getPreferencesFromServer(userId: string): Promise<UserPreferences> {
+    const read = await this.readPreferences(userId);
+    if (!read.fromServer) throw new Error("PREFERENCES_NOT_FROM_SERVER");
+    return read.prefs;
+  }
+
+  private readPreferences(userId: string): Promise<PreferencesRead> {
     const pending = this.inflight.get(userId);
     if (pending) return pending;
     const request = this.fetchPreferences(userId).finally(() => this.inflight.delete(userId));
@@ -461,12 +481,12 @@ class UserPreferencesService {
     return request;
   }
 
-  private async fetchPreferences(userId: string): Promise<UserPreferences> {
+  private async fetchPreferences(userId: string): Promise<PreferencesRead> {
     // Hors ligne : la copie locale directement, sans attendre que Firestore
     // renonce. C'est ce qui rend la lecture quotidienne lisible sans réseau.
     if (isOffline()) {
       const cached = readCache(userId);
-      if (cached) return cached;
+      if (cached) return { prefs: cached, fromServer: false };
     }
     try {
       const { sdk, db } = await firestore();
@@ -494,12 +514,14 @@ class UserPreferencesService {
       await this.flushPendingProgress(userId, prefs);
       // Réponse du serveur (suivi fusionné compris) : elle remplace la copie locale.
       writeCache(userId, prefs);
-      return prefs;
+      // Serveur injoignable, getDoc rend parfois le document de son cache
+      // persistant au lieu d'échouer : ce n'est pas une réponse du serveur.
+      return { prefs, fromServer: docSnap.metadata?.fromCache !== true };
     } catch (error) {
       // Réseau capricieux (l'appareil se croit en ligne) : la dernière copie
       // connue vaut mieux que des préférences vides.
       const cached = readCache(userId);
-      if (cached) return cached;
+      if (cached) return { prefs: cached, fromServer: false };
       // Ni serveur ni copie locale : l'erreur remonte, getPreferences retombe
       // sur les valeurs par défaut, getPreferencesOrThrow laisse l'appelant
       // décider (le widget garde alors son dernier état au lieu de l'écraser).
