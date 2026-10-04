@@ -512,6 +512,7 @@ export async function fetchTextResponse(webPath: string): Promise<Response> {
 
 /** Télécharge un fichier et l'enregistre localement (natif : disque, web : Cache API). */
 export async function downloadFile(webPath: string): Promise<void> {
+  const removalsAtStart = removals.get(webPath) ?? 0;
   await ensureManifestLoaded();
   // L'empreinte sert deux fois : dans l'URL, pour qu'aucun cache HTTP ne
   // rende l'ancien fichier, et dans l'index, pour reconnaître plus tard que
@@ -589,6 +590,15 @@ export async function downloadFile(webPath: string): Promise<void> {
   // l'atteindraient pas.
   const hash = ecrit === null ? undefined : ((await hashOf(ecrit)) ?? attendue);
 
+  // Retiré pendant le téléchargement (la mise à jour de fond reprend un livre
+  // que l'on supprime au même moment) : la suppression est la dernière
+  // volonté, la copie qui vient d'arriver s'en va et n'est pas inscrite.
+  // Sans cela, le livre réapparaissait comme téléchargé.
+  if ((removals.get(webPath) ?? 0) !== removalsAtStart) {
+    await discardLocalCopy(webPath);
+    return;
+  }
+
   downloadManifest.value = {
     files: {
       ...downloadManifest.value.files,
@@ -597,6 +607,12 @@ export async function downloadFile(webPath: string): Promise<void> {
   };
   await saveManifest();
 }
+
+/**
+ * Suppressions demandées, par chemin : un téléchargement en cours les compare
+ * à son départ pour savoir qu'il a été désavoué entre-temps.
+ */
+const removals = new Map<string, number>();
 
 function isJson(text: string): boolean {
   try {
@@ -609,8 +625,17 @@ function isJson(text: string): boolean {
 
 /** Supprime la copie locale d'un fichier. */
 export async function removeFile(webPath: string): Promise<void> {
+  removals.set(webPath, (removals.get(webPath) ?? 0) + 1);
   await ensureManifestLoaded();
+  await discardLocalCopy(webPath);
 
+  const files = { ...downloadManifest.value.files };
+  delete files[webPath];
+  downloadManifest.value = { files };
+  await saveManifest();
+}
+
+async function discardLocalCopy(webPath: string): Promise<void> {
   if (isNative) {
     await Filesystem.deleteFile({ directory: Directory.Data, path: localPath(webPath) }).catch(
       () => {
@@ -621,9 +646,4 @@ export async function removeFile(webPath: string): Promise<void> {
     const cache = await webCache();
     await cache?.delete(webPath);
   }
-
-  const files = { ...downloadManifest.value.files };
-  delete files[webPath];
-  downloadManifest.value = { files };
-  await saveManifest();
 }
