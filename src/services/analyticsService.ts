@@ -156,6 +156,41 @@ function exceptionValues(bag: Properties | undefined): unknown[] {
   return Array.isArray(list) ? list.map((item: { value?: unknown }) => item?.value) : [];
 }
 
+/**
+ * Les paramètres d'adresse qui portent une donnée personnelle. L'invitation à
+ * créer un compte ouvrait `/login?email=<l'adresse de l'invité>` : le
+ * `$pageview` et chaque événement de la page l'emportaient dans
+ * `$current_url`. L'adresse passe désormais par l'état de la navigation (voir
+ * SignupPromptModal) ; ce filtre retire en plus le paramètre de toute URL
+ * envoyée, site comme app, pour les liens anciens ou venus d'ailleurs.
+ */
+const PERSONAL_PARAMS = ["email"];
+/**
+ * Toutes les propriétés où posthog-js recopie une adresse. Celles de la
+ * session (`$session_entry_*`) suivent chaque événement jusqu'à la fin de la
+ * session, même émis depuis une autre page : une session ouverte sur un
+ * ancien lien `/login?email=…` y gardait l'adresse.
+ */
+const PERSONAL_URL_KEYS = [...URL_KEYS, "$session_entry_url", "$session_entry_referrer"];
+
+export function withoutPersonalParams(url: string): string {
+  if (!PERSONAL_PARAMS.some((param) => url.includes(`${param}=`))) return url;
+  try {
+    const parsed = new URL(url);
+    for (const param of PERSONAL_PARAMS) parsed.searchParams.delete(param);
+    return parsed.toString();
+  } catch {
+    return url;
+  }
+}
+
+function stripPersonalParams(bag: Properties | undefined): void {
+  if (!bag) return;
+  for (const key of PERSONAL_URL_KEYS) {
+    if (typeof bag[key] === "string") bag[key] = withoutPersonalParams(bag[key]);
+  }
+}
+
 const stampPlatform: BeforeSendFn = (event) => {
   if (!event) return event;
   if (INTERNAL_PATHS.test(window.location.pathname)) return null;
@@ -169,6 +204,9 @@ const stampPlatform: BeforeSendFn = (event) => {
   // compris les $pageview automatiques (mêmes raisons que app_platform).
   event.properties.is_logged_in = isLoggedIn;
   event.properties.locale = i18n.global.locale.value;
+  stripPersonalParams(event.properties);
+  stripPersonalParams(event.$set);
+  stripPersonalParams(event.$set_once);
   if (isNativeApp) {
     rewriteNativeUrls(event.properties);
     rewriteNativeUrls(event.$set);
@@ -274,6 +312,11 @@ class AnalyticsService {
       // taguées). `stampPlatform` rattrape le reste, voir son commentaire.
       posthog.register(SUPER_PROPERTIES);
       this.posthog = posthog;
+      // On ne charge qu'après un accord. Un refus d'une session précédente
+      // reste pourtant gardé par posthog-js (opt_out_capturing persiste) :
+      // sans ceci, accepter de nouveau après avoir relancé l'app ne
+      // rétablissait jamais la capture.
+      if (posthog.has_opted_out_capturing()) posthog.opt_in_capturing();
 
       // Dégradation détectée APRÈS le chargement (sonde FPS de useDevicePerf) :
       // on arrête l'enregistrement en cours de session. Le verdict étant
@@ -314,6 +357,11 @@ class AnalyticsService {
       this.posthog.capture(event, properties);
       return;
     }
+    // Refus explicite : rien ne se garde pour plus tard. La file ne sert
+    // qu'en attendant une réponse ou le chargement du SDK ; sans cette
+    // garde, un accord donné ensuite envoyait ce qui avait été capturé
+    // pendant le refus.
+    if (getConsentChoice() === "denied") return;
     if (this.queue.length >= QUEUE_LIMIT) this.queue.shift();
     this.queue.push({ event, properties, timestamp: new Date() });
   }

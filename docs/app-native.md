@@ -150,6 +150,31 @@ avec un leurre qui se comporte comme le vrai proxy, `then` compris.
   appareil récent. Ajoutées par `scripts/setup-android.mjs` (le dossier
   `android/` est régénéré à chaque publication) ; test :
   `src/__tests__/androidStoragePermissions.test.ts`.
+- Android 10 et moins, la permission elle-même : le plugin la **demande**
+  (dialogue du système) avant chaque transfert, quel que soit le dossier.
+  Deux conséquences, tenues par
+  `src/__tests__/androidStoragePermissionDenied.test.ts` :
+  - une mise à jour de fond (la vérification du Sidour embarqué, la reprise
+    des livres périmés au lancement) ne part que si la permission est déjà
+    accordée (`backgroundDownloadAllowed`, qui la lit par
+    `checkPermissions` sans rien demander) ; sinon elle attend, et la copie
+    en place reste ce qu'on lit. Le dialogue ne surgit donc qu'après un
+    geste de téléchargement. La version d'Android se lit dans les
+    indications du client (`userAgentData`), puis dans l'agent utilisateur
+    de la webview : réduit, celui-ci annonce « Android 10; K » sur tout
+    appareil, où la permission n'est jamais accordée au-delà du SDK 29, et
+    s'y fier couperait les mises à jour de fond des téléphones récents
+    (`deviceAndroidMajor`). Au-delà d'Android 10, ou version inconnue, rien
+    n'est vérifié ;
+  - un refus (`OS-PLUG-FLTR-0006`) a son message (`downloads.permissionDenied`,
+    qui dit où l'autoriser) au lieu de « Vérifiez votre connexion ».
+
+  Un chemin sans permission (HTTP natif, puis écriture dans
+  `Directory.Data`) a été écarté : `CapacitorHttp` réanalyse toute réponse
+  `application/json` côté natif, les octets écrits ne seraient plus ceux du
+  site, et l'empreinte ne correspondrait jamais (retéléchargement à chaque
+  synchronisation). Il faudrait pour cela un téléchargement natif qui ne
+  demande rien, donc un changement natif.
 - `textService.loadText` passe par `fetchTextResponse` : copie téléchargée à
   jour d'abord, puis copie embarquée (et pour le Sidour, la vérification de
   fond décrite plus haut), puis réseau (`https://petite-jerusalem.fr`), puis,
@@ -199,6 +224,12 @@ sans réseau, elle s'ouvre et se lit, à partir de deux copies locales.
   passé minuit), le plus récent l'emporte ; le chnei mikra se fusionne à part,
   à la semaine. Conséquence assumée : décocher hors ligne quelque chose que le
   serveur sait déjà lu ne tient pas au retour du réseau.
+- **La page se relit au retour à l'écran.** Chaque coche réécrit tout le
+  suivi du jour : la lecture du jour relit donc le serveur quand on y revient,
+  sans quoi la coche suivante effaçait celle faite sur un autre appareil. Un
+  geste fait après minuit recharge d'abord le nouveau jour, puis s'y applique ;
+  au nouveau jour, ce qui était lu la veille se rouvre. Test :
+  `dailyReadingStaleState.test.ts`.
 
 Vérification : composer une liste, mode avion, rouvrir la lecture du jour (les
 textes téléchargés s'affichent, les autres disent qu'ils ne sont pas
@@ -241,6 +272,11 @@ Implémentées côté client (`src/services/pushService.ts`,
 être uploadée dans la console Firebase et la capability Push Notifications
 ajoutée dans Xcode.
 
+La fonction relit les profils abonnés toutes les cinq minutes ; elle n'en
+demande que les champs qu'elle lit (`REMINDER_FIELDS`, projection `select`),
+pas les marque-pages ni les positions de lecture. Un champ lu doit y figurer,
+sans quoi il vaudrait `undefined` : `dailyReminderFields.test.ts` y veille.
+
 Côté iOS, `scripts/setup-ios.mjs` pose l'entitlement `aps-environment` (sandbox
 en Debug, production en Release), le background mode `remote-notification` et
 les trois hooks APNs dans `AppDelegate.swift` ; la clé APNs doit être importée
@@ -255,6 +291,29 @@ endormi : `pushReminderPlace` reçoit la position arrondie au dixième de degré
 chkia est recalculée côté serveur dans `functions/src/sunsetReminder.ts`
 `@hebcal/core`, qui la donne dans l'application, est publié en ESM seul quand
 `functions/` compile en CommonJS.
+
+À la déconnexion, l'appareil se détache du compte qui part
+(`pushService.detachDevice`) : son jeton est retiré de `fcmTokens`, sans
+toucher `pushReminderEnabled` (les autres appareils du compte gardent leurs
+rappels). Sans cela, le téléphone recevait les rappels du compte parti une
+fois quelqu'un d'autre connecté. L'écriture n'attend pas plus de trois
+secondes.
+
+- Retiré du compte, le jeton reste sur l'appareil : il ne mène plus à ce
+  compte, et les informations de l'équipe y sont abonnées.
+- Resté dans le document (hors ligne, serveur muet), il est effacé de
+  l'appareil, pour ne plus mener nulle part ; la Cloud Function le purge au
+  premier envoi. L'effacement demande le réseau : sans lui, il est rejoué au
+  retour du réseau et au lancement suivant (`dropStaleToken`), puis les
+  informations de l'équipe se réabonnent avec le nouveau jeton.
+- L'appareil retient le compte parti (`pj_fcm_detached_from`). S'il revient,
+  ses rappels reprennent ici, s'ils sont toujours actifs et que le système
+  laisse notifier (`reattachDevice`, à chaque connexion et à chaque
+  lancement tant que ce n'est pas fait) ; sans cela ils restaient affichés
+  comme actifs sans plus arriver sur ce téléphone. Un autre compte efface le
+  repère : l'appareil ne s'inscrit pour lui que s'il active ses rappels.
+
+Tenu par `src/__tests__/pushDetachOnLogout.test.ts`.
 
 ## Rappels d'horaires (notifications locales)
 
@@ -319,6 +378,13 @@ une bougie), le matin du jour civil, ou une semaine avant. Les deux derniers
 partent à 9 h du fuseau de l'**appareil**, là où vit celui qui les reçoit, et
 non du lieu des horaires.
 
+L'entrée du jour s'efface devant le Chabbat et les fêtes (`occasionEntryAt`) :
+une date qui tombe un samedi se rappelle à l'allumage du vendredi (au coucher
+du soleil, le Chabbat est déjà entré) ; une date qui suit un Chabbat, à sa
+sortie ; une date au milieu d'une fête, à l'allumage de ce jour-là. La veille
+se prend dans le calendrier du lieu, quel que soit le fuseau de l'appareil.
+Tenu par `src/__tests__/occasionEntry.test.ts`.
+
 Une date qui arrive dans les sept jours paraît aussi sur l'**accueil**
 (`OccasionsBanner.vue`, chargé à la demande comme les autres cartes du moment :
 il tire le calendrier hébraïque, qui n'a rien à faire dans le premier rendu).
@@ -366,7 +432,9 @@ en porte un, l'appareil décide sinon.
 
 Changer d'avis reprogramme les rappels d'horaires : ils sont posés sur des
 instants calculés, et ces instants viennent de bouger (voir
-`zmanReminderService`).
+`zmanReminderService`). Changer l'écart d'allumage aussi : l'entrée du
+Chabbat et des fêtes, et son rappel une heure avant, se lisent sur lui (test :
+`zmanReminderCandleLighting.test.ts`).
 
 Les **astuces vues** (`useFeatureTips`, clé `pj_tips_seen`) aussi : une
 astuce qui reviendrait à chaque vidage de cache finirait par agacer, et

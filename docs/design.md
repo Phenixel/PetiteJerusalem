@@ -449,6 +449,20 @@ réponse se lit dans un bloc de surface douce, sous le formulaire, sans bouton
 à presser : elle change avec chaque réglage. Ce n'est pas une page de plus,
 c'est une question qu'on se pose devant le calendrier, et elle s'y pose.
 
+### Un choix ne s'oublie pas d'une année à l'autre
+
+Le convertisseur garde le jour et le mois **choisis** à part de ce qu'il
+montre pour l'année en cours. Une année qui n'a pas ce mois ou ce jour montre
+le plus proche (Adar II devient Adar une année ordinaire, le 30 'Hechvan
+devient le 29 quand le mois n'en a que 29), et l'année suivante retrouve le
+choix : le 14 Adar II revient en Adar II, le 30 au 30. Ramener le choix sur
+place l'effaçait ; trois flèches plus loin, Pourim était devenu Pourim Katan.
+
+Adar choisi dans une année ordinaire se lit comme Adar II les années à treize
+mois : c'est la règle des dates personnelles et de hebcal pour les
+anniversaires, et Pourim y tombe. Adar I choisi dans une année à treize mois
+reste Adar I. Tenu par `src/__tests__/dateConverterChoice.test.ts`.
+
 ### Une recherche trouve ce qu'on voulait dire
 
 Un même nom s'écrit de dix façons : « Chabbat », « Shabbat », « Shabat » ;
@@ -581,6 +595,16 @@ elle reste proposée à tous, et seul qui s'en plaint la coupe. Ce réglage-là
 est gardé sur l'appareil, et deux fois plutôt qu'une (voir
 docs/app-native.md) : un réglage posé pour ne PLUS être surpris ne doit pas
 revenir tout seul au lancement suivant.
+
+### Une permission se demande après un geste, jamais en fond
+
+Le dialogue d'une permission du système ne surgit qu'après un geste qui la
+réclame : toucher « Télécharger », activer un rappel. Une tâche de fond qui
+en aurait besoin attend qu'elle soit accordée, sans la demander. Sous
+Android 10, la mise à jour silencieuse du Sidour faisait ainsi surgir la
+permission de stockage à l'ouverture d'un office, sans que personne n'ait
+rien demandé (`docs/app-native.md`). Et un refus se dit pour ce qu'il est,
+avec l'endroit où revenir dessus, plutôt que d'envoyer vérifier la connexion.
 
 ### Un réglage se pose là où il est atteignable
 
@@ -790,6 +814,11 @@ un leilouy nichmat, la date du décès se choisit comme une date du calendrier
 la choisisse, ce que la date change : sans elle, le nom est lu trente jours ;
 avec elle, il revient tous les ans, la semaine qui précède l'anniversaire.
 
+« Signaler », sur la chaîne, vise un nom : le bouton ne s'éteint pas après
+un premier signalement, et la fenêtre demande le nom en cause au lieu de
+promettre un masquage au troisième. La case « Bloquer ce créateur » n'y paraît
+pas : le créateur est l'équipe, la bloquer effaçait la chaîne de l'appareil.
+
 Dans le lecteur, « Vous lisez pour » garde les deux groupes de la page de la
 chaîne, chacun avec son dessin : on ne dit pas de la même façon une refoua
 chelema et un leilouy nichmat (`PrayerNamesLine`). Retirer un nom pose la
@@ -843,6 +872,16 @@ soir). « Oui, créer la session » crée ; « Changer la date » ramène au cha
 Au-delà de demain, rien ne s'interpose. Tenu par
 `src/__tests__/newSessionDeadline.test.ts` et `sessionDeadline.test.ts`.
 
+### La saisie d'une chaîne survit à la connexion
+
+Créer une chaîne demande un compte, mais le formulaire s'ouvre sans : le
+visiteur remplit tout, clique « Créer », et l'invite l'envoie se connecter.
+Au retour, le formulaire était vide. La saisie (titre, description, type,
+livres retenus, date, email des invités) se garde donc à ce moment-là, pour
+l'onglet seulement (`sessionStorage`, rien ne part au serveur), se remet en
+place au retour et s'efface à la création. Tenu par
+`src/__tests__/newSessionDraft.test.ts`.
+
 ### Une chaîne se partage dès sa création
 
 Une chaîne que personne ne voit reste vide : celles qui se sont remplies
@@ -852,6 +891,25 @@ la page de la chaîne s'ouvre donc sur la fenêtre de partage qui existe déjà
 phrase : penser à la partager autour de soi, pour que d'autres y participent.
 Le signal passe par l'adresse (`?partager=1`), retiré aussitôt : un
 rechargement ne rouvre pas la fenêtre.
+
+### Les jours restants se comptent sur le calendrier
+
+La pastille de « Je participe » compte les jours du calendrier jusqu'à la
+date limite, pas les heures arrondies : « J-1 » la veille, et le jour même
+**« Jour J »** (« Last day », « היום האחרון ») plutôt qu'un « J-0 » qui se lit
+mal. Chaque langue a ses trois formes, l'hébreu accordant le singulier
+(« עוד יום אחד »). Tenu par `src/__tests__/myParticipatedSessions.test.ts`
+(« Je participe : jours restants »).
+
+### Un nom public n'est jamais une adresse email
+
+Un compte créé par email sans « Nom affiché » (le champ est facultatif)
+prenait son adresse pour nom, et ce nom part tel quel dans les données
+lisibles par tous : « Créée par jean.dupont@exemple.fr » sur la carte d'une
+chaîne, le nom d'une réservation. Sans nom affiché, le nom du compte est
+désormais ce qui précède « @ » (« jean.dupont »). Les chaînes et réservations
+déjà enregistrées gardent ce qu'elles portent. Tenu par
+`src/__tests__/publicNameWithoutEmail.test.ts`.
 
 ### L'écran de connexion dit quoi faire
 
@@ -867,6 +925,17 @@ et le message brut part seulement vers PostHog, où il sert. Sous la phrase,
 - l'adresse déjà inscrite : « Me connecter avec cette adresse » ;
 - la dernière connexion de l'appareil s'est faite avec Google ou Apple : la
   phrase le rappelle, et la sortie est ce bouton-là.
+
+Un mot de passe perdu a sa sortie à lui, toujours là sous le champ du mot de
+passe : **« Mot de passe oublié ? »**, un cadenas et son nom. Sans elle,
+l'aide tournait en rond : le mot de passe refusé proposait de créer le compte,
+l'adresse déjà inscrite proposait de s'y connecter. Elle garde l'adresse
+saisie, efface le mot de passe, et n'a qu'un champ ; l'email part par Firebase
+Auth (`sendPasswordResetEmail`, dans la langue de l'écran), et « Retour à la
+connexion » ramène au formulaire. La réponse est **la même que l'adresse ait
+un compte ou non** (« Si un compte existe avec l'adresse… ») : l'écran ne sert
+pas à vérifier qui est inscrit. Tenu par
+`src/__tests__/loginPasswordReset.test.ts` et `e2e/firebase/auth.spec.ts`.
 
 La dernière méthode employée sur l'appareil (`services/lastAuthMethod.ts`)
 porte aussi une pastille, **« Dernière utilisation »**, posée sur le bord haut
@@ -1033,6 +1102,13 @@ C'est l'exception à « `primary` ne porte jamais un texte de lecture » : un
 fragment court, dans un paragraphe qu'on lit d'un trait. La halakha de
 l'oubli (« si l'on a conclu haEl hakadoch, on recommence ») accompagne le
 passage, en didascalie, les jours où elle sert.
+
+Le jour suit le lieu des horaires. À Jérusalem, ville entourée d'une muraille
+depuis Josué, Pourim se fête le 15 Adar (Chouchan Pourim) : 'Al hanissim, la
+lecture de Vayavo Amalek, Migdol et le psaume de Pourim y viennent le 15, et
+pas le 14. Jérusalem, c'est la ville du catalogue, ou une position à moins de
+7 km de son centre (ses quartiers, pas Maalé Adoumim ni Mevasseret ;
+`isWalledCityPlace`). Tenu par `src/__tests__/purimJerusalem.test.ts`.
 
 ### Le parchemin s'ouvre depuis le texte
 

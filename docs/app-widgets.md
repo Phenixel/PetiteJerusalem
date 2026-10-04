@@ -140,9 +140,12 @@ widgets dont le payload a changé.
   intacts, comme le `then` des horaires), et l'accent du thème (`accent`), une
   couleur et non un texte.
 - **Rafraîchi** au lancement, au retour au premier plan, à la
-  connexion/déconnexion, au changement de lieu des horaires, au changement de
-  langue, au changement de thème, et à chaque progression de la lecture du jour
-  (`src/services/widgetService.ts`). Un payload inchangé n'est pas renvoyé, et
+  connexion/déconnexion, au changement de lieu des horaires, d'opinion suivie
+  ou d'écart d'allumage, au changement de langue, au changement de thème, et à
+  chaque progression de la lecture du jour (`src/services/widgetService.ts`).
+  Les horaires ne se recalculent que si leur clé change : elle porte donc tout
+  ce dont ils dépendent, opinion et écart d'allumage compris (test :
+  `widgetZmanimSettings.test.ts`). Un payload inchangé n'est pas renvoyé, et
   le natif ne recharge que le widget dont le payload a changé (le budget de
   rafraîchissement WidgetKit n'est pas extensible) ; la page Lecture du jour
   fournit ses préférences en mémoire pour éviter une relecture Firestore.

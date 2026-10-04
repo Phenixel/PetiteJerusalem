@@ -217,3 +217,38 @@ export function describeEmailAuthError(
   const key = code !== null ? EMAIL_AUTH_MESSAGE_KEYS[code] : undefined;
   return { key: key ?? "login.loginError", help: null };
 }
+
+/**
+ * « Mot de passe oublié » : ce que l'écran dit d'un envoi en échec. Il ne dit
+ * jamais si l'adresse a un compte : les codes qui le trahiraient
+ * (`auth/user-not-found`, `auth/invalid-credential`) se taisent, et l'écran
+ * répond comme si l'email était parti (isPasswordResetSilent). Les autres
+ * gardent la phrase de la connexion (adresse invalide, trop d'essais,
+ * réseau), le reste une phrase générique.
+ */
+const PASSWORD_RESET_SILENT_CODES = new Set([
+  "auth/user-not-found",
+  "auth/invalid-credential",
+  "auth/user-disabled",
+]);
+
+export function isPasswordResetSilent(code: string | null): boolean {
+  return code !== null && PASSWORD_RESET_SILENT_CODES.has(code);
+}
+
+const PASSWORD_RESET_MESSAGE_KEYS: Record<string, string> = {
+  "auth/invalid-email": "login.errors.invalidEmail",
+  "auth/missing-email": "login.errors.invalidEmail",
+  "auth/too-many-requests": "login.errors.tooManyRequests",
+  "auth/network-request-failed": "login.errors.network",
+};
+
+/** Toutes les clés que `describePasswordResetError` peut rendre (tenues par un test). */
+export const PASSWORD_RESET_ERROR_KEYS: readonly string[] = [
+  ...new Set(Object.values(PASSWORD_RESET_MESSAGE_KEYS)),
+  "login.reset.error",
+];
+
+export function describePasswordResetError(code: string | null): string {
+  return (code !== null && PASSWORD_RESET_MESSAGE_KEYS[code]) || "login.reset.error";
+}

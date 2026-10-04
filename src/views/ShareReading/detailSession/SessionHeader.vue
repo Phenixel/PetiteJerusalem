@@ -93,7 +93,9 @@ const emit = defineEmits<{
         {{ t("common.share") }}
       </button>
       <!-- Signalement (modération App Store) : ouvert à tous sauf au créateur,
-           désactivé une fois la session signalée depuis cet appareil. -->
+           désactivé une fois la session signalée depuis cet appareil, sauf
+           sur la chaîne perpétuelle, où l'on signale un nom après l'autre
+           (moderationService.isReportLocked). -->
       <button
         v-if="!isOwner"
         @click="emit('report')"

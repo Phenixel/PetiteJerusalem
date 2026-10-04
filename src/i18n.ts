@@ -113,9 +113,19 @@ export const i18n = createI18n({
   },
 });
 
-if (initialLocale !== "fr") {
-  void loadLocaleMessages(initialLocale);
-}
+/**
+ * Les messages de la langue de départ sont là. Le français est embarqué ;
+ * une autre langue arrive par son chunk, et `main.ts` attend celui-ci avant
+ * le premier rendu : sans quoi un visiteur anglais ou hébreu voyait d'abord
+ * la page en français (en hébreu : du français de droite à gauche), puis
+ * toute la page se recomposer. `loadLocaleMessages` n'échoue jamais : un
+ * chunk introuvable laisse le repli français.
+ */
+export const localeReady: Promise<void> =
+  initialLocale !== "fr" ? loadLocaleMessages(initialLocale) : Promise.resolve();
+
+/** La langue de départ n'est pas le français : le premier rendu attend `localeReady`. */
+export const waitsForLocale = initialLocale !== "fr";
 
 /**
  * Applique une langue : messages chargés en tâche de fond (le français sert de
