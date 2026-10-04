@@ -20,7 +20,6 @@ import { isNativeApp } from "../composables/useNativeApp";
 import PageTabs from "../components/PageTabs.vue";
 import { LIBRARY_TABS } from "../config/pageTabs";
 import {
-  downloadBook,
   downloadingPaths,
   formatDownloadSize,
   isBookBundled,
@@ -41,7 +40,7 @@ import { useFoldedBooks } from "../composables/useFoldedBooks";
 import { useCatalogSearch } from "../composables/useCatalogSearch";
 import { useSearchTracking } from "../composables/useSearchTracking";
 import { markReadingEntry } from "../services/readingEntry";
-import { downloadErrorKey, useBookDownload, type BookState } from "../composables/useBookDownload";
+import { useBookDownload, type BookState } from "../composables/useBookDownload";
 import { analyticsService } from "../services/analyticsService";
 import { useNow } from "../composables/useNow";
 import { currentMoadimBook, withCurrentFirst } from "../content/moadimNow";
@@ -74,7 +73,7 @@ const route = useRoute();
 // bibliothèque. Une Map calculée une fois par changement de l'index des
 // téléchargements : le patron lisait l'état six fois par carte, sur cent
 // cinquante cartes, à chaque rendu.
-const { bookStateOf, toggleDownload } = useBookDownload();
+const { bookStateOf, toggleDownload, downloadAll } = useBookDownload();
 const bookStates = computed(() => {
   const states = new Map<string, BookState>();
   if (!isNativeApp) return states;
@@ -447,42 +446,10 @@ const tabAllDownloaded = computed(
   () => tabBooks.value.length > 0 && tabBooks.value.every((b) => isBookDownloaded(b)),
 );
 
-async function downloadAllInTab() {
-  analyticsService.capture("offline_download_started", {
-    scope: "all",
-    tab: currentCorpus.value?.typeKey ?? "Tout",
-    books_count: tabBooks.value.filter((b) => !isBookDownloaded(b)).length,
-  });
-  let downloaded = 0;
-  for (const book of tabBooks.value) {
-    if (isBookDownloaded(book)) continue;
-    try {
-      await downloadBook(book);
-      downloaded++;
-    } catch (e) {
-      // Sortie de boucle silencieuse : `offline_download_started` restait sans
-      // suite, exactement comme un utilisateur qui quitte la page. Ces deux
-      // cas ne se distinguaient pas, alors qu'un « Tout télécharger » coupé
-      // en route est le pire moment pour perdre quelqu'un.
-      analyticsService.capture("offline_download_failed", {
-        scope: "all",
-        tab: currentCorpus.value?.typeKey ?? "Tout",
-        book: book.path,
-        // Le rang dit si le lot a échoué d'emblée ou s'est interrompu près du
-        // but : les deux n'appellent pas la même correction.
-        books_done: downloaded,
-        is_online: navigator.onLine,
-        error_message: e instanceof Error ? e.message : String(e),
-      });
-      toast.error(t(downloadErrorKey(e)));
-      return; // Hors connexion, ou permission refusée : inutile d'enchaîner les échecs.
-    }
-  }
-  analyticsService.capture("offline_download_completed", {
-    scope: "all",
-    tab: currentCorpus.value?.typeKey ?? "Tout",
-    books_count: downloaded,
-  });
+// Le lot et son suivi vivent dans useBookDownload, avec le téléchargement
+// d'un seul livre : un échec en chemin n'y abandonne pas la suite.
+function downloadAllInTab() {
+  return downloadAll(tabBooks.value, currentCorpus.value?.typeKey ?? "Tout");
 }
 
 // Libérer de la place : symétrique de « Tout télécharger », donc au même

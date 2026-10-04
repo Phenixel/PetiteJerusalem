@@ -291,6 +291,27 @@ changement du DOM). Ils montrent ce qu'on prend pour une commande sans en
 en sont exclus par la classe `ph-no-deadclick` (`TextReadingPage.vue`) : on y
 appuie sans rien demander (double appui du défilement, lecture du doigt).
 
+### Bibliothèque hors ligne : `offline_download_completed` (existant)
+
+Une propriété de plus sur le lot (`scope: all`, « Tout télécharger ») :
+
+| Propriété      | Valeurs                                       | Statut             |
+| -------------- | --------------------------------------------- | ------------------ |
+| `books_count`  | les livres effectivement rapportés            | existant, conservé |
+| `books_failed` | les livres perdus en route, 0 le plus souvent | **nouveau**        |
+
+`books_failed` porte le même nom que sur
+`onboarding_offline_download_finished`, qui le posait déjà. Il devient utile
+maintenant qu'un échec n'arrête plus le lot : `offline_download_failed` part
+pour chaque livre manqué, puis le lot va jusqu'au bout et
+`offline_download_completed` dit ce qui manque. Les deux événements se
+suivent donc dans un même lot, ce qui n'arrivait pas avant. Le lot s'arrête
+encore, sans `offline_download_completed`, quand les livres suivants
+échoueraient tous : hors connexion au premier échec, permission de stockage
+refusée (Android 10 et moins), ou trois échecs de suite (place épuisée, site
+injoignable). Voir `composables/useBookDownload.ts` et
+`src/__tests__/offlineDownloadAll.test.ts`.
+
 ### Lecture : `text_opened` (existant)
 
 | Propriété | Valeurs | Statut |
