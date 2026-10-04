@@ -197,6 +197,28 @@ const track = (event: string, extra: Record<string, unknown> = {}) => {
 /** L'ajout resté en route qu'on attend déjà : un second essai ne le compte pas deux fois. */
 let awaitedLanding: Promise<PrayerName> | null = null;
 
+/**
+ * Les ajouts déjà annoncés. Un ajout resté en route aboutit par deux chemins
+ * quand on le réessaie avant son arrivée : l'attente posée au premier essai
+ * et le second essai lui-même. Il ne s'annonce qu'une fois.
+ */
+const announcedAdds = new Set<string>();
+
+/** Le nom enregistré : le suivi, le mot à l'écran, la liste. */
+function announce(saved: PrayerName, action: "added" | "updated"): void {
+  if (action === "added") {
+    if (announcedAdds.has(saved.id)) return;
+    announcedAdds.add(saved.id);
+  }
+  track("prayer_name_saved", { action, has_death_date: isDated(saved) });
+  toast.success(
+    action === "updated"
+      ? t("perpetual.form.saved")
+      : t("perpetual.form.added", { name: formatPrayerName(saved) }),
+  );
+  emit("saved", saved);
+}
+
 const isConnectionError = (err: unknown) =>
   err instanceof PrayerNameOfflineError || err instanceof PrayerNamePendingError;
 
@@ -207,16 +229,7 @@ async function save(): Promise<void> {
     const saved = props.name
       ? await prayerNameService.update(props.sessionId, props.name, input.value)
       : await prayerNameService.add(props.sessionId, props.ownerId, input.value, props.ownedCount);
-    track("prayer_name_saved", {
-      action: props.name ? "updated" : "added",
-      has_death_date: isDated(saved),
-    });
-    toast.success(
-      props.name
-        ? t("perpetual.form.saved")
-        : t("perpetual.form.added", { name: formatPrayerName(saved) }),
-    );
-    emit("saved", saved);
+    announce(saved, props.name ? "updated" : "added");
     emit("close");
   } catch (err) {
     // Le serveur se tait, mais l'ajout est en route : quand il arrive, le
@@ -224,12 +237,15 @@ async function save(): Promise<void> {
     // l'ignorerait, et un second essai l'écrirait deux fois.
     if (err instanceof PrayerNamePendingError && err.landing && err.landing !== awaitedLanding) {
       awaitedLanding = err.landing;
+      // La fenêtre ne se ferme à l'arrivée que si elle montre encore cette
+      // saisie : rouverte entre-temps sur un autre nom, elle reste ouverte.
+      const attempted = JSON.stringify(input.value);
       err.landing.then(
         (landed) => {
-          track("prayer_name_saved", { action: "added", has_death_date: isDated(landed) });
-          toast.success(t("perpetual.form.added", { name: formatPrayerName(landed) }));
-          emit("saved", landed);
-          emit("close");
+          announce(landed, "added");
+          if (props.open && !props.name && JSON.stringify(input.value) === attempted) {
+            emit("close");
+          }
         },
         (late) => console.error("Erreur lors de l'enregistrement du nom:", late),
       );
