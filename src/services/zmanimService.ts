@@ -15,6 +15,7 @@ import {
 import "@hebcal/locales/fr";
 import { dateTimeFormat, displayNames } from "./intlCache";
 import { devicePreference } from "./devicePreference";
+import { haversineKm } from "./geo";
 import { saidTachanun } from "./tachanun";
 import {
   DEFAULT_ZMANIM_OPINION,
@@ -821,6 +822,28 @@ export function hebrewDateFor(place: ZmanimPlace, day: Date, now: Date = new Dat
  * deux en Asia/Jerusalem.
  */
 export const isIsraelPlace = (place: ZmanimPlace): boolean => place.tzid === "Asia/Jerusalem";
+
+/** Jérusalem au catalogue des villes (src/datas/cities.json). */
+const JERUSALEM = { lat: 31.769, lon: 35.2163 };
+
+/**
+ * Jusqu'où une position compte pour Jérusalem : les quartiers (Gilo, Ramot,
+ * Pisgat Zeev), pas Maalé Adoumim ni Mevasseret, qui fêtent Pourim le 14.
+ */
+const JERUSALEM_RADIUS_KM = 7;
+
+/**
+ * Le lieu fête-t-il Pourim le 15 Adar (Chouchan Pourim), en ville entourée
+ * d'une muraille depuis Josué ? En pratique, Jérusalem seule.
+ */
+export function isWalledCityPlace(place: ZmanimPlace): boolean {
+  if (!isIsraelPlace(place)) return false;
+  if (place.city === "Jérusalem") return true;
+  return (
+    haversineKm(place.latitude, place.longitude, JERUSALEM.lat, JERUSALEM.lon) <=
+    JERUSALEM_RADIUS_KM
+  );
+}
 
 /** hebcal ne porte que trois catalogues : en, he et fr (voir l'import en tête). */
 const hebcalLocale = (locale: string): string =>

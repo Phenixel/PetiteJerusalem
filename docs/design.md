@@ -1083,6 +1083,13 @@ fragment court, dans un paragraphe qu'on lit d'un trait. La halakha de
 l'oubli (« si l'on a conclu haEl hakadoch, on recommence ») accompagne le
 passage, en didascalie, les jours où elle sert.
 
+Le jour suit le lieu des horaires. À Jérusalem, ville entourée d'une muraille
+depuis Josué, Pourim se fête le 15 Adar (Chouchan Pourim) : 'Al hanissim, la
+lecture de Vayavo Amalek, Migdol et le psaume de Pourim y viennent le 15, et
+pas le 14. Jérusalem, c'est la ville du catalogue, ou une position à moins de
+7 km de son centre (ses quartiers, pas Maalé Adoumim ni Mevasseret ;
+`isWalledCityPlace`). Tenu par `src/__tests__/purimJerusalem.test.ts`.
+
 ### Le parchemin s'ouvre depuis le texte
 
 Deux passages du sidour ont leur forme propre sur un parchemin : le pitoum
