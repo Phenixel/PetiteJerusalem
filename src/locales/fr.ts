@@ -46,6 +46,10 @@ const fr = {
   },
   errors: {
     prayerNameIncomplete: "Le prénom et celui de la mère sont nécessaires.",
+    prayerNameOffline:
+      "Pas de connexion : la liste n'a pas changé. Réessayez une fois de retour en ligne.",
+    prayerNamePending:
+      "Le serveur ne répond pas : votre demande partira d'elle-même au retour de la connexion, inutile de la refaire.",
     prayerNameLimit:
       "Vous avez proposé autant de noms qu'un compte le peut : retirez-en un pour en ajouter un autre.",
     permissionDenied: "Vous n'avez pas les droits nécessaires pour effectuer cette action.",

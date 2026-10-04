@@ -1,3 +1,4 @@
+import type { Page } from "playwright/test";
 import { HDate, months } from "@hebcal/core";
 import {
   test,
@@ -189,6 +190,28 @@ async function reportsOf(sessionId: string): Promise<string[]> {
 }
 
 /**
+ * Coupe ou rend le réseau de Firestore, sans que l'appareil le sache :
+ * `navigator.onLine` reste vrai, comme sur un réseau qui ne répond plus. (Un
+ * appareil qui se sait hors ligne voit « Connexion impossible » à la place de
+ * la page, fenêtre comprise.)
+ */
+async function muteFirestore(page: Page, muted: boolean): Promise<void> {
+  const firestore = new RegExp(`localhost:${FIRESTORE_PORT}`);
+  if (muted) await page.route(firestore, (route) => route.abort("timedout"));
+  else await page.unroute(firestore);
+}
+
+/** Les noms d'une chaîne, tels que Firestore les garde. */
+async function namesOf(chainId: string): Promise<unknown[]> {
+  const res = await fetch(
+    `http://localhost:${FIRESTORE_PORT}/v1/${DOCUMENTS}/sessions/${chainId}/names`,
+    { headers: { Authorization: "Bearer owner" } },
+  );
+  if (!res.ok) throw new Error(`Noms : ${res.status} ${await res.text()}`);
+  return ((await res.json()) as { documents?: unknown[] }).documents ?? [];
+}
+
+/**
  * La date hébraïque d'un jour à venir, telle que la fenêtre la garde. Adar I
  * d'une année à treize mois ne se dit pas dans ce modèle (un décès d'Adar
  * revient en Adar II) : le test qui tomberait dessus ne prouverait rien.
@@ -268,6 +291,38 @@ test.describe("chaîne perpétuelle", () => {
     await expect
       .poll(() => reportsOf(chain.id), { timeout: 10_000 })
       .toEqual(["Premier Nom", "Second Nom"]);
+  });
+
+  test("serveur muet : la fenêtre rend la main, et le nom n'arrive qu'une fois", async ({
+    page,
+  }) => {
+    const account = await createAccount("reseau-muet");
+    const chain = await seedPerpetualChain();
+    await signIn(page, account, `/share-reading/session/${chain.slug}`);
+
+    const names = page.locator("[data-prayer-names]");
+    await names.getByRole("button", { name: "Proposer un nom" }).click();
+    const dialog = page.getByRole("dialog", { name: "Proposer un nom" });
+    await dialog.locator("#prayer-first-name").fill("Yossef");
+    await dialog.locator("#prayer-mother-name").fill("Rahel");
+
+    // L'appareil se croit en ligne, mais Firestore ne répond plus.
+    await muteFirestore(page, true);
+    const add = dialog.getByRole("button", { name: "Ajouter le nom" });
+    await add.click();
+    const pending = page.getByText(/Le serveur ne répond pas/).first();
+    await expect(pending).toBeVisible({ timeout: 20_000 });
+    // La fenêtre reste ouverte, avec ce qui a été saisi, et le bouton répond.
+    await expect(dialog.locator("#prayer-first-name")).toHaveValue("Yossef");
+    await expect(add).toBeEnabled();
+    // On réessaie quand même : c'est le même ajout qui reste en route.
+    await add.click();
+
+    await muteFirestore(page, false);
+    await expect(names.getByRole("button", { name: "Modifier Yossef ben Rahel" })).toBeVisible({
+      timeout: 90_000,
+    });
+    await expect.poll(() => namesOf(chain.id), { timeout: 10_000 }).toHaveLength(1);
   });
 
   test("un défunt daté ne paraît que la semaine de son anniversaire", async ({ page }) => {

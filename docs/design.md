@@ -819,6 +819,12 @@ un premier signalement, et la fenêtre demande le nom en cause au lieu de
 promettre un masquage au troisième. La case « Bloquer ce créateur » n'y paraît
 pas : le créateur est l'équipe, la bloquer effaçait la chaîne de l'appareil.
 
+Sans réseau, la fenêtre d'un nom ne se fige pas : elle dit ce qui se passe
+et garde ce qui a été saisi. Hors ligne, rien ne part. Si l'appareil se croit
+en ligne mais que le serveur se tait, elle rend la main au bout de dix
+secondes : la demande partira d'elle-même au retour de la connexion, il est
+inutile de la refaire, et le nom rejoint la liste quand il arrive.
+
 Dans le lecteur, « Vous lisez pour » garde les deux groupes de la page de la
 chaîne, chacun avec son dessin : on ne dit pas de la même façon une refoua
 chelema et un leilouy nichmat (`PrayerNamesLine`). Retirer un nom pose la
