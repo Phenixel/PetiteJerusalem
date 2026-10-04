@@ -47,6 +47,9 @@ export type TextDisplayStatus = {
 export const RANDOM_RESERVATION_TTL_MS = 60 * 60 * 1000;
 
 class ReservationService {
+  /** La dernière transaction de chaque chaîne, pour mettre la suivante en file. */
+  private pendingBySession = new Map<string, Promise<void>>();
+
   /**
    * Une réservation à durée limitée (tirage aléatoire) qui n'a pas été lue à
    * temps : elle est ignorée par tous les affichages et remplacée à la
@@ -187,6 +190,13 @@ class ReservationService {
    *
    * Le rappel peut être rejoué en cas de contention : ce qu'il compte, il le
    * rend, il ne l'accumule jamais au-dehors.
+   *
+   * Les transactions d'une même chaîne passent l'une après l'autre. Lancées
+   * ensemble (sept sections cochées en quarante secondes, en septembre 2026),
+   * chacune invalidait celles encore ouvertes ; le SDK relançait la plus
+   * lente, qui reperdait contre le clic suivant, jusqu'à épuiser ses essais
+   * (« the stored version does not match the required base version »). Un
+   * double appui sur le même interrupteur pouvait aussi finir hors d'ordre.
    */
   private updateReservations<T>(
     sessionId: string,
@@ -194,16 +204,34 @@ class ReservationService {
     ifMissing?: () => T,
   ): Promise<T> {
     const sfDocRef = doc(db, "sessions", sessionId);
-    return runTransaction(db, async (transaction) => {
-      const sfDoc = await transaction.get(sfDocRef);
-      if (!sfDoc.exists()) {
-        if (ifMissing) return ifMissing();
-        throw new SessionMissingError();
-      }
-      const data = sfDoc.data() as { reservations?: ReservationRecord[] };
-      const reservations = Array.isArray(data.reservations) ? data.reservations : [];
-      return change(reservations, (next) => transaction.update(sfDocRef, { reservations: next }));
+    // Le nombre d'essais reste celui du SDK (cinq). Il rejoue aussi une
+    // panne de réseau, avec une attente qui grandit : dix essais tenaient
+    // l'interrupteur « Lu » plus d'une minute hors ligne (huit secondes à
+    // cinq), et la file ferait attendre d'autant chaque coche suivante.
+    const run = () =>
+      runTransaction(db, async (transaction) => {
+        const sfDoc = await transaction.get(sfDocRef);
+        if (!sfDoc.exists()) {
+          if (ifMissing) return ifMissing();
+          throw new SessionMissingError();
+        }
+        const data = sfDoc.data() as { reservations?: ReservationRecord[] };
+        const reservations = Array.isArray(data.reservations) ? data.reservations : [];
+        return change(reservations, (next) => transaction.update(sfDocRef, { reservations: next }));
+      });
+    // Une transaction à la fois par chaîne, sur cet appareil : la suivante
+    // part quand la précédente a fini, réussie ou non.
+    const previous = this.pendingBySession.get(sessionId) ?? Promise.resolve();
+    const current = previous.then(run, run);
+    const settled = current.then(
+      () => undefined,
+      () => undefined,
+    );
+    this.pendingBySession.set(sessionId, settled);
+    void settled.then(() => {
+      if (this.pendingBySession.get(sessionId) === settled) this.pendingBySession.delete(sessionId);
     });
+    return current;
   }
 
   async createReservation(
