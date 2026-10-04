@@ -21,7 +21,6 @@ import { useZmanimPlaceLabel } from "../../composables/useZmanimPlaceLabel";
 import { useZmanCountdown } from "../../composables/useZmanCountdown";
 import { useNow } from "../../composables/useNow";
 import { dateTimeFormat } from "../../services/intlCache";
-import { localDayFrom, localDayKey } from "../../services/dateService";
 import { getParashaForShabbat } from "../../services/dailyCycles";
 import {
   candleLightingMinutes,
@@ -46,6 +45,9 @@ import {
   type ZmanPeriod,
   type ZmanTime,
   zmanimGap,
+  placeDayAfter,
+  placeDayKey,
+  placeDayOffset,
 } from "../../services/zmanimService";
 import { revealFromOrigin } from "../../composables/useRevealOrigin";
 import { useToast } from "../../composables/useToast";
@@ -108,11 +110,9 @@ const now = useNow();
 /** Décalage en jours par rapport à aujourd'hui (flèches de navigation). */
 const dayOffset = ref(0);
 
-const day = computed(() => {
-  const date = new Date(now.value);
-  date.setDate(date.getDate() + dayOffset.value);
-  return date;
-});
+// Le jour du LIEU décalé de `dayOffset`, et non celui de l'appareil (voir
+// placeDayAfter).
+const day = computed(() => placeDayAfter(place.value, now.value, dayOffset.value));
 const isToday = computed(() => dayOffset.value === 0);
 
 /**
@@ -122,13 +122,13 @@ const isToday = computed(() => dayOffset.value === 0);
  */
 const dayPickerOpen = ref(false);
 const dayKey = computed({
-  get: () => localDayKey(day.value),
+  // Le jour du lieu, celui de l'en-tête : un appareil à New York qui regarde
+  // Jérusalem un soir y est déjà le lendemain.
+  get: () => placeDayKey(place.value, day.value),
   set: (key: string) => {
-    const picked = localDayFrom(key);
-    if (!picked) return;
-    const today = new Date(now.value.getFullYear(), now.value.getMonth(), now.value.getDate());
-    // Arrondi : les changements d'heure font des journées de 23 ou 25 heures.
-    dayOffset.value = Math.round((picked.getTime() - today.getTime()) / 86_400_000);
+    const offset = placeDayOffset(place.value, now.value, key);
+    if (offset === null) return;
+    dayOffset.value = offset;
     trackDayChange("picker");
     // Qui a trouvé le calendrier tout seul n'a pas besoin qu'on le lui montre.
     markTipSeen("zmanim-date");

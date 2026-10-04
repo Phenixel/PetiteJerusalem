@@ -289,8 +289,8 @@ const loadSessionData = async () => {
     textStudies.value = sessionService.getSessionTextStudies(sessionData);
     session.value = sessionData;
 
-    hasReported.value = moderationService.hasReportedSession(sessionData.id);
-    isCreatorBlocked.value = moderationService.isCreatorBlocked(sessionData.personId);
+    hasReported.value = moderationService.isReportLocked(sessionData);
+    isCreatorBlocked.value = moderationService.isBlockedForViewer(sessionData);
   } catch (err) {
     console.error("Erreur lors du chargement des données:", err);
     // Une chaîne déjà affichée reste à l'écran (la liste garde ses textes
@@ -1226,7 +1226,7 @@ watch(session, (s) => applySessionSeo(s));
     <ReportSessionModal
       v-model:show="showReportModal"
       :session="session"
-      @reported="hasReported = true"
+      @reported="hasReported = !isPerpetual"
       @creator-blocked="isCreatorBlocked = true"
     />
   </main>

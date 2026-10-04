@@ -12,6 +12,7 @@
  * « pessah dates », et « פסח » plutôt que l'un ou l'autre.
  */
 
+import { HDate } from "@hebcal/core";
 import { SEO_LOCALES, type SeoLocale } from "./seoLocales";
 
 export type SeoFestival = {
@@ -41,6 +42,14 @@ export type SeoFestival = {
    * en Israël comme en diaspora. C'est donc par là qu'on la tient.
    */
   hebrewDate?: { day: number; month: string };
+  /**
+   * Le nom hebcal de l'entrée qui la porte quand elle n'a pas la sienne. En
+   * Israël, Simhat Torah tombe le jour de Chemini Atséret et hebcal n'émet
+   * que ce dernier : sans repli, la page de Simhat Torah, ouverte en français
+   * ou en anglais depuis Israël, ne trouvait aucun jour. Le prérendu, calculé
+   * pour Paris dans ces deux langues, n'en a pas besoin.
+   */
+  alsoNamed?: Partial<Record<SeoLocale, string>>;
 };
 
 const festival = (
@@ -49,12 +58,14 @@ const festival = (
   labels: [string, string, string],
   fast?: "dawn" | "eve",
   hebrewDate?: { day: number; month: string },
+  alsoNamed?: Partial<Record<SeoLocale, string>>,
 ): SeoFestival => ({
   names: { fr: names[0], en: names[1], he: names[2] },
   slugs: { fr: slugs[0], en: slugs[1], he: slugs[2] },
   labels: { fr: labels[0], en: labels[1], he: labels[2] },
   ...(fast ? { fast } : {}),
   ...(hebrewDate ? { hebrewDate } : {}),
+  ...(alsoNamed ? { alsoNamed } : {}),
 });
 
 export const SEO_FESTIVALS: SeoFestival[] = [
@@ -106,6 +117,9 @@ export const SEO_FESTIVALS: SeoFestival[] = [
     ["Simhat Torah", "Simchat Torah", "שְׁמִינִי עֲצֶרֶת · שִׂמְחַת תּוֹרָה"],
     ["simhat-torah", "simchat-torah", "simchat-tora"],
     ["Simhat Torah", "Simchat Torah", "שמחת תורה"],
+    undefined,
+    undefined,
+    { fr: "Chemini Atzéret", en: "Shmini Atzeret" },
   ),
   festival(
     ["Hanoukah", "Chanukah", "חֲנוּכָּה"],
@@ -176,4 +190,61 @@ export function findFestivalBySlug(slug: string): SeoFestival | null {
       SEO_LOCALES.some((locale) => festival.slugs[locale] === slug),
     ) ?? null
   );
+}
+
+/** Une entrée du calendrier, réduite à ce qu'il faut pour y reconnaître une fête. */
+export interface FestivalCandidate {
+  key: string;
+  name: string;
+  first: HDate;
+  last: HDate;
+}
+
+/** hebcal-fr écrit « H̲anoukah » : la marque diacritique ne compte pas. */
+const withoutMarks = (name: string): string => name.replace(/[̱̲]/g, "");
+
+/**
+ * L'entrée du calendrier où la page d'une fête doit ouvrir : sa prochaine
+ * occurrence à partir du jour `today` (numéro absolu hebcal), ou null.
+ *
+ * Même règle que le prérendu (zmanimSeoPages, `entriesOf` et `blocksOf`) :
+ * - un bloc peut réunir deux fêtes sous un nom composé (« Chemini Atzéret ·
+ *   Simhat Torah » en diaspora) : on compare nom à nom, chacun à l'égalité
+ *   stricte (sans quoi Pourim attraperait Chouchan Pourim) ;
+ * - une fête que hebcal ne nomme pas (Hochaana Rabba) se tient par sa date :
+ *   l'entrée qui la contient, sinon la dernière qui commence avant elle dans
+ *   le même mois (le bloc de Souccot).
+ * La page comparait le nom entier : ces trois fêtes ne trouvaient rien, et la
+ * page sautait de deux ans sans rien mettre en avant.
+ */
+export function festivalEntryKey(
+  entries: FestivalCandidate[],
+  festival: SeoFestival,
+  locale: SeoLocale,
+  today: number,
+): string | null {
+  if (festival.hebrewDate) {
+    const year = entries[0]?.first.getFullYear();
+    if (!year) return null;
+    const day = new HDate(festival.hebrewDate.day, festival.hebrewDate.month, year);
+    if (day.abs() < today) return null;
+    const containing = entries.find((e) => e.first.abs() <= day.abs() && day.abs() <= e.last.abs());
+    if (containing) return containing.key;
+    const before = entries.filter(
+      (e) => e.first.abs() <= day.abs() && e.first.getMonth() === day.getMonth(),
+    );
+    return before[before.length - 1]?.key ?? null;
+  }
+  const named = (wanted: string[]) =>
+    entries.find(
+      (entry) =>
+        entry.last.abs() >= today &&
+        withoutMarks(entry.name)
+          .split(" · ")
+          .some((name) => wanted.includes(name)),
+    );
+  const fallback = festival.alsoNamed?.[locale];
+  const found =
+    named(festival.names[locale].split(" · ")) ?? (fallback ? named([fallback]) : undefined);
+  return found?.key ?? null;
 }

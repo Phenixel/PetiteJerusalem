@@ -15,6 +15,7 @@ import {
 import "@hebcal/locales/fr";
 import { dateTimeFormat, displayNames } from "./intlCache";
 import { devicePreference } from "./devicePreference";
+import { haversineKm } from "./geo";
 import { saidTachanun } from "./tachanun";
 import {
   DEFAULT_ZMANIM_OPINION,
@@ -230,10 +231,20 @@ const ZMAN_DEFS = [
   // jour civil a changé, mais le milieu de sa nuit, souvent vers 1 h, n'est
   // pas forcément passé, et c'est lui qu'on vient vérifier à cette heure-là.
   { key: "chatzotNightDawn", period: "dawn", round: "up", at: (z: Zmanim) => z.chatzotNight() },
-  { key: "alotHaShachar", period: "dawn", round: "down", at: (z, _n, o, c) => o.alotHaShachar(z, c) },
+  {
+    key: "alotHaShachar",
+    period: "dawn",
+    round: "down",
+    at: (z, _n, o, c) => o.alotHaShachar(z, c),
+  },
   { key: "misheyakir", period: "dawn", round: "up", at: (z, _n, o, c) => o.misheyakir(z, c) },
   { key: "sunrise", period: "dawn", round: "up", at: (z: Zmanim) => z.sunrise() },
-  { key: "sofZmanShmaMGA", period: "morning", round: "down", at: (z, _n, o, c) => o.sofZmanShmaMGA(z, c) },
+  {
+    key: "sofZmanShmaMGA",
+    period: "morning",
+    round: "down",
+    at: (z, _n, o, c) => o.sofZmanShmaMGA(z, c),
+  },
   { key: "sofZmanShma", period: "morning", round: "down", at: (z: Zmanim) => z.sofZmanShma() },
   {
     key: "sofZmanTfillaMGA",
@@ -243,9 +254,19 @@ const ZMAN_DEFS = [
   },
   { key: "sofZmanTfilla", period: "morning", round: "down", at: (z: Zmanim) => z.sofZmanTfilla() },
   { key: "chatzot", period: "afternoon", round: "down", at: (z: Zmanim) => z.chatzot() },
-  { key: "minchaGedola", period: "afternoon", round: "up", at: (z, _n, o, c) => o.minchaGedola(z, c) },
+  {
+    key: "minchaGedola",
+    period: "afternoon",
+    round: "up",
+    at: (z, _n, o, c) => o.minchaGedola(z, c),
+  },
   { key: "minchaKetana", period: "afternoon", round: "up", at: (z: Zmanim) => z.minchaKetana() },
-  { key: "plagHaMincha", period: "afternoon", round: "up", at: (z, _n, o, c) => o.plagHaMincha(z, c) },
+  {
+    key: "plagHaMincha",
+    period: "afternoon",
+    round: "up",
+    at: (z, _n, o, c) => o.plagHaMincha(z, c),
+  },
   { key: "sunset", period: "evening", round: "down", at: (z: Zmanim) => z.sunset() },
   { key: "tzeit", period: "evening", round: "up", at: (z, _n, o, c) => o.tzeit(z, c) },
   // Milieu de la nuit qui suit le jour affiché : lu sur le lendemain, dont la
@@ -486,6 +507,73 @@ export function dayInPlace(place: ZmanimPlace, date: Date): Date {
     .split("-")
     .map(Number);
   return new Date(year, month - 1, day, 12);
+}
+
+/** L'instant de midi, au lieu, d'un jour civil du lieu (mois de 0 à 11). */
+function noonInPlace(place: ZmanimPlace, year: number, month: number, day: number): Date {
+  const guess = Date.UTC(year, month, day, 12);
+  const parts = Object.fromEntries(
+    dateTimeFormat("en-US", {
+      timeZone: place.tzid,
+      hourCycle: "h23",
+      year: "numeric",
+      month: "numeric",
+      day: "numeric",
+      hour: "numeric",
+      minute: "numeric",
+    })
+      .formatToParts(new Date(guess))
+      .map((part) => [part.type, part.value]),
+  );
+  const seenThere = Date.UTC(
+    Number(parts.year),
+    Number(parts.month) - 1,
+    Number(parts.day),
+    Number(parts.hour),
+    Number(parts.minute),
+  );
+  return new Date(guess - (seenThere - guess));
+}
+
+/**
+ * Un instant du jour du LIEU qui suit (ou précède) de `offset` jours celui
+ * de `from`. Le jour même, `from` lui-même : « maintenant » sert à l'horaire
+ * qui vient. Les autres jours, midi au lieu.
+ *
+ * Avancer « d'un jour » à l'horloge de l'appareil gardait son heure murale :
+ * quand l'écart entre son fuseau et celui du lieu change (une semaine de
+ * changement d'heure où les deux pays ne basculent pas ensemble), un jour du
+ * lieu sautait ou revenait deux fois. Appareil à Paris, lieu New York, le
+ * samedi 24 octobre 2026 à 05:30 : vendredi, dimanche, lundi ; le samedi
+ * manquait aux flèches, au widget et aux rappels.
+ */
+export function placeDayAfter(place: ZmanimPlace, from: Date, offset: number): Date {
+  if (offset === 0) return from;
+  const day = dayInPlace(place, from);
+  day.setDate(day.getDate() + offset);
+  return noonInPlace(place, day.getFullYear(), day.getMonth(), day.getDate());
+}
+
+/** Le jour du lieu d'un instant, en clé de champ `date` (YYYY-MM-DD). */
+export function placeDayKey(place: ZmanimPlace, instant: Date): string {
+  const day = dayInPlace(place, instant);
+  const month = String(day.getMonth() + 1).padStart(2, "0");
+  return `${day.getFullYear()}-${month}-${String(day.getDate()).padStart(2, "0")}`;
+}
+
+/**
+ * Combien de jours du lieu séparent le jour de `from` de celui que nomme
+ * `key` (YYYY-MM-DD), ou null si la clé n'est pas une date. Le calendrier de
+ * la page des horaires s'ouvre et se lit dans le jour du lieu, celui de
+ * l'en-tête, et non dans celui de l'appareil.
+ */
+export function placeDayOffset(place: ZmanimPlace, from: Date, key: string): number | null {
+  const [year, month, day] = key.split("-").map(Number);
+  if (!year || !month || !day) return null;
+  const today = dayInPlace(place, from);
+  const picked = new Date(year, month - 1, day, 12);
+  // Arrondi : une journée de l'appareil peut compter 23 ou 25 heures.
+  return Math.round((picked.getTime() - today.getTime()) / 86_400_000);
 }
 
 /** Une date renvoyée par hebcal peut être invalide aux latitudes extrêmes. */
@@ -734,6 +822,28 @@ export function hebrewDateFor(place: ZmanimPlace, day: Date, now: Date = new Dat
  * deux en Asia/Jerusalem.
  */
 export const isIsraelPlace = (place: ZmanimPlace): boolean => place.tzid === "Asia/Jerusalem";
+
+/** Jérusalem au catalogue des villes (src/datas/cities.json). */
+const JERUSALEM = { lat: 31.769, lon: 35.2163 };
+
+/**
+ * Jusqu'où une position compte pour Jérusalem : les quartiers (Gilo, Ramot,
+ * Pisgat Zeev), pas Maalé Adoumim ni Mevasseret, qui fêtent Pourim le 14.
+ */
+const JERUSALEM_RADIUS_KM = 7;
+
+/**
+ * Le lieu fête-t-il Pourim le 15 Adar (Chouchan Pourim), en ville entourée
+ * d'une muraille depuis Josué ? En pratique, Jérusalem seule.
+ */
+export function isWalledCityPlace(place: ZmanimPlace): boolean {
+  if (!isIsraelPlace(place)) return false;
+  if (place.city === "Jérusalem") return true;
+  return (
+    haversineKm(place.latitude, place.longitude, JERUSALEM.lat, JERUSALEM.lon) <=
+    JERUSALEM_RADIUS_KM
+  );
+}
 
 /** hebcal ne porte que trois catalogues : en, he et fr (voir l'import en tête). */
 const hebcalLocale = (locale: string): string =>
@@ -1114,16 +1224,48 @@ function isYomTov(hd: HDate, il: boolean): boolean {
   return holidaysOn(hd, il).some((ev) => (ev.getFlags() & flags.CHAG) !== 0);
 }
 
+/**
+ * L'instant où une date personnelle commence, pour y allumer la bougie d'une
+ * hazkara : au coucher du soleil de la veille, sauf quand le Chabbat ou une
+ * fête s'en mêle.
+ *
+ *  - La date ouvre un temps de repos (un décès au 29 Tichri, un samedi) : la
+ *    bougie s'allume avant l'entrée du Chabbat, à l'heure de l'allumage. Au
+ *    coucher du soleil, le Chabbat est déjà entré.
+ *  - La date tombe au milieu d'un temps de repos (le second jour d'une fête,
+ *    un Chabbat qui suit une fête) : l'allumage de ce jour-là, à la nuit ou à
+ *    la sortie du Chabbat, celui du cadre des horaires.
+ *  - La date suit un temps de repos (un décès au 30 Tichri, un dimanche) :
+ *    à sa sortie. Au coucher du soleil, le Chabbat dure encore.
+ *
+ * La veille se prend à midi, dans le calendrier du lieu (civilNoon) : passer
+ * par minuit de l'appareil décalait d'un jour un lieu à l'ouest de lui (un
+ * appareil à Paris pour Montréal recevait le rappel la veille de la veille).
+ *
+ * Aux hautes latitudes, l'été, la sortie du Chabbat ne se calcule pas
+ * toujours (`end` nul) : le coucher du soleil de la veille reste alors le
+ * repère, plutôt que de ne rien rappeler.
+ */
+export function occasionEntryAt(place: ZmanimPlace, hd: HDate, locale: string): Date | null {
+  const period = restPeriodAt(place, hd, locale);
+  if (period) {
+    if (period.first.abs() === hd.abs()) return period.start;
+    const lighting = period.lightings.find((l) => l.day.abs() === hd.abs());
+    if (lighting && isUsable(lighting.at)) return lighting.at;
+  }
+  const before = restPeriodAt(place, hd.prev(), locale);
+  if (before && !period && before.end) return before.end;
+  const sunset = new Zmanim(geoLocationOf(place), civilNoon(hd.prev()), false).sunset();
+  return isUsable(sunset) ? sunset : null;
+}
+
 /** La sortie des étoiles d'un jour hébraïque, en ce lieu, ou null aux latitudes extrêmes. */
 export function nightfallOf(place: ZmanimPlace, hd: HDate): Date | null {
   const day = civilNoon(hd);
   const zmanim = new Zmanim(geoLocationOf(place), day, false);
   // Une FIN, comme la sortie des étoiles de la liste du jour : minute
   // supérieure, pour que les deux annoncent la même (voir ZmanRounding).
-  return roundUsable(
-    opinionZmanim(currentOpinion).tzeit(zmanim, opinionContext(place, day)),
-    "up",
-  );
+  return roundUsable(opinionZmanim(currentOpinion).tzeit(zmanim, opinionContext(place, day)), "up");
 }
 
 /**
@@ -1152,6 +1294,16 @@ export function birkatHalevanaWindow(hd: HDate): { start: Date; end: Date } {
 }
 
 /**
+ * Le premier jour d'Av dont la nuit d'ouverture suit la fin du jeûne. Le
+ * 9 Av tombe-t-il un Chabbat, le jeûne est reporté au dimanche 10 : la nuit
+ * qui ouvre le 10 est alors celle du jeûne, et la bénédiction attend celle du
+ * 11 (5789, 5792, 5796, 5799...).
+ */
+function firstNightAfterTishaBeAv(year: number): number {
+  return new HDate(9, months.AV, year).getDay() === 6 ? 11 : 10;
+}
+
+/**
  * Dit-on la bénédiction de la lune (Birkat Halevana) la nuit qui ouvre ce
  * jour hébraïque-là ?
  *
@@ -1163,10 +1315,13 @@ export function birkatHalevanaWindow(hd: HDate): { start: Date; end: Date } {
  * écoulés.
  *
  * Deux reports d'usage sont conservés, pour la dire dans la joie : en Av on
- * attend la sortie de Tich'a beAv, en Tichri celle de Kippour.
+ * attend la sortie de Tich'a beAv (reporté au 10 quand le 9 est un Chabbat),
+ * en Tichri celle de Kippour.
  */
 export function saysBirkatHalevana(place: ZmanimPlace, hd: HDate): boolean {
-  if (hd.getMonth() === months.AV && hd.getDate() < 10) return false;
+  if (hd.getMonth() === months.AV && hd.getDate() < firstNightAfterTishaBeAv(hd.getFullYear())) {
+    return false;
+  }
   if (hd.getMonth() === months.TISHREI && hd.getDate() < 11) return false;
   const night = nightfallOf(place, hd.prev());
   if (!night) return false; // Pas de nuit ici ce jour-là : rien à annoncer.

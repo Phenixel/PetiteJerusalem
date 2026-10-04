@@ -64,6 +64,54 @@ test.describe("chaînes de lecture", () => {
     await expect(page).toHaveURL(new RegExp(`/share-reading/session/${session.slug}$`));
   });
 
+  test("revenir à la chaîne juste après un tirage ne montre pas le texte comme pris", async ({
+    page,
+  }) => {
+    // En production, la page de la chaîne lisait la session entre la pose du
+    // tirage et son retrait au départ du lecteur : le texte paraissait réservé,
+    // et le cocher répondait « Réservation introuvable ». Les écritures sont
+    // ralenties ici pour que la course se joue à chaque fois.
+    const owner = await createAccount("proprio");
+    const session = await seedTehilimSession(owner);
+    await page.route("**/documents:commit*", async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 700));
+      await route.continue();
+    });
+
+    await gotoApp(page, `/share-reading/session/${session.slug}`);
+    await page.getByRole("button", { name: "Tirer un Téhilim" }).click();
+    await expect(page).toHaveURL(/\/lire\//, { timeout: 20_000 });
+    await expect.poll(async () => (await reservationsOf(session.id)).length).toBe(1);
+
+    await page.getByRole("button", { name: "Retour à la session" }).click();
+    await expect(page.getByRole("heading", { level: 1 })).toContainText(session.name);
+    await expect.poll(async () => (await reservationsOf(session.id)).length).toBe(0);
+    await expect(page.getByRole("checkbox", { name: "Terminé" })).toHaveCount(0);
+  });
+
+  test("un tirage marqué lu puis remis en non lu ne se rend pas au départ", async ({ page }) => {
+    // Lue, la réservation devient définitive : son échéance tombe. Le lecteur
+    // qui se ravise garde son texte, il ne le rend pas en quittant la page.
+    const owner = await createAccount("proprio");
+    const session = await seedTehilimSession(owner);
+
+    await gotoApp(page, `/share-reading/session/${session.slug}`);
+    await page.getByRole("button", { name: "Tirer un Téhilim" }).click();
+    await expect(page).toHaveURL(/\/lire\//, { timeout: 20_000 });
+    await expect.poll(async () => (await reservationsOf(session.id)).length).toBe(1);
+
+    await page.getByRole("button", { name: "Marquer comme lu" }).first().click();
+    await expect.poll(async () => (await reservationsOf(session.id))[0]?.isCompleted).toBe(true);
+    await page.getByRole("button", { name: "Remettre en non lu" }).first().click();
+    await expect.poll(async () => (await reservationsOf(session.id))[0]?.isCompleted).toBe(false);
+
+    // Le retour à la chaîne attend la libération d'un tirage : s'il y en avait
+    // une, elle serait passée quand la page de la chaîne s'affiche.
+    await page.getByRole("button", { name: "Retour à la session" }).click();
+    await expect(page.getByRole("heading", { level: 1 })).toContainText(session.name);
+    expect((await reservationsOf(session.id)).length).toBe(1);
+  });
+
   test("un compte réserve un psaume, le marque lu, puis annule", async ({ page }) => {
     const owner = await createAccount("proprio");
     const reader = await createAccount("lecteur");
