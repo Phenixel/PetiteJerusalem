@@ -596,6 +596,16 @@ est gardé sur l'appareil, et deux fois plutôt qu'une (voir
 docs/app-native.md) : un réglage posé pour ne PLUS être surpris ne doit pas
 revenir tout seul au lancement suivant.
 
+### Une permission se demande après un geste, jamais en fond
+
+Le dialogue d'une permission du système ne surgit qu'après un geste qui la
+réclame : toucher « Télécharger », activer un rappel. Une tâche de fond qui
+en aurait besoin attend qu'elle soit accordée, sans la demander. Sous
+Android 10, la mise à jour silencieuse du Sidour faisait ainsi surgir la
+permission de stockage à l'ouverture d'un office, sans que personne n'ait
+rien demandé (`docs/app-native.md`). Et un refus se dit pour ce qu'il est,
+avec l'endroit où revenir dessus, plutôt que d'envoyer vérifier la connexion.
+
 ### Un réglage se pose là où il est atteignable
 
 L'avis suivi pour les horaires (Rav Posen, Rav Ovadia Yossef) gouverne toutes

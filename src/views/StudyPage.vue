@@ -41,7 +41,7 @@ import { useFoldedBooks } from "../composables/useFoldedBooks";
 import { useCatalogSearch } from "../composables/useCatalogSearch";
 import { useSearchTracking } from "../composables/useSearchTracking";
 import { markReadingEntry } from "../services/readingEntry";
-import { useBookDownload, type BookState } from "../composables/useBookDownload";
+import { downloadErrorKey, useBookDownload, type BookState } from "../composables/useBookDownload";
 import { analyticsService } from "../services/analyticsService";
 import { useNow } from "../composables/useNow";
 import { currentMoadimBook, withCurrentFirst } from "../content/moadimNow";
@@ -474,8 +474,8 @@ async function downloadAllInTab() {
         is_online: navigator.onLine,
         error_message: e instanceof Error ? e.message : String(e),
       });
-      toast.error(t("downloads.error"));
-      return; // Probablement hors connexion : inutile d'enchaîner les échecs.
+      toast.error(t(downloadErrorKey(e)));
+      return; // Hors connexion, ou permission refusée : inutile d'enchaîner les échecs.
     }
   }
   analyticsService.capture("offline_download_completed", {

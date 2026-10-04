@@ -1700,6 +1700,8 @@ const fr = {
     deleteAllDone: "Téléchargements supprimés.",
     deleteError: "Suppression impossible. Réessayez.",
     error: "Téléchargement impossible. Vérifiez votre connexion.",
+    permissionDenied:
+      "Téléchargement impossible : l'app n'a pas accès au stockage. Autorisez-le dans les réglages de l'app sur Android, puis réessayez.",
   },
   offline: {
     title: "Connexion impossible",

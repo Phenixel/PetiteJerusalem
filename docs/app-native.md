@@ -150,6 +150,31 @@ avec un leurre qui se comporte comme le vrai proxy, `then` compris.
   appareil récent. Ajoutées par `scripts/setup-android.mjs` (le dossier
   `android/` est régénéré à chaque publication) ; test :
   `src/__tests__/androidStoragePermissions.test.ts`.
+- Android 10 et moins, la permission elle-même : le plugin la **demande**
+  (dialogue du système) avant chaque transfert, quel que soit le dossier.
+  Deux conséquences, tenues par
+  `src/__tests__/androidStoragePermissionDenied.test.ts` :
+  - une mise à jour de fond (la vérification du Sidour embarqué, la reprise
+    des livres périmés au lancement) ne part que si la permission est déjà
+    accordée (`backgroundDownloadAllowed`, qui la lit par
+    `checkPermissions` sans rien demander) ; sinon elle attend, et la copie
+    en place reste ce qu'on lit. Le dialogue ne surgit donc qu'après un
+    geste de téléchargement. La version d'Android se lit dans les
+    indications du client (`userAgentData`), puis dans l'agent utilisateur
+    de la webview : réduit, celui-ci annonce « Android 10; K » sur tout
+    appareil, où la permission n'est jamais accordée au-delà du SDK 29, et
+    s'y fier couperait les mises à jour de fond des téléphones récents
+    (`deviceAndroidMajor`). Au-delà d'Android 10, ou version inconnue, rien
+    n'est vérifié ;
+  - un refus (`OS-PLUG-FLTR-0006`) a son message (`downloads.permissionDenied`,
+    qui dit où l'autoriser) au lieu de « Vérifiez votre connexion ».
+
+  Un chemin sans permission (HTTP natif, puis écriture dans
+  `Directory.Data`) a été écarté : `CapacitorHttp` réanalyse toute réponse
+  `application/json` côté natif, les octets écrits ne seraient plus ceux du
+  site, et l'empreinte ne correspondrait jamais (retéléchargement à chaque
+  synchronisation). Il faudrait pour cela un téléchargement natif qui ne
+  demande rien, donc un changement natif.
 - `textService.loadText` passe par `fetchTextResponse` : copie téléchargée à
   jour d'abord, puis copie embarquée (et pour le Sidour, la vérification de
   fond décrite plus haut), puis réseau (`https://petite-jerusalem.fr`), puis,

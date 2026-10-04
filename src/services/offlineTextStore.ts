@@ -91,6 +91,97 @@ interface DownloadManifest {
 
 const isNative = Capacitor.isNativePlatform();
 
+/**
+ * Le code du refus de la permission de stockage par `@capacitor/file-transfer`.
+ * Sous Android 10 et moins, le plugin la demande avant tout transfert, même
+ * vers l'espace privé de l'app (voir docs/app-native.md) ; refusée, il rejette
+ * avec ce code.
+ */
+export const STORAGE_PERMISSION_DENIED = "OS-PLUG-FLTR-0006";
+
+/** Le téléchargement a-t-il échoué parce que la permission de stockage est refusée ? */
+export function isStoragePermissionDenied(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false;
+  const { code, message } = error as { code?: unknown; message?: unknown };
+  return (
+    code === STORAGE_PERMISSION_DENIED ||
+    (typeof message === "string" && message.includes("user denied permission request"))
+  );
+}
+
+/** La version majeure d'Android lue dans l'agent utilisateur, null ailleurs. */
+export function androidMajorVersion(userAgent: string): number | null {
+  const match = /Android (\d+)/.exec(userAgent);
+  return match ? Number(match[1]) : null;
+}
+
+/**
+ * L'agent utilisateur réduit des webviews récentes : « Android 10; K », quel
+ * que soit l'appareil et sa version d'Android. La vraie version ne se lit
+ * alors que dans les indications du client (`userAgentData`).
+ */
+const REDUCED_ANDROID_UA = /Android 10; K[;)]/;
+
+type ClientHints = {
+  getHighEntropyValues?(hints: string[]): Promise<{ platformVersion?: string }>;
+};
+
+/**
+ * La version majeure d'Android de l'appareil, null si elle ne se lit pas.
+ *
+ * Les indications du client d'abord. L'agent utilisateur seul ne suffit
+ * plus : réduit, il annonce Android 10 sur un téléphone récent, où la
+ * permission de stockage ne peut jamais être accordée (le manifeste la borne
+ * au SDK 29). S'y fier coupait pour de bon les mises à jour de fond sur ces
+ * appareils. Réduit et sans indications, la version est tenue pour inconnue.
+ */
+export async function deviceAndroidMajor(userAgent: string): Promise<number | null> {
+  const hints =
+    typeof navigator === "undefined"
+      ? undefined
+      : (navigator as Navigator & { userAgentData?: ClientHints }).userAgentData;
+  try {
+    const version = (await hints?.getHighEntropyValues?.(["platformVersion"]))?.platformVersion;
+    const major = version ? Number.parseInt(version, 10) : NaN;
+    if (Number.isFinite(major) && major > 0) return major;
+  } catch {
+    // Indications refusées : l'agent utilisateur reste le repli.
+  }
+  if (REDUCED_ANDROID_UA.test(userAgent)) return null;
+  return androidMajorVersion(userAgent);
+}
+
+/**
+ * Une tâche de fond (mise à jour d'un texte embarqué ou téléchargé) peut-elle
+ * télécharger sans faire surgir le dialogue de permission ? Sous Android 10
+ * et moins, `@capacitor/file-transfer` demande la permission de stockage
+ * avant tout transfert : sans elle déjà accordée, une mise à jour silencieuse
+ * l'aurait demandée à l'ouverture d'un office, sans que personne n'ait rien
+ * demandé. Elle attend alors un téléchargement voulu, qui la demandera.
+ *
+ * Au-delà d'Android 10, le plugin ne la consulte plus : rien à vérifier, et
+ * surtout rien à attendre, la permission n'y étant jamais accordée. La
+ * version vient de deviceAndroidMajor ; inconnue, la tâche part comme avant.
+ */
+export async function backgroundDownloadAllowed(
+  userAgent: string = typeof navigator === "undefined" ? "" : navigator.userAgent,
+): Promise<boolean> {
+  if (!isNative || Capacitor.getPlatform() !== "android") return true;
+  const major = await deviceAndroidMajor(userAgent);
+  if (major === null || major > 10) return true;
+  try {
+    // checkPermissions vient de Capacitor, pour tout plugin qui déclare des
+    // permissions : il lit l'état sans rien demander.
+    const plugin = FileTransfer as unknown as {
+      checkPermissions(): Promise<Record<string, string>>;
+    };
+    const states = await plugin.checkPermissions();
+    return states.publicStorage === "granted";
+  } catch {
+    return false;
+  }
+}
+
 /** Manifest réactif : l'UI (page Téléchargements, boutons) s'y abonne. */
 export const downloadManifest = ref<DownloadManifest>({ files: {} });
 
@@ -345,6 +436,8 @@ async function revalidateBundled(webPath: string, bundledText: Promise<string>):
     const embarquee = await bundledHashes.get(webPath);
     if (embarquee === null || embarquee === attendue) return;
     if (isDownloaded(webPath) && isDownloadCurrent(webPath)) return;
+    // Personne n'a rien demandé : pas de dialogue de permission pour cela.
+    if (!(await backgroundDownloadAllowed())) return;
     await downloadFile(webPath);
   } catch (error) {
     console.warn(`Vérification de ${webPath} impossible:`, error);
