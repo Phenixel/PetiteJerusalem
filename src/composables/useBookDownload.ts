@@ -9,6 +9,7 @@ import {
   isBookBundled,
   isBookDownloaded,
   removeBook,
+  type OfflineBook,
 } from "../services/offlineLibraryService";
 import { analyticsService } from "../services/analyticsService";
 
@@ -75,5 +76,66 @@ export function useBookDownload() {
     }
   }
 
-  return { bookStateOf, toggleDownload };
+  /**
+   * « Tout télécharger » : les livres d'un onglet de la bibliothèque (ou
+   * toute la bibliothèque depuis l'accueil), l'un après l'autre.
+   *
+   * Un échec n'abandonne que le livre en cause. Avant, il abandonnait le lot
+   * entier, en supposant l'appareil hors connexion ; l'Error tracking a
+   * montré le contraire (un « Tout télécharger » coupé au 182e livre le
+   * 2 octobre 2026, `is_online` vrai, sur un simple « Error during file
+   * transfer »), et un transfert raté en chemin coûtait toute la fin de la
+   * bibliothèque. Hors connexion, on s'arrête toujours : les suivants
+   * échoueraient tous. En ligne, on continue et l'on dit à la fin ce qui
+   * manque, comme le font déjà l'introduction (OnboardingOfflinePicker) et
+   * `downloadBooks`.
+   */
+  async function downloadAll(books: OfflineBook[], tab: string): Promise<void> {
+    const pending = books.filter((book) => !isBookDownloaded(book));
+    analyticsService.capture("offline_download_started", {
+      scope: "all",
+      tab,
+      books_count: pending.length,
+    });
+    let downloaded = 0;
+    let failed = 0;
+    for (const book of pending) {
+      try {
+        await downloadBook(book);
+        downloaded++;
+      } catch (e) {
+        failed++;
+        // Sortie négative du lot : `offline_download_started` restait sans
+        // suite, exactement comme un utilisateur qui quitte la page. Ces deux
+        // cas ne se distinguaient pas, alors qu'un « Tout télécharger » coupé
+        // en route est le pire moment pour perdre quelqu'un.
+        const online = navigator.onLine;
+        analyticsService.capture("offline_download_failed", {
+          scope: "all",
+          tab,
+          book: book.path,
+          // Le rang dit si le lot a échoué d'emblée ou s'est interrompu près
+          // du but : les deux n'appellent pas la même correction.
+          books_done: downloaded,
+          is_online: online,
+          error_message: e instanceof Error ? e.message : String(e),
+        });
+        if (!online) {
+          toast.error(t("downloads.error"));
+          return;
+        }
+      }
+    }
+    analyticsService.capture("offline_download_completed", {
+      scope: "all",
+      tab,
+      books_count: downloaded,
+      // Ce qui manque à la fin : `books_count` seul ne disait pas si le lot
+      // est complet (voir docs/tracking-plan.md).
+      books_failed: failed,
+    });
+    if (failed > 0) toast.error(t("downloads.error"));
+  }
+
+  return { bookStateOf, toggleDownload, downloadAll };
 }
