@@ -1,6 +1,7 @@
 import { computed, ref } from "vue";
 import { isNativeApp } from "./useNativeApp";
 import { homeHighlights, type Announcement } from "../services/announcements";
+import { isOutdated } from "../services/appUpdateService";
 
 /**
  * L'état partagé des informations de l'équipe : la liste, ce qui est nouveau
@@ -98,13 +99,16 @@ function saveSeen(time: number): void {
  */
 function markAllSeen(): void {
   saveSeen(items.value.reduce((max, a) => Math.max(max, a.publishedAt?.getTime() ?? 0), 0));
-  if (installed.value && installed.value !== seenVersion.value) {
-    seenVersion.value = installed.value;
-    try {
-      localStorage.setItem(SEEN_VERSION_KEY, installed.value);
-    } catch {
-      // Stockage indisponible : la note reviendra, rien de plus grave.
-    }
+  if (installed.value) saveSeenVersion(installed.value);
+}
+
+function saveSeenVersion(version: string): void {
+  if (version === seenVersion.value) return;
+  seenVersion.value = version;
+  try {
+    localStorage.setItem(SEEN_VERSION_KEY, version);
+  } catch {
+    // Stockage indisponible : la note reviendra, rien de plus grave.
   }
 }
 
@@ -112,9 +116,21 @@ function markAllSeen(): void {
  * Une annonce ouverte seule (depuis une notification, l'accueil) : elle et
  * les plus anciennes ne sont plus nouvelles. Un seul repère par appareil,
  * c'est le prix de la simplicité ; les plus anciennes ont eu leur tour.
+ *
+ * Une note de version lue avec sa version installée avance aussi le repère
+ * de version : la date seule ne suffit plus à l'éteindre (voir
+ * unreadAnnouncements), elle resterait « Nouveau » jusqu'à la prochaine
+ * visite de la liste. Lue avant l'installation, elle reviendra, comme une
+ * note vue dans la liste.
  */
-function markSeenUpTo(date: Date | null): void {
-  if (date) saveSeen(date.getTime());
+async function markSeenUpTo(a: Announcement): Promise<void> {
+  if (a.publishedAt) saveSeen(a.publishedAt.getTime());
+  if (a.kind !== "release" || !a.version) return;
+  // Ouverte depuis une notification, la page arrive avant la liste : la
+  // version installée n'a pas encore été lue.
+  if (installed.value === null) installed.value = await readInstalledVersion();
+  if (!installed.value || isOutdated(installed.value, a.version)) return;
+  if (seenVersion.value && isOutdated(seenVersion.value, a.version)) saveSeenVersion(a.version);
 }
 
 export function useAnnouncements() {

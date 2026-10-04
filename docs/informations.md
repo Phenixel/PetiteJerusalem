@@ -61,8 +61,11 @@ liste, sans pastille « Nouveau » tant que la version n'est pas là. Une note
 vue dans la liste avant l'installation redevient nouvelle une fois la version
 installée : l'appareil retient la version de sa dernière visite
 (`pj_announcements_seen_version`), et une note d'une version plus récente,
-désormais installée, est nouvelle quelle que soit sa date. Test :
-`announcements.test.ts` (« une note de version vue avant son installation »).
+désormais installée, est nouvelle quelle que soit sa date. Ouverte seule
+(depuis l'accueil ou une notification) avec sa version installée, elle avance
+ce repère jusqu'à sa version : elle est lue, sans attendre une visite de la
+liste. Tests : `announcements.test.ts` (« une note de version vue avant son
+installation ») et `announcementsSeenVersion.test.ts`.
 
 ## Comment ça marche
 
