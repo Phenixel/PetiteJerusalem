@@ -141,8 +141,12 @@ function restoreDraft(): void {
   if (typeof draft.guestEmailRequired === "boolean") {
     sessionData.guestEmailRequired = draft.guestEmailRequired;
   }
-  if (Array.isArray(draft.selectedBooks)) draftBooks = draft.selectedBooks.map(String);
-  if (typeof draft.type === "string") sessionData.type = draft.type;
+  // Sans type, le brouillon n'a pas de livres : sa liste vide ne doit pas
+  // décocher ceux du type choisi ensuite.
+  if (typeof draft.type === "string" && draft.type) {
+    if (Array.isArray(draft.selectedBooks)) draftBooks = draft.selectedBooks.map(String);
+    sessionData.type = draft.type;
+  }
 }
 
 const buttonText = computed(() => {

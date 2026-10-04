@@ -144,4 +144,26 @@ describe("le formulaire de création, le temps de se connecter", () => {
     expect(again.field("name").value).toBe("");
     again.unmount();
   });
+
+  it("un brouillon sans type ne décoche pas les livres du type choisi au retour", async () => {
+    // Le compte est vérifié avant les champs : « Créer » garde un brouillon
+    // sans type, donc sans livres.
+    const before = await mount();
+    before.set("name", "Tehilim pour refoua");
+    before.set("description", "Une lecture partagée");
+    await before.submit();
+    before.unmount();
+
+    state.user = { id: "u1", name: "Sarah", email: "s@exemple.fr" };
+    const after = await mount();
+    expect(after.field("name").value).toBe("Tehilim pour refoua");
+    after.set("type", "Tehilim");
+    after.set("dateLimit", "2099-01-15");
+    await flush();
+
+    await after.submit();
+    expect(createSessionWithValidation).toHaveBeenCalledTimes(1);
+    expect(createSessionWithValidation.mock.calls[0][6]).toEqual(["Livre 1", "Livre 2", "Livre 3"]);
+    after.unmount();
+  });
 });
