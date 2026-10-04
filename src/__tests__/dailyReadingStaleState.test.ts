@@ -48,6 +48,20 @@ vi.mock("../services/analyticsService", () => ({ analyticsService: { capture: vi
 vi.mock("../views/Library/DailyReadingItem.vue", () => ({
   default: { render: () => null },
 }));
+// Le repli animé garde un minuteur en filet (350 ms) : il sonnait parfois
+// après la fin du fichier, jsdom déjà démonté, et faisait échouer toute la
+// suite sur « window is not defined ». Ici le repli est immédiat.
+vi.mock("../components/CollapseTransition.vue", async () => {
+  const { defineComponent } = await import("vue");
+  return {
+    default: defineComponent({
+      setup:
+        (_, { slots }) =>
+        () =>
+          slots.default?.(),
+    }),
+  };
+});
 
 const { default: DailyReading } = await import("../views/Library/DailyReading.vue");
 
@@ -96,11 +110,7 @@ function foldToggle(button: HTMLButtonElement): HTMLButtonElement {
   return button.closest("article")!.querySelector("header button")!;
 }
 
-/**
- * Replié, d'après le chevron du titre. Un repli fait après le montage est
- * animé : `display` ne suit qu'à la fin de la transition, que jsdom ne joue
- * pas, alors que le chevron tourne tout de suite.
- */
+/** Replié, d'après le chevron du titre. */
 function chevronFolded(button: HTMLButtonElement): boolean {
   return foldToggle(button).querySelector(".-rotate-90") !== null;
 }
