@@ -95,6 +95,15 @@ monte comme ailleurs, et `session:signalements` la liste.
   l'admin.
 - Les aperçus sociaux (`socialPreview`, `ogImage`) ne servent plus les
   sessions masquées.
+- Un slug repris par une autre session ne lui donne pas les liens de
+  l'original : les règles ne peuvent pas comparer deux documents, c'est donc
+  la lecture (`firestoreService.getSessionBySlug`) qui tranche, en faveur de
+  la chaîne perpétuelle (son drapeau `perpetual` est réservé à l'admin ; un
+  identifiant, lui, se choisit), sinon de la plus ancienne. L'aperçu social
+  suit la même règle (`functions/src/sessionSlug.ts`). Test :
+  `sessionSlugCollision.test.ts`. Une copie antidatée gagne encore sur une
+  session ordinaire : la date de création vient du client, seules des règles
+  d'unicité du slug fermeraient ce cas.
 
 ## Conditions d'utilisation et contact
 
