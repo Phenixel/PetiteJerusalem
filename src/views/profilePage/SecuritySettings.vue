@@ -145,6 +145,10 @@ const trackDeleteFailed = (
 };
 
 const deleteAccount = async () => {
+  // La touche Entrée du champ n'est pas éteinte comme le bouton : sans cette
+  // garde, deux appuis lançaient deux suppressions, et la seconde échouait
+  // en comptant un `account_delete_failed` à côté de `account_deleted`.
+  if (isDeletingAccount.value) return;
   clearMessages();
 
   try {
