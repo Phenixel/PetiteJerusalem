@@ -64,6 +64,9 @@ describe("reservationService - invités sans email", () => {
   });
 
   it("canUserDeleteReservation reconnaît l'invité via son email", () => {
+    // Les emails retenus par les tests précédents feraient de l'appareil
+    // celui de Sarah : seul l'email saisi compte ici.
+    localStorage.removeItem("pj_guest_emails");
     const reservation = makeReservation({ chosenByGuestId: "sarah@mail.fr" });
     expect(reservationService.canUserDeleteReservation(reservation, null, "sarah@mail.fr")).toBe(
       true,

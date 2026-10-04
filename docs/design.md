@@ -934,6 +934,18 @@ plus d'après le pourcentage. Tenu par
 `src/__tests__/reservationHelpers.test.ts` (« ne dit pas 100 % tant qu'il
 reste une place »).
 
+### Un invité reste lui-même d'une visite à l'autre
+
+Un invité qui réserve avec son email en fait l'identifiant de sa réservation
+(`chosenByGuestId`). Le formulaire se vide au rechargement : l'appareil ne
+savait plus qui il était, et l'invité ne pouvait plus ni annuler ni marquer
+lue sa propre lecture. L'appareil retient donc les emails avec lesquels on y
+a réservé (`guestService.rememberGuestEmail`, clé `pj_guest_emails`, les cinq
+plus récents), comme il retient déjà l'identité locale des invités sans email,
+et ils comptent dans l'identité de l'invité (`getGuestIdentifiers`). Même
+portée que l'identité locale : ce navigateur, pas un autre appareil. Tenu par
+`src/__tests__/guestEmailIdentity.test.ts`.
+
 ### L'écran de connexion dit quoi faire
 
 Un échec ne montre jamais l'erreur brute de Firebase (« Firebase: Error
