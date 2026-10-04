@@ -107,6 +107,12 @@ monte comme ailleurs, et `session:signalements` la liste.
   `sessionSlugCollision.test.ts`. Une copie antidatée gagne encore sur une
   session ordinaire : la date de création vient du client, seules des règles
   d'unicité du slug fermeraient ce cas.
+- Les champs d'une session sont bornés par `validSessionFields` (titre 300,
+  description 5000, slug 200). Le formulaire de création et la fenêtre de
+  modification portent les mêmes `maxlength`, et le slug se coupe au dernier
+  mot entier avant 180 caractères (`truncateSlug`), ce qui laisse la place
+  d'un suffixe de doublon. Un titre long était refusé avec un message
+  générique. Tenu par `src/__tests__/sessionLongTitle.test.ts`.
 
 ## Conditions d'utilisation et contact
 

@@ -53,6 +53,21 @@ export interface SessionParticipant {
 }
 
 /**
+ * Les règles Firestore bornent le slug à 200 caractères : un titre long
+ * (250 caractères latins) était refusé à la création, avec un message
+ * générique. On coupe au dernier mot entier avant 180, ce qui laisse la
+ * place d'un suffixe de doublon (« -3 », « -k3x9qz »).
+ */
+export const SLUG_BASE_MAX_LENGTH = 180;
+export function truncateSlug(slug: string): string {
+  if (slug.length <= SLUG_BASE_MAX_LENGTH) return slug;
+  const cut = slug.slice(0, SLUG_BASE_MAX_LENGTH + 1);
+  const lastHyphen = cut.lastIndexOf("-");
+  const head = lastHyphen > 0 ? cut.slice(0, lastHyphen) : cut.slice(0, SLUG_BASE_MAX_LENGTH);
+  return head.replace(/-+$/, "");
+}
+
+/**
  * Qui tient cette réservation : un compte, un invité, ou personne de
  * nommable. Les deux comptages de participants (le nombre, puis les noms)
  * partagent cette règle, sinon la liste et le chiffre finiraient par diverger.
@@ -438,7 +453,7 @@ class SessionService {
     // Un nom écrit entièrement en alphabet non latin (hébreu…) donne un slug
     // vide une fois les caractères hors a-z0-9 supprimés : sans base de repli,
     // la session serait stockée avec slug "" et les liens ?session= seraient vides.
-    const base = generateSlug(baseName) || "session";
+    const base = truncateSlug(generateSlug(baseName)) || "session";
     const existing = await firestoreService.getSessionBySlug(base);
     if (!existing || existing.id === excludeSessionId) return base;
 

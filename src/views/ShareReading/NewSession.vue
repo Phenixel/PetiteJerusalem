@@ -393,6 +393,7 @@ const goBack = () => {
             v-model="sessionData.name"
             :placeholder="t('newSession.sessionTitlePlaceholder')"
             required
+            maxlength="300"
             class="field"
           />
         </div>
@@ -406,6 +407,7 @@ const goBack = () => {
             v-model="sessionData.description"
             :placeholder="t('newSession.sessionDescriptionPlaceholder')"
             required
+            maxlength="5000"
             class="field resize-y"
             rows="4"
           ></textarea>
