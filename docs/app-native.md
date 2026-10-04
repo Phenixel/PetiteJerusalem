@@ -230,6 +230,16 @@ sans réseau, elle s'ouvre et se lit, à partir de deux copies locales.
   geste fait après minuit recharge d'abord le nouveau jour, puis s'y applique ;
   au nouveau jour, ce qui était lu la veille se rouvre. Test :
   `dailyReadingStaleState.test.ts`.
+- **Les marque-pages et positions de lecture s'écrivent après lecture du
+  compte.** `readingProgressService` les fusionne avec ceux du compte à la
+  connexion, et n'écrit rien au compte tant qu'il ne l'a pas lu : un échec de
+  lecture n'est pas un compte vide, et pousser l'état de l'appareil seul
+  effacerait les marque-pages posés ailleurs. La copie locale du dernier
+  passage n'est pas le compte non plus : la fusion demande une vraie réponse
+  du serveur (`userPreferencesService.getPreferencesFromServer`), ni notre
+  copie ni le cache de Firestore. L'écriture suivante retente la fusion.
+  Tests : `readingProgressSyncFailure.test.ts`,
+  `preferencesFromServer.test.ts`.
 
 Vérification : composer une liste, mode avion, rouvrir la lecture du jour (les
 textes téléchargés s'affichent, les autres disent qu'ils ne sont pas
