@@ -230,10 +230,20 @@ const ZMAN_DEFS = [
   // jour civil a changé, mais le milieu de sa nuit, souvent vers 1 h, n'est
   // pas forcément passé, et c'est lui qu'on vient vérifier à cette heure-là.
   { key: "chatzotNightDawn", period: "dawn", round: "up", at: (z: Zmanim) => z.chatzotNight() },
-  { key: "alotHaShachar", period: "dawn", round: "down", at: (z, _n, o, c) => o.alotHaShachar(z, c) },
+  {
+    key: "alotHaShachar",
+    period: "dawn",
+    round: "down",
+    at: (z, _n, o, c) => o.alotHaShachar(z, c),
+  },
   { key: "misheyakir", period: "dawn", round: "up", at: (z, _n, o, c) => o.misheyakir(z, c) },
   { key: "sunrise", period: "dawn", round: "up", at: (z: Zmanim) => z.sunrise() },
-  { key: "sofZmanShmaMGA", period: "morning", round: "down", at: (z, _n, o, c) => o.sofZmanShmaMGA(z, c) },
+  {
+    key: "sofZmanShmaMGA",
+    period: "morning",
+    round: "down",
+    at: (z, _n, o, c) => o.sofZmanShmaMGA(z, c),
+  },
   { key: "sofZmanShma", period: "morning", round: "down", at: (z: Zmanim) => z.sofZmanShma() },
   {
     key: "sofZmanTfillaMGA",
@@ -243,9 +253,19 @@ const ZMAN_DEFS = [
   },
   { key: "sofZmanTfilla", period: "morning", round: "down", at: (z: Zmanim) => z.sofZmanTfilla() },
   { key: "chatzot", period: "afternoon", round: "down", at: (z: Zmanim) => z.chatzot() },
-  { key: "minchaGedola", period: "afternoon", round: "up", at: (z, _n, o, c) => o.minchaGedola(z, c) },
+  {
+    key: "minchaGedola",
+    period: "afternoon",
+    round: "up",
+    at: (z, _n, o, c) => o.minchaGedola(z, c),
+  },
   { key: "minchaKetana", period: "afternoon", round: "up", at: (z: Zmanim) => z.minchaKetana() },
-  { key: "plagHaMincha", period: "afternoon", round: "up", at: (z, _n, o, c) => o.plagHaMincha(z, c) },
+  {
+    key: "plagHaMincha",
+    period: "afternoon",
+    round: "up",
+    at: (z, _n, o, c) => o.plagHaMincha(z, c),
+  },
   { key: "sunset", period: "evening", round: "down", at: (z: Zmanim) => z.sunset() },
   { key: "tzeit", period: "evening", round: "up", at: (z, _n, o, c) => o.tzeit(z, c) },
   // Milieu de la nuit qui suit le jour affiché : lu sur le lendemain, dont la
@@ -486,6 +506,73 @@ export function dayInPlace(place: ZmanimPlace, date: Date): Date {
     .split("-")
     .map(Number);
   return new Date(year, month - 1, day, 12);
+}
+
+/** L'instant de midi, au lieu, d'un jour civil du lieu (mois de 0 à 11). */
+function noonInPlace(place: ZmanimPlace, year: number, month: number, day: number): Date {
+  const guess = Date.UTC(year, month, day, 12);
+  const parts = Object.fromEntries(
+    dateTimeFormat("en-US", {
+      timeZone: place.tzid,
+      hourCycle: "h23",
+      year: "numeric",
+      month: "numeric",
+      day: "numeric",
+      hour: "numeric",
+      minute: "numeric",
+    })
+      .formatToParts(new Date(guess))
+      .map((part) => [part.type, part.value]),
+  );
+  const seenThere = Date.UTC(
+    Number(parts.year),
+    Number(parts.month) - 1,
+    Number(parts.day),
+    Number(parts.hour),
+    Number(parts.minute),
+  );
+  return new Date(guess - (seenThere - guess));
+}
+
+/**
+ * Un instant du jour du LIEU qui suit (ou précède) de `offset` jours celui
+ * de `from`. Le jour même, `from` lui-même : « maintenant » sert à l'horaire
+ * qui vient. Les autres jours, midi au lieu.
+ *
+ * Avancer « d'un jour » à l'horloge de l'appareil gardait son heure murale :
+ * quand l'écart entre son fuseau et celui du lieu change (une semaine de
+ * changement d'heure où les deux pays ne basculent pas ensemble), un jour du
+ * lieu sautait ou revenait deux fois. Appareil à Paris, lieu New York, le
+ * samedi 24 octobre 2026 à 05:30 : vendredi, dimanche, lundi ; le samedi
+ * manquait aux flèches, au widget et aux rappels.
+ */
+export function placeDayAfter(place: ZmanimPlace, from: Date, offset: number): Date {
+  if (offset === 0) return from;
+  const day = dayInPlace(place, from);
+  day.setDate(day.getDate() + offset);
+  return noonInPlace(place, day.getFullYear(), day.getMonth(), day.getDate());
+}
+
+/** Le jour du lieu d'un instant, en clé de champ `date` (YYYY-MM-DD). */
+export function placeDayKey(place: ZmanimPlace, instant: Date): string {
+  const day = dayInPlace(place, instant);
+  const month = String(day.getMonth() + 1).padStart(2, "0");
+  return `${day.getFullYear()}-${month}-${String(day.getDate()).padStart(2, "0")}`;
+}
+
+/**
+ * Combien de jours du lieu séparent le jour de `from` de celui que nomme
+ * `key` (YYYY-MM-DD), ou null si la clé n'est pas une date. Le calendrier de
+ * la page des horaires s'ouvre et se lit dans le jour du lieu, celui de
+ * l'en-tête, et non dans celui de l'appareil.
+ */
+export function placeDayOffset(place: ZmanimPlace, from: Date, key: string): number | null {
+  const [year, month, day] = key.split("-").map(Number);
+  if (!year || !month || !day) return null;
+  const today = dayInPlace(place, from);
+  const picked = new Date(year, month - 1, day, 12);
+  // Arrondi : une journée de l'appareil peut compter 23 ou 25 heures.
+  return Math.round((picked.getTime() - today.getTime()) / 86_400_000);
 }
 
 /** Une date renvoyée par hebcal peut être invalide aux latitudes extrêmes. */
@@ -1120,10 +1207,7 @@ export function nightfallOf(place: ZmanimPlace, hd: HDate): Date | null {
   const zmanim = new Zmanim(geoLocationOf(place), day, false);
   // Une FIN, comme la sortie des étoiles de la liste du jour : minute
   // supérieure, pour que les deux annoncent la même (voir ZmanRounding).
-  return roundUsable(
-    opinionZmanim(currentOpinion).tzeit(zmanim, opinionContext(place, day)),
-    "up",
-  );
+  return roundUsable(opinionZmanim(currentOpinion).tzeit(zmanim, opinionContext(place, day)), "up");
 }
 
 /**
