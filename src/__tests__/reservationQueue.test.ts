@@ -61,7 +61,7 @@ import { reservationService } from "../services/reservationService";
 const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
 
 describe("les transactions d'une chaîne", () => {
-  it("passent l'une après l'autre, dans l'ordre des appuis, et en essaient davantage", async () => {
+  it("passent l'une après l'autre, dans l'ordre des appuis", async () => {
     const first = reservationService.markReservationAsCompleted("chaine", "a", true);
     const second = reservationService.markReservationAsCompleted("chaine", "a", false);
     const elsewhere = reservationService.markReservationAsCompleted("autre-chaine", "b", true);
@@ -78,7 +78,9 @@ describe("les transactions d'une chaîne", () => {
     await Promise.all([second, elsewhere]);
     // Le dernier appui l'emporte : « non lu ».
     expect(store.reservations.find((r) => r.id === "a")?.isCompleted).toBe(false);
-    expect(options[0]).toEqual({ maxAttempts: 10 });
+    // Les essais restent ceux du SDK : davantage figerait l'interrupteur
+    // plus d'une minute hors ligne.
+    expect(options[0]).toBeUndefined();
   });
 
   it("un échec ne bloque pas la suivante", async () => {

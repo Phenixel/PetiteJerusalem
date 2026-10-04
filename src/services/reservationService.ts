@@ -46,13 +46,6 @@ export type TextDisplayStatus = {
  */
 export const RANDOM_RESERVATION_TTL_MS = 60 * 60 * 1000;
 
-/**
- * Essais d'une transaction de réservation avant d'abandonner. Le SDK en fait
- * cinq par défaut ; la file par chaîne (updateReservations) écarte la
- * contention de cet appareil, il ne reste que celle des autres lecteurs.
- */
-const TRANSACTION_ATTEMPTS = 10;
-
 class ReservationService {
   /** La dernière transaction de chaque chaîne, pour mettre la suivante en file. */
   private pendingBySession = new Map<string, Promise<void>>();
@@ -211,23 +204,21 @@ class ReservationService {
     ifMissing?: () => T,
   ): Promise<T> {
     const sfDocRef = doc(db, "sessions", sessionId);
+    // Le nombre d'essais reste celui du SDK (cinq). Il rejoue aussi une
+    // panne de réseau, avec une attente qui grandit : dix essais tenaient
+    // l'interrupteur « Lu » plus d'une minute hors ligne (huit secondes à
+    // cinq), et la file ferait attendre d'autant chaque coche suivante.
     const run = () =>
-      runTransaction(
-        db,
-        async (transaction) => {
-          const sfDoc = await transaction.get(sfDocRef);
-          if (!sfDoc.exists()) {
-            if (ifMissing) return ifMissing();
-            throw new SessionMissingError();
-          }
-          const data = sfDoc.data() as { reservations?: ReservationRecord[] };
-          const reservations = Array.isArray(data.reservations) ? data.reservations : [];
-          return change(reservations, (next) =>
-            transaction.update(sfDocRef, { reservations: next }),
-          );
-        },
-        { maxAttempts: TRANSACTION_ATTEMPTS },
-      );
+      runTransaction(db, async (transaction) => {
+        const sfDoc = await transaction.get(sfDocRef);
+        if (!sfDoc.exists()) {
+          if (ifMissing) return ifMissing();
+          throw new SessionMissingError();
+        }
+        const data = sfDoc.data() as { reservations?: ReservationRecord[] };
+        const reservations = Array.isArray(data.reservations) ? data.reservations : [];
+        return change(reservations, (next) => transaction.update(sfDocRef, { reservations: next }));
+      });
     // Une transaction à la fois par chaîne, sur cet appareil : la suivante
     // part quand la précédente a fini, réussie ou non.
     const previous = this.pendingBySession.get(sessionId) ?? Promise.resolve();
