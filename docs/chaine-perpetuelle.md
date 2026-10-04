@@ -104,6 +104,11 @@ réservations et avance le compteur (`nextRound`), dans une transaction qui
 relit la session : sa propre écriture, ou une relance, ne compte jamais deux
 fois le même tour. Sans `slotCount` valide, le tour ne finit jamais : mieux
 vaut une chaîne qui ne repart pas qu'une chaîne vidée par erreur.
+Seules les places de la chaîne comptent : les Tehilim du catalogue, de
+`PERPETUAL_FIRST_TEXT_ID` (103) à 102 + `slotCount`. Les règles laissent
+chacun ajouter des réservations ; cent cinquante identifiants inventés, marqués
+lus, finissaient le tour en deux écritures. Tests : `perpetualChain.test.ts`
+(« ne compte que les places de la chaîne », « suit le catalogue »).
 
 La page qui voit tout lu le dit (« Tour terminé ! ») et se recharge une fois,
 cinq secondes plus tard, pour montrer le tour suivant.
@@ -120,6 +125,10 @@ affichages et cède sa place à la suivante, dans les versions déjà installée
 comme dans celle-ci, et quelle que soit celle qui a réservé. Un tirage garde
 son heure, que l'app repousse tant qu'on lit ; une place lue n'a plus
 d'échéance. La page de la chaîne le dit en une ligne (`perpetual.holdNote`).
+Une échéance plus lointaine que ce jour (posée à la main par un client), ou
+qui ne se lit pas comme une date, revient à un jour : sans quoi elle tenait la
+place sans fin. Test : « ramène à un jour une échéance plus lointaine, ou
+illisible ».
 
 La règle compte une place par texte : elle ne vaut que pour des textes d'une
 seule section, ce que les 150 Tehilim sont. `chaine:creer` refuse un catalogue
