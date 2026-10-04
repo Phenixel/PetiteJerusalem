@@ -15,6 +15,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../firebase/firestore";
 import type { Session } from "../models/models";
+import { isReservationShape } from "./reservationShape";
 
 // Durée de vie du cache de la liste des sessions. Court : les réservations
 // des autres participants doivent apparaître rapidement.
@@ -34,6 +35,11 @@ class FirestoreOperationError extends Error {
   }
 }
 
+/** Un horodatage Firestore en Date ; undefined pour tout le reste. */
+function toDate(value: unknown): Date | undefined {
+  return value instanceof Timestamp ? value.toDate() : undefined;
+}
+
 class FirestoreService {
   private sessionsCache: { data: Session[]; fetchedAt: number } | null = null;
   private sessionsCachePromise: Promise<Session[]> | null = null;
@@ -42,20 +48,31 @@ class FirestoreService {
 
   // === MÉTHODES UTILITAIRES ===
 
+  /**
+   * Un document de session tel que l'app le lit. Les règles ne typent ni les
+   * dates ni le contenu de `reservations` : une date posée en chaîne
+   * (`createdAt: "x"`) faisait lever `toDate`, et `getSessions` rejetait en
+   * entier, liste et accueil du partage compris, pour tout le monde. Une date
+   * illisible prend donc la valeur de repli, et une réservation sans forme
+   * est écartée (isReservationShape).
+   */
   private convertToSession(doc: QueryDocumentSnapshot<DocumentData>): Session {
     const data = doc.data();
     return {
       ...data,
       id: doc.id,
-      createdAt: data.createdAt?.toDate() || new Date(),
-      dateLimit: data.dateLimit?.toDate() || new Date(),
-      slug: data.slug || "",
-      endedAt: data.endedAt?.toDate() || undefined,
-      updatedAt: data.updatedAt?.toDate() || undefined,
-      hiddenAt: data.hiddenAt?.toDate() || undefined,
-      cycleStartedAt: data.cycleStartedAt?.toDate() || undefined,
-      lastCycleStartedAt: data.lastCycleStartedAt?.toDate() || undefined,
-      lastCycleEndedAt: data.lastCycleEndedAt?.toDate() || undefined,
+      createdAt: toDate(data.createdAt) ?? new Date(),
+      dateLimit: toDate(data.dateLimit) ?? new Date(),
+      slug: typeof data.slug === "string" ? data.slug : "",
+      endedAt: toDate(data.endedAt),
+      updatedAt: toDate(data.updatedAt),
+      hiddenAt: toDate(data.hiddenAt),
+      cycleStartedAt: toDate(data.cycleStartedAt),
+      lastCycleStartedAt: toDate(data.lastCycleStartedAt),
+      lastCycleEndedAt: toDate(data.lastCycleEndedAt),
+      reservations: Array.isArray(data.reservations)
+        ? data.reservations.filter(isReservationShape)
+        : data.reservations,
     } as Session;
   }
 

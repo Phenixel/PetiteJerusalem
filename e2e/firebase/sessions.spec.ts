@@ -3,6 +3,7 @@ import {
   expect,
   createAccount,
   readDoc,
+  seedDoc,
   seedTehilimSession,
   signIn,
   tehilimId,
@@ -110,6 +111,47 @@ test.describe("chaînes de lecture", () => {
     await page.getByRole("button", { name: "Retour à la session" }).click();
     await expect(page.getByRole("heading", { level: 1 })).toContainText(session.name);
     expect((await reservationsOf(session.id)).length).toBe(1);
+  });
+
+  test("une session mal formée ne casse ni la liste ni sa page", async ({ page }) => {
+    // Les règles ne contrôlent que la taille du tableau des réservations et ne
+    // typent pas les dates : un client hostile peut y mettre null, ou une date
+    // en texte. Une seule session de ce genre plantait la liste pour tous.
+    const owner = await createAccount("proprio");
+    const healthy = await seedTehilimSession(owner);
+    const id = uniqueId();
+    const broken = { id: `cassee-${id}`, slug: `chaine-cassee-${id}`, name: `Chaîne cassée ${id}` };
+    await seedDoc("sessions", broken.id, {
+      name: broken.name,
+      type: "Tehilim",
+      description: "Posée telle qu'un client hostile l'écrirait.",
+      dateLimit: new Date(Date.now() + 7 * 24 * 3600 * 1000),
+      createdAt: "pas une date",
+      updatedAt: 1,
+      personId: owner.uid,
+      creatorName: owner.name,
+      slug: broken.slug,
+      guestEmailRequired: false,
+      selectedBooks: ["ספר 1 (Sefer 1)"],
+      reservations: [null, 7, { sans: "texte" }],
+    });
+
+    await gotoApp(page, "/share-reading");
+    await expect(page.getByText(healthy.name).first()).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByText(broken.name).first()).toBeVisible();
+
+    // Sa page s'ouvre, et l'on y réserve encore : les entrées illisibles
+    // restent dans le tableau, la taille seule change, comme le veulent les règles.
+    await gotoApp(page, `/share-reading/session/${broken.slug}`);
+    await expect(page.getByRole("heading", { level: 1 })).toContainText(broken.name);
+    await page.getByLabel("Réserver").first().check();
+    await page.getByRole("button", { name: "Confirmer" }).click();
+    const modal = page.getByRole("dialog").or(page.locator(".modal-overlay")).first();
+    await modal.locator('input[type="text"]').first().fill("Invité tenace");
+    await modal.getByRole("button", { name: "Valider ma réservation" }).click();
+    await expect
+      .poll(async () => ((await readDoc("sessions", broken.id))?.reservations as unknown[]).length)
+      .toBe(4);
   });
 
   test("un compte réserve un psaume, le marque lu, puis annule", async ({ page }) => {

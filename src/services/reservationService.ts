@@ -2,6 +2,7 @@ import type { Session, TextStudy, TextStudyReservation, ReservationRecord } from
 import { db } from "../firebase/firestore";
 import { doc, runTransaction } from "firebase/firestore";
 import { firestoreService } from "./firestoreService";
+import { isReservationShape } from "./reservationShape";
 import { guestService } from "./guestService";
 import { analyticsService } from "./analyticsService";
 import { moderationService } from "./moderationService";
@@ -215,9 +216,17 @@ class ReservationService {
           if (ifMissing) return ifMissing();
           throw new SessionMissingError();
         }
-        const data = sfDoc.data() as { reservations?: ReservationRecord[] };
-        const reservations = Array.isArray(data.reservations) ? data.reservations : [];
-        return change(reservations, (next) => transaction.update(sfDocRef, { reservations: next }));
+        const data = sfDoc.data() as { reservations?: unknown[] };
+        const stored = Array.isArray(data.reservations) ? data.reservations : [];
+        // Une entrée sans forme de réservation (isReservationShape) n'est ni lue
+        // ni retirée : elle est reposée telle quelle, en fin de tableau. Les
+        // règles comptent la taille du tableau (+1, -1, égale) ; l'écarter en
+        // passant changerait le compte et ferait refuser l'écriture.
+        const reservations = stored.filter(isReservationShape);
+        const unreadable = stored.filter((r) => !isReservationShape(r));
+        return change(reservations, (next) =>
+          transaction.update(sfDocRef, { reservations: [...next, ...unreadable] }),
+        );
       });
     // Une transaction à la fois par chaîne, sur cet appareil : la suivante
     // part quand la précédente a fini, réussie ou non.
