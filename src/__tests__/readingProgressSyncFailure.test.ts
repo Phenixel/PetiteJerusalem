@@ -21,17 +21,17 @@ vi.mock("../services/authService", () => ({
   },
 }));
 
-const getPreferencesOrThrow = vi.fn();
+const getPreferencesFromServer = vi.fn();
 const savePreferences = vi.fn<(id: string, prefs: unknown) => Promise<void>>(() =>
   Promise.resolve(),
 );
 
 vi.mock("../services/userPreferencesService", () => ({
   userPreferencesService: {
-    getPreferencesOrThrow: (id: string) => getPreferencesOrThrow(id),
+    getPreferencesFromServer: (id: string) => getPreferencesFromServer(id),
     // Ce que faisait la fusion : un échec de lecture devenait un compte vide.
     getPreferences: (id: string) =>
-      getPreferencesOrThrow(id).catch(() => ({ bookmarks: [], readingPositions: {} })),
+      getPreferencesFromServer(id).catch(() => ({ bookmarks: [], readingPositions: {} })),
     savePreferences: (id: string, prefs: unknown) => savePreferences(id, prefs),
   },
 }));
@@ -59,13 +59,13 @@ async function laisserFiler(): Promise<void> {
 
 beforeEach(() => {
   localStorage.clear();
-  getPreferencesOrThrow.mockReset();
+  getPreferencesFromServer.mockReset();
   savePreferences.mockClear();
 });
 
 describe("fusion des marque-pages quand le compte ne se lit pas", () => {
   it("n'écrit rien au compte", async () => {
-    getPreferencesOrThrow.mockRejectedValue(new Error("injoignable"));
+    getPreferencesFromServer.mockRejectedValue(new Error("injoignable"));
     localStorage.setItem(
       "pj-bookmarks",
       JSON.stringify([{ ...MARQUE_PAGE_DU_COMPTE, id: "104#0#1", textId: "104", at: 20 }]),
@@ -78,13 +78,13 @@ describe("fusion des marque-pages quand le compte ne se lit pas", () => {
   });
 
   it("au marque-page suivant, relit le compte et garde ce qu'il portait", async () => {
-    getPreferencesOrThrow.mockRejectedValueOnce(new Error("injoignable"));
+    getPreferencesFromServer.mockRejectedValueOnce(new Error("injoignable"));
     const progress = await service();
     listener({ id: "u1" });
     await laisserFiler();
 
     // Le serveur répond de nouveau.
-    getPreferencesOrThrow.mockResolvedValue({
+    getPreferencesFromServer.mockResolvedValue({
       bookmarks: [MARQUE_PAGE_DU_COMPTE],
       readingPositions: {},
       deletedBookmarks: {},
@@ -104,7 +104,7 @@ describe("fusion des marque-pages quand le compte ne se lit pas", () => {
   });
 
   it("fusionne et écrit normalement quand le compte se lit", async () => {
-    getPreferencesOrThrow.mockResolvedValue({
+    getPreferencesFromServer.mockResolvedValue({
       bookmarks: [MARQUE_PAGE_DU_COMPTE],
       readingPositions: {},
       deletedBookmarks: {},

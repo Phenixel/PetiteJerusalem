@@ -328,10 +328,12 @@ class ReadingProgressService {
 
   /** Fusionne local ↔ cloud (position la plus récente par texte, union des marque-pages). */
   private async syncWithCloud(userId: string): Promise<void> {
-    // OrThrow : getPreferences rendrait des préférences vides sur un échec de
-    // lecture, et la fusion pousserait alors l'état local seul par-dessus le
-    // compte. L'échec remonte, rien n'est écrit.
-    const prefs = await userPreferencesService.getPreferencesOrThrow(userId);
+    // Du serveur, ou rien : getPreferences rendrait des préférences vides sur
+    // un échec de lecture, et getPreferencesOrThrow la copie locale d'hier
+    // (hors ligne, réseau capricieux). Dans les deux cas la fusion pousserait
+    // par-dessus le compte un état qui ignore ce qui a été posé ailleurs
+    // depuis. L'échec remonte, rien n'est écrit, la fusion sera retentée.
+    const prefs = await userPreferencesService.getPreferencesFromServer(userId);
     const local = this.positions();
     const cloud = prefs.readingPositions ?? {};
     const merged: Record<string, ReadingPosition> = { ...cloud };
