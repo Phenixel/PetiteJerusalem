@@ -27,11 +27,8 @@ const props = defineProps<{
   textStudiesMap: Map<string, TextStudy>;
 }>();
 
-const myReservations = (session: Session): TextStudyReservation[] => {
-  if (!props.currentUser) return [];
-  const user = props.currentUser;
-  return (session.reservations ?? []).filter((r) => reservationService.isOwnReservation(r, user));
-};
+const myReservations = (session: Session): TextStudyReservation[] =>
+  reservationService.ownActiveReservations(session.reservations, props.currentUser);
 
 const readCount = (session: Session) => {
   const mine = myReservations(session);
@@ -78,10 +75,21 @@ function toggleExpand(id: string) {
   expandedIds.value = next;
 }
 
-/** Jours restants avant la date limite (arrondi supérieur, 0 = aujourd'hui). */
+/**
+ * Jours restants avant la date limite, comptés en jours du calendrier :
+ * 0 le jour même, 1 la veille. L'arrondi supérieur des heures restantes
+ * donnait « J-1 » le jour même et « J-2 » la veille.
+ */
 const daysLeft = (session: Session): number => {
   const limit = endOfLocalDay(new Date(session.dateLimit));
-  return Math.max(0, Math.ceil((limit.getTime() - Date.now()) / (24 * 3600 * 1000)));
+  const today = new Date();
+  const limitDay = new Date(limit.getFullYear(), limit.getMonth(), limit.getDate());
+  const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  // Math.round : un changement d'heure fait une journée de 23 ou 25 heures.
+  return Math.max(
+    0,
+    Math.round((limitDay.getTime() - startOfToday.getTime()) / (24 * 3600 * 1000)),
+  );
 };
 
 const getTextStudyName = (textStudyId: string): string => {
@@ -203,7 +211,7 @@ const goToSession = (session: Session) => {
                     "
                   >
                     <AppIcon name="hourglass" :size="11" />
-                    {{ t("shareReading.daysLeftChip", { count: daysLeft(session) }) }}
+                    {{ t("shareReading.daysLeftChip", daysLeft(session)) }}
                   </span>
                 </span>
               </span>

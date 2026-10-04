@@ -24,6 +24,26 @@ export interface RoundReservation {
 export const PERPETUAL_HOLD_MS = 24 * 60 * 60 * 1000;
 
 /**
+ * L'identifiant du premier Tehilim du catalogue (src/datas/textStudies.json) :
+ * les places de la chaîne sont les textes `PERPETUAL_FIRST_TEXT_ID` à
+ * `PERPETUAL_FIRST_TEXT_ID + slotCount - 1`. perpetualChain.test.ts vérifie
+ * qu'il suit le catalogue.
+ */
+export const PERPETUAL_FIRST_TEXT_ID = 103;
+
+/** La réservation porte-t-elle une place de la chaîne ? */
+function isChainSlot(textStudyId: unknown, slotCount: number): textStudyId is string {
+  if (typeof textStudyId !== "string") return false;
+  const id = Number(textStudyId);
+  return (
+    String(id) === textStudyId &&
+    Number.isInteger(id) &&
+    id >= PERPETUAL_FIRST_TEXT_ID &&
+    id < PERPETUAL_FIRST_TEXT_ID + slotCount
+  );
+}
+
+/**
  * Les réservations de la chaîne, chacune avec son échéance, ou null si
  * aucune n'en manque. Une réservation non lue et sans échéance en reçoit une,
  * à `PERPETUAL_HOLD_MS` de maintenant ; les autres ne bougent pas : un tirage
@@ -36,16 +56,25 @@ export const PERPETUAL_HOLD_MS = 24 * 60 * 60 * 1000;
  */
 export function withHoldExpiry(reservations: unknown, now: Date): unknown[] | null {
   if (!Array.isArray(reservations)) return null;
-  const expiresAt = new Date(now.getTime() + PERPETUAL_HOLD_MS).toISOString();
+  const latest = now.getTime() + PERPETUAL_HOLD_MS;
+  const expiresAt = new Date(latest).toISOString();
   let stamped = false;
   const next = (reservations as (RoundReservation | null)[]).map((r) => {
-    if (!r || typeof r !== "object" || r.isCompleted === true || r.expiresAt !== undefined) {
-      return r;
-    }
+    if (!r || typeof r !== "object" || r.isCompleted === true) return r;
+    // Une échéance plus lointaine que la règle (posée à la main, ou
+    // illisible) tiendrait la place sans fin : elle revient à un jour.
+    if (r.expiresAt !== undefined && !holdsTooLong(r.expiresAt, latest)) return r;
     stamped = true;
     return { ...r, expiresAt };
   });
   return stamped ? next : null;
+}
+
+/** L'échéance dépasse-t-elle `latest`, ou ne se lit-elle pas comme une date ? */
+function holdsTooLong(expiresAt: unknown, latest: number): boolean {
+  if (typeof expiresAt !== "string") return true;
+  const at = Date.parse(expiresAt);
+  return Number.isNaN(at) || at > latest;
 }
 
 /**
@@ -62,7 +91,10 @@ export function isRoundComplete(reservations: unknown, slotCount: unknown): bool
   }
   const read = new Set<string>();
   for (const r of reservations as RoundReservation[]) {
-    if (r && r.isCompleted === true && typeof r.textStudyId === "string") {
+    // Seules les places de la chaîne comptent : les règles laissent chacun
+    // ajouter des réservations, et cent cinquante identifiants inventés,
+    // marqués lus, finissaient le tour en deux écritures.
+    if (r && r.isCompleted === true && isChainSlot(r.textStudyId, slotCount)) {
       read.add(r.textStudyId);
     }
   }

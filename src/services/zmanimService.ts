@@ -1152,6 +1152,16 @@ export function birkatHalevanaWindow(hd: HDate): { start: Date; end: Date } {
 }
 
 /**
+ * Le premier jour d'Av dont la nuit d'ouverture suit la fin du jeûne. Le
+ * 9 Av tombe-t-il un Chabbat, le jeûne est reporté au dimanche 10 : la nuit
+ * qui ouvre le 10 est alors celle du jeûne, et la bénédiction attend celle du
+ * 11 (5789, 5792, 5796, 5799...).
+ */
+function firstNightAfterTishaBeAv(year: number): number {
+  return new HDate(9, months.AV, year).getDay() === 6 ? 11 : 10;
+}
+
+/**
  * Dit-on la bénédiction de la lune (Birkat Halevana) la nuit qui ouvre ce
  * jour hébraïque-là ?
  *
@@ -1163,10 +1173,13 @@ export function birkatHalevanaWindow(hd: HDate): { start: Date; end: Date } {
  * écoulés.
  *
  * Deux reports d'usage sont conservés, pour la dire dans la joie : en Av on
- * attend la sortie de Tich'a beAv, en Tichri celle de Kippour.
+ * attend la sortie de Tich'a beAv (reporté au 10 quand le 9 est un Chabbat),
+ * en Tichri celle de Kippour.
  */
 export function saysBirkatHalevana(place: ZmanimPlace, hd: HDate): boolean {
-  if (hd.getMonth() === months.AV && hd.getDate() < 10) return false;
+  if (hd.getMonth() === months.AV && hd.getDate() < firstNightAfterTishaBeAv(hd.getFullYear())) {
+    return false;
+  }
   if (hd.getMonth() === months.TISHREI && hd.getDate() < 11) return false;
   const night = nightfallOf(place, hd.prev());
   if (!night) return false; // Pas de nuit ici ce jour-là : rien à annoncer.

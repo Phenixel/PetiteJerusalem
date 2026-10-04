@@ -3,6 +3,7 @@ import {
   type User as FirebaseUser,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
+  sendPasswordResetEmail,
   signInWithPopup,
   signInWithCredential,
   reauthenticateWithPopup,
@@ -17,7 +18,13 @@ import {
 } from "firebase/auth";
 import { FirebaseAuthentication } from "@capacitor-firebase/authentication";
 import { auth, googleAuthProvider } from "../firebase/core";
-import { AuthFlowError, RecentLoginRequiredError, isAuthCancellation } from "./authErrors";
+import {
+  AuthFlowError,
+  RecentLoginRequiredError,
+  authErrorCode,
+  isAuthCancellation,
+  isPasswordResetSilent,
+} from "./authErrors";
 import { appPlatform, isNativeApp } from "../composables/useNativeApp";
 import type { User } from "../models/models";
 import { clearPreferencesCache, userPreferencesService } from "./userPreferencesService";
@@ -197,6 +204,27 @@ class AuthService {
       name: cred.user.displayName || cred.user.email || "",
       email: cred.user.email || email,
     };
+  }
+
+  /**
+   * L'email de réinitialisation du mot de passe, par Firebase Auth. Comme la
+   * connexion par email, il passe par le SDK web, même dans l'app native
+   * (skipNativeAuth) ; le lien mène à la page d'action de Firebase, que l'app
+   * ne s'approprie pas (voir scripts/lib/app-links.mjs, `/__/auth/`).
+   *
+   * `languageCode` : la langue de l'interface, pour que l'email parte dans la
+   * même. Une adresse sans compte ne se distingue pas d'une autre : avec la
+   * protection contre l'énumération, Firebase ne le dit pas, et sans elle, son
+   * `auth/user-not-found` est tu ici (isPasswordResetSilent).
+   */
+  async sendPasswordReset(email: string, languageCode: string): Promise<void> {
+    auth.languageCode = languageCode;
+    try {
+      await sendPasswordResetEmail(auth, email);
+    } catch (error) {
+      if (isPasswordResetSilent(authErrorCode(error))) return;
+      throw error;
+    }
   }
 
   async signInWithGooglePopup(): Promise<User> {

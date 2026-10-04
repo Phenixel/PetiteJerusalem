@@ -37,7 +37,12 @@ class SerieService {
 
   async getSerie(serieId: string): Promise<Serie | null> {
     const series = await this.getAllSeries();
-    return series.find((s) => s.id === serieId) ?? null;
+    const known = series.find((s) => s.id === serieId);
+    if (known) return known;
+    // Créée depuis le chargement de la liste (le cache tient une heure) : on
+    // relit une fois avant de la dire introuvable.
+    this.series.invalidate();
+    return (await this.getAllSeries()).find((s) => s.id === serieId) ?? null;
   }
 
   invalidateCache(): void {

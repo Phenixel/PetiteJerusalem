@@ -329,6 +329,15 @@ const he: LocaleMessages = {
     termsAnd: "ול",
     privacyLink: "מדיניות הפרטיות",
     lastUsed: "שימוש אחרון",
+    reset: {
+      link: "שכחתם את הסיסמה?",
+      title: "שכחתי סיסמה",
+      intro: "הזינו את כתובת האימייל של החשבון: נשלח אליה קישור לבחירת סיסמה חדשה.",
+      send: "שליחת הקישור",
+      sent: "אם קיים חשבון עם הכתובת {email}, נשלח אליה כעת אימייל עם קישור לבחירת סיסמה חדשה. כדאי לבדוק גם בתיקיית הספאם.",
+      back: "חזרה להתחברות",
+      error: "לא ניתן היה לשלוח את האימייל. נסו שוב בעוד רגע.",
+    },
     help: {
       signup: "יצירת חשבון עם כתובת זו",
       login: "התחברות עם כתובת זו",
@@ -907,7 +916,7 @@ const he: LocaleMessages = {
     allSessions: "כל הסשנים",
     readCount: "{done}/{total} נקראו",
     allRead: "הכול נקרא",
-    daysLeftChip: "עוד {count} ימים",
+    daysLeftChip: "היום האחרון | עוד יום אחד | עוד {count} ימים",
     showFinished: "הצגת סשנים שהסתיימו ({count})",
     hideFinished: "הסתרת סשנים שהסתיימו",
     openSession: "פתיחת הסשן",
@@ -1823,6 +1832,8 @@ const he: LocaleMessages = {
     reportTitle: "דיווח על מפגש זה",
     reportSubtitle:
       "ספרו לנו מה הבעיה. המפגש ייבדק על ידי צוות הניהול, ויוסתר אוטומטית לאחר 3 דיווחים.",
+    reportSubtitlePerpetual:
+      "ספרו לנו איזה שם בעייתי. צוות הניהול יבדוק אותו ויסיר אותו מהרשימה במידת הצורך; תוכלו לדווח גם על שם אחר.",
     reasonLabel: "סיבת הדיווח",
     reasons: {
       inappropriate: "תוכן לא הולם",
@@ -1832,6 +1843,7 @@ const he: LocaleMessages = {
     },
     detailsLabel: "פרטים",
     detailsPlaceholder: "תארו את הבעיה…",
+    detailsPlaceholderPerpetual: "השם שעליו אתם מדווחים, ומה הבעיה…",
     reporting: "שולח…",
     reportSuccess: "תודה, הדיווח שלך נשלח.",
     reportError: "הדיווח נכשל. אנא נסו שוב.",

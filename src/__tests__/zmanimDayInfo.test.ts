@@ -298,6 +298,15 @@ describe("saysBirkatHalevana", () => {
     expect(says(2026, 9, 22)).toBe(true); // 11 Tichri, sortie de Kippour
   });
 
+  it("attend la sortie du jeûne reporté quand le 9 Av est un Chabbat", () => {
+    // 5789 : le 9 Av tombe le samedi 21 juillet 2029, le jeûne est reporté au
+    // dimanche 10 Av. La nuit qui ouvre le 10 est celle du jeûne (il commence
+    // à la chkia du Chabbat) ; la bénédiction attend celle qui ouvre le 11.
+    expect(new HDate(9, "Av", 5789).getDay()).toBe(6);
+    expect(says(2029, 7, 22)).toBe(false); // 10 Av, le jeûne reporté
+    expect(says(2029, 7, 23)).toBe(true); // 11 Av, sortie du jeûne
+  });
+
   it("donne la date limite du mois", () => {
     // Eloul 5786 : la dernière nuit est celle qui ouvre le 15.
     expect(birkatHalevanaLastDay(DEFAULT_PLACE, hd(2026, 8, 21)).getDate()).toBe(15);

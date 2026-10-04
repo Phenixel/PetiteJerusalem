@@ -37,7 +37,11 @@ import { tipsOffered } from "../../composables/useFeatureTips";
 import type { IconName } from "../../components/icons/registry";
 import { revealFromOrigin } from "../../composables/useRevealOrigin";
 import { dateTimeFormat } from "../../services/intlCache";
-import { findFestivalBySlug, type SeoFestival } from "../../content/zmanimFestivals";
+import {
+  festivalEntryKey,
+  findFestivalBySlug,
+  type SeoFestival,
+} from "../../content/zmanimFestivals";
 import { festivalLinks } from "../../content/festivalLinks";
 import { isSectionPath, localeOfPath, sectionPath, type SeoLocale } from "../../content/seoLocales";
 import AppIcon from "../../components/icons/AppIcon.vue";
@@ -289,19 +293,11 @@ const router = useRouter();
 /** La fête demandée par l'URL, ou null sur /calendrier. */
 const festival = ref<SeoFestival | null>(null);
 
-/** hebcal-fr écrit « H̲anoukah » : la marque diacritique ne compte pas. */
-const cleanName = (name: string): string => name.replace(/[\u0331\u0332]/g, "");
-
 /** L'entrée mise en avant : la prochaine occurrence de la fête demandée. */
 const festivalKey = computed(() => {
   const wanted = festival.value;
   if (!wanted) return null;
-  const found = entries.value.find(
-    (entry) =>
-      cleanName(entry.name) === wanted.names[calendarLocale.value] &&
-      entry.last.abs() >= today.value,
-  );
-  return found?.key ?? null;
+  return festivalEntryKey(entries.value, wanted, calendarLocale.value, today.value);
 });
 
 /**
@@ -517,10 +513,7 @@ onMounted(() => {
         :key="row.key"
         :data-entry="row.key"
         class="card p-4"
-        :class="[
-          isPastRow(row) ? 'opacity-55' : '',
-          surface(row.key),
-        ]"
+        :class="[isPastRow(row) ? 'opacity-55' : '', surface(row.key)]"
       >
         <!-- Une fête de l'année : son nom, ses dates, et ses heures quand le
              travail y est interdit. Sur un téléphone, les heures se rangent

@@ -559,6 +559,15 @@ garde le sien, qui lui convient.
 Le test `nativeProfile.test.ts` tient la page : ce qui paraît avec et sans
 compte, les sous-pages où mène chaque ligne, l'état porté au bout.
 
+### Ce qui ne se modifie pas n'a pas l'air d'un champ
+
+Un cadre de champ (`.field`) promet qu'on peut écrire dedans. Dans le profil,
+l'adresse email et l'identifiant du compte en portaient un sans pouvoir se
+modifier, et ils étaient touchés à répétition (audit PostHog d'octobre 2026,
+2.7). Ils se lisent désormais comme un texte, sous leur étiquette ; seul le
+nom affiché garde son champ, puisqu'il se modifie. L'identifiant se
+sélectionne d'un appui, pour qui doit le copier en écrivant à l'équipe.
+
 ### Un geste qui surprend doit pouvoir se couper
 
 Le double appui qui lance le défilement automatique se fait tout seul : deux
@@ -781,6 +790,11 @@ un leilouy nichmat, la date du décès se choisit comme une date du calendrier
 la choisisse, ce que la date change : sans elle, le nom est lu trente jours ;
 avec elle, il revient tous les ans, la semaine qui précède l'anniversaire.
 
+« Signaler », sur la chaîne, vise un nom : le bouton ne s'éteint pas après
+un premier signalement, et la fenêtre demande le nom en cause au lieu de
+promettre un masquage au troisième. La case « Bloquer ce créateur » n'y paraît
+pas : le créateur est l'équipe, la bloquer effaçait la chaîne de l'appareil.
+
 Dans le lecteur, « Vous lisez pour » garde les deux groupes de la page de la
 chaîne, chacun avec son dessin : on ne dit pas de la même façon une refoua
 chelema et un leilouy nichmat (`PrayerNamesLine`). Retirer un nom pose la
@@ -850,6 +864,15 @@ phrase : penser à la partager autour de soi, pour que d'autres y participent.
 Le signal passe par l'adresse (`?partager=1`), retiré aussitôt : un
 rechargement ne rouvre pas la fenêtre.
 
+### Les jours restants se comptent sur le calendrier
+
+La pastille de « Je participe » compte les jours du calendrier jusqu'à la
+date limite, pas les heures arrondies : « J-1 » la veille, et le jour même
+**« Jour J »** (« Last day », « היום האחרון ») plutôt qu'un « J-0 » qui se lit
+mal. Chaque langue a ses trois formes, l'hébreu accordant le singulier
+(« עוד יום אחד »). Tenu par `src/__tests__/myParticipatedSessions.test.ts`
+(« Je participe : jours restants »).
+
 ### L'écran de connexion dit quoi faire
 
 Un échec ne montre jamais l'erreur brute de Firebase (« Firebase: Error
@@ -864,6 +887,17 @@ et le message brut part seulement vers PostHog, où il sert. Sous la phrase,
 - l'adresse déjà inscrite : « Me connecter avec cette adresse » ;
 - la dernière connexion de l'appareil s'est faite avec Google ou Apple : la
   phrase le rappelle, et la sortie est ce bouton-là.
+
+Un mot de passe perdu a sa sortie à lui, toujours là sous le champ du mot de
+passe : **« Mot de passe oublié ? »**, un cadenas et son nom. Sans elle,
+l'aide tournait en rond : le mot de passe refusé proposait de créer le compte,
+l'adresse déjà inscrite proposait de s'y connecter. Elle garde l'adresse
+saisie, efface le mot de passe, et n'a qu'un champ ; l'email part par Firebase
+Auth (`sendPasswordResetEmail`, dans la langue de l'écran), et « Retour à la
+connexion » ramène au formulaire. La réponse est **la même que l'adresse ait
+un compte ou non** (« Si un compte existe avec l'adresse… ») : l'écran ne sert
+pas à vérifier qui est inscrit. Tenu par
+`src/__tests__/loginPasswordReset.test.ts` et `e2e/firebase/auth.spec.ts`.
 
 La dernière méthode employée sur l'appareil (`services/lastAuthMethod.ts`)
 porte aussi une pastille, **« Dernière utilisation »**, posée sur le bord haut
@@ -1315,7 +1349,10 @@ bandeau publie sa hauteur réelle dans `--navbar-height`, dont dépendent les
 barres collantes des pages.
 
 L'app native n'a pas de bandeau : la navigation y passe par la barre du bas
-(`BottomTabBar`).
+(`BottomTabBar`). Comme sur iOS et Android, toucher l'onglet de la page où
+l'on est la remonte en haut (en douceur, sauf si le système demande moins
+d'animations) ; depuis une sous-page, il ramène à la page de l'onglet. Tenu
+par `src/__tests__/bottomTabBar.test.ts`.
 
 ### Le haut de l'app n'a pas de bord
 

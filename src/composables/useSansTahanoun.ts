@@ -1,4 +1,4 @@
-import { computed, readonly, ref } from "vue";
+import { customRef, ref, type Ref } from "vue";
 import { analyticsService } from "../services/analyticsService";
 
 /**
@@ -43,8 +43,22 @@ export function isSansTahanoun(at: Date = new Date()): boolean {
   return heldOn.value !== null && heldOn.value === dayKey(at);
 }
 
-/** L'état de l'interrupteur, pour le menu qui le porte. */
-export const sansTahanoun = readonly(computed(() => isSansTahanoun()));
+/**
+ * L'état de l'interrupteur, pour le menu qui le porte. Relu à chaque lecture,
+ * et non gardé comme un `computed` : celui-ci ne suivait que `heldOn`, pas
+ * l'heure. L'app restée ouverte d'un jour à l'autre montrait l'interrupteur
+ * encore allumé le lendemain, et chaque appui, qui demandait de l'éteindre,
+ * était ignoré puisqu'il l'était déjà.
+ */
+export const sansTahanoun: Readonly<Ref<boolean>> = customRef((track) => ({
+  get() {
+    track();
+    return isSansTahanoun();
+  },
+  set() {
+    // Lecture seule : setSansTahanoun le pose.
+  },
+}));
 
 export function setSansTahanoun(value: boolean): void {
   if (value === isSansTahanoun()) return;

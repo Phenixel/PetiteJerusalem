@@ -26,6 +26,7 @@ import {
 } from "./zmanimService";
 import { useHebrewOccasions } from "../composables/useHebrewOccasions";
 import { useZmanimOpinion } from "../composables/useZmanimOpinion";
+import { useCandleLighting } from "../composables/useCandleLighting";
 import {
   nextOccurrence,
   occasionDateIn,
@@ -367,6 +368,11 @@ class ZmanReminderService {
     // doivent repartir à la nouvelle heure (voir zmanimOpinions).
     const { opinion } = useZmanimOpinion();
     watch(opinion, () => void this.refresh());
+
+    // L'écart d'allumage aussi : l'entrée du Chabbat et des fêtes, et donc
+    // leur rappel, se lisent sur lui (18, 20, 30 ou 40 minutes avant la chkia).
+    const { minutes: candleMinutes } = useCandleLighting();
+    watch(candleMinutes, () => void this.refresh());
 
     const { place } = useZmanimLocation();
     watch(place, () => void this.refresh());

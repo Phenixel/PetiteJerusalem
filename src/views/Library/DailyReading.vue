@@ -467,6 +467,9 @@ async function loadPreferences(initial = false, resync = false) {
   }
 }
 
+/** La page a-t-elle été quittée ? Voir la fin de onMounted. */
+let unmounted = false;
+
 onMounted(async () => {
   let loaded = false;
   try {
@@ -492,13 +495,21 @@ onMounted(async () => {
       done_count: completedCount.value,
     });
   }
+  // Page quittée pendant le chargement : onUnmounted est déjà passé, et
+  // l'écouteur posé maintenant ne serait jamais retiré. Une copie fuyait à
+  // chaque visite, et au retour à l'écran après minuit, la page démontée
+  // rechargeait les préférences et réécrivait la remise à zéro.
+  if (unmounted) return;
   // Fichiers téléchargés dans un format antérieur : remis à jour en tâche de
   // fond. Aucun nouveau livre n'est téléchargé sans l'accord de l'utilisateur.
   void refreshStaleDownloads();
   document.addEventListener("visibilitychange", onVisibilityChange);
 });
 
-onUnmounted(() => document.removeEventListener("visibilitychange", onVisibilityChange));
+onUnmounted(() => {
+  unmounted = true;
+  document.removeEventListener("visibilitychange", onVisibilityChange);
+});
 
 /**
  * Le serveur a toujours raison : au retour de la connexion, on se réaligne sur
