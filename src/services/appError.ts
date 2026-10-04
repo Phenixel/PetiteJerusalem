@@ -1,3 +1,5 @@
+import type { PrayerName } from "../models/models";
+
 /**
  * Erreurs métier des services de session et de réservation.
  *
@@ -96,6 +98,36 @@ export class PrayerNameIncompleteError extends AppError {
   constructor() {
     super("prayerNameIncomplete", "Le prénom et celui de la mère sont obligatoires");
     this.name = "PrayerNameIncompleteError";
+  }
+}
+
+/**
+ * Un nom de la chaîne perpétuelle écrit, corrigé, prolongé ou retiré sans
+ * connexion. Le cache persistant de Firestore ne rendrait pas la main : la
+ * fenêtre resterait figée, et l'écriture partirait seule au retour du réseau,
+ * d'où un doublon si l'on réessaie entre-temps. On refuse donc tout de suite
+ * (voir OfflineWriteError, userPreferencesService).
+ */
+export class PrayerNameOfflineError extends AppError {
+  constructor() {
+    super("prayerNameOffline", "Hors ligne : le nom n'a pas été enregistré");
+    this.name = "PrayerNameOfflineError";
+  }
+}
+
+/**
+ * Un nom de la chaîne perpétuelle écrit sans que le serveur l'ait confirmé à
+ * temps : l'appareil se croit en ligne, mais le réseau ne répond pas.
+ * L'écriture reste dans la file de Firestore et partira seule au retour du
+ * réseau ; la fenêtre rend la main plutôt que d'attendre sans fin.
+ */
+export class PrayerNamePendingError extends AppError {
+  /** Pour un ajout : le nom, quand le serveur l'aura enfin reçu. */
+  landing?: Promise<PrayerName>;
+
+  constructor() {
+    super("prayerNamePending", "Le serveur n'a pas confirmé l'écriture du nom");
+    this.name = "PrayerNamePendingError";
   }
 }
 

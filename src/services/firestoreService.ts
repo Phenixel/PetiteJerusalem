@@ -43,6 +43,8 @@ function toDate(value: unknown): Date | undefined {
 class FirestoreService {
   private sessionsCache: { data: Session[]; fetchedAt: number } | null = null;
   private sessionsCachePromise: Promise<Session[]> | null = null;
+  /** Avance à chaque invalidation : voir `getSessions`. */
+  private sessionsCacheGeneration = 0;
 
   // === MÉTHODES UTILITAIRES ===
 
@@ -84,6 +86,7 @@ class FirestoreService {
   invalidateSessionsCache(): void {
     this.sessionsCache = null;
     this.sessionsCachePromise = null;
+    this.sessionsCacheGeneration++;
   }
 
   // === MÉTHODES SESSION ===
@@ -109,19 +112,40 @@ class FirestoreService {
     if (this.sessionsCachePromise) {
       return this.sessionsCachePromise;
     }
+    // Une lecture partie avant une écriture rapporte l'état d'avant : elle
+    // ne remplit le cache (ni n'efface la lecture suivante) que si aucune
+    // invalidation n'est passée entre-temps.
+    const generation = this.sessionsCacheGeneration;
     this.sessionsCachePromise = (async () => {
       try {
         const querySnapshot = await getDocs(collection(db, "sessions"));
         const sessions = querySnapshot.docs.map((doc) => this.convertToSession(doc));
-        this.sessionsCache = { data: sessions, fetchedAt: Date.now() };
+        if (generation === this.sessionsCacheGeneration) {
+          this.sessionsCache = { data: sessions, fetchedAt: Date.now() };
+        }
         return sessions;
       } catch (error) {
         this.handleFirestoreError(error, "récupération des sessions");
       } finally {
-        this.sessionsCachePromise = null;
+        if (generation === this.sessionsCacheGeneration) this.sessionsCachePromise = null;
       }
     })();
     return this.sessionsCachePromise;
+  }
+
+  /**
+   * Les sessions marquées perpétuelles (une seule en pratique), sans
+   * télécharger toute la collection et ses réservations.
+   */
+  async getPerpetualSessions(): Promise<Session[]> {
+    try {
+      const snapshot = await getDocs(
+        query(collection(db, "sessions"), where("perpetual", "==", true)),
+      );
+      return snapshot.docs.map((doc) => this.convertToSession(doc));
+    } catch (error) {
+      this.handleFirestoreError(error, "récupération de la chaîne perpétuelle");
+    }
   }
 
   async getSessionById(sessionId: string): Promise<Session | null> {
@@ -142,10 +166,22 @@ class FirestoreService {
     try {
       const q = query(collection(db, "sessions"), where("slug", "==", slug));
       const querySnapshot = await getDocs(q);
-      if (!querySnapshot.empty) {
-        return this.convertToSession(querySnapshot.docs[0]);
-      }
-      return null;
+      if (querySnapshot.empty) return null;
+      // Rien n'empêche une session d'en reprendre le slug d'une autre (les
+      // règles ne voient pas les autres documents) : le premier résultat
+      // venu, dans l'ordre des identifiants, pouvait alors capter ses liens
+      // de partage, ceux de la chaîne perpétuelle compris. Le lien reste à
+      // la chaîne perpétuelle, sinon à la session la plus ancienne. C'est le
+      // drapeau `perpetual` qui désigne la chaîne, réservé à l'admin par les
+      // règles ; un identifiant, lui, se choisit à la création, et une copie
+      // nommée comme le slug aurait pris le lien de n'importe quelle session.
+      const sessions = querySnapshot.docs.map((d) => this.convertToSession(d));
+      return (
+        sessions.find((session) => session.perpetual === true) ??
+        sessions.reduce((oldest, session) =>
+          session.createdAt.getTime() < oldest.createdAt.getTime() ? session : oldest,
+        )
+      );
     } catch (error) {
       this.handleFirestoreError(error, "récupération de la session par slug");
     }

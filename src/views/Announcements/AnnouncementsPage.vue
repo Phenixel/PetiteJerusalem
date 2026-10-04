@@ -5,7 +5,7 @@ import AppIcon from "../../components/icons/AppIcon.vue";
 import AnnouncementItem from "../../components/announcements/AnnouncementItem.vue";
 import AnnouncementsPushPrompt from "../../components/announcements/AnnouncementsPushPrompt.vue";
 import { useAnnouncements } from "../../composables/useAnnouncements";
-import { isNew } from "../../services/announcements";
+import { unreadAnnouncements } from "../../services/announcements";
 import { analyticsService } from "../../services/analyticsService";
 import { seoService } from "../../services/seoService";
 import { SITE_URL } from "../../config/site";
@@ -20,11 +20,23 @@ import { SITE_URL } from "../../config/site";
  * l'arrivée, sinon elles s'éteindraient à l'instant où on vient les lire.
  */
 const { t } = useI18n();
-const { items, status, seenAt, load, markAllSeen } = useAnnouncements();
+const { items, status, seenAt, seenVersion, installed, load, markAllSeen } = useAnnouncements();
 
 const seenBefore = ref(seenAt.value);
+const seenVersionBefore = ref(seenVersion.value);
+// Les mêmes que l'accueil : une note de version pas encore installée n'est
+// pas « Nouveau » (elle ne le sera qu'une fois la version là).
 const newIds = computed(
-  () => new Set(items.value.filter((a) => isNew(a, seenBefore.value)).map((a) => a.id)),
+  () =>
+    new Set(
+      unreadAnnouncements(
+        items.value,
+        seenBefore.value,
+        installed.value,
+        Date.now(),
+        seenVersionBefore.value,
+      ).map((a) => a.id),
+    ),
 );
 
 onMounted(async () => {

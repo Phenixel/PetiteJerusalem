@@ -46,6 +46,11 @@ const router = createRouter({
         stale() ? false : savedPosition,
       );
     }
+    // Arrivée sur un verset (?verset=N : reprise, marque-page, lien partagé) :
+    // le lecteur s'y place lui-même, une fois le chapitre rendu. Remettre en
+    // haut ici annulait son défilement quand le chapitre était déjà chargé
+    // (un autre chapitre du même texte), et le verset restait hors de l'écran.
+    if (to.query.verset !== undefined) return false;
     return { top: 0 };
   },
 });

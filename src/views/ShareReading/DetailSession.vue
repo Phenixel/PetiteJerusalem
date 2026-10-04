@@ -33,7 +33,7 @@ import PrayerNamesCard from "./detailSession/PrayerNamesCard.vue";
 // ne se charge qu'à la première ouverture.
 const PrayerNameModal = defineAsyncComponent(() => import("../../components/PrayerNameModal.vue"));
 import { prayerNameService } from "../../services/prayerNameService";
-import { isPerpetual as isPerpetualSession } from "../../services/perpetualChain";
+import { isPerpetual as isPerpetualSession, waitForNextRound } from "../../services/perpetualChain";
 import { EnumTypeTextStudy } from "../../models/typeTextStudy";
 import { isOffline } from "../../services/userPreferencesService";
 import { useToast } from "../../composables/useToast";
@@ -289,8 +289,8 @@ const loadSessionData = async () => {
     textStudies.value = sessionService.getSessionTextStudies(sessionData);
     session.value = sessionData;
 
-    hasReported.value = moderationService.hasReportedSession(sessionData.id);
-    isCreatorBlocked.value = moderationService.isCreatorBlocked(sessionData.personId);
+    hasReported.value = moderationService.isReportLocked(sessionData);
+    isCreatorBlocked.value = moderationService.isBlockedForViewer(sessionData);
   } catch (err) {
     console.error("Erreur lors du chargement des données:", err);
     // Une chaîne déjà affichée reste à l'écran (la liste garde ses textes
@@ -633,8 +633,11 @@ const onPrayerNameRemoved = (id: string) => {
 };
 
 /**
- * Tout est lu : la Cloud Function remet la chaîne à zéro dans la seconde. La
- * page le dit, puis se recharge une fois pour montrer le tour suivant.
+ * Tout est lu : la Cloud Function remet la chaîne à zéro, dans la seconde
+ * d'habitude, en quelques secondes après un démarrage à froid. La page le
+ * dit, puis relit la chaîne jusqu'à voir le tour suivant, par quelques essais
+ * espacés et bornés (waitForNextRound). L'attente se coupe quand on quitte la
+ * page ou la chaîne, et se réarme au tour d'après.
  */
 const isRoundDone = computed(
   () =>
@@ -642,11 +645,24 @@ const isRoundDone = computed(
     progressStats.value.total > 0 &&
     progressStats.value.read >= progressStats.value.total,
 );
-let hasReloadedAfterRound = false;
+let nextRoundWait: AbortController | null = null;
+const stopWaitingForNextRound = () => {
+  nextRoundWait?.abort();
+  nextRoundWait = null;
+};
 watch(isRoundDone, (done) => {
-  if (!done || hasReloadedAfterRound) return;
-  hasReloadedAfterRound = true;
-  setTimeout(() => void loadSessionData(), 5000);
+  const current = session.value;
+  if (!done || !current || nextRoundWait) return;
+  const wait = new AbortController();
+  nextRoundWait = wait;
+  void waitForNextRound(current, () => sessionService.getSessionById(current.id), {
+    signal: wait.signal,
+  }).then((latest) => {
+    if (nextRoundWait === wait) nextRoundWait = null;
+    if (!latest || wait.signal.aborted || session.value?.id !== latest.id) return;
+    if (!Array.isArray(latest.reservations)) latest.reservations = [];
+    session.value = latest;
+  });
 });
 
 // --- Tirage aléatoire (sessions Tehilim uniquement) ---
@@ -860,6 +876,7 @@ onMounted(async () => {
 
 onUnmounted(() => {
   unsubscribeAuth?.();
+  stopWaitingForNextRound();
 });
 
 // Même composant réutilisé d'une chaîne à l'autre (lien « Mes sessions »,
@@ -869,6 +886,7 @@ watch(
   () => route.params.slug,
   (slug) => {
     if (!slug || slug === session.value?.slug || slug === session.value?.id) return;
+    stopWaitingForNextRound();
     selectedItems.value.clear();
     prayerNames.value = [];
     listedNames.value = [];
@@ -1208,7 +1226,7 @@ watch(session, (s) => applySessionSeo(s));
     <ReportSessionModal
       v-model:show="showReportModal"
       :session="session"
-      @reported="hasReported = true"
+      @reported="hasReported = !isPerpetual"
       @creator-blocked="isCreatorBlocked = true"
     />
   </main>

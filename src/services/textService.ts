@@ -990,14 +990,45 @@ export function parseContent(
   }
 }
 
-export async function loadText(textStudy: TextStudyJsonEntry): Promise<TextContent> {
-  // Copie locale (téléchargement hors ligne) d'abord, réseau sinon.
-  const res = await fetchTextResponse(resolveFilePath(textStudy));
-  if (!res.ok) {
-    if (res.status === 404) throw new MissingTextFileError();
-    throw new Error(`Texte non disponible (${res.status})`);
+/**
+ * Les deux derniers fichiers lus, déjà parsés. Les 150 psaumes vivent dans un
+ * seul `tehilim.json` (1,2 Mo) : le Tehilim du jour (jusqu'à neuf psaumes) le
+ * relisait et le reparsait une fois par psaume, et le lecteur à chaque psaume
+ * suivant. `parseContent` ne modifie pas ces données : elles se partagent.
+ */
+const FILE_CACHE_SIZE = 2;
+const fileCache = new Map<string, Promise<unknown>>();
+
+function readTextFile(path: string): Promise<unknown> {
+  const cached = fileCache.get(path);
+  if (cached) {
+    // Le plus récent en dernier : c'est le plus ancien qui sort.
+    fileCache.delete(path);
+    fileCache.set(path, cached);
+    return cached;
   }
-  const data = await res.json();
+  const pending = (async () => {
+    // Copie locale (téléchargement hors ligne) d'abord, réseau sinon.
+    const res = await fetchTextResponse(path);
+    if (!res.ok) {
+      if (res.status === 404) throw new MissingTextFileError();
+      throw new Error(`Texte non disponible (${res.status})`);
+    }
+    return res.json();
+  })();
+  fileCache.set(path, pending);
+  while (fileCache.size > FILE_CACHE_SIZE) {
+    fileCache.delete(fileCache.keys().next().value as string);
+  }
+  // Un échec ne se garde pas : l'essai suivant relit le fichier.
+  pending.catch(() => {
+    if (fileCache.get(path) === pending) fileCache.delete(path);
+  });
+  return pending;
+}
+
+export async function loadText(textStudy: TextStudyJsonEntry): Promise<TextContent> {
+  const data = await readTextFile(resolveFilePath(textStudy));
   const talmudChapters = String(textStudy.type) === "Talmud Bavli" ? await getTalmudChapters() : {};
   return parseContent(textStudy, data, talmudChapters);
 }
