@@ -790,6 +790,11 @@ un leilouy nichmat, la date du décès se choisit comme une date du calendrier
 la choisisse, ce que la date change : sans elle, le nom est lu trente jours ;
 avec elle, il revient tous les ans, la semaine qui précède l'anniversaire.
 
+« Signaler », sur la chaîne, vise un nom : le bouton ne s'éteint pas après
+un premier signalement, et la fenêtre demande le nom en cause au lieu de
+promettre un masquage au troisième. La case « Bloquer ce créateur » n'y paraît
+pas : le créateur est l'équipe, la bloquer effaçait la chaîne de l'appareil.
+
 Dans le lecteur, « Vous lisez pour » garde les deux groupes de la page de la
 chaîne, chacun avec son dessin : on ne dit pas de la même façon une refoua
 chelema et un leilouy nichmat (`PrayerNamesLine`). Retirer un nom pose la

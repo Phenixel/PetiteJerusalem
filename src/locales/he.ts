@@ -1823,6 +1823,8 @@ const he: LocaleMessages = {
     reportTitle: "דיווח על מפגש זה",
     reportSubtitle:
       "ספרו לנו מה הבעיה. המפגש ייבדק על ידי צוות הניהול, ויוסתר אוטומטית לאחר 3 דיווחים.",
+    reportSubtitlePerpetual:
+      "ספרו לנו איזה שם בעייתי. צוות הניהול יבדוק אותו ויסיר אותו מהרשימה במידת הצורך; תוכלו לדווח גם על שם אחר.",
     reasonLabel: "סיבת הדיווח",
     reasons: {
       inappropriate: "תוכן לא הולם",
@@ -1832,6 +1834,7 @@ const he: LocaleMessages = {
     },
     detailsLabel: "פרטים",
     detailsPlaceholder: "תארו את הבעיה…",
+    detailsPlaceholderPerpetual: "השם שעליו אתם מדווחים, ומה הבעיה…",
     reporting: "שולח…",
     reportSuccess: "תודה, הדיווח שלך נשלח.",
     reportError: "הדיווח נכשל. אנא נסו שוב.",
