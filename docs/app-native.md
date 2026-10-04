@@ -192,6 +192,12 @@ sans réseau, elle s'ouvre et se lit, à partir de deux copies locales.
   passé minuit), le plus récent l'emporte ; le chnei mikra se fusionne à part,
   à la semaine. Conséquence assumée : décocher hors ligne quelque chose que le
   serveur sait déjà lu ne tient pas au retour du réseau.
+- **La page se relit au retour à l'écran.** Chaque coche réécrit tout le
+  suivi du jour : la lecture du jour relit donc le serveur quand on y revient,
+  sans quoi la coche suivante effaçait celle faite sur un autre appareil. Un
+  geste fait après minuit recharge d'abord le nouveau jour, puis s'y applique ;
+  au nouveau jour, ce qui était lu la veille se rouvre. Test :
+  `dailyReadingStaleState.test.ts`.
 
 Vérification : composer une liste, mode avion, rouvrir la lecture du jour (les
 textes téléchargés s'affichent, les autres disent qu'ils ne sont pas
