@@ -91,6 +91,20 @@ function folded(button: HTMLButtonElement): boolean {
   return (button.closest("div[style]") as HTMLElement | null)?.style.display === "none";
 }
 
+/** Le titre d'un texte : le toucher le replie ou le rouvre. */
+function foldToggle(button: HTMLButtonElement): HTMLButtonElement {
+  return button.closest("article")!.querySelector("header button")!;
+}
+
+/**
+ * Replié, d'après le chevron du titre. Un repli fait après le montage est
+ * animé : `display` ne suit qu'à la fin de la transition, que jsdom ne joue
+ * pas, alors que le chevron tourne tout de suite.
+ */
+function chevronFolded(button: HTMLButtonElement): boolean {
+  return foldToggle(button).querySelector(".-rotate-90") !== null;
+}
+
 async function returnToScreen() {
   Object.defineProperty(document, "visibilityState", { value: "visible", configurable: true });
   document.dispatchEvent(new Event("visibilitychange"));
@@ -145,5 +159,35 @@ describe("la lecture du jour et un état périmé", () => {
 
     expect(markButtons()[0].textContent?.trim()).toBe(fr.dailyReading.markRead);
     expect(folded(markButtons()[0])).toBe(false);
+  });
+
+  it("garde replié, au retour à l'écran, un texte replié à la main", async () => {
+    // Rien de coché aujourd'hui : le suivi du compte est encore daté d'hier.
+    server.progress = { date: "2026-10-04", completedIds: [] };
+    await mount();
+    foldToggle(markButtons()[0]).click();
+    await settle();
+    expect(chevronFolded(markButtons()[0])).toBe(true);
+
+    await returnToScreen();
+
+    expect(chevronFolded(markButtons()[0])).toBe(true);
+    expect(chevronFolded(markButtons()[1])).toBe(false);
+  });
+
+  it("laisse ouvert, au retour à l'écran, un texte lu rouvert pour le relire", async () => {
+    server.progress = { date: dayKey(new Date()), completedIds: [A] };
+    await mount();
+    expect(chevronFolded(markButtons()[0])).toBe(true);
+    foldToggle(markButtons()[0]).click();
+    await settle();
+    expect(chevronFolded(markButtons()[0])).toBe(false);
+
+    // B est lu ailleurs entre-temps : lui seul se replie.
+    server.progress = { date: dayKey(new Date()), completedIds: [A, B] };
+    await returnToScreen();
+
+    expect(chevronFolded(markButtons()[0])).toBe(false);
+    expect(chevronFolded(markButtons()[1])).toBe(true);
   });
 });

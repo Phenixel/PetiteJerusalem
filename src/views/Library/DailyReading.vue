@@ -403,11 +403,16 @@ async function applyPreferences(prefs: UserPreferences, initial: boolean) {
   // indépendamment de la remise à zéro quotidienne.
   storedParashaProgress.value = progress?.parashaProgress ?? null;
   const currentWeek = weeklyParasha.value?.weekKey;
+  const parashaWasCompleted = parashaCompleted.value;
   parashaCompleted.value =
     !!currentWeek &&
     progress?.parashaProgress?.week === currentWeek &&
     progress.parashaProgress.completed === true;
-  if (parashaCompleted.value) setCollapsed("parasha", true);
+  // Au retour à l'écran, la paracha ne se replie que si elle vient d'être lue
+  // ailleurs : rouverte ici pour la relire, elle reste ouverte.
+  if (parashaCompleted.value && !(resyncing && parashaWasCompleted)) {
+    setCollapsed("parasha", true);
+  }
 
   if (progress && progress.date === localDayKey()) {
     const before = new Set([...completedIds.value, ...completedOptions.value]);
@@ -429,8 +434,10 @@ async function applyPreferences(prefs: UserPreferences, initial: boolean) {
     completedSections.value = {};
     completedOptions.value = new Set();
     // Ce qui était lu hier se rouvre : rien n'est lu aujourd'hui (le chnei
-    // mikra, à la semaine, garde son état).
-    collapsedIds.value = new Set(parashaCompleted.value ? ["parasha"] : []);
+    // mikra, à la semaine, garde son état). Pas au retour à l'écran : tant
+    // que rien n'est coché aujourd'hui, le suivi du compte reste daté de la
+    // veille, et un texte replié à la main se rouvrait à chaque retour.
+    if (!resyncing) collapsedIds.value = new Set(parashaCompleted.value ? ["parasha"] : []);
     if (
       progress &&
       (progress.completedIds.length > 0 ||
