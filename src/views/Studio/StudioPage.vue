@@ -5,7 +5,7 @@ import { useI18n } from "vue-i18n";
 import type { ChiourDoc, SerieDoc } from "../../models/models";
 import { studioService, type StudioAuthor } from "../../services/studioService";
 import { chiourService } from "../../services/chiourService";
-import { byEpisode } from "../../services/serieService";
+import { byEpisode, nextEpisodeNumber } from "../../services/serieService";
 import { seoService } from "../../services/seoService";
 import { useToast } from "../../composables/useToast";
 import AppIcon from "../../components/icons/AppIcon.vue";
@@ -228,7 +228,7 @@ async function removeChiour(chiour: ChiourDoc) {
           :category-suggestions="categorySuggestions"
           :chiour="editing"
           :preset-serie-id="formPresetSerieId"
-          :preset-episode="formPresetSerieId ? serieEpisodes.length + 1 : null"
+          :preset-episode="formPresetSerieId ? nextEpisodeNumber(serieEpisodes) : null"
           @saved="onSaved"
           @cancel="closeForm"
         />

@@ -182,18 +182,16 @@ describe("textes téléchargés et corrigés depuis", () => {
     expect(await outdatedDownloads()).toEqual([SIDOUR]);
   });
 
-  it("n'inscrit jamais une empreinte qu'elle n'a pas vérifiée", async () => {
-    // Un portail captif répond 200 avec sa page de connexion : l'empreinte
-    // espérée la figerait dans l'index, à jamais « à jour ».
+  it("n'inscrit jamais une page à la place d'un texte", async () => {
+    // Un portail captif répond 200 avec sa page de connexion : inscrite, elle
+    // passait pour un livre lisible hors ligne, et l'empreinte espérée l'aurait
+    // figée dans l'index, à jamais « à jour ». Le téléchargement échoue.
     servi[SIDOUR] = "<html>Connectez-vous au réseau</html>";
     manifesteDuSite = { [SIDOUR]: await empreinte('{"title":"Chaharit"}') };
-    const { downloadFile, downloadManifest, outdatedDownloads } = await store();
+    const { downloadFile, downloadManifest } = await store();
 
-    await downloadFile(SIDOUR);
-
-    expect(downloadManifest.value.files[SIDOUR].hash).not.toBe(manifesteDuSite[SIDOUR]);
-    // Et la copie douteuse est reprise à la vérification suivante.
-    expect(await outdatedDownloads()).toEqual([SIDOUR]);
+    await expect(downloadFile(SIDOUR)).rejects.toThrow(/illisible/);
+    expect(downloadManifest.value.files[SIDOUR]).toBeUndefined();
   });
 
   it("retient l'empreinte de ce qu'elle télécharge", async () => {
