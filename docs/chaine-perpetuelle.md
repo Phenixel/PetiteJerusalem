@@ -75,7 +75,9 @@ avait réessayé entre-temps. `prayerNameService` reprend donc la parade de
   partira d'elle-même (`errors.prayerNamePending`). Firestore ne sait pas
   annuler une écriture : elle reste en file. Un ajout réessayé pendant ce
   temps reprend l'écriture en route au lieu d'en lancer une seconde, et quand
-  il arrive, le nom rejoint la liste comme un ajout ordinaire.
+  il arrive, le nom rejoint la liste comme un ajout ordinaire. Il ne
+  s'annonce qu'une fois, même réessayé avant d'arriver, et la fenêtre ne se
+  ferme à son arrivée que si elle montre encore cette saisie.
 
 ## Les données
 
@@ -168,7 +170,8 @@ monde, alors qu'un signalement y vise un nom.
 
 `src/__tests__/prayerNameOffline.test.ts` : un nom ne s'écrit pas hors
 ligne, la main revient quand le serveur se tait, et un ajout réessayé ne
-s'écrit qu'une fois.
+s'écrit qu'une fois. `src/__tests__/prayerNameLateLanding.test.ts` : la
+fenêtre montée, à l'arrivée d'un ajout resté en route.
 
 `src/__tests__/perpetualChain.test.ts` : la forme d'un nom (ben, bat), quand
 un nom est lu (échéance, semaine de l'anniversaire, passage d'une année à
