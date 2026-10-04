@@ -77,8 +77,12 @@ monte comme ailleurs, et `session:signalements` la liste.
 - Un slug repris par une autre session ne lui donne pas les liens de
   l'original : les règles ne peuvent pas comparer deux documents, c'est donc
   la lecture (`firestoreService.getSessionBySlug`) qui tranche, en faveur de
-  la session dont c'est l'identifiant (la chaîne perpétuelle), sinon de la
-  plus ancienne (test : `sessionSlugCollision.test.ts`).
+  la chaîne perpétuelle (son drapeau `perpetual` est réservé à l'admin ; un
+  identifiant, lui, se choisit), sinon de la plus ancienne. L'aperçu social
+  suit la même règle (`functions/src/sessionSlug.ts`). Test :
+  `sessionSlugCollision.test.ts`. Une copie antidatée gagne encore sur une
+  session ordinaire : la date de création vient du client, seules des règles
+  d'unicité du slug fermeraient ce cas.
 
 ## Conditions d'utilisation et contact
 
