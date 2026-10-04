@@ -1224,6 +1224,41 @@ function isYomTov(hd: HDate, il: boolean): boolean {
   return holidaysOn(hd, il).some((ev) => (ev.getFlags() & flags.CHAG) !== 0);
 }
 
+/**
+ * L'instant où une date personnelle commence, pour y allumer la bougie d'une
+ * hazkara : au coucher du soleil de la veille, sauf quand le Chabbat ou une
+ * fête s'en mêle.
+ *
+ *  - La date ouvre un temps de repos (un décès au 29 Tichri, un samedi) : la
+ *    bougie s'allume avant l'entrée du Chabbat, à l'heure de l'allumage. Au
+ *    coucher du soleil, le Chabbat est déjà entré.
+ *  - La date tombe au milieu d'un temps de repos (le second jour d'une fête,
+ *    un Chabbat qui suit une fête) : l'allumage de ce jour-là, à la nuit ou à
+ *    la sortie du Chabbat, celui du cadre des horaires.
+ *  - La date suit un temps de repos (un décès au 30 Tichri, un dimanche) :
+ *    à sa sortie. Au coucher du soleil, le Chabbat dure encore.
+ *
+ * La veille se prend à midi, dans le calendrier du lieu (civilNoon) : passer
+ * par minuit de l'appareil décalait d'un jour un lieu à l'ouest de lui (un
+ * appareil à Paris pour Montréal recevait le rappel la veille de la veille).
+ *
+ * Aux hautes latitudes, l'été, la sortie du Chabbat ne se calcule pas
+ * toujours (`end` nul) : le coucher du soleil de la veille reste alors le
+ * repère, plutôt que de ne rien rappeler.
+ */
+export function occasionEntryAt(place: ZmanimPlace, hd: HDate, locale: string): Date | null {
+  const period = restPeriodAt(place, hd, locale);
+  if (period) {
+    if (period.first.abs() === hd.abs()) return period.start;
+    const lighting = period.lightings.find((l) => l.day.abs() === hd.abs());
+    if (lighting && isUsable(lighting.at)) return lighting.at;
+  }
+  const before = restPeriodAt(place, hd.prev(), locale);
+  if (before && !period && before.end) return before.end;
+  const sunset = new Zmanim(geoLocationOf(place), civilNoon(hd.prev()), false).sunset();
+  return isUsable(sunset) ? sunset : null;
+}
+
 /** La sortie des étoiles d'un jour hébraïque, en ce lieu, ou null aux latitudes extrêmes. */
 export function nightfallOf(place: ZmanimPlace, hd: HDate): Date | null {
   const day = civilNoon(hd);
