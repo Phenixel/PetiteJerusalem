@@ -52,11 +52,6 @@ export interface SessionParticipant {
 }
 
 /**
- * Qui tient cette réservation : un compte, un invité, ou personne de
- * nommable. Les deux comptages de participants (le nombre, puis les noms)
- * partagent cette règle, sinon la liste et le chiffre finiraient par diverger.
- */
-/**
  * Les règles Firestore bornent le slug à 200 caractères : un titre long
  * (250 caractères latins) était refusé à la création, avec un message
  * générique. On coupe au dernier mot entier avant 180, ce qui laisse la
@@ -71,6 +66,11 @@ export function truncateSlug(slug: string): string {
   return head.replace(/-+$/, "");
 }
 
+/**
+ * Qui tient cette réservation : un compte, un invité, ou personne de
+ * nommable. Les deux comptages de participants (le nombre, puis les noms)
+ * partagent cette règle, sinon la liste et le chiffre finiraient par diverger.
+ */
 function participantKey(reservation: TextStudyReservation): string | null {
   if (reservation.chosenById) return `user:${reservation.chosenById}`;
   if (reservation.chosenByGuestId) return `guest:${reservation.chosenByGuestId}`;
