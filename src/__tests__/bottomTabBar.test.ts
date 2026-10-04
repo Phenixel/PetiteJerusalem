@@ -8,7 +8,8 @@ import { createMemoryHistory, createRouter, type Router } from "vue-router";
  * bascule. Un appui ouvre la page (en surcouche, voir App.vue), un second
  * appui la referme et rend la page qu'elle recouvrait. L'onglet profil reste
  * allumé sur les sous-pages du profil. Et l'onglet profil
- * s'annonce « Réglages » tant que personne n'est connecté.
+ * s'annonce « Réglages » tant que personne n'est connecté. Toucher l'onglet de
+ * la page où l'on est la remonte en haut.
  */
 
 // La barre interroge l'état de connexion (libellé Profil / Réglages) : les
@@ -160,5 +161,36 @@ describe("BottomTabBar", () => {
     await bar.router.push("/bibliotheque");
     await nextTick();
     expect(bar.profileTab().classList).not.toContain("tab-item-active");
+  });
+
+  it("l'onglet de la page où l'on est la remonte en haut, sans rien changer d'autre", async () => {
+    const scrollTo = vi.fn();
+    vi.stubGlobal("scrollTo", scrollTo);
+    // Un vrai clic, annulable : RouterLink l'annule et navigue lui-même.
+    const tap = async (el: Element) => {
+      (el as HTMLElement).click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      await nextTick();
+    };
+    try {
+      const bar = mount();
+      await bar.router.push("/bibliotheque");
+      await bar.router.isReady();
+      await nextTick();
+      await tap(bar.link("/bibliotheque")!);
+      expect(scrollTo).toHaveBeenCalledWith(expect.objectContaining({ top: 0 }));
+      expect(bar.router.currentRoute.value.path).toBe("/bibliotheque");
+
+      // Depuis un corpus, l'onglet ramène à la bibliothèque : c'est la
+      // navigation qui remet en haut, pas l'onglet.
+      scrollTo.mockClear();
+      await bar.router.push("/bibliotheque/tehilim");
+      await nextTick();
+      await tap(bar.link("/bibliotheque")!);
+      expect(bar.router.currentRoute.value.path).toBe("/bibliotheque");
+      expect(scrollTo).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });

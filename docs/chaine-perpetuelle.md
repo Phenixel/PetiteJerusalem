@@ -127,9 +127,25 @@ réservations et avance le compteur (`nextRound`), dans une transaction qui
 relit la session : sa propre écriture, ou une relance, ne compte jamais deux
 fois le même tour. Sans `slotCount` valide, le tour ne finit jamais : mieux
 vaut une chaîne qui ne repart pas qu'une chaîne vidée par erreur.
+Seules les places de la chaîne comptent : les Tehilim du catalogue, de
+`PERPETUAL_FIRST_TEXT_ID` (103) à 102 + `slotCount`. Les règles laissent
+chacun ajouter des réservations ; cent cinquante identifiants inventés, marqués
+lus, finissaient le tour en deux écritures. Tests : `perpetualChain.test.ts`
+(« ne compte que les places de la chaîne », « suit le catalogue »).
 
-La page qui voit tout lu le dit (« Tour terminé ! ») et se recharge une fois,
-cinq secondes plus tard, pour montrer le tour suivant.
+La page qui voit tout lu le dit (« Tour terminé ! »), puis relit la chaîne
+jusqu'à voir le tour suivant (`waitForNextRound`, `services/perpetualChain`) :
+cinq essais, de plus en plus espacés, une quarantaine de secondes en tout
+(`NEXT_ROUND_RETRY_DELAYS_MS`). La fonction répond d'habitude dans la seconde,
+mais un démarrage à froid peut prendre plusieurs secondes : un seul
+rechargement, cinq secondes après, laissait alors la page figée sans carte de
+tirage. L'attente est bornée, et se coupe quand on quitte la page.
+
+Le lecteur fait de même. « Un autre Téhilim » tire dans la copie de la chaîne
+chargée à l'ouverture du texte ; quand elle n'a plus de place libre, il relit
+la chaîne avant de dire qu'il n'y a plus rien. Si le tour y est entièrement
+lu (le lecteur vient de lire le dernier Téhilim), il le dit et attend le tour
+suivant de la même façon, puis tire dans celui-ci.
 
 ## Une place réservée tient un jour
 
@@ -143,6 +159,14 @@ affichages et cède sa place à la suivante, dans les versions déjà installée
 comme dans celle-ci, et quelle que soit celle qui a réservé. Un tirage garde
 son heure, que l'app repousse tant qu'on lit ; une place lue n'a plus
 d'échéance. La page de la chaîne le dit en une ligne (`perpetual.holdNote`).
+Une échéance plus lointaine que ce jour (posée à la main par un client), ou
+qui ne se lit pas comme une date, revient à un jour : sans quoi elle tenait la
+place sans fin. Test : « ramène à un jour une échéance plus lointaine, ou
+illisible ».
+
+Une échéance ne désigne donc plus un tirage, sur cette chaîne. Le lecteur ne
+rend, quand on le quitte sans lire, que ce qu'il a lui-même tiré, jamais une
+place réservée à la main (`e2e/firebase/perpetualDraw.spec.ts`).
 
 La règle compte une place par texte : elle ne vaut que pour des textes d'une
 seule section, ce que les 150 Tehilim sont. `chaine:creer` refuse un catalogue
@@ -160,7 +184,9 @@ nouveaux et les noms.
 
 Les noms sont du contenu public écrit par les utilisateurs (règle 1.2 de
 l'App Store, voir `docs/moderation.md`) : filtre de termes à la saisie,
-signalement par le bouton « Signaler » de la chaîne (le motif nomme le nom),
+signalement par le bouton « Signaler » de la chaîne (les précisions nomment
+le nom ; on peut en signaler un autre ensuite, et le créateur, l'équipe, ne
+s'y bloque pas),
 retrait par l'admin (`node scripts/admin.mjs chaine:noms`, puis
 `chaine:retirer-nom <id>`). La chaîne elle-même ne se masque pas toute seule
 au troisième signalement : trois comptes suffiraient à la retirer à tout le
@@ -176,11 +202,13 @@ fenêtre montée, à l'arrivée d'un ajout resté en route.
 `src/__tests__/perpetualChain.test.ts` : la forme d'un nom (ben, bat), quand
 un nom est lu (échéance, semaine de l'anniversaire, passage d'une année à
 l'autre), l'ordre de la liste, le compteur, la règle de fin de tour et la
-remise à zéro, l'échéance d'une place réservée, le document écrit par
-`chaine:creer`, et la présence des textes `perpetual.*` dans les trois
+remise à zéro, l'échéance d'une place réservée, l'attente bornée du tour suivant
+(`waitForNextRound`), le document écrit par `chaine:creer`, et la présence des textes `perpetual.*` dans les trois
 langues.
 
 `e2e/firebase/perpetualChain.spec.ts`, contre les émulateurs : la carte, les
-noms (un ajout sur un réseau muet n'arrive qu'une fois), et les règles Firestore (un nom ne s'écrit qu'en son nom et sur la
+noms (un ajout sur un réseau muet n'arrive qu'une fois), la fin d'un tour (la page
+et le lecteur attendent le tour suivant quand la fonction tarde), et les
+règles Firestore (un nom ne s'écrit qu'en son nom et sur la
 chaîne ; le drapeau et le compteur de la chaîne ne s'écrivent pas depuis un
 compte).

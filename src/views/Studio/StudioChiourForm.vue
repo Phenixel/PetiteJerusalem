@@ -2,6 +2,7 @@
 import { ref, computed } from "vue";
 import { useI18n } from "vue-i18n";
 import type { ChiourDoc, SerieDoc } from "../../models/models";
+import { episodeFromField } from "../../services/serieService";
 import { studioService, type StudioChiourPayload } from "../../services/studioService";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import AppSelect from "../../components/AppSelect.vue";
@@ -122,7 +123,7 @@ async function save() {
       niveau: niveau.value.trim() || null,
       serieId: serieChoice.value && serieChoice.value !== NEW_SERIE ? serieChoice.value : null,
       newSerieName: serieChoice.value === NEW_SERIE ? newSerieName.value.trim() || null : null,
-      episode: episode.value,
+      episode: episodeFromField(episode.value),
       duration,
     };
 

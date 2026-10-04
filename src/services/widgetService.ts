@@ -4,6 +4,7 @@ import { isNativeApp } from "../composables/useNativeApp";
 import { useTheme } from "../composables/useTheme";
 import { useZmanimLocation } from "../composables/useZmanimLocation";
 import { useZmanimOpinion } from "../composables/useZmanimOpinion";
+import { useCandleLighting } from "../composables/useCandleLighting";
 import { i18n, loadLocaleMessages, type SupportedLocale } from "../i18n";
 import { localDayKey } from "./dateService";
 import { authService, type User } from "./authService";
@@ -118,6 +119,10 @@ class WidgetService {
     const { opinion } = useZmanimOpinion();
     watch(opinion, () => void this.refresh());
 
+    // L'écart d'allumage aussi : le widget annonce l'heure d'allumage.
+    const { minutes: candleMinutes } = useCandleLighting();
+    watch(candleMinutes, () => void this.refresh());
+
     // Changement de thème, ou thème de fête qui s'installe ou s'en va :
     // l'accent des widgets est celui que l'app porte.
     const { appliedTheme } = useTheme();
@@ -177,7 +182,12 @@ class WidgetService {
       // une coche de lecture, par exemple, ne les recalcule pas.
       const { place } = useZmanimLocation();
       const accent = useTheme().appliedTheme.value.primary;
-      const zmanimKey = `${locale}|${localDayKey()}|${accent}|${JSON.stringify(place.value)}`;
+      // L'opinion et l'écart d'allumage en font partie : sans eux, un
+      // changement d'avis relançait le calcul pour trouver la même clé, et
+      // le widget gardait les anciennes heures jusqu'au lendemain.
+      const opinion = useZmanimOpinion().opinion.value;
+      const candle = useCandleLighting().minutes.value;
+      const zmanimKey = `${locale}|${localDayKey()}|${accent}|${opinion}|${candle}|${JSON.stringify(place.value)}`;
       if (zmanimKey !== this.zmanimKey) {
         await nextIdle();
         this.zmanimJson = JSON.stringify(

@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { HDate } from "@hebcal/core";
 import {
   candleLightingChoice,
@@ -106,5 +106,29 @@ describe("l'allumage du cadre de repos", () => {
     expect(at(telAviv)).toBe("18:23");
     setCandleLightingChoice(18);
     expect(at(telAviv)).toBe("18:25");
+  });
+});
+
+/**
+ * Revenir à l'usage du lieu doit tenir au lancement suivant : l'ancien choix
+ * restait dans le stockage de l'appareil et revenait (18 à Jérusalem, soit
+ * l'allumage annoncé 22 minutes trop tard).
+ */
+describe("le retour à l'usage du lieu", () => {
+  it("tient après un redémarrage de l'app", async () => {
+    localStorage.clear();
+    vi.resetModules();
+    const { useCandleLighting } = await import("../composables/useCandleLighting");
+    const { choose } = useCandleLighting();
+    choose(18);
+    expect(localStorage.getItem("pj_candle_minutes")).toBe("18");
+    choose(null);
+    expect(localStorage.getItem("pj_candle_minutes")).toBeNull();
+
+    // Le lancement suivant relit le stockage : l'usage du lieu revient.
+    vi.resetModules();
+    const relaunched = await import("../services/zmanimService");
+    expect(relaunched.candleLightingChoice()).toBeNull();
+    expect(relaunched.candleLightingMinutes(jerusalem)).toBe(40);
   });
 });

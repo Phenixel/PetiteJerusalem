@@ -1,6 +1,7 @@
 import { computed, ref } from "vue";
 import { isNativeApp } from "./useNativeApp";
 import { homeHighlights, type Announcement } from "../services/announcements";
+import { isOutdated } from "../services/appUpdateService";
 
 /**
  * L'état partagé des informations de l'équipe : la liste, ce qui est nouveau
@@ -12,6 +13,8 @@ import { homeHighlights, type Announcement } from "../services/announcements";
  */
 
 const SEEN_KEY = "pj_announcements_seen";
+/** La version de l'app installée lors de la dernière visite de la liste. */
+const SEEN_VERSION_KEY = "pj_announcements_seen_version";
 
 function readSeen(): number | null {
   try {
@@ -23,9 +26,18 @@ function readSeen(): number | null {
   }
 }
 
+function readSeenVersion(): string | null {
+  try {
+    return localStorage.getItem(SEEN_VERSION_KEY);
+  } catch {
+    return null;
+  }
+}
+
 const items = ref<Announcement[]>([]);
 const status = ref<"idle" | "loading" | "ready" | "error">("idle");
 const seenAt = ref<number | null>(readSeen());
+const seenVersion = ref<string | null>(readSeenVersion());
 /** Version de l'app installée (notes de version), nulle sur le site. */
 const installed = ref<string | null>(null);
 
@@ -80,26 +92,57 @@ function saveSeen(time: number): void {
   }
 }
 
-/** La liste a été vue : plus rien n'est nouveau jusqu'à la prochaine annonce. */
+/**
+ * La liste a été vue : plus rien n'est nouveau jusqu'à la prochaine annonce,
+ * ou jusqu'à l'installation d'une version dont la note attendait (voir
+ * unreadAnnouncements).
+ */
 function markAllSeen(): void {
   saveSeen(items.value.reduce((max, a) => Math.max(max, a.publishedAt?.getTime() ?? 0), 0));
+  if (installed.value) saveSeenVersion(installed.value);
+}
+
+function saveSeenVersion(version: string): void {
+  if (version === seenVersion.value) return;
+  seenVersion.value = version;
+  try {
+    localStorage.setItem(SEEN_VERSION_KEY, version);
+  } catch {
+    // Stockage indisponible : la note reviendra, rien de plus grave.
+  }
 }
 
 /**
  * Une annonce ouverte seule (depuis une notification, l'accueil) : elle et
  * les plus anciennes ne sont plus nouvelles. Un seul repère par appareil,
  * c'est le prix de la simplicité ; les plus anciennes ont eu leur tour.
+ *
+ * Une note de version lue avec sa version installée avance aussi le repère
+ * de version : la date seule ne suffit plus à l'éteindre (voir
+ * unreadAnnouncements), elle resterait « Nouveau » jusqu'à la prochaine
+ * visite de la liste. Lue avant l'installation, elle reviendra, comme une
+ * note vue dans la liste.
  */
-function markSeenUpTo(date: Date | null): void {
-  if (date) saveSeen(date.getTime());
+async function markSeenUpTo(a: Announcement): Promise<void> {
+  if (a.publishedAt) saveSeen(a.publishedAt.getTime());
+  if (a.kind !== "release" || !a.version) return;
+  // Ouverte depuis une notification, la page arrive avant la liste : la
+  // version installée n'a pas encore été lue.
+  if (installed.value === null) installed.value = await readInstalledVersion();
+  if (!installed.value || isOutdated(installed.value, a.version)) return;
+  if (seenVersion.value && isOutdated(seenVersion.value, a.version)) saveSeenVersion(a.version);
 }
 
 export function useAnnouncements() {
-  const highlights = computed(() => homeHighlights(items.value, seenAt.value, installed.value));
+  const highlights = computed(() =>
+    homeHighlights(items.value, seenAt.value, installed.value, Date.now(), seenVersion.value),
+  );
   return {
     items,
     status,
     seenAt,
+    seenVersion,
+    installed,
     highlights,
     load,
     markAllSeen,

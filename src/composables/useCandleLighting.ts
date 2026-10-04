@@ -47,6 +47,9 @@ export function useCandleLighting() {
     known = value !== null;
     apply(value);
     if (value !== null) candleLightingStore.write(value);
+    // L'usage du lieu : l'ancien choix s'efface aussi des stockages, sans
+    // quoi il revenait au lancement suivant (18 au lieu des 40 de Jérusalem).
+    else candleLightingStore.clear();
   }
 
   return { minutes: computed(() => minutes.value), choose };

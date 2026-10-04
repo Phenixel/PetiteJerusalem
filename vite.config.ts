@@ -102,6 +102,10 @@ export default defineConfig({
         manualChunks: {
           'firebase-core': ['firebase/app', 'firebase/auth'],
           'firebase-firestore': ['firebase/firestore'],
+          // Le petit module que Firestore Lite partage avec le SDK complet :
+          // laissé dans « firebase-firestore », il y faisait charger les
+          // 671 kB du SDK complet à qui ne voulait que Lite (accueil du site).
+          'firebase-bloom': ['@firebase/webchannel-wrapper/bloom-blob'],
           vue: ['vue', 'vue-router', 'vue-i18n'],
         },
       },

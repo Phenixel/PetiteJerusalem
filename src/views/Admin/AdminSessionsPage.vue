@@ -8,6 +8,7 @@ import { ref, computed, onMounted, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import type { Session } from "../../models/models";
 import { adminService, type ReportWithId } from "../../services/adminService";
+import { sessionService } from "../../services/sessionService";
 import { TextTypeService } from "../../services/textTypeService";
 import { DateService } from "../../services/dateService";
 import { useToast } from "../../composables/useToast";
@@ -99,11 +100,12 @@ const filtered = computed(() => {
 
 const visible = computed(() => filtered.value.slice(0, shown.value));
 
-/** Personnes distinctes qui ont réservé au moins un texte. */
+/**
+ * Personnes distinctes qui tiennent au moins une place, le même chiffre que la
+ * page publique : les tirages expirés sans lecture n'y comptent plus.
+ */
 const participants = (session: Session) =>
-  new Set(
-    (session.reservations ?? []).map((r) => r.chosenById || r.chosenByGuestId || r.chosenByName),
-  ).size;
+  sessionService.getSessionReservationStats(session).participants;
 
 async function refresh() {
   [sessions.value, reports.value] = await Promise.all([
