@@ -321,9 +321,13 @@ onMounted(async () => {
     return;
   }
 
-  const queryEmail = router.currentRoute.value.query.email as string;
-  if (queryEmail) {
-    email.value = queryEmail;
+  // L'adresse d'un invité qui crée son compte arrive par l'état de la
+  // navigation (SignupPromptModal) ; `?email=` reste lu pour les liens anciens.
+  const stateEmail = (window.history.state as { email?: unknown } | null)?.email;
+  const queryEmail = router.currentRoute.value.query.email;
+  const prefill = typeof stateEmail === "string" ? stateEmail : queryEmail;
+  if (typeof prefill === "string" && prefill) {
+    email.value = prefill;
   }
   const queryMode = router.currentRoute.value.query.mode as string;
   if (queryMode === "signup") {
