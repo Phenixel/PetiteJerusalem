@@ -807,7 +807,15 @@ function scrollToLine(line: number) {
   // Un placement, pas une lecture : rien ne s'enregistre avant que le lecteur
   // ne touche à la page (voir awaitingReaderGesture).
   awaitingReaderGesture = true;
-  scrollTo(positionSection.value, line, () => document.querySelector(`[data-line="${line}"]`));
+  scrollTo(positionSection.value, line, () => {
+    const verse = document.querySelector(`[data-line="${line}"]`);
+    // Pas de tel verset dans ce chapitre (un traité de Guemara n'a pas de
+    // lignes repérées, sa reprise vaut toujours 0) : le chapitre s'ouvre en
+    // haut. Le routeur ne remonte plus pour une arrivée sur un verset, et la
+    // page restait à la hauteur où l'on avait laissé la liste des chapitres.
+    if (!verse) scrollTopProgrammatic();
+    return verse;
+  });
 }
 
 // Arrivée avec ?verset=N (reprise, marque-page, lien partagé) : on scrolle au

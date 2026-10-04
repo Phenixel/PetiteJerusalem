@@ -131,4 +131,35 @@ test.describe("lecteur", () => {
     );
     expect(stored).toMatchObject({ section: 3, line: 8 });
   });
+
+  test("« Reprendre » ouvre le chapitre en haut quand le verset n'y est pas", async ({ page }) => {
+    // Une reprise dont la ligne n'existe pas dans le chapitre (c'est le cas de
+    // toute reprise dans la Guemara, sans lignes repérées) : le routeur ne
+    // remonte plus pour une arrivée sur un verset, c'est donc au lecteur de
+    // le faire, sans quoi le chapitre s'ouvrait à la hauteur de la liste.
+    const saved = {
+      textId: "331",
+      section: 3,
+      line: 999,
+      path: "/bibliotheque/tanakh/shir-hashirim/3",
+      label: "Shir Hashirim · Chapitre 3",
+      at: Date.now(),
+    };
+    await page.addInitScript((position) => {
+      localStorage.setItem("pj-reading-positions", JSON.stringify({ "331": position }));
+    }, saved);
+    await page.setViewportSize({ width: 390, height: 420 });
+    await gotoApp(page, "/bibliotheque/tanakh/shir-hashirim");
+    const resume = page.getByRole("button", { name: "Reprendre", exact: true });
+    await expect(resume).toBeVisible();
+    await page.evaluate(() => window.scrollTo(0, 150));
+    expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(0);
+    // Le clic du DOM, et non celui de Playwright, qui ramènerait d'abord le
+    // bouton à l'écran et remonterait la page à notre place.
+    await resume.evaluate((button) => (button as HTMLElement).click());
+
+    await expect(page).toHaveURL(/\/shir-hashirim\/3\?verset=999$/);
+    await expect(page.locator('[data-line="0"]').first()).toBeVisible();
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+  });
 });
