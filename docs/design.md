@@ -882,6 +882,17 @@ et le message brut part seulement vers PostHog, où il sert. Sous la phrase,
 - la dernière connexion de l'appareil s'est faite avec Google ou Apple : la
   phrase le rappelle, et la sortie est ce bouton-là.
 
+Un mot de passe perdu a sa sortie à lui, toujours là sous le champ du mot de
+passe : **« Mot de passe oublié ? »**, un cadenas et son nom. Sans elle,
+l'aide tournait en rond : le mot de passe refusé proposait de créer le compte,
+l'adresse déjà inscrite proposait de s'y connecter. Elle garde l'adresse
+saisie, efface le mot de passe, et n'a qu'un champ ; l'email part par Firebase
+Auth (`sendPasswordResetEmail`, dans la langue de l'écran), et « Retour à la
+connexion » ramène au formulaire. La réponse est **la même que l'adresse ait
+un compte ou non** (« Si un compte existe avec l'adresse… ») : l'écran ne sert
+pas à vérifier qui est inscrit. Tenu par
+`src/__tests__/loginPasswordReset.test.ts` et `e2e/firebase/auth.spec.ts`.
+
 La dernière méthode employée sur l'appareil (`services/lastAuthMethod.ts`)
 porte aussi une pastille, **« Dernière utilisation »**, posée sur le bord haut
 de son bouton, hors du bouton dont le libellé reste celui de la commande ;
