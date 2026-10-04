@@ -211,6 +211,23 @@ describe("sessionService.getSessionReservationStats", () => {
     expect(stats.read).toBe(3);
     expect(stats.percentage).toBe(75);
   });
+
+  it("ne dit pas 100 % tant qu'il reste une place", () => {
+    // 326 places sur 327 (le Talmud entier moins une) : l'arrondi donnait 100.
+    const grand = [text("103", 327)];
+    const s = session(
+      Array.from({ length: 326 }, (_, i) =>
+        reservation({ id: `r${i}`, section: i + 1, isCompleted: true }),
+      ),
+    );
+    const stats = sessionService.getSessionReservationStats(s, grand);
+    expect(stats.reserved).toBe(326);
+    expect(stats.percentage).toBe(99);
+    expect(stats.readPercentage).toBe(99);
+
+    const plein = session([reservation({ id: "a", section: undefined })]);
+    expect(sessionService.getSessionReservationStats(plein, grand).percentage).toBe(100);
+  });
 });
 
 describe("sessionService.getSessionParticipants", () => {
@@ -270,6 +287,19 @@ describe("endOfLocalDay", () => {
     expect(sessionService.isSessionFinished({ dateLimit: yesterday } as unknown as Session)).toBe(
       true,
     );
+  });
+});
+
+/**
+ * Les règles ne contrôlent que la taille du tableau des réservations : une
+ * entrée null, un nombre ou un objet sans texte y entrent. Le client ne
+ * parcourt que celles qui ont la forme d'une réservation.
+ */
+describe("isReservationShape", () => {
+  it("écarte ce qui n'a pas la forme d'une réservation", async () => {
+    const { isReservationShape } = await import("../services/reservationShape");
+    expect([null, 7, "x", {}, { textStudyId: 103 }].filter(isReservationShape)).toEqual([]);
+    expect(isReservationShape(reservation())).toBe(true);
   });
 });
 

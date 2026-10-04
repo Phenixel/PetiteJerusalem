@@ -49,7 +49,7 @@ watch(
     announcement.value = found;
     status.value = found ? "ready" : "missing";
     if (!found) return;
-    markSeenUpTo(found.publishedAt);
+    void markSeenUpTo(found);
     analyticsService.capture("announcement_viewed", { id: found.id, kind: found.kind });
     const url = `${SITE_URL}/informations/${found.id}`;
     seoService.setMeta({

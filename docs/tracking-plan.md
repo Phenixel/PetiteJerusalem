@@ -19,10 +19,22 @@ Ce que l'application et le site envoient à PostHog, et pourquoi. Le projet est
   `isTrackedSurface`). `localStorage.setItem('ph_debug', '1')` force le
   chargement n'importe où pour vérifier une instrumentation ; les événements
   partent alors avec `env: 'preview'` et s'excluent de toute analyse.
-- **Rien ne part sans consentement** (ePrivacy/RGPD). Avant l'accord, les
-  événements attendent dans une file bornée et sont rejoués au chargement.
+- **Rien ne part sans consentement** (ePrivacy/RGPD). Avant toute réponse,
+  les événements attendent dans une file bornée et sont rejoués au
+  chargement ; pendant un refus, rien ne s'y garde, et un accord donné
+  ensuite n'envoie que ce qui suit. Un nouvel accord, même dans une session
+  qui suit un refus, rétablit la capture (posthog-js garde le refus et le
+  relirait). Tenu par `src/__tests__/analyticsConsent.test.ts`.
 - **Toute nouvelle propriété est documentée ici**, dans la section de son
   événement.
+- **Aucune adresse email dans une URL suivie.** PostHog enregistre l'adresse
+  de chaque page (`$current_url`, `$referrer`, leurs `$initial_*`, et
+  l'adresse d'entrée de la session, `$session_entry_url`, jointe à chaque
+  événement) et le replay la montre : une donnée personnelle ne se passe pas
+  en paramètre d'adresse. L'invitation à créer un compte transmet l'adresse de l'invité
+  par l'état de la navigation ; `before_send` retire en plus tout paramètre
+  `email` des URL envoyées (`withoutPersonalParams`, tenu par
+  `src/__tests__/analyticsPersonalParams.test.ts`).
 
 ## Les propriétés portées par tous les événements
 
@@ -279,6 +291,27 @@ changement du DOM). Ils montrent ce qu'on prend pour une commande sans en
 en sont exclus par la classe `ph-no-deadclick` (`TextReadingPage.vue`) : on y
 appuie sans rien demander (double appui du défilement, lecture du doigt).
 
+### Bibliothèque hors ligne : `offline_download_completed` (existant)
+
+Une propriété de plus sur le lot (`scope: all`, « Tout télécharger ») :
+
+| Propriété      | Valeurs                                       | Statut             |
+| -------------- | --------------------------------------------- | ------------------ |
+| `books_count`  | les livres effectivement rapportés            | existant, conservé |
+| `books_failed` | les livres perdus en route, 0 le plus souvent | **nouveau**        |
+
+`books_failed` porte le même nom que sur
+`onboarding_offline_download_finished`, qui le posait déjà. Il devient utile
+maintenant qu'un échec n'arrête plus le lot : `offline_download_failed` part
+pour chaque livre manqué, puis le lot va jusqu'au bout et
+`offline_download_completed` dit ce qui manque. Les deux événements se
+suivent donc dans un même lot, ce qui n'arrivait pas avant. Le lot s'arrête
+encore, sans `offline_download_completed`, quand les livres suivants
+échoueraient tous : hors connexion au premier échec, permission de stockage
+refusée (Android 10 et moins), ou trois échecs de suite (place épuisée, site
+injoignable). Voir `composables/useBookDownload.ts` et
+`src/__tests__/offlineDownloadAll.test.ts`.
+
 ### Lecture : `text_opened` (existant)
 
 | Propriété | Valeurs | Statut |
@@ -379,6 +412,37 @@ connexion dit quoi faire »).
 | --- | --- |
 | `help` | `signup` (créer le compte), `login` (s'y connecter), `provider` (le bouton de la dernière méthode) |
 | `reason` | la raison de l'échec qui l'a proposée, comme `email_auth_failed.reason` |
+
+#### `password_reset_opened` (nouveau)
+
+« Mot de passe oublié ? » touché sous le champ du mot de passe (docs/design.md,
+« L'écran de connexion dit quoi faire »).
+
+| Propriété | Valeurs |
+| --- | --- |
+| `after_error` | la raison de l'échec affiché à ce moment, comme `email_auth_failed.reason` (`auth/invalid-credential` le plus souvent), ou `null` |
+| `last_method` | comme `login_viewed` |
+
+#### `password_reset_requested` (nouveau)
+
+L'envoi de l'email de réinitialisation. Ni l'adresse, ni le fait qu'elle ait un
+compte : Firebase ne le dit pas, et une adresse sans compte compte comme
+`sent`.
+
+| Propriété | Valeurs |
+| --- | --- |
+| `outcome` | `sent`, `failed` |
+| `reason` | le code Firebase d'un échec (`auth/too-many-requests`, `auth/invalid-email`, `auth/network-request-failed`...), `error` sans code, `null` pour `sent` |
+
+#### `account_delete_failed` (existant)
+
+| Propriété | Valeurs | Statut |
+| --- | --- | --- |
+| `reason` | `requires_recent_login`, `reauth_cancelled`, `error` | existant |
+| `reason` | `wrong_password` : le mot de passe saisi dans la confirmation (compte à mot de passe) est faux | **nouvelle valeur**, avec le champ de mot de passe de la confirmation |
+
+Après `account_deleted`, le suivi est remis à zéro comme à la déconnexion
+(`signed_out`) : les événements suivants repartent anonymes.
 
 ### Lecture du jour : `daily_reading_viewed` (nouveau)
 

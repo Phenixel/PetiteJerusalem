@@ -25,11 +25,20 @@ function readStoredChoice(): ConsentChoice | null {
 // null = pas encore choisi : la bannière est affichée.
 const choice: Ref<ConsentChoice | null> = ref(readStoredChoice());
 
+/**
+ * La dernière décision, à part de l'affichage de la bannière. Rouvrir la
+ * bannière remet `choice` à null pour la montrer, mais la décision reste
+ * appliquée tant qu'elle n'est pas modifiée : après un refus, ce qui se
+ * passe pendant que la bannière est rouverte ne se garde pas pour plus tard.
+ */
+let applied: ConsentChoice | null = choice.value;
+
 const listeners = new Set<(choice: ConsentChoice) => void>();
 
 export function useConsent() {
   function setChoice(newChoice: ConsentChoice): void {
     choice.value = newChoice;
+    applied = newChoice;
     try {
       localStorage.setItem(STORAGE_KEY, newChoice);
     } catch {
@@ -46,9 +55,12 @@ export function useConsent() {
   return { choice, setChoice, reopen };
 }
 
-/** Choix courant, pour du code hors composant (analyticsService). */
+/**
+ * La décision en vigueur, pour du code hors composant (analyticsService) :
+ * la dernière prise, même bannière rouverte ; null tant qu'aucune ne l'a été.
+ */
 export function getConsentChoice(): ConsentChoice | null {
-  return choice.value;
+  return applied;
 }
 
 /**

@@ -362,6 +362,7 @@ export function recentSeasonalChanges(hd: HDate, il: boolean): Set<string> {
  * Yaalé véyavo à Roch Hodech et aux fêtes, Al hanissim à Hanouka et Pourim…
  *
  * `il` : calendrier d'Israël (un seul jour de Yom Tov) ou de diaspora.
+ * `walledCity` : Jérusalem, où Pourim se fête le 15 Adar (isWalledCityPlace).
  */
 /**
  * Le rang du jour dans le 'Omer (1 à 49), ou null hors de la période. Le
@@ -376,7 +377,7 @@ export function omerDay(hd: HDate): number | null {
   return rang >= 1 && rang <= 49 ? rang : null;
 }
 
-export function activeOccasions(hd: HDate, il: boolean): Set<string> {
+export function activeOccasions(hd: HDate, il: boolean, walledCity = false): Set<string> {
   const events = getHolidaysOnDate(hd, il) ?? [];
   const has = (mask: number) => events.some((ev) => (ev.getFlags() & mask) !== 0);
   // La fête elle-même, reconnue à son `basename` : « Pessah III (CH''M) » et
@@ -396,7 +397,10 @@ export function activeOccasions(hd: HDate, il: boolean): Set<string> {
   // Hanouka : hebcal pose « 1 Candle » sur la VEILLE (l'allumage du soir) ;
   // le premier jour porte « 2 Candles », le dernier « 8th Day ».
   const hanukkah = events.some((ev) => /^Chanukah: (?:[2-8] Candles|8th Day)/.test(ev.getDesc()));
-  const purim = events.some((ev) => ev.getDesc() === "Purim");
+  // Pourim : le 14 Adar, sauf dans une ville entourée d'une muraille depuis
+  // Josué (Jérusalem), où il se fête le 15, Chouchan Pourim. Al hanissim, la
+  // lecture de Vayavo Amalek et Migdol suivent le jour de la ville.
+  const purim = events.some((ev) => ev.getDesc() === (walledCity ? "Shushan Purim" : "Purim"));
   if (hanukkah || purim) occ.add("nissim");
   // Le quantième de 'Hanouka : la Torah s'y lit un passage par jour, celui du
   // nassi correspondant. Les bougies comptent un cran de plus que le jour,

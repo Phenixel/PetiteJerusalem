@@ -161,3 +161,83 @@ export function perpetualStats(session: Session, currentRead: number): Perpetual
     lastCycleParticipants: session.lastCycleParticipants ?? null,
   };
 }
+
+/**
+ * Le tour est-il entièrement lu ? La même règle que la Cloud Function
+ * (isRoundComplete, functions/src/perpetualRound.ts) : chaque place a une
+ * réservation lue, une place étant un texte. Sans `slotCount` valide, jamais :
+ * la fonction ne remettrait pas la chaîne à zéro, inutile de l'attendre.
+ */
+export function isRoundFinished(session: Pick<Session, "reservations" | "slotCount">): boolean {
+  const slotCount = session.slotCount;
+  if (typeof slotCount !== "number" || !Number.isInteger(slotCount) || slotCount <= 0) {
+    return false;
+  }
+  const read = new Set<string>();
+  for (const r of session.reservations ?? []) {
+    if (r?.isCompleted === true) read.add(r.textStudyId);
+  }
+  return read.size >= slotCount;
+}
+
+/**
+ * Les attentes entre deux relectures de la chaîne, une fois le tour lu. La
+ * Cloud Function la remet à zéro dans la seconde, mais un démarrage à froid
+ * peut prendre plusieurs secondes : on relit vite, puis de plus en plus
+ * espacé, une quarantaine de secondes en tout, et pas au-delà.
+ */
+export const NEXT_ROUND_RETRY_DELAYS_MS: readonly number[] = [1500, 3000, 5000, 10_000, 20_000];
+
+/** La chaîne relue a-t-elle quitté le tour que l'on voyait fini ? */
+export function hasNextRoundStarted(
+  previous: Pick<Session, "cycle">,
+  latest: Pick<Session, "cycle" | "reservations" | "slotCount">,
+): boolean {
+  return (latest.cycle ?? 0) > (previous.cycle ?? 0) || !isRoundFinished(latest);
+}
+
+export interface WaitForNextRoundOptions {
+  /** Attentes avant chaque relecture ; par défaut NEXT_ROUND_RETRY_DELAYS_MS. */
+  delays?: readonly number[];
+  /** Coupe l'attente (page quittée) : plus aucune relecture ne part. */
+  signal?: AbortSignal;
+}
+
+function pause(ms: number, signal?: AbortSignal): Promise<void> {
+  return new Promise((resolve) => {
+    if (signal?.aborted) return resolve();
+    const timer = setTimeout(done, ms);
+    function done() {
+      clearTimeout(timer);
+      signal?.removeEventListener("abort", done);
+      resolve();
+    }
+    signal?.addEventListener("abort", done, { once: true });
+  });
+}
+
+/**
+ * Relit la chaîne jusqu'à voir le tour suivant, par quelques essais espacés et
+ * bornés (`delays`). Renvoie la chaîne relue, ou null si le tour suivant
+ * n'est pas venu à temps, ou si l'attente a été coupée. Une relecture qui
+ * échoue (réseau) compte pour un essai, sans interrompre les suivants.
+ */
+export async function waitForNextRound(
+  previous: Pick<Session, "cycle">,
+  load: () => Promise<Session | null>,
+  { delays = NEXT_ROUND_RETRY_DELAYS_MS, signal }: WaitForNextRoundOptions = {},
+): Promise<Session | null> {
+  for (const delay of delays) {
+    await pause(delay, signal);
+    if (signal?.aborted) return null;
+    let latest: Session | null = null;
+    try {
+      latest = await load();
+    } catch (err) {
+      console.error("Relecture de la chaîne impossible :", err);
+    }
+    if (signal?.aborted) return null;
+    if (latest && hasNextRoundStarted(previous, latest)) return latest;
+  }
+  return null;
+}

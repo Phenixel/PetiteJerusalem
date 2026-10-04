@@ -5,7 +5,7 @@ import type { Chiour } from "../models/models";
 // testées ici (tri des épisodes, épisode suivant) sont pures.
 vi.mock("../firebase/firestore", () => ({ db: {} }));
 
-import { serieService } from "../services/serieService";
+import { episodeFromField, nextEpisodeNumber, serieService } from "../services/serieService";
 
 function chiour(partial: Partial<Chiour> & { slug: string }): Chiour {
   return {
@@ -88,5 +88,22 @@ describe("serieService.getPreviousEpisode", () => {
     const horsSerie = catalogue.find((c) => c.slug === "hors-serie")!;
     expect(serieService.getPreviousEpisode(premier, catalogue)).toBeNull();
     expect(serieService.getPreviousEpisode(horsSerie, catalogue)).toBeNull();
+  });
+});
+
+describe("numéros d'épisode du studio", () => {
+  it("propose le plus grand numéro pris, plus un", () => {
+    // Le nombre d'épisodes plus un donnait 3 après la suppression de l'épisode 2.
+    expect(nextEpisodeNumber([{ episode: 1 }, { episode: 3 }])).toBe(4);
+    expect(nextEpisodeNumber([{ episode: null }, { episode: 2 }])).toBe(3);
+    expect(nextEpisodeNumber([])).toBe(1);
+  });
+
+  it("un champ vidé veut dire « sans numéro »", () => {
+    // v-model.number rend la chaîne vide, que le serveur refusait.
+    expect(episodeFromField("")).toBeNull();
+    expect(episodeFromField(null)).toBeNull();
+    expect(episodeFromField(Number.NaN)).toBeNull();
+    expect(episodeFromField(4)).toBe(4);
   });
 });

@@ -16,6 +16,7 @@ const { posthog, onAuthChanged } = vi.hoisted(() => ({
     identify: vi.fn(),
     setPersonProperties: vi.fn(),
     opt_in_capturing: vi.fn(),
+    has_opted_out_capturing: vi.fn(() => false),
     opt_out_capturing: vi.fn(),
     stopSessionRecording: vi.fn(),
     reset: vi.fn(),

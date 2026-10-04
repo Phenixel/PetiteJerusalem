@@ -21,7 +21,11 @@ defineEmits<{
 
 // Aperçu de la disponibilité : pourcentage de sections déjà réservées.
 const reservationStats = computed(() => sessionService.getSessionReservationStats(props.session));
-const isFull = computed(() => reservationStats.value.percentage >= 100);
+const isFull = computed(
+  () =>
+    reservationStats.value.total > 0 &&
+    reservationStats.value.reserved >= reservationStats.value.total,
+);
 </script>
 
 <template>

@@ -7,6 +7,7 @@ import { authService, type User } from "../services/authService";
 import {
   authErrorCode,
   describeEmailAuthError,
+  describePasswordResetError,
   isAuthCancellation,
   isAuthProviderUnavailable,
   type EmailAuthHelp,
@@ -27,9 +28,14 @@ import { SITE_URL } from "../config/site";
 const { localePath } = useLocalePath();
 
 const router = useRouter();
-const { t } = useI18n();
+const { t, locale } = useI18n();
 
-const mode = ref<"login" | "signup">("login");
+/**
+ * `reset` : « Mot de passe oublié », l'email de réinitialisation de Firebase.
+ * Sans lui, l'aide tournait en rond : un mot de passe refusé proposait de
+ * créer un compte, l'adresse déjà inscrite proposait de s'y connecter.
+ */
+const mode = ref<"login" | "signup" | "reset">("login");
 const email = ref("");
 const password = ref("");
 const confirmPassword = ref("");
@@ -43,6 +49,12 @@ const errorMessage = ref<string | null>(null);
 const errorHelp = ref<EmailAuthHelp | null>(null);
 // L'erreur email qui a appelé l'aide, pour la mesure (`login_help_clicked`).
 let errorReason: string | null = null;
+/**
+ * L'adresse à laquelle l'email de réinitialisation est parti, ou null. Le
+ * message qui le dit ne dit pas si elle a un compte : Firebase ne le révèle
+ * pas, et l'écran non plus.
+ */
+const resetSentTo = ref<string | null>(null);
 
 /**
  * La dernière façon de se connecter sur cet appareil (lastAuthMethod) : son
@@ -64,15 +76,54 @@ function clearError() {
   errorReason = null;
 }
 
-function setMode(newMode: "login" | "signup") {
+function setMode(newMode: "login" | "signup" | "reset") {
   mode.value = newMode;
+  resetSentTo.value = null;
   clearError();
 }
 
 const buttonText = computed(() => {
   if (loading.value) return t("login.pleaseWait");
+  if (mode.value === "reset") return t("login.reset.send");
   return mode.value === "login" ? t("login.signIn") : t("login.register");
 });
+
+/** « Mot de passe oublié ? » : l'adresse saisie reste, le mot de passe s'efface. */
+function openReset() {
+  // `after_error` : l'échec affiché quand on l'a touché (un mot de passe
+  // refusé, le plus souvent), ou null.
+  analyticsService.capture("password_reset_opened", {
+    after_error: errorReason,
+    last_method: lastMethod.value,
+  });
+  password.value = "";
+  setMode("reset");
+}
+
+/**
+ * Envoie l'email de réinitialisation. Ni l'adresse ni le fait qu'elle ait un
+ * compte ne partent vers PostHog ; seule l'issue, et le code d'un échec.
+ */
+async function sendReset() {
+  clearError();
+  resetSentTo.value = null;
+  const address = email.value.trim();
+  loading.value = true;
+  try {
+    await authService.sendPasswordReset(address, String(locale.value));
+    analyticsService.capture("password_reset_requested", { outcome: "sent", reason: null });
+    resetSentTo.value = address;
+  } catch (e: unknown) {
+    const code = authErrorCode(e);
+    analyticsService.capture("password_reset_requested", {
+      outcome: "failed",
+      reason: code ?? "error",
+    });
+    errorMessage.value = t(describePasswordResetError(code));
+  } finally {
+    loading.value = false;
+  }
+}
 
 /** L'échec d'une connexion par email, compté puis dit en clair. */
 function failEmailAuth(reason: string, message: string, help: EmailAuthHelp | null = null) {
@@ -87,6 +138,7 @@ function failEmailAuth(reason: string, message: string, help: EmailAuthHelp | nu
 }
 
 async function submitForm() {
+  if (mode.value === "reset") return sendReset();
   clearError();
   // Troisième chemin de connexion, et le seul dont les échecs étaient muets :
   // `signed_in`/`signed_up {method: email}` n'avaient pas de contrepartie. Un
@@ -269,9 +321,13 @@ onMounted(async () => {
     return;
   }
 
-  const queryEmail = router.currentRoute.value.query.email as string;
-  if (queryEmail) {
-    email.value = queryEmail;
+  // L'adresse d'un invité qui crée son compte arrive par l'état de la
+  // navigation (SignupPromptModal) ; `?email=` reste lu pour les liens anciens.
+  const stateEmail = (window.history.state as { email?: unknown } | null)?.email;
+  const queryEmail = router.currentRoute.value.query.email;
+  const prefill = typeof stateEmail === "string" ? stateEmail : queryEmail;
+  if (typeof prefill === "string" && prefill) {
+    email.value = prefill;
   }
   const queryMode = router.currentRoute.value.query.mode as string;
   if (queryMode === "signup") {
@@ -354,7 +410,16 @@ onMounted(async () => {
         {{ t("common.or") }}
       </p>
 
-      <div class="relative grid grid-cols-2 gap-0 bg-black/5 p-1 rounded-btn mb-8 dark:bg-white/10">
+      <!-- « Mot de passe oublié » : l'adresse seule, et le chemin du retour. -->
+      <div v-if="mode === 'reset'" class="mb-6">
+        <h2 class="text-lg font-bold text-text-primary">{{ t("login.reset.title") }}</h2>
+        <p class="mt-1 text-sm text-text-secondary">{{ t("login.reset.intro") }}</p>
+      </div>
+
+      <div
+        v-else
+        class="relative grid grid-cols-2 gap-0 bg-black/5 p-1 rounded-btn mb-8 dark:bg-white/10"
+      >
         <div
           class="absolute top-1 bottom-1 w-[calc(50%-4px)] bg-surface rounded-control shadow-sm transition-all duration-300 ease-out"
           :class="mode === 'login' ? 'left-1' : 'left-1 translate-x-full'"
@@ -424,7 +489,7 @@ onMounted(async () => {
           />
         </div>
 
-        <div class="mb-5">
+        <div v-if="mode !== 'reset'" class="mb-5">
           <label class="block text-sm font-semibold text-text-primary mb-2" for="password">{{
             t("common.password")
           }}</label>
@@ -436,6 +501,17 @@ onMounted(async () => {
             placeholder="••••••••"
             required
           />
+          <!-- La sortie d'un mot de passe perdu, là où on le cherche. -->
+          <button
+            v-if="mode === 'login'"
+            type="button"
+            class="mt-2 inline-flex items-center gap-1.5 text-sm font-semibold text-primary hover:underline disabled:opacity-60"
+            :disabled="loading"
+            @click="openReset"
+          >
+            <AppIcon name="lock" :size="13" />
+            {{ t("login.reset.link") }}
+          </button>
         </div>
 
         <Transition name="slide-up">
@@ -484,9 +560,28 @@ onMounted(async () => {
           </button>
         </div>
 
+        <p
+          v-if="resetSentTo"
+          class="mb-4 rounded-card bg-green-600/10 px-4 py-3 text-sm text-green-700 dark:text-green-300"
+          role="status"
+        >
+          {{ t("login.reset.sent", { email: resetSentTo }) }}
+        </p>
+
         <button class="btn btn-primary w-full" type="submit" :disabled="loading">
           <AppIcon v-if="loading" name="spinner" :size="15" class="animate-spin" />
+          <AppIcon v-else-if="mode === 'reset'" name="envelope" :size="15" />
           {{ buttonText }}
+        </button>
+        <button
+          v-if="mode === 'reset'"
+          type="button"
+          class="btn btn-soft w-full mt-3"
+          :disabled="loading"
+          @click="setMode('login')"
+        >
+          <AppIcon name="arrow-left" :size="15" class="rtl:rotate-180" />
+          {{ t("login.reset.back") }}
         </button>
       </form>
 
