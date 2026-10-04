@@ -825,6 +825,12 @@ chelema et un leilouy nichmat (`PrayerNamesLine`). Retirer un nom pose la
 question, avec le nom (`useConfirm`) ; le prolonger, non : cela se refait
 d'un geste.
 
+Un tour fini se dit (« Tour terminé ! ») et ne fige rien : la page, comme
+« Un autre Téhilim » dans le lecteur, attend le tour suivant d'elle-même,
+quelques essais en une quarantaine de secondes, puis montre la carte de
+tirage. Au-delà, elle n'insiste pas : une chaîne qui ne repart pas est une
+panne, que le rechargement de la page dira, pas une attente sans fin.
+
 À la création d'une session de Tehilim, la chaîne perpétuelle se propose en
 une ligne discrète sous le type, en petit : elle ne détourne pas de la
 création, et ne promet pas de chiffre de lecteurs qu'on ne connaît pas.

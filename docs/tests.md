@@ -100,7 +100,8 @@ Firebase.
   - `public` (`e2e/public/`) : les pages qui ne parlent pas à Firebase. Aucun
     prérequis au-delà de Node et de Chromium.
   - `firebase` (`e2e/firebase/`) : comptes, chaînes de lecture, réservations,
-    chaîne perpétuelle (ses noms, et les règles Firestore qui les gardent),
+    chaîne perpétuelle (ses noms, la fin d'un tour, et les règles Firestore
+    qui les gardent),
     chiourim. Ces tests ont besoin des émulateurs Auth et Firestore.
 - Le serveur Vite est lancé par Playwright lui-même sur le port **5474**
   (`E2E_PORT`), voisin du 5473 du dev pour tourner à côté d'une session de
@@ -181,8 +182,9 @@ Les tests du projet `firebase` importent `test` et `expect` de ce fichier, qui
 - `seedTehilimSession(owner, options)` : une chaîne de Tehilim posée dans
   Firestore telle que l'app l'écrirait (mêmes champs que
   `sessionService.createSession`) ;
-- `seedPerpetualChain()` : une chaîne perpétuelle telle que `chaine:creer`
-  l'écrirait, sous un identifiant unique (voir `docs/chaine-perpetuelle.md`) ;
+- `seedPerpetualChain(fields?)` : une chaîne perpétuelle telle que
+  `chaine:creer` l'écrirait, sous un identifiant unique, avec des champs en
+  plus si besoin (un tour déjà lu) ; voir `docs/chaine-perpetuelle.md` ;
 - `uniqueId()` : un suffixe unique par test et par processus ;
 - `readDoc` et `seedDoc`, réexportés, pour lire ou poser un document
   quelconque.

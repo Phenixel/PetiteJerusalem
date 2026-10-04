@@ -8,6 +8,7 @@ import {
   seedPerpetualChain,
   seedTehilimSession,
   signIn,
+  tehilimId,
   uniqueId,
 } from "../support/firebase";
 import { gotoApp } from "../support/fixtures";
@@ -20,8 +21,9 @@ import {
 /**
  * La chaîne perpétuelle de Tehilim (docs/chaine-perpetuelle.md) : sa carte en
  * tête du partage, les noms qu'on lui confie, et les règles Firestore qui les
- * gardent. La remise à zéro d'un tour fini (Cloud Function) est tenue par
- * src/__tests__/perpetualChain.test.ts.
+ * gardent, et ce que la page et le lecteur font d'un tour fini. La remise à
+ * zéro elle-même (Cloud Function) est tenue par
+ * src/__tests__/perpetualChain.test.ts ; ici, le test la joue à sa place.
  */
 
 const DAY = 24 * 3600 * 1000;
@@ -112,6 +114,49 @@ async function writeSession(
   });
   return res.status;
 }
+
+/** Les Téhilim `from` à `to` du tour, lus par d'autres. */
+function readSlots(from: number, to: number) {
+  return Array.from({ length: to - from + 1 }, (_, i) => ({
+    id: `lu-${from + i}`,
+    textStudyId: tehilimId(from + i),
+    section: 1,
+    chosenByGuestId: "autre-lecteur",
+    chosenByName: "Un autre lecteur",
+    isCompleted: true,
+    createdAt: new Date(),
+  }));
+}
+
+/**
+ * Ce que fait la Cloud Function d'un tour fini (nextRound) : les
+ * réservations vidées, le tour suivant. Les émulateurs ne la font pas
+ * tourner ; le test la joue lui-même, quand il veut.
+ */
+async function startNextRound(chainId: string): Promise<void> {
+  const mask = ["reservations", "cycle", "completedCycles"]
+    .map((field) => `updateMask.fieldPaths=${field}`)
+    .join("&");
+  const res = await fetch(
+    `http://localhost:${FIRESTORE_PORT}/v1/${DOCUMENTS}/sessions/${chainId}?${mask}`,
+    {
+      method: "PATCH",
+      headers: { Authorization: "Bearer owner", "Content-Type": "application/json" },
+      body: JSON.stringify({
+        fields: toFirestoreFields({ reservations: [], cycle: 2, completedCycles: 1 }),
+      }),
+    },
+  );
+  if (!res.ok) throw new Error(`Tour suivant : ${res.status} ${await res.text()}`);
+}
+
+/**
+ * Le retard d'une Cloud Function au démarrage à froid. C'est le scénario même
+ * du test, pas une attente de confort : la page qui ne relisait la chaîne
+ * qu'une fois, cinq secondes après la fin du tour, restait figée quand la
+ * fonction arrivait plus tard.
+ */
+const coldStart = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /** Les précisions des signalements d'une session, dans l'ordre d'arrivée. */
 async function reportsOf(sessionId: string): Promise<string[]> {
@@ -316,5 +361,52 @@ test.describe("chaîne perpétuelle", () => {
       await writeSession(uid, own, { ...session, completedCycles: 40 }, ["completedCycles"]),
     ).toBe(403);
     expect((await readDoc("sessions", own))?.perpetual).toBeUndefined();
+  });
+  test("un tour fini : la page relit la chaîne jusqu'au tour suivant", async ({ page }) => {
+    const chain = await seedPerpetualChain({ reservations: readSlots(1, 150) });
+    await gotoApp(page, `/share-reading/session/${chain.slug}`);
+    await expect(page.getByText("Tour terminé !")).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByRole("button", { name: "Tirer un Téhilim" })).toHaveCount(0);
+
+    // La fonction arrive après le seul rechargement que faisait la page.
+    await coldStart(7_000);
+    await startNextRound(chain.id);
+
+    await expect(page.getByRole("button", { name: "Tirer un Téhilim" })).toBeVisible({
+      timeout: 30_000,
+    });
+    await expect(page.getByText("Tour terminé !")).toHaveCount(0);
+  });
+
+  test("un tour fini dans le lecteur : « Un autre Téhilim » attend le tour suivant", async ({
+    page,
+  }) => {
+    // Un seul Téhilim libre : le tirage tombe sur lui, et sa lecture finit le tour.
+    const chain = await seedPerpetualChain({ reservations: readSlots(1, 149) });
+    await gotoApp(page, `/share-reading/session/${chain.slug}`);
+    await page.getByRole("button", { name: "Tirer un Téhilim" }).click();
+    await expect(page).toHaveURL(new RegExp(`/lire/${tehilimId(150)}\\?`), { timeout: 20_000 });
+
+    // La carte de réservation est en tête et au pied du texte : la première suffit.
+    const markRead = page.getByRole("button", { name: "Marquer comme lu" }).first();
+    await expect(markRead).toBeVisible({ timeout: 20_000 });
+    await markRead.click();
+    await expect(page.getByRole("button", { name: "Remettre en non lu" }).first()).toBeVisible();
+
+    await page.getByRole("button", { name: "Un autre Téhilim" }).first().click();
+    // La copie locale dit tout pris ; la chaîne relue dit le tour fini.
+    await expect(page.getByText("Tour terminé !")).toBeVisible({ timeout: 10_000 });
+    await coldStart(3_000);
+    await startNextRound(chain.id);
+
+    await expect(page).not.toHaveURL(new RegExp(`/lire/${tehilimId(150)}\\?`), {
+      timeout: 30_000,
+    });
+    await expect(
+      page.getByText("Tous les Téhilim de cette session sont déjà réservés."),
+    ).toHaveCount(0);
+    await expect
+      .poll(async () => ((await readDoc("sessions", chain.id))?.reservations as unknown[]).length)
+      .toBe(1);
   });
 });

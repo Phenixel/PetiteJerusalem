@@ -6,14 +6,17 @@ import {
   ANNIVERSARY_WINDOW_DAYS,
   findPerpetualSession,
   formatPrayerName,
+  hasNextRoundStarted,
   isDated,
   isPrayerNameListed,
+  isRoundFinished,
   normalizeNamePart,
   perpetualStats,
   prayerNameExpiry,
   PRAYER_NAME_TTL_DAYS,
   sortPrayerNames,
   spokenDuration,
+  waitForNextRound,
 } from "../services/perpetualChain";
 import { daysUntilNext } from "../services/hebrewOccasions";
 import {
@@ -381,5 +384,65 @@ describe("les textes de la chaîne perpétuelle", () => {
     const expected = keys((fr as unknown as Messages).perpetual as Messages).sort();
     expect(keys((en as unknown as Messages).perpetual as Messages).sort()).toEqual(expected);
     expect(keys((he as unknown as Messages).perpetual as Messages).sort()).toEqual(expected);
+  });
+});
+
+describe("la fin d'un tour, vue de l'app", () => {
+  const read = (count: number) =>
+    Array.from({ length: count }, (_, i) => ({
+      id: `r${i}`,
+      textStudyId: String(103 + i),
+      section: 1,
+      chosenByGuestId: "g",
+      isCompleted: true,
+      createdAt: NOW,
+    }));
+  const finished = chain({ cycle: 3, reservations: read(150) });
+  const nextRound = chain({ cycle: 4, reservations: [] });
+  const noDelay = { delays: [0, 0, 0] };
+
+  it("voit le tour fini comme la Cloud Function, et jamais sans slotCount", () => {
+    expect(isRoundFinished(finished)).toBe(true);
+    expect(isRoundFinished(chain({ reservations: read(149) }))).toBe(false);
+    expect(isRoundFinished({ ...finished, slotCount: undefined })).toBe(false);
+    expect(isRoundComplete(finished.reservations, 150)).toBe(true);
+  });
+
+  it("reconnaît le tour suivant au compteur, ou à la chaîne qui n'est plus finie", () => {
+    expect(hasNextRoundStarted(finished, finished)).toBe(false);
+    expect(hasNextRoundStarted(finished, nextRound)).toBe(true);
+    expect(hasNextRoundStarted(finished, { ...nextRound, cycle: undefined })).toBe(true);
+  });
+
+  it("relit jusqu'au tour suivant, même si la fonction est en retard", async () => {
+    const load = vi
+      .fn<() => Promise<Session | null>>()
+      .mockResolvedValueOnce(finished)
+      .mockRejectedValueOnce(new Error("réseau"))
+      .mockResolvedValueOnce(nextRound);
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    await expect(waitForNextRound(finished, load, noDelay)).resolves.toBe(nextRound);
+    expect(load).toHaveBeenCalledTimes(3);
+  });
+
+  it("s'arrête au bout des essais prévus, sans boucle sans fin", async () => {
+    const load = vi.fn(async () => finished);
+    await expect(waitForNextRound(finished, load, noDelay)).resolves.toBeNull();
+    expect(load).toHaveBeenCalledTimes(3);
+  });
+
+  it("ne relit plus rien une fois la page quittée", async () => {
+    vi.useFakeTimers();
+    try {
+      const load = vi.fn(async () => nextRound);
+      const leave = new AbortController();
+      const waiting = waitForNextRound(finished, load, { delays: [5000], signal: leave.signal });
+      leave.abort();
+      await expect(waiting).resolves.toBeNull();
+      expect(load).not.toHaveBeenCalled();
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
