@@ -20,6 +20,7 @@ const { posthog } = vi.hoisted(() => ({
     identify: vi.fn(),
     opt_in_capturing: vi.fn(),
     opt_out_capturing: vi.fn(),
+    has_opted_out_capturing: vi.fn(() => false),
     stopSessionRecording: vi.fn(),
     reset: vi.fn(),
   },
@@ -65,6 +66,30 @@ describe("les URL envoyées à PostHog", () => {
       },
     });
     expect(JSON.stringify(sent)).not.toContain("invite");
+  });
+
+  it("ni par l'adresse d'entrée de la session, que chaque événement recopie", async () => {
+    // Une session ouverte sur un ancien lien : l'événement part d'une autre
+    // page, mais posthog-js y joint l'adresse par où la session est entrée.
+    vi.resetModules();
+    posthog.init.mockClear();
+    localStorage.setItem("ph_debug", "1");
+    const { analyticsService } = await import("../services/analyticsService");
+    analyticsService.init();
+    await vi.waitFor(() => expect(posthog.init).toHaveBeenCalled());
+    const beforeSend = posthog.init.mock.calls[0][1].before_send as (event: unknown) => {
+      properties: Record<string, unknown>;
+    };
+    const sent = beforeSend({
+      event: "zmanim_viewed",
+      properties: {
+        $current_url: "https://petite-jerusalem.fr/horaires",
+        $session_entry_url: "https://petite-jerusalem.fr/login?email=invite%40exemple.fr",
+        $session_entry_referrer: "https://exemple.fr/?email=invite%40exemple.fr",
+      },
+    });
+    expect(JSON.stringify(sent)).not.toContain("invite");
+    expect(sent?.properties?.$session_entry_url).toBe("https://petite-jerusalem.fr/login");
   });
 });
 

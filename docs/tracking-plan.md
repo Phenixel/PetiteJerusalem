@@ -24,9 +24,10 @@ Ce que l'application et le site envoient à PostHog, et pourquoi. Le projet est
 - **Toute nouvelle propriété est documentée ici**, dans la section de son
   événement.
 - **Aucune adresse email dans une URL suivie.** PostHog enregistre l'adresse
-  de chaque page (`$current_url`, `$referrer` et leurs `$initial_*`) et le
-  replay la montre : une donnée personnelle ne se passe pas en paramètre
-  d'adresse. L'invitation à créer un compte transmet l'adresse de l'invité
+  de chaque page (`$current_url`, `$referrer`, leurs `$initial_*`, et
+  l'adresse d'entrée de la session, `$session_entry_url`, jointe à chaque
+  événement) et le replay la montre : une donnée personnelle ne se passe pas
+  en paramètre d'adresse. L'invitation à créer un compte transmet l'adresse de l'invité
   par l'état de la navigation ; `before_send` retire en plus tout paramètre
   `email` des URL envoyées (`withoutPersonalParams`, tenu par
   `src/__tests__/analyticsPersonalParams.test.ts`).

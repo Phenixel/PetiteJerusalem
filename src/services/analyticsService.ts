@@ -165,6 +165,13 @@ function exceptionValues(bag: Properties | undefined): unknown[] {
  * envoyée, site comme app, pour les liens anciens ou venus d'ailleurs.
  */
 const PERSONAL_PARAMS = ["email"];
+/**
+ * Toutes les propriétés où posthog-js recopie une adresse. Celles de la
+ * session (`$session_entry_*`) suivent chaque événement jusqu'à la fin de la
+ * session, même émis depuis une autre page : une session ouverte sur un
+ * ancien lien `/login?email=…` y gardait l'adresse.
+ */
+const PERSONAL_URL_KEYS = [...URL_KEYS, "$session_entry_url", "$session_entry_referrer"];
 
 export function withoutPersonalParams(url: string): string {
   if (!PERSONAL_PARAMS.some((param) => url.includes(`${param}=`))) return url;
@@ -179,7 +186,7 @@ export function withoutPersonalParams(url: string): string {
 
 function stripPersonalParams(bag: Properties | undefined): void {
   if (!bag) return;
-  for (const key of URL_KEYS) {
+  for (const key of PERSONAL_URL_KEYS) {
     if (typeof bag[key] === "string") bag[key] = withoutPersonalParams(bag[key]);
   }
 }
