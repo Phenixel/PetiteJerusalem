@@ -293,10 +293,12 @@ Une propriété de plus sur le lot (`scope: all`, « Tout télécharger ») :
 maintenant qu'un échec n'arrête plus le lot : `offline_download_failed` part
 pour chaque livre manqué, puis le lot va jusqu'au bout et
 `offline_download_completed` dit ce qui manque. Les deux événements se
-suivent donc dans un même lot, ce qui n'arrivait pas avant ; hors connexion,
-le lot s'arrête toujours au premier échec et n'envoie pas de
-`offline_download_completed` (voir `composables/useBookDownload.ts` et
-`src/__tests__/offlineDownloadAll.test.ts`).
+suivent donc dans un même lot, ce qui n'arrivait pas avant. Le lot s'arrête
+encore, sans `offline_download_completed`, quand les livres suivants
+échoueraient tous : hors connexion au premier échec, permission de stockage
+refusée (Android 10 et moins), ou trois échecs de suite (place épuisée, site
+injoignable). Voir `composables/useBookDownload.ts` et
+`src/__tests__/offlineDownloadAll.test.ts`.
 
 ### Lecture : `text_opened` (existant)
 

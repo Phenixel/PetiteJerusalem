@@ -23,6 +23,9 @@ export function downloadErrorKey(error: unknown): "downloads.permissionDenied" |
   return isStoragePermissionDenied(error) ? "downloads.permissionDenied" : "downloads.error";
 }
 
+/** Échecs de suite au-delà desquels « Tout télécharger » renonce au reste du lot. */
+export const MAX_CONSECUTIVE_FAILURES = 3;
+
 /**
  * Le téléchargement d'un livre pour le lire sans connexion (app native), tel
  * que le proposent la carte d'un texte dans la bibliothèque, le menu de
@@ -96,9 +99,10 @@ export function useBookDownload() {
    * 2 octobre 2026, `is_online` vrai, sur un simple « Error during file
    * transfer »), et un transfert raté en chemin coûtait toute la fin de la
    * bibliothèque. Hors connexion, on s'arrête toujours : les suivants
-   * échoueraient tous. En ligne, on continue et l'on dit à la fin ce qui
-   * manque, comme le font déjà l'introduction (OnboardingOfflinePicker) et
-   * `downloadBooks`.
+   * échoueraient tous. De même quand la permission de stockage est refusée,
+   * ou après plusieurs échecs de suite. En ligne, sinon, on continue et l'on
+   * dit à la fin ce qui manque, comme le font déjà l'introduction
+   * (OnboardingOfflinePicker) et `downloadBooks`.
    */
   async function downloadAll(books: OfflineBook[], tab: string): Promise<void> {
     const pending = books.filter((book) => !isBookDownloaded(book));
@@ -109,10 +113,12 @@ export function useBookDownload() {
     });
     let downloaded = 0;
     let failed = 0;
+    let consecutiveFailures = 0;
     for (const book of pending) {
       try {
         await downloadBook(book);
         downloaded++;
+        consecutiveFailures = 0;
       } catch (e) {
         failed++;
         // Sortie négative du lot : `offline_download_started` restait sans
@@ -130,8 +136,18 @@ export function useBookDownload() {
           is_online: online,
           error_message: e instanceof Error ? e.message : String(e),
         });
-        if (!online) {
-          toast.error(t("downloads.error"));
+        consecutiveFailures++;
+        // Ce qui ferait échouer tous les suivants arrête le lot : hors
+        // connexion, la permission de stockage refusée (Android 10 et moins,
+        // où chaque livre rouvrirait le dialogue), ou plusieurs échecs de
+        // suite (place épuisée, site injoignable). Un échec isolé, lui,
+        // n'abandonne que son livre.
+        if (
+          !online ||
+          isStoragePermissionDenied(e) ||
+          consecutiveFailures >= MAX_CONSECUTIVE_FAILURES
+        ) {
+          toast.error(t(downloadErrorKey(e)));
           return;
         }
       }

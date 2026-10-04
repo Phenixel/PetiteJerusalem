@@ -144,4 +144,63 @@ describe("« Tout télécharger »", () => {
     expect(propsOf("offline_download_failed")).toMatchObject({ is_online: false });
     expect(error).toHaveBeenCalledTimes(1);
   });
+
+  it("permission de stockage refusée : s'arrête, et le dit pour ce que c'est", async () => {
+    // Android 10 et moins : chaque livre rouvrirait le dialogue, puis tous
+    // échoueraient avec « Vérifiez votre connexion ».
+    downloadBook.mockRejectedValue(
+      Object.assign(new Error("user denied permission request"), { code: "OS-PLUG-FLTR-0006" }),
+    );
+    const { downloadAll } = setup();
+
+    await downloadAll(BOOKS, "Talmud Bavli");
+
+    expect(downloadBook).toHaveBeenCalledTimes(1);
+    expect(events()).toEqual(["offline_download_started", "offline_download_failed"]);
+    expect(error).toHaveBeenCalledTimes(1);
+    expect(error).toHaveBeenCalledWith(fr.downloads.permissionDenied);
+  });
+
+  it("en ligne, renonce au reste après plusieurs échecs de suite", async () => {
+    // Place épuisée, site injoignable : inutile d'essayer toute la bibliothèque.
+    const many = Array.from(
+      { length: 8 },
+      (_, i) => ({ path: `/texts/talmud/traite-${i}.json`, corpus: "Talmud Bavli" }) as OfflineBook,
+    );
+    downloadBook.mockRejectedValue(new Error("No space left on device"));
+    const { downloadAll } = setup();
+
+    await downloadAll(many, "Talmud Bavli");
+
+    expect(downloadBook).toHaveBeenCalledTimes(3);
+    expect(events().filter((name) => name === "offline_download_failed")).toHaveLength(3);
+    expect(events()).not.toContain("offline_download_completed");
+    expect(error).toHaveBeenCalledTimes(1);
+  });
+
+  it("des échecs espacés ne font pas renoncer : le compte repart à chaque réussite", async () => {
+    const many = Array.from(
+      { length: 7 },
+      (_, i) => ({ path: `/texts/talmud/traite-${i}.json`, corpus: "Talmud Bavli" }) as OfflineBook,
+    );
+    const ok = async (book: { path: string }) => void downloaded.add(book.path);
+    const ko = async () => Promise.reject(new Error("Error during file transfer"));
+    downloadBook
+      .mockImplementationOnce(ko)
+      .mockImplementationOnce(ko)
+      .mockImplementationOnce(ok)
+      .mockImplementationOnce(ko)
+      .mockImplementationOnce(ko)
+      .mockImplementationOnce(ok)
+      .mockImplementationOnce(ok);
+    const { downloadAll } = setup();
+
+    await downloadAll(many, "Talmud Bavli");
+
+    expect(downloadBook).toHaveBeenCalledTimes(7);
+    expect(propsOf("offline_download_completed")).toMatchObject({
+      books_count: 3,
+      books_failed: 4,
+    });
+  });
 });
