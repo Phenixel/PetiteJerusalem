@@ -72,8 +72,21 @@ const ANDROID_10 =
 const ANDROID_14 =
   "Mozilla/5.0 (Linux; Android 14; Pixel 8 Build/AP1A.240305.019; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/120.0.0.0 Mobile Safari/537.36";
 
-function surAndroid(userAgent: string) {
+/** L'agent réduit des webviews récentes : le même sur tous les appareils. */
+const ANDROID_REDUIT =
+  "Mozilla/5.0 (Linux; Android 10; K; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/140.0.0.0 Mobile Safari/537.36";
+
+function surAndroid(userAgent: string, platformVersion?: string) {
   vi.spyOn(navigator, "userAgent", "get").mockReturnValue(userAgent);
+  // Les indications du client : la vraie version d'Android, quand la webview
+  // les donne.
+  Object.defineProperty(navigator, "userAgentData", {
+    configurable: true,
+    value:
+      platformVersion === undefined
+        ? undefined
+        : { getHighEntropyValues: () => Promise.resolve({ platformVersion }) },
+  });
 }
 
 /** Le site sert ces empreintes, différentes de ce que l'appareil a. */
@@ -153,6 +166,36 @@ describe("Android 10 et moins : la permission de stockage", () => {
     const { refreshStaleDownloads } = await import("../services/offlineLibraryService");
     await refreshStaleDownloads();
     expect(transfers).toEqual([]);
+  });
+
+  it("agent réduit sur un téléphone récent : la mise à jour part, sans rien vérifier", async () => {
+    // « Android 10; K » sur un Android 16 : la permission n'y est jamais
+    // accordée, s'y fier coupait les mises à jour de fond pour de bon.
+    surAndroid(ANDROID_REDUIT, "16.0.0");
+    siteSert({ [CHAHARIT]: "autre-version" });
+    const { fetchTextResponse } = await lancer();
+    await fetchTextResponse(CHAHARIT);
+    await vi.waitFor(() => expect(transfers).toHaveLength(1));
+    expect(permission.checks).toBe(0);
+  });
+
+  it("agent réduit sur un vrai Android 10 : la mise à jour attend la permission", async () => {
+    surAndroid(ANDROID_REDUIT, "10.0.0");
+    siteSert({ [CHAHARIT]: "autre-version" });
+    const { fetchTextResponse } = await lancer();
+    await fetchTextResponse(CHAHARIT);
+    await tacheDeFond();
+    expect(permission.checks).toBeGreaterThan(0);
+    expect(transfers).toEqual([]);
+  });
+
+  it("agent réduit sans indications du client : version inconnue, la mise à jour part", async () => {
+    surAndroid(ANDROID_REDUIT);
+    siteSert({ [CHAHARIT]: "autre-version" });
+    const { fetchTextResponse } = await lancer();
+    await fetchTextResponse(CHAHARIT);
+    await vi.waitFor(() => expect(transfers).toHaveLength(1));
+    expect(permission.checks).toBe(0);
   });
 
   it("ne vérifie rien au-delà d'Android 10 : la mise à jour part comme avant", async () => {

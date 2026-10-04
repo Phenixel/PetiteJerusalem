@@ -159,8 +159,13 @@ avec un leurre qui se comporte comme le vrai proxy, `then` compris.
     accordée (`backgroundDownloadAllowed`, qui la lit par
     `checkPermissions` sans rien demander) ; sinon elle attend, et la copie
     en place reste ce qu'on lit. Le dialogue ne surgit donc qu'après un
-    geste de téléchargement. La version d'Android se lit dans l'agent
-    utilisateur de la webview ; au-delà d'Android 10, rien n'est vérifié ;
+    geste de téléchargement. La version d'Android se lit dans les
+    indications du client (`userAgentData`), puis dans l'agent utilisateur
+    de la webview : réduit, celui-ci annonce « Android 10; K » sur tout
+    appareil, où la permission n'est jamais accordée au-delà du SDK 29, et
+    s'y fier couperait les mises à jour de fond des téléphones récents
+    (`deviceAndroidMajor`). Au-delà d'Android 10, ou version inconnue, rien
+    n'est vérifié ;
   - un refus (`OS-PLUG-FLTR-0006`) a son message (`downloads.permissionDenied`,
     qui dit où l'autoriser) au lieu de « Vérifiez votre connexion ».
 

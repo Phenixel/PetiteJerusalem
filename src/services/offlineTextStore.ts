@@ -116,6 +116,42 @@ export function androidMajorVersion(userAgent: string): number | null {
 }
 
 /**
+ * L'agent utilisateur réduit des webviews récentes : « Android 10; K », quel
+ * que soit l'appareil et sa version d'Android. La vraie version ne se lit
+ * alors que dans les indications du client (`userAgentData`).
+ */
+const REDUCED_ANDROID_UA = /Android 10; K[;)]/;
+
+type ClientHints = {
+  getHighEntropyValues?(hints: string[]): Promise<{ platformVersion?: string }>;
+};
+
+/**
+ * La version majeure d'Android de l'appareil, null si elle ne se lit pas.
+ *
+ * Les indications du client d'abord. L'agent utilisateur seul ne suffit
+ * plus : réduit, il annonce Android 10 sur un téléphone récent, où la
+ * permission de stockage ne peut jamais être accordée (le manifeste la borne
+ * au SDK 29). S'y fier coupait pour de bon les mises à jour de fond sur ces
+ * appareils. Réduit et sans indications, la version est tenue pour inconnue.
+ */
+export async function deviceAndroidMajor(userAgent: string): Promise<number | null> {
+  const hints =
+    typeof navigator === "undefined"
+      ? undefined
+      : (navigator as Navigator & { userAgentData?: ClientHints }).userAgentData;
+  try {
+    const version = (await hints?.getHighEntropyValues?.(["platformVersion"]))?.platformVersion;
+    const major = version ? Number.parseInt(version, 10) : NaN;
+    if (Number.isFinite(major) && major > 0) return major;
+  } catch {
+    // Indications refusées : l'agent utilisateur reste le repli.
+  }
+  if (REDUCED_ANDROID_UA.test(userAgent)) return null;
+  return androidMajorVersion(userAgent);
+}
+
+/**
  * Une tâche de fond (mise à jour d'un texte embarqué ou téléchargé) peut-elle
  * télécharger sans faire surgir le dialogue de permission ? Sous Android 10
  * et moins, `@capacitor/file-transfer` demande la permission de stockage
@@ -123,16 +159,15 @@ export function androidMajorVersion(userAgent: string): number | null {
  * l'aurait demandée à l'ouverture d'un office, sans que personne n'ait rien
  * demandé. Elle attend alors un téléchargement voulu, qui la demandera.
  *
- * Au-delà d'Android 10, le plugin ne la consulte plus : rien à vérifier.
- * L'agent utilisateur de la webview porte la version d'Android ; s'il en
- * annonçait une plus basse que la vraie, on vérifierait pour rien, sans autre
- * effet que de garder la copie en place.
+ * Au-delà d'Android 10, le plugin ne la consulte plus : rien à vérifier, et
+ * surtout rien à attendre, la permission n'y étant jamais accordée. La
+ * version vient de deviceAndroidMajor ; inconnue, la tâche part comme avant.
  */
 export async function backgroundDownloadAllowed(
   userAgent: string = typeof navigator === "undefined" ? "" : navigator.userAgent,
 ): Promise<boolean> {
   if (!isNative || Capacitor.getPlatform() !== "android") return true;
-  const major = androidMajorVersion(userAgent);
+  const major = await deviceAndroidMajor(userAgent);
   if (major === null || major > 10) return true;
   try {
     // checkPermissions vient de Capacitor, pour tout plugin qui déclare des
