@@ -1,15 +1,6 @@
-import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  limit,
-  orderBy,
-  query,
-  where,
-  type DocumentData,
-} from "firebase/firestore";
-import { db } from "../firebase/firestore";
+import type { DocumentData } from "firebase/firestore";
+import type { Firestore } from "firebase/firestore/lite";
+import { isNativeApp } from "../composables/useNativeApp";
 import { cached } from "./cached";
 import {
   ANNOUNCEMENT_KINDS,
@@ -22,6 +13,30 @@ import {
  * Lecture des informations de l'équipe (voir services/announcements.ts).
  * Chargé à la demande : il tire Firestore, que l'accueil n'importe pas.
  */
+
+type FirestoreApi = typeof import("firebase/firestore/lite");
+
+/**
+ * Le Firestore de lecture. Sur le site, Firestore Lite (voir
+ * ../firebase/firestoreLite) : l'accueil d'un visiteur n'a besoin du SDK
+ * complet que pour ces informations. Dans l'app native, le SDK complet, dont
+ * le cache garde les informations lisibles hors ligne. Les deux exposent les
+ * mêmes fonctions de lecture sous les mêmes noms.
+ */
+async function firestore(): Promise<{ fs: FirestoreApi; db: Firestore }> {
+  if (isNativeApp) {
+    const [fs, { db }] = await Promise.all([
+      import("firebase/firestore"),
+      import("../firebase/firestore"),
+    ]);
+    return { fs: fs as unknown as FirestoreApi, db: db as unknown as Firestore };
+  }
+  const [fs, { liteDb }] = await Promise.all([
+    import("firebase/firestore/lite"),
+    import("../firebase/firestoreLite"),
+  ]);
+  return { fs, db: liteDb };
+}
 
 /** Relue au plus toutes les dix minutes : une annonce doit se voir vite. */
 const CACHE_TTL = 10 * 60 * 1000;
@@ -69,12 +84,13 @@ class AnnouncementService {
   // La requête filtre sur `published` : les règles refusent toute liste qui
   // pourrait contenir un brouillon (voir firestore.rules).
   private readonly list = cached(CACHE_TTL, async () => {
-    const snap = await getDocs(
-      query(
-        collection(db, "announcements"),
-        where("published", "==", true),
-        orderBy("publishedAt", "desc"),
-        limit(LIST_LIMIT),
+    const { fs, db } = await firestore();
+    const snap = await fs.getDocs(
+      fs.query(
+        fs.collection(db, "announcements"),
+        fs.where("published", "==", true),
+        fs.orderBy("publishedAt", "desc"),
+        fs.limit(LIST_LIMIT),
       ),
     );
     return snap.docs.map((d) => parseAnnouncement(d.id, d.data()));
@@ -101,7 +117,8 @@ class AnnouncementService {
     const known = this.list.isStale() ? null : this.list.peek()?.find((a) => a.id === id);
     if (known) return known;
     try {
-      const snap = await getDoc(doc(db, "announcements", id));
+      const { fs, db } = await firestore();
+      const snap = await fs.getDoc(fs.doc(db, "announcements", id));
       return snap.exists() ? parseAnnouncement(snap.id, snap.data()) : null;
     } catch (error) {
       if ((error as { code?: string }).code === "permission-denied") return null;

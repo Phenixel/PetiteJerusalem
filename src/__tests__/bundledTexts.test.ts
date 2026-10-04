@@ -46,6 +46,10 @@ vi.mock("@capacitor/filesystem", () => ({
     getUri: ({ path }: { path: string }) => Promise.resolve({ uri: `file:///data/${path}` }),
     stat: ({ path }: { path: string }) =>
       Promise.resolve({ size: (disque[`file:///data/${path}`] ?? "").length }),
+    deleteFile: ({ path }: { path: string }) => {
+      delete disque[`file:///data/${path}`];
+      return Promise.resolve();
+    },
   },
 }));
 vi.mock("@capacitor/file-transfer", () => ({
@@ -59,6 +63,8 @@ vi.mock("@capacitor/file-transfer", () => ({
 }));
 
 const CHAHARIT = "/texts/tefila/chaharit.json";
+/** La version corrigée que sert le site : un texte est du JSON. */
+const CORRIGE = '{"title":"Chaharit corrigé"}';
 const TEHILIM = "/texts/tehilim.json";
 
 /** Les fichiers du binaire, tels que la webview les sert. */
@@ -148,9 +154,9 @@ describe("textes embarqués dans l'app", () => {
   });
 
   it("télécharge la version corrigée du site, qui s'ouvre la fois suivante", async () => {
-    const corrigee = await empreinte("chaharit corrigé");
+    const corrigee = await empreinte(CORRIGE);
     siteSert({ [CHAHARIT]: corrigee });
-    recu = "chaharit corrigé";
+    recu = CORRIGE;
     const lire = await lancer();
 
     // La lecture n'attend pas le site : la copie embarquée d'abord.
@@ -160,11 +166,11 @@ describe("textes embarqués dans l'app", () => {
     expect(transfers[0]).toContain(`h=${corrigee}`);
 
     await tacheDeFond();
-    expect(await lire(CHAHARIT)).toBe("chaharit corrigé");
+    expect(await lire(CHAHARIT)).toBe(CORRIGE);
   });
 
   it("garde la copie embarquée quand le téléchargement rend autre chose (portail captif)", async () => {
-    siteSert({ [CHAHARIT]: await empreinte("chaharit corrigé") });
+    siteSert({ [CHAHARIT]: await empreinte(CORRIGE) });
     recu = "<html>Connectez-vous au Wi-Fi</html>";
     const lire = await lancer();
 
@@ -172,5 +178,11 @@ describe("textes embarqués dans l'app", () => {
     await vi.waitFor(() => expect(transfers).toHaveLength(1));
     await tacheDeFond();
     expect(await lire(CHAHARIT)).toBe("chaharit embarqué");
+    // La page reçue n'est ni gardée sur le disque, ni inscrite (la seconde
+    // lecture a relancé la vérification : on la laisse finir).
+    await tacheDeFond();
+    expect(Object.values(disque)).not.toContain(recu);
+    const { isDownloaded } = await import("../services/offlineTextStore");
+    expect(isDownloaded(CHAHARIT)).toBe(false);
   });
 });

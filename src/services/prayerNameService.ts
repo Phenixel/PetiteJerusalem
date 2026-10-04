@@ -12,8 +12,14 @@ import {
 } from "firebase/firestore";
 import { db } from "../firebase/firestore";
 import type { PrayerName } from "../models/models";
-import { PrayerNameIncompleteError, PrayerNameLimitError } from "./appError";
+import {
+  PrayerNameIncompleteError,
+  PrayerNameLimitError,
+  PrayerNameOfflineError,
+  PrayerNamePendingError,
+} from "./appError";
 import { moderationService } from "./moderationService";
+import { isOffline } from "./userPreferencesService";
 import {
   isDated,
   isPrayerNameListed,
@@ -73,6 +79,59 @@ function cleanInput(input: PrayerNameInput): PrayerNameInput {
     deathDay: dated ? input.deathDay : null,
     deathMonth: dated ? input.deathMonth : null,
   };
+}
+
+/**
+ * Hors ligne, aucune écriture : voir PrayerNameOfflineError. La fenêtre le
+ * dit et reste ouverte, avec ce qui a été saisi.
+ */
+function assertOnline(): void {
+  if (isOffline()) throw new PrayerNameOfflineError();
+}
+
+/**
+ * Le temps qu'on attend la confirmation du serveur. Avec le cache persistant,
+ * une écriture ne rend la main qu'une fois confirmée : sur un réseau qui ne
+ * répond pas alors que l'appareil se croit en ligne, elle ne la rendrait
+ * jamais, et la fenêtre resterait figée.
+ */
+export const SERVER_ACK_TIMEOUT_MS = 10_000;
+
+/**
+ * L'écriture, confirmée par le serveur, ou PrayerNamePendingError passé le
+ * délai. Elle n'est pas annulée pour autant (Firestore ne le permet pas) :
+ * elle partira au retour du réseau.
+ */
+async function acknowledged<T>(write: Promise<T>): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const late = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new PrayerNamePendingError()), SERVER_ACK_TIMEOUT_MS);
+  });
+  try {
+    return await Promise.race([write, late]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
+ * Les ajouts encore en route, par nom saisi. Un ajout resté sans confirmation
+ * partira au retour du réseau : réessayer le même nom en attendant ne doit
+ * pas en écrire un second. On reprend alors l'écriture en route.
+ */
+const pendingAdds = new Map<string, Promise<PrayerName>>();
+
+function addKey(sessionId: string, ownerId: string, input: PrayerNameInput): string {
+  return JSON.stringify([
+    sessionId,
+    ownerId,
+    input.gender,
+    input.firstName,
+    input.motherName,
+    input.kind,
+    input.deathDay,
+    input.deathMonth,
+  ]);
 }
 
 /** Les champs d'échéance et de date : l'un ou l'autre, jamais les deux. */
@@ -149,6 +208,7 @@ class PrayerNameService {
   ): Promise<PrayerName> {
     if (ownedCount >= MAX_NAMES_PER_OWNER) throw new PrayerNameLimitError();
     const clean = cleanInput(input);
+    assertOnline();
     const now = new Date();
     const fields = {
       ownerId,
@@ -160,22 +220,38 @@ class PrayerNameService {
       updatedAt: serverTimestamp(),
       ...timingFields(clean, now, false),
     };
-    const ref = await addDoc(namesOf(sessionId), fields);
-    return {
-      id: ref.id,
-      ownerId,
-      gender: clean.gender,
-      firstName: clean.firstName,
-      motherName: clean.motherName,
-      kind: clean.kind,
-      createdAt: now,
-      updatedAt: now,
-      ...this.localTiming(clean, now),
-    };
+    const key = addKey(sessionId, ownerId, clean);
+    let saved = pendingAdds.get(key);
+    if (!saved) {
+      saved = addDoc(namesOf(sessionId), fields).then(
+        (ref): PrayerName => ({
+          id: ref.id,
+          ownerId,
+          gender: clean.gender,
+          firstName: clean.firstName,
+          motherName: clean.motherName,
+          kind: clean.kind,
+          createdAt: now,
+          updatedAt: now,
+          ...this.localTiming(clean, now),
+        }),
+      );
+      pendingAdds.set(key, saved);
+      const done = () => pendingAdds.delete(key);
+      saved.then(done, done);
+    }
+    try {
+      return await acknowledged(saved);
+    } catch (err) {
+      // Le nom arrivera plus tard : la fenêtre le saura, et la liste aussi.
+      if (err instanceof PrayerNamePendingError) err.landing = saved;
+      throw err;
+    }
   }
 
   async update(sessionId: string, name: PrayerName, input: PrayerNameInput): Promise<PrayerName> {
     const clean = cleanInput(input);
+    assertOnline();
     const now = new Date();
     // Corriger un nom ne remet pas son échéance à zéro : seul « Prolonger »
     // le fait. Sauf s'il change de forme (une date retirée, un défunt devenu
@@ -184,14 +260,16 @@ class PrayerNameService {
     const timing = keepsExpiry
       ? { expiresAt: Timestamp.fromDate(name.expiresAt!) }
       : timingFields(clean, now, true);
-    await updateDoc(doc(namesOf(sessionId), name.id), {
-      gender: clean.gender,
-      firstName: clean.firstName,
-      motherName: clean.motherName,
-      kind: clean.kind,
-      updatedAt: serverTimestamp(),
-      ...timing,
-    });
+    await acknowledged(
+      updateDoc(doc(namesOf(sessionId), name.id), {
+        gender: clean.gender,
+        firstName: clean.firstName,
+        motherName: clean.motherName,
+        kind: clean.kind,
+        updatedAt: serverTimestamp(),
+        ...timing,
+      }),
+    );
     const updated: PrayerName = {
       ...name,
       gender: clean.gender,
@@ -210,17 +288,21 @@ class PrayerNameService {
 
   /** Trente jours de plus, à compter d'aujourd'hui. */
   async renew(sessionId: string, name: PrayerName): Promise<PrayerName> {
+    assertOnline();
     const now = new Date();
     const expiresAt = prayerNameExpiry(now);
-    await updateDoc(doc(namesOf(sessionId), name.id), {
-      expiresAt: Timestamp.fromDate(expiresAt),
-      updatedAt: serverTimestamp(),
-    });
+    await acknowledged(
+      updateDoc(doc(namesOf(sessionId), name.id), {
+        expiresAt: Timestamp.fromDate(expiresAt),
+        updatedAt: serverTimestamp(),
+      }),
+    );
     return { ...name, expiresAt, updatedAt: now };
   }
 
   async remove(sessionId: string, nameId: string): Promise<void> {
-    await deleteDoc(doc(namesOf(sessionId), nameId));
+    assertOnline();
+    await acknowledged(deleteDoc(doc(namesOf(sessionId), nameId)));
   }
 
   private localTiming(

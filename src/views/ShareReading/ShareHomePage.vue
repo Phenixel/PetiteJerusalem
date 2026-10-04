@@ -200,11 +200,12 @@ const endSession = async (session: Session) => {
   if (await sessionEditing.endSession(session)) replaceSession(sessionEditing.ended(session));
 };
 
-const availableTypes = computed(() => {
-  const types = new Set<EnumTypeTextStudy>();
-  for (const s of sessions.value) types.add(s.type);
-  return Array.from(types);
-});
+// Les types proposés en puces sont ceux de la liste « En cours » : une puce
+// tirée d'une chaîne terminée, masquée, au créateur bloqué ou de la chaîne
+// perpétuelle (qui a sa carte à part) menait à « aucun résultat ».
+const availableTypes = computed(() =>
+  sessionService.listedTypes(sessions.value, moderationService.getBlockedCreatorIds()),
+);
 
 const filteredSessions = computed(() => {
   // Modération : les sessions masquées et celles des créateurs bloqués par
@@ -228,8 +229,8 @@ const hasActiveFilter = computed(() => searchTerm.value.trim() !== "" || selecte
 
 const perpetualSession = computed(() => {
   const found = findPerpetualSession(sessions.value);
-  // Un visiteur qui a bloqué son créateur ne la voit pas plus qu'ailleurs.
-  if (!found || moderationService.getBlockedCreatorIds().includes(found.personId)) return null;
+  // Son créateur est l'équipe : un blocage ne la cache pas (isBlockedForViewer).
+  if (!found || moderationService.isBlockedForViewer(found)) return null;
   return found;
 });
 const perpetualNames = ref<PrayerName[]>([]);

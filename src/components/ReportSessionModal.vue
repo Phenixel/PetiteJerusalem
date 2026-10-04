@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref, toRef, watch } from "vue";
+import { computed, ref, toRef, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import type { ReportReason, Session } from "../models/models";
 import { moderationService } from "../services/moderationService";
+import { isPerpetual } from "../services/perpetualChain";
 import { useToast } from "../composables/useToast";
 import { useOverlay } from "../composables/useOverlayStack";
 import AppIcon from "./icons/AppIcon.vue";
@@ -12,6 +13,10 @@ import AppIcon from "./icons/AppIcon.vue";
  * optionnels, avec la possibilité de bloquer le créateur dans la foulée.
  * Les signalements arrivent dans le backoffice ; au 3e signalement distinct
  * la session est masquée automatiquement.
+ *
+ * La chaîne perpétuelle fait exception (docs/moderation.md) : un signalement
+ * y vise un nom, que les précisions nomment ; elle ne se masque pas toute
+ * seule, et son créateur, l'équipe, ne se bloque pas.
  */
 
 const { t } = useI18n();
@@ -29,6 +34,11 @@ const emit = defineEmits<{
 }>();
 
 const REASONS: ReportReason[] = ["inappropriate", "offensive", "spam", "other"];
+
+const perpetual = computed(() => isPerpetual(props.session));
+const canBlockCreator = computed(
+  () => props.session != null && moderationService.canBlockCreator(props.session),
+);
 
 const reason = ref<ReportReason>("inappropriate");
 const details = ref("");
@@ -59,16 +69,13 @@ const submitReport = async () => {
     isSubmitting.value = true;
     await moderationService.reportSession(session, reason.value, details.value);
 
-    if (blockCreator.value && session.personId) {
-      moderationService.blockCreator(session.personId);
-    }
+    const blocks = blockCreator.value && canBlockCreator.value && !!session.personId;
+    if (blocks) moderationService.blockCreator(session.personId);
 
     toast.success(t("moderation.reportSuccess"));
     closeModal();
     emit("reported");
-    if (blockCreator.value) {
-      emit("creator-blocked");
-    }
+    if (blocks) emit("creator-blocked");
   } catch (error) {
     console.error("Erreur lors du signalement:", error);
     toast.errorFromException(error, t("moderation.reportError"));
@@ -90,7 +97,7 @@ const submitReport = async () => {
         </button>
       </div>
       <p class="text-sm text-text-secondary mb-5">
-        {{ t("moderation.reportSubtitle") }}
+        {{ perpetual ? t("moderation.reportSubtitlePerpetual") : t("moderation.reportSubtitle") }}
       </p>
 
       <form @submit.prevent="submitReport" class="space-y-5">
@@ -136,13 +143,18 @@ const submitReport = async () => {
             class="field resize-y"
             rows="3"
             maxlength="1000"
-            :placeholder="t('moderation.detailsPlaceholder')"
+            :placeholder="
+              perpetual
+                ? t('moderation.detailsPlaceholderPerpetual')
+                : t('moderation.detailsPlaceholder')
+            "
           ></textarea>
         </div>
 
         <!-- Bloquer le créateur (exigence App Store : pouvoir bloquer les
-             utilisateurs abusifs) : ses sessions disparaissent de cet appareil. -->
-        <label v-if="session?.personId" class="flex items-start gap-3 cursor-pointer">
+             utilisateurs abusifs) : ses sessions disparaissent de cet appareil.
+             Pas sur la chaîne perpétuelle : son créateur est l'équipe. -->
+        <label v-if="canBlockCreator" class="flex items-start gap-3 cursor-pointer">
           <input
             type="checkbox"
             v-model="blockCreator"
