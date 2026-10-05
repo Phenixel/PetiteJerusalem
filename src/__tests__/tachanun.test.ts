@@ -61,6 +61,26 @@ describe("le lendemain de 'Hanouka", () => {
   });
 });
 
+describe("la fin de Tichri", () => {
+  /**
+   * hebcal rend le tahanoun du 25 au 30 Tichri ; l'usage séfarade ne le dit
+   * pas de tout le mois. Il reprend après Roch 'Hodech 'Hechvan.
+   */
+  it("ne dit pas le tahanoun du 25 au 30 Tichri", () => {
+    // 5787 : mardi 6 octobre 2026 = 25 Tichri, vendredi 9 = 28 Tichri.
+    for (let day = 25; day <= 30; day++) {
+      expect(saidTachanun(new HDate(day, months.TISHREI, 5787), false)).toEqual(none);
+    }
+    expect(saidTachanun(hd(2026, 10, 6), false)).toEqual(none);
+    expect(saidTachanun(hd(2026, 10, 9), false)).toEqual(none);
+  });
+
+  it("le reprend le 2 'Hechvan", () => {
+    // Mardi 13 octobre 2026 : le lendemain de Roch 'Hodech.
+    expect(saidTachanun(hd(2026, 10, 13), false)).toEqual(full);
+  });
+});
+
 describe("Chouchan Pourim Katan", () => {
   /**
    * Le Choul'han Aroukh (Ora'h 'Haïm 697, 1) omet le tahanoun les 14 ET 15
