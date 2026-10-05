@@ -191,6 +191,12 @@ plus rien : la règle aurait rendu le tahanoun au 3 Tévet 5790, qui est
 justement ce huitième jour. C'est le nom de l'événement (`basename()`) qui
 tranche.
 
+Ajout d'octobre 2026, signalé en usage : **la fin de Tichri**. hebcal rend le
+tahanoun du 25 au 30 Tichri (il ne les range que parmi les jours où certaines
+communautés l'omettent) ; l'usage séfarade que suit l'application ne le dit
+pas de tout le mois. `saidTachanun` le retire donc jusqu'à Roch 'Hodech
+'Hechvan inclus. Test : `tachanun.test.ts`, « la fin de Tichri ».
+
 ### 3.5 Allumage en Israël : 18 minutes partout sauf Jérusalem
 
 `CANDLE_LIGHTING_BY_CITY` ne connaît que Jérusalem (40). Or :
