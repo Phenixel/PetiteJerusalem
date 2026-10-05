@@ -669,6 +669,14 @@ describe("la sortie de Chabbat et de Yom Tov (Ata 'honantanou)", () => {
     // Le second jour de fête de diaspora n'a rien à séparer.
     expect(activeOccasions(new HDate(16, months.NISAN, 5787), false).has("motsae")).toBe(false);
   });
+
+  it("pas le vendredi soir qui suit un Yom Tov : on entre dans Chabbat", () => {
+    // Chavou'ot 5786 tombe le vendredi 22 mai 2026 en Israël : le 7 Sivan
+    // est Chabbat, il n'y a rien à séparer.
+    const chabbat = activeOccasions(new HDate(7, months.SIVAN, 5786), true);
+    expect(chabbat.has("motsae")).toBe(false);
+    expect(chabbat.has("motsae-yom-tov")).toBe(false);
+  });
 });
 
 describe("Hochana Rabba", () => {

@@ -496,14 +496,16 @@ export function activeOccasions(hd: HDate, il: boolean, walledCity = false): Set
   // d'Arvit, la havdala de la prière. C'est le jour hébraïque qui commence à
   // la chkia qui le porte (voir tefilaHebrewDay) : la veille était Chabbat ou
   // Yom Tov, et ce soir ne l'est plus (sinon on ne prie pas l'office de
-  // semaine, et le second jour de fête de diaspora n'a rien à séparer).
+  // semaine, et le second jour de fête de diaspora n'a rien à séparer). Un
+  // Yom Tov qui tombe un vendredi ne se sépare pas non plus : on entre dans
+  // Chabbat, plus saint que lui, et il n'y a pas de havdala.
   const veille = hd.prev();
   const veilleKodech =
     veille.getDay() === 6 ||
     (getHolidaysOnDate(veille, il) ?? []).some(
       (ev) => (ev.getFlags() & flags.CHAG) !== 0 && (ev.getFlags() & flags.EREV) === 0,
     );
-  if (veilleKodech && !has(flags.CHAG)) {
+  if (veilleKodech && !has(flags.CHAG) && hd.getDay() !== 6) {
     occ.add("motsae");
     // La sortie d'un Yom Tov qui ne tombe pas un dimanche hébraïque. Les
     // fichiers disent la sortie de Chabbat sous « jour-0 », la clé que toutes
@@ -653,8 +655,9 @@ export function activeOccasions(hd: HDate, il: boolean, walledCity = false): Set
     occ.add(holHamoed ? "chir-moed-minha" : "lamnatseah-minha");
   }
   // Le compte du 'Omer, quarante-neuf soirs, de la deuxième nuit de Pessah au
-  // 5 Sivan. Il se compte le soir : c'est donc le jour hébraïque d'Arvit, déjà
-  // basculé à la chkia, qui donne le bon numéro (voir tefilaHebrewDay).
+  // 5 Sivan. Il se compte le soir : c'est donc le jour hébraïque d'Arvit,
+  // celui de la nuit qui vient, qui donne le bon numéro (voir
+  // tefilaHebrewDay).
   // hebcal compte lui aussi depuis le 16 Nissan, premier jour du 'Omer.
   const omer = omerDay(hd);
   if (omer !== null) {

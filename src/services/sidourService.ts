@@ -58,19 +58,32 @@ export function nextTefilaEntry(entry: TextStudyJsonEntry | null): TextStudyJson
  * reste celle du jeudi (avec ses supplications et son psaume) ; celle du
  * vendredi ne s'affiche qu'à partir de minuit.
  *
- * Arvit, et tout ce qui n'est pas un office du sidour (brahot, Sli'hot…), se
- * disent une fois la nuit tombée et appartiennent au jour hébraïque qui
- * commence à la chkia : Yaalé véyavo dès la nuit qui ouvre Roch Hodech, Retsé
- * au birkat hamazon du vendredi soir.
+ * Ce qui n'est pas un office du sidour (brahot, Sli'hot…) suit le jour
+ * hébraïque qui commence à la chkia : Retsé au birkat hamazon du vendredi
+ * soir, mais pas à celui du vendredi midi.
+ *
+ * Arvit est l'office d'une nuit, et pas toujours de celle qui court : ouverte
+ * dans la journée, avant la chkia, c'est l'Arvit du soir qui vient que l'on
+ * prépare ou que l'on prie tôt, pas celle de la nuit passée. Elle prend donc
+ * le jour hébraïque du lendemain dès le lever du soleil : le lundi à 19 h,
+ * pas d'Ata 'honantanou pour une sortie de fête qui était la veille, et le
+ * compte du 'Omer est celui de ce soir. Avant le lever du soleil, c'est
+ * encore la nuit en cours, dont l'Arvit se rattrape jusqu'au matin. Test :
+ * src/__tests__/sidourWindow.test.ts, « Arvit ouverte dans la journée ».
  */
 export function tefilaHebrewDay(
   place: ZmanimPlace,
   tefila: TefilaKey | null,
   now: Date = new Date(),
 ): HDate {
-  return tefila === "chaharit" || tefila === "minha"
-    ? hebrewDayOf(place, now)
-    : hebrewDateFor(place, now, now);
+  if (tefila === "chaharit" || tefila === "minha") return hebrewDayOf(place, now);
+  if (tefila !== "arvit") return hebrewDateFor(place, now, now);
+  const sunrise = computeZmanim(place, now).find((z) => z.key === "sunrise")?.date;
+  // Sans lever du soleil (les nuits blanches du Grand Nord), la bascule à la
+  // chkia, faute de mieux.
+  if (!sunrise) return hebrewDateFor(place, now, now);
+  const today = hebrewDayOf(place, now);
+  return now.getTime() >= sunrise.getTime() ? today.next() : today;
 }
 
 // ---- Lecture de la Torah de la semaine (lundi et jeudi) -------------------
