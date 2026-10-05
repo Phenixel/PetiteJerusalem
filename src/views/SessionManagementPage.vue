@@ -12,7 +12,7 @@ import {
 import { SearchService } from "../services/searchService";
 import { searchItems } from "../services/fuzzySearch";
 import { TextTypeService } from "../services/textTypeService";
-import { DateService } from "../services/dateService";
+import { DateService, deadlineOf } from "../services/dateService";
 import { authService } from "../services/authService";
 import { appendHebrewNumeral, formatNumberWithHebrew } from "../services/hebrewNumerals";
 import type { Session, TextStudy, TextStudyReservation } from "../models/models";
@@ -610,12 +610,14 @@ const sessionStats = computed(() => {
     };
   }
 
-  // Le même calcul que la page publique et la carte d'aperçu.
+  // Le même calcul que la page publique et la carte d'aperçu : le taux se
+  // compte en places, et un texte n'est réservé qu'en entier (un chapitre
+  // pris sur trois ne le rend pas « réservé »).
   const stats = sessionService.getSessionReservationStats(current, textStudies.value);
   const totalTexts = textStudies.value.length;
   let reservedTexts = 0;
   for (const status of statusIndex.value.values()) {
-    if (status.status !== "available") reservedTexts++;
+    if (status.status === "fully_reserved") reservedTexts++;
   }
 
   return {
@@ -624,7 +626,7 @@ const sessionStats = computed(() => {
     completionRate: stats.reserved > 0 ? Math.round((stats.read / stats.reserved) * 100) : 0,
     totalTexts,
     reservedTexts,
-    reservationRate: totalTexts > 0 ? Math.round((reservedTexts / totalTexts) * 100) : 0,
+    reservationRate: stats.percentage,
   };
 });
 
@@ -671,7 +673,7 @@ onMounted(() => {
                 TextTypeService.formatType(session.type)
               }}</span>
               <span class="chip bg-black/5 text-text-secondary dark:bg-white/10">{{
-                t("common.dateLimitValue", { date: DateService.formatDate(session.dateLimit) })
+                t("common.dateLimitValue", { date: DateService.formatDate(deadlineOf(session)) })
               }}</span>
               <span
                 v-if="session.isEnded"

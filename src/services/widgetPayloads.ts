@@ -17,6 +17,7 @@ import {
   restPeriodAt,
   tachanunStatus,
   type ZmanimPlace,
+  placeDayAfter,
 } from "./zmanimService";
 import type { HDate } from "@hebcal/core";
 import type { UserPreferences } from "./userPreferencesService";
@@ -262,8 +263,7 @@ export function buildZmanimWidgetPayload(
   const times: ZmanimWidgetTime[] = [];
   const days: ZmanimWidgetDay[] = [];
   for (let i = 0; i < ZMANIM_WIDGET_DAYS; i++) {
-    const day = new Date(now);
-    day.setDate(day.getDate() + i);
+    const day = placeDayAfter(place, now, i);
     const zmanim = computeZmanim(place, day);
     for (const zman of zmanim) {
       times.push({

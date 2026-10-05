@@ -5,6 +5,7 @@ import { guestService } from "./guestService";
 import { analyticsService } from "./analyticsService";
 import { BANNED_WORDS, BANNED_PHRASES } from "../datas/bannedWords";
 import type { ReportReason, Session } from "../models/models";
+import { isPerpetual } from "./perpetualChain";
 
 /**
  * Modération du contenu généré par les utilisateurs (exigence App Store 1.2) :
@@ -165,6 +166,16 @@ class ModerationService {
     return readLocalList(REPORTED_SESSIONS_KEY).includes(sessionId);
   }
 
+  /**
+   * Le bouton « Signaler » est-il éteint pour cette session ? Une session
+   * ordinaire se signale une fois par appareil. La chaîne perpétuelle reçoit
+   * des noms sans fin, et un signalement y vise un nom : on peut toujours en
+   * signaler un autre.
+   */
+  isReportLocked(session: Pick<Session, "id" | "perpetual">): boolean {
+    return !isPerpetual(session) && this.hasReportedSession(session.id);
+  }
+
   private markSessionReported(sessionId: string): void {
     const reported = readLocalList(REPORTED_SESSIONS_KEY);
     if (!reported.includes(sessionId)) {
@@ -181,6 +192,24 @@ class ModerationService {
   isCreatorBlocked(personId: string | undefined): boolean {
     if (!personId) return false;
     return this.getBlockedCreatorIds().includes(personId);
+  }
+
+  /**
+   * Bloquer le créateur ne se propose que pour une session ordinaire. Celui de
+   * la chaîne perpétuelle est l'équipe (`petite-jerusalem`) : le bloquer
+   * retirait toute la chaîne de l'appareil, quand on voulait écarter un nom.
+   */
+  canBlockCreator(session: Pick<Session, "personId" | "perpetual">): boolean {
+    return !!session.personId && !isPerpetual(session);
+  }
+
+  /**
+   * La session est-elle cachée parce que le visiteur a bloqué son créateur ?
+   * Jamais pour la chaîne perpétuelle : un blocage posé avant que la case n'y
+   * disparaisse la cacherait pour de bon, carte de l'accueil comprise.
+   */
+  isBlockedForViewer(session: Pick<Session, "personId" | "perpetual">): boolean {
+    return !isPerpetual(session) && this.isCreatorBlocked(session.personId);
   }
 
   blockCreator(personId: string): void {

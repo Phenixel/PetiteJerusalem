@@ -28,21 +28,25 @@ function cleanup(el: HTMLElement) {
   el.style.opacity = "";
 }
 
-/** Appelle `done` une seule fois : à la fin de la transition de hauteur, ou au filet. */
+/**
+ * Appelle `done` une seule fois : à la fin de la transition de hauteur, ou au
+ * filet. Les minuteurs globaux, pas ceux de `window` : le filet peut partir
+ * après la page (un test démonté, jsdom retiré), et `window` n'existe plus.
+ */
 function whenFinished(el: HTMLElement, done: () => void) {
   let finished = false;
   const finish = () => {
     if (finished) return;
     finished = true;
     el.removeEventListener("transitionend", onEnd);
-    window.clearTimeout(timer);
+    clearTimeout(timer);
     done();
   };
   const onEnd = (event: TransitionEvent) => {
     if (event.target === el && event.propertyName === "height") finish();
   };
   el.addEventListener("transitionend", onEnd);
-  const timer = window.setTimeout(finish, DURATION_MS + 50);
+  const timer = setTimeout(finish, DURATION_MS + 50);
 }
 
 function onEnter(element: Element, done: () => void) {

@@ -17,7 +17,8 @@ import { HDate, getHolidaysOnDate, months, tachanun } from "@hebcal/core";
  * lendemain, et l'exception ne se déclenche donc jamais. Résultat, le 28 Eloul
  * l'application annonçait « pas de tahanoun à Min'ha » alors qu'on le dit.
  *
- * S'y ajoute le 9 au 12 Sivan, pour une autre raison : voir `isTashlumin`.
+ * S'y ajoutent le 9 au 12 Sivan et la fin de Tichri, pour une autre raison :
+ * voir `isTashlumin` et `isEndOfTishrei`.
  *
  * On refait donc la vérification ici, pour les trois jours, plutôt que
  * d'attendre la correction en amont. Les deux autres cas passent déjà : les
@@ -43,14 +44,29 @@ export interface TachanunSaid {
  * l'usage séfarade comme achkénaze est de ne pas dire le tahanoun tant qu'ils
  * durent. Le 13, il reprend.
  *
- * Les autres jours que hebcal signale de la même façon (Pessah Cheni, du 25
- * au 30 Tichri, Yom haAtsmaout, Yom Yerouchalayim) gardent sa réponse : là,
- * l'usage est réellement partagé.
+ * Les autres jours que hebcal signale de la même façon (Pessah Cheni, Yom
+ * haAtsmaout, Yom Yerouchalayim) gardent sa réponse : là, l'usage est
+ * réellement partagé. La fin de Tichri, elle, est reprise plus bas.
  */
 const TASHLUMIN_LAST_DAY = 12;
 
 function isTashlumin(hd: HDate): boolean {
   return hd.getMonth() === months.SIVAN && hd.getDate() <= TASHLUMIN_LAST_DAY;
+}
+
+/**
+ * La fin de Tichri, du 25 au 30.
+ *
+ * hebcal y rend le tahanoun, et ne range ces jours que parmi ceux où CERTAINES
+ * communautés l'omettent. Or l'usage séfarade, que suit l'application, est de
+ * ne pas le dire de tout le mois de Tichri (Kaf Ha'haïm sur Ora'h
+ * 'Haïm 131) : il ne reprend qu'après Roch 'Hodech 'Hechvan. L'application
+ * annonçait donc « On dit Ta'hanoun » du mardi 6 au vendredi 9 octobre 2026.
+ */
+const TISHREI_FIRST_DAY_WITHOUT = 25;
+
+function isEndOfTishrei(hd: HDate): boolean {
+  return hd.getMonth() === months.TISHREI && hd.getDate() >= TISHREI_FIRST_DAY_WITHOUT;
 }
 
 /**
@@ -102,7 +118,8 @@ function keepsPreviousMincha(next: HDate): boolean {
 }
 
 export function saidTachanun(hd: HDate, il: boolean): TachanunSaid {
-  if (isTashlumin(hd) || isShushanPurimKatan(hd)) return { shacharit: false, mincha: false };
+  if (isTashlumin(hd) || isEndOfTishrei(hd) || isShushanPurimKatan(hd))
+    return { shacharit: false, mincha: false };
   // Le lendemain de 'Hanouka : on ne lit pas hebcal pour ce jour-là, il s'y
   // trompe. Le tahanoun s'y dit, et sa Min'ha suit la règle ordinaire, celle
   // qui regarde le lendemain.
