@@ -236,8 +236,9 @@ const verseBlocks = computed<TextBlock[]>(() => {
 // Roch Hodech, Al hanissim à Hanouka…) ne s'affichent que le jour où ils se
 // disent, fondus dans le fil du texte. Le jour suivi dépend de l'office
 // (voir tefilaHebrewDay) : Cha'harit et Min'ha vivent la journée civile,
-// Min'ha du jeudi soir reste celle du jeudi ; Arvit et les brahot basculent
-// à la chkia, Retsé se bénit dès le vendredi soir.
+// Min'ha du jeudi soir reste celle du jeudi ; les brahot basculent à la
+// chkia, Retsé se bénit dès le vendredi soir ; Arvit suit la nuit qui vient
+// dès le lever du soleil, celle qu'on priera ce soir.
 //
 // L'heure est donc une donnée du rendu, pas une valeur figée à l'ouverture :
 // on bénit après la chkia du vendredi une page ouverte avant elle, et Retsé
