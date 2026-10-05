@@ -18,17 +18,22 @@ import {
  * lui, les emporte d'un appareil à l'autre et jusqu'au site : une date qu'on a
  * pris la peine d'inscrire ne doit pas mourir avec un téléphone.
  *
- * L'adoption n'a lieu qu'une fois par compte et par appareil : à la première
- * connexion, ce qui a été saisi sans compte rejoint le compte (union des deux
- * listes). Ensuite, c'est le compte qui fait foi et qui remplace la copie
- * locale, sans quoi une date supprimée sur un autre appareil serait
- * ressuscitée par la fusion à chaque connexion.
+ * À la connexion, le compte fait foi et remplace la copie locale, sans quoi
+ * une date supprimée sur un autre appareil serait ressuscitée par la fusion à
+ * chaque connexion. Seul ce qui a été saisi sans compte le rejoint. Pour le
+ * reconnaître, l'appareil retient le dernier compte suivi et les dates qu'il
+ * portait (OWNER_KEY) : une date locale qui n'en est pas a été saisie depuis,
+ * sans compte. Celles qui en sont appartiennent à ce compte-là, et ne sont
+ * pas versées dans un autre qui se connecterait sur le même appareil.
  */
 
 const STORAGE_KEY = "pj_hebrew_occasions";
-/** Le compte dont les dates ont déjà été adoptées sur cet appareil. */
+/**
+ * Les comptes adoptés, du temps où l'appareil ne retenait que cela. Seulement
+ * relue, pour un appareil qui n'a pas encore de OWNER_KEY.
+ */
 const ADOPTED_KEY = "pj_hebrew_occasions_adopted";
-/** Le dernier compte dont l'appareil a pris les dates, voir adoptAccount. */
+/** Le dernier compte suivi sur cet appareil et ses dates, voir adoptAccount. */
 const OWNER_KEY = "pj_hebrew_occasions_owner";
 
 /** Au-delà, la liste ne se lit plus, et les notifications ne suivraient pas. */
@@ -85,29 +90,29 @@ function adoptedAccounts(): string[] {
   }
 }
 
-function rememberAdopted(userId: string): void {
-  try {
-    const known = adoptedAccounts();
-    if (known.includes(userId)) return;
-    localStorage.setItem(ADOPTED_KEY, JSON.stringify([...known, userId].slice(-5)));
-  } catch {
-    // Stockage indisponible : la fusion se refera, au pire une fois de trop.
-  }
+interface OccasionsOwner {
+  id: string;
+  /** Les dates que ce compte portait la dernière fois qu'il a été lu ou écrit. */
+  ids: string[];
 }
 
-function readOwner(): string | null {
+function readOwner(): OccasionsOwner | null {
   try {
-    return localStorage.getItem(OWNER_KEY);
+    const raw = localStorage.getItem(OWNER_KEY);
+    const parsed = raw ? (JSON.parse(raw) as Partial<OccasionsOwner>) : null;
+    if (!parsed || typeof parsed.id !== "string" || !Array.isArray(parsed.ids)) return null;
+    return { id: parsed.id, ids: parsed.ids.filter((id): id is string => typeof id === "string") };
   } catch {
     return null;
   }
 }
 
-function rememberOwner(userId: string): void {
+function rememberOwner(userId: string, list: HebrewOccasion[]): void {
   try {
-    localStorage.setItem(OWNER_KEY, userId);
+    const owner: OccasionsOwner = { id: userId, ids: list.map((entry) => entry.id) };
+    localStorage.setItem(OWNER_KEY, JSON.stringify(owner));
   } catch {
-    // Stockage indisponible : l'appareil se fiera aux comptes adoptés.
+    // Stockage indisponible : la fusion se refera, au pire une fois de trop.
   }
 }
 
@@ -120,6 +125,7 @@ async function pushToAccount(userId: string, list: HebrewOccasion[]): Promise<vo
     const { userPreferencesService } = await import("../services/userPreferencesService");
     await userPreferencesService.savePreferences(userId, { hebrewOccasions: list });
     pendingPush = false;
+    if (accountId.value === userId) rememberOwner(userId, list);
   } catch {
     // Hors ligne, ou Firestore injoignable : l'appareil garde la liste, et
     // elle repartira au retour du réseau ou au prochain changement.
@@ -128,9 +134,25 @@ async function pushToAccount(userId: string, list: HebrewOccasion[]): Promise<vo
 }
 
 /**
- * Prend en charge le compte connecté : ses dates deviennent celles à l'écran.
- * À la première connexion sur cet appareil, ce qui a été saisi sans compte le
- * rejoint ; ensuite, le compte fait foi.
+ * Ce que l'appareil porte et qui n'appartient à aucun compte : saisi avant
+ * toute connexion, ou depuis que le dernier compte suivi est parti.
+ */
+function enteredWithoutAccount(userId: string): HebrewOccasion[] {
+  const owner = readOwner();
+  if (owner) {
+    const theirs = new Set(owner.ids);
+    return occasions.value.filter((entry) => !theirs.has(entry.id));
+  }
+  // Appareil d'avant OWNER_KEY : on ne sait pas dire à qui sont ses dates. La
+  // règle d'alors s'applique une dernière fois (tout rejoint un compte jamais
+  // adopté, rien un compte déjà adopté), plutôt que d'en écarter à l'aveugle.
+  return adoptedAccounts().includes(userId) ? [] : occasions.value;
+}
+
+/**
+ * Prend en charge le compte connecté : ses dates deviennent celles à l'écran,
+ * et ce qui a été saisi sans compte le rejoint. Ce qu'un autre compte a laissé
+ * sur l'appareil cède la place.
  */
 async function adoptAccount(userId: string): Promise<void> {
   try {
@@ -138,17 +160,10 @@ async function adoptAccount(userId: string): Promise<void> {
     const prefs = await userPreferencesService.getPreferencesOrThrow(userId);
     if (accountId.value !== userId) return; // Déconnecté entre-temps.
     const remote = parseList(prefs.hebrewOccasions);
-    const first = !adoptedAccounts().includes(userId);
-    // Les dates d'un autre compte, restées sur l'appareil à sa déconnexion
-    // (anniversaires, hazkarot de sa famille), ne rejoignent pas celui-ci :
-    // seules celles saisies sans compte sont adoptées. Avant que l'appareil
-    // ne retienne ce dernier compte, un compte déjà adopté en tient lieu.
-    const owner = readOwner() ?? adoptedAccounts().slice(-1)[0] ?? null;
-    const foreign = owner !== null && owner !== userId;
-    const next =
-      first && !foreign ? mergeOccasions(remote, occasions.value, MAX_OCCASIONS) : remote;
-    rememberAdopted(userId);
-    rememberOwner(userId);
+    const next = mergeOccasions(remote, enteredWithoutAccount(userId), MAX_OCCASIONS);
+    // Ce que le compte porte déjà ; ce qui le rejoint ne sera tenu pour sien
+    // qu'une fois écrit (pushToAccount), pour qu'un échec ne le perde pas.
+    rememberOwner(userId, remote);
     if (!sameList(next, occasions.value)) occasions.value = next;
     if (!sameList(next, remote)) await pushToAccount(userId, next);
   } catch {
