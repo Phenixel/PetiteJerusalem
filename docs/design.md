@@ -1007,6 +1007,35 @@ courant de l'écran : un compte créé d'un toucher avec Google, puis, des
 semaines plus tard, une adresse et un mot de passe qui n'ont jamais existé.
 Tenu par `src/__tests__/loginEmailErrors.test.ts` et `emailAuthErrors.test.ts`.
 
+### Ce qu'un compte laisse sur l'appareil ne rejoint pas le suivant
+
+À la déconnexion, marque-pages, positions de lecture et dates personnelles
+restent sur l'appareil : ils y ont autant leur place qu'avant la connexion.
+Mais à la connexion d'un autre compte (téléphone de famille, ordinateur de la
+synagogue), la fusion les versait dans le sien, hazkarot et anniversaires
+d'une autre famille compris.
+
+L'appareil retient donc le dernier compte suivi, et de quoi reconnaître ce
+qui est à lui : pour la lecture, l'instant de son départ
+(`pj-reading-owner`), tout ce qui est daté d'avant étant sien ; pour les
+dates, qui ne portent pas d'horodatage, la liste de celles que le compte
+portait (`pj_hebrew_occasions_owner`). Un autre compte qui se connecte
+retrouve les siens à la place.
+
+Ce qui a été saisi sans compte rejoint toujours le compte qui se connecte,
+que ce soit avant toute connexion ou après le départ d'un compte : cela
+n'existe nulle part ailleurs, l'écarter le perdrait. Le même compte qui
+revient retrouve tout, et ce qui a été saisi en son absence avec.
+
+Deux comptes d'une même personne (Google, puis adresse) sont deux comptes :
+l'appareil ne sait pas les rapprocher, et dans le doute il ne verse pas les
+données de l'un dans l'autre. Chacun garde les siennes, rien n'est perdu.
+
+Un appareil d'avant cette règle ne sait pas dire à qui sont ses dates : il
+applique une dernière fois la règle d'alors (tout rejoint un compte jamais
+adopté) plutôt que d'en écarter à l'aveugle. Tenu par
+`src/__tests__/accountSwitchLocalData.test.ts`.
+
 ## 2. Les couleurs de thème
 
 Trois duos au choix, dans cet ordre. Le premier est celui d'origine.

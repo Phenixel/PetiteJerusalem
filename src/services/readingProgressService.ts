@@ -66,6 +66,12 @@ const POSITIONS_KEY = "pj-reading-positions";
 const RESUME_DISMISSED_KEY = "pj-reading-resume-dismissed";
 const BOOKMARKS_KEY = "pj-bookmarks";
 const TOMBSTONES_KEY = "pj-bookmark-tombstones";
+/**
+ * Le dernier compte fusionné sur cet appareil, et l'instant où il l'a quitté
+ * (null tant qu'il est connecté). Absent : rien n'a encore appartenu à un
+ * compte. Voir discardLeftBy.
+ */
+const OWNER_KEY = "pj-reading-owner";
 const MAX_POSITIONS = 50;
 const MAX_BOOKMARKS = 200;
 const MAX_TOMBSTONES = 300;
@@ -122,6 +128,17 @@ function sortedById(bookmarks: Bookmark[]): Bookmark[] {
   return [...bookmarks].sort((a, b) => a.id.localeCompare(b.id));
 }
 
+interface ReadingOwner {
+  id: string;
+  leftAt: number | null;
+}
+
+function readOwner(): ReadingOwner | null {
+  const owner = readJson<Partial<ReadingOwner> | null>(OWNER_KEY, null);
+  if (!owner || typeof owner.id !== "string") return null;
+  return { id: owner.id, leftAt: typeof owner.leftAt === "number" ? owner.leftAt : null };
+}
+
 /** Garde les tombstones les plus récentes (l'inventaire ne grossit pas sans fin). */
 function pruneTombstones(tombstones: Record<string, number>): Record<string, number> {
   const entries = Object.entries(tombstones)
@@ -155,6 +172,7 @@ class ReadingProgressService {
         authService.onAuthChanged((user) => {
           this.user = user;
           if (user?.id !== this.syncedUserId) this.syncedUserId = null;
+          this.noteDeparture(user?.id ?? null);
           const done = user ? this.syncWithCloud(user.id).catch(() => {}) : Promise.resolve();
           if (first) {
             first = false;
@@ -164,6 +182,35 @@ class ReadingProgressService {
       });
     }
     return this.syncPromise ?? Promise.resolve();
+  }
+
+  /**
+   * Le dernier compte fusionné n'est plus celui qui est connecté (personne,
+   * ou un autre) : on retient l'instant, une fois. Ce qui est daté d'avant
+   * lui appartient, ce qui suivra non.
+   */
+  private noteDeparture(userId: string | null): void {
+    const owner = readOwner();
+    if (!owner || owner.leftAt !== null || owner.id === userId) return;
+    writeJson(OWNER_KEY, { ...owner, leftAt: Date.now() });
+  }
+
+  /**
+   * Un autre compte que le dernier fusionné arrive : ce que celui-là a laissé
+   * sur l'appareil (tout ce qui date d'avant son départ) ne doit pas être
+   * versé dans celui-ci. Ce qui a été lu ou marqué depuis, sans compte, reste
+   * et rejoindra le compte, comme sur un appareil neuf.
+   */
+  private discardLeftBy(owner: ReadingOwner): void {
+    const leftAt = owner.leftAt ?? Infinity;
+    const positions = Object.entries(this.positions()).filter(([, p]) => p.at >= leftAt);
+    writeJson(POSITIONS_KEY, Object.fromEntries(positions));
+    writeJson(
+      BOOKMARKS_KEY,
+      this.bookmarksAll().filter((b) => b.at >= leftAt),
+    );
+    const tombstones = Object.entries(this.tombstones()).filter(([, at]) => at >= leftAt);
+    writeJson(TOMBSTONES_KEY, Object.fromEntries(tombstones));
   }
 
   // ---- Positions ----
@@ -334,6 +381,12 @@ class ReadingProgressService {
     // par-dessus le compte un état qui ignore ce qui a été posé ailleurs
     // depuis. L'échec remonte, rien n'est écrit, la fusion sera retentée.
     const prefs = await userPreferencesService.getPreferencesFromServer(userId);
+    // Seulement une fois le compte lu : tant qu'il ne l'est pas, l'appareil
+    // garde tout, et ce que ce compte y pose entre-temps est daté d'après le
+    // départ du précédent, donc conservé.
+    const owner = readOwner();
+    if (owner && owner.id !== userId) this.discardLeftBy(owner);
+    writeJson(OWNER_KEY, { id: userId, leftAt: null });
     const local = this.positions();
     const cloud = prefs.readingPositions ?? {};
     const merged: Record<string, ReadingPosition> = { ...cloud };

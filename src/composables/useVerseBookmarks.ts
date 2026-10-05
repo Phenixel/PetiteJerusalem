@@ -49,6 +49,11 @@ export function useVerseBookmarks<K>(options: VerseBookmarksOptions<K>) {
     bookmarks.value = readingProgressService.getBookmarks(toValue(options.textId), scope);
   }
 
+  // La lecture du jour pose des marque-pages sans passer par la bibliothèque :
+  // le compte doit être suivi d'ici aussi, pour qu'ils le rejoignent et que
+  // l'appareil sache qui les a posés.
+  void readingProgressService.ensureSynced().then(refresh);
+
   const bookmarkIds = computed(() => new Set(bookmarks.value.map((b) => b.id)));
 
   function isBookmarked(section: number | null, line: number): boolean {
