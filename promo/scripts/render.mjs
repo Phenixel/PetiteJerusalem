@@ -4,7 +4,7 @@
  * le format qu'acceptent TikTok, Reels, Shorts et les statuts WhatsApp.
  * Compose d'abord les musiques qui manquent (scripts/music.mjs).
  *
- * Usage : npm run render [-- --only horaires]
+ * Usage : npm run render [-- --only horaires] [-- --series 2]
  * PROMO_CHROMIUM : un Chromium à employer plutôt que celui que Remotion
  * télécharge (en session cloud : celui de Playwright).
  */
@@ -18,7 +18,10 @@ const outDir = join(root, "out");
 mkdirSync(outDir, { recursive: true });
 
 const only = process.argv.flatMap((a, i, argv) => (a === "--only" ? [argv[i + 1]] : []));
-const videos = only.length ? VIDEOS.filter((v) => only.includes(v.id)) : VIDEOS;
+const series = process.argv.flatMap((a, i, argv) => (a === "--series" ? [Number(argv[i + 1])] : []));
+const videos = VIDEOS.filter(
+  (v) => (!only.length || only.includes(v.id)) && (!series.length || series.includes(v.series ?? 1)),
+);
 
 const missing = videos.filter((v) => !existsSync(join(root, "public/music", `${v.id}.wav`)));
 if (missing.length) {
@@ -30,7 +33,7 @@ if (!existsSync(join(root, "public/captures/marks.json"))) {
 }
 
 for (const video of videos) {
-  const file = join(outDir, `${video.id}.mp4`);
+  const file = join(outDir, `${video.series === 2 ? "s2-" : ""}${video.id}.mp4`);
   console.log(`render: ${video.id} → ${file}`);
   execFileSync(
     "npx",

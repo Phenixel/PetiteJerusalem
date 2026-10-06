@@ -51,6 +51,10 @@ export type VideoSpec = {
   /** Temps marqués de la section « feature », et le bruitage qui va avec. */
   marks: Record<string, { beat: number; sound?: CueSound }>;
   montage: MontageId[];
+  /** 1 : la première série ; 2 : les histoires (gabarit Story, 31 s). */
+  series?: 1 | 2;
+  /** Temps par plan du montage (2 dans la série 2, pour avoir le temps de lire). */
+  montageStep?: number;
 };
 
 const STD: Durations = { hook: 4, feature: 24, break: 2, montage: 8, end: 6 };
@@ -215,6 +219,162 @@ export const VIDEOS: VideoSpec[] = [
   },
 ];
 
+// === Série 2 : les histoires =====================================================
+
+/** 31 secondes : une histoire de 36 temps, six plans de montage à deux temps. */
+const S2: Durations = { hook: 4, feature: 36, break: 2, montage: 12, end: 8 };
+
+/** Des temps marqués d'un même bruitage : cues("w", "whoosh", 0, 6, 12). */
+function cues(prefix: string, sound: CueSound, ...beats: number[]) {
+  return Object.fromEntries(beats.map((beat, i) => [`${prefix}${i}`, { beat, sound }]));
+}
+
+VIDEOS.push(
+  {
+    id: "refoua",
+    title: "Un proche est malade",
+    series: 2,
+    montageStep: 2,
+    look: { theme: "ocean", dark: false },
+    music: {
+      bpm: 120,
+      root: 62,
+      motif: "lumiere",
+      genre: "cinematic",
+      drops: [16, 30],
+      progression: [[0, 3, 7], [-4, 0, 3], [3, 7, 10], [-2, 2, 5]],
+    },
+    durations: S2,
+    marks: {
+      cree: { beat: 6, sound: "swipe" },
+      envoi: { beat: 16 },
+      reserve: { beat: 24, sound: "whoosh" },
+      siyoum: { beat: 30 },
+      ctaTap: { beat: 5.33, sound: "tap" },
+      submitTap: { beat: 15.6, sound: "tap" },
+      sent: { beat: 17, sound: "chime" },
+      full: { beat: 33, sound: "chime" },
+      ...cues("type", "type", 6.5, 7.3, 8.1),
+      ...cues("ami", "pop", 17, 17.2, 17.4, 17.6, 17.8, 18, 18.2, 18.4),
+    },
+    montage: ["horaires", "bibliotheque", "sidour", "calendrier", "lecture", "kotel"],
+  },
+  {
+    id: "journee",
+    title: "Une journée avec l'app",
+    series: 2,
+    montageStep: 2,
+    look: { theme: "sunset", dark: false },
+    music: {
+      bpm: 120,
+      root: 64,
+      motif: "freygish",
+      genre: "halftime",
+      drops: [18],
+      progression: [[0, 4, 7], [1, 5, 8], [-2, 1, 5], [0, 4, 7]],
+    },
+    durations: S2,
+    marks: {
+      ...cues("heure", "whoosh", 6, 12, 18, 24, 30),
+      notif1: { beat: 13, sound: "chime" },
+      notif2: { beat: 25.5, sound: "chime" },
+      minha: { beat: 21, sound: "swipe" },
+    },
+    montage: ["partage", "bibliotheque", "calendrier", "kotel", "mesdates", "chiourim"],
+  },
+  {
+    id: "secrets",
+    title: "3 gestes que personne ne connaît",
+    series: 2,
+    montageStep: 2,
+    look: { theme: "sunset", dark: false },
+    music: {
+      bpm: 120,
+      root: 65,
+      motif: "dabke",
+      genre: "halftime",
+      drops: [12, 24],
+      progression: [[0, 4, 7], [1, 5, 8], [-2, 1, 5], [0, 4, 7]],
+    },
+    durations: S2,
+    marks: {
+      deux: { beat: 12 },
+      trois: { beat: 24 },
+      swipe: { beat: 4, sound: "swipe" },
+      toast: { beat: 7.5, sound: "pop" },
+      ...cues("double", "tap", 16, 16.33),
+      defile: { beat: 16.5, sound: "whoosh" },
+      kotelTap: { beat: 27, sound: "tap" },
+      kotel: { beat: 27.5, sound: "chime" },
+    },
+    montage: ["partage", "bibliotheque", "calendrier", "lecture", "mesdates", "chiourim"],
+  },
+  {
+    id: "chiffres",
+    title: "Petite Jérusalem en chiffres",
+    series: 2,
+    montageStep: 2,
+    look: { theme: "emerald", dark: false },
+    music: {
+      bpm: 120,
+      root: 60,
+      motif: "nigoun",
+      genre: "mizrahi",
+      drops: [18],
+      progression: [[0, 4, 7], [1, 5, 8], [0, 4, 7], [-2, 1, 5]],
+    },
+    durations: S2,
+    marks: {
+      ...cues("plan", "whoosh", 6, 12, 18, 24, 30),
+      ...cues("compte", "pop", 1.33, 7.33, 13.33, 19.33, 25.33, 31.33),
+    },
+    montage: ["horaires", "partage", "sidour", "kotel", "calendrier", "lecture"],
+  },
+  {
+    id: "fetes",
+    title: "L'app se met en fête",
+    series: 2,
+    montageStep: 2,
+    look: { theme: "sunset", dark: false },
+    music: {
+      bpm: 120,
+      root: 62,
+      motif: "freygish",
+      genre: "mizrahi",
+      drops: [8, 22],
+      progression: [[0, 4, 7], [1, 5, 8], [-2, 1, 5], [0, 4, 7]],
+    },
+    durations: S2,
+    marks: {
+      ...cues("fete", "whoosh", 15, 29),
+      ...cues("voeu", "pop", 1, 9, 16, 23, 30),
+      ...cues("rond", "swipe", 3.2, 11.2, 18.2, 25.2, 32.2),
+    },
+    montage: ["horaires", "partage", "bibliotheque", "calendrier", "mesdates", "sombre"],
+  },
+  {
+    id: "langues",
+    title: "Français, English, עברית",
+    series: 2,
+    montageStep: 2,
+    look: { theme: "sunset", dark: false },
+    music: {
+      bpm: 120,
+      root: 67,
+      motif: "envol",
+      genre: "mizrahi",
+      drops: [12, 24],
+      progression: [[0, 3, 7], [-4, 0, 3], [-7, -4, 0], [-5, -2, 2]],
+    },
+    durations: S2,
+    marks: {
+      ...cues("flip", "swipe", 4, 8),
+      ...cues("fan", "pop", 12.2, 12.4, 12.6, 24.2, 24.4, 24.6),
+    },
+    montage: ["partage", "bibliotheque", "sidour", "kotel", "calendrier", "lecture"],
+  },
+);
+
 export const videoTimeline = (v: VideoSpec) => buildTimeline(v.music.bpm, v.durations);
 
 /** Les bruitages de la vidéo, en temps absolus. */
@@ -227,6 +387,7 @@ export function videoCues(v: VideoSpec): Cue[] {
     if (mark.sound) cues.push({ beat: feature.from + mark.beat, sound: mark.sound });
   }
   // Un souffle par plan du montage (le premier tombe avec l'impact).
-  for (let i = 1; i < montage.beats; i++) cues.push({ beat: montage.from + i, sound: "whoosh" });
+  const step = v.montageStep ?? 1;
+  for (let i = step; i < montage.beats; i += step) cues.push({ beat: montage.from + i, sound: "whoosh" });
   return cues;
 }

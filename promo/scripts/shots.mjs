@@ -328,4 +328,140 @@ export const SHOTS = [
     },
   }),
   screen("oceanNight", "accueil", "/", "Ma lecture quotidienne", { marks: { occasion: CARD("Anniversaire de Noa") } }),
+
+  // === Série 2 =================================================================
+  ...SERIES2(),
 ];
+
+/** Un écran sous un habillage donné (un invité, une horloge, une langue). */
+function lookScreen(prefix, look, name, path, readyText, extra = {}) {
+  return {
+  name: `${prefix}-${name}`,
+  look,
+  async run(t) {
+    await t.open(path, readyText);
+    if (extra.before) await extra.before(t);
+    await t.snap();
+    for (const [key, selector] of Object.entries(extra.marks ?? {})) {
+      await t.mark(key, typeof selector === "string" ? t.page.locator(selector) : selector);
+    }
+    if (extra.full) await t.snapFull();
+  },
+  };
+}
+
+function SERIES2() {
+  const shots = [];
+
+  // Les fêtes : l'app en invité, le jour de la fête, thème de fête permis.
+  const FETES = {
+    hanouka: { clock: "2026-12-08T18:30:00+01:00", scheme: "dark" },
+    pourim: { clock: "2027-03-23T11:00:00+01:00", scheme: "light" },
+    pessah: { clock: "2027-04-22T11:00:00+02:00", scheme: "light" },
+    souccot: { clock: "2027-10-17T11:00:00+02:00", scheme: "light" },
+    tichri: { clock: "2027-09-28T11:00:00+02:00", scheme: "light" },
+  };
+  for (const [fete, { clock, scheme }] of Object.entries(FETES)) {
+    const look = { theme: "sunset", scheme, signedIn: false, clock, holidays: true };
+    shots.push(
+      lookScreen(`fete-${fete}`, look, "accueil", "/", null, {
+        before: async (t) => {
+          await t.page.locator(".holiday-greeting").first().waitFor({ timeout: 20000 });
+          await t.wait(1500);
+        },
+        marks: { greeting: ".holiday-greeting", fab: "nav [aria-label*='oraires']" },
+      }),
+      lookScreen(`fete-${fete}`, look, "horaires", "/horaires/paris", "Paris"),
+    );
+  }
+
+  // Une journée : l'accueil et l'office du moment, heure après heure.
+  const DAY = "2026-10-07T";
+  const moments = [
+    ["matin", "06:40:00+02:00", "light", [["chaharit", "/bibliotheque/sidour/chaharit", "Chaharit"]]],
+    ["midi", "14:30:00+02:00", "light", [["minha", "/bibliotheque/sidour/minha", "Min'ha"]]],
+    ["soir", "19:00:00+02:00", "light", [["horaires", "/horaires/paris", "Paris"]]],
+    ["nuit", "22:30:00+02:00", "dark", [["arvit", "/bibliotheque/sidour/arvit", "Arvit"], ["chema", "/bibliotheque/sidour/chema-al-hamita", "Chema al Hamita"]]],
+  ];
+  for (const [moment, time, scheme, pages] of moments) {
+    const look = { theme: "sunset", scheme, signedIn: false, clock: `${DAY}${time}` };
+    shots.push(lookScreen(`jour-${moment}`, look, "accueil", "/", null, { before: (t) => t.wait(1500) }));
+    for (const [name, path, ready] of pages) shots.push(lookScreen(`jour-${moment}`, look, name, path, ready));
+  }
+
+  // Trois langues, le même compte.
+  const LANGS = { en: "My daily reading", he: "הקריאה היומית שלי", fr: "Ma lecture quotidienne" };
+  for (const [locale, daily] of Object.entries(LANGS)) {
+    const look = { theme: "sunset", scheme: "light", locale };
+    shots.push(
+      lookScreen(`lang-${locale}`, look, "accueil", "/", daily),
+      lookScreen(`lang-${locale}`, look, "horaires", "/horaires/paris", "Paris"),
+      lookScreen(`lang-${locale}`, look, "tehilim-23", "/bibliotheque/tehilim/23", "Tehilim 23"),
+    );
+  }
+
+  // Les chiffres : les corpus de la bibliothèque.
+  for (const corpus of ["michna", "talmud", "tanakh", "brahot"]) {
+    shots.push(lookScreen("emerald", LOOKS.emerald, `corpus-${corpus}`, `/bibliotheque/${corpus}`, null, { before: (t) => t.wait(1200) }));
+  }
+
+  // Refoua chelema : la page d'intention, puis une chaîne créée de bout en bout.
+  shots.push(lookScreen("ocean", LOOKS.ocean, "intention-refoua", "/tehilim/refoua-chelema", "refoua chelema", { marks: { cta: "a.seo-cta" } }));
+  shots.push({
+    name: "ocean-nouvelle-chaine",
+    look: LOOKS.ocean,
+    frames: true,
+    async run(t) {
+      const page = t.page;
+      const log = [];
+      const snap = async (label) => log.push(`${await t.snap()} ${label}`);
+      await t.open("/share-reading/new-session", "Créer une session");
+      await t.mark("name", page.locator("#name"));
+      await snap("vide");
+      await page.click("#name");
+      const title = "Refoua chelema pour David ben Sarah";
+      for (let i = 3; i <= title.length + 2; i += 3) {
+        await page.fill("#name", title.slice(0, i));
+        await snap("saisie");
+      }
+      await page.fill("#description", "Lisons les 150 Tehilim ensemble pour la guérison de David ben Sarah.");
+      await t.wait(300);
+      await snap("description");
+      await t.mark("type", page.locator("button#type"));
+      await page.click("button#type");
+      await t.wait(500);
+      await snap("types");
+      await page.locator("li[role=option]:has-text('Tehilim')").first().click();
+      await t.wait(800);
+      await snap("tehilim");
+      const label = await page.evaluate(() => {
+        const d = new Date(Date.now() + 10 * 24 * 3600 * 1000);
+        return new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(d);
+      });
+      await t.mark("date", page.locator("button#dateLimit"));
+      await page.click("button#dateLimit");
+      await t.wait(600);
+      if (!(await page.locator(`[aria-label="${label}"]`).count())) {
+        await page.locator("[aria-label='Mois suivant']").first().click();
+        await t.wait(400);
+      }
+      await page.locator(`[aria-label="${label}"]`).first().click();
+      await t.wait(300);
+      await snap("calendrier");
+      await page.locator("button:has-text('Confirmer'):visible").first().click();
+      await t.wait(600);
+      const submit = page.locator("button[type=submit]").first();
+      await submit.scrollIntoViewIfNeeded();
+      await t.wait(500);
+      await t.mark("submit", submit);
+      await snap("pret");
+      await submit.click();
+      await page.locator("text=Votre session est prête >> visible=true").first().waitFor({ timeout: 20000 });
+      await t.wait(1500);
+      await snap("partage");
+      console.log(log.join("\n"));
+    },
+  });
+
+  return shots;
+}

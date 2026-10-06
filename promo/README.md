@@ -19,6 +19,29 @@ lancée en mode « app native » sur des données de démo, et chaque geste
 (glisser une ligne d'horaire, cocher un psaume, tourner la boussole) y a été
 joué pour de vrai, image par image.
 
+### Série 2 : les histoires
+
+Une seconde série raconte au lieu de présenter : une situation, un moment
+de la journée, un classement. 31 secondes, plus de mouvement (téléphones
+qui entrent en trombe avec leur traîne, éventails, mosaïques de pierres,
+horloge à volets, compteurs, bandeaux défilants, confettis), et pourtant
+le temps de lire : chaque phrase reste posée tout son plan, sur une plaque,
+et le montage final passe à deux temps par fonctionnalité. Rendues dans
+`out/s2-<id>.mp4`.
+
+| Vidéo      | L'histoire                                                                   | Musique          |
+| ---------- | ---------------------------------------------------------------------------- | ---------------- |
+| `refoua`   | « Un proche est malade » : la chaîne tapée, envoyée, réservée, jusqu'à 150/150 | cinématique      |
+| `journee`  | six heures d'une journée, de l'aube au Chema du coucher, l'app passe en sombre | half-time        |
+| `secrets`  | « 3 gestes que personne ne connaît » : glisser, double appui, le Kotel        | half-time        |
+| `chiffres` | 0 €, 0 publicité, puis 150 Tehilim, 62 traités de Michna, 40 du Talmud…        | mizrahi          |
+| `fetes`    | l'app en habit de fête : Hanouka, Pourim, Pessah, Souccot, Roch Hachana        | mizrahi          |
+| `langues`  | français, English, עברית : la même app, l'hébreu de droite à gauche          | mizrahi          |
+
+Les fêtes et les heures de la journée sont filmées en invité, horloge
+figée au jour voulu (`clock` dans `scripts/shots.mjs`) ; les langues avec le
+compte de démo, langue de l'interface réglée avant le chargement.
+
 ## La chaîne
 
 1. **Captures** (`npm run captures`) : `scripts/demo-server.mjs` démarre les
@@ -47,7 +70,8 @@ image et régler un temps.
 cd promo
 npm ci
 npm run captures   # 2 à 3 minutes, émulateurs compris
-npm run render     # 5 à 6 minutes pour les six
+npm run render     # 15 minutes pour les douze
+npm run render -- --series 2   # la série 2 seule
 ```
 
 Prérequis : ceux de `npm run store:screenshots` (CLI firebase, JDK 21), les
@@ -77,9 +101,18 @@ Les gestes d'une scène sont des **temps marqués** (`marks` dans
 une carte qui sort de l'écran ; la musique y pose le bruitage nommé à côté.
 Déplacer un geste, c'est changer un nombre, et l'image comme le son suivent.
 
-Pour ajouter une vidéo : une entrée dans `VIDEOS` (`src/videos.ts`), une
-scène dans `src/scenes`, son accroche dans `src/Root.tsx`, et les plans
-qui lui manquent dans `scripts/shots.mjs`.
+La série 2 suit le gabarit `src/Story.tsx` : `hook` 4 temps, `feature` 36,
+`break` 2, `montage` 12 (six plans de deux temps), `end` 8. Ses scènes
+vivent dans `src/scenes2`, ses effets dans `src/components/Fx.tsx` et
+`src/components/Sections2.tsx`, et sa musique choisit un genre
+(`genre`, `drops` dans `src/videos.ts`) : la batterie change, un piano
+porte les accords, la musique bégaie avant chaque drop et s'arrête comme
+une bande sur « Mais aussi… ».
+
+Pour ajouter une vidéo : une entrée dans `VIDEOS` (`src/videos.ts`, avec
+`series: 2` pour le gabarit des histoires), une scène dans `src/scenes` ou
+`src/scenes2`, son accroche dans `src/Root.tsx`, et les plans qui lui
+manquent dans `scripts/shots.mjs`.
 
 ## L'apparence
 
@@ -94,7 +127,8 @@ et jamais de dégradé, les espaces insécables du français.
 - **Remotion** est gratuit pour un particulier ou une entreprise de trois
   personnes au plus, ce qu'est Phenixel ; au-delà, une licence d'entreprise
   est due (<https://www.remotion.dev/license>).
-- **Tone.js** (MIT), **Playfair Display** et **Manrope** (SIL OFL).
+- **Tone.js** (MIT), **Playfair Display**, **Manrope**, **Frank Ruhl
+  Libre** et **Heebo** (SIL OFL).
 - La musique est composée par le script : elle appartient au projet, sans
   droits à reverser, et ne correspond à aucun morceau qu'une détection de
   droits des réseaux pourrait reconnaître.

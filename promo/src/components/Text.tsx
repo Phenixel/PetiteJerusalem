@@ -10,9 +10,9 @@ import { interpolate, useCurrentFrame, useVideoConfig } from "remotion";
 import { clamp, springAt } from "../anim.ts";
 import { DISPLAY, SANS } from "../theme.ts";
 
-type Word = { text: string; accent: boolean };
+export type Word = { text: string; accent: boolean };
 
-function parse(line: string): Word[] {
+export function parse(line: string): Word[] {
   // L'accent peut couvrir plusieurs mots : « *au bon moment* ».
   let accent = false;
   return line

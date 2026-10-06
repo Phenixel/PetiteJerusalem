@@ -73,22 +73,28 @@ const browser = await chromium.launch({
 });
 
 /** Un contexte « app native » fr, au thème voulu, connecté au compte de démo. */
-async function appContext({ theme = "sunset", scheme = "light", signedIn = true }) {
+/**
+ * `locale` : langue de l'interface ; `clock` : date et heure figées (ISO),
+ * pour filmer une fête ou une heure du jour, en invité seulement (un compte
+ * dont l'horloge diffère de celle de l'émulateur verrait son jeton refusé) ;
+ * `holidays` : laisser le thème de la fête du moment s'appliquer.
+ */
+async function appContext({ theme = "sunset", scheme = "light", signedIn = true, locale = "fr", clock, holidays = false }) {
   const context = await browser.newContext({
     viewport: VIEWPORT,
     deviceScaleFactor: 3,
     isMobile: true,
     hasTouch: true,
-    locale: "fr-FR",
+    locale: { fr: "fr-FR", en: "en-US", he: "he-IL" }[locale],
     timezoneId: "Europe/Paris",
     colorScheme: scheme,
     geolocation: PARIS,
     permissions: ["geolocation", "notifications", "camera"],
   });
   await context.addInitScript(
-    ({ prefs, onboardingVersion, tipIds }) => {
+    ({ prefs, onboardingVersion, tipIds, locale }) => {
       window.CapacitorCustomPlatform = { name: "promo-videos" };
-      localStorage.setItem("petite-jerusalem-locale", "fr");
+      localStorage.setItem("petite-jerusalem-locale", locale);
       localStorage.setItem("pj_analytics_consent", "denied");
       // Introduction et astuces vues : elles prendraient l'écran.
       localStorage.setItem("pj_onboarding_seen", onboardingVersion);
@@ -100,11 +106,13 @@ async function appContext({ theme = "sunset", scheme = "light", signedIn = true 
       document.addEventListener("DOMContentLoaded", () => document.head.appendChild(style));
     },
     {
-      prefs: { theme, colorScheme: scheme, holidayThemes: false, fontLatin: "manrope", fontHebrew: "frank" },
+      prefs: { theme, colorScheme: scheme, holidayThemes: holidays, fontLatin: "manrope", fontHebrew: "frank" },
       onboardingVersion: ONBOARDING_VERSION,
       tipIds: TIP_IDS,
+      locale,
     },
   );
+  if (clock) await context.clock.setFixedTime(new Date(clock));
   const page = await context.newPage();
   if (signedIn) {
     await page.goto(`${baseUrl}/login`, { waitUntil: "load" });

@@ -14,7 +14,7 @@ export const HEIGHT = 1920;
 export type SectionKind = "hook" | "feature" | "break" | "montage" | "end";
 
 /** Bruitages posés sur la grille, joués par la musique. */
-export type CueSound = "whoosh" | "tap" | "pop" | "impact" | "swipe" | "chime";
+export type CueSound = "whoosh" | "tap" | "pop" | "impact" | "swipe" | "chime" | "type";
 
 export type Cue = { beat: number; sound: CueSound };
 
@@ -27,6 +27,14 @@ export type MusicStyle = {
   motif: "freygish" | "envol" | "nigoun" | "lumiere" | "dabke";
   /** Accords d'une mesure à l'autre, en demi-tons depuis la tonique. */
   progression: number[][];
+  /**
+   * Le genre (série 2) : « pop » est celui de la série 1 ; « mizrahi »,
+   * « halftime » et « cinematic » changent la batterie et ajoutent piano,
+   * bégaiements avant les drops et arrêt de bande sur la coupure.
+   */
+  genre?: "pop" | "mizrahi" | "halftime" | "cinematic";
+  /** Temps de la feature où la musique retombe, en drop. */
+  drops?: number[];
 };
 
 export type Timeline = {

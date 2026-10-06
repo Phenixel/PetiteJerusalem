@@ -8,20 +8,26 @@ import { loadFont } from "@remotion/fonts";
 
 // Les fichiers des polices viennent des paquets Fontsource (licence OFL),
 // embarqués au rendu : aucun appel réseau, un rendu identique partout.
-const fontFile = (pkg: string, weight: number, style: "normal" | "italic") =>
+const fontFile = (pkg: string, subset: string, weight: number, style: "normal" | "italic") =>
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  require(`@fontsource/${pkg}/files/${pkg}-latin-${weight}-${style}.woff2`) as string;
+  require(`@fontsource/${pkg}/files/${pkg}-${subset}-${weight}-${style}.woff2`) as string;
 
-export const DISPLAY = "Playfair Display";
-export const SANS = "Manrope";
+// L'hébreu (la série 2 parle aussi hébreu) : Frank Ruhl Libre sous les
+// titres, Heebo sous le texte courant, les deux polices hébraïques de l'app.
+export const DISPLAY = '"Playfair Display", "Frank Ruhl Libre", serif';
+export const SANS = '"Manrope", "Heebo", sans-serif';
 
 for (const weight of [600, 700, 800]) {
   for (const style of ["normal", "italic"] as const) {
-    loadFont({ family: DISPLAY, url: fontFile("playfair-display", weight, style), weight: String(weight), style });
+    loadFont({ family: "Playfair Display", url: fontFile("playfair-display", "latin", weight, style), weight: String(weight), style });
   }
 }
 for (const weight of [500, 600, 700, 800]) {
-  loadFont({ family: SANS, url: fontFile("manrope", weight, "normal"), weight: String(weight) });
+  loadFont({ family: "Manrope", url: fontFile("manrope", "latin", weight, "normal"), weight: String(weight) });
+}
+for (const weight of [700, 800]) {
+  loadFont({ family: "Frank Ruhl Libre", url: fontFile("frank-ruhl-libre", "hebrew", weight, "normal"), weight: String(weight) });
+  loadFont({ family: "Heebo", url: fontFile("heebo", "hebrew", weight, "normal"), weight: String(weight) });
 }
 
 export type ThemeName = "sunset" | "ocean" | "emerald";

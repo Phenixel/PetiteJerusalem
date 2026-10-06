@@ -160,5 +160,95 @@
     "y": 160,
     "w": 157,
     "h": 26
+  },
+  "fete-hanouka-accueil:greeting": {
+    "x": 16,
+    "y": 24,
+    "w": 358,
+    "h": 48
+  },
+  "fete-hanouka-accueil:fab": {
+    "x": 169,
+    "y": 738,
+    "w": 52,
+    "h": 52
+  },
+  "fete-pourim-accueil:greeting": {
+    "x": 16,
+    "y": 24,
+    "w": 358,
+    "h": 44
+  },
+  "fete-pourim-accueil:fab": {
+    "x": 169,
+    "y": 738,
+    "w": 52,
+    "h": 52
+  },
+  "fete-pessah-accueil:greeting": {
+    "x": 16,
+    "y": 24,
+    "w": 358,
+    "h": 44
+  },
+  "fete-pessah-accueil:fab": {
+    "x": 169,
+    "y": 738,
+    "w": 52,
+    "h": 52
+  },
+  "fete-souccot-accueil:greeting": {
+    "x": 16,
+    "y": 24,
+    "w": 358,
+    "h": 44
+  },
+  "fete-souccot-accueil:fab": {
+    "x": 169,
+    "y": 738,
+    "w": 52,
+    "h": 52
+  },
+  "fete-tichri-accueil:greeting": {
+    "x": 16,
+    "y": 24,
+    "w": 358,
+    "h": 44
+  },
+  "fete-tichri-accueil:fab": {
+    "x": 169,
+    "y": 738,
+    "w": 52,
+    "h": 52
+  },
+  "ocean-nouvelle-chaine:name": {
+    "x": 48,
+    "y": 256,
+    "w": 294,
+    "h": 46
+  },
+  "ocean-nouvelle-chaine:type": {
+    "x": 48,
+    "y": 533,
+    "w": 294,
+    "h": 46
+  },
+  "ocean-nouvelle-chaine:date": {
+    "x": 48,
+    "y": 907,
+    "w": 294,
+    "h": 46
+  },
+  "ocean-nouvelle-chaine:submit": {
+    "x": 48,
+    "y": 571,
+    "w": 294,
+    "h": 43
+  },
+  "ocean-intention-refoua:cta": {
+    "x": 24,
+    "y": 400,
+    "w": 342,
+    "h": 78
   }
 }

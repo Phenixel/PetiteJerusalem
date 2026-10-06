@@ -180,6 +180,27 @@ window.renderTrack = async function renderTrack(spec) {
       volume: -18,
     }).connect(fxBus);
 
+    // Série 2 : tambourin, toms, 808, et l'arrêt de bande.
+    const tambFilter = new Tone.Filter(9000, "highpass").connect(drumsBus);
+    const tamb = new Tone.NoiseSynth({ noise: { type: "white" }, envelope: { attack: 0.001, decay: 0.07, sustain: 0 }, volume: -19 }).connect(tambFilter);
+    const tom = new Tone.MembraneSynth({
+      pitchDecay: 0.06, octaves: 2.2, envelope: { attack: 0.001, decay: 0.5, sustain: 0, release: 0.1 }, volume: -4,
+    }).connect(drumsBus);
+    tom.connect(revSend(0.25));
+    const eight = new Tone.MembraneSynth({
+      pitchDecay: 0.18, octaves: 1.4, oscillator: { type: "sine" },
+      envelope: { attack: 0.002, decay: 1.1, sustain: 0.2, release: 0.3 }, volume: -1,
+    }).connect(duck);
+    const stopper = new Tone.Synth({ oscillator: { type: "sawtooth" }, envelope: { attack: 0.005, decay: 0.5, sustain: 0, release: 0.05 }, volume: -16 });
+    const stopFilter = new Tone.Filter(1200, "lowpass").connect(fxBus);
+    stopper.connect(stopFilter);
+    const keys = new Tone.PolySynth(Tone.FMSynth, {
+      harmonicity: 2, modulationIndex: 1.4,
+      envelope: { attack: 0.004, decay: 1.2, sustain: 0.1, release: 1 },
+      modulationEnvelope: { attack: 0.002, decay: 0.4, sustain: 0, release: 0.4 },
+      volume: -15,
+    }).connect(leadBus);
+
     // --- Aides --------------------------------------------------------------
     // Les synthés de Tone exigent des déclenchements dans l'ordre du temps :
     // tout passe par une file, triée puis jouée d'un bloc à la fin.
@@ -244,7 +265,8 @@ window.renderTrack = async function renderTrack(spec) {
     };
 
     // Grille de batterie d'une mesure entière, temps par temps.
-    const grooveBeat = (b, { full = true, darbuka = true, hats = true, clapOn = true }) => {
+    const genre = style.genre ?? "pop";
+    const popGroove = (b, { full = true, darbuka = true, hats = true, clapOn = true }) => {
       const t = beatTime(b);
       const inBar = ((b % 4) + 4) % 4;
       if (full) playKick(t);
@@ -270,6 +292,98 @@ window.renderTrack = async function renderTrack(spec) {
         }
       }
     };
+    // Mizrahi : darbouka en doubles croches, tambourin, claps sur les contretemps.
+    const mizrahiGroove = (b, opts) => {
+      popGroove(b, { ...opts, darbuka: false });
+      if (!opts.darbuka) return;
+      const t = beatTime(b);
+      const inBar = ((b % 4) + 4) % 4;
+      // doum tek-ka tek | doum doum tek-ka
+      const pattern = inBar % 2 === 0 ? ["D", "T", "K", "T"] : ["D", "D", "T", "K"];
+      pattern.forEach((hit, i) => {
+        const at16 = t + i * s16;
+        if (hit === "D") trig(doum, 96, 0.2, at16, 0.85);
+        else {
+          trig(tek, 0.03, at16, hit === "T" ? 0.8 : 0.45);
+          if (hit === "T") trig(tekTone, 860, 0.02, at16, 0.55);
+        }
+      });
+      if (opts.hats) {
+        trig(tamb, 0.05, t, 0.5);
+        trig(tamb, 0.05, t + s16 * 2, 0.9);
+      }
+      if (opts.clapOn && opts.full) trig(clap, 0.06, t + s16 * 2, 0.35);
+    };
+    // Half-time : grosse caisse syncopée, caisse claire sur le 3, charleston en roulements.
+    const halftimeGroove = (b, { full = true, darbuka = true, hats = true, clapOn = true }) => {
+      const t = beatTime(b);
+      const inBar = ((b % 4) + 4) % 4;
+      if (full) {
+        if (inBar === 0) {
+          playKick(t);
+          trig(eight, midiToFreq(style.root - 24 + chordAt(b)[0]), spb * 1.4, t, 0.9);
+        }
+        if (inBar === 1) playKick(t + s16 * 2, 0.8);
+        if (inBar === 2 && b % 8 >= 4) playKick(t + s16 * 3, 0.7);
+      }
+      if (clapOn && inBar === 2) trig(clap, 0.12, t, 1);
+      if (hats) {
+        const roll = inBar === 3 && b % 8 === 7;
+        const steps = roll ? 8 : 2;
+        for (let i = 0; i < steps; i++) trig(hat, 0.015, t + (i * spb) / steps, roll ? 0.3 + i * 0.07 : 0.8 - i * 0.3);
+      }
+      if (darbuka && inBar % 2 === 1) {
+        trig(tek, 0.03, t + s16 * 3, 0.6);
+        trig(tekTone, 820, 0.02, t + s16 * 3, 0.5);
+      }
+    };
+    // Cinématique : toms, grosse caisse sur le 1 et le 3, la pulsation monte.
+    const cinematicGroove = (b, { full = true, darbuka = true, hats = true, clapOn = true }) => {
+      const t = beatTime(b);
+      const inBar = ((b % 4) + 4) % 4;
+      if (full && inBar % 2 === 0) playKick(t);
+      if (darbuka) {
+        if (inBar === 0) trig(tom, 82, 0.4, t + s16 * 2, 0.7);
+        if (inBar === 2) {
+          trig(tom, 110, 0.3, t + s16 * 2, 0.6);
+          trig(tom, 92, 0.3, t + s16 * 3, 0.7);
+        }
+      }
+      if (clapOn && (inBar === 1 || inBar === 3)) trig(clap, 0.1, t, 0.8);
+      if (hats) for (let i = 0; i < 2; i++) trig(tamb, 0.04, t + i * s16 * 2, 0.4 + i * 0.3);
+    };
+    const grooveBeat = (b, opts) => {
+      if (genre === "mizrahi") return mizrahiGroove(b, opts);
+      if (genre === "halftime") return halftimeGroove(b, opts);
+      if (genre === "cinematic") return cinematicGroove(b, opts);
+      return popGroove(b, opts);
+    };
+    /** Bégaiement : l'accord haché en doubles croches, juste avant un drop. */
+    const stutter = (beat, beats = 1) => {
+      const chord = chordAt(beat).map((n) => midiToFreq(style.root + 12 + n));
+      const steps = beats * 4;
+      for (let i = 0; i < steps; i++) {
+        trig(keys, chord, s16 * 0.5, beatTime(beat) + i * s16, 0.35 + (i / steps) * 0.5);
+      }
+    };
+    /** Arrêt de bande : une note qui s'effondre et le filtre qui se ferme. */
+    const tapeStop = (beat) => {
+      const t = beatTime(beat);
+      at(t, () => {
+        stopper.frequency.setValueAtTime(320, t);
+        stopper.frequency.exponentialRampToValueAtTime(30, t + 0.45);
+        stopFilter.frequency.setValueAtTime(2400, t);
+        stopFilter.frequency.exponentialRampToValueAtTime(200, t + 0.45);
+        stopper.triggerAttackRelease(0.45, t, 0.9);
+      });
+    };
+    /** Accords de piano, posés sur le premier temps de chaque mesure. */
+    const keysBar = (beat, beats) => {
+      const chord = chordAt(beat).map((n) => midiToFreq(style.root + n));
+      trig(keys, chord, beats * spb, beatTime(beat), 0.6);
+      trig(keys, chord.map((f) => f * 2), spb, beatTime(beat) + spb * 1.5, 0.3);
+    };
+
     const bassBeat = (b, { offbeat = true, eighths = false }) => {
       const chord = chordAt(b);
       const rootNote = style.root - 24 + chord[0];
@@ -310,8 +424,12 @@ window.renderTrack = async function renderTrack(spec) {
     playImpact(feature.from);
     for (let b = feature.from; b < feature.from + feature.beats; b++) {
       const fromStart = b - feature.from;
-      grooveBeat(b, { full: true, darbuka: true, hats: fromStart >= 4 });
-      bassBeat(b, { offbeat: true });
+      // Le temps qui précède un drop se vide : seul le bégaiement reste.
+      const preDrop = (style.drops ?? []).some((d) => fromStart === d - 1) || (genre !== "pop" && fromStart === feature.beats - 1);
+      grooveBeat(b, { full: !preDrop, darbuka: !preDrop, hats: fromStart >= 4 && !preDrop, clapOn: !preDrop });
+      if (preDrop) continue;
+      if (genre === "halftime") trig(sub, midiToFreq(style.root - 24 + chordAt(b)[0]), spb * 0.95, beatTime(b), 0.5);
+      else bassBeat(b, { offbeat: true });
       if (fromStart % 4 === 0) playPadBar(b, Math.min(4, feature.from + feature.beats - b));
     }
     for (let b = feature.from; b < feature.from + feature.beats; b += 8) {
@@ -329,8 +447,20 @@ window.renderTrack = async function renderTrack(spec) {
     }
     playRiser(feature.from + feature.beats - 2, 2);
 
+    // Série 2 : le piano porte les accords, et la longue section repart en
+    // deux temps (une mesure creuse, un bégaiement, puis le drop).
+    if (genre !== "pop") {
+      for (let b = feature.from; b < feature.from + feature.beats; b += 4) keysBar(b, 4);
+      for (const drop of style.drops ?? []) {
+        stutter(feature.from + drop - 1, 1);
+        playImpact(feature.from + drop);
+      }
+      stutter(feature.from + feature.beats - 1, 1);
+    }
+
     // Coupure « Mais aussi » : tout s'arrête sauf un accord en suspens.
     const brkT = beatTime(brk.from);
+    if (genre !== "pop") tapeStop(brk.from);
     trig(boom, 70, 1, brkT, 0.7);
     trig(chime, 
       style.progression[0].map((n) => midiToFreq(style.root + 24 + n)),
@@ -385,6 +515,10 @@ window.renderTrack = async function renderTrack(spec) {
       if (cue.sound === "whoosh") playWhoosh(cue.beat);
       else if (cue.sound === "tap") trig(tap, 1900, 0.03, t, 0.9);
       else if (cue.sound === "pop") trig(tap, 980, 0.05, t, 1);
+      else if (cue.sound === "type") {
+        // Une rafale de touches de clavier, en doubles croches.
+        for (let i = 0; i < 8; i++) trig(tap, 2600 + (i % 3) * 300, 0.012, t + i * (s16 / 1.5), 0.45);
+      }
       else if (cue.sound === "impact") playImpact(cue.beat);
       else if (cue.sound === "chime") trig(chime, [midiToFreq(style.root + 31), midiToFreq(style.root + 36)], 0.6, t, 0.8);
       else if (cue.sound === "swipe") {

@@ -5,6 +5,13 @@
 import type { ComponentType } from "react";
 import { Composition } from "remotion";
 import { Promo, type FeatureProps, type HookLine } from "./Promo.tsx";
+import { ChiffresFeature } from "./scenes2/Chiffres.tsx";
+import { FetesFeature } from "./scenes2/Fetes.tsx";
+import { JourneeFeature } from "./scenes2/Journee.tsx";
+import { LanguesFeature } from "./scenes2/Langues.tsx";
+import { RefouaFeature } from "./scenes2/Refoua.tsx";
+import { SecretsFeature } from "./scenes2/Secrets.tsx";
+import { Story } from "./Story.tsx";
 import { BibliothequeFeature } from "./scenes/Bibliotheque.tsx";
 import { CalendrierFeature } from "./scenes/Calendrier.tsx";
 import { HorairesFeature } from "./scenes/Horaires.tsx";
@@ -67,6 +74,55 @@ const SCENES: Record<string, { hook: HookLine[]; Feature: ComponentType<FeatureP
     ],
     Feature: LectureDuJourFeature,
   },
+  // Série 2.
+  refoua: {
+    hook: [
+      { text: "Un proche", beat: 0 },
+      { text: "est malade.", beat: 1 },
+      { text: `Que faire${NNBSP}?`, beat: 2, accent: true },
+    ],
+    Feature: RefouaFeature,
+  },
+  journee: {
+    hook: [
+      { text: "Votre journée,", beat: 0 },
+      { text: "réglée", beat: 1 },
+      { text: "sur le ciel", beat: 2, accent: true },
+    ],
+    Feature: JourneeFeature,
+  },
+  secrets: {
+    hook: [
+      { text: "3 gestes", beat: 0 },
+      { text: "que personne", beat: 1 },
+      { text: "ne connaît", beat: 2, accent: true },
+    ],
+    Feature: SecretsFeature,
+  },
+  chiffres: {
+    hook: [
+      { text: "0\u00a0€", beat: 0 },
+      { text: "0 publicité", beat: 1 },
+      { text: "0 compte obligatoire", beat: 2, accent: true },
+    ],
+    Feature: ChiffresFeature,
+  },
+  fetes: {
+    hook: [
+      { text: "Votre app", beat: 0 },
+      { text: "se met", beat: 1 },
+      { text: "en fête", beat: 2, accent: true },
+    ],
+    Feature: FetesFeature,
+  },
+  langues: {
+    hook: [
+      { text: "Français,", beat: 0 },
+      { text: "English,", beat: 1 },
+      { text: "עברית", beat: 2, accent: true },
+    ],
+    Feature: LanguesFeature,
+  },
 };
 
 export const Root = () => (
@@ -75,7 +131,7 @@ export const Root = () => (
       <Composition
         key={spec.id}
         id={spec.id}
-        component={() => <Promo spec={spec} {...SCENES[spec.id]} />}
+        component={() => (spec.series === 2 ? <Story spec={spec} {...SCENES[spec.id]} /> : <Promo spec={spec} {...SCENES[spec.id]} />)}
         durationInFrames={totalFrames(videoTimeline(spec))}
         fps={FPS}
         width={WIDTH}

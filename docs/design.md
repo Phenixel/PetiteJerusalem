@@ -1563,3 +1563,25 @@ les confettis du siyoum sont des aplats.
 - **Le rythme** : l'image et la musique partagent une grille de 120 temps
   par minute. Une coupe, une ligne qui frappe, un appui tombent sur un temps,
   et la musique joue le bruitage du geste au même instant.
+
+### La série 2 bouge plus, et se lit autant
+
+Les histoires (`promo/src/Story.tsx`) poussent le mouvement : téléphones qui
+entrent en trombe, suivis de deux échos plus pâles en guise de flou de
+bougé, éventails de trois téléphones, mosaïque de pierres qui se pose puis
+repart entre deux chapitres, horloge à volets, compteurs, bandeaux défilants.
+Trois règles gardent la lecture :
+
+- **une phrase par plan, posée tout le plan** : le sous-titre
+  (`Subtitle`) arrive mot par mot puis reste, sur une plaque de surface qui
+  le détache de ce qui bouge derrière ; sa chute se remplit d'un aplat de
+  la couleur du thème (ou de la fête) ;
+- **le montage final passe à deux temps par plan** : une seconde pour
+  lire « Le calendrier des fêtes », la caméra plongeant sur le détail au
+  second temps ;
+- **des chiffres alignés** : ceux de Playfair, par défaut elzéviriens, font
+  du zéro un « o », et « 0 € » se lisait « o € ».
+
+L'hébreu des vidéos s'écrit en Frank Ruhl Libre et Heebo, comme dans l'app,
+de droite à gauche.
+
