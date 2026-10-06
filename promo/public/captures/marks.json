@@ -1,0 +1,164 @@
+{
+  "sunset-accueil:fab": {
+    "x": 169,
+    "y": 738,
+    "w": 52,
+    "h": 52
+  },
+  "sunset-accueil:occasion": {
+    "x": 16,
+    "y": 108,
+    "w": 358,
+    "h": 70
+  },
+  "sunset-accueil:daily": {
+    "x": 16,
+    "y": 210,
+    "w": 358,
+    "h": 107
+  },
+  "sunset-horaires:next": {
+    "x": 24,
+    "y": 307,
+    "w": 342,
+    "h": 74
+  },
+  "sunset-horaires:city": {
+    "x": 75,
+    "y": 104,
+    "w": 104,
+    "h": 35
+  },
+  "sunset-horaires:position": {
+    "x": 187,
+    "y": 104,
+    "w": 128,
+    "h": 35
+  },
+  "sunset-horaires-swipe:row": {
+    "x": 24,
+    "y": 554,
+    "w": 342,
+    "h": 63
+  },
+  "ocean-session:share": {
+    "x": 246,
+    "y": 307,
+    "w": 107,
+    "h": 32
+  },
+  "ocean-session-reserver:box42": {
+    "x": 44,
+    "y": 220,
+    "w": 213,
+    "h": 22
+  },
+  "ocean-session-reserver:box43": {
+    "x": 44,
+    "y": 382,
+    "w": 213,
+    "h": 22
+  },
+  "ocean-session-reserver:box44": {
+    "x": 44,
+    "y": 544,
+    "w": 213,
+    "h": 22
+  },
+  "ocean-session-reserver:confirm": {
+    "x": 223,
+    "y": 659,
+    "w": 135,
+    "h": 43
+  },
+  "emerald-bibliotheque:download": {
+    "x": 106,
+    "y": 198,
+    "w": 178,
+    "h": 43
+  },
+  "emerald-bibliotheque:tehilim": {
+    "x": 45,
+    "y": 318,
+    "w": 39,
+    "h": 12
+  },
+  "emerald-tehilim-23:phonetique": {
+    "x": 269,
+    "y": 265,
+    "w": 95,
+    "h": 28
+  },
+  "emerald-tehilim-23:plus": {
+    "x": 140,
+    "y": 261,
+    "w": 45,
+    "h": 36
+  },
+  "emerald-tehilim-23-defilement:pill": {
+    "x": 135,
+    "y": 692,
+    "w": 121,
+    "h": 36
+  },
+  "emerald-lecture-du-jour:gerer": {
+    "x": 76,
+    "y": 139,
+    "w": 162,
+    "h": 43
+  },
+  "emerald-lecture-du-jour:cloche": {
+    "x": 24,
+    "y": 138,
+    "w": 44,
+    "h": 44
+  },
+  "emerald-lecture-du-jour:suivi": {
+    "x": 24,
+    "y": 266,
+    "w": 342,
+    "h": 104
+  },
+  "oceanNight-calendrier:mesDates": {
+    "x": 24,
+    "y": 202,
+    "w": 137,
+    "h": 43
+  },
+  "oceanNight-calendrier:convertir": {
+    "x": 169,
+    "y": 202,
+    "w": 197,
+    "h": 43
+  },
+  "oceanNight-accueil:occasion": {
+    "x": 16,
+    "y": 108,
+    "w": 358,
+    "h": 70
+  },
+  "night-chaharit:horaire": {
+    "x": 24,
+    "y": 253,
+    "w": 342,
+    "h": 72
+  },
+  "night-chaharit:menu": {
+    "x": 322,
+    "y": 644,
+    "w": 44,
+    "h": 44
+  },
+  "night-sidour:chaharit": {
+    "x": 24,
+    "y": 363,
+    "w": 342,
+    "h": 56
+  },
+  "night-chaharit-amida:kotel": {
+    "x": 209,
+    "y": 160,
+    "w": 157,
+    "h": 26
+  }
+}

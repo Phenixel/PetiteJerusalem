@@ -15,6 +15,9 @@ export default defineConfigWithVueTs(
     "**/dist-ssr/**",
     "**/coverage/**",
     "functions/**",
+    // Les vidéos promotionnelles : projet Remotion à part (promo/README.md),
+    // vérifié par son propre type-check.
+    "promo/**",
     // Projets natifs Capacitor (générés par `npx cap add`) et worktrees de session
     "android/**",
     "ios/**",

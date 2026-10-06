@@ -1531,3 +1531,35 @@ Cette charte est en cours d'écriture, au fil des décisions.
   plus vives sans perdre les liens et les numéros de verset.
 - L'icône de l'app porte encore le bleu d'avant : elle se reprendra plus tard.
   Les captures des fiches des stores se régénèrent à la prochaine CI.
+
+## 10. Les vidéos promotionnelles
+
+Les vidéos courtes des réseaux (`promo/`, mode d'emploi dans
+`promo/README.md`) sont la même maison que l'app, vue de plus loin. Elles en
+reprennent les jetons (`promo/src/theme.ts` : les trois duos, le beige, le
+gris nuit, l'ombre chaude) et ce qu'on n'y emploie pas, à commencer par les
+dégradés : les volets qui balaient l'écran d'une scène à l'autre, les fonds,
+les confettis du siyoum sont des aplats.
+
+- **Ce qu'on voit est l'app.** Chaque écran est une capture de l'app native
+  sur des données de démo, chaque geste y a été joué. Rien n'est redessiné,
+  sauf ce qui doit grandir pour se lire sur un téléphone posé dans la main :
+  la carte d'avancement d'une chaîne, le suivi de la lecture du jour, qui
+  reprennent alors la mise en forme de l'app à l'échelle de la vidéo.
+- **Le mur de pierre** est le fond de toutes les scènes : des assises en
+  aplats à peine plus clairs ou plus sombres que le fond, qui glissent
+  lentement. Sur la couleur du thème (l'accroche), les pierres ne se
+  marquent presque plus.
+- **Les polices** : Playfair Display pour tout ce qui se lit comme un titre
+  (l'accroche, les légendes, « Mais aussi… », le nom de l'app), avec un mot
+  en italique de la couleur du thème pour la chute ; Manrope pour les
+  pastilles, qui sont rondes comme les commandes de l'app.
+- **Une vidéo, un habillage** : chaque vidéo garde le thème et le mode
+  (clair ou sombre) de ses captures, et le montage final mêle les autres,
+  pour montrer en passant que l'app se règle à son goût.
+- **La zone sûre** : les réseaux posent leurs boutons en bas et à droite.
+  Les légendes se tiennent en haut (sous 210 px), rien d'important ne
+  descend sous 1 500 px ; le téléphone, lui, peut sortir par le bas.
+- **Le rythme** : l'image et la musique partagent une grille de 120 temps
+  par minute. Une coupe, une ligne qui frappe, un appui tombent sur un temps,
+  et la musique joue le bruitage du geste au même instant.
