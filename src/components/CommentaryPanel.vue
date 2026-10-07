@@ -127,7 +127,7 @@ onBeforeUnmount(() => {
 
 /* Dans l'app, sur une tablette : la colonne s'arrête au-dessus de la barre
    d'onglets (3,5 rem, plus la zone des gestes). */
-:global(.native-app) .commentary-panel.sheet-docked {
+:global(.native-app .commentary-panel.sheet-docked) {
   bottom: calc(3.5rem + var(--safe-bottom, 0px));
   border-radius: var(--radius-xl) 0 0 var(--radius-xl);
 }

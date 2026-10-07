@@ -84,13 +84,16 @@ function onPointerUp(event: PointerEvent): void {
   const vh = window.innerHeight;
   const heights = props.snaps.length ? props.snaps.map((s) => s * vh) : [startHeight];
   const lowest = heights[0];
-  // Poussé vers le bas, d'un geste franc ou sous les deux tiers du premier cran.
-  if ((last.vy > FLICK && moved < startHeight) || moved < lowest * 0.66) {
+  const flickDown = last.vy > FLICK && moved < startHeight;
+  // Fermé : poussé sous les deux tiers du premier cran, ou d'un geste franc
+  // vers le bas depuis le premier cran. Plus haut, le même geste le ramène
+  // d'un cran : on redescend un Tossafot lu en plein écran sans le perdre.
+  if (moved < lowest * 0.66 || (flickDown && snapIndex.value === 0)) {
     emit("close");
     return;
   }
   if (!props.snaps.length) return;
-  if (last.vy > FLICK) snapIndex.value = Math.max(0, snapIndex.value - 1);
+  if (flickDown) snapIndex.value = Math.max(0, snapIndex.value - 1);
   else if (last.vy < -FLICK) snapIndex.value = Math.min(heights.length - 1, snapIndex.value + 1);
   else {
     let nearest = 0;
@@ -152,6 +155,17 @@ onBeforeUnmount(() => {
   box-shadow: var(--shadow-pop);
   transition: height 0.25s cubic-bezier(0.2, 0.8, 0.3, 1);
   animation: sheet-in 0.25s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+/* Dans l'app, le volet se pose sur la barre d'onglets (3,5 rem, plus la zone
+   des gestes), qui reste visible : c'est le menu de l'app, on ne le perd pas
+   en lisant un commentaire. Il passe sous la barre, dont le bouton rond des
+   horaires déborde au-dessus de son bord, et lui garde une marge en bas. */
+:global(.native-app .bottom-sheet) {
+  bottom: calc(3.5rem + var(--safe-bottom, 0px));
+  z-index: 45;
+  max-height: calc(92dvh - 3.5rem - var(--safe-bottom, 0px));
+  padding-bottom: 1.25rem;
 }
 
 /* Sous le doigt, aucune inertie : le volet suit. */

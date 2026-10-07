@@ -57,6 +57,18 @@ describe("le bottom sheet", () => {
     expect(sheet.style.height).toBe("90dvh");
   });
 
+  it("redescend d'un cran, sans se fermer, d'un geste franc depuis le plein écran", async () => {
+    Object.defineProperty(window, "innerHeight", { value: 800, configurable: true });
+    const { sheet, grip, ferme } = await volet({ snaps: [0.5, 0.9] }, 400);
+    await tire(grip, 400, 120, 1000);
+    expect(sheet.style.height).toBe("90dvh");
+    sheet.getBoundingClientRect = () => ({ height: 720 }) as DOMRect;
+    // Vers le bas, vite, jusqu'à mi-écran : il se pose au premier cran.
+    await tire(grip, 120, 420, 60);
+    expect(ferme).not.toHaveBeenCalled();
+    expect(sheet.style.height).toBe("50dvh");
+  });
+
   it("se ferme d'un geste franc vers le bas", async () => {
     Object.defineProperty(window, "innerHeight", { value: 800, configurable: true });
     const { grip, ferme } = await volet({ snaps: [0.5, 0.9] }, 400);

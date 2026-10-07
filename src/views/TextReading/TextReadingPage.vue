@@ -1088,7 +1088,12 @@ function keepPassageInView(line: number): void {
   const el = document.querySelector<HTMLElement>(`[data-line="${line}"]`);
   if (!el) return;
   const rect = el.getBoundingClientRect();
-  const visibleBottom = window.innerHeight * (sideBySide.value ? 0.9 : 0.45);
+  // Le haut du volet, là où il est vraiment (dans l'app, il se pose sur la
+  // barre d'onglets) ; à défaut, la mi-hauteur.
+  const sheetTop =
+    document.querySelector(".commentary-panel")?.getBoundingClientRect().top ??
+    window.innerHeight * 0.45;
+  const visibleBottom = sideBySide.value ? window.innerHeight * 0.9 : sheetTop - 16;
   if (rect.top >= 0 && rect.bottom <= visibleBottom) return;
   markProgrammaticScroll();
   window.scrollBy({ top: rect.top - window.innerHeight * 0.15, behavior: "smooth" });

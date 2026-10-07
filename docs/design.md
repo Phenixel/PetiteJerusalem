@@ -1564,8 +1564,14 @@ Le volet a une poignée (un trait de 2,25 rem, à la couleur du texte en
 transparence) ; la poignée et son en-tête portent le geste, le corps défile.
 Il a des crans (le panneau d'étude : mi-hauteur et presque plein écran) ou
 prend la hauteur de son contenu (les commandes) ; un geste franc vers le bas
-le ferme d'un coup, un tirage lent se pose au cran le plus proche. Il ne
-voile pas la page : on lit et on touche le texte au-dessus. Il passe sur la
+le ferme d'un coup depuis son premier cran (plus haut, il le ramène d'un
+cran : un Tossafot lu en plein écran se redescend sans se perdre), un tirage
+lent se pose au cran le plus proche. Il ne
+voile pas la page : on lit et on touche le texte au-dessus. Dans l'app, il
+se pose **sur la barre d'onglets**, qui reste visible : c'est le menu de
+l'app, on ne le perd pas en lisant un commentaire (le volet passe sous le
+bouton rond des horaires, qui déborde de la barre, et lui garde 1,25 rem
+de marge). Il passe sur la
 barre d'onglets et sous les fenêtres modales (le partage d'un passage s'ouvre
 par-dessus), coins hauts arrondis comme une surface (`--radius-xl`), au fond
 de la surface et à l'ombre des surfaces qui se posent (`--shadow-pop`). Le
