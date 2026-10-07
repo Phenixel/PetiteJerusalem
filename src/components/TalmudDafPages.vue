@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, nextTick, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { flatMeforshim, type DafBlock, type DafMeforshim } from "../services/textService";
 import TalmudPage from "./TalmudPage.vue";
@@ -12,6 +12,13 @@ import TalmudPage from "./TalmudPage.vue";
  * Tant que les commentaires arrivent, la page montre la guemara seule ; s'ils
  * ne viennent pas (hors ligne, sans copie locale), elle le dit, et la guemara
  * reste lisible dans sa forme.
+ *
+ * La taille de lecture (A− / A+, le pincement dans l'app) n'agrandit pas le
+ * texte de la page : cela déplacerait ses lignes, et une page de Vilna se
+ * reconnaît à ses lignes. Elle agrandit la page entière, comme une loupe. La
+ * page prend `scale` fois la largeur disponible ; ses caractères suivent sa
+ * largeur (TalmudPage), ses proportions restent donc celles du livre. Ce qui
+ * dépasse de l'écran se rejoint en faisant glisser la page de côté.
  */
 const props = defineProps<{
   blocks: DafBlock[];
@@ -36,6 +43,48 @@ function pageMeforshim(block: DafBlock) {
   return block.amud !== undefined ? (flat.value.get(block.amud) ?? null) : null;
 }
 
+/** La largeur de la page agrandie, en part de la largeur disponible. */
+const zoomWidth = computed(() => `${Math.round(props.scale * 100)}%`);
+
+/**
+ * Les cadres des pages, pour garder sous les yeux ce qu'on regardait quand
+ * la loupe change : le milieu de ce qui était visible reste au milieu.
+ */
+const frames = new Map<number, HTMLElement>();
+function setFrame(index: number, el: unknown): void {
+  if (!(el instanceof HTMLElement)) {
+    frames.delete(index);
+    return;
+  }
+  if (frames.get(index) === el) return;
+  frames.set(index, el);
+  // Une page ouverte déjà agrandie se présente par son milieu : la guemara.
+  void nextTick(() => {
+    el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2;
+  });
+}
+
+/** Le milieu visible d'un cadre, de 0 (bord gauche) à 1 (bord droit). */
+function centreOf(frame: HTMLElement): number {
+  const hidden = frame.scrollWidth - frame.clientWidth;
+  if (hidden <= 0) return 0.5;
+  // En écriture de droite à gauche, `scrollLeft` part de 0 et descend.
+  const left = frame.scrollLeft < 0 ? hidden + frame.scrollLeft : frame.scrollLeft;
+  return (left + frame.clientWidth / 2) / frame.scrollWidth;
+}
+
+watch(
+  () => props.scale,
+  async () => {
+    const centres = new Map([...frames].map(([index, frame]) => [index, centreOf(frame)]));
+    await nextTick();
+    for (const [index, frame] of frames) {
+      const centre = centres.get(index) ?? 0.5;
+      frame.scrollLeft = centre * frame.scrollWidth - frame.clientWidth / 2;
+    }
+  },
+);
+
 /** L'index de la première ligne de chaque daf dans la section (ancres). */
 function offsetOf(index: number): number {
   let offset = 0;
@@ -52,12 +101,34 @@ function offsetOf(index: number): number {
     <p :data-block-anchor="offsetOf(index)" class="mt-8 mb-3 text-sm font-semibold text-primary">
       {{ t("textReading.labels.daf", { daf: block.daf }) }}
     </p>
-    <TalmudPage
-      :daf="block.daf"
-      :lines="block.lines"
-      :meforshim="pageMeforshim(block)"
-      :scale="scale"
-      :tractate-start="block.amud === 0"
-    />
+    <!-- Le cadre de la loupe : la page s'y élargit, et s'y fait glisser. Il
+         est écrit de gauche à droite pour que `scrollLeft` se lise de la même
+         façon partout ; la page, dedans, garde son sens. -->
+    <div :ref="(el) => setFrame(index, el)" class="daf-zoom" dir="ltr">
+      <div class="daf-zoom-page" :style="{ width: zoomWidth }">
+        <TalmudPage
+          :daf="block.daf"
+          :lines="block.lines"
+          :meforshim="pageMeforshim(block)"
+          :scale="1"
+          :tractate-start="block.amud === 0"
+        />
+      </div>
+    </div>
   </template>
 </template>
+
+<style scoped>
+/* Une page plus large que l'écran se fait glisser de côté ; plus étroite
+   (A−), elle se tient au milieu. */
+.daf-zoom {
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+.daf-zoom-page {
+  margin-inline: auto;
+}
+</style>

@@ -717,6 +717,17 @@ lecture. La page n'a pas de cadre ni de fond propre : c'est le texte qui
 dessine la forme. Rachi et Tossafot ne se chargent qu'à l'ouverture de la
 page ; s'ils manquent, une ligne le dit et la guemara reste seule au centre.
 
+**La taille de lecture y est une loupe.** A− / A+, et le pincement dans
+l'app, n'agrandissent pas le texte de la page du daf : ses lignes bougeraient,
+et une page de Vilna se reconnaît à ses lignes. Ils agrandissent la page
+entière (`TalmudDafPages.vue`) : elle prend de 85 à 160 % de la largeur
+disponible, ses caractères suivent sa largeur, ses proportions restent celles
+du livre. Ce qui dépasse de l'écran se rejoint en faisant glisser la page de
+côté. Une page ouverte déjà agrandie se présente par son milieu, la guemara ;
+quand la loupe change, le milieu de ce qu'on regardait reste en place. Le
+réglage est le même que partout, un seul, gardé sur l'appareil : qui lit gros
+lit aussi la page en gros.
+
 **Le début de chaque partie est en gras**, dans la page du daf comme dans la
 guemara lue d'un seul tenant (`talmudOpenings`, `MarkedText.vue`) : le
 « מתני׳ » qui ouvre une Michna et le « גמ׳ » qui ouvre la Guemara, avec le mot
