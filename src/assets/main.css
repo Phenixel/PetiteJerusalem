@@ -239,9 +239,12 @@ body {
      0 dans l'app native, où le bandeau n'est pas rendu. */
   --navbar-height: 0px;
   /* La colonne des commentaires quand le texte et eux tiennent côte à côte
-     (dès 640 px de large, voir useSideBySide) : assez pour lire un Tossafot,
-     jamais plus que ce que le texte peut céder, d'un pliant à un ordinateur. */
-  --study-width: clamp(17rem, 40vw, 26rem);
+     (dès 640 px de large, voir useSideBySide). Elle prend la place que la
+     colonne de lecture (48 rem) et ses marges (4 rem) laissent libre, entre
+     17 rem (de quoi lire un Tossafot sur un pliant) et 32 rem (au-delà, les
+     lignes deviendraient trop longues) : un grand écran lui donne de l'air
+     sans rien retirer au texte, un petit le partage. */
+  --study-width: clamp(17rem, calc(100vw - 52rem), 32rem);
 }
 
 #app {

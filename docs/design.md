@@ -1526,9 +1526,15 @@ téléphone, un bottom sheet à mi-hauteur (55 %), qu'on tire par sa poignée
 jusqu'à 92 % de l'écran pour un long Tossafot. Dès que l'écran a la place
 de deux colonnes (640 px de large : tablette, pliant ouvert, téléphone en
 paysage, ordinateur, voir `useSideBySide`), une **colonne à droite**, sous le
-bandeau et sur toute la hauteur, de la largeur `--study-width` (entre 17 et
-26 rem, 40 % de l'écran) ; la colonne de lecture se rétrécit et se range
-à sa gauche : le texte à gauche, les explications à droite. Déplier un
+bandeau et sur toute la hauteur : le texte à gauche, les explications à
+droite. La colonne prend la place que le texte laisse libre
+(`--study-width` : l'écran moins 48 rem de texte et 4 rem de marges,
+entre 17 et 32 rem). Le texte, lui, **ne bouge que s'il le faut** : il
+garde sa largeur ordinaire (48 rem) tant qu'elle tient à gauche du
+panneau, et ne rétrécit qu'en dessous ; il reste centré sur l'écran tant
+qu'il n'y touche pas le panneau (un grand écran ne bouge pas), et sinon
+glisse vers la gauche juste assez pour garder 2 rem d'écart avec lui. Il
+glisse en place, sans sauter, à l'ouverture comme à la fermeture. Déplier un
 pliant fait passer le volet à droite sans rien fermer. À l'ouverture, le
 passage étudié est ramené sous les yeux s'il passait sous le volet ou
 glissait sous le bas de l'écran en se rétrécissant. En tête, l'endroit

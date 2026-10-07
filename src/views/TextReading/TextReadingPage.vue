@@ -2513,11 +2513,36 @@ watch(textId, (_, previousTextId) => {
   padding-bottom: calc(55vh + 2rem);
 }
 @media (min-width: 640px) {
+  /* La colonne de lecture garde sa largeur ordinaire (48 rem) tant que la
+     place à gauche du panneau la contient, et ne rétrécit qu'en dessous.
+     Elle reste centrée sur l'écran tant qu'elle n'y touche pas le panneau
+     (un grand écran ne bouge pas) ; sinon elle glisse vers la gauche, juste
+     assez pour laisser l'écart (`--study-gap`) entre le texte et lui. */
   .study-open {
-    width: calc(100% - var(--study-width) - 0.5rem);
+    --study-gap: 2rem;
+    --study-room: calc(100% - var(--study-width) - var(--study-gap));
+    --study-text: min(48rem, var(--study-room));
+    width: var(--study-text);
+    max-width: none;
     padding-bottom: 3rem;
-    margin-right: calc(var(--study-width) + 0.5rem);
-    margin-left: auto;
+    margin-left: min(
+      calc((100% - var(--study-text)) / 2),
+      calc(var(--study-room) - var(--study-text))
+    );
+    margin-right: 0;
+  }
+}
+
+/* Le texte glisse en place quand le panneau s'ouvre ou se ferme, au lieu de
+   sauter d'un côté à l'autre. */
+main {
+  transition:
+    margin-left 0.25s ease,
+    width 0.25s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  main {
+    transition: none;
   }
 }
 
