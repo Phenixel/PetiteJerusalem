@@ -1582,7 +1582,12 @@ Il a des crans (le panneau d'étude : mi-hauteur et presque plein écran) ou
 prend la hauteur de son contenu (les commandes) ; un geste franc vers le bas
 le ferme d'un coup depuis son premier cran (plus haut, il le ramène d'un
 cran : un Tossafot lu en plein écran se redescend sans se perdre), un tirage
-lent se pose au cran le plus proche. Il ne
+lent se pose au cran le plus proche. Le volet des commandes, à la hauteur
+de son contenu, se tire de partout, boutons compris (le geste ne commence
+qu'au-delà de quelques pixels, un appui reste un appui) ; **tiré vers le
+haut, il ouvre les commentaires du passage**, comme l'appui sur leur rangée,
+sans avoir à la viser. Il grandit sous le doigt pendant le geste : on voit
+qu'il va s'ouvrir. Il ne
 voile pas la page : on lit et on touche le texte au-dessus. Dans l'app, il
 se pose **sur la barre d'onglets**, qui reste visible : c'est le menu de
 l'app, on ne le perd pas en lisant un commentaire (le volet passe sous le

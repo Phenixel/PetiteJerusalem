@@ -18,6 +18,14 @@ import { computed, onBeforeUnmount, ref } from "vue";
  *
  * `docked` le pose autrement, sans poignée ni geste : c'est à l'appelant de
  * dire où (le panneau d'étude en fait une colonne sur un écran large).
+ *
+ * Un volet à la hauteur de son contenu (les commandes d'un passage) se tire
+ * de partout, pas seulement par sa poignée : le geste ne commence qu'au-delà
+ * de quelques pixels, un simple appui reste un appui sur un bouton. S'il est
+ * `expandable`, le tirer vers le haut l'ouvre sur la suite (`expand`) : les
+ * commentaires du passage, sans avoir à viser leur bouton. Une zone qui
+ * défile elle-même (la phonétique d'un long passage) se marque
+ * `data-sheet-nodrag`.
  */
 const props = withDefaults(
   defineProps<{
@@ -29,11 +37,13 @@ const props = withDefaults(
     initialSnap?: number;
     /** Posé ailleurs qu'au bas de l'écran : ni poignée, ni geste, ni crans. */
     docked?: boolean;
+    /** Tiré vers le haut, le volet s'ouvre sur la suite (`expand`). */
+    expandable?: boolean;
   }>(),
-  { snaps: () => [], initialSnap: 0, docked: false },
+  { snaps: () => [], initialSnap: 0, docked: false, expandable: false },
 );
 
-const emit = defineEmits<{ (e: "close"): void }>();
+const emit = defineEmits<{ (e: "close"): void; (e: "expand"): void }>();
 
 const sheet = ref<HTMLElement | null>(null);
 const snapIndex = ref(Math.min(props.initialSnap, Math.max(0, props.snaps.length - 1)));
@@ -50,25 +60,53 @@ const height = computed(() => {
 /** Un geste plus rapide que cela (px/ms) décide seul, quelle que soit la hauteur. */
 const FLICK = 0.6;
 
-let start: { y: number; height: number; pointer: number } | null = null;
+let start: { y: number; height: number; pointer: number; active: boolean } | null = null;
 let last = { y: 0, t: 0, vy: 0 };
+
+/** Un doigt bouge toujours un peu : en deçà, c'est un appui, pas un geste. */
+const SLOP = 6;
+/** Tiré de tant au-dessus de sa hauteur, le volet s'ouvre sur la suite. */
+const EXPAND_PULL = 48;
+
+/** Le clic qui suit un geste n'est pas un appui sur le bouton où il a fini. */
+function swallowNextClick(): void {
+  const swallow = (event: MouseEvent) => {
+    event.stopPropagation();
+    event.preventDefault();
+  };
+  window.addEventListener("click", swallow, { capture: true, once: true });
+  setTimeout(() => window.removeEventListener("click", swallow, { capture: true }), 400);
+}
 
 function onPointerDown(event: PointerEvent): void {
   if (props.docked || event.button > 0 || !sheet.value) return;
-  // Un bouton de l'en-tête (la croix) garde son appui.
-  if (event.target instanceof Element && event.target.closest("button")) return;
+  const target = event.target instanceof Element ? event.target : null;
+  if (target?.closest("[data-sheet-nodrag]")) return;
+  // Un volet à crans défile : seuls sa poignée et son en-tête se tirent, et
+  // leurs boutons (la croix) gardent leur appui.
+  if (props.snaps.length && (!target?.closest(".sheet-grip") || target.closest("button"))) {
+    return;
+  }
   start = {
     y: event.clientY,
     height: sheet.value.getBoundingClientRect().height,
     pointer: event.pointerId,
+    active: false,
   };
   last = { y: event.clientY, t: event.timeStamp, vy: 0 };
-  (event.currentTarget as HTMLElement).setPointerCapture?.(event.pointerId);
 }
 
 function onPointerMove(event: PointerEvent): void {
   if (!start || event.pointerId !== start.pointer) return;
-  const max = props.snaps.length ? Math.max(...props.snaps) * window.innerHeight : start.height;
+  if (!start.active) {
+    if (Math.abs(event.clientY - start.y) < SLOP) return;
+    start.active = true;
+    sheet.value?.setPointerCapture?.(event.pointerId);
+  }
+  const vh = window.innerHeight;
+  const max = props.snaps.length
+    ? Math.max(...props.snaps) * vh
+    : start.height + (props.expandable ? vh * 0.3 : 0);
   dragHeight.value = Math.min(max, Math.max(0, start.height - (event.clientY - start.y)));
   const dt = event.timeStamp - last.t;
   if (dt > 0) last = { y: event.clientY, t: event.timeStamp, vy: (event.clientY - last.y) / dt };
@@ -78,9 +116,21 @@ function onPointerUp(event: PointerEvent): void {
   if (!start || event.pointerId !== start.pointer) return;
   const moved = dragHeight.value;
   const startHeight = start.height;
+  const active = start.active;
   start = null;
   dragHeight.value = null;
-  if (moved === null) return;
+  // Un appui, pas un geste : le bouton touché répond comme d'habitude.
+  if (!active || moved === null) return;
+  swallowNextClick();
+  // Tiré vers le haut : la suite (les commentaires du passage).
+  if (
+    props.expandable &&
+    !props.snaps.length &&
+    (moved > startHeight + EXPAND_PULL || (last.vy < -FLICK && moved > startHeight + SLOP))
+  ) {
+    emit("expand");
+    return;
+  }
   const vh = window.innerHeight;
   const heights = props.snaps.length ? props.snaps.map((s) => s * vh) : [startHeight];
   const lowest = heights[0];
@@ -122,14 +172,12 @@ onBeforeUnmount(() => {
     aria-modal="false"
     :aria-label="label"
     :style="{ height }"
+    @pointerdown="onPointerDown"
+    @pointermove="onPointerMove"
+    @pointerup="onPointerUp"
+    @pointercancel="onPointerUp"
   >
-    <div
-      class="sheet-grip"
-      @pointerdown="onPointerDown"
-      @pointermove="onPointerMove"
-      @pointerup="onPointerUp"
-      @pointercancel="onPointerUp"
-    >
+    <div class="sheet-grip">
       <span v-if="!docked" class="sheet-handle" aria-hidden="true"></span>
       <slot name="header" />
     </div>
@@ -202,6 +250,16 @@ onBeforeUnmount(() => {
   padding-top: 0;
   touch-action: auto;
   cursor: auto;
+}
+
+/* Un volet à la hauteur de son contenu se tire de partout : le geste est le
+   nôtre sur toute sa surface, sauf là où le contenu défile lui-même. */
+.sheet-fit {
+  touch-action: none;
+}
+
+.sheet-fit [data-sheet-nodrag] {
+  touch-action: pan-y;
 }
 
 /* À la hauteur du contenu : le corps ne s'étire pas. */

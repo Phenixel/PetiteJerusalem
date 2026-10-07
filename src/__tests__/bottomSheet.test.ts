@@ -91,4 +91,30 @@ describe("le bottom sheet", () => {
     expect(ferme).not.toHaveBeenCalled();
     expect(sheet.style.height).toBe("");
   });
+
+  it("tiré vers le haut, s'ouvre sur la suite (les commentaires du passage)", async () => {
+    Object.defineProperty(window, "innerHeight", { value: 800, configurable: true });
+    const suite = vi.fn();
+    const { grip, ferme } = await volet({ expandable: true, onExpand: suite }, 150);
+    await tire(grip, 650, 560, 300);
+    expect(suite).toHaveBeenCalledOnce();
+    expect(ferme).not.toHaveBeenCalled();
+  });
+
+  it("sans suite, ne s'ouvre sur rien quand on le tire vers le haut", async () => {
+    const suite = vi.fn();
+    const { grip, ferme } = await volet({ onExpand: suite }, 150);
+    await tire(grip, 650, 560, 300);
+    expect(suite).not.toHaveBeenCalled();
+    expect(ferme).not.toHaveBeenCalled();
+  });
+
+  it("laisse un simple appui à ce qu'il touche", async () => {
+    const suite = vi.fn();
+    const { grip, ferme } = await volet({ expandable: true, onExpand: suite }, 150);
+    // Le doigt bouge de 3 px : un appui, pas un geste.
+    await tire(grip, 650, 647, 120);
+    expect(suite).not.toHaveBeenCalled();
+    expect(ferme).not.toHaveBeenCalled();
+  });
 });

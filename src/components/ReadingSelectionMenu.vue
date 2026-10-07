@@ -49,8 +49,10 @@ import BottomSheet from "./BottomSheet.vue";
  * montent dans un bottom sheet (BottomSheet.vue) au lieu d'une bulle posée
  * sur le passage : c'est la forme qu'un téléphone donne à ce qui accompagne
  * un écran, le pouce l'atteint, il se pousse vers le bas pour se fermer, et
- * il ne cache jamais le passage qu'on vient de toucher. Sur un écran large
- * (tablette, pliant ouvert, ordinateur), la bulle reste contre le passage.
+ * il ne cache jamais le passage qu'on vient de toucher. Le tirer vers le haut
+ * ouvre les commentaires du passage, comme l'appui sur leur rangée. Sur un
+ * écran large (tablette, pliant ouvert, ordinateur), la bulle reste contre le
+ * passage.
  */
 
 /** Téléphone : le volet au bas de l'écran ; écran large : la bulle. */
@@ -308,6 +310,10 @@ onBeforeUnmount(() => {
               label: t('textReading.selection.title'),
               style: { '--bubble-scale': bubbleScale },
               onClose: clearPassage,
+              // Tirer le volet vers le haut ouvre les commentaires, là où le
+              // passage en a : le geste vaut l'appui sur leur rangée.
+              expandable: !!commentary && commentary.state !== 'none',
+              onExpand: openCommentaries,
             }
           : {
               class: 'bubble-anchor',
@@ -370,7 +376,7 @@ onBeforeUnmount(() => {
 
         <!-- La phonétique du seul passage choisi : l'hébreu reste à l'écran
              dessous, on ne bascule pas toute la page pour un mot. -->
-        <div v-else class="bubble-phonetic">
+        <div v-else class="bubble-phonetic" data-sheet-nodrag>
           <div class="flex items-start justify-between gap-2">
             <p class="bubble-place">{{ readingPassage.place }}</p>
             <button
