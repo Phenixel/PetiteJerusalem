@@ -8,7 +8,7 @@
  * sources du domaine public.
  */
 
-import { writeFileSync, readFileSync, mkdirSync } from 'fs';
+import { writeFileSync, readFileSync, mkdirSync, rmSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -17,7 +17,7 @@ const ROOT = resolve(__dirname, '..');
 const OUT = resolve(ROOT, 'public/texts');
 const GCS = 'https://storage.googleapis.com/sefaria-export/json';
 
-// `--only=tanakh` (ou tehilim/mishna/talmud/rashi) pour ne régénérer qu'un
+// `--only=tanakh` (ou tehilim/mishna/talmud/rashi/meforshim) pour ne régénérer qu'un
 // corpus. `tefila` n'est jamais du lot par défaut : ses fichiers sont mis en
 // forme à la main après téléchargement, il faut le demander nommément (voir
 // plus bas).
@@ -245,6 +245,125 @@ if (shouldRun('talmud')) {
     t => t,
     `${OUT}/talmud`
   );
+}
+
+// ---------- Rachi et Tossafot sur le Talmud (forme de la page) ----------
+//
+// Le lecteur peut montrer un amoud dans la forme de la page de Vilna : la
+// guemara au centre, Rachi du côté de la reliure, Tossafot de l'autre
+// (TalmudPage.vue). Les deux commentaires vivent à part, un fichier par traité
+// (public/texts/talmud-meforshim/<slug>/<n>.json, vingt amoudim par fichier),
+// qui ne se télécharge qu'à l'ouverture de cette forme : la guemara seule
+// reste légère.
+//
+// Les fichiers sont alignés amoud par amoud sur celui de la guemara (index 0
+// = premier amoud du fichier de guemara ; `from` dit l'index du premier amoud
+// de la tranche). Le fichier de guemara saute les amoudim
+// vides de Sefaria (cleanTextArray) ; on refait donc la même marche sur la
+// guemara de Sefaria pour savoir quel amoud source correspond à chaque index.
+// Chaque commentaire garde son dibbour hamat'hil en gras (<b>…</b>), comme
+// Rachi sur la Torah ; le tiret qui le sépare du commentaire dans la source
+// disparaît avec lui, c'est la graisse qui le dit sur la page.
+//
+// Bava Batra : Rachi s'arrête au 29a, le Rachbam prend sa place, comme dans
+// la page imprimée. `--only=meforshim` pour ne régénérer que ce corpus.
+
+/**
+ * « מאימתי קורין וכו' », un tiret, puis le commentaire → « <b>מאימתי קורין
+ * וכו'</b> פירוש… » : le dibbour en gras, le tiret retiré.
+ */
+function meforashComment(raw) {
+  const text = String(raw ?? '')
+    .replace(/<br\s*\/?>/g, ' ')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ').replace(/&thinsp;/g, ' ')
+    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!text) return '';
+  // Le dibbour est court : un tiret au-delà de 140 signes est dans le commentaire.
+  const m = text.match(/^(.{1,140}?)\s*[\u2013\u2014-]\s+(.+)$/s);
+  return m ? `<b>${m[1].trim()}</b> ${m[2].trim()}` : text;
+}
+
+/** Les commentaires d'un amoud source, à plat, dans l'ordre de la guemara. */
+function amudComments(amud) {
+  return (Array.isArray(amud) ? amud.flat(Infinity) : amud ? [amud] : [])
+    .map(meforashComment)
+    .filter(Boolean);
+}
+
+const MEFORSHIM_DIR = `${OUT}/talmud-meforshim`;
+/** Amoudim par fichier : à garder d'accord avec textService (MEFORSHIM_CHUNK). */
+const MEFORSHIM_CHUNK = 20;
+
+if (shouldRun('meforshim')) {
+  mkdirSync(MEFORSHIM_DIR, { recursive: true });
+  const tractates = [...new Set(
+    textStudies.filter(t => t.type === 'Talmud Bavli').map(t => talmudNameFromLink(t.link)),
+  )];
+  console.log(`\n=== Rachi et Tossafot (${tractates.length} traités) ===`);
+  const commentary = (name, seder, tractate) =>
+    withRetry(
+      () => fetchJson(`${GCS}/Talmud/Bavli/Rishonim on Talmud/${name}/${seder}/${name} on ${tractate}/Hebrew/merged.json`),
+      `${name} ${tractate}`,
+    ).then(d => d.text ?? []).catch(() => []);
+
+  for (let i = 0; i < tractates.length; i += 4) {
+    await Promise.all(tractates.slice(i, i + 4).map(async (tractate) => {
+      const seder = talmudSederMap[tractate];
+      // Middot, Kinnim : des traités sans guemara, donc sans page.
+      if (!seder) return;
+      const slug = tractate.toLowerCase().replace(/ /g, '-').replace(/'/g, '');
+      try {
+        const [gemara, rashi, tosafot, rashbam] = await Promise.all([
+          withRetry(() => fetchJson(`${GCS}/Talmud/Bavli/${seder}/${tractate}/Hebrew/merged.json`), `${tractate}/He`),
+          commentary('Rashi', seder, tractate),
+          commentary('Tosafot', seder, tractate),
+          tractate === 'Bava Batra' ? commentary('Rashbam', seder, tractate) : Promise.resolve([]),
+        ]);
+        // Les index source que le fichier de guemara a gardés : le filtre de
+        // cleanTextArray, appliqué amoud par amoud.
+        const kept = [];
+        (gemara.text ?? []).forEach((amud, s) => {
+          const cleaned = typeof amud === 'string' ? stripHtml(amud)
+            : Array.isArray(amud) ? amud.map(x => stripHtml(typeof x === 'string' ? x : '')) : '';
+          if (cleaned === '' || (Array.isArray(cleaned) && cleaned.every(x => !x))) return;
+          kept.push(s);
+        });
+        const local = JSON.parse(readFileSync(`${OUT}/talmud/${slug}.json`, 'utf8'));
+        if ((local.he ?? []).length !== kept.length) {
+          console.error(`  ✗ ${tractate}: ${kept.length} amoudim chez Sefaria, ${(local.he ?? []).length} dans talmud/${slug}.json`);
+          return;
+        }
+        const inner = kept.map(s => {
+          const own = amudComments(rashi[s]);
+          return own.length ? own : amudComments(rashbam[s]);
+        });
+        const outer = kept.map(s => amudComments(tosafot[s]));
+        if (!inner.some(a => a.length) && !outer.some(a => a.length)) {
+          console.warn(`  ⚠ ${tractate}: ni Rachi ni Tossafot, pas de fichier`);
+          return;
+        }
+        // Par tranches de MEFORSHIM_CHUNK amoudim : un chapitre n'en charge
+        // qu'une ou deux, quand un traité entier pèse jusqu'à 3 Mo.
+        rmSync(`${MEFORSHIM_DIR}/${slug}`, { recursive: true, force: true });
+        mkdirSync(`${MEFORSHIM_DIR}/${slug}`, { recursive: true });
+        for (let k = 0; k * MEFORSHIM_CHUNK < kept.length; k++) {
+          const from = k * MEFORSHIM_CHUNK;
+          writeFileSync(`${MEFORSHIM_DIR}/${slug}/${k}.json`, JSON.stringify({
+            title: tractate,
+            from,
+            rashi: inner.slice(from, from + MEFORSHIM_CHUNK),
+            tosafot: outer.slice(from, from + MEFORSHIM_CHUNK),
+          }), 'utf8');
+        }
+        console.log(`  ✓ ${tractate} → talmud-meforshim/${slug}/`);
+      } catch (e) {
+        console.error(`  ✗ ${tractate}: ${e.message}`);
+      }
+    }));
+  }
 }
 
 // ---------- Tanakh ----------
