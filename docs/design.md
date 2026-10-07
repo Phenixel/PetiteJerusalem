@@ -717,6 +717,15 @@ lecture. La page n'a pas de cadre ni de fond propre : c'est le texte qui
 dessine la forme. Rachi et Tossafot ne se chargent qu'à l'ouverture de la
 page ; s'ils manquent, une ligne le dit et la guemara reste seule au centre.
 
+**Le début de chaque partie est en gras**, dans la page du daf comme dans la
+guemara lue d'un seul tenant (`talmudOpenings`, `MarkedText.vue`) : le
+« מתני׳ » qui ouvre une Michna et le « גמ׳ » qui ouvre la Guemara, avec le mot
+qui les suit, le premier mot du traité (sa Michna n'a pas de « מתני׳ »), et la
+formule « הדרן עלך … » qui clôt un chapitre. C'est ce que fait la page
+imprimée, et c'est ainsi qu'on retrouve d'un coup d'œil où l'on en est. Sur
+la page du daf, Rachi et Tossafot ont de même leur dibbour hamat'hil en
+lettres carrées grasses.
+
 **Le Sefer Torah** (`TorahScroll.vue`) : les lettres seules, dans l'écriture
 du sofer, en une colonne justifiée d'une trentaine de lettres (21 em) au
 milieu de la page. La petou'ha finit la ligne, la setouma laisse un blanc de
@@ -1472,22 +1481,22 @@ côté. Et devant un texte, ce qu'il propose n'est pas ce qu'on veut proposer :
 la traduction automatique d'un verset et la recherche web d'un mot d'hébreu.
 
 Les passages d'un texte coupent donc la sélection du système (`.reading-pick`)
-et se choisissent d'un appui ; une bulle vient se poser dessus, au-dessus du
-passage comme le ferait le menu qu'elle remplace, avec les gestes qui ont un
-sens là où l'on est : **partager** ce passage (le lien y ramène, et non en
+et se choisissent d'un appui ; un volet monte au bas de l'écran (voir « Ce
+qui accompagne un texte monte dans un bottom sheet »), avec les gestes qui
+ont un sens là où l'on est : **partager** ce passage (le lien y ramène, et non en
 haut du chapitre), en lire la **phonétique** sans faire basculer toute la
 page, **signaler une erreur** (le formulaire de support s'ouvre avec
 l'endroit, les premiers mots et le lien déjà écrits), et le **marque-page** là
 où le texte en prend.
 
-L'appui long ouvre la bulle, comme l'appui bref. Couper la sélection du
+L'appui long ouvre le volet, comme l'appui bref. Couper la sélection du
 système coupe aussi le geste qui l'ouvrait : sans cela, appuyer longuement sur
 un verset ne ferait plus rien du tout, et le geste que tout le monde connaît
-pour agir sur du texte serait mort. La bulle se pose au-dessus du passage,
-jamais sous la zone système ni sous le bandeau du site (elle passe alors
-dessous), et sa rangée de commandes suit la taille de lecture, à moitié comme
-le menu de lecture, plafonnée pour que quatre colonnes tiennent sur la largeur
-d'un téléphone.
+pour agir sur du texte serait mort. Sa rangée de commandes suit la taille de
+lecture, à moitié comme le menu de lecture, plafonnée pour que quatre
+colonnes tiennent sur la largeur d'un téléphone. (Le volet a d'abord été une
+bulle posée contre le passage ; elle cachait le texte voisin et se lisait mal
+au pouce, d'où le nom resté aux classes, `.reading-bubble`.)
 
 Le choix se fait au passage, jamais au mot : c'est la seule unité que ces
 commandes savent nommer. Un lien mène à un verset, pas à trois mots, et un
@@ -1496,12 +1505,12 @@ copiés se cherchent. Partout ailleurs (le reste du site, un texte qu'on
 accompagne sans qu'il ait d'adresse à lui), la sélection ordinaire reste, à la
 couleur du thème.
 
-### Les commentaires d'un passage s'ouvrent depuis sa bulle, puis suivent la lecture
+### Les commentaires d'un passage s'ouvrent depuis son volet, puis suivent la lecture
 
 Une guemara a Rachi et Tossafot, une paracha a Rachi ; chacun est rattaché à
 un passage précis du texte (la guemara est découpée en passages de l'ordre
 d'une phrase, ceux de Sefaria, invisibles à la lecture : le texte se lit
-toujours d'un seul tenant, seul le passage choisi prend un fond). La bulle
+toujours d'un seul tenant, seul le passage choisi prend un fond). Le volet
 d'un passage qui a des commentaires porte une **seconde rangée**, sur toute
 sa largeur, sous les commandes : « Commentaires », avec ce qu'il y a à lire
 (« Rachi 2 · Tossafot 1 »). Une cinquième colonne ne tiendrait pas sur un
@@ -1511,31 +1520,28 @@ grisée, avec « … », le temps que les commentaires arrivent (ils ne se
 chargent qu'au premier passage touché).
 
 Elle ouvre le **panneau d'étude** (`CommentaryPanel.vue`) : un bottom sheet
-à mi-hauteur (55 %) au bas d'un téléphone, qu'on tire par sa poignée
-jusqu'à 92 % de l'écran pour un long Tossafot (voir « Dans l'app, ce qui
-accompagne un écran monte dans un bottom sheet »), une colonne de 24 rem à
-droite d'un écran large, le texte se rangeant à sa gauche. À l'ouverture, le
-passage étudié remonte au-dessus du volet s'il passait dessous. En tête, l'endroit
+à mi-hauteur (55 %), qu'on tire par sa poignée jusqu'à 92 % de l'écran
+pour un long Tossafot. À l'ouverture, le passage étudié remonte au-dessus du
+volet s'il passait dessous. En tête, l'endroit
 (« Chapitre 1 · Daf 2a · passage 3 ») et la croix ; dessous, Rachi (le
 Rachbam en Bava Batra, là où il prend sa place) puis Tossafot, le dibbour
 hamat'hil en gras, à la taille de lecture : c'est un texte qu'on étudie. Le
 panneau **suit la lecture** : tant qu'il est ouvert, toucher un autre passage
-y montre les siens, sans rouvrir de bulle ; on étudie un daf d'un geste par
+y montre les siens, sans rouvrir le volet des commandes ; on étudie un daf d'un geste par
 passage. Dans le texte, les mots que citent les dibbourim du passage étudié
 sont soulignés à la couleur du thème (`MarkedText.vue`), sans fond, assez bas
 pour passer sous les voyelles. Le bouton du menu de lecture s'efface tant que
 le panneau est ouvert (il occupe sa place) ; la croix, Échap, le bouton
-retour ou le volet poussé vers le bas le ferment, et rendent la bulle aux
-passages.
+retour ou le volet poussé vers le bas le ferment, et rendent leurs commandes
+aux passages.
 
-### Dans l'app, ce qui accompagne un écran monte dans un bottom sheet
+### Ce qui accompagne un texte monte dans un bottom sheet
 
-Sur le site, les commandes d'un passage se posent en bulle contre lui, comme
-le menu de sélection qu'elles remplacent. Dans l'app native, ce qui
-accompagne un écran sans le quitter monte du bas, dans un **bottom sheet**
-(`BottomSheet.vue`) : les commandes d'un passage (mêmes commandes, même
-rangée « Commentaires », réparties sur toute la largeur) et le panneau
-d'étude. C'est la forme qu'un téléphone donne à ces choses : le pouce les
+Sur le site comme dans l'app, ce qui accompagne un texte sans le quitter
+monte du bas de l'écran, dans un **bottom sheet** (`BottomSheet.vue`) : les
+commandes d'un passage (réparties sur toute la largeur, avec la rangée
+« Commentaires ») et le panneau d'étude. C'est la forme qu'un téléphone donne
+à ces choses : le pouce les
 atteint, elles ne cachent jamais le passage qu'on vient de toucher, et elles
 se ferment comme on les ferme partout ailleurs, en les poussant vers le bas.
 
@@ -1548,9 +1554,10 @@ voile pas la page : on lit et on touche le texte au-dessus. Il passe sur la
 barre d'onglets et sous les fenêtres modales (le partage d'un passage s'ouvre
 par-dessus), coins hauts arrondis comme une surface (`--radius-xl`), au fond
 de la surface et à l'ombre des surfaces qui se posent (`--shadow-pop`). Le
-bouton du menu de lecture s'efface tant qu'un volet est ouvert. Sur le site,
-le panneau d'étude est le même volet sur un téléphone, et une colonne sans
-poignée sur un écran large (`docked`).
+bouton du menu de lecture s'efface tant qu'un volet est ouvert. Sur un écran
+large, le volet garde la largeur d'une colonne de lecture (44 rem), centré
+au bas de l'écran : une rangée de commandes étirée sur tout un écran
+d'ordinateur ne se lirait plus d'un regard.
 
 ### Une fenêtre modale tient dans ce qui est visible, clavier compris
 

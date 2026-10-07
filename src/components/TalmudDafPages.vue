@@ -57,6 +57,7 @@ function offsetOf(index: number): number {
       :lines="block.lines"
       :meforshim="pageMeforshim(block)"
       :scale="scale"
+      :tractate-start="block.amud === 0"
     />
   </template>
 </template>

@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { leadRanges, markedPieces } from "../services/pageForm";
+import { leadRanges, markedPieces, talmudOpenings } from "../services/pageForm";
 import {
   parseContent,
   parseDafMeforshim,
@@ -81,8 +81,8 @@ describe("le dibbour hamat'hil dans le texte", () => {
     const texte = "בראשית ברא אלהים";
     expect(leadRanges(texte, ["בראשית.", "בראשית ברא"])).toEqual([[0, 10]]);
     expect(markedPieces(texte, [[0, 10]])).toEqual([
-      { text: "בראשית ברא", marked: true },
-      { text: " אלהים", marked: false },
+      { text: "בראשית ברא", marked: true, strong: false },
+      { text: " אלהים", marked: false, strong: false },
     ]);
   });
 });
@@ -113,5 +113,30 @@ describe("commentaires d'un verset de la Torah", () => {
     );
     expect(ranges.length).toBeGreaterThan(0);
     expect(verset.slice(ranges[0][0], ranges[0][1]).replace(/[֑-ׇ]/g, "")).toMatch(/^בראשית/);
+  });
+});
+
+describe("le début d'une Michna, d'une Guemara", () => {
+  const gras = (ligne: string, debut = false) =>
+    talmudOpenings(ligne, debut).map(([a, b]) => ligne.slice(a, b).replace(/[\u0591-\u05C7]/g, ""));
+
+  it("met en gras « מתני׳ » et « גמ׳ » avec le mot qui les suit", () => {
+    expect(gras("מַתְנִי׳ מֵאֵימָתַי קוֹרִין אֶת שְׁמַע בְּשַׁחֲרִית?")).toEqual(["מתני׳ מאימתי"]);
+    expect(gras("גְּמָ׳ תַּנָּא הֵיכָא קָאֵי")).toEqual(["גמ׳ תנא"]);
+    expect(gras("אִיכָּא דְּמַתְנֵי לְהָא")).toEqual([]);
+  });
+
+  it("met en gras le premier mot du traité, et la fin d'un chapitre", () => {
+    expect(gras("מֵאֵימָתַי קוֹרִין אֶת שְׁמַע בָּעֲרָבִין?", true)).toEqual(["מאימתי"]);
+    expect(gras("וְהָא לָא קַשְׁיָא. הֲדַרַן עֲלָךְ מֵאֵימָתַי")).toEqual(["הדרן עלך מאימתי"]);
+  });
+
+  it("trouve chaque Michna et chaque Guemara de Berakhot", () => {
+    const he = read("talmud/berakhot.json") as { he: string[][] };
+    const lignes = he.he.flat().filter((l) => typeof l === "string");
+    const ouvertes = lignes.filter((l) => talmudOpenings(l).length > 0);
+    // 37 « מתני׳ », 34 « גמ׳ », 9 fins de chapitre (une au milieu d'un passage
+    // qui ouvre aussi la Michna suivante n'en compte qu'une).
+    expect(ouvertes.length).toBeGreaterThan(70);
   });
 });

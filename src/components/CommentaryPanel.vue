@@ -14,12 +14,11 @@ import { COMMENTARY_LABELS, type CommentaryGroup } from "../composables/usePassa
  * texte y montre les commentaires de celui-ci, sans rouvrir de bulle. On
  * étudie ainsi un daf passage après passage, d'un seul geste chaque fois.
  *
- * Sur un téléphone, c'est un bottom sheet (BottomSheet.vue) à mi-hauteur,
- * qu'on tire par sa poignée jusqu'en haut de l'écran pour lire un long
- * Tossafot, et qu'on pousse vers le bas pour le fermer (la page réserve sa
- * hauteur sous le texte pour qu'on puisse lire jusqu'au bout) ; sur un écran
- * large, une colonne à droite du texte, qui se décale pour lui faire place.
- * Il se ferme aussi d'une croix, d'Échap ou du bouton retour.
+ * C'est un bottom sheet (BottomSheet.vue), sur le site comme dans l'app :
+ * à mi-hauteur, on le tire par sa poignée jusqu'en haut de l'écran pour lire
+ * un long Tossafot, on le pousse vers le bas pour le fermer (la page réserve
+ * sa hauteur sous le texte pour qu'on puisse lire jusqu'au bout). Il se ferme
+ * aussi d'une croix, d'Échap ou du bouton retour.
  */
 const props = defineProps<{
   /** Où se trouve le passage, en clair : « Daf 2a · passage 3 ». */
@@ -43,14 +42,6 @@ watch(
   () => body.value?.closest(".sheet-body")?.scrollTo({ top: 0 }),
 );
 
-/** Écran large : la colonne de droite, sans poignée ni geste. */
-const WIDE = "(min-width: 1024px)";
-const wideQuery = typeof window !== "undefined" ? window.matchMedia?.(WIDE) : undefined;
-const wide = ref(wideQuery?.matches ?? false);
-const onWide = (event: MediaQueryListEvent): void => {
-  wide.value = event.matches;
-};
-
 const isEmpty = computed(() => props.state === "ready" && props.groups.length === 0);
 
 function onKeydown(event: KeyboardEvent): void {
@@ -58,12 +49,10 @@ function onKeydown(event: KeyboardEvent): void {
 }
 onMounted(() => {
   window.addEventListener("keydown", onKeydown);
-  wideQuery?.addEventListener?.("change", onWide);
 });
 onBeforeUnmount(() => {
   open.value = false;
   window.removeEventListener("keydown", onKeydown);
-  wideQuery?.removeEventListener?.("change", onWide);
 });
 </script>
 
@@ -72,7 +61,6 @@ onBeforeUnmount(() => {
     class="commentary-panel"
     :label="t('textReading.commentaries.title')"
     :snaps="[0.55, 0.92]"
-    :docked="wide"
     @close="emit('close')"
   >
     <template #header>
@@ -120,17 +108,6 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-/* Écran large : le volet devient une colonne à droite, sous le bandeau, sur
-   toute la hauteur (la page se range à sa gauche, voir TextReadingPage). */
-.commentary-panel.sheet-docked {
-  inset: calc(var(--safe-top, 0px) + var(--navbar-height, 4rem)) 0 0 auto;
-  z-index: 46;
-  width: 24rem;
-  max-height: none;
-  border-radius: var(--radius-xl) 0 0 0;
-  animation: none;
-}
-
 .commentary-head {
   display: flex;
   align-items: flex-start;
@@ -138,10 +115,6 @@ onBeforeUnmount(() => {
   gap: 0.75rem;
   padding: 0.4rem 1rem 0.6rem 1.25rem;
   border-bottom: 1px solid color-mix(in srgb, var(--color-text-primary) 8%, transparent);
-}
-
-.sheet-docked .commentary-head {
-  padding-top: 0.9rem;
 }
 
 .commentary-title {

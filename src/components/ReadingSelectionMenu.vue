@@ -1,18 +1,16 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 import AppIcon from "./icons/AppIcon.vue";
 import ShareModal from "./ShareModal.vue";
 import { useReadingSize } from "../composables/useReadingSize";
-import { useScrollFrame } from "../composables/useScrollFrame";
 import { useOverlay } from "../composables/useOverlayStack";
 import { openFeedback } from "../composables/useFeedback";
 import { clearPassage, readingPassage } from "../composables/useReadingSelection";
 import { hasNiqqud, transliterate } from "../services/hebrewTransliteration";
 import { analyticsService } from "../services/analyticsService";
 import { COMMENTARY_LABELS } from "../composables/usePassageCommentaries";
-import { isNativeApp } from "../composables/useNativeApp";
 import BottomSheet from "./BottomSheet.vue";
 
 /**
@@ -41,33 +39,20 @@ import BottomSheet from "./BottomSheet.vue";
  * ne tiendrait pas sur un téléphone, et ce n'est pas une commande comme les
  * autres : elle ouvre le panneau d'étude, qui suit ensuite la lecture.
  *
- * Elle est posée une fois dans App.vue et suit le passage : la bulle glisse
- * avec lui au défilement, et s'efface quand il quitte l'écran, comme le fait
- * le menu qu'elle remplace.
- *
- * Dans l'app native, les mêmes commandes montent dans un bottom sheet
- * (BottomSheet.vue) au lieu d'une bulle posée sur le passage : c'est la forme
- * qu'un téléphone donne à ce qui accompagne un écran, il se pousse vers le
- * bas pour se fermer, et il ne cache jamais le passage qu'on vient de toucher.
+ * Elle est posée une fois dans App.vue. Sur le site comme dans l'app, les
+ * commandes montent dans un bottom sheet (BottomSheet.vue), au bas de
+ * l'écran, plutôt que dans une bulle posée sur le passage : le pouce les
+ * atteint, elles ne cachent jamais le passage qu'on vient de toucher, et le
+ * volet se pousse vers le bas pour se fermer. Le nom de « bulle » est resté
+ * aux classes (`.reading-bubble`, `.bubble-action`).
  */
 
 const { t } = useI18n();
 const route = useRoute();
-const scrollFrame = useScrollFrame();
 
 /** Ce que la bulle montre : les commandes, ou la phonétique du passage. */
 const view = ref<"actions" | "phonetic">("actions");
 const showShare = ref(false);
-
-/**
- * La place de la bulle : le haut de son bord, en pixels de fenêtre. Elle se
- * pose au-dessus du passage, comme le menu du système ; dessous quand le
- * passage touche le haut de l'écran, où elle passerait sous la zone système ou
- * sous le bandeau du site.
- */
-const spot = shallowRef<{ top: number } | null>(null);
-
-const bubble = ref<HTMLElement | null>(null);
 
 /**
  * La bulle suit la taille de lecture, à moitié, comme le menu de lecture : qui
@@ -78,67 +63,6 @@ const bubble = ref<HTMLElement | null>(null);
 const readingSize = useReadingSize();
 const bubbleScale = computed(() => Math.min(1.2, 1 + (readingSize.scale.value - 1) * 0.5));
 const iconSize = computed(() => Math.round(17 * bubbleScale.value));
-
-/**
- * Ce qui tient le haut de l'écran et sous quoi la bulle ne passe pas : la zone
- * système (l'app native est bord à bord) et le bandeau du site. Mesuré par un
- * témoin : `--safe-top` est une expression `max()` que le style calculé ne rend
- * pas en pixels. Refait quand la fenêtre change de taille, pas à chaque image.
- */
-const chromeTop = ref(0);
-function measureChrome(): void {
-  const probe = document.createElement("div");
-  probe.style.cssText =
-    "position:fixed;top:0;left:0;width:0;visibility:hidden;pointer-events:none;" +
-    "height:calc(var(--safe-top) + var(--navbar-height) + 0.5rem)";
-  document.body.appendChild(probe);
-  chromeTop.value = probe.getBoundingClientRect().height;
-  probe.remove();
-}
-
-/**
- * Hauteur supposée de la bulle tant qu'elle n'est pas rendue : sa rangée de
- * commandes est plus basse que cela, on la pose donc au-dessus sans hésiter.
- */
-const ROOM_ABOVE = 132;
-/**
- * L'écart entre la bulle et le passage : elle se pose contre lui, juste assez
- * détachée pour qu'on voie où finit l'une et où commence l'autre.
- */
-const GAP = 6;
-
-function measure(): void {
-  const el = readingPassage.value?.el;
-  if (!el || !el.isConnected) {
-    spot.value = null;
-    return;
-  }
-  const rect = el.getBoundingClientRect();
-  // Passage sorti de l'écran : la bulle s'efface, le choix reste. Elle
-  // revient telle quelle dès qu'on remonte dessus.
-  if (rect.bottom < 0 || rect.top > window.innerHeight) {
-    spot.value = null;
-    return;
-  }
-  // Sa hauteur réelle dès qu'elle est rendue : la phonétique d'un long
-  // paragraphe ne tient pas dans la place d'une rangée de commandes, et
-  // sortirait par le haut de l'écran.
-  const height = bubble.value?.offsetHeight || ROOM_ABOVE;
-  const above = rect.top - GAP - height;
-  const below = above < chromeTop.value;
-  spot.value = { top: below ? rect.bottom + GAP : above };
-}
-
-// La bulle suit le passage sans poser d'écouteur de plus : la géométrie du
-// défilement est déjà mesurée une fois par image pour toute l'app.
-watch([readingPassage, scrollFrame], measure, { immediate: true });
-watch(() => scrollFrame.value.viewport, measureChrome);
-// La phonétique change sa hauteur : elle peut lui faire changer de côté.
-watch(view, () => void nextTick(measure));
-// Et la bulle se replace une fois rendue, sa hauteur enfin connue (voir aussi
-// le montage, plus bas) : sur la hauteur supposée, elle se posait trop haut
-// au-dessus du passage, ou passait dessous alors qu'elle tenait au-dessus.
-watch(readingPassage, () => void nextTick(measure));
 
 // Un nouveau passage repart des commandes : la phonétique du précédent n'a
 // rien à faire au-dessus de celui-ci, ni sa fenêtre de partage devant.
@@ -270,13 +194,6 @@ function onKeydown(event: KeyboardEvent): void {
 }
 
 onMounted(() => {
-  measureChrome();
-  // Le tout premier passage de la page : la bulle a été placée pendant que le
-  // composant se montait, c'est-à-dire sur sa hauteur supposée, et le suivi
-  // ci-dessus ne rejoue pas pour un passage déjà choisi. Elle se replace donc
-  // ici, la bulle rendue et sa hauteur connue. Sans ce passage, le premier
-  // passage choisi de chaque page laissait un blanc sous la bulle.
-  measure();
   document.addEventListener("pointerdown", onPointerDown);
   window.addEventListener("keydown", onKeydown);
 });
@@ -288,104 +205,83 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <!-- L'enveloppe tient toute la largeur et ne prend aucun appui : seule la
-       bulle qu'elle centre en reçoit. La bulle se pose ainsi au milieu de la
-       colonne de lecture, quelle que soit la longueur du passage. -->
-  <!-- Dans l'app native, l'enveloppe est un bottom sheet : même contenu,
-       posé au bas de l'écran plutôt que sur le passage. -->
-  <Transition :name="isNativeApp ? 'sheet' : 'bubble'">
-    <component
-      :is="isNativeApp ? BottomSheet : 'div'"
-      v-if="readingPassage && (isNativeApp || spot) && !showShare"
-      v-bind="
-        isNativeApp
-          ? {
-              label: t('textReading.selection.title'),
-              style: { '--bubble-scale': bubbleScale },
-              onClose: clearPassage,
-            }
-          : {
-              class: 'bubble-anchor',
-              style: { top: `${spot?.top ?? 0}px`, '--bubble-scale': bubbleScale },
-            }
-      "
-    >
-      <div
-        ref="bubble"
-        class="reading-bubble"
-        :class="{ 'bubble-sheet': isNativeApp }"
-        role="group"
-        :aria-label="t('textReading.selection.title')"
-      >
-        <!-- Les commandes du passage : une rangée, comme le menu qu'elles
+  <!-- Le volet des commandes : au bas de l'écran, sur le site comme dans
+       l'app ; il se pousse vers le bas pour relâcher le passage. -->
+  <BottomSheet
+    v-if="readingPassage && !showShare"
+    :label="t('textReading.selection.title')"
+    :style="{ '--bubble-scale': bubbleScale }"
+    @close="clearPassage"
+  >
+    <div class="reading-bubble" role="group" :aria-label="t('textReading.selection.title')">
+      <!-- Les commandes du passage : une rangée, comme le menu qu'elles
              remplacent, chacune sous son icône. -->
-        <div v-if="view === 'actions'" class="flex items-stretch">
-          <button type="button" class="bubble-action" @click="share">
-            <AppIcon name="share" :size="iconSize" />
-            {{ t("textReading.selection.share") }}
-          </button>
-          <button v-if="canTransliterate" type="button" class="bubble-action" @click="showPhonetic">
-            <AppIcon name="languages" :size="iconSize" />
-            {{ t("textReading.phonetic") }}
-          </button>
-          <button type="button" class="bubble-action" @click="report">
-            <AppIcon name="flag" :size="iconSize" />
-            {{ t("textReading.selection.report") }}
-          </button>
-          <!-- Le marque-page, là où le texte en prend : on ne revient pas à un
-               verset d'une brakha ou d'un daf. -->
-          <button
-            v-if="showBookmark"
-            type="button"
-            class="bubble-action"
-            :class="readingPassage.bookmarked ? 'text-primary' : ''"
-            :aria-label="bookmarkLabel"
-            :title="bookmarkLabel"
-            @click="bookmark"
-          >
-            <AppIcon name="bookmark" :size="iconSize" />
-            {{ t("textReading.selection.bookmark") }}
-          </button>
-        </div>
-
-        <!-- Les commentaires du passage : une rangée à part, sur toute la
-             largeur, avec ce qu'il y a à lire. -->
-        <button
-          v-if="view === 'actions' && commentary && commentary.state !== 'none'"
-          type="button"
-          class="bubble-commentary"
-          :disabled="commentary.state === 'loading'"
-          @click="openCommentaries"
-        >
-          <AppIcon name="book-reader" :size="iconSize" />
-          <span>{{ t("textReading.commentaries.open") }}</span>
-          <span v-if="commentaryCounts" class="bubble-counts">{{ commentaryCounts }}</span>
-          <span v-else class="bubble-counts">…</span>
+      <div v-if="view === 'actions'" class="flex items-stretch">
+        <button type="button" class="bubble-action" @click="share">
+          <AppIcon name="share" :size="iconSize" />
+          {{ t("textReading.selection.share") }}
         </button>
-
-        <!-- La phonétique du seul passage choisi : l'hébreu reste à l'écran
-             dessous, on ne bascule pas toute la page pour un mot. -->
-        <div v-else class="bubble-phonetic">
-          <div class="flex items-start justify-between gap-2">
-            <p class="bubble-place">{{ readingPassage.place }}</p>
-            <button
-              type="button"
-              class="icon-btn !w-7 !h-7 shrink-0"
-              :aria-label="t('common.close')"
-              @click="clearPassage()"
-            >
-              <AppIcon name="x" :size="14" />
-            </button>
-          </div>
-          <p dir="ltr" class="bubble-tl">{{ phonetic }}</p>
-        </div>
+        <button v-if="canTransliterate" type="button" class="bubble-action" @click="showPhonetic">
+          <AppIcon name="languages" :size="iconSize" />
+          {{ t("textReading.phonetic") }}
+        </button>
+        <button type="button" class="bubble-action" @click="report">
+          <AppIcon name="flag" :size="iconSize" />
+          {{ t("textReading.selection.report") }}
+        </button>
+        <!-- Le marque-page, là où le texte en prend : on ne revient pas à un
+               verset d'une brakha ou d'un daf. -->
+        <button
+          v-if="showBookmark"
+          type="button"
+          class="bubble-action"
+          :class="readingPassage.bookmarked ? 'text-primary' : ''"
+          :aria-label="bookmarkLabel"
+          :title="bookmarkLabel"
+          @click="bookmark"
+        >
+          <AppIcon name="bookmark" :size="iconSize" />
+          {{ t("textReading.selection.bookmark") }}
+        </button>
       </div>
-    </component>
-  </Transition>
+
+      <!-- Les commentaires du passage : une rangée à part, sur toute la
+             largeur, avec ce qu'il y a à lire. -->
+      <button
+        v-if="view === 'actions' && commentary && commentary.state !== 'none'"
+        type="button"
+        class="bubble-commentary"
+        :disabled="commentary.state === 'loading'"
+        @click="openCommentaries"
+      >
+        <AppIcon name="book-reader" :size="iconSize" />
+        <span>{{ t("textReading.commentaries.open") }}</span>
+        <span v-if="commentaryCounts" class="bubble-counts">{{ commentaryCounts }}</span>
+        <span v-else class="bubble-counts">…</span>
+      </button>
+
+      <!-- La phonétique du seul passage choisi : l'hébreu reste à l'écran
+             dessous, on ne bascule pas toute la page pour un mot. -->
+      <div v-else class="bubble-phonetic">
+        <div class="flex items-start justify-between gap-2">
+          <p class="bubble-place">{{ readingPassage.place }}</p>
+          <button
+            type="button"
+            class="icon-btn !w-7 !h-7 shrink-0"
+            :aria-label="t('common.close')"
+            @click="clearPassage()"
+          >
+            <AppIcon name="x" :size="14" />
+          </button>
+        </div>
+        <p dir="ltr" class="bubble-tl">{{ phonetic }}</p>
+      </div>
+    </div>
+  </BottomSheet>
 
   <!-- Le partage du passage : la même fenêtre que partout ailleurs, avec le
-       lien qui ramène ici. Dans le <body>, comme les autres fenêtres : la
-       bulle s'efface pendant qu'elle est ouverte, et l'emporterait avec elle. -->
+       lien qui ramène ici. Dans le <body>, comme les autres fenêtres : le
+       volet s'efface pendant qu'elle est ouverte, et l'emporterait avec elle. -->
   <Teleport to="body">
     <ShareModal
       v-if="readingPassage"
@@ -401,38 +297,8 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
-/* L'enveloppe : posée sur la fenêtre, à la hauteur du passage, transparente
-   aux appuis. Le retrait de côté garantit que la bulle ne touche jamais le
-   bord d'un écran étroit. */
-.bubble-anchor {
-  position: fixed;
-  inset-inline: 0;
-  z-index: 45;
-  display: flex;
-  justify-content: center;
-  padding-inline: 0.75rem;
-  pointer-events: none;
-}
-
-.reading-bubble {
-  pointer-events: auto;
-  max-width: min(26rem, 100%);
-  overflow: hidden;
-  border-radius: var(--radius-xl);
-  background-color: var(--color-surface);
-  box-shadow: var(--shadow-pop);
-}
-
-/* Dans le bottom sheet de l'app : la largeur de l'écran, le fond et l'ombre
-   sont ceux du volet, les commandes se répartissent sur toute la rangée. */
-.bubble-sheet {
-  max-width: none;
-  border-radius: 0;
-  background-color: transparent;
-  box-shadow: none;
-}
-
-.bubble-sheet > .flex {
+/* Les commandes, réparties sur toute la largeur du volet. */
+.reading-bubble > .flex {
   justify-content: space-around;
 }
 
@@ -520,37 +386,5 @@ onBeforeUnmount(() => {
   font-style: italic;
   line-height: 1.6;
   color: var(--color-text-primary);
-}
-
-/* Elle surgit du passage, brièvement : elle accompagne l'appui, elle ne
-   s'annonce pas. */
-.bubble-enter-active {
-  transition:
-    opacity 0.12s ease-out,
-    scale 0.18s cubic-bezier(0.3, 1.3, 0.55, 1);
-}
-
-.bubble-leave-active {
-  transition:
-    opacity 0.1s ease-in,
-    scale 0.1s ease-in;
-}
-
-.bubble-enter-from,
-.bubble-leave-to {
-  opacity: 0;
-  scale: 0.9;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .bubble-enter-active,
-  .bubble-leave-active {
-    transition: opacity 0.12s ease;
-  }
-
-  .bubble-enter-from,
-  .bubble-leave-to {
-    scale: 1;
-  }
 }
 </style>

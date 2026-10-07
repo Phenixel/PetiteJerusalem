@@ -263,18 +263,26 @@ const NOT_QUOTED = new Set(["וכו", "כו", "וגו", "גמ", "גמרא", "מ�
  * qui cite le passage d'avant, ou qui abrège, ne souligne que ce qu'il cite
  * vraiment, ou rien.
  */
-export function leadRanges(text: string, leads: string[]): [number, number][] {
+/**
+ * Les mots d'un texte, réduits à leurs lettres (`key`), avec leur place sans
+ * la ponctuation qui les borde (« השחר. », « ״וטהר״ ») : du premier signe
+ * hébreu au dernier, le géresh d'une abréviation compris (« מתני׳ »).
+ */
+function textWords(text: string): { key: string; start: number; end: number }[] {
   const words: { key: string; start: number; end: number }[] = [];
   for (const m of text.matchAll(/[^\s\u05BE]+/g)) {
     const key = wordKey(m[0]);
     if (!key) continue;
-    // Le mot sans la ponctuation qui le borde (« השחר. », « ״וטהר״ ») : on
-    // souligne des mots, pas un point. Du premier signe hébreu au dernier.
     const first = m[0].search(/[\u0591-\u05C7\u05D0-\u05EA]/);
     let last = m[0].length;
-    while (last > first && !/[\u0591-\u05C7\u05D0-\u05EA]/.test(m[0][last - 1])) last--;
+    while (last > first && !/[\u0591-\u05C7\u05D0-\u05EA\u05F3']/.test(m[0][last - 1])) last--;
     words.push({ key, start: m.index! + first, end: m.index! + last });
   }
+  return words;
+}
+
+export function leadRanges(text: string, leads: string[]): [number, number][] {
+  const words = textWords(text);
   const ranges: [number, number][] = [];
   for (const lead of leads) {
     const keys = lead
@@ -303,18 +311,60 @@ export function leadRanges(text: string, leads: string[]): [number, number][] {
   return merged;
 }
 
-/** Un texte coupé aux mots soulignés : les morceaux, chacun marqué ou non. */
+/** Un morceau de texte : souligné (dibbour), en gras (début de Michna, de Guemara). */
+export interface TextPiece {
+  text: string;
+  marked: boolean;
+  strong: boolean;
+}
+
+/**
+ * Un texte coupé aux mots soulignés (`ranges`) et aux mots en gras
+ * (`strong`) : les morceaux, chacun avec ce qu'il porte.
+ */
 export function markedPieces(
   text: string,
   ranges: [number, number][],
-): { text: string; marked: boolean }[] {
-  const pieces: { text: string; marked: boolean }[] = [];
-  let at = 0;
-  for (const [start, end] of ranges) {
-    if (start > at) pieces.push({ text: text.slice(at, start), marked: false });
-    pieces.push({ text: text.slice(start, end), marked: true });
-    at = end;
+  strong: [number, number][] = [],
+): TextPiece[] {
+  const cuts = new Set([0, text.length]);
+  for (const [a, b] of [...ranges, ...strong]) {
+    cuts.add(a);
+    cuts.add(b);
   }
-  if (at < text.length) pieces.push({ text: text.slice(at), marked: false });
+  const sorted = [...cuts].filter((c) => c >= 0 && c <= text.length).sort((a, b) => a - b);
+  const within = (list: [number, number][], at: number) => list.some(([a, b]) => at >= a && at < b);
+  const pieces: TextPiece[] = [];
+  for (let i = 0; i < sorted.length - 1; i++) {
+    const [a, b] = [sorted[i], sorted[i + 1]];
+    if (a === b) continue;
+    const piece = { text: text.slice(a, b), marked: within(ranges, a), strong: within(strong, a) };
+    const last = pieces[pieces.length - 1];
+    if (last && last.marked === piece.marked && last.strong === piece.strong)
+      last.text += piece.text;
+    else pieces.push(piece);
+  }
   return pieces;
+}
+
+/**
+ * Ce que la page imprimée met en gras dans une ligne de guemara, pour qu'on
+ * retrouve d'un coup d'œil où commence chaque partie :
+ *  - le « מתני׳ » qui ouvre une Michna et le « גמ׳ » qui ouvre la Guemara,
+ *    avec le mot qui les suit ;
+ *  - le premier mot du traité (`tractateStart`), dont la Michna n'a pas de
+ *    « מתני׳ » ;
+ *  - la formule qui clôt un chapitre, « הדרן עלך … », jusqu'à la fin de la
+ *    ligne.
+ */
+export function talmudOpenings(line: string, tractateStart = false): [number, number][] {
+  const words = textWords(line);
+  if (words.length === 0) return [];
+  const ranges: [number, number][] = [];
+  const opener = words[0].key === "מתני" || words[0].key === "גמ";
+  if (opener) ranges.push([words[0].start, (words[1] ?? words[0]).end]);
+  else if (tractateStart) ranges.push([words[0].start, words[0].end]);
+  const hadran = words.findIndex((w, i) => w.key === "הדרנ" && words[i + 1]?.key === "עלכ");
+  if (hadran >= 0) ranges.push([words[hadran].start, words[words.length - 1].end]);
+  return ranges;
 }

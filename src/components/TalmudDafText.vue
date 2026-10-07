@@ -3,6 +3,7 @@ import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import type { DafBlock } from "../services/textService";
 import MarkedText from "./MarkedText.vue";
+import { talmudOpenings } from "../services/pageForm";
 
 /**
  * Une guemara : le texte d'un chapitre d'un seul tenant, un repère à chaque
@@ -20,6 +21,10 @@ import MarkedText from "./MarkedText.vue";
  * lecture, commentaires) et porte sa ligne (`data-line`, l'index dans la
  * section). `leads` souligne, dans le passage étudié, les mots que citent ses
  * commentaires.
+ *
+ * Comme sur la page imprimée, le début de chaque Michna et de chaque Guemara
+ * est en gras (« מתני׳ », « גמ׳ » et le mot qui suit, le premier mot du
+ * traité, la formule qui clôt un chapitre, voir talmudOpenings).
  */
 const props = withDefaults(
   defineProps<{
@@ -50,6 +55,12 @@ const emit = defineEmits<{
 
 function pick(event: MouseEvent, line: number, text: string): void {
   emit("pick", event, line, text);
+}
+
+/** Les mots en gras d'une ligne ; le tout premier passage du traité ouvre sa Michna. */
+function openings(block: DafBlock, k: number, line: string): [number, number][] {
+  const tractateStart = block.amud === 0 && (block.passages?.[k] ?? k) === 0;
+  return talmudOpenings(line, tractateStart);
 }
 
 const { t } = useI18n();
@@ -103,6 +114,7 @@ function offsetOf(index: number): number {
           @contextmenu="pick($event, offsetOf(index) + k, line)"
           ><MarkedText
             :text="line"
+            :strong="openings(block, k, line)"
             :leads="leads?.line === offsetOf(index) + k ? leads.leads : null" /></span
         >{{ " " }}</template
       >
@@ -113,7 +125,9 @@ function offsetOf(index: number): number {
       class="font-hebrew text-text-primary daf-he"
       :class="variant === 'daily' ? 'daf-he-daily' : ''"
     >
-      {{ block.lines.join(" ") }}
+      <template v-for="(line, k) in block.lines" :key="k"
+        ><MarkedText :text="line" :strong="openings(block, k, line)" />{{ " " }}</template
+      >
     </p>
     <p v-else dir="ltr" class="leading-relaxed italic text-text-secondary daf-tl">
       {{ phoneticByDaf.get(block.daf) }}

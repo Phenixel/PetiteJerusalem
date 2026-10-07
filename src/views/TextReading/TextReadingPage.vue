@@ -1078,11 +1078,9 @@ function commentarySummary(line: number): CommentarySummary {
 
 /**
  * Le volet monte à mi-hauteur : le passage qu'on vient de toucher, s'il est
- * dans la moitié basse, passerait dessous. On le remonte sous le bandeau. Sur
- * un écran large, la colonne de droite ne cache rien.
+ * dans la moitié basse, passerait dessous. On le remonte sous le bandeau.
  */
 function keepAboveSheet(line: number): void {
-  if (window.matchMedia?.("(min-width: 1024px)").matches) return;
   const el = document.querySelector<HTMLElement>(`[data-line="${line}"]`);
   if (!el) return;
   const rect = el.getBoundingClientRect();
@@ -2473,7 +2471,7 @@ watch(textId, (_, previousTextId) => {
         :halakhot="hasHalakhot"
         :share-title="shareTitle"
         :share-url="canonicalUrl"
-        :concealed="studyLine !== null || (isNativeApp && selectedPassageKey !== null)"
+        :concealed="studyLine !== null || selectedPassageKey !== null"
         @update:phonetic="setReadingMode($event ? 'phonetic' : 'hebrew')"
         @update:page-form-active="setReadingMode($event ? 'page' : 'hebrew')"
         @download="toggleDownload()"
@@ -2501,19 +2499,11 @@ watch(textId, (_, previousTextId) => {
 </template>
 
 <style scoped>
-/* Le panneau d'étude ouvert (CommentaryPanel.vue) : sur un téléphone, la page
-   réserve sous le texte la hauteur du volet, pour qu'on lise jusqu'au dernier
-   passage ; sur un écran large, la colonne de lecture se range à gauche de
-   la colonne des commentaires. Les mesures sont celles du panneau. */
+/* Le panneau d'étude ouvert (CommentaryPanel.vue) : la page réserve sous le
+   texte la hauteur de son volet à mi-hauteur, pour qu'on lise jusqu'au
+   dernier passage. */
 .study-open {
   padding-bottom: calc(55vh + 2rem);
-}
-@media (min-width: 1024px) {
-  .study-open {
-    padding-bottom: 3rem;
-    margin-right: calc(24rem + 1rem);
-    margin-left: auto;
-  }
 }
 
 /* Reader text sizes follow the A− / A+ control (useReadingSize).

@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import type { RashiComment } from "../services/textService";
-import { amudOf, dafColumns, dafSides, gemaraPageText } from "../services/pageForm";
+import { amudOf, dafColumns, dafSides, gemaraPageText, talmudOpenings } from "../services/pageForm";
+import MarkedText from "./MarkedText.vue";
 
 /**
  * Un amoud dans la forme de la page de Vilna : la guemara au centre, Rachi
@@ -29,10 +30,23 @@ const props = defineProps<{
   meforshim: { rashi: RashiComment[]; tosafot: RashiComment[] } | null;
   /** La taille de lecture (useReadingSize). */
   scale: number;
+  /** Le premier amoud du traité : son premier mot ouvre la Michna, en gras. */
+  tractateStart?: boolean;
 }>();
 
 const sides = computed(() => dafSides(amudOf(props.daf)));
-const mainText = computed(() => gemaraPageText(props.lines));
+/**
+ * La guemara, passage par passage, sans voyelles : le début de chaque Michna
+ * et de chaque Guemara en gras, comme sur la page imprimée (talmudOpenings).
+ */
+const mainLines = computed(() =>
+  props.lines
+    .map((line, k) => {
+      const text = gemaraPageText([line]);
+      return { text, strong: talmudOpenings(text, props.tractateStart && k === 0) };
+    })
+    .filter((l) => l.text),
+);
 const rashi = computed(() => props.meforshim?.rashi ?? []);
 const tosafot = computed(() => props.meforshim?.tosafot ?? []);
 
@@ -248,7 +262,11 @@ watch(
         class="daf-spacer"
         :style="{ float: sides.tosafot, clear: sides.tosafot }"
       ></div>
-      <p class="daf-main">{{ mainText }}<span ref="mainEnd" class="daf-end"></span></p>
+      <p class="daf-main">
+        <template v-for="(line, k) in mainLines" :key="k"
+          ><MarkedText :text="line.text" :strong="line.strong" />{{ " " }}</template
+        ><span ref="mainEnd" class="daf-end"></span>
+      </p>
     </div>
 
     <!-- Rachi : les blancs flottent du côté opposé au sien. -->
