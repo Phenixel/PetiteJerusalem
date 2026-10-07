@@ -1510,9 +1510,12 @@ mode d'étude. La rangée n'apparaît pas sur un passage sans commentaire ;
 grisée, avec « … », le temps que les commentaires arrivent (ils ne se
 chargent qu'au premier passage touché).
 
-Elle ouvre le **panneau d'étude** (`CommentaryPanel.vue`) : un volet à
-mi-hauteur (55 vh) au bas d'un téléphone, une colonne de 24 rem à droite
-d'un écran large, le texte se rangeant à sa gauche. En tête, l'endroit
+Elle ouvre le **panneau d'étude** (`CommentaryPanel.vue`) : un bottom sheet
+à mi-hauteur (55 %) au bas d'un téléphone, qu'on tire par sa poignée
+jusqu'à 92 % de l'écran pour un long Tossafot (voir « Dans l'app, ce qui
+accompagne un écran monte dans un bottom sheet »), une colonne de 24 rem à
+droite d'un écran large, le texte se rangeant à sa gauche. À l'ouverture, le
+passage étudié remonte au-dessus du volet s'il passait dessous. En tête, l'endroit
 (« Chapitre 1 · Daf 2a · passage 3 ») et la croix ; dessous, Rachi (le
 Rachbam en Bava Batra, là où il prend sa place) puis Tossafot, le dibbour
 hamat'hil en gras, à la taille de lecture : c'est un texte qu'on étudie. Le
@@ -1521,8 +1524,33 @@ y montre les siens, sans rouvrir de bulle ; on étudie un daf d'un geste par
 passage. Dans le texte, les mots que citent les dibbourim du passage étudié
 sont soulignés à la couleur du thème (`MarkedText.vue`), sans fond, assez bas
 pour passer sous les voyelles. Le bouton du menu de lecture s'efface tant que
-le panneau est ouvert (il occupe sa place) ; la croix, Échap ou le bouton
-retour le ferment, et rendent la bulle aux passages.
+le panneau est ouvert (il occupe sa place) ; la croix, Échap, le bouton
+retour ou le volet poussé vers le bas le ferment, et rendent la bulle aux
+passages.
+
+### Dans l'app, ce qui accompagne un écran monte dans un bottom sheet
+
+Sur le site, les commandes d'un passage se posent en bulle contre lui, comme
+le menu de sélection qu'elles remplacent. Dans l'app native, ce qui
+accompagne un écran sans le quitter monte du bas, dans un **bottom sheet**
+(`BottomSheet.vue`) : les commandes d'un passage (mêmes commandes, même
+rangée « Commentaires », réparties sur toute la largeur) et le panneau
+d'étude. C'est la forme qu'un téléphone donne à ces choses : le pouce les
+atteint, elles ne cachent jamais le passage qu'on vient de toucher, et elles
+se ferment comme on les ferme partout ailleurs, en les poussant vers le bas.
+
+Le volet a une poignée (un trait de 2,25 rem, à la couleur du texte en
+transparence) ; la poignée et son en-tête portent le geste, le corps défile.
+Il a des crans (le panneau d'étude : mi-hauteur et presque plein écran) ou
+prend la hauteur de son contenu (les commandes) ; un geste franc vers le bas
+le ferme d'un coup, un tirage lent se pose au cran le plus proche. Il ne
+voile pas la page : on lit et on touche le texte au-dessus. Il passe sur la
+barre d'onglets et sous les fenêtres modales (le partage d'un passage s'ouvre
+par-dessus), coins hauts arrondis comme une surface (`--radius-xl`), au fond
+de la surface et à l'ombre des surfaces qui se posent (`--shadow-pop`). Le
+bouton du menu de lecture s'efface tant qu'un volet est ouvert. Sur le site,
+le panneau d'étude est le même volet sur un téléphone, et une colonne sans
+poignée sur un écran large (`docked`).
 
 ### Une fenêtre modale tient dans ce qui est visible, clavier compris
 

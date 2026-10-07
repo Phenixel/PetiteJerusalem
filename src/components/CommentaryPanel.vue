@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import AppIcon from "./icons/AppIcon.vue";
+import BottomSheet from "./BottomSheet.vue";
 import { useOverlay } from "../composables/useOverlayStack";
 import { COMMENTARY_LABELS, type CommentaryGroup } from "../composables/usePassageCommentaries";
 
@@ -13,10 +14,12 @@ import { COMMENTARY_LABELS, type CommentaryGroup } from "../composables/usePassa
  * texte y montre les commentaires de celui-ci, sans rouvrir de bulle. On
  * étudie ainsi un daf passage après passage, d'un seul geste chaque fois.
  *
- * Sur un téléphone, c'est un volet à mi-hauteur au bas de l'écran (la page
- * réserve sa hauteur sous le texte pour qu'on puisse lire jusqu'au bout) ;
- * sur un écran large, une colonne à droite du texte, qui se décale pour lui
- * faire place. Il se ferme d'une croix, d'Échap ou du bouton retour.
+ * Sur un téléphone, c'est un bottom sheet (BottomSheet.vue) à mi-hauteur,
+ * qu'on tire par sa poignée jusqu'en haut de l'écran pour lire un long
+ * Tossafot, et qu'on pousse vers le bas pour le fermer (la page réserve sa
+ * hauteur sous le texte pour qu'on puisse lire jusqu'au bout) ; sur un écran
+ * large, une colonne à droite du texte, qui se décale pour lui faire place.
+ * Il se ferme aussi d'une croix, d'Échap ou du bouton retour.
  */
 const props = defineProps<{
   /** Où se trouve le passage, en clair : « Daf 2a · passage 3 ». */
@@ -33,45 +36,61 @@ const { t } = useI18n();
 const open = ref(true);
 useOverlay(open, () => emit("close"));
 
-/** Chaque passage repart du haut de ses commentaires. */
+/** Chaque passage repart du haut de ses commentaires (le corps du volet défile). */
 const body = ref<HTMLElement | null>(null);
 watch(
   () => props.place,
-  () => body.value?.scrollTo({ top: 0 }),
+  () => body.value?.closest(".sheet-body")?.scrollTo({ top: 0 }),
 );
+
+/** Écran large : la colonne de droite, sans poignée ni geste. */
+const WIDE = "(min-width: 1024px)";
+const wideQuery = typeof window !== "undefined" ? window.matchMedia?.(WIDE) : undefined;
+const wide = ref(wideQuery?.matches ?? false);
+const onWide = (event: MediaQueryListEvent): void => {
+  wide.value = event.matches;
+};
 
 const isEmpty = computed(() => props.state === "ready" && props.groups.length === 0);
 
 function onKeydown(event: KeyboardEvent): void {
   if (event.key === "Escape") emit("close");
 }
-onMounted(() => window.addEventListener("keydown", onKeydown));
+onMounted(() => {
+  window.addEventListener("keydown", onKeydown);
+  wideQuery?.addEventListener?.("change", onWide);
+});
 onBeforeUnmount(() => {
   open.value = false;
   window.removeEventListener("keydown", onKeydown);
+  wideQuery?.removeEventListener?.("change", onWide);
 });
 </script>
 
 <template>
-  <aside
+  <BottomSheet
     class="commentary-panel"
-    role="complementary"
-    :aria-label="t('textReading.commentaries.title')"
+    :label="t('textReading.commentaries.title')"
+    :snaps="[0.55, 0.92]"
+    :docked="wide"
+    @close="emit('close')"
   >
-    <header class="commentary-head">
-      <div class="min-w-0">
-        <p class="commentary-title">{{ t("textReading.commentaries.title") }}</p>
-        <p class="commentary-place">{{ place }}</p>
-      </div>
-      <button
-        type="button"
-        class="icon-btn shrink-0"
-        :aria-label="t('common.close')"
-        @click="emit('close')"
-      >
-        <AppIcon name="x" :size="16" />
-      </button>
-    </header>
+    <template #header>
+      <header class="commentary-head">
+        <div class="min-w-0">
+          <p class="commentary-title">{{ t("textReading.commentaries.title") }}</p>
+          <p class="commentary-place">{{ place }}</p>
+        </div>
+        <button
+          type="button"
+          class="icon-btn shrink-0"
+          :aria-label="t('common.close')"
+          @click="emit('close')"
+        >
+          <AppIcon name="x" :size="16" />
+        </button>
+      </header>
+    </template>
 
     <div ref="body" class="commentary-body">
       <p v-if="state === 'loading' || state === 'idle'" class="commentary-note">
@@ -97,34 +116,19 @@ onBeforeUnmount(() => {
       </section>
       <p class="commentary-hint">{{ t("textReading.commentaries.hint") }}</p>
     </div>
-  </aside>
+  </BottomSheet>
 </template>
 
 <style scoped>
-/* Téléphone : un volet au bas de l'écran, à mi-hauteur, qui laisse le texte
-   lisible au-dessus. Au-dessus de la barre d'onglets de l'app, sous les
-   fenêtres modales. */
-.commentary-panel {
-  position: fixed;
-  inset: auto 0 0 0;
+/* Écran large : le volet devient une colonne à droite, sous le bandeau, sur
+   toute la hauteur (la page se range à sa gauche, voir TextReadingPage). */
+.commentary-panel.sheet-docked {
+  inset: calc(var(--safe-top, 0px) + var(--navbar-height, 4rem)) 0 0 auto;
   z-index: 46;
-  display: flex;
-  flex-direction: column;
-  height: var(--commentary-height, 55vh);
-  padding-bottom: env(safe-area-inset-bottom);
-  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-  background-color: var(--color-surface);
-  box-shadow: var(--shadow-pop);
-}
-
-/* Écran large : une colonne à droite, sous le bandeau, toute la hauteur. */
-@media (min-width: 1024px) {
-  .commentary-panel {
-    inset: calc(var(--safe-top, 0px) + var(--navbar-height, 4rem)) 0 0 auto;
-    width: var(--commentary-width, 24rem);
-    height: auto;
-    border-radius: var(--radius-xl) 0 0 0;
-  }
+  width: 24rem;
+  max-height: none;
+  border-radius: var(--radius-xl) 0 0 0;
+  animation: none;
 }
 
 .commentary-head {
@@ -132,8 +136,12 @@ onBeforeUnmount(() => {
   align-items: flex-start;
   justify-content: space-between;
   gap: 0.75rem;
-  padding: 0.9rem 1rem 0.6rem 1.25rem;
+  padding: 0.4rem 1rem 0.6rem 1.25rem;
   border-bottom: 1px solid color-mix(in srgb, var(--color-text-primary) 8%, transparent);
+}
+
+.sheet-docked .commentary-head {
+  padding-top: 0.9rem;
 }
 
 .commentary-title {
@@ -152,11 +160,8 @@ onBeforeUnmount(() => {
   color: var(--color-text-primary);
 }
 
+/* Le corps du volet défile (BottomSheet) : ici, la marge du texte seulement. */
 .commentary-body {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
   padding: 0.75rem 1.25rem 1.25rem;
 }
 

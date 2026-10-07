@@ -1076,10 +1076,27 @@ function commentarySummary(line: number): CommentarySummary {
   return counts.length ? { state: "ready", counts } : { state: "none" };
 }
 
+/**
+ * Le volet monte à mi-hauteur : le passage qu'on vient de toucher, s'il est
+ * dans la moitié basse, passerait dessous. On le remonte sous le bandeau. Sur
+ * un écran large, la colonne de droite ne cache rien.
+ */
+function keepAboveSheet(line: number): void {
+  if (window.matchMedia?.("(min-width: 1024px)").matches) return;
+  const el = document.querySelector<HTMLElement>(`[data-line="${line}"]`);
+  if (!el) return;
+  const rect = el.getBoundingClientRect();
+  const visibleBottom = window.innerHeight * 0.45;
+  if (rect.top >= 0 && rect.bottom <= visibleBottom) return;
+  markProgrammaticScroll();
+  window.scrollBy({ top: rect.top - window.innerHeight * 0.15, behavior: "smooth" });
+}
+
 function openStudy(line: number): void {
   studyLine.value = line;
   studyViewed = 1;
   clearPassage();
+  void nextTick(() => keepAboveSheet(line));
   // Les commentaires : trouvés, et sur quel corpus.
   analyticsService.capture("commentaries_opened", {
     corpus: commentaries.corpus.value,
@@ -2456,7 +2473,7 @@ watch(textId, (_, previousTextId) => {
         :halakhot="hasHalakhot"
         :share-title="shareTitle"
         :share-url="canonicalUrl"
-        :concealed="studyLine !== null"
+        :concealed="studyLine !== null || (isNativeApp && selectedPassageKey !== null)"
         @update:phonetic="setReadingMode($event ? 'phonetic' : 'hebrew')"
         @update:page-form-active="setReadingMode($event ? 'page' : 'hebrew')"
         @download="toggleDownload()"

@@ -96,9 +96,10 @@ const props = withDefaults(
     /** L'adresse publique du texte ; à défaut, celle de la page ouverte. */
     shareUrl?: string;
     /**
-     * Le panneau d'étude occupe le bas de l'écran (téléphone) ou sa droite
-     * (écran large), là où se posent les boutons ronds : ils s'effacent le
-     * temps qu'il est ouvert.
+     * Un volet occupe le bas de l'écran (le panneau d'étude, les commandes
+     * d'un passage dans l'app) ou sa droite (le panneau sur un écran large),
+     * là où se posent les boutons ronds : ils s'effacent le temps qu'il est
+     * ouvert.
      */
     concealed?: boolean;
   }>(),

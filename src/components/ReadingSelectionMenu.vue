@@ -12,6 +12,8 @@ import { clearPassage, readingPassage } from "../composables/useReadingSelection
 import { hasNiqqud, transliterate } from "../services/hebrewTransliteration";
 import { analyticsService } from "../services/analyticsService";
 import { COMMENTARY_LABELS } from "../composables/usePassageCommentaries";
+import { isNativeApp } from "../composables/useNativeApp";
+import BottomSheet from "./BottomSheet.vue";
 
 /**
  * La bulle de commandes d'un passage choisi (voir useReadingSelection).
@@ -42,6 +44,11 @@ import { COMMENTARY_LABELS } from "../composables/usePassageCommentaries";
  * Elle est posée une fois dans App.vue et suit le passage : la bulle glisse
  * avec lui au défilement, et s'efface quand il quitte l'écran, comme le fait
  * le menu qu'elle remplace.
+ *
+ * Dans l'app native, les mêmes commandes montent dans un bottom sheet
+ * (BottomSheet.vue) au lieu d'une bulle posée sur le passage : c'est la forme
+ * qu'un téléphone donne à ce qui accompagne un écran, il se pousse vers le
+ * bas pour se fermer, et il ne cache jamais le passage qu'on vient de toucher.
  */
 
 const { t } = useI18n();
@@ -253,7 +260,8 @@ function onPointerDown(event: PointerEvent): void {
   // sous les doigts de celui qui vient de l'ouvrir.
   if (showShare.value || !readingPassage.value) return;
   const target = event.target;
-  if (target instanceof Element && target.closest(".reading-pick, .reading-bubble")) return;
+  if (target instanceof Element && target.closest(".reading-pick, .reading-bubble, .bottom-sheet"))
+    return;
   clearPassage();
 }
 
@@ -283,15 +291,29 @@ onBeforeUnmount(() => {
   <!-- L'enveloppe tient toute la largeur et ne prend aucun appui : seule la
        bulle qu'elle centre en reçoit. La bulle se pose ainsi au milieu de la
        colonne de lecture, quelle que soit la longueur du passage. -->
-  <Transition name="bubble">
-    <div
-      v-if="readingPassage && spot && !showShare"
-      class="bubble-anchor"
-      :style="{ top: `${spot.top}px`, '--bubble-scale': bubbleScale }"
+  <!-- Dans l'app native, l'enveloppe est un bottom sheet : même contenu,
+       posé au bas de l'écran plutôt que sur le passage. -->
+  <Transition :name="isNativeApp ? 'sheet' : 'bubble'">
+    <component
+      :is="isNativeApp ? BottomSheet : 'div'"
+      v-if="readingPassage && (isNativeApp || spot) && !showShare"
+      v-bind="
+        isNativeApp
+          ? {
+              label: t('textReading.selection.title'),
+              style: { '--bubble-scale': bubbleScale },
+              onClose: clearPassage,
+            }
+          : {
+              class: 'bubble-anchor',
+              style: { top: `${spot?.top ?? 0}px`, '--bubble-scale': bubbleScale },
+            }
+      "
     >
       <div
         ref="bubble"
         class="reading-bubble"
+        :class="{ 'bubble-sheet': isNativeApp }"
         role="group"
         :aria-label="t('textReading.selection.title')"
       >
@@ -358,7 +380,7 @@ onBeforeUnmount(() => {
           <p dir="ltr" class="bubble-tl">{{ phonetic }}</p>
         </div>
       </div>
-    </div>
+    </component>
   </Transition>
 
   <!-- Le partage du passage : la même fenêtre que partout ailleurs, avec le
@@ -399,6 +421,19 @@ onBeforeUnmount(() => {
   border-radius: var(--radius-xl);
   background-color: var(--color-surface);
   box-shadow: var(--shadow-pop);
+}
+
+/* Dans le bottom sheet de l'app : la largeur de l'écran, le fond et l'ombre
+   sont ceux du volet, les commandes se répartissent sur toute la rangée. */
+.bubble-sheet {
+  max-width: none;
+  border-radius: 0;
+  background-color: transparent;
+  box-shadow: none;
+}
+
+.bubble-sheet > .flex {
+  justify-content: space-around;
 }
 
 /* Une commande : l'icône, puis son nom en petit, dans une colonne étroite.
