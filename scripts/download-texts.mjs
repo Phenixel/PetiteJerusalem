@@ -256,17 +256,22 @@ if (shouldRun('talmud')) {
 // qui ne se télécharge qu'à l'ouverture de cette forme : la guemara seule
 // reste légère.
 //
-// Les fichiers sont alignés amoud par amoud sur celui de la guemara (index 0
-// = premier amoud du fichier de guemara ; `from` dit l'index du premier amoud
-// de la tranche). Le fichier de guemara saute les amoudim
-// vides de Sefaria (cleanTextArray) ; on refait donc la même marche sur la
-// guemara de Sefaria pour savoir quel amoud source correspond à chaque index.
+// Les fichiers sont alignés sur celui de la guemara, amoud par amoud et
+// passage par passage : `rashi[a][p]` est la liste des commentaires du passage
+// p de l'amoud a (index 0 = premier amoud du fichier de guemara ; `from` dit
+// l'index du premier amoud de la tranche). C'est ce qui permet au lecteur de
+// montrer les commentaires d'un passage touché (CommentaryPanel.vue), et à la
+// page du daf de les mettre bout à bout. Le fichier de guemara saute les
+// amoudim vides de Sefaria (cleanTextArray) mais garde tous les passages d'un
+// amoud, vides compris ; on refait donc la même marche sur la guemara de
+// Sefaria pour savoir quel amoud source correspond à chaque index.
 // Chaque commentaire garde son dibbour hamat'hil en gras (<b>…</b>), comme
 // Rachi sur la Torah ; le tiret qui le sépare du commentaire dans la source
 // disparaît avec lui, c'est la graisse qui le dit sur la page.
 //
 // Bava Batra : Rachi s'arrête au 29a, le Rachbam prend sa place, comme dans
-// la page imprimée. `--only=meforshim` pour ne régénérer que ce corpus.
+// la page imprimée ; `rashbam` liste les amoudim de la tranche (index dans la
+// tranche) où c'est lui qui occupe la place de Rachi. `--only=meforshim` pour ne régénérer que ce corpus.
 
 /**
  * « מאימתי קורין וכו' », un tiret, puis le commentaire → « <b>מאימתי קורין
@@ -286,12 +291,17 @@ function meforashComment(raw) {
   return m ? `<b>${m[1].trim()}</b> ${m[2].trim()}` : text;
 }
 
-/** Les commentaires d'un amoud source, à plat, dans l'ordre de la guemara. */
+/** Les commentaires d'un amoud source, passage par passage. */
 function amudComments(amud) {
-  return (Array.isArray(amud) ? amud.flat(Infinity) : amud ? [amud] : [])
-    .map(meforashComment)
-    .filter(Boolean);
+  if (!Array.isArray(amud)) return [];
+  return amud.map(passage =>
+    (Array.isArray(passage) ? passage.flat(Infinity) : passage ? [passage] : [])
+      .map(meforashComment)
+      .filter(Boolean));
 }
+
+/** Un amoud sans aucun commentaire. */
+const isEmptyAmud = amud => amud.every(passage => passage.length === 0);
 
 const MEFORSHIM_DIR = `${OUT}/talmud-meforshim`;
 /** Amoudim par fichier : à garder d'accord avec textService (MEFORSHIM_CHUNK). */
@@ -336,12 +346,23 @@ if (shouldRun('meforshim')) {
           console.error(`  ✗ ${tractate}: ${kept.length} amoudim chez Sefaria, ${(local.he ?? []).length} dans talmud/${slug}.json`);
           return;
         }
-        const inner = kept.map(s => {
+        const fromRashbam = new Set();
+        const inner = kept.map((s, a) => {
           const own = amudComments(rashi[s]);
-          return own.length ? own : amudComments(rashbam[s]);
+          if (!isEmptyAmud(own)) return own;
+          const other = amudComments(rashbam[s]);
+          if (!isEmptyAmud(other)) fromRashbam.add(a);
+          return other;
         });
         const outer = kept.map(s => amudComments(tosafot[s]));
-        if (!inner.some(a => a.length) && !outer.some(a => a.length)) {
+        // Un commentaire ne commente pas un passage que la guemara n'a pas.
+        const overflow = kept.findIndex((s, a) =>
+          inner[a].length > local.he[a].length || outer[a].length > local.he[a].length);
+        if (overflow >= 0) {
+          console.error(`  ✗ ${tractate}: amoud ${overflow}, plus de passages commentés que de passages`);
+          return;
+        }
+        if (inner.every(isEmptyAmud) && outer.every(isEmptyAmud)) {
           console.warn(`  ⚠ ${tractate}: ni Rachi ni Tossafot, pas de fichier`);
           return;
         }
@@ -351,11 +372,15 @@ if (shouldRun('meforshim')) {
         mkdirSync(`${MEFORSHIM_DIR}/${slug}`, { recursive: true });
         for (let k = 0; k * MEFORSHIM_CHUNK < kept.length; k++) {
           const from = k * MEFORSHIM_CHUNK;
+          const rashbamHere = [...fromRashbam]
+            .filter(a => a >= from && a < from + MEFORSHIM_CHUNK)
+            .map(a => a - from);
           writeFileSync(`${MEFORSHIM_DIR}/${slug}/${k}.json`, JSON.stringify({
             title: tractate,
             from,
             rashi: inner.slice(from, from + MEFORSHIM_CHUNK),
             tosafot: outer.slice(from, from + MEFORSHIM_CHUNK),
+            ...(rashbamHere.length ? { rashbam: rashbamHere } : {}),
           }), 'utf8');
         }
         console.log(`  ✓ ${tractate} → talmud-meforshim/${slug}/`);
