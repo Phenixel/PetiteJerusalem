@@ -1,6 +1,7 @@
 import type { TextStudyJsonEntry } from "../models/models";
 import { formatNumberWithHebrew } from "./hebrewNumerals";
 import { fetchTextResponse } from "./offlineTextStore";
+import { parashaMark, type ParashaMark } from "./pageForm";
 
 /**
  * Loads the locally-stored texts under `public/texts/`.
@@ -14,6 +15,11 @@ import { fetchTextResponse } from "./offlineTextStore";
 export interface DafBlock {
   daf: string;
   lines: string[];
+  /**
+   * L'index de l'amoud dans le fichier du traité (0 = le premier amoud du
+   * fichier), celui des commentaires de la page (voir loadDafMeforshim).
+   */
+  amud?: number;
 }
 
 /**
@@ -372,6 +378,12 @@ export interface TextSection {
   blocks?: TextBlock[];
   /** Parachiot : Targoum Onkelos aligné ligne à ligne sur `he` (chnei mikra). */
   targum?: string[];
+  /**
+   * Torah : la marque qui suit chaque verset dans le Sefer Torah (petou'ha,
+   * setouma), alignée sur `he`. Sa présence ouvre la forme du Sefer Torah
+   * (voir pageForm.ts) : seuls les fichiers de la Torah la portent.
+   */
+  scrollMarks?: ParashaMark[];
   /** Tefila : les jours entre lesquels le texte change (voir TextDay). */
   days?: TextDay[];
 }
@@ -613,6 +625,7 @@ function parseTalmud(
         dafBlocks.push({
           daf: `${Math.floor(i / 2) + 2}${i % 2 === 0 ? "a" : "b"}`,
           lines: dafLines,
+          amud: i,
         });
       }
       const dafRange =
@@ -645,6 +658,9 @@ function parseTalmud(
   return { title, type: "Talmud Bavli", sections };
 }
 
+/** Les livres de la Torah, tels que les fichiers de paracha les nomment (`fromBook`). */
+const TORAH_BOOKS = new Set(["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"]);
+
 function loadTanakh(
   textStudy: TextStudyJsonEntry,
   data: {
@@ -653,6 +669,7 @@ function loadTanakh(
     targum?: unknown[];
     blockLabels?: string[];
     chapters?: string;
+    fromBook?: string;
   },
 ): TextContent {
   const heChapters = data.he ?? [];
@@ -670,6 +687,8 @@ function loadTanakh(
     // en ne retirant jamais une ligne d'un seul côté.
     const targumAll: string[] = [];
     let hasTargum = false;
+    // Les marques de paracha, que cleanText retire du texte lu.
+    const marks: ParashaMark[] = [];
     let offset = 0;
     heChapters.forEach((group, i) => {
       const targumGroup = Array.isArray(data.targum?.[i]) ? (data.targum[i] as unknown[]) : null;
@@ -681,6 +700,7 @@ function loadTanakh(
             typeof verse === "string" ? cleanText(verse) : normalizeLines(verse).join(" ");
           if (!heLine) return;
           lines.push(heLine);
+          marks.push(typeof verse === "string" ? parashaMark(verse) : null);
           const targumVerse = targumGroup[j];
           const cleaned = typeof targumVerse === "string" ? cleanText(targumVerse) : "";
           targumAll.push(cleaned);
@@ -688,7 +708,13 @@ function loadTanakh(
         });
       } else {
         lines = normalizeLines(group);
-        for (let k = 0; k < lines.length; k++) targumAll.push("");
+        const raw = Array.isArray(group) ? group.flat(Infinity) : [group];
+        const verses = raw.filter((v) => typeof v === "string" && cleanText(v));
+        lines.forEach((_, k) => {
+          targumAll.push("");
+          // Même marche que normalizeLines : un verset brut par ligne gardée.
+          marks.push(verses.length === lines.length ? parashaMark(String(verses[k])) : null);
+        });
       }
       if (lines.length === 0) return;
       const named = data.blockLabels?.[i];
@@ -705,6 +731,7 @@ function loadTanakh(
     const section = buildSection(1, textStudy.name, allLines);
     if (blocks.length > 1) section.blocks = blocks;
     if (hasTargum) section.targum = targumAll;
+    if (data.fromBook && TORAH_BOOKS.has(data.fromBook)) section.scrollMarks = marks;
     return { title, type: "Tanakh", sections: [section] };
   }
 
@@ -1082,4 +1109,69 @@ export async function loadParashaRashi(textStudy: TextStudyJsonEntry): Promise<R
     throw new Error(`Rachi non disponible (${res.status})`);
   }
   return parseParashaRashi((await res.json()) as { he?: unknown[] });
+}
+
+// ---- Rachi et Tossafot sur la guemara (forme de la page) -------------------
+
+/** Les commentaires d'un amoud, dans l'ordre de la page. */
+export interface DafMeforshim {
+  /** Rachi (le Rachbam en Bava Batra, là où Rachi s'arrête). */
+  rashi: RashiComment[];
+  tosafot: RashiComment[];
+}
+
+/** Amoudim par fichier : à garder d'accord avec download-texts.mjs. */
+export const MEFORSHIM_CHUNK = 20;
+
+/**
+ * Une tranche de commentaires (public/texts/talmud-meforshim/<slug>/<n>.json,
+ * voir download-texts.mjs) → les commentaires par index d'amoud du traité.
+ */
+export function parseDafMeforshim(data: {
+  from?: number;
+  rashi?: unknown[];
+  tosafot?: unknown[];
+}): Map<number, DafMeforshim> {
+  const byAmud = new Map<number, DafMeforshim>();
+  const comments = (amud: unknown): RashiComment[] =>
+    (Array.isArray(amud) ? amud : [])
+      .map((c) => parseRashiComment(String(c)))
+      .filter((c): c is RashiComment => c !== null);
+  const from = data.from ?? 0;
+  const count = Math.max(data.rashi?.length ?? 0, data.tosafot?.length ?? 0);
+  for (let i = 0; i < count; i++) {
+    byAmud.set(from + i, {
+      rashi: comments(data.rashi?.[i]),
+      tosafot: comments(data.tosafot?.[i]),
+    });
+  }
+  return byAmud;
+}
+
+/**
+ * Rachi et Tossafot des amoudim demandés (index du fichier du traité). Un
+ * traité sans commentaires (Tamid, Chekalim) ou une tranche introuvable rend
+ * des amoudim sans commentaire : la page se compose alors de la guemara seule.
+ * Une autre erreur (réseau) remonte, pour que la page puisse le dire.
+ */
+export async function loadDafMeforshim(
+  textStudy: TextStudyJsonEntry,
+  amudim: number[],
+): Promise<Map<number, DafMeforshim>> {
+  const slug = tractateSlug(tractateFromLink(textStudy.link));
+  const chunks = [...new Set(amudim.map((a) => Math.floor(a / MEFORSHIM_CHUNK)))];
+  const parts = await Promise.all(
+    chunks.map(async (chunk) => {
+      const res = await fetchTextResponse(`/texts/talmud-meforshim/${slug}/${chunk}.json`);
+      if (res.status === 404) return new Map<number, DafMeforshim>();
+      if (!res.ok) throw new Error(`Commentaires non disponibles (${res.status})`);
+      // Un hébergeur qui répond par la page de l'app à un fichier absent
+      // (réécriture des routes) : pas de commentaires, plutôt qu'une erreur.
+      const data = await res.json().catch(() => ({}));
+      return parseDafMeforshim(data);
+    }),
+  );
+  const byAmud = new Map<number, DafMeforshim>();
+  for (const part of parts) for (const [amud, m] of part) byAmud.set(amud, m);
+  return byAmud;
 }

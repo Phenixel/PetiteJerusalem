@@ -685,6 +685,51 @@ office ou une bénédiction se lisent du début, on n'y revient pas à un
 paragraphe comme à un verset de Tehilim ; le sommaire du menu y mène déjà à
 chaque passage.
 
+### Un texte se lit aussi dans la forme de sa page
+
+La guemara et la Torah ont une forme que le lecteur connaît par cœur : la page
+de Vilna, identique d'une édition à l'autre (on cite « le haut du 2b »), et la
+colonne du Sefer Torah. Le lecteur les offre comme une troisième façon de
+montrer le texte, entre l'hébreu verset par verset et la phonétique : un même
+groupe de trois boutons dans la barre d'outils (« Hébreu », la forme,
+« Phonétique ») et, en abrégé, dans le menu de lecture (א, l'icône de la
+forme, Aa). Le bouton de la forme porte son dessin et son nom : un livre ouvert et
+« Page » pour la guemara, un rouleau et « Sefer Torah » pour la Torah. Il
+n'apparaît que sur les textes qui ont une forme (une guemara, une paracha) ;
+les Prophètes ont des petou'hot mais pas de colonne de Sefer Torah à
+reproduire. Le choix est gardé sur l'appareil (`usePageForm`, une seule
+préférence pour les deux) ; la phonétique passe devant le temps qu'on la lise
+et rend la forme en revenant à l'hébreu.
+
+**La page du daf** (`TalmudDafPages.vue`, `TalmudPage.vue`) : un amoud par
+page, sous son repère « Daf 2a » (l'ancre du menu de lecture). La guemara est
+au centre, sans voyelles ni ponctuation moderne, en lettres carrées
+(`--font-hebrew`) ; Rachi est du côté de la reliure (à droite sur l'amoud a,
+page de gauche du livre ouvert, à gauche sur l'amoud b), Tossafot du côté du
+bord, en écriture de Rachi. Les commentaires se partagent les quatre premières
+lignes, longent la guemara, et celui qui la dépasse passe dessous dans sa
+moitié ; celui qui finit avant la laisse s'élargir. La mise en page se mesure
+à l'écran (blancs flottants de trois calques superposés, à la manière de
+daf-renderer) et se refait quand la largeur, la taille de lecture ou les
+polices changent. Les tailles suivent la largeur de la page, pour garder ses
+proportions, sans descendre sous 13 px pour la guemara, puis la taille de
+lecture. La page n'a pas de cadre ni de fond propre : c'est le texte qui
+dessine la forme. Rachi et Tossafot ne se chargent qu'à l'ouverture de la
+page ; s'ils manquent, une ligne le dit et la guemara reste seule au centre.
+
+**Le Sefer Torah** (`TorahScroll.vue`) : les lettres seules, dans l'écriture
+du sofer, en une colonne justifiée d'une trentaine de lettres (21 em) au
+milieu de la page. La petou'ha finit la ligne, la setouma laisse un blanc de
+neuf lettres, Haazinou s'écrit en deux colonnes (chaque moitié contre son
+bord) et Az yachir en briques (lignes de deux et de trois membres, que la
+colonne resserre plutôt que de les replier). Le début de chaque montée porte
+une petite pastille à la couleur du thème, comme la marge d'un tikoun : elle
+n'est pas du texte, elle est en police d'interface. Chaque verset reste un
+passage du lecteur (reprise, marque-page, bulle de sélection). Ce que les
+données ne disent pas n'est pas inventé : les coupures de colonne et de ligne
+d'un vrai Sefer Torah n'y sont pas, la colonne coule donc librement, et les
+lignes des chirot suivent les repos des teamim plutôt que le tikoun exact.
+
 ### La pastille du défilement est son propre arrêt
 
 Pendant une descente automatique, une pastille au bas de l'écran
@@ -1314,13 +1359,19 @@ elles, l'identité du site.
 | `--font-reading`                  | au choix               | le texte latin d'une lecture (traduction, phonétique, didascalies)      |
 | `--font-serif`                    | Lora, Georgia en repli | les tranches des livres de la bibliothèque et la dédicace               |
 
-Une seule autre famille a droit de cité, et à un seul endroit : **Stam Sefarad
-CLM** (projet Culmus, GPL avec exception d'embarquement,
-`public/fonts/stam-sefarad-clm.LICENSE.txt`), l'écriture du sofer, ktav
-Sefaradi avec taguim. Elle n'écrit que la retranscription des parchemins
-(`KlafViewer.vue`) : là, le rendu du klaf est ce qu'on vient chercher, et
-c'est la seule raison d'être de la police. Elle ne sert ni au fil d'un texte,
-ni à un titre, ni à une étiquette.
+Deux autres familles ont droit de cité, chacune là où l'écriture est ce
+qu'on vient chercher, et nulle part ailleurs (ni titre, ni étiquette) :
+
+- **Stam Sefarad CLM** (projet Culmus, GPL avec exception d'embarquement,
+  `public/fonts/stam-sefarad-clm.LICENSE.txt`), l'écriture du sofer, ktav
+  Sefaradi avec taguim. Elle écrit la retranscription des parchemins
+  (`KlafViewer.vue`) et la paracha dans la forme du Sefer Torah
+  (`TorahScroll.vue`, voir « Un texte se lit aussi dans la forme de sa
+  page »).
+- **Noto Rashi Hebrew** (OFL, `public/fonts/noto-rashi-hebrew.LICENSE.txt`),
+  l'écriture de Rachi. Elle n'écrit que Rachi et Tossafot sur la page du daf
+  (`TalmudPage.vue`), où ils sont imprimés dans cette écriture ; le dibbour
+  hamat'hil reste en lettres carrées grasses, dans `--font-hebrew`.
 
 Playfair est une police d'apparat : posée partout, elle ne met plus rien en
 avant. Elle est automatique sur les `h1` et se pose à la main (classe

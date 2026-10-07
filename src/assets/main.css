@@ -56,6 +56,19 @@
   unicode-range: U+0590-05FF, U+FB1D-FB4F;
 }
 
+/* L'écriture de Rachi (Noto Rashi Hebrew, OFL, voir
+   public/fonts/noto-rashi-hebrew.LICENSE.txt), celle des commentaires sur la
+   page du daf (TalmudPage.vue) : Rachi et Tossafot y sont imprimés dans cette
+   écriture depuis Venise. Variable (400 à 700), 18 Ko, chargée à la
+   première page de daf ouverte. */
+@font-face {
+  font-family: "Noto Rashi Hebrew";
+  src: url("/fonts/noto-rashi-hebrew-var.woff2") format("woff2");
+  font-weight: 400 700;
+  font-display: swap;
+  unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F;
+}
+
 /* Neutralise l'auto-agrandissement du texte des navigateurs mobiles (font
    boosting / text-size-adjust), qui gonfle certains blocs dans la WebView de
    l'app et fait déborder les mises en page. */

@@ -130,6 +130,20 @@ Les points 1, 2, 5 et 6 sont tenus par un test
 vérifiées contre celles que pose le calendrier
 (`src/__tests__/sidourContent.test.ts`).
 
+### Les commentaires de la page du daf
+
+Rachi et Tossafot de la page du daf vivent à part, par tranches de vingt
+amoudim (`texts/talmud-meforshim/<traité>/<n>.json`, `{ title, from, rashi,
+tosafot }`, écrits par `scripts/download-texts.mjs --only=meforshim`). Une
+version installée calcule elle-même le nom de la tranche d'un amoud
+(`MEFORSHIM_CHUNK` dans `textService.ts`) : **la taille des tranches ne change
+pas sans changer de dossier**, sans quoi une version publiée demanderait
+`3.json` pour un amoud qui n'y est plus, et montrerait la guemara sans ses
+commentaires. Les index d'amoud sont ceux du fichier de guemara du traité ;
+une guemara régénérée qui gagnerait ou perdrait un amoud se régénère donc avec
+ses commentaires (tenu par `src/__tests__/pageForm.test.ts`, qui vérifie
+l'alignement sur chaque traité).
+
 ## Quand la flotte a rattrapé
 
 Ces contraintes ne sont pas éternelles : elles valent tant que des versions

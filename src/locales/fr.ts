@@ -1448,6 +1448,14 @@ const fr = {
     previous: "Précédent",
     next: "Suivant",
     phonetic: "Phonétique",
+    pageForm: {
+      daf: "Page",
+      scroll: "Sefer Torah",
+      dafHint: "La page de Vilna : la guemara au centre, Rachi et Tossafot autour",
+      scrollHint: "Comme dans le Sefer Torah : sans voyelles, avec les petou'hot et les setoumot",
+      meforshimUnavailable:
+        "Rachi et Tossafot n'ont pas pu être chargés : la page montre la guemara seule.",
+    },
     hebrew: "Hébreu",
     reserve: "Réserver ce passage",
     cancel: "Annuler la réservation",

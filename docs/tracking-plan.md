@@ -326,6 +326,21 @@ précédente. `reading` : depuis un autre texte (psaume suivant, office
 suivant) ; `direct` : sans page précédente (widget, lien partagé, moteur de
 recherche, page rechargée).
 
+### Lecture : `page_form_toggled` (nouveau)
+
+Le lecteur passe une guemara dans la forme de la page de Vilna, ou une
+paracha dans celle du Sefer Torah, ou l'en retire (bouton de la barre
+d'outils ou du menu de lecture, `TextReadingPage.vue`, voir `docs/design.md`,
+« Un texte se lit aussi dans la forme de sa page »). Il dit si la forme est
+trouvée, et pour quel corpus elle sert. Ne part qu'au changement du choix
+gardé : passer à la phonétique et en revenir ne le touche pas.
+
+| Propriété | Valeurs                                                  | Statut      |
+| --------- | -------------------------------------------------------- | ----------- |
+| `enabled` | `true` (la forme s'affiche), `false` (retour à l'hébreu) | **nouveau** |
+| `form`    | `daf` (page de Vilna), `scroll` (Sefer Torah)            | **nouveau** |
+| `text_id` | l'id du texte dans le catalogue (`textStudies.json`)     | **nouveau** |
+
 ### Recherche
 
 `library_search_used` et `chiourim_search_used` (existants) continuent de

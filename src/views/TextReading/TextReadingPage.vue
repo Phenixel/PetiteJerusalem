@@ -22,7 +22,14 @@ import {
   rubricText,
   saidOn,
 } from "../../services/textService";
-import type { TextBlock, TextContent, TextDay, TextSection } from "../../services/textService";
+import type {
+  DafMeforshim,
+  TextBlock,
+  TextContent,
+  TextDay,
+  TextSection,
+} from "../../services/textService";
+import { loadDafMeforshim } from "../../services/textService";
 import {
   activeOccasions,
   getWeekdayTorahParasha,
@@ -80,6 +87,9 @@ import SessionReservationCard from "./SessionReservationCard.vue";
 import PrayerNamesLine from "./PrayerNamesLine.vue";
 import ReadingNav from "../../components/ReadingNav.vue";
 import TalmudDafText from "../../components/TalmudDafText.vue";
+import TalmudDafPages from "../../components/TalmudDafPages.vue";
+import TorahScroll from "../../components/TorahScroll.vue";
+import { PAGE_FORM_LABELS, usePageForm } from "../../composables/usePageForm";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import { useToast } from "../../composables/useToast";
 import { useReadingSize } from "../../composables/useReadingSize";
@@ -419,6 +429,82 @@ const currentSection = computed<TextSection | null>(() => {
 
 const canTransliterate = computed(
   () => currentSection.value?.he.some((line) => hasNiqqud(line)) ?? false,
+);
+
+// La forme de la page (pageForm.ts) : la page de Vilna pour une guemara, le
+// Sefer Torah pour une paracha. Le choix est gardé sur l'appareil
+// (usePageForm) ; la phonétique, elle, n'a pas de forme de page et passe
+// devant le temps qu'on la lise.
+const pageForm = usePageForm();
+const pageFormKind = computed<"daf" | "scroll" | null>(() => {
+  const section = currentSection.value;
+  if (!section) return null;
+  if (content.value?.type === "Talmud Bavli" && section.dafBlocks?.length) return "daf";
+  if (section.scrollMarks?.length) return "scroll";
+  return null;
+});
+const showPageForm = computed(
+  () => pageFormKind.value !== null && pageForm.enabled.value && !showPhonetic.value,
+);
+
+/** Le mode d'affichage choisi dans la barre d'outils ou le menu. */
+type ReadingMode = "hebrew" | "page" | "phonetic";
+const readingMode = computed<ReadingMode>(() =>
+  showPhonetic.value ? "phonetic" : showPageForm.value ? "page" : "hebrew",
+);
+function setReadingMode(mode: ReadingMode): void {
+  if (mode === readingMode.value) return;
+  if (mode === "phonetic") {
+    showPhonetic.value = true;
+    return;
+  }
+  showPhonetic.value = false;
+  const on = mode === "page";
+  if (pageFormKind.value && pageForm.enabled.value !== on) {
+    pageForm.set(on);
+    // Une forme de lecture nouvelle : savoir si elle est trouvée, et sur
+    // quel corpus elle sert.
+    analyticsService.capture("page_form_toggled", {
+      enabled: on,
+      form: pageFormKind.value,
+      text_id: textEntry.value?.id ?? null,
+    });
+  }
+}
+
+// Rachi et Tossafot du chapitre ouvert, chargés à l'ouverture de la page du
+// daf seulement : la guemara seule ne les attend pas.
+const dafMeforshim = ref<Map<number, DafMeforshim> | null>(null);
+const dafMeforshimState = ref<"loading" | "ready" | "error">("loading");
+let meforshimRequest = 0;
+watch(
+  () => (showPageForm.value && pageFormKind.value === "daf" ? currentSection.value : null),
+  async (section) => {
+    if (!section || !textEntry.value) return;
+    const request = ++meforshimRequest;
+    dafMeforshim.value = null;
+    dafMeforshimState.value = "loading";
+    const amudim = (section.dafBlocks ?? [])
+      .map((b) => b.amud)
+      .filter((a): a is number => a !== undefined);
+    try {
+      const loaded = await loadDafMeforshim(textEntry.value, amudim);
+      if (request !== meforshimRequest) return;
+      dafMeforshim.value = loaded;
+      dafMeforshimState.value = "ready";
+    } catch {
+      if (request !== meforshimRequest) return;
+      dafMeforshimState.value = "error";
+    }
+  },
+  { immediate: true },
+);
+
+/** Les montées d'une paracha, pour les repères du Sefer Torah. */
+const scrollAliyot = computed(() =>
+  verseBlocks.value
+    .filter((b) => b.label)
+    .map((b) => ({ offset: b.offset, anchor: anchorOf(b), label: blockLabel(b) })),
 );
 
 // Double appui sur le texte : la page descend toute seule, à l'allure choisie
@@ -1980,8 +2066,8 @@ watch(textId, (_, previousTextId) => {
         <ReadingNav v-if="!isSingleSection" v-bind="sectionNavProps" class="mb-8" />
         <ReadingNav v-else-if="prevText || nextText" v-bind="siblingNavProps" class="mb-8" />
 
-        <!-- Reading toolbar: text size + Hebrew / phonetic toggle -->
-        <div class="flex items-center justify-end gap-3 mb-5">
+        <!-- Reading toolbar: text size + Hebrew / page / phonetic toggle -->
+        <div class="flex flex-wrap items-center justify-end gap-3 mb-5">
           <button
             v-if="bookmarks.length && !isLiturgyText"
             @click="showBookmarksPanel = !showBookmarksPanel"
@@ -1996,21 +2082,48 @@ watch(textId, (_, previousTextId) => {
           </button>
           <ReadingSizeControl />
 
+          <!-- Hébreu, forme de la page (guemara, Torah), phonétique : trois
+               façons de montrer le même texte, une seule à la fois. -->
           <div
-            v-if="canTransliterate"
+            v-if="canTransliterate || pageFormKind"
             class="inline-flex p-0.5 rounded-btn bg-black/5 dark:bg-white/10"
+            role="group"
           >
             <button
-              @click="showPhonetic = false"
+              @click="setReadingMode('hebrew')"
               class="px-3 py-1 rounded-control text-sm font-medium transition-colors"
-              :class="!showPhonetic ? 'bg-surface text-primary shadow-sm' : 'text-text-secondary'"
+              :class="
+                readingMode === 'hebrew'
+                  ? 'bg-surface text-primary shadow-sm'
+                  : 'text-text-secondary'
+              "
+              :aria-pressed="readingMode === 'hebrew'"
             >
               {{ t("textReading.hebrew") }}
             </button>
             <button
-              @click="showPhonetic = true"
+              v-if="pageFormKind"
+              @click="setReadingMode('page')"
+              class="inline-flex items-center gap-1.5 px-3 py-1 rounded-control text-sm font-medium transition-colors"
+              :class="
+                readingMode === 'page' ? 'bg-surface text-primary shadow-sm' : 'text-text-secondary'
+              "
+              :aria-pressed="readingMode === 'page'"
+              :title="t(PAGE_FORM_LABELS[pageFormKind].hint)"
+            >
+              <AppIcon :name="PAGE_FORM_LABELS[pageFormKind].icon" :size="14" />
+              {{ t(PAGE_FORM_LABELS[pageFormKind].label) }}
+            </button>
+            <button
+              v-if="canTransliterate"
+              @click="setReadingMode('phonetic')"
               class="px-3 py-1 rounded-control text-sm font-medium transition-colors"
-              :class="showPhonetic ? 'bg-surface text-primary shadow-sm' : 'text-text-secondary'"
+              :class="
+                readingMode === 'phonetic'
+                  ? 'bg-surface text-primary shadow-sm'
+                  : 'text-text-secondary'
+              "
+              :aria-pressed="readingMode === 'phonetic'"
             >
               {{ t("textReading.phonetic") }}
             </button>
@@ -2066,8 +2179,35 @@ watch(textId, (_, previousTextId) => {
              texte (double appui du défilement, lecture du doigt) ne change
              rien à l'écran sans être une commande en panne, et noierait les
              clics morts de PostHog. -->
+        <!-- La forme de la page : la page de Vilna, le Sefer Torah. -->
         <div
-          v-if="content.type === 'Talmud Bavli'"
+          v-if="showPageForm && pageFormKind === 'daf'"
+          class="ph-no-deadclick"
+          :style="{ '--reading-scale': readingSize.scale.value }"
+        >
+          <TalmudDafPages
+            :blocks="currentSection.dafBlocks ?? []"
+            :meforshim="dafMeforshim"
+            :state="dafMeforshimState"
+            :scale="readingSize.scale.value"
+          />
+        </div>
+        <div
+          v-else-if="showPageForm && pageFormKind === 'scroll'"
+          class="ph-no-deadclick"
+          :style="{ '--reading-scale': readingSize.scale.value }"
+        >
+          <TorahScroll
+            :lines="currentSection.he"
+            :marks="currentSection.scrollMarks ?? []"
+            :aliyot="scrollAliyot"
+            :picked-line="pickedLine"
+            :highlighted-line="highlightedLine"
+            @pick="pickVerse"
+          />
+        </div>
+        <div
+          v-else-if="content.type === 'Talmud Bavli'"
           class="ph-no-deadclick"
           :style="{ '--reading-scale': readingSize.scale.value }"
         >
@@ -2245,12 +2385,15 @@ watch(textId, (_, previousTextId) => {
       <ReadingMenu
         :sections="navSections"
         :phonetic="canTransliterate ? showPhonetic : null"
+        :page-form="pageFormKind"
+        :page-form-active="showPageForm"
         :download-state="bookState"
         :tefila="isTefila"
         :halakhot="hasHalakhot"
         :share-title="shareTitle"
         :share-url="canonicalUrl"
-        @update:phonetic="showPhonetic = $event"
+        @update:phonetic="setReadingMode($event ? 'phonetic' : 'hebrew')"
+        @update:page-form-active="setReadingMode($event ? 'page' : 'hebrew')"
         @download="toggleDownload()"
       />
       <ReadingProgressBar />

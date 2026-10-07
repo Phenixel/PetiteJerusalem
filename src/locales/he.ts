@@ -1358,6 +1358,13 @@ const he: LocaleMessages = {
     previous: "הקודם",
     next: "הבא",
     phonetic: "תעתיק",
+    pageForm: {
+      daf: "צורת הדף",
+      scroll: "ספר תורה",
+      dafHint: "צורת הדף של דפוס וילנא: הגמרא באמצע, רש״י ותוספות סביבה",
+      scrollHint: "כמו בספר תורה: בלי ניקוד, עם הפתוחות והסתומות",
+      meforshimUnavailable: "לא ניתן לטעון את רש״י ותוספות: הדף מציג את הגמרא בלבד.",
+    },
     hebrew: "עברית",
     reserve: "שמור קטע זה",
     cancel: "ביטול ההזמנה",

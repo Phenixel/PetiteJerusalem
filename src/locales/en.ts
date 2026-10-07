@@ -1398,6 +1398,14 @@ const en: LocaleMessages = {
     previous: "Previous",
     next: "Next",
     phonetic: "Phonetic",
+    pageForm: {
+      daf: "Page",
+      scroll: "Torah scroll",
+      dafHint: "The Vilna page: the Gemara in the center, Rashi and Tosafot around it",
+      scrollHint: "As in a Torah scroll: no vowels, with the open and closed sections",
+      meforshimUnavailable:
+        "Rashi and Tosafot could not be loaded: the page shows the Gemara alone.",
+    },
     hebrew: "Hebrew",
     reserve: "Reserve this passage",
     cancel: "Cancel reservation",

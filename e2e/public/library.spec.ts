@@ -92,6 +92,21 @@ test.describe("lecteur", () => {
     await expect(page.getByText(/Daf 2a/).first()).toBeVisible();
   });
 
+  test("la guemara et la Torah s'ouvrent dans la forme de leur page", async ({ page }) => {
+    // La page de Vilna : la guemara au centre, Rachi et Tossafot autour.
+    await gotoApp(page, "/bibliotheque/talmud/berakhot/1");
+    await page.getByRole("button", { name: "Page", exact: true }).first().click();
+    const daf = page.locator(".daf-page").first();
+    await expect(daf).toBeVisible({ timeout: 20_000 });
+    await expect(daf.locator(".daf-lead").first()).toBeVisible({ timeout: 20_000 });
+    // Le choix est gardé : la Torah s'ouvre à son tour dans le Sefer Torah.
+    await gotoApp(page, "/bibliotheque/tanakh/haazinu");
+    await expect(page.locator(".torah-scroll")).toBeVisible({ timeout: 20_000 });
+    await expect(page.locator(".scroll-row-2").first()).toBeVisible();
+    await page.getByRole("button", { name: "Hébreu", exact: true }).first().click();
+    await expect(page.locator(".torah-scroll")).toHaveCount(0);
+  });
+
   test("l'ancienne adresse /lire/:id mène au texte, pas à une page vide", async ({ page }) => {
     // 103 est l'identifiant du Tehilim 1 (src/datas/textStudies.json).
     await gotoApp(page, "/lire/103");
