@@ -3,8 +3,9 @@ import { createApp, h, nextTick, type App } from "vue";
 import BottomSheet from "../components/BottomSheet.vue";
 
 /**
- * Le bottom sheet (commandes d'un passage, panneau d'étude) : il se tire par
- * sa poignée jusqu'au cran suivant et se pousse vers le bas pour se fermer.
+ * Le bottom sheet de l'app native : il se tire par sa poignée jusqu'au cran
+ * suivant, se pousse vers le bas pour se fermer, et ne bouge pas quand il est
+ * posé ailleurs (la colonne du panneau d'étude sur un écran large).
  */
 
 let monte: App | null = null;
@@ -69,5 +70,13 @@ describe("le bottom sheet", () => {
     expect(ferme).not.toHaveBeenCalled();
     await tire(grip, 600, 700, 1000);
     expect(ferme).toHaveBeenCalledOnce();
+  });
+
+  it("posé ailleurs, n'a ni poignée ni geste", async () => {
+    const { sheet, grip, ferme } = await volet({ snaps: [0.5, 0.9], docked: true }, 400);
+    expect(sheet.querySelector(".sheet-handle")).toBeNull();
+    await tire(grip, 400, 700, 50);
+    expect(ferme).not.toHaveBeenCalled();
+    expect(sheet.style.height).toBe("");
   });
 });

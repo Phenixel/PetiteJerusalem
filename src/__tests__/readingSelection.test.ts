@@ -241,8 +241,9 @@ describe("la bulle de commandes", () => {
 });
 
 /**
- * La place des commandes : un bottom sheet au bas de l'écran, sur le site
- * comme dans l'app, et jamais une bulle posée sur le passage. Il est là dès
+ * La place des commandes sur un téléphone (app ou site) : un bottom sheet au
+ * bas de l'écran, et non une bulle posée sur le passage (celle-ci ne vit plus
+ * que sur un écran large, voir readingSelectionWide.test.ts). Il est là dès
  * le tout premier passage de la page (la bulle n'est montée qu'au premier
  * choix, voir App.vue), et un appui dans le volet, poignée comprise, ne
  * relâche pas le passage.

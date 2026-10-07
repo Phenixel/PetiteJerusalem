@@ -238,6 +238,10 @@ body {
   /* Hauteur réelle du bandeau de site, publiée par NavbarComponents. Reste à
      0 dans l'app native, où le bandeau n'est pas rendu. */
   --navbar-height: 0px;
+  /* La colonne des commentaires quand le texte et eux tiennent côte à côte
+     (dès 640 px de large, voir useSideBySide) : assez pour lire un Tossafot,
+     jamais plus que ce que le texte peut céder, d'un pliant à un ordinateur. */
+  --study-width: clamp(17rem, 40vw, 26rem);
 }
 
 #app {

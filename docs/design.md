@@ -1481,9 +1481,11 @@ côté. Et devant un texte, ce qu'il propose n'est pas ce qu'on veut proposer :
 la traduction automatique d'un verset et la recherche web d'un mot d'hébreu.
 
 Les passages d'un texte coupent donc la sélection du système (`.reading-pick`)
-et se choisissent d'un appui ; un volet monte au bas de l'écran (voir « Ce
-qui accompagne un texte monte dans un bottom sheet »), avec les gestes qui
-ont un sens là où l'on est : **partager** ce passage (le lien y ramène, et non en
+et se choisissent d'un appui ; sur un téléphone, un volet monte au bas de
+l'écran (voir « Sur un téléphone, ce qui accompagne un texte monte dans un
+bottom sheet ») ; sur un écran large, une bulle vient se poser contre le
+passage, comme le ferait le menu qu'elle remplace. L'un et l'autre portent
+les gestes qui ont un sens là où l'on est : **partager** ce passage (le lien y ramène, et non en
 haut du chapitre), en lire la **phonétique** sans faire basculer toute la
 page, **signaler une erreur** (le formulaire de support s'ouvre avec
 l'endroit, les premiers mots et le lien déjà écrits), et le **marque-page** là
@@ -1492,11 +1494,11 @@ où le texte en prend.
 L'appui long ouvre le volet, comme l'appui bref. Couper la sélection du
 système coupe aussi le geste qui l'ouvrait : sans cela, appuyer longuement sur
 un verset ne ferait plus rien du tout, et le geste que tout le monde connaît
-pour agir sur du texte serait mort. Sa rangée de commandes suit la taille de
-lecture, à moitié comme le menu de lecture, plafonnée pour que quatre
-colonnes tiennent sur la largeur d'un téléphone. (Le volet a d'abord été une
-bulle posée contre le passage ; elle cachait le texte voisin et se lisait mal
-au pouce, d'où le nom resté aux classes, `.reading-bubble`.)
+pour agir sur du texte serait mort. La bulle se pose au-dessus du passage,
+jamais sous la zone système ni sous le bandeau du site (elle passe alors
+dessous). La rangée de commandes suit la taille de lecture, à moitié comme le
+menu de lecture, plafonnée pour que quatre colonnes tiennent sur la largeur
+d'un téléphone.
 
 Le choix se fait au passage, jamais au mot : c'est la seule unité que ces
 commandes savent nommer. Un lien mène à un verset, pas à trois mots, et un
@@ -1519,15 +1521,22 @@ mode d'étude. La rangée n'apparaît pas sur un passage sans commentaire ;
 grisée, avec « … », le temps que les commentaires arrivent (ils ne se
 chargent qu'au premier passage touché).
 
-Elle ouvre le **panneau d'étude** (`CommentaryPanel.vue`) : un bottom sheet
-à mi-hauteur (55 %), qu'on tire par sa poignée jusqu'à 92 % de l'écran
-pour un long Tossafot. À l'ouverture, le passage étudié remonte au-dessus du
-volet s'il passait dessous. En tête, l'endroit
+Elle ouvre le **panneau d'étude** (`CommentaryPanel.vue`). Sur un
+téléphone, un bottom sheet à mi-hauteur (55 %), qu'on tire par sa poignée
+jusqu'à 92 % de l'écran pour un long Tossafot. Dès que l'écran a la place
+de deux colonnes (640 px de large : tablette, pliant ouvert, téléphone en
+paysage, ordinateur, voir `useSideBySide`), une **colonne à droite**, sous le
+bandeau et sur toute la hauteur, de la largeur `--study-width` (entre 17 et
+26 rem, 40 % de l'écran) ; la colonne de lecture se rétrécit et se range
+à sa gauche : le texte à gauche, les explications à droite. Déplier un
+pliant fait passer le volet à droite sans rien fermer. À l'ouverture, le
+passage étudié est ramené sous les yeux s'il passait sous le volet ou
+glissait sous le bas de l'écran en se rétrécissant. En tête, l'endroit
 (« Chapitre 1 · Daf 2a · passage 3 ») et la croix ; dessous, Rachi (le
 Rachbam en Bava Batra, là où il prend sa place) puis Tossafot, le dibbour
 hamat'hil en gras, à la taille de lecture : c'est un texte qu'on étudie. Le
 panneau **suit la lecture** : tant qu'il est ouvert, toucher un autre passage
-y montre les siens, sans rouvrir le volet des commandes ; on étudie un daf d'un geste par
+y montre les siens, sans rouvrir les commandes ; on étudie un daf d'un geste par
 passage. Dans le texte, les mots que citent les dibbourim du passage étudié
 sont soulignés à la couleur du thème (`MarkedText.vue`), sans fond, assez bas
 pour passer sous les voyelles. Le bouton du menu de lecture s'efface tant que
@@ -1535,13 +1544,13 @@ le panneau est ouvert (il occupe sa place) ; la croix, Échap, le bouton
 retour ou le volet poussé vers le bas le ferment, et rendent leurs commandes
 aux passages.
 
-### Ce qui accompagne un texte monte dans un bottom sheet
+### Sur un téléphone, ce qui accompagne un texte monte dans un bottom sheet
 
-Sur le site comme dans l'app, ce qui accompagne un texte sans le quitter
-monte du bas de l'écran, dans un **bottom sheet** (`BottomSheet.vue`) : les
-commandes d'un passage (réparties sur toute la largeur, avec la rangée
-« Commentaires ») et le panneau d'étude. C'est la forme qu'un téléphone donne
-à ces choses : le pouce les
+Sur un téléphone, dans l'app comme sur le site, ce qui accompagne un texte
+sans le quitter monte du bas de l'écran, dans un **bottom sheet**
+(`BottomSheet.vue`) : les commandes d'un passage (réparties sur toute la
+largeur, avec la rangée « Commentaires ») et le panneau d'étude. C'est la
+forme qu'un téléphone donne à ces choses : le pouce les
 atteint, elles ne cachent jamais le passage qu'on vient de toucher, et elles
 se ferment comme on les ferme partout ailleurs, en les poussant vers le bas.
 
@@ -1554,10 +1563,11 @@ voile pas la page : on lit et on touche le texte au-dessus. Il passe sur la
 barre d'onglets et sous les fenêtres modales (le partage d'un passage s'ouvre
 par-dessus), coins hauts arrondis comme une surface (`--radius-xl`), au fond
 de la surface et à l'ombre des surfaces qui se posent (`--shadow-pop`). Le
-bouton du menu de lecture s'efface tant qu'un volet est ouvert. Sur un écran
-large, le volet garde la largeur d'une colonne de lecture (44 rem), centré
-au bas de l'écran : une rangée de commandes étirée sur tout un écran
-d'ordinateur ne se lirait plus d'un regard.
+bouton du menu de lecture s'efface tant qu'un volet est ouvert. Au-delà de
+640 px de large, la place ne manque plus : les commandes redeviennent une
+bulle contre le passage, et le panneau d'étude une colonne à droite
+(`docked` : ni poignée, ni geste ; dans l'app, elle s'arrête au-dessus de la
+barre d'onglets).
 
 ### Une fenêtre modale tient dans ce qui est visible, clavier compris
 

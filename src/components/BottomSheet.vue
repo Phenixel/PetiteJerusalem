@@ -15,6 +15,9 @@ import { computed, onBeforeUnmount, ref } from "vue";
  * mi-hauteur) ; sans crans, il prend la hauteur de son contenu et ne se tire
  * que vers le bas. La poignée et l'en-tête (slot `header`) portent le geste ;
  * le corps défile.
+ *
+ * `docked` le pose autrement, sans poignée ni geste : c'est à l'appelant de
+ * dire où (le panneau d'étude en fait une colonne sur un écran large).
  */
 const props = withDefaults(
   defineProps<{
@@ -24,8 +27,10 @@ const props = withDefaults(
     snaps?: number[];
     /** Le cran d'ouverture. */
     initialSnap?: number;
+    /** Posé ailleurs qu'au bas de l'écran : ni poignée, ni geste, ni crans. */
+    docked?: boolean;
   }>(),
-  { snaps: () => [], initialSnap: 0 },
+  { snaps: () => [], initialSnap: 0, docked: false },
 );
 
 const emit = defineEmits<{ (e: "close"): void }>();
@@ -36,6 +41,7 @@ const snapIndex = ref(Math.min(props.initialSnap, Math.max(0, props.snaps.length
 const dragHeight = ref<number | null>(null);
 
 const height = computed(() => {
+  if (props.docked) return undefined;
   if (dragHeight.value !== null) return `${dragHeight.value}px`;
   const snap = props.snaps[snapIndex.value];
   return snap ? `${snap * 100}dvh` : undefined;
@@ -48,7 +54,7 @@ let start: { y: number; height: number; pointer: number } | null = null;
 let last = { y: 0, t: 0, vy: 0 };
 
 function onPointerDown(event: PointerEvent): void {
-  if (event.button > 0 || !sheet.value) return;
+  if (props.docked || event.button > 0 || !sheet.value) return;
   // Un bouton de l'en-tête (la croix) garde son appui.
   if (event.target instanceof Element && event.target.closest("button")) return;
   start = {
@@ -104,7 +110,11 @@ onBeforeUnmount(() => {
   <section
     ref="sheet"
     class="bottom-sheet"
-    :class="{ 'sheet-dragging': dragHeight !== null, 'sheet-fit': !snaps.length }"
+    :class="{
+      'sheet-dragging': dragHeight !== null,
+      'sheet-fit': !snaps.length && !docked,
+      'sheet-docked': docked,
+    }"
     role="dialog"
     aria-modal="false"
     :aria-label="label"
@@ -117,7 +127,7 @@ onBeforeUnmount(() => {
       @pointerup="onPointerUp"
       @pointercancel="onPointerUp"
     >
-      <span class="sheet-handle" aria-hidden="true"></span>
+      <span v-if="!docked" class="sheet-handle" aria-hidden="true"></span>
       <slot name="header" />
     </div>
     <div class="sheet-body">
@@ -129,14 +139,9 @@ onBeforeUnmount(() => {
 <style scoped>
 /* Au-dessus de la barre d'onglets (z-50), sous les fenêtres modales (60) :
    le partage d'un passage s'ouvre par-dessus son volet. */
-/* Sur un écran large, le volet garde la largeur d'une colonne de lecture,
-   centré : une rangée de commandes étirée sur tout un écran d'ordinateur ne
-   se lit plus d'un regard. */
 .bottom-sheet {
   position: fixed;
   inset: auto 0 0 0;
-  max-width: 44rem;
-  margin-inline: auto;
   z-index: 55;
   display: flex;
   max-height: 92dvh;
@@ -177,6 +182,12 @@ onBeforeUnmount(() => {
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
+}
+
+.sheet-docked .sheet-grip {
+  padding-top: 0;
+  touch-action: auto;
+  cursor: auto;
 }
 
 /* À la hauteur du contenu : le corps ne s'étire pas. */

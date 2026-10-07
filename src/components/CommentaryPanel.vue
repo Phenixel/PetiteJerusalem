@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import AppIcon from "./icons/AppIcon.vue";
 import BottomSheet from "./BottomSheet.vue";
+import { sideBySide } from "../composables/useSideBySide";
 import { useOverlay } from "../composables/useOverlayStack";
 import { COMMENTARY_LABELS, type CommentaryGroup } from "../composables/usePassageCommentaries";
 
@@ -14,11 +15,14 @@ import { COMMENTARY_LABELS, type CommentaryGroup } from "../composables/usePassa
  * texte y montre les commentaires de celui-ci, sans rouvrir de bulle. On
  * étudie ainsi un daf passage après passage, d'un seul geste chaque fois.
  *
- * C'est un bottom sheet (BottomSheet.vue), sur le site comme dans l'app :
- * à mi-hauteur, on le tire par sa poignée jusqu'en haut de l'écran pour lire
- * un long Tossafot, on le pousse vers le bas pour le fermer (la page réserve
- * sa hauteur sous le texte pour qu'on puisse lire jusqu'au bout). Il se ferme
- * aussi d'une croix, d'Échap ou du bouton retour.
+ * Sur un téléphone (app ou site), c'est un bottom sheet (BottomSheet.vue) à
+ * mi-hauteur, qu'on tire par sa poignée jusqu'en haut de l'écran pour lire
+ * un long Tossafot, et qu'on pousse vers le bas pour le fermer (la page
+ * réserve sa hauteur sous le texte pour qu'on puisse lire jusqu'au bout).
+ * Dès que l'écran a la place de deux colonnes (tablette, pliant ouvert,
+ * téléphone en paysage, ordinateur : voir useSideBySide), c'est une colonne
+ * à droite du texte, qui se range à sa gauche.
+ * Il se ferme aussi d'une croix, d'Échap ou du bouton retour.
  */
 const props = defineProps<{
   /** Où se trouve le passage, en clair : « Daf 2a · passage 3 ». */
@@ -61,6 +65,7 @@ onBeforeUnmount(() => {
     class="commentary-panel"
     :label="t('textReading.commentaries.title')"
     :snaps="[0.55, 0.92]"
+    :docked="sideBySide"
     @close="emit('close')"
   >
     <template #header>
@@ -108,6 +113,25 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
+/* Écran large : le volet devient une colonne à droite, sous le bandeau, sur
+   toute la hauteur (la page se range à sa gauche, voir TextReadingPage), de
+   la largeur `--study-width` (main.css). */
+.commentary-panel.sheet-docked {
+  inset: calc(var(--safe-top, 0px) + var(--navbar-height, 4rem)) 0 0 auto;
+  z-index: 46;
+  width: var(--study-width);
+  max-height: none;
+  border-radius: var(--radius-xl) 0 0 0;
+  animation: none;
+}
+
+/* Dans l'app, sur une tablette : la colonne s'arrête au-dessus de la barre
+   d'onglets (3,5 rem, plus la zone des gestes). */
+:global(.native-app) .commentary-panel.sheet-docked {
+  bottom: calc(3.5rem + var(--safe-bottom, 0px));
+  border-radius: var(--radius-xl) 0 0 var(--radius-xl);
+}
+
 .commentary-head {
   display: flex;
   align-items: flex-start;
@@ -115,6 +139,10 @@ onBeforeUnmount(() => {
   gap: 0.75rem;
   padding: 0.4rem 1rem 0.6rem 1.25rem;
   border-bottom: 1px solid color-mix(in srgb, var(--color-text-primary) 8%, transparent);
+}
+
+.sheet-docked .commentary-head {
+  padding-top: 0.9rem;
 }
 
 .commentary-title {

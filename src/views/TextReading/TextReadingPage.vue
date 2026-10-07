@@ -84,6 +84,7 @@ import TalmudDafPages from "../../components/TalmudDafPages.vue";
 import TorahScroll from "../../components/TorahScroll.vue";
 import { PAGE_FORM_LABELS, usePageForm } from "../../composables/usePageForm";
 import { usePassageCommentaries } from "../../composables/usePassageCommentaries";
+import { sideBySide } from "../../composables/useSideBySide";
 import type { CommentarySummary } from "../../composables/useReadingSelection";
 import CommentaryPanel from "../../components/CommentaryPanel.vue";
 import MarkedText from "../../components/MarkedText.vue";
@@ -1077,14 +1078,17 @@ function commentarySummary(line: number): CommentarySummary {
 }
 
 /**
- * Le volet monte à mi-hauteur : le passage qu'on vient de toucher, s'il est
- * dans la moitié basse, passerait dessous. On le remonte sous le bandeau.
+ * Le passage étudié reste sous les yeux à l'ouverture du panneau. Sur un
+ * téléphone, le volet monte à mi-hauteur : un passage de la moitié basse
+ * passerait dessous. Sur un écran large, la colonne de texte se rétrécit pour
+ * faire place aux commentaires, et le passage, qui s'allonge, peut glisser
+ * sous le bas de l'écran. Dans les deux cas, on le remonte sous le bandeau.
  */
-function keepAboveSheet(line: number): void {
+function keepPassageInView(line: number): void {
   const el = document.querySelector<HTMLElement>(`[data-line="${line}"]`);
   if (!el) return;
   const rect = el.getBoundingClientRect();
-  const visibleBottom = window.innerHeight * 0.45;
+  const visibleBottom = window.innerHeight * (sideBySide.value ? 0.9 : 0.45);
   if (rect.top >= 0 && rect.bottom <= visibleBottom) return;
   markProgrammaticScroll();
   window.scrollBy({ top: rect.top - window.innerHeight * 0.15, behavior: "smooth" });
@@ -1094,7 +1098,8 @@ function openStudy(line: number): void {
   studyLine.value = line;
   studyViewed = 1;
   clearPassage();
-  void nextTick(() => keepAboveSheet(line));
+  // Après la mise en page : la colonne de texte vient peut-être de se rétrécir.
+  void nextTick(() => requestAnimationFrame(() => keepPassageInView(line)));
   // Les commentaires : trouvés, et sur quel corpus.
   analyticsService.capture("commentaries_opened", {
     corpus: commentaries.corpus.value,
@@ -2471,7 +2476,7 @@ watch(textId, (_, previousTextId) => {
         :halakhot="hasHalakhot"
         :share-title="shareTitle"
         :share-url="canonicalUrl"
-        :concealed="studyLine !== null || selectedPassageKey !== null"
+        :concealed="studyLine !== null || (!sideBySide && selectedPassageKey !== null)"
         @update:phonetic="setReadingMode($event ? 'phonetic' : 'hebrew')"
         @update:page-form-active="setReadingMode($event ? 'page' : 'hebrew')"
         @download="toggleDownload()"
@@ -2499,11 +2504,21 @@ watch(textId, (_, previousTextId) => {
 </template>
 
 <style scoped>
-/* Le panneau d'étude ouvert (CommentaryPanel.vue) : la page réserve sous le
-   texte la hauteur de son volet à mi-hauteur, pour qu'on lise jusqu'au
-   dernier passage. */
+/* Le panneau d'étude ouvert (CommentaryPanel.vue). Sur un téléphone, la page
+   réserve sous le texte la hauteur de son volet à mi-hauteur, pour qu'on lise
+   jusqu'au dernier passage. Dès que le texte et ses commentaires tiennent
+   côte à côte (640 px, voir useSideBySide), la colonne de lecture se range à
+   gauche de celle des commentaires (`--study-width`, main.css). */
 .study-open {
   padding-bottom: calc(55vh + 2rem);
+}
+@media (min-width: 640px) {
+  .study-open {
+    width: calc(100% - var(--study-width) - 0.5rem);
+    padding-bottom: 3rem;
+    margin-right: calc(var(--study-width) + 0.5rem);
+    margin-left: auto;
+  }
 }
 
 /* Reader text sizes follow the A− / A+ control (useReadingSize).
