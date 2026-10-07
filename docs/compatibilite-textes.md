@@ -150,6 +150,99 @@ une guemara régénérée qui gagnerait ou perdrait un amoud se régénère donc
 ses commentaires (tenu par `src/__tests__/pageForm.test.ts`, qui vérifie
 l'alignement sur chaque traité).
 
+### Les coupures de ligne du livre imprimé (proposition)
+
+La forme de la page compose ses lignes à l'écran : ce ne sont pas celles du
+livre. Deux dossiers nouveaux disent où le livre coupe les siennes, pour
+qu'on puisse un jour les rendre telles quelles. Ils sont écrits par
+`scripts/layout/` (mode d'emploi dans son `README.md`), à partir de scans du
+domaine public ; ils ne portent **aucun mot**, seulement des places dans les
+textes qu'on a déjà. Rien ne les lit encore : brancher ces coupures dans le
+rendu se fera à part. Une version installée ne les demande pas, et les
+fichiers existants ne changent pas.
+
+**La page de Vilna** : `texts/talmud-layout/<traité>/<n>.json`, par tranches
+de vingt amoudim comme `talmud-meforshim` (même règle : la taille des
+tranches ne change pas sans changer de dossier).
+
+```text
+{
+  "title": "Berakhot",
+  "from": 0,
+  "edition": "vilna-romm-1880",
+  "through": 17,
+  "main": [[[0, 0], [0, 7], [0, 13]]],
+  "rashi": [[[[0, 0, 8]], [[0, 8, 6]], [[0, 14, 4], [1, 0, 7]]]],
+  "tosafot": [[[[0, 0, 10]]]],
+  "absent": [{ "rashi": [[14, 37, 8]] }]
+}
+```
+
+- `main[a]` : les lignes de la guemara de l'amoud `from + a`, chacune par la
+  place de son premier mot, `[passage, mot]`. Le passage est celui du fichier
+  de guemara (`he[amoud][passage]`) ; le mot se compte dans
+  `gemaraPageText([passage]).split(" ")`, c'est-à-dire dans le passage tel
+  que la page du daf l'affiche. Les lignes se suivent dans l'ordre du texte :
+  une ligne va de son premier mot à celui de la suivante.
+- `rashi[a]`, `tosafot[a]` : les lignes du commentaire, chacune par les
+  morceaux de texte qu'elle porte, `[passage, mot, nombre]`. Le mot se compte
+  dans les commentaires du passage bout à bout, chacun lu par
+  `parseRashiComment` (son dibbour, puis son texte), coupés aux espaces. Un
+  quatrième nombre donne l'amoud quand le texte est celui d'un autre amoud :
+  un commentaire qui finit à la page suivante reste rangé, chez Sefaria, sous
+  l'amoud où il commence.
+- `absent[a]` : ce que le fichier de commentaires porte et que la page
+  n'imprime pas (un doublon, un ajout entre crochets), ou que le relevé n'a
+  pas su placer. Ces mots ne sont sur aucune ligne.
+- `through` : le dernier amoud relevé de la tranche. Le dernier amoud relevé
+  d'un traité peut avoir des commentaires qui finissent à la page suivante :
+  ils seront placés quand elle le sera.
+
+Pourquoi les commentaires ne se notent pas comme la guemara, par un seul
+début de ligne : la page n'imprime pas les commentaires dans l'ordre des
+passages. Rachi sur le passage 14 peut venir avant Rachi sur le passage 9, et
+une ligne porter la fin d'un commentaire et le début d'un autre, d'un autre
+passage. Une ligne dit donc tout ce qu'elle porte.
+
+**Les colonnes du Sefer Torah** : `texts/torah-layout/<id>.json`, un fichier
+par paracha, sous le numéro de son fichier de texte.
+
+```text
+{
+  "title": "Beshalach",
+  "edition": "ezrat-hasofer-1769",
+  "columns": [{ "column": 81, "from": 16, "lines": [[0, 0], [0, 3], [0, 11]] }],
+  "blanks": [[105, 1], [105, 6]],
+  "big": [],
+  "small": []
+}
+```
+
+- `columns` : les colonnes du rouleau que la paracha occupe, par leur numéro
+  dans le rouleau. `from` : la ligne de la colonne (de 0 à 41) où la paracha
+  commence ; les colonnes suivantes commencent à 0. `lines` : la place du
+  premier mot de chaque ligne, `[verset, mot]` ; le verset est celui du
+  fichier de la paracha mis à plat (comme `data-line` dans le lecteur), le
+  mot se compte dans `scrollVerseWords(verset)`.
+- `blanks` : les mots que précède un blanc voulu dans la ligne (une setouma,
+  une brique d'Az yachir, la seconde moitié d'une ligne de Haazinou).
+- `big`, `small` : les grandes et les petites lettres, chacune par son
+  verset, son mot et son rang dans le mot. Elles ne se lisent pas sur le
+  scan : elles viennent du balisage du texte de Sefaria.
+- `edition` : le tikoun dont viennent les colonnes. Celui de Judah Pisa
+  compte 264 colonnes de 42 lignes ; ce n'est pas la mise en colonnes de 245
+  colonnes des rouleaux d'aujourd'hui, dont aucun tikoun imprimé n'est encore
+  du domaine public. Un autre tikoun donnerait d'autres fichiers, sous une
+  autre `edition`.
+
+Ce que le relevé garantit, et ce qu'il ne garantit pas. Un test
+(`src/__tests__/textLayout.test.ts`) tient que chaque place écrite existe et
+que les lignes se partagent le texte mot pour mot, sans en perdre ni en
+ajouter. Il ne dit pas que les coupures sont justes : cela se mesure à l'œil,
+sur des planches de relecture (`scripts/layout/README.md`). Ces index sont
+ceux des fichiers de texte : une guemara, des commentaires ou une paracha
+régénérés demandent de refaire le relevé.
+
 ## Quand la flotte a rattrapé
 
 Ces contraintes ne sont pas éternelles : elles valent tant que des versions
