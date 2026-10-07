@@ -1406,6 +1406,18 @@ const en: LocaleMessages = {
       meforshimUnavailable:
         "Rashi and Tosafot could not be loaded: the page shows the Gemara alone.",
     },
+    commentaries: {
+      open: "Commentaries",
+      title: "Commentaries",
+      rashi: "Rashi",
+      rashbam: "Rashbam",
+      tosafot: "Tosafot",
+      loading: "Loading the commentaries…",
+      error: "The commentaries could not be loaded: check your connection.",
+      none: "No commentary on this passage.",
+      hint: "Tap another passage of the text to read its commentaries.",
+    },
+    passageN: "passage {n}",
     hebrew: "Hebrew",
     reserve: "Reserve this passage",
     cancel: "Cancel reservation",

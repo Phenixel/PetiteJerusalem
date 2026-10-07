@@ -236,3 +236,85 @@ export function dafColumns(m: DafMeasure): { rashi: number | null; tosafot: numb
   };
   return { rashi: column(m.rashiEnd), tosafot: column(m.tosafotEnd) };
 }
+
+// ---- Le dibbour hamat'hil dans le passage ----------------------------------
+
+/** Les lettres finales, ramenées à leur forme ordinaire pour comparer. */
+const FINALS: Record<string, string> = { ך: "כ", ם: "מ", ן: "נ", ף: "פ", ץ: "צ" };
+
+/** Un mot réduit à ses lettres : sans voyelles, teamim, guillemets ni finales. */
+function wordKey(word: string): string {
+  let key = "";
+  for (const c of word) if (c >= "א" && c <= "ת") key += FINALS[c] ?? c;
+  return key;
+}
+
+/**
+ * Ce que le commentateur écrit dans son dibbour sans que ce soit un mot du
+ * passage : « וכו' », « וגו' » (et la suite), « גמ' », « מתני' ».
+ */
+const NOT_QUOTED = new Set(["וכו", "כו", "וגו", "גמ", "גמרא", "מתני", "מתניתין"]);
+
+/**
+ * Les mots du dibbour hamat'hil de chaque commentaire, retrouvés dans le
+ * passage tel qu'il s'affiche (vocalisé ou non) : leur place dans la chaîne,
+ * `[début, fin)`, pour les souligner. On cherche la plus longue suite des
+ * premiers mots du dibbour (deux au moins quand il en a deux) ; un dibbour
+ * qui cite le passage d'avant, ou qui abrège, ne souligne que ce qu'il cite
+ * vraiment, ou rien.
+ */
+export function leadRanges(text: string, leads: string[]): [number, number][] {
+  const words: { key: string; start: number; end: number }[] = [];
+  for (const m of text.matchAll(/[^\s\u05BE]+/g)) {
+    const key = wordKey(m[0]);
+    if (!key) continue;
+    // Le mot sans la ponctuation qui le borde (« השחר. », « ״וטהר״ ») : on
+    // souligne des mots, pas un point. Du premier signe hébreu au dernier.
+    const first = m[0].search(/[\u0591-\u05C7\u05D0-\u05EA]/);
+    let last = m[0].length;
+    while (last > first && !/[\u0591-\u05C7\u05D0-\u05EA]/.test(m[0][last - 1])) last--;
+    words.push({ key, start: m.index! + first, end: m.index! + last });
+  }
+  const ranges: [number, number][] = [];
+  for (const lead of leads) {
+    const keys = lead
+      .split(/[\s\u05BE]+/)
+      .map(wordKey)
+      .filter((k) => k && !NOT_QUOTED.has(k));
+    if (keys.length === 0) continue;
+    let best = { at: -1, length: 0 };
+    for (let i = 0; i < words.length && best.length < keys.length; i++) {
+      let k = 0;
+      while (k < keys.length && i + k < words.length && words[i + k].key === keys[k]) k++;
+      if (k > best.length) best = { at: i, length: k };
+    }
+    if (best.length >= Math.min(2, keys.length)) {
+      ranges.push([words[best.at].start, words[best.at + best.length - 1].end]);
+    }
+  }
+  // Dans l'ordre du texte, les chevauchements réunis.
+  ranges.sort((a, b) => a[0] - b[0]);
+  const merged: [number, number][] = [];
+  for (const r of ranges) {
+    const last = merged[merged.length - 1];
+    if (last && r[0] <= last[1]) last[1] = Math.max(last[1], r[1]);
+    else merged.push([...r]);
+  }
+  return merged;
+}
+
+/** Un texte coupé aux mots soulignés : les morceaux, chacun marqué ou non. */
+export function markedPieces(
+  text: string,
+  ranges: [number, number][],
+): { text: string; marked: boolean }[] {
+  const pieces: { text: string; marked: boolean }[] = [];
+  let at = 0;
+  for (const [start, end] of ranges) {
+    if (start > at) pieces.push({ text: text.slice(at, start), marked: false });
+    pieces.push({ text: text.slice(start, end), marked: true });
+    at = end;
+  }
+  if (at < text.length) pieces.push({ text: text.slice(at), marked: false });
+  return pieces;
+}

@@ -107,6 +107,27 @@ test.describe("lecteur", () => {
     await expect(page.locator(".torah-scroll")).toHaveCount(0);
   });
 
+  test("un passage de guemara ouvre ses commentaires, qui suivent la lecture", async ({ page }) => {
+    await gotoApp(page, "/bibliotheque/talmud/berakhot/1");
+    const passages = page.locator(".daf-passage");
+    await expect(passages.first()).toBeVisible({ timeout: 20_000 });
+    // Le premier passage : Rachi et Tossafot, annoncés dans la bulle.
+    await passages.nth(0).click();
+    const rangee = page.locator(".bubble-commentary");
+    await expect(rangee).toContainText("Rachi 2 · Tossafot 1", { timeout: 20_000 });
+    await rangee.click();
+    const panneau = page.locator(".commentary-panel");
+    await expect(panneau).toContainText("Daf 2a · passage 1");
+    await expect(panneau).toContainText("Tossafot");
+    // Le panneau ouvert, un autre passage y passe, sans bulle.
+    await passages.nth(2).click();
+    await expect(panneau).toContainText("Daf 2a · passage 3");
+    await expect(page.locator(".reading-bubble")).toHaveCount(0);
+    await expect(page.locator(".lead-mark").first()).toBeVisible();
+    await panneau.getByRole("button", { name: "Fermer" }).click();
+    await expect(panneau).toHaveCount(0);
+  });
+
   test("l'ancienne adresse /lire/:id mène au texte, pas à une page vide", async ({ page }) => {
     // 103 est l'identifiant du Tehilim 1 (src/datas/textStudies.json).
     await gotoApp(page, "/lire/103");

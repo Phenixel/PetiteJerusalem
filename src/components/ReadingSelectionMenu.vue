@@ -11,6 +11,7 @@ import { openFeedback } from "../composables/useFeedback";
 import { clearPassage, readingPassage } from "../composables/useReadingSelection";
 import { hasNiqqud, transliterate } from "../services/hebrewTransliteration";
 import { analyticsService } from "../services/analyticsService";
+import { COMMENTARY_LABELS } from "../composables/usePassageCommentaries";
 
 /**
  * La bulle de commandes d'un passage choisi (voir useReadingSelection).
@@ -31,6 +32,12 @@ import { analyticsService } from "../services/analyticsService";
  * Le marque-page s'y ajoute là où le texte en prend : c'était la seule
  * commande d'un verset choisi, elle rejoint les autres plutôt que de rester
  * seule sous le fil.
+ *
+ * Là où le passage a des commentaires (une guemara, une paracha), une seconde
+ * rangée les propose, sur toute la largeur de la bulle : « Commentaires »,
+ * avec ce qu'il y a à lire (« Rachi 2 · Tossafot 1 »). Une cinquième colonne
+ * ne tiendrait pas sur un téléphone, et ce n'est pas une commande comme les
+ * autres : elle ouvre le panneau d'étude, qui suit ensuite la lecture.
  *
  * Elle est posée une fois dans App.vue et suit le passage : la bulle glisse
  * avec lui au défilement, et s'efface quand il quitte l'écran, comme le fait
@@ -169,6 +176,24 @@ const bookmarkLabel = computed(() =>
   readingPassage.value?.bookmarked ? t("textReading.bookmarkRemove") : t("textReading.bookmarkAdd"),
 );
 
+/**
+ * Les commentaires du passage : la rangée ne paraît que s'il en a, ou le temps
+ * qu'on le sache. Le compte dit ce qu'on va trouver avant de l'ouvrir.
+ */
+const commentary = computed(() => readingPassage.value?.commentary?.summary() ?? null);
+const commentaryCounts = computed(() =>
+  commentary.value?.state === "ready"
+    ? commentary.value.counts.map((c) => `${t(COMMENTARY_LABELS[c.source])} ${c.count}`).join(" · ")
+    : "",
+);
+
+function openCommentaries(): void {
+  const passage = readingPassage.value;
+  if (!passage?.commentary) return;
+  track("commentaries");
+  passage.commentary.open();
+}
+
 /** Les premiers mots du passage : de quoi le reconnaître dans un signalement. */
 const EXCERPT_MAX = 160;
 function excerpt(hebrew: string): string {
@@ -301,6 +326,21 @@ onBeforeUnmount(() => {
           </button>
         </div>
 
+        <!-- Les commentaires du passage : une rangée à part, sur toute la
+             largeur, avec ce qu'il y a à lire. -->
+        <button
+          v-if="view === 'actions' && commentary && commentary.state !== 'none'"
+          type="button"
+          class="bubble-commentary"
+          :disabled="commentary.state === 'loading'"
+          @click="openCommentaries"
+        >
+          <AppIcon name="book-reader" :size="iconSize" />
+          <span>{{ t("textReading.commentaries.open") }}</span>
+          <span v-if="commentaryCounts" class="bubble-counts">{{ commentaryCounts }}</span>
+          <span v-else class="bubble-counts">…</span>
+        </button>
+
         <!-- La phonétique du seul passage choisi : l'hébreu reste à l'écran
              dessous, on ne bascule pas toute la page pour un mot. -->
         <div v-else class="bubble-phonetic">
@@ -389,6 +429,37 @@ onBeforeUnmount(() => {
 .bubble-action:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: -2px;
+}
+
+/* Les commentaires : une rangée sous les commandes, séparée d'un filet. */
+.bubble-commentary {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.85rem;
+  border-top: 1px solid color-mix(in srgb, var(--color-text-primary) 8%, transparent);
+  font-size: calc(0.8rem * var(--bubble-scale, 1));
+  font-weight: 600;
+  color: var(--color-text-primary);
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.bubble-commentary:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--color-text-primary) 7%, transparent);
+  color: var(--color-primary);
+}
+
+.bubble-commentary:disabled {
+  color: var(--color-text-secondary);
+}
+
+.bubble-counts {
+  margin-inline-start: auto;
+  font-weight: 500;
+  color: var(--color-text-secondary);
 }
 
 /* La phonétique : un texte, pas une commande. Elle défile si le passage est

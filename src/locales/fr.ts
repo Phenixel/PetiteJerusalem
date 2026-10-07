@@ -1456,6 +1456,18 @@ const fr = {
       meforshimUnavailable:
         "Rachi et Tossafot n'ont pas pu être chargés : la page montre la guemara seule.",
     },
+    commentaries: {
+      open: "Commentaires",
+      title: "Commentaires",
+      rashi: "Rachi",
+      rashbam: "Rachbam",
+      tosafot: "Tossafot",
+      loading: "Les commentaires arrivent…",
+      error: "Les commentaires n'ont pas pu être chargés : vérifiez la connexion.",
+      none: "Pas de commentaire sur ce passage.",
+      hint: "Touchez un autre passage du texte pour lire ses commentaires.",
+    },
+    passageN: "passage {n}",
     hebrew: "Hébreu",
     reserve: "Réserver ce passage",
     cancel: "Annuler la réservation",

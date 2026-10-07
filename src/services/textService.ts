@@ -20,6 +20,32 @@ export interface DafBlock {
    * fichier), celui des commentaires de la page (voir loadDafMeforshim).
    */
   amud?: number;
+  /**
+   * Le passage source de chaque ligne dans l'amoud (Sefaria compte aussi les
+   * passages vides, que `lines` saute) : l'index des commentaires d'un passage.
+   */
+  passages?: number[];
+}
+
+/**
+ * Les lignes d'un amoud (passages de Sefaria), avec l'index de chacune parmi
+ * les passages de l'amoud : un passage vide n'est pas une ligne, mais il garde
+ * sa place dans la numérotation des commentaires.
+ */
+function amudLines(amud: unknown): { lines: string[]; passages: number[] } {
+  if (!Array.isArray(amud)) {
+    const lines = normalizeLines(amud);
+    return { lines, passages: lines.map(() => 0) };
+  }
+  const lines: string[] = [];
+  const passages: number[] = [];
+  amud.forEach((passage, p) => {
+    const line = normalizeLines(passage).join(" ");
+    if (!line) return;
+    lines.push(line);
+    passages.push(p);
+  });
+  return { lines, passages };
 }
 
 /**
@@ -410,10 +436,30 @@ export function placeLabel(
   verseN: (n: number) => string,
   headingOf: (heading: SectionHeading | undefined, fallback: string) => string = (_, label) =>
     label,
+  passageN: (n: number) => string = verseN,
 ): string {
   const section = sections.find((s) => s.index === (sectionIndex ?? 1)) ?? sections[0] ?? null;
   const parts: string[] = [];
   if (section && sections.length > 1) parts.push(headingOf(section.heading, section.label));
+  // Guemara : le chapitre sans sa plage de dafim, le daf, puis le passage
+  // dans le daf (« Chapitre 1 · Daf 2a · passage 3 »).
+  if (section?.dafBlocks?.length) {
+    if (section.heading?.kind === "chapterDaf" && sections.length > 1) {
+      parts[parts.length - 1] = headingOf(
+        { kind: "chapter", n: section.heading.n },
+        `Chapitre ${formatNumberWithHebrew(section.heading.n)}`,
+      );
+    }
+    let offset = 0;
+    for (const block of section.dafBlocks) {
+      if (line < offset + block.lines.length) {
+        parts.push(headingOf({ kind: "daf", daf: block.daf }, `Daf ${block.daf}`));
+        parts.push(passageN(line - offset + 1));
+        return parts.join(" · ");
+      }
+      offset += block.lines.length;
+    }
+  }
   const block = section?.blocks?.length
     ? [...section.blocks].reverse().find((b) => b.offset <= line)
     : undefined;
@@ -619,13 +665,14 @@ function parseTalmud(
       const dafBlocks: DafBlock[] = [];
       // Each index in `he` is one daf side: index 0 = 2a, 1 = 2b, 2 = 3a…
       for (let i = range.startIdx; i <= range.endIdx && i < heDaf.length; i++) {
-        const dafLines = normalizeLines(heDaf[i]);
+        const { lines: dafLines, passages } = amudLines(heDaf[i]);
         if (dafLines.length === 0) continue;
         lines.push(...dafLines);
         dafBlocks.push({
           daf: `${Math.floor(i / 2) + 2}${i % 2 === 0 ? "a" : "b"}`,
           lines: dafLines,
           amud: i,
+          passages,
         });
       }
       const dafRange =
@@ -1115,9 +1162,20 @@ export async function loadParashaRashi(textStudy: TextStudyJsonEntry): Promise<R
 
 /** Les commentaires d'un amoud, dans l'ordre de la page. */
 export interface DafMeforshim {
-  /** Rachi (le Rachbam en Bava Batra, là où Rachi s'arrête). */
-  rashi: RashiComment[];
-  tosafot: RashiComment[];
+  /**
+   * Rachi, passage par passage (`rashi[p]` : les commentaires du passage p de
+   * l'amoud, voir DafBlock.passages). En Bava Batra, le Rachbam là où Rachi
+   * s'arrête : `inner` le dit.
+   */
+  rashi: RashiComment[][];
+  tosafot: RashiComment[][];
+  /** Qui occupe la place de Rachi sur cet amoud. */
+  inner: "rashi" | "rashbam";
+}
+
+/** Tous les commentaires d'un amoud bout à bout, pour la page du daf. */
+export function flatMeforshim(m: DafMeforshim): { rashi: RashiComment[]; tosafot: RashiComment[] } {
+  return { rashi: m.rashi.flat(), tosafot: m.tosafot.flat() };
 }
 
 /** Amoudim par fichier : à garder d'accord avec download-texts.mjs. */
@@ -1131,18 +1189,23 @@ export function parseDafMeforshim(data: {
   from?: number;
   rashi?: unknown[];
   tosafot?: unknown[];
+  rashbam?: number[];
 }): Map<number, DafMeforshim> {
   const byAmud = new Map<number, DafMeforshim>();
-  const comments = (amud: unknown): RashiComment[] =>
-    (Array.isArray(amud) ? amud : [])
+  const comments = (passage: unknown): RashiComment[] =>
+    (Array.isArray(passage) ? passage : [])
       .map((c) => parseRashiComment(String(c)))
       .filter((c): c is RashiComment => c !== null);
+  const passages = (amud: unknown): RashiComment[][] =>
+    (Array.isArray(amud) ? amud : []).map(comments);
   const from = data.from ?? 0;
+  const rashbam = new Set(data.rashbam ?? []);
   const count = Math.max(data.rashi?.length ?? 0, data.tosafot?.length ?? 0);
   for (let i = 0; i < count; i++) {
     byAmud.set(from + i, {
-      rashi: comments(data.rashi?.[i]),
-      tosafot: comments(data.tosafot?.[i]),
+      rashi: passages(data.rashi?.[i]),
+      tosafot: passages(data.tosafot?.[i]),
+      inner: rashbam.has(i) ? "rashbam" : "rashi",
     });
   }
   return byAmud;

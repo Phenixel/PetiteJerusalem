@@ -1,6 +1,7 @@
 <script setup lang="ts">
+import { computed } from "vue";
 import { useI18n } from "vue-i18n";
-import type { DafBlock, DafMeforshim } from "../services/textService";
+import { flatMeforshim, type DafBlock, type DafMeforshim } from "../services/textService";
 import TalmudPage from "./TalmudPage.vue";
 
 /**
@@ -21,6 +22,20 @@ const props = defineProps<{
 
 const { t } = useI18n();
 
+/**
+ * Les commentaires de chaque amoud, bout à bout : la page ne les découpe pas
+ * par passage. Calculés une fois par chargement, pour que la page ne se
+ * recompose pas à chaque rendu de la lecture.
+ */
+const flat = computed(() => {
+  const byAmud = new Map<number, ReturnType<typeof flatMeforshim>>();
+  for (const [amud, m] of props.meforshim ?? []) byAmud.set(amud, flatMeforshim(m));
+  return byAmud;
+});
+function pageMeforshim(block: DafBlock) {
+  return block.amud !== undefined ? (flat.value.get(block.amud) ?? null) : null;
+}
+
 /** L'index de la première ligne de chaque daf dans la section (ancres). */
 function offsetOf(index: number): number {
   let offset = 0;
@@ -40,7 +55,7 @@ function offsetOf(index: number): number {
     <TalmudPage
       :daf="block.daf"
       :lines="block.lines"
-      :meforshim="block.amud !== undefined ? (meforshim?.get(block.amud) ?? null) : null"
+      :meforshim="pageMeforshim(block)"
       :scale="scale"
     />
   </template>

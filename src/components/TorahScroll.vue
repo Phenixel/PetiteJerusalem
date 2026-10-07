@@ -7,6 +7,7 @@ import {
   scrollVerseWords,
   type ParashaMark,
 } from "../services/pageForm";
+import MarkedText from "./MarkedText.vue";
 
 /**
  * Une paracha dans la forme du Sefer Torah : les lettres seules, dans
@@ -29,6 +30,8 @@ const props = defineProps<{
   aliyot: { offset: number; anchor: string; label: string }[];
   pickedLine?: number | null;
   highlightedLine?: number | null;
+  /** Le passage étudié et les dibbourim de ses commentaires (voir MarkedText). */
+  leads?: { line: number; leads: string[] } | null;
 }>();
 
 const emit = defineEmits<{
@@ -118,8 +121,10 @@ function pick(event: MouseEvent, line: number): void {
             :class="stateClass(verse.line)"
             @click="pick($event, verse.line)"
             @contextmenu="pick($event, verse.line)"
-            >{{ verse.text }}</span
-          >
+            ><MarkedText
+              :text="verse.text"
+              :leads="leads?.line === verse.line ? leads.leads : null"
+          /></span>
           <span v-if="verse.setouma" class="scroll-setouma" aria-hidden="true"></span>
           {{ " " }}
         </template>

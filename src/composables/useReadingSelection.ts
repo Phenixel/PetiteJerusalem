@@ -44,7 +44,23 @@ export interface ReadingPassage {
   bookmarked?: boolean | null;
   /** Pose ou retire le marque-page du passage. */
   toggleBookmark?: () => void;
+  /**
+   * Les commentaires du passage (Rachi, Tossafot), là où le texte en a : la
+   * bulle propose de les ouvrir dans le panneau d'étude. `summary` se lit à
+   * chaque rendu (les commentaires arrivent après l'appui), `open` ouvre le
+   * panneau sur ce passage.
+   */
+  commentary?: {
+    summary: () => CommentarySummary;
+    open: () => void;
+  };
 }
+
+/** Ce que la bulle dit des commentaires d'un passage. */
+export type CommentarySummary =
+  | { state: "loading" }
+  | { state: "ready"; counts: { source: "rashi" | "rashbam" | "tosafot"; count: number }[] }
+  | { state: "none" };
 
 /**
  * `shallowRef` : la valeur porte un élément du DOM, qu'un proxy réactif

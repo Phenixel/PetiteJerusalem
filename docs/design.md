@@ -1372,6 +1372,8 @@ qu'on vient chercher, et nulle part ailleurs (ni titre, ni étiquette) :
   l'écriture de Rachi. Elle n'écrit que Rachi et Tossafot sur la page du daf
   (`TalmudPage.vue`), où ils sont imprimés dans cette écriture ; le dibbour
   hamat'hil reste en lettres carrées grasses, dans `--font-hebrew`.
+  Le panneau d'étude, lui, garde `--font-hebrew` : on y lit un commentaire
+  en grand, pas une page.
 
 Playfair est une police d'apparat : posée partout, elle ne met plus rien en
 avant. Elle est automatique sur les `h1` et se pose à la main (classe
@@ -1493,6 +1495,34 @@ signalement qui dit « Tehilim 23 · verset 4 » se corrige, là où trois mots
 copiés se cherchent. Partout ailleurs (le reste du site, un texte qu'on
 accompagne sans qu'il ait d'adresse à lui), la sélection ordinaire reste, à la
 couleur du thème.
+
+### Les commentaires d'un passage s'ouvrent depuis sa bulle, puis suivent la lecture
+
+Une guemara a Rachi et Tossafot, une paracha a Rachi ; chacun est rattaché à
+un passage précis du texte (la guemara est découpée en passages de l'ordre
+d'une phrase, ceux de Sefaria, invisibles à la lecture : le texte se lit
+toujours d'un seul tenant, seul le passage choisi prend un fond). La bulle
+d'un passage qui a des commentaires porte une **seconde rangée**, sur toute
+sa largeur, sous les commandes : « Commentaires », avec ce qu'il y a à lire
+(« Rachi 2 · Tossafot 1 »). Une cinquième colonne ne tiendrait pas sur un
+téléphone, et ce n'est pas une commande comme les autres : elle ouvre un
+mode d'étude. La rangée n'apparaît pas sur un passage sans commentaire ;
+grisée, avec « … », le temps que les commentaires arrivent (ils ne se
+chargent qu'au premier passage touché).
+
+Elle ouvre le **panneau d'étude** (`CommentaryPanel.vue`) : un volet à
+mi-hauteur (55 vh) au bas d'un téléphone, une colonne de 24 rem à droite
+d'un écran large, le texte se rangeant à sa gauche. En tête, l'endroit
+(« Chapitre 1 · Daf 2a · passage 3 ») et la croix ; dessous, Rachi (le
+Rachbam en Bava Batra, là où il prend sa place) puis Tossafot, le dibbour
+hamat'hil en gras, à la taille de lecture : c'est un texte qu'on étudie. Le
+panneau **suit la lecture** : tant qu'il est ouvert, toucher un autre passage
+y montre les siens, sans rouvrir de bulle ; on étudie un daf d'un geste par
+passage. Dans le texte, les mots que citent les dibbourim du passage étudié
+sont soulignés à la couleur du thème (`MarkedText.vue`), sans fond, assez bas
+pour passer sous les voyelles. Le bouton du menu de lecture s'efface tant que
+le panneau est ouvert (il occupe sa place) ; la croix, Échap ou le bouton
+retour le ferment, et rendent la bulle aux passages.
 
 ### Une fenêtre modale tient dans ce qui est visible, clavier compris
 

@@ -341,6 +341,25 @@ gardé : passer à la phonétique et en revenir ne le touche pas.
 | `form`    | `daf` (page de Vilna), `scroll` (Sefer Torah)            | **nouveau** |
 | `text_id` | l'id du texte dans le catalogue (`textStudies.json`)     | **nouveau** |
 
+### Lecture : `commentaries_opened`, `commentaries_closed` (nouveaux)
+
+Les commentaires d'un passage (Rachi, Tossafot, voir `docs/design.md`,
+« Les commentaires d'un passage s'ouvrent depuis sa bulle, puis suivent la
+lecture ») : `commentaries_opened` part quand la rangée « Commentaires » de
+la bulle ouvre le panneau d'étude, `commentaries_closed` quand on le ferme
+(croix, Échap, retour, changement de texte). Le second dit si le panneau
+sert à un passage ou à l'étude d'un daf entier.
+
+| Événement             | Propriété         | Valeurs                                                    | Statut      |
+| --------------------- | ----------------- | ---------------------------------------------------------- | ----------- |
+| `commentaries_opened` | `corpus`          | `talmud`, `torah`                                          | **nouveau** |
+| `commentaries_opened` | `text_id`         | l'id du texte dans le catalogue                            | **nouveau** |
+| `commentaries_opened` | `count`           | le nombre de commentaires du passage                       | **nouveau** |
+| `commentaries_closed` | `passages_viewed` | les passages vus dans le panneau, celui de l'ouverture compris | **nouveau** |
+
+`passage_action` (existant) prend une valeur de plus pour `action` :
+`commentaries`, l'appui sur la rangée de la bulle.
+
 ### Recherche
 
 `library_search_used` et `chiourim_search_used` (existants) continuent de

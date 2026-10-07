@@ -95,6 +95,12 @@ const props = withDefaults(
     shareTitle?: string;
     /** L'adresse publique du texte ; à défaut, celle de la page ouverte. */
     shareUrl?: string;
+    /**
+     * Le panneau d'étude occupe le bas de l'écran (téléphone) ou sa droite
+     * (écran large), là où se posent les boutons ronds : ils s'effacent le
+     * temps qu'il est ouvert.
+     */
+    concealed?: boolean;
   }>(),
   {
     sections: () => [],
@@ -106,6 +112,7 @@ const props = withDefaults(
     halakhot: false,
     shareTitle: "",
     shareUrl: "",
+    concealed: false,
   },
 );
 
@@ -377,7 +384,7 @@ onUnmounted(() => {
     leave-to-class="transform translate-y-10 opacity-0"
   >
     <div
-      v-show="!atBottom || open"
+      v-show="(!atBottom || open) && !concealed"
       class="fixed right-6 z-50"
       :style="{ '--menu-bottom': `${bottomRem}rem`, bottom: `${bottomRem}rem` }"
     >

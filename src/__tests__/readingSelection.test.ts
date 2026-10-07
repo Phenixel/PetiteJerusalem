@@ -199,6 +199,45 @@ describe("la bulle de commandes", () => {
     expect(pose).toHaveBeenCalledOnce();
     expect(readingPassage.value).toBeNull();
   });
+
+  it("propose les commentaires du passage, avec ce qu'il y a à lire", async () => {
+    const ouvrePanneau = vi.fn();
+    const host = await ouvre(
+      passage({
+        commentary: {
+          summary: () => ({
+            state: "ready",
+            counts: [
+              { source: "rashi", count: 2 },
+              { source: "tosafot", count: 1 },
+            ],
+          }),
+          open: ouvrePanneau,
+        },
+      }),
+    );
+    const rangee = host.querySelector<HTMLButtonElement>(".bubble-commentary")!;
+    expect(rangee.textContent).toContain(fr.textReading.commentaries.open);
+    expect(rangee.textContent).toContain("Rachi 2 · Tossafot 1");
+    // Une rangée à part : les quatre colonnes de commandes restent quatre.
+    expect(commandes(host)).toHaveLength(3);
+    rangee.click();
+    expect(ouvrePanneau).toHaveBeenCalledOnce();
+  });
+
+  it("ne propose rien d'un passage sans commentaire, et attend ceux qui arrivent", async () => {
+    const sans = await ouvre(
+      passage({ commentary: { summary: () => ({ state: "none" }), open: vi.fn() } }),
+    );
+    expect(sans.querySelector(".bubble-commentary")).toBeNull();
+    monte?.unmount();
+    clearPassage();
+
+    const enRoute = await ouvre(
+      passage({ commentary: { summary: () => ({ state: "loading" }), open: vi.fn() } }),
+    );
+    expect(enRoute.querySelector<HTMLButtonElement>(".bubble-commentary")!.disabled).toBe(true);
+  });
 });
 
 /**

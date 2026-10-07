@@ -187,7 +187,14 @@ describe("forme de la page du daf", () => {
         );
         const parsed = parseDafMeforshim(data);
         amudim += parsed.size;
-        for (const m of parsed.values()) if (m.rashi.length + m.tosafot.length) commented++;
+        for (const [amud, m] of parsed) {
+          if (m.rashi.flat().length + m.tosafot.flat().length) commented++;
+          // Passage par passage : jamais plus de passages commentés que la
+          // guemara n'en a (index des passages, vides compris).
+          const passages = (gemara.he[amud] as unknown[]).length;
+          expect(m.rashi.length, `${slug} : amoud ${amud}`).toBeLessThanOrEqual(passages);
+          expect(m.tosafot.length, `${slug} : amoud ${amud}`).toBeLessThanOrEqual(passages);
+        }
       }
       expect(amudim, `${slug} : amoudim`).toBe(gemara.he.length);
       expect(commented / amudim, `${slug} : amoudim commentés`).toBeGreaterThan(0.6);
@@ -199,9 +206,30 @@ describe("forme de la page du daf", () => {
 
   it("garde le dibbour hamat'hil en avant, comme sur la page", () => {
     const parsed = parseDafMeforshim(read("talmud-meforshim/berakhot/0.json") as never);
-    const first = parsed.get(0)!.rashi[0];
+    const first = parsed.get(0)!.rashi[0][0];
     expect(first.lead).toBe("מאימתי קורין את שמע בערבין. משעה שהכהנים נכנסים לאכול בתרומתן");
     expect(first.text.startsWith("כהנים שנטמאו")).toBe(true);
-    expect(parsed.get(0)!.tosafot[0].lead).toBe("מאימתי קורין וכו'");
+    expect(parsed.get(0)!.tosafot[0][0].lead).toBe("מאימתי קורין וכו'");
+    expect(parsed.get(0)!.inner).toBe("rashi");
+  });
+
+  it("rattache chaque commentaire au passage qu'il commente", () => {
+    const parsed = parseDafMeforshim(read("talmud-meforshim/berakhot/0.json") as never);
+    const entry = entries.find((e) => e.type === "Talmud Bavli" && e.link.endsWith("/Berakhot"))!;
+    const daf = parseContent(entry, read("talmud/berakhot.json"), {
+      berakhot: [{ chapter: 1, startDaf: "2a", endDaf: "2a", startIdx: 0, endIdx: 0 }],
+    }).sections[0].dafBlocks![0];
+    // Berakhot 2a, passage 3 : « רבן גמליאל אומר עד שיעלה עמוד השחר », et le
+    // Rachi qui en reprend les mots.
+    const p = daf.passages![2];
+    expect(gemaraPageText([daf.lines[2]])).toContain("עד שיעלה עמוד השחר");
+    expect(parsed.get(0)!.rashi[p][0].lead).toBe("עד שיעלה עמוד השחר");
+  });
+
+  it("donne au Rachbam la place de Rachi en Bava Batra, là où Rachi s'arrête", () => {
+    const parsed = parseDafMeforshim(read("talmud-meforshim/bava-batra/2.json") as never);
+    // Index 55 du traité : le 29b.
+    expect(parsed.get(55)!.inner).toBe("rashbam");
+    expect(parsed.get(40)!.inner).toBe("rashi");
   });
 });

@@ -132,14 +132,20 @@ vérifiées contre celles que pose le calendrier
 
 ### Les commentaires de la page du daf
 
-Rachi et Tossafot de la page du daf vivent à part, par tranches de vingt
-amoudim (`texts/talmud-meforshim/<traité>/<n>.json`, `{ title, from, rashi,
-tosafot }`, écrits par `scripts/download-texts.mjs --only=meforshim`). Une
+Rachi et Tossafot de la guemara vivent à part, par tranches de vingt amoudim
+(`texts/talmud-meforshim/<traité>/<n>.json`, `{ title, from, rashi, tosafot,
+rashbam? }`, écrits par `scripts/download-texts.mjs --only=meforshim`).
+`rashi[a][p]` est la liste des commentaires du passage `p` de l'amoud `a`,
+dans la numérotation des passages de Sefaria, vides compris : c'est elle que
+le lecteur retrouve à partir de `DafBlock.passages`, et **elle ne se
+renumérote pas** sans régénérer aussi la guemara. `rashbam` liste les amoudim
+de la tranche où le Rachbam tient la place de Rachi (Bava Batra). Une
 version installée calcule elle-même le nom de la tranche d'un amoud
 (`MEFORSHIM_CHUNK` dans `textService.ts`) : **la taille des tranches ne change
 pas sans changer de dossier**, sans quoi une version publiée demanderait
 `3.json` pour un amoud qui n'y est plus, et montrerait la guemara sans ses
-commentaires. Les index d'amoud sont ceux du fichier de guemara du traité ;
+commentaires. Les index d'amoud et de passage sont ceux du fichier de
+guemara du traité ;
 une guemara régénérée qui gagnerait ou perdrait un amoud se régénère donc avec
 ses commentaires (tenu par `src/__tests__/pageForm.test.ts`, qui vérifie
 l'alignement sur chaque traité).

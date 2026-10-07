@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
-import type { DafMeforshim } from "../services/textService";
+import type { RashiComment } from "../services/textService";
 import { amudOf, dafColumns, dafSides, gemaraPageText } from "../services/pageForm";
 
 /**
@@ -25,8 +25,8 @@ const props = defineProps<{
   daf: string;
   /** La guemara de l'amoud, telle que le fichier la porte (vocalisée). */
   lines: string[];
-  /** Rachi et Tossafot de l'amoud ; null : la guemara seule. */
-  meforshim: DafMeforshim | null;
+  /** Rachi et Tossafot de l'amoud, bout à bout ; null : la guemara seule. */
+  meforshim: { rashi: RashiComment[]; tosafot: RashiComment[] } | null;
   /** La taille de lecture (useReadingSize). */
   scale: number;
 }>();

@@ -22,14 +22,7 @@ import {
   rubricText,
   saidOn,
 } from "../../services/textService";
-import type {
-  DafMeforshim,
-  TextBlock,
-  TextContent,
-  TextDay,
-  TextSection,
-} from "../../services/textService";
-import { loadDafMeforshim } from "../../services/textService";
+import type { TextBlock, TextContent, TextDay, TextSection } from "../../services/textService";
 import {
   activeOccasions,
   getWeekdayTorahParasha,
@@ -90,6 +83,10 @@ import TalmudDafText from "../../components/TalmudDafText.vue";
 import TalmudDafPages from "../../components/TalmudDafPages.vue";
 import TorahScroll from "../../components/TorahScroll.vue";
 import { PAGE_FORM_LABELS, usePageForm } from "../../composables/usePageForm";
+import { usePassageCommentaries } from "../../composables/usePassageCommentaries";
+import type { CommentarySummary } from "../../composables/useReadingSelection";
+import CommentaryPanel from "../../components/CommentaryPanel.vue";
+import MarkedText from "../../components/MarkedText.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import { useToast } from "../../composables/useToast";
 import { useReadingSize } from "../../composables/useReadingSize";
@@ -472,32 +469,21 @@ function setReadingMode(mode: ReadingMode): void {
   }
 }
 
-// Rachi et Tossafot du chapitre ouvert, chargés à l'ouverture de la page du
-// daf seulement : la guemara seule ne les attend pas.
-const dafMeforshim = ref<Map<number, DafMeforshim> | null>(null);
-const dafMeforshimState = ref<"loading" | "ready" | "error">("loading");
-let meforshimRequest = 0;
+// Rachi et Tossafot (guemara), Rachi (paracha) du chapitre ouvert : chargés au
+// premier passage touché ou à l'ouverture de la page du daf, jamais avant ;
+// la lecture seule ne les attend pas (usePassageCommentaries).
+const commentaries = usePassageCommentaries(textEntry, currentSection);
 watch(
   () => (showPageForm.value && pageFormKind.value === "daf" ? currentSection.value : null),
-  async (section) => {
-    if (!section || !textEntry.value) return;
-    const request = ++meforshimRequest;
-    dafMeforshim.value = null;
-    dafMeforshimState.value = "loading";
-    const amudim = (section.dafBlocks ?? [])
-      .map((b) => b.amud)
-      .filter((a): a is number => a !== undefined);
-    try {
-      const loaded = await loadDafMeforshim(textEntry.value, amudim);
-      if (request !== meforshimRequest) return;
-      dafMeforshim.value = loaded;
-      dafMeforshimState.value = "ready";
-    } catch {
-      if (request !== meforshimRequest) return;
-      dafMeforshimState.value = "error";
-    }
+  (section) => {
+    if (section) void commentaries.ensure();
   },
   { immediate: true },
+);
+const dafMeforshimState = computed<"loading" | "ready" | "error">(() =>
+  commentaries.state.value === "ready" || commentaries.state.value === "error"
+    ? commentaries.state.value
+    : "loading",
 );
 
 /** Les montées d'une paracha, pour les repères du Sefer Torah. */
@@ -825,6 +811,7 @@ function placeLabel(sectionIndex: number | null, line: number): string {
     line,
     (n) => t("textReading.verseN", { n }),
     headingLabel,
+    (n) => t("textReading.passageN", { n }),
   );
 }
 
@@ -1056,6 +1043,59 @@ usePassageLongPress();
 
 /** Le passage choisi dans le texte ouvert, par sa ligne : le fil le surligne. */
 const pickedLine = ref<number | null>(null);
+
+// --- Le panneau d'étude (commentaires d'un passage) ---
+// Ouvert depuis la bulle d'un passage, il suit ensuite la lecture : tant
+// qu'il est ouvert, toucher un autre passage y montre ses commentaires, sans
+// rouvrir de bulle (voir CommentaryPanel.vue et docs/design.md).
+/** La ligne dont le panneau montre les commentaires ; null : fermé. */
+const studyLine = ref<number | null>(null);
+let studyViewed = 0;
+/** Le passage surligné : celui qu'on étudie, sinon celui de la bulle. */
+const selectedLine = computed(() => studyLine.value ?? pickedLine.value);
+const studyGroups = computed(() =>
+  studyLine.value === null ? [] : commentaries.groupsAt(studyLine.value),
+);
+/** Les dibbourim du passage étudié, pour en souligner les mots dans le texte. */
+const studyLeads = computed(() =>
+  studyLine.value === null
+    ? null
+    : {
+        line: studyLine.value,
+        leads: studyGroups.value.flatMap((g) => g.comments.map((c) => c.lead).filter(Boolean)),
+      },
+);
+
+function commentarySummary(line: number): CommentarySummary {
+  const state = commentaries.state.value;
+  if (state === "error") return { state: "none" };
+  if (state !== "ready") return { state: "loading" };
+  const counts = commentaries
+    .groupsAt(line)
+    .map((g) => ({ source: g.source, count: g.comments.length }));
+  return counts.length ? { state: "ready", counts } : { state: "none" };
+}
+
+function openStudy(line: number): void {
+  studyLine.value = line;
+  studyViewed = 1;
+  clearPassage();
+  // Les commentaires : trouvés, et sur quel corpus.
+  analyticsService.capture("commentaries_opened", {
+    corpus: commentaries.corpus.value,
+    text_id: textEntry.value?.id ?? null,
+    count: commentaries.groupsAt(line).reduce((n, g) => n + g.comments.length, 0),
+  });
+}
+
+function closeStudy(): void {
+  if (studyLine.value === null) return;
+  // Le panneau qui suit la lecture : sert-il à un passage, ou à un daf entier ?
+  analyticsService.capture("commentaries_closed", { passages_viewed: studyViewed });
+  studyLine.value = null;
+}
+watch([textId, sectionParam], closeStudy);
+onBeforeUnmount(closeStudy);
 // Relâché d'ailleurs (un appui hors du texte, Échap, le bouton retour) : le
 // surlignage suit.
 watch(selectedPassageKey, (key) => {
@@ -1085,7 +1125,15 @@ function passagePlace(line: number, label?: string): string {
 }
 
 function pickPassage(passage: { el: HTMLElement; line: number; hebrew: string; label?: string }) {
+  // Le panneau d'étude ouvert suit la lecture : le passage touché y passe.
+  if (studyLine.value !== null) {
+    if (studyLine.value !== passage.line) studyViewed++;
+    studyLine.value = passage.line;
+    return;
+  }
   const key = `${textId.value}#${positionSection.value ?? 0}#${passage.line}`;
+  const withCommentary = commentaries.corpus.value !== null;
+  if (withCommentary) void commentaries.ensure();
   selectPassage({
     key,
     el: passage.el,
@@ -1095,6 +1143,9 @@ function pickPassage(passage: { el: HTMLElement; line: number; hebrew: string; l
     // Une tefila ne prend pas de marque-page : elle se lit du début.
     bookmarked: isLiturgyText.value ? null : isLineBookmarked(passage.line),
     toggleBookmark: () => toggleBookmarkAt(passage.line),
+    commentary: withCommentary
+      ? { summary: () => commentarySummary(passage.line), open: () => openStudy(passage.line) }
+      : undefined,
   });
   // Un second appui sur le même passage le relâche (voir selectPassage).
   pickedLine.value = selectedPassageKey.value === key ? passage.line : null;
@@ -1922,7 +1973,11 @@ watch(textId, (_, previousTextId) => {
 </script>
 
 <template>
-  <main ref="readingRoot" class="mx-auto px-6 py-12 max-w-3xl w-full">
+  <main
+    ref="readingRoot"
+    class="mx-auto px-6 py-12 max-w-3xl w-full"
+    :class="{ 'study-open': studyLine !== null }"
+  >
     <button @click="exitReading" class="back-link mb-8">
       <AppIcon name="chevron-left" :size="14" />
       {{ sessionSlug ? t("textReading.backToSession") : t("textReading.back") }}
@@ -2187,7 +2242,7 @@ watch(textId, (_, previousTextId) => {
         >
           <TalmudDafPages
             :blocks="currentSection.dafBlocks ?? []"
-            :meforshim="dafMeforshim"
+            :meforshim="commentaries.talmud.value"
             :state="dafMeforshimState"
             :scale="readingSize.scale.value"
           />
@@ -2201,8 +2256,9 @@ watch(textId, (_, previousTextId) => {
             :lines="currentSection.he"
             :marks="currentSection.scrollMarks ?? []"
             :aliyot="scrollAliyot"
-            :picked-line="pickedLine"
+            :picked-line="selectedLine"
             :highlighted-line="highlightedLine"
+            :leads="studyLeads"
             @pick="pickVerse"
           />
         </div>
@@ -2214,7 +2270,12 @@ watch(textId, (_, previousTextId) => {
           <TalmudDafText
             :blocks="currentSection.dafBlocks ?? []"
             anchored
+            selectable
+            :selected-line="selectedLine"
+            :highlighted-line="highlightedLine"
+            :leads="studyLeads"
             :phonetic-by-daf="showPhonetic ? phoneticByDaf : null"
+            @pick="pickVerse"
           />
         </div>
 
@@ -2270,7 +2331,7 @@ watch(textId, (_, previousTextId) => {
                   :class="{
                     'bg-primary/10': highlightedLine === block.offset + index,
                     'reading-selected':
-                      pickedLine === block.offset + index &&
+                      selectedLine === block.offset + index &&
                       highlightedLine !== block.offset + index,
                   }"
                 >
@@ -2290,7 +2351,10 @@ watch(textId, (_, previousTextId) => {
                     dir="rtl"
                     class="flex-1 min-w-0 font-hebrew text-text-primary reading-he"
                   >
-                    {{ line }}
+                    <MarkedText
+                      :text="line"
+                      :leads="studyLeads?.line === block.offset + index ? studyLeads.leads : null"
+                    />
                   </p>
                   <p
                     v-else
@@ -2392,6 +2456,7 @@ watch(textId, (_, previousTextId) => {
         :halakhot="hasHalakhot"
         :share-title="shareTitle"
         :share-url="canonicalUrl"
+        :concealed="studyLine !== null"
         @update:phonetic="setReadingMode($event ? 'phonetic' : 'hebrew')"
         @update:page-form-active="setReadingMode($event ? 'page' : 'hebrew')"
         @download="toggleDownload()"
@@ -2404,11 +2469,36 @@ watch(textId, (_, previousTextId) => {
         :steps="gesturesTip"
         :after="['reading-menu']"
       />
+      <!-- Le panneau d'étude : les commentaires du passage, qui suivent la
+           lecture tant qu'il est ouvert. -->
+      <CommentaryPanel
+        v-if="studyLine !== null"
+        :place="placeLabel(positionSection, studyLine)"
+        :groups="studyGroups"
+        :state="commentaries.state.value"
+        :style="{ '--reading-scale': readingSize.scale.value }"
+        @close="closeStudy"
+      />
     </template>
   </main>
 </template>
 
 <style scoped>
+/* Le panneau d'étude ouvert (CommentaryPanel.vue) : sur un téléphone, la page
+   réserve sous le texte la hauteur du volet, pour qu'on lise jusqu'au dernier
+   passage ; sur un écran large, la colonne de lecture se range à gauche de
+   la colonne des commentaires. Les mesures sont celles du panneau. */
+.study-open {
+  padding-bottom: calc(55vh + 2rem);
+}
+@media (min-width: 1024px) {
+  .study-open {
+    padding-bottom: 3rem;
+    margin-right: calc(24rem + 1rem);
+    margin-left: auto;
+  }
+}
+
 /* Reader text sizes follow the A− / A+ control (useReadingSize).
    L'interligne de l'hébreu est volontairement plus serré que leading-loose :
    assez d'air pour les voyelles et les teamim, sans étirer la lecture. */
