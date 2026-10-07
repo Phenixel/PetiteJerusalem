@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { createApp, defineComponent, h, nextTick, ref } from "vue";
 import { createI18n } from "vue-i18n";
 import fr from "../locales/fr";
+import { dafZoomFrame } from "../services/dafZoom";
 import type { DafBlock } from "../services/textService";
 
 /**
@@ -70,5 +71,32 @@ describe("la loupe de la page du daf", () => {
     expect(frames).toHaveLength(blocks.length);
     for (const frame of frames)
       expect(frame.querySelector(".daf-zoom-page .page-stub")).not.toBeNull();
+  });
+});
+
+describe("la place que prend la page agrandie", () => {
+  it("déborde de la colonne quand l'écran a de la place : un ordinateur", () => {
+    // Une colonne de 650 px au milieu d'un écran de 2000 px, agrandie 1,6 fois.
+    const frame = dafZoomFrame(1.6, 650, 659, 659);
+    expect(frame.page).toBeCloseTo(1040);
+    // La page tient entière : rien à faire glisser.
+    expect(650 + 2 * frame.grow).toBeCloseTo(frame.page);
+  });
+
+  it("ne déborde pas plus que la place libre, et glisse pour le reste", () => {
+    const frame = dafZoomFrame(1.6, 700, 40, 40);
+    expect(frame.grow).toBe(40);
+    expect(frame.page).toBeGreaterThan(700 + 2 * frame.grow);
+  });
+
+  it("s'arrête au côté le plus étroit : le volet des commentaires ouvert", () => {
+    expect(dafZoomFrame(1.35, 600, 300, 20).grow).toBe(20);
+    expect(dafZoomFrame(1.35, 600, 300, -10).grow).toBe(0);
+  });
+
+  it("ne déborde pas sur un téléphone, ni quand la page rétrécit", () => {
+    expect(dafZoomFrame(1.6, 358, 0, 0)).toEqual({ page: 358 * 1.6, grow: 0 });
+    expect(dafZoomFrame(0.85, 650, 600, 600).grow).toBe(0);
+    expect(dafZoomFrame(1, 650, 600, 600).grow).toBe(0);
   });
 });
