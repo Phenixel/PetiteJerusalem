@@ -1,0 +1,70 @@
+{
+  "note": "Les scans dont le pipeline tire les coupures de ligne. Aucun n'est dans le dépôt : ils se téléchargent dans le cache (voir README.md). Chaque entrée dit d'où vient le fichier et sous quelle licence.",
+  "vilna": {
+    "title": "Talmud Bavli, Shas de Vilna (Romm, 1882 à 1887)",
+    "item": "Talmud_Bavli_Vilna_images",
+    "page": "https://archive.org/details/Talmud_Bavli_Vilna_images",
+    "license": "Public Domain Mark 1.0 (https://creativecommons.org/publicdomain/mark/1.0/)",
+    "rights": "Bibliothèque nationale d'Israël : « Public Domain, All use permitted ». Numérisation : Duke University Libraries.",
+    "dpi": 350,
+    "volumes": {
+      "v01": {
+        "file": "Talmud_Bavli_Vilna_A_V01_Berakhot_Seder-Zera'im_1884_images.pdf",
+        "year": 1884,
+        "bytes": 377070051,
+        "tractates": {
+          "berakhot": {
+            "firstPage": 13
+          }
+        }
+      }
+    }
+  },
+  "ezrat-hasofer": {
+    "title": "'Ezrat ha-Sofer, tikoun soferim de Judah Pisa, sans voyelles (Amsterdam, 1769)",
+    "item": "ezrat-hasofer-amsterdam-1769-full-images",
+    "page": "https://archive.org/details/ezrat-hasofer-amsterdam-1769-full-images",
+    "license": "Public Domain Mark 1.0 (https://creativecommons.org/publicdomain/mark/1.0/)",
+    "rights": "Numérisé par la Bibliothèque nationale d'Israël, d'après son exemplaire.",
+    "file": "Ezrat_Hasofer_Amsterdam_1769_Full.pdf",
+    "dpi": 144,
+    "note": "Chaque colonne du rouleau (264 colonnes de 42 lignes) tient sur deux pages en vis-à-vis de 21 lignes. `pages` donne, pour chaque paracha, les pages du PDF avec leur colonne et la ligne de la colonne par laquelle la page commence. `missingStart` : le scan n'a pas le début de la paracha ; la première page peut commencer jusqu'à ce nombre de mots plus loin. C'est le cas de Haazinou : l'ouverture qui porte la fin de la colonne 260 et le début de la 261 manque (Devarim 32, 1 à 9).",
+    "parashiot": {
+      "279": {
+        "name": "Beshalach",
+        "pages": [
+          [190, 81, 0],
+          [191, 81, 21],
+          [192, 82, 0],
+          [193, 82, 21],
+          [194, 83, 0],
+          [195, 83, 21],
+          [196, 84, 0],
+          [197, 84, 21],
+          [198, 85, 0],
+          [199, 85, 21],
+          [200, 86, 0],
+          [201, 86, 21]
+        ]
+      },
+      "316": {
+        "name": "Haazinu",
+        "pages": [
+          [561, 261, 21],
+          [562, 262, 0],
+          [563, 262, 21],
+          [564, 263, 0]
+        ],
+        "missingStart": 160
+      }
+    }
+  },
+  "baer": {
+    "title": "Seligmann Baer, Tiqqun ha-Sofer veha-Qore, 3e édition (Rödelheim, 1886)",
+    "item": "baer-tiqqun-hasofer-vehaqore-rodelheim-1886-images",
+    "page": "https://archive.org/details/baer-tiqqun-hasofer-vehaqore-rodelheim-1886-images",
+    "license": "Public Domain Mark 1.0 (https://creativecommons.org/publicdomain/mark/1.0/)",
+    "rights": "Numérisé par la Bibliothèque nationale d'Israël, d'après son exemplaire.",
+    "file": "Baer_Tiqqun_Hasofer_Vehaqore_Rödelheim_1886.pdf"
+  }
+}
