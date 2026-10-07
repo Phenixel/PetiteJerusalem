@@ -1602,6 +1602,14 @@ bulle contre le passage, et le panneau d'étude une colonne à droite
 (`docked` : ni poignée, ni geste ; dans l'app, elle s'arrête au-dessus de la
 barre d'onglets).
 
+Ce qui flotte au bas de l'écran (la pastille du défilement automatique, les
+toasts, la barre d'une sélection) passe **au-dessus du volet ouvert** : le
+volet annonce sa hauteur (`bottomSheetSlot`, `useBottomChrome.ts`) et ces
+éléments s'y posent, comme ils se posent sur la barre d'onglets. Sans cela,
+la pastille qui arrête la descente serait cachée sous les commentaires
+qu'on lit en défilant. La colonne d'un écran large n'annonce rien : elle ne
+couvre pas le bas de l'écran.
+
 ### Une fenêtre modale tient dans ce qui est visible, clavier compris
 
 Le voile d'une fenêtre modale (`.modal-overlay`) ne couvre pas la page : il

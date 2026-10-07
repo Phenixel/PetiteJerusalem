@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { bottomSheetSlot } from "../composables/useBottomChrome";
 
 /**
  * Le bottom sheet de l'app native : un volet qui monte du bas de l'écran,
@@ -154,8 +155,29 @@ function onPointerUp(event: PointerEvent): void {
   }
 }
 
+/**
+ * La hauteur du volet, annoncée à ce qui flotte au bas de l'écran (la pastille
+ * du défilement automatique, les toasts, voir useBottomChromeHeight) pour
+ * qu'il passe au-dessus de lui. Un volet posé ailleurs (`docked`) n'en a pas.
+ */
+const announce = bottomSheetSlot();
+let sizes: ResizeObserver | null = null;
+function publish(): void {
+  announce(props.docked ? null : (sheet.value?.getBoundingClientRect().height ?? null));
+}
+onMounted(() => {
+  publish();
+  if (typeof ResizeObserver !== "undefined" && sheet.value) {
+    sizes = new ResizeObserver(publish);
+    sizes.observe(sheet.value);
+  }
+});
+watch(() => props.docked, publish);
+
 onBeforeUnmount(() => {
   start = null;
+  sizes?.disconnect();
+  announce(null);
 });
 </script>
 
