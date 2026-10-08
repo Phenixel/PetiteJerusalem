@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { createApp, defineComponent, h, nextTick, ref } from "vue";
 import { createI18n } from "vue-i18n";
 import fr from "../locales/fr";
-import { dafZoomFrame } from "../services/dafZoom";
+import { pageZoomFrame } from "../services/pageZoom";
 import type { DafBlock } from "../services/textService";
 
 /**
@@ -77,26 +77,45 @@ describe("la loupe de la page du daf", () => {
 describe("la place que prend la page agrandie", () => {
   it("déborde de la colonne quand l'écran a de la place : un ordinateur", () => {
     // Une colonne de 650 px au milieu d'un écran de 2000 px, agrandie 1,6 fois.
-    const frame = dafZoomFrame(1.6, 650, 659, 659);
+    const frame = pageZoomFrame(1.6, 650, 659, 659);
     expect(frame.page).toBeCloseTo(1040);
     // La page tient entière : rien à faire glisser.
     expect(650 + 2 * frame.grow).toBeCloseTo(frame.page);
   });
 
   it("ne déborde pas plus que la place libre, et glisse pour le reste", () => {
-    const frame = dafZoomFrame(1.6, 700, 40, 40);
+    const frame = pageZoomFrame(1.6, 700, 40, 40);
     expect(frame.grow).toBe(40);
     expect(frame.page).toBeGreaterThan(700 + 2 * frame.grow);
   });
 
   it("s'arrête au côté le plus étroit : le volet des commentaires ouvert", () => {
-    expect(dafZoomFrame(1.35, 600, 300, 20).grow).toBe(20);
-    expect(dafZoomFrame(1.35, 600, 300, -10).grow).toBe(0);
+    expect(pageZoomFrame(1.35, 600, 300, 20).grow).toBe(20);
+    expect(pageZoomFrame(1.35, 600, 300, -10).grow).toBe(0);
   });
 
   it("ne déborde pas sur un téléphone, ni quand la page rétrécit", () => {
-    expect(dafZoomFrame(1.6, 358, 0, 0)).toEqual({ page: 358 * 1.6, grow: 0 });
-    expect(dafZoomFrame(0.85, 650, 600, 600).grow).toBe(0);
-    expect(dafZoomFrame(1, 650, 600, 600).grow).toBe(0);
+    expect(pageZoomFrame(1.6, 358, 0, 0)).toEqual({ page: 358 * 1.6, grow: 0 });
+    expect(pageZoomFrame(0.85, 650, 600, 600).grow).toBe(0);
+    expect(pageZoomFrame(1, 650, 600, 600).grow).toBe(0);
+  });
+});
+
+describe("la colonne du Sefer Torah", () => {
+  // 21 cadratins à 24 px : la largeur ordinaire de la colonne.
+  const SCROLL = 504;
+
+  it("garde sa largeur ordinaire dans une colonne de lecture plus large", () => {
+    expect(pageZoomFrame(1, 720, 600, 600, SCROLL)).toEqual({ page: SCROLL, grow: 0 });
+  });
+
+  it("tient entière sur un téléphone : elle rétrécit au lieu de replier ses lignes", () => {
+    expect(pageZoomFrame(1, 342, 0, 0, SCROLL)).toEqual({ page: 342, grow: 0 });
+  });
+
+  it("agrandie, déborde de la colonne quand elle la dépasse", () => {
+    const frame = pageZoomFrame(1.6, 720, 600, 600, SCROLL);
+    expect(frame.page).toBeCloseTo(SCROLL * 1.6);
+    expect(720 + 2 * frame.grow).toBeCloseTo(frame.page);
   });
 });

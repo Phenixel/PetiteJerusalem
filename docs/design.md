@@ -724,7 +724,7 @@ entière (`TalmudDafPages.vue`) : elle prend de 85 à 160 % de la largeur
 disponible, ses caractères suivent sa largeur, ses proportions restent celles
 du livre. La page agrandie déborde d'abord de la colonne de lecture, autant à
 gauche qu'à droite, dans la place que l'écran laisse autour d'elle
-(`dafZoom.ts`) : sur un ordinateur elle se lit entière, sans rien faire
+(`pageZoom.ts`) : sur un ordinateur elle se lit entière, sans rien faire
 glisser, ce qu'une souris sans pavé tactile ne sait pas faire. Elle garde
 16 px du bord de l'écran, et du volet des commentaires quand il est ouvert. Ce
 qui dépasse encore, sur un téléphone dès le premier cran, se rejoint en faisant
@@ -754,6 +754,15 @@ passage du lecteur (reprise, marque-page, bulle de sélection). Ce que les
 données ne disent pas n'est pas inventé : les coupures de colonne et de ligne
 d'un vrai Sefer Torah n'y sont pas, la colonne coule donc librement, et les
 lignes des chirot suivent les repos des teamim plutôt que le tikoun exact.
+
+**La colonne garde ses lignes sur tous les écrans.** Elle fait 21 cadratins
+partout : sur un téléphone ce sont ses caractères qui rétrécissent (16 px au
+lieu de 24 sur un écran de 390 px), elle ne se replie pas, et les chirot
+gardent leur dessin. La taille de lecture l'agrandit tout entière, comme la
+page du daf (`pageZoom.ts`, `useReadingColumn.ts`) : elle déborde de la colonne
+de lecture tant qu'il y a de la place, puis se fait glisser de côté. Agrandie
+au-delà de l'écran, elle se présente par son bord droit, où commencent les
+lignes.
 
 ### La pastille du défilement est son propre arrêt
 

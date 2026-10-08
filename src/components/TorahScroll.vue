@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, nextTick, onMounted, ref, watch } from "vue";
+import { useReadingColumn } from "../composables/useReadingColumn";
+import { useReadingSize } from "../composables/useReadingSize";
+import { pageZoomFrame } from "../services/pageZoom";
 import {
   azYashirLines,
   findTorahSongs,
@@ -20,6 +23,12 @@ import MarkedText from "./MarkedText.vue";
  * lecture, le marque-page et la bulle de sélection marchent comme sur le
  * texte vocalisé. Le début de chaque montée porte un petit repère, comme la
  * marge d'un tikoun, qui est aussi l'ancre du menu de lecture.
+ *
+ * La colonne garde la même largeur en lettres sur tous les écrans, donc les
+ * mêmes lignes : sur un téléphone ses caractères rétrécissent, elle ne se
+ * replie pas. La taille de lecture (A− / A+, le pincement) l'agrandit tout
+ * entière, comme la page du daf : elle déborde de la colonne de lecture tant
+ * qu'il y a de la place, puis se fait glisser de côté (pageZoom.ts).
  */
 const props = defineProps<{
   /** Les versets de la paracha, à plat (la section du lecteur). */
@@ -101,89 +110,169 @@ function stateClass(line: number) {
 function pick(event: MouseEvent, line: number): void {
   emit("pick", event, line, props.lines[line] ?? "");
 }
+
+/** La colonne du parchemin : une trentaine de lettres, soit 21 cadratins. */
+const SCROLL_EMS = 21;
+/** La taille ordinaire de son écriture, en rem (voir le style). */
+const SCROLL_REM = 1.5;
+
+const readingSize = useReadingSize();
+const { ruler, column, free } = useReadingColumn();
+const frame = ref<HTMLElement | null>(null);
+const rem = ref(16);
+
+const zoom = computed(() =>
+  pageZoomFrame(
+    readingSize.scale.value,
+    column.value,
+    free.value.left,
+    free.value.right,
+    SCROLL_EMS * SCROLL_REM * rem.value,
+  ),
+);
+/** Le cadre déborde de la colonne de lecture d'autant de chaque côté. */
+const frameStyle = computed(() => ({ marginInline: `${-zoom.value.grow}px` }));
+/**
+ * La colonne à sa largeur en lettres, l'écriture à la taille qui la fait
+ * tenir dans la page agrandie. Avant la première mesure, le style seul.
+ */
+const scrollStyle = computed(() =>
+  column.value
+    ? {
+        width: `${SCROLL_EMS}em`,
+        maxWidth: "none",
+        fontSize: `${zoom.value.page / SCROLL_EMS}px`,
+      }
+    : undefined,
+);
+
+/** Les lignes commencent à droite : c'est là que la colonne se présente. */
+function showLineStarts(): void {
+  const el = frame.value;
+  if (el) el.scrollLeft = el.scrollWidth;
+}
+
+onMounted(() => {
+  rem.value = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+  void nextTick(showLineStarts);
+});
+
+// Quand la loupe change, le milieu de ce qu'on regardait reste au milieu.
+watch(
+  () => zoom.value.page,
+  async () => {
+    const el = frame.value;
+    if (!el) return;
+    const hidden = el.scrollWidth - el.clientWidth;
+    const centre = hidden > 0 ? (el.scrollLeft + el.clientWidth / 2) / el.scrollWidth : 1;
+    await nextTick();
+    el.scrollLeft = hidden > 0 ? centre * el.scrollWidth - el.clientWidth / 2 : el.scrollWidth;
+  },
+);
 </script>
 
 <template>
-  <div class="torah-scroll" dir="rtl">
-    <template v-for="(piece, p) in pieces" :key="p">
-      <p v-if="piece.kind === 'prose'" class="scroll-para">
-        <template v-for="verse in piece.verses" :key="verse.line">
-          <span
-            v-if="aliyaAt.get(verse.line)"
-            class="scroll-aliya"
-            :data-block-anchor="aliyaAt.get(verse.line)!.anchor"
-            dir="auto"
-            >{{ aliyaAt.get(verse.line)!.label }}</span
-          >
-          <span
-            :data-line="verse.line"
-            class="reading-pick scroll-verse"
-            :class="stateClass(verse.line)"
-            @click="pick($event, verse.line)"
-            @contextmenu="pick($event, verse.line)"
-            ><MarkedText
-              :text="verse.text"
-              :leads="leads?.line === verse.line ? leads.leads : null"
-          /></span>
-          <span v-if="verse.setouma" class="scroll-setouma" aria-hidden="true"></span>
-          {{ " " }}
-        </template>
-      </p>
+  <div class="scroll-zoom-root">
+    <div ref="ruler" class="scroll-ruler" aria-hidden="true"></div>
+    <!-- Le cadre de la loupe, écrit de gauche à droite pour que `scrollLeft`
+         se lise de la même façon partout ; la colonne, dedans, garde son sens. -->
+    <div ref="frame" class="scroll-zoom" dir="ltr" :style="frameStyle">
+      <div class="torah-scroll" dir="rtl" :style="scrollStyle">
+        <template v-for="(piece, p) in pieces" :key="p">
+          <p v-if="piece.kind === 'prose'" class="scroll-para">
+            <template v-for="verse in piece.verses" :key="verse.line">
+              <span
+                v-if="aliyaAt.get(verse.line)"
+                class="scroll-aliya"
+                :data-block-anchor="aliyaAt.get(verse.line)!.anchor"
+                dir="auto"
+                >{{ aliyaAt.get(verse.line)!.label }}</span
+              >
+              <span
+                :data-line="verse.line"
+                class="reading-pick scroll-verse"
+                :class="stateClass(verse.line)"
+                @click="pick($event, verse.line)"
+                @contextmenu="pick($event, verse.line)"
+                ><MarkedText
+                  :text="verse.text"
+                  :leads="leads?.line === verse.line ? leads.leads : null"
+              /></span>
+              <span v-if="verse.setouma" class="scroll-setouma" aria-hidden="true"></span>
+              {{ " " }}
+            </template>
+          </p>
 
-      <!-- Haazinou : un verset par ligne, ses deux moitiés de part et d'autre
+          <!-- Haazinou : un verset par ligne, ses deux moitiés de part et d'autre
            d'un blanc. -->
-      <div v-else-if="piece.kind === 'haazinou'" class="scroll-song">
-        <template v-for="row in piece.rows" :key="row.line">
-          <span
-            v-if="aliyaAt.get(row.line)"
-            class="scroll-aliya scroll-aliya-row"
-            :data-block-anchor="aliyaAt.get(row.line)!.anchor"
-            dir="auto"
-            >{{ aliyaAt.get(row.line)!.label }}</span
-          >
+          <div v-else-if="piece.kind === 'haazinou'" class="scroll-song">
+            <template v-for="row in piece.rows" :key="row.line">
+              <span
+                v-if="aliyaAt.get(row.line)"
+                class="scroll-aliya scroll-aliya-row"
+                :data-block-anchor="aliyaAt.get(row.line)!.anchor"
+                dir="auto"
+                >{{ aliyaAt.get(row.line)!.label }}</span
+              >
+              <div
+                :data-line="row.line"
+                class="reading-pick scroll-row scroll-row-2"
+                :class="stateClass(row.line)"
+                @click="pick($event, row.line)"
+                @contextmenu="pick($event, row.line)"
+              >
+                <span>{{ row.halves[0] }}</span>
+                <span>{{ row.halves[1] }}</span>
+              </div>
+            </template>
+          </div>
+
+          <!-- Az yachir : « une demi-brique sur une brique ». -->
           <div
-            :data-line="row.line"
-            class="reading-pick scroll-row scroll-row-2"
-            :class="stateClass(row.line)"
-            @click="pick($event, row.line)"
-            @contextmenu="pick($event, row.line)"
+            v-else
+            :data-line="piece.line"
+            class="reading-pick scroll-song scroll-bricks"
+            :class="stateClass(piece.line)"
+            @click="pick($event, piece.line)"
+            @contextmenu="pick($event, piece.line)"
           >
-            <span>{{ row.halves[0] }}</span>
-            <span>{{ row.halves[1] }}</span>
+            <span
+              v-if="aliyaWithin(piece.line, piece.rows.length)"
+              class="scroll-aliya scroll-aliya-row"
+              :data-block-anchor="aliyaWithin(piece.line, piece.rows.length)!.anchor"
+              dir="auto"
+              >{{ aliyaWithin(piece.line, piece.rows.length)!.label }}</span
+            >
+            <div
+              v-for="(row, r) in piece.rows"
+              :key="r"
+              class="scroll-row"
+              :class="row.length === 1 ? 'scroll-row-full' : ''"
+            >
+              <span v-for="(member, m) in row" :key="m">{{ member }}</span>
+            </div>
           </div>
         </template>
       </div>
-
-      <!-- Az yachir : « une demi-brique sur une brique ». -->
-      <div
-        v-else
-        :data-line="piece.line"
-        class="reading-pick scroll-song scroll-bricks"
-        :class="stateClass(piece.line)"
-        @click="pick($event, piece.line)"
-        @contextmenu="pick($event, piece.line)"
-      >
-        <span
-          v-if="aliyaWithin(piece.line, piece.rows.length)"
-          class="scroll-aliya scroll-aliya-row"
-          :data-block-anchor="aliyaWithin(piece.line, piece.rows.length)!.anchor"
-          dir="auto"
-          >{{ aliyaWithin(piece.line, piece.rows.length)!.label }}</span
-        >
-        <div
-          v-for="(row, r) in piece.rows"
-          :key="r"
-          class="scroll-row"
-          :class="row.length === 1 ? 'scroll-row-full' : ''"
-        >
-          <span v-for="(member, m) in row" :key="m">{{ member }}</span>
-        </div>
-      </div>
-    </template>
+    </div>
   </div>
 </template>
 
 <style scoped>
+/* Le repère de la colonne de lecture : sa largeur, sans hauteur. */
+.scroll-ruler {
+  height: 0;
+}
+
+/* Le cadre de la loupe : une colonne plus large que la place qu'elle a se
+   fait glisser de côté. */
+.scroll-zoom {
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
 /* La colonne du parchemin : l'écriture du sofer (Stam Sefarad CLM, voir
    main.css), à la taille de lecture, justifiée, une trentaine de lettres par
    ligne comme une colonne de Sefer Torah. */
