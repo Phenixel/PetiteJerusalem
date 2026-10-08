@@ -1451,6 +1451,7 @@ const fr = {
     pageForm: {
       daf: "Page",
       scroll: "Sefer Torah",
+      pointed: "Voyelles",
       dafHint: "La page de Vilna : la guemara au centre, Rachi et Tossafot autour",
       scrollHint: "Comme dans le Sefer Torah : sans voyelles, avec les petou'hot et les setoumot",
       meforshimUnavailable:
@@ -1538,6 +1539,12 @@ const fr = {
       hideHalakhot: "Masquer les halakhot",
       hideHalakhotHint:
         "Les consignes de loi qui accompagnent un passage (ce qu'on reprend en cas d'oubli) sont retirées du texte.",
+      scrollPointed: "Voyelles et teamim",
+      scrollPointedHint:
+        "Les voyelles et les teamim s'affichent sur la colonne du Sefer Torah, sans en changer les lignes.",
+      scrollPeek: "Appui long pour basculer",
+      scrollPeekHint:
+        "Tant qu'on reste appuyé sur le texte, il passe à l'autre forme, avec ou sans les voyelles et les teamim.",
       share: "Partager ce texte",
     },
     // Divisions d'un texte (chapitre, daf) : textService les décrit, la vue

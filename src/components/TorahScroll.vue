@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref, watch } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useReadingColumn } from "../composables/useReadingColumn";
 import { useReadingSize } from "../composables/useReadingSize";
+import { restoreScrollPointing, scrollPeek, scrollPointed } from "../composables/useScrollPointing";
 import { pageZoomFrame } from "../services/pageZoom";
+import { pointedVerseWords } from "../services/scrollPointing";
 import {
   azYashirLines,
   findTorahSongs,
@@ -108,7 +110,115 @@ function stateClass(line: number) {
 }
 
 function pick(event: MouseEvent, line: number): void {
+  // Un appui long qui vient de montrer l'autre forme ne choisit pas un passage.
+  if (peeking.value || performance.now() < swallowUntil) return;
   emit("pick", event, line, props.lines[line] ?? "");
+}
+
+// ---- Les voyelles et les teamim, sur les mêmes lignes ----------------------
+
+restoreScrollPointing();
+const scrollEl = ref<HTMLElement | null>(null);
+/** Vrai tant qu'un appui long montre l'autre forme (scrollPeek). */
+const peeking = ref(false);
+/** Ce qu'on montre : le réglage, ou son contraire le temps d'un appui. */
+const showPointed = computed(() => scrollPointed.value !== peeking.value);
+/** Faut-il savoir où sont les mots ? Dès qu'une des deux formes peut servir. */
+const wantsBoxes = computed(() => scrollPointed.value || scrollPeek.value);
+const pointedWords = computed(() =>
+  wantsBoxes.value ? props.lines.flatMap(pointedVerseWords) : [],
+);
+
+/** La place d'un mot du parchemin dans la colonne, en cadratins. */
+interface WordBox {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
+const boxes = ref<WordBox[]>([]);
+
+/**
+ * Relève la place de chaque mot écrit. La colonne a partout la même largeur
+ * en lettres : ces places, comptées en cadratins, valent à toutes les
+ * tailles. Le mot lu se pose ensuite sur le mot écrit, au même endroit : les
+ * lignes ne peuvent pas bouger, chirot comprises.
+ */
+function measureWords(): void {
+  const el = scrollEl.value;
+  if (!el || !wantsBoxes.value) return;
+  const font = parseFloat(getComputedStyle(el).fontSize);
+  const origin = el.getBoundingClientRect();
+  if (!font || !origin.width) return;
+  const found: WordBox[] = [];
+  const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, {
+    acceptNode: (node) =>
+      node.parentElement?.closest(".scroll-aliya, .scroll-pointed")
+        ? NodeFilter.FILTER_REJECT
+        : NodeFilter.FILTER_ACCEPT,
+  });
+  const range = document.createRange();
+  for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+    for (const word of (node.nodeValue ?? "").matchAll(/\S+/g)) {
+      range.setStart(node, word.index);
+      range.setEnd(node, word.index + word[0].length);
+      const rect = range.getBoundingClientRect();
+      found.push({
+        left: (rect.left - origin.left) / font,
+        top: (rect.top - origin.top) / font,
+        width: rect.width / font,
+        height: rect.height / font,
+      });
+    }
+  }
+  // Un mot de trop ou de moins, et l'on ne saurait plus lequel poser où :
+  // la colonne reste alors telle que le sofer l'écrit.
+  boxes.value = found.length === pointedWords.value.length ? found : [];
+}
+
+const pointedShown = computed(() => showPointed.value && boxes.value.length > 0);
+
+// ---- L'appui long ----------------------------------------------------------
+
+/** Le temps d'appui qui fait un appui long, et le jeu laissé au doigt. */
+const HOLD_MS = 350;
+const HOLD_SLACK = 10;
+let holdTimer = 0;
+let holdStart = { x: 0, y: 0 };
+let swallowUntil = 0;
+
+function onPointerDown(event: PointerEvent): void {
+  if (!scrollPeek.value || (event.pointerType === "mouse" && event.button !== 0)) return;
+  holdStart = { x: event.clientX, y: event.clientY };
+  window.clearTimeout(holdTimer);
+  holdTimer = window.setTimeout(() => {
+    peeking.value = true;
+  }, HOLD_MS);
+}
+
+/** Un doigt qui glisse fait défiler la page : ce n'est pas un appui. */
+function onPointerMove(event: PointerEvent): void {
+  if (peeking.value || !holdTimer) return;
+  if (Math.hypot(event.clientX - holdStart.x, event.clientY - holdStart.y) > HOLD_SLACK) {
+    window.clearTimeout(holdTimer);
+    holdTimer = 0;
+  }
+}
+
+function onPointerEnd(): void {
+  window.clearTimeout(holdTimer);
+  holdTimer = 0;
+  if (!peeking.value) return;
+  peeking.value = false;
+  // Le clic qui suit le relâchement n'est pas un choix de passage.
+  swallowUntil = performance.now() + 500;
+}
+
+/** Avec l'appui long, le menu du système ne s'ouvre pas sur le texte. */
+function onContextMenu(event: Event): void {
+  if (!scrollPeek.value) return;
+  event.preventDefault();
+  event.stopPropagation();
 }
 
 /** La colonne du parchemin : une trentaine de lettres, soit 21 cadratins. */
@@ -155,6 +265,16 @@ function showLineStarts(): void {
 onMounted(() => {
   rem.value = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
   void nextTick(showLineStarts);
+  // L'écriture du sofer arrive après le premier rendu : les mots bougent.
+  void document.fonts?.ready.then(() => nextTick(measureWords));
+});
+
+onBeforeUnmount(() => window.clearTimeout(holdTimer));
+
+// Les mots se relèvent quand une des deux formes peut servir, quand le texte
+// change, et quand la colonne prend sa largeur en lettres (première mesure).
+watch([wantsBoxes, () => props.lines, () => column.value > 0], () => void nextTick(measureWords), {
+  flush: "post",
 });
 
 // Quand la loupe change, le milieu de ce qu'on regardait reste au milieu.
@@ -177,7 +297,19 @@ watch(
     <!-- Le cadre de la loupe, écrit de gauche à droite pour que `scrollLeft`
          se lise de la même façon partout ; la colonne, dedans, garde son sens. -->
     <div ref="frame" class="scroll-zoom" dir="ltr" :style="frameStyle">
-      <div class="torah-scroll" dir="rtl" :style="scrollStyle">
+      <div
+        ref="scrollEl"
+        class="torah-scroll"
+        :class="{ 'scroll-pointed-on': pointedShown, 'scroll-peek-on': scrollPeek }"
+        dir="rtl"
+        :style="scrollStyle"
+        @pointerdown="onPointerDown"
+        @pointermove="onPointerMove"
+        @pointerup="onPointerEnd"
+        @pointercancel="onPointerEnd"
+        @pointerleave="onPointerEnd"
+        @contextmenu.capture="onContextMenu"
+      >
         <template v-for="(piece, p) in pieces" :key="p">
           <p v-if="piece.kind === 'prose'" class="scroll-para">
             <template v-for="verse in piece.verses" :key="verse.line">
@@ -253,12 +385,62 @@ watch(
             </div>
           </div>
         </template>
+        <!-- Les mots lus, posés chacun sur le mot écrit : mêmes lignes. -->
+        <div v-if="pointedShown" class="scroll-pointed" dir="ltr" aria-hidden="true">
+          <span
+            v-for="(box, i) in boxes"
+            :key="i"
+            class="scroll-pointed-word"
+            :style="{
+              left: `${box.left}em`,
+              top: `${box.top}em`,
+              width: `${box.width}em`,
+              height: `${box.height}em`,
+            }"
+            ><span dir="rtl">{{ pointedWords[i] }}</span></span
+          >
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
+/* Les voyelles et les teamim : le mot lu se pose sur le mot écrit, qui garde
+   sa place et s'efface. Il est dans la police de lecture, que le lecteur
+   choisit : l'écriture du sofer n'a pas ces signes. */
+.scroll-pointed {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  font-family: var(--font-hebrew);
+}
+
+.scroll-pointed-word {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.scroll-pointed-word > span {
+  font-size: 0.78em;
+  line-height: 1;
+}
+
+.scroll-pointed-on .scroll-verse,
+.scroll-pointed-on .scroll-row {
+  color: transparent;
+}
+
+/* Avec l'appui long, le texte ne se sélectionne pas sous le doigt. */
+.scroll-peek-on {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+}
+
 /* Le repère de la colonne de lecture : sa largeur, sans hauteur. */
 .scroll-ruler {
   height: 0;
@@ -277,6 +459,7 @@ watch(
    main.css), à la taille de lecture, justifiée, une trentaine de lettres par
    ligne comme une colonne de Sefer Torah. */
 .torah-scroll {
+  position: relative;
   container-type: inline-size;
   max-width: 21em;
   margin-inline: auto;

@@ -4,6 +4,12 @@ import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 import AppIcon from "./icons/AppIcon.vue";
 import { PAGE_FORM_LABELS } from "../composables/usePageForm";
+import {
+  scrollPeek,
+  scrollPointed,
+  setScrollPeek,
+  setScrollPointed,
+} from "../composables/useScrollPointing";
 import ReadingSizeControl from "./ReadingSizeControl.vue";
 import ShareModal from "./ShareModal.vue";
 import ToggleSwitch from "./ToggleSwitch.vue";
@@ -565,6 +571,36 @@ onUnmounted(() => {
                       :model-value="halakhotHidden"
                       @update:model-value="setHalakhotHidden"
                     />
+                  </label>
+                </li>
+                <!-- Dans la forme du Sefer Torah : les voyelles et les teamim sur
+                     la colonne du parchemin, et l'appui long qui passe de
+                     l'une à l'autre (useScrollPointing). -->
+                <li v-if="pageForm === 'scroll' && pageFormActive">
+                  <label class="setting-row">
+                    <span class="min-w-0">
+                      <span class="setting-name">{{
+                        t("textReading.settings.scrollPointed")
+                      }}</span>
+                      <span class="setting-hint">
+                        {{ t("textReading.settings.scrollPointedHint") }}
+                      </span>
+                    </span>
+                    <ToggleSwitch
+                      :model-value="scrollPointed"
+                      @update:model-value="setScrollPointed"
+                    />
+                  </label>
+                </li>
+                <li v-if="pageForm === 'scroll' && pageFormActive">
+                  <label class="setting-row">
+                    <span class="min-w-0">
+                      <span class="setting-name">{{ t("textReading.settings.scrollPeek") }}</span>
+                      <span class="setting-hint">
+                        {{ t("textReading.settings.scrollPeekHint") }}
+                      </span>
+                    </span>
+                    <ToggleSwitch :model-value="scrollPeek" @update:model-value="setScrollPeek" />
                   </label>
                 </li>
               </ul>

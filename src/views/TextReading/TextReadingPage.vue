@@ -83,6 +83,7 @@ import TalmudDafText from "../../components/TalmudDafText.vue";
 import TalmudDafPages from "../../components/TalmudDafPages.vue";
 import TorahScroll from "../../components/TorahScroll.vue";
 import { PAGE_FORM_LABELS, usePageForm } from "../../composables/usePageForm";
+import { scrollPointed, setScrollPointed } from "../../composables/useScrollPointing";
 import { usePassageCommentaries } from "../../composables/usePassageCommentaries";
 import { sideBySide } from "../../composables/useSideBySide";
 import type { CommentarySummary } from "../../composables/useReadingSelection";
@@ -2168,6 +2169,19 @@ watch(textId, (_, previousTextId) => {
 
           <!-- Hébreu, forme de la page (guemara, Torah), phonétique : trois
                façons de montrer le même texte, une seule à la fois. -->
+          <!-- Sefer Torah : les voyelles et les teamim, sur les mêmes lignes
+               (TorahScroll.vue). Le même réglage que dans le menu de lecture. -->
+          <button
+            v-if="showPageForm && pageFormKind === 'scroll'"
+            type="button"
+            class="inline-flex items-center px-3 py-1.5 rounded-btn bg-black/5 dark:bg-white/10 text-sm font-medium transition-colors"
+            :class="scrollPointed ? 'text-primary' : 'text-text-secondary hover:text-text-primary'"
+            :aria-pressed="scrollPointed"
+            :title="t('textReading.settings.scrollPointedHint')"
+            @click="setScrollPointed(!scrollPointed)"
+          >
+            {{ t("textReading.pageForm.pointed") }}
+          </button>
           <div
             v-if="canTransliterate || pageFormKind"
             class="inline-flex p-0.5 rounded-btn bg-black/5 dark:bg-white/10"

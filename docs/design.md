@@ -764,6 +764,18 @@ de lecture tant qu'il y a de la place, puis se fait glisser de côté. Agrandie
 au-delà de l'écran, elle se présente par son bord droit, où commencent les
 lignes.
 
+**Les voyelles et les teamim s'y posent sans rien déplacer.** Un bouton
+« Voyelles », en haut de la page à côté des formes, et un interrupteur du menu
+de lecture les affichent sur la colonne (`useScrollPointing.ts`). Le mot lu se
+pose sur le mot écrit, à la même place (`scrollPointing.ts`) : les lignes, les
+blancs et les chirot ne bougent pas. Il est dans la police de lecture, que le
+lecteur choisit, puisque l'écriture du sofer ne porte pas ces signes ; le qri
+se lit à la place du ktiv. Un second interrupteur du menu, « Appui long pour
+basculer », montre l'autre forme tant qu'on reste appuyé sur le texte, et
+revient quand on relâche. Il est éteint au départ : l'appui long sert
+d'ordinaire à choisir un passage, et ce réglage coupe sur la colonne la
+sélection du texte et le menu du système.
+
 ### La pastille du défilement est son propre arrêt
 
 Pendant une descente automatique, une pastille au bas de l'écran
