@@ -776,6 +776,15 @@ revient quand on relâche. Il est éteint au départ : l'appui long sert
 d'ordinaire à choisir un passage, et ce réglage coupe sur la colonne la
 sélection du texte et le menu du système.
 
+**Un blanc sépare les pages.** Toutes les quarante-deux lignes, le nombre de
+lignes d'une colonne de Sefer Torah, la colonne laisse un blanc de trois
+lignes (`scrollPages.ts`). Rien n'y est écrit, ni numéro ni filet : c'est le
+blanc qui dit la page. Il ne coupe aucune ligne et n'en déplace aucune ; une
+ligne de chira ne se coupe pas, la page qui commencerait en son milieu commence
+à la suivante. Ce sont les pages de notre colonne, les mêmes sur tous les
+écrans, pas encore les colonnes d'un rouleau : elles le deviendront avec les
+coupures de ligne du livre.
+
 ### La pastille du défilement est son propre arrêt
 
 Pendant une descente automatique, une pastille au bas de l'écran

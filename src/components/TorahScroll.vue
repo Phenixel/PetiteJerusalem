@@ -4,6 +4,7 @@ import { useReadingColumn } from "../composables/useReadingColumn";
 import { useReadingSize } from "../composables/useReadingSize";
 import { restoreScrollPointing, scrollPeek, scrollPointed } from "../composables/useScrollPointing";
 import { pageZoomFrame } from "../services/pageZoom";
+import { scrollPageStarts } from "../services/scrollPages";
 import { pointedVerseWords } from "../services/scrollPointing";
 import {
   azYashirLines,
@@ -31,6 +32,9 @@ import MarkedText from "./MarkedText.vue";
  * replie pas. La taille de lecture (A− / A+, le pincement) l'agrandit tout
  * entière, comme la page du daf : elle déborde de la colonne de lecture tant
  * qu'il y a de la place, puis se fait glisser de côté (pageZoom.ts).
+ *
+ * Un blanc de trois lignes sépare les pages, toutes les quarante-deux lignes
+ * (scrollPages.ts) ; rien n'y est écrit.
  */
 const props = defineProps<{
   /** Les versets de la paracha, à plat (la section du lecteur). */
@@ -102,6 +106,77 @@ function aliyaWithin(start: number, count: number) {
   return props.aliyot.find((a) => a.offset >= start && a.offset < start + count);
 }
 
+// ---- Les pages du parchemin -------------------------------------------------
+
+const countWords = (text: string): number => (text ? text.split(" ").length : 0);
+
+/**
+ * Le rang, parmi tous les mots de la colonne, du premier mot de chaque verset
+ * et de chaque ligne de chira, dans l'ordre où ils sont écrits.
+ */
+const wordRanks = computed(() => {
+  const verses = new Map<number, number>();
+  const bricks = new Map<string, number>();
+  let rank = 0;
+  pieces.value.forEach((piece, p) => {
+    if (piece.kind === "prose") {
+      for (const verse of piece.verses) {
+        verses.set(verse.line, rank);
+        rank += countWords(verse.text);
+      }
+    } else if (piece.kind === "haazinou") {
+      for (const row of piece.rows) {
+        verses.set(row.line, rank);
+        rank += countWords(row.halves[0]) + countWords(row.halves[1]);
+      }
+    } else {
+      piece.rows.forEach((row, r) => {
+        bricks.set(`${p}:${r}`, rank);
+        rank += row.reduce((n, member) => n + countWords(member), 0);
+      });
+    }
+  });
+  return { verses, bricks, total: rank };
+});
+
+/** Le rang du premier mot de chaque page après la première (measureWords). */
+const pageStarts = ref<number[]>([]);
+
+/**
+ * Un verset de prose coupé là où une page commence : un blanc avant lui si
+ * elle commence par lui, et ses morceaux, un blanc entre deux.
+ */
+const proseParts = computed(() => {
+  const parts = new Map<number, { gapBefore: boolean; texts: string[] }>();
+  for (const piece of pieces.value) {
+    if (piece.kind !== "prose") continue;
+    for (const verse of piece.verses) {
+      const start = wordRanks.value.verses.get(verse.line) ?? 0;
+      const words = verse.text.split(" ");
+      const texts: string[] = [];
+      let at = 0;
+      for (const page of pageStarts.value) {
+        if (page <= start || page >= start + words.length) continue;
+        texts.push(words.slice(at, page - start).join(" "));
+        at = page - start;
+      }
+      texts.push(words.slice(at).join(" "));
+      parts.set(verse.line, { gapBefore: pageStarts.value.includes(start), texts });
+    }
+  }
+  return parts;
+});
+
+/**
+ * Une page commence-t-elle à cette ligne de chira ? Une ligne ne se coupe
+ * pas : la page qui commencerait au milieu de la précédente commence ici.
+ */
+function pageAt(rank: number | undefined, previous: number | undefined): boolean {
+  if (rank === undefined) return false;
+  const after = previous ?? rank - 1;
+  return pageStarts.value.some((page) => page > after && page <= rank);
+}
+
 function stateClass(line: number) {
   return {
     "bg-primary/10": props.highlightedLine === line,
@@ -146,7 +221,7 @@ const boxes = ref<WordBox[]>([]);
  */
 function measureWords(): void {
   const el = scrollEl.value;
-  if (!el || !wantsBoxes.value) return;
+  if (!el) return;
   const font = parseFloat(getComputedStyle(el).fontSize);
   const origin = el.getBoundingClientRect();
   if (!font || !origin.width) return;
@@ -171,10 +246,25 @@ function measureWords(): void {
       });
     }
   }
+  // Les pages : un blanc toutes les quarante-deux lignes (scrollPages.ts).
+  const pages =
+    found.length === wordRanks.value.total ? scrollPageStarts(found.map((box) => box.top)) : [];
+  // Un blanc posé déplace les mots qui le suivent : on les relève à nouveau.
+  // Il tombe au début d'une ligne, les lignes ne changent donc pas, et la
+  // seconde passe retrouve les mêmes pages.
+  if (pages.join() !== pageStarts.value.join() && passes < 3) {
+    passes++;
+    pageStarts.value = pages;
+    void nextTick(measureWords);
+    return;
+  }
+  passes = 0;
   // Un mot de trop ou de moins, et l'on ne saurait plus lequel poser où :
   // la colonne reste alors telle que le sofer l'écrit.
-  boxes.value = found.length === pointedWords.value.length ? found : [];
+  boxes.value = wantsBoxes.value && found.length === pointedWords.value.length ? found : [];
 }
+
+let passes = 0;
 
 const pointedShown = computed(() => showPointed.value && boxes.value.length > 0);
 
@@ -314,6 +404,11 @@ watch(
           <p v-if="piece.kind === 'prose'" class="scroll-para">
             <template v-for="verse in piece.verses" :key="verse.line">
               <span
+                v-if="proseParts.get(verse.line)?.gapBefore"
+                class="scroll-page-gap"
+                aria-hidden="true"
+              ></span>
+              <span
                 v-if="aliyaAt.get(verse.line)"
                 class="scroll-aliya"
                 :data-block-anchor="aliyaAt.get(verse.line)!.anchor"
@@ -326,10 +421,18 @@ watch(
                 :class="stateClass(verse.line)"
                 @click="pick($event, verse.line)"
                 @contextmenu="pick($event, verse.line)"
-                ><MarkedText
-                  :text="verse.text"
-                  :leads="leads?.line === verse.line ? leads.leads : null"
-              /></span>
+                ><template
+                  v-for="(text, k) in proseParts.get(verse.line)?.texts ?? [verse.text]"
+                  :key="k"
+                  ><span v-if="k > 0" class="scroll-page-gap" aria-hidden="true"></span
+                  ><MarkedText
+                    :text="text"
+                    :leads="leads?.line === verse.line ? leads.leads : null"
+                  />{{
+                    k < (proseParts.get(verse.line)?.texts.length ?? 1) - 1 ? " " : ""
+                  }}</template
+                ></span
+              >
               <span v-if="verse.setouma" class="scroll-setouma" aria-hidden="true"></span>
               {{ " " }}
             </template>
@@ -338,7 +441,17 @@ watch(
           <!-- Haazinou : un verset par ligne, ses deux moitiés de part et d'autre
            d'un blanc. -->
           <div v-else-if="piece.kind === 'haazinou'" class="scroll-song">
-            <template v-for="row in piece.rows" :key="row.line">
+            <template v-for="(row, r) in piece.rows" :key="row.line">
+              <div
+                v-if="
+                  pageAt(
+                    wordRanks.verses.get(row.line),
+                    r > 0 ? wordRanks.verses.get(piece.rows[r - 1].line) : undefined,
+                  )
+                "
+                class="scroll-page-gap-row"
+                aria-hidden="true"
+              ></div>
               <span
                 v-if="aliyaAt.get(row.line)"
                 class="scroll-aliya scroll-aliya-row"
@@ -375,14 +488,21 @@ watch(
               dir="auto"
               >{{ aliyaWithin(piece.line, piece.rows.length)!.label }}</span
             >
-            <div
-              v-for="(row, r) in piece.rows"
-              :key="r"
-              class="scroll-row"
-              :class="row.length === 1 ? 'scroll-row-full' : ''"
-            >
-              <span v-for="(member, m) in row" :key="m">{{ member }}</span>
-            </div>
+            <template v-for="(row, r) in piece.rows" :key="r">
+              <div
+                v-if="
+                  pageAt(
+                    wordRanks.bricks.get(`${p}:${r}`),
+                    r > 0 ? wordRanks.bricks.get(`${p}:${r - 1}`) : undefined,
+                  )
+                "
+                class="scroll-page-gap-row"
+                aria-hidden="true"
+              ></div>
+              <div class="scroll-row" :class="row.length === 1 ? 'scroll-row-full' : ''">
+                <span v-for="(member, m) in row" :key="m">{{ member }}</span>
+              </div>
+            </template>
           </div>
         </template>
         <!-- Les mots lus, posés chacun sur le mot écrit : mêmes lignes. -->
@@ -439,6 +559,20 @@ watch(
   user-select: none;
   -webkit-user-select: none;
   -webkit-touch-callout: none;
+}
+
+/* Les pages : un blanc de trois lignes toutes les quarante-deux lignes, sans
+   rien d'écrit. Dans la prose c'est un flottant de toute la largeur, posé
+   devant le premier mot de la page : il ne tient pas sur la ligne qui
+   précède et passe dessous, sans la couper ni lui ôter sa justification. */
+.scroll-page-gap {
+  float: right;
+  width: 100%;
+  height: 5.25em;
+}
+
+.scroll-page-gap-row {
+  height: 5.25em;
 }
 
 /* Le repère de la colonne de lecture : sa largeur, sans hauteur. */
