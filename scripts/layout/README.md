@@ -1,15 +1,82 @@
-# Les coupures de ligne du livre imprimé
+# Les lignes du livre
 
-Ce dossier tire d'un scan l'endroit où chaque ligne du livre se coupe, et
-l'écrit dans `public/texts/talmud-layout/` (la page de Vilna) et
-`public/texts/torah-layout/` (les colonnes du Sefer Torah). Le format de ces
-fichiers est décrit dans `docs/compatibilite-textes.md`.
+Ce dossier relève l'endroit où chaque ligne du livre se coupe, et l'écrit
+dans `public/texts/torah-layout/` (les colonnes du Sefer Torah, pour toute la
+Torah) et `public/texts/talmud-layout/` (la page de Vilna, un pilote). Le
+format de ces fichiers est décrit dans `docs/compatibilite-textes.md`.
 
-Rien n'est transcrit. Le texte, on l'a déjà (`public/texts/`) ; l'image ne
-sert qu'à savoir où les lignes se coupent. Aucune lettre n'est lue : on
-relève sur l'image les lignes et la largeur de leurs mots, et l'on cale cette
-suite de largeurs sur les mots du texte, dont on sait prévoir la largeur dans
-le caractère du livre.
+Rien n'est transcrit. Le texte, on l'a déjà (`public/texts/`) ; les sources
+ne servent qu'à savoir où les lignes se coupent. Sur une image, aucune lettre
+n'est lue : on y relève les lignes et la largeur de leurs mots, et l'on cale
+cette suite de largeurs sur les mots du texte, dont on sait prévoir la
+largeur dans le caractère du livre.
+
+## Le Sefer Torah
+
+Le rouleau relevé est celui de **245 colonnes de 42 lignes**, où chaque
+colonne commence par un vav (« vavé ha'amoudim »), sauf les six de
+« בי"ה שמ"ו ». C'est la disposition des tikounim de lecture d'aujourd'hui.
+
+```bash
+# Les sources (une fois).
+python3 scripts/layout/fetch.py tikkun-io
+python3 scripts/layout/fetch.py scrollscraper
+python3 scripts/layout/fetch.py sefaria-torah
+
+# Le contrôle, sans rien écrire : ce qui est recalé, et pourquoi.
+python3 scripts/layout/scroll.py --check
+
+# Les 54 fichiers, puis le manifeste et les tests.
+python3 scripts/layout/scroll.py --write
+node scripts/texts-manifest.mjs
+npx vitest run src/__tests__/textLayout.test.ts src/__tests__/scrollLayout.test.ts
+```
+
+Trois sources, de la plus commode à la plus sûre (`scroll.py`) :
+
+1. **tikkun.io** (licence MIT) donne les 245 colonnes ligne par ligne, en
+   texte. Son texte est celui de Sefaria, comme le nôtre : les 79 977 mots se
+   suivent à l'identique, une ligne se note donc par la place d'un mot de
+   notre fichier, sans rien caler.
+2. **Les images du tikoun d'ORT** montrent les mêmes lignes. tikkun.io en a
+   vraisemblablement été tiré, par un partage des versets qui range parfois un mot
+   une ligne trop haut ou trop bas. Chaque ligne est donc recalée sur son
+   image, et l'image a raison : onze coupures corrigées (colonnes 16, 82, 83
+   et 88), et deux lignes que tikkun.io arrête avant le bord alors qu'elles
+   sont pleines.
+3. **La tradition écrite** fixe les lignes des deux chirot et de leurs
+   abords. Là où les deux sources s'en écartent, elle a raison : les cinq
+   lignes d'après Az yachir commencent par « ותקח, אחריה, סוס, ויצאו,
+   ויבאו » (Rema, Yoré Déa 275, 6) ; dans Haazinou, « ואילים » finit sa ligne
+   (Rambam, Hilkhot Sefer Torah 8, 4) ; la dernière ligne d'Az yachir est en
+   trois morceaux. Les lignes blanches suivent la règle : quatre entre deux
+   livres, une avant et une après chaque chira.
+
+Ce que vaut le contrôle. `scroll.py --probe 9` déplace d'un mot une coupure
+sur neuf (1 075), puis demande au contrôle de les retrouver : il
+les retrouve toutes, sans fausse alerte. Les colonnes des deux chirot (78,
+242, 243) en sont exclues, leurs lettres étant étirées sur l'image : la
+tradition les fixe, et elles ont été relues à l'œil.
+
+Ce que le relevé ne garantit pas :
+
+- **Un rouleau n'est pas l'autre.** Ces lignes sont celles du tikoun de 245
+  colonnes. Un rouleau écrit sur un autre tikoun (celui, plus espacé, de Rav
+  Davidovitch, un rouleau yéménite, un rouleau ancien) coupe ses lignes
+  ailleurs.
+- **Deux témoins, pas trois.** tikkun.io dérive des images d'ORT : hors des
+  chirot, rien d'autre ne les contrôle. Une ligne que le tikoun d'ORT
+  couperait autrement qu'un tikoun imprimé passerait inaperçue.
+- **Les six lignes d'après Haazinou** ne sont pas celles du Rema (cinq
+  lignes, qui demandent une colonne très large) : le rouleau de 245 colonnes
+  en écrit six, pour que la colonne suivante commence par un vav.
+- **Le texte** est celui de Sefaria (la Massora d'Alep). Les rouleaux
+  achkénazes et séfarades en diffèrent par quelques lettres (Berechit 9, 29 ;
+  Devarim 23, 2) : cela ne change aucune ligne, mais ce n'est pas la lettre
+  de tous les rouleaux.
+- Les nounim inversés de Bamidbar 10, 35 ne sont pas écrits.
+
+## La page de Vilna et le pilote sur scan
 
 ## Ce qu'il faut
 
@@ -25,8 +92,8 @@ texte.
 
 ## Les sources
 
-`sources.json` dit d'où vient chaque scan et sous quelle licence. Toutes
-viennent d'archive.org, marquées « Public Domain Mark 1.0 » :
+`sources.json` dit d'où vient chaque source et sous quelle licence. Les
+scans viennent d'archive.org, marqués « Public Domain Mark 1.0 » :
 
 - le Shas de Vilna de la veuve et des frères Romm (1882 à 1887), numérisé par
   la bibliothèque de l'université Duke ;
@@ -46,8 +113,10 @@ python3 scripts/layout/fetch.py ezrat-hasofer
 # 2. La guemara : un passage d'un traité.
 python3 scripts/layout/talmud.py berakhot --from 2a --to 10b --write
 
-# 3. La Torah : une paracha, par son numéro.
-python3 scripts/layout/torah.py 279 --write
+# 3. Le pilote de la Torah sur scan : une paracha du tikoun de Pisa (264
+#    colonnes). Rien n'en va dans le dépôt, qui porte le rouleau de 245
+#    colonnes (plus haut).
+python3 scripts/layout/torah.py 279 --review /tmp/relecture
 
 # 4. Le manifeste des textes, puis les tests.
 node scripts/texts-manifest.mjs
@@ -87,19 +156,20 @@ douteuse.
 
 | Fichier        | Ce qu'il fait                                                       |
 | -------------- | ------------------------------------------------------------------- |
-| `fetch.py`     | télécharge un scan dans le cache                                    |
+| `fetch.py`     | télécharge une source dans le cache                                 |
 | `imaging.py`   | rend une page (`pdftoppm`), en tire l'encre, la redresse            |
 | `segment.py`   | les lettres, les gouttières, les lignes, les mots                   |
 | `daf.py`       | la page de Vilna : la guemara et les colonnes de commentaire        |
 | `align.py`     | le calage des mots vus sur les mots du texte                        |
 | `texts.py`     | les mots du texte, comptés comme le lecteur les compte              |
 | `talmud.py`    | la guemara, Rachi et Tossafot d'un passage                          |
-| `torah.py`     | les colonnes d'une paracha                                          |
+| `torah.py`     | le pilote : les colonnes d'une paracha lues sur le tikoun de Pisa   |
+| `scroll.py`    | les 245 colonnes du Sefer Torah, pour toute la Torah                |
 | `review.py`    | les planches de relecture                                           |
 | `capture.mjs`  | la capture de notre rendu (Playwright)                              |
 | `compare.py`   | les images côte à côte                                              |
 | `fonts.json`   | la largeur des lettres de chaque caractère, mesurée (`--calibrate`) |
-| `sources.json` | les scans, leurs adresses, leurs licences, leurs pages              |
+| `sources.json` | les sources, leurs adresses, leurs licences, leurs pages            |
 
 ## Ce que le calage ne sait pas faire
 

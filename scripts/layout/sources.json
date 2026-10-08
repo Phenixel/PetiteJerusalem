@@ -1,5 +1,5 @@
 {
-  "note": "Les scans dont le pipeline tire les coupures de ligne. Aucun n'est dans le dépôt : ils se téléchargent dans le cache (voir README.md). Chaque entrée dit d'où vient le fichier et sous quelle licence.",
+  "note": "Ce dont le pipeline tire les lignes du livre. Rien n'est dans le dépôt : tout se télécharge dans le cache (voir README.md). Chaque entrée dit d'où vient le fichier et sous quelle licence.",
   "vilna": {
     "title": "Talmud Bavli, Shas de Vilna (Romm, 1882 à 1887)",
     "item": "Talmud_Bavli_Vilna_images",
@@ -66,5 +66,39 @@
     "license": "Public Domain Mark 1.0 (https://creativecommons.org/publicdomain/mark/1.0/)",
     "rights": "Numérisé par la Bibliothèque nationale d'Israël, d'après son exemplaire.",
     "file": "Baer_Tiqqun_Hasofer_Vehaqore_Rödelheim_1886.pdf"
+  },
+  "tikkun-io": {
+    "title": "tikkun.io : les 245 colonnes du Sefer Torah, ligne par ligne, en texte",
+    "repository": "https://github.com/akivajgordon/tikkun.io",
+    "commit": "57ba104e8de055cf92d3cf6aa91245bd92b34d60",
+    "license": "MIT (Copyright (c) 2015 Akiva Gordon)",
+    "rights": "Le texte est celui de Sefaria ; la mise en lignes est celle du dépôt (src/data/pages/torah).",
+    "use": "La base du relevé : chaque ligne devient la place d'un mot de notre texte, qui est le même mot pour mot."
+  },
+  "scrollscraper": {
+    "title": "Le tikoun d'ORT (« Navigating the Bible II », bible.ort.org, hors ligne depuis 2022), gardé par ScrollScraper",
+    "repository": "https://github.com/jae-63/scrollscraper",
+    "commit": "cea640f51d9afe81e286e218026733fceb498e70",
+    "license": "MPL-2.0 pour le dépôt et ses données dérivées (final_outputs/map.csv). Les images (data/webmedia.tgz) sont de World ORT, sans licence de réutilisation.",
+    "rights": "Les images ne servent qu'à contrôler les lignes, sur le poste : aucune n'entre dans le dépôt, aucune n'est redistribuée. Seul en sort le fait qu'un mot commence telle ligne.",
+    "files": ["final_outputs/map.csv", "data/webmedia.tgz"],
+    "use": "Le contrôle : chaque ligne de tikkun.io est recalée sur son image (la largeur de ses mots)."
+  },
+  "sefaria-torah": {
+    "title": "La Torah de Sefaria (Miqra selon la Massora), avec son balisage des grandes et des petites lettres",
+    "page": "https://storage.googleapis.com/sefaria-export/json/Tanakh/Torah",
+    "license": "CC BY-SA 3.0 pour l'édition « Miqra according to the Masorah » (texte du domaine public)",
+    "rights": "Lu pour savoir quelles lettres sont grandes ou petites ; notre texte en vient déjà.",
+    "books": ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"]
+  },
+  "tradition": {
+    "title": "La tradition écrite des chirot",
+    "texts": [
+      "Rambam, Michné Torah, Hilkhot Tefillin ouMezouza veSefer Torah 8, 4",
+      "Choul'han Aroukh et Rema, Yoré Déa 275"
+    ],
+    "page": "https://www.sefaria.org/Mishneh_Torah,_Tefillin,_Mezuzah_and_the_Torah_Scroll.8",
+    "license": "Domaine public",
+    "use": "Les premiers mots des lignes d'Az yachir, de Haazinou et de leurs abords : recopiés dans scroll.py, où ils font foi."
   }
 }

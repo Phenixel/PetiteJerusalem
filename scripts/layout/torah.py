@@ -1,6 +1,10 @@
-"""Les colonnes et les lignes du Sefer Torah, d'après un tikoun soferim.
+"""Les colonnes et les lignes du Sefer Torah, lues sur le scan d'un tikoun soferim.
 
-    python3 scripts/layout/torah.py 279 --write        (Bechala'h)
+    python3 scripts/layout/torah.py 279 --review /tmp/relecture        (Bechala'h)
+
+C'est le pilote : la lecture d'un scan, essayée sur le tikoun de Judah Pisa
+(264 colonnes). Le dépôt porte, lui, le rouleau de 245 colonnes, relevé pour
+toute la Torah par scroll.py ; `--write` range ce relevé-ci dans le cache.
 
 Un tikoun soferim imprime la Torah comme le sofer l'écrit : les mêmes mots
 sur chaque ligne, les mêmes lignes dans chaque colonne. Pour chaque page du
@@ -295,7 +299,8 @@ def _word_starts(result: ZoneResult, line_index: int, count: int) -> dict[int, i
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("parasha", type=int, help="le numéro de la paracha (public/texts/tanakh)")
-    parser.add_argument("--write", action="store_true", help="écrit public/texts/torah-layout")
+    parser.add_argument("--write", action="store_true",
+                        help="écrit le relevé dans le cache (le dépôt porte le rouleau de 245 colonnes, voir scroll.py)")
     parser.add_argument("--review", help="dossier des planches de contrôle (hors dépôt)")
     parser.add_argument("--sample", type=int, default=0,
                         help="avec --review : une planche de N lignes tirées au hasard")
@@ -322,7 +327,9 @@ def main() -> None:
             f.write("\n")
     layout, _ = run(args.parasha, fonts, args.review, args.sample)
     if args.write:
-        out = os.path.join(TEXTS, "torah-layout")
+        # public/texts/torah-layout porte le rouleau de 245 colonnes (scroll.py),
+        # dans un autre format : ce relevé-ci reste hors du dépôt.
+        out = os.path.join(CACHE, "ezrat-1769", "layout")
         os.makedirs(out, exist_ok=True)
         path = os.path.join(out, f"{args.parasha}.json")
         with open(path, "w", encoding="utf8") as f:
