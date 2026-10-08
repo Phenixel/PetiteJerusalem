@@ -1035,7 +1035,8 @@ Informations
   info:voir <id>
   info:creer --type nouveaute|mise-a-jour|incident|question --titre … --texte …
              [--texte-fichier f.md] [--titre-en … --texte-en …] [--titre-he … --texte-he …]
-             [--lien /page|https://… --lien-texte …] [--version X.Y.Z]
+             [--lien /page|https://… --lien-texte …]
+             [--version X.Y.Z] (mise à jour : la version décrite ; incident : celle qui le corrige)
              [--publier] [--notifier] [--date AAAA-MM-JJ]
   info:modifier <id> [mêmes options] [--publier|--depublier] [--resolu|--en-cours] [--notifier]
   info:resoudre <id>

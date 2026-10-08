@@ -3,7 +3,13 @@ import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import AppIcon from "../icons/AppIcon.vue";
 import { dateTimeFormat } from "../../services/intlCache";
-import { ANNOUNCEMENT_ICONS, localized, type Announcement } from "../../services/announcements";
+import {
+  ANNOUNCEMENT_ICONS,
+  isOngoingIncident,
+  localized,
+  type Announcement,
+} from "../../services/announcements";
+import { useAnnouncements } from "../../composables/useAnnouncements";
 
 /**
  * Une information de l'équipe, telle que l'accueil la montre.
@@ -25,9 +31,10 @@ const props = defineProps<{
 defineEmits<{ (e: "open"): void }>();
 
 const { t, locale } = useI18n();
+const { installed } = useAnnouncements();
 
 const a = computed(() => props.announcement);
-const openIncident = computed(() => a.value.kind === "incident" && !a.value.resolved);
+const openIncident = computed(() => isOngoingIncident(a.value, installed.value));
 const title = computed(() => localized(a.value.title, locale.value));
 const excerpt = computed(() => localized(a.value.body, locale.value).replace(/\s+/g, " ").trim());
 const date = computed(() =>

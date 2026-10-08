@@ -53,9 +53,13 @@ describe("announcementFields", () => {
     expect(announcementFields({ ...base, link: "https://a.fr" }).link?.url).toBe("https://a.fr");
   });
 
-  it("ne garde la version que pour une mise à jour, « résolu » que pour un incident", () => {
+  it("ne garde la version que pour une mise à jour ou un incident, « résolu » que pour un incident", () => {
     expect(announcementFields({ ...base, version: "3.11.0" }).version).toBeNull();
     expect(announcementFields({ ...base, kind: "release", version: "3.11.0" }).version).toBe(
+      "3.11.0",
+    );
+    // Incident : la version qui le corrige.
+    expect(announcementFields({ ...base, kind: "incident", version: "3.11.0" }).version).toBe(
       "3.11.0",
     );
     expect(announcementFields({ ...base, resolved: true }).resolved).toBe(false);

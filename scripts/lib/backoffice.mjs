@@ -91,7 +91,11 @@ export function announcementFields(input) {
     title,
     body,
     link: url ? { url, label: input.linkLabel ?? { fr: "" } } : null,
-    version: kind === "release" && clean(input.version) ? clean(input.version) : null,
+    // Une mise à jour : la version décrite ; un incident : celle qui le corrige.
+    version:
+      (kind === "release" || kind === "incident") && clean(input.version)
+        ? clean(input.version)
+        : null,
     resolved: kind === "incident" ? input.resolved === true : false,
     published: input.published === true,
     notify: input.notify === true,

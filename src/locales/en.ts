@@ -1935,6 +1935,7 @@ const en: LocaleMessages = {
     ongoing: "Ongoing",
     resolved: "Resolved",
     version: "Version {version}",
+    fixedIn: "Fixed in version {version}",
     openLink: "Open",
     reply: "Reply",
     replyPrefill: "In reply to “{title}”:\n",
@@ -2036,6 +2037,9 @@ const en: LocaleMessages = {
       bodyFr: "Text (French)",
       versionLabel: "App version",
       versionHint: "Leave empty if these notes are not about a specific version.",
+      fixVersionLabel: "Fixed in version",
+      fixVersionHint:
+        "Devices running this version no longer see the incident on the home screen. Leave empty if it does not depend on an update.",
       resolvedLabel: "Incident resolved",
       linkUrl: "Link (optional)",
       linkLabel: "Button text",

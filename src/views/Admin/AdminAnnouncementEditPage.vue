@@ -104,7 +104,10 @@ const fields = computed<AnnouncementAdminFields>(() => ({
   title: text(title.value),
   body: text(body.value),
   link: linkUrl.value.trim() ? { url: linkUrl.value.trim(), label: text(linkLabel.value) } : null,
-  version: kind.value === "release" && version.value.trim() ? version.value.trim() : null,
+  version:
+    (kind.value === "release" || kind.value === "incident") && version.value.trim()
+      ? version.value.trim()
+      : null,
   resolved: kind.value === "incident" ? resolved.value : false,
   published: published.value,
   notify: notify.value,
@@ -252,9 +255,13 @@ async function remove(): Promise<void> {
           <textarea id="ann-body" v-model="body.fr" rows="6" class="field resize-y"></textarea>
         </div>
 
-        <div v-if="kind === 'release'">
+        <div v-if="kind === 'release' || kind === 'incident'">
           <label class="block text-sm font-semibold text-text-secondary mb-2" for="ann-version">{{
-            t("admin.announcements.versionLabel")
+            t(
+              kind === "incident"
+                ? "admin.announcements.fixVersionLabel"
+                : "admin.announcements.versionLabel",
+            )
           }}</label>
           <input
             id="ann-version"
@@ -263,7 +270,15 @@ async function remove(): Promise<void> {
             placeholder="3.11.0"
             class="field sm:w-48"
           />
-          <p class="mt-2 text-xs text-text-secondary">{{ t("admin.announcements.versionHint") }}</p>
+          <p class="mt-2 text-xs text-text-secondary">
+            {{
+              t(
+                kind === "incident"
+                  ? "admin.announcements.fixVersionHint"
+                  : "admin.announcements.versionHint",
+              )
+            }}
+          </p>
         </div>
 
         <label v-if="kind === 'incident'" class="inline-flex items-center gap-2 cursor-pointer">

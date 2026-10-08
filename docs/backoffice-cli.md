@@ -149,8 +149,10 @@ Options d'une information :
 - `--titre-en`, `--texte-en`, `--titre-he`, `--texte-he` : les traductions,
   facultatives (sans elles, ces lecteurs voient le français) ;
 - `--lien /page` ou `--lien https://…`, `--lien-texte` : le bouton ;
-- `--version X.Y.Z` : pour une mise à jour (l'app ne l'annonce qu'une fois
-  cette version installée) ;
+- `--version X.Y.Z` : pour une mise à jour, la version décrite (l'app ne
+  l'annonce qu'une fois cette version installée) ; pour un incident, la
+  version qui le corrige (les appareils qui l'ont ne le voient plus sur
+  l'accueil) ;
 - `--publier`, `--notifier` ;
 - `--date AAAA-MM-JJ` (ou une date ISO) : la date de publication, au lieu
   de maintenant, pour reprendre un historique. Refusée dans le futur, et

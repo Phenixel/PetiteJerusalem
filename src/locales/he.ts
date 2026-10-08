@@ -1876,6 +1876,7 @@ const he: LocaleMessages = {
     ongoing: "בטיפול",
     resolved: "טופל",
     version: "גרסה {version}",
+    fixedIn: "תוקן בגרסה {version}",
     openLink: "פתיחה",
     reply: "להשיב",
     replyPrefill: "בתשובה ל„{title}”:\n",
@@ -1973,6 +1974,9 @@ const he: LocaleMessages = {
       bodyFr: "טקסט (צרפתית)",
       versionLabel: "גרסת האפליקציה",
       versionHint: "השאירו ריק אם ההערות אינן נוגעות לגרסה מסוימת.",
+      fixVersionLabel: "תוקן בגרסה",
+      fixVersionHint:
+        "מכשירים שבהם מותקנת גרסה זו אינם רואים עוד את התקלה במסך הבית. השאירו ריק אם התקלה אינה תלויה בעדכון.",
       resolvedLabel: "התקלה טופלה",
       linkUrl: "קישור (רשות)",
       linkLabel: "טקסט הכפתור",

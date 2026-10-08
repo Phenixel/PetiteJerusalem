@@ -2006,6 +2006,7 @@ const fr = {
     ongoing: "En cours",
     resolved: "Résolu",
     version: "Version {version}",
+    fixedIn: "Corrigé dans la version {version}",
     openLink: "Ouvrir",
     reply: "Répondre",
     replyPrefill: "En réponse à « {title} » :\n",
@@ -2107,6 +2108,9 @@ const fr = {
       bodyFr: "Texte (français)",
       versionLabel: "Version de l'app",
       versionHint: "Laissez vide si ces notes ne concernent pas une version précise.",
+      fixVersionLabel: "Corrigé dans la version",
+      fixVersionHint:
+        "Les appareils qui ont cette version ne voient plus l'incident sur l'accueil. Laissez vide s'il ne dépend pas d'une mise à jour.",
       resolvedLabel: "Incident résolu",
       linkUrl: "Lien (facultatif)",
       linkLabel: "Texte du bouton",

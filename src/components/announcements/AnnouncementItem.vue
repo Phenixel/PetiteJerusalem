@@ -3,7 +3,13 @@ import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import AppIcon from "../icons/AppIcon.vue";
 import { dateTimeFormat } from "../../services/intlCache";
-import { ANNOUNCEMENT_ICONS, localized, type Announcement } from "../../services/announcements";
+import {
+  ANNOUNCEMENT_ICONS,
+  isOngoingIncident,
+  localized,
+  type Announcement,
+} from "../../services/announcements";
+import { useAnnouncements } from "../../composables/useAnnouncements";
 
 /**
  * Une information de l'équipe, telle que la liste la montre : sa nature, sa
@@ -18,6 +24,7 @@ const props = defineProps<{
 }>();
 
 const { t, locale } = useI18n();
+const { installed } = useAnnouncements();
 
 const a = computed(() => props.announcement);
 const title = computed(() => localized(a.value.title, locale.value));
@@ -34,7 +41,7 @@ const date = computed(() =>
       )
     : t("announcements.draftDate"),
 );
-const openIncident = computed(() => a.value.kind === "incident" && !a.value.resolved);
+const openIncident = computed(() => isOngoingIncident(a.value, installed.value));
 </script>
 
 <template>
@@ -57,10 +64,14 @@ const openIncident = computed(() => a.value.kind === "incident" && !a.value.reso
         {{ t(`announcements.kinds.${a.kind}`) }}
       </span>
       <span v-if="a.kind === 'incident'" class="chip">
-        {{ a.resolved ? t("announcements.resolved") : t("announcements.ongoing") }}
+        {{ openIncident ? t("announcements.ongoing") : t("announcements.resolved") }}
       </span>
       <span v-if="a.version" class="chip">
-        {{ t("announcements.version", { version: a.version }) }}
+        {{
+          t(a.kind === "incident" ? "announcements.fixedIn" : "announcements.version", {
+            version: a.version,
+          })
+        }}
       </span>
       <span v-if="isNew" class="chip bg-primary text-white">{{ t("announcements.new") }}</span>
       <span class="ms-auto">{{ date }}</span>
