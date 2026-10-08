@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { computed, nextTick, watch } from "vue";
+import { computed, nextTick, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useReadingColumn } from "../composables/useReadingColumn";
+import { linkedMeforshim, nextLink, type DafLink } from "../services/dafLinks";
 import { pageZoomFrame } from "../services/pageZoom";
-import { flatMeforshim, type DafBlock, type DafMeforshim } from "../services/textService";
+import type { DafBlock, DafMeforshim } from "../services/textService";
 import TalmudPage from "./TalmudPage.vue";
 
 /**
@@ -35,17 +36,34 @@ const { t } = useI18n();
 
 /**
  * Les commentaires de chaque amoud, bout à bout : la page ne les découpe pas
- * par passage. Calculés une fois par chargement, pour que la page ne se
- * recompose pas à chaque rendu de la lecture.
+ * par passage, mais chacun garde le passage qu'il explique (dafLinks.ts).
+ * Calculés une fois par chargement, pour que la page ne se recompose pas à
+ * chaque rendu de la lecture.
  */
 const flat = computed(() => {
-  const byAmud = new Map<number, ReturnType<typeof flatMeforshim>>();
-  for (const [amud, m] of props.meforshim ?? []) byAmud.set(amud, flatMeforshim(m));
+  const byAmud = new Map<number, ReturnType<typeof linkedMeforshim>>();
+  for (const [amud, m] of props.meforshim ?? []) byAmud.set(amud, linkedMeforshim(m));
   return byAmud;
 });
 function pageMeforshim(block: DafBlock) {
   return block.amud !== undefined ? (flat.value.get(block.amud) ?? null) : null;
 }
+
+/**
+ * Le passage ou le commentaire qu'on a touché, et sa page : un seul à la fois
+ * dans le chapitre. Le toucher à nouveau le relâche.
+ */
+const linked = ref<(DafLink & { page: number }) | null>(null);
+function onLink(page: number, touched: DafLink | null): void {
+  const current = linked.value?.page === page ? linked.value : null;
+  const next = nextLink(current && { passage: current.passage, comment: current.comment }, touched);
+  linked.value = next && { ...next, page };
+}
+// Un autre chapitre : plus rien de choisi.
+watch(
+  () => props.blocks,
+  () => (linked.value = null),
+);
 
 /** La colonne de lecture et la place libre autour d'elle (useReadingColumn). */
 const { ruler, column, free } = useReadingColumn();
@@ -126,8 +144,11 @@ function offsetOf(index: number): number {
           :daf="block.daf"
           :lines="block.lines"
           :meforshim="pageMeforshim(block)"
+          :passages="block.passages"
+          :linked="linked?.page === index ? linked : null"
           :scale="1"
           :tractate-start="block.amud === 0"
+          @link="onLink(index, $event)"
         />
       </div>
     </div>

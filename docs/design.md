@@ -742,6 +742,18 @@ imprimée, et c'est ainsi qu'on retrouve d'un coup d'œil où l'on en est. Sur
 la page du daf, Rachi et Tossafot ont de même leur dibbour hamat'hil en
 lettres carrées grasses.
 
+**Un passage et ses commentaires se répondent.** Sur la page du daf, on
+touche un passage de la guemara que Rachi ou Tossafot explique : il se
+surligne, et tous ses commentaires avec lui, chacun dans sa colonne ; les
+mots qu'ils citent sont soulignés dans le passage. On touche un commentaire :
+il se surligne seul, avec son passage, où ses mots à lui sont soulignés. La
+couleur est celle du passage choisi partout dans la lecture
+(`--color-selection`), pour le passage comme pour le commentaire : c'est elle
+qui dit qu'ils vont ensemble. Un seul choix à la fois dans le chapitre ; le
+toucher à nouveau le relâche, toucher un passage sans commentaire aussi. Sous
+une souris, ce qui se touche prend une teinte légère. Rien ne change de
+largeur, la page ne se recompose pas (`dafLinks.ts`, `TalmudPage.vue`).
+
 **Le Sefer Torah** (`TorahScroll.vue`) : les lettres seules, dans l'écriture
 du sofer, **ligne pour ligne et colonne pour colonne comme le rouleau**. Le
 rouleau est celui de 245 colonnes de 42 lignes, où chaque colonne commence
