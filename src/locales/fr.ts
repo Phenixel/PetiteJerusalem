@@ -1468,6 +1468,8 @@ const fr = {
       error: "Les commentaires n'ont pas pu être chargés : vérifiez la connexion.",
       none: "Pas de commentaire sur ce passage.",
       hint: "Touchez un autre passage du texte pour lire ses commentaires.",
+      resize: "Largeur des commentaires",
+      resizeHint: "Faites glisser pour changer la largeur ; double-cliquez pour la rétablir.",
     },
     passageN: "passage {n}",
     hebrew: "Hébreu",

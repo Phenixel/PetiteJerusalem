@@ -363,6 +363,18 @@ des Neviim, des Ketouvim ou un psaume (`tanakh`).
 `passage_action` (existant) prend une valeur de plus pour `action` :
 `commentaries`, l'appui sur la rangée de la bulle.
 
+### Lecture : `commentaries_resized` (nouveau)
+
+Sur un écran large, la colonne des commentaires se règle en tirant son bord
+gauche (ou au clavier, par les flèches) ; un double appui sur le bord lui
+rend sa largeur d'origine. L'événement part à la fin du geste, une fois, et
+dit si la largeur par défaut convient à qui étudie.
+
+| Événement              | Propriété        | Valeurs                                                 | Statut      |
+| ---------------------- | ---------------- | ------------------------------------------------------- | ----------- |
+| `commentaries_resized` | `width`          | la largeur choisie, en pixels ; `null` quand on la rétablit | **nouveau** |
+| `commentaries_resized` | `viewport_width` | la largeur de la fenêtre, en pixels                     | **nouveau** |
+
 ### Recherche
 
 `library_search_used` et `chiourim_search_used` (existants) continuent de

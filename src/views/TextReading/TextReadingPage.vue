@@ -2554,6 +2554,11 @@ main {
     transition: none;
   }
 }
+/* Pendant qu'on tire le bord de la colonne des commentaires, le texte suit
+   le doigt sans retard (CommentaryPanel.vue). */
+:global(.study-resizing main) {
+  transition: none;
+}
 
 /* Reader text sizes follow the A− / A+ control (useReadingSize).
    L'interligne de l'hébreu est volontairement plus serré que leading-loose :

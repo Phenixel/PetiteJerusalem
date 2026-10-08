@@ -247,6 +247,15 @@ body {
   --study-width: clamp(17rem, calc(100vw - 52rem), 32rem);
 }
 
+/* On tire le bord de la colonne des commentaires (CommentaryPanel.vue) : la
+   flèche de redimensionnement partout, et pas de texte sélectionné au
+   passage du doigt. Une largeur choisie s'écrit sur la racine, en pixels,
+   par-dessus `--study-width` (useStudyWidth). */
+.study-resizing {
+  cursor: col-resize;
+  user-select: none;
+}
+
 #app {
   min-height: 100vh;
   display: flex;

@@ -1568,6 +1568,18 @@ le panneau est ouvert (il occupe sa place) ; la croix, Échap, le bouton
 retour ou le volet poussé vers le bas le ferment, et rendent leurs commandes
 aux passages.
 
+**La colonne se règle en tirant son bord gauche** (`useStudyWidth`) : une
+bande de 14 px à cheval sur le bord, la flèche de redimensionnement au
+survol, un trait vertical au milieu de sa hauteur (la poignée d'un volet,
+couchée), et tout le bord à la couleur du thème pendant qu'on tire. Le texte
+suit sans délai : il rétrécit quand la colonne s'élargit, et reprend sa
+largeur ordinaire, 48 rem au plus, quand elle se resserre (au-delà, les
+lignes deviendraient trop longues pour se lire). La colonne ne descend pas
+sous 17 rem et laisse toujours 20 rem au texte. Au clavier, le bord se
+prend par Tab et se règle aux flèches ; un double appui le rend à sa
+largeur d'origine. La largeur choisie se garde sur l'appareil, comme la
+taille du texte.
+
 ### Sur un téléphone, ce qui accompagne un texte monte dans un bottom sheet
 
 Sur un téléphone, dans l'app comme sur le site, ce qui accompagne un texte

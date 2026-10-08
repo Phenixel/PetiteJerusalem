@@ -1418,6 +1418,8 @@ const en: LocaleMessages = {
       error: "The commentaries could not be loaded: check your connection.",
       none: "No commentary on this passage.",
       hint: "Tap another passage of the text to read its commentaries.",
+      resize: "Commentary width",
+      resizeHint: "Drag to change the width; double-click to restore it.",
     },
     passageN: "passage {n}",
     hebrew: "Hebrew",
