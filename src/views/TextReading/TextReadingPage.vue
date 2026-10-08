@@ -2296,6 +2296,7 @@ watch(textId, (_, previousTextId) => {
           :style="{ '--reading-scale': readingSize.scale.value }"
         >
           <TorahScroll
+            :text-id="textEntry?.id ?? null"
             :lines="currentSection.he"
             :marks="currentSection.scrollMarks ?? []"
             :aliyot="scrollAliyot"

@@ -743,26 +743,53 @@ la page du daf, Rachi et Tossafot ont de même leur dibbour hamat'hil en
 lettres carrées grasses.
 
 **Le Sefer Torah** (`TorahScroll.vue`) : les lettres seules, dans l'écriture
-du sofer, en une colonne justifiée d'une trentaine de lettres (21 em) au
-milieu de la page. La petou'ha finit la ligne, la setouma laisse un blanc de
-neuf lettres, Haazinou s'écrit en deux colonnes (chaque moitié contre son
-bord) et Az yachir en briques (lignes de deux et de trois membres, que la
-colonne resserre plutôt que de les replier). Le début de chaque montée porte
-une petite pastille à la couleur du thème, comme la marge d'un tikoun : elle
-n'est pas du texte, elle est en police d'interface. Chaque verset reste un
-passage du lecteur (reprise, marque-page, bulle de sélection). Ce que les
-données ne disent pas n'est pas inventé : les coupures de colonne et de ligne
-d'un vrai Sefer Torah n'y sont pas, la colonne coule donc librement, et les
-lignes des chirot suivent les repos des teamim plutôt que le tikoun exact.
+du sofer, **ligne pour ligne et colonne pour colonne comme le rouleau**. Le
+rouleau est celui de 245 colonnes de 42 lignes, où chaque colonne commence
+par un vav : ses lignes sont relevées pour toute la Torah
+(`public/texts/torah-layout`, `scrollLayout.ts`, `scripts/layout/scroll.py`).
+La petou'ha finit la ligne, la setouma laisse un blanc dans la ligne, Az
+yachir s'écrit en briques et Haazinou en deux moitiés, là où le rouleau les
+met ; une paracha qui commence au milieu d'une ligne y commence au milieu.
+Les grandes et les petites lettres sont grandes et petites. Chaque verset
+reste un passage du lecteur : on le touche pour ouvrir ses commentaires, il
+se surligne sur toutes les lignes qu'il traverse.
 
-**La colonne garde ses lignes sur tous les écrans.** Elle fait 21 cadratins
-partout : sur un téléphone ce sont ses caractères qui rétrécissent (16 px au
-lieu de 24 sur un écran de 390 px), elle ne se replie pas, et les chirot
-gardent leur dessin. La taille de lecture l'agrandit tout entière, comme la
-page du daf (`pageZoom.ts`, `useReadingColumn.ts`) : elle déborde de la colonne
-de lecture tant qu'il y a de la place, puis se fait glisser de côté. Agrandie
+**Une ligne remplit la colonne comme le sofer la remplit.** Il n'écarte pas
+ses mots : il élargit ou resserre ses lettres. Chaque ligne s'étire donc en
+largeur, lettres et espaces ensemble, de 0,86 à 1,16 (`fitLine`) ; au-delà,
+les espaces prennent le reste, ce qui n'arrive qu'à une ligne sur deux cents.
+La colonne fait 16,75 cadratins, la largeur de la ligne médiane du rouleau
+dans l'écriture du sofer : la moitié des lignes s'étire, l'autre se resserre,
+presque toutes de moins d'un dixième. Les morceaux d'une ligne à blancs
+gardent leur écriture, et ce sont les blancs qui prennent la place. Une
+colonne plus large que les autres dans le rouleau (celle d'Az yachir, d'un
+tiers) s'écrit plus petit, pour tenir dans la même page.
+
+**Trois lignes de blanc séparent deux colonnes.** Rien n'y est écrit, ni
+numéro ni filet : c'est le blanc qui dit la colonne. Les lignes blanches du
+rouleau (avant et après une chira) sont, elles, des lignes blanches.
+
+**Le repère de montée est dans la marge**, comme dans un tikoun : une petite
+étiquette à la couleur du thème, en police d'interface, écrite de haut en
+bas à droite de la ligne où la montée commence. Elle ne prend aucune place
+dans la ligne. Un trait fin au-dessus du premier mot de la montée dit où
+elle commence dans la ligne.
+
+**La colonne garde ses lignes sur tous les écrans.** Elle fait 18 cadratins
+partout, marge comprise : sur un téléphone ce sont ses caractères qui
+rétrécissent (18 px au lieu de 24 sur un écran de 375 px), elle ne se replie
+pas. La taille de lecture l'agrandit tout entière, comme la page du daf
+(`pageZoom.ts`, `useReadingColumn.ts`) : elle déborde de la colonne de
+lecture tant qu'il y a de la place, puis se fait glisser de côté. Agrandie
 au-delà de l'écran, elle se présente par son bord droit, où commencent les
 lignes.
+
+**Sans les lignes du rouleau, la colonne s'écrit à notre façon.** Le fichier
+des lignes peut manquer (pas de réseau) ou ne plus coller au texte : la
+colonne est alors justifiée sur 21 cadratins, les marques et les chirot
+reconnues dans le texte (`pageForm.ts`), un blanc toutes les quarante-deux
+lignes (`scrollPages.ts`). Tant qu'on attend le fichier, rien ne s'écrit :
+on n'écrit pas la colonne deux fois.
 
 **Les voyelles et les teamim s'y posent sans rien déplacer.** Un bouton
 « Voyelles », en haut de la page à côté des formes, et un interrupteur du menu
@@ -775,15 +802,6 @@ basculer », montre l'autre forme tant qu'on reste appuyé sur le texte, et
 revient quand on relâche. Il est éteint au départ : l'appui long sert
 d'ordinaire à choisir un passage, et ce réglage coupe sur la colonne la
 sélection du texte et le menu du système.
-
-**Un blanc sépare les pages.** Toutes les quarante-deux lignes, le nombre de
-lignes d'une colonne de Sefer Torah, la colonne laisse un blanc de trois
-lignes (`scrollPages.ts`). Rien n'y est écrit, ni numéro ni filet : c'est le
-blanc qui dit la page. Il ne coupe aucune ligne et n'en déplace aucune ; une
-ligne de chira ne se coupe pas, la page qui commencerait en son milieu commence
-à la suivante. Ce sont les pages de notre colonne, les mêmes sur tous les
-écrans, pas encore les colonnes d'un rouleau : elles le deviendront avec les
-coupures de ligne du livre.
 
 ### La pastille du défilement est son propre arrêt
 
