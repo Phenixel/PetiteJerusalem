@@ -2,7 +2,13 @@ import { describe, it, expect } from "vitest";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { gemaraPageText, scrollVerseWords } from "../services/pageForm";
-import { MEFORSHIM_CHUNK, parseRashiComment } from "../services/textService";
+import {
+  SCROLL_COLUMN_LINES,
+  scrollColumns,
+  type ScrollLayout,
+  type ScrollRow,
+} from "../services/scrollLayout";
+import { MEFORSHIM_CHUNK, cleanText, parseRashiComment } from "../services/textService";
 
 /**
  * Les coupures de ligne du livre imprimé (public/texts/talmud-layout et
@@ -155,57 +161,155 @@ describe("coupures de la page de Vilna", () => {
   }
 });
 
-interface ScrollLayout {
-  title: string;
-  edition: string;
-  columns: { column: number; from: number; lines: [number, number][] }[];
-  blanks: [number, number][];
-  big: [number, number, number][];
-  small: [number, number, number][];
-}
-
 describe("colonnes du Sefer Torah", () => {
-  const files = folders("torah-layout");
+  /** Les parachiot de la Torah au catalogue (public/texts/tanakh). */
+  const PARASHIOT = Array.from({ length: 54 }, (_, k) => 264 + k);
+  /** Les colonnes qui ne commencent pas par un vav : « בי"ה שמ"ו » et les deux coutumes du chin. */
+  const NOT_VAV: Record<number, string> = {
+    1: "בראשית",
+    59: "יהודה",
+    78: "הבאים",
+    102: "שמר",
+    132: "שני",
+    184: "מה",
+  };
 
-  for (const file of files) {
-    const layout = read<ScrollLayout>(`torah-layout/${file}`);
-    const verses = (read<{ he: string[][] }>(`tanakh/${file}`).he.flat() as string[]).map(
-      scrollVerseWords,
-    );
-    const order = new Map<string, number>();
-    verses.forEach((words, v) => words.forEach((_, w) => order.set(`${v}:${w}`, order.size)));
+  const parashiot = PARASHIOT.map((id) => {
+    const text = read<{ fromBook: string; he: string[][] }>(`tanakh/${id}.json`);
+    const raw = text.he.flat();
+    return {
+      id,
+      book: text.fromBook,
+      raw,
+      verses: raw.map(scrollVerseWords),
+      layout: read<ScrollLayout>(`torah-layout/${id}.json`),
+    };
+  });
 
-    it(`${layout.title} : des colonnes de quarante-deux lignes, dans l'ordre`, () => {
-      let previous = 0;
-      for (const column of layout.columns) {
-        expect(column.column).toBeGreaterThan(previous);
-        previous = column.column;
-        expect(column.from).toBeGreaterThanOrEqual(0);
-        expect(column.from + column.lines.length).toBeLessThanOrEqual(42);
-      }
-      // Une colonne entamée va jusqu'au bout, sauf la dernière.
-      layout.columns.slice(0, -1).forEach((column) => {
-        expect(column.from + column.lines.length, `colonne ${column.column}`).toBe(42);
+  it("couvre toute la Torah, et rien d'autre", () => {
+    expect(folders("torah-layout")).toEqual(PARASHIOT.map((id) => `${id}.json`).sort());
+  });
+
+  it("compte les mots comme le lecteur, qui lit le texte nettoyé", () => {
+    for (const { id, raw, verses } of parashiot) {
+      raw.forEach((verse, v) => {
+        expect(verses[v].length, `paracha ${id}, verset ${v}`).toBeGreaterThan(0);
+        expect(scrollVerseWords(cleanText(verse)), `paracha ${id}, verset ${v}`).toEqual(verses[v]);
       });
-      layout.columns.slice(1).forEach((column) => expect(column.from).toBe(0));
-    });
+    }
+  });
 
-    it(`${layout.title} : chaque ligne commence à un mot du texte, après la précédente`, () => {
-      const at = layout.columns.flatMap((column) =>
-        column.lines.map(([v, w]) => order.get(`${v}:${w}`)),
-      );
-      expect(at).not.toContain(undefined);
-      for (let k = 1; k < at.length; k++) {
-        expect(at[k]!, `ligne ${k + 1}`).toBeGreaterThan(at[k - 1]!);
+  it("donne à chaque mot une ligne, une seule", () => {
+    for (const { id, layout, verses } of parashiot) {
+      const columns = scrollColumns(layout, verses);
+      expect(columns, `paracha ${id}`).not.toBeNull();
+      const written = columns!.flatMap((c) => c.rows.flatMap((r) => r.pieces));
+      const words = written.flatMap((p) => p.runs.flatMap((r) => r.words));
+      expect(words, `paracha ${id}`).toEqual(verses.flat());
+    }
+  });
+
+  it("tient les colonnes de quarante-deux lignes, d'un bout à l'autre du rouleau", () => {
+    let column = 1;
+    let line = 0;
+    let previousBook = "";
+    parashiot.forEach(({ id, book, layout }, n) => {
+      const first = layout.columns[0];
+      if (n > 0) {
+        // La paracha reprend où la précédente s'arrête : dans la même ligne
+        // après une setouma, sinon à la ligne suivante ; quatre lignes
+        // blanches plus bas d'un livre à l'autre, une avant Haazinou.
+        const shared = first.lines[0][0] === null;
+        const blank = (book !== previousBook ? 4 : 0) + (id === 316 ? 1 : 0);
+        const skipped = shared ? 0 : 1 + blank;
+        const at = (column - 1) * SCROLL_COLUMN_LINES + line + skipped;
+        expect(first.column, `paracha ${id}`).toBe(Math.floor(at / SCROLL_COLUMN_LINES) + 1);
+        expect(first.from, `paracha ${id}`).toBe(at % SCROLL_COLUMN_LINES);
+        if (shared) expect(parashiot[n - 1].layout.columns.at(-1)!.lines.at(-1)!.at(-1)).toBeNull();
+      } else {
+        expect([first.column, first.from]).toEqual([1, 0]);
       }
+      layout.columns.forEach((c, k) => {
+        expect(c.column, `paracha ${id}`).toBe(first.column + k);
+        if (k > 0) expect(c.from, `paracha ${id}, colonne ${c.column}`).toBe(0);
+        const last = k === layout.columns.length - 1;
+        if (!last) expect(c.from + c.lines.length, `colonne ${c.column}`).toBe(SCROLL_COLUMN_LINES);
+        else expect(c.from + c.lines.length).toBeLessThanOrEqual(SCROLL_COLUMN_LINES);
+      });
+      const end = layout.columns.at(-1)!;
+      column = end.column;
+      line = end.from + end.lines.length - 1;
+      previousBook = book;
     });
+    // Le rouleau finit avec sa deux cent quarante-cinquième colonne.
+    expect([column, line]).toEqual([245, SCROLL_COLUMN_LINES - 1]);
+  });
 
-    it(`${layout.title} : les blancs et les lettres à part désignent le texte`, () => {
-      for (const [v, w] of layout.blanks)
-        expect(order.has(`${v}:${w}`), `blanc ${v}:${w}`).toBe(true);
+  it("commence chaque colonne par un vav, sauf celles que la tradition nomme", () => {
+    const seen = new Set<number>();
+    for (const { layout, verses } of parashiot) {
+      for (const c of layout.columns) {
+        const head = c.lines[0][0];
+        if (c.from !== 0 || !head) continue;
+        const word = verses[head[0]][head[1]];
+        seen.add(c.column);
+        expect(word.startsWith("ו") || NOT_VAV[c.column] === word, `colonne ${c.column}`).toBe(
+          true,
+        );
+      }
+    }
+    expect(seen.size).toBe(245);
+  });
+
+  it("écrit les deux chirot comme la tradition les fixe", () => {
+    const heads = (rows: ScrollRow[], piece = 0): string[] =>
+      rows.map((row) => row.pieces[piece].runs[0].words[0]);
+    // Az yachir : trente lignes, une pleine puis trois morceaux et deux tour à
+    // tour ; une ligne blanche avant et après ; cinq lignes dessous, dont le
+    // Rema donne les premiers mots (Yoré Déa 275, 6).
+    const beshalach = parashiot.find((p) => p.id === 279)!;
+    const rows = scrollColumns(beshalach.layout, beshalach.verses)!.find(
+      (c) => c.column === 78,
+    )!.rows;
+    expect(rows).toHaveLength(SCROLL_COLUMN_LINES);
+    expect(heads(rows.slice(0, 5))).toEqual("הבאים ביבשה יהוה מת במצרים".split(" "));
+    expect(rows[5].kind).toBe("blank");
+    expect(rows.slice(6, 36).map((row) => row.pieces.length)).toEqual([
+      1,
+      ...Array.from({ length: 29 }, (_, k) => (k % 2 ? 2 : 3)),
+    ]);
+    expect(heads(rows.slice(6, 36))).toEqual(
+      (
+        "אז לאמר ורכבו לישועה אבי שמו שלשיו אבן יהוה קמיך אפיך נזלים אויב נפשי ברוחך " +
+        "אדירים כמכה פלא בחסדך קדשך אחז אדום כל ופחד יעבר קנית לשבתך ידיך בא הים"
+      ).split(" "),
+    );
+    expect(rows[36].kind).toBe("blank");
+    expect(heads(rows.slice(37))).toEqual("ותקח אחריה סוס ויצאו ויבאו".split(" "));
+
+    // Haazinou : soixante-dix lignes en deux moitiés (Rambam, Sefer Torah 8, 4),
+    // six lignes dessus, une ligne blanche de part et d'autre.
+    const haazinou = parashiot.find((p) => p.id === 316)!;
+    const vayelech = parashiot.find((p) => p.id === 315)!;
+    const song = scrollColumns(haazinou.layout, haazinou.verses)!.flatMap((c) => c.rows);
+    const halves = song.filter((row) => row.kind === "halves");
+    expect(halves).toHaveLength(70);
+    expect(heads(halves).slice(0, 3)).toEqual(["האזינו", "יערף", "כשעירם"]);
+    expect(heads(halves, 1).slice(0, 3)).toEqual(["ותשמע", "תזל", "וכרביבים"]);
+    // « ואילים » finit sa ligne : la suivante commence par « בני ».
+    expect(heads(halves)[22]).toBe("בני");
+    expect(song[70].kind).toBe("blank");
+    const before = scrollColumns(vayelech.layout, vayelech.verses)!.at(-1)!.rows;
+    expect(heads(before.slice(-6))).toEqual("ואעידה אחרי הדרך באחרית להכעיסו קהל".split(" "));
+  });
+
+  it("désigne des lettres du texte pour les grandes et les petites", () => {
+    for (const { id, layout, verses } of parashiot) {
       for (const [v, w, letter] of [...layout.big, ...layout.small]) {
-        expect(verses[v]?.[w]?.[letter], `lettre ${v}:${w}:${letter}`).toMatch(/[א-ת]/);
+        expect(verses[v]?.[w]?.[letter], `paracha ${id}, lettre ${v}:${w}:${letter}`).toMatch(
+          /[א-ת]/,
+        );
       }
-    });
-  }
+    }
+  });
 });
