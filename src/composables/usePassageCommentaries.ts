@@ -2,42 +2,75 @@ import { computed, ref, shallowRef, watch, type Ref } from "vue";
 import type { TextStudyJsonEntry } from "../models/models";
 import {
   loadDafMeforshim,
-  loadParashaRashi,
+  loadMishnaMeforshim,
+  loadTanakhRashi,
   type DafMeforshim,
   type RashiComment,
   type TextSection,
 } from "../services/textService";
 
 /**
- * Les commentaires d'un passage du texte ouvert : Rachi et Tossafot pour une
- * guemara (le Rachbam en Bava Batra, là où il prend la place de Rachi), Rachi
- * pour une paracha. Ils servent au bouton « Commentaires » de la bulle d'un
- * passage et au panneau d'étude (CommentaryPanel.vue), et, bout à bout, à la
- * page du daf (TalmudDafPages.vue).
+ * Les commentaires d'un passage du texte ouvert :
+ * - une guemara : Rachi et Tossafot (le Rachbam en Bava Batra, là où il prend
+ *   la place de Rachi) ;
+ * - une michna : le Bartenura et les Tossefot Yom Tov ;
+ * - un verset du Tanakh (paracha, Neviim, Ketouvim, un psaume) : Rachi.
+ *
+ * Ils servent au bouton « Commentaires » de la bulle d'un passage et au
+ * panneau d'étude (CommentaryPanel.vue), et, bout à bout, à la page du daf
+ * (TalmudDafPages.vue).
  *
  * Rien ne se charge à l'ouverture du texte : les fichiers viennent au premier
  * passage touché, ou à l'ouverture de la page du daf (`ensure`). Un chapitre
- * de guemara en demande une ou deux tranches, une paracha son fichier Rachi.
+ * de guemara en demande une ou deux tranches, un traité de Michna ou un livre
+ * son fichier.
  */
+
+/** Les commentateurs, dans l'ordre où le panneau les présente. */
+export type CommentarySource = "rashi" | "rashbam" | "tosafot" | "bartenura" | "tosafotYomTov";
 
 /** Un commentateur et ce qu'il dit du passage. */
 export interface CommentaryGroup {
-  source: "rashi" | "rashbam" | "tosafot";
+  source: CommentarySource;
   comments: RashiComment[];
 }
 
-/** Le corpus dont le texte ouvert a des commentaires, ou null. */
-export type CommentaryCorpus = "talmud" | "torah" | null;
+/**
+ * Le corpus dont le texte ouvert a des commentaires, ou null. `torah` (une
+ * paracha) et `tanakh` (Neviim, Ketouvim, Tehilim) ont tous deux Rachi ; on
+ * les distingue pour la mesure d'audience.
+ */
+export type CommentaryCorpus = "talmud" | "torah" | "mishna" | "tanakh" | null;
+
+/** Les livres du catalogue qui ont Rachi, hors Torah. */
+const NACH_BOOKS = new Set(["Nevi'im (Prophets)", "Ketuvim (Writings)"]);
 
 export function commentaryCorpusOf(
   type: string | undefined,
   section: TextSection | null,
+  livre?: string,
 ): CommentaryCorpus {
   if (!section) return null;
   if (type === "Talmud Bavli" && section.dafBlocks?.length) return "talmud";
   // La forme du Sefer Torah et Rachi ont le même domaine : les parachiot.
   if (section.scrollMarks?.length) return "torah";
+  if (type === "Mishna") return "mishna";
+  if (type === "Tehilim" || (type === "Tanakh" && livre && NACH_BOOKS.has(livre))) return "tanakh";
   return null;
+}
+
+/**
+ * Les cases d'une section dans une grille de commentaires : un texte lu d'un
+ * seul tenant (une paracha, un livre, un psaume) a tous ses groupes bout à
+ * bout ; un texte lu chapitre par chapitre (un traité de Michna, Chir
+ * HaChirim) a le groupe de son chapitre.
+ */
+export function sectionCells(
+  groups: RashiComment[][][],
+  section: TextSection,
+  whole: boolean,
+): RashiComment[][] {
+  return whole ? groups.flat() : (groups[section.index - 1] ?? []);
 }
 
 /**
@@ -79,13 +112,17 @@ export function usePassageCommentaries(
   section: Ref<TextSection | null>,
 ) {
   const corpus = computed<CommentaryCorpus>(() =>
-    commentaryCorpusOf(textEntry.value ? String(textEntry.value.type) : undefined, section.value),
+    commentaryCorpusOf(
+      textEntry.value ? String(textEntry.value.type) : undefined,
+      section.value,
+      textEntry.value?.livre,
+    ),
   );
   const state = ref<"idle" | "loading" | "ready" | "error">("idle");
   /** Guemara : les commentaires par index d'amoud du traité. */
   const talmud = shallowRef<Map<number, DafMeforshim> | null>(null);
-  /** Torah : Rachi verset par verset, aligné sur `he`. */
-  const torah = shallowRef<RashiComment[][] | null>(null);
+  /** Michna, Tanakh : chaque commentateur, ligne par ligne, aligné sur `he`. */
+  const lines = shallowRef<{ source: CommentarySource; cells: RashiComment[][] }[] | null>(null);
 
   let request = 0;
   // Un autre texte, un autre chapitre : ce qui était chargé ne vaut plus.
@@ -93,7 +130,7 @@ export function usePassageCommentaries(
     request++;
     state.value = "idle";
     talmud.value = null;
-    torah.value = null;
+    lines.value = null;
   });
 
   /** Charge les commentaires de la section ouverte, une fois. */
@@ -113,9 +150,19 @@ export function usePassageCommentaries(
         if (mine !== request) return;
         talmud.value = loaded;
       } else {
-        const loaded = await loadParashaRashi(entry);
-        if (mine !== request) return;
-        torah.value = loaded;
+        const whole = entry.totalSections === 1;
+        if (corpus.value === "mishna") {
+          const loaded = await loadMishnaMeforshim(entry);
+          if (mine !== request) return;
+          lines.value = [
+            { source: "bartenura", cells: sectionCells(loaded.bartenura, open, whole) },
+            { source: "tosafotYomTov", cells: sectionCells(loaded.tosafotYomTov, open, whole) },
+          ];
+        } else {
+          const loaded = await loadTanakhRashi(entry);
+          if (mine !== request) return;
+          lines.value = [{ source: "rashi", cells: sectionCells(loaded, open, whole) }];
+        }
       }
       state.value = "ready";
     } catch {
@@ -128,11 +175,9 @@ export function usePassageCommentaries(
     const open = section.value;
     if (!open || state.value !== "ready") return [];
     if (corpus.value === "talmud" && talmud.value) return talmudGroups(talmud.value, open, line);
-    if (corpus.value === "torah" && torah.value) {
-      const comments = torah.value[line] ?? [];
-      return comments.length ? [{ source: "rashi", comments }] : [];
-    }
-    return [];
+    return (lines.value ?? [])
+      .map(({ source, cells }) => ({ source, comments: cells[line] ?? [] }))
+      .filter((g) => g.comments.length > 0);
   }
 
   return { corpus, state, talmud, ensure, groupsAt };
@@ -143,4 +188,6 @@ export const COMMENTARY_LABELS = {
   rashi: "textReading.commentaries.rashi",
   rashbam: "textReading.commentaries.rashbam",
   tosafot: "textReading.commentaries.tosafot",
-} as const;
+  bartenura: "textReading.commentaries.bartenura",
+  tosafotYomTov: "textReading.commentaries.tosafotYomTov",
+} as const satisfies Record<CommentarySource, string>;

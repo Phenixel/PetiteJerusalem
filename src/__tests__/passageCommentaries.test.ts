@@ -3,13 +3,16 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { leadRanges, markedPieces, talmudOpenings } from "../services/pageForm";
 import {
+  parseCommentaryGroups,
   parseContent,
   parseDafMeforshim,
+  parseMishnaMeforshim,
   parseParashaRashi,
   placeLabel,
 } from "../services/textService";
 import {
   commentaryCorpusOf,
+  sectionCells,
   talmudGroups,
   talmudPassageOf,
 } from "../composables/usePassageCommentaries";
@@ -88,19 +91,20 @@ describe("le dibbour hamat'hil dans le texte", () => {
 });
 
 describe("commentaires d'un verset de la Torah", () => {
-  it("ne propose les commentaires qu'à la guemara et aux parachiot", () => {
+  it("propose Rachi aux parachiot, aux Neviim, aux Ketouvim et aux psaumes", () => {
     const berechit = entries.find((e) => e.type === "Tanakh" && e.id === 264)!;
     const josue = entries.find((e) => e.type === "Tanakh" && e.id === 318)!;
     const tehilim = entries.find((e) => e.type === "Tehilim")!;
     const paracha = parseContent(berechit, read("tanakh/264.json")).sections[0];
+    const livre = parseContent(josue, read("tanakh/318.json")).sections[0];
     expect(commentaryCorpusOf("Talmud Bavli", chapitre)).toBe("talmud");
-    expect(commentaryCorpusOf("Tanakh", paracha)).toBe("torah");
-    expect(
-      commentaryCorpusOf("Tanakh", parseContent(josue, read("tanakh/318.json")).sections[0]),
-    ).toBeNull();
+    expect(commentaryCorpusOf("Tanakh", paracha, berechit.livre)).toBe("torah");
+    expect(commentaryCorpusOf("Tanakh", livre, josue.livre)).toBe("tanakh");
     expect(
       commentaryCorpusOf("Tehilim", parseContent(tehilim, read("tehilim.json")).sections[0]),
-    ).toBeNull();
+    ).toBe("tanakh");
+    // La liturgie n'a pas de commentaire.
+    expect(commentaryCorpusOf("Sidour", livre)).toBeNull();
   });
 
   it("souligne « בראשית » dans le premier verset", () => {
@@ -113,6 +117,37 @@ describe("commentaires d'un verset de la Torah", () => {
     );
     expect(ranges.length).toBeGreaterThan(0);
     expect(verset.slice(ranges[0][0], ranges[0][1]).replace(/[֑-ׇ]/g, "")).toMatch(/^בראשית/);
+  });
+});
+
+describe("commentaires d'une michna, d'un verset des Neviim", () => {
+  it("donne le Bartenura puis les Tossefot Yom Tov de chaque michna, chapitre par chapitre", () => {
+    const entry = entries.find((e) => e.type === "Mishna" && e.link.endsWith("_Berakhot"))!;
+    const texte = parseContent(entry, read("mishna/berakhot.json"));
+    expect(commentaryCorpusOf("Mishna", texte.sections[0])).toBe("mishna");
+    const m = parseMishnaMeforshim(read("mishna-meforshim/berakhot.json") as never);
+    // Berakhot se lit chapitre par chapitre : le chapitre 2 a ses propres cases.
+    const chapitre2 = texte.sections.find((s) => s.index === 2)!;
+    const cases = sectionCells(m.bartenura, chapitre2, false);
+    expect(cases).toHaveLength(chapitre2.he.length);
+    expect(sectionCells(m.bartenura, texte.sections[0], false)[0][0].lead).toBe(
+      "מֵאֵימָתַי קוֹרִין.",
+    );
+    expect(sectionCells(m.tosafotYomTov, texte.sections[0], false)[0][0].lead).toBe(
+      "מאימתי קורין את שמע בערבית.",
+    );
+  });
+
+  it("retrouve Rachi d'un verset de Yehochoua, livre lu d'un seul tenant", () => {
+    const josue = entries.find((e) => e.id === 318)!;
+    const texte = parseContent(josue, read("tanakh/318.json")).sections[0];
+    const cases = sectionCells(
+      parseCommentaryGroups((read("rashi/318.json") as { he: unknown }).he),
+      texte,
+      true,
+    );
+    expect(cases).toHaveLength(texte.he.length);
+    expect(cases[0][0].lead.replace(/[\u0591-\u05C7]/g, "")).toBe("ויהי אחרי מות משה");
   });
 });
 

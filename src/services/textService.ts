@@ -1134,18 +1134,22 @@ export function parseRashiComment(raw: string): RashiComment | null {
  * un tableau vide.
  */
 export function parseParashaRashi(data: { he?: unknown[] }): RashiComment[][] {
-  const lines: RashiComment[][] = [];
-  for (const group of data.he ?? []) {
-    if (!Array.isArray(group)) continue;
-    for (const verse of group) {
-      lines.push(
-        (Array.isArray(verse) ? verse : [])
-          .map((comment) => parseRashiComment(String(comment)))
-          .filter((comment): comment is RashiComment => comment !== null),
-      );
-    }
-  }
-  return lines;
+  return parseCommentaryGroups(data.he).flat();
+}
+
+/**
+ * Une grille de commentaires (groupes × lignes × commentaires), telle que
+ * download-texts.mjs l'écrit : un groupe par groupe du fichier de texte
+ * (chapitre, montée), une case par ligne affichée.
+ */
+export function parseCommentaryGroups(groups: unknown): RashiComment[][][] {
+  return (Array.isArray(groups) ? groups : []).map((group) =>
+    (Array.isArray(group) ? group : []).map((line) =>
+      (Array.isArray(line) ? line : [])
+        .map((comment) => parseRashiComment(String(comment)))
+        .filter((comment): comment is RashiComment => comment !== null),
+    ),
+  );
 }
 
 /** Rachi sur une paracha (option du chnei mikra), voir {@link parseParashaRashi}. */
@@ -1156,6 +1160,59 @@ export async function loadParashaRashi(textStudy: TextStudyJsonEntry): Promise<R
     throw new Error(`Rachi non disponible (${res.status})`);
   }
   return parseParashaRashi((await res.json()) as { he?: unknown[] });
+}
+
+/** Le psaume d'une entrée de Tehilim (« …/Psalms.23 » → 23). */
+function psalmOf(textStudy: TextStudyJsonEntry): number {
+  return Number(String(textStudy.link).split(".").pop()) || 1;
+}
+
+/** L'entrée du livre de Tehilim au catalogue, dont le fichier Rachi sert aux psaumes. */
+const TEHILIM_BOOK_ID = 328;
+
+async function readCommentaryFile(path: string): Promise<Record<string, unknown>> {
+  const res = await fetchTextResponse(path);
+  if (!res.ok) {
+    if (res.status === 404) throw new MissingTextFileError();
+    throw new Error(`Commentaires non disponibles (${res.status})`);
+  }
+  return (await res.json()) as Record<string, unknown>;
+}
+
+/**
+ * Rachi sur un livre du Tanakh (public/texts/rashi/<id>.json), en groupes
+ * alignés sur ceux du fichier de texte. Un psaume lu seul (corpus Tehilim)
+ * prend son chapitre dans le fichier du livre de Tehilim : un seul groupe.
+ */
+export async function loadTanakhRashi(textStudy: TextStudyJsonEntry): Promise<RashiComment[][][]> {
+  if (String(textStudy.type) === "Tehilim") {
+    const data = await readCommentaryFile(`/texts/rashi/${TEHILIM_BOOK_ID}.json`);
+    const groups = parseCommentaryGroups(data.he);
+    return [groups[psalmOf(textStudy) - 1] ?? []];
+  }
+  const data = await readCommentaryFile(`/texts/rashi/${textStudy.id}.json`);
+  return parseCommentaryGroups(data.he);
+}
+
+// ---- Bartenura et Tossefot Yom Tov sur la Michna ----------------------------
+
+/** Les commentaires d'un traité de Michna, chapitre × michna × commentaires. */
+export interface MishnaMeforshim {
+  bartenura: RashiComment[][][];
+  tosafotYomTov: RashiComment[][][];
+}
+
+/** public/texts/mishna-meforshim/<traité>.json, voir download-texts.mjs. */
+export function parseMishnaMeforshim(data: Record<string, unknown>): MishnaMeforshim {
+  return {
+    bartenura: parseCommentaryGroups(data.bartenura),
+    tosafotYomTov: parseCommentaryGroups(data.tosafotYomTov),
+  };
+}
+
+export async function loadMishnaMeforshim(textStudy: TextStudyJsonEntry): Promise<MishnaMeforshim> {
+  const slug = tractateSlug(tractateFromLink(textStudy.link, true));
+  return parseMishnaMeforshim(await readCommentaryFile(`/texts/mishna-meforshim/${slug}.json`));
 }
 
 // ---- Rachi et Tossafot sur la guemara (forme de la page) -------------------

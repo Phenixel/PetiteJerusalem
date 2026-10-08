@@ -1525,7 +1525,9 @@ couleur du thème.
 
 ### Les commentaires d'un passage s'ouvrent depuis son volet, puis suivent la lecture
 
-Une guemara a Rachi et Tossafot, une paracha a Rachi ; chacun est rattaché à
+Une guemara a Rachi et Tossafot ; une michna, le Bartenura et les Tossefot
+Yom Tov (les deux qu'imprime une Michna courante) ; un verset du Tanakh,
+paracha, Neviim, Ketouvim ou psaume lu seul, a Rachi. Chacun est rattaché à
 un passage précis du texte (la guemara est découpée en passages de l'ordre
 d'une phrase, ceux de Sefaria, invisibles à la lecture : le texte se lit
 toujours d'un seul tenant, seul le passage choisi prend un fond). Le volet

@@ -804,13 +804,17 @@ const positionLabel = computed(() => {
     : base;
 });
 
-/** "Chapitre 2 (ב) · 3e montée · verset 14" pour une position donnée. */
+/**
+ * "Chapitre 2 (ב) · 3e montée · verset 14" pour une position donnée ; dans la
+ * Michna, "Chapitre 2 (ב) · michna 3".
+ */
 function placeLabel(sectionIndex: number | null, line: number): string {
+  const isMishna = String(textEntry.value?.type) === "Mishna";
   return describePlace(
     content.value?.sections ?? [],
     sectionIndex,
     line,
-    (n) => t("textReading.verseN", { n }),
+    (n) => (isMishna ? t("textReading.mishnaN", { n }) : t("textReading.verseN", { n })),
     headingLabel,
     (n) => t("textReading.passageN", { n }),
   );

@@ -343,16 +343,19 @@ gardé : passer à la phonétique et en revenir ne le touche pas.
 
 ### Lecture : `commentaries_opened`, `commentaries_closed` (nouveaux)
 
-Les commentaires d'un passage (Rachi, Tossafot, voir `docs/design.md`,
+Les commentaires d'un passage (Rachi, Tossafot, Bartenura, Tossefot Yom
+Tov, voir `docs/design.md`,
 « Les commentaires d'un passage s'ouvrent depuis sa bulle, puis suivent la
 lecture ») : `commentaries_opened` part quand la rangée « Commentaires » de
 la bulle ouvre le panneau d'étude, `commentaries_closed` quand on le ferme
 (croix, Échap, retour, changement de texte). Le second dit si le panneau
-sert à un passage ou à l'étude d'un daf entier.
+sert à un passage ou à l'étude d'un daf entier. `corpus` dit lequel : une
+guemara (`talmud`), une paracha (`torah`), une michna (`mishna`), un verset
+des Neviim, des Ketouvim ou un psaume (`tanakh`).
 
 | Événement             | Propriété         | Valeurs                                                    | Statut      |
 | --------------------- | ----------------- | ---------------------------------------------------------- | ----------- |
-| `commentaries_opened` | `corpus`          | `talmud`, `torah`                                          | **nouveau** |
+| `commentaries_opened` | `corpus`          | `talmud`, `torah`, `mishna`, `tanakh` (Neviim, Ketouvim)   | **nouveau** |
 | `commentaries_opened` | `text_id`         | l'id du texte dans le catalogue                            | **nouveau** |
 | `commentaries_opened` | `count`           | le nombre de commentaires du passage                       | **nouveau** |
 | `commentaries_closed` | `passages_viewed` | les passages vus dans le panneau, celui de l'ouverture compris | **nouveau** |

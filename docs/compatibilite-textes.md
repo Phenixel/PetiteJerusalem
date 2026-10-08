@@ -150,6 +150,29 @@ une guemara régénérée qui gagnerait ou perdrait un amoud se régénère donc
 ses commentaires (tenu par `src/__tests__/pageForm.test.ts`, qui vérifie
 l'alignement sur chaque traité).
 
+### Les commentaires de la Michna et des Neviim / Ketouvim
+
+Deux corpus s'ajoutent, écrits par `scripts/download-texts.mjs
+--only=commentaires`, et lus seulement par le panneau d'étude :
+
+- `texts/mishna-meforshim/<traité>.json`, `{ title, bartenura,
+  tosafotYomTov }` : un fichier par traité, nommé comme celui de sa Michna ;
+- `texts/rashi/<id>.json` pour les entrées des Neviim et des Ketouvim (318
+  à 339), au format de Rachi sur une paracha (`{ title, he }`, sans
+  `fromBook` ni `grouping`). Le fichier du livre de Tehilim (328) sert aussi
+  aux psaumes lus un par un : son groupe `n - 1` est le psaume `n`.
+
+Leur grille est celle du fichier de texte livré : un groupe par groupe du
+fichier (chapitre, livre des Douze), une case par ligne **affichée** (une
+ligne vide de la source n'en a pas), une liste de commentaires par case, le
+dibbour hamat'hil en `<b>…</b>`. Un texte lu chapitre par chapitre (un
+traité de Michna, Chir HaChirim) prend le groupe de son chapitre
+(`section.index - 1`) ; un texte lu d'un seul tenant, tous les groupes bout à
+bout. Une version publiée ne lit ces fichiers que pour les parachiot (option
+Rachi du chnei mikra) : les fichiers des Neviim et des Ketouvim ne lui
+changent rien. Un texte régénéré qui gagnerait ou perdrait une ligne se
+régénère avec ses commentaires (tenu par `src/__tests__/commentaryFiles.test.ts`).
+
 ### Les coupures de ligne du livre imprimé (proposition)
 
 La forme de la page compose ses lignes à l'écran : ce ne sont pas celles du

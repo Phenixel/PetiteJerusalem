@@ -1,4 +1,5 @@
 import { computed, getCurrentScope, onScopeDispose, shallowRef } from "vue";
+import type { CommentarySource } from "./usePassageCommentaries";
 
 /**
  * Le passage choisi dans un texte, et ce qu'on en fait.
@@ -59,7 +60,7 @@ export interface ReadingPassage {
 /** Ce que la bulle dit des commentaires d'un passage. */
 export type CommentarySummary =
   | { state: "loading" }
-  | { state: "ready"; counts: { source: "rashi" | "rashbam" | "tosafot"; count: number }[] }
+  | { state: "ready"; counts: { source: CommentarySource; count: number }[] }
   | { state: "none" };
 
 /**

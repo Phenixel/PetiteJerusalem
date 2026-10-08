@@ -17,7 +17,7 @@ const ROOT = resolve(__dirname, '..');
 const OUT = resolve(ROOT, 'public/texts');
 const GCS = 'https://storage.googleapis.com/sefaria-export/json';
 
-// `--only=tanakh` (ou tehilim/mishna/talmud/rashi/meforshim) pour ne régénérer qu'un
+// `--only=tanakh` (ou tehilim/mishna/talmud/rashi/meforshim/commentaires) pour ne régénérer qu'un
 // corpus. `tefila` n'est jamais du lot par défaut : ses fichiers sont mis en
 // forme à la main après téléchargement, il faut le demander nommément (voir
 // plus bas).
@@ -759,6 +759,193 @@ if (shouldRun('rashi')) {
       he: groups,
     }), 'utf8');
     console.log(`  ✓ Rachi ${entry.name} (${commented} versets commentés) → rashi/${entry.id}.json`);
+  }
+}
+
+// ---------- Commentaires de la Michna et des Neviim / Ketouvim ----------
+//
+// Les commentaires d'un passage s'ouvrent depuis son volet (CommentaryPanel.vue) :
+// Rachi et Tossafot pour la guemara (plus haut), Rachi pour la Torah (plus
+// haut), et ici :
+//
+// - la Michna : le Bartenura et les Tossefot Yom Tov, un fichier par traité
+//   (public/texts/mishna-meforshim/<slug>.json) ;
+// - les Neviim et les Ketouvim : Rachi, un fichier par entrée du catalogue
+//   (public/texts/rashi/<id>.json), au format de Rachi sur une paracha ; le
+//   fichier du livre de Tehilim (328) sert aussi aux psaumes lus un par un.
+//
+// Chaque fichier suit la grille du fichier de texte LIVRÉ : un groupe par
+// groupe du fichier (chapitre, livre des Douze), dans chaque groupe une case
+// par ligne que le lecteur affiche (une ligne vide n'en a pas), et dans
+// chaque case la liste des commentaires. Le fichier de texte a perdu les
+// chapitres vides de la source (cleanTextArray) : on refait la même marche
+// sur la source pour savoir à quel chapitre de Sefaria répond chaque groupe.
+// Le dibbour hamat'hil garde son gras (<b>…</b>) ; le point qui le suit dans
+// la source rentre dans le gras, comme chez Rachi sur la Torah.
+// `--only=commentaires` pour ne régénérer que ces fichiers.
+
+/** Un commentaire de la source → son texte, le dibbour en gras. */
+function commentText(raw) {
+  return cleanRashiText(String(raw ?? '').replace(/<br\s*\/?>/g, ' ').replace(/\s+/g, ' '))
+    .replace(/^<b>\s*([^<]*?)\s*<\/b>\s*([.:,])/, '<b>$1$2</b>')
+    .replace(/^<b>\s*([^<]*?)\s*<\/b>/, '<b>$1</b>');
+}
+
+/** Les commentaires d'une case de la source (une chaîne, une liste, rien). */
+function cellComments(cell) {
+  return (Array.isArray(cell) ? cell.flat(Infinity) : cell ? [cell] : [])
+    .map(commentText)
+    .filter(Boolean);
+}
+
+/**
+ * Le corps d'un texte de Sefaria : un tableau, ou, quand le texte a aussi une
+ * introduction (les Tossefot Yom Tov sur Péa), le nœud sans nom d'un objet.
+ */
+function textBody(text) {
+  return Array.isArray(text) ? text : (text?.[''] ?? []);
+}
+
+/** Les index des chapitres de la source que cleanTextArray garde. */
+function keptChapters(source) {
+  const kept = [];
+  (source ?? []).forEach((chapter, i) => {
+    const clean = Array.isArray(chapter)
+      ? chapter.map(s => stripHtml(typeof s === 'string' ? s : ''))
+      : typeof chapter === 'string' ? stripHtml(chapter) : '';
+    if (clean === '' || (Array.isArray(clean) && clean.every(s => !s))) return;
+    kept.push(i);
+  });
+  return kept;
+}
+
+/**
+ * Un groupe du fichier de texte et le chapitre de la source qui lui répond →
+ * une case par ligne affichée, avec les commentaires de chaque commentateur.
+ */
+function alignGroup(group, chapterOf) {
+  const cells = [];
+  (Array.isArray(group) ? group : [group]).forEach((line, v) => {
+    if (!verseText(line)) return;
+    cells.push(chapterOf(v));
+  });
+  return cells;
+}
+
+const MISHNA_MEFORSHIM = [
+  ['bartenura', 'Rishonim on Mishnah/Bartenura', 'Bartenura on'],
+  ['tosafotYomTov', 'Acharonim on Mishnah/Tosafot Yom Tov', 'Tosafot Yom Tov on'],
+];
+
+// Les traités que mishnaSederMap ne connaît pas (leurs fichiers de texte
+// datent d'une version antérieure du script), et les noms de Sefaria qui ne
+// sont pas « Mishnah <nom du catalogue> ».
+const MISHNA_SEDER_EXTRA = {
+  'Avot': 'Seder Nezikin', 'Middot': 'Seder Kodashim', 'Kinnim': 'Seder Kodashim',
+  'Keilim': 'Seder Tahorot', 'Oholot': 'Seder Tahorot', 'Negaim': 'Seder Tahorot',
+  'Parah': 'Seder Tahorot', 'Toharot': 'Seder Tahorot', 'Mikvaot': 'Seder Tahorot',
+  'Makhshirin': 'Seder Tahorot', 'Zavim': 'Seder Tahorot', 'Tevul Yom': 'Seder Tahorot',
+  'Yadayim': 'Seder Tahorot', 'Oktzin': 'Seder Tahorot',
+};
+const MISHNA_SEFARIA_NAME = {
+  'Avot': 'Pirkei Avot', 'Keilim': 'Mishnah Kelim', 'Toharot': 'Mishnah Tahorot',
+};
+// Le texte de Taanit s'écrit avec une apostrophe, ses commentaires sans.
+const MISHNA_TEXT_NAME = { 'Taanit': "Mishnah Ta'anit" };
+// Un dossier de Sefaria orthographié autrement que les autres.
+const MISHNA_FOLDER_NAME = {
+  'Tosafot Yom Tov on Mishnah Peah': 'Tosefot Yom Tov on Mishnah Peah',
+};
+
+// Les livres de Rachi, par leur nom Sefaria : Neviim, puis Ketouvim.
+const RASHI_PROPHETS = new Set([
+  'Joshua', 'Judges', 'I Samuel', 'II Samuel', 'I Kings', 'II Kings', 'Isaiah', 'Jeremiah',
+  'Ezekiel', 'Hosea', 'Joel', 'Amos', 'Obadiah', 'Jonah', 'Micah', 'Nahum', 'Habakkuk',
+  'Zephaniah', 'Haggai', 'Zechariah', 'Malachi',
+]);
+
+if (shouldRun('commentaires')) {
+  console.log('\n=== Bartenura et Tossefot Yom Tov sur la Michna ===');
+  mkdirSync(`${OUT}/mishna-meforshim`, { recursive: true });
+  // Le nom du traité, comme textService le lit dans le lien du catalogue.
+  const tractates = [...new Set(textStudies.filter(t => t.type === 'Mishna')
+    .map(t => t.link.replace('https://www.sefaria.org/', '').replace(/^Mishnah_/, '').replace(/_/g, ' ')))];
+  for (let i = 0; i < tractates.length; i += 5) {
+    await Promise.all(tractates.slice(i, i + 5).map(async (tractate) => {
+      const seder = mishnaSederMap[tractate] ?? MISHNA_SEDER_EXTRA[tractate];
+      const sefaria = MISHNA_SEFARIA_NAME[tractate] ?? `Mishnah ${tractate}`;
+      const slug = tractate.toLowerCase().replace(/ /g, '-').replace(/'/g, '');
+      if (!seder) { console.warn(`  ⚠ ${tractate}: pas de seder`); return; }
+      try {
+        const shipped = JSON.parse(readFileSync(`${OUT}/mishna/${slug}.json`, 'utf8'));
+        const source = await withRetry(
+          () => fetchJson(`${GCS}/Mishnah/${seder}/${MISHNA_TEXT_NAME[tractate] ?? sefaria}/Hebrew/merged.json`),
+          `Mishna ${tractate}`,
+        );
+        const kept = keptChapters(source.text);
+        if (kept.length !== (shipped.he ?? []).length) {
+          throw new Error(`${kept.length} chapitres à la source, ${shipped.he?.length} livrés`);
+        }
+        const out = { title: tractate };
+        for (const [key, dir, prefix] of MISHNA_MEFORSHIM) {
+          const folder = MISHNA_FOLDER_NAME[`${prefix} ${sefaria}`] ?? `${prefix} ${sefaria}`;
+          const data = await withRetry(
+            () => fetchJson(`${GCS}/Mishnah/${dir}/${seder}/${folder}/Hebrew/merged.json`),
+            folder,
+          ).catch(() => null);
+          if (!data) { console.warn(`  ⚠ ${folder}: absent`); continue; }
+          out[key] = shipped.he.map((group, g) =>
+            alignGroup(group, m => cellComments(textBody(data.text)[kept[g]]?.[m])));
+        }
+        writeFileSync(`${OUT}/mishna-meforshim/${slug}.json`, JSON.stringify(out), 'utf8');
+        console.log(`  ✓ ${tractate} → mishna-meforshim/${slug}.json`);
+      } catch (e) {
+        console.error(`  ✗ ${tractate}: ${e.message}`);
+      }
+    }));
+  }
+
+  console.log('\n=== Rachi sur les Neviim et les Ketouvim ===');
+  // Le livre de chaque groupe du fichier livré, dans l'ordre des groupes.
+  const booksOf = entry => {
+    const rawRef = entry.link.replace('https://www.sefaria.org/', '');
+    if (rawRef === 'Trei Asar') return TREI_ASAR_BOOKS.map(([b]) => (b === 'Malakhi' ? 'Malachi' : b));
+    if (rawRef === 'Ezra-Nehemiah') return ['Ezra', 'Nehemiah'];
+    const std = refToStdName[rawRef] ?? rawRef;
+    return tanakhGcsMap[std] ? [std] : [];
+  };
+  const textPathOf = book =>
+    `Tanakh/${RASHI_PROPHETS.has(book) ? 'Prophets' : 'Writings'}/${book}`;
+  const rashiPathOf = book =>
+    `Tanakh/Rishonim on Tanakh/Rashi/${RASHI_PROPHETS.has(book) ? 'Prophets' : 'Writings'}/Rashi on ${book}`;
+
+  for (const entry of tanakhEntries.filter(e => booksOf(e).length)) {
+    try {
+      const shipped = JSON.parse(readFileSync(`${OUT}/tanakh/${entry.id}.json`, 'utf8'));
+      // Chaque groupe livré → [livre, chapitre de la source].
+      const places = [];
+      const rashiOf = {};
+      for (const book of booksOf(entry)) {
+        const [text, rashi] = await Promise.all([
+          withRetry(() => fetchJson(`${GCS}/${textPathOf(book)}/Hebrew/merged.json`), book),
+          withRetry(() => fetchJson(`${GCS}/${rashiPathOf(book)}/Hebrew/merged.json`), `Rashi ${book}`),
+        ]);
+        rashiOf[book] = textBody(rashi.text);
+        for (const c of keptChapters(text.text)) places.push([book, c]);
+      }
+      if (places.length !== (shipped.he ?? []).length) {
+        throw new Error(`${places.length} chapitres à la source, ${shipped.he?.length} livrés`);
+      }
+      const he = shipped.he.map((group, g) => {
+        const [book, c] = places[g];
+        return alignGroup(group, v => cellComments(rashiOf[book][c]?.[v]));
+      });
+      const commented = he.flat().filter(cell => cell.length > 0).length;
+      writeFileSync(`${OUT}/rashi/${entry.id}.json`, JSON.stringify({ title: entry.name, he }), 'utf8');
+      console.log(`  ✓ Rachi ${entry.name} (${commented} versets commentés) → rashi/${entry.id}.json`);
+    } catch (e) {
+      console.error(`  ✗ Rachi ${entry.name}: ${e.message}`);
+    }
   }
 }
 
