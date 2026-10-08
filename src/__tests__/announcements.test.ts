@@ -2,10 +2,12 @@ import { describe, expect, it } from "vitest";
 import {
   appliesToInstalled,
   FIRST_VISIT_WINDOW_MS,
+  fixedOnDevice,
   HOME_PREVIEW_MAX_AGE_MS,
   HOME_RECENT_WINDOW_MS,
   homeHighlights,
   isExternalLink,
+  isOngoingIncident,
   isNew,
   localized,
   sortAnnouncements,
@@ -167,6 +169,70 @@ describe("homeHighlights", () => {
     const release = make({ kind: "release", version: "3.11.0" });
     expect(unreadAnnouncements([release], null, "3.10.0", NOW)).toEqual([]);
     expect(homeHighlights([release], null, "3.10.0", NOW)).toEqual([]);
+  });
+});
+
+describe("un incident corrigé par une version", () => {
+  const incident = make({ id: "i", kind: "incident", version: "3.10.11" });
+
+  it("reste en cours tant que la version du correctif n'est pas installée", () => {
+    expect(fixedOnDevice(incident, "3.10.10")).toBe(false);
+    expect(isOngoingIncident(incident, "3.10.10")).toBe(true);
+    const [first] = homeHighlights([incident], null, "3.10.10", NOW);
+    expect(first).toMatchObject({ announcement: incident, mode: "preview" });
+    // Lu, il reste en une ligne : l'appareil est toujours concerné.
+    const read = homeHighlights([incident], NOW, "3.10.10", NOW);
+    expect(read).toMatchObject([{ announcement: incident, mode: "compact" }]);
+  });
+
+  it("quitte l'accueil une fois le correctif installé, lu ou non", () => {
+    for (const installed of ["3.10.11", "3.11.0"]) {
+      expect(isOngoingIncident(incident, installed)).toBe(false);
+      expect(homeHighlights([incident], null, installed, NOW)).toEqual([]);
+      expect(homeHighlights([incident], NOW, installed, NOW)).toEqual([]);
+      expect(unreadAnnouncements([incident], null, installed, NOW)).toEqual([]);
+    }
+  });
+
+  it("ne s'affiche pas sur le site, toujours à la dernière version", () => {
+    expect(fixedOnDevice(incident, null)).toBe(true);
+    expect(homeHighlights([incident], null, null, NOW)).toEqual([]);
+  });
+
+  it("laisse la place aux nouveautés là où il est corrigé", () => {
+    const news = make({ id: "n", publishedAt: new Date(NOW - 2 * DAY) });
+    const [first, second] = homeHighlights([incident, news], null, "3.10.11", NOW);
+    expect(first).toMatchObject({ announcement: news, mode: "preview", unreadCount: 1 });
+    expect(second).toBeUndefined();
+  });
+
+  it("sans version, un incident ne dépend que de « résolu »", () => {
+    const plain = make({ id: "p", kind: "incident" });
+    expect(fixedOnDevice(plain, null)).toBe(false);
+    expect(isOngoingIncident(plain, "9.9.9")).toBe(true);
+    expect(isOngoingIncident({ ...plain, resolved: true }, "9.9.9")).toBe(false);
+    // Une note de version n'est jamais « corrigée » : la règle ne vaut que pour un incident.
+    expect(fixedOnDevice(make({ kind: "release", version: "3.10.11" }), "3.10.11")).toBe(false);
+  });
+});
+
+describe("une note de version lue", () => {
+  const note = make({ id: "r", kind: "release", version: "3.10.11" });
+
+  it("ne revient pas sur l'accueil, même dans la semaine", () => {
+    expect(homeHighlights([note], NOW, "3.10.11", NOW)).toEqual([]);
+    expect(homeHighlights([note], NOW, null, NOW)).toEqual([]);
+  });
+
+  it("non lue, elle s'annonce toujours en aperçu", () => {
+    const [first] = homeHighlights([note], null, "3.10.11", NOW);
+    expect(first).toMatchObject({ announcement: note, mode: "preview" });
+  });
+
+  it("laisse la ligne de la semaine à la dernière annonce d'une autre nature", () => {
+    const news = make({ id: "n", publishedAt: new Date(NOW - 3 * DAY) });
+    const [first] = homeHighlights([note, news], NOW, "3.10.11", NOW);
+    expect(first).toMatchObject({ announcement: news, mode: "compact" });
   });
 });
 

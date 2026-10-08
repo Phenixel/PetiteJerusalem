@@ -70,7 +70,8 @@ describe("une note de version ouverte seule", () => {
 
     expect(seenVersion.value).toBe("3.12.0");
     expect(localStorage.getItem(SEEN_VERSION_KEY)).toBe("3.12.0");
-    expect(highlights.value[0]).toMatchObject({ mode: "compact", unreadCount: 0 });
+    // Lue, une note de version quitte l'accueil : pas de ligne d'une semaine.
+    expect(highlights.value).toEqual([]);
   });
 
   it("ouverte depuis une notification, avant la liste : la version installée est lue", async () => {

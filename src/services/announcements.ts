@@ -38,9 +38,13 @@ export interface Announcement {
   updatedAt: Date | null;
   /** Une page de l'app où aller (« /bibliotheque/sidour »), ou une adresse externe. */
   link: { url: string; label: LocalizedText } | null;
-  /** Notes de version : la version de l'app qu'elles décrivent (« 3.11.0 »). */
+  /**
+   * Notes de version : la version de l'app qu'elles décrivent (« 3.11.0 »).
+   * Incident : la version qui le corrige ; un appareil qui l'a n'est plus
+   * concerné (voir fixedOnDevice).
+   */
   version: string | null;
-  /** Incident : réglé. Tant qu'il ne l'est pas, l'accueil le montre. */
+  /** Incident : réglé pour tous. Tant qu'il ne l'est pas, l'accueil le montre. */
   resolved: boolean;
   /** Partir en notification à la publication (une fois, voir functions/src/announcements.ts). */
   notify: boolean;
@@ -66,10 +70,29 @@ export const FIRST_VISIT_WINDOW_MS = 14 * 24 * 60 * 60 * 1000;
  * Des notes de version ne concernent l'appareil qu'une fois la version
  * installée : annoncées pendant la revue des stores, elles décriraient ce que
  * l'app ne fait pas encore. Sur le site (`installed` nul), toujours.
+ *
+ * Un incident corrigé sur cet appareil ne le concerne plus : il n'y est ni
+ * nouveau, ni mis en avant.
  */
 export function appliesToInstalled(a: Announcement, installed: string | null): boolean {
+  if (fixedOnDevice(a, installed)) return false;
   if (a.kind !== "release" || !a.version || !installed) return true;
   return !isOutdated(installed, a.version);
+}
+
+/**
+ * Un incident qui porte la version de son correctif est réglé là où cette
+ * version est installée : qui a fait la mise à jour n'a plus à le lire sur
+ * son accueil. Le site (`installed` nul) est toujours à la dernière version.
+ */
+export function fixedOnDevice(a: Announcement, installed: string | null): boolean {
+  if (a.kind !== "incident" || !a.version) return false;
+  return !installed || !isOutdated(installed, a.version);
+}
+
+/** Un incident encore en cours pour cet appareil : ni réglé pour tous, ni corrigé ici. */
+export function isOngoingIncident(a: Announcement, installed: string | null): boolean {
+  return a.kind === "incident" && !a.resolved && !fixedOnDevice(a, installed);
 }
 
 /** Publiée depuis la dernière visite de la liste ? */
@@ -122,7 +145,8 @@ export const HOME_PREVIEW_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
 
 /**
  * Une fois lue, une annonce récente reste une semaine sur l'accueil, en une
- * ligne : on sait que l'équipe a parlé, sans relire.
+ * ligne : on sait que l'équipe a parlé, sans relire. Sauf une note de
+ * version : lue, elle n'a plus rien à dire à qui a déjà la mise à jour.
  */
 export const HOME_RECENT_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -139,11 +163,12 @@ export interface HomeHighlight {
  * Ce que l'accueil montre, dans l'ordre (au plus deux cartes).
  *
  * Un incident en cours passe avant tout, lu ou non : il reste sur l'accueil
- * jusqu'à ce qu'il soit réglé, c'est ce qui évite dix fois le même
- * signalement. Non lu, il est en aperçu et compte les autres nouveautés ;
+ * jusqu'à ce qu'il soit réglé (pour tous, ou sur cet appareil par la version
+ * qui le corrige), c'est ce qui évite dix fois le même signalement. Non lu, il est en aperçu et compte les autres nouveautés ;
  * lu, il se réduit à une ligne et laisse la place, dessous, à la dernière
  * nouveauté non lue. Sans incident : la dernière annonce non lue en aperçu,
- * sinon la dernière de la semaine en une ligne, sinon rien.
+ * sinon la dernière de la semaine en une ligne (hors notes de version),
+ * sinon rien.
  */
 export function homeHighlights(
   items: Announcement[],
@@ -158,7 +183,7 @@ export function homeHighlights(
   );
   const unreadCount = unread.length;
 
-  const incident = items.find((a) => a.kind === "incident" && !a.resolved);
+  const incident = items.find((a) => isOngoingIncident(a, installed));
   if (incident) {
     if (unread.includes(incident))
       return [{ announcement: incident, mode: "preview", unreadCount }];
@@ -171,7 +196,11 @@ export function homeHighlights(
   if (unread.length > 0) return [{ announcement: unread[0], mode: "preview", unreadCount }];
 
   const recent = items.find(
-    (a) => a.publishedAt && age(a) <= HOME_RECENT_WINDOW_MS && appliesToInstalled(a, installed),
+    (a) =>
+      a.kind !== "release" &&
+      a.publishedAt &&
+      age(a) <= HOME_RECENT_WINDOW_MS &&
+      appliesToInstalled(a, installed),
   );
   return recent ? [{ announcement: recent, mode: "compact", unreadCount: 0 }] : [];
 }

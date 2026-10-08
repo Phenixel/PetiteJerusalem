@@ -13,7 +13,9 @@ site.
    - **Nouveauté** : une fonction à découvrir ;
    - **Mise à jour** : les notes d'une version, avec son numéro (`3.11.0`) ;
    - **Incident** : un problème connu, qui reste en tête de l'accueil tant
-     qu'il n'est pas marqué « résolu » ;
+     qu'il n'est pas marqué « résolu ». S'il se règle par une mise à jour,
+     indiquer la version qui le corrige (`3.10.11`) : les appareils qui
+     l'ont ne le voient plus sur l'accueil ;
    - **Question** : l'annonce se termine par un bouton « Répondre », qui ouvre
      le formulaire de support déjà amorcé ; la réponse arrive dans la base
      Notion du support, comme les autres messages.
@@ -44,10 +46,16 @@ information « Mise à jour » à la publication de la release GitHub.
 - **Une carte sur l'accueil**, seulement quand il y a quelque chose :
   - une annonce pas encore lue s'y montre **en aperçu** (sa nature, le titre
     et le début du texte, « Lire la suite »), pendant un mois au plus ;
-  - une fois lue, elle reste **une semaine en une ligne** ;
+  - une fois lue, elle reste **une semaine en une ligne**, sauf une note de
+    version : lue, elle quitte l'accueil ;
   - un incident en cours passe avant tout et reste jusqu'à ce qu'il soit
     marqué résolu ; lu, il se réduit à une ligne et laisse la dernière
-    nouveauté non lue s'afficher en aperçu dessous.
+    nouveauté non lue s'afficher en aperçu dessous ;
+  - un incident qui porte la version de son correctif ne s'affiche que là
+    où cette version manque : une fois la mise à jour faite, il quitte
+    l'accueil et n'est plus « Nouveau », lu ou non. Dans la liste, il se lit
+    « Résolu », avec « Corrigé dans la version… ». Le site, toujours à la
+    dernière version, ne le met jamais en avant.
 - **Une notification** dans l'app, qui ouvre l'annonce.
 
 « Déjà vu » se retient sur l'appareil (`pj_announcements_seen`), sans compte.

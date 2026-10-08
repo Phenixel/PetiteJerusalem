@@ -8,8 +8,9 @@ import AnnouncementHomeCard from "./AnnouncementHomeCard.vue";
 /**
  * Les informations de l'équipe, sur l'accueil, quand il y a quelque chose à
  * dire (voir homeHighlights) : une annonce pas encore lue en aperçu, titre et
- * début du texte ; lue, une ligne pendant une semaine ; un incident en cours
- * tant qu'il n'est pas réglé. Le reste du temps, rien : la liste complète
+ * début du texte ; lue, une ligne pendant une semaine (sauf une note de
+ * version) ; un incident en cours tant qu'il n'est pas réglé, pour tous ou
+ * sur cet appareil par la version qui le corrige. Le reste du temps, rien : la liste complète
  * reste à un lien, en bas de l'accueil.
  */
 const { highlights, load } = useAnnouncements();
