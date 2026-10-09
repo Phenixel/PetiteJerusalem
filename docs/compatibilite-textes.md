@@ -222,12 +222,15 @@ tranches ne change pas sans changer de dossier).
   `tosafot`, il se compte dans les commentaires du passage bout à bout, chacun
   lu par `parseRashiComment` (son dibbour, puis son texte), coupés aux
   espaces. Un quatrième nombre donne l'amoud quand ce n'est pas celui de la
-  page : un commentaire commencé à la page d'avant.
+  page : un commentaire commencé à la page d'avant, ou que le livre imprime
+  quelques pages après l'endroit où notre fichier le range.
 - Une ligne porte plusieurs morceaux quand la page n'imprime pas les
   commentaires dans l'ordre des passages de Sefaria, ou qu'une ligne finit un
   commentaire et en commence un autre.
 - Ce que la page imprime et que nous n'avons pas n'a pas de ligne : les
-  réclames, Rabbénou 'Hananel, le Ein Michpat, le Massoret haChass.
+  réclames, Rabbénou 'Hananel, le Ein Michpat, le Massoret haChass, et les
+  commentaires composés comme Rachi que nos fichiers ne portent pas (le
+  Rachbam de Pessa'him, la Chita Mekoubétset). Leur place reste blanche.
 
 D'où viennent ces lignes (`scripts/layout/vilna.py`) : de pages recomposées
 ligne pour ligne d'après Vilna, en PDF, où le texte est du texte. La police

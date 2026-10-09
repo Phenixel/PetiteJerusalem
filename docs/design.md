@@ -727,9 +727,10 @@ déformer, et chaque ligne s'étire ou se resserre un peu pour retrouver sa
 largeur imprimée, sans jamais sortir de sa boîte. Le dibbour hamat'hil est
 en lettres carrées grasses, y compris quand le fichier ne le balise pas (il
 finit alors au premier point). Ce que le livre imprime et que nous n'avons
-pas n'est pas inventé : ni les réclames, ni les notes des marges. Un traité
-dont les lignes ne sont pas relevées se compose à notre façon, dans la même
-forme (`TalmudPage.vue`).
+pas n'est pas inventé : ni les réclames, ni les notes des marges, ni un
+commentaire que nous n'avons pas (sa place reste blanche). Une page dont les
+lignes ne sont pas relevées se compose à notre façon, dans la même forme
+(`TalmudPage.vue`).
 
 **La taille de lecture y est une loupe.** A− / A+, et le pincement dans
 l'app, n'agrandissent pas le texte de la page du daf : ses lignes bougeraient,

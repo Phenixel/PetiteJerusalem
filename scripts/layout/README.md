@@ -87,16 +87,29 @@ python3 scripts/layout/vilna.py all --write              # tout le Shas
 
 La source est une page par amoud, recomposée ligne pour ligne d'après Vilna,
 en PDF (lecteur de shas.org, voir `sources.json`). Le texte y est du texte :
-`vilna.py` en lit les mots, leur police et leur place, sans rien deviner.
+`vilna.py` en lit les mots, leur police et leur place.
 
+- **Le mot** : ses lettres et sa boîte viennent de `pdftotext -bbox`, sa
+  police de `pdftohtml -xml`. On les rapproche par les lettres et par la
+  place, pas par le seul milieu de la boîte : dans la moitié des traités, les
+  polices annoncent de fausses hampes et la boîte d'un mot de dibbour tient
+  trois lignes de haut.
 - **La zone** vient de la police, et la police se reconnaît à ce qu'elle
   écrit : celle dont les mots sont ceux de notre guemara, celle dont les mots
-  sont ceux de nos commentaires (Rachi et Tossafot la partagent), celles des
-  dibbourim. Le nom de la police ne sert pas : dans quinze traités il ne dit
-  rien. Les marges ont les leurs, qu'on laisse.
-- **La ligne** vient de la place. Deux colonnes voisines se séparent à leur
-  gouttière, qui se retrouve au même endroit d'une rangée à l'autre ; un
-  blanc de justification, non.
+  sont ceux de nos commentaires (Rachi et Tossafot la partagent, pas toujours
+  au même corps), celles des dibbourim. Le nom de la police ne sert pas :
+  dans quinze traités il ne dit rien, et une même écriture y est découpée en
+  plusieurs polices. Les marges ont les leurs, qu'on laisse.
+- **La ligne** vient de la place. Un mot à la boîte trop haute est remis à
+  sa ligne : celle que les mots du corps laissent libre à cet endroit
+  (`settle`). Un renvoi en petit corps, un mot entre crochets, un bout de
+  mot composé à part rejoignent la ligne qu'ils touchent (`adopt`) ; une
+  ligne de guemara seule dans sa police se reconnaît à sa place
+  (`missing_rows`). Les appels de note ne sont pas des mots.
+- **Les colonnes** : deux colonnes voisines se séparent à leur gouttière,
+  qui se retrouve au même endroit d'une rangée à l'autre. Un blanc de
+  justification peut en avoir l'air : deux morceaux d'une même rangée qui se
+  suivent dans notre texte sont recollés.
 - **À qui est une ligne de commentaire** : à Rachi ou à Tossafot selon la
   police du dibbour qu'elle ouvre, sinon selon ses mots. Le côté ne le dit
   pas : sur certaines pages Rachi tient les deux colonnes.
@@ -107,29 +120,41 @@ en PDF (lecteur de shas.org, voir `sources.json`). Le texte y est du texte :
   les commentaires dans l'ordre de notre fichier : les suites de mots restées
   seules sont cherchées partout sur la page.
 
-`--check` dit, par zone : les lignes dont les deux bords sont retrouvés mot
-pour mot, les mots imprimés retrouvés dans notre texte, et nos mots posés sur
-une ligne. Ce que le relevé ne garantit pas : une ligne dont un bord n'est pas
-retrouvé (une variante de texte) peut commencer un mot trop tôt ou trop
-tard ; les réclames et les notes des marges ne sont pas relevées.
+### Les témoins
+
+Un relevé qui paraît bon en chiffres peut être faux à l'écran. Trois témoins
+le disent :
+
+1. **Le texte.** `--check` compte, par zone, les lignes dont les deux bords
+   sont retrouvés mot pour mot, les mots imprimés retrouvés dans notre
+   texte, et nos mots posés sur une ligne.
+2. **L'encre** (`ink_faults`). La même page est rendue en image, et pour
+   chaque ligne on regarde si l'encre s'arrête bien à ses deux bords : de
+   l'encre juste au-delà (il manque un mot à la ligne), du blanc juste en
+   deçà (sa boîte est trop longue). La couche de texte peut se tromper sans
+   le dire ; l'image, non.
+3. **Le scan du livre.** Les pages de shas.org sont une recomposition : il
+   faut savoir si elle suit Vilna. Les lignes de guemara de Berakhot (du 2a
+   au 10b) ont été comparées à celles lues sur le scan de l'édition Romm
+   (le pilote, plus bas, qui devine les mots à leur largeur) : même nombre
+   de lignes sur seize pages de dix-huit, 95 % des débuts de ligne
+   identiques, et les écarts, vus sur le scan, donnent raison au PDF.
 
 Une page ne s'écrit que si elle est sûre. Elle est écartée, et l'app la
-compose alors à sa façon, quand : des mots des commentaires sont posés l'un
-sur l'autre dans le PDF (leur place est fausse) ; moins de 85 % des lignes
-de guemara ont leurs deux bords ; moins de 95 % de notre guemara est posée ;
-moins de 60 % des mots imprimés d'un commentaire se retrouvent chez nous, ou
-moins de 30 % des nôtres sur la page. Un traité dont moins de 30 % des pages
-passent ne s'écrit pas du tout.
+compose alors à sa façon, quand : quatre mots ou plus sont posés l'un sur
+l'autre dans les commentaires ; moins de 85 % des lignes de guemara ont
+leurs deux bords ; moins de 95 % de notre guemara est posée ; moins de 60 %
+des mots imprimés d'un commentaire se retrouvent chez nous ; l'encre dément
+plus de 6 % des lignes (et plus de quatre) ; un commentaire que nous avons
+n'est imprimé ni sur sa page ni sur ses voisines. Un traité dont moins de
+la moitié des pages passent ne s'écrit pas du tout : c'est le cas de
+Horayot (ses Tossafot ne sont pas sur la page) et de Nedarim (la page y
+porte le Ran, que nous n'avons pas, et 69 pages sur 180 seulement passent).
 
-Ce qui n'a pas de lignes à ce jour :
-
-- quatorze traités dont les PDF ont des polices sans nom et des mots mal
-  placés (Berakhot, Chagigah, Chullin, Ketubot, Makkot, Megillah, Moed
-  Katan, Nazir, Rosh Hashanah, Sanhedrin, Shevuot, Sukkah, Taanit, Yoma) :
-  il leur faut une autre lecture du PDF (les tracés des lettres plutôt que
-  la couche de texte) ou une autre source ;
-- Nedarim, dont la page porte le Ran et non Tossafot, et Kinnim ;
-- Chekalim et Middot, que nos fichiers ne rangent pas par amoud.
+Ce que le relevé ne porte pas : les réclames et les notes des marges ; les
+commentaires composés comme Rachi que nous n'avons pas (le Rachbam, la
+Chita Mekoubétset), dont la place reste blanche ; Kinnim ; Chekalim et
+Middot, que nos fichiers ne rangent pas par amoud.
 
 ## Le pilote sur scan
 
