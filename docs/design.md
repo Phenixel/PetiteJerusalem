@@ -723,8 +723,16 @@ mots qu'il y met (`TalmudPrintedPage.vue`, `dafLayout.ts`,
 `public/texts/talmud-layout`) : mêmes lignes, même forme de page, sur tous
 les écrans. Nos polices n'ont pas les largeurs de celles du livre : la taille
 de chaque écriture est celle qui fait tenir sa ligne médiane sans la
-déformer, et chaque ligne s'étire ou se resserre un peu pour retrouver sa
-largeur imprimée, sans jamais sortir de sa boîte. Le dibbour hamat'hil est
+déformer. **Chaque ligne remplit sa boîte d'un bord à l'autre** : plus
+courte, elle est justifiée (ses espaces s'ouvrent, ses lettres ne
+s'élargissent qu'à peine) ; plus longue, elle se resserre. Les deux bords
+d'une colonne sont donc droits, comme dans le livre. La largeur vraie de
+chaque ligne est lue sur l'écran une fois écrite, pas estimée. **Le mot
+d'ouverture** d'un traité ou d'un chapitre est écrit en très grand, en gras,
+dans le blanc que les commentaires laissent au-dessus de la guemara, sans
+cadre ; « מתני׳ », « גמ׳ » et le premier mot d'un chapitre commencé en
+milieu de page sont en gras dans leur ligne ; « הדרן עלך … » est centré, en
+gras, à la fin du chapitre. Le dibbour hamat'hil est
 en lettres carrées grasses, y compris quand le fichier ne le balise pas (il
 finit alors au premier point). Ce que le livre imprime et que nous n'avons
 pas n'est pas inventé : ni les réclames, ni les notes des marges, ni un

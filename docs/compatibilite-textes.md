@@ -227,6 +227,15 @@ tranches ne change pas sans changer de dossier).
 - Une ligne porte plusieurs morceaux quand la page n'imprime pas les
   commentaires dans l'ordre des passages de Sefaria, ou qu'une ligne finit un
   commentaire et en commence un autre.
+- `initial` (facultatif) : le mot d'ouverture d'un traité ou d'un chapitre,
+  écrit en très grand au-dessus de la guemara. `[x, y, largeur, hauteur,
+passage, mot, nombre]` : son bord gauche, le milieu et la hauteur de ses
+  lettres, puis sa place dans la guemara. Il n'est dans aucune ligne de
+  `main`.
+- `big` (facultatif) : les mots de la guemara que le livre écrit plus grand
+  dans leur ligne, `[passage, mot, nombre]`.
+- `closing` (facultatif) : « הדרן עלך … », la ligne qui clôt un chapitre,
+  écrite à part en grand. Même forme que `initial`.
 - Ce que la page imprime et que nous n'avons pas n'a pas de ligne : les
   réclames, Rabbénou 'Hananel, le Ein Michpat, le Massoret haChass, et les
   commentaires composés comme Rachi que nos fichiers ne portent pas (le

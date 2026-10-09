@@ -120,6 +120,19 @@ en PDF (lecteur de shas.org, voir `sources.json`). Le texte y est du texte :
   les commentaires dans l'ordre de notre fichier : les suites de mots restées
   seules sont cherchées partout sur la page.
 
+- **Ce que le livre écrit à part.** Le mot d'ouverture d'un traité ou d'un
+  chapitre, en très grand au-dessus de la guemara (`initial_words` : sa
+  boîte est mesurée sur l'encre, et il quitte la première ligne) ; « הדרן
+  עלך … » à la fin d'un chapitre (`closing_lines` ; nos commentaires la
+  répètent, le livre non : elle y est tenue pour posée) ; les mots écrits
+  plus grand dans leur ligne (`big_words`).
+- **Une ligne reste lisible.** Les mots de notre texte que la page n'a pas à
+  l'identique prennent la ligne de leurs voisins ; mais une ligne ne porte
+  pas bien plus de lettres que le livre n'en imprime. Au-delà (une addition
+  entre crochets de notre texte, que le livre n'a pas), ces mots-là en
+  sortent : mieux vaut un mot absent de la page qu'une ligne écrasée.
+  `--check` compte les lignes encore trop chargées.
+
 ### Les témoins
 
 Un relevé qui paraît bon en chiffres peut être faux à l'écran. Trois témoins
@@ -145,8 +158,9 @@ compose alors à sa façon, quand : quatre mots ou plus sont posés l'un sur
 l'autre dans les commentaires ; moins de 85 % des lignes de guemara ont
 leurs deux bords ; moins de 95 % de notre guemara est posée ; moins de 60 %
 des mots imprimés d'un commentaire se retrouvent chez nous ; l'encre dément
-plus de 6 % des lignes (et plus de quatre) ; un commentaire que nous avons
-n'est imprimé ni sur sa page ni sur ses voisines. Un traité dont moins de
+plus de 6 % des lignes (et plus de quatre) ; plus de deux mots sur cinq
+d'un commentaire que nous avons ne sont imprimés ni sur sa page ni sur ses
+voisines. Un traité dont moins de
 la moitié des pages passent ne s'écrit pas du tout : c'est le cas de
 Horayot (ses Tossafot ne sont pas sur la page) et de Nedarim (la page y
 porte le Ran, que nous n'avons pas, et 69 pages sur 180 seulement passent).

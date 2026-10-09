@@ -42,6 +42,37 @@ export interface DafLayoutPage {
   main: DafLayoutLine[];
   rashi: DafLayoutLine[];
   tosafot: DafLayoutLine[];
+  /**
+   * Le mot d'ouverture d'un traité ou d'un chapitre, que le livre écrit en
+   * très grand au-dessus de la guemara : sa boîte (bord gauche, milieu,
+   * largeur, hauteur des lettres) et sa place dans la guemara. Il n'est dans
+   * aucune ligne de `main`.
+   */
+  initial?: [
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    passage: number,
+    word: number,
+    count: number,
+  ][];
+  /** Les mots de la guemara que le livre écrit plus grand dans leur ligne. */
+  big?: DafRun[];
+  /**
+   * « הדרן עלך … » : la ligne qui clôt un chapitre, que le livre écrit à
+   * part, en grand, au milieu de la colonne. Même forme que `initial` : sa
+   * boîte et sa place dans la guemara. Elle n'est dans aucune ligne de `main`.
+   */
+  closing?: [
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    passage: number,
+    word: number,
+    count: number,
+  ][];
 }
 
 export interface DafLayoutChunk {
@@ -56,6 +87,8 @@ export interface DafWord {
   passage: number;
   /** Du dibbour hamat'hil : en lettres carrées grasses. */
   lead: boolean;
+  /** Écrit plus grand dans sa ligne (« גמ׳ », le premier mot d'un chapitre). */
+  big?: boolean;
   /** Le rang de son commentaire dans la colonne de la page (dafLinks.ts). */
   comment?: number;
 }
@@ -66,7 +99,16 @@ export interface DafLine {
   y: number;
   width: number;
   words: DafWord[];
+  /**
+   * Hors des lignes courantes : le mot d'ouverture en très grand, ou la
+   * ligne qui clôt un chapitre. `height` est alors la hauteur de ses lettres.
+   */
+  kind?: "initial" | "closing";
+  height?: number;
 }
+
+/** Les mots qui annoncent la michna et la guemara, en gras sur la page. */
+const HEADS = new Set(["מתני׳", "גמ׳", "מתני'", "גמ'"]);
 
 /** Les mots d'un commentaire : son dibbour, puis son texte. */
 function commentWords(comment: RashiComment): { words: string[]; lead: number } {
@@ -120,15 +162,36 @@ export function dafLines(
     gemara.set(passages?.[k] ?? k, text ? text.split(" ") : []);
   });
   const out: DafLine[] = [];
-  for (const [x, y, width, ...runs] of page.main) {
+  const big = new Set<string>();
+  for (const [passage, from, count] of page.big ?? [])
+    for (let k = from; k < from + count; k++) big.add(`${passage}:${k}`);
+  const gemaraWords = (runs: DafRun[]): DafWord[] | null => {
     const words: DafWord[] = [];
     for (const [passage, from, count] of runs) {
       const source = gemara.get(passage);
       if (!source || from + count > source.length) return null;
-      for (let k = from; k < from + count; k++)
-        words.push({ text: source[k], passage, lead: false });
+      for (let k = from; k < from + count; k++) {
+        const word: DafWord = { text: source[k], passage, lead: false };
+        if (big.has(`${passage}:${k}`) || HEADS.has(source[k])) word.big = true;
+        words.push(word);
+      }
     }
+    return words;
+  };
+  for (const [x, y, width, height, passage, word, count] of page.initial ?? []) {
+    const words = gemaraWords([[passage, word, count]]);
+    if (!words) return null;
+    out.push({ zone: "main", kind: "initial", x, y, width, height, words });
+  }
+  for (const [x, y, width, ...runs] of page.main) {
+    const words = gemaraWords(runs);
+    if (!words) return null;
     out.push({ zone: "main", x, y, width, words });
+  }
+  for (const [x, y, width, height, passage, word, count] of page.closing ?? []) {
+    const words = gemaraWords([[passage, word, count]]);
+    if (!words) return null;
+    out.push({ zone: "main", kind: "closing", x, y, width, height, words });
   }
   // Les commentaires : ceux de la page, et ceux d'une autre que cite une ligne.
   const cache = new Map<string, DafWord[][]>();

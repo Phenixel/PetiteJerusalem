@@ -94,3 +94,45 @@ describe("leadLength", () => {
     expect(leadLength([], [...long, "סוף."])).toBe(0);
   });
 });
+
+describe("dafLines, hors des lignes courantes", () => {
+  const page: DafLayoutPage = {
+    ...PAGE,
+    initial: [[4200, 900, 1500, 500, 0, 0, 1]],
+    main: [
+      [3000, 1500, 4000, [0, 1, 3], [2, 0, 1]],
+      [3000, 1780, 4000, [2, 1, 1]],
+    ],
+    big: [[2, 1, 1]],
+    closing: [[3500, 2400, 3000, 300, 2, 2, 2]],
+  };
+  const lines = dafLines(page, 5, LINES, PASSAGES, MEFORSHIM)!;
+
+  it("écrit le mot d'ouverture à part, avec sa hauteur", () => {
+    const opening = lines.find((l) => l.kind === "initial")!;
+    expect(opening.words.map((w) => w.text)).toEqual(["מאימתי"]);
+    expect(opening.height).toBe(500);
+    expect(opening.words[0].passage).toBe(0);
+    const first = lines.find((l) => l.zone === "main" && !l.kind)!;
+    expect(first.words[0].text).toBe("קורין");
+  });
+
+  it("marque les mots que le livre écrit plus grand", () => {
+    const big = lines.flatMap((l) => l.words).filter((w) => w.big);
+    expect(big.map((w) => w.text)).toEqual(["סוף"]);
+  });
+
+  it("écrit à part la ligne qui clôt le chapitre", () => {
+    const closing = lines.find((l) => l.kind === "closing")!;
+    expect(closing.words.map((w) => w.text).join(" ")).toBe("האשמורה הראשונה");
+    expect(closing.height).toBe(300);
+    const last = lines.filter((l) => l.zone === "main" && !l.kind).pop()!;
+    expect(last.words.map((w) => w.text)).toEqual(["סוף"]);
+  });
+
+  it("refuse un mot d'ouverture qui n'existe pas", () => {
+    expect(
+      dafLines({ ...page, initial: [[0, 0, 10, 10, 9, 0, 1]] }, 5, LINES, PASSAGES, MEFORSHIM),
+    ).toBeNull();
+  });
+});
