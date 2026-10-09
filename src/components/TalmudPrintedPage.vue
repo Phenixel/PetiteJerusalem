@@ -59,7 +59,7 @@ watchEffect(() => {
 
 type Face = "main" | "side" | "lead";
 /** La taille du dibbour hamat'hil dans sa ligne de commentaire. */
-const LEAD_SIZE = 0.86;
+const LEAD_SIZE = 0.94;
 /** Les polices des trois écritures de la page, lues sur l'écran. */
 const faces = ref<Record<Face, string> | null>(null);
 const fontEpoch = ref(0);
@@ -358,7 +358,7 @@ function isLinkable(row: Row, run: Run): boolean {
 }
 
 .daf-row-side .daf-lead {
-  font-size: 0.86em;
+  font-size: 0.94em;
 }
 
 .daf-run {
