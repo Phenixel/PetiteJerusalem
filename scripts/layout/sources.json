@@ -108,7 +108,7 @@
     "license": "Conditions de hebrewbooks.org : usage personnel, sans usage commercial. Le propriétaire du dépôt a donné son accord pour s'en servir (2026-10-09).",
     "rights": "Les pages restent dans le cache. Seuls en sortent la place et la boîte de chaque ligne ; aucun mot de ces pages n'entre dans le dépôt.",
     "use": "Les lignes de la guemara, de Rachi et de Tossafot, et leur place sur la page (vilna.py).",
-    "note": "`tractates` : le numéro de la page du premier amoud (2a) de chaque traité ; l'amoud n du fichier est à la page numéro + n. Chekalim (Yerouchalmi) et Middot (Michna) ne sont pas rangés par amoud dans nos fichiers : ils n'ont pas de lignes.",
+    "note": "`tractates` : le numéro de la page du premier amoud (2a) de chaque traité ; l'amoud n du fichier est à la page numéro + n. Chekalim (Yerouchalmi) et Middot (Michna) ne sont pas rangés par amoud dans nos fichiers : ils n'ont pas de lignes. Nedarim (la page y porte le Ran, que nous n'avons pas, et un Rachi qui n'est pas le nôtre) et Kinnim n'ont pas de lignes non plus.",
     "tractates": {
       "berakhot": 1,
       "shabbat": 126,
@@ -124,7 +124,6 @@
       "chagigah": 1530,
       "yevamot": 1581,
       "ketubot": 1823,
-      "nedarim": 2045,
       "nazir": 2225,
       "sotah": 2355,
       "gittin": 2451,
@@ -145,7 +144,6 @@
       "temurah": 5073,
       "keritot": 5138,
       "meilah": 5192,
-      "kinnim": 5233,
       "tamid": 5239,
       "niddah": 5264
     }

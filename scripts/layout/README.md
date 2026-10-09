@@ -81,7 +81,6 @@ Ce que le relevé ne garantit pas :
 ```bash
 python3 scripts/layout/vilna.py beitzah --fetch          # les pages (une par seconde)
 python3 scripts/layout/vilna.py beitzah --check          # ce que vaut le calage
-python3 scripts/layout/vilna.py beitzah --amud 3a --dump # une page, ligne par ligne
 python3 scripts/layout/vilna.py beitzah --write          # public/texts/talmud-layout
 python3 scripts/layout/vilna.py all --write              # tout le Shas
 ```
@@ -90,9 +89,11 @@ La source est une page par amoud, recomposée ligne pour ligne d'après Vilna,
 en PDF (lecteur de shas.org, voir `sources.json`). Le texte y est du texte :
 `vilna.py` en lit les mots, leur police et leur place, sans rien deviner.
 
-- **La zone** vient de la police : celle de la guemara, celle de Rachi (que
-  Tossafot partage), celle des dibbourim de Rachi, celle des dibbourim de
-  Tossafot. Les marges ont les leurs, qu'on laisse.
+- **La zone** vient de la police, et la police se reconnaît à ce qu'elle
+  écrit : celle dont les mots sont ceux de notre guemara, celle dont les mots
+  sont ceux de nos commentaires (Rachi et Tossafot la partagent), celles des
+  dibbourim. Le nom de la police ne sert pas : dans quinze traités il ne dit
+  rien. Les marges ont les leurs, qu'on laisse.
 - **La ligne** vient de la place. Deux colonnes voisines se séparent à leur
   gouttière, qui se retrouve au même endroit d'une rangée à l'autre ; un
   blanc de justification, non.
@@ -110,8 +111,25 @@ en PDF (lecteur de shas.org, voir `sources.json`). Le texte y est du texte :
 pour mot, les mots imprimés retrouvés dans notre texte, et nos mots posés sur
 une ligne. Ce que le relevé ne garantit pas : une ligne dont un bord n'est pas
 retrouvé (une variante de texte) peut commencer un mot trop tôt ou trop
-tard ; les réclames et les notes des marges ne sont pas relevées ; Chekalim
-et Middot, que nos fichiers ne rangent pas par amoud, n'ont pas de lignes.
+tard ; les réclames et les notes des marges ne sont pas relevées.
+
+Une page ne s'écrit que si elle est sûre. Elle est écartée, et l'app la
+compose alors à sa façon, quand : des mots des commentaires sont posés l'un
+sur l'autre dans le PDF (leur place est fausse) ; moins de 85 % des lignes
+de guemara ont leurs deux bords ; moins de 95 % de notre guemara est posée ;
+moins de 60 % des mots imprimés d'un commentaire se retrouvent chez nous, ou
+moins de 30 % des nôtres sur la page. Un traité dont moins de 30 % des pages
+passent ne s'écrit pas du tout.
+
+Ce qui n'a pas de lignes à ce jour :
+
+- quatorze traités dont les PDF ont des polices sans nom et des mots mal
+  placés (Berakhot, Chagigah, Chullin, Ketubot, Makkot, Megillah, Moed
+  Katan, Nazir, Rosh Hashanah, Sanhedrin, Shevuot, Sukkah, Taanit, Yoma) :
+  il leur faut une autre lecture du PDF (les tracés des lettres plutôt que
+  la couche de texte) ou une autre source ;
+- Nedarim, dont la page porte le Ran et non Tossafot, et Kinnim ;
+- Chekalim et Middot, que nos fichiers ne rangent pas par amoud.
 
 ## Le pilote sur scan
 

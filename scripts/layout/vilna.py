@@ -3,7 +3,6 @@
     python3 scripts/layout/vilna.py beitzah --fetch          # télécharge les pages
     python3 scripts/layout/vilna.py beitzah --check          # dit ce que vaut le calage
     python3 scripts/layout/vilna.py beitzah --write          # écrit public/texts/talmud-layout
-    python3 scripts/layout/vilna.py beitzah --amud 3a --dump # une page, ligne par ligne
 
 Le pilote (talmud.py) lisait un scan : il devinait les mots à leur largeur.
 Ici la source est une page recomposée ligne pour ligne d'après Vilna, en
@@ -106,15 +105,18 @@ class Chunk:
 def decode(raw: str) -> str:
     """Les polices du PDF rangent l'hébreu aux places de Windows-1255, vues
     selon la police comme du MacRoman ou du Latin-1 : on revient aux lettres.
-    Le noun de la police de la guemara sort en caractère de contrôle (0x13).
+    Certaines lettres sortent en caractère de contrôle (le noun en 0x13 ou en
+    0x0E selon la police) : on les garde à part, la page dira lesquelles.
     Le texte est dans l'ordre de l'œil (de gauche à droite) : on le retourne."""
     out = []
     for ch in raw:
         if "א" <= ch <= "ת":
             out.append(ch)
             continue
-        if ch == "\x13":
-            out.append("נ")
+        if ord(ch) < 32:
+            # Une lettre sortie en caractère de contrôle (le noun, le plus
+            # souvent) : laquelle, la page le dira (voir printed_page).
+            out.append(chr(0xE000 + ord(ch)))
             continue
         letter = None
         for encoding in ("mac_roman", "latin-1", "cp1252"):
@@ -168,10 +170,12 @@ def read_page(pdf: str) -> list[Chunk]:
             if left - 1 <= cx <= left + width + 1 and top - 2 <= cy <= top + height + 2:
                 gap = abs(top + height / 2 - cy)
                 if best is None or gap < best[0]:
-                    best = (gap, font_size, family)
+                    best = (gap, font_size, family, top, height)
         if best is None:
             continue
-        words.append(Chunk(text, best[2], best[1], round(x0), round(y0), round(x1 - x0), round(y1 - y0)))
+        # La hauteur vient du morceau : celle du mot, dans certaines polices,
+        # déborde de sa ligne et la brouille avec ses voisines.
+        words.append(Chunk(text, best[2], best[1], round(x0), best[3], round(x1 - x0), best[4]))
     return words
 
 
@@ -192,14 +196,14 @@ class PrintedLine:
     zone: str = ""
 
 
-def words_of(chunks: list[Chunk], lead_fonts: tuple[str, ...]) -> tuple[list[str], list[bool]]:
+def words_of(chunks: list[Chunk], lead_fonts: dict) -> tuple[list[str], list[bool]]:
     """Les mots d'une ligne, de droite à gauche. Deux mots qui se touchent
     n'en font qu'un (un point composé à part, une lettre d'une autre police)."""
     words: list[str] = []
     lead: list[bool] = []
     previous: Chunk | None = None
     for chunk in sorted(chunks, key=lambda c: -c.right):
-        is_lead = chunk.family.startswith(lead_fonts)
+        is_lead = (chunk.family, chunk.size) in lead_fonts
         if previous is not None and previous.left - chunk.right < 1.5 and words:
             words[-1] += chunk.text
         else:
@@ -212,7 +216,7 @@ def words_of(chunks: list[Chunk], lead_fonts: tuple[str, ...]) -> tuple[list[str
 def rows_of(chunks: list[Chunk], tolerance: float) -> list[list[Chunk]]:
     """Les mots rangés par ligne de la page. Les mots du corps (la taille la
     plus fréquente) font les rangées ; un dibbour ou un renvoi, d'un autre
-    corps, rejoint la rangée qu'il chevauche le plus en hauteur."""
+    corps, rejoint la rangée dont le milieu est le plus proche du sien."""
     if not chunks:
         return []
     body = Counter(c.size for c in chunks).most_common(1)[0][0]
@@ -226,19 +230,14 @@ def rows_of(chunks: list[Chunk], tolerance: float) -> list[list[Chunk]]:
     for chunk in chunks:
         if chunk.size == body:
             continue
-        overlap = [min(b, chunk.top + chunk.height) - max(a, chunk.top) for a, b in spans]
-        k = max(range(len(spans)), key=lambda i: overlap[i]) if spans else -1
-        if k >= 0 and overlap[k] > 0.3 * chunk.height:
+        # La rangée dont le milieu est le plus proche du sien, si elle l'est assez.
+        gaps = [abs((a + b) / 2 - chunk.middle) for a, b in spans]
+        k = min(range(len(spans)), key=lambda i: gaps[i]) if spans else -1
+        if k >= 0 and gaps[k] <= 0.55 * (spans[k][1] - spans[k][0]):
             rows[k].append(chunk)
         else:
             rows.append([chunk])
     return rows
-
-
-SIDE = "Rashi_rc"
-RASHI_LEAD = "SF_NeomiRound"
-TOSAFOT_LEAD = "Vilna_Lamed"
-LEADS = (RASHI_LEAD, TOSAFOT_LEAD)
 
 
 @dataclass
@@ -247,40 +246,107 @@ class Printed:
     right: list[PrintedLine]
     left: list[PrintedLine]
     wide: list[PrintedLine]
-    box: tuple[int, int, int, int]
-    """La boîte de la page : gauche, haut, droite, bas."""
     sizes: dict[str, int]
 
 
-def printed_page(pdf: str) -> Printed | None:
-    """La guemara et les deux commentaires d'une page, ligne par ligne."""
+Key = tuple[str, int]
+UNSURE = [0]
+"""Les mots posés l'un sur l'autre dans les commentaires de la dernière page lue."""
+FLOOR = 0.3
+"""La part des pages qu'un traité doit avoir pour s'écrire (voir write)."""
+
+
+def font_rows(chunks: list[Chunk]) -> list[list[str]]:
+    """Les mots d'une police, rangée par rangée, de droite à gauche."""
+    rows: list[list[Chunk]] = []
+    for chunk in sorted(chunks, key=lambda c: c.middle):
+        if rows and abs(rows[-1][0].middle - chunk.middle) <= chunk.size * 0.3:
+            rows[-1].append(chunk)
+        else:
+            rows.append([chunk])
+    return [[norm(c.text) for c in sorted(row, key=lambda c: -c.right) if norm(c.text)] for row in rows]
+
+
+def printed_page(pdf: str, known: dict[str, set], vocabulary: dict[str, set],
+                 openings: dict[str, set]) -> Printed | None:
+    """La guemara et les deux commentaires d'une page, ligne par ligne.
+
+    Le rôle d'une police se lit à ce qu'elle écrit, pas à son nom (la moitié
+    des pages n'en donnent pas) : celle dont les suites de mots sont celles de
+    notre guemara est la police de la guemara, celle qui écrit nos
+    commentaires est leur corps. Les autres polices des mêmes rangées, si
+    leurs mots sont des nôtres, sont les dibbourim (du corps des commentaires
+    ou plus grands) et les renvois (plus petits). Le reste, ce sont les
+    marges et les commentaires que nous n'avons pas.
+    """
+    UNSURE[0] = 0
     chunks = read_page(pdf)
-    # Le corps des commentaires : la taille la plus fréquente de la police de Rachi.
-    side_sizes = Counter(c.size for c in chunks if c.family.startswith(SIDE))
-    main_sizes = Counter(c.size for c in chunks if c.family == "Vilna")
-    if not main_sizes:
+    # Les lettres sorties en caractère de contrôle : pour chacune, la lettre
+    # qui fait le plus de ses mots des mots de notre texte.
+    every_word = vocabulary["main"] | vocabulary["rashi"] | vocabulary["tosafot"]
+    unknown = {ch for c in chunks for ch in c.text if "\ue000" <= ch < "\ue020"}
+    for ch in sorted(unknown):
+        with_it = [re.sub("[^א-ת\ue000-\ue01f]", "", c.text) for c in chunks if ch in c.text]
+        best = max("נאבגדהוזחטיכךלמםןסעפףצץקרשת",
+                   key=lambda letter: sum(1 for w in with_it if w.replace(ch, letter) in every_word))
+        for c in chunks:
+            if ch in c.text:
+                c.text = c.text.replace(ch, best)
+    fonts: dict[Key, list[Chunk]] = defaultdict(list)
+    for c in chunks:
+        fonts[(c.family, c.size)].append(c)
+    roles: dict[Key, str] = {}
+    strength: dict[Key, float] = {}
+    for key, own in fonts.items():
+        rows = font_rows(own)
+        mine = [g for row in rows for g in grams(row)]
+        if len(mine) < 8:
+            continue
+        hits = {zone: sum(1 for g in mine if g in known[zone]) for zone in known}
+        side_hits = max(hits["rashi"], hits["tosafot"])
+        # La guemara : ses suites de mots sont les nôtres (un texte un peu
+        # autre que l'imprimé en retrouve moins), plus que celles d'un commentaire.
+        if hits["main"] >= 0.12 * len(mine) and hits["main"] >= side_hits:
+            roles[key] = "main"
+            strength[key] = hits["main"]
+        elif side_hits >= 0.25 * len(mine):
+            roles[key] = "side"
+    # Une seule police écrit la guemara : celle qui lui ressemble le plus. Un
+    # commentaire des marges qui la cite beaucoup (Rabbénou 'Hananel) n'en est pas.
+    mains = [key for key, role in roles.items() if role == "main"]
+    if mains:
+        chosen = max(mains, key=lambda key: strength[key])
+        for key in mains:
+            if key != chosen:
+                del roles[key]
+    main = [c for key, own in fonts.items() if roles.get(key) == "main" for c in own]
+    body = [c for key, own in fonts.items() if roles.get(key) == "side" for c in own]
+    if not main:
         return None
-    main_size = main_sizes.most_common(1)[0][0]
-    side_size = side_sizes.most_common(1)[0][0] if side_sizes else 0
-    body = [c for c in chunks if c.family.startswith(SIDE) and c.size == side_size]
-    main = [c for c in chunks if c.family == "Vilna" and c.size == main_size]
-    # Le titre courant est dans la police de la guemara, en plus grand : il
-    # n'en est pas. Un mot d'ouverture de chapitre, plus grand lui aussi, si.
-    top = min((c.top for c in body), default=min(c.top for c in main))
-    main += [c for c in chunks if c.family == "Vilna" and c.size > main_size and c.top > top]
+    main_size = Counter(c.size for c in main).most_common(1)[0][0]
+    side_size = Counter(c.size for c in body).most_common(1)[0][0] if body else main_size
+    side = body[:]
+    lead_fonts: dict[Key, str] = {}
     if body:
         lo, hi = min(c.left for c in body), max(c.right for c in body)
         low, high = min(c.top for c in body) - 6, max(c.top + c.height for c in body) + 6
-    else:
-        lo, hi = min(c.left for c in main), max(c.right for c in main)
-        low, high = 0, 10 ** 6
-    inside = lambda c: lo - 2 <= c.left and c.right <= hi + 2 and low <= c.middle <= high  # noqa: E731
-    side = body[:]
-    # Dans les colonnes : les renvois en petit corps et les dibbourim.
-    side += [c for c in chunks if c.family.startswith(SIDE) and side_size > c.size >= side_size - 5 and inside(c)
-             and not re.fullmatch(r"\(?[א-ת]\)?", c.text.strip())]
-    side += [c for c in chunks if c.family.startswith(LEADS) and inside(c)
-             and not re.fullmatch(r"\(?[א-ת]\)?", c.text.strip())]
+        everything = vocabulary["rashi"] | vocabulary["tosafot"]
+        for key, own in fonts.items():
+            if key in roles or not 0.55 * side_size <= key[1] <= 1.7 * side_size:
+                continue
+            inside = [c for c in own if lo - 2 <= c.left and c.right <= hi + 2 and low <= c.middle <= high
+                      and not re.fullmatch(r"[(\[]?[א-ת][)\]]?", c.text.strip())]
+            words = [norm(c.text) for c in inside if norm(c.text)]
+            if len(inside) < 0.6 * len(own) or not words:
+                continue
+            if sum(1 for w in words if w in everything) < 0.6 * len(words):
+                continue
+            side += inside
+            # Un dibbour est du corps de la ligne ou plus grand ; un renvoi, plus petit.
+            if key[1] >= 0.9 * side_size:
+                hits = {zone: sum(1 for w in words if w in openings[zone]) for zone in openings}
+                lead_fonts[key] = max(hits, key=lambda zone: hits[zone]) if len(set(hits.values())) > 1 else ""
+    LEADS = lead_fonts
 
     def lines(chunks: list[Chunk], tolerance: float, columns: bool) -> list[PrintedLine]:
         rows = [sorted(row, key=lambda c: -c.right) for row in rows_of(chunks, tolerance)]
@@ -312,11 +378,19 @@ def printed_page(pdf: str) -> Printed | None:
                     groups[-1].append(chunk)
             for group in groups:
                 words, lead = words_of(group, LEADS)
-                owner = "rashi" if any(c.family.startswith(RASHI_LEAD) for c in group) else \
-                    "tosafot" if any(c.family.startswith(TOSAFOT_LEAD) for c in group) else ""
+                owner = next((LEADS[(c.family, c.size)] for c in sorted(group, key=lambda c: -c.right)
+                              if LEADS.get((c.family, c.size))), "")
                 if any(norm(w) for w in words):
                     out.append(PrintedLine(words, lead, owner, min(c.left for c in group), max(c.right for c in group),
                                            min(c.top for c in group), max(c.top + c.height for c in group)))
+        # Dans certaines polices sans nom, des mots sortent du PDF à une
+        # fausse place, sur leurs voisins : les boîtes des lignes ne sont
+        # alors plus sûres, et la page le dit (voir page_at).
+        if columns:
+            UNSURE[0] = sum(
+                1 for row in rows for a, b in zip(row, row[1:])
+                if min(a.right, b.right) - max(a.left, b.left) > 0.5 * min(a.width, b.width) > 0
+            )
         return out
 
     main_lines = lines(main, main_size * 0.3, False)
@@ -325,10 +399,9 @@ def printed_page(pdf: str) -> Printed | None:
     for line in main_lines:
         line.zone = "main"
     everything = main_lines + side_lines
-    box = (min(l.left for l in everything), int(min(l.top for l in everything)),
-           max(l.right for l in everything), int(max(l.bottom for l in everything)))
-    centre = (box[0] + box[2]) / 2
-    width = box[2] - box[0]
+    lo, hi = min(l.left for l in everything), max(l.right for l in everything)
+    centre = (lo + hi) / 2
+    width = hi - lo
     right, left, wide = [], [], []
     for line in side_lines:
         if line.right - line.left > 0.62 * width or (line.left < centre - 0.12 * width and line.right > centre + 0.12 * width):
@@ -337,14 +410,17 @@ def printed_page(pdf: str) -> Printed | None:
             right.append(line)
         else:
             left.append(line)
-    return Printed(main_lines, right, left, wide, box, {"main": main_size, "side": side_size})
+    return Printed(main_lines, right, left, wide, {"main": main_size, "side": side_size})
 
 
 # ---- Caler la page sur notre texte ---------------------------------------------
 
 
 def norm(word: str) -> str:
-    return re.sub("[^א-ת]", "", word)
+    """Ce qu'on compare d'un mot : ses lettres, sans le noun. Dans certaines
+    polices du PDF le noun n'a pas de code et ne sort pas du tout : on
+    l'ôte donc des deux côtés, et « נזיר » se reconnaît dans « זיר »."""
+    return re.sub("[^א-ת]|[נן]", "", word)
 
 
 @dataclass
@@ -431,7 +507,7 @@ def match(ours: list[Token], lines: list[PrintedLine], sizes: tuple[int, ...] = 
         before = ours_at.get(j - 1, -1 if j == 0 else None)
         after = ours_at.get(end, len(a) if end == len(b) else None)
         if before is not None and after is not None and 0 < after - before - 1 <= 8 and end - j <= 8 \
-                and all(i not in line_of for i in range(before + 1, after)):
+                and b and all(i not in line_of for i in range(before + 1, after)):
             gap = list(range(before + 1, after))
             for n, i in enumerate(gap):
                 if end > j:
@@ -532,31 +608,69 @@ def grams(words: list[str]) -> set[tuple[str, ...]]:
     return {tuple(words[i: i + 3]) for i in range(len(words) - 2)}
 
 
+WHY: dict[int, str] = {}
+"""Pourquoi une page n'a pas de lignes (voir page_layout)."""
+
+
+SHIFT: dict[str, int] = {}
+"""Le décalage des pages d'un traité. La source numérote ses pages à la
+suite ; là où nos fichiers comptent un amoud qu'elle n'a pas (ou l'inverse),
+la page d'un amoud est une ou deux plus loin. On le voit à ce que la page
+n'écrit pas notre guemara, et l'on cherche à côté."""
+
+
 def page_layout(tractate: Tractate, amud: int, taken: dict[str, set]) -> tuple[dict, dict] | None:
     """Le fichier d'une page, et ce que vaut son calage."""
-    pdf = pdf_path(tractate.slug, amud)
+    base = SHIFT.get(tractate.slug, 0)
+    for shift in (base, base + 1, base - 1, base + 2, base - 2):
+        if not 0 <= amud + shift:
+            continue
+        got = page_at(tractate, amud, pdf_path(tractate.slug, amud + shift), taken)
+        if got is not None:
+            SHIFT[tractate.slug] = shift
+            return got
+        if amud in WHY:
+            return None
+    return None
+
+
+def page_at(tractate: Tractate, amud: int, pdf: str, taken: dict[str, set]) -> tuple[dict, dict] | None:
     if not os.path.exists(pdf):
         return None
-    printed = printed_page(pdf)
+    ours_main = tractate.tokens("main", amud)
+    free = {zone: [t for t in side_tokens(tractate, zone, amud) if (t.unit, t.passage, t.word) not in taken[zone]]
+            for zone in ("rashi", "tosafot")}
+    ahead = {zone: tractate.tokens(zone, amud + 1) if amud + 1 < len(tractate) else [] for zone in free}
+    texts = {zone: [norm(t.text) for t in free[zone] + ahead[zone] if norm(t.text)] for zone in free}
+    texts["main"] = [norm(t.text) for t in ours_main if norm(t.text)]
+    known = {zone: grams(words) for zone, words in texts.items()}
+    vocabulary = {zone: set(words) for zone, words in texts.items()}
+    # Les premiers mots de nos commentaires : ce qu'écrit une police de dibbour.
+    openings: dict[str, set] = {"rashi": set(), "tosafot": set()}
+    for zone in openings:
+        previous = None
+        for t in free[zone] + ahead[zone]:
+            if (t.unit, t.passage) != previous or t.word < 4:
+                openings[zone].add(norm(t.text))
+            previous = (t.unit, t.passage)
+    printed = printed_page(pdf, known, vocabulary, openings)
     if printed is None:
         return None
-    ours_main = tractate.tokens("main", amud)
+    if UNSURE[0] >= 4:
+        WHY[amud] = f"places peu sûres : {UNSURE[0]} mots l'un sur l'autre"
+        return None
     main = place(ours_main, printed.main)
     # À qui est une ligne de commentaire. La police de son dibbour hamat'hil
     # le dit quand elle en ouvre un (sur certaines pages Rachi tient les deux
     # côtés) ; sinon ses mots, comparés aux deux textes ; sinon la ligne
     # d'avant dans sa colonne.
-    free = {zone: [t for t in side_tokens(tractate, zone, amud) if (t.unit, t.passage, t.word) not in taken[zone]]
-            for zone in ("rashi", "tosafot")}
-    ahead = {zone: tractate.tokens(zone, amud + 1) if amud + 1 < len(tractate) else [] for zone in free}
-    known = {zone: grams([norm(t.text) for t in free[zone] + ahead[zone] if norm(t.text)]) for zone in free}
     columns: dict[str, list[PrintedLine]] = {"rashi": [], "tosafot": []}
     for stream in (printed.right, printed.left, printed.wide):
         stream = sorted(stream, key=lambda l: l.top)
         owners: list[str] = []
         for line in stream:
             mine = grams([norm(w) for w in line.words if norm(w)])
-            hits = {zone: len(mine & known[zone]) for zone in known}
+            hits = {zone: len(mine & known[zone]) for zone in ("rashi", "tosafot")}
             best = max(hits, key=lambda zone: hits[zone])
             other = min(hits.values())
             if line.owner:
@@ -583,7 +697,37 @@ def page_layout(tractate: Tractate, amud: int, taken: dict[str, set]) -> tuple[d
         for runs in placed[zone].runs:
             for a, p, w, n in runs:
                 taken[zone].update((a, p, w + d) for d in range(n))
-    x0, y0, x1, y1 = printed.box
+    # Une page ne s'écrit ligne pour ligne que si elle est bien calée : la
+    # guemara presque toute aux bords sûrs, et de chaque commentaire la plus
+    # grande part de ce qui est imprimé. Sinon elle se compose à notre façon, entière.
+    if main.sure < 0.85 * max(1, len(main.lines)):
+        WHY[amud] = f"guemara {main.sure}/{len(main.lines)}"
+        return None
+    on_page = sum(n for runs in main.runs for _, _, _, n in runs)
+    if on_page < 0.95 * len(ours_main):
+        WHY[amud] = f"guemara : {on_page} mots sur {len(ours_main)}"
+        return None
+    for zone in ("rashi", "tosafot"):
+        if placed[zone].printed >= 40 and placed[zone].matched < 0.6 * placed[zone].printed:
+            WHY[amud] = f"{zone} {placed[zone].matched}/{placed[zone].printed}"
+            return None
+        # Un commentaire que nous avons et que la page n'imprime pas là (les
+        # Tossafot de Horayot) : la page ligne pour ligne le ferait disparaître.
+        ours = len(tractate.tokens(zone, amud))
+        here = sum(n for runs in placed[zone].runs for a, _, _, n in runs if a == amud)
+        if ours >= 40 and here < 0.3 * ours:
+            WHY[amud] = f"{zone} : {here} mots sur {ours}"
+            return None
+    # La page : ce qu'on en écrit. Un commentaire que nous n'avons pas (le Ran,
+    # Rabbénou Guerchom), composé comme Rachi, n'a aucun de nos mots : ses
+    # lignes ne sont pas de la page.
+    kept = {zone: [(l, runs) for l, runs in zip(placed[zone].lines, placed[zone].runs) if runs]
+            for zone in ("main", "rashi", "tosafot")}
+    every = [l for zone in kept for l, _ in kept[zone]]
+    if not every:
+        return None
+    x0, y0 = min(l.left for l in every), int(min(l.top for l in every))
+    x1, y1 = max(l.right for l in every), int(max(l.bottom for l in every))
     scale = UNITS / (x1 - x0)
     # La boîte d'une ligne : son bord gauche, le milieu de sa hauteur, sa largeur.
     box = lambda l: [round((l.left - x0) * scale), round(((l.top + l.bottom) / 2 - y0) * scale),  # noqa: E731
@@ -598,22 +742,19 @@ def page_layout(tractate: Tractate, amud: int, taken: dict[str, set]) -> tuple[d
     page: dict = {
         "height": round((y1 - y0) * scale),
         "pitch": [pitch(printed.main), pitch(printed.right + printed.left + printed.wide)],
-        "main": [box(l) + [[p, w, n] for _, p, w, n in runs] for l, runs in zip(main.lines, main.runs)],
+        "main": [box(l) + [[p, w, n] for _, p, w, n in runs] for l, runs in kept["main"]],
     }
     for zone in ("rashi", "tosafot"):
         page[zone] = [
             box(l) + [[p, w, n] if a == amud else [p, w, n, a] for a, p, w, n in runs]
-            for l, runs in zip(placed[zone].lines, placed[zone].runs)
-            # Une réclame (le premier mot de la suite, répété au bas d'une
-            # colonne) n'est pas du texte : elle n'a pas de ligne.
-            if runs or len(l.words) > 3
+            for l, runs in kept[zone]
         ]
     # Ce que notre fichier porte et que la page n'a pas.
     report = {"amud": amud}
     for zone, ours in (("main", ours_main), ("rashi", tractate.tokens("rashi", amud)),
                        ("tosafot", tractate.tokens("tosafot", amud))):
         report[zone] = {
-            "lines": len(placed[zone].lines),
+            "lines": len(kept[zone]),
             "empty": sum(1 for l, runs in zip(placed[zone].lines, placed[zone].runs) if not runs and len(l.words) > 3),
             "printed": placed[zone].printed,
             "matched": placed[zone].matched,
@@ -667,8 +808,12 @@ def write(slug: str, pages: list[dict | None]) -> None:
     os.makedirs(out, exist_ok=True)
     for name in os.listdir(out):
         os.remove(os.path.join(out, name))
-    title = Tractate(slug)
-    del title
+    # Un traité dont presque aucune page ne passe (les mots du PDF n'y sont pas
+    # à leur place) ne s'écrit pas : quelques pages du livre perdues parmi les
+    # nôtres ne font pas un traité.
+    if sum(1 for p in pages if p) < FLOOR * len(pages):
+        os.rmdir(out)
+        return
     for n in range(0, len(pages), CHUNK):
         part = pages[n: n + CHUNK]
         if not any(part):
@@ -684,23 +829,12 @@ def main() -> None:
     parser.add_argument("--fetch", action="store_true", help="télécharge les pages qui manquent au cache")
     parser.add_argument("--check", action="store_true", help="dit ce que vaut le calage")
     parser.add_argument("--write", action="store_true", help="écrit public/texts/talmud-layout")
-    parser.add_argument("--amud", help="une seule page (« 3a »)")
-    parser.add_argument("--dump", action="store_true", help="avec --amud : les lignes de la page")
     args = parser.parse_args()
     slugs = sorted(sources()["tractates"]) if args.tractate == "all" else [args.tractate]
     for slug in slugs:
         tractate = Tractate(slug)
         if args.fetch:
             fetch(slug, len(tractate))
-        if args.dump and args.amud:
-            printed = printed_page(pdf_path(slug, parse_amud(args.amud)))
-            assert printed
-            for name in ("main", "right", "left", "wide"):
-                print(f"--- {name}")
-                for line in getattr(printed, name):
-                    print(f"{line.left:4d} {int(line.top):4d} {line.right - line.left:4d}  "
-                          + " ".join(("*" if b else "") + w for w, b in zip(line.words, line.lead)))
-            continue
         pages, reports = run(slug)
         words = placed_words(tractate, pages)
         got = sum(1 for p in pages if p)
