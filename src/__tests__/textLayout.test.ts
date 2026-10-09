@@ -120,9 +120,10 @@ describe("lignes de la page de Vilna", () => {
           if (count <= 0 || w + count > (words[p]?.length ?? -1))
             faults.push(`amoud ${amud} : mot en grand ${p}, ${w}, ${count} n'existe pas`);
         }
-        for (const [x, y, width, height, p, w, count] of page.closing ?? []) {
+        for (const [x, y, width, height, p, w, count, zone] of page.closing ?? []) {
           if (x < 0 || x + width > DAF_UNITS + 2 || y < 0 || y > page.height || !(height > 0))
             faults.push(`amoud ${amud} : clôture hors de la page`);
+          if (zone) continue;
           if (count <= 0 || w + count > (words[p]?.length ?? -1))
             faults.push(`amoud ${amud} : clôture ${p}, ${w}, ${count} n'existe pas`);
           else if (words[p][w] !== "הדרן")
@@ -140,7 +141,7 @@ describe("lignes de la page de Vilna", () => {
         const words = gemara[amud].map(gemaraWords);
         const seen = new Set<string>();
         // Le mot d'ouverture et la clôture, écrits hors des lignes, sont de la guemara aussi.
-        const apart = [...(page.initial ?? []), ...(page.closing ?? [])].map(
+        const apart = [...(page.initial ?? []), ...(page.closing ?? []).filter((c) => !c[7])].map(
           ([, , , , p, w, count]) => [p, w, count] as [number, number, number],
         );
         for (const [, , , ...runs] of [

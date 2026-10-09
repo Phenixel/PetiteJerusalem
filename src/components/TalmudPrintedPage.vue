@@ -1,5 +1,14 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch, watchEffect } from "vue";
+import {
+  computed,
+  nextTick,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  shallowRef,
+  watch,
+  watchEffect,
+} from "vue";
 import {
   DAF_UNITS,
   dafLines,
@@ -125,7 +134,8 @@ onBeforeUnmount(() => document.fonts?.removeEventListener?.("loadingdone", onFon
  * La largeur de chaque ligne telle que l'écran l'écrit, en cadratins de sa
  * zone ; null tant qu'on ne l'a pas lue (la première image se fie au canvas).
  */
-const seen = ref<{ of: DafLine[]; widths: number[] } | null>(null);
+// (shallowRef : `of` doit rester le tableau lui-même, pour s'y comparer.)
+const seen = shallowRef<{ of: DafLine[]; widths: number[] } | null>(null);
 /** La taille à laquelle chaque ligne est écrite en ce moment (voir rows). */
 let written: number[] = [];
 let observer: ResizeObserver | null = null;
@@ -143,7 +153,9 @@ function measure(): void {
   texts.forEach((text, i) => {
     const box = text.parentElement!.getBoundingClientRect().width;
     const own = text.getBoundingClientRect().width;
-    if (!(box > 0) || !(own > 0)) ok = false;
+    // Une ligne sans mot n'a pas de largeur : ce n'est pas une page illisible.
+    if (!(box > 0)) ok = false;
+    else if (!(own > 0)) widths.push(0);
     // En cadratins : la part de la boîte que le texte occupe, à sa taille.
     else widths.push(((own / box) * lines[i].width) / written[i]);
   });
@@ -151,7 +163,7 @@ function measure(): void {
   if (ok && widths.length === lines.length) seen.value = { of: lines, widths };
 }
 
-watch([printed, fontEpoch], () => void nextTick(measure), { flush: "post" });
+watch([printed, fontEpoch], () => measureSoon(), { flush: "post" });
 
 // ---- N'écrire que ce qu'on regarde ------------------------------------------
 
@@ -178,9 +190,19 @@ onMounted(() => {
 
 onBeforeUnmount(() => watcher?.disconnect());
 
+// Une graisse ou un corps qui n'arrive qu'après l'écriture (le gras d'un mot
+// en grand, chargé à la demande) change la largeur d'une ligne sans prévenir
+// toujours : on relit un peu après, tant que la page est là.
+const later: number[] = [];
+function measureSoon(): void {
+  void nextTick(measure);
+  if (typeof window === "undefined") return;
+  for (const delay of [350, 1500]) later.push(window.setTimeout(measure, delay));
+}
 watch(near, (now) => {
-  if (now) void nextTick(measure);
+  if (now) measureSoon();
 });
+onBeforeUnmount(() => later.forEach((id) => window.clearTimeout(id)));
 
 onMounted(() => {
   void nextTick(measure);
@@ -381,7 +403,7 @@ function isLinkable(row: Row, run: Run): boolean {
       :key="i"
       class="daf-row"
       :class="[
-        row.zone === 'main' ? 'daf-row-main' : 'daf-row-side',
+        row.zone === 'main' || row.kind ? 'daf-row-main' : 'daf-row-side',
         row.kind ? `daf-row-${row.kind}` : '',
       ]"
       :style="row.style"
@@ -488,6 +510,8 @@ function isLinkable(row: Row, run: Run): boolean {
 /* « גמ׳ », « מתני׳ », le premier mot d'un chapitre commencé en milieu de page. */
 .daf-big {
   font-weight: 700;
+  font-size: 1.22em;
+  line-height: 0;
 }
 
 .daf-run {

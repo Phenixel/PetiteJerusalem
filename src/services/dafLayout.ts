@@ -61,8 +61,10 @@ export interface DafLayoutPage {
   big?: DafRun[];
   /**
    * « הדרן עלך … » : la ligne qui clôt un chapitre, que le livre écrit à
-   * part, en grand, au milieu de la colonne. Même forme que `initial` : sa
-   * boîte et sa place dans la guemara. Elle n'est dans aucune ligne de `main`.
+   * part, en grand, sous la guemara et sous chaque commentaire. Même forme
+   * que `initial` : sa boîte et la place de ses mots ; puis, pour celle d'un
+   * commentaire, sa zone (1 pour Rachi, 2 pour Tossafot) et l'amoud quand ce
+   * n'est pas celui de la page. Elle n'est dans aucune ligne courante.
    */
   closing?: [
     x: number,
@@ -72,6 +74,8 @@ export interface DafLayoutPage {
     passage: number,
     word: number,
     count: number,
+    zone?: number,
+    amud?: number,
   ][];
   /**
    * Les abréviations du livre, là où nos mots en toutes lettres ne tiennent
@@ -214,7 +218,8 @@ export function dafLines(
     if (!words) return null;
     out.push({ zone: "main", x, y, width, words });
   }
-  for (const [x, y, width, height, passage, word, count] of page.closing ?? []) {
+  for (const [x, y, width, height, passage, word, count, zone] of page.closing ?? []) {
+    if (zone) continue;
     const words = gemaraWords([[passage, word, count]]);
     if (!words) return null;
     out.push({ zone: "main", kind: "closing", x, y, width, height, words });
@@ -253,6 +258,17 @@ export function dafLines(
       }
       out.push({ zone, x, y, width, words });
     }
+  }
+  // La clôture sous Rachi et sous Tossafot, écrite à part comme sous la guemara.
+  for (const [x, y, width, height, passage, word, count, z, other] of page.closing ?? []) {
+    if (!z) continue;
+    const zone = z === 1 ? "rashi" : "tosafot";
+    const source = wordsOf(zone, other ?? amud)?.[passage];
+    if (!source) continue;
+    const words = source
+      .slice(word, word + count)
+      .map((w) => ({ text: w.text, lead: false, passage: -1 }));
+    if (words.length) out.push({ zone, kind: "closing", x, y, width, height, words });
   }
   return out;
 }
