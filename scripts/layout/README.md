@@ -130,8 +130,14 @@ en PDF (lecteur de shas.org, voir `sources.json`). Le texte y est du texte :
   l'identique prennent la ligne de leurs voisins ; mais une ligne ne porte
   pas bien plus de lettres que le livre n'en imprime. Au-delà (une addition
   entre crochets de notre texte, que le livre n'a pas), ces mots-là en
-  sortent : mieux vaut un mot absent de la page qu'une ligne écrasée.
-  `--check` compte les lignes encore trop chargées.
+  sortent : mieux vaut un mot absent de la page qu'une ligne écrasée. Avant
+  cela, un mot au bord d'une ligne trop pleine passe à sa voisine si elle a
+  la place ; un renvoi où notre texte nomme le traité que le livre
+  sous-entend, ou une source que l'édition a ajoutée entre parenthèses,
+  reste comme le livre l'imprime. Et là où ce sont nos mots eux-mêmes qui
+  chargent la ligne (« המוציא מחברו עליו הראיה » pour « המע"ה »), le fichier
+  porte l'abréviation du livre (`short`). `--check` compte les lignes encore
+  trop chargées.
 
 ### Les témoins
 

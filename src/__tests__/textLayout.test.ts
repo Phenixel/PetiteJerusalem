@@ -109,6 +109,13 @@ describe("lignes de la page de Vilna", () => {
           if (count <= 0 || w + count > (words[p]?.length ?? -1))
             faults.push(`amoud ${amud} : mot d'ouverture ${p}, ${w}, ${count} n'existe pas`);
         }
+        // Une abréviation remplace des mots de la guemara qui existent, par un texte court.
+        for (const [zone, p, w, count, text, other] of page.short ?? []) {
+          if (![0, 1, 2].includes(zone) || !(count > 1) || !text || text.length > 40)
+            faults.push(`amoud ${amud} : abréviation ${zone}, ${p}, ${w}, ${count}`);
+          if (zone === 0 && other === undefined && w + count > (words[p]?.length ?? -1))
+            faults.push(`amoud ${amud} : abréviation ${p}, ${w}, ${count} n'existe pas`);
+        }
         for (const [p, w, count] of page.big ?? []) {
           if (count <= 0 || w + count > (words[p]?.length ?? -1))
             faults.push(`amoud ${amud} : mot en grand ${p}, ${w}, ${count} n'existe pas`);

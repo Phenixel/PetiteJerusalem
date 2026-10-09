@@ -178,7 +178,8 @@ régénère avec ses commentaires (tenu par `src/__tests__/commentaryFiles.test.
 La forme de la page compose ses lignes à l'écran : ce ne sont pas celles du
 livre. Deux dossiers disent où le livre coupe les siennes. Ils sont écrits
 par `scripts/layout/` (mode d'emploi dans son `README.md`) ; ils ne portent
-**aucun mot**, seulement des places dans les textes qu'on a déjà. Une version
+**aucun mot** (aux abréviations de `short` près, plus bas), seulement des
+places dans les textes qu'on a déjà. Une version
 publiée ne les demande pas, et les fichiers existants ne changent pas.
 
 - Les colonnes du Sefer Torah sont relevées pour toute la Torah, et lues :
@@ -236,6 +237,13 @@ passage, mot, nombre]` : son bord gauche, le milieu et la hauteur de ses
   dans leur ligne, `[passage, mot, nombre]`.
 - `closing` (facultatif) : « הדרן עלך … », la ligne qui clôt un chapitre,
   écrite à part en grand. Même forme que `initial`.
+- `short` (facultatif) : les abréviations du livre, là où nos mots en toutes
+  lettres ne tiennent pas dans la ligne. `[zone, passage, mot, nombre,
+texte]` (zone 0 pour la guemara, 1 pour Rachi, 2 pour Tossafot ; un
+  sixième nombre donne l'amoud quand ce n'est pas celui de la page) : la
+  page écrit `texte` (« המע"ה ») à la place de ces mots. C'est le seul texte
+  qu'un fichier de lignes porte, et seulement sur les lignes qui sans lui
+  seraient illisibles.
 - Ce que la page imprime et que nous n'avons pas n'a pas de ligne : les
   réclames, Rabbénou 'Hananel, le Ein Michpat, le Massoret haChass, et les
   commentaires composés comme Rachi que nos fichiers ne portent pas (le

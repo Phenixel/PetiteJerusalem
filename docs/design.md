@@ -732,7 +732,12 @@ d'ouverture** d'un traité ou d'un chapitre est écrit en très grand, en gras,
 dans le blanc que les commentaires laissent au-dessus de la guemara, sans
 cadre ; « מתני׳ », « גמ׳ » et le premier mot d'un chapitre commencé en
 milieu de page sont en gras dans leur ligne ; « הדרן עלך … » est centré, en
-gras, à la fin du chapitre. Le dibbour hamat'hil est
+gras, à la fin du chapitre. **Une ligne reste lisible** : là où notre texte
+écrit en toutes lettres ce que le livre abrège, au point que la ligne
+serait écrasée, la page écrit l'abréviation du livre (« המע"ה ») ; partout
+ailleurs nos mots restent entiers. Seules les pages proches de l'écran sont
+écrites : un chapitre de trente pages s'ouvre aussi vite qu'une seule. Le
+dibbour hamat'hil est
 en lettres carrées grasses, y compris quand le fichier ne le balise pas (il
 finit alors au premier point). Ce que le livre imprime et que nous n'avons
 pas n'est pas inventé : ni les réclames, ni les notes des marges, ni un

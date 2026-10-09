@@ -916,6 +916,9 @@ class Placed:
     commentaire imprimé dans une autre recension que la nôtre en a peu."""
     safe: set = field(default_factory=set)
     """Les lignes (par identité) dont les deux bords sont retrouvés mot pour mot."""
+    short: list = field(default_factory=list)
+    """Les abréviations du livre à écrire à la place de nos mots, sur les
+    lignes qui sans cela seraient illisibles : (amoud, passage, mot, nombre, texte)."""
 
 
 def match(ours: list[Token], lines: list[PrintedLine], sizes: tuple[int, ...] = (8, 5, 4),
@@ -923,8 +926,11 @@ def match(ours: list[Token], lines: list[PrintedLine], sizes: tuple[int, ...] = 
     """À chaque mot de notre texte (par son rang dans `ours`), la ligne qui le
     porte. Renvoie aussi le nombre de mots imprimés retrouvés, et leur total."""
     theirs: list[tuple[str, int]] = []
+    raw: list[str] = []
+    GAPS.clear()
     for k, line in enumerate(lines):
         theirs += [(norm(w), k) for w in line.words if norm(w)]
+        raw += [w for w in line.words if norm(w)]
     a = [norm(t.text) for t in ours]
     b = [w for w, _ in theirs]
     line_of: dict[int, int] = {}
@@ -975,6 +981,8 @@ def match(ours: list[Token], lines: list[PrintedLine], sizes: tuple[int, ...] = 
                     j += n
                     continue
             j += 1
+    EXACT.clear()
+    EXACT.update(line_of)
     # Entre deux mots retrouvés qui se suivent des deux côtés, ce qui diffère
     # est une abréviation (« ר' » pour « רבי », « א"ל » pour « אמר ליה ») ou
     # un mot que la page n'imprime pas là (« גמ' ») : nos mots prennent la
@@ -1000,6 +1008,8 @@ def match(ours: list[Token], lines: list[PrintedLine], sizes: tuple[int, ...] = 
                 else:
                     at = len(b) - 1
                 line_of[i] = theirs[at][1]
+            if end > j and len({theirs[x][1] for x in range(j, end)}) == 1:
+                GAPS.append((gap, raw[j:end], theirs[j][1]))
             taken_b.update(range(j, end))
         j = end + 1
     # Une ligne est sûre quand son premier et son dernier mot imprimés sont
@@ -1015,6 +1025,11 @@ def match(ours: list[Token], lines: list[PrintedLine], sizes: tuple[int, ...] = 
     return line_of, len(taken_b), len(b)
 
 
+GAPS: list = []
+"""Au dernier calage : les mots de notre texte qui répondent à d'autres mots
+imprimés (une abréviation du livre), ces mots imprimés, et leur ligne."""
+EXACT: set[int] = set()
+"""Les mots de notre texte retrouvés tels quels sur la page au dernier calage."""
 FOUND: dict[int, tuple[int, int]] = {}
 """Par ligne du dernier calage : ses mots retrouvés, sur combien."""
 SURE: set[int] = set()
@@ -1085,18 +1100,88 @@ def place(ours: list[Token], lines: list[PrintedLine], ahead: list[Token] | None
     # au-delà, les mots qu'elle n'a reçus que par voisinage (une variante de
     # notre texte, que la page n'écrit pas) la rendraient illisible. Ils en
     # sortent ; mieux vaut un mot absent qu'une ligne écrasée.
+    # Un renvoi entre parenthèses où notre texte nomme le traité que le livre
+    # sous-entend (« (לקמן בבא מציעא דף עט.) » pour « (לקמן דף עט.) ») : les
+    # mots ajoutés ne sont pas sur la page, le renvoi y reste comme imprimé.
+    exact = set(EXACT)
+    i = 0
+    while i < len(everything):
+        if everything[i].text.startswith("("):
+            j = i
+            while j < len(everything) and j - i < 8 and ")" not in everything[j].text \
+                    and same_comment(everything, i, min(j + 1, len(everything) - 1)):
+                j += 1
+            if j < len(everything) and ")" in everything[j].text and j > i + 1:
+                span = range(i, j + 1)
+                found_here = [k for k in span if k in exact]
+                # Une source ajoutée par l'édition (« (דברים כ״ו:י״ב) »), que
+                # le livre n'a pas du tout, se reconnaît à sa ponctuation.
+                added = not found_here and any("״" in everything[k].text or "׳" in everything[k].text for k in span) \
+                    and any(":" in everything[k].text for k in span)
+                if 2 * len(found_here) >= len(span) or added:
+                    for k in span:
+                        if k not in exact:
+                            line_of.pop(k, None)
+                i = j
+        i += 1
+    letters = [len(norm(t.text)) for t in everything]
+    room = [sum(len(norm(w)) for w in line.words) for line in lines]
+    used = [0] * len(lines)
+    for i, k in line_of.items():
+        used[k] += letters[i]
+    # D'abord entre voisines : un mot posé par voisinage au bord d'une ligne
+    # trop pleine passe à la ligne d'à côté, si elle a la place.
+    for _ in range(3):
+        moved = False
+        for k in range(len(lines)):
+            if used[k] <= 1.2 * room[k] + 2:
+                continue
+            mine = sorted(i for i, at in line_of.items() if at == k)
+            for edge, step in ((-1, 1), (0, -1)):
+                while mine and used[k] > 1.2 * room[k] + 2:
+                    i = mine[edge]
+                    j = line_of.get(i + step)
+                    if i in solid or j is None or j == k or not (0 <= i + step < len(everything)) \
+                            or not same_comment(everything, min(i, i + step), max(i, i + step)) \
+                            or used[j] + letters[i] > 1.1 * room[j] + 2:
+                        break
+                    line_of[i] = j
+                    used[k] -= letters[i]
+                    used[j] += letters[i]
+                    mine.pop(edge)
+                    moved = True
+        if not moved:
+            break
+    # Ce qui reste de trop sort de la page.
     load: dict[int, list[int]] = defaultdict(list)
     for i, k in line_of.items():
         load[k].append(i)
     for k, mine in load.items():
-        room = sum(len(norm(w)) for w in lines[k].words)
-        used = sum(len(norm(everything[i].text)) for i in mine)
-        if used > 1.4 * room + 4:
+        if used[k] > 1.35 * room[k] + 3:
             for i in sorted((i for i in mine if i not in solid), reverse=True):
                 del line_of[i]
-                used -= len(norm(everything[i].text))
-                if used <= 1.25 * room + 4:
+                used[k] -= letters[i]
+                if used[k] <= 1.2 * room[k] + 3:
                     break
+    # Ce qui reste trop chargé l'est par nos mots eux-mêmes : notre texte
+    # écrit en toutes lettres ce que le livre abrège (« המע"ה »). Sur ces
+    # lignes-là, et sur elles seules, la page écrit l'abréviation du livre.
+    short: list[tuple[int, int, int, int, str]] = []
+    for gap, printed_words, k in sorted(GAPS, key=lambda g: len(g[1]) - len(g[0])):
+        if used[k] <= 1.2 * room[k] + 2 or len(gap) <= len(printed_words):
+            continue
+        if not any(mark in w for w in printed_words for mark in "\"'״׳"):
+            continue
+        first, last = everything[gap[0]], everything[gap[-1]]
+        if any(line_of.get(i) != k for i in gap) or not same_comment(everything, gap[0], gap[-1]) \
+                or last.word - first.word != len(gap) - 1:
+            continue
+        text = " ".join(printed_words)
+        saved = sum(letters[i] for i in gap) - len(norm(text))
+        if saved <= 0:
+            continue
+        short.append((first.unit, first.passage, first.word, len(gap), text))
+        used[k] -= saved
     runs = runs_of(everything, line_of, len(lines))
     # Une ligne dont aucun mot imprimé n'est des nôtres (un titre de colonne,
     # « רבינו חננאל ») n'a reçu de mots que par voisinage : ils sont à la
@@ -1118,14 +1203,9 @@ def place(ours: list[Token], lines: list[PrintedLine], ahead: list[Token] | None
     printed = sum(found.get(k, (0, 0))[1] for k in range(len(lines)) if runs[k])
     longest = sum(max(found.get(k, (0, 0))[1], sum(n for _, _, _, n in runs[k]))
                   for k in range(len(lines)) if runs[k])
-    tight = 0
-    for k in range(len(lines)):
-        if runs[k]:
-            room = sum(len(norm(w)) for w in lines[k].words)
-            used = sum(len(norm(text_of[(a, p, w + d)])) for a, p, w, n in runs[k] for d in range(n))
-            tight += used > 1.3 * room + 3
+    tight = sum(1 for k in range(len(lines)) if runs[k] and used[k] > 1.3 * room[k] + 3)
     return Placed(lines, runs, matched, printed, sure, tight, matched / max(1, longest),
-                  {id(lines[k]) for k in SURE_NOW})
+                  {id(lines[k]) for k in SURE_NOW}, short)
 
 
 def side_tokens(tractate: Tractate, zone: str, amud: int) -> list[Token]:
@@ -1405,6 +1485,14 @@ def page_at(tractate: Tractate, amud: int, pdf: str, taken: dict[str, set]) -> t
     if closing:
         page["closing"] = [[round((a - x0) * scale), round(((t + b) / 2 - y0) * scale), round((c - a) * scale),
                             round((b - t) * scale), p, w, n] for a, t, c, b, p, w, n in closing]
+    # Les abréviations du livre, là où nos mots en toutes lettres ne tiennent
+    # pas : par zone (0 la guemara, 1 Rachi, 2 Tossafot), la place de nos
+    # mots et ce que le livre écrit.
+    brief = [[z, p, w, n, text] if a == amud else [z, p, w, n, text, a]
+             for z, zone in enumerate(("main", "rashi", "tosafot"))
+             for a, p, w, n, text in placed[zone].short]
+    if brief:
+        page["short"] = brief
     if initials:
         # Le mot d'ouverture : sa boîte (bord gauche, milieu, largeur, hauteur) et sa place.
         page["initial"] = [

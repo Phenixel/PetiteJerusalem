@@ -136,3 +136,27 @@ describe("dafLines, hors des lignes courantes", () => {
     ).toBeNull();
   });
 });
+
+describe("dafLines, les abréviations du livre", () => {
+  const page: DafLayoutPage = {
+    ...PAGE,
+    short: [
+      [0, 0, 1, 2, 'ק"ש'],
+      [1, 0, 2, 2, "מש'"],
+    ],
+  };
+  const lines = dafLines(page, 5, LINES, PASSAGES, MEFORSHIM)!;
+
+  it("écrit l'abréviation à la place de nos mots, dans la guemara", () => {
+    const first = lines.find((l) => l.zone === "main")!;
+    expect(first.words.map((w) => w.text)).toEqual(["מאימתי", 'ק"ש', "שמע", "עד"]);
+    expect(first.words[1].short).toBe(true);
+    expect(first.words[1].passage).toBe(0);
+  });
+
+  it("et dans un commentaire, sans toucher aux autres lignes", () => {
+    const rashi = lines.filter((l) => l.zone === "rashi");
+    expect(rashi[1].words.map((w) => w.text)).toEqual(["מאימתי", "קורין", "מש'", "נכנסים"]);
+    expect(rashi[0].words.map((w) => w.text)).toEqual(["של", "הדף", "הקודם"]);
+  });
+});

@@ -153,6 +153,35 @@ function measure(): void {
 
 watch([printed, fontEpoch], () => void nextTick(measure), { flush: "post" });
 
+// ---- N'écrire que ce qu'on regarde ------------------------------------------
+
+/**
+ * Un chapitre fait vingt pages de cent cinquante lignes. On n'écrit que
+ * celles qui sont à l'écran ou tout près : la page garde ses proportions
+ * (donc sa place dans le défilement) et se remplit quand on s'en approche.
+ * Sans IntersectionObserver (les tests, un vieux navigateur), tout s'écrit.
+ */
+const near = ref(typeof IntersectionObserver === "undefined");
+let watcher: IntersectionObserver | null = null;
+
+onMounted(() => {
+  if (typeof IntersectionObserver === "undefined" || !root.value) return;
+  watcher = new IntersectionObserver(
+    (entries) => {
+      near.value = entries.some((entry) => entry.isIntersecting);
+    },
+    // Deux écrans d'avance de chaque côté : la page est écrite avant d'arriver.
+    { rootMargin: "200% 0px 200% 0px" },
+  );
+  watcher.observe(root.value);
+});
+
+onBeforeUnmount(() => watcher?.disconnect());
+
+watch(near, (now) => {
+  if (now) void nextTick(measure);
+});
+
 onMounted(() => {
   void nextTick(measure);
   // Une page écrite hors de l'écran (sans largeur) se lit quand elle y vient.
@@ -343,7 +372,7 @@ function isLinkable(row: Row, run: Run): boolean {
       ><span class="daf-probe-lead"></span
     ></span>
     <div
-      v-for="(row, i) in rows"
+      v-for="(row, i) in near ? rows : []"
       :key="i"
       class="daf-row"
       :class="[

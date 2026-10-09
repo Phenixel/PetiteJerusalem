@@ -73,6 +73,21 @@ export interface DafLayoutPage {
     word: number,
     count: number,
   ][];
+  /**
+   * Les abréviations du livre, là où nos mots en toutes lettres ne tiennent
+   * pas dans la ligne (« המע"ה » pour « המוציא מחברו עליו הראיה ») :
+   * `[zone, passage, mot, nombre, texte]`, zone 0 pour la guemara, 1 pour
+   * Rachi, 2 pour Tossafot, et l'amoud quand ce n'est pas celui de la page.
+   * La page écrit `texte` à la place de ces mots ; ailleurs, nos mots restent.
+   */
+  short?: [
+    zone: number,
+    passage: number,
+    word: number,
+    count: number,
+    text: string,
+    amud?: number,
+  ][];
 }
 
 export interface DafLayoutChunk {
@@ -87,6 +102,8 @@ export interface DafWord {
   passage: number;
   /** Du dibbour hamat'hil : en lettres carrées grasses. */
   lead: boolean;
+  /** Une abréviation du livre, écrite à la place de plusieurs de nos mots. */
+  short?: boolean;
   /** Écrit plus grand dans sa ligne (« גמ׳ », le premier mot d'un chapitre). */
   big?: boolean;
   /** Le rang de son commentaire dans la colonne de la page (dafLinks.ts). */
@@ -162,6 +179,9 @@ export function dafLines(
     gemara.set(passages?.[k] ?? k, text ? text.split(" ") : []);
   });
   const out: DafLine[] = [];
+  const short = new Map<string, { count: number; text: string }>();
+  for (const [zone, passage, word, count, text, other] of page.short ?? [])
+    short.set(`${zone}:${other ?? amud}:${passage}:${word}`, { count, text });
   const big = new Set<string>();
   for (const [passage, from, count] of page.big ?? [])
     for (let k = from; k < from + count; k++) big.add(`${passage}:${k}`);
@@ -171,6 +191,12 @@ export function dafLines(
       const source = gemara.get(passage);
       if (!source || from + count > source.length) return null;
       for (let k = from; k < from + count; k++) {
+        const brief = short.get(`0:${amud}:${passage}:${k}`);
+        if (brief && k + brief.count <= from + count) {
+          words.push({ text: brief.text, passage, lead: false, short: true });
+          k += brief.count - 1;
+          continue;
+        }
         const word: DafWord = { text: source[k], passage, lead: false };
         if (big.has(`${passage}:${k}`) || HEADS.has(source[k])) word.big = true;
         words.push(word);
@@ -212,9 +238,17 @@ export function dafLines(
         const source = wordsOf(zone, other ?? amud)?.[passage];
         // Un commentaire d'une page qu'on n'a pas : la ligne s'écrit sans lui.
         if (!source) continue;
-        for (let k = from; k < Math.min(from + count, source.length); k++) {
+        const end = Math.min(from + count, source.length);
+        for (let k = from; k < end; k++) {
+          const at = other ?? amud;
+          const brief = short.get(`${zone === "rashi" ? 1 : 2}:${at}:${passage}:${k}`);
+          let word = source[k];
+          if (brief && k + brief.count <= end) {
+            word = { ...word, text: brief.text, short: true };
+            k += brief.count - 1;
+          }
           // Un mot d'une autre page ne se relie pas aux passages de celle-ci.
-          words.push(other === undefined ? source[k] : { ...source[k], passage: -1, comment: -1 });
+          words.push(other === undefined ? word : { ...word, passage: -1, comment: -1 });
         }
       }
       out.push({ zone, x, y, width, words });
