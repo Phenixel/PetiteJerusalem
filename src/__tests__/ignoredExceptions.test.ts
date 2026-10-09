@@ -10,11 +10,23 @@ const IDB_LOST =
   "UnknownError: Connection to Indexed Database server lost. Refresh the page to try again";
 const IDB_CLOSING =
   "InvalidStateError: Failed to execute 'transaction' on 'IDBDatabase': The database connection is closing.";
+const IDB_NO_TRANSACTION =
+  "UnknownError: Attempt to get a record from database without an in-progress transaction";
 
 describe("isIgnoredException", () => {
   it("écarte la perte de connexion IndexedDB (WebKit, polling Firebase Auth)", () => {
     expect(isIgnoredException([IDB_LOST])).toBe(true);
     expect(isIgnoredException([IDB_CLOSING])).toBe(true);
+  });
+
+  it("écarte la transaction IndexedDB devenue inactive au retour d'arrière-plan", () => {
+    expect(isIgnoredException([IDB_NO_TRANSACTION])).toBe(true);
+    // Les autres appels portés par le même défaut de WebKit.
+    expect(
+      isIgnoredException([
+        "UnknownError: Attempt to put a record into database without an in-progress transaction",
+      ]),
+    ).toBe(true);
   });
 
   it("écarte la « Script error. » opaque des scripts injectés cross-origin", () => {
