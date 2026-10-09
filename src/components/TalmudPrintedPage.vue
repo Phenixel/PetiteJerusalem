@@ -279,8 +279,13 @@ const rows = computed<Row[]>(() => {
   const marked = markedWords.value;
   // Le mot d'ouverture et la ligne de clôture ont leur taille : celle des
   // lettres du livre (une lettre carrée tient les deux tiers de son corps).
+  // La clôture se mesure à sa boîte de texte, qui est déjà son corps.
   const sizeOf = (line: DafLine): number =>
-    line.kind && line.height ? line.height / LETTER : sizes.get(line.zone)!;
+    line.kind === "initial" && line.height
+      ? line.height / LETTER
+      : line.kind === "closing" && line.height
+        ? line.height * 0.82
+        : sizes.get(line.zone)!;
   written = lines.map(sizeOf);
   return lines.map((line, i): Row => {
     const size = written[i];

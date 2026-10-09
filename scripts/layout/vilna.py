@@ -1444,6 +1444,32 @@ def page_at(tractate: Tractate, amud: int, pdf: str, taken: dict[str, set]) -> t
             joined.append((rank, line, list(runs)))
         joined = [(line, runs) for _, line, runs in joined if runs]
         kept[zone] = sorted(joined, key=lambda pair: (pair[0].top, -pair[0].right))
+    # Dernier garde-fou, sur la boîte elle-même : une ligne ne porte pas bien
+    # plus de lettres que sa largeur n'en tient au corps de sa zone (un bout
+    # de ligne d'un mot qui en aurait reçu quatre). Ses derniers mots en sortent.
+    count = {"main": {(t.unit, t.passage, t.word): len(norm(t.text)) for t in ours_main}}
+    for zone in ("rashi", "tosafot"):
+        count[zone] = {(t.unit, t.passage, t.word): len(norm(t.text))
+                       for t in side_tokens(tractate, zone, amud) + ahead[zone]}
+    for zone, pairs in kept.items():
+        load = [sum(count[zone].get((a, p, w + d), 3) + 1 for a, p, w, n in runs for d in range(n)) for _, runs in pairs]
+        dense = sorted(n / max(1, l.right - l.left) for (l, runs), n in zip(pairs, load)
+                       if sum(r[3] for r in runs) >= 4)
+        if len(dense) < 5:
+            continue
+        usual = dense[len(dense) // 2]
+        for k, ((line, runs), n) in enumerate(zip(pairs, load)):
+            width = max(1, line.right - line.left)
+            runs = list(runs)
+            while n > 1.6 * usual * width + 2 and sum(r[3] for r in runs) > 1:
+                a, p, w, m = runs[-1]
+                n -= count[zone].get((a, p, w + m - 1), 3) + 1
+                runs[-1] = (a, p, w, m - 1)
+                if m == 1:
+                    runs.pop()
+                if n <= 1.3 * usual * width + 2:
+                    break
+            pairs[k] = (line, runs)
     initials = initial_words(pdf, printed.sizes["main"], ours_main, kept["main"])
     closing = closing_lines(printed.sizes["main"], ours_main, kept["main"])
     kept["main"] = [(l, runs) for l, runs in kept["main"] if runs]
