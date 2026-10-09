@@ -2,7 +2,7 @@
 
 Ce dossier relève l'endroit où chaque ligne du livre se coupe, et l'écrit
 dans `public/texts/torah-layout/` (les colonnes du Sefer Torah, pour toute la
-Torah) et `public/texts/talmud-layout/` (la page de Vilna, un pilote). Le
+Torah) et `public/texts/talmud-layout/` (la page de Vilna). Le
 format de ces fichiers est décrit dans `docs/compatibilite-textes.md`.
 
 Rien n'est transcrit. Le texte, on l'a déjà (`public/texts/`) ; les sources
@@ -76,7 +76,44 @@ Ce que le relevé ne garantit pas :
   de tous les rouleaux.
 - Les nounim inversés de Bamidbar 10, 35 ne sont pas écrits.
 
-## La page de Vilna et le pilote sur scan
+## La page de Vilna
+
+```bash
+python3 scripts/layout/vilna.py beitzah --fetch          # les pages (une par seconde)
+python3 scripts/layout/vilna.py beitzah --check          # ce que vaut le calage
+python3 scripts/layout/vilna.py beitzah --amud 3a --dump # une page, ligne par ligne
+python3 scripts/layout/vilna.py beitzah --write          # public/texts/talmud-layout
+python3 scripts/layout/vilna.py all --write              # tout le Shas
+```
+
+La source est une page par amoud, recomposée ligne pour ligne d'après Vilna,
+en PDF (lecteur de shas.org, voir `sources.json`). Le texte y est du texte :
+`vilna.py` en lit les mots, leur police et leur place, sans rien deviner.
+
+- **La zone** vient de la police : celle de la guemara, celle de Rachi (que
+  Tossafot partage), celle des dibbourim de Rachi, celle des dibbourim de
+  Tossafot. Les marges ont les leurs, qu'on laisse.
+- **La ligne** vient de la place. Deux colonnes voisines se séparent à leur
+  gouttière, qui se retrouve au même endroit d'une rangée à l'autre ; un
+  blanc de justification, non.
+- **À qui est une ligne de commentaire** : à Rachi ou à Tossafot selon la
+  police du dibbour qu'elle ouvre, sinon selon ses mots. Le côté ne le dit
+  pas : sur certaines pages Rachi tient les deux colonnes.
+- **Nos mots** : le texte de la page et le nôtre sont le même Talmud. On les
+  aligne mot à mot ; ce qui diffère entre deux mots retrouvés est une
+  abréviation (« ר' » pour « רבי », « א"ל » pour « אמר ליה »), et nos mots
+  prennent la ligne du mot imprimé qui leur répond. La page n'imprime pas
+  les commentaires dans l'ordre de notre fichier : les suites de mots restées
+  seules sont cherchées partout sur la page.
+
+`--check` dit, par zone : les lignes dont les deux bords sont retrouvés mot
+pour mot, les mots imprimés retrouvés dans notre texte, et nos mots posés sur
+une ligne. Ce que le relevé ne garantit pas : une ligne dont un bord n'est pas
+retrouvé (une variante de texte) peut commencer un mot trop tôt ou trop
+tard ; les réclames et les notes des marges ne sont pas relevées ; Chekalim
+et Middot, que nos fichiers ne rangent pas par amoud, n'ont pas de lignes.
+
+## Le pilote sur scan
 
 ## Ce qu'il faut
 
@@ -111,7 +148,7 @@ python3 scripts/layout/fetch.py vilna v01
 python3 scripts/layout/fetch.py ezrat-hasofer
 
 # 2. La guemara : un passage d'un traité.
-python3 scripts/layout/talmud.py berakhot --from 2a --to 10b --write
+python3 scripts/layout/talmud.py berakhot --from 2a --to 2b --review /tmp/relecture
 
 # 3. Le pilote de la Torah sur scan : une paracha du tikoun de Pisa (264
 #    colonnes). Rien n'en va dans le dépôt, qui porte le rouleau de 245
@@ -162,9 +199,10 @@ douteuse.
 | `daf.py`       | la page de Vilna : la guemara et les colonnes de commentaire        |
 | `align.py`     | le calage des mots vus sur les mots du texte                        |
 | `texts.py`     | les mots du texte, comptés comme le lecteur les compte              |
-| `talmud.py`    | la guemara, Rachi et Tossafot d'un passage                          |
+| `talmud.py`    | le pilote : la guemara, Rachi et Tossafot lus sur un scan           |
 | `torah.py`     | le pilote : les colonnes d'une paracha lues sur le tikoun de Pisa   |
 | `scroll.py`    | les 245 colonnes du Sefer Torah, pour toute la Torah                |
+| `vilna.py`     | la page de Vilna ligne pour ligne, lue dans des pages composées     |
 | `review.py`    | les planches de relecture                                           |
 | `capture.mjs`  | la capture de notre rendu (Playwright)                              |
 | `compare.py`   | les images côte à côte                                              |

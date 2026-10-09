@@ -717,6 +717,20 @@ lecture. La page n'a pas de cadre ni de fond propre : c'est le texte qui
 dessine la forme. Rachi et Tossafot ne se chargent qu'à l'ouverture de la
 page ; s'ils manquent, une ligne le dit et la guemara reste seule au centre.
 
+**La page du daf est celle du livre, ligne pour ligne.** Chaque ligne de la
+guemara, de Rachi et de Tossafot est posée là où Vilna l'imprime, avec les
+mots qu'il y met (`TalmudPrintedPage.vue`, `dafLayout.ts`,
+`public/texts/talmud-layout`) : mêmes lignes, même forme de page, sur tous
+les écrans. Nos polices n'ont pas les largeurs de celles du livre : la taille
+de chaque écriture est celle qui fait tenir sa ligne médiane sans la
+déformer, et chaque ligne s'étire ou se resserre un peu pour retrouver sa
+largeur imprimée, sans jamais sortir de sa boîte. Le dibbour hamat'hil est
+en lettres carrées grasses, y compris quand le fichier ne le balise pas (il
+finit alors au premier point). Ce que le livre imprime et que nous n'avons
+pas n'est pas inventé : ni les réclames, ni les notes des marges. Un traité
+dont les lignes ne sont pas relevées se compose à notre façon, dans la même
+forme (`TalmudPage.vue`).
+
 **La taille de lecture y est une loupe.** A− / A+, et le pincement dans
 l'app, n'agrandissent pas le texte de la page du daf : ses lignes bougeraient,
 et une page de Vilna se reconnaît à ses lignes. Ils agrandissent la page

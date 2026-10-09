@@ -21,6 +21,8 @@ import {
   placeLabel as describePlace,
   rubricText,
   saidOn,
+  tractateFromLink,
+  tractateSlug,
 } from "../../services/textService";
 import type { TextBlock, TextContent, TextDay, TextSection } from "../../services/textService";
 import {
@@ -2284,6 +2286,7 @@ watch(textId, (_, previousTextId) => {
           :style="{ '--reading-scale': readingSize.scale.value }"
         >
           <TalmudDafPages
+            :tractate="textEntry ? tractateSlug(tractateFromLink(textEntry.link)) : null"
             :blocks="currentSection.dafBlocks ?? []"
             :meforshim="commentaries.talmud.value"
             :state="dafMeforshimState"

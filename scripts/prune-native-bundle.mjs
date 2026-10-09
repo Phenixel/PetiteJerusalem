@@ -44,6 +44,7 @@ const PRUNED_DIRS = [
   "texts/tanakh",
   "texts/rashi",
   "texts/talmud-meforshim",
+  "texts/talmud-layout",
   "texts/mishna-meforshim",
   "texts/tefila",
 ].map((d) => join(root, d));

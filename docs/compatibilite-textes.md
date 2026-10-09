@@ -184,9 +184,10 @@ publiée ne les demande pas, et les fichiers existants ne changent pas.
 - Les colonnes du Sefer Torah sont relevées pour toute la Torah, et lues :
   la forme du Sefer Torah écrit ligne pour ligne comme le rouleau
   (`TorahScroll.vue`, `scrollLayout.ts`).
-- La page de Vilna n'est relevée que pour un pilote (Berakhot 2a à 10b), à
-  partir de scans du domaine public, et rien ne la lit encore : son format
-  reste une proposition.
+- Les lignes de la page de Vilna sont lues, elles aussi : la page du daf
+  pose chaque ligne de la guemara, de Rachi et de Tossafot là où le livre
+  l'imprime (`TalmudPrintedPage.vue`, `dafLayout.ts`). Un traité sans fichier
+  de lignes se compose comme avant (`TalmudPage.vue`).
 
 **La page de Vilna** : `texts/talmud-layout/<traité>/<n>.json`, par tranches
 de vingt amoudim comme `talmud-meforshim` (même règle : la taille des
@@ -194,42 +195,46 @@ tranches ne change pas sans changer de dossier).
 
 ```text
 {
-  "title": "Berakhot",
+  "edition": "vilna",
   "from": 0,
-  "edition": "vilna-romm-1880",
-  "through": 17,
-  "main": [[[0, 0], [0, 7], [0, 13]]],
-  "rashi": [[[[0, 0, 8]], [[0, 8, 6]], [[0, 14, 4], [1, 0, 7]]]],
-  "tosafot": [[[[0, 0, 10]]]],
-  "absent": [{ "rashi": [[14, 37, 8]] }]
+  "pages": [
+    {
+      "height": 16540,
+      "pitch": [286, 254],
+      "main": [[2968, 1500, 4048, [0, 0, 7]], [2968, 2056, 4032, [0, 15, 1], [1, 0, 7]]],
+      "rashi": [[5127, 206, 4857, [0, 0, 9]], [7063, 698, 2921, [3, 21, 6, 4]]],
+      "tosafot": [[0, 190, 4841, [0, 0, 12]]]
+    }
+  ]
 }
 ```
 
-- `main[a]` : les lignes de la guemara de l'amoud `from + a`, chacune par la
-  place de son premier mot, `[passage, mot]`. Le passage est celui du fichier
-  de guemara (`he[amoud][passage]`) ; le mot se compte dans
-  `gemaraPageText([passage]).split(" ")`, c'est-à-dire dans le passage tel
-  que la page du daf l'affiche. Les lignes se suivent dans l'ordre du texte :
-  une ligne va de son premier mot à celui de la suivante.
-- `rashi[a]`, `tosafot[a]` : les lignes du commentaire, chacune par les
-  morceaux de texte qu'elle porte, `[passage, mot, nombre]`. Le mot se compte
-  dans les commentaires du passage bout à bout, chacun lu par
-  `parseRashiComment` (son dibbour, puis son texte), coupés aux espaces. Un
-  quatrième nombre donne l'amoud quand le texte est celui d'un autre amoud :
-  un commentaire qui finit à la page suivante reste rangé, chez Sefaria, sous
-  l'amoud où il commence.
-- `absent[a]` : ce que le fichier de commentaires porte et que la page
-  n'imprime pas (un doublon, un ajout entre crochets), ou que le relevé n'a
-  pas su placer. Ces mots ne sont sur aucune ligne.
-- `through` : le dernier amoud relevé de la tranche. Le dernier amoud relevé
-  d'un traité peut avoir des commentaires qui finissent à la page suivante :
-  ils seront placés quand elle le sera.
+- `pages[a]` : la page de l'amoud `from + a` (`null` s'il n'a pas de lignes).
+  Tout s'y compte en **dix-millièmes de la largeur de la page**, guemara et
+  commentaires compris, marges exclues. `height` : sa hauteur ; `pitch` :
+  l'interligne de la guemara, puis celui des commentaires.
+- Une ligne est `[x, y, largeur, morceau, morceau…]` : son bord gauche, le
+  milieu de sa hauteur, sa largeur, puis les morceaux de notre texte qu'elle
+  porte.
+- Un morceau est `[passage, mot, nombre]`. Le passage est celui du fichier de
+  guemara (`he[amoud][passage]`, `DafBlock.passages`). Dans `main`, le mot se
+  compte dans `gemaraPageText([passage]).split(" ")`. Dans `rashi` et
+  `tosafot`, il se compte dans les commentaires du passage bout à bout, chacun
+  lu par `parseRashiComment` (son dibbour, puis son texte), coupés aux
+  espaces. Un quatrième nombre donne l'amoud quand ce n'est pas celui de la
+  page : un commentaire commencé à la page d'avant.
+- Une ligne porte plusieurs morceaux quand la page n'imprime pas les
+  commentaires dans l'ordre des passages de Sefaria, ou qu'une ligne finit un
+  commentaire et en commence un autre.
+- Ce que la page imprime et que nous n'avons pas n'a pas de ligne : les
+  réclames, Rabbénou 'Hananel, le Ein Michpat, le Massoret haChass.
 
-Pourquoi les commentaires ne se notent pas comme la guemara, par un seul
-début de ligne : la page n'imprime pas les commentaires dans l'ordre des
-passages. Rachi sur le passage 14 peut venir avant Rachi sur le passage 9, et
-une ligne porter la fin d'un commentaire et le début d'un autre, d'un autre
-passage. Une ligne dit donc tout ce qu'elle porte.
+D'où viennent ces lignes (`scripts/layout/vilna.py`) : de pages recomposées
+ligne pour ligne d'après Vilna, en PDF, où le texte est du texte. La police
+dit la zone, la place dit la ligne ; le texte de la page sert à retrouver les
+mots du nôtre, et ne va pas dans le dépôt. Ces fichiers sont lourds (environ
+5 Ko par amoud) : l'app ne les embarque pas (`PRUNED_DIRS`), elle les prend
+sur le site comme la guemara.
 
 **Les colonnes du Sefer Torah** : `texts/torah-layout/<id>.json`, un fichier
 par paracha (264 à 317), sous le numéro de son fichier de texte. Le rouleau
@@ -293,9 +298,9 @@ Ce que les tests tiennent (`src/__tests__/textLayout.test.ts`) : chaque place
 écrite existe et les lignes se partagent le texte mot pour mot ; les 54
 fichiers se suivent sans trou d'un bout à l'autre des 245 colonnes de 42
 lignes ; chaque colonne commence par un vav, sauf les six que la tradition
-nomme ; les deux chirot ont leurs lignes. Pour la page de Vilna, le test ne
-tient que le partage du texte : la justesse des coupures s'y mesure à l'œil,
-sur des planches de relecture. Ces index sont ceux des fichiers de texte :
+nomme ; les deux chirot ont leurs lignes. Pour la page de Vilna : chaque
+morceau désigne des mots qui existent, aucun mot n'est sur deux lignes, et
+les lignes de la guemara portent tout son texte. Ces index sont ceux des fichiers de texte :
 une guemara, des commentaires ou une paracha régénérés demandent de refaire
 le relevé. Un fichier de lignes qui ne colle plus à son texte n'est pas lu :
 la colonne s'écrit alors à notre façon, justifiée (`scrollColumns` rend

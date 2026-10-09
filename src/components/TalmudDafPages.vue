@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from "vue";
+import { computed, nextTick, reactive, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useReadingColumn } from "../composables/useReadingColumn";
+import { loadDafLayout, type DafLayoutPage } from "../services/dafLayout";
 import { linkedMeforshim, nextLink, type DafLink } from "../services/dafLinks";
 import { pageZoomFrame } from "../services/pageZoom";
 import type { DafBlock, DafMeforshim } from "../services/textService";
 import TalmudPage from "./TalmudPage.vue";
+import TalmudPrintedPage from "./TalmudPrintedPage.vue";
 
 /**
  * Un chapitre de guemara dans la forme de la page : un amoud après l'autre,
@@ -30,6 +32,8 @@ const props = defineProps<{
   meforshim: Map<number, DafMeforshim> | null;
   state: "loading" | "ready" | "error";
   scale: number;
+  /** Le traité (« beitzah ») : ses lignes imprimées portent ce nom (talmud-layout). */
+  tractate?: string | null;
 }>();
 
 const { t } = useI18n();
@@ -63,6 +67,29 @@ function onLink(page: number, touched: DafLink | null): void {
 watch(
   () => props.blocks,
   () => (linked.value = null),
+);
+
+/**
+ * Les lignes imprimées de chaque amoud (dafLayout.ts). `undefined` : on les
+ * attend, rien ne s'écrit encore ; `null` : il n'y en a pas (ou elles ne
+ * collent pas au texte), la page se compose à notre façon.
+ */
+const printed = reactive(new Map<number, DafLayoutPage | null>());
+watch(
+  () => [props.tractate, props.blocks] as const,
+  ([tractate, blocks]) => {
+    printed.clear();
+    blocks.forEach((block, index) => {
+      if (!tractate || block.amud === undefined) {
+        printed.set(index, null);
+        return;
+      }
+      void loadDafLayout(tractate, block.amud).then((page) => {
+        if (props.tractate === tractate && props.blocks === blocks) printed.set(index, page);
+      });
+    });
+  },
+  { immediate: true },
 );
 
 /** La colonne de lecture et la place libre autour d'elle (useReadingColumn). */
@@ -140,7 +167,20 @@ function offsetOf(index: number): number {
          façon partout ; la page, dedans, garde son sens. -->
     <div :ref="(el) => setFrame(index, el)" class="daf-zoom" dir="ltr" :style="frameStyle">
       <div class="daf-zoom-page" :style="pageStyle">
+        <TalmudPrintedPage
+          v-if="printed.get(index) && block.amud !== undefined"
+          :daf="block.daf"
+          :amud="block.amud"
+          :page="printed.get(index)!"
+          :lines="block.lines"
+          :passages="block.passages"
+          :meforshim="meforshim"
+          :linked="linked?.page === index ? linked : null"
+          @link="onLink(index, $event)"
+          @mismatch="printed.set(index, null)"
+        />
         <TalmudPage
+          v-else-if="printed.get(index) === null"
           :daf="block.daf"
           :lines="block.lines"
           :meforshim="pageMeforshim(block)"

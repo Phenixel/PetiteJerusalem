@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { DAF_LAYOUT_CHUNK, DAF_UNITS, type DafLayoutChunk } from "../services/dafLayout";
 import { gemaraPageText, scrollVerseWords } from "../services/pageForm";
 import {
   SCROLL_COLUMN_LINES,
@@ -39,24 +40,13 @@ const commentWords = (comments: string[]): string[] =>
     return parsed ? `${parsed.lead} ${parsed.text}`.split(/\s+/).filter(Boolean) : [];
   });
 
-type Run = [number, number, number] | [number, number, number, number];
-interface DafLayout {
-  title: string;
-  from: number;
-  edition: string;
-  through: number;
-  main: [number, number][][];
-  rashi: Run[][][];
-  tosafot: Run[][][];
-  absent: Partial<Record<"rashi" | "tosafot", Run[]>>[];
-}
 interface Meforshim {
   from: number;
   rashi: string[][][];
   tosafot: string[][][];
 }
 
-describe("coupures de la page de Vilna", () => {
+describe("lignes de la page de Vilna", () => {
   const tractates = folders("talmud-layout");
 
   it("ne couvre que des traités qu'on a", () => {
@@ -69,93 +59,96 @@ describe("coupures de la page de Vilna", () => {
     const gemara = read<{ he: string[][] }>(`talmud/${slug}.json`).he;
     const chunks = folders(`talmud-layout/${slug}`).map((file) => ({
       n: Number(file.replace(".json", "")),
-      data: read<DafLayout>(`talmud-layout/${slug}/${file}`),
+      data: read<DafLayoutChunk>(`talmud-layout/${slug}/${file}`),
     }));
-    const meforshim = new Map<number, Meforshim>();
+    const meforshim = new Map<number, Meforshim | null>();
     const comments = (zone: "rashi" | "tosafot", amud: number): string[][] => {
       const n = Math.floor(amud / MEFORSHIM_CHUNK);
-      if (!meforshim.has(n))
-        meforshim.set(n, read<Meforshim>(`talmud-meforshim/${slug}/${n}.json`));
-      const chunk = meforshim.get(n)!;
-      return chunk[zone][amud - chunk.from] ?? [];
+      if (!meforshim.has(n)) {
+        const path = `talmud-meforshim/${slug}/${n}.json`;
+        meforshim.set(n, existsSync(resolve(TEXTS, path)) ? read<Meforshim>(path) : null);
+      }
+      const chunk = meforshim.get(n);
+      return chunk ? (chunk[zone][amud - chunk.from] ?? []) : [];
     };
+    const pages = chunks.flatMap(({ data }) =>
+      data.pages.flatMap((page, i) => (page ? [{ amud: data.from + i, page }] : [])),
+    );
 
     it(`${slug} : des tranches de vingt amoudim, comme les commentaires`, () => {
+      expect(DAF_LAYOUT_CHUNK).toBe(MEFORSHIM_CHUNK);
       for (const { n, data } of chunks) {
-        expect(data.from).toBe(n * MEFORSHIM_CHUNK);
-        expect(data.through).toBeGreaterThanOrEqual(data.from);
-        expect(data.through).toBeLessThan(Math.min(data.from + MEFORSHIM_CHUNK, gemara.length));
-        for (const zone of ["main", "rashi", "tosafot", "absent"] as const) {
-          expect(data[zone].length, `${zone} de la tranche ${n}`).toBe(
-            data.through - data.from + 1,
-          );
+        expect(data.from).toBe(n * DAF_LAYOUT_CHUNK);
+        expect(data.pages.length).toBeLessThanOrEqual(DAF_LAYOUT_CHUNK);
+        expect(data.from + data.pages.length).toBeLessThanOrEqual(gemara.length);
+      }
+    });
+
+    it(`${slug} : chaque ligne tient dans sa page`, () => {
+      for (const { amud, page } of pages) {
+        expect(page.height, `amoud ${amud}`).toBeGreaterThan(0);
+        for (const zone of ["main", "rashi", "tosafot"] as const) {
+          for (const [x, y, width] of page[zone]) {
+            expect(x, `amoud ${amud}`).toBeGreaterThanOrEqual(0);
+            expect(x + width, `amoud ${amud}`).toBeLessThanOrEqual(DAF_UNITS + 2);
+            expect(y, `amoud ${amud}`).toBeGreaterThanOrEqual(0);
+            expect(y, `amoud ${amud}`).toBeLessThanOrEqual(page.height);
+            expect(width, `amoud ${amud}`).toBeGreaterThan(0);
+          }
         }
       }
     });
 
-    it(`${slug} : les lignes de la guemara se partagent chaque amoud`, () => {
-      for (const { data } of chunks) {
-        data.main.forEach((lines, i) => {
-          const amud = data.from + i;
-          // La place de chaque mot de l'amoud, dans l'ordre de la page.
-          const order = new Map<string, number>();
-          gemara[amud].forEach((passage, p) =>
-            gemaraWords(passage).forEach((_, w) => order.set(`${p}:${w}`, order.size)),
-          );
-          const at = lines.map(([p, w]) => order.get(`${p}:${w}`));
-          expect(at, `amoud ${amud} : une place qui n'existe pas`).not.toContain(undefined);
-          // La première ligne commence au premier mot, les suivantes avancent :
-          // chaque mot appartient à une ligne et une seule.
-          expect(at[0], `amoud ${amud}`).toBe(0);
-          for (let k = 1; k < at.length; k++) {
-            expect(at[k]!, `amoud ${amud}, ligne ${k + 1}`).toBeGreaterThan(at[k - 1]!);
+    it(`${slug} : les lignes de la guemara portent tout son texte, mot pour mot`, () => {
+      let total = 0;
+      let placed = 0;
+      for (const { amud, page } of pages) {
+        const words = gemara[amud].map(gemaraWords);
+        const seen = new Set<string>();
+        for (const [, , , ...runs] of page.main) {
+          for (const [p, w, count] of runs) {
+            expect(count, `amoud ${amud}`).toBeGreaterThan(0);
+            expect(w + count, `amoud ${amud}, passage ${p}`).toBeLessThanOrEqual(
+              words[p]?.length ?? -1,
+            );
+            for (let k = w; k < w + count; k++) {
+              expect(seen.has(`${p}:${k}`), `amoud ${amud} : ${p}:${k} deux fois`).toBe(false);
+              seen.add(`${p}:${k}`);
+            }
           }
-        });
+        }
+        total += words.reduce((n, list) => n + list.length, 0);
+        placed += seen.size;
       }
+      // Un mot de notre fichier que la page n'a pas ne va sur aucune ligne :
+      // il n'y en a presque pas.
+      expect(placed / total).toBeGreaterThan(0.995);
     });
 
     for (const zone of ["rashi", "tosafot"] as const) {
-      it(`${slug} : chaque mot de ${zone} est sur une ligne, une seule fois`, () => {
-        const through = Math.max(...chunks.map((c) => c.data.through));
+      it(`${slug} : les lignes de ${zone} désignent son texte, sans le répéter`, () => {
         const seen = new Set<string>();
-        const take = (amud: number, [p, w, count]: Run, where: string): void => {
-          const words = commentWords(comments(zone, amud)[p] ?? []);
-          expect(count, `${where} : un morceau vide`).toBeGreaterThan(0);
-          expect(
-            w + count,
-            `${where} : au-delà du passage ${p} de l'amoud ${amud}`,
-          ).toBeLessThanOrEqual(words.length);
-          for (let k = w; k < w + count; k++) {
-            const key = `${amud}:${p}:${k}`;
-            expect(seen.has(key), `${where} : le mot ${key} est pris deux fois`).toBe(false);
-            seen.add(key);
-          }
-        };
-        for (const { data } of chunks) {
-          data[zone].forEach((lines, i) => {
-            const amud = data.from + i;
-            lines.forEach((line, l) => {
-              expect(line.length, `amoud ${amud}, ligne ${l + 1} vide`).toBeGreaterThan(0);
-              for (const run of line) take(run[3] ?? amud, run, `amoud ${amud}, ligne ${l + 1}`);
-            });
-          });
-          data.absent.forEach((absent, i) => {
-            for (const run of absent[zone] ?? [])
-              take(data.from + i, run, `absent de ${data.from + i}`);
-          });
-        }
-        // Tout amoud d'avant le dernier est entièrement placé. Le dernier
-        // peut finir à la page suivante, qu'on n'a pas encore relevée.
-        for (let amud = 0; amud < through; amud++) {
-          comments(zone, amud).forEach((passage, p) => {
-            commentWords(passage).forEach((_, w) => {
+        let total = 0;
+        for (const { amud, page } of pages) {
+          for (const [, , , ...runs] of page[zone]) {
+            for (const [p, w, count, other] of runs) {
+              const at = other ?? amud;
+              const words = commentWords(comments(zone, at)[p] ?? []);
+              expect(count, `amoud ${amud}`).toBeGreaterThan(0);
               expect(
-                seen.has(`${amud}:${p}:${w}`),
-                `le mot ${amud}:${p}:${w} n'est sur aucune ligne`,
-              ).toBe(true);
-            });
-          });
+                w + count,
+                `amoud ${amud} : passage ${p} de l'amoud ${at}`,
+              ).toBeLessThanOrEqual(words.length);
+              for (let k = w; k < w + count; k++) {
+                const key = `${at}:${p}:${k}`;
+                expect(seen.has(key), `amoud ${amud} : ${key} deux fois`).toBe(false);
+                seen.add(key);
+              }
+            }
+          }
+          total += comments(zone, amud).reduce((n, list) => n + commentWords(list).length, 0);
         }
+        if (total) expect(seen.size / total).toBeGreaterThan(0.97);
       });
     }
   }
