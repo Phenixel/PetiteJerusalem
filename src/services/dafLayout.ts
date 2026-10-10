@@ -78,6 +78,11 @@ export interface DafLayoutPage {
     amud?: number,
   ][];
   /**
+   * « הדרן עלך … » quand nos textes rangent la formule à la page d'avant ou
+   * d'après : sa boîte et ses mots (les nôtres), écrits là où le livre la met.
+   */
+  formula?: [x: number, y: number, width: number, height: number, text: string][];
+  /**
    * Les abréviations du livre, là où nos mots en toutes lettres ne tiennent
    * pas dans la ligne (« המע"ה » pour « המוציא מחברו עליו הראיה ») :
    * `[zone, passage, mot, nombre, texte]`, zone 0 pour la guemara, 1 pour
@@ -284,6 +289,10 @@ export function dafLines(
       .slice(word, word + count)
       .map((w) => ({ text: w.text, lead: false, passage: -1 }));
     if (words.length) out.push({ zone, kind: "closing", x, y, width, height, words });
+  }
+  for (const [x, y, width, height, text] of page.formula ?? []) {
+    const words = text.split(" ").map((word) => ({ text: word, lead: false, passage: -1 }));
+    out.push({ zone: "main", kind: "closing", x, y, width, height, words });
   }
   return out;
 }

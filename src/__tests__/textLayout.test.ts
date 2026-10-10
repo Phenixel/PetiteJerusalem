@@ -116,6 +116,13 @@ describe("lignes de la page de Vilna", () => {
           if (zone === 0 && other === undefined && w + count > (words[p]?.length ?? -1))
             faults.push(`amoud ${amud} : abréviation ${p}, ${w}, ${count} n'existe pas`);
         }
+        // La formule de clôture rangée à la page voisine : nos mots, rien d'autre.
+        for (const [x, y, width, height, text] of page.formula ?? []) {
+          if (x < 0 || x + width > DAF_UNITS + 2 || y < 0 || y > page.height || !(height > 0))
+            faults.push(`amoud ${amud} : formule hors de la page`);
+          if (!/^הדרן עלך [א-ת'"׳״ ]+$/.test(text))
+            faults.push(`amoud ${amud} : formule « ${text} »`);
+        }
         for (const [p, w, count] of page.big ?? []) {
           if (count <= 0 || w + count > (words[p]?.length ?? -1))
             faults.push(`amoud ${amud} : mot en grand ${p}, ${w}, ${count} n'existe pas`);

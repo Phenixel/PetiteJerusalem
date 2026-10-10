@@ -332,6 +332,19 @@ def big_words(main_size: int, ours: list[Token], kept: list) -> list[list[int]]:
     return out
 
 
+ORPHANS: list = []
+"""Les rangées « הדרן עלך … » de la dernière page que ses propres mots ne portent pas."""
+
+
+def formula_text(words: list[str], tokens: list[Token]) -> str | None:
+    """Les mots de notre texte (d'une page voisine) qui sont cette formule."""
+    said = [norm(t.text) for t in tokens]
+    for k in range(len(said)):
+        if said[k: k + len(words)] == words:
+            return " ".join(re.sub("[^א-ת'\"׳״]", "", t.text) for t in tokens[k: k + len(words)])
+    return None
+
+
 def closing_lines(main_size: int, ours: list[Token], kept: list) -> list[list[int]]:
     """« הדרן עלך … » : la ligne qui clôt un chapitre, en grand au milieu de
     la colonne. Notre guemara la porte ; le livre l'écrit à part. Ses mots
@@ -349,6 +362,7 @@ def closing_lines(main_size: int, ours: list[Token], kept: list) -> list[list[in
             rows.append([c])
     said = [norm(t.text) for t in ours]
     out = []
+    ORPHANS.clear()
     done: set = set()
     # La plus grande d'abord : un commentaire de la marge répète parfois la
     # formule en plus petit, et notre guemara ne la porte qu'une fois.
@@ -359,7 +373,12 @@ def closing_lines(main_size: int, ours: list[Token], kept: list) -> list[list[in
             continue
         at = next((k for k in range(len(said)) if said[k: k + len(words)] == words
                    and len({t.passage for t in ours[k: k + len(words)]}) == 1), None)
-        if at is None or at in done:
+        if at is None:
+            # Notre guemara range la formule à la page d'à côté : voir formulas_from.
+            ORPHANS.append((min(c.left for c in row), int(min(c.top for c in row)), max(c.right for c in row),
+                            int(max(c.top + c.height for c in row)), words))
+            continue
+        if at in done:
             continue
         done.add(at)
         gone = {(t.passage, t.word) for t in ours[at: at + len(words)]}
@@ -427,6 +446,8 @@ def side_closings(side_size: int, formulas: dict[str, list[list[Token]]], kept: 
                    and len({t.passage for t in ours[k: k + len(words)]}) == 1), None)
         if at is not None:
             out.append([3, left, top, right, bottom, ours[at].unit, ours[at].passage, ours[at].word, len(words)])
+        else:
+            ORPHANS.append((left, top, right, bottom, words))
     return out
 
 
@@ -1068,11 +1089,14 @@ def match(ours: list[Token], lines: list[PrintedLine], sizes: tuple[int, ...] = 
 
     ours_at: dict[int, int] = {}
 
+    POS.clear()
+
     def take(i: int, j: int, n: int) -> None:
         for d in range(n):
             line_of[i + d] = theirs[j + d][1]
             taken_b.add(j + d)
             ours_at[j + d] = i + d
+            POS[i + d] = j + d
 
     for block in SequenceMatcher(None, a, b, autojunk=False).get_matching_blocks():
         take(block.a, block.b, block.size)
@@ -1144,6 +1168,7 @@ def match(ours: list[Token], lines: list[PrintedLine], sizes: tuple[int, ...] = 
                 else:
                     at = len(b) - 1
                 line_of[i] = theirs[at][1]
+                POS[i] = at
             if end > j and len({theirs[x][1] for x in range(j, end)}) == 1:
                 GAPS.append((gap, raw[j:end], theirs[j][1]))
             taken_b.update(range(j, end))
@@ -1167,17 +1192,17 @@ FLAGS: dict[int, list[bool]] = {}
 """Par ligne du dernier calage : pour chacun de ses mots, s'il est retrouvé."""
 
 
-def trim(line: PrintedLine, flags: list[bool]) -> None:
+def trim(line: PrintedLine, flags: list[bool]) -> list[bool]:
     """Rend à une ligne de commentaire sa largeur quand elle a pris les mots
     de la colonne voisine (la gouttière n'a pas été vue) : au-delà de son
     dernier mot retrouvé, trois mots ou plus qui ne sont pas des nôtres,
     derrière un blanc, sont de l'autre colonne."""
     index = [i for i, w in enumerate(line.words) if norm(w)]
     if len(index) != len(flags) or len(line.spans) != len(line.words):
-        return
+        return flags
     mine = [i for i, found in zip(index, flags) if found]
     if not mine:
-        return
+        return flags
     size = line.bottom - line.top
     first, last = mine[0], mine[-1]
     # Vers la droite (les mots d'avant), puis vers la gauche (les mots d'après).
@@ -1196,17 +1221,21 @@ def trim(line: PrintedLine, flags: list[bool]) -> None:
             break
         keep_last = i
     if keep_first == 0 and keep_last == len(line.words) - 1:
-        return
+        return flags
+    kept_flags = [found for i, found in zip(index, flags) if keep_first <= i <= keep_last]
     line.words = line.words[keep_first: keep_last + 1]
     line.lead = line.lead[keep_first: keep_last + 1]
     line.spans = line.spans[keep_first: keep_last + 1]
     line.right = max(r for _, r in line.spans)
     line.left = min(l for l, _ in line.spans)
+    return kept_flags
 
 
 GAPS: list = []
 """Au dernier calage : les mots de notre texte qui répondent à d'autres mots
 imprimés (une abréviation du livre), ces mots imprimés, et leur ligne."""
+POS: dict[int, int] = {}
+"""Au dernier calage : pour un mot de notre texte, le rang du mot imprimé qui lui répond."""
 EXACT: set[int] = set()
 """Les mots de notre texte retrouvés tels quels sur la page au dernier calage."""
 FOUND: dict[int, tuple[int, int]] = {}
@@ -1249,20 +1278,32 @@ def same_comment(ours: list[Token], i: int, j: int) -> bool:
 
 
 def runs_of(ours: list[Token], line_of: dict[int, int], count: int) -> list[list[tuple[int, int, int, int]]]:
-    """Par ligne, les suites de mots de notre texte qu'elle porte."""
+    """Par ligne, les suites de mots de notre texte qu'elle porte, dans
+    l'ordre où le livre les imprime : sur une ligne qui finit un commentaire
+    et ouvre le dibbour d'un autre, notre fichier ne les range pas toujours
+    dans cet ordre-là."""
     per_line: list[list[int]] = [[] for _ in range(count)]
     for i, k in line_of.items():
         per_line[k].append(i)
     out = []
     for indexes in per_line:
-        runs: list[tuple[int, int, int, int]] = []
+        groups: list[list[int]] = []
         for i in sorted(indexes):
             t = ours[i]
-            if runs and runs[-1][0] == t.unit and runs[-1][1] == t.passage and runs[-1][2] + runs[-1][3] == t.word:
-                runs[-1] = (t.unit, t.passage, runs[-1][2], runs[-1][3] + 1)
+            last = ours[groups[-1][-1]] if groups else None
+            if last is not None and (last.unit, last.passage, last.word + 1) == (t.unit, t.passage, t.word):
+                groups[-1].append(i)
             else:
-                runs.append((t.unit, t.passage, t.word, 1))
-        out.append(runs)
+                groups.append([i])
+        # La place imprimée de chaque suite : celle de son premier mot retrouvé.
+        keyed = []
+        for order, group in enumerate(groups):
+            seen = [POS[i] for i in group if i in POS]
+            keyed.append((min(seen) if seen else None, order, group))
+        known = [k for k, _, _ in keyed if k is not None]
+        if len(known) == len(keyed):
+            keyed.sort(key=lambda item: item[0])
+        out.append([(ours[g[0]].unit, ours[g[0]].passage, ours[g[0]].word, len(g)) for _, _, g in keyed])
     return out
 
 
@@ -1274,7 +1315,8 @@ def place(ours: list[Token], lines: list[PrintedLine], ahead: list[Token] | None
     found = dict(FOUND)
     for k, line in enumerate(lines):
         if line.zone != "main" and k in FLAGS:
-            trim(line, FLAGS[k])
+            flags = trim(line, FLAGS[k])
+            found[k] = (sum(flags), len(flags))
     text_of = {(t.unit, t.passage, t.word): t.text for t in everything}
     solid = set(line_of)
     fill(everything, line_of, len(lines))
@@ -1397,6 +1439,22 @@ def side_tokens(tractate: Tractate, zone: str, amud: int) -> list[Token]:
 
 def grams(words: list[str]) -> set[tuple[str, ...]]:
     return {tuple(words[i: i + 3]) for i in range(len(words) - 2)}
+
+
+def reading_order(lines: list[PrintedLine]) -> list[PrintedLine]:
+    """Les lignes dans l'ordre où on les lit : rangée par rangée, et sur une
+    rangée de droite à gauche. Deux morceaux d'une même rangée n'ont pas
+    toujours tout à fait la même hauteur (un dibbour d'une autre police) :
+    les trier par leur haut seul lirait le morceau de gauche avant l'autre."""
+    out: list[tuple[int, int, PrintedLine]] = []
+    row, first = 0, None
+    for line in sorted(lines, key=lambda l: l.top + l.bottom):
+        middle = (line.top + line.bottom) / 2
+        if first is None or middle - first > 0.35 * (line.bottom - line.top):
+            row, first = row + 1, middle
+        out.append((row, -line.right, line))
+    out.sort(key=lambda item: item[:2])
+    return [line for _, _, line in out]
 
 
 def foreign(lines: list[PrintedLine], known: dict[str, set]) -> set[int]:
@@ -1537,7 +1595,7 @@ def page_at(tractate: Tractate, amud: int, pdf: str, taken: dict[str, set]) -> t
             columns[owner or "rashi"].append(line)
     placed = {"main": main}
     for zone in ("rashi", "tosafot"):
-        lines = sorted(columns[zone], key=lambda l: (l.top, -l.right))
+        lines = reading_order(columns[zone])
         for line in lines:
             line.zone = zone
         placed[zone] = place(free[zone], lines, ahead[zone])
@@ -1691,6 +1749,28 @@ def page_at(tractate: Tractate, amud: int, pdf: str, taken: dict[str, set]) -> t
         return round(steps.most_common(1)[0][0] * scale) if steps else 0
 
     bold = big_words(printed.sizes["main"], ours_main, kept["main"])
+    # Après « הדרן עלך … », le chapitre suivant s'ouvre par son premier mot en
+    # grand, sans l'annonce « מתני׳ » de notre texte : même quand le PDF ne
+    # dit pas le corps de ce mot, la place le dit.
+    where = {(t.passage, t.word): k for k, t in enumerate(ours_main)}
+    for _, _, _, _, passage, word, count in closing:
+        k = where.get((passage, word + count - 1))
+        if k is None or k + 2 >= len(ours_main) or norm(ours_main[k + 1].text) != norm("מתני"):
+            continue
+        gone, opens = ours_main[k + 1], ours_main[k + 2]
+        if [opens.passage, opens.word, 1] not in bold:
+            bold.append([opens.passage, opens.word, 1])
+        for j, (line, runs) in enumerate(kept["main"]):
+            rest = []
+            for unit, p, w, n in runs:
+                if p == gone.passage and w <= gone.word < w + n:
+                    if gone.word > w:
+                        rest.append((unit, p, w, gone.word - w))
+                    if gone.word + 1 < w + n:
+                        rest.append((unit, p, gone.word + 1, w + n - gone.word - 1))
+                else:
+                    rest.append((unit, p, w, n))
+            kept["main"][j] = (line, rest)
     kept["main"] = [(l, runs) for l, runs in kept["main"] if runs]
     page: dict = {
         "height": round((y1 - y0) * scale),
@@ -1708,9 +1788,27 @@ def page_at(tractate: Tractate, amud: int, pdf: str, taken: dict[str, set]) -> t
             y1 = max(y1, b + 1)
             ends.append([round((a - x0) * scale), round(((t + b) / 2 - y0) * scale), round((c - a) * scale),
                          round((b - t) * scale), p, w, n, z] + ([unit] if unit != amud else []))
+    # La formule que notre texte range à la page d'avant ou d'après : elle
+    # s'écrit là où le livre la met, avec nos mots (le seul texte entier
+    # qu'un fichier de lignes porte, avec les abréviations de `short`).
+    around = [t for a in (amud - 1, amud + 1) if 0 <= a < len(tractate) for t in tractate.tokens("main", a)]
+    formulas_here = []
+    seen_rows: set = set()
+    for a, t, c, b, words in ORPHANS:
+        if (a, t) in seen_rows or not (x0 - 2 <= a and c <= x1 + 2 and y0 <= t and b <= y1 + 60):
+            continue
+        seen_rows.add((a, t))
+        text = formula_text(words, around)
+        if text:
+            y1 = max(y1, b + 1)
+            formulas_here.append([round((a - x0) * scale), round(((t + b) / 2 - y0) * scale),
+                                  round((c - a) * scale), round((b - t) * scale), text])
+    if formulas_here:
+        page["formula"] = formulas_here
+    if ends or formulas_here:
+        page["height"] = round((y1 - y0) * scale)
     if ends:
         page["closing"] = ends
-        page["height"] = round((y1 - y0) * scale)
     # Les abréviations du livre, là où nos mots en toutes lettres ne tiennent
     # pas : par zone (0 la guemara, 1 Rachi, 2 Tossafot), la place de nos
     # mots et ce que le livre écrit.
