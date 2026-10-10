@@ -1183,12 +1183,16 @@ def trim(line: PrintedLine, flags: list[bool]) -> None:
     # Vers la droite (les mots d'avant), puis vers la gauche (les mots d'après).
     keep_first = first
     for i in range(first - 1, -1, -1):
-        if line.spans[i][0] - line.spans[keep_first][1] >= 0.4 * size and i + 1 >= 3:
+        gap = line.spans[i][0] - line.spans[keep_first][1]
+        # Trois mots ou plus derrière un blanc ; ou un ou deux derrière un
+        # blanc plus large qu'entre deux mots (une note de marge accrochée).
+        if (gap >= 0.4 * size and i + 1 >= 3) or gap >= 0.7 * size:
             break
         keep_first = i
     keep_last = last
     for i in range(last + 1, len(line.words)):
-        if line.spans[keep_last][0] - line.spans[i][1] >= 0.4 * size and len(line.words) - i >= 3:
+        gap = line.spans[keep_last][0] - line.spans[i][1]
+        if (gap >= 0.4 * size and len(line.words) - i >= 3) or gap >= 0.7 * size:
             break
         keep_last = i
     if keep_first == 0 and keep_last == len(line.words) - 1:
