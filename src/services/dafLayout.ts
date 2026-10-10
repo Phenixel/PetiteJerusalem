@@ -262,6 +262,21 @@ export function dafLines(
   // La clôture sous Rachi et sous Tossafot, écrite à part comme sous la guemara.
   for (const [x, y, width, height, passage, word, count, z, other] of page.closing ?? []) {
     if (!z) continue;
+    // Zone 3 : sous un commentaire qui ne la porte pas, avec les mots de la guemara.
+    if (z === 3) {
+      const words = gemaraWords([[passage, word, count]]);
+      if (words)
+        out.push({
+          zone: "main",
+          kind: "closing",
+          x,
+          y,
+          width,
+          height,
+          words: words.map((w) => ({ ...w, passage: -1 })),
+        });
+      continue;
+    }
     const zone = z === 1 ? "rashi" : "tosafot";
     const source = wordsOf(zone, other ?? amud)?.[passage];
     if (!source) continue;

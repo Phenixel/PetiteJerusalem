@@ -380,7 +380,8 @@ def closing_lines(main_size: int, ours: list[Token], kept: list) -> list[list[in
     return out
 
 
-def side_closings(side_size: int, formulas: dict[str, list[list[Token]]], kept: dict, used: list) -> list[list]:
+def side_closings(side_size: int, formulas: dict[str, list[list[Token]]], kept: dict, used: list,
+                  ours: list[Token] | None = None) -> list[list]:
     """« הדרן עלך … » sous Rachi et sous Tossafot : les rangées de la formule
     que la guemara n'a pas prises, chacune au commentaire dont la colonne est
     juste au-dessus et qui la porte. [zone, gauche, haut, droite, bas, amoud,
@@ -414,10 +415,18 @@ def side_closings(side_size: int, formulas: dict[str, list[list[Token]]], kept: 
             continue
         _, z, zone = best
         mine = next((f for f in formulas[zone] if [norm(t.text) for t in f][:len(words)] == words[:len(f)]), None)
-        if mine is None:
+        if mine is not None:
+            formulas[zone].remove(mine)
+            out.append([z, left, top, right, bottom, mine[0].unit, mine[0].passage, mine[0].word, len(mine)])
             continue
-        formulas[zone].remove(mine)
-        out.append([z, left, top, right, bottom, mine[0].unit, mine[0].passage, mine[0].word, len(mine)])
+        # Notre commentaire ne porte pas la formule : ce sont les mots de
+        # celle de la guemara, sur la même page (zone 3 : écrite sous un
+        # commentaire, avec les mots de la guemara).
+        said = [norm(t.text) for t in ours or []]
+        at = next((k for k in range(len(said)) if said[k: k + len(words)] == words
+                   and len({t.passage for t in ours[k: k + len(words)]}) == 1), None)
+        if at is not None:
+            out.append([3, left, top, right, bottom, ours[at].unit, ours[at].passage, ours[at].word, len(words)])
     return out
 
 
@@ -507,23 +516,29 @@ class PrintedLine:
     bottom: float
     zone: str = ""
     font: tuple = ()
+    spans: list = field(default_factory=list)
+    """Par mot : son bord gauche et son bord droit."""
 
 
-def words_of(chunks: list[Chunk], lead_fonts: dict) -> tuple[list[str], list[bool]]:
-    """Les mots d'une ligne, de droite à gauche. Deux mots qui se touchent
-    n'en font qu'un (un point composé à part, une lettre d'une autre police)."""
+def words_of(chunks: list[Chunk], lead_fonts: dict) -> tuple[list[str], list[bool], list[tuple[int, int]]]:
+    """Les mots d'une ligne, de droite à gauche, et la place de chacun. Deux
+    mots qui se touchent n'en font qu'un (un point composé à part, une lettre
+    d'une autre police)."""
     words: list[str] = []
     lead: list[bool] = []
+    spans: list[tuple[int, int]] = []
     previous: Chunk | None = None
     for chunk in sorted(chunks, key=lambda c: -c.right):
         is_lead = (chunk.family, chunk.size) in lead_fonts
         if previous is not None and previous.left - chunk.right < 1.5 and words:
             words[-1] += chunk.text
+            spans[-1] = (min(spans[-1][0], chunk.left), max(spans[-1][1], chunk.right))
         else:
             words.append(chunk.text)
             lead.append(is_lead)
+            spans.append((chunk.left, chunk.right))
         previous = chunk
-    return words, lead
+    return words, lead, spans
 
 
 def rows_of(chunks: list[Chunk], tolerance: float, bodies: set | None = None) -> list[list[Chunk]]:
@@ -942,12 +957,13 @@ def printed_page(pdf: str, known: dict[str, set], vocabulary: dict[str, set],
             found = again
         for group in found:
             if True:
-                words, lead = words_of(group, LEADS)
+                words, lead, spans = words_of(group, LEADS)
                 owner = next((LEADS[(c.family, c.size)] for c in sorted(group, key=lambda c: -c.right)
                               if LEADS.get((c.family, c.size))), "")
                 if any(norm(w) for w in words):
                     out.append(PrintedLine(words, lead, owner, min(c.left for c in group), max(c.right for c in group),
                                            min(c.top for c in group), max(c.top + c.height for c in group)))
+                    out[-1].spans = spans
         # Dans certaines polices sans nom, des mots sortent du PDF à une
         # fausse place, sur leurs voisins : les boîtes des lignes ne sont
         # alors plus sûres, et la page le dit (voir page_at).
@@ -1142,7 +1158,46 @@ def match(ours: list[Token], lines: list[PrintedLine], sizes: tuple[int, ...] = 
     SURE.update(k for k, js in bounds.items() if js[0] in taken_b and js[-1] in taken_b)
     FOUND.clear()
     FOUND.update({k: (sum(1 for j in js if j in taken_b), len(js)) for k, js in bounds.items()})
+    FLAGS.clear()
+    FLAGS.update({k: [j in taken_b for j in js] for k, js in bounds.items()})
     return line_of, len(taken_b), len(b)
+
+
+FLAGS: dict[int, list[bool]] = {}
+"""Par ligne du dernier calage : pour chacun de ses mots, s'il est retrouvé."""
+
+
+def trim(line: PrintedLine, flags: list[bool]) -> None:
+    """Rend à une ligne de commentaire sa largeur quand elle a pris les mots
+    de la colonne voisine (la gouttière n'a pas été vue) : au-delà de son
+    dernier mot retrouvé, trois mots ou plus qui ne sont pas des nôtres,
+    derrière un blanc, sont de l'autre colonne."""
+    index = [i for i, w in enumerate(line.words) if norm(w)]
+    if len(index) != len(flags) or len(line.spans) != len(line.words):
+        return
+    mine = [i for i, found in zip(index, flags) if found]
+    if not mine:
+        return
+    size = line.bottom - line.top
+    first, last = mine[0], mine[-1]
+    # Vers la droite (les mots d'avant), puis vers la gauche (les mots d'après).
+    keep_first = first
+    for i in range(first - 1, -1, -1):
+        if line.spans[i][0] - line.spans[keep_first][1] >= 0.4 * size and i + 1 >= 3:
+            break
+        keep_first = i
+    keep_last = last
+    for i in range(last + 1, len(line.words)):
+        if line.spans[keep_last][0] - line.spans[i][1] >= 0.4 * size and len(line.words) - i >= 3:
+            break
+        keep_last = i
+    if keep_first == 0 and keep_last == len(line.words) - 1:
+        return
+    line.words = line.words[keep_first: keep_last + 1]
+    line.lead = line.lead[keep_first: keep_last + 1]
+    line.spans = line.spans[keep_first: keep_last + 1]
+    line.right = max(r for _, r in line.spans)
+    line.left = min(l for l, _ in line.spans)
 
 
 GAPS: list = []
@@ -1213,9 +1268,17 @@ def place(ours: list[Token], lines: list[PrintedLine], ahead: list[Token] | None
     SURE_NOW = set(SURE)
     everything = ours + (ahead or [])
     found = dict(FOUND)
+    for k, line in enumerate(lines):
+        if line.zone != "main" and k in FLAGS:
+            trim(line, FLAGS[k])
     text_of = {(t.unit, t.passage, t.word): t.text for t in everything}
     solid = set(line_of)
     fill(everything, line_of, len(lines))
+    # Les mots de la page suivante (ou de pages d'avant) ne viennent ici que
+    # retrouvés pour de bon : le voisinage ne les y amène pas, il viderait
+    # le haut de leur vraie page.
+    for i in [i for i in line_of if i >= len(ours) and i not in solid]:
+        del line_of[i]
     # Une ligne ne porte pas bien plus de lettres que le livre n'en imprime :
     # au-delà, les mots qu'elle n'a reçus que par voisinage (une variante de
     # notre texte, que la page n'écrit pas) la rendraient illisible. Ils en
@@ -1545,6 +1608,7 @@ def page_at(tractate: Tractate, amud: int, pdf: str, taken: dict[str, set]) -> t
                     merged = PrintedLine(last.words + line.words, last.lead + line.lead, last.owner or line.owner,
                                          min(line.left, last.left), max(last.right, line.right),
                                          min(last.top, line.top), max(last.bottom, line.bottom), zone)
+                    merged.spans = last.spans + line.spans
                     if before and runs:
                         a, p, w, n = before[-1]
                         if (a, p, w + n) == tuple(runs[0][:3]):
@@ -1586,6 +1650,11 @@ def page_at(tractate: Tractate, amud: int, pdf: str, taken: dict[str, set]) -> t
                 if n <= 1.3 * usual * width + 2:
                     break
             pairs[k] = (line, runs)
+    # Un bout de ligne d'un ou deux mots, venus d'une autre page et posés là
+    # par hasard (un renvoi isolé en tête de page) : ce n'est pas une ligne.
+    for zone in ("rashi", "tosafot"):
+        kept[zone] = [(l, runs) for l, runs in kept[zone]
+                      if not (sum(r[3] for r in runs) <= 2 and all(r[0] != amud for r in runs))]
     closing = closing_lines(printed.sizes["main"], ours_main, kept["main"])
     kept["main"] = [(l, runs) for l, runs in kept["main"] if runs]
     initials = initial_words(pdf, printed.sizes["main"], ours_main, kept["main"])
@@ -1630,7 +1699,7 @@ def page_at(tractate: Tractate, amud: int, pdf: str, taken: dict[str, set]) -> t
              round((b - t) * scale), p, w, n] for a, t, c, b, p, w, n in closing]
     # Sous Rachi et sous Tossafot : la même forme, puis la zone (1 ou 2) et
     # l'amoud du commentaire quand ce n'est pas celui de la page.
-    for z, a, t, c, b, unit, p, w, n in side_closings(printed.sizes["side"], formulas, kept, closing):
+    for z, a, t, c, b, unit, p, w, n in side_closings(printed.sizes["side"], formulas, kept, closing, ours_main):
         if x0 - 2 <= a and c <= x1 + 2 and y0 <= t and b <= y1 + 60:
             y1 = max(y1, b + 1)
             ends.append([round((a - x0) * scale), round(((t + b) / 2 - y0) * scale), round((c - a) * scale),
