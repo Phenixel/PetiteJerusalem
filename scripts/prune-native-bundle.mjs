@@ -43,6 +43,9 @@ const PRUNED_DIRS = [
   "texts/mishna",
   "texts/tanakh",
   "texts/rashi",
+  "texts/talmud-meforshim",
+  "texts/talmud-layout",
+  "texts/mishna-meforshim",
   "texts/tefila",
 ].map((d) => join(root, d));
 // Ce que seul le site sert : plan du site, fichiers pour les robots, image

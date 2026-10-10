@@ -21,6 +21,8 @@ import {
   placeLabel as describePlace,
   rubricText,
   saidOn,
+  tractateFromLink,
+  tractateSlug,
 } from "../../services/textService";
 import type { TextBlock, TextContent, TextDay, TextSection } from "../../services/textService";
 import {
@@ -80,6 +82,15 @@ import SessionReservationCard from "./SessionReservationCard.vue";
 import PrayerNamesLine from "./PrayerNamesLine.vue";
 import ReadingNav from "../../components/ReadingNav.vue";
 import TalmudDafText from "../../components/TalmudDafText.vue";
+import TalmudDafPages from "../../components/TalmudDafPages.vue";
+import TorahScroll from "../../components/TorahScroll.vue";
+import { PAGE_FORM_LABELS, usePageForm } from "../../composables/usePageForm";
+import { scrollPointed, setScrollPointed } from "../../composables/useScrollPointing";
+import { usePassageCommentaries } from "../../composables/usePassageCommentaries";
+import { sideBySide } from "../../composables/useSideBySide";
+import type { CommentarySummary } from "../../composables/useReadingSelection";
+import CommentaryPanel from "../../components/CommentaryPanel.vue";
+import MarkedText from "../../components/MarkedText.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import { useToast } from "../../composables/useToast";
 import { useReadingSize } from "../../composables/useReadingSize";
@@ -421,6 +432,71 @@ const canTransliterate = computed(
   () => currentSection.value?.he.some((line) => hasNiqqud(line)) ?? false,
 );
 
+// La forme de la page (pageForm.ts) : la page de Vilna pour une guemara, le
+// Sefer Torah pour une paracha. Le choix est gardé sur l'appareil
+// (usePageForm) ; la phonétique, elle, n'a pas de forme de page et passe
+// devant le temps qu'on la lise.
+const pageForm = usePageForm();
+const pageFormKind = computed<"daf" | "scroll" | null>(() => {
+  const section = currentSection.value;
+  if (!section) return null;
+  if (content.value?.type === "Talmud Bavli" && section.dafBlocks?.length) return "daf";
+  if (section.scrollMarks?.length) return "scroll";
+  return null;
+});
+const showPageForm = computed(
+  () => pageFormKind.value !== null && pageForm.enabled.value && !showPhonetic.value,
+);
+
+/** Le mode d'affichage choisi dans la barre d'outils ou le menu. */
+type ReadingMode = "hebrew" | "page" | "phonetic";
+const readingMode = computed<ReadingMode>(() =>
+  showPhonetic.value ? "phonetic" : showPageForm.value ? "page" : "hebrew",
+);
+function setReadingMode(mode: ReadingMode): void {
+  if (mode === readingMode.value) return;
+  if (mode === "phonetic") {
+    showPhonetic.value = true;
+    return;
+  }
+  showPhonetic.value = false;
+  const on = mode === "page";
+  if (pageFormKind.value && pageForm.enabled.value !== on) {
+    pageForm.set(on);
+    // Une forme de lecture nouvelle : savoir si elle est trouvée, et sur
+    // quel corpus elle sert.
+    analyticsService.capture("page_form_toggled", {
+      enabled: on,
+      form: pageFormKind.value,
+      text_id: textEntry.value?.id ?? null,
+    });
+  }
+}
+
+// Rachi et Tossafot (guemara), Rachi (paracha) du chapitre ouvert : chargés au
+// premier passage touché ou à l'ouverture de la page du daf, jamais avant ;
+// la lecture seule ne les attend pas (usePassageCommentaries).
+const commentaries = usePassageCommentaries(textEntry, currentSection);
+watch(
+  () => (showPageForm.value && pageFormKind.value === "daf" ? currentSection.value : null),
+  (section) => {
+    if (section) void commentaries.ensure();
+  },
+  { immediate: true },
+);
+const dafMeforshimState = computed<"loading" | "ready" | "error">(() =>
+  commentaries.state.value === "ready" || commentaries.state.value === "error"
+    ? commentaries.state.value
+    : "loading",
+);
+
+/** Les montées d'une paracha, pour les repères du Sefer Torah. */
+const scrollAliyot = computed(() =>
+  verseBlocks.value
+    .filter((b) => b.label)
+    .map((b) => ({ offset: b.offset, anchor: anchorOf(b), label: blockLabel(b) })),
+);
+
 // Double appui sur le texte : la page descend toute seule, à l'allure choisie
 // dans la pastille du bas (AutoScrollPill). Seulement dans le texte ouvert :
 // la liste des chapitres d'un traité se parcourt, elle ne se lit pas.
@@ -731,14 +807,19 @@ const positionLabel = computed(() => {
     : base;
 });
 
-/** "Chapitre 2 (ב) · 3e montée · verset 14" pour une position donnée. */
+/**
+ * "Chapitre 2 (ב) · 3e montée · verset 14" pour une position donnée ; dans la
+ * Michna, "Chapitre 2 (ב) · michna 3".
+ */
 function placeLabel(sectionIndex: number | null, line: number): string {
+  const isMishna = String(textEntry.value?.type) === "Mishna";
   return describePlace(
     content.value?.sections ?? [],
     sectionIndex,
     line,
-    (n) => t("textReading.verseN", { n }),
+    (n) => (isMishna ? t("textReading.mishnaN", { n }) : t("textReading.verseN", { n })),
     headingLabel,
+    (n) => t("textReading.passageN", { n }),
   );
 }
 
@@ -970,6 +1051,83 @@ usePassageLongPress();
 
 /** Le passage choisi dans le texte ouvert, par sa ligne : le fil le surligne. */
 const pickedLine = ref<number | null>(null);
+
+// --- Le panneau d'étude (commentaires d'un passage) ---
+// Ouvert depuis la bulle d'un passage, il suit ensuite la lecture : tant
+// qu'il est ouvert, toucher un autre passage y montre ses commentaires, sans
+// rouvrir de bulle (voir CommentaryPanel.vue et docs/design.md).
+/** La ligne dont le panneau montre les commentaires ; null : fermé. */
+const studyLine = ref<number | null>(null);
+let studyViewed = 0;
+/** Le passage surligné : celui qu'on étudie, sinon celui de la bulle. */
+const selectedLine = computed(() => studyLine.value ?? pickedLine.value);
+const studyGroups = computed(() =>
+  studyLine.value === null ? [] : commentaries.groupsAt(studyLine.value),
+);
+/** Les dibbourim du passage étudié, pour en souligner les mots dans le texte. */
+const studyLeads = computed(() =>
+  studyLine.value === null
+    ? null
+    : {
+        line: studyLine.value,
+        leads: studyGroups.value.flatMap((g) => g.comments.map((c) => c.lead).filter(Boolean)),
+      },
+);
+
+function commentarySummary(line: number): CommentarySummary {
+  const state = commentaries.state.value;
+  if (state === "error") return { state: "none" };
+  if (state !== "ready") return { state: "loading" };
+  const counts = commentaries
+    .groupsAt(line)
+    .map((g) => ({ source: g.source, count: g.comments.length }));
+  return counts.length ? { state: "ready", counts } : { state: "none" };
+}
+
+/**
+ * Le passage étudié reste sous les yeux à l'ouverture du panneau. Sur un
+ * téléphone, le volet monte à mi-hauteur : un passage de la moitié basse
+ * passerait dessous. Sur un écran large, la colonne de texte se rétrécit pour
+ * faire place aux commentaires, et le passage, qui s'allonge, peut glisser
+ * sous le bas de l'écran. Dans les deux cas, on le remonte sous le bandeau.
+ */
+function keepPassageInView(line: number): void {
+  const el = document.querySelector<HTMLElement>(`[data-line="${line}"]`);
+  if (!el) return;
+  const rect = el.getBoundingClientRect();
+  // Le haut du volet, là où il est vraiment (dans l'app, il se pose sur la
+  // barre d'onglets) ; à défaut, la mi-hauteur.
+  const sheetTop =
+    document.querySelector(".commentary-panel")?.getBoundingClientRect().top ??
+    window.innerHeight * 0.45;
+  const visibleBottom = sideBySide.value ? window.innerHeight * 0.9 : sheetTop - 16;
+  if (rect.top >= 0 && rect.bottom <= visibleBottom) return;
+  markProgrammaticScroll();
+  window.scrollBy({ top: rect.top - window.innerHeight * 0.15, behavior: "smooth" });
+}
+
+function openStudy(line: number): void {
+  studyLine.value = line;
+  studyViewed = 1;
+  clearPassage();
+  // Après la mise en page : la colonne de texte vient peut-être de se rétrécir.
+  void nextTick(() => requestAnimationFrame(() => keepPassageInView(line)));
+  // Les commentaires : trouvés, et sur quel corpus.
+  analyticsService.capture("commentaries_opened", {
+    corpus: commentaries.corpus.value,
+    text_id: textEntry.value?.id ?? null,
+    count: commentaries.groupsAt(line).reduce((n, g) => n + g.comments.length, 0),
+  });
+}
+
+function closeStudy(): void {
+  if (studyLine.value === null) return;
+  // Le panneau qui suit la lecture : sert-il à un passage, ou à un daf entier ?
+  analyticsService.capture("commentaries_closed", { passages_viewed: studyViewed });
+  studyLine.value = null;
+}
+watch([textId, sectionParam], closeStudy);
+onBeforeUnmount(closeStudy);
 // Relâché d'ailleurs (un appui hors du texte, Échap, le bouton retour) : le
 // surlignage suit.
 watch(selectedPassageKey, (key) => {
@@ -999,7 +1157,15 @@ function passagePlace(line: number, label?: string): string {
 }
 
 function pickPassage(passage: { el: HTMLElement; line: number; hebrew: string; label?: string }) {
+  // Le panneau d'étude ouvert suit la lecture : le passage touché y passe.
+  if (studyLine.value !== null) {
+    if (studyLine.value !== passage.line) studyViewed++;
+    studyLine.value = passage.line;
+    return;
+  }
   const key = `${textId.value}#${positionSection.value ?? 0}#${passage.line}`;
+  const withCommentary = commentaries.corpus.value !== null;
+  if (withCommentary) void commentaries.ensure();
   selectPassage({
     key,
     el: passage.el,
@@ -1009,6 +1175,9 @@ function pickPassage(passage: { el: HTMLElement; line: number; hebrew: string; l
     // Une tefila ne prend pas de marque-page : elle se lit du début.
     bookmarked: isLiturgyText.value ? null : isLineBookmarked(passage.line),
     toggleBookmark: () => toggleBookmarkAt(passage.line),
+    commentary: withCommentary
+      ? { summary: () => commentarySummary(passage.line), open: () => openStudy(passage.line) }
+      : undefined,
   });
   // Un second appui sur le même passage le relâche (voir selectPassage).
   pickedLine.value = selectedPassageKey.value === key ? passage.line : null;
@@ -1836,7 +2005,11 @@ watch(textId, (_, previousTextId) => {
 </script>
 
 <template>
-  <main ref="readingRoot" class="mx-auto px-6 py-12 max-w-3xl w-full">
+  <main
+    ref="readingRoot"
+    class="mx-auto px-6 py-12 max-w-3xl w-full"
+    :class="{ 'study-open': studyLine !== null }"
+  >
     <button @click="exitReading" class="back-link mb-8">
       <AppIcon name="chevron-left" :size="14" />
       {{ sessionSlug ? t("textReading.backToSession") : t("textReading.back") }}
@@ -1980,8 +2153,8 @@ watch(textId, (_, previousTextId) => {
         <ReadingNav v-if="!isSingleSection" v-bind="sectionNavProps" class="mb-8" />
         <ReadingNav v-else-if="prevText || nextText" v-bind="siblingNavProps" class="mb-8" />
 
-        <!-- Reading toolbar: text size + Hebrew / phonetic toggle -->
-        <div class="flex items-center justify-end gap-3 mb-5">
+        <!-- Reading toolbar: text size + Hebrew / page / phonetic toggle -->
+        <div class="flex flex-wrap items-center justify-end gap-3 mb-5">
           <button
             v-if="bookmarks.length && !isLiturgyText"
             @click="showBookmarksPanel = !showBookmarksPanel"
@@ -1996,21 +2169,61 @@ watch(textId, (_, previousTextId) => {
           </button>
           <ReadingSizeControl />
 
+          <!-- Hébreu, forme de la page (guemara, Torah), phonétique : trois
+               façons de montrer le même texte, une seule à la fois. -->
+          <!-- Sefer Torah : les voyelles et les teamim, sur les mêmes lignes
+               (TorahScroll.vue). Le même réglage que dans le menu de lecture. -->
+          <button
+            v-if="showPageForm && pageFormKind === 'scroll'"
+            type="button"
+            class="inline-flex items-center px-3 py-1.5 rounded-btn bg-black/5 dark:bg-white/10 text-sm font-medium transition-colors"
+            :class="scrollPointed ? 'text-primary' : 'text-text-secondary hover:text-text-primary'"
+            :aria-pressed="scrollPointed"
+            :title="t('textReading.settings.scrollPointedHint')"
+            @click="setScrollPointed(!scrollPointed)"
+          >
+            {{ t("textReading.pageForm.pointed") }}
+          </button>
           <div
-            v-if="canTransliterate"
+            v-if="canTransliterate || pageFormKind"
             class="inline-flex p-0.5 rounded-btn bg-black/5 dark:bg-white/10"
+            role="group"
           >
             <button
-              @click="showPhonetic = false"
+              @click="setReadingMode('hebrew')"
               class="px-3 py-1 rounded-control text-sm font-medium transition-colors"
-              :class="!showPhonetic ? 'bg-surface text-primary shadow-sm' : 'text-text-secondary'"
+              :class="
+                readingMode === 'hebrew'
+                  ? 'bg-surface text-primary shadow-sm'
+                  : 'text-text-secondary'
+              "
+              :aria-pressed="readingMode === 'hebrew'"
             >
               {{ t("textReading.hebrew") }}
             </button>
             <button
-              @click="showPhonetic = true"
+              v-if="pageFormKind"
+              @click="setReadingMode('page')"
+              class="inline-flex items-center gap-1.5 px-3 py-1 rounded-control text-sm font-medium transition-colors"
+              :class="
+                readingMode === 'page' ? 'bg-surface text-primary shadow-sm' : 'text-text-secondary'
+              "
+              :aria-pressed="readingMode === 'page'"
+              :title="t(PAGE_FORM_LABELS[pageFormKind].hint)"
+            >
+              <AppIcon :name="PAGE_FORM_LABELS[pageFormKind].icon" :size="14" />
+              {{ t(PAGE_FORM_LABELS[pageFormKind].label) }}
+            </button>
+            <button
+              v-if="canTransliterate"
+              @click="setReadingMode('phonetic')"
               class="px-3 py-1 rounded-control text-sm font-medium transition-colors"
-              :class="showPhonetic ? 'bg-surface text-primary shadow-sm' : 'text-text-secondary'"
+              :class="
+                readingMode === 'phonetic'
+                  ? 'bg-surface text-primary shadow-sm'
+                  : 'text-text-secondary'
+              "
+              :aria-pressed="readingMode === 'phonetic'"
             >
               {{ t("textReading.phonetic") }}
             </button>
@@ -2066,15 +2279,50 @@ watch(textId, (_, previousTextId) => {
              texte (double appui du défilement, lecture du doigt) ne change
              rien à l'écran sans être une commande en panne, et noierait les
              clics morts de PostHog. -->
+        <!-- La forme de la page : la page de Vilna, le Sefer Torah. -->
         <div
-          v-if="content.type === 'Talmud Bavli'"
+          v-if="showPageForm && pageFormKind === 'daf'"
+          class="ph-no-deadclick"
+          :style="{ '--reading-scale': readingSize.scale.value }"
+        >
+          <TalmudDafPages
+            :tractate="textEntry ? tractateSlug(tractateFromLink(textEntry.link)) : null"
+            :blocks="currentSection.dafBlocks ?? []"
+            :meforshim="commentaries.talmud.value"
+            :state="dafMeforshimState"
+            :scale="readingSize.scale.value"
+          />
+        </div>
+        <div
+          v-else-if="showPageForm && pageFormKind === 'scroll'"
+          class="ph-no-deadclick"
+          :style="{ '--reading-scale': readingSize.scale.value }"
+        >
+          <TorahScroll
+            :text-id="textEntry?.id ?? null"
+            :lines="currentSection.he"
+            :marks="currentSection.scrollMarks ?? []"
+            :aliyot="scrollAliyot"
+            :picked-line="selectedLine"
+            :highlighted-line="highlightedLine"
+            :leads="studyLeads"
+            @pick="pickVerse"
+          />
+        </div>
+        <div
+          v-else-if="content.type === 'Talmud Bavli'"
           class="ph-no-deadclick"
           :style="{ '--reading-scale': readingSize.scale.value }"
         >
           <TalmudDafText
             :blocks="currentSection.dafBlocks ?? []"
             anchored
+            selectable
+            :selected-line="selectedLine"
+            :highlighted-line="highlightedLine"
+            :leads="studyLeads"
             :phonetic-by-daf="showPhonetic ? phoneticByDaf : null"
+            @pick="pickVerse"
           />
         </div>
 
@@ -2130,7 +2378,7 @@ watch(textId, (_, previousTextId) => {
                   :class="{
                     'bg-primary/10': highlightedLine === block.offset + index,
                     'reading-selected':
-                      pickedLine === block.offset + index &&
+                      selectedLine === block.offset + index &&
                       highlightedLine !== block.offset + index,
                   }"
                 >
@@ -2150,7 +2398,10 @@ watch(textId, (_, previousTextId) => {
                     dir="rtl"
                     class="flex-1 min-w-0 font-hebrew text-text-primary reading-he"
                   >
-                    {{ line }}
+                    <MarkedText
+                      :text="line"
+                      :leads="studyLeads?.line === block.offset + index ? studyLeads.leads : null"
+                    />
                   </p>
                   <p
                     v-else
@@ -2245,12 +2496,16 @@ watch(textId, (_, previousTextId) => {
       <ReadingMenu
         :sections="navSections"
         :phonetic="canTransliterate ? showPhonetic : null"
+        :page-form="pageFormKind"
+        :page-form-active="showPageForm"
         :download-state="bookState"
         :tefila="isTefila"
         :halakhot="hasHalakhot"
         :share-title="shareTitle"
         :share-url="canonicalUrl"
-        @update:phonetic="showPhonetic = $event"
+        :concealed="studyLine !== null || (!sideBySide && selectedPassageKey !== null)"
+        @update:phonetic="setReadingMode($event ? 'phonetic' : 'hebrew')"
+        @update:page-form-active="setReadingMode($event ? 'page' : 'hebrew')"
         @download="toggleDownload()"
       />
       <ReadingProgressBar />
@@ -2261,11 +2516,68 @@ watch(textId, (_, previousTextId) => {
         :steps="gesturesTip"
         :after="['reading-menu']"
       />
+      <!-- Le panneau d'étude : les commentaires du passage, qui suivent la
+           lecture tant qu'il est ouvert. -->
+      <CommentaryPanel
+        v-if="studyLine !== null"
+        :place="placeLabel(positionSection, studyLine)"
+        :groups="studyGroups"
+        :state="commentaries.state.value"
+        :style="{ '--reading-scale': readingSize.scale.value }"
+        @close="closeStudy"
+      />
     </template>
   </main>
 </template>
 
 <style scoped>
+/* Le panneau d'étude ouvert (CommentaryPanel.vue). Sur un téléphone, la page
+   réserve sous le texte la hauteur de son volet à mi-hauteur, pour qu'on lise
+   jusqu'au dernier passage. Dès que le texte et ses commentaires tiennent
+   côte à côte (640 px, voir useSideBySide), la colonne de lecture se range à
+   gauche de celle des commentaires (`--study-width`, main.css). */
+.study-open {
+  padding-bottom: calc(55vh + 2rem);
+}
+@media (min-width: 640px) {
+  /* La colonne de lecture garde sa largeur ordinaire (48 rem) tant que la
+     place à gauche du panneau la contient, et ne rétrécit qu'en dessous.
+     Elle reste centrée sur l'écran tant qu'elle n'y touche pas le panneau
+     (un grand écran ne bouge pas) ; sinon elle glisse vers la gauche, juste
+     assez pour laisser l'écart (`--study-gap`) entre le texte et lui. */
+  .study-open {
+    --study-gap: 2rem;
+    --study-room: calc(100% - var(--study-width) - var(--study-gap));
+    --study-text: min(48rem, var(--study-room));
+    width: var(--study-text);
+    max-width: none;
+    padding-bottom: 3rem;
+    margin-left: min(
+      calc((100% - var(--study-text)) / 2),
+      calc(var(--study-room) - var(--study-text))
+    );
+    margin-right: 0;
+  }
+}
+
+/* Le texte glisse en place quand le panneau s'ouvre ou se ferme, au lieu de
+   sauter d'un côté à l'autre. */
+main {
+  transition:
+    margin-left 0.25s ease,
+    width 0.25s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  main {
+    transition: none;
+  }
+}
+/* Pendant qu'on tire le bord de la colonne des commentaires, le texte suit
+   le doigt sans retard (CommentaryPanel.vue). */
+:global(.study-resizing main) {
+  transition: none;
+}
+
 /* Reader text sizes follow the A− / A+ control (useReadingSize).
    L'interligne de l'hébreu est volontairement plus serré que leading-loose :
    assez d'air pour les voyelles et les teamim, sans étirer la lecture. */

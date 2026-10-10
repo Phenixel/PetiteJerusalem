@@ -56,6 +56,19 @@
   unicode-range: U+0590-05FF, U+FB1D-FB4F;
 }
 
+/* L'écriture de Rachi (Noto Rashi Hebrew, OFL, voir
+   public/fonts/noto-rashi-hebrew.LICENSE.txt), celle des commentaires sur la
+   page du daf (TalmudPage.vue) : Rachi et Tossafot y sont imprimés dans cette
+   écriture depuis Venise. Variable (400 à 700), 18 Ko, chargée à la
+   première page de daf ouverte. */
+@font-face {
+  font-family: "Noto Rashi Hebrew";
+  src: url("/fonts/noto-rashi-hebrew-var.woff2") format("woff2");
+  font-weight: 400 700;
+  font-display: swap;
+  unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F;
+}
+
 /* Neutralise l'auto-agrandissement du texte des navigateurs mobiles (font
    boosting / text-size-adjust), qui gonfle certains blocs dans la WebView de
    l'app et fait déborder les mises en page. */
@@ -225,6 +238,22 @@ body {
   /* Hauteur réelle du bandeau de site, publiée par NavbarComponents. Reste à
      0 dans l'app native, où le bandeau n'est pas rendu. */
   --navbar-height: 0px;
+  /* La colonne des commentaires quand le texte et eux tiennent côte à côte
+     (dès 640 px de large, voir useSideBySide). Elle prend la place que la
+     colonne de lecture (48 rem) et ses marges (4 rem) laissent libre, entre
+     17 rem (de quoi lire un Tossafot sur un pliant) et 32 rem (au-delà, les
+     lignes deviendraient trop longues) : un grand écran lui donne de l'air
+     sans rien retirer au texte, un petit le partage. */
+  --study-width: clamp(17rem, calc(100vw - 52rem), 32rem);
+}
+
+/* On tire le bord de la colonne des commentaires (CommentaryPanel.vue) : la
+   flèche de redimensionnement partout, et pas de texte sélectionné au
+   passage du doigt. Une largeur choisie s'écrit sur la racine, en pixels,
+   par-dessus `--study-width` (useStudyWidth). */
+.study-resizing {
+  cursor: col-resize;
+  user-select: none;
 }
 
 #app {

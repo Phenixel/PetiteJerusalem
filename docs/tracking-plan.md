@@ -326,6 +326,55 @@ précédente. `reading` : depuis un autre texte (psaume suivant, office
 suivant) ; `direct` : sans page précédente (widget, lien partagé, moteur de
 recherche, page rechargée).
 
+### Lecture : `page_form_toggled` (nouveau)
+
+Le lecteur passe une guemara dans la forme de la page de Vilna, ou une
+paracha dans celle du Sefer Torah, ou l'en retire (bouton de la barre
+d'outils ou du menu de lecture, `TextReadingPage.vue`, voir `docs/design.md`,
+« Un texte se lit aussi dans la forme de sa page »). Il dit si la forme est
+trouvée, et pour quel corpus elle sert. Ne part qu'au changement du choix
+gardé : passer à la phonétique et en revenir ne le touche pas.
+
+| Propriété | Valeurs                                                  | Statut      |
+| --------- | -------------------------------------------------------- | ----------- |
+| `enabled` | `true` (la forme s'affiche), `false` (retour à l'hébreu) | **nouveau** |
+| `form`    | `daf` (page de Vilna), `scroll` (Sefer Torah)            | **nouveau** |
+| `text_id` | l'id du texte dans le catalogue (`textStudies.json`)     | **nouveau** |
+
+### Lecture : `commentaries_opened`, `commentaries_closed` (nouveaux)
+
+Les commentaires d'un passage (Rachi, Tossafot, Bartenura, Tossefot Yom
+Tov, voir `docs/design.md`,
+« Les commentaires d'un passage s'ouvrent depuis sa bulle, puis suivent la
+lecture ») : `commentaries_opened` part quand la rangée « Commentaires » de
+la bulle ouvre le panneau d'étude, `commentaries_closed` quand on le ferme
+(croix, Échap, retour, changement de texte). Le second dit si le panneau
+sert à un passage ou à l'étude d'un daf entier. `corpus` dit lequel : une
+guemara (`talmud`), une paracha (`torah`), une michna (`mishna`), un verset
+des Neviim, des Ketouvim ou un psaume (`tanakh`).
+
+| Événement             | Propriété         | Valeurs                                                    | Statut      |
+| --------------------- | ----------------- | ---------------------------------------------------------- | ----------- |
+| `commentaries_opened` | `corpus`          | `talmud`, `torah`, `mishna`, `tanakh` (Neviim, Ketouvim)   | **nouveau** |
+| `commentaries_opened` | `text_id`         | l'id du texte dans le catalogue                            | **nouveau** |
+| `commentaries_opened` | `count`           | le nombre de commentaires du passage                       | **nouveau** |
+| `commentaries_closed` | `passages_viewed` | les passages vus dans le panneau, celui de l'ouverture compris | **nouveau** |
+
+`passage_action` (existant) prend une valeur de plus pour `action` :
+`commentaries`, l'appui sur la rangée de la bulle.
+
+### Lecture : `commentaries_resized` (nouveau)
+
+Sur un écran large, la colonne des commentaires se règle en tirant son bord
+gauche (ou au clavier, par les flèches) ; un double appui sur le bord lui
+rend sa largeur d'origine. L'événement part à la fin du geste, une fois, et
+dit si la largeur par défaut convient à qui étudie.
+
+| Événement              | Propriété        | Valeurs                                                 | Statut      |
+| ---------------------- | ---------------- | ------------------------------------------------------- | ----------- |
+| `commentaries_resized` | `width`          | la largeur choisie, en pixels ; `null` quand on la rétablit | **nouveau** |
+| `commentaries_resized` | `viewport_width` | la largeur de la fenêtre, en pixels                     | **nouveau** |
+
 ### Recherche
 
 `library_search_used` et `chiourim_search_used` (existants) continuent de

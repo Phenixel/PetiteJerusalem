@@ -1,0 +1,152 @@
+{
+  "note": "Ce dont le pipeline tire les lignes du livre. Rien n'est dans le dépôt : tout se télécharge dans le cache (voir README.md). Chaque entrée dit d'où vient le fichier et sous quelle licence.",
+  "vilna": {
+    "title": "Talmud Bavli, Shas de Vilna (Romm, 1882 à 1887)",
+    "item": "Talmud_Bavli_Vilna_images",
+    "page": "https://archive.org/details/Talmud_Bavli_Vilna_images",
+    "license": "Public Domain Mark 1.0 (https://creativecommons.org/publicdomain/mark/1.0/)",
+    "rights": "Bibliothèque nationale d'Israël : « Public Domain, All use permitted ». Numérisation : Duke University Libraries.",
+    "dpi": 350,
+    "volumes": {
+      "v01": {
+        "file": "Talmud_Bavli_Vilna_A_V01_Berakhot_Seder-Zera'im_1884_images.pdf",
+        "year": 1884,
+        "bytes": 377070051,
+        "tractates": {
+          "berakhot": {
+            "firstPage": 13
+          }
+        }
+      }
+    }
+  },
+  "ezrat-hasofer": {
+    "title": "'Ezrat ha-Sofer, tikoun soferim de Judah Pisa, sans voyelles (Amsterdam, 1769)",
+    "item": "ezrat-hasofer-amsterdam-1769-full-images",
+    "page": "https://archive.org/details/ezrat-hasofer-amsterdam-1769-full-images",
+    "license": "Public Domain Mark 1.0 (https://creativecommons.org/publicdomain/mark/1.0/)",
+    "rights": "Numérisé par la Bibliothèque nationale d'Israël, d'après son exemplaire.",
+    "file": "Ezrat_Hasofer_Amsterdam_1769_Full.pdf",
+    "dpi": 144,
+    "note": "Chaque colonne du rouleau (264 colonnes de 42 lignes) tient sur deux pages en vis-à-vis de 21 lignes. `pages` donne, pour chaque paracha, les pages du PDF avec leur colonne et la ligne de la colonne par laquelle la page commence. `missingStart` : le scan n'a pas le début de la paracha ; la première page peut commencer jusqu'à ce nombre de mots plus loin. C'est le cas de Haazinou : l'ouverture qui porte la fin de la colonne 260 et le début de la 261 manque (Devarim 32, 1 à 9).",
+    "parashiot": {
+      "279": {
+        "name": "Beshalach",
+        "pages": [
+          [190, 81, 0],
+          [191, 81, 21],
+          [192, 82, 0],
+          [193, 82, 21],
+          [194, 83, 0],
+          [195, 83, 21],
+          [196, 84, 0],
+          [197, 84, 21],
+          [198, 85, 0],
+          [199, 85, 21],
+          [200, 86, 0],
+          [201, 86, 21]
+        ]
+      },
+      "316": {
+        "name": "Haazinu",
+        "pages": [
+          [561, 261, 21],
+          [562, 262, 0],
+          [563, 262, 21],
+          [564, 263, 0]
+        ],
+        "missingStart": 160
+      }
+    }
+  },
+  "baer": {
+    "title": "Seligmann Baer, Tiqqun ha-Sofer veha-Qore, 3e édition (Rödelheim, 1886)",
+    "item": "baer-tiqqun-hasofer-vehaqore-rodelheim-1886-images",
+    "page": "https://archive.org/details/baer-tiqqun-hasofer-vehaqore-rodelheim-1886-images",
+    "license": "Public Domain Mark 1.0 (https://creativecommons.org/publicdomain/mark/1.0/)",
+    "rights": "Numérisé par la Bibliothèque nationale d'Israël, d'après son exemplaire.",
+    "file": "Baer_Tiqqun_Hasofer_Vehaqore_Rödelheim_1886.pdf"
+  },
+  "tikkun-io": {
+    "title": "tikkun.io : les 245 colonnes du Sefer Torah, ligne par ligne, en texte",
+    "repository": "https://github.com/akivajgordon/tikkun.io",
+    "commit": "57ba104e8de055cf92d3cf6aa91245bd92b34d60",
+    "license": "MIT (Copyright (c) 2015 Akiva Gordon)",
+    "rights": "Le texte est celui de Sefaria ; la mise en lignes est celle du dépôt (src/data/pages/torah).",
+    "use": "La base du relevé : chaque ligne devient la place d'un mot de notre texte, qui est le même mot pour mot."
+  },
+  "scrollscraper": {
+    "title": "Le tikoun d'ORT (« Navigating the Bible II », bible.ort.org, hors ligne depuis 2022), gardé par ScrollScraper",
+    "repository": "https://github.com/jae-63/scrollscraper",
+    "commit": "cea640f51d9afe81e286e218026733fceb498e70",
+    "license": "MPL-2.0 pour le dépôt et ses données dérivées (final_outputs/map.csv). Les images (data/webmedia.tgz) sont de World ORT, sans licence de réutilisation.",
+    "rights": "Les images ne servent qu'à contrôler les lignes, sur le poste : aucune n'entre dans le dépôt, aucune n'est redistribuée. Seul en sort le fait qu'un mot commence telle ligne.",
+    "files": ["final_outputs/map.csv", "data/webmedia.tgz"],
+    "use": "Le contrôle : chaque ligne de tikkun.io est recalée sur son image (la largeur de ses mots)."
+  },
+  "sefaria-torah": {
+    "title": "La Torah de Sefaria (Miqra selon la Massora), avec son balisage des grandes et des petites lettres",
+    "page": "https://storage.googleapis.com/sefaria-export/json/Tanakh/Torah",
+    "license": "CC BY-SA 3.0 pour l'édition « Miqra according to the Masorah » (texte du domaine public)",
+    "rights": "Lu pour savoir quelles lettres sont grandes ou petites ; notre texte en vient déjà.",
+    "books": ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"]
+  },
+  "tradition": {
+    "title": "La tradition écrite des chirot",
+    "texts": [
+      "Rambam, Michné Torah, Hilkhot Tefillin ouMezouza veSefer Torah 8, 4",
+      "Choul'han Aroukh et Rema, Yoré Déa 275"
+    ],
+    "page": "https://www.sefaria.org/Mishneh_Torah,_Tefillin,_Mezuzah_and_the_Torah_Scroll.8",
+    "license": "Domaine public",
+    "use": "Les premiers mots des lignes d'Az yachir, de Haazinou et de leurs abords : recopiés dans scroll.py, où ils font foi."
+  },
+  "shas-org": {
+    "title": "Le Talmud de Vilna recomposé ligne pour ligne, une page PDF par amoud (lecteur de shas.org, pages de hebrewbooks.org)",
+    "page": "https://www.shas.org/dafviewer/",
+    "pages": "https://www.shas.org/daf-pdf/{page}.pdf",
+    "license": "Conditions de hebrewbooks.org : usage personnel, sans usage commercial. Le propriétaire du dépôt a donné son accord pour s'en servir (2026-10-09).",
+    "rights": "Les pages restent dans le cache. Seuls en sortent la place et la boîte de chaque ligne ; aucun mot de ces pages n'entre dans le dépôt.",
+    "use": "Les lignes de la guemara, de Rachi et de Tossafot, et leur place sur la page (vilna.py).",
+    "note": "`tractates` : le numéro de la page du premier amoud (2a) de chaque traité ; l'amoud n du fichier est à la page numéro + n. Chekalim (Yerouchalmi) et Middot (Michna) ne sont pas rangés par amoud dans nos fichiers : ils n'ont pas de lignes. Kinnim (Michna et ses commentaires, pages 5233 à 5238) n'a pas de lignes non plus. Dans Nedarim la page porte aussi le Ran, que nous n'avons pas : trop peu de pages passent les contrôles, le traité ne s'écrit pas (voir FLOOR dans vilna.py).",
+    "tractates": {
+      "berakhot": 1,
+      "shabbat": 126,
+      "eruvin": 438,
+      "pesachim": 645,
+      "yoma": 927,
+      "sukkah": 1100,
+      "beitzah": 1210,
+      "rosh-hashanah": 1288,
+      "taanit": 1355,
+      "megillah": 1414,
+      "moed-katan": 1475,
+      "chagigah": 1530,
+      "yevamot": 1581,
+      "ketubot": 1823,
+      "nedarim": 2045,
+      "nazir": 2225,
+      "sotah": 2355,
+      "gittin": 2451,
+      "kiddushin": 2629,
+      "bava-kamma": 2791,
+      "bava-metzia": 3027,
+      "bava-batra": 3262,
+      "sanhedrin": 3612,
+      "makkot": 3836,
+      "shevuot": 3882,
+      "avodah-zarah": 3978,
+      "horayot": 4128,
+      "zevachim": 4153,
+      "menachot": 4391,
+      "chullin": 4608,
+      "bekhorot": 4889,
+      "arakhin": 5008,
+      "temurah": 5073,
+      "keritot": 5138,
+      "meilah": 5192,
+      "tamid": 5239,
+      "niddah": 5264
+    }
+  }
+}

@@ -92,6 +92,42 @@ test.describe("lecteur", () => {
     await expect(page.getByText(/Daf 2a/).first()).toBeVisible();
   });
 
+  test("la guemara et la Torah s'ouvrent dans la forme de leur page", async ({ page }) => {
+    // La page de Vilna : la guemara au centre, Rachi et Tossafot autour.
+    await gotoApp(page, "/bibliotheque/talmud/berakhot/1");
+    await page.getByRole("button", { name: "Page", exact: true }).first().click();
+    const daf = page.locator(".daf-page").first();
+    await expect(daf).toBeVisible({ timeout: 20_000 });
+    await expect(daf.locator(".daf-lead").first()).toBeVisible({ timeout: 20_000 });
+    // Le choix est gardé : la Torah s'ouvre à son tour dans le Sefer Torah.
+    await gotoApp(page, "/bibliotheque/tanakh/haazinu");
+    await expect(page.locator(".torah-scroll")).toBeVisible({ timeout: 20_000 });
+    await expect(page.locator(".scroll-row-2").first()).toBeVisible();
+    await page.getByRole("button", { name: "Hébreu", exact: true }).first().click();
+    await expect(page.locator(".torah-scroll")).toHaveCount(0);
+  });
+
+  test("un passage de guemara ouvre ses commentaires, qui suivent la lecture", async ({ page }) => {
+    await gotoApp(page, "/bibliotheque/talmud/berakhot/1");
+    const passages = page.locator(".daf-passage");
+    await expect(passages.first()).toBeVisible({ timeout: 20_000 });
+    // Le premier passage : Rachi et Tossafot, annoncés dans la bulle.
+    await passages.nth(0).click();
+    const rangee = page.locator(".bubble-commentary");
+    await expect(rangee).toContainText("Rachi 2 · Tossafot 1", { timeout: 20_000 });
+    await rangee.click();
+    const panneau = page.locator(".commentary-panel");
+    await expect(panneau).toContainText("Daf 2a · passage 1");
+    await expect(panneau).toContainText("Tossafot");
+    // Le panneau ouvert, un autre passage y passe, sans bulle.
+    await passages.nth(2).click();
+    await expect(panneau).toContainText("Daf 2a · passage 3");
+    await expect(page.locator(".reading-bubble")).toHaveCount(0);
+    await expect(page.locator(".lead-mark").first()).toBeVisible();
+    await panneau.getByRole("button", { name: "Fermer" }).click();
+    await expect(panneau).toHaveCount(0);
+  });
+
   test("l'ancienne adresse /lire/:id mène au texte, pas à une page vide", async ({ page }) => {
     // 103 est l'identifiant du Tehilim 1 (src/datas/textStudies.json).
     await gotoApp(page, "/lire/103");

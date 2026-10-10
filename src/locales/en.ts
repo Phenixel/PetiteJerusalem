@@ -1398,6 +1398,31 @@ const en: LocaleMessages = {
     previous: "Previous",
     next: "Next",
     phonetic: "Phonetic",
+    pageForm: {
+      daf: "Page",
+      scroll: "Torah scroll",
+      pointed: "Vowels",
+      dafHint: "The Vilna page: the Gemara in the center, Rashi and Tosafot around it",
+      scrollHint: "As in a Torah scroll: no vowels, with the open and closed sections",
+      meforshimUnavailable:
+        "Rashi and Tosafot could not be loaded: the page shows the Gemara alone.",
+    },
+    commentaries: {
+      open: "Commentaries",
+      title: "Commentaries",
+      rashi: "Rashi",
+      rashbam: "Rashbam",
+      tosafot: "Tosafot",
+      bartenura: "Bartenura",
+      tosafotYomTov: "Tosafot Yom Tov",
+      loading: "Loading the commentaries…",
+      error: "The commentaries could not be loaded: check your connection.",
+      none: "No commentary on this passage.",
+      hint: "Tap another passage of the text to read its commentaries.",
+      resize: "Commentary width",
+      resizeHint: "Drag to change the width; double-click to restore it.",
+    },
+    passageN: "passage {n}",
     hebrew: "Hebrew",
     reserve: "Reserve this passage",
     cancel: "Cancel reservation",
@@ -1426,6 +1451,7 @@ const en: LocaleMessages = {
     resumeCta: "Resume",
     resumeDismiss: "Dismiss",
     verseN: "verse {n}",
+    mishnaN: "mishnah {n}",
     bookmarks: "Bookmarks",
     bookmarkAdd: "Add a bookmark",
     bookmarkRemove: "Remove bookmark",
@@ -1458,6 +1484,12 @@ const en: LocaleMessages = {
       hideHalakhot: "Hide halakhot",
       hideHalakhotHint:
         "The rulings that accompany a passage (what to repeat if you forgot) are removed from the text.",
+      scrollPointed: "Vowels and te'amim",
+      scrollPointedHint:
+        "Vowels and te'amim are shown on the Torah scroll column, without changing its lines.",
+      scrollPeek: "Press and hold to switch",
+      scrollPeekHint:
+        "While you keep pressing the text, it switches to the other form, with or without vowels and te'amim.",
       share: "Share this text",
     },
     labels: {

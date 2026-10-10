@@ -199,64 +199,77 @@ describe("la bulle de commandes", () => {
     expect(pose).toHaveBeenCalledOnce();
     expect(readingPassage.value).toBeNull();
   });
+
+  it("propose les commentaires du passage, avec ce qu'il y a à lire", async () => {
+    const ouvrePanneau = vi.fn();
+    const host = await ouvre(
+      passage({
+        commentary: {
+          summary: () => ({
+            state: "ready",
+            counts: [
+              { source: "rashi", count: 2 },
+              { source: "tosafot", count: 1 },
+            ],
+          }),
+          open: ouvrePanneau,
+        },
+      }),
+    );
+    const rangee = host.querySelector<HTMLButtonElement>(".bubble-commentary")!;
+    expect(rangee.textContent).toContain(fr.textReading.commentaries.open);
+    expect(rangee.textContent).toContain("Rachi 2 · Tossafot 1");
+    // Une rangée à part : les quatre colonnes de commandes restent quatre.
+    expect(commandes(host)).toHaveLength(3);
+    rangee.click();
+    expect(ouvrePanneau).toHaveBeenCalledOnce();
+  });
+
+  it("ne propose rien d'un passage sans commentaire, et attend ceux qui arrivent", async () => {
+    const sans = await ouvre(
+      passage({ commentary: { summary: () => ({ state: "none" }), open: vi.fn() } }),
+    );
+    expect(sans.querySelector(".bubble-commentary")).toBeNull();
+    monte?.unmount();
+    clearPassage();
+
+    const enRoute = await ouvre(
+      passage({ commentary: { summary: () => ({ state: "loading" }), open: vi.fn() } }),
+    );
+    expect(enRoute.querySelector<HTMLButtonElement>(".bubble-commentary")!.disabled).toBe(true);
+  });
 });
 
 /**
- * La place de la bulle. Elle se pose CONTRE le passage : tant qu'elle n'est
- * pas rendue, sa hauteur n'est qu'une supposition, et le tout premier passage
- * choisi d'une page se voyait coiffé d'une bulle flottant bien au-dessus de
- * lui, un blanc entre les deux. C'est ce cas-là, le premier choix, que le
- * test tient.
+ * La place des commandes sur un téléphone (app ou site) : un bottom sheet au
+ * bas de l'écran, et non une bulle posée sur le passage (celle-ci ne vit plus
+ * que sur un écran large, voir readingSelectionWide.test.ts). Il est là dès
+ * le tout premier passage de la page (la bulle n'est montée qu'au premier
+ * choix, voir App.vue), et un appui dans le volet, poignée comprise, ne
+ * relâche pas le passage.
  */
-describe("la place de la bulle", () => {
-  /** Hauteur de la bulle : jsdom ne met en page rien du tout. */
-  const hauteurBulle = 50;
-  const HAUT = 300;
+describe("la place des commandes", () => {
+  beforeEach(repart);
 
-  beforeEach(() => {
-    repart();
-    Object.defineProperty(HTMLElement.prototype, "offsetHeight", {
-      configurable: true,
-      get(this: HTMLElement) {
-        return this.classList.contains("reading-bubble") ? hauteurBulle : 0;
-      },
-    });
+  it("montent dans un volet au bas de l'écran", async () => {
+    const host = await ouvre(passage());
+    const volet = host.querySelector<HTMLElement>(".bottom-sheet")!;
+    expect(volet).not.toBeNull();
+    expect(volet.querySelectorAll(".bubble-action").length).toBeGreaterThan(0);
   });
 
-  afterEach(() => {
-    delete (HTMLElement.prototype as unknown as Record<string, unknown>).offsetHeight;
-  });
-
-  /** Un passage posé à une hauteur connue de la fenêtre. */
-  function pose(haut: number, bas: number): ReadingPassage {
-    const p = passage();
-    p.el.getBoundingClientRect = () =>
-      ({ top: haut, bottom: bas, left: 0, right: 360, width: 360, height: bas - haut }) as DOMRect;
-    return p;
-  }
-
-  const hautDeLaBulle = (host: HTMLElement): string =>
-    (host.querySelector(".bubble-anchor") as HTMLElement).style.top;
-
-  it("se pose contre le passage choisi", async () => {
-    const host = await ouvre(pose(HAUT, HAUT + 40));
-    // Au-dessus du passage, à l'écart près : sur sa hauteur SUPPOSÉE elle se
-    // serait posée bien plus haut, laissant un blanc sous elle.
-    expect(hautDeLaBulle(host)).toBe(`${HAUT - 6 - hauteurBulle}px`);
-  });
-
-  it("s'y pose aussi au tout premier passage de la page", async () => {
-    // Le cas qui était faux : la bulle n'est montée qu'au premier passage
-    // choisi (App.vue), donc elle se place pendant son propre montage, et le
-    // suivi du passage ne rejoue pas pour un choix déjà fait.
-    selectPassage(pose(HAUT, HAUT + 40));
+  it("y sont aussi au tout premier passage de la page", async () => {
+    selectPassage(passage());
     const host = await monteSeule();
-    expect(hautDeLaBulle(host)).toBe(`${HAUT - 6 - hauteurBulle}px`);
+    expect(host.querySelector(".bottom-sheet .bubble-action")).not.toBeNull();
   });
 
-  it("passe sous le passage quand elle ne tient pas au-dessus", async () => {
-    const host = await ouvre(pose(20, 60));
-    expect(hautDeLaBulle(host)).toBe("66px");
+  it("ne relâchent pas le passage quand on touche le volet", async () => {
+    const host = await ouvre(passage());
+    host
+      .querySelector(".sheet-grip")!
+      .dispatchEvent(new MouseEvent("pointerdown", { bubbles: true }));
+    expect(readingPassage.value).not.toBeNull();
   });
 });
 

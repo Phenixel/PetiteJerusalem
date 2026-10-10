@@ -130,6 +130,202 @@ Les points 1, 2, 5 et 6 sont tenus par un test
 vérifiées contre celles que pose le calendrier
 (`src/__tests__/sidourContent.test.ts`).
 
+### Les commentaires de la page du daf
+
+Rachi et Tossafot de la guemara vivent à part, par tranches de vingt amoudim
+(`texts/talmud-meforshim/<traité>/<n>.json`, `{ title, from, rashi, tosafot,
+rashbam? }`, écrits par `scripts/download-texts.mjs --only=meforshim`).
+`rashi[a][p]` est la liste des commentaires du passage `p` de l'amoud `a`,
+dans la numérotation des passages de Sefaria, vides compris : c'est elle que
+le lecteur retrouve à partir de `DafBlock.passages`, et **elle ne se
+renumérote pas** sans régénérer aussi la guemara. `rashbam` liste les amoudim
+de la tranche où le Rachbam tient la place de Rachi (Bava Batra). Une
+version installée calcule elle-même le nom de la tranche d'un amoud
+(`MEFORSHIM_CHUNK` dans `textService.ts`) : **la taille des tranches ne change
+pas sans changer de dossier**, sans quoi une version publiée demanderait
+`3.json` pour un amoud qui n'y est plus, et montrerait la guemara sans ses
+commentaires. Les index d'amoud et de passage sont ceux du fichier de
+guemara du traité ;
+une guemara régénérée qui gagnerait ou perdrait un amoud se régénère donc avec
+ses commentaires (tenu par `src/__tests__/pageForm.test.ts`, qui vérifie
+l'alignement sur chaque traité).
+
+### Les commentaires de la Michna et des Neviim / Ketouvim
+
+Deux corpus s'ajoutent, écrits par `scripts/download-texts.mjs
+--only=commentaires`, et lus seulement par le panneau d'étude :
+
+- `texts/mishna-meforshim/<traité>.json`, `{ title, bartenura,
+tosafotYomTov }` : un fichier par traité, nommé comme celui de sa Michna ;
+- `texts/rashi/<id>.json` pour les entrées des Neviim et des Ketouvim (318
+  à 339), au format de Rachi sur une paracha (`{ title, he }`, sans
+  `fromBook` ni `grouping`). Le fichier du livre de Tehilim (328) sert aussi
+  aux psaumes lus un par un : son groupe `n - 1` est le psaume `n`.
+
+Leur grille est celle du fichier de texte livré : un groupe par groupe du
+fichier (chapitre, livre des Douze), une case par ligne **affichée** (une
+ligne vide de la source n'en a pas), une liste de commentaires par case, le
+dibbour hamat'hil en `<b>…</b>`. Un texte lu chapitre par chapitre (un
+traité de Michna, Chir HaChirim) prend le groupe de son chapitre
+(`section.index - 1`) ; un texte lu d'un seul tenant, tous les groupes bout à
+bout. Une version publiée ne lit ces fichiers que pour les parachiot (option
+Rachi du chnei mikra) : les fichiers des Neviim et des Ketouvim ne lui
+changent rien. Un texte régénéré qui gagnerait ou perdrait une ligne se
+régénère avec ses commentaires (tenu par `src/__tests__/commentaryFiles.test.ts`).
+
+### Les lignes du livre : la page de Vilna, les colonnes du Sefer Torah
+
+La forme de la page compose ses lignes à l'écran : ce ne sont pas celles du
+livre. Deux dossiers disent où le livre coupe les siennes. Ils sont écrits
+par `scripts/layout/` (mode d'emploi dans son `README.md`) ; ils ne portent
+**aucun mot** (aux abréviations de `short` près, plus bas), seulement des
+places dans les textes qu'on a déjà. Une version
+publiée ne les demande pas, et les fichiers existants ne changent pas.
+
+- Les colonnes du Sefer Torah sont relevées pour toute la Torah, et lues :
+  la forme du Sefer Torah écrit ligne pour ligne comme le rouleau
+  (`TorahScroll.vue`, `scrollLayout.ts`).
+- Les lignes de la page de Vilna sont lues, elles aussi : la page du daf
+  pose chaque ligne de la guemara, de Rachi et de Tossafot là où le livre
+  l'imprime (`TalmudPrintedPage.vue`, `dafLayout.ts`). Un traité sans fichier
+  de lignes se compose comme avant (`TalmudPage.vue`).
+
+**La page de Vilna** : `texts/talmud-layout/<traité>/<n>.json`, par tranches
+de vingt amoudim comme `talmud-meforshim` (même règle : la taille des
+tranches ne change pas sans changer de dossier).
+
+```text
+{
+  "edition": "vilna",
+  "from": 0,
+  "pages": [
+    {
+      "height": 16540,
+      "pitch": [286, 254],
+      "main": [[2968, 1500, 4048, [0, 0, 7]], [2968, 2056, 4032, [0, 15, 1], [1, 0, 7]]],
+      "rashi": [[5127, 206, 4857, [0, 0, 9]], [7063, 698, 2921, [3, 21, 6, 4]]],
+      "tosafot": [[0, 190, 4841, [0, 0, 12]]]
+    }
+  ]
+}
+```
+
+- `pages[a]` : la page de l'amoud `from + a` (`null` s'il n'a pas de lignes).
+  Tout s'y compte en **dix-millièmes de la largeur de la page**, guemara et
+  commentaires compris, marges exclues. `height` : sa hauteur ; `pitch` :
+  l'interligne de la guemara, puis celui des commentaires.
+- Une ligne est `[x, y, largeur, morceau, morceau…]` : son bord gauche, le
+  milieu de sa hauteur, sa largeur, puis les morceaux de notre texte qu'elle
+  porte.
+- Un morceau est `[passage, mot, nombre]`. Le passage est celui du fichier de
+  guemara (`he[amoud][passage]`, `DafBlock.passages`). Dans `main`, le mot se
+  compte dans `gemaraPageText([passage]).split(" ")`. Dans `rashi` et
+  `tosafot`, il se compte dans les commentaires du passage bout à bout, chacun
+  lu par `parseRashiComment` (son dibbour, puis son texte), coupés aux
+  espaces. Un quatrième nombre donne l'amoud quand ce n'est pas celui de la
+  page : un commentaire commencé à la page d'avant, ou que le livre imprime
+  quelques pages après l'endroit où notre fichier le range.
+- Une ligne porte plusieurs morceaux quand la page n'imprime pas les
+  commentaires dans l'ordre des passages de Sefaria, ou qu'une ligne finit un
+  commentaire et en commence un autre.
+- `initial` (facultatif) : le mot d'ouverture d'un traité ou d'un chapitre,
+  écrit en très grand au-dessus de la guemara. `[x, y, largeur, hauteur,
+passage, mot, nombre]` : son bord gauche, le milieu et la hauteur de ses
+  lettres, puis sa place dans la guemara. Il n'est dans aucune ligne de
+  `main`.
+- `big` (facultatif) : les mots de la guemara que le livre écrit plus grand
+  dans leur ligne, `[passage, mot, nombre]`.
+- `closing` (facultatif) : « הדרן עלך … », la ligne qui clôt un chapitre,
+  écrite à part en grand. Même forme que `initial`.
+- `short` (facultatif) : les abréviations du livre, là où nos mots en toutes
+  lettres ne tiennent pas dans la ligne. `[zone, passage, mot, nombre,
+texte]` (zone 0 pour la guemara, 1 pour Rachi, 2 pour Tossafot ; un
+  sixième nombre donne l'amoud quand ce n'est pas celui de la page) : la
+  page écrit `texte` (« המע"ה ») à la place de ces mots. C'est le seul texte
+  qu'un fichier de lignes porte, et seulement sur les lignes qui sans lui
+  seraient illisibles.
+- Ce que la page imprime et que nous n'avons pas n'a pas de ligne : les
+  réclames, Rabbénou 'Hananel, le Ein Michpat, le Massoret haChass, et les
+  commentaires composés comme Rachi que nos fichiers ne portent pas (le
+  Rachbam de Pessa'him, la Chita Mekoubétset). Leur place reste blanche.
+
+D'où viennent ces lignes (`scripts/layout/vilna.py`) : de pages recomposées
+ligne pour ligne d'après Vilna, en PDF, où le texte est du texte. La police
+dit la zone, la place dit la ligne ; le texte de la page sert à retrouver les
+mots du nôtre, et ne va pas dans le dépôt. Ces fichiers sont lourds (environ
+5 Ko par amoud) : l'app ne les embarque pas (`PRUNED_DIRS`), elle les prend
+sur le site comme la guemara.
+
+**Les colonnes du Sefer Torah** : `texts/torah-layout/<id>.json`, un fichier
+par paracha (264 à 317), sous le numéro de son fichier de texte. Le rouleau
+est celui de 245 colonnes de 42 lignes, où chaque colonne commence par un
+vav, celui des tikounim de lecture d'aujourd'hui (`edition: "tikkun-245"`).
+
+```text
+{
+  "title": "Beshalach",
+  "edition": "tikkun-245",
+  "columns": [
+    {
+      "column": 76,
+      "from": 17,
+      "lines": [[null, [0, 0]], [[0, 1]], [[5, 6], null], [], [[57, 8], [58, 0]]]
+    }
+  ],
+  "big": [],
+  "small": []
+}
+```
+
+- `columns` : les colonnes du rouleau que la paracha occupe, par leur numéro
+  dans le rouleau (1 à 245). `from` : la ligne de la colonne (de 0 à 41) où
+  la paracha commence ; les colonnes suivantes commencent à 0, et toutes
+  sauf la dernière vont jusqu'à la quarante-deuxième ligne.
+- `lines` : les lignes, dans l'ordre. Une ligne est la suite de ses
+  **morceaux**, chacun noté par la place de son premier mot, `[verset, mot]` ;
+  le verset est celui du fichier de la paracha mis à plat (comme `data-line`
+  dans le lecteur), le mot se compte dans `scrollVerseWords(verset)`. Un
+  morceau va de son premier mot à celui du morceau suivant. Entre deux
+  morceaux d'une ligne, un blanc : une setouma, une brique d'Az yachir.
+- `null` tient la place d'un blanc au bord de la ligne. À la fin
+  (`[[5, 6], null]`), la ligne s'arrête avant le bord : c'est une petou'ha, ou
+  bien la paracha suivante continue dans la même ligne. Au début
+  (`[null, [0, 0]]`), ce qui précède dans la ligne est de la paracha d'avant :
+  quatorze parachiot commencent ainsi au milieu d'une ligne.
+- `[]` : une ligne blanche (avant et après Az yachir, après Haazinou). Les
+  quatre lignes blanches qui séparent deux livres, et celle d'avant Haazinou,
+  ne sont dans aucun fichier : elles se lisent dans `from`.
+- `halves`, sur une colonne : de quelle ligne à quelle ligne (rangs dans
+  `lines`) on écrit Haazinou, chaque ligne en deux moitiés de même largeur.
+- `big`, `small` : les grandes et les petites lettres, chacune par son
+  verset, son mot et son rang dans le mot. Elles viennent du balisage du
+  texte de Sefaria.
+
+Ces fichiers pèsent 216 Ko en tout et restent dans le binaire de l'app (ils
+ne sont pas dans `PRUNED_DIRS` de `scripts/prune-native-bundle.mjs`) : une
+paracha téléchargée a ses lignes sans réseau.
+
+D'où viennent ces lignes, par ordre d'autorité croissante
+(`scripts/layout/scroll.py`) : les colonnes de tikkun.io (licence MIT), dont
+le texte est le nôtre mot pour mot ; les images du tikoun d'ORT, sur
+lesquelles chaque ligne est recalée (onze coupures corrigées sur 10 270
+lignes) ; la tradition écrite pour les deux chirot et leurs abords (Rambam,
+Hilkhot Sefer Torah 8, 4 ; Rema, Yoré Déa 275, 6 : cinq corrections). Le
+détail, et ce que ce relevé ne garantit pas, est dans
+`scripts/layout/README.md`.
+
+Ce que les tests tiennent (`src/__tests__/textLayout.test.ts`) : chaque place
+écrite existe et les lignes se partagent le texte mot pour mot ; les 54
+fichiers se suivent sans trou d'un bout à l'autre des 245 colonnes de 42
+lignes ; chaque colonne commence par un vav, sauf les six que la tradition
+nomme ; les deux chirot ont leurs lignes. Pour la page de Vilna : chaque
+morceau désigne des mots qui existent, aucun mot n'est sur deux lignes, et
+les lignes de la guemara portent tout son texte. Ces index sont ceux des fichiers de texte :
+une guemara, des commentaires ou une paracha régénérés demandent de refaire
+le relevé. Un fichier de lignes qui ne colle plus à son texte n'est pas lu :
+la colonne s'écrit alors à notre façon, justifiée (`scrollColumns` rend
+`null`).
+
 ## Quand la flotte a rattrapé
 
 Ces contraintes ne sont pas éternelles : elles valent tant que des versions

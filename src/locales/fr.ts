@@ -1448,6 +1448,31 @@ const fr = {
     previous: "Précédent",
     next: "Suivant",
     phonetic: "Phonétique",
+    pageForm: {
+      daf: "Page",
+      scroll: "Sefer Torah",
+      pointed: "Voyelles",
+      dafHint: "La page de Vilna : la guemara au centre, Rachi et Tossafot autour",
+      scrollHint: "Comme dans le Sefer Torah : sans voyelles, avec les petou'hot et les setoumot",
+      meforshimUnavailable:
+        "Rachi et Tossafot n'ont pas pu être chargés : la page montre la guemara seule.",
+    },
+    commentaries: {
+      open: "Commentaires",
+      title: "Commentaires",
+      rashi: "Rachi",
+      rashbam: "Rachbam",
+      tosafot: "Tossafot",
+      bartenura: "Bartenura",
+      tosafotYomTov: "Tossefot Yom Tov",
+      loading: "Les commentaires arrivent…",
+      error: "Les commentaires n'ont pas pu être chargés : vérifiez la connexion.",
+      none: "Pas de commentaire sur ce passage.",
+      hint: "Touchez un autre passage du texte pour lire ses commentaires.",
+      resize: "Largeur des commentaires",
+      resizeHint: "Faites glisser pour changer la largeur ; double-cliquez pour la rétablir.",
+    },
+    passageN: "passage {n}",
     hebrew: "Hébreu",
     reserve: "Réserver ce passage",
     cancel: "Annuler la réservation",
@@ -1476,6 +1501,7 @@ const fr = {
     resumeCta: "Reprendre",
     resumeDismiss: "Ignorer",
     verseN: "verset {n}",
+    mishnaN: "michna {n}",
     bookmarks: "Marque-pages",
     bookmarkAdd: "Ajouter un marque-page",
     bookmarkRemove: "Retirer le marque-page",
@@ -1513,6 +1539,12 @@ const fr = {
       hideHalakhot: "Masquer les halakhot",
       hideHalakhotHint:
         "Les consignes de loi qui accompagnent un passage (ce qu'on reprend en cas d'oubli) sont retirées du texte.",
+      scrollPointed: "Voyelles et teamim",
+      scrollPointedHint:
+        "Les voyelles et les teamim s'affichent sur la colonne du Sefer Torah, sans en changer les lignes.",
+      scrollPeek: "Appui long pour basculer",
+      scrollPeekHint:
+        "Tant qu'on reste appuyé sur le texte, il passe à l'autre forme, avec ou sans les voyelles et les teamim.",
       share: "Partager ce texte",
     },
     // Divisions d'un texte (chapitre, daf) : textService les décrit, la vue

@@ -685,6 +685,164 @@ office ou une bénédiction se lisent du début, on n'y revient pas à un
 paragraphe comme à un verset de Tehilim ; le sommaire du menu y mène déjà à
 chaque passage.
 
+### Un texte se lit aussi dans la forme de sa page
+
+La guemara et la Torah ont une forme que le lecteur connaît par cœur : la page
+de Vilna, identique d'une édition à l'autre (on cite « le haut du 2b »), et la
+colonne du Sefer Torah. Le lecteur les offre comme une troisième façon de
+montrer le texte, entre l'hébreu verset par verset et la phonétique : un même
+groupe de trois boutons dans la barre d'outils (« Hébreu », la forme,
+« Phonétique ») et, en abrégé, dans le menu de lecture (א, l'icône de la
+forme, Aa). Le bouton de la forme porte son dessin et son nom : un livre ouvert et
+« Page » pour la guemara, un rouleau et « Sefer Torah » pour la Torah. Il
+n'apparaît que sur les textes qui ont une forme (une guemara, une paracha) ;
+les Prophètes ont des petou'hot mais pas de colonne de Sefer Torah à
+reproduire. Le choix est gardé sur l'appareil (`usePageForm`, une seule
+préférence pour les deux) ; la phonétique passe devant le temps qu'on la lise
+et rend la forme en revenant à l'hébreu.
+
+**La page du daf** (`TalmudDafPages.vue`, `TalmudPage.vue`) : un amoud par
+page, sous son repère « Daf 2a » (l'ancre du menu de lecture). La guemara est
+au centre, sans voyelles ni ponctuation moderne, en lettres carrées
+(`--font-hebrew`) ; Rachi est du côté de la reliure (à droite sur l'amoud a,
+page de gauche du livre ouvert, à gauche sur l'amoud b), Tossafot du côté du
+bord, en écriture de Rachi. Les commentaires se partagent les quatre premières
+lignes, longent la guemara, et celui qui la dépasse passe dessous dans sa
+moitié ; celui qui finit avant la laisse s'élargir. La mise en page se mesure
+à l'écran (blancs flottants de trois calques superposés, à la manière de
+daf-renderer) et se refait quand la largeur, la taille de lecture ou les
+polices changent. Les tailles suivent la largeur de la page, pour garder ses
+proportions, sans descendre sous 13 px pour la guemara, puis la taille de
+lecture. La page n'a pas de cadre ni de fond propre : c'est le texte qui
+dessine la forme. Rachi et Tossafot ne se chargent qu'à l'ouverture de la
+page ; s'ils manquent, une ligne le dit et la guemara reste seule au centre.
+
+**La page du daf est celle du livre, ligne pour ligne.** Chaque ligne de la
+guemara, de Rachi et de Tossafot est posée là où Vilna l'imprime, avec les
+mots qu'il y met (`TalmudPrintedPage.vue`, `dafLayout.ts`,
+`public/texts/talmud-layout`) : mêmes lignes, même forme de page, sur tous
+les écrans. Nos polices n'ont pas les largeurs de celles du livre : la taille
+de chaque écriture est celle qui fait tenir sa ligne médiane sans la
+déformer. **Chaque ligne remplit sa boîte d'un bord à l'autre** : plus
+courte, elle est justifiée (ses espaces s'ouvrent, ses lettres ne
+s'élargissent qu'à peine) ; plus longue, elle se resserre. Les deux bords
+d'une colonne sont donc droits, comme dans le livre. La largeur vraie de
+chaque ligne est lue sur l'écran une fois écrite, pas estimée. **Le mot
+d'ouverture** d'un traité ou d'un chapitre est écrit en très grand, en gras,
+dans le blanc que les commentaires laissent au-dessus de la guemara, sans
+cadre ; « מתני׳ », « גמ׳ » et le premier mot d'un chapitre commencé en
+milieu de page sont en gras dans leur ligne ; « הדרן עלך … » est centré, en
+gras, à la fin du chapitre. **Une ligne reste lisible** : là où notre texte
+écrit en toutes lettres ce que le livre abrège, au point que la ligne
+serait écrasée, la page écrit l'abréviation du livre (« המע"ה ») ; partout
+ailleurs nos mots restent entiers. Seules les pages proches de l'écran sont
+écrites : un chapitre de trente pages s'ouvre aussi vite qu'une seule. Le
+dibbour hamat'hil est
+en lettres carrées grasses, y compris quand le fichier ne le balise pas (il
+finit alors au premier point). Ce que le livre imprime et que nous n'avons
+pas n'est pas inventé : ni les réclames, ni les notes des marges, ni un
+commentaire que nous n'avons pas (sa place reste blanche). Une page dont les
+lignes ne sont pas relevées se compose à notre façon, dans la même forme
+(`TalmudPage.vue`).
+
+**La taille de lecture y est une loupe.** A− / A+, et le pincement dans
+l'app, n'agrandissent pas le texte de la page du daf : ses lignes bougeraient,
+et une page de Vilna se reconnaît à ses lignes. Ils agrandissent la page
+entière (`TalmudDafPages.vue`) : elle prend de 85 à 160 % de la largeur
+disponible, ses caractères suivent sa largeur, ses proportions restent celles
+du livre. La page agrandie déborde d'abord de la colonne de lecture, autant à
+gauche qu'à droite, dans la place que l'écran laisse autour d'elle
+(`pageZoom.ts`) : sur un ordinateur elle se lit entière, sans rien faire
+glisser, ce qu'une souris sans pavé tactile ne sait pas faire. Elle garde
+16 px du bord de l'écran, et du volet des commentaires quand il est ouvert. Ce
+qui dépasse encore, sur un téléphone dès le premier cran, se rejoint en faisant
+glisser la page de côté. Une page ouverte déjà agrandie se présente par son
+milieu, la guemara ; quand la loupe change, le milieu de ce qu'on regardait
+reste en place. Le réglage est le même que partout, un seul, gardé sur
+l'appareil : qui lit gros lit aussi la page en gros.
+
+**Le début de chaque partie est en gras**, dans la page du daf comme dans la
+guemara lue d'un seul tenant (`talmudOpenings`, `MarkedText.vue`) : le
+« מתני׳ » qui ouvre une Michna et le « גמ׳ » qui ouvre la Guemara, avec le mot
+qui les suit, le premier mot du traité (sa Michna n'a pas de « מתני׳ »), et la
+formule « הדרן עלך … » qui clôt un chapitre. C'est ce que fait la page
+imprimée, et c'est ainsi qu'on retrouve d'un coup d'œil où l'on en est. Sur
+la page du daf, Rachi et Tossafot ont de même leur dibbour hamat'hil en
+lettres carrées grasses.
+
+**Un passage et ses commentaires se répondent.** Sur la page du daf, on
+touche un passage de la guemara que Rachi ou Tossafot explique : il se
+surligne, et tous ses commentaires avec lui, chacun dans sa colonne ; les
+mots qu'ils citent sont soulignés dans le passage. On touche un commentaire :
+il se surligne seul, avec son passage, où ses mots à lui sont soulignés. La
+couleur est celle du passage choisi partout dans la lecture
+(`--color-selection`), pour le passage comme pour le commentaire : c'est elle
+qui dit qu'ils vont ensemble. Un seul choix à la fois dans le chapitre ; le
+toucher à nouveau le relâche, toucher un passage sans commentaire aussi. Sous
+une souris, ce qui se touche prend une teinte légère. Rien ne change de
+largeur, la page ne se recompose pas (`dafLinks.ts`, `TalmudPage.vue`).
+
+**Le Sefer Torah** (`TorahScroll.vue`) : les lettres seules, dans l'écriture
+du sofer, **ligne pour ligne et colonne pour colonne comme le rouleau**. Le
+rouleau est celui de 245 colonnes de 42 lignes, où chaque colonne commence
+par un vav : ses lignes sont relevées pour toute la Torah
+(`public/texts/torah-layout`, `scrollLayout.ts`, `scripts/layout/scroll.py`).
+La petou'ha finit la ligne, la setouma laisse un blanc dans la ligne, Az
+yachir s'écrit en briques et Haazinou en deux moitiés, là où le rouleau les
+met ; une paracha qui commence au milieu d'une ligne y commence au milieu.
+Les grandes et les petites lettres sont grandes et petites. Chaque verset
+reste un passage du lecteur : on le touche pour ouvrir ses commentaires, il
+se surligne sur toutes les lignes qu'il traverse.
+
+**Une ligne remplit la colonne comme le sofer la remplit.** Il n'écarte pas
+ses mots : il élargit ou resserre ses lettres. Chaque ligne s'étire donc en
+largeur, lettres et espaces ensemble, de 0,86 à 1,16 (`fitLine`) ; au-delà,
+les espaces prennent le reste, ce qui n'arrive qu'à une ligne sur deux cents.
+La colonne fait 16,75 cadratins, la largeur de la ligne médiane du rouleau
+dans l'écriture du sofer : la moitié des lignes s'étire, l'autre se resserre,
+presque toutes de moins d'un dixième. Les morceaux d'une ligne à blancs
+gardent leur écriture, et ce sont les blancs qui prennent la place. Une
+colonne plus large que les autres dans le rouleau (celle d'Az yachir, d'un
+tiers) s'écrit plus petit, pour tenir dans la même page.
+
+**Trois lignes de blanc séparent deux colonnes.** Rien n'y est écrit, ni
+numéro ni filet : c'est le blanc qui dit la colonne. Les lignes blanches du
+rouleau (avant et après une chira) sont, elles, des lignes blanches.
+
+**Le repère de montée est dans la marge**, comme dans un tikoun : une petite
+étiquette à la couleur du thème, en police d'interface, écrite de haut en
+bas à droite de la ligne où la montée commence. Elle ne prend aucune place
+dans la ligne. Un trait fin au-dessus du premier mot de la montée dit où
+elle commence dans la ligne.
+
+**La colonne garde ses lignes sur tous les écrans.** Elle fait 18 cadratins
+partout, marge comprise : sur un téléphone ce sont ses caractères qui
+rétrécissent (18 px au lieu de 24 sur un écran de 375 px), elle ne se replie
+pas. La taille de lecture l'agrandit tout entière, comme la page du daf
+(`pageZoom.ts`, `useReadingColumn.ts`) : elle déborde de la colonne de
+lecture tant qu'il y a de la place, puis se fait glisser de côté. Agrandie
+au-delà de l'écran, elle se présente par son bord droit, où commencent les
+lignes.
+
+**Sans les lignes du rouleau, la colonne s'écrit à notre façon.** Le fichier
+des lignes peut manquer (pas de réseau) ou ne plus coller au texte : la
+colonne est alors justifiée sur 21 cadratins, les marques et les chirot
+reconnues dans le texte (`pageForm.ts`), un blanc toutes les quarante-deux
+lignes (`scrollPages.ts`). Tant qu'on attend le fichier, rien ne s'écrit :
+on n'écrit pas la colonne deux fois.
+
+**Les voyelles et les teamim s'y posent sans rien déplacer.** Un bouton
+« Voyelles », en haut de la page à côté des formes, et un interrupteur du menu
+de lecture les affichent sur la colonne (`useScrollPointing.ts`). Le mot lu se
+pose sur le mot écrit, à la même place (`scrollPointing.ts`) : les lignes, les
+blancs et les chirot ne bougent pas. Il est dans la police de lecture, que le
+lecteur choisit, puisque l'écriture du sofer ne porte pas ces signes ; le qri
+se lit à la place du ktiv. Un second interrupteur du menu, « Appui long pour
+basculer », montre l'autre forme tant qu'on reste appuyé sur le texte, et
+revient quand on relâche. Il est éteint au départ : l'appui long sert
+d'ordinaire à choisir un passage, et ce réglage coupe sur la colonne la
+sélection du texte et le menu du système.
+
 ### La pastille du défilement est son propre arrêt
 
 Pendant une descente automatique, une pastille au bas de l'écran
@@ -1314,13 +1472,21 @@ elles, l'identité du site.
 | `--font-reading`                  | au choix               | le texte latin d'une lecture (traduction, phonétique, didascalies)      |
 | `--font-serif`                    | Lora, Georgia en repli | les tranches des livres de la bibliothèque et la dédicace               |
 
-Une seule autre famille a droit de cité, et à un seul endroit : **Stam Sefarad
-CLM** (projet Culmus, GPL avec exception d'embarquement,
-`public/fonts/stam-sefarad-clm.LICENSE.txt`), l'écriture du sofer, ktav
-Sefaradi avec taguim. Elle n'écrit que la retranscription des parchemins
-(`KlafViewer.vue`) : là, le rendu du klaf est ce qu'on vient chercher, et
-c'est la seule raison d'être de la police. Elle ne sert ni au fil d'un texte,
-ni à un titre, ni à une étiquette.
+Deux autres familles ont droit de cité, chacune là où l'écriture est ce
+qu'on vient chercher, et nulle part ailleurs (ni titre, ni étiquette) :
+
+- **Stam Sefarad CLM** (projet Culmus, GPL avec exception d'embarquement,
+  `public/fonts/stam-sefarad-clm.LICENSE.txt`), l'écriture du sofer, ktav
+  Sefaradi avec taguim. Elle écrit la retranscription des parchemins
+  (`KlafViewer.vue`) et la paracha dans la forme du Sefer Torah
+  (`TorahScroll.vue`, voir « Un texte se lit aussi dans la forme de sa
+  page »).
+- **Noto Rashi Hebrew** (OFL, `public/fonts/noto-rashi-hebrew.LICENSE.txt`),
+  l'écriture de Rachi. Elle n'écrit que Rachi et Tossafot sur la page du daf
+  (`TalmudPage.vue`), où ils sont imprimés dans cette écriture ; le dibbour
+  hamat'hil reste en lettres carrées grasses, dans `--font-hebrew`.
+  Le panneau d'étude, lui, garde `--font-hebrew` : on y lit un commentaire
+  en grand, pas une page.
 
 Playfair est une police d'apparat : posée partout, elle ne met plus rien en
 avant. Elle est automatique sur les `h1` et se pose à la main (classe
@@ -1419,21 +1585,23 @@ côté. Et devant un texte, ce qu'il propose n'est pas ce qu'on veut proposer :
 la traduction automatique d'un verset et la recherche web d'un mot d'hébreu.
 
 Les passages d'un texte coupent donc la sélection du système (`.reading-pick`)
-et se choisissent d'un appui ; une bulle vient se poser dessus, au-dessus du
-passage comme le ferait le menu qu'elle remplace, avec les gestes qui ont un
-sens là où l'on est : **partager** ce passage (le lien y ramène, et non en
+et se choisissent d'un appui ; sur un téléphone, un volet monte au bas de
+l'écran (voir « Sur un téléphone, ce qui accompagne un texte monte dans un
+bottom sheet ») ; sur un écran large, une bulle vient se poser contre le
+passage, comme le ferait le menu qu'elle remplace. L'un et l'autre portent
+les gestes qui ont un sens là où l'on est : **partager** ce passage (le lien y ramène, et non en
 haut du chapitre), en lire la **phonétique** sans faire basculer toute la
 page, **signaler une erreur** (le formulaire de support s'ouvre avec
 l'endroit, les premiers mots et le lien déjà écrits), et le **marque-page** là
 où le texte en prend.
 
-L'appui long ouvre la bulle, comme l'appui bref. Couper la sélection du
+L'appui long ouvre le volet, comme l'appui bref. Couper la sélection du
 système coupe aussi le geste qui l'ouvrait : sans cela, appuyer longuement sur
 un verset ne ferait plus rien du tout, et le geste que tout le monde connaît
 pour agir sur du texte serait mort. La bulle se pose au-dessus du passage,
 jamais sous la zone système ni sous le bandeau du site (elle passe alors
-dessous), et sa rangée de commandes suit la taille de lecture, à moitié comme
-le menu de lecture, plafonnée pour que quatre colonnes tiennent sur la largeur
+dessous). La rangée de commandes suit la taille de lecture, à moitié comme le
+menu de lecture, plafonnée pour que quatre colonnes tiennent sur la largeur
 d'un téléphone.
 
 Le choix se fait au passage, jamais au mot : c'est la seule unité que ces
@@ -1442,6 +1610,107 @@ signalement qui dit « Tehilim 23 · verset 4 » se corrige, là où trois mots
 copiés se cherchent. Partout ailleurs (le reste du site, un texte qu'on
 accompagne sans qu'il ait d'adresse à lui), la sélection ordinaire reste, à la
 couleur du thème.
+
+### Les commentaires d'un passage s'ouvrent depuis son volet, puis suivent la lecture
+
+Une guemara a Rachi et Tossafot ; une michna, le Bartenura et les Tossefot
+Yom Tov (les deux qu'imprime une Michna courante) ; un verset du Tanakh,
+paracha, Neviim, Ketouvim ou psaume lu seul, a Rachi. Chacun est rattaché à
+un passage précis du texte (la guemara est découpée en passages de l'ordre
+d'une phrase, ceux de Sefaria, invisibles à la lecture : le texte se lit
+toujours d'un seul tenant, seul le passage choisi prend un fond). Le volet
+d'un passage qui a des commentaires porte une **seconde rangée**, sur toute
+sa largeur, sous les commandes : « Commentaires », avec ce qu'il y a à lire
+(« Rachi 2 · Tossafot 1 »). Une cinquième colonne ne tiendrait pas sur un
+téléphone, et ce n'est pas une commande comme les autres : elle ouvre un
+mode d'étude. La rangée n'apparaît pas sur un passage sans commentaire ;
+grisée, avec « … », le temps que les commentaires arrivent (ils ne se
+chargent qu'au premier passage touché).
+
+Elle ouvre le **panneau d'étude** (`CommentaryPanel.vue`). Sur un
+téléphone, un bottom sheet à mi-hauteur (55 %), qu'on tire par sa poignée
+jusqu'à 92 % de l'écran pour un long Tossafot. Dès que l'écran a la place
+de deux colonnes (640 px de large : tablette, pliant ouvert, téléphone en
+paysage, ordinateur, voir `useSideBySide`), une **colonne à droite**, sous le
+bandeau et sur toute la hauteur : le texte à gauche, les explications à
+droite. La colonne prend la place que le texte laisse libre
+(`--study-width` : l'écran moins 48 rem de texte et 4 rem de marges,
+entre 17 et 32 rem). Le texte, lui, **ne bouge que s'il le faut** : il
+garde sa largeur ordinaire (48 rem) tant qu'elle tient à gauche du
+panneau, et ne rétrécit qu'en dessous ; il reste centré sur l'écran tant
+qu'il n'y touche pas le panneau (un grand écran ne bouge pas), et sinon
+glisse vers la gauche juste assez pour garder 2 rem d'écart avec lui. Il
+glisse en place, sans sauter, à l'ouverture comme à la fermeture. Déplier un
+pliant fait passer le volet à droite sans rien fermer. À l'ouverture, le
+passage étudié est ramené sous les yeux s'il passait sous le volet ou
+glissait sous le bas de l'écran en se rétrécissant. En tête, l'endroit
+(« Chapitre 1 · Daf 2a · passage 3 ») et la croix ; dessous, Rachi (le
+Rachbam en Bava Batra, là où il prend sa place) puis Tossafot, le dibbour
+hamat'hil en gras, à la taille de lecture : c'est un texte qu'on étudie. Le
+panneau **suit la lecture** : tant qu'il est ouvert, toucher un autre passage
+y montre les siens, sans rouvrir les commandes ; on étudie un daf d'un geste par
+passage. Dans le texte, les mots que citent les dibbourim du passage étudié
+sont soulignés à la couleur du thème (`MarkedText.vue`), sans fond, assez bas
+pour passer sous les voyelles. Le bouton du menu de lecture s'efface tant que
+le panneau est ouvert (il occupe sa place) ; la croix, Échap, le bouton
+retour ou le volet poussé vers le bas le ferment, et rendent leurs commandes
+aux passages.
+
+**La colonne se règle en tirant son bord gauche** (`useStudyWidth`) : une
+bande de 14 px à cheval sur le bord, la flèche de redimensionnement au
+survol, un trait vertical au milieu de sa hauteur (la poignée d'un volet,
+couchée), et tout le bord à la couleur du thème pendant qu'on tire. Le texte
+suit sans délai : il rétrécit quand la colonne s'élargit, et reprend sa
+largeur ordinaire, 48 rem au plus, quand elle se resserre (au-delà, les
+lignes deviendraient trop longues pour se lire). La colonne ne descend pas
+sous 17 rem et laisse toujours 20 rem au texte. Au clavier, le bord se
+prend par Tab et se règle aux flèches ; un double appui le rend à sa
+largeur d'origine. La largeur choisie se garde sur l'appareil, comme la
+taille du texte.
+
+### Sur un téléphone, ce qui accompagne un texte monte dans un bottom sheet
+
+Sur un téléphone, dans l'app comme sur le site, ce qui accompagne un texte
+sans le quitter monte du bas de l'écran, dans un **bottom sheet**
+(`BottomSheet.vue`) : les commandes d'un passage (réparties sur toute la
+largeur, avec la rangée « Commentaires ») et le panneau d'étude. C'est la
+forme qu'un téléphone donne à ces choses : le pouce les
+atteint, elles ne cachent jamais le passage qu'on vient de toucher, et elles
+se ferment comme on les ferme partout ailleurs, en les poussant vers le bas.
+
+Le volet a une poignée (un trait de 2,25 rem, à la couleur du texte en
+transparence) ; la poignée et son en-tête portent le geste, le corps défile.
+Il a des crans (le panneau d'étude : mi-hauteur et presque plein écran) ou
+prend la hauteur de son contenu (les commandes) ; un geste franc vers le bas
+le ferme d'un coup depuis son premier cran (plus haut, il le ramène d'un
+cran : un Tossafot lu en plein écran se redescend sans se perdre), un tirage
+lent se pose au cran le plus proche. Le volet des commandes, à la hauteur
+de son contenu, se tire de partout, boutons compris (le geste ne commence
+qu'au-delà de quelques pixels, un appui reste un appui) ; **tiré vers le
+haut, il ouvre les commentaires du passage**, comme l'appui sur leur rangée,
+sans avoir à la viser. Il grandit sous le doigt pendant le geste : on voit
+qu'il va s'ouvrir. Il ne
+voile pas la page : on lit et on touche le texte au-dessus. Dans l'app, il
+se pose **sur la barre d'onglets**, qui reste visible : c'est le menu de
+l'app, on ne le perd pas en lisant un commentaire (le volet passe sous le
+bouton rond des horaires, qui déborde de la barre, et lui garde 1,25 rem
+de marge). Il passe sur la
+barre d'onglets et sous les fenêtres modales (le partage d'un passage s'ouvre
+par-dessus), coins hauts arrondis comme une surface (`--radius-xl`), au fond
+de la surface et à l'ombre des surfaces qui se posent (`--shadow-pop`). Le
+bouton du menu de lecture s'efface tant qu'un volet est ouvert. Au-delà de
+640 px de large, la place ne manque plus : les commandes redeviennent une
+bulle contre le passage, et le panneau d'étude une colonne à droite
+(`docked` : ni poignée, ni geste ; dans l'app, elle s'arrête au-dessus de la
+barre d'onglets).
+
+Ce qui flotte au bas de l'écran (la pastille du défilement automatique, les
+toasts, la barre d'une sélection) passe **au-dessus du volet ouvert** : le
+volet annonce sa hauteur (`bottomSheetSlot`, `useBottomChrome.ts`) et ces
+éléments s'y posent, comme ils se posent sur la barre d'onglets. Sans cela,
+la pastille qui arrête la descente serait cachée sous les commentaires
+qu'on lit en défilant. La colonne d'un écran large n'annonce rien : elle ne
+couvre pas le bas de l'écran.
 
 ### Une fenêtre modale tient dans ce qui est visible, clavier compris
 
