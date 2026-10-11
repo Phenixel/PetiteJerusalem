@@ -8,6 +8,7 @@ import {
   type RashiComment,
   type TextSection,
 } from "../services/textService";
+import { DAF_LAYOUT_REACH } from "../services/dafLayout";
 
 /**
  * Les commentaires d'un passage du texte ouvert :
@@ -143,9 +144,13 @@ export function usePassageCommentaries(
     state.value = "loading";
     try {
       if (corpus.value === "talmud") {
+        // Une page du livre porte parfois un commentaire que nos textes
+        // rangent plus tôt (jusqu'à six amoudim avant, là où est la michna) ou
+        // à l'amoud suivant : on charge aussi les tranches de ces voisins.
         const amudim = (open.dafBlocks ?? [])
           .map((b) => b.amud)
-          .filter((a): a is number => a !== undefined);
+          .filter((a): a is number => a !== undefined)
+          .flatMap((a) => [Math.max(0, a - DAF_LAYOUT_REACH), a, a + 1]);
         const loaded = await loadDafMeforshim(entry, amudim);
         if (mine !== request) return;
         talmud.value = loaded;

@@ -20,6 +20,12 @@ export const DAF_UNITS = 10000;
 export const DAF_LAYOUT_CHUNK = 20;
 
 /**
+ * Jusqu'où, avant l'amoud affiché, le relevé va chercher un commentaire que
+ * nos textes rangent plus tôt que le livre (scripts/layout/vilna.py).
+ */
+export const DAF_LAYOUT_REACH = 6;
+
+/**
  * Un morceau de texte sur une ligne : `[passage, mot, nombre]`, et l'amoud
  * quand ce n'est pas celui de la page (un commentaire commencé à la page
  * d'avant). Le passage est celui de Sefaria (DafBlock.passages) ; le mot se
