@@ -178,8 +178,8 @@ régénère avec ses commentaires (tenu par `src/__tests__/commentaryFiles.test.
 La forme de la page compose ses lignes à l'écran : ce ne sont pas celles du
 livre. Deux dossiers disent où le livre coupe les siennes. Ils sont écrits
 par `scripts/layout/` (mode d'emploi dans son `README.md`) ; ils ne portent
-**aucun mot** (aux abréviations de `short` près, plus bas), seulement des
-places dans les textes qu'on a déjà. Une version
+presque **aucun mot** (seulement les abréviations de `short` et le texte de
+`fill`, plus bas), surtout des places dans les textes qu'on a déjà. Une version
 publiée ne les demande pas, et les fichiers existants ne changent pas.
 
 - Les colonnes du Sefer Torah sont relevées pour toute la Torah, et lues :
@@ -244,6 +244,14 @@ texte]` (zone 0 pour la guemara, 1 pour Rachi, 2 pour Tossafot ; un
   page écrit `texte` (« המע"ה ») à la place de ces mots. C'est le seul texte
   qu'un fichier de lignes porte, et seulement sur les lignes qui sans lui
   seraient illisibles.
+- `fill` (facultatif) : le texte du livre lui-même, là où le nôtre n'a rien
+  (le texte de Sefaria n'est pas toujours celui de la page : il lui manque
+  des mots, parfois un paragraphe). `[zone, x, y, largeur, texte, dibbour]`,
+  zone 1 pour Rachi, 2 pour Tossafot ; `dibbour` dit combien des premiers
+  mots sont du dibbour hamat'hil. Ces mots viennent du livre, pas de nos
+  fichiers : ils ne se relient à aucun passage.
+- `formula` (facultatif) : « הדרן עלך … » quand nos textes rangent la
+  formule à la page voisine, `[x, y, largeur, hauteur, texte]`, avec nos mots.
 - Ce que la page imprime et que nous n'avons pas n'a pas de ligne : les
   réclames, Rabbénou 'Hananel, le Ein Michpat, le Massoret haChass, et les
   commentaires composés comme Rachi que nos fichiers ne portent pas (le

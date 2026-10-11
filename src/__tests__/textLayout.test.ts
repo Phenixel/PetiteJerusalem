@@ -116,6 +116,19 @@ describe("lignes de la page de Vilna", () => {
           if (zone === 0 && other === undefined && w + count > (words[p]?.length ?? -1))
             faults.push(`amoud ${amud} : abréviation ${p}, ${w}, ${count} n'existe pas`);
         }
+        // Le texte du livre là où le nôtre n'a rien : des lettres hébraïques, dans la page.
+        for (const [zone, x, y, width, text, lead] of page.fill ?? []) {
+          if (
+            ![1, 2].includes(zone) ||
+            x < 0 ||
+            x + width > DAF_UNITS + 2 ||
+            y < 0 ||
+            y > page.height
+          )
+            faults.push(`amoud ${amud} : texte du livre hors de la page`);
+          if (!/[א-ת]{2}/.test(text) || /[^א-ת'"׳״.,:;()[\] -]/.test(text) || lead < 0)
+            faults.push(`amoud ${amud} : texte du livre « ${text} »`);
+        }
         // La formule de clôture rangée à la page voisine : nos mots, rien d'autre.
         for (const [x, y, width, height, text] of page.formula ?? []) {
           if (x < 0 || x + width > DAF_UNITS + 2 || y < 0 || y > page.height || !(height > 0))

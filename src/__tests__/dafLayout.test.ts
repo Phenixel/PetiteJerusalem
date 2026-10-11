@@ -160,3 +160,16 @@ describe("dafLines, les abréviations du livre", () => {
     expect(rashi[0].words.map((w) => w.text)).toEqual(["של", "הדף", "הקודם"]);
   });
 });
+
+describe("dafLines, le texte du livre", () => {
+  const page: DafLayoutPage = { ...PAGE, fill: [[2, 0, 700, 2800, "ואם תאמר מאי קאמר", 2]] };
+  const lines = dafLines(page, 5, LINES, PASSAGES, MEFORSHIM)!;
+
+  it("écrit la ligne que notre texte n'a pas, dans sa zone, sans la relier", () => {
+    const added = lines.filter((l) => l.zone === "tosafot").pop()!;
+    expect(added.words.map((w) => w.text)).toEqual(["ואם", "תאמר", "מאי", "קאמר"]);
+    expect(added.words.map((w) => w.lead)).toEqual([true, true, false, false]);
+    expect(added.words.every((w) => w.passage === -1)).toBe(true);
+    expect(added.y).toBe(700);
+  });
+});

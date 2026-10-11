@@ -739,7 +739,9 @@ ailleurs nos mots restent entiers. Seules les pages proches de l'écran sont
 écrites : un chapitre de trente pages s'ouvre aussi vite qu'une seule. Le
 dibbour hamat'hil est
 en lettres carrées grasses, y compris quand le fichier ne le balise pas (il
-finit alors au premier point). Ce que le livre imprime et que nous n'avons
+finit alors au premier point). **Là où notre texte n'a rien et que le livre a des lignes** (un mot, un
+paragraphe que Sefaria ne donne pas), la page écrit le texte du livre, dans
+l'écriture de sa colonne : elle n'a pas de trou. Ce que le livre imprime et que nous n'avons
 pas n'est pas inventé : ni les réclames, ni les notes des marges, ni un
 commentaire que nous n'avons pas (sa place reste blanche). Une page dont les
 lignes ne sont pas relevées se compose à notre façon, dans la même forme

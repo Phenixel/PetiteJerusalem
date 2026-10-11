@@ -139,6 +139,15 @@ en PDF (lecteur de shas.org, voir `sources.json`). Le texte y est du texte :
   porte l'abréviation du livre (`short`). `--check` compte les lignes encore
   trop chargées.
 
+- **Le texte que nous n'avons pas.** Le texte de Sefaria n'est pas toujours
+  celui de la page. Une ligne de nos colonnes sans aucun de nos mots, prise
+  entre deux lignes de notre commentaire, ou le bout d'une ligne que notre
+  texte n'a pas, s'écrit avec le texte du livre (`book_lines`, `fill` dans le
+  fichier), si la page rend bien ses lettres (le noun surtout). Un titre de
+  commentaire se reconnaît à ses mots dans les colonnes, même quand sa
+  police sert aussi aux notes de marge ; une ligne faite d'un seul titre
+  reste entière.
+
 ### Les témoins
 
 Un relevé qui paraît bon en chiffres peut être faux à l'écran. Trois témoins

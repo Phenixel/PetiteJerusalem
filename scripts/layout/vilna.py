@@ -539,6 +539,8 @@ class PrintedLine:
     font: tuple = ()
     spans: list = field(default_factory=list)
     """Par mot : son bord gauche et son bord droit."""
+    flags: list = field(default_factory=list)
+    """Par mot, après le calage : il a son répondant dans notre texte."""
 
 
 def words_of(chunks: list[Chunk], lead_fonts: dict) -> tuple[list[str], list[bool], list[tuple[int, int]]]:
@@ -579,6 +581,7 @@ def rows_of(chunks: list[Chunk], tolerance: float, bodies: set | None = None) ->
         else:
             rows.append([chunk])
     spans = [(min(c.top for c in row), max(c.top + c.height for c in row)) for row in rows]
+    alone: list[Chunk] = []
     for chunk in chunks:
         if chunk.size in bodies:
             continue
@@ -588,7 +591,16 @@ def rows_of(chunks: list[Chunk], tolerance: float, bodies: set | None = None) ->
         if k >= 0 and gaps[k] <= 0.55 * (spans[k][1] - spans[k][0]):
             rows[k].append(chunk)
         else:
-            rows.append([chunk])
+            alone.append(chunk)
+    # Une ligne tout entière d'un autre corps (un titre de commentaire qui
+    # tient la ligne) n'a aucun mot du corps : ses mots font rangée entre eux.
+    extra: list[list[Chunk]] = []
+    for chunk in sorted(alone, key=lambda c: c.middle):
+        if extra and abs(extra[-1][0].middle - chunk.middle) <= max(tolerance, 0.3 * chunk.height):
+            extra[-1].append(chunk)
+        else:
+            extra.append([chunk])
+    rows += extra
     return rows
 
 
@@ -903,7 +915,9 @@ def printed_page(pdf: str, known: dict[str, set], vocabulary: dict[str, set],
             inside = [c for c in own if lo - 2 <= c.left and c.right <= hi + 2 and low <= c.middle <= high
                       and not re.fullmatch(r"[(\[]?[א-ת][)\]]?", c.text.strip())]
             words = [norm(c.text) for c in inside if norm(c.text)]
-            if len(inside) < 0.6 * len(own) or not words:
+            # (Cette police sert aussi aux titres des notes de marge : on ne
+            # juge que ses mots qui sont dans les colonnes.)
+            if not words:
                 continue
             if sum(1 for w in words if w in everything) < 0.6 * len(words):
                 continue
@@ -1317,6 +1331,9 @@ def place(ours: list[Token], lines: list[PrintedLine], ahead: list[Token] | None
         if line.zone != "main" and k in FLAGS:
             flags = trim(line, FLAGS[k])
             found[k] = (sum(flags), len(flags))
+        # Par mot de la ligne (les signes sans lettre comptent pour retrouvés).
+        own = iter(FLAGS.get(k, []) if line.zone == "main" else (flags if k in FLAGS else []))
+        line.flags = [next(own, False) if norm(w) else True for w in line.words]
     text_of = {(t.unit, t.passage, t.word): t.text for t in everything}
     solid = set(line_of)
     fill(everything, line_of, len(lines))
@@ -1439,6 +1456,59 @@ def side_tokens(tractate: Tractate, zone: str, amud: int) -> list[Token]:
 
 def grams(words: list[str]) -> set[tuple[str, ...]]:
     return {tuple(words[i: i + 3]) for i in range(len(words) - 2)}
+
+
+def book_lines(placed: dict, kept: dict, side_size: int) -> list[list]:
+    """Ce que le livre imprime dans nos colonnes et que notre texte n'a pas.
+
+    Le texte de Sefaria n'est pas toujours celui de la page : il lui manque
+    des mots, parfois un paragraphe. La page ligne pour ligne laisserait un
+    blanc. On y écrit alors le texte du livre lui-même, à sa place :
+      - une ligne entière sans aucun de nos mots, prise entre deux lignes
+        de notre commentaire dans la même colonne ;
+      - le bout d'une ligne (deux mots ou plus à son bord) que notre texte
+        n'a pas : la ligne garde sa part, le bout s'écrit à côté.
+    [zone, gauche, haut, droite, bas, texte, mots de dibbour]."""
+    out = []
+    for z, zone in ((1, "rashi"), (2, "tosafot")):
+        ours = [line for line, _ in kept[zone]]
+        mine = {id(line) for line in ours}
+        for line, runs in zip(placed[zone].lines, placed[zone].runs):
+            if runs or id(line) in mine or sum(1 for w in line.words if len(norm(w)) > 1) < 2:
+                continue
+            tall = line.bottom - line.top
+
+            def beside(a: PrintedLine, reach: float) -> bool:
+                return min(a.right, line.right) - max(a.left, line.left) > 0 and abs(a.top - line.top) <= reach
+
+            # Entre deux lignes à nous, dans sa colonne, à quelques lignes de là.
+            if any(beside(a, 12 * tall) and a.top < line.top for a in ours) \
+                    and any(beside(a, 12 * tall) and a.top > line.top for a in ours):
+                lead = next((k for k, flag in enumerate(line.lead) if not flag), len(line.lead))
+                out.append([z, line.left, line.top, line.right, line.bottom, " ".join(line.words), lead])
+        for k, (line, runs) in enumerate(kept[zone]):
+            if len(line.flags) != len(line.words) or len(line.spans) != len(line.words) or not any(line.flags):
+                continue
+            first = next(i for i, flag in enumerate(line.flags) if flag)
+            last = len(line.flags) - 1 - next(i for i, flag in enumerate(reversed(line.flags)) if flag)
+            # Au début de la ligne (à droite), puis à sa fin (à gauche).
+            for a, b in ((0, first), (last + 1, len(line.words))):
+                words = line.words[a:b]
+                if sum(1 for w in words if len(norm(w)) > 1) < 2:
+                    continue
+                left = min(l for l, _ in line.spans[a:b])
+                right = max(r for _, r in line.spans[a:b])
+                lead = next((i for i, flag in enumerate(line.lead[a:b]) if not flag), b - a)
+                out.append([z, left, line.top, right, line.bottom, " ".join(words), lead])
+            if first >= 2 or len(line.words) - 1 - last >= 2:
+                keep_a = first if sum(1 for w in line.words[:first] if len(norm(w)) > 1) >= 2 else 0
+                keep_b = last + 1 if sum(1 for w in line.words[last + 1:] if len(norm(w)) > 1) >= 2 else len(line.words)
+                if (keep_a, keep_b) != (0, len(line.words)):
+                    line.words, line.lead = line.words[keep_a:keep_b], line.lead[keep_a:keep_b]
+                    line.spans, line.flags = line.spans[keep_a:keep_b], line.flags[keep_a:keep_b]
+                    line.left, line.right = min(l for l, _ in line.spans), max(r for _, r in line.spans)
+    del side_size
+    return out
 
 
 def reading_order(lines: list[PrintedLine]) -> list[PrintedLine]:
@@ -1671,6 +1741,7 @@ def page_at(tractate: Tractate, amud: int, pdf: str, taken: dict[str, set]) -> t
                                          min(line.left, last.left), max(last.right, line.right),
                                          min(last.top, line.top), max(last.bottom, line.bottom), zone)
                     merged.spans = last.spans + line.spans
+                    merged.flags = last.flags + line.flags
                     if before and runs:
                         a, p, w, n = before[-1]
                         if (a, p, w + n) == tuple(runs[0][:3]):
@@ -1717,6 +1788,13 @@ def page_at(tractate: Tractate, amud: int, pdf: str, taken: dict[str, set]) -> t
     for zone in ("rashi", "tosafot"):
         kept[zone] = [(l, runs) for l, runs in kept[zone]
                       if not (sum(r[3] for r in runs) <= 2 and all(r[0] != amud for r in runs))]
+    # Le texte du livre, là où le nôtre n'a rien : seulement si la page rend
+    # bien ses lettres (dans certaines polices sans nom le noun ne sort pas,
+    # et l'on écrirait « זיר » pour « נזיר »).
+    letters = "".join(w for zone in ("rashi", "tosafot") for l in placed[zone].lines for w in l.words)
+    hebrew = sum(1 for ch in letters if "א" <= ch <= "ת")
+    nuns = sum(1 for ch in letters if ch in "נן")
+    book = book_lines(placed, kept, printed.sizes["side"]) if hebrew > 200 and nuns >= 0.03 * hebrew else []
     closing = closing_lines(printed.sizes["main"], ours_main, kept["main"])
     kept["main"] = [(l, runs) for l, runs in kept["main"] if runs]
     initials = initial_words(pdf, printed.sizes["main"], ours_main, kept["main"])
@@ -1817,6 +1895,16 @@ def page_at(tractate: Tractate, amud: int, pdf: str, taken: dict[str, set]) -> t
              for a, p, w, n, text in placed[zone].short]
     if brief:
         page["short"] = brief
+    if book:
+        # Le texte du livre que le nôtre n'a pas : zone (1 ou 2), boîte, mots, mots de dibbour.
+        page["fill"] = [[z, round((a - x0) * scale), round(((t + b) / 2 - y0) * scale), round((c - a) * scale),
+                         re.sub("[^א-ת'\"׳״.,:;()\\[\\] -]", "", text).strip(), lead]
+                        for z, a, t, c, b, text, lead in book
+                        if x0 <= a and c <= x1 and y0 <= t and b <= y1
+                        # De vrais mots : un renvoi entre crochets (« [פ"ג ה"ה] ») est une note d'éditeur.
+                        and len(re.findall("[א-ת]{3}", text)) >= 2]
+        if not page["fill"]:
+            del page["fill"]
     if initials:
         # Le mot d'ouverture : sa boîte (bord gauche, milieu, largeur, hauteur) et sa place.
         page["initial"] = [
