@@ -1459,7 +1459,8 @@ def grams(words: list[str]) -> set[tuple[str, ...]]:
     return {tuple(words[i: i + 3]) for i in range(len(words) - 2)}
 
 
-def book_lines(placed: dict, kept: dict, side_size: int, strangers: list | None = None) -> list[list]:
+def book_lines(placed: dict, kept: dict, side_size: int, strangers: list | None = None,
+               ours: set | None = None) -> list[list]:
     """Ce que le livre imprime dans nos colonnes et que notre texte n'a pas.
 
     Le texte de Sefaria n'est pas toujours celui de la page : il lui manque
@@ -1485,6 +1486,12 @@ def book_lines(placed: dict, kept: dict, side_size: int, strangers: list | None 
     def whole(line: PrintedLine, z: int) -> None:
         """Une ligne entière du livre, si elle est dans les colonnes de la page."""
         if sum(1 for w in line.words if len(re.findall("[א-ת]", w)) >= 3) < 2:
+            return
+        # Une ligne dont les mots sont les nôtres n'est pas un manque : nos
+        # mots sont posés sur la ligne voisine, l'écrire les dirait deux fois.
+        said = [norm(w) for w in line.words if norm(w)]
+        pairs = list(zip(said, said[1:]))
+        if ours and pairs and sum(1 for pair in pairs if pair in ours) >= 0.4 * len(pairs):
             return
         if not (lo - 2 <= line.left and line.right <= hi + 2 and top - 2 <= line.top and line.bottom <= bottom + 40):
             return
@@ -1516,17 +1523,22 @@ def book_lines(placed: dict, kept: dict, side_size: int, strangers: list | None 
             if sum(r[3] for r in runs) > 1.3 * (last + 1 - first) + 1:
                 continue
             # Au début de la ligne (à droite), puis à sa fin (à gauche).
-            for a, b in ((0, first), (last + 1, len(line.words))):
+            cut = [0, len(line.words)]
+            for side, (a, b) in enumerate(((0, first), (last + 1, len(line.words)))):
                 words = line.words[a:b]
                 if sum(1 for w in words if len(norm(w)) > 1) < 2:
+                    continue
+                said = [norm(w) for w in words if norm(w)]
+                if ours and sum(1 for pair in zip(said, said[1:]) if pair in ours) >= 0.4 * max(1, len(said) - 1):
                     continue
                 left = min(l for l, _ in line.spans[a:b])
                 right = max(r for _, r in line.spans[a:b])
                 lead = next((i for i, flag in enumerate(line.lead[a:b]) if not flag), b - a)
                 out.append([z, left, line.top, right, line.bottom, " ".join(words), lead])
-            if first >= 2 or len(line.words) - 1 - last >= 2:
-                keep_a = first if sum(1 for w in line.words[:first] if len(norm(w)) > 1) >= 2 else 0
-                keep_b = last + 1 if sum(1 for w in line.words[last + 1:] if len(norm(w)) > 1) >= 2 else len(line.words)
+                cut[side] = first if side == 0 else last + 1
+            # La ligne ne cède que le bout qui s'est écrit à côté.
+            keep_a, keep_b = cut
+            if True:
                 if (keep_a, keep_b) != (0, len(line.words)):
                     line.words, line.lead = line.words[keep_a:keep_b], line.lead[keep_a:keep_b]
                     line.spans, line.flags = line.spans[keep_a:keep_b], line.flags[keep_a:keep_b]
@@ -1824,14 +1836,28 @@ def page_at(tractate: Tractate, amud: int, pdf: str, taken: dict[str, set]) -> t
     hebrew = sum(1 for ch in letters if "א" <= ch <= "ת")
     nuns = sum(1 for ch in letters if ch in "נן")
     strangers = [l for l in printed.right + printed.left + printed.wide if id(l) in others]
-    book = book_lines(placed, kept, printed.sizes["side"], strangers) if hebrew > 200 and nuns >= 0.03 * hebrew else []
+    spoken = set()
+    for zone in ("rashi", "tosafot"):
+        for a in range(max(0, amud - 6), min(len(tractate), amud + 2)):
+            said = [norm(t.text) for t in tractate.tokens(zone, a)]
+            said = [w for w in said if w]
+            spoken.update(zip(said, said[1:]))
+    book = book_lines(placed, kept, printed.sizes["side"], strangers, spoken) \
+        if hebrew > 200 and nuns >= 0.03 * hebrew else []
     closing = closing_lines(printed.sizes["main"], ours_main, kept["main"])
     kept["main"] = [(l, runs) for l, runs in kept["main"] if runs]
     initials = initial_words(pdf, printed.sizes["main"], ours_main, kept["main"])
     kept["main"] = [(l, runs) for l, runs in kept["main"] if runs]
-    # Une boîte moins large qu'une lettre n'est pas une ligne (un signe isolé).
+    # Une boîte moins large qu'une lettre n'est pas une ligne (un signe isolé),
+    # pas plus qu'un bout de commentaire posé sur une ligne de guemara (le mot
+    # d'ouverture d'un chapitre, pris pour du Rachi).
+    column = [min((m.left for m, _ in kept["main"]), default=0), max((m.right for m, _ in kept["main"]), default=0)]
+    over = lambda l, m: (column[0] - 2 <= l.left and l.right <= column[1] + 2  # noqa: E731
+                         and m.top <= (l.top + l.bottom) / 2 <= m.bottom
+                         and min(l.right, m.right + 6) - max(l.left, m.left - 6) > 0)
     for zone in ("rashi", "tosafot"):
-        kept[zone] = [(l, runs) for l, runs in kept[zone] if l.right - l.left >= 0.6 * printed.sizes["side"]]
+        kept[zone] = [(l, runs) for l, runs in kept[zone] if l.right - l.left >= 0.6 * printed.sizes["side"]
+                      and not (sum(r[3] for r in runs) <= 2 and any(over(l, m) for m, _ in kept["main"]))]
     every = [l for zone in ("main", "rashi", "tosafot") for l, _ in kept[zone]]
     if not every:
         return None
@@ -1934,6 +1960,7 @@ def page_at(tractate: Tractate, amud: int, pdf: str, taken: dict[str, set]) -> t
                          re.sub("[^א-ת'\"׳״.,:;()\\[\\] -]", "", text).strip(), lead]
                         for z, a, t, c, b, text, lead in book
                         if x0 <= a and c <= x1 and y0 <= t and b <= y1
+                        and not norm(text).startswith(norm("הדרן עלך"))
                         # De vrais mots : un renvoi entre crochets (« [פ"ג ה"ה] ») est une note d'éditeur.
                         and len(re.findall("[א-ת]{3}", text)) >= 2]
         if not page["fill"]:
