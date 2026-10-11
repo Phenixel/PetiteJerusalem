@@ -1458,34 +1458,53 @@ def grams(words: list[str]) -> set[tuple[str, ...]]:
     return {tuple(words[i: i + 3]) for i in range(len(words) - 2)}
 
 
-def book_lines(placed: dict, kept: dict, side_size: int) -> list[list]:
+def book_lines(placed: dict, kept: dict, side_size: int, strangers: list | None = None) -> list[list]:
     """Ce que le livre imprime dans nos colonnes et que notre texte n'a pas.
 
     Le texte de Sefaria n'est pas toujours celui de la page : il lui manque
     des mots, parfois un paragraphe. La page ligne pour ligne laisserait un
     blanc. On y écrit alors le texte du livre lui-même, à sa place :
-      - une ligne entière sans aucun de nos mots, prise entre deux lignes
-        de notre commentaire dans la même colonne ;
+      - une ligne entière sans aucun de nos mots, dans les colonnes de la
+        page (entre ses bords, là où sont Rachi et Tossafot) : un Tossafot
+        entier que Sefaria ne donne pas, le Rachbam de Pessa'him. Une note
+        de marge est hors de ces bords : elle ne s'écrit pas ;
       - le bout d'une ligne (deux mots ou plus à son bord) que notre texte
         n'a pas : la ligne garde sa part, le bout s'écrit à côté.
     [zone, gauche, haut, droite, bas, texte, mots de dibbour]."""
     out = []
+    every = [line for zone in ("main", "rashi", "tosafot") for line, _ in kept[zone]]
+    if not every:
+        return out
+    lo, hi = min(l.left for l in every), max(l.right for l in every)
+    top, bottom = min(l.top for l in every), max(l.bottom for l in every)
+    sides = sorted(line.bottom - line.top for zone in ("rashi", "tosafot") for line, _ in kept[zone])
+    height = sides[len(sides) // 2] if sides else 0
+    taken: list = []
+
+    def whole(line: PrintedLine, z: int) -> None:
+        """Une ligne entière du livre, si elle est dans les colonnes de la page."""
+        if sum(1 for w in line.words if len(re.findall("[א-ת]", w)) >= 3) < 2:
+            return
+        if not (lo - 2 <= line.left and line.right <= hi + 2 and top - 2 <= line.top and line.bottom <= bottom + 40):
+            return
+        # Ni par-dessus une ligne que la page a déjà (une rangée mal coupée),
+        # ni dans un corps plus petit que celui des commentaires (une glose).
+        if line.bottom - line.top < 0.8 * height:
+            return
+        if any(min(m.right, line.right) - max(m.left, line.left) > 4
+               and min(m.bottom, line.bottom) - max(m.top, line.top) > 4 for m in every + taken):
+            return
+        taken.append(line)
+        lead = next((k for k, flag in enumerate(line.lead) if not flag), len(line.lead))
+        out.append([z, line.left, line.top, line.right, line.bottom, " ".join(line.words), lead])
+
+    for line in strangers or []:
+        whole(line, 1 if line.owner == "rashi" else 2)
     for z, zone in ((1, "rashi"), (2, "tosafot")):
-        ours = [line for line, _ in kept[zone]]
-        mine = {id(line) for line in ours}
+        mine = {id(line) for line, _ in kept[zone]}
         for line, runs in zip(placed[zone].lines, placed[zone].runs):
-            if runs or id(line) in mine or sum(1 for w in line.words if len(norm(w)) > 1) < 2:
-                continue
-            tall = line.bottom - line.top
-
-            def beside(a: PrintedLine, reach: float) -> bool:
-                return min(a.right, line.right) - max(a.left, line.left) > 0 and abs(a.top - line.top) <= reach
-
-            # Entre deux lignes à nous, dans sa colonne, à quelques lignes de là.
-            if any(beside(a, 12 * tall) and a.top < line.top for a in ours) \
-                    and any(beside(a, 12 * tall) and a.top > line.top for a in ours):
-                lead = next((k for k, flag in enumerate(line.lead) if not flag), len(line.lead))
-                out.append([z, line.left, line.top, line.right, line.bottom, " ".join(line.words), lead])
+            if not runs and id(line) not in mine:
+                whole(line, z)
         for k, (line, runs) in enumerate(kept[zone]):
             if len(line.flags) != len(line.words) or len(line.spans) != len(line.words) or not any(line.flags):
                 continue
@@ -1794,7 +1813,8 @@ def page_at(tractate: Tractate, amud: int, pdf: str, taken: dict[str, set]) -> t
     letters = "".join(w for zone in ("rashi", "tosafot") for l in placed[zone].lines for w in l.words)
     hebrew = sum(1 for ch in letters if "א" <= ch <= "ת")
     nuns = sum(1 for ch in letters if ch in "נן")
-    book = book_lines(placed, kept, printed.sizes["side"]) if hebrew > 200 and nuns >= 0.03 * hebrew else []
+    strangers = [l for l in printed.right + printed.left + printed.wide if id(l) in others]
+    book = book_lines(placed, kept, printed.sizes["side"], strangers) if hebrew > 200 and nuns >= 0.03 * hebrew else []
     closing = closing_lines(printed.sizes["main"], ours_main, kept["main"])
     kept["main"] = [(l, runs) for l, runs in kept["main"] if runs]
     initials = initial_words(pdf, printed.sizes["main"], ours_main, kept["main"])
