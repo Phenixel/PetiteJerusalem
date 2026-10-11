@@ -22,6 +22,7 @@ donc toujours aucun mot, seulement des places et des boîtes.
 
 from __future__ import annotations
 
+from types import SimpleNamespace
 import argparse
 import html
 import json
@@ -1399,6 +1400,31 @@ def place(ours: list[Token], lines: list[PrintedLine], ahead: list[Token] | None
                     moved = True
         if not moved:
             break
+    # Puis vers une ligne restée vide : nos mots de la ligne d'après (ou
+    # d'avant) se sont posés sur celle-ci, qui en est écrasée, et la ligne du
+    # livre reste blanche. Ils y retournent quand ce sont bien ses mots.
+    for k in range(len(lines)):
+        if used[k] <= 1.3 * room[k] + 2:
+            continue
+        for e in range(len(lines)):
+            if used[e] or room[e] < 4 or e == k:
+                continue
+            below = 0 < lines[e].top - lines[k].top < 2.2 * (lines[k].bottom - lines[k].top)
+            above = 0 < lines[k].top - lines[e].top < 2.2 * (lines[k].bottom - lines[k].top)
+            if not (below or above) or min(lines[e].right, lines[k].right) - max(lines[e].left, lines[k].left) <= 0:
+                continue
+            mine = sorted(i for i, at in line_of.items() if at == k)
+            theirs = [norm(w) for w in lines[e].words if norm(w)]
+            for m in range(min(len(mine) - 1, len(theirs)), 0, -1):
+                part = mine[-m:] if below else mine[:m]
+                want = theirs[:m] if below else theirs[-m:]
+                same = sum(1 for i, w in zip(part, want) if norm(everything[i].text) == w)
+                if same >= 0.6 * m and 2 * m >= len(theirs) and part[-1] - part[0] == m - 1:
+                    for i in part:
+                        line_of[i] = e
+                        used[k] -= letters[i]
+                        used[e] += letters[i]
+                    break
     # Ce qui reste trop chargé l'est par nos mots eux-mêmes : notre texte
     # écrit en toutes lettres ce que le livre abrège (« המע"ה »). Sur ces
     # lignes-là, et sur elles seules, la page écrit l'abréviation du livre.
@@ -1506,13 +1532,34 @@ def book_lines(placed: dict, kept: dict, side_size: int, strangers: list | None 
         lead = next((k for k, flag in enumerate(line.lead) if not flag), len(line.lead))
         out.append([z, line.left, line.top, line.right, line.bottom, " ".join(line.words), lead])
 
-    for line in strangers or []:
-        whole(line, 1 if line.owner == "rashi" else 2)
+    # Les lignes sans aucun de nos mots. Une ligne que rien n'a retenue est
+    # souvent en morceaux (un blanc pris pour une gouttière) : les morceaux
+    # d'une même rangée qui se touchent se recollent avant de s'écrire.
+    loose = [(1 if line.owner == "rashi" else 2, line) for line in strangers or []]
     for z, zone in ((1, "rashi"), (2, "tosafot")):
         mine = {id(line) for line, _ in kept[zone]}
-        for line, runs in zip(placed[zone].lines, placed[zone].runs):
-            if not runs and id(line) not in mine:
-                whole(line, z)
+        loose += [(z, line) for line, runs in zip(placed[zone].lines, placed[zone].runs)
+                  if not runs and id(line) not in mine]
+    loose.sort(key=lambda pair: (round(pair[1].top / 4), -pair[1].right))
+    rows: list[list] = []
+    for z, line in loose:
+        last = rows[-1][-1][1] if rows else None
+        if last is not None and abs(last.top - line.top) < 4 and 0 <= last.left - line.right < 1.5 * height \
+                and not any(min(m.right, last.left) - max(m.left, line.right) > 2
+                            and abs(m.top - line.top) < 4 for m in every):
+            rows[-1].append((z, line))
+        else:
+            rows.append([(z, line)])
+    for row in rows:
+        if len(row) == 1:
+            whole(row[0][1], row[0][0])
+            continue
+        parts = [line for _, line in row]
+        whole(SimpleNamespace(left=min(l.left for l in parts), right=max(l.right for l in parts),
+                              top=min(l.top for l in parts), bottom=max(l.bottom for l in parts),
+                              words=[w for l in parts for w in l.words],
+                              lead=[f for l in parts for f in l.lead]), row[0][0])
+    for z, zone in ((1, "rashi"), (2, "tosafot")):
         for k, (line, runs) in enumerate(kept[zone]):
             if len(line.flags) != len(line.words) or len(line.spans) != len(line.words) or not any(line.flags):
                 continue
