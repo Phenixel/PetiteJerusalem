@@ -436,7 +436,8 @@ def side_closings(side_size: int, formulas: dict[str, list[list[Token]]], kept: 
         mine = next((f for f in formulas[zone] if [norm(t.text) for t in f][:len(words)] == words[:len(f)]), None)
         if mine is not None:
             formulas[zone].remove(mine)
-            out.append([z, left, top, right, bottom, mine[0].unit, mine[0].passage, mine[0].word, len(mine)])
+            out.append([z, left, top, right, bottom, mine[0].unit, mine[0].passage, mine[0].word,
+                        min(len(mine), len(words))])
             continue
         # Notre commentaire ne porte pas la formule : ce sont les mots de
         # celle de la guemara, sur la même page (zone 3 : écrite sous un
@@ -1510,6 +1511,10 @@ def book_lines(placed: dict, kept: dict, side_size: int, strangers: list | None 
                 continue
             first = next(i for i, flag in enumerate(line.flags) if flag)
             last = len(line.flags) - 1 - next(i for i, flag in enumerate(reversed(line.flags)) if flag)
+            # Ce qui reste de la ligne doit pouvoir tenir nos mots : sinon la
+            # ligne garde toute sa largeur (vingt mots dans la boîte d'un seul).
+            if sum(r[3] for r in runs) > 1.3 * (last + 1 - first) + 1:
+                continue
             # Au début de la ligne (à droite), puis à sa fin (à gauche).
             for a, b in ((0, first), (last + 1, len(line.words))):
                 words = line.words[a:b]
@@ -1801,7 +1806,12 @@ def page_at(tractate: Tractate, amud: int, pdf: str, taken: dict[str, set]) -> t
                     runs.pop()
                 if n <= 1.3 * usual * width + 2:
                     break
+            # Une boîte d'une lettre ou deux qui porterait encore un mot
+            # entier (un renvoi ajouté par Sefaria) : ce n'est pas une ligne.
+            if zone != "main" and n > 3 * usual * width + 2:
+                runs = []
             pairs[k] = (line, runs)
+        kept[zone] = [(line, runs) for line, runs in pairs if runs]
     # Un bout de ligne d'un ou deux mots, venus d'une autre page et posés là
     # par hasard (un renvoi isolé en tête de page) : ce n'est pas une ligne.
     for zone in ("rashi", "tosafot"):
@@ -1819,6 +1829,9 @@ def page_at(tractate: Tractate, amud: int, pdf: str, taken: dict[str, set]) -> t
     kept["main"] = [(l, runs) for l, runs in kept["main"] if runs]
     initials = initial_words(pdf, printed.sizes["main"], ours_main, kept["main"])
     kept["main"] = [(l, runs) for l, runs in kept["main"] if runs]
+    # Une boîte moins large qu'une lettre n'est pas une ligne (un signe isolé).
+    for zone in ("rashi", "tosafot"):
+        kept[zone] = [(l, runs) for l, runs in kept[zone] if l.right - l.left >= 0.6 * printed.sizes["side"]]
     every = [l for zone in ("main", "rashi", "tosafot") for l, _ in kept[zone]]
     if not every:
         return None
