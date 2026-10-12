@@ -394,6 +394,48 @@ plus bas encore. Sans quoi tout se vaudrait et la carte ne se lirait plus.
 Les dates passées, elles, gardent leur effacement : s'effacer et ressortir
 sont deux moyens opposés, ils ne se gênent pas.
 
+### Une carte mise en avant peut porter son objet
+
+La carte du moment dit déjà, par sa couleur, qu'on vient la chercher. Une
+occasion rare y ajoute son objet, dessiné aux couleurs du vrai : la lune les
+nuits de la bénédiction, la 'hanoukkia les soirs de 'Hanouka
+(`CardArt.vue`). Ces couleurs tranchent sur tout le reste de l'app, qui
+n'est fait que des tons du thème : c'est ce qu'on veut, un objet qui se
+reconnaît d'un coup d'œil avant qu'on ait lu le nom.
+
+- **Dans un coin bas de la carte**, du côté de la fin de ligne (la droite en
+  français, la gauche en hébreu), et **jamais dehors, sauf par le haut** :
+  l'objet reste dans la carte sur trois côtés et ne déborde que du bord
+  haut, d'une vingtaine de pixels. La lune dépasse comme elle monterait
+  au-dessus d'un toit ; les bougies et leurs flammes passent la ligne de la
+  carte. Le texte lui laisse sa place (une marge de fin), il ne passe jamais
+  dessus.
+- **La forme suit le jour.** La lune est à sa phase du soir (son âge depuis
+  le molad, `moonAge`) : gibbeuse le 10 du mois, presque pleine le 14,
+  éclairée par la droite comme on la voit croître depuis la France ; sa part
+  sombre est un voile à peine plus clair que le fond, la lumière cendrée. La
+  'hanoukkia porte autant de bougies que le soir en compte, posées de droite
+  à gauche, plus le chamach ; allumées le soir venu, éteintes quand la carte
+  annonce l'allumage de ce soir.
+- **Elle se lève une fois.** À sa première apparition de la session, la
+  lune monte en biais depuis le coin bas, le bord bas de la carte faisant
+  l'horizon ; la 'hanoukkia monte droit, puis s'allume dans l'ordre où on
+  l'allume : le chamach, la bougie du soir (la plus à gauche), puis les
+  autres vers la droite. Revenir sur la page la trouve à sa place, sans
+  mouvement (voir « Le mouvement répond à un geste » : c'est la seule
+  arrivée qui bouge, parce que c'est l'objet lui-même qui arrive). Le bandeau
+  de l'accueil et la carte du Sidour ont chacun leur lever. Jamais en
+  mouvement réduit, ni en rendu dégradé (`perf-lite`).
+- **En aplats.** Deux ou trois tons par matière (la face et l'ombre de
+  l'argent, la cire et son flanc, la flamme et son cœur), jamais de dégradé.
+
+Sur l'accueil, le bandeau de la bénédiction de la lune porte la même lune,
+plus petite, sur sa surface claire : elle y prend des tons un peu plus
+soutenus pour se détacher du blanc.
+
+Un objet de plus (le loulav et l'etrog de Souccot, le chofar d'Eloul) se
+dessine dans `CardArt.vue`, avec les mêmes règles.
+
 ### Le Sidour s'ouvre sur le moment
 
 Ce qu'on dit (les tefilot, les brahot, les textes des fêtes) vivait dans trois
@@ -405,21 +447,28 @@ geste ne change pas, il mène plus vite.
 La page tient en trois étages (`SidourPage.vue`) :
 
 - **le moment**, en carte pleine couleur, la seule de la page (voir « Ce qu'on
-  vient chercher prend la couleur, pleine ») : l'office dont c'est l'heure,
-  avec l'heure jusqu'à laquelle il se dit et, en pastilles, ce que le jour y
-  ajoute (Ya'alé véyavo, Hallel, Moussaf, 'Al hanissim, Ata 'honantanou, le
-  compte du 'Omer...), les mêmes occasions que celles qui colorent le texte
-  (voir « Ce que le jour ajoute dans une tefila »). Entre deux plages, la
-  carte annonce l'office qui vient plutôt que de disparaître : sur l'accueil,
-  une carte vide se retire ; ici, c'est la raison d'être de la page. Un soir de
-  'Hanouka, l'allumage passe devant l'office ; une nuit de Sli'hot, de
-  'hatsot au lever du soleil, les Sli'hot ;
-- **ce qui se dit aussi maintenant**, deux ou trois lignes au plus sous la
-  carte : l'office quand l'allumage ou les Sli'hot l'ont précédé, la havdala
-  le soir où sort un Chabbat ou une fête, la bénédiction de la lune quand sa
-  fenêtre est ouverte, le loulav et les Hochanot de Souccot, le Chema du
-  coucher et le tikoun 'hatsot la nuit. Au-delà de trois, ce n'est plus un
-  rappel mais une liste, et la liste est dessous ;
+  vient chercher prend la couleur, pleine ») : **une seule chose**, la plus
+  importante à cette heure. L'office dont c'est l'heure, avec l'heure jusqu'à
+  laquelle il se dit et, en pastilles, ce que le jour y ajoute (Ya'alé
+  véyavo, Hallel, Moussaf, 'Al hanissim, Ata 'honantanou, le compte du
+  'Omer...), les mêmes occasions que celles qui colorent le texte (voir « Ce
+  que le jour ajoute dans une tefila »). Une occasion rare passe devant
+  l'office de tous les jours : l'allumage un soir de 'Hanouka, les Sli'hot de
+  'hatsot au lever du soleil, la bénédiction de la lune les nuits où elle se
+  dit (une dizaine par mois, et elle se rate faute de rappel). Entre deux
+  offices, la fête en cours prend la carte s'il y a un texte à dire
+  maintenant ou cette nuit (le loulav jusqu'à la chkia, l'allumage du soir,
+  les Sli'hot de la nuit) ; sinon la carte annonce l'office qui vient plutôt
+  que de disparaître : sur l'accueil, une carte vide se retire ; ici, c'est la
+  raison d'être de la page ;
+- **une ligne dessous, au plus**, et seulement un soir d'occasion : l'office
+  sous l'allumage, les Sli'hot ou la lune, qui l'ont précédé dans la carte ;
+  la havdala le soir où sort un Chabbat ou une fête. Les autres jours, rien.
+  La carte annonçait d'abord jusqu'à trois lignes (le Chema du coucher, le
+  tikoun 'hatsot, le loulav, les Hochanot) : trois mises en avant, c'était
+  n'en faire aucune, et à Souccot le loulav et les Hochanot se répétaient
+  au-dessus de la liste de la fête, qui remonte juste en dessous. L'office
+  seul tient la carte ; le reste est un geste plus bas ;
 - **tous les textes**, en une liste, sans les livres qui les séparaient, mais
   pas sans repères : de légers intertitres par usage (les offices, le soir,
   les brahot, les occasions, les étapes de la vie), puis les fêtes en bas. Le
@@ -547,7 +596,10 @@ Ce qui ne bouge pas : l'arrivée sur une page (au-delà du simple fondu déjà e
 place), un état déjà là au chargement (un livre téléchargé hier n'anime pas sa
 coche), et tout ce qui changerait sans qu'on ait rien fait. Les livres qui se
 posent un à un sur l'étagère restent l'exception déjà admise, de loin en loin
-(voir `useShelfIntro`).
+(voir `useShelfIntro`), avec une seconde : l'objet d'une carte mise en avant
+(la lune qui se lève, la 'hanoukkia qui s'allume), une fois par session et
+par carte, parce que c'est l'occasion elle-même qui arrive (voir « Une carte
+mise en avant peut porter son objet »).
 
 Tout se coupe quand le système demande moins d'animations, et sur une petite
 machine (`perf-lite`) : l'état final s'affiche d'emblée, rien ne manque, seul
@@ -1241,6 +1293,12 @@ côte, à plat.
 Deux couleurs échappent au thème, parce qu'elles disent un état et non un
 goût : le danger (rouge, `.btn-danger`) et l'échéance qui approche (ambre).
 Elles ne bougent pas quand on change de thème.
+
+Les objets dessinés sur une carte mise en avant (la lune, la 'hanoukkia, voir
+« Une carte mise en avant peut porter son objet ») échappent aussi au thème :
+ils ont les couleurs du vrai, l'argent, la cire, la flamme, la lune. Elles
+vivent dans `CardArt.vue`, en variables de ce seul composant, et restent des
+aplats : pas de dégradé pour arrondir une lune.
 
 ### La sélection prend la couleur du thème
 

@@ -22,6 +22,7 @@
 import { computed, onMounted, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import AppIcon from "../components/icons/AppIcon.vue";
+import CardArt, { type CardArtSpec } from "../components/CardArt.vue";
 import type { IconName } from "../components/icons/registry";
 import KotelCompass from "../components/KotelCompass.vue";
 import NaanouimCompass from "../components/NaanouimCompass.vue";
@@ -36,12 +37,14 @@ import { useLocalePath } from "../composables/useLocalePath";
 import { isNativeApp } from "../composables/useNativeApp";
 import { localeMessagesReady } from "../i18n";
 import {
+  MOMENT_TEXTS,
   sidourMoment,
   type SidourAddition,
   type SidourExtra,
   type SidourHero,
 } from "../services/sidourMoment";
 import {
+  FEAST_LABEL_KEYS,
   sidourSections,
   sidourText,
   type SidourSection,
@@ -118,26 +121,29 @@ function additionLabel(addition: SidourAddition): string {
 }
 
 const tefilaName = (tefila: TefilaKey) => t(`home.sidourNow.names.${tefila}`);
+/** Le nom d'un texte sur la carte : l'hébreu du catalogue en hébreu, sinon le latin. */
+const textName = (text: SidourText) => (locale.value === "he" ? text.hebrew : text.latin);
 
 const hero = computed(() => {
   const h = moment.value.hero;
   if (!h) return null;
   const text = sidourText(h.text);
   if (!text) return null;
-  const kicker =
-    h.kind === "hanouka"
-      ? t("sidour.tonight")
-      : h.kind === "next-tefila"
-        ? t("sidour.next")
-        : t("sidour.now");
-  const day = h.day && !(h.kind === "hanouka") ? ` · ${t(DAY_LABELS[h.day])}` : "";
-  const name = h.tefila ? tefilaName(h.tefila) : text.latin;
+  let kicker = t("sidour.now");
+  if (h.kind === "hanouka") kicker = t("sidour.tonight");
+  else if (h.kind === "halevana") kicker = t("sidour.thisNight");
+  else if (h.kind === "next-tefila") kicker = t("sidour.next");
+  else if (h.kind === "feast" && h.feast) kicker = t(FEAST_LABEL_KEYS[h.feast]);
+  const day = h.day && h.kind !== "hanouka" ? ` · ${t(DAY_LABELS[h.day])}` : "";
+  const name = h.tefila ? tefilaName(h.tefila) : textName(text);
   let meta = "";
   if (h.kind === "tefila") meta = t("sidour.until", { time: time(h.end) });
   else if (h.kind === "next-tefila") meta = t("sidour.from", { time: time(h.start) });
   else if (h.kind === "slihot") meta = t("sidour.slihot.now", { time: time(h.end) });
-  else if (h.kind === "hanouka") {
-    const n = h.night ?? 1;
+  else if (h.kind === "halevana" && h.until)
+    meta = t("sidour.halevana.until", { date: formatHebrewDate(h.until, locale.value) });
+  else if (h.night) {
+    const n = h.night;
     meta = h.beforeShabbat
       ? n === 1
         ? t("sidour.hanouka.beforeShabbatOne", { time: time(h.beforeShabbat) })
@@ -145,11 +151,19 @@ const hero = computed(() => {
       : n === 1
         ? t("sidour.hanouka.nightOne")
         : t("sidour.hanouka.night", { n });
-  }
+  } else if (h.text === MOMENT_TEXTS.loulav) meta = t("sidour.loulav.until", { time: time(h.end) });
+  else if (h.text === MOMENT_TEXTS.slihot)
+    meta = t("sidour.slihot.tonight", { start: time(h.start), end: time(h.end) });
+
+  // L'objet de l'occasion, dessiné dans la carte (voir CardArt).
+  let art: CardArtSpec | null = null;
+  if (h.kind === "halevana" && h.moonAge !== undefined) art = { kind: "moon", age: h.moonAge };
+  else if (h.night) art = { kind: "hanoukia", night: h.night, lit: h.kind === "hanouka" };
+
   const icon: IconName = h.tefila
     ? TEFILA_ICONS[h.tefila]
-    : h.kind === "hanouka"
-      ? "candle"
+    : h.text === MOMENT_TEXTS.loulav
+      ? "book-open"
       : "moon";
   return {
     kind: h.kind,
@@ -159,70 +173,38 @@ const hero = computed(() => {
     name,
     meta,
     icon,
+    art,
     additions: h.additions.map(additionLabel),
   };
 });
 
-// --- Ce qui se dit aussi maintenant ---------------------------------------
-const EXTRA_ICONS: Record<SidourExtra["key"], IconName> = {
-  tefila: "sun",
-  havdala: "candle",
-  halevana: "moon",
-  loulav: "book-open",
-  hochanot: "book-open",
-  slihot: "moon",
-  chema: "moon",
-  tikoun: "moon",
-};
-
+// --- La ligne dessous, un soir d'occasion ------------------------------------
 function extraMeta(extra: SidourExtra): string {
-  switch (extra.key) {
-    case "tefila": {
-      const when = extra.now
-        ? t("sidour.until", { time: time(extra.end) })
-        : t("sidour.from", { time: time(extra.start) });
-      const adds = (extra.additions ?? []).map(additionLabel).join(", ");
-      const sentence = `${when.charAt(0).toLocaleUpperCase(locale.value)}${when.slice(1)}`;
-      return adds ? `${sentence} · ${adds}` : sentence;
-    }
-    case "havdala":
-      return extra.start
-        ? t("sidour.extras.havdala", { time: time(extra.start) })
-        : t("sidour.extras.havdalaPlain");
-    case "halevana":
-      return extra.until
-        ? t("sidour.extras.halevana", { date: formatHebrewDate(extra.until, locale.value) })
-        : "";
-    case "loulav":
-      return t("sidour.extras.loulav");
-    case "hochanot":
-      return t("sidour.extras.hochanot");
-    case "slihot":
-      return t("sidour.extras.slihot", { start: time(extra.start), end: time(extra.end) });
-    case "chema":
-      return t("sidour.extras.chema");
-    case "tikoun":
-      return extra.start && now.value.getTime() < extra.start.getTime()
-        ? t("sidour.extras.tikounFrom", { time: time(extra.start) })
-        : t("sidour.extras.tikounUntil", { time: time(extra.end) });
+  if (extra.key === "havdala") {
+    return extra.start
+      ? t("sidour.extras.havdala", { time: time(extra.start) })
+      : t("sidour.extras.havdalaPlain");
   }
+  const when = extra.now
+    ? t("sidour.until", { time: time(extra.end) })
+    : t("sidour.from", { time: time(extra.start) });
+  const adds = (extra.additions ?? []).map(additionLabel).join(", ");
+  const sentence = `${when.charAt(0).toLocaleUpperCase(locale.value)}${when.slice(1)}`;
+  return adds ? `${sentence} · ${adds}` : sentence;
 }
 
-const extras = computed(() =>
-  moment.value.extras
-    .map((extra) => {
-      const text = sidourText(extra.text);
-      if (!text) return null;
-      return {
-        key: text.key,
-        path: text.path,
-        name: extra.tefila ? tefilaName(extra.tefila) : text.latin,
-        meta: extraMeta(extra),
-        icon: extra.tefila ? TEFILA_ICONS[extra.tefila] : EXTRA_ICONS[extra.key],
-      };
-    })
-    .filter((extra) => extra !== null),
-);
+const extra = computed(() => {
+  const e = moment.value.extra;
+  const text = e ? sidourText(e.text) : null;
+  if (!e || !text) return null;
+  return {
+    key: text.key,
+    path: text.path,
+    name: e.tefila ? tefilaName(e.tefila) : textName(text),
+    meta: extraMeta(e),
+    icon: e.tefila ? TEFILA_ICONS[e.tefila] : ("candle" as IconName),
+  };
+});
 
 // --- Les outils ---------------------------------------------------------------
 // Les fenêtres sont montées avec la page, fermées : le miroir doit demander la
@@ -335,18 +317,22 @@ onMounted(() => {
     <RouterLink
       v-if="hero"
       :to="hero.path"
-      class="sidour-hero press-feedback block rounded-card bg-primary px-5 pt-4 pb-5 text-white"
+      class="sidour-hero press-feedback relative block rounded-card bg-primary px-5 pt-4 pb-5 text-white"
+      :class="{ 'pe-36 sm:pe-44': hero.art }"
       @click="trackOpen(hero, 'hero')"
     >
-      <span class="block text-sm font-semibold text-white/85">{{ hero.kicker }}</span>
-      <span class="mt-1 flex items-center justify-between gap-3">
+      <!-- L'objet de l'occasion, quand elle en a un : la lune, la 'hanoukkia.
+           Il prend la place du dessin de l'office. -->
+      <CardArt v-if="hero.art" :art="hero.art" :rise="26" />
+      <span class="relative block text-sm font-semibold text-white/85">{{ hero.kicker }}</span>
+      <span class="relative mt-1 flex items-center justify-between gap-3">
         <span class="font-display text-3xl font-bold leading-tight">{{ hero.name }}</span>
-        <AppIcon :name="hero.icon" :size="30" class="shrink-0" />
+        <AppIcon v-if="!hero.art" :name="hero.icon" :size="30" class="shrink-0" />
       </span>
-      <span class="mt-1 block text-[15px] font-medium text-white/90">{{ hero.meta }}</span>
+      <span class="relative mt-1 block text-[15px] font-medium text-white/90">{{ hero.meta }}</span>
       <span
         v-if="hero.additions.length"
-        class="mt-3 flex flex-wrap gap-1.5"
+        class="relative mt-3 flex flex-wrap gap-1.5"
         :aria-label="t('sidour.additions.label')"
       >
         <span
@@ -359,23 +345,21 @@ onMounted(() => {
       </span>
     </RouterLink>
 
-    <div v-if="extras.length" class="mt-3 flex flex-col gap-3">
-      <RouterLink
-        v-for="extra in extras"
-        :key="extra.key"
-        :to="extra.path"
-        class="card card-hover press-feedback group flex items-center gap-4 px-4 py-3.5"
-        @click="trackOpen(extra, 'extra')"
-      >
-        <AppIcon :name="extra.icon" :size="21" class="shrink-0 text-primary" />
-        <span class="flex flex-col gap-0.5 min-w-0">
-          <span class="font-semibold text-text-primary group-hover:text-primary transition-colors">
-            {{ extra.name }}
-          </span>
-          <span class="text-sm text-text-secondary">{{ extra.meta }}</span>
+    <!-- Une ligne dessous, au plus, et seulement un soir d'occasion. -->
+    <RouterLink
+      v-if="extra"
+      :to="extra.path"
+      class="card card-hover press-feedback group mt-3 flex items-center gap-4 px-4 py-3.5"
+      @click="trackOpen(extra, 'extra')"
+    >
+      <AppIcon :name="extra.icon" :size="21" class="shrink-0 text-primary" />
+      <span class="flex flex-col gap-0.5 min-w-0">
+        <span class="font-semibold text-text-primary group-hover:text-primary transition-colors">
+          {{ extra.name }}
         </span>
-      </RouterLink>
-    </div>
+        <span class="text-sm text-text-secondary">{{ extra.meta }}</span>
+      </span>
+    </RouterLink>
 
     <p class="mt-4 flex justify-center">
       <RouterLink

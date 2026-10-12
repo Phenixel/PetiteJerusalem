@@ -1824,17 +1824,16 @@ const fr = {
     },
     slihot: {
       now: "Avant Cha'harit, jusqu'au lever du soleil à {time}",
+      tonight: "Cette nuit, de {start} à {end}",
     },
+    // La carte de la lune, les nuits où elle se bénit.
+    thisNight: "Cette nuit",
+    halevana: { until: "Jusqu'au {date}" },
+    // Entre deux offices, à Souccot : le loulav se prend jusqu'à la chkia.
+    loulav: { until: "Jusqu'au coucher du soleil, à {time}" },
     extras: {
       havdala: "À la sortie, à {time}",
       havdalaPlain: "À la sortie du Chabbat",
-      halevana: "Cette nuit, jusqu'au {date}",
-      loulav: "Chaque jour de Souccot, hors Chabbat",
-      hochanot: "Après le Hallel de Cha'harit",
-      slihot: "Cette nuit, de {start} à {end}",
-      chema: "Avant de dormir",
-      tikounFrom: "À partir de {time}",
-      tikounUntil: "Jusqu'au lever du soleil, à {time}",
     },
     groups: {
       offices: "Les offices",

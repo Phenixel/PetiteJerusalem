@@ -1294,6 +1294,15 @@ export function birkatHalevanaWindow(hd: HDate): { start: Date; end: Date } {
 }
 
 /**
+ * L'âge de la lune à cet instant, en jours depuis le molad du mois de `hd` :
+ * ce que la lune dessinée sur les cartes de la bénédiction prend pour phase.
+ * La fenêtre de la bénédiction s'ouvre sept jours pleins après le molad.
+ */
+export function moonAge(hd: HDate, now: Date): number {
+  return (now.getTime() - birkatHalevanaWindow(hd).start.getTime()) / 86_400_000 + 7;
+}
+
+/**
  * Le premier jour d'Av dont la nuit d'ouverture suit la fin du jeûne. Le
  * 9 Av tombe-t-il un Chabbat, le jeûne est reporté au dimanche 10 : la nuit
  * qui ouvre le 10 est alors celle du jeûne, et la bénédiction attend celle du

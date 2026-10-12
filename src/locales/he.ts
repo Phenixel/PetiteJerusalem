@@ -1699,17 +1699,14 @@ const he: LocaleMessages = {
     },
     slihot: {
       now: "לפני שחרית, עד הנץ ב־{time}",
+      tonight: "הלילה, מ־{start} עד {end}",
     },
+    thisNight: "הלילה",
+    halevana: { until: "עד {date}" },
+    loulav: { until: "עד השקיעה, ב־{time}" },
     extras: {
       havdala: "במוצאי שבת, ב־{time}",
       havdalaPlain: "במוצאי שבת",
-      halevana: "הלילה, עד {date}",
-      loulav: "בכל יום מימי הסוכות, חוץ משבת",
-      hochanot: "אחרי ההלל בשחרית",
-      slihot: "הלילה, מ־{start} עד {end}",
-      chema: "לפני השינה",
-      tikounFrom: "החל מ־{time}",
-      tikounUntil: "עד הנץ, ב־{time}",
     },
     groups: {
       offices: "התפילות",

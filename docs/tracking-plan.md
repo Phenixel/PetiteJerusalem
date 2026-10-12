@@ -242,7 +242,7 @@ voir si l'on vient au Sidour à l'heure des offices.
 
 | Propriété | Valeurs | Statut |
 | --- | --- | --- |
-| `hero` | `chaharit`, `minha`, `arvit` (l'office dont c'est l'heure), `next_chaharit`, `next_minha`, `next_arvit` (celui qui vient, entre deux plages), `hanouka`, `slihot`, ou `null` | **nouveau** |
+| `hero` | `chaharit`, `minha`, `arvit` (l'office dont c'est l'heure), `next_chaharit`, `next_minha`, `next_arvit` (celui qui vient, entre deux plages), `hanouka`, `slihot`, `halevana` (la bénédiction de la lune, les nuits où elle se dit), `feast` (entre deux offices, le texte de la fête en cours ; `feast` dit laquelle), ou `null` | **nouveau** |
 | `feast` | la fête dont les textes remontent en tête : `tichri`, `souccot`, `hanouka`, ou `null` | **nouveau** |
 
 ### `sidour_text_opened` (nouveau)
@@ -253,7 +253,7 @@ et ce qu'on cherche dans la liste.
 | Propriété | Valeurs | Statut |
 | --- | --- | --- |
 | `text` | le texte, `corpus/slug` (`sidour/chaharit`, `brahot/birkat-hamazon`...) | **nouveau** |
-| `source` | `hero` (la carte du moment), `extra` (les lignes sous elle), `list` (la liste) | **nouveau** |
+| `source` | `hero` (la carte du moment), `extra` (la ligne sous elle, un soir d'occasion : l'office ou la havdala), `list` (la liste) | **nouveau** |
 | `section` | pour `list`, le groupe : `offices`, `soir`, `brahot`, `occasions`, `vie`, `fetes`, ou la fête en tête (`tichri`, `souccot`, `hanouka`) ; `null` sinon | **nouveau** |
 | `feast` | comme sur `sidour_viewed` | **nouveau** |
 

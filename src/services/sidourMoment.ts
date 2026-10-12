@@ -14,6 +14,7 @@ import {
   hebrewDayOf,
   isIsraelPlace,
   isWalledCityPlace,
+  moonAge,
   restPeriodAt,
   saysBirkatHalevana,
   slihotWindow,
@@ -24,9 +25,10 @@ import type { FeastId } from "../content/sidourGroups";
 import { orderTools, type SidourToolId } from "../content/sidourTools";
 
 /**
- * Ce que la page du Sidour met en tête, à l'heure qu'il est : le texte du
- * moment en carte pleine couleur, puis deux ou trois textes qui se disent
- * aussi maintenant, et la fête dont les textes remontent dans la liste.
+ * Ce que la page du Sidour met en tête, à l'heure qu'il est : un seul texte,
+ * celui du moment, en carte pleine couleur ; une ligne dessous au plus, et
+ * seulement un soir d'occasion (l'office sous l'allumage de 'Hanouka, la
+ * havdala sous Arvit) ; et la fête dont les textes remontent dans la liste.
  *
  * Tout se calcule sur l'appareil, au lieu des horaires, avec les mêmes règles
  * que le lecteur : les plages des offices de sidourService, les occasions de
@@ -70,9 +72,12 @@ export interface SidourHero {
   /**
    * `tefila` : l'office dont c'est l'heure ; `next-tefila` : celui qui vient,
    * entre deux plages ; `hanouka` : l'allumage du soir ; `slihot` : les
-   * Sli'hot, de 'hatsot au lever du soleil, en saison.
+   * Sli'hot, de 'hatsot au lever du soleil, en saison ; `halevana` : la
+   * bénédiction de la lune, les nuits où elle se dit ; `feast` : entre deux
+   * offices, le texte de la fête en cours (le loulav, l'allumage du soir, les
+   * Sli'hot de la nuit qui vient).
    */
-  kind: "tefila" | "next-tefila" | "hanouka" | "slihot";
+  kind: "tefila" | "next-tefila" | "hanouka" | "slihot" | "halevana" | "feast";
   /** Le texte qu'ouvre la carte, « corpus/slug » (voir sidourGroups). */
   text: string;
   tefila?: TefilaKey;
@@ -84,25 +89,34 @@ export interface SidourHero {
   night?: number;
   /** Vendredi de 'Hanouka : l'allumage se fait avant celui du Chabbat. */
   beforeShabbat?: Date;
+  /** `feast` : la fête dont la carte porte le texte. */
+  feast?: FeastId;
+  /** Birkat halevana : le dernier jour où on la dit. */
+  until?: HDate;
+  /** Birkat halevana : l'âge de la lune, en jours depuis le molad (son dessin). */
+  moonAge?: number;
 }
 
-/** Un texte qui se dit aussi maintenant, sous la carte du moment. */
+/**
+ * La ligne sous la carte, un soir d'occasion : l'office quand l'allumage, les
+ * Sli'hot ou la lune ont pris la carte, ou la havdala quand un Chabbat ou une
+ * fête sort.
+ */
 export interface SidourExtra {
-  key: "tefila" | "havdala" | "halevana" | "loulav" | "hochanot" | "slihot" | "chema" | "tikoun";
+  key: "tefila" | "havdala";
   text: string;
   tefila?: TefilaKey;
   /** L'office en cours (true) ou celui qui vient (false). */
   now?: boolean;
   start?: Date;
   end?: Date;
-  /** Birkat halevana : le dernier jour où on la dit. */
-  until?: HDate;
   additions?: SidourAddition[];
 }
 
 export interface SidourMoment {
   hero: SidourHero | null;
-  extras: SidourExtra[];
+  /** Au plus une ligne sous la carte, et pas tous les jours. */
+  extra: SidourExtra | null;
   /** La fête dont les textes remontent en tête de la liste. */
   feast: FeastId | null;
   /** Les outils proposés, celui du moment devant (voir content/sidourTools). */
@@ -114,18 +128,12 @@ export const MOMENT_TEXTS = {
   chaharit: "sidour/chaharit",
   minha: "sidour/minha",
   arvit: "sidour/arvit",
-  chema: "sidour/chema-al-hamita",
-  tikoun: "sidour/tikoun-hatsot",
   havdala: "sidour/havdala",
   halevana: "brahot/birkat-halevana",
   hanouka: "moadim/nerot-hanouka",
   loulav: "moadim/netilat-loulav",
-  hochanot: "moadim/hochanot",
   slihot: "moadim/slihot",
 } as const;
-
-/** Au plus trois textes sous la carte : au-delà, ce n'est plus un rappel. */
-const MAX_EXTRAS = 3;
 
 /**
  * Le miroir passe devant une heure avant que s'ouvre Cha'harit : les
@@ -294,7 +302,7 @@ function havdalaEvening(
 function momentTools(
   place: ZmanimPlace,
   now: Date,
-  hero: SidourHero | null,
+  office: { tefila: TefilaKey; start: Date; current: boolean } | null,
   day: boolean,
 ): SidourToolId[] {
   const first: SidourToolId[] = [];
@@ -306,9 +314,9 @@ function momentTools(
   if (todayOccasions.has("sukkot") || eveningOccasions.has("sukkot")) inSeason.add("naanouim");
   if (day && todayOccasions.has("sukkot") && today.getDay() !== 6) first.push("naanouim");
 
-  if (hero?.tefila === "chaharit" && hero.start) {
-    const soon = hero.kind === "tefila" || hero.start.getTime() - now.getTime() <= MIRROR_LEAD_MS;
-    const occasions = occasionsOf(place, tefilaHebrewDay(place, "chaharit", hero.start));
+  if (office?.tefila === "chaharit") {
+    const soon = office.current || office.start.getTime() - now.getTime() <= MIRROR_LEAD_MS;
+    const occasions = occasionsOf(place, tefilaHebrewDay(place, "chaharit", office.start));
     const withoutTefilin = ["shabbat", "yom-tov", "hol-hamoed", "tisha-beav"].some((key) =>
       occasions.has(key),
     );
@@ -318,14 +326,41 @@ function momentTools(
   return orderTools(first, inSeason);
 }
 
+/**
+ * Le moment, par ordre de priorité. La carte prend le premier qui vaut :
+ *
+ * 1. l'allumage de 'Hanouka, le soir ;
+ * 2. les Sli'hot, de 'hatsot au lever du soleil, en saison ;
+ * 3. la bénédiction de la lune, les nuits où elle se dit : elle revient
+ *    une dizaine de nuits par mois et se rate faute de rappel, quand Arvit,
+ *    lui, se dit chaque soir ;
+ * 4. l'office dont c'est l'heure ;
+ * 5. entre deux offices, le texte de la fête en cours, s'il y en a un qui se
+ *    dit maintenant ou cette nuit ;
+ * 6. l'office qui vient.
+ *
+ * Une ligne dessous, au plus, et seulement sous une occasion : la havdala le
+ * soir où sort un Chabbat ou une fête, sinon l'office sous les trois
+ * premières. Le reste (le Chema du coucher, le loulav, les Hochanot) est dans
+ * la liste, juste en dessous, et la fête en cours y remonte en tête : le
+ * répéter au-dessus en faisait trois cartes pour une.
+ */
 export function sidourMoment(place: ZmanimPlace, now: Date = new Date()): SidourMoment {
   const t = now.getTime();
   const times = new Map(computeZmanim(place, now).map((z) => [z.key, z.date]));
   const evening = hebrewDateFor(place, now, now);
-  const extras: SidourExtra[] = [];
+  const today = hebrewDayOf(place, now);
+  const feast = currentFeast(evening);
   let hero: SidourHero | null = null;
 
-  // 'Hanouka : l'allumage passe devant l'office du soir.
+  const sunrise = times.get("sunrise");
+  const sunset = times.get("sunset");
+  const tzeit = times.get("tzeit");
+  const misheyakir = times.get("misheyakir");
+  const night = (!!tzeit && t >= tzeit.getTime()) || (!!misheyakir && t < misheyakir.getTime());
+  const day = !!sunrise && !!sunset && t >= sunrise.getTime() && t < sunset.getTime();
+
+  // 1. 'Hanouka : l'allumage passe devant l'office du soir.
   const hanouka = hanoukaEvening(place, now, times);
   if (hanouka) {
     hero = {
@@ -338,7 +373,7 @@ export function sidourMoment(place: ZmanimPlace, now: Date = new Date()): Sidour
     };
   }
 
-  // Les Sli'hot, de 'hatsot au lever du soleil, les matins de la saison.
+  // 2. Les Sli'hot, de 'hatsot au lever du soleil, les matins de la saison.
   const slihot = slihotWindow(place, now);
   const slihotSeason = !!slihot && isSlihotMorning(hebrewDayOf(place, slihot.end));
   if (!hero && slihot && slihotSeason && slihot.tonight && t >= slihot.start.getTime()) {
@@ -353,84 +388,104 @@ export function sidourMoment(place: ZmanimPlace, now: Date = new Date()): Sidour
     };
   }
 
-  // L'office en cours, ou celui qui vient.
+  // 3. La lune, les nuits où on la bénit.
+  if (!hero && night && saysBirkatHalevana(place, evening)) {
+    hero = {
+      kind: "halevana",
+      text: MOMENT_TEXTS.halevana,
+      day: null,
+      additions: [],
+      until: birkatHalevanaLastDay(place, evening),
+      moonAge: moonAge(evening, now),
+    };
+  }
+
+  // 4. L'office en cours ; 6. celui qui vient.
   const current = currentTefilaWindow(place, now);
   const window = current ?? nextTefilaWindow(place, now);
-  if (window) {
-    const office = officeOf(place, window);
-    if (!hero) {
-      hero = {
-        kind: current ? "tefila" : "next-tefila",
-        text: MOMENT_TEXTS[office.tefila],
-        ...office,
-      };
-    } else {
-      extras.push({
-        key: "tefila",
-        text: MOMENT_TEXTS[office.tefila],
-        tefila: office.tefila,
-        now: !!current,
-        start: office.start,
-        end: office.end,
-        additions: current ? office.additions : [],
-      });
-    }
+  const office = window ? officeOf(place, window) : null;
+  const occasion = hero !== null;
+  if (!hero && office && current) {
+    hero = { kind: "tefila", text: MOMENT_TEXTS[office.tefila], ...office };
   }
 
-  const sunrise = times.get("sunrise");
-  const sunset = times.get("sunset");
-  const tzeit = times.get("tzeit");
-  const misheyakir = times.get("misheyakir");
-  const chatzot = times.get("chatzot");
-  const night = (!!tzeit && t >= tzeit.getTime()) || (!!misheyakir && t < misheyakir.getTime());
-  const day = !!sunrise && !!sunset && t >= sunrise.getTime() && t < sunset.getTime();
+  // 5. Entre deux offices, la fête.
+  if (!hero && feast) hero = feastHero(place, now, feast, today, day, slihot, slihotSeason);
 
-  const havdala = havdalaEvening(place, now, times);
-  if (havdala) extras.push(havdala);
-
-  if (night && saysBirkatHalevana(place, evening)) {
-    extras.push({
-      key: "halevana",
-      text: MOMENT_TEXTS.halevana,
-      until: birkatHalevanaLastDay(place, evening),
-    });
+  if (!hero && office) {
+    hero = { kind: "next-tefila", text: MOMENT_TEXTS[office.tefila], ...office };
   }
 
-  // Souccot : le loulav le jour, les Hochanot le matin, après le Hallel.
-  if (day) {
-    const occasions = occasionsOf(place, hebrewDayOf(place, now));
-    if (occasions.has("loulav")) extras.push({ key: "loulav", text: MOMENT_TEXTS.loulav });
-    const morning = !!chatzot && t < chatzot.getTime();
-    if (morning && occasions.has("sukkot") && !occasions.has("shemini-atzeret"))
-      extras.push({ key: "hochanot", text: MOMENT_TEXTS.hochanot });
+  // La ligne dessous : la havdala d'abord, sinon l'office sous une occasion.
+  let extra: SidourExtra | null = havdalaEvening(place, now, times);
+  if (!extra && occasion && office) {
+    extra = {
+      key: "tefila",
+      text: MOMENT_TEXTS[office.tefila],
+      tefila: office.tefila,
+      now: !!current,
+      start: office.start,
+      end: office.end,
+      additions: current ? office.additions : [],
+    };
   }
-
-  // Les Sli'hot de la nuit qui vient, annoncées dès la chkia.
-  const afterSunset = !!sunset && t >= sunset.getTime();
-  if (hero?.kind !== "slihot" && slihot && slihotSeason && afterSunset) {
-    extras.push({ key: "slihot", text: MOMENT_TEXTS.slihot, start: slihot.start, end: slihot.end });
-  }
-
-  // La nuit : le Chema du coucher, et le tikoun 'hatsot (pas les nuits de
-  // Chabbat ni de fête, où il ne se dit pas).
-  if (night) {
-    extras.push({ key: "chema", text: MOMENT_TEXTS.chema });
-    const nightOccasions = occasionsOf(place, evening);
-    const restNight = nightOccasions.has("shabbat") || nightOccasions.has("yom-tov");
-    if (!restNight && slihot) {
-      extras.push({
-        key: "tikoun",
-        text: MOMENT_TEXTS.tikoun,
-        start: slihot.start,
-        end: slihot.end,
-      });
-    }
-  }
+  // Pas de havdala sous une carte qui n'est ni l'office du soir ni une
+  // occasion (la havdala elle-même n'est pas une carte).
+  if (extra?.key === "havdala" && hero?.kind !== "tefila" && !occasion) extra = null;
 
   return {
     hero,
-    extras: extras.slice(0, MAX_EXTRAS),
-    feast: currentFeast(evening),
-    tools: momentTools(place, now, hero, day),
+    extra,
+    feast,
+    tools: momentTools(
+      place,
+      now,
+      office ? { tefila: office.tefila, start: office.start, current: !!current } : null,
+      day,
+    ),
+  };
+}
+
+/**
+ * La fête en carte, entre deux offices : le loulav le jour où on le prend,
+ * l'allumage de 'Hanouka du soir qui vient, les Sli'hot de la nuit qui vient.
+ * Rien pour une fête qui n'a pas de texte à dire maintenant : l'office qui
+ * vient garde alors la carte.
+ */
+function feastHero(
+  place: ZmanimPlace,
+  now: Date,
+  feast: FeastId,
+  today: HDate,
+  day: boolean,
+  slihot: ReturnType<typeof slihotWindow>,
+  slihotSeason: boolean,
+): SidourHero | null {
+  if (feast === "souccot") {
+    if (!day || !occasionsOf(place, today).has("loulav")) return null;
+    const sunset = computeZmanim(place, now).find((z) => z.key === "sunset")?.date;
+    return {
+      kind: "feast",
+      feast,
+      text: MOMENT_TEXTS.loulav,
+      day: null,
+      additions: [],
+      end: sunset,
+    };
+  }
+  if (feast === "hanouka") {
+    const night = hanoukaNight(today.next());
+    if (night === null) return null;
+    return { kind: "feast", feast, text: MOMENT_TEXTS.hanouka, day: null, additions: [], night };
+  }
+  if (!slihot || !slihotSeason) return null;
+  return {
+    kind: "feast",
+    feast,
+    text: MOMENT_TEXTS.slihot,
+    day: null,
+    additions: [],
+    start: slihot.start,
+    end: slihot.end,
   };
 }

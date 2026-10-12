@@ -1755,17 +1755,14 @@ const en: LocaleMessages = {
     },
     slihot: {
       now: "Before Shacharit, until sunrise at {time}",
+      tonight: "Tonight, from {start} to {end}",
     },
+    thisNight: "Tonight",
+    halevana: { until: "Until {date}" },
+    loulav: { until: "Until sunset, at {time}" },
     extras: {
       havdala: "After Shabbat ends, at {time}",
       havdalaPlain: "After Shabbat ends",
-      halevana: "Tonight, until {date}",
-      loulav: "Every day of Sukkot, except Shabbat",
-      hochanot: "After Hallel at Shacharit",
-      slihot: "Tonight, from {start} to {end}",
-      chema: "Before going to sleep",
-      tikounFrom: "From {time}",
-      tikounUntil: "Until sunrise, at {time}",
     },
     groups: {
       offices: "Services",

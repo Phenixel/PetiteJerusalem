@@ -14,10 +14,11 @@ import en from "../locales/en";
 import he from "../locales/he";
 
 /**
- * Ce que la page du Sidour met en tête : l'office dont c'est l'heure (ou
- * celui qui vient), avec ce que le jour y ajoute ; l'allumage de 'Hanouka le
- * soir ; les Sli'hot de 'hatsot au lever du soleil ; et ce qui se dit aussi
- * maintenant (havdala, Chema du coucher) ; et l'ordre des outils, celui du
+ * Ce que la page du Sidour met en tête : une carte, l'office dont c'est
+ * l'heure (ou celui qui vient), avec ce que le jour y ajoute ; l'allumage de
+ * 'Hanouka le soir ; les Sli'hot de 'hatsot au lever du soleil ; la lune les
+ * nuits où on la bénit ; la fête entre deux offices ; et une ligne dessous au
+ * plus, un soir d'occasion (l'office, la havdala) ; et l'ordre des outils, celui du
  * moment devant. Les heures sont celles de Paris
  * (le lieu par défaut), écrites avec leur décalage pour ne pas dépendre du
  * fuseau de la machine de test.
@@ -46,20 +47,20 @@ describe("la carte du moment", () => {
     );
   });
 
-  it("le soir : Arvit, puis le Chema du coucher", () => {
-    const { hero, extras } = sidourMoment(DEFAULT_PLACE, at("2026-10-12T22:30:00+02:00"));
+  it("le soir : Arvit seul, le Chema du coucher reste dans la liste", () => {
+    const { hero, extra } = sidourMoment(DEFAULT_PLACE, at("2026-10-12T22:30:00+02:00"));
     expect(hero?.tefila).toBe("arvit");
     expect(hero?.day).toBeNull();
-    expect(extras.map((x) => x.key)).toContain("chema");
+    expect(extra).toBeNull();
   });
 
   it("à la sortie du Chabbat : Arvit avec Ata 'honantanou, et la havdala", () => {
     // Samedi 17 octobre 2026, au soir.
-    const { hero, extras } = sidourMoment(DEFAULT_PLACE, at("2026-10-17T20:30:00+02:00"));
+    const { hero, extra } = sidourMoment(DEFAULT_PLACE, at("2026-10-17T20:30:00+02:00"));
     expect(hero?.tefila).toBe("arvit");
     expect(hero?.day).toBe("motsaeChabbat");
     expect(hero?.additions.map((a) => a.key)).toContain("ataHonantanou");
-    expect(extras.map((x) => x.key)).toContain("havdala");
+    expect(extra?.key).toBe("havdala");
   });
 
   it("un soir de 'Hanouka : l'allumage passe devant Arvit, qui suit", () => {
@@ -67,7 +68,7 @@ describe("la carte du moment", () => {
     const moment = sidourMoment(DEFAULT_PLACE, at("2026-12-08T17:40:00+01:00"));
     expect(moment.hero?.kind).toBe("hanouka");
     expect(moment.hero?.night).toBe(5);
-    expect(moment.extras[0]).toMatchObject({ key: "tefila", tefila: "arvit" });
+    expect(moment.extra).toMatchObject({ key: "tefila", tefila: "arvit" });
     expect(moment.feast).toBe("hanouka");
   });
 
@@ -89,22 +90,70 @@ describe("la carte du moment", () => {
     const moment = sidourMoment(DEFAULT_PLACE, at("2026-09-07T05:30:00+02:00"));
     expect(moment.hero?.kind).toBe("slihot");
     expect(moment.hero?.day).toBe("eloul");
-    expect(moment.extras[0]).toMatchObject({ key: "tefila", tefila: "chaharit" });
+    expect(moment.extra).toMatchObject({ key: "tefila", tefila: "chaharit" });
     expect(moment.feast).toBe("tichri");
   });
 
-  it("le soir, en Eloul, annonce les Sli'hot de la nuit", () => {
-    const { extras } = sidourMoment(DEFAULT_PLACE, at("2026-09-06T21:30:00+02:00"));
-    expect(extras.map((x) => x.key)).toContain("slihot");
+  it("le soir, en Eloul : Arvit seul, les Sli'hot sont en tête de la liste", () => {
+    const { hero, extra } = sidourMoment(DEFAULT_PLACE, at("2026-09-06T21:30:00+02:00"));
+    expect(hero?.tefila).toBe("arvit");
+    expect(extra).toBeNull();
   });
 
-  it("n'annonce jamais plus de trois textes sous la carte", () => {
+  it("les nuits de la bénédiction de la lune, la lune prend la carte, Arvit dessous", () => {
+    // Mardi 20 octobre 2026, 10 'Hechvan : la lune a un peu plus de neuf jours.
+    const moment = sidourMoment(DEFAULT_PLACE, at("2026-10-20T21:00:00+02:00"));
+    expect(moment.hero?.kind).toBe("halevana");
+    expect(moment.hero?.until?.getDate()).toBe(15);
+    expect(moment.hero?.moonAge).toBeGreaterThan(9);
+    expect(moment.hero?.moonAge).toBeLessThan(10);
+    expect(moment.extra).toMatchObject({ key: "tefila", tefila: "arvit" });
+  });
+
+  it("un motsaé Chabbat de la lune : la lune, et la havdala plutôt qu'Arvit", () => {
+    // Samedi 24 octobre 2026, 14 'Hechvan.
+    const moment = sidourMoment(DEFAULT_PLACE, at("2026-10-24T21:00:00+02:00"));
+    expect(moment.hero?.kind).toBe("halevana");
+    expect(moment.extra?.key).toBe("havdala");
+  });
+
+  it("pas de lune avant la nuit : Min'ha, puis Arvit qui vient", () => {
+    expect(sidourMoment(DEFAULT_PLACE, at("2026-10-20T15:00:00+02:00")).hero?.kind).toBe("tefila");
+  });
+
+  it("à Souccot, l'office seul en tête : le loulav et les Hochanot sont juste dessous", () => {
+    // Lundi 28 septembre 2026, 'Hol hamoed.
+    const moment = sidourMoment(DEFAULT_PLACE, at("2026-09-28T10:00:00+02:00"));
+    expect(moment.hero?.tefila).toBe("chaharit");
+    expect(moment.extra).toBeNull();
+    expect(moment.feast).toBe("souccot");
+  });
+
+  it("entre deux offices, la fête prend la carte", () => {
+    // Souccot, entre 'hatsot et min'ha guedola : le loulav, jusqu'à la chkia.
+    const souccot = sidourMoment(DEFAULT_PLACE, at("2026-09-28T13:50:00+02:00")).hero;
+    expect(souccot).toMatchObject({
+      kind: "feast",
+      feast: "souccot",
+      text: "moadim/netilat-loulav",
+    });
+    expect(souccot?.end).toBeInstanceOf(Date);
+    // 'Hanouka, au même moment de la journée : l'allumage du soir, cinquième bougie.
+    const hanouka = sidourMoment(DEFAULT_PLACE, at("2026-12-08T12:50:00+01:00")).hero;
+    expect(hanouka).toMatchObject({ kind: "feast", feast: "hanouka", night: 5 });
+  });
+
+  it("jamais plus d'une ligne sous la carte, et seulement sous une occasion", () => {
     for (const iso of [
-      "2026-10-17T20:30:00+02:00",
-      "2026-09-06T21:30:00+02:00",
-      "2026-12-08T17:40:00+01:00",
+      "2026-10-12T09:40:00+02:00",
+      "2026-10-12T13:50:00+02:00",
+      "2026-09-28T13:50:00+02:00",
+      "2026-12-08T12:50:00+01:00",
     ]) {
-      expect(sidourMoment(DEFAULT_PLACE, at(iso)).extras.length).toBeLessThanOrEqual(3);
+      expect({ iso, extra: sidourMoment(DEFAULT_PLACE, at(iso)).extra }).toEqual({
+        iso,
+        extra: null,
+      });
     }
   });
 });
