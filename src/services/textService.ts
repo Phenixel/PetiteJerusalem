@@ -1228,6 +1228,12 @@ export interface DafMeforshim {
   tosafot: RashiComment[][];
   /** Qui occupe la place de Rachi sur cet amoud. */
   inner: "rashi" | "rashbam";
+  /**
+   * Là où le livre imprime Rachi et le Rachbam (Pessa'him, à partir de 99b) :
+   * `rashbamAfter[p]` commentaires de `rashi[p]` sont de Rachi, les suivants
+   * du Rachbam.
+   */
+  rashbamAfter?: number[];
 }
 
 /** Tous les commentaires d'un amoud bout à bout, pour la page du daf. */
@@ -1247,6 +1253,7 @@ export function parseDafMeforshim(data: {
   rashi?: unknown[];
   tosafot?: unknown[];
   rashbam?: number[];
+  rashbamAfter?: Record<string, number[]>;
 }): Map<number, DafMeforshim> {
   const byAmud = new Map<number, DafMeforshim>();
   const comments = (passage: unknown): RashiComment[] =>
@@ -1263,6 +1270,7 @@ export function parseDafMeforshim(data: {
       rashi: passages(data.rashi?.[i]),
       tosafot: passages(data.tosafot?.[i]),
       inner: rashbam.has(i) ? "rashbam" : "rashi",
+      ...(data.rashbamAfter?.[i] ? { rashbamAfter: data.rashbamAfter[i] } : {}),
     });
   }
   return byAmud;

@@ -232,4 +232,16 @@ describe("forme de la page du daf", () => {
     expect(parsed.get(55)!.inner).toBe("rashbam");
     expect(parsed.get(40)!.inner).toBe("rashi");
   });
+
+  it("garde Rachi et le Rachbam côte à côte en Pessa'him, à partir de 99b", () => {
+    const parsed = parseDafMeforshim(read("talmud-meforshim/pesachim/9.json") as never);
+    // Index 197 du traité : le 100b, où le livre imprime les deux.
+    const amud = parsed.get(197)!;
+    expect(amud.inner).toBe("rashi");
+    expect(amud.rashbamAfter).toBeDefined();
+    const p = amud.rashbamAfter!.findIndex((n, k) => n < amud.rashi[k].length);
+    expect(p).toBeGreaterThanOrEqual(0);
+    // Avant 99b, Rachi seul.
+    expect(parsed.get(180)!.rashbamAfter).toBeUndefined();
+  });
 });

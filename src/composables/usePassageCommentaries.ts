@@ -102,10 +102,18 @@ export function talmudGroups(
   const place = talmudPassageOf(section, line);
   const amud = place ? meforshim.get(place.amud) : undefined;
   if (!place || !amud) return [];
-  return [
-    { source: amud.inner, comments: amud.rashi[place.passage] ?? [] },
-    { source: "tosafot" as const, comments: amud.tosafot[place.passage] ?? [] },
-  ].filter((g) => g.comments.length > 0);
+  const inner = amud.rashi[place.passage] ?? [];
+  // Rachi et le Rachbam sur la même page : chacun sous son nom.
+  const cut = amud.rashbamAfter ? (amud.rashbamAfter[place.passage] ?? inner.length) : null;
+  const groups: CommentaryGroup[] =
+    cut === null
+      ? [{ source: amud.inner, comments: inner }]
+      : [
+          { source: "rashi", comments: inner.slice(0, cut) },
+          { source: "rashbam", comments: inner.slice(cut) },
+        ];
+  groups.push({ source: "tosafot", comments: amud.tosafot[place.passage] ?? [] });
+  return groups.filter((g) => g.comments.length > 0);
 }
 
 export function usePassageCommentaries(

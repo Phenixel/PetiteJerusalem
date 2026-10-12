@@ -304,14 +304,19 @@ function amudComments(amud) {
 const isEmptyAmud = amud => amud.every(passage => passage.length === 0);
 
 const MEFORSHIM_DIR = `${OUT}/talmud-meforshim`;
+/** Les traités où le Rachbam tient la place de Rachi, ou s'imprime à côté de lui. */
+const RASHBAM_TRACTATES = new Set(['Bava Batra', 'Pesachim']);
 /** Amoudim par fichier : à garder d'accord avec textService (MEFORSHIM_CHUNK). */
 const MEFORSHIM_CHUNK = 20;
 
 if (shouldRun('meforshim')) {
   mkdirSync(MEFORSHIM_DIR, { recursive: true });
+  // `--tractate=Pesachim` : un seul traité, sans toucher aux autres (leurs
+  // lignes relevées, talmud-layout, tiennent à leurs commentaires mot pour mot).
+  const oneTractate = process.argv.find(a => a.startsWith('--tractate='))?.slice('--tractate='.length);
   const tractates = [...new Set(
     textStudies.filter(t => t.type === 'Talmud Bavli').map(t => talmudNameFromLink(t.link)),
-  )];
+  )].filter(t => !oneTractate || t === oneTractate);
   console.log(`\n=== Rachi et Tossafot (${tractates.length} traités) ===`);
   const commentary = (name, seder, tractate) =>
     withRetry(
@@ -330,7 +335,7 @@ if (shouldRun('meforshim')) {
           withRetry(() => fetchJson(`${GCS}/Talmud/Bavli/${seder}/${tractate}/Hebrew/merged.json`), `${tractate}/He`),
           commentary('Rashi', seder, tractate),
           commentary('Tosafot', seder, tractate),
-          tractate === 'Bava Batra' ? commentary('Rashbam', seder, tractate) : Promise.resolve([]),
+          RASHBAM_TRACTATES.has(tractate) ? commentary('Rashbam', seder, tractate) : Promise.resolve([]),
         ]);
         // Les index source que le fichier de guemara a gardés : le filtre de
         // cleanTextArray, appliqué amoud par amoud.
@@ -347,12 +352,21 @@ if (shouldRun('meforshim')) {
           return;
         }
         const fromRashbam = new Set();
+        // Là où le livre imprime les deux (Pessa'him, à partir de 99b) : le
+        // Rachbam suit Rachi dans chaque passage, et `rashbamAfter` dit après
+        // combien de commentaires de Rachi il commence.
+        const rashbamAfter = new Map();
         const inner = kept.map((s, a) => {
           const own = amudComments(rashi[s]);
-          if (!isEmptyAmud(own)) return own;
           const other = amudComments(rashbam[s]);
-          if (!isEmptyAmud(other)) fromRashbam.add(a);
-          return other;
+          if (isEmptyAmud(own)) {
+            if (!isEmptyAmud(other)) fromRashbam.add(a);
+            return other;
+          }
+          if (isEmptyAmud(other)) return own;
+          const count = Math.max(own.length, other.length);
+          rashbamAfter.set(a, Array.from({ length: count }, (_, p) => (own[p] ?? []).length));
+          return Array.from({ length: count }, (_, p) => [...(own[p] ?? []), ...(other[p] ?? [])]);
         });
         const outer = kept.map(s => amudComments(tosafot[s]));
         // Un commentaire ne commente pas un passage que la guemara n'a pas.
@@ -375,12 +389,16 @@ if (shouldRun('meforshim')) {
           const rashbamHere = [...fromRashbam]
             .filter(a => a >= from && a < from + MEFORSHIM_CHUNK)
             .map(a => a - from);
+          const rashbamBoth = [...rashbamAfter]
+            .filter(([a]) => a >= from && a < from + MEFORSHIM_CHUNK)
+            .map(([a, counts]) => [a - from, counts]);
           writeFileSync(`${MEFORSHIM_DIR}/${slug}/${k}.json`, JSON.stringify({
             title: tractate,
             from,
             rashi: inner.slice(from, from + MEFORSHIM_CHUNK),
             tosafot: outer.slice(from, from + MEFORSHIM_CHUNK),
             ...(rashbamHere.length ? { rashbam: rashbamHere } : {}),
+            ...(rashbamBoth.length ? { rashbamAfter: Object.fromEntries(rashbamBoth) } : {}),
           }), 'utf8');
         }
         console.log(`  ✓ ${tractate} → talmud-meforshim/${slug}/`);
