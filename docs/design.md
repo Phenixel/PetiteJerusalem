@@ -470,6 +470,23 @@ Un objet de plus se dessine dans `components/art`, avec ces règles, et prend
 sa place dans `CARD_ART_GEOMETRY` (taille, proportions, ce qui dépasse en
 haut, retrait du bord).
 
+### Une icône devant un titre doit dire quelque chose
+
+Une icône à gauche d'un titre de carte ne se pose que si rien d'autre ne dit
+ce qu'est la carte. Quand la carte porte déjà son objet (le sidour, la lune,
+la gerbe) ou son chiffre en grand à droite (l'heure de la carte des horaires,
+le pourcentage de la lecture du jour), l'icône le redit en moins bien : un
+soleil levant devant « Faire Cha'harit » à côté du livre, une horloge devant
+« Netz haHama » à côté de 08:08, un sablier devant le compte du 'Omer à côté
+de la gerbe. Ces cartes n'en ont donc pas, et leur titre s'aligne sur le
+bord de la carte. Tenu, pour les cartes qui portent leur objet, par
+`src/__tests__/cardArt.test.ts`.
+
+L'icône reste là où elle est seule à distinguer : le gâteau d'un
+anniversaire et la bougie d'un leilouy nichmat parmi les dates qu'on a
+posées, les lignes « Aujourd'hui » et « Hors ligne » de la bibliothèque, les
+titres de section des horaires.
+
 ### Le Sidour s'ouvre sur le moment
 
 Ce qu'on dit (les tefilot, les brahot, les textes des fêtes) vivait dans trois

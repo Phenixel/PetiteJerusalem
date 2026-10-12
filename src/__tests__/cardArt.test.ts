@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
+import { readdirSync, readFileSync } from "node:fs";
 import { createApp, h, nextTick, type App } from "vue";
 import ArtHanoukia from "../components/art/ArtHanoukia.vue";
 import { CARD_ART_GEOMETRY } from "../components/CardArt.vue";
@@ -44,6 +45,19 @@ describe("l'objet d'une carte mise en avant", () => {
     for (const [kind, geometry] of Object.entries(CARD_ART_GEOMETRY)) {
       if (kind === "moon") continue;
       expect({ kind, inside: geometry.end >= 0 }).toEqual({ kind, inside: true });
+    }
+  });
+
+  it("une carte qui porte son objet n'a pas d'icône devant son titre", () => {
+    // Les cartes de l'accueil (le sidour, la lune, la gerbe) : l'objet dit
+    // déjà ce qu'est la carte, une icône à gauche le redirait en moins bien.
+    const cards = readdirSync("src/components")
+      .filter((file) => file.endsWith(".vue") && file !== "CardArt.vue")
+      .map((file) => ({ file, source: readFileSync(`src/components/${file}`, "utf8") }))
+      .filter(({ source }) => source.includes("<CardArt"));
+    expect(cards.map(({ file }) => file)).toContain("SidourNowCard.vue");
+    for (const { file, source } of cards) {
+      expect({ file, icone: source.includes("<AppIcon") }).toEqual({ file, icone: false });
     }
   });
 
