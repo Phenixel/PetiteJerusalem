@@ -225,6 +225,8 @@ onBeforeUnmount(() => observer?.disconnect());
  * elle ne sort jamais de sa boîte.
  */
 const WIDEN = 1.08;
+/** Le corps d'un renvoi entre crochets, en part de celui de sa ligne. */
+const NOTE = 0.72;
 /** La hauteur d'une lettre carrée, en part de son corps. */
 const LETTER = 0.66;
 
@@ -235,7 +237,10 @@ const faceOf = (line: DafLine, word: DafWord): Face =>
 function natural(line: DafLine): number {
   const space = widthOf(" ", line.zone === "main" ? "main" : "side");
   return (
-    line.words.reduce((total, word) => total + widthOf(word.text, faceOf(line, word)), 0) +
+    line.words.reduce(
+      (total, word) => total + widthOf(word.text, faceOf(line, word)) * (word.note ? NOTE : 1),
+      0,
+    ) +
     Math.max(0, line.words.length - 1) * space
   );
 }
@@ -244,7 +249,7 @@ function natural(line: DafLine): number {
 interface Run {
   passage: number;
   comment: number | undefined;
-  parts: { text: string; lead: boolean; marked: boolean; big: boolean }[];
+  parts: { text: string; lead: boolean; marked: boolean; big: boolean; note: boolean }[];
 }
 interface Row {
   zone: DafLine["zone"];
@@ -332,9 +337,16 @@ const rows = computed<Row[]>(() => {
       const isMarked = marked?.has(word) ?? false;
       const last = run.parts[run.parts.length - 1];
       const isBig = word.big ?? false;
-      if (last && last.lead === word.lead && last.marked === isMarked && last.big === isBig)
+      const isNote = word.note ?? false;
+      if (
+        last &&
+        last.lead === word.lead &&
+        last.marked === isMarked &&
+        last.big === isBig &&
+        last.note === isNote
+      )
         last.text += text;
-      else run.parts.push({ text, lead: word.lead, marked: isMarked, big: isBig });
+      else run.parts.push({ text, lead: word.lead, marked: isMarked, big: isBig, note: isNote });
     });
     return {
       zone: line.zone,
@@ -425,6 +437,7 @@ function isLinkable(row: Row, run: Run): boolean {
             ><b v-else-if="part.big" class="daf-big" :class="{ 'daf-cited': part.marked }">{{
               part.text
             }}</b
+            ><span v-else-if="part.note" class="daf-note">{{ part.text }}</span
             ><span v-else-if="part.marked" class="daf-cited">{{ part.text }}</span
             ><template v-else>{{ part.text }}</template></template
           ></span
@@ -509,6 +522,11 @@ function isLinkable(row: Row, run: Run): boolean {
 .daf-row-closing .daf-row-text {
   text-align: center;
   text-align-last: center;
+}
+
+/* Un renvoi entre crochets, que le livre compose en plus petit (NOTE). */
+.daf-note {
+  font-size: 0.72em;
 }
 
 /* « גמ׳ », « מתני׳ », le premier mot d'un chapitre commencé en milieu de page. */

@@ -492,6 +492,17 @@ NUNS: dict[str, tuple[int, int]] = {}
 BOOK_WORD = re.compile("[א-ת'\"׳״.,:;()\\[\\]-]+")
 
 
+WORDBOOKS: dict[str, set] = {}
+
+
+def wordbook_of(tractate: Tractate) -> set:
+    """Tous les mots de nos textes du traité (guemara et commentaires), lettres seules."""
+    if tractate.slug not in WORDBOOKS:
+        WORDBOOKS[tractate.slug] = {re.sub("[^א-ת]", "", t.text) for zone in ("main", "rashi", "tosafot")
+                                    for a in range(len(tractate)) for t in tractate.tokens(zone, a)}
+    return WORDBOOKS[tractate.slug]
+
+
 def nun_safe(zone: str, kept: dict, tractate: Tractate, ours_main: list[Token], amud: int) -> bool:
     """La police de cette zone rend-elle ses nounim sur cette page : le livre
     en écrit autant que notre texte sur les mêmes lignes (à 3 % près)."""
@@ -573,12 +584,14 @@ def book_edits(pairs: list, text_of: dict, taken: set, lossy: bool = False,
             # ou écrit deux fois l'un sur l'autre (un gras de fortune).
             if any(re.search(r"\s", w.strip()) or re.fullmatch(r"(.{2,})\1", norm(w)) for w in theirs[j1:j2]):
                 continue
-            if lossy:
-                if any(ch in text_of.get(key, "") for key in keys for ch in "נן"):
-                    continue
-                if any(not any(mark in w for mark in "\"'״׳") and re.sub("[^א-ת]", "", w) not in (known or ())
-                       for w in words):
-                    continue
+            if lossy and any(ch in text_of.get(key, "") for key in keys for ch in "נן"):
+                continue
+            # Un mot long que nos textes du traité n'ont nulle part : deux mots
+            # que le PDF a collés (« למהרהלילה »), plus souvent qu'une leçon.
+            # Dans une police qui perd ses nounim, tout mot inconnu est douteux.
+            if any(not any(mark in w for mark in "\"'״׳") and re.sub("[^א-ת]", "", w) not in (known or ())
+                   and (lossy or len(re.sub("[^א-ת]", "", w)) >= 7) for w in words):
+                continue
             # Un renvoi entre parenthèses que le livre compose à part, en
             # petit : la ligne lue ne le porte pas, il n'est pas absent.
             here = " ".join(text_of.get(key, "") for key in keys)
@@ -2397,9 +2410,7 @@ def page_at(tractate: Tractate, amud: int, pdf: str, taken: dict[str, set]) -> t
     # Puis tout ce que le livre écrit autrement que notre texte, quand la
     # page rend bien ses lettres (même condition que pour le texte du livre).
     if hebrew > 200 and nuns >= 0.03 * hebrew:
-        wordbook = {re.sub("[^א-ת]", "", t.text) for t in ours_main}
-        wordbook |= {re.sub("[^א-ת]", "", t.text) for zone in ("rashi", "tosafot")
-                     for a in range(max(0, amud - 6), min(len(tractate), amud + 2)) for t in tractate.tokens(zone, a)}
+        wordbook = wordbook_of(tractate)
         for z, zone in enumerate(("main", "rashi", "tosafot")):
             if zone == "main":
                 text_of = {(t.unit, t.passage, t.word): t.text for t in ours_main}

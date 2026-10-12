@@ -137,6 +137,47 @@ describe("dafLines, hors des lignes courantes", () => {
   });
 });
 
+describe("dafLines, le texte du livre mot par mot", () => {
+  const page: DafLayoutPage = {
+    ...PAGE,
+    short: [
+      [0, 0, 1, 1, "קורין [לקמן ד:] כולן"],
+      [1, 0, 0, 1, "מאימתי [ב.]"],
+    ],
+  };
+  const lines = dafLines(page, 5, LINES, PASSAGES, MEFORSHIM)!;
+
+  it("écrit chaque mot du livre à part, et les crochets en renvoi", () => {
+    const first = lines.find((l) => l.zone === "main")!;
+    expect(first.words.map((w) => w.text)).toEqual([
+      "מאימתי",
+      "קורין",
+      "[לקמן",
+      "ד:]",
+      "כולן",
+      "את",
+      "שמע",
+      "עד",
+    ]);
+    expect(first.words.map((w) => w.note ?? false)).toEqual([
+      false,
+      false,
+      true,
+      true,
+      false,
+      false,
+      false,
+      false,
+    ]);
+  });
+
+  it("garde le dibbour au premier mot seulement", () => {
+    const rashi = lines.filter((l) => l.zone === "rashi")[1];
+    expect(rashi.words[0]).toMatchObject({ text: "מאימתי", lead: true, short: true });
+    expect(rashi.words[1]).toMatchObject({ text: "[ב.]", lead: false, note: true });
+  });
+});
+
 describe("dafLines, les abréviations du livre", () => {
   const page: DafLayoutPage = {
     ...PAGE,

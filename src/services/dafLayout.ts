@@ -136,8 +136,10 @@ export interface DafWord {
   passage: number;
   /** Du dibbour hamat'hil : en lettres carrées grasses. */
   lead: boolean;
-  /** Une abréviation du livre, écrite à la place de plusieurs de nos mots. */
+  /** Le texte du livre, écrit à la place de nos mots (une abréviation, une autre leçon). */
   short?: boolean;
+  /** Un renvoi entre crochets, que le livre compose en plus petit dans la ligne. */
+  note?: boolean;
   /** Écrit plus grand dans sa ligne (« גמ׳ », le premier mot d'un chapitre). */
   big?: boolean;
   /** Le rang de son commentaire dans la colonne de la page (dafLinks.ts). */
@@ -200,6 +202,23 @@ function zoneWords(passages: RashiComment[][]): { passage: DafWord[][]; count: n
  * la page et, s'il est chargé, celui d'avant. `null` si une place n'existe
  * pas dans la guemara : la page s'écrit alors sans ses lignes.
  */
+/**
+ * Les mots d'un texte du livre. Ce qui est entre crochets (« [לקמן סה:] »,
+ * un renvoi ajouté par les éditeurs) y est composé en plus petit.
+ */
+function bookWords(text: string): { text: string; note?: boolean }[] {
+  let open = false;
+  return text
+    .split(" ")
+    .filter(Boolean)
+    .map((word) => {
+      const note = open || word.startsWith("[");
+      if (word.includes("[")) open = true;
+      if (word.includes("]")) open = false;
+      return note ? { text: word, note: true } : { text: word };
+    });
+}
+
 export function dafLines(
   page: DafLayoutPage,
   amud: number,
@@ -227,7 +246,8 @@ export function dafLines(
       for (let k = from; k < from + count; k++) {
         const brief = short.get(`0:${amud}:${passage}:${k}`);
         if (brief && k + brief.count <= from + count) {
-          words.push({ text: brief.text, passage, lead: false, short: true });
+          for (const piece of bookWords(brief.text))
+            words.push({ ...piece, passage, lead: false, short: true });
           k += brief.count - 1;
           continue;
         }
@@ -277,13 +297,21 @@ export function dafLines(
         for (let k = from; k < end; k++) {
           const at = other ?? amud;
           const brief = short.get(`${zone === "rashi" ? 1 : 2}:${at}:${passage}:${k}`);
-          let word = source[k];
-          if (brief && k + brief.count <= end) {
-            word = { ...word, text: brief.text, short: true };
-            k += brief.count - 1;
-          }
+          // Le texte du livre garde la place du mot qu'il remplace (son
+          // passage, son commentaire, son dibbour), mot par mot.
+          const pieces: DafWord[] =
+            brief && k + brief.count <= end
+              ? bookWords(brief.text).map((piece, i) => ({
+                  ...source[k],
+                  ...piece,
+                  lead: source[k].lead && i === 0,
+                  short: true,
+                }))
+              : [source[k]];
+          if (brief && k + brief.count <= end) k += brief.count - 1;
           // Un mot d'une autre page ne se relie pas aux passages de celle-ci.
-          words.push(other === undefined ? word : { ...word, passage: -1, comment: -1 });
+          for (const word of pieces)
+            words.push(other === undefined ? word : { ...word, passage: -1, comment: -1 });
         }
       }
       out.push({ zone, x, y, width, words });
