@@ -1810,7 +1810,14 @@ def page_at(tractate: Tractate, amud: int, pdf: str, taken: dict[str, set]) -> t
         WHY[amud] = f"guemara {main.sure}/{len(main.lines)}"
         return None
     on_page = sum(n for runs in main.runs for _, _, _, n in runs)
-    if on_page < 0.95 * len(ours_main):
+    # « הדרן עלך … » s'écrit à part (closing_lines) : ses mots ne sont pas
+    # attendus dans les lignes, et sur une dernière page, courte, ils pèsent.
+    said = [norm(t.text) for t in ours_main]
+    hadran = 0
+    for k in range(len(said) - 1):
+        if said[k] == norm("הדרן") and said[k + 1] == norm("עלך"):
+            hadran += sum(1 for t in ours_main[k:] if t.passage == ours_main[k].passage)
+    if on_page < 0.95 * (len(ours_main) - hadran):
         WHY[amud] = f"guemara : {on_page} mots sur {len(ours_main)}"
         return None
     for zone in ("rashi", "tosafot"):
