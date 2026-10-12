@@ -174,10 +174,10 @@ onUnmounted(() => observer?.disconnect());
      le thème. La part sombre est la lumière cendrée, un voile à peine plus
      clair que le fond. */
   --moon-highland: #e2ded4;
-  --moon-mare: #b2ad9f;
-  --moon-mare-deep: #a29e92;
+  --moon-mare: #aaa597;
+  --moon-mare-deep: #959186;
   --moon-bright: #f7f5ef;
-  --moon-pit: #d3cfc4;
+  --moon-pit: #d6d2c8;
   --moon-dark: rgb(255 255 255 / 0.14);
 }
 

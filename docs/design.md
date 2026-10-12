@@ -403,9 +403,12 @@ porte en plus l'objet de ce qu'elle annonce, dessiné aux couleurs du vrai
 - le **sidour**, relié de cuir bleu nuit, titre doré, signet rouge, pour un
   office, celui de l'heure ou celui qui vient ;
 - la **lune**, à sa phase du soir, les nuits de la bénédiction : la face
-  visible, aux gris de la vraie (les mers qui se rejoignent au nord-ouest,
-  la Sérénité et la Tranquillité au centre, les Crises seules au bord est,
-  Tycho et ses rayons dans les hautes terres du sud) ;
+  visible, aux gris de la vraie. Les contours des mers sont relevés sur une
+  photo de la pleine lune (floutée, seuillée au tiers le plus sombre, bords
+  simplifiés), pas dessinés de mémoire : elles se rejoignent d'un seul
+  tenant, de l'Océan des Tempêtes à la Fécondité, avec les baies claires de
+  Copernic et de Kepler, leurs fonds plus sombres, les Crises seules au bord
+  est, Tycho et ses rayons fins dans les hautes terres du sud ;
 - la **'hanoukkia** les soirs de 'Hanouka ;
 - le **chofar** des Sli'hot, le pavillon ouvert en haut, vers l'avant, et
   l'embouchure en bas ;
