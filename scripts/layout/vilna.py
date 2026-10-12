@@ -487,6 +487,176 @@ def foot_block(left: float, right: float, bottom: float, side_size: int, taken: 
     return out if len(out) >= 2 else []
 
 
+NUNS: dict[str, tuple[int, int]] = {}
+"""Par zone, les nounim du livre et les nôtres sur la dernière page lue."""
+BOOK_WORD = re.compile("[א-ת'\"׳״.,:;()\\[\\]-]+")
+
+
+def nun_safe(zone: str, kept: dict, tractate: Tractate, ours_main: list[Token], amud: int) -> bool:
+    """La police de cette zone rend-elle ses nounim sur cette page : le livre
+    en écrit autant que notre texte sur les mêmes lignes (à 3 % près)."""
+    if zone == "main":
+        text_of = {(t.unit, t.passage, t.word): t.text for t in ours_main}
+    else:
+        text_of = {(t.unit, t.passage, t.word): t.text
+                   for a in range(max(0, amud - 6), min(len(tractate), amud + 2)) for t in tractate.tokens(zone, a)}
+    printed = "".join(w for l, _ in kept[zone] for w in l.words)
+    ours = "".join(text_of.get((a, p, w + d), "") for _, runs in kept[zone] for a, p, w, n in runs for d in range(n))
+    count = lambda text: sum(1 for ch in text if ch in "נן")  # noqa: E731
+    NUNS[zone] = (count(printed), count(ours))
+    return count(ours) >= 20 and count(printed) >= 0.97 * count(ours)
+
+
+def book_edits(pairs: list, text_of: dict, taken: set, lossy: bool = False,
+               known: set | None = None) -> list[tuple[int, int, int, int, str]]:
+    """Là où le livre n'écrit pas ce que dit notre texte, la page écrit le
+    livre : une abréviation (« א"ר » pour « אמר רבי »), une autre leçon
+    (« עובד כוכבים » pour « נכרי »), un mot que notre texte n'a pas, un mot
+    qu'il a en trop. Notre texte reste la référence de chaque ligne (le
+    passage, le commentaire qu'on ouvre) et ne tranche que là où la lecture
+    du livre est douteuse : un mot aux signes étrangers, ou notre mot à une
+    lettre près (dans certaines polices une lettre ne sort pas du PDF).
+    `pairs` : les lignes gardées d'une zone et leurs mots ; `taken` : les
+    mots déjà remplacés (abréviations des lignes trop chargées). `lossy` :
+    la police de la zone ne rend pas tous ses nounim ; on ne suit alors le
+    livre que là où le noun n'est pas en jeu (aucun de nos mots remplacés
+    n'en a, et chaque mot du livre est une abréviation ou un mot que nos
+    textes connaissent, `known`).
+    [amoud, passage, mot, nombre, texte du livre]."""
+    found: list[dict] = []
+    for k, (line, runs) in enumerate(pairs):
+        ours = [(a, p, w + d) for a, p, w, n in runs for d in range(n)]
+        if not ours or any(key in taken for key in ours):
+            continue
+        # Les mots du livre, sans les appels de note (« א) », « (ב) ») : mais
+        # dans une parenthèse ouverte, « ז) » est la fin d'un renvoi.
+        theirs, depth = [], 0
+        for w in line.words:
+            # (Une lettre seule, sans apostrophe, est aussi un appel de note.)
+            lone = len(re.sub("[^א-ת]", "", w)) == 1 and not any(mark in w for mark in "\"'״׳")
+            if norm(w) and not (depth == 0 and (MARK.fullmatch(w.strip()) or lone)):
+                theirs.append(w)
+            depth = max(0, depth + w.count("(") - w.count(")"))
+        if not theirs:
+            continue
+        mine = [norm(text_of.get(key, "")) for key in ours]
+        said = [norm(w) for w in theirs]
+        if mine == said:
+            continue
+        spans: list[list[int]] = []
+        for tag, i1, i2, j1, j2 in SequenceMatcher(None, mine, said, autojunk=False).get_opcodes():
+            if tag == "equal":
+                continue
+            if spans and spans[-1][1] == i1 and spans[-1][3] == j1:
+                spans[-1][1], spans[-1][3] = i2, j2
+            else:
+                spans.append([i1, i2, j1, j2])
+        for i1, i2, j1, j2 in spans:
+            # Les mêmes lettres, coupées autrement : ce n'est pas un écart.
+            if "".join(mine[i1:i2]) == "".join(said[j1:j2]):
+                continue
+            # Un mot de trop d'un côté seulement s'accroche à son voisin.
+            if i1 == i2 or j1 == j2:
+                if i1 > 0 and j1 > 0:
+                    i1, j1 = i1 - 1, j1 - 1
+                elif i2 < len(mine) and j2 < len(said):
+                    i2, j2 = i2 + 1, j2 + 1
+                else:
+                    continue
+            keys = ours[i1:i2]
+            if len({key[:2] for key in keys}) != 1 or [key[2] for key in keys] != list(range(keys[0][2], keys[0][2] + len(keys))):
+                continue
+            words = ["".join(BOOK_WORD.findall(w)) for w in theirs[j1:j2]]
+            if any(not norm(w) or len(norm(w)) > 12 for w in words) or any("".join(BOOK_WORD.findall(w)) != w.strip() for w in theirs[j1:j2]):
+                continue
+            # Un mot troué (une lettre que le PDF ne rend pas laisse un blanc)
+            # ou écrit deux fois l'un sur l'autre (un gras de fortune).
+            if any(re.search(r"\s", w.strip()) or re.fullmatch(r"(.{2,})\1", norm(w)) for w in theirs[j1:j2]):
+                continue
+            if lossy:
+                if any(ch in text_of.get(key, "") for key in keys for ch in "נן"):
+                    continue
+                if any(not any(mark in w for mark in "\"'״׳") and re.sub("[^א-ת]", "", w) not in (known or ())
+                       for w in words):
+                    continue
+            # Un renvoi entre parenthèses que le livre compose à part, en
+            # petit : la ligne lue ne le porte pas, il n'est pas absent.
+            here = " ".join(text_of.get(key, "") for key in keys)
+            if ("(" in here or ")" in here) and not any("(" in w or ")" in w for w in words):
+                continue
+            # Une parenthèse ou un crochet que la ligne lue ne referme pas :
+            # la suite du renvoi lui échappe, on n'y touche pas.
+            there = " ".join(words)
+            if there.count("(") - there.count(")") != here.count("(") - here.count(")") \
+                    or there.count("[") != there.count("]"):
+                continue
+            # À une lettre près de notre mot (en plus ou en moins : une lettre
+            # que le PDF ne rend pas, un appel de note collé), sans signe
+            # d'abréviation : la lecture est douteuse, notre texte tranche.
+            if i2 - i1 == 1 and j2 - j1 == 1 and not any(mark in words[0] for mark in "\"'״׳"):
+                a, b = mine[i1], said[j1]
+                long, small = (a, b) if len(a) > len(b) else (b, a)
+                if len(long) == len(small) + 1 and any(long[:k] + long[k + 1:] == small for k in range(len(long))):
+                    continue
+            # Un appel de note d'une ou deux lettres collé au mot, devant ou
+            # derrière (« מתרץיג », « ידלימשך »).
+            if i2 - i1 == 1 and j2 - j1 == 1 and 0 < len(said[j1]) - len(mine[i1]) <= 2 and len(mine[i1]) >= 2 \
+                    and (said[j1].startswith(mine[i1]) or said[j1].endswith(mine[i1])):
+                continue
+            # Un appel de note collé au mot (« ז'פרט ») n'est pas du texte.
+            if i2 - i1 == 1 and j2 - j1 == 1 and re.match("[א-ת]['׳][א-ת]{2}", words[0]) and said[j1][1:] == mine[i1]:
+                continue
+            # Ce que l'écart ôte de nos mots, et ce qu'il ajoute.
+            gone = [w for w in mine[i1:i2] if len(w) >= 2 and w not in said[j1:j2]]
+            come = [w for w in said[j1:j2] if len(w) >= 2 and w not in mine[i1:i2]]
+            found.append({"at": k, "edit": (*keys[0], len(keys), " ".join(words)),
+                          "gone": gone if i2 - i1 > j2 - j1 and not abbreviates(words, mine[i1:i2]) else [],
+                          "come": come if j2 - j1 > i2 - i1 else []})
+    # Un mot qui passe d'une ligne à sa voisine (le livre coupe ailleurs que
+    # notre texte) doit partir d'un côté et arriver de l'autre : un écart qui
+    # ôterait un mot sans qu'une ligne voisine le reçoive le perdrait, un
+    # écart qui l'ajouterait alors que la voisine le garde le dirait deux
+    # fois. Ces écarts-là ne se font pas ; la coupure reste alors la nôtre.
+    def near(a: int, b: int) -> bool:
+        la, lb = pairs[a][0], pairs[b][0]
+        return a != b and abs(la.top - lb.top) < 2.5 * (la.bottom - la.top) \
+            and min(la.right, lb.right) - max(la.left, lb.left) > 0
+
+    tokens = {k: [norm(text_of.get((a, p, w + d), "")) for a, p, w, n in runs for d in range(n)]
+              for k, (_, runs) in enumerate(pairs)}
+    for _ in range(3):
+        alive = list(found)
+        for e in alive:
+            others = [o for o in found if o is not e and near(e["at"], o["at"])]
+            if any(w not in [x for o in others for x in o["come"]] for w in e["gone"]):
+                found.remove(e)
+                continue
+            around = [k for k in tokens if near(e["at"], k)]
+            kept_there = [w for k in around for w in tokens[k]
+                          if not any(o["at"] == k and w in o["gone"] for o in found)]
+            if any(w in kept_there for w in e["come"]):
+                found.remove(e)
+        if len(alive) == len(found):
+            break
+    return [e["edit"] for e in found]
+
+
+def abbreviates(words: list[str], ours: list[str]) -> bool:
+    """Les mots du livre abrègent-ils les nôtres, un pour un ou en sigle
+    (« א"ר » pour « אמר רבי », « וחכ"א » pour « וחכמים אומרים ») : leurs
+    lettres sont, dans l'ordre, un début de chacun de nos mots."""
+    if not words or not all(any(mark in w for mark in "\"'״׳") for w in words):
+        return False
+    letters = "".join(norm(w) for w in words)
+
+    def fits(i: int, k: int) -> bool:
+        if k == len(ours):
+            return i == len(letters)
+        return any(ours[k].startswith(letters[i:j]) and fits(j, k + 1) for j in range(i + 1, len(letters) + 1))
+
+    return len(ours) <= 6 and fits(0, 0)
+
+
 def ink_faults(pdf: str, lines: list) -> list[str]:
     """Le second témoin : l'encre de la page.
 
@@ -1468,6 +1638,9 @@ def place(ours: list[Token], lines: list[PrintedLine], ahead: list[Token] | None
             continue
         if not any(mark in w for w in printed_words for mark in "\"'״׳"):
             continue
+        # Un mot troué (une lettre que le PDF ne rend pas) ne s'écrit pas.
+        if any(re.search(r"\s", w.strip()) for w in printed_words):
+            continue
         first, last = everything[gap[0]], everything[gap[-1]]
         if any(line_of.get(i) != k for i in gap) or not same_comment(everything, gap[0], gap[-1]) \
                 or last.word - first.word != len(gap) - 1:
@@ -2218,7 +2391,30 @@ def page_at(tractate: Tractate, amud: int, pdf: str, taken: dict[str, set]) -> t
     # mots et ce que le livre écrit.
     brief = [[z, p, w, n, text] if a == amud else [z, p, w, n, text, a]
              for z, zone in enumerate(("main", "rashi", "tosafot"))
-             for a, p, w, n, text in placed[zone].short]
+             for a, p, w, n, text in placed[zone].short
+             # (Pas dans une police qui perd ses nounim : voir plus bas.)
+             if nun_safe(zone, kept, tractate, ours_main, amud)]
+    # Puis tout ce que le livre écrit autrement que notre texte, quand la
+    # page rend bien ses lettres (même condition que pour le texte du livre).
+    if hebrew > 200 and nuns >= 0.03 * hebrew:
+        wordbook = {re.sub("[^א-ת]", "", t.text) for t in ours_main}
+        wordbook |= {re.sub("[^א-ת]", "", t.text) for zone in ("rashi", "tosafot")
+                     for a in range(max(0, amud - 6), min(len(tractate), amud + 2)) for t in tractate.tokens(zone, a)}
+        for z, zone in enumerate(("main", "rashi", "tosafot")):
+            if zone == "main":
+                text_of = {(t.unit, t.passage, t.word): t.text for t in ours_main}
+            else:
+                text_of = {(t.unit, t.passage, t.word): t.text
+                           for a in range(max(0, amud - 6), min(len(tractate), amud + 2))
+                           for t in tractate.tokens(zone, a)}
+            # Chaque zone a sa police, et certaines ne rendent pas le noun :
+            # on le voit à ce que le livre en écrit moins que notre texte sur
+            # les mêmes lignes. Là, la lecture n'est pas sûre : notre texte
+            # reste tel quel.
+            lossy = not nun_safe(zone, kept, tractate, ours_main, amud)
+            taken_here = {(a, p, w + d) for a, p, w, n, _ in placed[zone].short for d in range(n)}
+            brief += [[z, p, w, n, text] if a == amud else [z, p, w, n, text, a]
+                      for a, p, w, n, text in book_edits(kept[zone], text_of, taken_here, lossy, wordbook)]
     if brief:
         page["short"] = brief
     if book or foot:

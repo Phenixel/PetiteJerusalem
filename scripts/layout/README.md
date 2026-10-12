@@ -185,6 +185,19 @@ colonne : le Rachbam en Bava Batra (là où Rachi s'arrête) et en Pessa'him
 Tossafot, qui n'y est qu'en marge du livre et ne reste qu'au volet des
 commentaires. Sans eux, la moitié de Nedarim ne passait pas les contrôles.
 
+Le texte de la page est celui du livre. Nos mots (Sefaria) donnent à chaque
+ligne sa place dans le texte, le passage et le commentaire qu'on ouvre ; mais
+là où le livre écrit autre chose (une abréviation, « א"ר » pour « אמר רבי » ;
+une autre leçon ; un mot de plus ou de moins), le fichier le dit dans `short`
+et la page écrit le livre (`book_edits`). Notre texte ne tranche que là où la
+lecture du PDF est douteuse : une police qui ne rend pas ses nounim (on le
+voit à ce que le livre en écrit moins que nous sur les mêmes lignes), un mot
+troué ou imprimé deux fois, un appel de note collé au mot, un renvoi que la
+ligne lue ne referme pas, un mot à une lettre près du nôtre. Un mot qui
+passe d'une ligne à sa voisine ne bouge que s'il part d'un côté et arrive de
+l'autre ; sinon la coupure reste la nôtre. La ponctuation que Sefaria ajoute
+à la guemara reste là où les mots sont les mêmes.
+
 Ce que le relevé ne porte pas : les réclames et les notes des marges ; les
 commentaires que nous n'avons pas (le second Rachi de Mena'hot, le Rivan
 de Makkot, la Chita Mekoubétset), dont le texte, quand il est dans les

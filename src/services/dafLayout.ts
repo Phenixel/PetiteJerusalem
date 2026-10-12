@@ -105,11 +105,14 @@ export interface DafLayoutPage {
     height?: number,
   ][];
   /**
-   * Les abréviations du livre, là où nos mots en toutes lettres ne tiennent
-   * pas dans la ligne (« המע"ה » pour « המוציא מחברו עליו הראיה ») :
-   * `[zone, passage, mot, nombre, texte]`, zone 0 pour la guemara, 1 pour
-   * Rachi, 2 pour Tossafot, et l'amoud quand ce n'est pas celui de la page.
-   * La page écrit `texte` à la place de ces mots ; ailleurs, nos mots restent.
+   * Ce que le livre écrit autrement que notre texte : une abréviation
+   * (« א"ר » pour « אמר רבי »), une autre leçon (« עובד כוכבים » pour
+   * « נכרי »), un mot de plus ou de moins. `[zone, passage, mot, nombre,
+   * texte]`, zone 0 pour la guemara, 1 pour Rachi, 2 pour Tossafot, et
+   * l'amoud quand ce n'est pas celui de la page. La page écrit `texte`, le
+   * texte du livre, à la place de ces mots ; ailleurs, nos mots restent
+   * (là où ils disent la même chose, ou là où la lecture du livre n'est pas
+   * sûre : voir book_edits dans scripts/layout/vilna.py).
    */
   short?: [
     zone: number,
