@@ -1520,7 +1520,7 @@ def grams(words: list[str]) -> set[tuple[str, ...]]:
 
 
 def book_lines(placed: dict, kept: dict, side_size: int, strangers: list | None = None,
-               ours: set | None = None) -> list[list]:
+               ours: dict | None = None) -> list[list]:
     """Ce que le livre imprime dans nos colonnes et que notre texte n'a pas.
 
     Le texte de Sefaria n'est pas toujours celui de la page : il lui manque
@@ -1543,6 +1543,25 @@ def book_lines(placed: dict, kept: dict, side_size: int, strangers: list | None 
     height = sides[len(sides) // 2] if sides else 0
     taken: list = []
 
+    # Ce que nos lignes portent déjà, par zone et par hauteur : une ligne du
+    # livre n'est un doublon que si ses mots sont sur une ligne toute proche
+    # (ils s'y sont posés par voisinage). Les mêmes mots plus loin dans la
+    # page, ou dans l'autre commentaire, sont un autre passage : un second
+    # Tossafot sur le même dibbour, un Tossafot qui cite Rachi.
+    carried: list[tuple[int, float, set]] = []
+    for z, zone in ((1, "rashi"), (2, "tosafot")):
+        for line, runs in kept[zone]:
+            words = [(ours or {}).get((zone, a, p, w + d), "") for a, p, w, n in runs for d in range(n)]
+            words = [w for w in words if w]
+            carried.append((z, line.top, set(zip(words, words[1:]))))
+
+    def around(z: int, at: float | None) -> set:
+        out: set = set()
+        for zone, top, pairs in carried:
+            if zone == z and (at is None or abs(top - at) < 3.5 * height):
+                out |= pairs
+        return out
+
     def whole(line: PrintedLine, z: int) -> None:
         """Une ligne entière du livre, si elle est dans les colonnes de la page."""
         if sum(1 for w in line.words if len(re.findall("[א-ת]", w)) >= 3) < 2:
@@ -1551,7 +1570,12 @@ def book_lines(placed: dict, kept: dict, side_size: int, strangers: list | None 
         # mots sont posés sur la ligne voisine, l'écrire les dirait deux fois.
         said = [norm(w) for w in line.words if norm(w)]
         pairs = list(zip(said, said[1:]))
-        if ours and pairs and sum(1 for pair in pairs if pair in ours) >= 0.4 * len(pairs):
+        if pairs and sum(1 for pair in pairs if pair in around(z, line.top)) >= 0.5 * len(pairs):
+            return
+        # Presque toute la ligne déjà écrite ailleurs sur la page, dans le
+        # même commentaire : ce sont nos mots, posés loin de leur ligne. (Les
+        # trois quarts : un second Tossafot reprend le titre du premier.)
+        if len(pairs) >= 3 and sum(1 for pair in pairs if pair in around(z, None)) >= 0.75 * len(pairs):
             return
         foot = any(id(part) in under for part in getattr(line, "parts", [line]))
         if not (lo - 2 <= line.left and line.right <= hi + 2 and top - 2 <= line.top
@@ -1561,8 +1585,11 @@ def book_lines(placed: dict, kept: dict, side_size: int, strangers: list | None 
         # ni dans un corps plus petit que celui des commentaires (une glose).
         if line.bottom - line.top < 0.8 * height and not foot:
             return
+        # (La boîte d'un titre, en grand, mord sur ses voisines : c'est la
+        # moitié d'une hauteur de ligne qui compte.)
         if any(min(m.right, line.right) - max(m.left, line.left) > 4
-               and min(m.bottom, line.bottom) - max(m.top, line.top) > 4 for m in every + taken):
+               and min(m.bottom, line.bottom) - max(m.top, line.top)
+               > 0.45 * min(m.bottom - m.top, line.bottom - line.top) for m in every + taken):
             return
         taken.append(line)
         lead = next((k for k, flag in enumerate(line.lead) if not flag), len(line.lead))
@@ -1624,7 +1651,9 @@ def book_lines(placed: dict, kept: dict, side_size: int, strangers: list | None 
                 if sum(1 for w in words if len(norm(w)) > 1) < 2:
                     continue
                 said = [norm(w) for w in words if norm(w)]
-                if ours and sum(1 for pair in zip(said, said[1:]) if pair in ours) >= 0.4 * max(1, len(said) - 1):
+                if sum(1 for pair in zip(said, said[1:]) if pair in around(z, line.top)) >= 0.5 * max(1, len(said) - 1):
+                    continue
+                if len(said) >= 4 and sum(1 for pair in zip(said, said[1:]) if pair in around(z, None)) >= 0.75 * (len(said) - 1):
                     continue
                 left = min(l for l, _ in line.spans[a:b])
                 right = max(r for _, r in line.spans[a:b])
@@ -2054,12 +2083,8 @@ def page_at(tractate: Tractate, amud: int, pdf: str, taken: dict[str, set]) -> t
     hebrew = sum(1 for ch in letters if "א" <= ch <= "ת")
     nuns = sum(1 for ch in letters if ch in "נן")
     strangers = [l for l in printed.right + printed.left + printed.wide if id(l) in others]
-    spoken = set()
-    for zone in ("rashi", "tosafot"):
-        for a in range(max(0, amud - 6), min(len(tractate), amud + 2)):
-            said = [norm(t.text) for t in tractate.tokens(zone, a)]
-            said = [w for w in said if w]
-            spoken.update(zip(said, said[1:]))
+    spoken = {(zone, t.unit, t.passage, t.word): norm(t.text) for zone in ("rashi", "tosafot")
+              for a in range(max(0, amud - 6), min(len(tractate), amud + 2)) for t in tractate.tokens(zone, a)}
     book = book_lines(placed, kept, printed.sizes["side"], strangers, spoken) \
         if hebrew > 200 and nuns >= 0.03 * hebrew else []
     closing = closing_lines(printed.sizes["main"], ours_main, kept["main"])
