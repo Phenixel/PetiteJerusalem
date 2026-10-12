@@ -1770,6 +1770,9 @@ def page_at(tractate: Tractate, amud: int, pdf: str, taken: dict[str, set]) -> t
     for stream in (printed.right, printed.left, printed.wide):
         stream = sorted((l for l in stream if id(l) not in others), key=lambda l: l.top)
         owners: list[str] = []
+        weak: dict[int, str] = {}
+        strong: list[tuple[PrintedLine, str]] = []
+        fonts_say: set[int] = set()
         for line in stream:
             mine = grams([norm(w) for w in line.words if norm(w)])
             hits = {zone: len(mine & known[zone]) for zone in ("rashi", "tosafot")}
@@ -1779,13 +1782,44 @@ def page_at(tractate: Tractate, amud: int, pdf: str, taken: dict[str, set]) -> t
             # polices sans nom, une même police de dibbour sert aux deux.
             if hits[best] >= 2 and hits[best] > 2 * other:
                 owners.append(best)
+                strong.append((line, best))
             elif line.owner:
                 owners.append(line.owner)
+                fonts_say.add(len(owners) - 1)
             elif hits[best] == 1 and other == 0 and len(mine) <= 2:
-                owners.append(best)
+                # Un seul indice : il ne vaut que si la colonne ne dit rien.
+                owners.append("")
+                weak[len(owners) - 1] = best
             else:
                 owners.append("")
-        # Les lignes sans avis prennent celui de leur voisine.
+        # Les lignes sans avis prennent celui de leur voisine : d'abord la
+        # plus proche au-dessus ou au-dessous d'elle, dans sa colonne (un
+        # bout de ligne de trois mots est du commentaire qui l'entoure, pas
+        # de celui d'en face) ; à défaut, celle d'avant dans la page.
+        # La police d'un dibbour sert parfois au corps d'une ligne : quand les
+        # lignes d'au-dessus et d'au-dessous, dans la même colonne, sont par
+        # leurs mots de l'autre commentaire, la ligne est des leurs.
+        for k in sorted(fonts_say):
+            line, tall = stream[k], stream[k].bottom - stream[k].top
+            over = [(other.top - line.top, owner) for other, owner in strong
+                    if min(other.right, line.right) - max(other.left, line.left) > 0
+                    and 0 < abs(other.top - line.top) < 6 * tall]
+            above = max((item for item in over if item[0] < 0), default=None)
+            below = min((item for item in over if item[0] > 0), default=None)
+            if above and below and above[1] == below[1] != owners[k]:
+                owners[k] = above[1]
+        decided = [(line, owner) for line, owner in zip(stream, owners) if owner]
+        for k, line in enumerate(stream):
+            if owners[k]:
+                continue
+            tall = line.bottom - line.top
+            near = [(abs(other.top - line.top), owner) for other, owner in decided
+                    if min(other.right, line.right) - max(other.left, line.left) > 0
+                    and 0 < abs(other.top - line.top) < 3 * tall]
+            if near:
+                owners[k] = min(near)[1]
+            elif k in weak:
+                owners[k] = weak[k]
         for k in range(len(stream)):
             if not owners[k] and k:
                 owners[k] = owners[k - 1]
