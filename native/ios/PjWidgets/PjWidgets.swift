@@ -91,7 +91,7 @@ struct PjWidgetBackground: ViewModifier {
  * servent qu'aux payloads d'avant, qui ne le portaient pas.
  */
 enum PjColors {
-    static let fallbackAccent = "#D46D01"
+    static let fallbackAccent = "#D96507"
     static let background = adaptive(light: "#FFF9F3", dark: "#1F2937")
     static let text = adaptive(light: "#35312A", dark: "#F3F4F6")
     static let textSecondary = adaptive(light: "#6D6759", dark: "#9CA3AF")

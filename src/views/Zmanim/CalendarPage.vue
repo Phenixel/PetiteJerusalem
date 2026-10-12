@@ -227,11 +227,10 @@ const isPastRow = (row: CalendarRow): boolean =>
  * couleur ne se détache pas du beige. Une carte pleine, elle, se voit d'un
  * bout à l'autre de la page.
  *
- * Le texte posé sur la teinte (`on-brand` : une encre sombre sur une teinte
- * claire, le blanc sur une teinte de fête) y descend en trois tons, comme
- * sur le bandeau du profil : le nom et les heures à plein, les dates et les
- * intitulés en dessous, la date hébraïque plus bas encore. Sans quoi tout se
- * vaudrait et la carte ne se lirait plus.
+ * Le texte posé sur la teinte (`on-brand`, le blanc) y descend en trois
+ * tons, comme sur le bandeau du profil : le nom et les heures à plein, les
+ * dates et les intitulés en dessous, la date hébraïque plus bas encore. Sans
+ * quoi tout se vaudrait et la carte ne se lirait plus.
  */
 const isAhead = (key: string): boolean => key === nextKey.value || key === festivalKey.value;
 

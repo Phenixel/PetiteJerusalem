@@ -5,22 +5,18 @@ import { activeHolidayTheme } from "./useHolidayTheme";
 /**
  * Les couleurs d'un thème, qu'il vienne d'un thème choisi ou d'une fête.
  *
- * Deux familles, la principale et la secondaire, et dans chacune deux
- * rôles :
- *
- * - l'**encre** (`primary`, `secondary`) : le texte, les liens, les icônes,
- *   les filets et les teintes légères posées sous un texte de la même
- *   couleur. Elle doit se lire sur le fond clair comme sur le fond sombre ;
- * - la **teinte** (`brand`, `secondaryBrand`) : la couleur de la palette,
- *   telle quelle, pour les fonds pleins (la carte du moment, les boutons, les
- *   pastilles pleines, le bouton central de la barre) et les décors. Ce qui
- *   s'écrit dessus prend `onBrand`, le blanc ou une encre sombre selon que la
- *   teinte est soutenue ou claire.
+ * Deux familles, la principale et la secondaire. Chacune a son **encre**
+ * (`primary`, `secondary`) : le texte, les liens, les icônes, les filets, et
+ * les teintes légères posées sous un texte de la même couleur. Les fonds
+ * pleins (la carte du moment, les boutons, les pastilles pleines, le bouton
+ * central de la barre) prennent la **teinte** (`brand`) et écrivent dessus
+ * `onBrand`. Aujourd'hui la teinte est l'encre, avec du blanc dessus : les
+ * deux rôles restent séparés pour qu'un thème puisse un jour poser une teinte
+ * claire avec un texte sombre.
  *
  * `brandSoft` et `secondarySoft` sont les versions claires de la palette,
- * pour les fonds doux. Un thème de fête ne donne que ses deux encres, assez
- * soutenues pour servir aussi de teinte : le reste s'en déduit (voir
- * `resolveThemeColors`).
+ * pour les fonds doux. Ce qu'un thème ne donne pas se déduit de ses encres
+ * (voir `resolveThemeColors`), y compris pour un thème de fête.
  */
 export interface ThemeColors {
   primary: string;
@@ -36,60 +32,52 @@ export interface ThemeOption extends ThemeColors {
   id: string;
 }
 
-/** Les couleurs de la palette du logo (orange, bleu, et leurs versions claires). */
+/**
+ * Les couleurs de la palette du logo, telles que l'app les emploie. Les
+ * teintes du logo (l'orange #FEA547, le bleu #539EE2) sont claires : le blanc
+ * ne s'y lit pas, et elles ne s'écrivent pas sur le fond. L'app prend donc la
+ * même teinte, soutenue juste assez pour porter le blanc et se lire en encre :
+ * un seul orange, un seul bleu. Les versions claires de la palette servent
+ * aux fonds doux.
+ */
 const PALETTE = {
-  orange: "#FEA547",
+  orange: "#D96507",
   orangeSoft: "#FFD09E",
-  orangeInk: "#D46D01",
-  orangeOn: "#3B2412",
-  blue: "#539EE2",
+  blue: "#328CDC",
   blueSoft: "#A9CCEB",
-  blueInk: "#328CDC",
-  blueOn: "#10263F",
 } as const;
 
 /**
  * Les trois thèmes, dans l'ordre où ils s'affichent. Le premier est celui
- * d'origine, « sunset » : l'orange de la palette du logo, le bleu en
- * secondaire. Le bleu et le vert restent au choix, avec l'orange en
- * secondaire.
+ * d'origine, « sunset » : l'orange de la palette, le bleu en secondaire. Le
+ * bleu et le vert restent au choix, avec l'orange en secondaire.
  *
- * Les teintes de la palette sont claires : le blanc ne s'y lit pas (2:1 sur
- * l'orange) et elles ne s'écrivent pas sur le fond. Elles servent donc de
- * fond plein, avec un texte sombre dessus (`onBrand`), et le texte en couleur
- * prend la même teinte, juste assez soutenue pour la règle de lisibilité de
- * docs/design.md (`primary`, `secondary`). Tenu par
- * src/__tests__/themeColors.test.ts.
+ * Une couleur par famille, qui sert à la fois de fond plein sous du blanc et
+ * d'encre sur le fond clair. Une première version posait la teinte claire du
+ * logo en fond, avec un texte brun, et une encre plus soutenue pour le texte :
+ * deux oranges se côtoyaient sur chaque écran, et l'action principale perdait
+ * son autorité. Tenu par src/__tests__/themeColors.test.ts.
  */
 export const THEME_OPTIONS: ThemeOption[] = [
   {
     id: "sunset",
-    primary: PALETTE.orangeInk,
-    brand: PALETTE.orange,
-    onBrand: PALETTE.orangeOn,
+    primary: PALETTE.orange,
     brandSoft: PALETTE.orangeSoft,
-    secondary: PALETTE.blueInk,
-    secondaryBrand: PALETTE.blue,
+    secondary: PALETTE.blue,
     secondarySoft: PALETTE.blueSoft,
   },
   {
     id: "ocean",
-    primary: PALETTE.blueInk,
-    brand: PALETTE.blue,
-    onBrand: PALETTE.blueOn,
+    primary: PALETTE.blue,
     brandSoft: PALETTE.blueSoft,
-    secondary: PALETTE.orangeInk,
-    secondaryBrand: PALETTE.orange,
+    secondary: PALETTE.orange,
     secondarySoft: PALETTE.orangeSoft,
   },
   {
     id: "emerald",
     primary: "#059C66",
-    brand: "#059C66",
-    onBrand: "#FFFFFF",
     brandSoft: "#A7DCC4",
-    secondary: PALETTE.orangeInk,
-    secondaryBrand: PALETTE.orange,
+    secondary: PALETTE.orange,
     secondarySoft: PALETTE.orangeSoft,
   },
 ];

@@ -383,8 +383,7 @@ la journée dans une liste de lignes (`ZmanRow`), se perd dans une liste de
 cartes, où chacune porte déjà trois niveaux de texte.
 
 La prochaine fête du calendrier prend donc la teinte du thème à plein, sur
-toute sa carte, et son texte passe à ce qui s'écrit sur elle (`on-brand` :
-le brun sur l'orange, le blanc sur une teinte de fête). C'est la seule carte
+toute sa carte, et son texte passe au blanc (`on-brand`). C'est la seule carte
 colorée de la page, et on la trouve sans avoir à lire.
 
 Ce texte y descend en trois tons, comme sur le bandeau du profil : le nom de
@@ -1301,58 +1300,56 @@ adopté) plutôt que d'en écarter à l'aveugle. Tenu par
 Les couleurs viennent de la palette du logo : un orange, un bleu, et leur
 version claire.
 
-| Palette       | Teinte    | Claire    |
-| ------------- | --------- | --------- |
-| Orange        | `#FEA547` | `#FFD09E` |
-| Bleu          | `#539EE2` | `#A9CCEB` |
-| Fond de page  | `#FFF9F3` |           |
-| Briques (mur) | `#D6C4B8` |           |
+| Palette       | Logo      | Dans l'app | Claire    |
+| ------------- | --------- | ---------- | --------- |
+| Orange        | `#FEA547` | `#D96507`  | `#FFD09E` |
+| Bleu          | `#539EE2` | `#328CDC`  | `#A9CCEB` |
+| Fond de page  | `#FFF9F3` |            |           |
+| Briques (mur) | `#D6C4B8` |            |           |
 
-Ces teintes sont claires : le blanc ne s'y lit pas (2:1 sur l'orange, 2,9:1
-sur le bleu), et elles ne s'écrivent pas sur le fond. Chaque famille de
-couleur a donc deux rôles :
-
-- la **teinte** (`--color-brand`, `--color-secondary-brand`) : la couleur de
-  la palette telle quelle, pour ce qui est **plein** (la carte du moment, les
-  boutons, les pastilles et les segments choisis, le bouton central de la
-  barre, le bandeau du profil, la carte de la prochaine fête, les ronds de la
-  frise du partage). Ce qui s'écrit dessus prend `--color-on-brand` : une
-  encre sombre de la même famille (brun sur l'orange, bleu nuit sur le
-  bleu), ou le blanc sur une teinte assez soutenue (le vert, les thèmes de
-  fête). Sa version claire (`--color-brand-soft`, `--color-secondary-soft`)
-  sert aux fonds doux ;
-- l'**encre** (`--color-primary`, `--color-secondary`) : la même teinte,
-  juste assez soutenue pour se lire sur le fond clair, sur une carte blanche
-  et sur le fond sombre. Elle porte le texte en couleur, les liens, les
-  icônes, les numéros de verset, l'onglet actif, les filets, et les teintes
-  légères posées sous un texte de même couleur (`bg-primary/10`). Les
-  indicateurs sans texte (barres d'avancement, points, interrupteurs)
-  restent à l'encre : la teinte claire s'y verrait trop peu.
+Les teintes du logo sont claires : le blanc ne s'y lit pas (2:1 sur l'orange,
+2,9:1 sur le bleu), et elles ne s'écrivent pas sur le fond. L'app prend donc
+la **même teinte, soutenue juste assez** pour porter le blanc et se lire en
+encre : un seul orange, un seul bleu. Une première version posait la teinte
+claire en fond, avec un texte brun, et une encre plus soutenue pour le
+texte : deux oranges se côtoyaient sur chaque écran (le bouton pastel à côté
+de l'heure caramel), et l'action principale perdait son autorité. Les
+versions claires de la palette restent pour les fonds doux.
 
 Trois thèmes au choix, dans cet ordre. Le premier est celui d'origine.
 
-| Thème           | Teinte    | Sur la teinte | Encre     | Secondaire (teinte, encre) |
-| --------------- | --------- | ------------- | --------- | -------------------------- |
-| sunset (défaut) | `#FEA547` | `#3B2412`     | `#D46D01` | `#539EE2`, `#328CDC`       |
-| ocean           | `#539EE2` | `#10263F`     | `#328CDC` | `#FEA547`, `#D46D01`       |
-| emerald         | `#059C66` | blanc         | `#059C66` | `#FEA547`, `#D46D01`       |
+| Thème           | `primary` | `secondary` |
+| --------------- | --------- | ----------- |
+| sunset (défaut) | `#D96507` | `#328CDC`   |
+| ocean           | `#328CDC` | `#D96507`   |
+| emerald         | `#059C66` | `#D96507`   |
 
 L'orange et le bleu sont l'un en second de l'autre ; le vert prend l'orange
-en second. Un thème de fête ne donne que ses deux encres, assez soutenues
-pour servir aussi de teinte, avec du blanc dessus (`resolveThemeColors`).
-La règle de lisibilité est tenue par `src/__tests__/themeColors.test.ts` :
-l'encre à 3,1:1 au moins sur le fond, 3,5:1 sur une carte blanche, 3,3:1 sur
-le fond sombre ; ce qui s'écrit sur la teinte à 3,5:1 au moins.
+en second. La couleur principale sert aussi bien de fond plein sous du blanc
+que d'encre sur le fond : la règle de lisibilité est tenue par
+`src/__tests__/themeColors.test.ts` (l'encre à 3,1:1 au moins sur le fond,
+3,5:1 sur une carte blanche, 3,3:1 sur le fond sombre ; le blanc à 3,5:1 sur
+la couleur).
+
+Les fonds pleins (la carte du moment, les boutons, les pastilles et segments
+choisis, le bouton central de la barre, le bandeau du profil, la carte de la
+prochaine fête, les ronds de la frise du partage) prennent
+`--color-brand`, et ce qui s'écrit dessus `--color-on-brand`. Aujourd'hui ce
+sont la couleur principale et le blanc ; les deux rôles restent séparés pour
+qu'un thème puisse un jour poser une teinte claire avec un texte sombre. Le
+texte en couleur, les liens, les icônes, l'onglet actif, les filets et les
+teintes légères (`bg-primary/10`) prennent `--color-primary`. Un thème de
+fête ne donne que ses deux couleurs, et le reste s'en déduit
+(`resolveThemeColors`).
 
 Ils vivent dans `src/composables/useTheme.ts`, qui réécrit les variables sur
-la racine. L'accent des widgets natifs et de la montre est l'encre (il s'y
-écrit du texte) ; sa valeur de repli (`DEFAULT_ACCENT` dans
-`widgetPayloads.ts`, les constantes `FALLBACK_ACCENT` côté natif) est celle
-du thème par défaut, `#D46D01` : les trois se changent ensemble. Le fond
-(`#FFF9F3`) se reprend dans la couleur du navigateur (`index.html`), la barre
-d'état (`useNativeStatusBar`, `scripts/setup-android.mjs`) et le fond des
-widgets. La vignette de partage (`functions/src/ogCard.ts`) prend la teinte,
-avec le brun dessus.
+la racine. L'accent des widgets natifs et de la montre suit le thème ; sa
+valeur de repli (`DEFAULT_ACCENT` dans `widgetPayloads.ts`, les constantes
+`FALLBACK_ACCENT` côté natif) est celle du thème par défaut, `#D96507` : les
+trois se changent ensemble. Le fond (`#FFF9F3`) se reprend dans la couleur du
+navigateur (`index.html`), la barre d'état (`useNativeStatusBar`,
+`scripts/setup-android.mjs`) et le fond des widgets. La vignette de partage
+(`functions/src/ogCard.ts`) prend l'orange, avec le blanc dessus.
 
 La couleur secondaire tient les éléments qui ne sont ni l'action principale
 ni le texte : les outils du Sidour, la ligne sous la carte du moment, les
@@ -1441,8 +1438,7 @@ Trois choses changent, pas une de plus :
 - **les ornements** : deux dessins par fête, dans le style des illustrations
   des portes (`src/components/holiday`). En tête de l'accueil, de part et
   d'autre d'un souhait ; à côté du nom du site dans le bandeau et en tête du
-  pied de page ; à la couleur du texte sur le bandeau du profil (le blanc,
-  sur la teinte d'une fête) ; et, sur toutes les autres
+  pied de page ; en blanc sur le bandeau du profil ; et, sur toutes les autres
   pages, en filigrane dans les coins hauts (`HolidayBackdrop`), là où le mur
   de pierre se voit, jamais sur une page de lecture. Toujours à même le fond,
   jamais en carte : c'est une parure, pas une réponse. Un ornement qui se

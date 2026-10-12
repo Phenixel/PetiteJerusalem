@@ -4,8 +4,8 @@ import { HOLIDAY_THEMES } from "../services/holidayThemes";
 
 /**
  * Les couleurs de thème (voir docs/design.md, « Les couleurs de thème ») :
- * la teinte de la palette sert de fond plein, l'encre de texte. Chaque rôle
- * doit se lire là où il se pose.
+ * une couleur par famille, qui sert de fond plein sous du blanc et d'encre
+ * sur le fond. Chaque rôle doit se lire là où il se pose.
  */
 const luminance = (hex: string) => {
   const channel = (i: number) => {
@@ -52,11 +52,16 @@ describe("les couleurs de thème", () => {
     }
   });
 
-  it("les thèmes prennent la palette du logo : orange et bleu, l'un en second de l'autre", () => {
+  it("les thèmes prennent la palette du logo : un seul orange, un seul bleu, du blanc dessus", () => {
     const [sunset, ocean, emerald] = THEME_OPTIONS.map(resolveThemeColors);
-    expect(sunset).toMatchObject({ brand: "#FEA547", secondaryBrand: "#539EE2" });
-    expect(ocean).toMatchObject({ brand: "#539EE2", secondaryBrand: "#FEA547" });
-    expect(emerald).toMatchObject({ brand: "#059C66", secondaryBrand: "#FEA547" });
+    expect(sunset).toMatchObject({
+      primary: "#D96507",
+      brand: "#D96507",
+      onBrand: "#FFFFFF",
+      secondary: "#328CDC",
+    });
+    expect(ocean).toMatchObject({ primary: "#328CDC", brand: "#328CDC", secondary: "#D96507" });
+    expect(emerald).toMatchObject({ primary: "#059C66", brand: "#059C66", secondary: "#D96507" });
   });
 
   it("un thème de fête, qui ne donne que ses encres, s'en sert aussi de teinte", () => {

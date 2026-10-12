@@ -44,7 +44,7 @@ type Translate = (key: string, params?: Record<string, unknown>) => string;
  * L'app pousse normalement celle du thème choisi par l'utilisateur
  * (widgetService), pour que les widgets portent les mêmes couleurs que l'app.
  */
-const DEFAULT_ACCENT = "#D46D01";
+const DEFAULT_ACCENT = "#D96507";
 
 /** Un horaire prêt à afficher : libellé et heure localisés + epoch ms. */
 export interface ZmanimWidgetTime {
