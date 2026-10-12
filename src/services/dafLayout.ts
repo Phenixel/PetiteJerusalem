@@ -95,7 +95,15 @@ export interface DafLayoutPage {
    * texte, dibbour]` : sa boîte comme une ligne, ses mots, et combien des
    * premiers sont du dibbour hamat'hil. Ces mots ne se relient à aucun passage.
    */
-  fill?: [zone: number, x: number, y: number, width: number, text: string, lead: number][];
+  fill?: [
+    zone: number,
+    x: number,
+    y: number,
+    width: number,
+    text: string,
+    lead: number,
+    height?: number,
+  ][];
   /**
    * Les abréviations du livre, là où nos mots en toutes lettres ne tiennent
    * pas dans la ligne (« המע"ה » pour « המוציא מחברו עליו הראיה ») :
@@ -304,12 +312,21 @@ export function dafLines(
       .map((w) => ({ text: w.text, lead: false, passage: -1 }));
     if (words.length) out.push({ zone, kind: "closing", x, y, width, height, words });
   }
-  for (const [z, x, y, width, text, lead] of page.fill ?? []) {
+  for (const [z, x, y, width, text, lead, height] of page.fill ?? []) {
     const words = text
       .split(" ")
       .filter(Boolean)
       .map((word, k) => ({ text: word, lead: k < lead, passage: -1 }));
-    if (words.length) out.push({ zone: z === 1 ? "rashi" : "tosafot", x, y, width, words });
+    // Une hauteur : le bloc du pied de page, dans un corps plus petit.
+    if (words.length)
+      out.push({
+        zone: z === 1 ? "rashi" : "tosafot",
+        x,
+        y,
+        width,
+        words,
+        ...(height ? { height } : {}),
+      });
   }
   for (const [x, y, width, height, text] of page.formula ?? []) {
     const words = text.split(" ").map((word) => ({ text: word, lead: false, passage: -1 }));

@@ -1412,6 +1412,7 @@ const en: LocaleMessages = {
       title: "Commentaries",
       rashi: "Rashi",
       rashbam: "Rashbam",
+      ran: "Ran",
       tosafot: "Tosafot",
       bartenura: "Bartenura",
       tosafotYomTov: "Tosafot Yom Tov",

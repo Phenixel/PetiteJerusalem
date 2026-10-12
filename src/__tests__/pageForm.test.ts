@@ -244,4 +244,16 @@ describe("forme de la page du daf", () => {
     // Avant 99b, Rachi seul.
     expect(parsed.get(180)!.rashbamAfter).toBeUndefined();
   });
+
+  it("donne au Ran la place de Tossafot en Nedarim, et garde Tossafot pour le volet", () => {
+    const parsed = parseDafMeforshim(read("talmud-meforshim/nedarim/0.json") as never);
+    const amud = parsed.get(2)!;
+    expect(amud.outer).toBe("ran");
+    expect(amud.tosafot.flat().length).toBeGreaterThan(0);
+    expect(amud.margin).toBeDefined();
+    // Ailleurs, Tossafot tient sa colonne.
+    const other = parseDafMeforshim(read("talmud-meforshim/berakhot/0.json") as never);
+    expect(other.get(0)!.outer).toBeUndefined();
+    expect(other.get(0)!.margin).toBeUndefined();
+  });
 });

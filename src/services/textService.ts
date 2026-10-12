@@ -1234,6 +1234,10 @@ export interface DafMeforshim {
    * du Rachbam.
    */
   rashbamAfter?: number[];
+  /** Le Ran, là où il occupe la place de Tossafot (Nedarim). */
+  outer?: "ran";
+  /** Tossafot, là où il n'est plus qu'en marge du livre (Nedarim) : pour le volet. */
+  margin?: RashiComment[][];
 }
 
 /** Tous les commentaires d'un amoud bout à bout, pour la page du daf. */
@@ -1254,6 +1258,8 @@ export function parseDafMeforshim(data: {
   tosafot?: unknown[];
   rashbam?: number[];
   rashbamAfter?: Record<string, number[]>;
+  outer?: string;
+  margin?: unknown[];
 }): Map<number, DafMeforshim> {
   const byAmud = new Map<number, DafMeforshim>();
   const comments = (passage: unknown): RashiComment[] =>
@@ -1271,6 +1277,8 @@ export function parseDafMeforshim(data: {
       tosafot: passages(data.tosafot?.[i]),
       inner: rashbam.has(i) ? "rashbam" : "rashi",
       ...(data.rashbamAfter?.[i] ? { rashbamAfter: data.rashbamAfter[i] } : {}),
+      ...(data.outer === "ran" ? { outer: "ran" as const } : {}),
+      ...(data.margin ? { margin: passages(data.margin[i]) } : {}),
     });
   }
   return byAmud;

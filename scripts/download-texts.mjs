@@ -331,11 +331,13 @@ if (shouldRun('meforshim')) {
       if (!seder) return;
       const slug = tractate.toLowerCase().replace(/ /g, '-').replace(/'/g, '');
       try {
-        const [gemara, rashi, tosafot, rashbam] = await Promise.all([
+        const [gemara, rashi, tosafot, rashbam, ran] = await Promise.all([
           withRetry(() => fetchJson(`${GCS}/Talmud/Bavli/${seder}/${tractate}/Hebrew/merged.json`), `${tractate}/He`),
           commentary('Rashi', seder, tractate),
           commentary('Tosafot', seder, tractate),
           RASHBAM_TRACTATES.has(tractate) ? commentary('Rashbam', seder, tractate) : Promise.resolve([]),
+          // Nedarim : le livre met le Ran à la place de Tossafot, et Tossafot en marge.
+          tractate === 'Nedarim' ? commentary('Ran', seder, tractate) : Promise.resolve([]),
         ]);
         // Les index source que le fichier de guemara a gardés : le filtre de
         // cleanTextArray, appliqué amoud par amoud.
@@ -368,10 +370,15 @@ if (shouldRun('meforshim')) {
           rashbamAfter.set(a, Array.from({ length: count }, (_, p) => (own[p] ?? []).length));
           return Array.from({ length: count }, (_, p) => [...(own[p] ?? []), ...(other[p] ?? [])]);
         });
-        const outer = kept.map(s => amudComments(tosafot[s]));
+        // Là où le Ran tient la colonne (Nedarim), Tossafot passe en `margin` :
+        // il n'est plus sur la page ligne pour ligne, mais reste au volet.
+        const hasRan = ran.length > 0;
+        const outer = kept.map(s => amudComments((hasRan ? ran : tosafot)[s]));
+        const margin = hasRan ? kept.map(s => amudComments(tosafot[s])) : [];
         // Un commentaire ne commente pas un passage que la guemara n'a pas.
         const overflow = kept.findIndex((s, a) =>
-          inner[a].length > local.he[a].length || outer[a].length > local.he[a].length);
+          inner[a].length > local.he[a].length || outer[a].length > local.he[a].length
+          || (margin[a] ?? []).length > local.he[a].length);
         if (overflow >= 0) {
           console.error(`  ✗ ${tractate}: amoud ${overflow}, plus de passages commentés que de passages`);
           return;
@@ -398,6 +405,7 @@ if (shouldRun('meforshim')) {
             rashi: inner.slice(from, from + MEFORSHIM_CHUNK),
             tosafot: outer.slice(from, from + MEFORSHIM_CHUNK),
             ...(rashbamHere.length ? { rashbam: rashbamHere } : {}),
+            ...(hasRan ? { outer: 'ran', margin: margin.slice(from, from + MEFORSHIM_CHUNK) } : {}),
             ...(rashbamBoth.length ? { rashbamAfter: Object.fromEntries(rashbamBoth) } : {}),
           }), 'utf8');
         }

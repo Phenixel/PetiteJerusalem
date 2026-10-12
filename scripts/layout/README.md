@@ -176,14 +176,21 @@ des mots imprimés d'un commentaire se retrouvent chez nous ; l'encre dément
 plus de 6 % des lignes (et plus de quatre) ; plus de deux mots sur cinq
 d'un commentaire que nous avons ne sont imprimés ni sur sa page ni sur ses
 voisines. Un traité dont moins de
-la moitié des pages passent ne s'écrit pas du tout : c'est le cas de
-Horayot (ses Tossafot ne sont pas sur la page) et de Nedarim (la page y
-porte le Ran, que nous n'avons pas, et 69 pages sur 180 seulement passent).
+la moitié des pages passent ne s'écrit pas du tout (aucun aujourd'hui).
+
+Les commentateurs qui prennent le relais de Rachi ou de Tossafot viennent
+de Sefaria comme eux (`scripts/download-texts.mjs`), et tiennent leur
+colonne : le Rachbam en Bava Batra (là où Rachi s'arrête) et en Pessa'him
+(à côté de Rachi, à partir de 99b) ; le Ran en Nedarim, à la place de
+Tossafot, qui n'y est qu'en marge du livre et ne reste qu'au volet des
+commentaires. Sans eux, la moitié de Nedarim ne passait pas les contrôles.
 
 Ce que le relevé ne porte pas : les réclames et les notes des marges ; les
-commentaires composés comme Rachi que nous n'avons pas (le Rachbam, la
-Chita Mekoubétset), dont la place reste blanche ; Kinnim ; Chekalim et
-Middot, que nos fichiers ne rangent pas par amoud.
+commentaires que nous n'avons pas (le second Rachi de Mena'hot, le Rivan
+de Makkot, la Chita Mekoubétset), dont le texte, quand il est dans les
+colonnes de la page, s'écrit depuis le livre ; Kinnim ; Chekalim et
+Middot, que nos fichiers ne rangent pas par amoud. Les « תוספות » du pied
+de page (Keritot) s'écrivent aussi depuis le livre, dans leur petit corps.
 
 ## Le pilote sur scan
 

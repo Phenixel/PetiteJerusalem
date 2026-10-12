@@ -286,7 +286,9 @@ const rows = computed<Row[]>(() => {
   for (const zone of ["main", "rashi", "tosafot"] as const) {
     const fits = lines
       .map((line, i) =>
-        line.zone === zone && !line.kind && line.words.length >= 4 ? line.width / widths[i] : 0,
+        line.zone === zone && !line.kind && !line.height && line.words.length >= 4
+          ? line.width / widths[i]
+          : 0,
       )
       .filter((fit) => fit > 0 && Number.isFinite(fit))
       .sort((a, b) => a - b);
@@ -307,7 +309,9 @@ const rows = computed<Row[]>(() => {
       ? line.height / LETTER
       : line.kind === "closing" && line.height
         ? line.height * 0.82
-        : sizes.get(line.zone)!;
+        : line.height
+          ? Math.min(sizes.get(line.zone)!, line.height * 0.82)
+          : sizes.get(line.zone)!;
   written = lines.map(sizeOf);
   return lines.map((line, i): Row => {
     const size = written[i];

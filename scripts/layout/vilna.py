@@ -453,6 +453,40 @@ def side_closings(side_size: int, formulas: dict[str, list[list[Token]]], kept: 
     return out
 
 
+def foot_block(left: float, right: float, bottom: float, side_size: int, taken: set[int]) -> list[list]:
+    """Les « תוספות » du pied de page (Kodachim) : un bloc que le livre
+    imprime sous le corps de la page, entre ses bords, dans un corps plus
+    petit, et qu'il annonce par ce mot. Nos textes ne l'ont pas : il s'écrit
+    depuis le livre. Sans l'annonce, ce n'est pas lui (des notes).
+    [zone, gauche, haut, droite, bas, texte, mots de dibbour]."""
+    under = [c for c in CHUNKS if id(c) not in taken and c.top >= bottom - 2 and norm(c.text)
+             and left - 2 <= c.left and c.right <= right + 2 and 0.55 * side_size <= c.size <= 1.05 * side_size]
+    rows: list[list[Chunk]] = []
+    for c in sorted(under, key=lambda c: c.middle):
+        if rows and abs(rows[-1][-1].middle - c.middle) < 0.3 * c.size:
+            rows[-1].append(c)
+        else:
+            rows.append([c])
+    out, limit, body = [], bottom, 0
+    for row in rows:
+        row.sort(key=lambda c: -c.right)
+        top, low = min(c.top for c in row), max(c.top + c.height for c in row)
+        if top - limit > 1.5 * side_size:
+            break
+        if not out and norm(row[0].text) != norm("תוספות"):
+            return []
+        # Le bloc garde son corps : ce qui suit en plus petit est une note.
+        size = Counter(c.size for c in row).most_common(1)[0][0]
+        if out and size < 0.95 * body:
+            break
+        body = max(body, size)
+        words = [c.text.strip() for c in row]
+        out.append([2, min(c.left for c in row), top, max(c.right for c in row), low, " ".join(words),
+                    1 if not out else 0])
+        limit = low
+    return out if len(out) >= 2 else []
+
+
 def ink_faults(pdf: str, lines: list) -> list[str]:
     """Le second témoin : l'encre de la page.
 
@@ -1519,11 +1553,13 @@ def book_lines(placed: dict, kept: dict, side_size: int, strangers: list | None 
         pairs = list(zip(said, said[1:]))
         if ours and pairs and sum(1 for pair in pairs if pair in ours) >= 0.4 * len(pairs):
             return
-        if not (lo - 2 <= line.left and line.right <= hi + 2 and top - 2 <= line.top and line.bottom <= bottom + 40):
+        foot = any(id(part) in under for part in getattr(line, "parts", [line]))
+        if not (lo - 2 <= line.left and line.right <= hi + 2 and top - 2 <= line.top
+                and (foot or line.bottom <= bottom + 40)):
             return
         # Ni par-dessus une ligne que la page a déjà (une rangée mal coupée),
         # ni dans un corps plus petit que celui des commentaires (une glose).
-        if line.bottom - line.top < 0.8 * height:
+        if line.bottom - line.top < 0.8 * height and not foot:
             return
         if any(min(m.right, line.right) - max(m.left, line.left) > 4
                and min(m.bottom, line.bottom) - max(m.top, line.top) > 4 for m in every + taken):
@@ -1540,6 +1576,18 @@ def book_lines(placed: dict, kept: dict, side_size: int, strangers: list | None 
         mine = {id(line) for line, _ in kept[zone]}
         loose += [(z, line) for line, runs in zip(placed[zone].lines, placed[zone].runs)
                   if not runs and id(line) not in mine]
+    # Le pied de page : un bloc qui suit le corps de la page sans blanc, entre
+    # ses bords, parfois dans un corps plus petit (les « תוספות » du bas des
+    # pages de Kodachim). Il est de la page ; les notes de marge, elles,
+    # sortent des bords.
+    limit, under = bottom, set()
+    for z, line in sorted(loose, key=lambda pair: pair[1].top):
+        if line.top < bottom - 2 or not (lo - 2 <= line.left and line.right <= hi + 2):
+            continue
+        if line.top - limit > 1.5 * height or line.bottom - line.top < 0.5 * height:
+            continue
+        under.add(id(line))
+        limit = max(limit, line.bottom)
     loose.sort(key=lambda pair: (round(pair[1].top / 4), -pair[1].right))
     rows: list[list] = []
     for z, line in loose:
@@ -1557,7 +1605,7 @@ def book_lines(placed: dict, kept: dict, side_size: int, strangers: list | None 
         parts = [line for _, line in row]
         whole(SimpleNamespace(left=min(l.left for l in parts), right=max(l.right for l in parts),
                               top=min(l.top for l in parts), bottom=max(l.bottom for l in parts),
-                              words=[w for l in parts for w in l.words],
+                              words=[w for l in parts for w in l.words], parts=parts,
                               lead=[f for l in parts for f in l.lead]), row[0][0])
     for z, zone in ((1, "rashi"), (2, "tosafot")):
         for k, (line, runs) in enumerate(kept[zone]):
@@ -1913,6 +1961,12 @@ def page_at(tractate: Tractate, amud: int, pdf: str, taken: dict[str, set]) -> t
     # Le mot d'ouverture et la clôture sont de la page : elle va jusqu'à eux.
     for _, top, _, bottom, *_ in initials + closing:
         y0, y1 = min(y0, int(top)), max(y1, int(bottom) + 1)
+    foot: list[list] = []
+    if book is not None and (hebrew > 200 and nuns >= 0.03 * hebrew):
+        seen = {id(c) for l in every for c in getattr(l, "chunks", [])}
+        for row in foot_block(x0, x1, y1, printed.sizes["side"], seen):
+            foot.append(row)
+            y1 = max(y1, int(row[4]) + 1)
     scale = UNITS / (x1 - x0)
     # La boîte d'une ligne : son bord gauche, le milieu de sa hauteur, sa largeur.
     box = lambda l: [round((l.left - x0) * scale), round(((l.top + l.bottom) / 2 - y0) * scale),  # noqa: E731
@@ -2001,7 +2055,7 @@ def page_at(tractate: Tractate, amud: int, pdf: str, taken: dict[str, set]) -> t
              for a, p, w, n, text in placed[zone].short]
     if brief:
         page["short"] = brief
-    if book:
+    if book or foot:
         # Le texte du livre que le nôtre n'a pas : zone (1 ou 2), boîte, mots, mots de dibbour.
         page["fill"] = [[z, round((a - x0) * scale), round(((t + b) / 2 - y0) * scale), round((c - a) * scale),
                          re.sub("[^א-ת'\"׳״.,:;()\\[\\] -]", "", text).strip(), lead]
@@ -2010,6 +2064,10 @@ def page_at(tractate: Tractate, amud: int, pdf: str, taken: dict[str, set]) -> t
                         and not norm(text).startswith(norm("הדרן עלך"))
                         # De vrais mots : un renvoi entre crochets (« [פ"ג ה"ה] ») est une note d'éditeur.
                         and len(re.findall("[א-ת]{3}", text)) >= 2]
+        # Le bloc du pied de page a son corps, plus petit : sa hauteur suit.
+        page["fill"] += [[z, round((a - x0) * scale), round(((t + b) / 2 - y0) * scale), round((c - a) * scale),
+                          re.sub("[^א-ת'\"׳״.,:;()\\[\\] -]", "", text).strip(), lead, round((b - t) * scale)]
+                         for z, a, t, c, b, text, lead in foot]
         if not page["fill"]:
             del page["fill"]
     if initials:

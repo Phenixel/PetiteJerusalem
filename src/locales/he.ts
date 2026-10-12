@@ -1371,6 +1371,7 @@ const he: LocaleMessages = {
       title: "מפרשים",
       rashi: "רש״י",
       rashbam: "רשב״ם",
+      ran: "ר״ן",
       tosafot: "תוספות",
       bartenura: "ברטנורא",
       tosafotYomTov: "תוספות יום טוב",

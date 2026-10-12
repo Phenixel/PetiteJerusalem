@@ -28,7 +28,13 @@ import { DAF_LAYOUT_REACH } from "../services/dafLayout";
  */
 
 /** Les commentateurs, dans l'ordre où le panneau les présente. */
-export type CommentarySource = "rashi" | "rashbam" | "tosafot" | "bartenura" | "tosafotYomTov";
+export type CommentarySource =
+  | "rashi"
+  | "rashbam"
+  | "tosafot"
+  | "ran"
+  | "bartenura"
+  | "tosafotYomTov";
 
 /** Un commentateur et ce qu'il dit du passage. */
 export interface CommentaryGroup {
@@ -112,7 +118,8 @@ export function talmudGroups(
           { source: "rashi", comments: inner.slice(0, cut) },
           { source: "rashbam", comments: inner.slice(cut) },
         ];
-  groups.push({ source: "tosafot", comments: amud.tosafot[place.passage] ?? [] });
+  groups.push({ source: amud.outer ?? "tosafot", comments: amud.tosafot[place.passage] ?? [] });
+  if (amud.margin) groups.push({ source: "tosafot", comments: amud.margin[place.passage] ?? [] });
   return groups.filter((g) => g.comments.length > 0);
 }
 
@@ -201,6 +208,7 @@ export const COMMENTARY_LABELS = {
   rashi: "textReading.commentaries.rashi",
   rashbam: "textReading.commentaries.rashbam",
   tosafot: "textReading.commentaries.tosafot",
+  ran: "textReading.commentaries.ran",
   bartenura: "textReading.commentaries.bartenura",
   tosafotYomTov: "textReading.commentaries.tosafotYomTov",
 } as const satisfies Record<CommentarySource, string>;
