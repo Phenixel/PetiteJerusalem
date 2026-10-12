@@ -73,16 +73,16 @@ body {
 @theme {
   /* Couleurs : le fond est fixe, les trois thèmes sont au choix de
      l'utilisateur et réécrits au vol par useTheme. Valeurs par défaut :
-     « sunset », l'orange et le bleu de la palette du logo, soutenus pour
-     porter le blanc. Chaque famille a son encre (--color-primary,
+     « sunset », le vermillon d'origine et le bleu de la palette du logo,
+     soutenu pour porter le blanc. Chaque famille a son encre (--color-primary,
      --color-secondary) ; les fonds pleins prennent la teinte (--color-brand)
      et écrivent dessus --color-on-brand ; -soft, la version claire. Voir
      docs/design.md, « Les couleurs de thème ». */
-  --color-primary: #d96507;
+  --color-primary: #de4f17;
   --color-secondary: #328cdc;
-  --color-brand: #d96507;
+  --color-brand: #de4f17;
   --color-on-brand: #ffffff;
-  --color-brand-soft: #ffd09e;
+  --color-brand-soft: #f2b9a2;
   --color-secondary-brand: #328cdc;
   --color-secondary-soft: #a9cceb;
 

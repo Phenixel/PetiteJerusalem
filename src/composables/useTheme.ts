@@ -33,36 +33,34 @@ export interface ThemeOption extends ThemeColors {
 }
 
 /**
- * Les couleurs de la palette du logo, telles que l'app les emploie. Les
- * teintes du logo (l'orange #FEA547, le bleu #539EE2) sont claires : le blanc
- * ne s'y lit pas, et elles ne s'écrivent pas sur le fond. L'app prend donc la
- * même teinte, soutenue juste assez pour porter le blanc et se lire en encre :
- * un seul orange, un seul bleu. Les versions claires de la palette servent
- * aux fonds doux.
+ * Les deux couleurs des thèmes. L'orange est le vermillon d'origine de l'app,
+ * celui de la pierre de Jérusalem au soleil couchant. Le bleu vient de la
+ * palette du logo (#539EE2), soutenu juste assez pour porter le blanc et se
+ * lire en encre. Leurs versions claires se déduisent (`resolveThemeColors`),
+ * sauf celle du bleu, qui est celle du logo.
  */
 const PALETTE = {
-  orange: "#D96507",
-  orangeSoft: "#FFD09E",
+  orange: "#DE4F17",
   blue: "#328CDC",
   blueSoft: "#A9CCEB",
 } as const;
 
 /**
  * Les trois thèmes, dans l'ordre où ils s'affichent. Le premier est celui
- * d'origine, « sunset » : l'orange de la palette, le bleu en secondaire. Le
- * bleu et le vert restent au choix, avec l'orange en secondaire.
+ * d'origine, « sunset » : l'orange, le bleu en secondaire. Le bleu et le vert
+ * restent au choix, avec l'orange en secondaire.
  *
  * Une couleur par famille, qui sert à la fois de fond plein sous du blanc et
- * d'encre sur le fond clair. Une première version posait la teinte claire du
- * logo en fond, avec un texte brun, et une encre plus soutenue pour le texte :
- * deux oranges se côtoyaient sur chaque écran, et l'action principale perdait
- * son autorité. Tenu par src/__tests__/themeColors.test.ts.
+ * d'encre sur le fond clair. Deux essais ont été écartés pour l'orange : la
+ * teinte claire du logo en fond, avec un texte brun (deux oranges sur chaque
+ * écran, l'action principale sans autorité), puis l'orange du logo soutenu
+ * (#D96507), qui tirait au brun à côté du vermillon. Tenu par
+ * src/__tests__/themeColors.test.ts.
  */
 export const THEME_OPTIONS: ThemeOption[] = [
   {
     id: "sunset",
     primary: PALETTE.orange,
-    brandSoft: PALETTE.orangeSoft,
     secondary: PALETTE.blue,
     secondarySoft: PALETTE.blueSoft,
   },
@@ -71,14 +69,12 @@ export const THEME_OPTIONS: ThemeOption[] = [
     primary: PALETTE.blue,
     brandSoft: PALETTE.blueSoft,
     secondary: PALETTE.orange,
-    secondarySoft: PALETTE.orangeSoft,
   },
   {
     id: "emerald",
     primary: "#059C66",
     brandSoft: "#A7DCC4",
     secondary: PALETTE.orange,
-    secondarySoft: PALETTE.orangeSoft,
   },
 ];
 

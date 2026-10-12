@@ -52,16 +52,16 @@ describe("les couleurs de thème", () => {
     }
   });
 
-  it("les thèmes prennent la palette du logo : un seul orange, un seul bleu, du blanc dessus", () => {
+  it("les thèmes prennent le vermillon d'origine et le bleu du logo, du blanc dessus", () => {
     const [sunset, ocean, emerald] = THEME_OPTIONS.map(resolveThemeColors);
     expect(sunset).toMatchObject({
-      primary: "#D96507",
-      brand: "#D96507",
+      primary: "#DE4F17",
+      brand: "#DE4F17",
       onBrand: "#FFFFFF",
       secondary: "#328CDC",
     });
-    expect(ocean).toMatchObject({ primary: "#328CDC", brand: "#328CDC", secondary: "#D96507" });
-    expect(emerald).toMatchObject({ primary: "#059C66", brand: "#059C66", secondary: "#D96507" });
+    expect(ocean).toMatchObject({ primary: "#328CDC", brand: "#328CDC", secondary: "#DE4F17" });
+    expect(emerald).toMatchObject({ primary: "#059C66", brand: "#059C66", secondary: "#DE4F17" });
   });
 
   it("un thème de fête, qui ne donne que ses encres, s'en sert aussi de teinte", () => {

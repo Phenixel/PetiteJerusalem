@@ -113,10 +113,11 @@ function buildSvg({ title, label, tagline }: OgCardOptions): string {
     )
     .join("\n  ");
 
-  // Fond à plat, dans l'orange du thème « sunset » (celui de la palette du
-  // logo, soutenu pour porter le blanc). Pas de dégradé (voir docs/design.md).
+  // Fond à plat, dans la couleur d'origine de l'app (thème « sunset ») : le
+  // site n'emploie plus de dégradé nulle part, sa vignette de partage non plus
+  // (voir docs/design.md).
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${WIDTH}" height="${HEIGHT}" viewBox="0 0 ${WIDTH} ${HEIGHT}">
-  <rect width="${WIDTH}" height="${HEIGHT}" fill="#D96507"/>
+  <rect width="${WIDTH}" height="${HEIGHT}" fill="#DE4F17"/>
   <text x="${MARGIN}" y="110" font-family="${FONT_LATIN}" font-weight="700" font-size="34" fill="#ffffff" opacity="0.95">Petite Jérusalem</text>
   <text x="${MARGIN}" y="170" font-family="${FONT_LATIN}" font-weight="400" font-size="30" fill="#ffffff" opacity="0.85">${esc(label)}</text>
   ${titleSpans}

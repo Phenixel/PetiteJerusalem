@@ -1297,32 +1297,36 @@ adopté) plutôt que d'en écarter à l'aveugle. Tenu par
 
 ## 2. Les couleurs de thème
 
-Les couleurs viennent de la palette du logo : un orange, un bleu, et leur
-version claire.
+Deux couleurs : l'orange d'origine de l'app, le vermillon de la pierre de
+Jérusalem au soleil couchant, et le bleu de la palette du logo. Le fond et le
+mur viennent eux aussi du logo.
 
-| Palette       | Logo      | Dans l'app | Claire    |
+| Couleur       | Logo      | Dans l'app | Claire    |
 | ------------- | --------- | ---------- | --------- |
-| Orange        | `#FEA547` | `#D96507`  | `#FFD09E` |
+| Orange        |           | `#DE4F17`  | déduite   |
 | Bleu          | `#539EE2` | `#328CDC`  | `#A9CCEB` |
 | Fond de page  | `#FFF9F3` |            |           |
 | Briques (mur) | `#D6C4B8` |            |           |
 
-Les teintes du logo sont claires : le blanc ne s'y lit pas (2:1 sur l'orange,
-2,9:1 sur le bleu), et elles ne s'écrivent pas sur le fond. L'app prend donc
-la **même teinte, soutenue juste assez** pour porter le blanc et se lire en
-encre : un seul orange, un seul bleu. Une première version posait la teinte
-claire en fond, avec un texte brun, et une encre plus soutenue pour le
-texte : deux oranges se côtoyaient sur chaque écran (le bouton pastel à côté
-de l'heure caramel), et l'action principale perdait son autorité. Les
-versions claires de la palette restent pour les fonds doux.
+Le bleu du logo est clair : le blanc ne s'y lit pas (2,9:1), et il ne
+s'écrit pas sur le fond. L'app prend donc la **même teinte, soutenue juste
+assez** pour porter le blanc et se lire en encre. Pour l'orange, deux essais
+ont été écartés. La teinte claire du logo (`#FEA547`) en fond, avec un texte
+brun et une encre plus soutenue pour le texte : deux oranges se côtoyaient
+sur chaque écran (le bouton pastel à côté de l'heure caramel), et l'action
+principale perdait son autorité. Puis cette teinte soutenue pour le blanc
+(`#D96507`) : plus jaune que le vermillon, elle tirait au brun et rendait
+l'app terne. Des oranges plus vifs entre les deux (`#E65D00`) n'ont pas
+convaincu non plus : le vermillon reste. La version claire de l'orange se
+déduit de lui (`resolveThemeColors`).
 
 Trois thèmes au choix, dans cet ordre. Le premier est celui d'origine.
 
 | Thème           | `primary` | `secondary` |
 | --------------- | --------- | ----------- |
-| sunset (défaut) | `#D96507` | `#328CDC`   |
-| ocean           | `#328CDC` | `#D96507`   |
-| emerald         | `#059C66` | `#D96507`   |
+| sunset (défaut) | `#DE4F17` | `#328CDC`   |
+| ocean           | `#328CDC` | `#DE4F17`   |
+| emerald         | `#059C66` | `#DE4F17`   |
 
 L'orange et le bleu sont l'un en second de l'autre ; le vert prend l'orange
 en second. La couleur principale sert aussi bien de fond plein sous du blanc
@@ -1345,7 +1349,7 @@ fête ne donne que ses deux couleurs, et le reste s'en déduit
 Ils vivent dans `src/composables/useTheme.ts`, qui réécrit les variables sur
 la racine. L'accent des widgets natifs et de la montre suit le thème ; sa
 valeur de repli (`DEFAULT_ACCENT` dans `widgetPayloads.ts`, les constantes
-`FALLBACK_ACCENT` côté natif) est celle du thème par défaut, `#D96507` : les
+`FALLBACK_ACCENT` côté natif) est celle du thème par défaut, `#DE4F17` : les
 trois se changent ensemble. Le fond (`#FFF9F3`) se reprend dans la couleur du
 navigateur (`index.html`), la barre d'état (`useNativeStatusBar`,
 `scripts/setup-android.mjs`) et le fond des widgets. La vignette de partage
