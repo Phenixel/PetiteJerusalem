@@ -155,16 +155,14 @@ const hero = computed(() => {
   else if (h.text === MOMENT_TEXTS.slihot)
     meta = t("sidour.slihot.tonight", { start: time(h.start), end: time(h.end) });
 
-  // L'objet de l'occasion, dessiné dans la carte (voir CardArt).
-  let art: CardArtSpec | null = null;
+  // L'objet du moment, dessiné dans la carte (voir CardArt) : le sidour pour
+  // un office, et pour une occasion, son objet à elle.
+  let art: CardArtSpec = { kind: "siddur" };
   if (h.kind === "halevana" && h.moonAge !== undefined) art = { kind: "moon", age: h.moonAge };
   else if (h.night) art = { kind: "hanoukia", night: h.night, lit: h.kind === "hanouka" };
+  else if (h.text === MOMENT_TEXTS.slihot) art = { kind: "shofar" };
+  else if (h.text === MOMENT_TEXTS.loulav) art = { kind: "loulav" };
 
-  const icon: IconName = h.tefila
-    ? TEFILA_ICONS[h.tefila]
-    : h.text === MOMENT_TEXTS.loulav
-      ? "book-open"
-      : "moon";
   return {
     kind: h.kind,
     key: text.key,
@@ -172,8 +170,10 @@ const hero = computed(() => {
     kicker: `${kicker}${day}`,
     name,
     meta,
-    icon,
     art,
+    // Un objet clair (la lune, le chofar) : le texte qui passe devant garde
+    // une ombre douce, et la ligne d'heure lui laisse sa place.
+    lightArt: art.kind === "moon" || art.kind === "shofar",
     additions: h.additions.map(additionLabel),
   };
 });
@@ -318,18 +318,21 @@ onMounted(() => {
       v-if="hero"
       :to="hero.path"
       class="sidour-hero press-feedback relative block rounded-card bg-primary px-5 pt-4 pb-5 text-white"
-      :class="{ 'pe-36 sm:pe-44': hero.art }"
+      :class="{ 'sidour-hero-light': hero.lightArt }"
       @click="trackOpen(hero, 'hero')"
     >
-      <!-- L'objet de l'occasion, quand elle en a un : la lune, la 'hanoukkia.
-           Il prend la place du dessin de l'office. -->
-      <CardArt v-if="hero.art" :art="hero.art" :rise="26" />
+      <!-- L'objet du moment, derrière le texte : le sidour, la lune, la
+           'hanoukkia... Il ne sort de la carte que par le haut. -->
+      <CardArt :art="hero.art" />
       <span class="relative block text-sm font-semibold text-white/85">{{ hero.kicker }}</span>
-      <span class="relative mt-1 flex items-center justify-between gap-3">
-        <span class="font-display text-3xl font-bold leading-tight">{{ hero.name }}</span>
-        <AppIcon v-if="!hero.art" :name="hero.icon" :size="30" class="shrink-0" />
+      <span class="relative mt-1 block font-display text-3xl font-bold leading-tight">
+        {{ hero.name }}
       </span>
-      <span class="relative mt-1 block text-[15px] font-medium text-white/90">{{ hero.meta }}</span>
+      <span
+        class="relative mt-1 block text-[15px] font-medium text-white/90"
+        :class="{ 'pe-[30%]': hero.lightArt }"
+        >{{ hero.meta }}</span
+      >
       <span
         v-if="hero.additions.length"
         class="relative mt-3 flex flex-wrap gap-1.5"
@@ -434,6 +437,13 @@ onMounted(() => {
 <style scoped>
 .sidour-hero {
   box-shadow: var(--shadow-card-hover);
+}
+/* Le blanc sur un objet clair : une ombre douce, juste assez pour que le
+   titre se lise là où il passe devant la lune. */
+.sidour-hero-light {
+  text-shadow:
+    0 1px 2px rgb(0 0 0 / 0.3),
+    0 0 12px rgb(0 0 0 / 0.18);
 }
 /* Les lignes d'une liste posée dans une carte : un filet entre elles, pas de
    bordure autour (la carte se détache par son ombre). */

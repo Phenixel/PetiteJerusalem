@@ -55,7 +55,7 @@ const deadline = computed(() =>
     class="card card-hover group relative mt-1 flex min-h-16 items-center p-4 pe-24"
     @click="analyticsService.capture('birkat_halevana_opened', { source: 'home' })"
   >
-    <CardArt :art="{ kind: 'moon', age }" :rise="10" :size="68" surface="plain" />
+    <CardArt :art="{ kind: 'moon', age }" :scale="0.46" surface="plain" />
     <span class="relative min-w-0">
       <span
         class="block font-medium leading-snug text-text-primary transition-colors group-hover:text-primary"

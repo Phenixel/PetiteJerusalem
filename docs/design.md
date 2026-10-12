@@ -396,45 +396,68 @@ sont deux moyens opposés, ils ne se gênent pas.
 
 ### Une carte mise en avant peut porter son objet
 
-La carte du moment dit déjà, par sa couleur, qu'on vient la chercher. Une
-occasion rare y ajoute son objet, dessiné aux couleurs du vrai : la lune les
-nuits de la bénédiction, la 'hanoukkia les soirs de 'Hanouka
-(`CardArt.vue`). Ces couleurs tranchent sur tout le reste de l'app, qui
-n'est fait que des tons du thème : c'est ce qu'on veut, un objet qui se
-reconnaît d'un coup d'œil avant qu'on ait lu le nom.
+La carte du moment dit déjà, par sa couleur, qu'on vient la chercher. Elle
+porte en plus l'objet de ce qu'elle annonce, dessiné aux couleurs du vrai
+(`CardArt.vue`, les dessins dans `components/art`) :
 
-- **Dans un coin bas de la carte**, du côté de la fin de ligne (la droite en
-  français, la gauche en hébreu), et **jamais dehors, sauf par le haut** :
-  l'objet reste dans la carte sur trois côtés et ne déborde que du bord
-  haut, d'une vingtaine de pixels. La lune dépasse comme elle monterait
-  au-dessus d'un toit ; les bougies et leurs flammes passent la ligne de la
-  carte. Le texte lui laisse sa place (une marge de fin), il ne passe jamais
-  dessus.
+- le **sidour**, relié de cuir bleu nuit, titre doré, signet rouge, pour un
+  office, celui de l'heure ou celui qui vient ;
+- la **lune**, à sa phase du soir, les nuits de la bénédiction ;
+- la **'hanoukkia** les soirs de 'Hanouka ;
+- le **chofar** des Sli'hot ;
+- le **loulav et l'etrog**, quand la fête de Souccot prend la carte ;
+- la **gerbe** d'orge du 'Omer.
+
+Ces couleurs tranchent sur tout le reste de l'app, qui n'est fait que des
+tons du thème : c'est ce qu'on veut, un objet qui se reconnaît d'un coup
+d'œil avant qu'on ait lu le nom.
+
+- **La carte ne grandit pas pour lui.** L'objet a sa taille à lui, et c'est
+  lui qui passe sous le bord bas quand la carte est courte. Une première
+  version réservait au dessin une marge de fin : le titre passait à la
+  ligne, la carte prenait soixante pixels pour rien, et paraissait grande
+  pour être grande. Il ne prend pas non plus plus de 42 % de la largeur de
+  la carte : sur un petit téléphone, il rapetisse plutôt que de manger le
+  titre.
+- **Derrière le texte.** Le titre passe devant l'objet quand il est long ;
+  sur un objet sombre (le livre, le loulav, les bougies), le blanc se lit
+  tel quel. Sur un objet clair (la lune, le chofar), le texte prend une
+  ombre douce, et seule la ligne d'heure lui laisse sa place. Les pastilles
+  d'un office (Hallel, Moussaf...) passent devant le livre.
+- **Dans le coin de fin de ligne** (la droite en français, la gauche en
+  hébreu), et **hors de la carte, seulement par le haut** : le haut du
+  livre, les bougies et leurs flammes, la pointe du chofar, la palme du
+  loulav passent la ligne de la carte. La lune, plus grande, est en plus
+  coupée par le bord de la carte, mais seulement sous le haut de la carte :
+  ce qui dépasse en haut est une calotte entière, jamais une coupe droite
+  prolongée au-dessus de la carte. Tenu par `src/__tests__/cardArt.test.ts`.
 - **La forme suit le jour.** La lune est à sa phase du soir (son âge depuis
   le molad, `moonAge`) : gibbeuse le 10 du mois, presque pleine le 14,
   éclairée par la droite comme on la voit croître depuis la France ; sa part
   sombre est un voile à peine plus clair que le fond, la lumière cendrée. La
   'hanoukkia porte autant de bougies que le soir en compte, posées de droite
-  à gauche, plus le chamach ; allumées le soir venu, éteintes quand la carte
-  annonce l'allumage de ce soir.
-- **Elle se lève une fois.** À sa première apparition de la session, la
-  lune monte en biais depuis le coin bas, le bord bas de la carte faisant
-  l'horizon ; la 'hanoukkia monte droit, puis s'allume dans l'ordre où on
-  l'allume : le chamach, la bougie du soir (la plus à gauche), puis les
-  autres vers la droite. Revenir sur la page la trouve à sa place, sans
-  mouvement (voir « Le mouvement répond à un geste » : c'est la seule
-  arrivée qui bouge, parce que c'est l'objet lui-même qui arrive). Le bandeau
-  de l'accueil et la carte du Sidour ont chacun leur lever. Jamais en
-  mouvement réduit, ni en rendu dégradé (`perf-lite`).
+  à gauche, plus le chamach : des bougies de boîte, de toutes les couleurs,
+  et grandes, c'est elles qu'on doit voir. Allumées le soir venu, éteintes
+  quand la carte annonce l'allumage de ce soir.
+- **Il se lève une fois.** À sa première apparition de la session, l'objet
+  monte en biais depuis le coin bas de la carte, le bord bas faisant
+  l'horizon ; la 'hanoukkia s'allume ensuite dans l'ordre où on l'allume :
+  le chamach, la bougie du soir (la plus à gauche), puis les autres vers la
+  droite. Revenir sur la page le trouve à sa place, sans mouvement (voir « Le
+  mouvement répond à un geste » : c'est la seule arrivée qui bouge, parce
+  que c'est l'occasion elle-même qui arrive). Chaque carte a son lever. Jamais
+  en mouvement réduit, ni en rendu dégradé (`perf-lite`).
 - **En aplats.** Deux ou trois tons par matière (la face et l'ombre de
   l'argent, la cire et son flanc, la flamme et son cœur), jamais de dégradé.
 
-Sur l'accueil, le bandeau de la bénédiction de la lune porte la même lune,
-plus petite, sur sa surface claire : elle y prend des tons un peu plus
-soutenus pour se détacher du blanc.
+Sur l'accueil, les cartes du moment portent le même objet, en petit, sur
+leur surface claire : le sidour sur « Faire Cha'harit », la lune sur la
+bénédiction de la lune, la gerbe sur le compte du 'Omer. La lune y prend des
+tons un peu plus soutenus pour se détacher du blanc.
 
-Un objet de plus (le loulav et l'etrog de Souccot, le chofar d'Eloul) se
-dessine dans `CardArt.vue`, avec les mêmes règles.
+Un objet de plus se dessine dans `components/art`, avec ces règles, et prend
+sa place dans `CARD_ART_GEOMETRY` (taille, proportions, ce qui dépasse en
+haut, retrait du bord).
 
 ### Le Sidour s'ouvre sur le moment
 
@@ -597,8 +620,8 @@ place), un état déjà là au chargement (un livre téléchargé hier n'anime p
 coche), et tout ce qui changerait sans qu'on ait rien fait. Les livres qui se
 posent un à un sur l'étagère restent l'exception déjà admise, de loin en loin
 (voir `useShelfIntro`), avec une seconde : l'objet d'une carte mise en avant
-(la lune qui se lève, la 'hanoukkia qui s'allume), une fois par session et
-par carte, parce que c'est l'occasion elle-même qui arrive (voir « Une carte
+(le livre ou la lune qui se lèvent, la 'hanoukkia qui s'allume), une fois par
+session et par carte, parce que c'est l'occasion elle-même qui arrive (voir « Une carte
 mise en avant peut porter son objet »).
 
 Tout se coupe quand le système demande moins d'animations, et sur une petite
@@ -1294,11 +1317,12 @@ Deux couleurs échappent au thème, parce qu'elles disent un état et non un
 goût : le danger (rouge, `.btn-danger`) et l'échéance qui approche (ambre).
 Elles ne bougent pas quand on change de thème.
 
-Les objets dessinés sur une carte mise en avant (la lune, la 'hanoukkia, voir
-« Une carte mise en avant peut porter son objet ») échappent aussi au thème :
-ils ont les couleurs du vrai, l'argent, la cire, la flamme, la lune. Elles
-vivent dans `CardArt.vue`, en variables de ce seul composant, et restent des
-aplats : pas de dégradé pour arrondir une lune.
+Les objets dessinés sur une carte mise en avant (le sidour, la lune, la
+'hanoukkia, voir « Une carte mise en avant peut porter son objet »)
+échappent aussi au thème : ils ont les couleurs du vrai, le cuir, l'argent,
+la cire, la flamme, la lune. Elles vivent dans leurs dessins
+(`components/art`), et restent des aplats : pas de dégradé pour arrondir une
+lune.
 
 ### La sélection prend la couleur du thème
 
