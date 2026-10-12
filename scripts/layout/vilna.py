@@ -1926,6 +1926,30 @@ def page_at(tractate: Tractate, amud: int, pdf: str, taken: dict[str, set]) -> t
                 runs = []
             pairs[k] = (line, runs)
         kept[zone] = [(line, runs) for line, runs in pairs if runs]
+    # Un ou deux mots d'une autre page, sans leur suite ni ce qui les précède
+    # (le nom du traité que Sefaria ajoute à un renvoi, resté sans place à la
+    # page d'avant) : ils ne sont pas de cette page.
+    for zone in ("rashi", "tosafot"):
+        # (Sur la page même, seulement entre parenthèses : deux
+        # mots seuls peuvent être un commentaire entier.)
+        opens, depth = set(), None
+        for t in side_tokens(tractate, zone, amud):
+            if "(" in t.text:
+                depth = (t.unit, t.passage)
+            if depth == (t.unit, t.passage):
+                opens.add((t.unit, t.passage, t.word))
+            if ")" in t.text:
+                depth = None
+        spans = defaultdict(list)
+        for _, runs in kept[zone]:
+            for a, p, w, n in runs:
+                spans[a, p].append((w, w + n))
+        # Seuls : rien de leur passage à moins de trois mots d'eux.
+        alone = lambda r: not any((lo, hi) != (r[2], r[2] + r[3]) and lo <= r[2] + r[3] + 3 and r[2] - 3 <= hi  # noqa: E731
+                                  for lo, hi in spans[r[0], r[1]])
+        kept[zone] = [(l, [r for r in runs if not (r[3] <= 2 and (r[0] != amud or tuple(r[:3]) in opens) and alone(r))])
+                      for l, runs in kept[zone]]
+        kept[zone] = [(l, runs) for l, runs in kept[zone] if runs]
     # Un bout de ligne d'un ou deux mots, venus d'une autre page et posés là
     # par hasard (un renvoi isolé en tête de page) : ce n'est pas une ligne.
     for zone in ("rashi", "tosafot"):
@@ -1950,6 +1974,24 @@ def page_at(tractate: Tractate, amud: int, pdf: str, taken: dict[str, set]) -> t
     kept["main"] = [(l, runs) for l, runs in kept["main"] if runs]
     initials = initial_words(pdf, printed.sizes["main"], ours_main, kept["main"])
     kept["main"] = [(l, runs) for l, runs in kept["main"] if runs]
+    # Aucun mot de la guemara ne se perd entre deux lignes : quelques mots
+    # restés sans ligne entre la fin d'une ligne et le début de la suivante,
+    # dans le même passage, sont la fin de la première (l'ouverture d'un
+    # chapitre, dont le premier mot, en grand, est lu à part).
+    held = {(a, p, w + d) for _, runs in kept["main"] for a, p, w, n in runs for d in range(n)}
+    held |= {(amud, p, w + d) for _, _, _, _, p, w, n in closing + initials for d in range(n)}
+    pairs = kept["main"]
+    for k in range(len(pairs) - 1):
+        (line, runs), (_, after) = pairs[k], pairs[k + 1]
+        if not runs or not after:
+            continue
+        a, p, w, n = runs[-1]
+        b, q, v, _ = after[0]
+        gap = v - (w + n)
+        if (a, p) == (b, q) and 0 < gap <= 4 and not any((a, p, w + n + d) in held for d in range(gap)):
+            runs = list(runs)
+            runs[-1] = (a, p, w, n + gap)
+            pairs[k] = (line, runs)
     # Une boîte moins large qu'une lettre n'est pas une ligne (un signe isolé),
     # pas plus qu'un bout de commentaire posé sur une ligne de guemara (le mot
     # d'ouverture d'un chapitre, pris pour du Rachi).
