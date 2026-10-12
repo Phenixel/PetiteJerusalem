@@ -150,10 +150,12 @@ describe("etudeTexts pages de corpus (/bibliotheque/<corpus>)", () => {
     }
   });
 
-  it("les corpus liturgiques ne proposent pas le partage", () => {
+  it("proposent le partage, et mènent au Sidour", () => {
+    // La liturgie n'a plus de liste par corpus : ses textes se rangent sur
+    // /sidour (voir sidourSeo.test.ts), où les listes d'étude renvoient.
+    expect(LISTED_CORPORA).toEqual(["tehilim", "michna", "talmud", "tanakh"]);
     expect(buildCorpusBody("talmud")).toContain('href="/share-reading/new-session"');
-    expect(buildCorpusBody("sidour")).not.toContain('href="/share-reading/new-session"');
-    expect(buildCorpusBody("brahot")).not.toContain('href="/share-reading/new-session"');
+    expect(buildCorpusBody("talmud")).toContain('href="/sidour"');
   });
 
   it("émet un fil d'Ariane et la liste des livres en JSON-LD", () => {

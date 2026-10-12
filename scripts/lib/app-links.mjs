@@ -74,6 +74,7 @@ export const APP_LINK_PATHS = [
   "/profile",
   "/session-management",
   "/share-reading",
+  "/sidour",
   "/studio",
   "/tehilim",
   "/telechargements",

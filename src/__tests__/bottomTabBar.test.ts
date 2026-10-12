@@ -9,7 +9,8 @@ import { createMemoryHistory, createRouter, type Router } from "vue-router";
  * appui la referme et rend la page qu'elle recouvrait. L'onglet profil reste
  * allumé sur les sous-pages du profil. Et l'onglet profil
  * s'annonce « Réglages » tant que personne n'est connecté. Toucher l'onglet de
- * la page où l'on est la remonte en haut.
+ * la page où l'on est la remonte en haut. Les textes de liturgie vivent
+ * sous /bibliotheque mais allument le Sidour, pas l'Étude.
  */
 
 // La barre interroge l'état de connexion (libellé Profil / Réglages) : les
@@ -161,6 +162,39 @@ describe("BottomTabBar", () => {
     await bar.router.push("/bibliotheque");
     await nextTick();
     expect(bar.profileTab().classList).not.toContain("tab-item-active");
+  });
+
+  it("les textes de liturgie allument le Sidour, la bibliothèque, les chiourim et le partage l'Étude", async () => {
+    const bar = mount();
+    const sidour = () => bar.link("/sidour")!;
+    const study = () => bar.link("/bibliotheque")!;
+    const lit = async (path: string) => {
+      await bar.router.push(path);
+      await nextTick();
+      return [
+        sidour().classList.contains("tab-item-active"),
+        study().classList.contains("tab-item-active"),
+      ];
+    };
+    await bar.router.isReady();
+
+    // Le Sidour, sa page et ses textes, dont les anciennes adresses publiées.
+    expect(await lit("/sidour")).toEqual([true, false]);
+    expect(await lit("/bibliotheque/sidour/chaharit")).toEqual([true, false]);
+    expect(await lit("/bibliotheque/moadim/hochanot")).toEqual([true, false]);
+    expect(await lit("/bibliotheque/brahot/birkat-hamazon")).toEqual([true, false]);
+
+    // L'Étude : la bibliothèque, ses corpus, les chiourim, le partage.
+    expect(await lit("/bibliotheque")).toEqual([false, true]);
+    expect(await lit("/bibliotheque/tehilim")).toEqual([false, true]);
+    expect(await lit("/bibliotheque/tanakh/bereshit")).toEqual([false, true]);
+    expect(await lit("/chiourim")).toEqual([false, true]);
+    expect(await lit("/share-reading/session/tehilim-pour-tous")).toEqual([false, true]);
+
+    // Un nom qui commence pareil n'est pas le même corpus.
+    expect(await lit("/bibliotheque/sidourim")).toEqual([false, true]);
+    // Ailleurs, ni l'un ni l'autre.
+    expect(await lit("/horaires")).toEqual([false, false]);
   });
 
   it("l'onglet de la page où l'on est la remonte en haut, sans rien changer d'autre", async () => {

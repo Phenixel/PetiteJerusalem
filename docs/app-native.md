@@ -124,7 +124,10 @@ avec un leurre qui se comporte comme le vrai proxy, `then` compris.
   - `authoritative` : `tehilim.json` (~370 Ko) et `talmud-chapters.json`
     (~40 Ko), lus dans le binaire, qui fait foi pour eux ;
   - `revalidated` : le Sidour, les trois offices et les quatre textes qui les
-    accompagnent (`tefila/`, ~1 Mo). La copie du binaire s'ouvre tout de
+    accompagnent, et depuis la page du Sidour les treize brahot, Birkat
+    Hamazon en tête (`tefila/`, ~1,1 Mo) : tout ce que la page du Sidour liste
+    hors des fêtes s'ouvre sans réseau. Les textes des fêtes (Moadim) se
+    téléchargent d'eux-mêmes quand leur fête remonte en tête du Sidour. La copie du binaire s'ouvre tout de
     suite, sans rien attendre du réseau ; en fond, l'app demande au site s'il
     en sert une autre version (une correction de tefila n'attend pas une
     version de l'app) et la télécharge, vérifiée à l'empreinte : c'est elle

@@ -29,7 +29,7 @@ import { moderationService } from "../../services/moderationService";
 import { searchItems } from "../../services/fuzzySearch";
 import { isNativeApp } from "../../composables/useNativeApp";
 import PageTabs from "../../components/PageTabs.vue";
-import { LIBRARY_TABS } from "../../config/pageTabs";
+import { STUDY_TABS } from "../../config/pageTabs";
 import { liveValue } from "../../composables/liveInput";
 import { useSessionEditing, type SessionEditData } from "../../composables/useSessionEditing";
 import { SITE_URL } from "../../config/site";
@@ -327,13 +327,13 @@ const handleCreateClick = () => {
 <template>
   <main ref="shareRoot" class="mx-auto px-6 py-12">
     <div class="animate-[fadeIn_0.5s_ease] text-center" :class="isNativeApp ? 'mb-8' : 'mb-16'">
-      <!-- App native : le partage est le second onglet de la bibliothèque, et
+      <!-- App native : le partage est le troisième onglet de l'Étude, et
            les onglets tiennent lieu de titre (voir PageTabs). -->
       <PageTabs
         v-if="isNativeApp"
-        :tabs="LIBRARY_TABS"
+        :tabs="STUDY_TABS"
         event="library_tab_switched"
-        :label="t('study.title')"
+        :label="t('common.study')"
       />
       <!-- Le seul h1 de la page. -->
       <h1

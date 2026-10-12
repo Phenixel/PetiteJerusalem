@@ -197,27 +197,83 @@ sert à l'office en communauté plutôt qu'à la prière seul.
 
 ## Bibliothèque
 
-### `moadim_now_opened` (nouveau)
+### `moadim_now_opened` (nouveau, plus posé)
 
 L'encart posé en tête du sidour le temps d'une fête (`MoadimNowBanner`), qui
 mène aux textes de la fête dans Moadim. Il dit si l'on cherche ces textes
 depuis le sidour.
+
+N'est plus posé depuis la page du Sidour (octobre 2026, voir « Sidour et
+Étude ») : la liste du sidour a disparu avec son encart, et les textes de la
+fête remontent d'eux-mêmes en tête de la page. Le nom reste réservé, et ses
+données passées gardent leur sens.
 
 | Propriété  | Valeurs                                                   | Statut      |
 | ---------- | --------------------------------------------------------- | ----------- |
 | `source`   | `library_sidour`                                          | **nouveau** |
 | `festival` | le livre de la fête, `Souccot`, `Yamim Noraim`, `Hanouka` | **nouveau** |
 
-### `sidour_brahot_opened` (nouveau)
+### `sidour_brahot_opened` (nouveau, plus posé)
 
 Le lien « Vous cherchez le Birkat Hamazon ou une autre brakha ? », en tête du
 sidour (`SidourBrahotLink`), qui mène au livre des Brahot. Il dit combien de
 lecteurs viennent chercher le Birkat Hamazon ou une brakha dans le sidour.
 
+N'est plus posé depuis la page du Sidour (octobre 2026) : les brahot y sont
+dans la même liste que les offices. Le nom reste réservé.
+
 | Propriété    | Valeurs                                            | Statut      |
 | ------------ | -------------------------------------------------- | ----------- |
 | `source`     | `library_sidour`                                   | **nouveau** |
 | `had_search` | booléen : une recherche était tapée dans le sidour | **nouveau** |
+
+## Sidour et Étude (octobre 2026)
+
+La barre du bas de l'app devient Accueil, Sidour, horaires, Étude, Profil
+(voir `docs/design.md`, « Le Sidour s'ouvre sur le moment »). Rien n'est
+renommé ni retiré : deux événements s'ajoutent pour la nouvelle page, et
+quelques propriétés prennent une valeur de plus.
+
+### `sidour_viewed` (nouveau)
+
+L'arrivée sur la page du Sidour (`/sidour`). Il dit ce que la carte du moment
+proposait à ce moment-là : le dénominateur de `sidour_text_opened`, et de quoi
+voir si l'on vient au Sidour à l'heure des offices.
+
+| Propriété | Valeurs | Statut |
+| --- | --- | --- |
+| `hero` | `chaharit`, `minha`, `arvit` (l'office dont c'est l'heure), `next_chaharit`, `next_minha`, `next_arvit` (celui qui vient, entre deux plages), `hanouka`, `slihot`, ou `null` | **nouveau** |
+| `feast` | la fête dont les textes remontent en tête : `tichri`, `souccot`, `hanouka`, ou `null` | **nouveau** |
+
+### `sidour_text_opened` (nouveau)
+
+Un texte ouvert depuis la page du Sidour. Il dit si la carte du moment sert,
+et ce qu'on cherche dans la liste.
+
+| Propriété | Valeurs | Statut |
+| --- | --- | --- |
+| `text` | le texte, `corpus/slug` (`sidour/chaharit`, `brahot/birkat-hamazon`...) | **nouveau** |
+| `source` | `hero` (la carte du moment), `extra` (les lignes sous elle), `list` (la liste) | **nouveau** |
+| `section` | pour `list`, le groupe : `offices`, `soir`, `brahot`, `occasions`, `vie`, `fetes`, ou la fête en tête (`tichri`, `souccot`, `hanouka`) ; `null` sinon | **nouveau** |
+| `feast` | comme sur `sidour_viewed` | **nouveau** |
+
+### Valeurs ajoutées à des propriétés existantes
+
+| Événement | Propriété | Valeur ajoutée | Ce qu'elle dit |
+| --- | --- | --- | --- |
+| `library_tab_switched` | `tab` | `chiourim` | les onglets de l'Étude sont trois : `reading` (la bibliothèque), `chiourim`, `sharing`. Le nom de l'événement reste celui d'origine. |
+| `text_opened` | `entry` | `sidour` | la lecture s'ouvre depuis la page du Sidour (`services/readingEntry.ts`). |
+| `tehilim_day_opened` | `source` | `library_today` | depuis « Aujourd'hui », en bas de la bibliothèque. |
+| `chnei_mikra_opened` | `source` | `library_today` | idem. |
+| `offline_download_completed` | `scope` | `feast` | les textes de la fête, téléchargés d'eux-mêmes quand ils remontent en tête du Sidour (app) ; `tab` porte alors la fête (`tichri`, `souccot`, `hanouka`). |
+
+`library_corpus_opened` ne porte plus que les corpus d'étude (`tehilim`,
+`michna`, `talmud`, `tanakh`) : les listes de liturgie mènent au Sidour.
+`library_search_result_opened` peut porter un `corpus` de liturgie (`Sidour`,
+`Brahot`, `Moadim`) : ce sont les résultats rangés « Dans le Sidour ».
+`offline_download_started`, `offline_download_completed` et
+`offline_download_deleted` posés par la ligne « Hors ligne » gardent
+`tab: Tout`, pour l'étude entière.
 
 ## Chaîne perpétuelle de Tehilim
 
@@ -317,7 +373,7 @@ injoignable). Voir `composables/useBookDownload.ts` et
 | Propriété | Valeurs | Statut |
 | --- | --- | --- |
 | `source` | `library`, `session` | existant, conservé |
-| `entry` | `search`, `resume`, `push`, `home`, `library`, `daily_reading`, `chnei_mikra`, `tehilim_day`, `reading`, `zmanim`, `calendar`, `session`, `direct`, `other` | **nouveau** |
+| `entry` | `search`, `resume`, `push`, `home`, `library`, `sidour`, `daily_reading`, `chnei_mikra`, `tehilim_day`, `reading`, `zmanim`, `calendar`, `session`, `direct`, `other` | **nouveau** |
 
 `entry` dit d'où l'on arrive (`services/readingEntry.ts`) : un indice laissé
 juste avant la navigation quand l'adresse ne peut pas le dire (un résultat de

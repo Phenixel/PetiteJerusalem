@@ -36,7 +36,7 @@ export interface Announcement {
   /** Posée à la première publication, elle ordonne la liste. */
   publishedAt: Date | null;
   updatedAt: Date | null;
-  /** Une page de l'app où aller (« /bibliotheque/sidour »), ou une adresse externe. */
+  /** Une page de l'app où aller (« /sidour »), ou une adresse externe. */
   link: { url: string; label: LocalizedText } | null;
   /** Notes de version : la version de l'app qu'elles décrivent (« 3.11.0 »). */
   version: string | null;

@@ -9,6 +9,7 @@ import {
   computeZmanim,
   hebrewDateFor,
   hebrewDayOf,
+  placeDayAfter,
   type ZmanKey,
   type ZmanimPlace,
 } from "./zmanimService";
@@ -240,6 +241,23 @@ export function currentTefilaWindow(
       .filter((w) => w.tefila === "arvit")
       .find(inWindow) ?? null
   );
+}
+
+/**
+ * L'office dont la plage s'ouvre ensuite, quand on est entre deux : de
+ * 'hatsot à min'ha guedola, de la chkia à la sortie des étoiles, et de
+ * 'hatsot de la nuit à misheyakir. La page du Sidour l'annonce plutôt que de
+ * ne rien proposer.
+ */
+export function nextTefilaWindow(place: ZmanimPlace, now: Date = new Date()): TefilaWindow | null {
+  const t = now.getTime();
+  for (const offset of [0, 1]) {
+    const next = windowsOfDay(place, placeDayAfter(place, now, offset)).find(
+      (w) => w.start.getTime() > t,
+    );
+    if (next) return next;
+  }
+  return null;
 }
 
 /** Le chemin de lecture d'un office ("/bibliotheque/sidour/minha"). */

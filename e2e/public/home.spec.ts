@@ -7,6 +7,7 @@ test.describe("accueil visiteur", () => {
     await expect(page.locator("html")).toHaveAttribute("lang", "fr");
 
     const nav = page.locator("header nav");
+    await expect(nav.getByRole("link", { name: "Sidour" })).toBeVisible();
     await expect(nav.getByRole("link", { name: "Partage de lectures" })).toBeVisible();
     await expect(nav.getByRole("link", { name: "Bibliothèque" })).toBeVisible();
     await expect(nav.getByRole("link", { name: "Chiourim" })).toBeVisible();

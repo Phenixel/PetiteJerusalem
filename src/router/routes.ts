@@ -33,6 +33,7 @@ const AuteurChiourimPage = () => import("../views/Chiourim/AuteurChiourimPage.vu
 const SerieChiourimPage = () => import("../views/Chiourim/SerieChiourimPage.vue");
 const TextReadingPage = () => import("../views/TextReading/TextReadingPage.vue");
 const StudyPage = () => import("../views/StudyPage.vue");
+const SidourPage = () => import("../views/SidourPage.vue");
 const DailyReadingPage = () => import("../views/Library/DailyReadingPage.vue");
 const ChneiMikraPage = () => import("../views/Library/ChneiMikraPage.vue");
 const TehilimDayPage = () => import("../views/Library/TehilimDayPage.vue");
@@ -237,10 +238,37 @@ export default [
   // Détail d'un corpus de la bibliothèque (liste des textes) : la page
   // d'accueil de la bibliothèque ne montre que les grandes sections.
   {
-    path: "/bibliotheque/:corpus(tehilim|michna|talmud|tanakh|moadim|brahot|sidour)",
+    path: "/bibliotheque/:corpus(tehilim|michna|talmud|tanakh)",
     name: "study-corpus",
     meta: { offlineOk: true },
     component: StudyPage,
+  },
+  // Le Sidour : les tefilot, les brahot et les textes des fêtes, en une
+  // liste, l'office du moment en tête. Tout se calcule sur l'appareil, et les
+  // textes de l'office sont embarqués : la page tient hors connexion.
+  {
+    path: "/sidour",
+    name: "sidour",
+    meta: { offlineOk: true },
+    component: SidourPage,
+  },
+  // Les trois livres de liturgie avaient chacun leur liste dans la
+  // bibliothèque : ils n'en font plus qu'une, celle du Sidour. Leurs adresses
+  // restent dans la nature (le widget Sidour des apps installées ouvre
+  // /bibliotheque/sidour, des informations publiées y renvoient) ;
+  // firebase.json porte les mêmes redirections côté serveur. Les textes,
+  // eux, gardent leur adresse sous /bibliotheque.
+  {
+    path: "/bibliotheque/sidour",
+    redirect: "/sidour",
+  },
+  {
+    path: "/bibliotheque/moadim",
+    redirect: "/sidour",
+  },
+  {
+    path: "/bibliotheque/brahot",
+    redirect: "/sidour",
   },
   // Les Sli'hot avaient un livre à elles, l'allumage de Hanouka vivait parmi
   // les brahot : les deux sont passés dans Moadim, avec les textes des fêtes.

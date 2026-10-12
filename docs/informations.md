@@ -19,7 +19,7 @@ site.
      Notion du support, comme les autres messages.
 3. Écrire le titre et le texte en français. L'anglais et l'hébreu sont
    facultatifs : sans traduction, ces lecteurs voient le français.
-4. Un lien, facultatif : une page de l'app (`/bibliotheque/sidour`) ou une
+4. Un lien, facultatif : une page de l'app (`/sidour`) ou une
    adresse externe (`https://…`), avec le texte du bouton.
 5. Cocher **Publié**, et **Envoyer une notification** si elle doit partir.
    Une confirmation le rappelle : une notification envoyée ne se rattrape pas.

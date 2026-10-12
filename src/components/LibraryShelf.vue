@@ -10,7 +10,9 @@
 // seulement de loin en loin (voir useShelfIntro) : au quotidien, on vient
 // ouvrir un livre, pas regarder les livres arriver.
 
+import { reactive, watch } from "vue";
 import { shouldPlayShelfIntro } from "../composables/useShelfIntro";
+import { prefersLessMotion } from "../composables/useMotion";
 
 export interface ShelfBook {
   /** Identifiant de corpus (tehilim, michna, talmud, tanakh). */
@@ -19,15 +21,49 @@ export interface ShelfBook {
   to: string;
   /** Titre écrit sur la couverture. */
   label: string;
+  /**
+   * App native : la part du livre qui est sur le téléphone (0 à 1), en
+   * nombre de livres du corpus. Absent sur le site.
+   */
+  offline?: number;
+  /** Ce que le lien annonce aux lecteurs d'écran, état compris. */
+  ariaLabel?: string;
 }
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     books: ShelfBook[];
     /** Décalage de l'animation d'entrée : la 2e étagère se garnit après la 1re. */
     startIndex?: number;
   }>(),
   { startIndex: 0 },
+);
+
+// --- La pastille du hors ligne, dans l'angle de la couverture ---
+// Une coche quand tout le livre est sur le téléphone (le même signe que sur
+// chaque texte de sa liste), un anneau qui se remplit quand il ne l'est qu'en
+// partie, rien sinon : l'étagère reste nue tant qu'on n'a rien téléchargé.
+const RING = 2 * Math.PI * 5.6;
+const isDone = (book: ShelfBook) => (book.offline ?? 0) >= 0.999;
+const hasBadge = (book: ShelfBook) => (book.offline ?? 0) > 0.001;
+const ringDash = (book: ShelfBook) =>
+  `${(RING * Math.min(1, book.offline ?? 0)).toFixed(2)} ${RING.toFixed(2)}`;
+
+// Un livre qui vient d'arriver en entier, pendant qu'on le regardait : la
+// coche se trace, la pastille et le livre sautent un peu. Seulement sur ce
+// passage, provoqué par un téléchargement : jamais à l'arrivée sur la page.
+const landed = reactive(new Set<string>());
+watch(
+  () => props.books.map((book) => [book.corpus, isDone(book)] as const),
+  (now, before) => {
+    if (!before || prefersLessMotion()) return;
+    const wasDone = new Map(before);
+    for (const [corpus, done] of now) {
+      if (!done || wasDone.get(corpus) !== false) continue;
+      landed.add(corpus);
+      setTimeout(() => landed.delete(corpus), 900);
+    }
+  },
 );
 
 const emit = defineEmits<{ (e: "open", corpus: string): void }>();
@@ -39,17 +75,13 @@ const BINDINGS: Record<string, string> = {
   michna: "#7d6a4c",
   talmud: "#6d5743",
   tanakh: "#84483f",
-  sidour: "#6e4551",
-  moadim: "#7a5c36",
-  brahot: "#5f6249",
 };
 
 function bindingOf(corpus: string): string {
   return BINDINGS[corpus] ?? "#7d6a4c";
 }
 
-// Tranché une fois pour toute la page : les deux étagères se garnissent
-// ensemble, ou pas du tout.
+// Tranché une fois pour toute la page.
 const playIntro = shouldPlayShelfIntro();
 </script>
 
@@ -61,9 +93,10 @@ const playIntro = shouldPlayShelfIntro();
         :key="book.corpus"
         :to="book.to"
         class="book"
+        :class="{ 'book-landed': landed.has(book.corpus) }"
         :style="{ '--i': startIndex + index, '--binding': bindingOf(book.corpus) }"
         role="listitem"
-        :aria-label="book.label"
+        :aria-label="book.ariaLabel ?? book.label"
         @click="emit('open', book.corpus)"
       >
         <span class="book-rise">
@@ -132,6 +165,30 @@ const playIntro = shouldPlayShelfIntro();
                 <path d="M49 77.2 51.6 80 49 82.8 46.4 80Z" fill="#ecdfc4" stroke="none" />
               </g>
             </svg>
+            <!-- dans l'angle de la couverture : le livre est sur le téléphone -->
+            <Transition name="book-badge">
+              <span
+                v-if="hasBadge(book)"
+                class="book-badge"
+                :class="{ 'book-badge-landed': landed.has(book.corpus) }"
+                aria-hidden="true"
+              >
+                <svg viewBox="0 0 20 20" class="book-badge-svg">
+                  <path v-if="isDone(book)" class="book-check" d="M6 10.4l2.7 2.7L14.2 7.6" />
+                  <template v-else>
+                    <circle class="book-ring-track" cx="10" cy="10" r="5.6" />
+                    <circle
+                      class="book-ring"
+                      cx="10"
+                      cy="10"
+                      r="5.6"
+                      :stroke-dasharray="ringDash(book)"
+                      transform="rotate(-90 10 10)"
+                    />
+                  </template>
+                </svg>
+              </span>
+            </Transition>
             <!-- ombre portée sur la planche -->
             <span class="book-shadow" aria-hidden="true"></span>
           </span>
@@ -194,6 +251,7 @@ const playIntro = shouldPlayShelfIntro();
 }
 
 .book-lift {
+  position: relative;
   display: block;
   transform-origin: bottom center;
   transition: transform 0.4s ease-out;
@@ -277,7 +335,119 @@ const playIntro = shouldPlayShelfIntro();
   box-shadow: 0 3px 8px rgb(0 0 0 / 0.5);
 }
 
+/* --- La pastille du hors ligne ---
+   Posée dans l'angle haut de la couverture, à quelques pixels de ses bords
+   (la couverture va de 3 à 87 sur 96 en largeur, de 3 à 137 sur 140 en
+   hauteur). Blanche, comme un petit sceau, la couleur du thème pour le
+   signe : elle se lit sur toutes les reliures. */
+.book-badge {
+  position: absolute;
+  top: calc(2.1% + 3px);
+  right: calc(9.4% + 3px);
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  background: #fff;
+  color: var(--color-primary);
+  box-shadow: 0 1px 2px rgb(30 26 18 / 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.book-badge-svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+}
+.book-check {
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 12;
+  stroke-dashoffset: 0;
+}
+.book-ring-track {
+  stroke: #e7dfcf;
+  stroke-width: 2.8;
+}
+/* L'anneau se remplit à mesure que les livres du corpus arrivent. */
+.book-ring {
+  stroke: currentColor;
+  stroke-width: 2.8;
+  transition: stroke-dasharray 0.5s ease;
+}
+
+/* La pastille paraît au premier livre téléchargé, s'efface quand on
+   supprime : un mouvement qui suit le geste, rien à l'arrivée sur la page. */
+.book-badge-enter-active,
+.book-badge-leave-active {
+  transition:
+    transform 0.25s ease,
+    opacity 0.25s ease;
+}
+.book-badge-enter-from,
+.book-badge-leave-to {
+  transform: scale(0.4);
+  opacity: 0;
+}
+
+/* Le livre arrivé en entier : la coche se trace, la pastille saute, le livre
+   se soulève un instant et se repose sur la planche. */
+.book-badge-landed {
+  animation: book-badge-pop 0.5s cubic-bezier(0.3, 1.5, 0.5, 1);
+}
+.book-badge-landed .book-check {
+  animation: book-check-draw 0.4s ease-out 0.1s both;
+}
+.book-landed .book-lift {
+  animation: book-landed 0.6s ease-out;
+}
+@keyframes book-badge-pop {
+  0% {
+    transform: scale(0.6);
+  }
+  60% {
+    transform: scale(1.18);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes book-check-draw {
+  from {
+    stroke-dashoffset: 12;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes book-landed {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-7px);
+  }
+}
+:root.perf-lite .book-badge-landed,
+:root.perf-lite .book-badge-landed .book-check,
+:root.perf-lite .book-landed .book-lift {
+  animation: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .book-badge-landed,
+  .book-badge-landed .book-check,
+  .book-landed .book-lift {
+    animation: none;
+  }
+  .book-badge-enter-active,
+  .book-badge-leave-active,
+  .book-ring {
+    transition: none;
+  }
   .shelf-intro .book-rise {
     animation: none;
     opacity: 1;

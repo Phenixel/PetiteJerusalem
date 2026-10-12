@@ -11,6 +11,7 @@ import { useHolidayTheme } from "../composables/useHolidayTheme";
 import HolidayFabShape from "./holiday/HolidayFabShape.vue";
 import { useLocalePath } from "../composables/useLocalePath";
 import { isSectionPath } from "../content/seoLocales";
+import { SIDOUR_PATH, STUDY_PATH, isSidourPath, isStudyPath } from "../config/navSections";
 
 const { t } = useI18n();
 const route = useRoute();
@@ -38,64 +39,58 @@ onUnmounted(() => {
 const { localePath } = useLocalePath();
 
 // `anim` : personnalité de l'icône au toucher, en écho aux illustrations de
-// l'accueil (livre qui se redresse, casque qui hoche, personnage qui bondit).
+// l'accueil (maison qui gonfle, livre qui se redresse, lecteur qui se
+// balance, personnage qui bondit).
 //
-// `activeOn` : les adresses qui allument l'onglet. Le `active-class` de
+// `isActive` : les adresses qui allument l'onglet. Le `active-class` de
 // RouterLink ne suffit pas, il compare les routes déclarées et non les
 // adresses : /bibliotheque/tehilim et /bibliotheque sont deux routes
-// distinctes, l'onglet s'éteignait donc dès qu'on ouvrait un corpus, alors
-// qu'on est toujours dans la bibliothèque. Le partage de lectures est dans le
-// même cas, à plus forte raison depuis qu'il est le second onglet de la
-// bibliothèque (voir PageTabs) : il n'a pas d'onglet à lui dans la barre.
+// distinctes, l'onglet s'éteignait donc dès qu'on ouvrait un corpus. Et les
+// textes de liturgie, s'ils vivent sous /bibliotheque, allument le Sidour,
+// pas l'Étude (voir config/navSections).
 type Tab = {
   to: string;
   icon: IconName;
   labelKey: string;
-  exact: boolean;
   anim: string;
-  /** Préfixes d'adresse qui allument cet onglet. */
-  activeOn?: string[];
+  isActive: (path: string) => boolean;
 };
-const tabs = computed<Tab[]>(() => [
+const tabs = computed<Tab[]>(() => {
   // L'accueil est traduit (/, /en, /he) : l'onglet suit l'espace de langue,
   // comme le bouton des horaires plus bas.
-  { to: localePath("home"), icon: "home", labelKey: "common.home", exact: true, anim: "pop" },
-  {
-    to: "/bibliotheque",
-    icon: "book-open",
-    labelKey: "study.title",
-    exact: false,
-    anim: "sway",
-    activeOn: ["/bibliotheque", "/share-reading"],
-  },
-  {
-    to: "/chiourim",
-    icon: "headphones",
-    labelKey: "common.chiourim",
-    exact: false,
-    anim: "nod",
-    activeOn: ["/chiourim"],
-  },
-  // Les sous-pages du profil (/profile/appearance...) sont des routes à part :
-  // `activeOn` garde l'onglet allumé tant qu'on y est.
-  isLoggedIn.value
-    ? {
-        to: "/profile",
-        icon: "user",
-        labelKey: "common.profile",
-        exact: false,
-        anim: "hop",
-        activeOn: ["/profile"],
-      }
-    : {
-        to: "/profile",
-        icon: "settings",
-        labelKey: "profile.guestTitle",
-        exact: false,
-        anim: "hop",
-        activeOn: ["/profile"],
-      },
-]);
+  const home = localePath("home");
+  return [
+    { to: home, icon: "home", labelKey: "common.home", anim: "pop", isActive: (p) => p === home },
+    // Le Sidour garde la place et le dessin de l'ancienne bibliothèque : c'est
+    // par ce livre ouvert qu'on allait chercher l'office, le geste ne change
+    // pas, il mène simplement plus vite.
+    {
+      to: SIDOUR_PATH,
+      icon: "book-open",
+      labelKey: "common.sidour",
+      anim: "sway",
+      isActive: isSidourPath,
+    },
+    // L'Étude réunit la bibliothèque, les chiourim et le partage, reliés par
+    // les onglets en tête de leurs pages (PageTabs).
+    {
+      to: STUDY_PATH,
+      icon: "book-reader",
+      labelKey: "common.study",
+      anim: "bow",
+      isActive: isStudyPath,
+    },
+    // Les sous-pages du profil (/profile/appearance...) sont des routes à
+    // part : l'onglet reste allumé tant qu'on y est.
+    {
+      to: "/profile",
+      icon: isLoggedIn.value ? "user" : "settings",
+      labelKey: isLoggedIn.value ? "common.profile" : "profile.guestTitle",
+      anim: "hop",
+      isActive: (p) => p === "/profile" || p.startsWith("/profile/"),
+    },
+  ];
+});
 
 const zmanimPath = computed(() => localePath("horaires"));
 
@@ -168,11 +163,10 @@ function toggleZmanim(event: MouseEvent) {
         <RouterLink
           :to="tab.to"
           class="tab-item"
-          :class="
-            tab.activeOn?.some((prefix) => route.path.startsWith(prefix)) ? 'tab-item-active' : ''
-          "
-          :exact-active-class="tab.exact ? 'tab-item-active' : 'tab-item-noop'"
-          :active-class="tab.exact ? 'tab-item-noop' : 'tab-item-active'"
+          :class="tab.isActive(route.path) ? 'tab-item-active' : ''"
+          :aria-current="tab.isActive(route.path) ? 'page' : undefined"
+          exact-active-class="tab-item-noop"
+          active-class="tab-item-noop"
           @click="onTabClick(tab)"
         >
           <span
@@ -287,7 +281,7 @@ function toggleZmanim(event: MouseEvent) {
   }
 }
 
-/* Bibliothèque : le livre penche puis se redresse (cf. tome-straighten). */
+/* Sidour : le livre penche puis se redresse (cf. tome-straighten). */
 .tab-icon-sway {
   transform-origin: bottom center;
   animation: tab-icon-sway 0.45s ease-out;
@@ -305,24 +299,25 @@ function toggleZmanim(event: MouseEvent) {
   }
 }
 
-/* Chiourim : le casque hoche en rythme (cf. phones-nod). */
-.tab-icon-nod {
-  transform-origin: center 65%;
-  animation: tab-icon-nod 0.5s ease-in-out;
+/* Étude : le lecteur se balance au-dessus de son livre, deux fois, comme on
+   le fait en étudiant. */
+.tab-icon-bow {
+  transform-origin: bottom center;
+  animation: tab-icon-bow 0.6s ease-in-out;
 }
-@keyframes tab-icon-nod {
+@keyframes tab-icon-bow {
   0%,
   100% {
-    transform: rotate(0deg);
+    transform: translateY(0) rotate(0deg);
   }
-  20% {
-    transform: rotate(-8deg);
+  25% {
+    transform: translateY(1.5px) rotate(7deg);
   }
   50% {
-    transform: rotate(7deg);
+    transform: translateY(0) rotate(0deg);
   }
-  80% {
-    transform: rotate(-4deg);
+  75% {
+    transform: translateY(1px) rotate(5deg);
   }
 }
 
@@ -349,7 +344,7 @@ function toggleZmanim(event: MouseEvent) {
 @media (prefers-reduced-motion: reduce) {
   .tab-icon-pop,
   .tab-icon-sway,
-  .tab-icon-nod,
+  .tab-icon-bow,
   .tab-icon-hop {
     animation: none;
   }

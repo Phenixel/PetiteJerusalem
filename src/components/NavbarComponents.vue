@@ -53,6 +53,9 @@ const { activeHolidayTheme } = useHolidayTheme();
 
 const navLinks = computed(() => [
   { to: localePath("home"), labelKey: "common.home", exact: true },
+  // Le Sidour : les tefilot, les brahot et les textes des fêtes, qui
+  // vivaient dans la bibliothèque (voir SidourPage).
+  { to: "/sidour", labelKey: "common.sidour", exact: true },
   { to: "/share-reading", labelKey: "common.shareReading", exact: true },
   { to: "/bibliotheque", labelKey: "study.title", exact: true },
   { to: "/chiourim", labelKey: "common.chiourim", exact: true },
@@ -156,7 +159,7 @@ function goToLogin() {
     <!-- Bouton hamburger pour mobile -->
     <button
       @click="toggleMobileMenu"
-      class="flex flex-col justify-around w-7 h-5 shrink-0 bg-transparent border-none cursor-pointer p-0 z-[1000] md:hidden text-text-primary"
+      class="flex flex-col justify-around w-7 h-5 shrink-0 bg-transparent border-none cursor-pointer p-0 z-[1000] xl:hidden text-text-primary"
       :class="{ 'fixed right-4 top-4': isMobileMenuOpen }"
       :aria-label="$t('navbar.mainMenu')"
     >
@@ -174,8 +177,11 @@ function goToLogin() {
       ></span>
     </button>
 
-    <!-- Navigation desktop -->
-    <nav class="hidden md:flex items-center gap-8">
+    <!-- Navigation desktop. Sept entrées depuis l'arrivée du Sidour : elles ne
+         tiennent sur une ligne, avec le nom du site et la connexion, qu'à
+         partir de 1280 px ; en dessous, le menu (voir docs/design.md, « Le
+         bandeau de navigation »). -->
+    <nav class="hidden xl:flex items-center gap-8">
       <div class="flex gap-2 items-center">
         <RouterLink
           v-for="link in navLinks"
@@ -318,6 +324,7 @@ function goToLogin() {
 .nav-link {
   position: relative;
   padding: 0.5rem 0.75rem;
+  white-space: nowrap;
   font-weight: 500;
   color: var(--color-text-secondary);
   transition: color 0.2s ease;

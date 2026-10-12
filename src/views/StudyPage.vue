@@ -13,18 +13,22 @@ import {
   hubPath,
   corpusTitle,
   corpusDescription,
+  latinName,
   LISTED_CORPORA,
-  type Corpus,
+  type ListedCorpus,
 } from "../content/etudeTexts";
 import { isNativeApp } from "../composables/useNativeApp";
 import PageTabs from "../components/PageTabs.vue";
-import { LIBRARY_TABS } from "../config/pageTabs";
+import { STUDY_TABS } from "../config/pageTabs";
 import {
+  downloadableBooksOfCorpus,
   downloadingPaths,
   formatDownloadSize,
   isBookBundled,
   isBookDownloaded,
+  missingBooksOfCorpus,
   offlineBooks,
+  offlineCorpora,
   removeBooks,
   totalDownloadedSize,
   type OfflineBook,
@@ -42,11 +46,9 @@ import { useSearchTracking } from "../composables/useSearchTracking";
 import { markReadingEntry } from "../services/readingEntry";
 import { useBookDownload, type BookState } from "../composables/useBookDownload";
 import { analyticsService } from "../services/analyticsService";
-import { useNow } from "../composables/useNow";
-import { currentMoadimBook, withCurrentFirst } from "../content/moadimNow";
 import AppIcon from "../components/icons/AppIcon.vue";
 import AccountCta from "../components/AccountCta.vue";
-import DailyReadingCard from "../components/DailyReadingCard.vue";
+import LibraryOfflineRow from "../components/LibraryOfflineRow.vue";
 import LibraryShelf, { type ShelfBook } from "../components/LibraryShelf.vue";
 import CollapseTransition from "../components/CollapseTransition.vue";
 import CatalogSearchField from "../components/CatalogSearchField.vue";
@@ -58,8 +60,9 @@ import { SITE_URL } from "../config/site";
 // jour, qui coiffent les Tehilim.
 const ChneiMikraBanner = defineAsyncComponent(() => import("../components/ChneiMikraBanner.vue"));
 const TehilimDayBanner = defineAsyncComponent(() => import("../components/TehilimDayBanner.vue"));
-const MoadimNowBanner = defineAsyncComponent(() => import("../components/MoadimNowBanner.vue"));
-const SidourBrahotLink = defineAsyncComponent(() => import("../components/SidourBrahotLink.vue"));
+// « Aujourd'hui » (psaumes du jour, chnei mikra, lecture du jour) tire le
+// calendrier hébraïque, lui aussi : chargé à la demande.
+const StudyToday = defineAsyncComponent(() => import("../components/StudyToday.vue"));
 // Ce qu'on dit avant de lire des Tehilim et après : les textes et leur rendu
 // liturgique pèsent, et ne servent qu'à ce livre.
 const BookEncadrement = defineAsyncComponent(() => import("../components/BookEncadrement.vue"));
@@ -85,15 +88,14 @@ const bookState = (text: TextStudyJsonEntry): BookState =>
 
 // La bibliothèque est un tableau de bord : l'accueil ne montre que les grandes
 // sections (corpus) ; la liste détaillée des textes vit sur /bibliotheque/:corpus.
-// `shelf` répartit les livres sur les étagères de l'accueil : pas plus de
-// quatre volumes par planche, la liturgie a la sienne.
+// Quatre corpus d'étude, sur une étagère. La liturgie (Sidour, Moadim, Brahot)
+// a sa page, le Sidour : elle ne vit plus ici (voir SidourPage).
 const CORPUS_META: {
   corpus: string;
   typeKey: string;
   labelKey: string;
   descKey: string;
   searchKey: string;
-  shelf: number;
 }[] = [
   {
     corpus: "tehilim",
@@ -101,7 +103,6 @@ const CORPUS_META: {
     labelKey: "study.types.tehilim",
     descKey: "study.corpus.tehilimDesc",
     searchKey: "study.corpus.tehilimSearch",
-    shelf: 1,
   },
   {
     corpus: "michna",
@@ -109,7 +110,6 @@ const CORPUS_META: {
     labelKey: "study.types.mishna",
     descKey: "study.corpus.michnaDesc",
     searchKey: "study.corpus.michnaSearch",
-    shelf: 1,
   },
   {
     corpus: "talmud",
@@ -117,7 +117,6 @@ const CORPUS_META: {
     labelKey: "study.types.talmud",
     descKey: "study.corpus.talmudDesc",
     searchKey: "study.corpus.talmudSearch",
-    shelf: 1,
   },
   {
     corpus: "tanakh",
@@ -125,35 +124,23 @@ const CORPUS_META: {
     labelKey: "study.types.tanakh",
     descKey: "study.corpus.tanakhDesc",
     searchKey: "study.corpus.tanakhSearch",
-    shelf: 1,
-  },
-  // Liturgie : des textes qu'on lit, pas qu'on partage, jamais proposés au
-  // partage de lecture (voir isShareable dans content/etudeTexts).
-  {
-    corpus: "sidour",
-    typeKey: "Sidour",
-    labelKey: "study.types.sidour",
-    descKey: "study.corpus.sidourDesc",
-    searchKey: "study.corpus.sidourSearch",
-    shelf: 2,
-  },
-  {
-    corpus: "moadim",
-    typeKey: "Moadim",
-    labelKey: "study.types.moadim",
-    descKey: "study.corpus.moadimDesc",
-    searchKey: "study.corpus.moadimSearch",
-    shelf: 2,
-  },
-  {
-    corpus: "brahot",
-    typeKey: "Brahot",
-    labelKey: "study.types.brahot",
-    descKey: "study.corpus.brahotDesc",
-    searchKey: "study.corpus.brahotSearch",
-    shelf: 2,
   },
 ];
+
+/**
+ * Les types de la liturgie, que la recherche de l'accueil parcourt aussi :
+ * qui tape « Birkat Hamazon » dans l'étude ne doit pas repartir bredouille.
+ * Leurs résultats se rangent à part, « Dans le Sidour », et mènent au texte.
+ */
+const LITURGY_TYPES = [
+  { key: "Sidour", labelKey: "study.types.sidour" },
+  { key: "Brahot", labelKey: "study.types.brahot" },
+  { key: "Moadim", labelKey: "study.types.moadim" },
+];
+const LITURGY_TYPE_KEYS = new Set(LITURGY_TYPES.map((type) => type.key));
+
+/** Le nom hébreu d'un texte du catalogue : « ברכת המזון (Birkat Hamazon) » → « ברכת המזון ». */
+const hebrewOf = (text: TextStudyJsonEntry) => text.name.replace(/\s*\([^)]*\)\s*$/, "").trim();
 
 const allTexts = (textStudiesJson as TextStudiesJson).textStudies;
 
@@ -162,16 +149,38 @@ const currentCorpus = computed(
   () => CORPUS_META.find((c) => c.corpus === String(route.params.corpus ?? "")) ?? null,
 );
 
-// Les livres des étagères : un par grande section, titre sur la couverture.
-// Deux planches : les quatre corpus d'étude, puis la liturgie en dessous.
-const shelfOf = (shelf: number): ShelfBook[] =>
-  CORPUS_META.filter((c) => c.shelf === shelf).map((c) => ({
-    corpus: c.corpus,
-    to: `/bibliotheque/${c.corpus}`,
-    label: t(c.labelKey),
-  }));
-const studyShelfBooks = computed<ShelfBook[]>(() => shelfOf(1));
-const liturgyShelfBooks = computed<ShelfBook[]>(() => shelfOf(2));
+// L'étagère : un livre par grande section, titre sur la couverture. Dans
+// l'app, chaque livre dit dans son angle s'il est sur le téléphone : la part
+// de ses livres téléchargés (les Tehilim, embarqués, le sont toujours).
+function offlineShare(typeKey: string): number {
+  const corpus = offlineCorpora.find((c) => c.key === typeKey);
+  if (!corpus) return 0;
+  const downloadable = downloadableBooksOfCorpus(corpus).length;
+  if (downloadable === 0) return 1;
+  return 1 - missingBooksOfCorpus(corpus).length / downloadable;
+}
+const shelfBooks = computed<ShelfBook[]>(() =>
+  CORPUS_META.map((c) => {
+    const label = t(c.labelKey);
+    if (!isNativeApp) return { corpus: c.corpus, to: `/bibliotheque/${c.corpus}`, label };
+    const offline = offlineShare(c.typeKey);
+    const ariaLabel =
+      offline >= 0.999
+        ? t("study.offline.bookDone", { book: label })
+        : offline > 0.001
+          ? t("study.offline.bookPartial", { book: label })
+          : label;
+    return { corpus: c.corpus, to: `/bibliotheque/${c.corpus}`, label, offline, ariaLabel };
+  }),
+);
+
+// Les livres de l'étude qui se téléchargent, pour la ligne « Hors ligne ».
+const STUDY_TYPE_KEYS = new Set(CORPUS_META.map((c) => c.typeKey));
+const studyOfflineBooks = computed(() =>
+  isNativeApp
+    ? offlineBooks.filter((book) => STUDY_TYPE_KEYS.has(book.corpus) && !isBookBundled(book))
+    : [],
+);
 
 // La recherche de l'accueil couvre toute la bibliothèque, celle d'une page
 // corpus reste dans le corpus : le placeholder le dit explicitement.
@@ -193,8 +202,19 @@ const {
   reset: resetSearch,
 } = useCatalogSearch(
   allTexts,
-  CORPUS_META.map((c) => ({ key: c.typeKey, labelKey: c.labelKey })),
+  [...CORPUS_META.map((c) => ({ key: c.typeKey, labelKey: c.labelKey })), ...LITURGY_TYPES],
   () => currentCorpus.value?.typeKey ?? null,
+);
+
+// Les résultats de l'étude, par corpus puis par livre ; ceux de la liturgie
+// en une liste, sous « Dans le Sidour ».
+const studyResultGroups = computed(() =>
+  groupedByType.value.filter((group) => !LITURGY_TYPE_KEYS.has(group.key)),
+);
+const sidourResults = computed(() =>
+  groupedByType.value
+    .filter((group) => LITURGY_TYPE_KEYS.has(group.key))
+    .flatMap((group) => Object.values(group.groups).flat()),
 );
 
 // Recherche en cours : l'écran se replie autour de la barre et des résultats.
@@ -267,23 +287,6 @@ const showChneiMikra = computed(() => browsingBook("tanakh"));
 
 // Les psaumes du jour (cycle mensuel) coiffent les Tehilim, de la même façon.
 const showTehilimDay = computed(() => browsingBook("tehilim"));
-
-// Le temps d'une fête, le sidour renvoie à ses textes dans Moadim (le loulav,
-// les Hochanot à Souccot), et Moadim ouvre sa liste sur le livre de la fête.
-const showMoadimNow = computed(() => browsingBook("sidour"));
-// Le Birkat Hamazon et les brahot ne sont pas dans le sidour, et l'on vient
-// pourtant les y chercher : le renvoi reste affiché pendant une recherche,
-// c'est souvent là qu'on s'aperçoit qu'ils n'y sont pas.
-const showSidourBrahot = computed(() => currentCorpus.value?.corpus === "sidour");
-const now = useNow();
-const moadimBookNow = computed(() =>
-  currentCorpus.value?.corpus === "moadim" && !hasSearch.value
-    ? currentMoadimBook(now.value)
-    : null,
-);
-function orderedGroups<T>(groups: Record<string, T>): Record<string, T> {
-  return withCurrentFirst(groups, moadimBookNow.value);
-}
 
 // Le Yehi ratson des Tehilim se dit à l'ouverture du livre, une fois pour les
 // psaumes qu'on va y lire : sa place est ici, pas sur chacun des cent
@@ -415,11 +418,12 @@ function trackSearchResultOpened(text: TextStudyJsonEntry): void {
   if (!hasSearch.value) return;
   searchTracking.flush();
   markReadingEntry("search");
-  // Le rang à l'écran : les résultats s'y rangent par rayon puis par livre
-  // (le livre de la fête en tête), pas dans l'ordre du catalogue.
-  const shown = groupedByType.value.flatMap((group) =>
-    Object.values(orderedGroups(group.groups)).flat(),
-  );
+  // Le rang à l'écran : les résultats de l'étude s'y rangent par rayon puis
+  // par livre, ceux du Sidour à la suite, pas dans l'ordre du catalogue.
+  const shown = [
+    ...studyResultGroups.value.flatMap((group) => Object.values(group.groups).flat()),
+    ...sidourResults.value,
+  ];
   analyticsService.capture("library_search_result_opened", {
     scope: searchScope(),
     rank: shown.indexOf(text) + 1,
@@ -428,18 +432,16 @@ function trackSearchResultOpened(text: TextStudyJsonEntry): void {
   });
 }
 
-// App native : « Tout télécharger » (toute la bibliothèque sur l'accueil, le
-// corpus courant sur sa page) + espace utilisé.
+// App native, page d'un corpus : « Tout télécharger » le corpus, et l'espace
+// utilisé. L'accueil de la bibliothèque, lui, a sa ligne « Hors ligne » en bas
+// de page (LibraryOfflineRow) et ses livres disent leur état dans leur angle.
 const tabCorpusBooks = computed<OfflineBook[]>(() => {
-  if (!isNativeApp) return [];
-  return currentCorpus.value === null
-    ? offlineBooks
-    : offlineBooks.filter((b) => b.corpus === currentCorpus.value?.typeKey);
+  if (!isNativeApp || currentCorpus.value === null) return [];
+  return offlineBooks.filter((b) => b.corpus === currentCorpus.value?.typeKey);
 });
 
-// Ce qui se télécharge : les livres embarqués dans l'app (les Tehilim, les
-// Sidour) y sont déjà, leurs pages n'ont donc rien à
-// proposer.
+// Ce qui se télécharge : les livres embarqués dans l'app (les Tehilim) y sont
+// déjà, leur page n'a donc rien à proposer.
 const tabBooks = computed(() => tabCorpusBooks.value.filter((b) => !isBookBundled(b)));
 
 const tabAllDownloaded = computed(
@@ -453,8 +455,7 @@ function downloadAllInTab() {
 }
 
 // Libérer de la place : symétrique de « Tout télécharger », donc au même
-// endroit et avec la même portée, toute la bibliothèque depuis l'accueil, le
-// corpus courant depuis sa page.
+// endroit et avec la même portée, le corpus courant.
 // Un livre embarqué a pu être téléchargé par une version d'avant : sa copie
 // se libère avec les autres.
 const tabDownloadedBooks = computed(() => tabCorpusBooks.value.filter((b) => isBookDownloaded(b)));
@@ -521,9 +522,9 @@ function applySeoMeta() {
     const fr = locale.value === "fr" && (LISTED_CORPORA as string[]).includes(corpus.corpus);
     seoService.setMeta({
       title: fr
-        ? corpusTitle(corpus.corpus as Corpus)
+        ? corpusTitle(corpus.corpus as ListedCorpus)
         : pageTitle(t(corpus.labelKey), t("study.title")),
-      description: fr ? corpusDescription(corpus.corpus as Corpus) : t(corpus.descKey),
+      description: fr ? corpusDescription(corpus.corpus as ListedCorpus) : t(corpus.descKey),
       canonical: url,
     });
   } else {
@@ -607,9 +608,9 @@ onUnmounted(() => {
         >
           <PageTabs
             v-if="isNativeApp"
-            :tabs="LIBRARY_TABS"
+            :tabs="STUDY_TABS"
             event="library_tab_switched"
-            :label="t('study.title')"
+            :label="t('common.study')"
           />
           <h1
             class="text-3xl md:text-5xl font-bold text-text-primary tracking-tight pb-1"
@@ -646,8 +647,8 @@ onUnmounted(() => {
            icône posée contre le premier. Supprimer reste l'exception, il n'a
            pas à peser autant à l'écran, la modale, elle, explique tout. -->
       <span class="flex items-center gap-1">
-        <!-- Rien à télécharger (Tehilim, Sidour) : seule reste la corbeille,
-             pour une copie téléchargée par une version d'avant. -->
+        <!-- Rien à télécharger (Tehilim) : seule reste la corbeille, pour
+             une copie téléchargée par une version d'avant. -->
         <template v-if="tabBooks.length > 0">
           <button v-if="!tabAllDownloaded" class="btn btn-soft" @click="downloadAllInTab()">
             <AppIcon
@@ -688,16 +689,6 @@ onUnmounted(() => {
          traite sur leur page. -->
     <TehilimDayBanner v-if="showTehilimDay" class="max-w-5xl mx-auto mb-10" />
 
-    <!-- Sidour : le temps d'une fête, le renvoi vers ses textes dans Moadim. -->
-    <MoadimNowBanner v-if="showMoadimNow" class="max-w-5xl mx-auto mb-10" />
-
-    <!-- Sidour : le renvoi vers les Brahot, où vit le Birkat Hamazon. -->
-    <SidourBrahotLink
-      v-if="showSidourBrahot"
-      :searching="hasSearch"
-      class="max-w-5xl mx-auto mb-8"
-    />
-
     <!-- Tehilim : ce qu'on dit avant d'en lire, et ce qu'on dit après. -->
     <BookEncadrement v-if="showBookEncadrement" corpus="tehilim" class="max-w-5xl mx-auto mb-10" />
 
@@ -731,35 +722,39 @@ onUnmounted(() => {
 
       <!-- Les grandes sections : on est dans la bibliothèque, les livres sont
            la porte d'entrée principale, visibles sans scroller, même sur
-           téléphone. Deux étagères : l'étude, puis la liturgie (pas plus de
-           quatre volumes par planche). -->
+           téléphone. Dans l'app, chacun dit dans son angle s'il est sur le
+           téléphone. -->
       <div class="mt-2 md:mt-6">
-        <LibraryShelf :books="studyShelfBooks" @open="trackCorpusOpened" />
-        <LibraryShelf
-          :books="liturgyShelfBooks"
-          :start-index="studyShelfBooks.length"
-          class="mt-7 !max-w-[19rem]"
-          @open="trackCorpusOpened"
-        />
+        <LibraryShelf :books="shelfBooks" @open="trackCorpusOpened" />
       </div>
 
-      <!-- Connecté : la lecture du jour en bas de page, même carte que le
-           tableau de bord de l'accueil (un seul design pour la même chose). -->
-      <div v-if="user" class="max-w-3xl mx-auto mt-14 animate-[fadeIn_0.5s_ease]">
-        <div v-if="dailyLoading" class="card p-6 h-36 animate-pulse"></div>
-        <DailyReadingCard v-else :done="readingDone" :total="readingTotal" />
-      </div>
+      <!-- Ce qui se lit aujourd'hui : les psaumes du jour, le chnei mikra, et
+           pour un compte, la lecture du jour. -->
+      <StudyToday
+        class="max-w-3xl mx-auto mt-12 animate-[fadeIn_0.5s_ease]"
+        :signed-in="!!user && !dailyLoading"
+        :done="readingDone"
+        :total="readingTotal"
+      />
+
+      <!-- App native : tout télécharger, en bas de page, une ligne parmi les
+           autres. -->
+      <LibraryOfflineRow
+        v-if="isNativeApp"
+        class="max-w-3xl mx-auto mt-6"
+        :books="studyOfflineBooks"
+      />
     </template>
 
     <!-- ===== Liste détaillée : page corpus, ou recherche depuis l'accueil ===== -->
     <template v-else>
       <div v-if="hasResults" class="max-w-5xl mx-auto space-y-12 animate-[fadeIn_0.5s_ease]">
-        <div v-for="typeGroup in groupedByType" :key="typeGroup.key" class="space-y-10">
+        <div v-for="typeGroup in studyResultGroups" :key="typeGroup.key" class="space-y-10">
           <!-- Type heading: shown only when searching across the whole library. -->
           <h2 v-if="!currentCorpus" class="text-2xl font-bold text-text-primary">
             {{ t(typeGroup.labelKey) }}
           </h2>
-          <section v-for="(texts, livre) in orderedGroups(typeGroup.groups)" :key="livre">
+          <section v-for="(texts, livre) in typeGroup.groups" :key="livre">
             <!-- Les Tehilim : le titre du sefer replie et rouvre sa liste. -->
             <button
               v-if="foldableBooks"
@@ -780,15 +775,8 @@ onUnmounted(() => {
                 class="shrink-0 text-text-secondary"
               />
             </button>
-            <h3 v-else class="text-xl font-bold text-text-primary mb-4 flex items-center gap-3">
+            <h3 v-else class="text-xl font-bold text-text-primary mb-4">
               {{ formatBookName(String(livre)) }}
-              <!-- Moadim : le livre de la fête en cours, en tête de la liste. -->
-              <span
-                v-if="livre === moadimBookNow"
-                class="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary"
-              >
-                {{ t("study.moadimNow.current") }}
-              </span>
             </h3>
             <!-- Une seule colonne sur téléphone : les noms restent lisibles en entier.
                  Un sefer replié ne pose pas ses cartes du tout (`v-if`) : c'est
@@ -861,6 +849,33 @@ onUnmounted(() => {
             </CollapseTransition>
           </section>
         </div>
+
+        <!-- La liturgie a sa page, le Sidour : une recherche qui la touche y
+             renvoie, plutôt que de répondre qu'il n'y a rien. -->
+        <section v-if="!currentCorpus && sidourResults.length" class="space-y-4">
+          <h2 class="flex items-center gap-2.5 text-2xl font-bold text-text-primary">
+            <AppIcon name="book-open" :size="20" class="text-primary" />
+            {{ t("study.inSidour") }}
+          </h2>
+          <div class="card overflow-hidden">
+            <router-link
+              v-for="text in sidourResults"
+              :key="text.id"
+              :to="hubPath(text)"
+              class="sidour-result group flex min-h-12 items-center justify-between gap-3 px-4 py-2.5"
+              @click="trackSearchResultOpened(text)"
+            >
+              <span
+                class="font-medium text-text-primary group-hover:text-primary transition-colors"
+              >
+                {{ latinName(text) }}
+              </span>
+              <span class="font-hebrew text-lg text-text-secondary" lang="he" dir="rtl">
+                {{ hebrewOf(text) }}
+              </span>
+            </router-link>
+          </div>
+        </section>
       </div>
 
       <!-- Empty -->
@@ -873,3 +888,11 @@ onUnmounted(() => {
     <AccountCta class="max-w-3xl mx-auto mt-12" />
   </main>
 </template>
+
+<style scoped>
+/* Les résultats du Sidour, en lignes d'une liste posée dans une carte : un
+   filet entre elles, comme sur la page du Sidour. */
+.sidour-result + .sidour-result {
+  border-top: 1px solid var(--color-line);
+}
+</style>

@@ -312,6 +312,27 @@ button,
     box-shadow: var(--shadow-card-hover);
   }
 
+  /* Une surface qu'on touche s'enfonce à peine sous le doigt : le geste a été
+     reçu. Le mouvement répond au geste, rien ne bouge de lui-même (voir
+     docs/design.md, « Le mouvement répond à un geste »). */
+  .press-feedback {
+    transition:
+      transform 0.15s ease,
+      box-shadow 0.25s ease,
+      background-color 0.25s ease;
+  }
+  .press-feedback:active {
+    transform: scale(0.985);
+  }
+  :root.perf-lite .press-feedback:active {
+    transform: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .press-feedback:active {
+      transform: none;
+    }
+  }
+
   /* Buttons */
   .btn {
     display: inline-flex;

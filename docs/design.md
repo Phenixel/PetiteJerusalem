@@ -232,22 +232,34 @@ lues, et elles sont courtes pour qu'on les lise. Seuls les gestes se passent
 page de lecture. Une page nouvelle doit gagner sa place contre les autres,
 et ce qui s'apprend en le faisant va avec les gestes, pas avant.
 
-### Deux pages, un jeu d'onglets
+### Des pages voisines, un jeu d'onglets
 
-La barre du bas de l'app tient quatre onglets, pas un de plus. Des pages qui
-vont ensemble n'y ont donc pas toutes leur place, et elles finissaient
-introuvables : le partage de lectures n'était atteignable que par l'accueil, le
-calendrier des fêtes par un petit lien perdu sous le titre des horaires. Elles
-se rangent deux par deux, là où l'on est déjà (`PageTabs.vue`, app native
-seulement) :
+La barre du bas de l'app tient quatre onglets, pas un de plus : Accueil,
+Sidour, Étude et Profil, le rond des horaires au milieu (voir « Le bandeau de
+navigation »). Des pages qui vont ensemble n'y ont donc pas toutes leur
+place, et elles finissaient introuvables : le partage de lectures n'était
+atteignable que par l'accueil, le calendrier des fêtes par un petit lien perdu
+sous le titre des horaires. Elles se rangent ensemble, là où l'on est déjà
+(`PageTabs.vue`, app native seulement) :
 
-- **Lecture** et **Partage**, en tête de la bibliothèque : lire un texte, ou se
-  le répartir à plusieurs ;
+- **Bibliothèque**, **Chiourim** et **Partage**, en tête de l'Étude : lire un
+  texte, écouter un cours, se répartir une lecture à plusieurs ;
 - **Horaires** et **Calendrier** : les horaires du jour, ou les fêtes de
   l'année.
 
 Sur le site, ces onglets ne servent pas : le bandeau y mène d'un clic (le
 calendrier des fêtes y a son entrée depuis).
+
+Trois onglets ne tenaient pas avec la marge des deux : « Bibliothèque »,
+« Chiourim » et « Partage » demandaient environ 356 px pour 327 sur un
+téléphone de 375 px. Chaque onglet a donc 16 px de marge de chaque côté
+(`px-4`), et les trois tiennent dans les trois langues.
+
+Changer d'onglet fait **glisser la pastille blanche** de l'onglet quitté à
+celui qu'on a touché, en s'étirant à sa largeur : la barre du nouvel onglet
+(une autre page, donc une autre instance) reprend la position notée au
+toucher. Arrivé autrement (barre du bas, lien), la pastille est simplement à
+sa place, sans mouvement (voir « Le mouvement répond à un geste »).
 
 Deux règles y tiennent :
 
@@ -285,10 +297,12 @@ ne tient pas la page non plus : un petit « i », à côté des coordonnées, l'
 en fenêtre (voir « Le mode d'emploi ne tient pas la page »). Un refus de la
 position, lui, reste en clair : il est urgent, et il change ce qui est affiché.
 
-Dans la barre du bas, c'est l'onglet Bibliothèque qui reste allumé sur tout le
-partage, comme sur les pages d'un corpus (`activeOn` dans `BottomTabBar.vue`,
-le `active-class` de RouterLink comparant les routes déclarées et non les
-adresses).
+Dans la barre du bas, c'est l'onglet Étude qui reste allumé sur la
+bibliothèque, ses corpus, les chiourim et tout le partage ; l'onglet Sidour,
+sur sa page et sur chaque texte de liturgie, bien que ces textes vivent sous
+/bibliotheque (`config/navSections.ts` : c'est l'adresse qui décide, le
+`active-class` de RouterLink comparant les routes déclarées et non les
+adresses). Tenu par `src/__tests__/bottomTabBar.test.ts`.
 
 ### L'accueil de l'app salue, il ne présente pas
 
@@ -379,6 +393,118 @@ plus bas encore. Sans quoi tout se vaudrait et la carte ne se lirait plus.
 
 Les dates passées, elles, gardent leur effacement : s'effacer et ressortir
 sont deux moyens opposés, ils ne se gênent pas.
+
+### Le Sidour s'ouvre sur le moment
+
+Ce qu'on dit (les tefilot, les brahot, les textes des fêtes) vivait dans trois
+livres de la bibliothèque, mêlés à ce qu'on étudie. Il a sa page, le Sidour,
+deuxième onglet de la barre du bas, à la place et sous le dessin de l'ancienne
+bibliothèque : c'est par ce livre ouvert qu'on allait chercher l'office, le
+geste ne change pas, il mène plus vite.
+
+La page tient en trois étages (`SidourPage.vue`) :
+
+- **le moment**, en carte pleine couleur, la seule de la page (voir « Ce qu'on
+  vient chercher prend la couleur, pleine ») : l'office dont c'est l'heure,
+  avec l'heure jusqu'à laquelle il se dit et, en pastilles, ce que le jour y
+  ajoute (Ya'alé véyavo, Hallel, Moussaf, 'Al hanissim, Ata 'honantanou, le
+  compte du 'Omer...), les mêmes occasions que celles qui colorent le texte
+  (voir « Ce que le jour ajoute dans une tefila »). Entre deux plages, la
+  carte annonce l'office qui vient plutôt que de disparaître : sur l'accueil,
+  une carte vide se retire ; ici, c'est la raison d'être de la page. Un soir de
+  'Hanouka, l'allumage passe devant l'office ; une nuit de Sli'hot, de
+  'hatsot au lever du soleil, les Sli'hot ;
+- **ce qui se dit aussi maintenant**, deux ou trois lignes au plus sous la
+  carte : l'office quand l'allumage ou les Sli'hot l'ont précédé, la havdala
+  le soir où sort un Chabbat ou une fête, la bénédiction de la lune quand sa
+  fenêtre est ouverte, le loulav et les Hochanot de Souccot, le Chema du
+  coucher et le tikoun 'hatsot la nuit. Au-delà de trois, ce n'est plus un
+  rappel mais une liste, et la liste est dessous ;
+- **tous les textes**, en une liste, sans les livres qui les séparaient, mais
+  pas sans repères : de légers intertitres par usage (les offices, le soir,
+  les brahot, les occasions, les étapes de la vie), puis les fêtes en bas. Le
+  temps d'une fête (d'Eloul à Kippour, de Kippour à Sim'hat Torah, 'Hanouka),
+  ses textes remontent en tête, marqués « en ce moment ». Dans l'app, ils se
+  téléchargent alors d'eux-mêmes : ils doivent s'ouvrir sans réseau, à la
+  synagogue comme ailleurs.
+
+Les textes gardent leur adresse sous /bibliotheque : elle est publiée (le
+widget Sidour, les liens partagés, les pages indexées, les positions de
+lecture synchronisées) et une version installée de l'app la lit encore. Les
+anciennes listes /bibliotheque/sidour, /moadim et /brahot mènent à /sidour
+(routes.ts, et firebase.json côté serveur). Le Birkat Hamazon et les brahot
+voyagent désormais avec l'app, comme le reste du Sidour
+(`src/datas/bundledTexts.json`).
+
+La recherche de la bibliothèque parcourt aussi la liturgie : qui tape
+« Birkat Hamazon » dans l'étude ne repart pas bredouille, le résultat se range
+à part, « Dans le Sidour ».
+
+Tenu par `src/__tests__/sidourMoment.test.ts` (ce que la carte propose, à
+l'heure qu'il est) et `src/__tests__/sidourGroups.test.ts` (chaque texte
+rangé une fois et une seule, les fêtes qui remontent).
+
+### Un livre dit s'il est sur le téléphone
+
+Dans l'app, chaque livre de l'étagère porte dans l'angle haut de sa couverture
+une petite pastille blanche : une coche quand tout le livre est sur le
+téléphone (le même signe que sur chaque texte de sa liste), un anneau qui se
+remplit quand il ne l'est qu'en partie, rien du tout sinon. L'étagère reste
+nue tant qu'on n'a rien téléchargé ; les Tehilim, embarqués, portent leur
+coche d'emblée. La part se compte en livres du corpus, comme la liste que
+l'on trouve en l'ouvrant. Le lien l'annonce aux lecteurs d'écran
+(« Talmud, en partie sur ce téléphone »).
+
+Le bouton « Tout télécharger » ne tient plus le haut de la bibliothèque, entre
+la recherche et l'étagère, pour une action qu'on fait une fois : il devient
+une ligne en bas de page, « Hors ligne », dans le même dessin que les lignes
+d'« Aujourd'hui » (`LibraryOfflineRow.vue`). La ligne entière lance le
+téléchargement ; la corbeille est à son bout.
+
+Elle dit ce qui compte à chaque moment :
+
+- **avant**, la taille de ce qui reste, et ce qui est déjà là. C'est une
+  estimation (le poids du corpus réparti entre ses livres) : un livre n'a de
+  taille sur l'appareil qu'une fois téléchargé, et un ordre de grandeur suffit
+  à décider ;
+- **pendant**, le pourcentage en grand au bout de la ligne (voir « Le chiffre
+  en avant tombe toujours au même endroit »), le temps restant, déduit de la
+  vitesse tenue depuis le début et arrondi à cinq secondes ou à la minute pour
+  ne pas danser, et une barre fine au pied de la carte ;
+- **après**, ce que tout occupe, et la corbeille.
+
+Un second appui pendant le lot ne relance rien (`useBookDownload`). Tenu par
+`src/__tests__/libraryOffline.test.ts` et
+`src/__tests__/offlineDownloadAll.test.ts`.
+
+### Le mouvement répond à un geste
+
+L'app a le droit de bouger, à une condition : que ce soit en réponse à
+quelque chose qu'on vient de faire. Le mouvement dit alors que le geste a été
+reçu, et ce qu'il a produit ; il prolonge le doigt. Ce qui bouge de soi-même,
+à chaque arrivée sur une page, finit par lasser, et passe pour tapageur.
+
+Ce qui bouge, donc :
+
+- l'icône d'un onglet de la barre du bas qu'on touche (le livre du Sidour
+  penche et se redresse, le lecteur de l'Étude se balance) ;
+- la pastille des onglets d'une page, qui glisse jusqu'à celui qu'on a touché ;
+- une carte ou une ligne qu'on presse, qui s'enfonce à peine sous le doigt
+  (`.press-feedback`, `main.css`) ;
+- « Tout télécharger » : la flèche plonge dans son plateau au toucher, les
+  anneaux des livres se remplissent à mesure, un livre arrivé en entier fait
+  tracer sa coche et se soulève un instant de la planche, et la coche de la
+  ligne se trace à la fin du lot ; la pastille s'efface quand on supprime.
+
+Ce qui ne bouge pas : l'arrivée sur une page (au-delà du simple fondu déjà en
+place), un état déjà là au chargement (un livre téléchargé hier n'anime pas sa
+coche), et tout ce qui changerait sans qu'on ait rien fait. Les livres qui se
+posent un à un sur l'étagère restent l'exception déjà admise, de loin en loin
+(voir `useShelfIntro`).
+
+Tout se coupe quand le système demande moins d'animations, et sur une petite
+machine (`perf-lite`) : l'état final s'affiche d'emblée, rien ne manque, seul
+le trajet disparaît (`composables/useMotion.ts`).
 
 ### Ce qui est à soi se range avec le reste
 
@@ -1483,8 +1609,17 @@ la baseline disparaît, les marges verticales sont réduites de moitié. Le
 bandeau publie sa hauteur réelle dans `--navbar-height`, dont dépendent les
 barres collantes des pages.
 
+Le bandeau du site compte sept entrées depuis l'arrivée du Sidour (Accueil,
+Sidour, Partage de lectures, Bibliothèque, Chiourim, Horaires, Calendrier) :
+elles ne tiennent sur une ligne, avec le nom du site et la connexion, qu'à
+partir de 1280 px. En dessous, le menu (le bouton à trois traits) prend le
+relais ; à 1024 px, « Partage de lectures » passait déjà sur trois lignes et
+le nom du site se coupait.
+
 L'app native n'a pas de bandeau : la navigation y passe par la barre du bas
-(`BottomTabBar`). Comme sur iOS et Android, toucher l'onglet de la page où
+(`BottomTabBar`) : Accueil, Sidour, le rond des horaires, Étude, Profil. Le
+Sidour réunit ce qu'on dit, l'Étude ce qu'on apprend (la bibliothèque, les
+chiourim, le partage, reliés par les onglets de leurs pages). Comme sur iOS et Android, toucher l'onglet de la page où
 l'on est la remonte en haut (en douceur, sauf si le système demande moins
 d'animations) ; depuis une sous-page, il ramène à la page de l'onglet. Tenu
 par `src/__tests__/bottomTabBar.test.ts`.

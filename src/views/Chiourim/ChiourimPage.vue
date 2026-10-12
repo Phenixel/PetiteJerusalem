@@ -5,6 +5,8 @@ import { chiourService } from "../../services/chiourService";
 import type { Chiour } from "../../models/models";
 import ChiourCard from "../../components/ChiourCard.vue";
 import { useSearchTracking } from "../../composables/useSearchTracking";
+import PageTabs from "../../components/PageTabs.vue";
+import { STUDY_TABS } from "../../config/pageTabs";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import AccountCta from "../../components/AccountCta.vue";
 import CollapseTransition from "../../components/CollapseTransition.vue";
@@ -132,9 +134,20 @@ onMounted(() => {
         class="text-center animate-[fadeIn_0.5s_ease]"
         :class="isNativeApp ? 'mb-6' : 'mb-12'"
       >
+        <!-- App native : les chiourim sont le deuxième onglet de l'Étude, et
+             les onglets tiennent lieu de titre (voir PageTabs). -->
+        <PageTabs
+          v-if="isNativeApp"
+          :tabs="STUDY_TABS"
+          event="library_tab_switched"
+          :label="t('common.study')"
+        />
         <!-- Titre de la page (un h2 : le h1 est ailleurs) : il porte donc la
              police d'apparat à la main. -->
-        <h2 class="font-display text-4xl md:text-5xl font-bold text-text-primary tracking-tight">
+        <h2
+          class="font-display text-4xl md:text-5xl font-bold text-text-primary tracking-tight"
+          :class="isNativeApp ? 'sr-only' : ''"
+        >
           {{ t("chiourim.title") }}
         </h2>
         <p
