@@ -428,6 +428,9 @@ La page tient en trois étages (`SidourPage.vue`) :
   téléchargent alors d'eux-mêmes : ils doivent s'ouvrir sans réseau, à la
   synagogue comme ailleurs.
 
+Entre le moment et la liste, une rangée d'**outils** : les petits instruments
+qui servent pendant qu'on prie (voir « Les outils du Sidour » ci-dessous).
+
 Les textes gardent leur adresse sous /bibliotheque : elle est publiée (le
 widget Sidour, les liens partagés, les pages indexées, les positions de
 lecture synchronisées) et une version installée de l'app la lit encore. Les
@@ -435,6 +438,50 @@ anciennes listes /bibliotheque/sidour, /moadim et /brahot mènent à /sidour
 (routes.ts, et firebase.json côté serveur). Le Birkat Hamazon et les brahot
 voyagent désormais avec l'app, comme le reste du Sidour
 (`src/datas/bundledTexts.json`).
+
+### Les outils du Sidour
+
+La direction du Kotel, le miroir des téfilines et, le temps de Souccot, les
+six côtés du na'anou'a s'ouvraient seulement depuis le texte où ils servent :
+le titre de la 'Amida, celui de la pose des téfilines, les brahot du loulav.
+Qui les cherchait sans passer par un office (le voyageur qui veut savoir de
+quel côté se tourner, celui qui pose ses téfilines avant d'ouvrir son sidour)
+ne les trouvait pas. La page du Sidour les réunit, sur l'app comme sur le
+site.
+
+- **La même pastille que dans le texte.** Un outil se reconnaît partout : la
+  pastille à la couleur du thème, son dessin et son nom en toutes lettres
+  (voir « Une commande posée dans un texte porte son nom »), un peu plus
+  grande puisqu'elle est seule à porter son nom. Sur la page, aucun titre de
+  passage ne précise ce qu'elle ouvre : elle prend le nom entier
+  (« Miroir des téfilines », pas « Miroir »).
+- **Une ligne qui défile**, sous l'intertitre « Outils », et non des pastilles
+  qui passent à la ligne : deux noms entiers ne tiennent pas côte à côte sur
+  un téléphone, et empilées, elles prenaient la hauteur de trois cartes. La
+  pastille coupée au bord de l'écran dit qu'il y en a d'autres ; la rangée
+  garde sa hauteur quand les outils seront cinq.
+- **Celui du moment devant**, comme le texte du moment : le miroir le matin
+  d'un jour où l'on met les téfilines (Cha'harit en cours, ou qui s'ouvre
+  dans l'heure ; ni Chabbat, ni Yom Tov, ni 'Hol hamoed, ni le 9 Av, où on
+  les met à Min'ha), les six côtés le jour où l'on prend le loulav. La
+  boussole tient la tête le reste du temps : elle sert à chaque 'Amida.
+- **Un outil de saison ne se montre qu'en saison** : les six côtés, de
+  l'entrée de Souccot à la fin de Hochana Rabba. Hors saison, ils restent au
+  texte qui les porte, comme les textes des fêtes restent en bas de la liste.
+- **Au survol, le dessin s'anime** (l'aiguille de la boussole cherche son cap,
+  le miroir pivote sur son manche), comme celui des portes de l'accueil. Au
+  toucher, la fenêtre s'ouvre aussitôt : pas d'autre mouvement à voir.
+
+Les fenêtres se montent avec la page, fermées : le miroir doit demander la
+caméra dans le geste même qui l'ouvre (Safari refuse sans rien demander un
+tour de boucle plus tard), une fenêtre chargée après coup arriverait trop
+tard.
+
+Ajouter un outil : une entrée dans `src/content/sidourTools.ts`, sa fenêtre et
+son ouverture dans `SidourPage.vue` (`TOOL_OPENERS`), et, s'il a un moment ou
+une saison, sa règle dans `momentTools` (`services/sidourMoment.ts`). L'ordre
+est tenu par `src/__tests__/sidourMoment.test.ts` (« les outils du moment »,
+« la rangée d'outils »).
 
 La recherche de la bibliothèque parcourt aussi la liturgie : qui tape
 « Birkat Hamazon » dans l'étude ne repart pas bredouille, le résultat se range

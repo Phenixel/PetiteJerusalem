@@ -1668,6 +1668,7 @@ const he: LocaleMessages = {
     until: "עד {time}",
     from: "החל מ־{time}",
     nowPill: "עכשיו",
+    tools: { label: "כלים" },
     days: {
       hanouka: "חנוכה",
       pourim: "פורים",

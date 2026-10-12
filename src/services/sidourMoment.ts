@@ -21,6 +21,7 @@ import {
   type ZmanimPlace,
 } from "./zmanimService";
 import type { FeastId } from "../content/sidourGroups";
+import { orderTools, type SidourToolId } from "../content/sidourTools";
 
 /**
  * Ce que la page du Sidour met en tête, à l'heure qu'il est : le texte du
@@ -30,7 +31,9 @@ import type { FeastId } from "../content/sidourGroups";
  * Tout se calcule sur l'appareil, au lieu des horaires, avec les mêmes règles
  * que le lecteur : les plages des offices de sidourService, les occasions de
  * dailyCycles (celles qui colorent ce que le jour ajoute dans le texte), les
- * Sli'hot de 'hatsot au lever du soleil, la bénédiction de la lune.
+ * Sli'hot de 'hatsot au lever du soleil, la bénédiction de la lune. Les
+ * outils (la boussole, le miroir) suivent le même moment : celui dont c'est
+ * l'heure passe devant.
  *
  * Tenu par src/__tests__/sidourMoment.test.ts.
  */
@@ -102,6 +105,8 @@ export interface SidourMoment {
   extras: SidourExtra[];
   /** La fête dont les textes remontent en tête de la liste. */
   feast: FeastId | null;
+  /** Les outils proposés, celui du moment devant (voir content/sidourTools). */
+  tools: SidourToolId[];
 }
 
 /** Les textes que la page met en avant, par leur clé « corpus/slug ». */
@@ -121,6 +126,12 @@ export const MOMENT_TEXTS = {
 
 /** Au plus trois textes sous la carte : au-delà, ce n'est plus un rappel. */
 const MAX_EXTRAS = 3;
+
+/**
+ * Le miroir passe devant une heure avant que s'ouvre Cha'harit : les
+ * téfilines se posent avant l'office, et dès misheyakir.
+ */
+const MIRROR_LEAD_MS = 60 * 60 * 1000;
 
 // ---- Le jour ---------------------------------------------------------------
 
@@ -267,6 +278,46 @@ function havdalaEvening(
 }
 
 /** Le moment du Sidour, au lieu des horaires et à l'heure qu'il est. */
+/**
+ * Les outils de la rangée, dans l'ordre du moment.
+ *
+ * - Les six côtés du na'anou'a sont de saison : de l'entrée de Souccot à la
+ *   fin de Hochana Rabba. Ils passent devant le jour, quand on prend le
+ *   loulav (pas le Chabbat, où on ne le prend pas).
+ * - Le miroir passe devant le matin d'un jour où l'on met les téfilines :
+ *   Cha'harit en cours, ou qui s'ouvre dans l'heure. Pas le Chabbat ni un Yom
+ *   Tov, pas à 'Hol hamoed (les Séfarades, et toute la Terre d'Israël, ne les
+ *   y mettent pas), pas le 9 Av, où on les met à Min'ha.
+ * - La boussole du Kotel sert à chaque 'Amida : elle n'a pas de moment, et
+ *   tient la tête le reste du temps.
+ */
+function momentTools(
+  place: ZmanimPlace,
+  now: Date,
+  hero: SidourHero | null,
+  day: boolean,
+): SidourToolId[] {
+  const first: SidourToolId[] = [];
+  const inSeason = new Set<SidourToolId>();
+
+  const today = hebrewDayOf(place, now);
+  const todayOccasions = occasionsOf(place, today);
+  const eveningOccasions = occasionsOf(place, hebrewDateFor(place, now, now));
+  if (todayOccasions.has("sukkot") || eveningOccasions.has("sukkot")) inSeason.add("naanouim");
+  if (day && todayOccasions.has("sukkot") && today.getDay() !== 6) first.push("naanouim");
+
+  if (hero?.tefila === "chaharit" && hero.start) {
+    const soon = hero.kind === "tefila" || hero.start.getTime() - now.getTime() <= MIRROR_LEAD_MS;
+    const occasions = occasionsOf(place, tefilaHebrewDay(place, "chaharit", hero.start));
+    const withoutTefilin = ["shabbat", "yom-tov", "hol-hamoed", "tisha-beav"].some((key) =>
+      occasions.has(key),
+    );
+    if (soon && !withoutTefilin) first.push("tefilin");
+  }
+
+  return orderTools(first, inSeason);
+}
+
 export function sidourMoment(place: ZmanimPlace, now: Date = new Date()): SidourMoment {
   const t = now.getTime();
   const times = new Map(computeZmanim(place, now).map((z) => [z.key, z.date]));
@@ -376,5 +427,10 @@ export function sidourMoment(place: ZmanimPlace, now: Date = new Date()): Sidour
     }
   }
 
-  return { hero, extras: extras.slice(0, MAX_EXTRAS), feast: currentFeast(evening) };
+  return {
+    hero,
+    extras: extras.slice(0, MAX_EXTRAS),
+    feast: currentFeast(evening),
+    tools: momentTools(place, now, hero, day),
+  };
 }

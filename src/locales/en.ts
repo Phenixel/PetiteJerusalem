@@ -1724,6 +1724,7 @@ const en: LocaleMessages = {
     until: "until {time}",
     from: "from {time}",
     nowPill: "now",
+    tools: { label: "Tools" },
     days: {
       hanouka: "Hanukkah",
       pourim: "Purim",

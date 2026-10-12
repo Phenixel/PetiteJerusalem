@@ -257,6 +257,18 @@ et ce qu'on cherche dans la liste.
 | `section` | pour `list`, le groupe : `offices`, `soir`, `brahot`, `occasions`, `vie`, `fetes`, ou la fête en tête (`tichri`, `souccot`, `hanouka`) ; `null` sinon | **nouveau** |
 | `feast` | comme sur `sidour_viewed` | **nouveau** |
 
+### Les outils : `kotel_compass_opened`, `tefilin_mirror_opened` (existants), `naanouim_compass_opened` (existant, une propriété de plus)
+
+La page du Sidour porte une rangée d'outils (voir `docs/design.md`, « Les
+outils du Sidour ») : ils gardent leurs événements, qui disent d'où on les
+ouvre. Le dénominateur des ouvertures depuis le Sidour est `sidour_viewed`.
+
+| Événement | Propriété | Valeurs | Statut |
+| --- | --- | --- | --- |
+| `kotel_compass_opened` | `source` | `title` (le titre du passage), `menu` (le menu de lecture), `sidour` (la rangée d'outils) | `sidour` **nouveau** |
+| `tefilin_mirror_opened` | `source` | `title`, `menu`, `sidour` | `sidour` **nouveau** |
+| `naanouim_compass_opened` | `source` | `title` (le titre des brahot du loulav), `rubric` (une consigne du Hallel), `sidour` | **nouveau** : l'événement n'avait pas de propriété |
+
 ### Valeurs ajoutées à des propriétés existantes
 
 | Événement | Propriété | Valeur ajoutée | Ce qu'elle dit |

@@ -1792,6 +1792,8 @@ const fr = {
     until: "jusqu'à {time}",
     from: "à partir de {time}",
     nowPill: "en ce moment",
+    // La rangée d'outils, sous la carte du moment (voir content/sidourTools).
+    tools: { label: "Outils" },
     days: {
       hanouka: "'Hanouka",
       pourim: "Pourim",

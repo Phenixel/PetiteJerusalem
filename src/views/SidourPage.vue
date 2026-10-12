@@ -13,12 +13,22 @@
  * Les fêtes restent en bas de la liste, et remontent en tête le temps de la
  * leur ; dans l'app, leurs textes se téléchargent alors d'eux-mêmes.
  *
+ * Sous le moment, les outils : la direction du Kotel, le miroir des
+ * téfilines, le temps de Souccot les six côtés du na'anou'a (voir
+ * content/sidourTools). Celui dont c'est l'heure passe devant.
+ *
  * Les textes gardent leur adresse sous /bibliotheque : elle est publiée.
  */
 import { computed, onMounted, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import AppIcon from "../components/icons/AppIcon.vue";
 import type { IconName } from "../components/icons/registry";
+import KotelCompass from "../components/KotelCompass.vue";
+import NaanouimCompass from "../components/NaanouimCompass.vue";
+import TefilinMirror from "../components/TefilinMirror.vue";
+import { openKotelCompass } from "../composables/useKotelCompass";
+import { openNaanouimCompass } from "../composables/useNaanouimCompass";
+import { openTefilinMirror } from "../composables/useTefilinMirror";
 import { useNow } from "../composables/useNow";
 import { useZmanimLocation } from "../composables/useZmanimLocation";
 import { useZmanimPlaceLabel } from "../composables/useZmanimPlaceLabel";
@@ -38,6 +48,7 @@ import {
   type SidourText,
 } from "../content/sidourGroups";
 import { SIDOUR_HUB_PATH, SIDOUR_SEO } from "../content/sidourSeo";
+import { SIDOUR_TOOLS, type SidourToolId } from "../content/sidourTools";
 import {
   formatHebrewDate,
   formatZmanDay,
@@ -213,6 +224,23 @@ const extras = computed(() =>
     .filter((extra) => extra !== null),
 );
 
+// --- Les outils ---------------------------------------------------------------
+// Les fenêtres sont montées avec la page, fermées : le miroir doit demander la
+// caméra dans le geste même qui l'ouvre (voir TefilinMirror), une fenêtre
+// chargée après coup arriverait trop tard.
+const tools = computed(() =>
+  moment.value.tools
+    .map((id) => SIDOUR_TOOLS.find((tool) => tool.id === id))
+    .filter((tool) => tool !== undefined),
+);
+const offersNaanouim = computed(() => moment.value.tools.includes("naanouim"));
+
+const TOOL_OPENERS: Record<SidourToolId, () => void> = {
+  kotel: () => openKotelCompass("sidour"),
+  tefilin: () => openTefilinMirror("sidour"),
+  naanouim: () => openNaanouimCompass("sidour"),
+};
+
 // --- Mesure d'audience -------------------------------------------------------
 // Ce que la carte proposait à l'arrivée : l'office, celui qui vient, la fête.
 function heroValue(h: SidourHero | null): string | null {
@@ -359,6 +387,30 @@ onMounted(() => {
       </RouterLink>
     </p>
 
+    <!-- Les outils, en une ligne qui défile : la pastille qui les ouvre
+         depuis le texte, son dessin et son nom en toutes lettres ; celui du
+         moment devant. Une ligne et pas des pastilles empilées : deux noms
+         entiers ne tiennent pas côte à côte sur un téléphone, et la rangée
+         doit garder sa hauteur quand les outils seront cinq. -->
+    <section v-if="tools.length" class="mt-8" aria-labelledby="sidour-tools">
+      <h2 id="sidour-tools" class="mb-1 ms-1 text-sm font-semibold text-text-secondary">
+        {{ t("sidour.tools.label") }}
+      </h2>
+      <div class="sidour-tools -mx-6 flex gap-2 overflow-x-auto px-6 py-1">
+        <button
+          v-for="tool in tools"
+          :key="tool.id"
+          type="button"
+          class="sidour-tool"
+          :class="`sidour-tool-${tool.id}`"
+          @click="TOOL_OPENERS[tool.id]()"
+        >
+          <AppIcon :name="tool.icon" :size="15" class="sidour-tool-icon shrink-0" />
+          {{ t(tool.labelKey) }}
+        </button>
+      </div>
+    </section>
+
     <!-- Tous les textes, rangés par usage ; les fêtes en bas, celle du moment
          en tête. -->
     <section v-for="section in sections" :key="section.id" class="mt-8">
@@ -388,6 +440,10 @@ onMounted(() => {
         </RouterLink>
       </div>
     </section>
+
+    <KotelCompass />
+    <TefilinMirror />
+    <NaanouimCompass v-if="offersNaanouim" />
   </main>
 </template>
 
@@ -402,5 +458,97 @@ onMounted(() => {
 }
 .sidour-row:active {
   background-color: color-mix(in srgb, var(--color-text-primary) 5%, transparent);
+}
+
+/* Un outil : la pastille des commandes de titre du lecteur (`.title-action`,
+   LiturgyText), à la taille du renvoi qu'elle porte seule sous un texte. */
+/* La ligne défile au doigt, sans barre : la pastille coupée au bord de
+   l'écran dit qu'il y en a d'autres. */
+.sidour-tools {
+  scrollbar-width: none;
+}
+.sidour-tools::-webkit-scrollbar {
+  display: none;
+}
+.sidour-tool {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  white-space: nowrap;
+  gap: 0.45rem;
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--color-primary);
+  background-color: color-mix(in srgb, var(--color-primary) 10%, transparent);
+  transition:
+    background-color 0.2s ease,
+    transform 0.15s ease;
+}
+.sidour-tool:hover {
+  background-color: color-mix(in srgb, var(--color-primary) 16%, transparent);
+}
+.sidour-tool:active {
+  transform: scale(0.97);
+}
+.sidour-tool:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Au survol, le dessin s'anime : l'aiguille de la boussole cherche son cap,
+   le miroir pivote sur son manche. Au toucher, la fenêtre s'ouvre déjà : pas
+   de mouvement à voir. */
+@media (hover: hover) {
+  .sidour-tool:hover .sidour-tool-icon {
+    animation: tool-seek 0.6s ease-out;
+  }
+  .sidour-tool-tefilin:hover .sidour-tool-icon {
+    transform-origin: 50% 85%;
+    animation-name: tool-tilt;
+  }
+}
+@keyframes tool-seek {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  30% {
+    transform: rotate(-35deg);
+  }
+  60% {
+    transform: rotate(14deg);
+  }
+  80% {
+    transform: rotate(-5deg);
+  }
+}
+@keyframes tool-tilt {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  35% {
+    transform: rotate(-14deg);
+  }
+  70% {
+    transform: rotate(6deg);
+  }
+}
+:root.perf-lite .sidour-tool-icon {
+  animation: none !important;
+}
+:root.perf-lite .sidour-tool:active {
+  transform: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sidour-tool-icon {
+    animation: none !important;
+  }
+  .sidour-tool:active {
+    transform: none;
+  }
 }
 </style>

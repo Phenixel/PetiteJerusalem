@@ -8,12 +8,17 @@ import {
   tefilaAdditions,
 } from "../services/sidourMoment";
 import { DEFAULT_PLACE } from "../services/zmanimService";
+import { orderTools, SIDOUR_TOOLS } from "../content/sidourTools";
+import fr from "../locales/fr";
+import en from "../locales/en";
+import he from "../locales/he";
 
 /**
  * Ce que la page du Sidour met en tête : l'office dont c'est l'heure (ou
  * celui qui vient), avec ce que le jour y ajoute ; l'allumage de 'Hanouka le
  * soir ; les Sli'hot de 'hatsot au lever du soleil ; et ce qui se dit aussi
- * maintenant (havdala, Chema du coucher). Les heures sont celles de Paris
+ * maintenant (havdala, Chema du coucher) ; et l'ordre des outils, celui du
+ * moment devant. Les heures sont celles de Paris
  * (le lieu par défaut), écrites avec leur décalage pour ne pas dépendre du
  * fuseau de la machine de test.
  */
@@ -155,5 +160,64 @@ describe("le calendrier du Sidour", () => {
     const shabbat = new HDate(new Date(2026, 8, 5, 12)); // samedi 5 septembre 2026
     expect(shabbat.getDay()).toBe(6);
     expect(isSlihotMorning(shabbat)).toBe(false);
+  });
+});
+
+describe("les outils du moment", () => {
+  const tools = (iso: string) => sidourMoment(DEFAULT_PLACE, at(iso)).tools;
+
+  it("un matin de semaine, le miroir des téfilines passe devant la boussole", () => {
+    // Mardi 13 octobre 2026 : Cha'harit s'ouvre à 7 h 03 (misheyakir).
+    expect(tools("2026-10-13T08:00:00+02:00")).toEqual(["tefilin", "kotel"]);
+    // Dans l'heure qui précède : on pose les téfilines avant l'office.
+    expect(tools("2026-10-13T06:30:00+02:00")).toEqual(["tefilin", "kotel"]);
+  });
+
+  it("le reste du temps, la boussole du Kotel tient la tête", () => {
+    expect(tools("2026-10-13T03:00:00+02:00")).toEqual(["kotel", "tefilin"]);
+    expect(tools("2026-10-13T13:50:00+02:00")).toEqual(["kotel", "tefilin"]);
+  });
+
+  it("pas de miroir devant les matins sans téfilines : Chabbat, 'Hol hamoed, 9 Av", () => {
+    expect(tools("2026-10-17T09:00:00+02:00")).toEqual(["kotel", "tefilin"]); // Chabbat
+    expect(tools("2026-09-28T10:00:00+02:00")).toEqual(["naanouim", "kotel", "tefilin"]); // 'Hol hamoed
+    expect(tools("2027-08-12T08:00:00+02:00")).toEqual(["kotel", "tefilin"]); // 9 Av 5787
+  });
+
+  it("les six côtés du na'anou'a, le temps de Souccot, devant le jour où l'on prend le loulav", () => {
+    // Lundi 28 septembre 2026, 'Hol hamoed ; vendredi 2 octobre, Hochana Rabba.
+    expect(tools("2026-09-28T10:00:00+02:00")).toEqual(["naanouim", "kotel", "tefilin"]);
+    expect(tools("2026-10-02T11:00:00+02:00")).toEqual(["naanouim", "kotel", "tefilin"]);
+    // Le soir où la fête entre, et le Chabbat où on ne prend pas le loulav :
+    // de saison, mais pas devant.
+    expect(tools("2026-09-25T20:30:00+02:00")).toEqual(["kotel", "tefilin", "naanouim"]);
+    expect(tools("2026-09-26T11:00:00+02:00")).toEqual(["kotel", "tefilin", "naanouim"]);
+    // Chemini Atseret, et le reste de l'année : plus de na'anou'a.
+    expect(tools("2026-10-03T11:00:00+02:00")).not.toContain("naanouim");
+    expect(tools("2026-10-13T08:00:00+02:00")).not.toContain("naanouim");
+  });
+});
+
+describe("la rangée d'outils", () => {
+  it("met les outils du moment devant, sans doublon, et laisse un outil hors saison dehors", () => {
+    expect(orderTools([], new Set())).toEqual(["kotel", "tefilin"]);
+    expect(orderTools(["tefilin", "tefilin"], new Set())).toEqual(["tefilin", "kotel"]);
+    expect(orderTools(["naanouim"], new Set())).toEqual(["kotel", "tefilin"]);
+    expect(orderTools(["naanouim"], new Set(["naanouim"]))).toEqual([
+      "naanouim",
+      "kotel",
+      "tefilin",
+    ]);
+  });
+
+  it("chaque outil a son nom dans les trois langues", () => {
+    for (const tool of SIDOUR_TOOLS) {
+      for (const messages of [fr, en, he]) {
+        const value = tool.labelKey
+          .split(".")
+          .reduce<unknown>((node, key) => (node as Record<string, unknown>)?.[key], messages);
+        expect(typeof value, `${tool.labelKey}`).toBe("string");
+      }
+    }
   });
 });
