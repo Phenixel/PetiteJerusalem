@@ -402,9 +402,13 @@ porte en plus l'objet de ce qu'elle annonce, dessiné aux couleurs du vrai
 
 - le **sidour**, relié de cuir bleu nuit, titre doré, signet rouge, pour un
   office, celui de l'heure ou celui qui vient ;
-- la **lune**, à sa phase du soir, les nuits de la bénédiction ;
+- la **lune**, à sa phase du soir, les nuits de la bénédiction : la face
+  visible, aux gris de la vraie (les mers qui se rejoignent au nord-ouest,
+  la Sérénité et la Tranquillité au centre, les Crises seules au bord est,
+  Tycho et ses rayons dans les hautes terres du sud) ;
 - la **'hanoukkia** les soirs de 'Hanouka ;
-- le **chofar** des Sli'hot ;
+- le **chofar** des Sli'hot, le pavillon ouvert en haut, vers l'avant, et
+  l'embouchure en bas ;
 - le **loulav et l'etrog**, quand la fête de Souccot prend la carte ;
 - la **gerbe** d'orge du 'Omer.
 
@@ -449,6 +453,9 @@ d'œil avant qu'on ait lu le nom.
   en mouvement réduit, ni en rendu dégradé (`perf-lite`).
 - **En aplats.** Deux ou trois tons par matière (la face et l'ombre de
   l'argent, la cire et son flanc, la flamme et son cœur), jamais de dégradé.
+- **Avec son ombre**, comme les cartes : une ombre portée légère détache ce
+  qui dépasse du fond de la page. Sans elle, la lune claire se fondait dans
+  le beige au-dessus de la carte, et paraissait coupée au bord haut.
 
 Sur l'accueil, les cartes du moment portent le même objet, en petit, sur
 leur surface claire : le sidour sur « Faire Cha'harit », la lune sur la

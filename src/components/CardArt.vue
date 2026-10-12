@@ -27,10 +27,11 @@ type ArtKind = CardArtSpec["kind"];
  * quand le bord le coupe).
  *
  * La lune déborde du côté : le bord de la carte la coupe, mais seulement sous
- * le haut de la carte. Son centre est à 0,32 de sa taille du bord, et à 0,37
+ * le haut de la carte. Son centre est à 0,36 de sa taille du bord, et à 0,33
  * sous le haut de la carte ; à cette hauteur-là, le disque (rayon 0,48) ne
- * s'étend qu'à 0,30 de part et d'autre du centre : il tient dans la carte, et
- * ce qui dépasse en haut est une calotte entière, sans coupe droite.
+ * s'étend qu'à 0,35 de part et d'autre du centre : il tient dans la carte, et
+ * ce qui dépasse en haut (0,15 de sa taille) est une calotte entière, sans
+ * coupe droite.
  *
  * Aucun objet ne prend plus de `MAX_SHARE` de la largeur de la carte : sur un
  * petit téléphone, il rapetisse plutôt que de manger le titre.
@@ -39,10 +40,10 @@ export const CARD_ART_GEOMETRY: Record<
   ArtKind,
   { size: number; aspect: number; rise: number; end: number }
 > = {
-  moon: { size: 150, aspect: 1, rise: 0.13, end: -0.18 },
+  moon: { size: 150, aspect: 1, rise: 0.17, end: -0.14 },
   hanoukia: { size: 150, aspect: 100 / 140, rise: 0.19, end: 0.04 },
   siddur: { size: 150, aspect: 100 / 130, rise: 0.1, end: 0.03 },
-  shofar: { size: 165, aspect: 100 / 140, rise: 0.08, end: 0.01 },
+  shofar: { size: 165, aspect: 100 / 140, rise: 0.14, end: 0.02 },
   loulav: { size: 185, aspect: 100 / 150, rise: 0.11, end: 0.03 },
   omer: { size: 140, aspect: 100 / 120, rise: 0.1, end: 0.04 },
 };
@@ -168,20 +169,25 @@ onUnmounted(() => observer?.disconnect());
   pointer-events: none;
   clip-path: inset(0 round 0 0 var(--radius-card) var(--radius-card));
 
-  /* La lune : ses couleurs changent avec la surface de la carte, jamais avec
+  /* La lune : les gris de la vraie, les hautes terres claires, les mers plus
+     sombres. Ses couleurs changent avec la surface de la carte, jamais avec
      le thème. La part sombre est la lumière cendrée, un voile à peine plus
      clair que le fond. */
-  --moon-lit: #f2eddf;
-  --moon-mare: #dad1bb;
-  --moon-crater: #fbf8ef;
+  --moon-highland: #e2ded4;
+  --moon-mare: #b2ad9f;
+  --moon-mare-deep: #a29e92;
+  --moon-bright: #f7f5ef;
+  --moon-pit: #d3cfc4;
   --moon-dark: rgb(255 255 255 / 0.14);
 }
 
-/* Sur une surface claire, la lune prend un ton plus soutenu pour se détacher
-   du blanc, et sa part sombre devient une ombre légère. */
+/* Sur une surface claire, la lune prend des tons plus soutenus pour se
+   détacher du blanc, et sa part sombre devient une ombre légère. */
 .card-art-plain {
-  --moon-lit: #ebe4d0;
-  --moon-mare: #cfc5ab;
+  --moon-highland: #d9d4c8;
+  --moon-mare: #a29d90;
+  --moon-mare-deep: #928e83;
+  --moon-pit: #cbc6ba;
   --moon-dark: rgb(15 20 40 / 0.07);
 }
 :root.dark .card-art-plain {
@@ -195,6 +201,12 @@ onUnmounted(() => observer?.disconnect());
   height: var(--art-size);
   aspect-ratio: var(--art-aspect);
   overflow: visible;
+  /* Une ombre portée, comme celle des cartes : ce qui dépasse en haut se
+     détache du fond de la page, la lune claire sur le beige surtout. */
+  filter: drop-shadow(0 1px 3px rgb(0 0 0 / 0.2));
+}
+:root.perf-lite .art {
+  filter: none;
 }
 
 /* --- Le lever, une fois par session et par carte ------------------------- */
