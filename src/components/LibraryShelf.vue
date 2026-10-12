@@ -338,8 +338,9 @@ const playIntro = shouldPlayShelfIntro();
 /* --- La pastille du hors ligne ---
    Posée dans l'angle haut de la couverture, à quelques pixels de ses bords
    (la couverture va de 3 à 87 sur 96 en largeur, de 3 à 137 sur 140 en
-   hauteur). Blanche, comme un petit sceau, la couleur du thème pour le
-   signe : elle se lit sur toutes les reliures. */
+   hauteur). Blanche, comme un petit sceau, la couleur secondaire du thème
+   pour le signe (un état, pas une action) : elle se lit sur toutes les
+   reliures. */
 .book-badge {
   position: absolute;
   top: calc(2.1% + 3px);
@@ -348,7 +349,7 @@ const playIntro = shouldPlayShelfIntro();
   height: 18px;
   border-radius: 9999px;
   background: #fff;
-  color: var(--color-primary);
+  color: var(--color-secondary);
   box-shadow: 0 1px 2px rgb(30 26 18 / 0.3);
   display: flex;
   align-items: center;

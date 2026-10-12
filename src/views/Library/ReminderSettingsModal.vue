@@ -346,7 +346,7 @@ function confirm() {
             :class="[
               'absolute w-9 h-9 -translate-x-1/2 -translate-y-1/2 rounded-full text-sm font-medium transition-colors tabular-nums',
               selectedValue === n.value
-                ? 'bg-primary text-white'
+                ? 'bg-brand text-on-brand'
                 : 'text-text-primary hover:bg-black/10 dark:hover:bg-white/15',
             ]"
             :style="{ left: `${n.x}px`, top: `${n.y}px` }"

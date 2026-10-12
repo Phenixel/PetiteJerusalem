@@ -1195,7 +1195,7 @@ const formatBookName = bookName;
             :class="[
               'px-4 py-2 rounded-btn text-sm font-medium transition-colors',
               selectedType === ty.key
-                ? 'bg-primary text-white'
+                ? 'bg-brand text-on-brand'
                 : 'bg-black/5 text-text-secondary hover:bg-black/10 hover:text-text-primary dark:bg-white/10 dark:hover:bg-white/15',
             ]"
           >
@@ -1303,7 +1303,7 @@ const formatBookName = bookName;
               :class="[
                 'px-3.5 py-1.5 rounded-control text-sm font-medium transition-colors',
                 activeTab === 'today'
-                  ? 'bg-primary text-white'
+                  ? 'bg-brand text-on-brand'
                   : 'text-text-secondary hover:text-text-primary',
               ]"
             >
@@ -1316,7 +1316,7 @@ const formatBookName = bookName;
               :class="[
                 'inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-control text-sm font-medium transition-colors',
                 activeTab === 'week'
-                  ? 'bg-primary text-white'
+                  ? 'bg-brand text-on-brand'
                   : 'text-text-secondary hover:text-text-primary',
               ]"
             >
@@ -1331,7 +1331,7 @@ const formatBookName = bookName;
               <span
                 v-else
                 class="w-1.5 h-1.5 rounded-full"
-                :class="activeTab === 'week' ? 'bg-white' : 'bg-primary'"
+                :class="activeTab === 'week' ? 'bg-on-brand' : 'bg-primary'"
               ></span>
             </button>
           </div>

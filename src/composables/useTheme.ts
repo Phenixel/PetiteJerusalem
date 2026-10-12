@@ -2,44 +2,117 @@ import { computed, ref, watchEffect } from "vue";
 import { createAccountPreference } from "./createAccountPreference";
 import { activeHolidayTheme } from "./useHolidayTheme";
 
-/** Un duo de couleurs, qu'il vienne d'un thème choisi ou d'une fête. */
+/**
+ * Les couleurs d'un thème, qu'il vienne d'un thème choisi ou d'une fête.
+ *
+ * Deux familles, la principale et la secondaire, et dans chacune deux
+ * rôles :
+ *
+ * - l'**encre** (`primary`, `secondary`) : le texte, les liens, les icônes,
+ *   les filets et les teintes légères posées sous un texte de la même
+ *   couleur. Elle doit se lire sur le fond clair comme sur le fond sombre ;
+ * - la **teinte** (`brand`, `secondaryBrand`) : la couleur de la palette,
+ *   telle quelle, pour les fonds pleins (la carte du moment, les boutons, les
+ *   pastilles pleines, le bouton central de la barre) et les décors. Ce qui
+ *   s'écrit dessus prend `onBrand`, le blanc ou une encre sombre selon que la
+ *   teinte est soutenue ou claire.
+ *
+ * `brandSoft` et `secondarySoft` sont les versions claires de la palette,
+ * pour les fonds doux. Un thème de fête ne donne que ses deux encres, assez
+ * soutenues pour servir aussi de teinte : le reste s'en déduit (voir
+ * `resolveThemeColors`).
+ */
 export interface ThemeColors {
   primary: string;
   secondary: string;
+  brand?: string;
+  onBrand?: string;
+  brandSoft?: string;
+  secondaryBrand?: string;
+  secondarySoft?: string;
 }
 
 export interface ThemeOption extends ThemeColors {
   id: string;
 }
 
+/** Les couleurs de la palette du logo (orange, bleu, et leurs versions claires). */
+const PALETTE = {
+  orange: "#FEA547",
+  orangeSoft: "#FFD09E",
+  orangeInk: "#D46D01",
+  orangeOn: "#3B2412",
+  blue: "#539EE2",
+  blueSoft: "#A9CCEB",
+  blueInk: "#328CDC",
+  blueOn: "#10263F",
+} as const;
+
 /**
- * Les trois duos de couleurs, dans l'ordre où ils s'affichent. Le premier est
- * celui d'origine : « sunset », le vermillon de la pierre de Jérusalem au
- * soleil couchant. Il tient la maison, le bleu et le vert restent au choix.
+ * Les trois thèmes, dans l'ordre où ils s'affichent. Le premier est celui
+ * d'origine, « sunset » : l'orange de la palette du logo, le bleu en
+ * secondaire. Le bleu et le vert restent au choix, avec l'orange en
+ * secondaire.
  *
- * Chaque duo est franc : la couleur se pose à plat, jamais en dégradé (voir
- * docs/design.md). Le `primary` sert aussi bien de fond sous du blanc que
- * d'encre sur le beige : il est donc pris assez soutenu pour rester lisible
- * dans les deux sens, et le `secondary` l'accompagne d'un demi-ton plus loin
- * sur la roue, pour les puces et les illustrations.
+ * Les teintes de la palette sont claires : le blanc ne s'y lit pas (2:1 sur
+ * l'orange) et elles ne s'écrivent pas sur le fond. Elles servent donc de
+ * fond plein, avec un texte sombre dessus (`onBrand`), et le texte en couleur
+ * prend la même teinte, juste assez soutenue pour la règle de lisibilité de
+ * docs/design.md (`primary`, `secondary`). Tenu par
+ * src/__tests__/themeColors.test.ts.
  */
 export const THEME_OPTIONS: ThemeOption[] = [
   {
     id: "sunset",
-    primary: "#DE4F17",
-    secondary: "#C98A00",
+    primary: PALETTE.orangeInk,
+    brand: PALETTE.orange,
+    onBrand: PALETTE.orangeOn,
+    brandSoft: PALETTE.orangeSoft,
+    secondary: PALETTE.blueInk,
+    secondaryBrand: PALETTE.blue,
+    secondarySoft: PALETTE.blueSoft,
   },
   {
     id: "ocean",
-    primary: "#1E6BF0",
-    secondary: "#0891B2",
+    primary: PALETTE.blueInk,
+    brand: PALETTE.blue,
+    onBrand: PALETTE.blueOn,
+    brandSoft: PALETTE.blueSoft,
+    secondary: PALETTE.orangeInk,
+    secondaryBrand: PALETTE.orange,
+    secondarySoft: PALETTE.orangeSoft,
   },
   {
     id: "emerald",
     primary: "#059C66",
-    secondary: "#0D9488",
+    brand: "#059C66",
+    onBrand: "#FFFFFF",
+    brandSoft: "#A7DCC4",
+    secondary: PALETTE.orangeInk,
+    secondaryBrand: PALETTE.orange,
+    secondarySoft: PALETTE.orangeSoft,
   },
 ];
+
+/** Une couleur mêlée de blanc, pour la version claire d'une teinte de fête. */
+function lighten(hex: string, amount: number): string {
+  const channel = (i: number) => parseInt(hex.slice(i, i + 2), 16);
+  const mix = (c: number) => Math.round(c + (255 - c) * amount);
+  return `#${[1, 3, 5].map((i) => mix(channel(i)).toString(16).padStart(2, "0")).join("")}`;
+}
+
+/** Toutes les couleurs d'un thème : celles qu'il donne, et celles qui s'en déduisent. */
+export function resolveThemeColors(theme: ThemeColors): Required<ThemeColors> {
+  return {
+    primary: theme.primary,
+    secondary: theme.secondary,
+    brand: theme.brand ?? theme.primary,
+    onBrand: theme.onBrand ?? "#FFFFFF",
+    brandSoft: theme.brandSoft ?? lighten(theme.primary, 0.6),
+    secondaryBrand: theme.secondaryBrand ?? theme.secondary,
+    secondarySoft: theme.secondarySoft ?? lighten(theme.secondary, 0.6),
+  };
+}
 
 const DEFAULT_THEME = THEME_OPTIONS[0];
 
@@ -49,8 +122,15 @@ function themeById(id: string): ThemeOption {
 
 function applyThemeColors(theme: ThemeColors) {
   if (typeof document === "undefined") return;
-  document.documentElement.style.setProperty("--color-primary", theme.primary);
-  document.documentElement.style.setProperty("--color-secondary", theme.secondary);
+  const colors = resolveThemeColors(theme);
+  const style = document.documentElement.style;
+  style.setProperty("--color-primary", colors.primary);
+  style.setProperty("--color-secondary", colors.secondary);
+  style.setProperty("--color-brand", colors.brand);
+  style.setProperty("--color-on-brand", colors.onBrand);
+  style.setProperty("--color-brand-soft", colors.brandSoft);
+  style.setProperty("--color-secondary-brand", colors.secondaryBrand);
+  style.setProperty("--color-secondary-soft", colors.secondarySoft);
 }
 
 /**

@@ -390,7 +390,7 @@ const handleCreateClick = () => {
             class="chip !px-4 !py-2 transition-colors"
             :class="
               myTab === 'participated'
-                ? 'bg-primary text-white'
+                ? 'bg-brand text-on-brand'
                 : 'bg-black/5 text-text-secondary hover:text-text-primary dark:bg-white/10'
             "
             @click="switchMyTab('participated')"
@@ -402,7 +402,7 @@ const handleCreateClick = () => {
             class="chip !px-4 !py-2 transition-colors"
             :class="
               myTab === 'created'
-                ? 'bg-primary text-white'
+                ? 'bg-brand text-on-brand'
                 : 'bg-black/5 text-text-secondary hover:text-text-primary dark:bg-white/10'
             "
             @click="switchMyTab('created')"
@@ -474,7 +474,7 @@ const handleCreateClick = () => {
             class="chip transition-colors"
             :class="
               selectedType === ''
-                ? 'bg-primary text-white'
+                ? 'bg-brand text-on-brand'
                 : 'bg-black/5 text-text-secondary hover:text-text-primary dark:bg-white/10'
             "
             @click="selectedType = ''"
@@ -487,7 +487,7 @@ const handleCreateClick = () => {
             class="chip transition-colors"
             :class="
               selectedType === type
-                ? 'bg-primary text-white'
+                ? 'bg-brand text-on-brand'
                 : 'bg-black/5 text-text-secondary hover:text-text-primary dark:bg-white/10'
             "
             @click="selectedType = selectedType === type ? '' : type"

@@ -265,20 +265,31 @@ onUnmounted(() => {
         @mouseleave="onThemeLeave"
       >
         <span class="block overflow-hidden rounded-xs">
-          <!-- En-tête coloré du thème : les deux couleurs du duo posées à
-               plat, la seconde en bande sur le bord. Un dégradé les mélangeait
-               en une troisième couleur qui n'existe nulle part dans l'app. -->
-          <span class="relative block h-16 sm:h-24" :style="{ backgroundColor: theme.primary }">
+          <!-- En-tête coloré du thème : les deux teintes de la palette posées
+               à plat, la seconde en bande sur le bord, et le texte qui s'écrit
+               dessus. Un dégradé les mélangeait en une troisième couleur qui
+               n'existe nulle part dans l'app. -->
+          <span
+            class="relative block h-16 sm:h-24"
+            :style="{
+              backgroundColor: theme.brand ?? theme.primary,
+              color: theme.onBrand ?? '#fff',
+            }"
+          >
             <span
               class="absolute inset-y-0 end-0 w-1/4"
-              :style="{ backgroundColor: theme.secondary }"
+              :style="{ backgroundColor: theme.secondaryBrand ?? theme.secondary }"
             ></span>
             <span class="absolute inset-0 flex items-end p-2 sm:p-3">
               <span class="flex items-center gap-1.5 sm:gap-2">
-                <span class="block h-5 w-5 rounded-full bg-white/30 sm:h-8 sm:w-8"></span>
+                <span class="block h-5 w-5 rounded-full bg-current opacity-25 sm:h-8 sm:w-8"></span>
                 <span class="block">
-                  <span class="block h-2 w-10 rounded-full bg-white/60 sm:h-2.5 sm:w-20"></span>
-                  <span class="mt-1 block h-1.5 w-6 rounded-full bg-white/40 sm:h-2 sm:w-12"></span>
+                  <span
+                    class="block h-2 w-10 rounded-full bg-current opacity-60 sm:h-2.5 sm:w-20"
+                  ></span>
+                  <span
+                    class="mt-1 block h-1.5 w-6 rounded-full bg-current opacity-40 sm:h-2 sm:w-12"
+                  ></span>
                 </span>
               </span>
             </span>

@@ -71,18 +71,26 @@ body {
 }
 
 @theme {
-  /* Couleurs : le fond beige est fixe, les trois duos de thème sont au choix
-     de l'utilisateur ; --color-primary/--color-secondary sont réécrits au
-     vol par useTheme. Le duo par défaut est « sunset », l'orange vermillon
-     de la pierre chauffée. Voir docs/design.md pour la charte. */
-  --color-primary: #de4f17;
-  --color-secondary: #c98a00;
+  /* Couleurs : le fond est fixe, les trois thèmes sont au choix de
+     l'utilisateur et réécrits au vol par useTheme. Valeurs par défaut :
+     « sunset », l'orange et le bleu de la palette du logo. Chaque famille a
+     son encre (texte, liens, icônes : --color-primary, --color-secondary) et
+     sa teinte (fonds pleins et décors : --color-brand, --color-secondary-brand),
+     avec ce qui s'écrit sur la teinte (--color-on-brand) et une version
+     claire (-soft). Voir docs/design.md, « Les couleurs de thème ». */
+  --color-primary: #d46d01;
+  --color-secondary: #328cdc;
+  --color-brand: #fea547;
+  --color-on-brand: #3b2412;
+  --color-brand-soft: #ffd09e;
+  --color-secondary-brand: #539ee2;
+  --color-secondary-soft: #a9cceb;
 
   /* Backgrounds */
   --color-bg-primary: #ffffff;
   --color-bg-secondary: #f8f9fa;
   --color-bg-dark: #181818;
-  --color-bg-beige: #f4f1ea;
+  --color-bg-beige: #fff9f3;
 
   /* Surfaces (cards, panels, modals). Flipped in dark mode below. */
   --color-surface: #ffffff;
@@ -365,12 +373,14 @@ button,
     font-size: 0.875rem;
   }
 
+  /* Le bouton plein : la teinte du thème, et ce qui s'écrit dessus. Au
+     survol, la teinte se fonce d'un pas vers son encre. */
   .btn-primary {
-    background-color: var(--color-primary);
-    color: #fff;
+    background-color: var(--color-brand);
+    color: var(--color-on-brand);
   }
   .btn-primary:hover:not(:disabled) {
-    background-color: color-mix(in srgb, var(--color-primary) 85%, #1a1408);
+    background-color: color-mix(in srgb, var(--color-brand) 82%, var(--color-on-brand));
   }
 
   .btn-soft {
@@ -686,8 +696,8 @@ button,
   margin-top: 0.5rem;
   padding: 0.75rem 1.5rem;
   border-radius: var(--radius-btn);
-  background: var(--color-primary);
-  color: #fff;
+  background: var(--color-brand);
+  color: var(--color-on-brand);
   font-weight: 700;
   text-decoration: none;
 }

@@ -234,9 +234,9 @@ function toggleZmanim(event: MouseEvent) {
   align-items: center;
   justify-content: center;
   border-radius: 9999px;
-  background-color: var(--color-primary);
-  color: #fff;
-  box-shadow: 0 6px 18px color-mix(in srgb, var(--color-primary) 45%, transparent);
+  background-color: var(--color-brand);
+  color: var(--color-on-brand);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--color-brand) 55%, transparent);
   transition:
     transform 0.2s ease,
     box-shadow 0.2s ease;

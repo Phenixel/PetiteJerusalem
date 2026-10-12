@@ -35,10 +35,10 @@ defineProps<{ theme: HolidayThemeId }>();
   height: 4.5rem;
   transform: translateX(-50%);
   pointer-events: none;
-  filter: drop-shadow(0 6px 10px color-mix(in srgb, var(--color-primary) 45%, transparent));
+  filter: drop-shadow(0 6px 10px color-mix(in srgb, var(--color-brand) 55%, transparent));
 }
 .fab-shape :deep(.body) {
-  fill: var(--color-primary);
+  fill: var(--color-brand);
 }
 .fab-shape :deep(.detail) {
   fill: var(--color-secondary);

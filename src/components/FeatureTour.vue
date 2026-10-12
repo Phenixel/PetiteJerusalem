@@ -481,7 +481,7 @@ watch(index, async () => {
         >
           <span
             v-if="step.icon"
-            class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary text-white"
+            class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand text-on-brand"
           >
             <AppIcon :name="step.icon" :size="15" />
           </span>

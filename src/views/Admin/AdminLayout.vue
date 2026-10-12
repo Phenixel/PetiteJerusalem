@@ -97,8 +97,8 @@ const isActive = (item: NavItem) =>
             {{ item.label }}
             <span
               v-if="item.badge > 0"
-              class="min-w-5 rounded-pill px-1.5 text-center text-xs tabular-nums text-white"
-              :class="item.alert ? 'bg-red-600' : 'bg-primary'"
+              class="min-w-5 rounded-pill px-1.5 text-center text-xs tabular-nums"
+              :class="item.alert ? 'bg-red-600 text-white' : 'bg-brand text-on-brand'"
             >
               {{ item.badge }}
             </span>

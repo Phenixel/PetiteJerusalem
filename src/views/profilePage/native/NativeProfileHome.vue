@@ -192,7 +192,7 @@ onUnmounted(() => {
            du thème, c'est la seule touche pleine de la page. -->
       <header v-if="currentUser" class="relative mb-8 flex flex-col items-center text-center">
         <span
-          class="font-display flex h-20 w-20 items-center justify-center rounded-full bg-primary text-4xl text-white"
+          class="font-display flex h-20 w-20 items-center justify-center rounded-full bg-brand text-4xl text-on-brand"
           aria-hidden="true"
         >
           {{ initial }}

@@ -12,7 +12,7 @@ là où il faut agir ; rien de vaporeux.
 
 | Rôle                              | Jeton                    | Clair      | Sombre       |
 | --------------------------------- | ------------------------ | ---------- | ------------ |
-| Fond de page                      | `--color-bg-beige`       | `#f4f1ea`  | `#111827`    |
+| Fond de page                      | `--color-bg-beige`       | `#fff9f3`  | `#111827`    |
 | Surface (carte, panneau, fenêtre) | `--color-surface`        | `#ffffff`  | `#1f2937`    |
 | Surface douce                     | `--color-surface-soft`   | `#f8f5ef`  | `#273244`    |
 | Texte                             | `--color-text-primary`   | `#35312a`  | `#f3f4f6`    |
@@ -382,14 +382,15 @@ pas du beige ; et l'encre seule, qui suffit à marquer le prochain horaire de
 la journée dans une liste de lignes (`ZmanRow`), se perd dans une liste de
 cartes, où chacune porte déjà trois niveaux de texte.
 
-La prochaine fête du calendrier prend donc la couleur du thème à plein, sur
-toute sa carte, et son texte passe au blanc. C'est la seule carte colorée de
-la page, et on la trouve sans avoir à lire.
+La prochaine fête du calendrier prend donc la teinte du thème à plein, sur
+toute sa carte, et son texte passe à ce qui s'écrit sur elle (`on-brand` :
+le brun sur l'orange, le blanc sur une teinte de fête). C'est la seule carte
+colorée de la page, et on la trouve sans avoir à lire.
 
-Le blanc y descend en trois tons, comme sur le bandeau du profil, le seul
-autre endroit où l'on écrit sur la couleur : le nom de la fête et ses heures à
-plein, les dates et les intitulés des heures en dessous, la date hébraïque
-plus bas encore. Sans quoi tout se vaudrait et la carte ne se lirait plus.
+Ce texte y descend en trois tons, comme sur le bandeau du profil : le nom de
+la fête et ses heures à plein, les dates et les intitulés des heures en
+dessous, la date hébraïque plus bas encore. Sans quoi tout se vaudrait et la
+carte ne se lirait plus.
 
 Les dates passées, elles, gardent leur effacement : s'effacer et ressortir
 sont deux moyens opposés, ils ne se gênent pas.
@@ -427,10 +428,11 @@ d'œil avant qu'on ait lu le nom.
   la carte : sur un petit téléphone, il rapetisse plutôt que de manger le
   titre.
 - **Derrière le texte.** Le titre passe devant l'objet quand il est long ;
-  sur un objet sombre (le livre, le loulav, les bougies), le blanc se lit
-  tel quel. Sur un objet clair (la lune, le chofar), le texte prend une
-  ombre douce, et seule la ligne d'heure lui laisse sa place. Les pastilles
-  d'un office (Hallel, Moussaf...) passent devant le livre.
+  sur un objet sombre (le livre, le loulav, les bougies), le texte de la
+  carte se lit tel quel. Sur un objet clair (la lune, le chofar), il prend un
+  halo de la couleur de la carte, et seule la ligne d'heure lui laisse sa
+  place. Les pastilles d'un office (Hallel, Moussaf...) passent devant le
+  livre.
 - **Dans le coin de fin de ligne** (la droite en français, la gauche en
   hébreu), et **hors de la carte, seulement par le haut** : le haut du
   livre, les bougies et leurs flammes, la pointe du chofar, la palme du
@@ -1296,25 +1298,70 @@ adopté) plutôt que d'en écarter à l'aveugle. Tenu par
 
 ## 2. Les couleurs de thème
 
-Trois duos au choix, dans cet ordre. Le premier est celui d'origine.
+Les couleurs viennent de la palette du logo : un orange, un bleu, et leur
+version claire.
 
-| Thème           | `primary` | `secondary` |
-| --------------- | --------- | ----------- |
-| sunset (défaut) | `#DE4F17` | `#C98A00`   |
-| ocean           | `#1E6BF0` | `#0891B2`   |
-| emerald         | `#059C66` | `#0D9488`   |
+| Palette       | Teinte    | Claire    |
+| ------------- | --------- | --------- |
+| Orange        | `#FEA547` | `#FFD09E` |
+| Bleu          | `#539EE2` | `#A9CCEB` |
+| Fond de page  | `#FFF9F3` |           |
+| Briques (mur) | `#D6C4B8` |           |
 
-Ils vivent dans `src/composables/useTheme.ts`, qui réécrit `--color-primary`
-et `--color-secondary` sur la racine ; le CSS ne connaît que les deux
-variables. L'accent des widgets natifs suit le même choix, et sa valeur de
-repli (`DEFAULT_ACCENT` dans `widgetPayloads.ts`, les constantes
-`FALLBACK_ACCENT` côté natif) est celle du thème par défaut : les trois se
-changent ensemble.
+Ces teintes sont claires : le blanc ne s'y lit pas (2:1 sur l'orange, 2,9:1
+sur le bleu), et elles ne s'écrivent pas sur le fond. Chaque famille de
+couleur a donc deux rôles :
 
-Ce que fait `primary` : les boutons pleins, les liens, les numéros de verset,
-l'onglet actif, le bandeau du profil, les illustrations. Ce que fait
-`secondary` : les puces d'une seconde catégorie et les traits d'accent des
-illustrations. Il ne sert plus à faire un dégradé avec `primary`.
+- la **teinte** (`--color-brand`, `--color-secondary-brand`) : la couleur de
+  la palette telle quelle, pour ce qui est **plein** (la carte du moment, les
+  boutons, les pastilles et les segments choisis, le bouton central de la
+  barre, le bandeau du profil, la carte de la prochaine fête, les ronds de la
+  frise du partage). Ce qui s'écrit dessus prend `--color-on-brand` : une
+  encre sombre de la même famille (brun sur l'orange, bleu nuit sur le
+  bleu), ou le blanc sur une teinte assez soutenue (le vert, les thèmes de
+  fête). Sa version claire (`--color-brand-soft`, `--color-secondary-soft`)
+  sert aux fonds doux ;
+- l'**encre** (`--color-primary`, `--color-secondary`) : la même teinte,
+  juste assez soutenue pour se lire sur le fond clair, sur une carte blanche
+  et sur le fond sombre. Elle porte le texte en couleur, les liens, les
+  icônes, les numéros de verset, l'onglet actif, les filets, et les teintes
+  légères posées sous un texte de même couleur (`bg-primary/10`). Les
+  indicateurs sans texte (barres d'avancement, points, interrupteurs)
+  restent à l'encre : la teinte claire s'y verrait trop peu.
+
+Trois thèmes au choix, dans cet ordre. Le premier est celui d'origine.
+
+| Thème           | Teinte    | Sur la teinte | Encre     | Secondaire (teinte, encre) |
+| --------------- | --------- | ------------- | --------- | -------------------------- |
+| sunset (défaut) | `#FEA547` | `#3B2412`     | `#D46D01` | `#539EE2`, `#328CDC`       |
+| ocean           | `#539EE2` | `#10263F`     | `#328CDC` | `#FEA547`, `#D46D01`       |
+| emerald         | `#059C66` | blanc         | `#059C66` | `#FEA547`, `#D46D01`       |
+
+L'orange et le bleu sont l'un en second de l'autre ; le vert prend l'orange
+en second. Un thème de fête ne donne que ses deux encres, assez soutenues
+pour servir aussi de teinte, avec du blanc dessus (`resolveThemeColors`).
+La règle de lisibilité est tenue par `src/__tests__/themeColors.test.ts` :
+l'encre à 3,1:1 au moins sur le fond, 3,5:1 sur une carte blanche, 3,3:1 sur
+le fond sombre ; ce qui s'écrit sur la teinte à 3,5:1 au moins.
+
+Ils vivent dans `src/composables/useTheme.ts`, qui réécrit les variables sur
+la racine. L'accent des widgets natifs et de la montre est l'encre (il s'y
+écrit du texte) ; sa valeur de repli (`DEFAULT_ACCENT` dans
+`widgetPayloads.ts`, les constantes `FALLBACK_ACCENT` côté natif) est celle
+du thème par défaut, `#D46D01` : les trois se changent ensemble. Le fond
+(`#FFF9F3`) se reprend dans la couleur du navigateur (`index.html`), la barre
+d'état (`useNativeStatusBar`, `scripts/setup-android.mjs`) et le fond des
+widgets. La vignette de partage (`functions/src/ogCard.ts`) prend la teinte,
+avec le brun dessus.
+
+La couleur secondaire tient les éléments qui ne sont ni l'action principale
+ni le texte : les outils du Sidour, la ligne sous la carte du moment, les
+icônes « Aujourd'hui » de la bibliothèque, la pastille « sur le téléphone »
+des livres, les traits d'accent des illustrations, les puces d'une seconde
+catégorie. Elle ne sert pas à faire un dégradé avec la principale.
+
+Le mur de pierre du fond prend la teinte des briques : c'est la lumière qui
+passe par ses joints (`--sw-glow-rgb`, `StoneWallBackground.vue`).
 
 **Pas de dégradé.** Nulle part : ni sur un fond, ni sur un texte
 (`bg-clip-text`), ni sur une vignette de partage. Une couleur pleine ressort
@@ -1394,7 +1441,8 @@ Trois choses changent, pas une de plus :
 - **les ornements** : deux dessins par fête, dans le style des illustrations
   des portes (`src/components/holiday`). En tête de l'accueil, de part et
   d'autre d'un souhait ; à côté du nom du site dans le bandeau et en tête du
-  pied de page ; en blanc sur le bandeau du profil ; et, sur toutes les autres
+  pied de page ; à la couleur du texte sur le bandeau du profil (le blanc,
+  sur la teinte d'une fête) ; et, sur toutes les autres
   pages, en filigrane dans les coins hauts (`HolidayBackdrop`), là où le mur
   de pierre se voit, jamais sur une page de lecture. Toujours à même le fond,
   jamais en carte : c'est une parure, pas une réponse. Un ornement qui se

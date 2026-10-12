@@ -75,7 +75,7 @@ function trackChneiMikra() {
         class="today-row group"
         @click="trackTehilim"
       >
-        <AppIcon name="book" :size="21" class="shrink-0 text-primary" />
+        <AppIcon name="book" :size="21" class="shrink-0 text-secondary" />
         <span class="flex flex-col gap-0.5 min-w-0">
           <span class="font-semibold text-text-primary group-hover:text-primary transition-colors">
             {{ t("study.today.tehilim") }}
@@ -89,7 +89,7 @@ function trackChneiMikra() {
         class="today-row group"
         @click="trackChneiMikra"
       >
-        <AppIcon name="scroll" :size="21" class="shrink-0 text-primary" />
+        <AppIcon name="scroll" :size="21" class="shrink-0 text-secondary" />
         <span class="flex flex-col gap-0.5 min-w-0">
           <span class="font-semibold text-text-primary group-hover:text-primary transition-colors">
             {{ t("chneiMikra.title") }}
@@ -100,7 +100,7 @@ function trackChneiMikra() {
       <!-- La lecture du jour suit le compte : sans lui, rien à reprendre. Le
            chiffre en avant tombe au bout de la ligne, comme sur l'accueil. -->
       <RouterLink v-if="signedIn" to="/bibliotheque/lecture-du-jour" class="today-row group">
-        <AppIcon name="circle-check" :size="21" class="shrink-0 text-primary" />
+        <AppIcon name="circle-check" :size="21" class="shrink-0 text-secondary" />
         <span class="flex flex-1 flex-col gap-0.5 min-w-0">
           <span class="font-semibold text-text-primary group-hover:text-primary transition-colors">
             {{ t("dailyReading.title") }}

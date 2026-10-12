@@ -317,19 +317,19 @@ onMounted(() => {
     <RouterLink
       v-if="hero"
       :to="hero.path"
-      class="sidour-hero press-feedback relative block rounded-card bg-primary px-5 pt-4 pb-5 text-white"
+      class="sidour-hero press-feedback relative block rounded-card bg-brand px-5 pt-4 pb-5 text-on-brand"
       :class="{ 'sidour-hero-light': hero.lightArt }"
       @click="trackOpen(hero, 'hero')"
     >
       <!-- L'objet du moment, derrière le texte : le sidour, la lune, la
            'hanoukkia... Il ne sort de la carte que par le haut. -->
       <CardArt :art="hero.art" />
-      <span class="relative block text-sm font-semibold text-white/85">{{ hero.kicker }}</span>
+      <span class="relative block text-sm font-semibold text-on-brand/80">{{ hero.kicker }}</span>
       <span class="relative mt-1 block font-display text-3xl font-bold leading-tight">
         {{ hero.name }}
       </span>
       <span
-        class="relative mt-1 block text-[15px] font-medium text-white/90"
+        class="relative mt-1 block text-[15px] font-medium text-on-brand/90"
         :class="{ 'pe-[30%]': hero.lightArt }"
         >{{ hero.meta }}</span
       >
@@ -341,7 +341,7 @@ onMounted(() => {
         <span
           v-for="label in hero.additions"
           :key="label"
-          class="rounded-pill bg-white/20 px-2.5 py-1 text-xs font-semibold text-white"
+          class="rounded-pill bg-on-brand/10 px-2.5 py-1 text-xs font-semibold text-on-brand"
         >
           {{ label }}
         </span>
@@ -355,7 +355,7 @@ onMounted(() => {
       class="card card-hover press-feedback group mt-3 flex items-center gap-4 px-4 py-3.5"
       @click="trackOpen(extra, 'extra')"
     >
-      <AppIcon :name="extra.icon" :size="21" class="shrink-0 text-primary" />
+      <AppIcon :name="extra.icon" :size="21" class="shrink-0 text-secondary" />
       <span class="flex flex-col gap-0.5 min-w-0">
         <span class="font-semibold text-text-primary group-hover:text-primary transition-colors">
           {{ extra.name }}
@@ -438,12 +438,13 @@ onMounted(() => {
 .sidour-hero {
   box-shadow: var(--shadow-card-hover);
 }
-/* Le blanc sur un objet clair : une ombre douce, juste assez pour que le
-   titre se lise là où il passe devant la lune. */
+/* Le texte sur un objet clair : un halo de la couleur de la carte, juste
+   assez pour que le titre se lise là où il passe devant la lune (le texte
+   sombre d'une teinte claire comme le blanc d'une teinte de fête). */
 .sidour-hero-light {
   text-shadow:
-    0 1px 2px rgb(0 0 0 / 0.3),
-    0 0 12px rgb(0 0 0 / 0.18);
+    0 0 3px var(--color-brand),
+    0 0 10px var(--color-brand);
 }
 /* Les lignes d'une liste posée dans une carte : un filet entre elles, pas de
    bordure autour (la carte se détache par son ombre). */
@@ -455,7 +456,8 @@ onMounted(() => {
 }
 
 /* Un outil : la pastille des commandes de titre du lecteur (`.title-action`,
-   LiturgyText), à la taille du renvoi qu'elle porte seule sous un texte. */
+   LiturgyText), à la taille du renvoi qu'elle porte seule sous un texte, à
+   la couleur secondaire du thème : un instrument, pas un texte. */
 /* La ligne défile au doigt, sans barre : la pastille coupée au bord de
    l'écran dit qu'il y en a d'autres. */
 .sidour-tools {
@@ -475,20 +477,20 @@ onMounted(() => {
   font-size: 0.875rem;
   font-weight: 600;
   line-height: 1.3;
-  color: var(--color-primary);
-  background-color: color-mix(in srgb, var(--color-primary) 10%, transparent);
+  color: var(--color-secondary);
+  background-color: color-mix(in srgb, var(--color-secondary) 11%, transparent);
   transition:
     background-color 0.2s ease,
     transform 0.15s ease;
 }
 .sidour-tool:hover {
-  background-color: color-mix(in srgb, var(--color-primary) 16%, transparent);
+  background-color: color-mix(in srgb, var(--color-secondary) 18%, transparent);
 }
 .sidour-tool:active {
   transform: scale(0.97);
 }
 .sidour-tool:focus-visible {
-  outline: 2px solid var(--color-primary);
+  outline: 2px solid var(--color-secondary);
   outline-offset: 2px;
 }
 

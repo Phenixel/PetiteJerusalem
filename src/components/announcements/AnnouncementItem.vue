@@ -62,7 +62,7 @@ const openIncident = computed(() => a.value.kind === "incident" && !a.value.reso
       <span v-if="a.version" class="chip">
         {{ t("announcements.version", { version: a.version }) }}
       </span>
-      <span v-if="isNew" class="chip bg-primary text-white">{{ t("announcements.new") }}</span>
+      <span v-if="isNew" class="chip bg-brand text-on-brand">{{ t("announcements.new") }}</span>
       <span class="ms-auto">{{ date }}</span>
     </div>
     <h3

@@ -158,8 +158,8 @@ const chapters = [1, 2, 3];
   }
   2%,
   93% {
-    background-color: var(--color-primary);
-    color: #fff;
+    background-color: var(--color-brand);
+    color: var(--color-on-brand);
   }
   97%,
   100% {
@@ -265,8 +265,8 @@ const chapters = [1, 2, 3];
   position: relative;
   padding: 0.15rem 0.45rem;
   border-radius: 999px;
-  background-color: var(--color-primary);
-  color: #fff;
+  background-color: var(--color-brand);
+  color: var(--color-on-brand);
   font-weight: 600;
 }
 
@@ -375,8 +375,8 @@ const chapters = [1, 2, 3];
   }
   .box-a,
   .box-b {
-    background-color: var(--color-primary);
-    color: #fff;
+    background-color: var(--color-brand);
+    color: var(--color-on-brand);
   }
   .chip,
   .row-a .finger-row {

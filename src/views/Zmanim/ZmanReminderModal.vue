@@ -145,7 +145,7 @@ function remove(): void {
           :class="[
             'rounded-pill px-3 py-1 text-sm font-medium transition-colors',
             minutes === choice
-              ? 'bg-primary text-white'
+              ? 'bg-brand text-on-brand'
               : 'bg-black/5 text-text-secondary hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/15',
           ]"
           @click="minutes = choice"

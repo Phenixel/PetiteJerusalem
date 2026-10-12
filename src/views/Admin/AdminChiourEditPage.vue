@@ -302,7 +302,7 @@ async function remove() {
               class="rounded-pill px-3 py-1 text-sm font-semibold transition-colors"
               :class="
                 selectedCategories.includes(cat)
-                  ? 'bg-primary text-white'
+                  ? 'bg-brand text-on-brand'
                   : 'bg-black/5 text-text-secondary hover:text-text-primary dark:bg-white/10'
               "
               :aria-pressed="selectedCategories.includes(cat)"

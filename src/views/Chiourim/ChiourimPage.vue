@@ -194,7 +194,7 @@ onMounted(() => {
         class="chip transition-colors"
         :class="
           selectedCategory === 'all'
-            ? 'bg-primary text-white'
+            ? 'bg-brand text-on-brand'
             : 'bg-black/5 text-text-secondary hover:text-text-primary dark:bg-white/10'
         "
       >
@@ -207,7 +207,7 @@ onMounted(() => {
         class="chip transition-colors"
         :class="
           selectedCategory === cat
-            ? 'bg-primary text-white'
+            ? 'bg-brand text-on-brand'
             : 'bg-black/5 text-text-secondary hover:text-text-primary dark:bg-white/10'
         "
       >

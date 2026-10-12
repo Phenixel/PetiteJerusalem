@@ -78,7 +78,7 @@ function goToChiour() {
 
           <button
             @click="player.toggle()"
-            class="w-10 h-10 flex items-center justify-center bg-primary text-white rounded-full transition-colors shrink-0"
+            class="w-10 h-10 flex items-center justify-center bg-brand text-on-brand rounded-full transition-colors shrink-0"
             :title="player.isPlaying.value ? t('audioPlayer.pause') : t('audioPlayer.play')"
           >
             <AppIcon
