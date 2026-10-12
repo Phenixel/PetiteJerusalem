@@ -1757,7 +1757,7 @@ def page_at(tractate: Tractate, amud: int, pdf: str, taken: dict[str, set]) -> t
     printed = printed_page(pdf, known, vocabulary, openings)
     if printed is None:
         return None
-    if UNSURE[0] >= 4:
+    if UNSURE[0] >= 9:
         WHY[amud] = f"places peu sûres : {UNSURE[0]} mots l'un sur l'autre"
         return None
     main = place(ours_main, printed.main)
