@@ -31,6 +31,7 @@ import { DAF_LAYOUT_REACH } from "../services/dafLayout";
 export type CommentarySource =
   | "rashi"
   | "rashbam"
+  | "mefaresh"
   | "tosafot"
   | "ran"
   | "bartenura"
@@ -207,6 +208,7 @@ export function usePassageCommentaries(
 export const COMMENTARY_LABELS = {
   rashi: "textReading.commentaries.rashi",
   rashbam: "textReading.commentaries.rashbam",
+  mefaresh: "textReading.commentaries.mefaresh",
   tosafot: "textReading.commentaries.tosafot",
   ran: "textReading.commentaries.ran",
   bartenura: "textReading.commentaries.bartenura",

@@ -1226,8 +1226,11 @@ export interface DafMeforshim {
    */
   rashi: RashiComment[][];
   tosafot: RashiComment[][];
-  /** Qui occupe la place de Rachi sur cet amoud. */
-  inner: "rashi" | "rashbam";
+  /**
+   * Qui occupe la place de Rachi sur cet amoud : lui, ou celui qui prend son
+   * relais (le Rachbam en Bava Batra, le « מפרש » en Tamid).
+   */
+  inner: "rashi" | "rashbam" | "mefaresh";
   /**
    * Là où le livre imprime Rachi et le Rachbam (Pessa'him, à partir de 99b) :
    * `rashbamAfter[p]` commentaires de `rashi[p]` sont de Rachi, les suivants
@@ -1260,6 +1263,7 @@ export function parseDafMeforshim(data: {
   rashbamAfter?: Record<string, number[]>;
   outer?: string;
   margin?: unknown[];
+  second?: string;
 }): Map<number, DafMeforshim> {
   const byAmud = new Map<number, DafMeforshim>();
   const comments = (passage: unknown): RashiComment[] =>
@@ -1275,7 +1279,7 @@ export function parseDafMeforshim(data: {
     byAmud.set(from + i, {
       rashi: passages(data.rashi?.[i]),
       tosafot: passages(data.tosafot?.[i]),
-      inner: rashbam.has(i) ? "rashbam" : "rashi",
+      inner: !rashbam.has(i) ? "rashi" : data.second === "mefaresh" ? "mefaresh" : "rashbam",
       ...(data.rashbamAfter?.[i] ? { rashbamAfter: data.rashbamAfter[i] } : {}),
       ...(data.outer === "ran" ? { outer: "ran" as const } : {}),
       ...(data.margin ? { margin: passages(data.margin[i]) } : {}),
@@ -1286,7 +1290,7 @@ export function parseDafMeforshim(data: {
 
 /**
  * Rachi et Tossafot des amoudim demandés (index du fichier du traité). Un
- * traité sans commentaires (Tamid, Chekalim) ou une tranche introuvable rend
+ * traité sans commentaires (Chekalim) ou une tranche introuvable rend
  * des amoudim sans commentaire : la page se compose alors de la guemara seule.
  * Une autre erreur (réseau) remonte, pour que la page puisse le dire.
  */

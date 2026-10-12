@@ -199,9 +199,9 @@ describe("forme de la page du daf", () => {
       expect(amudim, `${slug} : amoudim`).toBe(gemara.he.length);
       expect(commented / amudim, `${slug} : amoudim commentés`).toBeGreaterThan(0.6);
     }
-    // Tous les traités de guemara, sauf ceux que Vilna imprime sans Rachi
-    // ni Tossafot (Tamid) ou qui ne sont pas du Bavli (Chekalim).
-    expect(withPages).toBe(36);
+    // Tous les traités de guemara (Tamid avec son « מפרש »), sauf Chekalim,
+    // qui n'est pas du Bavli.
+    expect(withPages).toBe(37);
   });
 
   it("garde le dibbour hamat'hil en avant, comme sur la page", () => {
@@ -255,5 +255,11 @@ describe("forme de la page du daf", () => {
     const other = parseDafMeforshim(read("talmud-meforshim/berakhot/0.json") as never);
     expect(other.get(0)!.outer).toBeUndefined();
     expect(other.get(0)!.margin).toBeUndefined();
+  });
+
+  it("donne au « מפרש » la place de Rachi en Tamid", () => {
+    const parsed = parseDafMeforshim(read("talmud-meforshim/tamid/0.json") as never);
+    const amud = [...parsed.values()].find((m) => m.rashi.flat().length > 0)!;
+    expect(amud.inner).toBe("mefaresh");
   });
 });

@@ -1462,6 +1462,7 @@ const fr = {
       title: "Commentaires",
       rashi: "Rachi",
       rashbam: "Rachbam",
+      mefaresh: "Méfarech",
       ran: "Ran",
       tosafot: "Tossafot",
       bartenura: "Bartenura",

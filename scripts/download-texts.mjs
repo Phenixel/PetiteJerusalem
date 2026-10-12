@@ -324,6 +324,12 @@ if (shouldRun('meforshim')) {
       `${name} ${tractate}`,
     ).then(d => d.text ?? []).catch(() => []);
 
+  const commentaryAt = (path) =>
+    withRetry(() => fetchJson(`${GCS}/Talmud/Bavli/Rishonim on Talmud/${path}/Hebrew/merged.json`), path)
+      .then(d => d.text ?? []).catch(() => []);
+  /** Qui est le second commentaire de la colonne de Rachi, quand ce n'est pas le Rachbam. */
+  const SECOND = { Tamid: 'mefaresh' };
+
   for (let i = 0; i < tractates.length; i += 4) {
     await Promise.all(tractates.slice(i, i + 4).map(async (tractate) => {
       const seder = talmudSederMap[tractate];
@@ -335,7 +341,10 @@ if (shouldRun('meforshim')) {
           withRetry(() => fetchJson(`${GCS}/Talmud/Bavli/${seder}/${tractate}/Hebrew/merged.json`), `${tractate}/He`),
           commentary('Rashi', seder, tractate),
           commentary('Tosafot', seder, tractate),
-          RASHBAM_TRACTATES.has(tractate) ? commentary('Rashbam', seder, tractate) : Promise.resolve([]),
+          RASHBAM_TRACTATES.has(tractate) ? commentary('Rashbam', seder, tractate)
+            // Tamid n'a pas de Rachi : le « מפרש » tient sa colonne.
+            : tractate === 'Tamid' ? commentaryAt('Mefaresh on Tamid')
+            : Promise.resolve([]),
           // Nedarim : le livre met le Ran à la place de Tossafot, et Tossafot en marge.
           tractate === 'Nedarim' ? commentary('Ran', seder, tractate) : Promise.resolve([]),
         ]);
@@ -405,6 +414,7 @@ if (shouldRun('meforshim')) {
             rashi: inner.slice(from, from + MEFORSHIM_CHUNK),
             tosafot: outer.slice(from, from + MEFORSHIM_CHUNK),
             ...(rashbamHere.length ? { rashbam: rashbamHere } : {}),
+            ...(SECOND[tractate] && (rashbamHere.length || rashbamBoth.length) ? { second: SECOND[tractate] } : {}),
             ...(hasRan ? { outer: 'ran', margin: margin.slice(from, from + MEFORSHIM_CHUNK) } : {}),
             ...(rashbamBoth.length ? { rashbamAfter: Object.fromEntries(rashbamBoth) } : {}),
           }), 'utf8');
