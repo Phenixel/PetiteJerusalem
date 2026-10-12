@@ -1796,6 +1796,64 @@ def page_at(tractate: Tractate, amud: int, pdf: str, taken: dict[str, set]) -> t
         # plus proche au-dessus ou au-dessous d'elle, dans sa colonne (un
         # bout de ligne de trois mots est du commentaire qui l'entoure, pas
         # de celui d'en face) ; à défaut, celle d'avant dans la page.
+        # Une ligne qui continue la phrase de celle d'au-dessus, dans sa
+        # colonne, est du même commentaire : la suite de mots à cheval sur les
+        # deux lignes est dans son texte, et pas dans l'autre. C'est plus sûr
+        # que la police (un mot cité en gras) ou qu'un indice isolé.
+        # (Une ligne très espacée se lit mot par mot : ses morceaux, sur la
+        # même rangée et qui se suivent de près, se jugent ensemble.)
+        rows: list[list[int]] = []
+        for k in sorted(range(len(stream)), key=lambda k: (round(stream[k].top / 3), -stream[k].right)):
+            last = stream[rows[-1][-1]] if rows else None
+            if last is not None and abs(last.top - stream[k].top) < 3 \
+                    and 0 <= last.left - stream[k].right < 3 * (stream[k].bottom - stream[k].top):
+                rows[-1].append(k)
+            else:
+                rows.append([k])
+        text = [[norm(w) for k in row for w in stream[k].words if norm(w)] for row in rows]
+        span = [(min(stream[k].left for k in row), max(stream[k].right for k in row), stream[row[0]].top,
+                 stream[row[0]].bottom - stream[row[0]].top) for row in rows]
+        strong_at = {id(line) for line, _ in strong}
+        # D'abord les mots de la rangée entière, comme pour une ligne.
+        for r, row in enumerate(rows):
+            if len(row) < 2:
+                continue
+            mine = grams(text[r])
+            hits = {zone: len(mine & known[zone]) for zone in ("rashi", "tosafot")}
+            best = max(hits, key=lambda zone: hits[zone])
+            if hits[best] >= 2 and hits[best] > 2 * min(hits.values()):
+                for k in row:
+                    owners[k] = best
+                    if id(stream[k]) not in strong_at:
+                        strong.append((stream[k], best))
+                        strong_at.add(id(stream[k]))
+                    fonts_say.discard(k)
+                    weak.pop(k, None)
+        order = sorted(range(len(rows)), key=lambda r: span[r][2])
+        for r in order:
+            if not text[r] or all(id(stream[k]) in strong_at for k in rows[r]):
+                continue
+            left, right, top, tall = span[r]
+            above = [q for q in order if q != r and text[q] and 0 < top - span[q][2] < 2.5 * tall
+                     and min(span[q][1], right) - max(span[q][0], left) > 0.5 * min(right - left, span[q][1] - span[q][0])]
+            if not above:
+                continue
+            q = max(above, key=lambda q: span[q][2])
+            votes = Counter(owners[k] for k in rows[q] if owners[k])
+            if not votes:
+                continue
+            zone = votes.most_common(1)[0][0]
+            other = "tosafot" if zone == "rashi" else "rashi"
+            joined = text[q][-2:] + text[r][:2]
+            bridge = [tuple(joined[i: i + 3]) for i in range(len(joined) - 2)]
+            if len(text[q]) >= 2 and any(g in known[zone] for g in bridge) and not any(g in known[other] for g in bridge):
+                for k in rows[r]:
+                    owners[k] = zone
+                    if id(stream[k]) not in strong_at:
+                        strong.append((stream[k], zone))
+                        strong_at.add(id(stream[k]))
+                    fonts_say.discard(k)
+                    weak.pop(k, None)
         # La police d'un dibbour sert parfois au corps d'une ligne : quand les
         # lignes d'au-dessus et d'au-dessous, dans la même colonne, sont par
         # leurs mots de l'autre commentaire, la ligne est des leurs.
