@@ -55,7 +55,8 @@ function openSheet() {
 
 /** Toute la barre ouvre le plein écran ; ses boutons gardent leur rôle. */
 function onBarClick(event: MouseEvent) {
-  if ((event.target as HTMLElement).closest("button, a, input, [role='slider']")) return;
+  const target = event.target as HTMLElement;
+  if (target.closest("button, a, input, [role='slider'], [role='menu']")) return;
   openSheet();
 }
 
@@ -112,7 +113,7 @@ watch(
     >
       <div
         ref="bar"
-        class="mx-auto cursor-pointer overflow-hidden rounded-control shadow-pop"
+        class="mx-auto cursor-pointer rounded-control shadow-pop"
         :class="isNativeApp ? '' : 'max-w-3xl md:max-w-none md:rounded-none'"
         :style="{ backgroundColor: tone, color: COVER_INK }"
         @click="onBarClick"
@@ -211,8 +212,10 @@ watch(
 
           <!-- Les commandes de droite -->
           <div class="flex shrink-0 items-center justify-end gap-1">
+            <!-- La vitesse : son menu s'ouvre vers le haut, au-dessus de la barre -->
             <PlayerSpeed
               v-if="!isNativeApp"
+              placement="above"
               class="hidden bg-white/10 hover:bg-white/20 md:inline-block"
             />
             <button

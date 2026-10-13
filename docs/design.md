@@ -1415,8 +1415,11 @@ parcourt, on lance, on reprend.
   sortait cette page (tenu par `playerBarOpen.test.ts`). D'où vient l'écoute (« Lecture depuis
   Chaar Habitahon »), la grande pochette, le titre et le rav, la barre de
   lecture, puis reculer de 15 s, précédent, la lecture en grand rond,
-  suivant, avancer de 30 s ; la vitesse en une pastille qu'on touche pour
-  passer à la suivante. Plus bas, le texte étudié, ce qui suit dans la
+  suivant, avancer de 30 s. La vitesse, à droite du titre (sur un écran
+  large, dans la barre, à droite) : une pastille qui la dit, et qui ouvre la
+  liste des vitesses, de 0,75× à 2×, la sienne cochée ; on touche celle
+  qu'on veut (tenu par `playerSpeed.test.ts`). La faire défiler d'appui en
+  appui obligeait à passer par toutes pour revenir en arrière. Plus bas, le texte étudié, ce qui suit dans la
   file, et « À propos du cours », qui mène à sa page. Sur un écran large,
   deux colonnes : le cours à gauche, la suite à droite.
 - **La file se lit d'un coup d'œil.** « En cours » d'abord, à part : la

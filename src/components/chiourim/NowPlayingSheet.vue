@@ -363,13 +363,22 @@ const shareUrl = computed(() =>
             />
           </div>
 
-          <div class="mt-8">
-            <h2 dir="auto" class="font-display text-2xl font-bold leading-tight line-clamp-3">
-              {{ track.title }}
-            </h2>
-            <p v-if="track.subtitle" dir="auto" class="mt-1 truncate opacity-75">
-              {{ track.subtitle }}
-            </p>
+          <!-- Le titre et le rav ; la vitesse à leur droite, sous la main sans
+               encombrer la rangée des commandes -->
+          <div class="mt-8 flex items-start gap-4">
+            <div class="min-w-0 flex-1">
+              <h2 dir="auto" class="font-display text-2xl font-bold leading-tight line-clamp-3">
+                {{ track.title }}
+              </h2>
+              <p v-if="track.subtitle" dir="auto" class="mt-1 truncate opacity-75">
+                {{ track.subtitle }}
+              </p>
+            </div>
+            <!-- Des classes globales : PlayerSpeed les pose sur son bouton, que le
+                 style local de ce composant n'atteindrait pas -->
+            <PlayerSpeed
+              class="mt-1 shrink-0 bg-white/[0.14] transition-colors hover:bg-white/[0.22]"
+            />
           </div>
 
           <PlayerSeek class="mt-6" />
@@ -428,11 +437,6 @@ const shareUrl = computed(() =>
               <AppIcon name="rotate-cw" :size="26" />
               <span class="skip-n">30</span>
             </button>
-          </div>
-
-          <!-- La vitesse ; le texte étudié a sa carte, juste en dessous -->
-          <div class="mt-6 flex items-center">
-            <PlayerSpeed class="sheet-pill" />
           </div>
         </section>
 
