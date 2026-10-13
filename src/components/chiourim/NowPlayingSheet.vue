@@ -16,11 +16,12 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import type { Chiour } from "../../models/models";
-import { useAudioPlayer } from "../../composables/useAudioPlayer";
+import { useAudioPlayer, type AudioTrack } from "../../composables/useAudioPlayer";
+import { shortTitle } from "../../composables/useChiourPlayback";
 import { useOverlay } from "../../composables/useOverlayStack";
 import { useTexteLabels } from "../../composables/useTexteLabels";
 import { chiourService } from "../../services/chiourService";
-import { chiourTexte, texteRoute } from "../../services/chiourTexte";
+import { chiourTexte, texteOf, texteRoute } from "../../services/chiourTexte";
 import { analyticsService } from "../../services/analyticsService";
 import { COVER_INK, playerTone } from "./cover";
 import { formatMinutes } from "./duration";
@@ -35,7 +36,7 @@ import { SITE_URL } from "../../config/site";
 const { t, locale } = useI18n();
 const router = useRouter();
 const player = useAudioPlayer();
-const { texteLabel } = useTexteLabels();
+const { chapitreLabel, texteLabel } = useTexteLabels();
 
 const track = computed(() => player.track.value);
 const tone = computed(() => playerTone(track.value?.cover?.seed ?? track.value?.slug ?? ""));
@@ -93,9 +94,42 @@ function openTexte() {
 }
 
 // --- La file ---
-const upNext = computed(() =>
-  player.queue.value.map((item, index) => ({ item, index })).slice(player.queueIndex.value),
+/** Ce qui suit le cours en cours, avec sa place dans la file. */
+const following = computed(() =>
+  player.queue.value.map((item, index) => ({ item, index })).slice(player.queueIndex.value + 1),
 );
+/** Les dix suivants d'abord : une série de quarante ne se lit pas d'un bloc. */
+const QUEUE_FIRST = 10;
+const showWholeQueue = ref(false);
+const shownFollowing = computed(() =>
+  showWholeQueue.value ? following.value : following.value.slice(0, QUEUE_FIRST),
+);
+
+/** La ligne sous un cours de la file : le chapitre qu'il étudie, sa durée. */
+function itemLine(item: AudioTrack): string {
+  const entry = texteOf(item.texteId);
+  const chapter =
+    entry && typeof item.texteChapitre === "number" ? chapitreLabel(entry, item.texteChapitre) : "";
+  const duration = item.duration ? formatMinutes(item.duration, locale.value) : "";
+  return [chapter, duration].filter(Boolean).join(" · ");
+}
+
+/** Sous le cours qui joue : son chapitre, ce qu'il en reste. */
+const currentLine = computed(() => {
+  if (!track.value) return "";
+  const entry = texteOf(track.value.texteId);
+  const chapter =
+    entry && typeof track.value.texteChapitre === "number"
+      ? chapitreLabel(entry, track.value.texteChapitre)
+      : "";
+  const total = player.duration.value || track.value.duration || 0;
+  const left = total
+    ? t("chiourim.player.left", {
+        time: formatMinutes(total - player.currentTime.value, locale.value),
+      })
+    : "";
+  return [chapter, left].filter(Boolean).join(" · ");
+});
 
 const showShare = ref(false);
 const shareUrl = computed(() =>
@@ -254,34 +288,64 @@ const shareUrl = computed(() =>
             </button>
           </section>
 
-          <section v-if="upNext.length > 1" class="sheet-card">
-            <h3 class="mb-2 font-bold">{{ t("chiourim.player.upNext") }}</h3>
-            <ol class="-mx-2">
-              <li v-for="{ item, index } in upNext" :key="item.src">
-                <button
-                  type="button"
-                  class="flex w-full items-center gap-3 rounded-control px-2 py-2 text-start transition-colors hover:bg-white/10"
-                  :aria-current="index === player.queueIndex.value ? 'true' : undefined"
-                  @click="player.playAt(index)"
-                >
-                  <span class="flex w-6 shrink-0 justify-center text-sm tabular-nums opacity-75">
-                    <NowPlayingBars
-                      v-if="index === player.queueIndex.value"
-                      :playing="player.isPlaying.value"
-                    />
-                    <template v-else>{{ index + 1 }}</template>
-                  </span>
-                  <span
-                    class="min-w-0 flex-1 truncate"
-                    :class="index === player.queueIndex.value ? 'font-bold' : ''"
-                    >{{ item.title }}</span
+          <!-- La file : ce qui joue, puis ce qui suit, une ligne par cours -->
+          <section v-if="player.queue.value.length > 1" class="sheet-card overflow-hidden !p-0">
+            <h3 class="sheet-label px-5 pt-4">{{ t("chiourim.player.nowPlaying") }}</h3>
+            <div class="flex items-center gap-3 px-5 pb-4 pt-3">
+              <ChiourCover
+                v-if="track.cover"
+                :seed="track.cover.seed"
+                :label="track.cover.label"
+                size="sm"
+              />
+              <span class="min-w-0 flex-1">
+                <span class="block font-semibold leading-snug line-clamp-2">{{
+                  shortTitle(track.title, track.context)
+                }}</span>
+                <span v-if="currentLine" class="mt-0.5 block text-sm opacity-70">{{
+                  currentLine
+                }}</span>
+              </span>
+              <NowPlayingBars :playing="player.isPlaying.value" class="shrink-0" />
+            </div>
+
+            <template v-if="following.length">
+              <div class="flex items-baseline justify-between px-5 pt-2">
+                <h3 class="sheet-label">{{ t("chiourim.player.upNext") }}</h3>
+                <span class="text-xs opacity-60">{{
+                  t("chiourim.coursesCount", { count: following.length })
+                }}</span>
+              </div>
+              <ol class="sheet-queue mt-2">
+                <li v-for="{ item, index } in shownFollowing" :key="item.src">
+                  <button
+                    type="button"
+                    class="flex w-full items-start gap-4 px-5 py-3.5 text-start transition-colors hover:bg-white/5"
+                    @click="player.playAt(index)"
                   >
-                  <span v-if="item.duration" class="shrink-0 text-xs tabular-nums opacity-70">{{
-                    formatMinutes(item.duration, locale)
-                  }}</span>
-                </button>
-              </li>
-            </ol>
+                    <span class="w-7 shrink-0 pt-0.5 text-sm tabular-nums opacity-55">{{
+                      item.episode ?? index + 1
+                    }}</span>
+                    <span class="min-w-0 flex-1">
+                      <span class="block font-medium leading-snug line-clamp-2">{{
+                        shortTitle(item.title, track.context)
+                      }}</span>
+                      <span v-if="itemLine(item)" class="mt-0.5 block text-sm opacity-60">{{
+                        itemLine(item)
+                      }}</span>
+                    </span>
+                  </button>
+                </li>
+              </ol>
+              <button
+                v-if="following.length > shownFollowing.length"
+                type="button"
+                class="w-full border-t border-white/10 px-5 py-3 text-start text-sm font-semibold opacity-80 hover:opacity-100"
+                @click="showWholeQueue = true"
+              >
+                {{ t("chiourim.player.wholeQueue", { count: following.length }) }}
+              </button>
+            </template>
           </section>
 
           <section v-if="chiour" class="sheet-card">
@@ -361,6 +425,20 @@ const shareUrl = computed(() =>
   border-radius: var(--radius-card);
   padding: 1rem 1.25rem;
   background: rgb(0 0 0 / 0.22);
+}
+.sheet-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.7;
+}
+/* Une ligne par cours, séparées d'un filet : la file se lit d'un coup d'œil. */
+.sheet-queue > li + li {
+  border-top: 1px solid rgb(255 255 255 / 0.1);
+}
+.sheet-queue {
+  border-top: 1px solid rgb(255 255 255 / 0.1);
 }
 .sheet-chip {
   border-radius: 999px;

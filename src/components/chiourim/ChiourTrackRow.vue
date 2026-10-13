@@ -16,6 +16,7 @@ import type { PlaySource } from "../../composables/useAudioPlayer";
 import {
   chiourCover,
   chiourSubtitle,
+  shortTitle,
   useChiourPlayback,
 } from "../../composables/useChiourPlayback";
 import { isFinished, listeningOf, progressOf } from "../../services/listeningProgress";
@@ -36,8 +37,10 @@ const props = withDefaults(
     subtitle?: string | null;
     /** D'où vient la file, en tête du lecteur plein écran (voir playFrom). */
     context?: string | null;
+    /** Le nom de la série, retiré du titre qui le répète (voir shortTitle). */
+    stripPrefix?: string | null;
   }>(),
-  { number: undefined, subtitle: null, context: null },
+  { number: undefined, subtitle: null, context: null, stripPrefix: null },
 );
 
 const emit = defineEmits<{ played: [] }>();
@@ -50,6 +53,7 @@ const playing = computed(() => isPlaying(props.chiour.slug));
 const cover = computed(() => chiourCover(props.chiour));
 const line = computed(() => props.subtitle ?? chiourSubtitle(props.chiour));
 const showNumber = computed(() => props.number !== undefined);
+const title = computed(() => shortTitle(props.chiour.name, props.stripPrefix));
 
 const finished = computed(() => isFinished(props.chiour.slug));
 const progress = computed(() => progressOf(props.chiour.slug));
@@ -110,7 +114,7 @@ function play() {
       <span
         class="block truncate font-semibold transition-colors"
         :class="current ? 'text-primary' : 'text-text-primary'"
-        >{{ chiour.name }}</span
+        >{{ title }}</span
       >
       <span class="flex items-center gap-1.5 text-sm text-text-secondary">
         <AppIcon

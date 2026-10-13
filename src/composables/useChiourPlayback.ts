@@ -26,6 +26,27 @@ export function chiourCover(chiour: Chiour, serieName = serieNameOf(chiour)) {
   return { seed: chiour.slug, label: chiour.name };
 }
 
+/**
+ * Le titre d'un cours sans le nom de sa série quand il le répète, pour une
+ * liste où la série est déjà dite : « Shaar Habitahon Shiour 10 Chapitre 2 »
+ * devient « Shiour 10 Chapitre 2 » sous « Shaar Habitahon ». Accents et
+ * majuscules ignorés pour la comparaison ; le reste garde sa graphie, sa
+ * première lettre en capitale. Un titre qui n'est que le nom de la série
+ * reste entier.
+ */
+export function shortTitle(title: string, prefix: string | null | undefined): string {
+  if (!prefix) return title;
+  const fold = (value: string) =>
+    value
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase();
+  if (!fold(title).startsWith(fold(prefix))) return title;
+  const rest = title.slice(prefix.length).replace(/^[\s\-\u2013:,.·]+/, "");
+  if (!rest) return title;
+  return rest.charAt(0).toUpperCase() + rest.slice(1);
+}
+
 export function chiourTrack(chiour: Chiour, context: string | null = null): AudioTrack {
   const serieName = serieNameOf(chiour);
   return {
@@ -36,6 +57,9 @@ export function chiourTrack(chiour: Chiour, context: string | null = null): Audi
     cover: chiourCover(chiour, serieName),
     duration: chiour.duration,
     context: context ?? serieName ?? chiour.auteur,
+    texteId: chiour.texteId,
+    texteChapitre: chiour.texteChapitre,
+    episode: chiour.episode,
   };
 }
 

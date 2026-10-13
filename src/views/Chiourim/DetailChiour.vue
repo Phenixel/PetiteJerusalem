@@ -447,6 +447,7 @@ watch(() => route.params.slug, loadChiour);
             :list="episodes"
             source="chiour"
             :context="serie.name"
+            :strip-prefix="serie.name"
             :number="episode.episode ?? i + 1"
             :subtitle="''"
           />

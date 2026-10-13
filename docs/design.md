@@ -1397,6 +1397,15 @@ parcourt, on lance, on reprend.
   passer à la suivante. Plus bas, le texte étudié, ce qui suit dans la
   file, et « À propos du cours », qui mène à sa page. Sur un écran large,
   deux colonnes : le cours à gauche, la suite à droite.
+- **La file se lit d'un coup d'œil.** « En cours » d'abord, à part : la
+  pochette, le titre entier, le chapitre et ce qu'il reste, les barres qui
+  dansent. Puis « À suivre », dix lignes et la suite à un geste : une ligne
+  par cours, séparées d'un filet, le numéro, le titre sur deux lignes au
+  plus et, dessous, le chapitre étudié et la durée. Une liste compacte
+  d'une ligne par cours ne laissait pas voir où l'on en était.
+- **Un titre ne répète pas sa série.** Dans une liste où la série est déjà
+  dite (la page d'une série, la file du lecteur), « Shaar Habitahon Shiour
+  10 Chapitre 2 » devient « Shiour 10 Chapitre 2 » (`shortTitle`).
 - **La couleur du lecteur.** La barre et le plein écran prennent la reliure
   de la série, assombrie, en aplat (`playerTone`), et y écrivent en crème ;
   le bouton de lecture est un rond crème qui porte la reliure. C'est le seul
@@ -1405,9 +1414,13 @@ parcourt, on lance, on reprend.
   Spotify.
 - **La pochette.** Les cours n'ont pas d'image : chaque série reçoit une
   reliure, comme les volumes de l'étagère, d'une teinte chaude et mate tirée
-  de son identifiant (la même à chaque visite), son titre en Playfair dans
-  un cadre estampé, le rav en bas. En petit, ses initiales. Un rav a la même
-  reliure, ronde. Hors thème, identique en mode sombre, en aplats, le titre
+  de son identifiant (la même à chaque visite). Dans un cadre estampé, son
+  titre en Playfair, au centre, aussi grand que la pochette le permet : sa
+  taille suit la largeur de la pochette (unités de conteneur) et la longueur
+  du titre, sans qu'un mot ne déborde, sur des lignes équilibrées. En bas,
+  sous un fleuron (deux traits, un losange), le rav en petites capitales.
+  Un titre écrit petit dans un coin se perdait dans la teinte. En petit, les
+  initiales de la série. Un rav a la même reliure, ronde. Hors thème, identique en mode sombre, en aplats, le titre
   crème à 4,5:1 au moins sur chaque teinte (`components/chiourim/cover.ts`,
   tenu par `chiourCover.test.ts`).
 - **Le texte étudié.** Un cours rattaché à un livre de la bibliothèque

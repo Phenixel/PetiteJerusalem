@@ -230,6 +230,7 @@ watch(() => route.params.serieId, loadSerie);
           :list="episodes"
           source="serie"
           :context="serie.name"
+          :strip-prefix="serie.name"
           :number="chiour.episode ?? i + 1"
           :subtitle="episodeLine(chiour)"
         />

@@ -38,6 +38,19 @@ const initials = computed(() => coverInitials(props.label));
 const compact = computed(
   () => props.size === "avatar" || props.size === "xs" || props.size === "sm",
 );
+
+/**
+ * La taille du titre, en part de la largeur de la pochette (cqw) : aussi
+ * grand que possible, sans qu'un mot ne déborde du cadre, et plus petit pour
+ * un titre long, qui doit tenir en quatre lignes.
+ */
+const titleSize = computed(() => {
+  const longestWord = Math.max(...props.label.split(/\s+/).map((w) => w.length), 1);
+  const byWord = 70 / (0.58 * longestWord);
+  const length = props.label.length;
+  const byLength = length <= 12 ? 16 : length <= 20 ? 13.5 : length <= 30 ? 11 : 9;
+  return Math.max(7, Math.min(byWord, byLength));
+});
 </script>
 
 <template>
@@ -64,23 +77,94 @@ const compact = computed(
       "
       >{{ initials }}</span
     >
-    <div
-      v-else
-      class="absolute inset-[7%] flex flex-col justify-between border border-current/35 p-[8%]"
-    >
-      <span
-        class="font-display font-bold leading-tight line-clamp-4"
-        :class="size === 'lg' ? 'text-2xl md:text-3xl' : 'text-base sm:text-lg'"
-        >{{ label }}</span
-      >
-      <span v-if="sub" class="truncate opacity-80" :class="size === 'lg' ? 'text-sm' : 'text-xs'">{{
-        sub
+    <!-- La face : le titre au centre, aussi grand que la pochette le permet ;
+         le rav en bas, sous un fleuron, en petites capitales. -->
+    <div v-else class="cover-face" :class="{ 'cover-face--foot': sub }">
+      <span class="cover-title font-display" :style="{ fontSize: `${titleSize}cqw` }">{{
+        label
       }}</span>
+      <span v-if="sub" class="cover-foot">
+        <span class="cover-ornament" aria-hidden="true">
+          <span class="cover-rule"></span>
+          <span class="cover-diamond"></span>
+          <span class="cover-rule"></span>
+        </span>
+        <span class="cover-sub">{{ sub }}</span>
+      </span>
     </div>
   </div>
 </template>
 
 <style scoped>
+/* La pochette se mesure elle-même : ses textes suivent sa largeur (cqw), du
+   catalogue au plein écran. */
+.chiour-cover {
+  container-type: inline-size;
+}
+.cover-face {
+  position: absolute;
+  inset: 6%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6cqw;
+  padding: 8cqw 7cqw;
+  border: 1px solid color-mix(in srgb, currentColor 38%, transparent);
+  text-align: center;
+}
+/* Avec le rav en bas, le titre se centre dans ce qui reste au-dessus. */
+.cover-face--foot {
+  padding-bottom: 20cqw;
+}
+.cover-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  overflow: hidden;
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+.cover-foot {
+  position: absolute;
+  inset-inline: 7cqw;
+  bottom: 6cqw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2.5cqw;
+}
+.cover-ornament {
+  display: flex;
+  align-items: center;
+  gap: 2cqw;
+  opacity: 0.7;
+}
+.cover-rule {
+  height: 1px;
+  width: 7cqw;
+  background: currentColor;
+}
+.cover-diamond {
+  height: 1.6cqw;
+  width: 1.6cqw;
+  transform: rotate(45deg);
+  background: currentColor;
+}
+.cover-sub {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 4.2cqw;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  opacity: 0.85;
+}
 .chiour-cover--avatar {
   width: 1.75rem;
   height: 1.75rem;

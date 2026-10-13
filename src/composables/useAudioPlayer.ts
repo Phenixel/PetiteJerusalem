@@ -29,6 +29,11 @@ export interface AudioTrack {
   duration?: number | null;
   /** D'où vient la file : la série, le rav, le texte (« Lecture depuis… »). */
   context?: string | null;
+  /** Le texte étudié et son chapitre (voir chiourTexte), pour la file du lecteur. */
+  texteId?: number | null;
+  texteChapitre?: number | null;
+  /** Le numéro d'épisode dans sa série. */
+  episode?: number | null;
 }
 
 const track = ref<AudioTrack | null>(null);

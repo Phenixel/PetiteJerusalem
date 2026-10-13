@@ -3,7 +3,8 @@
  * Un cours entamé, dans la rangée « Reprendre l'écoute » : sa pochette avec
  * la barre de ce qui est écouté, son titre, ce qu'il en reste. Toute la tuile
  * relance l'écoute là où on l'a laissée (la file reprend avec la série) ; le
- * cours qui joue se met en pause.
+ * cours qui joue se met en pause. Pas de bouton posé sur la pochette : il en
+ * cachait le titre, et la tuile entière est déjà le bouton.
  */
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
@@ -11,15 +12,16 @@ import type { Chiour } from "../../models/models";
 import { chiourCover, useChiourPlayback } from "../../composables/useChiourPlayback";
 import { listeningOf, progressOf } from "../../services/listeningProgress";
 import { formatMinutes } from "./duration";
-import AppIcon from "../icons/AppIcon.vue";
 import ChiourCover from "./ChiourCover.vue";
+import NowPlayingBars from "./NowPlayingBars.vue";
 
 const props = defineProps<{ chiour: Chiour; queue: Chiour[] }>();
 
 const { t, locale } = useI18n();
-const { isPlaying, playFrom } = useChiourPlayback();
+const { isCurrent, isPlaying, playFrom } = useChiourPlayback();
 
 const cover = computed(() => chiourCover(props.chiour));
+const current = computed(() => isCurrent(props.chiour.slug));
 const playing = computed(() => isPlaying(props.chiour.slug));
 const left = computed(() => {
   const entry = listeningOf(props.chiour.slug);
@@ -42,14 +44,12 @@ const left = computed(() => {
   >
     <span class="relative block">
       <ChiourCover :seed="cover.seed" :label="cover.label" size="md" class="shadow-card" />
+      <!-- Le cours qui joue : ses barres dans l'angle, comme dans les listes -->
       <span
-        class="absolute bottom-3 right-3 flex h-11 w-11 items-center justify-center rounded-full bg-brand text-on-brand shadow-pop transition-transform group-hover:scale-105 rtl:left-3 rtl:right-auto"
+        v-if="current"
+        class="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-black/55 text-white rtl:left-2 rtl:right-auto"
       >
-        <AppIcon
-          :name="playing ? 'pause-solid' : 'play-solid'"
-          :size="18"
-          :class="{ 'ml-0.5': !playing }"
-        />
+        <NowPlayingBars :playing="playing" />
       </span>
       <span class="absolute inset-x-0 bottom-0 h-1 overflow-hidden rounded-b-card bg-black/30">
         <span

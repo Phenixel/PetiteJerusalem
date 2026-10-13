@@ -1343,6 +1343,8 @@ const en: LocaleMessages = {
       upNext: "Up next",
       about: "About the shiur",
       openPage: "Open the shiur page",
+      nowPlaying: "Now playing",
+      wholeQueue: "See the whole queue ({count})",
     },
     texte: {
       fieldLabel: "Book studied",

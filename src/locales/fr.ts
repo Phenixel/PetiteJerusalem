@@ -1391,6 +1391,8 @@ const fr = {
       upNext: "À suivre",
       about: "À propos du cours",
       openPage: "Voir la page du cours",
+      nowPlaying: "En cours",
+      wholeQueue: "Voir toute la file ({count})",
     },
     texte: {
       fieldLabel: "Livre étudié",

@@ -1306,6 +1306,8 @@ const he: LocaleMessages = {
       upNext: "הבא בתור",
       about: "על השיעור",
       openPage: "לדף השיעור",
+      nowPlaying: "מתנגן עכשיו",
+      wholeQueue: "כל התור ({count})",
     },
     texte: {
       fieldLabel: "הספר הנלמד",
