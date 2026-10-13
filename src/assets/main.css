@@ -73,16 +73,16 @@ body {
 @theme {
   /* Couleurs : le fond est fixe, les trois thèmes sont au choix de
      l'utilisateur et réécrits au vol par useTheme. Valeurs par défaut :
-     « sunset », le vermillon d'origine et le bleu de la palette du logo,
-     soutenu pour porter le blanc. Chaque famille a son encre (--color-primary,
-     --color-secondary) ; les fonds pleins prennent la teinte (--color-brand)
-     et écrivent dessus --color-on-brand ; -soft, la version claire. Voir
-     docs/design.md, « Les couleurs de thème ». */
-  --color-primary: #de4f17;
+     « sunset », l'orange et le bleu de la palette du logo. Chaque famille a
+     son encre (texte, liens, icônes : --color-primary, --color-secondary) ;
+     les fonds pleins prennent la teinte (--color-brand) et écrivent dessus
+     --color-on-brand, un brun sur l'orange clair ; -soft, la version claire.
+     Voir docs/design.md, « Les couleurs de thème ». */
+  --color-primary: #d46d01;
   --color-secondary: #328cdc;
-  --color-brand: #de4f17;
-  --color-on-brand: #ffffff;
-  --color-brand-soft: #f2b9a2;
+  --color-brand: #fea547;
+  --color-on-brand: #3b2412;
+  --color-brand-soft: #ffd09e;
   --color-secondary-brand: #328cdc;
   --color-secondary-soft: #a9cceb;
 
@@ -392,8 +392,9 @@ button,
   }
 
   /* Le bouton plein : la teinte du thème, et ce qui s'écrit dessus. Au
-     survol, la teinte se fonce d'un pas : le blanc s'y lit encore mieux.
-     Mêlée à la couleur de son texte, elle s'éclaircissait et le texte
+     survol, la teinte se fonce d'un pas : le blanc s'y lit encore mieux, le
+     brun de l'orange clair s'y lit toujours franchement. Mêlée à la couleur
+     de son texte, une teinte sous du blanc s'éclaircissait et le texte
      pâlissait (tenu par src/__tests__/themeColors.test.ts). */
   .btn-primary {
     background-color: var(--color-brand);
