@@ -31,12 +31,18 @@
 </template>
 
 <style scoped>
-/* Les couleurs de l'objet : le cuir, le papier, la dorure. */
+/* Les couleurs de l'objet : le cuir, le papier, la dorure. Le contour ne se
+   voit que sur une carte sombre (--art-outline, voir CardArt). */
 .cover {
   fill: #1c3157;
 }
 .cover-back {
   fill: #13223d;
+}
+.cover,
+.cover-back {
+  stroke: var(--art-outline, none);
+  stroke-width: 0.9;
 }
 .spine {
   fill: #27426f;

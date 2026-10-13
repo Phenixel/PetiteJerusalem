@@ -374,13 +374,15 @@ button,
   }
 
   /* Le bouton plein : la teinte du thème, et ce qui s'écrit dessus. Au
-     survol, la teinte se fonce d'un pas vers son encre. */
+     survol, la teinte se fonce d'un pas : le blanc s'y lit encore mieux.
+     Mêlée à la couleur de son texte, elle s'éclaircissait et le texte
+     pâlissait (tenu par src/__tests__/themeColors.test.ts). */
   .btn-primary {
     background-color: var(--color-brand);
     color: var(--color-on-brand);
   }
   .btn-primary:hover:not(:disabled) {
-    background-color: color-mix(in srgb, var(--color-brand) 82%, var(--color-on-brand));
+    background-color: color-mix(in srgb, var(--color-brand) 85%, #1a1408);
   }
 
   .btn-soft {

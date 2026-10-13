@@ -192,6 +192,9 @@ onUnmounted(() => observer?.disconnect());
 }
 :root.dark .card-art-plain {
   --moon-dark: rgb(255 255 255 / 0.08);
+  /* Le cuir bleu nuit du sidour se confond avec une carte sombre : un liseré
+     clair en garde le contour. */
+  --art-outline: rgb(255 255 255 / 0.3);
 }
 
 .art {

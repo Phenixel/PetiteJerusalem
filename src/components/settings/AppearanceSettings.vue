@@ -311,7 +311,7 @@ onUnmounted(() => {
             <span class="block pt-1">
               <span
                 class="block h-4 w-12 rounded-control sm:h-6 sm:w-20"
-                :style="{ backgroundColor: theme.primary }"
+                :style="{ backgroundColor: theme.brand ?? theme.primary }"
               ></span>
             </span>
           </span>

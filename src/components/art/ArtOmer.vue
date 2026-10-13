@@ -4,8 +4,10 @@
  * apportait au Temple le lendemain de Pessa'h et dont on compte les jours.
  * Neuf tiges en éventail, leurs épis barbus, le lien qui les serre.
  */
+// Le sommet de l'épi du milieu est à 24 : ses barbes montent de 23 et
+// restent dans le dessin, sans quoi le bord du cadre les coupait droit.
 const STALKS = [-4, -3, -2, -1, 0, 1, 2, 3, 4].map((i) => {
-  const top = { x: 50 + i * 8, y: 18 + Math.abs(i) * 4 };
+  const top = { x: 50 + i * 8, y: 24 + Math.abs(i) * 4 };
   const knot = { x: 50 + i * 1.3, y: 92 };
   const foot = { x: 50 + i * 3, y: 122 };
   const angle = (Math.atan2(top.x - knot.x, knot.y - top.y) * 180) / Math.PI;

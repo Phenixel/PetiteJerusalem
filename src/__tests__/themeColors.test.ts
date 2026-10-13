@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 import { resolveThemeColors, THEME_OPTIONS } from "../composables/useTheme";
 import { HOLIDAY_THEMES } from "../services/holidayThemes";
 
@@ -46,6 +47,33 @@ describe("les couleurs de thème", () => {
     for (const theme of [...THEME_OPTIONS, ...HOLIDAY_THEMES]) {
       const { brand, onBrand } = resolveThemeColors(theme);
       expect({ theme: theme.id, lisible: contrast(brand, onBrand) >= 3.5 }).toEqual({
+        theme: theme.id,
+        lisible: true,
+      });
+    }
+  });
+
+  it("au survol, le bouton plein se fonce : son texte s'y lit au moins aussi bien", () => {
+    // La règle de main.css, relue telle quelle : la teinte mêlée d'une autre
+    // couleur, dans l'espace sRGB.
+    const css = readFileSync("src/assets/main.css", "utf8");
+    const rule = css.match(
+      /\.btn-primary:hover:not\(:disabled\)\s*\{\s*background-color:\s*color-mix\(in srgb, var\(--color-brand\) (\d+)%, (#[0-9a-f]{6})\)/i,
+    );
+    expect(rule).not.toBeNull();
+    const [, share, other] = rule!;
+    const mix = (hex: string) => {
+      const p = Number(share) / 100;
+      const channel = (h: string, i: number) => parseInt(h.slice(i, i + 2), 16);
+      return `#${[1, 3, 5]
+        .map((i) => Math.round(channel(hex, i) * p + channel(other, i) * (1 - p)))
+        .map((c) => c.toString(16).padStart(2, "0"))
+        .join("")}`;
+    };
+    for (const theme of [...THEME_OPTIONS, ...HOLIDAY_THEMES]) {
+      const { brand, onBrand } = resolveThemeColors(theme);
+      const hover = contrast(mix(brand), onBrand);
+      expect({ theme: theme.id, lisible: hover >= contrast(brand, onBrand) }).toEqual({
         theme: theme.id,
         lisible: true,
       });

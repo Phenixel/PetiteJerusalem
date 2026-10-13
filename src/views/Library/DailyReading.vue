@@ -1326,7 +1326,7 @@ const formatBookName = bookName;
                 v-if="parashaCompleted"
                 name="circle-check"
                 :size="13"
-                :class="activeTab === 'week' ? 'text-white' : 'text-green-500'"
+                :class="activeTab === 'week' ? 'text-on-brand' : 'text-green-500'"
               />
               <span
                 v-else

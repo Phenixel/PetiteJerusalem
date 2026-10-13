@@ -145,10 +145,19 @@ onMounted(async () => {
   if (from !== null && from !== activeIndex.value) slideFrom(from);
   else place();
   // Les polices arrivent après le premier rendu, la langue peut changer : la
-  // pastille suit la largeur des onglets, sans mouvement.
+  // pastille suit la largeur des onglets, sans mouvement. Seulement quand la
+  // largeur change : l'observateur se signale aussi une fois dès qu'il
+  // observe, dans l'image même où le glissement part, et reposer la pastille
+  // à ce moment-là la mettait à l'arrivée avant qu'elle ait bougé.
   if (typeof ResizeObserver !== "undefined" && shell.value) {
-    resizeObserver = new ResizeObserver(() => place());
-    resizeObserver.observe(shell.value);
+    const target = shell.value;
+    let width = target.offsetWidth;
+    resizeObserver = new ResizeObserver(() => {
+      if (target.offsetWidth === width) return;
+      width = target.offsetWidth;
+      place();
+    });
+    resizeObserver.observe(target);
   }
 });
 onUnmounted(() => resizeObserver?.disconnect());

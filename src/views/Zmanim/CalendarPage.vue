@@ -244,7 +244,7 @@ const subInk = (key: string): string => (isAhead(key) ? "text-on-brand/85" : "te
 const fadedInk = (key: string): string =>
   isAhead(key) ? "text-on-brand/70" : "text-text-secondary/80";
 /** Le filet qui sépare les heures des dates sur un téléphone. */
-const divider = (key: string): string => (isAhead(key) ? "border-white/25" : "border-line");
+const divider = (key: string): string => (isAhead(key) ? "border-on-brand/25" : "border-line");
 
 /** « Chabbat Roch Hachana » : le Chabbat qui prolonge une fête est du même bloc. */
 function title(entry: CalendarEntry): string {
