@@ -767,7 +767,10 @@ Plusieurs mots se cherchent chacun de leur côté, dans n'importe quel ordre, et
 tous doivent répondre ; un nombre se cherche comme un nombre (« 23 » trouve
 le Tehilim 23, jamais le 123 ni le 24). Deux lettres ne comptent qu'en début
 de mot, et une description ne s'explore que par débuts de mots, sans fautes :
-sur une phrase entière, tout répondrait à tout.
+sur une phrase entière, tout répondrait à tout. La clé phonétique, elle aussi,
+ne se cherche qu'à partir d'un début de mot (« babametsia », tapé d'un trait,
+trouve Bava Metzia) : au milieu d'un mot, « chabbat » tombait dans le
+« Ahavat » du Chaar Ahavat Hachem (tenu par `fuzzySearch.test.ts`).
 
 Ce que la phonétique ne devine pas s'écrit : « Genèse » pour Berechit,
 « Maariv » pour Arvit, « Psaume 23 », les noms hébreux des parachiot
