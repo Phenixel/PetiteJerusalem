@@ -1304,6 +1304,7 @@ const he: LocaleMessages = {
       collapse: "מזעור הנגן",
       from: "מתנגן מתוך",
       upNext: "הבא בתור",
+      earlier: "קודמים",
       about: "על השיעור",
       openPage: "לדף השיעור",
       nowPlaying: "מתנגן עכשיו",

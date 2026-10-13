@@ -6,8 +6,9 @@
  * Il prend la reliure de la série du cours, assombrie, en aplat (playerTone),
  * et y pose en crème : d'où vient l'écoute, la pochette, le titre et le rav,
  * la barre de lecture, les commandes (reculer de 15 s, précédent, lecture,
- * suivant, avancer de 30 s), la vitesse et le texte étudié. Plus bas, ce qui
- * suit dans la file, et ce que dit le cours de lui-même.
+ * suivant, avancer de 30 s), la vitesse et le texte étudié. Plus bas, la
+ * file (ce qui joue, ce qui suit, et repliés au-dessus les cours d'avant), et
+ * ce que dit le cours de lui-même.
  *
  * Chargé à la demande (il lit le catalogue, donc Firestore) : la barre du bas,
  * montée sur toutes les pages, n'en porte rien.
@@ -30,6 +31,7 @@ import ChiourCover from "./ChiourCover.vue";
 import NowPlayingBars from "./NowPlayingBars.vue";
 import PlayerSeek from "./PlayerSeek.vue";
 import PlayerSpeed from "./PlayerSpeed.vue";
+import QueueRow from "./QueueRow.vue";
 import ShareModal from "../ShareModal.vue";
 import { SITE_URL } from "../../config/site";
 import { FULL_CLIP, SHEET_EASING, barClip, motionAllowed } from "./sheetMotion";
@@ -258,10 +260,15 @@ function openTexte() {
 }
 
 // --- La file ---
+const placed = computed(() => player.queue.value.map((item, index) => ({ item, index })));
 /** Ce qui suit le cours en cours, avec sa place dans la file. */
-const following = computed(() =>
-  player.queue.value.map((item, index) => ({ item, index })).slice(player.queueIndex.value + 1),
-);
+const following = computed(() => placed.value.slice(player.queueIndex.value + 1));
+/**
+ * Ce qui le précède. Replié d'abord : la file s'ouvre sur ce qui joue. Mais
+ * un cours lancé au milieu d'une série ne doit pas en perdre le début.
+ */
+const earlier = computed(() => placed.value.slice(0, Math.max(0, player.queueIndex.value)));
+const showEarlier = ref(false);
 /** Les dix suivants d'abord : une série de quarante ne se lit pas d'un bloc. */
 const QUEUE_FIRST = 10;
 const showWholeQueue = ref(false);
@@ -461,9 +468,45 @@ const shareUrl = computed(() =>
             </button>
           </section>
 
-          <!-- La file : ce qui joue, puis ce qui suit, une ligne par cours -->
+          <!-- La file : les cours d'avant (repliés), ce qui joue, puis ce qui
+               suit, une ligne par cours -->
           <section v-if="player.queue.value.length > 1" class="sheet-card overflow-hidden !p-0">
-            <h3 class="sheet-label px-5 pt-4">{{ t("chiourim.player.nowPlaying") }}</h3>
+            <template v-if="earlier.length">
+              <button
+                type="button"
+                class="flex w-full items-center justify-between gap-3 px-5 pb-3 pt-4 text-start transition-colors hover:bg-white/5"
+                :aria-expanded="showEarlier"
+                aria-controls="sheet-earlier"
+                @click="showEarlier = !showEarlier"
+              >
+                <span class="sheet-label">{{ t("chiourim.player.earlier") }}</span>
+                <span class="flex items-center gap-1.5 text-xs opacity-60">
+                  {{ t("chiourim.coursesCount", { count: earlier.length }) }}
+                  <AppIcon
+                    name="chevron-down"
+                    :size="16"
+                    class="transition-transform"
+                    :class="{ 'rotate-180': showEarlier }"
+                  />
+                </span>
+              </button>
+              <ol v-show="showEarlier" id="sheet-earlier" class="sheet-queue">
+                <li v-for="{ item, index } in earlier" :key="item.src">
+                  <QueueRow
+                    :number="item.episode ?? index + 1"
+                    :title="shortTitle(item.title, track.context)"
+                    :line="itemLine(item)"
+                    @click="player.playAt(index)"
+                  />
+                </li>
+              </ol>
+            </template>
+            <h3
+              class="sheet-label px-5 pt-4"
+              :class="{ 'border-t border-white/10': earlier.length }"
+            >
+              {{ t("chiourim.player.nowPlaying") }}
+            </h3>
             <div class="flex items-center gap-3 px-5 pb-4 pt-3">
               <ChiourCover
                 v-if="track.cover"
@@ -491,23 +534,12 @@ const shareUrl = computed(() =>
               </div>
               <ol class="sheet-queue mt-2">
                 <li v-for="{ item, index } in shownFollowing" :key="item.src">
-                  <button
-                    type="button"
-                    class="flex w-full items-start gap-4 px-5 py-3.5 text-start transition-colors hover:bg-white/5"
+                  <QueueRow
+                    :number="item.episode ?? index + 1"
+                    :title="shortTitle(item.title, track.context)"
+                    :line="itemLine(item)"
                     @click="player.playAt(index)"
-                  >
-                    <span class="w-7 shrink-0 pt-0.5 text-sm tabular-nums opacity-55">{{
-                      item.episode ?? index + 1
-                    }}</span>
-                    <span class="min-w-0 flex-1">
-                      <span dir="auto" class="font-medium leading-snug line-clamp-2">{{
-                        shortTitle(item.title, track.context)
-                      }}</span>
-                      <span v-if="itemLine(item)" class="mt-0.5 block text-sm opacity-60">{{
-                        itemLine(item)
-                      }}</span>
-                    </span>
-                  </button>
+                  />
                 </li>
               </ol>
               <button

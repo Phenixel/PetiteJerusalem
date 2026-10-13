@@ -1437,7 +1437,11 @@ parcourt, on lance, on reprend.
   dansent. Puis « À suivre », dix lignes et la suite à un geste : une ligne
   par cours, séparées d'un filet, le numéro, le titre sur deux lignes au
   plus et, dessous, le chapitre étudié et la durée. Une liste compacte
-  d'une ligne par cours ne laissait pas voir où l'on en était.
+  d'une ligne par cours ne laissait pas voir où l'on en était. Au-dessus
+  d'« En cours », repliés, les cours d'avant : une ligne « Précédents » et
+  leur nombre, qu'un appui déplie dans le même dessin, dans l'ordre de la
+  série. Un cours lancé au milieu d'une série n'en montrait que la suite,
+  et le début de la file était perdu (tenu par `nowPlayingQueue.test.ts`).
 - **Un titre ne répète pas sa série.** Dans une liste où la série est déjà
   dite (la page d'une série, la file du lecteur), « Shaar Habitahon Shiour
   10 Chapitre 2 » devient « Shiour 10 Chapitre 2 » (`shortTitle`).
