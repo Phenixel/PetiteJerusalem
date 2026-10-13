@@ -13,7 +13,7 @@ import fr from "../locales/fr";
  * partie, rien sinon : l'étagère reste nue tant qu'on n'a rien téléchargé.
  */
 
-const { bulk, downloaded } = vi.hoisted(() => ({
+const { bulk, downloaded, confirm, removeBooks } = vi.hoisted(() => ({
   bulk: {
     active: false,
     total: 0,
@@ -24,13 +24,15 @@ const { bulk, downloaded } = vi.hoisted(() => ({
     startedAt: 0,
   },
   downloaded: new Set<string>(),
+  confirm: vi.fn(),
+  removeBooks: vi.fn(),
 }));
 
 vi.mock("../composables/useBookDownload", () => ({
   bulkDownload: bulk,
   useBookDownload: () => ({ downloadAll: vi.fn() }),
 }));
-vi.mock("../composables/useConfirm", () => ({ useConfirm: () => ({ confirm: vi.fn() }) }));
+vi.mock("../composables/useConfirm", () => ({ useConfirm: () => ({ confirm }) }));
 vi.mock("../composables/useToast", () => ({
   useToast: () => ({ success: vi.fn(), error: vi.fn() }),
 }));
@@ -41,7 +43,7 @@ vi.mock("../services/offlineLibraryService", () => ({
   downloadedBytesOf: (books: { path: string }[]) =>
     books.filter((b) => downloaded.has(b.path)).length * 1024 * 1024,
   isBookDownloaded: (book: { path: string }) => downloaded.has(book.path),
-  removeBooks: vi.fn(),
+  removeBooks,
 }));
 
 import LibraryShelf from "../components/LibraryShelf.vue";
@@ -133,5 +135,22 @@ describe("la ligne « Hors ligne »", () => {
     const done = mount(LibraryOfflineRow, { books: BOOKS });
     expect(textOf(done.host)).toContain("Tout est téléchargé");
     expect(textOf(done.host)).toContain("3 Mo sur ce téléphone");
+  });
+
+  it("libère aussi les textes du Sidour sur le téléphone, qui n'ont plus d'autre corbeille", async () => {
+    Object.assign(bulk, { active: false });
+    downloaded.clear();
+    BOOKS.forEach((book) => downloaded.add(book.path));
+    const feast = { path: "/texts/moadim/souccot.json", corpus: "Moadim" } as OfflineBook;
+    downloaded.add(feast.path);
+    confirm.mockResolvedValue(true);
+    removeBooks.mockClear();
+    const { host } = mount(LibraryOfflineRow, { books: BOOKS, alsoRemovable: [feast] });
+    // La place prise compte les textes du Sidour.
+    expect(textOf(host)).toContain("4 Mo sur ce téléphone");
+    const trash = [...host.querySelectorAll("button")].at(-1);
+    trash?.click();
+    await vi.waitFor(() => expect(removeBooks).toHaveBeenCalled());
+    expect(removeBooks.mock.calls[0][0]).toContainEqual(feast);
   });
 });

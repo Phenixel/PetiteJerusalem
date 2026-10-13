@@ -233,7 +233,7 @@ node scripts/admin.mjs info:modifier release-vX.Y.Z --notifier --confirmer
 node scripts/admin.mjs info:creer --type nouveaute \
   --titre "Les Hochanot sont dans le sidour" \
   --texte "Tout Souccot, les Hochanot du jour s'affichent dans l'office du matin." \
-  --lien /sidour --lien-texte "Ouvrir le sidour" --publier
+  --lien /bibliotheque/sidour --lien-texte "Ouvrir le sidour" --publier
 # … lire l'essai, puis relancer avec --confirmer
 
 # Prévenir d'un incident, puis le clore

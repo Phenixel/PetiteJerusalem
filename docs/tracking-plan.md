@@ -285,7 +285,18 @@ ouvre. Le dénominateur des ouvertures depuis le Sidour est `sidour_viewed`.
 `Brahot`, `Moadim`) : ce sont les résultats rangés « Dans le Sidour ».
 `offline_download_started`, `offline_download_completed` et
 `offline_download_deleted` posés par la ligne « Hors ligne » gardent
-`tab: Tout`, pour l'étude entière.
+`tab: Tout`, pour l'étude entière. Sa corbeille libère aussi les textes du
+Sidour téléchargés à part (ceux d'une fête, d'anciennes copies des brahot) :
+`books_count` les compte avec le reste.
+
+`offline_download_delete_failed` (existant, jamais documenté) part quand la
+corbeille échoue, depuis la ligne « Hors ligne » comme depuis une page de
+livre. Mêmes propriétés que `offline_download_deleted` (`scope`, `tab`,
+`books_count`), plus `error_message`, le message de l'erreur.
+
+Le téléchargement des textes de la fête (`scope: feast`) ne part qu'en
+ligne, et un seul à la fois : hors connexion, il attend une visite suivante
+au lieu d'envoyer un lot vide.
 
 ## Chaîne perpétuelle de Tehilim
 

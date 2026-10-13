@@ -36,6 +36,13 @@ import { analyticsService } from "../services/analyticsService";
 const props = defineProps<{
   /** Les livres de l'étude qui se téléchargent (embarqués exclus). */
   books: OfflineBook[];
+  /**
+   * Ce qui est sur le téléphone sans être de l'étude : les textes du Sidour
+   * téléchargés à part (ceux d'une fête, d'anciennes copies des brahot). Ils
+   * n'ont plus d'autre endroit où se supprimer : la corbeille les libère
+   * avec le reste, et leur poids compte dans la place prise.
+   */
+  alsoRemovable?: OfflineBook[];
 }>();
 
 const { t, locale } = useI18n();
@@ -44,7 +51,8 @@ const toast = useToast();
 const { downloadAll } = useBookDownload();
 
 const missing = computed(() => props.books.filter((book) => !isBookDownloaded(book)));
-const usedBytes = computed(() => downloadedBytesOf(props.books));
+const removable = computed(() => [...props.books, ...(props.alsoRemovable ?? [])]);
+const usedBytes = computed(() => downloadedBytesOf(removable.value));
 const remainingBytes = computed(() => approxBytesOfBooks(missing.value));
 
 const running = computed(() => bulkDownload.active);
@@ -136,7 +144,7 @@ function start() {
 const removing = ref(false);
 async function removeAll() {
   if (removing.value) return;
-  const books = props.books.filter((book) => isBookDownloaded(book));
+  const books = removable.value.filter((book) => isBookDownloaded(book));
   if (books.length === 0) return;
   // La corbeille est discrète : c'est la fenêtre qui dit ce qui va partir, et
   // ce qui reste accessible ensuite.

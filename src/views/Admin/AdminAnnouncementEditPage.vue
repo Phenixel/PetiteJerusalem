@@ -286,7 +286,7 @@ async function remove(): Promise<void> {
               id="ann-link"
               v-model="linkUrl"
               type="text"
-              placeholder="/sidour"
+              placeholder="/bibliotheque/sidour"
               class="field"
             />
           </div>

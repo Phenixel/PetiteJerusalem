@@ -81,6 +81,22 @@ export const APP_LINK_PATHS = [
   "/zmanim",
 ];
 
+/**
+ * Les chemins que l'app connaît depuis trop peu pour être confiés à iOS.
+ *
+ * Le fichier `apple-app-site-association` est servi par le site : il vaut
+ * aussitôt pour toutes les versions installées, y compris celles qui ne
+ * connaissent pas encore ces pages et ouvriraient une page introuvable (un
+ * lien vers /sidour, dans une version d'avant le Sidour). Tant qu'elles
+ * circulent, ces liens restent au navigateur sur iPhone. Android n'est pas
+ * concerné : son intent-filter est figé dans chaque version, qui ne déclare
+ * que les pages qu'elle connaît.
+ *
+ * Un chemin en sort quand la plus ancienne version encore en circulation le
+ * connaît (voir docs/app-links.md). Tenu par src/__tests__/appLinks.test.ts.
+ */
+export const IOS_DEFERRED_PATHS = ["/sidour"];
+
 /** Un chemin est-il de ceux que l'app ouvre ? (préfixe exact ou sous-chemin) */
 export function isAppLinkPath(path) {
   return APP_LINK_PATHS.some((prefix) =>
@@ -143,8 +159,8 @@ export function buildAssetLinks(fingerprints) {
  * aussi les chemins simplement voisins.
  */
 export function buildAppleAppSiteAssociation(teamId) {
-  const components = APP_LINK_PATHS.flatMap((path) =>
-    path === "/" ? [{ "/": "/" }] : [{ "/": path }, { "/": `${path}/*` }],
+  const components = APP_LINK_PATHS.filter((path) => !IOS_DEFERRED_PATHS.includes(path)).flatMap(
+    (path) => (path === "/" ? [{ "/": "/" }] : [{ "/": path }, { "/": `${path}/*` }]),
   );
   return {
     applinks: {

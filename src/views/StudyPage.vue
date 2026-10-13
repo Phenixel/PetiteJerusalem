@@ -181,6 +181,11 @@ const studyOfflineBooks = computed(() =>
     ? offlineBooks.filter((book) => STUDY_TYPE_KEYS.has(book.corpus) && !isBookBundled(book))
     : [],
 );
+// Les textes du Sidour n'ont plus de page de livre où se supprimer : la
+// corbeille de l'étude libère aussi ceux qui sont sur le téléphone.
+const liturgyOfflineBooks = computed(() =>
+  isNativeApp ? offlineBooks.filter((book) => !STUDY_TYPE_KEYS.has(book.corpus)) : [],
+);
 
 // La recherche de l'accueil couvre toute la bibliothèque, celle d'une page
 // corpus reste dans le corpus : le placeholder le dit explicitement.
@@ -743,6 +748,7 @@ onUnmounted(() => {
         v-if="isNativeApp"
         class="max-w-3xl mx-auto mt-6"
         :books="studyOfflineBooks"
+        :also-removable="liturgyOfflineBooks"
       />
     </template>
 
