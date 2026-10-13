@@ -5,12 +5,14 @@
  * sa durée.
  *
  * Toute la ligne le joue, en faisant de la liste la file du lecteur ; toucher
- * le cours qui joue le met en pause. Sa page (sa description, le texte qu'il
+ * le cours qui joue le met en pause. Un cours sans audio ouvre sa page, où
+ * restent sa description et son texte. Sa page (sa description, le texte qu'il
  * étudie) s'ouvre depuis le lecteur plein écran. Le cours qui joue se
  * reconnaît à sa couleur et à ses barres.
  */
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
+import { useRouter } from "vue-router";
 import type { Chiour } from "../../models/models";
 import type { PlaySource } from "../../composables/useAudioPlayer";
 import {
@@ -46,6 +48,7 @@ const props = withDefaults(
 const emit = defineEmits<{ played: [] }>();
 
 const { t, locale } = useI18n();
+const router = useRouter();
 const { isCurrent, isPlaying, playFrom } = useChiourPlayback();
 
 const current = computed(() => isCurrent(props.chiour.slug));
@@ -71,13 +74,18 @@ const timeLabel = computed(() => {
 });
 
 const playLabel = computed(() =>
-  playing.value
-    ? t("audioPlayer.pauseTitle", { title: props.chiour.name })
-    : t("audioPlayer.playTitle", { title: props.chiour.name }),
+  !props.chiour.mediaUrl
+    ? props.chiour.name
+    : playing.value
+      ? t("audioPlayer.pauseTitle", { title: props.chiour.name })
+      : t("audioPlayer.playTitle", { title: props.chiour.name }),
 );
 
 function play() {
-  if (!props.chiour.mediaUrl) return;
+  if (!props.chiour.mediaUrl) {
+    void router.push(`/chiourim/${props.chiour.slug}`);
+    return;
+  }
   playFrom(props.list, props.chiour, props.source, props.context);
   emit("played");
 }
@@ -88,7 +96,6 @@ function play() {
     type="button"
     class="track group flex w-full items-center gap-3 rounded-control px-2 py-2 text-start transition-colors hover:bg-black/[0.04] active:bg-black/[0.06] dark:hover:bg-white/5"
     :aria-label="playLabel"
-    :disabled="!chiour.mediaUrl"
     @click="play"
   >
     <!-- Le numéro d'épisode, ou la pochette ; les barres sur le cours qui joue -->
@@ -112,6 +119,7 @@ function play() {
 
     <span class="min-w-0 flex-1">
       <span
+        dir="auto"
         class="block truncate font-semibold transition-colors"
         :class="current ? 'text-primary' : 'text-text-primary'"
         >{{ title }}</span
@@ -124,7 +132,7 @@ function play() {
           class="shrink-0 text-secondary"
           :aria-label="t('chiourim.player.finished')"
         />
-        <span v-if="line" class="truncate">{{ line }}</span>
+        <span v-if="line" dir="auto" class="truncate">{{ line }}</span>
       </span>
       <!-- Entamé : où on en est -->
       <span

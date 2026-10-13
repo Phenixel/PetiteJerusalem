@@ -64,7 +64,7 @@ const mainLabel = computed(() => {
   if (!target) return t("chiourim.listen");
   return target.slug === episodes.value[0]?.slug && resumePosition(target.slug) === null
     ? t("chiourim.listen")
-    : t("chiourim.resumeEpisode", { n: target.episode ?? "" });
+    : t("chiourim.resumeEpisode", { n: target.episode ?? episodes.value.indexOf(target) + 1 });
 });
 
 function playMain() {
@@ -186,6 +186,7 @@ watch(() => route.params.serieId, loadSerie);
             {{ t("serie.label") }}
           </p>
           <h1
+            dir="auto"
             class="font-display text-3xl font-bold leading-tight tracking-tight text-text-primary md:mt-1 md:text-5xl"
           >
             {{ serie.name }}
@@ -217,7 +218,11 @@ watch(() => route.params.serieId, loadSerie);
         />
       </div>
 
-      <p v-if="serie.description" class="mt-5 max-w-3xl leading-relaxed text-text-secondary">
+      <p
+        v-if="serie.description"
+        dir="auto"
+        class="mt-5 max-w-3xl leading-relaxed text-text-secondary"
+      >
         {{ serie.description }}
       </p>
 

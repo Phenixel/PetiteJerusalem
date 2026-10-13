@@ -214,4 +214,17 @@ describe("texteFields", () => {
     expect(searchCatalog(catalog, "zéraim").map((e) => e.id)).toEqual([1]);
     expect(searchCatalog(catalog, "")).toHaveLength(3);
   });
+
+  it("trouve un livre quelle que soit sa graphie latine", () => {
+    const parachiot = [
+      { id: 270, name: "Vayetze", livre: "Berechit" },
+      { id: 312, name: "Ki Tetze", livre: "Devarim" },
+      { id: 404, name: "שער הבטחון (Chaar Habita'hon)", livre: "חובות הלבבות (Hovot Halévavot)" },
+    ];
+    expect(searchCatalog(parachiot, "Vayetse").map((e) => e.id)).toEqual([270]);
+    expect(searchCatalog(parachiot, "Ki Tétsé").map((e) => e.id)).toEqual([312]);
+    expect(searchCatalog(parachiot, "shaar habitahon").map((e) => e.id)).toEqual([404]);
+    expect(searchCatalog(catalog, "Berachot").map((e) => e.id)).toEqual([1]);
+    expect(searchCatalog(catalog, "Shaharit").map((e) => e.id)).toEqual([345]);
+  });
 });

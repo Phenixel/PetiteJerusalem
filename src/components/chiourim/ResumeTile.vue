@@ -34,7 +34,7 @@ const left = computed(() => {
 <template>
   <button
     type="button"
-    class="group block w-36 shrink-0 text-left sm:w-44"
+    class="group block w-36 shrink-0 text-start sm:w-44"
     :aria-label="
       playing
         ? t('audioPlayer.pauseTitle', { title: chiour.name })
@@ -47,7 +47,7 @@ const left = computed(() => {
       <!-- Le cours qui joue : ses barres dans l'angle, comme dans les listes -->
       <span
         v-if="current"
-        class="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-black/55 text-white rtl:left-2 rtl:right-auto"
+        class="absolute end-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-black/55 text-white"
       >
         <NowPlayingBars :playing="playing" />
       </span>
@@ -58,8 +58,10 @@ const left = computed(() => {
         />
       </span>
     </span>
+    <!-- line-clamp pose son propre display : pas de « block » à côté, qui l'annulerait -->
     <span
-      class="mt-2 line-clamp-2 block font-semibold leading-snug text-text-primary group-hover:text-primary"
+      dir="auto"
+      class="mt-2 line-clamp-2 font-semibold leading-snug text-text-primary group-hover:text-primary"
       >{{ chiour.name }}</span
     >
     <span v-if="left" class="block truncate text-sm text-text-secondary">{{ left }}</span>

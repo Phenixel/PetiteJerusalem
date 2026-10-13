@@ -12,7 +12,7 @@
  * Chargé à la demande (il lit le catalogue, donc Firestore) : la barre du bas,
  * montée sur toutes les pages, n'en porte rien.
  */
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import type { Chiour } from "../../models/models";
@@ -21,7 +21,7 @@ import { shortTitle } from "../../composables/useChiourPlayback";
 import { useOverlay } from "../../composables/useOverlayStack";
 import { useTexteLabels } from "../../composables/useTexteLabels";
 import { chiourService } from "../../services/chiourService";
-import { chiourTexte, texteOf, texteRoute } from "../../services/chiourTexte";
+import { chiourTexte, hasChapitres, texteOf, texteRoute } from "../../services/chiourTexte";
 import { analyticsService } from "../../services/analyticsService";
 import { COVER_INK, playerTone } from "./cover";
 import { formatMinutes } from "./duration";
@@ -43,18 +43,52 @@ const tone = computed(() => playerTone(track.value?.cover?.seed ?? track.value?.
 
 useOverlay(player.sheetOpen, player.closeSheet);
 
-// La page sous le lecteur ne défile pas avec lui.
+// La page sous le lecteur ne défile pas avec lui, et le clavier y reste :
+// le focus entre sur « Réduire », ne sort pas du lecteur avec Tab, et revient
+// à la barre du bas quand on le referme.
+const root = ref<HTMLElement | null>(null);
+const collapseButton = ref<HTMLButtonElement | null>(null);
 let overflowBefore = "";
 onMounted(() => {
   overflowBefore = document.documentElement.style.overflow;
   document.documentElement.style.overflow = "hidden";
+  document.addEventListener("keydown", onKeydown);
+  collapseButton.value?.focus({ preventScroll: true });
 });
 onBeforeUnmount(() => {
   document.documentElement.style.overflow = overflowBefore;
+  document.removeEventListener("keydown", onKeydown);
+  // La barre du bas réapparaît une fois le lecteur fermé.
+  void nextTick(() =>
+    document.querySelector<HTMLElement>("[data-player-open]")?.focus({ preventScroll: true }),
+  );
 });
 
+const FOCUSABLE =
+  "button:not([disabled]), a[href], input:not([disabled]), [tabindex]:not([tabindex='-1'])";
+
 function onKeydown(event: KeyboardEvent) {
-  if (event.key === "Escape") player.closeSheet();
+  // La fenêtre de partage, ouverte par-dessus, se ferme seule d'abord.
+  if (event.key === "Escape") {
+    if (showShare.value) showShare.value = false;
+    else player.closeSheet();
+    return;
+  }
+  if (event.key !== "Tab" || showShare.value || !root.value) return;
+  const items = [...root.value.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(
+    (el) => el.offsetParent !== null,
+  );
+  if (!items.length) return;
+  const first = items[0];
+  const last = items[items.length - 1];
+  const active = document.activeElement;
+  if (!root.value.contains(active) || (event.shiftKey && active === first)) {
+    event.preventDefault();
+    (event.shiftKey ? last : first).focus();
+  } else if (!event.shiftKey && active === last) {
+    event.preventDefault();
+    first.focus();
+  }
 }
 
 // --- Le cours qui joue, tel que le catalogue le connaît ---
@@ -105,11 +139,17 @@ const shownFollowing = computed(() =>
   showWholeQueue.value ? following.value : following.value.slice(0, QUEUE_FIRST),
 );
 
+/** Le chapitre qu'étudie un cours de la file, si son livre en a (voir chiourTexte). */
+function chapterOf(item: AudioTrack): string {
+  const entry = texteOf(item.texteId);
+  return entry && hasChapitres(entry) && typeof item.texteChapitre === "number"
+    ? chapitreLabel(entry, item.texteChapitre)
+    : "";
+}
+
 /** La ligne sous un cours de la file : le chapitre qu'il étudie, sa durée. */
 function itemLine(item: AudioTrack): string {
-  const entry = texteOf(item.texteId);
-  const chapter =
-    entry && typeof item.texteChapitre === "number" ? chapitreLabel(entry, item.texteChapitre) : "";
+  const chapter = chapterOf(item);
   const duration = item.duration ? formatMinutes(item.duration, locale.value) : "";
   return [chapter, duration].filter(Boolean).join(" · ");
 }
@@ -117,11 +157,7 @@ function itemLine(item: AudioTrack): string {
 /** Sous le cours qui joue : son chapitre, ce qu'il en reste. */
 const currentLine = computed(() => {
   if (!track.value) return "";
-  const entry = texteOf(track.value.texteId);
-  const chapter =
-    entry && typeof track.value.texteChapitre === "number"
-      ? chapitreLabel(entry, track.value.texteChapitre)
-      : "";
+  const chapter = chapterOf(track.value);
   const total = player.duration.value || track.value.duration || 0;
   const left = total
     ? t("chiourim.player.left", {
@@ -139,12 +175,12 @@ const shareUrl = computed(() =>
 
 <template>
   <div
+    ref="root"
     class="player-sheet fixed inset-0 z-[58] overflow-y-auto overscroll-contain"
     :style="{ backgroundColor: tone, color: COVER_INK }"
     role="dialog"
     aria-modal="true"
     :aria-label="t('audioPlayer.nowPlaying')"
-    @keydown="onKeydown"
   >
     <div
       v-if="track"
@@ -153,6 +189,7 @@ const shareUrl = computed(() =>
       <!-- En tête : réduire, d'où vient l'écoute, partager -->
       <header class="flex items-center gap-3">
         <button
+          ref="collapseButton"
           type="button"
           class="sheet-icon"
           :aria-label="t('chiourim.player.collapse')"
@@ -165,7 +202,7 @@ const shareUrl = computed(() =>
           <p v-if="track.context" class="text-xs uppercase tracking-wider opacity-70">
             {{ t("chiourim.player.from") }}
           </p>
-          <p class="truncate text-sm font-semibold">{{ track.context }}</p>
+          <p dir="auto" class="truncate text-sm font-semibold">{{ track.context }}</p>
         </div>
         <button
           type="button"
@@ -195,10 +232,12 @@ const shareUrl = computed(() =>
           </div>
 
           <div class="mt-8">
-            <h2 class="font-display text-2xl font-bold leading-tight line-clamp-3">
+            <h2 dir="auto" class="font-display text-2xl font-bold leading-tight line-clamp-3">
               {{ track.title }}
             </h2>
-            <p v-if="track.subtitle" class="mt-1 truncate opacity-75">{{ track.subtitle }}</p>
+            <p v-if="track.subtitle" dir="auto" class="mt-1 truncate opacity-75">
+              {{ track.subtitle }}
+            </p>
           </div>
 
           <PlayerSeek class="mt-6" />
@@ -282,9 +321,11 @@ const shareUrl = computed(() =>
                   texteLabel(texte.entry, texte.chapitre)
                 }}</span>
               </span>
-              <span class="sheet-pill hidden shrink-0 sm:inline-flex">{{
-                t("chiourim.texte.read")
-              }}</span>
+              <!-- Masquée sur téléphone par son enveloppe : le display de
+                   .sheet-pill, hors couche, l'emporterait sur « hidden » -->
+              <span class="hidden shrink-0 sm:block">
+                <span class="sheet-pill">{{ t("chiourim.texte.read") }}</span>
+              </span>
             </button>
           </section>
 
@@ -299,7 +340,7 @@ const shareUrl = computed(() =>
                 size="sm"
               />
               <span class="min-w-0 flex-1">
-                <span class="block font-semibold leading-snug line-clamp-2">{{
+                <span dir="auto" class="font-semibold leading-snug line-clamp-2">{{
                   shortTitle(track.title, track.context)
                 }}</span>
                 <span v-if="currentLine" class="mt-0.5 block text-sm opacity-70">{{
@@ -327,7 +368,7 @@ const shareUrl = computed(() =>
                       item.episode ?? index + 1
                     }}</span>
                     <span class="min-w-0 flex-1">
-                      <span class="block font-medium leading-snug line-clamp-2">{{
+                      <span dir="auto" class="font-medium leading-snug line-clamp-2">{{
                         shortTitle(item.title, track.context)
                       }}</span>
                       <span v-if="itemLine(item)" class="mt-0.5 block text-sm opacity-60">{{
@@ -352,6 +393,7 @@ const shareUrl = computed(() =>
             <h3 class="mb-2 font-bold">{{ t("chiourim.player.about") }}</h3>
             <p
               v-if="chiour.description"
+              dir="auto"
               class="whitespace-pre-line leading-relaxed opacity-85 line-clamp-6"
             >
               {{ chiour.description }}

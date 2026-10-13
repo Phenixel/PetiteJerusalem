@@ -1337,6 +1337,7 @@ const en: LocaleMessages = {
       left: "{time} left",
       finished: "Listened",
       open: "Open the player",
+      openTrack: "Open the player: {title}",
       collapse: "Minimize the player",
       from: "Playing from",
       upNext: "Up next",

@@ -131,7 +131,8 @@ const chromePadClass = computed(() => {
       : "pb-[calc(3.5rem+var(--safe-bottom))]";
     return `pt-[var(--safe-top)] ${bottom}`;
   }
-  return isMiniPlayerVisible.value ? "pb-20 md:pb-24" : "";
+  // Sur téléphone, la barre du lecteur s'ajoute à la zone du geste d'accueil.
+  return isMiniPlayerVisible.value ? "pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-24" : "";
 });
 
 // Réglages d'appareil appliqués d'entrée, en synchrone : un visiteur sans

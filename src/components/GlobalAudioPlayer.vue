@@ -71,7 +71,8 @@ const playLabel = computed(() =>
           <button
             type="button"
             class="flex min-w-0 flex-1 items-center gap-3 text-start"
-            :aria-label="t('chiourim.player.open')"
+            data-player-open
+            :aria-label="t('chiourim.player.openTrack', { title: player.track.value.title })"
             @click="player.openSheet()"
           >
             <ChiourCover
@@ -81,12 +82,15 @@ const playLabel = computed(() =>
               size="xs"
             />
             <span class="min-w-0">
-              <span class="block truncate text-sm font-semibold">{{
+              <span dir="auto" class="block truncate text-sm font-semibold">{{
                 player.track.value.title
               }}</span>
-              <span v-if="player.track.value.subtitle" class="block truncate text-xs opacity-75">{{
-                player.track.value.subtitle
-              }}</span>
+              <span
+                v-if="player.track.value.subtitle"
+                dir="auto"
+                class="block truncate text-xs opacity-75"
+                >{{ player.track.value.subtitle }}</span
+              >
             </span>
           </button>
 
@@ -243,9 +247,6 @@ const playLabel = computed(() =>
   overflow: hidden;
   border-radius: 999px;
   background: rgb(255 255 255 / 0.2);
-}
-[dir="rtl"] .mini-progress > div {
-  margin-inline-start: auto;
 }
 .slide-up-enter-active,
 .slide-up-leave-active {

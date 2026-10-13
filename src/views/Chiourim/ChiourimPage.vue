@@ -302,19 +302,19 @@ onMounted(() => {
         <AppIcon
           name="search"
           :size="16"
-          class="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary/70 pointer-events-none"
+          class="absolute start-4 top-1/2 -translate-y-1/2 text-text-secondary/70 pointer-events-none"
         />
         <input
           :value="searchTerm"
           @input="searchTerm = liveValue($event)"
           type="text"
           :placeholder="t('chiourim.searchPlaceholder')"
-          class="field !pl-11"
+          class="field !ps-11 !pe-10"
         />
         <button
           v-if="searchTerm"
           @click="searchTerm = ''"
-          class="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary/70 hover:text-text-primary transition-colors"
+          class="absolute end-3 top-1/2 -translate-y-1/2 text-text-secondary/70 hover:text-text-primary transition-colors"
           :aria-label="t('chiourim.clearSearch')"
         >
           <AppIcon name="x" :size="14" />
@@ -329,7 +329,8 @@ onMounted(() => {
         @click="filtersOpen = !filtersOpen"
       >
         <AppIcon name="settings" :size="17" />
-        <span class="hidden sm:inline">{{ t("chiourim.filters.button") }}</span>
+        <!-- Caché à l'œil sur téléphone, faute de place, mais toujours dit -->
+        <span class="sr-only sm:not-sr-only">{{ t("chiourim.filters.button") }}</span>
         <span v-if="activeFilters.length" class="filters-count">{{ activeFilters.length }}</span>
       </button>
     </div>
@@ -576,7 +577,7 @@ onMounted(() => {
         <button
           @click="
             searchTerm = '';
-            selectedCategory = 'all';
+            clearFilters();
           "
           class="mt-4 text-primary font-medium hover:underline"
         >

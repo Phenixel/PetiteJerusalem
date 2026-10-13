@@ -1385,6 +1385,7 @@ const fr = {
       left: "Il reste {time}",
       finished: "Écouté",
       open: "Ouvrir le lecteur",
+      openTrack: "Ouvrir le lecteur : {title}",
       collapse: "Réduire le lecteur",
       from: "Lecture depuis",
       upNext: "À suivre",

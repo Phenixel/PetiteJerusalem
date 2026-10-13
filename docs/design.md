@@ -1430,6 +1430,16 @@ parcourt, on lance, on reprend.
   initiales de la série. Un rav a la même reliure, ronde. Hors thème, identique en mode sombre, en aplats, le titre
   crème à 4,5:1 au moins sur chaque teinte (`components/chiourim/cover.ts`,
   tenu par `chiourCover.test.ts`).
+- **Les titres gardent leur langue.** Un titre, un nom de série ou de rav,
+  une description sont écrits par les auteurs : en hébreu dans l'interface
+  française, en français dans l'interface hébraïque. Ils portent
+  `dir="auto"` : coupés, ils perdent leur fin et pas leur début, et leurs
+  signes restent à leur place ; ils s'alignent pourtant comme la page autour
+  d'eux, et un mot sans fin passe à la ligne au lieu de déborder (règle
+  `[dir="auto"]` de `assets/main.css`). Un titre long se borne à deux
+  lignes dans les tuiles et la file du lecteur, trois sous la pochette du
+  plein écran ; `line-clamp` pose son propre `display`, on ne lui adjoint
+  jamais `block`, qui l'annule.
 - **Le texte étudié.** Un cours rattaché à un livre de la bibliothèque
   (`services/chiourTexte.ts`) le dit sur sa page et dans le lecteur plein
   écran, par une carte qui mène au livre au chapitre près (« Chaar

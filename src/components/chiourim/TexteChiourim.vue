@@ -12,7 +12,7 @@ import { useI18n } from "vue-i18n";
 import type { Chiour, TextStudyJsonEntry } from "../../models/models";
 import { chiourService } from "../../services/chiourService";
 import { serieService } from "../../services/serieService";
-import { chiourimOfTexte, texteTitle } from "../../services/chiourTexte";
+import { chiourimOfTexte, hasChapitres, texteTitle } from "../../services/chiourTexte";
 import { useTexteLabels } from "../../composables/useTexteLabels";
 import { analyticsService } from "../../services/analyticsService";
 import AppIcon from "../icons/AppIcon.vue";
@@ -53,7 +53,9 @@ const title = computed(() =>
 /** La ligne sous un cours : son rav, et le chapitre qu'il étudie. */
 function line(chiour: Chiour): string {
   const chapter =
-    chiour.texteChapitre !== null ? chapitreLabel(props.entry, chiour.texteChapitre) : "";
+    chiour.texteChapitre !== null && hasChapitres(props.entry)
+      ? chapitreLabel(props.entry, chiour.texteChapitre)
+      : "";
   return [chiour.auteur, chapter].filter(Boolean).join(" · ");
 }
 

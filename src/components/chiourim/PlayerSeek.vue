@@ -86,9 +86,6 @@ function onChange(event: Event) {
   border-radius: 999px;
   background: currentColor;
 }
-[dir="rtl"] .seek-fill {
-  margin-inline-start: auto;
-}
 .seek-range {
   position: absolute;
   inset: 0;

@@ -31,6 +31,8 @@ const { t, locale } = useI18n();
 const { headingLabel } = useTextLabels();
 
 const MAX_RESULTS = 8;
+/** Le champ du chapitre, nommé par son libellé. */
+const chapterId = `${props.id ?? "chiour-texte"}-chapitre`;
 const all = linkableTextes();
 
 const search = ref("");
@@ -136,33 +138,30 @@ function onChapterNumber(event: Event) {
     </div>
 
     <!-- La recherche d'un livre -->
-    <div v-else class="relative">
-      <AppIcon
-        name="search"
-        :size="16"
-        class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary/70"
-      />
-      <input
-        :id="props.id"
-        :value="search"
-        type="text"
-        class="field !pl-11"
-        :placeholder="t('chiourim.texte.searchPlaceholder')"
-        :disabled="props.disabled"
-        autocomplete="off"
-        @input="search = liveValue($event)"
-      />
-      <ul
-        v-if="results.length"
-        class="mt-2 overflow-hidden rounded-control bg-surface shadow-pop"
-        role="listbox"
-      >
+    <div v-else>
+      <!-- La loupe se centre sur le champ seul, pas sur les résultats en dessous -->
+      <div class="relative">
+        <AppIcon
+          name="search"
+          :size="16"
+          class="pointer-events-none absolute start-4 top-1/2 -translate-y-1/2 text-text-secondary/70"
+        />
+        <input
+          :id="props.id"
+          :value="search"
+          type="text"
+          class="field !ps-11"
+          :placeholder="t('chiourim.texte.searchPlaceholder')"
+          :disabled="props.disabled"
+          autocomplete="off"
+          @input="search = liveValue($event)"
+        />
+      </div>
+      <ul v-if="results.length" class="mt-2 overflow-hidden rounded-control bg-surface shadow-pop">
         <li v-for="result in results" :key="result.id">
           <button
             type="button"
-            class="block w-full px-4 py-2.5 text-left transition-colors hover:bg-black/5 dark:hover:bg-white/10"
-            role="option"
-            :aria-selected="false"
+            class="block w-full px-4 py-2.5 text-start transition-colors hover:bg-black/5 dark:hover:bg-white/10"
             @click="choose(result)"
           >
             <span class="block font-medium text-text-primary">{{ result.name }}</span>
@@ -177,16 +176,17 @@ function onChapterNumber(event: Event) {
 
     <!-- Le chapitre -->
     <div v-if="entry && hasChapitres(entry)">
-      <span class="mb-2 block text-sm font-semibold text-text-secondary">{{
+      <label :for="chapterId" class="mb-2 block text-sm font-semibold text-text-secondary">{{
         t("chiourim.texte.chapterLabel")
-      }}</span>
+      }}</label>
       <p v-if="loadingChapters" class="text-sm text-text-secondary">
-        <AppIcon name="spinner" :size="13" class="mr-1 animate-spin" />{{
+        <AppIcon name="spinner" :size="13" class="me-1 animate-spin" />{{
           t("chiourim.texte.loadingChapters")
         }}
       </p>
       <AppSelect
         v-else-if="chapterOptions.length"
+        :id="chapterId"
         v-model="chapterModel"
         :options="chapterOptions"
         :placeholder="t('chiourim.texte.wholeText')"
@@ -194,6 +194,7 @@ function onChapterNumber(event: Event) {
       />
       <input
         v-else-if="chaptersFailed"
+        :id="chapterId"
         type="number"
         min="0"
         step="1"

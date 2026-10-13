@@ -328,6 +328,7 @@ watch(() => route.params.slug, loadChiour);
             >{{ serie.name }}
           </router-link>
           <h1
+            dir="auto"
             class="mt-1 font-display text-2xl font-bold leading-tight tracking-tight text-text-primary md:text-4xl"
           >
             {{ chiour.name }}
@@ -377,12 +378,11 @@ watch(() => route.params.slug, loadChiour);
         >
           <AppIcon name="share" :size="17" />
         </button>
-        <span
-          v-for="cat in chiour.categories"
-          :key="cat"
-          class="chip hidden bg-primary/10 text-primary sm:inline-flex"
-        >
-          {{ cat }}
+        <!-- Les catégories passent à la ligne entre les deux boutons, sans les pousser -->
+        <span v-if="chiour.categories.length" class="hidden min-w-0 flex-1 flex-wrap gap-2 sm:flex">
+          <span v-for="cat in chiour.categories" :key="cat" class="chip bg-primary/10 text-primary">
+            {{ cat }}
+          </span>
         </span>
         <BigPlayButton
           v-if="chiour.mediaUrl"
@@ -421,7 +421,7 @@ watch(() => route.params.slug, loadChiour);
         <h2 class="mb-2 text-lg font-bold text-text-primary">
           {{ t("common.description") }}
         </h2>
-        <p class="text-text-secondary leading-relaxed whitespace-pre-line">
+        <p dir="auto" class="text-text-secondary leading-relaxed whitespace-pre-line">
           {{ chiour.description }}
         </p>
       </section>
@@ -441,14 +441,14 @@ watch(() => route.params.slug, loadChiour);
         </div>
         <div class="-mx-2">
           <ChiourTrackRow
-            v-for="(episode, i) in episodeWindow"
+            v-for="episode in episodeWindow"
             :key="episode.slug"
             :chiour="episode"
             :list="episodes"
             source="chiour"
             :context="serie.name"
             :strip-prefix="serie.name"
-            :number="episode.episode ?? i + 1"
+            :number="episode.episode ?? episodes.indexOf(episode) + 1"
             :subtitle="''"
           />
         </div>

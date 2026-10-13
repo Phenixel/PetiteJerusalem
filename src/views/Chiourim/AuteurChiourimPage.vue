@@ -181,7 +181,10 @@ watch(() => route.params.auteur, loadAuteur);
       >
         <ChiourCover :seed="auteurSeed" :label="auteurName" size="lg" round class="shadow-pop" />
         <div class="min-w-0 flex-1">
-          <h1 class="font-display text-3xl font-bold tracking-tight text-text-primary md:text-5xl">
+          <h1
+            dir="auto"
+            class="font-display text-3xl font-bold tracking-tight text-text-primary md:text-5xl"
+          >
             {{ auteurName }}
           </h1>
           <p class="mt-3 text-text-secondary">
@@ -204,25 +207,26 @@ watch(() => route.params.auteur, loadAuteur);
           <AppIcon
             name="search"
             :size="16"
-            class="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary/70 pointer-events-none"
+            class="absolute start-4 top-1/2 -translate-y-1/2 text-text-secondary/70 pointer-events-none"
           />
           <input
             :value="searchTerm"
             @input="searchTerm = liveValue($event)"
             type="text"
             :placeholder="t('auteurPage.searchPlaceholder')"
-            class="field !pl-11"
+            class="field !ps-11 !pe-10"
           />
           <button
             v-if="searchTerm"
             @click="searchTerm = ''"
-            class="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary/70 hover:text-text-primary transition-colors"
+            class="absolute end-3 top-1/2 -translate-y-1/2 text-text-secondary/70 hover:text-text-primary transition-colors"
             :aria-label="t('chiourim.clearSearch')"
           >
             <AppIcon name="x" :size="14" />
           </button>
         </div>
         <BigPlayButton
+          v-if="playOrder.some((c) => c.mediaUrl)"
           class="ms-auto"
           :playing="playingHere && player.isPlaying.value"
           :label="

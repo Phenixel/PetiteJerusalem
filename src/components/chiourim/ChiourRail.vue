@@ -34,15 +34,24 @@ function page(direction: 1 | -1) {
   el.scrollBy({ left: direction * (rtl ? -1 : 1) * el.clientWidth * 0.85, behavior: "smooth" });
 }
 
-let observer: ResizeObserver | null = null;
+// La largeur de la rangée change avec l'écran, son contenu avec le catalogue
+// (une tuile de plus à reprendre) : les deux décident des flèches.
+let resize: ResizeObserver | null = null;
+let content: MutationObserver | null = null;
 onMounted(() => {
   update();
-  if (track.value && "ResizeObserver" in window) {
-    observer = new ResizeObserver(update);
-    observer.observe(track.value);
+  if (!track.value) return;
+  if ("ResizeObserver" in window) {
+    resize = new ResizeObserver(update);
+    resize.observe(track.value);
   }
+  content = new MutationObserver(update);
+  content.observe(track.value, { childList: true });
 });
-onBeforeUnmount(() => observer?.disconnect());
+onBeforeUnmount(() => {
+  resize?.disconnect();
+  content?.disconnect();
+});
 </script>
 
 <template>

@@ -178,9 +178,9 @@ chapitre : il s'affiche alors à côté du texte, et le texte à côté du cours
 (voir `src/services/chiourTexte.ts`). Le livre se nomme par son identifiant
 dans `src/datas/textStudies.json`, que `livre:liste` retrouve :
 
-| Commande                    | Ce qu'elle fait                                                                                  |
-| --------------------------- | ------------------------------------------------------------------------------------------------ |
-| `livre:liste --recherche …` | Les livres dont le nom contient le terme (accents ignorés), avec leur identifiant et leur livre. |
+| Commande                    | Ce qu'elle fait                                                                                                                                                                                                                |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `livre:liste --recherche …` | Les livres dont le nom contient le terme, quelle que soit sa graphie (accents, apostrophes et espaces ignorés ; « Vayetse » trouve Vayetze, « Chaar Habitahon » trouve Chaar Habita'hon), avec leur identifiant et leur livre. |
 
 Puis `--livre <id>` et `--chapitre N` sur `chiour:modifier` ou
 `chiour:ajouter`. Le chapitre se compte comme la bibliothèque :

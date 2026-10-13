@@ -245,8 +245,28 @@ export function texteFields(input, catalog, current = {}) {
 }
 
 /**
- * Les textes du catalogue dont le nom ou le livre contient le terme, accents
- * et majuscules ignorés : de quoi trouver l'identifiant à passer à --livre.
+ * Un nom réduit à sa prononciation approchée, pour que les graphies d'un même
+ * nom se rejoignent : accents, apostrophes, espaces et tirets ôtés, puis
+ * « tz », « z » et « ts » confondus, comme « ch », « kh », « sh » et « h ».
+ * Ainsi « Vayetse » trouve « Vayetze », « Chaar Habitahon » trouve « Chaar
+ * Habita'hon », « Berachot » trouve « Berakhot ».
+ *
+ * @param {unknown} value
+ */
+export function foldTransliteration(value) {
+  return String(value)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]/gu, "")
+    .replace(/tz|ts|z/g, "s")
+    .replace(/[cks]h/g, "h");
+}
+
+/**
+ * Les textes du catalogue dont le nom ou le livre contient le terme, quelle
+ * que soit sa graphie (voir foldTransliteration) : de quoi trouver
+ * l'identifiant à passer à --livre.
  *
  * @template {{ name: string, livre: string }} T
  * @param {T[]} catalog
@@ -254,10 +274,11 @@ export function texteFields(input, catalog, current = {}) {
  * @returns {T[]}
  */
 export function searchCatalog(catalog, term) {
-  const fold = (value) => String(value).normalize("NFD").replace(/[̀-ͯ']/g, "").toLowerCase();
-  const needle = fold(term ?? "").trim();
+  const needle = foldTransliteration(term ?? "");
   if (!needle) return catalog;
-  return catalog.filter((entry) => fold(`${entry.name} ${entry.livre}`).includes(needle));
+  return catalog.filter((entry) =>
+    foldTransliteration(`${entry.name} ${entry.livre}`).includes(needle),
+  );
 }
 
 /** L'adresse publique du studio d'un auteur, pour un lien secret. */

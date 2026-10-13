@@ -1300,6 +1300,7 @@ const he: LocaleMessages = {
       left: "נותרו {time}",
       finished: "הושמע",
       open: "פתיחת הנגן",
+      openTrack: "פתיחת הנגן: {title}",
       collapse: "מזעור הנגן",
       from: "מתנגן מתוך",
       upNext: "הבא בתור",

@@ -80,7 +80,7 @@ const titleSize = computed(() => {
     <!-- La face : le titre au centre, aussi grand que la pochette le permet ;
          le rav en bas, sous un fleuron, en petites capitales. -->
     <div v-else class="cover-face" :class="{ 'cover-face--foot': sub }">
-      <span class="cover-title font-display" :style="{ fontSize: `${titleSize}cqw` }">{{
+      <span dir="auto" class="cover-title font-display" :style="{ fontSize: `${titleSize}cqw` }">{{
         label
       }}</span>
       <span v-if="sub" class="cover-foot">
@@ -89,7 +89,7 @@ const titleSize = computed(() => {
           <span class="cover-diamond"></span>
           <span class="cover-rule"></span>
         </span>
-        <span class="cover-sub">{{ sub }}</span>
+        <span dir="auto" class="cover-sub">{{ sub }}</span>
       </span>
     </div>
   </div>

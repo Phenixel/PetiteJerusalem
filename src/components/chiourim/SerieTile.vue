@@ -32,12 +32,18 @@ defineProps<{
       />
     </div>
     <p
+      dir="auto"
       class="mt-2 line-clamp-2 font-semibold leading-snug text-text-primary transition-colors group-hover:text-primary"
       :class="{ 'text-center': round }"
     >
       {{ name }}
     </p>
-    <p v-if="sub" class="truncate text-sm text-text-secondary" :class="{ 'text-center': round }">
+    <p
+      v-if="sub"
+      dir="auto"
+      class="truncate text-sm text-text-secondary"
+      :class="{ 'text-center': round }"
+    >
       {{ sub }}
     </p>
   </router-link>
