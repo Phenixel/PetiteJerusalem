@@ -529,6 +529,7 @@ export const appPages: SeoPage[] = [
         <li><strong><a href="/bibliotheque/michna">Michna</a></strong> : les six ordres (sedarim) de la Michna, traité par traité.</li>
         <li><strong><a href="/bibliotheque/talmud">Talmud Bavli</a></strong> : les traités (massekhtot) du Talmud de Babylone.</li>
         <li><strong><a href="/bibliotheque/tanakh">Tanakh</a></strong> : la Torah paracha par paracha, les Neviim (Prophètes) et les Ketouvim (Écrits).</li>
+        <li><strong><a href="/bibliotheque/moussar">Moussar</a></strong> : les dix portes de 'Hovot Halévavot, dont le <a href="/bibliotheque/moussar/chaar-habitahon">Chaar Habita'hon</a>, et le Pélé Yoets, sujet par sujet.</li>
       </ul>
       <p>Et la liturgie, à lire sur son écran, a sa page : le <a href="/sidour">Sidour</a>, avec les prières
       de la semaine, les brahot (dont le <a href="/bibliotheque/brahot/birkat-hamazon">Birkat Hamazon</a>)
@@ -552,6 +553,7 @@ export const appPages: SeoPage[] = [
             ["Michna", "/bibliotheque/michna"],
             ["Talmud Bavli", "/bibliotheque/talmud"],
             ["Tanakh", "/bibliotheque/tanakh"],
+            ["Moussar", "/bibliotheque/moussar"],
             ["Sidour", "/sidour"],
           ] as const
         ).map(([n, path], i) => ({

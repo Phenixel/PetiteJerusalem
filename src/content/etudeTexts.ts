@@ -4,6 +4,14 @@
  *   /bibliotheque/tanakh/{parasha}       (single section)
  *   /bibliotheque/michna/{traite}        (hub) + /bibliotheque/michna/{traite}/{chapitre}
  *   /bibliotheque/talmud/{traite}        (hub) + /bibliotheque/talmud/{traite}/{chapitre}
+ *   /bibliotheque/moussar/{livre}        (hub) + /bibliotheque/moussar/{livre}/{section}
+ *
+ * Le moussar est un rayon d'étude (sa page de liste, son livre sur l'étagère)
+ * qu'on ne propose pas au partage de lecture, comme la liturgie. Ses numéros
+ * de section sont ceux qu'un cours cite : une porte de 'Hovot Halévavot
+ * s'ouvre sur son introduction, la section 0, puis ses chapitres gardent
+ * leur numéro (1 à n) ; un sujet du Pélé Yoets garde son numéro dans tout le
+ * livre (la lettre Beth va de 22 à 41). Voir loadMoussar dans textService.
  *
  * One canonical URL per piece of content (no more /lire ↔ /bibliotheque duplication).
  * The body markup is built here so it is shared by BOTH the build-time prerender
@@ -19,13 +27,22 @@ import { transliterate, hasNiqqud } from "../services/hebrewTransliteration";
 
 export const SITE_URL = "https://petite-jerusalem.fr";
 
-export type Corpus = "tehilim" | "tanakh" | "michna" | "talmud" | "moadim" | "brahot" | "sidour";
+export type Corpus =
+  | "tehilim"
+  | "tanakh"
+  | "michna"
+  | "talmud"
+  | "moussar"
+  | "moadim"
+  | "brahot"
+  | "sidour";
 
 const TYPE_TO_CORPUS: Record<string, Corpus> = {
   Tehilim: "tehilim",
   Tanakh: "tanakh",
   Mishna: "michna",
   "Talmud Bavli": "talmud",
+  Moussar: "moussar",
   Moadim: "moadim",
   Brahot: "brahot",
   Sidour: "sidour",
@@ -36,6 +53,7 @@ const CORPUS_LABEL: Record<Corpus, string> = {
   tanakh: "Tanakh",
   michna: "Michna",
   talmud: "Talmud",
+  moussar: "Moussar",
   moadim: "Moadim",
   brahot: "Brahot",
   sidour: "Sidour",
@@ -52,7 +70,17 @@ const LITURGY_CORPORA: ReadonlySet<Corpus> = new Set(["moadim", "brahot", "sidou
 export const isLiturgy = (entry: TextStudyJsonEntry): boolean =>
   LITURGY_CORPORA.has(corpusOf(entry));
 
-export const isShareable = (entry: TextStudyJsonEntry): boolean => !isLiturgy(entry);
+/**
+ * Les corpus qu'on ne propose pas au partage de lecture : la liturgie, et le
+ * moussar, qui s'étudie à son rythme (un sujet du Pélé Yoets, une porte de
+ * 'Hovot Halévavot) plutôt qu'il ne se répartit. Le moussar n'est pas pour
+ * autant de la liturgie : marque-pages, reprise de lecture, numéros de
+ * paragraphe et livres voisins restent les siens.
+ */
+const SOLO_CORPORA: ReadonlySet<Corpus> = new Set([...LITURGY_CORPORA, "moussar"]);
+
+export const isShareable = (entry: TextStudyJsonEntry): boolean =>
+  !SOLO_CORPORA.has(corpusOf(entry));
 
 const allEntries = (textStudiesJson as TextStudiesJson).textStudies;
 
@@ -70,7 +98,54 @@ function baseSlug(entry: TextStudyJsonEntry): string {
   if (corpus === "tehilim") return String(entry.link).split(".").pop() ?? "1";
   if (corpus === "talmud") return tractateSlug(tractateFromLink(entry.link));
   if (corpus === "michna") return tractateSlug(tractateFromLink(entry.link, true));
+  if (corpus === "moussar") return moussarSlug(latinName(entry));
   return tractateSlug(latinName(entry)); // tanakh parasha / book
+}
+
+/**
+ * Le slug d'un livre de moussar : sans accents ni apostrophes, et tout ce qui
+ * n'est ni lettre ni chiffre devient un tiret. « Chaar Habita'hon » →
+ * chaar-habitahon, « Pélé Yoets, Aleph » → pele-yoets-aleph.
+ */
+export function moussarSlug(latin: string): string {
+  return latin
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/['’‘`]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+/**
+ * Moussar : le nom d'un livre précédé de son ouvrage (« Hovot Halévavot,
+ * Chaar Habita'hon ») ; le Pélé Yoets porte déjà le sien (« Pélé Yoets,
+ * Aleph »).
+ */
+function moussarName(entry: TextStudyJsonEntry): string {
+  const book = latinLivre(entry.livre);
+  const name = latinName(entry);
+  return name.startsWith(book) ? name : `${book}, ${name}`;
+}
+
+/** Moussar : ce que compte un livre, des chapitres ou des sujets (Pélé Yoets). */
+function moussarUnit(entry: TextStudyJsonEntry): { one: string; many: string } {
+  return latinName(entry).startsWith(latinLivre(entry.livre))
+    ? { one: "sujet", many: "Sujets" }
+    : { one: "chapitre", many: "Chapitres" };
+}
+
+/**
+ * Moussar : le titre d'une section. Un sujet du Pélé Yoets se nomme par son
+ * numéro dans le livre, la lettre n'y ajoute rien (« Pélé Yoets, Sujet 11 :
+ * אבירות לב ») ; un chapitre, par sa porte.
+ */
+function moussarSectionName(entry: TextStudyJsonEntry, section: TextSection): string {
+  if (!isMultiSection(entry)) return moussarName(entry);
+  const book = latinLivre(entry.livre);
+  return latinName(entry).startsWith(book)
+    ? `${book}, ${section.label}`
+    : `${moussarName(entry)}, ${section.label}`;
 }
 
 /**
@@ -199,8 +274,18 @@ export const READING_LEAD =
 const READING_LEAD_SOLO =
   "Texte intégral en hébreu, accompagné de la phonétique pour le lire même sans maîtriser l'hébreu.";
 
+/**
+ * Moussar : rien à partager, et pas toujours de phonétique (le Pélé Yoets
+ * n'est pas vocalisé, la phonétique ne s'en déduit pas).
+ */
+const READING_LEAD_MOUSSAR = "Texte intégral en hébreu, à étudier à son rythme.";
+
 export const readingLead = (entry: TextStudyJsonEntry): string =>
-  isShareable(entry) ? READING_LEAD : READING_LEAD_SOLO;
+  corpusOf(entry) === "moussar"
+    ? READING_LEAD_MOUSSAR
+    : isShareable(entry)
+      ? READING_LEAD
+      : READING_LEAD_SOLO;
 
 /** A short human title for a section, used in H1 / breadcrumbs. */
 export function sectionHeading(entry: TextStudyJsonEntry, section: TextSection): string {
@@ -213,10 +298,12 @@ export function sectionHeading(entry: TextStudyJsonEntry, section: TextSection):
   // Liturgie : le nom seul, « Sli'hot Sli'hot » ou un libellé de section
   // n'apporteraient rien sur un texte unique.
   if (LITURGY_CORPORA.has(corpus)) return latinName(entry);
+  if (corpus === "moussar") return moussarSectionName(entry, section);
   return `${CORPUS_LABEL[corpus]} ${latinName(entry)}, ${section.label}`;
 }
 
 function hubHeading(entry: TextStudyJsonEntry): string {
+  if (corpusOf(entry) === "moussar") return moussarName(entry);
   return `${CORPUS_LABEL[corpusOf(entry)]} ${latinName(entry)}`;
 }
 
@@ -234,11 +321,18 @@ export function sectionTitle(entry: TextStudyJsonEntry, section: TextSection): s
   }
   if (LITURGY_CORPORA.has(corpus))
     return `${latinName(entry)} en hébreu et phonétique | Petite Jérusalem`;
+  if (corpus === "moussar")
+    return `${moussarSectionName(entry, section)} en hébreu | Petite Jérusalem`;
   return `${CORPUS_LABEL[corpus]} ${latinName(entry)} ${section.label} en hébreu et phonétique | Petite Jérusalem`;
 }
 
 export function sectionDescription(entry: TextStudyJsonEntry, section: TextSection): string {
   const corpus = corpusOf(entry);
+  if (corpus === "moussar") {
+    // La phonétique, seulement là où le texte est vocalisé ('Hovot Halévavot).
+    const how = section.he.some(hasNiqqud) ? "en hébreu vocalisé, avec la phonétique" : "en hébreu";
+    return `Lisez ${moussarSectionName(entry, section)} ${how}. Texte intégral, à étudier à votre rythme.`;
+  }
   const what =
     corpus === "tehilim"
       ? `le Tehilim ${slugOf(entry)} (Psaume ${slugOf(entry)})`
@@ -257,10 +351,16 @@ export function sectionDescription(entry: TextStudyJsonEntry, section: TextSecti
 }
 
 export function hubTitle(entry: TextStudyJsonEntry): string {
+  if (corpusOf(entry) === "moussar")
+    return `${moussarName(entry)} en ligne, en hébreu | Petite Jérusalem`;
   return `${CORPUS_LABEL[corpusOf(entry)]} ${latinName(entry)} en ligne (hébreu + phonétique) | Petite Jérusalem`;
 }
 
 export function hubDescription(entry: TextStudyJsonEntry): string {
+  if (corpusOf(entry) === "moussar") {
+    const { one } = moussarUnit(entry);
+    return `Lisez ${moussarName(entry)} en ligne, ${one} par ${one}, en hébreu. Texte intégral, à étudier à votre rythme.`;
+  }
   return `Lisez ${CORPUS_LABEL[corpusOf(entry)]} ${latinName(entry)} en ligne, chapitre par chapitre, en hébreu avec la phonétique. Texte intégral et partage de la lecture à plusieurs.`;
 }
 
@@ -271,10 +371,12 @@ const ctaHtml = `<p><a class="seo-cta" href="${SHARE_NEW_SESSION}">Partager cett
 function relatedLinksHtml(entry: TextStudyJsonEntry): string {
   const corpus = corpusOf(entry);
   const items: string[] = [];
-  if (isMultiSection(entry))
+  if (isMultiSection(entry)) {
+    const all = corpus === "moussar" ? moussarUnit(entry).many.toLowerCase() : "chapitres";
     items.push(
-      `<li><a href="${hubPath(entry)}">Tous les chapitres de ${latinName(entry)}</a></li>`,
+      `<li><a href="${hubPath(entry)}">Tous les ${all} de ${esc(latinName(entry))}</a></li>`,
     );
+  }
   const list = listLinkHtml(corpus);
   if (list) items.push(list);
   // Un texte de liturgie remonte au Sidour, la page de tous les textes qu'on
@@ -360,18 +462,23 @@ export function buildHubBody(entry: TextStudyJsonEntry, content: TextContent): s
   const rows = content.sections
     .map((s) => `<li><a href="${sectionPath(entry, s.index)}">${esc(s.label)}</a></li>`)
     .join("\n        ");
+  // Moussar : des chapitres ou des sujets, et pas toujours de phonétique.
+  const moussar = corpusOf(entry) === "moussar" ? moussarUnit(entry) : null;
+  const lead = moussar
+    ? `Lisez ${esc(moussarName(entry))} en ligne, ${moussar.one} par ${moussar.one}, en hébreu.`
+    : `Lisez ${esc(CORPUS_LABEL[corpusOf(entry)])} ${esc(latinName(entry))} en ligne, chapitre par
+      chapitre, en hébreu avec la phonétique.`;
   return `
   <main class="seo-article reading-page">
     <h1>${esc(hubHeading(entry))}</h1>
     <p class="seo-lead">
-      Lisez ${esc(CORPUS_LABEL[corpusOf(entry)])} ${esc(latinName(entry))} en ligne, chapitre par
-      chapitre, en hébreu avec la phonétique.
+      ${lead}
     </p>
 
     ${isShareable(entry) ? ctaHtml : ""}
 
     <section class="seo-section">
-      <h2>Chapitres</h2>
+      <h2>${moussar?.many ?? "Chapitres"}</h2>
       <ul class="chapter-list">
         ${rows}
       </ul>
@@ -449,11 +556,11 @@ export function hubJsonLd(entry: TextStudyJsonEntry): Record<string, unknown>[] 
 // anciennes adresses y sont redirigées (firebase.json).
 
 /** Les corpus qui ont une page de liste dans la bibliothèque : l'étude. */
-export type ListedCorpus = "tehilim" | "michna" | "talmud" | "tanakh";
+export type ListedCorpus = "tehilim" | "michna" | "talmud" | "tanakh" | "moussar";
 
 export const corpusPath = (corpus: ListedCorpus): string => `${ETUDE}/${corpus}`;
 
-export const LISTED_CORPORA: ListedCorpus[] = ["tehilim", "michna", "talmud", "tanakh"];
+export const LISTED_CORPORA: ListedCorpus[] = ["tehilim", "michna", "talmud", "tanakh", "moussar"];
 
 const isListedCorpus = (corpus: Corpus): corpus is ListedCorpus =>
   (LISTED_CORPORA as Corpus[]).includes(corpus);
@@ -506,6 +613,14 @@ const CORPUS_SEO: Record<ListedCorpus, CorpusSeo> = {
     h1: "Le Tanakh en ligne : Torah, Neviim, Ketouvim",
     lead: "Les 54 parachiot de la Torah, puis les livres des Prophètes et des Écrits, en hébreu avec la phonétique.",
     listLabel: "Tout le Tanakh (parachiot et livres)",
+  },
+  moussar: {
+    title: "Moussar : 'Hovot Halévavot et Pélé Yoets en hébreu | Petite Jérusalem",
+    description:
+      "Les livres de moussar en ligne, en hébreu : les dix portes de 'Hovot Halévavot, dont le Chaar Habita'hon (la porte de la confiance en Dieu), et le Pélé Yoets, sujet par sujet, de Aleph à Tav.",
+    h1: "Moussar : 'Hovot Halévavot et Pélé Yoets",
+    lead: "Le travail des midot, livre par livre : 'Hovot Halévavot de Rabbénou Ba'hya, l'introduction de l'auteur puis ses dix portes, chapitre par chapitre, en hébreu vocalisé avec la phonétique ; le Pélé Yoets de Rabbi Eliezer Papo, ses sujets rangés de Aleph à Tav, chacun sur sa page.",
+    listLabel: "Tous les livres de moussar",
   },
 };
 
@@ -564,12 +679,14 @@ export function buildCorpusBody(corpus: ListedCorpus): string {
         : corpus === "tanakh"
           ? `<li><a href="/paracha">La paracha de la semaine</a></li>`
           : "";
+  const shareable = !SOLO_CORPORA.has(corpus);
+
   return `
   <main class="seo-article reading-page">
     <h1>${esc(seo.h1)}</h1>
     <p class="seo-lead">${esc(seo.lead)}</p>
 
-    ${ctaHtml}
+    ${shareable ? ctaHtml : ""}
 
     ${sections}
 

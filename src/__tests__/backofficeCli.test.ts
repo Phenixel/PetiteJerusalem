@@ -10,7 +10,9 @@ import {
   parseList,
   releaseAnnouncement,
   releaseAnnouncementId,
+  searchCatalog,
   slugify,
+  texteFields,
   versionOf,
 } from "../../scripts/lib/backoffice.mjs";
 
@@ -144,5 +146,85 @@ describe("chiourim", () => {
       "https://firebasestorage.googleapis.com/v0/b/b/o/chiourim%2Fx%2Faudio.mp3?alt=media&token=t",
     );
     expect(downloadUrl("b", "a.mp3", "t", "localhost:8472")).toMatch(/^http:\/\/localhost:8472\//);
+  });
+});
+
+/**
+ * Le livre d'un chiour (`--livre`, `--chapitre`) : les champs texteId et
+ * texteChapitre que lit src/services/chiourTexte.ts.
+ */
+describe("texteFields", () => {
+  const catalog = [
+    { id: 1, type: "Talmud Bavli", name: "ברכות (Berakhot)", livre: "זרעים (Zeraim)" },
+    { id: 103, type: "Tehilim", name: "Tehilim 1", livre: "ספר 1 (Sefer 1)" },
+    { id: 345, type: "Sidour", name: "שחרית (Chaharit)", livre: "סידור (Sidour)" },
+  ];
+
+  it("rattache un livre, et oublie le chapitre de l'ancien", () => {
+    expect(texteFields({ livre: "1" }, catalog)).toEqual({ texteId: 1, texteChapitre: null });
+    expect(texteFields({ livre: "1" }, catalog, { texteId: 1, texteChapitre: 3 })).toEqual({
+      texteId: 1,
+    });
+    expect(texteFields({ livre: "1", chapitre: "3" }, catalog)).toEqual({
+      texteId: 1,
+      texteChapitre: 3,
+    });
+  });
+
+  it("accepte le chapitre 0, l'introduction d'une porte", () => {
+    expect(texteFields({ chapitre: "0" }, catalog, { texteId: 1 })).toEqual({ texteChapitre: 0 });
+  });
+
+  it("retire le livre et son chapitre", () => {
+    expect(texteFields({ livre: "aucun" }, catalog, { texteId: 1, texteChapitre: 2 })).toEqual({
+      texteId: null,
+      texteChapitre: null,
+    });
+    expect(texteFields({ chapitre: "" }, catalog, { texteId: 1, texteChapitre: 2 })).toEqual({
+      texteChapitre: null,
+    });
+  });
+
+  it("refuse un livre inconnu, un chapitre sans livre ou hors bornes", () => {
+    expect(() => texteFields({ livre: "9999" }, catalog)).toThrow(BackofficeInputError);
+    expect(() => texteFields({ chapitre: "2" }, catalog)).toThrow(BackofficeInputError);
+    expect(() => texteFields({ livre: "1", chapitre: "-1" }, catalog)).toThrow(
+      BackofficeInputError,
+    );
+    expect(() => texteFields({ livre: "1", chapitre: "2.5" }, catalog)).toThrow(
+      BackofficeInputError,
+    );
+  });
+
+  it("refuse un chapitre à un psaume ou une tefila", () => {
+    expect(() => texteFields({ livre: "103", chapitre: "1" }, catalog)).toThrow(
+      BackofficeInputError,
+    );
+    expect(() => texteFields({ livre: "345", chapitre: "1" }, catalog)).toThrow(
+      BackofficeInputError,
+    );
+  });
+
+  it("ne touche à rien sans option", () => {
+    expect(texteFields({}, catalog, { texteId: 1, texteChapitre: 2 })).toEqual({});
+  });
+
+  it("trouve un livre par son nom, accents ignorés", () => {
+    expect(searchCatalog(catalog, "berakhot").map((e) => e.id)).toEqual([1]);
+    expect(searchCatalog(catalog, "zéraim").map((e) => e.id)).toEqual([1]);
+    expect(searchCatalog(catalog, "")).toHaveLength(3);
+  });
+
+  it("trouve un livre quelle que soit sa graphie latine", () => {
+    const parachiot = [
+      { id: 270, name: "Vayetze", livre: "Berechit" },
+      { id: 312, name: "Ki Tetze", livre: "Devarim" },
+      { id: 404, name: "שער הבטחון (Chaar Habita'hon)", livre: "חובות הלבבות (Hovot Halévavot)" },
+    ];
+    expect(searchCatalog(parachiot, "Vayetse").map((e) => e.id)).toEqual([270]);
+    expect(searchCatalog(parachiot, "Ki Tétsé").map((e) => e.id)).toEqual([312]);
+    expect(searchCatalog(parachiot, "shaar habitahon").map((e) => e.id)).toEqual([404]);
+    expect(searchCatalog(catalog, "Berachot").map((e) => e.id)).toEqual([1]);
+    expect(searchCatalog(catalog, "Shaharit").map((e) => e.id)).toEqual([345]);
   });
 });

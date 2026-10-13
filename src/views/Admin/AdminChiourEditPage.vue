@@ -6,6 +6,7 @@ import type { ChiourDoc } from "../../models/models";
 import { adminService, type AuteurWithId, type SerieWithId } from "../../services/adminService";
 import { chiourService } from "../../services/chiourService";
 import { studioService } from "../../services/studioService";
+import { episodeFromField } from "../../services/serieService";
 import { formatAgo, formatDay, formatDuration, formatSize } from "../../services/adminFormat";
 import { useToast } from "../../composables/useToast";
 import { useConfirm } from "../../composables/useConfirm";
@@ -15,6 +16,7 @@ import AppSelect from "../../components/AppSelect.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import ProgressBar from "../../components/ProgressBar.vue";
 import ToggleSwitch from "../../components/ToggleSwitch.vue";
+import ChiourTexteField from "../../components/ChiourTexteField.vue";
 import AdminStatus from "../../components/admin/AdminStatus.vue";
 import AdminSkeleton from "../../components/admin/AdminSkeleton.vue";
 
@@ -49,6 +51,8 @@ const niveau = ref("");
 const serieId = ref("");
 const episode = ref<number | null>(null);
 const published = ref(false);
+const texteId = ref<number | null>(null);
+const texteChapitre = ref<number | null>(null);
 
 const audioFile = ref<File | null>(null);
 const uploadPercent = ref<number | null>(null);
@@ -108,6 +112,8 @@ onMounted(async () => {
       serieId.value = doc.serieId ?? "";
       episode.value = doc.episode ?? null;
       published.value = doc.published;
+      texteId.value = typeof doc.texteId === "number" ? doc.texteId : null;
+      texteChapitre.value = typeof doc.texteChapitre === "number" ? doc.texteChapitre : null;
     }
   } finally {
     isLoading.value = false;
@@ -171,8 +177,10 @@ async function save() {
       categories: selectedCategories.value,
       niveau: niveau.value.trim() || null,
       serieId: serieId.value || null,
-      episode: episode.value,
+      episode: episodeFromField(episode.value),
       published: published.value,
+      texteId: texteId.value,
+      texteChapitre: texteId.value === null ? null : texteChapitre.value,
     });
     toast.success(t("admin.chiourEdit.saved"));
     void refreshAdminSummary(true);
@@ -373,6 +381,12 @@ async function remove() {
               <input id="chiour-niveau" v-model="niveau" type="text" class="field" />
             </div>
           </div>
+        </section>
+
+        <section class="card space-y-3 p-5">
+          <h3 class="font-bold text-text-primary">{{ t("chiourim.texte.fieldLabel") }}</h3>
+          <ChiourTexteField v-model:texte-id="texteId" v-model:chapitre="texteChapitre" />
+          <p class="text-xs text-text-secondary">{{ t("chiourim.texte.fieldHint") }}</p>
         </section>
 
         <section class="card space-y-3 p-5">

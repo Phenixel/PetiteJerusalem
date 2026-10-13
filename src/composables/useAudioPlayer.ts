@@ -1,7 +1,7 @@
 import { ref, computed } from "vue";
-import { useRoute } from "vue-router";
 import { analyticsService } from "../services/analyticsService";
 import { useViewedChiourim } from "./useViewedChiourim";
+import { recordFinished, recordPosition, resumePosition } from "../services/listeningProgress";
 
 /**
  * Lecteur audio global (singleton au niveau module).
@@ -9,6 +9,11 @@ import { useViewedChiourim } from "./useViewedChiourim";
  * L'élément <audio> vit hors de l'arbre des composants : la lecture survit aux
  * navigations. La page détail (AudioPlayer) et le mini-lecteur
  * (GlobalAudioPlayer) pilotent tous deux cet état partagé.
+ *
+ * Il joue une file : les épisodes d'une série, les cours d'un texte, la
+ * liste d'où l'on a lancé l'écoute. Un cours fini enchaîne sur le suivant,
+ * comme une liste de lecture ; un cours entamé reprend là où on l'a laissé
+ * (voir listeningProgress).
  */
 
 export interface AudioTrack {
@@ -16,6 +21,19 @@ export interface AudioTrack {
   title: string;
   /** Slug du chiour, pour relier le mini-lecteur à sa page détail. */
   slug?: string;
+  /** La ligne sous le titre : le rav, la série. */
+  subtitle?: string;
+  /** De quoi dessiner la pochette sans relire le catalogue (voir ChiourCover). */
+  cover?: { seed: string; label: string };
+  /** Durée connue d'avance (le dépôt l'a mesurée), pour la file du lecteur. */
+  duration?: number | null;
+  /** D'où vient la file : la série, le rav, le texte (« Lecture depuis… »). */
+  context?: string | null;
+  /** Le texte étudié et son chapitre (voir chiourTexte), pour la file du lecteur. */
+  texteId?: number | null;
+  texteChapitre?: number | null;
+  /** Le numéro d'épisode dans sa série. */
+  episode?: number | null;
 }
 
 const track = ref<AudioTrack | null>(null);
@@ -26,11 +44,33 @@ const volume = ref(1);
 const previousVolume = ref(1);
 const playbackRate = ref(1);
 const isLoaded = ref(false);
+/** La file en cours, et la place du morceau chargé dans cette file. */
+const queue = ref<AudioTrack[]>([]);
+const queueIndex = ref(-1);
+/**
+ * Le lecteur plein écran (NowPlayingSheet) : ouvert d'un appui sur la barre
+ * du bas, il y montre le cours qui joue, ses commandes, la suite de la file.
+ */
+const sheetOpen = ref(false);
 
 let audio: HTMLAudioElement | null = null;
 // Seek demandé avant que les métadonnées soient chargées (clic sur la barre
 // d'un morceau pas encore lancé) : appliqué dès loadedmetadata.
 let pendingSeekRatio: number | null = null;
+// Reprise d'un cours entamé, en secondes : appliquée dès loadedmetadata.
+let pendingSeekSeconds: number | null = null;
+// Le morceau en cours a-t-il été lancé par la file (fin du précédent) ?
+let startedByQueue = false;
+/**
+ * D'où l'écoute a été lancée (propriété `source` de `chiour_played`) : la
+ * page du cours, une série, un auteur, le catalogue, la reprise, un texte de
+ * la bibliothèque. Gardée pour toute la file qu'elle a lancée.
+ */
+export type PlaySource = "chiour" | "serie" | "auteur" | "catalogue" | "reprise" | "texte";
+let playSource: PlaySource = "chiour";
+// Dernière position retenue (listeningProgress), pour n'écrire qu'à intervalles.
+let lastRecorded = 0;
+const RECORD_EVERY = 10;
 
 // --- Engagement audio : écoute réelle, pas seulement des pages vues. ---
 // `chiour_played` une fois par morceau lancé, puis `chiour_progress` aux
@@ -50,7 +90,23 @@ function trackPlayStarted() {
   if (!track.value || track.value.src === trackedSrc) return;
   trackedSrc = track.value.src;
   reachedMilestones.clear();
-  analyticsService.capture("chiour_played", trackProperties());
+  analyticsService.capture("chiour_played", {
+    ...trackProperties(),
+    // Enchaîné par la file à la fin du précédent, ou lancé à la main.
+    autoplay: startedByQueue,
+    source: playSource,
+    // Repris là où on l'avait laissé, ou écouté du début.
+    // (la reprise peut attendre encore les métadonnées : pendingSeekSeconds).
+    resumed: pendingSeekSeconds !== null || (audio !== null && audio.currentTime > 1),
+  });
+}
+
+/** Retient la position du morceau en cours (listeningProgress). */
+function recordCurrent(force = false) {
+  if (!audio || !track.value?.slug) return;
+  if (!force && Math.abs(audio.currentTime - lastRecorded) < RECORD_EVERY) return;
+  lastRecorded = audio.currentTime;
+  recordPosition(track.value.slug, audio.currentTime, duration.value);
 }
 
 function trackMilestone(milestone: number) {
@@ -73,7 +129,8 @@ function updateMediaSession() {
   if (!("mediaSession" in navigator) || !track.value) return;
   navigator.mediaSession.metadata = new MediaMetadata({
     title: track.value.title,
-    artist: "Petite Jerusalem",
+    artist: track.value.subtitle || "Petite Jerusalem",
+    album: "Petite Jerusalem",
   });
 }
 
@@ -90,6 +147,10 @@ function ensureAudio(): HTMLAudioElement {
     if (pendingSeekRatio !== null) {
       audio.currentTime = pendingSeekRatio * audio.duration;
       pendingSeekRatio = null;
+      pendingSeekSeconds = null;
+    } else if (pendingSeekSeconds !== null) {
+      if (pendingSeekSeconds < audio.duration) audio.currentTime = pendingSeekSeconds;
+      pendingSeekSeconds = null;
     }
   });
   audio.addEventListener("timeupdate", () => {
@@ -101,6 +162,7 @@ function ensureAudio(): HTMLAudioElement {
     if (Math.abs(audio.currentTime - currentTime.value) >= 1) {
       currentTime.value = audio.currentTime;
     }
+    recordCurrent();
     if (duration.value > 0) {
       const pct = (audio.currentTime / duration.value) * 100;
       if (pct >= 75) trackMilestone(75);
@@ -118,10 +180,14 @@ function ensureAudio(): HTMLAudioElement {
   });
   audio.addEventListener("pause", () => {
     isPlaying.value = false;
+    recordCurrent(true);
   });
   audio.addEventListener("ended", () => {
     isPlaying.value = false;
     trackMilestone(100);
+    if (track.value?.slug) recordFinished(track.value.slug, duration.value);
+    // La file continue : l'épisode suivant, comme une liste de lecture.
+    if (hasNext.value) next(true);
   });
 
   if ("mediaSession" in navigator) {
@@ -129,6 +195,10 @@ function ensureAudio(): HTMLAudioElement {
     navigator.mediaSession.setActionHandler("pause", () => audio?.pause());
     navigator.mediaSession.setActionHandler("seekbackward", () => skip(-15));
     navigator.mediaSession.setActionHandler("seekforward", () => skip(30));
+    navigator.mediaSession.setActionHandler("previoustrack", () => previous());
+    navigator.mediaSession.setActionHandler("nexttrack", () => {
+      if (hasNext.value) next();
+    });
   }
 
   return audio;
@@ -147,19 +217,93 @@ function load(newTrack: AudioTrack) {
   duration.value = 0;
   isLoaded.value = false;
   pendingSeekRatio = null;
+  lastRecorded = 0;
+  pendingSeekSeconds = newTrack.slug ? resumePosition(newTrack.slug) : null;
   el.src = newTrack.src;
   el.volume = volume.value;
   el.playbackRate = playbackRate.value;
   updateMediaSession();
 }
 
-function play(newTrack?: AudioTrack) {
-  if (newTrack) load(newTrack);
+function play(newTrack?: AudioTrack, source: PlaySource = "chiour") {
+  if (newTrack) {
+    playSource = source;
+    // Un morceau hors de la file en cours la remplace : il est seul.
+    const index = queue.value.findIndex((t) => t.src === newTrack.src);
+    if (index === -1) {
+      queue.value = [newTrack];
+      queueIndex.value = 0;
+    } else {
+      queueIndex.value = index;
+    }
+    startedByQueue = false;
+    load(newTrack);
+  }
   ensureAudio()
     .play()
     .catch(() => {
       // Lecture refusée (politique autoplay…) : l'état reste en pause.
     });
+}
+
+/**
+ * Joue une liste à partir d'un de ses morceaux : la suite s'enchaînera seule.
+ * Le morceau déjà chargé n'est pas relancé, la file change simplement autour
+ * de lui.
+ */
+function playQueue(tracks: AudioTrack[], index: number, source: PlaySource) {
+  const start = tracks[index];
+  if (!start) return;
+  playSource = source;
+  queue.value = tracks;
+  queueIndex.value = index;
+  startedByQueue = false;
+  load(start);
+  play();
+}
+
+const hasNext = computed(() => queueIndex.value >= 0 && queueIndex.value < queue.value.length - 1);
+const hasPrevious = computed(() => queueIndex.value > 0);
+
+/** Le morceau suivant de la file ; `auto` quand c'est la fin du précédent qui l'appelle. */
+function next(auto = false) {
+  const following = queue.value[queueIndex.value + 1];
+  if (!following) return;
+  queueIndex.value += 1;
+  startedByQueue = auto;
+  load(following);
+  play();
+}
+
+/** Joue le morceau de la file à cette place (la file du lecteur plein écran). */
+function playAt(index: number) {
+  const target = queue.value[index];
+  if (!target) return;
+  if (index === queueIndex.value) {
+    if (!isPlaying.value) play();
+    return;
+  }
+  queueIndex.value = index;
+  startedByQueue = false;
+  load(target);
+  play();
+}
+
+/**
+ * Comme partout : au-delà des premières secondes, revient au début du
+ * morceau ; au début, passe au précédent de la file.
+ */
+function previous() {
+  const before = queue.value[queueIndex.value - 1];
+  if (audio && (audio.currentTime > 5 || !before)) {
+    audio.currentTime = 0;
+    return;
+  }
+  if (!before) return;
+  queueIndex.value -= 1;
+  startedByQueue = false;
+  load(before);
+  play();
 }
 
 function toggle() {
@@ -203,6 +347,7 @@ function setSpeed(speed: number) {
 
 /** Arrête la lecture et ferme le mini-lecteur. */
 function close() {
+  recordCurrent(true);
   if (audio) {
     audio.pause();
     audio.removeAttribute("src");
@@ -214,6 +359,10 @@ function close() {
   duration.value = 0;
   isLoaded.value = false;
   pendingSeekRatio = null;
+  pendingSeekSeconds = null;
+  sheetOpen.value = false;
+  queue.value = [];
+  queueIndex.value = -1;
 }
 
 const progress = computed(() => {
@@ -233,7 +382,15 @@ export function useAudioPlayer() {
     playbackRate,
     progress,
     isMuted,
+    queue,
+    queueIndex,
+    hasNext,
+    hasPrevious,
     play,
+    playQueue,
+    playAt,
+    next,
+    previous,
     toggle,
     skip,
     seekRatio,
@@ -241,17 +398,21 @@ export function useAudioPlayer() {
     toggleMute,
     setSpeed,
     close,
+    sheetOpen,
+    openSheet: () => {
+      if (track.value) sheetOpen.value = true;
+    },
+    closeSheet: () => {
+      sheetOpen.value = false;
+    },
   };
 }
 
 /**
- * Le mini-lecteur est visible dès qu'un morceau est chargé, sauf sur la page
- * détail de ce même chiour (le lecteur complet y est déjà affiché).
+ * La barre du lecteur est visible dès qu'un morceau est chargé, sur toutes
+ * les pages (celle du cours comprise : elle n'a plus de lecteur à elle), sauf
+ * quand le lecteur plein écran la recouvre.
  */
 export function useMiniPlayerVisible() {
-  const route = useRoute();
-  return computed(() => {
-    if (!track.value) return false;
-    return !(route.name === "detail-chiour" && route.params.slug === track.value.slug);
-  });
+  return computed(() => !!track.value && !sheetOpen.value);
 }

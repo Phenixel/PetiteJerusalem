@@ -1,3 +1,4 @@
+import { shallowRef } from "vue";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../firebase/firestore";
 import type { Chiour, SerieDoc } from "../models/models";
@@ -41,16 +42,28 @@ export function episodeFromField(value: unknown): number | null {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
+/**
+ * Les séries déjà lues, réactives : une ligne de cours affichée avant leur
+ * arrivée prend le nom de sa série dès qu'il est connu.
+ */
+const knownSeries = shallowRef<Serie[] | null>(null);
+
 class SerieService {
   private readonly series = cached(CACHE_TTL, async () => {
     const snap = await getDocs(collection(db, "series"));
     const series = snap.docs.map((d) => ({ ...(d.data() as SerieDoc), id: d.id }));
     series.sort((a, b) => a.name.localeCompare(b.name, "fr"));
+    knownSeries.value = series;
     return series;
   });
 
   getAllSeries(): Promise<Serie[]> {
     return this.series.get();
+  }
+
+  /** Les séries déjà en cache, sans rien charger (le mini-lecteur, une ligne de cours). */
+  peekSeries(): Serie[] | null {
+    return knownSeries.value;
   }
 
   async getSerie(serieId: string): Promise<Serie | null> {

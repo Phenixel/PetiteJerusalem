@@ -583,3 +583,68 @@ jeton). `$referrer` dit d'où venait le lien mort.
 
 `tip` reçoit une **nouvelle valeur**, `zmanim-date` : le calendrier sous la
 date des horaires.
+
+## Cours audio : l'écoute en liste, et le lien vers les textes
+
+Les cours s'écoutent désormais comme dans une application d'écoute : une
+liste devient la file du lecteur, l'épisode suivant s'enchaîne, un cours
+entamé reprend où on l'a laissé. Et un cours peut dire le texte de la
+bibliothèque qu'il étudie (voir `services/chiourTexte.ts`).
+
+### `chiour_played` (existant, trois propriétés de plus)
+
+| Propriété | Valeurs | Statut |
+| --- | --- | --- |
+| `chiour_slug`, `chiour_title`, `duration_seconds` |  | existants, conservés |
+| `source` | `chiour` (la page du cours), `serie`, `auteur`, `catalogue`, `reprise` (la rangée « Reprendre l'écoute »), `texte` (les cours sous un texte de la bibliothèque) | **nouveau** |
+| `autoplay` | vrai quand la fin du cours précédent l'a enchaîné | **nouveau** |
+| `resumed` | vrai quand il reprend là où on l'avait laissé | **nouveau** |
+
+`source` est celle du geste qui a lancé la file : les cours qu'elle enchaîne
+la gardent, et portent `autoplay`.
+
+### `chiour_opened` (existant, une propriété de plus)
+
+`texte_id` (**nouveau**) : l'identifiant du texte que le cours étudie, `null`
+s'il n'en a pas.
+
+### `chiour_text_opened` (nouveau)
+
+D'un cours, d'une série ou du lecteur plein écran vers son texte (« Lire le texte »).
+
+| Propriété | Valeurs |
+| --- | --- |
+| `source` | `chiour`, `serie`, `lecteur` (le lecteur plein écran) |
+| `chiour_slug` | le cours, `null` depuis une série |
+| `texte_id` | l'identifiant du texte dans le catalogue |
+| `chapitre` | le chapitre visé, `null` pour le texte entier |
+
+### `text_chiourim_shown` (nouveau)
+
+L'encart « Cours sur ce chapitre » (ou « sur ce texte ») s'affiche sous un
+texte de la bibliothèque : le dénominateur des écoutes lancées depuis un
+texte (`chiour_played`, `source` `texte`). Une fois par texte et par chapitre
+ouvert.
+
+| Propriété | Valeurs |
+| --- | --- |
+| `texte_id` | l'identifiant du texte |
+| `chapitre` | le chapitre ouvert, `null` sur le texte entier |
+| `chiourim_count` | les cours du texte |
+| `chapter_count` | ceux du chapitre ouvert |
+
+### `chiourim_filters_opened` (nouveau)
+
+Le bouton « Filtres » du catalogue ouvre son panneau (les thèmes, les
+rabbanim). `results_count` : les cours affichés à l'ouverture.
+`chiourim_category_filtered` (existant) continue de partir au choix d'un
+thème, depuis ce panneau ; `category` vaut `all` quand on le retire.
+
+### `chiourim_rav_filtered` (nouveau)
+
+Un rav choisi (ou retiré) dans les filtres du catalogue.
+
+| Propriété | Valeurs |
+| --- | --- |
+| `auteur` | le nom du rav, `null` quand le filtre est retiré |
+| `results_count` | les cours affichés |

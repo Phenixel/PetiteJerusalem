@@ -100,6 +100,13 @@ describe("recherche", () => {
     expect(search(TEXTS, "bo")).toEqual(["Bo"]);
   });
 
+  it("cherche la clé de mots collés depuis un début de mot, jamais au milieu", () => {
+    // « chabbat » (Habat) ne tombe pas dans le « Ahavat » (aHabat) d'un
+    // autre nom ; « babametsia », tapé d'un trait, trouve encore Bava Metzia.
+    expect(search([...TEXTS, "Chaar Ahavat Hachem"], "chabbat")).toEqual(["Shabbat"]);
+    expect(search(TEXTS, "babametsia")).toEqual(["Bava Metzia"]);
+  });
+
   it("ne trouve rien quand un mot ne répond pas", () => {
     expect(search(TEXTS, "aucun texte de ce nom")).toEqual([]);
   });

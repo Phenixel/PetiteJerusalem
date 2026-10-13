@@ -26,7 +26,9 @@ async function seedChiour(published = true) {
 }
 
 test.describe("chiourim", () => {
-  test("un chiour publié se liste, se cherche et s'ouvre", async ({ page }) => {
+  // Comme dans une application d'écoute : la ligne d'un cours le lance, et sa
+  // page s'ouvre depuis le lecteur plein écran (« Voir la page du cours »).
+  test("un chiour publié se liste, se cherche, s'écoute et s'ouvre", async ({ page }) => {
     const chiour = await seedChiour();
     await gotoApp(page, "/chiourim");
     await expect(page.getByText(chiour.name).first()).toBeVisible({ timeout: 20_000 });
@@ -34,12 +36,22 @@ test.describe("chiourim", () => {
     await page.getByPlaceholder("Rechercher un cours, un rav...").fill("rien de tel ici");
     await expect(page.getByText("Aucun chiour ne correspond à votre recherche.")).toBeVisible();
     await page.getByPlaceholder("Rechercher un cours, un rav...").fill(chiour.name);
-    await page.getByText(chiour.name).first().click();
+    await page
+      .getByRole("button", { name: `Écouter « ${chiour.name} »` })
+      .first()
+      .click();
+
+    await page.getByRole("button", { name: `Ouvrir le lecteur : ${chiour.name}` }).click();
+    const sheet = page.getByRole("dialog");
+    await expect(sheet.getByRole("heading", { name: chiour.name })).toBeVisible();
+    await sheet.getByRole("button", { name: "Voir la page du cours" }).click();
 
     await expect(page).toHaveURL(new RegExp(`/chiourim/${chiour.slug}$`));
     await expect(page.getByRole("heading", { level: 1 })).toContainText(chiour.name);
     await expect(page.getByText(chiour.auteur).first()).toBeVisible();
-    await expect(page.getByRole("button", { name: "Lecture" }).first()).toBeVisible();
+    await expect(
+      page.getByRole("main").getByRole("button", { name: /^(Écouter|Reprendre|Pause)$/ }),
+    ).toBeVisible();
   });
 
   test("un brouillon n'apparaît pas", async ({ page }) => {

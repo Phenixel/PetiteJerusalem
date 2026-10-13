@@ -15,7 +15,7 @@ import { shouldPlayShelfIntro } from "../composables/useShelfIntro";
 import { prefersLessMotion } from "../composables/useMotion";
 
 export interface ShelfBook {
-  /** Identifiant de corpus (tehilim, michna, talmud, tanakh). */
+  /** Identifiant de corpus (tehilim, michna, talmud, tanakh, moussar, sidour…). */
   corpus: string;
   /** Destination du lien. */
   to: string;
@@ -75,6 +75,9 @@ const BINDINGS: Record<string, string> = {
   michna: "#7d6a4c",
   talmud: "#6d5743",
   tanakh: "#84483f",
+  // Le moussar, cinquième volume de l'étude : un bronze plus doré que la
+  // Michna, pour ne pas se confondre avec ses voisins de planche.
+  moussar: "#86622f",
 };
 
 function bindingOf(corpus: string): string {

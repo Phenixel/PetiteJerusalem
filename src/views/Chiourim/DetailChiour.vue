@@ -6,21 +6,37 @@ import { chiourService } from "../../services/chiourService";
 import { analyticsService } from "../../services/analyticsService";
 import { serieService, type Serie } from "../../services/serieService";
 import { useViewedChiourim } from "../../composables/useViewedChiourim";
+import { chiourCover, useChiourPlayback } from "../../composables/useChiourPlayback";
+import { formatMinutes } from "../../components/chiourim/duration";
+import { listeningOf, progressOf, resumePosition } from "../../services/listeningProgress";
+import { useTexteLabels } from "../../composables/useTexteLabels";
+import { chiourTexte, texteRoute } from "../../services/chiourTexte";
 import type { Chiour } from "../../models/models";
-import AudioPlayer from "../../components/AudioPlayer.vue";
-import ChiourCard from "../../components/ChiourCard.vue";
+import BigPlayButton from "../../components/chiourim/BigPlayButton.vue";
+import ChiourCover from "../../components/chiourim/ChiourCover.vue";
+import ChiourTrackRow from "../../components/chiourim/ChiourTrackRow.vue";
 import ShareModal from "../../components/ShareModal.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import { seoService } from "../../services/seoService";
 import { SITE_URL } from "../../config/site";
 
+/**
+ * La page d'un cours, comme celle d'une playlist d'un seul titre : sa
+ * pochette, son titre et son rav, le bouton qui le lance (le lecteur, lui, est
+ * en bas de l'écran, et s'ouvre en plein écran), le texte qu'il étudie, sa
+ * description, puis la série où il s'inscrit et d'autres cours à écouter.
+ * C'est la page qu'on partage, et celle où mène une recherche.
+ */
+
 const route = useRoute();
 const router = useRouter();
+const { t, locale } = useI18n();
+const { player, isCurrent, playFrom } = useChiourPlayback();
+const { texteLabel } = useTexteLabels();
 
-function goToAuteur(auteur: string) {
-  router.push(`/chiourim/auteur/${chiourService.generateAuteurSlug(auteur)}`);
+function auteurPath(auteur: string) {
+  return `/chiourim/auteur/${chiourService.generateAuteurSlug(auteur)}`;
 }
-const { t } = useI18n();
 
 const { isViewed, markViewed, isLoaded: viewedLoaded } = useViewedChiourim();
 
@@ -58,25 +74,97 @@ watch(
   { immediate: true },
 );
 
-const nextEpisode = computed(() => {
-  if (!chiour.value || !allChiourim.value.length) return null;
-  return serieService.getNextEpisode(chiour.value, allChiourim.value);
+const cover = computed(() => (chiour.value ? chiourCover(chiour.value) : null));
+
+const current = computed(() => !!chiour.value && isCurrent(chiour.value.slug));
+const playing = computed(() => current.value && player.isPlaying.value);
+
+/** Où on en est, dit sous le titre : la durée, ou ce qu'il en reste. */
+const progress = computed(() => (chiour.value ? progressOf(chiour.value.slug) : 0));
+const timeLine = computed(() => {
+  if (!chiour.value) return "";
+  const duration = chiour.value.duration ?? listeningOf(chiour.value.slug)?.d ?? 0;
+  if (!duration) return "";
+  const resume = resumePosition(chiour.value.slug);
+  if (resume !== null)
+    return t("chiourim.player.left", { time: formatMinutes(duration - resume, locale.value) });
+  return formatMinutes(duration, locale.value);
 });
 
-const previousEpisode = computed(() => {
-  if (!chiour.value || !allChiourim.value.length) return null;
-  return serieService.getPreviousEpisode(chiour.value, allChiourim.value);
+const playLabel = computed(() => {
+  if (playing.value) return t("audioPlayer.pause");
+  if (current.value || (chiour.value && resumePosition(chiour.value.slug) !== null))
+    return t("chiourim.resumeShort");
+  return t("chiourim.listen");
 });
 
-// Les épisodes voisins ont leur propre bloc : les recommandations proposent
-// autre chose (mêmes catégories / même auteur), sans les dupliquer.
+/** Le lance avec sa série pour file, ou le met en pause s'il joue. */
+function playThis() {
+  if (!chiour.value) return;
+  const queue = episodes.value.length ? episodes.value : [chiour.value];
+  playFrom(queue, chiour.value, "chiour", serie.value?.name ?? null);
+}
+
+/** La série du cours, dans l'ordre : la file du lecteur et la liste « Dans cette série ». */
+const episodes = computed(() =>
+  chiour.value?.serieId ? serieService.episodesOf(chiour.value.serieId, allChiourim.value) : [],
+);
+
+/**
+ * La série affichée sous le cours : entière jusqu'à douze épisodes, sinon une
+ * fenêtre autour de celui-ci, la série complète restant à un lien.
+ */
+const SERIE_WINDOW = 12;
+const episodeWindow = computed(() => {
+  const list = episodes.value;
+  if (list.length <= SERIE_WINDOW) return list;
+  const index = Math.max(
+    0,
+    list.findIndex((c) => c.slug === chiour.value?.slug),
+  );
+  const start = Math.min(Math.max(0, index - 3), list.length - SERIE_WINDOW);
+  return list.slice(start, start + SERIE_WINDOW);
+});
+
+const texte = computed(() => (chiour.value ? chiourTexte(chiour.value) : null));
+const texteTo = computed(() =>
+  texte.value ? texteRoute(texte.value.entry, texte.value.chapitre) : null,
+);
+
+function trackTexteOpened() {
+  if (!chiour.value || !texte.value) return;
+  analyticsService.capture("chiour_text_opened", {
+    source: "chiour",
+    chiour_slug: chiour.value.slug,
+    texte_id: Number(texte.value.entry.id),
+    chapitre: texte.value.chapitre,
+  });
+}
+
+// Les épisodes voisins ont leur propre liste : les recommandations proposent
+// autre chose (mêmes catégories, même auteur), sans les dupliquer.
 const recommendations = computed(() => {
   if (!chiour.value || !allChiourim.value.length) return [];
   return chiourService
-    .getRecommendations(chiour.value, allChiourim.value, 4)
-    .filter((r) => r.slug !== nextEpisode.value?.slug && r.slug !== previousEpisode.value?.slug)
-    .slice(0, 2);
+    .getRecommendations(chiour.value, allChiourim.value, 12)
+    .filter((r) => !r.serieId || r.serieId !== chiour.value?.serieId)
+    .slice(0, 4);
 });
+
+/**
+ * Quand la série enchaîne (fin d'un épisode, bouton suivant), la page suit le
+ * cours qui joue, comme l'écran « en cours de lecture » d'un lecteur : on
+ * reste sur ce qu'on écoute.
+ */
+watch(
+  () => player.track.value?.slug,
+  (now, before) => {
+    if (!now || !before || before !== route.params.slug) return;
+    if (episodes.value.some((e) => e.slug === now)) {
+      void router.replace(`/chiourim/${now}`);
+    }
+  },
+);
 
 function applyChiour(all: Chiour[], slug: string): boolean {
   allChiourim.value = all;
@@ -104,6 +192,8 @@ function trackChiourOpened(found: Chiour): void {
     // Réécoute ou découverte : `useViewedChiourim` garde la trace des chiourim
     // déjà lancés sur cet appareil.
     already_viewed: isViewed(found.slug),
+    // Le cours étudie-t-il un livre de la bibliothèque ?
+    texte_id: found.texteId ?? null,
   });
 }
 
@@ -115,7 +205,7 @@ let trackedSlug: string | null = null;
 function applyFound(found: Chiour): void {
   chiour.value = found;
   trackChiourOpened(found);
-  serie.value = null;
+  if (serie.value?.id !== found.serieId) serie.value = null;
   if (found.serieId) {
     serieService
       .getSerie(found.serieId)
@@ -134,14 +224,14 @@ function applyFound(found: Chiour): void {
 
 const loadChiour = async () => {
   const slug = route.params.slug as string;
+  if (!slug) return;
   error.value = null;
 
-  // Instant display from cache (even if media URLs are stale)
+  // Affichage immédiat depuis le cache
   const cached = chiourService.getCachedChiourim();
   if (cached && applyChiour(cached, slug)) {
     chiourService.registerView(slug);
     isLoading.value = false;
-    // If media URLs may be expired, refresh in background
     if (chiourService.isCacheStale()) {
       chiourService
         .getAllChiourim()
@@ -157,8 +247,8 @@ const loadChiour = async () => {
 
   // Pas de cache (arrivée à froid sur un lien partagé) : on n'attend que le
   // document du chiour lui-même, un seul doc au lieu du catalogue entier.
-  // Le catalogue se charge ensuite en arrière-plan pour les recommandations
-  // et les épisodes voisins (leurs computed restent vides d'ici là).
+  // Le catalogue se charge ensuite en arrière-plan pour la série et les
+  // recommandations (leurs computed restent vides d'ici là).
   try {
     isLoading.value = true;
     const single = await chiourService.getChiourBySlug(slug);
@@ -188,42 +278,25 @@ watch(() => route.params.slug, loadChiour);
 </script>
 
 <template>
-  <main class="mx-auto px-6 py-12 max-w-4xl">
-    <!-- Back link -->
-    <button @click="router.push('/chiourim')" class="back-link mb-8">
-      <AppIcon name="chevron-left" :size="14" />
+  <main class="mx-auto max-w-4xl px-6 py-8 md:py-12">
+    <button @click="router.push('/chiourim')" class="back-link mb-6">
+      <AppIcon name="chevron-left" :size="14" class="rtl:rotate-180" />
       {{ t("detailChiour.backToList") }}
     </button>
 
-    <!-- Skeleton loading -->
-    <div v-if="isLoading" class="animate-pulse">
-      <div class="h-8 bg-black/10 rounded-lg w-2/3 mb-4 dark:bg-white/10"></div>
-      <div class="flex gap-2 mb-6">
-        <div class="h-6 w-20 bg-primary/10 rounded-lg"></div>
-        <div class="h-6 w-16 bg-primary/10 rounded-lg"></div>
-      </div>
-      <div class="flex gap-4 mb-8">
-        <div class="h-5 bg-black/10 rounded w-32 dark:bg-white/10"></div>
-        <div class="h-5 bg-black/10 rounded w-24 dark:bg-white/10"></div>
-      </div>
-      <div class="card p-6 mb-8">
-        <div class="h-2 bg-black/10 rounded-full mb-4 dark:bg-white/10"></div>
-        <div class="flex justify-between mb-4">
-          <div class="h-3 w-10 bg-black/10 rounded dark:bg-white/10"></div>
-          <div class="h-3 w-10 bg-black/10 rounded dark:bg-white/10"></div>
+    <!-- Chargement -->
+    <div v-if="isLoading" class="animate-pulse" aria-hidden="true">
+      <div class="flex flex-col gap-6 md:flex-row md:items-end">
+        <div class="mx-auto h-56 w-56 rounded-card bg-black/10 md:mx-0 dark:bg-white/10"></div>
+        <div class="w-full flex-1 space-y-3">
+          <div class="h-4 w-32 rounded bg-black/10 dark:bg-white/10"></div>
+          <div class="h-8 w-2/3 rounded-lg bg-black/10 dark:bg-white/10"></div>
+          <div class="h-4 w-40 rounded bg-black/10 dark:bg-white/10"></div>
         </div>
-        <div class="flex justify-center">
-          <div class="w-12 h-12 bg-black/10 rounded-full dark:bg-white/10"></div>
-        </div>
-      </div>
-      <div class="space-y-2 mb-8">
-        <div class="h-4 bg-black/10 rounded w-full dark:bg-white/10"></div>
-        <div class="h-4 bg-black/10 rounded w-5/6 dark:bg-white/10"></div>
-        <div class="h-4 bg-black/10 rounded w-4/6 dark:bg-white/10"></div>
       </div>
     </div>
 
-    <!-- Error -->
+    <!-- Erreur -->
     <div v-else-if="error" class="flex flex-col items-center justify-center py-16 text-center">
       <AppIcon name="alert-triangle" :size="32" class="text-red-500 mb-4" />
       <p class="text-text-primary font-medium mb-6">{{ error }}</p>
@@ -232,157 +305,170 @@ watch(() => route.params.slug, loadChiour);
       </button>
     </div>
 
-    <!-- Content -->
     <div v-else-if="chiour" class="animate-[fadeIn_0.3s_ease]">
-      <!-- Header -->
-      <div class="mb-8">
-        <h1 class="text-3xl md:text-4xl font-bold text-text-primary mb-4 dark:text-gray-100">
-          {{ chiour.name }}
-        </h1>
-
-        <!-- Categories -->
-        <div class="flex flex-wrap gap-2 mb-5">
-          <!-- Déjà vu lors d'une visite précédente (connecté uniquement) -->
-          <span
-            v-if="wasAlreadyViewed"
-            class="chip bg-green-600/10 text-green-700 inline-flex items-center gap-1 dark:text-green-300"
+      <!-- En-tête : la pochette, la série, le titre, le rav -->
+      <header class="flex flex-col gap-6 md:flex-row md:items-end md:gap-8">
+        <div v-if="cover" class="mx-auto w-[min(64vw,15rem)] shrink-0 md:mx-0 md:w-56">
+          <ChiourCover
+            :seed="cover.seed"
+            :label="cover.label"
+            :sub="serie ? chiour.auteur : null"
+            size="md"
+            class="shadow-pop"
+          />
+        </div>
+        <div class="min-w-0 flex-1">
+          <router-link
+            v-if="serie"
+            :to="`/chiourim/serie/${serie.id}`"
+            class="text-sm font-semibold text-text-secondary hover:text-primary"
           >
-            <AppIcon name="circle-check" :size="12" />
-            {{ t("common.viewed") }}
+            <template v-if="chiour.episode != null"
+              >{{ t("serie.episodeBadge", { n: chiour.episode }) }} · </template
+            >{{ serie.name }}
+          </router-link>
+          <h1
+            dir="auto"
+            class="mt-1 font-display text-2xl font-bold leading-tight tracking-tight text-text-primary md:text-4xl"
+          >
+            {{ chiour.name }}
+          </h1>
+          <router-link
+            v-if="chiour.auteur"
+            :to="auteurPath(chiour.auteur)"
+            class="mt-3 inline-flex items-center gap-2 font-semibold text-text-primary hover:text-primary"
+          >
+            <ChiourCover
+              :seed="chiour.auteurId ?? chiour.auteur"
+              :label="chiour.auteur"
+              size="avatar"
+              round
+            />
+            {{ chiour.auteur }}
+          </router-link>
+          <p class="mt-1 flex flex-wrap items-center gap-x-2 text-sm text-text-secondary">
+            <span v-if="timeLine">{{ timeLine }}</span>
+            <span v-if="timeLine && chiour.niveau" aria-hidden="true">·</span>
+            <span v-if="chiour.niveau">{{ chiour.niveau }}</span>
+            <span
+              v-if="wasAlreadyViewed"
+              class="chip inline-flex items-center gap-1 bg-green-600/10 text-green-700 dark:text-green-300"
+            >
+              <AppIcon name="circle-check" :size="12" />
+              {{ t("common.viewed") }}
+            </span>
+          </p>
+          <span
+            v-if="progress > 0 && progress < 1"
+            class="mt-2 block h-1 w-40 overflow-hidden rounded-full bg-black/10 dark:bg-white/15"
+            aria-hidden="true"
+          >
+            <span class="block h-full bg-primary" :style="{ width: `${progress * 100}%` }" />
           </span>
+        </div>
+      </header>
+
+      <!-- Les actions : partager à gauche, l'écoute au bout -->
+      <div class="mt-5 flex items-center gap-2">
+        <button
+          class="flex h-10 w-10 items-center justify-center rounded-full bg-black/5 text-text-primary transition-colors hover:bg-black/10 dark:bg-white/10"
+          :aria-label="t('common.share')"
+          :title="t('common.share')"
+          @click="showShareModal = true"
+        >
+          <AppIcon name="share" :size="17" />
+        </button>
+        <!-- Les catégories passent à la ligne entre les deux boutons, sans les pousser -->
+        <span v-if="chiour.categories.length" class="hidden min-w-0 flex-1 flex-wrap gap-2 sm:flex">
           <span v-for="cat in chiour.categories" :key="cat" class="chip bg-primary/10 text-primary">
             {{ cat }}
           </span>
-        </div>
-
-        <!-- Série : pastille cliquable «#n · Nom de la série» vers la page série -->
-        <div v-if="serie" class="mb-5">
-          <router-link
-            :to="`/chiourim/serie/${serie.id}`"
-            class="chip bg-secondary/10 text-secondary inline-flex items-center gap-1.5 transition-colors hover:bg-secondary/20"
-          >
-            <AppIcon name="book-open" :size="13" />
-            <span class="font-semibold">
-              <template v-if="chiour.episode != null">#{{ chiour.episode }} · </template
-              >{{ serie.name }}
-            </span>
-            <AppIcon name="chevron-right" :size="12" />
-          </router-link>
-        </div>
-
-        <!-- Meta : auteur + niveau + partage -->
-        <div class="flex flex-wrap items-center gap-x-6 gap-y-3 text-text-secondary">
-          <button
-            v-if="chiour.auteur"
-            @click="goToAuteur(chiour.auteur)"
-            class="flex items-center gap-2 hover:text-primary transition-colors"
-          >
-            <AppIcon name="teacher" :size="16" class="text-primary" />
-            <span
-              class="font-semibold text-text-primary underline decoration-dotted underline-offset-2 hover:text-primary"
-              >{{ chiour.auteur }}</span
-            >
-          </button>
-          <div v-if="chiour.niveau" class="flex items-center gap-2">
-            <AppIcon name="signal" :size="16" class="text-primary" />
-            <span>{{ chiour.niveau }}</span>
-          </div>
-          <button class="btn btn-soft ml-auto" @click="showShareModal = true">
-            <AppIcon name="share" :size="15" />
-            {{ t("common.share") }}
-          </button>
-        </div>
+        </span>
+        <BigPlayButton
+          v-if="chiour.mediaUrl"
+          class="ms-auto"
+          :playing="playing"
+          :label="playLabel"
+          @click="playThis"
+        />
       </div>
 
-      <!-- Audio Player (aucun bloc si le chiour n'a pas d'audio) -->
-      <div v-if="chiour.mediaUrl" class="mb-8">
-        <AudioPlayer :src="chiour.mediaUrl" :title="chiour.name" :slug="chiour.slug" />
-      </div>
+      <!-- Le texte étudié : la carte mène au livre, au chapitre près -->
+      <router-link
+        v-if="texte && texteTo"
+        :to="texteTo"
+        class="card card-hover mt-6 flex items-center gap-4 p-4 md:p-5"
+        @click="trackTexteOpened"
+      >
+        <span
+          class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"
+        >
+          <AppIcon name="book-open" :size="22" />
+        </span>
+        <span class="min-w-0 flex-1">
+          <span class="block text-sm text-text-secondary">{{ t("chiourim.texte.studied") }}</span>
+          <span class="block font-semibold leading-snug text-text-primary">{{
+            texteLabel(texte.entry, texte.chapitre)
+          }}</span>
+        </span>
+        <span class="btn btn-soft btn-sm hidden shrink-0 !rounded-pill sm:inline-flex">
+          {{ t("chiourim.texte.read") }}
+        </span>
+      </router-link>
 
-      <!-- Description : carte standard, comme les cours -->
-      <div v-if="chiour.description" class="mb-12 card p-6">
-        <h2 class="text-lg font-bold text-text-primary mb-3">
+      <!-- La description -->
+      <section v-if="chiour.description" class="mt-8">
+        <h2 class="mb-2 text-lg font-bold text-text-primary">
           {{ t("common.description") }}
         </h2>
-        <p class="text-text-secondary leading-relaxed whitespace-pre-line">
+        <p dir="auto" class="text-text-secondary leading-relaxed whitespace-pre-line">
           {{ chiour.description }}
         </p>
-      </div>
+      </section>
 
-      <!-- Navigation dans la série : liens fantômes (fond léger au survol),
-           ni carte ni filet. Grille à 2 colonnes : précédent à gauche, suivant
-           à droite, TOUJOURS sur la même ligne (jamais de chevauchement, même
-           sur mobile) grâce aux placements col-start explicites. -->
-      <nav
-        v-if="serie && (previousEpisode || nextEpisode)"
-        class="mb-12 -mx-3 grid grid-cols-2 gap-2"
-      >
-        <router-link
-          v-if="previousEpisode"
-          :to="`/chiourim/${previousEpisode.slug}`"
-          class="group flex items-center gap-2.5 min-w-0 rounded-control px-3 py-2.5 transition-colors hover:bg-black/[0.04] dark:hover:bg-white/5"
-          :class="nextEpisode ? 'col-start-1' : 'col-span-2'"
-        >
-          <AppIcon
-            name="chevron-left"
-            :size="16"
-            class="text-text-secondary shrink-0 transition-transform group-hover:-translate-x-0.5 group-hover:text-primary"
+      <!-- La série -->
+      <section v-if="serie && episodes.length > 1" class="mt-12">
+        <div class="mb-3 flex items-baseline justify-between gap-4">
+          <h2 class="font-display text-2xl font-bold tracking-tight text-text-primary">
+            {{ t("detailChiour.inSerie") }}
+          </h2>
+          <router-link
+            :to="`/chiourim/serie/${serie.id}`"
+            class="shrink-0 text-sm font-semibold text-text-secondary hover:text-primary"
+          >
+            {{ t("serie.seeAll") }}
+          </router-link>
+        </div>
+        <div class="-mx-2">
+          <ChiourTrackRow
+            v-for="episode in episodeWindow"
+            :key="episode.slug"
+            :chiour="episode"
+            :list="episodes"
+            source="chiour"
+            :context="serie.name"
+            :strip-prefix="serie.name"
+            :number="episode.episode ?? episodes.indexOf(episode) + 1"
+            :subtitle="''"
           />
-          <span class="min-w-0">
-            <span class="block text-sm text-text-secondary">{{
-              t("serie.previous")
-            }}</span>
-            <span
-              class="block font-semibold text-text-primary group-hover:text-primary transition-colors truncate"
-            >
-              <template v-if="previousEpisode.episode != null"
-                >{{ previousEpisode.episode }}. </template
-              >{{ previousEpisode.name }}
-            </span>
-          </span>
-        </router-link>
+        </div>
+      </section>
 
-        <router-link
-          v-if="nextEpisode"
-          :to="`/chiourim/${nextEpisode.slug}`"
-          class="group flex items-center justify-end gap-2.5 min-w-0 text-right rounded-control px-3 py-2.5 transition-colors hover:bg-black/[0.04] dark:hover:bg-white/5"
-          :class="previousEpisode ? 'col-start-2' : 'col-span-2'"
-        >
-          <span class="min-w-0">
-            <span class="block text-sm text-text-secondary">{{
-              t("serie.next")
-            }}</span>
-            <span
-              class="block font-semibold text-text-primary group-hover:text-primary transition-colors truncate"
-            >
-              <template v-if="nextEpisode.episode != null">{{ nextEpisode.episode }}. </template
-              >{{ nextEpisode.name }}
-            </span>
-          </span>
-          <AppIcon
-            name="chevron-right"
-            :size="16"
-            class="text-text-secondary shrink-0 transition-transform group-hover:translate-x-0.5 group-hover:text-primary"
-          />
-        </router-link>
-      </nav>
-
-      <!-- Recommandations -->
-      <div v-if="recommendations.length > 0">
-        <h2 class="text-2xl font-bold text-text-primary mb-6">
+      <!-- À écouter ensuite -->
+      <section v-if="recommendations.length > 0" class="mt-12">
+        <h2 class="mb-3 font-display text-2xl font-bold tracking-tight text-text-primary">
           {{ t("detailChiour.recommendations") }}
         </h2>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <ChiourCard
+        <div class="-mx-2">
+          <ChiourTrackRow
             v-for="rec in recommendations"
             :key="rec.slug"
             :chiour="rec"
-            :serie-name="serie && rec.serieId === serie.id ? serie.name : undefined"
-            class="h-full"
+            :list="recommendations"
+            source="chiour"
           />
         </div>
-      </div>
+      </section>
     </div>
 
     <ShareModal

@@ -36,6 +36,17 @@ export const BOOK_ALIASES: Record<string, string[]> = {
   Brahot: ["Bénédictions", "Blessings"],
   "Maagal Hahayim": ["Cycle de la vie", "Life cycle"],
   Sidour: ["Siddur", "Prières", "Prayers", "Tefila", "Tefilot", "תפילה"],
+  // Moussar : le nom du rayon, et les graphies des deux livres.
+  "Hovot Halévavot": [
+    "Hovot Halevavot",
+    "Chovot HaLevavot",
+    "Duties of the Heart",
+    "Devoirs des cœurs",
+    "Moussar",
+    "Musar",
+    "מוסר",
+  ],
+  "Pélé Yoets": ["Pele Yoetz", "Pélé Yoets", "Pele Yoets", "Moussar", "Musar", "מוסר"],
 };
 
 /**
@@ -217,4 +228,15 @@ export const TEXT_ALIASES: Record<string, string[]> = {
   Arvit: ["Maariv", "מעריב", "Prière du soir", "Evening prayer"],
   "Chema al Hamita": ["Kriat Chema", "Chéma du coucher", "Bedtime Shema"],
   "Tikoun Hatsot": ["Prière de minuit", "Midnight prayer"],
+
+  // Moussar : la porte qu'on vient le plus chercher, sous ses graphies.
+  "Chaar Habita'hon": [
+    "Shaar Habitahon",
+    "Chaar Habitahon",
+    "Shaar HaBitachon",
+    "Bitahon",
+    "Bitachon",
+    "Confiance en Dieu",
+    "Gate of Trust",
+  ],
 };

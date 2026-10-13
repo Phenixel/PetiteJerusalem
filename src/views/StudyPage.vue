@@ -88,7 +88,7 @@ const bookState = (text: TextStudyJsonEntry): BookState =>
 
 // La bibliothèque est un tableau de bord : l'accueil ne montre que les grandes
 // sections (corpus) ; la liste détaillée des textes vit sur /bibliotheque/:corpus.
-// Quatre corpus d'étude, sur une étagère. La liturgie (Sidour, Moadim, Brahot)
+// Cinq corpus d'étude, sur une étagère (le moussar en dernier). La liturgie (Sidour, Moadim, Brahot)
 // a sa page, le Sidour : elle ne vit plus ici (voir SidourPage).
 const CORPUS_META: {
   corpus: string;
@@ -124,6 +124,15 @@ const CORPUS_META: {
     labelKey: "study.types.tanakh",
     descKey: "study.corpus.tanakhDesc",
     searchKey: "study.corpus.tanakhSearch",
+  },
+  // Moussar : un rayon d'étude ('Hovot Halévavot, Pélé Yoets), qu'on ne
+  // propose pas au partage de lecture pour autant (voir isShareable).
+  {
+    corpus: "moussar",
+    typeKey: "Moussar",
+    labelKey: "study.types.moussar",
+    descKey: "study.corpus.moussarDesc",
+    searchKey: "study.corpus.moussarSearch",
   },
 ];
 

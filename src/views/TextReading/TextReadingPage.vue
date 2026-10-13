@@ -1,6 +1,14 @@
 <script setup lang="ts">
 import { SIDOUR_PATH, isSidourPath } from "../../config/navSections";
-import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from "vue";
+import {
+  ref,
+  computed,
+  defineAsyncComponent,
+  watch,
+  nextTick,
+  onMounted,
+  onBeforeUnmount,
+} from "vue";
 import { HDate } from "@hebcal/core";
 import { useRoute, useRouter, onBeforeRouteLeave } from "vue-router";
 import type { RouteLocationRaw } from "vue-router";
@@ -82,6 +90,11 @@ import PrayerNamesLine from "./PrayerNamesLine.vue";
 import ReadingNav from "../../components/ReadingNav.vue";
 import TalmudDafText from "../../components/TalmudDafText.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
+// Les cours audio d'un texte : chargés à la demande, ils lisent Firestore et
+// ne servent qu'aux textes d'étude qui en ont.
+const TexteChiourim = defineAsyncComponent(
+  () => import("../../components/chiourim/TexteChiourim.vue"),
+);
 import { useToast } from "../../composables/useToast";
 import { useReadingSize } from "../../composables/useReadingSize";
 import { readingProgressService } from "../../services/readingProgressService";
@@ -174,7 +187,7 @@ const isEtudeRoute = computed(() => route.params.corpus !== undefined);
 /** Corpus ayant leur page de bibliothèque (route `study-corpus`) : le retour
  * y ramène, plutôt qu'à l'accueil de la bibliothèque. Les textes de liturgie
  * (Sidour, Moadim, Brahot) remontent, eux, à la page du Sidour. */
-const LIBRARY_CORPORA = new Set(["tehilim", "michna", "talmud", "tanakh"]);
+const LIBRARY_CORPORA = new Set(["tehilim", "michna", "talmud", "tanakh", "moussar"]);
 const etudeEntry = computed<TextStudyJsonEntry | null>(() =>
   isEtudeRoute.value
     ? entryByCorpusSlug(String(route.params.corpus), String(route.params.slug))
@@ -824,6 +837,16 @@ watch([content, sectionParam, () => route.query.verset], ([loaded, , verset]) =>
   if (!loaded || verset === undefined) return;
   const line = Number(verset);
   if (Number.isInteger(line) && line >= 0) scrollToLine(line);
+});
+
+// Arrivée avec ?chapitre=N depuis un cours audio (voir chiourTexte) : sur un
+// texte d'une seule page, le N-ième bloc (le chapitre d'un livre des
+// Prophètes, la montée d'une paracha). On s'y rend comme à un verset.
+watch([content, () => route.query.chapitre], ([loaded, chapitre]) => {
+  if (!loaded || chapitre === undefined || route.query.verset !== undefined) return;
+  if (loaded.sections.length !== 1) return;
+  const block = loaded.sections[0].blocks?.[Number(chapitre) - 1];
+  if (block) scrollToLine(block.offset);
 });
 
 // Arrivée par un renvoi (#repère, voir TextLink) : la fin des Hochanot ramène
@@ -1918,6 +1941,13 @@ watch(textId, (_, previousTextId) => {
       <!-- Passage list (multi-section texts) -->
       <div v-if="showSectionList">
         <ReadingNav v-if="prevText || nextText" v-bind="siblingNavProps" class="mb-8" />
+        <!-- Les cours audio sur ce livre, avant ses chapitres -->
+        <TexteChiourim
+          v-if="textEntry && !isLiturgyText && !isSessionMode"
+          :entry="textEntry"
+          :chapitre="null"
+          class="mb-10"
+        />
         <p class="text-sm text-text-secondary mb-4">
           {{ t("textReading.sectionsCount", { count: content.sections.length }) }}
         </p>
@@ -2202,6 +2232,14 @@ watch(textId, (_, previousTextId) => {
             </span>
           </span>
         </RouterLink>
+
+        <!-- Les cours audio sur ce chapitre (ou ce texte), une fois lu -->
+        <TexteChiourim
+          v-if="textEntry && !isLiturgyText && !isSessionMode"
+          :entry="textEntry"
+          :chapitre="isSingleSection ? null : currentSection.index"
+          class="mt-12"
+        />
 
         <!-- Bottom navigation -->
         <ReadingNav v-if="!isSingleSection" v-bind="sectionNavProps" class="mt-12" />

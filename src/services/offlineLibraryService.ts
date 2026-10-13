@@ -36,7 +36,7 @@ export interface OfflineBook {
   /** Chemin web du fichier, clé unique du livre. */
   path: string;
   name: string;
-  /** Corpus (type) : "Tehilim" | "Mishna" | "Talmud Bavli" | "Tanakh". */
+  /** Corpus (type) : "Tehilim" | "Mishna" | "Talmud Bavli" | "Tanakh" | "Moussar"… */
   corpus: string;
   /** Regroupement d'origine (seder, livre). */
   livre: string;
@@ -99,6 +99,7 @@ const CORPUS_META: { key: string; labelKey: string; approxBytes: number }[] = [
   { key: "Mishna", labelKey: "study.types.mishna", approxBytes: 3_000_000 },
   { key: "Talmud Bavli", labelKey: "study.types.talmud", approxBytes: 29_900_000 },
   { key: "Tanakh", labelKey: "study.types.tanakh", approxBytes: 6_800_000 },
+  { key: "Moussar", labelKey: "study.types.moussar", approxBytes: 3_500_000 },
   { key: "Sidour", labelKey: "study.types.sidour", approxBytes: 0 },
   { key: "Moadim", labelKey: "study.types.moadim", approxBytes: 560_000 },
   { key: "Brahot", labelKey: "study.types.brahot", approxBytes: 0 },

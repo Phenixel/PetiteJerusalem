@@ -182,6 +182,24 @@ body {
   background-color: var(--color-selection);
 }
 
+/* ---- Le texte des auteurs, dans sa langue ---------------------------------
+   Un titre de cours peut être en hébreu dans l'interface française, ou en
+   français dans l'interface hébraïque. Posé avec dir="auto", il prend le sens
+   de sa propre langue : coupé, il perd sa fin et pas son début, et ses
+   signes restent à leur place. Il s'aligne pourtant comme la page autour de
+   lui (match-parent), et un mot sans fin passe à la ligne plutôt que de
+   déborder. En couche de base, pour qu'un text-center l'emporte.
+   Chromium lit match-parent mais l'applique comme start : seule sa forme
+   préfixée, déclarée après, y fait ce qu'elle dit ; Firefox, qui ne la
+   connaît pas, garde la première. */
+@layer base {
+  [dir="auto"] {
+    text-align: match-parent;
+    text-align: -webkit-match-parent;
+    overflow-wrap: break-word;
+  }
+}
+
 /* Global Styles */
 body {
   font-family: var(--font-sans);

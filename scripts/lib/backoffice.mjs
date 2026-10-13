@@ -179,6 +179,108 @@ export function parseList(value) {
     .filter(Boolean);
 }
 
+// ---- Le texte d'un chiour (voir src/services/chiourTexte.ts) ----------------------
+
+/** Le plus grand numéro de chapitre accepté (le Pélé Yoets compte ses sujets jusqu'à 391). */
+export const CHAPITRE_MAX = 10000;
+
+/**
+ * Les textes dont on ne précise pas de chapitre : un psaume, une tefila. Même
+ * règle que `hasChapitres` dans src/services/chiourTexte.ts.
+ */
+const TYPES_SANS_CHAPITRE = new Set(["Tehilim", "Sidour", "Brahot", "Moadim"]);
+
+const SANS = new Set(["", "aucun", "aucune", "-"]);
+
+/**
+ * `--livre` et `--chapitre` en champs `texteId` / `texteChapitre`, ceux-là
+ * seulement qui changent. Changer de texte oublie le chapitre de l'ancien ;
+ * `--livre aucun` retire les deux. Le chapitre se compte comme la
+ * bibliothèque (l'index de la section, 0 pour l'introduction d'une porte de
+ * 'Hovot Halévavot, le numéro du sujet du Pélé Yoets, le rang du bloc d'un
+ * texte d'une page) : il n'est vérifié qu'en bornes, le catalogue ne dit pas
+ * comment chaque fichier se découpe.
+ *
+ * @param {{ livre?: string, chapitre?: string }} input
+ * @param {{ id: number | string, type: string }[]} catalog
+ * @param {{ texteId?: number | null, texteChapitre?: number | null }} [current]
+ * @returns {{ texteId?: number | null, texteChapitre?: number | null }}
+ */
+export function texteFields(input, catalog, current = {}) {
+  const fields = {};
+  let texteId = typeof current.texteId === "number" ? current.texteId : null;
+  if (input.livre !== undefined) {
+    const raw = String(input.livre).trim().toLowerCase();
+    if (SANS.has(raw)) {
+      return { texteId: null, texteChapitre: null };
+    }
+    const id = Number(raw);
+    if (!Number.isInteger(id) || !catalog.some((entry) => Number(entry.id) === id)) {
+      throw new BackofficeInputError(
+        `Livre inconnu : ${input.livre} (voir livre:liste --recherche …).`,
+      );
+    }
+    if (id !== texteId) fields.texteChapitre = null;
+    fields.texteId = id;
+    texteId = id;
+  }
+  if (input.chapitre !== undefined) {
+    const raw = String(input.chapitre).trim().toLowerCase();
+    if (SANS.has(raw)) {
+      fields.texteChapitre = null;
+      return fields;
+    }
+    if (texteId === null) throw new BackofficeInputError("--chapitre demande un --livre.");
+    const entry = catalog.find((e) => Number(e.id) === texteId);
+    if (entry && TYPES_SANS_CHAPITRE.has(entry.type)) {
+      throw new BackofficeInputError(`Ce texte (${entry.type}) ne se découpe pas en chapitres.`);
+    }
+    const n = Number(raw);
+    if (!Number.isInteger(n) || n < 0 || n > CHAPITRE_MAX) {
+      throw new BackofficeInputError(`Chapitre invalide : ${input.chapitre}.`);
+    }
+    fields.texteChapitre = n;
+  }
+  return fields;
+}
+
+/**
+ * Un nom réduit à sa prononciation approchée, pour que les graphies d'un même
+ * nom se rejoignent : accents, apostrophes, espaces et tirets ôtés, puis
+ * « tz », « z » et « ts » confondus, comme « ch », « kh », « sh » et « h ».
+ * Ainsi « Vayetse » trouve « Vayetze », « Chaar Habitahon » trouve « Chaar
+ * Habita'hon », « Berachot » trouve « Berakhot ».
+ *
+ * @param {unknown} value
+ */
+export function foldTransliteration(value) {
+  return String(value)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]/gu, "")
+    .replace(/tz|ts|z/g, "s")
+    .replace(/[cks]h/g, "h");
+}
+
+/**
+ * Les textes du catalogue dont le nom ou le livre contient le terme, quelle
+ * que soit sa graphie (voir foldTransliteration) : de quoi trouver
+ * l'identifiant à passer à --livre.
+ *
+ * @template {{ name: string, livre: string }} T
+ * @param {T[]} catalog
+ * @param {string} term
+ * @returns {T[]}
+ */
+export function searchCatalog(catalog, term) {
+  const needle = foldTransliteration(term ?? "");
+  if (!needle) return catalog;
+  return catalog.filter((entry) =>
+    foldTransliteration(`${entry.name} ${entry.livre}`).includes(needle),
+  );
+}
+
 /** L'adresse publique du studio d'un auteur, pour un lien secret. */
 export function studioLink(token) {
   return `https://petite-jerusalem.fr/studio/${token}`;

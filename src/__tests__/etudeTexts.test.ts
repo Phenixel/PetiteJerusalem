@@ -153,9 +153,11 @@ describe("etudeTexts pages de corpus (/bibliotheque/<corpus>)", () => {
   it("proposent le partage, et mènent au Sidour", () => {
     // La liturgie n'a plus de liste par corpus : ses textes se rangent sur
     // /sidour (voir sidourSeo.test.ts), où les listes d'étude renvoient.
-    expect(LISTED_CORPORA).toEqual(["tehilim", "michna", "talmud", "tanakh"]);
+    expect(LISTED_CORPORA).toEqual(["tehilim", "michna", "talmud", "tanakh", "moussar"]);
     expect(buildCorpusBody("talmud")).toContain('href="/share-reading/new-session"');
     expect(buildCorpusBody("talmud")).toContain('href="/sidour"');
+    // Le moussar s'étudie à son rythme : sa liste ne propose pas le partage.
+    expect(buildCorpusBody("moussar")).not.toContain('href="/share-reading/new-session"');
   });
 
   it("émet un fil d'Ariane et la liste des livres en JSON-LD", () => {

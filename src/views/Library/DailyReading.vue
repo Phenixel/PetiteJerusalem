@@ -86,6 +86,7 @@ const TYPES = [
   { key: "Mishna", labelKey: "study.types.mishna" },
   { key: "Talmud Bavli", labelKey: "study.types.talmud" },
   { key: "Tanakh", labelKey: "study.types.tanakh" },
+  { key: "Moussar", labelKey: "study.types.moussar" },
 ];
 
 // Type tabs that map to an actual corpus (everything except the "Tout" tab).

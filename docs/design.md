@@ -767,7 +767,10 @@ Plusieurs mots se cherchent chacun de leur côté, dans n'importe quel ordre, et
 tous doivent répondre ; un nombre se cherche comme un nombre (« 23 » trouve
 le Tehilim 23, jamais le 123 ni le 24). Deux lettres ne comptent qu'en début
 de mot, et une description ne s'explore que par débuts de mots, sans fautes :
-sur une phrase entière, tout répondrait à tout.
+sur une phrase entière, tout répondrait à tout. La clé phonétique, elle aussi,
+ne se cherche qu'à partir d'un début de mot (« babametsia », tapé d'un trait,
+trouve Bava Metzia) : au milieu d'un mot, « chabbat » tombait dans le
+« Ahavat » du Chaar Ahavat Hachem (tenu par `fuzzySearch.test.ts`).
 
 Ce que la phonétique ne devine pas s'écrit : « Genèse » pour Berechit,
 « Maariv » pour Arvit, « Psaume 23 », les noms hébreux des parachiot
@@ -1355,6 +1358,99 @@ applique une dernière fois la règle d'alors (tout rejoint un compte jamais
 adopté) plutôt que d'en écarter à l'aveugle. Tenu par
 `src/__tests__/accountSwitchLocalData.test.ts`.
 
+### Les cours s'écoutent comme une liste de lecture
+
+Les cours audio ont pris la forme que tout le monde connaît des applications
+d'écoute : une série est une playlist, un rav un artiste, un cours un
+morceau. On ne lit plus une grille de cartes qui se ressemblent toutes ; on
+parcourt, on lance, on reprend.
+
+- **Le catalogue en rangées.** « Reprendre l'écoute » (les cours entamés sur
+  cet appareil), les séries, les rabbanim, puis les nouveautés et tous les
+  cours en lignes. Une rangée défile de côté et déborde jusqu'au bord de
+  l'écran pour le dire ; sur ordinateur, deux flèches la font défiler. Une
+  recherche ou un thème resserre tout en une seule liste.
+- **Les filtres se demandent.** En haut, la recherche et, à côté, un
+  bouton « Filtres » (son dessin et son nom ; le nombre de filtres posés en
+  pastille). Il ouvre un panneau, les thèmes puis les rabbanim, qu'on
+  referme sur « Voir les N cours ». Fermé, chaque filtre posé reste sous la
+  recherche en pastille pleine, qu'on retire d'un geste. Une rangée de
+  thèmes toujours ouverte faisait de l'en-tête un nuage de mots-clés avant
+  même le premier cours.
+- **Une ligne joue.** Toute la ligne d'un cours le lance, et la liste
+  affichée devient la file du lecteur : la fin d'un cours enchaîne le
+  suivant. Toucher le cours qui joue le met en pause. Il prend la couleur du
+  thème et ses trois barres, qui se figent en pause et ne bougent pas en
+  mouvement réduit. Un cours entamé porte une barre fine de ce qui est
+  écouté, et ce qu'il en reste à la place de sa durée ; un cours fini, une
+  coche.
+- **Une série, un cours, un rav : une page de playlist.** La pochette, le
+  titre, le rav (son rond et son nom), la durée ; puis une ligne d'actions,
+  « Lire le texte » ou partager d'un côté, le grand bouton rond d'écoute au
+  bout (il reprend l'épisode entamé, et dit lequel aux lecteurs d'écran) ;
+  puis la liste. La page d'un cours n'a pas de lecteur à elle : c'est la
+  page qu'on partage, avec le texte étudié, la description, la série.
+- **Le lecteur est en bas.** Une barre qui flotte au-dessus de la barre de
+  l'app et suit d'une page à l'autre : la pochette, le titre et le rav, la
+  lecture, le cours suivant pendant l'écoute (fermer, en pause), la
+  progression au bord bas. Sur un écran large, elle prend toute la largeur
+  avec les commandes et la barre de lecture au milieu, la vitesse et fermer
+  à droite.
+- **Le lecteur plein écran.** Un appui sur la barre l'ouvre ; la flèche du
+  haut ou le retour le referment. D'où vient l'écoute (« Lecture depuis
+  Chaar Habitahon »), la grande pochette, le titre et le rav, la barre de
+  lecture, puis reculer de 15 s, précédent, la lecture en grand rond,
+  suivant, avancer de 30 s ; la vitesse en une pastille qu'on touche pour
+  passer à la suivante. Plus bas, le texte étudié, ce qui suit dans la
+  file, et « À propos du cours », qui mène à sa page. Sur un écran large,
+  deux colonnes : le cours à gauche, la suite à droite.
+- **La file se lit d'un coup d'œil.** « En cours » d'abord, à part : la
+  pochette, le titre entier, le chapitre et ce qu'il reste, les barres qui
+  dansent. Puis « À suivre », dix lignes et la suite à un geste : une ligne
+  par cours, séparées d'un filet, le numéro, le titre sur deux lignes au
+  plus et, dessous, le chapitre étudié et la durée. Une liste compacte
+  d'une ligne par cours ne laissait pas voir où l'on en était.
+- **Un titre ne répète pas sa série.** Dans une liste où la série est déjà
+  dite (la page d'une série, la file du lecteur), « Shaar Habitahon Shiour
+  10 Chapitre 2 » devient « Shiour 10 Chapitre 2 » (`shortTitle`).
+- **La couleur du lecteur.** La barre et le plein écran prennent la reliure
+  de la série, assombrie, en aplat (`playerTone`), et y écrivent en crème ;
+  le bouton de lecture est un rond crème qui porte la reliure. C'est le seul
+  endroit où une surface de l'app sort du thème : comme la carte de la fête,
+  on reconnaît d'un coup d'œil ce qui joue. Pas de dégradé, contrairement à
+  Spotify.
+- **La pochette.** Les cours n'ont pas d'image : chaque série reçoit une
+  reliure, comme les volumes de l'étagère, d'une teinte chaude et mate tirée
+  de son identifiant (la même à chaque visite). Dans un cadre estampé, son
+  titre en Playfair, au centre, aussi grand que la pochette le permet : sa
+  taille suit la largeur de la pochette (unités de conteneur) et la longueur
+  du titre, sans qu'un mot ne déborde, sur des lignes équilibrées. En bas,
+  sous un fleuron (deux traits, un losange), le rav en petites capitales.
+  Un titre écrit petit dans un coin se perdait dans la teinte. En petit, les
+  initiales de la série. Un rav a la même reliure, ronde. Hors thème, identique en mode sombre, en aplats, le titre
+  crème à 4,5:1 au moins sur chaque teinte (`components/chiourim/cover.ts`,
+  tenu par `chiourCover.test.ts`).
+- **Les titres gardent leur langue.** Un titre, un nom de série ou de rav,
+  une description sont écrits par les auteurs : en hébreu dans l'interface
+  française, en français dans l'interface hébraïque. Ils portent
+  `dir="auto"` : coupés, ils perdent leur fin et pas leur début, et leurs
+  signes restent à leur place ; ils s'alignent pourtant comme la page autour
+  d'eux, et un mot sans fin passe à la ligne au lieu de déborder (règle
+  `[dir="auto"]` de `assets/main.css`). Un titre long se borne à deux
+  lignes dans les tuiles et la file du lecteur, trois sous la pochette du
+  plein écran ; `line-clamp` pose son propre `display`, on ne lui adjoint
+  jamais `block`, qui l'annule.
+- **Le texte étudié.** Un cours rattaché à un livre de la bibliothèque
+  (`services/chiourTexte.ts`) le dit sur sa page et dans le lecteur plein
+  écran, par une carte qui mène au livre au chapitre près (« Chaar
+  Habita'hon · Chapitre 4 ») ; une série, par « Lire le texte ». Dans
+  l'autre sens, sous le chapitre qu'on vient de lire (ou en tête d'un
+  livre), « Cours sur ce chapitre » : ceux du chapitre d'abord, trois à cinq
+  lignes, la suite à un geste. Rien sous une tefila : on y vient prier.
+
+Aucune image, aucun dégradé : la barre de lecture est une piste en deux
+aplats sous le curseur natif.
+
 ## 2. Les couleurs de thème
 
 Deux couleurs : l'orange d'origine de l'app, le vermillon de la pierre de
@@ -1634,6 +1730,38 @@ la fête, le livre s'ouvre sur le premier. Le choix ne se retient pas : rouvrir
 le livre, c'est retrouver le jour qu'il est. Une adresse peut nommer le jour
 (`?jour=hoshana-rabba`) : le lien de la page de Hochaana Rabba, les anciennes
 pages d'un jour, un passage partagé.
+
+### L'étagère de la bibliothèque : des volumes reliés, hors thème
+
+L'accueil de la bibliothèque pose ses grands rayons d'étude comme des livres
+sur une planche (`LibraryShelf.vue`) : Tehilim, Michna, Talmud, Tanakh,
+Moussar. La liturgie n'y est pas : elle a sa page, le Sidour.
+
+Cinq volumes au plus sur la planche : au-delà, le titre de la couverture
+devient trop petit pour se lire sur un téléphone. Un rayon de plus se pose
+donc sur une planche nouvelle, plutôt qu'en sixième volume.
+
+Les reliures ne suivent pas le thème choisi : ce sont des objets, de teintes
+chaudes et mates de la même famille (terre cuite, bronze, brun), identiques en
+mode sombre. Un volume nouveau prend une teinte de cette famille qui ne se
+confond pas avec ses voisins :
+
+| Rayon   | Reliure   |
+| ------- | --------- |
+| Tehilim | `#96604a` |
+| Michna  | `#7d6a4c` |
+| Talmud  | `#6d5743` |
+| Tanakh  | `#84483f` |
+| Moussar | `#86622f` |
+
+Le Moussar ('Hovot Halévavot, Pélé Yoets) est un rayon d'étude : il a sa page
+de liste et son volume sur la planche, ses marque-pages et sa reprise de
+lecture. Il ne se propose pas au partage de lecture, comme la liturgie
+(`isShareable` dans `content/etudeTexts.ts`). Ses numéros de section sont ceux
+qu'un cours cite, et donc ceux de ses adresses : une porte de 'Hovot
+Halévavot s'ouvre sur son introduction, la section 0, et ses chapitres gardent
+leur numéro ; un sujet du Pélé Yoets garde son numéro dans tout le livre (la
+lettre Beth va du 22 au 41). Tenu par `moussar.test.ts`.
 
 ## 3. Les rayons
 
