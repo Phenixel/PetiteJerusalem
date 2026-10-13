@@ -1313,7 +1313,6 @@ const en: LocaleMessages = {
     subtitle: "Discover Torah courses and lessons shared by the community",
     loadError: "Error loading shiurim",
     searchPlaceholder: "Search a course, a rabbi...",
-    allCategories: "All",
     availableChiourim: "Available shiurim",
     noResults: "No shiur matches your search.",
     clearFilters: "Clear filters",
@@ -1376,6 +1375,13 @@ const en: LocaleMessages = {
       onChapter: "Shiurim on this chapter",
       onText: "Shiurim on this text",
       showAll: "See all {count} shiurim",
+    },
+    filters: {
+      button: "Filters",
+      themes: "Themes",
+      clear: "Clear all",
+      show: "Show {count} shiurim",
+      remove: "Remove the filter “{filter}”",
     },
   },
   detailChiour: {

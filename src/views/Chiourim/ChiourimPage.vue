@@ -14,6 +14,7 @@ import ChiourRail from "../../components/chiourim/ChiourRail.vue";
 import ChiourTrackRow from "../../components/chiourim/ChiourTrackRow.vue";
 import ResumeTile from "../../components/chiourim/ResumeTile.vue";
 import SerieTile from "../../components/chiourim/SerieTile.vue";
+import ChiourCover from "../../components/chiourim/ChiourCover.vue";
 import { inProgressSlugs } from "../../services/listeningProgress";
 import { seoService } from "../../services/seoService";
 import { isNativeApp } from "../../composables/useNativeApp";
@@ -39,6 +40,10 @@ const error = ref<string | null>(null);
 const searchTerm = ref("");
 const { searching } = useSearchMode(searchTerm);
 const selectedCategory = ref<string>("all");
+/** Le rav choisi dans les filtres, null pour tous. */
+const selectedRav = ref<string | null>(null);
+/** Le panneau des filtres, ouvert par le bouton « Filtres ». */
+const filtersOpen = ref(false);
 
 /** Combien de cours la liste complète montre d'abord, puis à chaque « Afficher plus ». */
 const PAGE = 20;
@@ -89,13 +94,57 @@ const loadChiourim = async () => {
 };
 
 /** On parcourt le catalogue (rangées) tant qu'on ne cherche ni ne filtre. */
-const browsing = computed(() => !searchTerm.value.trim() && selectedCategory.value === "all");
+const browsing = computed(
+  () => !searchTerm.value.trim() && selectedCategory.value === "all" && !selectedRav.value,
+);
 
 const filteredChiourim = computed(() => {
   let result = chiourim.value;
   result = chiourService.filterByCategory(result, selectedCategory.value);
+  if (selectedRav.value) result = chiourService.filterByAuteur(result, selectedRav.value);
   result = chiourService.filterBySearch(result, searchTerm.value);
   return result;
+});
+
+// --- Les filtres ---
+
+/** Les filtres posés, en pastilles qu'on retire d'un geste sous la recherche. */
+const activeFilters = computed(() => {
+  const list: { key: string; label: string; clear: () => void }[] = [];
+  if (selectedCategory.value !== "all")
+    list.push({
+      key: "category",
+      label: selectedCategory.value,
+      clear: () => (selectedCategory.value = "all"),
+    });
+  if (selectedRav.value)
+    list.push({ key: "rav", label: selectedRav.value, clear: () => (selectedRav.value = null) });
+  return list;
+});
+
+function toggleCategory(cat: string) {
+  selectedCategory.value = selectedCategory.value === cat ? "all" : cat;
+}
+
+function toggleRav(name: string) {
+  selectedRav.value = selectedRav.value === name ? null : name;
+}
+
+function clearFilters() {
+  selectedCategory.value = "all";
+  selectedRav.value = null;
+}
+
+watch(filtersOpen, (open) => {
+  if (open)
+    analyticsService.capture("chiourim_filters_opened", { results_count: chiourimCount.value });
+});
+
+watch(selectedRav, (auteur) => {
+  analyticsService.capture("chiourim_rav_filtered", {
+    auteur,
+    results_count: chiourimCount.value,
+  });
 });
 
 const chiourimCount = computed(() => filteredChiourim.value.length);
@@ -154,7 +203,7 @@ const latest = computed(() =>
 
 const allVisible = computed(() => filteredChiourim.value.slice(0, shown.value));
 
-watch([searchTerm, selectedCategory], () => {
+watch([searchTerm, selectedCategory, selectedRav], () => {
   shown.value = PAGE;
 });
 
@@ -243,12 +292,13 @@ onMounted(() => {
       </div>
     </CollapseTransition>
 
-    <!-- Recherche : collante sur l'app pour rester accessible au défilement. -->
+    <!-- La recherche et le bouton des filtres, sur une ligne ; collante dans
+         l'app pour rester sous le pouce au défilement. -->
     <div
       :class="isNativeApp ? 'app-sticky-search' : ''"
-      class="flex justify-center mb-4 animate-[fadeIn_0.5s_ease]"
+      class="mx-auto mb-3 flex max-w-2xl items-center gap-2 animate-[fadeIn_0.5s_ease]"
     >
-      <div class="relative w-full md:w-96">
+      <div class="relative min-w-0 flex-1">
         <AppIcon
           name="search"
           :size="16"
@@ -270,39 +320,104 @@ onMounted(() => {
           <AppIcon name="x" :size="14" />
         </button>
       </div>
+      <button
+        type="button"
+        class="filters-btn"
+        :class="filtersOpen || activeFilters.length ? 'filters-btn--on' : ''"
+        :aria-expanded="filtersOpen"
+        aria-controls="chiourim-filters"
+        @click="filtersOpen = !filtersOpen"
+      >
+        <AppIcon name="settings" :size="17" />
+        <span class="hidden sm:inline">{{ t("chiourim.filters.button") }}</span>
+        <span v-if="activeFilters.length" class="filters-count">{{ activeFilters.length }}</span>
+      </button>
     </div>
 
-    <!-- Les thèmes -->
+    <!-- Le panneau des filtres : les thèmes, les rabbanim -->
+    <CollapseTransition>
+      <section
+        v-if="filtersOpen"
+        id="chiourim-filters"
+        class="card mx-auto mb-4 max-w-2xl p-4 md:p-5"
+        :aria-label="t('chiourim.filters.button')"
+      >
+        <h3 class="filters-label">{{ t("chiourim.filters.themes") }}</h3>
+        <div class="mt-2 flex flex-wrap gap-2">
+          <button
+            v-for="cat in dynamicCategories"
+            :key="cat"
+            type="button"
+            class="chip transition-colors"
+            :class="
+              selectedCategory === cat
+                ? 'bg-brand text-on-brand'
+                : 'bg-black/5 text-text-secondary hover:text-text-primary dark:bg-white/10'
+            "
+            :aria-pressed="selectedCategory === cat"
+            @click="toggleCategory(cat)"
+          >
+            {{ cat }}
+          </button>
+        </div>
+
+        <h3 v-if="rabbanim.length > 1" class="filters-label mt-5">
+          {{ t("chiourim.rabbanim") }}
+        </h3>
+        <div v-if="rabbanim.length > 1" class="mt-2 flex flex-wrap gap-2">
+          <button
+            v-for="rav in rabbanim"
+            :key="rav.name"
+            type="button"
+            class="chip inline-flex items-center gap-2 !ps-1 transition-colors"
+            :class="
+              selectedRav === rav.name
+                ? 'bg-brand text-on-brand'
+                : 'bg-black/5 text-text-secondary hover:text-text-primary dark:bg-white/10'
+            "
+            :aria-pressed="selectedRav === rav.name"
+            @click="toggleRav(rav.name)"
+          >
+            <ChiourCover :seed="rav.seed" :label="rav.name" size="avatar" round />
+            {{ rav.name }}
+          </button>
+        </div>
+
+        <div class="mt-5 flex items-center justify-between gap-3">
+          <button
+            v-if="activeFilters.length"
+            type="button"
+            class="text-sm font-semibold text-text-secondary hover:text-primary"
+            @click="clearFilters"
+          >
+            {{ t("chiourim.filters.clear") }}
+          </button>
+          <button type="button" class="btn btn-primary ms-auto" @click="filtersOpen = false">
+            {{ t("chiourim.filters.show", { count: chiourimCount }) }}
+          </button>
+        </div>
+      </section>
+    </CollapseTransition>
+
+    <!-- Les filtres posés, panneau fermé : une pastille chacun, qu'on retire -->
     <div
-      class="chip-row -mx-6 mb-10 flex gap-2 overflow-x-auto px-6 pb-1 md:flex-wrap md:justify-center animate-[fadeIn_0.5s_ease]"
+      v-if="!filtersOpen && activeFilters.length"
+      class="mx-auto mb-4 flex max-w-2xl flex-wrap items-center gap-2"
     >
       <button
-        @click="selectedCategory = 'all'"
-        class="chip shrink-0 transition-colors"
-        :class="
-          selectedCategory === 'all'
-            ? 'bg-brand text-on-brand'
-            : 'bg-black/5 text-text-secondary hover:text-text-primary dark:bg-white/10'
-        "
-        :aria-pressed="selectedCategory === 'all'"
+        v-for="filter in activeFilters"
+        :key="filter.key"
+        type="button"
+        class="chip inline-flex items-center gap-1.5 bg-brand text-on-brand"
+        :aria-label="t('chiourim.filters.remove', { filter: filter.label })"
+        @click="filter.clear()"
       >
-        {{ t("chiourim.allCategories") }}
-      </button>
-      <button
-        v-for="cat in dynamicCategories"
-        :key="cat"
-        @click="selectedCategory = cat"
-        class="chip shrink-0 transition-colors"
-        :class="
-          selectedCategory === cat
-            ? 'bg-brand text-on-brand'
-            : 'bg-black/5 text-text-secondary hover:text-text-primary dark:bg-white/10'
-        "
-        :aria-pressed="selectedCategory === cat"
-      >
-        {{ cat }}
+        {{ filter.label }}
+        <AppIcon name="x" :size="12" />
       </button>
     </div>
+
+    <div :class="isNativeApp ? 'mb-6' : 'mb-10'"></div>
 
     <!-- Chargement -->
     <div v-if="isLoading" class="animate-pulse space-y-10" aria-hidden="true">
@@ -475,10 +590,47 @@ onMounted(() => {
 </template>
 
 <style scoped>
-.chip-row {
-  scrollbar-width: none;
+/* Le bouton des filtres : de la hauteur du champ, à côté de lui. */
+.filters-btn {
+  display: inline-flex;
+  align-self: stretch;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.5rem;
+  border-radius: var(--radius-control);
+  padding-inline: 1rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+  transition:
+    color 0.15s,
+    background-color 0.15s;
 }
-.chip-row::-webkit-scrollbar {
-  display: none;
+.filters-btn:hover {
+  color: var(--color-primary);
+}
+.filters-btn--on {
+  color: var(--color-primary);
+}
+.filters-count {
+  display: inline-flex;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding-inline: 0.3rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-on-brand);
+  background: var(--color-brand);
+}
+.filters-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
 }
 </style>

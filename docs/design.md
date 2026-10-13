@@ -1370,6 +1370,13 @@ parcourt, on lance, on reprend.
   cours en lignes. Une rangée défile de côté et déborde jusqu'au bord de
   l'écran pour le dire ; sur ordinateur, deux flèches la font défiler. Une
   recherche ou un thème resserre tout en une seule liste.
+- **Les filtres se demandent.** En haut, la recherche et, à côté, un
+  bouton « Filtres » (son dessin et son nom ; le nombre de filtres posés en
+  pastille). Il ouvre un panneau, les thèmes puis les rabbanim, qu'on
+  referme sur « Voir les N cours ». Fermé, chaque filtre posé reste sous la
+  recherche en pastille pleine, qu'on retire d'un geste. Une rangée de
+  thèmes toujours ouverte faisait de l'en-tête un nuage de mots-clés avant
+  même le premier cours.
 - **Une ligne joue.** Toute la ligne d'un cours le lance, et la liste
   affichée devient la file du lecteur : la fin d'un cours enchaîne le
   suivant. Toucher le cours qui joue le met en pause. Il prend la couleur du

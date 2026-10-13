@@ -1276,7 +1276,6 @@ const he: LocaleMessages = {
     subtitle: "גלו שיעורי תורה ולימודים שמשתפת הקהילה",
     loadError: "שגיאה בטעינת השיעורים",
     searchPlaceholder: "חפשו שיעור, רב...",
-    allCategories: "הכל",
     availableChiourim: "שיעורים זמינים",
     noResults: "אין שיעור שתואם את החיפוש שלך.",
     clearFilters: "נקה מסננים",
@@ -1339,6 +1338,13 @@ const he: LocaleMessages = {
       onChapter: "שיעורים על פרק זה",
       onText: "שיעורים על טקסט זה",
       showAll: "כל {count} השיעורים",
+    },
+    filters: {
+      button: "סינון",
+      themes: "נושאים",
+      clear: "ניקוי הכל",
+      show: "הצגת {count} שיעורים",
+      remove: "הסרת הסינון “{filter}”",
     },
   },
   detailChiour: {

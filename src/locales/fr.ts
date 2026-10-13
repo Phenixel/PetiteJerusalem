@@ -1361,7 +1361,6 @@ const fr = {
     subtitle: "Découvrez des cours et leçons de Torah partagés par la communauté",
     loadError: "Erreur lors du chargement des chiourim",
     searchPlaceholder: "Rechercher un cours, un rav...",
-    allCategories: "Tous",
     availableChiourim: "Chiourim disponibles",
     noResults: "Aucun chiour ne correspond à votre recherche.",
     clearFilters: "Réinitialiser les filtres",
@@ -1424,6 +1423,13 @@ const fr = {
       onChapter: "Cours sur ce chapitre",
       onText: "Cours sur ce texte",
       showAll: "Voir les {count} cours",
+    },
+    filters: {
+      button: "Filtres",
+      themes: "Thèmes",
+      clear: "Tout effacer",
+      show: "Voir les {count} cours",
+      remove: "Retirer le filtre « {filter} »",
     },
   },
   detailChiour: {

@@ -632,3 +632,19 @@ ouvert.
 | `chapitre` | le chapitre ouvert, `null` sur le texte entier |
 | `chiourim_count` | les cours du texte |
 | `chapter_count` | ceux du chapitre ouvert |
+
+### `chiourim_filters_opened` (nouveau)
+
+Le bouton « Filtres » du catalogue ouvre son panneau (les thèmes, les
+rabbanim). `results_count` : les cours affichés à l'ouverture.
+`chiourim_category_filtered` (existant) continue de partir au choix d'un
+thème, depuis ce panneau ; `category` vaut `all` quand on le retire.
+
+### `chiourim_rav_filtered` (nouveau)
+
+Un rav choisi (ou retiré) dans les filtres du catalogue.
+
+| Propriété | Valeurs |
+| --- | --- |
+| `auteur` | le nom du rav, `null` quand le filtre est retiré |
+| `results_count` | les cours affichés |
