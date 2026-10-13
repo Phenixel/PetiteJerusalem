@@ -78,7 +78,12 @@ function toPoll(value: unknown): Poll | null {
     const label = toText(o.label);
     if (typeof o.id !== "string" || !o.id || !label.fr.trim()) continue;
     if (options.some((known) => known.id === o.id)) continue;
-    const image = typeof o.image === "string" && /^https:\/\//i.test(o.image) ? o.image : null;
+    // https, ou l'émulateur Storage en local (http://localhost:8472/…).
+    const image =
+      typeof o.image === "string" &&
+      /^(https:\/\/|http:\/\/(localhost|127\.0\.0\.1)[:/])/i.test(o.image)
+        ? o.image
+        : null;
     options.push({ id: o.id, label, image });
   }
   if (options.length < POLL_MIN_OPTIONS) return null;

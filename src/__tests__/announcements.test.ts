@@ -365,6 +365,7 @@ describe("lecture d'une information", () => {
         { id: "o1", label: { fr: "Bleue", en: "Blue" }, image: "https://exemple.fr/b.jpg" },
         { id: "o2", label: { fr: "Verte" }, image: "http://exemple.fr/v.jpg" },
         { id: "o2", label: { fr: "Doublon" } },
+        { id: "o3", label: { fr: "Émulateur" }, image: "http://localhost:8472/v0/b/x/o/c.png" },
         { label: { fr: "Sans identifiant" } },
       ],
       multiple: true,
@@ -377,6 +378,8 @@ describe("lecture d'une information", () => {
       options: [
         { id: "o1", label: { fr: "Bleue", en: "Blue" }, image: "https://exemple.fr/b.jpg" },
         { id: "o2", label: { fr: "Verte" }, image: null },
+        // L'émulateur Storage sert en http : sans lui, rouvrir un sondage en local perdait ses images.
+        { id: "o3", label: { fr: "Émulateur" }, image: "http://localhost:8472/v0/b/x/o/c.png" },
       ],
       multiple: true,
       closed: false,
