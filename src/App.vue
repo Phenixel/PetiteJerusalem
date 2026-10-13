@@ -131,7 +131,7 @@ const chromePadClass = computed(() => {
       : "pb-[calc(3.5rem+var(--safe-bottom))]";
     return `pt-[var(--safe-top)] ${bottom}`;
   }
-  return isMiniPlayerVisible.value ? "pb-20" : "";
+  return isMiniPlayerVisible.value ? "pb-20 md:pb-24" : "";
 });
 
 // Réglages d'appareil appliqués d'entrée, en synchrone : un visiteur sans

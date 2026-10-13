@@ -6,12 +6,13 @@ import { chiourService } from "../../services/chiourService";
 import { analyticsService } from "../../services/analyticsService";
 import { serieService, type Serie } from "../../services/serieService";
 import { useViewedChiourim } from "../../composables/useViewedChiourim";
-import { useAudioPlayer } from "../../composables/useAudioPlayer";
-import { chiourCover } from "../../composables/useChiourPlayback";
+import { chiourCover, useChiourPlayback } from "../../composables/useChiourPlayback";
+import { formatMinutes } from "../../components/chiourim/duration";
+import { listeningOf, progressOf, resumePosition } from "../../services/listeningProgress";
 import { useTexteLabels } from "../../composables/useTexteLabels";
 import { chiourTexte, texteRoute } from "../../services/chiourTexte";
 import type { Chiour } from "../../models/models";
-import AudioPlayer from "../../components/AudioPlayer.vue";
+import BigPlayButton from "../../components/chiourim/BigPlayButton.vue";
 import ChiourCover from "../../components/chiourim/ChiourCover.vue";
 import ChiourTrackRow from "../../components/chiourim/ChiourTrackRow.vue";
 import ShareModal from "../../components/ShareModal.vue";
@@ -20,15 +21,17 @@ import { seoService } from "../../services/seoService";
 import { SITE_URL } from "../../config/site";
 
 /**
- * La page d'un cours, l'écran « en cours de lecture » : sa pochette, son
- * titre et son rav, le lecteur, le texte qu'il étudie, sa description, puis
- * la série où il s'inscrit et d'autres cours à écouter ensuite.
+ * La page d'un cours, comme celle d'une playlist d'un seul titre : sa
+ * pochette, son titre et son rav, le bouton qui le lance (le lecteur, lui, est
+ * en bas de l'écran, et s'ouvre en plein écran), le texte qu'il étudie, sa
+ * description, puis la série où il s'inscrit et d'autres cours à écouter.
+ * C'est la page qu'on partage, et celle où mène une recherche.
  */
 
 const route = useRoute();
 const router = useRouter();
-const { t } = useI18n();
-const player = useAudioPlayer();
+const { t, locale } = useI18n();
+const { player, isCurrent, playFrom } = useChiourPlayback();
 const { texteLabel } = useTexteLabels();
 
 function auteurPath(auteur: string) {
@@ -72,6 +75,35 @@ watch(
 );
 
 const cover = computed(() => (chiour.value ? chiourCover(chiour.value) : null));
+
+const current = computed(() => !!chiour.value && isCurrent(chiour.value.slug));
+const playing = computed(() => current.value && player.isPlaying.value);
+
+/** Où on en est, dit sous le titre : la durée, ou ce qu'il en reste. */
+const progress = computed(() => (chiour.value ? progressOf(chiour.value.slug) : 0));
+const timeLine = computed(() => {
+  if (!chiour.value) return "";
+  const duration = chiour.value.duration ?? listeningOf(chiour.value.slug)?.d ?? 0;
+  if (!duration) return "";
+  const resume = resumePosition(chiour.value.slug);
+  if (resume !== null)
+    return t("chiourim.player.left", { time: formatMinutes(duration - resume, locale.value) });
+  return formatMinutes(duration, locale.value);
+});
+
+const playLabel = computed(() => {
+  if (playing.value) return t("audioPlayer.pause");
+  if (current.value || (chiour.value && resumePosition(chiour.value.slug) !== null))
+    return t("chiourim.resumeShort");
+  return t("chiourim.listen");
+});
+
+/** Le lance avec sa série pour file, ou le met en pause s'il joue. */
+function playThis() {
+  if (!chiour.value) return;
+  const queue = episodes.value.length ? episodes.value : [chiour.value];
+  playFrom(queue, chiour.value, "chiour", serie.value?.name ?? null);
+}
 
 /** La série du cours, dans l'ordre : la file du lecteur et la liste « Dans cette série ». */
 const episodes = computed(() =>
@@ -246,23 +278,22 @@ watch(() => route.params.slug, loadChiour);
 </script>
 
 <template>
-  <main class="mx-auto px-6 py-12 max-w-4xl">
-    <button @click="router.push('/chiourim')" class="back-link mb-8">
+  <main class="mx-auto max-w-4xl px-6 py-8 md:py-12">
+    <button @click="router.push('/chiourim')" class="back-link mb-6">
       <AppIcon name="chevron-left" :size="14" class="rtl:rotate-180" />
       {{ t("detailChiour.backToList") }}
     </button>
 
     <!-- Chargement -->
     <div v-if="isLoading" class="animate-pulse" aria-hidden="true">
-      <div class="flex flex-col items-center gap-6 md:flex-row md:items-end">
-        <div class="h-44 w-44 rounded-card bg-black/10 md:h-56 md:w-56 dark:bg-white/10"></div>
+      <div class="flex flex-col gap-6 md:flex-row md:items-end">
+        <div class="mx-auto h-56 w-56 rounded-card bg-black/10 md:mx-0 dark:bg-white/10"></div>
         <div class="w-full flex-1 space-y-3">
           <div class="h-4 w-32 rounded bg-black/10 dark:bg-white/10"></div>
           <div class="h-8 w-2/3 rounded-lg bg-black/10 dark:bg-white/10"></div>
           <div class="h-4 w-40 rounded bg-black/10 dark:bg-white/10"></div>
         </div>
       </div>
-      <div class="card mt-8 h-36 p-6"></div>
     </div>
 
     <!-- Erreur -->
@@ -276,17 +307,16 @@ watch(() => route.params.slug, loadChiour);
 
     <div v-else-if="chiour" class="animate-[fadeIn_0.3s_ease]">
       <!-- En-tête : la pochette, la série, le titre, le rav -->
-      <header
-        class="flex flex-col items-center gap-6 text-center md:flex-row md:items-end md:text-start"
-      >
-        <ChiourCover
-          v-if="cover"
-          :seed="cover.seed"
-          :label="cover.label"
-          :sub="serie ? chiour.auteur : null"
-          size="lg"
-          class="shadow-card"
-        />
+      <header class="flex flex-col gap-6 md:flex-row md:items-end md:gap-8">
+        <div v-if="cover" class="mx-auto w-[min(64vw,15rem)] shrink-0 md:mx-0 md:w-56">
+          <ChiourCover
+            :seed="cover.seed"
+            :label="cover.label"
+            :sub="serie ? chiour.auteur : null"
+            size="md"
+            class="shadow-pop"
+          />
+        </div>
         <div class="min-w-0 flex-1">
           <router-link
             v-if="serie"
@@ -298,23 +328,27 @@ watch(() => route.params.slug, loadChiour);
             >{{ serie.name }}
           </router-link>
           <h1
-            class="mt-1 font-display text-3xl font-bold tracking-tight text-text-primary md:text-4xl"
+            class="mt-1 font-display text-2xl font-bold leading-tight tracking-tight text-text-primary md:text-4xl"
           >
             {{ chiour.name }}
           </h1>
-          <div
-            class="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-text-secondary md:justify-start"
+          <router-link
+            v-if="chiour.auteur"
+            :to="auteurPath(chiour.auteur)"
+            class="mt-3 inline-flex items-center gap-2 font-semibold text-text-primary hover:text-primary"
           >
-            <router-link
-              v-if="chiour.auteur"
-              :to="auteurPath(chiour.auteur)"
-              class="font-semibold text-text-primary hover:text-primary"
-              >{{ chiour.auteur }}</router-link
-            >
-            <span v-if="chiour.niveau" class="inline-flex items-center gap-1.5 text-sm">
-              <AppIcon name="signal" :size="14" />
-              {{ chiour.niveau }}
-            </span>
+            <ChiourCover
+              :seed="chiour.auteurId ?? chiour.auteur"
+              :label="chiour.auteur"
+              size="avatar"
+              round
+            />
+            {{ chiour.auteur }}
+          </router-link>
+          <p class="mt-1 flex flex-wrap items-center gap-x-2 text-sm text-text-secondary">
+            <span v-if="timeLine">{{ timeLine }}</span>
+            <span v-if="timeLine && chiour.niveau" aria-hidden="true">·</span>
+            <span v-if="chiour.niveau">{{ chiour.niveau }}</span>
             <span
               v-if="wasAlreadyViewed"
               class="chip inline-flex items-center gap-1 bg-green-600/10 text-green-700 dark:text-green-300"
@@ -322,34 +356,48 @@ watch(() => route.params.slug, loadChiour);
               <AppIcon name="circle-check" :size="12" />
               {{ t("common.viewed") }}
             </span>
-          </div>
+          </p>
+          <span
+            v-if="progress > 0 && progress < 1"
+            class="mt-2 block h-1 w-40 overflow-hidden rounded-full bg-black/10 dark:bg-white/15"
+            aria-hidden="true"
+          >
+            <span class="block h-full bg-primary" :style="{ width: `${progress * 100}%` }" />
+          </span>
         </div>
       </header>
 
-      <!-- Le lecteur (aucun si le cours n'a pas d'audio) -->
-      <AudioPlayer
-        v-if="chiour.mediaUrl"
-        class="mt-8"
-        :chiour="chiour"
-        :queue="episodes"
-        @navigate="(slug) => router.push(`/chiourim/${slug}`)"
-      />
-
-      <div class="mt-4 flex flex-wrap items-center justify-center gap-2 md:justify-start">
-        <span v-for="cat in chiour.categories" :key="cat" class="chip bg-primary/10 text-primary">
+      <!-- Les actions : partager à gauche, l'écoute au bout -->
+      <div class="mt-5 flex items-center gap-2">
+        <button
+          class="flex h-10 w-10 items-center justify-center rounded-full bg-black/5 text-text-primary transition-colors hover:bg-black/10 dark:bg-white/10"
+          :aria-label="t('common.share')"
+          :title="t('common.share')"
+          @click="showShareModal = true"
+        >
+          <AppIcon name="share" :size="17" />
+        </button>
+        <span
+          v-for="cat in chiour.categories"
+          :key="cat"
+          class="chip hidden bg-primary/10 text-primary sm:inline-flex"
+        >
           {{ cat }}
         </span>
-        <button class="btn btn-soft btn-sm ms-auto max-md:ms-0" @click="showShareModal = true">
-          <AppIcon name="share" :size="14" />
-          {{ t("common.share") }}
-        </button>
+        <BigPlayButton
+          v-if="chiour.mediaUrl"
+          class="ms-auto"
+          :playing="playing"
+          :label="playLabel"
+          @click="playThis"
+        />
       </div>
 
       <!-- Le texte étudié : la carte mène au livre, au chapitre près -->
       <router-link
         v-if="texte && texteTo"
         :to="texteTo"
-        class="card card-hover mt-8 flex items-center gap-4 p-5"
+        class="card card-hover mt-6 flex items-center gap-4 p-4 md:p-5"
         @click="trackTexteOpened"
       >
         <span
@@ -363,14 +411,14 @@ watch(() => route.params.slug, loadChiour);
             texteLabel(texte.entry, texte.chapitre)
           }}</span>
         </span>
-        <span class="btn btn-soft btn-sm shrink-0 !rounded-pill">
+        <span class="btn btn-soft btn-sm hidden shrink-0 !rounded-pill sm:inline-flex">
           {{ t("chiourim.texte.read") }}
         </span>
       </router-link>
 
       <!-- La description -->
-      <section v-if="chiour.description" class="card mt-8 p-6">
-        <h2 class="mb-3 text-lg font-bold text-text-primary">
+      <section v-if="chiour.description" class="mt-8">
+        <h2 class="mb-2 text-lg font-bold text-text-primary">
           {{ t("common.description") }}
         </h2>
         <p class="text-text-secondary leading-relaxed whitespace-pre-line">
@@ -398,6 +446,7 @@ watch(() => route.params.slug, loadChiour);
             :chiour="episode"
             :list="episodes"
             source="chiour"
+            :context="serie.name"
             :number="episode.episode ?? i + 1"
             :subtitle="''"
           />

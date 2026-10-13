@@ -12,7 +12,7 @@ import { useI18n } from "vue-i18n";
 import type { Chiour, TextStudyJsonEntry } from "../../models/models";
 import { chiourService } from "../../services/chiourService";
 import { serieService } from "../../services/serieService";
-import { chiourimOfTexte } from "../../services/chiourTexte";
+import { chiourimOfTexte, texteTitle } from "../../services/chiourTexte";
 import { useTexteLabels } from "../../composables/useTexteLabels";
 import { analyticsService } from "../../services/analyticsService";
 import AppIcon from "../icons/AppIcon.vue";
@@ -24,7 +24,7 @@ const props = defineProps<{
   chapitre: number | null;
 }>();
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const { chapitreLabel } = useTexteLabels();
 
 const FIRST = 3;
@@ -108,6 +108,7 @@ watch(
         :chiour="chiour"
         :list="ordered"
         source="texte"
+        :context="texteTitle(entry, locale)"
         :subtitle="line(chiour)"
       />
     </div>

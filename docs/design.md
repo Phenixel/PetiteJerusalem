@@ -1361,22 +1361,48 @@ adopté) plutôt que d'en écarter à l'aveugle. Tenu par
 ### Les cours s'écoutent comme une liste de lecture
 
 Les cours audio ont pris la forme que tout le monde connaît des applications
-d'écoute : une série est un album, un rav un artiste, un cours un morceau.
-On ne lit plus une grille de cartes qui se ressemblent toutes ; on parcourt,
-on lance, on reprend.
+d'écoute : une série est une playlist, un rav un artiste, un cours un
+morceau. On ne lit plus une grille de cartes qui se ressemblent toutes ; on
+parcourt, on lance, on reprend.
 
 - **Le catalogue en rangées.** « Reprendre l'écoute » (les cours entamés sur
   cet appareil), les séries, les rabbanim, puis les nouveautés et tous les
   cours en lignes. Une rangée défile de côté et déborde jusqu'au bord de
   l'écran pour le dire ; sur ordinateur, deux flèches la font défiler. Une
   recherche ou un thème resserre tout en une seule liste.
-- **Une ligne, deux gestes.** La ligne d'un cours mène à sa page ; le bouton
-  rond au bout le joue tout de suite. La liste affichée devient la file du
-  lecteur : la fin d'un cours enchaîne le suivant. Le cours qui joue prend
-  la couleur du thème et ses trois barres, qui se figent en pause et ne
-  bougent pas en mouvement réduit. Un cours entamé porte une barre fine de
-  ce qui est écouté, et ce qu'il en reste à la place de sa durée ; un cours
-  fini, une coche.
+- **Une ligne joue.** Toute la ligne d'un cours le lance, et la liste
+  affichée devient la file du lecteur : la fin d'un cours enchaîne le
+  suivant. Toucher le cours qui joue le met en pause. Il prend la couleur du
+  thème et ses trois barres, qui se figent en pause et ne bougent pas en
+  mouvement réduit. Un cours entamé porte une barre fine de ce qui est
+  écouté, et ce qu'il en reste à la place de sa durée ; un cours fini, une
+  coche.
+- **Une série, un cours, un rav : une page de playlist.** La pochette, le
+  titre, le rav (son rond et son nom), la durée ; puis une ligne d'actions,
+  « Lire le texte » ou partager d'un côté, le grand bouton rond d'écoute au
+  bout (il reprend l'épisode entamé, et dit lequel aux lecteurs d'écran) ;
+  puis la liste. La page d'un cours n'a pas de lecteur à elle : c'est la
+  page qu'on partage, avec le texte étudié, la description, la série.
+- **Le lecteur est en bas.** Une barre qui flotte au-dessus de la barre de
+  l'app et suit d'une page à l'autre : la pochette, le titre et le rav, la
+  lecture, le cours suivant pendant l'écoute (fermer, en pause), la
+  progression au bord bas. Sur un écran large, elle prend toute la largeur
+  avec les commandes et la barre de lecture au milieu, la vitesse et fermer
+  à droite.
+- **Le lecteur plein écran.** Un appui sur la barre l'ouvre ; la flèche du
+  haut ou le retour le referment. D'où vient l'écoute (« Lecture depuis
+  Chaar Habitahon »), la grande pochette, le titre et le rav, la barre de
+  lecture, puis reculer de 15 s, précédent, la lecture en grand rond,
+  suivant, avancer de 30 s ; la vitesse en une pastille qu'on touche pour
+  passer à la suivante. Plus bas, le texte étudié, ce qui suit dans la
+  file, et « À propos du cours », qui mène à sa page. Sur un écran large,
+  deux colonnes : le cours à gauche, la suite à droite.
+- **La couleur du lecteur.** La barre et le plein écran prennent la reliure
+  de la série, assombrie, en aplat (`playerTone`), et y écrivent en crème ;
+  le bouton de lecture est un rond crème qui porte la reliure. C'est le seul
+  endroit où une surface de l'app sort du thème : comme la carte de la fête,
+  on reconnaît d'un coup d'œil ce qui joue. Pas de dégradé, contrairement à
+  Spotify.
 - **La pochette.** Les cours n'ont pas d'image : chaque série reçoit une
   reliure, comme les volumes de l'étagère, d'une teinte chaude et mate tirée
   de son identifiant (la même à chaque visite), son titre en Playfair dans
@@ -1384,22 +1410,13 @@ on lance, on reprend.
   reliure, ronde. Hors thème, identique en mode sombre, en aplats, le titre
   crème à 4,5:1 au moins sur chaque teinte (`components/chiourim/cover.ts`,
   tenu par `chiourCover.test.ts`).
-- **La page d'un cours est l'écran « en cours de lecture ».** La pochette,
-  la série, le titre et le rav, puis le lecteur : une barre qu'on fait
-  glisser, le temps écoulé et le temps restant, la vitesse, reculer de 15 s,
-  le cours précédent, la lecture en grand rond plein, le suivant, avancer de
-  30 s. Quand la série enchaîne, la page suit le cours qui joue.
-- **Le mini-lecteur** flotte au-dessus de la barre de l'app, une surface à
-  part avec son ombre : la pochette, le titre et le rav (qui mènent à la
-  page du cours), lecture, cours suivant, fermer, et la barre de
-  progression au bord bas.
 - **Le texte étudié.** Un cours rattaché à un livre de la bibliothèque
-  (`services/chiourTexte.ts`) le dit sur sa page, par une carte qui mène au
-  livre au chapitre près (« Chaar Habita'hon · Chapitre 4 ») ; une série,
-  par « Lire le texte » à côté de « Écouter ». Dans l'autre sens, sous le
-  chapitre qu'on vient de lire (ou en tête d'un livre), « Cours sur ce
-  chapitre » : ceux du chapitre d'abord, trois à cinq lignes, la suite à un geste.
-  Rien sous une tefila : on y vient prier.
+  (`services/chiourTexte.ts`) le dit sur sa page et dans le lecteur plein
+  écran, par une carte qui mène au livre au chapitre près (« Chaar
+  Habita'hon · Chapitre 4 ») ; une série, par « Lire le texte ». Dans
+  l'autre sens, sous le chapitre qu'on vient de lire (ou en tête d'un
+  livre), « Cours sur ce chapitre » : ceux du chapitre d'abord, trois à cinq
+  lignes, la suite à un geste. Rien sous une tefila : on y vient prier.
 
 Aucune image, aucun dégradé : la barre de lecture est une piste en deux
 aplats sous le curseur natif.

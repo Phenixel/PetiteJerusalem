@@ -26,14 +26,16 @@ export function chiourCover(chiour: Chiour, serieName = serieNameOf(chiour)) {
   return { seed: chiour.slug, label: chiour.name };
 }
 
-export function chiourTrack(chiour: Chiour): AudioTrack {
+export function chiourTrack(chiour: Chiour, context: string | null = null): AudioTrack {
   const serieName = serieNameOf(chiour);
   return {
     src: chiour.mediaUrl,
     title: chiour.name,
     slug: chiour.slug,
-    subtitle: chiourSubtitle(chiour, serieName),
+    subtitle: chiour.auteur ?? "",
     cover: chiourCover(chiour, serieName),
+    duration: chiour.duration,
+    context: context ?? serieName ?? chiour.auteur,
   };
 }
 
@@ -46,8 +48,15 @@ export function useChiourPlayback() {
   /**
    * Joue `chiour` en faisant de `list` la file : les cours qui ont un audio,
    * dans l'ordre affiché. Le cours qui joue déjà se met en pause (ou repart).
+   * `context` dit d'où vient la file, en tête du lecteur plein écran
+   * (« Lecture depuis Chaar Habita'hon ») ; par défaut la série du cours.
    */
-  function playFrom(list: Chiour[], chiour: Chiour, source: PlaySource) {
+  function playFrom(
+    list: Chiour[],
+    chiour: Chiour,
+    source: PlaySource,
+    context: string | null = null,
+  ) {
     if (isCurrent(chiour.slug)) {
       player.toggle();
       return;
@@ -55,10 +64,14 @@ export function useChiourPlayback() {
     const playable = list.filter((c) => c.mediaUrl);
     const index = playable.findIndex((c) => c.slug === chiour.slug);
     if (index === -1) {
-      if (chiour.mediaUrl) player.play(chiourTrack(chiour), source);
+      if (chiour.mediaUrl) player.play(chiourTrack(chiour, context), source);
       return;
     }
-    player.playQueue(playable.map(chiourTrack), index, source);
+    player.playQueue(
+      playable.map((c) => chiourTrack(c, context)),
+      index,
+      source,
+    );
   }
 
   return { player, isCurrent, isPlaying, playFrom };

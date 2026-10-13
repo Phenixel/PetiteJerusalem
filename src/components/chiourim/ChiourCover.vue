@@ -23,8 +23,11 @@ const props = withDefaults(
     label: string;
     /** La ligne du bas (le rav d'une série), en grand seulement. */
     sub?: string | null;
-    /** xs : 40 px, sm : 56 px, md : la largeur de son parent, lg : la pochette d'en-tête. */
-    size?: "xs" | "sm" | "md" | "lg";
+    /**
+     * avatar : 28 px (le rav à côté de son nom), xs : 40 px, sm : 56 px,
+     * md : la largeur de son parent, lg : la pochette d'en-tête.
+     */
+    size?: "avatar" | "xs" | "sm" | "md" | "lg";
     round?: boolean;
   }>(),
   { sub: null, size: "md", round: false },
@@ -32,7 +35,9 @@ const props = withDefaults(
 
 const tone = computed(() => coverTone(props.seed));
 const initials = computed(() => coverInitials(props.label));
-const compact = computed(() => props.size === "xs" || props.size === "sm");
+const compact = computed(
+  () => props.size === "avatar" || props.size === "xs" || props.size === "sm",
+);
 </script>
 
 <template>
@@ -48,7 +53,15 @@ const compact = computed(() => props.size === "xs" || props.size === "sm");
     <span
       v-if="compact || round"
       class="absolute inset-0 flex items-center justify-center font-display font-bold"
-      :class="size === 'xs' ? 'text-sm' : size === 'sm' ? 'text-lg' : 'text-4xl md:text-5xl'"
+      :class="
+        size === 'avatar'
+          ? 'text-[10px]'
+          : size === 'xs'
+            ? 'text-sm'
+            : size === 'sm'
+              ? 'text-lg'
+              : 'text-4xl md:text-5xl'
+      "
       >{{ initials }}</span
     >
     <div
@@ -68,6 +81,10 @@ const compact = computed(() => props.size === "xs" || props.size === "sm");
 </template>
 
 <style scoped>
+.chiour-cover--avatar {
+  width: 1.75rem;
+  height: 1.75rem;
+}
 .chiour-cover--xs {
   width: 2.5rem;
   height: 2.5rem;

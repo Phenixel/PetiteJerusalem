@@ -400,6 +400,7 @@ onMounted(() => {
             :chiour="chiour"
             :list="latest"
             source="catalogue"
+            :context="t('chiourim.latest')"
           />
         </div>
       </section>
@@ -420,6 +421,7 @@ onMounted(() => {
             :chiour="chiour"
             :list="allVisible"
             source="catalogue"
+            :context="t('chiourim.allCourses')"
           />
         </div>
         <div v-if="filteredChiourim.length > shown" class="mt-4 flex justify-center">
@@ -443,7 +445,7 @@ onMounted(() => {
           :chiour="chiour"
           :list="allVisible"
           source="catalogue"
-          @open="searchTracking.flush()"
+          @played="searchTracking.flush()"
         />
         <div v-if="filteredChiourim.length > shown" class="mt-4 flex justify-center">
           <button class="btn btn-soft" @click="shown += PAGE">

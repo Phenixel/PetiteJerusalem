@@ -10,6 +10,7 @@ import ChiourCover from "../../components/chiourim/ChiourCover.vue";
 import ChiourRail from "../../components/chiourim/ChiourRail.vue";
 import ChiourTrackRow from "../../components/chiourim/ChiourTrackRow.vue";
 import SerieTile from "../../components/chiourim/SerieTile.vue";
+import BigPlayButton from "../../components/chiourim/BigPlayButton.vue";
 import { formatMinutes, totalDuration } from "../../components/chiourim/duration";
 import { useChiourPlayback } from "../../composables/useChiourPlayback";
 import { seoService } from "../../services/seoService";
@@ -74,7 +75,7 @@ function playMain() {
     return;
   }
   const first = playOrder.value.find((c) => c.mediaUrl);
-  if (first) playFrom(playOrder.value, first, "auteur");
+  if (first) playFrom(playOrder.value, first, "auteur", auteurName.value);
 }
 
 // `applyAuteur` passe deux fois sur le même auteur (cache puis catalogue
@@ -178,7 +179,7 @@ watch(() => route.params.auteur, loadAuteur);
       <header
         class="flex flex-col items-center gap-6 text-center md:flex-row md:items-end md:text-start"
       >
-        <ChiourCover :seed="auteurSeed" :label="auteurName" size="lg" round class="shadow-card" />
+        <ChiourCover :seed="auteurSeed" :label="auteurName" size="lg" round class="shadow-pop" />
         <div class="min-w-0 flex-1">
           <h1 class="font-display text-3xl font-bold tracking-tight text-text-primary md:text-5xl">
             {{ auteurName }}
@@ -198,21 +199,8 @@ watch(() => route.params.auteur, loadAuteur);
         </div>
       </header>
 
-      <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
-        <button type="button" class="btn btn-primary !rounded-pill !px-6" @click="playMain">
-          <AppIcon
-            :name="playingHere && player.isPlaying.value ? 'pause-solid' : 'play-solid'"
-            :size="16"
-          />
-          {{
-            playingHere && player.isPlaying.value
-              ? t("audioPlayer.pause")
-              : playingHere
-                ? t("chiourim.resumeShort")
-                : t("chiourim.listen")
-          }}
-        </button>
-        <div class="relative w-full sm:ms-auto sm:w-72">
+      <div class="mt-6 flex items-center gap-3">
+        <div class="relative min-w-0 flex-1 sm:max-w-xs">
           <AppIcon
             name="search"
             :size="16"
@@ -234,6 +222,18 @@ watch(() => route.params.auteur, loadAuteur);
             <AppIcon name="x" :size="14" />
           </button>
         </div>
+        <BigPlayButton
+          class="ms-auto"
+          :playing="playingHere && player.isPlaying.value"
+          :label="
+            playingHere && player.isPlaying.value
+              ? t('audioPlayer.pause')
+              : playingHere
+                ? t('chiourim.resumeShort')
+                : t('chiourim.listen')
+          "
+          @click="playMain"
+        />
       </div>
 
       <!-- Recherche : une seule liste -->
@@ -245,6 +245,7 @@ watch(() => route.params.auteur, loadAuteur);
             :chiour="chiour"
             :list="filteredChiourim"
             source="auteur"
+            :context="auteurName"
           />
         </div>
         <div v-else class="flex flex-col items-center justify-center py-16 text-center">
@@ -280,6 +281,7 @@ watch(() => route.params.auteur, loadAuteur);
               :chiour="chiour"
               :list="horsSerie"
               source="auteur"
+              :context="auteurName"
               :subtitle="chiour.categories.join(' · ')"
             />
           </div>

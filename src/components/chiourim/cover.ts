@@ -53,3 +53,20 @@ export function coverInitials(label: string): string {
   const letters = words.slice(0, 2).map((w) => w[0].toUpperCase());
   return letters.join("") || label.trim().charAt(0).toUpperCase();
 }
+
+/**
+ * Le fond du lecteur d'un cours (plein écran, barre du bas) : la reliure de sa
+ * série, assombrie, en aplat. Assez sombre pour que la pochette s'y détache
+ * et que le crème s'y lise mieux encore que sur la pochette.
+ */
+export function playerTone(seed: string): string {
+  const tone = coverTone(seed);
+  const dark = [0x14, 0x0f, 0x0c];
+  const mix = (i: number) => {
+    const channel = parseInt(tone.slice(1 + i * 2, 3 + i * 2), 16);
+    return Math.round(channel * 0.55 + dark[i] * 0.45)
+      .toString(16)
+      .padStart(2, "0");
+  };
+  return `#${mix(0)}${mix(1)}${mix(2)}`;
+}

@@ -610,11 +610,11 @@ s'il n'en a pas.
 
 ### `chiour_text_opened` (nouveau)
 
-D'un cours ou d'une série vers son texte (« Lire le texte »).
+D'un cours, d'une série ou du lecteur plein écran vers son texte (« Lire le texte »).
 
 | Propriété | Valeurs |
 | --- | --- |
-| `source` | `chiour`, `serie` |
+| `source` | `chiour`, `serie`, `lecteur` (le lecteur plein écran) |
 | `chiour_slug` | le cours, `null` depuis une série |
 | `texte_id` | l'identifiant du texte dans le catalogue |
 | `chapitre` | le chapitre visé, `null` pour le texte entier |

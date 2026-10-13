@@ -9,6 +9,7 @@ import AppIcon from "../../components/icons/AppIcon.vue";
 import ChiourCover from "../../components/chiourim/ChiourCover.vue";
 import ChiourTrackRow from "../../components/chiourim/ChiourTrackRow.vue";
 import TexteLinkButton from "../../components/chiourim/TexteLinkButton.vue";
+import BigPlayButton from "../../components/chiourim/BigPlayButton.vue";
 import { formatMinutes, totalDuration } from "../../components/chiourim/duration";
 import { useChiourPlayback } from "../../composables/useChiourPlayback";
 import { isFinished, resumePosition } from "../../services/listeningProgress";
@@ -71,7 +72,8 @@ function playMain() {
     player.toggle();
     return;
   }
-  if (nextToPlay.value) playFrom(episodes.value, nextToPlay.value, "serie");
+  if (nextToPlay.value)
+    playFrom(episodes.value, nextToPlay.value, "serie", serie.value?.name ?? null);
 }
 
 /**
@@ -124,6 +126,10 @@ const loadSerie = async () => {
   }
 };
 
+const auteurSeed = computed(
+  () => episodes.value.find((c) => c.auteurId)?.auteurId ?? auteurName.value ?? "",
+);
+
 const auteurPath = computed(() =>
   auteurName.value
     ? `/chiourim/auteur/${chiourService.generateAuteurSlug(auteurName.value)}`
@@ -135,8 +141,8 @@ watch(() => route.params.serieId, loadSerie);
 </script>
 
 <template>
-  <main class="mx-auto px-6 py-12 max-w-5xl">
-    <button @click="router.push('/chiourim')" class="back-link mb-8">
+  <main class="mx-auto max-w-5xl px-6 py-8 md:py-12">
+    <button @click="router.push('/chiourim')" class="back-link mb-6">
       <AppIcon name="chevron-left" :size="14" class="rtl:rotate-180" />
       {{ t("detailChiour.backToList") }}
     </button>
@@ -144,9 +150,10 @@ watch(() => route.params.serieId, loadSerie);
     <!-- Chargement -->
     <div v-if="isLoading" class="animate-pulse" aria-hidden="true">
       <div class="flex flex-col gap-6 md:flex-row md:items-end">
-        <div class="h-44 w-44 rounded-card bg-black/10 md:h-56 md:w-56 dark:bg-white/10"></div>
+        <div
+          class="mx-auto h-56 w-56 rounded-card bg-black/10 md:mx-0 md:h-56 md:w-56 dark:bg-white/10"
+        ></div>
         <div class="flex-1 space-y-3">
-          <div class="h-4 w-20 rounded bg-black/10 dark:bg-white/10"></div>
           <div class="h-9 w-2/3 rounded-lg bg-black/10 dark:bg-white/10"></div>
           <div class="h-4 w-40 rounded bg-black/10 dark:bg-white/10"></div>
         </div>
@@ -163,65 +170,66 @@ watch(() => route.params.serieId, loadSerie);
     </div>
 
     <div v-else-if="serie" class="animate-[fadeIn_0.3s_ease]">
-      <!-- En-tête : la pochette, le titre, le rav, la durée -->
-      <header class="flex flex-col gap-6 md:flex-row md:items-end">
-        <ChiourCover
-          :seed="serie.id"
-          :label="serie.name"
-          :sub="auteurName"
-          size="lg"
-          class="self-center shadow-card md:self-auto"
-        />
+      <!-- En-tête, comme une playlist : la pochette, le titre, le rav, la durée -->
+      <header class="flex flex-col gap-6 md:flex-row md:items-end md:gap-8">
+        <div class="mx-auto w-[min(64vw,15rem)] shrink-0 md:mx-0 md:w-56">
+          <ChiourCover
+            :seed="serie.id"
+            :label="serie.name"
+            :sub="auteurName"
+            size="md"
+            class="shadow-pop"
+          />
+        </div>
         <div class="min-w-0 flex-1">
-          <p class="text-sm font-semibold text-text-secondary">{{ t("serie.label") }}</p>
+          <p class="hidden text-sm font-semibold text-text-secondary md:block">
+            {{ t("serie.label") }}
+          </p>
           <h1
-            class="mt-1 font-display text-3xl font-bold tracking-tight text-text-primary md:text-5xl"
+            class="font-display text-3xl font-bold leading-tight tracking-tight text-text-primary md:mt-1 md:text-5xl"
           >
             {{ serie.name }}
           </h1>
-          <p class="mt-3 text-text-secondary">
-            <router-link
-              v-if="auteurPath"
-              :to="auteurPath"
-              class="font-semibold text-text-primary hover:text-primary"
-              >{{ auteurName }}</router-link
-            >
-            <template v-if="auteurPath"> · </template>
+          <router-link
+            v-if="auteurPath && auteurName"
+            :to="auteurPath"
+            class="mt-3 inline-flex items-center gap-2 font-semibold text-text-primary hover:text-primary"
+          >
+            <ChiourCover :seed="auteurSeed" :label="auteurName" size="avatar" round />
+            {{ auteurName }}
+          </router-link>
+          <p class="mt-1 text-sm text-text-secondary">
             {{ t("serie.episodesCount", { count: episodes.length }) }}
             <template v-if="totalLabel"> · {{ totalLabel }}</template>
           </p>
         </div>
       </header>
 
-      <!-- Les commandes : écouter, lire le texte -->
-      <div class="mt-6 flex flex-wrap items-center gap-3">
-        <button
-          v-if="nextToPlay"
-          type="button"
-          class="btn btn-primary !rounded-pill !px-6"
-          @click="playMain"
-        >
-          <AppIcon
-            :name="playingHere && player.isPlaying.value ? 'pause-solid' : 'play-solid'"
-            :size="16"
-          />
-          {{ mainLabel }}
-        </button>
+      <!-- Les actions : le texte étudié à gauche, l'écoute au bout -->
+      <div class="mt-5 flex items-center gap-3">
         <TexteLinkButton v-if="texte" :entry="texte" :chapitre="null" source="serie" />
+        <BigPlayButton
+          v-if="nextToPlay"
+          class="ms-auto"
+          :playing="playingHere && player.isPlaying.value"
+          :label="mainLabel"
+          @click="playMain"
+        />
       </div>
 
-      <p v-if="serie.description" class="mt-6 max-w-3xl text-text-secondary leading-relaxed">
+      <p v-if="serie.description" class="mt-5 max-w-3xl leading-relaxed text-text-secondary">
         {{ serie.description }}
       </p>
 
-      <!-- Les épisodes -->
-      <section class="mt-8 -mx-2" :aria-label="t('serie.episodes')">
+      <!-- Les épisodes : toucher un épisode le joue, la série suit -->
+      <section class="-mx-2 mt-6" :aria-label="t('serie.episodes')">
         <ChiourTrackRow
           v-for="(chiour, i) in episodes"
           :key="chiour.slug"
           :chiour="chiour"
           :list="episodes"
           source="serie"
+          :context="serie.name"
           :number="chiour.episode ?? i + 1"
           :subtitle="episodeLine(chiour)"
         />

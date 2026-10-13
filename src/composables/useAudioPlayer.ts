@@ -1,5 +1,4 @@
 import { ref, computed } from "vue";
-import { useRoute } from "vue-router";
 import { analyticsService } from "../services/analyticsService";
 import { useViewedChiourim } from "./useViewedChiourim";
 import { recordFinished, recordPosition, resumePosition } from "../services/listeningProgress";
@@ -26,6 +25,10 @@ export interface AudioTrack {
   subtitle?: string;
   /** De quoi dessiner la pochette sans relire le catalogue (voir ChiourCover). */
   cover?: { seed: string; label: string };
+  /** Durée connue d'avance (le dépôt l'a mesurée), pour la file du lecteur. */
+  duration?: number | null;
+  /** D'où vient la file : la série, le rav, le texte (« Lecture depuis… »). */
+  context?: string | null;
 }
 
 const track = ref<AudioTrack | null>(null);
@@ -39,6 +42,11 @@ const isLoaded = ref(false);
 /** La file en cours, et la place du morceau chargé dans cette file. */
 const queue = ref<AudioTrack[]>([]);
 const queueIndex = ref(-1);
+/**
+ * Le lecteur plein écran (NowPlayingSheet) : ouvert d'un appui sur la barre
+ * du bas, il y montre le cours qui joue, ses commandes, la suite de la file.
+ */
+const sheetOpen = ref(false);
 
 let audio: HTMLAudioElement | null = null;
 // Seek demandé avant que les métadonnées soient chargées (clic sur la barre
@@ -262,6 +270,20 @@ function next(auto = false) {
   play();
 }
 
+/** Joue le morceau de la file à cette place (la file du lecteur plein écran). */
+function playAt(index: number) {
+  const target = queue.value[index];
+  if (!target) return;
+  if (index === queueIndex.value) {
+    if (!isPlaying.value) play();
+    return;
+  }
+  queueIndex.value = index;
+  startedByQueue = false;
+  load(target);
+  play();
+}
+
 /**
  * Comme partout : au-delà des premières secondes, revient au début du
  * morceau ; au début, passe au précédent de la file.
@@ -333,6 +355,7 @@ function close() {
   isLoaded.value = false;
   pendingSeekRatio = null;
   pendingSeekSeconds = null;
+  sheetOpen.value = false;
   queue.value = [];
   queueIndex.value = -1;
 }
@@ -360,6 +383,7 @@ export function useAudioPlayer() {
     hasPrevious,
     play,
     playQueue,
+    playAt,
     next,
     previous,
     toggle,
@@ -369,17 +393,21 @@ export function useAudioPlayer() {
     toggleMute,
     setSpeed,
     close,
+    sheetOpen,
+    openSheet: () => {
+      if (track.value) sheetOpen.value = true;
+    },
+    closeSheet: () => {
+      sheetOpen.value = false;
+    },
   };
 }
 
 /**
- * Le mini-lecteur est visible dès qu'un morceau est chargé, sauf sur la page
- * détail de ce même chiour (le lecteur complet y est déjà affiché).
+ * La barre du lecteur est visible dès qu'un morceau est chargé, sur toutes
+ * les pages (celle du cours comprise : elle n'a plus de lecteur à elle), sauf
+ * quand le lecteur plein écran la recouvre.
  */
 export function useMiniPlayerVisible() {
-  const route = useRoute();
-  return computed(() => {
-    if (!track.value) return false;
-    return !(route.name === "detail-chiour" && route.params.slug === track.value.slug);
-  });
+  return computed(() => !!track.value && !sheetOpen.value);
 }

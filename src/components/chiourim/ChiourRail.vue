@@ -78,7 +78,7 @@ onBeforeUnmount(() => observer?.disconnect());
     </div>
     <div
       ref="track"
-      class="rail-track -mx-6 flex snap-x snap-mandatory gap-4 overflow-x-auto px-6 pb-2"
+      class="rail-track -mx-6 flex items-start snap-x snap-mandatory gap-4 overflow-x-auto px-6 pb-2"
       @scroll.passive="update"
     >
       <slot />
