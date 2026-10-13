@@ -73,7 +73,7 @@ const subtitle = computed(() =>
       >
         {{ title }}
       </span>
-      <span class="mt-1 line-clamp-2 block text-sm leading-relaxed text-text-secondary">
+      <span class="mt-1 line-clamp-2 text-sm leading-relaxed text-text-secondary">
         {{ excerpt }}
       </span>
       <span class="mt-3 flex flex-wrap items-center justify-between gap-2 text-sm">
