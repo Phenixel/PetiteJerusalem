@@ -2267,6 +2267,7 @@ const en: LocaleMessages = {
         published: "Published",
         noAuteur: "No author",
         noSerie: "No series",
+        noTexte: "No book",
       },
       searchPlaceholder: "Search...",
       empty: "No matching chiour.",

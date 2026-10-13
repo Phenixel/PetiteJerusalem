@@ -2350,6 +2350,7 @@ const fr = {
         published: "Publiés",
         noAuteur: "Sans auteur",
         noSerie: "Sans série",
+        noTexte: "Sans livre",
       },
       searchPlaceholder: "Rechercher...",
       empty: "Aucun chiour ne correspond.",

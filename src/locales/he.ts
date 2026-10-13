@@ -2203,6 +2203,7 @@ const he: LocaleMessages = {
         published: "פורסמו",
         noAuteur: "ללא מרצה",
         noSerie: "ללא סדרה",
+        noTexte: "ללא ספר",
       },
       searchPlaceholder: "חיפוש...",
       empty: "אין שיעור מתאים.",
