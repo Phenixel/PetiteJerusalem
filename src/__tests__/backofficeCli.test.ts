@@ -207,6 +207,27 @@ describe("sondages", () => {
     expect(["aaaa", "bbbb"]).not.toContain(poll.options[2].id);
   });
 
+  it("garde les traductions d'un choix redonné sans elles, et traduit sans --choix", () => {
+    const existing = {
+      options: [
+        { id: "aaaa", label: { fr: "Oui", en: "Yes", he: "כן" }, image: null },
+        { id: "bbbb", label: { fr: "Non", en: "No" }, image: null },
+      ],
+      multiple: false,
+      closed: false,
+    };
+    const added = pollFields({ choices: ["Oui", "Non", "Peut-être"] }, existing)!;
+    expect(added.options.map((o) => o.label)).toEqual([
+      { fr: "Oui", en: "Yes", he: "כן" },
+      { fr: "Non", en: "No" },
+      { fr: "Peut-être" },
+    ]);
+    const translated = pollFields({ choicesHe: ["", "לא"] }, existing)!;
+    expect(translated.options.map((o) => o.label.he)).toEqual(["כן", "לא"]);
+    expect(translated.options.map((o) => o.id)).toEqual(["aaaa", "bbbb"]);
+    expect(() => pollFields({ choicesEn: ["Yes", "No"] }, null)).toThrow(BackofficeInputError);
+  });
+
   it("clôt ou rouvre sans toucher aux choix, et se retire", () => {
     const existing = {
       options: [{ id: "a1b2", label: { fr: "Oui" }, image: null }],

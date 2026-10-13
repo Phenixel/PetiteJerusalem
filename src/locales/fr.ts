@@ -2214,6 +2214,8 @@ const fr = {
       thanks: "Merci, votre choix est enregistré.",
       change: "Changer mon choix",
       closedVoted: "Votre choix est marqué ci-dessus.",
+      refused:
+        "Ce sondage n'accepte plus ce choix : il a peut-être été clos ou modifié. Rechargez la page.",
       error: "Votre choix n'a pas pu être envoyé. Vérifiez votre connexion, puis réessayez.",
     },
     home: {
@@ -2310,6 +2312,7 @@ const fr = {
       versionLabel: "Version de l'app",
       versionHint: "Laissez vide si ces notes ne concernent pas une version précise.",
       fixVersionLabel: "Corrigé dans la version",
+      invalidFixVersion: "La version du correctif s'écrit X.Y.Z, par exemple 3.11.1.",
       fixVersionHint:
         "Les appareils qui ont cette version ne voient plus l'incident sur l'accueil ; ceux qui ne l'ont pas le voient jusqu'à la mise à jour. Laissez vide s'il ne dépend pas d'une mise à jour.",
       poll: {

@@ -167,10 +167,11 @@ function saveSeenVersion(version: string): void {
  */
 async function markSeenUpTo(a: Announcement): Promise<void> {
   if (a.publishedAt) saveSeen(a.publishedAt.getTime());
-  if (a.kind !== "release" || !a.version) return;
   // Ouverte depuis une notification, la page arrive avant la liste : la
-  // version installée n'a pas encore été lue.
+  // version installée n'a pas encore été lue. Elle dit aussi si un incident
+  // est corrigé sur l'appareil (voir fixedOnDevice).
   if (installed.value === null) installed.value = await readInstalledVersion();
+  if (a.kind !== "release" || !a.version) return;
   if (!installed.value || isOutdated(installed.value, a.version)) return;
   if (seenVersion.value && isOutdated(seenVersion.value, a.version)) saveSeenVersion(a.version);
 }

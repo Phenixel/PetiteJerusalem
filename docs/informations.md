@@ -26,8 +26,10 @@ Dans tous les cas, l'information reste dans la liste (`/informations`).
    - **Incident** : un problème connu, qui reste en tête de l'accueil tant
      qu'il n'est pas marqué « résolu ». S'il se règle par une mise à jour,
      indiquer la version qui le corrige (« Corrigé dans la version »,
-     `3.11.1`) : les appareils qui l'ont ne le voient plus, ceux qui ne
-     l'ont pas le voient jusqu'à ce qu'ils mettent à jour ;
+     `3.11.1`, toujours sous la forme X.Y.Z) : les appareils qui l'ont ne
+     le voient plus, ceux qui ne l'ont pas le voient jusqu'à ce qu'ils
+     mettent à jour. Tant que l'app n'a pas lu sa propre version, elle
+     garde l'incident en cours ;
    - **Question** : l'annonce se termine par un bouton « Répondre », qui ouvre
      le formulaire de support déjà amorcé ; la réponse arrive dans la base
      Notion du support, comme les autres messages. **Ajouter un sondage**
@@ -121,7 +123,9 @@ celui de l'appareil marqué.
   Corriger une faute, oui ; remplacer « Bleu » par « Vert », non (retirer le
   choix et en ajouter un autre).
 - **Les images** vont dans Storage, sous `announcements/{id}/`, 5 Mo au
-  plus ; elles sont supprimées avec l'information.
+  plus. Tout le dossier part avec l'information, images remplacées
+  comprises ; d'ici là, une image remplacée reste en ligne. Une image
+  envoyée pour une information jamais enregistrée reste aussi.
 
 ## Les versions déjà installées
 
@@ -181,8 +185,14 @@ n'affiche rien sans la permission de notifier, qu'on ne demande qu'au geste :
 l'interrupteur, ou le bouton « Me prévenir » de la page Informations.
 
 Les règles d'un vote (`firestore.rules`) : le sondage est publié et ouvert,
-un seul choix sauf sondage à choix multiples, huit au plus, et l'heure est
-celle du serveur. Personne ne relit les votes, sauf l'admin qui les compte.
+les choix sont les siens (`poll.optionIds`, posé à l'enregistrement par le
+backoffice et la CLI, `pollToStore`), un seul sauf sondage à choix
+multiples, et l'heure est celle du serveur. Personne ne relit les votes,
+sauf l'admin qui les compte.
+
+Le vote passe par Firestore Lite, dans l'app aussi : le SDK complet garde
+une écriture hors ligne en file et ne rend la main qu'à l'accusé du
+serveur. Lite échoue tout de suite, et l'écran le dit.
 
 ## À savoir
 

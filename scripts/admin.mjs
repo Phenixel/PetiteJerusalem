@@ -298,7 +298,10 @@ async function saveAnnouncement(id, fields, existing) {
   // L'identifiant d'une nouvelle information est tiré d'avance : les images
   // du sondage se rangent sous lui, et le lien de sa page de vote en dépend.
   const ref = id ? db.collection("announcements").doc(id) : db.collection("announcements").doc();
-  const poll = fields.poll ? await uploadPollImages(ref.id, fields.poll) : null;
+  const uploaded = fields.poll ? await uploadPollImages(ref.id, fields.poll) : null;
+  // Les identifiants des choix, contre lesquels les règles vérifient chaque
+  // vote (comme pollToStore dans src/services/announcements.ts).
+  const poll = uploaded ? { ...uploaded, optionIds: uploaded.options.map((o) => o.id) } : null;
   const data = {
     ...fields,
     poll,
@@ -309,15 +312,17 @@ async function saveAnnouncement(id, fields, existing) {
   };
   if (existing) {
     await ref.update(data);
-    return ref.id;
+  } else {
+    await ref.set({
+      ...data,
+      publishedAt: fields.published ? publishedAt : null,
+      notifiedAt: null,
+      createdAt: FieldValue.serverTimestamp(),
+    });
   }
-  await ref.set({
-    ...data,
-    publishedAt: fields.published ? publishedAt : null,
-    notifiedAt: null,
-    createdAt: FieldValue.serverTimestamp(),
-  });
-  return ref.id;
+  // Ce qui est écrit, et non ce qui a été saisi : le lien de la page de vote,
+  // les adresses des images envoyées.
+  return { id: ref.id, poll: data.poll, link: data.link };
 }
 
 const IMAGE_CONTENT_TYPES = {
@@ -466,9 +471,9 @@ commands["info:creer"] = async () => {
   const fields = announcementFields(announcementInput());
   checkPollImages(fields.poll);
   const summary = `Créer l'information « ${fields.title.fr} » (${fields.kind}, ${fields.published ? "publiée" : "brouillon"}${dateNote()}).${pollNote(fields.poll)} ${notifyNote(fields, null)}`;
-  let id = null;
-  if (await write(summary, async () => (id = await saveAnnouncement(null, fields, null)))) {
-    out([`Information créée : ${id}`, notifyNote(fields, null)], { id, ...fields });
+  let saved = null;
+  if (await write(summary, async () => (saved = await saveAnnouncement(null, fields, null)))) {
+    out([`Information créée : ${saved.id}`, notifyNote(fields, null)], { ...fields, ...saved });
   }
 };
 
@@ -478,8 +483,9 @@ commands["info:modifier"] = async ([id]) => {
   const fields = announcementFields(announcementInput(existing));
   checkPollImages(fields.poll);
   const summary = `Modifier ${id} (« ${fields.title.fr} », ${fields.published ? "publiée" : "brouillon"}).${pollNote(fields.poll)} ${notifyNote(fields, existing)}`;
-  if (await write(summary, () => saveAnnouncement(id, fields, existing))) {
-    out([`Information modifiée : ${id}`, notifyNote(fields, existing)], { id, ...fields });
+  let saved = null;
+  if (await write(summary, async () => (saved = await saveAnnouncement(id, fields, existing)))) {
+    out([`Information modifiée : ${id}`, notifyNote(fields, existing)], { ...fields, ...saved });
   }
 };
 
@@ -507,12 +513,14 @@ commands["info:resultats"] = async ([id]) => {
   if (!a.poll?.options?.length) fail(`${id} n'a pas de sondage.`);
   const votes = firebase().db.collection("announcements").doc(id).collection("votes");
   const total = (await votes.count().get()).data().count;
-  const rows = [];
-  for (const option of a.poll.options) {
-    const count = (await votes.where("choices", "array-contains", option.id).count().get()).data()
-      .count;
-    rows.push({ id: option.id, label: option.label?.fr ?? "", count });
-  }
+  const rows = await Promise.all(
+    a.poll.options.map(async (option) => ({
+      id: option.id,
+      label: option.label?.fr ?? "",
+      count: (await votes.where("choices", "array-contains", option.id).count().get()).data().count,
+    })),
+  );
+
   const percent = (n) => (total ? Math.round((n / total) * 100) : 0);
   out(
     [
@@ -530,8 +538,14 @@ commands["info:supprimer"] = async ([id]) => {
   if (!id) fail("usage : info:supprimer <id>");
   const existing = await getAnnouncement(id);
   if (
-    await write(`Supprimer définitivement ${id} (« ${existing.title?.fr} »).`, () =>
-      firebase().db.collection("announcements").doc(id).delete(),
+    await write(
+      `Supprimer définitivement ${id} (« ${existing.title?.fr} »)${existing.poll ? ", et les images de son sondage" : ""}.`,
+      async () => {
+        await firebase().db.collection("announcements").doc(id).delete();
+        // Les images des choix, servies publiquement, ne survivent pas à
+        // l'information (comme adminService.deleteAnnouncement).
+        await firebase().bucket.deleteFiles({ prefix: `announcements/${id}/` });
+      },
     )
   ) {
     out([`Information supprimée : ${id}`], { id, deleted: true });

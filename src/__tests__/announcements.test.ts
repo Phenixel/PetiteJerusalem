@@ -12,6 +12,7 @@ import {
   linkWithPollPage,
   localized,
   pollPageUrl,
+  pollToStore,
   sortAnnouncements,
   unreadAnnouncements,
   visibleLink,
@@ -207,6 +208,20 @@ describe("un incident corrigé par une version", () => {
     }
   });
 
+  it("reste en cours dans l'app tant qu'elle n'a pas lu sa version", () => {
+    // Ouvert depuis une notification, avant la liste : la version n'est pas encore lue.
+    expect(fixedOnDevice(incident, null, true)).toBe(false);
+    expect(isOngoingIncident(incident, null)).toBe(false); // le site, lui, est à jour
+  });
+
+  it("une version de correctif illisible ne corrige rien", () => {
+    for (const fixedIn of ["prochaine", "3.11", "3.11.0 (Android)"]) {
+      expect(fixedOnDevice({ ...incident, fixedIn }, "3.10.10")).toBe(false);
+      expect(fixedOnDevice({ ...incident, fixedIn }, null)).toBe(false);
+    }
+    expect(fixedOnDevice({ ...incident, fixedIn: "v3.10.11" }, "3.10.11")).toBe(true);
+  });
+
   it("ne s'affiche pas sur le site, toujours à la dernière version", () => {
     expect(fixedOnDevice(incident, null)).toBe(true);
     expect(homeHighlights([incident], null, null, NOW)).toEqual([]);
@@ -339,6 +354,11 @@ describe("le lien de la page de vote", () => {
       );
       expect(cliLinkWithPollPage("abc", link, null)).toEqual(linkWithPollPage("abc", link, null));
     }
+  });
+
+  it("s'enregistre avec la liste de ses choix, que les règles vérifient", () => {
+    expect(pollToStore(poll).optionIds).toEqual(["o1", "o2"]);
+    expect(pollToStore(poll).options).toBe(poll.options);
   });
 
   it("ne s'affiche pas là où le sondage s'affiche déjà", () => {

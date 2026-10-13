@@ -2131,6 +2131,8 @@ const en: LocaleMessages = {
       thanks: "Thank you, your choice has been recorded.",
       change: "Change my choice",
       closedVoted: "Your choice is marked above.",
+      refused:
+        "This poll no longer accepts this choice: it may have been closed or changed. Reload the page.",
       error: "Your choice could not be sent. Check your connection, then try again.",
     },
     home: {
@@ -2228,6 +2230,7 @@ const en: LocaleMessages = {
       versionLabel: "App version",
       versionHint: "Leave empty if these notes are not about a specific version.",
       fixVersionLabel: "Fixed in version",
+      invalidFixVersion: "The fix version is written X.Y.Z, for example 3.11.1.",
       fixVersionHint:
         "Devices with this version no longer see the incident on the home page; the others see it until they update. Leave empty if it doesn't depend on an update.",
       poll: {

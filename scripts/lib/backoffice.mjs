@@ -98,9 +98,10 @@ function newOptionId(taken) {
  *
  * `input` : { choices?: string[] (« Libellé » ou « Libellé|image »),
  * choicesEn?, choicesHe? (alignés sur choices), multiple?, closed?, remove? }.
- * Sans `choices`, le sondage existant garde ses choix ; seuls `multiple` et
- * `closed` changent. Un choix dont le libellé français ne change pas garde
- * son identifiant, donc ses votes, et son image si on n'en donne pas.
+ * Sans `choices`, le sondage existant garde ses choix ; `multiple`, `closed`
+ * et les traductions changent seuls. Un choix dont le libellé français ne
+ * change pas garde son identifiant, donc ses votes, son image et ses
+ * traductions si on ne les redonne pas.
  * L'image est une adresse https, ou un fichier local rendu sous la forme
  * `{ file }` : le CLI l'envoie dans Storage avant d'écrire.
  *
@@ -118,12 +119,26 @@ export function pollFields(input, existing) {
   const closed = input.closed ?? existing?.closed === true;
   if (!input.choices?.length) {
     if (!existing) {
-      if (input.multiple !== undefined || input.closed !== undefined) {
+      if (
+        input.multiple !== undefined ||
+        input.closed !== undefined ||
+        input.choicesEn?.length ||
+        input.choicesHe?.length
+      ) {
         throw new BackofficeInputError("Pas de sondage à régler : ajoutez d'abord des --choix.");
       }
       return null;
     }
-    return { options: existing.options, multiple, closed };
+    // --choix-en / --choix-he seuls traduisent les choix existants, dans l'ordre.
+    const options = existing.options.map((o, index) => ({
+      ...o,
+      label: localizedText(
+        o.label.fr,
+        input.choicesEn?.[index] || o.label.en,
+        input.choicesHe?.[index] || o.label.he,
+      ),
+    }));
+    return { options, multiple, closed };
   }
   if (input.choices.length < POLL_MIN_OPTIONS || input.choices.length > POLL_MAX_OPTIONS) {
     throw new BackofficeInputError(
@@ -148,7 +163,12 @@ export function pollFields(input, existing) {
     if (imagePart) image = /^https:\/\//i.test(imagePart) ? imagePart : { file: imagePart };
     return {
       id: previous?.id ?? newOptionId(taken),
-      label: localizedText(fr, input.choicesEn?.[index], input.choicesHe?.[index]),
+      // Une traduction non redonnée reste celle du choix, s'il ne change pas.
+      label: localizedText(
+        fr,
+        input.choicesEn?.[index] || previous?.label?.en,
+        input.choicesHe?.[index] || previous?.label?.he,
+      ),
       image,
     };
   });

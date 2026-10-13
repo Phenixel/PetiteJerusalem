@@ -1,5 +1,6 @@
 import { isOutdated } from "./appUpdateService";
 import { SITE_URL } from "../config/site";
+import { isNativeApp } from "../composables/useNativeApp";
 import type { IconName } from "../components/icons/registry";
 
 /**
@@ -47,6 +48,16 @@ export interface Poll {
   multiple: boolean;
   /** Clos : les choix restent lisibles, on ne vote plus. */
   closed: boolean;
+}
+
+/**
+ * Le sondage tel qu'il s'enregistre : avec la liste de ses identifiants de
+ * choix (`optionIds`), contre laquelle les règles Firestore vérifient chaque
+ * vote. Les règles ne savent pas parcourir une liste d'objets ; sans cette
+ * liste, un vote pourrait porter n'importe quoi.
+ */
+export function pollToStore(poll: Poll): Poll & { optionIds: string[] } {
+  return { ...poll, optionIds: poll.options.map((o) => o.id) };
 }
 
 /** De quoi proposer un vrai choix, sans noyer la question. */
@@ -110,14 +121,27 @@ export function appliesToInstalled(a: Announcement, installed: string | null): b
   return !isOutdated(installed, a.version);
 }
 
+/** Une version de l'app telle qu'un correctif se note : X.Y.Z, un « v » devant toléré. */
+export const FIX_VERSION_PATTERN = /^v?\d+\.\d+\.\d+$/i;
+
 /**
  * Un incident qui porte la version de son correctif est réglé là où cette
  * version est installée : qui a fait la mise à jour n'a plus à le lire sur
  * son accueil. Le site (`installed` nul) est toujours à la dernière version.
+ *
+ * Dans l'app, `installed` nul veut dire que la version n'est pas encore lue
+ * (ou n'a pas pu l'être) : l'incident y reste en cours, c'est le côté sûr.
+ * Une version de correctif illisible ne corrige rien : `isOutdated` la
+ * dirait atteinte partout, et l'incident disparaîtrait chez tout le monde.
  */
-export function fixedOnDevice(a: Announcement, installed: string | null): boolean {
-  if (a.kind !== "incident" || !a.fixedIn) return false;
-  return !installed || !isOutdated(installed, a.fixedIn);
+export function fixedOnDevice(
+  a: Announcement,
+  installed: string | null,
+  native: boolean = isNativeApp,
+): boolean {
+  if (a.kind !== "incident" || !a.fixedIn || !FIX_VERSION_PATTERN.test(a.fixedIn)) return false;
+  if (!installed) return !native;
+  return !isOutdated(installed, a.fixedIn);
 }
 
 /** Un incident encore en cours pour cet appareil : ni réglé pour tous, ni corrigé ici. */

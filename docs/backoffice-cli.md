@@ -139,7 +139,7 @@ un script, par exemple pour retrouver un identifiant).
 | `info:modifier <id>`  | Change ce qui est passé en option, garde le reste. `--publier` / `--depublier`, `--resolu` / `--en-cours`.                          |
 | `info:resoudre <id>`  | Clôt un incident : il quitte l'accueil.                                                                                             |
 | `info:resultats <id>` | Les réponses à un sondage : le nombre d'appareils par choix, et en tout.                                                            |
-| `info:supprimer <id>` | Supprime définitivement.                                                                                                            |
+| `info:supprimer <id>` | Supprime définitivement, avec les images de son sondage.                                                                            |
 | `info:depuis-release` | La note de version d'un tag en information « Mise à jour » (`--tag vX.Y.Z`, ou `--version X.Y.Z --fichier note.md`). Voir plus bas. |
 
 Options d'une information :
@@ -163,7 +163,8 @@ Options d'une information :
   choix ; `--sondage-clos` (ou `--sondage-ouvert`) arrête les votes ;
   `--sans-sondage` retire le sondage. Avec `info:modifier`, des `--choix`
   remplacent la liste entière ; un choix dont le libellé français ne change
-  pas garde ses votes et son image ;
+  pas garde ses votes, son image et ses traductions. `--choix-en` ou
+  `--choix-he` seuls traduisent les choix existants, dans l'ordre ;
 - `--publier`, `--notifier` ;
 - `--date AAAA-MM-JJ` (ou une date ISO) : la date de publication, au lieu
   de maintenant, pour reprendre un historique. Refusée dans le futur, et

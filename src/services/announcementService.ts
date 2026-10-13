@@ -174,14 +174,21 @@ export const announcementService = new AnnouncementService();
  * nouveau vote remplace le précédent, sans compte et sans rien qui désigne
  * la personne. Les règles n'acceptent le vote que sur un sondage publié et
  * ouvert (voir firestore.rules).
+ *
+ * Par Firestore Lite, même dans l'app : le SDK complet y garde l'écriture en
+ * file hors ligne et ne rend la main qu'à l'accusé du serveur, le bouton
+ * tournait sans fin. Lite échoue tout de suite, et l'écran peut le dire.
  */
 export async function submitPollVote(
   announcementId: string,
   voterId: string,
   choices: string[],
 ): Promise<void> {
-  const { fs, db } = await firestore();
-  await fs.setDoc(fs.doc(db, "announcements", announcementId, "votes", voterId), {
+  const [fs, { liteDb }] = await Promise.all([
+    import("firebase/firestore/lite"),
+    import("../firebase/firestoreLite"),
+  ]);
+  await fs.setDoc(fs.doc(liteDb, "announcements", announcementId, "votes", voterId), {
     choices,
     votedAt: fs.serverTimestamp(),
   });

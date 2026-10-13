@@ -26,15 +26,27 @@ const poll = computed(() => props.announcement.poll);
 const mine = computed(() => votes.value[props.announcement.id] ?? null);
 const hasImages = computed(() => poll.value.options.some((o) => o.image));
 
+/**
+ * Des choix qui valent pour le sondage tel qu'il est : dans son ordre, sans
+ * un choix retiré depuis, un seul s'il n'en permet plus plusieurs. Un vote
+ * gardé sur l'appareil peut dater d'avant une correction du sondage, et les
+ * règles refuseraient de le renvoyer tel quel.
+ */
+function valid(ids: readonly string[]): string[] {
+  const kept = poll.value.options.map((o) => o.id).filter((id) => ids.includes(id));
+  return poll.value.multiple ? kept : kept.slice(0, 1);
+}
+
 /** En train de choisir : jamais voté, ou « Changer mon choix ». */
 const editing = ref(!mine.value);
-const selected = ref<string[]>(mine.value ? [...mine.value] : []);
+const selected = ref<string[]>(valid(mine.value ?? []));
 const sending = ref(false);
-const failed = ref(false);
+/** « network » : pas de connexion ; « refused » : le sondage ne prend plus ce vote. */
+const failed = ref<"network" | "refused" | null>(null);
 
 watch(mine, (value) => {
   if (value && !sending.value) {
-    selected.value = [...value];
+    selected.value = valid(value);
     editing.value = false;
   }
 });
@@ -53,12 +65,12 @@ function toggle(id: string): void {
 }
 
 async function submit(): Promise<void> {
-  if (!selected.value.length || sending.value) return;
-  sending.value = true;
-  failed.value = false;
-  const changed = !!mine.value;
   // Dans l'ordre des choix, pas dans celui des clics.
-  const choices = poll.value.options.map((o) => o.id).filter((id) => selected.value.includes(id));
+  const choices = valid(selected.value);
+  if (!choices.length || sending.value) return;
+  sending.value = true;
+  failed.value = null;
+  const changed = !!mine.value;
   try {
     await answerPoll(props.announcement, choices);
     editing.value = false;
@@ -69,13 +81,15 @@ async function submit(): Promise<void> {
     });
   } catch (error) {
     console.warn("Vote non enregistré:", error);
-    failed.value = true;
+    failed.value =
+      (error as { code?: string }).code === "permission-denied" ? "refused" : "network";
   } finally {
     sending.value = false;
   }
 }
 
 function change(): void {
+  selected.value = valid(selected.value);
   editing.value = true;
 }
 </script>
@@ -138,7 +152,7 @@ function change(): void {
           v-if="editing"
           type="button"
           class="btn btn-primary"
-          :disabled="!selected.length || sending"
+          :disabled="!valid(selected).length || sending"
           @click="submit"
         >
           <AppIcon v-if="sending" name="spinner" :size="14" class="animate-spin" />
@@ -165,7 +179,7 @@ function change(): void {
       class="mt-3 flex items-center justify-center gap-1.5 text-sm text-red-600 dark:text-red-400"
     >
       <AppIcon name="alert-circle" :size="14" />
-      {{ t("announcements.poll.error") }}
+      {{ failed === "refused" ? t("announcements.poll.refused") : t("announcements.poll.error") }}
     </p>
   </section>
 </template>

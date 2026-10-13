@@ -16,6 +16,7 @@ import {
   ref as storageRef,
   uploadBytesResumable,
   deleteObject,
+  listAll,
   getDownloadURL,
 } from "firebase/storage";
 import { db } from "../firebase/firestore";
@@ -35,6 +36,7 @@ import { studioService } from "./studioService";
 import { announcementService, parseAnnouncement } from "./announcementService";
 import {
   linkWithPollPage,
+  pollToStore,
   sortAnnouncements,
   type Announcement,
   type LocalizedText,
@@ -457,6 +459,7 @@ class AdminService {
     const savedId = id ?? newId;
     const data = {
       ...fields,
+      poll: fields.poll ? pollToStore(fields.poll) : null,
       link: linkWithPollPage(savedId, fields.link, fields.poll),
       updatedAt: serverTimestamp(),
       ...(fields.published && !previous?.publishedAt ? { publishedAt: serverTimestamp() } : {}),
@@ -523,18 +526,18 @@ class AdminService {
   }
 
   /**
-   * Supprime une information, et les images de son sondage s'il en avait :
-   * servies publiquement, elles ne doivent pas lui survivre. Les votes
-   * restent en sous-collection, sans rien qui désigne personne.
+   * Supprime une information, et tout ce qui est rangé sous son dossier de
+   * Storage : les images de son sondage, celles qu'on a remplacées depuis
+   * comprises. Servies publiquement, elles ne doivent pas lui survivre. Les
+   * votes restent en sous-collection, sans rien qui désigne personne.
    */
-  async deleteAnnouncement(id: string, previous: Announcement | null = null): Promise<void> {
+  async deleteAnnouncement(id: string): Promise<void> {
     await deleteDoc(doc(db, "announcements", id));
     announcementService.invalidate();
-    for (const option of previous?.poll?.options ?? []) {
-      if (option.image?.includes("firebasestorage")) {
-        await deleteObject(storageRef(storage, option.image)).catch(() => undefined);
-      }
-    }
+    const folder = await listAll(storageRef(storage, `announcements/${id}`)).catch(() => null);
+    await Promise.all(
+      (folder?.items ?? []).map((item) => deleteObject(item).catch(() => undefined)),
+    );
   }
 
   // --- Séries -------------------------------------------------------------

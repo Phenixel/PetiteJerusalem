@@ -15,8 +15,10 @@ import {
 import {
   ANNOUNCEMENT_ICONS,
   ANNOUNCEMENT_KINDS,
+  FIX_VERSION_PATTERN,
   POLL_MAX_OPTIONS,
   POLL_MIN_OPTIONS,
+  pollPageUrl,
   type Announcement,
   type AnnouncementKind,
   type LocalizedText,
@@ -180,11 +182,14 @@ onMounted(async () => {
     kind.value = found.kind;
     title.value = { fr: found.title.fr, en: found.title.en ?? "", he: found.title.he ?? "" };
     body.value = { fr: found.body.fr, en: found.body.en ?? "", he: found.body.he ?? "" };
-    linkUrl.value = found.link?.url ?? "";
+    // Le lien vers la page de vote est posé à l'enregistrement (voir
+    // linkWithPollPage) : affiché ici, il passerait pour un lien choisi.
+    const link = found.link?.url === pollPageUrl(found.id) ? null : found.link;
+    linkUrl.value = link?.url ?? "";
     linkLabel.value = {
-      fr: found.link?.label.fr ?? "",
-      en: found.link?.label.en ?? "",
-      he: found.link?.label.he ?? "",
+      fr: link?.label.fr ?? "",
+      en: link?.label.en ?? "",
+      he: link?.label.he ?? "",
     };
     version.value = found.version ?? "";
     fixedIn.value = found.fixedIn ?? "";
@@ -222,7 +227,10 @@ const fields = computed<AnnouncementAdminFields>(() => ({
   body: text(body.value),
   link: linkUrl.value.trim() ? { url: linkUrl.value.trim(), label: text(linkLabel.value) } : null,
   version: kind.value === "release" && version.value.trim() ? version.value.trim() : null,
-  fixedIn: kind.value === "incident" && fixedIn.value.trim() ? fixedIn.value.trim() : null,
+  fixedIn:
+    kind.value === "incident" && fixedIn.value.trim()
+      ? fixedIn.value.trim().replace(/^v/i, "")
+      : null,
   resolved: kind.value === "incident" ? resolved.value : false,
   poll: kind.value === "question" && pollEnabled.value ? poll.value : null,
   published: published.value,
@@ -262,6 +270,10 @@ async function save(): Promise<void> {
   errorMessage.value = "";
   if (!title.value.fr.trim() || !body.value.fr.trim()) {
     errorMessage.value = t("admin.announcements.missingFields");
+    return;
+  }
+  if (fields.value.fixedIn && !FIX_VERSION_PATTERN.test(fields.value.fixedIn)) {
+    errorMessage.value = t("admin.announcements.invalidFixVersion");
     return;
   }
   if (fields.value.poll && fields.value.poll.options.length < POLL_MIN_OPTIONS) {
@@ -313,7 +325,7 @@ async function remove(): Promise<void> {
   if (!accepted) return;
   isDeleting.value = true;
   try {
-    await adminService.deleteAnnouncement(existing.value.id, existing.value);
+    await adminService.deleteAnnouncement(existing.value.id);
     toast.success(t("admin.announcements.deleted"));
     void refreshAdminSummary(true);
     router.push(returnTo);
