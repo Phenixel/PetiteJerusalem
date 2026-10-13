@@ -516,6 +516,23 @@ seul (Data Layer d'un côté, WatchConnectivity de l'autre), derrière le plugin
 maison PjWatch. Les deux plateformes sont scriptées de bout en bout, signature
 et publication comprises, voir `docs/app-watch.md`.
 
+## Précision de la boussole du Kotel
+
+Chrome donne le cap à la page, jamais sa précision, et la webview Android
+pas davantage. Le plugin maison PjCompass
+(`native/android/app/src/main/java/fr/petitejerusalem/app/PjCompassPlugin.java`)
+écoute le magnétomètre pendant que la boussole est ouverte et remonte son
+statut d'étalonnage (`SensorManager` : 3 haute, 2 moyenne, 1 basse,
+0 inutilisable), le même qui fait dire à Google Maps qu'il faut calibrer.
+Il s'éteint quand l'app passe en arrière-plan et reprend à son retour.
+`scripts/setup-android.mjs` le copie avec les widgets et l'enregistre dans
+`MainActivity`. Côté page, `src/services/nativeCompassAccuracy.ts` : rien
+hors de l'app Android, et rien non plus sur un binaire plus ancien que le
+plugin (la précision reste alors « inconnue », la boussole sert quand même).
+iOS n'en a pas besoin : Safari donne la précision avec le cap
+(`webkitCompassAccuracy`). Voir `docs/design.md`, « La boussole se demande
+en l'ouvrant, dit sa précision, et se tient à plat ».
+
 ## Icônes qui suivent le thème de l'appareil
 
 Les deux systèmes savent adapter l'icône d'une app au thème du téléphone, à

@@ -1551,6 +1551,31 @@ const en: LocaleMessages = {
         "Your device or your browser does not allow the compass: the dial keeps north up, so orient it yourself.",
       compassDenied: "Access to the compass was refused: the dial keeps north up.",
       enable: "Turn on the compass",
+      searching: "The compass is looking for north…",
+      locked: "Tap “Turn on the compass” so the arrow follows your device.",
+      flatOk: "The phone is flat: the compass reads true.",
+      calibrate: "Calibrate",
+      accuracy: {
+        high: "good",
+        medium: "fair",
+        low: "poor",
+        line: "Accuracy: {level}",
+        lineDegrees: "Accuracy: {level}, within {deg}°",
+        lowLine: "Poor accuracy: calibrate the compass before following it.",
+        unknown: "Does the arrow look wrong?",
+      },
+      calibration: {
+        title: "Calibrate the compass",
+        away: "Step away from metal objects and electrical devices; remove the case if it has a magnet.",
+        eight:
+          "Slowly trace a figure 8 in the air with the phone, three or four times, turning it in every direction.",
+        flat: "Lay it flat again, screen up: the arrow settles back into place.",
+        current: "Accuracy is {level} for now: keep going.",
+        done: "The compass is calibrated.",
+        unknown:
+          "Your device does not report its accuracy: if the arrow still looks wrong, repeat the motion.",
+        back: "Back to the compass",
+      },
       rose: { n: "N", e: "E", s: "S", o: "W" },
       points: {
         n: "North",

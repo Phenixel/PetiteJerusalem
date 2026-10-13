@@ -3,7 +3,7 @@ import { computed, onUnmounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import AppIcon from "./icons/AppIcon.vue";
 import AppModal from "./AppModal.vue";
-import { compassNeedsPermission, useCompassHeading } from "../composables/useCompassHeading";
+import { useCompassHeading } from "../composables/useCompassHeading";
 import { closeNaanouimCompass, naanouimCompassOpen } from "../composables/useNaanouimCompass";
 
 /**
@@ -69,15 +69,11 @@ const CARDINAUX = [
 const TICKS = [0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330];
 
 /**
- * iOS ne donne l'orientation qu'après un geste : le bouton est pour lui. Il
- * s'efface dès que la boussole parle, qu'on la refuse, ou qu'elle s'avère
- * muette.
+ * iOS ne donne l'orientation qu'après un geste : la permission se demande
+ * dans celui qui ouvre la fenêtre (openNaanouimCompass), et le bouton ne
+ * reste que s'il n'a pas suffi.
  */
-const askable = computed(
-  () =>
-    compassNeedsPermission() &&
-    (compassStatus.value === "idle" || compassStatus.value === "asking"),
-);
+const askable = computed(() => compassStatus.value === "locked");
 
 /** Ce que la fenêtre dit du cadran, sous les nombres. */
 const hint = computed(() => {
@@ -103,7 +99,9 @@ watch(naanouimCompassOpen, (open) => {
     stop();
     return;
   }
-  if (!compassNeedsPermission()) void start();
+  // La permission, là où elle se demande, est déjà partie avec le geste
+  // d'ouverture : start en attend la réponse.
+  void start();
 });
 </script>
 
@@ -210,13 +208,7 @@ watch(naanouimCompassOpen, (open) => {
         {{ t("textReading.kotel.flat") }}
       </p>
 
-      <button
-        v-if="askable"
-        type="button"
-        class="btn btn-soft w-full mt-4"
-        :disabled="compassStatus === 'asking'"
-        @click="start"
-      >
+      <button v-if="askable" type="button" class="btn btn-soft w-full mt-4" @click="start">
         <AppIcon name="compass" :size="16" />
         {{ t("textReading.kotel.enable") }}
       </button>

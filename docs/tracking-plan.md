@@ -269,6 +269,17 @@ ouvre. Le dénominateur des ouvertures depuis le Sidour est `sidour_viewed`.
 | `tefilin_mirror_opened` | `source` | `title`, `menu`, `sidour` | `sidour` **nouveau** |
 | `naanouim_compass_opened` | `source` | `title` (le titre des brahot du loulav), `rubric` (une consigne du Hallel), `sidour` | **nouveau** : l'événement n'avait pas de propriété |
 
+### `kotel_compass_calibration_opened` (nouveau)
+
+On touche « Calibrer » sous la boussole du Kotel (voir `docs/design.md`, « La
+boussole se demande en l'ouvrant, dit sa précision, et se tient à plat »).
+Rapporté à `kotel_compass_opened`, il dit combien de gens doutent de la
+flèche ; `accuracy` dit si c'est la précision affichée qui les y a poussés.
+
+| Propriété | Valeurs | Statut |
+| --- | --- | --- |
+| `accuracy` | la précision affichée au moment du toucher : `high`, `medium`, `low`, ou `unknown` quand l'appareil ne la donne pas (Chrome sur le site) | **nouveau** |
+
 ### Valeurs ajoutées à des propriétés existantes
 
 | Événement | Propriété | Valeur ajoutée | Ce qu'elle dit |

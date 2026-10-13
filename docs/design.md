@@ -892,6 +892,49 @@ permission de stockage à l'ouverture d'un office, sans que personne n'ait
 rien demandé (`docs/app-native.md`). Et un refus se dit pour ce qu'il est,
 avec l'endroit où revenir dessus, plutôt que d'envoyer vérifier la connexion.
 
+### La boussole se demande en l'ouvrant, dit sa précision, et se tient à plat
+
+La boussole du Kotel (`KotelCompass.vue`) envoyait parfois prier de travers
+sans que rien ne le dise. Trois règles en sont sorties.
+
+- **La permission part avec le geste qui ouvre la fenêtre.** iOS ne donne
+  l'orientation qu'après un geste ; la fenêtre la demandait un tour de boucle
+  trop tard, Safari refusait sans rien demander, et il fallait toucher
+  « Activer la boussole » juste après avoir touché « Direction du Kotel ».
+  `openKotelCompass` la demande désormais lui-même (comme le miroir des
+  téfilines demande la caméra), et la fenêtre attend cette réponse. Quand le
+  bouton reste nécessaire (un geste qui n'a pas porté), il se pose **sur le
+  cadran éteint** (grisé, flou, la flèche retirée), et non sous lui : un
+  cadran qui a l'air de marcher ne fait chercher aucun bouton, et sa flèche,
+  figée nord en haut, enverrait du mauvais côté.
+- **La précision se voit, et se rétablit.** Sous le cadran, trois barres
+  comme celles du réseau et un mot (bonne, moyenne, faible), chiffré en
+  degrés quand l'appareil le donne (Safari). Sur le cadran, un halo de la
+  couleur de la flèche couvre le secteur où se trouve le Kotel : étroit, on
+  suit la flèche ; large, il faut calibrer. « Calibrer » ouvre, à la place du
+  cadran, un téléphone qui décrit un 8 et les trois gestes à faire ; la
+  précision s'y suit en direct jusqu'à « La boussole est calibrée ». La
+  commande est pleine quand la précision est faible, discrète sinon, et
+  reste proposée quand l'appareil ne dit rien de sa précision (Chrome sur le
+  site) : « La flèche vous semble fausse ? ». Le niveau faible s'écrit en
+  ambre, la teinte d'avertissement déjà employée par les informations. D'où vient la précision :
+  `webkitCompassAccuracy` sur iOS, le statut d'étalonnage du magnétomètre
+  dans l'app Android (plugin PjCompass, `docs/app-native.md`).
+- **Le cadran penche à l'opposé du téléphone.** Il reste à l'horizontale,
+  comme la rose d'une boussole de marine sur son cardan : le haut du
+  téléphone relevé, le haut du cadran s'enfonce dans l'écran ; à plat, il se
+  présente de face. On a envie de le redresser, et on pose le téléphone.
+  L'inclinaison suit la main (c'est elle qui la produit, voir « Le mouvement
+  répond à un geste »), plafonnée à 55° pour que la flèche reste lisible ;
+  la consigne « Tenez le téléphone à plat » devient « Le téléphone est à
+  plat » quand il l'est. Un niveau à bulle au centre a été écarté : moins
+  visible, et un point de plus sur un cadran qui n'a qu'une chose à montrer.
+
+Tenu par `src/__tests__/kotelCompass.test.ts` (la permission demandée dans
+le geste d'ouverture, le bouton posé sur le cadran éteint, la précision et le
+calibrage, l'inclinaison) et `src/__tests__/nativeCompassAccuracy.test.ts`
+(le pont vers PjCompass).
+
 ### Un réglage se pose là où il est atteignable
 
 L'avis suivi pour les horaires (Rav Posen, Rav Ovadia Yossef) gouverne toutes

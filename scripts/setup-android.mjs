@@ -20,6 +20,8 @@
  *   et déclare les receivers dans le manifest (voir docs/app-widgets.md)
  * - App Links : intent-filter vérifié sur le domaine, un lien du site ouvre
  *   l'app quand elle est installée (voir docs/app-links.md)
+ * - Boussole du Kotel : le plugin PjCompass (étalonnage du magnétomètre),
+ *   copié avec les widgets et enregistré dans MainActivity
  * - Montre Wear OS : le module android/wear/ recopié depuis native/wear/,
  *   déclaré dans settings.gradle, ses icônes reprises de l'app et les Tehilim
  *   embarqués dans ses assets (voir docs/app-watch.md)
@@ -122,7 +124,6 @@ if (!manifest.includes('android:name="android.hardware.camera"')) {
   console.log("setup-android: caméra déclarée facultative (uses-feature)");
 }
 
-
 // Petite icône des notifications push. Sans ces deux meta-data, Firebase
 // affiche les push reçues app fermée avec l'icône du lanceur, qu'Android réduit
 // à sa seule opacité : une pastille pleine, ou l'icône générique du système.
@@ -131,20 +132,31 @@ if (!manifest.includes('android:name="android.hardware.camera"')) {
 // Les notifications locales (rappels d'horaires, push rejouées au premier plan)
 // prennent la même icône par capacitor.config.ts.
 const NOTIFICATION_META = [
-  { name: "com.google.firebase.messaging.default_notification_icon", resource: "@drawable/ic_stat_pj" },
-  { name: "com.google.firebase.messaging.default_notification_color", resource: "@color/pj_notification" },
+  {
+    name: "com.google.firebase.messaging.default_notification_icon",
+    resource: "@drawable/ic_stat_pj",
+  },
+  {
+    name: "com.google.firebase.messaging.default_notification_color",
+    resource: "@color/pj_notification",
+  },
 ];
 const missingNotificationMeta = NOTIFICATION_META.filter(({ name }) => !manifest.includes(name));
 if (missingNotificationMeta.length > 0) {
   const lines = missingNotificationMeta
-    .map(({ name, resource }) => `        <meta-data\n            android:name="${name}"\n            android:resource="${resource}" />`)
+    .map(
+      ({ name, resource }) =>
+        `        <meta-data\n            android:name="${name}"\n            android:resource="${resource}" />`,
+    )
     .join("\n");
   const patched = manifest.replace(
     /(<application\b[^>]*>)/,
     `$1\n\n        <!-- Petite icône des notifications push (voir docs/app-native.md) -->\n${lines}\n`,
   );
   if (patched === manifest) {
-    console.error("setup-android: balise <application> introuvable, icône des notifications non déclarée.");
+    console.error(
+      "setup-android: balise <application> introuvable, icône des notifications non déclarée.",
+    );
     process.exit(1);
   }
   manifest = patched;
@@ -217,7 +229,9 @@ if (!existsSync(keystorePropertiesExample)) {
     keystorePropertiesExample,
     `storeFile=/Users/phenixel/petite-jerusalem-release.keystore\nstorePassword=***\nkeyAlias=petite-jerusalem\nkeyPassword=***\n`,
   );
-  console.log("setup-android: keystore.properties.example créé (à copier en keystore.properties et remplir)");
+  console.log(
+    "setup-android: keystore.properties.example créé (à copier en keystore.properties et remplir)",
+  );
 }
 
 // 6. Icônes launcher + splash générées depuis assets/logo.png. Sans cette
@@ -227,10 +241,13 @@ if (!existsSync(keystorePropertiesExample)) {
 const generatedMarker = join(androidDir, "app/src/main/res/drawable-port-night-xxxhdpi/splash.png");
 if (!existsSync(generatedMarker)) {
   try {
-    execSync("npx @capacitor/assets generate --android --assetPath assets --iconBackgroundColor '#f5eedc' --iconBackgroundColorDark '#f5eedc'", {
-      cwd: root,
-      stdio: "inherit",
-    });
+    execSync(
+      "npx @capacitor/assets generate --android --assetPath assets --iconBackgroundColor '#f5eedc' --iconBackgroundColorDark '#f5eedc'",
+      {
+        cwd: root,
+        stdio: "inherit",
+      },
+    );
     console.log("setup-android: icônes et splash générés depuis assets/logo.png");
   } catch {
     console.warn(
@@ -399,6 +416,16 @@ public class MainActivity extends BridgeActivity {
     );
     console.log("setup-android: plugin PjWatch enregistré dans MainActivity");
   }
+  if (!mainActivity.includes("PjCompassPlugin")) {
+    // L'étalonnage du magnétomètre, pour la précision de la boussole du
+    // Kotel (src/services/nativeCompassAccuracy.ts), même règle que
+    // ci-dessus.
+    mainActivity = mainActivity.replace(
+      /(\n\s*)(super\.onCreate\(savedInstanceState\);)/,
+      `$1// Précision de la boussole du Kotel (voir docs/app-native.md).$1registerPlugin(PjCompassPlugin.class);$1$2`,
+    );
+    console.log("setup-android: plugin PjCompass enregistré dans MainActivity");
+  }
   if (!mainActivity.includes("setOverScrollMode")) {
     mainActivity = mainActivity.replace(
       /(\n\s*)(super\.onCreate\(savedInstanceState\);)/,
@@ -466,9 +493,7 @@ if (missingReceivers.length > 0) {
 ${receivers}$1`,
   );
   writeFileSync(manifestPath, widgetManifest);
-  console.log(
-    `setup-android: ${missingReceivers.length} widgets déclarés dans le manifest`,
-  );
+  console.log(`setup-android: ${missingReceivers.length} widgets déclarés dans le manifest`);
 }
 
 // 11. Connexion Google native : sans ces variables, le plugin
@@ -559,7 +584,10 @@ console.log("setup-android: module Wear OS copié depuis native/wear/");
 const settingsGradlePath = join(androidDir, "settings.gradle");
 const settingsGradle = readFileSync(settingsGradlePath, "utf8");
 if (!settingsGradle.includes("':wear'")) {
-  writeFileSync(settingsGradlePath, `${settingsGradle.trimEnd()}\n\n// App Wear OS (docs/app-watch.md)\ninclude ':wear'\n`);
+  writeFileSync(
+    settingsGradlePath,
+    `${settingsGradle.trimEnd()}\n\n// App Wear OS (docs/app-watch.md)\ninclude ':wear'\n`,
+  );
   console.log("setup-android: module :wear déclaré dans settings.gradle");
 }
 
