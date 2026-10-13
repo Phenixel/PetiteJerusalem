@@ -37,6 +37,9 @@ export interface StudioChiourPayload {
   newSerieName: string | null;
   episode: number | null;
   duration: number | null;
+  /** Le livre de la bibliothèque étudié, et son chapitre (voir chiourTexte). */
+  texteId: number | null;
+  texteChapitre: number | null;
 }
 
 export interface StudioAuthor {

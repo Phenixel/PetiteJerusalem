@@ -18,6 +18,10 @@ function chiour(partial: Partial<Chiour> & { slug: string }): Chiour {
     auteurId: null,
     serieId: null,
     episode: null,
+    duration: null,
+    addedAt: null,
+    texteId: null,
+    texteChapitre: null,
     ...partial,
   };
 }

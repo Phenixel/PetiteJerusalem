@@ -41,6 +41,10 @@ const chiour = (slug: string): Chiour => ({
   auteurId: null,
   serieId: null,
   episode: null,
+  duration: null,
+  addedAt: null,
+  texteId: null,
+  texteChapitre: null,
 });
 
 const seriesSnapshot = (ids: string[]) => ({

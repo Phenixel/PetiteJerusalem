@@ -242,6 +242,30 @@ export const ICONS = {
     body: '<path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/>',
   },
   play: { body: '<polygon points="6 3 20 12 6 21 6 3"/>' },
+  // Les commandes du lecteur des cours, pleines : sur un bouton rond, un
+  // trait fin se perdait dans la couleur du thème.
+  "play-solid": {
+    filled: true,
+    body: '<path d="M7 4.4v15.2a1.2 1.2 0 0 0 1.84 1.01l11.9-7.6a1.2 1.2 0 0 0 0-2.02L8.84 3.39A1.2 1.2 0 0 0 7 4.4z"/>',
+  },
+  "pause-solid": {
+    filled: true,
+    body: '<rect x="5.5" y="3.5" width="4.5" height="17" rx="1.2"/><rect x="14" y="3.5" width="4.5" height="17" rx="1.2"/>',
+  },
+  "skip-back": {
+    filled: true,
+    body: '<path d="M19 4.6v14.8a1 1 0 0 1-1.55.83L7.6 13.6V19a1 1 0 0 1-2 0V5a1 1 0 0 1 2 0v5.4l9.85-6.63A1 1 0 0 1 19 4.6z"/>',
+  },
+  "skip-forward": {
+    filled: true,
+    body: '<path d="M5 4.6v14.8a1 1 0 0 0 1.55.83l9.85-6.63V19a1 1 0 0 0 2 0V5a1 1 0 0 0-2 0v5.4L6.55 3.77A1 1 0 0 0 5 4.6z"/>',
+  },
+  "rotate-ccw": {
+    body: '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>',
+  },
+  "rotate-cw": {
+    body: '<path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/>',
+  },
   pause: {
     body: '<rect x="14" y="4" width="4" height="16" rx="1"/><rect x="6" y="4" width="4" height="16" rx="1"/>',
   },

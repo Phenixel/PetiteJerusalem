@@ -5,49 +5,77 @@ import { useI18n } from "vue-i18n";
 import { chiourService, sortedCategories } from "../../services/chiourService";
 import { serieService, type Serie } from "../../services/serieService";
 import type { Chiour } from "../../models/models";
-import ChiourCard from "../../components/ChiourCard.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
+import ChiourCover from "../../components/chiourim/ChiourCover.vue";
+import ChiourRail from "../../components/chiourim/ChiourRail.vue";
+import ChiourTrackRow from "../../components/chiourim/ChiourTrackRow.vue";
+import SerieTile from "../../components/chiourim/SerieTile.vue";
+import { formatMinutes, totalDuration } from "../../components/chiourim/duration";
+import { useChiourPlayback } from "../../composables/useChiourPlayback";
 import { seoService } from "../../services/seoService";
 import { analyticsService } from "../../services/analyticsService";
 import { liveValue } from "../../composables/liveInput";
 import { SITE_URL } from "../../config/site";
 
+/**
+ * Un rav, comme un artiste : son nom, ce qu'il enseigne, ses séries en
+ * rangée, puis ses cours. La recherche resserre tout en une liste.
+ */
+
 const route = useRoute();
 const router = useRouter();
-const { t } = useI18n();
+const { t, locale } = useI18n();
+const { player, playFrom } = useChiourPlayback();
 
 const auteurName = ref<string | null>(null);
+const auteurSeed = ref("");
 const chiourim = ref<Chiour[]>([]);
 const allSeries = ref<Serie[]>([]);
 const isLoading = ref(true);
 const error = ref<string | null>(null);
 const searchTerm = ref("");
 
-const filteredChiourim = computed(() => {
-  return chiourService.filterBySearch(chiourim.value, searchTerm.value);
-});
+const filteredChiourim = computed(() =>
+  chiourService.filterBySearch(chiourim.value, searchTerm.value),
+);
+const searching = computed(() => searchTerm.value.trim() !== "");
 
-// Groupes série (dans l'ordre des séries), puis les chiourim hors série.
-const serieGroups = computed(() => {
-  const bySerieId = new Map<string, Chiour[]>();
-  for (const c of filteredChiourim.value) {
-    if (!c.serieId) continue;
-    const list = bySerieId.get(c.serieId) ?? [];
-    list.push(c);
-    bySerieId.set(c.serieId, list);
-  }
-  return allSeries.value
-    .filter((s) => bySerieId.has(s.id))
-    .map((s) => ({ serie: s, episodes: serieService.episodesOf(s.id, filteredChiourim.value) }));
-});
+/** Ses séries, avec leurs épisodes, les plus récentes d'abord. */
+const serieGroups = computed(() =>
+  allSeries.value
+    .map((serie) => ({ serie, episodes: serieService.episodesOf(serie.id, chiourim.value) }))
+    .filter((group) => group.episodes.length > 0)
+    .sort(
+      (a, b) =>
+        Math.max(0, ...b.episodes.map((c) => c.addedAt ?? 0)) -
+        Math.max(0, ...a.episodes.map((c) => c.addedAt ?? 0)),
+    ),
+);
 
 const horsSerie = computed(() =>
-  filteredChiourim.value.filter(
-    (c) => !c.serieId || !allSeries.value.some((s) => s.id === c.serieId),
-  ),
+  chiourim.value
+    .filter((c) => !c.serieId || !allSeries.value.some((s) => s.id === c.serieId))
+    .sort((a, b) => (b.addedAt ?? 0) - (a.addedAt ?? 0)),
 );
 
 const categories = computed(() => sortedCategories(chiourim.value));
+const totalLabel = computed(() => formatMinutes(totalDuration(chiourim.value), locale.value));
+
+/** Ce que lance le grand bouton : les cours hors série, puis les séries, dans l'ordre affiché. */
+const playOrder = computed(() => [
+  ...horsSerie.value,
+  ...serieGroups.value.flatMap((g) => g.episodes),
+]);
+const playingHere = computed(() => chiourim.value.some((c) => c.slug === player.track.value?.slug));
+
+function playMain() {
+  if (playingHere.value) {
+    player.toggle();
+    return;
+  }
+  const first = playOrder.value.find((c) => c.mediaUrl);
+  if (first) playFrom(playOrder.value, first, "auteur");
+}
 
 // `applyAuteur` passe deux fois sur le même auteur (cache puis catalogue
 // frais) : un seul événement par auteur réellement ouvert.
@@ -58,6 +86,7 @@ function applyAuteur(all: Chiour[], slug: string): boolean {
   if (!name) return false;
   auteurName.value = name;
   chiourim.value = chiourService.filterByAuteur(all, name);
+  auteurSeed.value = chiourim.value.find((c) => c.auteurId)?.auteurId ?? name;
   if (trackedAuteurSlug !== slug) {
     trackedAuteurSlug = slug;
     analyticsService.capture("chiour_auteur_opened", {
@@ -84,7 +113,7 @@ const loadAuteur = async () => {
   const slug = route.params.auteur as string;
   error.value = null;
 
-  // Instant display from cache
+  // Affichage immédiat depuis le cache
   const cached = chiourService.getCachedChiourim();
   if (cached && applyAuteur(cached, slug)) {
     isLoading.value = false;
@@ -99,7 +128,6 @@ const loadAuteur = async () => {
     return;
   }
 
-  // No cache, full load
   try {
     isLoading.value = true;
     const all = await chiourService.getAllChiourim();
@@ -119,35 +147,24 @@ watch(() => route.params.auteur, loadAuteur);
 </script>
 
 <template>
-  <main class="mx-auto px-6 py-12 max-w-6xl">
-    <!-- Back link -->
+  <main class="mx-auto px-6 py-12 max-w-5xl">
     <button @click="router.push('/chiourim')" class="back-link mb-8">
-      <AppIcon name="chevron-left" :size="14" />
+      <AppIcon name="chevron-left" :size="14" class="rtl:rotate-180" />
       {{ t("detailChiour.backToList") }}
     </button>
 
-    <!-- Skeleton loading -->
-    <div v-if="isLoading" class="animate-pulse">
-      <div class="mb-12">
-        <div class="h-9 bg-black/10 rounded-lg w-64 mb-3 dark:bg-white/10"></div>
-        <div class="h-4 bg-black/10 rounded w-32 dark:bg-white/10"></div>
-      </div>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        <div v-for="n in 3" :key="n" class="card p-6 animate-pulse">
-          <div class="h-5 bg-black/10 rounded-lg w-3/4 mb-3 dark:bg-white/10"></div>
-          <div class="flex gap-2 mb-3">
-            <div class="h-6 w-20 bg-primary/10 rounded-lg"></div>
-          </div>
-          <div class="space-y-2 mb-4">
-            <div class="h-3 bg-black/10 rounded w-full dark:bg-white/10"></div>
-            <div class="h-3 bg-black/10 rounded w-5/6 dark:bg-white/10"></div>
-          </div>
-          <div class="h-4 bg-black/10 rounded w-28 dark:bg-white/10"></div>
+    <!-- Chargement -->
+    <div v-if="isLoading" class="animate-pulse" aria-hidden="true">
+      <div class="flex flex-col items-center gap-6 md:flex-row md:items-end">
+        <div class="h-44 w-44 rounded-full bg-black/10 md:h-56 md:w-56 dark:bg-white/10"></div>
+        <div class="flex-1 space-y-3">
+          <div class="h-9 w-2/3 rounded-lg bg-black/10 dark:bg-white/10"></div>
+          <div class="h-4 w-40 rounded bg-black/10 dark:bg-white/10"></div>
         </div>
       </div>
     </div>
 
-    <!-- Error -->
+    <!-- Erreur -->
     <div v-else-if="error" class="flex flex-col items-center justify-center py-16 text-center">
       <AppIcon name="alert-triangle" :size="32" class="text-red-500 mb-4" />
       <p class="text-text-primary font-medium mb-6">{{ error }}</p>
@@ -156,28 +173,46 @@ watch(() => route.params.auteur, loadAuteur);
       </button>
     </div>
 
-    <!-- Content -->
     <div v-else-if="auteurName" class="animate-[fadeIn_0.3s_ease]">
-      <!-- Author header -->
-      <div class="mb-10 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
-        <div>
-          <h1 class="text-3xl md:text-4xl font-bold text-text-primary mb-2">
+      <!-- En-tête : le rav -->
+      <header
+        class="flex flex-col items-center gap-6 text-center md:flex-row md:items-end md:text-start"
+      >
+        <ChiourCover :seed="auteurSeed" :label="auteurName" size="lg" round class="shadow-card" />
+        <div class="min-w-0 flex-1">
+          <h1 class="font-display text-3xl font-bold tracking-tight text-text-primary md:text-5xl">
             {{ auteurName }}
           </h1>
-          <p class="text-text-secondary">
+          <p class="mt-3 text-text-secondary">
             {{ t("auteurPage.chiourimCount", { count: chiourim.length }) }}
+            <template v-if="totalLabel"> · {{ totalLabel }}</template>
           </p>
-
-          <!-- Categories de l'auteur -->
-          <div v-if="categories.length" class="flex flex-wrap gap-2 mt-4">
+          <div
+            v-if="categories.length"
+            class="mt-3 flex flex-wrap justify-center gap-2 md:justify-start"
+          >
             <span v-for="cat in categories" :key="cat" class="chip bg-primary/10 text-primary">
               {{ cat }}
             </span>
           </div>
         </div>
+      </header>
 
-        <!-- Search -->
-        <div class="relative w-full md:w-80 shrink-0">
+      <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+        <button type="button" class="btn btn-primary !rounded-pill !px-6" @click="playMain">
+          <AppIcon
+            :name="playingHere && player.isPlaying.value ? 'pause-solid' : 'play-solid'"
+            :size="16"
+          />
+          {{
+            playingHere && player.isPlaying.value
+              ? t("audioPlayer.pause")
+              : playingHere
+                ? t("chiourim.resumeShort")
+                : t("chiourim.listen")
+          }}
+        </button>
+        <div class="relative w-full sm:ms-auto sm:w-72">
           <AppIcon
             name="search"
             :size="16"
@@ -187,69 +222,69 @@ watch(() => route.params.auteur, loadAuteur);
             :value="searchTerm"
             @input="searchTerm = liveValue($event)"
             type="text"
-            :placeholder="t('chiourim.searchPlaceholder')"
+            :placeholder="t('auteurPage.searchPlaceholder')"
             class="field !pl-11"
           />
           <button
             v-if="searchTerm"
             @click="searchTerm = ''"
             class="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary/70 hover:text-text-primary transition-colors"
+            :aria-label="t('chiourim.clearSearch')"
           >
             <AppIcon name="x" :size="14" />
           </button>
         </div>
       </div>
 
-      <!-- Chiourim list : séries d'abord, puis hors série -->
-      <div v-if="filteredChiourim.length > 0" class="space-y-10">
-        <section v-for="group in serieGroups" :key="group.serie.id">
-          <div class="flex items-baseline justify-between gap-4 mb-4">
-            <h2 class="text-xl font-bold text-text-primary flex items-center gap-2">
-              <AppIcon name="book-open" :size="18" class="text-secondary" />
-              {{ group.serie.name }}
-            </h2>
-            <router-link
-              :to="`/chiourim/serie/${group.serie.id}`"
-              class="text-sm text-primary font-medium hover:underline shrink-0"
-            >
-              {{ t("serie.seeAll") }}
-            </router-link>
-          </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            <ChiourCard
-              v-for="chiour in group.episodes"
-              :key="chiour.slug"
-              :chiour="chiour"
-              :serie-name="group.serie.name"
-              class="h-full"
-            />
-          </div>
-        </section>
+      <!-- Recherche : une seule liste -->
+      <section v-if="searching" class="mt-8">
+        <div v-if="filteredChiourim.length" class="-mx-2">
+          <ChiourTrackRow
+            v-for="chiour in filteredChiourim"
+            :key="chiour.slug"
+            :chiour="chiour"
+            :list="filteredChiourim"
+            source="auteur"
+          />
+        </div>
+        <div v-else class="flex flex-col items-center justify-center py-16 text-center">
+          <AppIcon name="search" :size="32" class="text-text-secondary/40 mb-4" />
+          <p class="text-text-secondary text-lg">{{ t("chiourim.noResults") }}</p>
+          <button @click="searchTerm = ''" class="mt-4 text-primary font-medium hover:underline">
+            {{ t("chiourim.clearFilters") }}
+          </button>
+        </div>
+      </section>
 
-        <section v-if="horsSerie.length > 0">
-          <h2 v-if="serieGroups.length > 0" class="text-xl font-bold text-text-primary mb-4">
-            {{ t("serie.outOfSerie") }}
+      <template v-else>
+        <ChiourRail v-if="serieGroups.length" class="mt-10" :title="t('chiourim.series')">
+          <SerieTile
+            v-for="group in serieGroups"
+            :key="group.serie.id"
+            :to="`/chiourim/serie/${group.serie.id}`"
+            :seed="group.serie.id"
+            :name="group.serie.name"
+            :cover-sub="auteurName"
+            :sub="t('chiourim.coursesCount', { count: group.episodes.length })"
+          />
+        </ChiourRail>
+
+        <section v-if="horsSerie.length" class="mt-10">
+          <h2 class="mb-3 font-display text-2xl font-bold tracking-tight text-text-primary">
+            {{ serieGroups.length ? t("serie.outOfSerie") : t("chiourim.allCourses") }}
           </h2>
-          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            <ChiourCard
+          <div class="-mx-2">
+            <ChiourTrackRow
               v-for="chiour in horsSerie"
               :key="chiour.slug"
               :chiour="chiour"
-              class="h-full"
+              :list="horsSerie"
+              source="auteur"
+              :subtitle="chiour.categories.join(' · ')"
             />
           </div>
         </section>
-      </div>
-
-      <div v-else class="flex flex-col items-center justify-center py-16 text-center">
-        <AppIcon name="search" :size="32" class="text-text-secondary/40 mb-4" />
-        <p class="text-text-secondary text-lg">
-          {{ t("chiourim.noResults") }}
-        </p>
-        <button @click="searchTerm = ''" class="mt-4 text-primary font-medium hover:underline">
-          {{ t("chiourim.clearFilters") }}
-        </button>
-      </div>
+      </template>
     </div>
   </main>
 </template>

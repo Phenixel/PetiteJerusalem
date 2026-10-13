@@ -2,10 +2,20 @@
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import AppIcon from "./icons/AppIcon.vue";
-import ProgressBar from "./ProgressBar.vue";
-import { useAudioPlayer, useMiniPlayerVisible, formatTime } from "../composables/useAudioPlayer";
+import ChiourCover from "./chiourim/ChiourCover.vue";
+import { useAudioPlayer, useMiniPlayerVisible } from "../composables/useAudioPlayer";
 import { isNativeApp } from "../composables/useNativeApp";
-import { computed } from "vue";
+
+/**
+ * Le mini-lecteur : le cours qui joue reste sous la main d'une page à
+ * l'autre, au-dessus de la barre de l'app. Sa pochette et son titre mènent à
+ * la page du cours (l'écran « en cours de lecture ») ; les commandes jouent,
+ * mettent en pause, passent au cours suivant de la file, ou ferment.
+ *
+ * Il est monté sur toutes les pages : rien ici ne doit tirer Firestore ni le
+ * catalogue (voir initialBundle.test.ts). Le morceau porte de quoi dessiner
+ * sa pochette et sa ligne (AudioTrack.cover, AudioTrack.subtitle).
+ */
 
 const { t } = useI18n();
 const router = useRouter();
@@ -13,14 +23,12 @@ const router = useRouter();
 const player = useAudioPlayer();
 const isVisible = useMiniPlayerVisible();
 
-const formattedCurrent = computed(() => formatTime(player.currentTime.value));
-const formattedDuration = computed(() => formatTime(player.duration.value));
-
 function seek(event: MouseEvent) {
   const bar = event.currentTarget as HTMLElement;
   const rect = bar.getBoundingClientRect();
   const ratio = (event.clientX - rect.left) / rect.width;
-  player.seekRatio(ratio);
+  const rtl = getComputedStyle(bar).direction === "rtl";
+  player.seekRatio(rtl ? 1 - ratio : ratio);
 }
 
 function goToChiour() {
@@ -34,76 +42,93 @@ function goToChiour() {
   <Transition name="slide-up">
     <div
       v-if="isVisible && player.track.value"
-      class="fixed inset-x-0 z-40 bg-surface shadow-[0_-4px_20px_rgba(0,0,0,0.1)]"
+      class="fixed inset-x-0 z-40 px-2 pb-2"
       :class="
         isNativeApp
           ? 'bottom-[calc(3.5rem+var(--safe-bottom))]'
-          : 'bottom-0 pb-[env(safe-area-inset-bottom)]'
+          : 'bottom-0 pb-[calc(0.5rem+env(safe-area-inset-bottom))]'
       "
       role="region"
       :aria-label="t('audioPlayer.nowPlaying')"
     >
-      <!-- Barre de progression cliquable, collée au bord haut -->
-      <div class="cursor-pointer" @click="seek">
-        <ProgressBar :value="player.progress.value" size="xs" :animated="false" />
-      </div>
-
-      <div class="mx-auto max-w-4xl px-4 py-2.5 flex items-center gap-3">
-        <!-- Titre : lien vers la page du chiour -->
-        <button
-          class="flex items-center gap-2 min-w-0 flex-1 text-left text-sm font-medium text-text-primary hover:text-primary transition-colors"
-          :class="{ 'cursor-default hover:text-text-primary': !player.track.value.slug }"
-          @click="goToChiour"
-          :title="player.track.value.slug ? t('audioPlayer.goToChiour') : undefined"
-        >
-          <AppIcon name="headphones" :size="14" class="text-primary shrink-0" />
-          <span class="truncate">{{ player.track.value.title }}</span>
-        </button>
-
-        <!-- Temps (masqué en très petit écran) -->
-        <span class="hidden sm:block text-xs text-text-secondary whitespace-nowrap tabular-nums">
-          {{ formattedCurrent }} / {{ formattedDuration }}
-        </span>
-
-        <!-- Contrôles -->
-        <div class="flex items-center gap-3 shrink-0">
+      <div class="mx-auto max-w-3xl overflow-hidden rounded-control bg-surface shadow-pop">
+        <div class="flex items-center gap-3 px-2 py-2">
+          <!-- La pochette et le titre : la page du cours -->
           <button
-            @click="player.skip(-15)"
-            class="hidden sm:inline-flex items-center whitespace-nowrap text-text-secondary hover:text-primary transition-colors"
-            :title="t('audioPlayer.rewind')"
+            class="flex min-w-0 flex-1 items-center gap-3 text-left"
+            :class="{ 'cursor-default': !player.track.value.slug }"
+            :title="player.track.value.slug ? t('audioPlayer.goToChiour') : undefined"
+            @click="goToChiour"
           >
-            <AppIcon name="backward" :size="13" />
-            <span class="text-[9px] ml-0.5">15</span>
-          </button>
-
-          <button
-            @click="player.toggle()"
-            class="w-10 h-10 flex items-center justify-center bg-brand text-on-brand rounded-full transition-colors shrink-0"
-            :title="player.isPlaying.value ? t('audioPlayer.pause') : t('audioPlayer.play')"
-          >
-            <AppIcon
-              :name="player.isPlaying.value ? 'pause' : 'play'"
-              :size="16"
-              :class="{ 'ml-0.5': !player.isPlaying.value }"
+            <ChiourCover
+              v-if="player.track.value.cover"
+              :seed="player.track.value.cover.seed"
+              :label="player.track.value.cover.label"
+              size="xs"
             />
+            <span
+              v-else
+              class="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary"
+            >
+              <AppIcon name="headphones" :size="16" />
+            </span>
+            <span class="min-w-0">
+              <span class="block truncate text-sm font-semibold text-text-primary">{{
+                player.track.value.title
+              }}</span>
+              <span
+                v-if="player.track.value.subtitle"
+                class="block truncate text-xs text-text-secondary"
+                >{{ player.track.value.subtitle }}</span
+              >
+            </span>
           </button>
 
-          <button
-            @click="player.skip(30)"
-            class="hidden sm:inline-flex items-center whitespace-nowrap text-text-secondary hover:text-primary transition-colors"
-            :title="t('audioPlayer.forward')"
-          >
-            <span class="text-[9px] mr-0.5">30</span>
-            <AppIcon name="forward" :size="13" />
-          </button>
+          <!-- Les commandes -->
+          <div class="flex shrink-0 items-center gap-1">
+            <button
+              @click="player.skip(-15)"
+              class="hidden h-10 w-10 items-center justify-center rounded-full text-text-secondary transition-colors hover:text-primary sm:flex"
+              :title="t('audioPlayer.rewind')"
+              :aria-label="t('audioPlayer.rewind')"
+            >
+              <AppIcon name="rotate-ccw" :size="18" />
+            </button>
+            <button
+              @click="player.toggle()"
+              class="flex h-10 w-10 items-center justify-center rounded-full bg-brand text-on-brand transition-transform active:scale-95"
+              :title="player.isPlaying.value ? t('audioPlayer.pause') : t('audioPlayer.play')"
+              :aria-label="player.isPlaying.value ? t('audioPlayer.pause') : t('audioPlayer.play')"
+            >
+              <AppIcon
+                :name="player.isPlaying.value ? 'pause-solid' : 'play-solid'"
+                :size="16"
+                :class="{ 'ml-0.5': !player.isPlaying.value }"
+              />
+            </button>
+            <button
+              v-if="player.hasNext.value"
+              @click="player.next()"
+              class="flex h-10 w-10 items-center justify-center rounded-full text-text-primary transition-colors hover:text-primary"
+              :title="t('audioPlayer.next')"
+              :aria-label="t('audioPlayer.next')"
+            >
+              <AppIcon name="skip-forward" :size="18" class="rtl:rotate-180" />
+            </button>
+            <button
+              @click="player.close()"
+              class="flex h-10 w-10 items-center justify-center rounded-full text-text-secondary transition-colors hover:text-text-primary"
+              :title="t('audioPlayer.close')"
+              :aria-label="t('audioPlayer.close')"
+            >
+              <AppIcon name="x" :size="16" />
+            </button>
+          </div>
+        </div>
 
-          <button
-            @click="player.close()"
-            class="text-text-secondary hover:text-text-primary transition-colors ml-1"
-            :title="t('audioPlayer.close')"
-          >
-            <AppIcon name="x" :size="16" />
-          </button>
+        <!-- La barre, au bord bas : on y touche pour aller plus loin -->
+        <div class="mini-progress cursor-pointer" @click="seek">
+          <div class="h-full bg-primary" :style="{ width: `${player.progress.value}%` }"></div>
         </div>
       </div>
     </div>
@@ -111,6 +136,13 @@ function goToChiour() {
 </template>
 
 <style scoped>
+.mini-progress {
+  height: 3px;
+  background: color-mix(in srgb, var(--color-text-primary) 10%, transparent);
+}
+[dir="rtl"] .mini-progress > div {
+  margin-inline-start: auto;
+}
 .slide-up-enter-active,
 .slide-up-leave-active {
   transition:
