@@ -150,6 +150,24 @@ const POURIM_MONTEES = [
 ];
 
 /**
+ * Le passage de Roch Hodech, Bamidbar 28, 1 à 15 (segment 39 du Hallel de
+ * Roch Hodech dans la source), coupé aux versets où passent les montées. La
+ * source les borne de mots en retrait (« לוי חוזר מ''ואמרת להם'' », « ישראל »,
+ * « רביעי ») que la lecture ordinaire retire : on coupe donc sur le texte.
+ * Chaque morceau va jusqu'au suivant. Le verset 3 est à part : le Cohen le
+ * lit, et le Lévi le reprend quand on lit quatre montées. Deux lectures s'en
+ * servent : celle de Roch Hodech, en quatre montées, et celle de Roch Hodech
+ * Tévet, en trois (le nassi de 'Hanouka fait la quatrième).
+ */
+const ROCH_HODECH_VERSETS = {
+  v1: { seg: 39, until: "ואמרת להם" },
+  v3: { seg: 39, from: "ואמרת להם", until: "ואמרת להם" },
+  v4: { seg: 39, from: "את־הכבש אחד", until: "עלת תמיד העשיה" },
+  v6: { seg: 39, from: "עלת תמיד העשיה", until: "ובראשי חדשיכם" },
+  v11: { seg: 39, from: "ובראשי חדשיכם" },
+};
+
+/**
  * Les korbanot d'un jour de Souccot (Bamidbar 29, 17 à 34), trois versets par
  * jour, du deuxième au septième : la lecture de la Torah de 'Hol haMoed.
  * L'export du siddour ne les porte pas ; ils viennent du fichier de la
@@ -3074,56 +3092,36 @@ function chaharitRecipe() {
               "פותחים ההיכל ואומרים:",
             ),
           },
-          // Les quatre montées, chacune sous sa didascalie. La source les
-          // borne de mots en retrait au milieu du passage (« לוי חוזר
-          // מ''ואמרת להם'' », « ישראל », « רביעי »), que la lecture ordinaire
-          // retire : le passage s'affichait d'un seul tenant. Le Cohen lit les
-          // versets 1 à 3, le Lévi reprend au 3 jusqu'au 5, Israël lit du 6 au
-          // 10, le quatrième du 11 au 15. Chaque ligne garde la condition de
+          // Les quatre montées, chacune sous sa didascalie (voir
+          // ROCH_HODECH_VERSETS) : Cohen 1 à 3, Lévi 3 à 5, Israël 6 à 10,
+          // le quatrième 11 à 15. Chaque ligne garde la condition de
           // l'ancienne ligne unique : à Roch Hodech Tévet, c'est le bloc
           // suivant qui lit.
-          {
-            seg: 39,
-            unless: "hanouka",
-            until: "ואמרת להם",
-            rubric: R(
-              "On lit quatre montées dans la paracha des moussafim (Bamidbar 28). Cohen :",
-              "Four aliyot are read from the portion of the musaf offerings (Numbers 28). Kohen:",
-              "מוציאים ספר תורה וקוראים ארבעה עולים (במדבר כח). כהן:",
-            ),
-          },
-          { seg: 39, unless: "hanouka", from: "ואמרת להם", until: "ואמרת להם", tight: true },
-          {
-            seg: 39,
-            unless: "hanouka",
-            from: "ואמרת להם",
-            until: "ואמרת להם",
-            rubric: R(
-              "Lévi, qui reprend au verset 3 :",
-              "Levi, who starts again from verse 3:",
-              "לוי, חוזר מ״ואמרת להם״:",
-            ),
-          },
-          {
-            seg: 39,
-            unless: "hanouka",
-            from: "את־הכבש אחד",
-            until: "עלת תמיד העשיה",
-            tight: true,
-          },
-          {
-            seg: 39,
-            unless: "hanouka",
-            from: "עלת תמיד העשיה",
-            until: "ובראשי חדשיכם",
-            rubric: R("Israël :", "Yisrael:", "ישראל:"),
-          },
-          {
-            seg: 39,
-            unless: "hanouka",
-            from: "ובראשי חדשיכם",
-            rubric: R("Quatrième montée :", "Fourth aliyah:", "רביעי:"),
-          },
+          ...[
+            {
+              ...ROCH_HODECH_VERSETS.v1,
+              rubric: R(
+                "On lit quatre montées dans la paracha des moussafim (Bamidbar 28). Cohen :",
+                "Four aliyot are read from the portion of the musaf offerings (Numbers 28). Kohen:",
+                "מוציאים ספר תורה וקוראים ארבעה עולים (במדבר כח). כהן:",
+              ),
+            },
+            { ...ROCH_HODECH_VERSETS.v3, tight: true },
+            {
+              ...ROCH_HODECH_VERSETS.v3,
+              rubric: R(
+                "Lévi, qui reprend au verset 3 :",
+                "Levi, who starts again from verse 3:",
+                "לוי, חוזר מ״ואמרת להם״:",
+              ),
+            },
+            { ...ROCH_HODECH_VERSETS.v4, tight: true },
+            { ...ROCH_HODECH_VERSETS.v6, rubric: R("Israël :", "Yisrael:", "ישראל:") },
+            {
+              ...ROCH_HODECH_VERSETS.v11,
+              rubric: R("Quatrième montée :", "Fourth aliyah:", "רביעי:"),
+            },
+          ].map((ligne) => ({ ...ligne, unless: "hanouka" })),
         ],
       },
       // Roch Hodech Tévet, dans 'Hanouka : trois montées de Roch Hodech
@@ -3138,23 +3136,17 @@ function chaharitRecipe() {
         plain: true,
         lines: [
           {
-            seg: 39,
-            until: "ואמרת להם",
+            ...ROCH_HODECH_VERSETS.v1,
             rubric: R(
               "À Roch Hodech Tévet, on lit trois montées dans la paracha des moussafim (Bamidbar 28), puis une quatrième dans celle de 'Hanouka. Cohen :",
               "On Rosh Chodesh Tevet, three aliyot are read from the portion of the musaf offerings (Numbers 28), then a fourth from the Hanukkah reading. Kohen:",
               "בראש חודש טבת קוראים שלושה עולים בפרשת המוספים (במדבר כח), והרביעי בקריאת חנוכה. כהן:",
             ),
           },
-          { seg: 39, from: "ואמרת להם", until: "ואמרת להם", tight: true },
-          { seg: 39, from: "את־הכבש אחד", until: "עלת תמיד העשיה", tight: true },
-          {
-            seg: 39,
-            from: "עלת תמיד העשיה",
-            until: "ובראשי חדשיכם",
-            rubric: R("Lévi :", "Levi:", "לוי:"),
-          },
-          { seg: 39, from: "ובראשי חדשיכם", rubric: R("Israël :", "Yisrael:", "ישראל:") },
+          { ...ROCH_HODECH_VERSETS.v3, tight: true },
+          { ...ROCH_HODECH_VERSETS.v4, tight: true },
+          { ...ROCH_HODECH_VERSETS.v6, rubric: R("Lévi :", "Levi:", "לוי:") },
+          { ...ROCH_HODECH_VERSETS.v11, rubric: R("Israël :", "Yisrael:", "ישראל:") },
         ],
       },
       {

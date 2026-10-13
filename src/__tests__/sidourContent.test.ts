@@ -739,16 +739,16 @@ describe("Cha'harit : le Hallel et les lectures des jours à lecture propre", ()
     }[];
     const diaspora = lignes.filter((l) => l?.when === "hallel-brakha-houts-laarets");
     expect(diaspora).toHaveLength(2);
+    // Sa place à la fin du Hallel : voir « ferme le Hallel entier par
+    // Yehalelou'ha », plus bas.
     expect(sansSignes(String(diaspora[0].he))).toContain("לגמור את ההלל");
-    expect(diaspora[0].rubric!.fr).toMatch(/^Hors d'Israël, on a pris l'habitude/);
     expect(sansSignes(String(diaspora[1].he))).toContain("יהללוך");
-    expect(diaspora[1].rubric!.fr).toMatch(/^Hors d'Israël, on a pris l'habitude/);
     for (const ligne of diaspora) {
+      expect(ligne.rubric!.fr).toMatch(/^Hors d'Israël, on a pris l'habitude/);
       expect(ligne.rubric!.fr).toContain("Le 'hazan seul");
       expect(ligne.rubric!.fr).toContain("répond amen");
       expect(ligne.rubric!.fr).toContain("Qui prie seul ne la dit pas");
     }
-    expect(lignes.indexOf(diaspora[1])).toBe(lignes.length - 1);
   });
 
   it("lit un passage par jour à 'Hanouka, dans l'ordre des nessiim", () => {
