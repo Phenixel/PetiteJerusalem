@@ -1389,6 +1389,7 @@ const fr = {
       collapse: "Réduire le lecteur",
       from: "Lecture depuis",
       upNext: "À suivre",
+      earlier: "Précédents",
       about: "À propos du cours",
       openPage: "Voir la page du cours",
       nowPlaying: "En cours",

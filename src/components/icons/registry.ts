@@ -243,7 +243,10 @@ export const ICONS = {
   },
   play: { body: '<polygon points="6 3 20 12 6 21 6 3"/>' },
   // Les commandes du lecteur des cours, pleines : sur un bouton rond, un
-  // trait fin se perdait dans la couleur du thème.
+  // trait fin se perdait dans la couleur du thème. Le triangle est posé sur
+  // son centre de gravité (au tiers de sa largeur, côté base), pas sur sa
+  // boîte : dans un rond, c'est ainsi qu'il paraît au milieu. Un bouton
+  // n'ajoute donc pas de marge par-dessus (tenu par playIcon.test.ts).
   "play-solid": {
     filled: true,
     body: '<path d="M7 4.4v15.2a1.2 1.2 0 0 0 1.84 1.01l11.9-7.6a1.2 1.2 0 0 0 0-2.02L8.84 3.39A1.2 1.2 0 0 0 7 4.4z"/>',

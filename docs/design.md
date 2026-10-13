@@ -383,8 +383,9 @@ la journée dans une liste de lignes (`ZmanRow`), se perd dans une liste de
 cartes, où chacune porte déjà trois niveaux de texte.
 
 La prochaine fête du calendrier prend donc la teinte du thème à plein, sur
-toute sa carte, et son texte passe au blanc (`on-brand`). C'est la seule carte
-colorée de la page, et on la trouve sans avoir à lire.
+toute sa carte, et son texte passe à la couleur qui s'écrit dessus
+(`on-brand` : le brun sur l'orange clair, le blanc sur le bleu ou le vert).
+C'est la seule carte colorée de la page, et on la trouve sans avoir à lire.
 
 Ce texte y descend en trois tons, comme sur le bandeau du profil : le nom de
 la fête et ses heures à plein, les dates et les intitulés des heures en
@@ -486,6 +487,15 @@ L'icône reste là où elle est seule à distinguer : le gâteau d'un
 anniversaire et la bougie d'un leilouy nichmat parmi les dates qu'on a
 posées, les lignes « Aujourd'hui » et « Hors ligne » de la bibliothèque, les
 titres de section des horaires.
+
+### Le triangle de lecture se centre sur son poids
+
+Un triangle centré sur sa boîte paraît décalé vers sa base : son poids est
+au tiers de sa largeur. L'icône de lecture (`play-solid`) est donc dessinée
+avec son centre de gravité au milieu, et sa pointe déborde d'autant. Le
+bouton rond qui la porte la centre comme n'importe quelle icône, sans marge
+de plus : une marge la poussait de 1 à 2 px vers la pointe, et le triangle
+paraissait décalé à droite. Tenu par `src/__tests__/playIcon.test.ts`.
 
 ### Le Sidour s'ouvre sur le moment
 
@@ -1427,7 +1437,11 @@ parcourt, on lance, on reprend.
   dansent. Puis « À suivre », dix lignes et la suite à un geste : une ligne
   par cours, séparées d'un filet, le numéro, le titre sur deux lignes au
   plus et, dessous, le chapitre étudié et la durée. Une liste compacte
-  d'une ligne par cours ne laissait pas voir où l'on en était.
+  d'une ligne par cours ne laissait pas voir où l'on en était. Au-dessus
+  d'« En cours », repliés, les cours d'avant : une ligne « Précédents » et
+  leur nombre, qu'un appui déplie dans le même dessin, dans l'ordre de la
+  série. Un cours lancé au milieu d'une série n'en montrait que la suite,
+  et le début de la file était perdu (tenu par `nowPlayingQueue.test.ts`).
 - **Un titre ne répète pas sa série.** Dans une liste où la série est déjà
   dite (la page d'une série, la file du lecteur), « Shaar Habitahon Shiour
   10 Chapitre 2 » devient « Shiour 10 Chapitre 2 » (`shortTitle`).
@@ -1477,63 +1491,71 @@ aplats sous le curseur natif.
 
 ## 2. Les couleurs de thème
 
-Deux couleurs : l'orange d'origine de l'app, le vermillon de la pierre de
-Jérusalem au soleil couchant, et le bleu de la palette du logo. Le fond et le
-mur viennent eux aussi du logo.
+Deux couleurs, l'orange et le bleu de la palette du logo. Le fond et le mur
+viennent eux aussi du logo.
 
-| Couleur       | Logo      | Dans l'app | Claire    |
-| ------------- | --------- | ---------- | --------- |
-| Orange        |           | `#DE4F17`  | déduite   |
-| Bleu          | `#539EE2` | `#328CDC`  | `#A9CCEB` |
-| Fond de page  | `#FFF9F3` |            |           |
-| Briques (mur) | `#D6C4B8` |            |           |
+| Couleur       | Logo      | Encre     | Claire    |
+| ------------- | --------- | --------- | --------- |
+| Orange        | `#FEA547` | `#D46D01` | `#FFD09E` |
+| Bleu          | `#539EE2` | `#328CDC` | `#A9CCEB` |
+| Fond de page  | `#FFF9F3` |           |           |
+| Briques (mur) | `#D6C4B8` |           |           |
 
-Le bleu du logo est clair : le blanc ne s'y lit pas (2,9:1), et il ne
-s'écrit pas sur le fond. L'app prend donc la **même teinte, soutenue juste
-assez** pour porter le blanc et se lire en encre. Pour l'orange, deux essais
-ont été écartés. La teinte claire du logo (`#FEA547`) en fond, avec un texte
-brun et une encre plus soutenue pour le texte : deux oranges se côtoyaient
-sur chaque écran (le bouton pastel à côté de l'heure caramel), et l'action
-principale perdait son autorité. Puis cette teinte soutenue pour le blanc
-(`#D96507`) : plus jaune que le vermillon, elle tirait au brun et rendait
-l'app terne. Des oranges plus vifs entre les deux (`#E65D00`) n'ont pas
-convaincu non plus : le vermillon reste. La version claire de l'orange se
-déduit de lui (`resolveThemeColors`).
+L'orange du logo est clair : le blanc ne s'y lit pas (2:1), et il ne s'écrit
+pas sur le fond (1,9:1). Il sert donc **tel quel de fond plein**, avec un
+brun dessus (`#3B2412`, 7,4:1), et le texte orange prend la **même teinte,
+soutenue juste assez** pour se lire : c'est l'encre. Le bleu du logo, clair
+lui aussi, est pris soutenu une fois pour toutes (`#328CDC`) : il porte le
+blanc et se lit en encre.
+
+Essais écartés pour l'orange, dans l'ordre : le vermillon d'origine
+(`#DE4F17`), qui tirait au rouge ; l'orange du logo soutenu pour porter le
+blanc (`#D96507`), plus jaune que le vermillon mais qui tirait au brun et
+rendait l'app terne ; des oranges plus vifs entre les deux (`#E65D00`), qui
+n'ont pas convaincu non plus. Le prix de l'orange clair : deux oranges sur un
+même écran, la teinte dans les fonds pleins et l'encre dans le texte (l'heure
+de l'accueil, l'onglet actif).
 
 Trois thèmes au choix, dans cet ordre. Le premier est celui d'origine.
 
-| Thème           | `primary` | `secondary` |
-| --------------- | --------- | ----------- |
-| sunset (défaut) | `#DE4F17` | `#328CDC`   |
-| ocean           | `#328CDC` | `#DE4F17`   |
-| emerald         | `#059C66` | `#DE4F17`   |
+| Thème           | Encre     | Fond plein | Texte dessus | Secondaire |
+| --------------- | --------- | ---------- | ------------ | ---------- |
+| sunset (défaut) | `#D46D01` | `#FEA547`  | `#3B2412`    | bleu       |
+| ocean           | `#328CDC` | `#328CDC`  | blanc        | orange     |
+| emerald         | `#059C66` | `#059C66`  | blanc        | orange     |
 
 L'orange et le bleu sont l'un en second de l'autre ; le vert prend l'orange
-en second. La couleur principale sert aussi bien de fond plein sous du blanc
-que d'encre sur le fond : la règle de lisibilité est tenue par
-`src/__tests__/themeColors.test.ts` (l'encre à 3,1:1 au moins sur le fond,
-3,5:1 sur une carte blanche, 3,3:1 sur le fond sombre ; le blanc à 3,5:1 sur
-la couleur).
+en second. La règle de lisibilité est tenue par
+`src/__tests__/themeColors.test.ts` :
+
+- l'encre à 3,1:1 au moins sur le fond, 3,5:1 sur une carte blanche, 3,3:1
+  sur le fond sombre ;
+- ce qui s'écrit sur le fond plein à 3,5:1 au moins ;
+- au survol, le bouton plein se fonce, et son texte s'y lit encore à ce
+  seuil (le blanc mieux qu'au repos, le brun un peu moins : 5,6:1) ;
+- sur le fond plein, on écrit `on-brand`, jamais `text-white` ni l'encre :
+  le test relit les classes et les règles CSS de `src`.
 
 Les fonds pleins (la carte du moment, les boutons, les pastilles et segments
 choisis, le bouton central de la barre, le bandeau du profil, la carte de la
-prochaine fête, les ronds de la frise du partage) prennent
-`--color-brand`, et ce qui s'écrit dessus `--color-on-brand`. Aujourd'hui ce
-sont la couleur principale et le blanc ; les deux rôles restent séparés pour
-qu'un thème puisse un jour poser une teinte claire avec un texte sombre. Le
-texte en couleur, les liens, les icônes, l'onglet actif, les filets et les
-teintes légères (`bg-primary/10`) prennent `--color-primary`. Un thème de
-fête ne donne que ses deux couleurs, et le reste s'en déduit
-(`resolveThemeColors`).
+prochaine fête, les ronds de la frise du partage) prennent `--color-brand`,
+et ce qui s'écrit dessus `--color-on-brand`. Le texte en couleur, les liens,
+les icônes, l'onglet actif, les filets, les barres d'avancement, les
+interrupteurs et les teintes légères (`bg-primary/10`) prennent
+`--color-primary`, l'encre : l'orange clair s'y verrait trop peu. Un thème
+de fête ne donne que ses deux couleurs, assez soutenues pour servir des deux
+sous du blanc, et le reste s'en déduit (`resolveThemeColors`).
 
 Ils vivent dans `src/composables/useTheme.ts`, qui réécrit les variables sur
-la racine. L'accent des widgets natifs et de la montre suit le thème ; sa
-valeur de repli (`DEFAULT_ACCENT` dans `widgetPayloads.ts`, les constantes
-`FALLBACK_ACCENT` côté natif) est celle du thème par défaut, `#DE4F17` : les
+la racine. L'accent des widgets natifs et de la montre suit le thème : c'est
+son encre, qui s'écrit en texte et en barre sur le fond du widget. Sa valeur
+de repli (`DEFAULT_ACCENT` dans `widgetPayloads.ts`, les constantes
+`FALLBACK_ACCENT` côté natif) est celle du thème par défaut, `#D46D01` : les
 trois se changent ensemble. Le fond (`#FFF9F3`) se reprend dans la couleur du
 navigateur (`index.html`), la barre d'état (`useNativeStatusBar`,
 `scripts/setup-android.mjs`) et le fond des widgets. La vignette de partage
-(`functions/src/ogCard.ts`) prend l'orange, avec le blanc dessus.
+(`functions/src/ogCard.ts`) prend l'orange en fond plein, avec le brun
+dessus.
 
 La couleur secondaire tient les éléments qui ne sont ni l'action principale
 ni le texte : les outils du Sidour, la ligne sous la carte du moment, les
@@ -1577,19 +1599,19 @@ du texte se voient pareil.
 
 ### Lisibilité
 
-`primary` sert à la fois de fond sous du blanc et d'encre sur le beige. Les
-trois valeurs sont donc prises assez soutenues pour tenir dans les deux sens
-(entre 3,1 et 4,2 de contraste sur le beige, entre 3,5 et 4,8 sur le blanc).
-Une couleur plus vive que celles-ci ne passerait plus en texte : si le besoin
-vient, on ajoutera un jeton d'encre distinct du jeton de fond plutôt que
-d'éclaircir `primary`.
+L'encre (`primary`) et le fond plein (`brand`) sont deux jetons. Pour le bleu
+et le vert, c'est la même couleur, prise assez soutenue pour tenir dans les
+deux sens ; pour l'orange, la teinte du logo reste claire en fond plein et
+l'encre est sa version soutenue. Les trois encres tiennent au même niveau :
+3,4:1 sur le beige, 3,5:1 sur le blanc, 5:1 sur le fond sombre. Une encre
+plus vive que celles-ci ne passerait plus en texte : une couleur plus claire
+se pose en fond plein, avec un texte sombre dessus, pas en encre.
 
 C'est une **exception assumée** au niveau AA : 4,5 est le seuil d'un texte de
-taille courante, et aucun des trois `primary` ne l'atteint, ni en encre sur le
-beige, ni sous du blanc dans un bouton plein. On l'accepte parce que `primary`
-ne porte jamais un texte de lecture : des libellés courts, en demi-gras, et
-des titres. Le jour où il en portera un, c'est le jeton d'encre ci-dessus qu'il
-faudra, pas un thème plus terne.
+taille courante, et aucune des trois encres ne l'atteint sur le beige. On
+l'accepte parce que l'encre ne porte que des libellés courts, en demi-gras,
+des titres, et les ajouts du jour dans une tefila (voir plus bas). Le texte
+posé sur l'orange clair, lui, dépasse le seuil (7,4:1).
 
 ### Les thèmes des fêtes
 

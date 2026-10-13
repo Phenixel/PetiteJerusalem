@@ -457,7 +457,8 @@ onMounted(() => {
   box-shadow: var(--shadow-card-hover);
 }
 /* Le texte sur un objet clair : un halo de la couleur de la carte, juste
-   assez pour que le titre se lise là où il passe devant la lune. */
+   assez pour que le titre se lise là où il passe devant la lune (le brun de
+   l'orange clair comme le blanc d'une teinte de fête). */
 .sidour-hero-light {
   text-shadow:
     0 0 3px var(--color-brand),

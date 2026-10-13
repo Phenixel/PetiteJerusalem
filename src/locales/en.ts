@@ -1341,6 +1341,7 @@ const en: LocaleMessages = {
       collapse: "Minimize the player",
       from: "Playing from",
       upNext: "Up next",
+      earlier: "Earlier",
       about: "About the shiur",
       openPage: "Open the shiur page",
       nowPlaying: "Now playing",

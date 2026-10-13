@@ -57,6 +57,8 @@ const left = computed(() => {
       >
         <NowPlayingBars :playing="playing" />
       </span>
+      <!-- L'avancement, sur la pochette assombrie : la teinte du thème, qui s'y
+           voit mieux que l'encre (les barres posées sur le fond prennent l'encre) -->
       <span class="absolute inset-x-0 bottom-0 h-1 overflow-hidden rounded-b-card bg-black/30">
         <span
           class="block h-full bg-brand"

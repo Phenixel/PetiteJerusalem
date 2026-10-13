@@ -40,11 +40,13 @@ import type { UserPreferences } from "./userPreferencesService";
 type Translate = (key: string, params?: Record<string, unknown>) => string;
 
 /**
- * Couleur d'accent de repli : le thème d'origine « sunset » de useTheme.
- * L'app pousse normalement celle du thème choisi par l'utilisateur
- * (widgetService), pour que les widgets portent les mêmes couleurs que l'app.
+ * Couleur d'accent de repli : l'encre du thème d'origine « sunset » de
+ * useTheme (l'accent s'écrit en texte et en barre sur le fond du widget, pas
+ * en fond plein). L'app pousse normalement celle du thème choisi par
+ * l'utilisateur (widgetService), pour que les widgets portent les mêmes
+ * couleurs que l'app.
  */
-const DEFAULT_ACCENT = "#DE4F17";
+const DEFAULT_ACCENT = "#D46D01";
 
 /** Un horaire prêt à afficher : libellé et heure localisés + epoch ms. */
 export interface ZmanimWidgetTime {

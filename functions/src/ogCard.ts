@@ -109,19 +109,20 @@ function buildSvg({ title, label, tagline }: OgCardOptions): string {
     .map(
       (line, i) =>
         `<text x="${titleX}" y="${titleStartY + i * lineHeight}" text-anchor="${anchor}"${dir} ` +
-        `font-family="${FONT_LATIN}" font-weight="700" font-size="${titleSize}" fill="#ffffff">${esc(line)}</text>`,
+        `font-family="${FONT_LATIN}" font-weight="700" font-size="${titleSize}" fill="#3B2412">${esc(line)}</text>`,
     )
     .join("\n  ");
 
-  // Fond à plat, dans la couleur d'origine de l'app (thème « sunset ») : le
-  // site n'emploie plus de dégradé nulle part, sa vignette de partage non plus
-  // (voir docs/design.md).
+  // Fond à plat, dans l'orange du thème « sunset » (la teinte de la palette du
+  // logo), le texte dans le brun qui s'écrit dessus : le blanc ne se lit pas
+  // sur cet orange clair. Le site n'emploie plus de dégradé nulle part, sa
+  // vignette de partage non plus (voir docs/design.md).
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${WIDTH}" height="${HEIGHT}" viewBox="0 0 ${WIDTH} ${HEIGHT}">
-  <rect width="${WIDTH}" height="${HEIGHT}" fill="#DE4F17"/>
-  <text x="${MARGIN}" y="110" font-family="${FONT_LATIN}" font-weight="700" font-size="34" fill="#ffffff" opacity="0.95">Petite Jérusalem</text>
-  <text x="${MARGIN}" y="170" font-family="${FONT_LATIN}" font-weight="400" font-size="30" fill="#ffffff" opacity="0.85">${esc(label)}</text>
+  <rect width="${WIDTH}" height="${HEIGHT}" fill="#FEA547"/>
+  <text x="${MARGIN}" y="110" font-family="${FONT_LATIN}" font-weight="700" font-size="34" fill="#3B2412" opacity="0.95">Petite Jérusalem</text>
+  <text x="${MARGIN}" y="170" font-family="${FONT_LATIN}" font-weight="400" font-size="30" fill="#3B2412" opacity="0.85">${esc(label)}</text>
   ${titleSpans}
-  <text x="${MARGIN}" y="${HEIGHT - 70}" font-family="${FONT_LATIN}" font-weight="400" font-size="30" fill="#ffffff" opacity="0.85">${esc(tagline)}</text>
+  <text x="${MARGIN}" y="${HEIGHT - 70}" font-family="${FONT_LATIN}" font-weight="400" font-size="30" fill="#3B2412" opacity="0.85">${esc(tagline)}</text>
 </svg>`;
 }
 

@@ -1,12 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import { join } from "node:path";
 import { resolveThemeColors, THEME_OPTIONS } from "../composables/useTheme";
 import { HOLIDAY_THEMES } from "../services/holidayThemes";
 
 /**
  * Les couleurs de thème (voir docs/design.md, « Les couleurs de thème ») :
- * une couleur par famille, qui sert de fond plein sous du blanc et d'encre
- * sur le fond. Chaque rôle doit se lire là où il se pose.
+ * dans chaque famille, une encre pour le texte et une teinte pour les fonds
+ * pleins, avec ce qui s'écrit dessus. Chaque rôle doit se lire là où il se
+ * pose.
  */
 const luminance = (hex: string) => {
   const channel = (i: number) => {
@@ -21,6 +23,8 @@ const contrast = (a: string, b: string) => {
 };
 
 const FOND = "#fff9f3";
+/** Le seuil de ce qui s'écrit sur la teinte, au repos comme au survol. */
+const ON_BRAND_MIN = 3.5;
 const SURFACE = "#ffffff";
 const NUIT = "#111827";
 
@@ -46,16 +50,17 @@ describe("les couleurs de thème", () => {
   it("ce qui s'écrit sur la teinte s'y lit franchement", () => {
     for (const theme of [...THEME_OPTIONS, ...HOLIDAY_THEMES]) {
       const { brand, onBrand } = resolveThemeColors(theme);
-      expect({ theme: theme.id, lisible: contrast(brand, onBrand) >= 3.5 }).toEqual({
+      expect({ theme: theme.id, lisible: contrast(brand, onBrand) >= ON_BRAND_MIN }).toEqual({
         theme: theme.id,
         lisible: true,
       });
     }
   });
 
-  it("au survol, le bouton plein se fonce : son texte s'y lit au moins aussi bien", () => {
+  it("au survol, le bouton plein se fonce, et son texte s'y lit toujours franchement", () => {
     // La règle de main.css, relue telle quelle : la teinte mêlée d'une autre
-    // couleur, dans l'espace sRGB.
+    // couleur, dans l'espace sRGB. Le blanc s'y lit mieux qu'au repos ; le
+    // brun d'une teinte claire un peu moins, mais au même seuil que la teinte.
     const css = readFileSync("src/assets/main.css", "utf8");
     const rule = css.match(
       /\.btn-primary:hover:not\(:disabled\)\s*\{\s*background-color:\s*color-mix\(in srgb, var\(--color-brand\) (\d+)%, (#[0-9a-f]{6})\)/i,
@@ -72,24 +77,72 @@ describe("les couleurs de thème", () => {
     };
     for (const theme of [...THEME_OPTIONS, ...HOLIDAY_THEMES]) {
       const { brand, onBrand } = resolveThemeColors(theme);
-      const hover = contrast(mix(brand), onBrand);
-      expect({ theme: theme.id, lisible: hover >= contrast(brand, onBrand) }).toEqual({
+      const hover = mix(brand);
+      const whiteText = luminance(onBrand) > luminance(brand);
+      expect({
         theme: theme.id,
-        lisible: true,
-      });
+        fonce: luminance(hover) < luminance(brand),
+        lisible: contrast(hover, onBrand) >= (whiteText ? contrast(brand, onBrand) : ON_BRAND_MIN),
+      }).toEqual({ theme: theme.id, fonce: true, lisible: true });
     }
   });
 
-  it("les thèmes prennent le vermillon d'origine et le bleu du logo, du blanc dessus", () => {
+  it("l'orange clair porte le brun, le texte orange prend son encre, le bleu du logo reste", () => {
     const [sunset, ocean, emerald] = THEME_OPTIONS.map(resolveThemeColors);
+    const orange = {
+      secondary: "#D46D01",
+      secondaryBrand: "#FEA547",
+      secondarySoft: "#FFD09E",
+    };
     expect(sunset).toMatchObject({
-      primary: "#DE4F17",
-      brand: "#DE4F17",
-      onBrand: "#FFFFFF",
+      primary: "#D46D01",
+      brand: "#FEA547",
+      onBrand: "#3B2412",
+      brandSoft: "#FFD09E",
       secondary: "#328CDC",
+      secondarySoft: "#A9CCEB",
     });
-    expect(ocean).toMatchObject({ primary: "#328CDC", brand: "#328CDC", secondary: "#DE4F17" });
-    expect(emerald).toMatchObject({ primary: "#059C66", brand: "#059C66", secondary: "#DE4F17" });
+    expect(ocean).toMatchObject({
+      primary: "#328CDC",
+      brand: "#328CDC",
+      onBrand: "#FFFFFF",
+      ...orange,
+    });
+    expect(emerald).toMatchObject({
+      primary: "#059C66",
+      brand: "#059C66",
+      onBrand: "#FFFFFF",
+      ...orange,
+    });
+  });
+
+  it("sur la teinte, on écrit on-brand : ni le blanc, ni l'encre", () => {
+    // Le blanc ne se lit pas sur l'orange clair (2:1), l'encre orange non plus
+    // (1,8:1). Une classe ou une règle qui pose la teinte en fond et écrit
+    // dessus autre chose que on-brand ne se lirait que sous certains thèmes.
+    const files = (dir: string): string[] =>
+      readdirSync(dir).flatMap((name) => {
+        const path = join(dir, name);
+        if (statSync(path).isDirectory()) return name === "__tests__" ? [] : files(path);
+        return /\.(vue|css|ts)$/.test(name) ? [path] : [];
+      });
+    const offenders: string[] = [];
+    for (const file of files("src")) {
+      const source = readFileSync(file, "utf8");
+      // Une liste de classes, entre guillemets ou apostrophes.
+      for (const [list] of source.matchAll(/["'`][^"'`\n]*\bbg-brand(?![\w/-])[^"'`\n]*["'`]/g)) {
+        if (/\btext-(white|primary)(?![\w-])/.test(list)) offenders.push(`${file} : ${list}`);
+      }
+      // Une règle CSS qui pose la teinte en fond.
+      for (const [block] of source.matchAll(
+        /\{[^{}]*background(-color)?:\s*var\(--color-brand\)[^{}]*\}/g,
+      )) {
+        if (/(^|[\s;{])color:\s*(#fff\b|#ffffff\b|white\b|var\(--color-primary\))/i.test(block)) {
+          offenders.push(`${file} : ${block.replace(/\s+/g, " ").slice(0, 90)}`);
+        }
+      }
+    }
+    expect(offenders).toEqual([]);
   });
 
   it("un thème de fête, qui ne donne que ses encres, s'en sert aussi de teinte", () => {

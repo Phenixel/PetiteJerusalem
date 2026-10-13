@@ -255,12 +255,13 @@ watch(
   fill: var(--color-text-primary);
 }
 /* La pastille d'un rang : pleine, pour qu'on lise les nombres avant tout le
-   reste du cadran. */
+   reste du cadran. Un fond plein prend la teinte du thème, et le chiffre ce
+   qui s'écrit dessus (voir docs/design.md, « Les couleurs de thème »). */
 .naanoua-badge {
-  fill: var(--color-primary);
+  fill: var(--color-brand);
 }
 .naanoua-rang {
-  fill: var(--color-surface);
+  fill: var(--color-on-brand);
   font-size: 17px;
   font-weight: 700;
 }
