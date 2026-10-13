@@ -534,9 +534,18 @@ class AdminService {
   async deleteAnnouncement(id: string): Promise<void> {
     await deleteDoc(doc(db, "announcements", id));
     announcementService.invalidate();
-    const folder = await listAll(storageRef(storage, `announcements/${id}`)).catch(() => null);
+    // L'information est déjà supprimée : un échec ici ne doit pas la dire
+    // en échec, mais il se signale (des images resteraient en ligne).
+    const folder = await listAll(storageRef(storage, `announcements/${id}`)).catch((error) => {
+      console.warn(`Images de l'information ${id} non listées:`, error);
+      return null;
+    });
     await Promise.all(
-      (folder?.items ?? []).map((item) => deleteObject(item).catch(() => undefined)),
+      (folder?.items ?? []).map((item) =>
+        deleteObject(item).catch((error) =>
+          console.warn(`Image ${item.fullPath} non supprimée:`, error),
+        ),
+      ),
     );
   }
 

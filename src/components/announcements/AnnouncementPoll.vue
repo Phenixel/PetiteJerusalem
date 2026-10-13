@@ -37,15 +37,20 @@ function valid(ids: readonly string[]): string[] {
   return poll.value.multiple ? kept : kept.slice(0, 1);
 }
 
-/** En train de choisir : jamais voté, ou « Changer mon choix ». */
-const editing = ref(!mine.value);
+/**
+ * En train de choisir : jamais voté, « Changer mon choix », ou un vote dont
+ * aucun choix n'existe plus (tous retirés depuis) : il n'y a rien à montrer
+ * comme choisi, on rechoisit.
+ */
+const editing = ref(!valid(mine.value ?? []).length);
 const selected = ref<string[]>(valid(mine.value ?? []));
+const choices = computed(() => valid(selected.value));
 const sending = ref(false);
 /** « network » : pas de connexion ; « refused » : le sondage ne prend plus ce vote. */
 const failed = ref<"network" | "refused" | null>(null);
 
 watch(mine, (value) => {
-  if (value && !sending.value) {
+  if (value && !sending.value && valid(value).length) {
     selected.value = valid(value);
     editing.value = false;
   }
@@ -66,23 +71,30 @@ function toggle(id: string): void {
 
 async function submit(): Promise<void> {
   // Dans l'ordre des choix, pas dans celui des clics.
-  const choices = valid(selected.value);
-  if (!choices.length || sending.value) return;
+  const sent = choices.value;
+  if (!sent.length || sending.value) return;
   sending.value = true;
   failed.value = null;
   const changed = !!mine.value;
   try {
-    await answerPoll(props.announcement, choices);
+    await answerPoll(props.announcement, sent);
     editing.value = false;
     analyticsService.capture("announcement_poll_answered", {
       id: props.announcement.id,
-      choices_count: choices.length,
+      choices_count: sent.length,
       changed,
     });
   } catch (error) {
     console.warn("Vote non enregistré:", error);
     failed.value =
       (error as { code?: string }).code === "permission-denied" ? "refused" : "network";
+    // Refusé : le sondage a changé depuis la lecture de la liste, gardée en
+    // cache. La prochaine ouverture le relira du serveur.
+    if (failed.value === "refused") {
+      void import("../../services/announcementService").then((m) =>
+        m.announcementService.invalidate(),
+      );
+    }
   } finally {
     sending.value = false;
   }
@@ -152,7 +164,7 @@ function change(): void {
           v-if="editing"
           type="button"
           class="btn btn-primary"
-          :disabled="!valid(selected).length || sending"
+          :disabled="!choices.length || sending"
           @click="submit"
         >
           <AppIcon v-if="sending" name="spinner" :size="14" class="animate-spin" />

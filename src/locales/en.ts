@@ -2132,7 +2132,7 @@ const en: LocaleMessages = {
       change: "Change my choice",
       closedVoted: "Your choice is marked above.",
       refused:
-        "This poll no longer accepts this choice: it may have been closed or changed. Reload the page.",
+        "This poll no longer accepts this choice: it has probably been closed or changed since. Go back to the news list to see it up to date.",
       error: "Your choice could not be sent. Check your connection, then try again.",
     },
     home: {

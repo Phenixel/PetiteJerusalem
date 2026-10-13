@@ -2215,7 +2215,7 @@ const fr = {
       change: "Changer mon choix",
       closedVoted: "Votre choix est marqué ci-dessus.",
       refused:
-        "Ce sondage n'accepte plus ce choix : il a peut-être été clos ou modifié. Rechargez la page.",
+        "Ce sondage n'accepte plus ce choix : il a sans doute été clos ou modifié depuis. Revenez à la liste des informations pour le voir à jour.",
       error: "Votre choix n'a pas pu être envoyé. Vérifiez votre connexion, puis réessayez.",
     },
     home: {

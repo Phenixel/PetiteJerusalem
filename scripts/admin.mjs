@@ -541,10 +541,12 @@ commands["info:supprimer"] = async ([id]) => {
     await write(
       `Supprimer définitivement ${id} (« ${existing.title?.fr} »)${existing.poll ? ", et les images de son sondage" : ""}.`,
       async () => {
-        await firebase().db.collection("announcements").doc(id).delete();
         // Les images des choix, servies publiquement, ne survivent pas à
-        // l'information (comme adminService.deleteAnnouncement).
+        // l'information (comme adminService.deleteAnnouncement). D'abord
+        // elles : si leur suppression échoue, l'information est encore là et
+        // la commande se relance.
         await firebase().bucket.deleteFiles({ prefix: `announcements/${id}/` });
+        await firebase().db.collection("announcements").doc(id).delete();
       },
     )
   ) {
