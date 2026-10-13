@@ -578,9 +578,9 @@ const HALAKHA = {
     "בתענית ציבור קוראים « ויחל משה » (שמות לב, יא-יד; לד, א-י) בשלושה עולים, בשחרית ובמנחה.",
   ),
   hallel: R(
-    "Le Hallel se dit debout. Les jours où on le dit en entier ('Hanouka, 'Hol haMoed de Souccot), il s'ouvre sur sa bénédiction ; les jours où on l'abrège (Roch Hodech, 'Hol haMoed de Pessah), l'usage séfarade d'Erets Israël le dit sans bénédiction. Hors d'Israël, on a pris l'habitude de bénir celui de Roch Hodech, au début et à la fin.",
-    "Hallel is said standing. On days when the whole Hallel is said (Hanukkah, Chol HaMoed Sukkot), it opens with its blessing; on days when it is shortened (Rosh Hodesh, Chol HaMoed Pesach), Sephardic custom in Eretz Israel says it without a blessing. Outside Israel, the custom is to bless the Hallel of Rosh Hodesh, at the beginning and at the end.",
-    "אומרים הלל מעומד. בימים שגומרים את ההלל מברכים עליו, ובימים שמדלגים (ראש חודש וחול המועד פסח) נוהגים הספרדים בארץ ישראל לאומרו בלא ברכה. ובחוץ לארץ נהגו לברך על הלל של ראש חודש בתחילתו ובסופו.",
+    "Le Hallel se dit debout. Les jours où on le dit en entier ('Hanouka, 'Hol haMoed de Souccot), il s'ouvre sur sa bénédiction ; les jours où on l'abrège (Roch Hodech, 'Hol haMoed de Pessah), l'usage séfarade d'Erets Israël le dit sans bénédiction. Hors d'Israël, on a pris l'habitude de le bénir, au début et à la fin : le 'hazan seul dit les bénédictions, et l'assemblée répond amen ; qui prie seul les omet.",
+    "Hallel is said standing. On days when the whole Hallel is said (Hanukkah, Chol HaMoed Sukkot), it opens with its blessing; on days when it is shortened (Rosh Hodesh, Chol HaMoed Pesach), Sephardic custom in Eretz Israel says it without a blessing. Outside Israel, the custom is to bless it, at the beginning and at the end: only the chazan says the blessings, and the congregation answers amen; one praying alone omits them.",
+    "אומרים הלל מעומד. בימים שגומרים את ההלל מברכים עליו, ובימים שמדלגים (ראש חודש וחול המועד פסח) נוהגים הספרדים בארץ ישראל לאומרו בלא ברכה. ובחוץ לארץ נהגו לברך עליו בתחילתו ובסופו: החזן לבדו מברך והציבור עונים אמן, והמתפלל ביחיד אינו מברך.",
   ),
 };
 
@@ -2753,7 +2753,7 @@ function chaharitRecipe() {
           // Souccot), le Hallel s'ouvre sur sa bénédiction, « ligmor et
           // hahallel », que le 'hazan demande la permission de dire. Les
           // jours où on l'abrège, l'usage d'Erets Israël ne le bénit pas ;
-          // hors d'Israël, on bénit celui de Roch Hodech (voir plus bas).
+          // hors d'Israël, le 'hazan le bénit (voir plus bas).
           {
             seg: 2,
             mode: "full",
@@ -2785,19 +2785,20 @@ function chaharitRecipe() {
               "והחזן מברך ואחר כך הציבור מברכים:",
             ),
           },
-          // Le Hallel abrégé de Roch Hodech, hors d'Israël : on a pris
-          // l'habitude de le bénir quand même. La même bénédiction, sous une
-          // didascalie qui dit d'où vient l'usage. La clé n'est posée qu'à
-          // Roch Hodech hors d'Israël (dailyCycles.activeOccasions), jamais
-          // avec le Hallel entier : la bénédiction ne se lit qu'une fois.
+          // Le Hallel abrégé (Roch Hodech, 'Hol haMoed de Pessah), hors
+          // d'Israël : on a pris l'habitude de le bénir quand même. Le 'hazan
+          // seul dit la bénédiction, l'assemblée écoute et répond amen, et qui
+          // prie seul ne la dit pas : la didascalie le dit. La clé n'est posée
+          // que hors d'Israël (dailyCycles.activeOccasions), jamais avec le
+          // Hallel entier : la bénédiction ne se lit qu'une fois.
           {
             seg: 4,
             mode: "full",
             when: "hallel-brakha-houts-laarets",
             rubric: R(
-              "Hors d'Israël, on a pris l'habitude de bénir le Hallel de Roch Hodech. Le 'hazan bénit, puis l'assemblée :",
-              "Outside Israel, the custom is to bless the Hallel of Rosh Hodesh. The chazan says the blessing, then the congregation:",
-              'בחו"ל נהגו לברך על הלל של ראש חודש. והחזן מברך ואחר כך הציבור מברכים:',
+              "Hors d'Israël, on a pris l'habitude de bénir le Hallel abrégé. Le 'hazan seul dit la bénédiction ; l'assemblée écoute et répond amen. Qui prie seul ne la dit pas :",
+              "Outside Israel, the custom is to bless the shortened Hallel. Only the chazan says the blessing; the congregation listens and answers amen. One praying alone does not say it:",
+              'בחו"ל נהגו לברך על הלל בדילוג. החזן לבדו מברך, והציבור שומעים ועונים אמן. והמתפלל ביחיד אינו מברך:',
             ),
           },
           { seg: 5 },
@@ -2871,8 +2872,8 @@ function chaharitRecipe() {
           // la dit que les jours où on le dit en entier, et l'écrit en toutes
           // lettres au-dessus d'elle (« בימים שאין גומרים את ההלל אין
           // אומרים ») : c'est à 'Hanouka et à 'Hol haMoed de Souccot qu'on le
-          // termine. Hors d'Israël, l'usage la dit aussi à Roch Hodech, comme
-          // la bénédiction du début.
+          // termine. Hors d'Israël, l'usage la dit aussi au Hallel abrégé,
+          // comme la bénédiction du début : le 'hazan seul.
           {
             // La source la met tout entière en retrait, puisqu'on la saute
             // la plupart du temps : c'est le petit corps qu'on prend ici.
@@ -2890,9 +2891,9 @@ function chaharitRecipe() {
             mode: "small",
             when: "hallel-brakha-houts-laarets",
             rubric: R(
-              "Hors d'Israël, on a pris l'habitude de le fermer à Roch Hodech par cette bénédiction :",
-              "Outside Israel, the custom on Rosh Hodesh is to close it with this blessing:",
-              'בחו"ל נהגו לחתום בראש חודש בברכה זו:',
+              "Hors d'Israël, on a pris l'habitude de fermer le Hallel abrégé par cette bénédiction. Le 'hazan seul la dit ; l'assemblée écoute et répond amen. Qui prie seul ne la dit pas :",
+              "Outside Israel, the custom is to close the shortened Hallel with this blessing. Only the chazan says it; the congregation listens and answers amen. One praying alone does not say it:",
+              'בחו"ל נהגו לחתום את ההלל בדילוג בברכה זו. החזן לבדו מברך, והציבור שומעים ועונים אמן. והמתפלל ביחיד אינו מברך:',
             ),
           },
         ],

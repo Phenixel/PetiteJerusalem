@@ -722,11 +722,13 @@ describe("Cha'harit : le Hallel et les lectures des jours à lecture propre", ()
     expect(sansSignes(String(entier[5].he))).toContain("אהבתי");
   });
 
-  it("bénit le Hallel de Roch Hodech hors d'Israël, au début et à la fin", () => {
+  it("bénit le Hallel abrégé hors d'Israël, par le 'hazan seul, au début et à la fin", () => {
     // L'usage de la diaspora : la bénédiction du Hallel entier, et
     // « Yehalelou'ha » pour le fermer, sous une didascalie qui dit que
-    // c'est un usage de hors d'Israël. Une clé à elle, que le calendrier ne
-    // pose ni en Terre d'Israël ni les jours de Hallel entier.
+    // c'est un usage de hors d'Israël, que le 'hazan seul les dit (l'assemblée
+    // répond amen) et que qui prie seul ne les dit pas. Une clé à elle, que
+    // le calendrier ne pose ni en Terre d'Israël ni les jours de Hallel
+    // entier.
     const brut = (
       loadRaw(entry) as { blocks: { label?: string; when?: string; lines: unknown[] }[] }
     ).blocks;
@@ -741,6 +743,11 @@ describe("Cha'harit : le Hallel et les lectures des jours à lecture propre", ()
     expect(diaspora[0].rubric!.fr).toMatch(/^Hors d'Israël, on a pris l'habitude/);
     expect(sansSignes(String(diaspora[1].he))).toContain("יהללוך");
     expect(diaspora[1].rubric!.fr).toMatch(/^Hors d'Israël, on a pris l'habitude/);
+    for (const ligne of diaspora) {
+      expect(ligne.rubric!.fr).toContain("Le 'hazan seul");
+      expect(ligne.rubric!.fr).toContain("répond amen");
+      expect(ligne.rubric!.fr).toContain("Qui prie seul ne la dit pas");
+    }
     expect(lignes.indexOf(diaspora[1])).toBe(lignes.length - 1);
   });
 
@@ -1110,7 +1117,7 @@ describe("Cha'harit : 'Hol haMoed et le loulav de Souccot", () => {
     expect(sansSignes(suivant.kind === "he" ? suivant.text : "")).toMatch(/^הודו ליהוה כיטוב/);
   });
 
-  it("ferme le Hallel entier par Yehalelou'ha, l'abrégé seulement à Roch Hodech hors d'Israël", () => {
+  it("ferme le Hallel entier par Yehalelou'ha, l'abrégé seulement hors d'Israël", () => {
     const hallel = brut.find((b) => b.label === "Hallel")!;
     const lignes = hallel.lines as { when?: string; he?: string }[];
     const fins = lignes.slice(-2);
