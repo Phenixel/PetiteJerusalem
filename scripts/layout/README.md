@@ -198,6 +198,11 @@ passe d'une ligne à sa voisine ne bouge que s'il part d'un côté et arrive de
 l'autre ; sinon la coupure reste la nôtre. La ponctuation que Sefaria ajoute
 à la guemara reste là où les mots sont les mêmes.
 
+Pour la guemara, un second témoin lève ce doute : le texte de Vilna de
+Wikisource, que Sefaria publie sous CC-BY-SA (`witness.py`, dans le cache).
+Ce qu'il confirme, mot pour mot et à la suite, avec le mot d'avant ou celui
+d'après, s'écrit comme il l'écrit, quelle que soit la police du PDF.
+
 Ce que le relevé ne porte pas : les réclames et les notes des marges ; les
 commentaires que nous n'avons pas (le second Rachi de Mena'hot, le Rivan
 de Makkot, la Chita Mekoubétset), dont le texte, quand il est dans les
