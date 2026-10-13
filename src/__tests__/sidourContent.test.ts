@@ -78,6 +78,7 @@ const KNOWN_WHEN = new Set([
   "hallel",
   "hallel-complet",
   "hallel-abrege",
+  "hallel-brakha-houts-laarets",
   "hanouka",
   "rosh-chodesh-hanouka",
   "pourim",
@@ -721,6 +722,28 @@ describe("Cha'harit : le Hallel et les lectures des jours à lecture propre", ()
     expect(sansSignes(String(entier[5].he))).toContain("אהבתי");
   });
 
+  it("bénit le Hallel de Roch Hodech hors d'Israël, au début et à la fin", () => {
+    // L'usage de la diaspora : la bénédiction du Hallel entier, et
+    // « Yehalelou'ha » pour le fermer, sous une didascalie qui dit que
+    // c'est un usage de hors d'Israël. Une clé à elle, que le calendrier ne
+    // pose ni en Terre d'Israël ni les jours de Hallel entier.
+    const brut = (
+      loadRaw(entry) as { blocks: { label?: string; when?: string; lines: unknown[] }[] }
+    ).blocks;
+    const lignes = brut.find((b) => b.label === "Hallel")!.lines as {
+      when?: string;
+      he?: string;
+      rubric?: { fr: string };
+    }[];
+    const diaspora = lignes.filter((l) => l?.when === "hallel-brakha-houts-laarets");
+    expect(diaspora).toHaveLength(2);
+    expect(sansSignes(String(diaspora[0].he))).toContain("לגמור את ההלל");
+    expect(diaspora[0].rubric!.fr).toMatch(/^Hors d'Israël, on a pris l'habitude/);
+    expect(sansSignes(String(diaspora[1].he))).toContain("יהללוך");
+    expect(diaspora[1].rubric!.fr).toMatch(/^Hors d'Israël, on a pris l'habitude/);
+    expect(lignes.indexOf(diaspora[1])).toBe(lignes.length - 1);
+  });
+
   it("lit un passage par jour à 'Hanouka, dans l'ordre des nessiim", () => {
     const jours = blocks.filter((b) => /^hanouka-\d/.test(b.when ?? ""));
     expect(jours.map((b) => b.when)).toEqual(
@@ -729,6 +752,37 @@ describe("Cha'harit : le Hallel et les lectures des jours à lecture propre", ()
     // Le deuxième jour lit le nassi de Yissakhar, le huitième celui de Menaché.
     expect(sansSignes(jours[1].lines.join(" "))).toContain("נתנאל בןצוער");
     expect(sansSignes(jours[7].lines.join(" "))).toContain("גמליאל בןפדהצור");
+  });
+
+  it("lit la Torah de Roch Hodech en quatre montées, chacune sous sa didascalie", () => {
+    const occ = activeOccasions(new HDate(1, months.CHESHVAN, 5787), false);
+    const lecture = blocks.find(
+      (b) => b.label === "Lecture de la Torah" && b.when === "rosh-chodesh",
+    )!;
+    // Après « Yehi » et « Brikh chmeh », le passage, dans l'ordre des lignes.
+    const montees = lecture
+      .paragraphs!.map((p, i) => ({ p, texte: sansSignes(lecture.lines[i]) }))
+      .slice(2)
+      .filter(({ p }) => saidOn(p.when, occ, p.unless));
+    expect(montees.map(({ p }) => p.rubric?.fr ?? "")).toEqual([
+      "On lit quatre montées dans la paracha des moussafim (Bamidbar 28). Cohen\u00a0:",
+      "",
+      "Lévi, qui reprend au verset 3\u00a0:",
+      "",
+      "Israël\u00a0:",
+      "Quatrième montée\u00a0:",
+    ]);
+    const debuts = montees.map(({ texte }) => texte.slice(0, 12));
+    expect(debuts[0]).toContain("וידבר");
+    // Le Cohen finit au verset 3, que le Lévi reprend.
+    expect(debuts[1]).toContain("ואמרת להם");
+    expect(debuts[2]).toContain("ואמרת להם");
+    expect(debuts[3]).toContain("אתהכבש");
+    expect(debuts[4]).toContain("עלת תמיד");
+    expect(debuts[5]).toContain("ובראשי");
+    // Les mots en retrait qui bornent les montées dans la source ne
+    // traînent pas dans le fil.
+    for (const { texte } of montees) expect(texte).not.toMatch(/לוי חוזר|רביעי/);
   });
 
   it("lit la Torah à Pourim et les jours de jeûne", () => {
@@ -1056,12 +1110,12 @@ describe("Cha'harit : 'Hol haMoed et le loulav de Souccot", () => {
     expect(sansSignes(suivant.kind === "he" ? suivant.text : "")).toMatch(/^הודו ליהוה כיטוב/);
   });
 
-  it("ferme le Hallel entier par Yehalelou'ha, jamais l'abrégé", () => {
+  it("ferme le Hallel entier par Yehalelou'ha, l'abrégé seulement à Roch Hodech hors d'Israël", () => {
     const hallel = brut.find((b) => b.label === "Hallel")!;
     const lignes = hallel.lines as { when?: string; he?: string }[];
-    const fin = lignes.at(-1)!;
-    expect(fin.when).toBe("hallel-complet");
-    expect(sansSignes(String(fin.he))).toContain("יהללוך");
+    const fins = lignes.slice(-2);
+    expect(fins.map((l) => l.when)).toEqual(["hallel-complet", "hallel-brakha-houts-laarets"]);
+    for (const fin of fins) expect(sansSignes(String(fin.he))).toContain("יהללוך");
   });
 
   it("enchaîne Kaddich, lecture de la Torah et Moussaf à 'Hol haMoed", () => {

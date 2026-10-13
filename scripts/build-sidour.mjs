@@ -578,9 +578,9 @@ const HALAKHA = {
     "בתענית ציבור קוראים « ויחל משה » (שמות לב, יא-יד; לד, א-י) בשלושה עולים, בשחרית ובמנחה.",
   ),
   hallel: R(
-    "Le Hallel se dit debout. Les jours où on le dit en entier ('Hanouka, 'Hol haMoed de Souccot), il s'ouvre sur sa bénédiction ; les jours où on l'abrège (Roch Hodech, 'Hol haMoed de Pessah), l'usage séfarade le dit sans bénédiction.",
-    "Hallel is said standing. On days when the whole Hallel is said (Hanukkah, Chol HaMoed Sukkot), it opens with its blessing; on days when it is shortened (Rosh Hodesh, Chol HaMoed Pesach), Sephardic custom says it without a blessing.",
-    "אומרים הלל מעומד. בימים שגומרים את ההלל מברכים עליו, ובימים שמדלגים (ראש חודש וחול המועד פסח) נוהגים הספרדים לאומרו בלא ברכה.",
+    "Le Hallel se dit debout. Les jours où on le dit en entier ('Hanouka, 'Hol haMoed de Souccot), il s'ouvre sur sa bénédiction ; les jours où on l'abrège (Roch Hodech, 'Hol haMoed de Pessah), l'usage séfarade d'Erets Israël le dit sans bénédiction. Hors d'Israël, on a pris l'habitude de bénir celui de Roch Hodech, au début et à la fin.",
+    "Hallel is said standing. On days when the whole Hallel is said (Hanukkah, Chol HaMoed Sukkot), it opens with its blessing; on days when it is shortened (Rosh Hodesh, Chol HaMoed Pesach), Sephardic custom in Eretz Israel says it without a blessing. Outside Israel, the custom is to bless the Hallel of Rosh Hodesh, at the beginning and at the end.",
+    "אומרים הלל מעומד. בימים שגומרים את ההלל מברכים עליו, ובימים שמדלגים (ראש חודש וחול המועד פסח) נוהגים הספרדים בארץ ישראל לאומרו בלא ברכה. ובחוץ לארץ נהגו לברך על הלל של ראש חודש בתחילתו ובסופו.",
   ),
 };
 
@@ -2752,7 +2752,8 @@ function chaharitRecipe() {
           // Les jours où on le dit en entier ('Hanouka, 'Hol haMoed de
           // Souccot), le Hallel s'ouvre sur sa bénédiction, « ligmor et
           // hahallel », que le 'hazan demande la permission de dire. Les
-          // jours où on l'abrège, on ne le bénit pas.
+          // jours où on l'abrège, l'usage d'Erets Israël ne le bénit pas ;
+          // hors d'Israël, on bénit celui de Roch Hodech (voir plus bas).
           {
             seg: 2,
             mode: "full",
@@ -2782,6 +2783,21 @@ function chaharitRecipe() {
               "Le 'hazan bénit, puis l'assemblée :",
               "The chazan says the blessing, then the congregation:",
               "והחזן מברך ואחר כך הציבור מברכים:",
+            ),
+          },
+          // Le Hallel abrégé de Roch Hodech, hors d'Israël : on a pris
+          // l'habitude de le bénir quand même. La même bénédiction, sous une
+          // didascalie qui dit d'où vient l'usage. La clé n'est posée qu'à
+          // Roch Hodech hors d'Israël (dailyCycles.activeOccasions), jamais
+          // avec le Hallel entier : la bénédiction ne se lit qu'une fois.
+          {
+            seg: 4,
+            mode: "full",
+            when: "hallel-brakha-houts-laarets",
+            rubric: R(
+              "Hors d'Israël, on a pris l'habitude de bénir le Hallel de Roch Hodech. Le 'hazan bénit, puis l'assemblée :",
+              "Outside Israel, the custom is to bless the Hallel of Rosh Hodesh. The chazan says the blessing, then the congregation:",
+              'בחו"ל נהגו לברך על הלל של ראש חודש. והחזן מברך ואחר כך הציבור מברכים:',
             ),
           },
           { seg: 5 },
@@ -2851,11 +2867,12 @@ function chaharitRecipe() {
               { seg: 22, mode: "full", from: "הודו ליהוה כי־טוב" },
             ],
           },
-          // « Yehalelou'ha », la bénédiction qui ferme le Hallel. Elle ne se
-          // dit que les jours où on le dit en entier : la source l'écrit en
-          // toutes lettres au-dessus d'elle (« בימים שאין גומרים את ההלל אין
-          // אומרים »), et c'est à 'Hanouka et à 'Hol haMoed de Souccot qu'on
-          // le termine.
+          // « Yehalelou'ha », la bénédiction qui ferme le Hallel. La source ne
+          // la dit que les jours où on le dit en entier, et l'écrit en toutes
+          // lettres au-dessus d'elle (« בימים שאין גומרים את ההלל אין
+          // אומרים ») : c'est à 'Hanouka et à 'Hol haMoed de Souccot qu'on le
+          // termine. Hors d'Israël, l'usage la dit aussi à Roch Hodech, comme
+          // la bénédiction du début.
           {
             // La source la met tout entière en retrait, puisqu'on la saute
             // la plupart du temps : c'est le petit corps qu'on prend ici.
@@ -2866,6 +2883,16 @@ function chaharitRecipe() {
               "Le Hallel dit en entier, on le ferme par cette bénédiction :",
               "When the whole Hallel is said, it closes with this blessing:",
               "בימים שגומרים את ההלל חותמים:",
+            ),
+          },
+          {
+            seg: 24,
+            mode: "small",
+            when: "hallel-brakha-houts-laarets",
+            rubric: R(
+              "Hors d'Israël, on a pris l'habitude de le fermer à Roch Hodech par cette bénédiction :",
+              "Outside Israel, the custom on Rosh Hodesh is to close it with this blessing:",
+              'בחו"ל נהגו לחתום בראש חודש בברכה זו:',
             ),
           },
         ],
@@ -3046,14 +3073,55 @@ function chaharitRecipe() {
               "פותחים ההיכל ואומרים:",
             ),
           },
+          // Les quatre montées, chacune sous sa didascalie. La source les
+          // borne de mots en retrait au milieu du passage (« לוי חוזר
+          // מ''ואמרת להם'' », « ישראל », « רביעי »), que la lecture ordinaire
+          // retire : le passage s'affichait d'un seul tenant. Le Cohen lit les
+          // versets 1 à 3, le Lévi reprend au 3 jusqu'au 5, Israël lit du 6 au
+          // 10, le quatrième du 11 au 15. Chaque ligne garde la condition de
+          // l'ancienne ligne unique : à Roch Hodech Tévet, c'est le bloc
+          // suivant qui lit.
           {
             seg: 39,
             unless: "hanouka",
+            until: "ואמרת להם",
             rubric: R(
-              "On lit quatre montées dans la paracha des moussafim (Bamidbar 28) :",
-              "Four aliyot are read from the portion of the musaf offerings (Numbers 28):",
-              "מוציאים ספר תורה וקוראים ארבעה עולים (במדבר כח):",
+              "On lit quatre montées dans la paracha des moussafim (Bamidbar 28). Cohen :",
+              "Four aliyot are read from the portion of the musaf offerings (Numbers 28). Kohen:",
+              "מוציאים ספר תורה וקוראים ארבעה עולים (במדבר כח). כהן:",
             ),
+          },
+          { seg: 39, unless: "hanouka", from: "ואמרת להם", until: "ואמרת להם", tight: true },
+          {
+            seg: 39,
+            unless: "hanouka",
+            from: "ואמרת להם",
+            until: "ואמרת להם",
+            rubric: R(
+              "Lévi, qui reprend au verset 3 :",
+              "Levi, who starts again from verse 3:",
+              "לוי, חוזר מ״ואמרת להם״:",
+            ),
+          },
+          {
+            seg: 39,
+            unless: "hanouka",
+            from: "את־הכבש אחד",
+            until: "עלת תמיד העשיה",
+            tight: true,
+          },
+          {
+            seg: 39,
+            unless: "hanouka",
+            from: "עלת תמיד העשיה",
+            until: "ובראשי חדשיכם",
+            rubric: R("Israël :", "Yisrael:", "ישראל:"),
+          },
+          {
+            seg: 39,
+            unless: "hanouka",
+            from: "ובראשי חדשיכם",
+            rubric: R("Quatrième montée :", "Fourth aliyah:", "רביעי:"),
           },
         ],
       },
