@@ -93,7 +93,7 @@ const playLabel = computed(() =>
         <ChiourCover :seed="cover.seed" :label="cover.label" size="xs" />
         <span
           v-if="current"
-          class="absolute inset-0 flex items-center justify-center rounded-md bg-black/45 text-white"
+          class="absolute inset-0 flex items-center justify-center rounded-md bg-black/65 text-white"
         >
           <NowPlayingBars :playing="playing" />
         </span>

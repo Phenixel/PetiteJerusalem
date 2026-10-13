@@ -359,7 +359,7 @@ watch(() => route.params.slug, loadChiour);
         </span>
         <span class="min-w-0 flex-1">
           <span class="block text-sm text-text-secondary">{{ t("chiourim.texte.studied") }}</span>
-          <span class="block truncate font-semibold text-text-primary">{{
+          <span class="block font-semibold leading-snug text-text-primary">{{
             texteLabel(texte.entry, texte.chapitre)
           }}</span>
         </span>

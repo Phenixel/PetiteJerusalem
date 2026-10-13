@@ -3,7 +3,7 @@
  * Les cours audio d'un texte de la bibliothèque, sous le chapitre qu'on vient
  * de lire ou en tête d'un livre : ce qui fait le pont entre lire et écouter.
  *
- * Ceux du chapitre ouvert d'abord ; trois lignes, la suite à un geste. Rien
+ * Ceux du chapitre ouvert d'abord ; trois à cinq lignes, la suite à un geste. Rien
  * ne s'affiche tant qu'aucun cours n'étudie ce texte, ni hors connexion :
  * l'encart ne promet pas ce qu'il ne peut pas jouer.
  */
@@ -28,6 +28,8 @@ const { t } = useI18n();
 const { chapitreLabel } = useTexteLabels();
 
 const FIRST = 3;
+/** Ceux du chapitre ouvert passent avant, mais pas plus de cinq d'emblée. */
+const CHAPTER_MAX = 5;
 const all = ref<Chiour[]>([]);
 const expanded = ref(false);
 const texteId = computed(() => Number(props.entry.id));
@@ -39,7 +41,9 @@ const ofChapter = computed(() =>
     : ordered.value.filter((c) => c.texteChapitre === props.chapitre).length,
 );
 const visible = computed(() =>
-  expanded.value ? ordered.value : ordered.value.slice(0, Math.max(FIRST, ofChapter.value)),
+  expanded.value
+    ? ordered.value
+    : ordered.value.slice(0, Math.max(FIRST, Math.min(ofChapter.value, CHAPTER_MAX))),
 );
 
 const title = computed(() =>

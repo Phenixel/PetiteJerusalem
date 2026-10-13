@@ -1398,7 +1398,7 @@ on lance, on reprend.
   livre au chapitre près (« Chaar Habita'hon · Chapitre 4 ») ; une série,
   par « Lire le texte » à côté de « Écouter ». Dans l'autre sens, sous le
   chapitre qu'on vient de lire (ou en tête d'un livre), « Cours sur ce
-  chapitre » : ceux du chapitre d'abord, trois lignes, la suite à un geste.
+  chapitre » : ceux du chapitre d'abord, trois à cinq lignes, la suite à un geste.
   Rien sous une tefila : on y vient prier.
 
 Aucune image, aucun dégradé : la barre de lecture est une piste en deux
