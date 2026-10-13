@@ -2,6 +2,13 @@ import { ref, computed } from "vue";
 import { analyticsService } from "../services/analyticsService";
 import { useViewedChiourim } from "./useViewedChiourim";
 import { recordFinished, recordPosition, resumePosition } from "../services/listeningProgress";
+import {
+  bindMediaActions,
+  publishMetadata,
+  publishPlaybackState,
+  publishPosition,
+} from "../services/mediaSession";
+import { coverArtwork } from "../components/chiourim/coverArtwork";
 
 /**
  * Lecteur audio global (singleton au niveau module).
@@ -14,6 +21,10 @@ import { recordFinished, recordPosition, resumePosition } from "../services/list
  * liste d'où l'on a lancé l'écoute. Un cours fini enchaîne sur le suivant,
  * comme une liste de lecture ; un cours entamé reprend là où on l'a laissé
  * (voir listeningProgress).
+ *
+ * Le système le connaît comme une musique (voir services/mediaSession) : le
+ * cours qui joue s'affiche dans la notification d'Android, sur l'écran
+ * verrouillé d'iOS, et s'y commande sans rouvrir l'app.
  */
 
 export interface AudioTrack {
@@ -125,12 +136,34 @@ export function formatTime(seconds: number): string {
   return `${m}:${sStr}`;
 }
 
+// Le morceau dont la pochette se dessine : une pochette arrivée après qu'on
+// est passé au suivant ne remplace pas la sienne.
+let metadataFor: AudioTrack | null = null;
+
+/** Le titre, le rav et la série dans la session média, puis la pochette dès qu'elle est dessinée. */
 function updateMediaSession() {
-  if (!("mediaSession" in navigator) || !track.value) return;
-  navigator.mediaSession.metadata = new MediaMetadata({
-    title: track.value.title,
-    artist: track.value.subtitle || "Petite Jerusalem",
-    album: "Petite Jerusalem",
+  const current = track.value;
+  if (!current) return;
+  const info = {
+    title: current.title,
+    artist: current.subtitle || "Petite Jérusalem",
+    album: "Petite Jérusalem",
+  };
+  metadataFor = current;
+  publishMetadata(info);
+  if (!current.cover) return;
+  void coverArtwork(current.cover.seed, current.cover.label).then((artwork) => {
+    if (artwork && metadataFor === current) publishMetadata({ ...info, artwork });
+  });
+}
+
+/** Où en est le cours, pour la barre de progression du système. */
+function updateMediaPosition() {
+  if (!audio) return;
+  publishPosition({
+    duration: duration.value,
+    position: audio.currentTime,
+    playbackRate: audio.playbackRate,
   });
 }
 
@@ -152,7 +185,11 @@ function ensureAudio(): HTMLAudioElement {
       if (pendingSeekSeconds < audio.duration) audio.currentTime = pendingSeekSeconds;
       pendingSeekSeconds = null;
     }
+    updateMediaPosition();
   });
+  // Un saut ou un changement de vitesse : le système recale sa barre.
+  audio.addEventListener("seeked", updateMediaPosition);
+  audio.addEventListener("ratechange", updateMediaPosition);
   audio.addEventListener("timeupdate", () => {
     if (!audio) return;
     // timeupdate tire ~4×/s : publier chaque tick re-rendrait les composants
@@ -172,6 +209,8 @@ function ensureAudio(): HTMLAudioElement {
   });
   audio.addEventListener("play", () => {
     isPlaying.value = true;
+    publishPlaybackState("playing");
+    updateMediaPosition();
     trackPlayStarted();
     // C'est le démarrage de l'écoute qui marque un chiour comme vu, pas
     // l'arrivée sur sa page (voir DetailChiour). Idempotent et inerte pour un
@@ -180,6 +219,12 @@ function ensureAudio(): HTMLAudioElement {
   });
   audio.addEventListener("pause", () => {
     isPlaying.value = false;
+    // Un lecteur fermé a déjà dit « none » : la pause qui suit ne rouvre pas
+    // la notification.
+    if (track.value) {
+      publishPlaybackState("paused");
+      updateMediaPosition();
+    }
     recordCurrent(true);
   });
   audio.addEventListener("ended", () => {
@@ -190,16 +235,25 @@ function ensureAudio(): HTMLAudioElement {
     if (hasNext.value) next(true);
   });
 
-  if ("mediaSession" in navigator) {
-    navigator.mediaSession.setActionHandler("play", () => audio?.play());
-    navigator.mediaSession.setActionHandler("pause", () => audio?.pause());
-    navigator.mediaSession.setActionHandler("seekbackward", () => skip(-15));
-    navigator.mediaSession.setActionHandler("seekforward", () => skip(30));
-    navigator.mediaSession.setActionHandler("previoustrack", () => previous());
-    navigator.mediaSession.setActionHandler("nexttrack", () => {
+  // Les commandes du système (notification, écran verrouillé, écouteurs,
+  // touches multimédia) : les mêmes que celles du lecteur.
+  bindMediaActions({
+    play: () => play(),
+    pause: () => audio?.pause(),
+    seekbackward: () => skip(-15),
+    seekforward: () => skip(30),
+    seekto: ({ seekTime }) => {
+      if (audio && isLoaded.value && typeof seekTime === "number") {
+        audio.currentTime = Math.max(0, Math.min(duration.value, seekTime));
+      }
+    },
+    previoustrack: () => previous(),
+    nexttrack: () => {
       if (hasNext.value) next();
-    });
-  }
+    },
+    // « Arrêter » dans la notification d'Android : comme fermer la barre du lecteur.
+    stop: () => close(),
+  });
 
   return audio;
 }
@@ -345,9 +399,11 @@ function setSpeed(speed: number) {
   if (audio) audio.playbackRate = speed;
 }
 
-/** Arrête la lecture et ferme le mini-lecteur. */
+/** Arrête la lecture et ferme le mini-lecteur, et la notification avec lui. */
 function close() {
   recordCurrent(true);
+  publishPlaybackState("none");
+  metadataFor = null;
   if (audio) {
     audio.pause();
     audio.removeAttribute("src");

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, defineAsyncComponent } from "vue";
+import { computed, defineAsyncComponent, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import AppIcon from "./icons/AppIcon.vue";
 import ChiourCover from "./chiourim/ChiourCover.vue";
@@ -8,12 +8,16 @@ import PlayerSpeed from "./chiourim/PlayerSpeed.vue";
 import { COVER_INK, playerTone } from "./chiourim/cover";
 import { useAudioPlayer, useMiniPlayerVisible } from "../composables/useAudioPlayer";
 import { isNativeApp } from "../composables/useNativeApp";
+import { rememberBar } from "./chiourim/sheetMotion";
 
 /**
  * La barre du lecteur : le cours qui joue reste sous la main d'une page à
  * l'autre, comme dans une application d'écoute. Elle prend la reliure de sa
- * série, assombrie (playerTone), et un appui sur sa pochette ou son titre
- * ouvre le lecteur plein écran (NowPlayingSheet).
+ * série, assombrie (playerTone). Un appui n'importe où sur elle (hors de ses
+ * boutons), ou sur un téléphone un glissement vers le haut, ouvre le lecteur
+ * plein écran (NowPlayingSheet) : la barre s'agrandit jusqu'à couvrir
+ * l'écran, et le plein écran se réduit jusqu'à redevenir la barre (voir
+ * sheetMotion).
  *
  * Sur un téléphone, une barre posée au-dessus de la barre de l'app : la
  * pochette, le titre et le rav, lecture, puis le cours suivant pendant
@@ -25,7 +29,8 @@ import { isNativeApp } from "../composables/useNativeApp";
  * et sa ligne ; le lecteur plein écran, qui lit le catalogue, se charge à la
  * demande.
  */
-const NowPlayingSheet = defineAsyncComponent(() => import("./chiourim/NowPlayingSheet.vue"));
+const loadSheet = () => import("./chiourim/NowPlayingSheet.vue");
+const NowPlayingSheet = defineAsyncComponent(loadSheet);
 
 const { t } = useI18n();
 
@@ -39,25 +44,81 @@ const tone = computed(() =>
 const playLabel = computed(() =>
   player.isPlaying.value ? t("audioPlayer.pause") : t("audioPlayer.play"),
 );
+
+// --- Ouvrir le plein écran ---
+const bar = ref<HTMLElement | null>(null);
+
+function openSheet() {
+  rememberBar(bar.value);
+  player.openSheet();
+}
+
+/** Toute la barre ouvre le plein écran ; ses boutons gardent leur rôle. */
+function onBarClick(event: MouseEvent) {
+  const target = event.target as HTMLElement;
+  if (target.closest("button, a, input, [role='slider'], [role='menu']")) return;
+  openSheet();
+}
+
+// Téléphone : un glissement vers le haut sur la barre l'ouvre aussi.
+const SWIPE_OPEN = 24;
+let swipeStart: { x: number; y: number } | null = null;
+function onTouchStart(event: TouchEvent) {
+  const touch = event.touches[0];
+  swipeStart = touch ? { x: touch.clientX, y: touch.clientY } : null;
+}
+function onTouchMove(event: TouchEvent) {
+  const touch = event.touches[0];
+  if (!swipeStart || !touch) return;
+  const dy = swipeStart.y - touch.clientY;
+  if (dy > SWIPE_OPEN && dy > Math.abs(touch.clientX - swipeStart.x)) {
+    swipeStart = null;
+    openSheet();
+  }
+}
+
+// Le plein écran reste monté le temps de se réduire en barre, la barre
+// cachée dessous : elle réapparaît à l'instant où il la rejoint.
+const sheetMounted = ref(false);
+watch(
+  () => player.sheetOpen.value,
+  (open) => {
+    if (open) sheetMounted.value = true;
+  },
+);
+watch(
+  () => player.track.value,
+  (current, before) => {
+    if (!current) sheetMounted.value = false;
+    // Le premier cours lancé : le plein écran se charge en avance, il
+    // s'ouvrira sans attente au premier appui.
+    else if (!before) void loadSheet().catch(() => undefined);
+  },
+);
 </script>
 
 <template>
   <Transition name="slide-up">
     <div
-      v-if="isVisible && player.track.value"
+      v-if="player.track.value"
       class="fixed inset-x-0 z-40"
-      :class="
+      :class="[
         isNativeApp
           ? 'bottom-[calc(3.5rem+var(--safe-bottom))] px-2 pb-2'
-          : 'bottom-0 px-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] md:p-0'
-      "
+          : 'bottom-0 px-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] md:p-0',
+        { invisible: !isVisible || sheetMounted },
+      ]"
       role="region"
       :aria-label="t('audioPlayer.nowPlaying')"
     >
       <div
-        class="mx-auto overflow-hidden rounded-control shadow-pop"
+        ref="bar"
+        class="mx-auto cursor-pointer rounded-control shadow-pop"
         :class="isNativeApp ? '' : 'max-w-3xl md:max-w-none md:rounded-none'"
         :style="{ backgroundColor: tone, color: COVER_INK }"
+        @click="onBarClick"
+        @touchstart.passive="onTouchStart"
+        @touchmove.passive="onTouchMove"
       >
         <div
           class="flex items-center gap-3 px-2 py-2"
@@ -73,7 +134,7 @@ const playLabel = computed(() =>
             class="flex min-w-0 flex-1 items-center gap-3 text-start"
             data-player-open
             :aria-label="t('chiourim.player.openTrack', { title: player.track.value.title })"
-            @click="player.openSheet()"
+            @click="openSheet"
           >
             <ChiourCover
               v-if="player.track.value.cover"
@@ -151,8 +212,10 @@ const playLabel = computed(() =>
 
           <!-- Les commandes de droite -->
           <div class="flex shrink-0 items-center justify-end gap-1">
+            <!-- La vitesse : son menu s'ouvre vers le haut, au-dessus de la barre -->
             <PlayerSpeed
               v-if="!isNativeApp"
+              placement="above"
               class="hidden bg-white/10 hover:bg-white/20 md:inline-block"
             />
             <button
@@ -160,7 +223,7 @@ const playLabel = computed(() =>
               class="bar-icon hidden md:flex"
               :aria-label="t('chiourim.player.open')"
               :title="t('chiourim.player.open')"
-              @click="player.openSheet()"
+              @click="openSheet"
             >
               <AppIcon name="chevron-up" :size="20" />
             </button>
@@ -213,7 +276,7 @@ const playLabel = computed(() =>
     </div>
   </Transition>
 
-  <NowPlayingSheet v-if="player.sheetOpen.value && player.track.value" />
+  <NowPlayingSheet v-if="sheetMounted && player.track.value" @closed="sheetMounted = false" />
 </template>
 
 <style scoped>

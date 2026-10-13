@@ -641,7 +641,12 @@ Ce qui bouge, donc :
 - « Tout télécharger » : la flèche plonge dans son plateau au toucher, les
   anneaux des livres se remplissent à mesure, un livre arrivé en entier fait
   tracer sa coche et se soulève un instant de la planche, et la coche de la
-  ligne se trace à la fin du lot ; la pastille s'efface quand on supprime.
+  ligne se trace à la fin du lot ; la pastille s'efface quand on supprime ;
+- la barre du lecteur des cours, qui s'agrandit en plein écran quand on la
+  touche (ou qu'on la glisse vers le haut sur un téléphone), et le plein
+  écran qui se réduit jusqu'à redevenir la barre quand on le referme (ou
+  qu'on le tire vers le bas, et il suit le doigt). Voir
+  `components/chiourim/sheetMotion.ts`.
 
 Ce qui ne bouge pas : l'arrivée sur une page (au-delà du simple fondu déjà en
 place), un état déjà là au chargement (un livre téléchargé hier n'anime pas sa
@@ -654,7 +659,12 @@ mise en avant peut porter son objet »).
 
 Tout se coupe quand le système demande moins d'animations, et sur une petite
 machine (`perf-lite`) : l'état final s'affiche d'emblée, rien ne manque, seul
-le trajet disparaît (`composables/useMotion.ts`).
+le trajet disparaît (`composables/useMotion.ts`). Une exception : le passage
+de la barre du lecteur au plein écran ne se coupe qu'à la demande du système.
+Le mode allégé s'allume sur une bonne part des téléphones Android (4 Go de
+mémoire déclarés suffisent), et ce mouvement-là, bref et au geste, dit d'où
+vient le plein écran et où il repart : sans lui, le geste de le tirer vers le
+bas n'aurait plus de sens.
 
 ### Ce qui est à soi se range avec le reste
 
@@ -1396,12 +1406,20 @@ parcourt, on lance, on reprend.
   progression au bord bas. Sur un écran large, elle prend toute la largeur
   avec les commandes et la barre de lecture au milieu, la vitesse et fermer
   à droite.
-- **Le lecteur plein écran.** Un appui sur la barre l'ouvre ; la flèche du
-  haut ou le retour le referment. D'où vient l'écoute (« Lecture depuis
+- **Le lecteur plein écran.** Un appui n'importe où sur la barre l'ouvre
+  (ses boutons gardent leur rôle), comme un glissement vers le haut sur un
+  téléphone : la barre s'agrandit jusqu'à couvrir l'écran. La flèche du
+  haut, le retour, Échap, ou sur un téléphone le plein écran tiré vers le
+  bas (il suit le doigt) le referment : il se réduit jusqu'à redevenir la
+  barre. Il fallait viser la pochette ou la flèche, et rien ne disait d'où
+  sortait cette page (tenu par `playerBarOpen.test.ts`). D'où vient l'écoute (« Lecture depuis
   Chaar Habitahon »), la grande pochette, le titre et le rav, la barre de
   lecture, puis reculer de 15 s, précédent, la lecture en grand rond,
-  suivant, avancer de 30 s ; la vitesse en une pastille qu'on touche pour
-  passer à la suivante. Plus bas, le texte étudié, ce qui suit dans la
+  suivant, avancer de 30 s. La vitesse, à droite du titre (sur un écran
+  large, dans la barre, à droite) : une pastille qui la dit, et qui ouvre la
+  liste des vitesses, de 0,75× à 2×, la sienne cochée ; on touche celle
+  qu'on veut (tenu par `playerSpeed.test.ts`). La faire défiler d'appui en
+  appui obligeait à passer par toutes pour revenir en arrière. Plus bas, le texte étudié, ce qui suit dans la
   file, et « À propos du cours », qui mène à sa page. Sur un écran large,
   deux colonnes : le cours à gauche, la suite à droite.
 - **La file se lit d'un coup d'œil.** « En cours » d'abord, à part : la
@@ -1430,6 +1448,12 @@ parcourt, on lance, on reprend.
   initiales de la série. Un rav a la même reliure, ronde. Hors thème, identique en mode sombre, en aplats, le titre
   crème à 4,5:1 au moins sur chaque teinte (`components/chiourim/cover.ts`,
   tenu par `chiourCover.test.ts`).
+- **Hors de l'app, comme une musique.** Le cours qui joue s'affiche dans la
+  notification d'Android et sur l'écran verrouillé d'iOS, avec sa pochette :
+  la même reliure, dessinée en image (`components/chiourim/coverArtwork.ts`),
+  son titre, le rav et la série. Les commandes y sont celles du lecteur
+  (reculer de 15 secondes, avancer de 30, cours précédent et suivant). Voir
+  `docs/app-native.md`, « Écoute des cours en arrière-plan ».
 - **Les titres gardent leur langue.** Un titre, un nom de série ou de rav,
   une description sont écrits par les auteurs : en hébreu dans l'interface
   française, en français dans l'interface hébraïque. Ils portent

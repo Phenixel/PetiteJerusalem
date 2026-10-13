@@ -20,15 +20,23 @@ defineProps<{
 
 <template>
   <router-link :to="to" class="group block w-36 shrink-0 sm:w-44">
-    <div class="transition-transform duration-200 group-hover:-translate-y-0.5">
-      <ChiourCover v-if="round" :seed="seed" :label="name" size="md" round class="shadow-card" />
+    <!-- Au survol, toute la pochette se soulève, son ombre avec elle -->
+    <div class="transition-transform duration-200 group-hover:-translate-y-1">
+      <ChiourCover
+        v-if="round"
+        :seed="seed"
+        :label="name"
+        size="md"
+        round
+        class="shadow-card transition-shadow duration-200 group-hover:shadow-card-hover"
+      />
       <ChiourCover
         v-else
         :seed="seed"
         :label="name"
         :sub="coverSub"
         size="md"
-        class="shadow-card"
+        class="shadow-card transition-shadow duration-200 group-hover:shadow-card-hover"
       />
     </div>
     <p

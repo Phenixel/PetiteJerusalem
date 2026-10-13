@@ -6,9 +6,10 @@
  * - android/local.properties : chemin du SDK Android
  * - AndroidManifest.xml : permissions POST_NOTIFICATIONS (rappel de lecture,
  *   Android 13+), ACCESS_COARSE/FINE_LOCATION (horaires calculés pour la
- *   position de l'appareil) et READ/WRITE_EXTERNAL_STORAGE (téléchargement
- *   d'un livre hors ligne sous Android 11) : ces plugins livrent un manifest
- *   vide, l'app doit donc les déclarer elle-même. Et la petite icône des
+ *   position de l'appareil), READ/WRITE_EXTERNAL_STORAGE (téléchargement
+ *   d'un livre hors ligne sous Android 11) et FOREGROUND_SERVICE_MEDIA_PLAYBACK
+ *   (écoute des cours en arrière-plan, Android 14+) : ces plugins livrent un
+ *   manifest incomplet, l'app doit donc les déclarer elle-même. Et la petite icône des
  *   notifications push
  * - android/app/google-services.json : copié depuis la racine s'il s'y trouve
  *   (fichier téléchargé depuis la console Firebase, git-ignoré)
@@ -86,6 +87,11 @@ const PERMISSIONS = [
     comment: "Horaires (zmanim) calculés pour la position de l'appareil",
   },
   { name: "android.permission.ACCESS_FINE_LOCATION" },
+  {
+    name: "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
+    comment:
+      "Écoute des cours en arrière-plan : @capgo/capacitor-media-session tient la notification\n         de lecture dans un service de premier plan de type mediaPlayback. Son manifest ne\n         déclare que FOREGROUND_SERVICE ; depuis Android 14, démarrer ce service sans cette\n         permission-ci lève une SecurityException et ferme l'app à la première lecture.\n         Voir src/__tests__/mediaSessionAndroid.test.ts",
+  },
   {
     name: "android.permission.CAMERA",
     comment: "Miroir des téfilines (caméra frontale, rien n'est enregistré)",

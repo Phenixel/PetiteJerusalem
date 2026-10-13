@@ -5,6 +5,12 @@
  * montre qu'une partie. Sur ordinateur, deux flèches font défiler la rangée
  * d'une page (la molette ne défile pas de côté) ; sur un téléphone, le doigt
  * suffit, et la rangée déborde jusqu'au bord de l'écran pour le dire.
+ *
+ * Une rangée qui défile de côté rogne aussi ce qui dépasse en haut et en
+ * bas : la pochette qui se soulève au survol y perdait son bord haut, et
+ * semblait ne bouger que de l'intérieur. La piste a donc de la marge
+ * au-dessus et au-dessous (reprise en marges négatives, la mise en page ne
+ * change pas), assez pour la pochette soulevée et son ombre.
  */
 import { onBeforeUnmount, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
@@ -87,7 +93,7 @@ onBeforeUnmount(() => {
     </div>
     <div
       ref="track"
-      class="rail-track -mx-6 flex items-start snap-x snap-mandatory gap-4 overflow-x-auto px-6 pb-2"
+      class="rail-track -mx-6 -mb-3 -mt-3 flex items-start snap-x snap-mandatory gap-4 overflow-x-auto px-6 pb-5 pt-3"
       @scroll.passive="update"
     >
       <slot />
