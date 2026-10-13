@@ -541,16 +541,29 @@ def book_edits(pairs: list, text_of: dict, taken: set, lossy: bool = False,
             continue
         # Les mots du livre, sans les appels de note (« א) », « (ב) ») : mais
         # dans une parenthèse ouverte, « ז) » est la fin d'un renvoi.
+        mine = [norm(text_of.get(key, "")) for key in ours]
+        whole = set(mine)
         theirs, depth = [], 0
         for w in line.words:
-            # (Une lettre seule, sans apostrophe, est aussi un appel de note.)
+            # (Une lettre seule, sans apostrophe, est aussi un appel de note,
+            # sauf si elle achève un de nos mots que le PDF a coupé.)
             lone = len(re.sub("[^א-ת]", "", w)) == 1 and not any(mark in w for mark in "\"'״׳")
-            if norm(w) and not (depth == 0 and (MARK.fullmatch(w.strip()) or lone)):
+            if lone and theirs and norm(theirs[-1]) not in whole and norm(theirs[-1]) + norm(w) in whole:
+                theirs[-1] = theirs[-1].strip() + " " + w.strip()
+            elif norm(w) and not (depth == 0 and (MARK.fullmatch(w.strip()) or lone)):
                 theirs.append(w)
             depth = max(0, depth + w.count("(") - w.count(")"))
         if not theirs:
             continue
-        mine = [norm(text_of.get(key, "")) for key in ours]
+        # Un mot que le PDF a coupé en deux (une lettre qui ne sort pas laisse
+        # un blanc : « לפ י ») se recolle quand le tout est un de nos mots.
+        have, j = set(mine), 0
+        while j < len(theirs) - 1:
+            a, b = norm(theirs[j]), norm(theirs[j + 1])
+            if a not in have and a + b in have:
+                theirs[j: j + 2] = [theirs[j].strip() + " " + theirs[j + 1].strip()]
+            else:
+                j += 1
         said = [norm(w) for w in theirs]
         if mine == said:
             continue
@@ -584,7 +597,8 @@ def book_edits(pairs: list, text_of: dict, taken: set, lossy: bool = False,
             # ou écrit deux fois l'un sur l'autre (un gras de fortune).
             if any(re.search(r"\s", w.strip()) or re.fullmatch(r"(.{2,})\1", norm(w)) for w in theirs[j1:j2]):
                 continue
-            if lossy and any(ch in text_of.get(key, "") for key in keys for ch in "נן"):
+            if lossy and any(ch in text_of.get(key, "") for key in keys for ch in "נן") \
+                    and not abbreviates(words, mine[i1:i2]):
                 continue
             # Un mot long que nos textes du traité n'ont nulle part : deux mots
             # que le PDF a collés (« למהרהלילה »), plus souvent qu'une leçon.
@@ -2402,30 +2416,30 @@ def page_at(tractate: Tractate, amud: int, pdf: str, taken: dict[str, set]) -> t
     # Les abréviations du livre, là où nos mots en toutes lettres ne tiennent
     # pas : par zone (0 la guemara, 1 Rachi, 2 Tossafot), la place de nos
     # mots et ce que le livre écrit.
-    brief = [[z, p, w, n, text] if a == amud else [z, p, w, n, text, a]
-             for z, zone in enumerate(("main", "rashi", "tosafot"))
-             for a, p, w, n, text in placed[zone].short
-             # (Pas dans une police qui perd ses nounim : voir plus bas.)
-             if nun_safe(zone, kept, tractate, ours_main, amud)]
-    # Puis tout ce que le livre écrit autrement que notre texte, quand la
-    # page rend bien ses lettres (même condition que pour le texte du livre).
-    if hebrew > 200 and nuns >= 0.03 * hebrew:
-        wordbook = wordbook_of(tractate)
-        for z, zone in enumerate(("main", "rashi", "tosafot")):
-            if zone == "main":
-                text_of = {(t.unit, t.passage, t.word): t.text for t in ours_main}
-            else:
-                text_of = {(t.unit, t.passage, t.word): t.text
-                           for a in range(max(0, amud - 6), min(len(tractate), amud + 2))
-                           for t in tractate.tokens(zone, a)}
-            # Chaque zone a sa police, et certaines ne rendent pas le noun :
-            # on le voit à ce que le livre en écrit moins que notre texte sur
-            # les mêmes lignes. Là, la lecture n'est pas sûre : notre texte
-            # reste tel quel.
-            lossy = not nun_safe(zone, kept, tractate, ours_main, amud)
-            taken_here = {(a, p, w + d) for a, p, w, n, _ in placed[zone].short for d in range(n)}
-            brief += [[z, p, w, n, text] if a == amud else [z, p, w, n, text, a]
-                      for a, p, w, n, text in book_edits(kept[zone], text_of, taken_here, lossy, wordbook)]
+    # Par zone (0 la guemara, 1 Rachi, 2 Tossafot) : la place de nos mots et
+    # ce que le livre écrit. D'abord les abréviations des lignes trop
+    # chargées (place), puis tout ce que le livre écrit autrement que notre
+    # texte (book_edits).
+    brief: list[list] = []
+    wordbook = wordbook_of(tractate)
+    for z, zone in enumerate(("main", "rashi", "tosafot")):
+        if zone == "main":
+            text_of = {(t.unit, t.passage, t.word): t.text for t in ours_main}
+        else:
+            text_of = {(t.unit, t.passage, t.word): t.text
+                       for a in range(max(0, amud - 6), min(len(tractate), amud + 2))
+                       for t in tractate.tokens(zone, a)}
+        # Chaque zone a sa police, et certaines ne rendent pas le noun : on le
+        # voit à ce que le livre en écrit moins que notre texte sur les mêmes
+        # lignes. Là, seul un sigle qui abrège bien nos mots est sûr (ses
+        # lettres sont le début de chacun d'eux) : « הקב"ה », pas « לפ י ».
+        lossy = not nun_safe(zone, kept, tractate, ours_main, amud)
+        old = [(a, p, w, n, text) for a, p, w, n, text in placed[zone].short
+               if not lossy or abbreviates(text.split(), [norm(text_of.get((a, p, w + d), "")) for d in range(n)])]
+        taken_here = {(a, p, w + d) for a, p, w, n, _ in old for d in range(n)}
+        edits = book_edits(kept[zone], text_of, taken_here, lossy, wordbook) \
+            if hebrew > 200 and nuns >= 0.03 * hebrew else []
+        brief += [[z, p, w, n, text] if a == amud else [z, p, w, n, text, a] for a, p, w, n, text in old + edits]
     if brief:
         page["short"] = brief
     if book or foot:
