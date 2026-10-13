@@ -204,7 +204,7 @@ async function drawRasterWall(): Promise<void> {
 
     // Teinte et opacités du thème courant (variables posées sur .stone-wall).
     const styles = getComputedStyle(root);
-    const glow = (styles.getPropertyValue("--sw-glow-rgb").trim() || "186 137 66")
+    const glow = (styles.getPropertyValue("--sw-glow-rgb").trim() || "214 196 184")
       .split(/\s+/)
       .map(Number);
     const jointsAlpha = parseFloat(styles.getPropertyValue("--sw-joints-a")) || 0.55;
@@ -330,7 +330,9 @@ onUnmounted(() => {
 
 <style scoped>
 .stone-wall {
-  --sw-glow-rgb: 186 137 66;
+  /* Les briques de la palette (#D6C4B8) : la lumière des joints en prend la
+     teinte, sur le fond clair (#FFF9F3). */
+  --sw-glow-rgb: 214 196 184;
   --sw-joints-a: 0.55;
   --sw-grain-a: 0.05;
   position: fixed;

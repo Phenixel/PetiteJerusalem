@@ -180,7 +180,7 @@ function setSpeed(speed: number) {
 
         <button
           @click="togglePlay"
-          class="w-12 h-12 flex items-center justify-center bg-primary text-white rounded-full transition-colors shrink-0"
+          class="w-12 h-12 flex items-center justify-center bg-brand text-on-brand rounded-full transition-colors shrink-0"
           :title="isPlaying ? t('audioPlayer.pause') : t('audioPlayer.play')"
         >
           <AppIcon

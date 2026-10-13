@@ -18,6 +18,7 @@ import {
   buildAndroidIntentFilter,
   buildAppleAppSiteAssociation,
   buildAssetLinks,
+  IOS_DEFERRED_PATHS,
   isAppLinkPath,
 } from "../../scripts/lib/app-links.mjs";
 
@@ -117,6 +118,20 @@ describe("liens d'application", () => {
     expect(components).toContain("/share-reading");
     expect(components).toContain("/share-reading/*");
     expect(components).not.toContain("/__/auth/*");
+  });
+
+  it("laisse au navigateur, sur iPhone, les pages que les versions installées ne connaissent pas encore", () => {
+    // Le fichier iOS est servi par le site et vaut pour toutes les versions
+    // installées ; l'intent-filter Android est figé dans chacune.
+    expect(IOS_DEFERRED_PATHS).toContain("/sidour");
+    const [details] = buildAppleAppSiteAssociation("AB12CD34EF").applinks.details;
+    const components = details.components.map((component) => component["/"]);
+    for (const path of IOS_DEFERRED_PATHS) {
+      expect(APP_LINK_PATHS).toContain(path);
+      expect(components).not.toContain(path);
+      expect(components).not.toContain(`${path}/*`);
+      expect(buildAndroidIntentFilter()).toContain(`<data android:path="${path}" />`);
+    }
   });
 
   it("déclare le domaine et chaque chemin dans l'intent-filter Android", () => {

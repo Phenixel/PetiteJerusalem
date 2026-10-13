@@ -311,11 +311,11 @@ if (styles.includes(noActionBarMarker) && !styles.includes("android:windowBackgr
     styles.replace(
       noActionBarMarker,
       `${noActionBarMarker}
-        <item name="android:statusBarColor">#F4F1EA</item>
+        <item name="android:statusBarColor">#FFF9F3</item>
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:navigationBarColor">#FFFFFF</item>
         <item name="android:windowLightNavigationBar">true</item>
-        <item name="android:windowBackground">#F4F1EA</item>`,
+        <item name="android:windowBackground">#FFF9F3</item>`,
     ),
   );
   console.log("setup-android: couleurs de barre système ajoutées à styles.xml");

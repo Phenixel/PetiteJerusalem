@@ -11,6 +11,9 @@ const fr = {
     logout: "Déconnexion",
     shareReading: "Partage de lectures",
     chiourim: "Chiourim",
+    // Les deux onglets de lecture de la barre du bas (voir config/navSections).
+    sidour: "Sidour",
+    study: "Étude",
     language: "Langue",
     loading: "Chargement...",
     retry: "Réessayer",
@@ -137,7 +140,7 @@ const fr = {
       pinchSample2: "ète hachamayim vé-ète haaretz",
       offlineTitle: "Sans connexion",
       offlineIntro:
-        "Les Tehilim et tout le Sidour sont déjà dans l'application. Cochez ce que vous voulez emporter en plus.",
+        "Les Tehilim, tout le Sidour et les brahot sont déjà dans l'application. Cochez ce que vous voulez emporter en plus.",
       alreadyDownloaded: "Déjà sur cet appareil",
       booksCount: "{count} livre à télécharger | {count} livres à télécharger",
       selection: "Environ {size} à télécharger",
@@ -1774,33 +1777,122 @@ const fr = {
     notFoundDescription: "Cette intention n'existe pas (encore).",
     notFoundLink: "Voir toutes les intentions « Tehilim par intention »",
   },
+  /* La page du Sidour (voir SidourPage.vue) : ce qui se dit maintenant en
+     tête, puis tous les textes de liturgie, rangés par usage. */
+  sidour: {
+    title: "Sidour",
+    subtitle:
+      "Les tefilot, les brahot et les textes des fêtes, en hébreu avec la phonétique. Ce qui se dit maintenant vient en premier.",
+    seoDescription:
+      "Le Sidour en ligne, en hébreu avec la phonétique : Cha'harit, Min'ha, Arvit, le Birkat Hamazon et les brahot, les Sli'hot et les textes des fêtes. L'office du moment en tête.",
+    placeLink: "Horaires de {place}",
+    now: "En ce moment",
+    next: "Prochain office",
+    tonight: "Ce soir",
+    until: "jusqu'à {time}",
+    from: "à partir de {time}",
+    nowPill: "en ce moment",
+    // La rangée d'outils, sous la carte du moment (voir content/sidourTools).
+    tools: { label: "Outils" },
+    days: {
+      hanouka: "'Hanouka",
+      pourim: "Pourim",
+      holHamoed: "'Hol hamoed",
+      roshHodech: "Roch 'Hodech",
+      taanit: "Jour de jeûne",
+      teshuva: "Dix jours de techouva",
+      motsaeChabbat: "Motsaé Chabbat",
+      eloul: "Eloul",
+    },
+    additions: {
+      label: "Ce que le jour ajoute",
+      yaaleVeyavo: "Ya'alé véyavo",
+      alHanissim: "'Al hanissim",
+      hamelekh: "Hamélekh hakadoch",
+      hallel: "Hallel",
+      moussaf: "Moussaf",
+      anenou: "'Anénou",
+      ataHonantanou: "Ata 'honantanou",
+      omer: "{n}e jour du 'Omer",
+      omerOne: "1er jour du 'Omer",
+    },
+    hanouka: {
+      night: "{n}e bougie ce soir",
+      nightOne: "Première bougie ce soir",
+      beforeShabbat: "{n}e bougie, avant l'allumage du Chabbat à {time}",
+      beforeShabbatOne: "Première bougie, avant l'allumage du Chabbat à {time}",
+    },
+    slihot: {
+      now: "Avant Cha'harit, jusqu'au lever du soleil à {time}",
+      tonight: "Cette nuit, de {start} à {end}",
+    },
+    // La carte de la lune, les nuits où elle se bénit.
+    thisNight: "Cette nuit",
+    halevana: { until: "Jusqu'au {date}" },
+    // Entre deux offices, à Souccot : le loulav se prend jusqu'à la chkia.
+    loulav: { until: "Jusqu'au coucher du soleil, à {time}" },
+    extras: {
+      havdala: "À la sortie, à {time}",
+      havdalaPlain: "À la sortie du Chabbat",
+    },
+    groups: {
+      offices: "Les offices",
+      soir: "Le soir",
+      brahot: "Brahot",
+      occasions: "Occasions",
+      vie: "Les étapes de la vie",
+      fetes: "Les fêtes",
+    },
+    feasts: {
+      tichri: "Yamim Noraim",
+      souccot: "Souccot",
+      hanouka: "'Hanouka",
+    },
+  },
   study: {
     title: "Bibliothèque",
-    /* Onglets en tête de la bibliothèque, app native seulement : lire un texte
-       ou se le répartir à plusieurs (voir PageTabs.vue). */
+    /* Les onglets de l'Étude, en tête de la bibliothèque, des chiourim et du
+       partage, app native seulement (voir PageTabs.vue). */
     tabs: {
-      reading: "Lecture",
+      reading: "Bibliothèque",
+      chiourim: "Chiourim",
       sharing: "Partage",
     },
-    subtitle:
-      "Lisez et étudiez les textes : Tehilim, Michna, Talmud, Tanakh, Sidour, Moadim et Brahot.",
+    subtitle: "Lisez et étudiez les textes : Tehilim, Michna, Talmud et Tanakh.",
     searchPlaceholder: "Rechercher un texte…",
     searchAllPlaceholder: "Rechercher dans tous les textes…",
     noResults: "Aucun texte ne correspond à votre recherche.",
     sections: "{count} sections",
     textsCount: "{count} texte | {count} textes",
     range: "{from} à {to}",
-    // Le temps d'une fête, sa place dans Moadim (voir MoadimNowBanner) : le
-    // renvoi depuis le sidour, et le livre de la fête en tête de Moadim.
-    // Le renvoi du sidour vers les Brahot (voir SidourBrahotLink).
-    sidourBrahot: {
-      question: "Vous cherchez le Birkat Hamazon ou une autre brakha ?",
-      link: "Le livre des Brahot",
+    // La recherche de la bibliothèque renvoie aux textes de la liturgie, qui
+    // ont leur page (voir StudyPage).
+    inSidour: "Dans le Sidour",
+    // « Aujourd'hui » : ce qui se lit ce jour-là (voir StudyToday).
+    today: {
+      title: "Aujourd'hui",
+      tehilim: "Tehilim du jour",
+      psalm: "Psaume {n}",
+      psalms: "Psaumes {from} à {to}",
+      parasha: "Paracha {parasha}",
     },
-    moadimNow: {
-      label: "{fete}, en ce moment",
-      title: "Les textes de la fête, dans Moadim",
-      current: "En ce moment",
+    // « Hors ligne » et la pastille des livres de l'étagère (voir
+    // LibraryOfflineRow, LibraryShelf).
+    offline: {
+      title: "Hors ligne",
+      remaining: "Environ {size}, pour lire sans connexion",
+      remainingWithUsed: "Environ {size} à télécharger, {used} déjà là",
+      downloading: "Téléchargement",
+      estimating: "Calcul du temps restant…",
+      etaFew: "Encore quelques secondes",
+      etaSeconds: "Encore {n} s environ",
+      etaMinutes: "Encore {n} min environ",
+      progress: "{done} sur {total}",
+      used: "{size} sur ce téléphone",
+      mb: "{n} Mo",
+      kb: "{n} Ko",
+      bookDone: "{book}, sur ce téléphone",
+      bookPartial: "{book}, en partie sur ce téléphone",
     },
     types: {
       all: "Tout",
@@ -1817,19 +1909,10 @@ const fr = {
       michnaDesc: "Les six sédarim de la Michna, traité par traité, chapitre par chapitre.",
       talmudDesc: "La Guemara : les traités du Talmud Bavli, pour avancer daf après daf.",
       tanakhDesc: "La Torah paracha par paracha, les Neviim et les Ketouvim.",
-      sidourDesc:
-        "Cha'harit, Min'ha et Arvit de la semaine, avec les horaires au lieu où l'on se trouve et les ajouts du calendrier au jour le jour ; le Chema du coucher, le tikoun hatsot et la havdala.",
-      moadimDesc:
-        "Ce qu'on dit aux rendez-vous de l'année : les Sli'hot d'Eloul et des dix jours de techouva, l'Atarat nedarim de la veille de Roch Hachana et de Kippour, l'allumage de Hanouka.",
-      brahotDesc:
-        "Birkat Hamazon, bénédictions sur ce qu'on mange et ce qu'on sent, prière du voyageur, brit mila, bénédiction de la lune : les bénédictions à portée de main.",
       tehilimSearch: "Rechercher un tehilim…",
       michnaSearch: "Rechercher une michna…",
       talmudSearch: "Rechercher un traité du Talmud…",
       tanakhSearch: "Rechercher une paracha ou un livre…",
-      sidourSearch: "Rechercher dans le Sidour…",
-      moadimSearch: "Rechercher un texte de fête…",
-      brahotSearch: "Rechercher une brakha…",
     },
   },
   watch: {

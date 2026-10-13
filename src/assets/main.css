@@ -71,18 +71,26 @@ body {
 }
 
 @theme {
-  /* Couleurs : le fond beige est fixe, les trois duos de thème sont au choix
-     de l'utilisateur ; --color-primary/--color-secondary sont réécrits au
-     vol par useTheme. Le duo par défaut est « sunset », l'orange vermillon
-     de la pierre chauffée. Voir docs/design.md pour la charte. */
+  /* Couleurs : le fond est fixe, les trois thèmes sont au choix de
+     l'utilisateur et réécrits au vol par useTheme. Valeurs par défaut :
+     « sunset », le vermillon d'origine et le bleu de la palette du logo,
+     soutenu pour porter le blanc. Chaque famille a son encre (--color-primary,
+     --color-secondary) ; les fonds pleins prennent la teinte (--color-brand)
+     et écrivent dessus --color-on-brand ; -soft, la version claire. Voir
+     docs/design.md, « Les couleurs de thème ». */
   --color-primary: #de4f17;
-  --color-secondary: #c98a00;
+  --color-secondary: #328cdc;
+  --color-brand: #de4f17;
+  --color-on-brand: #ffffff;
+  --color-brand-soft: #f2b9a2;
+  --color-secondary-brand: #328cdc;
+  --color-secondary-soft: #a9cceb;
 
   /* Backgrounds */
   --color-bg-primary: #ffffff;
   --color-bg-secondary: #f8f9fa;
   --color-bg-dark: #181818;
-  --color-bg-beige: #f4f1ea;
+  --color-bg-beige: #fff9f3;
 
   /* Surfaces (cards, panels, modals). Flipped in dark mode below. */
   --color-surface: #ffffff;
@@ -312,6 +320,27 @@ button,
     box-shadow: var(--shadow-card-hover);
   }
 
+  /* Une surface qu'on touche s'enfonce à peine sous le doigt : le geste a été
+     reçu. Le mouvement répond au geste, rien ne bouge de lui-même (voir
+     docs/design.md, « Le mouvement répond à un geste »). */
+  .press-feedback {
+    transition:
+      transform 0.15s ease,
+      box-shadow 0.25s ease,
+      background-color 0.25s ease;
+  }
+  .press-feedback:active {
+    transform: scale(0.985);
+  }
+  :root.perf-lite .press-feedback:active {
+    transform: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .press-feedback:active {
+      transform: none;
+    }
+  }
+
   /* Buttons */
   .btn {
     display: inline-flex;
@@ -344,12 +373,16 @@ button,
     font-size: 0.875rem;
   }
 
+  /* Le bouton plein : la teinte du thème, et ce qui s'écrit dessus. Au
+     survol, la teinte se fonce d'un pas : le blanc s'y lit encore mieux.
+     Mêlée à la couleur de son texte, elle s'éclaircissait et le texte
+     pâlissait (tenu par src/__tests__/themeColors.test.ts). */
   .btn-primary {
-    background-color: var(--color-primary);
-    color: #fff;
+    background-color: var(--color-brand);
+    color: var(--color-on-brand);
   }
   .btn-primary:hover:not(:disabled) {
-    background-color: color-mix(in srgb, var(--color-primary) 85%, #1a1408);
+    background-color: color-mix(in srgb, var(--color-brand) 85%, #1a1408);
   }
 
   .btn-soft {
@@ -665,8 +698,8 @@ button,
   margin-top: 0.5rem;
   padding: 0.75rem 1.5rem;
   border-radius: var(--radius-btn);
-  background: var(--color-primary);
-  color: #fff;
+  background: var(--color-brand);
+  color: var(--color-on-brand);
   font-weight: 700;
   text-decoration: none;
 }

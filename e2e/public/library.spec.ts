@@ -4,7 +4,7 @@ test.describe("bibliothèque", () => {
   test("présente les corpus et mène aux Tehilim", async ({ page }) => {
     await gotoApp(page, "/bibliotheque");
     await expect(page.getByRole("heading", { level: 1, name: "Bibliothèque" })).toBeVisible();
-    for (const corpus of ["tehilim", "michna", "talmud", "tanakh", "sidour", "brahot"]) {
+    for (const corpus of ["tehilim", "michna", "talmud", "tanakh"]) {
       await expect(page.locator(`a[href="/bibliotheque/${corpus}"]`).first()).toBeVisible();
     }
     await page.locator('a[href="/bibliotheque/tehilim"]').first().click();
@@ -25,6 +25,13 @@ test.describe("bibliothèque", () => {
     await expect(page.getByText("Aucun texte ne correspond à votre recherche.")).toBeVisible();
   });
 
+  test("la recherche renvoie au Sidour pour un texte de liturgie", async ({ page }) => {
+    await gotoApp(page, "/bibliotheque");
+    await page.getByPlaceholder("Rechercher dans tous les textes…").fill("hamazon");
+    await expect(page.getByRole("heading", { name: "Dans le Sidour" })).toBeVisible();
+    await expect(page.locator('a[href="/bibliotheque/brahot/birkat-hamazon"]')).toBeVisible();
+  });
+
   test("l'ancienne adresse des Sli'hot mène à leur page dans les Moadim", async ({ page }) => {
     await gotoApp(page, "/bibliotheque/slihot");
     await expect(page).toHaveURL(/\/bibliotheque\/moadim\/slihot$/);
@@ -33,6 +40,24 @@ test.describe("bibliothèque", () => {
   test("l'ancienne page des téléchargements ramène à la bibliothèque", async ({ page }) => {
     await gotoApp(page, "/telechargements");
     await expect(page).toHaveURL(/\/bibliotheque$/);
+  });
+});
+
+test.describe("sidour", () => {
+  test("réunit les tefilot, les brahot et les textes des fêtes", async ({ page }) => {
+    await gotoApp(page, "/sidour");
+    await expect(page.getByRole("heading", { level: 1, name: "Sidour" })).toBeVisible();
+    for (const text of ["sidour/chaharit", "brahot/birkat-hamazon", "moadim/slihot"]) {
+      await expect(page.locator(`main a[href="/bibliotheque/${text}"]`).first()).toBeVisible();
+    }
+  });
+
+  test("les anciennes listes du Sidour, des Moadim et des Brahot y mènent", async ({ page }) => {
+    // Le widget Sidour des apps installées ouvre /bibliotheque/sidour.
+    for (const corpus of ["sidour", "moadim", "brahot"]) {
+      await gotoApp(page, `/bibliotheque/${corpus}`);
+      await expect(page).toHaveURL(/\/sidour$/);
+    }
   });
 });
 

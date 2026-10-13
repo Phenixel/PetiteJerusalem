@@ -586,7 +586,7 @@ const phoneticOf = computed(() => {
             v-if="block.naanouim"
             type="button"
             class="title-action"
-            @click="openNaanouimCompass()"
+            @click="openNaanouimCompass('title')"
           >
             <AppIcon name="compass" :size="15" class="flex-shrink-0" />
             {{ t("textReading.naanouim.open") }}
@@ -680,7 +680,7 @@ const phoneticOf = computed(() => {
                   v-if="naanouimAbove(paragraph)"
                   type="button"
                   class="reading-klaf"
-                  @click.stop="openNaanouimCompass()"
+                  @click.stop="openNaanouimCompass('rubric')"
                 >
                   <AppIcon name="compass" :size="14" />
                   {{ t("textReading.naanouim.open") }}
@@ -716,7 +716,7 @@ const phoneticOf = computed(() => {
                           type="button"
                           class="reading-klaf reading-naanouim"
                           dir="ltr"
-                          @click.stop="openNaanouimCompass()"
+                          @click.stop="openNaanouimCompass('rubric')"
                         >
                           <AppIcon name="compass" :size="14" />
                           {{ t("textReading.naanouim.open") }}

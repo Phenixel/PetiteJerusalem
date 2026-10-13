@@ -199,8 +199,8 @@ sous Node). À la place :
   entièrement côté client et ne charge de toute façon jamais ces fichiers ;
   les retirer économise aussi ~79 Mo de HTML dans l'APK et l'IPA. Un test
   verrouille ce comportement (`src/__tests__/pruneNativeBundle.test.ts`).
-- **`/bibliotheque/<corpus>`** (`tehilim`, `michna`, `talmud`, `tanakh`,
-  `sidour`, `brahot`) : une page statique par corpus qui liste chaque livre
+- **`/bibliotheque/<corpus>`** (`tehilim`, `michna`, `talmud`, `tanakh`) :
+  une page statique par corpus qui liste chaque livre
   en lien, groupés par seder, sefer ou livre (`buildCorpusBody` dans
   `src/content/etudeTexts.ts`), avec un `ItemList` en JSON-LD. Avant, la liste
   des livres n'existait que dans la vue Vue, un robot n'avait donc aucun chemin
@@ -208,6 +208,13 @@ sous Node). À la place :
   sidour n'avaient aucun lien entrant). `StudyPage.vue` pose le même titre et
   la même description en français à l'exécution, pour que la page rendue par
   Googlebot corresponde au HTML servi.
+- **`/sidour`** : tous les textes de liturgie (tefilot, brahot, textes des
+  fêtes) sur une page, rangés par usage comme dans l'app
+  (`src/content/sidourSeo.ts`, groupes de `sidourGroups.ts`), avec un
+  `ItemList` en JSON-LD. Elle remplace les listes `/bibliotheque/sidour`,
+  `/moadim` et `/brahot`, redirigées en 301 vers elle (`firebase.json`) ; les
+  pages de texte gardent leur adresse sous `/bibliotheque` et remontent vers
+  `/sidour`. `SidourPage.vue` pose le même titre et la même description.
 - `src/views/ContentPage.vue` rend les pages d'atterrissage et légales
   longues (`landingPages` dans `seoPages.ts` : `/finir-le-chass`,
   `/partage-tehilim`, `/confidentialite`, `/a-propos`, `/mentions-legales`)
@@ -223,7 +230,7 @@ sitemaps générés) : les pages statiques déclarées dans `seoPages.ts`, `/`,
 légales ci-dessus, `/zmanim`, `/paracha`, le hub des Tehilim par intention et
 ses pages d'intention, `/horaires` et ses 242 pages de villes, `/calendrier`
 et ses 15 pages de fêtes (depuis `zmanimSeoPages.ts`, chacune en trois
-langues), plus les six pages de corpus et les pages de lecture de la
+langues), plus les quatre pages de corpus, `/sidour` et les pages de lecture de la
 Bibliothèque générées par corpus, livre et chapitre par `prerender-seo.mjs`.
 (`/login` est `noindex` ; les anciennes URL `/etude` redirigent en 301 vers
 `/bibliotheque` dans `firebase.json`.)

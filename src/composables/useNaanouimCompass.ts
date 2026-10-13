@@ -2,7 +2,9 @@ import { computed, ref } from "vue";
 import { analyticsService } from "../services/analyticsService";
 
 /**
- * Le cadran des na'anou'im, ouvert depuis le titre des brahot du loulav.
+ * Le cadran des na'anou'im, ouvert depuis le titre des brahot du loulav, les
+ * consignes du Hallel qui disent où l'agiter, et, le temps de Souccot, la
+ * rangée d'outils de la page du Sidour.
  *
  * Ce que le sidour écrit est une liste : sud, nord, est, haut, bas, ouest. Ce
  * qu'il faut savoir, le loulav en main, c'est de quel côté se tourner
@@ -20,9 +22,15 @@ const open = ref(false);
 /** La fenêtre est ouverte. */
 export const naanouimCompassOpen = computed(() => open.value);
 
-export function openNaanouimCompass(): void {
+/**
+ * D'où l'on ouvre le cadran : le titre des brahot, une consigne du Hallel, le
+ * Sidour.
+ */
+export type NaanouimCompassSource = "title" | "rubric" | "sidour";
+
+export function openNaanouimCompass(source: NaanouimCompassSource): void {
   open.value = true;
-  analyticsService.capture("naanouim_compass_opened");
+  analyticsService.capture("naanouim_compass_opened", { source });
 }
 
 export function closeNaanouimCompass(): void {

@@ -530,9 +530,9 @@ export const appPages: SeoPage[] = [
         <li><strong><a href="/bibliotheque/talmud">Talmud Bavli</a></strong> : les traités (massekhtot) du Talmud de Babylone.</li>
         <li><strong><a href="/bibliotheque/tanakh">Tanakh</a></strong> : la Torah paracha par paracha, les Neviim (Prophètes) et les Ketouvim (Écrits).</li>
       </ul>
-      <p>Et la liturgie, à lire sur son écran : le <a href="/bibliotheque/sidour">Sidour</a> (les prières de la semaine),
-      les <a href="/bibliotheque/moadim">Moadim</a> (les textes des fêtes, dont les <a href="/bibliotheque/moadim/slihot">Sli'hot</a>)
-      et les <a href="/bibliotheque/brahot">brahot</a> (bénédictions).</p>
+      <p>Et la liturgie, à lire sur son écran, a sa page : le <a href="/sidour">Sidour</a>, avec les prières
+      de la semaine, les brahot (dont le <a href="/bibliotheque/brahot/birkat-hamazon">Birkat Hamazon</a>)
+      et les textes des fêtes (dont les <a href="/bibliotheque/moadim/slihot">Sli'hot</a>).</p>
       <p>Envie d'avancer en groupe ? Lancez un <a href="/share-reading">partage de lectures</a> ou
       organisez de quoi <a href="/finir-le-chass">finir le Chass</a> ensemble.</p>
     </section>
@@ -548,18 +548,17 @@ export const appPages: SeoPage[] = [
         name: "Textes disponibles à l'étude",
         itemListElement: (
           [
-            ["Tehilim", "tehilim"],
-            ["Michna", "michna"],
-            ["Talmud Bavli", "talmud"],
-            ["Tanakh", "tanakh"],
-            ["Sidour", "sidour"],
-            ["Brahot", "brahot"],
+            ["Tehilim", "/bibliotheque/tehilim"],
+            ["Michna", "/bibliotheque/michna"],
+            ["Talmud Bavli", "/bibliotheque/talmud"],
+            ["Tanakh", "/bibliotheque/tanakh"],
+            ["Sidour", "/sidour"],
           ] as const
-        ).map(([n, corpus], i) => ({
+        ).map(([n, path], i) => ({
           "@type": "ListItem",
           position: i + 1,
           name: n,
-          url: `${SITE_URL}/bibliotheque/${corpus}`,
+          url: `${SITE_URL}${path}`,
         })),
       },
     ],

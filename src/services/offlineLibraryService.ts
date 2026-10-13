@@ -25,8 +25,8 @@ const TALMUD_CHAPTERS_PATH = "/texts/talmud-chapters.json";
 
 /**
  * Fichiers embarqués dans le binaire natif : ils sont lisibles hors ligne sans
- * rien télécharger, dès l'installation (les Tehilim, le Sidour, le découpage
- * du Talmud). Les corpus volumineux, eux, sont retirés du
+ * rien télécharger, dès l'installation (les Tehilim, le Sidour et les brahot,
+ * le découpage du Talmud). Les corpus volumineux, eux, sont retirés du
  * bundle par scripts/prune-native-bundle.mjs, qui lit la même liste
  * (`src/datas/bundledTexts.json`).
  */
@@ -86,8 +86,8 @@ export interface OfflineCorpus {
   books: OfflineBook[];
   /**
    * Poids approximatif de ce que le corpus télécharge, en octets : ses livres
-   * embarqués n'en font pas partie (0 pour les Tehilim et le Sidour, tout
-   * entiers dans l'app).
+   * embarqués n'en font pas partie (0 pour les Tehilim, le Sidour et les
+   * brahot, tout entiers dans l'app).
    */
   approxBytes: number;
   /** Déjà dans le binaire natif : lisible hors ligne sans rien télécharger. */
@@ -101,7 +101,7 @@ const CORPUS_META: { key: string; labelKey: string; approxBytes: number }[] = [
   { key: "Tanakh", labelKey: "study.types.tanakh", approxBytes: 6_800_000 },
   { key: "Sidour", labelKey: "study.types.sidour", approxBytes: 0 },
   { key: "Moadim", labelKey: "study.types.moadim", approxBytes: 560_000 },
-  { key: "Brahot", labelKey: "study.types.brahot", approxBytes: 132_000 },
+  { key: "Brahot", labelKey: "study.types.brahot", approxBytes: 0 },
 ];
 
 export const offlineCorpora: OfflineCorpus[] = CORPUS_META.map((meta) => {
@@ -123,6 +123,32 @@ export function missingBooksOfCorpus(corpus: OfflineCorpus): OfflineBook[] {
 /** Livres d'un corpus qui se téléchargent (ceux que l'app n'embarque pas). */
 export function downloadableBooksOfCorpus(corpus: OfflineCorpus): OfflineBook[] {
   return corpus.books.filter((book) => !isBookBundled(book));
+}
+
+/**
+ * Le poids approximatif d'un livre à télécharger, en octets : sa part du
+ * corpus (le poids du corpus réparti à parts égales entre ses livres
+ * téléchargeables). Un ordre de grandeur, comme `approxBytes` : de quoi dire
+ * avant de lancer combien il reste, et suivre l'avancement d'un lot, pas un
+ * compteur exact. 0 pour un livre embarqué.
+ */
+export function approxBytesOfBook(book: OfflineBook): number {
+  if (isBookBundled(book)) return 0;
+  const corpus = offlineCorpora.find((c) => c.key === book.corpus);
+  if (!corpus) return 0;
+  const downloadable = downloadableBooksOfCorpus(corpus).length;
+  return downloadable === 0 ? 0 : corpus.approxBytes / downloadable;
+}
+
+/** Le poids approximatif d'une liste de livres (voir approxBytesOfBook). */
+export function approxBytesOfBooks(books: OfflineBook[]): number {
+  return books.reduce((sum, book) => sum + approxBytesOfBook(book), 0);
+}
+
+/** Ce que pèsent, sur l'appareil, ceux de ces livres qui y sont téléchargés. */
+export function downloadedBytesOf(books: OfflineBook[]): number {
+  const files = downloadManifest.value.files;
+  return books.reduce((sum, book) => sum + (files[book.path]?.size ?? 0), 0);
 }
 
 /**

@@ -92,7 +92,7 @@ struct PjWidgetBackground: ViewModifier {
  */
 enum PjColors {
     static let fallbackAccent = "#DE4F17"
-    static let background = adaptive(light: "#F4F1EA", dark: "#1F2937")
+    static let background = adaptive(light: "#FFF9F3", dark: "#1F2937")
     static let text = adaptive(light: "#35312A", dark: "#F3F4F6")
     static let textSecondary = adaptive(light: "#6D6759", dark: "#9CA3AF")
     /// Le vert de « tout est lu » (text-green-600 / dark:text-green-400).

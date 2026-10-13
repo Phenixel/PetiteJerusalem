@@ -86,15 +86,22 @@ const LINKS: Record<string, FestivalLink> = {
     "Lighting the chanukiah and its blessings",
     "הדלקת נרות חנוכה וברכותיה",
   ]),
-  sidour: library("sidour", "/bibliotheque/sidour", [
-    "Le sidour : Cha'harit, Min'ha, Arvit",
-    "The siddur: Shacharit, Mincha, Arvit",
-    "הסידור: שחרית, מנחה, ערבית",
+  // Le Sidour réunit les tefilot, les brahot et les textes des fêtes : les
+  // anciennes listes /bibliotheque/sidour et /brahot y sont redirigées.
+  sidour: library("sidour", "/sidour", [
+    "Le sidour : les tefilot, les brahot et les textes des fêtes",
+    "The siddur: prayers, blessings and festival texts",
+    "הסידור: תפילות, ברכות וטקסטים של המועדים",
   ]),
-  brahot: library("brahot", "/bibliotheque/brahot", [
-    "Les brahot, bénédiction par bénédiction",
-    "The berachot, blessing by blessing",
-    "הברכות, ברכה אחר ברכה",
+  birkatHamazon: library("birkatHamazon", "/bibliotheque/brahot/birkat-hamazon", [
+    "Le Birkat Hamazon, et ce que la fête y ajoute",
+    "Birkat Hamazon, and what the festival adds to it",
+    "ברכת המזון ומה שהחג מוסיף בה",
+  ]),
+  birkotHanehenin: library("birkotHanehenin", "/bibliotheque/brahot/birkot-hanehenin", [
+    "Les bénédictions sur les fruits et ce qu'on mange",
+    "The blessings over fruit and food",
+    "ברכות הנהנין על הפירות והמאכלים",
   ]),
   tanakh: library("tanakh", "/bibliotheque/tanakh", [
     "Le Tanakh : la Torah, les Neviim, les Ketouvim",
@@ -139,10 +146,10 @@ const BY_FESTIVAL: Record<string, string[]> = {
   "simhat-torah": ["paracha", "tanakh", "sidour"],
   hanouka: ["nerotHanouka", "sidour", "tehilimBook"],
   "10-tevet": ["sidour", "tehilimIntentions", "partageTehilim"],
-  "tou-bichvat": ["brahot", "sidour"],
+  "tou-bichvat": ["birkotHanehenin", "sidour"],
   "jeune-esther": ["sidour", "tehilimIntentions", "partageTehilim"],
-  pourim: ["brahot", "sidour", "tehilimBook"],
-  pessah: ["sidour", "tehilimBook", "brahot", "paracha"],
+  pourim: ["birkatHamazon", "sidour", "tehilimBook"],
+  pessah: ["sidour", "tehilimBook", "birkatHamazon", "paracha"],
   "lag-baomer": ["tehilimBook", "partageTehilim", "sidour"],
   chavouot: ["paracha", "tanakh", "sidour", "partageTehilim"],
   "17-tamouz": ["sidour", "tehilimIntentions", "partageTehilim"],

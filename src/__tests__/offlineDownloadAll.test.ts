@@ -40,9 +40,12 @@ vi.mock("../services/offlineLibraryService", () => ({
   downloadingPaths: new Set<string>(),
   downloadBook,
   removeBook: vi.fn(),
+  // Mille octets estimés par livre : le lot en suit l'avancement.
+  approxBytesOfBook: () => 1000,
+  approxBytesOfBooks: (books: unknown[]) => books.length * 1000,
 }));
 
-import { useBookDownload } from "../composables/useBookDownload";
+import { bulkDownload, useBookDownload } from "../composables/useBookDownload";
 import type { OfflineBook } from "../services/offlineLibraryService";
 
 /** Trois livres d'un même corpus, dont aucun n'est encore sur l'appareil. */
@@ -202,5 +205,38 @@ describe("« Tout télécharger »", () => {
       books_count: 3,
       books_failed: 4,
     });
+  });
+  it("suit l'avancement du lot, et refuse un second lot pendant le premier", async () => {
+    // Ce que la bibliothèque affiche (pourcentage, temps restant) vient de là ;
+    // un second appui pendant le lot en lançait un second sur la même liste.
+    setOnline(true);
+    downloadBook.mockImplementation(async (book: { path: string }) => {
+      downloaded.add(book.path);
+    });
+    let release!: () => void;
+    downloadBook.mockImplementationOnce(
+      (book: { path: string }) =>
+        new Promise<void>((resolve) => {
+          release = () => {
+            downloaded.add(book.path);
+            resolve();
+          };
+        }),
+    );
+    const { downloadAll } = setup();
+    const first = downloadAll(BOOKS, "Tout");
+    expect(bulkDownload.active).toBe(true);
+    expect(bulkDownload.total).toBe(3);
+    expect(bulkDownload.bytesTotal).toBe(3000);
+    expect(bulkDownload.bytesDone).toBe(0);
+
+    await downloadAll(BOOKS, "Tout");
+    expect(events().filter((name) => name === "offline_download_started")).toHaveLength(1);
+
+    release();
+    await first;
+    expect(bulkDownload.active).toBe(false);
+    expect(bulkDownload.done).toBe(3);
+    expect(bulkDownload.bytesDone).toBe(3000);
   });
 });

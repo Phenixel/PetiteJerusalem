@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { SIDOUR_PATH, isSidourPath } from "../../config/navSections";
 import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from "vue";
 import { HDate } from "@hebcal/core";
 import { useRoute, useRouter, onBeforeRouteLeave } from "vue-router";
@@ -171,16 +172,9 @@ const {
 // navigation + metadata between the two.
 const isEtudeRoute = computed(() => route.params.corpus !== undefined);
 /** Corpus ayant leur page de bibliothèque (route `study-corpus`) : le retour
- * y ramène, plutôt qu'à l'accueil de la bibliothèque. */
-const LIBRARY_CORPORA = new Set([
-  "tehilim",
-  "michna",
-  "talmud",
-  "tanakh",
-  "moadim",
-  "brahot",
-  "sidour",
-]);
+ * y ramène, plutôt qu'à l'accueil de la bibliothèque. Les textes de liturgie
+ * (Sidour, Moadim, Brahot) remontent, eux, à la page du Sidour. */
+const LIBRARY_CORPORA = new Set(["tehilim", "michna", "talmud", "tanakh"]);
 const etudeEntry = computed<TextStudyJsonEntry | null>(() =>
   isEtudeRoute.value
     ? entryByCorpusSlug(String(route.params.corpus), String(route.params.slug))
@@ -607,9 +601,13 @@ function isCurrentTextPath(path: string): boolean {
   return path === base || path.startsWith(`${base}/`);
 }
 
-/** La bibliothèque du corpus lu (Tehilim, Talmud…), à défaut son accueil. */
+/**
+ * La bibliothèque du corpus lu (Tehilim, Talmud…), à défaut son accueil ; le
+ * Sidour pour un texte de liturgie.
+ */
 function libraryLocation(): string {
   const corpus = isEtudeRoute.value ? String(route.params.corpus) : "";
+  if (isSidourPath(`/bibliotheque/${corpus}`)) return SIDOUR_PATH;
   return LIBRARY_CORPORA.has(corpus) ? `/bibliotheque/${corpus}` : "/bibliotheque";
 }
 

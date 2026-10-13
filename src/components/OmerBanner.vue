@@ -6,7 +6,7 @@ import { useNow } from "../composables/useNow";
 import { hebrewDateFor } from "../services/zmanimService";
 import { omerDay } from "../services/dailyCycles";
 import { analyticsService } from "../services/analyticsService";
-import AppIcon from "./icons/AppIcon.vue";
+import CardArt from "./CardArt.vue";
 
 /**
  * Le compte du 'Omer, les quarante-neuf soirs où il se dit.
@@ -20,6 +20,9 @@ import AppIcon from "./icons/AppIcon.vue";
  * le compte dit le soir vaut pour le jour qui vient de s'ouvrir, et c'est
  * celui-là qu'un calendrier nomme jusqu'au lendemain soir. D'où hebrewDateFor,
  * qui tient compte de l'heure, et le minuteur qui la suit.
+ *
+ * Il porte la gerbe du 'Omer dans son coin (voir CardArt) : une carte mise
+ * en avant porte son objet, et pas d'icône à gauche qui le redise.
  */
 const { t, locale } = useI18n();
 const { place } = useZmanimLocation();
@@ -45,20 +48,18 @@ const compte = computed(() => {
   <RouterLink
     v-if="jour !== null"
     to="/bibliotheque/sidour/arvit"
-    class="card card-hover flex items-center justify-between gap-3 p-4 group"
+    class="card card-hover group relative mt-1 flex items-center justify-between gap-3 p-4 pe-20"
     @click="analyticsService.capture('omer_opened', { source: 'home', day: jour })"
   >
-    <span class="flex min-w-0 items-center gap-3">
-      <AppIcon name="hourglass" :size="20" class="shrink-0 text-primary" />
-      <span class="min-w-0">
-        <span
-          class="block font-medium leading-snug text-text-primary transition-colors group-hover:text-primary"
-        >
-          {{ compte }}
-        </span>
-        <span class="block text-xs text-text-secondary">
-          {{ restants > 0 ? t("home.omer.remaining", { n: restants }) : t("home.omer.last") }}
-        </span>
+    <CardArt :art="{ kind: 'omer' }" :scale="0.5" surface="plain" />
+    <span class="relative min-w-0">
+      <span
+        class="block font-medium leading-snug text-text-primary transition-colors group-hover:text-primary"
+      >
+        {{ compte }}
+      </span>
+      <span class="block text-xs text-text-secondary">
+        {{ restants > 0 ? t("home.omer.remaining", { n: restants }) : t("home.omer.last") }}
       </span>
     </span>
   </RouterLink>
