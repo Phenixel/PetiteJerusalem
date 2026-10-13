@@ -82,6 +82,15 @@ export const APP_LINK_PATHS = [
 ];
 
 /**
+ * Les pages du site qui doivent rester au navigateur, même app installée :
+ * `/sondage/:id` est l'adresse que suivent les versions de l'app qui ne
+ * savent pas afficher un sondage (voir pollPageUrl dans
+ * src/services/announcements.ts). Revendiquée par l'app, elle la rouvrirait
+ * sur une page sans les choix. Le test de couverture les met à part.
+ */
+export const BROWSER_ONLY_PATHS = ["/sondage"];
+
+/**
  * Les chemins que l'app connaît depuis trop peu pour être confiés à iOS.
  *
  * Le fichier `apple-app-site-association` est servi par le site : il vaut

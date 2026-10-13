@@ -15,6 +15,7 @@ import {
   APP_ID,
   APP_LINK_DOMAIN,
   APP_LINK_PATHS,
+  BROWSER_ONLY_PATHS,
   buildAndroidIntentFilter,
   buildAppleAppSiteAssociation,
   buildAssetLinks,
@@ -54,7 +55,9 @@ describe("liens d'application", () => {
     // Garde-fou : une lecture qui ne trouve plus rien rendrait le test toujours
     // vert (routes.ts renommé, écriture des `path:` changée).
     expect(paths.length).toBeGreaterThan(15);
-    const uncovered = paths.filter((path) => !isAppLinkPath(path));
+    const uncovered = paths.filter(
+      (path) => !isAppLinkPath(path) && !BROWSER_ONLY_PATHS.includes(path),
+    );
     expect(
       uncovered,
       `Routes absentes de APP_LINK_PATHS (scripts/lib/app-links.mjs) : leurs liens s'ouvriraient dans le navigateur au lieu de l'app.`,
@@ -90,6 +93,8 @@ describe("liens d'application", () => {
       "/fonts/noto-serif-hebrew-var.woff2",
       "/.well-known/assetlinks.json",
       "/sitemap.xml",
+      // La page de vote des versions qui ne savent pas afficher un sondage.
+      "/sondage/abc123",
     ]) {
       expect(isAppLinkPath(path), `${path} ne doit pas ouvrir l'app`).toBe(false);
     }
