@@ -187,7 +187,7 @@ const isEtudeRoute = computed(() => route.params.corpus !== undefined);
 /** Corpus ayant leur page de bibliothèque (route `study-corpus`) : le retour
  * y ramène, plutôt qu'à l'accueil de la bibliothèque. Les textes de liturgie
  * (Sidour, Moadim, Brahot) remontent, eux, à la page du Sidour. */
-const LIBRARY_CORPORA = new Set(["tehilim", "michna", "talmud", "tanakh"]);
+const LIBRARY_CORPORA = new Set(["tehilim", "michna", "talmud", "tanakh", "moussar"]);
 const etudeEntry = computed<TextStudyJsonEntry | null>(() =>
   isEtudeRoute.value
     ? entryByCorpusSlug(String(route.params.corpus), String(route.params.slug))

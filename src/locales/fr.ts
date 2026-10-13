@@ -1583,6 +1583,10 @@ const fr = {
       daf: "Daf {daf}",
       dafRange: "Daf {from} à {to}",
       chapterDaf: "{chapter} · {daf}",
+      // Moussar : la hakdama d'une porte de 'Hovot Halévavot, un sujet du
+      // Pélé Yoets (son numéro dans le livre, son nom hébreu).
+      introduction: "Introduction",
+      topic: "Sujet {n} : {title}",
     },
     // Liens de bas de page des lectures publiques de la bibliothèque.
     links: {
@@ -1943,7 +1947,7 @@ const fr = {
       chiourim: "Chiourim",
       sharing: "Partage",
     },
-    subtitle: "Lisez et étudiez les textes : Tehilim, Michna, Talmud et Tanakh.",
+    subtitle: "Lisez et étudiez les textes : Tehilim, Michna, Talmud, Tanakh et Moussar.",
     searchPlaceholder: "Rechercher un texte…",
     searchAllPlaceholder: "Rechercher dans tous les textes…",
     noResults: "Aucun texte ne correspond à votre recherche.",
@@ -1985,6 +1989,7 @@ const fr = {
       mishna: "Michna",
       talmud: "Talmud",
       tanakh: "Tanakh",
+      moussar: "Moussar",
       sidour: "Sidour",
       moadim: "Moadim",
       brahot: "Brahot",
@@ -1994,10 +1999,13 @@ const fr = {
       michnaDesc: "Les six sédarim de la Michna, traité par traité, chapitre par chapitre.",
       talmudDesc: "La Guemara : les traités du Talmud Bavli, pour avancer daf après daf.",
       tanakhDesc: "La Torah paracha par paracha, les Neviim et les Ketouvim.",
+      moussarDesc:
+        "Les livres de moussar : les dix portes de 'Hovot Halévavot, dont le Chaar Habita'hon, et le Pélé Yoets, sujet par sujet.",
       tehilimSearch: "Rechercher un tehilim…",
       michnaSearch: "Rechercher une michna…",
       talmudSearch: "Rechercher un traité du Talmud…",
       tanakhSearch: "Rechercher une paracha ou un livre…",
+      moussarSearch: "Rechercher une porte ou une lettre…",
     },
   },
   watch: {

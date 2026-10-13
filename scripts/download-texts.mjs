@@ -17,10 +17,24 @@ const ROOT = resolve(__dirname, '..');
 const OUT = resolve(ROOT, 'public/texts');
 const GCS = 'https://storage.googleapis.com/sefaria-export/json';
 
-// `--only=tanakh` (ou tehilim/mishna/talmud/rashi) pour ne régénérer qu'un
-// corpus. `tefila` n'est jamais du lot par défaut : ses fichiers sont mis en
-// forme à la main après téléchargement, il faut le demander nommément (voir
-// plus bas).
+// `--only=tanakh` (ou tehilim/mishna/talmud/rashi/moussar) pour ne régénérer
+// qu'un corpus. `tefila` n'est jamais du lot par défaut : ses fichiers sont
+// mis en forme à la main après téléchargement, il faut le demander nommément
+// (voir plus bas).
+//
+// Le moussar (`--only=moussar`, et du lot par défaut : rien n'y est retouché
+// à la main) écrit un fichier par entrée du catalogue, public/texts/moussar/
+// <id>.json, au format { title, sections: [{ n, title?, he }] }. `n` est le
+// numéro de la section, celui de l'adresse (/bibliotheque/moussar/<slug>/<n>)
+// et celui qu'un cours cite :
+//   - une porte de 'Hovot Halévavot : 0 pour son introduction (la hakdama),
+//     puis 1 à n pour ses chapitres, pour que le numéro de section soit le
+//     numéro du chapitre ;
+//   - l'introduction de l'auteur : une seule section, 1, comme tout texte
+//     d'un seul tenant ;
+//   - le Pélé Yoets : le numéro du sujet dans tout le livre (1 à 391, celui
+//     des références « Pele Yoetz 11 »), si bien que la lettre Beth porte les
+//     sections 22 à 41 ; `title` y donne le nom du sujet, en hébreu.
 const onlyArg = process.argv.find(a => a.startsWith('--only='));
 const ONLY = onlyArg ? onlyArg.split('=')[1] : null;
 const shouldRun = corpus => !ONLY || ONLY === corpus;
@@ -30,6 +44,7 @@ mkdirSync(`${OUT}/talmud`, { recursive: true });
 mkdirSync(`${OUT}/tanakh`, { recursive: true });
 mkdirSync(`${OUT}/rashi`, { recursive: true });
 mkdirSync(`${OUT}/tefila`, { recursive: true });
+mkdirSync(`${OUT}/moussar`, { recursive: true });
 
 // ---------- Utilities ----------
 
@@ -615,6 +630,137 @@ if (shouldRun('rashi')) {
       he: groups,
     }), 'utf8');
     console.log(`  ✓ Rachi ${entry.name} (${commented} versets commentés) → rashi/${entry.id}.json`);
+  }
+}
+
+// ---------- Moussar : 'Hovot Halévavot et Pélé Yoets ----------
+//
+// Le rayon d'étude du moussar (voir l'en-tête pour le format et la
+// numérotation des sections). Le texte garde la ponctuation de sa source ;
+// seules les balises tombent, et un <br> y va à la ligne.
+
+if (shouldRun('moussar')) {
+  console.log('\n=== Moussar (\'Hovot Halévavot, Pélé Yoets) ===');
+
+  const moussarEntries = new Map(
+    textStudies.filter(t => t.type === 'Moussar').map(t => [t.id, t]),
+  );
+  /** Les paragraphes d'un passage, nettoyés, un <br> devenant une ligne. */
+  const moussarLines = paragraphs => (Array.isArray(paragraphs) ? paragraphs : [])
+    .flatMap(p => (typeof p === 'string' ? p.split(/<br\s*\/?>/i) : []))
+    .map(line => stripHtml(line).replace(/\s{2,}/g, ' ').trim())
+    .filter(Boolean);
+  const writeMoussar = (id, sections) => {
+    const entry = moussarEntries.get(id);
+    if (!entry) throw new Error(`entrée ${id} absente du catalogue`);
+    const empty = sections.filter(s => s.he.length === 0).map(s => s.n);
+    if (empty.length) throw new Error(`${entry.name} : sections vides (${empty.join(', ')})`);
+    // Le catalogue annonce le nombre de sections (liste des chapitres,
+    // découpage du partage) : un écart veut dire que la source a bougé.
+    if (sections.length !== entry.totalSections) {
+      throw new Error(
+        `${entry.name} : ${sections.length} sections, le catalogue en annonce ${entry.totalSections}`,
+      );
+    }
+    writeFileSync(`${OUT}/moussar/${id}.json`, JSON.stringify({ title: entry.name, sections }), 'utf8');
+    console.log(`  ✓ ${entry.name} → moussar/${id}.json (${sections.length} sections)`);
+  };
+
+  // 'Hovot Halévavot : l'introduction de l'auteur (400), puis les dix portes
+  // (401 à 410), dans l'ordre du livre. Les ajouts de la fin (« Addenda » :
+  // poème, admonition, prière) n'en font pas partie.
+  const HOVOT_PORTES = [
+    'First Treatise on Unity',
+    'Second Treatise on Examination',
+    'Third Treatise on Service of God',
+    'Fourth Treatise on Trust',
+    'Fifth Treatise on Devotion',
+    'Sixth Treatise on Submission',
+    'Seventh Treatise on Repentance',
+    'Eighth Treatise on Examining the Soul',
+    'Ninth Treatise on Abstinence',
+    'Tenth Treatise on Devotion to God',
+  ];
+  try {
+    const data = await withRetry(
+      () => fetchJson(`${GCS}/Jewish Thought/Rishonim/Duties of the Heart/Duties of the Heart/Hebrew/merged.json`),
+      'Duties of the Heart',
+    );
+    const text = data.text ?? {};
+    writeMoussar(400, [{ n: 1, he: moussarLines(text['Introduction of the Author']) }]);
+    HOVOT_PORTES.forEach((key, i) => {
+      const porte = text[key];
+      if (!porte || !Array.isArray(porte[''])) throw new Error(`porte absente : ${key}`);
+      writeMoussar(401 + i, [
+        { n: 0, he: moussarLines(porte.Introduction) },
+        ...porte[''].map((chapitre, c) => ({ n: c + 1, he: moussarLines(chapitre) })),
+      ]);
+    });
+  } catch (e) {
+    console.error(`  ✗ 'Hovot Halévavot: ${e.message}`);
+  }
+
+  // Pélé Yoets : 391 sujets rangés par lettre (420 à 441), chacun sous son
+  // numéro dans le livre. Le premier sujet d'une lettre s'ouvre sur
+  // « אות ב: » (la lettre ש s'écrit « אות : »), son premier paragraphe sur le
+  // nom du sujet, en gras ou suivi de « - ». Les sujets 392 à 403 de la
+  // source sont vides, le « Supplement » n'est pas du livre.
+  const PELE_LETTRES = [
+    ['א', 1], ['ב', 22], ['ג', 42], ['ד', 58], ['ה', 73], ['ו', 100], ['ז', 104],
+    ['ח', 118], ['ט', 149], ['י', 159], ['כ', 179], ['ל', 199], ['מ', 208],
+    ['נ', 238], ['ס', 256], ['ע', 270], ['פ', 292], ['צ', 301], ['ק', 311],
+    ['ר', 326], ['ש', 341], ['ת', 376],
+  ];
+  const PELE_DERNIER = 391;
+  // Les sujets dont la source n'écrit le nom ni en gras ni avant un « - ».
+  const PELE_TITRES = { 245: 'נדה' };
+  const LETTRE = /^אות\s*([א-ת]?)\s*:\s*/;
+  const peleTitle = (n, first) => {
+    const bold = first.trim().match(/^(?:אות\s*[א-ת]?\s*:\s*)?<b>([^<]+)<\/b>/);
+    const plain = stripHtml(first).replace(LETTRE, '');
+    const title = bold
+      ? bold[1].replace(LETTRE, '').trim()
+      : plain.includes(' - ')
+        ? plain.slice(0, plain.indexOf(' - ')).trim()
+        : PELE_TITRES[n];
+    if (!title || title.length > 40 || !plain.startsWith(title)) {
+      throw new Error(`sujet ${n} : nom introuvable (« ${plain.slice(0, 40)} »)`);
+    }
+    return title;
+  };
+  try {
+    const data = await withRetry(
+      () => fetchJson(`${GCS}/Musar/Acharonim/Pele Yoetz/Hebrew/merged.json`),
+      'Pele Yoetz',
+    );
+    const sujets = data.text?.[''] ?? [];
+    if (sujets.slice(PELE_DERNIER).some(s => moussarLines(s).length > 0)) {
+      throw new Error(`des sujets au-delà du ${PELE_DERNIER}e ne sont plus vides`);
+    }
+    const debuts = new Map(PELE_LETTRES.map(([lettre, debut]) => [debut, lettre]));
+    // Chaque lettre s'ouvre là où on l'attend, et nulle part ailleurs.
+    for (let n = 1; n <= PELE_DERNIER; n++) {
+      const first = stripHtml(String(sujets[n - 1]?.[0] ?? ''));
+      const m = first.match(LETTRE);
+      const attendue = debuts.get(n);
+      if (n === 1 ? m : Boolean(m) !== (attendue !== undefined)) {
+        throw new Error(`sujet ${n} : début de lettre inattendu (« ${first.slice(0, 20)} »)`);
+      }
+      if (m && m[1] && m[1] !== attendue) {
+        throw new Error(`sujet ${n} : lettre ${m[1]}, ${attendue} attendue`);
+      }
+    }
+    PELE_LETTRES.forEach(([, debut], i) => {
+      const fin = i + 1 < PELE_LETTRES.length ? PELE_LETTRES[i + 1][1] - 1 : PELE_DERNIER;
+      const sections = [];
+      for (let n = debut; n <= fin; n++) {
+        const sujet = sujets[n - 1] ?? [];
+        sections.push({ n, title: peleTitle(n, String(sujet[0] ?? '')), he: moussarLines(sujet) });
+      }
+      writeMoussar(420 + i, sections);
+    });
+  } catch (e) {
+    console.error(`  ✗ Pélé Yoets: ${e.message}`);
   }
 }
 

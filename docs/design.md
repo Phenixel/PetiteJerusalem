@@ -1638,6 +1638,38 @@ le livre, c'est retrouver le jour qu'il est. Une adresse peut nommer le jour
 (`?jour=hoshana-rabba`) : le lien de la page de Hochaana Rabba, les anciennes
 pages d'un jour, un passage partagé.
 
+### L'étagère de la bibliothèque : des volumes reliés, hors thème
+
+L'accueil de la bibliothèque pose ses grands rayons d'étude comme des livres
+sur une planche (`LibraryShelf.vue`) : Tehilim, Michna, Talmud, Tanakh,
+Moussar. La liturgie n'y est pas : elle a sa page, le Sidour.
+
+Cinq volumes au plus sur la planche : au-delà, le titre de la couverture
+devient trop petit pour se lire sur un téléphone. Un rayon de plus se pose
+donc sur une planche nouvelle, plutôt qu'en sixième volume.
+
+Les reliures ne suivent pas le thème choisi : ce sont des objets, de teintes
+chaudes et mates de la même famille (terre cuite, bronze, brun), identiques en
+mode sombre. Un volume nouveau prend une teinte de cette famille qui ne se
+confond pas avec ses voisins :
+
+| Rayon   | Reliure   |
+| ------- | --------- |
+| Tehilim | `#96604a` |
+| Michna  | `#7d6a4c` |
+| Talmud  | `#6d5743` |
+| Tanakh  | `#84483f` |
+| Moussar | `#86622f` |
+
+Le Moussar ('Hovot Halévavot, Pélé Yoets) est un rayon d'étude : il a sa page
+de liste et son volume sur la planche, ses marque-pages et sa reprise de
+lecture. Il ne se propose pas au partage de lecture, comme la liturgie
+(`isShareable` dans `content/etudeTexts.ts`). Ses numéros de section sont ceux
+qu'un cours cite, et donc ceux de ses adresses : une porte de 'Hovot
+Halévavot s'ouvre sur son introduction, la section 0, et ses chapitres gardent
+leur numéro ; un sujet du Pélé Yoets garde son numéro dans tout le livre (la
+lettre Beth va du 22 au 41). Tenu par `moussar.test.ts`.
+
 ## 3. Les rayons
 
 Deux familles, et elles vont en sens contraire. Les **surfaces** sont taillées
