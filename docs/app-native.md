@@ -596,6 +596,61 @@ branchent :
 La teinte du volet est l'or des pierres de l'icône (`#C79A3B`), déclarée aux
 deux endroits.
 
+La notification de lecture des cours (ci-dessous) prend la même silhouette, par
+une ressource qui remplace celle du plugin.
+
+## Écoute des cours en arrière-plan
+
+Un cours s'écoute comme une musique : il continue écran éteint ou app quittée,
+s'affiche dans la notification d'Android (et la carte du lecteur des réglages
+rapides, l'écran verrouillé) comme sur l'écran verrouillé et le centre de
+contrôle d'iOS, et s'y commande sans rouvrir l'app (lecture, pause, reculer de
+15 secondes, avancer de 30, cours précédent et suivant de la file, position).
+Le lecteur (`useAudioPlayer`) publie ce qui joue à `src/services/mediaSession.ts`,
+qui le transmet au système :
+
+- **site** : l'API Media Session du navigateur, comme avant ;
+- **Android** : la webview n'en fait rien. `@capgo/capacitor-media-session`
+  tient une vraie session média native, dans un service de premier plan de
+  type `mediaPlayback` qui garde aussi la lecture en vie. C'est l'état de
+  lecture qui ouvre et ferme la notification : « playing » ou « paused » la
+  montre, « none » (le lecteur fermé, ou « Arrêter » dans la notification) la
+  retire ;
+- **iOS** : le plugin repasse, à dessein, par l'API Media Session du WKWebView,
+  que le système relaie à l'écran verrouillé. Il y faut le mode d'arrière-plan
+  `audio`, sans lequel iOS coupe le son dès que l'app passe en arrière-plan.
+
+Ce que le natif exige, et que posent les scripts :
+
+- `setup-android.mjs` déclare `FOREGROUND_SERVICE_MEDIA_PLAYBACK` : le plugin
+  ne déclare que `FOREGROUND_SERVICE`, et depuis Android 14 démarrer son
+  service sans l'autre lève une `SecurityException`, l'app se fermerait à la
+  première lecture ;
+- `native/android/` remplace deux icônes du plugin par des ressources de même
+  nom : `ic_baseline_volume_up_24` (la petite icône : `ic_stat_pj` au lieu
+  d'un haut-parleur générique) et `ic_baseline_replay_30_24` (le bouton
+  « reculer », sans le « 30 » qui mentirait) ;
+- `setup-ios.mjs` ajoute `audio` aux `UIBackgroundModes`, y compris dans un
+  Info.plist qui avait déjà la clé.
+
+`src/__tests__/mediaSessionAndroid.test.ts` tient ces trois points ;
+`src/__tests__/mediaSessionNative.test.ts` tient le dialogue avec le plugin
+(ce qui part, les commandes reçues, la notification retirée à la fermeture et
+pas rouverte par la pause qui suit).
+
+La pochette affichée par le système est celle de l'app, dessinée en image
+(`components/chiourim/coverArtwork.ts`) : les pochettes de l'app sont du CSS,
+le système veut une image.
+
+Deux limites, propres au plugin : le canal de notification s'appelle
+« Playback » dans les réglages d'Android, et le texte de la notification est
+« artiste - album » (ici « le rav · la série - Petite Jérusalem »).
+
+À vérifier sur un appareil avant chaque publication qui touche au lecteur :
+lancer un cours, verrouiller l'écran, le commander depuis la notification (ou
+l'écran verrouillé), passer au suivant, fermer le lecteur et voir la
+notification partir.
+
 ## Liens du site qui ouvrent l'app
 
 Un lien vers `petite-jerusalem.fr` (une session partagée reçue par message,

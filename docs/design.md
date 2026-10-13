@@ -1430,6 +1430,12 @@ parcourt, on lance, on reprend.
   initiales de la série. Un rav a la même reliure, ronde. Hors thème, identique en mode sombre, en aplats, le titre
   crème à 4,5:1 au moins sur chaque teinte (`components/chiourim/cover.ts`,
   tenu par `chiourCover.test.ts`).
+- **Hors de l'app, comme une musique.** Le cours qui joue s'affiche dans la
+  notification d'Android et sur l'écran verrouillé d'iOS, avec sa pochette :
+  la même reliure, dessinée en image (`components/chiourim/coverArtwork.ts`),
+  son titre, le rav et la série. Les commandes y sont celles du lecteur
+  (reculer de 15 secondes, avancer de 30, cours précédent et suivant). Voir
+  `docs/app-native.md`, « Écoute des cours en arrière-plan ».
 - **Les titres gardent leur langue.** Un titre, un nom de série ou de rav,
   une description sont écrits par les auteurs : en hébreu dans l'interface
   française, en français dans l'interface hébraïque. Ils portent
