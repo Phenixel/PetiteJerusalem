@@ -32,6 +32,10 @@ import PlayerSeek from "./PlayerSeek.vue";
 import PlayerSpeed from "./PlayerSpeed.vue";
 import ShareModal from "../ShareModal.vue";
 import { SITE_URL } from "../../config/site";
+import { FULL_CLIP, SHEET_EASING, barClip, motionAllowed } from "./sheetMotion";
+
+/** Le plein écran a fini de se réduire en barre : GlobalAudioPlayer peut le démonter. */
+const emit = defineEmits<{ closed: [] }>();
 
 const { t, locale } = useI18n();
 const router = useRouter();
@@ -47,13 +51,20 @@ useOverlay(player.sheetOpen, player.closeSheet);
 // le focus entre sur « Réduire », ne sort pas du lecteur avec Tab, et revient
 // à la barre du bas quand on le referme.
 const root = ref<HTMLElement | null>(null);
+const content = ref<HTMLElement | null>(null);
 const collapseButton = ref<HTMLButtonElement | null>(null);
 let overflowBefore = "";
 onMounted(() => {
   overflowBefore = document.documentElement.style.overflow;
   document.documentElement.style.overflow = "hidden";
   document.addEventListener("keydown", onKeydown);
+  root.value?.addEventListener("touchstart", onTouchStart, { passive: true });
+  // Non passif : pendant le geste, la page ne défile pas sous le doigt.
+  root.value?.addEventListener("touchmove", onTouchMove, { passive: false });
+  root.value?.addEventListener("touchend", onTouchEnd);
+  root.value?.addEventListener("touchcancel", onTouchEnd);
   collapseButton.value?.focus({ preventScroll: true });
+  growFromBar();
 });
 onBeforeUnmount(() => {
   document.documentElement.style.overflow = overflowBefore;
@@ -63,6 +74,125 @@ onBeforeUnmount(() => {
     document.querySelector<HTMLElement>("[data-player-open]")?.focus({ preventScroll: true }),
   );
 });
+
+// --- La barre qui s'agrandit, le plein écran qui redevient la barre ---
+const closing = ref(false);
+/** De combien le doigt a tiré le plein écran vers le bas, à l'instant du lâcher. */
+let dragOffset = 0;
+
+function growFromBar() {
+  if (!root.value || !motionAllowed()) return;
+  root.value.animate([{ clipPath: barClip() }, { clipPath: FULL_CLIP }], {
+    duration: 420,
+    easing: SHEET_EASING,
+  });
+  content.value?.animate(
+    [
+      { opacity: 0, transform: "translateY(24px)" },
+      { opacity: 1, transform: "none" },
+    ],
+    { duration: 320, delay: 90, easing: "ease-out", fill: "backwards" },
+  );
+}
+
+/** Se réduit jusqu'à la barre, d'où qu'on le ferme (flèche, Échap, retour, geste), puis s'en va. */
+async function shrinkToBar() {
+  closing.value = true;
+  const el = root.value;
+  if (!el || !motionAllowed()) {
+    emit("closed");
+    return;
+  }
+  content.value?.animate([{ opacity: 1 }, { opacity: 0 }], {
+    duration: 160,
+    easing: "ease-in",
+    fill: "forwards",
+  });
+  const from = `translateY(${dragOffset}px)`;
+  el.style.transform = "";
+  try {
+    await el.animate(
+      [
+        { clipPath: FULL_CLIP, transform: from },
+        { clipPath: barClip(), transform: "translateY(0px)" },
+      ],
+      { duration: 360, easing: SHEET_EASING, fill: "forwards" },
+    ).finished;
+  } catch {
+    // Animation interrompue : on ferme quand même.
+  }
+  emit("closed");
+}
+
+watch(
+  () => player.sheetOpen.value,
+  (open) => {
+    if (!open && !closing.value) void shrinkToBar();
+  },
+);
+
+// --- Téléphone : tirer le plein écran vers le bas le referme ---
+// Le geste ne part que du haut de la page (sinon, c'est la page qui défile),
+// et pas d'un curseur (la barre de lecture se tire de côté). Le plein écran
+// suit le doigt ; lâché assez bas, ou d'un coup sec, il se réduit en barre,
+// sinon il remonte.
+const DRAG_SLOP = 8;
+const DRAG_CLOSE = 120;
+const FLICK_SPEED = 0.6; // px/ms
+let touchStart: { x: number; y: number; atTop: boolean } | null = null;
+let dragging = false;
+let lastMove = { y: 0, time: 0 };
+let speed = 0;
+
+function onTouchStart(event: TouchEvent) {
+  const touch = event.touches[0];
+  const target = event.target as HTMLElement | null;
+  if (closing.value || !touch || target?.closest("input, [role='slider']")) {
+    touchStart = null;
+    return;
+  }
+  touchStart = { x: touch.clientX, y: touch.clientY, atTop: (root.value?.scrollTop ?? 0) <= 0 };
+  dragging = false;
+  dragOffset = 0;
+  speed = 0;
+  lastMove = { y: touch.clientY, time: event.timeStamp };
+}
+
+function onTouchMove(event: TouchEvent) {
+  const touch = event.touches[0];
+  if (!touchStart || !touch || !root.value) return;
+  const dy = touch.clientY - touchStart.y;
+  if (!dragging) {
+    const vertical = Math.abs(dy) > Math.abs(touch.clientX - touchStart.x);
+    if (!touchStart.atTop || dy <= DRAG_SLOP || !vertical) return;
+    dragging = true;
+  }
+  event.preventDefault();
+  dragOffset = Math.max(0, dy - DRAG_SLOP);
+  const elapsed = event.timeStamp - lastMove.time;
+  if (elapsed > 0) speed = (touch.clientY - lastMove.y) / elapsed;
+  lastMove = { y: touch.clientY, time: event.timeStamp };
+  root.value.style.transform = `translateY(${dragOffset}px)`;
+}
+
+function onTouchEnd() {
+  touchStart = null;
+  if (!dragging || !root.value) return;
+  dragging = false;
+  if (dragOffset > DRAG_CLOSE || speed > FLICK_SPEED) {
+    player.closeSheet();
+    return;
+  }
+  const from = `translateY(${dragOffset}px)`;
+  root.value.style.transform = "";
+  dragOffset = 0;
+  if (motionAllowed()) {
+    root.value.animate([{ transform: from }, { transform: "translateY(0px)" }], {
+      duration: 220,
+      easing: SHEET_EASING,
+    });
+  }
+}
 
 const FOCUSABLE =
   "button:not([disabled]), a[href], input:not([disabled]), [tabindex]:not([tabindex='-1'])";
@@ -177,6 +307,7 @@ const shareUrl = computed(() =>
   <div
     ref="root"
     class="player-sheet fixed inset-0 z-[58] overflow-y-auto overscroll-contain"
+    :class="{ 'pointer-events-none': closing }"
     :style="{ backgroundColor: tone, color: COVER_INK }"
     role="dialog"
     aria-modal="true"
@@ -184,6 +315,7 @@ const shareUrl = computed(() =>
   >
     <div
       v-if="track"
+      ref="content"
       class="mx-auto w-full max-w-6xl px-6 pb-[calc(2rem+var(--safe-bottom,0px))] pt-[calc(0.75rem+var(--safe-top,0px))]"
     >
       <!-- En tête : réduire, d'où vient l'écoute, partager -->

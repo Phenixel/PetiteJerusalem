@@ -42,8 +42,14 @@ const left = computed(() => {
     "
     @click="playFrom(queue, chiour, 'reprise')"
   >
-    <span class="relative block">
-      <ChiourCover :seed="cover.seed" :label="cover.label" size="md" class="shadow-card" />
+    <!-- Au survol, toute la pochette se soulève, son ombre avec elle (comme SerieTile) -->
+    <span class="relative block transition-transform duration-200 group-hover:-translate-y-1">
+      <ChiourCover
+        :seed="cover.seed"
+        :label="cover.label"
+        size="md"
+        class="shadow-card transition-shadow duration-200 group-hover:shadow-card-hover"
+      />
       <!-- Le cours qui joue : ses barres dans l'angle, comme dans les listes -->
       <span
         v-if="current"
