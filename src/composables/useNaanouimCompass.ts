@@ -1,6 +1,5 @@
 import { computed, ref } from "vue";
 import { analyticsService } from "../services/analyticsService";
-import { requestCompassPermission } from "./useCompassHeading";
 
 /**
  * Le cadran des na'anou'im, ouvert depuis le titre des brahot du loulav, les
@@ -30,9 +29,6 @@ export const naanouimCompassOpen = computed(() => open.value);
 export type NaanouimCompassSource = "title" | "rubric" | "sidour";
 
 export function openNaanouimCompass(source: NaanouimCompassSource): void {
-  // La permission de l'orientation se demande dans le geste qui ouvre la
-  // fenêtre, comme pour la boussole du Kotel (voir openKotelCompass).
-  void requestCompassPermission();
   open.value = true;
   analyticsService.capture("naanouim_compass_opened", { source });
 }

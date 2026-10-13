@@ -113,7 +113,7 @@ describe("boussole du Kotel : la permission", () => {
     oriente({ webkitCompassHeading: 90 });
     await attend();
 
-    // La fenêtre a attendu la même réponse, sans redemander.
+    // Une seule demande : pas de second appui.
     expect(requestPermission).toHaveBeenCalledTimes(1);
     expect(boutonActiver()).toBeUndefined();
     expect(document.body.textContent).toContain(fr.textReading.kotel.live);

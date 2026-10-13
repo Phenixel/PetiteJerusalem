@@ -1,6 +1,5 @@
 import { computed, ref } from "vue";
 import { analyticsService } from "../services/analyticsService";
-import { requestCompassPermission } from "./useCompassHeading";
 
 /**
  * La boussole du Kotel, ouverte de trois endroits : le titre d'un passage qui
@@ -23,11 +22,6 @@ export const kotelCompassOpen = computed(() => open.value);
 export type KotelCompassSource = "title" | "menu" | "sidour";
 
 export function openKotelCompass(source: KotelCompassSource): void {
-  // La permission de l'orientation se demande ici, dans le geste même qui
-  // ouvre la fenêtre (iOS) : la fenêtre, montée à l'avance, n'en est
-  // prévenue qu'un tour de boucle plus tard, quand Safari ne voit plus le
-  // geste. Elle attendra cette réponse au lieu d'en réclamer une autre.
-  void requestCompassPermission();
   open.value = true;
   analyticsService.capture("kotel_compass_opened", { source });
 }

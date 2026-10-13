@@ -901,8 +901,8 @@ sans que rien ne le dise. Trois règles en sont sorties.
   l'orientation qu'après un geste ; la fenêtre la demandait un tour de boucle
   trop tard, Safari refusait sans rien demander, et il fallait toucher
   « Activer la boussole » juste après avoir touché « Direction du Kotel ».
-  `openKotelCompass` la demande désormais lui-même (comme le miroir des
-  téfilines demande la caméra), et la fenêtre attend cette réponse. Quand le
+  La fenêtre démarre désormais la boussole dans le geste même (un `watch`
+  synchrone, comme le miroir des téfilines pour la caméra). Quand le
   bouton reste nécessaire (un geste qui n'a pas porté), il se pose **sur le
   cadran éteint** (grisé, flou, la flèche retirée), et non sous lui : un
   cadran qui a l'air de marcher ne fait chercher aucun bouton, et sa flèche,

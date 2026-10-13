@@ -13,8 +13,8 @@ import { accuracyFromAndroidStatus, type CompassAccuracy } from "./compassReadin
  */
 
 interface PjCompassBridge {
-  /** Branche le magnétomètre ; `available` faux sur un appareil qui n'en a pas. */
-  start(): Promise<{ available: boolean }>;
+  /** Branche le magnétomètre (rien ne remonte sur un appareil qui n'en a pas). */
+  start(): Promise<void>;
   stop(): Promise<void>;
   /** L'étalonnage a changé : le statut de `SensorManager`, de -1 à 3. */
   addListener(

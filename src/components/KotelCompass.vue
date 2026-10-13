@@ -40,7 +40,7 @@ const {
   tilt,
   start,
   stop,
-} = useCompassHeading();
+} = useCompassHeading({ accuracy: true });
 
 const live = computed(() => compassStatus.value === "live");
 
@@ -100,7 +100,7 @@ const TICKS = [0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330];
 
 /**
  * iOS ne donne l'orientation qu'après un geste. La permission se demande
- * dans celui qui ouvre la fenêtre (openKotelCompass) ; le bouton ne reste
+ * dans celui qui ouvre la fenêtre (voir le `watch` plus bas) ; le bouton ne reste
  * que si ce geste n'a pas suffi. Il se pose alors sur le cadran éteint, et
  * non sous lui : un cadran qui a l'air de marcher ne fait chercher aucun
  * bouton, et la flèche, figée nord en haut, enverrait prier de travers
@@ -116,12 +116,13 @@ const locked = computed(() => compassStatus.value === "locked");
  * l'appareil n'y change rien.
  */
 const tiltStyle = computed(() => {
-  if (!live.value || tilt.value === null) return {};
+  if (!live.value || tilt.value === null) return "";
   const { x, y } = dialTilt(tilt.value);
-  return { transform: `rotateX(${x}deg) rotateY(${y}deg)` };
+  // Une chaîne et non un objet : à valeur égale (le cadran au plus fort de
+  // son inclinaison, la main qui tremble d'un degré), le cadran ne se
+  // redessine pas.
+  return `transform: rotateX(${x}deg) rotateY(${y}deg)`;
 });
-
-const flat = computed(() => tilt.value !== null && isFlat(tilt.value));
 
 /**
  * La précision, dessinée autour de la flèche : le secteur où le Kotel se
@@ -192,7 +193,17 @@ function openCalibration(): void {
  * en touchant « Calibrer », coupée quand le système demande moins
  * d'animations (le dessin du 8 reste, le téléphone posé à sa croisée).
  */
-const animateCalibration = computed(() => calibrating.value && !prefersLessMotion());
+const animateCalibration = computed(() => !prefersLessMotion());
+
+/** Le calibrage a pris : la précision est redevenue bonne. */
+const calibrated = computed(() => accuracy.value === "high");
+
+/** Ce que le calibrage dit de la précision, pendant qu'on fait le geste. */
+const calibrationText = computed(() => {
+  if (calibrated.value) return t("textReading.kotel.calibration.done");
+  if (accuracy.value === "unknown") return t("textReading.kotel.calibration.unknown");
+  return t("textReading.kotel.calibration.current", { level: accuracyLevel.value });
+});
 
 /** Le chemin du 8, couché : deux boucles qui se croisent au centre. */
 const EIGHT =
@@ -200,9 +211,9 @@ const EIGHT =
 
 /** Ce que la fenêtre dit du cadran, sous les chiffres. */
 const hint = computed(() => {
-  if (compassStatus.value === "live") return t("textReading.kotel.live");
+  if (live.value) return t("textReading.kotel.live");
   if (compassStatus.value === "denied") return t("textReading.kotel.compassDenied");
-  if (compassStatus.value === "locked") return t("textReading.kotel.locked");
+  if (locked.value) return t("textReading.kotel.locked");
   if (compassStatus.value === "unavailable") return t("textReading.kotel.fixed");
   return t("textReading.kotel.searching");
 });
@@ -215,7 +226,8 @@ const hint = computed(() => {
  */
 const flatText = computed(() => {
   if (!live.value) return null;
-  return flat.value ? t("textReading.kotel.flatOk") : t("textReading.kotel.flat");
+  const flat = tilt.value !== null && isFlat(tilt.value);
+  return flat ? t("textReading.kotel.flatOk") : t("textReading.kotel.flat");
 });
 
 const close = closeKotelCompass;
@@ -227,17 +239,21 @@ onUnmounted(closeKotelCompass);
 
 // La boussole n'écoute que la fenêtre ouverte : les événements d'orientation
 // arrivent plusieurs fois par seconde, ils n'ont rien à faire derrière une
-// page de texte fermée.
-watch(kotelCompassOpen, (open) => {
-  if (!open) {
-    stop();
-    calibrating.value = false;
-    return;
-  }
-  // La permission, là où elle se demande, est déjà partie avec le geste
-  // d'ouverture : start en attend la réponse.
-  void start();
-});
+// page de texte fermée. `flush: "sync"` : elle démarre dans le geste qui
+// ouvre la fenêtre, le seul où iOS accepte de demander la permission (voir
+// useCompassHeading).
+watch(
+  kotelCompassOpen,
+  (open) => {
+    if (!open) {
+      stop();
+      calibrating.value = false;
+      return;
+    }
+    void start();
+  },
+  { flush: "sync" },
+);
 </script>
 
 <template>
@@ -282,17 +298,11 @@ watch(kotelCompassOpen, (open) => {
         </ol>
         <p
           class="mt-4 flex items-center justify-center gap-2 text-sm font-medium"
-          :class="accuracy === 'high' ? 'text-primary' : 'text-text-secondary'"
+          :class="calibrated ? 'text-primary' : 'text-text-secondary'"
           aria-live="polite"
         >
-          <AppIcon v-if="accuracy === 'high'" name="circle-check" :size="16" />
-          {{
-            accuracy === "high"
-              ? t("textReading.kotel.calibration.done")
-              : accuracy === "unknown"
-                ? t("textReading.kotel.calibration.unknown")
-                : t("textReading.kotel.calibration.current", { level: accuracyLevel })
-          }}
+          <AppIcon v-if="calibrated" name="circle-check" :size="16" />
+          {{ calibrationText }}
         </p>
         <button type="button" class="btn btn-primary w-full mt-4" @click="calibrating = false">
           <AppIcon name="compass" :size="16" />
@@ -344,7 +354,11 @@ watch(kotelCompassOpen, (open) => {
               <!-- La précision : le secteur où se trouve le Kotel, de part
                    et d'autre de la flèche. -->
               <g v-if="wedgePath" class="kotel-rose" :style="spin(needleAngle)">
-                <path :d="wedgePath" class="kotel-spread" :class="`kotel-spread-${accuracy}`" />
+                <path
+                  :d="wedgePath"
+                  class="kotel-spread"
+                  :class="{ 'kotel-spread-low': accuracy === 'low' }"
+                />
               </g>
               <!-- La flèche du Kotel : le seul élément qui compte, tout le
                    reste du cadran n'est là que pour la situer. Éteinte tant
@@ -358,7 +372,7 @@ watch(kotelCompassOpen, (open) => {
             </svg>
           </div>
           <div v-if="locked" class="absolute inset-0 flex items-center justify-center">
-            <button type="button" class="btn btn-primary shadow-lg" @click="start">
+            <button type="button" class="btn btn-primary shadow-lg" @click="start(true)">
               <AppIcon name="compass" :size="16" />
               {{ t("textReading.kotel.enable") }}
             </button>

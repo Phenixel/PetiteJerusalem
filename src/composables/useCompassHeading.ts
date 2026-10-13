@@ -22,12 +22,13 @@ import { watchNativeCompassAccuracy } from "../services/nativeCompassAccuracy";
  * absolue, une permission refusée, tout cela ramène simplement au cadran fixe.
  *
  * iOS exige un geste de l'utilisateur : `DeviceOrientationEvent.requestPermission`
- * n'aboutit que depuis un clic. La permission se demande donc dans le geste
- * même qui ouvre la fenêtre (`requestCompassPermission`, appelé par
- * `openKotelCompass`) : un tour de boucle plus tard, Safari la refuse sans
- * rien demander, et la fenêtre réclamait un second appui sur « Activer la
- * boussole » alors qu'on venait d'appuyer. Le bouton ne reste que pour le cas
- * où ce premier geste n'a pas suffi (`locked`).
+ * n'aboutit que depuis un clic. Les fenêtres démarrent donc la boussole
+ * dans le geste même qui les ouvre (un `watch` synchrone, comme le miroir des
+ * téfilines), et `start` appelle `requestPermission` avant tout `await` : un
+ * tour de boucle plus tard, Safari refuse sans rien demander, et la fenêtre
+ * réclamait un second appui sur « Activer la boussole » alors qu'on venait
+ * d'appuyer. Le bouton ne reste que pour le cas où ce premier geste n'a pas
+ * suffi (`locked`).
  *
  * Avec le cap viennent deux choses que le cadran montre aussi : la précision
  * estimée (Safari la donne avec le cap, l'app Android la lit au système), et
@@ -63,54 +64,6 @@ function orientationApi(): OrientationPermission | undefined {
   return (globalThis as { DeviceOrientationEvent?: OrientationPermission }).DeviceOrientationEvent;
 }
 
-/** Vrai si la plateforme réclame un geste avant de donner l'orientation. */
-export function compassNeedsPermission(): boolean {
-  return typeof orientationApi()?.requestPermission === "function" && !granted;
-}
-
-/**
- * La réponse à la demande : accordée, refusée, ou `gesture` quand la
- * plateforme a refusé de demander faute d'un geste de l'utilisateur.
- */
-export type CompassPermission = "granted" | "denied" | "gesture";
-
-/** La demande en cours, que la fenêtre attend au lieu d'en lancer une autre. */
-let pending: Promise<CompassPermission> | null = null;
-
-/**
- * Demande l'accès à l'orientation, là où la plateforme le réclame (iOS).
- *
- * À appeler dans le geste qui ouvre la fenêtre, et de façon synchrone : rien
- * ne doit être attendu avant l'appel à `requestPermission`, sans quoi Safari
- * ne voit plus le geste. La fenêtre, qui démarre après coup, attend la même
- * réponse. Ailleurs, l'accès est acquis d'office.
- */
-export function requestCompassPermission(): Promise<CompassPermission> {
-  const api = orientationApi();
-  if (granted || typeof api?.requestPermission !== "function") return Promise.resolve("granted");
-  if (pending) return pending;
-  let asked: Promise<string>;
-  try {
-    asked = api.requestPermission();
-  } catch {
-    return Promise.resolve("gesture");
-  }
-  const answer: Promise<CompassPermission> = Promise.resolve(asked).then(
-    (state) => {
-      if (state !== "granted") return "denied";
-      granted = true;
-      return "granted";
-    },
-    // Appel hors geste : Safari rejette au lieu de demander.
-    () => "gesture",
-  );
-  pending = answer;
-  void answer.finally(() => {
-    if (pending === answer) pending = null;
-  });
-  return answer;
-}
-
 /** Le cap porté par un événement, ou null s'il n'en porte pas d'absolu. */
 function headingOf(event: CompassEvent): number | null {
   // Safari calcule le cap lui-même, et c'est le seul qu'il donne.
@@ -130,13 +83,13 @@ function headingOf(event: CompassEvent): number | null {
  */
 const SILENCE_MS = 2000;
 
-export function useCompassHeading(): {
+export function useCompassHeading(options: { accuracy?: boolean } = {}): {
   heading: Ref<number | null>;
   status: Ref<CompassStatus>;
   accuracy: Ref<CompassAccuracy>;
   accuracyDegrees: Ref<number | null>;
   tilt: Ref<DeviceTilt | null>;
-  start: () => Promise<void>;
+  start: (retry?: boolean) => Promise<void>;
   stop: () => void;
 } {
   const heading = ref<number | null>(null);
@@ -201,30 +154,30 @@ export function useCompassHeading(): {
   }
 
   /**
-   * Démarre l'écoute. Appelée depuis le bouton « Activer la boussole », elle
-   * part elle-même d'un geste : la demande de permission y aboutit.
+   * Démarre l'écoute, dans un geste de l'utilisateur là où la plateforme
+   * l'exige : l'ouverture de la fenêtre, ou le bouton « Activer la boussole »
+   * (`retry`), après quoi un échec n'a plus de geste à attendre.
    */
-  async function start(): Promise<void> {
+  async function start(retry = false): Promise<void> {
     if (listening) return;
-    if (!orientationApi() || typeof window === "undefined") {
+    const api = orientationApi();
+    if (!api || typeof window === "undefined") {
       status.value = "unavailable";
       return;
     }
-    // Le bouton n'est proposé qu'en `locked` : un échec venu de lui n'a plus
-    // de geste à attendre.
-    const fromButton = status.value === "locked";
-    if (compassNeedsPermission()) {
+    if (typeof api.requestPermission === "function" && !granted) {
       status.value = "asking";
-      const answer = await requestCompassPermission();
-      if (answer === "denied") {
-        status.value = "denied";
-        return;
-      }
-      if (answer === "gesture") {
-        // Le geste n'a pas porté jusqu'à la demande : la fenêtre la propose.
-        // Une seconde fois, depuis le bouton même, il n'y a plus rien à
-        // attendre : le cadran fixe reste juste.
-        status.value = fromButton ? "unavailable" : "locked";
+      try {
+        if ((await api.requestPermission()) !== "granted") {
+          status.value = "denied";
+          return;
+        }
+        granted = true;
+      } catch {
+        // Appel hors geste : Safari rejette au lieu de demander. La fenêtre
+        // propose alors le bouton ; depuis le bouton même, il n'y a plus
+        // rien à attendre, le cadran fixe reste juste.
+        status.value = retry ? "unavailable" : "locked";
         return;
       }
     }
@@ -238,10 +191,14 @@ export function useCompassHeading(): {
     window.addEventListener("deviceorientation", onOrientation);
     listening = true;
     status.value = "asking";
-    unwatchAccuracy = watchNativeCompassAccuracy((level) => {
-      accuracy.value = level;
-      accuracyDegrees.value = null;
-    });
+    // Le magnétomètre natif ne s'allume que pour une fenêtre qui montre la
+    // précision.
+    if (options.accuracy) {
+      unwatchAccuracy = watchNativeCompassAccuracy((level) => {
+        accuracy.value = level;
+        accuracyDegrees.value = null;
+      });
+    }
     // L'écoute continue au-delà du délai : un magnétomètre lent (un capteur
     // qui s'étalonne) doit encore pouvoir réveiller le cadran, la fenêtre
     // disant en attendant qu'il n'y a pas de nord.

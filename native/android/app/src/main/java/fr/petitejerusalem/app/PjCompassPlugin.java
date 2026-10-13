@@ -42,9 +42,8 @@ public class PjCompassPlugin extends Plugin implements SensorEventListener {
     public void start(PluginCall call) {
         wanted = true;
         accuracy = NONE;
-        JSObject result = new JSObject();
-        result.put("available", listen());
-        call.resolve(result);
+        listen();
+        call.resolve();
     }
 
     @PluginMethod
@@ -54,19 +53,21 @@ public class PjCompassPlugin extends Plugin implements SensorEventListener {
         call.resolve();
     }
 
-    /** Branche le magnétomètre ; faux sur un appareil qui n'en a pas. */
-    private boolean listen() {
-        if (listening) return true;
+    /**
+     * Branche le magnétomètre. Un appareil qui n'en a pas ne remonte rien : la
+     * précision reste inconnue côté page.
+     */
+    private void listen() {
+        if (listening) return;
         if (manager == null) {
             manager = (SensorManager) getContext().getSystemService(Context.SENSOR_SERVICE);
         }
-        if (manager == null) return false;
+        if (manager == null) return;
         if (sensor == null) sensor = manager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
-        if (sensor == null) return false;
-        // Le rythme de l'interface suffit : on ne lit que le statut, qui
+        if (sensor == null) return;
+        // Le rythme le plus lent suffit : on ne lit que le statut, qui
         // change en secondes, pas la mesure.
-        listening = manager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_UI);
-        return listening;
+        listening = manager.registerListener(this, sensor, SensorManager.SENSOR_DELAY_NORMAL);
     }
 
     private void release() {

@@ -70,10 +70,10 @@ const TICKS = [0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330];
 
 /**
  * iOS ne donne l'orientation qu'après un geste : la permission se demande
- * dans celui qui ouvre la fenêtre (openNaanouimCompass), et le bouton ne
- * reste que s'il n'a pas suffi.
+ * dans celui qui ouvre la fenêtre, et le bouton ne reste que s'il n'a pas
+ * suffi.
  */
-const askable = computed(() => compassStatus.value === "locked");
+const locked = computed(() => compassStatus.value === "locked");
 
 /** Ce que la fenêtre dit du cadran, sous les nombres. */
 const hint = computed(() => {
@@ -82,7 +82,7 @@ const hint = computed(() => {
   return t("textReading.kotel.fixed");
 });
 
-const showFlat = computed(() => compassStatus.value === "live" || askable.value);
+const showFlat = computed(() => compassStatus.value === "live" || locked.value);
 
 const close = closeNaanouimCompass;
 
@@ -93,16 +93,19 @@ const close = closeNaanouimCompass;
 onUnmounted(closeNaanouimCompass);
 
 // La boussole n'écoute que la fenêtre ouverte : les événements d'orientation
-// arrivent plusieurs fois par seconde.
-watch(naanouimCompassOpen, (open) => {
-  if (!open) {
-    stop();
-    return;
-  }
-  // La permission, là où elle se demande, est déjà partie avec le geste
-  // d'ouverture : start en attend la réponse.
-  void start();
-});
+// arrivent plusieurs fois par seconde. `flush: "sync"` : elle démarre dans le
+// geste qui ouvre la fenêtre, comme celle du Kotel.
+watch(
+  naanouimCompassOpen,
+  (open) => {
+    if (!open) {
+      stop();
+      return;
+    }
+    void start();
+  },
+  { flush: "sync" },
+);
 </script>
 
 <template>
@@ -208,7 +211,7 @@ watch(naanouimCompassOpen, (open) => {
         {{ t("textReading.kotel.flat") }}
       </p>
 
-      <button v-if="askable" type="button" class="btn btn-soft w-full mt-4" @click="start">
+      <button v-if="locked" type="button" class="btn btn-soft w-full mt-4" @click="start(true)">
         <AppIcon name="compass" :size="16" />
         {{ t("textReading.kotel.enable") }}
       </button>

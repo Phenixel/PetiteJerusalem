@@ -9,7 +9,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const plateforme = vi.hoisted(() => ({ native: true, nom: "android" }));
 const plugin = vi.hoisted(() => ({
-  start: vi.fn(() => Promise.resolve({ available: true })),
+  start: vi.fn(() => Promise.resolve()),
   stop: vi.fn(() => Promise.resolve()),
   remove: vi.fn(() => Promise.resolve()),
   ecoute: null as ((data: { accuracy: number }) => void) | null,
