@@ -35,6 +35,11 @@ export function useTextLabels() {
       // Une strophe du psaume 119 : la lettre suffit à qui lit l'hébreu.
       case "letter":
         return locale.value === "he" ? heading.letter : `${heading.letter} · ${heading.name}`;
+      // Moussar : la hakdama d'une porte, un sujet du Pélé Yoets sous son nom.
+      case "introduction":
+        return t("textReading.labels.introduction");
+      case "topic":
+        return t("textReading.labels.topic", { n: heading.n, title: heading.title });
     }
   }
 

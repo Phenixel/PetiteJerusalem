@@ -177,12 +177,36 @@ insécables du français (U+202F avant ! ? ;, U+00A0 avant : et dans « »).
 
 | Commande                   | Ce qu'elle fait                                                                                                                                                                                                                                                                           |
 | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `chiour:liste`             | `--filtre brouillons\|publies\|sans-auteur\|sans-serie`, `--auteur <id>`, `--recherche …`. Le premier mot de chaque ligne est le slug.                                                                                                                                                    |
+| `chiour:liste`             | `--filtre brouillons\|publies\|sans-auteur\|sans-serie\|sans-livre`, `--auteur <id>`, `--recherche …`. Le premier mot de chaque ligne est le slug.                                                                                                                                        |
 | `chiour:voir <slug>`       | Un chiour en entier (série, catégories, audio).                                                                                                                                                                                                                                           |
 | `chiour:publier <slug>…`   | Publie un ou plusieurs chiourim (les envois des auteurs arrivent en brouillon).                                                                                                                                                                                                           |
 | `chiour:depublier <slug>…` | Les retire de l'app.                                                                                                                                                                                                                                                                      |
-| `chiour:modifier <slug>`   | `--titre`, `--description`, `--auteur <id>`, `--serie <id>` ou `--sans-serie`, `--episode N`, `--categories a,b`, `--niveau`, `--publier` / `--depublier`.                                                                                                                                |
+| `chiour:modifier <slug>`   | `--titre`, `--description`, `--auteur <id>`, `--serie <id>` ou `--sans-serie`, `--episode N`, `--categories a,b`, `--niveau`, `--livre <id>` (ou `aucun`), `--chapitre N` (ou `aucun`), `--publier` / `--depublier`.                                                                      |
 | `chiour:ajouter <fichier>` | Ajoute un chiour avec son audio (mp3, m4a, wav, ogg, aac), comme le studio d'un auteur : `--titre`, `--auteur <id>` requis ; `--description`, `--categories`, `--serie`, `--episode`, `--niveau`, `--publier`. Durée mesurée par `ffprobe` s'il est installé, sinon `--duree <secondes>`. |
+
+### Le livre d'un chiour
+
+Un cours peut dire le livre de la bibliothèque qu'il étudie, et son
+chapitre : il s'affiche alors à côté du texte, et le texte à côté du cours
+(voir `src/services/chiourTexte.ts`). Le livre se nomme par son identifiant
+dans `src/datas/textStudies.json`, que `livre:liste` retrouve :
+
+| Commande                    | Ce qu'elle fait                                                                                                                                                                                                                |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `livre:liste --recherche …` | Les livres dont le nom contient le terme, quelle que soit sa graphie (accents, apostrophes et espaces ignorés ; « Vayetse » trouve Vayetze, « Chaar Habitahon » trouve Chaar Habita'hon), avec leur identifiant et leur livre. |
+
+Puis `--livre <id>` et `--chapitre N` sur `chiour:modifier` ou
+`chiour:ajouter`. Le chapitre se compte comme la bibliothèque :
+
+- un texte en plusieurs pages : le numéro de sa page (le chapitre d'un
+  traité ; 0 pour l'introduction d'une porte de 'Hovot Halévavot, puis le
+  numéro du chapitre ; le numéro du sujet du Pélé Yoets dans tout le livre) ;
+- un texte d'une seule page : le rang du bloc (le chapitre d'un livre des
+  Prophètes, la montée d'une paracha) ;
+- un psaume ou une tefila : pas de chapitre.
+
+Changer de livre oublie le chapitre de l'ancien ; `--livre aucun` retire les
+deux.
 
 ### Auteurs et séries
 
@@ -262,6 +286,10 @@ node scripts/admin.mjs chiour:publier <slug> <slug> --confirmer
 node scripts/admin.mjs auteur:voir <auteurId>
 node scripts/admin.mjs chiour:ajouter ~/cours.mp3 --titre "…" --auteur <auteurId> \
   --serie <serieId> --episode 4 --categories "Michna" --confirmer
+
+# Rattacher un cours au chapitre 4 du Chaar Habita'hon
+node scripts/admin.mjs livre:liste --recherche bitahon
+node scripts/admin.mjs chiour:modifier <slug> --livre 404 --chapitre 4 --confirmer
 ```
 
 ## Pour faire évoluer le script

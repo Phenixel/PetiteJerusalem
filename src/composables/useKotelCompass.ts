@@ -2,13 +2,15 @@ import { computed, ref } from "vue";
 import { analyticsService } from "../services/analyticsService";
 
 /**
- * La boussole du Kotel, ouverte de deux endroits : le titre d'un passage qui
- * se dit face à Jérusalem (la 'Amida, Moussaf) et le menu de lecture, à
- * portée de pouce tout au long de l'office.
+ * La boussole du Kotel, ouverte de trois endroits : le titre d'un passage qui
+ * se dit face à Jérusalem (la 'Amida, Moussaf), le menu de lecture, à
+ * portée de pouce tout au long de l'office, et la rangée d'outils de la page
+ * du Sidour.
  *
  * L'état est partagé à l'échelle de l'app, comme celui du menu de lecture :
  * le titre et le menu vivent dans deux arbres de composants séparés, et la
- * fenêtre elle-même n'est montée qu'une fois, par le lecteur de liturgie.
+ * fenêtre elle-même n'est montée qu'une fois, par le lecteur de liturgie ou
+ * par la page du Sidour.
  */
 
 const open = ref(false);
@@ -16,8 +18,8 @@ const open = ref(false);
 /** La fenêtre est ouverte. */
 export const kotelCompassOpen = computed(() => open.value);
 
-/** D'où l'on ouvre la boussole : pour savoir laquelle des deux portes sert. */
-export type KotelCompassSource = "title" | "menu";
+/** D'où l'on ouvre la boussole : pour savoir laquelle des portes sert. */
+export type KotelCompassSource = "title" | "menu" | "sidour";
 
 export function openKotelCompass(source: KotelCompassSource): void {
   open.value = true;

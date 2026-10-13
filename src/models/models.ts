@@ -194,6 +194,14 @@ export interface Chiour {
   auteurId: string | null;
   serieId: string | null;
   episode: number | null;
+  /** Durée de l'audio en secondes, quand le dépôt a su la mesurer. */
+  duration: number | null;
+  /** Mise en ligne (création du document), en millisecondes : les nouveautés. */
+  addedAt: number | null;
+  /** Le texte de la bibliothèque que le cours étudie (voir ChiourDoc.texteId). */
+  texteId: number | null;
+  /** Le chapitre de ce texte, quand le cours en suit un (voir ChiourDoc.texteChapitre). */
+  texteChapitre: number | null;
 }
 
 /**
@@ -225,6 +233,23 @@ export interface ChiourDoc {
   auteurId?: string | null;
   serieId?: string | null;
   episode?: number | null;
+  /**
+   * Le texte de la bibliothèque que le cours étudie : l'`id` de son entrée
+   * dans src/datas/textStudies.json (404 pour le Chaar Habita'hon). Champ
+   * ajouté après coup : les versions publiées de l'app l'ignorent, et un
+   * identifiant que le catalogue d'une version ne connaît pas n'y affiche
+   * simplement pas de lien.
+   */
+  texteId?: number | null;
+  /**
+   * Le chapitre de ce texte, tel que la bibliothèque le numérote : l'index de
+   * la section d'un texte en plusieurs pages (le chapitre d'un traité, 0 pour
+   * l'introduction d'une porte de 'Hovot Halévavot, le numéro du sujet du
+   * Pélé Yoets), ou le rang du bloc d'un texte d'une seule page (le chapitre
+   * d'un livre des Prophètes, la montée d'une paracha). Absent : le cours
+   * porte sur le texte entier. Voir src/services/chiourTexte.ts.
+   */
+  texteChapitre?: number | null;
   createdAt?: Date;
   updatedAt?: Date;
 }

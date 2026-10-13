@@ -749,7 +749,7 @@ async function remove(): Promise<void> {
               </div>
               <div class="h-2 overflow-hidden rounded-pill bg-surface-soft">
                 <div
-                  class="h-full rounded-pill bg-primary"
+                  class="h-full rounded-pill bg-brand"
                   :style="{ width: `${percent(pollResults.byOption[option.id] ?? 0)}%` }"
                 ></div>
               </div>

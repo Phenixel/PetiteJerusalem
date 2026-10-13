@@ -76,7 +76,7 @@ const openIncident = computed(() => isOngoingIncident(a.value, installed.value))
         <AppIcon name="list" :size="13" />
         {{ a.poll.closed ? t("announcements.poll.closedChip") : t("announcements.poll.chip") }}
       </span>
-      <span v-if="isNew" class="chip bg-primary text-white">{{ t("announcements.new") }}</span>
+      <span v-if="isNew" class="chip bg-brand text-on-brand">{{ t("announcements.new") }}</span>
       <span class="ms-auto">{{ date }}</span>
     </div>
     <h3

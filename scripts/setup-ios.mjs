@@ -5,7 +5,8 @@
  * pendant iOS de scripts/setup-android.mjs).
  *
  * - Info.plist : nom affiché, langues, description d'usage de la position,
- *   background mode « remote-notification », déclaration de chiffrement
+ *   background modes « remote-notification » et « audio » (écoute des cours
+ *   écran verrouillé), déclaration de chiffrement
  *   (ITSAppUsesNonExemptEncryption) et schéma d'URL Google (REVERSED_CLIENT_ID)
  * - App.entitlements : Sign in with Apple + APNs (aps-environment piloté par
  *   la configuration : development en Debug, production en Release) +
@@ -235,12 +236,29 @@ addEntry(
   "NSCameraUsageDescription",
 );
 
-// Réception des notifications push quand l'app est en arrière-plan.
+// Modes d'arrière-plan :
+// - remote-notification : réception des notifications push app en arrière-plan ;
+// - audio : un cours continue de jouer écran verrouillé ou app quittée, et se
+//   commande depuis l'écran verrouillé et le centre de contrôle (la session
+//   média du WKWebView, voir src/services/mediaSession.ts). Sans ce mode, iOS
+//   coupe le son dès que l'app passe en arrière-plan.
+const BACKGROUND_MODES = ["remote-notification", "audio"];
 addEntry(
   "UIBackgroundModes",
-  "\t<array>\n\t\t<string>remote-notification</string>\n\t</array>",
-  "UIBackgroundModes (remote-notification)",
+  `\t<array>\n${BACKGROUND_MODES.map((mode) => `\t\t<string>${mode}</string>`).join("\n")}\n\t</array>`,
+  `UIBackgroundModes (${BACKGROUND_MODES.join(", ")})`,
 );
+// Un Info.plist d'avant l'écoute en arrière-plan a déjà la clé : addEntry
+// n'y touche pas, on complète le tableau.
+for (const mode of BACKGROUND_MODES) {
+  const modes = /<key>UIBackgroundModes<\/key>\s*<array>([\s\S]*?)<\/array>/.exec(infoPlist);
+  if (!modes || modes[1].includes(`<string>${mode}</string>`)) continue;
+  infoPlist = infoPlist.replace(
+    modes[0],
+    modes[0].replace(/(\s*)<\/array>$/, `\n\t\t<string>${mode}</string>$1</array>`),
+  );
+  console.log(`setup-ios: Info.plist, mode d'arrière-plan « ${mode} » ajouté`);
+}
 
 // Évite le questionnaire « export compliance » à chaque build TestFlight :
 // l'app n'utilise que le HTTPS du système (exemption standard).

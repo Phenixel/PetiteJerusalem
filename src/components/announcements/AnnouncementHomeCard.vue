@@ -75,7 +75,7 @@ const subtitle = computed(() =>
           <AppIcon :name="ANNOUNCEMENT_ICONS[a.kind]" :size="12" />
           {{ t(`announcements.kinds.${a.kind}`) }}
         </span>
-        <span class="chip bg-primary text-white">{{ t("announcements.new") }}</span>
+        <span class="chip bg-brand text-on-brand">{{ t("announcements.new") }}</span>
         <span class="ms-auto">{{ date }}</span>
       </span>
       <span

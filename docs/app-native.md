@@ -124,7 +124,10 @@ avec un leurre qui se comporte comme le vrai proxy, `then` compris.
   - `authoritative` : `tehilim.json` (~370 Ko) et `talmud-chapters.json`
     (~40 Ko), lus dans le binaire, qui fait foi pour eux ;
   - `revalidated` : le Sidour, les trois offices et les quatre textes qui les
-    accompagnent (`tefila/`, ~1 Mo). La copie du binaire s'ouvre tout de
+    accompagnent, et depuis la page du Sidour les treize brahot, Birkat
+    Hamazon en tête (`tefila/`, ~1,1 Mo) : tout ce que la page du Sidour liste
+    hors des fêtes s'ouvre sans réseau. Les textes des fêtes (Moadim) se
+    téléchargent d'eux-mêmes quand leur fête remonte en tête du Sidour. La copie du binaire s'ouvre tout de
     suite, sans rien attendre du réseau ; en fond, l'app demande au site s'il
     en sert une autre version (une correction de tefila n'attend pas une
     version de l'app) et la télécharge, vérifiée à l'empreinte : c'est elle
@@ -513,6 +516,23 @@ seul (Data Layer d'un côté, WatchConnectivity de l'autre), derrière le plugin
 maison PjWatch. Les deux plateformes sont scriptées de bout en bout, signature
 et publication comprises, voir `docs/app-watch.md`.
 
+## Précision de la boussole du Kotel
+
+Chrome donne le cap à la page, jamais sa précision, et la webview Android
+pas davantage. Le plugin maison PjCompass
+(`native/android/app/src/main/java/fr/petitejerusalem/app/PjCompassPlugin.java`)
+écoute le magnétomètre pendant que la boussole est ouverte et remonte son
+statut d'étalonnage (`SensorManager` : 3 haute, 2 moyenne, 1 basse,
+0 inutilisable), le même qui fait dire à Google Maps qu'il faut calibrer.
+Il s'éteint quand l'app passe en arrière-plan et reprend à son retour.
+`scripts/setup-android.mjs` le copie avec les widgets et l'enregistre dans
+`MainActivity`. Côté page, `src/services/nativeCompassAccuracy.ts` : rien
+hors de l'app Android, et rien non plus sur un binaire plus ancien que le
+plugin (la précision reste alors « inconnue », la boussole sert quand même).
+iOS n'en a pas besoin : Safari donne la précision avec le cap
+(`webkitCompassAccuracy`). Voir `docs/design.md`, « La boussole se demande
+en l'ouvrant, dit sa précision, et se tient à plat ».
+
 ## Icônes qui suivent le thème de l'appareil
 
 Les deux systèmes savent adapter l'icône d'une app au thème du téléphone, à
@@ -575,6 +595,61 @@ branchent :
 
 La teinte du volet est l'or des pierres de l'icône (`#C79A3B`), déclarée aux
 deux endroits.
+
+La notification de lecture des cours (ci-dessous) prend la même silhouette, par
+une ressource qui remplace celle du plugin.
+
+## Écoute des cours en arrière-plan
+
+Un cours s'écoute comme une musique : il continue écran éteint ou app quittée,
+s'affiche dans la notification d'Android (et la carte du lecteur des réglages
+rapides, l'écran verrouillé) comme sur l'écran verrouillé et le centre de
+contrôle d'iOS, et s'y commande sans rouvrir l'app (lecture, pause, reculer de
+15 secondes, avancer de 30, cours précédent et suivant de la file, position).
+Le lecteur (`useAudioPlayer`) publie ce qui joue à `src/services/mediaSession.ts`,
+qui le transmet au système :
+
+- **site** : l'API Media Session du navigateur, comme avant ;
+- **Android** : la webview n'en fait rien. `@capgo/capacitor-media-session`
+  tient une vraie session média native, dans un service de premier plan de
+  type `mediaPlayback` qui garde aussi la lecture en vie. C'est l'état de
+  lecture qui ouvre et ferme la notification : « playing » ou « paused » la
+  montre, « none » (le lecteur fermé, ou « Arrêter » dans la notification) la
+  retire ;
+- **iOS** : le plugin repasse, à dessein, par l'API Media Session du WKWebView,
+  que le système relaie à l'écran verrouillé. Il y faut le mode d'arrière-plan
+  `audio`, sans lequel iOS coupe le son dès que l'app passe en arrière-plan.
+
+Ce que le natif exige, et que posent les scripts :
+
+- `setup-android.mjs` déclare `FOREGROUND_SERVICE_MEDIA_PLAYBACK` : le plugin
+  ne déclare que `FOREGROUND_SERVICE`, et depuis Android 14 démarrer son
+  service sans l'autre lève une `SecurityException`, l'app se fermerait à la
+  première lecture ;
+- `native/android/` remplace deux icônes du plugin par des ressources de même
+  nom : `ic_baseline_volume_up_24` (la petite icône : `ic_stat_pj` au lieu
+  d'un haut-parleur générique) et `ic_baseline_replay_30_24` (le bouton
+  « reculer », sans le « 30 » qui mentirait) ;
+- `setup-ios.mjs` ajoute `audio` aux `UIBackgroundModes`, y compris dans un
+  Info.plist qui avait déjà la clé.
+
+`src/__tests__/mediaSessionAndroid.test.ts` tient ces trois points ;
+`src/__tests__/mediaSessionNative.test.ts` tient le dialogue avec le plugin
+(ce qui part, les commandes reçues, la notification retirée à la fermeture et
+pas rouverte par la pause qui suit).
+
+La pochette affichée par le système est celle de l'app, dessinée en image
+(`components/chiourim/coverArtwork.ts`) : les pochettes de l'app sont du CSS,
+le système veut une image.
+
+Deux limites, propres au plugin : le canal de notification s'appelle
+« Playback » dans les réglages d'Android, et le texte de la notification est
+« artiste - album » (ici « le rav · la série - Petite Jérusalem »).
+
+À vérifier sur un appareil avant chaque publication qui touche au lecteur :
+lancer un cours, verrouiller l'écran, le commander depuis la notification (ou
+l'écran verrouillé), passer au suivant, fermer le lecteur et voir la
+notification partir.
 
 ## Liens du site qui ouvrent l'app
 

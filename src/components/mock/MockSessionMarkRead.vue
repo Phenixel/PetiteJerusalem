@@ -131,8 +131,8 @@ const { t } = useI18n();
   align-items: center;
   justify-content: center;
   border-radius: 0.15rem;
-  background-color: var(--color-primary);
-  color: #fff;
+  background-color: var(--color-brand);
+  color: var(--color-on-brand);
 }
 
 .box-idle {

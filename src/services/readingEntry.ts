@@ -29,6 +29,7 @@ export type ReadingEntry =
   | "push"
   | "home"
   | "library"
+  | "sidour"
   | "daily_reading"
   | "chnei_mikra"
   | "tehilim_day"
@@ -67,6 +68,9 @@ export function readingEntryFromPath(backPath: string | null | undefined): Readi
   if (first === "share-reading" || first === "session-management") return "session";
   if (ZMANIM_SEGMENTS.has(first)) return "zmanim";
   if (CALENDAR_SEGMENTS.has(first)) return "calendar";
+  // La page du Sidour, d'où s'ouvrent les tefilot, les brahot et les textes
+  // des fêtes.
+  if (first === "sidour") return "sidour";
   if (first !== "bibliotheque") return "other";
   if (second === "lecture-du-jour") return "daily_reading";
   if (second === "chnei-mikra") return "chnei_mikra";

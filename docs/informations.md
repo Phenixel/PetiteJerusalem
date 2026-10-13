@@ -35,7 +35,11 @@ Dans tous les cas, l'information reste dans la liste (`/informations`).
 3. Écrire le titre et le texte en français. L'anglais et l'hébreu sont
    facultatifs : sans traduction, ces lecteurs voient le français.
 4. Un lien, facultatif : une page de l'app (`/bibliotheque/sidour`) ou une
-   adresse externe (`https://…`), avec le texte du bouton.
+   adresse externe (`https://…`), avec le texte du bouton. Une information
+   est lue par toutes les versions installées : le lien vise une adresse que
+   les plus anciennes connaissent. `/bibliotheque/sidour` ouvre le Sidour
+   partout (les versions récentes la redirigent vers `/sidour`) ; `/sidour`
+   seul mène à une page introuvable dans une app pas encore à jour.
 5. Cocher **Publié**, et **Envoyer une notification** si elle doit partir.
    Une confirmation le rappelle : une notification envoyée ne se rattrape pas.
 

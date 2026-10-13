@@ -7,6 +7,7 @@ import { studioService, type StudioChiourPayload } from "../../services/studioSe
 import AppIcon from "../../components/icons/AppIcon.vue";
 import AppSelect from "../../components/AppSelect.vue";
 import ProgressBar from "../../components/ProgressBar.vue";
+import ChiourTexteField from "../../components/ChiourTexteField.vue";
 
 const props = defineProps<{
   token: string;
@@ -43,6 +44,8 @@ const newCategory = ref("");
 const serieChoice = ref<string>(props.chiour?.serieId ?? props.presetSerieId ?? "");
 const newSerieName = ref("");
 const episode = ref<number | null>(props.chiour?.episode ?? props.presetEpisode ?? null);
+const texteId = ref<number | null>(props.chiour?.texteId ?? null);
+const texteChapitre = ref<number | null>(props.chiour?.texteChapitre ?? null);
 
 const audioFile = ref<File | null>(null);
 const fileInput = ref<HTMLInputElement | null>(null);
@@ -125,6 +128,8 @@ async function save() {
       newSerieName: serieChoice.value === NEW_SERIE ? newSerieName.value.trim() || null : null,
       episode: episodeFromField(episode.value),
       duration,
+      texteId: texteId.value,
+      texteChapitre: texteId.value === null ? null : texteChapitre.value,
     };
 
     if (isEditing.value) {
@@ -257,6 +262,18 @@ async function save() {
         />
         <p class="text-xs text-text-secondary/70 mt-1.5">{{ t("studio.form.episodeHint") }}</p>
       </div>
+    </div>
+
+    <div>
+      <label for="studio-texte" class="block text-sm font-semibold text-text-secondary mb-2">
+        {{ t("chiourim.texte.fieldLabel") }}
+      </label>
+      <ChiourTexteField
+        id="studio-texte"
+        v-model:texte-id="texteId"
+        v-model:chapitre="texteChapitre"
+      />
+      <p class="text-xs text-text-secondary/70 mt-1.5">{{ t("chiourim.texte.fieldHint") }}</p>
     </div>
 
     <div v-if="serieChoice === NEW_SERIE">

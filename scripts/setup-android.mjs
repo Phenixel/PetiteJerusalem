@@ -6,9 +6,10 @@
  * - android/local.properties : chemin du SDK Android
  * - AndroidManifest.xml : permissions POST_NOTIFICATIONS (rappel de lecture,
  *   Android 13+), ACCESS_COARSE/FINE_LOCATION (horaires calculés pour la
- *   position de l'appareil) et READ/WRITE_EXTERNAL_STORAGE (téléchargement
- *   d'un livre hors ligne sous Android 11) : ces plugins livrent un manifest
- *   vide, l'app doit donc les déclarer elle-même. Et la petite icône des
+ *   position de l'appareil), READ/WRITE_EXTERNAL_STORAGE (téléchargement
+ *   d'un livre hors ligne sous Android 11) et FOREGROUND_SERVICE_MEDIA_PLAYBACK
+ *   (écoute des cours en arrière-plan, Android 14+) : ces plugins livrent un
+ *   manifest incomplet, l'app doit donc les déclarer elle-même. Et la petite icône des
  *   notifications push
  * - android/app/google-services.json : copié depuis la racine s'il s'y trouve
  *   (fichier téléchargé depuis la console Firebase, git-ignoré)
@@ -20,6 +21,8 @@
  *   et déclare les receivers dans le manifest (voir docs/app-widgets.md)
  * - App Links : intent-filter vérifié sur le domaine, un lien du site ouvre
  *   l'app quand elle est installée (voir docs/app-links.md)
+ * - Boussole du Kotel : le plugin PjCompass (étalonnage du magnétomètre),
+ *   copié avec les widgets et enregistré dans MainActivity
  * - Montre Wear OS : le module android/wear/ recopié depuis native/wear/,
  *   déclaré dans settings.gradle, ses icônes reprises de l'app et les Tehilim
  *   embarqués dans ses assets (voir docs/app-watch.md)
@@ -84,6 +87,11 @@ const PERMISSIONS = [
     comment: "Horaires (zmanim) calculés pour la position de l'appareil",
   },
   { name: "android.permission.ACCESS_FINE_LOCATION" },
+  {
+    name: "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
+    comment:
+      "Écoute des cours en arrière-plan : @capgo/capacitor-media-session tient la notification\n         de lecture dans un service de premier plan de type mediaPlayback. Son manifest ne\n         déclare que FOREGROUND_SERVICE ; depuis Android 14, démarrer ce service sans cette\n         permission-ci lève une SecurityException et ferme l'app à la première lecture.\n         Voir src/__tests__/mediaSessionAndroid.test.ts",
+  },
   {
     name: "android.permission.CAMERA",
     comment: "Miroir des téfilines (caméra frontale, rien n'est enregistré)",
@@ -311,11 +319,11 @@ if (styles.includes(noActionBarMarker) && !styles.includes("android:windowBackgr
     styles.replace(
       noActionBarMarker,
       `${noActionBarMarker}
-        <item name="android:statusBarColor">#F4F1EA</item>
+        <item name="android:statusBarColor">#FFF9F3</item>
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:navigationBarColor">#FFFFFF</item>
         <item name="android:windowLightNavigationBar">true</item>
-        <item name="android:windowBackground">#F4F1EA</item>`,
+        <item name="android:windowBackground">#FFF9F3</item>`,
     ),
   );
   console.log("setup-android: couleurs de barre système ajoutées à styles.xml");
@@ -398,6 +406,16 @@ public class MainActivity extends BridgeActivity {
       `$1// Montre Wear OS (voir native/wear/ et docs/app-watch.md).$1registerPlugin(PjWatchPlugin.class);$1$2`,
     );
     console.log("setup-android: plugin PjWatch enregistré dans MainActivity");
+  }
+  if (!mainActivity.includes("PjCompassPlugin")) {
+    // L'étalonnage du magnétomètre, pour la précision de la boussole du
+    // Kotel (src/services/nativeCompassAccuracy.ts), même règle que
+    // ci-dessus.
+    mainActivity = mainActivity.replace(
+      /(\n\s*)(super\.onCreate\(savedInstanceState\);)/,
+      `$1// Précision de la boussole du Kotel (voir docs/app-native.md).$1registerPlugin(PjCompassPlugin.class);$1$2`,
+    );
+    console.log("setup-android: plugin PjCompass enregistré dans MainActivity");
   }
   if (!mainActivity.includes("setOverScrollMode")) {
     mainActivity = mainActivity.replace(

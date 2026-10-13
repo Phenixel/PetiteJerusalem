@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Petite icône de la notification de lecture des cours. Le plugin
+     @capgo/capacitor-media-session la cherche sous ce nom, un haut-parleur
+     générique : la ressource de l'app, de même nom, l'emporte sur celle du
+     plugin, et la notification prend la silhouette de l'app, comme les
+     autres (ic_stat_pj, voir docs/app-native.md). -->
+<bitmap xmlns:android="http://schemas.android.com/apk/res/android"
+    android:src="@drawable/ic_stat_pj" />

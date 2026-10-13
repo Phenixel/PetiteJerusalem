@@ -476,6 +476,13 @@ export function activeOccasions(hd: HDate, il: boolean, walledCity = false): Set
     occ.add("hallel");
     const entier = hanukkah || (holHamoed && festival("Sukkot"));
     occ.add(entier ? "hallel-complet" : "hallel-abrege");
+    // Le Hallel abrégé (Roch Hodech, 'Hol haMoed de Pessah), hors d'Israël :
+    // on a pris l'habitude de le bénir quand même, au début et à la fin, là
+    // où l'usage d'Erets Israël le dit sans bénédiction. Le 'hazan seul dit
+    // les bénédictions, l'assemblée répond amen. Une clé nouvelle pour du
+    // contenu nouveau : les versions publiées n'en affichent rien, comme
+    // avant.
+    if (!entier && !il) occ.add("hallel-brakha-houts-laarets");
   }
   if (occ.has("shabbat") || occ.has("moed")) occ.add("shabbat-or-moed");
   // Les dix jours de pénitence : de Roch Hachana à Yom Kippour, 1 au 10 Tichri.

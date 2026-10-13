@@ -2831,6 +2831,270 @@
       "link": "https://www.sefaria.org/Siddur_Edot_HaMizrach,_Fast_Days_and_Mourning,_Mourning",
       "totalSections": 1,
       "type": "Brahot"
+    },
+    {
+      "id": 400,
+      "name": "הקדמת המחבר (Hakdamat Hamé'haber)",
+      "livre": "חובות הלבבות (Hovot Halévavot)",
+      "link": "https://www.sefaria.org/Duties_of_the_Heart%2C_Introduction_of_the_Author",
+      "totalSections": 1,
+      "type": "Moussar"
+    },
+    {
+      "id": 401,
+      "name": "שער היחוד (Chaar Hayi'houd)",
+      "livre": "חובות הלבבות (Hovot Halévavot)",
+      "link": "https://www.sefaria.org/Duties_of_the_Heart%2C_First_Treatise_on_Unity",
+      "totalSections": 11,
+      "type": "Moussar"
+    },
+    {
+      "id": 402,
+      "name": "שער הבחינה (Chaar Habé'hina)",
+      "livre": "חובות הלבבות (Hovot Halévavot)",
+      "link": "https://www.sefaria.org/Duties_of_the_Heart%2C_Second_Treatise_on_Examination",
+      "totalSections": 7,
+      "type": "Moussar"
+    },
+    {
+      "id": 403,
+      "name": "שער עבודת האלהים (Chaar 'Avodat Haélokim)",
+      "livre": "חובות הלבבות (Hovot Halévavot)",
+      "link": "https://www.sefaria.org/Duties_of_the_Heart%2C_Third_Treatise_on_Service_of_God",
+      "totalSections": 11,
+      "type": "Moussar"
+    },
+    {
+      "id": 404,
+      "name": "שער הבטחון (Chaar Habita'hon)",
+      "livre": "חובות הלבבות (Hovot Halévavot)",
+      "link": "https://www.sefaria.org/Duties_of_the_Heart%2C_Fourth_Treatise_on_Trust",
+      "totalSections": 8,
+      "type": "Moussar"
+    },
+    {
+      "id": 405,
+      "name": "שער יחוד המעשה (Chaar Yi'houd Hama'assé)",
+      "livre": "חובות הלבבות (Hovot Halévavot)",
+      "link": "https://www.sefaria.org/Duties_of_the_Heart%2C_Fifth_Treatise_on_Devotion",
+      "totalSections": 7,
+      "type": "Moussar"
+    },
+    {
+      "id": 406,
+      "name": "שער הכניעה (Chaar Hakni'a)",
+      "livre": "חובות הלבבות (Hovot Halévavot)",
+      "link": "https://www.sefaria.org/Duties_of_the_Heart%2C_Sixth_Treatise_on_Submission",
+      "totalSections": 11,
+      "type": "Moussar"
+    },
+    {
+      "id": 407,
+      "name": "שער התשובה (Chaar Hatechouva)",
+      "livre": "חובות הלבבות (Hovot Halévavot)",
+      "link": "https://www.sefaria.org/Duties_of_the_Heart%2C_Seventh_Treatise_on_Repentance",
+      "totalSections": 11,
+      "type": "Moussar"
+    },
+    {
+      "id": 408,
+      "name": "שער חשבון הנפש (Chaar 'Hechbon Hanéfech)",
+      "livre": "חובות הלבבות (Hovot Halévavot)",
+      "link": "https://www.sefaria.org/Duties_of_the_Heart%2C_Eighth_Treatise_on_Examining_the_Soul",
+      "totalSections": 7,
+      "type": "Moussar"
+    },
+    {
+      "id": 409,
+      "name": "שער הפרישות (Chaar Hapérichout)",
+      "livre": "חובות הלבבות (Hovot Halévavot)",
+      "link": "https://www.sefaria.org/Duties_of_the_Heart%2C_Ninth_Treatise_on_Abstinence",
+      "totalSections": 8,
+      "type": "Moussar"
+    },
+    {
+      "id": 410,
+      "name": "שער אהבת ה' (Chaar Ahavat Hachem)",
+      "livre": "חובות הלבבות (Hovot Halévavot)",
+      "link": "https://www.sefaria.org/Duties_of_the_Heart%2C_Tenth_Treatise_on_Devotion_to_God",
+      "totalSections": 8,
+      "type": "Moussar"
+    },
+    {
+      "id": 420,
+      "name": "פלא יועץ, אות א (Pélé Yoets, Aleph)",
+      "livre": "פלא יועץ (Pélé Yoets)",
+      "link": "https://www.sefaria.org/Pele_Yoetz.1",
+      "totalSections": 21,
+      "type": "Moussar"
+    },
+    {
+      "id": 421,
+      "name": "פלא יועץ, אות ב (Pélé Yoets, Beth)",
+      "livre": "פלא יועץ (Pélé Yoets)",
+      "link": "https://www.sefaria.org/Pele_Yoetz.22",
+      "totalSections": 20,
+      "type": "Moussar"
+    },
+    {
+      "id": 422,
+      "name": "פלא יועץ, אות ג (Pélé Yoets, Guimel)",
+      "livre": "פלא יועץ (Pélé Yoets)",
+      "link": "https://www.sefaria.org/Pele_Yoetz.42",
+      "totalSections": 16,
+      "type": "Moussar"
+    },
+    {
+      "id": 423,
+      "name": "פלא יועץ, אות ד (Pélé Yoets, Daleth)",
+      "livre": "פלא יועץ (Pélé Yoets)",
+      "link": "https://www.sefaria.org/Pele_Yoetz.58",
+      "totalSections": 15,
+      "type": "Moussar"
+    },
+    {
+      "id": 424,
+      "name": "פלא יועץ, אות ה (Pélé Yoets, Hé)",
+      "livre": "פלא יועץ (Pélé Yoets)",
+      "link": "https://www.sefaria.org/Pele_Yoetz.73",
+      "totalSections": 27,
+      "type": "Moussar"
+    },
+    {
+      "id": 425,
+      "name": "פלא יועץ, אות ו (Pélé Yoets, Vav)",
+      "livre": "פלא יועץ (Pélé Yoets)",
+      "link": "https://www.sefaria.org/Pele_Yoetz.100",
+      "totalSections": 4,
+      "type": "Moussar"
+    },
+    {
+      "id": 426,
+      "name": "פלא יועץ, אות ז (Pélé Yoets, Zaïn)",
+      "livre": "פלא יועץ (Pélé Yoets)",
+      "link": "https://www.sefaria.org/Pele_Yoetz.104",
+      "totalSections": 14,
+      "type": "Moussar"
+    },
+    {
+      "id": 427,
+      "name": "פלא יועץ, אות ח (Pélé Yoets, 'Heth)",
+      "livre": "פלא יועץ (Pélé Yoets)",
+      "link": "https://www.sefaria.org/Pele_Yoetz.118",
+      "totalSections": 31,
+      "type": "Moussar"
+    },
+    {
+      "id": 428,
+      "name": "פלא יועץ, אות ט (Pélé Yoets, Teth)",
+      "livre": "פלא יועץ (Pélé Yoets)",
+      "link": "https://www.sefaria.org/Pele_Yoetz.149",
+      "totalSections": 10,
+      "type": "Moussar"
+    },
+    {
+      "id": 429,
+      "name": "פלא יועץ, אות י (Pélé Yoets, Youd)",
+      "livre": "פלא יועץ (Pélé Yoets)",
+      "link": "https://www.sefaria.org/Pele_Yoetz.159",
+      "totalSections": 20,
+      "type": "Moussar"
+    },
+    {
+      "id": 430,
+      "name": "פלא יועץ, אות כ (Pélé Yoets, Kaf)",
+      "livre": "פלא יועץ (Pélé Yoets)",
+      "link": "https://www.sefaria.org/Pele_Yoetz.179",
+      "totalSections": 20,
+      "type": "Moussar"
+    },
+    {
+      "id": 431,
+      "name": "פלא יועץ, אות ל (Pélé Yoets, Lamed)",
+      "livre": "פלא יועץ (Pélé Yoets)",
+      "link": "https://www.sefaria.org/Pele_Yoetz.199",
+      "totalSections": 9,
+      "type": "Moussar"
+    },
+    {
+      "id": 432,
+      "name": "פלא יועץ, אות מ (Pélé Yoets, Mem)",
+      "livre": "פלא יועץ (Pélé Yoets)",
+      "link": "https://www.sefaria.org/Pele_Yoetz.208",
+      "totalSections": 30,
+      "type": "Moussar"
+    },
+    {
+      "id": 433,
+      "name": "פלא יועץ, אות נ (Pélé Yoets, Noun)",
+      "livre": "פלא יועץ (Pélé Yoets)",
+      "link": "https://www.sefaria.org/Pele_Yoetz.238",
+      "totalSections": 18,
+      "type": "Moussar"
+    },
+    {
+      "id": 434,
+      "name": "פלא יועץ, אות ס (Pélé Yoets, Samekh)",
+      "livre": "פלא יועץ (Pélé Yoets)",
+      "link": "https://www.sefaria.org/Pele_Yoetz.256",
+      "totalSections": 14,
+      "type": "Moussar"
+    },
+    {
+      "id": 435,
+      "name": "פלא יועץ, אות ע (Pélé Yoets, 'Ayin)",
+      "livre": "פלא יועץ (Pélé Yoets)",
+      "link": "https://www.sefaria.org/Pele_Yoetz.270",
+      "totalSections": 22,
+      "type": "Moussar"
+    },
+    {
+      "id": 436,
+      "name": "פלא יועץ, אות פ (Pélé Yoets, Pé)",
+      "livre": "פלא יועץ (Pélé Yoets)",
+      "link": "https://www.sefaria.org/Pele_Yoetz.292",
+      "totalSections": 9,
+      "type": "Moussar"
+    },
+    {
+      "id": 437,
+      "name": "פלא יועץ, אות צ (Pélé Yoets, Tsadi)",
+      "livre": "פלא יועץ (Pélé Yoets)",
+      "link": "https://www.sefaria.org/Pele_Yoetz.301",
+      "totalSections": 10,
+      "type": "Moussar"
+    },
+    {
+      "id": 438,
+      "name": "פלא יועץ, אות ק (Pélé Yoets, Qof)",
+      "livre": "פלא יועץ (Pélé Yoets)",
+      "link": "https://www.sefaria.org/Pele_Yoetz.311",
+      "totalSections": 15,
+      "type": "Moussar"
+    },
+    {
+      "id": 439,
+      "name": "פלא יועץ, אות ר (Pélé Yoets, Rech)",
+      "livre": "פלא יועץ (Pélé Yoets)",
+      "link": "https://www.sefaria.org/Pele_Yoetz.326",
+      "totalSections": 15,
+      "type": "Moussar"
+    },
+    {
+      "id": 440,
+      "name": "פלא יועץ, אות ש (Pélé Yoets, Chin)",
+      "livre": "פלא יועץ (Pélé Yoets)",
+      "link": "https://www.sefaria.org/Pele_Yoetz.341",
+      "totalSections": 35,
+      "type": "Moussar"
+    },
+    {
+      "id": 441,
+      "name": "פלא יועץ, אות ת (Pélé Yoets, Tav)",
+      "livre": "פלא יועץ (Pélé Yoets)",
+      "link": "https://www.sefaria.org/Pele_Yoetz.376",
+      "totalSections": 16,
+      "type": "Moussar"
     }
   ],
   "types": [
@@ -2841,6 +3105,7 @@
     "Tanakh",
     "Moadim",
     "Brahot",
-    "Sidour"
+    "Sidour",
+    "Moussar"
   ]
 }

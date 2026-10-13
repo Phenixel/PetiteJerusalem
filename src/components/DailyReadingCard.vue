@@ -5,7 +5,6 @@
 // éventuels handlers (analytics) directement sur le composant.
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
-import AppIcon from "./icons/AppIcon.vue";
 import ProgressBar from "./ProgressBar.vue";
 
 const props = defineProps<{ done: number; total: number }>();
@@ -20,15 +19,13 @@ const allDone = computed(() => props.total > 0 && props.done >= props.total);
      l'autre), le pourcentage en grand à droite, centré sur le bloc de texte.
      Le chiffre est la réponse que la carte apporte, et la seule chose qu'elle
      porte à ce corps-là ; la barre, dessous, la précise. Même rythme que la
-     carte des horaires, dont le chiffre tombe au même endroit. -->
+     carte des horaires, dont le chiffre tombe au même endroit, et comme elle
+     sans icône devant le titre. -->
 <template>
   <RouterLink to="/bibliotheque/lecture-du-jour" class="card card-hover p-5 md:p-6 block group">
     <!-- Liste vide : inviter à la composer -->
     <template v-if="total === 0">
-      <h3
-        class="font-semibold text-text-primary flex items-center gap-2.5 group-hover:text-primary transition-colors"
-      >
-        <AppIcon name="book" :size="17" class="text-primary" />
+      <h3 class="font-semibold text-text-primary group-hover:text-primary transition-colors">
         {{ t("dailyReading.title") }}
       </h3>
       <p class="mt-3 text-sm text-text-secondary leading-relaxed">
@@ -45,10 +42,7 @@ const allDone = computed(() => props.total > 0 && props.done >= props.total);
     <template v-else>
       <div class="flex items-center justify-between gap-4">
         <div class="min-w-0">
-          <h3
-            class="font-semibold text-text-primary flex items-center gap-2.5 group-hover:text-primary transition-colors"
-          >
-            <AppIcon name="book" :size="17" class="shrink-0 text-primary" />
+          <h3 class="font-semibold text-text-primary group-hover:text-primary transition-colors">
             {{ t("dailyReading.title") }}
           </h3>
           <p

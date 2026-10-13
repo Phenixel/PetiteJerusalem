@@ -41,8 +41,10 @@ import {
   parseList,
   releaseAnnouncement,
   releaseAnnouncementId,
+  searchCatalog,
   slugify,
   studioLink,
+  texteFields,
   versionOf,
 } from "./lib/backoffice.mjs";
 
@@ -99,6 +101,8 @@ const OPTIONS = {
   duree: { type: "string" },
   filtre: { type: "string" },
   recherche: { type: "string" },
+  livre: { type: "string" },
+  chapitre: { type: "string" },
 };
 
 const { values: opts, positionals } = parseArgs({
@@ -660,6 +664,24 @@ async function checkSerie(serieId, auteurId) {
   if (snap.data().auteurId !== auteurId) fail(`la série ${serieId} n'est pas de ${auteurId}.`);
 }
 
+/** Le catalogue de la bibliothèque (les livres auxquels rattacher un chiour). */
+let catalogCache = null;
+function catalog() {
+  catalogCache ??= JSON.parse(
+    readFileSync(new URL("../src/datas/textStudies.json", import.meta.url), "utf8"),
+  ).textStudies;
+  return catalogCache;
+}
+
+/** « Livre : 404 שער הבטחון (Chaar Habita'hon), chapitre 4 », ou rien. */
+function describeTexte(c) {
+  if (typeof c.texteId !== "number") return "Livre : -";
+  const entry = catalog().find((e) => Number(e.id) === c.texteId);
+  const name = entry ? entry.name : "inconnu du catalogue";
+  const chapitre = typeof c.texteChapitre === "number" ? `, chapitre ${c.texteChapitre}` : "";
+  return `Livre : ${c.texteId} ${name}${chapitre}`;
+}
+
 function describeChiour(c) {
   const minutes = c.duration ? `${Math.round(c.duration / 60)} min` : "?";
   return `${c.slug}  [${c.published ? "publié" : "brouillon"}]  ${c.auteur ?? "sans auteur"}  ${minutes}  ${c.views ?? 0} vues  ${c.name}`;
@@ -673,6 +695,7 @@ commands["chiour:liste"] = async () => {
     publies: (c) => c.published,
     "sans-auteur": (c) => !c.auteurId,
     "sans-serie": (c) => !c.serieId,
+    "sans-livre": (c) => typeof c.texteId !== "number",
   };
   if (opts.filtre) {
     if (!filters[opts.filtre]) fail(`--filtre : ${Object.keys(filters).join(", ")}`);
@@ -694,6 +717,7 @@ commands["chiour:voir"] = async ([slug]) => {
     [
       describeChiour(c),
       `Série : ${c.serieId ?? "-"}${c.episode ? ` (épisode ${c.episode})` : ""}`,
+      describeTexte(c),
       `Catégories : ${(c.categories ?? []).join(", ") || "-"}`,
       `Audio : ${c.mediaUrl ?? "-"}`,
       "",
@@ -753,6 +777,7 @@ commands["chiour:modifier"] = async ([slug]) => {
     await checkSerie(opts.serie, auteurId);
     fields.serieId = opts.serie;
   }
+  Object.assign(fields, texteFields({ livre: opts.livre, chapitre: opts.chapitre }, catalog(), c));
   if (opts.publier) fields.published = true;
   if (opts.depublier) fields.published = false;
   if (fields.name === "") fail("le titre ne peut pas être vide.");
@@ -800,6 +825,7 @@ commands["chiour:ajouter"] = async ([file]) => {
   if (!opts.auteur) fail("--auteur <id> requis (voir auteur:liste).");
   const auteur = await getAuteur(opts.auteur);
   if (opts.serie) await checkSerie(opts.serie, auteur.id);
+  const texte = texteFields({ livre: opts.livre, chapitre: opts.chapitre }, catalog());
   const base = slugify(name);
   if (!base) fail("titre invalide.");
   const { db, FieldValue, bucket } = firebase();
@@ -840,6 +866,8 @@ commands["chiour:ajouter"] = async ([file]) => {
         niveau: opts.niveau?.trim() || null,
         serieId: opts.serie ?? null,
         episode: episodeOf(opts.episode),
+        texteId: texte.texteId ?? null,
+        texteChapitre: texte.texteChapitre ?? null,
         audioPath,
         mediaUrl,
         duration,
@@ -856,6 +884,17 @@ commands["chiour:ajouter"] = async ([file]) => {
       published,
     });
   }
+};
+
+// ---- Livres de la bibliothèque ----------------------------------------------------
+
+commands["livre:liste"] = async () => {
+  const found = searchCatalog(catalog(), opts.recherche ?? "");
+  const lines = found.map(
+    (e) =>
+      `${e.id}  ${e.type}  ${e.name}  (${e.livre}${e.totalSections > 1 ? `, ${e.totalSections} sections` : ""})`,
+  );
+  out(lines.length ? lines : ["Aucun livre."], found);
 };
 
 // ---- Auteurs et séries ---------------------------------------------------------
@@ -1188,13 +1227,19 @@ Informations
   info:depuis-release --version X.Y.Z --fichier note.md
 
 Chiourim
-  chiour:liste [--filtre brouillons|publies|sans-auteur|sans-serie] [--auteur <id>] [--recherche …]
+  chiour:liste [--filtre brouillons|publies|sans-auteur|sans-serie|sans-livre] [--auteur <id>]
+               [--recherche …]
   chiour:voir <slug>
   chiour:publier <slug>…     chiour:depublier <slug>…
   chiour:modifier <slug> [--titre … --description … --auteur <id> --serie <id>|--sans-serie
-                  --episode N --categories a,b --niveau … --publier|--depublier]
+                  --episode N --categories a,b --niveau … --livre <id>|aucun --chapitre N|aucun
+                  --publier|--depublier]
   chiour:ajouter <fichier.mp3> --titre … --auteur <id> [--description … --categories a,b
-                 --serie <id> --episode N --niveau … --duree <secondes> --publier]
+                 --serie <id> --episode N --niveau … --livre <id> --chapitre N
+                 --duree <secondes> --publier]
+
+Livres de la bibliothèque (pour --livre)
+  livre:liste [--recherche …]
 
 Auteurs et séries
   auteur:liste

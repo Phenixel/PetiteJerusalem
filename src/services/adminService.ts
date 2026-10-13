@@ -66,6 +66,8 @@ export interface ChiourAdminFields {
   episode?: number | null;
   published?: boolean;
   duration?: number | null;
+  texteId?: number | null;
+  texteChapitre?: number | null;
 }
 
 function slugify(name: string): string {

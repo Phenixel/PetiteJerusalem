@@ -395,7 +395,7 @@ useOverlay(
             :class="[
               'flex items-center gap-1.5 rounded-pill px-3 py-1 text-sm font-medium transition-colors',
               draft.kind === kind
-                ? 'bg-primary text-white'
+                ? 'bg-brand text-on-brand'
                 : 'bg-black/5 text-text-secondary hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/15',
             ]"
             @click="draft.kind = kind"
@@ -481,7 +481,7 @@ useOverlay(
             :class="[
               'rounded-pill px-3 py-1 text-sm font-medium transition-colors',
               draft.reminder === reminder
-                ? 'bg-primary text-white'
+                ? 'bg-brand text-on-brand'
                 : 'bg-black/5 text-text-secondary hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/15',
             ]"
             @click="draft.reminder = reminder as OccasionReminder"

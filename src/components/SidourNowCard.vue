@@ -1,19 +1,21 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
-import { currentTefilaWindow, tefilaPath, type TefilaKey } from "../services/sidourService";
+import { currentTefilaWindow, tefilaPath } from "../services/sidourService";
 import { formatZmanTime } from "../services/zmanimService";
 import { useZmanimLocation } from "../composables/useZmanimLocation";
 import { useNow } from "../composables/useNow";
 import { analyticsService } from "../services/analyticsService";
-import AppIcon from "./icons/AppIcon.vue";
-import type { IconName } from "./icons/registry";
+import CardArt from "./CardArt.vue";
 
 /**
  * Le raccourci du sidour sur l'accueil : pendant la plage horaire d'un office
  * (Cha'harit, Min'ha, Arvit), une ligne mène directement au texte, avec
  * l'heure jusqu'à laquelle il se dit. Entre deux offices, rien : la carte
  * n'occupe pas l'accueil quand elle n'a rien à proposer.
+ *
+ * Elle porte le sidour lui-même dans son coin (voir CardArt), comme la carte
+ * du moment de la page du Sidour : pas d'icône à gauche qui le redise.
  *
  * Chargée à la demande (voir HomeView) : elle tire le moteur des horaires.
  */
@@ -25,12 +27,6 @@ const { place } = useZmanimLocation();
 const now = useNow();
 
 const window_ = computed(() => currentTefilaWindow(place.value, now.value));
-
-const ICONS: Record<TefilaKey, IconName> = {
-  chaharit: "sunrise",
-  minha: "sun",
-  arvit: "moon",
-};
 
 const path = computed(() => (window_.value ? tefilaPath(window_.value.tefila) : null));
 const tefilaName = computed(() =>
@@ -52,14 +48,14 @@ function trackOpen() {
   <RouterLink
     v-if="window_ && path"
     :to="path"
-    class="card card-hover group flex w-full items-center gap-2.5 px-5 py-4 sm:px-6"
+    class="card card-hover group relative mt-1 flex w-full items-center px-5 py-4 pe-20 sm:px-6 sm:pe-20"
     @click="trackOpen()"
   >
-    <AppIcon :name="ICONS[window_.tefila]" :size="17" class="shrink-0 text-primary" />
+    <CardArt :art="{ kind: 'siddur' }" :scale="0.42" surface="plain" />
     <!-- Pas de troncature : si la ligne ne tient pas (écran étroit, texte
          agrandi), elle passe à la ligne. L'heure limite est le seul chiffre de
          la carte, elle ne se perd jamais dans les points de suspension. -->
-    <span class="font-medium text-text-primary transition-colors group-hover:text-primary">
+    <span class="relative font-medium text-text-primary transition-colors group-hover:text-primary">
       {{ t("home.sidourNow.title", { tefila: tefilaName }) }}
       <span class="font-normal text-text-secondary">
         · {{ t("home.sidourNow.until", { time: untilTime }) }}

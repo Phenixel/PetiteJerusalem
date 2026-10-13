@@ -106,6 +106,8 @@ describe("i18n usage", () => {
       "admin.chiourim.filters.",
       "admin.chiourim.sort.",
       "admin.sessions.filters.",
+      // Le corpus d'un livre à rattacher à un cours (ChiourTexteField).
+      "chiourim.texte.types.",
       // Les informations de l'équipe : leur nature, et les langues de leurs
       // traductions (voir services/announcements, AdminAnnouncementEditPage).
       "admin.announcements.filters.",

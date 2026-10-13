@@ -149,8 +149,8 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #fff;
-  background: var(--color-primary);
+  color: var(--color-on-brand);
+  background: var(--color-brand);
   /* idle state before activation */
   filter: grayscale(1);
   opacity: 0.4;
@@ -192,7 +192,7 @@ onUnmounted(() => {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: var(--color-primary);
+  background: var(--color-brand);
   transform: scaleY(0);
   transform-origin: top center;
 }
