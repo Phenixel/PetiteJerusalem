@@ -19,10 +19,6 @@ defineEmits<{ click: [] }>();
     :title="label"
     @click="$emit('click')"
   >
-    <AppIcon
-      :name="playing ? 'pause-solid' : 'play-solid'"
-      :size="24"
-      :class="{ 'ml-1': !playing }"
-    />
+    <AppIcon :name="playing ? 'pause-solid' : 'play-solid'" :size="24" />
   </button>
 </template>

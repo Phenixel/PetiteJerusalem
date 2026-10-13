@@ -411,11 +411,7 @@ const shareUrl = computed(() =>
               :title="player.isPlaying.value ? t('audioPlayer.pause') : t('audioPlayer.play')"
               @click="player.toggle()"
             >
-              <AppIcon
-                :name="player.isPlaying.value ? 'pause-solid' : 'play-solid'"
-                :size="30"
-                :class="{ 'ml-1': !player.isPlaying.value }"
-              />
+              <AppIcon :name="player.isPlaying.value ? 'pause-solid' : 'play-solid'" :size="30" />
             </button>
             <button
               type="button"

@@ -182,11 +182,7 @@ watch(
                 :title="playLabel"
                 @click="player.toggle()"
               >
-                <AppIcon
-                  :name="player.isPlaying.value ? 'pause-solid' : 'play-solid'"
-                  :size="16"
-                  :class="{ 'ml-0.5': !player.isPlaying.value }"
-                />
+                <AppIcon :name="player.isPlaying.value ? 'pause-solid' : 'play-solid'" :size="16" />
               </button>
               <button
                 class="bar-icon"
@@ -235,11 +231,7 @@ watch(
               :title="playLabel"
               @click="player.toggle()"
             >
-              <AppIcon
-                :name="player.isPlaying.value ? 'pause-solid' : 'play-solid'"
-                :size="22"
-                :class="{ 'ml-0.5': !player.isPlaying.value }"
-              />
+              <AppIcon :name="player.isPlaying.value ? 'pause-solid' : 'play-solid'" :size="22" />
             </button>
             <button
               v-if="player.isPlaying.value && player.hasNext.value"

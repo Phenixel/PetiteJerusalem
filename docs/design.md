@@ -488,6 +488,15 @@ anniversaire et la bougie d'un leilouy nichmat parmi les dates qu'on a
 posées, les lignes « Aujourd'hui » et « Hors ligne » de la bibliothèque, les
 titres de section des horaires.
 
+### Le triangle de lecture se centre sur son poids
+
+Un triangle centré sur sa boîte paraît décalé vers sa base : son poids est
+au tiers de sa largeur. L'icône de lecture (`play-solid`) est donc dessinée
+avec son centre de gravité au milieu, et sa pointe déborde d'autant. Le
+bouton rond qui la porte la centre comme n'importe quelle icône, sans marge
+de plus : une marge la poussait de 1 à 2 px vers la pointe, et le triangle
+paraissait décalé à droite. Tenu par `src/__tests__/playIcon.test.ts`.
+
 ### Le Sidour s'ouvre sur le moment
 
 Ce qu'on dit (les tefilot, les brahot, les textes des fêtes) vivait dans trois
