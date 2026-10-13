@@ -491,7 +491,7 @@ const shareUrl = computed(() =>
                 </span>
               </button>
               <ol v-show="showEarlier" id="sheet-earlier" class="sheet-queue">
-                <li v-for="{ item, index } in earlier" :key="item.src">
+                <li v-for="{ item, index } in earlier" :key="index">
                   <QueueRow
                     :number="item.episode ?? index + 1"
                     :title="shortTitle(item.title, track.context)"
@@ -533,7 +533,7 @@ const shareUrl = computed(() =>
                 }}</span>
               </div>
               <ol class="sheet-queue mt-2">
-                <li v-for="{ item, index } in shownFollowing" :key="item.src">
+                <li v-for="{ item, index } in shownFollowing" :key="index">
                   <QueueRow
                     :number="item.episode ?? index + 1"
                     :title="shortTitle(item.title, track.context)"
