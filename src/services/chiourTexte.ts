@@ -84,7 +84,7 @@ export function texteTitle(entry: TextStudyJsonEntry, locale: string): string {
 export type ChapitreKind = "introduction" | "topic" | "aliya" | "chapter";
 
 export function chapitreKind(entry: TextStudyJsonEntry, chapitre: number): ChapitreKind {
-  if (String(corpusOf(entry)) === "moussar" && chapitre === 0) return "introduction";
+  if (corpusOf(entry) === "moussar" && chapitre === 0) return "introduction";
   if (isPeleYoets(entry)) return "topic";
   if (!isMultiSection(entry) && isParasha(entry)) return "aliya";
   return "chapter";

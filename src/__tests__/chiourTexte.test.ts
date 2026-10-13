@@ -41,6 +41,8 @@ const VAYETZE = 270;
 const YEHOSHUA = 318;
 const TEHILIM_1 = 103;
 const CHAHARIT = 345;
+const CHAAR_HABITAHON = 404;
+const PELE_YOETS_ALEPH = 420;
 
 describe("le texte d'un cours", () => {
   it("retrouve l'entrée du catalogue, et ignore un identifiant inconnu", () => {
@@ -76,6 +78,20 @@ describe("le texte d'un cours", () => {
     expect(chapitreKind(texteOf(VAYETZE)!, 2)).toBe("aliya");
     expect(chapitreKind(texteOf(YEHOSHUA)!, 2)).toBe("chapter");
     expect(chapitreKind(texteOf(BERAKHOT_TALMUD)!, 2)).toBe("chapter");
+  });
+
+  it("mène au chapitre du moussar, l'introduction d'une porte comprise", () => {
+    const porte = texteOf(CHAAR_HABITAHON)!;
+    expect(texteRoute(porte, 4).path).toBe("/bibliotheque/moussar/chaar-habitahon/4");
+    expect(texteRoute(porte, 0).path).toBe("/bibliotheque/moussar/chaar-habitahon/0");
+    expect(chapitreKind(porte, 0)).toBe("introduction");
+    expect(chapitreKind(porte, 4)).toBe("chapter");
+    expect(
+      chiourTexte(chiour({ slug: "a", texteId: CHAAR_HABITAHON, texteChapitre: 0 }))?.chapitre,
+    ).toBe(0);
+    const pele = texteOf(PELE_YOETS_ALEPH)!;
+    expect(chapitreKind(pele, 11)).toBe("topic");
+    expect(texteRoute(pele, 11).path).toBe("/bibliotheque/moussar/pele-yoets-aleph/11");
   });
 
   it("nomme le texte dans l'alphabet du lecteur", () => {
