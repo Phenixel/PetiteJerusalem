@@ -20,6 +20,8 @@
  *   et déclare les receivers dans le manifest (voir docs/app-widgets.md)
  * - App Links : intent-filter vérifié sur le domaine, un lien du site ouvre
  *   l'app quand elle est installée (voir docs/app-links.md)
+ * - Boussole du Kotel : le plugin PjCompass (étalonnage du magnétomètre),
+ *   copié avec les widgets et enregistré dans MainActivity
  * - Montre Wear OS : le module android/wear/ recopié depuis native/wear/,
  *   déclaré dans settings.gradle, ses icônes reprises de l'app et les Tehilim
  *   embarqués dans ses assets (voir docs/app-watch.md)
@@ -398,6 +400,16 @@ public class MainActivity extends BridgeActivity {
       `$1// Montre Wear OS (voir native/wear/ et docs/app-watch.md).$1registerPlugin(PjWatchPlugin.class);$1$2`,
     );
     console.log("setup-android: plugin PjWatch enregistré dans MainActivity");
+  }
+  if (!mainActivity.includes("PjCompassPlugin")) {
+    // L'étalonnage du magnétomètre, pour la précision de la boussole du
+    // Kotel (src/services/nativeCompassAccuracy.ts), même règle que
+    // ci-dessus.
+    mainActivity = mainActivity.replace(
+      /(\n\s*)(super\.onCreate\(savedInstanceState\);)/,
+      `$1// Précision de la boussole du Kotel (voir docs/app-native.md).$1registerPlugin(PjCompassPlugin.class);$1$2`,
+    );
+    console.log("setup-android: plugin PjCompass enregistré dans MainActivity");
   }
   if (!mainActivity.includes("setOverScrollMode")) {
     mainActivity = mainActivity.replace(

@@ -1,4 +1,10 @@
 import { onUnmounted, ref, type Ref } from "vue";
+import {
+  accuracyFromDegrees,
+  type CompassAccuracy,
+  type DeviceTilt,
+} from "../services/compassReading";
+import { watchNativeCompassAccuracy } from "../services/nativeCompassAccuracy";
 
 /**
  * Le cap de l'appareil, en degrés : ce vers quoi pointe le haut du téléphone.
@@ -16,21 +22,35 @@ import { onUnmounted, ref, type Ref } from "vue";
  * absolue, une permission refusée, tout cela ramène simplement au cadran fixe.
  *
  * iOS exige un geste de l'utilisateur : `DeviceOrientationEvent.requestPermission`
- * n'aboutit que depuis un clic. La boussole est donc démarrée à l'ouverture de
- * la fenêtre là où c'est possible, et derrière un bouton là où iOS le demande.
+ * n'aboutit que depuis un clic. Les fenêtres démarrent donc la boussole
+ * dans le geste même qui les ouvre (un `watch` synchrone, comme le miroir des
+ * téfilines), et `start` appelle `requestPermission` avant tout `await` : un
+ * tour de boucle plus tard, Safari refuse sans rien demander, et la fenêtre
+ * réclamait un second appui sur « Activer la boussole » alors qu'on venait
+ * d'appuyer. Le bouton ne reste que pour le cas où ce premier geste n'a pas
+ * suffi (`locked`).
+ *
+ * Avec le cap viennent deux choses que le cadran montre aussi : la précision
+ * estimée (Safari la donne avec le cap, l'app Android la lit au système), et
+ * l'inclinaison du téléphone, qui dit s'il est tenu à plat.
  */
 
-/** État de la boussole, tel que la fenêtre doit le raconter. */
-export type CompassStatus = "idle" | "asking" | "live" | "denied" | "unavailable";
+/**
+ * État de la boussole, tel que la fenêtre doit le raconter. `locked` : la
+ * plateforme attend un geste pour donner l'orientation, la fenêtre doit le
+ * demander.
+ */
+export type CompassStatus = "idle" | "asking" | "locked" | "live" | "denied" | "unavailable";
 
 /** Le `requestPermission` d'iOS, absent des types du DOM. */
 interface OrientationPermission {
   requestPermission?: () => Promise<"granted" | "denied" | "prompt">;
 }
 
-/** L'événement d'orientation, plus le cap déjà calculé de Safari. */
+/** L'événement d'orientation, plus le cap déjà calculé de Safari et sa précision. */
 interface CompassEvent extends DeviceOrientationEvent {
   webkitCompassHeading?: number;
+  webkitCompassAccuracy?: number;
 }
 
 /**
@@ -40,11 +60,8 @@ interface CompassEvent extends DeviceOrientationEvent {
  */
 let granted = false;
 
-/** Vrai si la plateforme réclame un geste avant de donner l'orientation. */
-export function compassNeedsPermission(): boolean {
-  const api = (globalThis as { DeviceOrientationEvent?: OrientationPermission })
-    .DeviceOrientationEvent;
-  return typeof api?.requestPermission === "function" && !granted;
+function orientationApi(): OrientationPermission | undefined {
+  return (globalThis as { DeviceOrientationEvent?: OrientationPermission }).DeviceOrientationEvent;
 }
 
 /** Le cap porté par un événement, ou null s'il n'en porte pas d'absolu. */
@@ -66,21 +83,53 @@ function headingOf(event: CompassEvent): number | null {
  */
 const SILENCE_MS = 2000;
 
-export function useCompassHeading(): {
+export function useCompassHeading(options: { accuracy?: boolean } = {}): {
   heading: Ref<number | null>;
   status: Ref<CompassStatus>;
-  start: () => Promise<void>;
+  accuracy: Ref<CompassAccuracy>;
+  accuracyDegrees: Ref<number | null>;
+  tilt: Ref<DeviceTilt | null>;
+  start: (retry?: boolean) => Promise<void>;
   stop: () => void;
 } {
   const heading = ref<number | null>(null);
   const status = ref<CompassStatus>("idle");
+  /** La précision estimée du cap ; `unknown` tant que rien ne la donne. */
+  const accuracy = ref<CompassAccuracy>("unknown");
+  /** L'écart chiffré, en degrés, quand l'appareil le donne (Safari). */
+  const accuracyDegrees = ref<number | null>(null);
+  /** L'inclinaison de l'appareil ; null tant qu'il ne l'a pas donnée. */
+  const tilt = ref<DeviceTilt | null>(null);
 
   let listening = false;
   let silence: ReturnType<typeof setTimeout> | null = null;
+  let unwatchAccuracy: (() => void) | null = null;
+
+  function readTilt(event: CompassEvent): void {
+    if (typeof event.beta !== "number" || typeof event.gamma !== "number") return;
+    // Au degré, comme le cap : la main tremble, le cadran n'a pas à trembler
+    // avec elle.
+    const beta = Math.round(event.beta);
+    const gamma = Math.round(event.gamma);
+    if (tilt.value?.beta === beta && tilt.value?.gamma === gamma) return;
+    tilt.value = { beta, gamma };
+  }
+
+  function readAccuracy(event: CompassEvent): void {
+    const degrees = event.webkitCompassAccuracy;
+    if (typeof degrees !== "number" || Number.isNaN(degrees)) return;
+    accuracy.value = accuracyFromDegrees(degrees);
+    accuracyDegrees.value = degrees >= 0 ? Math.round(degrees) : null;
+  }
 
   function onOrientation(event: Event): void {
-    const value = headingOf(event as CompassEvent);
+    const compassEvent = event as CompassEvent;
+    // L'inclinaison vient aussi des événements sans nord : elle ne dépend
+    // que de la pesanteur.
+    readTilt(compassEvent);
+    const value = headingOf(compassEvent);
     if (value === null) return;
+    readAccuracy(compassEvent);
     if (silence) {
       clearTimeout(silence);
       silence = null;
@@ -96,16 +145,22 @@ export function useCompassHeading(): {
       clearTimeout(silence);
       silence = null;
     }
+    unwatchAccuracy?.();
+    unwatchAccuracy = null;
     if (!listening) return;
     window.removeEventListener("deviceorientationabsolute", onOrientation);
     window.removeEventListener("deviceorientation", onOrientation);
     listening = false;
   }
 
-  async function start(): Promise<void> {
+  /**
+   * Démarre l'écoute, dans un geste de l'utilisateur là où la plateforme
+   * l'exige : l'ouverture de la fenêtre, ou le bouton « Activer la boussole »
+   * (`retry`), après quoi un échec n'a plus de geste à attendre.
+   */
+  async function start(retry = false): Promise<void> {
     if (listening) return;
-    const api = (globalThis as { DeviceOrientationEvent?: OrientationPermission })
-      .DeviceOrientationEvent;
+    const api = orientationApi();
     if (!api || typeof window === "undefined") {
       status.value = "unavailable";
       return;
@@ -119,18 +174,31 @@ export function useCompassHeading(): {
         }
         granted = true;
       } catch {
-        // Appel hors geste de l'utilisateur, ou API absente à l'exécution :
-        // le cadran fixe reste juste, il n'y a rien à signaler d'autre.
-        status.value = "unavailable";
+        // Appel hors geste : Safari rejette au lieu de demander. La fenêtre
+        // propose alors le bouton ; depuis le bouton même, il n'y a plus
+        // rien à attendre, le cadran fixe reste juste.
+        status.value = retry ? "unavailable" : "locked";
         return;
       }
     }
+    if (listening) return;
+    tilt.value = null;
+    accuracy.value = "unknown";
+    accuracyDegrees.value = null;
     // Les deux événements : Chrome ne donne le nord que sur
     // « deviceorientationabsolute », Safari le donne sur « deviceorientation ».
     window.addEventListener("deviceorientationabsolute", onOrientation);
     window.addEventListener("deviceorientation", onOrientation);
     listening = true;
     status.value = "asking";
+    // Le magnétomètre natif ne s'allume que pour une fenêtre qui montre la
+    // précision.
+    if (options.accuracy) {
+      unwatchAccuracy = watchNativeCompassAccuracy((level) => {
+        accuracy.value = level;
+        accuracyDegrees.value = null;
+      });
+    }
     // L'écoute continue au-delà du délai : un magnétomètre lent (un capteur
     // qui s'étalonne) doit encore pouvoir réveiller le cadran, la fenêtre
     // disant en attendant qu'il n'y a pas de nord.
@@ -142,5 +210,5 @@ export function useCompassHeading(): {
 
   onUnmounted(stop);
 
-  return { heading, status, start, stop };
+  return { heading, status, accuracy, accuracyDegrees, tilt, start, stop };
 }

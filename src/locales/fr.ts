@@ -1610,6 +1610,33 @@ const fr = {
         "Votre appareil ou votre navigateur ne permettent pas d'utiliser la boussole : le cadran garde le nord en haut, à vous de l'orienter.",
       compassDenied: "L'accès à la boussole a été refusé : le cadran garde le nord en haut.",
       enable: "Activer la boussole",
+      searching: "La boussole cherche le nord…",
+      locked: "Touchez « Activer la boussole » pour que la flèche suive votre appareil.",
+      flatOk: "Le téléphone est à plat : la boussole s'oriente juste.",
+      calibrate: "Calibrer",
+      // La précision estimée du cap, sous le cadran (voir docs/design.md,
+      // « La boussole dit sa précision »).
+      accuracy: {
+        high: "bonne",
+        medium: "moyenne",
+        low: "faible",
+        line: "Précision {level}",
+        lineDegrees: "Précision {level}, à {deg}° près",
+        lowLine: "Précision faible : calibrez la boussole avant de la suivre.",
+        unknown: "La flèche vous semble fausse ?",
+      },
+      calibration: {
+        title: "Calibrer la boussole",
+        away: "Éloignez-vous des objets en métal et des appareils électriques ; retirez l'étui s'il porte un aimant.",
+        eight:
+          "Décrivez lentement un 8 dans l'air avec le téléphone, trois ou quatre fois, en le faisant pivoter dans tous les sens.",
+        flat: "Reposez-le à plat, l'écran vers le ciel : la flèche reprend sa place.",
+        current: "Précision {level} pour l'instant : continuez le geste.",
+        done: "La boussole est calibrée.",
+        unknown:
+          "Votre appareil ne dit pas sa précision : si la flèche reste fausse, refaites le geste.",
+        back: "Revenir à la boussole",
+      },
       rose: { n: "N", e: "E", s: "S", o: "O" },
       points: {
         n: "Nord",
