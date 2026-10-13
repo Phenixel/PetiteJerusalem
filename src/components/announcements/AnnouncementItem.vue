@@ -66,12 +66,15 @@ const openIncident = computed(() => isOngoingIncident(a.value, installed.value))
       <span v-if="a.kind === 'incident'" class="chip">
         {{ openIncident ? t("announcements.ongoing") : t("announcements.resolved") }}
       </span>
-      <span v-if="a.version" class="chip">
-        {{
-          t(a.kind === "incident" ? "announcements.fixedIn" : "announcements.version", {
-            version: a.version,
-          })
-        }}
+      <span v-if="a.fixedIn" class="chip">
+        {{ t("announcements.fixedIn", { version: a.fixedIn }) }}
+      </span>
+      <span v-else-if="a.version" class="chip">
+        {{ t("announcements.version", { version: a.version }) }}
+      </span>
+      <span v-if="a.poll" class="chip">
+        <AppIcon name="list" :size="13" />
+        {{ a.poll.closed ? t("announcements.poll.closedChip") : t("announcements.poll.chip") }}
       </span>
       <span v-if="isNew" class="chip bg-primary text-white">{{ t("announcements.new") }}</span>
       <span class="ms-auto">{{ date }}</span>

@@ -357,6 +357,14 @@ export default [
     name: "announcement",
     component: AnnouncementDetailPage,
   },
+  // La page de vote d'un sondage, pour les versions de l'app qui ne savent
+  // pas l'afficher : elle s'ouvre dans le navigateur (hors des liens
+  // d'application, voir BROWSER_ONLY_PATHS de scripts/lib/app-links.mjs).
+  {
+    path: "/sondage/:id",
+    name: "announcement-poll",
+    component: AnnouncementDetailPage,
+  },
   // Studio auteurs : accès par lien secret distribué par l'admin (pas de
   // compte). Page volontairement absente de toute navigation, et noindex.
   {

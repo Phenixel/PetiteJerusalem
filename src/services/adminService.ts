@@ -1,5 +1,4 @@
 import {
-  addDoc,
   collection,
   doc,
   getDoc,
@@ -34,7 +33,13 @@ import { serieService } from "./serieService";
 import { firestoreService } from "./firestoreService";
 import { studioService } from "./studioService";
 import { announcementService, parseAnnouncement } from "./announcementService";
-import { sortAnnouncements, type Announcement, type LocalizedText } from "./announcements";
+import {
+  linkWithPollPage,
+  sortAnnouncements,
+  type Announcement,
+  type LocalizedText,
+  type Poll,
+} from "./announcements";
 
 /**
  * Backoffice admin : CRUD direct Firestore/Storage, autorisé par les règles
@@ -74,10 +79,21 @@ export interface AnnouncementAdminFields {
   body: LocalizedText;
   link: Announcement["link"];
   version: string | null;
+  fixedIn: string | null;
   resolved: boolean;
+  poll: Poll | null;
   published: boolean;
   notify: boolean;
 }
+
+/** Les réponses à un sondage : le nombre d'appareils par choix, et en tout. */
+export interface PollResults {
+  total: number;
+  byOption: Record<string, number>;
+}
+
+/** Une image de choix : 5 Mo au plus (storage.rules). */
+export const POLL_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
 
 /**
  * Les dates d'un chiour arrivent de Firestore en Timestamp, alors que le
@@ -431,26 +447,71 @@ class AdminService {
     id: string | null,
     fields: AnnouncementAdminFields,
     previous: Announcement | null,
+    newId: string = this.newAnnouncementId(),
   ): Promise<string> {
+    // L'identifiant d'une nouvelle information est tiré d'avance (`newId`) :
+    // les images du sondage sont déjà rangées sous lui, et le lien de sa page
+    // de vote (voir linkWithPollPage) en dépend.
+    const savedId = id ?? newId;
     const data = {
       ...fields,
+      link: linkWithPollPage(savedId, fields.link, fields.poll),
       updatedAt: serverTimestamp(),
       ...(fields.published && !previous?.publishedAt ? { publishedAt: serverTimestamp() } : {}),
     };
-    let savedId = id;
-    if (savedId) {
+    if (id) {
       await updateDoc(doc(db, "announcements", savedId), data);
     } else {
-      const created = await addDoc(collection(db, "announcements"), {
+      await setDoc(doc(db, "announcements", savedId), {
         ...data,
         publishedAt: fields.published ? serverTimestamp() : null,
         notifiedAt: null,
         createdAt: serverTimestamp(),
       });
-      savedId = created.id;
     }
     announcementService.invalidate();
     return savedId;
+  }
+
+  /** Un identifiant Firestore libre pour une information à créer. */
+  newAnnouncementId(): string {
+    return doc(collection(db, "announcements")).id;
+  }
+
+  /**
+   * Dépose l'image d'un choix de sondage sous `announcements/{id}/` et rend
+   * son adresse publique. Le nom porte la date : remplacer une image ne
+   * laisse pas l'ancienne en cache chez qui l'a déjà vue.
+   */
+  async uploadPollImage(announcementId: string, optionId: string, file: File): Promise<string> {
+    if (!file.type.startsWith("image/")) throw new Error("not-an-image");
+    if (file.size > POLL_IMAGE_MAX_BYTES) throw new Error("image-too-large");
+    const ext = (file.name.split(".").pop() ?? "jpg").toLowerCase().replace(/[^a-z0-9]/g, "");
+    const path = `announcements/${announcementId}/${optionId}-${Date.now()}.${ext || "jpg"}`;
+    const task = uploadBytesResumable(storageRef(storage, path), file, {
+      contentType: file.type,
+      cacheControl: "public, max-age=31536000, immutable",
+    });
+    await new Promise<void>((resolve, reject) => task.on("state_changed", null, reject, resolve));
+    return getDownloadURL(storageRef(storage, path));
+  }
+
+  /**
+   * Les réponses à un sondage, comptées par le serveur : un appareil, une
+   * voix, son dernier vote. Un choix retiré depuis n'est plus compté à part.
+   */
+  async pollResults(announcementId: string, optionIds: string[]): Promise<PollResults> {
+    const votes = collection(db, "announcements", announcementId, "votes");
+    const [total, ...counts] = await Promise.all([
+      getCountFromServer(votes),
+      ...optionIds.map((optionId) =>
+        getCountFromServer(query(votes, where("choices", "array-contains", optionId))),
+      ),
+    ]);
+    return {
+      total: total.data().count,
+      byOption: Object.fromEntries(optionIds.map((o, i) => [o, counts[i].data().count])),
+    };
   }
 
   /** Clôt un incident depuis la liste, sans rien toucher d'autre. */
@@ -459,9 +520,19 @@ class AdminService {
     announcementService.invalidate();
   }
 
-  async deleteAnnouncement(id: string): Promise<void> {
+  /**
+   * Supprime une information, et les images de son sondage s'il en avait :
+   * servies publiquement, elles ne doivent pas lui survivre. Les votes
+   * restent en sous-collection, sans rien qui désigne personne.
+   */
+  async deleteAnnouncement(id: string, previous: Announcement | null = null): Promise<void> {
     await deleteDoc(doc(db, "announcements", id));
     announcementService.invalidate();
+    for (const option of previous?.poll?.options ?? []) {
+      if (option.image?.includes("firebasestorage")) {
+        await deleteObject(storageRef(storage, option.image)).catch(() => undefined);
+      }
+    }
   }
 
   // --- Séries -------------------------------------------------------------

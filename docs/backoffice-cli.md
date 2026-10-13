@@ -138,6 +138,7 @@ un script, par exemple pour retrouver un identifiant).
 | `info:creer`          | Nouvelle information (options ci-dessous). Brouillon sauf `--publier`.                                                              |
 | `info:modifier <id>`  | Change ce qui est passé en option, garde le reste. `--publier` / `--depublier`, `--resolu` / `--en-cours`.                          |
 | `info:resoudre <id>`  | Clôt un incident : il quitte l'accueil.                                                                                             |
+| `info:resultats <id>` | Les réponses à un sondage : le nombre d'appareils par choix, et en tout.                                                            |
 | `info:supprimer <id>` | Supprime définitivement.                                                                                                            |
 | `info:depuis-release` | La note de version d'un tag en information « Mise à jour » (`--tag vX.Y.Z`, ou `--version X.Y.Z --fichier note.md`). Voir plus bas. |
 
@@ -150,9 +151,19 @@ Options d'une information :
   facultatives (sans elles, ces lecteurs voient le français) ;
 - `--lien /page` ou `--lien https://…`, `--lien-texte` : le bouton ;
 - `--version X.Y.Z` : pour une mise à jour, la version décrite (l'app ne
-  l'annonce qu'une fois cette version installée) ; pour un incident, la
-  version qui le corrige (les appareils qui l'ont ne le voient plus sur
-  l'accueil) ;
+  l'annonce qu'une fois cette version installée) ;
+- `--corrige-dans X.Y.Z` : pour un incident, la version qui le corrige (les
+  appareils qui l'ont ne le voient plus sur l'accueil, les autres le voient
+  jusqu'à la mise à jour) ;
+- `--choix "Libellé"`, une fois par choix (de 2 à 8) : une question devient
+  un sondage. Une image se donne après une barre, adresse https ou fichier
+  local (envoyé dans Storage) : `--choix "Bleu|bleu.jpg"`. `--choix-en` et
+  `--choix-he`, dans le même ordre, traduisent les libellés.
+  `--choix-multiples` (ou `--choix-unique`) permet de cocher plusieurs
+  choix ; `--sondage-clos` (ou `--sondage-ouvert`) arrête les votes ;
+  `--sans-sondage` retire le sondage. Avec `info:modifier`, des `--choix`
+  remplacent la liste entière ; un choix dont le libellé français ne change
+  pas garde ses votes et son image ;
 - `--publier`, `--notifier` ;
 - `--date AAAA-MM-JJ` (ou une date ISO) : la date de publication, au lieu
   de maintenant, pour reprendre un historique. Refusée dans le futur, et

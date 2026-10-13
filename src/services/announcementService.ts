@@ -4,9 +4,13 @@ import { isNativeApp } from "../composables/useNativeApp";
 import { cached } from "./cached";
 import {
   ANNOUNCEMENT_KINDS,
+  POLL_MAX_OPTIONS,
+  POLL_MIN_OPTIONS,
   type Announcement,
   type AnnouncementKind,
   type LocalizedText,
+  type Poll,
+  type PollOption,
 } from "./announcements";
 
 /**
@@ -57,6 +61,34 @@ function toText(value: unknown): LocalizedText {
   return text;
 }
 
+function toVersion(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+/**
+ * Le sondage d'une question, ou null. Un choix sans identifiant ni libellé
+ * est écarté ; avec moins de deux choix, ce n'est plus un sondage.
+ */
+function toPoll(value: unknown): Poll | null {
+  const raw = value && typeof value === "object" ? (value as Record<string, unknown>) : null;
+  if (!raw || !Array.isArray(raw.options)) return null;
+  const options: PollOption[] = [];
+  for (const item of raw.options as unknown[]) {
+    const o = (item && typeof item === "object" ? item : {}) as Record<string, unknown>;
+    const label = toText(o.label);
+    if (typeof o.id !== "string" || !o.id || !label.fr.trim()) continue;
+    if (options.some((known) => known.id === o.id)) continue;
+    const image = typeof o.image === "string" && /^https:\/\//i.test(o.image) ? o.image : null;
+    options.push({ id: o.id, label, image });
+  }
+  if (options.length < POLL_MIN_OPTIONS) return null;
+  return {
+    options: options.slice(0, POLL_MAX_OPTIONS),
+    multiple: raw.multiple === true,
+    closed: raw.closed === true,
+  };
+}
+
 /** Un document Firestore, lu sans rien supposer de sa forme. */
 export function parseAnnouncement(id: string, data: DocumentData): Announcement {
   const kind = ANNOUNCEMENT_KINDS.includes(data.kind) ? (data.kind as AnnouncementKind) : "news";
@@ -73,8 +105,10 @@ export function parseAnnouncement(id: string, data: DocumentData): Announcement 
       link && typeof link.url === "string" && link.url.trim()
         ? { url: link.url.trim(), label: toText(link.label) }
         : null,
-    version: typeof data.version === "string" && data.version.trim() ? data.version.trim() : null,
+    version: toVersion(data.version),
+    fixedIn: kind === "incident" ? toVersion(data.fixedIn) : null,
     resolved: data.resolved === true,
+    poll: kind === "question" ? toPoll(data.poll) : null,
     notify: data.notify === true,
     notifiedAt: toDate(data.notifiedAt),
   };
@@ -128,3 +162,22 @@ class AnnouncementService {
 }
 
 export const announcementService = new AnnouncementService();
+
+/**
+ * Le vote d'un appareil à un sondage, sous `announcements/{id}/votes/{voterId}`.
+ * `voterId` est un identifiant tiré au hasard et gardé sur l'appareil : un
+ * nouveau vote remplace le précédent, sans compte et sans rien qui désigne
+ * la personne. Les règles n'acceptent le vote que sur un sondage publié et
+ * ouvert (voir firestore.rules).
+ */
+export async function submitPollVote(
+  announcementId: string,
+  voterId: string,
+  choices: string[],
+): Promise<void> {
+  const { fs, db } = await firestore();
+  await fs.setDoc(fs.doc(db, "announcements", announcementId, "votes", voterId), {
+    choices,
+    votedAt: fs.serverTimestamp(),
+  });
+}

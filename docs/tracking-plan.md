@@ -493,3 +493,17 @@ jeton). `$referrer` dit d'où venait le lien mort.
 
 `tip` reçoit une **nouvelle valeur**, `zmanim-date` : le calendrier sous la
 date des horaires.
+
+### Informations de l'équipe : `announcement_poll_answered` (nouveau)
+
+Un vote envoyé à un sondage (voir `docs/informations.md`), depuis la page de
+l'information, dans l'app ou sur le site.
+
+| Propriété       | Valeurs                                                       |
+| --------------- | ------------------------------------------------------------- |
+| `id`            | l'identifiant de l'information                                |
+| `choices_count` | le nombre de choix cochés (1, sauf sondage à choix multiples) |
+| `changed`       | `true` si l'appareil change un vote déjà envoyé               |
+
+Pas le choix lui-même : les réponses se comptent dans Firestore
+(`announcements/{id}/votes`), le backoffice les affiche.

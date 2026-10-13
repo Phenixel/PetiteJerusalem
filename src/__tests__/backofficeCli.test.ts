@@ -8,6 +8,7 @@ import {
   localizedText,
   parseKind,
   parseList,
+  pollFields,
   releaseAnnouncement,
   releaseAnnouncementId,
   slugify,
@@ -53,17 +54,30 @@ describe("announcementFields", () => {
     expect(announcementFields({ ...base, link: "https://a.fr" }).link?.url).toBe("https://a.fr");
   });
 
-  it("ne garde la version que pour une mise à jour ou un incident, « résolu » que pour un incident", () => {
+  it("ne garde la version que pour une mise à jour, « résolu » que pour un incident", () => {
     expect(announcementFields({ ...base, version: "3.11.0" }).version).toBeNull();
     expect(announcementFields({ ...base, kind: "release", version: "3.11.0" }).version).toBe(
       "3.11.0",
     );
-    // Incident : la version qui le corrige.
-    expect(announcementFields({ ...base, kind: "incident", version: "3.11.0" }).version).toBe(
-      "3.11.0",
-    );
+    expect(announcementFields({ ...base, kind: "incident", version: "3.11.0" }).version).toBeNull();
     expect(announcementFields({ ...base, resolved: true }).resolved).toBe(false);
     expect(announcementFields({ ...base, kind: "incident", resolved: true }).resolved).toBe(true);
+  });
+
+  it("garde la version du correctif d'un incident à part, et la veut X.Y.Z", () => {
+    const incident = { ...base, kind: "incident", fixedIn: "v3.11.1" };
+    expect(announcementFields(incident).fixedIn).toBe("3.11.1");
+    expect(announcementFields(incident).version).toBeNull();
+    expect(announcementFields({ ...base, fixedIn: "3.11.1" }).fixedIn).toBeNull();
+    expect(() => announcementFields({ ...incident, fixedIn: "bientôt" })).toThrow(
+      BackofficeInputError,
+    );
+  });
+
+  it("ne garde un sondage que sur une question", () => {
+    const poll = pollFields({ choices: ["Oui", "Non"] }, null);
+    expect(announcementFields({ ...base, kind: "question", poll }).poll).toBe(poll);
+    expect(announcementFields({ ...base, poll }).poll).toBeNull();
   });
 
   it("n'écrit jamais notifiedAt ni publishedAt : ils appartiennent au serveur", () => {
@@ -148,5 +162,68 @@ describe("chiourim", () => {
       "https://firebasestorage.googleapis.com/v0/b/b/o/chiourim%2Fx%2Faudio.mp3?alt=media&token=t",
     );
     expect(downloadUrl("b", "a.mp3", "t", "localhost:8472")).toMatch(/^http:\/\/localhost:8472\//);
+  });
+});
+
+describe("sondages", () => {
+  it("lit les choix, leur image (adresse ou fichier) et leurs traductions", () => {
+    const poll = pollFields(
+      {
+        choices: ["Bleu|https://exemple.fr/bleu.jpg", "Vert|vert.png", "Rouge"],
+        choicesEn: ["Blue", "Green"],
+        multiple: true,
+      },
+      null,
+    )!;
+    expect(poll.multiple).toBe(true);
+    expect(poll.closed).toBe(false);
+    expect(poll.options.map((o) => o.label)).toEqual([
+      { fr: "Bleu", en: "Blue" },
+      { fr: "Vert", en: "Green" },
+      { fr: "Rouge" },
+    ]);
+    expect(poll.options.map((o) => o.image)).toEqual([
+      "https://exemple.fr/bleu.jpg",
+      { file: "vert.png" },
+      null,
+    ]);
+    expect(new Set(poll.options.map((o) => o.id)).size).toBe(3);
+  });
+
+  it("garde l'identifiant (donc les votes) et l'image d'un choix dont le libellé ne change pas", () => {
+    const existing = {
+      options: [
+        { id: "aaaa", label: { fr: "Bleu" }, image: "https://exemple.fr/bleu.jpg" },
+        { id: "bbbb", label: { fr: "Vert" }, image: null },
+      ],
+      multiple: false,
+      closed: false,
+    };
+    const poll = pollFields({ choices: ["Vert", "Bleu", "Jaune"] }, existing)!;
+    expect(poll.options.map((o) => o.id).slice(0, 2)).toEqual(["bbbb", "aaaa"]);
+    expect(poll.options[1].image).toBe("https://exemple.fr/bleu.jpg");
+    expect(["aaaa", "bbbb"]).not.toContain(poll.options[2].id);
+  });
+
+  it("clôt ou rouvre sans toucher aux choix, et se retire", () => {
+    const existing = {
+      options: [{ id: "a1b2", label: { fr: "Oui" }, image: null }],
+      multiple: false,
+      closed: false,
+    };
+    expect(pollFields({ closed: true }, existing)).toEqual({ ...existing, closed: true });
+    expect(pollFields({ remove: true }, existing)).toBeNull();
+    expect(pollFields({}, null)).toBeNull();
+    expect(() => pollFields({ closed: true }, null)).toThrow(BackofficeInputError);
+  });
+
+  it("refuse moins de deux choix, plus de huit, ou un choix vide", () => {
+    expect(() => pollFields({ choices: ["Seul"] }, null)).toThrow(BackofficeInputError);
+    expect(() =>
+      pollFields({ choices: Array.from({ length: 9 }, (_, i) => `C${i}`) }, null),
+    ).toThrow(BackofficeInputError);
+    expect(() => pollFields({ choices: ["Oui", "|image.png"] }, null)).toThrow(
+      BackofficeInputError,
+    );
   });
 });

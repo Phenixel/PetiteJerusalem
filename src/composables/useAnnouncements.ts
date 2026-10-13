@@ -15,6 +15,10 @@ import { isOutdated } from "../services/appUpdateService";
 const SEEN_KEY = "pj_announcements_seen";
 /** La version de l'app installée lors de la dernière visite de la liste. */
 const SEEN_VERSION_KEY = "pj_announcements_seen_version";
+/** Les réponses de l'appareil aux sondages : { [id d'information]: choix }. */
+const POLL_VOTES_KEY = "pj_poll_votes";
+/** L'identifiant tiré au hasard sous lequel l'appareil vote. */
+const POLL_VOTER_KEY = "pj_poll_voter";
 
 function readSeen(): number | null {
   try {
@@ -34,12 +38,50 @@ function readSeenVersion(): string | null {
   }
 }
 
+function readVotes(): Record<string, string[]> {
+  try {
+    const raw = JSON.parse(localStorage.getItem(POLL_VOTES_KEY) ?? "{}") as unknown;
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+    return Object.fromEntries(
+      Object.entries(raw as Record<string, unknown>).filter(
+        (entry): entry is [string, string[]] =>
+          Array.isArray(entry[1]) && entry[1].every((c) => typeof c === "string"),
+      ),
+    );
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * L'identifiant de vote de l'appareil, créé au premier vote. Sans stockage,
+ * un identifiant neuf à chaque vote : le vote compte, il ne se remplace pas.
+ */
+function voterId(): string {
+  const fresh = () =>
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 12)}`;
+  try {
+    const known = localStorage.getItem(POLL_VOTER_KEY);
+    if (known && /^[\w-]{8,64}$/.test(known)) return known;
+    const id = fresh();
+    localStorage.setItem(POLL_VOTER_KEY, id);
+    return id;
+  } catch {
+    return fresh();
+  }
+}
+
 const items = ref<Announcement[]>([]);
 const status = ref<"idle" | "loading" | "ready" | "error">("idle");
 const seenAt = ref<number | null>(readSeen());
 const seenVersion = ref<string | null>(readSeenVersion());
 /** Version de l'app installée (notes de version), nulle sur le site. */
 const installed = ref<string | null>(null);
+/** Ce que l'appareil a répondu aux sondages. */
+const votes = ref<Record<string, string[]>>(readVotes());
+const answered = computed(() => new Set(Object.keys(votes.value)));
 
 let loading: Promise<void> | null = null;
 
@@ -133,9 +175,32 @@ async function markSeenUpTo(a: Announcement): Promise<void> {
   if (seenVersion.value && isOutdated(seenVersion.value, a.version)) saveSeenVersion(a.version);
 }
 
+/**
+ * Vote à un sondage, ou change son vote : un seul vote par appareil, le
+ * dernier compte. Retenu sur l'appareil une fois accepté par le serveur ; le
+ * sondage quitte alors l'accueil.
+ */
+async function answerPoll(a: Announcement, choices: string[]): Promise<void> {
+  const { submitPollVote } = await import("../services/announcementService");
+  await submitPollVote(a.id, voterId(), choices);
+  votes.value = { ...votes.value, [a.id]: choices };
+  try {
+    localStorage.setItem(POLL_VOTES_KEY, JSON.stringify(votes.value));
+  } catch {
+    // Stockage indisponible : le vote est compté, l'appareil l'oubliera.
+  }
+}
+
 export function useAnnouncements() {
   const highlights = computed(() =>
-    homeHighlights(items.value, seenAt.value, installed.value, Date.now(), seenVersion.value),
+    homeHighlights(
+      items.value,
+      seenAt.value,
+      installed.value,
+      Date.now(),
+      seenVersion.value,
+      answered.value,
+    ),
   );
   return {
     items,
@@ -143,9 +208,11 @@ export function useAnnouncements() {
     seenAt,
     seenVersion,
     installed,
+    votes,
     highlights,
     load,
     markAllSeen,
     markSeenUpTo,
+    answerPoll,
   };
 }

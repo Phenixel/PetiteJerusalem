@@ -35,7 +35,9 @@ function release(version: string, publishedAt: Date): Announcement {
     updatedAt: null,
     link: null,
     version,
+    fixedIn: null,
     resolved: false,
+    poll: null,
     notify: false,
     notifiedAt: null,
   };
