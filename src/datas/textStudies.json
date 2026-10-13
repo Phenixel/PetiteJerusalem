@@ -609,6 +609,14 @@
       "type": "Mishna"
     },
     {
+      "id": 442,
+      "name": "עדיות (Eduyot)",
+      "livre": "נזיקין (Nezikin)",
+      "link": "https://www.sefaria.org/Mishnah_Eduyot",
+      "totalSections": 8,
+      "type": "Mishna"
+    },
+    {
       "id": 77,
       "name": "עבודה זרה (Avodah Zarah)",
       "livre": "נזיקין (Nezikin)",

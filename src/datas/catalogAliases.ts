@@ -199,6 +199,8 @@ export const TEXT_ALIASES: Record<string, string[]> = {
     "פרקי אבות",
   ],
   Beitzah: ["Yom Tov"],
+  // Edouyot : sa graphie pleine en hébreu, et le nom que lui donne le Talmud.
+  Eduyot: ["עדויות", "Be'hirta", "בחירתא"],
   Oktzin: ["Uktzin", "Oukatsin"],
 
   // Moadim.
