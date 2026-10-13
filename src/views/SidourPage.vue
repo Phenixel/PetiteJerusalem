@@ -1,3 +1,12 @@
+<script lang="ts">
+/**
+ * Le téléchargement des textes de la fête en cours, un seul à la fois pour
+ * toute l'app : revenir sur la page pendant qu'il tourne ne le relance pas,
+ * et ne compte pas pour téléchargés des livres encore en route.
+ */
+let feastDownload: Promise<void> | null = null;
+</script>
+
 <script setup lang="ts">
 /**
  * Le Sidour : deuxième onglet de la barre du bas, et tout ce qu'on dit.
@@ -249,9 +258,18 @@ function trackOpen(
 // Le temps d'une fête, ses textes viennent en tête : ils doivent s'ouvrir sans
 // réseau, à la synagogue comme ailleurs. Rien ne se télécharge si le système
 // le refuse en arrière-plan (vieux Android sans accès au stockage).
-async function downloadFeastTexts(): Promise<void> {
+function downloadFeastTexts(): Promise<void> {
+  feastDownload ??= runFeastDownload().finally(() => {
+    feastDownload = null;
+  });
+  return feastDownload;
+}
+
+async function runFeastDownload(): Promise<void> {
   const feast = moment.value.feast;
   if (!isNativeApp || !feast) return;
+  // Hors connexion, chaque visite essayait et échouait : on attend le réseau.
+  if (typeof navigator !== "undefined" && navigator.onLine === false) return;
   const feastSection = sections.value.find((section) => section.kind === "feast-now");
   if (!feastSection) return;
   const [library, store] = await Promise.all([

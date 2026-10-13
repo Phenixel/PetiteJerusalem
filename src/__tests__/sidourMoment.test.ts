@@ -7,7 +7,7 @@ import {
   sidourMoment,
   tefilaAdditions,
 } from "../services/sidourMoment";
-import { DEFAULT_PLACE } from "../services/zmanimService";
+import { DEFAULT_PLACE, type ZmanimPlace } from "../services/zmanimService";
 import { orderTools, SIDOUR_TOOLS } from "../content/sidourTools";
 import fr from "../locales/fr";
 import en from "../locales/en";
@@ -24,6 +24,14 @@ import he from "../locales/he";
  * fuseau de la machine de test.
  */
 const at = (iso: string) => new Date(iso);
+
+const JERUSALEM: ZmanimPlace = {
+  source: "city",
+  latitude: 31.769,
+  longitude: 35.2163,
+  tzid: "Asia/Jerusalem",
+  city: "Jérusalem",
+};
 
 describe("la carte du moment", () => {
   it("un matin de Roch 'Hodech : Cha'harit, avec Ya'alé véyavo, le Hallel et Moussaf", () => {
@@ -158,6 +166,57 @@ describe("la carte du moment", () => {
   });
 });
 
+describe("les bords de la nuit et des fêtes", () => {
+  it("la lune s'efface à l'instant où le délai se ferme, même au milieu de la nuit", () => {
+    // Nuit du 25 au 26 octobre 2026, la dernière : le délai se ferme vers 2 h 44.
+    expect(sidourMoment(DEFAULT_PLACE, at("2026-10-26T02:30:00+01:00")).hero?.kind).toBe(
+      "halevana",
+    );
+    expect(sidourMoment(DEFAULT_PLACE, at("2026-10-26T03:04:00+01:00")).hero?.kind).not.toBe(
+      "halevana",
+    );
+  });
+
+  it("'Hanouka n'annonce pas un allumage déjà passé, ni un allumage pendant le Chabbat", () => {
+    // Vendredi 4 décembre 2026, après la chkia : le Chabbat est entré.
+    const friday = sidourMoment(DEFAULT_PLACE, at("2026-12-04T17:10:00+01:00")).hero;
+    expect(friday?.kind).not.toBe("feast");
+    // Jérusalem, 8 décembre 2026, passé 'hatsot : la cinquième bougie a été allumée.
+    const late = sidourMoment(JERUSALEM, at("2026-12-08T23:45:00+02:00")).hero;
+    expect(late?.kind).not.toBe("feast");
+  });
+
+  it("l'allumage et la havdala tiennent jusqu'à 'hatsot, passé minuit", () => {
+    // Nuit du 8 au 9 décembre 2026 : 'hatsot vers 0 h 43.
+    expect(sidourMoment(DEFAULT_PLACE, at("2026-12-09T00:10:00+01:00")).hero?.kind).toBe("hanouka");
+    // Motsaé Chabbat du 18 juillet 2026 : 'hatsot vers 1 h 58.
+    expect(sidourMoment(DEFAULT_PLACE, at("2026-07-19T00:30:00+02:00")).extra?.key).toBe("havdala");
+  });
+
+  it("quand le 9 Av reporté entre à la sortie du Chabbat, la havdala attend la fin du jeûne", () => {
+    // Samedi 21 juillet 2029, 9 Av : le jeûne est reporté au dimanche.
+    expect(sidourMoment(DEFAULT_PLACE, at("2029-07-21T22:45:00+02:00")).extra?.key).not.toBe(
+      "havdala",
+    );
+    expect(sidourMoment(DEFAULT_PLACE, at("2029-07-22T23:00:00+02:00")).extra?.key).toBe("havdala");
+  });
+
+  it("le loulav prend la carte les jours de Yom Tov de Souccot aussi", () => {
+    // Dimanche 27 septembre 2026, 16 Tichri, Yom Tov en diaspora.
+    expect(sidourMoment(DEFAULT_PLACE, at("2026-09-27T13:55:00+02:00")).hero).toMatchObject({
+      kind: "feast",
+      feast: "souccot",
+      text: "moadim/netilat-loulav",
+    });
+  });
+
+  it("le vendredi 24 Kislev, l'allumage fait déjà remonter les textes de 'Hanouka", () => {
+    const moment = sidourMoment(DEFAULT_PLACE, at("2026-12-04T16:20:00+01:00"));
+    expect(moment.hero?.kind).toBe("hanouka");
+    expect(moment.feast).toBe("hanouka");
+  });
+});
+
 describe("ce que le jour ajoute à un office", () => {
   const hd = new HDate(1, months.CHESHVAN, 5787);
   const keys = (tefila: "chaharit" | "minha" | "arvit", occasions: string[]) =>
@@ -191,6 +250,9 @@ describe("le calendrier du Sidour", () => {
     expect(currentFeast(new HDate(10, months.TISHREI, 5787))).toBe("tichri");
     expect(currentFeast(new HDate(15, months.TISHREI, 5787))).toBe("souccot");
     expect(currentFeast(new HDate(23, months.TISHREI, 5787))).toBe("souccot");
+    // En Terre d'Israël, Sim'hat Torah tombe le 22 : le 23, la fête est finie.
+    expect(currentFeast(new HDate(22, months.TISHREI, 5787), true)).toBe("souccot");
+    expect(currentFeast(new HDate(23, months.TISHREI, 5787), true)).toBeNull();
     expect(currentFeast(new HDate(25, months.KISLEV, 5787))).toBe("hanouka");
     expect(currentFeast(new HDate(2, months.TEVET, 5787))).toBe("hanouka");
     expect(currentFeast(new HDate(1, months.CHESHVAN, 5787))).toBeNull();
@@ -241,7 +303,9 @@ describe("les outils du moment", () => {
     // de saison, mais pas devant.
     expect(tools("2026-09-25T20:30:00+02:00")).toEqual(["kotel", "tefilin", "naanouim"]);
     expect(tools("2026-09-26T11:00:00+02:00")).toEqual(["kotel", "tefilin", "naanouim"]);
-    // Chemini Atseret, et le reste de l'année : plus de na'anou'a.
+    // Chemini Atseret, dès son entrée le soir de Hochana Rabba, et le reste
+    // de l'année : plus de na'anou'a.
+    expect(tools("2026-10-02T21:00:00+02:00")).not.toContain("naanouim");
     expect(tools("2026-10-03T11:00:00+02:00")).not.toContain("naanouim");
     expect(tools("2026-10-13T08:00:00+02:00")).not.toContain("naanouim");
   });

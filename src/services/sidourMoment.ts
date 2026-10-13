@@ -9,12 +9,14 @@ import {
 } from "./sidourService";
 import {
   birkatHalevanaLastDay,
+  birkatHalevanaWindow,
   computeZmanim,
   hebrewDateFor,
   hebrewDayOf,
   isIsraelPlace,
   isWalledCityPlace,
   moonAge,
+  placeDayAfter,
   restPeriodAt,
   saysBirkatHalevana,
   slihotWindow,
@@ -154,14 +156,15 @@ export function hanoukaNight(hd: HDate): number | null {
  * La fête dont les textes remontent en tête de la liste, au jour hébraïque
  * (bascule à la chkia) : les Sli'hot et l'Atarat nedarim depuis Roch 'Hodech
  * Eloul (l'usage séfarade, celui de l'app) jusqu'à Kippour, les textes de
- * Souccot du lendemain de Kippour à Sim'hat Torah, 'Hanouka ses huit jours.
+ * Souccot du lendemain de Kippour à Sim'hat Torah (le 23 Tichri en diaspora,
+ * le 22 en Terre d'Israël), 'Hanouka ses huit jours.
  */
-export function currentFeast(hd: HDate): FeastId | null {
+export function currentFeast(hd: HDate, il = false): FeastId | null {
   const month = hd.getMonth();
   const day = hd.getDate();
   if (month === months.ELUL) return "tichri";
   if (month === months.TISHREI && day <= 10) return "tichri";
-  if (month === months.TISHREI && day <= 23) return "souccot";
+  if (month === months.TISHREI && day <= (il ? 22 : 23)) return "souccot";
   if (hanoukaNight(hd) !== null) return "hanouka";
   return null;
 }
@@ -234,6 +237,26 @@ function officeOf(place: ZmanimPlace, window: TefilaWindow) {
   };
 }
 
+type ZmanMap = Map<ZmanKey, Date>;
+
+function zmanMap(place: ZmanimPlace, day: Date): ZmanMap {
+  return new Map(computeZmanim(place, day).map((z) => [z.key, z.date]));
+}
+
+/**
+ * Le soir dont la nuit est en cours : celui du jour, ou celui de la veille
+ * entre minuit et 'hatsot de la nuit, quand 'hatsot tombe après minuit. Un
+ * soir d'occasion (l'allumage, la havdala) court jusqu'à 'hatsot : passé
+ * minuit, les horaires du jour civil sont déjà ceux du lendemain, et il
+ * s'effaçait à minuit.
+ */
+function eveningOf(place: ZmanimPlace, now: Date, times: ZmanMap): { day: Date; times: ZmanMap } {
+  const dawnMidnight = times.get("chatzotNightDawn");
+  if (!dawnMidnight || now.getTime() >= dawnMidnight.getTime()) return { day: now, times };
+  const day = placeDayAfter(place, now, -1);
+  return { day, times: zmanMap(place, day) };
+}
+
 /**
  * L'allumage de 'Hanouka, s'il est l'heure : le soir, de la chkia (de la
  * sortie du Chabbat le samedi) à 'hatsot ; le vendredi, de plag hamin'ha à la
@@ -242,12 +265,13 @@ function officeOf(place: ZmanimPlace, window: TefilaWindow) {
 function hanoukaEvening(
   place: ZmanimPlace,
   now: Date,
-  times: Map<ZmanKey, Date>,
+  evening: { day: Date; times: ZmanMap },
 ): { night: number; beforeShabbat?: Date } | null {
+  const { times } = evening;
   const sunset = times.get("sunset");
   const plag = times.get("plagHaMincha");
   const midnight = times.get("chatzotNight");
-  const today = hebrewDayOf(place, now);
+  const today = hebrewDayOf(place, evening.day);
   const t = now.getTime();
 
   if (today.getDay() === 5) {
@@ -269,20 +293,31 @@ function hanoukaEvening(
 /**
  * La havdala, le soir où finit un Chabbat ou un Yom Tov (le dernier jour d'un
  * bloc de repos), de la chkia à 'hatsot ; avec l'heure de la sortie.
+ *
+ * Quand Tich'a beAv, reporté, commence à la sortie du Chabbat, on ne dit ce
+ * soir-là que la bénédiction du feu : la havdala attend la sortie du jeûne,
+ * le dimanche soir.
  */
 function havdalaEvening(
   place: ZmanimPlace,
   now: Date,
-  times: Map<ZmanKey, Date>,
+  evening: { day: Date; times: ZmanMap },
 ): SidourExtra | null {
+  const { times } = evening;
   const sunset = times.get("sunset");
   const midnight = times.get("chatzotNight");
   const t = now.getTime();
   if (!sunset || t < sunset.getTime() || (midnight && t >= midnight.getTime())) return null;
-  const today = hebrewDayOf(place, now);
+  const today = hebrewDayOf(place, evening.day);
+  if (occasionsOf(place, today.next()).has("tisha-beav")) return null;
   const rest = restPeriodAt(place, today, "fr");
-  if (!rest || rest.last.abs() !== today.abs()) return null;
-  return { key: "havdala", text: MOMENT_TEXTS.havdala, start: rest.end ?? undefined };
+  if (rest && rest.last.abs() === today.abs()) {
+    return { key: "havdala", text: MOMENT_TEXTS.havdala, start: rest.end ?? undefined };
+  }
+  if (today.getDay() === 0 && occasionsOf(place, today).has("tisha-beav")) {
+    return { key: "havdala", text: MOMENT_TEXTS.havdala, start: times.get("tzeit") };
+  }
+  return null;
 }
 
 /** Le moment du Sidour, au lieu des horaires et à l'heure qu'il est. */
@@ -308,11 +343,14 @@ function momentTools(
   const first: SidourToolId[] = [];
   const inSeason = new Set<SidourToolId>();
 
+  // La saison suit le jour hébraïque : elle s'ouvre à la chkia du 14 Tichri
+  // et se ferme à celle de Hochana Rabba, pas à minuit.
   const today = hebrewDayOf(place, now);
-  const todayOccasions = occasionsOf(place, today);
   const eveningOccasions = occasionsOf(place, hebrewDateFor(place, now, now));
-  if (todayOccasions.has("sukkot") || eveningOccasions.has("sukkot")) inSeason.add("naanouim");
-  if (day && todayOccasions.has("sukkot") && today.getDay() !== 6) first.push("naanouim");
+  if (eveningOccasions.has("sukkot")) inSeason.add("naanouim");
+  if (day && occasionsOf(place, today).has("sukkot") && today.getDay() !== 6) {
+    first.push("naanouim");
+  }
 
   if (office?.tefila === "chaharit") {
     const soon = office.current || office.start.getTime() - now.getTime() <= MIRROR_LEAD_MS;
@@ -347,10 +385,14 @@ function momentTools(
  */
 export function sidourMoment(place: ZmanimPlace, now: Date = new Date()): SidourMoment {
   const t = now.getTime();
-  const times = new Map(computeZmanim(place, now).map((z) => [z.key, z.date]));
+  const times = zmanMap(place, now);
   const evening = hebrewDateFor(place, now, now);
   const today = hebrewDayOf(place, now);
-  const feast = currentFeast(evening);
+  const currentEvening = eveningOf(place, now, times);
+  // Le vendredi 24 Kislev, de plag à la chkia, l'allumage tient la carte
+  // alors que 'Hanouka ne commence qu'au soir : ses textes remontent déjà.
+  const hanouka = hanoukaEvening(place, now, currentEvening);
+  const feast = currentFeast(evening, isIsraelPlace(place)) ?? (hanouka ? "hanouka" : null);
   let hero: SidourHero | null = null;
 
   const sunrise = times.get("sunrise");
@@ -361,7 +403,6 @@ export function sidourMoment(place: ZmanimPlace, now: Date = new Date()): Sidour
   const day = !!sunrise && !!sunset && t >= sunrise.getTime() && t < sunset.getTime();
 
   // 1. 'Hanouka : l'allumage passe devant l'office du soir.
-  const hanouka = hanoukaEvening(place, now, times);
   if (hanouka) {
     hero = {
       kind: "hanouka",
@@ -388,8 +429,14 @@ export function sidourMoment(place: ZmanimPlace, now: Date = new Date()): Sidour
     };
   }
 
-  // 3. La lune, les nuits où on la bénit.
-  if (!hero && night && saysBirkatHalevana(place, evening)) {
+  // 3. La lune, les nuits où on la bénit, et jusqu'à l'instant où le délai
+  // se ferme : la dernière nuit, il tombe souvent avant l'aube.
+  if (
+    !hero &&
+    night &&
+    saysBirkatHalevana(place, evening) &&
+    t <= birkatHalevanaWindow(evening).end.getTime()
+  ) {
     hero = {
       kind: "halevana",
       text: MOMENT_TEXTS.halevana,
@@ -410,14 +457,16 @@ export function sidourMoment(place: ZmanimPlace, now: Date = new Date()): Sidour
   }
 
   // 5. Entre deux offices, la fête.
-  if (!hero && feast) hero = feastHero(place, now, feast, today, day, slihot, slihotSeason);
+  if (!hero && feast) {
+    hero = feastHero(place, now, feast, today, day, times.get("sunset"), slihot, slihotSeason);
+  }
 
   if (!hero && office) {
     hero = { kind: "next-tefila", text: MOMENT_TEXTS[office.tefila], ...office };
   }
 
   // La ligne dessous : la havdala d'abord, sinon l'office sous une occasion.
-  let extra: SidourExtra | null = havdalaEvening(place, now, times);
+  let extra: SidourExtra | null = havdalaEvening(place, now, currentEvening);
   if (!extra && occasion && office) {
     extra = {
       key: "tefila",
@@ -458,12 +507,15 @@ function feastHero(
   feast: FeastId,
   today: HDate,
   day: boolean,
+  sunset: Date | undefined,
   slihot: ReturnType<typeof slihotWindow>,
   slihotSeason: boolean,
 ): SidourHero | null {
   if (feast === "souccot") {
-    if (!day || !occasionsOf(place, today).has("loulav")) return null;
-    const sunset = computeZmanim(place, now).find((z) => z.key === "sunset")?.date;
+    // Le loulav se prend chaque jour de Souccot, Yom Tov compris, sauf le
+    // Chabbat : la même règle que la rangée des outils. (L'occasion `loulav`
+    // écarte le Yom Tov pour le texte de Cha'harit, pas pour la carte.)
+    if (!day || !occasionsOf(place, today).has("sukkot") || today.getDay() === 6) return null;
     return {
       kind: "feast",
       feast,
@@ -474,6 +526,9 @@ function feastHero(
     };
   }
   if (feast === "hanouka") {
+    // Passé la chkia, l'allumage du soir a sa carte jusqu'à 'hatsot, ou
+    // c'est le Chabbat qui est entré : « ce soir » serait déjà passé.
+    if (sunset && now.getTime() >= sunset.getTime()) return null;
     const night = hanoukaNight(today.next());
     if (night === null) return null;
     return { kind: "feast", feast, text: MOMENT_TEXTS.hanouka, day: null, additions: [], night };
