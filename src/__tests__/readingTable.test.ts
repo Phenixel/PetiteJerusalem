@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createApp, h, nextTick, ref, type App } from "vue";
 import { createI18n } from "vue-i18n";
-import type { Router } from "vue-router";
+import { createMemoryHistory, createRouter, type Router } from "vue-router";
 
 /**
  * La table d'étude (docs/design.md, « Des textes mis de côté, sur la
@@ -38,6 +38,8 @@ function text(key: string, patch: Partial<TableText> = {}): TableText {
     path: `/bibliotheque/tanakh/${key}/1`,
     title: `Texte ${key}`,
     place: "Chapitre 1 · verset 3",
+    book: "Berechit",
+    excerpt: "בְּרֵאשִׁית בָּרָא אֱלֹהִים",
     corpus: "tanakh",
     line: 2,
     offset: 140,
@@ -184,11 +186,12 @@ describe("la barre de la table", () => {
     app = null;
   });
 
-  async function mountBar() {
+  async function mountBar(router?: Router) {
     host = document.createElement("div");
     document.body.appendChild(host);
     app = createApp({ render: () => h(ReadingTableBar) });
     app.use(createI18n({ legacy: false, locale: "fr", messages: { fr } }));
+    if (router) app.use(router);
     app.mount(host);
     await nextTick();
   }
@@ -198,24 +201,33 @@ describe("la barre de la table", () => {
     expect(host.querySelector("[role='region']")).toBeNull();
   });
 
-  it("sur un téléphone, montre les trois derniers posés et compte les autres", async () => {
+  it("porte un onglet par texte posé, celui qu'on lit levé", async () => {
     for (const key of ["a", "b", "c", "d", "e"]) placeOnTable(text(key));
+    const unregister = registerTableReader({ key: "c", snapshot: () => text("c") });
     await mountBar();
-    const volumes = [...host.querySelectorAll<HTMLElement>("[data-table-key]")];
-    expect(volumes.map((v) => v.dataset.tableKey)).toEqual(["c", "d", "e"]);
-    expect(host.textContent).toContain("+2");
+
+    const tabs = [...host.querySelectorAll<HTMLElement>("[data-table-key]")];
+    expect(tabs.map((tab) => tab.dataset.tableKey)).toEqual(["a", "b", "c", "d", "e"]);
+    expect(tabs.filter((tab) => tab.classList.contains("table-tab-open"))).toEqual([tabs[2]]);
+    expect(tabs[2].getAttribute("aria-current")).toBe("page");
+    unregister();
   });
 
-  it("porte les textes posés, souligne celui qu'on lit, et s'ouvre d'un appui", async () => {
+  it("un onglet ouvre son texte, la barre ouvre la table", async () => {
     placeOnTable(text("a"));
     placeOnTable(text("b"));
     const unregister = registerTableReader({ key: "b", snapshot: () => text("b") });
-    await mountBar();
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [{ path: "/:rest(.*)*", component: { render: () => null } }],
+    });
+    await router.push("/bibliotheque/tanakh/b/1");
+    await mountBar(router);
 
-    const volumes = [...host.querySelectorAll<HTMLElement>("[data-table-key]")];
-    expect(volumes.map((v) => v.dataset.tableKey)).toEqual(["a", "b"]);
-    expect(volumes[1].classList.contains("tome-open")).toBe(true);
-    expect(volumes[0].classList.contains("tome-open")).toBe(false);
+    host.querySelector<HTMLElement>("[data-table-key='a']")!.click();
+    await vi.waitFor(() => expect(router.currentRoute.value.path).toBe("/bibliotheque/tanakh/a/1"));
+    expect(hasTableRestore("/bibliotheque/tanakh/a/1")).toBe(true);
+    expect(useReadingTable().sheetOpen.value).toBe(false);
 
     host.querySelector<HTMLElement>("[role='region']")!.click();
     expect(useReadingTable().sheetOpen.value).toBe(true);

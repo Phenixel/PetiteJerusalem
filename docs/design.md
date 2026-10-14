@@ -1498,34 +1498,42 @@ geste : plusieurs livres ouverts sur la table, chacun à sa page.
 - **Mettre de côté.** En tête de chaque texte de la bibliothèque, à droite de
   « Retour », un bouton « Mettre de côté » (les trois livres posés et son
   nom) ; le même dans le menu de lecture, sous « Haut de page », parce que
-  c'est au milieu d'un chapitre qu'on en a besoin. Le texte rejoint la table,
-  la page se réduit jusqu'à son volume dans la barre du bas (une carte à la
-  reliure de son rayon, qui porte son nom), et l'on retrouve la
+  c'est au milieu d'un chapitre qu'on en a besoin. Le texte rejoint la table
+  et la tête de sa page (le livre à l'encre du thème, le nom en Playfair) se
+  réduit jusqu'à son onglet dans la barre du bas ; on retrouve la
   bibliothèque. Pas en chaîne de lecture : on y lit sa part, on ne l'emporte
   pas.
-- **La barre de la table.** Elle se pose au bas de l'écran comme le lecteur
-  audio, au-dessus de lui et de la barre de l'app, et suit d'une page à
-  l'autre : la pile et son compte, puis les textes posés côte à côte, chacun
-  en petit volume (la reliure de son rayon en dos, son nom à côté). Le
-  dernier posé se range au bout, de l'autre côté des autres ; au-delà de
-  trois sur un téléphone (cinq sur un écran large), les plus anciens se
-  comptent (« +2 ») : un quatrième volume ne laissait plus lire aucun nom. Le texte à l'écran est
-  souligné de l'encre du thème. Une surface claire, pas une teinte : c'est
-  un outil de lecture, pas une écoute en cours. Les boutons flottants du bas
-  (menu de lecture, retour en haut, toasts) montent d'autant
-  (`TABLE_BAR_REM`, `useBottomChromeHeight`).
-- **La table ouverte.** Un appui n'importe où sur la barre, ou sur un
-  téléphone un glissement vers le haut, ouvre un panneau qui monte du bas, à
-  la hauteur de ce qu'il porte et jamais plus des trois quarts de l'écran :
-  la page reste visible derrière un voile léger, la table se pose dessus,
-  elle ne la remplace pas. Les textes s'y lisent comme des livres : une
-  petite couverture à la reliure du rayon, le nom, l'endroit où on l'a
-  laissé (« 1re montée · verset 22 »), « Ouvert » pour celui qu'on lit, une
-  croix pour le ranger. Les derniers posés en tête. « Tout ranger » vide la
-  table, après confirmation. Ouverte depuis un texte qui n'y est pas
-  encore, elle propose de le poser aussi : passer à un autre ne le perd pas.
-  Échap, le retour Android, un appui autour ou le panneau tiré vers le bas
-  la referment.
+- **La barre de la table, un jeu d'onglets.** Elle se pose au bas de l'écran
+  comme le lecteur audio, au-dessus de lui et de la barre de l'app, et suit
+  d'une page à l'autre. Elle prend la forme que le site donne déjà à un
+  choix entre voisins (la bascule hébreu / phonétique, Bibliothèque /
+  Chiourim / Partage) : un onglet par texte, le dernier posé au bout, et le
+  texte qu'on lit est l'onglet levé, blanc, à l'encre du thème. Quand ils ne
+  tiennent plus, la rangée défile de côté, l'onglet lu restant sous les
+  yeux. Ni liseré, ni reliure, ni teinte : une première version posait de
+  petits volumes à la couleur de leur rayon, un dessin de plus que le reste
+  du site n'a nulle part. Les boutons flottants du bas (menu de lecture,
+  retour en haut, toasts) montent d'autant (`TABLE_BAR_REM`,
+  `useBottomChromeHeight`).
+- **Un onglet, un geste.** Toucher un onglet ouvre ce texte, à l'endroit où
+  on l'a laissé : passer d'un livre à l'autre ne demande qu'un appui. La pile
+  au début de la barre (et son compte), la flèche au bout, un appui ailleurs
+  sur la barre, un glissement vers le haut, ou l'onglet du texte qu'on lit
+  ouvrent la table.
+- **La table ouverte montre les pages.** Un panneau monte du bas, à la
+  hauteur de ce qu'il porte et jamais plus des trois quarts de l'écran : la
+  page reste visible derrière un voile léger, la table se pose dessus, elle
+  ne la remplace pas. Chaque texte y montre sa page ouverte, dans le dessin
+  de la tête d'une page de lecture : son rayon et son livre en petit, à
+  l'encre du thème (« Tanakh · Berechit »), son nom, puis la première ligne
+  de la page où on l'a laissé, dans sa langue et sa police de lecture, et
+  l'endroit (« 1re montée · verset 22 », « Daf 2b » pour une Guemara). Une
+  ligne par texte, séparées d'un filet comme la file du lecteur, dans
+  l'ordre de la barre ; « Ouvert » marque celui qu'on lit, une croix range
+  un texte, « Tout ranger » vide la table après confirmation. Ouverte depuis
+  un texte qui n'y est pas encore, elle propose de le poser aussi, d'une
+  commande à la couleur du thème qui porte son nom. Échap, le retour
+  Android, un appui autour ou le panneau tiré vers le bas la referment.
 - **Chaque texte rouvre à sa page.** La table retient le verset en haut de
   l'écran et sa hauteur dans la fenêtre ; rouvert, le texte revient
   exactement là, au pixel près, quelle que soit la taille du texte choisie
@@ -1542,8 +1550,6 @@ geste : plusieurs livres ouverts sur la table, chacun à sa page.
   à un rechargement ou à une app refermée (localStorage), mais ne suit pas
   le compte d'un appareil à l'autre. Vingt-quatre textes au plus, le plus
   ancien posé partant le premier.
-- **Les reliures** sont celles de l'étagère (`config/bindings.ts`), la
-  Michna prêtant la sienne à la liturgie.
 
 ## 2. Les couleurs de thème
 

@@ -1024,15 +1024,31 @@ function tableSnapshot(refresh = false): TableText | null {
   if (contentTextId !== textId.value) return null;
   let line: number | null = null;
   let offset = 0;
+  // La page où l'on en est, telle que la table la montre : sa première ligne.
+  let excerpt = "";
+  let daf = "";
+  const root = readingRoot.value;
   if (currentSection.value && !showSectionList.value) {
     // Le premier verset encore visible sous l'en-tête, comme la reprise.
-    for (const el of readingRoot.value?.querySelectorAll<HTMLElement>("[data-line]") ?? []) {
+    for (const el of root?.querySelectorAll<HTMLElement>("[data-line]") ?? []) {
       const rect = el.getBoundingClientRect();
       if (rect.bottom >= 96) {
         line = Number(el.dataset.line ?? 0);
         offset = rect.top;
+        excerpt = (el.querySelector(".reading-he, .reading-tl") ?? el).textContent ?? "";
         break;
       }
+    }
+    // Une Guemara n'a pas de versets repérés : le daf lu est le dernier dont
+    // le titre est passé sous l'en-tête, et sa page commence à son titre.
+    if (line === null && content.value.type === "Talmud Bavli") {
+      let current: HTMLElement | null = null;
+      for (const label of root?.querySelectorAll<HTMLElement>("[data-block-anchor]") ?? []) {
+        if (label.getBoundingClientRect().top <= 140 || !current) current = label;
+        else break;
+      }
+      daf = current?.textContent?.trim() ?? "";
+      excerpt = current?.nextElementSibling?.textContent ?? "";
     }
   }
   const section =
@@ -1041,12 +1057,16 @@ function tableSnapshot(refresh = false): TableText | null {
       : null;
   // Où l'on reprendra : « Chapitre 4 · verset 12 ». Une tefila se dit par
   // son chapitre seulement : ses paragraphes ne sont pas des versets.
-  const place =
-    line !== null && !isLiturgyText.value
+  const place = daf
+    ? daf
+    : line !== null && !isLiturgyText.value
       ? placeLabel(positionSection.value, line)
       : section
         ? sectionLabel(section)
         : "";
+  // Le livre, en latin (« Berechit », « Zeraim ») : la table le dit au-dessus
+  // du nom, comme la tête de la page de lecture.
+  const livre = String(entry.livre ?? "");
   return {
     key: textId.value,
     path: canonicalReadingPath.value,
@@ -1056,6 +1076,8 @@ function tableSnapshot(refresh = false): TableText | null {
     // avec le traité du Talmud de même nom.
     title: entry.type === "Mishna" ? `Michna ${latinName(entry)}` : latinName(entry),
     place,
+    book: (livre.match(/\(([^)]+)\)\s*$/)?.[1] ?? livre).trim(),
+    excerpt: excerpt.replace(/\s+/g, " ").trim().slice(0, 160),
     corpus: isEtudeRoute.value ? String(route.params.corpus) : (corpusOf(entry) ?? ""),
     line,
     offset,

@@ -3,7 +3,6 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 import AppIcon from "../icons/AppIcon.vue";
-import { bindingOf } from "../../config/bindings";
 import { useConfirm } from "../../composables/useConfirm";
 import { useOverlay } from "../../composables/useOverlayStack";
 import {
@@ -19,11 +18,13 @@ import { analyticsService } from "../../services/analyticsService";
 
 /**
  * La table d'étude ouverte : un panneau qui monte du bas, à la hauteur de ce
- * qu'il porte, sous lequel la page reste visible. Les textes posés s'y
- * lisent comme des livres sur une table : la reliure de leur rayon, leur
- * nom, l'endroit où on les a laissés. Un appui en rouvre un, à cet endroit
- * même ; celui qu'on lit est marqué « Ouvert ». Une croix range un texte,
- * « Tout ranger » vide la table.
+ * qu'il porte, sous lequel la page reste visible. Chaque texte posé y montre
+ * sa page ouverte, comme un livre sur une table : son rayon et son livre à
+ * l'encre du thème (la tête de la page de lecture), son nom, la première
+ * ligne de la page où on l'a laissé, dans sa langue, et l'endroit. Une ligne
+ * par texte, séparées d'un filet, dans l'ordre de la barre. Un appui en
+ * rouvre un, à cet endroit même ; celui qu'on lit est marqué « Ouvert ». Une
+ * croix range un texte, « Tout ranger » vide la table.
  *
  * Ouvert depuis un texte qui n'est pas encore sur la table, il propose de
  * l'y poser aussi : passer à un autre ne le fait pas perdre.
@@ -48,8 +49,19 @@ function refreshUnplaced() {
 }
 watch(sheetOpen, (open) => open && refreshUnplaced(), { immediate: true });
 
-// Les derniers posés en tête : c'est vers eux qu'on revient le plus.
-const ordered = computed(() => [...texts.value].reverse());
+/**
+ * Au-dessus du nom : le rayon et le livre (« Tanakh · Berechit »), sans
+ * répéter le nom quand le livre le porte déjà (la paracha Berechit).
+ */
+const TYPE_KEYS: Record<string, string> = { michna: "mishna" };
+function headOf(text: TableText): string {
+  const corpus = text.corpus ? t(`study.types.${TYPE_KEYS[text.corpus] ?? text.corpus}`) : "";
+  const book = text.book && text.book !== text.title && text.book !== corpus ? text.book : "";
+  return [corpus, book].filter(Boolean).join(" · ");
+}
+
+/** Une ligne en hébreu s'écrit dans sa police, de droite à gauche. */
+const HEBREW = /[\u0590-\u05ff]/;
 
 function close() {
   closeTableSheet();
@@ -61,6 +73,7 @@ function openText(text: TableText) {
     corpus: text.corpus,
     texts_count: texts.value.length,
     was_open: text.key === openKey.value,
+    from: "table",
   });
   openFromTable(text.key, router);
 }
@@ -216,45 +229,57 @@ const panelStyle = computed(() =>
         </div>
 
         <!-- Le texte à l'écran, pas encore sur la table -->
-        <div v-if="unplaced" class="flex-shrink-0 px-5 pb-3">
-          <button type="button" class="btn btn-soft w-full !justify-start" @click="placeCurrent">
-            <AppIcon name="plus" :size="16" class="flex-shrink-0 text-primary" />
+        <div v-if="unplaced" class="flex-shrink-0 px-5 pb-2">
+          <button type="button" class="table-place" @click="placeCurrent">
+            <AppIcon name="plus" :size="16" class="flex-shrink-0" />
             <span class="truncate">{{
               t("readingTable.placeCurrent", { title: unplaced.title })
             }}</span>
           </button>
         </div>
 
-        <ul class="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain px-4 pb-2">
-          <li v-for="text in ordered" :key="text.key" class="table-item">
+        <!-- Les pages ouvertes, dans l'ordre de la barre -->
+        <ul class="table-list min-h-0 flex-1 overflow-y-auto overscroll-contain px-5">
+          <li v-for="text in texts" :key="text.key" class="flex items-start gap-1">
             <button
               type="button"
-              class="flex min-w-0 flex-1 items-center gap-3 p-3 text-start"
+              class="table-page group min-w-0 flex-1 text-start"
               :aria-current="text.key === openKey ? 'true' : undefined"
               @click="openText(text)"
             >
-              <span class="table-cover" :style="{ '--binding': bindingOf(text.corpus) }">
-                <span class="table-cover-band"></span>
+              <span v-if="headOf(text)" class="block truncate text-xs font-semibold text-primary">
+                {{ headOf(text) }}
               </span>
-              <span class="min-w-0 flex-1">
-                <span dir="auto" class="block truncate font-semibold text-text-primary">
+              <span class="mt-0.5 flex items-center gap-2">
+                <span
+                  dir="auto"
+                  class="truncate font-semibold text-text-primary transition-colors group-hover:text-primary"
+                >
                   {{ text.title }}
                 </span>
-                <!-- Où l'on reprendra : le chapitre et le verset. -->
-                <span v-if="text.place" class="block truncate text-sm text-text-secondary">
-                  {{ text.place }}
+                <span
+                  v-if="text.key === openKey"
+                  class="chip flex-shrink-0 bg-primary/10 text-primary"
+                >
+                  {{ t("readingTable.openNow") }}
                 </span>
               </span>
+              <!-- La page où on l'a laissé : sa première ligne, dans sa langue -->
               <span
-                v-if="text.key === openKey"
-                class="chip flex-shrink-0 bg-primary/10 text-primary"
+                v-if="text.excerpt"
+                :dir="HEBREW.test(text.excerpt) ? 'rtl' : 'auto'"
+                class="table-excerpt"
+                :class="{ 'font-hebrew': HEBREW.test(text.excerpt) }"
               >
-                {{ t("readingTable.openNow") }}
+                {{ text.excerpt }}
+              </span>
+              <span v-if="text.place" class="mt-1 block truncate text-sm text-text-secondary">
+                {{ text.place }}
               </span>
             </button>
             <button
               type="button"
-              class="icon-btn me-1.5 flex-shrink-0"
+              class="icon-btn mt-3 flex-shrink-0"
               :aria-label="t('readingTable.remove', { title: text.title })"
               :title="t('readingTable.remove', { title: text.title })"
               @click="remove(text)"
@@ -288,7 +313,7 @@ const panelStyle = computed(() =>
   background-color: rgb(20 16 8 / 0.3);
 }
 
-/* Le panneau : une surface, taillée franc, qui monte du bas ; à la hauteur
+/* Le panneau : une surface, taillée franc comme une fenêtre, qui monte du bas ; à la hauteur
    de ce qu'il porte, sans jamais dépasser les trois quarts de l'écran. */
 .table-sheet {
   position: fixed;
@@ -302,8 +327,8 @@ const panelStyle = computed(() =>
   max-height: min(75vh, 40rem);
   margin-inline: auto;
   padding-bottom: max(var(--safe-bottom, 0px), env(safe-area-inset-bottom, 0px));
-  border-start-start-radius: var(--radius-3xl);
-  border-start-end-radius: var(--radius-3xl);
+  border-start-start-radius: var(--radius-xl);
+  border-start-end-radius: var(--radius-xl);
   background-color: var(--color-surface);
   box-shadow: var(--shadow-pop);
   outline: none;
@@ -312,34 +337,47 @@ const panelStyle = computed(() =>
 @media (min-width: 768px) {
   .table-sheet {
     bottom: 1rem;
-    border-radius: var(--radius-3xl);
+    border-radius: var(--radius-xl);
   }
 }
 
-.table-item {
-  display: flex;
-  align-items: center;
-  border-radius: var(--radius-card);
-  background-color: var(--color-surface-soft);
+/* Une ligne par texte, séparées d'un filet, comme la file du lecteur. */
+.table-list > li + li {
+  border-top: 1px solid var(--color-line);
+}
+.table-page {
+  display: block;
+  padding-block: 0.875rem;
+}
+/* La première ligne de la page : le texte même, dans sa police de lecture,
+   sur une ligne, coupée du côté où elle finit. */
+.table-excerpt {
+  display: block;
+  margin-top: 0.375rem;
+  overflow: hidden;
+  color: var(--color-text-primary);
+  font-size: 1.05rem;
+  line-height: 1.6;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-/* La couverture : un petit volume à la reliure de son rayon, un filet de
-   dorure près du dos. */
-.table-cover {
-  position: relative;
-  width: 2.25rem;
-  height: 3rem;
-  flex-shrink: 0;
-  border-radius: var(--radius-xs) var(--radius-sm) var(--radius-sm) var(--radius-xs);
-  background-color: var(--binding);
-  box-shadow: var(--shadow-card);
+/* « Poser aussi » : une commande à la couleur du thème, qui dit ce qu'elle fait. */
+.table-place {
+  display: inline-flex;
+  max-width: 100%;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.875rem;
+  border-radius: var(--radius-btn);
+  background-color: color-mix(in srgb, var(--color-primary) 10%, transparent);
+  color: var(--color-primary);
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: background-color 0.2s ease;
 }
-.table-cover-band {
-  position: absolute;
-  inset-block: 0.35rem;
-  inset-inline-start: 0.4rem;
-  width: 1px;
-  background-color: rgb(255 244 222 / 0.55);
+.table-place:hover {
+  background-color: color-mix(in srgb, var(--color-primary) 16%, transparent);
 }
 
 .table-veil-enter-active,

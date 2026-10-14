@@ -1,27 +1,36 @@
 <script setup lang="ts">
 import { computed, defineAsyncComponent, nextTick, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
+import { useRouter } from "vue-router";
 import AppIcon from "../icons/AppIcon.vue";
-import { bindingOf } from "../../config/bindings";
 import { useMiniPlayerVisible } from "../../composables/useAudioPlayer";
 import { useBottomChromeHeight } from "../../composables/useBottomChrome";
 import { isNativeApp } from "../../composables/useNativeApp";
 import { prefersLessMotion } from "../../composables/useMotion";
-import { endFlight, openTableSheet, useReadingTable } from "../../composables/useReadingTable";
+import {
+  endFlight,
+  openFromTable,
+  openTableSheet,
+  useReadingTable,
+  type TableText,
+} from "../../composables/useReadingTable";
 import { analyticsService } from "../../services/analyticsService";
 
 /**
- * La barre de la table d'étude : les textes mis de côté, posés côte à côte
- * en bas de l'écran comme le cours qui joue dans la barre du lecteur. Chacun
- * y est un petit volume à la reliure de son rayon ; celui qu'on lit est
- * souligné. Le dernier posé se range au bout, de l'autre côté des autres.
+ * La barre de la table d'étude : les textes mis de côté, en bas de l'écran
+ * comme le cours qui joue dans la barre du lecteur, et sous la forme que le
+ * site donne déjà à un choix entre voisins, un jeu d'onglets (la bascule
+ * hébreu / phonétique, Bibliothèque / Chiourim / Partage). Le texte qu'on lit
+ * est l'onglet levé, blanc, à l'encre du thème. Le dernier posé se range au
+ * bout ; quand ils ne tiennent plus, la rangée défile de côté.
  *
- * Un appui n'importe où sur elle, ou sur un téléphone un glissement vers le
- * haut, ouvre la table (ReadingTableSheet) : un panneau qui monte du bas
- * sans couvrir toute la page, d'où l'on passe d'un texte à l'autre.
+ * Toucher un onglet ouvre ce texte, à l'endroit où on l'a laissé : passer de
+ * l'un à l'autre ne demande qu'un geste. La pile (au début), la flèche (au
+ * bout), un appui ailleurs sur la barre ou un glissement vers le haut ouvrent
+ * la table (ReadingTableSheet), où chaque texte montre sa page.
  *
- * Mettre un texte de côté le fait s'envoler jusqu'ici : la page se réduit
- * jusqu'à son volume dans la barre (voir `flight` dans useReadingTable).
+ * Mettre un texte de côté le fait s'envoler jusqu'ici : la tête de sa page se
+ * réduit jusqu'à son onglet (voir `flight` dans useReadingTable).
  *
  * Montée sur toutes les pages : rien ici ne tire le catalogue des textes ;
  * le panneau se charge à la demande.
@@ -30,6 +39,7 @@ const loadSheet = () => import("./ReadingTableSheet.vue");
 const ReadingTableSheet = defineAsyncComponent(loadSheet);
 
 const { t } = useI18n();
+const router = useRouter();
 const { texts, sheetOpen, flight, openKey } = useReadingTable();
 
 // Au-dessus de la barre de l'app et du lecteur audio, sous ce qu'elle porte.
@@ -39,23 +49,6 @@ const bottom = useBottomChromeHeight("0.5rem", { table: false });
 const miniPlayerVisible = useMiniPlayerVisible();
 const aboveWidePlayer = computed(() => miniPlayerVisible.value && !isNativeApp);
 
-/**
- * Les derniers posés seulement, le reste se compte (« +2 ») : trois sur un
- * téléphone, où un quatrième volume ne laissait plus lire aucun nom
- * (« Bere… », « N… »), cinq sur un écran large.
- */
-const wideQuery =
-  typeof window !== "undefined" && typeof window.matchMedia === "function"
-    ? window.matchMedia("(min-width: 768px)")
-    : null;
-const wide = ref(wideQuery?.matches ?? false);
-wideQuery?.addEventListener?.("change", (event) => {
-  wide.value = event.matches;
-});
-const maxShown = computed(() => (wide.value ? 5 : 3));
-const shown = computed(() => texts.value.slice(-maxShown.value));
-const hiddenCount = computed(() => Math.max(0, texts.value.length - maxShown.value));
-
 const openLabel = computed(() => t("readingTable.open", texts.value.length));
 
 function openSheet() {
@@ -63,7 +56,24 @@ function openSheet() {
   openTableSheet();
 }
 
-// Téléphone : un glissement vers le haut sur la barre l'ouvre aussi.
+/** Un onglet : le texte, là où on l'a laissé ; celui qu'on lit ouvre la table. */
+function onTab(text: TableText) {
+  if (text.key === openKey.value || !router) {
+    openSheet();
+    return;
+  }
+  analyticsService.capture("reading_table_text_opened", {
+    text_id: text.key,
+    corpus: text.corpus,
+    texts_count: texts.value.length,
+    was_open: false,
+    from: "bar",
+  });
+  openFromTable(text.key, router);
+}
+
+// Téléphone : un glissement vers le haut sur la barre l'ouvre aussi. Un
+// glissement de côté, lui, fait défiler les onglets.
 const SWIPE_OPEN = 24;
 let swipeStart: { x: number; y: number } | null = null;
 function onTouchStart(event: TouchEvent) {
@@ -95,10 +105,36 @@ watch(
   { immediate: true },
 );
 
-// --- L'envol : la page mise de côté se réduit jusqu'à son volume ---
+// L'onglet du texte lu, ou du dernier posé, reste sous les yeux quand la
+// rangée défile.
+const tabs = ref<HTMLElement | null>(null);
+function tabOf(key: string | null | undefined): HTMLElement | null {
+  if (!key) return null;
+  const all = tabs.value?.querySelectorAll<HTMLElement>("[data-table-key]") ?? [];
+  return [...all].find((tab) => tab.dataset.tableKey === key) ?? null;
+}
+function revealTab(key: string | null | undefined) {
+  const row = tabs.value;
+  const tab = tabOf(key);
+  if (!row || !tab) return;
+  const start =
+    tab.getBoundingClientRect().left - row.getBoundingClientRect().left + row.scrollLeft;
+  const end = start + tab.offsetWidth;
+  if (start < row.scrollLeft) row.scrollLeft = start;
+  else if (end > row.scrollLeft + row.clientWidth) row.scrollLeft = end - row.clientWidth;
+}
+watch(
+  [openKey, () => texts.value.length],
+  async () => {
+    await nextTick();
+    revealTab(flight.value?.key ?? openKey.value ?? texts.value[texts.value.length - 1]?.key);
+  },
+  { immediate: true },
+);
+
+// --- L'envol : la tête de la page mise de côté se réduit jusqu'à son onglet ---
 const ghost = ref<HTMLElement | null>(null);
-const bar = ref<HTMLElement | null>(null);
-/** Le volume qui attend l'arrivée de sa page pour paraître. */
+/** L'onglet qui attend l'arrivée de sa page pour paraître. */
 const landingKey = ref<string | null>(null);
 
 watch(flight, async (current) => {
@@ -109,10 +145,9 @@ watch(flight, async (current) => {
   }
   landingKey.value = current.key;
   await nextTick();
+  revealTab(current.key);
   const el = ghost.value;
-  const target =
-    bar.value?.querySelector<HTMLElement>(`[data-table-key="${CSS.escape(current.key)}"]`) ??
-    bar.value;
+  const target = tabOf(current.key);
   if (!el || !target || typeof el.animate !== "function") {
     land();
     return;
@@ -126,6 +161,7 @@ watch(flight, async (current) => {
         left: `${from.left}px`,
         width: `${from.width}px`,
         height: `${from.height}px`,
+        borderRadius: "6px",
         opacity: 1,
       },
       {
@@ -133,7 +169,8 @@ watch(flight, async (current) => {
         left: `${to.left}px`,
         width: `${to.width}px`,
         height: `${to.height}px`,
-        opacity: 0.9,
+        borderRadius: "10px",
+        opacity: 0.85,
       },
     ],
     { duration: 480, easing: "cubic-bezier(0.55, 0, 0.25, 1)", fill: "forwards" },
@@ -155,7 +192,6 @@ const ghostStyle = computed(() => {
     left: `${current.from.left}px`,
     width: `${current.from.width}px`,
     height: `${current.from.height}px`,
-    "--binding": bindingOf(current.corpus),
   };
 });
 </script>
@@ -169,61 +205,62 @@ const ghostStyle = computed(() => {
       :style="{ bottom }"
     >
       <div
-        ref="bar"
         role="region"
         :aria-label="t('readingTable.title')"
-        class="pointer-events-auto mx-auto flex h-12 max-w-md cursor-pointer items-center gap-2 rounded-control bg-surface ps-1.5 pe-1 shadow-pop md:max-w-xl"
+        class="pointer-events-auto mx-auto flex h-12 max-w-md cursor-pointer items-center gap-1.5 rounded-control bg-surface ps-1.5 pe-1 shadow-pop md:max-w-xl"
         @click="openSheet"
         @touchstart.passive="onTouchStart"
         @touchmove.passive="onTouchMove"
       >
+        <!-- La pile et son compte : la table -->
         <button
           type="button"
-          class="flex h-full min-w-0 flex-1 items-center gap-2 text-start"
+          class="relative flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"
           :aria-label="openLabel"
           :title="openLabel"
+          @click.stop="openSheet"
         >
-          <!-- La pile et son compte -->
-          <span
-            class="relative flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"
-          >
-            <AppIcon name="books" :size="18" />
-            <span class="table-count">{{ texts.length }}</span>
-          </span>
-          <!-- Les volumes posés, côte à côte -->
-          <span class="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden" aria-hidden="true">
-            <span
-              v-if="hiddenCount"
-              class="flex-shrink-0 text-xs font-semibold text-text-secondary"
-            >
-              +{{ hiddenCount }}
-            </span>
-            <span
-              v-for="text in shown"
-              :key="text.key"
-              :data-table-key="text.key"
-              class="tome"
-              :class="{ 'tome-open': text.key === openKey, 'opacity-0': text.key === landingKey }"
-              :style="{ '--binding': bindingOf(text.corpus) }"
-            >
-              <span class="tome-spine"></span>
-              <span dir="auto" class="truncate">{{ text.title }}</span>
-            </span>
-          </span>
+          <AppIcon name="books" :size="18" />
+          <span class="table-count" aria-hidden="true">{{ texts.length }}</span>
         </button>
-        <span
-          class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-text-secondary"
-          aria-hidden="true"
+
+        <!-- Les textes posés : un onglet chacun -->
+        <div ref="tabs" class="table-tabs min-w-0 flex-1">
+          <div class="inline-flex rounded-btn bg-black/5 p-0.5 dark:bg-white/10">
+            <button
+              v-for="text in texts"
+              :key="text.key"
+              type="button"
+              :data-table-key="text.key"
+              class="table-tab"
+              :class="{
+                'table-tab-open': text.key === openKey,
+                'opacity-0': text.key === landingKey,
+              }"
+              :aria-current="text.key === openKey ? 'page' : undefined"
+              :title="text.place ? `${text.title} · ${text.place}` : text.title"
+              @click.stop="onTab(text)"
+            >
+              <span dir="auto" class="truncate">{{ text.title }}</span>
+            </button>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          class="flex h-10 w-9 flex-shrink-0 items-center justify-center rounded-full text-text-secondary"
+          :aria-label="openLabel"
+          @click.stop="openSheet"
         >
           <AppIcon name="chevron-up" :size="18" />
-        </span>
+        </button>
       </div>
     </div>
   </Transition>
 
-  <!-- La page qui s'envole vers la barre -->
+  <!-- La tête de la page qui s'envole vers son onglet -->
   <div v-if="flight" ref="ghost" class="table-ghost" :style="ghostStyle" aria-hidden="true">
-    <span class="table-ghost-spine"></span>
+    <span v-if="flight.book" dir="auto" class="table-ghost-book">{{ flight.book }}</span>
     <span dir="auto" class="table-ghost-title">{{ flight.title }}</span>
   </div>
 
@@ -247,62 +284,72 @@ const ghostStyle = computed(() => {
   text-align: center;
 }
 
-/* Un volume : sa reliure en dos, son titre à côté. Taillé franc, comme les
-   livres de l'étagère ; il se partage la place avec ses voisins. */
-.tome {
-  display: inline-flex;
-  min-width: 0;
-  max-width: 9.5rem;
-  flex: 0 1 auto;
-  align-items: center;
-  gap: 0.4rem;
-  height: 1.9rem;
-  padding-inline-end: 0.5rem;
-  overflow: hidden;
-  border-radius: var(--radius-sm);
-  background-color: var(--color-surface-soft);
-  color: var(--color-text-primary);
-  font-size: 0.75rem;
-  font-weight: 600;
-  transition: opacity 0.2s ease;
+/* La rangée d'onglets défile de côté quand elle déborde, sans barre de
+   défilement : le bord coupé dit qu'il y en a d'autres. */
+.table-tabs {
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
 }
-.tome-spine {
-  width: 0.4rem;
-  align-self: stretch;
-  flex-shrink: 0;
-  background-color: var(--binding);
-}
-/* Le texte à l'écran : souligné de l'encre du thème. */
-.tome-open {
-  box-shadow: inset 0 -2px 0 var(--color-primary);
-  color: var(--color-primary);
+.table-tabs::-webkit-scrollbar {
+  display: none;
 }
 
+/* Un onglet : le dessin de la bascule hébreu / phonétique. */
+.table-tab {
+  display: inline-flex;
+  max-width: 9rem;
+  flex-shrink: 0;
+  align-items: center;
+  padding: 0.375rem 0.75rem;
+  border-radius: var(--radius-control);
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+  white-space: nowrap;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    opacity 0.2s ease;
+}
+.table-tab:hover {
+  color: var(--color-text-primary);
+}
+.table-tab-open,
+.table-tab-open:hover {
+  background-color: var(--color-surface);
+  color: var(--color-primary);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
+}
+
+/* La tête de la page lue, comme en haut de la lecture : le livre à l'encre
+   du thème, le nom en Playfair. */
 .table-ghost {
   position: fixed;
   z-index: 45;
   display: flex;
-  align-items: flex-start;
-  gap: 0.75rem;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 1.5rem;
   overflow: hidden;
   border-radius: var(--radius-card);
   background-color: var(--color-surface);
   box-shadow: var(--shadow-pop);
   pointer-events: none;
 }
-.table-ghost-spine {
-  width: 0.5rem;
-  align-self: stretch;
-  flex-shrink: 0;
-  background-color: var(--binding);
+.table-ghost-book {
+  color: var(--color-primary);
+  font-size: 0.875rem;
+  font-weight: 600;
+  white-space: nowrap;
 }
 .table-ghost-title {
-  padding-top: 1.25rem;
-  font-family: var(--font-display);
-  font-size: 1.75rem;
-  font-weight: 700;
-  white-space: nowrap;
   color: var(--color-text-primary);
+  font-family: var(--font-display);
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.15;
+  white-space: nowrap;
 }
 
 .table-bar-enter-active,

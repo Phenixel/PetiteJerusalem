@@ -33,7 +33,11 @@ export interface TableText {
   title: string;
   /** Le chapitre lu (« Chapitre 4 »), vide pour un texte d'une seule page. */
   place: string;
-  /** Le rayon (`tehilim`, `talmud`...) : la teinte de sa reliure. */
+  /** Le livre, en latin (« Berechit », « Zeraim ») ; vide s'il n'en a pas. */
+  book: string;
+  /** La première ligne de la page où on l'a laissé, telle qu'elle s'affichait. */
+  excerpt: string;
+  /** Le rayon (`tehilim`, `talmud`...). */
   corpus: string;
   /** Le verset en haut de l'écran quand on l'a quitté, null sans versets repérés. */
   line: number | null;
@@ -90,6 +94,8 @@ function load(): TableText[] {
     return parsed.texts.filter(isTableText).map((t) => ({
       ...t,
       place: typeof t.place === "string" ? t.place : "",
+      book: typeof t.book === "string" ? t.book : "",
+      excerpt: typeof t.excerpt === "string" ? t.excerpt : "",
       corpus: typeof t.corpus === "string" ? t.corpus : "",
       offset: typeof t.offset === "number" ? t.offset : 0,
       at: typeof t.at === "number" ? t.at : 0,
@@ -129,7 +135,7 @@ let pendingRestore: TableText | null = null;
 export interface TableFlight {
   key: string;
   title: string;
-  corpus: string;
+  book: string;
   from: { top: number; left: number; width: number; height: number };
 }
 const flight = shallowRef<TableFlight | null>(null);
@@ -200,7 +206,7 @@ export function refreshOpenReader(): void {
  */
 export function setAside(text: TableText, from: TableFlight["from"] | null): void {
   placeOnTable(text);
-  flight.value = from ? { key: text.key, title: text.title, corpus: text.corpus, from } : null;
+  flight.value = from ? { key: text.key, title: text.title, book: text.book, from } : null;
 }
 
 export function endFlight(): void {
