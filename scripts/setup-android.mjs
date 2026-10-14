@@ -44,6 +44,7 @@ import {
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { buildAndroidIntentFilter, APP_LINK_DOMAIN } from "./lib/app-links.mjs";
+import { ENV } from "./lib/environments.mjs";
 import { buildTehilimAsset, TEHILIM_ASSET } from "./lib/watch-tehilim.mjs";
 import { ANDROID_DENSITIES, ANDROID_MONOCHROME, withMonochromeLayer } from "./lib/app-icon.mjs";
 
@@ -170,7 +171,7 @@ if (existsSync(gsSource) && !existsSync(gsDest)) {
 } else if (!existsSync(gsDest)) {
   console.warn(
     "setup-android: ⚠️ google-services.json introuvable, l'auth native Google et le push ne fonctionneront pas.\n" +
-      "  Console Firebase → projet → app Android fr.petitejerusalem.app → télécharger google-services.json\n" +
+      `  Console Firebase → projet ${ENV.firebase.projectId} → app Android ${ENV.appId} → télécharger google-services.json\n` +
       "  puis le placer à la racine du repo ou dans android/app/.",
   );
 }
@@ -215,6 +216,33 @@ $1$2            signingConfig keystorePropertiesFile.exists() ? signingConfigs.r
     );
   writeFileSync(appBuildGradlePath, patched);
   console.log("setup-android: signingConfigs.release + versionName ajoutés à build.gradle");
+}
+
+// 4 bis. Identité de l'app selon l'environnement (PJ_ENV, voir
+//    scripts/lib/environments.mjs). `cap add` écrit l'applicationId et le nom
+//    de capacitor.config.ts, c'est-à-dire ceux de la production : l'app de
+//    staging reçoit ici les siens, pour s'installer à côté de la vraie
+//    (docs/staging.md). Le package Java, lui, ne change pas : les sources de
+//    native/android/ restent dans fr.petitejerusalem.app.
+{
+  const gradle = readFileSync(appBuildGradlePath, "utf8");
+  const withId = gradle.replace(/applicationId "[^"]+"/, `applicationId "${ENV.appId}"`);
+  if (withId !== gradle) {
+    writeFileSync(appBuildGradlePath, withId);
+    console.log(`setup-android: applicationId ${ENV.appId}`);
+  }
+  const stringsPath = join(androidDir, "app/src/main/res/values/strings.xml");
+  if (existsSync(stringsPath)) {
+    const strings = readFileSync(stringsPath, "utf8");
+    const named = strings.replace(
+      /(<string name="(?:app_name|title_activity_main)">)[^<]*(<\/string>)/g,
+      `$1${ENV.appName}$2`,
+    );
+    if (named !== strings) {
+      writeFileSync(stringsPath, named);
+      console.log(`setup-android: nom de l'app « ${ENV.appName} »`);
+    }
+  }
 }
 
 // 5. Modèle de keystore.properties (le vrai fichier reste git-ignoré et doit
@@ -573,6 +601,13 @@ if (!appGradle.includes("play-services-wearable")) {
 const wearDir = join(androidDir, "wear");
 cpSync(join(root, "native/wear"), wearDir, { recursive: true });
 console.log("setup-android: module Wear OS copié depuis native/wear/");
+// La montre et le téléphone doivent partager l'applicationId pour se parler
+// (Data Layer) : celle de l'app de staging suit donc la sienne.
+{
+  const wearGradlePath = join(wearDir, "build.gradle");
+  const wearGradle = readFileSync(wearGradlePath, "utf8");
+  writeFileSync(wearGradlePath, wearGradle.replace(/applicationId "[^"]+"/, `applicationId "${ENV.appId}"`));
+}
 
 const settingsGradlePath = join(androidDir, "settings.gradle");
 const settingsGradle = readFileSync(settingsGradlePath, "utf8");

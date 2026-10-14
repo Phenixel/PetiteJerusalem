@@ -18,19 +18,10 @@ import {
 } from "firebase/auth";
 import { isNativeApp } from "../composables/useNativeApp";
 
-// Configuration publique du projet (les clés Web Firebase ne sont pas des
-// secrets : la sécurité repose sur les règles Firestore/Storage).
-const firebaseConfig = {
-  apiKey: "AIzaSyCykY9IonqmVpuA0VGICXnMWVtVNWlipnk",
-  authDomain: "petite-jerusalem.fr",
-  projectId: "petite-jerusalem-dev",
-  storageBucket: "petite-jerusalem-dev.firebasestorage.app",
-  messagingSenderId: "152837353533",
-  appId: "1:152837353533:web:f98a0d34a8c2e834d07a54",
-  measurementId: "G-YCXXL5PMK0",
-};
-
-export const app = initializeApp(firebaseConfig);
+// Configuration publique du projet de l'environnement visé (production ou
+// staging, voir scripts/lib/environments.mjs). Les clés Web Firebase ne sont
+// pas des secrets : la sécurité repose sur les règles Firestore/Storage.
+export const app = initializeApp(__PJ_ENV__.firebase);
 
 // Dans l'app native, PAS de getAuth() : il embarque browserPopupRedirectResolver,
 // qui charge une iframe depuis authDomain. Dans la WKWebView iOS (origine

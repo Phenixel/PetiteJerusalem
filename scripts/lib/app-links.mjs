@@ -28,11 +28,17 @@
  * publiées dans les fichiers `.well-known`, elles n'ont rien de secret.
  */
 
-/** Domaine du site. Un seul host : chaque host déclaré doit servir sa preuve. */
-export const APP_LINK_DOMAIN = "petite-jerusalem.fr";
+import { ENV } from "./environments.mjs";
 
-/** Identifiant de l'app, commun aux deux plateformes (capacitor.config.ts). */
-export const APP_ID = "fr.petitejerusalem.app";
+/**
+ * Domaine du site. Un seul host : chaque host déclaré doit servir sa preuve.
+ * Celui de l'environnement visé (PJ_ENV) : le site de staging sert les preuves
+ * de l'app de staging, et elle seule les réclame (docs/staging.md).
+ */
+export const APP_LINK_DOMAIN = new URL(ENV.siteUrl).host;
+
+/** Identifiant de l'app, commun aux deux plateformes (environments.mjs). */
+export const APP_ID = ENV.appId;
 
 /** Écrites en dur si on préfère ne pas dépendre de l'environnement. */
 const ANDROID_SHA256_DEFAULT = [];

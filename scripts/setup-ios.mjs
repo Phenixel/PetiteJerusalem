@@ -49,11 +49,13 @@ import { createHash } from "node:crypto";
 import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { APP_LINK_DOMAIN } from "./lib/app-links.mjs";
+import { ENV } from "./lib/environments.mjs";
 import { IOS_ICON_FILES, iosAppIconContents } from "./lib/app-icon.mjs";
 import {
   addAppSource,
   addWidgetExtension,
   APP_GROUP,
+  SOURCE_APP_GROUP,
   widgetEntitlements,
   registerViewController,
   widgetInfoPlist,
@@ -79,8 +81,10 @@ if (!existsSync(pbxprojPath)) {
   process.exit(1);
 }
 
-const BUNDLE_ID = "fr.petitejerusalem.app";
-const DISPLAY_NAME = "Petite Jérusalem";
+// Ceux de l'environnement visé (PJ_ENV) : « PJ Staging » a son propre bundle
+// id pour s'installer à côté de la vraie app (docs/staging.md).
+const BUNDLE_ID = ENV.appId;
+const DISPLAY_NAME = ENV.appName;
 /** Widgets d'écran d'accueil : l'App ID de la cible d'extension. */
 const WIDGET_BUNDLE_ID = `${BUNDLE_ID}.${WIDGET_TARGET}`;
 /** Apple Watch : l'App ID de l'app de montre (suffixe imposé par Apple). */
@@ -552,13 +556,21 @@ const APP_PLUGIN_SOURCES = [
   "PjWatchPlugin.swift",
   "PjViewController.swift",
 ];
+/**
+ * Recopie une source Swift en y mettant l'App Group de l'environnement : les
+ * sources versionnées portent celui de la production en toutes lettres.
+ */
+function copySwiftSource(from, to) {
+  const source = readFileSync(from, "utf8");
+  writeFileSync(to, source.replaceAll(`"${SOURCE_APP_GROUP}"`, `"${APP_GROUP}"`));
+}
 for (const name of APP_PLUGIN_SOURCES) {
-  copyFileSync(join(nativeIosDir, "App", name), join(appDir, name));
+  copySwiftSource(join(nativeIosDir, "App", name), join(appDir, name));
 }
 
 const widgetDir = join(iosDir, "App", WIDGET_TARGET);
 mkdirSync(widgetDir, { recursive: true });
-copyFileSync(
+copySwiftSource(
   join(nativeIosDir, WIDGET_TARGET, `${WIDGET_TARGET}.swift`),
   join(widgetDir, `${WIDGET_TARGET}.swift`),
 );

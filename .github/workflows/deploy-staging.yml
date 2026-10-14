@@ -1,0 +1,174 @@
+name: Deploy Staging
+
+# Met à jour l'environnement de staging à chaque fusion sur main : le site
+# petite-jerusalem-staging.web.app et son backend (projet Firebase
+# petite-jerusalem-staging), l'app Android « PJ Staging » sur la piste de test
+# interne du Play Store, l'app iOS « PJ Staging » sur TestFlight. Rien de tout
+# cela n'atteint le public : la production ne bouge qu'aux tags vX.Y.Z, comme
+# avant. Voir docs/staging.md.
+#
+# Les deux apps sont construites par les workflows de production eux-mêmes
+# (deploy-android.yml, deploy-ios.yml, appelés avec environment: staging) :
+# une seule chaîne de build, ce qui part en staging est ce qui partira en
+# production au tag suivant.
+#
+# Secrets propres au staging (docs/staging.md pour les créer) :
+#   FIREBASE_SERVICE_ACCOUNT_STAGING   clé du compte de service de la CI
+#   GOOGLE_SERVICES_JSON_STAGING       google-services.json de l'app Android
+#   GOOGLE_SERVICE_INFO_PLIST_STAGING  GoogleService-Info.plist de l'app iOS
+# Les autres (signature Android, clé App Store Connect, compte Play) sont
+# ceux de la production : même compte développeur, même clé d'importation.
+
+on:
+  push:
+    branches:
+      - main
+    # Une fusion qui ne touche que la documentation ne reconstruit rien.
+    paths-ignore:
+      - "docs/**"
+      - "**.md"
+  # Lancement manuel, depuis n'importe quelle branche : pour essayer sur le
+  # téléphone une branche avant de la fusionner.
+  workflow_dispatch:
+    inputs:
+      mobile:
+        description: "Construire aussi les apps (sinon : le site et le backend seuls)"
+        type: boolean
+        default: true
+
+# Une fusion à la fois. Celle qui attend est remplacée par la suivante : seul
+# l'état le plus récent de main vaut la peine d'être installé.
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false
+
+jobs:
+  # Le numéro de version, calculé une fois pour les deux apps. La version
+  # affichée est celle du prochain correctif (v3.10.11 publiée : 3.10.12),
+  # le numéro de build vient du run et croît à chaque fusion, re-runs compris.
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      name: ${{ steps.version.outputs.name }}
+      build: ${{ steps.version.outputs.build }}
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Calculer la version de staging
+        id: version
+        run: |
+          LAST="$(git describe --tags --abbrev=0 --match 'v[0-9]*.[0-9]*.[0-9]*')"
+          IFS=. read -r MAJ MIN PAT <<< "${LAST#v}"
+          NAME="$MAJ.$MIN.$((PAT + 1))"
+          # Dix tentatives par run au plus : bien assez pour des re-runs.
+          BUILD=$(( GITHUB_RUN_NUMBER * 10 + GITHUB_RUN_ATTEMPT ))
+          echo "Dernière release $LAST, staging $NAME (build $BUILD)"
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          echo "build=$BUILD" >> "$GITHUB_OUTPUT"
+
+  web:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      PJ_ENV: staging
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Vérifier les secrets requis
+        env:
+          FIREBASE_SERVICE_ACCOUNT_STAGING: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_STAGING }}
+        run: |
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT_STAGING" ]; then
+            echo "::error::Secret GitHub manquant : FIREBASE_SERVICE_ACCOUNT_STAGING, voir docs/staging.md"
+            exit 1
+          fi
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Les fichiers /.well-known du site de staging déclarent l'app de
+      # staging (scripts/lib/app-links.mjs lit PJ_ENV).
+      - name: Build web app
+        env:
+          IOS_DEVELOPMENT_TEAM: ${{ secrets.IOS_DEVELOPMENT_TEAM }}
+          ANDROID_APP_LINK_SHA256: ${{ secrets.ANDROID_APP_LINK_SHA256_STAGING }}
+        run: npm run build
+
+      # Le staging ne doit jamais apparaître dans un moteur de recherche : ses
+      # pages copient celles du site (et leur balise canonique pointe déjà
+      # vers petite-jerusalem.fr).
+      - name: Fermer le site aux robots
+        run: |
+          printf 'User-agent: *\nDisallow: /\n' > dist/robots.txt
+
+      - name: Install Functions dependencies
+        run: npm ci --prefix functions
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: "${{ secrets.FIREBASE_SERVICE_ACCOUNT_STAGING }}"
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Deploy hosting
+        run: firebase deploy --only hosting --project petite-jerusalem-staging --non-interactive
+
+      - name: Deploy Firestore rules, indexes and Storage rules
+        run: |
+          firebase deploy --only firestore:rules,firestore:indexes,storage \
+            --project petite-jerusalem-staging --non-interactive
+
+      # functions/.env.petite-jerusalem-staging donne aux functions l'adresse
+      # du site et le bucket de staging.
+      - name: Deploy functions
+        run: |
+          set +e
+          for attempt in 1 2 3; do
+            firebase deploy --only functions --project petite-jerusalem-staging --non-interactive
+            code=$?
+            [ "$code" -eq 0 ] && exit 0
+            echo "Functions deploy attempt $attempt failed (exit $code); retrying in 30s…"
+            sleep 30
+          done
+          exit "$code"
+
+  android:
+    needs: version
+    if: ${{ github.event_name == 'push' || inputs.mobile }}
+    permissions:
+      contents: write
+      actions: read
+    uses: ./.github/workflows/deploy-android.yml
+    with:
+      environment: staging
+      version_name: ${{ needs.version.outputs.name }}
+      build_number: ${{ needs.version.outputs.build }}
+    secrets: inherit
+
+  ios:
+    needs: version
+    if: ${{ github.event_name == 'push' || inputs.mobile }}
+    permissions:
+      contents: read
+      actions: read
+    uses: ./.github/workflows/deploy-ios.yml
+    with:
+      environment: staging
+      version_name: ${{ needs.version.outputs.name }}
+      build_number: ${{ needs.version.outputs.build }}
+    secrets: inherit
