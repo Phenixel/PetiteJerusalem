@@ -201,19 +201,19 @@ describe("la barre de la table", () => {
     expect(host.querySelector("[role='region']")).toBeNull();
   });
 
-  it("porte un onglet par texte posé, celui qu'on lit levé", async () => {
+  it("porte un livre par texte posé, celui qu'on lit sorti du rang", async () => {
     for (const key of ["a", "b", "c", "d", "e"]) placeOnTable(text(key));
     const unregister = registerTableReader({ key: "c", snapshot: () => text("c") });
     await mountBar();
 
     const tabs = [...host.querySelectorAll<HTMLElement>("[data-table-key]")];
     expect(tabs.map((tab) => tab.dataset.tableKey)).toEqual(["a", "b", "c", "d", "e"]);
-    expect(tabs.filter((tab) => tab.classList.contains("table-tab-open"))).toEqual([tabs[2]]);
+    expect(tabs.filter((tab) => tab.classList.contains("table-book-open"))).toEqual([tabs[2]]);
     expect(tabs[2].getAttribute("aria-current")).toBe("page");
     unregister();
   });
 
-  it("un onglet ouvre son texte, la barre ouvre la table", async () => {
+  it("un livre ouvre son texte, la barre ouvre la table", async () => {
     placeOnTable(text("a"));
     placeOnTable(text("b"));
     const unregister = registerTableReader({ key: "b", snapshot: () => text("b") });

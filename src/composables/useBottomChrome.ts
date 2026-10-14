@@ -5,9 +5,11 @@ import { tableBarVisible } from "./useReadingTable";
 
 /**
  * La place que prend la barre de la table d'étude (ReadingTableBar) : la
- * barre elle-même (3 rem) et l'écart qui la sépare de ce qui est dessous.
+ * barre elle-même (3 rem), l'écart qui la sépare de ce qui est dessous, et
+ * la tête des livres qui dépasse au-dessus (jusqu'à 1,4 rem pour le livre
+ * sorti du rang) : un bouton flottant posé juste au-dessus ne la touche pas.
  */
-export const TABLE_BAR_REM = 3.5;
+export const TABLE_BAR_REM = 5;
 
 /**
  * Hauteur occupée en bas de l'écran par les barres fixes empilées :

@@ -436,12 +436,12 @@ Un texte posé sur la table.
 
 #### `reading_table_opened`
 
-Le panneau de la table ouvert depuis la barre (la pile, la flèche, l'onglet
+Le panneau de la table ouvert depuis la barre (la pile, la flèche, le livre
 du texte lu, un glissement vers le haut). `texts_count` : les textes posés.
 
 #### `reading_table_text_opened`
 
-Un texte rouvert depuis la table : un onglet de la barre, ou une ligne du
+Un texte rouvert depuis la table : un livre de la barre, ou une ligne du
 panneau. Le `text_opened` qui suit porte `entry: table`.
 
 | Propriété | Valeurs |
@@ -450,7 +450,7 @@ panneau. Le `text_opened` qui suit porte `entry: table`.
 | `corpus` | son rayon |
 | `texts_count` | les textes posés |
 | `was_open` | c'était le texte déjà à l'écran (le panneau se referme seulement) |
-| `from` | `bar` (un onglet de la barre), `table` (une ligne du panneau) |
+| `from` | `bar` (un livre de la barre), `table` (une ligne du panneau) |
 
 #### `reading_table_text_removed`
 

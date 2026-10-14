@@ -3,6 +3,7 @@ import { computed, defineAsyncComponent, nextTick, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import AppIcon from "../icons/AppIcon.vue";
+import { bindingInkOf, bindingOf } from "../../config/bindings";
 import { useMiniPlayerVisible } from "../../composables/useAudioPlayer";
 import { useBottomChromeHeight } from "../../composables/useBottomChrome";
 import { isNativeApp } from "../../composables/useNativeApp";
@@ -18,19 +19,22 @@ import { analyticsService } from "../../services/analyticsService";
 
 /**
  * La barre de la table d'étude : les textes mis de côté, en bas de l'écran
- * comme le cours qui joue dans la barre du lecteur, et sous la forme que le
- * site donne déjà à un choix entre voisins, un jeu d'onglets (la bascule
- * hébreu / phonétique, Bibliothèque / Chiourim / Partage). Le texte qu'on lit
- * est l'onglet levé, blanc, à l'encre du thème. Le dernier posé se range au
- * bout ; quand ils ne tiennent plus, la rangée défile de côté.
+ * comme le cours qui joue dans la barre du lecteur. Chacun y est un petit
+ * livre debout, dessiné comme les volumes de l'étagère de la bibliothèque
+ * (la reliure de son rayon, un double filet crème, le titre en serif) : posé
+ * sur la barre comme sur une planche, il ne dépasse pas en bas, et sa tête
+ * dépasse un peu en haut. Le texte qu'on lit est sorti du rang, plus haut que
+ * ses voisins, comme un livre qu'on vient de prendre. Le dernier posé se
+ * range au bout ; quand ils ne tiennent plus, la rangée défile de côté.
  *
- * Toucher un onglet ouvre ce texte, à l'endroit où on l'a laissé : passer de
+ * Toucher un livre ouvre ce texte, à l'endroit où on l'a laissé : passer de
  * l'un à l'autre ne demande qu'un geste. La pile (au début), la flèche (au
- * bout), un appui ailleurs sur la barre ou un glissement vers le haut ouvrent
- * la table (ReadingTableSheet), où chaque texte montre sa page.
+ * bout), un appui ailleurs sur la barre, un glissement vers le haut, ou le
+ * livre qu'on lit ouvrent la table (ReadingTableSheet), où chaque texte
+ * montre sa page.
  *
  * Mettre un texte de côté le fait s'envoler jusqu'ici : la tête de sa page se
- * réduit jusqu'à son onglet (voir `flight` dans useReadingTable).
+ * réduit jusqu'à son livre (voir `flight` dans useReadingTable).
  *
  * Montée sur toutes les pages : rien ici ne tire le catalogue des textes ;
  * le panneau se charge à la demande.
@@ -49,6 +53,15 @@ const bottom = useBottomChromeHeight("0.5rem", { table: false });
 const miniPlayerVisible = useMiniPlayerVisible();
 const aboveWidePlayer = computed(() => miniPlayerVisible.value && !isNativeApp);
 
+/**
+ * La taille du titre sur la couverture : un mot ne s'y coupe jamais
+ * (« Berakho / t »). Le plus long mot du titre décide, entre 6,5 et 10 px.
+ */
+function titleSize(title: string): string {
+  const longest = Math.max(...title.split(/\s+/).map((word) => word.length), 1);
+  return `${Math.min(10, Math.max(6.5, 74 / longest)).toFixed(1)}px`;
+}
+
 const openLabel = computed(() => t("readingTable.open", texts.value.length));
 
 function openSheet() {
@@ -56,8 +69,8 @@ function openSheet() {
   openTableSheet();
 }
 
-/** Un onglet : le texte, là où on l'a laissé ; celui qu'on lit ouvre la table. */
-function onTab(text: TableText) {
+/** Un livre : le texte, là où on l'a laissé ; celui qu'on lit ouvre la table. */
+function onBook(text: TableText) {
   if (text.key === openKey.value || !router) {
     openSheet();
     return;
@@ -73,7 +86,7 @@ function onTab(text: TableText) {
 }
 
 // Téléphone : un glissement vers le haut sur la barre l'ouvre aussi. Un
-// glissement de côté, lui, fait défiler les onglets.
+// glissement de côté, lui, fait défiler les livres.
 const SWIPE_OPEN = 24;
 let swipeStart: { x: number; y: number } | null = null;
 function onTouchStart(event: TouchEvent) {
@@ -105,17 +118,17 @@ watch(
   { immediate: true },
 );
 
-// L'onglet du texte lu, ou du dernier posé, reste sous les yeux quand la
+// Le livre du texte lu, ou du dernier posé, reste sous les yeux quand la
 // rangée défile.
-const tabs = ref<HTMLElement | null>(null);
-function tabOf(key: string | null | undefined): HTMLElement | null {
+const shelf = ref<HTMLElement | null>(null);
+function bookOf(key: string | null | undefined): HTMLElement | null {
   if (!key) return null;
-  const all = tabs.value?.querySelectorAll<HTMLElement>("[data-table-key]") ?? [];
+  const all = shelf.value?.querySelectorAll<HTMLElement>("[data-table-key]") ?? [];
   return [...all].find((tab) => tab.dataset.tableKey === key) ?? null;
 }
-function revealTab(key: string | null | undefined) {
-  const row = tabs.value;
-  const tab = tabOf(key);
+function revealBook(key: string | null | undefined) {
+  const row = shelf.value;
+  const tab = bookOf(key);
   if (!row || !tab) return;
   const start =
     tab.getBoundingClientRect().left - row.getBoundingClientRect().left + row.scrollLeft;
@@ -127,14 +140,14 @@ watch(
   [openKey, () => texts.value.length],
   async () => {
     await nextTick();
-    revealTab(flight.value?.key ?? openKey.value ?? texts.value[texts.value.length - 1]?.key);
+    revealBook(flight.value?.key ?? openKey.value ?? texts.value[texts.value.length - 1]?.key);
   },
   { immediate: true },
 );
 
-// --- L'envol : la tête de la page mise de côté se réduit jusqu'à son onglet ---
+// --- L'envol : la tête de la page mise de côté se réduit jusqu'à son livre ---
 const ghost = ref<HTMLElement | null>(null);
-/** L'onglet qui attend l'arrivée de sa page pour paraître. */
+/** Le livre qui attend l'arrivée de sa page pour paraître. */
 const landingKey = ref<string | null>(null);
 
 watch(flight, async (current) => {
@@ -145,9 +158,9 @@ watch(flight, async (current) => {
   }
   landingKey.value = current.key;
   await nextTick();
-  revealTab(current.key);
+  revealBook(current.key);
   const el = ghost.value;
-  const target = tabOf(current.key);
+  const target = bookOf(current.key);
   if (!el || !target || typeof el.animate !== "function") {
     land();
     return;
@@ -169,7 +182,7 @@ watch(flight, async (current) => {
         left: `${to.left}px`,
         width: `${to.width}px`,
         height: `${to.height}px`,
-        borderRadius: "10px",
+        borderRadius: "3px",
         opacity: 0.85,
       },
     ],
@@ -224,24 +237,35 @@ const ghostStyle = computed(() => {
           <span class="table-count" aria-hidden="true">{{ texts.length }}</span>
         </button>
 
-        <!-- Les textes posés : un onglet chacun -->
-        <div ref="tabs" class="table-tabs min-w-0 flex-1">
-          <div class="inline-flex rounded-btn bg-black/5 p-0.5 dark:bg-white/10">
+        <!-- Les textes posés : un livre debout chacun, posé sur la barre -->
+        <div ref="shelf" class="table-shelf min-w-0 flex-1">
+          <div class="table-shelf-row">
             <button
               v-for="text in texts"
               :key="text.key"
               type="button"
               :data-table-key="text.key"
-              class="table-tab"
+              class="table-book"
               :class="{
-                'table-tab-open': text.key === openKey,
+                'table-book-open': text.key === openKey,
                 'opacity-0': text.key === landingKey,
               }"
+              :style="{
+                '--binding': bindingOf(text.corpus),
+                '--ink': bindingInkOf(text.corpus),
+                '--title-size': titleSize(text.title),
+              }"
               :aria-current="text.key === openKey ? 'page' : undefined"
+              :aria-label="text.place ? `${text.title}, ${text.place}` : text.title"
               :title="text.place ? `${text.title} · ${text.place}` : text.title"
-              @click.stop="onTab(text)"
+              @click.stop="onBook(text)"
             >
-              <span dir="auto" class="truncate">{{ text.title }}</span>
+              <span class="table-book-lift">
+                <span class="table-book-pages" aria-hidden="true"></span>
+                <span class="table-book-cover">
+                  <span dir="auto" class="table-book-title">{{ text.title }}</span>
+                </span>
+              </span>
             </button>
           </div>
         </div>
@@ -258,7 +282,7 @@ const ghostStyle = computed(() => {
     </div>
   </Transition>
 
-  <!-- La tête de la page qui s'envole vers son onglet -->
+  <!-- La tête de la page qui s'envole vers son livre -->
   <div v-if="flight" ref="ghost" class="table-ghost" :style="ghostStyle" aria-hidden="true">
     <span v-if="flight.book" dir="auto" class="table-ghost-book">{{ flight.book }}</span>
     <span dir="auto" class="table-ghost-title">{{ flight.title }}</span>
@@ -284,42 +308,123 @@ const ghostStyle = computed(() => {
   text-align: center;
 }
 
-/* La rangée d'onglets défile de côté quand elle déborde, sans barre de
-   défilement : le bord coupé dit qu'il y en a d'autres. */
-.table-tabs {
+/* La rangée de livres défile de côté quand elle déborde, sans barre de
+   défilement : le bord coupé dit qu'il y en a d'autres. Un conteneur qui
+   défile coupe aussi ce qui dépasse en haut : il monte donc au-dessus de la
+   barre de quoi loger la tête des livres, et laisse passer les appuis à
+   travers ce qui n'est pas un livre. */
+.table-shelf {
+  align-self: stretch;
+  margin-top: -1.5rem;
   overflow-x: auto;
+  overflow-y: hidden;
   overscroll-behavior-x: contain;
   scrollbar-width: none;
+  pointer-events: none;
 }
-.table-tabs::-webkit-scrollbar {
+.table-shelf::-webkit-scrollbar {
   display: none;
 }
+.table-shelf-row {
+  display: flex;
+  height: 100%;
+  width: max-content;
+  align-items: flex-end;
+  gap: 0.4rem;
+  padding: 0 0.25rem 0.3rem;
+}
 
-/* Un onglet : le dessin de la bascule hébreu / phonétique. */
-.table-tab {
-  display: inline-flex;
-  max-width: 9rem;
+/* Un livre debout : la couverture à la reliure de son rayon, la tranche des
+   pages qui dépasse au bout, comme sur l'étagère (LibraryShelf). Posé à
+   quelques pixels du bas de la barre, il dépasse d'un quart en haut. */
+.table-book {
+  position: relative;
+  width: 3.5rem;
+  height: 3.6rem;
   flex-shrink: 0;
+  pointer-events: auto;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.2s ease;
+}
+/* Son ombre, sur la barre ; elle reste posée quand le livre se soulève. */
+.table-book::after {
+  content: "";
+  position: absolute;
+  inset-inline: 12%;
+  bottom: -2px;
+  height: 4px;
+  border-radius: 9999px;
+  background: rgb(58 46 30 / 0.3);
+  filter: blur(2px);
+}
+:root.dark .table-book::after {
+  background: rgb(0 0 0 / 0.5);
+}
+.table-book-lift {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  transform-origin: bottom center;
+  transition: transform 0.3s ease-out;
+}
+.table-book-pages {
+  position: absolute;
+  inset-block: 2px;
+  inset-inline-end: 0;
+  width: 5px;
+  border-radius: 2px;
+  background: #efe5d0;
+  box-shadow: inset -1.5px 0 0 #d6c8ab;
+}
+/* La couverture et son double filet crème, estampé comme sur l'étagère. */
+.table-book-cover {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  inset-inline-end: 3px;
+  display: flex;
   align-items: center;
-  padding: 0.375rem 0.75rem;
-  border-radius: var(--radius-control);
-  color: var(--color-text-secondary);
-  font-size: 0.875rem;
-  font-weight: 500;
-  white-space: nowrap;
-  transition:
-    background-color 0.2s ease,
-    color 0.2s ease,
-    opacity 0.2s ease;
+  justify-content: center;
+  padding: 0.45rem 0.3rem;
+  border-radius: 3px;
+  background-color: var(--binding);
+  box-shadow:
+    inset 0 0 0 3px var(--binding),
+    inset 0 0 0 4px rgb(236 223 196 / 0.5),
+    inset 0 0 0 5.5px var(--binding),
+    inset 0 0 0 6px rgb(236 223 196 / 0.28),
+    0 1px 2px rgb(30 26 18 / 0.25);
 }
-.table-tab:hover {
-  color: var(--color-text-primary);
+/* Le titre, comme doré à chaud : en serif, centré, sur deux ou trois lignes. */
+.table-book-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+  color: var(--ink);
+  font-family: var(--font-serif);
+  font-size: var(--title-size, 10px);
+  font-weight: 600;
+  line-height: 1.15;
+  text-align: center;
+  /* La règle de [dir="auto"] (assets/main.css) passe un mot trop long à la
+     ligne : sur une couverture, le titre rapetisse plutôt (titleSize). */
+  overflow-wrap: normal;
 }
-.table-tab-open,
-.table-tab-open:hover {
-  background-color: var(--color-surface);
-  color: var(--color-primary);
-  box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
+/* Le livre qu'on lit, sorti du rang ; les autres se soulèvent au survol. */
+@media (hover: hover) {
+  .table-book:hover .table-book-lift {
+    transform: translateY(-3px);
+  }
+}
+.table-book-open .table-book-lift,
+.table-book-open:hover .table-book-lift {
+  transform: translateY(-7px);
+}
+.table-book:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 /* La tête de la page lue, comme en haut de la lecture : le livre à l'encre
