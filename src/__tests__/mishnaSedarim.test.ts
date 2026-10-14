@@ -86,9 +86,7 @@ describe("les sedarim de la Michna", () => {
   });
 
   it("font le compte de Nezikin et de toute la Michna", () => {
-    // Compté sur les fichiers, donc avec les deux baraïtot que le catalogue
-    // ne donne pas à partager (Avot 6, 11 michnayot ; Bikkurim 4, 5 michnayot ;
-    // voir catalogSections.test.ts) : 674 et 4 176 sans elles.
+    // Avec Avot 6 et Bikkurim 4, que les chaînes partagent aussi.
     expect(michnayot(mishna.filter((entry) => entry.livre === NEZIKIN))).toBe(685);
     expect(michnayot(mishna)).toBe(4192);
   });

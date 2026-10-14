@@ -12,21 +12,9 @@ import { parseContent, resolveFilePath } from "../services/textService";
  * fichier. Quand les deux divergent, des chapitres se lisent sans pouvoir se
  * réserver : Middot annonçait 3 perakim pour 5, dans la Michna comme dans le
  * Talmud, si bien qu'un groupe finissait l'une ou l'autre sans ses chapitres
- * 4 et 5.
+ * 4 et 5. Bikkurim 4 et Avot 6 (« Kinyan Torah »), deux baraïtot que les
+ * éditions impriment à la suite du traité, se partagent aussi.
  */
-
-/**
- * Les chapitres que le lecteur affiche en plus de ceux que le catalogue donne
- * à partager : deux baraïtot que les éditions impriment à la suite du traité.
- * Le catalogue ne les compte pas ; qu'il les compte un jour, et c'est ici que
- * cela s'écrit.
- */
-const HORS_PARTAGE: Record<string, number> = {
-  // Le chapitre 4 de Bikkurim (« Androginos »).
-  "Mishna|Bikkurim": 1,
-  // Le chapitre 6 d'Avot (« Kinyan Torah »).
-  "Mishna|Avot": 1,
-};
 
 const shared = (textStudiesJson as TextStudiesJson).textStudies.filter(isShareable);
 const keyOf = (entry: TextStudyJsonEntry): string => `${entry.type}|${latinPart(entry.name)}`;
@@ -53,17 +41,11 @@ describe("les places qu'annonce le catalogue", () => {
     const ecarts: string[] = [];
     for (const entry of shared) {
       const lues = readerSections(entry);
-      const attendues = entry.totalSections + (HORS_PARTAGE[keyOf(entry)] ?? 0);
-      if (lues !== attendues) {
+      if (lues !== entry.totalSections) {
         ecarts.push(`${keyOf(entry)} : ${entry.totalSections} au catalogue, ${lues} au lecteur`);
       }
     }
-    expect(ecarts, "Accorder totalSections au fichier, ou l'écrire dans HORS_PARTAGE").toEqual([]);
-  });
-
-  it("n'ont pas d'exception qui ne désigne plus aucun texte", () => {
-    const keys = new Set(shared.map(keyOf));
-    expect(Object.keys(HORS_PARTAGE).filter((key) => !keys.has(key))).toEqual([]);
+    expect(ecarts, "Accorder totalSections au fichier").toEqual([]);
   });
 
   it("ont chacune quelque chose à lire", () => {
