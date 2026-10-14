@@ -1627,7 +1627,7 @@ premier jour au bout d'une année. Tenu par `parcoursLights.test.ts`.
 Ce qui se lit (un programme, une lecture du calendrier, un texte du jour) est
 un volume relié sur l'étagère de Mon parcours et de l'accueil
 (`ProgramVolume.vue`, `VolumeShelf.vue`), de la reliure de son rayon
-(`content/bindings.ts`, la même que l'étagère de la bibliothèque). Sa taille
+(`config/bindings.ts`, la même que l'étagère de la bibliothèque). Sa taille
 dit sa longueur : petit pour un traité ou un texte du jour, ordinaire pour un
 séder ou une lecture du calendrier, épais pour plusieurs sedarim, le plus
 grand pour tout le corpus. Un signet rouge dépasse quand la portion du jour
@@ -1876,6 +1876,79 @@ il y glisse. On y arrive par un appui
 long sur un bloc (au doigt), ou par « Modifier l'accueil » en bas de la
 page. C'est un réglage de l'appareil (`useHomeLayout`), et un bloc qui n'a
 rien à dire s'efface de lui-même.
+
+### Des textes mis de côté, sur la table
+
+On étudie rarement un seul livre : on lit un passage, on va voir un
+commentaire, une michna, un psaume, puis on revient. La table d'étude rend ce
+geste : plusieurs livres ouverts sur la table, chacun à sa page.
+
+- **Mettre de côté.** En tête de chaque texte de la bibliothèque, à droite de
+  « Retour », un bouton « Mettre de côté » (les trois livres posés et son
+  nom) ; le même dans le menu de lecture, sous « Haut de page », parce que
+  c'est au milieu d'un chapitre qu'on en a besoin. Le texte rejoint la table
+  et la tête de sa page (le livre à l'encre du thème, le nom en Playfair) se
+  réduit jusqu'à son livre dans la barre du bas ; on retrouve la
+  bibliothèque. Pas en chaîne de lecture : on y lit sa part, on ne l'emporte
+  pas. Ni sur un texte du Sidour (une tefila, une brakha, un texte de fête) :
+  on y vient prier d'un bout à l'autre, pas étudier en passant d'un livre à
+  l'autre, et le Sidour a sa page à lui.
+- **La barre de la table, des livres debout.** Elle se pose au bas de
+  l'écran comme le lecteur audio, au-dessus de lui et de la barre de l'app,
+  et suit d'une page à l'autre. Chaque texte posé y est un petit livre
+  debout, dessiné comme les volumes de l'étagère de la bibliothèque : la
+  couverture à la reliure de son rayon, la tranche des pages au bout, un
+  double filet crème, le titre en serif (`config/bindings.ts`). Posé sur la barre
+  comme sur une planche, un livre ne dépasse jamais en bas, et sa tête
+  dépasse d'un quart en haut ; le texte qu'on lit est sorti du rang, plus
+  haut que ses voisins. Le dernier posé se range au bout ; quand ils ne
+  tiennent plus, la rangée défile de côté, le livre lu restant sous les
+  yeux. Un titre ne se coupe jamais au milieu d'un mot : il rapetisse
+  plutôt, selon son plus long mot. Rien devant les livres : une pile et son
+  compte les précédaient, mais on les voit, on les compte. Deux versions
+  avant celle-ci : de petites
+  étiquettes à liseré de couleur, un dessin que le site n'a nulle part, puis
+  un jeu d'onglets collés les uns aux autres, où rien ne séparait un texte
+  du suivant. Les boutons flottants du bas (menu de lecture, retour en
+  haut, toasts) montent d'autant, tête des livres comprise
+  (`TABLE_BAR_REM`, `useBottomChromeHeight`).
+- **Un livre, un geste.** Toucher un livre ouvre ce texte, à l'endroit où on
+  l'a laissé : passer de l'un à l'autre ne demande qu'un appui. La flèche
+  au bout de la barre, un appui ailleurs sur elle, un glissement vers le
+  haut, ou le livre qu'on lit ouvrent la table.
+- **La table ouverte montre les pages.** Un panneau monte du bas, à la
+  hauteur de ce qu'il porte et jamais plus des trois quarts de l'écran : la
+  page reste visible derrière un voile léger, la table se pose dessus, elle
+  ne la remplace pas. Chaque texte y montre sa page ouverte, dans le dessin
+  de la tête d'une page de lecture : son rayon et son livre en petit, à
+  l'encre du thème (« Tanakh · Berechit »), son nom, puis la première ligne
+  de la page où on l'a laissé, dans sa langue et sa police de lecture, et
+  l'endroit (« 1re montée · verset 22 », « Daf 2b » pour une Guemara). Une
+  ligne par texte, séparées d'un filet comme la file du lecteur, dans
+  l'ordre de la barre ; « Ouvert » marque celui qu'on lit, une croix range
+  un texte, « Tout ranger » vide la table après confirmation, et « Retour à
+  la bibliothèque » y mène pour chercher un autre texte (sauf depuis la
+  bibliothèque même). Ouverte depuis
+  un texte qui n'y est pas encore, elle propose de le poser aussi, d'une
+  commande à la couleur du thème qui porte son nom. Échap, le retour
+  Android, un appui autour ou le panneau tiré vers le bas la referment.
+- **Chaque texte rouvre à sa page.** La table retient le verset en haut de
+  l'écran et sa hauteur dans la fenêtre ; rouvert, le texte revient
+  exactement là, au pixel près, quelle que soit la taille du texte choisie
+  entre-temps. Un texte sans versets repérés (une Guemara) retrouve son
+  défilement, compté depuis le haut du texte. Le texte qu'on quitte, s'il
+  est sur la table, retient d'abord sa page, et il la suit pendant la
+  lecture : une app refermée ne la perd pas. Les boutons qui remettent la
+  page en haut avant de naviguer (« Retour », chapitre suivant, texte
+  voisin) la font retenir avant ce saut, et la liste des chapitres n'efface
+  jamais le chapitre où l'on lisait. Dans l'app, la page qu'on quitte reste
+  un instant au-dessus du texte le temps de sa transition : le texte se
+  repose à son départ. Tenu par `readingTable.test.ts`.
+- **Sur l'appareil.** La table est celle d'une séance d'étude : elle survit
+  à un rechargement ou à une app refermée (localStorage), mais ne suit pas
+  le compte d'un appareil à l'autre. Le site ouvert dans deux onglets partage la même
+  table : ce qu'on pose dans l'un apparaît dans l'autre. Vingt-quatre textes au plus, le plus
+  ancien posé partant le premier.
 
 ## 2. Les couleurs de thème
 

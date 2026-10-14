@@ -16,7 +16,7 @@
  */
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
-import { bindingOf } from "../../../content/bindings";
+import { bindingOf } from "../../../config/bindings";
 import type { CycleId, HabitPreset, ProgramCorpus } from "../../../services/parcours/model";
 import ProgramVolume from "../ProgramVolume.vue";
 

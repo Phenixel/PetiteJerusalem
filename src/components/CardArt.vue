@@ -16,7 +16,7 @@ export type CardArtSpec =
   | { kind: "siddur" }
   | {
       kind: "volume";
-      /** La reliure du corpus (content/bindings.ts). */
+      /** La reliure du corpus (config/bindings.ts). */
       color: string;
       /** Le titre de la couverture : « Moed », « Tehilim ». */
       label: string;

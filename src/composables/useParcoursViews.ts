@@ -4,7 +4,7 @@ import type { RouteLocationRaw } from "vue-router";
 import type { CardArtSpec } from "../components/CardArt.vue";
 import type { VolumeFormat } from "../components/parcours/ProgramVolume.vue";
 import { corpusOf, hubPath } from "../content/etudeTexts";
-import { bindingOf } from "../content/bindings";
+import { bindingOf } from "../config/bindings";
 import { texteOf, texteTitle } from "../services/chiourTexte";
 import { getWeeklyParasha, parashaTitle, tehilimOfCycle } from "../services/dailyCycles";
 import { localDayFrom } from "../services/dateService";

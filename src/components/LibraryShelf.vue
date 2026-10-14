@@ -13,7 +13,7 @@
 import { reactive, watch } from "vue";
 import { shouldPlayShelfIntro } from "../composables/useShelfIntro";
 import { prefersLessMotion } from "../composables/useMotion";
-import { bindingOf } from "../content/bindings";
+import { bindingOf } from "../config/bindings";
 
 export interface ShelfBook {
   /** Identifiant de corpus (tehilim, michna, talmud, tanakh, moussar, sidour…). */

@@ -10,6 +10,9 @@ import ToastContainer from "./components/ToastContainer.vue";
 import ConfirmDialog from "./components/ConfirmDialog.vue";
 import ConsentBanner from "./components/ConsentBanner.vue";
 import GlobalAudioPlayer from "./components/GlobalAudioPlayer.vue";
+import ReadingTableBar from "./components/readingTable/ReadingTableBar.vue";
+import { TABLE_BAR_REM } from "./composables/useBottomChrome";
+import { tableBarVisible } from "./composables/useReadingTable";
 import { useMiniPlayerVisible } from "./composables/useAudioPlayer";
 import { useOnline } from "./composables/useOnline";
 import { isNativeApp } from "./composables/useNativeApp";
@@ -208,7 +211,16 @@ authService.onAuthChanged((user) => {
     <OnboardingFlow v-if="isOnboardingOpen" />
     <FeedbackModal v-if="feedbackMounted" />
     <ReadingSelectionMenu v-if="selectionMounted" />
+    <!-- La table d'étude : la place de sa barre au bas de la page, pour que
+         la fin du texte ne passe pas dessous, puis la barre elle-même. -->
+    <div
+      v-if="tableBarVisible"
+      class="flex-shrink-0"
+      :style="{ height: `${TABLE_BAR_REM}rem` }"
+      aria-hidden="true"
+    ></div>
     <GlobalAudioPlayer />
+    <ReadingTableBar />
     <BottomTabBar v-if="isNativeApp" />
     <!-- App native : le flou en dégradé qui rend l'heure et la batterie
          lisibles quand la page défile sous elles (l'app reste bord à bord). -->

@@ -1407,6 +1407,22 @@ const fr = {
     seoDescription: "Tous les chiourim de {auteur} sur Petite Jerusalem.",
     searchPlaceholder: "Chercher parmi ses cours…",
   },
+  // La table d'étude : les textes mis de côté (voir useReadingTable).
+  readingTable: {
+    title: "Sur la table",
+    setAside: "Mettre de côté",
+    open: "Ouvrir la table d'étude, un texte posé | Ouvrir la table d'étude, {count} textes posés",
+    count: "Un texte posé | {count} textes posés",
+    placeCurrent: "Poser aussi « {title} »",
+    openNow: "Ouvert",
+    remove: "Ranger « {title} »",
+    hint: "Touchez un texte pour le rouvrir là où vous l'aviez laissé.",
+    backToLibrary: "Retour à la bibliothèque",
+    clear: "Tout ranger",
+    clearTitle: "Ranger tous les textes ?",
+    clearMessage: "Ils quittent la table ; vos marque-pages et votre reprise de lecture restent.",
+    clearConfirm: "Tout ranger",
+  },
   audioPlayer: {
     play: "Lecture",
     pause: "Pause",

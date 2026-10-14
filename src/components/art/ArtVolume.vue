@@ -5,7 +5,7 @@
  * son nom, en lettres dorées. C'est l'objet des cartes de programme : le
  * séder Moed, les Tehilim, le traité qu'on s'est donné à finir.
  *
- * La reliure est passée en propriété (voir content/bindings.ts) ; l'ombre du
+ * La reliure est passée en propriété (voir config/bindings.ts) ; l'ombre du
  * dos et le plat arrière en sont des voiles sombres, en aplats.
  */
 defineProps<{

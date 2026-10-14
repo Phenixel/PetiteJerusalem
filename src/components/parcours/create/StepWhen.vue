@@ -11,7 +11,7 @@
 import { HDate } from "@hebcal/core";
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import { bindingOf } from "../../../content/bindings";
+import { bindingOf } from "../../../config/bindings";
 import { useParcours } from "../../../composables/useParcours";
 import { useParcoursViews } from "../../../composables/useParcoursViews";
 import { localDayFrom } from "../../../services/dateService";
