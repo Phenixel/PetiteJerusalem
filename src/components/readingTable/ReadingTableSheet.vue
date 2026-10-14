@@ -99,6 +99,19 @@ function placeCurrent() {
   unplaced.value = null;
 }
 
+/**
+ * Retour à la bibliothèque, pour y chercher un autre texte : la table se
+ * referme, et le texte qu'on quitte retient sa page (la garde de route du
+ * lecteur). Inutile depuis la bibliothèque même.
+ */
+const LIBRARY_PATH = "/bibliotheque";
+const onLibrary = computed(() => route.path === LIBRARY_PATH);
+function goToLibrary() {
+  analyticsService.capture("reading_table_library_opened", { texts_count: texts.value.length });
+  close();
+  void router.push(LIBRARY_PATH);
+}
+
 async function clearAll() {
   const accepted = await confirm({
     title: t("readingTable.clearTitle"),
@@ -292,15 +305,27 @@ const panelStyle = computed(() =>
           </li>
         </ul>
 
-        <footer class="flex flex-shrink-0 items-center justify-between gap-3 px-5 pt-1 pb-4">
+        <footer class="flex-shrink-0 px-5 pt-1 pb-4">
           <p class="text-xs text-text-secondary">{{ t("readingTable.hint") }}</p>
-          <button
-            type="button"
-            class="flex-shrink-0 text-sm font-semibold text-text-secondary transition-colors hover:text-primary"
-            @click="clearAll"
-          >
-            {{ t("readingTable.clear") }}
-          </button>
+          <div class="mt-3 flex items-center justify-between gap-3">
+            <!-- Chercher un autre texte : la bibliothèque, d'un geste -->
+            <button
+              v-if="!onLibrary"
+              type="button"
+              class="btn btn-soft !px-3 !py-1.5 text-sm"
+              @click="goToLibrary"
+            >
+              <AppIcon name="chevron-left" :size="15" class="rtl:rotate-180" />
+              {{ t("readingTable.backToLibrary") }}
+            </button>
+            <button
+              type="button"
+              class="ms-auto flex-shrink-0 text-sm font-semibold text-text-secondary transition-colors hover:text-primary"
+              @click="clearAll"
+            >
+              {{ t("readingTable.clear") }}
+            </button>
+          </div>
         </footer>
       </section>
     </Transition>

@@ -1371,6 +1371,7 @@ const he: LocaleMessages = {
     openNow: "פתוח",
     remove: "הסרת “{title}”",
     hint: "הקישו על טקסט כדי לחזור אליו בדיוק במקום שבו עצרתם.",
+    backToLibrary: "חזרה לספרייה",
     clear: "פינוי הכול",
     clearTitle: "לפנות את כל הטקסטים?",
     clearMessage: "הם יורדים מהשולחן; הסימניות ומקום הקריאה נשמרים.",

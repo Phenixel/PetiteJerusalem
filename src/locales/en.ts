@@ -1408,6 +1408,7 @@ const en: LocaleMessages = {
     openNow: "Open",
     remove: "Put away “{title}”",
     hint: "Tap a text to reopen it where you left off.",
+    backToLibrary: "Back to the library",
     clear: "Put all away",
     clearTitle: "Put all texts away?",
     clearMessage: "They leave the table; your bookmarks and reading position stay.",

@@ -1456,6 +1456,7 @@ const fr = {
     openNow: "Ouvert",
     remove: "Ranger « {title} »",
     hint: "Touchez un texte pour le rouvrir là où vous l'aviez laissé.",
+    backToLibrary: "Retour à la bibliothèque",
     clear: "Tout ranger",
     clearTitle: "Ranger tous les textes ?",
     clearMessage: "Ils quittent la table ; vos marque-pages et votre reprise de lecture restent.",

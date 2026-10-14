@@ -456,6 +456,11 @@ panneau. Le `text_opened` qui suit porte `entry: table`.
 
 Un texte rangé d'une croix. `text_id`, et `texts_count` : ceux qui restent.
 
+#### `reading_table_library_opened`
+
+« Retour à la bibliothèque », touché au bas de la table. `texts_count` : les
+textes posés.
+
 #### `reading_table_cleared`
 
 « Tout ranger », confirmé. `texts_count` : les textes rangés.

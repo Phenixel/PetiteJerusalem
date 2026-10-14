@@ -1538,7 +1538,9 @@ geste : plusieurs livres ouverts sur la table, chacun à sa page.
   l'endroit (« 1re montée · verset 22 », « Daf 2b » pour une Guemara). Une
   ligne par texte, séparées d'un filet comme la file du lecteur, dans
   l'ordre de la barre ; « Ouvert » marque celui qu'on lit, une croix range
-  un texte, « Tout ranger » vide la table après confirmation. Ouverte depuis
+  un texte, « Tout ranger » vide la table après confirmation, et « Retour à
+  la bibliothèque » y mène pour chercher un autre texte (sauf depuis la
+  bibliothèque même). Ouverte depuis
   un texte qui n'y est pas encore, elle propose de le poser aussi, d'une
   commande à la couleur du thème qui porte son nom. Échap, le retour
   Android, un appui autour ou le panneau tiré vers le bas la referment.
