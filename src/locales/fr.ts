@@ -2419,6 +2419,12 @@ const fr = {
       tagWeekdays: "Sauf Chabbat",
       habitStudy: "La carte ouvre la bibliothèque : vous y lisez ce que vous voulez.",
       takenPart: "Déjà sur votre étagère",
+      anchorOpens: {
+        noon: "La carte vient à 'hatsot, au milieu du jour ; avant, elle attend en retrait.",
+        minha: "La carte vient à l'heure de Min'ha ; avant, elle attend en retrait.",
+        night: "La carte vient à la nuit tombée ; avant, elle attend en retrait.",
+        free: "La carte est là dès le matin.",
+      },
       everyDay: "Chaque jour.",
       exceptChabbat: "Chaque jour, sauf Chabbat.",
       someDays:

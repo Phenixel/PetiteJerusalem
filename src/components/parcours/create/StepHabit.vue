@@ -146,6 +146,14 @@ const knot = computed(() => {
   return anchor.value ? POSITIONS[anchor.value] : null;
 });
 
+/** Ce que le repère fait de la carte : d'où elle s'ouvre (voir useOfficeTimes). */
+const opensNote = computed(() => {
+  const at = anchor.value;
+  if (at === "noon" || at === "minha") return t(`parcours.create.anchorOpens.${at}`);
+  if (at === "arvit" || at === "bedtime") return t("parcours.create.anchorOpens.night");
+  return t("parcours.create.anchorOpens.free");
+});
+
 const momentName = computed(() =>
   anchor.value ? t(`parcours.anchors.${anchor.value}`) : t("parcours.day.moments.anytime"),
 );
@@ -213,6 +221,7 @@ const momentName = computed(() =>
         <span v-if="knot !== null" class="anchor-knot" :style="{ insetInlineStart: `${knot}%` }" />
       </div>
       <p class="mt-1.5 text-base font-bold">{{ momentName }}</p>
+      <p class="mt-0.5 text-[13px] text-text-secondary">{{ opensNote }}</p>
       <p class="mt-0.5 text-[13px] text-text-secondary">
         {{ t("parcours.create.slide") }}
         <button

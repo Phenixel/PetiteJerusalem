@@ -137,6 +137,7 @@ describe("i18n usage", () => {
       "parcours.create.moments.",
       "parcours.create.partsTitle.",
       "parcours.create.rhythmNotes.",
+      "parcours.create.anchorOpens.",
       "parcours.create.rhythms.",
       "parcours.cycles.",
       "parcours.day.during.",

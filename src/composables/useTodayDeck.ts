@@ -8,6 +8,7 @@ import { localDayFrom } from "../services/dateService";
 import {
   isOwnHabit,
   type DayKey,
+  type HabitAnchor,
   type MomentId,
   type Objective,
   type ProgramObjective,
@@ -48,7 +49,8 @@ import { useZmanimLocation } from "./useZmanimLocation";
  * Un office dont l'heure n'est pas encore venue (Min'ha au matin) passe
  * après tout ce qui se fait maintenant, même remis à plus tard ; en tête, il
  * se montre en retrait (« Pas encore l'heure », à partir de quand) et ne se
- * glisse pas.
+ * glisse pas. Une habitude attend de même son repère (le Chema du coucher,
+ * la nuit venue : voir useOfficeTimes).
  */
 
 /** Une occasion du calendrier, et sa fois (voir services/parcours/occasions.ts). */
@@ -126,9 +128,23 @@ export function useTodayDeck() {
   /** L'office de l'heure, quand le parcours le porte. */
   const isNow = (view: TaskView): boolean => offices.isNow(view.task.step);
 
-  /** Un office d'aujourd'hui pas encore ouvert, qui reste à faire. */
-  const isWaiting = (view: TaskView): boolean =>
-    view.progress !== "done" && offices.isAhead(view.task.step);
+  /**
+   * Le repère d'une habitude. Une habitude d'avant les repères, posée « au
+   * coucher », le prend de son moment.
+   */
+  function anchorOf(view: TaskView): HabitAnchor | null {
+    const objective = view.objective;
+    if (objective.kind !== "habit" || view.task.step) return null;
+    return objective.anchor ?? (objective.moment === "bedtime" ? "bedtime" : null);
+  }
+
+  /** Un office, ou une habitude à son repère, pas encore ouvert et qui reste à faire. */
+  function isWaiting(view: TaskView): boolean {
+    if (view.progress === "done") return false;
+    if (offices.isAhead(view.task.step)) return true;
+    const anchor = anchorOf(view);
+    return anchor !== null && offices.isAnchorAhead(anchor);
+  }
 
   function kickerOf(view: TaskView): string {
     if (isNow(view)) return t("parcours.hub.now");
@@ -149,6 +165,11 @@ export function useTodayDeck() {
       return { title: view.title, meta: offices.officeMeta(task.step) ?? view.meta };
     }
     if (objective.kind === "habit") {
+      // Pas encore son heure : à partir de quand, comme un office.
+      const anchor = anchorOf(view);
+      const opens = anchor && isWaiting(view) ? offices.anchorOpensAt(anchor) : null;
+      if (opens)
+        return { title: view.title, meta: t("parcours.hub.from", { time: offices.time(opens) }) };
       return {
         title: view.title,
         meta: isOwnHabit(objective.preset) ? t("parcours.hub.personal") : view.meta,

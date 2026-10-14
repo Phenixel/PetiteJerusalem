@@ -2337,6 +2337,12 @@ const en: LocaleMessages = {
       tagWeekdays: "Except Shabbat",
       habitStudy: "The card opens the library: read whatever you like there.",
       takenPart: "Already on your shelf",
+      anchorOpens: {
+        noon: "The card comes at midday (chatzot); before that, it waits in the background.",
+        minha: "The card comes when Mincha time begins; before that, it waits in the background.",
+        night: "The card comes at nightfall; before that, it waits in the background.",
+        free: "The card is there from the morning.",
+      },
       everyDay: "Every day.",
       exceptChabbat: "Every day, except Shabbat.",
       someDays:

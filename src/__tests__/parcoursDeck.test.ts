@@ -9,7 +9,8 @@ import type { Objective } from "../services/parcours/model";
  * l'heure en tête quand le parcours le porte, puis le moment présent ; ce
  * qu'on remet « plus tard » passe dessous, même l'office ; ce qui est fait
  * quitte le paquet. Un office dont l'heure n'est pas venue attend après tout
- * le reste, en retrait (« Pas encore l'heure »).
+ * le reste, en retrait (« Pas encore l'heure »), comme une habitude dont le
+ * repère n'est pas venu (le Chema du coucher, avant la nuit).
  */
 
 vi.mock("../services/authService", () => ({
@@ -103,13 +104,15 @@ describe("le paquet de l'accueil", () => {
     const office = deck.top.value!;
     deck.postpone(office);
     expect(deck.top.value?.view?.objective.id).toBe("t23");
-    // Après tout ce qui se fait maintenant ; Min'ha et Arvit, pas encore à l'heure, après lui.
+    // Après tout ce qui se fait maintenant ; Min'ha, Arvit et le Chema du
+    // coucher, pas encore à leur heure, après lui.
     const now = deck.pending.value.filter((card) => !card.waiting);
     expect(now.at(-1)?.key).toBe(office.key);
-    expect(deck.pending.value.slice(now.length).map((card) => card.view?.task.step)).toEqual([
-      "minha",
-      "arvit",
-    ]);
+    expect(
+      deck.pending.value
+        .slice(now.length)
+        .map((card) => card.view?.task.step ?? card.view?.objective.id),
+    ).toEqual(["minha", "arvit", "chema"]);
   });
 
   it("quitte le paquet ce qui est fait, et le garde dans la journée", async () => {
@@ -138,7 +141,8 @@ describe("le paquet de l'accueil", () => {
     expect(moments).toEqual(["morning", "morning", "afternoon", "evening", "bedtime"]);
     const chema = deck.day.value.at(-1);
     expect(chema?.art).toEqual({ kind: "moon" });
-    expect(chema?.meta).toBe(fr.parcours.hub.beforeSleep);
+    // À 9 h, il attend la nuit : à partir de quand.
+    expect(chema?.meta).toMatch(/^à partir de \d{1,2}:\d{2}$/);
   });
 
   it("propose de rattraper un programme en retard, sans le compter dans la journée", async () => {
@@ -172,12 +176,18 @@ describe("le paquet de l'accueil", () => {
   });
 
   it("garde en retrait l'office qui n'est pas encore à l'heure, après ce qui se fait maintenant", async () => {
-    const { deck, store } = await mountDeck();
+    const { createHabit } = await import("../services/parcours/create");
+    const tsedaka = createHabit(
+      { preset: "tsedaka", name: "", days: ALL_WEEK, moment: "anytime" },
+      TODAY,
+      5,
+    );
+    const { deck, store } = await mountDeck([tsedaka]);
     // Cha'harit, puis le texte du matin : faits.
     store.setDone(deck.top.value!.view!.task, TODAY, true, "test");
     store.setDone(deck.top.value!.view!.task, TODAY, true, "test");
-    // Le Chema du coucher se fait quand on veut : il passe avant Min'ha, qui n'est pas ouvert.
-    expect(deck.top.value?.view?.objective.id).toBe("chema");
+    // La tsédaka se fait quand on veut : elle passe avant Min'ha, qui n'est pas ouvert.
+    expect(deck.top.value?.view?.objective.id).toBe(tsedaka.id);
     expect(deck.top.value?.waiting).toBeFalsy();
     store.setDone(deck.top.value!.view!.task, TODAY, true, "test");
     // Plus rien à faire maintenant : Min'ha en tête, en retrait, et à partir de quand.
@@ -191,6 +201,21 @@ describe("le paquet de l'accueil", () => {
     const minha = later.deck.day.value.find((card) => card.view?.task.step === "minha");
     expect(minha?.waiting).toBe(false);
     expect(minha?.kicker).toBe(fr.parcours.hub.now);
+  });
+
+  it("fait attendre une habitude son repère : le Chema du coucher, la nuit venue", async () => {
+    const { deck } = await mountDeck();
+    // À 9 h : en retrait, après tout le reste, à partir de la sortie des étoiles.
+    const chema = deck.pending.value.at(-1);
+    expect(chema?.view?.objective.id).toBe("chema");
+    expect(chema?.waiting).toBe(true);
+    expect(chema?.kicker).toBe(fr.parcours.hub.notYet);
+    // À 21 h à Paris, la nuit est tombée : il est à faire, avant de dormir.
+    vi.setSystemTime(new Date("2026-10-14T19:00:00Z"));
+    const night = await mountDeck();
+    const tonight = night.deck.day.value.find((card) => card.view?.objective.id === "chema");
+    expect(tonight?.waiting).toBe(false);
+    expect(tonight?.meta).toBe(fr.parcours.hub.beforeSleep);
   });
 
   it("met la carte du 'Omer dans la pile, le soir, et retient qu'il est compté", async () => {
@@ -220,10 +245,17 @@ describe("le paquet de l'accueil", () => {
     const tehilim = deck.day.value.find((card) => card.view?.objective.id === week.id);
     expect(tehilim?.title).toBe("Tehilim 73 à 89");
     expect(tehilim?.meta).toMatch(/^17\spsaumes$/);
+    // À 9 h, le repas de midi n'est pas venu : il attend 'hatsot.
     const meal = deck.day.value.find((card) => card.view?.objective.id === hamazon.id);
-    expect(meal?.kicker).toBe(fr.parcours.anchorKicker.noon);
-    expect(meal?.meta).toBe(fr.parcours.hub.afterMeal);
+    expect(meal?.waiting).toBe(true);
     expect(meal?.art).toEqual({ kind: "siddur" });
+    // À 15 h à Paris, après le repas.
+    vi.setSystemTime(new Date("2026-10-14T13:00:00Z"));
+    const afternoon = await mountDeck([week, hamazon]);
+    const after = afternoon.deck.day.value.find((card) => card.view?.objective.id === hamazon.id);
+    expect(after?.waiting).toBe(false);
+    expect(after?.kicker).toBe(fr.parcours.anchorKicker.noon);
+    expect(after?.meta).toBe(fr.parcours.hub.afterMeal);
   });
 
   it("ne montre une carte de la semaine que les jours qu'on lui a donnés", async () => {

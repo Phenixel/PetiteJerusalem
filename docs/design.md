@@ -1652,7 +1652,14 @@ vient, l'heure en grand), l'étagère sans titre.
   et « Pas encore l'heure », à partir de quand, le sidour pâli. Il ne se
   glisse pas (tiré de côté, il revient sans rien marquer) ; un toucher
   ouvre sa fiche, d'où l'on peut le cocher quand même. À son heure, il
-  reprend sa couleur et sa place. Tenu par
+  reprend sa couleur et sa place. Une habitude attend de même le repère
+  qu'on lui a donné sur la barre : « à midi » dès 'hatsot, « avec Min'ha »
+  dès Min'ha guedola, « avec Arvit » et « au coucher » dès la sortie des
+  étoiles (le Chema du coucher ne se propose pas le matin) ; « au réveil »,
+  « avec Cha'harit » et « toute la journée » n'attendent pas. Une habitude
+  d'avant les repères, posée au coucher, attend la nuit aussi. Les
+  programmes et les cycles, eux, n'attendent jamais : leur moment les
+  range, l'étude se fait quand on peut. Tenu par
   `src/__tests__/parcoursDeck.test.ts`.
 - **Les cartes d'occasion** (la lune les nuits où on la bénit, le compte du
   'Omer le soir, l'allumage de 'Hanouka) prennent leur place dans la pile, à
@@ -1765,7 +1772,9 @@ pas (« 2 sur 3 »), puis la question en grand, alignée au début.
   pour les tefilin et la tsédaka), et son moment, qu'on pose en glissant
   le rond sur le fil du jour : au réveil, avec Cha'harit, à midi, avec
   Min'ha, avec Arvit, au coucher, ou toute la journée. Le repère se garde
-  (`anchor`) et dit la carte (« Ce soir, après Arvit »). Les réglages
+  (`anchor`), dit la carte (« Ce soir, après Arvit ») et d'où elle s'ouvre :
+  une ligne sous le fil le dit (« La carte vient à la nuit tombée ; avant,
+  elle attend en retrait »). Les réglages
   d'une habitude prise reprennent le même écran.
 
 ### L'accueil à son goût
