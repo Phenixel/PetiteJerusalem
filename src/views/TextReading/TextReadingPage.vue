@@ -96,6 +96,11 @@ import AppIcon from "../../components/icons/AppIcon.vue";
 const TexteChiourim = defineAsyncComponent(
   () => import("../../components/chiourim/TexteChiourim.vue"),
 );
+// La tâche de Mon parcours qui a mené à cette lecture : chargée à la demande,
+// elle tire le calendrier hébraïque, et ne sert qu'à qui vient du parcours.
+const ReaderTaskCard = defineAsyncComponent(
+  () => import("../../components/parcours/ReaderTaskCard.vue"),
+);
 import { useToast } from "../../composables/useToast";
 import { useReadingSize } from "../../composables/useReadingSize";
 import { readingProgressService } from "../../services/readingProgressService";
@@ -111,6 +116,7 @@ import { nightWithoutTachanun, withoutTachanun } from "../../services/tachanun";
 import { isWalledCityPlace, pastChatzotNight } from "../../services/zmanimService";
 import { useKeepAwake } from "../../composables/useKeepAwake";
 import { analyticsService } from "../../services/analyticsService";
+import { haptic } from "../../services/haptics";
 import { useLocalePath } from "../../composables/useLocalePath";
 import { useConfirm } from "../../composables/useConfirm";
 import {
@@ -213,6 +219,10 @@ const sectionParam = computed(() =>
   route.params.section ? Number(route.params.section) : undefined,
 );
 const sessionSlug = computed(() => (route.query.session ? String(route.query.session) : null));
+/** L'objectif de Mon parcours qui a mené ici (`?objectif=`), s'il y en a un. */
+const parcoursObjective = computed(() =>
+  typeof route.query.objectif === "string" ? route.query.objectif : null,
+);
 
 /** Reading lead is shown on the public /bibliotheque pages (not in the session reader).
  * Les corpus liturgiques (non partageables) reçoivent la variante sans partage. */
@@ -1509,6 +1519,7 @@ async function toggleRead() {
   isReserving.value = true;
   try {
     await sessionService.markReservationAsCompleted(session.value.id, r.id, next);
+    haptic(next ? "done" : "undo");
     r.isCompleted = next;
     // La transaction a effacé l'échéance du tirage : l'état local doit suivre,
     // sinon « remettre en non lu » ferait réapparaître une réservation périmée
@@ -2458,6 +2469,13 @@ watch(textId, (_, previousTextId) => {
           v-bind="reservationCardProps"
           guest-form-id-prefix="guest-bottom"
           v-model:reservation-form="reservationForm"
+        />
+
+        <!-- Venu de Mon parcours : la tâche du jour se coche là où l'on finit. -->
+        <ReaderTaskCard
+          v-if="parcoursObjective && !isSessionMode"
+          :objective-id="parcoursObjective"
+          class="mt-12"
         />
 
         <!-- Sidour : à la fin de Min'ha, un geste suffit pour enchaîner

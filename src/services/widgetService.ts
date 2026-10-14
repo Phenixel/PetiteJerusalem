@@ -34,14 +34,18 @@ import { watchService } from "./watchService";
  *
  * Rafraîchi au lancement, au retour au premier plan, au changement de lieu
  * des horaires, au changement de langue, au changement de thème (les widgets
- * et la montre portent l'accent choisi), à chaque progression de la lecture du
- * jour, et quand la montre réclame tout (app de montre ouverte pour la
- * première fois). Un payload inchangé n'est pas renvoyé : le natif ne recharge
- * pas ses widgets pour rien.
+ * et la montre portent l'accent choisi), à chaque changement de Mon parcours
+ * (useParcours), et quand la montre réclame tout (app de montre ouverte pour
+ * la première fois). Un payload inchangé n'est pas renvoyé : le natif ne
+ * recharge pas ses widgets pour rien.
+ *
+ * La lecture du jour des widgets et de la montre est celle que Mon parcours
+ * tient sur l'appareil, avec ou sans compte (legacyProjection). Un compte que
+ * cet appareil n'a pas encore repris garde celle de son profil, comme avant.
  */
 
 /** Le sous-ensemble des préférences dont dépend le widget de lecture. */
-export type DailyWidgetPrefs = Pick<
+type DailyWidgetPrefs = Pick<
   UserPreferences,
   "dailyReadingIds" | "dailyReadingOptions" | "dailyReadingProgress"
 >;
@@ -74,10 +78,6 @@ class WidgetService {
   // antérieur porteur de données plus vieilles.
   private queue: Promise<void> = Promise.resolve();
   private queued = false;
-
-  // Préférences fraîches confiées par la page Lecture du jour : évite de
-  // relire dans Firestore un document qu'elle vient d'écrire.
-  private pendingDaily: DailyWidgetPrefs | null = null;
 
   // Les destinataires. Chacun retient ce qu'il a déjà reçu : un payload
   // identique ne repart pas (chaque envoi fait recharger les widgets natifs,
@@ -144,14 +144,9 @@ class WidgetService {
     });
   }
 
-  /**
-   * Recalcule et pousse ce qui a changé. `dailyPrefs` : préférences déjà en
-   * mémoire chez l'appelant (page Lecture du jour), pour construire le payload
-   * sans relire Firestore. Les appels qui se chevauchent sont regroupés.
-   */
-  refresh(dailyPrefs?: DailyWidgetPrefs): Promise<void> {
+  /** Recalcule et pousse ce qui a changé. Les appels qui se chevauchent sont regroupés. */
+  refresh(): Promise<void> {
     if (!isNativeApp) return Promise.resolve();
-    if (dailyPrefs) this.pendingDaily = dailyPrefs;
     if (this.queued) return this.queue;
     this.queued = true;
     this.queue = this.queue.then(() => {
@@ -159,6 +154,24 @@ class WidgetService {
       return this.push();
     });
     return this.queue;
+  }
+
+  /**
+   * La lecture du jour à montrer : celle que Mon parcours tient sur
+   * l'appareil, sauf pour un compte qu'il n'a pas encore repris (une mise à
+   * jour qu'on n'a pas encore ouverte jusqu'au parcours, un appareil neuf),
+   * qui garde celle de son profil.
+   */
+  private async dailyPrefs(): Promise<DailyWidgetPrefs> {
+    const [{ readDeviceState }, { legacyProjection }] = await Promise.all([
+      import("./parcours/deviceStore"),
+      import("./parcours/legacyDailyReading"),
+    ]);
+    const device = readDeviceState();
+    const user = this.user;
+    const adopted = device.owner?.uid === user?.id && !device.owner?.leftAt;
+    if (user && !adopted) return userPreferencesService.getPreferencesOrThrow(user.id);
+    return legacyProjection(device.data, localDayKey());
   }
 
   private async push(): Promise<void> {
@@ -196,28 +209,20 @@ class WidgetService {
         this.zmanimKey = zmanimKey;
       }
 
-      // Lecture du jour : prefs fournies par la page si possible, Firestore
-      // sinon. En cas d'échec de lecture (hors ligne), on garde le dernier
-      // payload calculé plutôt que d'écraser les surfaces par du vide.
-      const provided = this.pendingDaily;
-      this.pendingDaily = null;
+      // Lecture du jour : celle de l'appareil, ou du profil pour un compte que
+      // l'appareil n'a pas encore repris. En cas d'échec de lecture (hors
+      // ligne), on garde le dernier payload calculé plutôt que d'écraser les
+      // surfaces par du vide.
       // Le chnei mikra suit le calendrier du lieu des horaires, comme la page
       // (le test d'isIsraelPlace, sans tirer zmanimService dans ce module).
       const il = place.value.tzid === "Asia/Jerusalem";
-      if (!this.user) {
+      try {
+        const prefs = await this.dailyPrefs();
         this.dailyJson = JSON.stringify(
-          buildDailyReadingWidgetPayload(null, t, new Date(), accent, il),
+          buildDailyReadingWidgetPayload(prefs, t, new Date(), accent, il),
         );
-      } else {
-        try {
-          const prefs =
-            provided ?? (await userPreferencesService.getPreferencesOrThrow(this.user.id));
-          this.dailyJson = JSON.stringify(
-            buildDailyReadingWidgetPayload(prefs, t, new Date(), accent, il),
-          );
-        } catch {
-          // Hors ligne : le dernier payload tient.
-        }
+      } catch {
+        // Hors ligne : le dernier payload tient.
       }
 
       // Bibliothèque (raccourcis d'écran d'accueil) et écrans de la montre :

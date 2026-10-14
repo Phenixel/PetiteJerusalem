@@ -14,6 +14,13 @@ export type CardArtSpec =
       lit: boolean;
     }
   | { kind: "siddur" }
+  | {
+      kind: "volume";
+      /** La reliure du corpus (config/bindings.ts). */
+      color: string;
+      /** Le titre de la couverture : « Moed », « Tehilim ». */
+      label: string;
+    }
   | { kind: "shofar" }
   | { kind: "loulav" }
   | { kind: "omer" };
@@ -43,6 +50,7 @@ export const CARD_ART_GEOMETRY: Record<
   moon: { size: 150, aspect: 1, rise: 0.17, end: -0.14 },
   hanoukia: { size: 150, aspect: 100 / 140, rise: 0.19, end: 0.04 },
   siddur: { size: 150, aspect: 100 / 130, rise: 0.1, end: 0.03 },
+  volume: { size: 150, aspect: 100 / 130, rise: 0.1, end: 0.03 },
   shofar: { size: 165, aspect: 100 / 140, rise: 0.14, end: 0.02 },
   loulav: { size: 185, aspect: 100 / 150, rise: 0.11, end: 0.03 },
   omer: { size: 140, aspect: 100 / 120, rise: 0.1, end: 0.04 },
@@ -60,7 +68,8 @@ const played = new Set<string>();
 
 <script setup lang="ts">
 /**
- * L'objet d'une carte mise en avant : le sidour pour un office, la lune les
+ * L'objet d'une carte mise en avant : le sidour pour un office, le volume
+ * d'un programme de Mon parcours, la lune les
  * nuits où on la bénit, la 'hanoukkia les soirs de 'Hanouka, le chofar des
  * Sli'hot, le loulav et l'etrog de Souccot, la gerbe du 'Omer (les dessins
  * sont dans components/art). Il tranche sur le reste de la page par ses
@@ -85,6 +94,7 @@ import ArtMoon from "./art/ArtMoon.vue";
 import ArtOmer from "./art/ArtOmer.vue";
 import ArtShofar from "./art/ArtShofar.vue";
 import ArtSiddur from "./art/ArtSiddur.vue";
+import ArtVolume from "./art/ArtVolume.vue";
 
 const props = withDefaults(
   defineProps<{
@@ -118,7 +128,12 @@ const frame = computed(() => {
 // celle de la carte du Sidour (en couleur) ont chacune leur lever.
 const playKey = computed(() => {
   const art = props.art;
-  const detail = art.kind === "hanoukia" ? `-${art.night}-${art.lit}` : "";
+  const detail =
+    art.kind === "hanoukia"
+      ? `-${art.night}-${art.lit}`
+      : art.kind === "volume"
+        ? `-${art.label}`
+        : "";
   return `${art.kind}${detail}-${props.surface}`;
 });
 const rising = ref(false);
@@ -154,6 +169,12 @@ onUnmounted(() => observer?.disconnect());
       :rising="rising"
     />
     <ArtSiddur v-else-if="art.kind === 'siddur'" class="art" />
+    <ArtVolume
+      v-else-if="art.kind === 'volume'"
+      class="art"
+      :color="art.color"
+      :label="art.label"
+    />
     <ArtShofar v-else-if="art.kind === 'shofar'" class="art" />
     <ArtLoulav v-else-if="art.kind === 'loulav'" class="art" />
     <ArtOmer v-else class="art" />

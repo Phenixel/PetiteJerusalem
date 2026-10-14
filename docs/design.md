@@ -175,6 +175,20 @@ fait. Quatre règles la tiennent :
   attend que la page se soit posée. Sous l'introduction, elle attend qu'elle
   se ferme : c'est le cas de l'astuce de l'accueil, à la première ouverture.
 
+**Le tutoriel de Mon parcours** (`useParcoursTours`) fait exception à deux
+règles. Ses gestes ne se devinent pas (glisser une carte, tirer la pile,
+l'appui long sur un volume, pincer le mur) : une visite par écran, de trois
+ou quatre pas, à la première visite de chacun ; l'accueil (la pile, la
+barre de la journée, la lumière, l'étagère), Mon parcours (la lumière, le
+mur, l'étagère, « Nouvel objectif »), Nouvel objectif (finir un texte, un
+cycle, une habitude), un programme (la portion, « Rattraper », « Lire la
+suite », « Modifier »). Un pas dont la commande n'est pas à l'écran (pas de
+retard, pas de suite à lire) se saute. Et il se montre **aussi sur le site**
+(`web`) : on n'y arrive pas d'un moteur de recherche, avec un compte, et les
+gestes y sont les mêmes. Sur l'accueil, il passe avant l'astuce des
+réglages, qui attend l'ouverture suivante. Les commandes se trouvent par
+leur repère `data-tour`.
+
 L'accueil porte la première : où l'app se règle à son goût (l'onglet en bas
 à droite, thème, police, mode sombre), puis le compte, ce qu'il apporte
 (partager des lectures, la lecture du jour, ses réglages sur un autre
@@ -648,6 +662,8 @@ Ce qui bouge, donc :
 - la pastille des onglets d'une page, qui glisse jusqu'à celui qu'on a touché ;
 - une carte ou une ligne qu'on presse, qui s'enfonce à peine sous le doigt
   (`.press-feedback`, `main.css`) ;
+- une lumière de la série qu'on vient de gagner, qui grandit dans sa feuille
+  et dont le halo s'ouvre (la tâche faite l'a allumée) ;
 - « Tout télécharger » : la flèche plonge dans son plateau au toucher, les
   anneaux des livres se remplissent à mesure, un livre arrivé en entier fait
   tracer sa coche et se soulève un instant de la planche, et la coche de la
@@ -674,7 +690,39 @@ de la barre du lecteur au plein écran ne se coupe qu'à la demande du système.
 Le mode allégé s'allume sur une bonne part des téléphones Android (4 Go de
 mémoire déclarés suffisent), et ce mouvement-là, bref et au geste, dit d'où
 vient le plein écran et où il repart : sans lui, le geste de le tirer vers le
-bas n'aurait plus de sens.
+bas n'aurait plus de sens. La pile de l'accueil est la seconde exception (la
+coche, la montée de la suivante, l'anneau) : ces repères disent qu'une carte
+est faite et qu'une autre est arrivée devant. L'arrivée d'un objectif qu'on
+vient de créer est la troisième (le volume qui tombe sur sa planche,
+l'habitude qui se glisse dans sa liste) : elle dit où il s'est rangé
+(`prefersReducedMotion`, `composables/useMotion.ts`).
+
+### Le toucher répond
+
+Le téléphone répond au doigt quand quelque chose se fait (`services/haptics.ts`),
+avec quatre retours, toujours les mêmes :
+
+- **fait** (deux battements, le « succès » du système) : une tâche faite,
+  par la pile, le portefeuille, la fiche, la portion d'un
+  programme, l'anneau du lecteur ou la feuille d'un jour ; une section
+  d'une chaîne de lecture marquée lue ; un objectif ajouté ; une lumière
+  de la série gagnée ;
+- **défait** (un battement léger) : une tâche décochée ou remise à plus
+  tard, une section remise en non lu ;
+- **seuil** (à peine) : pendant un geste, le moment où, lâché, il agirait
+  (la carte ou la ligne glissée assez loin, la pile tirée assez bas,
+  l'anneau plein), le rond du fil du jour qui passe d'un repère à l'autre, le
+  volume qu'on vient de créer qui touche sa planche, un
+  bloc de l'accueil qui change de place, une case d'unité touchée, le mur
+  qui s'ouvre en pinçant ; un battement au plus toutes les 60 ms ;
+- **appui long** (un battement franc) : la fiche d'une carte, le réglage
+  de l'accueil.
+
+Dans l'app, c'est le moteur du téléphone (`@capacitor/haptics`), qui suit
+le réglage du système ; sur le site, la vibration du navigateur là où elle
+existe (Android), rien sur iPhone, qui ne la donne pas au web. Un retour
+qui échoue se tait sans gêner le geste. Tenu par
+`src/__tests__/haptics.test.ts`.
 
 ### Ce qui est à soi se range avec le reste
 
@@ -831,6 +879,23 @@ jusqu'à son contenu : on ne savait jamais sur quel onglet on était, ni ce qui
 (`NativeProfileHome.vue`), rangé comme les réglages d'un téléphone ; le site
 garde le sien, qui lui convient.
 
+- **Mon parcours, sur le rond et dans une ligne.** Connecté, la pastille de
+  la série (la lumière et le compte des jours d'affilée, ensemble, sur un
+  fond clair) est à cheval sur le bas du rond à l'initiale, côté fin,
+  détachée d'un liseré de la couleur de la page (`ProfileStreakPill.vue`) ;
+  la toucher ouvre « Mes lumières ». La ligne « Mon parcours », en tête de
+  Mes lectures et là pour tous, mène à la page et dit la journée : « 1 sur
+  4 » au bout, et sa barre sous le nom (`ProfileParcoursRow.vue`, l'option
+  `progress` de `SettingsRow`).
+- **Le bandeau du profil du site** (`ProfileHeader.vue`) : à plat, la teinte
+  du thème. En haut, le rond à l'initiale (dès qu'il y a la place ; sur un
+  téléphone, le nom prend la ligne), le nom et, à côté de lui, la même
+  pastille de la série, l'adresse dessous. Sur la pastille claire, la
+  lumière se lit quelle que soit sa couleur (une ménorah dorée se perdait
+  dans l'orange), et le compte aussi. Dessous, sans filet, sur toute la
+  largeur : la journée (« Aujourd'hui, 1 sur 4 », la lumière et le record),
+  « Mon parcours », et la barre (`ProfileParcours.vue`). Tout à l'encre du
+  bandeau, en trois tons.
 - **Une page de lignes, rangées par groupe.** Mes lectures (les raccourcis),
   Réglages (apparence, langue, notifications, préférences), Mon compte
   (sécurité, déconnexion), Aide, Informations. Chaque groupe est un panneau
@@ -863,9 +928,10 @@ garde le sien, qui lui convient.
   l'app, on la change rarement, et trois langues se lisent mieux en liste
   cochée qu'en tuiles (`AppearanceSettings`, `with-language` à faux).
 - **L'identité en tête, sans bandeau.** Connecté : un rond à l'initiale, de la
-  couleur du thème (la seule touche pleine de la page), le nom, l'adresse et
-  « Modifier mon profil ». Sans compte : le titre « Réglages » et une carte
-  qui propose le compte, deux boutons, sans insister.
+  couleur du thème (la seule touche pleine de la page), la lumière de la
+  série à cheval dessus, le nom, l'adresse et « Modifier mon profil ». Sans
+  compte : le titre « Réglages » et une carte qui propose le compte, deux
+  boutons, sans insister.
 - **Le pied de page du site finit la page,** en petit : qui fait l'app, ses
   réseaux et la version installée, qu'on demande à qui écrit pour un bug.
 
@@ -1112,9 +1178,9 @@ dessin, une ligne, une précision en petit) : on sait que l'équipe a parlé, et
 elle ne prend plus la place d'une nouvelle. Son dessin est une cloche, ou,
 pour un incident, le triangle ambré des avertissements.
 
-Le reste du temps, la liste reste à un lien, en bas de l'accueil, juste
-au-dessus de « Écrivez-nous » : l'une donne des nouvelles, l'autre en
-demande, les deux vivent à la fin du parcours. Sur la page elle-même, chaque
+Le reste du temps, la liste n'est pas sur l'accueil : on la trouve au pied
+de page du site et dans le profil de l'app (l'accueil ne garde, tout en bas,
+que « Écrivez-nous »). Sur la page elle-même, chaque
 annonce est une carte (elle répond à « qu'est-ce qui a changé ? »), avec sa
 nature en pastille et « Nouveau » en pastille pleine, calculé sur la visite
 précédente.
@@ -1488,6 +1554,452 @@ parcourt, on lance, on reprend.
 
 Aucune image, aucun dégradé : la barre de lecture est une piste en deux
 aplats sous le curseur natif.
+
+### Mon parcours : le mur se bâtit en pierres, et seulement lui
+
+Mon parcours (`/parcours`) suit ce qu'on s'est donné à tenir : un texte à
+finir pour une date, une habitude, les Tehilim du mois, la paracha de la
+semaine, un texte relu chaque jour. Ce qui a été fait se voit comme un mur
+qu'on bâtit, une pierre par jour (`components/parcours/StoneWall.vue`) : une
+colonne par semaine, du dimanche en haut au Chabbat en bas, la rangée la plus
+haute, comme une assise de fondation.
+
+- **Les pierres sont pour l'histoire, et seulement elle.** Le mur des cinq
+  dernières semaines, le mur entier, sa légende. Une pierre posée, tout est
+  fait ; à moitié posée, une partie ; blanche, Chabbat, une fête ou rien de
+  prévu ; un creux, rien de coché ; la place en pointillé, à venir. Ce qui se
+  prévoit ou se choisit reste **à plat** : la semaine d'un programme est un
+  histogramme (`WeekBars.vue`), la semaine d'une habitude des cases
+  plates, comme le choix des jours. Au milieu d'une page,
+  des pierres disaient « bâti » pour ce qui n'était qu'un plan.
+- **Les pierres sont hors thème**, comme les reliures : la teinte de la pierre
+  de Jérusalem, en aplats et un grain minéral (une texture, pas un dégradé),
+  partagées par la classe globale `.pj-stone`. Seul le ciment fonce en sombre.
+- **Le mur s'ouvre sur aujourd'hui**, au bout du sens de lecture (à droite en
+  français, à gauche en hébreu), et remplit la largeur de l'écran ; on
+  remonte le temps en glissant. Une pierre touchée s'ouvre et se complète,
+  des mois après s'il le faut.
+
+### Rien ne se compte contre soi
+
+La série (des jours d'affilée où l'on a fait quelque chose) porte une lampe
+de terre cuite, dessinée comme dans la maquette (`ParcoursLamp.vue`) : sa
+flamme monte quand la journée est pleine, et baisse un jour manqué sans
+jamais s'éteindre. Chabbat et les fêtes ne la coupent pas : rien n'y est
+demandé. « Pas aujourd'hui » retire une tâche du jour sans la compter
+manquée. Aujourd'hui ne coupe rien tant qu'il n'est pas fini. Un jour passé se
+coche après coup, depuis le mur (la feuille de ce jour). Un retard se dit
+(« 6 michnayot de retard ») avec « Rien ne presse », et se rattrape au choix
+(la semaine, d'ici la fin, d'un coup, en repoussant la fin, ou « Déjà
+fait ») ; la portion du jour ne grossit jamais d'elle-même.
+
+### Les lumières de la série
+
+Plus la série monte, plus ce qui éclaire est grand
+(`services/parcours/lights.ts`, `StreakLight.vue`) : la vieille lampe au
+départ, la bougie à 3 jours, la lanterne à 7, la ménorah à 14, le phare à
+21, la lune à 30, le soleil à 50 (de Pessa'h à Chavouot), les étoiles à
+75, la galaxie à 100, la supernova à 150, le quasar à 250, et la lumière du
+premier jour au bout d'une année. Tenu par `parcoursLights.test.ts`.
+
+- **Des objets, pas des icônes**, aux couleurs du vrai et en aplats, à la
+  taille de la lampe (80 sur 62) : ils prennent sa place sur l'accueil, dans
+  Mon parcours et le profil sans rien déplacer. Ce qui brûle garde sa
+  flamme, qui monte et baisse comme celle de la lampe ; ce qui rayonne a un
+  halo, un aplat plus ou moins vif. Rien ne bouge de soi-même.
+- **On voit la lumière de la série en cours ; on garde celles du record.**
+  Une série qui retombe redescend la lumière montrée, jamais celles qu'on a
+  gagnées : « Mes lumières » les garde toutes.
+- **« Mes lumières » est une liste** (une feuille, `LightsSheet.vue`) : le
+  texte au début de la ligne (le nom, le palier, la phrase), la lumière au
+  bout, posée sans fond ; celle de la série en cours cerclée, « Votre
+  lumière ». Plus haute que l'écran, la feuille s'ouvre à mi-hauteur, sur
+  son titre, et se déploie quand on la glisse vers le haut (`BottomSheet`,
+  `tall`) ; c'est le voile qui défile, sans geste à programmer.
+- **Ce qui vient reste dans l'ombre.** Une lumière à gagner n'est qu'une
+  ombre floue, « À découvrir », avec son palier (la prochaine dit dans
+  combien de jours) : on y devine une forme, sans plus. Un peu agrandie et
+  poussée vers le bord, elle déborde de sa carte, qui la coupe. On sait
+  qu'il y a quelque chose, pas quoi.
+- **Une lumière gagnée se fête, une fois** (`LightCelebration.vue`) : un
+  instant après le geste qui l'a allumée, une feuille monte, la lumière y
+  grandit et son halo s'ouvre deux fois, avec son nom, sa phrase et « Voir
+  mes lumières ». Le dernier record fêté se garde sur l'appareil ; la
+  première fois, et quand le record saute d'un coup (le compte relu sur un
+  nouvel appareil), rien ne se fête : on ne célèbre que ce qu'on vient de
+  faire. Tenu par `e2e/firebase/parcours.spec.ts` (« la série qui franchit
+  un palier allume une lumière, une fois »).
+- **La lumière s'ouvre d'un toucher**, sans bouton à côté : sur Mon parcours
+  et dans le profil (sa pastille, sur le rond dans l'app, à côté du nom sur
+  le site), toucher la lumière ouvre « Mes lumières ». C'est l'objet lui-même, comme
+  la lampe de l'accueil qui mène à Mon parcours ; sur Mon parcours, son nom
+  est écrit juste dessous (« La ménorah · prochaine lumière dans 1 jour »),
+  et son nom accessible le dit partout (« Mes lumières, La ménorah »).
+
+### Un objectif, un volume
+
+Ce qui se lit (un programme, une lecture du calendrier, les textes du jour)
+est un volume relié sur l'étagère de Mon parcours et de l'accueil
+(`ProgramVolume.vue`, `VolumeShelf.vue`), de la reliure de son rayon
+(`config/bindings.ts`, la même que l'étagère de la bibliothèque). Un signet
+rouge dépasse quand la portion du jour attend ; le liseré doré fait le tour
+de la couverture à mesure qu'on avance, et une ligne sous le volume dit où
+l'on en est. Les habitudes ne sont pas des livres : elles ont leur liste, et
+leur semaine en cases plates.
+
+- **Tous de la même taille, pas de la même épaisseur.** Des volumes de
+  hauteurs différentes font une planche bancale : la couverture est la même
+  pour tous, et c'est la tranche des pages qui dit la longueur (mince pour
+  un traité ou peu de textes du jour, ordinaire pour un séder ou une lecture
+  du calendrier, épaisse pour plusieurs sedarim, la plus épaisse pour tout
+  le corpus).
+- **Reliés comme le sidour** (`ArtSiddur`) : le dos un ton plus clair, ses
+  nerfs dorés et sa charnière ; un double filet doré autour du titre (le
+  liseré qui se remplit, et un filet fin dedans) ; le titre en lettres
+  dorées, un fleuron, le sous-titre plus petit dessous.
+- **Le titre tient dans son cadre**, jamais au-delà du liseré : il rapetisse
+  un peu sur sa ligne (« Tehilim 1 » ne se coupe pas pour si peu), puis
+  passe sur plusieurs lignes, mot par mot (« Kodachim / Toharot »), trois
+  au plus ; un mot trop long même à la plus petite taille se resserre
+  plutôt que de déborder.
+- **Les textes du jour font un seul volume**, « Lecture du jour » : deux
+  psaumes, dix, une page qu'on aime ne font pas dix livres sur la planche.
+  Quand ce ne sont que des psaumes, il s'appelle « Mes Tehilim journaliers »
+  (« Tehilim » sur la couverture, « Chaque jour » dessous), qu'on sache d'un
+  coup d'œil ce qu'il tient ; la page prend le même nom, la carte de
+  l'accueil sa forme courte, « Mes Tehilim », qui tient à côté du volume
+  qu'elle porte (`dailyName`). Un texte d'un autre corpus ramène tout à
+  « Lecture du jour ».
+  Son épaisseur dit combien il en tient, son liseré se remplit des textes
+  lus aujourd'hui, et il ouvre leur page (voir « La lecture du jour,
+  revenue »), où la liste se compose.
+
+- **Un volume touché sur l'accueil ouvre le texte**, à l'endroit où l'on en
+  est (`readRoute`) : la portion du jour d'un programme si elle attend,
+  sinon la suite de ce qu'on a lu ; la lecture du jour ; les Tehilim du
+  jour ; la paracha. Un appui long, ou le clic droit, ouvre sa page et ses
+  réglages ; un objectif en pause ou fini ouvre sa page. Il ouvrait sa page,
+  qui pour un texte du jour ou un cycle n'était faite que de réglages. Dans
+  Mon parcours, le volume ouvre toujours sa page ; celle d'un texte ou d'un
+  cycle commence par ce qu'il y a à lire aujourd'hui et « Lire »
+  (`ObjectiveTodayCard.vue`).
+- **À la souris, plusieurs planches.** Au doigt, l'étagère défile de côté ;
+  à la souris, elle ne défile pas (tout le monde n'a pas de pavé tactile) :
+  les volumes passent sur une planche de plus, chaque rangée avec sa
+  planche en travers, comme dans une bibliothèque.
+
+Le choix de ce qu'on lit se fait sur la même planche : les sedarim debout, un
+toucher en prend un, un autre le repose, on en prend autant qu'on veut. Un
+traité seul se trouve par son nom (la recherche) et sort de son séder comme
+un livre mince, posé devant lui.
+
+### Un programme se lit au jour ou à la semaine
+
+Trois rythmes : chaque jour, chaque jour sauf Chabbat et les fêtes, ou à la
+semaine (la portion de la semaine, à répartir comme on veut). Pas de rythme
+au mois : une portion mensuelle se remet au lendemain jusqu'à la fin du mois,
+et un programme ainsi découpé s'abandonne. Le pas se
+montre avant de commencer (« 3 michnayot par jour, 12 min environ ») ; changer
+la date ou le rythme repart d'aujourd'hui, à la position atteinte.
+
+### Le paquet de l'accueil
+
+Sur l'accueil (dans l'app, avec ou sans compte ; sur le site, pour un
+compte), Mon parcours suit la maquette P2-Accueil à la lettre
+(`components/parcours/home/`) : la salutation et la date hébraïque, la lampe
+à côté, le paquet, sa barre, la carte des horaires (le lieu, l'horaire qui
+vient, l'heure en grand), l'étagère sans titre.
+
+- **La pile.** La carte du dessus, en couleur pleine aux mesures de la carte
+  du moment du Sidour (124 px, le titre en Playfair, l'objet qui ne sort que
+  par le haut), dit ce qu'il y a à faire maintenant ; deux cartes se devinent
+  dessous, décalées et réduites, de plus en plus pâles. Une carte en plus
+  (rattraper) se montre en clair, le titre à l'encre.
+- **Toucher ouvre la page**, directement (le texte, l'office), sans second
+  toucher. Une carte sans page (les tefilin, garder sa langue) ouvre sa
+  fiche.
+- **Les gestes de la pile** : glisser à droite, c'est fait ; à gauche, plus
+  tard (la carte passe sous la pile). En deçà de 110 px, la carte revient.
+  Ce que le geste fera se découvre sous elle (« C'est fait » à gauche,
+  « Plus tard » à droite). Tirée vers le bas, la pile s'étale, les cartes
+  du dessous plus vite que celle du dessus, et s'ouvre au-delà de 50 px. Un
+  appui long (550 ms) ouvre la fiche ; le clic droit et la touche du menu
+  contextuel aussi. Un glissé n'ouvre jamais la page.
+- **La suivante se voit arriver.** Faite, la carte reçoit une coche (un
+  rond clair, sur le côté gauche qu'on voit encore, 260 ms), puis s'envole
+  à droite en accélérant ; dans le même temps, la carte du dessous monte
+  prendre sa place, d'un pas franc qui la porte un peu au-delà avant de se
+  poser, et prend sa couleur ; puis un anneau à l'encre s'en échappe une
+  fois. Remise à plus tard, la carte s'envole à gauche, la suivante monte
+  de même, et elle repasse sous la pile. Elle ne revient jamais du côté où
+  elle est partie : on ne la confond pas avec la suivante. Un lecteur
+  d'écran entend « C'est fait. Ensuite : Arvit ». Ces repères disent ce
+  qui vient de se passer : une petite machine (`perf-lite`) les garde, et
+  seul le réglage du système qui demande moins d'animations fait tout
+  d'un coup.
+- **La pile et le défilement.** Au doigt, la page défile, même posé sur une
+  carte : la pile ne garde un geste vertical que pour se déplier, tirée
+  vers le bas quand la page est en haut. Le portefeuille ouvert défile
+  aussi comme le reste de la page ; on le replie par « Replier » (à la
+  souris, en le poussant vers le haut). Les gestes de côté restent aux
+  cartes. Tenu par `e2e/firebase/parcours.spec.ts` (« l'accueil au
+  doigt »).
+- **Le portefeuille** : toutes les cartes du jour, du matin au coucher, qui
+  se chevauchent tous les 80 px, l'objet en petit dans le coin. La carte du
+  dessus garde sa couleur pleine, celles à faire attendent sur fond clair,
+  celles qui sont faites s'éteignent (fond doux, texte gris, dessin pâli).
+  Glisser à droite : faite, même après coup ; à gauche : plus tard, ou pas
+  faite si elle l'était. En tête, « Aujourd'hui, 3 sur 8 » et « Replier ». Pas de case à cocher : le geste suffit, et la fiche le
+  redit en boutons. Chaque carte garde son élément d'un état à l'autre :
+  se déplier les fait glisser de la pile à leur place, celles déjà faites
+  sortant de sous la pile.
+- **La fiche** est une feuille qui monte du bas (`BottomSheet.vue`, la
+  poignée en haut) : le moment, le nom en grand, ce qu'il y a à faire, puis
+  deux boutons par ligne (c'est fait, ouvrir, plus tard, pas aujourd'hui) et
+  « Voir le programme ». Chaque geste y a son bouton, pour qui ne glisse pas,
+  et sur le site.
+- **L'ordre** : l'allumage de 'Hanouka à son heure, l'office dont c'est
+  l'heure s'il est dans le parcours (la carte dit « Maintenant » et jusqu'à
+  quand, et remplace alors le raccourci du Sidour), la lune et le 'Omer, puis
+  le moment présent, ceux qui viennent, ceux déjà passés, « Rattraper », et
+  enfin ce qu'on a remis à plus tard. Un office dit jusqu'à quand, ou à
+  partir de quand s'il vient.
+- **Pas encore l'heure.** Un office dont l'heure n'est pas venue (Min'ha au
+  matin) passe après tout ce qui se fait maintenant, même ce qu'on a remis
+  à plus tard : la pile ne propose jamais en couleur pleine ce qu'on ne
+  peut pas encore faire. Quand il ne reste que lui, il attend en tête, en
+  retrait : la carte claire et à plat (un filet, pas d'ombre), une horloge
+  et « Pas encore l'heure », à partir de quand, le sidour pâli. Il ne se
+  glisse pas (tiré de côté, il revient sans rien marquer) ; un toucher
+  ouvre sa fiche, d'où l'on peut le cocher quand même. À son heure, il
+  reprend sa couleur et sa place. Une habitude attend de même son repère
+  (choisi sur la barre pour l'étude, celui du modèle sinon) : « à midi » dès 'hatsot, « avec Min'ha »
+  dès Min'ha guedola, « avec Arvit » et « au coucher » dès la sortie des
+  étoiles (le Chema du coucher ne se propose pas le matin) ; « au réveil »,
+  « avec Cha'harit » et « toute la journée » n'attendent pas. Une habitude
+  d'avant les repères, posée au coucher, attend la nuit aussi. Les
+  programmes et les cycles, eux, n'attendent jamais : leur moment les
+  range, l'étude se fait quand on peut. Tenu par
+  `src/__tests__/parcoursDeck.test.ts`.
+- **Les cartes d'occasion** (la lune les nuits où on la bénit, le compte du
+  'Omer le soir, l'allumage de 'Hanouka) prennent leur place dans la pile, à
+  leur heure, et s'ouvrent de même ; leurs bandeaux se taisent tant que le
+  parcours a commencé. Elles ne comptent pas dans la journée : faites,
+  l'appareil s'en souvient (`services/parcours/occasions.ts`), pour qu'une
+  lune bénie ne revienne pas la nuit suivante.
+- **« Rattraper »**, une carte en plus pour un programme en retard (« si vous
+  avez un moment »), mène à la feuille de rattrapage ; glissée à droite, le
+  retard est dit lu.
+- **La barre de la journée**, sous la pile repliée, est un bouton : une case
+  ronde par tâche, rangées par moment ; à l'encre, fait ; à moitié teintée,
+  la carte du dessus ; grise, ce qui vient. Le compte au bout (« 3 sur 8 »).
+  La toucher ouvre le portefeuille.
+- **Sous les volumes de l'accueil**, ce qui attend et où (« ce soir 7:1 »),
+  ce qui est fait (« fait ce soir »), ou la position (« 72 sur 150 ») ; dans
+  Mon parcours, l'avancement et le retard (« 6 % · 9 en retard »).
+
+### Ma journée, retirée
+
+Ma journée (`/parcours/journee`, la maquette P2-Journee) a été retirée, pour
+simplifier : la pile et le portefeuille de l'accueil montrent déjà la
+journée, dans l'ordre où elle se fait. Ce qu'elle seule offrait a trouvé
+une autre place :
+
+- un jour passé se complète depuis le mur de Mon parcours, dans la feuille
+  de ce jour ;
+- le rappel du soir et l'avis des textes à télécharger pour le hors-ligne
+  sont au bas et en tête de Mon parcours ;
+- son adresse (`/parcours/journee`) mène à l'accueil ; celle de la lecture
+  du jour (`/bibliotheque/lecture-du-jour`, que gardent les widgets, la
+  montre et le rappel du soir) a retrouvé sa page (voir plus bas) ;
+- « Ma journée », dans l'onglet de l'étude, mène aussi à l'accueil.
+
+Restent d'elle deux décisions : le retour en tête des pages de Mon parcours
+est un chevron et un nom, à l'encre (`ParcoursBack.vue`) ; le fond de la
+page a son jeton, `--color-page`, qui fonce en sombre.
+
+### Un volume ouvert, ses réglages, le lecteur
+
+Un objectif en pause se voit sans ouvrir ses réglages : sur l'étagère, son
+volume pâlit et porte une pastille « En pause » (le dessin et le mot) ; en
+tête de sa page, une bande dit depuis quand, que rien n'est perdu, et
+« Reprendre » d'un toucher (`PausedNotice.vue`). La pause ne se lisait que
+dans un interrupteur, au bas des réglages. Un programme en pause ne dit pas
+de retard ; à la reprise, sa fin recule d'autant de jours que la pause en a
+duré, et le pas repart de là où l'on en était (`resumeProgram`, tenu par
+`parcoursPlan.test.ts`). Sans quoi on reprenait avec des semaines « de
+retard » qu'on avait choisi de ne pas lire.
+
+- **Un programme au jour** (P2-Programme) : le volume en grand, son liseré
+  doré à l'avancement et son signet quand une portion attend ; « Vous en
+  êtes à » et la position ; la piste de l'année ; la portion du jour, seule
+  surface en couleur, qu'on ouvre par « Lire » et qu'on glisse à droite
+  quand c'est faite (elle dit alors la suivante) ; le retard, sans alarme
+  (« Environ 4 jours. Rien ne presse. ») ; la semaine en histogramme ; la
+  fin prévue, veille de la fête quand elle l'est.
+- **Un programme à la semaine** (P2-Semaine) : « Semaine 3 sur 52 », la
+  carte de la semaine (celle de l'accueil), les cases de la portion à
+  toucher (« Où j'en suis cette semaine »), et les semaines, une pierre
+  chacune, nommées par leur paracha.
+- **Prendre de l'avance.** Une portion faite (du jour ou de la semaine),
+  sa page propose « Lire la suite », la portion d'après, et le volume de
+  l'accueil touché y mène aussi ; au bas de la lecture, l'anneau la marque
+  lue aujourd'hui (« Lu en avance »), et propose encore la suite. L'avance
+  se dit sous la portion (« 4 michnayot d'avance »), sans fanfare : les
+  portions gardent leur taille, la fin vient plus tôt. Alléger les portions
+  à venir changerait ce qu'on s'est promis sans qu'on l'ait demandé.
+- **Le chnei mikra, une montée par jour** (`aliyot.ts`) : une carte chaque
+  jour, la sixième et la septième montée le vendredi ; une montée oubliée
+  ne disparaît pas, la carte du lendemain en montre deux (« Noah, 3e et 4e
+  montées »). Elle ouvre la page du chnei mikra réduite à ces montées, avec
+  « Toute la paracha » pour le reste, et au bas l'anneau qui la coche. Le
+  réglage de la paracha passe de l'un à l'autre (« Une montée par jour »).
+- **Rattraper** monte du bas comme la fiche : les cinq façons en pastilles,
+  la semaine redessinée à chaque choix, ce qui était prévu dans la teinte de
+  la pierre et ce que le rattrapage ajoute en couleur.
+- **Modifier** (P2-Reglages) : des lignes groupées, comme les réglages du
+  téléphone (le rythme, le moment, puis la pause et « Ranger le volume »,
+  en rouge, `--color-danger`) ; une ligne touchée ouvre sa feuille.
+- **Le mur entier** dit au-dessus les mois qu'on regarde (« De Av 5786 à
+  Tichri 5787 ») ; le mur de Mon parcours s'y ouvre aussi en écartant deux
+  doigts dessus.
+- **Un jour du mur** s'ouvre en feuille : le jour en titre, un nœud par
+  tâche, « Fermer ».
+- **Au bas d'une lecture** venue de Mon parcours, la fin de la portion :
+  un anneau qu'on tire vers le haut ; il se remplit à mesure, et lâché au
+  bout, la portion est faite (« Le signet a avancé »), avec « Annuler ».
+  Pour qui ne tire pas, l'anneau est un bouton.
+- Les pierres sont dans `components/parcours/stones.css`, que chaque
+  composant qui en pose importe.
+
+### Nouvel objectif, sur une seule page
+
+La création reprend P2-Creer1 à 3 et P2-Habitude, mais sur une seule page :
+en tête, le retour vers Mon parcours, puis la question en grand, alignée au
+début. Ce qu'on choisit en haut reste marqué (le volume sorti de sa
+planche, les autres en retrait ; la pastille en couleur), et la suite se
+déplie dessous, sous un filet, la page glissant jusqu'à elle : la partie,
+puis « d'ici quand ? » après « Suivant » ; ou l'habitude à régler ; ou le
+texte à chercher. Changer d'avis se fait en haut, sans revenir en arrière.
+Le choix ne va plus dans l'adresse : chaque changement d'adresse ramène la
+page en haut, et la page doit glisser vers la section.
+
+Créé, l'objectif ne s'ouvre pas : on revient sur Mon parcours, qui glisse
+jusqu'à lui et le fait arriver sous les yeux (`useParcoursArrival`). Un
+volume tombe sur sa planche, rebondit deux fois et soulève une poussière
+dorée (le liseré des reliures), puis sa ligne paraît ; une habitude se
+glisse dans sa liste, dans la teinte du thème qui s'efface, et les cases
+de sa semaine se posent une à une. Une seule fois : rien ne se rejoue au
+rechargement. Tenu par `e2e/firebase/parcours.spec.ts` (« un volume se
+choisit sur une seule page »).
+
+- **Que voulez-vous accomplir ?** Les volumes debout sur leur planche
+  (Michna, Talmud, Tanakh, Tehilim) ; les cycles en pastilles (Tehilim
+  chaque semaine, chaque mois, Chnei mikra, un texte chaque jour) ; les
+  habitudes en pastilles, et « Avec mes mots » en contour, à l'encre.
+  Les habitudes proposées se font chaque jour sans moment trop précis à
+  tenir : les trois tefilot, le Chéma du coucher, la tsédaka, garder sa
+  langue, un temps d'étude (la carte ouvre la bibliothèque). Les tefilin
+  et Birkat Hamazon n'y sont plus (les tefilot et le repas les portent) ;
+  une habitude déjà prise se lit toujours.
+- **Un modèle se confirme.** Toucher une habitude toute prête ou un cycle
+  n'ajoute rien : une feuille monte (`PresetSheet.vue`), qui dit ce qu'il
+  demande, ses jours et son moment en étiquettes, puis « Ajouter à mon
+  parcours » en grand, « Régler les jours » pour une habitude, et
+  « Annuler ». Le bouton ne prend le toucher qu'après 400 ms (le temps que
+  la feuille monte) : un double toucher sur la liste ne l'atteint pas.
+  « Ajouter à mon parcours », sous une habitude qu'on règle, attend de même.
+- **Une seule fois.** Un modèle déjà pris (une habitude, un cycle, le
+  programme des Tehilim) n'est plus proposé ; retiré du parcours, il
+  revient. Les sedarim, traités et livres qu'un programme en cours étudie
+  restent éteints sur la planche, « Déjà sur votre étagère ». Ajouter quand
+  même (une adresse gardée, deux touchers) mène à celui qu'on a déjà. Tenu
+  par `e2e/firebase/parcours.spec.ts` (« un modèle se confirme »).
+- **D'ici quand ?** Quatre réponses en liste : la veille de Roch Hachana,
+  de Pessa'h (avec le nombre de jours), une autre date, ou « à mon
+  rythme » (tant par jour ou par semaine : la date de fin s'en déduit).
+  Le rythme en trois segments ; la réponse en couleur pleine, avec son
+  volume : ce que demande chaque jour d'étude, en unités et en minutes, et
+  la fin. « Plus soutenu. » au-delà d'une demi-heure par jour. À la
+  semaine, les jours où la carte vient sur l'accueil, écrits en entier
+  (le dimanche, le mercredi et le vendredi d'office). Puis le moment, sur
+  le fil du jour d'une habitude (après Arvit d'office), avec ce qu'il
+  fait : la carte de la portion passe en tête de l'accueil à ce moment-là,
+  sans attendre en retrait pour autant, on l'ouvre quand on veut. Il se
+  garde (`anchor`) et se change dans les réglages du programme, sur le
+  même fil.
+- **Une habitude** : son nom, ses jours en cases plates (Chabbat en pause
+  pour les tefilin et la tsédaka), et son moment. Seuls un temps d'étude et
+  une habitude « avec mes mots » le choisissent, en glissant le rond sur le
+  fil du jour : au réveil, avec Cha'harit, à midi, avec Min'ha, avec Arvit,
+  au coucher ; c'est là que la question a un sens. Les
+  autres ont le leur, d'office, qui se dit sans barre : les tefilot chaque
+  office à son heure, le Chéma au coucher, la tsédaka et garder sa langue
+  toute la journée. Le repère se garde (`anchor`), dit la carte (« Ce
+  soir, après Arvit ») et d'où elle s'ouvre : une ligne le dit (« La carte
+  vient à la nuit tombée ; avant, elle attend en retrait »). Les réglages
+  d'une habitude prise reprennent le même écran.
+- **« Toute la journée » est un interrupteur**, au-dessus du fil
+  (`AnchorTrack`), pour un programme comme pour une habitude : allumé, le
+  fil s'éteint et ne se touche plus ; éteint, le rond revient sur le
+  dernier repère choisi. Un lien « ou toute la journée » écrit après le nom
+  du moment (« Toute la journée ») disait deux fois la même chose, et ne
+  montrait pas qu'on quittait le fil.
+- **Une date se donne en hébreu et en civil**, partout où Mon parcours en
+  pose une (la fin d'un programme à sa création, sur sa page, dans ses
+  réglages, le rattrapage qui repousse la fin) : « 29 Elul 5787 (1 octobre
+  2027) ». La date hébraïque seule ne se situe pas d'un coup d'œil dans
+  l'année qu'on vit.
+
+### La lecture du jour, revenue
+
+La page de la lecture du jour d'avant Mon parcours revient
+(`/bibliotheque/lecture-du-jour`, `LectureDuJourPage.vue`), nourrie par lui,
+sans rien perdre de ce qu'elle savait faire : on a souvent plusieurs textes
+le même jour (plusieurs psaumes), et on les lit à la suite. C'est la page du
+volume « Lecture du jour » et de la carte du même nom.
+
+- **Les textes du jour, rien d'autre**, dans l'ordre du catalogue. Les
+  lectures du calendrier (les Tehilim du mois ou de la semaine, la paracha)
+  n'y sont plus : chacune a son volume, sa carte et sa page. La lecture
+  quotidienne d'avant les mêlait, et la paracha y avait un onglet « Cette
+  semaine », faute d'autre place. Ce qui se dit avant et après (le Yehi
+  ratson des Tehilim) se pose une fois pour tout ce qu'on lit du même
+  corpus.
+- **La liste se compose sur la page** : « Modifier ma liste » montre les
+  textes du jour, chacun se retire d'un toucher (la croix et son nom, « Retirer
+  Tehilim 23 »), et la recherche en ajoute plusieurs d'affilée. Elle s'ouvre
+  d'office quand la liste est vide. Tenu par `e2e/firebase/parcours.spec.ts`
+  (« plusieurs textes d'affilée, lus à la suite dans la lecture du jour »).
+- **Chaque texte se coche** (« Marquer comme lu ») et se replie ; un titre
+  touché le replie ou le rouvre. Les chapitres d'un texte se cochent un à
+  un (« 3/8 »), et le dernier coche le texte. La journée se dit en haut
+  (« 1 sur 4 lus aujourd'hui » et sa barre).
+- Le menu de lecture, la taille du texte (à côté de « Modifier ma liste »),
+  le défilement tout seul, l'écran qui reste allumé, l'avis des textes à
+  télécharger et le rappel du soir, comme avant.
+- **Sur l'accueil, une seule carte** : les textes du jour, un ou plusieurs,
+  font la carte « Lecture du jour » (« 3 textes · Tehilim 1 et 2 autres »),
+  qui ouvre la page ; glissée, elle les coche tous. Le profil compte la
+  journée de même.
+- **Plusieurs textes d'affilée** : à la création comme sur la page, un
+  toucher coche un texte, la recherche se refait autant qu'on veut, ce
+  qu'on a coché attend au-dessus, et « Ajouter 3 textes », collé au bas de
+  l'écran, les prend tous.
+
+### L'accueil à son goût
+
+L'accueil se règle (P2-AccueilModifier, `/accueil/modifier`) : le paquet du
+jour reste en tête, toujours ; dessous, les blocs (les horaires, mes
+volumes, les trois portes, mes dates, et « Reprendre », à remettre) se
+glissent pour changer d'ordre et se masquent d'une pastille. Ils tremblent
+un peu, le temps du réglage : on peut les prendre. Le bloc qu'on tient suit
+le doigt, les autres s'écartent à mesure, et la place où il sera posé se
+dessine en pointillé (la teinte de l'encre, un fond à peine teinté) ; lâché,
+il y glisse. On y arrive par un appui
+long sur un bloc (au doigt), ou par « Modifier l'accueil » en bas de la
+page. C'est un réglage de l'appareil (`useHomeLayout`), et un bloc qui n'a
+rien à dire s'efface de lui-même.
 
 ### Des textes mis de côté, sur la table
 

@@ -59,7 +59,7 @@ defineProps<{ playing: boolean }>();
   }
 }
 /* Rendu dégradé (useDevicePerf) : pas d'animation continue. */
-:global(:root.perf-lite) .playing .bar {
+:root.perf-lite .playing .bar {
   animation: none;
 }
 </style>

@@ -92,6 +92,11 @@ body {
   --color-bg-dark: #181818;
   --color-bg-beige: #fff9f3;
 
+  /* Le fond de la page, sous tout le reste ; il fonce en sombre. Ce qui
+     doit se confondre avec lui (une ligne du fil de Ma journée qu'on
+     glisse) le prend. */
+  --color-page: #fff9f3;
+
   /* Surfaces (cards, panels, modals). Flipped in dark mode below. */
   --color-surface: #ffffff;
   --color-surface-soft: #f8f5ef;
@@ -103,6 +108,11 @@ body {
 
   /* Hairlines for the few separators that remain. */
   --color-line: rgb(53 49 42 / 0.08);
+  /* Ce qui se perd : retirer, ranger, supprimer. */
+  --color-danger: #dc2626;
+
+  /* Le trait appuyé : la poignée d'une feuille, un contour en pointillé. */
+  --color-line-strong: rgb(53 49 42 / 0.18);
 
   /* Polices. Deux familles portent toute l'interface :
      Playfair Display (--font-display) pour les titres principaux et le peu
@@ -151,11 +161,14 @@ body {
 /* Dark mode: flip the semantic tokens so most components adapt without
    per-element dark: overrides. */
 :root.dark {
+  --color-page: #111827;
   --color-surface: #1f2937;
   --color-surface-soft: #273244;
   --color-text-primary: #f3f4f6;
   --color-text-secondary: #9ca3af;
   --color-line: rgb(255 255 255 / 0.1);
+  --color-line-strong: rgb(255 255 255 / 0.22);
+  --color-danger: #f87171;
   --shadow-card: 0 1px 2px rgb(0 0 0 / 0.3), 0 2px 8px rgb(0 0 0 / 0.25);
   --shadow-card-hover: 0 2px 4px rgb(0 0 0 / 0.35), 0 8px 24px rgb(0 0 0 / 0.4);
   --shadow-pop: 0 4px 12px rgb(0 0 0 / 0.4), 0 16px 40px rgb(0 0 0 / 0.5);
@@ -204,7 +217,7 @@ body {
 body {
   font-family: var(--font-sans);
   color: var(--color-text-primary);
-  background-color: var(--color-bg-beige);
+  background-color: var(--color-page);
   scrollbar-gutter: stable;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -214,7 +227,6 @@ body {
 }
 
 :root.dark body {
-  background-color: #111827; /* gray-900 */
   color: #f3f4f6; /* gray-100 */
 }
 
@@ -493,6 +505,21 @@ button,
     outline: 2px solid var(--color-primary);
     outline-offset: -2px;
   }
+  /* Sous le nom d'une ligne : ce qui est fait de ce qui est à faire. */
+  .settings-progress {
+    display: block;
+    height: 5px;
+    margin-top: 0.45rem;
+    overflow: hidden;
+    border-radius: var(--radius-pill);
+    background-color: color-mix(in srgb, var(--color-text-primary) 8%, transparent);
+  }
+  .settings-progress > span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background-color: var(--color-brand);
+  }
 
   /* Quiet back / breadcrumb link at the top of detail pages. */
   .back-link {
@@ -599,6 +626,56 @@ button,
     /* Centré tant qu'il tient dans la fenêtre, posé en haut et défilant
        dès qu'il déborde (voir le voile ci-dessus). */
     margin-block: auto;
+  }
+
+  /* La feuille du bas (BottomSheet) : posée au pied de l'écran, arrondie en
+     haut seulement, avec sa poignée. Sur un grand écran, elle garde la largeur
+     d'un téléphone, centrée. */
+  .sheet-overlay {
+    position: fixed;
+    inset-inline: 0;
+    top: var(--modal-viewport-top, 0px);
+    height: var(--modal-viewport-height, 100%);
+    z-index: 60;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    background-color: rgb(30 26 18 / 0.38);
+  }
+  .sheet-panel {
+    width: 100%;
+    max-width: 32rem;
+    margin-top: auto;
+    padding: 10px 18px calc(26px + env(safe-area-inset-bottom, 0px));
+    border-radius: var(--radius-3xl) var(--radius-3xl) 0 0;
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-pop);
+    animation: sheetUp 0.26s ease;
+  }
+  /* Une feuille plus haute que l'écran s'ouvre à mi-hauteur : le voile
+     défile, et la feuille glissée vers le haut se déploie (BottomSheet,
+     `tall`). Alignée en haut, sous sa marge : alignée en bas, le débordement
+     partait du bas, et la feuille s'ouvrait sur sa fin. */
+  .sheet-panel-tall {
+    align-self: flex-start;
+    margin-top: calc(var(--modal-viewport-height, 100vh) * 0.38);
+  }
+  @keyframes sheetUp {
+    from {
+      transform: translateY(24px);
+      opacity: 0;
+    }
+    to {
+      transform: none;
+      opacity: 1;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .sheet-panel {
+      animation: none;
+    }
   }
 }
 

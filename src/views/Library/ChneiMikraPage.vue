@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, watch } from "vue";
+import { computed, defineAsyncComponent, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import {
@@ -27,7 +27,16 @@ import ChneiMikraOptions from "../../components/ChneiMikraOptions.vue";
 import ReadingMenu from "../../components/ReadingMenu.vue";
 import ReadingProgressBar from "../../components/ReadingProgressBar.vue";
 import ReadingSizeControl from "../../components/ReadingSizeControl.vue";
+import type { TextStudyJsonEntry } from "../../models/models";
 import DailyReadingItem from "./DailyReadingItem.vue";
+import { appendHebrewNumeral } from "../../services/hebrewNumerals";
+import { ALIYOT_PER_PARASHA, aliyotLabel, parseAliyotQuery } from "../../services/parcours/aliyot";
+
+// Venu de Mon parcours : la fin de la lecture coche la carte du jour (chargée
+// à la demande, elle tire le calendrier hébraïque).
+const ReaderTaskCard = defineAsyncComponent(
+  () => import("../../components/parcours/ReaderTaskCard.vue"),
+);
 import { SITE_URL } from "../../config/site";
 
 /**
@@ -82,6 +91,43 @@ useAutoScroll(() => parasha.value !== null);
 useKeepAwake(() => parasha.value !== null);
 
 const isCurrentWeek = computed(() => parasha.value?.weekKey === currentWeek.value?.weekKey);
+
+/**
+ * Mon parcours, une montée par jour (`?montees=2-3`, comptées de 1 sur la
+ * semaine, de 8 à 14 pour la seconde d'une paracha double) : la page se
+ * réduit aux montées de la carte. « Toute la paracha » rend le reste.
+ */
+const montees = computed(() =>
+  route.query[WEEK_PARAM] === undefined ? parseAliyotQuery(route.query.montees) : null,
+);
+const objectiveId = computed(() =>
+  typeof route.query.objectif === "string" ? route.query.objectif : null,
+);
+type ShownEntry = { entry: TextStudyJsonEntry; blocks?: { from: number; to: number } };
+const shownEntries = computed(() =>
+  (parasha.value?.entries ?? []).flatMap((entry, index): ShownEntry[] => {
+    const range = montees.value;
+    if (!range) return [{ entry }];
+    const start = index * ALIYOT_PER_PARASHA;
+    const from = Math.max(range.from, start) - start;
+    const to = Math.min(range.to, start + ALIYOT_PER_PARASHA) - start;
+    return to > from ? [{ entry, blocks: { from, to } }] : [];
+  }),
+);
+const monteesLabel = computed(() =>
+  montees.value && parasha.value
+    ? aliyotLabel(
+        montees.value,
+        parasha.value.entries.map((entry) => appendHebrewNumeral(entry.name)),
+        t,
+      )
+    : "",
+);
+function showWhole(): void {
+  const query = { ...route.query };
+  delete query.montees;
+  void router.replace({ query });
+}
 
 const title = computed(() => parashaTitle(parasha.value));
 
@@ -202,15 +248,29 @@ watch([title, locale, localeMessagesReady], applySeoMeta, { immediate: true });
         <!-- La paracha change : on remonte des composants neufs plutôt que de
              recycler ceux du texte précédent, marque-pages compris. -->
         <div :key="parasha.weekKey" class="mt-8 space-y-10">
+          <!-- Une montée par jour : celles de la carte, et de quoi lire tout le reste. -->
+          <div v-if="montees" class="card flex items-center justify-between gap-3 px-4 py-3">
+            <p class="min-w-0">
+              <span class="block text-[13px] font-semibold text-text-secondary">
+                {{ t("chneiMikra.today") }}
+              </span>
+              <span class="block font-bold">{{ monteesLabel }}</span>
+            </p>
+            <button type="button" class="btn btn-soft min-h-10 flex-none px-4" @click="showWhole">
+              {{ t("chneiMikra.whole") }}
+            </button>
+          </div>
           <DailyReadingItem
-            v-for="entry in parasha.entries"
-            :key="entry.id"
-            :entry="entry"
+            v-for="shown in shownEntries"
+            :key="shown.entry.id"
+            :entry="shown.entry"
+            :blocks="shown.blocks"
             :with-targoum="true"
             :double-verses="doubleVerses"
             :with-rashi="withRashi"
             source="library_chnei_mikra"
           />
+          <ReaderTaskCard v-if="objectiveId" :objective-id="objectiveId" />
         </div>
       </template>
 

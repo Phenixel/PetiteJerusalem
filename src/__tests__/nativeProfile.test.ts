@@ -147,8 +147,10 @@ describe("profil de l'app native", () => {
     // Rien de ce qui suppose un compte.
     expect(page.row("/profile/security")).toBeNull();
     expect(page.row("/profile/account")).toBeNull();
-    expect(page.row("/bibliotheque/lecture-du-jour")).toBeNull();
+    expect(page.row("/share-reading")).toBeNull();
     expect(page.text()).not.toContain(fr.common.logout);
+    // Mon parcours se tient sans compte, sur le téléphone : sa carte, chargée à la demande.
+    await vi.waitFor(() => expect(page.row("/parcours")).not.toBeNull());
   });
 
   it("connecté, le nom en titre, les raccourcis et le compte", async () => {
@@ -157,7 +159,7 @@ describe("profil de l'app native", () => {
     expect(page.text()).toContain("alice@example.com");
     expect(page.row("/profile/account")).not.toBeNull();
     expect(page.row("/profile/security")).not.toBeNull();
-    expect(page.row("/bibliotheque/lecture-du-jour")).not.toBeNull();
+    await vi.waitFor(() => expect(page.row("/parcours")).not.toBeNull());
     expect(page.row("/share-reading")).not.toBeNull();
     expect(page.text()).toContain(fr.common.logout);
     expect(page.row("/login?mode=signup")).toBeNull();

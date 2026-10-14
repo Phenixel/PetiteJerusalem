@@ -34,7 +34,13 @@ const SerieChiourimPage = () => import("../views/Chiourim/SerieChiourimPage.vue"
 const TextReadingPage = () => import("../views/TextReading/TextReadingPage.vue");
 const StudyPage = () => import("../views/StudyPage.vue");
 const SidourPage = () => import("../views/SidourPage.vue");
-const DailyReadingPage = () => import("../views/Library/DailyReadingPage.vue");
+const HomeEditPage = () => import("../views/HomeEditPage.vue");
+const ParcoursPage = () => import("../views/Parcours/ParcoursPage.vue");
+const MurPage = () => import("../views/Parcours/MurPage.vue");
+const LectureDuJourPage = () => import("../views/Parcours/LectureDuJourPage.vue");
+const NouvelObjectifPage = () => import("../views/Parcours/NouvelObjectifPage.vue");
+const ObjectifPage = () => import("../views/Parcours/ObjectifPage.vue");
+const ProgrammeReglagesPage = () => import("../views/Parcours/ProgrammeReglagesPage.vue");
 const ChneiMikraPage = () => import("../views/Library/ChneiMikraPage.vue");
 const TehilimDayPage = () => import("../views/Library/TehilimDayPage.vue");
 const ContentPage = () => import("../views/ContentPage.vue");
@@ -201,19 +207,62 @@ export default [
     meta: { offlineOk: true },
     component: StudyPage,
   },
-  // Lecture quotidienne : déplacée du profil vers la bibliothèque (elle vit à
-  // côté des textes qu'elle fait lire). Route statique, prioritaire sur
-  // /bibliotheque/:corpus ci-dessous.
-  // Dans l'app native, la lecture du jour se lit sans connexion : les textes
-  // téléchargés viennent de l'appareil et la liste est relue de sa copie
-  // locale (la page passe alors en lecture seule). Sur le web il n'y a rien
-  // de téléchargé : la page a besoin du réseau, comme avant.
+  // La lecture du jour : les textes du jour et les lectures du calendrier de
+  // Mon parcours, à la suite (la carte « Lecture du jour » de la pile y
+  // mène). Les versions installées, les widgets, la montre et le rappel du
+  // soir y mènent aussi. Comme Mon parcours : sans compte dans l'app, avec un
+  // compte sur le site. Route statique, prioritaire sur /bibliotheque/:corpus.
   {
     path: "/bibliotheque/lecture-du-jour",
     name: "daily-reading",
-    component: DailyReadingPage,
-    meta: { requiresAuth: true, offlineOk: isNativeApp, plainBackground: true },
+    meta: { requiresAuth: !isNativeApp, offlineOk: isNativeApp },
+    component: LectureDuJourPage,
   },
+  // Ma journée a été retirée : la pile et le portefeuille de l'accueil
+  // montrent la journée. L'adresse mène à l'accueil, pour les liens gardés.
+  {
+    path: "/parcours/journee",
+    name: "parcours-day",
+    redirect: "/",
+  },
+  // L'accueil à son goût : l'ordre des blocs, ceux qu'on masque. Un réglage
+  // de l'appareil ; sur le site, comme le tableau de bord, pour un compte.
+  {
+    path: "/accueil/modifier",
+    name: "home-edit",
+    meta: { requiresAuth: !isNativeApp, offlineOk: isNativeApp },
+    component: HomeEditPage,
+  },
+  // Mon parcours : programmes, habitudes, la journée et le mur. Dans l'app,
+  // tout marche sans compte, sur l'appareil, et sans réseau ; sur le site,
+  // un compte est demandé (il n'y a pas d'appareil où garder le suivi).
+  ...[
+    {
+      path: "/parcours",
+      name: "parcours",
+      component: ParcoursPage,
+    },
+    {
+      path: "/parcours/mur",
+      name: "parcours-wall",
+      component: MurPage,
+    },
+    {
+      path: "/parcours/nouveau",
+      name: "parcours-new",
+      component: NouvelObjectifPage,
+    },
+    {
+      path: "/parcours/objectif/:id",
+      name: "parcours-objective",
+      component: ObjectifPage,
+    },
+    {
+      path: "/parcours/objectif/:id/reglages",
+      name: "parcours-objective-settings",
+      component: ProgrammeReglagesPage,
+    },
+  ].map((route) => ({ ...route, meta: { requiresAuth: !isNativeApp, offlineOk: isNativeApp } })),
   // Chnei mikra : la paracha de la semaine avec son Targoum, ouverte à tous.
   // La semaine se choisit en query (`?semaine=2026-08-15`) plutôt qu'en
   // segment, qui se confondrait avec /bibliotheque/:corpus/:slug.

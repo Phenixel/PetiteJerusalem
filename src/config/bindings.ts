@@ -3,7 +3,9 @@
  * toutes de la même famille pour rester sobres (un vrai jeu de volumes, pas
  * un arc-en-ciel). Hors thème, identiques en mode sombre (docs/design.md,
  * « L'étagère de la bibliothèque »). L'étagère les porte, et les livres posés
- * sur la table d'étude les reprennent.
+ * sur la table d'étude les reprennent, comme l'étagère de Mon parcours et
+ * l'objet des cartes de programme : un séder de Michna a la même reliure
+ * partout.
  */
 const BINDINGS: Record<string, string> = {
   tehilim: "#96604a",

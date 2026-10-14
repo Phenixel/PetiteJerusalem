@@ -39,6 +39,7 @@ import { isOffline } from "../../services/userPreferencesService";
 import { useToast } from "../../composables/useToast";
 import { liveValue } from "../../composables/liveInput";
 import { analyticsService } from "../../services/analyticsService";
+import { haptic } from "../../services/haptics";
 import { moderationService } from "../../services/moderationService";
 import { useConfirm } from "../../composables/useConfirm";
 import { parseSlotKey, slotKey, useReservationIndex } from "../../composables/useReservationIndex";
@@ -528,6 +529,7 @@ const toggleReservationCompletion = async (textStudyId: string, section: number)
   const previous = reservation.isCompleted;
   const newCompletionStatus = !previous;
   reservation.isCompleted = newCompletionStatus;
+  haptic(newCompletionStatus ? "done" : "undo");
 
   try {
     await reservationService.markReservationAsCompleted(

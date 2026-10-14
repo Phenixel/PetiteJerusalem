@@ -1,40 +1,26 @@
 <script setup lang="ts">
 import { useRouter } from "vue-router";
-import {
-  onMounted,
-  onUnmounted,
-  ref,
-  computed,
-  defineAsyncComponent,
-  watch,
-  type Component,
-} from "vue";
+import { onMounted, onUnmounted, ref, computed, defineAsyncComponent, watch } from "vue";
 import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { localeMessagesReady } from "../i18n";
 import { seoService } from "../services/seoService";
 import { SITE_URL } from "../config/site";
 import { localeOfPath, sectionPath } from "../content/seoLocales";
-import { localDayKey } from "../services/dateService";
 import { analyticsService } from "../services/analyticsService";
 import { authService, type User } from "../services/authService";
-import {
-  countDailyProgress,
-  userPreferencesService,
-  type UserPreferences,
-} from "../services/userPreferencesService";
 import { isNativeApp } from "../composables/useNativeApp";
 import { useHomeAccountCta } from "../composables/useHomeAccountCta";
 import { openFeedback } from "../composables/useFeedback";
 import SiteFooter from "../components/SiteFooter.vue";
-import AppIcon from "../components/icons/AppIcon.vue";
 import FeedbackNudge from "../components/FeedbackNudge.vue";
 import FeatureTour, { type TourStep } from "../components/FeatureTour.vue";
 import { tipsOffered } from "../composables/useFeatureTips";
-import DailyReadingCard from "../components/DailyReadingCard.vue";
-import IllustrationPartage from "../components/illustrations/IllustrationPartage.vue";
-import IllustrationChiourim from "../components/illustrations/IllustrationChiourim.vue";
-import IllustrationBibliotheque from "../components/illustrations/IllustrationBibliotheque.vue";
+import { useParcoursTours } from "../composables/useParcoursTours";
+import HomeDoors from "../components/HomeDoors.vue";
+import HomeResume from "../components/HomeResume.vue";
+import { useHomeLayout } from "../composables/useHomeLayout";
+import { useLongPress } from "../composables/useLongPress";
 import HolidayGreeting from "../components/holiday/HolidayGreeting.vue";
 
 // Chargée à la demande : la carte tire le moteur de calcul des horaires
@@ -55,6 +41,16 @@ const SidourNowCard = defineAsyncComponent(() => import("../components/SidourNow
 // encore vue. Elles tirent Firestore, d'où le chargement à la demande.
 const AnnouncementsBanner = defineAsyncComponent(
   () => import("../components/announcements/AnnouncementsBanner.vue"),
+);
+// Mon parcours : le paquet du jour, la lampe et l'étagère. Ils tirent le
+// calendrier hébraïque (les jours de repos), même chargement à la demande.
+const ParcoursHub = defineAsyncComponent(
+  () => import("../components/parcours/home/ParcoursHub.vue"),
+);
+const HomeLamp = defineAsyncComponent(() => import("../components/parcours/home/HomeLamp.vue"));
+const HomeShelf = defineAsyncComponent(() => import("../components/parcours/home/HomeShelf.vue"));
+const HomeHebrewDate = defineAsyncComponent(
+  () => import("../components/parcours/home/HomeHebrewDate.vue"),
 );
 
 const router = useRouter();
@@ -96,6 +92,9 @@ const { dismissed: accountCtaDismissed, dismissHomeAccountCta } = useHomeAccount
  */
 const homeRoot = ref<HTMLElement | null>(null);
 
+/** Le tutoriel de Mon parcours, sur l'accueil : la pile, la journée, la lumière, l'étagère. */
+const parcoursTours = useParcoursTours();
+
 const homeTip = computed<TourStep[]>(() => {
   const steps: TourStep[] = [
     {
@@ -128,10 +127,26 @@ function dismissAccountCta() {
   analyticsService.capture("home_signup_cta_dismissed");
 }
 
-// --- Tableau de bord (connecté) : lecture du jour et horaires du jour. ---
-const dashLoading = ref(false);
-const readingTotal = ref(0);
-const readingDone = ref(0);
+// --- Tableau de bord : Mon parcours et les horaires du jour. Dans l'app, avec
+// ou sans compte (le parcours se tient sur le téléphone) ; sur le site, pour
+// un compte, le visiteur a la page d'accueil du site. ---
+const dashboard = computed(() => user.value !== null || isNativeApp);
+
+/** Le paquet porte les offices du jour : le raccourci du Sidour se tait. */
+const officesInDeck = ref(false);
+/** Le parcours a commencé : la lune et le 'Omer sont des cartes de la pile. */
+const parcoursBegun = ref(false);
+
+/** L'ordre des blocs sous le paquet, et ceux qu'on a masqués (useHomeLayout). */
+const { layout: homeLayout } = useHomeLayout();
+
+// Un appui long sur un bloc (au doigt) ouvre le réglage de l'accueil. Le
+// paquet a le sien (la fiche de la carte), un volume de l'étagère aussi (sa
+// page), et la barre de la journée s'y touche : ils n'en sont pas.
+const editPress = useLongPress(
+  (target) => !target.closest(".dk, .day-bar, .deck-more, .shelf-cell, input"),
+  () => void router.push("/accueil/modifier"),
+);
 
 const firstName = computed(
   () => (user.value?.name ?? "").split(" ")[0] || user.value?.name || t("common.anonymousUser"),
@@ -140,84 +155,6 @@ const greeting = computed(() => {
   const hour = new Date().getHours();
   return hour >= 18 || hour < 5 ? t("home.dashboard.helloEvening") : t("home.dashboard.hello");
 });
-
-// Même règle de comptage que la page Lecture quotidienne (chnei mikra
-// hebdomadaire exclu, complétions intersectées avec les listes actives).
-function applyDashboardCounts(prefs: UserPreferences) {
-  const progress = prefs.dailyReadingProgress;
-  const isToday = progress?.date === localDayKey();
-  const counts = countDailyProgress({
-    textIds: prefs.dailyReadingIds ?? [],
-    options: prefs.dailyReadingOptions ?? [],
-    completedTextIds: isToday ? (progress.completedIds ?? []) : [],
-    completedOptions: isToday ? (progress.completedOptions ?? []) : [],
-  });
-  readingTotal.value = counts.total;
-  readingDone.value = counts.done;
-}
-
-async function loadDashboard(u: User) {
-  // Copie locale d'abord : les compteurs du jour s'affichent tout de suite,
-  // sans squelette, et la lecture Firestore confirme ou corrige ensuite.
-  const cached = userPreferencesService.getCachedPreferences(u.id);
-  if (cached) applyDashboardCounts(cached);
-  dashLoading.value = !cached;
-  try {
-    applyDashboardCounts(await userPreferencesService.getPreferences(u.id));
-  } catch (error) {
-    console.error("Erreur lors du chargement du tableau de bord:", error);
-  } finally {
-    dashLoading.value = false;
-  }
-}
-
-const features = computed<
-  { illustration: Component; title: string; description: string; route: string }[]
->(() => [
-  {
-    illustration: IllustrationPartage,
-    title: t("home.features.shareReading.title"),
-    description: t("home.features.shareReading.description"),
-    route: "share-reading",
-  },
-  {
-    illustration: IllustrationChiourim,
-    title: t("home.features.chiourim.title"),
-    description: t("home.features.chiourim.description"),
-    route: "chiourim",
-  },
-  {
-    illustration: IllustrationBibliotheque,
-    title: t("home.features.study.title"),
-    description: t("home.features.study.description"),
-    route: "bibliotheque",
-  },
-]);
-
-/**
- * Les trois portes, deux mises en page.
- *
- * Dans l'app, l'écran est étroit et la barre du bas attend juste en dessous :
- * les trois tiennent sur une seule ligne, un dessin et un titre, sans la
- * phrase de présentation. On sait ce qu'est la bibliothèque quand on a
- * installé l'app ; la phrase servait au visiteur du site.
- *
- * Sur le web, elles s'empilent en lignes sur un téléphone (texte à gauche,
- * dessin à droite, la place y est en largeur) et se rangent côte à côte,
- * centrées sous leur dessin, dès qu'il y a trois colonnes. Rien ne les sépare
- * qu'un écart : un filet entre elles redessinait les cases dont on venait de
- * les sortir.
- */
-const doorsClass = isNativeApp
-  ? "grid grid-cols-3 gap-2"
-  : "grid grid-cols-1 gap-2 md:grid-cols-3 md:gap-8";
-const doorClass = isNativeApp
-  ? "flex flex-col items-center gap-2 px-1 py-3 text-center"
-  : "flex items-center gap-5 py-4 text-left md:flex-col md:items-center md:gap-4 md:py-2 md:text-center";
-const doorIllustrationClass = isNativeApp
-  ? "h-14 w-14"
-  : "order-2 h-24 w-24 sm:h-28 sm:w-28 md:order-1 md:h-24 md:w-24";
-const doorTitleClass = isNativeApp ? "text-base leading-snug" : "text-2xl md:text-3xl";
 
 // Ce que voit un visiteur qui (re)vient : la landing anonyme ou le tableau de
 // bord connecté. Une seule capture, au premier état d'auth connu.
@@ -238,12 +175,6 @@ onMounted(() => {
       hasTrackedHomeView = true;
       analyticsService.capture("home_viewed", { variant: u ? "dashboard" : "landing" });
     }
-    if (u) {
-      loadDashboard(u);
-    } else {
-      readingTotal.value = 0;
-      readingDone.value = 0;
-    }
   });
   applyHomeMeta();
 });
@@ -261,88 +192,32 @@ onUnmounted(() => {
          connecté ou non (voir HolidayGreeting). Rien le reste de l'année. -->
     <HolidayGreeting class="mb-6 md:mb-8" />
 
-    <!-- ===== Connecté : accueil personnalisé, hors carte ===== -->
-    <template v-if="user">
-      <!-- La salutation ne remplit qu'une demi-largeur : les raccourcis du
-           moment se rangent dans l'autre moitié, à côté du nom, au lieu de
-           traverser la page en bandeaux au-dessus du tableau de bord. Ils
-           n'apparaissent que quand leur moment est venu (l'heure d'un office,
-           les nuits de la bénédiction de la lune, l'Omer) : le reste du temps
-           la moitié droite est simplement vide, et la salutation garde sa
-           ligne. -->
-      <div class="w-full max-w-6xl mx-auto mb-8 grid gap-4 md:grid-cols-2 md:items-center md:gap-8">
-        <div class="enter-rise">
-          <h1 class="text-3xl md:text-5xl font-bold text-text-primary tracking-tight">
-            {{ greeting }},
-            <span class="text-primary">{{ firstName }}</span>
-          </h1>
-          <p class="mt-2 text-base md:text-lg text-text-secondary">
-            {{ t("home.dashboard.subtitle") }}
-          </p>
+    <!-- ===== Tableau de bord : connecté, ou dans l'app avec ou sans compte ===== -->
+    <template v-if="dashboard">
+      <!-- La salutation et la date hébraïque, la lampe du parcours à côté
+           (P2-Accueil) : la flamme est un objet, pas une icône. -->
+      <div class="w-full max-w-6xl mx-auto enter-rise">
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0 pt-1">
+            <h1
+              class="text-[30px] leading-[1.15] md:text-5xl font-bold text-text-primary tracking-tight"
+            >
+              <template v-if="user">
+                {{ greeting }},
+                <span class="text-primary">{{ firstName }}</span>
+              </template>
+              <template v-else>{{ greeting }}</template>
+            </h1>
+            <HomeHebrewDate class="mt-1.5 min-h-5 text-sm text-text-secondary" />
+          </div>
+          <HomeLamp class="flex-none" />
         </div>
-
-        <div class="flex flex-col gap-3">
-          <!-- Un mot de l'équipe : un incident en cours, une nouveauté pas
-               encore lue. En tête, parce qu'un incident explique peut-être
-               ce qui ne marche pas plus bas. -->
-          <AnnouncementsBanner />
-
-          <!-- C'est le temps d'une prière : le sidour à un geste, avec l'heure
-               limite. Absent entre deux offices. -->
-          <SidourNowCard />
-
-          <!-- La bénédiction de la lune : une fenêtre de quelques nuits par
-               mois, qui se rate faute de rappel. Absente le reste du temps. -->
-          <BirkatHalevanaBanner />
-          <OmerBanner />
-
-          <!-- Ce qu'on a inscrit soi-même au calendrier : un anniversaire, un
-               leilouy nichmat. Absent le reste de l'année. -->
-          <OccasionsBanner />
-        </div>
-      </div>
-
-      <div class="w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6 mb-10">
-        <!-- Squelettes pendant le chargement -->
-        <template v-if="dashLoading">
-          <div class="card p-6 h-36 animate-pulse"></div>
-          <div class="card p-6 h-36 animate-pulse"></div>
-        </template>
-
-        <template v-else>
-          <!-- Lecture quotidienne : où j'en suis aujourd'hui (carte partagée
-               avec la bibliothèque) -->
-          <DailyReadingCard
-            :done="readingDone"
-            :total="readingTotal"
-            class="dash-card"
-            @click="trackCard('daily_reading')"
-          />
-
-          <!-- Horaires du jour : calculés sur l'appareil, rien à charger.
-               Le partage de lectures reste à un clic (navbar, footer, cartes
-               de découverte plus bas). -->
-          <ZmanimCard class="dash-card" style="--enter-delay: 0.1s" @click="trackCard('zmanim')" />
-        </template>
-      </div>
-    </template>
-
-    <!-- ===== Non connecté : invitation à gauche, horaires du jour à droite,
-         à la place qu'occupent les cartes du tableau de bord ===== -->
-    <div
-      v-else
-      class="w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-8 items-center mb-10"
-    >
-      <!-- App native : une salutation, comme connecté, et rien de plus. On a
-           déjà installé l'app, l'accroche du site n'a plus rien à vendre, et
-           elle repoussait les horaires et les portes sous le pli. -->
-      <div v-if="isNativeApp" class="space-y-3">
-        <h1 class="text-3xl font-bold text-text-primary tracking-tight enter-rise">
-          {{ greeting }}
-        </h1>
+        <!-- App sans compte : tout marche sur le téléphone ; le compte, pour
+             le garder d'un appareil à l'autre, se propose jusqu'à ce
+             qu'« Ignorer » le retire de l'accueil. -->
         <div
-          v-if="!accountCtaDismissed"
-          class="flex flex-wrap items-center gap-2 enter-rise"
+          v-if="!user && !accountCtaDismissed"
+          class="mt-3 flex flex-wrap items-center gap-2 enter-rise"
           style="--enter-delay: 0.1s"
         >
           <RouterLink
@@ -363,8 +238,84 @@ onUnmounted(() => {
             {{ t("accountCta.dismiss") }}
           </button>
         </div>
+        <!-- Un mot de l'équipe : un incident en cours, une nouveauté pas
+             encore lue. En tête, parce qu'un incident explique peut-être ce
+             qui ne marche pas plus bas. -->
+        <AnnouncementsBanner class="mt-4" />
       </div>
-      <div v-else class="space-y-4 text-center md:text-start">
+
+      <!-- Le paquet du jour, toujours en tête ; dessous, les blocs dans l'ordre
+           qu'on leur a donné (P2-AccueilModifier). Un appui long sur un bloc,
+           ou « Modifier l'accueil » en bas, ouvre leur réglage. Un bloc qui
+           n'a rien à dire s'efface de lui-même. -->
+      <div
+        class="home-blocks w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 md:items-start gap-[26px] md:gap-6"
+        v-bind="editPress"
+      >
+        <!-- Mon parcours : le paquet du jour, sa barre, le portefeuille. -->
+        <ParcoursHub
+          class="dash-card"
+          @offices="(covered) => (officesInDeck = covered)"
+          @begun="(begun) => (parcoursBegun = begun)"
+        />
+
+        <template v-for="block in homeLayout.order" :key="block">
+          <div v-if="block === 'horaires'" class="flex flex-col gap-3">
+            <!-- Horaires du jour : calculés sur l'appareil, rien à charger. -->
+            <ZmanimCard
+              class="dash-card"
+              style="--enter-delay: 0.1s"
+              place-first
+              @click="trackCard('zmanim')"
+            />
+
+            <!-- C'est le temps d'une prière : le sidour à un geste, avec l'heure
+                 limite. Absent entre deux offices, et quand le paquet du
+                 parcours porte déjà les offices. -->
+            <SidourNowCard v-if="!officesInDeck" />
+
+            <!-- La bénédiction de la lune : une fenêtre de quelques nuits par
+                 mois, qui se rate faute de rappel. Absente le reste du temps,
+                 et quand le parcours a commencé : sa carte est dans la pile,
+                 avec celle du 'Omer. -->
+            <template v-if="!parcoursBegun">
+              <BirkatHalevanaBanner />
+              <OmerBanner />
+            </template>
+          </div>
+
+          <!-- L'étagère du parcours : un volume par objectif qui se lit. -->
+          <HomeShelf v-else-if="block === 'volumes'" class="md:col-span-2" />
+
+          <!-- Les trois portes du site. -->
+          <HomeDoors v-else-if="block === 'portes'" class="md:col-span-2" @open="trackCard" />
+
+          <!-- Reprendre la dernière lecture, au verset près. -->
+          <HomeResume v-else-if="block === 'reprendre'" @open="trackCard('resume')" />
+
+          <!-- Ce qu'on a inscrit soi-même au calendrier : un anniversaire, un
+               leilouy nichmat. Absent le reste de l'année. -->
+          <OccasionsBanner v-else-if="block === 'dates'" />
+        </template>
+      </div>
+
+      <p class="mt-[22px] mb-10 text-center">
+        <RouterLink
+          to="/accueil/modifier"
+          class="text-[13px] font-semibold text-text-secondary underline underline-offset-4"
+        >
+          {{ t("home.edit.link") }}
+        </RouterLink>
+      </p>
+    </template>
+
+    <!-- ===== Site, sans compte : invitation à gauche, horaires du jour à
+         droite, à la place qu'occupent les cartes du tableau de bord ===== -->
+    <div
+      v-else
+      class="w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-8 items-center mb-10"
+    >
+      <div class="space-y-4 text-center md:text-start">
         <h1
           class="text-4xl md:text-6xl font-bold text-text-primary tracking-tight leading-[1.05] enter-rise"
         >
@@ -418,46 +369,9 @@ onUnmounted(() => {
     </div>
 
     <div class="w-full max-w-6xl mx-auto">
-      <!-- Les trois portes du site, posées à même le fond : sans cadre. Elles
-           ne sont pas une donnée à consulter mais un endroit où aller, et le
-           cadre les mettait au même rang que les cartes du tableau de bord
-           juste au-dessus. Sans lui, les seules surfaces blanches de la page
-           sont celles qui répondent à une question (ma lecture, l'heure), et
-           l'accueil se lit en deux temps au lieu d'un empilement de boîtes.
-           Ce qui remplace le cadre : rien, qu'un écart entre elles, et au
-           survol le titre qui prend la couleur pendant que le dessin
-           s'anime. -->
-      <div class="mb-10 items-stretch" :class="doorsClass">
-        <button
-          v-for="(feature, index) in features"
-          :key="feature.title"
-          class="feature-link group cursor-pointer"
-          :class="doorClass"
-          :style="{ '--enter-delay': `${index * 0.12}s` }"
-          @click="
-            trackCard(`feature_${feature.route}`);
-            router.push(feature.route);
-          "
-        >
-          <div class="shrink-0 text-primary" :class="doorIllustrationClass">
-            <component :is="feature.illustration" />
-          </div>
-          <div class="order-1 min-w-0 flex-1 md:order-2">
-            <h3
-              class="font-display font-bold tracking-tight text-text-primary transition-colors group-hover:text-primary"
-              :class="doorTitleClass"
-            >
-              {{ feature.title }}
-            </h3>
-            <p
-              v-if="!isNativeApp"
-              class="mt-1.5 text-sm leading-relaxed text-text-secondary md:text-base"
-            >
-              {{ feature.description }}
-            </p>
-          </div>
-        </button>
-      </div>
+      <!-- Les trois portes du site (HomeDoors). Sur le tableau de bord, elles
+           sont un bloc qu'on range ou qu'on masque, avec les autres. -->
+      <HomeDoors v-if="!dashboard" class="mb-10" @open="trackCard" />
 
       <div class="text-center max-w-2xl mx-auto enter-rise" style="--enter-delay: 0.4s">
         <p class="font-serif italic text-text-secondary">{{ t("home.memorial.title") }}</p>
@@ -466,23 +380,10 @@ onUnmounted(() => {
         </p>
       </div>
 
-      <!-- Les informations de l'équipe, toutes, à un lien : l'accueil ne les
-           met en avant que quand il y a du nouveau (AnnouncementsBanner). -->
-      <p class="mt-10 text-center text-sm enter-rise" style="--enter-delay: 0.45s">
-        <RouterLink
-          to="/informations"
-          class="inline-flex items-center gap-1.5 font-medium text-text-primary underline decoration-line underline-offset-4 hover:text-primary transition-colors"
-          @click="trackCard('announcements')"
-        >
-          <AppIcon name="bell" :size="14" />
-          {{ t("announcements.homeLink") }}
-        </RouterLink>
-      </p>
-
       <!-- Le formulaire de support, tout en bas : discret (une ligne en
            petit, gris) mais visible, là où l'on arrive après avoir tout vu. -->
       <p
-        class="mt-4 text-center text-sm text-text-secondary enter-rise"
+        class="mt-10 text-center text-sm text-text-secondary enter-rise"
         style="--enter-delay: 0.5s"
       >
         {{ t("feedback.homePrompt") }}
@@ -498,6 +399,15 @@ onUnmounted(() => {
 
     <!-- L'astuce de l'accueil, une fois : les réglages, puis le compte (homeTip). -->
     <FeatureTour v-if="tipsOffered" tip="home-settings" :steps="homeTip" />
+    <!-- Mon parcours commencé : ses gestes, une fois (aussi sur le site). Il
+         passe avant l'astuce des réglages, qui attend l'ouverture suivante. -->
+    <FeatureTour
+      v-if="dashboard && parcoursBegun"
+      tip="parcours-home"
+      :steps="parcoursTours.home.value"
+      :delay="600"
+      web
+    />
   </main>
 
   <!-- App native : pas de footer de site (l'essentiel vit dans le profil). -->
@@ -511,7 +421,11 @@ onUnmounted(() => {
 
 <style scoped>
 /* Staggered entrance: cards, greeting/hero and memorial all rise into place. */
-.feature-link,
+/* L'appui long ouvre le réglage de l'accueil : pas l'aperçu du lien que le
+   système proposerait. */
+.home-blocks {
+  -webkit-touch-callout: none;
+}
 .dash-card,
 .enter-rise {
   opacity: 0;
@@ -528,7 +442,6 @@ onUnmounted(() => {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .feature-link,
   .dash-card,
   .enter-rise {
     animation: none;

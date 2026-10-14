@@ -134,12 +134,12 @@ describe("introduction de première ouverture", () => {
   });
 
   /**
-   * La lecture du jour se propose sur la page de l'essentiel, et son bouton termine
-   * l'introduction avant d'y conduire. Proposé plus tôt, il emmenait vers la
-   * connexion (la page demande un compte) et l'introduction, notée comme vue
-   * au passage, ne montrait jamais sa fin.
+   * Mon parcours se propose sur la page de l'essentiel, et son bouton termine
+   * l'introduction avant d'y conduire. Proposé plus tôt (pour la lecture du
+   * jour d'alors), il coupait l'introduction, notée comme vue au passage, qui
+   * ne montrait jamais sa fin.
    */
-  it("termine l'introduction avant de conduire à la lecture du jour", async () => {
+  it("termine l'introduction avant de conduire au premier objectif", async () => {
     const { host, router } = await mountComponent(
       () => import("../components/onboarding/OnboardingFlow.vue"),
     );
@@ -152,7 +152,7 @@ describe("introduction de première ouverture", () => {
     await click(button(host, fr.onboarding.essentials.compose));
     expect(isOnboardingOpen.value).toBe(false);
     expect(localStorage.getItem(SEEN_KEY)).toBe("1");
-    expect(router.currentRoute.value.path).toBe("/bibliotheque/lecture-du-jour");
+    expect(router.currentRoute.value.path).toBe("/parcours/nouveau");
   });
 
   it("se passe depuis les gestes, et de là seulement", async () => {

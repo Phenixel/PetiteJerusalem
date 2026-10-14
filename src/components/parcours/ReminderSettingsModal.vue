@@ -2,9 +2,9 @@
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useOverlay } from "../../composables/useOverlayStack";
-import AppIcon from "../../components/icons/AppIcon.vue";
-import CollapseTransition from "../../components/CollapseTransition.vue";
-import ToggleSwitch from "../../components/ToggleSwitch.vue";
+import AppIcon from "../icons/AppIcon.vue";
+import CollapseTransition from "../CollapseTransition.vue";
+import ToggleSwitch from "../ToggleSwitch.vue";
 
 /**
  * Réglages des rappels de lecture.

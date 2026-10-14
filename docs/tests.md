@@ -13,7 +13,7 @@ npm run test:unit          # vitest, mode interactif
 npx vitest run             # une seule passe, ce que fait `npm run verify`
 ```
 
-Les 173 fichiers vivent dans `src/__tests__/*.test.ts`. La configuration
+Les 246 fichiers vivent dans `src/__tests__/*.test.ts`. La configuration
 (`vitest.config.ts`) prend l'environnement `jsdom` par défaut ; les tests qui
 n'ont pas besoin du DOM (ceux qui lisent le dépôt ou lancent un script)
 commencent par `// @vitest-environment node`. Les dossiers `e2e/`, `android/`,
@@ -33,6 +33,8 @@ avec ce que chacun attend :
 | `searchInputs.test.ts` | Les barres de recherche lisent la frappe par `liveValue`, pas par `v-model` (qui attend la fin du mot sur un clavier à prédiction), et aucune ne filtre par un `toLowerCase().includes(…)` écrit sur place : toute recherche passe par `services/fuzzySearch`, qui trouve les autres graphies et pardonne les fautes (`docs/design.md`, « Une recherche trouve ce qu'on voulait dire »). |
 | `catalogSearch.test.ts` | Chaque clé des autres noms du catalogue (`src/datas/catalogAliases.ts`) désigne un texte ou un livre de `textStudies.json` : un texte renommé rendrait ses alias muets. Le même fichier rejoue sur le vrai catalogue ce que les gens tapent (« chabbat », « kidouchin », « psaume 23 », « genèse »). |
 | `cityAliases.test.ts` | Chaque ville des autres noms (`src/datas/cityAliases.ts`) figure dans `cities.json`, et « london », « ירושלים », « st etienne » trouvent leur ville en premier. |
+| `scopedStyles.test.ts` | Dans un `<style>` de composant, rien ne suit un `:global(…)` : le compilateur de Vue jette ce qui vient après la parenthèse, et `:global([dir="rtl"]) .mur` devient une règle sur tout élément en hébreu. Le sélecteur entier va dans `:global()`, ou l'ancêtre s'écrit sans lui (`:root.dark .planche`). |
+| `parcoursUnits.test.ts` | `src/datas/parcoursUnits.json` (ce que compte chaque chapitre des textes qu'un programme de Mon parcours peut finir) suit `public/texts/` : `node scripts/parcours-units.mjs` le réécrit, `--check` le vérifie. Un texte corrigé sans lui décalerait toutes les portions d'après (`docs/parcours.md`). |
 | `i18nUsage.test.ts` | Toute clé passée à `t("…")` ou `$t("…")` dans `src/` existe dans la locale française. |
 | `emailAuthErrors.test.ts` | Toute clé que `describeEmailAuthError` peut rendre (`EMAIL_AUTH_ERROR_KEYS`, les messages d'échec de l'écran de connexion) existe dans la locale française : elles sont choisies par une table, que `i18nUsage.test.ts` ne voit pas. |
 | `appLinks.test.ts` | La liste des chemins que l'app installée s'approprie (`scripts/lib/app-links.mjs`, servie sous `/.well-known/`) couvre les routes du routeur et n'attrape aucun chemin technique, `/__/auth/` en premier. |

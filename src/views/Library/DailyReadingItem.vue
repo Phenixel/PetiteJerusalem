@@ -8,7 +8,7 @@ import {
   MissingTextFileError,
   placeLabel,
 } from "../../services/textService";
-import type { RashiComment, TextContent, TextSection } from "../../services/textService";
+import type { RashiComment, TextBlock, TextContent, TextSection } from "../../services/textService";
 import { isEntryAvailableOffline } from "../../services/offlineLibraryService";
 import { ensureManifestLoaded } from "../../services/offlineTextStore";
 import { useOnline } from "../../composables/useOnline";
@@ -41,6 +41,11 @@ const props = defineProps<{
   withRashi?: boolean;
   /** D'où le texte est lu, pour la mesure d'audience (le chnei mikra a deux entrées). */
   source?: string;
+  /**
+   * Chnei mikra, une montée par jour : seules ces montées (blocs de la
+   * paracha, comptés de 0, `to` exclu) s'affichent.
+   */
+  blocks?: { from: number; to: number };
 }>();
 const emit = defineEmits<{
   "toggle-section": [index: number];
@@ -195,6 +200,13 @@ function goToBookmark(b: Bookmark) {
     text_id: props.entry.id,
     source: `${props.source ?? "daily_reading"}_bookmark`,
   });
+}
+
+/** Les blocs d'une section (chapitres, montées), réduits aux montées demandées. */
+function blocksOf(section: TextSection): TextBlock[] {
+  const blocks = section.blocks ?? [{ label: "", lines: section.he, offset: 0 }];
+  const range = props.blocks;
+  return range ? blocks.filter((_, index) => index >= range.from && index < range.to) : blocks;
 }
 
 function isSectionVisible(sectionIndex: number): boolean {
@@ -426,10 +438,7 @@ onUnmounted(() => {
             <!-- Verses / mishnayot / psalm lines: each on its own line, flowing on
                  the background, with a marker at each chapter / montée block -->
             <template v-else>
-              <template
-                v-for="block in section.blocks ?? [{ label: '', lines: section.he, offset: 0 }]"
-                :key="block.offset"
-              >
+              <template v-for="block in blocksOf(section)" :key="block.offset">
                 <p
                   v-if="block.label"
                   class="my-4 text-xs font-semibold text-primary/70 dark:text-primary text-center"
