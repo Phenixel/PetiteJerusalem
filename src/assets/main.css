@@ -639,6 +639,14 @@ button,
     box-shadow: var(--shadow-pop);
     animation: sheetUp 0.26s ease;
   }
+  /* Une feuille plus haute que l'écran s'ouvre à mi-hauteur : le voile
+     défile, et la feuille glissée vers le haut se déploie (BottomSheet,
+     `tall`). Alignée en haut, sous sa marge : alignée en bas, le débordement
+     partait du bas, et la feuille s'ouvrait sur sa fin. */
+  .sheet-panel-tall {
+    align-self: flex-start;
+    margin-top: calc(var(--modal-viewport-height, 100vh) * 0.38);
+  }
   @keyframes sheetUp {
     from {
       transform: translateY(24px);

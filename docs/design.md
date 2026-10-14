@@ -1586,12 +1586,15 @@ premier jour au bout d'une année. Tenu par `parcoursLights.test.ts`.
   gagnées : « Mes lumières » les garde toutes.
 - **« Mes lumières » est une liste** (une feuille, `LightsSheet.vue`) : le
   texte au début de la ligne (le nom, le palier, la phrase), la lumière au
-  bout, dans son cadre ; celle de la série en cours cerclée, « Votre
-  lumière ». La feuille s'ouvre sur son titre, pas sur « Fermer ».
+  bout, posée sans fond ; celle de la série en cours cerclée, « Votre
+  lumière ». Plus haute que l'écran, la feuille s'ouvre à mi-hauteur, sur
+  son titre, et se déploie quand on la glisse vers le haut (`BottomSheet`,
+  `tall`) ; c'est le voile qui défile, sans geste à programmer.
 - **Ce qui vient reste dans l'ombre.** Une lumière à gagner n'est qu'une
   ombre floue, « À découvrir », avec son palier (la prochaine dit dans
-  combien de jours) ; son dessin est agrandi dans son cadre, qui n'en garde
-  qu'un morceau. On sait qu'il y a quelque chose, pas quoi.
+  combien de jours) : on y devine une forme, sans plus. Un peu agrandie et
+  poussée vers le bord, elle déborde de sa carte, qui la coupe. On sait
+  qu'il y a quelque chose, pas quoi.
 - **Une lumière gagnée se fête, une fois** (`LightCelebration.vue`) : un
   instant après le geste qui l'a allumée, une feuille monte, la lumière y
   grandit et son halo s'ouvre deux fois, avec son nom, sa phrase et « Voir

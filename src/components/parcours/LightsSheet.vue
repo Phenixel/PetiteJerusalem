@@ -2,14 +2,15 @@
 /**
  * Mes lumières : toutes les lumières de la série, de la vieille lampe à la
  * lumière du premier jour (services/parcours/lights.ts), en liste : le texte
- * au début de la ligne, la lumière au bout, dans son cadre. Celles qu'on a
+ * au début de la ligne, la lumière au bout, posée sans fond. Celles qu'on a
  * gagnées (le record les garde) en couleur, avec leur nom, leur palier et
  * leur phrase ; celle de la série en cours, cerclée, « Votre lumière ». Les
- * autres, « À découvrir » : leur dessin réduit à une ombre floue, agrandi
- * dans son cadre qui le coupe, n'en laisse voir qu'un morceau. On sait dans
- * combien de jours, pas ce que c'est.
+ * autres, « À découvrir » : leur dessin réduit à une ombre floue, où l'on
+ * devine une forme, un peu agrandi et poussé vers le bord, que la carte
+ * coupe. On sait dans combien de jours, pas ce que c'est.
  *
- * On l'ouvre de Mon parcours et du profil.
+ * Longue, la feuille s'ouvre à mi-hauteur et se déploie en la glissant vers
+ * le haut (BottomSheet, `tall`). On l'ouvre de Mon parcours et du profil.
  */
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
@@ -47,7 +48,7 @@ const cells = computed(() => {
 </script>
 
 <template>
-  <BottomSheet :open="open" :label="t('parcours.lights.title')" @close="emit('close')">
+  <BottomSheet :open="open" :label="t('parcours.lights.title')" tall @close="emit('close')">
     <!-- Le focus s'ouvre sur le titre : sur « Fermer », la feuille s'ouvrait au bas de la liste. -->
     <p class="font-display text-2xl font-bold outline-none" tabindex="-1" data-autofocus>
       {{ t("parcours.lights.title") }}
@@ -75,7 +76,7 @@ const cells = computed(() => {
             {{ t(`parcours.lights.captions.${cell.id}`) }}
           </span>
         </span>
-        <span class="light-window" aria-hidden="true">
+        <span class="light-art" aria-hidden="true">
           <StreakLight :light="cell.id" :locked="!cell.earned" :width="84" />
         </span>
       </li>
@@ -108,19 +109,25 @@ const cells = computed(() => {
   box-shadow: none;
   color: var(--color-text-secondary);
 }
-/* Le cadre de la lumière, au bout de la ligne. */
-.light-window {
+/* La lumière, au bout de la ligne, posée sans fond. */
+.light-art {
   display: grid;
   flex: none;
   width: 96px;
-  height: 76px;
   place-items: center;
-  overflow: hidden;
-  border-radius: var(--radius-card);
-  background: color-mix(in srgb, var(--color-text-primary) 4%, transparent);
 }
-/* À découvrir : l'ombre agrandie, le cadre n'en garde qu'un morceau. */
-.is-hidden .light-window > :deep(svg) {
-  transform: scale(2.6);
+/* À découvrir : la carte coupe l'ombre, un peu agrandie et poussée vers le bord. */
+.light-row.is-hidden {
+  position: relative;
+  overflow: hidden;
+}
+.is-hidden .light-art {
+  height: 52px;
+}
+.is-hidden .light-art > :deep(svg) {
+  transform: translateX(14px) scale(1.6);
+}
+[dir="rtl"] .is-hidden .light-art > :deep(svg) {
+  transform: translateX(-14px) scale(1.6);
 }
 </style>

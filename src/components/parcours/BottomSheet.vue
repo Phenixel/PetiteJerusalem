@@ -4,10 +4,15 @@
  * le rattrapage. Elle monte du pied de l'écran, avec sa poignée ; le voile ou
  * Échap la referment (AppModal fait le reste : clavier, retour Android,
  * défilement bloqué derrière).
+ *
+ * `tall`, pour une feuille plus haute que l'écran (Mes lumières) : elle
+ * s'ouvre à mi-hauteur, son début sous les yeux ; glissée vers le haut, elle
+ * se déploie jusqu'en haut de l'écran, puis son contenu défile. Sans lui,
+ * elle s'ouvrait tout en haut, déjà déployée.
  */
 import AppModal from "../AppModal.vue";
 
-defineProps<{ open: boolean; label?: string }>();
+withDefaults(defineProps<{ open: boolean; label?: string; tall?: boolean }>(), { tall: false });
 const emit = defineEmits<{ (e: "close"): void }>();
 </script>
 
@@ -16,7 +21,7 @@ const emit = defineEmits<{ (e: "close"): void }>();
     :open="open"
     :label="label"
     overlay-class="sheet-overlay"
-    panel-class="sheet-panel"
+    :panel-class="tall ? 'sheet-panel sheet-panel-tall' : 'sheet-panel'"
     @close="emit('close')"
   >
     <div class="mx-auto mb-4 h-1 w-10 rounded-pill bg-line-strong" aria-hidden="true" />
