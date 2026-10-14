@@ -672,11 +672,15 @@
     "/texts/traductions/fr/rashi/315.json": "4b486794f9bc",
     "/texts/traductions/fr/rashi/316.json": "7884415f8917",
     "/texts/traductions/fr/rashi/317.json": "7707904d2d58",
+    "/texts/traductions/fr/talmud/beitzah.json": "68ca8857332d",
     "/texts/traductions/fr/talmud/berakhot.json": "ebc55c44d044",
     "/texts/traductions/fr/talmud/eruvin.json": "a3749aab3a12",
-    "/texts/traductions/fr/talmud/pesachim.json": "08b78abc4952",
+    "/texts/traductions/fr/talmud/pesachim.json": "be7049e8bbd0",
+    "/texts/traductions/fr/talmud/rosh-hashanah.json": "7eb1d1f78a8a",
     "/texts/traductions/fr/talmud/shabbat.json": "937fc0d8ec8a",
-    "/texts/traductions/fr/talmud/shekalim.json": "1c38e56c7d20",
+    "/texts/traductions/fr/talmud/shekalim.json": "34d620af6643",
+    "/texts/traductions/fr/talmud/sukkah.json": "08cfa991a366",
+    "/texts/traductions/fr/talmud/yoma.json": "84e361bf70a3",
     "/texts/traductions/fr/tanakh/264.json": "92a741cf636c",
     "/texts/traductions/fr/tanakh/265.json": "679723f76cd9",
     "/texts/traductions/fr/tanakh/266.json": "c90315ba7510",
@@ -754,6 +758,6 @@
     "/texts/traductions/fr/tanakh/338.json": "65f9395f1b3d",
     "/texts/traductions/fr/tanakh/339.json": "1ac91bcc1935",
     "/texts/traductions/fr/tehilim.json": "12a0cc95ea28",
-    "/texts/traductions/index.json": "2ad0ac07f237"
+    "/texts/traductions/index.json": "e4f9877c39bd"
   }
 }

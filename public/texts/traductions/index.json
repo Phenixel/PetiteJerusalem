@@ -524,7 +524,8 @@
       "en"
     ],
     "/texts/talmud/beitzah.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/talmud/bekhorot.json": [
       "en"
@@ -593,7 +594,8 @@
       "fr"
     ],
     "/texts/talmud/rosh-hashanah.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/talmud/sanhedrin.json": [
       "en"
@@ -613,7 +615,8 @@
       "en"
     ],
     "/texts/talmud/sukkah.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/talmud/taanit.json": [
       "en"
@@ -628,7 +631,8 @@
       "en"
     ],
     "/texts/talmud/yoma.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/talmud/zevachim.json": [
       "en"
