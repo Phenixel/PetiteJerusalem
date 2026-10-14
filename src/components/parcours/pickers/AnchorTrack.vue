@@ -6,17 +6,33 @@
  * rond se pose sur le repère le plus proche ; passer d'un repère à l'autre
  * se sent au doigt. Au clavier, les flèches le déplacent.
  *
- * `null` : toute la journée (le parent offre ce choix à côté).
+ * Au-dessus du fil, l'interrupteur « Toute la journée » : allumé, le
+ * repère est `null` et le fil s'éteint (on n'y choisit plus rien) ; éteint,
+ * le rond revient sur le dernier repère choisi.
  */
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import { HABIT_ANCHORS, type HabitAnchor } from "../../../services/parcours/model";
 import { useI18n } from "vue-i18n";
 import { haptic } from "../../../services/haptics";
+import ToggleSwitch from "../../ToggleSwitch.vue";
 
 defineProps<{ label: string; valueText: string }>();
 const anchor = defineModel<HabitAnchor | null>("anchor", { required: true });
 
 const { t } = useI18n();
+
+/** Le dernier repère posé : l'interrupteur éteint l'y ramène. */
+let lastAnchor: HabitAnchor = anchor.value ?? "chaharit";
+watch(anchor, (next) => {
+  if (next) lastAnchor = next;
+});
+
+const allDay = computed({
+  get: () => anchor.value === null,
+  set: (on: boolean) => {
+    anchor.value = on ? null : lastAnchor;
+  },
+});
 
 /** Où sont les repères sur le fil, en pour cent de sa largeur. */
 const POSITIONS: Record<HabitAnchor, number> = {
@@ -47,6 +63,7 @@ function positionOf(event: PointerEvent): number {
 }
 
 function onDown(event: PointerEvent): void {
+  if (allDay.value) return;
   try {
     (event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
   } catch {
@@ -68,6 +85,7 @@ function onUp(): void {
 }
 
 function onKey(event: KeyboardEvent): void {
+  if (allDay.value) return;
   const index = anchor.value ? HABIT_ANCHORS.indexOf(anchor.value) : -1;
   const forward = event.key === "ArrowRight" || event.key === "ArrowUp";
   const backward = event.key === "ArrowLeft" || event.key === "ArrowDown";
@@ -88,37 +106,55 @@ const knot = computed(() => {
 </script>
 
 <template>
-  <div
-    ref="track"
-    class="anchor-track"
-    role="slider"
-    tabindex="0"
-    :aria-label="label"
-    :aria-valuetext="valueText"
-    aria-valuemin="0"
-    :aria-valuemax="HABIT_ANCHORS.length - 1"
-    :aria-valuenow="anchor ? HABIT_ANCHORS.indexOf(anchor) : undefined"
-    @pointerdown="onDown"
-    @pointermove="onMove"
-    @pointerup="onUp"
-    @pointercancel="onUp"
-    @keydown="onKey"
-  >
-    <span class="anchor-line" />
-    <template v-for="(a, i) in HABIT_ANCHORS" :key="a">
-      <span class="anchor-point" :style="{ insetInlineStart: `${POSITIONS[a]}%` }" />
-      <span
-        class="anchor-label"
-        :style="{ insetInlineStart: `${POSITIONS[a]}%`, top: i % 2 === 0 ? '70px' : '8px' }"
-      >
-        {{ t(`parcours.anchorPoints.${a}`) }}
-      </span>
-    </template>
-    <span v-if="knot !== null" class="anchor-knot" :style="{ insetInlineStart: `${knot}%` }" />
+  <div>
+    <label class="all-day">
+      <span>{{ t("parcours.create.allDay") }}</span>
+      <ToggleSwitch v-model="allDay" />
+    </label>
+    <div
+      ref="track"
+      class="anchor-track"
+      :class="{ 'is-off': allDay }"
+      role="slider"
+      :tabindex="allDay ? -1 : 0"
+      :aria-disabled="allDay ? 'true' : undefined"
+      :aria-label="label"
+      :aria-valuetext="valueText"
+      aria-valuemin="0"
+      :aria-valuemax="HABIT_ANCHORS.length - 1"
+      :aria-valuenow="anchor ? HABIT_ANCHORS.indexOf(anchor) : undefined"
+      @pointerdown="onDown"
+      @pointermove="onMove"
+      @pointerup="onUp"
+      @pointercancel="onUp"
+      @keydown="onKey"
+    >
+      <span class="anchor-line" />
+      <template v-for="(a, i) in HABIT_ANCHORS" :key="a">
+        <span class="anchor-point" :style="{ insetInlineStart: `${POSITIONS[a]}%` }" />
+        <span
+          class="anchor-label"
+          :style="{ insetInlineStart: `${POSITIONS[a]}%`, top: i % 2 === 0 ? '70px' : '8px' }"
+        >
+          {{ t(`parcours.anchorPoints.${a}`) }}
+        </span>
+      </template>
+      <span v-if="knot !== null" class="anchor-knot" :style="{ insetInlineStart: `${knot}%` }" />
+    </div>
   </div>
 </template>
 
 <style scoped>
+.all-day {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
 .anchor-track {
   position: relative;
   height: 96px;
@@ -126,6 +162,12 @@ const knot = computed(() => {
   user-select: none;
   -webkit-user-select: none;
   cursor: pointer;
+}
+/* Toute la journée : le fil s'éteint, on n'y choisit plus rien. */
+.anchor-track.is-off {
+  opacity: 0.35;
+  pointer-events: none;
+  cursor: default;
 }
 .anchor-track:focus-visible {
   outline: 2px solid var(--color-primary);

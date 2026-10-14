@@ -6,7 +6,6 @@
  * ouvre le texte (« Lire ») ; la glisser à droite la marque faite. Le retard
  * se dit sans alarme, la semaine qui vient en histogramme.
  */
-import { HDate } from "@hebcal/core";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { useParcours } from "../../composables/useParcours";
@@ -21,7 +20,6 @@ import type { ProgramObjective } from "../../services/parcours/model";
 import { portionMinutes } from "../../services/parcours/plan";
 import { placeOf, unitLabel, unitOf } from "../../services/parcours/texts";
 import { haptic } from "../../services/haptics";
-import { formatHebrewDate } from "../../services/zmanimService";
 import ProgramTimeline from "./ProgramTimeline.vue";
 import ProgramVolume from "./ProgramVolume.vue";
 import WeekBars from "./WeekBars.vue";
@@ -122,12 +120,10 @@ const bars = computed(() =>
 
 const MILESTONES: Milestone[] = ["roshHashana", "pessah"];
 
-/** « Fin prévue le 29 Elul 5787, veille de Roch Hachana. » */
+/** « Fin prévue le 29 Elul 5787 (1 octobre 2027), veille de Roch Hachana. » */
 const endLabel = computed(() => {
   const end = props.program.end;
-  const date = localDayFrom(end) ?? new Date();
-  date.setHours(12);
-  const hebrew = formatHebrewDate(new HDate(date), locale.value);
+  const hebrew = views.dayLabel(end);
   const feast = MILESTONES.find((m) => milestoneEve(m, addDays(end, -1)) === end);
   return feast
     ? t("parcours.program.endEve", { date: hebrew, feast: t(`parcours.ends.${feast}`) })

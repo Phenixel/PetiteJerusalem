@@ -22,7 +22,7 @@ import { addDays, daysBetween, weekOf } from "../../services/parcours/days";
 import type { ProgramObjective } from "../../services/parcours/model";
 import { portionMinutes } from "../../services/parcours/plan";
 import { placeOf, unitLabel, unitOf } from "../../services/parcours/texts";
-import { formatHebrewDate, hebrewMonthName } from "../../services/zmanimService";
+import { hebrewMonthName } from "../../services/zmanimService";
 import DeckArt from "./home/DeckArt.vue";
 import UnitCells from "./UnitCells.vue";
 
@@ -178,7 +178,7 @@ const behindDays = computed(() => {
 
 const endLabel = computed(() =>
   t("parcours.program.end", {
-    date: formatHebrewDate(hebrewOf(props.program.end), locale.value),
+    date: views.dayLabel(props.program.end),
   }),
 );
 </script>

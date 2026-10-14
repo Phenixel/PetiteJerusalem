@@ -136,18 +136,10 @@ const momentName = computed(() =>
         :label="t('parcours.create.when')"
         :value-text="momentName"
       />
-      <p class="mt-1.5 text-base font-bold">{{ momentName }}</p>
+      <p v-if="anchor" class="mt-1.5 text-base font-bold">{{ momentName }}</p>
       <p class="mt-0.5 text-[13px] text-text-secondary">{{ opensNote }}</p>
-      <p class="mt-0.5 text-[13px] text-text-secondary">
+      <p v-if="anchor" class="mt-0.5 text-[13px] text-text-secondary">
         {{ t("parcours.create.slide") }}
-        <button
-          type="button"
-          class="font-bold text-primary"
-          :aria-pressed="anchor === null"
-          @click="setAnchor(null)"
-        >
-          {{ t("parcours.create.allDay") }}
-        </button>
       </p>
     </template>
     <template v-else-if="preset !== 'tefilot'">

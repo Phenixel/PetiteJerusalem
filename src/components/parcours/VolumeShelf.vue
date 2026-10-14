@@ -14,6 +14,9 @@
  * L'étagère défile quand elle se remplit, plutôt que de rapetisser ses
  * volumes : un titre de couverture doit se lire.
  *
+ * Un volume en pause pâlit et porte une pastille « En pause » : on le voit
+ * sur l'étagère, pas seulement dans ses réglages.
+ *
  * Un volume qu'on vient de créer (`arriving`) tombe sur sa planche, rebondit
  * un peu, et soulève une poussière dorée : il est arrivé.
  */
@@ -26,6 +29,7 @@ import { localDayFrom } from "../../services/dateService";
 import type { Objective, ProgramObjective } from "../../services/parcours/model";
 import { liveObjectives, taskProgress, type Task } from "../../services/parcours/schedule";
 import { placeOf, unitLabel } from "../../services/parcours/texts";
+import AppIcon from "../icons/AppIcon.vue";
 import ProgramVolume from "./ProgramVolume.vue";
 
 const props = withDefaults(
@@ -104,13 +108,16 @@ const volumes = computed(() =>
     .filter((o) => o.kind === "program" || o.kind === "cycle" || o.kind === "text")
     .map((objective) => {
       const task = taskOf(objective);
-      const text = caption(objective);
+      const paused =
+        objective.pausedFrom !== undefined && objective.pausedFrom <= store.today.value;
+      const text = paused ? t("parcours.paused.title") : caption(objective);
       return {
         objective,
         ...views.volumeOf(objective),
         progress: objective.kind === "program" ? programState(objective).progress : 0,
         caption: text,
-        ribbon: task !== undefined && !isDone(task),
+        ribbon: !paused && task !== undefined && !isDone(task),
+        paused,
         label: `${views.objectiveTitle(objective)}, ${text}`,
       };
     }),
@@ -130,7 +137,7 @@ const receiving = computed(() =>
         :key="volume.objective.id"
         :to="`/parcours/objectif/${volume.objective.id}`"
         class="shelf-cell press-feedback"
-        :class="{ 'is-arriving': volume.objective.id === arriving }"
+        :class="{ 'is-arriving': volume.objective.id === arriving, 'is-paused': volume.paused }"
         :data-arriving="volume.objective.id === arriving ? '' : undefined"
         :aria-label="volume.label"
         @click="emit('open', volume.objective)"
@@ -147,6 +154,10 @@ const receiving = computed(() =>
             :ribbon="volume.ribbon"
             :format="volume.format"
           />
+          <span v-if="volume.paused" class="shelf-paused" aria-hidden="true">
+            <AppIcon name="pause" class="size-3.5" />
+            {{ t("parcours.paused.title") }}
+          </span>
         </span>
         <span class="shelf-plank" aria-hidden="true" />
         <span class="shelf-caption">{{ volume.caption }}</span>
@@ -217,6 +228,31 @@ const receiving = computed(() =>
 /* Le bas du dessin garde la place du signet : il pend devant la planche. */
 .shelf-slot :deep(svg) {
   margin-bottom: -16px;
+}
+/* En pause : le volume pâlit, et la pastille le dit sur sa couverture. */
+.is-paused .shelf-slot > :deep(svg) {
+  opacity: 0.45;
+  filter: saturate(0.2);
+}
+.shelf-paused {
+  position: absolute;
+  inset-inline-start: 50%;
+  bottom: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 9px 4px 7px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+  color: var(--color-text-primary);
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+  transform: translateX(-50%);
+}
+[dir="rtl"] .shelf-paused {
+  transform: translateX(50%);
 }
 .shelf-add {
   display: flex;

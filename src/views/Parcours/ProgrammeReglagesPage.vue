@@ -9,7 +9,6 @@
  * le pas se recalcule sur ce qui reste. Mettre en pause garde tout ; ranger
  * se confirme.
  */
-import { HDate } from "@hebcal/core";
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
@@ -24,7 +23,6 @@ import { useParcours } from "../../composables/useParcours";
 import { useParcoursMeta } from "../../composables/useParcoursMeta";
 import { useParcoursViews } from "../../composables/useParcoursViews";
 import { analyticsService } from "../../services/analyticsService";
-import { localDayFrom } from "../../services/dateService";
 import {
   ANCHOR_MOMENT,
   CATCH_UP_OPTIONS,
@@ -35,11 +33,10 @@ import {
   type Rhythm,
 } from "../../services/parcours/model";
 import { rebase } from "../../services/parcours/plan";
-import { formatHebrewDate } from "../../services/zmanimService";
 
 useParcoursMeta("parcours.settings.title", "/parcours");
 
-const { t, locale } = useI18n();
+const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const { confirm } = useConfirm();
@@ -113,11 +110,9 @@ function setAutoCatchUp(option: CatchUpOption | null): void {
   store.saveObjective(next);
 }
 
-const endValue = computed(() => {
-  const date = localDayFrom(end.value) ?? new Date();
-  date.setHours(12);
-  return t("parcours.settings.endValue", { date: formatHebrewDate(new HDate(date), locale.value) });
-});
+const endValue = computed(() =>
+  t("parcours.settings.endValue", { date: views.dayLabel(end.value) }),
+);
 
 type Sheet = "end" | "rhythm" | "late" | "moment";
 const sheet = ref<Sheet | null>(null);
@@ -263,15 +258,7 @@ async function remove(): Promise<void> {
             :label="t('parcours.form.moment')"
             :value-text="momentName"
           />
-          <p class="mt-1.5 text-base font-bold">{{ momentName }}</p>
-          <button
-            type="button"
-            class="mt-0.5 text-[13px] font-bold text-primary"
-            :aria-pressed="anchor === null"
-            @click="anchor = null"
-          >
-            {{ t("parcours.create.allDay") }}
-          </button>
+          <p v-if="anchor" class="mt-1.5 text-base font-bold">{{ momentName }}</p>
         </template>
         <button type="button" class="btn btn-primary sheet-done" @click="sheet = null">
           {{ t("common.close") }}

@@ -1998,7 +1998,7 @@ const en: LocaleMessages = {
       oneYear: "One year",
     },
     date: {
-      both: "{hebrew}, {civil}",
+      both: "{hebrew} ({civil})",
     },
     streak: {
       days: "day in a row | days in a row",
@@ -2036,6 +2036,11 @@ const en: LocaleMessages = {
       },
     },
     habitWeek: "This week: {n} day kept | This week: {n} days kept",
+    paused: {
+      title: "Paused",
+      since: "Since {date}. Nothing is lost, and nothing is asked.",
+      resume: "Resume",
+    },
     shelf: {
       title: "My volumes",
       add: "A volume",
@@ -2399,8 +2404,8 @@ const en: LocaleMessages = {
       someDays:
         "{n} day a week: on the other days, it doesn't appear. | {n} days a week: on the other days, it doesn't appear.",
       when: "When",
-      slide: "Slide the dot along the thread, or",
-      allDay: "all day",
+      slide: "Slide the dot to the moment you want.",
+      allDay: "All day",
       tefilotHint: "Each service has its time: morning, afternoon, evening.",
     },
     anchors: {

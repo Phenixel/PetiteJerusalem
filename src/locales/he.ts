@@ -1941,7 +1941,7 @@ const he: LocaleMessages = {
       oneYear: "שנה",
     },
     date: {
-      both: "{hebrew}, {civil}",
+      both: "{hebrew} ({civil})",
     },
     streak: {
       days: "יום ברצף | ימים ברצף",
@@ -1979,6 +1979,11 @@ const he: LocaleMessages = {
       },
     },
     habitWeek: "השבוע: יום אחד נשמר | השבוע: {n} ימים נשמרו",
+    paused: {
+      title: "בהשהיה",
+      since: "מאז {date}. דבר לא אבד, ודבר לא נדרש.",
+      resume: "להמשיך",
+    },
     shelf: {
       title: "הכרכים שלי",
       add: "כרך",
@@ -2341,7 +2346,7 @@ const he: LocaleMessages = {
       someDays:
         "יום אחד בשבוע: בשאר הימים הוא לא מופיע. | {n} ימים בשבוע: בשאר הימים הוא לא מופיע.",
       when: "מתי",
-      slide: "החליקו את העיגול על החוט, או",
+      slide: "החליקו את העיגול אל הרגע הרצוי.",
       allDay: "כל היום",
       tefilotHint: "לכל תפילה הזמן שלה: בוקר, אחר הצהריים, ערב.",
     },

@@ -15,6 +15,7 @@ import { useRoute } from "vue-router";
 import CatchUpSheet from "../../components/parcours/CatchUpSheet.vue";
 import ObjectiveSettings from "../../components/parcours/ObjectiveSettings.vue";
 import ParcoursBack from "../../components/parcours/ParcoursBack.vue";
+import PausedNotice from "../../components/parcours/PausedNotice.vue";
 import ProgramDaily from "../../components/parcours/ProgramDaily.vue";
 import ProgramWeekly from "../../components/parcours/ProgramWeekly.vue";
 import { useParcours } from "../../composables/useParcours";
@@ -61,6 +62,9 @@ const catchingUp = ref(route.query.rattraper === "1");
         {{ t("common.edit") }}
       </RouterLink>
     </div>
+
+    <!-- En pause : dit en tête, avec « Reprendre », pas seulement dans les réglages. -->
+    <PausedNotice v-if="objective" class="mt-5" :objective="objective" />
 
     <p v-if="!objective" class="mt-16 text-center text-text-secondary">
       {{ t("parcours.objective.missing") }}

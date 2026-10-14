@@ -29,7 +29,6 @@ import {
 } from "../../../services/parcours/model";
 import { endForRate, MINUTES_PER_UNIT, studySlots } from "../../../services/parcours/plan";
 import { resolveParts, totalOf, unitOf } from "../../../services/parcours/texts";
-import { formatHebrewDate } from "../../../services/zmanimService";
 import AppDateField from "../../AppDateField.vue";
 import ProgramVolume from "../ProgramVolume.vue";
 import AnchorTrack from "../pickers/AnchorTrack.vue";
@@ -165,7 +164,8 @@ function duration(minutes: number): string {
   });
 }
 
-const endLabel = computed(() => formatHebrewDate(hebrewOf(end.value), locale.value));
+/** La fin, en hébreu et en civil : « 29 Elul 5787 (1 octobre 2027) ». */
+const endLabel = computed(() => views.dayLabel(end.value));
 const weekly = computed(() => rhythm.value === "weekly");
 
 const effort = computed(() => {
@@ -336,18 +336,10 @@ const cardLine = computed(() => {
       :label="t('parcours.create.whenStudy')"
       :value-text="momentName"
     />
-    <p class="mt-1.5 text-base font-bold">{{ momentName }}</p>
-    <p class="mt-0.5 text-[13px] text-text-secondary">
-      {{ t("parcours.create.slide") }}
-      <button
-        type="button"
-        class="font-bold text-primary"
-        :aria-pressed="anchor === null"
-        @click="trackAnchor = null"
-      >
-        {{ t("parcours.create.allDay") }}
-      </button>
-    </p>
+    <template v-if="anchor">
+      <p class="mt-1.5 text-base font-bold">{{ momentName }}</p>
+      <p class="mt-0.5 text-[13px] text-text-secondary">{{ t("parcours.create.slide") }}</p>
+    </template>
     <p class="mt-2.5 text-[13px] leading-normal text-text-secondary">{{ cardLine }}</p>
 
     <button

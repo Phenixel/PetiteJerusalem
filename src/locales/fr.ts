@@ -2076,7 +2076,7 @@ const fr = {
       oneYear: "Un an",
     },
     date: {
-      both: "{hebrew}, {civil}",
+      both: "{hebrew} ({civil})",
     },
     streak: {
       days: "jour d'affilée | jours d'affilée",
@@ -2115,6 +2115,11 @@ const fr = {
       },
     },
     habitWeek: "Cette semaine : {n} jour tenu | Cette semaine : {n} jours tenus",
+    paused: {
+      title: "En pause",
+      since: "Depuis le {date}. Rien n'est perdu, et plus rien n'est demandé.",
+      resume: "Reprendre",
+    },
     shelf: {
       title: "Mes volumes",
       add: "Un volume",
@@ -2481,8 +2486,8 @@ const fr = {
       someDays:
         "{n} jour par semaine : les autres jours, elle ne paraît pas. | {n} jours par semaine : les autres jours, elle ne paraît pas.",
       when: "Quand",
-      slide: "Glissez le rond sur le fil, ou",
-      allDay: "toute la journée",
+      slide: "Glissez le rond jusqu'au moment voulu.",
+      allDay: "Toute la journée",
       tefilotHint: "Chaque office a son moment : le matin, l'après-midi, le soir.",
     },
     anchors: {

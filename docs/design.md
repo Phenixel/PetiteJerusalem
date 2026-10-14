@@ -1766,13 +1766,19 @@ page a son jeton, `--color-page`, qui fonce en sombre.
 
 ### Un volume ouvert, ses réglages, le lecteur
 
+Un objectif en pause se voit sans ouvrir ses réglages : sur l'étagère, son
+volume pâlit et porte une pastille « En pause » (le dessin et le mot) ; en
+tête de sa page, une bande dit depuis quand, que rien n'est perdu, et
+« Reprendre » d'un toucher (`PausedNotice.vue`). La pause ne se lisait que
+dans un interrupteur, au bas des réglages.
+
 - **Un programme au jour** (P2-Programme) : le volume en grand, son liseré
   doré à l'avancement et son signet quand une portion attend ; « Vous en
   êtes à » et la position ; la piste de l'année ; la portion du jour, seule
   surface en couleur, qu'on ouvre par « Lire » et qu'on glisse à droite
   quand c'est faite (elle dit alors la suivante) ; le retard, sans alarme
   (« Environ 4 jours. Rien ne presse. ») ; la semaine en histogramme ; la
-  fin prévue, en date hébraïque, veille de la fête quand elle l'est.
+  fin prévue, veille de la fête quand elle l'est.
 - **Un programme à la semaine** (P2-Semaine) : « Semaine 3 sur 52 », la
   carte de la semaine (celle de l'accueil), les cases de la portion à
   toucher (« Où j'en suis cette semaine »), et les semaines, une pierre
@@ -1855,13 +1861,24 @@ choisit sur une seule page »).
   pour les tefilin et la tsédaka), et son moment. Seuls un temps d'étude et
   une habitude « avec mes mots » le choisissent, en glissant le rond sur le
   fil du jour : au réveil, avec Cha'harit, à midi, avec Min'ha, avec Arvit,
-  au coucher, ou toute la journée ; c'est là que la question a un sens. Les
+  au coucher ; c'est là que la question a un sens. Les
   autres ont le leur, d'office, qui se dit sans barre : les tefilot chaque
   office à son heure, le Chéma au coucher, la tsédaka et garder sa langue
   toute la journée. Le repère se garde (`anchor`), dit la carte (« Ce
   soir, après Arvit ») et d'où elle s'ouvre : une ligne le dit (« La carte
   vient à la nuit tombée ; avant, elle attend en retrait »). Les réglages
   d'une habitude prise reprennent le même écran.
+- **« Toute la journée » est un interrupteur**, au-dessus du fil
+  (`AnchorTrack`), pour un programme comme pour une habitude : allumé, le
+  fil s'éteint et ne se touche plus ; éteint, le rond revient sur le
+  dernier repère choisi. Un lien « ou toute la journée » écrit après le nom
+  du moment (« Toute la journée ») disait deux fois la même chose, et ne
+  montrait pas qu'on quittait le fil.
+- **Une date se donne en hébreu et en civil**, partout où Mon parcours en
+  pose une (la fin d'un programme à sa création, sur sa page, dans ses
+  réglages, le rattrapage qui repousse la fin) : « 29 Elul 5787 (1 octobre
+  2027) ». La date hébraïque seule ne se situe pas d'un coup d'œil dans
+  l'année qu'on vit.
 
 ### L'accueil à son goût
 
