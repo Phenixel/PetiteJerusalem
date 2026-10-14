@@ -1,15 +1,16 @@
 <script setup lang="ts">
 /**
- * Le mur entier : toutes les pierres posées depuis le premier jour, en un mur
- * continu qui s'ouvre sur aujourd'hui, au bout à droite. On remonte le temps
- * en glissant vers la gauche ; une pierre touchée s'ouvre et se complète,
- * même des mois après.
+ * Le mur entier (P2-Annee) : toutes les pierres posées depuis le premier
+ * jour, en un mur continu qui s'ouvre sur aujourd'hui, au bout à droite. On
+ * remonte le temps en glissant vers la gauche, et la ligne au-dessus dit les
+ * mois qu'on regarde ; une pierre touchée s'ouvre et se complète, même des
+ * mois après.
  */
 import { HDate } from "@hebcal/core";
 import { computed, nextTick, onMounted, onUnmounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
-import AppIcon from "../../components/icons/AppIcon.vue";
 import DaySheet from "../../components/parcours/DaySheet.vue";
+import ParcoursBack from "../../components/parcours/ParcoursBack.vue";
 import StoneLegend from "../../components/parcours/StoneLegend.vue";
 import StoneWall from "../../components/parcours/StoneWall.vue";
 import { useParcours } from "../../composables/useParcours";
@@ -83,6 +84,43 @@ const since = computed(() => {
 
 const initials = computed(() => labels.weekdayInitials());
 
+/** Ce que l'œil voit du mur : de combien il a glissé depuis aujourd'hui, et sa largeur. */
+const view = ref({ offset: 0, width: 0 });
+
+/** « De Tichri à 'Hechvan 5787 » : les mois des colonnes qu'on regarde. */
+const range = computed(() => {
+  const list = weeks.value;
+  if (list.length === 0) return "";
+  const last = list.length - 1;
+  const newest = Math.max(0, last - Math.floor(view.value.offset / COLUMN));
+  const oldest = Math.max(
+    0,
+    last - Math.floor((view.value.offset + Math.max(0, view.value.width - MARGIN)) / COLUMN),
+  );
+  const at = (i: number) => {
+    const hd = hebrewOf(weekStart(list[i].week));
+    return {
+      month: hebrewMonthName(hd.getMonth(), hd.getFullYear(), locale.value),
+      year: hd.getFullYear(),
+    };
+  };
+  const from = at(oldest);
+  const to = at(newest);
+  if (from.month === to.month && from.year === to.year) return `${to.month} ${to.year}`;
+  if (from.year === to.year) {
+    return t("parcours.wall.range", { from: from.month, to: to.month, year: to.year });
+  }
+  return t("parcours.wall.rangeYears", {
+    from: `${from.month} ${from.year}`,
+    to: `${to.month} ${to.year}`,
+  });
+});
+
+function onScroll(): void {
+  const el = scroller.value;
+  if (el) view.value = { offset: Math.abs(el.scrollLeft), width: el.clientWidth };
+}
+
 /**
  * Le mur s'ouvre sur aujourd'hui, au bout du sens de lecture : le défilement
  * prend le sens contraire de la page (droite à gauche en français, gauche à
@@ -114,6 +152,7 @@ const picked = ref<DayKey | null>(null);
 
 function measure(): void {
   if (scroller.value) fit.value = Math.floor((scroller.value.clientWidth - MARGIN) / COLUMN);
+  onScroll();
 }
 let resizeObserver: ResizeObserver | null = null;
 
@@ -131,15 +170,12 @@ onUnmounted(() => resizeObserver?.disconnect());
 </script>
 
 <template>
-  <main class="mx-auto w-full max-w-5xl px-4 py-8 md:px-6 md:py-12">
-    <RouterLink to="/parcours" class="back-link mb-4">
-      <AppIcon name="arrow-left" :size="14" class="rtl:rotate-180" />
-      {{ t("parcours.title") }}
-    </RouterLink>
-    <h1 class="text-center font-display text-3xl font-bold tracking-tight md:text-4xl">
+  <main class="mx-auto w-full max-w-5xl px-4 pb-9 pt-[18px] md:px-6 md:py-12">
+    <ParcoursBack to="/parcours" :label="t('parcours.title')" />
+    <h1 class="mt-0.5 text-center font-display text-[34px] font-bold md:text-4xl">
       {{ t("parcours.wall.page") }}
     </h1>
-    <p v-if="since" class="mt-2 text-center text-text-secondary">
+    <p v-if="since" class="mt-1 text-center text-sm text-text-secondary">
       {{
         t("parcours.wall.since", {
           held: store.streak.value.held,
@@ -149,7 +185,9 @@ onUnmounted(() => resizeObserver?.disconnect());
       }}
     </p>
 
-    <div class="mt-8 flex gap-1">
+    <p class="mt-[18px] text-center text-[15px] font-bold">{{ range }}</p>
+
+    <div class="mt-3.5 flex gap-1">
       <div
         class="flex w-4 flex-none flex-col pt-[39px] text-xs font-bold text-text-secondary"
         aria-hidden="true"
@@ -171,6 +209,7 @@ onUnmounted(() => resizeObserver?.disconnect());
         @pointermove="onPointerMove"
         @pointerup="onPointerUp"
         @pointerleave="onPointerUp"
+        @scroll.passive="onScroll"
       >
         <StoneWall
           class="w-max ps-1 pe-7"
@@ -199,15 +238,18 @@ onUnmounted(() => resizeObserver?.disconnect());
       </div>
     </div>
 
-    <div class="mt-5 flex items-center justify-between gap-3">
-      <p class="text-[13px] text-text-secondary">{{ t("parcours.wall.scrollHint") }}</p>
-      <button type="button" class="btn btn-soft btn-sm flex-none" @click="toToday()">
+    <div class="mt-[18px] flex items-center justify-between gap-3">
+      <p class="text-[13px] leading-snug text-text-secondary">
+        {{ t("parcours.wall.scrollHint") }}
+      </p>
+      <button type="button" class="btn btn-soft sheet-like flex-none" @click="toToday()">
         {{ t("parcours.wall.today") }}
       </button>
     </div>
-    <StoneLegend class="mt-5" />
-    <p class="mt-4 text-[13px] leading-relaxed text-text-secondary">
+    <StoneLegend class="mt-[18px]" />
+    <p class="mt-3.5 text-[13px] leading-normal text-text-secondary">
       {{ t("parcours.wall.backfill") }}
+      <template v-if="since">{{ t("parcours.wall.before", { since }) }}</template>
     </p>
 
     <DaySheet :day="picked" source="parcours_full_wall" @close="picked = null" />
@@ -223,5 +265,11 @@ onUnmounted(() => resizeObserver?.disconnect());
 }
 .wall-scroller::-webkit-scrollbar {
   display: none;
+}
+.sheet-like {
+  min-height: 44px;
+  padding: 0 16px;
+  font-size: 14px;
+  font-weight: 700;
 }
 </style>

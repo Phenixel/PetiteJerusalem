@@ -31,3 +31,6 @@ const SAMPLES = [
   --bevel: 2.5px;
 }
 </style>
+
+<!-- Les pierres : partagées avec le mur (voir stones.css). -->
+<style src="./stones.css"></style>

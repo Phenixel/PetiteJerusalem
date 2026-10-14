@@ -1,17 +1,21 @@
 <script setup lang="ts">
 /**
- * Mon parcours : où j'en suis. La lampe et la série, le mur des cinq
- * dernières semaines (on y touche un jour pour le compléter), les volumes de
- * l'étagère, les habitudes et leur semaine.
+ * Mon parcours (P2-Parcours) : où j'en suis. La lampe et la série, le mur
+ * des cinq dernières semaines (on y touche un jour pour le compléter, on
+ * écarte deux doigts dessus pour le mur entier), les volumes de l'étagère,
+ * les habitudes et leur semaine.
  *
  * On y arrive par la lampe de l'accueil, ou par le profil. Dans l'app, tout
  * marche sans compte, sur ce téléphone ; un compte le fait suivre d'un
  * appareil à l'autre, et le site l'exige.
  */
+import { HDate } from "@hebcal/core";
 import { computed, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
+import { useRouter } from "vue-router";
 import DaySheet from "../../components/parcours/DaySheet.vue";
 import HabitWeek from "../../components/parcours/HabitWeek.vue";
+import ParcoursBack from "../../components/parcours/ParcoursBack.vue";
 import ParcoursLamp from "../../components/parcours/ParcoursLamp.vue";
 import StoneWall from "../../components/parcours/StoneWall.vue";
 import VolumeShelf from "../../components/parcours/VolumeShelf.vue";
@@ -20,15 +24,19 @@ import { useParcoursLamp } from "../../composables/useParcoursLamp";
 import { useParcours } from "../../composables/useParcours";
 import { useParcoursMeta } from "../../composables/useParcoursMeta";
 import { useParcoursViews } from "../../composables/useParcoursViews";
+import { usePinchOpen } from "../../composables/usePinchOpen";
 import { useWallLabels } from "../../composables/useWallLabels";
 import { analyticsService } from "../../services/analyticsService";
+import { localDayFrom } from "../../services/dateService";
 import { addDays } from "../../services/parcours/days";
 import type { DayKey } from "../../services/parcours/model";
 import { liveObjectives, wallWeeks } from "../../services/parcours/schedule";
+import { hebrewMonthName } from "../../services/zmanimService";
 
 useParcoursMeta("parcours.title", "/parcours");
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
+const router = useRouter();
 const store = useParcours();
 const views = useParcoursViews();
 const labels = useWallLabels();
@@ -53,6 +61,21 @@ const lamp = useParcoursLamp();
 
 const picked = ref<DayKey | null>(null);
 
+/** « depuis Iyar 5785 » : le mois hébraïque du premier jour du parcours. */
+const since = computed(() => {
+  const first = store.begun.value;
+  const date = first ? localDayFrom(first) : null;
+  if (!date) return "";
+  date.setHours(12);
+  const hd = new HDate(date);
+  const month = `${hebrewMonthName(hd.getMonth(), hd.getFullYear(), locale.value)} ${hd.getFullYear()}`;
+  return t("parcours.wall.allSince", { month });
+});
+
+// Deux doigts écartés sur le mur : le mur entier.
+const wall = ref<HTMLElement | null>(null);
+usePinchOpen(wall, () => void router.push("/parcours/mur"));
+
 onMounted(() => {
   analyticsService.capture("parcours_viewed", {
     objectives_count: liveObjectives(store.data.value).length,
@@ -63,18 +86,19 @@ onMounted(() => {
 </script>
 
 <template>
-  <main class="mx-auto w-full max-w-5xl px-4 py-8 md:px-6 md:py-12">
-    <h1 class="text-center font-display text-3xl font-bold tracking-tight md:text-4xl">
+  <main class="mx-auto w-full max-w-5xl px-4 pb-10 pt-[18px] md:px-6 md:py-12">
+    <ParcoursBack to="/" :label="t('parcours.day.back')" />
+    <h1 class="mt-1 text-center text-[30px] font-bold md:text-4xl">
       {{ t("parcours.title") }}
     </h1>
 
-    <div class="mt-6 md:grid md:grid-cols-2 md:gap-12">
+    <div class="md:grid md:grid-cols-2 md:gap-12">
       <div>
-        <!-- La lampe, et la série qu'elle porte. -->
-        <section class="flex flex-col items-center text-center">
+        <!-- La lampe, en grand. La flamme baisse un jour manqué, elle ne s'éteint pas. -->
+        <section class="mt-[18px] flex flex-col items-center text-center">
           <ParcoursLamp :level="lamp.level.value" :width="168" />
-          <p class="mt-2 flex items-baseline gap-2">
-            <span class="font-display text-5xl font-bold leading-none text-primary">
+          <p class="mt-1.5 flex items-baseline gap-2">
+            <span class="font-display text-[44px] font-bold leading-none text-primary">
               {{ store.streak.value.current }}
             </span>
             <span class="text-base font-bold">
@@ -86,14 +110,15 @@ onMounted(() => {
           </p>
         </section>
 
-        <!-- Le mur : une pierre par jour, une colonne par semaine. -->
-        <section class="mt-8" :aria-label="t('parcours.wall.title')">
-          <h2 class="text-xl font-bold">
+        <!-- Le mur : une pierre par jour, une colonne par semaine, nommée par sa
+             paracha. C'est le bout droit du grand mur : le passé est à gauche. -->
+        <section :aria-label="t('parcours.wall.title')">
+          <h2 class="parcours-h2">
             <RouterLink to="/parcours/mur" class="hover:text-primary">
               {{ t("parcours.wall.title") }}
             </RouterLink>
           </h2>
-          <div class="mt-3 flex gap-2">
+          <div ref="wall" class="wall-pinch flex gap-2">
             <div
               class="flex w-4 flex-none flex-col text-xs font-bold text-text-secondary"
               aria-hidden="true"
@@ -134,9 +159,7 @@ onMounted(() => {
                 {{ t("parcours.wall.allHint") }}
               </span>
             </span>
-            <span v-if="store.begun.value" class="text-sm font-bold text-primary">
-              {{ t("parcours.wall.held", { n: store.streak.value.held }, store.streak.value.held) }}
-            </span>
+            <span v-if="since" class="text-sm font-bold text-primary">{{ since }}</span>
           </RouterLink>
         </section>
       </div>
@@ -152,19 +175,20 @@ onMounted(() => {
         </section>
 
         <template v-else>
-          <section class="mt-10 md:mt-0">
-            <h2 class="text-xl font-bold">{{ t("parcours.shelf.title") }}</h2>
-            <VolumeShelf class="mt-3" />
+          <section>
+            <h2 class="parcours-h2">{{ t("parcours.shelf.title") }}</h2>
+            <VolumeShelf />
           </section>
 
-          <section v-if="habits.length" class="mt-10">
-            <h2 class="text-xl font-bold">{{ t("parcours.habits.title") }}</h2>
-            <div class="card mt-3 divide-y divide-line overflow-hidden">
+          <!-- Mes habitudes : un nom, et sa semaine en petites cases. -->
+          <section v-if="habits.length">
+            <h2 class="parcours-h2">{{ t("parcours.habits.title") }}</h2>
+            <div class="card divide-y divide-line overflow-hidden">
               <RouterLink
                 v-for="habit in habits"
                 :key="habit.id"
                 :to="`/parcours/objectif/${habit.id}`"
-                class="flex min-h-14 items-center gap-3 px-4 py-2.5 hover:bg-surface-soft"
+                class="flex min-h-14 items-center gap-3 px-3.5 py-2.5 hover:bg-surface-soft"
               >
                 <span class="min-w-0 flex-1">
                   <span class="block text-[15px] font-bold">{{ views.objectiveTitle(habit) }}</span>
@@ -178,16 +202,10 @@ onMounted(() => {
           </section>
         </template>
 
-        <div class="card mt-10 divide-y divide-line overflow-hidden">
-          <RouterLink
-            to="/parcours/journee"
-            class="flex min-h-14 items-center px-4 font-semibold hover:bg-surface-soft"
-          >
-            {{ t("parcours.links.day") }}
-          </RouterLink>
+        <div class="card mt-3.5 divide-y divide-line overflow-hidden">
           <RouterLink
             to="/parcours/nouveau"
-            class="flex min-h-14 items-center px-4 font-bold text-primary hover:bg-surface-soft"
+            class="flex min-h-14 items-center px-3.5 text-[15px] font-bold text-primary hover:bg-surface-soft"
           >
             {{ t("parcours.links.new") }}
           </RouterLink>
@@ -209,3 +227,16 @@ onMounted(() => {
     <DaySheet :day="picked" source="parcours_wall" @close="picked = null" />
   </main>
 </template>
+
+<style scoped>
+.parcours-h2 {
+  margin: 38px 0 12px;
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+}
+/* Deux doigts écartés ouvrent le mur entier : la page ne zoome pas dessus. */
+.wall-pinch {
+  touch-action: pan-x pan-y;
+}
+</style>

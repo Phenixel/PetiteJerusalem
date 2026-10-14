@@ -1,29 +1,47 @@
 <script setup lang="ts">
 /**
- * Modifier un programme : sa date de fin, son rythme, son moment. Changer la
- * date ou le rythme repart d'aujourd'hui, à la position atteinte : le pas se
- * recalcule sur ce qui reste. Mettre en pause garde tout ; retirer se
- * confirme.
+ * Modifier un programme (P2-Reglages) : des lignes groupées, comme les
+ * réglages du téléphone. Le rythme (la date de fin, les jours d'étude, ce
+ * qu'on fait d'un retard), le moment, puis la pause et le rangement. Une
+ * ligne touchée ouvre sa feuille, en bas de l'écran.
+ *
+ * Changer la date ou le rythme repart d'aujourd'hui, à la position atteinte :
+ * le pas se recalcule sur ce qui reste. Mettre en pause garde tout ; ranger
+ * se confirme.
  */
-import { computed } from "vue";
+import { HDate } from "@hebcal/core";
+import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
-import { useRoute } from "vue-router";
-import AppIcon from "../../components/icons/AppIcon.vue";
-import ObjectivePauseRemove from "../../components/parcours/ObjectivePauseRemove.vue";
+import { useRoute, useRouter } from "vue-router";
+import BottomSheet from "../../components/parcours/BottomSheet.vue";
+import ParcoursBack from "../../components/parcours/ParcoursBack.vue";
+import ChoicePill from "../../components/parcours/pickers/ChoicePill.vue";
 import EndDatePicker from "../../components/parcours/pickers/EndDatePicker.vue";
 import MomentPicker from "../../components/parcours/pickers/MomentPicker.vue";
 import RhythmPicker from "../../components/parcours/pickers/RhythmPicker.vue";
+import { useConfirm } from "../../composables/useConfirm";
 import { useParcours } from "../../composables/useParcours";
 import { useParcoursMeta } from "../../composables/useParcoursMeta";
 import { useParcoursViews } from "../../composables/useParcoursViews";
 import { analyticsService } from "../../services/analyticsService";
-import type { DayKey, MomentId, ProgramObjective, Rhythm } from "../../services/parcours/model";
+import { localDayFrom } from "../../services/dateService";
+import {
+  CATCH_UP_OPTIONS,
+  type CatchUpOption,
+  type DayKey,
+  type MomentId,
+  type ProgramObjective,
+  type Rhythm,
+} from "../../services/parcours/model";
 import { rebase } from "../../services/parcours/plan";
+import { formatHebrewDate } from "../../services/zmanimService";
 
 useParcoursMeta("parcours.settings.title", "/parcours");
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const route = useRoute();
+const router = useRouter();
+const { confirm } = useConfirm();
 const store = useParcours();
 const views = useParcoursViews();
 
@@ -72,55 +90,226 @@ const paces = computed(() =>
     : { daily: "", weekdays: "", weekly: "" },
 );
 
-function forgetAutoCatchUp(): void {
+/** Ce qu'on fait d'un retard : demander, ou toujours la même chose. */
+function setAutoCatchUp(option: CatchUpOption | null): void {
   const p = program.value;
   if (!p) return;
   const next = { ...p };
-  delete next.autoCatchUp;
+  if (option) next.autoCatchUp = option;
+  else delete next.autoCatchUp;
   store.saveObjective(next);
+}
+
+const endValue = computed(() => {
+  const date = localDayFrom(end.value) ?? new Date();
+  date.setHours(12);
+  return t("parcours.settings.endValue", { date: formatHebrewDate(new HDate(date), locale.value) });
+});
+
+type Sheet = "end" | "rhythm" | "late" | "moment";
+const sheet = ref<Sheet | null>(null);
+
+const paused = computed(() => program.value?.pausedFrom !== undefined);
+
+function togglePause(): void {
+  const p = program.value;
+  if (!p) return;
+  store.setPaused(p.id, !paused.value);
+  analyticsService.capture("parcours_objective_paused", { paused: !paused.value, kind: p.kind });
+}
+
+async function remove(): Promise<void> {
+  const p = program.value;
+  if (!p) return;
+  const accepted = await confirm({
+    title: t("parcours.settings.removeTitle", { name: views.objectiveTitle(p) }),
+    message: t("parcours.settings.removeText"),
+    confirmLabel: t("parcours.settings.remove"),
+    danger: true,
+  });
+  if (!accepted) return;
+  store.removeObjective(p.id);
+  analyticsService.capture("parcours_objective_removed", { kind: p.kind });
+  void router.replace("/parcours");
 }
 </script>
 
 <template>
-  <main class="mx-auto w-full max-w-2xl px-4 py-8 md:px-6 md:py-12">
-    <RouterLink
+  <main class="mx-auto w-full max-w-2xl px-4 pb-10 pt-[18px] md:px-6 md:py-12">
+    <ParcoursBack
       :to="program ? `/parcours/objectif/${program.id}` : '/parcours'"
-      class="back-link mb-4"
-    >
-      <AppIcon name="arrow-left" :size="14" class="rtl:rotate-180" />
-      {{ program ? views.objectiveTitle(program) : t("parcours.title") }}
-    </RouterLink>
-    <h1 class="text-center font-display text-3xl font-bold">{{ t("parcours.settings.title") }}</h1>
+      :label="program ? views.objectiveTitle(program) : t('parcours.title')"
+    />
+    <h1 class="mt-1 text-center font-display text-[28px] font-bold">
+      {{ t("parcours.settings.heading") }}
+    </h1>
+    <p class="mt-1.5 text-center text-sm text-text-secondary">{{ t("parcours.settings.intro") }}</p>
 
     <p v-if="!program" class="mt-16 text-center text-text-secondary">
       {{ t("parcours.objective.missing") }}
     </p>
-    <div v-else class="mt-8 space-y-8">
-      <section>
-        <h2 class="text-sm font-bold">{{ t("parcours.form.end") }}</h2>
-        <EndDatePicker v-model="end" class="mt-2" :today="store.today.value" />
-      </section>
-      <section>
-        <h2 class="text-sm font-bold">{{ t("parcours.form.rhythm") }}</h2>
-        <RhythmPicker v-model="rhythm" class="mt-2" :paces="paces" />
-        <p class="mt-2 text-[13px] text-text-secondary">{{ t("parcours.settings.rebaseHint") }}</p>
-      </section>
-      <section>
-        <h2 class="text-sm font-bold">{{ t("parcours.form.moment") }}</h2>
-        <MomentPicker v-model="moment" class="mt-2" />
-      </section>
-      <div v-if="program.autoCatchUp" class="card flex items-center gap-3 px-4 py-3">
-        <span class="flex-1">
-          <span class="block text-[15px] font-bold">{{ t("parcours.settings.autoCatchUp") }}</span>
-          <span class="block text-[13px] text-text-secondary">
-            {{ t(`parcours.catchUp.options.${program.autoCatchUp}`) }}
-          </span>
-        </span>
-        <button type="button" class="btn btn-soft btn-sm" @click="forgetAutoCatchUp">
-          {{ t("parcours.settings.forget") }}
+    <template v-else>
+      <p class="settings-label">{{ t("parcours.settings.rhythm") }}</p>
+      <div class="settings-group">
+        <button type="button" class="settings-row" @click="sheet = 'end'">
+          <span class="settings-key">{{ t("parcours.settings.end") }}</span>
+          <span class="settings-value">{{ endValue }}</span>
+          <svg class="settings-chevron" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M9 6l6 6-6 6" />
+          </svg>
+        </button>
+        <button type="button" class="settings-row" @click="sheet = 'rhythm'">
+          <span class="settings-key">{{ t("parcours.settings.days") }}</span>
+          <span class="settings-value">{{ t(`parcours.settings.rhythmValue.${rhythm}`) }}</span>
+          <svg class="settings-chevron" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M9 6l6 6-6 6" />
+          </svg>
+        </button>
+        <button type="button" class="settings-row" @click="sheet = 'late'">
+          <span class="settings-key">{{ t("parcours.settings.late") }}</span>
+          <span class="settings-value">{{
+            program.autoCatchUp
+              ? t(`parcours.catchUp.options.${program.autoCatchUp}`)
+              : t("parcours.settings.ask")
+          }}</span>
+          <svg class="settings-chevron" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M9 6l6 6-6 6" />
+          </svg>
         </button>
       </div>
-      <ObjectivePauseRemove :objective="program" />
-    </div>
+
+      <p class="settings-label">{{ t("parcours.settings.moment") }}</p>
+      <div class="settings-group">
+        <button type="button" class="settings-row" @click="sheet = 'moment'">
+          <span class="settings-key">{{ t("parcours.settings.when") }}</span>
+          <span class="settings-value">{{ t(`parcours.day.during.${moment}`) }}</span>
+          <svg class="settings-chevron" viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M9 6l6 6-6 6" />
+          </svg>
+        </button>
+      </div>
+
+      <div class="settings-group mt-7">
+        <button type="button" class="settings-row" @click="togglePause">
+          <span class="settings-key">{{
+            paused ? t("parcours.settings.resume") : t("parcours.settings.pause")
+          }}</span>
+          <span class="settings-value">{{
+            paused ? t("parcours.settings.pausedHint") : t("parcours.settings.pauseFor")
+          }}</span>
+        </button>
+        <button type="button" class="settings-row" @click="remove">
+          <span class="settings-key settings-danger">{{
+            t("parcours.settings.removeVolume")
+          }}</span>
+        </button>
+      </div>
+      <p class="mt-2.5 px-1 text-[13px] leading-normal text-text-secondary">
+        {{ t("parcours.settings.removeHint") }}
+      </p>
+
+      <BottomSheet
+        :open="sheet !== null"
+        :label="t('parcours.settings.heading')"
+        @close="sheet = null"
+      >
+        <template v-if="sheet === 'end'">
+          <p class="sheet-title">{{ t("parcours.form.end") }}</p>
+          <EndDatePicker v-model="end" class="mt-3" :today="store.today.value" />
+        </template>
+        <template v-else-if="sheet === 'rhythm'">
+          <p class="sheet-title">{{ t("parcours.form.rhythm") }}</p>
+          <RhythmPicker v-model="rhythm" class="mt-3" :paces="paces" />
+          <p class="mt-2 text-[13px] text-text-secondary">
+            {{ t("parcours.settings.rebaseHint") }}
+          </p>
+        </template>
+        <template v-else-if="sheet === 'late'">
+          <p class="sheet-title">{{ t("parcours.settings.late") }}</p>
+          <div class="mt-3 flex flex-wrap gap-2">
+            <ChoicePill :on="!program.autoCatchUp" @click="setAutoCatchUp(null)">
+              {{ t("parcours.settings.ask") }}
+            </ChoicePill>
+            <ChoicePill
+              v-for="option in CATCH_UP_OPTIONS"
+              :key="option"
+              :on="program.autoCatchUp === option"
+              @click="setAutoCatchUp(option)"
+            >
+              {{ t(`parcours.catchUp.options.${option}`) }}
+            </ChoicePill>
+          </div>
+        </template>
+        <template v-else-if="sheet === 'moment'">
+          <p class="sheet-title">{{ t("parcours.form.moment") }}</p>
+          <MomentPicker v-model="moment" class="mt-3" />
+        </template>
+        <button type="button" class="btn btn-primary sheet-done" @click="sheet = null">
+          {{ t("common.close") }}
+        </button>
+      </BottomSheet>
+    </template>
   </main>
 </template>
+
+<style scoped>
+.settings-label {
+  margin: 24px 4px 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+.settings-group {
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+}
+.settings-group > .settings-row + .settings-row {
+  border-top: 1px solid var(--color-line);
+}
+.settings-row {
+  display: flex;
+  width: 100%;
+  min-height: 54px;
+  align-items: center;
+  gap: 12px;
+  padding: 0 14px;
+  text-align: start;
+}
+.settings-key {
+  flex: 1;
+  font-size: 15px;
+}
+.settings-danger {
+  font-weight: 700;
+  color: var(--color-danger);
+}
+.settings-value {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+}
+.settings-chevron {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  fill: none;
+  stroke: var(--color-text-secondary);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+[dir="rtl"] .settings-chevron {
+  transform: scaleX(-1);
+}
+.sheet-title {
+  font-size: 20px;
+  font-weight: 800;
+}
+.sheet-done {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 18px;
+  font-size: 14px;
+  font-weight: 700;
+}
+</style>

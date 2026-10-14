@@ -704,7 +704,7 @@ Une tâche cochée ou décochée.
 | --- | --- |
 | `done` | vrai quand elle est cochée |
 | `kind` | `program`, `habit`, `cycle`, `text` |
-| `source` | d'où : `home_deck_swipe` (la carte du dessus de la pile de l'accueil, glissée), `home_wallet_swipe` (une carte du portefeuille, glissée à droite ou, pour la décocher, à gauche), `home_sheet` (la fiche d'une carte), `journee_row` (Ma journée), `objective_button` ou `objective_swipe` (la portion du jour, sur la page d'un programme), `reader` (au bas d'une lecture ouverte depuis le parcours), `parcours_wall`, `parcours_full_wall` (un jour du mur) |
+| `source` | d'où : `home_deck_swipe` (la carte du dessus de la pile de l'accueil, glissée), `home_wallet_swipe` (une carte du portefeuille, glissée à droite ou, pour la décocher, à gauche), `home_sheet` (la fiche d'une carte), `journee_row` (Ma journée), `objective_swipe` (la portion du jour ou de la semaine, glissée sur la page d'un programme), `reader` (au bas d'une lecture ouverte depuis le parcours, l'anneau tiré vers le haut), `parcours_wall`, `parcours_full_wall` (un jour du mur) |
 | `days_ago` | 0 aujourd'hui, 1 hier... : ce qui se coche après coup |
 
 Une tâche de la lecture du jour d'avant (un texte du jour, une lecture du
@@ -758,7 +758,7 @@ lecture du jour a laissé place au paquet.
 
 ### `parcours_units_marked` (nouveau)
 
-Les cases d'une portion, cochées une à une sur la page d'un programme.
+Les cases d'une portion, cochées une à une sur la page d'un programme à la semaine (« Où j'en suis cette semaine »).
 `units` : les unités lues aujourd'hui ; `source` : `objective_cells`.
 
 ### `parcours_objective_created` (nouveau)

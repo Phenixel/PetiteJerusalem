@@ -18,7 +18,7 @@ import {
 } from "../../services/parcours/model";
 import { applyCatchUp, programPlan } from "../../services/parcours/plan";
 import { unitOf } from "../../services/parcours/texts";
-import AppModal from "../AppModal.vue";
+import BottomSheet from "./BottomSheet.vue";
 import ToggleSwitch from "../ToggleSwitch.vue";
 import ChoicePill from "./pickers/ChoicePill.vue";
 import WeekBars from "./WeekBars.vue";
@@ -83,12 +83,12 @@ function apply(): void {
 </script>
 
 <template>
-  <AppModal :open="open" :label="t('parcours.catchUp.title')" @close="emit('close')">
-    <h2 class="font-display text-2xl font-bold">
+  <BottomSheet :open="open" :label="t('parcours.catchUp.title')" @close="emit('close')">
+    <p class="font-display text-[26px] font-bold leading-tight">
       {{ t("parcours.catchUp.heading", { units: views.unitsLabel(unit, behind) }) }}
-    </h2>
+    </p>
     <p class="mt-1 text-sm text-text-secondary">{{ t("parcours.catchUp.hint") }}</p>
-    <div class="mt-4 flex flex-wrap gap-2">
+    <div class="mt-4 flex flex-wrap gap-2" role="group" :aria-label="t('parcours.catchUp.title')">
       <ChoicePill
         v-for="option in CATCH_UP_OPTIONS"
         :key="option"
@@ -98,14 +98,30 @@ function apply(): void {
         {{ t(`parcours.catchUp.options.${option}`) }}
       </ChoicePill>
     </div>
-    <WeekBars class="mt-6" :bars="bars" :label="t('parcours.program.weekLabel')" />
-    <p class="mt-3 min-h-12 text-[15px] leading-relaxed">{{ result }}</p>
-    <div class="mt-2 flex items-center gap-3">
+    <WeekBars
+      class="mt-5"
+      :bars="bars"
+      :tallest="160"
+      :mark-today="false"
+      :label="t('parcours.program.weekLabel')"
+    />
+    <p class="mt-3.5 min-h-[46px] text-[15px] leading-normal">{{ result }}</p>
+    <div class="mt-2.5 flex items-center gap-3">
       <span class="flex-1 text-sm">{{ t("parcours.catchUp.remember") }}</span>
       <ToggleSwitch v-model="remember" :label="t('parcours.catchUp.remember')" />
     </div>
-    <button type="button" class="btn btn-primary mt-5 w-full" @click="apply">
+    <button type="button" class="btn btn-primary apply-btn" @click="apply">
       {{ t("parcours.catchUp.apply") }}
     </button>
-  </AppModal>
+  </BottomSheet>
 </template>
+
+<style scoped>
+.apply-btn {
+  width: 100%;
+  min-height: 48px;
+  margin-top: 16px;
+  font-size: 15px;
+  font-weight: 700;
+}
+</style>

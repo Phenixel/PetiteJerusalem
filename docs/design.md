@@ -1640,6 +1640,37 @@ la journée) ; « Maintenant » se pose après le moment présent, un rond plein
 - Le fond de la page a son jeton, `--color-page`, qui fonce en sombre : une
   ligne glissée le prend pour passer devant ce qu'elle découvre.
 
+### Un volume ouvert, ses réglages, le lecteur
+
+- **Un programme au jour** (P2-Programme) : le volume en grand, son liseré
+  doré à l'avancement et son signet quand une portion attend ; « Vous en
+  êtes à » et la position ; la piste de l'année ; la portion du jour, seule
+  surface en couleur, qu'on ouvre par « Lire » et qu'on glisse à droite
+  quand c'est faite (elle dit alors la suivante) ; le retard, sans alarme
+  (« Environ 4 jours. Rien ne presse. ») ; la semaine en histogramme ; la
+  fin prévue, en date hébraïque, veille de la fête quand elle l'est.
+- **Un programme à la semaine** (P2-Semaine) : « Semaine 3 sur 52 », la
+  carte de la semaine (celle de l'accueil), les cases de la portion à
+  toucher (« Où j'en suis cette semaine »), et les semaines, une pierre
+  chacune, nommées par leur paracha.
+- **Rattraper** monte du bas comme la fiche : les cinq façons en pastilles,
+  la semaine redessinée à chaque choix, ce qui était prévu dans la teinte de
+  la pierre et ce que le rattrapage ajoute en couleur.
+- **Modifier** (P2-Reglages) : des lignes groupées, comme les réglages du
+  téléphone (le rythme, le moment, puis la pause et « Ranger le volume »,
+  en rouge, `--color-danger`) ; une ligne touchée ouvre sa feuille.
+- **Le mur entier** dit au-dessus les mois qu'on regarde (« De Av 5786 à
+  Tichri 5787 ») ; le mur de Mon parcours s'y ouvre aussi en écartant deux
+  doigts dessus.
+- **Un jour du mur** s'ouvre en feuille : le jour en titre, un nœud par
+  tâche, « Fermer ».
+- **Au bas d'une lecture** venue de Mon parcours, la fin de la portion :
+  un anneau qu'on tire vers le haut ; il se remplit à mesure, et lâché au
+  bout, la portion est faite (« Le signet a avancé »), avec « Annuler ».
+  Pour qui ne tire pas, l'anneau est un bouton.
+- Les pierres sont dans `components/parcours/stones.css`, que chaque
+  composant qui en pose importe.
+
 ## 2. Les couleurs de thème
 
 Deux couleurs, l'orange et le bleu de la palette du logo. Le fond et le mur

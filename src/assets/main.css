@@ -108,6 +108,9 @@ body {
 
   /* Hairlines for the few separators that remain. */
   --color-line: rgb(53 49 42 / 0.08);
+  /* Ce qui se perd : retirer, ranger, supprimer. */
+  --color-danger: #dc2626;
+
   /* Le trait appuyé : la poignée d'une feuille, un contour en pointillé. */
   --color-line-strong: rgb(53 49 42 / 0.18);
 
@@ -165,6 +168,7 @@ body {
   --color-text-secondary: #9ca3af;
   --color-line: rgb(255 255 255 / 0.1);
   --color-line-strong: rgb(255 255 255 / 0.22);
+  --color-danger: #f87171;
   --shadow-card: 0 1px 2px rgb(0 0 0 / 0.3), 0 2px 8px rgb(0 0 0 / 0.25);
   --shadow-card-hover: 0 2px 4px rgb(0 0 0 / 0.35), 0 8px 24px rgb(0 0 0 / 0.4);
   --shadow-pop: 0 4px 12px rgb(0 0 0 / 0.4), 0 16px 40px rgb(0 0 0 / 0.5);

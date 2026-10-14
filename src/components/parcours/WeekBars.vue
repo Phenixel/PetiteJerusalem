@@ -18,13 +18,23 @@ export interface WeekBar {
   rest: boolean;
 }
 
-const props = defineProps<{ bars: WeekBar[]; label: string }>();
-
-/** La plus haute barre de la semaine. */
-const TALLEST = 96;
+const props = withDefaults(
+  defineProps<{
+    bars: WeekBar[];
+    label: string;
+    /** La plus haute barre de la semaine, en px : plus haute dans la feuille « Rattraper ». */
+    tallest?: number;
+    /**
+     * Aujourd'hui tout en couleur (la page d'un programme) ; sans, chaque
+     * jour montre ce qu'il demandait et ce que le rattrapage y ajoute.
+     */
+    markToday?: boolean;
+  }>(),
+  { tallest: 96, markToday: true },
+);
 
 /** La hauteur d'une unité : la journée la plus chargée prend toute la hauteur. */
-const scale = computed(() => TALLEST / Math.max(1, ...props.bars.map((bar) => bar.units)));
+const scale = computed(() => props.tallest / Math.max(1, ...props.bars.map((bar) => bar.units)));
 </script>
 
 <template>
@@ -37,10 +47,10 @@ const scale = computed(() => TALLEST / Math.max(1, ...props.bars.map((bar) => ba
       <template v-else>
         <span
           class="bar-extra w-full transition-[height] duration-300"
-          :style="{ height: `${(bar.today ? bar.units : bar.extra) * scale}px` }"
+          :style="{ height: `${(bar.today && markToday ? bar.units : bar.extra) * scale}px` }"
         />
         <span
-          v-if="!bar.today"
+          v-if="!(bar.today && markToday)"
           class="bar-base w-full transition-[height] duration-300"
           :style="{ height: `${(bar.units - bar.extra) * scale}px` }"
         />

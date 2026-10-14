@@ -141,6 +141,7 @@ describe("i18n usage", () => {
       "parcours.pace.",
       "parcours.rhythms.",
       "parcours.sedarim.",
+      "parcours.settings.rhythmValue.",
       "parcours.tefilot.",
       "parcours.units.",
       "parcours.volume.all.",

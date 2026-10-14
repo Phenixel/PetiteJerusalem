@@ -25,8 +25,10 @@ const props = withDefaults(
     /** Une portion attend aujourd'hui. */
     ribbon?: boolean;
     format?: VolumeFormat;
+    /** L'échelle du dessin : 96 unités font 84 px sur l'étagère, 150 px en grand (P2-Programme). */
+    scale?: number;
   }>(),
-  { sub: "", ribbon: false, format: "regular" },
+  { sub: "", ribbon: false, format: "regular", scale: 0.875 },
 );
 
 /** La couverture (largeur, hauteur) et l'épaisseur des pages, en unités du dessin. */
@@ -36,8 +38,6 @@ const SHAPES: Record<VolumeFormat, { cover: [number, number]; pages: number; fon
   thick: { cover: [84, 134], pages: 16, font: 14 },
   large: { cover: [88, 140], pages: 22, font: 15 },
 };
-/** L'échelle commune des volumes : 96 unités font 84 px, comme ceux de l'accueil. */
-const SCALE = 0.875;
 
 const shape = computed(() => {
   const { cover, pages, font } = SHAPES[props.format];
@@ -58,8 +58,8 @@ const shape = computed(() => {
   const fontSize = Math.min(font, ((right - left - 8) / longest) * 1.9);
   const firstLine = 3 + ch * 0.42 - ((props.lines.length - 1) * (fontSize + 3)) / 2;
   return {
-    width: (cw + pages + 3) * SCALE,
-    height: (ch + 18) * SCALE,
+    width: (cw + pages + 3) * props.scale,
+    height: (ch + 18) * props.scale,
     viewBox: `0 0 ${cw + pages + 3} ${ch + 18}`,
     cw,
     ch,
