@@ -18,7 +18,9 @@
  * rien ne se compte contre soi. Chabbat et les fêtes sont des pauses.
  *
  * Ce module ne fait que décrire. Les calculs vivent à côté (plan.ts pour les
- * portions, schedule.ts pour les journées), le stockage dans store.ts.
+ * portions, schedule.ts pour les journées), le stockage dans deviceStore.ts
+ * (l'appareil) et cloud.ts (le compte), que composables/useParcours.ts réunit.
+ * Vue d'ensemble : docs/parcours.md.
  */
 
 /** Jour civil local, « YYYY-MM-DD » : la clé de dateService.localDayKey. */

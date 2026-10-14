@@ -223,7 +223,7 @@ export function useParcoursViews() {
           : "/bibliotheque/chnei-mikra";
       case "text": {
         const entry = texteOf(objective.textId);
-        return entry ? hubPath(entry) : null;
+        return entry ? { path: hubPath(entry), query: { objectif: objective.id } } : null;
       }
       default:
         return null;

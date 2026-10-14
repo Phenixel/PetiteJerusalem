@@ -1,6 +1,7 @@
+import { Locale } from "@hebcal/core";
 import { useI18n } from "vue-i18n";
 import { getParashaForShabbat } from "../services/dailyCycles";
-import { latinTexteName, hebrewName } from "../services/chiourTexte";
+import { latinTexteName } from "../services/chiourTexte";
 import { localDayFrom } from "../services/dateService";
 import { dateTimeFormat } from "../services/intlCache";
 import type { DayKey } from "../services/parcours/model";
@@ -19,8 +20,11 @@ export function useWallLabels() {
   function weekLabel(saturday: DayKey): string {
     const date = localDayFrom(saturday) ?? new Date();
     const parasha = getParashaForShabbat(date, isIsraelPlace(place.value));
+    // En hébreu, le nom de hebcal, sans nikoud (le catalogue ne l'a qu'en lettres latines).
+    const name = parasha?.names[0];
+    if (name && locale.value === "he") return Locale.gettext(name, "he-x-NoNikud");
     const entry = parasha?.entries[0];
-    if (entry) return locale.value === "he" ? hebrewName(entry) : latinTexteName(entry);
+    if (entry) return latinTexteName(entry);
     return dateTimeFormat(locale.value, { day: "numeric", month: "short" }).format(date);
   }
 

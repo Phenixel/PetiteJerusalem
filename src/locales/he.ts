@@ -1979,6 +1979,9 @@ const he: LocaleMessages = {
       unskip: "להחזיר להיום",
       lamp: "המסלול שלי, יום אחד ברצף | המסלול שלי, {n} ימים ברצף",
     },
+    reader: {
+      doneToast: "נעשה להיום.",
+    },
     reminder: {
       title: "תזכורת הערב",
       off: "ללא תזכורת",

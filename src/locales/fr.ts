@@ -2111,6 +2111,9 @@ const fr = {
       unskip: "Remettre aujourd'hui",
       lamp: "Mon parcours, {n} jour d'affilée | Mon parcours, {n} jours d'affilée",
     },
+    reader: {
+      doneToast: "C'est fait pour aujourd'hui.",
+    },
     reminder: {
       title: "Le rappel du soir",
       off: "Aucun rappel",

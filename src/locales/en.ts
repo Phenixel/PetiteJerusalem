@@ -2035,6 +2035,9 @@ const en: LocaleMessages = {
       unskip: "Back to today",
       lamp: "My journey, {n} day in a row | My journey, {n} days in a row",
     },
+    reader: {
+      doneToast: "Done for today.",
+    },
     reminder: {
       title: "Evening reminder",
       off: "No reminder",

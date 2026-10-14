@@ -704,7 +704,7 @@ Une tâche cochée ou décochée.
 | --- | --- |
 | `done` | vrai quand elle est cochée |
 | `kind` | `program`, `habit`, `cycle`, `text` |
-| `source` | d'où : `home_deck_swipe` ou `home_deck_button` (la carte du dessus du paquet de l'accueil), `home_wallet_swipe` ou `home_wallet_check` (le portefeuille), `home_sheet` (la fiche d'une carte), `journee_row` (Ma journée), `objective_button` ou `objective_swipe` (la portion du jour, sur la page d'un programme), `parcours_wall`, `parcours_full_wall` (un jour du mur) |
+| `source` | d'où : `home_deck_swipe` ou `home_deck_button` (la carte du dessus du paquet de l'accueil), `home_wallet_swipe` ou `home_wallet_check` (le portefeuille), `home_sheet` (la fiche d'une carte), `journee_row` (Ma journée), `objective_button` ou `objective_swipe` (la portion du jour, sur la page d'un programme), `reader` (au bas d'une lecture ouverte depuis le parcours), `parcours_wall`, `parcours_full_wall` (un jour du mur) |
 | `days_ago` | 0 aujourd'hui, 1 hier... : ce qui se coche après coup |
 
 Une tâche de la lecture du jour d'avant (un texte du jour, une lecture du

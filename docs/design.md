@@ -1547,7 +1547,8 @@ un livre mince, posé devant lui.
 
 Trois rythmes : chaque jour, chaque jour sauf Chabbat et les fêtes, ou à la
 semaine (la portion de la semaine, à répartir comme on veut). Pas de rythme
-au mois : une portion se lit dans la journée ou dans la semaine. Le pas se
+au mois : une portion mensuelle se remet au lendemain jusqu'à la fin du mois,
+et un programme ainsi découpé s'abandonne. Le pas se
 montre avant de commencer (« 3 michnayot par jour, 12 min environ ») ; changer
 la date ou le rythme repart d'aujourd'hui, à la position atteinte.
 
