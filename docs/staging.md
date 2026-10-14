@@ -71,6 +71,21 @@ tags `vX.Y.Z` et `web-vX.Y.Z`.
   retour échoue en staging au lieu d'écrire dans la base Notion des vrais
   retours.
 - Contenu public recopié depuis la production (voir plus bas).
+- Connexion Google activée (nom public « PJ Staging »), clé APNs `JP8UH7DW9U`
+  (la même que la production) importée pour l'app iOS.
+- Apple : App Group `group.fr.petitejerusalem.app.staging`, App ID
+  `fr.petitejerusalem.app.staging` et `fr.petitejerusalem.app.staging.PjWidgets`
+  rattachés au groupe, fiche App Store Connect « PJ Staging » (UGS
+  `pj-staging`), groupe TestFlight interne « Staging » en distribution
+  automatique.
+- Google Play : app « PJ Staging » créée, liste de testeurs internes
+  « PJ Staging » (distincte de celle des testeurs bêta), compte
+  `play-ci@` autorisé à déployer sur les canaux de test de cette app
+  seulement (jamais en production). Empreintes SHA-1 de la clé de debug, de
+  la clé d'importation et de la clé Play de la production ajoutées à l'app
+  Android de Firebase.
+- Secrets `GOOGLE_SERVICE_INFO_PLIST_STAGING` et
+  `GOOGLE_SERVICES_JSON_STAGING`, variable `STAGING_PLAY_STATUS=draft`.
 
 ### À faire par le propriétaire
 
