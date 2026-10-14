@@ -540,7 +540,8 @@
       "en"
     ],
     "/texts/talmud/eruvin.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/talmud/gittin.json": [
       "en"
@@ -588,7 +589,8 @@
       "en"
     ],
     "/texts/talmud/pesachim.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/talmud/rosh-hashanah.json": [
       "en"
