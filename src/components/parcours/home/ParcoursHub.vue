@@ -20,6 +20,7 @@ import { analyticsService } from "../../../services/analyticsService";
 import { haptic, type HapticKind } from "../../../services/haptics";
 import { liveObjectives } from "../../../services/parcours/schedule";
 import { trackDayViewed } from "../../../services/parcours/tracking";
+import LightCelebration from "../LightCelebration.vue";
 import TaskDeck from "./TaskDeck.vue";
 import TaskSheet from "./TaskSheet.vue";
 
@@ -184,5 +185,8 @@ function fromSheet(action: (card: DeckCard) => void, feel: HapticKind): void {
       @skip="(skipped) => fromSheet((card) => skip(card, skipped), 'undo')"
       @opened="sheet && opened(sheet)"
     />
+
+    <!-- La série franchit un palier : une nouvelle lumière. -->
+    <LightCelebration v-if="begun" />
   </section>
 </template>

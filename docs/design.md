@@ -648,6 +648,8 @@ Ce qui bouge, donc :
 - la pastille des onglets d'une page, qui glisse jusqu'à celui qu'on a touché ;
 - une carte ou une ligne qu'on presse, qui s'enfonce à peine sous le doigt
   (`.press-feedback`, `main.css`) ;
+- une lumière de la série qu'on vient de gagner, qui grandit dans sa feuille
+  et dont le halo s'ouvre (la tâche faite l'a allumée) ;
 - « Tout télécharger » : la flèche plonge dans son plateau au toucher, les
   anneaux des livres se remplissent à mesure, un livre arrivé en entier fait
   tracer sa coche et se soulève un instant de la planche, et la coche de la
@@ -689,7 +691,8 @@ avec quatre retours, toujours les mêmes :
 - **fait** (deux battements, le « succès » du système) : une tâche faite,
   par la pile, le portefeuille, la fiche, la portion d'un
   programme, l'anneau du lecteur ou la feuille d'un jour ; une section
-  d'une chaîne de lecture marquée lue ; un objectif ajouté ;
+  d'une chaîne de lecture marquée lue ; un objectif ajouté ; une lumière
+  de la série gagnée ;
 - **défait** (un battement léger) : une tâche décochée ou remise à plus
   tard, une section remise en non lu ;
 - **seuil** (à peine) : pendant un geste, le moment où, lâché, il agirait
@@ -862,6 +865,12 @@ jusqu'à son contenu : on ne savait jamais sur quel onglet on était, ni ce qui
 (`NativeProfileHome.vue`), rangé comme les réglages d'un téléphone ; le site
 garde le sien, qui lui convient.
 
+- **Mon parcours en tête, en carte** (`ProfileParcoursCard.vue` ; sur le
+  site aussi, en tête sur un téléphone, en haut du panneau au large) : la
+  lumière de la série et son compte, la lumière qu'on a et le record, la
+  journée (« Aujourd'hui, 2 sur 3 » et sa barre) et « Mes lumières » ; la
+  carte mène à Mon parcours. Sans objectif encore, la lampe attend et la
+  carte y mène aussi.
 - **Une page de lignes, rangées par groupe.** Mes lectures (les raccourcis),
   Réglages (apparence, langue, notifications, préférences), Mon compte
   (sécurité, déconnexion), Aide, Informations. Chaque groupe est un panneau
@@ -1557,6 +1566,43 @@ coche après coup, depuis le mur (la feuille de ce jour). Un retard se dit
 (« 6 michnayot de retard ») avec « Rien ne presse », et se rattrape au choix
 (la semaine, d'ici la fin, d'un coup, en repoussant la fin, ou « Déjà
 fait ») ; la portion du jour ne grossit jamais d'elle-même.
+
+### Les lumières de la série
+
+Plus la série monte, plus ce qui éclaire est grand
+(`services/parcours/lights.ts`, `StreakLight.vue`) : la vieille lampe au
+départ, la bougie à 3 jours, la lanterne à 7, la ménorah à 14, le phare à
+21, la lune à 30, le soleil à 50 (de Pessa'h à Chavouot), les étoiles à
+75, la galaxie à 100, la supernova à 150, le quasar à 250, et la lumière du
+premier jour au bout d'une année. Tenu par `parcoursLights.test.ts`.
+
+- **Des objets, pas des icônes**, aux couleurs du vrai et en aplats, à la
+  taille de la lampe (80 sur 62) : ils prennent sa place sur l'accueil, dans
+  Mon parcours et le profil sans rien déplacer. Ce qui brûle garde sa
+  flamme, qui monte et baisse comme celle de la lampe ; ce qui rayonne a un
+  halo, un aplat plus ou moins vif. Rien ne bouge de soi-même.
+- **On voit la lumière de la série en cours ; on garde celles du record.**
+  Une série qui retombe redescend la lumière montrée, jamais celles qu'on a
+  gagnées : « Mes lumières » les garde toutes.
+- **« Mes lumières » est une liste** (une feuille, `LightsSheet.vue`) : le
+  texte au début de la ligne (le nom, le palier, la phrase), la lumière au
+  bout, dans son cadre ; celle de la série en cours cerclée, « Votre
+  lumière ». La feuille s'ouvre sur son titre, pas sur « Fermer ».
+- **Ce qui vient reste dans l'ombre.** Une lumière à gagner n'est qu'une
+  ombre floue, « À découvrir », avec son palier (la prochaine dit dans
+  combien de jours) ; son dessin est agrandi dans son cadre, qui n'en garde
+  qu'un morceau. On sait qu'il y a quelque chose, pas quoi.
+- **Une lumière gagnée se fête, une fois** (`LightCelebration.vue`) : un
+  instant après le geste qui l'a allumée, une feuille monte, la lumière y
+  grandit et son halo s'ouvre deux fois, avec son nom, sa phrase et « Voir
+  mes lumières ». Le dernier record fêté se garde sur l'appareil ; la
+  première fois, et quand le record saute d'un coup (le compte relu sur un
+  nouvel appareil), rien ne se fête : on ne célèbre que ce qu'on vient de
+  faire. Tenu par `e2e/firebase/parcours.spec.ts` (« la série qui franchit
+  un palier allume une lumière, une fois »).
+- **Le bouton se nomme** : « Mes lumières », son étoile et son nom, puis la
+  lumière du moment, sous le record de Mon parcours et dans la carte du
+  profil.
 
 ### Un objectif, un volume
 

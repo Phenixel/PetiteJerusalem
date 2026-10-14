@@ -145,6 +145,8 @@ describe("i18n usage", () => {
       "parcours.habits.",
       "parcours.habitAbout.",
       "parcours.kicker.",
+      "parcours.lights.captions.",
+      "parcours.lights.names.",
       "parcours.moments.",
       "parcours.pace.",
       "parcours.rhythms.",

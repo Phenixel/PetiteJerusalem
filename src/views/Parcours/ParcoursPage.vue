@@ -24,8 +24,10 @@ import DaySheet from "../../components/parcours/DaySheet.vue";
 import HabitWeek from "../../components/parcours/HabitWeek.vue";
 import OfflineTextsNotice from "../../components/parcours/OfflineTextsNotice.vue";
 import ParcoursBack from "../../components/parcours/ParcoursBack.vue";
-import ParcoursLamp from "../../components/parcours/ParcoursLamp.vue";
+import LightCelebration from "../../components/parcours/LightCelebration.vue";
+import LightsSheet from "../../components/parcours/LightsSheet.vue";
 import StoneWall from "../../components/parcours/StoneWall.vue";
+import StreakLight from "../../components/parcours/StreakLight.vue";
 import VolumeShelf from "../../components/parcours/VolumeShelf.vue";
 import { prefersReducedMotion } from "../../composables/useMotion";
 import { isNativeApp } from "../../composables/useNativeApp";
@@ -82,6 +84,13 @@ const initials = computed(() => labels.weekdayInitials());
 const habits = computed(() => liveObjectives(store.data.value).filter((o) => o.kind === "habit"));
 const empty = computed(() => liveObjectives(store.data.value).length === 0);
 const lamp = useParcoursLamp();
+
+/** Mes lumières : celles qu'on a gagnées, et celles qui restent dans l'ombre. */
+const lightsOpen = ref(false);
+function openLights(): void {
+  lightsOpen.value = true;
+  analyticsService.capture("parcours_lights_opened", { source: "parcours" });
+}
 
 const picked = ref<DayKey | null>(null);
 
@@ -160,9 +169,10 @@ onMounted(() => {
 
     <div class="md:grid md:grid-cols-2 md:gap-12">
       <div>
-        <!-- La lampe, en grand. La flamme baisse un jour manqué, elle ne s'éteint pas. -->
+        <!-- La lumière de la série, en grand : la lampe d'abord, puis la bougie,
+             la lanterne... La flamme baisse un jour manqué, elle ne s'éteint pas. -->
         <section class="mt-[18px] flex flex-col items-center text-center">
-          <ParcoursLamp :level="lamp.level.value" :width="168" />
+          <StreakLight :light="lamp.light.value.id" :level="lamp.level.value" :width="168" />
           <p class="mt-1.5 flex items-baseline gap-2">
             <span class="font-display text-[44px] font-bold leading-none text-primary">
               {{ store.streak.value.current }}
@@ -173,6 +183,24 @@ onMounted(() => {
           </p>
           <p class="mt-1.5 text-sm text-text-secondary">
             {{ t("parcours.streak.best", { n: store.streak.value.best }) }}
+          </p>
+          <button type="button" class="lights-btn press-feedback mt-3.5" @click="openLights">
+            <svg class="h-4 w-4" viewBox="0 0 16 16" aria-hidden="true">
+              <path d="M8 1Q9 7 15 8Q9 9 8 15Q7 9 1 8Q7 7 8 1Z" fill="currentColor" />
+            </svg>
+            <span>{{ t("parcours.lights.open") }}</span>
+            <span class="font-semibold text-text-secondary">
+              {{ t(`parcours.lights.names.${lamp.light.value.id}`) }}
+            </span>
+          </button>
+          <p v-if="lamp.next.value" class="mt-2 text-[13px] text-text-secondary">
+            {{
+              t(
+                "parcours.lights.next",
+                { n: lamp.next.value.from - lamp.days.value },
+                lamp.next.value.from - lamp.days.value,
+              )
+            }}
           </p>
         </section>
 
@@ -297,6 +325,8 @@ onMounted(() => {
     </div>
 
     <DaySheet :day="picked" source="parcours_wall" @close="picked = null" />
+    <LightsSheet :open="lightsOpen" @close="lightsOpen = false" />
+    <LightCelebration v-if="!empty" />
     <p class="sr-only" aria-live="polite">{{ arrivedNote }}</p>
   </main>
 </template>
@@ -307,6 +337,20 @@ onMounted(() => {
   font-family: var(--font-display);
   font-size: 20px;
   font-weight: 700;
+}
+/* Mes lumières : une commande ronde, son dessin et son nom, puis la lumière du moment. */
+.lights-btn {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-primary);
 }
 /* Deux doigts écartés ouvrent le mur entier : la page ne zoome pas dessus. */
 .wall-pinch {

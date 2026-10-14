@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from "vue";
+import { ref, onMounted, onUnmounted, computed, defineAsyncComponent } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { authService } from "../services/authService";
@@ -13,6 +13,10 @@ import SecuritySettings from "./profilePage/SecuritySettings.vue";
 import AppearanceTab from "./profilePage/AppearanceTab.vue";
 import PreferencesTab from "./profilePage/PreferencesTab.vue";
 import { SITE_URL } from "../config/site";
+// Chargée à la demande : Mon parcours tire le calendrier hébraïque.
+const ProfileParcoursCard = defineAsyncComponent(
+  () => import("../components/parcours/ProfileParcoursCard.vue"),
+);
 
 const router = useRouter();
 const { t } = useI18n();
@@ -123,7 +127,10 @@ onUnmounted(() => {
       <ProfileHeader :user-display-name="userDisplayName" />
 
       <div class="max-w-[1200px] mx-auto px-6 grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8">
-        <nav class="lg:sticky lg:top-24 h-fit card p-3">
+        <!-- Mon parcours : la lumière de la série, la journée, Mes lumières. En
+             tête sur un téléphone ; au large, en haut du panneau, à droite du menu. -->
+        <ProfileParcoursCard class="lg:col-start-2 lg:row-start-1" />
+        <nav class="lg:sticky lg:top-24 h-fit card p-3 lg:col-start-1 lg:row-start-1 lg:row-span-2">
           <!-- Raccourcis vers les fonctionnalités déplacées dans leurs sections. -->
           <p class="px-4 pt-2 pb-1 text-sm font-semibold text-text-secondary">
             {{ t("profile.shortcuts.title") }}
@@ -187,7 +194,7 @@ onUnmounted(() => {
           </button>
         </nav>
 
-        <div id="profile-content">
+        <div id="profile-content" class="lg:col-start-2">
           <div v-if="activeTab === 'my-info'">
             <UserInfoForm :user="currentUser" @update="updateUserInfo" />
           </div>

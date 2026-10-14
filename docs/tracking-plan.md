@@ -184,8 +184,11 @@ lignes sur la page du profil elle-même, sans sous-page à compter.
 Un raccourci du profil vers ce qui y vivait autrefois : `shortcut` vaut
 `parcours` (Mon parcours, **nouvelle valeur**, qui remplace `daily_reading`
 depuis que la lecture du jour y vit) ou `my_sessions`, sur le site comme dans
-l'app (groupe « Mes lectures »). Dans l'app, la ligne de Mon parcours est là
-sans compte.
+l'app (groupe « Mes lectures »). Mon parcours n'est plus une ligne mais une
+carte en tête du profil (la lumière de la série, la journée, « Mes
+lumières ») : la toucher envoie toujours `shortcut: parcours`, sur le site
+comme dans l'app, avec ou sans compte. La ligne du menu du site reste, et
+l'envoie aussi.
 
 ## Lecture de la tefila
 
@@ -791,6 +794,25 @@ Les cases d'une portion, cochées une à une sur la page d'un programme à la se
 
 Un programme modifié : `field` vaut `end` ou `rhythm` (le pas repart
 d'aujourd'hui).
+
+### `parcours_light_unlocked` (nouveau)
+
+Une lumière de la série gagnée (la bougie, la lanterne... voir
+`services/parcours/lights.ts`) : le record vient de franchir un palier, et
+sa feuille monte. Une fois par palier et par appareil ; rien quand le record
+saute de plusieurs jours d'un coup (le compte relu sur un nouvel appareil).
+
+| Propriété | Valeurs |
+| --- | --- |
+| `light` | `candle`, `lantern`, `menorah`, `lighthouse`, `moon`, `sun`, `stars`, `galaxy`, `supernova`, `quasar`, `first-light` |
+| `days` | le palier franchi, en jours d'affilée : 3, 7, 14, 21, 30, 50, 75, 100, 150, 250, 365 |
+| `streak` | la série en cours |
+
+### `parcours_lights_opened` (nouveau)
+
+« Mes lumières » ouverte. `source` : `parcours` (sous la lumière de Mon
+parcours), `profile` (la carte du profil), `celebration` (« Voir mes
+lumières », depuis la feuille d'une lumière gagnée).
 
 ### `parcours_caught_up` (nouveau)
 

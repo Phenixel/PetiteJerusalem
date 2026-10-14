@@ -10,9 +10,10 @@ type Prefs = {
   dailyReadingProgress?: { completedIds?: number[] };
 };
 
-/** Le jour local, comme l'app l'écrit (localDayKey). */
-function todayKey(): string {
+/** Le jour local, comme l'app l'écrit (localDayKey), décalé de `offset` jours. */
+function todayKey(offset = 0): string {
   const now = new Date();
+  now.setDate(now.getDate() + offset);
   const month = String(now.getMonth() + 1).padStart(2, "0");
   const day = String(now.getDate()).padStart(2, "0");
   return `${now.getFullYear()}-${month}-${day}`;
@@ -135,6 +136,53 @@ test.describe("Mon parcours", () => {
         return Object.values(doc?.objectives ?? {}).find((o) => o.kind === "program") ?? null;
       })
       .toMatchObject({ corpus: "michna", anchor: "arvit" });
+  });
+
+  test("la série qui franchit un palier allume une lumière, une fois", async ({ page }) => {
+    // Six jours d'affilée jusqu'à hier ; le septième allume la lanterne.
+    const account = await createAccount("lumiere");
+    const now = Date.now();
+    const days: Record<string, { done: string[]; at: number }> = {};
+    for (let i = 1; i <= 6; i++) days[todayKey(-i)] = { done: ["serie-langue"], at: now };
+    await seedDoc("parcours", account.uid, {
+      v: 1,
+      objectives: {
+        "serie-langue": {
+          id: "serie-langue",
+          kind: "habit",
+          preset: "chmirat-halachon",
+          name: "",
+          days: [0, 1, 2, 3, 4, 5, 6],
+          moment: "anytime",
+          since: todayKey(-7),
+          createdAt: now,
+          updatedAt: now,
+        },
+      },
+      days,
+    });
+    // L'appareil a déjà vu ces six jours : seul le palier franchi se fête.
+    await page.addInitScript(() => {
+      if (!localStorage.getItem("pj_parcours_light_seen")) {
+        localStorage.setItem("pj_parcours_light_seen", "6");
+      }
+    });
+    await signIn(page, account, "/");
+
+    await page
+      .getByLabel(/^Garder ma langue,.*appui long pour la fiche/)
+      .click({ button: "right" });
+    await page.getByRole("button", { name: "C'est fait", exact: true }).click();
+    const light = page.getByRole("dialog", { name: "Une nouvelle lumière" });
+    await expect(light).toBeVisible();
+    await expect(light).toContainText("La lanterne");
+    await light.getByRole("button", { name: "Continuer" }).click();
+    await expect(light).toBeHidden();
+
+    // Fêtée, elle est notée sur l'appareil : elle ne se fêtera plus.
+    await expect
+      .poll(() => page.evaluate(() => localStorage.getItem("pj_parcours_light_seen")))
+      .toBe("7");
   });
 
   test("les anciennes adresses de la journée mènent à l'accueil", async ({ page }) => {

@@ -19,7 +19,7 @@
  *
  * Voir docs/design.md, « Le profil de l'app est une liste, pas un menu ».
  */
-import { computed, onMounted, onUnmounted, ref } from "vue";
+import { computed, defineAsyncComponent, onMounted, onUnmounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { authService, type User } from "../../../services/authService";
 import { analyticsService } from "../../../services/analyticsService";
@@ -43,6 +43,10 @@ import type { IconName } from "../../../components/icons/registry";
 import HolidayOrnaments from "../../../components/holiday/HolidayOrnaments.vue";
 import SettingsGroup from "../../../components/settings/SettingsGroup.vue";
 import SettingsRow from "../../../components/settings/SettingsRow.vue";
+// Chargée à la demande : Mon parcours tire le calendrier hébraïque.
+const ProfileParcoursCard = defineAsyncComponent(
+  () => import("../../../components/parcours/ProfileParcoursCard.vue"),
+);
 
 const { t } = useI18n();
 const toast = useToast();
@@ -249,17 +253,12 @@ onUnmounted(() => {
       </template>
 
       <div class="flex flex-col gap-7">
-        <!-- Mon parcours se tient sans compte, sur ce téléphone : sa ligne est
-             là pour tous. Les chaînes de lecture, elles, suivent le compte. -->
-        <SettingsGroup :title="t('profile.native.groups.reading')">
+        <!-- Mon parcours se tient sans compte, sur ce téléphone : sa carte est
+             là pour tous (la lumière de la série, la journée, Mes lumières).
+             Les chaînes de lecture, elles, suivent le compte. -->
+        <ProfileParcoursCard />
+        <SettingsGroup v-if="currentUser" :title="t('profile.native.groups.reading')">
           <SettingsRow
-            icon="book"
-            :label="t('parcours.title')"
-            to="/parcours"
-            @click="trackShortcut('parcours')"
-          />
-          <SettingsRow
-            v-if="currentUser"
             icon="users"
             :label="t('home.dashboard.sessionsTitle')"
             to="/share-reading"
