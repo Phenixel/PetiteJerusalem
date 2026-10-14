@@ -1830,6 +1830,20 @@ export function formatHebrewDate(hd: HDate, locale: string): string {
 }
 
 /**
+ * Le jour et le mois hébraïques, sans l'année : « 2 'Hechvan », « 1er
+ * 'Hechvan ». Ma journée les met à côté du jour de la semaine.
+ */
+export function formatHebrewDayMonth(hd: HDate, locale: string): string {
+  if (locale === "he") return hd.renderGematriya(false, true);
+  if (locale === "fr") {
+    const month = hd.getMonthName();
+    const day = hd.getDate();
+    return `${day === 1 ? "1er" : day} ${FRENCH_MONTHS[month] ?? month}`;
+  }
+  return hd.render("en", false);
+}
+
+/**
  * Le début d'une plage de dates hébraïques, allégé de ce que la fin répète.
  *
  * « du 1 Tichri 5787 au 2 Tichri 5787 » écrit le mois et l'année deux fois

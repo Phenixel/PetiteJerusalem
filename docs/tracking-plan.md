@@ -716,7 +716,8 @@ calendrier), cochée le jour même, envoie aussi `daily_reading_marked_read`
 ### `parcours_task_skipped` (nouveau)
 
 « Pas aujourd'hui », ou son contraire. `skipped`, `kind`, `source`
-(`journee`, ou `home_sheet` depuis la fiche d'une carte de l'accueil).
+(`home_sheet`, depuis la fiche d'une carte de l'accueil ; `journee` ne part
+plus : Ma journée n'a plus que « fait » et « plus tard »).
 
 ### `parcours_task_postponed` (nouveau)
 
@@ -724,7 +725,7 @@ calendrier), cochée le jour même, envoie aussi `daily_reading_marked_read`
 journée. `kind` (le genre de l'objectif, ou `occasion`, `catch_up` pour une
 carte en plus), et `source` : `swipe` (la carte du dessus glissée à gauche),
 `wallet_swipe` (une carte du portefeuille glissée à gauche), `sheet` (sa
-fiche).
+fiche), `journee_swipe` (une ligne de Ma journée glissée à gauche).
 
 ### `parcours_wallet_opened` (nouveau)
 

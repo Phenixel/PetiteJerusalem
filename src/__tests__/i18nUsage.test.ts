@@ -132,6 +132,8 @@ describe("i18n usage", () => {
       "parcours.corpus.",
       "parcours.create.partsTitle.",
       "parcours.cycles.",
+      "parcours.day.during.",
+      "parcours.day.moments.",
       "parcours.ends.",
       "parcours.habits.",
       "parcours.kicker.",

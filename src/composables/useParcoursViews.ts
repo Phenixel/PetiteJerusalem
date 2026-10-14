@@ -229,17 +229,23 @@ export function useParcoursViews() {
     }
   }
 
+  /** La portion d'un programme, seule : « Chabbat 7:1 à 7:3 ». */
+  function portionText(task: Task, objective: ProgramObjective): string {
+    const slot = task.slot;
+    if (!slot) return "";
+    return portionLabel(objective.texts, slot.from, slot.to, locale.value, (a, b) =>
+      t("parcours.portion.range", { from: a, to: b }),
+    );
+  }
+
   function meta(task: Task, objective: Objective, day: DayKey): string {
     switch (objective.kind) {
       case "program": {
         const slot = task.slot;
         if (!slot) return "";
         const units = Math.max(0, slot.to - slot.from);
-        const label = portionLabel(objective.texts, slot.from, slot.to, locale.value, (a, b) =>
-          t("parcours.portion.range", { from: a, to: b }),
-        );
         return t("parcours.portion.meta", {
-          portion: label,
+          portion: portionText(task, objective),
           units: unitsLabel(unitOf(objective.corpus), units),
         });
       }
@@ -371,6 +377,7 @@ export function useParcoursViews() {
     objectiveArt,
     coverLabel,
     taskView,
+    portionText,
     portionTime,
     dayLabel,
     volumeOf,

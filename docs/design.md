@@ -1616,6 +1616,30 @@ vient, l'heure en grand), l'étagère sans titre.
   ce qui est fait (« fait ce soir »), ou la position (« 72 sur 150 ») ; dans
   Mon parcours, l'avancement et le retard (« 6 % · 9 en retard »).
 
+### Ma journée, un fil
+
+Ma journée (`/parcours/journee`) suit la maquette P2-Journee : le jour en
+titre (« Aujourd'hui », « Lundi 12 »), sa date hébraïque et son compte, la
+semaine en cases plates, puis le fil. Chaque engagement est un nœud sur une
+ligne verticale, rangé par moment (Matin, Après-midi, Soir, Coucher, Toute
+la journée) ; « Maintenant » se pose après le moment présent, un rond plein
+à l'encre. Une ligne dit ce qu'elle demande (« jusqu'à 11:46 », « Chabbat
+7:1 à 7:3 », « avant de dormir ») et de quoi l'ouvrir (« Sidour »,
+« Lire ») tant qu'elle n'est pas faite.
+
+- Glissée à droite, la ligne est faite ; à gauche, elle passe à plus tard
+  (aujourd'hui seulement, comme la carte de l'accueil), ou n'est plus faite
+  si elle l'était. Ce que le geste fera se découvre dessous, en bande : la
+  teinte pleine pour « C'est fait », le gris pour l'autre côté. Le nœud se
+  touche aussi : il coche et décoche, pour qui ne glisse pas.
+- La tête de page se glisse : à droite la veille, à gauche le jour suivant.
+  Un jour passé le dit : « Oublié de cocher ? Glissez la ligne, c'est compté
+  pour ce jour-là. »
+- Le retour en tête des pages de Mon parcours est un chevron et un nom, à
+  l'encre (`ParcoursBack.vue`).
+- Le fond de la page a son jeton, `--color-page`, qui fonce en sombre : une
+  ligne glissée le prend pour passer devant ce qu'elle découvre.
+
 ## 2. Les couleurs de thème
 
 Deux couleurs, l'orange et le bleu de la palette du logo. Le fond et le mur

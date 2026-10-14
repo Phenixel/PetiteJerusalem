@@ -13,15 +13,9 @@ import { readOccasionsDone, writeOccasionDone } from "../services/parcours/occas
 import { liveObjectives } from "../services/parcours/schedule";
 import { unitOf } from "../services/parcours/texts";
 import { MOMENT_TEXTS, sidourMoment } from "../services/sidourMoment";
-import { currentTefilaWindow, tefilaWindowsOfDay } from "../services/sidourService";
-import {
-  computeZmanim,
-  formatHebrewDate,
-  formatZmanTime,
-  hebrewDateFor,
-} from "../services/zmanimService";
+import { computeZmanim, formatHebrewDate, hebrewDateFor } from "../services/zmanimService";
 import { useCurrentMoment } from "./useCurrentMoment";
-import { useNow } from "./useNow";
+import { useOfficeTimes } from "./useOfficeTimes";
 import { useParcours } from "./useParcours";
 import { useParcoursViews, type TaskView } from "./useParcoursViews";
 import { psalmsLabel } from "./useTehilimDay";
@@ -107,19 +101,15 @@ export function useTodayDeck() {
   const store = useParcours();
   const views = useParcoursViews();
   const moment = useCurrentMoment();
-  const now = useNow();
+  const offices = useOfficeTimes();
+  const now = offices.now;
   const { place } = useZmanimLocation();
 
   const today = store.today;
-  const office = computed(() => currentTefilaWindow(place.value, now.value));
-  const windows = computed(() => tefilaWindowsOfDay(place.value, now.value));
   const later = computed(() => (postponed.value.day === today.value ? postponed.value.keys : []));
 
-  const time = (date: Date): string => formatZmanTime(date, place.value.tzid, locale.value);
-
   /** L'office de l'heure, quand le parcours le porte. */
-  const isNow = (view: TaskView): boolean =>
-    view.task.step !== undefined && view.task.step === office.value?.tefila;
+  const isNow = (view: TaskView): boolean => offices.isNow(view.task.step);
 
   function kickerOf(view: TaskView): string {
     if (isNow(view)) return t("parcours.hub.now");
@@ -136,19 +126,7 @@ export function useTodayDeck() {
   function metaOf(view: TaskView): { title: string; meta: string } {
     const { task, objective } = view;
     if (task.step) {
-      const current = office.value;
-      if (current && isNow(view)) {
-        return { title: view.title, meta: t("parcours.hub.until", { time: time(current.end) }) };
-      }
-      const window = windows.value.find((w) => w.tefila === task.step);
-      if (!window) return { title: view.title, meta: view.meta };
-      return {
-        title: view.title,
-        meta:
-          now.value < window.start
-            ? t("parcours.hub.from", { time: time(window.start) })
-            : t("parcours.hub.until", { time: time(window.end) }),
-      };
+      return { title: view.title, meta: offices.officeMeta(task.step) ?? view.meta };
     }
     if (objective.kind === "habit") {
       const own = objective.preset !== "tefilin" && objective.preset !== "chema-al-hamita";
@@ -382,8 +360,8 @@ export function useTodayDeck() {
   /** Le parcours porte les offices : le raccourci du Sidour de l'accueil se tait. */
   const coversOffices = computed(() => tasks.value.some((card) => card.view?.task.step));
 
-  /** « Plus tard » : la carte passe sous le paquet. */
-  function postpone(card: DeckCard): void {
+  /** « Plus tard » : la carte passe sous le paquet (Ma journée aussi la remet). */
+  function postpone(card: Pick<DeckCard, "key">): void {
     const keys = later.value.filter((key) => key !== card.key);
     postponed.value = { day: today.value, keys: [...keys, card.key] };
   }
@@ -402,7 +380,7 @@ export function useTodayDeck() {
   }
 
   /** Remise à plus tard aujourd'hui : son moment le dit dans le portefeuille. */
-  const isLater = (card: DeckCard): boolean => later.value.includes(card.key);
+  const isLater = (card: Pick<DeckCard, "key">): boolean => later.value.includes(card.key);
 
   return {
     day,

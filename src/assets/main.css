@@ -92,6 +92,11 @@ body {
   --color-bg-dark: #181818;
   --color-bg-beige: #fff9f3;
 
+  /* Le fond de la page, sous tout le reste ; il fonce en sombre. Ce qui
+     doit se confondre avec lui (une ligne du fil de Ma journée qu'on
+     glisse) le prend. */
+  --color-page: #fff9f3;
+
   /* Surfaces (cards, panels, modals). Flipped in dark mode below. */
   --color-surface: #ffffff;
   --color-surface-soft: #f8f5ef;
@@ -153,6 +158,7 @@ body {
 /* Dark mode: flip the semantic tokens so most components adapt without
    per-element dark: overrides. */
 :root.dark {
+  --color-page: #111827;
   --color-surface: #1f2937;
   --color-surface-soft: #273244;
   --color-text-primary: #f3f4f6;
@@ -207,7 +213,7 @@ body {
 body {
   font-family: var(--font-sans);
   color: var(--color-text-primary);
-  background-color: var(--color-bg-beige);
+  background-color: var(--color-page);
   scrollbar-gutter: stable;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -217,7 +223,6 @@ body {
 }
 
 :root.dark body {
-  background-color: #111827; /* gray-900 */
   color: #f3f4f6; /* gray-100 */
 }
 
