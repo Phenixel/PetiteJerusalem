@@ -9,20 +9,24 @@ import { useParcours } from "./useParcours";
  * puis la bougie, la lanterne... voir services/parcours/lights.ts), et la
  * hauteur de sa flamme. Haute quand tout ce qu'aujourd'hui demandait est
  * fait ; basse quand la série est retombée à zéro ; entre les deux, sinon.
+ * Et la journée, ce qui en est fait (« 2 sur 3 »).
  */
 export function useParcoursLamp() {
   const store = useParcours();
 
   const days = computed(() => store.streak.value.current);
 
-  const full = computed(() => {
+  /** La journée : ce qu'aujourd'hui demande, et ce qui en est fait. */
+  const today = computed(() => {
     const tasks = store.todayTasks.value;
     const day = store.today.value;
-    return (
-      tasks.length > 0 &&
-      tasks.every((task) => taskProgress(store.data.value, task, day) === "done")
-    );
+    const done = tasks.filter(
+      (task) => taskProgress(store.data.value, task, day) === "done",
+    ).length;
+    return { done, total: tasks.length };
   });
+
+  const full = computed(() => today.value.total > 0 && today.value.done === today.value.total);
 
   const level = computed<LampLevel>(() =>
     full.value ? "high" : days.value > 0 ? "normal" : "low",
@@ -32,5 +36,5 @@ export function useParcoursLamp() {
   const light = computed(() => lightOf(days.value));
   const next = computed(() => nextLight(days.value));
 
-  return { days, level, light, next };
+  return { days, level, light, next, today };
 }

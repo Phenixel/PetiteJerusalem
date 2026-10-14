@@ -505,6 +505,21 @@ button,
     outline: 2px solid var(--color-primary);
     outline-offset: -2px;
   }
+  /* Sous le nom d'une ligne : ce qui est fait de ce qui est à faire. */
+  .settings-progress {
+    display: block;
+    height: 5px;
+    margin-top: 0.45rem;
+    overflow: hidden;
+    border-radius: var(--radius-pill);
+    background-color: color-mix(in srgb, var(--color-text-primary) 8%, transparent);
+  }
+  .settings-progress > span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background-color: var(--color-brand);
+  }
 
   /* Quiet back / breadcrumb link at the top of detail pages. */
   .back-link {

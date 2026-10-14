@@ -44,8 +44,11 @@ import HolidayOrnaments from "../../../components/holiday/HolidayOrnaments.vue";
 import SettingsGroup from "../../../components/settings/SettingsGroup.vue";
 import SettingsRow from "../../../components/settings/SettingsRow.vue";
 // Chargée à la demande : Mon parcours tire le calendrier hébraïque.
-const ProfileParcours = defineAsyncComponent(
-  () => import("../../../components/parcours/ProfileParcours.vue"),
+const ProfileLightBadge = defineAsyncComponent(
+  () => import("../../../components/parcours/ProfileLightBadge.vue"),
+);
+const ProfileParcoursRow = defineAsyncComponent(
+  () => import("../../../components/parcours/ProfileParcoursRow.vue"),
 );
 
 const { t } = useI18n();
@@ -195,11 +198,16 @@ onUnmounted(() => {
       <!-- Connecté : qui l'on est, d'un coup d'oeil. Le rond porte la couleur
            du thème, c'est la seule touche pleine de la page. -->
       <header v-if="currentUser" class="relative mb-8 flex flex-col items-center text-center">
-        <span
-          class="font-display flex h-20 w-20 items-center justify-center rounded-full bg-brand text-4xl text-on-brand"
-          aria-hidden="true"
-        >
-          {{ initial }}
+        <!-- Le rond, et à cheval sur son bas, côté fin, la lumière de la série
+             et son compte (la toucher ouvre Mes lumières). -->
+        <span class="relative">
+          <span
+            class="font-display flex h-20 w-20 items-center justify-center rounded-full bg-brand text-4xl text-on-brand"
+            aria-hidden="true"
+          >
+            {{ initial }}
+          </span>
+          <ProfileLightBadge class="absolute -bottom-3 -end-7" />
         </span>
         <h1 class="mt-4 text-2xl font-bold tracking-tight text-text-primary">
           {{ displayName }}
@@ -211,8 +219,6 @@ onUnmounted(() => {
           <AppIcon name="pencil" :size="14" />
           {{ t("profile.native.editProfile") }}
         </RouterLink>
-        <!-- Mon parcours, dans l'en-tête : la lumière, la série, la journée. -->
-        <ProfileParcours class="mt-7 w-full text-start" />
         <HolidayOrnaments
           v-if="activeHolidayTheme"
           :theme="activeHolidayTheme.id"
@@ -227,8 +233,6 @@ onUnmounted(() => {
         <h1 class="mb-6 text-center text-3xl font-bold tracking-tight text-text-primary">
           {{ t("profile.guestTitle") }}
         </h1>
-        <!-- Mon parcours se tient sans compte, sur ce téléphone : en tête aussi. -->
-        <ProfileParcours class="mb-8" />
         <section class="card mb-8 p-5">
           <p class="text-sm leading-relaxed text-text-secondary">
             {{ t("profile.guestSettingsHint") }}
@@ -257,10 +261,13 @@ onUnmounted(() => {
       </template>
 
       <div class="flex flex-col gap-7">
-        <!-- Mon parcours est dans l'en-tête, pour tous ; les chaînes de lecture,
-             elles, suivent le compte. -->
-        <SettingsGroup v-if="currentUser" :title="t('profile.native.groups.reading')">
+        <!-- Mon parcours se tient sans compte, sur ce téléphone : sa ligne est
+             là pour tous, avec la journée. Les chaînes de lecture, elles,
+             suivent le compte. -->
+        <SettingsGroup :title="t('profile.native.groups.reading')">
+          <ProfileParcoursRow />
           <SettingsRow
+            v-if="currentUser"
             icon="users"
             :label="t('home.dashboard.sessionsTitle')"
             to="/share-reading"

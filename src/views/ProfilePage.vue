@@ -17,6 +17,9 @@ import { SITE_URL } from "../config/site";
 const ProfileParcours = defineAsyncComponent(
   () => import("../components/parcours/ProfileParcours.vue"),
 );
+const ProfileStreak = defineAsyncComponent(
+  () => import("../components/parcours/ProfileStreak.vue"),
+);
 
 const router = useRouter();
 const { t } = useI18n();
@@ -124,9 +127,11 @@ onUnmounted(() => {
 
     <!-- Sans compte, l'abonnement ci-dessus renvoie à l'accueil. -->
     <div v-else-if="currentUser">
-      <ProfileHeader :user-display-name="userDisplayName">
-        <!-- Mon parcours, dans la bannière : la lumière, la série, la journée. -->
-        <ProfileParcours tone="brand" class="w-full md:w-80" />
+      <ProfileHeader :user-display-name="userDisplayName" :email="currentUser.email">
+        <!-- Mon parcours, dans le bandeau : la lumière et ses jours juste après
+             le nom, la journée en bas. -->
+        <template #name><ProfileStreak /></template>
+        <ProfileParcours />
       </ProfileHeader>
 
       <div class="max-w-[1200px] mx-auto px-6 grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8">
