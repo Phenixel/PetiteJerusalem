@@ -21,7 +21,9 @@ test.describe("Mon parcours", () => {
   test("un texte du jour se prend, se coche, et suit le compte", async ({ page }) => {
     const account = await createAccount("parcours");
     await signIn(page, account, "/parcours/nouveau");
-    await expect(page.getByRole("heading", { level: 1 })).toContainText("Nouvel objectif");
+    await expect(page.getByRole("heading", { level: 1 })).toContainText(
+      "Que voulez-vous accomplir",
+    );
 
     // Un texte chaque jour : le Tehilim 1.
     await page.getByRole("button", { name: /Un texte chaque jour/ }).click();
