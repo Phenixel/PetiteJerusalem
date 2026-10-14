@@ -138,6 +138,26 @@ describe("passer d'un texte à l'autre", () => {
     unregister();
   });
 
+  it("remonté à la liste des chapitres, le texte garde le chapitre où l'on lisait", () => {
+    placeOnTable(text("a", { path: "/bibliotheque/talmud/a/3", line: null, scrollY: 1800 }));
+    placeOnTable(text("b"));
+    // Le lecteur est sur la liste des chapitres : rien à retenir en mise à jour.
+    const unregister = registerTableReader({
+      key: "a",
+      snapshot: (refresh) =>
+        refresh ? null : text("a", { path: "/bibliotheque/talmud/a", scrollY: 0 }),
+    });
+    const { router } = fakeRouter("/bibliotheque/talmud/a");
+
+    openFromTable("b", router);
+
+    expect(useReadingTable().texts.value[0]).toMatchObject({
+      path: "/bibliotheque/talmud/a/3",
+      scrollY: 1800,
+    });
+    unregister();
+  });
+
   it("le texte déjà sous les yeux ne se rouvre pas : le panneau se referme", () => {
     placeOnTable(text("a"));
     const unregister = registerTableReader({ key: "a", snapshot: () => text("a") });
@@ -176,6 +196,14 @@ describe("la barre de la table", () => {
   it("n'existe pas tant que la table est vide", async () => {
     await mountBar();
     expect(host.querySelector("[role='region']")).toBeNull();
+  });
+
+  it("sur un téléphone, montre les trois derniers posés et compte les autres", async () => {
+    for (const key of ["a", "b", "c", "d", "e"]) placeOnTable(text(key));
+    await mountBar();
+    const volumes = [...host.querySelectorAll<HTMLElement>("[data-table-key]")];
+    expect(volumes.map((v) => v.dataset.tableKey)).toEqual(["c", "d", "e"]);
+    expect(host.textContent).toContain("+2");
   });
 
   it("porte les textes posés, souligne celui qu'on lit, et s'ouvre d'un appui", async () => {

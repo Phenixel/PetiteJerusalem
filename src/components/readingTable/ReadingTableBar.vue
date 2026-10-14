@@ -39,10 +39,22 @@ const bottom = useBottomChromeHeight("0.5rem", { table: false });
 const miniPlayerVisible = useMiniPlayerVisible();
 const aboveWidePlayer = computed(() => miniPlayerVisible.value && !isNativeApp);
 
-/** Quatre volumes au plus dans la barre, les derniers posés ; le reste se compte. */
-const MAX_SHOWN = 4;
-const shown = computed(() => texts.value.slice(-MAX_SHOWN));
-const hiddenCount = computed(() => Math.max(0, texts.value.length - MAX_SHOWN));
+/**
+ * Les derniers posés seulement, le reste se compte (« +2 ») : trois sur un
+ * téléphone, où un quatrième volume ne laissait plus lire aucun nom
+ * (« Bere… », « N… »), cinq sur un écran large.
+ */
+const wideQuery =
+  typeof window !== "undefined" && typeof window.matchMedia === "function"
+    ? window.matchMedia("(min-width: 768px)")
+    : null;
+const wide = ref(wideQuery?.matches ?? false);
+wideQuery?.addEventListener?.("change", (event) => {
+  wide.value = event.matches;
+});
+const maxShown = computed(() => (wide.value ? 5 : 3));
+const shown = computed(() => texts.value.slice(-maxShown.value));
+const hiddenCount = computed(() => Math.max(0, texts.value.length - maxShown.value));
 
 const openLabel = computed(() => t("readingTable.open", texts.value.length));
 

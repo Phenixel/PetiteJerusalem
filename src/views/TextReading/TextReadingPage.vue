@@ -608,6 +608,7 @@ async function loadContent() {
 // (next/previous) replaces it, since moving along is lateral navigation within
 // the same text rather than a new page to step back through.
 function goToSection(index: number, replace = false) {
+  rememberOnTable();
   userNavigated = true;
   const to =
     isEtudeRoute.value && textEntry.value
@@ -653,6 +654,7 @@ function libraryLocation(): string {
  * texte → chapitre, sans fin.
  */
 function goUp(target: RouteLocationRaw, preferHistory: boolean) {
+  rememberOnTable();
   const action = resolveBackNavigation({
     previousPath: previousHistoryPath(),
     parentPath: router.resolve(target).path,
@@ -729,6 +731,7 @@ const nextText = computed<TextStudyJsonEntry | null>(() =>
 // That way "Retour" (and the browser back button) returns to the list the
 // reader came from instead of stepping back through every text already read.
 function goToText(target: TextStudyJsonEntry) {
+  rememberOnTable();
   const to = isEtudeRoute.value
     ? hubPath(target)
     : { name: "text-reading", params: { textId: String(target.id) }, query: route.query };
@@ -975,7 +978,7 @@ function onScroll() {
     capturePosition();
     // Un texte posé sur la table suit la lecture : rouvert, il revient là
     // même si l'app a été fermée entre-temps.
-    if (isOnTable(textId.value)) refreshOnTable(tableSnapshot());
+    if (isOnTable(textId.value)) refreshOnTable(tableSnapshot(true));
   }, 600);
 }
 
@@ -1003,10 +1006,21 @@ const canSetAside = computed(
   () => !!textEntry.value && !!content.value && sessionSlug.value === null,
 );
 
-/** Ce que la table retient du texte à l'écran. */
-function tableSnapshot(): TableText | null {
+/** Le haut du texte dans le document : la table y compte son défilement. */
+function readingTop(): number {
+  return (readingRoot.value?.getBoundingClientRect().top ?? 0) + window.scrollY;
+}
+
+/**
+ * Ce que la table retient du texte à l'écran. `refresh` : la mise à jour
+ * d'un texte déjà posé, qui ne se fait que pendant la lecture. Remonté à la
+ * liste des chapitres, on a refermé le livre sans perdre sa page : la table
+ * garde le chapitre où l'on lisait.
+ */
+function tableSnapshot(refresh = false): TableText | null {
   const entry = textEntry.value;
   if (!entry || !content.value || sessionSlug.value !== null) return null;
+  if (refresh && showSectionList.value) return null;
   if (contentTextId !== textId.value) return null;
   let line: number | null = null;
   let offset = 0;
@@ -1037,16 +1051,17 @@ function tableSnapshot(): TableText | null {
     key: textId.value,
     path: canonicalReadingPath.value,
     // Le nom latin, court dans la barre (« Berakhot », et non « ברכות
-    // (Berakhot) », que le sens de lecture retourne) ; une Michna le dit,
-    // pour ne pas se confondre avec le traité du Talmud de même nom.
-    title: appendHebrewNumeral(
-      entry.type === "Mishna" ? `Michna ${latinName(entry)}` : latinName(entry),
-    ),
+    // (Berakhot) », que le sens de lecture retourne ; « Tehilim 119 », sans
+    // son numéro en lettres) ; une Michna le dit, pour ne pas se confondre
+    // avec le traité du Talmud de même nom.
+    title: entry.type === "Mishna" ? `Michna ${latinName(entry)}` : latinName(entry),
     place,
     corpus: isEtudeRoute.value ? String(route.params.corpus) : (corpusOf(entry) ?? ""),
     line,
     offset,
-    scrollY: window.scrollY,
+    // Compté depuis le haut du texte, et non de la page : ce qui le précède
+    // (une page qui s'en va, un bandeau) ne le décale pas.
+    scrollY: window.scrollY - readingTop(),
     at: Date.now(),
   };
 }
@@ -1093,8 +1108,13 @@ onBeforeUnmount(() => unregisterTableReader?.());
 
 // En quittant un texte posé sur la table (un autre texte, un autre chapitre,
 // la bibliothèque), il retient sa page : la page à l'écran est encore la sienne.
+// Les boutons de la page (chapitre suivant, « Retour », texte voisin) la
+// remettent en haut avant que la navigation ne parte : ils la font retenir
+// d'abord, et la garde de route, qui ne verrait plus que le haut de page,
+// s'abstient alors.
 function rememberOnTable() {
-  if (isOnTable(textId.value)) refreshOnTable(tableSnapshot());
+  if (Date.now() - programmaticScrollAt < 300) return;
+  if (isOnTable(textId.value)) refreshOnTable(tableSnapshot(true));
 }
 onBeforeRouteLeave(rememberOnTable);
 onBeforeRouteUpdate(rememberOnTable);
@@ -1112,16 +1132,30 @@ watch(
     resumeDismissed.value = true;
     awaitingReaderGesture = true;
     await nextTick();
-    await waitUntilPositionReachable(text.scrollY);
-    const verse =
-      text.line !== null
-        ? readingRoot.value?.querySelector<HTMLElement>(`[data-line="${text.line}"]`)
-        : null;
-    const top = verse
-      ? verse.getBoundingClientRect().top + window.scrollY - text.offset
-      : text.scrollY;
-    markProgrammaticScroll();
-    window.scrollTo({ top: Math.max(0, top) });
+    await waitUntilPositionReachable(readingTop() + text.scrollY);
+    const place = () => {
+      const verse =
+        text.line !== null
+          ? readingRoot.value?.querySelector<HTMLElement>(`[data-line="${text.line}"]`)
+          : null;
+      const top = verse
+        ? verse.getBoundingClientRect().top + window.scrollY - text.offset
+        : readingTop() + text.scrollY;
+      markProgrammaticScroll();
+      window.scrollTo({ top: Math.max(0, top) });
+    };
+    place();
+    // App native : la page qu'on quitte reste dans le document le temps de
+    // sa transition, au-dessus du texte (App.vue) ; à son départ, le texte
+    // remontait de toute sa hauteur. Il se repose tant que le texte bouge
+    // encore dans la page, et que le lecteur n'y a pas touché.
+    let lastTop = readingTop();
+    for (let i = 0; i < 12 && awaitingReaderGesture; i++) {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      const top = readingTop();
+      if (top !== lastTop && awaitingReaderGesture) place();
+      lastTop = top;
+    }
   },
   { flush: "post" },
 );

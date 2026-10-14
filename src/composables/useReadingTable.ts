@@ -39,7 +39,10 @@ export interface TableText {
   line: number | null;
   /** La hauteur de ce verset dans la fenêtre, en pixels. */
   offset: number;
-  /** Le défilement de la page : le repli d'un texte sans versets (Guemara). */
+  /**
+   * Le défilement, compté depuis le haut du texte : le repli d'un texte sans
+   * versets repérés (Guemara).
+   */
   scrollY: number;
   /** Dernière mise à jour, en ms epoch. */
   at: number;
@@ -48,8 +51,12 @@ export interface TableText {
 /** Ce que le lecteur ouvert sait dire de lui-même (voir registerTableReader). */
 export interface TableReader {
   key: string;
-  /** L'état du texte à l'écran, à poser ou à mettre à jour sur la table. */
-  snapshot: () => TableText | null;
+  /**
+   * L'état du texte à l'écran, à poser sur la table. `refresh` : pour
+   * mettre à jour un texte déjà posé, ce qui ne vaut que pendant la lecture
+   * (null sur la liste des chapitres, qui effacerait le chapitre retenu).
+   */
+  snapshot: (refresh?: boolean) => TableText | null;
 }
 
 const STORAGE_KEY = "pj-reading-table";
@@ -184,7 +191,7 @@ export function registerTableReader(entry: TableReader): () => void {
 /** Le lecteur ouvert retient sa page, s'il est sur la table. */
 export function refreshOpenReader(): void {
   const current = reader.value;
-  if (current && isOnTable(current.key)) refreshOnTable(current.snapshot());
+  if (current && isOnTable(current.key)) refreshOnTable(current.snapshot(true));
 }
 
 /**

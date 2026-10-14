@@ -1508,7 +1508,8 @@ geste : plusieurs livres ouverts sur la table, chacun à sa page.
   l'autre : la pile et son compte, puis les textes posés côte à côte, chacun
   en petit volume (la reliure de son rayon en dos, son nom à côté). Le
   dernier posé se range au bout, de l'autre côté des autres ; au-delà de
-  quatre, les plus anciens se comptent (« +2 »). Le texte à l'écran est
+  trois sur un téléphone (cinq sur un écran large), les plus anciens se
+  comptent (« +2 ») : un quatrième volume ne laissait plus lire aucun nom. Le texte à l'écran est
   souligné de l'encre du thème. Une surface claire, pas une teinte : c'est
   un outil de lecture, pas une écoute en cours. Les boutons flottants du bas
   (menu de lecture, retour en haut, toasts) montent d'autant
@@ -1529,9 +1530,14 @@ geste : plusieurs livres ouverts sur la table, chacun à sa page.
   l'écran et sa hauteur dans la fenêtre ; rouvert, le texte revient
   exactement là, au pixel près, quelle que soit la taille du texte choisie
   entre-temps. Un texte sans versets repérés (une Guemara) retrouve son
-  défilement. Le texte qu'on quitte, s'il est sur la table, retient d'abord
-  sa page, et il la suit pendant la lecture : une app refermée ne la perd
-  pas. Tenu par `readingTable.test.ts`.
+  défilement, compté depuis le haut du texte. Le texte qu'on quitte, s'il
+  est sur la table, retient d'abord sa page, et il la suit pendant la
+  lecture : une app refermée ne la perd pas. Les boutons qui remettent la
+  page en haut avant de naviguer (« Retour », chapitre suivant, texte
+  voisin) la font retenir avant ce saut, et la liste des chapitres n'efface
+  jamais le chapitre où l'on lisait. Dans l'app, la page qu'on quitte reste
+  un instant au-dessus du texte le temps de sa transition : le texte se
+  repose à son départ. Tenu par `readingTable.test.ts`.
 - **Sur l'appareil.** La table est celle d'une séance d'étude : elle survit
   à un rechargement ou à une app refermée (localStorage), mais ne suit pas
   le compte d'un appareil à l'autre. Vingt-quatre textes au plus, le plus
