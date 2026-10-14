@@ -368,9 +368,10 @@ export function useTodayDeck() {
 
   /**
    * Les textes du jour (un psaume, plusieurs, une page qu'on aime) : une
-   * seule carte, « Lecture du jour » (« Mes Tehilim journaliers » quand ce ne
-   * sont que des psaumes, voir dailyName), qui ouvre leur page, à la suite.
-   * Comme sur l'étagère, où ils font un seul volume.
+   * seule carte, « Lecture du jour » (« Mes Tehilim » quand ce ne sont que
+   * des psaumes, voir dailyName), qui ouvre leur page, à la suite. Comme sur
+   * l'étagère, où ils font un seul volume : c'est lui que la carte porte, son
+   * liseré rempli des textes lus aujourd'hui.
    */
   function dailyTextsCard(group: TaskView[]): DeckCard {
     const lead = group.find((view) => view.progress !== "done") ?? group[0];
@@ -385,12 +386,19 @@ export function useTodayDeck() {
     const name = views.dailyName(
       group.flatMap((view) => (view.objective.kind === "text" ? [view.objective.textId] : [])),
     );
+    const done = group.filter((view) => view.progress === "done").length;
     return {
       ...taskCard(lead),
       key: `${today.value}:lecture-du-jour`,
       group,
-      title: name.title,
+      title: name.card,
       meta: t("parcours.daily.cardMeta", { count: name.count(group.length), names }),
+      art: {
+        kind: "volume",
+        color: views.objectiveColor(group[0].objective),
+        label: name.cover,
+        progress: done / group.length,
+      },
       route: "/bibliotheque/lecture-du-jour",
       done: group.every((view) => view.progress === "done"),
       skipped: group.every((view) => view.skipped),

@@ -180,11 +180,14 @@ export function useParcoursViews() {
    * Le nom des textes du jour (le volume, la carte, la page) : « Mes Tehilim
    * journaliers » quand ce ne sont que des psaumes, qu'on sache d'un coup
    * d'œil ce qu'il y a dedans ; « Lecture du jour » dès qu'un autre texte
-   * s'y mêle (une michna, une page de moussar). `cover` est le titre court
-   * de la couverture ; `count`, « 3 psaumes » ou « 3 textes ».
+   * s'y mêle (une michna, une page de moussar). `card` est le titre de la
+   * carte de l'accueil, qui doit tenir à côté de son volume (« Mes
+   * Tehilim ») ; `cover`, celui de la couverture ; `count`, « 3 psaumes » ou
+   * « 3 textes ».
    */
   function dailyName(textIds: number[]): {
     title: string;
+    card: string;
     cover: string;
     count: (n: number) => string;
   } {
@@ -197,11 +200,13 @@ export function useParcoursViews() {
     return tehilim
       ? {
           title: t("parcours.daily.tehilimTitle"),
+          card: t("parcours.daily.tehilimCard"),
           cover: t("parcours.daily.tehilimCover"),
           count: (n) => unitsLabel("psalm", n),
         }
       : {
           title: t("parcours.daily.title"),
+          card: t("parcours.daily.title"),
           cover: t("parcours.daily.title"),
           count: (n) => t("parcours.daily.texts", { n }, n),
         };

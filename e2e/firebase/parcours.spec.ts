@@ -58,10 +58,8 @@ test.describe("Mon parcours", () => {
     // L'accueil : la carte des textes du jour en tête de la pile, nommée
     // d'après eux (que des psaumes) ; sa fiche (clic droit) la coche.
     await page.goto("/");
-    await page
-      .getByLabel(/^Mes Tehilim journaliers,.*appui long pour la fiche/)
-      .click({ button: "right" });
-    const sheet = page.getByRole("dialog", { name: "Mes Tehilim journaliers" });
+    await page.getByLabel(/^Mes Tehilim,.*appui long pour la fiche/).click({ button: "right" });
+    const sheet = page.getByRole("dialog", { name: "Mes Tehilim" });
     await sheet.getByRole("button", { name: "C'est fait", exact: true }).click();
     await expect(sheet).toBeHidden();
     await expect
@@ -228,11 +226,11 @@ test.describe("Mon parcours", () => {
     await page.getByRole("button", { name: "Ajouter 2 textes" }).click();
     await expect(page).toHaveURL(/\/parcours$/);
 
-    // L'accueil : une seule carte, « Mes Tehilim journaliers » (que des
-    // psaumes), qui ouvre la page.
+    // L'accueil : une seule carte, « Mes Tehilim » (que des psaumes), qui
+    // ouvre la page, « Mes Tehilim journaliers ».
     await page.goto("/");
     await page
-      .getByRole("link", { name: /^Mes Tehilim journaliers/ })
+      .getByRole("link", { name: /^Mes Tehilim,/ })
       .first()
       .click();
     await expect(page).toHaveURL(/\/bibliotheque\/lecture-du-jour$/);

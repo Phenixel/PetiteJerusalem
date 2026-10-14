@@ -2067,6 +2067,7 @@ const he: LocaleMessages = {
     daily: {
       title: "הקריאה היומית",
       tehilimTitle: "התהילים היומיים שלי",
+      tehilimCard: "התהילים שלי",
       tehilimCover: "תהילים",
       edit: "לערוך את הרשימה",
       editDone: "סיום",

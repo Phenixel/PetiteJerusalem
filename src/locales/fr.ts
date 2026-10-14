@@ -2203,6 +2203,7 @@ const fr = {
     daily: {
       title: "Lecture du jour",
       tehilimTitle: "Mes Tehilim journaliers",
+      tehilimCard: "Mes Tehilim",
       tehilimCover: "Tehilim",
       edit: "Modifier ma liste",
       editDone: "Terminé",

@@ -1666,8 +1666,10 @@ leur semaine en cases plates.
   psaumes, dix, une page qu'on aime ne font pas dix livres sur la planche.
   Quand ce ne sont que des psaumes, il s'appelle « Mes Tehilim journaliers »
   (« Tehilim » sur la couverture, « Chaque jour » dessous), qu'on sache d'un
-  coup d'œil ce qu'il tient ; la carte et la page prennent le même nom
-  (`dailyName`). Un texte d'un autre corpus le ramène à « Lecture du jour ».
+  coup d'œil ce qu'il tient ; la page prend le même nom, la carte de
+  l'accueil sa forme courte, « Mes Tehilim », qui tient à côté du volume
+  qu'elle porte (`dailyName`). Un texte d'un autre corpus ramène tout à
+  « Lecture du jour ».
   Son épaisseur dit combien il en tient, son liseré se remplit des textes
   lus aujourd'hui, et il ouvre leur page (voir « La lecture du jour,
   revenue »), où la liste se compose.

@@ -401,8 +401,9 @@ await waitFor(baseUrl, "le serveur Vite");
  */
 const SCREENS = [
   // L'accueil et la pile du jour : la lecture du compte (Tehilim 1 à 3, le
-  // premier coché) y entre d'elle-même, Tehilim 2 en tête.
-  { name: "01-accueil", path: "/", readyText: "Tehilim 2" },
+  // premier coché) y entre d'elle-même : une seule carte, « Mes Tehilim »
+  // (que des psaumes), et un seul volume.
+  { name: "01-accueil", path: "/", readyText: "Mes Tehilim" },
   // Les horaires d'une ville nommée plutôt que ceux de « ma position » : la
   // capture dit Paris en toutes lettres, où que tourne le script.
   { name: "02-horaires", path: "/horaires/paris", readyText: "Paris" },

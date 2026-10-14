@@ -2124,6 +2124,7 @@ const en: LocaleMessages = {
     daily: {
       title: "Today's reading",
       tehilimTitle: "My daily Tehilim",
+      tehilimCard: "My Tehilim",
       tehilimCover: "Tehilim",
       edit: "Edit my list",
       editDone: "Done",
