@@ -49,7 +49,7 @@ import { createHash } from "node:crypto";
 import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { APP_LINK_DOMAIN } from "./lib/app-links.mjs";
-import { ENV } from "./lib/environments.mjs";
+import { ENV, ENVIRONMENTS } from "./lib/environments.mjs";
 import { IOS_ICON_FILES, iosAppIconContents } from "./lib/app-icon.mjs";
 import {
   addAppSource,
@@ -85,6 +85,8 @@ if (!existsSync(pbxprojPath)) {
 // id pour s'installer à côté de la vraie app (docs/staging.md).
 const BUNDLE_ID = ENV.appId;
 const DISPLAY_NAME = ENV.appName;
+/** L'appId de capacitor.config.ts, que `cap add` écrit dans le pbxproj. */
+const CAPACITOR_APP_ID = ENVIRONMENTS.production.appId;
 /** Widgets d'écran d'accueil : l'App ID de la cible d'extension. */
 const WIDGET_BUNDLE_ID = `${BUNDLE_ID}.${WIDGET_TARGET}`;
 /** Apple Watch : l'App ID de l'app de montre (suffixe imposé par Apple). */
@@ -670,7 +672,16 @@ addResource("PrivacyInfo.xcprivacy", "text.plist.xml");
 if (existsSync(gsDest)) addResource("GoogleService-Info.plist", "text.plist.xml");
 
 // Bundle id (cap add le pose depuis appId, on le rend explicite et idempotent).
-pbxproj = pbxproj.replaceAll("com.getcapacitor.App", BUNDLE_ID);
+// L'appId de capacitor.config.ts reste celui de la production en staging :
+// c'est lui que `cap add` écrit, et lui qu'il faut remplacer par celui de
+// l'environnement. Le point-virgule épargne les cibles suffixées (widgets,
+// montre), ajoutées plus bas avec leur propre identifiant.
+pbxproj = pbxproj
+  .replaceAll("com.getcapacitor.App", BUNDLE_ID)
+  .replaceAll(
+    `PRODUCT_BUNDLE_IDENTIFIER = ${CAPACITOR_APP_ID};`,
+    `PRODUCT_BUNDLE_IDENTIFIER = ${BUNDLE_ID};`,
+  );
 
 /** Pose ou remplace un réglage dans un bloc buildSettings. */
 function setSetting(block, key, value) {
