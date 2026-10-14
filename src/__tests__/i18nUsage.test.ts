@@ -127,6 +127,7 @@ describe("i18n usage", () => {
       // Mon parcours : les moments, les unités, les sedarim, les modèles
       // d'habitude et les options, nommés par leur clé (voir
       // composables/useParcoursViews et components/parcours).
+      "home.edit.blocks.",
       "parcours.anchorKicker.",
       "parcours.anchorPoints.",
       "parcours.anchors.",

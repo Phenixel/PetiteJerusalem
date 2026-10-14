@@ -1,14 +1,6 @@
 <script setup lang="ts">
 import { useRouter } from "vue-router";
-import {
-  onMounted,
-  onUnmounted,
-  ref,
-  computed,
-  defineAsyncComponent,
-  watch,
-  type Component,
-} from "vue";
+import { onMounted, onUnmounted, ref, computed, defineAsyncComponent, watch } from "vue";
 import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { localeMessagesReady } from "../i18n";
@@ -25,9 +17,10 @@ import AppIcon from "../components/icons/AppIcon.vue";
 import FeedbackNudge from "../components/FeedbackNudge.vue";
 import FeatureTour, { type TourStep } from "../components/FeatureTour.vue";
 import { tipsOffered } from "../composables/useFeatureTips";
-import IllustrationPartage from "../components/illustrations/IllustrationPartage.vue";
-import IllustrationChiourim from "../components/illustrations/IllustrationChiourim.vue";
-import IllustrationBibliotheque from "../components/illustrations/IllustrationBibliotheque.vue";
+import HomeDoors from "../components/HomeDoors.vue";
+import HomeResume from "../components/HomeResume.vue";
+import { useHomeLayout } from "../composables/useHomeLayout";
+import { useLongPress } from "../composables/useLongPress";
 import HolidayGreeting from "../components/holiday/HolidayGreeting.vue";
 
 // Chargée à la demande : la carte tire le moteur de calcul des horaires
@@ -141,6 +134,17 @@ const officesInDeck = ref(false);
 /** Le parcours a commencé : la lune et le 'Omer sont des cartes de la pile. */
 const parcoursBegun = ref(false);
 
+/** L'ordre des blocs sous le paquet, et ceux qu'on a masqués (useHomeLayout). */
+const { layout: homeLayout } = useHomeLayout();
+
+// Un appui long sur un bloc (au doigt) ouvre le réglage de l'accueil. Le
+// paquet a le sien (la fiche de la carte), et la barre de la journée s'y
+// touche : ils n'en sont pas.
+const editPress = useLongPress(
+  (target) => !target.closest(".dk, .day-bar, .deck-more, input"),
+  () => void router.push("/accueil/modifier"),
+);
+
 const firstName = computed(
   () => (user.value?.name ?? "").split(" ")[0] || user.value?.name || t("common.anonymousUser"),
 );
@@ -148,54 +152,6 @@ const greeting = computed(() => {
   const hour = new Date().getHours();
   return hour >= 18 || hour < 5 ? t("home.dashboard.helloEvening") : t("home.dashboard.hello");
 });
-
-const features = computed<
-  { illustration: Component; title: string; description: string; route: string }[]
->(() => [
-  {
-    illustration: IllustrationPartage,
-    title: t("home.features.shareReading.title"),
-    description: t("home.features.shareReading.description"),
-    route: "share-reading",
-  },
-  {
-    illustration: IllustrationChiourim,
-    title: t("home.features.chiourim.title"),
-    description: t("home.features.chiourim.description"),
-    route: "chiourim",
-  },
-  {
-    illustration: IllustrationBibliotheque,
-    title: t("home.features.study.title"),
-    description: t("home.features.study.description"),
-    route: "bibliotheque",
-  },
-]);
-
-/**
- * Les trois portes, deux mises en page.
- *
- * Dans l'app, l'écran est étroit et la barre du bas attend juste en dessous :
- * les trois tiennent sur une seule ligne, un dessin et un titre, sans la
- * phrase de présentation. On sait ce qu'est la bibliothèque quand on a
- * installé l'app ; la phrase servait au visiteur du site.
- *
- * Sur le web, elles s'empilent en lignes sur un téléphone (texte à gauche,
- * dessin à droite, la place y est en largeur) et se rangent côte à côte,
- * centrées sous leur dessin, dès qu'il y a trois colonnes. Rien ne les sépare
- * qu'un écart : un filet entre elles redessinait les cases dont on venait de
- * les sortir.
- */
-const doorsClass = isNativeApp
-  ? "grid grid-cols-3 gap-2"
-  : "grid grid-cols-1 gap-2 md:grid-cols-3 md:gap-8";
-const doorClass = isNativeApp
-  ? "flex flex-col items-center gap-2 px-1 py-3 text-center"
-  : "flex items-center gap-5 py-4 text-left md:flex-col md:items-center md:gap-4 md:py-2 md:text-center";
-const doorIllustrationClass = isNativeApp
-  ? "h-14 w-14"
-  : "order-2 h-24 w-24 sm:h-28 sm:w-28 md:order-1 md:h-24 md:w-24";
-const doorTitleClass = isNativeApp ? "text-base leading-snug" : "text-2xl md:text-3xl";
 
 // Ce que voit un visiteur qui (re)vient : la landing anonyme ou le tableau de
 // bord connecté. Une seule capture, au premier état d'auth connu.
@@ -285,8 +241,13 @@ onUnmounted(() => {
         <AnnouncementsBanner class="mt-4" />
       </div>
 
+      <!-- Le paquet du jour, toujours en tête ; dessous, les blocs dans l'ordre
+           qu'on leur a donné (P2-AccueilModifier). Un appui long sur un bloc,
+           ou « Modifier l'accueil » en bas, ouvre leur réglage. Un bloc qui
+           n'a rien à dire s'efface de lui-même. -->
       <div
-        class="w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 md:items-start gap-[26px] md:gap-6"
+        class="home-blocks w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 md:items-start gap-[26px] md:gap-6"
+        v-bind="editPress"
       >
         <!-- Mon parcours : le paquet du jour, sa barre, le portefeuille. -->
         <ParcoursHub
@@ -295,37 +256,54 @@ onUnmounted(() => {
           @begun="(begun) => (parcoursBegun = begun)"
         />
 
-        <div class="flex flex-col gap-3">
-          <!-- Horaires du jour : calculés sur l'appareil, rien à charger. -->
-          <ZmanimCard
-            class="dash-card"
-            style="--enter-delay: 0.1s"
-            place-first
-            @click="trackCard('zmanim')"
-          />
+        <template v-for="block in homeLayout.order" :key="block">
+          <div v-if="block === 'horaires'" class="flex flex-col gap-3">
+            <!-- Horaires du jour : calculés sur l'appareil, rien à charger. -->
+            <ZmanimCard
+              class="dash-card"
+              style="--enter-delay: 0.1s"
+              place-first
+              @click="trackCard('zmanim')"
+            />
 
-          <!-- C'est le temps d'une prière : le sidour à un geste, avec l'heure
-               limite. Absent entre deux offices, et quand le paquet du
-               parcours porte déjà les offices. -->
-          <SidourNowCard v-if="!officesInDeck" />
+            <!-- C'est le temps d'une prière : le sidour à un geste, avec l'heure
+                 limite. Absent entre deux offices, et quand le paquet du
+                 parcours porte déjà les offices. -->
+            <SidourNowCard v-if="!officesInDeck" />
 
-          <!-- La bénédiction de la lune : une fenêtre de quelques nuits par
-               mois, qui se rate faute de rappel. Absente le reste du temps,
-               et quand le parcours a commencé : sa carte est dans la pile,
-               avec celle du 'Omer. -->
-          <template v-if="!parcoursBegun">
-            <BirkatHalevanaBanner />
-            <OmerBanner />
-          </template>
+            <!-- La bénédiction de la lune : une fenêtre de quelques nuits par
+                 mois, qui se rate faute de rappel. Absente le reste du temps,
+                 et quand le parcours a commencé : sa carte est dans la pile,
+                 avec celle du 'Omer. -->
+            <template v-if="!parcoursBegun">
+              <BirkatHalevanaBanner />
+              <OmerBanner />
+            </template>
+          </div>
+
+          <!-- L'étagère du parcours : un volume par objectif qui se lit. -->
+          <HomeShelf v-else-if="block === 'volumes'" class="md:col-span-2" />
+
+          <!-- Les trois portes du site. -->
+          <HomeDoors v-else-if="block === 'portes'" class="md:col-span-2" @open="trackCard" />
+
+          <!-- Reprendre la dernière lecture, au verset près. -->
+          <HomeResume v-else-if="block === 'reprendre'" @open="trackCard('resume')" />
 
           <!-- Ce qu'on a inscrit soi-même au calendrier : un anniversaire, un
                leilouy nichmat. Absent le reste de l'année. -->
-          <OccasionsBanner />
-        </div>
+          <OccasionsBanner v-else-if="block === 'dates'" />
+        </template>
       </div>
 
-      <!-- L'étagère du parcours : un volume par objectif qui se lit. -->
-      <HomeShelf class="w-full max-w-6xl mx-auto mt-[34px] mb-10" />
+      <p class="mt-[22px] mb-10 text-center">
+        <RouterLink
+          to="/accueil/modifier"
+          class="text-[13px] font-semibold text-text-secondary underline underline-offset-4"
+        >
+          {{ t("home.edit.link") }}
+        </RouterLink>
+      </p>
     </template>
 
     <!-- ===== Site, sans compte : invitation à gauche, horaires du jour à
@@ -388,46 +366,9 @@ onUnmounted(() => {
     </div>
 
     <div class="w-full max-w-6xl mx-auto">
-      <!-- Les trois portes du site, posées à même le fond : sans cadre. Elles
-           ne sont pas une donnée à consulter mais un endroit où aller, et le
-           cadre les mettait au même rang que les cartes du tableau de bord
-           juste au-dessus. Sans lui, les seules surfaces blanches de la page
-           sont celles qui répondent à une question (ma lecture, l'heure), et
-           l'accueil se lit en deux temps au lieu d'un empilement de boîtes.
-           Ce qui remplace le cadre : rien, qu'un écart entre elles, et au
-           survol le titre qui prend la couleur pendant que le dessin
-           s'anime. -->
-      <div class="mb-10 items-stretch" :class="doorsClass">
-        <button
-          v-for="(feature, index) in features"
-          :key="feature.title"
-          class="feature-link group cursor-pointer"
-          :class="doorClass"
-          :style="{ '--enter-delay': `${index * 0.12}s` }"
-          @click="
-            trackCard(`feature_${feature.route}`);
-            router.push(feature.route);
-          "
-        >
-          <div class="shrink-0 text-primary" :class="doorIllustrationClass">
-            <component :is="feature.illustration" />
-          </div>
-          <div class="order-1 min-w-0 flex-1 md:order-2">
-            <h3
-              class="font-display font-bold tracking-tight text-text-primary transition-colors group-hover:text-primary"
-              :class="doorTitleClass"
-            >
-              {{ feature.title }}
-            </h3>
-            <p
-              v-if="!isNativeApp"
-              class="mt-1.5 text-sm leading-relaxed text-text-secondary md:text-base"
-            >
-              {{ feature.description }}
-            </p>
-          </div>
-        </button>
-      </div>
+      <!-- Les trois portes du site (HomeDoors). Sur le tableau de bord, elles
+           sont un bloc qu'on range ou qu'on masque, avec les autres. -->
+      <HomeDoors v-if="!dashboard" class="mb-10" @open="trackCard" />
 
       <div class="text-center max-w-2xl mx-auto enter-rise" style="--enter-delay: 0.4s">
         <p class="font-serif italic text-text-secondary">{{ t("home.memorial.title") }}</p>
@@ -481,7 +422,11 @@ onUnmounted(() => {
 
 <style scoped>
 /* Staggered entrance: cards, greeting/hero and memorial all rise into place. */
-.feature-link,
+/* L'appui long ouvre le réglage de l'accueil : pas l'aperçu du lien que le
+   système proposerait. */
+.home-blocks {
+  -webkit-touch-callout: none;
+}
 .dash-card,
 .enter-rise {
   opacity: 0;
@@ -498,7 +443,6 @@ onUnmounted(() => {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .feature-link,
   .dash-card,
   .enter-rise {
     animation: none;

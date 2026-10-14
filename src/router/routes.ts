@@ -34,6 +34,7 @@ const SerieChiourimPage = () => import("../views/Chiourim/SerieChiourimPage.vue"
 const TextReadingPage = () => import("../views/TextReading/TextReadingPage.vue");
 const StudyPage = () => import("../views/StudyPage.vue");
 const SidourPage = () => import("../views/SidourPage.vue");
+const HomeEditPage = () => import("../views/HomeEditPage.vue");
 const ParcoursPage = () => import("../views/Parcours/ParcoursPage.vue");
 const JourneePage = () => import("../views/Parcours/JourneePage.vue");
 const MurPage = () => import("../views/Parcours/MurPage.vue");
@@ -214,6 +215,14 @@ export default [
     path: "/bibliotheque/lecture-du-jour",
     name: "daily-reading",
     redirect: "/parcours/journee",
+  },
+  // L'accueil à son goût : l'ordre des blocs, ceux qu'on masque. Un réglage
+  // de l'appareil ; sur le site, comme le tableau de bord, pour un compte.
+  {
+    path: "/accueil/modifier",
+    name: "home-edit",
+    meta: { requiresAuth: !isNativeApp, offlineOk: isNativeApp },
+    component: HomeEditPage,
   },
   // Mon parcours : programmes, habitudes, la journée et le mur. Dans l'app,
   // tout marche sans compte, sur l'appareil, et sans réseau ; sur le site,

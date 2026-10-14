@@ -756,6 +756,13 @@ alors `kind` (**nouvelle propriété**), le genre de l'objectif : `program`,
 `catch_up` (« Rattraper ») pour une carte en plus. `daily_reading` ne part plus : la carte de la
 lecture du jour a laissé place au paquet.
 
+### `home_block_moved`, `home_block_hidden`, `home_block_shown` (nouveaux)
+
+L'accueil à son goût (`/accueil/modifier`) : un bloc déplacé, masqué, ou
+remis. `block` : `horaires`, `volumes`, `portes`, `reprendre`, `dates` ; et
+pour un déplacement, `to`, sa nouvelle place (0 juste sous le paquet du jour).
+`home_card_clicked` prend aussi `card: resume`, le bloc « Reprendre ».
+
 ### `parcours_units_marked` (nouveau)
 
 Les cases d'une portion, cochées une à une sur la page d'un programme à la semaine (« Où j'en suis cette semaine »).

@@ -242,6 +242,26 @@ const en: LocaleMessages = {
     },
   },
   home: {
+    edit: {
+      title: "Your home page",
+      hint: "Drag a block to move it.",
+      done: "Done",
+      alwaysFirst: "Always first",
+      deck: "Today's deck",
+      hide: "Hide",
+      hideLabel: "Hide {name}",
+      tileLabel: "{name}, drag to move",
+      back: "To put back on the home page",
+      note: "You get here with a long press on any block of the home page, or with “Edit the home page” at the bottom. A block with nothing to say hides itself.",
+      link: "Edit the home page",
+      blocks: {
+        volumes: { title: "My volumes", sub: "the programs in progress, on their shelf" },
+        horaires: { title: "Today's times", sub: "the next time, in large" },
+        portes: { title: "Library, Shiurim, Sharing", sub: "the three doors" },
+        reprendre: { title: "Resume", sub: "the last text read" },
+        dates: { title: "My dates", sub: "a birthday, a leiluy nishmat" },
+      },
+    },
     omer: {
       day: "Day {n} of the Omer",
       dayOne: "Day 1 of the Omer",

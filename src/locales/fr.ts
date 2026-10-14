@@ -244,6 +244,26 @@ const fr = {
     },
   },
   home: {
+    edit: {
+      title: "Votre accueil",
+      hint: "Glissez un bloc pour le déplacer.",
+      done: "Terminé",
+      alwaysFirst: "Toujours en tête",
+      deck: "Le paquet du jour",
+      hide: "Masquer",
+      hideLabel: "Masquer {name}",
+      tileLabel: "{name}, glisser pour déplacer",
+      back: "À remettre sur l'accueil",
+      note: "On arrive ici par un appui long sur n'importe quel bloc de l'accueil, ou par « Modifier l'accueil » en bas de page. Un bloc qui n'a rien à dire s'efface de lui-même.",
+      link: "Modifier l'accueil",
+      blocks: {
+        volumes: { title: "Mes volumes", sub: "les programmes en cours, sur leur planche" },
+        horaires: { title: "Horaires du jour", sub: "le prochain horaire, en grand" },
+        portes: { title: "Bibliothèque, Chiourim, Partage", sub: "les trois portes" },
+        reprendre: { title: "Reprendre", sub: "le dernier texte lu" },
+        dates: { title: "Mes dates", sub: "un anniversaire, un leilouy nichmat" },
+      },
+    },
     omer: {
       day: "{n}e jour du 'Omer",
       dayOne: "1er jour du 'Omer",

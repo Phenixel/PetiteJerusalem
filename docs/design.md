@@ -1695,6 +1695,17 @@ pas (« 2 sur 3 »), puis la question en grand, alignée au début.
   (`anchor`) et dit la carte (« Ce soir, après Arvit »). Les réglages
   d'une habitude prise reprennent le même écran.
 
+### L'accueil à son goût
+
+L'accueil se règle (P2-AccueilModifier, `/accueil/modifier`) : le paquet du
+jour reste en tête, toujours ; dessous, les blocs (les horaires, mes
+volumes, les trois portes, mes dates, et « Reprendre », à remettre) se
+glissent pour changer d'ordre et se masquent d'une pastille. Ils tremblent
+un peu, le temps du réglage : on peut les prendre. On y arrive par un appui
+long sur un bloc (au doigt), ou par « Modifier l'accueil » en bas de la
+page. C'est un réglage de l'appareil (`useHomeLayout`), et un bloc qui n'a
+rien à dire s'efface de lui-même.
+
 ## 2. Les couleurs de thème
 
 Deux couleurs, l'orange et le bleu de la palette du logo. Le fond et le mur
