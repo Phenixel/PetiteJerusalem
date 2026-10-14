@@ -148,10 +148,33 @@ function frenchTypography(s) {
     .replace(/,\s*,/g, ",")
     .replace(/\s+/g, " ")
     .replace(/(\S) ?([!?;]+)/g, "$1\u202f$2")
-    .replace(/(\S) ?:(?=\s|$|<|»)/g, "$1\u00a0:")
+    .replace(/(\S) ?:(?=\s|$|<|»|\]|\))/g, "$1\u00a0:")
     .replace(/« ?/g, "«\u00a0")
     .replace(/ ?»/g, "\u00a0»")
     .trim();
+}
+
+/**
+ * Un résultat dont le JSON ne se lit pas parce qu'une citation garde ses
+ * guillemets droits (« Dieu m'a dit : "À ta descendance…" »). Les agents
+ * écrivent une clé par ligne : on relit ligne à ligne, et chaque paire de
+ * guillemets droits non échappés devient une paire de guillemets français,
+ * ce que demande le guide. Null si le fichier n'a pas cette forme.
+ */
+function repairJson(text) {
+  const out = {};
+  for (const line of text.split("\n")) {
+    const m = line.match(/^\s*"([^"]+)"\s*:\s*"(.*)"\s*,?\s*$/);
+    if (!m) continue;
+    let open = false;
+    const value = m[2].replace(/(?<!\\)"/g, () => ((open = !open) ? "« " : " »"));
+    try {
+      out[m[1]] = JSON.parse(`"${value}"`);
+    } catch {
+      return null;
+    }
+  }
+  return Object.keys(out).length ? out : null;
 }
 
 /** Les balises <b> et <i> s'ouvrent et se ferment dans l'ordre. */
@@ -189,8 +212,11 @@ if (command === "collect") {
     try {
       result = readJson(resultPath);
     } catch {
-      redo.push({ id, why: "JSON illisible" });
-      continue;
+      result = repairJson(readFileSync(resultPath, "utf8"));
+      if (!result) {
+        redo.push({ id, why: "JSON illisible" });
+        continue;
+      }
     }
     const lot = readJson(join(OUT, "lots", `${id}.json`));
     const problems = [];

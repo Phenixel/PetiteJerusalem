@@ -159,13 +159,28 @@ pas de guemara de Babylone :
 Mesuré en lignes du lecteur (un verset, une michna, une phrase de guemara) à
 la construction :
 
-| Corpus              | Anglais |      Français |
-| ------------------- | ------: | ------------: |
-| Tanakh et Tehilim   |   100 % |         100 % |
-| Michna              |   100 % |          60 % |
-| Talmud              |  99,6 % | Chekalim seul |
-| Rachi (chnei mikra) |  99,5 % |             0 |
-| 'Hovot Halévavot    |    98 % |             0 |
+| Corpus              | Anglais |                       Français |
+| ------------------- | ------: | -----------------------------: |
+| Tanakh et Tehilim   |   100 % |                          100 % |
+| Michna              |   100 % |   100 % (60 % humain, 40 % IA) |
+| Talmud              |  99,6 % | en cours (IA), Chekalim humain |
+| Rachi (chnei mikra) |  99,5 % |                    99,5 % (IA) |
+| 'Hovot Halévavot    |    98 % |                      98 % (IA) |
+
+### La traduction française assistée par IA
+
+Ce qui n'existe qu'en anglais est traduit en français par des agents (Claude
+Sonnet), à partir de la traduction anglaise humaine et de l'hébreu, en
+suivant `docs/traduction-ia.md` : c'est une première version, à relire. Les
+lignes traduites vivent dans `data/traductions-ia/fr/<fichier>`, à la clé de
+leur ligne, et `download-translations.mjs` les prend en dernier, après toute
+traduction humaine. Le pied du texte le dit : « Traduction : Joshua Kulp
+(traduit de l'anglais par IA) ». La licence est celle de la traduction
+anglaise d'où elle vient (une adaptation la garde).
+
+`scripts/translate-ia.mjs` découpe le travail en lots et rassemble les
+résultats (vérifiés ligne à ligne : complets, en français, gras et italique
+gardés, typographie du dépôt) ; un lot refusé repasse au tour suivant.
 
 Les quelques lignes sans traduction sont celles que l'alignement ne retrouve
 pas chez Sefaria (une phrase de guemara découpée autrement) : elles restent
@@ -222,8 +237,9 @@ même réglage, Rachi compris. Au pied du texte, le nom du traducteur
 
 ### Ce qui reste à faire
 
-- **Le français qui manque** (Talmud, Rachi, 'Hovot Halévavot, 40 % de la
-  Michna) : voir plus haut ; à trouver ou à demander.
+- **Le français assisté par IA** est à relire, et à remplacer par une
+  traduction humaine dès qu'on en obtient une (voir « Pour aller plus loin
+  en français : demander »).
 - **Le Pélé Yoets** n'a de traduction libre dans aucune langue.
 - **Hors ligne** : télécharger un livre ne télécharge pas sa traduction.
   Hors connexion, la commande ne se propose pas (son index ne se lit pas) ;

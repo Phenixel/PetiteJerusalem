@@ -11,8 +11,9 @@ relue ensuite : elle doit être fidèle avant d'être élégante.
 Un lot est un fichier JSON : `{ id, rel, corpus, items: [{ k, en, he? }] }`.
 On écrit un seul objet JSON, `{ "<k>": "<traduction française>", … }`, avec
 **toutes** les clés `k` du lot, et rien d'autre (ni commentaire, ni clé en
-plus). Le JSON doit être valide : un guillemet droit `"` dans le texte
-s'échappe (`\"`) ; mieux, une citation prend les guillemets français « ».
+plus). Le JSON doit être valide : **aucun guillemet droit `"` dans le
+texte traduit**. Une citation prend les guillemets français « », même si
+l'anglais a des guillemets droits ou courbes.
 
 ## La fidélité
 

@@ -149,9 +149,10 @@ describe("traductions des textes", () => {
       "Tehilim/fr": 0.99,
       "Tehilim/en": 0.99,
       "Mishna/en": 0.99,
-      "Mishna/fr": 0.55,
+      "Mishna/fr": 0.99,
       "Talmud Bavli/en": 0.99,
       "Moussar/en": 0.95,
+      "Moussar/fr": 0.95,
     };
     const chapters = read("/texts/talmud-chapters.json") as TalmudChapters;
     const counts = new Map<string, { lines: number; translated: number }>();
@@ -171,16 +172,18 @@ describe("traductions des textes", () => {
     }
     // 'Hovot Halévavot seulement : le Pélé Yoets n'a pas de traduction.
     const hovot = entries.filter((e) => e.type === "Moussar" && Number(e.id) <= 410);
-    const moussar = { lines: 0, translated: 0 };
-    for (const entry of hovot) {
-      const path = resolveFilePath(entry);
-      const content = parseContent(entry, read(path), {}, read(translationOf(path, "en")));
-      for (const section of content.sections) {
-        moussar.lines += section.he.length;
-        moussar.translated += (section.tr ?? []).filter(Boolean).length;
+    for (const lang of ["en", "fr"]) {
+      const moussar = { lines: 0, translated: 0 };
+      for (const entry of hovot) {
+        const path = resolveFilePath(entry);
+        const content = parseContent(entry, read(path), {}, read(translationOf(path, lang)));
+        for (const section of content.sections) {
+          moussar.lines += section.he.length;
+          moussar.translated += (section.tr ?? []).filter(Boolean).length;
+        }
       }
+      counts.set(`Moussar/${lang}`, moussar);
     }
-    counts.set("Moussar/en", moussar);
     for (const [key, minimum] of Object.entries(MINIMUM)) {
       const count = counts.get(key);
       expect(count, `${key}`).toBeDefined();

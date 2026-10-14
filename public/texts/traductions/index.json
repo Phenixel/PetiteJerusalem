@@ -1,7 +1,8 @@
 {
   "files": {
     "/texts/mishna/arakhin.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/mishna/avodah-zarah.json": [
       "en",
@@ -28,7 +29,8 @@
       "fr"
     ],
     "/texts/mishna/bekhorot.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/mishna/berakhot.json": [
       "en",
@@ -47,7 +49,8 @@
       "fr"
     ],
     "/texts/mishna/chullin.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/mishna/demai.json": [
       "en",
@@ -66,10 +69,12 @@
       "fr"
     ],
     "/texts/mishna/keilim.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/mishna/keritot.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/mishna/ketubot.json": [
       "en",
@@ -84,7 +89,8 @@
       "fr"
     ],
     "/texts/mishna/kinnim.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/mishna/maaser-sheni.json": [
       "en",
@@ -95,7 +101,8 @@
       "fr"
     ],
     "/texts/mishna/makhshirin.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/mishna/makkot.json": [
       "en",
@@ -106,16 +113,20 @@
       "fr"
     ],
     "/texts/mishna/meilah.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/mishna/menachot.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/mishna/middot.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/mishna/mikvaot.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/mishna/moed-katan.json": [
       "en",
@@ -130,24 +141,28 @@
       "fr"
     ],
     "/texts/mishna/negaim.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/mishna/niddah.json": [
       "en",
       "fr"
     ],
     "/texts/mishna/oholot.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/mishna/oktzin.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/mishna/orlah.json": [
       "en",
       "fr"
     ],
     "/texts/mishna/parah.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/mishna/peah.json": [
       "en",
@@ -194,23 +209,28 @@
       "fr"
     ],
     "/texts/mishna/tamid.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/mishna/temurah.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/mishna/terumot.json": [
       "en",
       "fr"
     ],
     "/texts/mishna/tevul-yom.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/mishna/toharot.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/mishna/yadayim.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/mishna/yevamot.json": [
       "en",
@@ -221,205 +241,272 @@
       "fr"
     ],
     "/texts/mishna/zavim.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/mishna/zevachim.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/moussar/400.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/moussar/401.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/moussar/402.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/moussar/403.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/moussar/404.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/moussar/405.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/moussar/406.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/moussar/407.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/moussar/408.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/moussar/409.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/moussar/410.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/rashi/264.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/rashi/265.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/rashi/266.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/rashi/267.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/rashi/268.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/rashi/269.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/rashi/270.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/rashi/271.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/rashi/272.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/rashi/273.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/rashi/274.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/rashi/275.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/rashi/276.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/rashi/277.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/rashi/278.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/rashi/279.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/rashi/280.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/rashi/281.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/rashi/282.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/rashi/283.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/rashi/284.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/rashi/285.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/rashi/286.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/rashi/287.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/rashi/288.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/rashi/289.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/rashi/290.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/rashi/291.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/rashi/292.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/rashi/293.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/rashi/294.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/rashi/295.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/rashi/296.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/rashi/297.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/rashi/298.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/rashi/299.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/rashi/300.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/rashi/301.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/rashi/302.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/rashi/303.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/rashi/304.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/rashi/305.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/rashi/306.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/rashi/307.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/rashi/308.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/rashi/309.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/rashi/310.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/rashi/311.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/rashi/312.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/rashi/313.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/rashi/314.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/rashi/315.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/rashi/316.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/rashi/317.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/talmud/arakhin.json": [
       "en"
@@ -443,7 +530,8 @@
       "en"
     ],
     "/texts/talmud/berakhot.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/talmud/chagigah.json": [
       "en"
