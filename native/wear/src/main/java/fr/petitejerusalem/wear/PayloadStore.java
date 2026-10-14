@@ -28,7 +28,7 @@ public final class PayloadStore {
     public static final String[] KEYS = {KEY_ZMANIM, KEY_DAILY, KEY_WATCH};
 
     /** Accent des payloads d'avant la couleur de thème (le bleu d'origine). */
-    public static final int FALLBACK_ACCENT = 0xFFDE4F17;
+    public static final int FALLBACK_ACCENT = 0xFFD46D01;
 
     private static final String STORE = "pj_watch";
 

@@ -34,7 +34,7 @@ const chiourim = ref<ChiourDoc[]>([]);
 const auteurs = ref<AuteurWithId[]>([]);
 const series = ref<SerieWithId[]>([]);
 
-const FILTERS = ["all", "draft", "published", "noAuteur", "noSerie"] as const;
+const FILTERS = ["all", "draft", "published", "noAuteur", "noSerie", "noTexte"] as const;
 type Filter = (typeof FILTERS)[number];
 const filter = useAdminQueryFilter<Filter>(FILTERS, "all");
 const search = ref("");
@@ -83,6 +83,8 @@ const matches: Record<Filter, (c: ChiourDoc) => boolean> = {
   published: (c) => c.published,
   noAuteur: (c) => !c.auteurId,
   noSerie: (c) => !c.serieId,
+  // Les cours qui ne disent pas encore le livre qu'ils étudient.
+  noTexte: (c) => typeof c.texteId !== "number",
 };
 
 const filterItems = computed(() =>

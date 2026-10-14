@@ -1,8 +1,9 @@
 import { holidayThemeOn, type HolidayThemeId } from "../services/holidayThemes";
 
 /**
- * La fête en cours et son livre dans Moadim : la liste de Moadim s'ouvre sur
- * lui, et le sidour y renvoie tant qu'elle dure (MoadimNowBanner).
+ * La fête en cours et son livre dans Moadim. La page du Sidour s'en sert pour
+ * nommer les livres des fêtes (content/sidourGroups) ; elle fait remonter le
+ * livre de la fête selon son propre calendrier (services/sidourMoment).
  *
  * La fenêtre est celle des thèmes des fêtes (holidayThemeOn), qui ne dépend
  * que du calendrier, pas du réglage du thème : les Sli'hot et l'Atarat

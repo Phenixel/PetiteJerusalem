@@ -283,7 +283,7 @@ const transform = computed(() => `translateX(${-shift.value * direction}px)`);
     <button
       v-if="canRemind"
       type="button"
-      class="absolute inset-y-0 end-0 flex items-center justify-center overflow-hidden bg-primary text-white"
+      class="absolute inset-y-0 end-0 flex items-center justify-center overflow-hidden bg-brand text-on-brand"
       :style="{ width: `${drawer}px`, transition: sliding ? 'none' : 'width 0.2s ease' }"
       :tabindex="expanded ? 0 : -1"
       :aria-hidden="!expanded"

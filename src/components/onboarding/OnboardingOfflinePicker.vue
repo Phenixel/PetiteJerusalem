@@ -153,7 +153,7 @@ async function downloadSelection(): Promise<void> {
               row.missing === 0
                 ? 'bg-green-600/10 text-green-600 dark:text-green-400'
                 : selected.has(row.corpus.key)
-                  ? 'bg-primary text-white'
+                  ? 'bg-brand text-on-brand'
                   : 'bg-black/5 dark:bg-white/10 text-transparent'
             "
           >

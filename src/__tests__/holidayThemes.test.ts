@@ -136,7 +136,7 @@ describe("le calendrier des thèmes de fête", () => {
       // Et en encre sur le fond sombre, où les trois thèmes choisis tiennent.
       const ratios = {
         id: theme.id,
-        beige: contrast(theme.primary, "#f4f1ea") >= 3.1,
+        beige: contrast(theme.primary, "#fff9f3") >= 3.1,
         white: contrast(theme.primary, "#ffffff") >= 3.5,
         dark: contrast(theme.primary, "#111827") >= 3.3,
       };

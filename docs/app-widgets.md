@@ -43,7 +43,7 @@ propose, qui n'ouvrent chacun qu'une page :
 | Raccourci | Ouvre | Ce qu'il montre |
 |---|---|---|
 | Bibliothèque | `/bibliotheque` | une étagère de volumes reliés ; en format moyen, les quatre livres portent leur titre |
-| Sidour | `/bibliotheque/sidour` | le livre du sidour, titre sur la couverture |
+| Sidour | `/bibliotheque/sidour` (redirigé vers `/sidour`) | le livre du sidour, titre sur la couverture |
 | Tehilim | `/bibliotheque/tehilim` | le livre des Tehilim, idem |
 | Prochain horaire | `/horaires` | l'heure du prochain zman, en grand, et son nom en dessous |
 | Avancement de la lecture | `/bibliotheque/lecture-du-jour` | un anneau qui se remplit au fil des coches, et son pourcentage |

@@ -197,27 +197,117 @@ sert à l'office en communauté plutôt qu'à la prière seul.
 
 ## Bibliothèque
 
-### `moadim_now_opened` (nouveau)
+### `moadim_now_opened` (nouveau, plus posé)
 
 L'encart posé en tête du sidour le temps d'une fête (`MoadimNowBanner`), qui
 mène aux textes de la fête dans Moadim. Il dit si l'on cherche ces textes
 depuis le sidour.
+
+N'est plus posé depuis la page du Sidour (octobre 2026, voir « Sidour et
+Étude ») : la liste du sidour a disparu avec son encart, et les textes de la
+fête remontent d'eux-mêmes en tête de la page. Le nom reste réservé, et ses
+données passées gardent leur sens.
 
 | Propriété  | Valeurs                                                   | Statut      |
 | ---------- | --------------------------------------------------------- | ----------- |
 | `source`   | `library_sidour`                                          | **nouveau** |
 | `festival` | le livre de la fête, `Souccot`, `Yamim Noraim`, `Hanouka` | **nouveau** |
 
-### `sidour_brahot_opened` (nouveau)
+### `sidour_brahot_opened` (nouveau, plus posé)
 
 Le lien « Vous cherchez le Birkat Hamazon ou une autre brakha ? », en tête du
 sidour (`SidourBrahotLink`), qui mène au livre des Brahot. Il dit combien de
 lecteurs viennent chercher le Birkat Hamazon ou une brakha dans le sidour.
 
+N'est plus posé depuis la page du Sidour (octobre 2026) : les brahot y sont
+dans la même liste que les offices. Le nom reste réservé.
+
 | Propriété    | Valeurs                                            | Statut      |
 | ------------ | -------------------------------------------------- | ----------- |
 | `source`     | `library_sidour`                                   | **nouveau** |
 | `had_search` | booléen : une recherche était tapée dans le sidour | **nouveau** |
+
+## Sidour et Étude (octobre 2026)
+
+La barre du bas de l'app devient Accueil, Sidour, horaires, Étude, Profil
+(voir `docs/design.md`, « Le Sidour s'ouvre sur le moment »). Rien n'est
+renommé ni retiré : deux événements s'ajoutent pour la nouvelle page, et
+quelques propriétés prennent une valeur de plus.
+
+### `sidour_viewed` (nouveau)
+
+L'arrivée sur la page du Sidour (`/sidour`). Il dit ce que la carte du moment
+proposait à ce moment-là : le dénominateur de `sidour_text_opened`, et de quoi
+voir si l'on vient au Sidour à l'heure des offices.
+
+| Propriété | Valeurs | Statut |
+| --- | --- | --- |
+| `hero` | `chaharit`, `minha`, `arvit` (l'office dont c'est l'heure), `next_chaharit`, `next_minha`, `next_arvit` (celui qui vient, entre deux plages), `hanouka`, `slihot`, `halevana` (la bénédiction de la lune, les nuits où elle se dit), `feast` (entre deux offices, le texte de la fête en cours ; `feast` dit laquelle), ou `null` | **nouveau** |
+| `feast` | la fête dont les textes remontent en tête : `tichri`, `souccot`, `hanouka`, ou `null` | **nouveau** |
+
+### `sidour_text_opened` (nouveau)
+
+Un texte ouvert depuis la page du Sidour. Il dit si la carte du moment sert,
+et ce qu'on cherche dans la liste.
+
+| Propriété | Valeurs | Statut |
+| --- | --- | --- |
+| `text` | le texte, `corpus/slug` (`sidour/chaharit`, `brahot/birkat-hamazon`...) | **nouveau** |
+| `source` | `hero` (la carte du moment), `extra` (la ligne sous elle, un soir d'occasion : l'office ou la havdala), `list` (la liste) | **nouveau** |
+| `section` | pour `list`, le groupe : `offices`, `soir`, `brahot`, `occasions`, `vie`, `fetes`, ou la fête en tête (`tichri`, `souccot`, `hanouka`) ; `null` sinon | **nouveau** |
+| `feast` | comme sur `sidour_viewed` | **nouveau** |
+
+### Les outils : `kotel_compass_opened`, `tefilin_mirror_opened` (existants), `naanouim_compass_opened` (existant, une propriété de plus)
+
+La page du Sidour porte une rangée d'outils (voir `docs/design.md`, « Les
+outils du Sidour ») : ils gardent leurs événements, qui disent d'où on les
+ouvre. Le dénominateur des ouvertures depuis le Sidour est `sidour_viewed`.
+
+| Événement | Propriété | Valeurs | Statut |
+| --- | --- | --- | --- |
+| `kotel_compass_opened` | `source` | `title` (le titre du passage), `menu` (le menu de lecture), `sidour` (la rangée d'outils) | `sidour` **nouveau** |
+| `tefilin_mirror_opened` | `source` | `title`, `menu`, `sidour` | `sidour` **nouveau** |
+| `naanouim_compass_opened` | `source` | `title` (le titre des brahot du loulav), `rubric` (une consigne du Hallel), `sidour` | **nouveau** : l'événement n'avait pas de propriété |
+
+### `kotel_compass_calibration_opened` (nouveau)
+
+On touche « Calibrer » sous la boussole du Kotel (voir `docs/design.md`, « La
+boussole se demande en l'ouvrant, dit sa précision, et se tient à plat »).
+Rapporté à `kotel_compass_opened`, il dit combien de gens doutent de la
+flèche ; `accuracy` dit si c'est la précision affichée qui les y a poussés.
+
+| Propriété | Valeurs | Statut |
+| --- | --- | --- |
+| `accuracy` | la précision affichée au moment du toucher : `high`, `medium`, `low`, ou `unknown` quand l'appareil ne la donne pas (Chrome sur le site) | **nouveau** |
+
+### Valeurs ajoutées à des propriétés existantes
+
+| Événement | Propriété | Valeur ajoutée | Ce qu'elle dit |
+| --- | --- | --- | --- |
+| `library_tab_switched` | `tab` | `chiourim` | les onglets de l'Étude sont trois : `reading` (la bibliothèque), `chiourim`, `sharing`. Le nom de l'événement reste celui d'origine. |
+| `text_opened` | `entry` | `sidour` | la lecture s'ouvre depuis la page du Sidour (`services/readingEntry.ts`). |
+| `tehilim_day_opened` | `source` | `library_today` | depuis « Aujourd'hui », en bas de la bibliothèque. |
+| `chnei_mikra_opened` | `source` | `library_today` | idem. |
+| `offline_download_completed` | `scope` | `feast` | les textes de la fête, téléchargés d'eux-mêmes quand ils remontent en tête du Sidour (app) ; `tab` porte alors la fête (`tichri`, `souccot`, `hanouka`). |
+
+`library_corpus_opened` ne porte plus que les corpus d'étude (`tehilim`,
+`michna`, `talmud`, `tanakh`) : les listes de liturgie mènent au Sidour.
+`library_search_result_opened` peut porter un `corpus` de liturgie (`Sidour`,
+`Brahot`, `Moadim`) : ce sont les résultats rangés « Dans le Sidour ».
+`offline_download_started`, `offline_download_completed` et
+`offline_download_deleted` posés par la ligne « Hors ligne » gardent
+`tab: Tout`, pour l'étude entière. Sa corbeille libère aussi les textes du
+Sidour téléchargés à part (ceux d'une fête, d'anciennes copies des brahot) :
+`books_count` les compte avec le reste.
+
+`offline_download_delete_failed` (existant, jamais documenté) part quand la
+corbeille échoue, depuis la ligne « Hors ligne » comme depuis une page de
+livre. Mêmes propriétés que `offline_download_deleted` (`scope`, `tab`,
+`books_count`), plus `error_message`, le message de l'erreur.
+
+Le téléchargement des textes de la fête (`scope: feast`) ne part qu'en
+ligne, et un seul à la fois : hors connexion, il attend une visite suivante
+au lieu d'envoyer un lot vide.
 
 ## Chaîne perpétuelle de Tehilim
 
@@ -317,11 +407,12 @@ injoignable). Voir `composables/useBookDownload.ts` et
 | Propriété | Valeurs | Statut |
 | --- | --- | --- |
 | `source` | `library`, `session` | existant, conservé |
-| `entry` | `search`, `resume`, `push`, `home`, `library`, `daily_reading`, `chnei_mikra`, `tehilim_day`, `reading`, `zmanim`, `calendar`, `session`, `direct`, `other` | **nouveau** |
+| `entry` | `search`, `resume`, `push`, `home`, `library`, `sidour`, `daily_reading`, `chnei_mikra`, `tehilim_day`, `reading`, `zmanim`, `calendar`, `session`, `direct`, `other` | **nouveau** |
 
 `entry` dit d'où l'on arrive (`services/readingEntry.ts`) : un indice laissé
 juste avant la navigation quand l'adresse ne peut pas le dire (un résultat de
-recherche, « Reprendre ma lecture », une notification), sinon la page
+recherche, « Reprendre ma lecture », une notification, un texte rouvert
+depuis la table d'étude, `table`, **nouvelle valeur**), sinon la page
 précédente. `reading` : depuis un autre texte (psaume suivant, office
 suivant) ; `direct` : sans page précédente (widget, lien partagé, moteur de
 recherche, page rechargée).
@@ -374,6 +465,54 @@ dit si la largeur par défaut convient à qui étudie.
 | ---------------------- | ---------------- | ------------------------------------------------------- | ----------- |
 | `commentaries_resized` | `width`          | la largeur choisie, en pixels ; `null` quand on la rétablit | **nouveau** |
 | `commentaries_resized` | `viewport_width` | la largeur de la fenêtre, en pixels                     | **nouveau** |
+
+### La table d'étude
+
+Les textes mis de côté pour passer de l'un à l'autre (docs/design.md, « Des
+textes mis de côté, sur la table »). Tous **nouveaux**.
+
+#### `text_set_aside`
+
+Un texte posé sur la table.
+
+| Propriété | Valeurs |
+| --- | --- |
+| `text_id` | l'identifiant du texte dans le catalogue |
+| `corpus` | son rayon (`tanakh`, `talmud`, `moussar`...) ; jamais un texte du Sidour, qui ne se pose pas sur la table |
+| `texts_count` | le nombre de textes sur la table une fois celui-ci posé |
+| `from` | `header` (le bouton en tête du texte), `menu` (le menu de lecture), `table` (« Poser aussi », depuis le panneau) |
+| `already_on_table` | le texte y était déjà, il n'a fait que retenir sa page (absent pour `from: table`) |
+
+#### `reading_table_opened`
+
+Le panneau de la table ouvert depuis la barre (la flèche, le livre du texte
+lu, un glissement vers le haut). `texts_count` : les textes posés.
+
+#### `reading_table_text_opened`
+
+Un texte rouvert depuis la table : un livre de la barre, ou une ligne du
+panneau. Le `text_opened` qui suit porte `entry: table`.
+
+| Propriété | Valeurs |
+| --- | --- |
+| `text_id` | l'identifiant du texte |
+| `corpus` | son rayon |
+| `texts_count` | les textes posés |
+| `was_open` | c'était le texte déjà à l'écran (le panneau se referme seulement) |
+| `from` | `bar` (un livre de la barre), `table` (une ligne du panneau) |
+
+#### `reading_table_text_removed`
+
+Un texte rangé d'une croix. `text_id`, et `texts_count` : ceux qui restent.
+
+#### `reading_table_library_opened`
+
+« Retour à la bibliothèque », touché au bas de la table. `texts_count` : les
+textes posés.
+
+#### `reading_table_cleared`
+
+« Tout ranger », confirmé. `texts_count` : les textes rangés.
 
 ### Recherche
 
@@ -542,3 +681,82 @@ jeton). `$referrer` dit d'où venait le lien mort.
 
 `tip` reçoit une **nouvelle valeur**, `zmanim-date` : le calendrier sous la
 date des horaires.
+
+### Informations de l'équipe : `announcement_poll_answered` (nouveau)
+
+Un vote envoyé à un sondage (voir `docs/informations.md`), depuis la page de
+l'information, dans l'app ou sur le site.
+
+| Propriété       | Valeurs                                                       |
+| --------------- | ------------------------------------------------------------- |
+| `id`            | l'identifiant de l'information                                |
+| `choices_count` | le nombre de choix cochés (1, sauf sondage à choix multiples) |
+| `changed`       | `true` si l'appareil change un vote déjà envoyé               |
+
+Pas le choix lui-même : les réponses se comptent dans Firestore
+(`announcements/{id}/votes`), le backoffice les affiche.
+
+## Cours audio : l'écoute en liste, et le lien vers les textes
+
+Les cours s'écoutent désormais comme dans une application d'écoute : une
+liste devient la file du lecteur, l'épisode suivant s'enchaîne, un cours
+entamé reprend où on l'a laissé. Et un cours peut dire le texte de la
+bibliothèque qu'il étudie (voir `services/chiourTexte.ts`).
+
+### `chiour_played` (existant, trois propriétés de plus)
+
+| Propriété | Valeurs | Statut |
+| --- | --- | --- |
+| `chiour_slug`, `chiour_title`, `duration_seconds` |  | existants, conservés |
+| `source` | `chiour` (la page du cours), `serie`, `auteur`, `catalogue`, `reprise` (la rangée « Reprendre l'écoute »), `texte` (les cours sous un texte de la bibliothèque) | **nouveau** |
+| `autoplay` | vrai quand la fin du cours précédent l'a enchaîné | **nouveau** |
+| `resumed` | vrai quand il reprend là où on l'avait laissé | **nouveau** |
+
+`source` est celle du geste qui a lancé la file : les cours qu'elle enchaîne
+la gardent, et portent `autoplay`.
+
+### `chiour_opened` (existant, une propriété de plus)
+
+`texte_id` (**nouveau**) : l'identifiant du texte que le cours étudie, `null`
+s'il n'en a pas.
+
+### `chiour_text_opened` (nouveau)
+
+D'un cours, d'une série ou du lecteur plein écran vers son texte (« Lire le texte »).
+
+| Propriété | Valeurs |
+| --- | --- |
+| `source` | `chiour`, `serie`, `lecteur` (le lecteur plein écran) |
+| `chiour_slug` | le cours, `null` depuis une série |
+| `texte_id` | l'identifiant du texte dans le catalogue |
+| `chapitre` | le chapitre visé, `null` pour le texte entier |
+
+### `text_chiourim_shown` (nouveau)
+
+L'encart « Cours sur ce chapitre » (ou « sur ce texte ») s'affiche sous un
+texte de la bibliothèque : le dénominateur des écoutes lancées depuis un
+texte (`chiour_played`, `source` `texte`). Une fois par texte et par chapitre
+ouvert.
+
+| Propriété | Valeurs |
+| --- | --- |
+| `texte_id` | l'identifiant du texte |
+| `chapitre` | le chapitre ouvert, `null` sur le texte entier |
+| `chiourim_count` | les cours du texte |
+| `chapter_count` | ceux du chapitre ouvert |
+
+### `chiourim_filters_opened` (nouveau)
+
+Le bouton « Filtres » du catalogue ouvre son panneau (les thèmes, les
+rabbanim). `results_count` : les cours affichés à l'ouverture.
+`chiourim_category_filtered` (existant) continue de partir au choix d'un
+thème, depuis ce panneau ; `category` vaut `all` quand on le retire.
+
+### `chiourim_rav_filtered` (nouveau)
+
+Un rav choisi (ou retiré) dans les filtres du catalogue.
+
+| Propriété | Valeurs |
+| --- | --- |
+| `auteur` | le nom du rav, `null` quand le filtre est retiré |
+| `results_count` | les cours affichés |

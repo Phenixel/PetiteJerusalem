@@ -15,9 +15,11 @@ import {
   APP_ID,
   APP_LINK_DOMAIN,
   APP_LINK_PATHS,
+  BROWSER_ONLY_PATHS,
   buildAndroidIntentFilter,
   buildAppleAppSiteAssociation,
   buildAssetLinks,
+  IOS_DEFERRED_PATHS,
   isAppLinkPath,
 } from "../../scripts/lib/app-links.mjs";
 
@@ -53,7 +55,9 @@ describe("liens d'application", () => {
     // Garde-fou : une lecture qui ne trouve plus rien rendrait le test toujours
     // vert (routes.ts renommé, écriture des `path:` changée).
     expect(paths.length).toBeGreaterThan(15);
-    const uncovered = paths.filter((path) => !isAppLinkPath(path));
+    const uncovered = paths.filter(
+      (path) => !isAppLinkPath(path) && !BROWSER_ONLY_PATHS.includes(path),
+    );
     expect(
       uncovered,
       `Routes absentes de APP_LINK_PATHS (scripts/lib/app-links.mjs) : leurs liens s'ouvriraient dans le navigateur au lieu de l'app.`,
@@ -89,6 +93,8 @@ describe("liens d'application", () => {
       "/fonts/noto-serif-hebrew-var.woff2",
       "/.well-known/assetlinks.json",
       "/sitemap.xml",
+      // La page de vote des versions qui ne savent pas afficher un sondage.
+      "/sondage/abc123",
     ]) {
       expect(isAppLinkPath(path), `${path} ne doit pas ouvrir l'app`).toBe(false);
     }
@@ -117,6 +123,20 @@ describe("liens d'application", () => {
     expect(components).toContain("/share-reading");
     expect(components).toContain("/share-reading/*");
     expect(components).not.toContain("/__/auth/*");
+  });
+
+  it("laisse au navigateur, sur iPhone, les pages que les versions installées ne connaissent pas encore", () => {
+    // Le fichier iOS est servi par le site et vaut pour toutes les versions
+    // installées ; l'intent-filter Android est figé dans chacune.
+    expect(IOS_DEFERRED_PATHS).toContain("/sidour");
+    const [details] = buildAppleAppSiteAssociation("AB12CD34EF").applinks.details;
+    const components = details.components.map((component) => component["/"]);
+    for (const path of IOS_DEFERRED_PATHS) {
+      expect(APP_LINK_PATHS).toContain(path);
+      expect(components).not.toContain(path);
+      expect(components).not.toContain(`${path}/*`);
+      expect(buildAndroidIntentFilter()).toContain(`<data android:path="${path}" />`);
+    }
   });
 
   it("déclare le domaine et chaque chemin dans l'intent-filter Android", () => {

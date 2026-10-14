@@ -24,7 +24,6 @@ import {
   restPeriodsNear,
   sameCivilDay,
 } from "../services/zmanimService";
-import AppIcon from "./icons/AppIcon.vue";
 import { useLocalePath } from "../composables/useLocalePath";
 
 /** Les pages traduites suivent l'espace de langue de l'URL ouverte. */
@@ -67,10 +66,9 @@ const headline = computed(() => {
     const lit = now.value.getTime() >= period.start.getTime();
     // « Sortie de Chabbat » ne convient plus quand une fête s'y ajoute.
     const endLabel = t(period.festivals.length > 0 ? "zmanim.rest.end" : "zmanim.shabbat.havdalah");
-    if (lit && period.end) return { icon: "candle" as const, label: endLabel, date: period.end };
+    if (lit && period.end) return { label: endLabel, date: period.end };
     if (!lit) {
       return {
-        icon: "candle" as const,
         label: t("zmanim.shabbat.candleLighting"),
         date: period.start,
         // Avant l'allumage, la sortie donne l'autre bout du repos ; après,
@@ -85,7 +83,6 @@ const headline = computed(() => {
   const zman = upcoming.value;
   if (!zman) return null;
   return {
-    icon: "clock" as const,
     label: t(`zmanim.names.${zman.key}`),
     date: zman.date,
     note: countdown(zman.date, now.value),
@@ -110,9 +107,10 @@ const hebrewDate = computed(() =>
 <!-- Composition : le texte serré à gauche (la date hébraïque qui situe, le nom
      de l'horaire, le temps qui reste et le lieu), l'heure en grand à droite,
      centrée sur ce bloc. C'est elle qu'on vient lire, de loin et en vitesse ;
-     le reste la sert et passe donc à côté, au corps du texte courant. Rien ne
-     dit « aujourd'hui » : une carte d'horaires sur l'accueil ne parle pas d'un
-     autre jour. -->
+     le reste la sert et passe donc à côté, au corps du texte courant. Pas
+     d'icône devant le nom : l'heure à droite dit déjà ce qu'est la carte. Rien
+     ne dit « aujourd'hui » : une carte d'horaires sur l'accueil ne parle pas
+     d'un autre jour. -->
 <template>
   <RouterLink
     :to="localePath('horaires')"
@@ -122,17 +120,14 @@ const hebrewDate = computed(() =>
       <span class="flex items-center justify-between gap-4">
         <span class="min-w-0">
           <span class="block text-sm text-text-secondary">{{ hebrewDate }}</span>
-          <span class="mt-1 flex items-start gap-2">
-            <AppIcon :name="headline.icon" :size="18" class="mt-0.5 shrink-0 text-primary" />
-            <!-- Ni troncature ni ellipse sur le nom : « Fin du Chéma (Maguen
-                 Avraham) » réduit à « Fin du Chéma… » ferait passer une heure
-                 pour l'autre, et les deux opinions sont séparées d'une bonne
-                 demi-heure. Il passe à la ligne s'il le faut. -->
-            <span
-              class="font-semibold leading-snug text-text-primary transition-colors group-hover:text-primary"
-            >
-              {{ headline.label }}
-            </span>
+          <!-- Ni troncature ni ellipse sur le nom : « Fin du Chéma (Maguen
+               Avraham) » réduit à « Fin du Chéma… » ferait passer une heure
+               pour l'autre, et les deux opinions sont séparées d'une bonne
+               demi-heure. Il passe à la ligne s'il le faut. -->
+          <span
+            class="mt-1 block font-semibold leading-snug text-text-primary transition-colors group-hover:text-primary"
+          >
+            {{ headline.label }}
           </span>
           <span class="mt-1 block text-sm text-text-secondary">
             <template v-if="headline.note">{{ headline.note }} · </template>{{ placeLabel }}

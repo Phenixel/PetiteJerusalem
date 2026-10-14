@@ -1,6 +1,14 @@
-import { collection, doc, getDoc, getDocs } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
 import { db } from "../firebase/firestore";
 import type { Chiour, ChiourDoc } from "../models/models";
+
+/** Un Timestamp Firestore (ou une date) en millisecondes, null sinon. */
+function millisOf(value: unknown): number | null {
+  const maybe = value as { toMillis?: () => number } | null | undefined;
+  if (typeof maybe?.toMillis === "function") return maybe.toMillis();
+  if (value instanceof Date) return value.getTime();
+  return null;
+}
 
 function toChiour(docData: ChiourDoc): Chiour {
   return {
@@ -14,6 +22,14 @@ function toChiour(docData: ChiourDoc): Chiour {
     auteurId: docData.auteurId ?? null,
     serieId: docData.serieId ?? null,
     episode: docData.episode ?? null,
+    duration:
+      typeof docData.duration === "number" && docData.duration > 0 ? docData.duration : null,
+    addedAt: millisOf(docData.createdAt),
+    texteId: typeof docData.texteId === "number" ? docData.texteId : null,
+    texteChapitre:
+      typeof docData.texteId === "number" && typeof docData.texteChapitre === "number"
+        ? docData.texteChapitre
+        : null,
   };
 }
 
@@ -48,6 +64,19 @@ class ChiourFirestoreRepository {
    * d'un lien partagé n'a pas besoin de télécharger tout le catalogue pour
    * afficher son contenu, le catalogue ne sert qu'aux recommandations.
    */
+  /**
+   * Les cours publiés d'un texte de la bibliothèque (voir ChiourDoc.texteId) :
+   * la page d'un livre n'a pas à charger tout le catalogue pour montrer ses
+   * cours. Un index d'un seul champ, que Firestore pose de lui-même.
+   */
+  async fetchByTexte(texteId: number): Promise<Chiour[]> {
+    const snap = await getDocs(query(collection(db, "chiourim"), where("texteId", "==", texteId)));
+    return snap.docs
+      .map((d) => d.data() as ChiourDoc)
+      .filter((doc) => doc.published !== false)
+      .map(toChiour);
+  }
+
   async fetchBySlug(slug: string): Promise<Chiour | null> {
     const snap = await getDoc(doc(db, "chiourim", slug));
     if (!snap.exists()) return null;

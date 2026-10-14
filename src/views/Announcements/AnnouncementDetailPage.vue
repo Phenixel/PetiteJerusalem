@@ -4,9 +4,16 @@ import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import AnnouncementItem from "../../components/announcements/AnnouncementItem.vue";
+import AnnouncementPoll from "../../components/announcements/AnnouncementPoll.vue";
 import { useAnnouncements } from "../../composables/useAnnouncements";
 import { openFeedback } from "../../composables/useFeedback";
-import { isExternalLink, localized, type Announcement } from "../../services/announcements";
+import {
+  isExternalLink,
+  localized,
+  visibleLink,
+  type Announcement,
+  type Poll,
+} from "../../services/announcements";
 import { analyticsService } from "../../services/analyticsService";
 import { seoService } from "../../services/seoService";
 import { SITE_URL } from "../../config/site";
@@ -14,7 +21,11 @@ import { SITE_URL } from "../../config/site";
 /**
  * Une information en entier : c'est là qu'ouvre la notification. Une
  * question s'y termine par « Répondre », qui ouvre le formulaire de support
- * déjà amorcé : la réponse arrive dans la même base Notion que le reste.
+ * déjà amorcé : la réponse arrive dans la même base Notion que le reste. Une
+ * question qui porte un sondage montre ses choix, et l'on vote ici.
+ *
+ * La même page répond à `/sondage/:id`, l'adresse que suivent les versions
+ * de l'app qui ne savent pas afficher un sondage (voir pollPageUrl).
  */
 const route = useRoute();
 const { t, locale } = useI18n();
@@ -24,11 +35,13 @@ const announcement = ref<Announcement | null>(null);
 const status = ref<"loading" | "ready" | "missing" | "error">("loading");
 
 const id = computed(() => String(route.params.id ?? ""));
-const linkLabel = computed(() => {
-  const link = announcement.value?.link;
-  if (!link) return "";
-  return localized(link.label, locale.value) || t("announcements.openLink");
-});
+const link = computed(() => (announcement.value ? visibleLink(announcement.value) : null));
+const withPoll = computed(() =>
+  announcement.value?.poll ? (announcement.value as Announcement & { poll: Poll }) : null,
+);
+const linkLabel = computed(() =>
+  link.value ? localized(link.value.label, locale.value) || t("announcements.openLink") : "",
+);
 
 watch(
   id,
@@ -89,11 +102,13 @@ function reply(): void {
     <template v-else-if="announcement">
       <AnnouncementItem :announcement="announcement" class="animate-[fadeIn_0.3s_ease]" />
 
+      <AnnouncementPoll v-if="withPoll" :key="withPoll.id" :announcement="withPoll" />
+
       <div class="mt-6 flex flex-wrap justify-center gap-3">
-        <template v-if="announcement.link">
+        <template v-if="link">
           <a
-            v-if="isExternalLink(announcement.link.url)"
-            :href="announcement.link.url"
+            v-if="isExternalLink(link.url)"
+            :href="link.url"
             target="_blank"
             rel="noopener noreferrer"
             class="btn btn-primary"
@@ -101,7 +116,7 @@ function reply(): void {
             {{ linkLabel }}
             <AppIcon name="external-link" :size="14" />
           </a>
-          <RouterLink v-else :to="announcement.link.url" class="btn btn-primary">
+          <RouterLink v-else :to="link.url" class="btn btn-primary">
             {{ linkLabel }}
           </RouterLink>
         </template>
@@ -109,7 +124,7 @@ function reply(): void {
           v-if="announcement.kind === 'question'"
           type="button"
           class="btn"
-          :class="announcement.link ? 'btn-soft' : 'btn-primary'"
+          :class="link || withPoll ? 'btn-soft' : 'btn-primary'"
           @click="reply"
         >
           <AppIcon name="message" :size="14" />

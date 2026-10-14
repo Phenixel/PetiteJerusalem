@@ -377,6 +377,19 @@ describe("le Hallel, et sa longueur", () => {
     expect(rhTevet.has("hallel-complet")).toBe(true);
     expect(rhTevet.has("hallel-abrege")).toBe(false);
   });
+
+  it("se bénit abrégé hors d'Israël, là où l'usage d'Erets Israël ne le bénit pas", () => {
+    const cle = "hallel-brakha-houts-laarets";
+    expect(activeOccasions(new HDate(1, months.CHESHVAN, 5787), false).has(cle)).toBe(true);
+    expect(activeOccasions(new HDate(1, months.CHESHVAN, 5787), true).has(cle)).toBe(false);
+    // Roch Hodech Tévet : le Hallel y est entier, sa bénédiction déjà là.
+    expect(activeOccasions(new HDate(1, months.TEVET, 5787), false).has(cle)).toBe(false);
+    // 'Hol haMoed de Pessah : abrégé aussi, il se bénit de même hors d'Israël.
+    expect(activeOccasions(new HDate(17, months.NISAN, 5787), false).has(cle)).toBe(true);
+    expect(activeOccasions(new HDate(17, months.NISAN, 5787), true).has(cle)).toBe(false);
+    // 'Hol haMoed de Souccot : entier, sa bénédiction déjà là.
+    expect(activeOccasions(new HDate(17, months.TISHREI, 5787), false).has(cle)).toBe(false);
+  });
 });
 
 describe("'Hol haMoed, et le loulav de Souccot", () => {

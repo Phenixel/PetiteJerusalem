@@ -21,6 +21,16 @@ service firebase.storage {
       allow delete: if isAdmin();
     }
 
+    // Images des choix d'un sondage (informations de l'équipe) : lecture
+    // publique, écriture réservée aux admins (voir adminService.uploadPollImage).
+    match /announcements/{announcementId}/{fileName} {
+      allow read: if true;
+      allow write: if isAdmin()
+        && request.resource.size < 5 * 1024 * 1024            // 5 Mo max par image
+        && request.resource.contentType.matches('image/.*');  // images uniquement
+      allow delete: if isAdmin();
+    }
+
     // Zone de dépôt du studio auteurs. Le token (segment de chemin) est validé
     // contre Firestore (règle cross-service) : seul un porteur de lien actif
     // peut déposer. Jamais de lecture publique : le fichier n'est servi

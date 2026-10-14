@@ -2,7 +2,7 @@
 <resources>
     <!-- Couleurs synchronisées avec src/assets/main.css (le beige de l'app et
          ses neutres chauds), les mêmes que PjColors côté iOS. -->
-    <color name="pj_widget_bg">#F4F1EA</color>
+    <color name="pj_widget_bg">#FFF9F3</color>
     <color name="pj_widget_text">#35312A</color>
     <color name="pj_widget_text_secondary">#6D6759</color>
     <!-- « Tout est lu » : le vert de la carte du tableau de bord

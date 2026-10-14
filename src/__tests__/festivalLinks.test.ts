@@ -4,6 +4,7 @@ import { SEO_FESTIVALS } from "../content/zmanimFestivals";
 import { SEO_LOCALES, sectionPath } from "../content/seoLocales";
 import { LISTED_CORPORA, corpusPath, hubPath, studyEntries } from "../content/etudeTexts";
 import { allPages } from "../content/seoPages";
+import { SIDOUR_HUB_PATH } from "../content/sidourSeo";
 
 /**
  * Les liens posés sous une fête (« Aller plus loin ») mènent à des pages qui
@@ -20,6 +21,7 @@ function knownPaths(): Set<string> {
   for (const corpus of LISTED_CORPORA) paths.add(corpusPath(corpus));
   for (const entry of studyEntries) paths.add(hubPath(entry));
   for (const page of allPages) paths.add(page.path);
+  paths.add(SIDOUR_HUB_PATH);
   for (const locale of SEO_LOCALES) {
     for (const key of ["horaires", "calendrier", "zmanim", "paracha", "partageTehilim"] as const) {
       paths.add(sectionPath(key, locale));

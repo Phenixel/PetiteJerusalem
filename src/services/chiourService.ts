@@ -61,10 +61,30 @@ class ChiourService {
     return single;
   }
 
+  // Les cours d'un texte, par texte : la page d'un livre les demande à chaque
+  // chapitre ouvert, une requête par livre et par heure suffit.
+  private readonly byTexte = new Map<number, ReturnType<typeof cached<Chiour[]>>>();
+
+  /**
+   * Les cours qui étudient un texte de la bibliothèque. Le catalogue en cache
+   * répond s'il est frais ; sinon une requête sur ce seul texte.
+   */
+  getChiourimOfTexte(texteId: number): Promise<Chiour[]> {
+    const fresh = this.chiourim.isStale() ? null : this.chiourim.peek();
+    if (fresh) return Promise.resolve(fresh.filter((c) => c.texteId === texteId));
+    let entry = this.byTexte.get(texteId);
+    if (!entry) {
+      entry = cached(CACHE_TTL, () => chiourFirestoreRepository.fetchByTexte(texteId));
+      this.byTexte.set(texteId, entry);
+    }
+    return entry.get();
+  }
+
   /** À appeler après toute mutation admin pour refléter le changement sans attendre le TTL. */
   invalidateCache(): void {
     this.chiourim.invalidate();
     this.categories.invalidate();
+    this.byTexte.clear();
   }
 
   /**

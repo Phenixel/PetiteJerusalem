@@ -1,8 +1,11 @@
+import { reactive, readonly } from "vue";
 import { useI18n } from "vue-i18n";
 import type { TextStudyJsonEntry } from "../models/models";
 import { isNativeApp } from "./useNativeApp";
 import { useToast } from "./useToast";
 import {
+  approxBytesOfBook,
+  approxBytesOfBooks,
   bookForEntry,
   downloadBook,
   downloadingPaths,
@@ -22,6 +25,38 @@ import { isStoragePermissionDenied } from "../services/offlineTextStore";
 export function downloadErrorKey(error: unknown): "downloads.permissionDenied" | "downloads.error" {
   return isStoragePermissionDenied(error) ? "downloads.permissionDenied" : "downloads.error";
 }
+
+/**
+ * Le lot « Tout télécharger » en cours, que la bibliothèque suit : combien de
+ * livres, et combien d'octets (estimés, voir approxBytesOfBook), sont passés.
+ * De quoi afficher le pourcentage et le temps restant, et refuser un second
+ * lot lancé par un second appui pendant le premier.
+ */
+export interface BulkDownload {
+  active: boolean;
+  /** Livres du lot, et livres passés (rapportés ou manqués). */
+  total: number;
+  done: number;
+  failed: number;
+  /** Octets estimés du lot, et de ce qui est passé. */
+  bytesTotal: number;
+  bytesDone: number;
+  /** Début du lot (ms), pour la vitesse et le temps restant. */
+  startedAt: number;
+}
+
+const bulk = reactive<BulkDownload>({
+  active: false,
+  total: 0,
+  done: 0,
+  failed: 0,
+  bytesTotal: 0,
+  bytesDone: 0,
+  startedAt: 0,
+});
+
+/** Le lot en cours, en lecture seule. */
+export const bulkDownload = readonly(bulk);
 
 /** Échecs de suite au-delà desquels « Tout télécharger » renonce au reste du lot. */
 export const MAX_CONSECUTIVE_FAILURES = 3;
@@ -105,12 +140,33 @@ export function useBookDownload() {
    * (OnboardingOfflinePicker) et `downloadBooks`.
    */
   async function downloadAll(books: OfflineBook[], tab: string): Promise<void> {
+    // Un second appui pendant le lot en lançait un second sur la même liste :
+    // les livres en cours y comptaient pour rapportés, les autres se
+    // téléchargeaient deux fois.
+    if (bulk.active) return;
     const pending = books.filter((book) => !isBookDownloaded(book));
     analyticsService.capture("offline_download_started", {
       scope: "all",
       tab,
       books_count: pending.length,
     });
+    Object.assign(bulk, {
+      active: true,
+      total: pending.length,
+      done: 0,
+      failed: 0,
+      bytesTotal: approxBytesOfBooks(pending),
+      bytesDone: 0,
+      startedAt: Date.now(),
+    });
+    try {
+      await runBatch(pending, tab);
+    } finally {
+      bulk.active = false;
+    }
+  }
+
+  async function runBatch(pending: OfflineBook[], tab: string): Promise<void> {
     let downloaded = 0;
     let failed = 0;
     let consecutiveFailures = 0;
@@ -119,8 +175,12 @@ export function useBookDownload() {
         await downloadBook(book);
         downloaded++;
         consecutiveFailures = 0;
+        bulk.done++;
+        bulk.bytesDone += approxBytesOfBook(book);
       } catch (e) {
         failed++;
+        bulk.failed++;
+        bulk.bytesDone += approxBytesOfBook(book);
         // Sortie négative du lot : `offline_download_started` restait sans
         // suite, exactement comme un utilisateur qui quitte la page. Ces deux
         // cas ne se distinguaient pas, alors qu'un « Tout télécharger » coupé

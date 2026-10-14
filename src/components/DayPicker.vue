@@ -198,7 +198,7 @@ function cellClass(cell: {
   today: boolean;
 }): string {
   const hover = "hover:bg-black/[0.04] dark:hover:bg-white/[0.06]";
-  if (cell.chosen) return "bg-primary font-semibold text-white";
+  if (cell.chosen) return "bg-brand font-semibold text-on-brand";
   if (cell.disabled) return "cursor-not-allowed text-text-secondary/35";
   // Aujourd'hui, non retenu : cerclé, comme sur les calendriers d'Android.
   if (cell.today) return `font-semibold text-primary ring-1 ring-primary/50 ${hover}`;
@@ -369,7 +369,7 @@ function confirm(): void {
           :data-current="year === cursor.getFullYear() ? '' : undefined"
           :class="
             year === cursor.getFullYear()
-              ? 'bg-primary font-semibold text-white'
+              ? 'bg-brand font-semibold text-on-brand'
               : 'text-text-primary hover:bg-black/[0.04] dark:hover:bg-white/[0.06]'
           "
           @click="pickYear(year)"

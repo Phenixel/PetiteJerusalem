@@ -17,10 +17,29 @@ const ROOT = resolve(__dirname, '..');
 const OUT = resolve(ROOT, 'public/texts');
 const GCS = 'https://storage.googleapis.com/sefaria-export/json';
 
-// `--only=tanakh` (ou tehilim/mishna/talmud/rashi/meforshim/commentaires) pour ne régénérer qu'un
-// corpus. `tefila` n'est jamais du lot par défaut : ses fichiers sont mis en
-// forme à la main après téléchargement, il faut le demander nommément (voir
-// plus bas).
+// Le script redonne les fichiers livrés à l'identique : un fichier qui change
+// après un passage, c'est que Sefaria a corrigé son texte depuis. Relire le
+// diff avant de le valider, puis relancer `node scripts/texts-manifest.mjs`,
+// sans quoi les appareils garderaient l'ancienne version.
+//
+// `--only=tanakh` (ou tehilim/mishna/talmud/rashi/meforshim/commentaires/
+// moussar) pour ne régénérer qu'un corpus. `tefila` n'est jamais du lot par
+// défaut : ses fichiers sont mis en forme à la main après téléchargement, il
+// faut le demander nommément (voir plus bas).
+//
+// Le moussar (`--only=moussar`, et du lot par défaut : rien n'y est retouché
+// à la main) écrit un fichier par entrée du catalogue, public/texts/moussar/
+// <id>.json, au format { title, sections: [{ n, title?, he }] }. `n` est le
+// numéro de la section, celui de l'adresse (/bibliotheque/moussar/<slug>/<n>)
+// et celui qu'un cours cite :
+//   - une porte de 'Hovot Halévavot : 0 pour son introduction (la hakdama),
+//     puis 1 à n pour ses chapitres, pour que le numéro de section soit le
+//     numéro du chapitre ;
+//   - l'introduction de l'auteur : une seule section, 1, comme tout texte
+//     d'un seul tenant ;
+//   - le Pélé Yoets : le numéro du sujet dans tout le livre (1 à 391, celui
+//     des références « Pele Yoetz 11 »), si bien que la lettre Beth porte les
+//     sections 22 à 41 ; `title` y donne le nom du sujet, en hébreu.
 const onlyArg = process.argv.find(a => a.startsWith('--only='));
 const ONLY = onlyArg ? onlyArg.split('=')[1] : null;
 const shouldRun = corpus => !ONLY || ONLY === corpus;
@@ -30,6 +49,7 @@ mkdirSync(`${OUT}/talmud`, { recursive: true });
 mkdirSync(`${OUT}/tanakh`, { recursive: true });
 mkdirSync(`${OUT}/rashi`, { recursive: true });
 mkdirSync(`${OUT}/tefila`, { recursive: true });
+mkdirSync(`${OUT}/moussar`, { recursive: true });
 
 // ---------- Utilities ----------
 
@@ -44,7 +64,11 @@ function cleanTextArray(arr) {
   if (Array.isArray(arr)) {
     return arr.map(item => {
       if (typeof item === 'string') return stripHtml(item);
-      if (Array.isArray(item)) return item.map(s => stripHtml(s || ''));
+      // Un niveau de plus pour le Talmud de Jérusalem (chapitre, halakha,
+      // segment) : Shekalim, le seul traité qui en vienne.
+      if (Array.isArray(item)) {
+        return item.map(s => (Array.isArray(s) ? s.map(x => stripHtml(x || '')) : stripHtml(s || '')));
+      }
       return '';
     }).filter(item => item !== '' && !(Array.isArray(item) && item.every(s => !s)));
   }
@@ -73,44 +97,18 @@ async function withRetry(fn, label, retries = 3) {
 
 const textStudies = JSON.parse(readFileSync(`${ROOT}/src/datas/textStudies.json`, 'utf8')).textStudies;
 
-// ---------- Build GCS lookup from books.json ----------
-
-console.log('Loading books index from Sefaria-Export...');
-const booksIndex = await withRetry(
-  () => fetchJson('https://raw.githubusercontent.com/Sefaria/Sefaria-Export/master/books.json'),
-  'books.json'
-);
-
-// Build lookup: title -> { he_url, en_url }
-const lookup = {};
-for (const b of booksIndex.books) {
-  if (!b.json_url || !b.json_url.includes('merged.json')) continue;
-  const title = b.title;
-  if (!lookup[title]) lookup[title] = {};
-  if (b.language === 'Hebrew') lookup[title].he_url = b.json_url;
-  if (b.language === 'English') lookup[title].en_url = b.json_url;
-}
-
-
 // ---------- TEHILIM (150 Psalms) ----------
 
 if (shouldRun('tehilim')) {
 console.log('\n=== Tehilim (Psalms) ===');
 try {
-  const [heData, enData] = await Promise.all([
-    withRetry(() => fetchJson(`${GCS}/Tanakh/Torah/../Writings/Psalms/Hebrew/merged.json`.replace('Torah/../', '')), 'Psalms/He'),
-    withRetry(() => fetchJson(`${GCS}/Tanakh/Writings/Psalms/English/merged.json`), 'Psalms/En'),
-  ]);
+  const heData = await withRetry(() => fetchJson(`${GCS}/Tanakh/Writings/Psalms/Hebrew/merged.json`), 'Psalms/He');
 
   const heText = heData.text; // Array[150][verses]
-  const enText = enData.text;
   const tehilim = {};
   for (let i = 0; i < 150; i++) {
     const psalmNum = i + 1;
-    tehilim[psalmNum] = {
-      he: cleanTextArray(heText[i] || []),
-      en: cleanTextArray(enText[i] || []),
-    };
+    tehilim[psalmNum] = { he: cleanTextArray(heText[i] || []) };
   }
   writeFileSync(`${OUT}/tehilim.json`, JSON.stringify(tehilim), 'utf8');
   console.log('  ✓ tehilim.json');
@@ -141,14 +139,26 @@ const mishnaSederMap = {
   'Zevachim': 'Seder Kodashim', 'Menachot': 'Seder Kodashim', 'Chullin': 'Seder Kodashim',
   'Bekhorot': 'Seder Kodashim', 'Arakhin': 'Seder Kodashim', 'Temurah': 'Seder Kodashim',
   'Keritot': 'Seder Kodashim', 'Meilah': 'Seder Kodashim', 'Tamid': 'Seder Kodashim',
-  'Niddah': 'Seder Tahorot',
+  'Middot': 'Seder Kodashim', 'Kinnim': 'Seder Kodashim',
+  'Keilim': 'Seder Tahorot', 'Oholot': 'Seder Tahorot', 'Negaim': 'Seder Tahorot',
+  'Parah': 'Seder Tahorot', 'Toharot': 'Seder Tahorot', 'Mikvaot': 'Seder Tahorot',
+  'Niddah': 'Seder Tahorot', 'Makhshirin': 'Seder Tahorot', 'Zavim': 'Seder Tahorot',
+  'Tevul Yom': 'Seder Tahorot', 'Yadayim': 'Seder Tahorot', 'Oktzin': 'Seder Tahorot',
+};
+
+// Les traités que l'export nomme autrement que le catalogue : leur dossier.
+const mishnaGcsNames = {
+  'Avot': 'Pirkei Avot',
+  'Taanit': "Mishnah Ta'anit",
+  'Keilim': 'Mishnah Kelim',
+  'Toharot': 'Mishnah Tahorot',
 };
 
 // Talmud seder mapping
 const talmudSederMap = {
   'Berakhot': 'Seder Zeraim',
   'Shabbat': 'Seder Moed', 'Eruvin': 'Seder Moed', 'Pesachim': 'Seder Moed',
-  'Shekalim': 'Seder Moed', 'Yoma': 'Seder Moed', 'Sukkah': 'Seder Moed',
+  'Yoma': 'Seder Moed', 'Sukkah': 'Seder Moed',
   'Beitzah': 'Seder Moed', 'Rosh Hashanah': 'Seder Moed', 'Taanit': 'Seder Moed',
   'Megillah': 'Seder Moed', 'Moed Katan': 'Seder Moed', 'Chagigah': 'Seder Moed',
   'Yevamot': 'Seder Nashim', 'Ketubot': 'Seder Nashim', 'Nedarim': 'Seder Nashim',
@@ -163,10 +173,20 @@ const talmudSederMap = {
   'Niddah': 'Seder Tahorot',
 };
 
+// Les traités du Chass qui n'ont pas de guemara de Babylone se lisent comme
+// les éditions les impriment : le Talmud de Jérusalem pour Shekalim, la
+// Michna seule pour Middot et Kinnim.
+const talmudGcsPaths = {
+  'Shekalim': 'Talmud/Yerushalmi/Seder Moed/Jerusalem Talmud Shekalim',
+  'Middot': 'Mishnah/Seder Kodashim/Mishnah Middot',
+  'Kinnim': 'Mishnah/Seder Kodashim/Mishnah Kinnim',
+};
+
 // Extract tractate name from link for Mishna
 // link: "https://www.sefaria.org/Mishnah_Berakhot" → "Berakhot"
+// (Avot n'a pas le préfixe : "https://www.sefaria.org/Avot" → "Avot")
 function mishnaNameFromLink(link) {
-  return link.replace('https://www.sefaria.org/Mishnah_', '').replace(/_/g, ' ');
+  return link.replace('https://www.sefaria.org/', '').replace(/^Mishnah_/, '').replace(/_/g, ' ');
 }
 
 // Extract tractate name from link for Talmud
@@ -175,7 +195,10 @@ function talmudNameFromLink(link) {
   return link.replace('https://www.sefaria.org/', '').replace(/_/g, ' ');
 }
 
-async function downloadMishnaOrTalmud(type, entries, sederMap, getNameFn, gcsPrefix, gcsNameFn, outDir) {
+// `gcsPathFn` donne le dossier du traité dans l'export, ou rien s'il n'y est
+// pas rangé. Le fichier écrit ne porte que l'hébreu, { title, he } : la
+// traduction anglaise n'est plus lue par le lecteur, ni livrée.
+async function downloadMishnaOrTalmud(type, entries, getNameFn, gcsPathFn, outDir) {
   const seen = new Set();
   const tasks = [];
   for (const entry of entries) {
@@ -192,26 +215,20 @@ async function downloadMishnaOrTalmud(type, entries, sederMap, getNameFn, gcsPre
   for (let i = 0; i < tasks.length; i += BATCH) {
     const batch = tasks.slice(i, i + BATCH);
     await Promise.all(batch.map(async ({ tractate }) => {
-      const gcsName = gcsNameFn(tractate);
-      const seder = sederMap[tractate];
-      if (!seder) {
+      const gcsPath = gcsPathFn(tractate);
+      if (!gcsPath) {
         console.warn(`  ⚠ No seder for ${tractate}, skipping`);
         return;
       }
-      const heUrl = `${GCS}/${gcsPrefix}/${seder}/${gcsName}/Hebrew/merged.json`;
-      const enUrl = `${GCS}/${gcsPrefix}/${seder}/${gcsName}/English/merged.json`;
+      const heUrl = `${GCS}/${gcsPath}/Hebrew/merged.json`;
       const slug = tractate.toLowerCase().replace(/ /g, '-').replace(/'/g, '');
       const outPath = `${outDir}/${slug}.json`;
 
       try {
-        const [heData, enData] = await Promise.all([
-          withRetry(() => fetchJson(heUrl), `${tractate}/He`),
-          withRetry(() => fetchJson(enUrl), `${tractate}/En`).catch(() => ({ text: [] })),
-        ]);
+        const heData = await withRetry(() => fetchJson(heUrl), `${tractate}/He`);
         const result = {
           title: tractate,
           he: cleanTextArray(heData.text),
-          en: cleanTextArray(enData.text),
         };
         writeFileSync(outPath, JSON.stringify(result), 'utf8');
         console.log(`  ✓ ${tractate} → ${slug}.json`);
@@ -227,10 +244,9 @@ async function downloadMishnaOrTalmud(type, entries, sederMap, getNameFn, gcsPre
 if (shouldRun('mishna')) {
   const mishnaEntries = textStudies.filter(t => t.type === 'Mishna');
   await downloadMishnaOrTalmud(
-    'Mishna', mishnaEntries, mishnaSederMap,
+    'Mishna', mishnaEntries,
     mishnaNameFromLink,
-    'Mishnah',
-    t => `Mishnah ${t}`,
+    t => mishnaSederMap[t] && `Mishnah/${mishnaSederMap[t]}/${mishnaGcsNames[t] ?? `Mishnah ${t}`}`,
     `${OUT}/mishna`
   );
 }
@@ -239,10 +255,9 @@ if (shouldRun('mishna')) {
 if (shouldRun('talmud')) {
   const talmudEntries = textStudies.filter(t => t.type === 'Talmud Bavli');
   await downloadMishnaOrTalmud(
-    'Talmud Bavli', talmudEntries, talmudSederMap,
+    'Talmud Bavli', talmudEntries,
     talmudNameFromLink,
-    'Talmud/Bavli',
-    t => t,
+    t => talmudGcsPaths[t] ?? (talmudSederMap[t] && `Talmud/Bavli/${talmudSederMap[t]}/${t}`),
     `${OUT}/talmud`
   );
 }
@@ -982,6 +997,137 @@ if (shouldRun('commentaires')) {
     } catch (e) {
       console.error(`  ✗ Rachi ${entry.name}: ${e.message}`);
     }
+  }
+}
+
+// ---------- Moussar : 'Hovot Halévavot et Pélé Yoets ----------
+//
+// Le rayon d'étude du moussar (voir l'en-tête pour le format et la
+// numérotation des sections). Le texte garde la ponctuation de sa source ;
+// seules les balises tombent, et un <br> y va à la ligne.
+
+if (shouldRun('moussar')) {
+  console.log('\n=== Moussar (\'Hovot Halévavot, Pélé Yoets) ===');
+
+  const moussarEntries = new Map(
+    textStudies.filter(t => t.type === 'Moussar').map(t => [t.id, t]),
+  );
+  /** Les paragraphes d'un passage, nettoyés, un <br> devenant une ligne. */
+  const moussarLines = paragraphs => (Array.isArray(paragraphs) ? paragraphs : [])
+    .flatMap(p => (typeof p === 'string' ? p.split(/<br\s*\/?>/i) : []))
+    .map(line => stripHtml(line).replace(/\s{2,}/g, ' ').trim())
+    .filter(Boolean);
+  const writeMoussar = (id, sections) => {
+    const entry = moussarEntries.get(id);
+    if (!entry) throw new Error(`entrée ${id} absente du catalogue`);
+    const empty = sections.filter(s => s.he.length === 0).map(s => s.n);
+    if (empty.length) throw new Error(`${entry.name} : sections vides (${empty.join(', ')})`);
+    // Le catalogue annonce le nombre de sections (liste des chapitres,
+    // découpage du partage) : un écart veut dire que la source a bougé.
+    if (sections.length !== entry.totalSections) {
+      throw new Error(
+        `${entry.name} : ${sections.length} sections, le catalogue en annonce ${entry.totalSections}`,
+      );
+    }
+    writeFileSync(`${OUT}/moussar/${id}.json`, JSON.stringify({ title: entry.name, sections }), 'utf8');
+    console.log(`  ✓ ${entry.name} → moussar/${id}.json (${sections.length} sections)`);
+  };
+
+  // 'Hovot Halévavot : l'introduction de l'auteur (400), puis les dix portes
+  // (401 à 410), dans l'ordre du livre. Les ajouts de la fin (« Addenda » :
+  // poème, admonition, prière) n'en font pas partie.
+  const HOVOT_PORTES = [
+    'First Treatise on Unity',
+    'Second Treatise on Examination',
+    'Third Treatise on Service of God',
+    'Fourth Treatise on Trust',
+    'Fifth Treatise on Devotion',
+    'Sixth Treatise on Submission',
+    'Seventh Treatise on Repentance',
+    'Eighth Treatise on Examining the Soul',
+    'Ninth Treatise on Abstinence',
+    'Tenth Treatise on Devotion to God',
+  ];
+  try {
+    const data = await withRetry(
+      () => fetchJson(`${GCS}/Jewish Thought/Rishonim/Duties of the Heart/Duties of the Heart/Hebrew/merged.json`),
+      'Duties of the Heart',
+    );
+    const text = data.text ?? {};
+    writeMoussar(400, [{ n: 1, he: moussarLines(text['Introduction of the Author']) }]);
+    HOVOT_PORTES.forEach((key, i) => {
+      const porte = text[key];
+      if (!porte || !Array.isArray(porte[''])) throw new Error(`porte absente : ${key}`);
+      writeMoussar(401 + i, [
+        { n: 0, he: moussarLines(porte.Introduction) },
+        ...porte[''].map((chapitre, c) => ({ n: c + 1, he: moussarLines(chapitre) })),
+      ]);
+    });
+  } catch (e) {
+    console.error(`  ✗ 'Hovot Halévavot: ${e.message}`);
+  }
+
+  // Pélé Yoets : 391 sujets rangés par lettre (420 à 441), chacun sous son
+  // numéro dans le livre. Le premier sujet d'une lettre s'ouvre sur
+  // « אות ב: » (la lettre ש s'écrit « אות : »), son premier paragraphe sur le
+  // nom du sujet, en gras ou suivi de « - ». Les sujets 392 à 403 de la
+  // source sont vides, le « Supplement » n'est pas du livre.
+  const PELE_LETTRES = [
+    ['א', 1], ['ב', 22], ['ג', 42], ['ד', 58], ['ה', 73], ['ו', 100], ['ז', 104],
+    ['ח', 118], ['ט', 149], ['י', 159], ['כ', 179], ['ל', 199], ['מ', 208],
+    ['נ', 238], ['ס', 256], ['ע', 270], ['פ', 292], ['צ', 301], ['ק', 311],
+    ['ר', 326], ['ש', 341], ['ת', 376],
+  ];
+  const PELE_DERNIER = 391;
+  // Les sujets dont la source n'écrit le nom ni en gras ni avant un « - ».
+  const PELE_TITRES = { 245: 'נדה' };
+  const LETTRE = /^אות\s*([א-ת]?)\s*:\s*/;
+  const peleTitle = (n, first) => {
+    const bold = first.trim().match(/^(?:אות\s*[א-ת]?\s*:\s*)?<b>([^<]+)<\/b>/);
+    const plain = stripHtml(first).replace(LETTRE, '');
+    const title = bold
+      ? bold[1].replace(LETTRE, '').trim()
+      : plain.includes(' - ')
+        ? plain.slice(0, plain.indexOf(' - ')).trim()
+        : PELE_TITRES[n];
+    if (!title || title.length > 40 || !plain.startsWith(title)) {
+      throw new Error(`sujet ${n} : nom introuvable (« ${plain.slice(0, 40)} »)`);
+    }
+    return title;
+  };
+  try {
+    const data = await withRetry(
+      () => fetchJson(`${GCS}/Musar/Acharonim/Pele Yoetz/Hebrew/merged.json`),
+      'Pele Yoetz',
+    );
+    const sujets = data.text?.[''] ?? [];
+    if (sujets.slice(PELE_DERNIER).some(s => moussarLines(s).length > 0)) {
+      throw new Error(`des sujets au-delà du ${PELE_DERNIER}e ne sont plus vides`);
+    }
+    const debuts = new Map(PELE_LETTRES.map(([lettre, debut]) => [debut, lettre]));
+    // Chaque lettre s'ouvre là où on l'attend, et nulle part ailleurs.
+    for (let n = 1; n <= PELE_DERNIER; n++) {
+      const first = stripHtml(String(sujets[n - 1]?.[0] ?? ''));
+      const m = first.match(LETTRE);
+      const attendue = debuts.get(n);
+      if (n === 1 ? m : Boolean(m) !== (attendue !== undefined)) {
+        throw new Error(`sujet ${n} : début de lettre inattendu (« ${first.slice(0, 20)} »)`);
+      }
+      if (m && m[1] && m[1] !== attendue) {
+        throw new Error(`sujet ${n} : lettre ${m[1]}, ${attendue} attendue`);
+      }
+    }
+    PELE_LETTRES.forEach(([, debut], i) => {
+      const fin = i + 1 < PELE_LETTRES.length ? PELE_LETTRES[i + 1][1] - 1 : PELE_DERNIER;
+      const sections = [];
+      for (let n = debut; n <= fin; n++) {
+        const sujet = sujets[n - 1] ?? [];
+        sections.push({ n, title: peleTitle(n, String(sujet[0] ?? '')), he: moussarLines(sujet) });
+      }
+      writeMoussar(420 + i, sections);
+    });
+  } catch (e) {
+    console.error(`  ✗ Pélé Yoets: ${e.message}`);
   }
 }
 

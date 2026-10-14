@@ -47,7 +47,10 @@ export { onAnnouncementWritten } from "./announcements";
 // Chaîne perpétuelle de Tehilim : un tour fini, elle repart à zéro.
 export { onPerpetualSessionUpdated } from "./perpetualChain";
 
-const SITE_URL = "https://petite-jerusalem.fr";
+// Le site de l'environnement : la production par défaut, celui de staging
+// sur le projet petite-jerusalem-staging (functions/.env.petite-jerusalem-staging,
+// que firebase-tools charge au déploiement vers ce projet, voir docs/staging.md).
+const SITE_URL = process.env.SITE_URL || "https://petite-jerusalem.fr";
 const OG_IMAGE = `${SITE_URL}/og-image.jpg`;
 
 const DEFAULT_TITLE = "Petite Jérusalem | Partage de lectures et d'études de Torah";

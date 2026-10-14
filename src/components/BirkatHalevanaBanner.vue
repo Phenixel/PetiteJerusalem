@@ -7,10 +7,11 @@ import {
   birkatHalevanaLastDay,
   formatHebrewDate,
   hebrewDateFor,
+  moonAge,
   saysBirkatHalevana,
 } from "../services/zmanimService";
 import { analyticsService } from "../services/analyticsService";
-import AppIcon from "./icons/AppIcon.vue";
+import CardArt from "./CardArt.vue";
 
 /**
  * La bénédiction de la lune, les nuits où elle se dit.
@@ -18,6 +19,9 @@ import AppIcon from "./icons/AppIcon.vue";
  * Elle a une fenêtre courte, une fois par mois, et se rate facilement : rien
  * ne la rappelle et son texte dort au fond de la bibliothèque. Le bandeau ne
  * paraît que ces nuits-là, et disparaît le reste du mois.
+ *
+ * Il porte la lune elle-même, à sa phase du soir, dans son coin (voir
+ * CardArt) : une carte mise en avant porte son objet, aux couleurs du vrai.
  */
 const { t, locale } = useI18n();
 const { place } = useZmanimLocation();
@@ -35,6 +39,9 @@ const now = useNow();
 const hebrewDay = computed(() => hebrewDateFor(place.value, now.value, now.value));
 const visible = computed(() => saysBirkatHalevana(place.value, hebrewDay.value));
 
+/** L'âge de la lune ce soir : son dessin en suit la phase. */
+const age = computed(() => moonAge(hebrewDay.value, now.value));
+
 /** La date limite : la moitié de la lunaison. */
 const deadline = computed(() =>
   formatHebrewDate(birkatHalevanaLastDay(place.value, hebrewDay.value), locale.value),
@@ -45,20 +52,18 @@ const deadline = computed(() =>
   <RouterLink
     v-if="visible"
     to="/bibliotheque/brahot/birkat-halevana"
-    class="card card-hover flex items-center justify-between gap-3 p-4 group"
+    class="card card-hover group relative mt-1 flex min-h-16 items-center p-4 pe-24"
     @click="analyticsService.capture('birkat_halevana_opened', { source: 'home' })"
   >
-    <span class="flex min-w-0 items-center gap-3">
-      <AppIcon name="moon" :size="20" class="shrink-0 text-primary" />
-      <span class="min-w-0">
-        <span
-          class="block font-medium leading-snug text-text-primary transition-colors group-hover:text-primary"
-        >
-          {{ t("home.birkatHalevana.title") }}
-        </span>
-        <span class="block text-xs text-text-secondary">
-          {{ t("home.birkatHalevana.until", { date: deadline }) }}
-        </span>
+    <CardArt :art="{ kind: 'moon', age }" :scale="0.46" surface="plain" />
+    <span class="relative min-w-0">
+      <span
+        class="block font-medium leading-snug text-text-primary transition-colors group-hover:text-primary"
+      >
+        {{ t("home.birkatHalevana.title") }}
+      </span>
+      <span class="block text-xs text-text-secondary">
+        {{ t("home.birkatHalevana.until", { date: deadline }) }}
       </span>
     </span>
   </RouterLink>

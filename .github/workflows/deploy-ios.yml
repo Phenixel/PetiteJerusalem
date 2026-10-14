@@ -42,6 +42,13 @@ name: Deploy iOS
 #   ASC_PRIVATE_KEY           contenu du fichier AuthKey_XXXXXXXXXX.p8
 #   IOS_DEVELOPMENT_TEAM      Team ID Apple (10 caractères)
 #   GOOGLE_SERVICE_INFO_PLIST contenu de GoogleService-Info.plist (config Firebase iOS)
+#
+# Staging : deploy-staging.yml appelle ce même workflow avec
+# `environment: staging` à chaque fusion sur main. L'app part alors sous le
+# bundle id fr.petitejerusalem.app.staging (« PJ Staging »), avec la config
+# Firebase de staging (GOOGLE_SERVICE_INFO_PLIST_STAGING), sur TestFlight
+# SEULEMENT : ni fiche, ni captures, ni soumission à l'examen. Voir
+# docs/staging.md.
 
 on:
   push:
@@ -58,15 +65,34 @@ on:
           provisioning verbeux (filtrés). Ne consomme aucun numéro de build.
         type: boolean
         default: false
-
-# Les runners macOS consomment les minutes 10× plus vite que Linux : un run
-# à la fois, et un plafond de temps pour ne pas partir à la dérive.
-concurrency:
-  group: deploy-ios-${{ github.ref }}
-  cancel-in-progress: false
+  # Appel par deploy-staging.yml. Sans appel (tag, lancement manuel), les
+  # entrées sont vides et tout se passe comme en production.
+  workflow_call:
+    inputs:
+      environment:
+        description: "production ou staging"
+        type: string
+        default: production
+      version_name:
+        description: "CFBundleShortVersionString imposé (staging : celui du prochain correctif)"
+        type: string
+        default: ""
+      build_number:
+        description: "CFBundleVersion imposé (staging : dérivé du run)"
+        type: string
+        default: ""
 
 jobs:
   ios:
+    # Un run de signature Apple à la fois, production et staging confondus :
+    # chacun crée un certificat de distribution sur un quota de trois, et
+    # révoque en début de run ceux qu'il juge libres (scripts/ios-signing.mjs).
+    # Deux runs entrelacés pourraient se retirer le certificat l'un de
+    # l'autre. Les runners macOS consomment aussi les minutes 10× plus vite
+    # que Linux : un plafond de temps pour ne pas partir à la dérive.
+    concurrency:
+      group: apple-signing
+      cancel-in-progress: false
     # macos-26 fournit Xcode 26, exigé à la fois par Capacitor 8 et par l'App
     # Store depuis le 28 avril 2026 (SDK iOS 26 minimum).
     runs-on: macos-26
@@ -83,6 +109,9 @@ jobs:
       # passe, le PEM est canonique, la clé est dans tous les emplacements
       # standard). 26.2 est la version validée en local sur le même projet.
       DEVELOPER_DIR: /Applications/Xcode_26.2.app/Contents/Developer
+      # Lu par scripts/lib/environments.mjs : bundle id, nom de l'app, App
+      # Group, config Firebase du bundle. Vide hors staging : la production.
+      PJ_ENV: ${{ inputs.environment == 'staging' && 'staging' || '' }}
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
@@ -97,7 +126,7 @@ jobs:
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
           ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
           IOS_DEVELOPMENT_TEAM: ${{ secrets.IOS_DEVELOPMENT_TEAM }}
-          GOOGLE_SERVICE_INFO_PLIST: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}
+          GOOGLE_SERVICE_INFO_PLIST: ${{ inputs.environment == 'staging' && secrets.GOOGLE_SERVICE_INFO_PLIST_STAGING || secrets.GOOGLE_SERVICE_INFO_PLIST }}
         run: |
           missing=()
           for name in ASC_KEY_ID ASC_ISSUER_ID ASC_PRIVATE_KEY IOS_DEVELOPMENT_TEAM GOOGLE_SERVICE_INFO_PLIST; do
@@ -160,9 +189,28 @@ jobs:
           ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
         run: node scripts/asc-auth-check.mjs
 
+      # Le bundle id de l'environnement, pour l'export de l'IPA plus bas
+      # (l'app, ses widgets et sa montre ont chacun le leur).
+      - name: Identité de l'app
+        run: |
+          node --input-type=module -e "
+            const { ENV } = await import('./scripts/lib/environments.mjs');
+            console.log('PJ_APP_ID=' + ENV.appId);
+          " >> "$GITHUB_ENV"
+
       - name: Déterminer la version (tag vX.Y.Z)
         id: version
+        env:
+          INPUT_VERSION: ${{ inputs.version_name }}
+          INPUT_BUILD: ${{ inputs.build_number }}
         run: |
+          # Staging : version et build viennent de deploy-staging.yml ; l'app
+          # de staging a sa propre fiche, ses numéros n'ont qu'à croître.
+          if [ -n "$INPUT_VERSION" ] && [ -n "$INPUT_BUILD" ]; then
+            echo "name=$INPUT_VERSION" >> "$GITHUB_OUTPUT"
+            echo "build=$INPUT_BUILD" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
             VERSION="${GITHUB_REF_NAME#v}"
           else
@@ -185,7 +233,7 @@ jobs:
 
       - name: Restaurer GoogleService-Info.plist
         env:
-          GOOGLE_SERVICE_INFO_PLIST: ${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}
+          GOOGLE_SERVICE_INFO_PLIST: ${{ inputs.environment == 'staging' && secrets.GOOGLE_SERVICE_INFO_PLIST_STAGING || secrets.GOOGLE_SERVICE_INFO_PLIST }}
         run: printf '%s' "$GOOGLE_SERVICE_INFO_PLIST" > GoogleService-Info.plist
 
       # Certificat de distribution + profils « App Store » (l'app, son
@@ -210,6 +258,14 @@ jobs:
           # signe (voir l'étape suivante et docs/app-watch.md).
           SHIP_WATCH_APPS: ${{ vars.SHIP_WATCH_APPS }}
         run: node scripts/ios-signing.mjs --setup
+
+      # L'app de staging porte un bandeau « STAGING » sur son icône, pour ne
+      # jamais la confondre avec la vraie sur l'écran d'accueil. Les icônes
+      # d'assets/staging/ remplacent les autres dans la copie du run, avant
+      # que le script natif ne les décline.
+      - name: Icônes de staging
+        if: ${{ inputs.environment == 'staging' }}
+        run: cp -R assets/staging/. assets/
 
       # Info.plist, entitlements, PrivacyInfo.xcprivacy, AppDelegate, icônes,
       # schéma Xcode, bundle id, équipe, versions, réglages de signature et
@@ -322,7 +378,7 @@ jobs:
           # mise : sans profil exporté, pas d'entrée à écrire ici.
           watch_profile=""
           if [ -n "${IOS_WATCH_PROVISIONING_PROFILE:-}" ]; then
-            watch_profile="  <key>fr.petitejerusalem.app.watchkitapp</key>
+            watch_profile="  <key>$PJ_APP_ID.watchkitapp</key>
               <string>$IOS_WATCH_PROVISIONING_PROFILE</string>"
           fi
           cat > "$RUNNER_TEMP/ExportOptions.plist" <<EOF
@@ -345,9 +401,9 @@ jobs:
                  chacun leur App ID et donc leur propre profil. -->
             <key>provisioningProfiles</key>
             <dict>
-              <key>fr.petitejerusalem.app</key>
+              <key>$PJ_APP_ID</key>
               <string>$IOS_PROVISIONING_PROFILE</string>
-              <key>fr.petitejerusalem.app.PjWidgets</key>
+              <key>$PJ_APP_ID.PjWidgets</key>
               <string>$IOS_WIDGET_PROVISIONING_PROFILE</string>
             $watch_profile
             </dict>
@@ -372,7 +428,7 @@ jobs:
       - name: Archiver l'IPA
         uses: actions/upload-artifact@v4
         with:
-          name: app-release-ios-${{ steps.version.outputs.name }}
+          name: app-release-ios-${{ steps.version.outputs.name }}${{ inputs.environment == 'staging' && format('-staging-{0}', steps.version.outputs.build) || '' }}
           path: ${{ runner.temp }}/export/*.ipa
           if-no-files-found: error
 
@@ -411,6 +467,8 @@ jobs:
       # Non bloquant, mais PAS silencieux : `continue-on-error` affichait
       # l'étape en vert et l'échec ne se voyait qu'en dépliant le journal.
       - name: Mettre à jour la fiche App Store
+        # L'app de staging ne sort pas de TestFlight : pas de fiche.
+        if: ${{ inputs.environment != 'staging' }}
         env:
           ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
           GH_TOKEN: ${{ github.token }}
@@ -452,7 +510,8 @@ jobs:
   # node:).
   screenshots:
     needs: ios
-    if: ${{ !inputs.debug_signing }}
+    # Ni captures ni examen pour l'app de staging, qui reste sur TestFlight.
+    if: ${{ !inputs.debug_signing && inputs.environment != 'staging' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -493,7 +552,7 @@ jobs:
   # succès : sans captures fraîches, celles du store restent en place.
   submit:
     needs: [ios, screenshots]
-    if: ${{ !cancelled() && needs.ios.result == 'success' && !inputs.debug_signing && vars.IOS_AUTO_SUBMIT != 'false' }}
+    if: ${{ !cancelled() && needs.ios.result == 'success' && !inputs.debug_signing && inputs.environment != 'staging' && vars.IOS_AUTO_SUBMIT != 'false' }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:

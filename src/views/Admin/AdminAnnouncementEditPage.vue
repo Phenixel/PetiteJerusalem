@@ -5,13 +5,24 @@ import { useI18n } from "vue-i18n";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import AnnouncementItem from "../../components/announcements/AnnouncementItem.vue";
 import AnnouncementHomeCard from "../../components/announcements/AnnouncementHomeCard.vue";
-import { adminService, type AnnouncementAdminFields } from "../../services/adminService";
+import AnnouncementPoll from "../../components/announcements/AnnouncementPoll.vue";
+import {
+  adminService,
+  POLL_IMAGE_MAX_BYTES,
+  type AnnouncementAdminFields,
+  type PollResults,
+} from "../../services/adminService";
 import {
   ANNOUNCEMENT_ICONS,
   ANNOUNCEMENT_KINDS,
+  FIX_VERSION_PATTERN,
+  POLL_MAX_OPTIONS,
+  POLL_MIN_OPTIONS,
+  pollPageUrl,
   type Announcement,
   type AnnouncementKind,
   type LocalizedText,
+  type Poll,
 } from "../../services/announcements";
 import { dateTimeFormat } from "../../services/intlCache";
 import { useConfirm } from "../../composables/useConfirm";
@@ -25,6 +36,10 @@ import AdminSkeleton from "../../components/admin/AdminSkeleton.vue";
  * les traductions en option), un lien, et la publier. La case « notifier »
  * envoie la notification au moment de la publication, une seule fois : la
  * confirmation le rappelle, puisqu'on ne rattrape pas une notification.
+ *
+ * Une question peut porter un sondage : de deux à huit choix, chacun avec
+ * son image s'il le faut, un seul ou plusieurs à cocher. Les réponses se
+ * lisent ici, sous l'aperçu.
  *
  * `/admin/informations/nouvelle` crée ; tout autre identifiant modifie.
  */
@@ -53,7 +68,94 @@ const body = ref<{ fr: string; en: string; he: string }>({ fr: "", en: "", he: "
 const linkUrl = ref("");
 const linkLabel = ref<{ fr: string; en: string; he: string }>({ fr: "", en: "", he: "" });
 const version = ref("");
+const fixedIn = ref("");
 const resolved = ref(false);
+
+/** Un choix en cours d'écriture ; `id` ne change plus une fois créé. */
+interface OptionDraft {
+  id: string;
+  label: { fr: string; en: string; he: string };
+  image: string | null;
+  uploading: boolean;
+}
+const pollEnabled = ref(false);
+const pollOptions = ref<OptionDraft[]>([]);
+const pollMultiple = ref(false);
+const pollClosed = ref(false);
+const pollResults = ref<PollResults | null>(null);
+
+function newOptionId(): string {
+  let id: string;
+  do id = Math.random().toString(36).slice(2, 8);
+  while (pollOptions.value.some((o) => o.id === id));
+  return id;
+}
+
+function addOption(): void {
+  if (pollOptions.value.length >= POLL_MAX_OPTIONS) return;
+  pollOptions.value.push({
+    id: newOptionId(),
+    label: { fr: "", en: "", he: "" },
+    image: null,
+    uploading: false,
+  });
+}
+
+function enablePoll(): void {
+  pollEnabled.value = true;
+  while (pollOptions.value.length < POLL_MIN_OPTIONS) addOption();
+}
+
+function moveOption(index: number, delta: number): void {
+  const target = index + delta;
+  if (target < 0 || target >= pollOptions.value.length) return;
+  const list = [...pollOptions.value];
+  [list[index], list[target]] = [list[target], list[index]];
+  pollOptions.value = list;
+}
+
+function removeOption(index: number): void {
+  pollOptions.value = pollOptions.value.filter((_, i) => i !== index);
+}
+
+/** L'identifiant sous lequel l'information sera enregistrée (tiré d'avance si nouvelle). */
+const announcementId = ref("");
+
+async function pickImage(option: OptionDraft, event: Event): Promise<void> {
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  input.value = "";
+  if (!file) return;
+  if (file.size > POLL_IMAGE_MAX_BYTES) {
+    toast.error(t("admin.announcements.poll.imageTooLarge"));
+    return;
+  }
+  option.uploading = true;
+  try {
+    option.image = await adminService.uploadPollImage(announcementId.value, option.id, file);
+  } catch (error) {
+    console.error("Erreur lors de l'envoi de l'image:", error);
+    toast.error(t("admin.error"));
+  } finally {
+    option.uploading = false;
+  }
+}
+
+async function loadResults(poll: Poll): Promise<void> {
+  try {
+    pollResults.value = await adminService.pollResults(
+      routeId.value,
+      poll.options.map((o) => o.id),
+    );
+  } catch (error) {
+    console.error("Erreur lors de la lecture des réponses:", error);
+  }
+}
+
+function percent(count: number): number {
+  const total = pollResults.value?.total ?? 0;
+  return total ? Math.round((count / total) * 100) : 0;
+}
 const published = ref(false);
 const notify = ref(true);
 
@@ -69,21 +171,41 @@ const notifiedLabel = computed(() =>
 
 onMounted(async () => {
   try {
-    if (isNew.value) return;
+    if (isNew.value) {
+      announcementId.value = adminService.newAnnouncementId();
+      return;
+    }
+    announcementId.value = routeId.value;
     const found = await adminService.getAnnouncement(routeId.value);
     existing.value = found;
     if (!found) return;
     kind.value = found.kind;
     title.value = { fr: found.title.fr, en: found.title.en ?? "", he: found.title.he ?? "" };
     body.value = { fr: found.body.fr, en: found.body.en ?? "", he: found.body.he ?? "" };
-    linkUrl.value = found.link?.url ?? "";
+    // Le lien vers la page de vote est posé à l'enregistrement (voir
+    // linkWithPollPage) : affiché ici, il passerait pour un lien choisi.
+    const link = found.link?.url === pollPageUrl(found.id) ? null : found.link;
+    linkUrl.value = link?.url ?? "";
     linkLabel.value = {
-      fr: found.link?.label.fr ?? "",
-      en: found.link?.label.en ?? "",
-      he: found.link?.label.he ?? "",
+      fr: link?.label.fr ?? "",
+      en: link?.label.en ?? "",
+      he: link?.label.he ?? "",
     };
     version.value = found.version ?? "";
+    fixedIn.value = found.fixedIn ?? "";
     resolved.value = found.resolved;
+    if (found.poll) {
+      pollEnabled.value = true;
+      pollOptions.value = found.poll.options.map((o) => ({
+        id: o.id,
+        label: { fr: o.label.fr, en: o.label.en ?? "", he: o.label.he ?? "" },
+        image: o.image,
+        uploading: false,
+      }));
+      pollMultiple.value = found.poll.multiple;
+      pollClosed.value = found.poll.closed;
+      void loadResults(found.poll);
+    }
     published.value = found.published;
     notify.value = found.notify;
   } finally {
@@ -105,9 +227,23 @@ const fields = computed<AnnouncementAdminFields>(() => ({
   body: text(body.value),
   link: linkUrl.value.trim() ? { url: linkUrl.value.trim(), label: text(linkLabel.value) } : null,
   version: kind.value === "release" && version.value.trim() ? version.value.trim() : null,
+  fixedIn:
+    kind.value === "incident" && fixedIn.value.trim()
+      ? fixedIn.value.trim().replace(/^v/i, "")
+      : null,
   resolved: kind.value === "incident" ? resolved.value : false,
+  poll: kind.value === "question" && pollEnabled.value ? poll.value : null,
   published: published.value,
   notify: notify.value,
+}));
+
+/** Le sondage tel qu'il sera enregistré : les choix sans libellé sont laissés de côté. */
+const poll = computed<Poll>(() => ({
+  options: pollOptions.value
+    .filter((o) => o.label.fr.trim())
+    .map((o) => ({ id: o.id, label: text(o.label), image: o.image })),
+  multiple: pollMultiple.value,
+  closed: pollClosed.value,
 }));
 
 /** L'aperçu : l'information telle que la liste la montrera. */
@@ -136,6 +272,18 @@ async function save(): Promise<void> {
     errorMessage.value = t("admin.announcements.missingFields");
     return;
   }
+  if (fields.value.fixedIn && !FIX_VERSION_PATTERN.test(fields.value.fixedIn)) {
+    errorMessage.value = t("admin.announcements.invalidFixVersion");
+    return;
+  }
+  if (fields.value.poll && fields.value.poll.options.length < POLL_MIN_OPTIONS) {
+    errorMessage.value = t("admin.announcements.poll.tooFew");
+    return;
+  }
+  if (pollOptions.value.some((o) => o.uploading)) {
+    errorMessage.value = t("admin.announcements.poll.uploading");
+    return;
+  }
   const url = linkUrl.value.trim();
   if (url && !url.startsWith("/") && !/^https?:\/\//i.test(url)) {
     errorMessage.value = t("admin.announcements.invalidLink");
@@ -151,11 +299,11 @@ async function save(): Promise<void> {
   }
   isSaving.value = true;
   try {
-    await adminService.saveAnnouncement(
-      isNew.value ? null : routeId.value,
-      fields.value,
-      existing.value,
-    );
+    if (isNew.value) {
+      await adminService.saveAnnouncement(null, fields.value, null, announcementId.value);
+    } else {
+      await adminService.saveAnnouncement(routeId.value, fields.value, existing.value);
+    }
     toast.success(t("admin.announcements.saved"));
     void refreshAdminSummary(true);
     router.push(returnTo);
@@ -264,6 +412,179 @@ async function remove(): Promise<void> {
             class="field sm:w-48"
           />
           <p class="mt-2 text-xs text-text-secondary">{{ t("admin.announcements.versionHint") }}</p>
+        </div>
+
+        <div v-if="kind === 'incident'">
+          <label class="block text-sm font-semibold text-text-secondary mb-2" for="ann-fixed-in">{{
+            t("admin.announcements.fixVersionLabel")
+          }}</label>
+          <input
+            id="ann-fixed-in"
+            v-model="fixedIn"
+            type="text"
+            placeholder="3.11.0"
+            class="field sm:w-48"
+          />
+          <p class="mt-2 text-xs text-text-secondary">
+            {{ t("admin.announcements.fixVersionHint") }}
+          </p>
+        </div>
+
+        <div v-if="kind === 'question'" class="rounded-control bg-surface-soft p-4">
+          <div v-if="!pollEnabled" class="flex flex-wrap items-center justify-between gap-3">
+            <p class="text-sm text-text-secondary">{{ t("admin.announcements.poll.intro") }}</p>
+            <button type="button" class="btn btn-soft" @click="enablePoll">
+              <AppIcon name="list" :size="14" />
+              {{ t("admin.announcements.poll.enable") }}
+            </button>
+          </div>
+          <template v-else>
+            <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
+              <span class="font-semibold text-text-primary">{{
+                t("admin.announcements.poll.title")
+              }}</span>
+              <button
+                type="button"
+                class="text-sm font-medium text-text-secondary hover:text-primary"
+                @click="pollEnabled = false"
+              >
+                {{ t("admin.announcements.poll.disable") }}
+              </button>
+            </div>
+            <p class="mb-4 text-xs text-text-secondary">
+              {{ t("admin.announcements.poll.hint") }}
+            </p>
+
+            <ol class="space-y-3">
+              <li
+                v-for="(option, index) in pollOptions"
+                :key="option.id"
+                class="card space-y-2 p-3"
+              >
+                <div class="flex items-center gap-2">
+                  <span class="w-5 shrink-0 text-sm font-semibold text-text-secondary">{{
+                    index + 1
+                  }}</span>
+                  <input
+                    v-model="option.label.fr"
+                    type="text"
+                    maxlength="120"
+                    :aria-label="t('admin.announcements.poll.optionLabel', { n: index + 1 })"
+                    :placeholder="t('admin.announcements.poll.optionPlaceholder')"
+                    class="field"
+                  />
+                  <button
+                    type="button"
+                    class="icon-btn shrink-0 disabled:opacity-40"
+                    :disabled="index === 0"
+                    :aria-label="t('admin.announcements.poll.up')"
+                    @click="moveOption(index, -1)"
+                  >
+                    <AppIcon name="chevron-up" :size="16" />
+                  </button>
+                  <button
+                    type="button"
+                    class="icon-btn shrink-0 disabled:opacity-40"
+                    :disabled="index === pollOptions.length - 1"
+                    :aria-label="t('admin.announcements.poll.down')"
+                    @click="moveOption(index, 1)"
+                  >
+                    <AppIcon name="chevron-down" :size="16" />
+                  </button>
+                  <button
+                    type="button"
+                    class="icon-btn shrink-0 disabled:opacity-40"
+                    :aria-label="t('admin.announcements.poll.remove')"
+                    @click="removeOption(index)"
+                  >
+                    <AppIcon name="trash" :size="16" />
+                  </button>
+                </div>
+                <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  <input
+                    v-model="option.label.en"
+                    type="text"
+                    maxlength="120"
+                    dir="ltr"
+                    :placeholder="t('admin.announcements.lang.en')"
+                    class="field"
+                  />
+                  <input
+                    v-model="option.label.he"
+                    type="text"
+                    maxlength="120"
+                    dir="rtl"
+                    :placeholder="t('admin.announcements.lang.he')"
+                    class="field"
+                  />
+                </div>
+                <div class="flex flex-wrap items-center gap-3">
+                  <img
+                    v-if="option.image"
+                    :src="option.image"
+                    alt=""
+                    class="h-14 w-20 rounded-control object-cover"
+                  />
+                  <label class="btn btn-soft cursor-pointer">
+                    <AppIcon
+                      :name="option.uploading ? 'spinner' : 'plus'"
+                      :size="14"
+                      :class="{ 'animate-spin': option.uploading }"
+                    />
+                    {{
+                      option.image
+                        ? t("admin.announcements.poll.replaceImage")
+                        : t("admin.announcements.poll.addImage")
+                    }}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      class="sr-only"
+                      :disabled="option.uploading"
+                      @change="pickImage(option, $event)"
+                    />
+                  </label>
+                  <button
+                    v-if="option.image"
+                    type="button"
+                    class="text-sm font-medium text-text-secondary hover:text-primary"
+                    @click="option.image = null"
+                  >
+                    {{ t("admin.announcements.poll.removeImage") }}
+                  </button>
+                </div>
+              </li>
+            </ol>
+
+            <button
+              v-if="pollOptions.length < POLL_MAX_OPTIONS"
+              type="button"
+              class="btn btn-soft mt-3"
+              @click="addOption"
+            >
+              <AppIcon name="plus" :size="14" />
+              {{ t("admin.announcements.poll.addOption") }}
+            </button>
+
+            <div class="mt-4 space-y-2">
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input
+                  v-model="pollMultiple"
+                  type="checkbox"
+                  class="w-5 h-5 rounded accent-primary cursor-pointer"
+                />
+                <span class="text-text-primary">{{ t("admin.announcements.poll.multiple") }}</span>
+              </label>
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input
+                  v-model="pollClosed"
+                  type="checkbox"
+                  class="w-5 h-5 rounded accent-primary cursor-pointer"
+                />
+                <span class="text-text-primary">{{ t("admin.announcements.poll.closed") }}</span>
+              </label>
+            </div>
+          </template>
         </div>
 
         <label v-if="kind === 'incident'" class="inline-flex items-center gap-2 cursor-pointer">
@@ -417,6 +738,37 @@ async function remove(): Promise<void> {
           {{ t("admin.announcements.preview") }}
         </h3>
         <AnnouncementItem :announcement="preview" />
+        <AnnouncementPoll
+          v-if="preview.poll"
+          :announcement="{ ...preview, poll: preview.poll }"
+          preview
+        />
+
+        <template v-if="existing?.poll && pollResults">
+          <h3 class="mb-3 mt-6 text-sm font-semibold text-text-secondary">
+            {{ t("admin.announcements.poll.results", pollResults.total) }}
+          </h3>
+          <ul class="card space-y-3 p-4">
+            <li v-for="option in existing.poll.options" :key="option.id">
+              <div class="mb-1 flex justify-between gap-3 text-sm">
+                <span class="text-text-primary">{{ option.label.fr }}</span>
+                <span class="shrink-0 font-semibold text-text-primary">
+                  {{ pollResults.byOption[option.id] ?? 0 }}
+                  <span class="font-normal text-text-secondary"
+                    >({{ percent(pollResults.byOption[option.id] ?? 0) }} %)</span
+                  >
+                </span>
+              </div>
+              <div class="h-2 overflow-hidden rounded-pill bg-surface-soft">
+                <div
+                  class="h-full rounded-pill bg-brand"
+                  :style="{ width: `${percent(pollResults.byOption[option.id] ?? 0)}%` }"
+                ></div>
+              </div>
+            </li>
+          </ul>
+        </template>
+
         <h3 class="mb-3 mt-6 text-sm font-semibold text-text-secondary">
           {{ t("admin.announcements.previewHome") }}
         </h3>

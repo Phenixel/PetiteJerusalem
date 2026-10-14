@@ -123,3 +123,12 @@ Réglages → Développeur → Associated Domains Development.
 - **Un seul host déclaré** (`petite-jerusalem.fr`) : tout host ajouté à
   l'intent-filter doit servir sa propre preuve, faute de quoi la vérification
   échoue pour l'ensemble.
+- **Le fichier iOS vaut pour toutes les versions installées.** Servi par le
+  site, `apple-app-site-association` s'applique dès le déploiement web, y
+  compris aux versions de l'app qui ne connaissent pas encore une page
+  nouvelle : elles l'ouvriraient sur une page introuvable. Une page nouvelle
+  reste donc au navigateur sur iPhone (`IOS_DEFERRED_PATHS`) tant que des
+  versions d'avant elle circulent ; elle en sort quand la plus ancienne
+  version encore en circulation la connaît. Aujourd'hui : `/sidour`, arrivé
+  avec la page du Sidour. Android n'a pas ce souci, son intent-filter étant
+  figé dans chaque version. Tenu par `src/__tests__/appLinks.test.ts`.

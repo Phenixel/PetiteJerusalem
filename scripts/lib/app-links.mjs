@@ -28,11 +28,17 @@
  * publiées dans les fichiers `.well-known`, elles n'ont rien de secret.
  */
 
-/** Domaine du site. Un seul host : chaque host déclaré doit servir sa preuve. */
-export const APP_LINK_DOMAIN = "petite-jerusalem.fr";
+import { ENV } from "./environments.mjs";
 
-/** Identifiant de l'app, commun aux deux plateformes (capacitor.config.ts). */
-export const APP_ID = "fr.petitejerusalem.app";
+/**
+ * Domaine du site. Un seul host : chaque host déclaré doit servir sa preuve.
+ * Celui de l'environnement visé (PJ_ENV) : le site de staging sert les preuves
+ * de l'app de staging, et elle seule les réclame (docs/staging.md).
+ */
+export const APP_LINK_DOMAIN = new URL(ENV.siteUrl).host;
+
+/** Identifiant de l'app, commun aux deux plateformes (environments.mjs). */
+export const APP_ID = ENV.appId;
 
 /** Écrites en dur si on préfère ne pas dépendre de l'environnement. */
 const ANDROID_SHA256_DEFAULT = [];
@@ -74,11 +80,37 @@ export const APP_LINK_PATHS = [
   "/profile",
   "/session-management",
   "/share-reading",
+  "/sidour",
   "/studio",
   "/tehilim",
   "/telechargements",
   "/zmanim",
 ];
+
+/**
+ * Les pages du site qui doivent rester au navigateur, même app installée :
+ * `/sondage/:id` est l'adresse que suivent les versions de l'app qui ne
+ * savent pas afficher un sondage (voir pollPageUrl dans
+ * src/services/announcements.ts). Revendiquée par l'app, elle la rouvrirait
+ * sur une page sans les choix. Le test de couverture les met à part.
+ */
+export const BROWSER_ONLY_PATHS = ["/sondage"];
+
+/**
+ * Les chemins que l'app connaît depuis trop peu pour être confiés à iOS.
+ *
+ * Le fichier `apple-app-site-association` est servi par le site : il vaut
+ * aussitôt pour toutes les versions installées, y compris celles qui ne
+ * connaissent pas encore ces pages et ouvriraient une page introuvable (un
+ * lien vers /sidour, dans une version d'avant le Sidour). Tant qu'elles
+ * circulent, ces liens restent au navigateur sur iPhone. Android n'est pas
+ * concerné : son intent-filter est figé dans chaque version, qui ne déclare
+ * que les pages qu'elle connaît.
+ *
+ * Un chemin en sort quand la plus ancienne version encore en circulation le
+ * connaît (voir docs/app-links.md). Tenu par src/__tests__/appLinks.test.ts.
+ */
+export const IOS_DEFERRED_PATHS = ["/sidour"];
 
 /** Un chemin est-il de ceux que l'app ouvre ? (préfixe exact ou sous-chemin) */
 export function isAppLinkPath(path) {
@@ -142,8 +174,8 @@ export function buildAssetLinks(fingerprints) {
  * aussi les chemins simplement voisins.
  */
 export function buildAppleAppSiteAssociation(teamId) {
-  const components = APP_LINK_PATHS.flatMap((path) =>
-    path === "/" ? [{ "/": "/" }] : [{ "/": path }, { "/": `${path}/*` }],
+  const components = APP_LINK_PATHS.filter((path) => !IOS_DEFERRED_PATHS.includes(path)).flatMap(
+    (path) => (path === "/" ? [{ "/": "/" }] : [{ "/": path }, { "/": `${path}/*` }]),
   );
   return {
     applinks: {

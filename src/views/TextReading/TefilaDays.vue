@@ -37,7 +37,7 @@ const say = (label: Rubric): string => rubricText(label, locale.value);
         :class="[
           'flex items-center gap-1.5 rounded-pill px-3 py-1 text-sm font-medium transition-colors',
           day.when === shown
-            ? 'bg-primary text-white'
+            ? 'bg-brand text-on-brand'
             : 'bg-black/5 text-text-secondary hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/15',
         ]"
         @click="emit('pick', day.when)"
@@ -48,7 +48,7 @@ const say = (label: Rubric): string => rubricText(label, locale.value);
         <span
           v-if="day.when === today"
           class="h-1.5 w-1.5 rounded-pill"
-          :class="day.when === shown ? 'bg-white' : 'bg-primary'"
+          :class="day.when === shown ? 'bg-on-brand' : 'bg-primary'"
           aria-hidden="true"
         />
         <span v-if="day.when === today" class="sr-only">{{ t("textReading.days.today") }}</span>
