@@ -1671,6 +1671,30 @@ la journée) ; « Maintenant » se pose après le moment présent, un rond plein
 - Les pierres sont dans `components/parcours/stones.css`, que chaque
   composant qui en pose importe.
 
+### Nouvel objectif, en trois pas
+
+La création suit P2-Creer1 à 3 et P2-Habitude : en tête, le retour et le
+pas (« 2 sur 3 »), puis la question en grand, alignée au début.
+
+- **Que voulez-vous accomplir ?** Les volumes debout sur leur planche
+  (Michna, Talmud, Tanakh, Tehilim) ; les cycles en pastilles (Tehilim
+  chaque semaine, chaque mois, Chnei mikra, un texte chaque jour) ; les
+  habitudes en pastilles, et « Avec mes mots » en contour, à l'encre.
+- **D'ici quand ?** Quatre réponses en liste : la veille de Roch Hachana,
+  de Pessa'h (avec le nombre de jours), une autre date, ou « à mon
+  rythme » (tant par jour ou par semaine : la date de fin s'en déduit).
+  Le rythme en trois segments ; la réponse en couleur pleine, avec son
+  volume : ce que demande chaque jour d'étude, en unités et en minutes, et
+  la fin. « Plus soutenu. » au-delà d'une demi-heure par jour. À la
+  semaine, les jours où la carte vient sur l'accueil (le dimanche, le
+  mercredi et le vendredi d'office) ; le moment en pastilles.
+- **Une habitude** : son nom, ses jours en cases plates (Chabbat en pause
+  pour les tefilin et la tsédaka), et son moment, qu'on pose en glissant
+  le rond sur le fil du jour : au réveil, avec Cha'harit, à midi, avec
+  Min'ha, avec Arvit, au coucher, ou toute la journée. Le repère se garde
+  (`anchor`) et dit la carte (« Ce soir, après Arvit »). Les réglages
+  d'une habitude prise reprennent le même écran.
+
 ## 2. Les couleurs de thème
 
 Deux couleurs, l'orange et le bleu de la palette du logo. Le fond et le mur

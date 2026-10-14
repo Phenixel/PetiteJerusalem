@@ -174,4 +174,45 @@ describe("le paquet de l'accueil", () => {
     expect(deck.pending.value.some((card) => card.key === omer?.key)).toBe(false);
     expect(localStorage.getItem("pj_parcours_occasions")).toContain(omer!.occasion!.key);
   });
+
+  it("donne les Tehilim de la semaine au jour de la semaine, et Birkat Hamazon après le repas", async () => {
+    const { createCycle, createHabit } = await import("../services/parcours/create");
+    const week = createCycle("tehilim-week", TODAY, 10);
+    const hamazon = createHabit(
+      { preset: "birkat-hamazon", name: "", days: ALL_WEEK, moment: "afternoon", anchor: "noon" },
+      TODAY,
+      11,
+    );
+    const { deck } = await mountDeck([week, hamazon]);
+    // Mercredi : les psaumes 73 à 89.
+    const tehilim = deck.day.value.find((card) => card.view?.objective.id === week.id);
+    expect(tehilim?.title).toBe("Tehilim 73 à 89");
+    expect(tehilim?.meta).toMatch(/^17\spsaumes$/);
+    const meal = deck.day.value.find((card) => card.view?.objective.id === hamazon.id);
+    expect(meal?.kicker).toBe(fr.parcours.anchorKicker.noon);
+    expect(meal?.meta).toBe(fr.parcours.hub.afterMeal);
+    expect(meal?.art).toEqual({ kind: "siddur" });
+  });
+
+  it("ne montre une carte de la semaine que les jours qu'on lui a donnés", async () => {
+    const { createProgram } = await import("../services/parcours/create");
+    const draft = { corpus: "michna" as const, parts: ["seder:moed"], end: "2027-09-25" };
+    // Mercredi : la carte vient le mercredi, pas l'autre.
+    const wednesday = createProgram(
+      { ...draft, rhythm: "weekly", moment: "evening", cardDays: [0, 3, 5] },
+      TODAY,
+      20,
+    );
+    const monday = createProgram(
+      { ...draft, rhythm: "weekly", moment: "evening", cardDays: [1] },
+      TODAY,
+      21,
+    );
+    const { deck, store } = await mountDeck([wednesday, monday]);
+    const ids = deck.day.value.map((card) => card.view?.objective.id);
+    expect(ids).toContain(wednesday.id);
+    expect(ids).not.toContain(monday.id);
+    // Ma journée, elle, garde les deux.
+    expect(store.todayTasks.value.map((task) => task.objectiveId)).toContain(monday.id);
+  });
 });

@@ -1,7 +1,8 @@
 <script setup lang="ts">
 /**
- * Nouvel objectif, en étapes : quoi, quelle partie, pour quand. Une habitude,
- * une lecture du calendrier ou un texte du jour vont plus vite.
+ * Nouvel objectif, en étapes (P2-Creer1 à 3, P2-Habitude) : quoi, quelle
+ * partie, pour quand. Une habitude, un cycle ou un texte du jour vont plus
+ * vite. L'étape se dit en haut à droite (« 2 sur 3 »).
  *
  * L'étape est dans l'adresse (`?etape=`), comme ce qu'on a déjà pris : le
  * retour du téléphone ramène à l'étape d'avant, sans rien perdre.
@@ -9,7 +10,7 @@
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
-import AppIcon from "../../components/icons/AppIcon.vue";
+import ParcoursBack from "../../components/parcours/ParcoursBack.vue";
 import StepHabit from "../../components/parcours/create/StepHabit.vue";
 import StepKind from "../../components/parcours/create/StepKind.vue";
 import StepParts from "../../components/parcours/create/StepParts.vue";
@@ -17,6 +18,7 @@ import StepText from "../../components/parcours/create/StepText.vue";
 import StepWhen from "../../components/parcours/create/StepWhen.vue";
 import { useParcours } from "../../composables/useParcours";
 import { useParcoursMeta } from "../../composables/useParcoursMeta";
+import { useParcoursViews } from "../../composables/useParcoursViews";
 import type { TextStudyJsonEntry } from "../../models/models";
 import { analyticsService } from "../../services/analyticsService";
 import { milestoneEve } from "../../services/parcours/calendar";
@@ -35,6 +37,7 @@ import {
   isAlive,
   type CycleId,
   type DayKey,
+  type HabitAnchor,
   type HabitPreset,
   type MomentId,
   type Objective,
@@ -51,6 +54,7 @@ const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const store = useParcours();
+const views = useParcoursViews();
 
 const CORPORA: ProgramCorpus[] = ["michna", "talmud", "tanakh", "tehilim"];
 
@@ -90,20 +94,37 @@ const programMoment = ref<MomentId>(PROGRAM_DEFAULT_MOMENT);
 const habitName = ref("");
 const habitDays = ref<number[]>([]);
 const habitMoment = ref<MomentId>("anytime");
+const habitAnchor = ref<HabitAnchor | null>(null);
+/** À la semaine : la carte vient le dimanche, le mercredi et le vendredi (P2-Creer3). */
+const cardDays = ref<number[]>([0, 3, 5]);
 
 const stepTitle = computed(() => {
   switch (step.value) {
     case "parts":
       return t(`parcours.create.partsTitle.${corpus.value}`);
-    case "when":
-      return t("parcours.create.whenTitle");
+    case "when": {
+      const title = corpus.value
+        ? views.objectiveTitle({
+            kind: "program",
+            corpus: corpus.value,
+            parts: parts.value,
+          } as Objective)
+        : "";
+      return t("parcours.create.whenTitle", { title });
+    }
     case "habit":
-      return t(`parcours.habits.${preset.value}`);
+      return t("parcours.create.habitTitle");
     case "text":
       return t("parcours.create.dailyText");
     default:
-      return t("parcours.create.title");
+      return t("parcours.create.kindTitle");
   }
+});
+
+/** « 1 sur 3 » : où l'on en est des trois étapes d'un texte à finir. */
+const stepCount = computed(() => {
+  const n = { kind: 1, parts: 2, when: 3 }[step.value as "kind" | "parts" | "when"];
+  return n ? t("parcours.create.stepOf", { n, total: 3 }) : "";
 });
 
 const takenCycles = computed(() =>
@@ -129,6 +150,7 @@ function startHabit(chosen: HabitPreset): void {
   habitName.value = "";
   habitDays.value = [...HABIT_DEFAULTS[chosen].days];
   habitMoment.value = HABIT_DEFAULTS[chosen].moment;
+  habitAnchor.value = HABIT_DEFAULTS[chosen].anchor ?? null;
 }
 
 function chooseHabit(chosen: HabitPreset): void {
@@ -161,6 +183,7 @@ function createChosenProgram(): void {
       rhythm: rhythm.value,
       end: end.value,
       moment: programMoment.value,
+      cardDays: cardDays.value,
     },
     store.today.value,
     Date.now(),
@@ -181,6 +204,7 @@ function createChosenHabit(): void {
       name: habitName.value,
       days: habitDays.value,
       moment: habitMoment.value,
+      anchor: habitAnchor.value ?? undefined,
     },
     store.today.value,
     Date.now(),
@@ -202,20 +226,18 @@ const canGoOn = computed(
 </script>
 
 <template>
-  <main class="mx-auto w-full max-w-2xl px-4 py-8 md:px-6 md:py-12">
-    <button v-if="step !== 'kind'" type="button" class="back-link mb-4" @click="router.back()">
-      <AppIcon name="arrow-left" :size="14" class="rtl:rotate-180" />
-      {{ t("common.back") }}
-    </button>
-    <RouterLink v-else to="/parcours" class="back-link mb-4">
-      <AppIcon name="arrow-left" :size="14" class="rtl:rotate-180" />
-      {{ t("parcours.title") }}
-    </RouterLink>
-    <h1 class="text-center font-display text-3xl font-bold leading-tight">{{ stepTitle }}</h1>
+  <main class="mx-auto w-full max-w-2xl px-4 pb-8 pt-[18px] md:px-6 md:py-12">
+    <div class="flex items-center justify-between">
+      <ParcoursBack v-if="step !== 'kind'" :label="t('common.back')" />
+      <ParcoursBack v-else to="/parcours" :label="t('parcours.title')" />
+      <span v-if="stepCount" class="text-[13px] font-semibold text-text-secondary">
+        {{ stepCount }}
+      </span>
+    </div>
+    <h1 class="mt-3.5 font-display text-[30px] font-bold leading-tight">{{ stepTitle }}</h1>
 
     <StepKind
       v-if="step === 'kind'"
-      class="mt-8"
       :taken-cycles="takenCycles"
       @program="chooseProgram"
       @cycle="createChosenCycle"
@@ -240,7 +262,7 @@ const canGoOn = computed(
       v-model:end="end"
       v-model:rhythm="rhythm"
       v-model:moment="programMoment"
-      class="mt-6"
+      v-model:card-days="cardDays"
       :corpus="corpus"
       :parts="parts"
       @create="createChosenProgram"
@@ -251,7 +273,7 @@ const canGoOn = computed(
       v-model:name="habitName"
       v-model:days="habitDays"
       v-model:moment="habitMoment"
-      class="mt-6"
+      v-model:anchor="habitAnchor"
       :preset="preset"
       @create="createChosenHabit"
     />

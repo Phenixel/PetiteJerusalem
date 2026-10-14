@@ -767,8 +767,8 @@ Les cases d'une portion, cochées une à une sur la page d'un programme à la se
 | --- | --- |
 | `kind` | `program`, `habit`, `cycle`, `text` |
 | `corpus`, `rhythm`, `parts_count`, `texts_count` | un programme : `michna`, `talmud`, `tanakh`, `tehilim` ; `daily`, `weekdays`, `weekly` ; les parties prises (sedarim, traités, livres) ; les textes qu'elles font |
-| `preset`, `days_count` | une habitude : `tefilot`, `tefilin`, `chema-al-hamita`, `tsedaka`, `chmirat-halachon`, `custom` ; ses jours dans la semaine |
-| `cycle` | une lecture du calendrier : `tehilim-month`, `parasha` |
+| `preset`, `days_count` | une habitude : `tefilot`, `tefilin`, `chema-al-hamita`, `birkat-hamazon`, `tsedaka`, `chmirat-halachon` (les objectifs d'avant), `custom` (« Avec mes mots ») ; ses jours dans la semaine |
+| `cycle` | une lecture du calendrier : `tehilim-week`, `tehilim-month`, `parasha` |
 | `text_id` | un texte du jour |
 
 ### `parcours_objective_paused`, `parcours_objective_removed` (nouveaux)

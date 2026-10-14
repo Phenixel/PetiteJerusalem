@@ -14,12 +14,11 @@
  * L'étagère défile quand elle se remplit, plutôt que de rapetisser ses
  * volumes : un titre de couverture doit se lire.
  */
-import { HDate } from "@hebcal/core";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { useParcours } from "../../composables/useParcours";
 import { useParcoursViews } from "../../composables/useParcoursViews";
-import { getTehilimOfHebrewDay } from "../../services/dailyCycles";
+import { tehilimOfCycle } from "../../services/dailyCycles";
 import { localDayFrom } from "../../services/dateService";
 import type { Objective, ProgramObjective } from "../../services/parcours/model";
 import { liveObjectives, taskProgress, type Task } from "../../services/parcours/schedule";
@@ -70,19 +69,19 @@ function programCaption(objective: ProgramObjective): string {
   return t("parcours.shelf.caption", { percent: Math.floor(progress * 100), state });
 }
 
-/** Les Tehilim du mois : le dernier psaume lu, sur les 150. */
-function tehilimPosition(objective: Objective): number {
+/** Les Tehilim du mois ou de la semaine : le dernier psaume lu, sur les 150. */
+function tehilimPosition(objective: Objective, cycle: "tehilim-month" | "tehilim-week"): number {
   const date = localDayFrom(store.today.value) ?? new Date();
   date.setHours(12);
-  const psalms = getTehilimOfHebrewDay(new HDate(date)).psalms;
+  const psalms = tehilimOfCycle(cycle, date).psalms;
   const task = taskOf(objective);
   return task && isDone(task) ? psalms[psalms.length - 1] : psalms[0] - 1;
 }
 
 function caption(objective: Objective): string {
   if (objective.kind === "program") return programCaption(objective);
-  if (objective.kind === "cycle" && objective.cycle === "tehilim-month" && props.home) {
-    return t("parcours.shelf.of", { n: tehilimPosition(objective), total: 150 });
+  if (objective.kind === "cycle" && objective.cycle !== "parasha" && props.home) {
+    return t("parcours.shelf.of", { n: tehilimPosition(objective, objective.cycle), total: 150 });
   }
   return views.objectiveTitle(objective);
 }

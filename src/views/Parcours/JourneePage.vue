@@ -28,11 +28,11 @@ import { useTodayDeck } from "../../composables/useTodayDeck";
 import { useWallLabels } from "../../composables/useWallLabels";
 import { useZmanimLocation } from "../../composables/useZmanimLocation";
 import { analyticsService } from "../../services/analyticsService";
-import { getTehilimOfHebrewDay } from "../../services/dailyCycles";
+import { tehilimOfCycle } from "../../services/dailyCycles";
 import { localDayFrom } from "../../services/dateService";
 import { dateTimeFormat } from "../../services/intlCache";
 import { addDays, isDayKey, weekStart } from "../../services/parcours/days";
-import type { DayKey, MomentId } from "../../services/parcours/model";
+import { isOwnHabit, type DayKey, type MomentId } from "../../services/parcours/model";
 import { TIMED_MOMENTS } from "../../services/parcours/moments";
 import { taskEntries } from "../../services/parcours/entries";
 import { daySummaries } from "../../services/parcours/schedule";
@@ -97,13 +97,10 @@ function sub(view: TaskView): string {
   const { task, objective } = view;
   const during = t(`parcours.day.during.${task.moment}`);
   if (task.step) return (isToday.value && offices.officeMeta(task.step)) || during;
-  if (objective.kind === "habit") {
-    const own = objective.preset !== "tefilin" && objective.preset !== "chema-al-hamita";
-    return own ? during : view.meta;
-  }
+  if (objective.kind === "habit") return isOwnHabit(objective.preset) ? during : view.meta;
   if (objective.kind === "program") return views.portionText(task, objective);
-  if (objective.kind === "cycle" && objective.cycle === "tehilim-month") {
-    const psalms = getTehilimOfHebrewDay(new HDate(date.value)).psalms;
+  if (objective.kind === "cycle" && objective.cycle !== "parasha") {
+    const psalms = tehilimOfCycle(objective.cycle, date.value).psalms;
     return psalms.length === 1
       ? t("parcours.day.psalm", { n: psalms[0] })
       : t("parcours.day.psalms", { from: psalms[0], to: psalms[psalms.length - 1] });

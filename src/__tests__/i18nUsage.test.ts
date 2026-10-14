@@ -127,10 +127,16 @@ describe("i18n usage", () => {
       // Mon parcours : les moments, les unités, les sedarim, les modèles
       // d'habitude et les options, nommés par leur clé (voir
       // composables/useParcoursViews et components/parcours).
+      "parcours.anchorKicker.",
+      "parcours.anchorPoints.",
+      "parcours.anchors.",
       "parcours.catchUp.options.",
       "parcours.catchUp.results.",
       "parcours.corpus.",
+      "parcours.create.moments.",
       "parcours.create.partsTitle.",
+      "parcours.create.rhythmNotes.",
+      "parcours.create.rhythms.",
       "parcours.cycles.",
       "parcours.day.during.",
       "parcours.day.moments.",

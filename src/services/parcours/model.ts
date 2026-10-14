@@ -138,6 +138,12 @@ export interface ProgramObjective extends ObjectiveBase {
   credit?: number;
   /** « La prochaine fois, faire ainsi sans demander ». */
   autoCatchUp?: CatchUpOption;
+  /**
+   * À la semaine : les jours (0 dimanche à 5 vendredi) où la carte de la
+   * semaine vient sur l'accueil, tant qu'elle n'est pas finie. Absent : tous
+   * les jours, comme avant.
+   */
+  cardDays?: number[];
 }
 
 /** Les habitudes qu'on propose, chacune avec son nom, son moment et ce qu'elle ouvre. */
@@ -145,6 +151,7 @@ export type HabitPreset =
   | "tefilot"
   | "tefilin"
   | "chema-al-hamita"
+  | "birkat-hamazon"
   | "tsedaka"
   | "chmirat-halachon"
   | "custom";
@@ -153,10 +160,44 @@ export const HABIT_PRESETS: readonly HabitPreset[] = [
   "tefilot",
   "tefilin",
   "chema-al-hamita",
+  "birkat-hamazon",
   "tsedaka",
   "chmirat-halachon",
   "custom",
 ];
+
+/**
+ * Une habitude sans texte à ouvrir : la tsédaka, garder sa langue, une
+ * habitude à soi. Sa carte dit « votre engagement à vous ».
+ */
+export const isOwnHabit = (preset: HabitPreset): boolean =>
+  preset === "tsedaka" || preset === "chmirat-halachon" || preset === "custom";
+
+/**
+ * Le repère d'une habitude sur le fil du jour (P2-Habitude) : au réveil,
+ * après Cha'harit, à midi, avant Min'ha, après Arvit, au coucher. Il dit
+ * quand, plus finement que le moment, qui s'en déduit.
+ */
+export type HabitAnchor = "wake" | "chaharit" | "noon" | "minha" | "arvit" | "bedtime";
+
+export const HABIT_ANCHORS: readonly HabitAnchor[] = [
+  "wake",
+  "chaharit",
+  "noon",
+  "minha",
+  "arvit",
+  "bedtime",
+];
+
+/** Le moment d'un repère. */
+export const ANCHOR_MOMENT: Record<HabitAnchor, MomentId> = {
+  wake: "morning",
+  chaharit: "morning",
+  noon: "afternoon",
+  minha: "afternoon",
+  arvit: "evening",
+  bedtime: "bedtime",
+};
 
 /** Revenir certains jours, à son moment. */
 export interface HabitObjective extends ObjectiveBase {
@@ -166,12 +207,14 @@ export interface HabitObjective extends ObjectiveBase {
   name: string;
   /** Les jours de la semaine (0 dimanche à 6 Chabbat). */
   days: number[];
+  /** Son repère sur le fil du jour ; absent, son moment suffit (une version d'avant l'ignore). */
+  anchor?: HabitAnchor;
 }
 
 /** Les lectures que le calendrier donne : le jour du mois, la paracha de la semaine. */
-export type CycleId = "tehilim-month" | "parasha";
+export type CycleId = "tehilim-month" | "tehilim-week" | "parasha";
 
-export const CYCLES: readonly CycleId[] = ["tehilim-month", "parasha"];
+export const CYCLES: readonly CycleId[] = ["tehilim-week", "tehilim-month", "parasha"];
 
 /** Suivre une lecture du calendrier. */
 export interface CycleObjective extends ObjectiveBase {

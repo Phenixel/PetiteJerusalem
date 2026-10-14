@@ -1,14 +1,21 @@
 <script setup lang="ts">
 /**
  * Les réglages d'un objectif qui n'est pas un programme : une habitude (son
- * nom, ses jours, son moment), une lecture du calendrier ou un texte du jour
- * (son moment, ses jours). Tout s'enregistre au fil des touches : un réglage
- * se refait d'un geste, il ne se valide pas.
+ * nom, ses jours, son repère sur le fil du jour, comme à sa création,
+ * P2-Habitude), une lecture du calendrier ou un texte du jour (son moment,
+ * ses jours). Tout s'enregistre au fil des touches : un réglage se refait
+ * d'un geste, il ne se valide pas.
  */
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { useParcours } from "../../composables/useParcours";
-import type { MomentId, Objective } from "../../services/parcours/model";
+import {
+  ANCHOR_MOMENT,
+  type HabitAnchor,
+  type MomentId,
+  type Objective,
+} from "../../services/parcours/model";
+import StepHabit from "./create/StepHabit.vue";
 import ObjectivePauseRemove from "./ObjectivePauseRemove.vue";
 import DaysPicker from "./pickers/DaysPicker.vue";
 import MomentPicker from "./pickers/MomentPicker.vue";
@@ -32,6 +39,18 @@ const days = computed({
   set: (value: number[]) => save({ days: value } as Partial<Objective>),
 });
 
+const anchor = computed({
+  get: () => (props.objective.kind === "habit" ? (props.objective.anchor ?? null) : null),
+  set: (value: HabitAnchor | null) => {
+    if (props.objective.kind !== "habit") return;
+    // Le repère porte aussi le moment : écrit en dernier, il fait foi.
+    const next = { ...props.objective, moment: value ? ANCHOR_MOMENT[value] : "anytime" };
+    if (value) next.anchor = value;
+    else delete next.anchor;
+    store.saveObjective(next);
+  },
+});
+
 const name = computed({
   get: () => (props.objective.kind === "habit" ? props.objective.name : ""),
   set: (value: string) => save({ name: value.slice(0, 60) } as Partial<Objective>),
@@ -39,18 +58,18 @@ const name = computed({
 </script>
 
 <template>
-  <div class="space-y-7">
-    <label v-if="objective.kind === 'habit'" class="block">
-      <span class="text-sm font-bold">{{ t("parcours.form.name") }}</span>
-      <input
-        class="field mt-2"
-        :value="name"
-        :placeholder="t(`parcours.habits.${objective.preset}`)"
-        maxlength="60"
-        @change="name = ($event.target as HTMLInputElement).value"
-      />
-    </label>
-
+  <div v-if="objective.kind === 'habit'" class="space-y-7">
+    <StepHabit
+      v-model:name="name"
+      v-model:days="days"
+      v-model:moment="moment"
+      v-model:anchor="anchor"
+      :preset="objective.preset"
+      editing
+    />
+    <ObjectivePauseRemove :objective="objective" />
+  </div>
+  <div v-else class="space-y-7">
     <section v-if="'days' in objective">
       <h2 class="text-sm font-bold">{{ t("parcours.form.days") }}</h2>
       <DaysPicker v-model="days" class="mt-2" />

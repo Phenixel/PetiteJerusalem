@@ -119,6 +119,10 @@ remplacer (`legacyDailyReading.ts`) :
   (`legacyProjection`), listes et journée chacune de son côté, seulement si
   elles changent.
 
+Les **Tehilim de la semaine** (`cycle-tehilim-week`, du dimanche au Chabbat)
+sont nouveaux : ils n'ont pas de place dans la lecture du jour d'avant, et
+la projection les ignore.
+
 Les **widgets et la montre** tirent la lecture du jour de l'appareil, avec ou
 sans compte (`widgetService`) ; un compte que l'appareil n'a pas encore repris
 garde celle de son profil.

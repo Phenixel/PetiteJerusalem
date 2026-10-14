@@ -6,7 +6,7 @@ import type { VolumeFormat } from "../components/parcours/ProgramVolume.vue";
 import { corpusOf, hubPath } from "../content/etudeTexts";
 import { bindingOf } from "../content/bindings";
 import { texteOf, texteTitle } from "../services/chiourTexte";
-import { getTehilimOfHebrewDay, getWeeklyParasha, parashaTitle } from "../services/dailyCycles";
+import { getWeeklyParasha, parashaTitle, tehilimOfCycle } from "../services/dailyCycles";
 import { localDayFrom } from "../services/dateService";
 import type {
   CycleObjective,
@@ -80,6 +80,8 @@ export interface TaskView {
 
 /** Le Chema al hamita, dans le Sidour. */
 const CHEMA_AL_HAMITA_ID = 348;
+/** Birkat Hamazon, dans les brahot. */
+const BIRKAT_HAMAZON_ID = 342;
 
 /** Le nom court d'un séder, dans la langue de l'écran. */
 const SEDER_KEYS = {
@@ -170,7 +172,7 @@ export function useParcoursViews() {
   function objectiveColor(objective: Objective): string {
     if (objective.kind === "program") return bindingOf(objective.corpus);
     if (objective.kind === "cycle") {
-      return bindingOf(objective.cycle === "tehilim-month" ? "tehilim" : "tanakh");
+      return bindingOf(objective.cycle === "parasha" ? "tanakh" : "tehilim");
     }
     if (objective.kind === "text") {
       const entry = texteOf(objective.textId);
@@ -184,7 +186,8 @@ export function useParcoursViews() {
       const withSidour =
         objective.preset === "tefilot" ||
         objective.preset === "tefilin" ||
-        objective.preset === "chema-al-hamita";
+        objective.preset === "chema-al-hamita" ||
+        objective.preset === "birkat-hamazon";
       return withSidour || step ? { kind: "siddur" } : null;
     }
     return { kind: "volume", color: objectiveColor(objective), label: coverLabel(objective) };
@@ -194,13 +197,11 @@ export function useParcoursViews() {
   function cycleReading(cycle: CycleObjective["cycle"], day: DayKey): string {
     const date = localDayFrom(day) ?? new Date();
     date.setHours(12);
-    if (cycle === "tehilim-month") {
-      return psalmsLabel(getTehilimOfHebrewDay(new HDate(date)).psalms, t);
-    }
+    if (cycle !== "parasha") return psalmsLabel(tehilimOfCycle(cycle, date).psalms, t);
     return parashaTitle(getWeeklyParasha(date, isIsraelPlace(place.value)));
   }
 
-  function route(task: Task, objective: Objective): RouteLocationRaw | null {
+  function route(task: Task, objective: Objective, day: DayKey): RouteLocationRaw | null {
     switch (objective.kind) {
       case "program": {
         const start = task.slot ? placeOf(objective.texts, task.slot.from) : null;
@@ -214,12 +215,21 @@ export function useParcoursViews() {
           const entry = texteOf(CHEMA_AL_HAMITA_ID);
           return entry ? hubPath(entry) : null;
         }
+        if (objective.preset === "birkat-hamazon") {
+          const entry = texteOf(BIRKAT_HAMAZON_ID);
+          return entry ? hubPath(entry) : null;
+        }
         return null;
       }
-      case "cycle":
-        return objective.cycle === "tehilim-month"
-          ? "/bibliotheque/tehilim-du-jour"
-          : "/bibliotheque/chnei-mikra";
+      case "cycle": {
+        if (objective.cycle === "tehilim-month") return "/bibliotheque/tehilim-du-jour";
+        if (objective.cycle === "parasha") return "/bibliotheque/chnei-mikra";
+        // Les Tehilim de la semaine : le premier psaume du jour, la tâche au bas.
+        const date = localDayFrom(day) ?? new Date();
+        date.setHours(12);
+        const first = tehilimOfCycle(objective.cycle, date).entries[0];
+        return first ? { path: hubPath(first), query: { objectif: objective.id } } : null;
+      }
       case "text": {
         const entry = texteOf(objective.textId);
         return entry ? { path: hubPath(entry), query: { objectif: objective.id } } : null;
@@ -251,6 +261,7 @@ export function useParcoursViews() {
       }
       case "habit":
         if (objective.preset === "tefilin") return t("parcours.hub.withChaharit");
+        if (objective.preset === "birkat-hamazon") return t("parcours.hub.afterMeal");
         if (objective.preset === "chema-al-hamita") return t("parcours.hub.beforeSleep");
         return momentLabel(task.moment);
       case "cycle":
@@ -267,8 +278,13 @@ export function useParcoursViews() {
     return objectiveTitle(objective);
   }
 
-  function kicker(task: Task): string {
-    return task.weekly ? t("parcours.kicker.weekly") : t(`parcours.kicker.${task.moment}`);
+  /** Le moment d'une carte : « Ce soir », « Cette semaine », ou le repère d'une habitude. */
+  function kicker(task: Task, objective: Objective): string {
+    if (task.weekly) return t("parcours.kicker.weekly");
+    if (objective.kind === "habit" && objective.anchor && !task.step) {
+      return t(`parcours.anchorKicker.${objective.anchor}`);
+    }
+    return t(`parcours.kicker.${task.moment}`);
   }
 
   /** Une tâche d'un jour, prête à montrer. */
@@ -282,8 +298,8 @@ export function useParcoursViews() {
       day,
       title: title(task, objective),
       meta: meta(task, objective, day),
-      kicker: kicker(task),
-      route: route(task, objective),
+      kicker: kicker(task, objective),
+      route: route(task, objective, day),
       art: objectiveArt(objective, task.step),
       progress: taskProgress(data, task, day),
       skipped: isSkipped(data.days[day], task.id),

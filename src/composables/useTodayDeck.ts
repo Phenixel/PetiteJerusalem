@@ -1,12 +1,18 @@
-import { HDate } from "@hebcal/core";
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import type { RouteLocationRaw } from "vue-router";
 import type { DeckArtSpec } from "../components/parcours/home/DeckArt.vue";
 import { sidourText } from "../content/sidourGroups";
-import { getTehilimOfHebrewDay, omerDay } from "../services/dailyCycles";
+import { omerDay, tehilimOfCycle } from "../services/dailyCycles";
 import { localDayFrom } from "../services/dateService";
-import type { DayKey, MomentId, Objective, ProgramObjective } from "../services/parcours/model";
+import {
+  isOwnHabit,
+  type DayKey,
+  type MomentId,
+  type Objective,
+  type ProgramObjective,
+} from "../services/parcours/model";
+import { weekdayOf } from "../services/parcours/days";
 import { dayOrder, deckOrder } from "../services/parcours/moments";
 import { portionMinutes } from "../services/parcours/plan";
 import { readOccasionsDone, writeOccasionDone } from "../services/parcours/occasions";
@@ -129,13 +135,15 @@ export function useTodayDeck() {
       return { title: view.title, meta: offices.officeMeta(task.step) ?? view.meta };
     }
     if (objective.kind === "habit") {
-      const own = objective.preset !== "tefilin" && objective.preset !== "chema-al-hamita";
-      return { title: view.title, meta: own ? t("parcours.hub.personal") : view.meta };
+      return {
+        title: view.title,
+        meta: isOwnHabit(objective.preset) ? t("parcours.hub.personal") : view.meta,
+      };
     }
-    if (objective.kind === "cycle" && objective.cycle === "tehilim-month") {
+    if (objective.kind === "cycle" && objective.cycle !== "parasha") {
       const date = localDayFrom(view.day) ?? new Date();
       date.setHours(12);
-      const psalms = getTehilimOfHebrewDay(new HDate(date)).psalms;
+      const psalms = tehilimOfCycle(objective.cycle, date).psalms;
       return { title: psalmsLabel(psalms, t), meta: views.unitsLabel("psalm", psalms.length) };
     }
     return { title: view.title, meta: view.meta };
@@ -155,7 +163,7 @@ export function useTodayDeck() {
    */
   function artOf(objective: Objective, step: string | undefined): DeckArtSpec | null {
     if (objective.kind === "habit") {
-      if (step) return { kind: "siddur" };
+      if (step || objective.preset === "birkat-hamazon") return { kind: "siddur" };
       return objective.preset === "chema-al-hamita" ? { kind: "moon" } : null;
     }
     const art = views.objectiveArt(objective);
@@ -303,8 +311,23 @@ export function useTodayDeck() {
     return cards;
   });
 
+  /**
+   * Une carte de la semaine ne vient sur l'accueil que les jours qu'on lui a
+   * donnés (P2-Semaine) ; elle reste dans Ma journée et sur la page du
+   * programme.
+   */
+  function onDeckToday(objective: Objective): boolean {
+    if (objective.kind !== "program" || objective.rhythm !== "weekly" || !objective.cardDays) {
+      return true;
+    }
+    return objective.cardDays.includes(weekdayOf(today.value));
+  }
+
   const tasks = computed<DeckCard[]>(() =>
-    store.todayTasks.value.map((task) => taskCard(views.taskView(task, today.value))),
+    store.todayTasks.value
+      .map((task) => views.taskView(task, today.value))
+      .filter((view) => view.progress === "done" || onDeckToday(view.objective))
+      .map(taskCard),
   );
 
   const catchUps = computed<DeckCard[]>(() => {

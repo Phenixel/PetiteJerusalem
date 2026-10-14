@@ -24,9 +24,9 @@ function dayCounts(data: ParcoursData, day: DayKey, ctx: ScheduleContext) {
 function legacyScope(objective: Objective): Record<string, string> | null {
   if (objective.kind === "text") return { scope: "text" };
   if (objective.kind !== "cycle") return null;
-  return objective.cycle === "parasha"
-    ? { scope: "parasha_week" }
-    : { scope: "option", option: "tehilim-jour" };
+  if (objective.cycle === "parasha") return { scope: "parasha_week" };
+  // Les Tehilim de la semaine n'étaient pas de la lecture du jour d'avant.
+  return objective.cycle === "tehilim-month" ? { scope: "option", option: "tehilim-jour" } : null;
 }
 
 /** Une tâche cochée ou décochée ; `data` est l'état d'après. */

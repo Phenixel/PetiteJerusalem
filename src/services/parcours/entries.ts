@@ -1,6 +1,6 @@
 import type { TextStudyJsonEntry } from "../../models/models";
 import { texteOf } from "../chiourTexte";
-import { getTehilimOfDay, getWeeklyParasha } from "../dailyCycles";
+import { getWeeklyParasha, tehilimOfCycle } from "../dailyCycles";
 import { localDayFrom } from "../dateService";
 import type { DayKey, Objective } from "./model";
 import type { Task } from "./schedule";
@@ -39,9 +39,9 @@ export function taskEntries(
       return known([texteOf(objective.textId)]);
     case "cycle": {
       const date = localDayFrom(day) ?? new Date();
-      return objective.cycle === "tehilim-month"
-        ? getTehilimOfDay(date).entries
-        : (getWeeklyParasha(date, il)?.entries ?? []);
+      return objective.cycle === "parasha"
+        ? (getWeeklyParasha(date, il)?.entries ?? [])
+        : tehilimOfCycle(objective.cycle, date).entries;
     }
     default:
       return [];
