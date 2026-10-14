@@ -37,6 +37,7 @@ const SidourPage = () => import("../views/SidourPage.vue");
 const HomeEditPage = () => import("../views/HomeEditPage.vue");
 const ParcoursPage = () => import("../views/Parcours/ParcoursPage.vue");
 const MurPage = () => import("../views/Parcours/MurPage.vue");
+const LectureDuJourPage = () => import("../views/Parcours/LectureDuJourPage.vue");
 const NouvelObjectifPage = () => import("../views/Parcours/NouvelObjectifPage.vue");
 const ObjectifPage = () => import("../views/Parcours/ObjectifPage.vue");
 const ProgrammeReglagesPage = () => import("../views/Parcours/ProgrammeReglagesPage.vue");
@@ -206,14 +207,16 @@ export default [
     meta: { offlineOk: true },
     component: StudyPage,
   },
-  // La lecture du jour vit désormais dans Mon parcours, sur l'accueil (la
-  // pile du jour). Son adresse reste : les versions installées, les widgets,
-  // la montre et le rappel du soir y mènent encore. Route statique,
-  // prioritaire sur /bibliotheque/:corpus ci-dessous.
+  // La lecture du jour : les textes du jour et les lectures du calendrier de
+  // Mon parcours, à la suite (la carte « Lecture du jour » de la pile y
+  // mène). Les versions installées, les widgets, la montre et le rappel du
+  // soir y mènent aussi. Comme Mon parcours : sans compte dans l'app, avec un
+  // compte sur le site. Route statique, prioritaire sur /bibliotheque/:corpus.
   {
     path: "/bibliotheque/lecture-du-jour",
     name: "daily-reading",
-    redirect: "/",
+    meta: { requiresAuth: !isNativeApp, offlineOk: isNativeApp },
+    component: LectureDuJourPage,
   },
   // Ma journée a été retirée : la pile et le portefeuille de l'accueil
   // montrent la journée. L'adresse mène à l'accueil, pour les liens gardés.

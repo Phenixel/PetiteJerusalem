@@ -1770,8 +1770,9 @@ une autre place :
   de ce jour ;
 - le rappel du soir et l'avis des textes à télécharger pour le hors-ligne
   sont au bas et en tête de Mon parcours ;
-- ses adresses (`/parcours/journee`, et `/bibliotheque/lecture-du-jour` que
-  gardent les widgets, la montre et le rappel du soir) mènent à l'accueil ;
+- son adresse (`/parcours/journee`) mène à l'accueil ; celle de la lecture
+  du jour (`/bibliotheque/lecture-du-jour`, que gardent les widgets, la
+  montre et le rappel du soir) a retrouvé sa page (voir plus bas) ;
 - « Ma journée », dans l'onglet de l'étude, mène aussi à l'accueil.
 
 Restent d'elle deux décisions : le retour en tête des pages de Mon parcours
@@ -1910,6 +1911,35 @@ choisit sur une seule page »).
   réglages, le rattrapage qui repousse la fin) : « 29 Elul 5787 (1 octobre
   2027) ». La date hébraïque seule ne se situe pas d'un coup d'œil dans
   l'année qu'on vit.
+
+### La lecture du jour, revenue
+
+La page de la lecture du jour d'avant Mon parcours revient
+(`/bibliotheque/lecture-du-jour`, `LectureDuJourPage.vue`), nourrie par lui,
+sans rien perdre de ce qu'elle savait faire : on a souvent plusieurs textes
+le même jour (plusieurs psaumes), et on les lit à la suite.
+
+- **Tout sur une page** : les lectures du calendrier en tête (les Tehilim
+  du jour, la paracha montée par montée), puis les textes du jour dans
+  l'ordre du catalogue. Ce qui se dit avant et après (le Yehi ratson des
+  Tehilim) se pose une fois pour tout ce qu'on lit du même corpus.
+- **Chaque lecture se coche** (« Marquer comme lu ») et se replie ; un titre
+  touché la replie ou la rouvre. Les chapitres d'un texte se cochent un à
+  un (« 3/8 »), et le dernier coche le texte. La journée se dit en haut
+  (« 1 sur 4 lus aujourd'hui » et sa barre).
+- **La paracha de la semaine à part**, dans « Cette semaine », avec le
+  verset écrit deux fois et Rachi, à finir avant Chabbat.
+- Le menu de lecture, la taille du texte, le défilement tout seul, l'écran
+  qui reste allumé, l'avis des textes à télécharger et le rappel du soir,
+  comme avant ; « Ajouter des textes » mène au choix des textes.
+- **Sur l'accueil, une seule carte** : deux textes du jour ou plus font la
+  carte « Lecture du jour » (« 3 textes · Tehilim 1 et 2 autres »), qui
+  ouvre la page ; glissée, elle les coche tous. Un texte seul garde sa
+  carte, qui ouvre son texte. Le profil compte la journée de même.
+- **Plusieurs textes d'affilée** : à la création, un toucher coche un
+  texte, la recherche se refait autant qu'on veut, ce qu'on a coché attend
+  au-dessus, et « Ajouter 3 textes », collé au bas de l'écran, les prend
+  tous.
 
 ### L'accueil à son goût
 

@@ -338,8 +338,23 @@ function createChosenCycle(cycle: CycleChoice): void {
   finish(createCycle(cycle, store.today.value, Date.now()), { cycle });
 }
 
-function createChosenText(entry: TextStudyJsonEntry): void {
-  finish(createText(Number(entry.id), store.today.value, Date.now()), { text_id: entry.id });
+/** Les textes du jour cochés, pris d'un coup ; Mon parcours glisse jusqu'au premier. */
+function createChosenTexts(entries: TextStudyJsonEntry[]): void {
+  if (entries.length === 0) return;
+  haptic("done");
+  const now = Date.now();
+  const created = entries.map((entry, i) =>
+    createText(Number(entry.id), store.today.value, now + i),
+  );
+  for (const objective of created) {
+    store.saveObjective(objective);
+    analyticsService.capture("parcours_objective_created", {
+      kind: "text",
+      text_id: objective.textId,
+      texts_count: created.length,
+    });
+  }
+  arriveOnParcours(router, created[0].id);
 }
 
 const canGoOn = computed(
@@ -416,7 +431,7 @@ const canGoOn = computed(
     <!-- Un texte chaque jour : on le cherche, on le prend. -->
     <section v-if="selection?.kind === 'text'" ref="textSection" class="create-section">
       <h2 class="create-h2">{{ t("parcours.create.dailyText") }}</h2>
-      <StepText class="mt-4" :taken="takenTexts" @pick="createChosenText" />
+      <StepText class="mt-4" :taken="takenTexts" @pick="createChosenTexts" />
     </section>
 
     <PresetSheet

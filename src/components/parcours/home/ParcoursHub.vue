@@ -64,7 +64,12 @@ function markOccasion(card: DeckCard, done: boolean, source: string): void {
 }
 
 function done(card: DeckCard, source: string): void {
-  if (card.view) {
+  if (card.group) {
+    // La lecture du jour, cochée en entier.
+    for (const view of card.group) {
+      if (view.progress !== "done") store.setDone(view.task, store.today.value, true, source);
+    }
+  } else if (card.view) {
     store.setDone(card.view.task, store.today.value, true, source);
   } else if (card.occasion) {
     markOccasion(card, true, source);
@@ -83,7 +88,12 @@ function done(card: DeckCard, source: string): void {
 }
 
 function undo(card: DeckCard, source: string): void {
-  if (card.view) {
+  if (card.group) {
+    for (const view of card.group) {
+      if (view.skipped) store.setSkipped(view.task, store.today.value, false, source);
+      else if (view.progress === "done") store.setDone(view.task, store.today.value, false, source);
+    }
+  } else if (card.view) {
     if (card.skipped) store.setSkipped(card.view.task, store.today.value, false, source);
     else store.setDone(card.view.task, store.today.value, false, source);
   } else if (card.occasion && card.done) {
@@ -100,7 +110,10 @@ function later(card: DeckCard, source: string): void {
 }
 
 function skip(card: DeckCard, skipped: boolean): void {
-  if (card.view) store.setSkipped(card.view.task, store.today.value, skipped, "home_sheet");
+  if (card.group) {
+    for (const view of card.group)
+      store.setSkipped(view.task, store.today.value, skipped, "home_sheet");
+  } else if (card.view) store.setSkipped(card.view.task, store.today.value, skipped, "home_sheet");
   else deck.setAside(card, skipped);
 }
 

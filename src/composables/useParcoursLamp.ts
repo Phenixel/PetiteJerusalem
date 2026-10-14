@@ -16,14 +16,21 @@ export function useParcoursLamp() {
 
   const days = computed(() => store.streak.value.current);
 
-  /** La journée : ce qu'aujourd'hui demande, et ce qui en est fait. */
+  /**
+   * La journée : ce qu'aujourd'hui demande, et ce qui en est fait. Comptée
+   * comme la pile de l'accueil : deux textes du jour ou plus n'y font qu'une
+   * carte, « Lecture du jour ».
+   */
   const today = computed(() => {
     const tasks = store.todayTasks.value;
     const day = store.today.value;
-    const done = tasks.filter(
-      (task) => taskProgress(store.data.value, task, day) === "done",
-    ).length;
-    return { done, total: tasks.length };
+    const isDone = (task: (typeof tasks)[number]) =>
+      taskProgress(store.data.value, task, day) === "done";
+    const texts = tasks.filter((task) => task.kind === "text");
+    const grouped = texts.length >= 2;
+    const others = grouped ? tasks.filter((task) => task.kind !== "text") : tasks;
+    const done = others.filter(isDone).length + (grouped && texts.every(isDone) ? 1 : 0);
+    return { done, total: others.length + (grouped ? 1 : 0) };
   });
 
   const full = computed(() => today.value.total > 0 && today.value.done === today.value.total);

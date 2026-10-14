@@ -594,13 +594,16 @@ Après `account_deleted`, le suivi est remis à zéro comme à la déconnexion
 journée ; Ma journée retirée, il part quand on déplie le portefeuille de
 l'accueil (la journée entière, sous les yeux), avec `parcours_wallet_opened`.
 Il compte toute la journée : textes, programmes, habitudes (voir « Mon
-parcours » plus bas). `/bibliotheque/lecture-du-jour` mène à l'accueil.
+parcours » plus bas). La page `/bibliotheque/lecture-du-jour`, revenue,
+l'envoie aussi à l'arrivée ; `source` (**nouvelle propriété**) dit d'où :
+`wallet` (le portefeuille de l'accueil) ou `page` (la lecture du jour).
 
 | Propriété | Valeurs |
 | --- | --- |
 | `state` | `empty` (rien de prévu), `in_progress`, `all_done` ; `error` ne part plus (rien ne se charge) |
 | `total_count` | les tâches du jour (les tâches de la semaine, comme le chnei mikra, et celles mises de côté n'y comptent pas) |
 | `done_count` | celles déjà faites |
+| `source` | `wallet` ou `page` |
 
 ### Chaînes
 
@@ -756,7 +759,7 @@ Une tâche cochée ou décochée.
 | --- | --- |
 | `done` | vrai quand elle est cochée |
 | `kind` | `program`, `habit`, `cycle`, `text` |
-| `source` | d'où : `home_deck_swipe` (la carte du dessus de la pile de l'accueil, glissée), `home_wallet_swipe` (une carte du portefeuille, glissée à droite ou, pour la décocher, à gauche), `home_sheet` (la fiche d'une carte), `journee_row` (Ma journée, retirée : ne part plus), `objective_swipe` (la portion du jour ou de la semaine, glissée sur la page d'un programme), `reader` (au bas d'une lecture ouverte depuis le parcours, l'anneau tiré vers le haut), `parcours_wall`, `parcours_full_wall` (un jour du mur) |
+| `source` | d'où : `home_deck_swipe` (la carte du dessus de la pile de l'accueil, glissée), `home_wallet_swipe` (une carte du portefeuille, glissée à droite ou, pour la décocher, à gauche), `home_sheet` (la fiche d'une carte), `journee_row` (Ma journée, retirée : ne part plus), `objective_swipe` (la portion du jour ou de la semaine, glissée sur la page d'un programme), `reader` (au bas d'une lecture ouverte depuis le parcours, l'anneau tiré vers le haut), `parcours_wall`, `parcours_full_wall` (un jour du mur), `daily_page` (**nouvelle valeur** : « Marquer comme lu » sur la page de la lecture du jour) ; la carte « Lecture du jour » de l'accueil, glissée, en envoie un par texte |
 | `days_ago` | 0 aujourd'hui, 1 hier... : ce qui se coche après coup |
 
 Une tâche de la lecture du jour d'avant (un texte du jour, une lecture du
@@ -844,7 +847,7 @@ marquée lue au bas de la lecture.
 | `corpus`, `rhythm`, `parts_count`, `texts_count` | un programme : `michna`, `talmud`, `tanakh`, `tehilim` ; `daily`, `weekdays`, `weekly` ; les parties prises (sedarim, traités, livres) ; les textes qu'elles font |
 | `preset`, `days_count` | une habitude : `tefilot`, `chema-al-hamita`, `tsedaka`, `chmirat-halachon`, `limoud` (un temps d'étude, **nouveau**), `custom` (« Avec mes mots ») ; `tefilin` et `birkat-hamazon` ne partent plus (la création ne les propose plus) ; ses jours dans la semaine |
 | `cycle` | une lecture du calendrier : `tehilim-week`, `tehilim-month`, `parasha` ; `parasha-aliyot` (**nouvelle valeur**), le chnei mikra une montée par jour |
-| `text_id` | un texte du jour |
+| `text_id` | un texte du jour ; `texts_count` dit combien ont été pris d'un coup (un événement par texte) |
 
 ### `parcours_objective_paused`, `parcours_objective_removed` (nouveaux)
 
@@ -889,8 +892,8 @@ Un retard rattrapé.
 
 ### Ce que deviennent ceux de la lecture du jour
 
-La page `/bibliotheque/lecture-du-jour` a laissé place à Ma journée, elle-même
-retirée depuis : la pile de l'accueil et Mon parcours la continuent. Ce
+La page `/bibliotheque/lecture-du-jour` avait laissé place à Ma journée,
+elle-même retirée depuis ; elle est revenue, nourrie par Mon parcours. Ce
 qu'elle envoyait continue quand l'écran continue :
 
 - `daily_reading_viewed` et `daily_reading_marked_read` : voir plus haut ;

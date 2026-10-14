@@ -69,6 +69,11 @@ export interface DeckCard {
   key: string;
   /** La tâche du parcours ; null pour une carte en plus. */
   view: TaskView | null;
+  /**
+   * La lecture du jour : les textes du jour, deux ou plus, sur une seule
+   * carte qui ouvre leur page. Elle se coche (et se décoche) en entier.
+   */
+  group?: TaskView[];
   /** Le programme à rattraper, pour la carte « Rattraper ». */
   catchUp: ProgramObjective | null;
   /** L'occasion, pour une carte d'occasion. */
@@ -361,12 +366,44 @@ export function useTodayDeck() {
     return objective.cardDays.includes(weekdayOf(today.value));
   }
 
-  const tasks = computed<DeckCard[]>(() =>
-    store.todayTasks.value
+  /**
+   * Les textes du jour, deux ou plus (plusieurs psaumes, une page qu'on aime) :
+   * une seule carte, « Lecture du jour », qui ouvre leur page, à la suite.
+   */
+  function dailyTextsCard(group: TaskView[]): DeckCard {
+    const lead = group.find((view) => view.progress !== "done") ?? group[0];
+    const names =
+      group.length > 2
+        ? t(
+            "parcours.daily.others",
+            { name: group[0].title, n: group.length - 1 },
+            group.length - 1,
+          )
+        : group.map((view) => view.title).join(", ");
+    return {
+      ...taskCard(lead),
+      key: `${today.value}:lecture-du-jour`,
+      group,
+      title: t("parcours.daily.title"),
+      meta: t("parcours.daily.cardMeta", { n: group.length, names }),
+      route: "/bibliotheque/lecture-du-jour",
+      done: group.every((view) => view.progress === "done"),
+      skipped: group.every((view) => view.skipped),
+      waiting: false,
+    };
+  }
+
+  const tasks = computed<DeckCard[]>(() => {
+    const shown = store.todayTasks.value
       .map((task) => views.taskView(task, today.value))
-      .filter((view) => view.progress === "done" || onDeckToday(view.objective))
-      .map(taskCard),
-  );
+      .filter((view) => view.progress === "done" || onDeckToday(view.objective));
+    const texts = shown.filter((view) => view.objective.kind === "text");
+    if (texts.length < 2) return shown.map(taskCard);
+    return [
+      ...shown.filter((view) => view.objective.kind !== "text").map(taskCard),
+      dailyTextsCard(texts),
+    ];
+  });
 
   const catchUps = computed<DeckCard[]>(() => {
     const day = today.value;

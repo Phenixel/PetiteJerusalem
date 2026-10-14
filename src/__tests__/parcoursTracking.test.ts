@@ -110,16 +110,19 @@ describe("l'arrivée sur la journée", () => {
       state: "empty",
       total_count: 0,
       done_count: 0,
+      source: "wallet",
     });
 
     const d = data(text);
     const task = tasksForDay(d, TUESDAY, ctx(d))[0];
     const done = setTaskDone(d, task, TUESDAY, true);
-    trackDayViewed(done, ctx(done), TUESDAY);
+    // Sur la page de la lecture du jour, revenue.
+    trackDayViewed(done, ctx(done), TUESDAY, "page");
     expect(capture).toHaveBeenLastCalledWith("daily_reading_viewed", {
       state: "all_done",
       total_count: 1,
       done_count: 1,
+      source: "page",
     });
   });
 });

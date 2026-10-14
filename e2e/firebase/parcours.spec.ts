@@ -34,6 +34,7 @@ test.describe("Mon parcours", () => {
       .getByRole("button", { name: /^Tehilim 1\b/ })
       .first()
       .click();
+    await page.getByRole("button", { name: "Ajouter 1 texte" }).click();
 
     // Pris, il arrive sur Mon parcours, sur l'étagère.
     await expect(page).toHaveURL(/\/parcours$/);
@@ -206,11 +207,50 @@ test.describe("Mon parcours", () => {
       .toBe("7");
   });
 
-  test("les anciennes adresses de la journée mènent à l'accueil", async ({ page }) => {
+  test("plusieurs textes d'affilée, lus à la suite dans la lecture du jour", async ({ page }) => {
+    const account = await createAccount("lecture");
+    await signIn(page, account, "/parcours/nouveau");
+    await page.getByRole("button", { name: /Un texte chaque jour/ }).click();
+    const search = page.getByPlaceholder(/Un texte/);
+    await search.fill("Tehilim 1");
+    await page
+      .getByRole("button", { name: /^Tehilim 1\b/ })
+      .first()
+      .click();
+    await search.fill("Tehilim 23");
+    await page
+      .getByRole("button", { name: /^Tehilim 23\b/ })
+      .first()
+      .click();
+    await page.getByRole("button", { name: "Ajouter 2 textes" }).click();
+    await expect(page).toHaveURL(/\/parcours$/);
+
+    // L'accueil : une seule carte, « Lecture du jour », qui ouvre la page.
+    await page.goto("/");
+    await page
+      .getByRole("link", { name: /^Lecture du jour/ })
+      .first()
+      .click();
+    await expect(page).toHaveURL(/\/bibliotheque\/lecture-du-jour$/);
+    await expect(page.getByRole("heading", { level: 1, name: "Lecture du jour" })).toBeVisible();
+    await expect(page.getByText("0 sur 2 lus aujourd'hui")).toBeVisible();
+
+    // Le premier texte, marqué lu : la journée le porte.
+    await page.getByRole("button", { name: "Marquer comme lu" }).first().click();
+    await expect(page.getByText("1 sur 2 lus aujourd'hui")).toBeVisible();
+    await expect
+      .poll(async () => {
+        const doc = (await readDoc("parcours", account.uid)) as ParcoursDoc | null;
+        return (doc?.days?.[todayKey()]?.done ?? []).length;
+      })
+      .toBe(1);
+  });
+
+  test("les anciennes adresses mènent à la lecture du jour et à l'accueil", async ({ page }) => {
     // Les widgets, le rappel du soir et les versions installées y mènent encore.
     const account = await createAccount("ancienne");
     await signIn(page, account, "/bibliotheque/lecture-du-jour");
-    await expect(page).toHaveURL(/\/$/);
+    await expect(page.getByRole("heading", { level: 1, name: "Lecture du jour" })).toBeVisible();
     await page.goto("/parcours/journee");
     await expect(page).toHaveURL(/\/$/);
   });

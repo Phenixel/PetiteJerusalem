@@ -63,11 +63,17 @@ export function trackTaskSkipped(task: Task, skipped: boolean, source: string): 
 }
 
 /** La journée d'aujourd'hui, vue entière (le portefeuille déplié). */
-export function trackDayViewed(data: ParcoursData, ctx: ScheduleContext, today: DayKey): void {
+export function trackDayViewed(
+  data: ParcoursData,
+  ctx: ScheduleContext,
+  today: DayKey,
+  source: "wallet" | "page" = "wallet",
+): void {
   const counts = dayCounts(data, today, ctx);
   analyticsService.capture("daily_reading_viewed", {
     state: counts.total_count === 0 ? "empty" : counts.all_done ? "all_done" : "in_progress",
     total_count: counts.total_count,
     done_count: counts.done_count,
+    source,
   });
 }
