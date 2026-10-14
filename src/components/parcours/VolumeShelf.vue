@@ -24,22 +24,28 @@
  * Un volume en pause pâlit et porte une pastille « En pause » : on le voit
  * sur l'étagère, pas seulement dans ses réglages.
  *
+ * Les textes du jour (un psaume, une page qu'on aime, autant qu'on veut)
+ * font un seul volume, « Lecture du jour » (« Mes Tehilim journaliers » quand
+ * ce ne sont que des psaumes, voir dailyName), qui ouvre leur page : on les y
+ * lit à la suite, on en ajoute, on en retire. Son liseré se remplit des
+ * textes lus aujourd'hui.
+ *
  * Un volume qu'on vient de créer (`arriving`) tombe sur sa planche, rebondit
  * un peu, et soulève une poussière dorée : il est arrivé.
  */
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
-import { useRouter } from "vue-router";
+import { useRouter, type RouteLocationRaw } from "vue-router";
 import { useLongPress } from "../../composables/useLongPress";
 import { useParcours } from "../../composables/useParcours";
 import { useParcoursViews } from "../../composables/useParcoursViews";
 import { tehilimOfCycle } from "../../services/dailyCycles";
 import { localDayFrom } from "../../services/dateService";
-import type { Objective, ProgramObjective } from "../../services/parcours/model";
+import type { Objective, ProgramObjective, TextObjective } from "../../services/parcours/model";
 import { liveObjectives, taskProgress, type Task } from "../../services/parcours/schedule";
 import { placeOf, unitLabel } from "../../services/parcours/texts";
 import AppIcon from "../icons/AppIcon.vue";
-import ProgramVolume from "./ProgramVolume.vue";
+import ProgramVolume, { type VolumeFormat } from "./ProgramVolume.vue";
 
 const props = withDefaults(
   defineProps<{
@@ -52,7 +58,9 @@ const props = withDefaults(
 
 /** La poussière dorée du volume qui se pose : six grains, en éventail. */
 const SPECKS = [-68, -40, -14, 14, 40, 68];
-const emit = defineEmits<{ (e: "open", objective: Objective): void }>();
+
+/** La page des textes du jour : les lire, en ajouter, en retirer. */
+const DAILY_PAGE = "/bibliotheque/lecture-du-jour";
 
 const { t, locale } = useI18n();
 const router = useRouter();
@@ -67,25 +75,24 @@ const targetOf = (objective: Objective) =>
 
 // Sur l'accueil, l'appui long (au doigt) ou le clic droit ouvre la page du
 // volume. Sur Android, l'appui long donne aussi un clic droit : une seule fois.
-let pressed: Objective | null = null;
+let pressed: string | null = null;
 let openedAt = 0;
-function openPage(objective: Objective | null): void {
-  if (!objective || Date.now() - openedAt < 800) return;
+function openPage(page: string | null): void {
+  if (!page || Date.now() - openedAt < 800) return;
   openedAt = Date.now();
-  void router.push(pagePath(objective));
+  void router.push(page);
 }
 const press = useLongPress(
   (target) => {
-    const id = target.closest<HTMLElement>("[data-objective]")?.dataset.objective;
-    pressed = id ? (store.data.value.objectives[id] ?? null) : null;
+    pressed = target.closest<HTMLElement>("[data-page]")?.dataset.page ?? null;
     return pressed !== null;
   },
   () => openPage(pressed),
 );
-function onContextmenu(event: MouseEvent, objective: Objective): void {
+function onContextmenu(event: MouseEvent, page: string): void {
   if (!props.home) return;
   event.preventDefault();
-  openPage(objective);
+  openPage(page);
 }
 
 /** La tâche d'aujourd'hui d'un objectif, s'il en a une. */
@@ -142,30 +149,84 @@ function caption(objective: Objective): string {
   return views.objectiveTitle(objective);
 }
 
-const volumes = computed(() =>
-  liveObjectives(store.data.value)
-    .filter((o) => o.kind === "program" || o.kind === "cycle" || o.kind === "text")
-    .map((objective) => {
-      const task = taskOf(objective);
-      const paused =
-        objective.pausedFrom !== undefined && objective.pausedFrom <= store.today.value;
-      const text = paused ? t("parcours.paused.title") : caption(objective);
-      return {
-        objective,
-        ...views.volumeOf(objective),
-        progress: objective.kind === "program" ? programState(objective).progress : 0,
-        caption: text,
-        ribbon: !paused && task !== undefined && !isDone(task),
-        paused,
-        label: `${views.objectiveTitle(objective)}, ${text}`,
-      };
-    }),
-);
+/** Un volume de l'étagère : celui d'un objectif, ou celui des textes du jour. */
+interface ShelfVolume {
+  key: string;
+  /** Où le toucher mène ; `page`, où mènent l'appui long et le clic droit. */
+  to: RouteLocationRaw;
+  page: string;
+  color: string;
+  lines: string[];
+  sub: string;
+  format: VolumeFormat;
+  progress: number;
+  caption: string;
+  ribbon: boolean;
+  paused: boolean;
+  label: string;
+  arriving: boolean;
+}
+
+function objectiveVolume(objective: Objective): ShelfVolume {
+  const task = taskOf(objective);
+  const paused = objective.pausedFrom !== undefined && objective.pausedFrom <= store.today.value;
+  const text = paused ? t("parcours.paused.title") : caption(objective);
+  return {
+    key: objective.id,
+    to: targetOf(objective),
+    page: pagePath(objective),
+    ...views.volumeOf(objective),
+    progress: objective.kind === "program" ? programState(objective).progress : 0,
+    caption: text,
+    ribbon: !paused && task !== undefined && !isDone(task),
+    paused,
+    label: `${views.objectiveTitle(objective)}, ${text}`,
+    arriving: objective.id === props.arriving,
+  };
+}
+
+/** Les textes du jour, un seul volume : son épaisseur dit combien il en tient. */
+function dailyVolume(texts: TextObjective[]): ShelfVolume {
+  const tasks = texts.map(taskOf).filter((task): task is Task => task !== undefined);
+  const done = tasks.filter(isDone).length;
+  const name = views.dailyName(texts.map((objective) => objective.textId));
+  const text =
+    props.home && tasks.length
+      ? t("parcours.shelf.of", { n: done, total: tasks.length })
+      : name.count(texts.length);
+  return {
+    key: "lecture-du-jour",
+    to: DAILY_PAGE,
+    page: DAILY_PAGE,
+    color: views.objectiveColor(texts[0]),
+    lines: [name.cover],
+    sub: t("parcours.task.everyDay"),
+    format: texts.length >= 7 ? "thick" : texts.length >= 3 ? "regular" : "small",
+    progress: tasks.length ? done / tasks.length : 0,
+    caption: text,
+    ribbon: done < tasks.length,
+    paused: false,
+    label: `${name.title}, ${text}`,
+    arriving: texts.some((objective) => objective.id === props.arriving),
+  };
+}
+
+const volumes = computed<ShelfVolume[]>(() => {
+  const read = liveObjectives(store.data.value).filter(
+    (o) => o.kind === "program" || o.kind === "cycle" || o.kind === "text",
+  );
+  const texts = read.filter((o): o is TextObjective => o.kind === "text");
+  const out: ShelfVolume[] = [];
+  for (const objective of read) {
+    if (objective.kind !== "text") out.push(objectiveVolume(objective));
+    // Le volume des textes du jour, à la place du premier d'entre eux.
+    else if (objective === texts[0]) out.push(dailyVolume(texts));
+  }
+  return out;
+});
 
 /** Un volume arrive sur cette étagère (une habitude arrive ailleurs). */
-const receiving = computed(() =>
-  volumes.value.some((volume) => volume.objective.id === props.arriving),
-);
+const receiving = computed(() => volumes.value.some((volume) => volume.arriving));
 </script>
 
 <template>
@@ -173,18 +234,17 @@ const receiving = computed(() =>
     <div class="shelf-row" v-bind="home ? press : {}">
       <RouterLink
         v-for="volume in volumes"
-        :key="volume.objective.id"
-        :to="targetOf(volume.objective)"
+        :key="volume.key"
+        :to="volume.to"
         class="shelf-cell press-feedback"
-        :class="{ 'is-arriving': volume.objective.id === arriving, 'is-paused': volume.paused }"
-        :data-arriving="volume.objective.id === arriving ? '' : undefined"
-        :data-objective="volume.objective.id"
+        :class="{ 'is-arriving': volume.arriving, 'is-paused': volume.paused }"
+        :data-arriving="volume.arriving ? '' : undefined"
+        :data-page="volume.page"
         :aria-label="volume.label"
-        @click="emit('open', volume.objective)"
-        @contextmenu="onContextmenu($event, volume.objective)"
+        @contextmenu="onContextmenu($event, volume.page)"
       >
         <span class="shelf-slot">
-          <span v-if="volume.objective.id === arriving" class="shelf-specks" aria-hidden="true">
+          <span v-if="volume.arriving" class="shelf-specks" aria-hidden="true">
             <i v-for="angle in SPECKS" :key="angle" :style="{ '--angle': `${angle}deg` }" />
           </span>
           <ProgramVolume

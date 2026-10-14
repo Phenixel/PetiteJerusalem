@@ -1638,21 +1638,44 @@ premier jour au bout d'une année. Tenu par `parcoursLights.test.ts`.
 
 ### Un objectif, un volume
 
-Ce qui se lit (un programme, une lecture du calendrier, un texte du jour) est
-un volume relié sur l'étagère de Mon parcours et de l'accueil
+Ce qui se lit (un programme, une lecture du calendrier, les textes du jour)
+est un volume relié sur l'étagère de Mon parcours et de l'accueil
 (`ProgramVolume.vue`, `VolumeShelf.vue`), de la reliure de son rayon
-(`config/bindings.ts`, la même que l'étagère de la bibliothèque). Sa taille
-dit sa longueur : petit pour un traité ou un texte du jour, ordinaire pour un
-séder ou une lecture du calendrier, épais pour plusieurs sedarim, le plus
-grand pour tout le corpus. Un signet rouge dépasse quand la portion du jour
-attend ; le liseré doré fait le tour de la couverture à mesure qu'on avance,
-et une ligne sous le volume dit où l'on en est. Les habitudes ne sont
-pas des livres : elles ont leur liste, et leur semaine en cases plates.
+(`config/bindings.ts`, la même que l'étagère de la bibliothèque). Un signet
+rouge dépasse quand la portion du jour attend ; le liseré doré fait le tour
+de la couverture à mesure qu'on avance, et une ligne sous le volume dit où
+l'on en est. Les habitudes ne sont pas des livres : elles ont leur liste, et
+leur semaine en cases plates.
+
+- **Tous de la même taille, pas de la même épaisseur.** Des volumes de
+  hauteurs différentes font une planche bancale : la couverture est la même
+  pour tous, et c'est la tranche des pages qui dit la longueur (mince pour
+  un traité ou peu de textes du jour, ordinaire pour un séder ou une lecture
+  du calendrier, épaisse pour plusieurs sedarim, la plus épaisse pour tout
+  le corpus).
+- **Reliés comme le sidour** (`ArtSiddur`) : le dos un ton plus clair, ses
+  nerfs dorés et sa charnière ; un double filet doré autour du titre (le
+  liseré qui se remplit, et un filet fin dedans) ; le titre en lettres
+  dorées, un fleuron, le sous-titre plus petit dessous.
+- **Le titre tient dans son cadre**, jamais au-delà du liseré : il rapetisse
+  un peu sur sa ligne (« Tehilim 1 » ne se coupe pas pour si peu), puis
+  passe sur plusieurs lignes, mot par mot (« Kodachim / Toharot »), trois
+  au plus ; un mot trop long même à la plus petite taille se resserre
+  plutôt que de déborder.
+- **Les textes du jour font un seul volume**, « Lecture du jour » : deux
+  psaumes, dix, une page qu'on aime ne font pas dix livres sur la planche.
+  Quand ce ne sont que des psaumes, il s'appelle « Mes Tehilim journaliers »
+  (« Tehilim » sur la couverture, « Chaque jour » dessous), qu'on sache d'un
+  coup d'œil ce qu'il tient ; la carte et la page prennent le même nom
+  (`dailyName`). Un texte d'un autre corpus le ramène à « Lecture du jour ».
+  Son épaisseur dit combien il en tient, son liseré se remplit des textes
+  lus aujourd'hui, et il ouvre leur page (voir « La lecture du jour,
+  revenue »), où la liste se compose.
 
 - **Un volume touché sur l'accueil ouvre le texte**, à l'endroit où l'on en
   est (`readRoute`) : la portion du jour d'un programme si elle attend,
-  sinon la suite de ce qu'on a lu ; le texte du jour ; les Tehilim du jour ;
-  la paracha. Un appui long, ou le clic droit, ouvre sa page et ses
+  sinon la suite de ce qu'on a lu ; la lecture du jour ; les Tehilim du
+  jour ; la paracha. Un appui long, ou le clic droit, ouvre sa page et ses
   réglages ; un objectif en pause ou fini ouvre sa page. Il ouvrait sa page,
   qui pour un texte du jour ou un cycle n'était faite que de réglages. Dans
   Mon parcours, le volume ouvre toujours sa page ; celle d'un texte ou d'un
@@ -1931,29 +1954,36 @@ choisit sur une seule page »).
 La page de la lecture du jour d'avant Mon parcours revient
 (`/bibliotheque/lecture-du-jour`, `LectureDuJourPage.vue`), nourrie par lui,
 sans rien perdre de ce qu'elle savait faire : on a souvent plusieurs textes
-le même jour (plusieurs psaumes), et on les lit à la suite.
+le même jour (plusieurs psaumes), et on les lit à la suite. C'est la page du
+volume « Lecture du jour » et de la carte du même nom.
 
-- **Tout sur une page** : les lectures du calendrier en tête (les Tehilim
-  du jour, la paracha montée par montée), puis les textes du jour dans
-  l'ordre du catalogue. Ce qui se dit avant et après (le Yehi ratson des
-  Tehilim) se pose une fois pour tout ce qu'on lit du même corpus.
-- **Chaque lecture se coche** (« Marquer comme lu ») et se replie ; un titre
-  touché la replie ou la rouvre. Les chapitres d'un texte se cochent un à
+- **Les textes du jour, rien d'autre**, dans l'ordre du catalogue. Les
+  lectures du calendrier (les Tehilim du mois ou de la semaine, la paracha)
+  n'y sont plus : chacune a son volume, sa carte et sa page. La lecture
+  quotidienne d'avant les mêlait, et la paracha y avait un onglet « Cette
+  semaine », faute d'autre place. Ce qui se dit avant et après (le Yehi
+  ratson des Tehilim) se pose une fois pour tout ce qu'on lit du même
+  corpus.
+- **La liste se compose sur la page** : « Modifier ma liste » montre les
+  textes du jour, chacun se retire d'un toucher (la croix et son nom, « Retirer
+  Tehilim 23 »), et la recherche en ajoute plusieurs d'affilée. Elle s'ouvre
+  d'office quand la liste est vide. Tenu par `e2e/firebase/parcours.spec.ts`
+  (« plusieurs textes d'affilée, lus à la suite dans la lecture du jour »).
+- **Chaque texte se coche** (« Marquer comme lu ») et se replie ; un titre
+  touché le replie ou le rouvre. Les chapitres d'un texte se cochent un à
   un (« 3/8 »), et le dernier coche le texte. La journée se dit en haut
   (« 1 sur 4 lus aujourd'hui » et sa barre).
-- **La paracha de la semaine à part**, dans « Cette semaine », avec le
-  verset écrit deux fois et Rachi, à finir avant Chabbat.
-- Le menu de lecture, la taille du texte, le défilement tout seul, l'écran
-  qui reste allumé, l'avis des textes à télécharger et le rappel du soir,
-  comme avant ; « Ajouter des textes » mène au choix des textes.
-- **Sur l'accueil, une seule carte** : deux textes du jour ou plus font la
-  carte « Lecture du jour » (« 3 textes · Tehilim 1 et 2 autres »), qui
-  ouvre la page ; glissée, elle les coche tous. Un texte seul garde sa
-  carte, qui ouvre son texte. Le profil compte la journée de même.
-- **Plusieurs textes d'affilée** : à la création, un toucher coche un
-  texte, la recherche se refait autant qu'on veut, ce qu'on a coché attend
-  au-dessus, et « Ajouter 3 textes », collé au bas de l'écran, les prend
-  tous.
+- Le menu de lecture, la taille du texte (à côté de « Modifier ma liste »),
+  le défilement tout seul, l'écran qui reste allumé, l'avis des textes à
+  télécharger et le rappel du soir, comme avant.
+- **Sur l'accueil, une seule carte** : les textes du jour, un ou plusieurs,
+  font la carte « Lecture du jour » (« 3 textes · Tehilim 1 et 2 autres »),
+  qui ouvre la page ; glissée, elle les coche tous. Le profil compte la
+  journée de même.
+- **Plusieurs textes d'affilée** : à la création comme sur la page, un
+  toucher coche un texte, la recherche se refait autant qu'on veut, ce
+  qu'on a coché attend au-dessus, et « Ajouter 3 textes », collé au bas de
+  l'écran, les prend tous.
 
 ### L'accueil à son goût
 

@@ -55,10 +55,13 @@ test.describe("Mon parcours", () => {
       )
       .toContain(103);
 
-    // L'accueil : sa carte en tête de la pile ; sa fiche (clic droit) la coche.
+    // L'accueil : la carte des textes du jour en tête de la pile, nommée
+    // d'après eux (que des psaumes) ; sa fiche (clic droit) la coche.
     await page.goto("/");
-    await page.getByLabel(/^Tehilim\s1,.*appui long pour la fiche/).click({ button: "right" });
-    const sheet = page.getByRole("dialog", { name: "Tehilim 1" });
+    await page
+      .getByLabel(/^Mes Tehilim journaliers,.*appui long pour la fiche/)
+      .click({ button: "right" });
+    const sheet = page.getByRole("dialog", { name: "Mes Tehilim journaliers" });
     await sheet.getByRole("button", { name: "C'est fait", exact: true }).click();
     await expect(sheet).toBeHidden();
     await expect
@@ -225,14 +228,17 @@ test.describe("Mon parcours", () => {
     await page.getByRole("button", { name: "Ajouter 2 textes" }).click();
     await expect(page).toHaveURL(/\/parcours$/);
 
-    // L'accueil : une seule carte, « Lecture du jour », qui ouvre la page.
+    // L'accueil : une seule carte, « Mes Tehilim journaliers » (que des
+    // psaumes), qui ouvre la page.
     await page.goto("/");
     await page
-      .getByRole("link", { name: /^Lecture du jour/ })
+      .getByRole("link", { name: /^Mes Tehilim journaliers/ })
       .first()
       .click();
     await expect(page).toHaveURL(/\/bibliotheque\/lecture-du-jour$/);
-    await expect(page.getByRole("heading", { level: 1, name: "Lecture du jour" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Mes Tehilim journaliers" }),
+    ).toBeVisible();
     await expect(page.getByText("0 sur 2 lus aujourd'hui")).toBeVisible();
 
     // Le premier texte, marqué lu : la journée le porte.
@@ -244,6 +250,18 @@ test.describe("Mon parcours", () => {
         return (doc?.days?.[todayKey()]?.done ?? []).length;
       })
       .toBe(1);
+
+    // La liste se compose sur la page : un texte retiré, un autre ajouté.
+    await page.getByRole("button", { name: "Modifier ma liste" }).click();
+    await page.getByRole("button", { name: "Retirer Tehilim 23" }).click();
+    await expect(page.getByText("Tout est lu pour aujourd'hui.")).toBeVisible();
+    await page.getByPlaceholder(/Un texte/).fill("Tehilim 121");
+    await page
+      .getByRole("button", { name: /^Tehilim 121\b/ })
+      .first()
+      .click();
+    await page.getByRole("button", { name: "Ajouter 1 texte" }).click();
+    await expect(page.getByText("1 sur 2 lus aujourd'hui")).toBeVisible();
   });
 
   test("les anciennes adresses mènent à la lecture du jour et à l'accueil", async ({ page }) => {

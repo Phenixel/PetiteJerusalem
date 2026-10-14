@@ -176,6 +176,37 @@ export function useParcoursViews() {
     }
   }
 
+  /**
+   * Le nom des textes du jour (le volume, la carte, la page) : « Mes Tehilim
+   * journaliers » quand ce ne sont que des psaumes, qu'on sache d'un coup
+   * d'œil ce qu'il y a dedans ; « Lecture du jour » dès qu'un autre texte
+   * s'y mêle (une michna, une page de moussar). `cover` est le titre court
+   * de la couverture ; `count`, « 3 psaumes » ou « 3 textes ».
+   */
+  function dailyName(textIds: number[]): {
+    title: string;
+    cover: string;
+    count: (n: number) => string;
+  } {
+    const tehilim =
+      textIds.length > 0 &&
+      textIds.every((id) => {
+        const entry = texteOf(id);
+        return entry !== null && corpusOf(entry) === "tehilim";
+      });
+    return tehilim
+      ? {
+          title: t("parcours.daily.tehilimTitle"),
+          cover: t("parcours.daily.tehilimCover"),
+          count: (n) => unitsLabel("psalm", n),
+        }
+      : {
+          title: t("parcours.daily.title"),
+          cover: t("parcours.daily.title"),
+          count: (n) => t("parcours.daily.texts", { n }, n),
+        };
+  }
+
   /** La reliure d'un objectif qui se lit : celle de son corpus. */
   function objectiveColor(objective: Objective): string {
     if (objective.kind === "program") return bindingOf(objective.corpus);
@@ -217,8 +248,8 @@ export function useParcoursViews() {
   function aliyotLabelOf(aliyot: AliyotRange, day: DayKey): string {
     const date = localDayFrom(day) ?? new Date();
     date.setHours(12);
-    const names = (getWeeklyParasha(date, isIsraelPlace(place.value))?.entries ?? []).map(
-      (entry) => appendHebrewNumeral(entry.name),
+    const names = (getWeeklyParasha(date, isIsraelPlace(place.value))?.entries ?? []).map((entry) =>
+      appendHebrewNumeral(entry.name),
     );
     return aliyotLabel(aliyot, names, t);
   }
@@ -477,6 +508,7 @@ export function useParcoursViews() {
     momentLabel,
     whenLabel,
     objectiveTitle,
+    dailyName,
     objectiveColor,
     objectiveArt,
     coverLabel,

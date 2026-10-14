@@ -21,7 +21,7 @@ sections qui suivent), le suivi d'audience dans `docs/tracking-plan.md`
 | `/parcours/nouveau`               | nouvel objectif, sur une seule page ; créé, il arrive sur `/parcours`                             |
 | `/parcours/objectif/:id`          | un programme (sa portion, son retard, sa semaine), ou les réglages d'un autre objectif            |
 | `/parcours/objectif/:id/reglages` | les réglages d'un programme                                                                       |
-| `/bibliotheque/lecture-du-jour`   | la lecture du jour : les textes du jour et les lectures du calendrier, à la suite                 |
+| `/bibliotheque/lecture-du-jour`   | la lecture du jour : les textes du jour, à la suite ; leur liste s'y compose                      |
 
 Dans l'app, tout s'ouvre **sans compte** et hors ligne. Le site demande un
 compte : il n'a pas d'appareil où garder le suivi.

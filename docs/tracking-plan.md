@@ -850,10 +850,14 @@ marquée lue au bas de la lecture.
 | `preset`, `days_count` | une habitude : `tefilot`, `chema-al-hamita`, `tsedaka`, `chmirat-halachon`, `limoud` (un temps d'étude, **nouveau**), `custom` (« Avec mes mots ») ; `tefilin` et `birkat-hamazon` ne partent plus (la création ne les propose plus) ; ses jours dans la semaine |
 | `cycle` | une lecture du calendrier : `tehilim-week`, `tehilim-month`, `parasha` ; `parasha-aliyot` (**nouvelle valeur**), le chnei mikra une montée par jour |
 | `text_id` | un texte du jour ; `texts_count` dit combien ont été pris d'un coup (un événement par texte) |
+| `source` | **nouvelle propriété** : `daily_page`, un texte ajouté depuis la page de la lecture du jour (« Modifier ma liste ») ; absente, l'objectif vient de la page de création |
 
 ### `parcours_objective_paused`, `parcours_objective_removed` (nouveaux)
 
 `kind`, et pour la pause `paused` (vrai à la pause, faux à la reprise).
+Au retrait, `source` (**nouvelle propriété**) vaut `daily_page` pour un texte
+retiré de la page de la lecture du jour ; absente, l'objectif est rangé
+depuis ses réglages.
 
 ### `parcours_program_updated` (nouveau)
 

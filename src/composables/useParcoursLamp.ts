@@ -18,8 +18,8 @@ export function useParcoursLamp() {
 
   /**
    * La journée : ce qu'aujourd'hui demande, et ce qui en est fait. Comptée
-   * comme la pile de l'accueil : deux textes du jour ou plus n'y font qu'une
-   * carte, « Lecture du jour ».
+   * comme la pile de l'accueil : les textes du jour n'y font qu'une carte,
+   * « Lecture du jour ».
    */
   const today = computed(() => {
     const tasks = store.todayTasks.value;
@@ -27,7 +27,7 @@ export function useParcoursLamp() {
     const isDone = (task: (typeof tasks)[number]) =>
       taskProgress(store.data.value, task, day) === "done";
     const texts = tasks.filter((task) => task.kind === "text");
-    const grouped = texts.length >= 2;
+    const grouped = texts.length > 0;
     const others = grouped ? tasks.filter((task) => task.kind !== "text") : tasks;
     const done = others.filter(isDone).length + (grouped && texts.every(isDone) ? 1 : 0);
     return { done, total: others.length + (grouped ? 1 : 0) };

@@ -3,11 +3,18 @@
  * Un volume de l'étagère de Mon parcours : un objectif, un volume (voir
  * docs/design.md, « Un objectif, un volume »).
  *
- * Sa taille dit sa longueur : un traité seul est un petit livre, un séder un
- * volume, plusieurs sedarim un volume plus épais, tout le Chass le plus gros.
- * Son titre dit ce qu'on a pris, sur une ou deux lignes. Le liseré doré fait
- * le tour de la couverture à mesure qu'on avance ; le signet rouge pend quand
- * une portion attend aujourd'hui.
+ * Tous les volumes ont la même couverture, pour se tenir droits côte à côte
+ * sur la planche ; c'est leur **épaisseur** qui dit leur longueur : un traité
+ * seul est mince, un séder ordinaire, plusieurs sedarim plus épais, tout le
+ * Chass le plus épais.
+ *
+ * Relié comme le sidour (ArtSiddur) : le dos plus clair et ses nerfs dorés,
+ * un double filet doré autour du titre, le titre en lettres dorées et un
+ * fleuron dessous. Le filet extérieur est le liseré qui se remplit à mesure
+ * qu'on avance ; le signet rouge pend quand une portion attend aujourd'hui.
+ *
+ * Le titre tient dans son cadre : il passe sur plusieurs lignes, mot par mot,
+ * et rapetisse s'il le faut ; jamais il ne déborde du liseré.
  */
 import { computed } from "vue";
 
@@ -16,7 +23,7 @@ export type VolumeFormat = "small" | "regular" | "thick" | "large";
 const props = withDefaults(
   defineProps<{
     color: string;
-    /** Le titre, une ou deux lignes : « Moed », ou « Moed » et « Nachim ». */
+    /** Le titre : « Moed », ou « Moed » et « Nachim » ; une ligne trop longue se coupe. */
     lines: string[];
     /** Sous le titre, plus petit : « Michna », « la semaine ». */
     sub?: string;
@@ -31,87 +38,174 @@ const props = withDefaults(
   { sub: "", ribbon: false, format: "regular", scale: 0.875 },
 );
 
-/** La couverture (largeur, hauteur) et l'épaisseur des pages, en unités du dessin. */
-const SHAPES: Record<VolumeFormat, { cover: [number, number]; pages: number; font: number }> = {
-  small: { cover: [62, 100], pages: 5, font: 13 },
-  regular: { cover: [84, 134], pages: 9, font: 15 },
-  thick: { cover: [84, 134], pages: 16, font: 14 },
-  large: { cover: [88, 140], pages: 22, font: 15 },
-};
+/** La couverture, la même pour tous (unités du dessin). */
+const COVER_W = 84;
+const COVER_H = 134;
 
-const shape = computed(() => {
-  const { cover, pages, font } = SHAPES[props.format];
-  const [cw, ch] = cover;
-  const small = cw < 70;
-  // Le cadre doré, rentré du dos (à gauche) plus que du bord.
-  const left = small ? 14 : 18;
-  const right = 3 + cw - (small ? 6 : 7);
-  const top = small ? 11 : 14;
-  const bottom = 3 + ch - (small ? 9 : 11);
-  const middle = (left + right) / 2;
+/** L'épaisseur des pages : elle seule dit la longueur de ce qu'on lit. */
+const PAGES: Record<VolumeFormat, number> = { small: 5, regular: 9, thick: 15, large: 21 };
+
+/** Le cadre doré, rentré du dos (à gauche) plus que du bord. */
+const FRAME = { left: 18, right: 3 + COVER_W - 7, top: 14, bottom: 3 + COVER_H - 11 };
+/** La place du texte dans le cadre, filet intérieur et marges compris. */
+const TEXT_WIDTH = FRAME.right - FRAME.left - 13;
+const MIDDLE = (FRAME.left + FRAME.right) / 2;
+
+/** La largeur moyenne d'une lettre du serif, en part de sa taille. */
+const CHAR = 0.55;
+const widthOf = (text: string, size: number): number => text.length * size * CHAR;
+
+/** Les mots d'une ligne, rangés sur autant de lignes qu'il en faut à cette taille. */
+function wrap(text: string, size: number): string[] {
+  const out: string[] = [];
+  for (const word of text.trim().split(/\s+/)) {
+    const last = out[out.length - 1];
+    if (last !== undefined && widthOf(`${last} ${word}`, size) <= TEXT_WIDTH) {
+      out[out.length - 1] = `${last} ${word}`;
+    } else out.push(word);
+  }
+  return out;
+}
+
+/**
+ * La plus grande taille où tout tient. D'abord chaque ligne entière, en
+ * rapetissant jusqu'à `oneLine` (« Tehilim 1 » ne se coupe pas pour si peu) ;
+ * puis mot par mot, sur `maxLines` lignes au plus. Un mot plus large que le
+ * cadre même à la plus petite taille se resserre (`squeeze`, voir
+ * textLength) plutôt que de déborder.
+ */
+function fit(lines: string[], max: number, oneLine: number, min: number, maxLines: number) {
+  const source = lines.map((line) => line.trim()).filter(Boolean);
+  const fits = (out: string[], size: number) =>
+    out.length <= maxLines && out.every((line) => widthOf(line, size) <= TEXT_WIDTH);
+  const done = (out: string[], size: number) => ({
+    size,
+    lines: out.map((text) => ({ text, squeeze: widthOf(text, size) > TEXT_WIDTH })),
+  });
+  for (let size = max; size >= oneLine; size -= 0.5) {
+    if (fits(source, size)) return done(source, size);
+  }
+  for (let size = max; size >= min; size -= 0.5) {
+    const out = source.flatMap((line) => wrap(line, size));
+    if (fits(out, size)) return done(out, size);
+  }
+  return done(source.flatMap((line) => wrap(line, min)).slice(0, maxLines), min);
+}
+
+const layout = computed(() => {
+  const pages = PAGES[props.format];
+  const title = fit(props.lines, 15, 11, 9, 3);
+  const sub = props.sub ? fit([props.sub], 9.5, 7, 7, 2) : { size: 0, lines: [] };
+  const titleStep = title.size * 1.12;
+  const subStep = sub.size * 1.2;
+  // Le titre, le fleuron, le sous-titre : un bloc, centré un peu haut dans le cadre.
+  const ornament = 9;
+  const height =
+    title.lines.length * titleStep +
+    ornament +
+    (sub.lines.length ? sub.lines.length * subStep + 4 : 0);
+  const top = 3 + COVER_H * 0.45 - height / 2;
+  const titleY = (i: number) => top + title.size * 0.85 + i * titleStep;
+  const ornamentY = top + title.lines.length * titleStep + ornament / 2;
+  const subY = (i: number) => ornamentY + ornament / 2 + 4 + sub.size * 0.85 + i * subStep;
   const leaves = Array.from(
     { length: Math.max(1, Math.floor((pages - 3) / 3)) },
-    (_, i) => `M${cw + 3 + i * 3} 10v${ch - 14}`,
+    (_, i) => `M${COVER_W + 3 + i * 3} 10v${COVER_H - 14}`,
   ).join("");
-  // Un titre long rétrécit plutôt que de déborder de la couverture.
-  const longest = Math.max(...props.lines.map((line) => line.length), 1);
-  const fontSize = Math.min(font, ((right - left - 8) / longest) * 1.9);
-  const firstLine = 3 + ch * 0.42 - ((props.lines.length - 1) * (fontSize + 3)) / 2;
   return {
-    width: (cw + pages + 3) * props.scale,
-    height: (ch + 18) * props.scale,
-    viewBox: `0 0 ${cw + pages + 3} ${ch + 18}`,
-    cw,
-    ch,
     pages,
+    width: (COVER_W + pages + 3) * props.scale,
+    height: (COVER_H + 18) * props.scale,
+    viewBox: `0 0 ${COVER_W + pages + 3} ${COVER_H + 18}`,
     leaves,
-    frame: `M${middle} ${top}H${right}V${bottom}H${left}V${top}Z`,
-    middle,
-    fontSize,
-    firstLine,
-    subY: firstLine + (props.lines.length - 1) * (fontSize + 3) + 18,
-    ribbonX: Math.round(3 + cw * 0.7),
+    title: title.lines.map((line, i) => ({ ...line, y: titleY(i) })),
+    titleSize: title.size,
+    ornamentY,
+    sub: sub.lines.map((line, i) => ({ ...line, y: subY(i) })),
+    subSize: sub.size,
+    ribbonX: Math.round(3 + COVER_W * 0.7),
   };
 });
+
+/** Le liseré extérieur, qui part du milieu du haut et fait le tour. */
+const FRAME_PATH = `M${MIDDLE} ${FRAME.top}H${FRAME.right}V${FRAME.bottom}H${FRAME.left}V${FRAME.top}Z`;
 
 /** Le liseré : sa part du tour de la couverture, au moins un trait quand on a commencé. */
 const dash = computed(() => {
   const share = Math.min(1, Math.max(0, props.progress));
   return `${share > 0 ? Math.max(1, Math.round(share * 100)) : 0} 100`;
 });
+
+/** Les nerfs du dos : deux paires de filets dorés, en haut et en bas. */
+const BANDS = [0.13, 0.17, 0.83, 0.87].map((share) => `M4 ${3 + COVER_H * share}H11`).join("");
 </script>
 
 <template>
-  <svg :width="shape.width" :height="shape.height" :viewBox="shape.viewBox" aria-hidden="true">
-    <rect :x="shape.cw" y="6" :width="shape.pages" :height="shape.ch - 6" rx="2" class="pages" />
-    <path :d="shape.leaves" class="leaves" />
-    <rect x="3" y="3" :width="shape.cw" :height="shape.ch" rx="4" :fill="color" />
-    <rect x="3" y="3" width="7" :height="shape.ch" rx="3.5" class="spine" />
-    <path :d="shape.frame" class="frame" />
-    <path :d="shape.frame" pathLength="100" :stroke-dasharray="dash" class="frame-gold" />
+  <svg :width="layout.width" :height="layout.height" :viewBox="layout.viewBox" aria-hidden="true">
+    <!-- La tranche des pages, ses feuillets en traits fins. -->
+    <rect :x="COVER_W" y="6" :width="layout.pages" :height="COVER_H - 6" rx="2" class="pages" />
+    <path :d="layout.leaves" class="leaves" />
+    <!-- Le plat, le dos plus clair et sa charnière, ses nerfs dorés. -->
+    <rect x="3" y="3" :width="COVER_W" :height="COVER_H" rx="4" :fill="color" />
+    <rect x="3" y="3" width="9" :height="COVER_H" rx="3.5" class="spine" />
+    <path :d="`M12 4V${COVER_H + 2}`" class="hinge" />
+    <path :d="BANDS" class="band" />
+    <!-- Le double filet : le liseré qui se remplit, et le filet fin dedans. -->
+    <path :d="FRAME_PATH" class="frame" />
+    <path :d="FRAME_PATH" pathLength="100" :stroke-dasharray="dash" class="frame-gold" />
+    <rect
+      :x="FRAME.left + 3.5"
+      :y="FRAME.top + 3.5"
+      :width="FRAME.right - FRAME.left - 7"
+      :height="FRAME.bottom - FRAME.top - 7"
+      rx="1"
+      class="filet"
+    />
+    <!-- Le titre doré, le fleuron, le sous-titre. -->
     <text
-      v-for="(line, i) in lines"
-      :key="i"
-      :x="shape.middle"
-      :y="shape.firstLine + i * (shape.fontSize + 3)"
+      v-for="(line, i) in layout.title"
+      :key="`t${i}`"
+      :x="MIDDLE"
+      :y="line.y"
       text-anchor="middle"
       class="title"
-      :style="{ fontSize: `${shape.fontSize}px` }"
+      :style="{ fontSize: `${layout.titleSize}px` }"
+      :textLength="line.squeeze ? TEXT_WIDTH : undefined"
+      :lengthAdjust="line.squeeze ? 'spacingAndGlyphs' : undefined"
     >
-      {{ line }}
+      {{ line.text }}
     </text>
-    <text v-if="sub" :x="shape.middle" :y="shape.subY" text-anchor="middle" class="sub">
-      {{ sub }}
+    <path
+      :d="`M${MIDDLE} ${layout.ornamentY - 3}L${MIDDLE + 2.6} ${layout.ornamentY}L${MIDDLE} ${layout.ornamentY + 3}L${MIDDLE - 2.6} ${layout.ornamentY}Z`"
+      class="gold"
+    />
+    <path
+      :d="`M${MIDDLE - 13} ${layout.ornamentY}H${MIDDLE - 5}M${MIDDLE + 5} ${layout.ornamentY}H${MIDDLE + 13}`"
+      class="ornament-line"
+    />
+    <text
+      v-for="(line, i) in layout.sub"
+      :key="`s${i}`"
+      :x="MIDDLE"
+      :y="line.y"
+      text-anchor="middle"
+      class="sub"
+      :style="{ fontSize: `${layout.subSize}px` }"
+      :textLength="line.squeeze ? TEXT_WIDTH : undefined"
+      :lengthAdjust="line.squeeze ? 'spacingAndGlyphs' : undefined"
+    >
+      {{ line.text }}
     </text>
     <path
       v-if="ribbon"
-      :d="`M${shape.ribbonX} ${shape.ch}H${shape.ribbonX + 6}V${shape.ch + 16}L${shape.ribbonX + 3} ${shape.ch + 12.5}L${shape.ribbonX} ${shape.ch + 16}Z`"
+      :d="`M${layout.ribbonX} ${COVER_H}H${layout.ribbonX + 6}V${COVER_H + 16}L${layout.ribbonX + 3} ${COVER_H + 12.5}L${layout.ribbonX} ${COVER_H + 16}Z`"
       class="ribbon"
     />
   </svg>
 </template>
 
 <style scoped>
+/* Les couleurs de l'objet, hors thème comme les reliures : le papier, la dorure. */
 .pages {
   fill: #efe5d0;
 }
@@ -120,31 +214,54 @@ const dash = computed(() => {
   stroke-width: 0.8;
   fill: none;
 }
+/* Le dos, un ton plus clair que le plat, et la charnière qui l'en sépare. */
 .spine {
-  fill: #000;
-  opacity: 0.16;
+  fill: #fff;
+  opacity: 0.1;
+}
+.hinge {
+  stroke: #000;
+  stroke-width: 0.8;
+  opacity: 0.22;
+}
+.band {
+  stroke: #e2c06a;
+  stroke-width: 0.9;
+  opacity: 0.75;
 }
 .frame {
   fill: none;
   stroke: #ecdfc4;
   stroke-width: 1.4;
-  opacity: 0.35;
+  opacity: 0.3;
 }
 .frame-gold {
   fill: none;
   stroke: #e2c06a;
   stroke-width: 2.2;
 }
+.filet {
+  fill: none;
+  stroke: #e2c06a;
+  stroke-width: 0.6;
+  opacity: 0.55;
+}
 .title {
-  fill: #f3ead6;
+  fill: #ecd28e;
   font-family: var(--font-serif), serif;
-  font-weight: 600;
+  font-weight: 700;
+}
+.gold {
+  fill: #e2c06a;
+}
+.ornament-line {
+  stroke: #e2c06a;
+  stroke-width: 0.9;
 }
 .sub {
-  fill: #ecdfc4;
-  opacity: 0.75;
+  fill: #f1e6cd;
+  opacity: 0.8;
   font-family: var(--font-serif), serif;
-  font-size: 10px;
   font-weight: 600;
 }
 .ribbon {
