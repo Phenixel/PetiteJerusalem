@@ -144,6 +144,13 @@ export interface ProgramObjective extends ObjectiveBase {
    * les jours, comme avant.
    */
   cardDays?: number[];
+  /**
+   * Le repère choisi sur le fil du jour (la barre de P2-Habitude), d'où se
+   * déduit `moment` : la carte de la portion passe en tête de l'accueil à ce
+   * moment-là, sans jamais attendre (l'étude se fait quand on peut). Absent :
+   * le moment seul, comme avant.
+   */
+  anchor?: HabitAnchor;
 }
 
 /**

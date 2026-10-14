@@ -2314,6 +2314,10 @@ const fr = {
       removeTitle: "Retirer « {name} » ?",
       removeText: "Les jours passés gardent leur pierre.",
     },
+    arrived: {
+      volume: "{title} est sur votre étagère.",
+      habit: "{title} est dans vos habitudes.",
+    },
     create: {
       title: "Nouvel objectif",
       kindTitle: "Que voulez-vous accomplir ?",
@@ -2340,7 +2344,6 @@ const fr = {
       noText: "Aucun texte de ce nom.",
       inSeder: "déjà pris avec le séder {seder}",
       next: "Suivant",
-      stepOf: "{n} sur {total}",
       whenTitle: "{title}, d'ici quand ?",
       feastYear: "{feast} {year}",
       endRh: "dans {n} jours, la fin de l'année",
@@ -2375,6 +2378,8 @@ const fr = {
       tight: "Plus soutenu.",
       tightHint: "Le rythme se change en route, et le rattrapage est là si une semaine déborde.",
       whenStudy: "Quand l'étudier",
+      studyWhenHint:
+        "À peu près quand vous l'étudiez : à ce moment de la journée, la carte de la portion passe en tête de l'accueil. Elle ne vous attend pas pour autant : vous pouvez l'ouvrir quand vous voulez.",
       cardDays: "Les jours où la carte vient sur l'accueil",
       moments: {
         morning: "Le matin",
@@ -2414,7 +2419,6 @@ const fr = {
       slide: "Glissez le rond sur le fil, ou",
       allDay: "toute la journée",
       tefilotHint: "Chaque office a son moment : le matin, l'après-midi, le soir.",
-      addToDay: "Ajouter à ma journée",
     },
     anchors: {
       wake: "Au réveil",

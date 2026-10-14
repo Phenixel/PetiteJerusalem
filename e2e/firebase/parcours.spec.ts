@@ -34,6 +34,10 @@ test.describe("Mon parcours", () => {
       .first()
       .click();
 
+    // Pris, il arrive sur Mon parcours, sur l'étagère.
+    await expect(page).toHaveURL(/\/parcours$/);
+    await expect(page.getByText("Tehilim 1 est sur votre étagère.")).toBeAttached();
+
     // Le compte le porte, et la lecture du jour d'avant aussi (les versions
     // installées, le rappel du soir la lisent encore).
     await expect
@@ -83,10 +87,12 @@ test.describe("Mon parcours", () => {
     await sheet.getByRole("button", { name: "Annuler" }).click();
     await expect(sheet).toBeHidden();
 
-    // Confirmé : l'habitude est prise, une seule fois.
+    // Confirmé : l'habitude est prise, une seule fois, et arrive dans la liste.
     await tefilot.click();
     await sheet.getByRole("button", { name: "Ajouter à mon parcours" }).click();
-    await expect(page).toHaveURL(/\/parcours\/objectif\//);
+    await expect(page).toHaveURL(/\/parcours$/);
+    await expect(page.getByText("Les trois tefilot est dans vos habitudes.")).toBeAttached();
+    await expect(page.getByRole("link", { name: /^Les trois tefilot/ })).toBeVisible();
     await expect
       .poll(async () => {
         const doc = (await readDoc("parcours", account.uid)) as ParcoursDoc | null;
@@ -98,6 +104,37 @@ test.describe("Mon parcours", () => {
     await page.goto("/parcours/nouveau");
     await expect(page.getByRole("button", { name: "Chema al hamita", exact: true })).toBeVisible();
     await expect(tefilot).toHaveCount(0);
+  });
+
+  test("un volume se choisit sur une seule page, et arrive sur l'étagère", async ({ page }) => {
+    const account = await createAccount("volume");
+    await signIn(page, account, "/parcours/nouveau");
+
+    // La Michna : sa partie se choisit dessous, sur la même page.
+    await page.getByRole("button", { name: "Michna", exact: true }).click();
+    await expect(page.getByRole("heading", { level: 2 })).toHaveText(
+      "Quelle partie de la Michna ?",
+    );
+    await expect(page.getByRole("heading", { level: 1 })).toContainText(
+      "Que voulez-vous accomplir",
+    );
+    await page.getByRole("button", { name: "Zeraïm", exact: true }).click();
+    await page.getByRole("button", { name: "Suivant", exact: true }).click();
+    await expect(page.getByRole("heading", { name: /d'ici quand/ })).toBeVisible();
+    await expect(page).toHaveURL(/\/parcours\/nouveau$/);
+
+    // Posé : il arrive sur l'étagère de Mon parcours, le soir d'office.
+    await page.getByRole("button", { name: "Poser le volume sur l'étagère" }).click();
+    await expect(page).toHaveURL(/\/parcours$/);
+    await expect(page.getByText(/est sur votre étagère\.$/)).toBeAttached();
+    await expect
+      .poll(async () => {
+        const doc = (await readDoc("parcours", account.uid)) as {
+          objectives?: Record<string, { kind?: string; corpus?: string; anchor?: string }>;
+        } | null;
+        return Object.values(doc?.objectives ?? {}).find((o) => o.kind === "program") ?? null;
+      })
+      .toMatchObject({ corpus: "michna", anchor: "arvit" });
   });
 
   test("les anciennes adresses de la journée mènent à l'accueil", async ({ page }) => {

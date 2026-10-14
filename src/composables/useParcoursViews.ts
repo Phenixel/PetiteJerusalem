@@ -285,7 +285,12 @@ export function useParcoursViews() {
   /** Le moment d'une carte : « Ce soir », « Cette semaine », ou le repère d'une habitude. */
   function kicker(task: Task, objective: Objective): string {
     if (task.weekly) return t("parcours.kicker.weekly");
-    const anchor = objective.kind === "habit" && !task.step ? habitAnchor(objective) : null;
+    const anchor =
+      objective.kind === "habit" && !task.step
+        ? habitAnchor(objective)
+        : objective.kind === "program"
+          ? (objective.anchor ?? null)
+          : null;
     if (anchor) return t(`parcours.anchorKicker.${anchor}`);
     return t(`parcours.kicker.${task.moment}`);
   }

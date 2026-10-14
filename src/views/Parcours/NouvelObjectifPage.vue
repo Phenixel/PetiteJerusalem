@@ -1,19 +1,27 @@
 <script setup lang="ts">
 /**
- * Nouvel objectif, en étapes (P2-Creer1 à 3, P2-Habitude) : quoi, quelle
- * partie, pour quand. Une habitude, un cycle ou un texte du jour vont plus
- * vite. L'étape se dit en haut à droite (« 2 sur 3 »).
+ * Nouvel objectif (P2-Creer1 à 3, P2-Habitude), sur une seule page : on
+ * choisit en haut (un volume, un cycle, une habitude), et la suite se
+ * déplie dessous, la page glissant jusqu'à elle : quelle partie, puis
+ * « d'ici quand ? » ; ou l'habitude à régler ; ou le texte à chercher. Ce
+ * qu'on a choisi reste marqué en haut, et se change sans revenir en
+ * arrière.
  *
- * L'étape est dans l'adresse (`?etape=`), comme ce qu'on a déjà pris : le
- * retour du téléphone ramène à l'étape d'avant, sans rien perdre.
+ * Le choix vit dans la page, pas dans l'adresse : la changer ramènerait la
+ * page en haut (router/index.ts), au lieu de la laisser glisser vers la
+ * section. Une adresse qui en porte un (`?modele=`, `?corpus=`, `?parts=`,
+ * `?etape=texte`) l'ouvre à l'arrivée, puis s'efface.
  *
  * Un modèle tout prêt (une habitude, un cycle) ne s'ajoute pas d'un toucher :
  * sa feuille dit ce qu'il demande, et l'on confirme (PresetSheet). On ne
  * prend pas deux fois le même : un modèle déjà pris n'est plus proposé, et
  * l'ajouter quand même (une adresse gardée, deux touchers) mène à celui
  * qu'on a déjà.
+ *
+ * Créé, l'objectif part sur Mon parcours, où il arrive sous les yeux (voir
+ * useParcoursArrival).
  */
-import { computed, ref, watch } from "vue";
+import { computed, nextTick, ref, watch, type Ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 import ParcoursBack from "../../components/parcours/ParcoursBack.vue";
@@ -24,11 +32,13 @@ import StepParts from "../../components/parcours/create/StepParts.vue";
 import StepText from "../../components/parcours/create/StepText.vue";
 import StepWhen from "../../components/parcours/create/StepWhen.vue";
 import { useParcours } from "../../composables/useParcours";
+import { arriveOnParcours } from "../../composables/useParcoursArrival";
 import { useParcoursMeta } from "../../composables/useParcoursMeta";
 import { useParcoursViews } from "../../composables/useParcoursViews";
 import type { TextStudyJsonEntry } from "../../models/models";
 import { analyticsService } from "../../services/analyticsService";
 import { haptic } from "../../services/haptics";
+import { prefersLessMotion } from "../../composables/useMotion";
 import { milestoneEve } from "../../services/parcours/calendar";
 import {
   HABIT_DEFAULTS,
@@ -50,13 +60,12 @@ import {
   type MomentId,
   type Objective,
   type ProgramCorpus,
+  type ProgramPart,
   type Rhythm,
 } from "../../services/parcours/model";
 import { resolveParts } from "../../services/parcours/texts";
 
 useParcoursMeta("parcours.create.title", "/parcours/nouveau");
-
-type Step = "kind" | "parts" | "when" | "habit" | "text";
 
 const { t } = useI18n();
 const route = useRoute();
@@ -66,39 +75,73 @@ const views = useParcoursViews();
 
 const CORPORA: ProgramCorpus[] = ["michna", "talmud", "tanakh", "tehilim"];
 
-const step = computed<Step>(() => {
-  const wanted = route.query.etape;
-  if (wanted === "partie" && corpus.value && corpus.value !== "tehilim") return "parts";
-  if (wanted === "quand" && corpus.value && parts.value.length) return "when";
-  if (wanted === "habitude" && preset.value) return "habit";
-  if (wanted === "texte") return "text";
-  return "kind";
-});
-const corpus = computed<ProgramCorpus | null>(() => {
-  const value = route.query.corpus;
-  return CORPORA.includes(value as ProgramCorpus) ? (value as ProgramCorpus) : null;
-});
-const parts = computed<string[]>({
-  get: () => {
-    const value = route.query.parts;
-    return typeof value === "string" && value ? value.split(",") : [];
-  },
-  set: (value) =>
-    void router.replace({ query: { ...route.query, parts: value.join(",") || undefined } }),
-});
-const preset = computed<HabitPreset | null>(() => {
-  const value = route.query.modele;
-  return HABIT_PRESETS.includes(value as HabitPreset) ? (value as HabitPreset) : null;
-});
+/** Ce qu'on a choisi en haut : ce qui se déplie dessous. */
+type Selection =
+  | { kind: "program"; corpus: ProgramCorpus }
+  | { kind: "habit"; preset: HabitPreset }
+  | { kind: "text" };
 
-function go(query: Record<string, string | undefined>): void {
-  void router.push({ query });
+/** Le choix porté par l'adresse d'arrivée. */
+function initialSelection(): Selection | null {
+  const { modele, corpus, etape } = route.query;
+  if (HABIT_PRESETS.includes(modele as HabitPreset)) {
+    return { kind: "habit", preset: modele as HabitPreset };
+  }
+  if (CORPORA.includes(corpus as ProgramCorpus)) {
+    return { kind: "program", corpus: corpus as ProgramCorpus };
+  }
+  return etape === "texte" ? { kind: "text" } : null;
 }
 
-// Le brouillon de l'étape « pour quand », et celui d'une habitude.
+const selection = ref<Selection | null>(initialSelection());
+const corpus = computed(() =>
+  selection.value?.kind === "program" ? selection.value.corpus : null,
+);
+const preset = computed(() => (selection.value?.kind === "habit" ? selection.value.preset : null));
+
+/** `program:michna`, `habit:custom`, `text` : ce que le haut de la page marque. */
+const selectedKey = computed(() => {
+  const chosen = selection.value;
+  if (!chosen) return null;
+  if (chosen.kind === "program") return `program:${chosen.corpus}`;
+  return chosen.kind === "habit" ? `habit:${chosen.preset}` : "text";
+});
+
+const parts = ref<ProgramPart[]>(
+  corpus.value === "tehilim"
+    ? ["all"]
+    : typeof route.query.parts === "string" && route.query.parts
+      ? route.query.parts.split(",")
+      : [],
+);
+/** « D'ici quand ? » déplié : par « Suivant », ou d'emblée pour les Tehilim. */
+const whenOpen = ref(
+  (route.query.etape === "quand" && parts.value.length > 0) || corpus.value === "tehilim",
+);
+
+// L'adresse a dit ce qu'elle avait à dire : elle s'efface.
+if (Object.keys(route.query).length) void router.replace({ query: {} });
+
+// Les sections qui se déplient, et la page qui glisse jusqu'à elles.
+const partsSection = ref<HTMLElement | null>(null);
+const whenSection = ref<HTMLElement | null>(null);
+const habitSection = ref<HTMLElement | null>(null);
+const textSection = ref<HTMLElement | null>(null);
+
+async function reveal(section: Ref<HTMLElement | null>): Promise<void> {
+  await nextTick();
+  section.value?.scrollIntoView({
+    behavior: prefersLessMotion() ? "auto" : "smooth",
+    block: "start",
+  });
+}
+
+// Le brouillon de « d'ici quand ? », et celui d'une habitude.
 const end = ref<DayKey>(milestoneEve("roshHashana", store.today.value));
 const rhythm = ref<Rhythm>("daily");
 const programMoment = ref<MomentId>(PROGRAM_DEFAULT_MOMENT);
+/** Le soir, après Arvit : le moment d'un programme qu'on vient de créer. */
+const programAnchor = ref<HabitAnchor | null>("arvit");
 const habitName = ref("");
 const habitDays = ref<number[]>([]);
 const habitMoment = ref<MomentId>("anytime");
@@ -106,34 +149,23 @@ const habitAnchor = ref<HabitAnchor | null>(null);
 /** À la semaine : la carte vient le dimanche, le mercredi et le vendredi (P2-Creer3). */
 const cardDays = ref<number[]>([0, 3, 5]);
 
-const stepTitle = computed(() => {
-  switch (step.value) {
-    case "parts":
-      return t(`parcours.create.partsTitle.${corpus.value}`);
-    case "when": {
-      const title = corpus.value
-        ? views.objectiveTitle({
-            kind: "program",
-            corpus: corpus.value,
-            parts: parts.value,
-          } as Objective)
-        : "";
-      return t("parcours.create.whenTitle", { title });
-    }
-    case "habit":
-      return t("parcours.create.habitTitle");
-    case "text":
-      return t("parcours.create.dailyText");
-    default:
-      return t("parcours.create.kindTitle");
-  }
+const whenTitle = computed(() => {
+  const title = corpus.value
+    ? views.objectiveTitle({
+        kind: "program",
+        corpus: corpus.value,
+        parts: parts.value,
+      } as Objective)
+    : "";
+  return t("parcours.create.whenTitle", { title });
 });
 
-/** « 1 sur 3 » : où l'on en est des trois étapes d'un texte à finir. */
-const stepCount = computed(() => {
-  const n = { kind: 1, parts: 2, when: 3 }[step.value as "kind" | "parts" | "when"];
-  return n ? t("parcours.create.stepOf", { n, total: 3 }) : "";
-});
+/** Le nom du modèle qu'on règle ; « Une habitude » pour la sienne. */
+const habitTitle = computed(() =>
+  preset.value && preset.value !== "custom"
+    ? t(`parcours.habits.${preset.value}`)
+    : t("parcours.create.habitTitle"),
+);
 
 const takenCycles = computed(() =>
   CYCLES.filter((cycle) => {
@@ -163,9 +195,23 @@ const takenTexts = computed(() =>
 );
 
 function chooseProgram(chosen: ProgramCorpus): void {
-  // Les Tehilim se finissent en entier : pas de partie à choisir.
-  if (chosen === "tehilim") go({ etape: "quand", corpus: chosen, parts: "all" });
-  else go({ etape: "partie", corpus: chosen });
+  if (corpus.value !== chosen) {
+    selection.value = { kind: "program", corpus: chosen };
+    // Les Tehilim se finissent en entier : pas de partie à choisir.
+    parts.value = chosen === "tehilim" ? ["all"] : [];
+    whenOpen.value = chosen === "tehilim";
+  }
+  void reveal(chosen === "tehilim" ? whenSection : partsSection);
+}
+
+function openWhen(): void {
+  whenOpen.value = true;
+  void reveal(whenSection);
+}
+
+function chooseText(): void {
+  selection.value = { kind: "text" };
+  void reveal(textSection);
 }
 
 /** Le brouillon d'une habitude part des réglages de son modèle. */
@@ -177,15 +223,18 @@ function startHabit(chosen: HabitPreset): void {
 }
 
 function chooseHabit(chosen: HabitPreset): void {
-  startHabit(chosen);
-  go({ etape: "habitude", modele: chosen });
+  if (preset.value !== chosen) {
+    startHabit(chosen);
+    selection.value = { kind: "habit", preset: chosen };
+  }
+  void reveal(habitSection);
 }
 
 /** Le modèle qu'on regarde, avant de le prendre. */
 const presetChoice = ref<PresetChoice | null>(null);
 
 function previewHabit(chosen: HabitPreset): void {
-  // « Avec mes mots » demande un nom : son étape, directement.
+  // « Avec mes mots » demande un nom : il se règle, directement.
   if (chosen === "custom") chooseHabit(chosen);
   else presetChoice.value = { kind: "habit", preset: chosen };
 }
@@ -213,7 +262,7 @@ function alreadyTaken(found: Objective | undefined): boolean {
   return true;
 }
 
-// Arrivé tout droit sur l'étape d'une habitude (une adresse rechargée) : ses réglages d'office.
+// Arrivé avec une habitude dans l'adresse (un rechargement) : ses réglages d'office.
 watch(
   preset,
   (chosen) => {
@@ -222,12 +271,12 @@ watch(
   { immediate: true },
 );
 
-/** L'objectif créé : on le garde, on le compte, et l'on va le voir. */
+/** L'objectif créé : on le garde, on le compte, et il arrive sur Mon parcours. */
 function finish(objective: Objective, properties: Record<string, unknown>): void {
   haptic("done");
   store.saveObjective(objective);
   analyticsService.capture("parcours_objective_created", { kind: objective.kind, ...properties });
-  void router.replace(`/parcours/objectif/${objective.id}`);
+  arriveOnParcours(router, objective.id);
 }
 
 function createChosenProgram(): void {
@@ -242,6 +291,7 @@ function createChosenProgram(): void {
       rhythm: rhythm.value,
       end: end.value,
       moment: programMoment.value,
+      anchor: programAnchor.value,
       cardDays: cardDays.value,
     },
     store.today.value,
@@ -298,65 +348,75 @@ const canGoOn = computed(
 
 <template>
   <main class="mx-auto w-full max-w-2xl px-4 pb-8 pt-[18px] md:px-6 md:py-12">
-    <div class="flex items-center justify-between">
-      <ParcoursBack v-if="step !== 'kind'" :label="t('common.back')" />
-      <ParcoursBack v-else to="/parcours" :label="t('parcours.title')" />
-      <span v-if="stepCount" class="text-[13px] font-semibold text-text-secondary">
-        {{ stepCount }}
-      </span>
-    </div>
-    <h1 class="mt-3.5 font-display text-[30px] font-bold leading-tight">{{ stepTitle }}</h1>
+    <ParcoursBack to="/parcours" :label="t('parcours.title')" />
+    <h1 class="mt-3.5 font-display text-[30px] font-bold leading-tight">
+      {{ t("parcours.create.kindTitle") }}
+    </h1>
 
     <StepKind
-      v-if="step === 'kind'"
+      :selected="selectedKey"
       :taken-cycles="takenCycles"
       :taken-habits="takenHabits"
       :taken-tehilim="takenTehilim"
       @program="chooseProgram"
       @cycle="(cycle) => (presetChoice = { kind: 'cycle', cycle })"
-      @text="go({ etape: 'texte' })"
+      @text="chooseText"
       @habit="previewHabit"
     />
 
-    <template v-else-if="step === 'parts' && corpus">
-      <StepParts v-model="parts" class="mt-6" :corpus="corpus" :taken="takenProgramTexts" />
+    <!-- Quelle partie : les sedarim sur leur planche, ou les livres. -->
+    <section
+      v-if="corpus && corpus !== 'tehilim'"
+      ref="partsSection"
+      :key="`parts-${corpus}`"
+      class="create-section"
+    >
+      <h2 class="create-h2">{{ t(`parcours.create.partsTitle.${corpus}`) }}</h2>
+      <StepParts v-model="parts" class="mt-4" :corpus="corpus" :taken="takenProgramTexts" />
       <button
+        v-if="!whenOpen"
         type="button"
         class="btn btn-primary mt-8 w-full"
         :disabled="!canGoOn"
-        @click="go({ ...route.query, etape: 'quand' } as Record<string, string>)"
+        @click="openWhen"
       >
         {{ t("parcours.create.next") }}
       </button>
-    </template>
+    </section>
 
-    <StepWhen
-      v-else-if="step === 'when' && corpus"
-      v-model:end="end"
-      v-model:rhythm="rhythm"
-      v-model:moment="programMoment"
-      v-model:card-days="cardDays"
-      :corpus="corpus"
-      :parts="parts"
-      @create="createChosenProgram"
-    />
+    <!-- D'ici quand : la date, le rythme, le moment. -->
+    <section v-if="corpus && whenOpen && canGoOn" ref="whenSection" class="create-section">
+      <h2 class="create-h2">{{ whenTitle }}</h2>
+      <StepWhen
+        v-model:end="end"
+        v-model:rhythm="rhythm"
+        v-model:moment="programMoment"
+        v-model:anchor="programAnchor"
+        v-model:card-days="cardDays"
+        :corpus="corpus"
+        :parts="parts"
+        @create="createChosenProgram"
+      />
+    </section>
 
-    <StepHabit
-      v-else-if="step === 'habit' && preset"
-      v-model:name="habitName"
-      v-model:days="habitDays"
-      v-model:moment="habitMoment"
-      v-model:anchor="habitAnchor"
-      :preset="preset"
-      @create="createChosenHabit()"
-    />
+    <!-- Une habitude : son nom, ses jours, son moment. -->
+    <section v-if="preset" ref="habitSection" :key="`habit-${preset}`" class="create-section">
+      <h2 class="create-h2">{{ habitTitle }}</h2>
+      <StepHabit
+        v-model:name="habitName"
+        v-model:days="habitDays"
+        v-model:moment="habitMoment"
+        v-model:anchor="habitAnchor"
+        :preset="preset"
+        @create="createChosenHabit()"
+      />
+    </section>
 
-    <StepText
-      v-else-if="step === 'text'"
-      class="mt-6"
-      :taken="takenTexts"
-      @pick="createChosenText"
-    />
+    <!-- Un texte chaque jour : on le cherche, on le prend. -->
+    <section v-if="selection?.kind === 'text'" ref="textSection" class="create-section">
+      <h2 class="create-h2">{{ t("parcours.create.dailyText") }}</h2>
+      <StepText class="mt-4" :taken="takenTexts" @pick="createChosenText" />
+    </section>
 
     <PresetSheet
       :choice="presetChoice"
@@ -366,3 +426,43 @@ const canGoOn = computed(
     />
   </main>
 </template>
+
+<style scoped>
+/* Une section dépliée sous le choix : un filet la sépare, elle monte à peine. */
+.create-section {
+  margin-top: 36px;
+  padding-top: 26px;
+  border-top: 1px solid var(--color-line);
+  /* Son titre se pose sous l'en-tête collant du site ; l'app n'a que la barre d'état. */
+  scroll-margin-top: 76px;
+  animation: section-unfolds 0.32s ease-out both;
+}
+@media (min-width: 768px) {
+  .create-section {
+    scroll-margin-top: 100px;
+  }
+}
+:root.native-app .create-section {
+  scroll-margin-top: calc(env(safe-area-inset-top, 0px) + 16px);
+}
+.create-h2 {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+@keyframes section-unfolds {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .create-section {
+    animation: none;
+  }
+}
+:root.perf-lite .create-section {
+  animation: none;
+}
+</style>

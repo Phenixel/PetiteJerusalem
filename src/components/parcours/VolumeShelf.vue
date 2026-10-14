@@ -13,6 +13,9 @@
  *
  * L'étagère défile quand elle se remplit, plutôt que de rapetisser ses
  * volumes : un titre de couverture doit se lire.
+ *
+ * Un volume qu'on vient de créer (`arriving`) tombe sur sa planche, rebondit
+ * un peu, et soulève une poussière dorée : il est arrivé.
  */
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
@@ -25,7 +28,17 @@ import { liveObjectives, taskProgress, type Task } from "../../services/parcours
 import { placeOf, unitLabel } from "../../services/parcours/texts";
 import ProgramVolume from "./ProgramVolume.vue";
 
-const props = withDefaults(defineProps<{ home?: boolean }>(), { home: false });
+const props = withDefaults(
+  defineProps<{
+    home?: boolean;
+    /** L'objectif qu'on vient de créer : son volume arrive sous les yeux. */
+    arriving?: string | null;
+  }>(),
+  { home: false, arriving: null },
+);
+
+/** La poussière dorée du volume qui se pose : six grains, en éventail. */
+const SPECKS = [-68, -40, -14, 14, 40, 68];
 const emit = defineEmits<{ (e: "open", objective: Objective): void }>();
 
 const { t, locale } = useI18n();
@@ -102,20 +115,30 @@ const volumes = computed(() =>
       };
     }),
 );
+
+/** Un volume arrive sur cette étagère (une habitude arrive ailleurs). */
+const receiving = computed(() =>
+  volumes.value.some((volume) => volume.objective.id === props.arriving),
+);
 </script>
 
 <template>
-  <div class="volume-shelf">
+  <div class="volume-shelf" :class="{ 'is-receiving': receiving }">
     <div class="shelf-row">
       <RouterLink
         v-for="volume in volumes"
         :key="volume.objective.id"
         :to="`/parcours/objectif/${volume.objective.id}`"
         class="shelf-cell press-feedback"
+        :class="{ 'is-arriving': volume.objective.id === arriving }"
+        :data-arriving="volume.objective.id === arriving ? '' : undefined"
         :aria-label="volume.label"
         @click="emit('open', volume.objective)"
       >
         <span class="shelf-slot">
+          <span v-if="volume.objective.id === arriving" class="shelf-specks" aria-hidden="true">
+            <i v-for="angle in SPECKS" :key="angle" :style="{ '--angle': `${angle}deg` }" />
+          </span>
           <ProgramVolume
             :color="volume.color"
             :lines="volume.lines"
@@ -229,5 +252,105 @@ const volumes = computed(() =>
   font-weight: 600;
   line-height: 1.35;
   color: var(--color-text-secondary);
+}
+
+/*
+ * Le volume qu'on vient de créer : il tombe sur la planche en accélérant,
+ * rebondit deux fois, et soulève une poussière dorée (le liseré des
+ * reliures) ; sa ligne vient ensuite. Le délai laisse la page glisser
+ * jusqu'à lui.
+ */
+.shelf-cell.is-arriving {
+  --arrive-delay: 0.45s;
+}
+/*
+ * Le défilement de l'étagère la coupe en haut : de la place pour la chute,
+ * que le doigt traverse jusqu'à ce qui est dessous.
+ */
+.volume-shelf.is-receiving {
+  padding-top: 120px;
+  margin-top: -120px;
+  pointer-events: none;
+}
+.is-receiving .shelf-cell {
+  pointer-events: auto;
+}
+.is-arriving .shelf-slot > :deep(svg) {
+  transform-origin: 50% 100%;
+  animation: volume-lands 0.95s var(--arrive-delay) backwards;
+}
+.is-arriving .shelf-caption {
+  animation: caption-comes 0.35s ease-out calc(var(--arrive-delay) + 0.75s) backwards;
+}
+.shelf-specks {
+  position: absolute;
+  inset-inline-start: 50%;
+  bottom: 0;
+  z-index: 2;
+}
+.shelf-specks i {
+  position: absolute;
+  bottom: 0;
+  left: -2.5px;
+  width: 5px;
+  height: 5px;
+  border-radius: var(--radius-pill);
+  background: #e2c06a;
+  opacity: 0;
+  transform-origin: 50% 100%;
+  animation: speck-flies 0.6s ease-out calc(var(--arrive-delay) + 0.48s) forwards;
+}
+@keyframes volume-lands {
+  0% {
+    opacity: 0;
+    transform: translateY(-110px) rotate(-7deg);
+    animation-timing-function: cubic-bezier(0.55, 0, 1, 0.55);
+  }
+  12% {
+    opacity: 1;
+  }
+  52% {
+    transform: none;
+    animation-timing-function: cubic-bezier(0, 0.45, 0.55, 1);
+  }
+  66% {
+    transform: translateY(-14px) rotate(2deg);
+    animation-timing-function: cubic-bezier(0.55, 0, 1, 0.55);
+  }
+  78% {
+    transform: none;
+    animation-timing-function: cubic-bezier(0, 0.45, 0.55, 1);
+  }
+  88% {
+    transform: translateY(-4px);
+    animation-timing-function: cubic-bezier(0.55, 0, 1, 0.55);
+  }
+  100% {
+    transform: none;
+  }
+}
+@keyframes speck-flies {
+  0% {
+    opacity: 1;
+    transform: rotate(var(--angle)) translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(var(--angle)) translateY(-34px) scale(0.4);
+  }
+}
+@keyframes caption-comes {
+  from {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .is-arriving .shelf-slot > :deep(svg),
+  .is-arriving .shelf-caption {
+    animation: none;
+  }
+  .shelf-specks {
+    display: none;
+  }
 }
 </style>

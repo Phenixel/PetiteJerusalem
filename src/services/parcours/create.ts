@@ -71,6 +71,8 @@ export interface ProgramDraft {
   moment: MomentId;
   /** À la semaine : les jours où sa carte vient sur l'accueil. */
   cardDays?: number[];
+  /** Le repère choisi sur le fil du jour ; le moment s'en déduit. */
+  anchor?: HabitAnchor | null;
 }
 
 export function createProgram(draft: ProgramDraft, today: DayKey, now: number): ProgramObjective {
@@ -86,6 +88,7 @@ export function createProgram(draft: ProgramDraft, today: DayKey, now: number): 
     end: draft.end,
     base: { day: today, position: 0 },
     moment: draft.moment,
+    ...(draft.anchor ? { anchor: draft.anchor } : {}),
     ...(draft.rhythm === "weekly" && draft.cardDays ? { cardDays: [...draft.cardDays] } : {}),
     since: today,
     createdAt: now,

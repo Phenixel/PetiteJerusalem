@@ -2234,6 +2234,10 @@ const en: LocaleMessages = {
       removeTitle: "Remove “{name}”?",
       removeText: "Past days keep their stone.",
     },
+    arrived: {
+      volume: "{title} is on your shelf.",
+      habit: "{title} is in your habits.",
+    },
     create: {
       title: "New goal",
       kindTitle: "What do you want to accomplish?",
@@ -2260,7 +2264,6 @@ const en: LocaleMessages = {
       noText: "No text by that name.",
       inSeder: "already taken with Seder {seder}",
       next: "Next",
-      stepOf: "{n} of {total}",
       whenTitle: "{title}, by when?",
       feastYear: "{feast} {year}",
       endRh: "in {n} days, the end of the year",
@@ -2294,6 +2297,8 @@ const en: LocaleMessages = {
       tight: "More demanding.",
       tightHint: "The pace can change along the way, and catching up is there if a week overflows.",
       whenStudy: "When to study it",
+      studyWhenHint:
+        "Roughly when you study it: at that time of day, the card for the portion moves to the top of the home screen. It won't hold you back: you can open it whenever you like.",
       cardDays: "The days the card comes to the home page",
       moments: {
         morning: "In the morning",
@@ -2332,7 +2337,6 @@ const en: LocaleMessages = {
       slide: "Slide the dot along the thread, or",
       allDay: "all day",
       tefilotHint: "Each service has its time: morning, afternoon, evening.",
-      addToDay: "Add to my day",
     },
     anchors: {
       wake: "On waking",

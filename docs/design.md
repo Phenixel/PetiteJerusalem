@@ -676,7 +676,10 @@ mémoire déclarés suffisent), et ce mouvement-là, bref et au geste, dit d'où
 vient le plein écran et où il repart : sans lui, le geste de le tirer vers le
 bas n'aurait plus de sens. La pile de l'accueil est la seconde exception (la
 coche, la montée de la suivante, l'anneau) : ces repères disent qu'une carte
-est faite et qu'une autre est arrivée devant.
+est faite et qu'une autre est arrivée devant. L'arrivée d'un objectif qu'on
+vient de créer est la troisième (le volume qui tombe sur sa planche,
+l'habitude qui se glisse dans sa liste) : elle dit où il s'est rangé
+(`prefersReducedMotion`, `composables/useMotion.ts`).
 
 ### Le toucher répond
 
@@ -691,7 +694,8 @@ avec quatre retours, toujours les mêmes :
   tard, une section remise en non lu ;
 - **seuil** (à peine) : pendant un geste, le moment où, lâché, il agirait
   (la carte ou la ligne glissée assez loin, la pile tirée assez bas,
-  l'anneau plein), le rond de l'habitude qui passe d'un repère à l'autre, un
+  l'anneau plein), le rond du fil du jour qui passe d'un repère à l'autre, le
+  volume qu'on vient de créer qui touche sa planche, un
   bloc de l'accueil qui change de place, une case d'unité touchée, le mur
   qui s'ouvre en pinçant ; un battement au plus toutes les 60 ms ;
 - **appui long** (un battement franc) : la fiche d'une carte, le réglage
@@ -1727,10 +1731,26 @@ page a son jeton, `--color-page`, qui fonce en sombre.
 - Les pierres sont dans `components/parcours/stones.css`, que chaque
   composant qui en pose importe.
 
-### Nouvel objectif, en trois pas
+### Nouvel objectif, sur une seule page
 
-La création suit P2-Creer1 à 3 et P2-Habitude : en tête, le retour et le
-pas (« 2 sur 3 »), puis la question en grand, alignée au début.
+La création reprend P2-Creer1 à 3 et P2-Habitude, mais sur une seule page :
+en tête, le retour vers Mon parcours, puis la question en grand, alignée au
+début. Ce qu'on choisit en haut reste marqué (le volume sorti de sa
+planche, les autres en retrait ; la pastille en couleur), et la suite se
+déplie dessous, sous un filet, la page glissant jusqu'à elle : la partie,
+puis « d'ici quand ? » après « Suivant » ; ou l'habitude à régler ; ou le
+texte à chercher. Changer d'avis se fait en haut, sans revenir en arrière.
+Le choix ne va plus dans l'adresse : chaque changement d'adresse ramène la
+page en haut, et la page doit glisser vers la section.
+
+Créé, l'objectif ne s'ouvre pas : on revient sur Mon parcours, qui glisse
+jusqu'à lui et le fait arriver sous les yeux (`useParcoursArrival`). Un
+volume tombe sur sa planche, rebondit deux fois et soulève une poussière
+dorée (le liseré des reliures), puis sa ligne paraît ; une habitude se
+glisse dans sa liste, dans la teinte du thème qui s'efface, et les cases
+de sa semaine se posent une à une. Une seule fois : rien ne se rejoue au
+rechargement. Tenu par `e2e/firebase/parcours.spec.ts` (« un volume se
+choisit sur une seule page »).
 
 - **Que voulez-vous accomplir ?** Les volumes debout sur leur planche
   (Michna, Talmud, Tanakh, Tehilim) ; les cycles en pastilles (Tehilim
@@ -1747,7 +1767,7 @@ pas (« 2 sur 3 »), puis la question en grand, alignée au début.
   parcours » en grand, « Régler les jours » pour une habitude, et
   « Annuler ». Le bouton ne prend le toucher qu'après 400 ms (le temps que
   la feuille monte) : un double toucher sur la liste ne l'atteint pas.
-  « Ajouter à ma journée », sur l'étape d'une habitude, attend de même.
+  « Ajouter à mon parcours », sous une habitude qu'on règle, attend de même.
 - **Une seule fois.** Un modèle déjà pris (une habitude, un cycle, le
   programme des Tehilim) n'est plus proposé ; retiré du parcours, il
   revient. Les sedarim, traités et livres qu'un programme en cours étudie
@@ -1760,8 +1780,13 @@ pas (« 2 sur 3 »), puis la question en grand, alignée au début.
   Le rythme en trois segments ; la réponse en couleur pleine, avec son
   volume : ce que demande chaque jour d'étude, en unités et en minutes, et
   la fin. « Plus soutenu. » au-delà d'une demi-heure par jour. À la
-  semaine, les jours où la carte vient sur l'accueil (le dimanche, le
-  mercredi et le vendredi d'office) ; le moment en pastilles.
+  semaine, les jours où la carte vient sur l'accueil, écrits en entier
+  (le dimanche, le mercredi et le vendredi d'office). Puis le moment, sur
+  le fil du jour d'une habitude (après Arvit d'office), avec ce qu'il
+  fait : la carte de la portion passe en tête de l'accueil à ce moment-là,
+  sans attendre en retrait pour autant, on l'ouvre quand on veut. Il se
+  garde (`anchor`) et se change dans les réglages du programme, sur le
+  même fil.
 - **Une habitude** : son nom, ses jours en cases plates (Chabbat en pause
   pour les tefilin et la tsédaka), et son moment. Seuls un temps d'étude et
   une habitude « avec mes mots » le choisissent, en glissant le rond sur le

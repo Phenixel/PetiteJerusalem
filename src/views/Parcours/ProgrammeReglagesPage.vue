@@ -17,7 +17,7 @@ import BottomSheet from "../../components/parcours/BottomSheet.vue";
 import ParcoursBack from "../../components/parcours/ParcoursBack.vue";
 import ChoicePill from "../../components/parcours/pickers/ChoicePill.vue";
 import EndDatePicker from "../../components/parcours/pickers/EndDatePicker.vue";
-import MomentPicker from "../../components/parcours/pickers/MomentPicker.vue";
+import AnchorTrack from "../../components/parcours/pickers/AnchorTrack.vue";
 import RhythmPicker from "../../components/parcours/pickers/RhythmPicker.vue";
 import { useConfirm } from "../../composables/useConfirm";
 import { useParcours } from "../../composables/useParcours";
@@ -26,10 +26,11 @@ import { useParcoursViews } from "../../composables/useParcoursViews";
 import { analyticsService } from "../../services/analyticsService";
 import { localDayFrom } from "../../services/dateService";
 import {
+  ANCHOR_MOMENT,
   CATCH_UP_OPTIONS,
   type CatchUpOption,
   type DayKey,
-  type MomentId,
+  type HabitAnchor,
   type ProgramObjective,
   type Rhythm,
 } from "../../services/parcours/model";
@@ -73,12 +74,24 @@ const rhythm = computed({
   get: () => program.value?.rhythm ?? "daily",
   set: (value: Rhythm) => change({ rhythm: value }),
 });
-const moment = computed({
-  get: () => program.value?.moment ?? "evening",
-  set: (value: MomentId) => {
-    if (program.value) store.saveObjective({ ...program.value, moment: value });
+const moment = computed(() => program.value?.moment ?? "evening");
+/** Le repère sur le fil du jour : il pose le moment avec lui, en un seul enregistrement. */
+const anchor = computed({
+  get: () => program.value?.anchor ?? null,
+  set: (next: HabitAnchor | null) => {
+    if (!program.value) return;
+    const changed: ProgramObjective = {
+      ...program.value,
+      moment: next ? ANCHOR_MOMENT[next] : "anytime",
+    };
+    if (next) changed.anchor = next;
+    else delete changed.anchor;
+    store.saveObjective(changed);
   },
 });
+const momentName = computed(() =>
+  anchor.value ? t(`parcours.anchors.${anchor.value}`) : t(`parcours.day.during.${moment.value}`),
+);
 const paces = computed(() =>
   program.value
     ? views.paceLabels(
@@ -182,7 +195,7 @@ async function remove(): Promise<void> {
       <div class="settings-group">
         <button type="button" class="settings-row" @click="sheet = 'moment'">
           <span class="settings-key">{{ t("parcours.settings.when") }}</span>
-          <span class="settings-value">{{ t(`parcours.day.during.${moment}`) }}</span>
+          <span class="settings-value">{{ momentName }}</span>
           <svg class="settings-chevron" viewBox="0 0 24 24" aria-hidden="true">
             <path d="M9 6l6 6-6 6" />
           </svg>
@@ -242,7 +255,23 @@ async function remove(): Promise<void> {
         </template>
         <template v-else-if="sheet === 'moment'">
           <p class="sheet-title">{{ t("parcours.form.moment") }}</p>
-          <MomentPicker v-model="moment" class="mt-3" />
+          <p class="mt-1 text-[13px] leading-normal text-text-secondary">
+            {{ t("parcours.create.studyWhenHint") }}
+          </p>
+          <AnchorTrack
+            v-model:anchor="anchor"
+            :label="t('parcours.form.moment')"
+            :value-text="momentName"
+          />
+          <p class="mt-1.5 text-base font-bold">{{ momentName }}</p>
+          <button
+            type="button"
+            class="mt-0.5 text-[13px] font-bold text-primary"
+            :aria-pressed="anchor === null"
+            @click="anchor = null"
+          >
+            {{ t("parcours.create.allDay") }}
+          </button>
         </template>
         <button type="button" class="btn btn-primary sheet-done" @click="sheet = null">
           {{ t("common.close") }}

@@ -40,7 +40,7 @@ const held = computed(() => cells.value.filter((cell) => cell === "done").length
 
 <template>
   <span class="habit-week" :aria-label="t('parcours.habitWeek', { n: held }, held)">
-    <i v-for="(cell, i) in cells" :key="i" :class="`cell-${cell}`" />
+    <i v-for="(cell, i) in cells" :key="i" :class="`cell-${cell}`" :style="{ '--i': i }" />
   </span>
 </template>
 

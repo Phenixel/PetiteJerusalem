@@ -10,9 +10,13 @@
  * On y arrive par la lampe de l'accueil, ou par le profil. Dans l'app, tout
  * marche sans compte, sur ce téléphone ; un compte le fait suivre d'un
  * appareil à l'autre, et le site l'exige.
+ *
+ * On y revient aussi d'un objectif qu'on vient de créer : la page glisse
+ * jusqu'à lui, et il arrive sous les yeux (le volume tombe sur sa planche,
+ * l'habitude se glisse dans sa liste), une fois (useParcoursArrival).
  */
 import { HDate } from "@hebcal/core";
-import { computed, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import DailyReminderButton from "../../components/parcours/DailyReminderButton.vue";
@@ -23,7 +27,9 @@ import ParcoursBack from "../../components/parcours/ParcoursBack.vue";
 import ParcoursLamp from "../../components/parcours/ParcoursLamp.vue";
 import StoneWall from "../../components/parcours/StoneWall.vue";
 import VolumeShelf from "../../components/parcours/VolumeShelf.vue";
+import { prefersReducedMotion } from "../../composables/useMotion";
 import { isNativeApp } from "../../composables/useNativeApp";
+import { takeArrival } from "../../composables/useParcoursArrival";
 import { useParcoursLamp } from "../../composables/useParcoursLamp";
 import { useParcours } from "../../composables/useParcours";
 import { useParcoursMeta } from "../../composables/useParcoursMeta";
@@ -32,6 +38,7 @@ import { usePinchOpen } from "../../composables/usePinchOpen";
 import { useWallLabels } from "../../composables/useWallLabels";
 import { useZmanimLocation } from "../../composables/useZmanimLocation";
 import { analyticsService } from "../../services/analyticsService";
+import { haptic } from "../../services/haptics";
 import { localDayFrom } from "../../services/dateService";
 import { addDays } from "../../services/parcours/days";
 import { taskEntries } from "../../services/parcours/entries";
@@ -93,7 +100,49 @@ const since = computed(() => {
 const wall = ref<HTMLElement | null>(null);
 usePinchOpen(wall, () => void router.push("/parcours/mur"));
 
+/** L'objectif qu'on vient de créer, le temps de son arrivée. */
+const arriving = ref<string | null>(takeArrival());
+/** Ce que dit un lecteur d'écran : « Séder Toharot est sur votre étagère ». */
+const arrivedNote = ref("");
+const timers: ReturnType<typeof setTimeout>[] = [];
+
+/** Le temps que la page glisse jusqu'à lui, puis qu'il touche la planche. */
+const SCROLL_AFTER_MS = 120;
+const LANDS_AFTER_MS = 940;
+const ARRIVAL_MS = 2600;
+
+function welcome(id: string): void {
+  const objective = store.data.value.objectives[id];
+  if (!objective) {
+    arriving.value = null;
+    return;
+  }
+  const still = prefersReducedMotion();
+  arrivedNote.value = t(
+    objective.kind === "habit" ? "parcours.arrived.habit" : "parcours.arrived.volume",
+    { title: views.objectiveTitle(objective) },
+  );
+  // Après la position que le routeur rend au retour : la page glisse jusqu'à lui.
+  timers.push(
+    setTimeout(() => {
+      document.querySelector<HTMLElement>("[data-arriving]")?.scrollIntoView({
+        behavior: still ? "auto" : "smooth",
+        block: "center",
+        inline: "center",
+      });
+    }, SCROLL_AFTER_MS),
+  );
+  // Le volume touche la planche : un battement.
+  if (!still && objective.kind !== "habit") {
+    timers.push(setTimeout(() => haptic("tick"), LANDS_AFTER_MS));
+  }
+  timers.push(setTimeout(() => (arriving.value = null), ARRIVAL_MS));
+}
+
+onBeforeUnmount(() => timers.forEach(clearTimeout));
+
 onMounted(() => {
+  if (arriving.value) welcome(arriving.value);
   analyticsService.capture("parcours_viewed", {
     objectives_count: liveObjectives(store.data.value).length,
     streak: store.streak.value.current,
@@ -196,7 +245,7 @@ onMounted(() => {
         <template v-else>
           <section>
             <h2 class="parcours-h2">{{ t("parcours.shelf.title") }}</h2>
-            <VolumeShelf />
+            <VolumeShelf :arriving="arriving" />
           </section>
 
           <!-- Mes habitudes : un nom, et sa semaine en petites cases. -->
@@ -207,7 +256,9 @@ onMounted(() => {
                 v-for="habit in habits"
                 :key="habit.id"
                 :to="`/parcours/objectif/${habit.id}`"
-                class="flex min-h-14 items-center gap-3 px-3.5 py-2.5 hover:bg-surface-soft"
+                class="habit-row flex min-h-14 items-center gap-3 px-3.5 py-2.5 hover:bg-surface-soft"
+                :class="{ 'is-arriving': habit.id === arriving }"
+                :data-arriving="habit.id === arriving ? '' : undefined"
               >
                 <span class="min-w-0 flex-1">
                   <span class="block text-[15px] font-bold">{{ views.objectiveTitle(habit) }}</span>
@@ -246,6 +297,7 @@ onMounted(() => {
     </div>
 
     <DaySheet :day="picked" source="parcours_wall" @close="picked = null" />
+    <p class="sr-only" aria-live="polite">{{ arrivedNote }}</p>
   </main>
 </template>
 
@@ -259,5 +311,53 @@ onMounted(() => {
 /* Deux doigts écartés ouvrent le mur entier : la page ne zoome pas dessus. */
 .wall-pinch {
   touch-action: pan-x pan-y;
+}
+/*
+ * L'habitude qu'on vient de créer : sa ligne se glisse dans la liste, dans
+ * la teinte du thème qui s'efface, et les cases de sa semaine se posent une
+ * à une. Le délai laisse la page glisser jusqu'à elle.
+ */
+.habit-row.is-arriving {
+  --arrive-delay: 0.45s;
+  --arrive-from: 36px;
+  animation: habit-arrives 1.9s ease-out var(--arrive-delay) backwards;
+}
+[dir="rtl"] .habit-row.is-arriving {
+  --arrive-from: -36px;
+}
+.habit-row.is-arriving :deep(.habit-week i) {
+  animation: cell-sets 0.32s ease-out calc(var(--arrive-delay) + 0.4s + var(--i) * 70ms) backwards;
+}
+@keyframes habit-arrives {
+  0% {
+    opacity: 0;
+    transform: translateX(var(--arrive-from));
+    background-color: color-mix(in srgb, var(--color-brand) 18%, transparent);
+  }
+  22% {
+    opacity: 1;
+    transform: none;
+  }
+  60% {
+    background-color: color-mix(in srgb, var(--color-brand) 18%, transparent);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+@keyframes cell-sets {
+  0% {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+  70% {
+    transform: scale(1.25);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .habit-row.is-arriving,
+  .habit-row.is-arriving :deep(.habit-week i) {
+    animation: none;
+  }
 }
 </style>

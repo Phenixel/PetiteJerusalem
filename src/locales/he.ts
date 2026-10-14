@@ -2177,6 +2177,10 @@ const he: LocaleMessages = {
       removeTitle: "להסיר את ״{name}״?",
       removeText: "הימים שעברו שומרים על האבן שלהם.",
     },
+    arrived: {
+      volume: "{title} על המדף שלך.",
+      habit: "{title} בהרגלים שלך.",
+    },
     create: {
       title: "יעד חדש",
       kindTitle: "מה תרצו להשיג?",
@@ -2203,7 +2207,6 @@ const he: LocaleMessages = {
       noText: "אין טקסט בשם הזה.",
       inSeder: "כבר נלקח עם סדר {seder}",
       next: "הבא",
-      stepOf: "{n} מתוך {total}",
       whenTitle: "{title}, עד מתי?",
       feastYear: "{feast} {year}",
       endRh: "בעוד {n} ימים, סוף השנה",
@@ -2237,6 +2240,8 @@ const he: LocaleMessages = {
       tight: "קצב תובעני יותר.",
       tightHint: "את הקצב אפשר לשנות בדרך, וההשלמה קיימת אם שבוע גולש.",
       whenStudy: "מתי ללמוד",
+      studyWhenHint:
+        "בערך מתי אתם לומדים: בשעה הזאת של היום, הכרטיס של המנה עולה לראש מסך הבית. הוא לא מחכה לכם: אפשר לפתוח אותו מתי שרוצים.",
       cardDays: "הימים שבהם הכרטיס מופיע בדף הבית",
       moments: {
         morning: "בבוקר",
@@ -2275,7 +2280,6 @@ const he: LocaleMessages = {
       slide: "החליקו את העיגול על החוט, או",
       allDay: "כל היום",
       tefilotHint: "לכל תפילה הזמן שלה: בוקר, אחר הצהריים, ערב.",
-      addToDay: "להוסיף ליום שלי",
     },
     anchors: {
       wake: "בקימה",

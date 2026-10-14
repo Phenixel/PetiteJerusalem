@@ -4,8 +4,9 @@
  * qu'on se donne (Roch Hachana, Pessa'h, une autre, ou « à mon rythme », tant
  * par jour sans date), puis le rythme ; la réponse vient en couleur pleine,
  * avec son volume : ce que chaque jour d'étude (ou chaque semaine) demande,
- * en unités et en minutes, et la fin. Puis le moment, et, à la semaine, les
- * jours où la carte vient sur l'accueil.
+ * en unités et en minutes, et la fin. Puis, à la semaine, les jours où la
+ * carte vient sur l'accueil (écrits en entier), et le moment, posé sur le fil
+ * du jour comme celui d'une habitude : une ligne dit à quoi il sert.
  */
 import { HDate } from "@hebcal/core";
 import { computed, ref, watch } from "vue";
@@ -16,24 +17,29 @@ import { useParcoursViews } from "../../../composables/useParcoursViews";
 import { localDayFrom } from "../../../services/dateService";
 import { milestoneEve } from "../../../services/parcours/calendar";
 import { addDays, daysBetween } from "../../../services/parcours/days";
-import type {
-  DayKey,
-  MomentId,
-  ProgramCorpus,
-  ProgramObjective,
-  ProgramPart,
-  Rhythm,
+import {
+  ANCHOR_MOMENT,
+  type DayKey,
+  type HabitAnchor,
+  type MomentId,
+  type ProgramCorpus,
+  type ProgramObjective,
+  type ProgramPart,
+  type Rhythm,
 } from "../../../services/parcours/model";
 import { endForRate, MINUTES_PER_UNIT, studySlots } from "../../../services/parcours/plan";
 import { resolveParts, totalOf, unitOf } from "../../../services/parcours/texts";
 import { formatHebrewDate } from "../../../services/zmanimService";
 import AppDateField from "../../AppDateField.vue";
 import ProgramVolume from "../ProgramVolume.vue";
+import AnchorTrack from "../pickers/AnchorTrack.vue";
 
 const props = defineProps<{ corpus: ProgramCorpus; parts: ProgramPart[] }>();
 const end = defineModel<DayKey>("end", { required: true });
 const rhythm = defineModel<Rhythm>("rhythm", { required: true });
 const moment = defineModel<MomentId>("moment", { required: true });
+/** Le repère sur le fil du jour ; le moment s'en déduit. */
+const anchor = defineModel<HabitAnchor | null>("anchor", { required: true });
 /** À la semaine : les jours où la carte vient sur l'accueil. */
 const cardDays = defineModel<number[]>("cardDays", { required: true });
 const emit = defineEmits<{ (e: "create"): void }>();
@@ -182,8 +188,19 @@ const tight = computed(() => {
 });
 
 const RHYTHM_CHOICES: Rhythm[] = ["daily", "weekdays", "weekly"];
-const MOMENT_CHOICES: MomentId[] = ["morning", "afternoon", "evening", "bedtime"];
 const CARD_DAYS = [0, 1, 2, 3, 4, 5];
+
+/** Le rond du fil : poser un repère pose aussi le moment, le repère en dernier. */
+const trackAnchor = computed({
+  get: () => anchor.value,
+  set: (next: HabitAnchor | null) => {
+    moment.value = next ? ANCHOR_MOMENT[next] : "anytime";
+    anchor.value = next;
+  },
+});
+const momentName = computed(() =>
+  anchor.value ? t(`parcours.anchors.${anchor.value}`) : t("parcours.day.moments.anytime"),
+);
 
 function toggleCardDay(day: number): void {
   cardDays.value = cardDays.value.includes(day)
@@ -201,8 +218,6 @@ const cardLine = computed(() => {
   );
   return t("parcours.create.cardWeekly", { days: names.join(", "), when });
 });
-
-const initials = computed(() => t("parcours.weekdayInitials").split(","));
 </script>
 
 <template>
@@ -296,7 +311,7 @@ const initials = computed(() => t("parcours.weekdayInitials").split(","));
     <p class="create-lab">{{ t("parcours.create.whenStudy") }}</p>
     <div
       v-if="weekly"
-      class="mb-2.5 flex gap-1.5"
+      class="mb-3 flex flex-wrap gap-1.5"
       role="group"
       :aria-label="t('parcours.create.cardDays')"
     >
@@ -304,28 +319,35 @@ const initials = computed(() => t("parcours.weekdayInitials").split(","));
         v-for="day in CARD_DAYS"
         :key="day"
         type="button"
-        class="chip flex-1 px-0"
+        class="chip"
         :class="{ 'is-on': cardDays.includes(day) }"
         :aria-pressed="cardDays.includes(day)"
-        :aria-label="t(`parcours.weekdays.${day}`)"
         @click="toggleCardDay(day)"
       >
-        {{ initials[day] }}
+        {{ t(`parcours.weekdays.${day}`) }}
       </button>
     </div>
-    <div class="flex flex-wrap gap-2" role="group" :aria-label="t('parcours.form.moment')">
+    <!-- Le moment, sur le fil du jour : à quoi il sert, d'abord. -->
+    <p class="text-[13px] leading-normal text-text-secondary">
+      {{ t("parcours.create.studyWhenHint") }}
+    </p>
+    <AnchorTrack
+      v-model:anchor="trackAnchor"
+      :label="t('parcours.create.whenStudy')"
+      :value-text="momentName"
+    />
+    <p class="mt-1.5 text-base font-bold">{{ momentName }}</p>
+    <p class="mt-0.5 text-[13px] text-text-secondary">
+      {{ t("parcours.create.slide") }}
       <button
-        v-for="option in MOMENT_CHOICES"
-        :key="option"
         type="button"
-        class="chip"
-        :class="{ 'is-on': moment === option }"
-        :aria-pressed="moment === option"
-        @click="moment = option"
+        class="font-bold text-primary"
+        :aria-pressed="anchor === null"
+        @click="trackAnchor = null"
       >
-        {{ t(`parcours.create.moments.${option}`) }}
+        {{ t("parcours.create.allDay") }}
       </button>
-    </div>
+    </p>
     <p class="mt-2.5 text-[13px] leading-normal text-text-secondary">{{ cardLine }}</p>
 
     <button

@@ -18,7 +18,7 @@ sections qui suivent), le suivi d'audience dans `docs/tracking-plan.md`
 | `/parcours`                       | la série, le mur des cinq dernières semaines, l'étagère, les habitudes                            |
 | `/parcours/journee`               | l'adresse de Ma journée, retirée : elle mène à l'accueil                                          |
 | `/parcours/mur`                   | le mur entier                                                                                     |
-| `/parcours/nouveau`               | nouvel objectif, en étapes gardées dans l'adresse (`?etape=`)                                     |
+| `/parcours/nouveau`               | nouvel objectif, sur une seule page ; créé, il arrive sur `/parcours`                             |
 | `/parcours/objectif/:id`          | un programme (sa portion, son retard, sa semaine), ou les réglages d'un autre objectif            |
 | `/parcours/objectif/:id/reglages` | les réglages d'un programme                                                                       |
 | `/bibliotheque/lecture-du-jour`   | l'adresse d'avant : elle mène à l'accueil                                                         |

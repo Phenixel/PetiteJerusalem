@@ -9,6 +9,10 @@
  * tefilot. Retiré de son parcours, il revient dans la liste. Le toucher
  * n'ajoute rien : il ouvre la feuille du modèle (PresetSheet), où l'on
  * confirme.
+ *
+ * Tout se fait sur la même page : ce qu'on a choisi reste marqué ici (le
+ * volume sorti de la planche, la pastille en couleur), et la suite se
+ * déplie dessous.
  */
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
@@ -17,6 +21,8 @@ import type { CycleId, HabitPreset, ProgramCorpus } from "../../../services/parc
 import ProgramVolume from "../ProgramVolume.vue";
 
 const props = defineProps<{
+  /** Ce qu'on a choisi et qu'on règle plus bas : `program:michna`, `habit:custom`, `text`. */
+  selected: string | null;
   takenCycles: CycleId[];
   takenHabits: HabitPreset[];
   /** Les Tehilim se finissent en entier : un seul programme à la fois. */
@@ -56,13 +62,15 @@ const habits = computed(() => HABITS.filter((preset) => !props.takenHabits.inclu
 <template>
   <div>
     <p class="create-lab">{{ t("parcours.create.finish") }}</p>
-    <div class="books">
+    <div class="books" :class="{ 'has-choice': selected?.startsWith('program:') }">
       <button
         v-for="corpus in corpora"
         :key="corpus"
         type="button"
         class="press-feedback book"
+        :class="{ 'is-chosen': selected === `program:${corpus}` }"
         :aria-label="t(`parcours.corpus.${corpus}`)"
+        :aria-current="selected === `program:${corpus}` ? 'true' : undefined"
         @click="emit('program', corpus)"
       >
         <ProgramVolume
@@ -87,7 +95,13 @@ const habits = computed(() => HABITS.filter((preset) => !props.takenHabits.inclu
       >
         {{ t(`parcours.cycles.${cycle}.pick`) }}
       </button>
-      <button type="button" class="pick-pill" @click="emit('text')">
+      <button
+        type="button"
+        class="pick-pill"
+        :class="{ 'is-on': selected === 'text' }"
+        :aria-current="selected === 'text' ? 'true' : undefined"
+        @click="emit('text')"
+      >
         {{ t("parcours.create.dailyText") }}
       </button>
     </div>
@@ -99,11 +113,19 @@ const habits = computed(() => HABITS.filter((preset) => !props.takenHabits.inclu
         :key="preset"
         type="button"
         class="pick-pill"
+        :class="{ 'is-on': selected === `habit:${preset}` }"
+        :aria-current="selected === `habit:${preset}` ? 'true' : undefined"
         @click="emit('habit', preset)"
       >
         {{ t(`parcours.habits.${preset}`) }}
       </button>
-      <button type="button" class="pick-pill pick-mine" @click="emit('habit', 'custom')">
+      <button
+        type="button"
+        class="pick-pill pick-mine"
+        :class="{ 'is-on': selected === 'habit:custom' }"
+        :aria-current="selected === 'habit:custom' ? 'true' : undefined"
+        @click="emit('habit', 'custom')"
+      >
         {{ t("parcours.create.ownWords") }}
       </button>
     </div>
@@ -128,6 +150,16 @@ const habits = computed(() => HABITS.filter((preset) => !props.takenHabits.inclu
   display: block;
   flex: 1;
   max-width: 66px;
+  transition:
+    transform 0.25s ease,
+    opacity 0.25s ease;
+}
+/* Le volume choisi sort de la planche ; les autres restent, en retrait. */
+.book.is-chosen {
+  transform: translateY(-14px);
+}
+.has-choice .book:not(.is-chosen) {
+  opacity: 0.55;
 }
 .book :deep(svg) {
   display: block;
@@ -163,5 +195,16 @@ const habits = computed(() => HABITS.filter((preset) => !props.takenHabits.inclu
   background: transparent;
   box-shadow: inset 0 0 0 1.5px var(--color-line-strong);
   color: var(--color-primary);
+}
+/* Ce qu'on règle plus bas : la couleur du thème. */
+.pick-pill.is-on {
+  background: var(--color-brand);
+  box-shadow: none;
+  color: var(--color-on-brand);
+}
+@media (prefers-reduced-motion: reduce) {
+  .book {
+    transition: none;
+  }
 }
 </style>
