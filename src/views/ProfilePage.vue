@@ -14,8 +14,8 @@ import AppearanceTab from "./profilePage/AppearanceTab.vue";
 import PreferencesTab from "./profilePage/PreferencesTab.vue";
 import { SITE_URL } from "../config/site";
 // Chargée à la demande : Mon parcours tire le calendrier hébraïque.
-const ProfileParcoursCard = defineAsyncComponent(
-  () => import("../components/parcours/ProfileParcoursCard.vue"),
+const ProfileParcours = defineAsyncComponent(
+  () => import("../components/parcours/ProfileParcours.vue"),
 );
 
 const router = useRouter();
@@ -124,13 +124,13 @@ onUnmounted(() => {
 
     <!-- Sans compte, l'abonnement ci-dessus renvoie à l'accueil. -->
     <div v-else-if="currentUser">
-      <ProfileHeader :user-display-name="userDisplayName" />
+      <ProfileHeader :user-display-name="userDisplayName">
+        <!-- Mon parcours, dans la bannière : la lumière, la série, la journée. -->
+        <ProfileParcours tone="brand" class="w-full md:w-80" />
+      </ProfileHeader>
 
       <div class="max-w-[1200px] mx-auto px-6 grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8">
-        <!-- Mon parcours : la lumière de la série, la journée, Mes lumières. En
-             tête sur un téléphone ; au large, en haut du panneau, à droite du menu. -->
-        <ProfileParcoursCard class="lg:col-start-2 lg:row-start-1" />
-        <nav class="lg:sticky lg:top-24 h-fit card p-3 lg:col-start-1 lg:row-start-1 lg:row-span-2">
+        <nav class="lg:sticky lg:top-24 h-fit card p-3">
           <!-- Raccourcis vers les fonctionnalités déplacées dans leurs sections. -->
           <p class="px-4 pt-2 pb-1 text-sm font-semibold text-text-secondary">
             {{ t("profile.shortcuts.title") }}
@@ -194,7 +194,7 @@ onUnmounted(() => {
           </button>
         </nav>
 
-        <div id="profile-content" class="lg:col-start-2">
+        <div id="profile-content">
           <div v-if="activeTab === 'my-info'">
             <UserInfoForm :user="currentUser" @update="updateUserInfo" />
           </div>

@@ -44,8 +44,8 @@ import HolidayOrnaments from "../../../components/holiday/HolidayOrnaments.vue";
 import SettingsGroup from "../../../components/settings/SettingsGroup.vue";
 import SettingsRow from "../../../components/settings/SettingsRow.vue";
 // Chargée à la demande : Mon parcours tire le calendrier hébraïque.
-const ProfileParcoursCard = defineAsyncComponent(
-  () => import("../../../components/parcours/ProfileParcoursCard.vue"),
+const ProfileParcours = defineAsyncComponent(
+  () => import("../../../components/parcours/ProfileParcours.vue"),
 );
 
 const { t } = useI18n();
@@ -211,6 +211,8 @@ onUnmounted(() => {
           <AppIcon name="pencil" :size="14" />
           {{ t("profile.native.editProfile") }}
         </RouterLink>
+        <!-- Mon parcours, dans l'en-tête : la lumière, la série, la journée. -->
+        <ProfileParcours class="mt-7 w-full text-start" />
         <HolidayOrnaments
           v-if="activeHolidayTheme"
           :theme="activeHolidayTheme.id"
@@ -225,6 +227,8 @@ onUnmounted(() => {
         <h1 class="mb-6 text-center text-3xl font-bold tracking-tight text-text-primary">
           {{ t("profile.guestTitle") }}
         </h1>
+        <!-- Mon parcours se tient sans compte, sur ce téléphone : en tête aussi. -->
+        <ProfileParcours class="mb-8" />
         <section class="card mb-8 p-5">
           <p class="text-sm leading-relaxed text-text-secondary">
             {{ t("profile.guestSettingsHint") }}
@@ -253,10 +257,8 @@ onUnmounted(() => {
       </template>
 
       <div class="flex flex-col gap-7">
-        <!-- Mon parcours se tient sans compte, sur ce téléphone : sa carte est
-             là pour tous (la lumière de la série, la journée, Mes lumières).
-             Les chaînes de lecture, elles, suivent le compte. -->
-        <ProfileParcoursCard />
+        <!-- Mon parcours est dans l'en-tête, pour tous ; les chaînes de lecture,
+             elles, suivent le compte. -->
         <SettingsGroup v-if="currentUser" :title="t('profile.native.groups.reading')">
           <SettingsRow
             icon="users"

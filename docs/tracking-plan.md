@@ -184,11 +184,11 @@ lignes sur la page du profil elle-même, sans sous-page à compter.
 Un raccourci du profil vers ce qui y vivait autrefois : `shortcut` vaut
 `parcours` (Mon parcours, **nouvelle valeur**, qui remplace `daily_reading`
 depuis que la lecture du jour y vit) ou `my_sessions`, sur le site comme dans
-l'app (groupe « Mes lectures »). Mon parcours n'est plus une ligne mais une
-carte en tête du profil (la lumière de la série, la journée, « Mes
-lumières ») : la toucher envoie toujours `shortcut: parcours`, sur le site
-comme dans l'app, avec ou sans compte. La ligne du menu du site reste, et
-l'envoie aussi.
+l'app (groupe « Mes lectures »). Mon parcours n'est plus une ligne mais un
+bloc de l'en-tête du profil (la lumière de la série, la journée) : son lien
+« Mon parcours » envoie toujours `shortcut: parcours`, sur le site comme
+dans l'app, avec ou sans compte. La ligne du menu du site reste, et l'envoie
+aussi.
 
 ## Lecture de la tefila
 
@@ -810,9 +810,10 @@ saute de plusieurs jours d'un coup (le compte relu sur un nouvel appareil).
 
 ### `parcours_lights_opened` (nouveau)
 
-« Mes lumières » ouverte. `source` : `parcours` (sous la lumière de Mon
-parcours), `profile` (la carte du profil), `celebration` (« Voir mes
-lumières », depuis la feuille d'une lumière gagnée).
+« Mes lumières » ouverte. `source` : `parcours` (la lumière de Mon parcours,
+touchée), `profile` (la lumière de l'en-tête du profil, touchée),
+`celebration` (« Voir mes lumières », depuis la feuille d'une lumière
+gagnée).
 
 ### `parcours_caught_up` (nouveau)
 

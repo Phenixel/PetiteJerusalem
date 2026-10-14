@@ -2236,7 +2236,7 @@ const en: LocaleMessages = {
     },
     lights: {
       title: "My lights",
-      open: "My lights",
+      openLabel: "My lights, {name}",
       intro:
         "Each step of your streak lights a new light. Once earned, it stays: a streak that drops doesn't take it back.",
       yours: "Your light",
@@ -2244,7 +2244,7 @@ const en: LocaleMessages = {
       from: "from {n} day | from {n} days",
       inDays: "in {n} day | in {n} days",
       hidden: "Yet to discover",
-      next: "Next light in {n} day | Next light in {n} days",
+      next: "next light in {n} day | next light in {n} days",
       unlocked: "A new light",
       see: "See my lights",
       keep: "Continue",

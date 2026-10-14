@@ -85,8 +85,9 @@ const habits = computed(() => liveObjectives(store.data.value).filter((o) => o.k
 const empty = computed(() => liveObjectives(store.data.value).length === 0);
 const lamp = useParcoursLamp();
 
-/** Mes lumières : celles qu'on a gagnées, et celles qui restent dans l'ombre. */
+/** Mes lumières : la lumière touchée les ouvre, gagnées et encore dans l'ombre. */
 const lightsOpen = ref(false);
+const lightName = computed(() => t(`parcours.lights.names.${lamp.light.value.id}`));
 function openLights(): void {
   lightsOpen.value = true;
   analyticsService.capture("parcours_lights_opened", { source: "parcours" });
@@ -180,9 +181,17 @@ onMounted(() => {
     <div class="md:grid md:grid-cols-2 md:gap-12">
       <div>
         <!-- La lumière de la série, en grand : la lampe d'abord, puis la bougie,
-             la lanterne... La flamme baisse un jour manqué, elle ne s'éteint pas. -->
+             la lanterne... La flamme baisse un jour manqué, elle ne s'éteint pas.
+             La toucher ouvre Mes lumières. -->
         <section class="mt-[18px] flex flex-col items-center text-center">
-          <StreakLight :light="lamp.light.value.id" :level="lamp.level.value" :width="168" />
+          <button
+            type="button"
+            class="press-feedback rounded-card"
+            :aria-label="t('parcours.lights.openLabel', { name: lightName })"
+            @click="openLights"
+          >
+            <StreakLight :light="lamp.light.value.id" :level="lamp.level.value" :width="168" />
+          </button>
           <p class="mt-1.5 flex items-baseline gap-2">
             <span class="font-display text-[44px] font-bold leading-none text-primary">
               {{ store.streak.value.current }}
@@ -194,23 +203,18 @@ onMounted(() => {
           <p class="mt-1.5 text-sm text-text-secondary">
             {{ t("parcours.streak.best", { n: store.streak.value.best }) }}
           </p>
-          <button type="button" class="lights-btn press-feedback mt-3.5" @click="openLights">
-            <svg class="h-4 w-4" viewBox="0 0 16 16" aria-hidden="true">
-              <path d="M8 1Q9 7 15 8Q9 9 8 15Q7 9 1 8Q7 7 8 1Z" fill="currentColor" />
-            </svg>
-            <span>{{ t("parcours.lights.open") }}</span>
-            <span class="font-semibold text-text-secondary">
-              {{ t(`parcours.lights.names.${lamp.light.value.id}`) }}
-            </span>
-          </button>
-          <p v-if="lamp.next.value" class="mt-2 text-[13px] text-text-secondary">
-            {{
-              t(
-                "parcours.lights.next",
-                { n: lamp.next.value.from - lamp.days.value },
-                lamp.next.value.from - lamp.days.value,
-              )
-            }}
+          <p class="mt-1 text-sm text-text-secondary">
+            <span class="font-bold text-text-primary">{{ lightName }}</span>
+            <template v-if="lamp.next.value">
+              ·
+              {{
+                t(
+                  "parcours.lights.next",
+                  { n: lamp.next.value.from - lamp.days.value },
+                  lamp.next.value.from - lamp.days.value,
+                )
+              }}
+            </template>
           </p>
         </section>
 
@@ -347,20 +351,6 @@ onMounted(() => {
   font-family: var(--font-display);
   font-size: 20px;
   font-weight: 700;
-}
-/* Mes lumières : une commande ronde, son dessin et son nom, puis la lumière du moment. */
-.lights-btn {
-  display: inline-flex;
-  min-height: 40px;
-  align-items: center;
-  gap: 8px;
-  padding: 0 16px;
-  border-radius: var(--radius-pill);
-  background: var(--color-surface);
-  box-shadow: var(--shadow-card);
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--color-primary);
 }
 /* Deux doigts écartés ouvrent le mur entier : la page ne zoome pas dessus. */
 .wall-pinch {

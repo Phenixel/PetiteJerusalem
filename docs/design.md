@@ -865,12 +865,14 @@ jusqu'à son contenu : on ne savait jamais sur quel onglet on était, ni ce qui
 (`NativeProfileHome.vue`), rangé comme les réglages d'un téléphone ; le site
 garde le sien, qui lui convient.
 
-- **Mon parcours en tête, en carte** (`ProfileParcoursCard.vue` ; sur le
-  site aussi, en tête sur un téléphone, en haut du panneau au large) : la
-  lumière de la série et son compte, la lumière qu'on a et le record, la
-  journée (« Aujourd'hui, 2 sur 3 » et sa barre) et « Mes lumières » ; la
-  carte mène à Mon parcours. Sans objectif encore, la lampe attend et la
-  carte y mène aussi.
+- **Mon parcours dans l'en-tête, sans carte à lui** (`ProfileParcours.vue`) :
+  la lumière de la série (la toucher ouvre « Mes lumières ») et son compte,
+  la lumière qu'on a et le record, la journée (« Aujourd'hui, 2 sur 3 » et
+  sa barre), et « Mon parcours » qui y mène. Dans l'app, sous « Modifier mon
+  profil », centré comme l'en-tête ; sans compte, sous le titre. Sur le
+  site, dans la bannière, à l'encre de la bannière, la lumière sur un
+  médaillon clair : une ménorah dorée se perdait dans l'orange. Sans objectif
+  encore, la lampe attend et la ligne mène à Mon parcours.
 - **Une page de lignes, rangées par groupe.** Mes lectures (les raccourcis),
   Réglages (apparence, langue, notifications, préférences), Mon compte
   (sécurité, déconnexion), Aide, Informations. Chaque groupe est un panneau
@@ -1603,9 +1605,11 @@ premier jour au bout d'une année. Tenu par `parcoursLights.test.ts`.
   nouvel appareil), rien ne se fête : on ne célèbre que ce qu'on vient de
   faire. Tenu par `e2e/firebase/parcours.spec.ts` (« la série qui franchit
   un palier allume une lumière, une fois »).
-- **Le bouton se nomme** : « Mes lumières », son étoile et son nom, puis la
-  lumière du moment, sous le record de Mon parcours et dans la carte du
-  profil.
+- **La lumière s'ouvre d'un toucher**, sans bouton à côté : sur Mon parcours
+  et dans le profil, toucher la lumière ouvre « Mes lumières ». C'est l'objet
+  lui-même, comme la lampe de l'accueil qui mène à Mon parcours ; son nom est
+  écrit juste dessous (« La ménorah · prochaine lumière dans 1 jour »), et
+  son nom accessible le dit (« Mes lumières, La ménorah »).
 
 ### Un objectif, un volume
 

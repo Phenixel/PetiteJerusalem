@@ -2316,7 +2316,7 @@ const fr = {
     },
     lights: {
       title: "Mes lumières",
-      open: "Mes lumières",
+      openLabel: "Mes lumières, {name}",
       intro:
         "Chaque palier de la série allume une lumière. Gagnée, elle reste : une série qui retombe ne vous la reprend pas.",
       yours: "Votre lumière",
@@ -2324,7 +2324,7 @@ const fr = {
       from: "dès {n} jour | dès {n} jours",
       inDays: "dans {n} jour | dans {n} jours",
       hidden: "À découvrir",
-      next: "Prochaine lumière dans {n} jour | Prochaine lumière dans {n} jours",
+      next: "prochaine lumière dans {n} jour | prochaine lumière dans {n} jours",
       unlocked: "Une nouvelle lumière",
       see: "Voir mes lumières",
       keep: "Continuer",
