@@ -35,6 +35,12 @@ const TextReadingPage = () => import("../views/TextReading/TextReadingPage.vue")
 const StudyPage = () => import("../views/StudyPage.vue");
 const SidourPage = () => import("../views/SidourPage.vue");
 const DailyReadingPage = () => import("../views/Library/DailyReadingPage.vue");
+const ParcoursPage = () => import("../views/Parcours/ParcoursPage.vue");
+const JourneePage = () => import("../views/Parcours/JourneePage.vue");
+const MurPage = () => import("../views/Parcours/MurPage.vue");
+const NouvelObjectifPage = () => import("../views/Parcours/NouvelObjectifPage.vue");
+const ObjectifPage = () => import("../views/Parcours/ObjectifPage.vue");
+const ProgrammeReglagesPage = () => import("../views/Parcours/ProgrammeReglagesPage.vue");
 const ChneiMikraPage = () => import("../views/Library/ChneiMikraPage.vue");
 const TehilimDayPage = () => import("../views/Library/TehilimDayPage.vue");
 const ContentPage = () => import("../views/ContentPage.vue");
@@ -214,6 +220,41 @@ export default [
     component: DailyReadingPage,
     meta: { requiresAuth: true, offlineOk: isNativeApp, plainBackground: true },
   },
+  // Mon parcours : programmes, habitudes, la journée et le mur. Dans l'app,
+  // tout marche sans compte, sur l'appareil, et sans réseau ; sur le site,
+  // un compte est demandé (il n'y a pas d'appareil où garder le suivi).
+  ...[
+    {
+      path: "/parcours",
+      name: "parcours",
+      component: ParcoursPage,
+    },
+    {
+      path: "/parcours/journee",
+      name: "parcours-day",
+      component: JourneePage,
+    },
+    {
+      path: "/parcours/mur",
+      name: "parcours-wall",
+      component: MurPage,
+    },
+    {
+      path: "/parcours/nouveau",
+      name: "parcours-new",
+      component: NouvelObjectifPage,
+    },
+    {
+      path: "/parcours/objectif/:id",
+      name: "parcours-objective",
+      component: ObjectifPage,
+    },
+    {
+      path: "/parcours/objectif/:id/reglages",
+      name: "parcours-objective-settings",
+      component: ProgrammeReglagesPage,
+    },
+  ].map((route) => ({ ...route, meta: { requiresAuth: !isNativeApp, offlineOk: isNativeApp } })),
   // Chnei mikra : la paracha de la semaine avec son Targoum, ouverte à tous.
   // La semaine se choisit en query (`?semaine=2026-08-15`) plutôt qu'en
   // segment, qui se confondrait avec /bibliotheque/:corpus/:slug.

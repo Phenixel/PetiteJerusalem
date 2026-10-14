@@ -45,7 +45,7 @@ import {
 } from "../../services/encadrementService";
 import DailyReadingItem from "./DailyReadingItem.vue";
 import ReadingEncadrement from "../../components/ReadingEncadrement.vue";
-import ReminderSettingsModal from "./ReminderSettingsModal.vue";
+import ReminderSettingsModal from "../../components/parcours/ReminderSettingsModal.vue";
 import FeatureTour, { type TourStep } from "../../components/FeatureTour.vue";
 import { tipsOffered } from "../../composables/useFeatureTips";
 import ChneiMikraOptions from "../../components/ChneiMikraOptions.vue";

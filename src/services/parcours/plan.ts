@@ -184,6 +184,30 @@ export function programPlan(
   };
 }
 
+/**
+ * Le programme repris d'aujourd'hui, à la position atteinte : quand on change
+ * sa date de fin ou son rythme, le nouveau pas se calcule sur ce qui reste,
+ * pas depuis le premier jour. Le rattrapage posé s'efface avec l'ancien pas.
+ */
+export function rebase(
+  program: ProgramObjective,
+  change: Partial<Pick<ProgramObjective, "end" | "rhythm">>,
+  today: DayKey,
+  days: Record<DayKey, DayLog>,
+  isRest: RestCalendar,
+  now: number = Date.now(),
+): ProgramObjective {
+  const position = programPlan(program, days, isRest).positionAt(addDays(today, -1));
+  const next: ProgramObjective = {
+    ...program,
+    ...change,
+    base: { day: today, position },
+    updatedAt: now,
+  };
+  delete next.extra;
+  return next;
+}
+
 /** Le prochain dimanche à partir d'un jour (lui-même s'il en est un). */
 const nextSunday = (day: DayKey): DayKey => addDays(day, (7 - weekdayOf(day)) % 7);
 
