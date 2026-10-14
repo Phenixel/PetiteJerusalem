@@ -878,9 +878,9 @@ garde le sien, qui lui convient.
   téléphone, le nom prend la ligne), le nom et, à côté de lui, la même
   pastille de la série, l'adresse dessous. Sur la pastille claire, la
   lumière se lit quelle que soit sa couleur (une ménorah dorée se perdait
-  dans l'orange), et le compte aussi. Sous un filet, sur toute la largeur :
-  la journée (« Aujourd'hui, 1 sur 4 », la lumière et le record), « Mon
-  parcours », et la barre (`ProfileParcours.vue`). Tout à l'encre du
+  dans l'orange), et le compte aussi. Dessous, sans filet, sur toute la
+  largeur : la journée (« Aujourd'hui, 1 sur 4 », la lumière et le record),
+  « Mon parcours », et la barre (`ProfileParcours.vue`). Tout à l'encre du
   bandeau, en trois tons.
 - **Une page de lignes, rangées par groupe.** Mes lectures (les raccourcis),
   Réglages (apparence, langue, notifications, préférences), Mon compte

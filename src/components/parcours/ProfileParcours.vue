@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * Mon parcours, au bas du bandeau du profil du site (ProfileHeader), sur
- * toute la largeur, sous un filet : la journée (« Aujourd'hui, 1 sur 4 »), la
+ * toute la largeur, sans filet : la journée (« Aujourd'hui, 1 sur 4 »), la
  * lumière qu'on a et le record, « Mon parcours » qui y mène, et la barre.
  * Tout à l'encre du bandeau. Pas encore commencé : la ligne dit par où
  * commencer. La lumière et ses jours, eux, sont dans leur pastille, à côté
@@ -76,8 +76,7 @@ function opened(): void {
 
 <style scoped>
 .pp-foot {
-  padding-top: 1.25rem;
-  border-top: 1px solid color-mix(in srgb, var(--color-on-brand) 16%, transparent);
+  padding-top: 0.5rem;
   color: var(--color-on-brand);
 }
 .pp-soft {
