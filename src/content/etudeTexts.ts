@@ -243,7 +243,7 @@ function sectionTextHtml(section: TextSection, numbered: boolean): string {
     return section.dafBlocks
       .map(
         (block) =>
-          `<h3 class="daf-label">Daf ${esc(block.daf)}</h3>\n` +
+          (block.daf ? `<h3 class="daf-label">Daf ${esc(block.daf)}</h3>\n` : "") +
           `      <ol class="reading-lines">\n      ${linesHtml(block.lines, false)}\n      </ol>`,
       )
       .join("\n      ");

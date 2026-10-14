@@ -12,6 +12,11 @@ import { fetchTextResponse } from "./offlineTextStore";
 
 /** Talmud: a daf side (e.g. "2a") with its lines, for continuous display with daf markers. */
 export interface DafBlock {
+  /**
+   * Le daf, vide pour un traité qui n'en a pas : Shekalim (Talmud de
+   * Jérusalem), Middot et Kinnim (la Michna seule) se rangent par chapitre,
+   * et l'on n'y invente pas de daf.
+   */
   daf: string;
   lines: string[];
 }
@@ -427,8 +432,9 @@ export class MissingTextFileError extends Error {
 
 interface TalmudChapter {
   chapter: number;
-  startDaf: string;
-  endDaf: string;
+  /** Absents d'un traité rangé par chapitre (voir DafBlock.daf). */
+  startDaf?: string;
+  endDaf?: string;
   startIdx: number;
   endIdx: number;
 }
@@ -610,6 +616,18 @@ function parseTalmud(
 
   if (chapterRanges.length > 0) {
     const sections = chapterRanges.map((range) => {
+      // Un traité rangé par chapitre : un seul bloc, sans daf.
+      if (!range.startDaf || !range.endDaf) {
+        const lines = normalizeLines(heDaf.slice(range.startIdx, range.endIdx + 1));
+        const heading: SectionHeading = { kind: "chapter", n: range.chapter };
+        return {
+          index: range.chapter,
+          label: chapterLabel(range.chapter),
+          heading,
+          he: lines,
+          dafBlocks: lines.length > 0 ? [{ daf: "", lines }] : [],
+        };
+      }
       const lines: string[] = [];
       const dafBlocks: DafBlock[] = [];
       // Each index in `he` is one daf side: index 0 = 2a, 1 = 2b, 2 = 3a…

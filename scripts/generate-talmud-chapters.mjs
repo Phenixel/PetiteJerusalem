@@ -184,6 +184,19 @@ function proportionalDistribution(totalDafs, chapterSizes) {
   return starts;
 }
 
+// Les chapitres, de leur premier index à leur dernier. Un fichier rangé par
+// chapitre (une entrée par chapitre) n'a pas de daf : on n'en invente pas,
+// le lecteur n'affiche alors que le chapitre.
+function toRanges(starts, total) {
+  const byChapter = starts.length === total;
+  return starts.map((startIdx, i) => {
+    const endIdx = i + 1 < starts.length ? starts[i + 1] - 1 : total - 1;
+    return byChapter
+      ? { chapter: i + 1, startIdx, endIdx }
+      : { chapter: i + 1, startDaf: dafLabel(startIdx), endDaf: dafLabel(endIdx), startIdx, endIdx };
+  });
+}
+
 const result = {};
 const slugs = Object.keys(SEDER_MAP);
 
@@ -222,17 +235,7 @@ for (const slug of slugs) {
       finalStarts = proportionalDistribution(ourTotal, mishnaSizes);
     }
 
-    const chapters = finalStarts.map((startIdx, i) => {
-      const endIdx =
-        i + 1 < finalStarts.length ? finalStarts[i + 1] - 1 : ourTotal - 1;
-      return {
-        chapter: i + 1,
-        startDaf: dafLabel(startIdx),
-        endDaf: dafLabel(endIdx),
-        startIdx,
-        endIdx,
-      };
-    });
+    const chapters = toRanges(finalStarts, ourTotal);
 
     result[slug] = chapters;
     const status = detected === expected ? "✓" : "~";
@@ -241,17 +244,7 @@ for (const slug of slugs) {
     // GCS fetch failed (Shekalim uses Yerushalmi, Middot/Kinnim are Mishna-only)
     if (mishnaSizes && ourTotal > 0) {
       const finalStarts = proportionalDistribution(ourTotal, mishnaSizes);
-      const chapters = finalStarts.map((startIdx, i) => {
-        const endIdx =
-          i + 1 < finalStarts.length ? finalStarts[i + 1] - 1 : ourTotal - 1;
-        return {
-          chapter: i + 1,
-          startDaf: dafLabel(startIdx),
-          endDaf: dafLabel(endIdx),
-          startIdx,
-          endIdx,
-        };
-      });
+      const chapters = toRanges(finalStarts, ourTotal);
       result[slug] = chapters;
       console.log(`~ ${title}: ${chapters.length} chapters (proportional, fetch failed: ${e.message.substring(0, 40)})`);
     } else {

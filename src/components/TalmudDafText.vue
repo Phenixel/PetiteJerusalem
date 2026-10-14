@@ -10,7 +10,8 @@ import type { DafBlock } from "../services/textService";
  *
  * `anchored` pose l'ancre du menu de lecture sur chaque daf (l'offset de sa
  * première ligne dans la section) ; `phoneticByDaf` remplace l'hébreu par sa
- * translittération quand le lecteur l'a demandée.
+ * translittération quand le lecteur l'a demandée. Un bloc sans daf (traité
+ * rangé par chapitre) n'a pas de repère.
  */
 const props = withDefaults(
   defineProps<{
@@ -38,6 +39,7 @@ function offsetOf(index: number): number {
        rendu au mauvais bloc. -->
   <template v-for="(block, index) in blocks" :key="`${index}-${block.daf}`">
     <p
+      v-if="block.daf"
       :data-block-anchor="anchored ? offsetOf(index) : undefined"
       :class="
         variant === 'daily'
