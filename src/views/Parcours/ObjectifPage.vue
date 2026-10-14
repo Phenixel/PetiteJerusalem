@@ -102,7 +102,8 @@ const bars = computed(() =>
     : [],
 );
 
-const catchingUp = ref(false);
+// La carte « Rattraper » de l'accueil arrive ici la feuille ouverte (?rattraper=1).
+const catchingUp = ref(route.query.rattraper === "1");
 </script>
 
 <template>

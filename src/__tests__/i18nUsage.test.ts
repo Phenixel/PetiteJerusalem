@@ -145,6 +145,7 @@ describe("i18n usage", () => {
       "parcours.wall.legendItems.",
       "parcours.wall.status.",
       "parcours.weekdays.",
+      "parcours.when.",
       "occasions.notify.",
       "occasions.reminders.",
       "occasions.when.",

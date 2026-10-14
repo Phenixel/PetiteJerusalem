@@ -56,6 +56,9 @@ const ParcoursHub = defineAsyncComponent(
 );
 const HomeLamp = defineAsyncComponent(() => import("../components/parcours/home/HomeLamp.vue"));
 const HomeShelf = defineAsyncComponent(() => import("../components/parcours/home/HomeShelf.vue"));
+const HomeHebrewDate = defineAsyncComponent(
+  () => import("../components/parcours/home/HomeHebrewDate.vue"),
+);
 
 const router = useRouter();
 const { t, locale } = useI18n();
@@ -135,6 +138,8 @@ const dashboard = computed(() => user.value !== null || isNativeApp);
 
 /** Le paquet porte les offices du jour : le raccourci du Sidour se tait. */
 const officesInDeck = ref(false);
+/** Le parcours a commencé : la lune et le 'Omer sont des cartes de la pile. */
+const parcoursBegun = ref(false);
 
 const firstName = computed(
   () => (user.value?.name ?? "").split(" ")[0] || user.value?.name || t("common.anonymousUser"),
@@ -230,62 +235,74 @@ onUnmounted(() => {
 
     <!-- ===== Tableau de bord : connecté, ou dans l'app avec ou sans compte ===== -->
     <template v-if="dashboard">
-      <!-- La salutation ne remplit qu'une demi-largeur : les raccourcis du
-           moment se rangent dans l'autre moitié, à côté du nom, au lieu de
-           traverser la page en bandeaux au-dessus du tableau de bord. Ils
-           n'apparaissent que quand leur moment est venu (l'heure d'un office,
-           les nuits de la bénédiction de la lune, l'Omer) : le reste du temps
-           la moitié droite est simplement vide, et la salutation garde sa
-           ligne. -->
-      <div class="w-full max-w-6xl mx-auto mb-8 grid gap-4 md:grid-cols-2 md:items-center md:gap-8">
-        <div class="enter-rise">
-          <!-- La lampe du parcours, allumée tant que la série tient. -->
-          <div class="flex items-end justify-between gap-4">
-            <h1 class="text-3xl md:text-5xl font-bold text-text-primary tracking-tight">
+      <!-- La salutation et la date hébraïque, la lampe du parcours à côté
+           (P2-Accueil) : la flamme est un objet, pas une icône. -->
+      <div class="w-full max-w-6xl mx-auto enter-rise">
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0 pt-1">
+            <h1
+              class="text-[30px] leading-[1.15] md:text-5xl font-bold text-text-primary tracking-tight"
+            >
               <template v-if="user">
                 {{ greeting }},
                 <span class="text-primary">{{ firstName }}</span>
               </template>
               <template v-else>{{ greeting }}</template>
             </h1>
-            <HomeLamp class="flex-none" />
+            <HomeHebrewDate class="mt-1.5 min-h-5 text-sm text-text-secondary" />
           </div>
-          <p v-if="user" class="mt-2 text-base md:text-lg text-text-secondary">
-            {{ t("home.dashboard.subtitle") }}
-          </p>
-          <!-- App sans compte : tout marche sur le téléphone ; le compte, pour
-               le garder d'un appareil à l'autre, se propose jusqu'à ce
-               qu'« Ignorer » le retire de l'accueil. -->
-          <div
-            v-else-if="!accountCtaDismissed"
-            class="mt-3 flex flex-wrap items-center gap-2 enter-rise"
-            style="--enter-delay: 0.1s"
-          >
-            <RouterLink
-              to="/login?mode=signup"
-              class="btn btn-primary"
-              @click="trackCard('signup_cta')"
-            >
-              {{ t("accountCta.signup") }}
-            </RouterLink>
-            <RouterLink to="/login" class="btn btn-soft" @click="trackCard('login_cta')">
-              {{ t("accountCta.login") }}
-            </RouterLink>
-            <button
-              type="button"
-              class="px-2 py-2 text-sm font-medium text-text-secondary transition-colors hover:text-primary"
-              @click="dismissAccountCta"
-            >
-              {{ t("accountCta.dismiss") }}
-            </button>
-          </div>
+          <HomeLamp class="flex-none" />
         </div>
+        <!-- App sans compte : tout marche sur le téléphone ; le compte, pour
+             le garder d'un appareil à l'autre, se propose jusqu'à ce
+             qu'« Ignorer » le retire de l'accueil. -->
+        <div
+          v-if="!user && !accountCtaDismissed"
+          class="mt-3 flex flex-wrap items-center gap-2 enter-rise"
+          style="--enter-delay: 0.1s"
+        >
+          <RouterLink
+            to="/login?mode=signup"
+            class="btn btn-primary"
+            @click="trackCard('signup_cta')"
+          >
+            {{ t("accountCta.signup") }}
+          </RouterLink>
+          <RouterLink to="/login" class="btn btn-soft" @click="trackCard('login_cta')">
+            {{ t("accountCta.login") }}
+          </RouterLink>
+          <button
+            type="button"
+            class="px-2 py-2 text-sm font-medium text-text-secondary transition-colors hover:text-primary"
+            @click="dismissAccountCta"
+          >
+            {{ t("accountCta.dismiss") }}
+          </button>
+        </div>
+        <!-- Un mot de l'équipe : un incident en cours, une nouveauté pas
+             encore lue. En tête, parce qu'un incident explique peut-être ce
+             qui ne marche pas plus bas. -->
+        <AnnouncementsBanner class="mt-4" />
+      </div>
+
+      <div
+        class="w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 md:items-start gap-[26px] md:gap-6"
+      >
+        <!-- Mon parcours : le paquet du jour, sa barre, le portefeuille. -->
+        <ParcoursHub
+          class="dash-card"
+          @offices="(covered) => (officesInDeck = covered)"
+          @begun="(begun) => (parcoursBegun = begun)"
+        />
 
         <div class="flex flex-col gap-3">
-          <!-- Un mot de l'équipe : un incident en cours, une nouveauté pas
-               encore lue. En tête, parce qu'un incident explique peut-être
-               ce qui ne marche pas plus bas. -->
-          <AnnouncementsBanner />
+          <!-- Horaires du jour : calculés sur l'appareil, rien à charger. -->
+          <ZmanimCard
+            class="dash-card"
+            style="--enter-delay: 0.1s"
+            place-first
+            @click="trackCard('zmanim')"
+          />
 
           <!-- C'est le temps d'une prière : le sidour à un geste, avec l'heure
                limite. Absent entre deux offices, et quand le paquet du
@@ -293,9 +310,13 @@ onUnmounted(() => {
           <SidourNowCard v-if="!officesInDeck" />
 
           <!-- La bénédiction de la lune : une fenêtre de quelques nuits par
-               mois, qui se rate faute de rappel. Absente le reste du temps. -->
-          <BirkatHalevanaBanner />
-          <OmerBanner />
+               mois, qui se rate faute de rappel. Absente le reste du temps,
+               et quand le parcours a commencé : sa carte est dans la pile,
+               avec celle du 'Omer. -->
+          <template v-if="!parcoursBegun">
+            <BirkatHalevanaBanner />
+            <OmerBanner />
+          </template>
 
           <!-- Ce qu'on a inscrit soi-même au calendrier : un anniversaire, un
                leilouy nichmat. Absent le reste de l'année. -->
@@ -303,18 +324,8 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <div class="w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6 mb-10">
-        <!-- Mon parcours : ce qu'il y a à faire maintenant, et la journée. -->
-        <ParcoursHub class="dash-card" @offices="(covered) => (officesInDeck = covered)" />
-
-        <!-- Horaires du jour : calculés sur l'appareil, rien à charger.
-             Le partage de lectures reste à un clic (navbar, footer, cartes
-             de découverte plus bas). -->
-        <ZmanimCard class="dash-card" style="--enter-delay: 0.1s" @click="trackCard('zmanim')" />
-      </div>
-
       <!-- L'étagère du parcours : un volume par objectif qui se lit. -->
-      <HomeShelf class="w-full max-w-6xl mx-auto mb-10" />
+      <HomeShelf class="w-full max-w-6xl mx-auto mt-[34px] mb-10" />
     </template>
 
     <!-- ===== Site, sans compte : invitation à gauche, horaires du jour à

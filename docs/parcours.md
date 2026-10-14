@@ -33,20 +33,21 @@ alors, au bas du texte, la tâche du jour à cocher (`ReaderTaskCard.vue`).
 
 `src/services/parcours/`, sans Vue :
 
-| Fichier                                    | Rôle                                                                                     |
-| ------------------------------------------ | ---------------------------------------------------------------------------------------- |
-| `model.ts`                                 | les objectifs (programme, habitude, cycle, texte du jour) et les journées                |
-| `texts.ts`                                 | ce qu'un programme peut finir et ce qu'il compte, d'après `src/datas/parcoursUnits.json` |
-| `plan.ts`                                  | la portion de chaque jour ou semaine, le retard, le rattrapage                           |
-| `schedule.ts`                              | les tâches d'un jour, l'état d'un jour sur le mur, la série                              |
-| `calendar.ts`                              | les jours de repos (Chabbat, les fêtes, en Israël ou en diaspora)                        |
-| `moments.ts`                               | le moment présent, l'ordre du paquet de l'accueil                                        |
-| `actions.ts`, `create.ts`                  | ce qu'on change, ce qu'on crée                                                           |
-| `merge.ts`                                 | la fusion de deux copies                                                                 |
-| `deviceStore.ts`, `cloud.ts`, `account.ts` | l'appareil, le compte, ce qui passe de l'un à l'autre                                    |
-| `legacyDailyReading.ts`                    | la lecture du jour d'avant                                                               |
-| `entries.ts`                               | les textes qu'une tâche fait lire (le téléchargement hors ligne)                         |
-| `tracking.ts`                              | le suivi d'audience commun à plusieurs écrans                                            |
+| Fichier                                    | Rôle                                                                                        |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------- |
+| `model.ts`                                 | les objectifs (programme, habitude, cycle, texte du jour) et les journées                   |
+| `texts.ts`                                 | ce qu'un programme peut finir et ce qu'il compte, d'après `src/datas/parcoursUnits.json`    |
+| `plan.ts`                                  | la portion de chaque jour ou semaine, le retard, le rattrapage                              |
+| `schedule.ts`                              | les tâches d'un jour, l'état d'un jour sur le mur, la série                                 |
+| `calendar.ts`                              | les jours de repos (Chabbat, les fêtes, en Israël ou en diaspora)                           |
+| `moments.ts`                               | le moment présent, l'ordre du paquet de l'accueil                                           |
+| `actions.ts`, `create.ts`                  | ce qu'on change, ce qu'on crée                                                              |
+| `merge.ts`                                 | la fusion de deux copies                                                                    |
+| `deviceStore.ts`, `cloud.ts`, `account.ts` | l'appareil, le compte, ce qui passe de l'un à l'autre                                       |
+| `legacyDailyReading.ts`                    | la lecture du jour d'avant                                                                  |
+| `entries.ts`                               | les textes qu'une tâche fait lire (le téléchargement hors ligne)                            |
+| `tracking.ts`                              | le suivi d'audience commun à plusieurs écrans                                               |
+| `occasions.ts`                             | les cartes d'occasion de la pile dites faites (la lune, le 'Omer, 'Hanouka), sur l'appareil |
 
 `composables/useParcours.ts` réunit le tout pour les pages : un seul état
 partagé, démarré au premier usage (qui n'ouvre jamais le parcours ne charge
@@ -138,7 +139,7 @@ programmes ni des habitudes.
 | `parcoursSync.test.ts`          | sans compte, avec un compte, un appareil partagé                                                |
 | `parcoursCloud.test.ts`         | l'écriture du compte n'envoie aucun champ `undefined` (Firestore refuserait l'écriture entière) |
 | `parcoursLegacyDaily.test.ts`   | la lecture du jour d'avant, reprise et tenue à jour                                             |
-| `parcoursDeck.test.ts`          | le paquet de l'accueil                                                                          |
+| `parcoursDeck.test.ts`          | le paquet de l'accueil : l'ordre, l'heure des offices, rattraper, la carte du 'Omer             |
 | `parcoursEntries.test.ts`       | les textes à télécharger pour la journée                                                        |
 | `parcoursTracking.test.ts`      | le suivi commun, et les événements de la lecture du jour qui continuent                         |
 | `widgetDailyParcours.test.ts`   | la lecture du jour des widgets, sans compte                                                     |

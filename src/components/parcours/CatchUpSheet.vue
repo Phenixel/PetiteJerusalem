@@ -76,6 +76,7 @@ function apply(): void {
     option: choice.value,
     behind: behind.value,
     remember: remember.value,
+    source: "objective",
   });
   emit("close");
 }

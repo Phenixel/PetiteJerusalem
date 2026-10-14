@@ -1,58 +1,86 @@
 <script setup lang="ts">
 /**
- * La fiche d'une carte, à l'appui long (ou au toucher, pour une carte qui
- * n'a pas de page à ouvrir) : ce qu'on peut en faire d'autre que l'ouvrir.
- * Cocher ou décocher, la remettre à plus tard (dans le paquet), « Pas
- * aujourd'hui », ouvrir sa page, voir l'objectif.
+ * La fiche d'une carte (P2-Accueil) : une feuille qui monte du bas, à
+ * l'appui long sur la carte, ou au toucher d'une carte qui n'a pas de page à
+ * ouvrir. Chaque geste y a son bouton, pour qui ne glisse pas : c'est fait,
+ * l'ouvrir, plus tard, pas aujourd'hui ; et le programme qu'elle sert.
  */
 import { useI18n } from "vue-i18n";
-import type { TaskView } from "../../../composables/useParcoursViews";
-import AppModal from "../../AppModal.vue";
+import type { DeckCard } from "../../../composables/useTodayDeck";
+import BottomSheet from "../BottomSheet.vue";
 
-defineProps<{ view: TaskView | null; canPostpone: boolean }>();
+defineProps<{ card: DeckCard | null }>();
 const emit = defineEmits<{
   (e: "close"): void;
-  (e: "done", done: boolean): void;
+  (e: "done"): void;
+  (e: "undo"): void;
   (e: "later"): void;
   (e: "skip", skipped: boolean): void;
+  (e: "opened"): void;
 }>();
 
 const { t } = useI18n();
 </script>
 
 <template>
-  <AppModal :open="view !== null" :label="view?.title" @close="emit('close')">
-    <template v-if="view">
-      <p class="text-center text-sm font-semibold text-primary">{{ view.kicker }}</p>
-      <h2 class="mt-1 text-center font-display text-2xl font-bold">{{ view.title }}</h2>
-      <p v-if="view.meta" class="mt-1 text-center text-sm text-text-secondary">{{ view.meta }}</p>
+  <BottomSheet :open="card !== null" :label="card?.title" @close="emit('close')">
+    <template v-if="card">
+      <p class="text-[13px] font-semibold text-text-secondary">
+        {{ card.done ? card.doneKicker : card.kicker }}
+      </p>
+      <p class="mt-1 text-2xl font-extrabold">{{ card.title }}</p>
+      <p v-if="card.meta" class="mt-1 text-[15px] text-text-secondary">{{ card.meta }}</p>
 
-      <div class="mt-6 flex flex-col gap-2">
-        <button
-          type="button"
-          class="btn"
-          :class="view.progress === 'done' ? 'btn-soft' : 'btn-primary'"
-          @click="emit('done', view.progress !== 'done')"
+      <div class="mt-[18px] grid grid-cols-2 gap-2">
+        <button v-if="card.done" type="button" class="btn btn-soft sheet-btn" @click="emit('undo')">
+          {{ t("parcours.hub.undo") }}
+        </button>
+        <button v-else type="button" class="btn btn-primary sheet-btn" @click="emit('done')">
+          {{ t("parcours.hub.done") }}
+        </button>
+        <RouterLink
+          v-if="card.route"
+          :to="card.route"
+          class="btn btn-soft sheet-btn"
+          @click="emit('opened')"
         >
-          {{ view.progress === "done" ? t("parcours.row.undo") : t("parcours.hub.done") }}
-        </button>
-        <button v-if="canPostpone" type="button" class="btn btn-soft" @click="emit('later')">
-          {{ t("parcours.hub.later") }}
-        </button>
-        <button type="button" class="btn btn-soft" @click="emit('skip', !view.skipped)">
-          {{ view.skipped ? t("parcours.hub.unskip") : t("parcours.row.skip") }}
-        </button>
-        <RouterLink v-if="view.route" :to="view.route" class="btn btn-soft" @click="emit('close')">
           {{ t("parcours.hub.open") }}
         </RouterLink>
-        <RouterLink
-          :to="`/parcours/objectif/${view.objective.id}`"
-          class="py-2 text-center text-sm font-bold text-primary"
-          @click="emit('close')"
+        <button
+          v-if="!card.done && !card.skipped"
+          type="button"
+          class="btn btn-soft sheet-btn"
+          @click="emit('later')"
         >
-          {{ t("parcours.hub.objective") }}
-        </RouterLink>
+          {{ t("parcours.hub.later") }}
+        </button>
+        <button
+          v-if="!card.done"
+          type="button"
+          class="btn btn-soft sheet-btn"
+          @click="emit('skip', !card.skipped)"
+        >
+          {{ card.skipped ? t("parcours.hub.unskip") : t("parcours.hub.skip") }}
+        </button>
       </div>
+      <RouterLink
+        v-if="card.programId"
+        :to="`/parcours/objectif/${card.programId}`"
+        class="mt-4 block text-center text-sm font-bold text-primary"
+        @click="emit('close')"
+      >
+        {{ t("parcours.hub.program") }}
+      </RouterLink>
     </template>
-  </AppModal>
+  </BottomSheet>
 </template>
+
+<style scoped>
+/* Les boutons de la fiche : la mesure de la maquette, deux par ligne. */
+.sheet-btn {
+  min-height: 44px;
+  padding: 0 16px;
+  font-size: 14px;
+  font-weight: 700;
+}
+</style>

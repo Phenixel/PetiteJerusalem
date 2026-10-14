@@ -704,7 +704,7 @@ Une tâche cochée ou décochée.
 | --- | --- |
 | `done` | vrai quand elle est cochée |
 | `kind` | `program`, `habit`, `cycle`, `text` |
-| `source` | d'où : `home_deck_swipe` ou `home_deck_button` (la carte du dessus du paquet de l'accueil), `home_wallet_swipe` ou `home_wallet_check` (le portefeuille), `home_sheet` (la fiche d'une carte), `journee_row` (Ma journée), `objective_button` ou `objective_swipe` (la portion du jour, sur la page d'un programme), `reader` (au bas d'une lecture ouverte depuis le parcours), `parcours_wall`, `parcours_full_wall` (un jour du mur) |
+| `source` | d'où : `home_deck_swipe` (la carte du dessus de la pile de l'accueil, glissée), `home_wallet_swipe` (une carte du portefeuille, glissée à droite ou, pour la décocher, à gauche), `home_sheet` (la fiche d'une carte), `journee_row` (Ma journée), `objective_button` ou `objective_swipe` (la portion du jour, sur la page d'un programme), `reader` (au bas d'une lecture ouverte depuis le parcours), `parcours_wall`, `parcours_full_wall` (un jour du mur) |
 | `days_ago` | 0 aujourd'hui, 1 hier... : ce qui se coche après coup |
 
 Une tâche de la lecture du jour d'avant (un texte du jour, une lecture du
@@ -720,21 +720,39 @@ calendrier), cochée le jour même, envoie aussi `daily_reading_marked_read`
 
 ### `parcours_task_postponed` (nouveau)
 
-« Plus tard » sur l'accueil : la carte passe sous le paquet, le temps de la
-journée. `kind`, et `source` : `swipe` (glissée à gauche), `button`, `sheet`
-(sa fiche).
+« Plus tard » sur l'accueil : la carte passe sous la pile, le temps de la
+journée. `kind` (le genre de l'objectif, ou `occasion`, `catch_up` pour une
+carte en plus), et `source` : `swipe` (la carte du dessus glissée à gauche),
+`wallet_swipe` (une carte du portefeuille glissée à gauche), `sheet` (sa
+fiche).
 
 ### `parcours_wallet_opened` (nouveau)
 
-Le portefeuille de l'accueil, la journée étalée. `source` : `swipe` (le
-paquet tiré vers le bas), `edge` (ses bords touchés) ou `button`.
+Le portefeuille de l'accueil, la journée étalée. `source` : `swipe` (la
+pile tirée vers le bas) ou `day_bar` (la barre de la journée touchée).
+
+### `parcours_occasion_marked` (nouveau)
+
+Une carte d'occasion de la pile dite faite, ou défaite : elle ne compte pas
+dans la journée, l'appareil s'en souvient.
+
+| Propriété | Valeurs |
+| --- | --- |
+| `occasion` | `halevana` (la bénédiction de la lune), `omer` (le compte du soir), `hanouka` (l'allumage) |
+| `done` | vrai quand elle est faite |
+| `source` | `home_deck_swipe`, `home_wallet_swipe`, `home_sheet` (comme `parcours_task_marked`) |
+
+`birkat_halevana_opened` et `omer_opened` (existants) partent toujours avec
+`source: home` quand leur carte est touchée dans la pile, comme quand elles
+étaient des bandeaux.
 
 ### `home_card_clicked` (existant)
 
 `card` prend une valeur de plus, `parcours_task` : une carte du paquet ou du
 portefeuille touchée, qui ouvre sa page (le texte, l'office). Elle porte
 alors `kind` (**nouvelle propriété**), le genre de l'objectif : `program`,
-`habit`, `cycle`, `text`. `daily_reading` ne part plus : la carte de la
+`habit`, `cycle`, `text` ; ou `occasion` (la lune, le 'Omer, 'Hanouka) et
+`catch_up` (« Rattraper ») pour une carte en plus. `daily_reading` ne part plus : la carte de la
 lecture du jour a laissé place au paquet.
 
 ### `parcours_units_marked` (nouveau)
@@ -770,6 +788,7 @@ Un retard rattrapé.
 | `option` | `week`, `remaining`, `oneDay`, `pushEnd`, `done` |
 | `behind` | les unités de retard |
 | `remember` | vrai si l'on a choisi de faire ainsi sans demander |
+| `source` | `objective` (la feuille « Rattraper » d'un programme), `home_deck_swipe`, `home_wallet_swipe` ou `home_sheet` (la carte « Rattraper » de l'accueil, dite faite : `option` vaut alors `done`) |
 
 ### Ce que deviennent ceux de la lecture du jour
 

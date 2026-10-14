@@ -103,6 +103,8 @@ body {
 
   /* Hairlines for the few separators that remain. */
   --color-line: rgb(53 49 42 / 0.08);
+  /* Le trait appuyé : la poignée d'une feuille, un contour en pointillé. */
+  --color-line-strong: rgb(53 49 42 / 0.18);
 
   /* Polices. Deux familles portent toute l'interface :
      Playfair Display (--font-display) pour les titres principaux et le peu
@@ -156,6 +158,7 @@ body {
   --color-text-primary: #f3f4f6;
   --color-text-secondary: #9ca3af;
   --color-line: rgb(255 255 255 / 0.1);
+  --color-line-strong: rgb(255 255 255 / 0.22);
   --shadow-card: 0 1px 2px rgb(0 0 0 / 0.3), 0 2px 8px rgb(0 0 0 / 0.25);
   --shadow-card-hover: 0 2px 4px rgb(0 0 0 / 0.35), 0 8px 24px rgb(0 0 0 / 0.4);
   --shadow-pop: 0 4px 12px rgb(0 0 0 / 0.4), 0 16px 40px rgb(0 0 0 / 0.5);
@@ -599,6 +602,48 @@ button,
     /* Centré tant qu'il tient dans la fenêtre, posé en haut et défilant
        dès qu'il déborde (voir le voile ci-dessus). */
     margin-block: auto;
+  }
+
+  /* La feuille du bas (BottomSheet) : posée au pied de l'écran, arrondie en
+     haut seulement, avec sa poignée. Sur un grand écran, elle garde la largeur
+     d'un téléphone, centrée. */
+  .sheet-overlay {
+    position: fixed;
+    inset-inline: 0;
+    top: var(--modal-viewport-top, 0px);
+    height: var(--modal-viewport-height, 100%);
+    z-index: 60;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    background-color: rgb(30 26 18 / 0.38);
+  }
+  .sheet-panel {
+    width: 100%;
+    max-width: 32rem;
+    margin-top: auto;
+    padding: 10px 18px calc(26px + env(safe-area-inset-bottom, 0px));
+    border-radius: var(--radius-3xl) var(--radius-3xl) 0 0;
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-pop);
+    animation: sheetUp 0.26s ease;
+  }
+  @keyframes sheetUp {
+    from {
+      transform: translateY(24px);
+      opacity: 0;
+    }
+    to {
+      transform: none;
+      opacity: 1;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .sheet-panel {
+      animation: none;
+    }
   }
 }
 

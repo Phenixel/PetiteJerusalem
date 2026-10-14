@@ -210,7 +210,6 @@ export function useParcoursViews() {
       }
       case "habit": {
         if (task.step) return tefilaPath(task.step);
-        if (objective.preset === "tefilin") return tefilaPath("chaharit");
         if (objective.preset === "chema-al-hamita") {
           const entry = texteOf(CHEMA_AL_HAMITA_ID);
           return entry ? hubPath(entry) : null;
@@ -245,7 +244,9 @@ export function useParcoursViews() {
         });
       }
       case "habit":
-        return task.step ? habitTitle(objective) : momentLabel(objective.moment);
+        if (objective.preset === "tefilin") return t("parcours.hub.withChaharit");
+        if (objective.preset === "chema-al-hamita") return t("parcours.hub.beforeSleep");
+        return momentLabel(task.moment);
       case "cycle":
         return cycleReading(objective.cycle, day);
       case "text":

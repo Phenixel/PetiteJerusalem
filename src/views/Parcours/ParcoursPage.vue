@@ -16,6 +16,7 @@ import ParcoursLamp from "../../components/parcours/ParcoursLamp.vue";
 import StoneWall from "../../components/parcours/StoneWall.vue";
 import VolumeShelf from "../../components/parcours/VolumeShelf.vue";
 import { isNativeApp } from "../../composables/useNativeApp";
+import { useParcoursLamp } from "../../composables/useParcoursLamp";
 import { useParcours } from "../../composables/useParcours";
 import { useParcoursMeta } from "../../composables/useParcoursMeta";
 import { useParcoursViews } from "../../composables/useParcoursViews";
@@ -48,7 +49,7 @@ const initials = computed(() => labels.weekdayInitials());
 
 const habits = computed(() => liveObjectives(store.data.value).filter((o) => o.kind === "habit"));
 const empty = computed(() => liveObjectives(store.data.value).length === 0);
-const lit = computed(() => store.streak.value.current > 0);
+const lamp = useParcoursLamp();
 
 const picked = ref<DayKey | null>(null);
 
@@ -71,7 +72,7 @@ onMounted(() => {
       <div>
         <!-- La lampe, et la série qu'elle porte. -->
         <section class="flex flex-col items-center text-center">
-          <ParcoursLamp :lit="lit" :size="112" />
+          <ParcoursLamp :level="lamp.level.value" :width="168" />
           <p class="mt-2 flex items-baseline gap-2">
             <span class="font-display text-5xl font-bold leading-none text-primary">
               {{ store.streak.value.current }}

@@ -210,7 +210,8 @@ const TEFILA_BOUNDS: [TefilaKey, ZmanKey, ZmanKey][] = [
   ["arvit", "tzeit", "chatzotNight"],
 ];
 
-function windowsOfDay(place: ZmanimPlace, day: Date): TefilaWindow[] {
+/** Les plages des trois offices d'un jour civil (Mon parcours dit « jusqu'à », « à partir de »). */
+export function tefilaWindowsOfDay(place: ZmanimPlace, day: Date): TefilaWindow[] {
   const times = new Map(computeZmanim(place, day).map((z) => [z.key, z.date]));
   const windows: TefilaWindow[] = [];
   for (const [tefila, startKey, endKey] of TEFILA_BOUNDS) {
@@ -232,12 +233,12 @@ export function currentTefilaWindow(
 ): TefilaWindow | null {
   const t = now.getTime();
   const inWindow = (w: TefilaWindow) => t >= w.start.getTime() && t < w.end.getTime();
-  const today = windowsOfDay(place, now).find(inWindow);
+  const today = tefilaWindowsOfDay(place, now).find(inWindow);
   if (today) return today;
   const yesterday = new Date(now);
   yesterday.setDate(yesterday.getDate() - 1);
   return (
-    windowsOfDay(place, yesterday)
+    tefilaWindowsOfDay(place, yesterday)
       .filter((w) => w.tefila === "arvit")
       .find(inWindow) ?? null
   );
@@ -252,7 +253,7 @@ export function currentTefilaWindow(
 export function nextTefilaWindow(place: ZmanimPlace, now: Date = new Date()): TefilaWindow | null {
   const t = now.getTime();
   for (const offset of [0, 1]) {
-    const next = windowsOfDay(place, placeDayAfter(place, now, offset)).find(
+    const next = tefilaWindowsOfDay(place, placeDayAfter(place, now, offset)).find(
       (w) => w.start.getTime() > t,
     );
     if (next) return next;

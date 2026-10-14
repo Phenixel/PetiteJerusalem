@@ -1517,8 +1517,9 @@ haute, comme une assise de fondation.
 ### Rien ne se compte contre soi
 
 La série (des jours d'affilée où l'on a fait quelque chose) porte une lampe
-de terre cuite, allumée tant qu'elle tient, éteinte sans reproche
-(`ParcoursLamp.vue`). Chabbat et les fêtes ne la coupent pas : rien n'y est
+de terre cuite, dessinée comme dans la maquette (`ParcoursLamp.vue`) : sa
+flamme monte quand la journée est pleine, et baisse un jour manqué sans
+jamais s'éteindre. Chabbat et les fêtes ne la coupent pas : rien n'y est
 demandé. « Pas aujourd'hui » retire une tâche du jour sans la compter
 manquée. Aujourd'hui ne coupe rien tant qu'il n'est pas fini. Un jour passé se
 coche après coup, depuis Ma journée ou le mur. Un retard se dit
@@ -1535,7 +1536,8 @@ un volume relié sur l'étagère de Mon parcours et de l'accueil
 dit sa longueur : petit pour un traité ou un texte du jour, ordinaire pour un
 séder ou une lecture du calendrier, épais pour plusieurs sedarim, le plus
 grand pour tout le corpus. Un signet rouge dépasse quand la portion du jour
-attend ; un trait sous le volume dit où l'on en est. Les habitudes ne sont
+attend ; le liseré doré fait le tour de la couverture à mesure qu'on avance,
+et une ligne sous le volume dit où l'on en est. Les habitudes ne sont
 pas des livres : elles ont leur liste, et leur semaine en cases plates.
 
 Le choix de ce qu'on lit se fait sur la même planche : les sedarim debout, un
@@ -1555,29 +1557,64 @@ la date ou le rythme repart d'aujourd'hui, à la position atteinte.
 ### Le paquet de l'accueil
 
 Sur l'accueil (dans l'app, avec ou sans compte ; sur le site, pour un
-compte), Mon parcours est un paquet de cartes (`components/parcours/home/`) :
-la carte du dessus, en couleur pleine aux mesures de la carte du moment du
-Sidour, dit ce qu'il y a à faire maintenant ; deux bords teintés dessous
-disent qu'il y en a d'autres.
+compte), Mon parcours suit la maquette P2-Accueil à la lettre
+(`components/parcours/home/`) : la salutation et la date hébraïque, la lampe
+à côté, le paquet, sa barre, la carte des horaires (le lieu, l'horaire qui
+vient, l'heure en grand), l'étagère sans titre.
 
+- **La pile.** La carte du dessus, en couleur pleine aux mesures de la carte
+  du moment du Sidour (124 px, le titre en Playfair, l'objet qui ne sort que
+  par le haut), dit ce qu'il y a à faire maintenant ; deux cartes se devinent
+  dessous, décalées et réduites, de plus en plus pâles. Une carte en plus
+  (rattraper) se montre en clair, le titre à l'encre.
 - **Toucher ouvre la page**, directement (le texte, l'office), sans second
-  toucher. Une carte sans page (la tsédaka, garder sa langue) ouvre sa fiche.
-- **Les gestes** : glisser à droite, c'est fait ; à gauche, plus tard (la
-  carte passe sous le paquet) ; tirer vers le bas, ou toucher les bords,
-  toute la journée (le portefeuille) ; un appui long, la fiche (plus tard,
-  pas aujourd'hui, ouvrir, voir l'objectif). Un glissé n'ouvre jamais la
-  page. Sur le site, chaque geste a son bouton sous le paquet ; dans l'app,
-  ces boutons ne sont lus que par le lecteur d'écran.
-- **L'ordre** : l'office dont c'est l'heure, s'il est dans le parcours (la
-  carte dit « Maintenant » et jusqu'à quand, et remplace alors le raccourci
-  du Sidour), puis le moment présent, ceux qui viennent, ceux déjà passés.
-- **Le portefeuille** étale la journée en cartes compactes, du matin au
-  coucher : la carte du dessus garde sa couleur pleine, celles à faire
-  attendent sur fond clair, celles qui sont faites s'éteignent (fond doux,
-  texte gris, dessin pâli). On y coche après coup.
-- **La barre de la journée**, sous le paquet : une case par carte, rangées
-  par moment ; pleine, fait ; à moitié teintée, la carte du dessus ; grise, ce
-  qui vient. Le compte au bout (« 3 sur 8 »).
+  toucher. Une carte sans page (les tefilin, garder sa langue) ouvre sa
+  fiche.
+- **Les gestes de la pile** : glisser à droite, c'est fait ; à gauche, plus
+  tard (la carte passe sous la pile). Au-delà de 110 px, la carte s'envole
+  du côté où on l'a poussée, et la suivante arrive du même côté ; en deçà,
+  elle revient. Ce que le geste fera se découvre sous elle (« C'est fait » à
+  gauche, « Plus tard » à droite). Tirée vers le bas, la pile s'étale, les
+  cartes du dessous plus vite que celle du dessus, et s'ouvre au-delà de
+  50 px. Un appui long (550 ms) ouvre la fiche ; le clic droit et la touche
+  du menu contextuel aussi. Un glissé n'ouvre jamais la page.
+- **Le portefeuille** : toutes les cartes du jour, du matin au coucher, qui
+  se chevauchent tous les 80 px, l'objet en petit dans le coin. La carte du
+  dessus garde sa couleur pleine, celles à faire attendent sur fond clair,
+  celles qui sont faites s'éteignent (fond doux, texte gris, dessin pâli).
+  Glisser à droite : faite, même après coup ; à gauche : plus tard, ou pas
+  faite si elle l'était ; vers le haut : le portefeuille se replie. En tête,
+  « Aujourd'hui, 3 sur 8 », « Ma journée » et « Replier ». Pas de case à
+  cocher : le geste suffit, et la fiche le redit en boutons. Les mêmes
+  éléments servent à la pile et au portefeuille : passer de l'un à l'autre
+  les fait glisser à leur place.
+- **La fiche** est une feuille qui monte du bas (`BottomSheet.vue`, la
+  poignée en haut) : le moment, le nom en grand, ce qu'il y a à faire, puis
+  deux boutons par ligne (c'est fait, ouvrir, plus tard, pas aujourd'hui) et
+  « Voir le programme ». Chaque geste y a son bouton, pour qui ne glisse pas,
+  et sur le site.
+- **L'ordre** : l'allumage de 'Hanouka à son heure, l'office dont c'est
+  l'heure s'il est dans le parcours (la carte dit « Maintenant » et jusqu'à
+  quand, et remplace alors le raccourci du Sidour), la lune et le 'Omer, puis
+  le moment présent, ceux qui viennent, ceux déjà passés, « Rattraper », et
+  enfin ce qu'on a remis à plus tard. Un office dit jusqu'à quand, ou à
+  partir de quand s'il vient.
+- **Les cartes d'occasion** (la lune les nuits où on la bénit, le compte du
+  'Omer le soir, l'allumage de 'Hanouka) prennent leur place dans la pile, à
+  leur heure, et s'ouvrent de même ; leurs bandeaux se taisent tant que le
+  parcours a commencé. Elles ne comptent pas dans la journée : faites,
+  l'appareil s'en souvient (`services/parcours/occasions.ts`), pour qu'une
+  lune bénie ne revienne pas la nuit suivante.
+- **« Rattraper »**, une carte en plus pour un programme en retard (« si vous
+  avez un moment »), mène à la feuille de rattrapage ; glissée à droite, le
+  retard est dit lu.
+- **La barre de la journée**, sous la pile repliée, est un bouton : une case
+  ronde par tâche, rangées par moment ; à l'encre, fait ; à moitié teintée,
+  la carte du dessus ; grise, ce qui vient. Le compte au bout (« 3 sur 8 »).
+  La toucher ouvre le portefeuille.
+- **Sous les volumes de l'accueil**, ce qui attend et où (« ce soir 7:1 »),
+  ce qui est fait (« fait ce soir »), ou la position (« 72 sur 150 ») ; dans
+  Mon parcours, l'avancement et le retard (« 6 % · 9 en retard »).
 
 ## 2. Les couleurs de thème
 
