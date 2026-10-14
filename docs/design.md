@@ -1556,7 +1556,8 @@ geste : plusieurs livres ouverts sur la table, chacun à sa page.
   repose à son départ. Tenu par `readingTable.test.ts`.
 - **Sur l'appareil.** La table est celle d'une séance d'étude : elle survit
   à un rechargement ou à une app refermée (localStorage), mais ne suit pas
-  le compte d'un appareil à l'autre. Vingt-quatre textes au plus, le plus
+  le compte d'un appareil à l'autre. Le site ouvert dans deux onglets partage la même
+  table : ce qu'on pose dans l'un apparaît dans l'autre. Vingt-quatre textes au plus, le plus
   ancien posé partant le premier.
 
 ## 2. Les couleurs de thème

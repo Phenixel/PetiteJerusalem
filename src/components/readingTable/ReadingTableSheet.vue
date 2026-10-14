@@ -113,6 +113,9 @@ async function clearAll() {
 // --- Fermeture : Échap, retour Android, navigation ---
 useOverlay(sheetOpen, close);
 function onKeydown(event: KeyboardEvent) {
+  // Une fenêtre posée par-dessus (la confirmation de « Tout ranger ») a déjà
+  // pris Échap pour elle : la table reste ouverte.
+  if (event.defaultPrevented) return;
   if (event.key === "Escape" && sheetOpen.value) {
     event.preventDefault();
     close();

@@ -940,23 +940,25 @@ function savePositionNow(line: number, sectionIndex = positionSection.value) {
   });
 }
 
+/**
+ * Le premier verset encore visible sous l'en-tête : c'est là qu'on reprendra,
+ * que ce soit par la reprise de lecture ou par la table d'étude.
+ */
+function firstVisibleVerse(root: ParentNode = document): HTMLElement | null {
+  for (const el of root.querySelectorAll<HTMLElement>("[data-line]")) {
+    if (el.getBoundingClientRect().bottom >= 96) return el;
+  }
+  return null;
+}
+
 function capturePosition() {
   if (!currentSection.value || showSectionList.value) return;
-  const els = document.querySelectorAll<HTMLElement>("[data-line]");
-  if (els.length === 0) {
+  if (!document.querySelector("[data-line]")) {
     // Talmud : pas d'éléments par verset, on retient le chapitre.
     savePositionNow(0);
     return;
   }
-  // Premier verset encore visible sous l'en-tête : c'est là qu'on reprendra.
-  let line = 0;
-  for (const el of els) {
-    if (el.getBoundingClientRect().bottom >= 96) {
-      line = Number(el.dataset.line ?? 0);
-      break;
-    }
-  }
-  savePositionNow(line);
+  savePositionNow(Number(firstVisibleVerse()?.dataset.line ?? 0));
 }
 
 // La position de lecture suit l'image partagée du défilement (useScrollFrame) :
@@ -1035,14 +1037,11 @@ function tableSnapshot(refresh = false): TableText | null {
   const root = readingRoot.value;
   if (currentSection.value && !showSectionList.value) {
     // Le premier verset encore visible sous l'en-tête, comme la reprise.
-    for (const el of root?.querySelectorAll<HTMLElement>("[data-line]") ?? []) {
-      const rect = el.getBoundingClientRect();
-      if (rect.bottom >= 96) {
-        line = Number(el.dataset.line ?? 0);
-        offset = rect.top;
-        excerpt = (el.querySelector(".reading-he, .reading-tl") ?? el).textContent ?? "";
-        break;
-      }
+    const verse = root ? firstVisibleVerse(root) : null;
+    if (verse) {
+      line = Number(verse.dataset.line ?? 0);
+      offset = verse.getBoundingClientRect().top;
+      excerpt = (verse.querySelector(".reading-he, .reading-tl") ?? verse).textContent ?? "";
     }
     // Une Guemara n'a pas de versets repérés : le daf lu est le dernier dont
     // le titre est passé sous l'en-tête, et sa page commence à son titre.
@@ -1060,11 +1059,10 @@ function tableSnapshot(refresh = false): TableText | null {
     currentSection.value && !isSingleSection.value && !showSectionList.value
       ? currentSection.value
       : null;
-  // Où l'on reprendra : « Chapitre 4 · verset 12 ». Une tefila se dit par
-  // son chapitre seulement : ses paragraphes ne sont pas des versets.
+  // Où l'on reprendra : « Chapitre 4 · verset 12 », « Daf 2b ».
   const place = daf
     ? daf
-    : line !== null && !isLiturgyText.value
+    : line !== null
       ? placeLabel(positionSection.value, line)
       : section
         ? sectionLabel(section)
@@ -1099,9 +1097,14 @@ function tableSnapshot(refresh = false): TableText | null {
  * en chercher un autre.
  */
 function setTextAside(from: "header" | "menu") {
-  const text = tableSnapshot();
+  const alreadyOnTable = isOnTable(textId.value);
+  // Depuis la liste des chapitres, un texte déjà posé garde le chapitre où
+  // l'on lisait : on le range sans rien en changer.
+  const text =
+    alreadyOnTable && showSectionList.value
+      ? (tableTexts.value.find((t) => t.key === textId.value) ?? null)
+      : tableSnapshot();
   if (!text) return;
-  const alreadyOnTable = isOnTable(text.key);
   const rect = readingRoot.value?.getBoundingClientRect();
   const top = rect ? Math.max(rect.top, 0) : 0;
   const bottom = rect ? Math.min(rect.bottom, window.innerHeight) : 0;
@@ -1131,7 +1134,12 @@ onMounted(() => {
     snapshot: tableSnapshot,
   });
 });
-onBeforeUnmount(() => unregisterTableReader?.());
+/** La page est démontée : une reprise encore en attente n'a plus d'objet. */
+let readerGone = false;
+onBeforeUnmount(() => {
+  readerGone = true;
+  unregisterTableReader?.();
+});
 
 // En quittant un texte posé sur la table (un autre texte, un autre chapitre,
 // la bibliothèque), il retient sa page : la page à l'écran est encore la sienne.
@@ -1160,6 +1168,14 @@ watch(
     awaitingReaderGesture = true;
     await nextTick();
     await waitUntilPositionReachable(readingTop() + text.scrollY);
+    // L'attente peut durer : le lecteur a pu défiler, changer de texte ou
+    // quitter la page entre-temps. La table ne reprend alors pas la main.
+    const stillHere = () =>
+      !readerGone &&
+      awaitingReaderGesture &&
+      route.path === text.path &&
+      contentTextId === textId.value;
+    if (!stillHere()) return;
     const place = () => {
       const verse =
         text.line !== null
@@ -1177,10 +1193,10 @@ watch(
     // remontait de toute sa hauteur. Il se repose tant que le texte bouge
     // encore dans la page, et que le lecteur n'y a pas touché.
     let lastTop = readingTop();
-    for (let i = 0; i < 12 && awaitingReaderGesture; i++) {
+    for (let i = 0; i < 12 && stillHere(); i++) {
       await new Promise((resolve) => setTimeout(resolve, 50));
       const top = readingTop();
-      if (top !== lastTop && awaitingReaderGesture) place();
+      if (top !== lastTop && stillHere()) place();
       lastTop = top;
     }
   },

@@ -26,6 +26,7 @@ import {
   takeTableRestore,
   useReadingTable,
   MAX_TABLE_TEXTS,
+  TABLE_RESTORE_TTL_MS,
   type TableText,
 } from "../composables/useReadingTable";
 import { takeReadingEntry } from "../services/readingEntry";
@@ -77,6 +78,23 @@ describe("la table d'étude", () => {
     const { texts } = useReadingTable();
     expect(texts.value.map((t) => t.key)).toEqual(["a", "b"]);
     expect(texts.value[0]).toMatchObject({ path: "/bibliotheque/tanakh/a/4", line: 12 });
+  });
+
+  it("ne réécrit rien quand le lecteur n'a pas changé de verset", () => {
+    placeOnTable(text("a"));
+    const setItem = vi.spyOn(Storage.prototype, "setItem");
+    refreshOnTable(text("a", { at: 99 }));
+    expect(setItem).not.toHaveBeenCalled();
+    refreshOnTable(text("a", { line: 5 }));
+    expect(setItem).toHaveBeenCalledTimes(1);
+    setItem.mockRestore();
+  });
+
+  it("suit ce qu'un autre onglet vient d'écrire", () => {
+    placeOnTable(text("a"));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ v: 1, texts: [text("a"), text("x")] }));
+    window.dispatchEvent(new StorageEvent("storage", { key: STORAGE_KEY }));
+    expect(useReadingTable().texts.value.map((t) => t.key)).toEqual(["a", "x"]);
   });
 
   it("ne met à jour que les textes qui sont sur la table", () => {
@@ -174,6 +192,25 @@ describe("passer d'un texte à l'autre", () => {
       scrollY: 1800,
     });
     unregister();
+  });
+
+  it("une reprise qui n'a pas abouti expire, et ne fait pas sauter une visite suivante", () => {
+    placeOnTable(text("b", { path: "/bibliotheque/talmud/b" }));
+    const { router } = fakeRouter("/bibliotheque");
+    openFromTable("b", router);
+    const later = Date.now() + TABLE_RESTORE_TTL_MS + 1;
+    expect(hasTableRestore("/bibliotheque/talmud/b", later)).toBe(false);
+    expect(takeTableRestore("/bibliotheque/talmud/b", later)).toBeNull();
+  });
+
+  it("une navigation refusée ne laisse rien en attente", async () => {
+    placeOnTable(text("b", { path: "/bibliotheque/talmud/b" }));
+    const { router, push } = fakeRouter("/bibliotheque");
+    push.mockImplementationOnce(() => Promise.resolve(new Error("annulée") as never));
+    openFromTable("b", router);
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(hasTableRestore("/bibliotheque/talmud/b")).toBe(false);
   });
 
   it("le texte déjà sous les yeux ne se rouvre pas : le panneau se referme", () => {

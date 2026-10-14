@@ -128,6 +128,15 @@ function save(texts: TableText[]): void {
 // suivant : une app refermée juste après avoir posé un texte le garde.
 const texts = ref<TableText[]>(load());
 
+// Le site ouvert dans deux onglets : chacun réécrit toute la table, et le
+// dernier aurait effacé ce que l'autre venait de poser. Chaque onglet relit
+// donc la table quand un autre l'a changée.
+if (typeof window !== "undefined") {
+  window.addEventListener("storage", (event) => {
+    if (event.key === STORAGE_KEY || event.key === null) texts.value = load();
+  });
+}
+
 /** Le panneau de la table, ouvert au-dessus de la page. */
 const sheetOpen = ref(false);
 
@@ -136,6 +145,23 @@ const reader = shallowRef<TableReader | null>(null);
 
 /** Le texte à replacer à son endroit dès qu'il est rendu. */
 let pendingRestore: TableText | null = null;
+let pendingAt = 0;
+/**
+ * Au-delà, la reprise attendue ne parle plus de la page qui s'ouvre : une
+ * navigation annulée ou un texte qui n'a pas pu se charger ne doit pas, bien
+ * plus tard, faire sauter une autre visite du même texte. Large, parce qu'un
+ * traité du Talmud peut mettre du temps à arriver sur un réseau lent.
+ */
+export const TABLE_RESTORE_TTL_MS = 30_000;
+
+function pendingFor(path: string, now = Date.now()): TableText | null {
+  if (!pendingRestore || pendingRestore.path !== path) return null;
+  if (now - pendingAt > TABLE_RESTORE_TTL_MS) {
+    pendingRestore = null;
+    return null;
+  }
+  return pendingRestore;
+}
 
 /**
  * Le dernier texte posé, pour l'animation qui le réduit dans la barre :
@@ -172,7 +198,16 @@ export function placeOnTable(text: TableText): void {
 
 /** Met à jour la page d'un texte déjà sur la table ; sans effet sinon. */
 export function refreshOnTable(text: TableText | null): void {
-  if (text && indexOf(text.key) !== -1) placeOnTable(text);
+  if (!text) return;
+  const index = indexOf(text.key);
+  if (index === -1) return;
+  // Le lecteur s'arrête de défiler sans avoir changé de verset : rien à
+  // réécrire, ni dans le stockage, ni dans la barre.
+  const kept = texts.value[index];
+  const same = (Object.keys(text) as (keyof TableText)[]).every(
+    (field) => field === "at" || kept[field] === text[field],
+  );
+  if (!same) placeOnTable(text);
 }
 
 export function removeFromTable(key: string): void {
@@ -236,20 +271,28 @@ export function openFromTable(key: string, router: Router): void {
   // Le texte déjà sous les yeux, à la page qu'il vient de retenir : rien à rouvrir.
   if (reader.value?.key === key && router.currentRoute.value.path === text.path) return;
   pendingRestore = { ...text };
+  pendingAt = Date.now();
   markReadingEntry("table");
-  void router.push(text.path);
+  // Une navigation refusée ou annulée ne laisse rien en attente.
+  void router.push(text.path).then(
+    (failure) => {
+      if (failure) pendingRestore = null;
+    },
+    () => {
+      pendingRestore = null;
+    },
+  );
 }
 
 /** Vrai si `path` est un texte de la table qui attend d'être replacé. */
-export function hasTableRestore(path: string): boolean {
-  return pendingRestore !== null && pendingRestore.path === path;
+export function hasTableRestore(path: string, now = Date.now()): boolean {
+  return pendingFor(path, now) !== null;
 }
 
 /** Le texte à replacer sur `path`, une seule fois ; null s'il n'y en a pas. */
-export function takeTableRestore(path: string): TableText | null {
-  if (!pendingRestore || pendingRestore.path !== path) return null;
-  const text = pendingRestore;
-  pendingRestore = null;
+export function takeTableRestore(path: string, now = Date.now()): TableText | null {
+  const text = pendingFor(path, now);
+  if (text) pendingRestore = null;
   return text;
 }
 
