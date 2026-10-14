@@ -10,7 +10,7 @@ import {
   onBeforeUnmount,
 } from "vue";
 import { HDate } from "@hebcal/core";
-import { useRoute, useRouter, onBeforeRouteLeave } from "vue-router";
+import { useRoute, useRouter, onBeforeRouteLeave, onBeforeRouteUpdate } from "vue-router";
 import type { RouteLocationRaw } from "vue-router";
 import { useI18n } from "vue-i18n";
 import textStudiesJson from "../../datas/textStudies.json";
@@ -69,6 +69,7 @@ import {
   hubDescription,
   isLiturgy,
   latinName,
+  corpusOf,
   READING_LEAD,
   readingLead as readingLeadOf,
   SITE_URL,
@@ -112,6 +113,17 @@ import { useKeepAwake } from "../../composables/useKeepAwake";
 import { analyticsService } from "../../services/analyticsService";
 import { useLocalePath } from "../../composables/useLocalePath";
 import { useConfirm } from "../../composables/useConfirm";
+import {
+  hasTableRestore,
+  isOnTable,
+  refreshOnTable,
+  registerTableReader,
+  setAside,
+  takeTableRestore,
+  useReadingTable,
+  type TableText,
+} from "../../composables/useReadingTable";
+import { waitUntilPositionReachable } from "../../router/scrollRestoration";
 import {
   clearPassage,
   selectedPassageKey,
@@ -521,11 +533,19 @@ const showEncadrementAfter = computed(() => encadrement.value !== null && !hasNe
 // deux requêtes, et la première revenue écrirait le contenu de l'ancien texte
 // sous l'adresse du nouveau. Un résultat périmé est simplement ignoré.
 let loadSequence = 0;
+/**
+ * Le texte dont `content` est le contenu. En passant d'un texte à l'autre
+ * sans quitter la page, l'adresse change avant que le nouveau contenu
+ * n'arrive : la table d'étude ne doit pas replacer le texte attendu sur
+ * l'ancien (voir la reprise depuis la table, plus bas).
+ */
+let contentTextId: string | null = null;
 
 async function loadContent() {
   if (!textEntry.value) return;
   const sequence = ++loadSequence;
   const stale = () => sequence !== loadSequence;
+  const forText = textId.value;
   // Usage de la bibliothèque vs lecture dans le cadre d'une chaîne.
   analyticsService.capture("text_opened", {
     text_id: textEntry.value.id,
@@ -550,6 +570,7 @@ async function loadContent() {
   try {
     const loaded = await loadText(textEntry.value);
     if (stale()) return;
+    contentTextId = forText;
     content.value = loaded;
     // Sidour : le lundi et le jeudi, la lecture de la Torah de la semaine
     // (le début de la paracha, en trois montées) prend la place de son
@@ -778,6 +799,8 @@ const showResumeBanner = computed(() => {
   const p = savedPosition.value;
   if (!p || resumeDismissed.value || route.query.verset !== undefined || !content.value)
     return false;
+  // Rouvert depuis la table d'étude : il reprend déjà où on l'avait laissé.
+  if (hasTableRestore(route.path)) return false;
   if (isSingleSection.value) return p.line > 2;
   if (showSectionList.value) return true;
   return p.section !== sectionParam.value || p.line > 2;
@@ -950,6 +973,9 @@ function onScroll() {
   scrollSaveTimer = window.setTimeout(() => {
     scrollSaveTimer = null;
     capturePosition();
+    // Un texte posé sur la table suit la lecture : rouvert, il revient là
+    // même si l'app a été fermée entre-temps.
+    if (isOnTable(textId.value)) refreshOnTable(tableSnapshot());
   }, 600);
 }
 
@@ -966,6 +992,139 @@ watch(currentSection, (section) => {
   const deepElsewhere = saved !== null && saved.line > 2 && saved.section !== positionSection.value;
   if (!deepElsewhere) savePositionNow(0);
 });
+
+// --- La table d'étude (voir useReadingTable) ---
+// On met le texte de côté pour en consulter un autre ; il garde l'endroit
+// exact où on l'a laissé : le verset en haut de l'écran, à sa hauteur.
+const { texts: tableTexts } = useReadingTable();
+
+/** Pas dans une chaîne de lecture : on y lit sa part, on ne l'emporte pas. */
+const canSetAside = computed(
+  () => !!textEntry.value && !!content.value && sessionSlug.value === null,
+);
+
+/** Ce que la table retient du texte à l'écran. */
+function tableSnapshot(): TableText | null {
+  const entry = textEntry.value;
+  if (!entry || !content.value || sessionSlug.value !== null) return null;
+  if (contentTextId !== textId.value) return null;
+  let line: number | null = null;
+  let offset = 0;
+  if (currentSection.value && !showSectionList.value) {
+    // Le premier verset encore visible sous l'en-tête, comme la reprise.
+    for (const el of readingRoot.value?.querySelectorAll<HTMLElement>("[data-line]") ?? []) {
+      const rect = el.getBoundingClientRect();
+      if (rect.bottom >= 96) {
+        line = Number(el.dataset.line ?? 0);
+        offset = rect.top;
+        break;
+      }
+    }
+  }
+  const section =
+    currentSection.value && !isSingleSection.value && !showSectionList.value
+      ? currentSection.value
+      : null;
+  // Où l'on reprendra : « Chapitre 4 · verset 12 ». Une tefila se dit par
+  // son chapitre seulement : ses paragraphes ne sont pas des versets.
+  const place =
+    line !== null && !isLiturgyText.value
+      ? placeLabel(positionSection.value, line)
+      : section
+        ? sectionLabel(section)
+        : "";
+  return {
+    key: textId.value,
+    path: canonicalReadingPath.value,
+    // Le nom latin, court dans la barre (« Berakhot », et non « ברכות
+    // (Berakhot) », que le sens de lecture retourne) ; une Michna le dit,
+    // pour ne pas se confondre avec le traité du Talmud de même nom.
+    title: appendHebrewNumeral(
+      entry.type === "Mishna" ? `Michna ${latinName(entry)}` : latinName(entry),
+    ),
+    place,
+    corpus: isEtudeRoute.value ? String(route.params.corpus) : (corpusOf(entry) ?? ""),
+    line,
+    offset,
+    scrollY: window.scrollY,
+    at: Date.now(),
+  };
+}
+
+/**
+ * Mettre de côté : le texte rejoint la table (ou y retient sa page), la page
+ * se réduit jusqu'à la barre du bas, et l'on retrouve la bibliothèque pour
+ * en chercher un autre.
+ */
+function setTextAside(from: "header" | "menu") {
+  const text = tableSnapshot();
+  if (!text) return;
+  const alreadyOnTable = isOnTable(text.key);
+  const rect = readingRoot.value?.getBoundingClientRect();
+  const top = rect ? Math.max(rect.top, 0) : 0;
+  const bottom = rect ? Math.min(rect.bottom, window.innerHeight) : 0;
+  setAside(
+    text,
+    rect && bottom > top ? { top, left: rect.left, width: rect.width, height: bottom - top } : null,
+  );
+  analyticsService.capture("text_set_aside", {
+    text_id: text.key,
+    corpus: text.corpus,
+    texts_count: tableTexts.value.length,
+    from,
+    already_on_table: alreadyOnTable,
+  });
+  void router.push("/bibliotheque");
+}
+
+// Le texte à l'écran se fait connaître de la table : elle le marque
+// « Ouvert », et peut l'y poser depuis son panneau. Pas en chaîne de lecture.
+let unregisterTableReader: (() => void) | null = null;
+onMounted(() => {
+  if (sessionSlug.value !== null) return;
+  unregisterTableReader = registerTableReader({
+    get key() {
+      return textId.value;
+    },
+    snapshot: tableSnapshot,
+  });
+});
+onBeforeUnmount(() => unregisterTableReader?.());
+
+// En quittant un texte posé sur la table (un autre texte, un autre chapitre,
+// la bibliothèque), il retient sa page : la page à l'écran est encore la sienne.
+function rememberOnTable() {
+  if (isOnTable(textId.value)) refreshOnTable(tableSnapshot());
+}
+onBeforeRouteLeave(rememberOnTable);
+onBeforeRouteUpdate(rememberOnTable);
+
+// Rouvert depuis la table : une fois le chapitre rendu, le verset retrouvé
+// revient à la hauteur où on l'avait laissé ; sans verset repéré (Guemara),
+// le défilement de la page. Le routeur n'a pas remis la page en haut
+// (hasTableRestore). Comme une reprise, ce n'est pas encore une lecture.
+watch(
+  [content, currentSection, () => route.path],
+  async ([loaded]) => {
+    if (!loaded || contentTextId !== textId.value) return;
+    const text = takeTableRestore(route.path);
+    if (!text) return;
+    resumeDismissed.value = true;
+    awaitingReaderGesture = true;
+    await nextTick();
+    await waitUntilPositionReachable(text.scrollY);
+    const verse =
+      text.line !== null
+        ? readingRoot.value?.querySelector<HTMLElement>(`[data-line="${text.line}"]`)
+        : null;
+    const top = verse
+      ? verse.getBoundingClientRect().top + window.scrollY - text.offset
+      : text.scrollY;
+    markProgrammaticScroll();
+    window.scrollTo({ top: Math.max(0, top) });
+  },
+  { flush: "post" },
+);
 
 // --- Marque-pages (voir useVerseBookmarks) ---
 function isLineBookmarked(line: number): boolean {
@@ -1858,10 +2017,22 @@ watch(textId, (_, previousTextId) => {
 
 <template>
   <main ref="readingRoot" class="mx-auto px-6 py-12 max-w-3xl w-full">
-    <button @click="exitReading" class="back-link mb-8">
-      <AppIcon name="chevron-left" :size="14" />
-      {{ sessionSlug ? t("textReading.backToSession") : t("textReading.back") }}
-    </button>
+    <div class="mb-8 flex items-center justify-between gap-3">
+      <button @click="exitReading" class="back-link">
+        <AppIcon name="chevron-left" :size="14" />
+        {{ sessionSlug ? t("textReading.backToSession") : t("textReading.back") }}
+      </button>
+      <!-- La table d'étude : on pose ce texte pour en ouvrir un autre. -->
+      <button
+        v-if="canSetAside"
+        type="button"
+        class="btn btn-soft !px-3 !py-1.5 text-sm"
+        @click="setTextAside('header')"
+      >
+        <AppIcon name="books" :size="15" class="text-primary" />
+        {{ t("readingTable.setAside") }}
+      </button>
+    </div>
 
     <!-- Text not in catalog -->
     <div v-if="!textEntry" class="flex flex-col items-center justify-center py-16 text-center">
@@ -2286,8 +2457,10 @@ watch(textId, (_, previousTextId) => {
         :halakhot="hasHalakhot"
         :share-title="shareTitle"
         :share-url="canonicalUrl"
+        :set-aside="canSetAside"
         @update:phonetic="showPhonetic = $event"
         @download="toggleDownload()"
+        @set-aside="setTextAside('menu')"
       />
       <ReadingProgressBar />
       <!-- Les gestes de lecture, une ouverture après le menu (gesturesTip). -->

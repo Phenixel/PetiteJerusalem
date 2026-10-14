@@ -5,6 +5,8 @@ import { useMiniPlayerVisible } from "../composables/useAudioPlayer";
 import { isNativeApp } from "../composables/useNativeApp";
 import { readingNavActive } from "../composables/useReadingNav";
 import { useScrollFrame } from "../composables/useScrollFrame";
+import { TABLE_BAR_REM } from "../composables/useBottomChrome";
+import { tableBarVisible } from "../composables/useReadingTable";
 
 const isVisible = ref(false);
 // Le pointeur survole le bouton : on ne le masque pas sous la main de
@@ -12,11 +14,17 @@ const isVisible = ref(false);
 const isHovered = ref(false);
 const isMiniPlayerVisible = useMiniPlayerVisible();
 
-// Reste au-dessus du mini-lecteur et, dans l'app, de la bottom bar.
+// Reste au-dessus du mini-lecteur et, dans l'app, de la bottom bar ; la
+// barre de la table d'étude, quand un texte y est posé, s'ajoute dessous.
 const bottomClass = computed(() => {
   if (isNativeApp) return isMiniPlayerVisible.value ? "bottom-44" : "bottom-28";
   return isMiniPlayerVisible.value ? "bottom-36" : "bottom-20";
 });
+// Une marge, et non une translation : celle de la transition d'apparition
+// l'écraserait.
+const tableLift = computed(() =>
+  tableBarVisible.value ? { marginBottom: `${TABLE_BAR_REM}rem` } : undefined,
+);
 
 // Le bouton n'apparaît que pendant le défilement et s'efface après un court
 // temps d'inactivité : au repos (ex. en bas de l'accueil, sur la dédicace
@@ -86,6 +94,7 @@ onUnmounted(() => {
       @pointerleave="onPointerLeave"
       class="fixed right-6 w-11 h-11 flex items-center justify-center rounded-full bg-surface text-text-primary shadow-pop hover:text-primary transition-colors duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary z-50"
       :class="bottomClass"
+      :style="tableLift"
       :aria-label="$t('textReading.navTop')"
     >
       <AppIcon name="arrow-up" :size="18" />

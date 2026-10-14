@@ -11,7 +11,8 @@
  *
  *  - un **indice** laissé juste avant la navigation par ce que la page
  *    précédente ne peut pas dire par son adresse : un résultat de recherche,
- *    « Reprendre ma lecture », une notification. Il ne vaut que quelques
+ *    « Reprendre ma lecture », une notification, la table d'étude (un texte
+ *    mis de côté qu'on rouvre, voir useReadingTable). Il ne vaut que quelques
  *    secondes, pour qu'un indice oublié ne colle pas à une lecture suivante ;
  *  - sinon, **la page d'où l'on vient** (`history.state.back` de vue-router) :
  *    l'accueil, la bibliothèque, la lecture du jour, un autre texte... Pas de
@@ -27,6 +28,7 @@ export type ReadingEntry =
   | "search"
   | "resume"
   | "push"
+  | "table"
   | "home"
   | "library"
   | "sidour"
@@ -40,7 +42,7 @@ export type ReadingEntry =
   | "other";
 
 /** Ce que l'indice laissé avant la navigation peut valoir. */
-export type ReadingEntryHint = Extract<ReadingEntry, "search" | "resume" | "push">;
+export type ReadingEntryHint = Extract<ReadingEntry, "search" | "resume" | "push" | "table">;
 
 /** Au-delà, l'indice ne parle plus de la lecture qui s'ouvre. */
 export const READING_HINT_TTL_MS = 10_000;

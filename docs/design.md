@@ -1489,6 +1489,56 @@ parcourt, on lance, on reprend.
 Aucune image, aucun dégradé : la barre de lecture est une piste en deux
 aplats sous le curseur natif.
 
+### Des textes mis de côté, sur la table
+
+On étudie rarement un seul livre : on lit un passage, on va voir un
+commentaire, une michna, un psaume, puis on revient. La table d'étude rend ce
+geste : plusieurs livres ouverts sur la table, chacun à sa page.
+
+- **Mettre de côté.** En tête de chaque texte de la bibliothèque, à droite de
+  « Retour », un bouton « Mettre de côté » (les trois livres posés et son
+  nom) ; le même dans le menu de lecture, sous « Haut de page », parce que
+  c'est au milieu d'un chapitre qu'on en a besoin. Le texte rejoint la table,
+  la page se réduit jusqu'à son volume dans la barre du bas (une carte à la
+  reliure de son rayon, qui porte son nom), et l'on retrouve la
+  bibliothèque. Pas en chaîne de lecture : on y lit sa part, on ne l'emporte
+  pas.
+- **La barre de la table.** Elle se pose au bas de l'écran comme le lecteur
+  audio, au-dessus de lui et de la barre de l'app, et suit d'une page à
+  l'autre : la pile et son compte, puis les textes posés côte à côte, chacun
+  en petit volume (la reliure de son rayon en dos, son nom à côté). Le
+  dernier posé se range au bout, de l'autre côté des autres ; au-delà de
+  quatre, les plus anciens se comptent (« +2 »). Le texte à l'écran est
+  souligné de l'encre du thème. Une surface claire, pas une teinte : c'est
+  un outil de lecture, pas une écoute en cours. Les boutons flottants du bas
+  (menu de lecture, retour en haut, toasts) montent d'autant
+  (`TABLE_BAR_REM`, `useBottomChromeHeight`).
+- **La table ouverte.** Un appui n'importe où sur la barre, ou sur un
+  téléphone un glissement vers le haut, ouvre un panneau qui monte du bas, à
+  la hauteur de ce qu'il porte et jamais plus des trois quarts de l'écran :
+  la page reste visible derrière un voile léger, la table se pose dessus,
+  elle ne la remplace pas. Les textes s'y lisent comme des livres : une
+  petite couverture à la reliure du rayon, le nom, l'endroit où on l'a
+  laissé (« 1re montée · verset 22 »), « Ouvert » pour celui qu'on lit, une
+  croix pour le ranger. Les derniers posés en tête. « Tout ranger » vide la
+  table, après confirmation. Ouverte depuis un texte qui n'y est pas
+  encore, elle propose de le poser aussi : passer à un autre ne le perd pas.
+  Échap, le retour Android, un appui autour ou le panneau tiré vers le bas
+  la referment.
+- **Chaque texte rouvre à sa page.** La table retient le verset en haut de
+  l'écran et sa hauteur dans la fenêtre ; rouvert, le texte revient
+  exactement là, au pixel près, quelle que soit la taille du texte choisie
+  entre-temps. Un texte sans versets repérés (une Guemara) retrouve son
+  défilement. Le texte qu'on quitte, s'il est sur la table, retient d'abord
+  sa page, et il la suit pendant la lecture : une app refermée ne la perd
+  pas. Tenu par `readingTable.test.ts`.
+- **Sur l'appareil.** La table est celle d'une séance d'étude : elle survit
+  à un rechargement ou à une app refermée (localStorage), mais ne suit pas
+  le compte d'un appareil à l'autre. Vingt-quatre textes au plus, le plus
+  ancien posé partant le premier.
+- **Les reliures** sont celles de l'étagère (`config/bindings.ts`), la
+  Michna prêtant la sienne à la liturgie.
+
 ## 2. Les couleurs de thème
 
 Deux couleurs, l'orange et le bleu de la palette du logo. Le fond et le mur

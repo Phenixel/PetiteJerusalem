@@ -1361,6 +1361,21 @@ const he: LocaleMessages = {
     seoDescription: "כל השיעורים של {auteur} בפטיט ירושלים.",
     searchPlaceholder: "חיפוש בשיעורים…",
   },
+  // שולחן הלימוד: הטקסטים שהונחו בצד (ראו useReadingTable).
+  readingTable: {
+    title: "על השולחן",
+    setAside: "הנחה בצד",
+    open: "פתיחת שולחן הלימוד, טקסט אחד | פתיחת שולחן הלימוד, {count} טקסטים",
+    count: "טקסט אחד | {count} טקסטים",
+    placeCurrent: "להניח גם את “{title}”",
+    openNow: "פתוח",
+    remove: "הסרת “{title}”",
+    hint: "הקישו על טקסט כדי לחזור אליו בדיוק במקום שבו עצרתם.",
+    clear: "פינוי הכול",
+    clearTitle: "לפנות את כל הטקסטים?",
+    clearMessage: "הם יורדים מהשולחן; הסימניות ומקום הקריאה נשמרים.",
+    clearConfirm: "פינוי הכול",
+  },
   audioPlayer: {
     play: "נגן",
     pause: "השהה",

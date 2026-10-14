@@ -11,6 +11,8 @@ import { SITE_URL } from "../config/site";
 import { useReadingSize } from "../composables/useReadingSize";
 import { detectStores, type StoreKey } from "../composables/useAppDownload";
 import { useMiniPlayerVisible } from "../composables/useAudioPlayer";
+import { TABLE_BAR_REM } from "../composables/useBottomChrome";
+import { tableBarVisible } from "../composables/useReadingTable";
 import { openFeedback } from "../composables/useFeedback";
 import { isNativeApp } from "../composables/useNativeApp";
 import {
@@ -88,6 +90,8 @@ const props = withDefaults(
     shareTitle?: string;
     /** L'adresse publique du texte ; à défaut, celle de la page ouverte. */
     shareUrl?: string;
+    /** Le texte peut se mettre de côté sur la table d'étude (useReadingTable). */
+    setAside?: boolean;
   }>(),
   {
     sections: () => [],
@@ -97,12 +101,14 @@ const props = withDefaults(
     halakhot: false,
     shareTitle: "",
     shareUrl: "",
+    setAside: false,
   },
 );
 
 const emit = defineEmits<{
   (e: "update:phonetic", value: boolean): void;
   (e: "download"): void;
+  (e: "set-aside"): void;
 }>();
 
 const { t } = useI18n();
@@ -126,9 +132,12 @@ const menuScale = computed(() => 1 + (readingSize.scale.value - 1) * 0.5);
 // Mêmes règles de placement que ScrollToTop, qu'il remplace : au-dessus du
 // mini-lecteur et, dans l'app, de la bottom bar. La distance au bas de
 // l'écran est aussi ce que le panneau retranche de sa hauteur (voir style).
+// La barre de la table d'étude, quand un texte y est posé, s'empile encore
+// dessous.
 const bottomRem = computed(() => {
-  if (isNativeApp) return isMiniPlayerVisible.value ? 11 : 7;
-  return isMiniPlayerVisible.value ? 9 : 5;
+  const table = tableBarVisible.value ? TABLE_BAR_REM : 0;
+  if (isNativeApp) return (isMiniPlayerVisible.value ? 11 : 7) + table;
+  return (isMiniPlayerVisible.value ? 9 : 5) + table;
 });
 
 // Tout en bas de l'office : le menu s'efface (panneau ouvert excepté). La
@@ -228,6 +237,16 @@ const settingsButtonIcon = computed(() => (view.value === "settings" ? "x" : "se
 const settingsButtonLabel = computed(() =>
   view.value === "settings" ? t("common.close") : t("textReading.settings.open"),
 );
+
+/**
+ * Mettre le texte de côté, en pleine lecture : c'est au milieu d'un chapitre
+ * qu'on a besoin d'aller voir un autre livre, loin du bouton de la tête de
+ * page. La page s'en charge (elle sait où l'on en est).
+ */
+function putAside() {
+  close();
+  emit("set-aside");
+}
 
 function goTop() {
   close();
@@ -453,6 +472,10 @@ onUnmounted(() => {
                 <button @click="goTop" class="section-item">
                   <AppIcon name="arrow-up" :size="13" class="flex-shrink-0 text-text-secondary" />
                   {{ t("textReading.navTop") }}
+                </button>
+                <button v-if="setAside" @click="putAside" class="section-item">
+                  <AppIcon name="books" :size="13" class="flex-shrink-0 text-text-secondary" />
+                  {{ t("readingTable.setAside") }}
                 </button>
                 <button v-if="kotelCompassOffered" @click="openKotel" class="section-item">
                   <AppIcon name="compass" :size="13" class="flex-shrink-0 text-text-secondary" />
