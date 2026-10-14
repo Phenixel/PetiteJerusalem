@@ -1486,9 +1486,7 @@ const he: LocaleMessages = {
       langAdj: { fr: "צרפתי", en: "אנגלי" },
       fallback: "אין עדיין תרגום {wanted} לטקסט זה: זהו התרגום ה{shown}.",
       unavailable: "לא ניתן היה לטעון את התרגום. הוא נקרא עם חיבור לרשת.",
-      credit: "תרגום",
-      publicDomain: "נחלת הכלל",
-      sefariaNote: "הטקסט מספריא, בעיצוב מותאם (ללא הערות שוליים).",
+      credit: "תרגום:",
     },
     settings: {
       open: "הגדרות קריאה",

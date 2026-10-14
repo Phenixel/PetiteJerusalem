@@ -1527,9 +1527,7 @@ const en: LocaleMessages = {
       langAdj: { fr: "French", en: "English" },
       fallback: "No {wanted} translation of this text yet: here is the {shown} translation.",
       unavailable: "The translation could not be loaded. It needs a connection.",
-      credit: "Translation",
-      publicDomain: "public domain",
-      sefariaNote: "Text from Sefaria, layout adapted (footnotes removed).",
+      credit: "Translation:",
     },
     settings: {
       open: "Reading settings",

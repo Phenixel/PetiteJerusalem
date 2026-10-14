@@ -1582,10 +1582,7 @@ const fr = {
       langAdj: { fr: "française", en: "anglaise" },
       fallback: "Pas encore de traduction {wanted} de ce texte\u00a0: voici la traduction {shown}.",
       unavailable: "La traduction n'a pas pu être chargée. Elle se lit avec une connexion.",
-      credit: "Traduction",
-      publicDomain: "domaine public",
-      sefariaNote:
-        "Texte repris de Sefaria, mise en forme adaptée (notes de bas de page retirées).",
+      credit: "Traduction\u00a0:",
     },
     settings: {
       open: "Réglages de lecture",

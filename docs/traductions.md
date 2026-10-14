@@ -116,15 +116,17 @@ Ce qui manque en français, et pourquoi :
 
 ## Citer une traduction
 
-Pour chaque version affichée, l'app doit donner :
+Au pied du texte, une seule ligne : « Traduction : » et le nom de celui qui a
+traduit (« Traduction : Moïse Schwab »), rien d'autre. Ni le titre de
+l'édition, ni la licence, ni Sefaria, ni ce qu'on a retouché : la page de
+lecture reste sobre (décision du propriétaire, octobre 2026).
 
-- le titre de la version, le traducteur et l'éditeur ;
-- la licence, avec son lien (CC BY-NC 4.0, CC BY 3.0, domaine public) ;
-- la source : « via Sefaria », avec un lien vers le texte ;
-- les modifications qu'on y fait (balises retirées, notes déplacées).
-
-Le nom « Sefaria » se cite comme source, sans laisser croire que l'app vient
-de Sefaria (c'est une marque déposée).
+Le nom est un lien vers la traduction chez Sefaria, dont la page donne
+l'édition, l'éditeur et la licence. C'est ce qui nous garde en règle : les
+licences CC demandent de citer l'auteur, la licence et les modifications,
+mais admettent qu'on le fasse par un lien vers une page qui les porte. Le
+fichier de chaque traduction garde, lui, toutes ses sources (`sources` :
+nom, auteur, année, éditeur, licence et son lien).
 
 ## Pour aller plus loin en français : demander
 
@@ -215,8 +217,8 @@ de l'interface, puis ce qui existe : un francophone lit le Talmud en anglais,
 et une phrase le lui dit. La traduction se pose sous chaque verset ; dans le
 Talmud, la guemara passe alors de son bloc par daf à une suite de phrases,
 chacune suivie de la sienne. La lecture du jour et le chnei mikra suivent le
-même réglage, Rachi compris. Au pied du texte, ses sources et leurs licences
-(`TranslationCredit.vue`). Pas de traduction sur une tefila.
+même réglage, Rachi compris. Au pied du texte, le nom du traducteur
+(`TranslationCredit.vue`, voir « Citer une traduction »). Pas de traduction sur une tefila.
 
 ### Ce qui reste à faire
 

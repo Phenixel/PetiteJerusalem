@@ -1048,9 +1048,10 @@ Quand la langue du lecteur manque (le Talmud, qu'on n'a qu'en anglais), une
 phrase le dit au-dessus du texte avant de montrer l'autre : on ne découvre
 pas une traduction anglaise sans savoir pourquoi.
 
-Ses sources se lisent à la fin du texte, là où se lit ce qui clôt une page :
-le nom de la version (lien vers Sefaria), son auteur, sa licence (lien vers
-son texte). Les licences le demandent, et le lecteur doit savoir qui il lit.
+Qui l'a traduite se lit à la fin du texte, là où se lit ce qui clôt une
+page, en une ligne : « Traduction : » et le nom du traducteur, rien d'autre.
+Le nom mène à la traduction chez Sefaria, qui porte l'édition et la licence
+(`docs/traductions.md`, « Citer une traduction »).
 
 ### La pastille du défilement est son propre arrêt
 
