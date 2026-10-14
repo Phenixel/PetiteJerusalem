@@ -5,14 +5,23 @@
  * déplacer et qu'on masque d'une pastille ; ceux qu'on a masqués attendent
  * en bas, à remettre d'un toucher. « Terminé » ramène à l'accueil.
  *
+ * Le bloc qu'on tient suit le doigt ; les autres s'écartent à mesure, et la
+ * place où il sera posé se dessine en pointillé. Lâché, il y glisse.
+ *
  * Au clavier, une flèche vers le haut ou le bas déplace le bloc qui a le
  * focus.
  */
-import { computed, ref, watch } from "vue";
+import { computed, ref, watch, type StyleValue } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import { SITE_URL } from "../config/site";
-import { HOME_BLOCKS, useHomeLayout, type HomeBlock } from "../composables/useHomeLayout";
+import {
+  dropIndex,
+  HOME_BLOCKS,
+  makeRoom,
+  useHomeLayout,
+  type HomeBlock,
+} from "../composables/useHomeLayout";
 import { localeMessagesReady } from "../i18n";
 import { analyticsService } from "../services/analyticsService";
 import { pageTitle, seoService } from "../services/seoService";
@@ -36,6 +45,35 @@ const home = useHomeLayout();
 const STEP = 96;
 
 const drag = ref<{ block: HomeBlock; y0: number; dy: number } | null>(null);
+/** Le bloc qu'on vient de lâcher : il glisse de là où on l'a lâché jusqu'à sa place. */
+const dropped = ref<{ block: HomeBlock; offset: number } | null>(null);
+/** L'image où l'ordre change : rien ne glisse, chacun est déjà où il doit être. */
+const settling = ref(false);
+
+const order = computed(() => home.layout.value.order);
+
+/** La place où le bloc tenu serait posé, si on le lâchait maintenant. */
+const target = computed(() => {
+  const d = drag.value;
+  if (!d) return null;
+  return dropIndex(order.value.indexOf(d.block), d.dy, STEP, order.value.length);
+});
+
+function tileStyle(block: HomeBlock, index: number): StyleValue | undefined {
+  const d = drag.value;
+  if (d?.block === block) {
+    // Un peu transparent : la place en pointillé se devine à travers.
+    return { transform: `translateY(${d.dy}px) scale(1.02)`, opacity: 0.88, transition: "none" };
+  }
+  if (dropped.value?.block === block) {
+    return { transform: `translateY(${dropped.value.offset}px)`, transition: "none" };
+  }
+  if (d && target.value !== null) {
+    const shift = makeRoom(index, order.value.indexOf(d.block), target.value);
+    if (shift) return { transform: `translateY(${shift * STEP}px)` };
+  }
+  return undefined;
+}
 
 function onDown(event: PointerEvent, block: HomeBlock): void {
   if (event.button !== 0) return;
@@ -52,13 +90,22 @@ function onMove(event: PointerEvent): void {
 function onUp(): void {
   const current = drag.value;
   if (!current) return;
+  const from = order.value.indexOf(current.block);
+  const to = target.value ?? from;
+  settling.value = true;
+  dropped.value = { block: current.block, offset: current.dy - (to - from) * STEP };
   drag.value = null;
-  const index = home.layout.value.order.indexOf(current.block);
-  const to = index + Math.round(current.dy / STEP);
-  if (to !== index) {
+  if (to !== from) {
     home.move(current.block, to);
     analyticsService.capture("home_block_moved", { block: current.block, to });
   }
+  // Une image plus tard, le bloc lâché glisse jusqu'à sa place.
+  requestAnimationFrame(() =>
+    requestAnimationFrame(() => {
+      settling.value = false;
+      dropped.value = null;
+    }),
+  );
 }
 
 function onKey(event: KeyboardEvent, block: HomeBlock): void {
@@ -103,17 +150,20 @@ const hidden = computed(() => HOME_BLOCKS.filter((b) => home.layout.value.hidden
       <p class="mt-0.5 text-lg font-extrabold">{{ t("home.edit.deck") }}</p>
     </div>
 
-    <div class="mt-3 flex flex-col gap-3">
+    <div class="relative mt-3 flex flex-col gap-3" :class="{ 'is-settling': settling }">
+      <!-- Où le bloc tenu sera posé : sa place, en pointillé. -->
       <div
-        v-for="block in home.layout.value.order"
+        v-if="drag && target !== null"
+        class="tile-slot"
+        :style="{ top: `${target * STEP}px` }"
+        aria-hidden="true"
+      />
+      <div
+        v-for="(block, index) in order"
         :key="block"
         class="tile"
         :class="drag?.block === block ? 'is-dragging' : 'is-waiting'"
-        :style="
-          drag?.block === block
-            ? { transform: `translateY(${drag.dy}px) scale(1.02)`, transition: 'none' }
-            : undefined
-        "
+        :style="tileStyle(block, index)"
         tabindex="0"
         :aria-label="t('home.edit.tileLabel', { name: t(`home.edit.blocks.${block}.title`) })"
         @pointerdown="onDown($event, block)"
@@ -207,18 +257,37 @@ const hidden = computed(() => HOME_BLOCKS.filter((b) => home.layout.value.hidden
 .tile.is-waiting {
   animation: wobble 0.5s ease-in-out infinite;
 }
+/* `rotate`, pas `transform` : le tremblement n'empêche pas un bloc de s'écarter. */
 @keyframes wobble {
   0%,
   100% {
-    transform: rotate(-0.4deg);
+    rotate: -0.4deg;
   }
   50% {
-    transform: rotate(0.4deg);
+    rotate: 0.4deg;
   }
+}
+/* La place où le bloc tenu sera posé. */
+.tile-slot {
+  position: absolute;
+  inset-inline: 0;
+  height: 84px;
+  border: 2px dashed color-mix(in srgb, var(--color-primary) 60%, transparent);
+  border-radius: var(--radius-card);
+  background: color-mix(in srgb, var(--color-primary) 6%, transparent);
+  pointer-events: none;
+  transition: top 0.2s ease;
+}
+.is-settling .tile {
+  transition: none;
 }
 @media (prefers-reduced-motion: reduce) {
   .tile.is-waiting {
     animation: none;
+  }
+  .tile,
+  .tile-slot {
+    transition: none;
   }
 }
 .tile-hide {

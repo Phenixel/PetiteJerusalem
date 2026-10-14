@@ -5,26 +5,31 @@
  * Replié, c'est une pile : la carte du dessus, en couleur pleine, aux mesures
  * de la carte du moment du Sidour, et deux cartes qui se devinent dessous.
  * Toucher la carte ouvre sa page, directement ; glisser à droite, c'est
- * fait ; à gauche, plus tard (elle passe sous la pile) : elle s'envole du
- * côté où on l'a poussée, et la suivante arrive du même côté. Tirée vers le
- * bas, la pile s'étale et s'ouvre en portefeuille ; un appui long ouvre sa
- * fiche.
+ * fait : une coche se pose sur la carte, elle s'envole, et celle du dessous
+ * monte prendre sa place, qui se signale d'un halo. À gauche, plus tard :
+ * elle s'envole de ce côté et repasse sous la pile. Tirée vers le bas, en
+ * haut de page, la pile s'étale et s'ouvre en portefeuille ; un appui long
+ * ouvre sa fiche.
  *
  * Ouvert, c'est le portefeuille : toutes les cartes du jour, du matin au
  * coucher, qui se chevauchent comme dans un porte-cartes. On en touche une
  * pour l'ouvrir ; glissée à droite, elle est faite, même après coup ; à
- * gauche, plus tard, ou pas faite si elle l'était ; vers le haut, le
- * portefeuille se replie.
+ * gauche, plus tard, ou pas faite si elle l'était. « Replier » le referme
+ * (à la souris, le pousser vers le haut aussi).
  *
- * Les mêmes éléments servent aux deux états, dans le même ordre : passer de
- * l'un à l'autre les fait glisser à leur nouvelle place. Le clic droit, la
- * touche du menu contextuel, ouvrent la fiche comme l'appui long : chaque
- * geste y a son bouton, pour qui ne glisse pas.
+ * La page défile sous le doigt, même posé sur une carte : la pile ne retient
+ * un geste vertical que pour se déplier, quand on la tire vers le bas en
+ * haut de page (voir docs/design.md, « La pile et le défilement »).
+ *
+ * Chaque carte du jour garde son élément, dans l'ordre de la journée, d'un
+ * état à l'autre : se déplier les fait glisser de la pile à leur place,
+ * celles déjà faites sortant de sous la pile. Le clic droit, la touche du
+ * menu contextuel, ouvrent la fiche comme l'appui long : chaque geste y a
+ * son bouton, pour qui ne glisse pas.
  */
-import { computed, onBeforeUnmount, reactive, ref, type StyleValue } from "vue";
+import { computed, onBeforeUnmount, reactive, ref, watch, type StyleValue } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
-import { prefersLessMotion } from "../../../composables/useMotion";
 import type { DeckCard } from "../../../composables/useTodayDeck";
 import DayBar from "./DayBar.vue";
 import DeckArt from "./DeckArt.vue";
@@ -63,12 +68,18 @@ const LIST_THRESHOLD = 90;
 /** Tirée de plus, la pile s'ouvre ; elle ne suit pas le doigt au-delà de PULL_MAX. */
 const PULL_OPEN = 50;
 const PULL_MAX = 140;
-/** Le portefeuille poussé vers le haut de plus se replie. */
+/** Le portefeuille poussé vers le haut de plus (à la souris) se replie. */
 const FOLD = 60;
 /** En deçà, on ne sait pas encore si le doigt glisse de côté ou tire. */
 const SLOP = 8;
 const LONG_PRESS_MS = 550;
-const LEAVE_MS = 260;
+/** La coche se pose sur la carte faite, puis la carte s'envole. */
+const STAMP_MS = 260;
+const FLY_MS = 300;
+/** Le halo de la carte montée en tête. */
+const ARRIVE_MS = 1400;
+/** Une carte faite que le parcours n'a pas encore retirée ne revient pas avant. */
+const SETTLE_MS = 1000;
 
 type Axis = "x" | "y" | null;
 const drag = reactive<{ key: string | null; dx: number; dy: number; axis: Axis }>({
@@ -77,19 +88,50 @@ const drag = reactive<{ key: string | null; dx: number; dy: number; axis: Axis }
   dy: 0,
   axis: null,
 });
-/** La carte du dessus s'envole : à droite faite, à gauche remise. */
-const leaving = ref<"right" | "left" | null>(null);
+
+/**
+ * La carte du dessus qui s'en va : faite, à droite, la coche s'y pose d'abord
+ * (`stamp`), puis elle s'envole (`fly`) ; remise, à gauche, elle s'envole
+ * aussitôt. Pendant l'envol, les cartes du dessous montent d'un cran.
+ */
+const leaving = ref<{
+  key: string;
+  side: "right" | "left";
+  phase: "stamp" | "fly";
+  dx: number;
+} | null>(null);
+/** La carte qui vient de monter en tête : elle se signale, une fois. */
+const arrived = ref<string | null>(null);
+/** Pour les lecteurs d'écran : ce que le geste a fait, et la carte qui suit. */
+const announce = ref("");
 
 let x0 = 0;
 let y0 = 0;
 /** Le clic qui suit un geste (glissé, appui long) ne compte pas. */
 let suppress = false;
 let pressTimer: ReturnType<typeof setTimeout> | undefined;
-let leaveTimer: ReturnType<typeof setTimeout> | undefined;
+const timers = new Set<ReturnType<typeof setTimeout>>();
+
+function after(run: () => void, ms: number): void {
+  const id = setTimeout(() => {
+    timers.delete(id);
+    run();
+  }, ms);
+  timers.add(id);
+}
 
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 
+/**
+ * Le système demande moins d'animations : tout se fait d'un coup. Une petite
+ * machine (`perf-lite`) garde, elle, la coche, la montée et le halo : ils
+ * disent ce qui vient de se passer, et ne coûtent qu'un instant.
+ */
+const reducedMotion = () =>
+  window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+
 const top = computed(() => props.pending[0] ?? null);
+const rankOf = computed(() => new Map(props.pending.map((card, i) => [card.key, i])));
 
 /** Combien la pile est tirée vers le bas : les cartes du dessous suivent, plus vite. */
 const pull = computed(() =>
@@ -98,15 +140,18 @@ const pull = computed(() =>
     : 0,
 );
 
-type Mode = "top" | "ghost" | "list";
+type Mode = "top" | "ghost" | "list" | "leaving";
 interface Item {
   card: DeckCard;
   mode: Mode;
+  /** Ni toucher, ni focus, ni lecteur d'écran : une carte qui se devine ou qui part. */
+  inert: boolean;
   classes: string[];
   style: StyleValue;
   kicker: string;
   label: string | undefined;
   art: "big" | "small" | null;
+  stamp: boolean;
 }
 
 function releaseLabel(card: DeckCard): string | null {
@@ -133,6 +178,7 @@ function listItem(card: DeckCard, j: number): Item {
   return {
     card,
     mode: "list",
+    inert: false,
     classes: [tone, "dk-pick"],
     style: {
       top: `${j * STEP}px`,
@@ -144,19 +190,13 @@ function listItem(card: DeckCard, j: number): Item {
       title: card.title,
     }),
     art: card.art ? "small" : null,
+    stamp: false,
   };
 }
 
 function topItem(card: DeckCard): Item {
   let style: StyleValue = { zIndex: 30 };
-  if (leaving.value) {
-    const sign = leaving.value === "right" ? 1 : -1;
-    style = {
-      ...style,
-      transform: `translateX(${sign * 460}px) rotate(${sign * 10}deg)`,
-      opacity: 0,
-    };
-  } else if (drag.key === card.key && drag.axis === "x") {
+  if (drag.key === card.key && drag.axis === "x") {
     style = {
       ...style,
       transform: `translateX(${drag.dx}px) rotate(${drag.dx / 30}deg)`,
@@ -168,11 +208,45 @@ function topItem(card: DeckCard): Item {
   return {
     card,
     mode: "top",
-    classes: [card.extra ? "dk-plain" : "", "dk-top"],
+    inert: false,
+    classes: [
+      card.extra ? "dk-plain" : "",
+      "dk-top",
+      arrived.value === card.key ? "dk-arrived" : "",
+    ],
     style,
     kicker: card.kicker,
     label: t("parcours.hub.topLabel", { title: card.title, meta: card.meta }),
     art: card.art ? "big" : null,
+    stamp: false,
+  };
+}
+
+/** La carte qui part : la coche posée là où on l'a lâchée, puis l'envol. */
+function leavingItem(card: DeckCard): Item {
+  const away = leaving.value!;
+  const sign = away.side === "right" ? 1 : -1;
+  return {
+    card,
+    mode: "leaving",
+    inert: true,
+    classes: [card.extra ? "dk-plain" : "", "dk-top", away.phase === "fly" ? "dk-fly" : ""],
+    style:
+      away.phase === "stamp"
+        ? {
+            zIndex: 40,
+            transform: `translateX(${away.dx}px) rotate(${away.dx / 30}deg)`,
+            transition: "none",
+          }
+        : {
+            zIndex: 40,
+            transform: `translateX(${sign * 460}px) rotate(${sign * 14}deg)`,
+            opacity: 0,
+          },
+    kicker: away.side === "right" ? t("parcours.hub.done") : card.kicker,
+    label: undefined,
+    art: card.art ? "big" : null,
+    stamp: away.side === "right",
   };
 }
 
@@ -182,6 +256,7 @@ function ghostItem(card: DeckCard, i: number): Item {
   return {
     card,
     mode: "ghost",
+    inert: true,
     classes: [i === 1 ? "dk-under1" : i === 2 ? "dk-under2" : "dk-plain", "dk-ghost"],
     style: {
       zIndex: i === 1 ? 20 : i === 2 ? 10 : 0,
@@ -191,15 +266,46 @@ function ghostItem(card: DeckCard, i: number): Item {
     },
     kicker: "",
     label: undefined,
-    art: null,
+    // Dessiné déjà, caché : il paraît quand la carte monte en tête.
+    art: card.art ? "big" : null,
+    stamp: false,
   };
 }
 
-/** Les cartes, dans le même ordre d'éléments quel que soit l'état. */
+/** Une carte faite, ou mise de côté : rangée sous la pile, invisible. */
+function stowedItem(card: DeckCard): Item {
+  return {
+    card,
+    mode: "ghost",
+    inert: true,
+    classes: ["dk-plain", "dk-ghost", "dk-stowed"],
+    style: { zIndex: 0, transform: "translateY(24px) scale(0.9)", opacity: 0 },
+    kicker: "",
+    label: undefined,
+    art: card.art ? "small" : null,
+    stamp: false,
+  };
+}
+
+/** La place d'une carte dans la pile : 0 en tête ; pendant l'envol, celles du dessous montent. */
+function slotOf(card: DeckCard): number {
+  const rank = rankOf.value.get(card.key);
+  if (rank === undefined) return -1;
+  const away = leaving.value;
+  if (away?.phase === "fly" && rank > 0 && props.pending[0]?.key === away.key) return rank - 1;
+  return rank;
+}
+
+/** Les cartes du jour, chacune son élément, dans l'ordre de la journée. */
 const items = computed<Item[]>(() =>
-  props.open
-    ? props.day.map(listItem)
-    : props.pending.map((card, i) => (i === 0 ? topItem(card) : ghostItem(card, i))),
+  props.day.map((card, j) => {
+    if (props.open) return listItem(card, j);
+    if (leaving.value?.key === card.key) return leavingItem(card);
+    const slot = slotOf(card);
+    if (slot === 0) return topItem(card);
+    if (slot > 0) return ghostItem(card, slot);
+    return stowedItem(card);
+  }),
 );
 
 const deckHeight = computed(() => {
@@ -220,6 +326,14 @@ const revealLater = computed(() =>
     : 0,
 );
 
+// La carte faite a quitté la tête : l'envol est fini.
+watch(
+  () => props.pending[0]?.key,
+  (key) => {
+    if (leaving.value?.phase === "fly" && key !== leaving.value.key) leaving.value = null;
+  },
+);
+
 function reset(): void {
   clearTimeout(pressTimer);
   drag.key = null;
@@ -236,7 +350,7 @@ function openSheet(card: DeckCard): void {
 }
 
 function onDown(event: PointerEvent, item: Item): void {
-  if (item.mode === "ghost" || event.button !== 0 || leaving.value) return;
+  if (item.inert || event.button !== 0 || leaving.value) return;
   x0 = event.clientX;
   y0 = event.clientY;
   suppress = false;
@@ -256,30 +370,74 @@ function onDown(event: PointerEvent, item: Item): void {
   drag.axis = null;
 }
 
+/**
+ * Au doigt, un geste vertical est à la page, qui défile : la pile ne le
+ * garde que pour se déplier, tirée vers le bas en haut de page. La souris,
+ * elle, ne fait pas défiler : tout geste lui revient.
+ */
+function keepsVertical(event: PointerEvent, item: Item, dy: number): boolean {
+  if (event.pointerType === "mouse") return true;
+  return item.mode === "top" && dy > 0 && window.scrollY <= 1;
+}
+
 function onMove(event: PointerEvent, item: Item): void {
   if (drag.key !== item.card.key) return;
   const dx = event.clientX - x0;
   const dy = event.clientY - y0;
   if (!drag.axis && (Math.abs(dx) > SLOP || Math.abs(dy) > SLOP)) {
-    drag.axis = Math.abs(dx) >= Math.abs(dy) ? "x" : "y";
-    suppress = true;
     clearTimeout(pressTimer);
+    const axis = Math.abs(dx) >= Math.abs(dy) ? "x" : "y";
+    if (axis === "y" && !keepsVertical(event, item, dy)) {
+      reset();
+      return;
+    }
+    drag.axis = axis;
+    suppress = true;
   }
   drag.dx = dx;
   drag.dy = dy;
 }
 
-/** La carte du dessus s'envole, puis le geste agit : la suivante arrive du même côté. */
-function fly(card: DeckCard, side: "right" | "left"): void {
+/** Un geste que la carte a pris retient la page ; tout autre la laisse défiler. */
+function onTouchMove(event: TouchEvent): void {
+  if (drag.key !== null && drag.axis !== null && event.cancelable) event.preventDefault();
+}
+
+/**
+ * La carte du dessus s'en va. Faite : la coche se pose, la carte s'envole à
+ * droite, la suivante monte ; le parcours la marque ensuite. Remise : elle
+ * s'envole à gauche et repasse sous la pile.
+ */
+function fly(card: DeckCard, side: "right" | "left", dx: number): void {
   reset();
-  leaving.value = side;
-  leaveTimer = setTimeout(
-    () => {
+  const calm = reducedMotion();
+  const next = props.pending[1] ?? null;
+  const action = t(side === "right" ? "parcours.hub.done" : "parcours.hub.later");
+  announce.value = next ? t("parcours.hub.announceNext", { action, title: next.title }) : action;
+  arrived.value = next?.key ?? null;
+  leaving.value = { key: card.key, side, phase: side === "right" && !calm ? "stamp" : "fly", dx };
+
+  const land = () => {
+    if (side === "left") {
       leaving.value = null;
-      if (side === "right") emit("done", card, "home_deck_swipe");
-      else emit("later", card, "swipe");
+      emit("later", card, "swipe");
+      return;
+    }
+    emit("done", card, "home_deck_swipe");
+    after(() => {
+      if (leaving.value?.key === card.key) leaving.value = null;
+    }, SETTLE_MS);
+  };
+  const takeOff = () => {
+    if (leaving.value?.key === card.key) leaving.value = { ...leaving.value, phase: "fly" };
+    after(land, calm ? 0 : FLY_MS);
+  };
+  after(takeOff, leaving.value.phase === "stamp" ? STAMP_MS : 0);
+  after(
+    () => {
+      if (arrived.value === next?.key) arrived.value = null;
     },
-    prefersLessMotion() ? 0 : LEAVE_MS,
+    calm ? 0 : STAMP_MS + FLY_MS + ARRIVE_MS,
   );
 }
 
@@ -290,8 +448,8 @@ function onUp(item: Item): void {
   const { dx, dy, axis } = drag;
   reset();
   if (item.mode === "top") {
-    if (axis === "x" && dx > TOP_THRESHOLD) fly(card, "right");
-    else if (axis === "x" && dx < -TOP_THRESHOLD) fly(card, "left");
+    if (axis === "x" && dx > TOP_THRESHOLD) fly(card, "right", dx);
+    else if (axis === "x" && dx < -TOP_THRESHOLD) fly(card, "left", dx);
     else if (axis === "y" && dy > PULL_OPEN) emit("unfold", "swipe");
     return;
   }
@@ -306,7 +464,7 @@ function onUp(item: Item): void {
 }
 
 function onClick(event: MouseEvent, item: Item): void {
-  if (item.mode === "ghost") {
+  if (item.inert) {
     event.preventDefault();
     return;
   }
@@ -330,7 +488,7 @@ function onClick(event: MouseEvent, item: Item): void {
 
 /** Une carte sans page est un bouton : Entrée et Espace l'ouvrent. */
 function onKeydown(event: KeyboardEvent, item: Item): void {
-  if (item.card.route || item.mode === "ghost") return;
+  if (item.card.route || item.inert) return;
   if (event.key === "Enter" || event.key === " ") {
     event.preventDefault();
     emit("sheet", item.card);
@@ -339,7 +497,7 @@ function onKeydown(event: KeyboardEvent, item: Item): void {
 
 function onContextmenu(event: Event, item: Item): void {
   event.preventDefault();
-  if (item.mode === "ghost" || suppress) return;
+  if (item.inert || suppress) return;
   openSheet(item.card);
 }
 
@@ -348,7 +506,8 @@ const hrefOf = (card: DeckCard): string | undefined =>
 
 onBeforeUnmount(() => {
   clearTimeout(pressTimer);
-  clearTimeout(leaveTimer);
+  for (const id of timers) clearTimeout(id);
+  timers.clear();
 });
 </script>
 
@@ -387,21 +546,22 @@ onBeforeUnmount(() => {
       </span>
 
       <a
-        v-for="(item, i) in items"
-        :key="i"
+        v-for="item in items"
+        :key="item.card.key"
         class="dk"
         :class="item.classes"
         :style="item.style"
-        :href="item.mode === 'ghost' ? undefined : hrefOf(item.card)"
-        :role="item.mode !== 'ghost' && !item.card.route ? 'button' : undefined"
-        :tabindex="item.mode === 'ghost' ? -1 : 0"
-        :aria-hidden="item.mode === 'ghost' ? 'true' : undefined"
+        :href="item.inert ? undefined : hrefOf(item.card)"
+        :role="!item.inert && !item.card.route ? 'button' : undefined"
+        :tabindex="item.inert ? -1 : 0"
+        :aria-hidden="item.inert ? 'true' : undefined"
         :aria-label="item.label"
         draggable="false"
         @pointerdown="onDown($event, item)"
         @pointermove="onMove($event, item)"
         @pointerup="onUp(item)"
         @pointercancel="reset"
+        @touchmove="onTouchMove"
         @click="onClick($event, item)"
         @keydown="onKeydown($event, item)"
         @contextmenu="onContextmenu($event, item)"
@@ -414,6 +574,19 @@ onBeforeUnmount(() => {
         <span class="dk-kick">{{ item.kicker }}</span>
         <span class="dk-title">{{ item.card.title }}</span>
         <span class="dk-meta">{{ item.card.meta }}</span>
+        <!-- C'est fait : la coche, posée sur la carte avant qu'elle s'envole. -->
+        <span v-if="item.stamp" class="dk-stamp">
+          <svg viewBox="0 0 24 24" width="30" height="30">
+            <path
+              d="M5 12.5l4.5 4.5L19 7.5"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="3"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </span>
       </a>
 
       <!-- Plus rien dans la pile : la journée est pleine, ou rien n'était prévu. -->
@@ -423,6 +596,8 @@ onBeforeUnmount(() => {
         <span v-if="rest.meta" class="dk-meta">{{ rest.meta }}</span>
       </div>
     </div>
+
+    <p class="sr-only" aria-live="polite">{{ announce }}</p>
 
     <DayBar
       v-if="!open && count.total > 0"
@@ -483,7 +658,8 @@ onBeforeUnmount(() => {
   -webkit-user-drag: none;
   /* L'appui long ouvre la fiche : pas l'aperçu du lien que le système proposerait. */
   -webkit-touch-callout: none;
-  touch-action: none;
+  /* La page défile sous le doigt ; la pile ne retient que ses gestes (onTouchMove). */
+  touch-action: pan-y;
   transition:
     top 0.3s ease,
     transform 0.26s ease,
@@ -523,8 +699,94 @@ onBeforeUnmount(() => {
 .dk-under2 {
   background: color-mix(in srgb, var(--color-surface) 85%, var(--color-brand) 15%);
 }
-.dk-ghost > * {
-  visibility: hidden;
+/* Ce qu'une carte porte paraît quand elle monte en tête, et s'efface sous la pile. */
+.dk > * {
+  transition: opacity 0.24s ease;
+}
+.dk.dk-ghost > * {
+  opacity: 0;
+}
+.dk-stowed {
+  pointer-events: none;
+}
+/* Faite ou remise : la carte s'envole, de plus en plus vite. */
+.dk-fly {
+  transition:
+    transform 0.3s cubic-bezier(0.4, 0, 1, 1),
+    opacity 0.3s ease-in;
+}
+/* La coche, posée sur la carte faite, du côté qu'on voit encore. */
+.dk-stamp {
+  position: absolute;
+  top: 50%;
+  left: 24px;
+  display: grid;
+  width: 64px;
+  height: 64px;
+  place-items: center;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-primary);
+  box-shadow: var(--shadow-pop);
+  transform: translateY(-50%);
+  animation: dk-stamp 0.26s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+@keyframes dk-stamp {
+  from {
+    opacity: 0;
+    transform: translateY(-50%) scale(0.3);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+  }
+}
+/*
+ * La suivante monte en tête d'un pas franc, un peu au-delà, puis se pose ;
+ * un anneau à l'encre s'en échappe une fois. La montée est une animation,
+ * pas une transition : `transform` sort des transitions de la carte.
+ */
+.dk-arrived {
+  transition:
+    top 0.3s ease,
+    opacity 0.26s ease,
+    background-color 0.3s ease;
+  animation: dk-rise 0.5s cubic-bezier(0.2, 0.8, 0.3, 1) backwards;
+}
+@keyframes dk-rise {
+  0% {
+    transform: translateY(12px) scale(0.95);
+  }
+  55% {
+    transform: translateY(-5px) scale(1.035);
+  }
+  100% {
+    transform: none;
+  }
+}
+.dk-arrived::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border: 3px solid var(--color-primary);
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  animation: dk-halo 0.9s ease-out 0.35s;
+}
+@keyframes dk-halo {
+  0% {
+    opacity: 0;
+    transform: scale(1);
+  }
+  12% {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.08, 1.25);
+  }
 }
 .dk-top {
   cursor: grab;
@@ -563,8 +825,16 @@ onBeforeUnmount(() => {
 }
 @media (prefers-reduced-motion: reduce) {
   .deck,
-  .dk {
+  .dk,
+  .dk > *,
+  .dk-fly,
+  .dk-arrived {
     transition: none;
+  }
+  .dk-stamp,
+  .dk-arrived,
+  .dk-arrived::after {
+    animation: none;
   }
 }
 </style>

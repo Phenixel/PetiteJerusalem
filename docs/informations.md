@@ -60,8 +60,9 @@ information « Mise à jour » à la publication de la release GitHub.
 
 - **La page Informations** (`/informations`), de la plus récente à la plus
   ancienne, avec une pastille « Nouveau » sur ce qui a été publié depuis la
-  dernière visite. On y arrive par le lien en bas de l'accueil, le pied de
-  page du site, et l'onglet « À propos » du profil dans l'app.
+  dernière visite. On y arrive par le pied de page du site et l'onglet
+  « À propos » du profil dans l'app ; l'accueil n'y mène plus que par sa
+  carte, quand il y a quelque chose.
 - **Une carte sur l'accueil**, seulement quand il y a quelque chose :
   - une annonce pas encore lue s'y montre **en aperçu** (sa nature, le titre
     et le début du texte, « Lire la suite »), pendant un mois au plus ;

@@ -1,4 +1,5 @@
-import { test, expect, createAccount, readDoc, signIn } from "../support/firebase";
+import type { Page } from "playwright/test";
+import { test, expect, createAccount, readDoc, seedDoc, signIn } from "../support/firebase";
 
 type ParcoursDoc = {
   objectives?: Record<string, { kind?: string; textId?: number }>;
@@ -71,5 +72,97 @@ test.describe("Mon parcours", () => {
     const account = await createAccount("ancienne");
     await signIn(page, account, "/bibliotheque/lecture-du-jour");
     await expect(page).toHaveURL(/\/parcours\/journee$/);
+  });
+});
+
+/**
+ * Un doigt qui glisse, en événements tactiles bruts : ils passent par le
+ * défilement de Chromium comme ceux d'un téléphone (les gestes synthétiques,
+ * eux, ne font pas défiler la page).
+ */
+async function finger(page: Page, from: { x: number; y: number }, dx: number, dy: number) {
+  const cdp = await page.context().newCDPSession(page);
+  const steps = 20;
+  await cdp.send("Input.dispatchTouchEvent", {
+    type: "touchStart",
+    touchPoints: [{ x: from.x, y: from.y }],
+  });
+  for (let i = 1; i <= steps; i++) {
+    await cdp.send("Input.dispatchTouchEvent", {
+      type: "touchMove",
+      touchPoints: [{ x: from.x + (dx * i) / steps, y: from.y + (dy * i) / steps }],
+    });
+    // Le rythme d'un doigt, une image à la fois : un geste, pas une attente.
+    await page.waitForTimeout(16);
+  }
+  await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  await cdp.detach();
+}
+
+test.describe("l'accueil au doigt", () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
+
+  test("la page défile sous le doigt, même sur la pile ; tirée en haut de page, elle se déplie", async ({
+    page,
+  }) => {
+    const account = await createAccount("pile");
+    const now = Date.now();
+    const habit = (id: string, preset: string) => ({
+      id,
+      kind: "habit",
+      preset,
+      name: "",
+      days: [0, 1, 2, 3, 4, 5, 6],
+      moment: "anytime",
+      since: todayKey(),
+      createdAt: now,
+      updatedAt: now,
+    });
+    await seedDoc("parcours", account.uid, {
+      v: 1,
+      objectives: {
+        "pile-langue": habit("pile-langue", "chmirat-halachon"),
+        "pile-chema": habit("pile-chema", "chema-al-hamita"),
+        "pile-repas": habit("pile-repas", "birkat-hamazon"),
+      },
+      days: {},
+    });
+    await signIn(page, account, "/");
+    // La carte du dessus, au libellé qui dit ses gestes.
+    const top = page.getByLabel(/vers le bas pour toute la journée/);
+    await expect(top).toBeVisible();
+    const fold = page.getByRole("button", { name: "Replier", exact: true });
+    const scrollY = () => page.evaluate(() => window.scrollY);
+    const onTop = async () => {
+      const box = (await top.boundingBox())!;
+      return { x: box.x + 90, y: box.y + 60 };
+    };
+
+    // Le doigt posé sur la carte, vers le haut : la page défile, la pile reste.
+    await finger(page, await onTop(), 0, -320);
+    await expect.poll(scrollY).toBeGreaterThan(100);
+    await expect(fold).toBeHidden();
+
+    // En haut de page, tirée vers le bas : la pile se déplie en portefeuille.
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await expect.poll(scrollY).toBe(0);
+    await finger(page, await onTop(), 0, 150);
+    await expect(fold).toBeVisible();
+
+    // Le portefeuille ouvert défile, lui aussi, sous le doigt.
+    const card = (await page
+      .getByLabel(/glisser à droite si c'est fait/)
+      .nth(1)
+      .boundingBox())!;
+    await finger(page, { x: card.x + 150, y: card.y + 30 }, 0, -320);
+    await expect.poll(scrollY).toBeGreaterThan(100);
+    await expect(fold).toBeAttached();
+
+    // Replié, la carte glissée à droite au doigt est faite.
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await fold.click();
+    await expect(page.getByRole("button", { name: /^Ma journée, 0\ssur\s3/ })).toBeVisible();
+    await finger(page, { x: 60, y: (await onTop()).y }, 200, 4);
+    await expect(page.getByRole("button", { name: /^Ma journée, 1\ssur\s3/ })).toBeVisible();
   });
 });

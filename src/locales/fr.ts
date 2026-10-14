@@ -2176,6 +2176,7 @@ const fr = {
       releaseUndo: "Relâchez : pas fait",
       releaseLater: "Relâchez : plus tard",
       releaseUnskip: "Relâchez : remettre aujourd'hui",
+      announceNext: "{action}. Ensuite : {title}",
       today: "Aujourd'hui, {done} sur {total}",
       day: "Ma journée",
       fold: "Replier",
@@ -2189,9 +2190,8 @@ const fr = {
       topLabel:
         "{title}, {meta}. Toucher pour l'ouvrir, glisser à droite quand c'est fait, à gauche pour plus tard, vers le bas pour toute la journée, appui long pour la fiche.",
       cardLabel:
-        "{title}. Toucher pour l'ouvrir, glisser à droite si c'est fait, à gauche pour plus tard, vers le haut pour replier.",
-      cardLabelDone:
-        "{title}, fait. Toucher pour l'ouvrir, glisser à gauche si ce n'est pas fait, vers le haut pour replier.",
+        "{title}. Toucher pour l'ouvrir, glisser à droite si c'est fait, à gauche pour plus tard.",
+      cardLabelDone: "{title}, fait. Toucher pour l'ouvrir, glisser à gauche si ce n'est pas fait.",
       lamp: "Mon parcours, {n} jour d'affilée | Mon parcours, {n} jours d'affilée",
       withChaharit: "avec Cha'harit",
       beforeSleep: "avant de dormir",
@@ -2661,7 +2661,6 @@ const fr = {
     seoTitle: "Informations de l'équipe {'|'} Petite Jérusalem",
     subtitle:
       "Les nouveautés, les mises à jour et ce qui se passe en ce moment, de la part de l'équipe.",
-    homeLink: "Nouveautés et informations de l'équipe",
     empty: "Aucune information pour le moment.",
     loadError: "Impossible de charger les informations. Vérifiez votre connexion, puis réessayez.",
     notFound: "Cette information n'existe plus.",

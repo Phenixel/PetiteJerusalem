@@ -31,6 +31,24 @@ export const DEFAULT_LAYOUT: HomeLayout = {
   hidden: ["reprendre"],
 };
 
+/**
+ * Glisser un bloc : la place où il serait posé, d'après le chemin du doigt,
+ * un pas par bloc. Tenu par src/__tests__/homeLayout.test.ts.
+ */
+export function dropIndex(from: number, dy: number, step: number, count: number): number {
+  return Math.max(0, Math.min(count - 1, from + Math.round(dy / step)));
+}
+
+/**
+ * Pendant le glissé, de combien de places un autre bloc s'écarte pour
+ * laisser voir la place du bloc tenu : -1 (il remonte), 0, ou 1 (il descend).
+ */
+export function makeRoom(index: number, from: number, to: number): number {
+  if (from < to && index > from && index <= to) return -1;
+  if (from > to && index >= to && index < from) return 1;
+  return 0;
+}
+
 const isBlock = (value: unknown): value is HomeBlock =>
   typeof value === "string" && (HOME_BLOCKS as readonly string[]).includes(value);
 

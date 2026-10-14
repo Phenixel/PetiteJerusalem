@@ -13,7 +13,6 @@ import { isNativeApp } from "../composables/useNativeApp";
 import { useHomeAccountCta } from "../composables/useHomeAccountCta";
 import { openFeedback } from "../composables/useFeedback";
 import SiteFooter from "../components/SiteFooter.vue";
-import AppIcon from "../components/icons/AppIcon.vue";
 import FeedbackNudge from "../components/FeedbackNudge.vue";
 import FeatureTour, { type TourStep } from "../components/FeatureTour.vue";
 import { tipsOffered } from "../composables/useFeatureTips";
@@ -377,23 +376,10 @@ onUnmounted(() => {
         </p>
       </div>
 
-      <!-- Les informations de l'équipe, toutes, à un lien : l'accueil ne les
-           met en avant que quand il y a du nouveau (AnnouncementsBanner). -->
-      <p class="mt-10 text-center text-sm enter-rise" style="--enter-delay: 0.45s">
-        <RouterLink
-          to="/informations"
-          class="inline-flex items-center gap-1.5 font-medium text-text-primary underline decoration-line underline-offset-4 hover:text-primary transition-colors"
-          @click="trackCard('announcements')"
-        >
-          <AppIcon name="bell" :size="14" />
-          {{ t("announcements.homeLink") }}
-        </RouterLink>
-      </p>
-
       <!-- Le formulaire de support, tout en bas : discret (une ligne en
            petit, gris) mais visible, là où l'on arrive après avoir tout vu. -->
       <p
-        class="mt-4 text-center text-sm text-text-secondary enter-rise"
+        class="mt-10 text-center text-sm text-text-secondary enter-rise"
         style="--enter-delay: 0.5s"
       >
         {{ t("feedback.homePrompt") }}

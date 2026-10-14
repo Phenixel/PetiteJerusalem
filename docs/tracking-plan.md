@@ -762,6 +762,9 @@ L'accueil à son goût (`/accueil/modifier`) : un bloc déplacé, masqué, ou
 remis. `block` : `horaires`, `volumes`, `portes`, `reprendre`, `dates` ; et
 pour un déplacement, `to`, sa nouvelle place (0 juste sous le paquet du jour).
 `home_card_clicked` prend aussi `card: resume`, le bloc « Reprendre ».
+`card: announcements` ne part plus : le lien des informations a quitté le bas
+de l'accueil (il reste au pied de page du site et dans le profil de l'app) ;
+la carte d'une annonce, elle, envoie toujours `announcement_opened`.
 
 ### `parcours_units_marked` (nouveau)
 

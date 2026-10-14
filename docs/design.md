@@ -1112,9 +1112,9 @@ dessin, une ligne, une précision en petit) : on sait que l'équipe a parlé, et
 elle ne prend plus la place d'une nouvelle. Son dessin est une cloche, ou,
 pour un incident, le triangle ambré des avertissements.
 
-Le reste du temps, la liste reste à un lien, en bas de l'accueil, juste
-au-dessus de « Écrivez-nous » : l'une donne des nouvelles, l'autre en
-demande, les deux vivent à la fin du parcours. Sur la page elle-même, chaque
+Le reste du temps, la liste n'est pas sur l'accueil : on la trouve au pied
+de page du site et dans le profil de l'app (l'accueil ne garde, tout en bas,
+que « Écrivez-nous »). Sur la page elle-même, chaque
 annonce est une carte (elle répond à « qu'est-ce qui a changé ? »), avec sa
 nature en pastille et « Nouveau » en pastille pleine, calculé sur la visite
 précédente.
@@ -1571,23 +1571,41 @@ vient, l'heure en grand), l'étagère sans titre.
   toucher. Une carte sans page (les tefilin, garder sa langue) ouvre sa
   fiche.
 - **Les gestes de la pile** : glisser à droite, c'est fait ; à gauche, plus
-  tard (la carte passe sous la pile). Au-delà de 110 px, la carte s'envole
-  du côté où on l'a poussée, et la suivante arrive du même côté ; en deçà,
-  elle revient. Ce que le geste fera se découvre sous elle (« C'est fait » à
-  gauche, « Plus tard » à droite). Tirée vers le bas, la pile s'étale, les
-  cartes du dessous plus vite que celle du dessus, et s'ouvre au-delà de
-  50 px. Un appui long (550 ms) ouvre la fiche ; le clic droit et la touche
-  du menu contextuel aussi. Un glissé n'ouvre jamais la page.
+  tard (la carte passe sous la pile). En deçà de 110 px, la carte revient.
+  Ce que le geste fera se découvre sous elle (« C'est fait » à gauche,
+  « Plus tard » à droite). Tirée vers le bas, la pile s'étale, les cartes
+  du dessous plus vite que celle du dessus, et s'ouvre au-delà de 50 px. Un
+  appui long (550 ms) ouvre la fiche ; le clic droit et la touche du menu
+  contextuel aussi. Un glissé n'ouvre jamais la page.
+- **La suivante se voit arriver.** Faite, la carte reçoit une coche (un
+  rond clair, sur le côté gauche qu'on voit encore, 260 ms), puis s'envole
+  à droite en accélérant ; dans le même temps, la carte du dessous monte
+  prendre sa place, d'un pas franc qui la porte un peu au-delà avant de se
+  poser, et prend sa couleur ; puis un anneau à l'encre s'en échappe une
+  fois. Remise à plus tard, la carte s'envole à gauche, la suivante monte
+  de même, et elle repasse sous la pile. Elle ne revient jamais du côté où
+  elle est partie : on ne la confond pas avec la suivante. Un lecteur
+  d'écran entend « C'est fait. Ensuite : Arvit ». Ces repères disent ce
+  qui vient de se passer : une petite machine (`perf-lite`) les garde, et
+  seul le réglage du système qui demande moins d'animations fait tout
+  d'un coup.
+- **La pile et le défilement.** Au doigt, la page défile, même posé sur une
+  carte : la pile ne garde un geste vertical que pour se déplier, tirée
+  vers le bas quand la page est en haut. Le portefeuille ouvert défile
+  aussi comme le reste de la page ; on le replie par « Replier » (à la
+  souris, en le poussant vers le haut). Les gestes de côté restent aux
+  cartes. Tenu par `e2e/firebase/parcours.spec.ts` (« l'accueil au
+  doigt »).
 - **Le portefeuille** : toutes les cartes du jour, du matin au coucher, qui
   se chevauchent tous les 80 px, l'objet en petit dans le coin. La carte du
   dessus garde sa couleur pleine, celles à faire attendent sur fond clair,
   celles qui sont faites s'éteignent (fond doux, texte gris, dessin pâli).
   Glisser à droite : faite, même après coup ; à gauche : plus tard, ou pas
-  faite si elle l'était ; vers le haut : le portefeuille se replie. En tête,
-  « Aujourd'hui, 3 sur 8 », « Ma journée » et « Replier ». Pas de case à
-  cocher : le geste suffit, et la fiche le redit en boutons. Les mêmes
-  éléments servent à la pile et au portefeuille : passer de l'un à l'autre
-  les fait glisser à leur place.
+  faite si elle l'était. En tête, « Aujourd'hui, 3 sur 8 », « Ma journée »
+  et « Replier ». Pas de case à cocher : le geste suffit, et la fiche le
+  redit en boutons. Chaque carte garde son élément d'un état à l'autre :
+  se déplier les fait glisser de la pile à leur place, celles déjà faites
+  sortant de sous la pile.
 - **La fiche** est une feuille qui monte du bas (`BottomSheet.vue`, la
   poignée en haut) : le moment, le nom en grand, ce qu'il y a à faire, puis
   deux boutons par ligne (c'est fait, ouvrir, plus tard, pas aujourd'hui) et
@@ -1701,7 +1719,10 @@ L'accueil se règle (P2-AccueilModifier, `/accueil/modifier`) : le paquet du
 jour reste en tête, toujours ; dessous, les blocs (les horaires, mes
 volumes, les trois portes, mes dates, et « Reprendre », à remettre) se
 glissent pour changer d'ordre et se masquent d'une pastille. Ils tremblent
-un peu, le temps du réglage : on peut les prendre. On y arrive par un appui
+un peu, le temps du réglage : on peut les prendre. Le bloc qu'on tient suit
+le doigt, les autres s'écartent à mesure, et la place où il sera posé se
+dessine en pointillé (la teinte de l'encre, un fond à peine teinté) ; lâché,
+il y glisse. On y arrive par un appui
 long sur un bloc (au doigt), ou par « Modifier l'accueil » en bas de la
 page. C'est un réglage de l'appareil (`useHomeLayout`), et un bloc qui n'a
 rien à dire s'efface de lui-même.
