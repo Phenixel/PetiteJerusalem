@@ -50,9 +50,14 @@ et les `$pageview` automatiques.
 | `is_logged_in`  | booléen                 | Segmenter anonyme / connecté.                 |
 | `locale`        | `fr`, `en`, `he`        | Segmenter par langue.                         |
 
-Dans l'app, l'origine `https://localhost` de la webview Capacitor est
-réécrite en `app://ios` / `app://android` : `$current_url` reste donc lisible
-et porte bien la route, sur les `$exception` comme sur le reste.
+Dans l'app, l'origine de la webview Capacitor est réécrite en `app://ios` /
+`app://android` : `$current_url` reste donc lisible et porte bien la route,
+sur les `$exception` comme sur le reste. Le schéma de cette origine dépend de
+la plateforme (`https://localhost` sur Android, `capacitor://localhost` sur
+iOS) : la réécriture les prend tous, l'hôte `localhost` suffisant à
+reconnaître la webview. Les événements de l'app iOS envoyés avant le
+14 octobre 2026 gardent leur origine `capacitor://localhost` : une analyse par
+page qui remonte plus loin doit compter les deux.
 
 ## Calendrier et pages de fête
 
