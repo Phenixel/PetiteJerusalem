@@ -9,7 +9,7 @@ import {
   setUnitsRead,
 } from "../services/parcours/actions";
 import { joiningEntries } from "../services/parcours/account";
-import { restCalendar } from "../services/parcours/calendar";
+import { parashaAliyotCount, restCalendar } from "../services/parcours/calendar";
 import { fetchAccountParcours, writeAccountEntries } from "../services/parcours/cloud";
 import {
   addDirt,
@@ -307,7 +307,8 @@ export function useParcours() {
   const data = computed(() => state.value.data);
   const todayKey = computed(() => localDayKey(now.value));
   const isRest = computed(() => restCalendar(isIsraelPlace(place.value)));
-  const context = computed(() => scheduleContext(data.value, isRest.value));
+  const aliyotCount = computed(() => parashaAliyotCount(isIsraelPlace(place.value)));
+  const context = computed(() => scheduleContext(data.value, isRest.value, aliyotCount.value));
   const signedIn = computed(() => accountId.value !== null);
 
   const tasksOn = (day: DayKey): Task[] => tasksForDay(data.value, day, context.value);

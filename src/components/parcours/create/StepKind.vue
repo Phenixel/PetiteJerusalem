@@ -17,20 +17,25 @@
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { bindingOf } from "../../../config/bindings";
-import type { CycleId, HabitPreset, ProgramCorpus } from "../../../services/parcours/model";
+import {
+  CYCLE_CHOICES,
+  type CycleChoice,
+  type HabitPreset,
+  type ProgramCorpus,
+} from "../../../services/parcours/model";
 import ProgramVolume from "../ProgramVolume.vue";
 
 const props = defineProps<{
   /** Ce qu'on a choisi et qu'on règle plus bas : `program:michna`, `habit:custom`, `text`. */
   selected: string | null;
-  takenCycles: CycleId[];
+  takenCycles: CycleChoice[];
   takenHabits: HabitPreset[];
   /** Les Tehilim se finissent en entier : un seul programme à la fois. */
   takenTehilim: boolean;
 }>();
 const emit = defineEmits<{
   (e: "program", corpus: ProgramCorpus): void;
-  (e: "cycle", cycle: CycleId): void;
+  (e: "cycle", cycle: CycleChoice): void;
   (e: "text"): void;
   (e: "habit", preset: HabitPreset): void;
 }>();
@@ -38,7 +43,6 @@ const emit = defineEmits<{
 const { t } = useI18n();
 
 const CORPORA: ProgramCorpus[] = ["michna", "talmud", "tanakh", "tehilim"];
-const CYCLES: CycleId[] = ["tehilim-week", "tehilim-month", "parasha"];
 /**
  * Les modèles d'habitude : ce qui se fait chaque jour, sans moment trop
  * précis à tenir ; « Avec mes mots » ferme la liste. Les tefilin et Birkat
@@ -55,7 +59,7 @@ const HABITS: HabitPreset[] = [
 const corpora = computed(() =>
   CORPORA.filter((corpus) => corpus !== "tehilim" || !props.takenTehilim),
 );
-const cycles = computed(() => CYCLES.filter((cycle) => !props.takenCycles.includes(cycle)));
+const cycles = computed(() => CYCLE_CHOICES.filter((cycle) => !props.takenCycles.includes(cycle)));
 const habits = computed(() => HABITS.filter((preset) => !props.takenHabits.includes(preset)));
 </script>
 

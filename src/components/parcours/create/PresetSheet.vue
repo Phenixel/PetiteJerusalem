@@ -1,10 +1,10 @@
 <script lang="ts">
-import type { CycleId, HabitPreset } from "../../../services/parcours/model";
+import type { CycleChoice, HabitPreset } from "../../../services/parcours/model";
 
 /** Un modèle tout prêt qu'on regarde avant de le prendre : une habitude, ou un cycle. */
 export type PresetChoice =
   | { kind: "habit"; preset: HabitPreset }
-  | { kind: "cycle"; cycle: CycleId };
+  | { kind: "cycle"; cycle: CycleChoice };
 </script>
 
 <script setup lang="ts">

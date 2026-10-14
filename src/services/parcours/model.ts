@@ -238,10 +238,24 @@ export type CycleId = "tehilim-month" | "tehilim-week" | "parasha";
 
 export const CYCLES: readonly CycleId[] = ["tehilim-week", "tehilim-month", "parasha"];
 
+/**
+ * Ce que la création propose : les cycles, et la paracha lue montée par
+ * montée (un cycle « parasha » avec `split: "aliyot"`, sous le même
+ * identifiant : on suit la paracha d'une façon ou de l'autre, pas des deux).
+ */
+export type CycleChoice = CycleId | "parasha-aliyot";
+
+export const CYCLE_CHOICES: readonly CycleChoice[] = [...CYCLES, "parasha-aliyot"];
+
 /** Suivre une lecture du calendrier. */
 export interface CycleObjective extends ObjectiveBase {
   kind: "cycle";
   cycle: CycleId;
+  /**
+   * La paracha, une montée par jour plutôt que toute la semaine (aliyot.ts).
+   * Absent : la paracha dans la semaine, comme avant.
+   */
+  split?: "aliyot";
 }
 
 /** Relire un texte en entier, certains jours (la lecture du jour d'avant). */

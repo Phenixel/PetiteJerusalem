@@ -1,6 +1,7 @@
-import { HDate, HebrewCalendar, flags, months } from "@hebcal/core";
-import { localDayKey } from "../dateService";
-import { weekdayOf } from "./days";
+import { HDate, HebrewCalendar, Sedra, flags, months } from "@hebcal/core";
+import { localDayFrom, localDayKey } from "../dateService";
+import { ALIYOT_PER_PARASHA } from "./aliyot";
+import { addDays, weekdayOf } from "./days";
 import type { DayKey } from "./model";
 import type { RestCalendar } from "./plan";
 
@@ -33,6 +34,36 @@ function yomTovDays(year: number, il: boolean): Set<DayKey> {
 /** Chabbat et les fêtes chômées, en Israël ou hors d'Israël. */
 export function restCalendar(il: boolean): RestCalendar {
   return (day: DayKey) => weekdayOf(day) === 6 || yomTovDays(Number(day.slice(0, 4)), il).has(day);
+}
+
+/**
+ * Les montées de la paracha d'une semaine, pour le chnei mikra lu montée par
+ * montée (aliyot.ts) : sept, quatorze pour une paracha double. Une semaine de
+ * fête lit d'avance la paracha du prochain Chabbat ordinaire, comme la page
+ * du chnei mikra (dailyCycles.getWeeklyParasha).
+ */
+export function parashaAliyotCount(il: boolean): (day: DayKey) => number {
+  const cache = new Map<DayKey, number>();
+  return (day) => {
+    let saturday = addDays(day, (6 - weekdayOf(day) + 7) % 7);
+    const cached = cache.get(saturday);
+    if (cached !== undefined) return cached;
+    const key = saturday;
+    let count = ALIYOT_PER_PARASHA;
+    for (let i = 0; i < 6; i++) {
+      const date = localDayFrom(saturday) ?? new Date();
+      date.setHours(12);
+      const hd = new HDate(date);
+      const reading = new Sedra(hd.getFullYear(), il).lookup(hd);
+      if (!reading.chag) {
+        count = Math.max(1, reading.parsha.length) * ALIYOT_PER_PARASHA;
+        break;
+      }
+      saturday = addDays(saturday, 7);
+    }
+    cache.set(key, count);
+    return count;
+  };
 }
 
 /** Les dates qu'on se donne pour finir, telles que l'étape « pour quand » les propose. */

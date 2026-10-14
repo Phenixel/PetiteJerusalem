@@ -22,6 +22,7 @@ import { placeOf, unitLabel, unitOf } from "../../services/parcours/texts";
 import { haptic } from "../../services/haptics";
 import ProgramTimeline from "./ProgramTimeline.vue";
 import ProgramVolume from "./ProgramVolume.vue";
+import ReadAhead from "./ReadAhead.vue";
 import WeekBars from "./WeekBars.vue";
 
 const props = defineProps<{ program: ProgramObjective }>();
@@ -185,6 +186,9 @@ const endLabel = computed(() => {
     <p v-else class="card mt-[26px] px-4 py-4 text-center text-text-secondary">
       {{ t("parcours.program.nothingToday") }}
     </p>
+
+    <!-- Prendre de l'avance : la portion faite (ou aucune aujourd'hui), la suite se propose. -->
+    <ReadAhead class="mt-[22px]" :program="program" :offer="done || !portion" />
 
     <!-- Le retard, dit sans alarme. -->
     <!-- En pause, pas de retard : la reprise recule la fin d'autant (resumeProgram). -->

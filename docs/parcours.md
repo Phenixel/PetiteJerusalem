@@ -33,21 +33,22 @@ alors, au bas du texte, la tâche du jour à cocher (`ReaderTaskCard.vue`).
 
 `src/services/parcours/`, sans Vue :
 
-| Fichier                                    | Rôle                                                                                        |
-| ------------------------------------------ | ------------------------------------------------------------------------------------------- |
-| `model.ts`                                 | les objectifs (programme, habitude, cycle, texte du jour) et les journées                   |
-| `texts.ts`                                 | ce qu'un programme peut finir et ce qu'il compte, d'après `src/datas/parcoursUnits.json`    |
-| `plan.ts`                                  | la portion de chaque jour ou semaine, le retard, le rattrapage                              |
-| `schedule.ts`                              | les tâches d'un jour, l'état d'un jour sur le mur, la série                                 |
-| `calendar.ts`                              | les jours de repos (Chabbat, les fêtes, en Israël ou en diaspora)                           |
-| `moments.ts`                               | le moment présent, l'ordre du paquet de l'accueil                                           |
-| `actions.ts`, `create.ts`                  | ce qu'on change, ce qu'on crée                                                              |
-| `merge.ts`                                 | la fusion de deux copies                                                                    |
-| `deviceStore.ts`, `cloud.ts`, `account.ts` | l'appareil, le compte, ce qui passe de l'un à l'autre                                       |
-| `legacyDailyReading.ts`                    | la lecture du jour d'avant                                                                  |
-| `entries.ts`                               | les textes qu'une tâche fait lire (le téléchargement hors ligne)                            |
-| `tracking.ts`                              | le suivi d'audience commun à plusieurs écrans                                               |
-| `occasions.ts`                             | les cartes d'occasion de la pile dites faites (la lune, le 'Omer, 'Hanouka), sur l'appareil |
+| Fichier                                    | Rôle                                                                                         |
+| ------------------------------------------ | -------------------------------------------------------------------------------------------- |
+| `model.ts`                                 | les objectifs (programme, habitude, cycle, texte du jour) et les journées                    |
+| `texts.ts`                                 | ce qu'un programme peut finir et ce qu'il compte, d'après `src/datas/parcoursUnits.json`     |
+| `plan.ts`                                  | la portion de chaque jour ou semaine, le retard, le rattrapage, l'avance, la reprise         |
+| `aliyot.ts`                                | le chnei mikra montée par montée : une par jour, ce qui reste dû                             |
+| `schedule.ts`                              | les tâches d'un jour, l'état d'un jour sur le mur, la série                                  |
+| `calendar.ts`                              | les jours de repos (Chabbat, les fêtes, en Israël ou en diaspora), les montées de la semaine |
+| `moments.ts`                               | le moment présent, l'ordre du paquet de l'accueil                                            |
+| `actions.ts`, `create.ts`                  | ce qu'on change, ce qu'on crée                                                               |
+| `merge.ts`                                 | la fusion de deux copies                                                                     |
+| `deviceStore.ts`, `cloud.ts`, `account.ts` | l'appareil, le compte, ce qui passe de l'un à l'autre                                        |
+| `legacyDailyReading.ts`                    | la lecture du jour d'avant                                                                   |
+| `entries.ts`                               | les textes qu'une tâche fait lire (le téléchargement hors ligne)                             |
+| `tracking.ts`                              | le suivi d'audience commun à plusieurs écrans                                                |
+| `occasions.ts`                             | les cartes d'occasion de la pile dites faites (la lune, le 'Omer, 'Hanouka), sur l'appareil  |
 
 `composables/useParcours.ts` réunit le tout pour les pages : un seul état
 partagé, démarré au premier usage (qui n'ouvre jamais le parcours ne charge
@@ -123,6 +124,22 @@ Les **Tehilim de la semaine** (`cycle-tehilim-week`, du dimanche au Chabbat)
 sont nouveaux : ils n'ont pas de place dans la lecture du jour d'avant, et
 la projection les ignore.
 
+Le **chnei mikra montée par montée** est la paracha (`daily-parasha`) avec
+`split: "aliyot"` : une carte par jour, une montée du dimanche au jeudi, la
+sixième et la septième le vendredi (quatorze montées sur six jours pour une
+paracha double) ; une montée oubliée reste due le lendemain, ce qui reste
+le vendredi se lit le Chabbat (`aliyot.ts`). La carte ouvre la page du chnei
+mikra réduite à ses montées (`?montees=3-4`). Pour la lecture du jour
+d'avant, la semaine est lue quand la carte du vendredi ou du Chabbat l'est
+(`parashaProgress.completed`). Le champ est facultatif : sans lui, la paracha
+se lit dans la semaine, comme avant.
+
+**Prendre de l'avance** : une portion faite propose « Lire la suite », la
+portion du prochain créneau (`nextPortion`), marquée lue aujourd'hui au bas
+de la lecture (`?avance=1`). Les portions gardent leur taille ; la fin vient
+plus tôt. **La pause** d'un programme repousse sa fin d'autant de jours
+qu'elle en a duré, à la reprise (`resumeProgram`).
+
 Les **widgets et la montre** tirent la lecture du jour de l'appareil, avec ou
 sans compte (`widgetService`) ; un compte que l'appareil n'a pas encore repris
 garde celle de son profil.
@@ -136,7 +153,8 @@ programmes ni des habitudes.
 | Test                            | Ce qu'il tient                                                                                  |
 | ------------------------------- | ----------------------------------------------------------------------------------------------- |
 | `parcoursUnits.test.ts`         | les unités des programmes suivent `public/texts/` (garde-fou, voir `docs/tests.md`)             |
-| `parcoursPlan.test.ts`          | les portions, le retard, les cinq rattrapages                                                   |
+| `parcoursPlan.test.ts`          | les portions, le retard, les cinq rattrapages, l'avance, la reprise après une pause             |
+| `parcoursAliyot.test.ts`        | le chnei mikra : une montée par jour, l'oubliée revient le lendemain, le Chabbat finit          |
 | `parcoursSchedule.test.ts`      | les tâches d'un jour, le mur, la série (Chabbat et « Pas aujourd'hui » ne la coupent pas)       |
 | `parcoursCalendar.test.ts`      | les jours de repos, les moments, l'ordre du paquet                                              |
 | `parcoursMerge.test.ts`         | la fusion de deux copies                                                                        |

@@ -2,6 +2,7 @@ import { localDayKey } from "../dateService";
 import { addDays, dayRange, weekOf, weekStart, weekdayOf } from "./days";
 import { isAlive } from "./model";
 import type { DayKey, DayLog, MomentId, Objective, ObjectiveKind, ParcoursData } from "./model";
+import { ALIYOT_PER_PARASHA, dueAliyot, readsByAliya, type AliyotRange } from "./aliyot";
 import { programPlan, type ProgramPlan, type RestCalendar, type SlotState } from "./plan";
 
 /**
@@ -13,7 +14,8 @@ import { programPlan, type ProgramPlan, type RestCalendar, type SlotState } from
  * temps (les trois tefilot) en donne une par office. Une tâche **de la
  * semaine** (la paracha, un programme au rythme hebdomadaire) se fait
  * n'importe quel jour de sa semaine : elle ne pèse sur aucun jour en
- * particulier, et compte le jour où on la fait.
+ * particulier, et compte le jour où on la fait. Le chnei mikra lu montée par
+ * montée, lui, a sa carte chaque jour (aliyot.ts).
  *
  * L'état d'un jour ne se garde pas : il se recalcule du journal et des
  * objectifs. Un objectif ne compte qu'à partir de son premier jour et
@@ -41,22 +43,32 @@ export interface Task {
   weekly: boolean;
   /** Programmes : la portion du créneau. */
   slot?: SlotState;
+  /** Le chnei mikra montée par montée : les montées que la carte demande. */
+  aliyot?: AliyotRange;
 }
 
 /** De quoi calculer les journées : le calendrier des repos, et les plans déjà faits. */
 export interface ScheduleContext {
   isRest: RestCalendar;
   plans: Map<string, ProgramPlan>;
+  /** Le journal : ce qui reste dû du chnei mikra se compte sur les jours d'avant. */
+  days: Record<DayKey, DayLog>;
+  /** Les montées de la paracha d'une semaine : 7, ou 14 pour une double (calendar.ts). */
+  aliyotCount: (day: DayKey) => number;
 }
 
-export function scheduleContext(data: ParcoursData, isRest: RestCalendar): ScheduleContext {
+export function scheduleContext(
+  data: ParcoursData,
+  isRest: RestCalendar,
+  aliyotCount: (day: DayKey) => number = () => ALIYOT_PER_PARASHA,
+): ScheduleContext {
   const plans = new Map<string, ProgramPlan>();
   for (const objective of Object.values(data.objectives)) {
     if (objective.kind === "program") {
       plans.set(objective.id, programPlan(objective, data.days, isRest));
     }
   }
-  return { isRest, plans };
+  return { isRest, plans, days: data.days, aliyotCount };
 }
 
 /** Le jour d'un instant enregistré (ms). */
@@ -90,8 +102,13 @@ function objectiveTasks(objective: Objective, day: DayKey, ctx: ScheduleContext)
       return objective.days.includes(weekdayOf(day))
         ? [{ ...base, id: objective.id, weekly: false }]
         : [];
-    case "cycle":
+    case "cycle": {
+      if (readsByAliya(objective)) {
+        const aliyot = dueAliyot(objective.id, day, ctx.aliyotCount(day), ctx.days, objective.since);
+        return aliyot ? [{ ...base, id: objective.id, weekly: false, aliyot }] : [];
+      }
       return [{ ...base, id: objective.id, weekly: objective.cycle === "parasha" }];
+    }
     case "program": {
       const plan = ctx.plans.get(objective.id);
       if (!plan) return [];

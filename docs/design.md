@@ -1801,6 +1801,19 @@ retard » qu'on avait choisi de ne pas lire.
   carte de la semaine (celle de l'accueil), les cases de la portion à
   toucher (« Où j'en suis cette semaine »), et les semaines, une pierre
   chacune, nommées par leur paracha.
+- **Prendre de l'avance.** Une portion faite (du jour ou de la semaine),
+  sa page propose « Lire la suite », la portion d'après, et le volume de
+  l'accueil touché y mène aussi ; au bas de la lecture, l'anneau la marque
+  lue aujourd'hui (« Lu en avance »), et propose encore la suite. L'avance
+  se dit sous la portion (« 4 michnayot d'avance »), sans fanfare : les
+  portions gardent leur taille, la fin vient plus tôt. Alléger les portions
+  à venir changerait ce qu'on s'est promis sans qu'on l'ait demandé.
+- **Le chnei mikra, une montée par jour** (`aliyot.ts`) : une carte chaque
+  jour, la sixième et la septième montée le vendredi ; une montée oubliée
+  ne disparaît pas, la carte du lendemain en montre deux (« Noah, 3e et 4e
+  montées »). Elle ouvre la page du chnei mikra réduite à ces montées, avec
+  « Toute la paracha » pour le reste, et au bas l'anneau qui la coche. Le
+  réglage de la paracha passe de l'un à l'autre (« Une montée par jour »).
 - **Rattraper** monte du bas comme la fiche : les cinq façons en pastilles,
   la semaine redessinée à chaque choix, ce qui était prévu dans la teinte de
   la pierre et ce que le rattrapage ajoute en couleur.

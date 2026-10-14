@@ -25,6 +25,7 @@ import { placeOf, unitLabel, unitOf } from "../../services/parcours/texts";
 import { hebrewMonthName } from "../../services/zmanimService";
 import DeckArt from "./home/DeckArt.vue";
 import UnitCells from "./UnitCells.vue";
+import ReadAhead from "./ReadAhead.vue";
 
 const props = defineProps<{ program: ProgramObjective }>();
 const emit = defineEmits<{ (e: "catch-up"): void }>();
@@ -222,6 +223,9 @@ const endLabel = computed(() =>
       <span class="hero-title">{{ hero.title }}</span>
       <span class="hero-meta">{{ hero.meta }}</span>
     </div>
+
+    <!-- Prendre de l'avance : la semaine faite, la suivante se propose. -->
+    <ReadAhead class="mt-[26px]" :program="program" :offer="done || !hero" />
 
     <template v-if="state && !done">
       <p class="mt-[26px] text-[15px] font-bold">{{ t("parcours.program.weekWhere") }}</p>

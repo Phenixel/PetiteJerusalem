@@ -6,7 +6,7 @@ import {
 } from "./legacyDailyReading";
 import { ALL_WEEK, WEEKDAYS_WITHOUT_CHABBAT, choosesItsTime, newObjectiveId } from "./model";
 import type {
-  CycleId,
+  CycleChoice,
   CycleObjective,
   DayKey,
   HabitAnchor,
@@ -124,14 +124,14 @@ export function createHabit(draft: HabitDraft, today: DayKey, now: number): Habi
 /** Les Tehilim de la semaine : un cycle de Mon parcours, sans lecture du jour d'avant. */
 export const TEHILIM_WEEK_ID = "cycle-tehilim-week";
 
-export const cycleObjectiveId = (cycle: CycleId): string =>
+export const cycleObjectiveId = (cycle: CycleChoice): string =>
   cycle === "tehilim-week"
     ? TEHILIM_WEEK_ID
     : cycle === "tehilim-month"
       ? LEGACY_TEHILIM_ID
       : LEGACY_PARASHA_ID;
 
-export function createCycle(cycle: CycleId, today: DayKey, now: number): CycleObjective {
+export function createCycle(cycle: CycleChoice, today: DayKey, now: number): CycleObjective {
   if (cycle === "tehilim-week") {
     return {
       id: TEHILIM_WEEK_ID,
@@ -142,6 +142,9 @@ export function createCycle(cycle: CycleId, today: DayKey, now: number): CycleOb
       createdAt: now,
       updatedAt: now,
     };
+  }
+  if (cycle === "parasha-aliyot") {
+    return { ...legacyCycleObjective("parasha", today, now), split: "aliyot" };
   }
   return legacyCycleObjective(cycle === "tehilim-month" ? "tehilim-jour" : "parasha", today, now);
 }

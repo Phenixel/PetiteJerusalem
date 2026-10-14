@@ -1,4 +1,5 @@
 import { setTaskDone } from "./actions";
+import { aliyotWeekDone, readsByAliya } from "./aliyot";
 import { weekOf, weekStart, addDays } from "./days";
 import { ALL_WEEK, isAlive } from "./model";
 import type { CycleObjective, DayKey, ParcoursData, TextObjective } from "./model";
@@ -156,6 +157,11 @@ export function importLegacy(
   return next;
 }
 
+const readsParashaByAliya = (data: ParcoursData): boolean => {
+  const objective = data.objectives[LEGACY_PARASHA_ID];
+  return objective !== undefined && readsByAliya(objective);
+};
+
 function doneThisWeek(data: ParcoursData, id: string, day: DayKey): boolean {
   for (let d = weekStart(day); d <= day; d = addDays(d, 1)) {
     if (data.days[d]?.done.includes(id)) return true;
@@ -199,7 +205,10 @@ export function legacyProjection(data: ParcoursData, today: DayKey): LegacyProje
       completedOptions: done.has(LEGACY_TEHILIM_ID) ? ["tehilim-jour"] : [],
       parashaProgress: {
         week: weekOf(today),
-        completed: doneThisWeek(data, LEGACY_PARASHA_ID, today),
+        // Montée par montée, la semaine est lue quand la carte du vendredi (ou du Chabbat) l'est.
+        completed: readsParashaByAliya(data)
+          ? aliyotWeekDone(data.days, LEGACY_PARASHA_ID, today)
+          : doneThisWeek(data, LEGACY_PARASHA_ID, today),
       },
     },
   };

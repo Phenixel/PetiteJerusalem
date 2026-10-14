@@ -20,6 +20,10 @@ import type { CatchUpOption, DayKey, DayLog, ProgramObjective, Rhythm, UnitKind 
  * de lui-même : c'est à la personne de dire comment le rattraper (la feuille
  * « Rattraper »), et rien ne presse.
  *
+ * L'avance, son contraire : ce qu'on a lu au-delà du rythme. Lire la suite
+ * (`nextPortion`, la portion du prochain créneau) la fait. Elle ne change
+ * pas le pas : les portions gardent leur taille, et la fin vient plus tôt.
+ *
  * La position se compte sur le journal des jours (les unités lues chaque
  * jour) plus ce qu'on a déclaré lu sans jour (`credit`) : deux appareils qui
  * fusionnent leurs journées retombent sur la même position.
@@ -45,6 +49,8 @@ export interface SlotState {
   complete: boolean;
   /** Retard à l'ouverture du créneau, hors rattrapage déjà posé. */
   behind: number;
+  /** Avance : lu avant ce créneau au-delà du rythme, plus ce qu'il a lu au-delà de sa portion. */
+  ahead: number;
   /** Tout est lu, ce créneau compris. */
   finished: boolean;
 }
@@ -57,6 +63,11 @@ export interface ProgramPlan {
   state(day: DayKey): SlotState;
   /** Unités lues jusqu'au soir de `day` compris. */
   positionAt(day: DayKey): number;
+  /**
+   * La suite, une fois lu ce qu'on a lu ce jour-là : la portion du prochain
+   * créneau d'étude, à partir de là où l'on en est. Rien quand tout est lu.
+   */
+  nextPortion(day: DayKey): { from: number; to: number } | null;
   /** Créneaux d'étude du départ à la fin. */
   readonly slotCount: number;
   /** La portion moyenne d'un créneau, sur le rythme actuel. */
@@ -170,8 +181,18 @@ export function programPlan(
       done,
       complete: quota > 0 && from + done >= to,
       behind: Math.max(0, target - from),
+      ahead: Math.max(0, from - pace(kBefore)) + Math.max(0, done - quota),
       finished: from + done >= total,
     };
+  }
+
+  function nextPortion(day: DayKey): { from: number; to: number } | null {
+    const position = positionAt(day);
+    if (position >= total) return null;
+    const slot = slotOfDay(rhythm, day);
+    const next = slots.find((candidate) => candidate > slot);
+    const quota = next ? state(slotStart(next)).quota : Math.max(1, Math.round(average));
+    return { from: position, to: Math.min(total, position + Math.max(1, quota)) };
   }
 
   return {
@@ -179,6 +200,7 @@ export function programPlan(
     slotOf: (day) => slotOfDay(rhythm, day),
     state,
     positionAt,
+    nextPortion,
     slotCount,
     average,
   };

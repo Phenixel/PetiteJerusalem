@@ -3,7 +3,8 @@
  * Les réglages d'un objectif qui n'est pas un programme : une habitude (son
  * nom, ses jours, son repère sur le fil du jour, comme à sa création,
  * P2-Habitude), une lecture du calendrier ou un texte du jour (son moment,
- * ses jours). Tout s'enregistre au fil des touches : un réglage se refait
+ * ses jours ; pour la paracha, toute la semaine ou une montée par jour).
+ * Tout s'enregistre au fil des touches : un réglage se refait
  * d'un geste, il ne se valide pas.
  */
 import { computed } from "vue";
@@ -15,6 +16,7 @@ import {
   type MomentId,
   type Objective,
 } from "../../services/parcours/model";
+import ToggleSwitch from "../ToggleSwitch.vue";
 import StepHabit from "./create/StepHabit.vue";
 import ObjectivePauseRemove from "./ObjectivePauseRemove.vue";
 import DaysPicker from "./pickers/DaysPicker.vue";
@@ -51,6 +53,18 @@ const anchor = computed({
   },
 });
 
+/** La paracha : une montée par jour (aliyot.ts), ou toute la semaine. */
+const byAliya = computed({
+  get: () => props.objective.kind === "cycle" && props.objective.split === "aliyot",
+  set: (on: boolean) => {
+    if (props.objective.kind !== "cycle") return;
+    const next = { ...props.objective };
+    if (on) next.split = "aliyot";
+    else delete next.split;
+    store.saveObjective(next);
+  },
+});
+
 const name = computed({
   get: () => (props.objective.kind === "habit" ? props.objective.name : ""),
   set: (value: string) => save({ name: value.slice(0, 60) } as Partial<Objective>),
@@ -75,6 +89,19 @@ const name = computed({
       <DaysPicker v-model="days" class="mt-2" />
       <p class="mt-2 text-[13px] text-text-secondary">{{ t("parcours.form.daysHint") }}</p>
     </section>
+
+    <label
+      v-if="objective.kind === 'cycle' && objective.cycle === 'parasha'"
+      class="card flex cursor-pointer items-center gap-3 px-4 py-3"
+    >
+      <span class="flex-1">
+        <span class="block text-[15px] font-bold">{{ t("parcours.settings.byAliya") }}</span>
+        <span class="block text-[13px] text-text-secondary">{{
+          t("parcours.settings.byAliyaHint")
+        }}</span>
+      </span>
+      <ToggleSwitch v-model="byAliya" />
+    </label>
 
     <section>
       <h2 class="text-sm font-bold">{{ t("parcours.form.moment") }}</h2>

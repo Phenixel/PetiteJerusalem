@@ -50,10 +50,10 @@ import {
   cycleObjectiveId,
 } from "../../services/parcours/create";
 import {
-  CYCLES,
+  CYCLE_CHOICES,
   HABIT_PRESETS,
   isAlive,
-  type CycleId,
+  type CycleChoice,
   type DayKey,
   type HabitAnchor,
   type HabitPreset,
@@ -167,8 +167,9 @@ const habitTitle = computed(() =>
     : t("parcours.create.habitTitle"),
 );
 
+// La paracha se suit d'une façon ou de l'autre : prise, ses deux choix s'éteignent.
 const takenCycles = computed(() =>
-  CYCLES.filter((cycle) => {
+  CYCLE_CHOICES.filter((cycle) => {
     const objective = store.data.value.objectives[cycleObjectiveId(cycle)];
     return objective !== undefined && isAlive(objective);
   }),
@@ -331,7 +332,7 @@ function createChosenHabit(chosen: HabitPreset | null = preset.value): void {
   finish(habit, { preset: habit.preset, days_count: habit.days.length });
 }
 
-function createChosenCycle(cycle: CycleId): void {
+function createChosenCycle(cycle: CycleChoice): void {
   const found = store.data.value.objectives[cycleObjectiveId(cycle)];
   if (found && isAlive(found) && alreadyTaken(found)) return;
   finish(createCycle(cycle, store.today.value, Date.now()), { cycle });

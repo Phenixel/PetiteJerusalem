@@ -824,6 +824,18 @@ la carte d'une annonce, elle, envoie toujours `announcement_opened`.
 Les cases d'une portion, cochées une à une sur la page d'un programme à la semaine (« Où j'en suis cette semaine »).
 `units` : les unités lues aujourd'hui ; `source` : `objective_cells`.
 
+### `parcours_read_ahead` (nouveau)
+
+La suite d'un programme lue en avance : la portion d'après, ouverte par
+« Lire la suite » (au bas d'une portion faite, sur la page du programme, ou
+le volume de l'accueil touché quand la portion du jour est faite) et
+marquée lue au bas de la lecture.
+
+| Propriété | Valeurs |
+| --- | --- |
+| `corpus` | `michna`, `talmud`, `tanakh`, `tehilim` |
+| `units` | les unités de la portion lue en avance |
+
 ### `parcours_objective_created` (nouveau)
 
 | Propriété | Valeurs |
@@ -831,7 +843,7 @@ Les cases d'une portion, cochées une à une sur la page d'un programme à la se
 | `kind` | `program`, `habit`, `cycle`, `text` |
 | `corpus`, `rhythm`, `parts_count`, `texts_count` | un programme : `michna`, `talmud`, `tanakh`, `tehilim` ; `daily`, `weekdays`, `weekly` ; les parties prises (sedarim, traités, livres) ; les textes qu'elles font |
 | `preset`, `days_count` | une habitude : `tefilot`, `chema-al-hamita`, `tsedaka`, `chmirat-halachon`, `limoud` (un temps d'étude, **nouveau**), `custom` (« Avec mes mots ») ; `tefilin` et `birkat-hamazon` ne partent plus (la création ne les propose plus) ; ses jours dans la semaine |
-| `cycle` | une lecture du calendrier : `tehilim-week`, `tehilim-month`, `parasha` |
+| `cycle` | une lecture du calendrier : `tehilim-week`, `tehilim-month`, `parasha` ; `parasha-aliyot` (**nouvelle valeur**), le chnei mikra une montée par jour |
 | `text_id` | un texte du jour |
 
 ### `parcours_objective_paused`, `parcours_objective_removed` (nouveaux)

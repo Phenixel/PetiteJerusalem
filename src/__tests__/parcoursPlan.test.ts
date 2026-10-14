@@ -199,3 +199,27 @@ describe("la reprise après une pause", () => {
     expect(resumed.base).toEqual(paused.base);
   });
 });
+
+describe("prendre de l'avance", () => {
+  it("la suite est la portion du prochain jour, à partir de là où l'on en est", () => {
+    const days = read({ [START]: 1 });
+    expect(programPlan(program(), days, chabbat).nextPortion(START)).toEqual({ from: 1, to: 2 });
+    // Lue aussi aujourd'hui, la suite devient celle d'après.
+    const ahead = read({ [START]: 2 });
+    expect(programPlan(program(), ahead, chabbat).nextPortion(START)).toEqual({ from: 2, to: 3 });
+  });
+
+  it("l'avance se dit le jour même et le lendemain, sans grossir ni réduire les portions", () => {
+    const days = read({ [START]: 2 });
+    const plan = programPlan(program(), days, chabbat);
+    expect(plan.state(START)).toMatchObject({ quota: 1, complete: true, ahead: 1, behind: 0 });
+    // Le lendemain : sa portion est la suivante, de même taille, et l'avance reste.
+    expect(plan.state(addDays(START, 1))).toMatchObject({ from: 2, to: 3, quota: 1, ahead: 1 });
+  });
+
+  it("rien à lire de plus quand tout est lu", () => {
+    const days = read({ [START]: 10 });
+    expect(programPlan(program(), days, chabbat).nextPortion(START)).toBeNull();
+  });
+});
+

@@ -8,6 +8,8 @@ import { bindingOf } from "../config/bindings";
 import { texteOf, texteTitle } from "../services/chiourTexte";
 import { getWeeklyParasha, parashaTitle, tehilimOfCycle } from "../services/dailyCycles";
 import { localDayFrom } from "../services/dateService";
+import { appendHebrewNumeral } from "../services/hebrewNumerals";
+import { aliyotLabel, readsByAliya, type AliyotRange } from "../services/parcours/aliyot";
 import type {
   CycleObjective,
   DayKey,
@@ -136,6 +138,11 @@ export function useParcoursViews() {
   }
 
   /** Le titre court de la couverture : « Moed », « Avot », « Michna ». */
+  /** La clé d'un cycle dans les traductions : le chnei mikra montée par montée a la sienne. */
+  function cycleKey(objective: CycleObjective): string {
+    return readsByAliya(objective) ? "parasha-aliyot" : objective.cycle;
+  }
+
   function coverLabel(objective: Objective): string {
     if (objective.kind === "program") {
       const first = partRef(objective.parts[0] ?? "all");
@@ -143,7 +150,7 @@ export function useParcoursViews() {
         ? partName(first, objective.corpus)
         : t(`parcours.corpus.${objective.corpus}`);
     }
-    if (objective.kind === "cycle") return t(`parcours.cycles.${objective.cycle}.cover`);
+    if (objective.kind === "cycle") return t(`parcours.cycles.${cycleKey(objective)}.cover`);
     if (objective.kind === "text") return textName(objective.textId, locale.value);
     return "";
   }
@@ -159,7 +166,7 @@ export function useParcoursViews() {
       case "habit":
         return habitTitle(objective);
       case "cycle":
-        return t(`parcours.cycles.${objective.cycle}.title`);
+        return t(`parcours.cycles.${cycleKey(objective)}.title`);
       case "text": {
         const entry = texteOf(objective.textId);
         return entry ? texteTitle(entry, locale.value) : "";
@@ -202,6 +209,20 @@ export function useParcoursViews() {
     return parashaTitle(getWeeklyParasha(date, isIsraelPlace(place.value)));
   }
 
+  /**
+   * Les montées d'une carte du chnei mikra : « Berechit, 2e et 3e montées » ;
+   * pour une paracha double, chacune avec les siennes (« Vayakhel, 7e
+   * montée · Pekoudei, 1re et 2e montées »).
+   */
+  function aliyotLabelOf(aliyot: AliyotRange, day: DayKey): string {
+    const date = localDayFrom(day) ?? new Date();
+    date.setHours(12);
+    const names = (getWeeklyParasha(date, isIsraelPlace(place.value))?.entries ?? []).map(
+      (entry) => appendHebrewNumeral(entry.name),
+    );
+    return aliyotLabel(aliyot, names, t);
+  }
+
   function route(task: Task, objective: Objective, day: DayKey): RouteLocationRaw | null {
     switch (objective.kind) {
       case "program": {
@@ -225,6 +246,12 @@ export function useParcoursViews() {
         return null;
       }
       case "cycle": {
+        // Montée par montée : la page du chnei mikra, réduite aux montées de la carte.
+        if (readsByAliya(objective)) {
+          const query: Record<string, string> = { objectif: objective.id };
+          if (task.aliyot) query.montees = `${task.aliyot.from + 1}-${task.aliyot.to}`;
+          return { path: "/bibliotheque/chnei-mikra", query };
+        }
         if (objective.cycle === "tehilim-month") return "/bibliotheque/tehilim-du-jour";
         if (objective.cycle === "parasha") return "/bibliotheque/chnei-mikra";
         // Les Tehilim de la semaine : le premier psaume du jour, la tâche au bas.
@@ -268,11 +295,31 @@ export function useParcoursViews() {
       const target = route(task, objective, day);
       if (target) return target;
     }
-    const position = store.context.value.plans.get(objective.id)?.positionAt(day) ?? 0;
-    const place = placeOf(objective.texts, position);
+    return aheadRoute(objective, day);
+  }
+
+  /** La suite d'un programme : la portion du prochain créneau (`nextPortion`). */
+  function nextPortionOf(program: ProgramObjective, day: DayKey) {
+    return store.context.value.plans.get(program.id)?.nextPortion(day) ?? null;
+  }
+
+  /**
+   * Lire la suite, en avance : le lecteur s'ouvre sur la portion d'après,
+   * et sa fin (ReaderTaskCard, `?avance=1`) la marque lue aujourd'hui.
+   */
+  function aheadRoute(program: ProgramObjective, day: DayKey): RouteLocationRaw | null {
+    const next = nextPortionOf(program, day);
+    const place = next ? placeOf(program.texts, next.from) : null;
     if (!place) return null;
     const target = readingRoute(place);
-    return { ...target, query: { ...target.query, objectif: objective.id } };
+    return { ...target, query: { ...target.query, objectif: program.id, avance: "1" } };
+  }
+
+  /** Une plage d'unités d'un programme : « Chabbat 7:4 à 8:1 ». */
+  function rangeText(program: ProgramObjective, from: number, to: number): string {
+    return portionLabel(program.texts, from, to, locale.value, (a, b) =>
+      t("parcours.portion.range", { from: a, to: b }),
+    );
   }
 
   /** La portion d'un programme, seule : « Chabbat 7:1 à 7:3 ». */
@@ -302,7 +349,7 @@ export function useParcoursViews() {
         if (objective.preset === "limoud") return t("parcours.hub.studyMeta");
         return momentLabel(task.moment);
       case "cycle":
-        return cycleReading(objective.cycle, day);
+        return task.aliyot ? aliyotLabelOf(task.aliyot, day) : cycleReading(objective.cycle, day);
       case "text":
         return t("parcours.task.everyDay");
       default:
@@ -362,7 +409,7 @@ export function useParcoursViews() {
         lines: [coverLabel(objective)],
         sub:
           objective.kind === "cycle"
-            ? t(`parcours.cycles.${objective.cycle}.sub`)
+            ? t(`parcours.cycles.${cycleKey(objective)}.sub`)
             : t("parcours.task.everyDay"),
       };
     }
@@ -435,6 +482,9 @@ export function useParcoursViews() {
     coverLabel,
     taskView,
     readRoute,
+    aheadRoute,
+    nextPortionOf,
+    rangeText,
     portionText,
     portionTime,
     dayLabel,
