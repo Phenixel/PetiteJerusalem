@@ -301,7 +301,7 @@
       "name": "מדות (Middot)",
       "livre": "קדשים (Kodashim)",
       "link": "https://www.sefaria.org/Middot",
-      "totalSections": 3,
+      "totalSections": 5,
       "type": "Talmud Bavli"
     },
     {
@@ -405,7 +405,7 @@
       "name": "ביכורים (Bikkurim)",
       "livre": "זרעים (Zeraim)",
       "link": "https://www.sefaria.org/Mishnah_Bikkurim",
-      "totalSections": 3,
+      "totalSections": 4,
       "type": "Mishna"
     },
     {
@@ -609,6 +609,14 @@
       "type": "Mishna"
     },
     {
+      "id": 442,
+      "name": "עדיות (Eduyot)",
+      "livre": "נזיקין (Nezikin)",
+      "link": "https://www.sefaria.org/Mishnah_Eduyot",
+      "totalSections": 8,
+      "type": "Mishna"
+    },
+    {
       "id": 77,
       "name": "עבודה זרה (Avodah Zarah)",
       "livre": "נזיקין (Nezikin)",
@@ -621,7 +629,7 @@
       "name": "אבות (Avot)",
       "livre": "נזיקין (Nezikin)",
       "link": "https://www.sefaria.org/Avot",
-      "totalSections": 5,
+      "totalSections": 6,
       "type": "Mishna"
     },
     {
@@ -709,7 +717,7 @@
       "name": "מדות (Middot)",
       "livre": "קדשים (Kodashim)",
       "link": "https://www.sefaria.org/Mishnah_Middot",
-      "totalSections": 3,
+      "totalSections": 5,
       "type": "Mishna"
     },
     {

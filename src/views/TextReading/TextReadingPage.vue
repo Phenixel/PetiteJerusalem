@@ -467,7 +467,8 @@ const dafOffsets = computed<{ daf: string; offset: number }[]>(() => {
   const out: { daf: string; offset: number }[] = [];
   let offset = 0;
   for (const block of currentSection.value?.dafBlocks ?? []) {
-    out.push({ daf: block.daf, offset });
+    // Un bloc sans daf (traité rangé par chapitre) n'a rien à publier.
+    if (block.daf) out.push({ daf: block.daf, offset });
     offset += block.lines.length;
   }
   return out;
