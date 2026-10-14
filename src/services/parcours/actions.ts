@@ -5,7 +5,7 @@ import type { Task } from "./schedule";
 /**
  * Ce qu'on fait de ses données : cocher, décocher, mettre de côté, créer,
  * retirer. Des fonctions pures, qui rendent des données neuves sans toucher
- * aux anciennes ; le store les applique et les garde (store.ts).
+ * aux anciennes ; composables/useParcours.ts les applique et les garde.
  *
  * Chaque écriture date l'entrée qu'elle touche (`at`, `updatedAt`) : c'est ce
  * qui la fait gagner sur l'autre appareil à la fusion.
@@ -56,11 +56,16 @@ export function setTaskDone(
   return withDay(
     data,
     day,
-    (log) => ({
-      ...log,
-      done: done ? [...without(log.done, task.id), task.id] : without(log.done, task.id),
-      skipped: log.skipped && without(log.skipped, task.id),
-    }),
+    (log) => {
+      const next = {
+        ...log,
+        done: done ? [...without(log.done, task.id), task.id] : without(log.done, task.id),
+      };
+      // Cochée, elle n'est plus mise de côté. Pas de champ vide : Firestore
+      // refuse `undefined`, et l'écriture du jour échouait sans bruit.
+      if (log.skipped) next.skipped = without(log.skipped, task.id);
+      return next;
+    },
     now,
   );
 }

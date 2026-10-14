@@ -128,17 +128,18 @@ programmes ni des habitudes.
 
 ## Les tests
 
-| Test                            | Ce qu'il tient                                                                            |
-| ------------------------------- | ----------------------------------------------------------------------------------------- |
-| `parcoursUnits.test.ts`         | les unités des programmes suivent `public/texts/` (garde-fou, voir `docs/tests.md`)       |
-| `parcoursPlan.test.ts`          | les portions, le retard, les cinq rattrapages                                             |
-| `parcoursSchedule.test.ts`      | les tâches d'un jour, le mur, la série (Chabbat et « Pas aujourd'hui » ne la coupent pas) |
-| `parcoursCalendar.test.ts`      | les jours de repos, les moments, l'ordre du paquet                                        |
-| `parcoursMerge.test.ts`         | la fusion de deux copies                                                                  |
-| `parcoursSync.test.ts`          | sans compte, avec un compte, un appareil partagé                                          |
-| `parcoursLegacyDaily.test.ts`   | la lecture du jour d'avant, reprise et tenue à jour                                       |
-| `parcoursDeck.test.ts`          | le paquet de l'accueil                                                                    |
-| `parcoursEntries.test.ts`       | les textes à télécharger pour la journée                                                  |
-| `parcoursTracking.test.ts`      | le suivi commun, et les événements de la lecture du jour qui continuent                   |
-| `widgetDailyParcours.test.ts`   | la lecture du jour des widgets, sans compte                                               |
-| `e2e/firebase/parcours.spec.ts` | un texte du jour pris, coché, et suivi par le compte (émulateurs)                         |
+| Test                            | Ce qu'il tient                                                                                  |
+| ------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `parcoursUnits.test.ts`         | les unités des programmes suivent `public/texts/` (garde-fou, voir `docs/tests.md`)             |
+| `parcoursPlan.test.ts`          | les portions, le retard, les cinq rattrapages                                                   |
+| `parcoursSchedule.test.ts`      | les tâches d'un jour, le mur, la série (Chabbat et « Pas aujourd'hui » ne la coupent pas)       |
+| `parcoursCalendar.test.ts`      | les jours de repos, les moments, l'ordre du paquet                                              |
+| `parcoursMerge.test.ts`         | la fusion de deux copies                                                                        |
+| `parcoursSync.test.ts`          | sans compte, avec un compte, un appareil partagé                                                |
+| `parcoursCloud.test.ts`         | l'écriture du compte n'envoie aucun champ `undefined` (Firestore refuserait l'écriture entière) |
+| `parcoursLegacyDaily.test.ts`   | la lecture du jour d'avant, reprise et tenue à jour                                             |
+| `parcoursDeck.test.ts`          | le paquet de l'accueil                                                                          |
+| `parcoursEntries.test.ts`       | les textes à télécharger pour la journée                                                        |
+| `parcoursTracking.test.ts`      | le suivi commun, et les événements de la lecture du jour qui continuent                         |
+| `widgetDailyParcours.test.ts`   | la lecture du jour des widgets, sans compte                                                     |
+| `e2e/firebase/parcours.spec.ts` | un texte du jour pris, coché, et suivi par le compte (émulateurs)                               |

@@ -36,6 +36,13 @@ export async function fetchAccountParcours(uid: string): Promise<ParcoursData> {
   return parseParcours(snapshot.exists() ? snapshot.data() : null);
 }
 
+/**
+ * Une entrée telle que Firestore l'accepte : il refuse tout champ `undefined`
+ * (un champ facultatif laissé vide par un objet recopié), et l'écriture
+ * entière échouait. Les entrées ne portent que des données simples.
+ */
+const plain = <T>(entry: T): T => JSON.parse(JSON.stringify(entry)) as T;
+
 /** Écrit les entrées données, telles que `data` les porte. */
 export async function writeAccountEntries(
   uid: string,
@@ -48,12 +55,12 @@ export async function writeAccountEntries(
   const fields: InstanceType<typeof sdk.FieldPath>[] = [new sdk.FieldPath("v")];
   for (const id of entries.objectives) {
     if (!data.objectives[id]) continue;
-    (payload.objectives as Record<string, unknown>)[id] = data.objectives[id];
+    (payload.objectives as Record<string, unknown>)[id] = plain(data.objectives[id]);
     fields.push(new sdk.FieldPath("objectives", id));
   }
   for (const day of entries.days) {
     if (!data.days[day]) continue;
-    (payload.days as Record<string, unknown>)[day] = data.days[day];
+    (payload.days as Record<string, unknown>)[day] = plain(data.days[day]);
     fields.push(new sdk.FieldPath("days", day));
   }
   await sdk.setDoc(sdk.doc(db, COLLECTION, uid), payload, { mergeFields: fields });
