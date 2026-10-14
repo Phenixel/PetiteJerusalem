@@ -164,7 +164,22 @@ const VERSIONS = {
       "Maximes des Pères, trans. by Rabbi Rivon Krygier, 2023 [fr]",
     ],
     talmud: ["Le Talmud de Jérusalem, traduit par Moise Schwab, 1878-1890 [fr]"],
+    // Pas de traduction française humaine : seul le dépôt IA les remplit.
+    rashi: [],
+    moussar: [],
   },
+};
+
+/**
+ * Le dépôt des traductions françaises assistées par IA (voir
+ * scripts/translate-ia.mjs et docs/traduction-ia.md), par fichier, à la clé
+ * de la ligne dans la forme de son hébreu. Il vient en dernier : une ligne
+ * qu'une traduction humaine couvre ne prend jamais la version IA.
+ */
+const IA_STORE = join(ROOT, "data", "traductions-ia");
+const readIaStore = (lang, rel) => {
+  const path = join(IA_STORE, lang, rel);
+  return existsSync(path) ? JSON.parse(readFileSync(path, "utf8")) : null;
 };
 
 // ---------- Les corpus : nos fichiers, et les livres de Sefaria où les retrouver ----------
@@ -530,6 +545,19 @@ for (const [corpusName, corpus] of Object.entries(CORPORA)) {
           break;
         }
       });
+      // Ce que les traductions humaines laissent vide, le dépôt IA le
+      // complète, ligne à ligne.
+      const ia = readIaStore(lang, rel);
+      let iaLines = 0;
+      if (ia) {
+        for (const line of lines) {
+          const key = line.path.join("/");
+          if (!letters(line.text) || byPath.has(key) || !ia[key]) continue;
+          byPath.set(key, ia[key]);
+          iaLines++;
+          totalTranslated++;
+        }
+      }
       const outPath = join(OUT, lang, rel);
       const webPath = `/texts/${rel}`;
       if (byPath.size === 0) {
@@ -549,6 +577,21 @@ for (const [corpusName, corpus] of Object.entries(CORPORA)) {
           url: `https://www.sefaria.org/${encodeURIComponent(first)}?ven=${encodeURIComponent(v.versionTitle.replace(/ /g, "_"))}&lang=bi`,
         };
       });
+      // La version IA se cite par la traduction anglaise d'où elle vient :
+      // son auteur, sa licence (une adaptation garde celle de sa source).
+      if (iaLines) {
+        const enPath = join(OUT, "en", rel);
+        const enSources = existsSync(enPath)
+          ? JSON.parse(readFileSync(enPath, "utf8")).sources
+          : [];
+        for (const source of enSources) {
+          sources.push({
+            ...source,
+            name: `${source.name} (traduction française par IA)`,
+            by: `${source.by ?? source.name} (traduit de l'anglais par IA)`,
+          });
+        }
+      }
       const text = mapLeaves(root, (_, path) => byPath.get(path.join("/")) ?? "");
       mkdirSync(dirname(outPath), { recursive: true });
       writeFileSync(outPath, JSON.stringify({ lang, sources, text }));
