@@ -1027,6 +1027,31 @@ office ou une bénédiction se lisent du début, on n'y revient pas à un
 paragraphe comme à un verset de Tehilim ; le sommaire du menu y mène déjà à
 chaque passage.
 
+### La traduction se lit sous le verset
+
+La traduction (`docs/traductions.md`) n'est pas une autre page ni une autre
+colonne : elle se pose sous chaque verset, dans la police de lecture latine
+(`--font-reading`), un cran sous l'hébreu et dans la couleur du texte
+secondaire. L'hébreu reste le texte qu'on lit ; la traduction l'accompagne,
+et deux colonnes ne tiendraient pas sur un téléphone. Dans le Talmud, le daf
+cesse d'être un seul bloc : chaque phrase de la guemara est suivie de la
+sienne, sans quoi on ne saurait plus ce qui traduit quoi. Le gras de
+Steinsaltz y reste (la traduction littérale), dans la couleur du texte, et
+son explication en romain : la différence fait partie du texte.
+
+La commande se pose dans la barre d'outils, après la bascule hébreu /
+phonétique, avec son dessin et son nom (« Traduction ») ; allumée, elle prend
+la couleur du thème. Elle ne paraît que sur un texte traduit, et pas sur une
+tefila. Le même réglage vit dans les réglages de lecture du menu, avec le
+choix de la langue quand le texte en a deux, celle de l'interface en premier.
+Quand la langue du lecteur manque (le Talmud, qu'on n'a qu'en anglais), une
+phrase le dit au-dessus du texte avant de montrer l'autre : on ne découvre
+pas une traduction anglaise sans savoir pourquoi.
+
+Ses sources se lisent à la fin du texte, là où se lit ce qui clôt une page :
+le nom de la version (lien vers Sefaria), son auteur, sa licence (lien vers
+son texte). Les licences le demandent, et le lecteur doit savoir qui il lit.
+
 ### La pastille du défilement est son propre arrêt
 
 Pendant une descente automatique, une pastille au bas de l'écran

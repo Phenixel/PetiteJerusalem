@@ -1574,6 +1574,19 @@ const fr = {
     navTop: "Haut de page",
     // Les réglages de lecture, dans le menu : le second bouton rond, à droite
     // de la croix, fait passer le panneau du sommaire aux réglages.
+    // La traduction sous l'hébreu (voir useTranslation et docs/traductions.md).
+    translation: {
+      toggle: "Traduction",
+      settingHint: "Sous chaque verset, sa traduction, quand le texte en a une.",
+      langs: { fr: "Français", en: "Anglais" },
+      langAdj: { fr: "française", en: "anglaise" },
+      fallback: "Pas encore de traduction {wanted} de ce texte\u00a0: voici la traduction {shown}.",
+      unavailable: "La traduction n'a pas pu être chargée. Elle se lit avec une connexion.",
+      credit: "Traduction",
+      publicDomain: "domaine public",
+      sefariaNote:
+        "Texte repris de Sefaria, mise en forme adaptée (notes de bas de page retirées).",
+    },
     settings: {
       open: "Réglages de lecture",
       backToMenu: "Revenir au sommaire",

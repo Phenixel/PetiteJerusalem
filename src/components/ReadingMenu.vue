@@ -35,6 +35,12 @@ import {
   setHalakhotHidden,
 } from "../composables/useHalakhot";
 import { sansTahanoun, setSansTahanoun } from "../composables/useSansTahanoun";
+import {
+  restoreTranslationFromDevice,
+  setTranslationLang,
+  setTranslationShown,
+  translationShown,
+} from "../composables/useTranslation";
 import type { ReadingNavSection } from "../composables/useReadingNav";
 import { analyticsService } from "../services/analyticsService";
 
@@ -70,6 +76,8 @@ import { analyticsService } from "../services/analyticsService";
  * quand il n'y a rien à télécharger). Une tefila (`tefila`) y ajoute le
  * réglage « sans tahanoun », qui n'a de sens que devant un office, et un
  * texte qui porte des consignes de loi (`halakhot`), celui qui les masque.
+ * Un texte traduit (`translationLangs`) y porte la traduction sous l'hébreu,
+ * et le choix de sa langue quand il en a deux.
  *
  * Les réglages portent enfin trois commandes qui n'étaient qu'ailleurs :
  * partager le texte lu, écrire au support, et, sur le site, télécharger
@@ -84,6 +92,10 @@ const props = withDefaults(
     tefila?: boolean;
     /** Le texte porte des halakhot : le réglage qui les masque a prise. */
     halakhot?: boolean;
+    /** Les langues dans lesquelles le texte se lit traduit (vide : aucune). */
+    translationLangs?: string[];
+    /** Celle de la traduction affichée, ou qui le serait. */
+    translationLang?: string | null;
     /** Le nom sous lequel le texte lu se partage. */
     shareTitle?: string;
     /** L'adresse publique du texte ; à défaut, celle de la page ouverte. */
@@ -95,6 +107,8 @@ const props = withDefaults(
     downloadState: "none",
     tefila: false,
     halakhot: false,
+    translationLangs: () => [],
+    translationLang: null,
     shareTitle: "",
     shareUrl: "",
   },
@@ -164,6 +178,7 @@ function showSettings() {
   // les relit avant de les montrer, comme l'écran des réglages.
   void restoreAutoScrollFromDevice();
   void restoreHalakhotHiddenFromDevice();
+  void restoreTranslationFromDevice();
   analyticsService.capture("reading_settings_opened", { tefila: props.tefila });
 }
 
@@ -518,6 +533,44 @@ onUnmounted(() => {
                 </li>
                 <!-- Les consignes de loi, là où le texte en porte : qui connaît
                      l'office relit la même règle matin après matin. -->
+                <!-- La traduction sous l'hébreu, sur un texte qui en a une ; sa
+                     langue quand il en a deux (Tanakh, Michna). -->
+                <li v-if="translationLangs.length">
+                  <label class="setting-row">
+                    <span class="min-w-0">
+                      <span class="setting-name">{{ t("textReading.translation.toggle") }}</span>
+                      <span class="setting-hint">
+                        {{ t("textReading.translation.settingHint") }}
+                      </span>
+                    </span>
+                    <ToggleSwitch
+                      :model-value="translationShown"
+                      @update:model-value="setTranslationShown($event, translationLang)"
+                    />
+                  </label>
+                  <div
+                    v-if="translationShown && translationLangs.length > 1"
+                    class="mb-2 inline-flex p-0.5 rounded-btn bg-black/5 dark:bg-white/10"
+                    role="group"
+                    :aria-label="t('textReading.translation.toggle')"
+                  >
+                    <button
+                      v-for="lang in translationLangs"
+                      :key="lang"
+                      type="button"
+                      @click="setTranslationLang(lang)"
+                      class="px-3 py-1 rounded-control text-sm font-medium transition-colors"
+                      :class="
+                        lang === translationLang
+                          ? 'bg-surface text-primary shadow-sm'
+                          : 'text-text-secondary'
+                      "
+                      :aria-pressed="lang === translationLang"
+                    >
+                      {{ t(`textReading.translation.langs.${lang}`) }}
+                    </button>
+                  </div>
+                </li>
                 <li v-if="halakhot">
                   <label class="setting-row">
                     <span class="min-w-0">

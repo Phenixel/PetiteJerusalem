@@ -137,6 +137,10 @@ describe("i18n usage", () => {
       "textReading.fold.",
       "textReading.kotel.points.",
       "textReading.kotel.rose.",
+      // Les langues d'une traduction, nommées par leur code (fr, en) : le
+      // choix du menu de lecture et la phrase qui dit laquelle on montre.
+      "textReading.translation.langs.",
+      "textReading.translation.langAdj.",
       "textReading.zman.",
       // Les limites du 'hamets, dont le cadre construit les intitulés selon
       // que le 14 Nissan tombe un Chabbat ou non (voir ChametzTimes.vue).

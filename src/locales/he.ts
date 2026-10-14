@@ -1478,6 +1478,18 @@ const he: LocaleMessages = {
     navTop: "לראש הדף",
     // הגדרות הקריאה, בתוך התפריט: הכפתור העגול השני, מימין ל-X, מחליף את
     // הלוח מתוכן העניינים להגדרות.
+    // התרגום מתחת לעברית (ראו useTranslation ו-docs/traductions.md).
+    translation: {
+      toggle: "תרגום",
+      settingHint: "מתחת לכל פסוק, תרגומו, כשיש לטקסט תרגום.",
+      langs: { fr: "צרפתית", en: "אנגלית" },
+      langAdj: { fr: "צרפתי", en: "אנגלי" },
+      fallback: "אין עדיין תרגום {wanted} לטקסט זה: זהו התרגום ה{shown}.",
+      unavailable: "לא ניתן היה לטעון את התרגום. הוא נקרא עם חיבור לרשת.",
+      credit: "תרגום",
+      publicDomain: "נחלת הכלל",
+      sefariaNote: "הטקסט מספריא, בעיצוב מותאם (ללא הערות שוליים).",
+    },
     settings: {
       open: "הגדרות קריאה",
       backToMenu: "חזרה לתוכן",

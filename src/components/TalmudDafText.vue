@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
 import type { DafBlock } from "../services/textService";
+import TranslationText from "./TranslationText.vue";
 
 /**
  * Une guemara : le texte d'un chapitre d'un seul tenant, un repère à chaque
@@ -11,6 +12,12 @@ import type { DafBlock } from "../services/textService";
  * `anchored` pose l'ancre du menu de lecture sur chaque daf (l'offset de sa
  * première ligne dans la section) ; `phoneticByDaf` remplace l'hébreu par sa
  * translittération quand le lecteur l'a demandée.
+ *
+ * `translationByDaf` (les lignes traduites de chaque daf, alignées sur ses
+ * lignes hébraïques) fait passer le daf d'un bloc à une suite de passages :
+ * chaque phrase de la guemara suivie de sa traduction, pour qu'on sache ce
+ * qui traduit quoi. Une traduction posée sous un daf entier ne se suivrait
+ * pas.
  */
 const props = withDefaults(
   defineProps<{
@@ -18,8 +25,17 @@ const props = withDefaults(
     variant?: "reader" | "daily";
     anchored?: boolean;
     phoneticByDaf?: Map<string, string> | null;
+    translationByDaf?: Map<string, string[]> | null;
+    /** Une ligne hébraïque en lettres latines, quand la phonétique est demandée. */
+    transliterate?: ((line: string) => string) | null;
   }>(),
-  { variant: "reader", anchored: false, phoneticByDaf: null },
+  {
+    variant: "reader",
+    anchored: false,
+    phoneticByDaf: null,
+    translationByDaf: null,
+    transliterate: null,
+  },
 );
 
 const { t } = useI18n();
@@ -47,8 +63,31 @@ function offsetOf(index: number): number {
     >
       {{ t("textReading.labels.daf", { daf: block.daf }) }}
     </p>
+    <!-- Avec la traduction : passage par passage, l'hébreu puis sa traduction. -->
+    <div v-if="translationByDaf" class="space-y-5">
+      <div v-for="(line, lineIndex) in block.lines" :key="lineIndex">
+        <p
+          v-if="!transliterate"
+          dir="rtl"
+          class="font-hebrew text-text-primary daf-he"
+          :class="variant === 'daily' ? 'daf-he-daily' : ''"
+        >
+          {{ line }}
+        </p>
+        <p v-else dir="ltr" class="leading-relaxed italic text-text-secondary daf-tl">
+          {{ transliterate(line) }}
+        </p>
+        <p
+          v-if="translationByDaf.get(block.daf)?.[lineIndex]"
+          dir="ltr"
+          class="mt-2 text-text-secondary daf-tr"
+        >
+          <TranslationText :text="translationByDaf.get(block.daf)![lineIndex]" />
+        </p>
+      </div>
+    </div>
     <p
-      v-if="!phoneticByDaf"
+      v-else-if="!phoneticByDaf"
       dir="rtl"
       class="font-hebrew text-text-primary daf-he"
       :class="variant === 'daily' ? 'daf-he-daily' : ''"
@@ -76,5 +115,10 @@ function offsetOf(index: number): number {
 .daf-tl {
   font-family: var(--font-reading);
   font-size: calc(1.125rem * var(--reading-scale, 1));
+}
+.daf-tr {
+  font-family: var(--font-reading);
+  font-size: calc(1.0625rem * var(--reading-scale, 1));
+  line-height: 1.65;
 }
 </style>

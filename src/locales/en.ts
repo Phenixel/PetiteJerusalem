@@ -1519,6 +1519,18 @@ const en: LocaleMessages = {
     navTop: "Top of page",
     // Reading settings, inside the menu: the second round button, to the
     // right of the cross, switches the panel from the contents to the settings.
+    // The translation under the Hebrew (see useTranslation and docs/traductions.md).
+    translation: {
+      toggle: "Translation",
+      settingHint: "Under each verse, its translation, when the text has one.",
+      langs: { fr: "French", en: "English" },
+      langAdj: { fr: "French", en: "English" },
+      fallback: "No {wanted} translation of this text yet: here is the {shown} translation.",
+      unavailable: "The translation could not be loaded. It needs a connection.",
+      credit: "Translation",
+      publicDomain: "public domain",
+      sefariaNote: "Text from Sefaria, layout adapted (footnotes removed).",
+    },
     settings: {
       open: "Reading settings",
       backToMenu: "Back to the contents",

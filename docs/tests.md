@@ -13,7 +13,7 @@ npm run test:unit          # vitest, mode interactif
 npx vitest run             # une seule passe, ce que fait `npm run verify`
 ```
 
-Les 173 fichiers vivent dans `src/__tests__/*.test.ts`. La configuration
+Les 229 fichiers vivent dans `src/__tests__/*.test.ts`. La configuration
 (`vitest.config.ts`) prend l'environnement `jsdom` par défaut ; les tests qui
 n'ont pas besoin du DOM (ceux qui lisent le dépôt ou lancent un script)
 commencent par `// @vitest-environment node`. Les dossiers `e2e/`, `android/`,
@@ -46,6 +46,7 @@ avec ce que chacun attend :
 | `pruneNativeBundle.test.ts` | Le bundle natif ne garde rien du prérendu SEO : pages HTML générées, sitemaps, `robots.txt`, `llms.txt` ; l'app démarre sur la coquille nue `app.html`. Des corpus, il ne garde que les textes listés dans `src/datas/bundledTexts.json` (Tehilim, Sidour). |
 | `bundledTexts.test.ts` | Chaque texte que l'app embarque existe dans `public/texts/`. Les Tehilim se lisent dans le binaire, sans rien demander au site ; le Sidour s'y ouvre aussi sans attendre le réseau, puis l'app télécharge en fond la version corrigée que le site servirait, vérifiée à l'empreinte (un portail captif ne la remplace pas). Que le Sidour soit embarqué tout entier, c'est `offlineDailyBooks.test.ts` qui le tient. |
 | `textsManifest.test.ts` | `public/texts/manifest.json` correspond aux fichiers de textes (`scripts/texts-manifest.mjs --check`) : un texte corrigé sans que le manifeste suive ne serait corrigé que pour qui n'a rien téléchargé. |
+| `translations.test.ts` | Chaque traduction (`public/texts/traductions/`) a la forme du fichier hébreu qu'elle traduit et donne à chaque section du lecteur autant de lignes que l'hébreu : sans quoi elle se décalerait d'un verset sans erreur. Chaque source a une licence libre de la liste (`docs/traductions.md`), un lien et rien d'une traduction automatique, et chaque corpus garde la couverture annoncée. |
 | `xcodeWidgets.test.ts` | La cible d'extension des widgets iOS que `scripts/lib/xcode-widgets.mjs` écrit dans le `project.pbxproj` est valide, à partir du vrai template Capacitor de `node_modules` ; personne n'a de macOS pour l'ouvrir dans Xcode. |
 | `xcodeWatch.test.ts` | Même chose pour la cible de l'app Apple Watch (`scripts/lib/xcode-watch.mjs`). |
 | `lastmod.test.ts` | Le `lastmod` du sitemap vient de git (`scripts/lib/lastmod.mjs`) : la date du dernier commit qui a touché le fichier de la page, vérifiée sur un dépôt jetable. |
