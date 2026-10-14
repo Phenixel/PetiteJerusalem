@@ -3,7 +3,7 @@ import { computed, defineAsyncComponent, nextTick, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import AppIcon from "../icons/AppIcon.vue";
-import { bindingInkOf, bindingOf } from "../../config/bindings";
+import { bindingOf } from "../../config/bindings";
 import { useMiniPlayerVisible } from "../../composables/useAudioPlayer";
 import { useBottomChromeHeight } from "../../composables/useBottomChrome";
 import { isNativeApp } from "../../composables/useNativeApp";
@@ -28,10 +28,10 @@ import { analyticsService } from "../../services/analyticsService";
  * range au bout ; quand ils ne tiennent plus, la rangée défile de côté.
  *
  * Toucher un livre ouvre ce texte, à l'endroit où on l'a laissé : passer de
- * l'un à l'autre ne demande qu'un geste. La pile (au début), la flèche (au
- * bout), un appui ailleurs sur la barre, un glissement vers le haut, ou le
- * livre qu'on lit ouvrent la table (ReadingTableSheet), où chaque texte
- * montre sa page.
+ * l'un à l'autre ne demande qu'un geste. La flèche (au bout), un appui
+ * ailleurs sur la barre, un glissement vers le haut, ou le livre qu'on lit
+ * ouvrent la table (ReadingTableSheet), où chaque texte montre sa page. Pas
+ * de pile ni de compte devant les livres : on les voit, on les compte.
  *
  * Mettre un texte de côté le fait s'envoler jusqu'ici : la tête de sa page se
  * réduit jusqu'à son livre (voir `flight` dans useReadingTable).
@@ -220,23 +220,11 @@ const ghostStyle = computed(() => {
       <div
         role="region"
         :aria-label="t('readingTable.title')"
-        class="pointer-events-auto mx-auto flex h-12 max-w-md cursor-pointer items-center gap-1.5 rounded-control bg-surface ps-1.5 pe-1 shadow-pop md:max-w-xl"
+        class="pointer-events-auto mx-auto flex h-12 max-w-md cursor-pointer items-center gap-1.5 rounded-control bg-surface ps-2 pe-1 shadow-pop md:max-w-xl"
         @click="openSheet"
         @touchstart.passive="onTouchStart"
         @touchmove.passive="onTouchMove"
       >
-        <!-- La pile et son compte : la table -->
-        <button
-          type="button"
-          class="relative flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"
-          :aria-label="openLabel"
-          :title="openLabel"
-          @click.stop="openSheet"
-        >
-          <AppIcon name="books" :size="18" />
-          <span class="table-count" aria-hidden="true">{{ texts.length }}</span>
-        </button>
-
         <!-- Les textes posés : un livre debout chacun, posé sur la barre -->
         <div ref="shelf" class="table-shelf min-w-0 flex-1">
           <div class="table-shelf-row">
@@ -252,7 +240,6 @@ const ghostStyle = computed(() => {
               }"
               :style="{
                 '--binding': bindingOf(text.corpus),
-                '--ink': bindingInkOf(text.corpus),
                 '--title-size': titleSize(text.title),
               }"
               :aria-current="text.key === openKey ? 'page' : undefined"
@@ -292,22 +279,6 @@ const ghostStyle = computed(() => {
 </template>
 
 <style scoped>
-.table-count {
-  position: absolute;
-  top: -0.2rem;
-  inset-inline-end: -0.2rem;
-  min-width: 1.05rem;
-  height: 1.05rem;
-  padding: 0 0.25rem;
-  border-radius: var(--radius-pill);
-  background-color: var(--color-brand);
-  color: var(--color-on-brand);
-  font-size: 0.65rem;
-  font-weight: 700;
-  line-height: 1.05rem;
-  text-align: center;
-}
-
 /* La rangée de livres défile de côté quand elle déborde, sans barre de
    défilement : le bord coupé dit qu'il y en a d'autres. Un conteneur qui
    défile coupe aussi ce qui dépasse en haut : il monte donc au-dessus de la
@@ -401,7 +372,7 @@ const ghostStyle = computed(() => {
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 3;
   overflow: hidden;
-  color: var(--ink);
+  color: #f3ead6;
   font-family: var(--font-serif);
   font-size: var(--title-size, 10px);
   font-weight: 600;

@@ -429,15 +429,15 @@ Un texte posé sur la table.
 | Propriété | Valeurs |
 | --- | --- |
 | `text_id` | l'identifiant du texte dans le catalogue |
-| `corpus` | son rayon (`tanakh`, `talmud`, `moadim`...) |
+| `corpus` | son rayon (`tanakh`, `talmud`, `moussar`...) ; jamais un texte du Sidour, qui ne se pose pas sur la table |
 | `texts_count` | le nombre de textes sur la table une fois celui-ci posé |
 | `from` | `header` (le bouton en tête du texte), `menu` (le menu de lecture), `table` (« Poser aussi », depuis le panneau) |
 | `already_on_table` | le texte y était déjà, il n'a fait que retenir sa page (absent pour `from: table`) |
 
 #### `reading_table_opened`
 
-Le panneau de la table ouvert depuis la barre (la pile, la flèche, le livre
-du texte lu, un glissement vers le haut). `texts_count` : les textes posés.
+Le panneau de la table ouvert depuis la barre (la flèche, le livre du texte
+lu, un glissement vers le haut). `texts_count` : les textes posés.
 
 #### `reading_table_text_opened`
 

@@ -1001,9 +1001,14 @@ watch(currentSection, (section) => {
 // exact où on l'a laissé : le verset en haut de l'écran, à sa hauteur.
 const { texts: tableTexts } = useReadingTable();
 
-/** Pas dans une chaîne de lecture : on y lit sa part, on ne l'emporte pas. */
+/**
+ * Pas dans une chaîne de lecture : on y lit sa part, on ne l'emporte pas. Ni
+ * sur un texte du Sidour (une tefila, une brakha, un texte de fête) : on y
+ * vient prier, d'un bout à l'autre, pas étudier en passant d'un livre à
+ * l'autre ; le Sidour a sa page à lui.
+ */
 const canSetAside = computed(
-  () => !!textEntry.value && !!content.value && sessionSlug.value === null,
+  () => !!textEntry.value && !!content.value && sessionSlug.value === null && !isLiturgyText.value,
 );
 
 /** Le haut du texte dans le document : la table y compte son défilement. */
@@ -1019,7 +1024,7 @@ function readingTop(): number {
  */
 function tableSnapshot(refresh = false): TableText | null {
   const entry = textEntry.value;
-  if (!entry || !content.value || sessionSlug.value !== null) return null;
+  if (!entry || !content.value || !canSetAside.value) return null;
   if (refresh && showSectionList.value) return null;
   if (contentTextId !== textId.value) return null;
   let line: number | null = null;

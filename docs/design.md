@@ -1502,30 +1502,32 @@ geste : plusieurs livres ouverts sur la table, chacun à sa page.
   et la tête de sa page (le livre à l'encre du thème, le nom en Playfair) se
   réduit jusqu'à son livre dans la barre du bas ; on retrouve la
   bibliothèque. Pas en chaîne de lecture : on y lit sa part, on ne l'emporte
-  pas.
+  pas. Ni sur un texte du Sidour (une tefila, une brakha, un texte de fête) :
+  on y vient prier d'un bout à l'autre, pas étudier en passant d'un livre à
+  l'autre, et le Sidour a sa page à lui.
 - **La barre de la table, des livres debout.** Elle se pose au bas de
   l'écran comme le lecteur audio, au-dessus de lui et de la barre de l'app,
   et suit d'une page à l'autre. Chaque texte posé y est un petit livre
   debout, dessiné comme les volumes de l'étagère de la bibliothèque : la
   couverture à la reliure de son rayon, la tranche des pages au bout, un
-  double filet crème, le titre en serif ; la liturgie prend le cuir bleu
-  nuit et le titre doré du sidour (`config/bindings.ts`). Posé sur la barre
+  double filet crème, le titre en serif (`config/bindings.ts`). Posé sur la barre
   comme sur une planche, un livre ne dépasse jamais en bas, et sa tête
   dépasse d'un quart en haut ; le texte qu'on lit est sorti du rang, plus
   haut que ses voisins. Le dernier posé se range au bout ; quand ils ne
   tiennent plus, la rangée défile de côté, le livre lu restant sous les
   yeux. Un titre ne se coupe jamais au milieu d'un mot : il rapetisse
-  plutôt, selon son plus long mot. Deux versions avant celle-ci : de petites
+  plutôt, selon son plus long mot. Rien devant les livres : une pile et son
+  compte les précédaient, mais on les voit, on les compte. Deux versions
+  avant celle-ci : de petites
   étiquettes à liseré de couleur, un dessin que le site n'a nulle part, puis
   un jeu d'onglets collés les uns aux autres, où rien ne séparait un texte
   du suivant. Les boutons flottants du bas (menu de lecture, retour en
   haut, toasts) montent d'autant, tête des livres comprise
   (`TABLE_BAR_REM`, `useBottomChromeHeight`).
 - **Un livre, un geste.** Toucher un livre ouvre ce texte, à l'endroit où on
-  l'a laissé : passer de l'un à l'autre ne demande qu'un appui. La pile au
-  début de la barre (et son compte), la flèche au bout, un appui ailleurs
-  sur la barre, un glissement vers le haut, ou le livre qu'on lit ouvrent la
-  table.
+  l'a laissé : passer de l'un à l'autre ne demande qu'un appui. La flèche
+  au bout de la barre, un appui ailleurs sur elle, un glissement vers le
+  haut, ou le livre qu'on lit ouvrent la table.
 - **La table ouverte montre les pages.** Un panneau monte du bas, à la
   hauteur de ce qu'il porte et jamais plus des trois quarts de l'écran : la
   page reste visible derrière un voile léger, la table se pose dessus, elle

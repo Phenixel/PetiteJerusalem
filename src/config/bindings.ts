@@ -13,21 +13,9 @@ const BINDINGS: Record<string, string> = {
   // Le moussar, cinquième volume de l'étude : un bronze plus doré que la
   // Michna, pour ne pas se confondre avec ses voisins de planche.
   moussar: "#86622f",
-  // La liturgie n'est pas sur l'étagère : elle prend le cuir bleu nuit du
-  // sidour (components/art/ArtSiddur.vue), et son titre doré.
-  sidour: "#1c3157",
-  moadim: "#1c3157",
-  brahot: "#1c3157",
 };
 
-const LITURGY = new Set(["sidour", "moadim", "brahot"]);
-
-/** La reliure d'un rayon ; celle de la Michna pour un livre inconnu. */
+/** La reliure d'un rayon ; celle de la Michna pour un autre livre. */
 export function bindingOf(corpus: string): string {
   return BINDINGS[corpus] ?? "#7d6a4c";
-}
-
-/** L'encre du titre sur la reliure : la dorure du sidour, le crème ailleurs. */
-export function bindingInkOf(corpus: string): string {
-  return LITURGY.has(corpus) ? "#dcb85e" : "#f3ead6";
 }

@@ -65,6 +65,12 @@ export interface TableReader {
 
 const STORAGE_KEY = "pj-reading-table";
 /**
+ * Les textes du Sidour (tefilot, brakhot, textes des fêtes) ne se posent pas
+ * sur la table : on y vient prier, pas étudier. Ceux qu'une version de test
+ * y aurait laissés en sont retirés à la lecture.
+ */
+const LITURGY_PATH = /^\/bibliotheque\/(?:moadim|slihot|brahot|sidour)\//;
+/**
  * Au-delà, le plus ancien posé quitte la table. Assez pour toute une séance
  * d'étude ; la borne ne sert qu'à garder le stockage raisonnable.
  */
@@ -91,15 +97,18 @@ function load(): TableText[] {
     if (!Array.isArray(parsed.texts)) return [];
     // Un champ ajouté plus tard manque aux textes posés avant lui : on le
     // complète plutôt que de jeter le texte.
-    return parsed.texts.filter(isTableText).map((t) => ({
-      ...t,
-      place: typeof t.place === "string" ? t.place : "",
-      book: typeof t.book === "string" ? t.book : "",
-      excerpt: typeof t.excerpt === "string" ? t.excerpt : "",
-      corpus: typeof t.corpus === "string" ? t.corpus : "",
-      offset: typeof t.offset === "number" ? t.offset : 0,
-      at: typeof t.at === "number" ? t.at : 0,
-    }));
+    return parsed.texts
+      .filter(isTableText)
+      .filter((t) => !LITURGY_PATH.test(t.path))
+      .map((t) => ({
+        ...t,
+        place: typeof t.place === "string" ? t.place : "",
+        book: typeof t.book === "string" ? t.book : "",
+        excerpt: typeof t.excerpt === "string" ? t.excerpt : "",
+        corpus: typeof t.corpus === "string" ? t.corpus : "",
+        offset: typeof t.offset === "number" ? t.offset : 0,
+        at: typeof t.at === "number" ? t.at : 0,
+      }));
   } catch {
     return [];
   }

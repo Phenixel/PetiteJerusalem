@@ -98,6 +98,22 @@ describe("la table d'étude", () => {
     expect(useReadingTable().texts.value.map((t) => t.key)).toEqual(["b"]);
   });
 
+  it("ne garde aucun texte du Sidour, qui ne se pose pas sur la table", () => {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        v: 1,
+        texts: [
+          text("a"),
+          text("cha", { path: "/bibliotheque/sidour/chaharit", corpus: "sidour" }),
+          text("sli", { path: "/bibliotheque/moadim/slihot", corpus: "moadim" }),
+        ],
+      }),
+    );
+    resetReadingTableForTests();
+    expect(useReadingTable().texts.value.map((t) => t.key)).toEqual(["a"]);
+  });
+
   it("se borne, le plus ancien posé quittant la table", () => {
     for (let i = 0; i <= MAX_TABLE_TEXTS; i++) placeOnTable(text(`t${i}`));
     const keys = useReadingTable().texts.value.map((t) => t.key);
