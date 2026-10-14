@@ -34,10 +34,18 @@ const keyOf = (entry: TextStudyJsonEntry): string => `${entry.type}|${latinPart(
 const talmudChapters = JSON.parse(readFileSync("public/texts/talmud-chapters.json", "utf8"));
 // Les 150 Tehilim partagent un fichier : on ne le lit qu'une fois.
 const files = new Map<string, unknown>();
-function readerSections(entry: TextStudyJsonEntry): number {
+function readerContent(entry: TextStudyJsonEntry) {
   const path = `public${resolveFilePath(entry)}`;
   if (!files.has(path)) files.set(path, JSON.parse(readFileSync(path, "utf8")));
-  return parseContent(entry, files.get(path), talmudChapters).sections.length;
+  return parseContent(entry, files.get(path), talmudChapters);
+}
+const readerSections = (entry: TextStudyJsonEntry): number => readerContent(entry).sections.length;
+
+/** Un chapitre du découpage du Talmud (public/texts/talmud-chapters.json). */
+interface TalmudRange {
+  chapter: number;
+  startIdx: number;
+  endIdx: number;
 }
 
 describe("les places qu'annonce le catalogue", () => {
@@ -56,6 +64,33 @@ describe("les places qu'annonce le catalogue", () => {
   it("n'ont pas d'exception qui ne désigne plus aucun texte", () => {
     const keys = new Set(shared.map(keyOf));
     expect(Object.keys(HORS_PARTAGE).filter((key) => !keys.has(key))).toEqual([]);
+  });
+
+  it("ont chacune quelque chose à lire", () => {
+    // Le chapitre 3 de Shekalim (Talmud) était vide : qui le réservait dans
+    // une chaîne n'avait rien à lire, et la page 4 portait les chapitres 3 et 4.
+    const vides = shared.flatMap((entry) =>
+      readerContent(entry)
+        .sections.filter((section) => section.he.length === 0)
+        .map((section) => `${keyOf(entry)} ${section.index}`),
+    );
+    expect(vides).toEqual([]);
+  });
+
+  it("se suivent dans le découpage du Talmud, sans trou ni recouvrement", () => {
+    const fautes: string[] = [];
+    for (const [slug, ranges] of Object.entries(talmudChapters as Record<string, TalmudRange[]>)) {
+      const dafim = JSON.parse(readFileSync(`public/texts/talmud/${slug}.json`, "utf8")).he.length;
+      ranges.forEach((range, i) => {
+        const debut = i === 0 ? 0 : ranges[i - 1].endIdx + 1;
+        if (range.chapter !== i + 1) fautes.push(`${slug} : chapitre ${range.chapter} au rang ${i + 1}`);
+        if (range.startIdx !== debut) fautes.push(`${slug} ${range.chapter} : commence à ${range.startIdx}, ${debut} attendu`);
+        if (range.endIdx < range.startIdx) fautes.push(`${slug} ${range.chapter} : vide`);
+      });
+      const fin = ranges.at(-1)?.endIdx;
+      if (fin !== dafim - 1) fautes.push(`${slug} : finit à ${fin}, le fichier à ${dafim - 1}`);
+    }
+    expect(fautes).toEqual([]);
   });
 
   it("comptent les cinq perakim de Middot, dans la Michna et dans le Talmud", () => {

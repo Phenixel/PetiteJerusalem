@@ -396,15 +396,15 @@
     {
       "chapter": 3,
       "startDaf": "3a",
-      "endDaf": "2b",
+      "endDaf": "3a",
       "startIdx": 2,
-      "endIdx": 1
+      "endIdx": 2
     },
     {
       "chapter": 4,
-      "startDaf": "3a",
+      "startDaf": "3b",
       "endDaf": "3b",
-      "startIdx": 2,
+      "startIdx": 3,
       "endIdx": 3
     },
     {

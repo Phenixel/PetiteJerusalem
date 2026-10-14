@@ -168,6 +168,12 @@ function getMishnaChapterSizes(slug) {
 }
 
 function proportionalDistribution(totalDafs, chapterSizes) {
+  // Un fichier qui a autant d'entrées que de chapitres est rangé par
+  // chapitre, pas par daf : Shekalim (Talmud de Jérusalem), Middot et Kinnim
+  // (la Michna seule). Chaque chapitre y est une entrée ; la répartition au
+  // prorata, elle, donnait deux fois le même début et un chapitre vide
+  // (Shekalim 3, la page 4 portant les chapitres 3 et 4).
+  if (totalDafs === chapterSizes.length) return chapterSizes.map((_, i) => i);
   const totalMishnayot = chapterSizes.reduce((a, b) => a + b, 0);
   const starts = [0];
   let acc = 0;
