@@ -76,9 +76,19 @@ tags `vX.Y.Z` et `web-vX.Y.Z`.
 
 1. **Droits IAM.** `bash scripts/setup-staging-iam.sh` : compte de service de
    la CI et ses rôles, rôles des agents de service (sans eux le build des
-   functions échoue), clé versée dans le secret GitHub
-   `FIREBASE_SERVICE_ACCOUNT_STAGING`. Puis
+   functions échoue), fédération d'identité de GitHub (l'organisation
+   interdit les clés de compte de service : la CI n'en a pas besoin). Puis
    `firebase deploy --only functions --project petite-jerusalem-staging`.
+
+   Fait le 14 octobre 2026. Le script s'arrête encore à son étape 3 (il
+   tente une clé, que l'organisation refuse) : la fédération d'identité a été
+   posée à la main, avec `gcloud iam workload-identity-pools create github`,
+   `providers create-oidc github` (condition
+   `assertion.repository == 'Phenixel/PetiteJerusalem'`) et le rôle
+   `roles/iam.workloadIdentityUser` du compte `github-staging@` pour ce dépôt.
+   Les functions HTTP et appelables ont aussi reçu `roles/run.invoker` pour
+   `allUsers` (un premier déploiement raté les avait créées sans) : à rejouer
+   si elles sont un jour recréées, comme `socialPreview` en production.
 2. **Connexion Google.** Console Firebase, `petite-jerusalem-staging`,
    Authentication, Sign-in method, Google, Activer. Le client OAuth que cela
    crée ne s'obtient pas par l'API.
