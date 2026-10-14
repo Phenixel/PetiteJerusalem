@@ -134,10 +134,20 @@ function welcome(id: string): void {
   // Après la position que le routeur rend au retour : la page glisse jusqu'à lui.
   timers.push(
     setTimeout(() => {
-      document.querySelector<HTMLElement>("[data-arriving]")?.scrollIntoView({
-        behavior: still ? "auto" : "smooth",
-        block: "center",
-        inline: "center",
+      const target = document.querySelector<HTMLElement>("[data-arriving]");
+      if (!target) return;
+      const behavior = still ? "auto" : "smooth";
+      // Un volume : l'étagère défile aussi de côté jusqu'à lui.
+      if (objective.kind !== "habit") {
+        target.scrollIntoView({ behavior, block: "center", inline: "center" });
+        return;
+      }
+      // Une habitude : la page seule. La ligne, encore décalée par son entrée,
+      // déborde de sa carte ; la centrer de côté faisait glisser la liste.
+      const box = target.getBoundingClientRect();
+      window.scrollTo({
+        top: window.scrollY + box.top + box.height / 2 - window.innerHeight / 2,
+        behavior,
       });
     }, SCROLL_AFTER_MS),
   );
