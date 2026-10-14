@@ -865,20 +865,23 @@ jusqu'à son contenu : on ne savait jamais sur quel onglet on était, ni ce qui
 (`NativeProfileHome.vue`), rangé comme les réglages d'un téléphone ; le site
 garde le sien, qui lui convient.
 
-- **Mon parcours, sur le rond et dans une ligne.** Connecté, la lumière de
-  la série est à cheval sur le bas du rond à l'initiale, côté fin, dans un
-  médaillon clair détaché d'un liseré, le compte des jours d'affilée posé
-  dessus (`ProfileLightBadge.vue`) ; la toucher ouvre « Mes lumières ». La
-  ligne « Mon parcours », en tête de Mes lectures et là pour tous, mène à
-  la page et dit la journée : « 1 sur 4 » au bout, et sa barre sous le nom
-  (`ProfileParcoursRow.vue`, l'option `progress` de `SettingsRow`).
+- **Mon parcours, sur le rond et dans une ligne.** Connecté, la pastille de
+  la série (la lumière et le compte des jours d'affilée, ensemble, sur un
+  fond clair) est à cheval sur le bas du rond à l'initiale, côté fin,
+  détachée d'un liseré de la couleur de la page (`ProfileStreakPill.vue`) ;
+  la toucher ouvre « Mes lumières ». La ligne « Mon parcours », en tête de
+  Mes lectures et là pour tous, mène à la page et dit la journée : « 1 sur
+  4 » au bout, et sa barre sous le nom (`ProfileParcoursRow.vue`, l'option
+  `progress` de `SettingsRow`).
 - **Le bandeau du profil du site** (`ProfileHeader.vue`) : à plat, la teinte
   du thème. En haut, le rond à l'initiale (dès qu'il y a la place ; sur un
-  téléphone, le nom prend la ligne), le nom et, écrits juste après lui, la
-  lumière de la série, sans fond, et ses jours d'affilée (`ProfileStreak.vue`),
-  l'adresse dessous. Sous un filet, sur toute la largeur : la journée
-  (« Aujourd'hui, 1 sur 4 », la lumière et le record), « Mon parcours », et
-  la barre (`ProfileParcours.vue`). Tout à l'encre du bandeau, en trois tons.
+  téléphone, le nom prend la ligne), le nom et, à côté de lui, la même
+  pastille de la série, l'adresse dessous. Sur la pastille claire, la
+  lumière se lit quelle que soit sa couleur (une ménorah dorée se perdait
+  dans l'orange), et le compte aussi. Sous un filet, sur toute la largeur :
+  la journée (« Aujourd'hui, 1 sur 4 », la lumière et le record), « Mon
+  parcours », et la barre (`ProfileParcours.vue`). Tout à l'encre du
+  bandeau, en trois tons.
 - **Une page de lignes, rangées par groupe.** Mes lectures (les raccourcis),
   Réglages (apparence, langue, notifications, préférences), Mon compte
   (sécurité, déconnexion), Aide, Informations. Chaque groupe est un panneau
@@ -1613,8 +1616,8 @@ premier jour au bout d'une année. Tenu par `parcoursLights.test.ts`.
   faire. Tenu par `e2e/firebase/parcours.spec.ts` (« la série qui franchit
   un palier allume une lumière, une fois »).
 - **La lumière s'ouvre d'un toucher**, sans bouton à côté : sur Mon parcours
-  et dans le profil (sur le rond dans l'app, dans le bandeau sur le site),
-  toucher la lumière ouvre « Mes lumières ». C'est l'objet lui-même, comme
+  et dans le profil (sa pastille, sur le rond dans l'app, à côté du nom sur
+  le site), toucher la lumière ouvre « Mes lumières ». C'est l'objet lui-même, comme
   la lampe de l'accueil qui mène à Mon parcours ; sur Mon parcours, son nom
   est écrit juste dessous (« La ménorah · prochaine lumière dans 1 jour »),
   et son nom accessible le dit partout (« Mes lumières, La ménorah »).

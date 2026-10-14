@@ -44,8 +44,8 @@ import HolidayOrnaments from "../../../components/holiday/HolidayOrnaments.vue";
 import SettingsGroup from "../../../components/settings/SettingsGroup.vue";
 import SettingsRow from "../../../components/settings/SettingsRow.vue";
 // Chargée à la demande : Mon parcours tire le calendrier hébraïque.
-const ProfileLightBadge = defineAsyncComponent(
-  () => import("../../../components/parcours/ProfileLightBadge.vue"),
+const ProfileStreakPill = defineAsyncComponent(
+  () => import("../../../components/parcours/ProfileStreakPill.vue"),
 );
 const ProfileParcoursRow = defineAsyncComponent(
   () => import("../../../components/parcours/ProfileParcoursRow.vue"),
@@ -198,8 +198,8 @@ onUnmounted(() => {
       <!-- Connecté : qui l'on est, d'un coup d'oeil. Le rond porte la couleur
            du thème, c'est la seule touche pleine de la page. -->
       <header v-if="currentUser" class="relative mb-8 flex flex-col items-center text-center">
-        <!-- Le rond, et à cheval sur son bas, côté fin, la lumière de la série
-             et son compte (la toucher ouvre Mes lumières). -->
+        <!-- Le rond, et à cheval sur son bas, côté fin, la pastille de la
+             lumière de la série et de son compte (la toucher ouvre Mes lumières). -->
         <span class="relative">
           <span
             class="font-display flex h-20 w-20 items-center justify-center rounded-full bg-brand text-4xl text-on-brand"
@@ -207,7 +207,7 @@ onUnmounted(() => {
           >
             {{ initial }}
           </span>
-          <ProfileLightBadge class="absolute -bottom-3 -end-7" />
+          <ProfileStreakPill overlap class="absolute -bottom-2 -end-10" />
         </span>
         <h1 class="mt-4 text-2xl font-bold tracking-tight text-text-primary">
           {{ displayName }}

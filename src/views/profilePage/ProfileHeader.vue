@@ -17,9 +17,9 @@ const { activeHolidayTheme } = useHolidayTheme();
 
 <template>
   <!-- Bandeau à plat : la teinte du thème, pleine, sans dégradé (docs/design.md).
-       En haut, qui l'on est : le rond à l'initiale, le nom et, juste après lui,
-       ce que la page y pose (#name : la lumière de la série et ses jours),
-       l'adresse dessous. En bas, sur toute la largeur, la suite (la journée et
+       En haut, qui l'on est : le rond à l'initiale, le nom et, à côté de lui,
+       ce que la page y pose (#name : la pastille de la lumière de la série et
+       de ses jours), l'adresse dessous. En bas, sur toute la largeur, la suite (la journée et
        sa barre). -->
   <div class="mb-12 bg-brand text-on-brand">
     <div

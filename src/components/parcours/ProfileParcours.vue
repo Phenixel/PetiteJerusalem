@@ -4,10 +4,11 @@
  * toute la largeur, sous un filet : la journée (« Aujourd'hui, 1 sur 4 »), la
  * lumière qu'on a et le record, « Mon parcours » qui y mène, et la barre.
  * Tout à l'encre du bandeau. Pas encore commencé : la ligne dit par où
- * commencer. La lumière et ses jours, eux, sont écrits après le nom
- * (ProfileStreak).
+ * commencer. La lumière et ses jours, eux, sont dans leur pastille, à côté
+ * du nom (ProfileStreakPill).
  *
- * Le profil de l'app a les siens : ProfileLightBadge, ProfileParcoursRow.
+ * Le profil de l'app a les siens : ProfileStreakPill, sur le rond, et
+ * ProfileParcoursRow.
  */
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
