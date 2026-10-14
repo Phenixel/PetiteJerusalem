@@ -1982,6 +1982,7 @@ const he: LocaleMessages = {
     paused: {
       title: "בהשהיה",
       since: "מאז {date}. דבר לא אבד, ודבר לא נדרש.",
+      sinceProgram: "מאז {date}. דבר לא אבד: עם החזרה, הסיום נדחה בהתאם.",
       resume: "להמשיך",
     },
     shelf: {
@@ -2111,6 +2112,10 @@ const he: LocaleMessages = {
     objective: {
       title: "יעד",
       missing: "היעד הזה כבר לא קיים.",
+      today: "היום",
+      todayDone: "נעשה היום",
+      read: "לקרוא",
+      readAgain: "לקרוא שוב",
     },
     program: {
       weeklyHeading: "{title} · שבועי, מאז {since}",

@@ -1,4 +1,4 @@
-import { addDays, dayRange, weekdayOf, weekOf } from "./days";
+import { addDays, dayRange, daysBetween, weekdayOf, weekOf } from "./days";
 import type { CatchUpOption, DayKey, DayLog, ProgramObjective, Rhythm, UnitKind } from "./model";
 
 /**
@@ -206,6 +206,27 @@ export function rebase(
   };
   delete next.extra;
   return next;
+}
+
+/**
+ * Un programme qui reprend après une pause : la fin recule d'autant de jours
+ * que la pause en a duré, et le pas repart d'aujourd'hui, de là où l'on en
+ * était. Le temps de la pause ne s'est pas compté en retard ; sans cela, on
+ * reprenait avec des semaines « de retard » qu'on avait choisi de ne pas lire.
+ */
+export function resumeProgram(
+  program: ProgramObjective,
+  today: DayKey,
+  days: Record<DayKey, DayLog>,
+  isRest: RestCalendar,
+  now: number = Date.now(),
+): ProgramObjective {
+  const from = program.pausedFrom;
+  const resumed = { ...program };
+  delete resumed.pausedFrom;
+  if (from === undefined || from >= today) return { ...resumed, updatedAt: now };
+  const end = addDays(program.end, daysBetween(from, today));
+  return rebase(resumed, { end }, today, days, isRest, now);
 }
 
 /** Le prochain dimanche à partir d'un jour (lui-même s'il en est un). */

@@ -251,7 +251,11 @@ const endLabel = computed(() =>
     </div>
 
     <!-- Le retard, dit sans alarme. -->
-    <div v-if="state && state.behind > 0" class="mt-[22px] flex items-center justify-between gap-3">
+    <!-- En pause, pas de retard : la reprise recule la fin d'autant (resumeProgram). -->
+    <div
+      v-if="state && state.behind > 0 && !program.pausedFrom"
+      class="mt-[22px] flex items-center justify-between gap-3"
+    >
       <p class="text-[15px] leading-snug">
         <span class="font-bold">{{
           t("parcours.program.behind", { units: views.unitsLabel(unit, state.behind) })

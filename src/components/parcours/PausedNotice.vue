@@ -19,9 +19,13 @@ const { t } = useI18n();
 const store = useParcours();
 const views = useParcoursViews();
 
-const since = computed(() =>
-  props.objective.pausedFrom ? views.dayLabel(props.objective.pausedFrom) : "",
-);
+/** Depuis quand ; pour un programme, que sa fin reculera d'autant à la reprise. */
+const message = computed(() => {
+  const date = props.objective.pausedFrom ? views.dayLabel(props.objective.pausedFrom) : "";
+  return props.objective.kind === "program"
+    ? t("parcours.paused.sinceProgram", { date })
+    : t("parcours.paused.since", { date });
+});
 
 function resume(): void {
   store.setPaused(props.objective.id, false);
@@ -40,7 +44,7 @@ function resume(): void {
     <span class="min-w-0 flex-1">
       <span class="block text-[15px] font-bold">{{ t("parcours.paused.title") }}</span>
       <span class="mt-0.5 block text-[13px] leading-snug text-text-secondary">
-        {{ t("parcours.paused.since", { date: since }) }}
+        {{ message }}
       </span>
     </span>
     <button type="button" class="btn btn-primary resume-btn" @click="resume">

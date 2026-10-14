@@ -2118,6 +2118,7 @@ const fr = {
     paused: {
       title: "En pause",
       since: "Depuis le {date}. Rien n'est perdu, et plus rien n'est demandé.",
+      sinceProgram: "Depuis le {date}. Rien n'est perdu : à la reprise, la fin recule d'autant.",
       resume: "Reprendre",
     },
     shelf: {
@@ -2248,6 +2249,10 @@ const fr = {
     objective: {
       title: "Objectif",
       missing: "Cet objectif n'existe plus.",
+      today: "Aujourd'hui",
+      todayDone: "Fait aujourd'hui",
+      read: "Lire",
+      readAgain: "Relire",
     },
     program: {
       weeklyHeading: "{title} · à la semaine, depuis {since}",

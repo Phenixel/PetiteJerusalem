@@ -14,6 +14,7 @@ import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 import CatchUpSheet from "../../components/parcours/CatchUpSheet.vue";
 import ObjectiveSettings from "../../components/parcours/ObjectiveSettings.vue";
+import ObjectiveTodayCard from "../../components/parcours/ObjectiveTodayCard.vue";
 import ParcoursBack from "../../components/parcours/ParcoursBack.vue";
 import PausedNotice from "../../components/parcours/PausedNotice.vue";
 import ProgramDaily from "../../components/parcours/ProgramDaily.vue";
@@ -89,9 +90,14 @@ const catchingUp = ref(route.query.rattraper === "1");
       <CatchUpSheet :open="catchingUp" :program="program" @close="catchingUp = false" />
     </template>
 
-    <!-- Une habitude, une lecture : ses réglages, directement. -->
+    <!-- Une lecture : ce qu'il y a à lire aujourd'hui, et « Lire », puis ses réglages. -->
     <template v-else>
       <h1 class="mt-6 text-center font-display text-3xl font-bold">{{ title }}</h1>
+      <ObjectiveTodayCard
+        v-if="objective.kind === 'cycle' || objective.kind === 'text'"
+        class="mt-6"
+        :objective="objective"
+      />
       <ObjectiveSettings class="mt-8" :objective="objective" />
     </template>
   </main>

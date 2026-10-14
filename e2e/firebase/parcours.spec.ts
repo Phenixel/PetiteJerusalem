@@ -138,6 +138,27 @@ test.describe("Mon parcours", () => {
       .toMatchObject({ corpus: "michna", anchor: "arvit" });
   });
 
+  test("sur l'accueil, un volume ouvre sa lecture ; le clic droit, sa page", async ({ page }) => {
+    const account = await createAccount("volume-accueil");
+    await signIn(page, account, "/parcours/nouveau");
+    await page.getByRole("button", { name: "Michna", exact: true }).click();
+    await page.getByRole("button", { name: "Zeraïm", exact: true }).click();
+    await page.getByRole("button", { name: "Suivant", exact: true }).click();
+    await page.getByRole("button", { name: "Poser le volume sur l'étagère" }).click();
+    await expect(page).toHaveURL(/\/parcours$/);
+
+    // Toucher le volume : la portion du jour, dans le lecteur, rattachée au programme.
+    await page.goto("/");
+    const volume = page.locator(".volume-shelf").getByRole("link", { name: /^Séder Zeraïm, / });
+    await volume.click();
+    await expect(page).toHaveURL(/\/bibliotheque\/michna\/.+\?objectif=/);
+
+    // Le clic droit : sa page, et ses réglages.
+    await page.goto("/");
+    await volume.click({ button: "right" });
+    await expect(page).toHaveURL(/\/parcours\/objectif\/[^/]+$/);
+  });
+
   test("la série qui franchit un palier allume une lumière, une fois", async ({ page }) => {
     // Six jours d'affilée jusqu'à hier ; le septième allume la lanterne.
     const account = await createAccount("lumiere");

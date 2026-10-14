@@ -2039,6 +2039,7 @@ const en: LocaleMessages = {
     paused: {
       title: "Paused",
       since: "Since {date}. Nothing is lost, and nothing is asked.",
+      sinceProgram: "Since {date}. Nothing is lost: when you resume, the end moves back as much.",
       resume: "Resume",
     },
     shelf: {
@@ -2168,6 +2169,10 @@ const en: LocaleMessages = {
     objective: {
       title: "Goal",
       missing: "This goal no longer exists.",
+      today: "Today",
+      todayDone: "Done today",
+      read: "Read",
+      readAgain: "Read again",
     },
     program: {
       weeklyHeading: "{title} · weekly, since {since}",

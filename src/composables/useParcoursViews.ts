@@ -242,6 +242,39 @@ export function useParcoursViews() {
     }
   }
 
+  /**
+   * Ce qu'un volume ouvre (l'étagère de l'accueil, « Lire » sur sa page) :
+   * la lecture d'aujourd'hui, à l'endroit où l'on en est. Pour un programme,
+   * la portion du jour si elle attend, sinon la suite de ce qu'on a lu (de
+   * quoi prendre de l'avance). Rien pour un objectif en pause ou fini : son
+   * volume ouvre alors sa page.
+   */
+  function readRoute(objective: Objective, day: DayKey): RouteLocationRaw | null {
+    if (objective.pausedFrom !== undefined && objective.pausedFrom <= day) return null;
+    if (objective.kind === "habit") return null;
+    if (objective.kind !== "program") {
+      // Un texte ou un cycle s'ouvre de même, qu'il ait une tâche aujourd'hui ou non.
+      const task = store.todayTasks.value.find((one) => one.objectiveId === objective.id) ?? {
+        id: objective.id,
+        objectiveId: objective.id,
+        kind: objective.kind,
+        moment: objective.moment,
+        weekly: false,
+      };
+      return route(task, objective, day);
+    }
+    const task = store.todayTasks.value.find((one) => one.objectiveId === objective.id);
+    if (task && taskProgress(store.data.value, task, day) !== "done") {
+      const target = route(task, objective, day);
+      if (target) return target;
+    }
+    const position = store.context.value.plans.get(objective.id)?.positionAt(day) ?? 0;
+    const place = placeOf(objective.texts, position);
+    if (!place) return null;
+    const target = readingRoute(place);
+    return { ...target, query: { ...target.query, objectif: objective.id } };
+  }
+
   /** La portion d'un programme, seule : « Chabbat 7:1 à 7:3 ». */
   function portionText(task: Task, objective: ProgramObjective): string {
     const slot = task.slot;
@@ -401,6 +434,7 @@ export function useParcoursViews() {
     objectiveArt,
     coverLabel,
     taskView,
+    readRoute,
     portionText,
     portionTime,
     dayLabel,

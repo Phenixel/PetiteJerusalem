@@ -11,8 +11,15 @@
  * (« 72 sur 150 »). Dans Mon parcours : l'avancement et le retard
  * (« 6 % · 9 en retard »).
  *
- * L'étagère défile quand elle se remplit, plutôt que de rapetisser ses
- * volumes : un titre de couverture doit se lire.
+ * L'étagère défile au doigt quand elle se remplit, plutôt que de rapetisser
+ * ses volumes : un titre de couverture doit se lire. À la souris, elle ne
+ * défile pas (tout le monde n'a pas de pavé tactile) : les volumes passent
+ * sur une planche de plus, comme dans une bibliothèque.
+ *
+ * Sur l'accueil, toucher un volume ouvre ce qu'il y a à lire aujourd'hui,
+ * à l'endroit où l'on en est (`readRoute`) ; un appui long, ou le clic
+ * droit, ouvre sa page et ses réglages. Dans Mon parcours, le volume ouvre
+ * sa page, qui commence par « Lire ».
  *
  * Un volume en pause pâlit et porte une pastille « En pause » : on le voit
  * sur l'étagère, pas seulement dans ses réglages.
@@ -22,6 +29,8 @@
  */
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
+import { useRouter } from "vue-router";
+import { useLongPress } from "../../composables/useLongPress";
 import { useParcours } from "../../composables/useParcours";
 import { useParcoursViews } from "../../composables/useParcoursViews";
 import { tehilimOfCycle } from "../../services/dailyCycles";
@@ -46,8 +55,38 @@ const SPECKS = [-68, -40, -14, 14, 40, 68];
 const emit = defineEmits<{ (e: "open", objective: Objective): void }>();
 
 const { t, locale } = useI18n();
+const router = useRouter();
 const store = useParcours();
 const views = useParcoursViews();
+
+const pagePath = (objective: Objective): string => `/parcours/objectif/${objective.id}`;
+
+/** Où mène un volume : sur l'accueil, la lecture du jour ; sinon (ou rien à lire), sa page. */
+const targetOf = (objective: Objective) =>
+  (props.home ? views.readRoute(objective, store.today.value) : null) ?? pagePath(objective);
+
+// Sur l'accueil, l'appui long (au doigt) ou le clic droit ouvre la page du
+// volume. Sur Android, l'appui long donne aussi un clic droit : une seule fois.
+let pressed: Objective | null = null;
+let openedAt = 0;
+function openPage(objective: Objective | null): void {
+  if (!objective || Date.now() - openedAt < 800) return;
+  openedAt = Date.now();
+  void router.push(pagePath(objective));
+}
+const press = useLongPress(
+  (target) => {
+    const id = target.closest<HTMLElement>("[data-objective]")?.dataset.objective;
+    pressed = id ? (store.data.value.objectives[id] ?? null) : null;
+    return pressed !== null;
+  },
+  () => openPage(pressed),
+);
+function onContextmenu(event: MouseEvent, objective: Objective): void {
+  if (!props.home) return;
+  event.preventDefault();
+  openPage(objective);
+}
 
 /** La tâche d'aujourd'hui d'un objectif, s'il en a une. */
 const taskOf = (objective: Objective): Task | undefined =>
@@ -131,16 +170,18 @@ const receiving = computed(() =>
 
 <template>
   <div class="volume-shelf" :class="{ 'is-receiving': receiving }">
-    <div class="shelf-row">
+    <div class="shelf-row" v-bind="home ? press : {}">
       <RouterLink
         v-for="volume in volumes"
         :key="volume.objective.id"
-        :to="`/parcours/objectif/${volume.objective.id}`"
+        :to="targetOf(volume.objective)"
         class="shelf-cell press-feedback"
         :class="{ 'is-arriving': volume.objective.id === arriving, 'is-paused': volume.paused }"
         :data-arriving="volume.objective.id === arriving ? '' : undefined"
+        :data-objective="volume.objective.id"
         :aria-label="volume.label"
         @click="emit('open', volume.objective)"
+        @contextmenu="onContextmenu($event, volume.objective)"
       >
         <span class="shelf-slot">
           <span v-if="volume.objective.id === arriving" class="shelf-specks" aria-hidden="true">
@@ -226,7 +267,7 @@ const receiving = computed(() =>
   height: 124px;
 }
 /* Le bas du dessin garde la place du signet : il pend devant la planche. */
-.shelf-slot :deep(svg) {
+.shelf-slot > :deep(svg) {
   margin-bottom: -16px;
 }
 /* En pause : le volume pâlit, et la pastille le dit sur sa couverture. */
@@ -280,6 +321,42 @@ const receiving = computed(() =>
 }
 :root.dark .shelf-plank {
   background: #7c654a;
+}
+/*
+ * À la souris, plusieurs planches : une grille de rangées de même hauteur,
+ * chacune avec sa planche peinte en travers sur toute la largeur.
+ */
+@media (hover: hover) and (pointer: fine) {
+  .volume-shelf {
+    --row: 186px;
+    --row-gap: 18px;
+    --plank: #b59a70;
+    overflow-x: visible;
+  }
+  :root.dark .volume-shelf {
+    --plank: #7c654a;
+  }
+  .shelf-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+    grid-auto-rows: var(--row);
+    justify-items: center;
+    gap: var(--row-gap) 14px;
+    width: auto;
+    background: repeating-linear-gradient(
+      to bottom,
+      transparent 0 124px,
+      var(--plank) 124px 133px,
+      rgb(58 46 30 / 0.12) 133px 137px,
+      transparent 137px calc(var(--row) + var(--row-gap))
+    );
+  }
+  .shelf-row::after {
+    display: none;
+  }
+  .shelf-plank {
+    visibility: hidden;
+  }
 }
 .shelf-caption {
   padding-top: 8px;

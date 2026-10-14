@@ -137,10 +137,10 @@ const parcoursBegun = ref(false);
 const { layout: homeLayout } = useHomeLayout();
 
 // Un appui long sur un bloc (au doigt) ouvre le réglage de l'accueil. Le
-// paquet a le sien (la fiche de la carte), et la barre de la journée s'y
-// touche : ils n'en sont pas.
+// paquet a le sien (la fiche de la carte), un volume de l'étagère aussi (sa
+// page), et la barre de la journée s'y touche : ils n'en sont pas.
 const editPress = useLongPress(
-  (target) => !target.closest(".dk, .day-bar, .deck-more, input"),
+  (target) => !target.closest(".dk, .day-bar, .deck-more, .shelf-cell, input"),
   () => void router.push("/accueil/modifier"),
 );
 

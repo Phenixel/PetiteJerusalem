@@ -33,7 +33,7 @@ import type {
   ParcoursData,
   ProgramObjective,
 } from "../services/parcours/model";
-import { applyCatchUp, type RestCalendar } from "../services/parcours/plan";
+import { applyCatchUp, resumeProgram, type RestCalendar } from "../services/parcours/plan";
 import {
   daySummaries,
   firstDay,
@@ -355,6 +355,13 @@ export function useParcours() {
       commit(removeObjective(data.value, id));
     },
     setPaused(id: string, paused: boolean) {
+      const objective = data.value.objectives[id];
+      // Un programme qui reprend : sa fin recule du temps de la pause (resumeProgram).
+      if (!paused && objective?.kind === "program") {
+        const resumed = resumeProgram(objective, todayKey.value, data.value.days, isRest.value);
+        commit(putObjective(data.value, resumed));
+        return;
+      }
       commit(setPaused(data.value, id, paused ? todayKey.value : null));
     },
     /** Rattrape le retard d'un programme ; `remember` en fait la règle des fois suivantes. */

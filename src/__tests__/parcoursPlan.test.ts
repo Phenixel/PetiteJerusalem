@@ -6,6 +6,7 @@ import {
   endForRate,
   portionMinutes,
   programPlan,
+  resumeProgram,
   studySlots,
 } from "../services/parcours/plan";
 
@@ -170,5 +171,31 @@ describe("les créneaux et le temps", () => {
     expect(portionMinutes("mishna", 3)).toBe(12);
     expect(portionMinutes("psalm", 2)).toBe(6);
     expect(portionMinutes("amud", 2)).toBe(30);
+  });
+});
+
+describe("la reprise après une pause", () => {
+  it("recule la fin du temps de la pause, sans compter ce temps en retard", () => {
+    // Deux jours lus, puis cinq jours de pause.
+    const paused = program({ pausedFrom: addDays(START, 2) });
+    const days = read({ [START]: 1, [addDays(START, 1)]: 1 });
+    const today = addDays(START, 7);
+    const resumed = resumeProgram(paused, today, days, chabbat, 5);
+    expect(resumed.pausedFrom).toBeUndefined();
+    expect(resumed.end).toBe(addDays(paused.end, 5));
+    expect(resumed.base).toEqual({ day: today, position: 2 });
+    expect(programPlan(resumed, days, chabbat).state(today)).toMatchObject({
+      from: 2,
+      to: 3,
+      behind: 0,
+    });
+  });
+
+  it("ne touche à rien d'autre qu'une pause posée aujourd'hui", () => {
+    const paused = program({ pausedFrom: START });
+    const resumed = resumeProgram(paused, START, {}, chabbat, 5);
+    expect(resumed.pausedFrom).toBeUndefined();
+    expect(resumed.end).toBe(paused.end);
+    expect(resumed.base).toEqual(paused.base);
   });
 });

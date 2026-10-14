@@ -1635,6 +1635,20 @@ attend ; le liseré doré fait le tour de la couverture à mesure qu'on avance,
 et une ligne sous le volume dit où l'on en est. Les habitudes ne sont
 pas des livres : elles ont leur liste, et leur semaine en cases plates.
 
+- **Un volume touché sur l'accueil ouvre le texte**, à l'endroit où l'on en
+  est (`readRoute`) : la portion du jour d'un programme si elle attend,
+  sinon la suite de ce qu'on a lu ; le texte du jour ; les Tehilim du jour ;
+  la paracha. Un appui long, ou le clic droit, ouvre sa page et ses
+  réglages ; un objectif en pause ou fini ouvre sa page. Il ouvrait sa page,
+  qui pour un texte du jour ou un cycle n'était faite que de réglages. Dans
+  Mon parcours, le volume ouvre toujours sa page ; celle d'un texte ou d'un
+  cycle commence par ce qu'il y a à lire aujourd'hui et « Lire »
+  (`ObjectiveTodayCard.vue`).
+- **À la souris, plusieurs planches.** Au doigt, l'étagère défile de côté ;
+  à la souris, elle ne défile pas (tout le monde n'a pas de pavé tactile) :
+  les volumes passent sur une planche de plus, chaque rangée avec sa
+  planche en travers, comme dans une bibliothèque.
+
 Le choix de ce qu'on lit se fait sur la même planche : les sedarim debout, un
 toucher en prend un, un autre le repose, on en prend autant qu'on veut. Un
 traité seul se trouve par son nom (la recherche) et sort de son séder comme
@@ -1770,7 +1784,11 @@ Un objectif en pause se voit sans ouvrir ses réglages : sur l'étagère, son
 volume pâlit et porte une pastille « En pause » (le dessin et le mot) ; en
 tête de sa page, une bande dit depuis quand, que rien n'est perdu, et
 « Reprendre » d'un toucher (`PausedNotice.vue`). La pause ne se lisait que
-dans un interrupteur, au bas des réglages.
+dans un interrupteur, au bas des réglages. Un programme en pause ne dit pas
+de retard ; à la reprise, sa fin recule d'autant de jours que la pause en a
+duré, et le pas repart de là où l'on en était (`resumeProgram`, tenu par
+`parcoursPlan.test.ts`). Sans quoi on reprenait avec des semaines « de
+retard » qu'on avait choisi de ne pas lire.
 
 - **Un programme au jour** (P2-Programme) : le volume en grand, son liseré
   doré à l'avancement et son signet quand une portion attend ; « Vous en
