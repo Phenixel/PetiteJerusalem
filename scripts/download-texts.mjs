@@ -17,6 +17,11 @@ const ROOT = resolve(__dirname, '..');
 const OUT = resolve(ROOT, 'public/texts');
 const GCS = 'https://storage.googleapis.com/sefaria-export/json';
 
+// Le script redonne les fichiers livrés à l'identique : un fichier qui change
+// après un passage, c'est que Sefaria a corrigé son texte depuis. Relire le
+// diff avant de le valider, puis relancer `node scripts/texts-manifest.mjs`,
+// sans quoi les appareils garderaient l'ancienne version.
+//
 // `--only=tanakh` (ou tehilim/mishna/talmud/rashi/moussar) pour ne régénérer
 // qu'un corpus. `tefila` n'est jamais du lot par défaut : ses fichiers sont
 // mis en forme à la main après téléchargement, il faut le demander nommément
@@ -59,7 +64,11 @@ function cleanTextArray(arr) {
   if (Array.isArray(arr)) {
     return arr.map(item => {
       if (typeof item === 'string') return stripHtml(item);
-      if (Array.isArray(item)) return item.map(s => stripHtml(s || ''));
+      // Un niveau de plus pour le Talmud de Jérusalem (chapitre, halakha,
+      // segment) : Shekalim, le seul traité qui en vienne.
+      if (Array.isArray(item)) {
+        return item.map(s => (Array.isArray(s) ? s.map(x => stripHtml(x || '')) : stripHtml(s || '')));
+      }
       return '';
     }).filter(item => item !== '' && !(Array.isArray(item) && item.every(s => !s)));
   }
@@ -88,44 +97,18 @@ async function withRetry(fn, label, retries = 3) {
 
 const textStudies = JSON.parse(readFileSync(`${ROOT}/src/datas/textStudies.json`, 'utf8')).textStudies;
 
-// ---------- Build GCS lookup from books.json ----------
-
-console.log('Loading books index from Sefaria-Export...');
-const booksIndex = await withRetry(
-  () => fetchJson('https://raw.githubusercontent.com/Sefaria/Sefaria-Export/master/books.json'),
-  'books.json'
-);
-
-// Build lookup: title -> { he_url, en_url }
-const lookup = {};
-for (const b of booksIndex.books) {
-  if (!b.json_url || !b.json_url.includes('merged.json')) continue;
-  const title = b.title;
-  if (!lookup[title]) lookup[title] = {};
-  if (b.language === 'Hebrew') lookup[title].he_url = b.json_url;
-  if (b.language === 'English') lookup[title].en_url = b.json_url;
-}
-
-
 // ---------- TEHILIM (150 Psalms) ----------
 
 if (shouldRun('tehilim')) {
 console.log('\n=== Tehilim (Psalms) ===');
 try {
-  const [heData, enData] = await Promise.all([
-    withRetry(() => fetchJson(`${GCS}/Tanakh/Torah/../Writings/Psalms/Hebrew/merged.json`.replace('Torah/../', '')), 'Psalms/He'),
-    withRetry(() => fetchJson(`${GCS}/Tanakh/Writings/Psalms/English/merged.json`), 'Psalms/En'),
-  ]);
+  const heData = await withRetry(() => fetchJson(`${GCS}/Tanakh/Writings/Psalms/Hebrew/merged.json`), 'Psalms/He');
 
   const heText = heData.text; // Array[150][verses]
-  const enText = enData.text;
   const tehilim = {};
   for (let i = 0; i < 150; i++) {
     const psalmNum = i + 1;
-    tehilim[psalmNum] = {
-      he: cleanTextArray(heText[i] || []),
-      en: cleanTextArray(enText[i] || []),
-    };
+    tehilim[psalmNum] = { he: cleanTextArray(heText[i] || []) };
   }
   writeFileSync(`${OUT}/tehilim.json`, JSON.stringify(tehilim), 'utf8');
   console.log('  ✓ tehilim.json');
@@ -156,14 +139,26 @@ const mishnaSederMap = {
   'Zevachim': 'Seder Kodashim', 'Menachot': 'Seder Kodashim', 'Chullin': 'Seder Kodashim',
   'Bekhorot': 'Seder Kodashim', 'Arakhin': 'Seder Kodashim', 'Temurah': 'Seder Kodashim',
   'Keritot': 'Seder Kodashim', 'Meilah': 'Seder Kodashim', 'Tamid': 'Seder Kodashim',
-  'Niddah': 'Seder Tahorot',
+  'Middot': 'Seder Kodashim', 'Kinnim': 'Seder Kodashim',
+  'Keilim': 'Seder Tahorot', 'Oholot': 'Seder Tahorot', 'Negaim': 'Seder Tahorot',
+  'Parah': 'Seder Tahorot', 'Toharot': 'Seder Tahorot', 'Mikvaot': 'Seder Tahorot',
+  'Niddah': 'Seder Tahorot', 'Makhshirin': 'Seder Tahorot', 'Zavim': 'Seder Tahorot',
+  'Tevul Yom': 'Seder Tahorot', 'Yadayim': 'Seder Tahorot', 'Oktzin': 'Seder Tahorot',
+};
+
+// Les traités que l'export nomme autrement que le catalogue : leur dossier.
+const mishnaGcsNames = {
+  'Avot': 'Pirkei Avot',
+  'Taanit': "Mishnah Ta'anit",
+  'Keilim': 'Mishnah Kelim',
+  'Toharot': 'Mishnah Tahorot',
 };
 
 // Talmud seder mapping
 const talmudSederMap = {
   'Berakhot': 'Seder Zeraim',
   'Shabbat': 'Seder Moed', 'Eruvin': 'Seder Moed', 'Pesachim': 'Seder Moed',
-  'Shekalim': 'Seder Moed', 'Yoma': 'Seder Moed', 'Sukkah': 'Seder Moed',
+  'Yoma': 'Seder Moed', 'Sukkah': 'Seder Moed',
   'Beitzah': 'Seder Moed', 'Rosh Hashanah': 'Seder Moed', 'Taanit': 'Seder Moed',
   'Megillah': 'Seder Moed', 'Moed Katan': 'Seder Moed', 'Chagigah': 'Seder Moed',
   'Yevamot': 'Seder Nashim', 'Ketubot': 'Seder Nashim', 'Nedarim': 'Seder Nashim',
@@ -178,10 +173,20 @@ const talmudSederMap = {
   'Niddah': 'Seder Tahorot',
 };
 
+// Les traités du Chass qui n'ont pas de guemara de Babylone se lisent comme
+// les éditions les impriment : le Talmud de Jérusalem pour Shekalim, la
+// Michna seule pour Middot et Kinnim.
+const talmudGcsPaths = {
+  'Shekalim': 'Talmud/Yerushalmi/Seder Moed/Jerusalem Talmud Shekalim',
+  'Middot': 'Mishnah/Seder Kodashim/Mishnah Middot',
+  'Kinnim': 'Mishnah/Seder Kodashim/Mishnah Kinnim',
+};
+
 // Extract tractate name from link for Mishna
 // link: "https://www.sefaria.org/Mishnah_Berakhot" → "Berakhot"
+// (Avot n'a pas le préfixe : "https://www.sefaria.org/Avot" → "Avot")
 function mishnaNameFromLink(link) {
-  return link.replace('https://www.sefaria.org/Mishnah_', '').replace(/_/g, ' ');
+  return link.replace('https://www.sefaria.org/', '').replace(/^Mishnah_/, '').replace(/_/g, ' ');
 }
 
 // Extract tractate name from link for Talmud
@@ -190,7 +195,10 @@ function talmudNameFromLink(link) {
   return link.replace('https://www.sefaria.org/', '').replace(/_/g, ' ');
 }
 
-async function downloadMishnaOrTalmud(type, entries, sederMap, getNameFn, gcsPrefix, gcsNameFn, outDir) {
+// `gcsPathFn` donne le dossier du traité dans l'export, ou rien s'il n'y est
+// pas rangé. Le fichier écrit ne porte que l'hébreu, { title, he } : la
+// traduction anglaise n'est plus lue par le lecteur, ni livrée.
+async function downloadMishnaOrTalmud(type, entries, getNameFn, gcsPathFn, outDir) {
   const seen = new Set();
   const tasks = [];
   for (const entry of entries) {
@@ -207,26 +215,20 @@ async function downloadMishnaOrTalmud(type, entries, sederMap, getNameFn, gcsPre
   for (let i = 0; i < tasks.length; i += BATCH) {
     const batch = tasks.slice(i, i + BATCH);
     await Promise.all(batch.map(async ({ tractate }) => {
-      const gcsName = gcsNameFn(tractate);
-      const seder = sederMap[tractate];
-      if (!seder) {
+      const gcsPath = gcsPathFn(tractate);
+      if (!gcsPath) {
         console.warn(`  ⚠ No seder for ${tractate}, skipping`);
         return;
       }
-      const heUrl = `${GCS}/${gcsPrefix}/${seder}/${gcsName}/Hebrew/merged.json`;
-      const enUrl = `${GCS}/${gcsPrefix}/${seder}/${gcsName}/English/merged.json`;
+      const heUrl = `${GCS}/${gcsPath}/Hebrew/merged.json`;
       const slug = tractate.toLowerCase().replace(/ /g, '-').replace(/'/g, '');
       const outPath = `${outDir}/${slug}.json`;
 
       try {
-        const [heData, enData] = await Promise.all([
-          withRetry(() => fetchJson(heUrl), `${tractate}/He`),
-          withRetry(() => fetchJson(enUrl), `${tractate}/En`).catch(() => ({ text: [] })),
-        ]);
+        const heData = await withRetry(() => fetchJson(heUrl), `${tractate}/He`);
         const result = {
           title: tractate,
           he: cleanTextArray(heData.text),
-          en: cleanTextArray(enData.text),
         };
         writeFileSync(outPath, JSON.stringify(result), 'utf8');
         console.log(`  ✓ ${tractate} → ${slug}.json`);
@@ -242,10 +244,9 @@ async function downloadMishnaOrTalmud(type, entries, sederMap, getNameFn, gcsPre
 if (shouldRun('mishna')) {
   const mishnaEntries = textStudies.filter(t => t.type === 'Mishna');
   await downloadMishnaOrTalmud(
-    'Mishna', mishnaEntries, mishnaSederMap,
+    'Mishna', mishnaEntries,
     mishnaNameFromLink,
-    'Mishnah',
-    t => `Mishnah ${t}`,
+    t => mishnaSederMap[t] && `Mishnah/${mishnaSederMap[t]}/${mishnaGcsNames[t] ?? `Mishnah ${t}`}`,
     `${OUT}/mishna`
   );
 }
@@ -254,10 +255,9 @@ if (shouldRun('mishna')) {
 if (shouldRun('talmud')) {
   const talmudEntries = textStudies.filter(t => t.type === 'Talmud Bavli');
   await downloadMishnaOrTalmud(
-    'Talmud Bavli', talmudEntries, talmudSederMap,
+    'Talmud Bavli', talmudEntries,
     talmudNameFromLink,
-    'Talmud/Bavli',
-    t => t,
+    t => talmudGcsPaths[t] ?? (talmudSederMap[t] && `Talmud/Bavli/${talmudSederMap[t]}/${t}`),
     `${OUT}/talmud`
   );
 }
