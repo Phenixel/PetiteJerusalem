@@ -400,7 +400,9 @@ await waitFor(baseUrl, "le serveur Vite");
  * `beforeShot` un dernier geste avant la capture.
  */
 const SCREENS = [
-  { name: "01-accueil", path: "/", readyText: "Ma lecture quotidienne" },
+  // L'accueil et la pile du jour : la lecture du compte (Tehilim 1 à 3, le
+  // premier coché) y entre d'elle-même, Tehilim 2 en tête.
+  { name: "01-accueil", path: "/", readyText: "Tehilim 2" },
   // Les horaires d'une ville nommée plutôt que ceux de « ma position » : la
   // capture dit Paris en toutes lettres, où que tourne le script.
   { name: "02-horaires", path: "/horaires/paris", readyText: "Paris" },
@@ -412,9 +414,9 @@ const SCREENS = [
   // URL canonique de Tehilim 1 (/lire/103 hors session redirige vers elle).
   { name: "04-lecture-tehilim", path: "/bibliotheque/tehilim/1", readyText: "Phonétique" },
   { name: "05-bibliotheque", path: "/bibliotheque", readyText: "Bibliothèque" },
-  // Ma journée : la lecture du jour du compte (Tehilim 1 à 3, le premier
-  // coché) y entre d'elle-même à la connexion.
-  { name: "06-lecture-quotidienne", path: "/parcours/journee", readyText: "Tehilim 1" },
+  // Mon parcours : la lampe, le mur, l'étagère (Ma journée a été retirée,
+  // la pile de l'accueil la montre).
+  { name: "06-lecture-quotidienne", path: "/parcours", readyText: "Mon mur" },
   { name: "07-chiour", path: `/chiourim/${CHIOUR_SLUG}`, readyText: "Description" },
   // Le calendrier des fêtes, l'onglet voisin des horaires : ses lignes
   // disent l'heure d'allumage de chaque fête.

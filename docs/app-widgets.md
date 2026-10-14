@@ -37,7 +37,7 @@ Trois grands :
   les textes du jour et les lectures du calendrier de Mon parcours, tels que
   l'appareil les tient, avec ou sans compte (`widgetService`, par
   `legacyProjection`). Toucher le widget ouvre `/bibliotheque/lecture-du-jour`,
-  qui mène à Ma journée : l'adresse est gravée dans les widgets déjà
+  qui mène à l'accueil et à sa pile du jour : l'adresse est gravée dans les widgets déjà
   installés.
 
 S'y ajoutent cinq **raccourcis**, au plus petit format que l'écran d'accueil

@@ -3,7 +3,9 @@
  * Mon parcours (P2-Parcours) : où j'en suis. La lampe et la série, le mur
  * des cinq dernières semaines (on y touche un jour pour le compléter, on
  * écarte deux doigts dessus pour le mur entier), les volumes de l'étagère,
- * les habitudes et leur semaine.
+ * les habitudes et leur semaine. Au bas, le rappel du soir ; et, quand un
+ * texte d'aujourd'hui manque sur l'appareil, de quoi le télécharger (tous
+ * deux vivaient sur Ma journée, retirée).
  *
  * On y arrive par la lampe de l'accueil, ou par le profil. Dans l'app, tout
  * marche sans compte, sur ce téléphone ; un compte le fait suivre d'un
@@ -13,8 +15,10 @@ import { HDate } from "@hebcal/core";
 import { computed, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
+import DailyReminderButton from "../../components/parcours/DailyReminderButton.vue";
 import DaySheet from "../../components/parcours/DaySheet.vue";
 import HabitWeek from "../../components/parcours/HabitWeek.vue";
+import OfflineTextsNotice from "../../components/parcours/OfflineTextsNotice.vue";
 import ParcoursBack from "../../components/parcours/ParcoursBack.vue";
 import ParcoursLamp from "../../components/parcours/ParcoursLamp.vue";
 import StoneWall from "../../components/parcours/StoneWall.vue";
@@ -26,12 +30,14 @@ import { useParcoursMeta } from "../../composables/useParcoursMeta";
 import { useParcoursViews } from "../../composables/useParcoursViews";
 import { usePinchOpen } from "../../composables/usePinchOpen";
 import { useWallLabels } from "../../composables/useWallLabels";
+import { useZmanimLocation } from "../../composables/useZmanimLocation";
 import { analyticsService } from "../../services/analyticsService";
 import { localDayFrom } from "../../services/dateService";
 import { addDays } from "../../services/parcours/days";
+import { taskEntries } from "../../services/parcours/entries";
 import type { DayKey } from "../../services/parcours/model";
 import { liveObjectives, wallWeeks } from "../../services/parcours/schedule";
-import { hebrewMonthName } from "../../services/zmanimService";
+import { hebrewMonthName, isIsraelPlace } from "../../services/zmanimService";
 
 useParcoursMeta("parcours.title", "/parcours");
 
@@ -40,6 +46,17 @@ const router = useRouter();
 const store = useParcours();
 const views = useParcoursViews();
 const labels = useWallLabels();
+const { place } = useZmanimLocation();
+
+/** Ce qu'il faut sur l'appareil pour lire les textes d'aujourd'hui sans connexion. */
+const entries = computed(() => {
+  const il = isIsraelPlace(place.value);
+  const today = store.today.value;
+  return store.todayTasks.value.flatMap((task) => {
+    const objective = store.data.value.objectives[task.objectiveId];
+    return objective ? taskEntries(task, objective, today, il) : [];
+  });
+});
 
 /** Cinq semaines : de quoi voir un mois, et le geste de la semaine qui finit. */
 const WEEKS = 5;
@@ -109,6 +126,8 @@ onMounted(() => {
             {{ t("parcours.streak.best", { n: store.streak.value.best }) }}
           </p>
         </section>
+
+        <OfflineTextsNotice class="mt-6" :entries="entries" />
 
         <!-- Le mur : une pierre par jour, une colonne par semaine, nommée par sa
              paracha. C'est le bout droit du grand mur : le passé est à gauche. -->
@@ -210,6 +229,8 @@ onMounted(() => {
             {{ t("parcours.links.new") }}
           </RouterLink>
         </div>
+
+        <DailyReminderButton class="mt-8" />
 
         <!-- Sans compte, dans l'app : tout marche, mais sur ce téléphone seulement. -->
         <p

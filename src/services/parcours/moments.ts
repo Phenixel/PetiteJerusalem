@@ -54,7 +54,7 @@ export function deckOrder(moment: MomentId, current: MomentId): number {
   return (delta >= 0 ? delta : TIMED_MOMENTS.length + delta) + anytime;
 }
 
-/** L'ordre de la journée, du matin au coucher (le portefeuille, Ma journée). */
+/** L'ordre de la journée, du matin au coucher (le portefeuille). */
 export function dayOrder(moment: MomentId): number {
   return moment === "anytime" ? TIMED_MOMENTS.length : TIMED_MOMENTS.indexOf(moment);
 }

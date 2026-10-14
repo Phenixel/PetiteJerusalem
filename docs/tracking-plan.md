@@ -290,7 +290,7 @@ flèche ; `accuracy` dit si c'est la précision affichée qui les y a poussés.
 | `text_opened` | `entry` | `sidour` | la lecture s'ouvre depuis la page du Sidour (`services/readingEntry.ts`). |
 | `tehilim_day_opened` | `source` | `library_today` | depuis « Aujourd'hui », en bas de la bibliothèque. |
 | `chnei_mikra_opened` | `source` | `library_today` | idem. |
-| `offline_download_started`, `offline_download_completed`, `offline_download_failed` | `scope` | `parcours` | les textes de la journée, téléchargés depuis Ma journée (app) ; l'ancienne page de la lecture du jour envoyait `daily_reading`. |
+| `offline_download_started`, `offline_download_completed`, `offline_download_failed` | `scope` | `parcours` | les textes de la journée, téléchargés depuis Mon parcours (app ; Ma journée, d'où ils partaient, a été retirée) ; l'ancienne page de la lecture du jour envoyait `daily_reading`. |
 | `offline_download_completed` | `scope` | `feast` | les textes de la fête, téléchargés d'eux-mêmes quand ils remontent en tête du Sidour (app) ; `tab` porte alors la fête (`tichri`, `souccot`, `hanouka`). |
 
 `library_corpus_opened` ne porte plus que les corpus d'étude (`tehilim`,
@@ -539,10 +539,11 @@ Après `account_deleted`, le suivi est remis à zéro comme à la déconnexion
 
 ### Lecture du jour : `daily_reading_viewed` (nouveau)
 
-À l'arrivée sur la lecture du jour. Depuis Mon parcours, elle part de Ma
-journée (`/parcours/journee`, où mène aussi `/bibliotheque/lecture-du-jour`),
-et compte toute la journée : textes, programmes, habitudes (voir « Mon
-parcours » plus bas).
+À l'arrivée sur la lecture du jour. Depuis Mon parcours, il partait de Ma
+journée ; Ma journée retirée, il part quand on déplie le portefeuille de
+l'accueil (la journée entière, sous les yeux), avec `parcours_wallet_opened`.
+Il compte toute la journée : textes, programmes, habitudes (voir « Mon
+parcours » plus bas). `/bibliotheque/lecture-du-jour` mène à l'accueil.
 
 | Propriété | Valeurs |
 | --- | --- |
@@ -704,7 +705,7 @@ Une tâche cochée ou décochée.
 | --- | --- |
 | `done` | vrai quand elle est cochée |
 | `kind` | `program`, `habit`, `cycle`, `text` |
-| `source` | d'où : `home_deck_swipe` (la carte du dessus de la pile de l'accueil, glissée), `home_wallet_swipe` (une carte du portefeuille, glissée à droite ou, pour la décocher, à gauche), `home_sheet` (la fiche d'une carte), `journee_row` (Ma journée), `objective_swipe` (la portion du jour ou de la semaine, glissée sur la page d'un programme), `reader` (au bas d'une lecture ouverte depuis le parcours, l'anneau tiré vers le haut), `parcours_wall`, `parcours_full_wall` (un jour du mur) |
+| `source` | d'où : `home_deck_swipe` (la carte du dessus de la pile de l'accueil, glissée), `home_wallet_swipe` (une carte du portefeuille, glissée à droite ou, pour la décocher, à gauche), `home_sheet` (la fiche d'une carte), `journee_row` (Ma journée, retirée : ne part plus), `objective_swipe` (la portion du jour ou de la semaine, glissée sur la page d'un programme), `reader` (au bas d'une lecture ouverte depuis le parcours, l'anneau tiré vers le haut), `parcours_wall`, `parcours_full_wall` (un jour du mur) |
 | `days_ago` | 0 aujourd'hui, 1 hier... : ce qui se coche après coup |
 
 Une tâche de la lecture du jour d'avant (un texte du jour, une lecture du
@@ -725,7 +726,8 @@ plus : Ma journée n'a plus que « fait » et « plus tard »).
 journée. `kind` (le genre de l'objectif, ou `occasion`, `catch_up` pour une
 carte en plus), et `source` : `swipe` (la carte du dessus glissée à gauche),
 `wallet_swipe` (une carte du portefeuille glissée à gauche), `sheet` (sa
-fiche), `journee_swipe` (une ligne de Ma journée glissée à gauche).
+fiche) ; `journee_swipe` (une ligne de Ma journée glissée à gauche) ne part
+plus, Ma journée a été retirée.
 
 ### `parcours_wallet_opened` (nouveau)
 
@@ -803,17 +805,18 @@ Un retard rattrapé.
 
 ### Ce que deviennent ceux de la lecture du jour
 
-La page `/bibliotheque/lecture-du-jour` a laissé place à Ma journée. Ce
+La page `/bibliotheque/lecture-du-jour` a laissé place à Ma journée, elle-même
+retirée depuis : la pile de l'accueil et Mon parcours la continuent. Ce
 qu'elle envoyait continue quand l'écran continue :
 
 - `daily_reading_viewed` et `daily_reading_marked_read` : voir plus haut ;
 - `reminder_settings_opened`, `reminder_enabled`, `reminder_enable_failed`,
   `reminder_disabled`, `reminder_disable_failed` : la cloche des rappels,
-  avec les mêmes propriétés, au bas de Ma journée ;
+  avec les mêmes propriétés, au bas de Mon parcours ;
 - `daily_reading_configured` (composer la liste), `daily_reading_tab_switched`
   (« Aujourd'hui » et « Cette semaine ») et `daily_reading_offline_prompt` (la
   modale d'un texte ajouté sans être téléchargé) n'ont plus d'écran, et ne
   partent plus. On compose désormais par `parcours_objective_created` et
   `parcours_objective_removed` (`kind` `text` ou `cycle`), et les textes
-  absents de l'appareil se proposent par le bandeau de Ma journée
+  absents de l'appareil se proposent par le bandeau de Mon parcours
   (`offline_download_started`, `scope` `parcours`).

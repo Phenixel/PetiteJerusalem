@@ -4,7 +4,7 @@ import {
   legacyCycleObjective,
   legacyTextObjective,
 } from "./legacyDailyReading";
-import { ALL_WEEK, WEEKDAYS_WITHOUT_CHABBAT, newObjectiveId } from "./model";
+import { ALL_WEEK, WEEKDAYS_WITHOUT_CHABBAT, choosesItsTime, newObjectiveId } from "./model";
 import type {
   CycleId,
   CycleObjective,
@@ -49,6 +49,16 @@ export const HABIT_DEFAULTS: Record<
   limoud: { moment: "anytime", days: ALL_WEEK },
   custom: { moment: "anytime", days: WEEKDAYS_WITHOUT_CHABBAT },
 };
+
+/**
+ * Le repère d'une habitude : celui qu'on a choisi sur la barre (un temps
+ * d'étude, une habitude à soi), ou celui de son modèle, d'office (le Chéma au
+ * coucher) ; null, toute la journée.
+ */
+export function habitAnchor(habit: HabitObjective): HabitAnchor | null {
+  if (choosesItsTime(habit.preset)) return habit.anchor ?? null;
+  return HABIT_DEFAULTS[habit.preset].anchor ?? null;
+}
 
 /** Le moment d'un programme qu'on vient de créer : le soir, comme la lecture d'un chiour. */
 export const PROGRAM_DEFAULT_MOMENT: MomentId = "evening";

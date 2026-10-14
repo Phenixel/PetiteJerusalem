@@ -569,9 +569,6 @@ onBeforeUnmount(() => {
         {{ t("parcours.hub.today", { done: count.done, total: count.total }) }}
       </span>
       <span class="flex gap-2.5">
-        <RouterLink to="/parcours/journee" class="deck-more">{{
-          t("parcours.hub.day")
-        }}</RouterLink>
         <button type="button" class="deck-more" @click="emit('fold', 'button')">
           {{ t("parcours.hub.fold") }}
           <svg class="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">

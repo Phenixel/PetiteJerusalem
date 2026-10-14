@@ -7,11 +7,12 @@ import { daySummary, type ScheduleContext, type Task } from "./schedule";
  * Le suivi d'audience de Mon parcours, là où plusieurs écrans font la même
  * chose (cocher, mettre de côté) : un seul endroit, les mêmes propriétés.
  *
- * La lecture du jour d'avant avait ses événements ; Ma journée la continue,
- * ils continuent donc de partir (docs/tracking-plan.md) :
- * `daily_reading_viewed` à l'arrivée sur la journée, `daily_reading_marked_read`
- * quand on coche ce qu'elle proposait (un texte du jour, une lecture du
- * calendrier). Les décomptes portent désormais sur toute la journée.
+ * La lecture du jour d'avant avait ses événements ; la pile de l'accueil la
+ * continue, ils continuent donc de partir (docs/tracking-plan.md) :
+ * `daily_reading_viewed` quand on déplie le portefeuille (la journée
+ * entière), `daily_reading_marked_read` quand on coche ce qu'elle proposait
+ * (un texte du jour, une lecture du calendrier). Les décomptes portent
+ * désormais sur toute la journée.
  */
 
 /** La journée, telle que la lecture du jour la comptait. */
@@ -61,7 +62,7 @@ export function trackTaskSkipped(task: Task, skipped: boolean, source: string): 
   analyticsService.capture("parcours_task_skipped", { skipped, kind: task.kind, source });
 }
 
-/** L'arrivée sur la journée d'aujourd'hui. */
+/** La journée d'aujourd'hui, vue entière (le portefeuille déplié). */
 export function trackDayViewed(data: ParcoursData, ctx: ScheduleContext, today: DayKey): void {
   const counts = dayCounts(data, today, ctx);
   analyticsService.capture("daily_reading_viewed", {

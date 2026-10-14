@@ -5,7 +5,8 @@
  * mikra celle du Tanakh, la lecture du jour finissait la bibliothèque : il
  * fallait savoir où les chercher. Les deux bandeaux restent sur leurs pages ;
  * ici, une ligne chacun, comme les lignes d'une liste, et Ma journée, où
- * en est le parcours aujourd'hui.
+ * en est le parcours aujourd'hui : elle mène à l'accueil, où la pile du
+ * jour la montre.
  *
  * Chargée à la demande (voir StudyPage) : elle tire le calendrier hébraïque.
  */
@@ -45,7 +46,7 @@ const day = computed(() => {
   const allDone = planned > 0 && done >= planned;
   return {
     begun,
-    to: begun ? "/parcours/journee" : "/parcours/nouveau",
+    to: begun ? "/" : "/parcours/nouveau",
     percent: planned > 0 ? Math.round((done / planned) * 100) : null,
     line: !begun
       ? t("parcours.empty.cta")

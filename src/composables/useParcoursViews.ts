@@ -35,6 +35,7 @@ import {
   unitOf,
   type PartRef,
 } from "../services/parcours/texts";
+import { habitAnchor } from "../services/parcours/create";
 import { tefilaPath } from "../services/sidourService";
 import { formatHebrewDate, isIsraelPlace } from "../services/zmanimService";
 import { dateTimeFormat } from "../services/intlCache";
@@ -284,9 +285,8 @@ export function useParcoursViews() {
   /** Le moment d'une carte : « Ce soir », « Cette semaine », ou le repère d'une habitude. */
   function kicker(task: Task, objective: Objective): string {
     if (task.weekly) return t("parcours.kicker.weekly");
-    if (objective.kind === "habit" && objective.anchor && !task.step) {
-      return t(`parcours.anchorKicker.${objective.anchor}`);
-    }
+    const anchor = objective.kind === "habit" && !task.step ? habitAnchor(objective) : null;
+    if (anchor) return t(`parcours.anchorKicker.${anchor}`);
     return t(`parcours.kicker.${task.moment}`);
   }
 

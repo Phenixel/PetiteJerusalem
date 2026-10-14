@@ -36,7 +36,6 @@ const StudyPage = () => import("../views/StudyPage.vue");
 const SidourPage = () => import("../views/SidourPage.vue");
 const HomeEditPage = () => import("../views/HomeEditPage.vue");
 const ParcoursPage = () => import("../views/Parcours/ParcoursPage.vue");
-const JourneePage = () => import("../views/Parcours/JourneePage.vue");
 const MurPage = () => import("../views/Parcours/MurPage.vue");
 const NouvelObjectifPage = () => import("../views/Parcours/NouvelObjectifPage.vue");
 const ObjectifPage = () => import("../views/Parcours/ObjectifPage.vue");
@@ -207,14 +206,21 @@ export default [
     meta: { offlineOk: true },
     component: StudyPage,
   },
-  // La lecture du jour vit désormais dans Mon parcours (Ma journée). Son
-  // adresse reste : les versions installées, les widgets, la montre et le
-  // rappel du soir y mènent encore. Route statique, prioritaire sur
-  // /bibliotheque/:corpus ci-dessous.
+  // La lecture du jour vit désormais dans Mon parcours, sur l'accueil (la
+  // pile du jour). Son adresse reste : les versions installées, les widgets,
+  // la montre et le rappel du soir y mènent encore. Route statique,
+  // prioritaire sur /bibliotheque/:corpus ci-dessous.
   {
     path: "/bibliotheque/lecture-du-jour",
     name: "daily-reading",
-    redirect: "/parcours/journee",
+    redirect: "/",
+  },
+  // Ma journée a été retirée : la pile et le portefeuille de l'accueil
+  // montrent la journée. L'adresse mène à l'accueil, pour les liens gardés.
+  {
+    path: "/parcours/journee",
+    name: "parcours-day",
+    redirect: "/",
   },
   // L'accueil à son goût : l'ordre des blocs, ceux qu'on masque. Un réglage
   // de l'appareil ; sur le site, comme le tableau de bord, pour un compte.
@@ -232,11 +238,6 @@ export default [
       path: "/parcours",
       name: "parcours",
       component: ParcoursPage,
-    },
-    {
-      path: "/parcours/journee",
-      name: "parcours-day",
-      component: JourneePage,
     },
     {
       path: "/parcours/mur",

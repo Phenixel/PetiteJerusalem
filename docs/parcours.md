@@ -16,12 +16,12 @@ sections qui suivent), le suivi d'audience dans `docs/tracking-plan.md`
 | --------------------------------- | ------------------------------------------------------------------------------------------------- |
 | `/`                               | l'accueil : la lampe, le paquet du jour, le portefeuille, l'étagère (`components/parcours/home/`) |
 | `/parcours`                       | la série, le mur des cinq dernières semaines, l'étagère, les habitudes                            |
-| `/parcours/journee`               | Ma journée, rangée par moments ; `?jour=` pour un jour passé                                      |
+| `/parcours/journee`               | l'adresse de Ma journée, retirée : elle mène à l'accueil                                          |
 | `/parcours/mur`                   | le mur entier                                                                                     |
 | `/parcours/nouveau`               | nouvel objectif, en étapes gardées dans l'adresse (`?etape=`)                                     |
 | `/parcours/objectif/:id`          | un programme (sa portion, son retard, sa semaine), ou les réglages d'un autre objectif            |
 | `/parcours/objectif/:id/reglages` | les réglages d'un programme                                                                       |
-| `/bibliotheque/lecture-du-jour`   | l'adresse d'avant : elle mène à Ma journée                                                        |
+| `/bibliotheque/lecture-du-jour`   | l'adresse d'avant : elle mène à l'accueil                                                         |
 
 Dans l'app, tout s'ouvre **sans compte** et hors ligne. Le site demande un
 compte : il n'a pas d'appareil où garder le suivi.

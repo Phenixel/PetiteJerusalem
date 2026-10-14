@@ -697,7 +697,7 @@ onMounted(() => {
       </div>
 
       <!-- Ce qui se lit aujourd'hui : les psaumes du jour, le chnei mikra, et
-           Ma journée. -->
+           Ma journée (elle mène à la pile de l'accueil). -->
       <StudyToday class="max-w-3xl mx-auto mt-12 animate-[fadeIn_0.5s_ease]" />
 
       <!-- App native : tout télécharger, en bas de page, une ligne parmi les

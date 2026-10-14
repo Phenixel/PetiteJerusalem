@@ -1,16 +1,18 @@
 <script setup lang="ts">
 /**
  * Une habitude (P2-Habitude) : son nom (celui du modèle s'il reste vide),
- * ses jours en cases plates, et son moment, qu'on pose sur le fil du jour
- * en glissant le rond : au réveil, avec Cha'harit, à midi, avec Min'ha, avec
- * Arvit, au coucher ; ou toute la journée. Les trois tefilot ont chacune le
- * leur.
+ * ses jours en cases plates, et son moment. Un temps d'étude et une habitude
+ * à soi le posent sur le fil du jour en glissant le rond : au réveil, avec
+ * Cha'harit, à midi, avec Min'ha, avec Arvit, au coucher ; ou toute la
+ * journée. Les autres ont le leur, qu'on ne redemande pas (choosesItsTime) :
+ * il se dit, sans barre ; les trois tefilot ont chacune le sien.
  */
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import {
   ANCHOR_MOMENT,
   HABIT_ANCHORS,
+  choosesItsTime,
   isOwnHabit,
   type HabitAnchor,
   type HabitPreset,
@@ -189,7 +191,7 @@ const momentName = computed(() =>
     </div>
     <p class="mt-2 text-[13px] text-text-secondary">{{ daysNote }}</p>
 
-    <template v-if="preset !== 'tefilot'">
+    <template v-if="choosesItsTime(preset)">
       <!-- Le moment se pose sur le fil du jour, du doigt. -->
       <p class="create-lab">{{ t("parcours.create.when") }}</p>
       <div
@@ -233,6 +235,12 @@ const momentName = computed(() =>
           {{ t("parcours.create.allDay") }}
         </button>
       </p>
+    </template>
+    <template v-else-if="preset !== 'tefilot'">
+      <!-- Son moment d'office : il se dit, on ne le demande pas. -->
+      <p class="create-lab">{{ t("parcours.create.when") }}</p>
+      <p class="text-base font-bold">{{ momentName }}</p>
+      <p class="mt-0.5 text-[13px] text-text-secondary">{{ opensNote }}</p>
     </template>
     <p v-else class="mt-4 text-[13px] text-text-secondary">
       {{ t("parcours.create.tefilotHint") }}

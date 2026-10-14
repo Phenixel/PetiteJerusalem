@@ -180,6 +180,15 @@ export const isOwnHabit = (preset: HabitPreset): boolean =>
   preset === "tsedaka" || preset === "chmirat-halachon" || preset === "custom";
 
 /**
+ * Une habitude dont on choisit le moment sur la barre des repères : un temps
+ * d'étude, une habitude à soi. Les autres ont le leur, d'office, qu'on ne
+ * redemande pas : les tefilot chaque office à son heure, le Chéma au
+ * coucher, la tsédaka et garder sa langue toute la journée.
+ */
+export const choosesItsTime = (preset: HabitPreset): boolean =>
+  preset === "limoud" || preset === "custom";
+
+/**
  * Le repère d'une habitude sur le fil du jour (P2-Habitude) : au réveil,
  * après Cha'harit, à midi, avant Min'ha, après Arvit, au coucher. Il dit
  * quand, plus finement que le moment, qui s'en déduit.

@@ -49,10 +49,12 @@ test.describe("Mon parcours", () => {
       )
       .toContain(103);
 
-    // Ma journée : on le coche.
-    await page.goto("/parcours/journee");
-    await page.getByRole("button", { name: "Cocher Tehilim 1" }).click();
-    await expect(page.getByRole("button", { name: "Décocher Tehilim 1" })).toBeVisible();
+    // L'accueil : sa carte en tête de la pile ; sa fiche (clic droit) la coche.
+    await page.goto("/");
+    await page.getByLabel(/^Tehilim\s1,.*appui long pour la fiche/).click({ button: "right" });
+    const sheet = page.getByRole("dialog", { name: "Tehilim 1" });
+    await sheet.getByRole("button", { name: "C'est fait", exact: true }).click();
+    await expect(sheet).toBeHidden();
     await expect
       .poll(async () => {
         const doc = (await readDoc("parcours", account.uid)) as ParcoursDoc | null;
@@ -98,10 +100,13 @@ test.describe("Mon parcours", () => {
     await expect(tefilot).toHaveCount(0);
   });
 
-  test("l'ancienne adresse de la lecture du jour mène à Ma journée", async ({ page }) => {
+  test("les anciennes adresses de la journée mènent à l'accueil", async ({ page }) => {
+    // Les widgets, le rappel du soir et les versions installées y mènent encore.
     const account = await createAccount("ancienne");
     await signIn(page, account, "/bibliotheque/lecture-du-jour");
-    await expect(page).toHaveURL(/\/parcours\/journee$/);
+    await expect(page).toHaveURL(/\/$/);
+    await page.goto("/parcours/journee");
+    await expect(page).toHaveURL(/\/$/);
   });
 });
 

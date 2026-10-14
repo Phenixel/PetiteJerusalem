@@ -4,7 +4,6 @@ import {
   computeZmanim,
   DEFAULT_PLACE,
   formatHebrewDate,
-  formatHebrewDayMonth,
   formatHebrewRangeStart,
   formatZmanDay,
   formatZmanTime,
@@ -291,14 +290,6 @@ describe("date hébraïque", () => {
     expect(formatHebrewDate(hd, "fr")).toBe("21 Av 5786");
     expect(formatHebrewDate(hd, "en")).toBe("21st of Av, 5786");
     expect(formatHebrewDate(hd, "he")).toContain("אָב");
-  });
-
-  it("se dit sans l'année à côté du jour de la semaine (Ma journée)", () => {
-    const hd = hebrewDateFor(DEFAULT_PLACE, PARIS_DAY, PARIS_DAY);
-    expect(formatHebrewDayMonth(hd, "fr")).toBe("21 Av");
-    expect(formatHebrewDayMonth(new HDate(1, "Cheshvan", 5787), "fr")).toBe("1er 'Hechvan");
-    expect(formatHebrewDayMonth(hd, "en")).toBe("21st of Av");
-    expect(formatHebrewDayMonth(hd, "he")).not.toContain("תשפ");
   });
 
   it("ne redit pas le mois ni l'année au début d'une plage", () => {

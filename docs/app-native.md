@@ -189,7 +189,8 @@ Vérification : télécharger un livre, activer le mode avion, l'ouvrir.
 
 Les pages **/parcours** sont `offlineOk` dans l'app native, et se servent
 sans compte ; l'ancienne adresse de la lecture du jour,
-**/bibliotheque/lecture-du-jour**, mène à Ma journée. Le détail est dans
+**/bibliotheque/lecture-du-jour**, mène à l'accueil et à sa pile du jour
+(Ma journée a été retirée). Le détail est dans
 `docs/parcours.md`.
 
 - **Le suivi** vit sur l'appareil (`localStorage`, clé `pj-parcours`, doublé

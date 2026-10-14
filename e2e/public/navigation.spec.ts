@@ -11,7 +11,7 @@ test.describe("navigation", () => {
   test("les pages protégées renvoient à la connexion en gardant la destination", async ({
     page,
   }) => {
-    for (const path of ["/profile", "/parcours/journee", "/session-management/x"]) {
+    for (const path of ["/profile", "/parcours", "/session-management/x"]) {
       await gotoApp(page, path);
       // La destination peut être encodée ou non selon le chemin qui l'a posée.
       await expect(page).toHaveURL(

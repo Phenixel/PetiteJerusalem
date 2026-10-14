@@ -19,6 +19,7 @@ import { useTodayDeck, type DeckCard } from "../../../composables/useTodayDeck";
 import { analyticsService } from "../../../services/analyticsService";
 import { haptic, type HapticKind } from "../../../services/haptics";
 import { liveObjectives } from "../../../services/parcours/schedule";
+import { trackDayViewed } from "../../../services/parcours/tracking";
 import TaskDeck from "./TaskDeck.vue";
 import TaskSheet from "./TaskSheet.vue";
 
@@ -108,6 +109,9 @@ const kindOf = (card: DeckCard): string =>
 function unfold(source: string): void {
   open.value = true;
   analyticsService.capture("parcours_wallet_opened", { source });
+  // La journée entière, sous les yeux : ce que disait l'arrivée sur la
+  // lecture du jour, puis sur Ma journée (retirée).
+  trackDayViewed(store.data.value, store.context.value, store.today.value);
 }
 
 /**

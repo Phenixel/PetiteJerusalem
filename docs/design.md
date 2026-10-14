@@ -684,7 +684,7 @@ Le téléphone répond au doigt quand quelque chose se fait (`services/haptics.t
 avec quatre retours, toujours les mêmes :
 
 - **fait** (deux battements, le « succès » du système) : une tâche faite,
-  par la pile, le portefeuille, la fiche, Ma journée, la portion d'un
+  par la pile, le portefeuille, la fiche, la portion d'un
   programme, l'anneau du lecteur ou la feuille d'un jour ; une section
   d'une chaîne de lecture marquée lue ; un objectif ajouté ;
 - **défait** (un battement léger) : une tâche décochée ou remise à plus
@@ -1530,8 +1530,8 @@ haute, comme une assise de fondation.
   fait ; à moitié posée, une partie ; blanche, Chabbat, une fête ou rien de
   prévu ; un creux, rien de coché ; la place en pointillé, à venir. Ce qui se
   prévoit ou se choisit reste **à plat** : la semaine d'un programme est un
-  histogramme (`WeekBars.vue`), la semaine de Ma journée et celle d'une
-  habitude des cases plates, comme le choix des jours. Au milieu d'une page,
+  histogramme (`WeekBars.vue`), la semaine d'une habitude des cases
+  plates, comme le choix des jours. Au milieu d'une page,
   des pierres disaient « bâti » pour ce qui n'était qu'un plan.
 - **Les pierres sont hors thème**, comme les reliures : la teinte de la pierre
   de Jérusalem, en aplats et un grain minéral (une texture, pas un dégradé),
@@ -1549,7 +1549,7 @@ flamme monte quand la journée est pleine, et baisse un jour manqué sans
 jamais s'éteindre. Chabbat et les fêtes ne la coupent pas : rien n'y est
 demandé. « Pas aujourd'hui » retire une tâche du jour sans la compter
 manquée. Aujourd'hui ne coupe rien tant qu'il n'est pas fini. Un jour passé se
-coche après coup, depuis Ma journée ou le mur. Un retard se dit
+coche après coup, depuis le mur (la feuille de ce jour). Un retard se dit
 (« 6 michnayot de retard ») avec « Rien ne presse », et se rattrape au choix
 (la semaine, d'ici la fin, d'un coup, en repoussant la fin, ou « Déjà
 fait ») ; la portion du jour ne grossit jamais d'elle-même.
@@ -1628,8 +1628,7 @@ vient, l'heure en grand), l'étagère sans titre.
   dessus garde sa couleur pleine, celles à faire attendent sur fond clair,
   celles qui sont faites s'éteignent (fond doux, texte gris, dessin pâli).
   Glisser à droite : faite, même après coup ; à gauche : plus tard, ou pas
-  faite si elle l'était. En tête, « Aujourd'hui, 3 sur 8 », « Ma journée »
-  et « Replier ». Pas de case à cocher : le geste suffit, et la fiche le
+  faite si elle l'était. En tête, « Aujourd'hui, 3 sur 8 » et « Replier ». Pas de case à cocher : le geste suffit, et la fiche le
   redit en boutons. Chaque carte garde son élément d'un état à l'autre :
   se déplier les fait glisser de la pile à leur place, celles déjà faites
   sortant de sous la pile.
@@ -1652,8 +1651,8 @@ vient, l'heure en grand), l'étagère sans titre.
   et « Pas encore l'heure », à partir de quand, le sidour pâli. Il ne se
   glisse pas (tiré de côté, il revient sans rien marquer) ; un toucher
   ouvre sa fiche, d'où l'on peut le cocher quand même. À son heure, il
-  reprend sa couleur et sa place. Une habitude attend de même le repère
-  qu'on lui a donné sur la barre : « à midi » dès 'hatsot, « avec Min'ha »
+  reprend sa couleur et sa place. Une habitude attend de même son repère
+  (choisi sur la barre pour l'étude, celui du modèle sinon) : « à midi » dès 'hatsot, « avec Min'ha »
   dès Min'ha guedola, « avec Arvit » et « au coucher » dès la sortie des
   étoiles (le Chema du coucher ne se propose pas le matin) ; « au réveil »,
   « avec Cha'harit » et « toute la journée » n'attendent pas. Une habitude
@@ -1678,29 +1677,24 @@ vient, l'heure en grand), l'étagère sans titre.
   ce qui est fait (« fait ce soir »), ou la position (« 72 sur 150 ») ; dans
   Mon parcours, l'avancement et le retard (« 6 % · 9 en retard »).
 
-### Ma journée, un fil
+### Ma journée, retirée
 
-Ma journée (`/parcours/journee`) suit la maquette P2-Journee : le jour en
-titre (« Aujourd'hui », « Lundi 12 »), sa date hébraïque et son compte, la
-semaine en cases plates, puis le fil. Chaque engagement est un nœud sur une
-ligne verticale, rangé par moment (Matin, Après-midi, Soir, Coucher, Toute
-la journée) ; « Maintenant » se pose après le moment présent, un rond plein
-à l'encre. Une ligne dit ce qu'elle demande (« jusqu'à 11:46 », « Chabbat
-7:1 à 7:3 », « avant de dormir ») et de quoi l'ouvrir (« Sidour »,
-« Lire ») tant qu'elle n'est pas faite.
+Ma journée (`/parcours/journee`, la maquette P2-Journee) a été retirée, pour
+simplifier : la pile et le portefeuille de l'accueil montrent déjà la
+journée, dans l'ordre où elle se fait. Ce qu'elle seule offrait a trouvé
+une autre place :
 
-- Glissée à droite, la ligne est faite ; à gauche, elle passe à plus tard
-  (aujourd'hui seulement, comme la carte de l'accueil), ou n'est plus faite
-  si elle l'était. Ce que le geste fera se découvre dessous, en bande : la
-  teinte pleine pour « C'est fait », le gris pour l'autre côté. Le nœud se
-  touche aussi : il coche et décoche, pour qui ne glisse pas.
-- La tête de page se glisse : à droite la veille, à gauche le jour suivant.
-  Un jour passé le dit : « Oublié de cocher ? Glissez la ligne, c'est compté
-  pour ce jour-là. »
-- Le retour en tête des pages de Mon parcours est un chevron et un nom, à
-  l'encre (`ParcoursBack.vue`).
-- Le fond de la page a son jeton, `--color-page`, qui fonce en sombre : une
-  ligne glissée le prend pour passer devant ce qu'elle découvre.
+- un jour passé se complète depuis le mur de Mon parcours, dans la feuille
+  de ce jour ;
+- le rappel du soir et l'avis des textes à télécharger pour le hors-ligne
+  sont au bas et en tête de Mon parcours ;
+- ses adresses (`/parcours/journee`, et `/bibliotheque/lecture-du-jour` que
+  gardent les widgets, la montre et le rappel du soir) mènent à l'accueil ;
+- « Ma journée », dans l'onglet de l'étude, mène aussi à l'accueil.
+
+Restent d'elle deux décisions : le retour en tête des pages de Mon parcours
+est un chevron et un nom, à l'encre (`ParcoursBack.vue`) ; le fond de la
+page a son jeton, `--color-page`, qui fonce en sombre.
 
 ### Un volume ouvert, ses réglages, le lecteur
 
@@ -1769,12 +1763,15 @@ pas (« 2 sur 3 »), puis la question en grand, alignée au début.
   semaine, les jours où la carte vient sur l'accueil (le dimanche, le
   mercredi et le vendredi d'office) ; le moment en pastilles.
 - **Une habitude** : son nom, ses jours en cases plates (Chabbat en pause
-  pour les tefilin et la tsédaka), et son moment, qu'on pose en glissant
-  le rond sur le fil du jour : au réveil, avec Cha'harit, à midi, avec
-  Min'ha, avec Arvit, au coucher, ou toute la journée. Le repère se garde
-  (`anchor`), dit la carte (« Ce soir, après Arvit ») et d'où elle s'ouvre :
-  une ligne sous le fil le dit (« La carte vient à la nuit tombée ; avant,
-  elle attend en retrait »). Les réglages
+  pour les tefilin et la tsédaka), et son moment. Seuls un temps d'étude et
+  une habitude « avec mes mots » le choisissent, en glissant le rond sur le
+  fil du jour : au réveil, avec Cha'harit, à midi, avec Min'ha, avec Arvit,
+  au coucher, ou toute la journée ; c'est là que la question a un sens. Les
+  autres ont le leur, d'office, qui se dit sans barre : les tefilot chaque
+  office à son heure, le Chéma au coucher, la tsédaka et garder sa langue
+  toute la journée. Le repère se garde (`anchor`), dit la carte (« Ce
+  soir, après Arvit ») et d'où elle s'ouvre : une ligne le dit (« La carte
+  vient à la nuit tombée ; avant, elle attend en retrait »). Les réglages
   d'une habitude prise reprennent le même écran.
 
 ### L'accueil à son goût

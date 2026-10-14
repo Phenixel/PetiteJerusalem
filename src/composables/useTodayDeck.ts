@@ -16,6 +16,7 @@ import {
 import { weekdayOf } from "../services/parcours/days";
 import { dayOrder, deckOrder } from "../services/parcours/moments";
 import { portionMinutes } from "../services/parcours/plan";
+import { habitAnchor } from "../services/parcours/create";
 import { readOccasionsDone, writeOccasionDone } from "../services/parcours/occasions";
 import { liveObjectives } from "../services/parcours/schedule";
 import { unitOf } from "../services/parcours/texts";
@@ -129,13 +130,14 @@ export function useTodayDeck() {
   const isNow = (view: TaskView): boolean => offices.isNow(view.task.step);
 
   /**
-   * Le repère d'une habitude. Une habitude d'avant les repères, posée « au
-   * coucher », le prend de son moment.
+   * Le repère d'une habitude : choisi sur la barre, ou celui de son modèle.
+   * Une habitude d'avant les repères, posée « au coucher », le prend de son
+   * moment.
    */
   function anchorOf(view: TaskView): HabitAnchor | null {
     const objective = view.objective;
     if (objective.kind !== "habit" || view.task.step) return null;
-    return objective.anchor ?? (objective.moment === "bedtime" ? "bedtime" : null);
+    return habitAnchor(objective) ?? (objective.moment === "bedtime" ? "bedtime" : null);
   }
 
   /** Un office, ou une habitude à son repère, pas encore ouvert et qui reste à faire. */
