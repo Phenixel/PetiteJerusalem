@@ -20,12 +20,23 @@
  * comme scripts/lib/certificate-quota.mjs.
  */
 import { createHash } from "node:crypto";
+import { ENV, ENVIRONMENTS } from "./environments.mjs";
 
 /** Nom de la cible, du dossier de ses sources et de son .appex. */
 export const WIDGET_TARGET = "PjWidgets";
 
-/** Seul espace lisible à la fois par l'app et par son extension. */
-export const APP_GROUP = "group.fr.petitejerusalem.app";
+/**
+ * Seul espace lisible à la fois par l'app et par son extension. Celui de
+ * l'environnement visé : l'app de staging a le sien, pour que ses widgets ne
+ * lisent pas ceux de la vraie app installée à côté (docs/staging.md).
+ */
+export const APP_GROUP = ENV.appGroup;
+
+/**
+ * Le groupe écrit en toutes lettres dans les sources Swift de native/ios/ :
+ * setup-ios.mjs le remplace par APP_GROUP en les recopiant.
+ */
+export const SOURCE_APP_GROUP = ENVIRONMENTS.production.appGroup;
 
 /** Identifiant pbxproj (24 hexa majuscules) stable pour un même rôle. */
 const objectId = (seed) =>

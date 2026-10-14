@@ -62,6 +62,9 @@ function isDebugOverride(): boolean {
  * fiable au moment de l'init est donc `isNativeApp`.
  */
 function isProductionSurface(): boolean {
+  // Le build de staging (app « PJ Staging » et son site) n'est jamais de la
+  // production, même installé comme une vraie app (docs/staging.md).
+  if (__PJ_ENV__.name !== "production") return false;
   return isNativeApp || PRODUCTION_HOSTS.includes(window.location.hostname);
 }
 
@@ -73,7 +76,7 @@ function isTrackedSurface(): boolean {
 }
 
 /** Super propriétés (A2) : contexte de release attaché à chaque événement. */
-const APP_ENV = isProductionSurface() ? "production" : "preview";
+const APP_ENV = isProductionSurface() ? "production" : __PJ_ENV__.name === "staging" ? "staging" : "preview";
 const APP_VERSION = __APP_VERSION__;
 
 /**

@@ -234,7 +234,10 @@ if (isNativeApp) {
       } catch {
         return; // URL illisible : on reste où on est.
       }
-      if (parsed.hostname !== "petite-jerusalem.fr") return;
+      // Le domaine du site, et celui de l'environnement pour l'app de
+      // staging (ses liens d'app pointent vers son propre site).
+      const hosts = ["petite-jerusalem.fr", new URL(__PJ_ENV__.siteUrl).hostname];
+      if (!hosts.includes(parsed.hostname)) return;
       // Au démarrage à froid, l'événement (retenu par Capacitor) arrive
       // pendant la navigation initiale : attendre le router pour que le
       // deep-link ne soit pas écarté par elle.
