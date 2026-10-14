@@ -1398,6 +1398,22 @@ const en: LocaleMessages = {
     seoDescription: "All shiurim by {auteur} on Petite Jerusalem.",
     searchPlaceholder: "Search their shiurim…",
   },
+  // The study table: texts set aside (see useReadingTable).
+  readingTable: {
+    title: "On the table",
+    setAside: "Set aside",
+    open: "Open the study table, one text | Open the study table, {count} texts",
+    count: "One text | {count} texts",
+    placeCurrent: "Also place “{title}”",
+    openNow: "Open",
+    remove: "Put away “{title}”",
+    hint: "Tap a text to reopen it where you left off.",
+    backToLibrary: "Back to the library",
+    clear: "Put all away",
+    clearTitle: "Put all texts away?",
+    clearMessage: "They leave the table; your bookmarks and reading position stay.",
+    clearConfirm: "Put all away",
+  },
   audioPlayer: {
     play: "Play",
     pause: "Pause",

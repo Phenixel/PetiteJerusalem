@@ -411,10 +411,59 @@ injoignable). Voir `composables/useBookDownload.ts` et
 
 `entry` dit d'où l'on arrive (`services/readingEntry.ts`) : un indice laissé
 juste avant la navigation quand l'adresse ne peut pas le dire (un résultat de
-recherche, « Reprendre ma lecture », une notification), sinon la page
+recherche, « Reprendre ma lecture », une notification, un texte rouvert
+depuis la table d'étude, `table`, **nouvelle valeur**), sinon la page
 précédente. `reading` : depuis un autre texte (psaume suivant, office
 suivant) ; `direct` : sans page précédente (widget, lien partagé, moteur de
 recherche, page rechargée).
+
+### La table d'étude
+
+Les textes mis de côté pour passer de l'un à l'autre (docs/design.md, « Des
+textes mis de côté, sur la table »). Tous **nouveaux**.
+
+#### `text_set_aside`
+
+Un texte posé sur la table.
+
+| Propriété | Valeurs |
+| --- | --- |
+| `text_id` | l'identifiant du texte dans le catalogue |
+| `corpus` | son rayon (`tanakh`, `talmud`, `moussar`...) ; jamais un texte du Sidour, qui ne se pose pas sur la table |
+| `texts_count` | le nombre de textes sur la table une fois celui-ci posé |
+| `from` | `header` (le bouton en tête du texte), `menu` (le menu de lecture), `table` (« Poser aussi », depuis le panneau) |
+| `already_on_table` | le texte y était déjà, il n'a fait que retenir sa page (absent pour `from: table`) |
+
+#### `reading_table_opened`
+
+Le panneau de la table ouvert depuis la barre (la flèche, le livre du texte
+lu, un glissement vers le haut). `texts_count` : les textes posés.
+
+#### `reading_table_text_opened`
+
+Un texte rouvert depuis la table : un livre de la barre, ou une ligne du
+panneau. Le `text_opened` qui suit porte `entry: table`.
+
+| Propriété | Valeurs |
+| --- | --- |
+| `text_id` | l'identifiant du texte |
+| `corpus` | son rayon |
+| `texts_count` | les textes posés |
+| `was_open` | c'était le texte déjà à l'écran (le panneau se referme seulement) |
+| `from` | `bar` (un livre de la barre), `table` (une ligne du panneau) |
+
+#### `reading_table_text_removed`
+
+Un texte rangé d'une croix. `text_id`, et `texts_count` : ceux qui restent.
+
+#### `reading_table_library_opened`
+
+« Retour à la bibliothèque », touché au bas de la table. `texts_count` : les
+textes posés.
+
+#### `reading_table_cleared`
+
+« Tout ranger », confirmé. `texts_count` : les textes rangés.
 
 ### Recherche
 
