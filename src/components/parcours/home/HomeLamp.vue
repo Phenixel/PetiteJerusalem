@@ -22,6 +22,7 @@ const { days, level, light } = useParcoursLamp();
   <RouterLink
     v-if="store.begun.value"
     to="/parcours"
+    data-tour="home-lamp"
     class="press-feedback -mt-1.5 flex flex-col items-center text-text-primary"
     :aria-label="t('parcours.hub.lamp', { n: days }, days)"
   >

@@ -24,7 +24,9 @@
 import { computed, nextTick, ref, watch, type Ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
+import FeatureTour from "../../components/FeatureTour.vue";
 import ParcoursBack from "../../components/parcours/ParcoursBack.vue";
+import { useParcoursTours } from "../../composables/useParcoursTours";
 import PresetSheet, { type PresetChoice } from "../../components/parcours/create/PresetSheet.vue";
 import StepHabit from "../../components/parcours/create/StepHabit.vue";
 import StepKind from "../../components/parcours/create/StepKind.vue";
@@ -71,6 +73,7 @@ const { t } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const store = useParcours();
+const tours = useParcoursTours();
 const views = useParcoursViews();
 
 const CORPORA: ProgramCorpus[] = ["michna", "talmud", "tanakh", "tehilim"];
@@ -440,6 +443,8 @@ const canGoOn = computed(
       @add="addPreset"
       @adjust="adjustPreset"
     />
+    <!-- Le tutoriel : choisir en haut, la suite se déplie dessous (aussi sur le site). -->
+    <FeatureTour v-if="!selection" tip="parcours-create" :steps="tours.create.value" web />
   </main>
 </template>
 

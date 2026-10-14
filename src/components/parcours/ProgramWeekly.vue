@@ -204,6 +204,7 @@ const endLabel = computed(() =>
     <div
       v-if="hero"
       class="week-hero mt-11"
+      data-tour="program-portion"
       role="link"
       tabindex="0"
       :style="heroStyle"
@@ -269,7 +270,12 @@ const endLabel = computed(() =>
           t("parcours.program.behindDays", { n: behindDays }, behindDays)
         }}</span>
       </p>
-      <button type="button" class="btn btn-soft week-btn flex-none" @click="emit('catch-up')">
+      <button
+        type="button"
+        class="btn btn-soft week-btn flex-none"
+        data-tour="program-catch-up"
+        @click="emit('catch-up')"
+      >
         {{ t("parcours.catchUp.open") }}
       </button>
     </div>

@@ -176,6 +176,68 @@ const fr = {
     stepOf: "Astuce {n} sur {total}",
     replay: "Revoir les astuces",
     replayed: "Les astuces se montreront à nouveau, page par page.",
+    parcours: {
+      deck: {
+        title: "Votre journée, carte par carte",
+        text: "Touchez la carte pour lire. Glissez-la à droite quand c'est fait, à gauche pour plus tard ; un appui long ouvre sa fiche.",
+      },
+      dayBar: {
+        title: "La barre de la journée",
+        text: "Ce qui est fait, ce qui reste. Touchez-la, ou tirez la pile vers le bas, pour voir toute la journée.",
+      },
+      lamp: {
+        title: "La lumière de la série",
+        text: "Chaque jour tenu la fait grandir, de la vieille lampe à la lumière du premier jour. Chabbat et les fêtes ne la coupent pas.",
+      },
+      shelf: {
+        title: "Vos volumes",
+        text: "Touchez un volume pour lire là où vous en êtes ; un appui long ouvre sa page et ses réglages.",
+      },
+      light: {
+        title: "Vos lumières",
+        text: "Touchez la lumière : toutes celles de la série, gagnées et à découvrir.",
+      },
+      wall: {
+        title: "Le mur",
+        text: "Une pierre par jour. Touchez un jour pour le compléter après coup ; écartez deux doigts pour le mur entier.",
+      },
+      volumes: {
+        title: "L'étagère",
+        text: "Un volume par lecture : touchez-le pour voir où vous en êtes, ce qu'il reste, et le régler.",
+      },
+      new: {
+        title: "Un objectif de plus",
+        text: "Un texte à finir, un cycle, une habitude : tout se choisit ici.",
+      },
+      books: {
+        title: "Finir un texte",
+        text: "Touchez un volume : sa partie se choisit dessous, puis pour quand. La page descend d'elle-même.",
+      },
+      cycles: {
+        title: "Suivre un cycle",
+        text: "Les Tehilim, le chnei mikra, des textes chaque jour : le calendrier dit quoi lire.",
+      },
+      habits: {
+        title: "Prendre une habitude",
+        text: "Les tefilot, le Chéma du coucher, la tsédaka : chaque habitude se confirme avant de s'ajouter.",
+      },
+      portion: {
+        title: "La portion du jour",
+        text: "« Lire » l'ouvre au bon endroit ; glissez la carte à droite quand c'est lu.",
+      },
+      catchUp: {
+        title: "Un retard ne presse pas",
+        text: "« Rattraper » le répartit, repousse la fin, ou le dit déjà lu.",
+      },
+      ahead: {
+        title: "Prendre de l'avance",
+        text: "Du temps devant vous ? « Lire la suite » ouvre la portion d'après ; la fin viendra plus tôt.",
+      },
+      edit: {
+        title: "Tout se règle",
+        text: "Le rythme, la date de fin, le moment, la pause : touchez « Modifier ».",
+      },
+    },
     home: {
       settings: {
         title: "À votre goût",
@@ -2142,7 +2204,8 @@ const fr = {
       title: "Lecture du jour",
       add: "Ajouter des textes",
       emptyTitle: "Rien à lire aujourd'hui",
-      emptyText: "Un psaume, une page qu'on aime : ajoutez les textes que vous lisez chaque jour, ils viendront ici, l'un après l'autre.",
+      emptyText:
+        "Un psaume, une page qu'on aime : ajoutez les textes que vous lisez chaque jour, ils viendront ici, l'un après l'autre.",
       today: "Aujourd'hui",
       week: "Cette semaine",
       beforeChabbat: "À finir avant Chabbat",
@@ -2151,7 +2214,8 @@ const fr = {
       readToday: "Lu aujourd'hui",
       allDone: "Tout est lu pour aujourd'hui.",
       progress: "{done} sur {total} lus aujourd'hui",
-      seoDescription: "Les textes que vous lisez chaque jour, les uns à la suite des autres, avec ce qui se dit avant et après.",
+      seoDescription:
+        "Les textes que vous lisez chaque jour, les uns à la suite des autres, avec ce qui se dit avant et après.",
       cardMeta: "{n} textes · {names}",
       others: "{name} et {n} autre | {name} et {n} autres",
     },

@@ -56,7 +56,7 @@ const nextText = computed(() =>
       <p class="min-w-0 text-[14px] leading-snug text-text-secondary">
         {{ t("parcours.program.nextUp", { portion: nextText }) }}
       </p>
-      <RouterLink :to="target" class="btn btn-soft ahead-btn flex-none">
+      <RouterLink :to="target" class="btn btn-soft ahead-btn flex-none" data-tour="program-ahead">
         {{ t("parcours.reader.readAhead") }}
       </RouterLink>
     </div>

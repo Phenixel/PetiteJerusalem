@@ -159,6 +159,8 @@ describe("i18n usage", () => {
       "parcours.wall.legendItems.",
       "parcours.wall.status.",
       "parcours.weekdays.",
+      // Le tutoriel de Mon parcours (composables/useParcoursTours).
+      "tips.parcours.",
       "parcours.when.",
       "occasions.notify.",
       "occasions.reminders.",

@@ -16,6 +16,7 @@ import SiteFooter from "../components/SiteFooter.vue";
 import FeedbackNudge from "../components/FeedbackNudge.vue";
 import FeatureTour, { type TourStep } from "../components/FeatureTour.vue";
 import { tipsOffered } from "../composables/useFeatureTips";
+import { useParcoursTours } from "../composables/useParcoursTours";
 import HomeDoors from "../components/HomeDoors.vue";
 import HomeResume from "../components/HomeResume.vue";
 import { useHomeLayout } from "../composables/useHomeLayout";
@@ -90,6 +91,9 @@ const { dismissed: accountCtaDismissed, dismissHomeAccountCta } = useHomeAccount
  * déjà un compte.
  */
 const homeRoot = ref<HTMLElement | null>(null);
+
+/** Le tutoriel de Mon parcours, sur l'accueil : la pile, la journée, la lumière, l'étagère. */
+const parcoursTours = useParcoursTours();
 
 const homeTip = computed<TourStep[]>(() => {
   const steps: TourStep[] = [
@@ -395,6 +399,15 @@ onUnmounted(() => {
 
     <!-- L'astuce de l'accueil, une fois : les réglages, puis le compte (homeTip). -->
     <FeatureTour v-if="tipsOffered" tip="home-settings" :steps="homeTip" />
+    <!-- Mon parcours commencé : ses gestes, une fois (aussi sur le site). Il
+         passe avant l'astuce des réglages, qui attend l'ouverture suivante. -->
+    <FeatureTour
+      v-if="dashboard && parcoursBegun"
+      tip="parcours-home"
+      :steps="parcoursTours.home.value"
+      :delay="600"
+      web
+    />
   </main>
 
   <!-- App native : pas de footer de site (l'essentiel vit dans le profil). -->

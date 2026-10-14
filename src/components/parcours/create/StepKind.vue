@@ -66,7 +66,11 @@ const habits = computed(() => HABITS.filter((preset) => !props.takenHabits.inclu
 <template>
   <div>
     <p class="create-lab">{{ t("parcours.create.finish") }}</p>
-    <div class="books" :class="{ 'has-choice': selected?.startsWith('program:') }">
+    <div
+      class="books"
+      data-tour="create-books"
+      :class="{ 'has-choice': selected?.startsWith('program:') }"
+    >
       <button
         v-for="corpus in corpora"
         :key="corpus"
@@ -89,7 +93,7 @@ const habits = computed(() => HABITS.filter((preset) => !props.takenHabits.inclu
     <p class="mt-2.5 text-[13px] text-text-secondary">{{ t("parcours.create.finishHint") }}</p>
 
     <p class="create-lab">{{ t("parcours.create.calendar") }}</p>
-    <div class="flex flex-wrap gap-2">
+    <div class="flex flex-wrap gap-2" data-tour="create-cycles">
       <button
         v-for="cycle in cycles"
         :key="cycle"
@@ -111,7 +115,7 @@ const habits = computed(() => HABITS.filter((preset) => !props.takenHabits.inclu
     </div>
 
     <p class="create-lab">{{ t("parcours.create.habit") }}</p>
-    <div class="flex flex-wrap gap-2">
+    <div class="flex flex-wrap gap-2" data-tour="create-habits">
       <button
         v-for="preset in habits"
         :key="preset"

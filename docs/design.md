@@ -175,6 +175,20 @@ fait. Quatre règles la tiennent :
   attend que la page se soit posée. Sous l'introduction, elle attend qu'elle
   se ferme : c'est le cas de l'astuce de l'accueil, à la première ouverture.
 
+**Le tutoriel de Mon parcours** (`useParcoursTours`) fait exception à deux
+règles. Ses gestes ne se devinent pas (glisser une carte, tirer la pile,
+l'appui long sur un volume, pincer le mur) : une visite par écran, de trois
+ou quatre pas, à la première visite de chacun ; l'accueil (la pile, la
+barre de la journée, la lumière, l'étagère), Mon parcours (la lumière, le
+mur, l'étagère, « Nouvel objectif »), Nouvel objectif (finir un texte, un
+cycle, une habitude), un programme (la portion, « Rattraper », « Lire la
+suite », « Modifier »). Un pas dont la commande n'est pas à l'écran (pas de
+retard, pas de suite à lire) se saute. Et il se montre **aussi sur le site**
+(`web`) : on n'y arrive pas d'un moteur de recherche, avec un compte, et les
+gestes y sont les mêmes. Sur l'accueil, il passe avant l'astuce des
+réglages, qui attend l'ouverture suivante. Les commandes se trouvent par
+leur repère `data-tour`.
+
 L'accueil porte la première : où l'app se règle à son goût (l'onglet en bas
 à droite, thème, police, mode sombre), puis le compte, ce qu'il apporte
 (partager des lectures, la lecture du jour, ses réglages sur un autre

@@ -47,12 +47,15 @@ import { taskEntries } from "../../services/parcours/entries";
 import type { DayKey } from "../../services/parcours/model";
 import { liveObjectives, wallWeeks } from "../../services/parcours/schedule";
 import { hebrewMonthName, isIsraelPlace } from "../../services/zmanimService";
+import FeatureTour from "../../components/FeatureTour.vue";
+import { useParcoursTours } from "../../composables/useParcoursTours";
 
 useParcoursMeta("parcours.title", "/parcours");
 
 const { t, locale } = useI18n();
 const router = useRouter();
 const store = useParcours();
+const tours = useParcoursTours();
 const views = useParcoursViews();
 const labels = useWallLabels();
 const { place } = useZmanimLocation();
@@ -187,6 +190,7 @@ onMounted(() => {
           <button
             type="button"
             class="press-feedback rounded-card"
+            data-tour="parcours-light"
             :aria-label="t('parcours.lights.openLabel', { name: lightName })"
             @click="openLights"
           >
@@ -228,7 +232,7 @@ onMounted(() => {
               {{ t("parcours.wall.title") }}
             </RouterLink>
           </h2>
-          <div ref="wall" class="wall-pinch flex gap-2">
+          <div ref="wall" class="wall-pinch flex gap-2" data-tour="parcours-wall">
             <div
               class="flex w-4 flex-none flex-col text-xs font-bold text-text-secondary"
               aria-hidden="true"
@@ -317,6 +321,7 @@ onMounted(() => {
         <div class="card mt-3.5 divide-y divide-line overflow-hidden">
           <RouterLink
             to="/parcours/nouveau"
+            data-tour="parcours-new"
             class="flex min-h-14 items-center px-3.5 text-[15px] font-bold text-primary hover:bg-surface-soft"
           >
             {{ t("parcours.links.new") }}
@@ -342,6 +347,8 @@ onMounted(() => {
     <LightsSheet :open="lightsOpen" @close="lightsOpen = false" />
     <LightCelebration v-if="!empty" />
     <p class="sr-only" aria-live="polite">{{ arrivedNote }}</p>
+    <!-- Le tutoriel : la lumière, le mur, l'étagère, un objectif de plus (aussi sur le site). -->
+    <FeatureTour v-if="!empty" tip="parcours-page" :steps="tours.page.value" web />
   </main>
 </template>
 

@@ -18,7 +18,9 @@ import { isNativeApp } from "./useNativeApp";
  *
  * App native seulement, comme l'introduction : le site se visite le plus
  * souvent par une page précise venue d'un moteur de recherche, et une bulle
- * en travers d'un texte qu'on est venu lire est une gêne, pas une aide. Un
+ * en travers d'un texte qu'on est venu lire est une gêne, pas une aide. Sauf
+ * Mon parcours (`web`) : on n'y arrive pas d'un moteur de recherche, avec un
+ * compte, et ses gestes ne se devinent pas plus sur le site. Un
  * paramètre d'adresse (`?tips`, ou `?tips=reading-menu` pour une seule) les
  * force partout, pour les montrer et les essayer sur les canaux de preview.
  *
@@ -49,7 +51,11 @@ export type FeatureTipId =
   | "calendar-occasions"
   | "reading-menu"
   | "reading-gestures"
-  | "share-reading";
+  | "share-reading"
+  | "parcours-home"
+  | "parcours-page"
+  | "parcours-create"
+  | "parcours-program";
 
 const STORAGE_KEY = "pj_tips_seen";
 
@@ -61,6 +67,10 @@ export const TIP_IDS: readonly FeatureTipId[] = [
   "reading-menu",
   "reading-gestures",
   "share-reading",
+  "parcours-home",
+  "parcours-page",
+  "parcours-create",
+  "parcours-program",
 ];
 
 /**
@@ -157,10 +167,15 @@ export function resetFeatureTipsForTests(): void {
 export function useFeatureTips() {
   /**
    * L'astuce doit-elle se montrer ? Attend la relecture native si besoin.
-   * `after` : les astuces qui doivent avoir été vues avant celle-ci.
+   * `after` : les astuces qui doivent avoir été vues avant celle-ci ;
+   * `web` : elle se montre aussi sur le site (Mon parcours).
    */
-  async function shouldShowTip(id: FeatureTipId, after: FeatureTipId[] = []): Promise<boolean> {
-    if (!tipsOffered.value) return false;
+  async function shouldShowTip(
+    id: FeatureTipId,
+    after: FeatureTipId[] = [],
+    web = false,
+  ): Promise<boolean> {
+    if (!tipsOffered.value && !web) return false;
     // Forcée par l'adresse, l'astuce se montre même déjà vue : c'est le but.
     if (isForced(id)) return true;
     await restoreFeatureTips();

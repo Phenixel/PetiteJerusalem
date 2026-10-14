@@ -174,6 +174,68 @@ const en: LocaleMessages = {
     stepOf: "Tip {n} of {total}",
     replay: "Replay the tips",
     replayed: "The tips will show again, page by page.",
+    parcours: {
+      deck: {
+        title: "Your day, card by card",
+        text: "Tap the card to read. Swipe it right when done, left for later; a long press opens its sheet.",
+      },
+      dayBar: {
+        title: "The day bar",
+        text: "What is done, what is left. Tap it, or pull the stack down, to see the whole day.",
+      },
+      lamp: {
+        title: "Your streak light",
+        text: "Each day kept makes it grow, from the old lamp to the light of the first day. Shabbat and holidays do not break it.",
+      },
+      shelf: {
+        title: "Your volumes",
+        text: "Tap a volume to read where you are; a long press opens its page and settings.",
+      },
+      light: {
+        title: "Your lights",
+        text: "Tap the light: every light of the streak, earned and still to discover.",
+      },
+      wall: {
+        title: "The wall",
+        text: "One stone a day. Tap a day to fill it in afterwards; spread two fingers for the whole wall.",
+      },
+      volumes: {
+        title: "The shelf",
+        text: "One volume per reading: tap it to see where you are, what is left, and adjust it.",
+      },
+      new: {
+        title: "One more goal",
+        text: "A text to finish, a cycle, a habit: everything is chosen here.",
+      },
+      books: {
+        title: "Finish a text",
+        text: "Tap a volume: its part is chosen below, then by when. The page scrolls on its own.",
+      },
+      cycles: {
+        title: "Follow a cycle",
+        text: "Tehilim, shnayim mikra, texts every day: the calendar says what to read.",
+      },
+      habits: {
+        title: "Take up a habit",
+        text: "The tefilot, the bedtime Shema, tzedaka: each habit is confirmed before it is added.",
+      },
+      portion: {
+        title: "Today's portion",
+        text: "“Read” opens it at the right place; swipe the card right once read.",
+      },
+      catchUp: {
+        title: "No rush when behind",
+        text: "“Catch up” spreads it out, moves the end, or marks it already read.",
+      },
+      ahead: {
+        title: "Get ahead",
+        text: "Time on your hands? “Read on” opens the next portion; you will finish sooner.",
+      },
+      edit: {
+        title: "Everything can be adjusted",
+        text: "The rhythm, the end date, the moment, the pause: tap “Edit”.",
+      },
+    },
     home: {
       settings: {
         title: "Make it yours",

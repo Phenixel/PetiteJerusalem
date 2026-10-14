@@ -643,7 +643,9 @@ jeton). `$referrer` dit d'où venait le lien mort.
 ### Astuces : `feature_tip_shown`, `feature_tip_finished` (existants)
 
 `tip` reçoit une **nouvelle valeur**, `zmanim-date` : le calendrier sous la
-date des horaires.
+date des horaires ; et quatre pour le tutoriel de Mon parcours,
+`parcours-home`, `parcours-page`, `parcours-create`, `parcours-program`, qui
+partent aussi du site.
 
 ### Informations de l'équipe : `announcement_poll_answered` (nouveau)
 

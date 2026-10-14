@@ -15,7 +15,9 @@ import { useRoute } from "vue-router";
 import CatchUpSheet from "../../components/parcours/CatchUpSheet.vue";
 import ObjectiveSettings from "../../components/parcours/ObjectiveSettings.vue";
 import ObjectiveTodayCard from "../../components/parcours/ObjectiveTodayCard.vue";
+import FeatureTour from "../../components/FeatureTour.vue";
 import ParcoursBack from "../../components/parcours/ParcoursBack.vue";
+import { useParcoursTours } from "../../composables/useParcoursTours";
 import PausedNotice from "../../components/parcours/PausedNotice.vue";
 import ProgramDaily from "../../components/parcours/ProgramDaily.vue";
 import ProgramWeekly from "../../components/parcours/ProgramWeekly.vue";
@@ -30,6 +32,7 @@ const { t } = useI18n();
 const route = useRoute();
 const store = useParcours();
 const views = useParcoursViews();
+const tours = useParcoursTours();
 
 const objective = computed(() => {
   const found = store.data.value.objectives[String(route.params.id)];
@@ -59,6 +62,7 @@ const catchingUp = ref(route.query.rattraper === "1");
         v-if="program"
         :to="`/parcours/objectif/${program.id}/reglages`"
         class="btn btn-soft edit-btn"
+        data-tour="program-edit"
       >
         {{ t("common.edit") }}
       </RouterLink>
@@ -100,6 +104,13 @@ const catchingUp = ref(route.query.rattraper === "1");
       />
       <ObjectiveSettings class="mt-8" :objective="objective" />
     </template>
+    <!-- Le tutoriel d'un programme : la portion, rattraper, la suite, les réglages. -->
+    <FeatureTour
+      v-if="program && !finished"
+      tip="parcours-program"
+      :steps="tours.program.value"
+      web
+    />
   </main>
 </template>
 

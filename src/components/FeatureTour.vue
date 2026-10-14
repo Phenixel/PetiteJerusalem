@@ -89,8 +89,10 @@ const props = withDefaults(
     after?: FeatureTipId[];
     /** Le temps que la page se pose (transition d'arrivée comprise). */
     delay?: number;
+    /** Aussi sur le site, pas seulement dans l'app (les astuces de Mon parcours). */
+    web?: boolean;
   }>(),
-  { after: () => [], delay: 800 },
+  { after: () => [], delay: 800, web: false },
 );
 
 const emit = defineEmits<{
@@ -326,7 +328,7 @@ function schedule(): void {
 }
 
 onMounted(async () => {
-  if (!props.steps.length || !(await shouldShowTip(props.tip, props.after))) return;
+  if (!props.steps.length || !(await shouldShowTip(props.tip, props.after, props.web))) return;
   schedule();
 });
 

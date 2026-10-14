@@ -169,6 +169,7 @@ const endLabel = computed(() => {
     <div
       v-if="portion"
       class="portion mt-[26px]"
+      data-tour="program-portion"
       :class="{ 'is-done': done }"
       :style="cardStyle"
       v-bind="done ? {} : card.listeners"
@@ -205,7 +206,12 @@ const endLabel = computed(() => {
           t("parcours.program.behindDays", { n: behindDays }, behindDays)
         }}</span>
       </p>
-      <button type="button" class="btn btn-soft portion-btn flex-none" @click="emit('catch-up')">
+      <button
+        type="button"
+        class="btn btn-soft portion-btn flex-none"
+        data-tour="program-catch-up"
+        @click="emit('catch-up')"
+      >
         {{ t("parcours.catchUp.open") }}
       </button>
     </div>
