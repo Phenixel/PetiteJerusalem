@@ -15,14 +15,8 @@ import { localeMessagesReady } from "../i18n";
 import { seoService } from "../services/seoService";
 import { SITE_URL } from "../config/site";
 import { localeOfPath, sectionPath } from "../content/seoLocales";
-import { localDayKey } from "../services/dateService";
 import { analyticsService } from "../services/analyticsService";
 import { authService, type User } from "../services/authService";
-import {
-  countDailyProgress,
-  userPreferencesService,
-  type UserPreferences,
-} from "../services/userPreferencesService";
 import { isNativeApp } from "../composables/useNativeApp";
 import { useHomeAccountCta } from "../composables/useHomeAccountCta";
 import { openFeedback } from "../composables/useFeedback";
@@ -31,7 +25,6 @@ import AppIcon from "../components/icons/AppIcon.vue";
 import FeedbackNudge from "../components/FeedbackNudge.vue";
 import FeatureTour, { type TourStep } from "../components/FeatureTour.vue";
 import { tipsOffered } from "../composables/useFeatureTips";
-import DailyReadingCard from "../components/DailyReadingCard.vue";
 import IllustrationPartage from "../components/illustrations/IllustrationPartage.vue";
 import IllustrationChiourim from "../components/illustrations/IllustrationChiourim.vue";
 import IllustrationBibliotheque from "../components/illustrations/IllustrationBibliotheque.vue";
@@ -56,6 +49,13 @@ const SidourNowCard = defineAsyncComponent(() => import("../components/SidourNow
 const AnnouncementsBanner = defineAsyncComponent(
   () => import("../components/announcements/AnnouncementsBanner.vue"),
 );
+// Mon parcours : le paquet du jour, la lampe et l'étagère. Ils tirent le
+// calendrier hébraïque (les jours de repos), même chargement à la demande.
+const ParcoursHub = defineAsyncComponent(
+  () => import("../components/parcours/home/ParcoursHub.vue"),
+);
+const HomeLamp = defineAsyncComponent(() => import("../components/parcours/home/HomeLamp.vue"));
+const HomeShelf = defineAsyncComponent(() => import("../components/parcours/home/HomeShelf.vue"));
 
 const router = useRouter();
 const { t, locale } = useI18n();
@@ -128,10 +128,13 @@ function dismissAccountCta() {
   analyticsService.capture("home_signup_cta_dismissed");
 }
 
-// --- Tableau de bord (connecté) : lecture du jour et horaires du jour. ---
-const dashLoading = ref(false);
-const readingTotal = ref(0);
-const readingDone = ref(0);
+// --- Tableau de bord : Mon parcours et les horaires du jour. Dans l'app, avec
+// ou sans compte (le parcours se tient sur le téléphone) ; sur le site, pour
+// un compte, le visiteur a la page d'accueil du site. ---
+const dashboard = computed(() => user.value !== null || isNativeApp);
+
+/** Le paquet porte les offices du jour : le raccourci du Sidour se tait. */
+const officesInDeck = ref(false);
 
 const firstName = computed(
   () => (user.value?.name ?? "").split(" ")[0] || user.value?.name || t("common.anonymousUser"),
@@ -140,36 +143,6 @@ const greeting = computed(() => {
   const hour = new Date().getHours();
   return hour >= 18 || hour < 5 ? t("home.dashboard.helloEvening") : t("home.dashboard.hello");
 });
-
-// Même règle de comptage que la page Lecture quotidienne (chnei mikra
-// hebdomadaire exclu, complétions intersectées avec les listes actives).
-function applyDashboardCounts(prefs: UserPreferences) {
-  const progress = prefs.dailyReadingProgress;
-  const isToday = progress?.date === localDayKey();
-  const counts = countDailyProgress({
-    textIds: prefs.dailyReadingIds ?? [],
-    options: prefs.dailyReadingOptions ?? [],
-    completedTextIds: isToday ? (progress.completedIds ?? []) : [],
-    completedOptions: isToday ? (progress.completedOptions ?? []) : [],
-  });
-  readingTotal.value = counts.total;
-  readingDone.value = counts.done;
-}
-
-async function loadDashboard(u: User) {
-  // Copie locale d'abord : les compteurs du jour s'affichent tout de suite,
-  // sans squelette, et la lecture Firestore confirme ou corrige ensuite.
-  const cached = userPreferencesService.getCachedPreferences(u.id);
-  if (cached) applyDashboardCounts(cached);
-  dashLoading.value = !cached;
-  try {
-    applyDashboardCounts(await userPreferencesService.getPreferences(u.id));
-  } catch (error) {
-    console.error("Erreur lors du chargement du tableau de bord:", error);
-  } finally {
-    dashLoading.value = false;
-  }
-}
 
 const features = computed<
   { illustration: Component; title: string; description: string; route: string }[]
@@ -238,12 +211,6 @@ onMounted(() => {
       hasTrackedHomeView = true;
       analyticsService.capture("home_viewed", { variant: u ? "dashboard" : "landing" });
     }
-    if (u) {
-      loadDashboard(u);
-    } else {
-      readingTotal.value = 0;
-      readingDone.value = 0;
-    }
   });
   applyHomeMeta();
 });
@@ -261,8 +228,8 @@ onUnmounted(() => {
          connecté ou non (voir HolidayGreeting). Rien le reste de l'année. -->
     <HolidayGreeting class="mb-6 md:mb-8" />
 
-    <!-- ===== Connecté : accueil personnalisé, hors carte ===== -->
-    <template v-if="user">
+    <!-- ===== Tableau de bord : connecté, ou dans l'app avec ou sans compte ===== -->
+    <template v-if="dashboard">
       <!-- La salutation ne remplit qu'une demi-largeur : les raccourcis du
            moment se rangent dans l'autre moitié, à côté du nom, au lieu de
            traverser la page en bandeaux au-dessus du tableau de bord. Ils
@@ -272,13 +239,46 @@ onUnmounted(() => {
            ligne. -->
       <div class="w-full max-w-6xl mx-auto mb-8 grid gap-4 md:grid-cols-2 md:items-center md:gap-8">
         <div class="enter-rise">
-          <h1 class="text-3xl md:text-5xl font-bold text-text-primary tracking-tight">
-            {{ greeting }},
-            <span class="text-primary">{{ firstName }}</span>
-          </h1>
-          <p class="mt-2 text-base md:text-lg text-text-secondary">
+          <!-- La lampe du parcours, allumée tant que la série tient. -->
+          <div class="flex items-end justify-between gap-4">
+            <h1 class="text-3xl md:text-5xl font-bold text-text-primary tracking-tight">
+              <template v-if="user">
+                {{ greeting }},
+                <span class="text-primary">{{ firstName }}</span>
+              </template>
+              <template v-else>{{ greeting }}</template>
+            </h1>
+            <HomeLamp class="flex-none" />
+          </div>
+          <p v-if="user" class="mt-2 text-base md:text-lg text-text-secondary">
             {{ t("home.dashboard.subtitle") }}
           </p>
+          <!-- App sans compte : tout marche sur le téléphone ; le compte, pour
+               le garder d'un appareil à l'autre, se propose jusqu'à ce
+               qu'« Ignorer » le retire de l'accueil. -->
+          <div
+            v-else-if="!accountCtaDismissed"
+            class="mt-3 flex flex-wrap items-center gap-2 enter-rise"
+            style="--enter-delay: 0.1s"
+          >
+            <RouterLink
+              to="/login?mode=signup"
+              class="btn btn-primary"
+              @click="trackCard('signup_cta')"
+            >
+              {{ t("accountCta.signup") }}
+            </RouterLink>
+            <RouterLink to="/login" class="btn btn-soft" @click="trackCard('login_cta')">
+              {{ t("accountCta.login") }}
+            </RouterLink>
+            <button
+              type="button"
+              class="px-2 py-2 text-sm font-medium text-text-secondary transition-colors hover:text-primary"
+              @click="dismissAccountCta"
+            >
+              {{ t("accountCta.dismiss") }}
+            </button>
+          </div>
         </div>
 
         <div class="flex flex-col gap-3">
@@ -288,8 +288,9 @@ onUnmounted(() => {
           <AnnouncementsBanner />
 
           <!-- C'est le temps d'une prière : le sidour à un geste, avec l'heure
-               limite. Absent entre deux offices. -->
-          <SidourNowCard />
+               limite. Absent entre deux offices, et quand le paquet du
+               parcours porte déjà les offices. -->
+          <SidourNowCard v-if="!officesInDeck" />
 
           <!-- La bénédiction de la lune : une fenêtre de quelques nuits par
                mois, qui se rate faute de rappel. Absente le reste du temps. -->
@@ -303,68 +304,26 @@ onUnmounted(() => {
       </div>
 
       <div class="w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6 mb-10">
-        <!-- Squelettes pendant le chargement -->
-        <template v-if="dashLoading">
-          <div class="card p-6 h-36 animate-pulse"></div>
-          <div class="card p-6 h-36 animate-pulse"></div>
-        </template>
+        <!-- Mon parcours : ce qu'il y a à faire maintenant, et la journée. -->
+        <ParcoursHub class="dash-card" @offices="(covered) => (officesInDeck = covered)" />
 
-        <template v-else>
-          <!-- Lecture quotidienne : où j'en suis aujourd'hui (carte partagée
-               avec la bibliothèque) -->
-          <DailyReadingCard
-            :done="readingDone"
-            :total="readingTotal"
-            class="dash-card"
-            @click="trackCard('daily_reading')"
-          />
-
-          <!-- Horaires du jour : calculés sur l'appareil, rien à charger.
-               Le partage de lectures reste à un clic (navbar, footer, cartes
-               de découverte plus bas). -->
-          <ZmanimCard class="dash-card" style="--enter-delay: 0.1s" @click="trackCard('zmanim')" />
-        </template>
+        <!-- Horaires du jour : calculés sur l'appareil, rien à charger.
+             Le partage de lectures reste à un clic (navbar, footer, cartes
+             de découverte plus bas). -->
+        <ZmanimCard class="dash-card" style="--enter-delay: 0.1s" @click="trackCard('zmanim')" />
       </div>
+
+      <!-- L'étagère du parcours : un volume par objectif qui se lit. -->
+      <HomeShelf class="w-full max-w-6xl mx-auto mb-10" />
     </template>
 
-    <!-- ===== Non connecté : invitation à gauche, horaires du jour à droite,
-         à la place qu'occupent les cartes du tableau de bord ===== -->
+    <!-- ===== Site, sans compte : invitation à gauche, horaires du jour à
+         droite, à la place qu'occupent les cartes du tableau de bord ===== -->
     <div
       v-else
       class="w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-8 items-center mb-10"
     >
-      <!-- App native : une salutation, comme connecté, et rien de plus. On a
-           déjà installé l'app, l'accroche du site n'a plus rien à vendre, et
-           elle repoussait les horaires et les portes sous le pli. -->
-      <div v-if="isNativeApp" class="space-y-3">
-        <h1 class="text-3xl font-bold text-text-primary tracking-tight enter-rise">
-          {{ greeting }}
-        </h1>
-        <div
-          v-if="!accountCtaDismissed"
-          class="flex flex-wrap items-center gap-2 enter-rise"
-          style="--enter-delay: 0.1s"
-        >
-          <RouterLink
-            to="/login?mode=signup"
-            class="btn btn-primary"
-            @click="trackCard('signup_cta')"
-          >
-            {{ t("accountCta.signup") }}
-          </RouterLink>
-          <RouterLink to="/login" class="btn btn-soft" @click="trackCard('login_cta')">
-            {{ t("accountCta.login") }}
-          </RouterLink>
-          <button
-            type="button"
-            class="px-2 py-2 text-sm font-medium text-text-secondary transition-colors hover:text-primary"
-            @click="dismissAccountCta"
-          >
-            {{ t("accountCta.dismiss") }}
-          </button>
-        </div>
-      </div>
-      <div v-else class="space-y-4 text-center md:text-start">
+      <div class="space-y-4 text-center md:text-start">
         <h1
           class="text-4xl md:text-6xl font-bold text-text-primary tracking-tight leading-[1.05] enter-rise"
         >

@@ -24,7 +24,7 @@ import { useParcours } from "../../composables/useParcours";
 import { useParcoursMeta } from "../../composables/useParcoursMeta";
 import { useParcoursViews } from "../../composables/useParcoursViews";
 import { useProgramWeek } from "../../composables/useProgramWeek";
-import { useSwipe } from "../../composables/useSwipe";
+import { dragStyle, useSwipe } from "../../composables/useSwipe";
 import { useToast } from "../../composables/useToast";
 import { analyticsService } from "../../services/analyticsService";
 import type { ProgramObjective } from "../../services/parcours/model";
@@ -94,14 +94,7 @@ const card = useSwipe({
     if (direction === "right") markDone(true, "swipe");
   },
 });
-const cardStyle = computed(() =>
-  card.dragging.value
-    ? {
-        transform: `translateX(${Math.max(0, card.dx.value)}px) rotate(${Math.max(0, card.dx.value) / 30}deg)`,
-        transition: "none",
-      }
-    : {},
-);
+const cardStyle = computed(() => dragStyle(card, { right: true }));
 
 const bars = computed(() =>
   program.value

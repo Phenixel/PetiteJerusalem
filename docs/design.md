@@ -1489,6 +1489,95 @@ parcourt, on lance, on reprend.
 Aucune image, aucun dégradé : la barre de lecture est une piste en deux
 aplats sous le curseur natif.
 
+### Mon parcours : le mur se bâtit en pierres, et seulement lui
+
+Mon parcours (`/parcours`) suit ce qu'on s'est donné à tenir : un texte à
+finir pour une date, une habitude, les Tehilim du mois, la paracha de la
+semaine, un texte relu chaque jour. Ce qui a été fait se voit comme un mur
+qu'on bâtit, une pierre par jour (`components/parcours/StoneWall.vue`) : une
+colonne par semaine, du dimanche en haut au Chabbat en bas, la rangée la plus
+haute, comme une assise de fondation.
+
+- **Les pierres sont pour l'histoire, et seulement elle.** Le mur des cinq
+  dernières semaines, le mur entier, sa légende. Une pierre posée, tout est
+  fait ; à moitié posée, une partie ; blanche, Chabbat, une fête ou rien de
+  prévu ; un creux, rien de coché ; la place en pointillé, à venir. Ce qui se
+  prévoit ou se choisit reste **à plat** : la semaine d'un programme est un
+  histogramme (`WeekBars.vue`), la semaine de Ma journée et celle d'une
+  habitude des cases plates, comme le choix des jours. Au milieu d'une page,
+  des pierres disaient « bâti » pour ce qui n'était qu'un plan.
+- **Les pierres sont hors thème**, comme les reliures : la teinte de la pierre
+  de Jérusalem, en aplats et un grain minéral (une texture, pas un dégradé),
+  partagées par la classe globale `.pj-stone`. Seul le ciment fonce en sombre.
+- **Le mur s'ouvre sur aujourd'hui**, au bout du sens de lecture (à droite en
+  français, à gauche en hébreu), et remplit la largeur de l'écran ; on
+  remonte le temps en glissant. Une pierre touchée s'ouvre et se complète,
+  des mois après s'il le faut.
+
+### Rien ne se compte contre soi
+
+La série (des jours d'affilée où l'on a fait quelque chose) porte une lampe
+de terre cuite, allumée tant qu'elle tient, éteinte sans reproche
+(`ParcoursLamp.vue`). Chabbat et les fêtes ne la coupent pas : rien n'y est
+demandé. « Pas aujourd'hui » retire une tâche du jour sans la compter
+manquée. Aujourd'hui ne coupe rien tant qu'il n'est pas fini. Un jour passé se
+coche après coup, depuis Ma journée ou le mur. Un retard se dit
+(« 6 michnayot de retard ») avec « Rien ne presse », et se rattrape au choix
+(la semaine, d'ici la fin, d'un coup, en repoussant la fin, ou « Déjà
+fait ») ; la portion du jour ne grossit jamais d'elle-même.
+
+### Un objectif, un volume
+
+Ce qui se lit (un programme, une lecture du calendrier, un texte du jour) est
+un volume relié sur l'étagère de Mon parcours et de l'accueil
+(`ProgramVolume.vue`, `VolumeShelf.vue`), de la reliure de son rayon
+(`content/bindings.ts`, la même que l'étagère de la bibliothèque). Sa taille
+dit sa longueur : petit pour un traité ou un texte du jour, ordinaire pour un
+séder ou une lecture du calendrier, épais pour plusieurs sedarim, le plus
+grand pour tout le corpus. Un signet rouge dépasse quand la portion du jour
+attend ; un trait sous le volume dit où l'on en est. Les habitudes ne sont
+pas des livres : elles ont leur liste, et leur semaine en cases plates.
+
+Le choix de ce qu'on lit se fait sur la même planche : les sedarim debout, un
+toucher en prend un, un autre le repose, on en prend autant qu'on veut. Un
+traité seul se trouve par son nom (la recherche) et sort de son séder comme
+un livre mince, posé devant lui.
+
+### Un programme se lit au jour ou à la semaine
+
+Trois rythmes : chaque jour, chaque jour sauf Chabbat et les fêtes, ou à la
+semaine (la portion de la semaine, à répartir comme on veut). Pas de rythme
+au mois : une portion se lit dans la journée ou dans la semaine. Le pas se
+montre avant de commencer (« 3 michnayot par jour, 12 min environ ») ; changer
+la date ou le rythme repart d'aujourd'hui, à la position atteinte.
+
+### Le paquet de l'accueil
+
+Sur l'accueil (dans l'app, avec ou sans compte ; sur le site, pour un
+compte), Mon parcours est un paquet de cartes (`components/parcours/home/`) :
+la carte du dessus, en couleur pleine aux mesures de la carte du moment du
+Sidour, dit ce qu'il y a à faire maintenant ; deux bords teintés dessous
+disent qu'il y en a d'autres.
+
+- **Toucher ouvre la page**, directement (le texte, l'office), sans second
+  toucher. Une carte sans page (la tsédaka, garder sa langue) ouvre sa fiche.
+- **Les gestes** : glisser à droite, c'est fait ; à gauche, plus tard (la
+  carte passe sous le paquet) ; tirer vers le bas, ou toucher les bords,
+  toute la journée (le portefeuille) ; un appui long, la fiche (plus tard,
+  pas aujourd'hui, ouvrir, voir l'objectif). Un glissé n'ouvre jamais la
+  page. Sur le site, chaque geste a son bouton sous le paquet ; dans l'app,
+  ces boutons ne sont lus que par le lecteur d'écran.
+- **L'ordre** : l'office dont c'est l'heure, s'il est dans le parcours (la
+  carte dit « Maintenant » et jusqu'à quand, et remplace alors le raccourci
+  du Sidour), puis le moment présent, ceux qui viennent, ceux déjà passés.
+- **Le portefeuille** étale la journée en cartes compactes, du matin au
+  coucher : la carte du dessus garde sa couleur pleine, celles à faire
+  attendent sur fond clair, celles qui sont faites s'éteignent (fond doux,
+  texte gris, dessin pâli). On y coche après coup.
+- **La barre de la journée**, sous le paquet : une case par carte, rangées
+  par moment ; pleine, fait ; à moitié teintée, la carte du dessus ; grise, ce
+  qui vient. Le compte au bout (« 3 sur 8 »).
+
 ## 2. Les couleurs de thème
 
 Deux couleurs, l'orange et le bleu de la palette du logo. Le fond et le mur

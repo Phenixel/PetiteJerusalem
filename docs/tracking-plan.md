@@ -704,7 +704,7 @@ Une tâche cochée ou décochée.
 | --- | --- |
 | `done` | vrai quand elle est cochée |
 | `kind` | `program`, `habit`, `cycle`, `text` |
-| `source` | d'où : `journee_row` (Ma journée), `objective_button` ou `objective_swipe` (la portion du jour, sur la page d'un programme), `parcours_wall`, `parcours_full_wall` (un jour du mur) |
+| `source` | d'où : `home_deck_swipe` ou `home_deck_button` (la carte du dessus du paquet de l'accueil), `home_wallet_swipe` ou `home_wallet_check` (le portefeuille), `home_sheet` (la fiche d'une carte), `journee_row` (Ma journée), `objective_button` ou `objective_swipe` (la portion du jour, sur la page d'un programme), `parcours_wall`, `parcours_full_wall` (un jour du mur) |
 | `days_ago` | 0 aujourd'hui, 1 hier... : ce qui se coche après coup |
 
 Une tâche de la lecture du jour d'avant (un texte du jour, une lecture du
@@ -716,7 +716,26 @@ calendrier), cochée le jour même, envoie aussi `daily_reading_marked_read`
 ### `parcours_task_skipped` (nouveau)
 
 « Pas aujourd'hui », ou son contraire. `skipped`, `kind`, `source`
-(`journee`).
+(`journee`, ou `home_sheet` depuis la fiche d'une carte de l'accueil).
+
+### `parcours_task_postponed` (nouveau)
+
+« Plus tard » sur l'accueil : la carte passe sous le paquet, le temps de la
+journée. `kind`, et `source` : `swipe` (glissée à gauche), `button`, `sheet`
+(sa fiche).
+
+### `parcours_wallet_opened` (nouveau)
+
+Le portefeuille de l'accueil, la journée étalée. `source` : `swipe` (le
+paquet tiré vers le bas), `edge` (ses bords touchés) ou `button`.
+
+### `home_card_clicked` (existant)
+
+`card` prend une valeur de plus, `parcours_task` : une carte du paquet ou du
+portefeuille touchée, qui ouvre sa page (le texte, l'office). Elle porte
+alors `kind` (**nouvelle propriété**), le genre de l'objectif : `program`,
+`habit`, `cycle`, `text`. `daily_reading` ne part plus : la carte de la
+lecture du jour a laissé place au paquet.
 
 ### `parcours_units_marked` (nouveau)
 

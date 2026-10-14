@@ -12,7 +12,7 @@ import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { useSwipe } from "../../composables/useSwipe";
 import type { TaskView } from "../../composables/useParcoursViews";
-import AppIcon from "../icons/AppIcon.vue";
+import TaskCheck from "./TaskCheck.vue";
 
 const props = withDefaults(defineProps<{ view: TaskView; swipe?: boolean }>(), { swipe: false });
 
@@ -73,16 +73,7 @@ const reveal = computed(() =>
         <span class="task-title">{{ view.title }}</span>
         <span v-if="view.meta" class="task-meta">{{ view.meta }}</span>
       </div>
-      <button
-        type="button"
-        class="task-check"
-        :class="{ 'is-on': done, 'is-half': view.progress === 'partial' }"
-        :aria-pressed="done"
-        :aria-label="t(done ? 'parcours.row.uncheck' : 'parcours.row.check', { name: view.title })"
-        @click="emit('toggle', !done)"
-      >
-        <AppIcon v-if="done" name="check" :size="16" :stroke-width="3" />
-      </button>
+      <TaskCheck :view="view" @toggle="(next) => emit('toggle', next)" />
     </div>
   </div>
 </template>
@@ -127,23 +118,6 @@ const reveal = computed(() =>
 .is-skipped .task-title,
 .is-skipped .task-meta {
   opacity: 0.55;
-}
-.task-check {
-  display: grid;
-  flex: none;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  border: 2px solid color-mix(in srgb, var(--color-text-primary) 22%, transparent);
-  border-radius: var(--radius-pill);
-  color: var(--color-on-brand);
-}
-.task-check.is-half {
-  border-color: var(--color-brand);
-}
-.task-check.is-on {
-  border-color: var(--color-brand);
-  background: var(--color-brand);
 }
 .task-reveal {
   position: absolute;

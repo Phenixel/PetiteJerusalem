@@ -22,9 +22,9 @@ import { onScopeDispose, ref, type Ref } from "vue";
 export type SwipeDirection = "left" | "right" | "up" | "down";
 
 export interface SwipeOptions {
-  /** Les axes que le geste peut prendre. */
+  /** Les axes que le geste peut prendre ; `y: "down"`, seulement tirer vers le bas. */
   x?: boolean;
-  y?: boolean;
+  y?: boolean | "down";
   /** Distance (px) au-delà de laquelle le geste agit en lâchant. */
   threshold?: number;
   /** Le geste a abouti. */
@@ -90,7 +90,8 @@ export function useSwipe(options: SwipeOptions) {
       if (Math.abs(moveX) < AXIS_SLOP && Math.abs(moveY) < AXIS_SLOP) return;
       clearTimeout(pressTimer);
       const horizontal = Math.abs(moveX) > Math.abs(moveY);
-      if ((horizontal && !options.x) || (!horizontal && !options.y)) {
+      const vertical = options.y === "down" ? moveY > 0 : Boolean(options.y);
+      if ((horizontal && !options.x) || (!horizontal && !vertical)) {
         // Le doigt défile : ce n'est pas notre geste.
         pointerId = null;
         return;
@@ -151,10 +152,44 @@ export function useSwipe(options: SwipeOptions) {
       onPointerup: onPointerUp,
       onPointercancel: () => reset(),
       onClickCapture,
+      // Tirer vers le bas : l'élément porte `touch-action: pan-y`, et le
+      // navigateur ferait défiler la page. Une fois le geste à nous (le doigt
+      // est parti vers le bas), on le lui retire ; vers le haut, la page
+      // défile comme d'habitude.
+      onTouchmove: (event: TouchEvent) => {
+        if (dragging.value && axis.value === "y" && event.cancelable) event.preventDefault();
+      },
       // Un menu contextuel sur un appui long viendrait par-dessus la fiche.
       onContextmenu: (event: Event) => {
         if (options.onLongPress) event.preventDefault();
       },
     },
   };
+}
+
+/** Les sens qu'un élément peut prendre en suivant le doigt. */
+export interface DragAllowance {
+  left?: boolean;
+  right?: boolean;
+  down?: boolean;
+}
+
+/**
+ * Ce qui suit le doigt, le temps du geste : une carte glissée de côté penche
+ * un peu, tirée vers le bas elle descend à demi. `allow` borne les sens : une
+ * carte qui ne se glisse qu'à droite ne part pas à gauche.
+ */
+export function dragStyle(
+  gesture: Pick<ReturnType<typeof useSwipe>, "dx" | "dy" | "dragging" | "axis">,
+  allow: DragAllowance,
+): Record<string, string> {
+  if (!gesture.dragging.value) return {};
+  if (gesture.axis.value === "y") {
+    const dy = allow.down ? Math.max(0, gesture.dy.value) / 2 : 0;
+    return { transform: `translateY(${dy}px)`, transition: "none" };
+  }
+  const min = allow.left ? -Infinity : 0;
+  const max = allow.right ? Infinity : 0;
+  const dx = Math.min(max, Math.max(min, gesture.dx.value));
+  return { transform: `translateX(${dx}px) rotate(${dx / 30}deg)`, transition: "none" };
 }
