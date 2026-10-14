@@ -8,10 +8,11 @@
  * elle, en bande de couleur. Le nœud se touche aussi : il coche et décoche,
  * pour qui ne glisse pas.
  */
-import { computed } from "vue";
+import { computed, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import type { RouteLocationRaw } from "vue-router";
 import { useSwipe } from "../../composables/useSwipe";
+import { haptic } from "../../services/haptics";
 
 const props = defineProps<{
   title: string;
@@ -55,6 +56,14 @@ const dx = computed(() => {
 const clamp = (value: number) => Math.max(0, Math.min(1, value));
 const revealDone = computed(() => clamp(dx.value / THRESHOLD));
 const revealLeft = computed(() => clamp(-dx.value / THRESHOLD));
+
+// Le seuil franchi, lâchée, la ligne agirait : cela se sent au doigt.
+watch(
+  () => (revealDone.value >= 1 ? "right" : revealLeft.value >= 1 ? "left" : null),
+  (armed, before) => {
+    if (armed && armed !== before) haptic("tick");
+  },
+);
 </script>
 
 <template>

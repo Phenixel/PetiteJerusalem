@@ -219,6 +219,8 @@ export function useParcoursViews() {
           const entry = texteOf(BIRKAT_HAMAZON_ID);
           return entry ? hubPath(entry) : null;
         }
+        // Un temps d'étude : la bibliothèque, on y lit ce qu'on veut.
+        if (objective.preset === "limoud") return "/bibliotheque";
         return null;
       }
       case "cycle": {
@@ -263,6 +265,7 @@ export function useParcoursViews() {
         if (objective.preset === "tefilin") return t("parcours.hub.withChaharit");
         if (objective.preset === "birkat-hamazon") return t("parcours.hub.afterMeal");
         if (objective.preset === "chema-al-hamita") return t("parcours.hub.beforeSleep");
+        if (objective.preset === "limoud") return t("parcours.hub.studyMeta");
         return momentLabel(task.moment);
       case "cycle":
         return cycleReading(objective.cycle, day);

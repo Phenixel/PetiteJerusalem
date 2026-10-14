@@ -36,6 +36,7 @@ import { isOwnHabit, type DayKey, type MomentId } from "../../services/parcours/
 import { TIMED_MOMENTS } from "../../services/parcours/moments";
 import { taskEntries } from "../../services/parcours/entries";
 import { daySummaries } from "../../services/parcours/schedule";
+import { haptic } from "../../services/haptics";
 import { trackDayViewed } from "../../services/parcours/tracking";
 import { formatHebrewDayMonth, isIsraelPlace } from "../../services/zmanimService";
 
@@ -173,10 +174,12 @@ const entries = computed(() => {
 onMounted(() => trackDayViewed(store.data.value, store.context.value, store.today.value));
 
 function toggle(view: TaskView, done: boolean): void {
+  haptic(done ? "done" : "undo");
   store.setDone(view.task, day.value, done, "journee_row");
 }
 
 function later(view: TaskView): void {
+  haptic("undo");
   deck.postpone(view);
   analyticsService.capture("parcours_task_postponed", {
     kind: view.task.kind,

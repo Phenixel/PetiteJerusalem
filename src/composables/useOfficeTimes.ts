@@ -27,6 +27,16 @@ export function useOfficeTimes() {
   const isNow = (step: TefilaStep | undefined): boolean =>
     step !== undefined && step === office.value?.tefila;
 
+  /**
+   * Un office d'aujourd'hui dont l'heure n'est pas encore venue (Min'ha au
+   * matin) : la pile de l'accueil le garde en retrait.
+   */
+  function isAhead(step: TefilaStep | undefined): boolean {
+    if (step === undefined || isNow(step)) return false;
+    const window = windows.value.find((w) => w.tefila === step);
+    return window !== undefined && now.value < window.start;
+  }
+
   /** Jusqu'à quand, ou à partir de quand, un office d'aujourd'hui ; null sans horaires. */
   function officeMeta(step: TefilaStep): string | null {
     const current = office.value;
@@ -38,5 +48,5 @@ export function useOfficeTimes() {
       : t("parcours.hub.until", { time: time(window.end) });
   }
 
-  return { now, office, isNow, officeMeta, time };
+  return { now, office, isNow, isAhead, officeMeta, time };
 }

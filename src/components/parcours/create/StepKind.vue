@@ -4,13 +4,24 @@
  * texte (un volume à prendre sur la planche), suivre un cycle (les Tehilim
  * de la semaine ou du mois, la paracha ; un texte relu chaque jour), ou
  * prendre une habitude, d'un modèle ou avec ses mots.
+ *
+ * Un modèle déjà pris n'est plus proposé : on ne prend pas deux fois les
+ * tefilot. Retiré de son parcours, il revient dans la liste. Le toucher
+ * n'ajoute rien : il ouvre la feuille du modèle (PresetSheet), où l'on
+ * confirme.
  */
+import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { bindingOf } from "../../../content/bindings";
 import type { CycleId, HabitPreset, ProgramCorpus } from "../../../services/parcours/model";
 import ProgramVolume from "../ProgramVolume.vue";
 
-defineProps<{ takenCycles: CycleId[] }>();
+const props = defineProps<{
+  takenCycles: CycleId[];
+  takenHabits: HabitPreset[];
+  /** Les Tehilim se finissent en entier : un seul programme à la fois. */
+  takenTehilim: boolean;
+}>();
 const emit = defineEmits<{
   (e: "program", corpus: ProgramCorpus): void;
   (e: "cycle", cycle: CycleId): void;
@@ -22,14 +33,24 @@ const { t } = useI18n();
 
 const CORPORA: ProgramCorpus[] = ["michna", "talmud", "tanakh", "tehilim"];
 const CYCLES: CycleId[] = ["tehilim-week", "tehilim-month", "parasha"];
-/** Les modèles d'habitude ; « Avec mes mots » ferme la liste. */
+/**
+ * Les modèles d'habitude : ce qui se fait chaque jour, sans moment trop
+ * précis à tenir ; « Avec mes mots » ferme la liste. Les tefilin et Birkat
+ * Hamazon n'y sont plus (les tefilot et le repas les portent déjà).
+ */
 const HABITS: HabitPreset[] = [
   "tefilot",
-  "tefilin",
   "chema-al-hamita",
-  "birkat-hamazon",
   "tsedaka",
+  "chmirat-halachon",
+  "limoud",
 ];
+
+const corpora = computed(() =>
+  CORPORA.filter((corpus) => corpus !== "tehilim" || !props.takenTehilim),
+);
+const cycles = computed(() => CYCLES.filter((cycle) => !props.takenCycles.includes(cycle)));
+const habits = computed(() => HABITS.filter((preset) => !props.takenHabits.includes(preset)));
 </script>
 
 <template>
@@ -37,7 +58,7 @@ const HABITS: HabitPreset[] = [
     <p class="create-lab">{{ t("parcours.create.finish") }}</p>
     <div class="books">
       <button
-        v-for="corpus in CORPORA"
+        v-for="corpus in corpora"
         :key="corpus"
         type="button"
         class="press-feedback book"
@@ -58,12 +79,10 @@ const HABITS: HabitPreset[] = [
     <p class="create-lab">{{ t("parcours.create.calendar") }}</p>
     <div class="flex flex-wrap gap-2">
       <button
-        v-for="cycle in CYCLES"
+        v-for="cycle in cycles"
         :key="cycle"
         type="button"
         class="pick-pill"
-        :disabled="takenCycles.includes(cycle)"
-        :title="takenCycles.includes(cycle) ? t('parcours.create.taken') : undefined"
         @click="emit('cycle', cycle)"
       >
         {{ t(`parcours.cycles.${cycle}.pick`) }}
@@ -76,7 +95,7 @@ const HABITS: HabitPreset[] = [
     <p class="create-lab">{{ t("parcours.create.habit") }}</p>
     <div class="flex flex-wrap gap-2">
       <button
-        v-for="preset in HABITS"
+        v-for="preset in habits"
         :key="preset"
         type="button"
         class="pick-pill"
@@ -139,10 +158,6 @@ const HABITS: HabitPreset[] = [
   font-size: 14px;
   font-weight: 700;
   color: var(--color-text-primary);
-}
-.pick-pill:disabled {
-  opacity: 0.5;
-  cursor: default;
 }
 .pick-mine {
   background: transparent;

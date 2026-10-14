@@ -45,6 +45,8 @@ export const HABIT_DEFAULTS: Record<
   "birkat-hamazon": { moment: "afternoon", days: ALL_WEEK, anchor: "noon" },
   tsedaka: { moment: "anytime", days: WEEKDAYS_WITHOUT_CHABBAT },
   "chmirat-halachon": { moment: "anytime", days: ALL_WEEK },
+  // Un temps d'étude, quand on veut dans la journée, Chabbat compris.
+  limoud: { moment: "anytime", days: ALL_WEEK },
   custom: { moment: "anytime", days: WEEKDAYS_WITHOUT_CHABBAT },
 };
 

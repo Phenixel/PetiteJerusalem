@@ -674,7 +674,34 @@ de la barre du lecteur au plein écran ne se coupe qu'à la demande du système.
 Le mode allégé s'allume sur une bonne part des téléphones Android (4 Go de
 mémoire déclarés suffisent), et ce mouvement-là, bref et au geste, dit d'où
 vient le plein écran et où il repart : sans lui, le geste de le tirer vers le
-bas n'aurait plus de sens.
+bas n'aurait plus de sens. La pile de l'accueil est la seconde exception (la
+coche, la montée de la suivante, l'anneau) : ces repères disent qu'une carte
+est faite et qu'une autre est arrivée devant.
+
+### Le toucher répond
+
+Le téléphone répond au doigt quand quelque chose se fait (`services/haptics.ts`),
+avec quatre retours, toujours les mêmes :
+
+- **fait** (deux battements, le « succès » du système) : une tâche faite,
+  par la pile, le portefeuille, la fiche, Ma journée, la portion d'un
+  programme, l'anneau du lecteur ou la feuille d'un jour ; une section
+  d'une chaîne de lecture marquée lue ; un objectif ajouté ;
+- **défait** (un battement léger) : une tâche décochée ou remise à plus
+  tard, une section remise en non lu ;
+- **seuil** (à peine) : pendant un geste, le moment où, lâché, il agirait
+  (la carte ou la ligne glissée assez loin, la pile tirée assez bas,
+  l'anneau plein), le rond de l'habitude qui passe d'un repère à l'autre, un
+  bloc de l'accueil qui change de place, une case d'unité touchée, le mur
+  qui s'ouvre en pinçant ; un battement au plus toutes les 60 ms ;
+- **appui long** (un battement franc) : la fiche d'une carte, le réglage
+  de l'accueil.
+
+Dans l'app, c'est le moteur du téléphone (`@capacitor/haptics`), qui suit
+le réglage du système ; sur le site, la vibration du navigateur là où elle
+existe (Android), rien sur iPhone, qui ne la donne pas au web. Un retour
+qui échoue se tait sans gêner le geste. Tenu par
+`src/__tests__/haptics.test.ts`.
 
 ### Ce qui est à soi se range avec le reste
 
@@ -1617,6 +1644,16 @@ vient, l'heure en grand), l'étagère sans titre.
   le moment présent, ceux qui viennent, ceux déjà passés, « Rattraper », et
   enfin ce qu'on a remis à plus tard. Un office dit jusqu'à quand, ou à
   partir de quand s'il vient.
+- **Pas encore l'heure.** Un office dont l'heure n'est pas venue (Min'ha au
+  matin) passe après tout ce qui se fait maintenant, même ce qu'on a remis
+  à plus tard : la pile ne propose jamais en couleur pleine ce qu'on ne
+  peut pas encore faire. Quand il ne reste que lui, il attend en tête, en
+  retrait : la carte claire et à plat (un filet, pas d'ombre), une horloge
+  et « Pas encore l'heure », à partir de quand, le sidour pâli. Il ne se
+  glisse pas (tiré de côté, il revient sans rien marquer) ; un toucher
+  ouvre sa fiche, d'où l'on peut le cocher quand même. À son heure, il
+  reprend sa couleur et sa place. Tenu par
+  `src/__tests__/parcoursDeck.test.ts`.
 - **Les cartes d'occasion** (la lune les nuits où on la bénit, le compte du
   'Omer le soir, l'allumage de 'Hanouka) prennent leur place dans la pile, à
   leur heure, et s'ouvrent de même ; leurs bandeaux se taisent tant que le
@@ -1698,6 +1735,24 @@ pas (« 2 sur 3 »), puis la question en grand, alignée au début.
   (Michna, Talmud, Tanakh, Tehilim) ; les cycles en pastilles (Tehilim
   chaque semaine, chaque mois, Chnei mikra, un texte chaque jour) ; les
   habitudes en pastilles, et « Avec mes mots » en contour, à l'encre.
+  Les habitudes proposées se font chaque jour sans moment trop précis à
+  tenir : les trois tefilot, le Chéma du coucher, la tsédaka, garder sa
+  langue, un temps d'étude (la carte ouvre la bibliothèque). Les tefilin
+  et Birkat Hamazon n'y sont plus (les tefilot et le repas les portent) ;
+  une habitude déjà prise se lit toujours.
+- **Un modèle se confirme.** Toucher une habitude toute prête ou un cycle
+  n'ajoute rien : une feuille monte (`PresetSheet.vue`), qui dit ce qu'il
+  demande, ses jours et son moment en étiquettes, puis « Ajouter à mon
+  parcours » en grand, « Régler les jours » pour une habitude, et
+  « Annuler ». Le bouton ne prend le toucher qu'après 400 ms (le temps que
+  la feuille monte) : un double toucher sur la liste ne l'atteint pas.
+  « Ajouter à ma journée », sur l'étape d'une habitude, attend de même.
+- **Une seule fois.** Un modèle déjà pris (une habitude, un cycle, le
+  programme des Tehilim) n'est plus proposé ; retiré du parcours, il
+  revient. Les sedarim, traités et livres qu'un programme en cours étudie
+  restent éteints sur la planche, « Déjà sur votre étagère ». Ajouter quand
+  même (une adresse gardée, deux touchers) mène à celui qu'on a déjà. Tenu
+  par `e2e/firebase/parcours.spec.ts` (« un modèle se confirme »).
 - **D'ici quand ?** Quatre réponses en liste : la veille de Roch Hachana,
   de Pessa'h (avec le nombre de jours), une autre date, ou « à mon
   rythme » (tant par jour ou par semaine : la date de fin s'en déduit).

@@ -1,4 +1,5 @@
 import { onScopeDispose } from "vue";
+import { haptic } from "../services/haptics";
 
 /**
  * L'appui long, au doigt, sur une zone : l'accueil s'ouvre ainsi en
@@ -37,6 +38,7 @@ export function useLongPress(accept: (target: Element) => boolean, onPress: () =
       timer = setTimeout(() => {
         timer = undefined;
         fired = true;
+        haptic("press");
         onPress();
       }, LONG_PRESS_MS);
     },

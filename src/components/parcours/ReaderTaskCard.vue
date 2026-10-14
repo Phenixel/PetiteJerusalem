@@ -12,10 +12,11 @@
  * Chargée à la demande (voir TextReadingPage) : elle tire le calendrier
  * hébraïque.
  */
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useParcours } from "../../composables/useParcours";
 import { useParcoursViews } from "../../composables/useParcoursViews";
+import { haptic } from "../../services/haptics";
 import { addDays } from "../../services/parcours/days";
 
 const props = defineProps<{ objectiveId: string }>();
@@ -64,12 +65,24 @@ const sub = computed(() => {
 });
 
 function markDone(): void {
-  if (task.value && !done.value) store.setDone(task.value, store.today.value, true, "reader");
+  if (!task.value || done.value) return;
+  haptic("done");
+  store.setDone(task.value, store.today.value, true, "reader");
 }
 
 function undo(): void {
-  if (task.value) store.setDone(task.value, store.today.value, false, "reader");
+  if (!task.value) return;
+  haptic("undo");
+  store.setDone(task.value, store.today.value, false, "reader");
 }
+
+// L'anneau plein : lâché maintenant, la portion est faite. Cela se sent.
+watch(
+  () => pulling.value && share.value >= 1,
+  (full) => {
+    if (full) haptic("tick");
+  },
+);
 
 function onDown(event: PointerEvent): void {
   if (done.value || event.button !== 0) return;

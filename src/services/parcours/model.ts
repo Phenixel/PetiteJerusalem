@@ -146,7 +146,11 @@ export interface ProgramObjective extends ObjectiveBase {
   cardDays?: number[];
 }
 
-/** Les habitudes qu'on propose, chacune avec son nom, son moment et ce qu'elle ouvre. */
+/**
+ * Les habitudes, chacune avec son nom, son moment et ce qu'elle ouvre. La
+ * création n'en propose qu'une partie (voir StepKind) : les tefilin et
+ * Birkat Hamazon n'y sont plus, mais une habitude déjà prise se lit encore.
+ */
 export type HabitPreset =
   | "tefilot"
   | "tefilin"
@@ -154,6 +158,7 @@ export type HabitPreset =
   | "birkat-hamazon"
   | "tsedaka"
   | "chmirat-halachon"
+  | "limoud"
   | "custom";
 
 export const HABIT_PRESETS: readonly HabitPreset[] = [
@@ -163,6 +168,7 @@ export const HABIT_PRESETS: readonly HabitPreset[] = [
   "birkat-hamazon",
   "tsedaka",
   "chmirat-halachon",
+  "limoud",
   "custom",
 ];
 

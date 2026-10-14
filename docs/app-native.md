@@ -458,6 +458,17 @@ le calcul est local, les coordonnées restent en `localStorage`.
   à `ios/App/App/Info.plist`. C'est indispensable, sans cette clé, iOS
   **ferme l'app** à la première demande de position.
 
+## Retours haptiques
+
+Le téléphone répond au doigt quand une tâche est faite, défaite, ou qu'un
+geste franchit son seuil (`src/services/haptics.ts`, vocabulaire dans
+`docs/design.md`, « Le toucher répond »). Le plugin `@capacitor/haptics`
+déclare lui-même la permission `VIBRATE` sur Android (permission normale,
+rien à demander) ; sur iOS, il passe par les générateurs de retour du
+système, qui suivent le réglage « Retours haptiques » de l'appareil. Le
+plugin se charge à la demande et se déstructure sur place (voir plus haut).
+Sur le site, `navigator.vibrate` prend le relais là où il existe.
+
 ## Retour arrière
 
 Chaque plateforme a son geste, et l'app doit câbler les deux.

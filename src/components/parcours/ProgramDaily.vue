@@ -20,6 +20,7 @@ import { addDays } from "../../services/parcours/days";
 import type { ProgramObjective } from "../../services/parcours/model";
 import { portionMinutes } from "../../services/parcours/plan";
 import { placeOf, unitLabel, unitOf } from "../../services/parcours/texts";
+import { haptic } from "../../services/haptics";
 import { formatHebrewDate } from "../../services/zmanimService";
 import ProgramTimeline from "./ProgramTimeline.vue";
 import ProgramVolume from "./ProgramVolume.vue";
@@ -93,7 +94,9 @@ const portion = computed(() => {
 });
 
 function markDone(): void {
-  if (task.value && !done.value) store.setDone(task.value, today.value, true, "objective_swipe");
+  if (!task.value || done.value) return;
+  haptic("done");
+  store.setDone(task.value, today.value, true, "objective_swipe");
 }
 
 // La portion glissée à droite : c'est fait.

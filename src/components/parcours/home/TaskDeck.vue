@@ -17,6 +17,10 @@
  * gauche, plus tard, ou pas faite si elle l'était. « Replier » le referme
  * (à la souris, le pousser vers le haut aussi).
  *
+ * Un office dont l'heure n'est pas venue attend en retrait (`waiting`) :
+ * claire et à plat, « Pas encore l'heure », elle résiste au glissé sans rien
+ * marquer ; un toucher ouvre sa fiche.
+ *
  * La page défile sous le doigt, même posé sur une carte : la pile ne retient
  * un geste vertical que pour se déplier, quand on la tire vers le bas en
  * haut de page (voir docs/design.md, « La pile et le défilement »).
@@ -31,6 +35,7 @@ import { computed, onBeforeUnmount, reactive, ref, watch, type StyleValue } from
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import type { DeckCard } from "../../../composables/useTodayDeck";
+import { haptic } from "../../../services/haptics";
 import DayBar from "./DayBar.vue";
 import DeckArt from "./DeckArt.vue";
 
@@ -122,6 +127,9 @@ function after(run: () => void, ms: number): void {
 
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 
+/** Une carte qui attend son heure se laisse tirer un peu, et revient. */
+const resist = (dx: number) => Math.sign(dx) * Math.min(36, Math.abs(dx) * 0.25);
+
 /**
  * Le système demande moins d'animations : tout se fait d'un coup. Une petite
  * machine (`perf-lite`) garde, elle, la coche, la montée et le halo : ils
@@ -155,7 +163,7 @@ interface Item {
 }
 
 function releaseLabel(card: DeckCard): string | null {
-  if (drag.key !== card.key || drag.axis !== "x") return null;
+  if (drag.key !== card.key || drag.axis !== "x" || card.waiting) return null;
   if (drag.dx > LIST_THRESHOLD) return t("parcours.hub.releaseDone");
   if (drag.dx < -LIST_THRESHOLD) {
     if (card.skipped) return t("parcours.hub.releaseUnskip");
@@ -174,7 +182,13 @@ function listItem(card: DeckCard, j: number): Item {
       : props.isLater(card)
         ? t("parcours.hub.laterKicker", { kicker: card.kicker })
         : card.kicker;
-  const tone = off ? "dk-done" : card.key === top.value?.key && !card.extra ? "" : "dk-plain";
+  const tone = off
+    ? "dk-done"
+    : card.waiting
+      ? "dk-plain dk-wait"
+      : card.key === top.value?.key && !card.extra
+        ? ""
+        : "dk-plain";
   return {
     card,
     mode: "list",
@@ -183,7 +197,12 @@ function listItem(card: DeckCard, j: number): Item {
     style: {
       top: `${j * STEP}px`,
       zIndex: j + 1,
-      ...(dragging ? { transform: `translateX(${drag.dx}px)`, transition: "none" } : {}),
+      ...(dragging
+        ? {
+            transform: `translateX(${card.waiting ? resist(drag.dx) : drag.dx}px)`,
+            transition: "none",
+          }
+        : {}),
     },
     kicker: releaseLabel(card) ?? kicker,
     label: t(card.done ? "parcours.hub.cardLabelDone" : "parcours.hub.cardLabel", {
@@ -196,7 +215,9 @@ function listItem(card: DeckCard, j: number): Item {
 
 function topItem(card: DeckCard): Item {
   let style: StyleValue = { zIndex: 30 };
-  if (drag.key === card.key && drag.axis === "x") {
+  if (drag.key === card.key && drag.axis === "x" && card.waiting) {
+    style = { ...style, transform: `translateX(${resist(drag.dx)}px)`, transition: "none" };
+  } else if (drag.key === card.key && drag.axis === "x") {
     style = {
       ...style,
       transform: `translateX(${drag.dx}px) rotate(${drag.dx / 30}deg)`,
@@ -210,13 +231,17 @@ function topItem(card: DeckCard): Item {
     mode: "top",
     inert: false,
     classes: [
-      card.extra ? "dk-plain" : "",
+      card.extra || card.waiting ? "dk-plain" : "",
+      card.waiting ? "dk-wait" : "",
       "dk-top",
       arrived.value === card.key ? "dk-arrived" : "",
     ],
     style,
     kicker: card.kicker,
-    label: t("parcours.hub.topLabel", { title: card.title, meta: card.meta }),
+    label: t(card.waiting ? "parcours.hub.waitLabel" : "parcours.hub.topLabel", {
+      title: card.title,
+      meta: card.meta,
+    }),
     art: card.art ? "big" : null,
     stamp: false,
   };
@@ -316,15 +341,32 @@ const deckHeight = computed(() => {
 });
 
 const revealDone = computed(() =>
-  !props.open && drag.key === top.value?.key && drag.axis === "x"
+  !props.open && drag.key === top.value?.key && drag.axis === "x" && !top.value?.waiting
     ? clamp(drag.dx / TOP_THRESHOLD, 0, 1)
     : 0,
 );
 const revealLater = computed(() =>
-  !props.open && drag.key === top.value?.key && drag.axis === "x"
+  !props.open && drag.key === top.value?.key && drag.axis === "x" && !top.value?.waiting
     ? clamp(-drag.dx / TOP_THRESHOLD, 0, 1)
     : 0,
 );
+
+/**
+ * Le seuil d'un geste : lâchée maintenant, la carte agirait (faite, plus
+ * tard), ou la pile s'ouvrirait. Le franchir se sent au doigt.
+ */
+const armedGesture = computed(() => {
+  if (drag.key === null || drag.axis === null) return null;
+  const card = props.open ? props.day.find((c) => c.key === drag.key) : top.value;
+  if (!card || card.key !== drag.key) return null;
+  if (drag.axis === "y") return !props.open && drag.dy > PULL_OPEN ? "pull" : null;
+  if (card.waiting) return null;
+  const limit = props.open ? LIST_THRESHOLD : TOP_THRESHOLD;
+  return drag.dx > limit ? "right" : drag.dx < -limit ? "left" : null;
+});
+watch(armedGesture, (armed, before) => {
+  if (armed && armed !== before) haptic("tick");
+});
 
 // La carte faite a quitté la tête : l'envol est fini.
 watch(
@@ -362,7 +404,9 @@ function onDown(event: PointerEvent, item: Item): void {
   clearTimeout(pressTimer);
   const card = item.card;
   pressTimer = setTimeout(() => {
-    if (drag.key === card.key && !drag.axis) openSheet(card);
+    if (drag.key !== card.key || drag.axis) return;
+    haptic("press");
+    openSheet(card);
   }, LONG_PRESS_MS);
   drag.key = card.key;
   drag.dx = 0;
@@ -410,6 +454,7 @@ function onTouchMove(event: TouchEvent): void {
  */
 function fly(card: DeckCard, side: "right" | "left", dx: number): void {
   reset();
+  haptic(side === "right" ? "done" : "undo");
   const calm = reducedMotion();
   const next = props.pending[1] ?? null;
   const action = t(side === "right" ? "parcours.hub.done" : "parcours.hub.later");
@@ -447,6 +492,8 @@ function onUp(item: Item): void {
   const card = item.card;
   const { dx, dy, axis } = drag;
   reset();
+  // Pas encore l'heure : le glissé de côté ne marque rien, la carte revient.
+  if (card.waiting && axis === "x") return;
   if (item.mode === "top") {
     if (axis === "x" && dx > TOP_THRESHOLD) fly(card, "right", dx);
     else if (axis === "x" && dx < -TOP_THRESHOLD) fly(card, "left", dx);
@@ -454,8 +501,11 @@ function onUp(item: Item): void {
     return;
   }
   if (axis === "x" && dx > LIST_THRESHOLD) {
-    if (!card.done) emit("done", card, "home_wallet_swipe");
+    if (card.done) return;
+    haptic("done");
+    emit("done", card, "home_wallet_swipe");
   } else if (axis === "x" && dx < -LIST_THRESHOLD) {
+    haptic("undo");
     if (card.done || card.skipped) emit("undo", card, "home_wallet_swipe");
     else emit("later", card, "wallet_swipe");
   } else if (axis === "y" && dy < -FOLD) {
@@ -474,7 +524,8 @@ function onClick(event: MouseEvent, item: Item): void {
     return;
   }
   const card = item.card;
-  if (!card.route) {
+  // Sans page, ou pas encore l'heure : le toucher ouvre la fiche.
+  if (!card.route || card.waiting) {
     event.preventDefault();
     emit("sheet", card);
     return;
@@ -486,9 +537,9 @@ function onClick(event: MouseEvent, item: Item): void {
   void router.push(card.route);
 }
 
-/** Une carte sans page est un bouton : Entrée et Espace l'ouvrent. */
+/** Une carte sans page (ou qui attend son heure) est un bouton : Entrée et Espace l'ouvrent. */
 function onKeydown(event: KeyboardEvent, item: Item): void {
-  if (item.card.route || item.inert) return;
+  if ((item.card.route && !item.card.waiting) || item.inert) return;
   if (event.key === "Enter" || event.key === " ") {
     event.preventDefault();
     emit("sheet", item.card);
@@ -551,8 +602,8 @@ onBeforeUnmount(() => {
         class="dk"
         :class="item.classes"
         :style="item.style"
-        :href="item.inert ? undefined : hrefOf(item.card)"
-        :role="!item.inert && !item.card.route ? 'button' : undefined"
+        :href="item.inert || item.card.waiting ? undefined : hrefOf(item.card)"
+        :role="!item.inert && (!item.card.route || item.card.waiting) ? 'button' : undefined"
         :tabindex="item.inert ? -1 : 0"
         :aria-hidden="item.inert ? 'true' : undefined"
         :aria-label="item.label"
@@ -571,7 +622,25 @@ onBeforeUnmount(() => {
           :art="item.card.art"
           :small="item.art === 'small'"
         />
-        <span class="dk-kick">{{ item.kicker }}</span>
+        <span class="dk-kick">
+          <svg
+            v-if="item.card.waiting && item.kicker"
+            class="dk-clock"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2" />
+            <path
+              d="M12 7.5V12l3 2"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+          {{ item.kicker }}
+        </span>
         <span class="dk-title">{{ item.card.title }}</span>
         <span class="dk-meta">{{ item.card.meta }}</span>
         <!-- C'est fait : la coche, posée sur la carte avant qu'elle s'envole. -->
@@ -682,6 +751,26 @@ onBeforeUnmount(() => {
   background: var(--color-surface-soft);
   color: var(--color-text-secondary);
   box-shadow: none;
+}
+/* Pas encore l'heure : la carte attend, claire et à plat, son dessin pâli. */
+.dk-wait {
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  box-shadow: inset 0 0 0 1px var(--color-line-strong);
+}
+.dk.dk-wait .dk-title {
+  color: var(--color-text-primary);
+}
+.dk-wait :deep(.deck-art) {
+  filter: grayscale(0.6);
+  opacity: 0.5;
+}
+.dk-clock {
+  display: inline-block;
+  width: 15px;
+  height: 15px;
+  margin-inline-end: 4px;
+  vertical-align: -2px;
 }
 .dk-done :deep(.deck-art),
 .dk-done :deep(.card-art) {

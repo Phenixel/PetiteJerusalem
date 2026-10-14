@@ -115,6 +115,7 @@ import { nightWithoutTachanun, withoutTachanun } from "../../services/tachanun";
 import { isWalledCityPlace, pastChatzotNight } from "../../services/zmanimService";
 import { useKeepAwake } from "../../composables/useKeepAwake";
 import { analyticsService } from "../../services/analyticsService";
+import { haptic } from "../../services/haptics";
 import { useLocalePath } from "../../composables/useLocalePath";
 import { useConfirm } from "../../composables/useConfirm";
 import {
@@ -1281,6 +1282,7 @@ async function toggleRead() {
   isReserving.value = true;
   try {
     await sessionService.markReservationAsCompleted(session.value.id, r.id, next);
+    haptic(next ? "done" : "undo");
     r.isCompleted = next;
     // La transaction a effacé l'échéance du tirage : l'état local doit suivre,
     // sinon « remettre en non lu » ferait réapparaître une réservation périmée

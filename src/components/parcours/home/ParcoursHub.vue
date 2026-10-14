@@ -17,6 +17,7 @@ import { useI18n } from "vue-i18n";
 import { useParcours } from "../../../composables/useParcours";
 import { useTodayDeck, type DeckCard } from "../../../composables/useTodayDeck";
 import { analyticsService } from "../../../services/analyticsService";
+import { haptic, type HapticKind } from "../../../services/haptics";
 import { liveObjectives } from "../../../services/parcours/schedule";
 import TaskDeck from "./TaskDeck.vue";
 import TaskSheet from "./TaskSheet.vue";
@@ -132,10 +133,13 @@ const sheet = computed<DeckCard | null>(
   () => deck.day.value.find((card) => card.key === sheetKey.value) ?? null,
 );
 
-function fromSheet(action: (card: DeckCard) => void): void {
+/** Un bouton de la fiche : elle se referme, le geste agit, et se sent au doigt. */
+function fromSheet(action: (card: DeckCard) => void, feel: HapticKind): void {
   const card = sheet.value;
   sheetKey.value = null;
-  if (card) action(card);
+  if (!card) return;
+  haptic(feel);
+  action(card);
 }
 </script>
 
@@ -170,10 +174,10 @@ function fromSheet(action: (card: DeckCard) => void): void {
     <TaskSheet
       :card="sheet"
       @close="sheetKey = null"
-      @done="fromSheet((card) => done(card, 'home_sheet'))"
-      @undo="fromSheet((card) => undo(card, 'home_sheet'))"
-      @later="fromSheet((card) => later(card, 'sheet'))"
-      @skip="(skipped) => fromSheet((card) => skip(card, skipped))"
+      @done="fromSheet((card) => done(card, 'home_sheet'), 'done')"
+      @undo="fromSheet((card) => undo(card, 'home_sheet'), 'undo')"
+      @later="fromSheet((card) => later(card, 'sheet'), 'undo')"
+      @skip="(skipped) => fromSheet((card) => skip(card, skipped), 'undo')"
       @opened="sheet && opened(sheet)"
     />
   </section>

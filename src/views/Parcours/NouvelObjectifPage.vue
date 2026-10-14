@@ -6,11 +6,18 @@
  *
  * L'étape est dans l'adresse (`?etape=`), comme ce qu'on a déjà pris : le
  * retour du téléphone ramène à l'étape d'avant, sans rien perdre.
+ *
+ * Un modèle tout prêt (une habitude, un cycle) ne s'ajoute pas d'un toucher :
+ * sa feuille dit ce qu'il demande, et l'on confirme (PresetSheet). On ne
+ * prend pas deux fois le même : un modèle déjà pris n'est plus proposé, et
+ * l'ajouter quand même (une adresse gardée, deux touchers) mène à celui
+ * qu'on a déjà.
  */
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 import ParcoursBack from "../../components/parcours/ParcoursBack.vue";
+import PresetSheet, { type PresetChoice } from "../../components/parcours/create/PresetSheet.vue";
 import StepHabit from "../../components/parcours/create/StepHabit.vue";
 import StepKind from "../../components/parcours/create/StepKind.vue";
 import StepParts from "../../components/parcours/create/StepParts.vue";
@@ -21,6 +28,7 @@ import { useParcoursMeta } from "../../composables/useParcoursMeta";
 import { useParcoursViews } from "../../composables/useParcoursViews";
 import type { TextStudyJsonEntry } from "../../models/models";
 import { analyticsService } from "../../services/analyticsService";
+import { haptic } from "../../services/haptics";
 import { milestoneEve } from "../../services/parcours/calendar";
 import {
   HABIT_DEFAULTS,
@@ -133,6 +141,21 @@ const takenCycles = computed(() =>
     return objective !== undefined && isAlive(objective);
   }),
 );
+/** Les modèles d'habitude déjà pris (« Avec mes mots » se prend autant qu'on veut). */
+const takenHabits = computed(() =>
+  Object.values(store.data.value.objectives).flatMap((o) =>
+    o.kind === "habit" && o.preset !== "custom" && isAlive(o) ? [o.preset] : [],
+  ),
+);
+/** Les programmes en cours d'un corpus : leurs textes ne se reprennent pas. */
+const livePrograms = (of: ProgramCorpus) =>
+  Object.values(store.data.value.objectives).flatMap((o) =>
+    o.kind === "program" && o.corpus === of && isAlive(o) ? [o] : [],
+  );
+const takenTehilim = computed(() => livePrograms("tehilim").length > 0);
+const takenProgramTexts = computed(() =>
+  corpus.value ? livePrograms(corpus.value).flatMap((o) => o.texts) : [],
+);
 const takenTexts = computed(() =>
   Object.values(store.data.value.objectives)
     .filter((o) => o.kind === "text" && isAlive(o))
@@ -158,6 +181,38 @@ function chooseHabit(chosen: HabitPreset): void {
   go({ etape: "habitude", modele: chosen });
 }
 
+/** Le modèle qu'on regarde, avant de le prendre. */
+const presetChoice = ref<PresetChoice | null>(null);
+
+function previewHabit(chosen: HabitPreset): void {
+  // « Avec mes mots » demande un nom : son étape, directement.
+  if (chosen === "custom") chooseHabit(chosen);
+  else presetChoice.value = { kind: "habit", preset: chosen };
+}
+
+function addPreset(): void {
+  const choice = presetChoice.value;
+  presetChoice.value = null;
+  if (choice?.kind === "cycle") createChosenCycle(choice.cycle);
+  else if (choice?.kind === "habit") {
+    startHabit(choice.preset);
+    createChosenHabit(choice.preset);
+  }
+}
+
+function adjustPreset(): void {
+  const choice = presetChoice.value;
+  presetChoice.value = null;
+  if (choice?.kind === "habit") chooseHabit(choice.preset);
+}
+
+/** Un modèle déjà pris : on va voir celui qu'on a, au lieu d'en prendre un second. */
+function alreadyTaken(found: Objective | undefined): boolean {
+  if (!found) return false;
+  void router.replace(`/parcours/objectif/${found.id}`);
+  return true;
+}
+
 // Arrivé tout droit sur l'étape d'une habitude (une adresse rechargée) : ses réglages d'office.
 watch(
   preset,
@@ -169,6 +224,7 @@ watch(
 
 /** L'objectif créé : on le garde, on le compte, et l'on va le voir. */
 function finish(objective: Objective, properties: Record<string, unknown>): void {
+  haptic("done");
   store.saveObjective(objective);
   analyticsService.capture("parcours_objective_created", { kind: objective.kind, ...properties });
   void router.replace(`/parcours/objectif/${objective.id}`);
@@ -176,6 +232,9 @@ function finish(objective: Objective, properties: Record<string, unknown>): void
 
 function createChosenProgram(): void {
   if (!corpus.value || resolveParts(corpus.value, parts.value).length === 0) return;
+  const chosen = [...parts.value].sort().join();
+  const same = livePrograms(corpus.value).find((o) => [...o.parts].sort().join() === chosen);
+  if (alreadyTaken(same)) return;
   const program = createProgram(
     {
       corpus: corpus.value,
@@ -196,11 +255,21 @@ function createChosenProgram(): void {
   });
 }
 
-function createChosenHabit(): void {
-  if (!preset.value) return;
+function createChosenHabit(chosen: HabitPreset | null = preset.value): void {
+  if (!chosen) return;
+  if (
+    chosen !== "custom" &&
+    alreadyTaken(
+      Object.values(store.data.value.objectives).find(
+        (o) => o.kind === "habit" && o.preset === chosen && isAlive(o),
+      ),
+    )
+  ) {
+    return;
+  }
   const habit = createHabit(
     {
-      preset: preset.value,
+      preset: chosen,
       name: habitName.value,
       days: habitDays.value,
       moment: habitMoment.value,
@@ -213,6 +282,8 @@ function createChosenHabit(): void {
 }
 
 function createChosenCycle(cycle: CycleId): void {
+  const found = store.data.value.objectives[cycleObjectiveId(cycle)];
+  if (found && isAlive(found) && alreadyTaken(found)) return;
   finish(createCycle(cycle, store.today.value, Date.now()), { cycle });
 }
 
@@ -239,14 +310,16 @@ const canGoOn = computed(
     <StepKind
       v-if="step === 'kind'"
       :taken-cycles="takenCycles"
+      :taken-habits="takenHabits"
+      :taken-tehilim="takenTehilim"
       @program="chooseProgram"
-      @cycle="createChosenCycle"
+      @cycle="(cycle) => (presetChoice = { kind: 'cycle', cycle })"
       @text="go({ etape: 'texte' })"
-      @habit="chooseHabit"
+      @habit="previewHabit"
     />
 
     <template v-else-if="step === 'parts' && corpus">
-      <StepParts v-model="parts" class="mt-6" :corpus="corpus" />
+      <StepParts v-model="parts" class="mt-6" :corpus="corpus" :taken="takenProgramTexts" />
       <button
         type="button"
         class="btn btn-primary mt-8 w-full"
@@ -275,7 +348,7 @@ const canGoOn = computed(
       v-model:moment="habitMoment"
       v-model:anchor="habitAnchor"
       :preset="preset"
-      @create="createChosenHabit"
+      @create="createChosenHabit()"
     />
 
     <StepText
@@ -283,6 +356,13 @@ const canGoOn = computed(
       class="mt-6"
       :taken="takenTexts"
       @pick="createChosenText"
+    />
+
+    <PresetSheet
+      :choice="presetChoice"
+      @close="presetChoice = null"
+      @add="addPreset"
+      @adjust="adjustPreset"
     />
   </main>
 </template>

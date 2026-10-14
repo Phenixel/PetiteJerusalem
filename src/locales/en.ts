@@ -1940,7 +1940,17 @@ const en: LocaleMessages = {
       "birkat-hamazon": "Birkat Hamazon",
       tsedaka: "Tzedakah",
       "chmirat-halachon": "Guarding my tongue",
+      limoud: "Time for study",
       custom: "A habit of my own",
+    },
+    habitAbout: {
+      tefilot:
+        "Shacharit, Mincha and Arvit, every day: each prayer comes to the home screen at its time.",
+      "chema-al-hamita": "The bedtime Shema, every night before sleeping: the card opens the text.",
+      tsedaka:
+        "A coin set aside every day except Shabbat: the card is checked off with one gesture.",
+      "chmirat-halachon": "Watching your words all day long: the card reminds you every day.",
+      limoud: "A moment of study every day, whatever you like to read: the card opens the library.",
     },
     tefilot: {
       chaharit: "Shacharit",
@@ -2100,6 +2110,9 @@ const en: LocaleMessages = {
       releaseLater: "Let go: later",
       releaseUnskip: "Let go: back to today",
       announceNext: "{action}. Next: {title}",
+      notYet: "Not yet time",
+      waitLabel: "{title}, {meta}. Not yet time: tap to open its details.",
+      studyMeta: "whatever you like, in the library",
       today: "Today, {done} of {total}",
       day: "My day",
       fold: "Fold",
@@ -2315,6 +2328,15 @@ const en: LocaleMessages = {
       habitTitle: "A habit",
       habitText: "The text is in the Siddur: the card will open it.",
       habitOwn: "A commitment of your own: the card is checked with a swipe.",
+      kindHabit: "A habit",
+      kindCycle: "A cycle",
+      confirmAdd: "Add to my journey",
+      adjustFirst: "Set the days",
+      eachAtItsTime: "Each prayer at its time",
+      tagEveryDay: "Every day",
+      tagWeekdays: "Except Shabbat",
+      habitStudy: "The card opens the library: read whatever you like there.",
+      takenPart: "Already on your shelf",
       everyDay: "Every day.",
       exceptChabbat: "Every day, except Shabbat.",
       someDays:

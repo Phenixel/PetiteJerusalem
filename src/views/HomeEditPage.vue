@@ -24,6 +24,7 @@ import {
 } from "../composables/useHomeLayout";
 import { localeMessagesReady } from "../i18n";
 import { analyticsService } from "../services/analyticsService";
+import { haptic } from "../services/haptics";
 import { pageTitle, seoService } from "../services/seoService";
 
 const { t, locale } = useI18n();
@@ -57,6 +58,11 @@ const target = computed(() => {
   const d = drag.value;
   if (!d) return null;
   return dropIndex(order.value.indexOf(d.block), d.dy, STEP, order.value.length);
+});
+
+// La place du bloc tenu change : un battement, à chaque cran.
+watch(target, (to, before) => {
+  if (to !== null && before !== null && to !== before) haptic("tick");
 });
 
 function tileStyle(block: HomeBlock, index: number): StyleValue | undefined {
@@ -120,10 +126,12 @@ function onKey(event: KeyboardEvent, block: HomeBlock): void {
 }
 
 function hide(block: HomeBlock): void {
+  haptic("tick");
   home.hide(block);
   analyticsService.capture("home_block_hidden", { block });
 }
 function show(block: HomeBlock): void {
+  haptic("tick");
   home.show(block);
   analyticsService.capture("home_block_shown", { block });
 }

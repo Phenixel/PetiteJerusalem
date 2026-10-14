@@ -8,7 +8,8 @@ import type { Objective } from "../services/parcours/model";
  * Le paquet de l'accueil (composables/useTodayDeck.ts) : l'office dont c'est
  * l'heure en tête quand le parcours le porte, puis le moment présent ; ce
  * qu'on remet « plus tard » passe dessous, même l'office ; ce qui est fait
- * quitte le paquet.
+ * quitte le paquet. Un office dont l'heure n'est pas venue attend après tout
+ * le reste, en retrait (« Pas encore l'heure »).
  */
 
 vi.mock("../services/authService", () => ({
@@ -102,7 +103,13 @@ describe("le paquet de l'accueil", () => {
     const office = deck.top.value!;
     deck.postpone(office);
     expect(deck.top.value?.view?.objective.id).toBe("t23");
-    expect(deck.pending.value.at(-1)?.key).toBe(office.key);
+    // Après tout ce qui se fait maintenant ; Min'ha et Arvit, pas encore à l'heure, après lui.
+    const now = deck.pending.value.filter((card) => !card.waiting);
+    expect(now.at(-1)?.key).toBe(office.key);
+    expect(deck.pending.value.slice(now.length).map((card) => card.view?.task.step)).toEqual([
+      "minha",
+      "arvit",
+    ]);
   });
 
   it("quitte le paquet ce qui est fait, et le garde dans la journée", async () => {
@@ -119,7 +126,8 @@ describe("le paquet de l'accueil", () => {
     const { deck } = await mountDeck();
     const arvit = deck.day.value.find((card) => card.view?.task.step === "arvit");
     expect(arvit?.meta).toMatch(/^à partir de \d{1,2}:\d{2}$/);
-    expect(arvit?.kicker).toBe(fr.parcours.kicker.evening);
+    expect(arvit?.kicker).toBe(fr.parcours.hub.notYet);
+    expect(arvit?.waiting).toBe(true);
     // Les trois offices, le texte du jour, le Chema al hamita.
     expect(deck.count.value).toEqual({ done: 0, total: 5 });
   });
@@ -155,10 +163,34 @@ describe("le paquet de l'accueil", () => {
     // La journée compte les tâches seules : les trois offices, le texte, le
     // Chema, et la portion de Moed.
     expect(deck.count.value.total).toBe(6);
-    // Il se range après les tâches, avant ce qu'on remet à plus tard.
+    // Il se range après les tâches, avant ce qu'on remet à plus tard (et
+    // avant les offices pas encore à l'heure).
     const top = deck.top.value!;
     deck.postpone(top);
-    expect(deck.pending.value.at(-2)?.key).toBe(catchUp?.key);
+    const now = deck.pending.value.filter((card) => !card.waiting);
+    expect(now.at(-2)?.key).toBe(catchUp?.key);
+  });
+
+  it("garde en retrait l'office qui n'est pas encore à l'heure, après ce qui se fait maintenant", async () => {
+    const { deck, store } = await mountDeck();
+    // Cha'harit, puis le texte du matin : faits.
+    store.setDone(deck.top.value!.view!.task, TODAY, true, "test");
+    store.setDone(deck.top.value!.view!.task, TODAY, true, "test");
+    // Le Chema du coucher se fait quand on veut : il passe avant Min'ha, qui n'est pas ouvert.
+    expect(deck.top.value?.view?.objective.id).toBe("chema");
+    expect(deck.top.value?.waiting).toBeFalsy();
+    store.setDone(deck.top.value!.view!.task, TODAY, true, "test");
+    // Plus rien à faire maintenant : Min'ha en tête, en retrait, et à partir de quand.
+    expect(deck.top.value?.view?.task.step).toBe("minha");
+    expect(deck.top.value?.waiting).toBe(true);
+    expect(deck.top.value?.kicker).toBe(fr.parcours.hub.notYet);
+    expect(deck.top.value?.meta).toMatch(/^à partir de \d{1,2}:\d{2}$/);
+    // À l'heure de Min'ha (16 h à Paris), elle reprend sa place, en couleur.
+    vi.setSystemTime(new Date("2026-10-14T14:00:00Z"));
+    const later = await mountDeck();
+    const minha = later.deck.day.value.find((card) => card.view?.task.step === "minha");
+    expect(minha?.waiting).toBe(false);
+    expect(minha?.kicker).toBe(fr.parcours.hub.now);
   });
 
   it("met la carte du 'Omer dans la pile, le soir, et retient qu'il est compté", async () => {

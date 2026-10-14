@@ -6,6 +6,10 @@
  * comme un livre mince, posé devant lui. « Tout le Chass » prend tout.
  *
  * Le Tanakh n'a pas de sedarim : ses livres se prennent un à un.
+ *
+ * Ce qu'un programme en cours étudie déjà ne se reprend pas : le séder, le
+ * traité ou le livre reste sur la planche, éteint, « Déjà sur votre
+ * étagère ».
  */
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
@@ -32,7 +36,14 @@ import {
 import CatalogSearchField from "../../CatalogSearchField.vue";
 import ChoicePill from "../pickers/ChoicePill.vue";
 
-const props = defineProps<{ corpus: ProgramCorpus }>();
+const props = withDefaults(
+  defineProps<{
+    corpus: ProgramCorpus;
+    /** Les textes d'un programme en cours du même corpus. */
+    taken?: number[];
+  }>(),
+  { taken: () => [] },
+);
 const model = defineModel<ProgramPart[]>({ required: true });
 
 const { t, locale } = useI18n();
@@ -49,6 +60,10 @@ const SEDER_COLORS: Record<SederId, string> = {
 };
 
 const bySeder = computed(() => props.corpus === "michna" || props.corpus === "talmud");
+const takenSet = computed(() => new Set(props.taken));
+const isTaken = (entry: TextStudyJsonEntry) => takenSet.value.has(Number(entry.id));
+/** Tout le corpus est déjà en cours : « Tout le Chass » ne se reprend pas non plus. */
+const allTaken = computed(() => programTexts(props.corpus).every(isTaken));
 const all = computed(() => model.value.includes("all"));
 const has = (part: ProgramPart) => all.value || model.value.includes(part);
 
@@ -87,6 +102,8 @@ interface Spine {
   on: boolean;
   /** Un traité sorti de son séder : un livre mince. */
   thin: boolean;
+  /** Déjà étudié par un programme en cours. */
+  taken: boolean;
   toggle: () => void;
 }
 
@@ -101,14 +118,16 @@ const spines = computed(() => {
     const height = Math.round(150 + (60 * sizes[i]) / most);
     const on = has(`seder:${seder}`);
     const label = t(`parcours.sedarim.${seder}`);
+    const taken = sederTexts(corpus, seder).every(isTaken);
     const items: Spine[] = [
       {
         key: seder,
         label,
         color: SEDER_COLORS[seder],
         height,
-        on,
+        on: on && !taken,
         thin: false,
+        taken,
         toggle: () => toggleSeder(seder),
       },
     ];
@@ -122,6 +141,7 @@ const spines = computed(() => {
           height: height - 44,
           on: true,
           thin: true,
+          taken: false,
           toggle: () => toggleText(entry),
         });
       }
@@ -139,14 +159,17 @@ const results = computed(() => {
     .map((entry) => {
       const seder = sederOf(entry);
       const inSeder = all.value || (seder !== null && model.value.includes(`seder:${seder}`));
+      const taken = isTaken(entry);
       return {
         entry,
         name: textName(Number(entry.id), locale.value),
-        on: inSeder || model.value.includes(`text:${entry.id}`),
-        disabled: inSeder,
-        meta: inSeder
-          ? t("parcours.create.inSeder", { seder: seder ? t(`parcours.sedarim.${seder}`) : "" })
-          : views.unitsLabel(unitOf(props.corpus), textTotal(Number(entry.id))),
+        on: !taken && (inSeder || model.value.includes(`text:${entry.id}`)),
+        disabled: inSeder || taken,
+        meta: taken
+          ? t("parcours.create.takenPart")
+          : inSeder
+            ? t("parcours.create.inSeder", { seder: seder ? t(`parcours.sedarim.${seder}`) : "" })
+            : views.unitsLabel(unitOf(props.corpus), textTotal(Number(entry.id))),
       };
     });
 });
@@ -158,7 +181,8 @@ const books = computed(() =>
     : programTexts(props.corpus).map((entry) => ({
         entry,
         name: textName(Number(entry.id), locale.value),
-        on: has(`text:${entry.id}`),
+        on: has(`text:${entry.id}`) && !isTaken(entry),
+        taken: isTaken(entry),
       })),
 );
 
@@ -184,9 +208,14 @@ const summary = computed(() => {
           :key="spine.key"
           type="button"
           class="spine"
-          :class="{ 'is-on': spine.on, 'is-thin': spine.thin }"
+          :class="{ 'is-on': spine.on, 'is-thin': spine.thin, 'is-taken': spine.taken }"
           :style="{ height: `${spine.height}px`, backgroundColor: spine.color }"
           :aria-pressed="spine.on"
+          :disabled="spine.taken"
+          :aria-label="
+            spine.taken ? `${spine.label}, ${t('parcours.create.takenPart')}` : undefined
+          "
+          :title="spine.taken ? t('parcours.create.takenPart') : undefined"
           @click="spine.toggle"
         >
           {{ spine.label }}
@@ -202,6 +231,8 @@ const summary = computed(() => {
         v-for="book in books"
         :key="book.entry.id"
         :on="book.on"
+        :disabled="book.taken"
+        :title="book.taken ? t('parcours.create.takenPart') : undefined"
         @click="toggleText(book.entry)"
       >
         {{ book.name }}
@@ -214,7 +245,7 @@ const summary = computed(() => {
         ><br />
         <span class="text-sm text-text-secondary">{{ summary.detail }}</span>
       </p>
-      <ChoicePill class="flex-none" :on="all" @click="toggleAll">
+      <ChoicePill class="flex-none" :on="all" :disabled="allTaken" @click="toggleAll">
         {{ t(`parcours.volume.all.${corpus}`) }}
       </ChoicePill>
     </div>
@@ -285,6 +316,11 @@ const summary = computed(() => {
 }
 .spine::after {
   bottom: 16px;
+}
+/* Déjà sur l'étagère : il reste sur la planche, éteint. */
+.spine.is-taken {
+  opacity: 0.35;
+  cursor: default;
 }
 /* Pris : sorti de la planche, ses filets dorés. */
 .spine.is-on {

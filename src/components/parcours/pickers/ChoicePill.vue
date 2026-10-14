@@ -11,7 +11,7 @@ withDefaults(defineProps<{ on?: boolean }>(), { on: undefined });
 <template>
   <button
     type="button"
-    class="inline-flex min-h-10 items-center rounded-pill px-4 text-sm font-bold transition-colors"
+    class="inline-flex min-h-10 items-center rounded-pill px-4 text-sm font-bold transition-colors disabled:cursor-default disabled:opacity-50"
     :class="
       on ? 'bg-brand text-on-brand' : 'bg-text-primary/5 text-text-primary hover:bg-text-primary/10'
     "

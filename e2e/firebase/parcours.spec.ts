@@ -2,7 +2,7 @@ import type { Page } from "playwright/test";
 import { test, expect, createAccount, readDoc, seedDoc, signIn } from "../support/firebase";
 
 type ParcoursDoc = {
-  objectives?: Record<string, { kind?: string; textId?: number }>;
+  objectives?: Record<string, { kind?: string; textId?: number; preset?: string }>;
   days?: Record<string, { done?: string[] }>;
 };
 type Prefs = {
@@ -66,6 +66,36 @@ test.describe("Mon parcours", () => {
             ?.completedIds ?? [],
       )
       .toContain(103);
+  });
+
+  test("un modèle se confirme avant de s'ajouter, et ne se prend qu'une fois", async ({ page }) => {
+    const account = await createAccount("modele");
+    await signIn(page, account, "/parcours/nouveau");
+    const tefilot = page.getByRole("button", { name: "Les trois tefilot", exact: true });
+
+    // Le toucher ouvre la feuille du modèle ; rien n'est encore ajouté.
+    await tefilot.click();
+    const sheet = page.getByRole("dialog", { name: "Les trois tefilot" });
+    await expect(sheet).toBeVisible();
+    await expect(page).toHaveURL(/\/parcours\/nouveau$/);
+    await sheet.getByRole("button", { name: "Annuler" }).click();
+    await expect(sheet).toBeHidden();
+
+    // Confirmé : l'habitude est prise, une seule fois.
+    await tefilot.click();
+    await sheet.getByRole("button", { name: "Ajouter à mon parcours" }).click();
+    await expect(page).toHaveURL(/\/parcours\/objectif\//);
+    await expect
+      .poll(async () => {
+        const doc = (await readDoc("parcours", account.uid)) as ParcoursDoc | null;
+        return Object.values(doc?.objectives ?? {}).filter((o) => o.preset === "tefilot").length;
+      })
+      .toBe(1);
+
+    // De retour sur la liste, il n'est plus proposé.
+    await page.goto("/parcours/nouveau");
+    await expect(page.getByRole("button", { name: "Chema al hamita", exact: true })).toBeVisible();
+    await expect(tefilot).toHaveCount(0);
   });
 
   test("l'ancienne adresse de la lecture du jour mène à Ma journée", async ({ page }) => {

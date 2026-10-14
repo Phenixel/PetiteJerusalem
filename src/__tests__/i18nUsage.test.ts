@@ -143,6 +143,7 @@ describe("i18n usage", () => {
       "parcours.day.moments.",
       "parcours.ends.",
       "parcours.habits.",
+      "parcours.habitAbout.",
       "parcours.kicker.",
       "parcours.moments.",
       "parcours.pace.",

@@ -44,6 +44,11 @@ import { useZmanimLocation } from "./useZmanimLocation";
  * compte du 'Omer le soir, l'allumage de 'Hanouka), qui s'ouvrent de même ;
  * et, après tout le reste, « Rattraper » pour un programme en retard, « si
  * vous avez un moment ».
+ *
+ * Un office dont l'heure n'est pas encore venue (Min'ha au matin) passe
+ * après tout ce qui se fait maintenant, même remis à plus tard ; en tête, il
+ * se montre en retrait (« Pas encore l'heure », à partir de quand) et ne se
+ * glisse pas.
  */
 
 /** Une occasion du calendrier, et sa fois (voir services/parcours/occasions.ts). */
@@ -81,6 +86,8 @@ export interface DeckCard {
   extra: boolean;
   /** Le programme qu'elle sert : la fiche propose de le voir. */
   programId: string | null;
+  /** Un office dont l'heure n'est pas encore venue : en retrait, il attend son heure. */
+  waiting?: boolean;
 }
 
 /** Ce qu'on a remis à plus tard, le jour où on l'a fait : la journée suivante repart de zéro. */
@@ -101,6 +108,8 @@ const OCCASION_RANK = -0.5;
 /** Rattraper se range après les tâches, avant ce qu'on a remis à plus tard. */
 const EXTRA_RANK = 50;
 const LATER_RANK = 100;
+/** Pas encore l'heure : après tout ce qui se fait maintenant. */
+const WAITING_RANK = 200;
 
 export function useTodayDeck() {
   const { t, locale } = useI18n();
@@ -117,8 +126,13 @@ export function useTodayDeck() {
   /** L'office de l'heure, quand le parcours le porte. */
   const isNow = (view: TaskView): boolean => offices.isNow(view.task.step);
 
+  /** Un office d'aujourd'hui pas encore ouvert, qui reste à faire. */
+  const isWaiting = (view: TaskView): boolean =>
+    view.progress !== "done" && offices.isAhead(view.task.step);
+
   function kickerOf(view: TaskView): string {
     if (isNow(view)) return t("parcours.hub.now");
+    if (isWaiting(view)) return t("parcours.hub.notYet");
     return view.kicker;
   }
 
@@ -189,6 +203,7 @@ export function useTodayDeck() {
       skipped: view.skipped,
       extra: false,
       programId: view.objective.kind === "program" ? view.objective.id : null,
+      waiting: isWaiting(view),
     };
   }
 
@@ -359,6 +374,7 @@ export function useTodayDeck() {
   });
 
   function rank(card: DeckCard): number {
+    if (card.waiting) return WAITING_RANK + dayOrder(card.moment);
     const delayed = later.value.indexOf(card.key);
     if (delayed >= 0) return LATER_RANK + delayed;
     if (card.occasion) return card.occasion.kind === "hanouka" ? HANOUKA_RANK : OCCASION_RANK;

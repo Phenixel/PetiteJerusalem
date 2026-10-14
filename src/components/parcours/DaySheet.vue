@@ -10,6 +10,7 @@ import { useI18n } from "vue-i18n";
 import { useParcours } from "../../composables/useParcours";
 import { useParcoursViews } from "../../composables/useParcoursViews";
 import { analyticsService } from "../../services/analyticsService";
+import { haptic } from "../../services/haptics";
 import { localDayFrom } from "../../services/dateService";
 import { dateTimeFormat } from "../../services/intlCache";
 import type { DayKey } from "../../services/parcours/model";
@@ -59,6 +60,7 @@ watch(
 function toggle(index: number): void {
   const view = rows.value[index];
   if (!view || !props.day) return;
+  haptic(view.progress === "done" ? "undo" : "done");
   store.setDone(view.task, props.day, view.progress !== "done", props.source);
 }
 </script>

@@ -16,6 +16,7 @@ import { useParcoursViews } from "../../composables/useParcoursViews";
 import { useSwipe } from "../../composables/useSwipe";
 import { useWallLabels } from "../../composables/useWallLabels";
 import { analyticsService } from "../../services/analyticsService";
+import { haptic } from "../../services/haptics";
 import { localDayFrom } from "../../services/dateService";
 import { addDays, daysBetween, weekOf } from "../../services/parcours/days";
 import type { ProgramObjective } from "../../services/parcours/model";
@@ -106,7 +107,9 @@ const hero = computed(() => {
 });
 
 function markDone(): void {
-  if (task.value && !done.value) store.setDone(task.value, today.value, true, "objective_swipe");
+  if (!task.value || done.value) return;
+  haptic("done");
+  store.setDone(task.value, today.value, true, "objective_swipe");
 }
 
 const card = useSwipe({
@@ -132,6 +135,7 @@ function setRead(units: number): void {
   if (!s) return;
   const todayUnits = store.data.value.days[today.value]?.units?.[props.program.id] ?? 0;
   const otherDays = s.done - todayUnits;
+  haptic("tick");
   store.setUnits(props.program.id, today.value, Math.max(0, units - otherDays));
   analyticsService.capture("parcours_units_marked", { units, source: "objective_cells" });
 }

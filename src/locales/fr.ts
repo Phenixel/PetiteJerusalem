@@ -2016,7 +2016,19 @@ const fr = {
       "birkat-hamazon": "Birkat Hamazon",
       tsedaka: "Tsédaka",
       "chmirat-halachon": "Garder ma langue",
+      limoud: "Un temps d'étude",
       custom: "Une habitude à moi",
+    },
+    habitAbout: {
+      tefilot:
+        "Cha'harit, Min'ha et Arvit, chaque jour : chaque office vient sur l'accueil à son heure.",
+      "chema-al-hamita":
+        "Le Chéma du coucher, chaque soir avant de dormir : la carte ouvre le texte.",
+      tsedaka: "Une pièce mise de côté chaque jour, sauf Chabbat : la carte se coche d'un geste.",
+      "chmirat-halachon":
+        "Veiller à ses paroles, toute la journée : la carte vous le rappelle chaque jour.",
+      limoud:
+        "Un moment d'étude chaque jour, ce que vous voulez lire : la carte ouvre la bibliothèque.",
     },
     tefilot: {
       chaharit: "Cha'harit",
@@ -2177,6 +2189,9 @@ const fr = {
       releaseLater: "Relâchez : plus tard",
       releaseUnskip: "Relâchez : remettre aujourd'hui",
       announceNext: "{action}. Ensuite : {title}",
+      notYet: "Pas encore l'heure",
+      waitLabel: "{title}, {meta}. Pas encore l'heure : toucher pour ouvrir sa fiche.",
+      studyMeta: "ce que vous voulez, dans la bibliothèque",
       today: "Aujourd'hui, {done} sur {total}",
       day: "Ma journée",
       fold: "Replier",
@@ -2395,6 +2410,15 @@ const fr = {
       habitTitle: "Une habitude",
       habitText: "Le texte est dans le Sidour : la carte l'ouvrira.",
       habitOwn: "Votre engagement à vous : la carte se coche d'un geste.",
+      kindHabit: "Une habitude",
+      kindCycle: "Un cycle",
+      confirmAdd: "Ajouter à mon parcours",
+      adjustFirst: "Régler les jours",
+      eachAtItsTime: "Chaque office à son heure",
+      tagEveryDay: "Chaque jour",
+      tagWeekdays: "Sauf Chabbat",
+      habitStudy: "La carte ouvre la bibliothèque : vous y lisez ce que vous voulez.",
+      takenPart: "Déjà sur votre étagère",
       everyDay: "Chaque jour.",
       exceptChabbat: "Chaque jour, sauf Chabbat.",
       someDays:

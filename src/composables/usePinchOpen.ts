@@ -1,4 +1,5 @@
 import { onBeforeUnmount, watch, type Ref } from "vue";
+import { haptic } from "../services/haptics";
 
 /**
  * Écarter deux doigts sur un élément, pour ouvrir sa vue en grand : le mur
@@ -27,6 +28,7 @@ export function usePinchOpen(target: Ref<HTMLElement | null>, onOpen: () => void
     if (event.cancelable) event.preventDefault();
     if (distance(event.touches) / baseline < OPEN_RATIO) return;
     baseline = 0;
+    haptic("tick");
     onOpen();
   }
 

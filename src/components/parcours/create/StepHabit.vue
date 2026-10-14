@@ -6,7 +6,7 @@
  * Arvit, au coucher ; ou toute la journée. Les trois tefilot ont chacune le
  * leur.
  */
-import { computed, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import {
   ANCHOR_MOMENT,
@@ -16,6 +16,7 @@ import {
   type HabitPreset,
   type MomentId,
 } from "../../../services/parcours/model";
+import { haptic } from "../../../services/haptics";
 
 const props = withDefaults(
   defineProps<{
@@ -34,6 +35,26 @@ const emit = defineEmits<{ (e: "create"): void }>();
 const { t } = useI18n();
 
 const WEEKDAY_KEYS = [0, 1, 2, 3, 4, 5, 6];
+
+/** Ce que la carte fera : ouvrir le Sidour, la bibliothèque, ou se cocher d'un geste. */
+const hint = computed(() => {
+  if (props.preset === "limoud") return t("parcours.create.habitStudy");
+  return isOwnHabit(props.preset) ? t("parcours.create.habitOwn") : t("parcours.create.habitText");
+});
+
+/**
+ * « Ajouter à ma journée » ne répond qu'un instant après l'arrivée sur
+ * l'étape : un double toucher sur la liste des modèles ne l'atteint pas.
+ */
+const ARM_MS = 400;
+const armed = ref(false);
+let armTimer: ReturnType<typeof setTimeout> | undefined;
+onMounted(() => (armTimer = setTimeout(() => (armed.value = true), ARM_MS)));
+onBeforeUnmount(() => clearTimeout(armTimer));
+
+function create(): void {
+  if (armed.value && days.value.length > 0) emit("create");
+}
 /** Les tefilin, la tsédaka : Chabbat est en pause, d'office. */
 const restsOnChabbat = computed(() => props.preset === "tefilin" || props.preset === "tsedaka");
 
@@ -94,7 +115,11 @@ function onDown(event: PointerEvent): void {
   dragging.value = positionOf(event);
 }
 function onMove(event: PointerEvent): void {
-  if (dragging.value !== null) dragging.value = positionOf(event);
+  if (dragging.value === null) return;
+  const before = nearest(dragging.value);
+  dragging.value = positionOf(event);
+  // Le rond passe d'un repère à l'autre : un battement.
+  if (nearest(dragging.value) !== before) haptic("tick");
 }
 function onUp(): void {
   if (dragging.value === null) return;
@@ -136,9 +161,7 @@ const momentName = computed(() =>
         maxlength="60"
       />
     </label>
-    <p class="mt-2 text-[13px] text-text-secondary">
-      {{ isOwnHabit(preset) ? t("parcours.create.habitOwn") : t("parcours.create.habitText") }}
-    </p>
+    <p class="mt-2 text-[13px] text-text-secondary">{{ hint }}</p>
 
     <p class="create-lab">{{ t("parcours.form.days") }}</p>
     <div class="flex gap-1" role="group" :aria-label="t('parcours.form.days')">
@@ -211,7 +234,8 @@ const momentName = computed(() =>
       type="button"
       class="btn btn-primary create-cta"
       :disabled="days.length === 0"
-      @click="emit('create')"
+      :aria-disabled="armed ? undefined : 'true'"
+      @click="create"
     >
       {{ t("parcours.create.addToDay") }}
     </button>
