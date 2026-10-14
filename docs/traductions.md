@@ -7,6 +7,10 @@ figure ici, avec sa licence et la manière de la citer.
 
 Pas de traduction automatique, ni par IA : c'est la règle de départ.
 
+Les versions retenues ci-dessous sont **dans l'app** depuis octobre 2026 :
+voir « Dans l'app » pour où elles vivent, comment elles se reconstruisent et
+comment le lecteur les montre.
+
 État des lieux d'octobre 2026, mesuré sur l'export public de Sefaria
 (`Sefaria-Export/books.json`, généré le 2 octobre 2026).
 
@@ -63,12 +67,12 @@ toute la bibliothèque : c'est lui qui fait l'écart.
 
 ### Français
 
-| Corpus        | Version (titre exact dans Sefaria)                               | Licence        | Remarques                                                                                                                                         |
-| ------------- | ---------------------------------------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Tanakh entier | Bible du Rabbinat 1899 [fr]                                      | Domaine public | Zadoc Kahn et le Rabbinat, 1899 et 1906 ; transcrite de Wikisource, verset par verset. Seuls Josué 21,36 et 21,37 manquent.                       |
-| Tanakh, repli | La Bible, Traduction Nouvelle, Samuel Cahen, 1831 [fr]           | Domaine public | Cahen est mort en 1862 (Sefaria affiche « unknown »).                                                                                             |
-| Mishna        | Le Talmud de Jérusalem, traduit par Moise Schwab, 1878-1890 [fr] | Domaine public | 39 traités : ceux du Talmud de Jérusalem (Zeraïm, Moèd, Nachim, une partie de Nezikin, le début de Nida). Notes de bas de page en HTML à traiter. |
-| Pirké Avot    | Maximes des Pères, trans. by Rabbi Rivon Krygier, 2023 [fr]      | CC BY-NC       | Traité complet.                                                                                                                                   |
+| Corpus        | Version (titre exact dans Sefaria)                               | Licence        | Remarques                                                                                                                                                  |
+| ------------- | ---------------------------------------------------------------- | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tanakh entier | Bible du Rabbinat 1899 [fr]                                      | Domaine public | Zadoc Kahn et le Rabbinat, 1899 et 1906 ; transcrite de Wikisource, verset par verset. Seuls Josué 21,36 et 21,37 manquent.                                |
+| Tanakh, repli | La Bible, Traduction Nouvelle, Samuel Cahen, 1831 [fr]           | Domaine public | Cahen est mort en 1862 (Sefaria affiche « unknown »).                                                                                                      |
+| Mishna        | Le Talmud de Jérusalem, traduit par Moise Schwab, 1878-1890 [fr] | Domaine public | 39 traités : ceux du Talmud de Jérusalem (Zeraïm, Moèd, Nachim, une partie de Nezikin, le début de Nida). Notes de bas de page retirées à la construction. |
+| Pirké Avot    | Maximes des Pères, trans. by Rabbi Rivon Krygier, 2023 [fr]      | CC BY-NC       | Traité complet.                                                                                                                                            |
 
 Ce qui manque en français, et pourquoi :
 
@@ -136,6 +140,95 @@ accordée à Sefaria pour l'anglais :
 
 Une app gratuite, sans publicité, qui cite et renvoie vers l'éditeur, est la
 demande la plus facile à accepter.
+
+## Dans l'app
+
+### Ce qui est intégré
+
+Les versions des deux tableaux ci-dessus, sauf les « repli » et « autre
+choix », plus deux compléments pour les fichiers du rayon Talmud qui n'ont
+pas de guemara de Babylone :
+
+- **Chekalim** (`talmud/shekalim.json`), qui est du Talmud de Jérusalem :
+  Guggenheimer en anglais (« The Jerusalem Talmud », De Gruyter, CC BY) et
+  Schwab en français ;
+- **Kinim** et **Midot**, qui n'ont que leur michna : Kulp.
+
+Mesuré en lignes du lecteur (un verset, une michna, une phrase de guemara) à
+la construction :
+
+| Corpus              | Anglais |      Français |
+| ------------------- | ------: | ------------: |
+| Tanakh et Tehilim   |   100 % |         100 % |
+| Michna              |   100 % |          60 % |
+| Talmud              |  99,6 % | Chekalim seul |
+| Rachi (chnei mikra) |  99,5 % |             0 |
+| 'Hovot Halévavot    |    98 % |             0 |
+
+Les quelques lignes sans traduction sont celles que l'alignement ne retrouve
+pas chez Sefaria (une phrase de guemara découpée autrement) : elles restent
+vides plutôt que de recevoir la traduction d'une autre.
+
+### Où elles vivent
+
+`public/texts/traductions/<langue>/`, au chemin du fichier hébreu qu'elles
+traduisent (`texts/mishna/berakhot.json` → `texts/traductions/fr/mishna/berakhot.json`),
+et un index (`texts/traductions/index.json`) qui donne, pour chaque fichier
+hébreu, ses langues. Un fichier de traduction a la forme de son hébreu, chaque
+chaîne remplacée par sa traduction, et porte ses sources (nom, auteur,
+licence, lien) : c'est lui qui dit comment le citer.
+
+À part de l'hébreu, et non dans le même fichier : qui lit en hébreu ne
+télécharge rien de plus, et le Talmud anglais (58 Mo pour l'anglais en tout)
+pèse à lui seul plus que tous les textes hébreux. Pour la même raison, l'app
+native ne les embarque pas (`scripts/prune-native-bundle.mjs`) : elles se
+lisent en ligne.
+
+### Les reconstruire
+
+```bash
+node scripts/download-translations.mjs              # tout
+node scripts/download-translations.mjs --only=mishna --lang=fr
+node scripts/texts-manifest.mjs                     # puis le manifeste
+```
+
+Le script lit chaque version par son titre exact (jamais un `merged`), refuse
+une licence hors de la liste et un titre qui trahit une traduction
+automatique, et aligne chaque ligne hébraïque de nos fichiers sur l'hébreu de
+Sefaria par ses seules lettres : nos fichiers redécoupent Sefaria (montées
+d'une paracha, Trei Asar, paragraphes du moussar), l'alignement par la
+position se tromperait. Ajouter une version, c'est l'ajouter à `VERSIONS` et
+`CREDITS` dans le script, et à ce registre.
+
+`src/__tests__/translations.test.ts` tient le reste : chaque fichier a la
+forme de son hébreu, chaque section du lecteur a autant de lignes traduites
+que de lignes hébraïques, chaque source a une licence de la liste et un lien,
+et chaque corpus garde au moins la couverture annoncée plus haut.
+
+### Dans le lecteur
+
+Une commande « Traduction » dans la barre d'outils du texte, et le même
+réglage dans les réglages de lecture, avec le choix de la langue quand le
+texte en a deux (`composables/useTranslation.ts`). Éteinte au départ, elle
+tient ensuite d'un texte à l'autre. La langue suit le choix fait, puis celle
+de l'interface, puis ce qui existe : un francophone lit le Talmud en anglais,
+et une phrase le lui dit. La traduction se pose sous chaque verset ; dans le
+Talmud, la guemara passe alors de son bloc par daf à une suite de phrases,
+chacune suivie de la sienne. La lecture du jour et le chnei mikra suivent le
+même réglage, Rachi compris. Au pied du texte, ses sources et leurs licences
+(`TranslationCredit.vue`). Pas de traduction sur une tefila.
+
+### Ce qui reste à faire
+
+- **Le français qui manque** (Talmud, Rachi, 'Hovot Halévavot, 40 % de la
+  Michna) : voir plus haut ; à trouver ou à demander.
+- **Le Pélé Yoets** n'a de traduction libre dans aucune langue.
+- **Hors ligne** : télécharger un livre ne télécharge pas sa traduction.
+  Hors connexion, la commande ne se propose pas (son index ne se lit pas) ;
+  allumée avant la coupure, une phrase dit que la traduction se lit en
+  ligne.
+- **Le prérendu** des pages de la bibliothèque (référencement) ne porte que
+  l'hébreu.
 
 ## Comment refaire la mesure
 

@@ -48,6 +48,8 @@ describe("prune-native-bundle", () => {
     write(root, "llms.txt", "# Petite Jérusalem");
     write(root, "llms-full.txt", "# Petite Jérusalem");
     write(root, "texts/talmud/berakhot.json", "{}");
+    write(root, "texts/traductions/index.json", "{}");
+    write(root, "texts/traductions/en/talmud/berakhot.json", "{}");
     write(root, "texts/tehilim.json", "{}");
     write(root, "texts/tefila/chaharit.json", "{}");
     write(root, "texts/tefila/minha.json", "{}");
@@ -83,6 +85,9 @@ describe("prune-native-bundle", () => {
 
   it("retire les corpus téléchargeables mais garde le reste", () => {
     expect(existsSync(join(root, "texts/talmud"))).toBe(false);
+    // Les traductions se lisent en ligne : le Talmud anglais pèse plus que
+    // tout l'hébreu (docs/traductions.md).
+    expect(existsSync(join(root, "texts/traductions"))).toBe(false);
     expect(existsSync(join(root, "texts/tehilim.json"))).toBe(true);
     expect(existsSync(join(root, "assets/app.js"))).toBe(true);
   });

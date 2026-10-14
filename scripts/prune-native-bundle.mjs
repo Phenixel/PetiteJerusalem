@@ -45,6 +45,9 @@ const PRUNED_DIRS = [
   "texts/moussar",
   "texts/rashi",
   "texts/tefila",
+  // Les traductions (docs/traductions.md) : le Talmud anglais pèse à lui seul
+  // plus que tous les textes hébreux. Lues en ligne, comme les corpus.
+  "texts/traductions",
 ].map((d) => join(root, d));
 // Ce que seul le site sert : plan du site, fichiers pour les robots, image
 // de partage, preuve de propriété pour un moteur, manifeste des textes (l'app

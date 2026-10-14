@@ -1,0 +1,854 @@
+{
+  "files": {
+    "/texts/mishna/arakhin.json": [
+      "en"
+    ],
+    "/texts/mishna/avodah-zarah.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/mishna/avot.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/mishna/bava-batra.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/mishna/bava-kamma.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/mishna/bava-metzia.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/mishna/beitzah.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/mishna/bekhorot.json": [
+      "en"
+    ],
+    "/texts/mishna/berakhot.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/mishna/bikkurim.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/mishna/chagigah.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/mishna/challah.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/mishna/chullin.json": [
+      "en"
+    ],
+    "/texts/mishna/demai.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/mishna/eruvin.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/mishna/gittin.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/mishna/horayot.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/mishna/keilim.json": [
+      "en"
+    ],
+    "/texts/mishna/keritot.json": [
+      "en"
+    ],
+    "/texts/mishna/ketubot.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/mishna/kiddushin.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/mishna/kilayim.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/mishna/kinnim.json": [
+      "en"
+    ],
+    "/texts/mishna/maaser-sheni.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/mishna/maasrot.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/mishna/makhshirin.json": [
+      "en"
+    ],
+    "/texts/mishna/makkot.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/mishna/megillah.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/mishna/meilah.json": [
+      "en"
+    ],
+    "/texts/mishna/menachot.json": [
+      "en"
+    ],
+    "/texts/mishna/middot.json": [
+      "en"
+    ],
+    "/texts/mishna/mikvaot.json": [
+      "en"
+    ],
+    "/texts/mishna/moed-katan.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/mishna/nazir.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/mishna/nedarim.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/mishna/negaim.json": [
+      "en"
+    ],
+    "/texts/mishna/niddah.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/mishna/oholot.json": [
+      "en"
+    ],
+    "/texts/mishna/oktzin.json": [
+      "en"
+    ],
+    "/texts/mishna/orlah.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/mishna/parah.json": [
+      "en"
+    ],
+    "/texts/mishna/peah.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/mishna/pesachim.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/mishna/rosh-hashanah.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/mishna/sanhedrin.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/mishna/shabbat.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/mishna/shekalim.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/mishna/sheviit.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/mishna/shevuot.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/mishna/sotah.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/mishna/sukkah.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/mishna/taanit.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/mishna/tamid.json": [
+      "en"
+    ],
+    "/texts/mishna/temurah.json": [
+      "en"
+    ],
+    "/texts/mishna/terumot.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/mishna/tevul-yom.json": [
+      "en"
+    ],
+    "/texts/mishna/toharot.json": [
+      "en"
+    ],
+    "/texts/mishna/yadayim.json": [
+      "en"
+    ],
+    "/texts/mishna/yevamot.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/mishna/yoma.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/mishna/zavim.json": [
+      "en"
+    ],
+    "/texts/mishna/zevachim.json": [
+      "en"
+    ],
+    "/texts/moussar/400.json": [
+      "en"
+    ],
+    "/texts/moussar/401.json": [
+      "en"
+    ],
+    "/texts/moussar/402.json": [
+      "en"
+    ],
+    "/texts/moussar/403.json": [
+      "en"
+    ],
+    "/texts/moussar/404.json": [
+      "en"
+    ],
+    "/texts/moussar/405.json": [
+      "en"
+    ],
+    "/texts/moussar/406.json": [
+      "en"
+    ],
+    "/texts/moussar/407.json": [
+      "en"
+    ],
+    "/texts/moussar/408.json": [
+      "en"
+    ],
+    "/texts/moussar/409.json": [
+      "en"
+    ],
+    "/texts/moussar/410.json": [
+      "en"
+    ],
+    "/texts/rashi/264.json": [
+      "en"
+    ],
+    "/texts/rashi/265.json": [
+      "en"
+    ],
+    "/texts/rashi/266.json": [
+      "en"
+    ],
+    "/texts/rashi/267.json": [
+      "en"
+    ],
+    "/texts/rashi/268.json": [
+      "en"
+    ],
+    "/texts/rashi/269.json": [
+      "en"
+    ],
+    "/texts/rashi/270.json": [
+      "en"
+    ],
+    "/texts/rashi/271.json": [
+      "en"
+    ],
+    "/texts/rashi/272.json": [
+      "en"
+    ],
+    "/texts/rashi/273.json": [
+      "en"
+    ],
+    "/texts/rashi/274.json": [
+      "en"
+    ],
+    "/texts/rashi/275.json": [
+      "en"
+    ],
+    "/texts/rashi/276.json": [
+      "en"
+    ],
+    "/texts/rashi/277.json": [
+      "en"
+    ],
+    "/texts/rashi/278.json": [
+      "en"
+    ],
+    "/texts/rashi/279.json": [
+      "en"
+    ],
+    "/texts/rashi/280.json": [
+      "en"
+    ],
+    "/texts/rashi/281.json": [
+      "en"
+    ],
+    "/texts/rashi/282.json": [
+      "en"
+    ],
+    "/texts/rashi/283.json": [
+      "en"
+    ],
+    "/texts/rashi/284.json": [
+      "en"
+    ],
+    "/texts/rashi/285.json": [
+      "en"
+    ],
+    "/texts/rashi/286.json": [
+      "en"
+    ],
+    "/texts/rashi/287.json": [
+      "en"
+    ],
+    "/texts/rashi/288.json": [
+      "en"
+    ],
+    "/texts/rashi/289.json": [
+      "en"
+    ],
+    "/texts/rashi/290.json": [
+      "en"
+    ],
+    "/texts/rashi/291.json": [
+      "en"
+    ],
+    "/texts/rashi/292.json": [
+      "en"
+    ],
+    "/texts/rashi/293.json": [
+      "en"
+    ],
+    "/texts/rashi/294.json": [
+      "en"
+    ],
+    "/texts/rashi/295.json": [
+      "en"
+    ],
+    "/texts/rashi/296.json": [
+      "en"
+    ],
+    "/texts/rashi/297.json": [
+      "en"
+    ],
+    "/texts/rashi/298.json": [
+      "en"
+    ],
+    "/texts/rashi/299.json": [
+      "en"
+    ],
+    "/texts/rashi/300.json": [
+      "en"
+    ],
+    "/texts/rashi/301.json": [
+      "en"
+    ],
+    "/texts/rashi/302.json": [
+      "en"
+    ],
+    "/texts/rashi/303.json": [
+      "en"
+    ],
+    "/texts/rashi/304.json": [
+      "en"
+    ],
+    "/texts/rashi/305.json": [
+      "en"
+    ],
+    "/texts/rashi/306.json": [
+      "en"
+    ],
+    "/texts/rashi/307.json": [
+      "en"
+    ],
+    "/texts/rashi/308.json": [
+      "en"
+    ],
+    "/texts/rashi/309.json": [
+      "en"
+    ],
+    "/texts/rashi/310.json": [
+      "en"
+    ],
+    "/texts/rashi/311.json": [
+      "en"
+    ],
+    "/texts/rashi/312.json": [
+      "en"
+    ],
+    "/texts/rashi/313.json": [
+      "en"
+    ],
+    "/texts/rashi/314.json": [
+      "en"
+    ],
+    "/texts/rashi/315.json": [
+      "en"
+    ],
+    "/texts/rashi/316.json": [
+      "en"
+    ],
+    "/texts/rashi/317.json": [
+      "en"
+    ],
+    "/texts/talmud/arakhin.json": [
+      "en"
+    ],
+    "/texts/talmud/avodah-zarah.json": [
+      "en"
+    ],
+    "/texts/talmud/bava-batra.json": [
+      "en"
+    ],
+    "/texts/talmud/bava-kamma.json": [
+      "en"
+    ],
+    "/texts/talmud/bava-metzia.json": [
+      "en"
+    ],
+    "/texts/talmud/beitzah.json": [
+      "en"
+    ],
+    "/texts/talmud/bekhorot.json": [
+      "en"
+    ],
+    "/texts/talmud/berakhot.json": [
+      "en"
+    ],
+    "/texts/talmud/chagigah.json": [
+      "en"
+    ],
+    "/texts/talmud/chullin.json": [
+      "en"
+    ],
+    "/texts/talmud/eruvin.json": [
+      "en"
+    ],
+    "/texts/talmud/gittin.json": [
+      "en"
+    ],
+    "/texts/talmud/horayot.json": [
+      "en"
+    ],
+    "/texts/talmud/keritot.json": [
+      "en"
+    ],
+    "/texts/talmud/ketubot.json": [
+      "en"
+    ],
+    "/texts/talmud/kiddushin.json": [
+      "en"
+    ],
+    "/texts/talmud/kinnim.json": [
+      "en"
+    ],
+    "/texts/talmud/makkot.json": [
+      "en"
+    ],
+    "/texts/talmud/megillah.json": [
+      "en"
+    ],
+    "/texts/talmud/meilah.json": [
+      "en"
+    ],
+    "/texts/talmud/menachot.json": [
+      "en"
+    ],
+    "/texts/talmud/middot.json": [
+      "en"
+    ],
+    "/texts/talmud/moed-katan.json": [
+      "en"
+    ],
+    "/texts/talmud/nazir.json": [
+      "en"
+    ],
+    "/texts/talmud/nedarim.json": [
+      "en"
+    ],
+    "/texts/talmud/niddah.json": [
+      "en"
+    ],
+    "/texts/talmud/pesachim.json": [
+      "en"
+    ],
+    "/texts/talmud/rosh-hashanah.json": [
+      "en"
+    ],
+    "/texts/talmud/sanhedrin.json": [
+      "en"
+    ],
+    "/texts/talmud/shabbat.json": [
+      "en"
+    ],
+    "/texts/talmud/shekalim.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/talmud/shevuot.json": [
+      "en"
+    ],
+    "/texts/talmud/sotah.json": [
+      "en"
+    ],
+    "/texts/talmud/sukkah.json": [
+      "en"
+    ],
+    "/texts/talmud/taanit.json": [
+      "en"
+    ],
+    "/texts/talmud/tamid.json": [
+      "en"
+    ],
+    "/texts/talmud/temurah.json": [
+      "en"
+    ],
+    "/texts/talmud/yevamot.json": [
+      "en"
+    ],
+    "/texts/talmud/yoma.json": [
+      "en"
+    ],
+    "/texts/talmud/zevachim.json": [
+      "en"
+    ],
+    "/texts/tanakh/264.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/265.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/266.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/267.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/268.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/269.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/270.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/271.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/272.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/273.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/274.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/275.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/276.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/277.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/278.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/279.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/280.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/281.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/282.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/283.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/284.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/285.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/286.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/287.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/288.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/289.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/290.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/291.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/292.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/293.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/294.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/295.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/296.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/297.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/298.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/299.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/300.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/301.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/302.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/303.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/304.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/305.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/306.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/307.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/308.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/309.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/310.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/311.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/312.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/313.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/314.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/315.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/316.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/317.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/318.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/319.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/320.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/321.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/322.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/323.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/324.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/325.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/326.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/327.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/328.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/329.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/330.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/331.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/332.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/333.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/334.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/335.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/336.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/337.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/338.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tanakh/339.json": [
+      "en",
+      "fr"
+    ],
+    "/texts/tehilim.json": [
+      "en",
+      "fr"
+    ]
+  }
+}
