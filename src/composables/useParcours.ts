@@ -42,7 +42,9 @@ import {
   tasksForDay,
   type Task,
 } from "../services/parcours/schedule";
+import { trackTaskMarked, trackTaskSkipped } from "../services/parcours/tracking";
 import { isIsraelPlace } from "../services/zmanimService";
+import { isNativeApp } from "./useNativeApp";
 import { useNow } from "./useNow";
 import { useZmanimLocation } from "./useZmanimLocation";
 
@@ -59,8 +61,8 @@ import { useZmanimLocation } from "./useZmanimLocation";
  * n'écrit jamais d'après une copie qu'on n'a pas relue.
  *
  * Avec un compte, Mon parcours tient aussi à jour la lecture du jour d'avant,
- * que les versions installées, les widgets et le rappel du soir lisent
- * encore (legacyDailyReading.ts).
+ * que les versions installées et le rappel du soir lisent encore
+ * (legacyDailyReading.ts) ; les widgets et la montre la tirent de l'appareil.
  */
 
 const state = shallowRef<DeviceState>(readDeviceState());
@@ -85,6 +87,17 @@ const PUSH_DELAY_MS = 1200;
 function persist(next: DeviceState): void {
   state.value = next;
   writeDeviceState(next);
+  refreshSurfaces();
+}
+
+/** Les widgets et la montre montrent la lecture du jour : ils suivent chaque changement. */
+function refreshSurfaces(): void {
+  if (!isNativeApp) return;
+  void import("../services/widgetService")
+    .then(({ widgetService }) => widgetService.refresh())
+    .catch(() => {
+      // Lot périmé après un déploiement : les widgets suivront au prochain lancement.
+    });
 }
 
 const today = (): DayKey => localDayKey();
@@ -321,13 +334,15 @@ export function useParcours() {
     begun,
     streak,
     tasksOn,
-    /** Coche ou décoche une tâche, ce jour-là. */
-    setDone(task: Task, day: DayKey, done: boolean) {
+    /** Coche ou décoche une tâche, ce jour-là ; `source` dit d'où (le suivi d'audience). */
+    setDone(task: Task, day: DayKey, done: boolean, source: string) {
       commit(setTaskDone(data.value, task, day, done));
+      trackTaskMarked(data.value, context.value, task, day, todayKey.value, done, source);
     },
     /** « Pas aujourd'hui », ou son contraire. */
-    setSkipped(task: Task, day: DayKey, skipped: boolean) {
+    setSkipped(task: Task, day: DayKey, skipped: boolean, source: string) {
       commit(setTaskSkipped(data.value, task.id, day, skipped));
+      trackTaskSkipped(task, skipped, source);
     },
     /** Les unités d'un programme lues ce jour-là. */
     setUnits(objectiveId: string, day: DayKey, units: number) {

@@ -61,7 +61,7 @@ const { activeHolidayTheme } = useHolidayTheme();
 // Ce que le compte apporte : les mêmes entrées que l'invitation du site.
 const guestBenefits = computed<{ icon: IconName; label: string }[]>(() => [
   { icon: "users", label: t("profile.guestBenefits.sessions") },
-  { icon: "book", label: t("profile.guestBenefits.dailyReading") },
+  { icon: "book", label: t("profile.guestBenefits.parcours") },
   { icon: "bell", label: t("profile.guestBenefits.reminders") },
   { icon: "bookmark", label: t("profile.guestBenefits.sync") },
 ]);
@@ -249,14 +249,17 @@ onUnmounted(() => {
       </template>
 
       <div class="flex flex-col gap-7">
-        <SettingsGroup v-if="currentUser" :title="t('profile.native.groups.reading')">
+        <!-- Mon parcours se tient sans compte, sur ce téléphone : sa ligne est
+             là pour tous. Les chaînes de lecture, elles, suivent le compte. -->
+        <SettingsGroup :title="t('profile.native.groups.reading')">
           <SettingsRow
             icon="book"
-            :label="t('dailyReading.title')"
-            to="/bibliotheque/lecture-du-jour"
-            @click="trackShortcut('daily_reading')"
+            :label="t('parcours.title')"
+            to="/parcours"
+            @click="trackShortcut('parcours')"
           />
           <SettingsRow
+            v-if="currentUser"
             icon="users"
             :label="t('home.dashboard.sessionsTitle')"
             to="/share-reading"

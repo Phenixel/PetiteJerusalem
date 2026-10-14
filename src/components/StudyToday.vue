@@ -4,27 +4,24 @@
  * une carte. Les psaumes du jour coiffaient la page des Tehilim, le chnei
  * mikra celle du Tanakh, la lecture du jour finissait la bibliothèque : il
  * fallait savoir où les chercher. Les deux bandeaux restent sur leurs pages ;
- * ici, une ligne chacun, comme les lignes d'une liste.
+ * ici, une ligne chacun, comme les lignes d'une liste, et Ma journée, où
+ * en est le parcours aujourd'hui.
  *
  * Chargée à la demande (voir StudyPage) : elle tire le calendrier hébraïque.
  */
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
+import { useParcours } from "../composables/useParcours";
 import { useTehilimDay, useWeeklyParasha } from "../composables/useTehilimDay";
 import { parashaTitle } from "../services/dailyCycles";
 import { analyticsService } from "../services/analyticsService";
+import { daySummary, liveObjectives } from "../services/parcours/schedule";
 import AppIcon from "./icons/AppIcon.vue";
-
-const props = defineProps<{
-  /** Connecté : la lecture du jour a sa ligne. */
-  signedIn: boolean;
-  done: number;
-  total: number;
-}>();
 
 const { t } = useI18n();
 const { cycle } = useTehilimDay();
 const { parasha } = useWeeklyParasha();
+const store = useParcours();
 
 const psalms = computed(() => {
   const list = cycle.value.psalms;
@@ -40,12 +37,24 @@ const parashaLabel = computed(() =>
   parasha.value ? t("study.today.parasha", { parasha: parashaTitle(parasha.value) }) : "",
 );
 
-const pct = computed(() => (props.total === 0 ? 0 : Math.round((props.done / props.total) * 100)));
-const allDone = computed(() => props.total > 0 && props.done >= props.total);
-const readingLine = computed(() => {
-  if (props.total === 0) return t("home.dashboard.readingSetupCta");
-  if (allDone.value) return t("dailyReading.allReadTitle");
-  return t("dailyReading.progress", { done: props.done, total: props.total });
+/** Ma journée : où en est le parcours aujourd'hui, ou de quoi le commencer. */
+const day = computed(() => {
+  const today = store.today.value;
+  const { planned, done } = daySummary(store.data.value, today, today, store.context.value);
+  const begun = liveObjectives(store.data.value).length > 0;
+  const allDone = planned > 0 && done >= planned;
+  return {
+    begun,
+    to: begun ? "/parcours/journee" : "/parcours/nouveau",
+    percent: planned > 0 ? Math.round((done / planned) * 100) : null,
+    line: !begun
+      ? t("parcours.empty.cta")
+      : planned === 0
+        ? t("parcours.today.nothing")
+        : allDone
+          ? t("parcours.today.allDone")
+          : t("parcours.today.progress", { done, total: planned }),
+  };
 });
 
 function trackTehilim() {
@@ -97,33 +106,26 @@ function trackChneiMikra() {
           <span class="text-sm text-text-secondary">{{ parashaLabel }}</span>
         </span>
       </RouterLink>
-      <!-- La lecture du jour suit le compte : sans lui, rien à reprendre. Le
-           chiffre en avant tombe au bout de la ligne, comme sur l'accueil. -->
-      <RouterLink v-if="signedIn" to="/bibliotheque/lecture-du-jour" class="today-row group">
+      <!-- Ma journée, avec ou sans compte : le chiffre en avant tombe au bout
+           de la ligne, comme sur l'accueil. -->
+      <RouterLink :to="day.to" class="today-row group">
         <AppIcon name="circle-check" :size="21" class="shrink-0 text-secondary" />
         <span class="flex flex-1 flex-col gap-0.5 min-w-0">
           <span class="font-semibold text-text-primary group-hover:text-primary transition-colors">
-            {{ t("dailyReading.title") }}
+            {{ t("parcours.day.title") }}
           </span>
           <span
             class="text-sm"
-            :class="
-              allDone
-                ? 'text-green-600 dark:text-green-400'
-                : total === 0
-                  ? 'font-medium text-primary'
-                  : 'text-text-secondary'
-            "
+            :class="day.begun ? 'text-text-secondary' : 'font-medium text-primary'"
           >
-            {{ readingLine }}
+            {{ day.line }}
           </span>
         </span>
         <span
-          v-if="total > 0"
-          class="shrink-0 text-2xl font-bold leading-none tabular-nums"
-          :class="allDone ? 'text-green-600 dark:text-green-400' : 'text-primary'"
+          v-if="day.percent !== null"
+          class="shrink-0 text-2xl font-bold leading-none tabular-nums text-primary"
         >
-          {{ pct }}<span class="text-base">%</span>
+          {{ day.percent }}<span class="text-base">%</span>
         </span>
       </RouterLink>
     </div>

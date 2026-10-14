@@ -3,14 +3,13 @@
  * Un jour du mur, ouvert : ce qu'il y avait à faire, à cocher après coup.
  * Tout se déclare, des mois après s'il le faut ; rien ne se compte contre soi.
  */
-import { computed } from "vue";
+import { computed, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useParcours } from "../../composables/useParcours";
 import { useParcoursViews } from "../../composables/useParcoursViews";
 import { analyticsService } from "../../services/analyticsService";
 import { localDayFrom } from "../../services/dateService";
 import { dateTimeFormat } from "../../services/intlCache";
-import { daysBetween } from "../../services/parcours/days";
 import type { DayKey } from "../../services/parcours/model";
 import { dayOrder } from "../../services/parcours/moments";
 import AppModal from "../AppModal.vue";
@@ -41,16 +40,17 @@ const rows = computed(() => {
     .map((task) => views.taskView(task, day));
 });
 
+watch(
+  () => props.day,
+  (day) => {
+    if (day) analyticsService.capture("parcours_day_opened", { source: props.source });
+  },
+);
+
 function toggle(index: number, done: boolean): void {
   const view = rows.value[index];
   if (!view || !props.day) return;
-  store.setDone(view.task, props.day, done);
-  analyticsService.capture("parcours_task_marked", {
-    done,
-    kind: view.objective.kind,
-    source: props.source,
-    days_ago: daysBetween(props.day, store.today.value),
-  });
+  store.setDone(view.task, props.day, done, props.source);
 }
 </script>
 

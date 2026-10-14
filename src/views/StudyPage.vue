@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, defineAsyncComponent, onMounted, onUnmounted, watch } from "vue";
+import { ref, computed, defineAsyncComponent, onMounted, watch } from "vue";
 import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
 import textStudiesJson from "../datas/textStudies.json";
@@ -7,7 +7,6 @@ import type { TextStudiesJson, TextStudyJsonEntry } from "../models/models";
 import { localeMessagesReady } from "../i18n";
 import { bookName } from "../services/catalogSearch";
 import { pageTitle, seoService } from "../services/seoService";
-import { localDayKey } from "../services/dateService";
 import { appendHebrewNumeral } from "../services/hebrewNumerals";
 import {
   hubPath,
@@ -35,8 +34,6 @@ import {
 } from "../services/offlineLibraryService";
 import { ensureManifestLoaded } from "../services/offlineTextStore";
 import { readingProgressService, type ReadingPosition } from "../services/readingProgressService";
-import { authService, type User } from "../services/authService";
-import { countDailyProgress, userPreferencesService } from "../services/userPreferencesService";
 import { useToast } from "../composables/useToast";
 import { useConfirm } from "../composables/useConfirm";
 import { useSearchMode } from "../composables/useSearchMode";
@@ -311,14 +308,7 @@ const showBookEncadrement = computed(() => browsingBook("tehilim"));
 // depuis l'accueil (la recherche reste la porte d'entrée la plus rapide).
 const showList = computed(() => currentCorpus.value !== null || hasSearch.value);
 
-// --- Connecté : lecture du jour et reprise de lecture, en tête de la
-// bibliothèque (ces fonctionnalités vivaient dans le profil). ---
-const user = ref<User | null>(null);
-let unsubscribeAuth: (() => void) | null = null;
-const dailyLoading = ref(false);
-const readingTotal = ref(0);
-const readingDone = ref(0);
-
+// --- La reprise de lecture, en tête de la bibliothèque. ---
 // Dernière position de lecture : le vrai « Reprendre ma lecture ».
 const lastReading = ref<ReadingPosition | null>(null);
 const resumeLink = computed(() =>
@@ -348,29 +338,6 @@ function dismissResume() {
     text_id: current.textId,
     source: "library",
   });
-}
-
-async function loadDailySummary(u: User) {
-  dailyLoading.value = true;
-  try {
-    const prefs = await userPreferencesService.getPreferences(u.id);
-    // Même règle de comptage que la page Lecture du jour (chnei mikra
-    // hebdomadaire exclu, complétions intersectées avec les listes actives).
-    const progress = prefs.dailyReadingProgress;
-    const isToday = progress?.date === localDayKey();
-    const counts = countDailyProgress({
-      textIds: prefs.dailyReadingIds ?? [],
-      options: prefs.dailyReadingOptions ?? [],
-      completedTextIds: isToday ? (progress.completedIds ?? []) : [],
-      completedOptions: isToday ? (progress.completedOptions ?? []) : [],
-    });
-    readingTotal.value = counts.total;
-    readingDone.value = counts.done;
-  } catch (error) {
-    console.error("Erreur lors du chargement de la lecture du jour:", error);
-  } finally {
-    dailyLoading.value = false;
-  }
 }
 
 function trackCorpusOpened(corpus: string) {
@@ -564,23 +531,10 @@ onMounted(() => {
     bookmarkCounts.value = readingProgressService.getBookmarkCounts();
     lastReading.value = readingProgressService.getResumePosition();
   });
-  unsubscribeAuth = authService.onAuthChanged((u) => {
-    user.value = u;
-    if (u) {
-      loadDailySummary(u);
-    } else {
-      readingTotal.value = 0;
-      readingDone.value = 0;
-    }
-  });
   if (isNativeApp) {
     ensureManifestLoaded();
   }
   applySeoMeta();
-});
-
-onUnmounted(() => {
-  unsubscribeAuth?.();
 });
 </script>
 
@@ -743,13 +697,8 @@ onUnmounted(() => {
       </div>
 
       <!-- Ce qui se lit aujourd'hui : les psaumes du jour, le chnei mikra, et
-           pour un compte, la lecture du jour. -->
-      <StudyToday
-        class="max-w-3xl mx-auto mt-12 animate-[fadeIn_0.5s_ease]"
-        :signed-in="!!user && !dailyLoading"
-        :done="readingDone"
-        :total="readingTotal"
-      />
+           Ma journée. -->
+      <StudyToday class="max-w-3xl mx-auto mt-12 animate-[fadeIn_0.5s_ease]" />
 
       <!-- App native : tout télécharger, en bas de page, une ligne parmi les
            autres. -->

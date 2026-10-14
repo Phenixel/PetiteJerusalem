@@ -182,8 +182,10 @@ lignes sur la page du profil elle-même, sans sous-page à compter.
 ### `profile_shortcut_clicked` (existant)
 
 Un raccourci du profil vers ce qui y vivait autrefois : `shortcut` vaut
-`daily_reading` ou `my_sessions`, sur le site comme dans l'app (groupe « Mes
-lectures »).
+`parcours` (Mon parcours, **nouvelle valeur**, qui remplace `daily_reading`
+depuis que la lecture du jour y vit) ou `my_sessions`, sur le site comme dans
+l'app (groupe « Mes lectures »). Dans l'app, la ligne de Mon parcours est là
+sans compte.
 
 ## Lecture de la tefila
 
@@ -288,6 +290,7 @@ flèche ; `accuracy` dit si c'est la précision affichée qui les y a poussés.
 | `text_opened` | `entry` | `sidour` | la lecture s'ouvre depuis la page du Sidour (`services/readingEntry.ts`). |
 | `tehilim_day_opened` | `source` | `library_today` | depuis « Aujourd'hui », en bas de la bibliothèque. |
 | `chnei_mikra_opened` | `source` | `library_today` | idem. |
+| `offline_download_started`, `offline_download_completed`, `offline_download_failed` | `scope` | `parcours` | les textes de la journée, téléchargés depuis Ma journée (app) ; l'ancienne page de la lecture du jour envoyait `daily_reading`. |
 | `offline_download_completed` | `scope` | `feast` | les textes de la fête, téléchargés d'eux-mêmes quand ils remontent en tête du Sidour (app) ; `tab` porte alors la fête (`tichri`, `souccot`, `hanouka`). |
 
 `library_corpus_opened` ne porte plus que les corpus d'étude (`tehilim`,
@@ -407,7 +410,7 @@ injoignable). Voir `composables/useBookDownload.ts` et
 | Propriété | Valeurs | Statut |
 | --- | --- | --- |
 | `source` | `library`, `session` | existant, conservé |
-| `entry` | `search`, `resume`, `push`, `home`, `library`, `sidour`, `daily_reading`, `chnei_mikra`, `tehilim_day`, `reading`, `zmanim`, `calendar`, `session`, `direct`, `other` | **nouveau** |
+| `entry` | `search`, `resume`, `push`, `home`, `library`, `sidour`, `daily_reading`, `parcours`, `chnei_mikra`, `tehilim_day`, `reading`, `zmanim`, `calendar`, `session`, `direct`, `other` | **nouveau** ; `parcours` (depuis une page de Mon parcours) **ajouté** |
 
 `entry` dit d'où l'on arrive (`services/readingEntry.ts`) : un indice laissé
 juste avant la navigation quand l'adresse ne peut pas le dire (un résultat de
@@ -475,7 +478,7 @@ appelée (voir docs/design.md, « Une astuce se joue sur la page, une fois »).
 
 | Propriété | Valeurs |
 | --- | --- |
-| `reason` | ce qui y a mené (`services/loginReason.ts`) : `direct`, `daily_reading`, `share_reading`, `profile`, `admin`, `other` |
+| `reason` | ce qui y a mené (`services/loginReason.ts`) : `direct`, `daily_reading`, `parcours` (une page de Mon parcours, sur le site ; **nouvelle valeur**), `share_reading`, `profile`, `admin`, `other` |
 | `mode` | `login` ou `signup` à l'arrivée |
 | `last_method` | la dernière méthode de connexion de l'appareil : `google`, `apple`, `email`, ou `null` |
 
@@ -536,12 +539,15 @@ Après `account_deleted`, le suivi est remis à zéro comme à la déconnexion
 
 ### Lecture du jour : `daily_reading_viewed` (nouveau)
 
-À l'arrivée sur `/bibliotheque/lecture-du-jour`, une fois la liste chargée.
+À l'arrivée sur la lecture du jour. Depuis Mon parcours, elle part de Ma
+journée (`/parcours/journee`, où mène aussi `/bibliotheque/lecture-du-jour`),
+et compte toute la journée : textes, programmes, habitudes (voir « Mon
+parcours » plus bas).
 
 | Propriété | Valeurs |
 | --- | --- |
-| `state` | `empty` (rien de composé), `in_progress`, `all_done`, `error` (chargement en échec) |
-| `total_count` | les lectures du jour (le chnei mikra hebdomadaire n'y compte pas) |
+| `state` | `empty` (rien de prévu), `in_progress`, `all_done` ; `error` ne part plus (rien ne se charge) |
+| `total_count` | les tâches du jour (les tâches de la semaine, comme le chnei mikra, et celles mises de côté n'y comptent pas) |
 | `done_count` | celles déjà faites |
 
 ### Chaînes
@@ -662,3 +668,103 @@ Un rav choisi (ou retiré) dans les filtres du catalogue.
 | --- | --- |
 | `auteur` | le nom du rav, `null` quand le filtre est retiré |
 | `results_count` | les cours affichés |
+
+## Mon parcours
+
+Programmes, habitudes, lectures du calendrier et textes du jour, la journée et
+le mur (`/parcours`). La lecture du jour y vit désormais. Le suivi qui se
+répète d'un écran à l'autre (cocher, mettre de côté, arriver sur la journée)
+passe par `src/services/parcours/tracking.ts`.
+
+### `parcours_viewed` (nouveau)
+
+À l'arrivée sur Mon parcours.
+
+| Propriété | Valeurs |
+| --- | --- |
+| `objectives_count` | les objectifs en cours |
+| `streak` | la série en cours, en jours |
+| `signed_in` | vrai avec un compte (sans compte, tout reste sur l'appareil) |
+
+### `parcours_wall_viewed` (nouveau)
+
+À l'arrivée sur le mur entier. `weeks` : les colonnes montrées.
+
+### `parcours_day_opened` (nouveau)
+
+Un jour du mur, ouvert pour le compléter après coup. `source` :
+`parcours_wall` (le mur de Mon parcours) ou `parcours_full_wall` (le mur
+entier).
+
+### `parcours_task_marked` (nouveau)
+
+Une tâche cochée ou décochée.
+
+| Propriété | Valeurs |
+| --- | --- |
+| `done` | vrai quand elle est cochée |
+| `kind` | `program`, `habit`, `cycle`, `text` |
+| `source` | d'où : `journee_row` (Ma journée), `objective_button` ou `objective_swipe` (la portion du jour, sur la page d'un programme), `parcours_wall`, `parcours_full_wall` (un jour du mur) |
+| `days_ago` | 0 aujourd'hui, 1 hier... : ce qui se coche après coup |
+
+Une tâche de la lecture du jour d'avant (un texte du jour, une lecture du
+calendrier), cochée le jour même, envoie aussi `daily_reading_marked_read`
+(existant, jamais documenté), avec ses propriétés d'alors : `marked`, `scope`
+(`text`, `option` avec `option: tehilim-jour`, `parasha_week`),
+`done_count`, `total_count`, `all_done`, comptés sur la journée.
+
+### `parcours_task_skipped` (nouveau)
+
+« Pas aujourd'hui », ou son contraire. `skipped`, `kind`, `source`
+(`journee`).
+
+### `parcours_units_marked` (nouveau)
+
+Les cases d'une portion, cochées une à une sur la page d'un programme.
+`units` : les unités lues aujourd'hui ; `source` : `objective_cells`.
+
+### `parcours_objective_created` (nouveau)
+
+| Propriété | Valeurs |
+| --- | --- |
+| `kind` | `program`, `habit`, `cycle`, `text` |
+| `corpus`, `rhythm`, `parts_count`, `texts_count` | un programme : `michna`, `talmud`, `tanakh`, `tehilim` ; `daily`, `weekdays`, `weekly` ; les parties prises (sedarim, traités, livres) ; les textes qu'elles font |
+| `preset`, `days_count` | une habitude : `tefilot`, `tefilin`, `chema-al-hamita`, `tsedaka`, `chmirat-halachon`, `custom` ; ses jours dans la semaine |
+| `cycle` | une lecture du calendrier : `tehilim-month`, `parasha` |
+| `text_id` | un texte du jour |
+
+### `parcours_objective_paused`, `parcours_objective_removed` (nouveaux)
+
+`kind`, et pour la pause `paused` (vrai à la pause, faux à la reprise).
+
+### `parcours_program_updated` (nouveau)
+
+Un programme modifié : `field` vaut `end` ou `rhythm` (le pas repart
+d'aujourd'hui).
+
+### `parcours_caught_up` (nouveau)
+
+Un retard rattrapé.
+
+| Propriété | Valeurs |
+| --- | --- |
+| `option` | `week`, `remaining`, `oneDay`, `pushEnd`, `done` |
+| `behind` | les unités de retard |
+| `remember` | vrai si l'on a choisi de faire ainsi sans demander |
+
+### Ce que deviennent ceux de la lecture du jour
+
+La page `/bibliotheque/lecture-du-jour` a laissé place à Ma journée. Ce
+qu'elle envoyait continue quand l'écran continue :
+
+- `daily_reading_viewed` et `daily_reading_marked_read` : voir plus haut ;
+- `reminder_settings_opened`, `reminder_enabled`, `reminder_enable_failed`,
+  `reminder_disabled`, `reminder_disable_failed` : la cloche des rappels,
+  avec les mêmes propriétés, au bas de Ma journée ;
+- `daily_reading_configured` (composer la liste), `daily_reading_tab_switched`
+  (« Aujourd'hui » et « Cette semaine ») et `daily_reading_offline_prompt` (la
+  modale d'un texte ajouté sans être téléchargé) n'ont plus d'écran, et ne
+  partent plus. On compose désormais par `parcours_objective_created` et
+  `parcours_objective_removed` (`kind` `text` ou `cycle`), et les textes
+  absents de l'appareil se proposent par le bandeau de Ma journée
+  (`offline_download_started`, `scope` `parcours`).

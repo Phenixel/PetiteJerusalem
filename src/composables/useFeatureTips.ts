@@ -49,8 +49,7 @@ export type FeatureTipId =
   | "calendar-occasions"
   | "reading-menu"
   | "reading-gestures"
-  | "share-reading"
-  | "daily-reading";
+  | "share-reading";
 
 const STORAGE_KEY = "pj_tips_seen";
 
@@ -62,7 +61,6 @@ export const TIP_IDS: readonly FeatureTipId[] = [
   "reading-menu",
   "reading-gestures",
   "share-reading",
-  "daily-reading",
 ];
 
 /**

@@ -157,9 +157,10 @@ const fr = {
         "Tehilim, Sidour, Michna, Talmud, Tanakh, fêtes et brakhot, avec une seule recherche.",
       zmanimTitle: "Les horaires",
       zmanimText: "Le bouton rond, en bas de l'écran : les horaires du jour, là où vous êtes.",
-      dailyTitle: "La lecture du jour",
-      dailyText: "Vos textes de chaque jour dans une liste, cochés au fil de la lecture.",
-      compose: "Composer ma lecture du jour",
+      dailyTitle: "Mon parcours",
+      dailyText:
+        "Un traité à finir, les Tehilim du jour, une habitude : chaque jour, ce qu'il y a à faire.",
+      compose: "Me fixer un objectif",
     },
     gestures: {
       title: "Trois gestes pour lire",
@@ -182,7 +183,7 @@ const fr = {
       },
       account: {
         title: "Un compte, si vous voulez",
-        text: "Rien n'oblige à en créer un : tout se lit sans. Il sert à partager des lectures à plusieurs, suivre votre lecture quotidienne et retrouver vos réglages sur un autre appareil.",
+        text: "Rien n'oblige à en créer un : tout se lit sans. Il sert à partager des lectures à plusieurs, retrouver votre parcours et vos réglages sur un autre appareil.",
       },
     },
     calendar: {
@@ -239,16 +240,6 @@ const fr = {
       join: {
         title: "Rejoindre une lecture",
         text: "Ouvrez une session, réservez un chapitre, ou laissez le tirage au sort choisir pour vous. Même sans compte.",
-      },
-    },
-    daily: {
-      compose: {
-        title: "Votre lecture du jour",
-        text: "Composez votre liste : des chapitres de Tehilim, une michna, la paracha de la semaine. Elle vous attend chaque jour, et se coche au fil de la lecture.",
-      },
-      reminder: {
-        title: "Un rappel chaque jour",
-        text: "La cloche vous rappelle votre lecture, à l'heure que vous choisissez, ou à la tombée de la nuit.",
       },
     },
   },
@@ -386,7 +377,7 @@ const fr = {
       "Vos réglages sont gardés sur cet appareil. Avec un compte gratuit, vous gagnez bien plus :",
     guestBenefits: {
       sessions: "des lectures partagées à plusieurs, suivies jusqu'au siyoum",
-      dailyReading: "votre lecture du jour et sa progression, retrouvées chaque jour",
+      parcours: "votre parcours et votre mur, d'un appareil à l'autre",
       reminders: "un rappel de lecture quotidien, à l'heure que vous choisissez",
       sync: "vos réglages, marque-pages et reprises de lecture sur tous vos appareils",
     },
@@ -400,7 +391,7 @@ const fr = {
     shortcuts: {
       title: "Retrouvez aussi",
       accountTitle: "Mon compte",
-      dailyReadingHint: "dans la Bibliothèque",
+      parcoursHint: "vos programmes et votre journée",
       mySessionsHint: "dans le Partage de lectures",
     },
     noParticipatedSessions: "Aucune session participée",
@@ -482,66 +473,23 @@ const fr = {
   },
   dailyReading: {
     title: "Ma lecture quotidienne",
-    description:
-      "Sélectionnez les textes que vous lisez chaque jour pour les retrouver ici, les uns à la suite des autres.",
-    manage: "Gérer ma liste",
-    done: "Terminé",
-    tabToday: "Aujourd'hui",
-    tabWeek: "Cette semaine",
-    addTexts: "Ajouter des textes",
-    add: "Ajouter",
-    added: "Ajouté",
-    selectedCount: "{count} texte(s) dans votre liste",
-    removeFromList: "Retirer de la liste",
-    emptyTitle: "Votre liste est vide",
-    emptyDescription:
-      "Ajoutez les psaumes ou passages que vous lisez quotidiennement pour les retrouver regroupés ici.",
     progress: "{done} sur {total} lus aujourd'hui",
     allReadTitle: "Bravo, tout est lu pour aujourd'hui !",
-    allReadDescription: "Revenez demain pour votre prochaine lecture.",
-    markRead: "Marquer comme lu",
-    readToday: "Lu aujourd'hui",
     sectionMarkRead: "Marquer lu",
     sectionRead: "Lu",
-    resetsDaily: "Le suivi se remet à zéro chaque jour.",
     widget: {
       title: "Lecture du jour",
       empty: "Ouvrez l'app pour composer votre liste de lecture",
     },
     options: {
-      title: "Lectures du moment",
-      description:
-        "Des lectures qui suivent le calendrier : elles s'affichent en tête de votre liste et se mettent à jour toutes seules.",
-      parashaTitle: "Chnei mikra (paracha de la semaine)",
-      parashaDescription:
-        "La paracha de la semaine, montée par montée, avec le Targoum Onkelos sous chaque verset.",
-      tehilimDayTitle: "Tehilim du jour",
-      tehilimDayDescription:
-        "Le cycle mensuel : les psaumes du jour du mois hébraïque, pour finir les Tehilim chaque mois.",
-      parashaReading: "Paracha de la semaine",
       tehilimDayReading: "Tehilim du jour · {day} du mois",
       psalmsOne: "Tehilim {n}",
       psalmsRange: "Tehilim {from} à {to}",
-      weeklyNote: "À terminer avant Chabbat",
-      readThisWeek: "Lu cette semaine",
     },
     loadError: "Impossible de charger ce texte.",
-    saveError: "Enregistrement impossible. Réessayez.",
     offline: {
-      banner:
-        "Hors connexion : vous lisez les textes téléchargés sur cet appareil. Vos lectures cochées sont gardées ici et synchronisées au retour du réseau ; la liste, elle, ne peut pas être modifiée d'ici là.",
-      readOnly: "Pas de connexion : votre liste ne peut pas être modifiée pour le moment.",
-      progressKept:
-        "Sans connexion : votre lecture est cochée sur cet appareil et sera synchronisée.",
       notDownloaded:
         "Ce texte n'est pas téléchargé sur cet appareil : il n'est pas lisible hors connexion.",
-      promptTitle: "Ce texte n'est pas téléchargé",
-      promptMessage:
-        "{name} n'est pas encore sur cet appareil : sans connexion, il ne pourra pas être lu. Le télécharger maintenant ?",
-      promptLater: "Plus tard",
-      downloadDone: "Textes téléchargés : votre lecture est disponible hors connexion.",
-      missing:
-        "Un texte de votre lecture du jour n'est pas téléchargé : il ne sera pas lisible hors connexion. | {count} textes de votre lecture du jour ne sont pas téléchargés : ils ne seront pas lisibles hors connexion.",
     },
   },
   calendar: {
@@ -1335,9 +1283,6 @@ const fr = {
       "{festival} {year} : dates, heure d\u2019entrée et de sortie {'|'} Petite Jérusalem",
     festivalDescription:
       "Quand tombe {festival} ? Les dates de {festival} sur plusieurs années, avec l\u2019heure d\u2019entrée et de sortie, calculées pour votre position.",
-    dailyReadingTitle: "Ma lecture du jour {'|'} Petite Jérusalem",
-    dailyReadingDescription:
-      "Retrouvez chaque jour les textes de votre lecture quotidienne : Tehilim, paracha de la semaine et vos textes choisis, avec suivi de progression.",
     notFoundTitle: "Page non trouvée {'|'} Petite Jérusalem",
     notFoundDescription: "La page demandée n'existe pas.",
     shareReadingTitle:
@@ -1788,7 +1733,7 @@ const fr = {
   accountCta: {
     title: "Créez votre compte gratuit",
     description:
-      "Partagez des lectures à plusieurs, suivez votre lecture quotidienne et recevez un rappel chaque jour.",
+      "Partagez des lectures à plusieurs, gardez votre parcours sur tous vos appareils et recevez un rappel chaque jour.",
     signup: "Créer un compte",
     login: "Se connecter",
     dismiss: "Ignorer",
@@ -1827,8 +1772,6 @@ const fr = {
   notifications: {
     title: "Rappels de lecture",
     description: "Recevez une notification tant que votre lecture quotidienne n'est pas terminée.",
-    settingsAriaOn: "Rappels de lecture activés : ouvrir les réglages",
-    settingsAriaOff: "Rappels de lecture désactivés : ouvrir les réglages",
     enable: "Activer les rappels",
     dailyOption: "Rappel à heure fixe",
     dailyOptionHint: "Chaque jour, à l'heure de votre choix.",
@@ -2145,6 +2088,16 @@ const fr = {
       pastHint: "Un jour passé : cochez ce qui a été fait.",
       empty: "Rien de prévu ce jour-là.",
     },
+    today: {
+      progress: "{done} sur {total} faits aujourd'hui",
+      allDone: "Tout est fait pour aujourd'hui",
+      nothing: "Rien de prévu aujourd'hui",
+    },
+    offline: {
+      missing:
+        "Un texte de votre journée n'est pas téléchargé : il ne se lira pas sans connexion. | {count} textes de votre journée ne sont pas téléchargés : ils ne se liront pas sans connexion.",
+      done: "Textes téléchargés : votre journée se lit sans connexion.",
+    },
     reminder: {
       title: "Le rappel du soir",
       off: "Aucun rappel",
@@ -2256,7 +2209,6 @@ const fr = {
       sharing: "Partage",
     },
     subtitle: "Lisez et étudiez les textes : Tehilim, Michna, Talmud, Tanakh et Moussar.",
-    searchPlaceholder: "Rechercher un texte…",
     searchAllPlaceholder: "Rechercher dans tous les textes…",
     noResults: "Aucun texte ne correspond à votre recherche.",
     sections: "{count} sections",
@@ -2292,7 +2244,6 @@ const fr = {
       bookPartial: "{book}, en partie sur ce téléphone",
     },
     types: {
-      all: "Tout",
       tehilim: "Tehilim",
       mishna: "Michna",
       talmud: "Talmud",

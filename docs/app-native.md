@@ -185,23 +185,26 @@ avec un leurre qui se comporte comme le vrai proxy, `then` compris.
 
 Vérification : télécharger un livre, activer le mode avion, l'ouvrir.
 
-## Lecture quotidienne hors-ligne
+## Mon parcours hors ligne
 
-La page **/bibliotheque/lecture-du-jour** est `offlineOk` dans l'app native :
-sans réseau, elle s'ouvre et se lit, à partir de deux copies locales.
+Les pages **/parcours** sont `offlineOk` dans l'app native, et se servent
+sans compte ; l'ancienne adresse de la lecture du jour,
+**/bibliotheque/lecture-du-jour**, mène à Ma journée. Le détail est dans
+`docs/parcours.md`.
 
-- **La liste et son suivi** : `userPreferencesService` garde le dernier
-  document `userPreferences` reçu en `localStorage` (clé `pj-preferences:<uid>`)
-  et le sert quand l'appareil est hors ligne. Il est effacé à la déconnexion et
-  à la suppression du compte.
-- **Les textes** : ceux que l'utilisateur a acceptés de télécharger. À l'ajout
-  d'un texte (ou à l'activation d'une lecture du moment) dont le livre n'est pas
-  sur l'appareil, une modale prévient qu'il ne sera pas lisible hors connexion
-  et propose de le télécharger. Un bandeau propose la même chose quand la
-  lecture du jour comporte des textes absents, la paracha de la semaine change
-  toute seule, par exemple. Rien n'est téléchargé sans cet accord :
-  `refreshStaleDownloads` ne fait que remettre au format courant des fichiers
-  **déjà** téléchargés.
+- **Le suivi** vit sur l'appareil (`localStorage`, clé `pj-parcours`, doublé
+  dans les Preferences de Capacitor, que le système ne vide pas avec le
+  stockage de la webview) : il sert dès le premier rendu, sans réseau ni
+  compte. Avec un compte, chaque changement part au document
+  `parcours/{uid}`, entrée par entrée ; une écriture qui échoue reste à faire
+  et repart au retour du réseau, après une nouvelle lecture du compte.
+- **Les textes** : ceux que l'utilisateur a acceptés de télécharger. Quand
+  des textes de la journée (la portion d'un programme, un texte du jour, les
+  psaumes du jour, la paracha de la semaine) ne sont pas sur l'appareil, Ma
+  journée le dit et propose de les télécharger
+  (`components/parcours/OfflineTextsNotice.vue`). Rien n'est téléchargé sans
+  cet accord : `refreshStaleDownloads` ne fait que remettre au format courant
+  des fichiers **déjà** téléchargés.
   Un livre supprimé pendant que cette mise à jour le reprend reste supprimé :
   `downloadFile` compte les suppressions demandées pour son chemin, et celle
   survenue en cours de route l'emporte (copie retirée, rien d'inscrit). Les
@@ -210,29 +213,8 @@ sans réseau, elle s'ouvre et se lit, à partir de deux copies locales.
   son tour. Tests : `offlineRemoveDuringDownload.test.ts`,
   `offlineRemoveDuringSync.test.ts`.
 
-**Synchronisation.** Deux règles, selon ce qu'on touche :
+**Synchronisation des lectures.**
 
-- **La composition de la liste appartient au serveur.** Hors connexion,
-  ajouter un texte, activer une lecture du moment ou régler les rappels affiche
-  « pas de connexion » au lieu d'enregistrer. Sans ce garde-fou, le cache
-  Firestore persistant (`src/firebase/firestore.ts`) garderait l'écriture en
-  attente et l'imposerait au serveur au retour du réseau, en écrasant ce qui a
-  pu changer ailleurs, `savePreferences` lève donc `OfflineWriteError` sans
-  rien tenter. Au retour du réseau, la page se réaligne sur le serveur.
-- **Une lecture faite ne se perd pas.** Le « marquer comme lu » s'enregistre
-  hors connexion (`saveDailyProgress` : suivi gardé en `localStorage`, clé
-  `pj-daily-progress-pending:<uid>`) et repart au serveur à la première lecture
-  réussie des préférences. `mergeDailyProgress` arbitre : **le « lu » gagne**
-  même jour, les deux suivis s'additionnent ; jours différents (la coupure a
-  passé minuit), le plus récent l'emporte ; le chnei mikra se fusionne à part,
-  à la semaine. Conséquence assumée : décocher hors ligne quelque chose que le
-  serveur sait déjà lu ne tient pas au retour du réseau.
-- **La page se relit au retour à l'écran.** Chaque coche réécrit tout le
-  suivi du jour : la lecture du jour relit donc le serveur quand on y revient,
-  sans quoi la coche suivante effaçait celle faite sur un autre appareil. Un
-  geste fait après minuit recharge d'abord le nouveau jour, puis s'y applique ;
-  au nouveau jour, ce qui était lu la veille se rouvre. Test :
-  `dailyReadingStaleState.test.ts`.
 - **Les marque-pages et positions de lecture s'écrivent après lecture du
   compte.** `readingProgressService` les fusionne avec ceux du compte à la
   connexion, et n'écrit rien au compte tant qu'il ne l'a pas lu : un échec de

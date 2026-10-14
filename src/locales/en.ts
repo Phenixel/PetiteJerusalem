@@ -156,9 +156,9 @@ const en: LocaleMessages = {
         "Tehilim, Siddur, Mishna, Talmud, Tanakh, festivals and blessings, with one search.",
       zmanimTitle: "The times",
       zmanimText: "The round button at the bottom of the screen: today's times, where you are.",
-      dailyTitle: "The reading of the day",
-      dailyText: "Your daily texts in one list, ticked off as you read.",
-      compose: "Build my daily reading",
+      dailyTitle: "My journey",
+      dailyText: "A tractate to finish, the daily Tehilim, a habit: each day, what there is to do.",
+      compose: "Set myself a goal",
     },
     gestures: {
       title: "Three gestures for reading",
@@ -181,7 +181,7 @@ const en: LocaleMessages = {
       },
       account: {
         title: "An account, if you like",
-        text: "Nothing requires one: everything can be read without it. It lets you share readings with others, follow your daily reading and find your settings again on another device.",
+        text: "Nothing requires one: everything can be read without it. It lets you share readings with others, and find your journey and your settings again on another device.",
       },
     },
     calendar: {
@@ -238,16 +238,6 @@ const en: LocaleMessages = {
       join: {
         title: "Join a reading",
         text: "Open a session, reserve a chapter, or let the draw choose for you. Even without an account.",
-      },
-    },
-    daily: {
-      compose: {
-        title: "Your daily reading",
-        text: "Build your list: chapters of Tehilim, a mishna, the week's parasha. It waits for you every day, and gets ticked as you read.",
-      },
-      reminder: {
-        title: "A reminder every day",
-        text: "The bell reminds you of your reading, at the time you choose, or at nightfall.",
       },
     },
   },
@@ -380,7 +370,7 @@ const en: LocaleMessages = {
       "Your settings are kept on this device. With a free account, you get much more:",
     guestBenefits: {
       sessions: "shared readings with others, followed through to the siyum",
-      dailyReading: "your daily reading and its progress, there every day",
+      parcours: "your journey and your wall, from one device to another",
       reminders: "a daily reading reminder at the time you choose",
       sync: "your settings, bookmarks and reading positions on all your devices",
     },
@@ -394,7 +384,7 @@ const en: LocaleMessages = {
     shortcuts: {
       title: "Also find",
       accountTitle: "My account",
-      dailyReadingHint: "in the Library",
+      parcoursHint: "your programs and your day",
       mySessionsHint: "in Reading Share",
     },
     noParticipatedSessions: "No participated sessions",
@@ -474,63 +464,22 @@ const en: LocaleMessages = {
   },
   dailyReading: {
     title: "My daily reading",
-    description: "Pick the texts you read every day so you can find them here, one after another.",
-    manage: "Manage my list",
-    done: "Done",
-    tabToday: "Today",
-    tabWeek: "This week",
-    addTexts: "Add texts",
-    add: "Add",
-    added: "Added",
-    selectedCount: "{count} text(s) in your list",
-    removeFromList: "Remove from list",
-    emptyTitle: "Your list is empty",
-    emptyDescription:
-      "Add the psalms or passages you read daily to find them grouped together here.",
     progress: "{done} of {total} read today",
     allReadTitle: "Well done, everything is read for today!",
-    allReadDescription: "Come back tomorrow for your next reading.",
-    markRead: "Mark as read",
-    readToday: "Read today",
     sectionMarkRead: "Mark read",
     sectionRead: "Read",
     options: {
-      title: "Readings of the moment",
-      description:
-        "Readings that follow the calendar: they appear at the top of your list and update on their own.",
-      parashaTitle: "Shnayim mikra (weekly parasha)",
-      parashaDescription:
-        "The weekly parasha, aliyah by aliyah, with Targum Onkelos under each verse.",
-      tehilimDayTitle: "Daily Tehilim",
-      tehilimDayDescription:
-        "The monthly cycle: the psalms of the Hebrew day of the month, to finish Tehilim every month.",
-      parashaReading: "Parasha of the week",
       tehilimDayReading: "Daily Tehilim · day {day} of the month",
       psalmsOne: "Tehilim {n}",
       psalmsRange: "Tehilim {from} to {to}",
-      weeklyNote: "To finish before Shabbat",
-      readThisWeek: "Read this week",
     },
-    resetsDaily: "Tracking resets every day.",
     widget: {
       title: "Daily reading",
       empty: "Open the app to set up your reading list",
     },
     loadError: "Unable to load this text.",
-    saveError: "Could not save. Please try again.",
     offline: {
-      banner:
-        "Offline: you are reading the texts downloaded on this device. What you tick off is kept here and synced when the network is back; your list, however, cannot be changed until then.",
-      readOnly: "No connection: your list cannot be changed right now.",
-      progressKept: "No connection: your reading is ticked off on this device and will be synced.",
       notDownloaded: "This text is not downloaded on this device: it cannot be read offline.",
-      promptTitle: "This text is not downloaded",
-      promptMessage:
-        "{name} is not on this device yet: without a connection, it will not be readable. Download it now?",
-      promptLater: "Later",
-      downloadDone: "Texts downloaded: your reading is available offline.",
-      missing:
-        "One text of your daily reading is not downloaded: it will not be readable offline. | {count} texts of your daily reading are not downloaded: they will not be readable offline.",
     },
   },
   calendar: {
@@ -1288,9 +1237,6 @@ const en: LocaleMessages = {
     festivalTitle: "{festival} {year}: dates, start and end times {'|'} Petite Jérusalem",
     festivalDescription:
       "When is {festival}? The dates of {festival} over several years, with the start and end times of the festival, computed for your location.",
-    dailyReadingTitle: "My daily reading {'|'} Petite Jérusalem",
-    dailyReadingDescription:
-      "Find your daily reading texts every day: Tehilim, the weekly parasha and your chosen texts, with progress tracking.",
     notFoundTitle: "Page not found {'|'} Petite Jérusalem",
     notFoundDescription: "The requested page does not exist.",
     shareReadingTitle: "Shared Torah reading and study {'|'} Petite Jérusalem",
@@ -1720,7 +1666,7 @@ const en: LocaleMessages = {
   accountCta: {
     title: "Create your free account",
     description:
-      "Share readings with others, follow your daily reading and get a reminder every day.",
+      "Share readings with others, keep your journey on all your devices and get a reminder every day.",
     signup: "Sign up",
     login: "Sign in",
     dismiss: "Not now",
@@ -1758,8 +1704,6 @@ const en: LocaleMessages = {
   notifications: {
     title: "Reading reminders",
     description: "Get a notification while your daily reading isn't finished.",
-    settingsAriaOn: "Reading reminders on: open settings",
-    settingsAriaOff: "Reading reminders off: open settings",
     enable: "Turn reminders on",
     dailyOption: "Reminder at a set time",
     dailyOptionHint: "Every day, at the time you choose.",
@@ -2068,6 +2012,16 @@ const en: LocaleMessages = {
       pastHint: "A past day: check what was done.",
       empty: "Nothing planned that day.",
     },
+    today: {
+      progress: "{done} of {total} done today",
+      allDone: "All done for today",
+      nothing: "Nothing planned today",
+    },
+    offline: {
+      missing:
+        "A text of your day isn't downloaded: it won't open without a connection. | {count} texts of your day aren't downloaded: they won't open without a connection.",
+      done: "Texts downloaded: your day reads without a connection.",
+    },
     reminder: {
       title: "Evening reminder",
       off: "No reminder",
@@ -2177,7 +2131,6 @@ const en: LocaleMessages = {
       sharing: "Sharing",
     },
     subtitle: "Read and study the texts: Tehilim, Mishnah, Talmud, Tanakh and Mussar.",
-    searchPlaceholder: "Search a text…",
     searchAllPlaceholder: "Search all texts…",
     noResults: "No text matches your search.",
     sections: "{count} sections",
@@ -2208,7 +2161,6 @@ const en: LocaleMessages = {
       bookPartial: "{book}, partly on this phone",
     },
     types: {
-      all: "All",
       tehilim: "Tehilim",
       mishna: "Mishnah",
       talmud: "Talmud",

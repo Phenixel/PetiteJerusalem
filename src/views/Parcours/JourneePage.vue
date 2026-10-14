@@ -8,24 +8,28 @@
  * La tête de page se glisse pour passer à la veille : un oubli d'hier se
  * coche après coup, sans détour par le mur.
  */
-import { computed } from "vue";
+import { computed, onMounted } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import TaskRow from "../../components/parcours/TaskRow.vue";
 import DailyReminderButton from "../../components/parcours/DailyReminderButton.vue";
+import OfflineTextsNotice from "../../components/parcours/OfflineTextsNotice.vue";
 import { useParcours } from "../../composables/useParcours";
 import { useParcoursMeta } from "../../composables/useParcoursMeta";
 import { useParcoursViews, type TaskView } from "../../composables/useParcoursViews";
 import { useSwipe } from "../../composables/useSwipe";
 import { useWallLabels } from "../../composables/useWallLabels";
-import { analyticsService } from "../../services/analyticsService";
+import { useZmanimLocation } from "../../composables/useZmanimLocation";
 import { localDayFrom } from "../../services/dateService";
 import { dateTimeFormat } from "../../services/intlCache";
 import { addDays, daysBetween, isDayKey, weekStart } from "../../services/parcours/days";
 import type { DayKey, MomentId } from "../../services/parcours/model";
 import { dayOrder, TIMED_MOMENTS } from "../../services/parcours/moments";
+import { taskEntries } from "../../services/parcours/entries";
 import { daySummaries } from "../../services/parcours/schedule";
+import { trackDayViewed } from "../../services/parcours/tracking";
+import { isIsraelPlace } from "../../services/zmanimService";
 
 useParcoursMeta("parcours.day.title", "/parcours/journee");
 
@@ -35,6 +39,7 @@ const router = useRouter();
 const store = useParcours();
 const views = useParcoursViews();
 const labels = useWallLabels();
+const { place } = useZmanimLocation();
 
 /** Le jour montré : celui de l'adresse, jamais après aujourd'hui. */
 const day = computed<DayKey>(() => {
@@ -89,23 +94,21 @@ const week = computed(() => {
   ).map((summary, i) => ({ ...summary, initial: initials[i] }));
 });
 
+/** Ce qu'il faut sur l'appareil pour lire la journée d'aujourd'hui sans connexion. */
+const entries = computed(() => {
+  if (day.value !== store.today.value) return [];
+  const il = isIsraelPlace(place.value);
+  return rows.value.flatMap((row) => taskEntries(row.task, row.objective, day.value, il));
+});
+
+onMounted(() => trackDayViewed(store.data.value, store.context.value, store.today.value));
+
 function toggle(view: TaskView, done: boolean, gesture: string): void {
-  store.setDone(view.task, day.value, done);
-  analyticsService.capture("parcours_task_marked", {
-    done,
-    kind: view.objective.kind,
-    source: `journee_${gesture}`,
-    days_ago: daysBetween(day.value, store.today.value),
-  });
+  store.setDone(view.task, day.value, done, `journee_${gesture}`);
 }
 
 function skip(view: TaskView, skipped: boolean): void {
-  store.setSkipped(view.task, day.value, skipped);
-  analyticsService.capture("parcours_task_skipped", {
-    skipped,
-    kind: view.objective.kind,
-    source: "journee",
-  });
+  store.setSkipped(view.task, day.value, skipped, "journee");
 }
 
 // La tête se glisse : à droite, la veille ; à gauche, le jour suivant.
@@ -173,6 +176,8 @@ const header = useSwipe({
     <p v-if="day !== store.today.value" class="mt-5 text-center text-sm text-text-secondary">
       {{ t("parcours.day.pastHint") }}
     </p>
+
+    <OfflineTextsNotice class="mt-6" :entries="entries" />
 
     <div v-if="groups.length" class="mt-6 space-y-6">
       <section v-for="group in groups" :key="group.moment">

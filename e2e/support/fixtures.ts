@@ -77,7 +77,6 @@ export const test = base.extend<Options & Fixtures>({
               "reading-menu",
               "reading-gestures",
               "share-reading",
-              "daily-reading",
             ]),
           );
         } catch {

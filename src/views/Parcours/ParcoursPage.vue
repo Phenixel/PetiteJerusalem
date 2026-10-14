@@ -51,10 +51,6 @@ const empty = computed(() => liveObjectives(store.data.value).length === 0);
 const lit = computed(() => store.streak.value.current > 0);
 
 const picked = ref<DayKey | null>(null);
-function pick(day: DayKey): void {
-  picked.value = day;
-  analyticsService.capture("parcours_day_opened", { source: "parcours_wall" });
-}
 
 onMounted(() => {
   analyticsService.capture("parcours_viewed", {
@@ -115,7 +111,7 @@ onMounted(() => {
               :weeks="weeks"
               :selected="picked"
               variant="compact"
-              @pick="pick"
+              @pick="(day) => (picked = day)"
             >
               <template #footer="{ week }">
                 <span class="mt-1.5 truncate text-center text-[11px] font-bold text-text-secondary">

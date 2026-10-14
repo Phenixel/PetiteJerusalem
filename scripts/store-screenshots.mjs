@@ -412,19 +412,9 @@ const SCREENS = [
   // URL canonique de Tehilim 1 (/lire/103 hors session redirige vers elle).
   { name: "04-lecture-tehilim", path: "/bibliotheque/tehilim/1", readyText: "Phonétique" },
   { name: "05-bibliotheque", path: "/bibliotheque", readyText: "Bibliothèque" },
-  {
-    name: "06-lecture-quotidienne",
-    path: "/bibliotheque/lecture-du-jour",
-    readyText: "Tehilim 1",
-    // Le titre de la section calé en haut de l'écran montre le suivi du jour
-    // (et laisse le lien de retour hors champ). Une marge au-dessus : collé
-    // au bord, le haut des lettres serait rogné.
-    beforeShot: (page) =>
-      page
-        .locator("text=Ma lecture quotidienne >> visible=true")
-        .first()
-        .evaluate((el) => window.scrollTo(0, el.getBoundingClientRect().top + window.scrollY - 24)),
-  },
+  // Ma journée : la lecture du jour du compte (Tehilim 1 à 3, le premier
+  // coché) y entre d'elle-même à la connexion.
+  { name: "06-lecture-quotidienne", path: "/parcours/journee", readyText: "Tehilim 1" },
   { name: "07-chiour", path: `/chiourim/${CHIOUR_SLUG}`, readyText: "Description" },
   // Le calendrier des fêtes, l'onglet voisin des horaires : ses lignes
   // disent l'heure d'allumage de chaque fête.

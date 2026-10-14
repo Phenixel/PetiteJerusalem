@@ -84,13 +84,7 @@ function setRead(units: number): void {
 function markDone(done: boolean, gesture: string): void {
   const view = todayView.value;
   if (!view) return;
-  store.setDone(view.task, store.today.value, done);
-  analyticsService.capture("parcours_task_marked", {
-    done,
-    kind: "program",
-    source: `objective_${gesture}`,
-    days_ago: 0,
-  });
+  store.setDone(view.task, store.today.value, done, `objective_${gesture}`);
   if (done) toast.success(t("parcours.program.doneToast"));
 }
 

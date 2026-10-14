@@ -131,15 +131,15 @@ onUnmounted(() => {
           <ul class="flex flex-col gap-1 mb-4">
             <li>
               <RouterLink
-                to="/bibliotheque/lecture-du-jour"
+                to="/parcours"
                 class="flex items-center gap-3 px-4 py-3 rounded-btn font-medium text-text-secondary hover:bg-black/5 hover:text-text-primary transition-colors dark:hover:bg-white/10 group"
-                @click="trackShortcut('daily_reading')"
+                @click="trackShortcut('parcours')"
               >
                 <AppIcon name="book" :size="15" class="text-primary shrink-0" />
                 <span class="min-w-0">
-                  {{ t("dailyReading.title") }}
+                  {{ t("parcours.title") }}
                   <span class="block text-xs font-normal text-text-secondary/80">
-                    {{ t("profile.shortcuts.dailyReadingHint") }}
+                    {{ t("profile.shortcuts.parcoursHint") }}
                   </span>
                 </span>
               </RouterLink>

@@ -34,7 +34,6 @@ const SerieChiourimPage = () => import("../views/Chiourim/SerieChiourimPage.vue"
 const TextReadingPage = () => import("../views/TextReading/TextReadingPage.vue");
 const StudyPage = () => import("../views/StudyPage.vue");
 const SidourPage = () => import("../views/SidourPage.vue");
-const DailyReadingPage = () => import("../views/Library/DailyReadingPage.vue");
 const ParcoursPage = () => import("../views/Parcours/ParcoursPage.vue");
 const JourneePage = () => import("../views/Parcours/JourneePage.vue");
 const MurPage = () => import("../views/Parcours/MurPage.vue");
@@ -207,18 +206,14 @@ export default [
     meta: { offlineOk: true },
     component: StudyPage,
   },
-  // Lecture quotidienne : déplacée du profil vers la bibliothèque (elle vit à
-  // côté des textes qu'elle fait lire). Route statique, prioritaire sur
+  // La lecture du jour vit désormais dans Mon parcours (Ma journée). Son
+  // adresse reste : les versions installées, les widgets, la montre et le
+  // rappel du soir y mènent encore. Route statique, prioritaire sur
   // /bibliotheque/:corpus ci-dessous.
-  // Dans l'app native, la lecture du jour se lit sans connexion : les textes
-  // téléchargés viennent de l'appareil et la liste est relue de sa copie
-  // locale (la page passe alors en lecture seule). Sur le web il n'y a rien
-  // de téléchargé : la page a besoin du réseau, comme avant.
   {
     path: "/bibliotheque/lecture-du-jour",
     name: "daily-reading",
-    component: DailyReadingPage,
-    meta: { requiresAuth: true, offlineOk: isNativeApp, plainBackground: true },
+    redirect: "/parcours/journee",
   },
   // Mon parcours : programmes, habitudes, la journée et le mur. Dans l'app,
   // tout marche sans compte, sur l'appareil, et sans réseau ; sur le site,

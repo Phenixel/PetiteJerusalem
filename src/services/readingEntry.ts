@@ -31,6 +31,7 @@ export type ReadingEntry =
   | "library"
   | "sidour"
   | "daily_reading"
+  | "parcours"
   | "chnei_mikra"
   | "tehilim_day"
   | "reading"
@@ -71,6 +72,8 @@ export function readingEntryFromPath(backPath: string | null | undefined): Readi
   // La page du Sidour, d'où s'ouvrent les tefilot, les brahot et les textes
   // des fêtes.
   if (first === "sidour") return "sidour";
+  // Mon parcours : la journée, une tâche de l'accueil, la page d'un programme.
+  if (first === "parcours") return "parcours";
   if (first !== "bibliotheque") return "other";
   if (second === "lecture-du-jour") return "daily_reading";
   if (second === "chnei-mikra") return "chnei_mikra";

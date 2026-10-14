@@ -23,6 +23,8 @@ describe("l'entrée d'une lecture, d'après la page précédente", () => {
     ["/bibliotheque/tehilim", "library"],
     ["/sidour", "sidour"],
     ["/bibliotheque/lecture-du-jour", "daily_reading"],
+    ["/parcours/journee", "parcours"],
+    ["/parcours/objectif/abc", "parcours"],
     ["/bibliotheque/chnei-mikra", "chnei_mikra"],
     ["/bibliotheque/tehilim-du-jour", "tehilim_day"],
     ["/bibliotheque/tehilim/23", "reading"],
