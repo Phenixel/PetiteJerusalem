@@ -17,7 +17,16 @@ const entries = (textStudiesJson as TextStudiesJson).textStudies;
 
 describe("rachi des parachiot", () => {
   it("aligne chaque fichier Rachi sur les versets de sa paracha", () => {
-    const files = readdirSync(RASHI_DIR).filter((f) => f.endsWith(".json"));
+    // Les parachiot seulement : les Neviim et les Ketouvim ont leur test
+    // (commentaryFiles.test.ts).
+    const files = readdirSync(RASHI_DIR).filter(
+      (f) =>
+        f.endsWith(".json") &&
+        entries.find((t) => `${t.id}.json` === f)?.livre !== undefined &&
+        !["Nevi'im (Prophets)", "Ketuvim (Writings)"].includes(
+          entries.find((t) => `${t.id}.json` === f)!.livre,
+        ),
+    );
     expect(files.length).toBeGreaterThan(0);
     for (const file of files) {
       const id = Number(file.replace(".json", ""));

@@ -3,6 +3,13 @@ import { computed, onMounted, onUnmounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 import AppIcon from "./icons/AppIcon.vue";
+import { PAGE_FORM_LABELS } from "../composables/usePageForm";
+import {
+  scrollPeek,
+  scrollPointed,
+  setScrollPeek,
+  setScrollPointed,
+} from "../composables/useScrollPointing";
 import ReadingSizeControl from "./ReadingSizeControl.vue";
 import ShareModal from "./ShareModal.vue";
 import ToggleSwitch from "./ToggleSwitch.vue";
@@ -67,7 +74,9 @@ import { analyticsService } from "../services/analyticsService";
  *
  * La page peut aussi lui confier deux commandes de sa barre d'outils, pour
  * qu'elles restent à portée en pleine lecture : la bascule hébreu /
- * phonétique (`phonetic`, null quand le texte ne se translittère pas) et,
+ * phonétique (`phonetic`, null quand le texte ne se translittère pas), avec
+ * la forme de la page quand le texte en a une (`pageForm`, voir
+ * pageForm.ts), et,
  * dans l'app native, le téléchargement du texte (`downloadState`, "none"
  * quand il n'y a rien à télécharger). Une tefila (`tefila`) y ajoute le
  * réglage « sans tahanoun », qui n'a de sens que devant un office, et un
@@ -82,6 +91,10 @@ const props = withDefaults(
   defineProps<{
     sections?: ReadingNavSection[];
     phonetic?: boolean | null;
+    /** La forme de la page que le texte propose (page du daf, Sefer Torah), ou null. */
+    pageForm?: "daf" | "scroll" | null;
+    /** La forme de la page est celle qui s'affiche. */
+    pageFormActive?: boolean;
     downloadState?: BookState;
     tefila?: boolean;
     /** Le texte porte des halakhot : le réglage qui les masque a prise. */
@@ -90,23 +103,34 @@ const props = withDefaults(
     shareTitle?: string;
     /** L'adresse publique du texte ; à défaut, celle de la page ouverte. */
     shareUrl?: string;
+    /**
+     * Un volet occupe le bas de l'écran (le panneau d'étude, les commandes
+     * d'un passage dans l'app) ou sa droite (le panneau sur un écran large),
+     * là où se posent les boutons ronds : ils s'effacent le temps qu'il est
+     * ouvert.
+     */
+    concealed?: boolean;
     /** Le texte peut se mettre de côté sur la table d'étude (useReadingTable). */
     setAside?: boolean;
   }>(),
   {
     sections: () => [],
     phonetic: null,
+    pageForm: null,
+    pageFormActive: false,
     downloadState: "none",
     tefila: false,
     halakhot: false,
     shareTitle: "",
     shareUrl: "",
+    concealed: false,
     setAside: false,
   },
 );
 
 const emit = defineEmits<{
   (e: "update:phonetic", value: boolean): void;
+  (e: "update:pageFormActive", value: boolean): void;
   (e: "download"): void;
   (e: "set-aside"): void;
 }>();
@@ -386,7 +410,7 @@ onUnmounted(() => {
     leave-to-class="transform translate-y-10 opacity-0"
   >
     <div
-      v-show="!atBottom || open"
+      v-show="(!atBottom || open) && !concealed"
       class="fixed right-6 z-50"
       :style="{ '--menu-bottom': `${bottomRem}rem`, bottom: `${bottomRem}rem` }"
     >
@@ -407,9 +431,10 @@ onUnmounted(() => {
               >
                 <div class="flex items-center gap-2 min-w-0">
                   <ReadingSizeControl />
-                  <!-- Hébreu / phonétique, en abrégé : la place manque pour les mots. -->
+                  <!-- Hébreu / forme de la page / phonétique, en abrégé : la place
+                       manque pour les mots. -->
                   <div
-                    v-if="phonetic !== null"
+                    v-if="phonetic !== null || pageForm"
                     class="inline-flex p-0.5 rounded-btn bg-black/5 dark:bg-white/10"
                     role="group"
                     :aria-label="`${t('textReading.hebrew')} / ${t('textReading.phonetic')}`"
@@ -418,15 +443,31 @@ onUnmounted(() => {
                       @click="emit('update:phonetic', false)"
                       class="px-2.5 py-1 rounded-control text-sm font-medium transition-colors"
                       :class="
-                        !phonetic ? 'bg-surface text-primary shadow-sm' : 'text-text-secondary'
+                        !phonetic && !pageFormActive
+                          ? 'bg-surface text-primary shadow-sm'
+                          : 'text-text-secondary'
                       "
-                      :aria-pressed="!phonetic"
+                      :aria-pressed="!phonetic && !pageFormActive"
                       :aria-label="t('textReading.hebrew')"
                       :title="t('textReading.hebrew')"
                     >
                       א
                     </button>
                     <button
+                      v-if="pageForm"
+                      @click="emit('update:pageFormActive', true)"
+                      class="px-2.5 py-1 rounded-control text-sm font-medium transition-colors"
+                      :class="
+                        pageFormActive ? 'bg-surface text-primary shadow-sm' : 'text-text-secondary'
+                      "
+                      :aria-pressed="pageFormActive"
+                      :aria-label="t(PAGE_FORM_LABELS[pageForm].label)"
+                      :title="t(PAGE_FORM_LABELS[pageForm].label)"
+                    >
+                      <AppIcon :name="PAGE_FORM_LABELS[pageForm].icon" :size="14" />
+                    </button>
+                    <button
+                      v-if="phonetic !== null"
                       @click="emit('update:phonetic', true)"
                       class="px-2.5 py-1 rounded-control text-sm font-medium transition-colors"
                       :class="
@@ -553,6 +594,36 @@ onUnmounted(() => {
                       :model-value="halakhotHidden"
                       @update:model-value="setHalakhotHidden"
                     />
+                  </label>
+                </li>
+                <!-- Dans la forme du Sefer Torah : les voyelles et les teamim sur
+                     la colonne du parchemin, et l'appui long qui passe de
+                     l'une à l'autre (useScrollPointing). -->
+                <li v-if="pageForm === 'scroll' && pageFormActive">
+                  <label class="setting-row">
+                    <span class="min-w-0">
+                      <span class="setting-name">{{
+                        t("textReading.settings.scrollPointed")
+                      }}</span>
+                      <span class="setting-hint">
+                        {{ t("textReading.settings.scrollPointedHint") }}
+                      </span>
+                    </span>
+                    <ToggleSwitch
+                      :model-value="scrollPointed"
+                      @update:model-value="setScrollPointed"
+                    />
+                  </label>
+                </li>
+                <li v-if="pageForm === 'scroll' && pageFormActive">
+                  <label class="setting-row">
+                    <span class="min-w-0">
+                      <span class="setting-name">{{ t("textReading.settings.scrollPeek") }}</span>
+                      <span class="setting-hint">
+                        {{ t("textReading.settings.scrollPeekHint") }}
+                      </span>
+                    </span>
+                    <ToggleSwitch :model-value="scrollPeek" @update:model-value="setScrollPeek" />
                   </label>
                 </li>
               </ul>
