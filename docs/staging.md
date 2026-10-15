@@ -4,15 +4,15 @@ Un second environnement, complet et séparé de la production, pour essayer
 « pour de vrai » ce qui partira à la prochaine release : sur le téléphone,
 avec un vrai backend, sans que personne d'autre ne le voie.
 
-|                  | Production                         | Staging                                          |
-| ---------------- | ---------------------------------- | ------------------------------------------------ |
-| Projet Firebase  | `petite-jerusalem-dev` (oui, c'est la prod) | `petite-jerusalem-staging`              |
-| Site             | https://petite-jerusalem.fr        | https://petite-jerusalem-staging.web.app         |
-| App              | « Petite Jérusalem », `fr.petitejerusalem.app` | « PJ Staging », `fr.petitejerusalem.app.staging` |
-| iOS              | App Store                          | TestFlight seulement (testeurs internes)         |
-| Android          | Play Store, piste production       | Play Store, piste de test interne                |
-| Mise à jour      | tag `vX.Y.Z`                       | chaque fusion sur `main`                         |
-| Mesure d'audience | PostHog                           | coupée                                           |
+|                   | Production                                     | Staging                                          |
+| ----------------- | ---------------------------------------------- | ------------------------------------------------ |
+| Projet Firebase   | `petite-jerusalem-dev` (oui, c'est la prod)    | `petite-jerusalem-staging`                       |
+| Site              | https://petite-jerusalem.fr                    | https://petite-jerusalem-staging.web.app         |
+| App               | « Petite Jérusalem », `fr.petitejerusalem.app` | « PJ Staging », `fr.petitejerusalem.app.staging` |
+| iOS               | App Store                                      | TestFlight seulement (testeurs internes)         |
+| Android           | Play Store, piste production                   | Play Store, piste de test interne                |
+| Mise à jour       | tag `vX.Y.Z`                                   | chaque fusion sur `main`                         |
+| Mesure d'audience | PostHog                                        | coupée                                           |
 
 Les deux apps ont des identifiants différents : elles s'installent côte à
 côte sur le même téléphone, et l'icône de staging porte un bandeau orange
@@ -104,6 +104,7 @@ tags `vX.Y.Z` et `web-vX.Y.Z`.
    Les functions HTTP et appelables ont aussi reçu `roles/run.invoker` pour
    `allUsers` (un premier déploiement raté les avait créées sans) : à rejouer
    si elles sont un jour recréées, comme `socialPreview` en production.
+
 2. **Connexion Google.** Console Firebase, `petite-jerusalem-staging`,
    Authentication, Sign-in method, Google, Activer. Le client OAuth que cela
    crée ne s'obtient pas par l'API.
@@ -187,11 +188,24 @@ PJ_ENV=staging npx cap add ios && cp -R assets/staging/. assets/ && PJ_ENV=stagi
 l'environnement qui les a générés : les régénérer pour passer de l'un à
 l'autre (et remettre les icônes avec `git checkout assets/`).
 
+## Le staging vit tout seul
+
+L'app de staging lit les textes qu'elle n'embarque pas (corpus, commentaires,
+lignes de Vilna) sur le site de staging, et ses liens de partage (un passage,
+une session, un chiour, un sondage) mènent au site de staging, que l'app de
+staging s'approprie : une nouveauté fusionnée sur main se voit dans l'app
+avant d'exister en production. L'adresse vient de `PJ_ENV` par
+`src/config/environment.ts` (`APP_SITE_URL`) ; en production, c'est
+`petite-jerusalem.fr`, comme avant. Une adresse de production écrite en dur
+dans le code de l'app fait échouer `src/__tests__/environments.test.ts`.
+
 ## Ce qui diffère encore de la production
 
-- Les liens de partage et les adresses canoniques pointent vers
-  `petite-jerusalem.fr` : une session de staging partagée s'ouvre sur le site
-  de production, qui ne la connaît pas.
+- Les adresses canoniques et les données structurées pointent vers
+  `petite-jerusalem.fr`, exprès : le staging copie le site, il ne doit pas
+  en être une seconde adresse pour un moteur de recherche.
+- Les fichiers audio des chiourim sont ceux de la production (voir « Le
+  contenu »).
 - Le formulaire de retour échoue (secret Notion factice).
 - Le site de staging est fermé aux robots (`robots.txt`).
 - Les widgets iOS ouvrent l'app par le schéma `petitejerusalem://`, commun aux

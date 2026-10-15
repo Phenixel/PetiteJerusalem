@@ -23,7 +23,8 @@ import {
   usePassageLongPress,
 } from "../../composables/useReadingSelection";
 import type { Bookmark } from "../../services/readingProgressService";
-import { hubPath, sectionPath, SITE_URL } from "../../content/etudeTexts";
+import { hubPath, sectionPath } from "../../content/etudeTexts";
+import { APP_SITE_URL } from "../../config/environment";
 import { appendHebrewNumeral } from "../../services/hebrewNumerals";
 import { analyticsService } from "../../services/analyticsService";
 import CollapseTransition from "../../components/CollapseTransition.vue";
@@ -148,7 +149,7 @@ function isVerseSelected(sectionIndex: number, line: number): boolean {
 function passageUrl(sectionIndex: number, line: number): string {
   const section = storeSection(sectionIndex);
   const path = section !== null ? sectionPath(props.entry, section) : hubPath(props.entry);
-  return `${SITE_URL}${path}?verset=${line}`;
+  return `${APP_SITE_URL}${path}?verset=${line}`;
 }
 
 function pickVerse(event: MouseEvent, sectionIndex: number, line: number, hebrew: string) {

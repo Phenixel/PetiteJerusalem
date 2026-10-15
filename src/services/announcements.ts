@@ -1,5 +1,5 @@
 import { isOutdated } from "./appUpdateService";
-import { SITE_URL } from "../config/site";
+import { APP_SITE_URL } from "../config/environment";
 import { isNativeApp } from "../composables/useNativeApp";
 import type { IconName } from "../components/icons/registry";
 
@@ -307,7 +307,7 @@ export function isExternalLink(url: string): boolean {
  * le lien rouvrirait l'app elle-même, sur une page sans les choix.
  */
 export function pollPageUrl(id: string): string {
-  return `${SITE_URL}/sondage/${id}`;
+  return `${APP_SITE_URL}/sondage/${id}`;
 }
 
 /** Le texte du bouton qui mène au vote, dans les trois langues. */

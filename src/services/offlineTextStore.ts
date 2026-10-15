@@ -4,6 +4,7 @@ import { Directory, Filesystem } from "@capacitor/filesystem";
 import { FileTransfer } from "@capacitor/file-transfer";
 import { Preferences } from "@capacitor/preferences";
 import bundledTexts from "../datas/bundledTexts.json";
+import { APP_SITE_URL } from "../config/environment";
 
 /**
  * Stockage local des fichiers de textes (`/texts/**`).
@@ -28,8 +29,11 @@ import bundledTexts from "../datas/bundledTexts.json";
  * apportée à un texte n'atteindrait jamais qui l'a déjà sur son appareil.
  */
 
-/** Origine du site, seule source des textes quand l'app native ne les embarque pas. */
-const REMOTE_TEXTS_BASE = "https://petite-jerusalem.fr";
+/**
+ * Origine du site, seule source des textes quand l'app native ne les embarque
+ * pas : celui de son environnement (l'app de staging lit le site de staging).
+ */
+const REMOTE_TEXTS_BASE = APP_SITE_URL;
 const MANIFEST_KEY = "offline-texts:manifest";
 const WEB_CACHE_NAME = "pj-texts-v1";
 

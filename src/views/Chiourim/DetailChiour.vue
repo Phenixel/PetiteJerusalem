@@ -19,6 +19,7 @@ import ShareModal from "../../components/ShareModal.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import { seoService } from "../../services/seoService";
 import { SITE_URL } from "../../config/site";
+import { APP_SITE_URL } from "../../config/environment";
 
 /**
  * La page d'un cours, comme celle d'une playlist d'un seul titre : sa
@@ -53,10 +54,12 @@ const viewMarkedFor = ref<string | null>(null);
 
 // Partage (même modal que les sessions de lecture : WhatsApp, SMS, QR, copie)
 const showShareModal = ref(false);
-// Toujours le domaine canonique : SITE_URL vaut "localhost"
-// (ou capacitor://localhost) en dev et dans l'app native, ce qui produirait
-// un lien de partage inutilisable.
-const shareUrl = computed(() => (chiour.value ? `${SITE_URL}/chiourim/${chiour.value.slug}` : ""));
+// Toujours le site de l'environnement (config/environment), jamais
+// window.location : elle vaut "localhost" (ou capacitor://localhost) en dev
+// et dans l'app native, ce qui produirait un lien de partage inutilisable.
+const shareUrl = computed(() =>
+  chiour.value ? `${APP_SITE_URL}/chiourim/${chiour.value.slug}` : "",
+);
 
 // Un watch sur ses deux sources, et non un watchEffect : celui-ci lisait et
 // écrivait `viewMarkedFor`, et se réveillait donc de sa propre écriture.
