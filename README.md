@@ -159,6 +159,7 @@ Les scripts de `scripts/*.mjs` qui n'ont pas de commande npm se lancent avec
 | `build-brahot.mjs` | Construit les bénédictions et les rites qui les entourent (`public/texts/tefila/*`) à partir du Siddur Edot HaMizrach de l'export public Sefaria. |
 | `build-sidour.mjs` | Construit les textes du sidour de semaine (Cha'harit, Min'ha, Arvit) à partir du même Siddur, au format des fichiers de tefila. |
 | `download-texts.mjs` | Télécharge tous les textes référencés depuis l'export public Sefaria (GCS) vers `public/texts/`. |
+| `download-translations.mjs` | Télécharge les traductions libres retenues (`docs/traductions.md`) et les aligne sur les textes hébreux, dans `public/texts/traductions/`. |
 | `generate-cities.mjs` | Régénère `src/datas/cities.json`, la liste de villes du sélecteur de la page Horaires, avec les coordonnées de geonames. |
 | `generate-hiloulot.mjs` | Régénère `src/datas/hiloulot.json` et `hiloulot.he.json`, les hiloulot des grands rabbanim jour par jour, depuis le calendrier Rabbi Ovadiah Yosef (MIT). |
 | `generate-talmud-chapters.mjs` | Génère `public/texts/talmud-chapters.json` en repérant les frontières de chapitres dans le texte brut du Talmud (Sefaria). |

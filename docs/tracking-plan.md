@@ -775,6 +775,31 @@ Un rav choisi (ou retiré) dans les filtres du catalogue.
 | `auteur` | le nom du rav, `null` quand le filtre est retiré |
 | `results_count` | les cours affichés |
 
+## Traductions (octobre 2026)
+
+La traduction sous l'hébreu (`composables/useTranslation.ts`,
+`docs/traductions.md`) : deux événements nouveaux, pour savoir si elle est
+trouvée, dans quelle langue on la lit, et donc où compléter le français.
+
+### `translation_toggled` (nouveau)
+
+La commande « Traduction » de la barre d'outils, ou l'interrupteur des
+réglages de lecture.
+
+| Propriété | Valeurs |
+| --- | --- |
+| `enabled` | `true` à l'allumage, `false` à l'extinction |
+| `lang` | la langue de la traduction du texte ouvert (`fr`, `en`), `null` si aucune |
+
+### `translation_language_changed` (nouveau)
+
+Une autre langue choisie dans les réglages de lecture, sur un texte traduit
+dans les deux (le Tanakh, une partie de la Michna).
+
+| Propriété | Valeurs |
+| --- | --- |
+| `lang` | la langue choisie (`fr`, `en`) |
+
 ## Mon parcours
 
 Programmes, habitudes, lectures du calendrier et textes du jour, la journée et

@@ -5,10 +5,27 @@ import type { TextStudyJsonEntry } from "../../models/models";
 import {
   loadParashaRashi,
   loadText,
+  loadTranslation,
   MissingTextFileError,
   placeLabel,
+  translationLangs,
+  translationLangsOfPath,
 } from "../../services/textService";
-import type { RashiComment, TextBlock, TextContent, TextSection } from "../../services/textService";
+import type {
+  RashiComment,
+  TextBlock,
+  TextContent,
+  TextSection,
+  TextTranslation,
+  TranslationSource,
+} from "../../services/textService";
+import {
+  pickTranslationLang,
+  translationLangChoice,
+  translationShown,
+} from "../../composables/useTranslation";
+import TranslationText from "../../components/TranslationText.vue";
+import TranslationAiNotice from "../../components/TranslationAiNotice.vue";
 import { isEntryAvailableOffline } from "../../services/offlineLibraryService";
 import { ensureManifestLoaded } from "../../services/offlineTextStore";
 import { useOnline } from "../../composables/useOnline";
@@ -52,7 +69,7 @@ const emit = defineEmits<{
   "toggle-section": [index: number];
   "sections-loaded": [indexes: number[]];
 }>();
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const { sectionLabel, headingLabel } = useTextLabels();
 // Taille de lecture partagée avec le lecteur de la bibliothèque (A− / A+).
 const readingSize = useReadingSize();
@@ -220,10 +237,60 @@ function targumLine(section: TextSection, line: number): string {
   return section.targum?.[line] ?? "";
 }
 
+// --- Traduction : le réglage du lecteur de la bibliothèque (useTranslation)
+// vaut ici aussi. Qui lit le Tanakh avec sa traduction l'attend dans sa
+// lecture du jour ; elle se charge à part, après l'hébreu, et seulement si
+// le réglage est allumé.
+const translation = ref<TextTranslation | null>(null);
+let translationSequence = 0;
+
+watch(
+  [translationShown, () => content.value !== null, locale, translationLangChoice],
+  async () => {
+    const sequence = ++translationSequence;
+    if (!translationShown.value || !content.value) return;
+    const lang = pickTranslationLang(
+      await translationLangs(props.entry),
+      locale.value,
+      translationLangChoice.value,
+    );
+    if (sequence !== translationSequence) return;
+    if (!lang) {
+      translation.value = null;
+      return;
+    }
+    if (translation.value?.lang === lang) return;
+    const loaded = await loadTranslation(props.entry, lang).catch(() => null);
+    if (sequence === translationSequence) translation.value = loaded;
+  },
+  { immediate: true },
+);
+
+/** La traduction d'une ligne de la section, ou rien. */
+function trLine(section: TextSection, line: number): string {
+  if (!translationShown.value) return "";
+  return translation.value?.sections.get(section.index)?.[line] ?? "";
+}
+
+/** Talmud : les lignes traduites de chaque daf de la section, ou null. */
+function trByDaf(section: TextSection): Map<string, string[]> | null {
+  const lines = translationShown.value ? translation.value?.sections.get(section.index) : null;
+  if (!lines?.length) return null;
+  const byDaf = new Map<string, string[]>();
+  let offset = 0;
+  for (const block of section.dafBlocks ?? []) {
+    byDaf.set(block.daf, lines.slice(offset, offset + block.lines.length));
+    offset += block.lines.length;
+  }
+  return byDaf;
+}
+
 // --- Rachi (option du chnei mikra) : fichier séparé de la paracha, chargé
 // seulement quand l'option est active, pour que la paracha seule reste
 // légère. Aligné ligne à ligne sur `he` (voir textService.loadParashaRashi). --
 const rashiLines = ref<RashiComment[][] | null>(null);
+/** Les sources de la traduction de Rachi, pour l'avertissement d'une version IA. */
+const rashiSources = ref<TranslationSource[]>([]);
 const rashiFailed = ref(false);
 let rashiLoading = false;
 
@@ -232,7 +299,17 @@ async function loadRashi() {
   rashiLoading = true;
   rashiFailed.value = false;
   try {
-    rashiLines.value = await loadParashaRashi(props.entry);
+    // Rachi traduit quand la traduction est allumée et qu'il en a une.
+    const lang = translationShown.value
+      ? pickTranslationLang(
+          await translationLangsOfPath(`/texts/rashi/${props.entry.id}.json`),
+          locale.value,
+          translationLangChoice.value,
+        )
+      : null;
+    const rashi = await loadParashaRashi(props.entry, lang);
+    rashiLines.value = rashi.lines;
+    rashiSources.value = rashi.sources;
   } catch {
     // Hors ligne, ou entrée sans fichier Rachi (Na"kh) : la lecture continue
     // sans le commentaire, un mot le dit sur les parachiot.
@@ -249,6 +326,20 @@ watch(
     if (wanted) void loadRashi();
   },
   { immediate: true },
+);
+
+// La traduction allumée ou éteinte : Rachi se recharge avec ou sans elle.
+watch(translationShown, () => {
+  if (!rashiLines.value) return;
+  rashiLines.value = null;
+  if (props.withRashi && content.value) void loadRashi();
+});
+
+/** Les sources des traductions affichées : celle du texte, et celle de Rachi. */
+const shownTranslationSources = computed<TranslationSource[]>(() =>
+  translationShown.value
+    ? [...(translation.value?.sources ?? []), ...(props.withRashi ? rashiSources.value : [])]
+    : [],
 );
 
 function rashiComments(line: number): RashiComment[] {
@@ -382,6 +473,9 @@ onUnmounted(() => {
         </button>
       </div>
 
+      <!-- Une traduction affichée (le texte, ou Rachi) faite par IA : on le dit. -->
+      <TranslationAiNotice :sources="shownTranslationSources" />
+
       <!-- Option Rachi active mais fichier introuvable (hors ligne, par exemple) -->
       <p
         v-if="withRashi && rashiFailed"
@@ -434,6 +528,7 @@ onUnmounted(() => {
               v-if="content.type === 'Talmud Bavli'"
               :blocks="section.dafBlocks ?? []"
               variant="daily"
+              :translation-by-daf="trByDaf(section)"
             />
 
             <!-- Verses / mishnayot / psalm lines: each on its own line, flowing on
@@ -486,6 +581,14 @@ onUnmounted(() => {
                     >
                       {{ targumLine(section, block.offset + index) }}
                     </span>
+                    <!-- La traduction du verset, sous lui (réglage Traduction) -->
+                    <span
+                      v-if="trLine(section, block.offset + index)"
+                      dir="ltr"
+                      class="block mt-1 mb-3 text-text-secondary daily-tr"
+                    >
+                      <TranslationText :text="trLine(section, block.offset + index)" />
+                    </span>
                     <!-- Option Rachi : les commentaires du verset, dibbour hamat'hil en avant -->
                     <span
                       v-if="rashiComments(block.offset + index).length"
@@ -501,12 +604,16 @@ onUnmounted(() => {
                           comment.lead
                         }}</span>
                         {{ comment.text }}
+                        <span v-if="comment.tr" dir="ltr" class="block mt-1 mb-2 daily-tr">
+                          <TranslationText :text="comment.tr" />
+                        </span>
                       </span>
                     </span>
                     <br
                       v-if="
                         !targumLine(section, block.offset + index) &&
-                        !rashiComments(block.offset + index).length
+                        !rashiComments(block.offset + index).length &&
+                        !trLine(section, block.offset + index)
                       "
                     />
                   </template>
@@ -537,6 +644,14 @@ onUnmounted(() => {
 .daily-tl {
   font-family: var(--font-reading);
   font-size: calc(1rem * var(--reading-scale, 1));
+}
+/* La traduction d'un verset ou d'un commentaire de Rachi : la police de
+   lecture latine, à gauche, sous l'hébreu qu'elle traduit. */
+.daily-tr {
+  font-family: var(--font-reading);
+  font-size: calc(0.95rem * var(--reading-scale, 1));
+  line-height: 1.6;
+  text-align: left;
 }
 /* Rachi : sous le Targoum, plus petit et en retrait derrière un filet
    (côté droit : le texte est en hébreu). */

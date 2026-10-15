@@ -407,6 +407,12 @@ export interface TextSection {
   heading?: SectionHeading;
   /** Cleaned Hebrew lines (verses / mishnayot). */
   he: string[];
+  /**
+   * La traduction de chaque ligne de `he` (même index), quand le texte a été
+   * chargé avec une traduction (voir loadTranslation) ; vide là où la source
+   * ne traduit pas la ligne. Seuls <b> et <i> y restent (voir richRuns).
+   */
+  tr?: string[];
   /** Talmud only: the section's lines grouped by daf. */
   dafBlocks?: DafBlock[];
   /** Single-section texts: the same lines grouped by chapter / montée. */
@@ -574,6 +580,52 @@ function normalizeLines(value: unknown): string[] {
   return [];
 }
 
+/**
+ * La traduction des lignes de `he`, une par ligne que donne normalizeLines,
+ * dans le même ordre : les deux valeurs ont la même forme (voir
+ * scripts/download-translations.mjs), on les parcourt ensemble. Une ligne
+ * sans traduction donne une chaîne vide, pour que l'index reste celui de
+ * l'hébreu.
+ */
+export function alignTranslation(he: unknown, tr: unknown): string[] {
+  if (typeof he === "string") {
+    if (!cleanText(he)) return [];
+    return [typeof tr === "string" ? tr.trim() : ""];
+  }
+  if (Array.isArray(he)) {
+    return he.flatMap((item, i) => alignTranslation(item, Array.isArray(tr) ? tr[i] : undefined));
+  }
+  return [];
+}
+
+/** Un fragment de traduction, avec sa mise en forme (gras, italique). */
+export interface RichRun {
+  text: string;
+  bold?: boolean;
+  italic?: boolean;
+}
+
+/**
+ * « <b>The Rabbis say:</b> until midnight » → ses fragments. Une traduction
+ * ne garde que <b> et <i> (le Talmud de Steinsaltz : la traduction en gras,
+ * l'explication en romain) ; on les lit ici plutôt que de confier du HTML au
+ * rendu.
+ */
+export function richRuns(text: string): RichRun[] {
+  const runs: RichRun[] = [];
+  let bold = false;
+  let italic = false;
+  for (const part of text.split(/(<\/?[bi]>)/)) {
+    if (part === "<b>") bold = true;
+    else if (part === "</b>") bold = false;
+    else if (part === "<i>") italic = true;
+    else if (part === "</i>") italic = false;
+    else if (part)
+      runs.push({ text: part, ...(bold ? { bold } : {}), ...(italic ? { italic } : {}) });
+  }
+  return runs;
+}
+
 let talmudChaptersCache: Record<string, TalmudChapter[]> | null = null;
 
 /** Chapter → daf-range map, fetched once and memoized. */
@@ -595,11 +647,12 @@ function buildSection(index: number, label: string, he: string[]): TextSection {
 const chapterLabel = (n: number): string => `Chapitre ${formatNumberWithHebrew(n)}`;
 
 /** Splits a he[chapter][verse] array into one section per non-empty chapter. */
-function chaptersToSections(heChapters: unknown[]): TextSection[] {
+function chaptersToSections(heChapters: unknown[], trChapters?: unknown[]): TextSection[] {
   return heChapters
     .map((chapter, i) => ({
       ...buildSection(i + 1, chapterLabel(i + 1), normalizeLines(chapter)),
       heading: { kind: "chapter", n: i + 1 } as SectionHeading,
+      ...(trChapters ? { tr: alignTranslation(chapter, trChapters[i]) } : {}),
     }))
     .filter((s) => s.he.length > 0);
 }
@@ -653,10 +706,12 @@ function acrosticheBlocks(lines: string[]): TextBlock[] | undefined {
 function loadTehilim(
   textStudy: TextStudyJsonEntry,
   data: Record<string, { he?: unknown }>,
+  tr?: Record<string, unknown>,
 ): TextContent {
   const psalmNum = String(textStudy.link).split(".").pop() ?? "1";
   const psalm = data[psalmNum] ?? { he: [] };
   const section = buildSection(1, textStudy.name, normalizeLines(psalm.he));
+  if (tr) section.tr = alignTranslation(psalm.he, tr[psalmNum]);
   const blocks = psalmNum === "119" ? acrosticheBlocks(section.he) : undefined;
   if (blocks) section.blocks = blocks;
   return { title: textStudy.name, type: "Tehilim", sections: [section] };
@@ -666,6 +721,7 @@ function parseTalmud(
   textStudy: TextStudyJsonEntry,
   data: { title?: string; he?: unknown[] },
   talmudChapters: Record<string, TalmudChapter[]>,
+  tr?: unknown[],
 ): TextContent {
   const heDaf = data.he ?? [];
   const slug = tractateSlug(tractateFromLink(textStudy.link));
@@ -676,7 +732,8 @@ function parseTalmud(
     const sections = chapterRanges.map((range) => {
       // Un traité rangé par chapitre : un seul bloc, sans daf.
       if (!range.startDaf || !range.endDaf) {
-        const lines = normalizeLines(heDaf.slice(range.startIdx, range.endIdx + 1));
+        const he = heDaf.slice(range.startIdx, range.endIdx + 1);
+        const lines = normalizeLines(he);
         const heading: SectionHeading = { kind: "chapter", n: range.chapter };
         return {
           index: range.chapter,
@@ -684,15 +741,18 @@ function parseTalmud(
           heading,
           he: lines,
           dafBlocks: lines.length > 0 ? [{ daf: "", lines }] : [],
+          ...(tr ? { tr: alignTranslation(he, tr.slice(range.startIdx, range.endIdx + 1)) } : {}),
         };
       }
       const lines: string[] = [];
+      const trLines: string[] = [];
       const dafBlocks: DafBlock[] = [];
       // Each index in `he` is one daf side: index 0 = 2a, 1 = 2b, 2 = 3a…
       for (let i = range.startIdx; i <= range.endIdx && i < heDaf.length; i++) {
         const { lines: dafLines, passages } = amudLines(heDaf[i]);
         if (dafLines.length === 0) continue;
         lines.push(...dafLines);
+        if (tr) trLines.push(...alignTranslation(heDaf[i], tr[i]));
         dafBlocks.push({
           daf: `${Math.floor(i / 2) + 2}${i % 2 === 0 ? "a" : "b"}`,
           lines: dafLines,
@@ -711,7 +771,14 @@ function parseTalmud(
         from: range.startDaf,
         to: range.endDaf,
       };
-      return { index: range.chapter, label, heading, he: lines, dafBlocks };
+      return {
+        index: range.chapter,
+        label,
+        heading,
+        he: lines,
+        dafBlocks,
+        ...(tr ? { tr: trLines } : {}),
+      };
     });
     return { title, type: "Talmud Bavli", sections };
   }
@@ -725,6 +792,7 @@ function parseTalmud(
     sections.push({
       ...buildSection(sections.length + 1, `Daf ${daf}`, he),
       heading: { kind: "daf", daf },
+      ...(tr ? { tr: alignTranslation(heDaf[i], tr[i]) } : {}),
     });
   }
   return { title, type: "Talmud Bavli", sections };
@@ -743,6 +811,7 @@ function loadTanakh(
     chapters?: string;
     fromBook?: string;
   },
+  tr?: unknown[],
 ): TextContent {
   const heChapters = data.he ?? [];
   const title = data.title ?? textStudy.name;
@@ -758,12 +827,14 @@ function loadTanakh(
     // Targoum aligné verset à verset : on avance dans les deux textes ensemble,
     // en ne retirant jamais une ligne d'un seul côté.
     const targumAll: string[] = [];
+    const trAll: string[] = [];
     let hasTargum = false;
     // Les marques de paracha, que cleanText retire du texte lu.
     const marks: ParashaMark[] = [];
     let offset = 0;
     heChapters.forEach((group, i) => {
       const targumGroup = Array.isArray(data.targum?.[i]) ? (data.targum[i] as unknown[]) : null;
+      const trGroup = Array.isArray(tr?.[i]) ? (tr[i] as unknown[]) : undefined;
       let lines: string[];
       if (targumGroup && Array.isArray(group)) {
         lines = [];
@@ -772,6 +843,14 @@ function loadTanakh(
             typeof verse === "string" ? cleanText(verse) : normalizeLines(verse).join(" ");
           if (!heLine) return;
           lines.push(heLine);
+          const trVerse = trGroup?.[j];
+          trAll.push(
+            typeof verse === "string"
+              ? typeof trVerse === "string"
+                ? trVerse.trim()
+                : ""
+              : alignTranslation(verse, trVerse).filter(Boolean).join(" "),
+          );
           marks.push(typeof verse === "string" ? parashaMark(verse) : null);
           const targumVerse = targumGroup[j];
           const cleaned = typeof targumVerse === "string" ? cleanText(targumVerse) : "";
@@ -782,6 +861,7 @@ function loadTanakh(
         lines = normalizeLines(group);
         const raw = Array.isArray(group) ? group.flat(Infinity) : [group];
         const verses = raw.filter((v) => typeof v === "string" && cleanText(v));
+        trAll.push(...alignTranslation(group, trGroup));
         lines.forEach((_, k) => {
           targumAll.push("");
           // Même marche que normalizeLines : un verset brut par ligne gardée.
@@ -803,11 +883,12 @@ function loadTanakh(
     const section = buildSection(1, textStudy.name, allLines);
     if (blocks.length > 1) section.blocks = blocks;
     if (hasTargum) section.targum = targumAll;
+    if (tr) section.tr = trAll;
     if (data.fromBook && TORAH_BOOKS.has(data.fromBook)) section.scrollMarks = marks;
     return { title, type: "Tanakh", sections: [section] };
   }
 
-  return { title, type: "Tanakh", sections: chaptersToSections(heChapters) };
+  return { title, type: "Tanakh", sections: chaptersToSections(heChapters, tr) };
 }
 
 /**
@@ -1068,6 +1149,7 @@ function loadTefila(
 function loadMoussar(
   textStudy: TextStudyJsonEntry,
   data: { title?: string; sections?: unknown },
+  tr?: unknown[],
 ): TextContent {
   const title = data.title ?? textStudy.name;
   const raw = (Array.isArray(data.sections) ? data.sections : []) as {
@@ -1077,10 +1159,12 @@ function loadMoussar(
   }[];
   if ((textStudy.totalSections ?? 1) <= 1) {
     const he = raw.flatMap((section) => normalizeLines(section?.he));
-    return { title, type: "Moussar", sections: [buildSection(1, textStudy.name, he)] };
+    const single = buildSection(1, textStudy.name, he);
+    if (tr) single.tr = raw.flatMap((section, k) => alignTranslation(section?.he, tr[k]));
+    return { title, type: "Moussar", sections: [single] };
   }
   const sections: TextSection[] = [];
-  for (const section of raw) {
+  for (const [k, section] of raw.entries()) {
     const n = section?.n;
     if (typeof n !== "number" || !Number.isInteger(n) || n < 0) continue;
     const he = normalizeLines(section.he);
@@ -1098,7 +1182,11 @@ function loadMoussar(
         : heading.kind === "topic"
           ? `Sujet ${n} : ${topic}`
           : chapterLabel(n);
-    sections.push({ ...buildSection(n, label, he), heading });
+    sections.push({
+      ...buildSection(n, label, he),
+      heading,
+      ...(tr ? { tr: alignTranslation(section.he, tr[k]) } : {}),
+    });
   }
   return { title, type: "Moussar", sections };
 }
@@ -1113,40 +1201,59 @@ export function parseContent(
   textStudy: TextStudyJsonEntry,
   data: unknown,
   talmudChapters: Record<string, TalmudChapter[]> = {},
+  translation?: unknown,
 ): TextContent {
+  // Le `text` d'un fichier de traduction a la forme de l'hébreu qu'il
+  // traduit (voir scripts/download-translations.mjs) : chaque lecteur le
+  // parcourt avec son hébreu.
+  const tr = (translation as { text?: unknown } | undefined)?.text;
+  const trList = Array.isArray(tr) ? tr : undefined;
   switch (String(textStudy.type)) {
     case "Tehilim":
-      return loadTehilim(textStudy, data as Record<string, { he?: unknown }>);
+      return loadTehilim(
+        textStudy,
+        data as Record<string, { he?: unknown }>,
+        tr && typeof tr === "object" && !Array.isArray(tr)
+          ? (tr as Record<string, unknown>)
+          : undefined,
+      );
     case "Mishna": {
       const d = data as { title?: string; he?: unknown[] };
       return {
         title: d.title ?? textStudy.name,
         type: "Mishna",
-        sections: chaptersToSections(d.he ?? []),
+        sections: chaptersToSections(d.he ?? [], trList),
       };
     }
     case "Talmud Bavli":
-      return parseTalmud(textStudy, data as { title?: string; he?: unknown[] }, talmudChapters);
+      return parseTalmud(
+        textStudy,
+        data as { title?: string; he?: unknown[] },
+        talmudChapters,
+        trList,
+      );
     case "Tanakh":
-      return loadTanakh(textStudy, data as { title?: string; he?: unknown[] });
+      return loadTanakh(textStudy, data as { title?: string; he?: unknown[] }, trList);
     case "Moadim":
     case "Brahot":
     case "Sidour":
       return loadTefila(textStudy, data as { title?: string; blocks?: TefilaFileBlock[] });
     case "Moussar":
-      return loadMoussar(textStudy, data as { title?: string; sections?: unknown });
+      return loadMoussar(textStudy, data as { title?: string; sections?: unknown }, trList);
     default:
       throw new Error(`Type non supporté : ${textStudy.type}`);
   }
 }
 
 /**
- * Les deux derniers fichiers lus, déjà parsés. Les 150 psaumes vivent dans un
- * seul `tehilim.json` (1,2 Mo) : le Tehilim du jour (jusqu'à neuf psaumes) le
- * relisait et le reparsait une fois par psaume, et le lecteur à chaque psaume
- * suivant. `parseContent` ne modifie pas ces données : elles se partagent.
+ * Les quatre derniers fichiers lus, déjà parsés. Les 150 psaumes vivent dans
+ * un seul `tehilim.json` (1,2 Mo) : le Tehilim du jour (jusqu'à neuf psaumes)
+ * le relisait et le reparsait une fois par psaume, et le lecteur à chaque
+ * psaume suivant. Un texte lu avec sa traduction en tient deux (l'hébreu et
+ * la traduction), d'où la place pour deux textes. `parseContent` ne modifie
+ * pas ces données : elles se partagent.
  */
-const FILE_CACHE_SIZE = 2;
+const FILE_CACHE_SIZE = 4;
 const fileCache = new Map<string, Promise<unknown>>();
 
 function readTextFile(path: string): Promise<unknown> {
@@ -1183,6 +1290,117 @@ export async function loadText(textStudy: TextStudyJsonEntry): Promise<TextConte
   return parseContent(textStudy, data, talmudChapters);
 }
 
+// ---- Traductions -----------------------------------------------------------
+//
+// Les traductions vivent à part de l'hébreu (public/texts/traductions/<langue>/,
+// au chemin du fichier hébreu), pour qu'un texte reste aussi léger qu'avant
+// pour qui le lit en hébreu. Le registre des versions retenues, et pourquoi,
+// est docs/traductions.md ; scripts/download-translations.mjs les construit.
+
+/** Comment une traduction se cite (voir CREDITS dans download-translations). */
+export interface TranslationSource {
+  name: string;
+  by?: string;
+  year?: string;
+  publisher?: string;
+  /** « Public Domain », « CC-BY », « CC-BY-NC »… */
+  license: string;
+  licenseUrl?: string;
+  /** Le texte chez Sefaria, dans cette version. */
+  url: string;
+  /**
+   * Traduction française faite par IA depuis cette traduction anglaise
+   * (data/traductions-ia/, docs/traductions.md) : le lecteur l'annonce.
+   */
+  ai?: boolean;
+}
+
+/** Une traduction dont une partie au moins vient d'une IA. */
+export function isAiTranslation(sources: TranslationSource[] | undefined): boolean {
+  return (sources ?? []).some((source) => source.ai === true);
+}
+
+/** La traduction d'un texte : ses sources, et les lignes de chaque section. */
+export interface TextTranslation {
+  lang: string;
+  sources: TranslationSource[];
+  /** Par index de section (TextSection.index), les lignes alignées sur `he`. */
+  sections: Map<number, string[]>;
+}
+
+const TRANSLATION_INDEX = "/texts/traductions/index.json";
+let translationIndex: Promise<Record<string, string[]>> | null = null;
+
+/** Pour chaque fichier hébreu, les langues dans lesquelles il est traduit. */
+function readTranslationIndex(): Promise<Record<string, string[]>> {
+  if (!translationIndex) {
+    const pending = (async () => {
+      const res = await fetchTextResponse(TRANSLATION_INDEX);
+      if (!res.ok) throw new Error(`Index des traductions indisponible (${res.status})`);
+      return ((await res.json()) as { files?: Record<string, string[]> }).files ?? {};
+    })();
+    translationIndex = pending;
+    // Un échec (hors ligne) ne se garde pas : on réessaiera au texte suivant.
+    pending.catch(() => {
+      if (translationIndex === pending) translationIndex = null;
+    });
+  }
+  return translationIndex;
+}
+
+/**
+ * Les langues dans lesquelles un fichier hébreu (« /texts/rashi/264.json »)
+ * est traduit, ou rien (index illisible, hors ligne).
+ */
+export async function translationLangsOfPath(path: string): Promise<string[]> {
+  try {
+    return (await readTranslationIndex())[path] ?? [];
+  } catch {
+    return [];
+  }
+}
+
+/** Le fichier de traduction d'un fichier hébreu (« /texts/mishna/x.json »). */
+export function translationPath(hebrewPath: string, lang: string): string {
+  return hebrewPath.replace(/^\/texts\//, `/texts/traductions/${lang}/`);
+}
+
+/**
+ * Les langues dans lesquelles un texte se lit traduit, ou rien. Une liste
+ * vide quand l'index ne se lit pas (hors ligne) : le lecteur ne propose
+ * alors pas de traduction, plutôt qu'une commande qui échouerait.
+ */
+export async function translationLangs(textStudy: TextStudyJsonEntry): Promise<string[]> {
+  try {
+    return await translationLangsOfPath(resolveFilePath(textStudy));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * La traduction d'un texte dans une langue, découpée comme son hébreu : le
+ * même parseContent, mené sur les deux fichiers ensemble.
+ */
+export async function loadTranslation(
+  textStudy: TextStudyJsonEntry,
+  lang: string,
+): Promise<TextTranslation> {
+  const path = resolveFilePath(textStudy);
+  const [data, translation] = await Promise.all([
+    readTextFile(path),
+    readTextFile(translationPath(path, lang)),
+  ]);
+  const talmudChapters = String(textStudy.type) === "Talmud Bavli" ? await getTalmudChapters() : {};
+  const content = parseContent(textStudy, data, talmudChapters, translation);
+  const sources = (translation as { sources?: TranslationSource[] }).sources ?? [];
+  return {
+    lang,
+    sources: Array.isArray(sources) ? sources : [],
+    sections: new Map(content.sections.map((s) => [s.index, s.tr ?? []])),
+  };
+}
+
 // ---- Rachi sur la paracha (option du chnei mikra) -------------------------
 
 /** Un commentaire de Rachi, dibbour hamat'hil séparé pour la mise en avant. */
@@ -1190,6 +1408,8 @@ export interface RashiComment {
   /** Les mots du verset commentés (en gras dans la source), parfois absents. */
   lead: string;
   text: string;
+  /** La traduction du commentaire, dibbour en gras (voir richRuns), si chargée. */
+  tr?: string;
 }
 
 /** « <b>וישמע יתרו.</b> מה שמועה שמע… » → dibbour en avant, texte nettoyé. */
@@ -1209,33 +1429,64 @@ export function parseRashiComment(raw: string): RashiComment | null {
  * `he`, le lecteur n'a qu'à se repérer par index. Un verset sans commentaire a
  * un tableau vide.
  */
-export function parseParashaRashi(data: { he?: unknown[] }): RashiComment[][] {
-  return parseCommentaryGroups(data.he).flat();
+export function parseParashaRashi(
+  data: { he?: unknown[] },
+  translation?: { text?: unknown },
+): RashiComment[][] {
+  return parseCommentaryGroups(data.he, translation?.text).flat();
 }
 
 /**
  * Une grille de commentaires (groupes × lignes × commentaires), telle que
  * download-texts.mjs l'écrit : un groupe par groupe du fichier de texte
- * (chapitre, montée), une case par ligne affichée.
+ * (chapitre, montée), une case par ligne affichée. `tr`, la traduction de
+ * la grille (de même forme, voir download-translations.mjs), pose sur
+ * chaque commentaire la sienne.
  */
-export function parseCommentaryGroups(groups: unknown): RashiComment[][][] {
-  return (Array.isArray(groups) ? groups : []).map((group) =>
-    (Array.isArray(group) ? group : []).map((line) =>
+export function parseCommentaryGroups(groups: unknown, tr?: unknown): RashiComment[][][] {
+  const at = (value: unknown, i: number): unknown => (Array.isArray(value) ? value[i] : undefined);
+  return (Array.isArray(groups) ? groups : []).map((group, g) =>
+    (Array.isArray(group) ? group : []).map((line, l) =>
       (Array.isArray(line) ? line : [])
-        .map((comment) => parseRashiComment(String(comment)))
+        .map((comment, c) => {
+          const parsed = parseRashiComment(String(comment));
+          const trComment = at(at(at(tr, g), l), c);
+          if (parsed && typeof trComment === "string" && trComment.trim()) {
+            parsed.tr = trComment.trim();
+          }
+          return parsed;
+        })
         .filter((comment): comment is RashiComment => comment !== null),
     ),
   );
 }
 
-/** Rachi sur une paracha (option du chnei mikra), voir {@link parseParashaRashi}. */
-export async function loadParashaRashi(textStudy: TextStudyJsonEntry): Promise<RashiComment[][]> {
-  const res = await fetchTextResponse(`/texts/rashi/${textStudy.id}.json`);
+/**
+ * Rachi sur une paracha (option du chnei mikra), voir {@link parseParashaRashi},
+ * avec les sources de sa traduction quand il en a une.
+ */
+export async function loadParashaRashi(
+  textStudy: TextStudyJsonEntry,
+  lang?: string | null,
+): Promise<{ lines: RashiComment[][]; sources: TranslationSource[] }> {
+  const path = `/texts/rashi/${textStudy.id}.json`;
+  const res = await fetchTextResponse(path);
   if (!res.ok) {
     if (res.status === 404) throw new MissingTextFileError();
     throw new Error(`Rachi non disponible (${res.status})`);
   }
-  return parseParashaRashi((await res.json()) as { he?: unknown[] });
+  // La traduction est un plus : faute d'elle (hors ligne, langue absente),
+  // Rachi se lit en hébreu comme avant.
+  let translation: { text?: unknown; sources?: unknown } | undefined;
+  if (lang) {
+    const trRes = await fetchTextResponse(translationPath(path, lang)).catch(() => null);
+    if (trRes?.ok) translation = (await trRes.json().catch(() => undefined)) as typeof translation;
+  }
+  const lines = parseParashaRashi((await res.json()) as { he?: unknown[] }, translation);
+  const sources = Array.isArray(translation?.sources)
+    ? (translation.sources as TranslationSource[])
+    : [];
+  return { lines, sources };
 }
 
 /** Le psaume d'une entrée de Tehilim (« …/Psalms.23 » → 23). */

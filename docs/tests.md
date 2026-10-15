@@ -13,7 +13,7 @@ npm run test:unit          # vitest, mode interactif
 npx vitest run             # une seule passe, ce que fait `npm run verify`
 ```
 
-Les 262 fichiers vivent dans `src/__tests__/*.test.ts`. La configuration
+Les 264 fichiers vivent dans `src/__tests__/*.test.ts`. La configuration
 (`vitest.config.ts`) prend l'environnement `jsdom` par défaut ; les tests qui
 n'ont pas besoin du DOM (ceux qui lisent le dépôt ou lancent un script)
 commencent par `// @vitest-environment node`. Les dossiers `e2e/`, `android/`,
@@ -48,6 +48,7 @@ avec ce que chacun attend :
 | `pruneNativeBundle.test.ts` | Le bundle natif ne garde rien du prérendu SEO : pages HTML générées, sitemaps, `robots.txt`, `llms.txt` ; l'app démarre sur la coquille nue `app.html`. Des corpus, il ne garde que les textes listés dans `src/datas/bundledTexts.json` (Tehilim, Sidour). |
 | `bundledTexts.test.ts` | Chaque texte que l'app embarque existe dans `public/texts/`. Les Tehilim se lisent dans le binaire, sans rien demander au site ; le Sidour s'y ouvre aussi sans attendre le réseau, puis l'app télécharge en fond la version corrigée que le site servirait, vérifiée à l'empreinte (un portail captif ne la remplace pas). Que le Sidour soit embarqué tout entier, c'est `offlineDailyBooks.test.ts` qui le tient. |
 | `textsManifest.test.ts` | `public/texts/manifest.json` correspond aux fichiers de textes (`scripts/texts-manifest.mjs --check`) : un texte corrigé sans que le manifeste suive ne serait corrigé que pour qui n'a rien téléchargé. |
+| `translations.test.ts` | Chaque traduction (`public/texts/traductions/`) a la forme du fichier hébreu qu'elle traduit et donne à chaque section du lecteur autant de lignes que l'hébreu : sans quoi elle se décalerait d'un verset sans erreur. Chaque source a une licence libre de la liste (`docs/traductions.md`), un lien et rien d'une traduction automatique de Sefaria ; une version IA du dépôt (`data/traductions-ia/`) porte le drapeau `ai`, qui fait afficher l'avertissement au lecteur. Chaque corpus garde la couverture annoncée. |
 | `scopedGlobal.test.ts` | Dans un `<style scoped>`, aucun `:global(.a)` suivi d'un autre sélecteur : Vue jette tout ce qui suit la parenthèse et applique la règle à `.a` lui-même. Écrite `:global(.native-app) .volet`, elle stylait toute la page de l'app (`<html class="native-app">`) au lieu du volet ; le sélecteur entier va dans la parenthèse. |
 | `pageForm.test.ts` | La forme de la page : Rachi et Tossafot (`public/texts/talmud-meforshim/`) alignés amoud par amoud et passage par passage sur la guemara de chaque traité (jamais plus de passages commentés que de passages), une tranche de vingt amoudim par fichier ; une marque de paracha (petou'ha, setouma) par verset sur les 54 parachiot de la Torah, et nulle part ailleurs ; Az yachir et Haazinou trouvés, avec leur longueur, sans un mot perdu. Une guemara ou une paracha régénérée sans ses commentaires le fait échouer. |
 | `environments.test.ts` | La production reste l'environnement par défaut, et le staging a une identité entièrement distincte (`scripts/lib/environments.mjs`). Le staging vit tout seul : aucune adresse de production écrite en dur dans le code de l'app hors des adresses canoniques et de la mesure d'audience, et l'app lit ses textes sur le site de son environnement (`APP_SITE_URL`, `src/config/environment.ts`) ; sans quoi l'app de staging irait chercher en production des fichiers qui n'y sont pas encore (docs/staging.md). |
@@ -65,7 +66,6 @@ avec ce que chacun attend :
 Quand une PR est rouge sans qu'aucun test fonctionnel ne semble concerné,
 c'est presque toujours l'un de ceux-là ; le message d'échec nomme le fichier
 et la règle.
-
 
 ### Le correctif posé sur `@hebcal/core`
 
@@ -92,7 +92,6 @@ paquet n'exposant que `.` et `./dist/esm/*`.
 Le correctif reste à proposer en amont, chez `hebcal/hebcal-es6` ; le patch se
 retire du dépôt dès qu'une version le porte. Voir
 `docs/audit-horaires-2026-09.md`, point 3.1.
-
 
 ## Tests de bout en bout (Playwright)
 

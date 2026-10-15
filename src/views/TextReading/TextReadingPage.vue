@@ -25,6 +25,8 @@ import type { User } from "../../services/authService";
 import {
   calendarDay,
   loadText,
+  loadTranslation,
+  translationLangs,
   MissingTextFileError,
   occasionsForDay,
   placeLabel as describePlace,
@@ -33,7 +35,22 @@ import {
   tractateFromLink,
   tractateSlug,
 } from "../../services/textService";
-import type { TextBlock, TextContent, TextDay, TextSection } from "../../services/textService";
+import type {
+  TextBlock,
+  TextContent,
+  TextDay,
+  TextSection,
+  TextTranslation,
+} from "../../services/textService";
+import {
+  pickTranslationLang,
+  setTranslationShown,
+  translationLangChoice,
+  translationShown,
+} from "../../composables/useTranslation";
+import TranslationText from "../../components/TranslationText.vue";
+import TranslationCredit from "../../components/TranslationCredit.vue";
+import TranslationAiNotice from "../../components/TranslationAiNotice.vue";
 import {
   activeOccasions,
   getWeekdayTorahParasha,
@@ -461,6 +478,105 @@ const currentSection = computed<TextSection | null>(() => {
 const canTransliterate = computed(
   () => currentSection.value?.he.some((line) => hasNiqqud(line)) ?? false,
 );
+
+// --- Traduction ---
+// Sous l'hébreu, la traduction du texte quand il en a une (voir
+// docs/traductions.md) : dans la langue choisie, à défaut celle de
+// l'interface, à défaut celle qui existe. Pas sur une tefila : le sidour se
+// prie en hébreu, et ses textes n'ont pas de traduction alignée.
+const textTranslationLangs = ref<string[]>([]);
+const translation = ref<TextTranslation | null>(null);
+/** Le texte dont `translation` est la traduction. */
+const translationTextId = ref<string | null>(null);
+const translationFailed = ref(false);
+
+const translationLang = computed(() =>
+  pickTranslationLang(textTranslationLangs.value, locale.value, translationLangChoice.value),
+);
+const canTranslate = computed(() => !isLiturgyText.value && translationLang.value !== null);
+const showTranslation = computed(() => canTranslate.value && translationShown.value);
+
+/** Les lignes traduites de la section lue, alignées sur `he` (vide sans traduction). */
+const trLines = computed<string[]>(() => {
+  const section = currentSection.value;
+  const tr = translation.value;
+  if (!showTranslation.value || !section || !tr || translationTextId.value !== textId.value) {
+    return [];
+  }
+  return tr.sections.get(section.index) ?? [];
+});
+
+/** Talmud : les lignes traduites de chaque daf, découpées comme ses lignes. */
+const translationByDaf = computed<Map<string, string[]> | null>(() => {
+  if (!trLines.value.length) return null;
+  const byDaf = new Map<string, string[]>();
+  let offset = 0;
+  for (const block of currentSection.value?.dafBlocks ?? []) {
+    byDaf.set(block.daf, trLines.value.slice(offset, offset + block.lines.length));
+    offset += block.lines.length;
+  }
+  return byDaf;
+});
+
+/**
+ * Le texte n'est pas traduit dans la langue du lecteur : on le dit, avant de
+ * montrer celle qui existe (le Talmud, qu'on n'a qu'en anglais).
+ */
+const translationFallback = computed(() => {
+  const lang = translationLang.value;
+  const wanted = translationLangChoice.value ?? locale.value;
+  if (!showTranslation.value || !lang || lang === wanted) return null;
+  if (wanted !== "fr" && wanted !== "en") return null;
+  return {
+    wanted: t(`textReading.translation.langAdj.${wanted}`),
+    shown: t(`textReading.translation.langAdj.${lang}`),
+  };
+});
+
+watch(
+  textId,
+  async (id) => {
+    textTranslationLangs.value = [];
+    const entry = textEntry.value;
+    if (!entry) return;
+    const langs = await translationLangs(entry);
+    if (textId.value === id) textTranslationLangs.value = langs;
+  },
+  { immediate: true },
+);
+
+let translationSequence = 0;
+watch(
+  [textId, translationLang, showTranslation],
+  async () => {
+    const entry = textEntry.value;
+    const lang = translationLang.value;
+    if (!showTranslation.value || !entry || !lang) return;
+    if (translationTextId.value === textId.value && translation.value?.lang === lang) return;
+    const sequence = ++translationSequence;
+    translationFailed.value = false;
+    try {
+      const loaded = await loadTranslation(entry, lang);
+      if (sequence !== translationSequence) return;
+      translation.value = loaded;
+      translationTextId.value = String(entry.id);
+    } catch {
+      if (sequence === translationSequence) translationFailed.value = true;
+    }
+  },
+  { immediate: true },
+);
+
+/** Les langues du texte pour le menu, celle de l'interface en premier. */
+const menuTranslationLangs = computed(() =>
+  [...textTranslationLangs.value].sort(
+    (a, b) => Number(b === locale.value) - Number(a === locale.value),
+  ),
+);
+
+function toggleTranslation() {
+  setTranslationShown(!translationShown.value, translationLang.value);
+}
 
 // La forme de la page (pageForm.ts) : la page de Vilna pour une guemara, le
 // Sefer Torah pour une paracha. Le choix est gardé sur l'appareil
@@ -2450,7 +2566,7 @@ watch(textId, (_, previousTextId) => {
         <ReadingNav v-if="!isSingleSection" v-bind="sectionNavProps" class="mb-8" />
         <ReadingNav v-else-if="prevText || nextText" v-bind="siblingNavProps" class="mb-8" />
 
-        <!-- Reading toolbar: text size + Hebrew / page / phonetic toggle -->
+        <!-- Reading toolbar: text size + Hebrew / page / phonetic toggle + translation -->
         <div class="flex flex-wrap items-center justify-end gap-3 mb-5">
           <button
             v-if="bookmarks.length && !isLiturgyText"
@@ -2525,7 +2641,34 @@ watch(textId, (_, previousTextId) => {
               {{ t("textReading.phonetic") }}
             </button>
           </div>
+
+          <!-- La traduction, quand le texte en a une : une commande qui porte
+               son nom, et la couleur du thème quand elle est allumée. -->
+          <button
+            v-if="canTranslate"
+            @click="toggleTranslation"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-btn bg-black/5 dark:bg-white/10 text-sm font-medium transition-colors"
+            :class="
+              showTranslation ? 'text-primary' : 'text-text-secondary hover:text-text-primary'
+            "
+            :aria-pressed="showTranslation"
+          >
+            <AppIcon name="languages" :size="14" />
+            {{ t("textReading.translation.toggle") }}
+          </button>
         </div>
+
+        <p v-if="translationFallback" class="mb-5 text-sm text-text-secondary">
+          {{ t("textReading.translation.fallback", translationFallback) }}
+        </p>
+        <p v-if="showTranslation && translationFailed" class="mb-5 text-sm text-text-secondary">
+          {{ t("textReading.translation.unavailable") }}
+        </p>
+        <TranslationAiNotice
+          v-if="showTranslation && trLines.length"
+          class="mb-5"
+          :sources="translation?.sources"
+        />
 
         <!-- Marque-pages du texte (ouvert depuis l'icône de la barre d'outils).
              Pas sur une tefila : une brakha ou un office se lisent du début,
@@ -2619,6 +2762,8 @@ watch(textId, (_, previousTextId) => {
             :highlighted-line="highlightedLine"
             :leads="studyLeads"
             :phonetic-by-daf="showPhonetic ? phoneticByDaf : null"
+            :translation-by-daf="translationByDaf"
+            :transliterate="showPhonetic ? transliterate : null"
             @pick="pickVerse"
           />
         </div>
@@ -2690,28 +2835,45 @@ watch(textId, (_, previousTextId) => {
                       :size="11"
                     />
                   </span>
-                  <p
-                    v-if="!showPhonetic"
-                    dir="rtl"
-                    class="flex-1 min-w-0 font-hebrew text-text-primary reading-he"
-                  >
-                    <MarkedText
-                      :text="line"
-                      :leads="studyLeads?.line === block.offset + index ? studyLeads.leads : null"
-                    />
-                  </p>
-                  <p
-                    v-else
-                    dir="ltr"
-                    class="flex-1 min-w-0 leading-relaxed italic text-text-secondary reading-tl"
-                  >
-                    {{ phoneticLines[block.offset + index] }}
-                  </p>
+                  <div class="flex-1 min-w-0">
+                    <p
+                      v-if="!showPhonetic"
+                      dir="rtl"
+                      class="font-hebrew text-text-primary reading-he"
+                    >
+                      <MarkedText
+                        :text="line"
+                        :leads="studyLeads?.line === block.offset + index ? studyLeads.leads : null"
+                      />
+                    </p>
+                    <p
+                      v-else
+                      dir="ltr"
+                      class="leading-relaxed italic text-text-secondary reading-tl"
+                    >
+                      {{ phoneticLines[block.offset + index] }}
+                    </p>
+                    <!-- La traduction du verset, sous lui, dans la police de
+                         lecture latine. -->
+                    <p
+                      v-if="trLines[block.offset + index]"
+                      dir="ltr"
+                      class="mt-2 text-text-secondary reading-tr"
+                    >
+                      <TranslationText :text="trLines[block.offset + index]" />
+                    </p>
+                  </div>
                 </div>
               </template>
             </div>
           </template>
         </div>
+
+        <!-- D'où vient la traduction lue : son auteur, sa licence. -->
+        <TranslationCredit
+          v-if="trLines.length && translation?.sources.length"
+          :sources="translation.sources"
+        />
 
         <!-- Ce qui se dit après la lecture, au bas du texte. -->
         <ReadingEncadrement
@@ -2813,6 +2975,8 @@ watch(textId, (_, previousTextId) => {
         :download-state="bookState"
         :tefila="isTefila"
         :halakhot="hasHalakhot"
+        :translation-langs="canTranslate ? menuTranslationLangs : []"
+        :translation-lang="translationLang"
         :share-title="shareTitle"
         :share-url="shareReadingUrl"
         :concealed="studyLine !== null || (!sideBySide && selectedPassageKey !== null)"
@@ -2904,5 +3068,12 @@ main {
      texte des lectures : le reste de l'app garde Manrope. */
   font-family: var(--font-reading);
   font-size: calc(1.125rem * var(--reading-scale, 1));
+}
+/* La traduction sous un verset : la police de lecture latine, un cran sous
+   l'hébreu, qui reste le texte qu'on lit. */
+.reading-tr {
+  font-family: var(--font-reading);
+  font-size: calc(1.0625rem * var(--reading-scale, 1));
+  line-height: 1.65;
 }
 </style>
