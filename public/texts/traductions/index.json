@@ -535,7 +535,8 @@
       "fr"
     ],
     "/texts/talmud/chagigah.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/talmud/chullin.json": [
       "en"
@@ -566,7 +567,8 @@
       "en"
     ],
     "/texts/talmud/megillah.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/talmud/meilah.json": [
       "en"
@@ -578,7 +580,8 @@
       "en"
     ],
     "/texts/talmud/moed-katan.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/talmud/nazir.json": [
       "en"
@@ -619,7 +622,8 @@
       "fr"
     ],
     "/texts/talmud/taanit.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/talmud/tamid.json": [
       "en"
@@ -628,7 +632,8 @@
       "en"
     ],
     "/texts/talmud/yevamot.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/talmud/yoma.json": [
       "en",
