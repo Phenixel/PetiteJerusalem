@@ -113,14 +113,22 @@ const SUPER_PROPERTIES = {
 } as const;
 
 /**
- * Dans l'app, la webview Capacitor sert le bundle depuis `https://localhost` :
- * les événements arrivent avec la même URL que du vrai trafic web local, et
- * `$lib` vaut « web » (c'est bien posthog-js qui tourne). On réécrit donc
- * l'origine en `app://android` / `app://ios` pour que l'app soit lisible d'un
- * coup d'œil dans PostHog, sans toucher au chemin (les insights par page
- * restent comparables entre le site et l'app).
+ * Dans l'app, la webview Capacitor sert le bundle depuis `localhost` : les
+ * événements arrivent avec la même URL que du vrai trafic web local, et `$lib`
+ * vaut « web » (c'est bien posthog-js qui tourne). On réécrit donc l'origine
+ * en `app://android` / `app://ios` pour que l'app soit lisible d'un coup
+ * d'œil dans PostHog, sans toucher au chemin (les insights par page restent
+ * comparables entre le site et l'app).
+ *
+ * Le schéma n'est pas le même d'une plateforme à l'autre : Android sert en
+ * `https://localhost`, iOS en `capacitor://localhost` (et Capacitor 2 servait
+ * en `ionic://localhost`). N'attendre que `http`/`https` laissait toutes les
+ * adresses de l'app iOS en `capacitor://localhost/...`, hors des analyses par
+ * page de l'app Android et du site. Tout schéma est donc accepté, l'hôte
+ * `localhost` suffisant à reconnaître la webview (voir
+ * `analyticsNativeUrls.test.ts`).
  */
-const NATIVE_ORIGIN = /^https?:\/\/localhost(?::\d+)?/;
+const NATIVE_ORIGIN = /^[a-z][a-z\d+.-]*:\/\/localhost(?::\d+)?/i;
 const APP_ORIGIN = `app://${appPlatform}`;
 const APP_HOST = `app.${appPlatform}`;
 const URL_KEYS = ["$current_url", "$referrer", "$initial_current_url", "$initial_referrer"];

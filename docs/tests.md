@@ -52,6 +52,7 @@ avec ce que chacun attend :
 | `xcodeWatch.test.ts` | Même chose pour la cible de l'app Apple Watch (`scripts/lib/xcode-watch.mjs`). |
 | `lastmod.test.ts` | Le `lastmod` du sitemap vient de git (`scripts/lib/lastmod.mjs`) : la date du dernier commit qui a touché le fichier de la page, vérifiée sur un dépôt jetable. |
 | `ignoredExceptions.test.ts` | Le filtre du bruit connu de l'Error tracking (`src/config/ignoredExceptions`) reconnaît les messages réellement observés dans PostHog, et seulement eux. |
+| `analyticsNativeUrls.test.ts` | Les adresses de l'app partent vers PostHog en `app://ios` / `app://android`, quel que soit le schéma dont la webview Capacitor sert le bundle (`https://localhost` sur Android, `capacitor://localhost` sur iOS) : sans quoi l'app iOS sort des analyses par page (`docs/tracking-plan.md`). |
 | `analyticsAudience.test.ts` | `resolveUserType` classe l'équipe, le compte de démonstration remis à Google et les testeurs du test fermé à part des vrais utilisateurs, quelle que soit la casse de l'email. |
 | `adminAccess.test.ts` | `isAdminEmail` n'accepte que le compte admin, et `generateStudioToken` produit un jeton de 64 caractères hexadécimaux jamais répété. |
 | `zmanimDeviceTimezone.test.ts` | Les horaires d'un lieu sont les mêmes instants quel que soit le fuseau de la MACHINE (`process.env.TZ` changé sous les pieds du calcul) : c'est le test qui tient le correctif posé sur `@hebcal/core`, décrit plus bas. |
