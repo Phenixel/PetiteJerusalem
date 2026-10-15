@@ -589,6 +589,9 @@ for (const [corpusName, corpus] of Object.entries(CORPORA)) {
             ...source,
             name: `${source.name} (traduction française par IA)`,
             by: `${source.by ?? source.name} (traduit de l'anglais par IA)`,
+            // Ce que le lecteur lit pour avertir que la traduction vient
+            // d'une IA et peut contenir des erreurs.
+            ai: true,
           });
         }
       }

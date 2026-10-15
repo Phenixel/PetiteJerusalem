@@ -1214,6 +1214,16 @@ export interface TranslationSource {
   licenseUrl?: string;
   /** Le texte chez Sefaria, dans cette version. */
   url: string;
+  /**
+   * Traduction française faite par IA depuis cette traduction anglaise
+   * (data/traductions-ia/, docs/traductions.md) : le lecteur l'annonce.
+   */
+  ai?: boolean;
+}
+
+/** Une traduction dont une partie au moins vient d'une IA. */
+export function isAiTranslation(sources: TranslationSource[] | undefined): boolean {
+  return (sources ?? []).some((source) => source.ai === true);
 }
 
 /** La traduction d'un texte : ses sources, et les lignes de chaque section. */
@@ -1352,11 +1362,14 @@ export function parseParashaRashi(
   return lines;
 }
 
-/** Rachi sur une paracha (option du chnei mikra), voir {@link parseParashaRashi}. */
+/**
+ * Rachi sur une paracha (option du chnei mikra), voir {@link parseParashaRashi},
+ * avec les sources de sa traduction quand il en a une.
+ */
 export async function loadParashaRashi(
   textStudy: TextStudyJsonEntry,
   lang?: string | null,
-): Promise<RashiComment[][]> {
+): Promise<{ lines: RashiComment[][]; sources: TranslationSource[] }> {
   const path = `/texts/rashi/${textStudy.id}.json`;
   const res = await fetchTextResponse(path);
   if (!res.ok) {
@@ -1365,10 +1378,14 @@ export async function loadParashaRashi(
   }
   // La traduction est un plus : faute d'elle (hors ligne, langue absente),
   // Rachi se lit en hébreu comme avant.
-  let translation: { text?: unknown } | undefined;
+  let translation: { text?: unknown; sources?: unknown } | undefined;
   if (lang) {
     const trRes = await fetchTextResponse(translationPath(path, lang)).catch(() => null);
     if (trRes?.ok) translation = (await trRes.json().catch(() => undefined)) as typeof translation;
   }
-  return parseParashaRashi((await res.json()) as { he?: unknown[] }, translation);
+  const lines = parseParashaRashi((await res.json()) as { he?: unknown[] }, translation);
+  const sources = Array.isArray(translation?.sources)
+    ? (translation.sources as TranslationSource[])
+    : [];
+  return { lines, sources };
 }

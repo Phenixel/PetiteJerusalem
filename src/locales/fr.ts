@@ -1583,6 +1583,8 @@ const fr = {
       fallback: "Pas encore de traduction {wanted} de ce texte\u00a0: voici la traduction {shown}.",
       unavailable: "La traduction n'a pas pu être chargée. Elle se lit avec une connexion.",
       credit: "Traduction\u00a0:",
+      aiNotice:
+        "Traduction en français faite par IA à partir du texte anglais\u00a0: elle peut contenir des erreurs.",
     },
     settings: {
       open: "Réglages de lecture",

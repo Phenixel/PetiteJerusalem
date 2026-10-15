@@ -48,6 +48,7 @@ import {
 } from "../../composables/useTranslation";
 import TranslationText from "../../components/TranslationText.vue";
 import TranslationCredit from "../../components/TranslationCredit.vue";
+import TranslationAiNotice from "../../components/TranslationAiNotice.vue";
 import {
   activeOccasions,
   getWeekdayTorahParasha,
@@ -2181,6 +2182,11 @@ watch(textId, (_, previousTextId) => {
         <p v-if="showTranslation && translationFailed" class="mb-5 text-sm text-text-secondary">
           {{ t("textReading.translation.unavailable") }}
         </p>
+        <TranslationAiNotice
+          v-if="showTranslation && trLines.length"
+          class="mb-5"
+          :sources="translation?.sources"
+        />
 
         <!-- Marque-pages du texte (ouvert depuis l'icône de la barre d'outils).
              Pas sur une tefila : une brakha ou un office se lisent du début,

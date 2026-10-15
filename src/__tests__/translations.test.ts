@@ -99,13 +99,25 @@ describe("traductions des textes", () => {
       for (const lang of langs) {
         const file = translationOf(path, lang);
         const { sources } = read(file) as {
-          sources: { name: string; license: string; url: string; licenseUrl?: string }[];
+          sources: {
+            name: string;
+            license: string;
+            url: string;
+            licenseUrl?: string;
+            ai?: boolean;
+          }[];
         };
         expect(sources.length, `${file}`).toBeGreaterThan(0);
         for (const source of sources) {
           expect(ALLOWED_LICENSES, `${file} : ${source.name}`).toContain(source.license);
           expect(source.name, `${file}`).not.toMatch(/✧|DeepL|Claude|GPT/i);
           expect(source.url, `${file}`).toMatch(/^https:\/\/www\.sefaria\.org\//);
+          // Une version IA porte son drapeau : c'est lui qui fait dire au
+          // lecteur qu'elle vient d'une IA et peut contenir des erreurs
+          // (TranslationAiNotice.vue).
+          expect(source.ai === true, `${file} : ${source.name}`).toBe(
+            / par IA\)$/.test(source.name),
+          );
           if (source.license !== "Public Domain") {
             expect(source.licenseUrl, `${file}`).toMatch(/^https:\/\/creativecommons\.org\//);
           }

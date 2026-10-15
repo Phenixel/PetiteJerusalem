@@ -16,6 +16,7 @@ import type {
   TextContent,
   TextSection,
   TextTranslation,
+  TranslationSource,
 } from "../../services/textService";
 import {
   pickTranslationLang,
@@ -23,6 +24,7 @@ import {
   translationShown,
 } from "../../composables/useTranslation";
 import TranslationText from "../../components/TranslationText.vue";
+import TranslationAiNotice from "../../components/TranslationAiNotice.vue";
 import { isEntryAvailableOffline } from "../../services/offlineLibraryService";
 import { ensureManifestLoaded } from "../../services/offlineTextStore";
 import { useOnline } from "../../composables/useOnline";
@@ -273,6 +275,8 @@ function trByDaf(section: TextSection): Map<string, string[]> | null {
 // seulement quand l'option est active, pour que la paracha seule reste
 // légère. Aligné ligne à ligne sur `he` (voir textService.loadParashaRashi). --
 const rashiLines = ref<RashiComment[][] | null>(null);
+/** Les sources de la traduction de Rachi, pour l'avertissement d'une version IA. */
+const rashiSources = ref<TranslationSource[]>([]);
 const rashiFailed = ref(false);
 let rashiLoading = false;
 
@@ -289,7 +293,9 @@ async function loadRashi() {
           translationLangChoice.value,
         )
       : null;
-    rashiLines.value = await loadParashaRashi(props.entry, lang);
+    const rashi = await loadParashaRashi(props.entry, lang);
+    rashiLines.value = rashi.lines;
+    rashiSources.value = rashi.sources;
   } catch {
     // Hors ligne, ou entrée sans fichier Rachi (Na"kh) : la lecture continue
     // sans le commentaire, un mot le dit sur les parachiot.
@@ -314,6 +320,13 @@ watch(translationShown, () => {
   rashiLines.value = null;
   if (props.withRashi && content.value) void loadRashi();
 });
+
+/** Les sources des traductions affichées : celle du texte, et celle de Rachi. */
+const shownTranslationSources = computed<TranslationSource[]>(() =>
+  translationShown.value
+    ? [...(translation.value?.sources ?? []), ...(props.withRashi ? rashiSources.value : [])]
+    : [],
+);
 
 function rashiComments(line: number): RashiComment[] {
   if (!props.withRashi) return [];
@@ -445,6 +458,9 @@ onUnmounted(() => {
           {{ bookmarkPlace(b) }}
         </button>
       </div>
+
+      <!-- Une traduction affichée (le texte, ou Rachi) faite par IA : on le dit. -->
+      <TranslationAiNotice :sources="shownTranslationSources" />
 
       <!-- Option Rachi active mais fichier introuvable (hors ligne, par exemple) -->
       <p

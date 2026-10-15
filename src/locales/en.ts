@@ -1528,6 +1528,7 @@ const en: LocaleMessages = {
       fallback: "No {wanted} translation of this text yet: here is the {shown} translation.",
       unavailable: "The translation could not be loaded. It needs a connection.",
       credit: "Translation:",
+      aiNotice: "French translation made by AI from the English text: it may contain errors.",
     },
     settings: {
       open: "Reading settings",

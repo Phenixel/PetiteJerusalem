@@ -238,6 +238,14 @@ chacune suivie de la sienne. La lecture du jour et le chnei mikra suivent le
 même réglage, Rachi compris. Au pied du texte, le nom du traducteur
 (`TranslationCredit.vue`, voir « Citer une traduction »). Pas de traduction sur une tefila.
 
+Une traduction faite par IA est annoncée en tête du texte, dans le lecteur
+comme dans la lecture du jour (Rachi compris) : « Traduction en français
+faite par IA à partir du texte anglais : elle peut contenir des erreurs »
+(`TranslationAiNotice.vue`). Le lecteur la reconnaît au drapeau `ai: true`
+que `download-translations.mjs` pose sur sa source ; une version
+ancienne de l'app l'ignore. `translations.test.ts` vérifie que toute source
+IA, et elle seule, le porte.
+
 ### Ce qui reste à faire
 
 - **Le français assisté par IA** est à relire, et à remplacer par une
