@@ -45,8 +45,54 @@ describe("environnements", () => {
   });
 
   it("déploie les functions de staging avec le site et le bucket de staging", () => {
-    const env = readFileSync(join(root, `functions/.env.${ENVIRONMENTS.staging.firebase.projectId}`), "utf8");
+    const env = readFileSync(
+      join(root, `functions/.env.${ENVIRONMENTS.staging.firebase.projectId}`),
+      "utf8",
+    );
     expect(env).toContain(`SITE_URL=${ENVIRONMENTS.staging.siteUrl}`);
     expect(env).toContain(`STORAGE_BUCKET=${ENVIRONMENTS.staging.firebase.storageBucket}`);
+  });
+});
+
+/**
+ * Le staging vit tout seul : son app lit les textes que son site sert, et ses
+ * liens de partage mènent à son site (src/config/environment.ts). Une adresse
+ * de production écrite en dur dans le code de l'app y renverrait l'app de
+ * staging : on n'en tolère qu'aux endroits qui parlent de la production
+ * elle-même (adresse canonique, mesure d'audience, contenus prérendus).
+ */
+describe("le staging vit tout seul", () => {
+  const PRODUCTION_ALLOWED = [
+    "src/config/site.ts",
+    "src/content/etudeTexts.ts",
+    "src/services/analyticsService.ts",
+    "src/config/analyticsAudience.ts",
+  ];
+
+  it("ne lit ni ne partage rien sur une adresse de production écrite en dur", async () => {
+    const { readdirSync, statSync } = await import("node:fs");
+    const files: string[] = [];
+    const walk = (dir: string) => {
+      for (const name of readdirSync(join(root, dir))) {
+        const rel = `${dir}/${name}`;
+        if (name === "__tests__") continue;
+        if (statSync(join(root, rel)).isDirectory()) walk(rel);
+        else if (/\.(ts|vue)$/.test(name)) files.push(rel);
+      }
+    };
+    walk("src");
+    const offenders = files.filter(
+      (f) =>
+        !PRODUCTION_ALLOWED.includes(f) &&
+        /["'`]https:\/\/(www\.)?petite-jerusalem\.fr/.test(readFileSync(join(root, f), "utf8")),
+    );
+    expect(offenders, "passer par APP_SITE_URL (src/config/environment.ts)").toEqual([]);
+  });
+
+  it("donne à l'app le site de son environnement, et celui-ci aux textes", async () => {
+    const { APP_SITE_URL } = await import("../config/environment");
+    expect(APP_SITE_URL).toBe(__PJ_ENV__.siteUrl);
+    const store = readFileSync(join(root, "src/services/offlineTextStore.ts"), "utf8");
+    expect(store).toMatch(/const REMOTE_TEXTS_BASE = APP_SITE_URL;/);
   });
 });

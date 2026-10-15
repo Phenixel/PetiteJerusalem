@@ -93,6 +93,7 @@ import {
   readingLead as readingLeadOf,
   SITE_URL,
 } from "../../content/etudeTexts";
+import { APP_SITE_URL } from "../../config/environment";
 import { encadrementOf } from "../../services/encadrementService";
 import LiturgyText from "./LiturgyText.vue";
 import TefilaDays from "./TefilaDays.vue";
@@ -1526,7 +1527,7 @@ function passageUrl(line: number): string {
   // Dans un texte à jours, le passage n'existe que sous son jour : l'adresse
   // le nomme, pour que celui qui la reçoit ne tombe pas sur un autre.
   const jour = shownDay.value ? `&jour=${encodeURIComponent(shownDay.value.when)}` : "";
-  return `${SITE_URL}${canonicalReadingPath.value}?verset=${line}${jour}`;
+  return `${APP_SITE_URL}${canonicalReadingPath.value}?verset=${line}${jour}`;
 }
 
 /**
@@ -2261,12 +2262,20 @@ const shareTitle = computed(() => {
       : "";
   return `${e.name}${sec}`;
 });
-const canonicalUrl = computed(() => {
+const canonicalPath = computed(() => {
   const e = textEntry.value;
   if (!e) return undefined;
-  if (currentSection.value) return `${SITE_URL}${sectionPath(e, currentSection.value.index)}`;
-  return `${SITE_URL}${hubPath(e)}`;
+  if (currentSection.value) return sectionPath(e, currentSection.value.index);
+  return hubPath(e);
 });
+/** L'adresse canonique, celle de la production (référencement). */
+const canonicalUrl = computed(() =>
+  canonicalPath.value === undefined ? undefined : `${SITE_URL}${canonicalPath.value}`,
+);
+/** L'adresse qu'on partage : celle du site de l'environnement (config/environment). */
+const shareReadingUrl = computed(() =>
+  canonicalPath.value === undefined ? undefined : `${APP_SITE_URL}${canonicalPath.value}`,
+);
 // Rejoué au changement de langue : les messages en et he arrivent par import
 // dynamique, parfois après le montage.
 watch(
@@ -2969,7 +2978,7 @@ watch(textId, (_, previousTextId) => {
         :translation-langs="canTranslate ? menuTranslationLangs : []"
         :translation-lang="translationLang"
         :share-title="shareTitle"
-        :share-url="canonicalUrl"
+        :share-url="shareReadingUrl"
         :concealed="studyLine !== null || (!sideBySide && selectedPassageKey !== null)"
         :set-aside="canSetAside"
         @update:phonetic="setReadingMode($event ? 'phonetic' : 'hebrew')"

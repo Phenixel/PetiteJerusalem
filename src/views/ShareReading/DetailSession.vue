@@ -19,6 +19,7 @@ import ReportSessionModal from "../../components/ReportSessionModal.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import { seoService } from "../../services/seoService";
 import { SITE_URL } from "../../config/site";
+import { APP_SITE_URL } from "../../config/environment";
 import SessionHeader from "./detailSession/SessionHeader.vue";
 // Cinq captures animées qui ne servent qu'à ceux qui ouvrent la fenêtre : le
 // morceau ne part qu'au clic sur la pastille.
@@ -723,11 +724,11 @@ function openInstructions(): void {
 }
 
 const openShareModal = (afterCreate = false) => {
-  // Domaine canonique plutôt que window.location.href : ce dernier vaut
+  // Le site de l'environnement plutôt que window.location.href : ce dernier vaut
   // localhost (ou capacitor://localhost) en dev et dans l'app native, ce qui
   // produirait un lien de partage inutilisable.
   const s = session.value;
-  shareUrl.value = s ? `${SITE_URL}/share-reading/session/${s.slug || s.id}` : SITE_URL;
+  shareUrl.value = s ? `${APP_SITE_URL}/share-reading/session/${s.slug || s.id}` : APP_SITE_URL;
   shareAfterCreate.value = afterCreate;
   showShareModal.value = true;
 };

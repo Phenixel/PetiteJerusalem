@@ -33,6 +33,7 @@ import { STUDY_TABS } from "../../config/pageTabs";
 import { liveValue } from "../../composables/liveInput";
 import { useSessionEditing, type SessionEditData } from "../../composables/useSessionEditing";
 import { SITE_URL } from "../../config/site";
+import { APP_SITE_URL } from "../../config/environment";
 
 const router = useRouter();
 const { t } = useI18n();
@@ -166,9 +167,9 @@ const shareUrl = ref("");
 
 const openShareModal = (session: Session) => {
   selectedSession.value = session;
-  // Domaine canonique : SITE_URL vaut localhost (ou
+  // Le site de l'environnement, pas window.location : elle vaut localhost (ou
   // capacitor://localhost) en dev et dans l'app native → lien inutilisable.
-  shareUrl.value = `${SITE_URL}/share-reading/session/${session.slug || session.id}`;
+  shareUrl.value = `${APP_SITE_URL}/share-reading/session/${session.slug || session.id}`;
   showShareModal.value = true;
 };
 

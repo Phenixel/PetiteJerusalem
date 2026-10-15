@@ -33,7 +33,7 @@ import PlayerSeek from "./PlayerSeek.vue";
 import PlayerSpeed from "./PlayerSpeed.vue";
 import QueueRow from "./QueueRow.vue";
 import ShareModal from "../ShareModal.vue";
-import { SITE_URL } from "../../config/site";
+import { APP_SITE_URL } from "../../config/environment";
 import { FULL_CLIP, SHEET_EASING, barClip, motionAllowed } from "./sheetMotion";
 
 /** Le plein écran a fini de se réduire en barre : GlobalAudioPlayer peut le démonter. */
@@ -306,7 +306,7 @@ const currentLine = computed(() => {
 
 const showShare = ref(false);
 const shareUrl = computed(() =>
-  track.value?.slug ? `${SITE_URL}/chiourim/${track.value.slug}` : "",
+  track.value?.slug ? `${APP_SITE_URL}/chiourim/${track.value.slug}` : "",
 );
 </script>
 

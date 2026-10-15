@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
+import { APP_SITE_URL } from "../config/environment";
 import { useRoute } from "vue-router";
 import AppIcon from "./icons/AppIcon.vue";
 import { PAGE_FORM_LABELS } from "../composables/usePageForm";
@@ -14,7 +15,6 @@ import ReadingSizeControl from "./ReadingSizeControl.vue";
 import ShareModal from "./ShareModal.vue";
 import ToggleSwitch from "./ToggleSwitch.vue";
 import FeatureTour, { type TourExit, type TourStep } from "./FeatureTour.vue";
-import { SITE_URL } from "../config/site";
 import { useReadingSize } from "../composables/useReadingSize";
 import { detectStores, type StoreKey } from "../composables/useAppDownload";
 import { useMiniPlayerVisible } from "../composables/useAudioPlayer";
@@ -223,7 +223,7 @@ function showSettings() {
  */
 const route = useRoute();
 const showShare = ref(false);
-const shareUrl = computed(() => props.shareUrl || `${SITE_URL}${route.fullPath}`);
+const shareUrl = computed(() => props.shareUrl || `${APP_SITE_URL}${route.fullPath}`);
 const shareName = computed(() => props.shareTitle || t("textReading.pageTitle"));
 
 function share() {
