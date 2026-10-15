@@ -56,10 +56,129 @@ export function isValidLink(url) {
   return url.startsWith("/") || /^https?:\/\//i.test(url);
 }
 
+/** Les bornes d'un sondage, celles de src/services/announcements.ts. */
+export const POLL_MIN_OPTIONS = 2;
+export const POLL_MAX_OPTIONS = 8;
+
+/**
+ * La page du site où voter, pour les versions de l'app qui ne savent pas
+ * afficher un sondage : la même que pollPageUrl (src/services/announcements.ts).
+ */
+export function pollPageUrl(id) {
+  return `https://petite-jerusalem.fr/sondage/${id}`;
+}
+
+export const POLL_LINK_LABEL = { fr: "Voter", en: "Vote", he: "להצבעה" };
+
+/**
+ * Le lien à enregistrer, comme linkWithPollPage de l'app : un sondage sans
+ * lien reçoit celui de sa page de vote ; ce lien retombe avec le sondage.
+ */
+export function linkWithPollPage(id, link, poll) {
+  const own = link?.url === pollPageUrl(id);
+  if (poll) return link && !own ? link : { url: pollPageUrl(id), label: POLL_LINK_LABEL };
+  return own ? null : link;
+}
+
+/**
+ * Un identifiant de choix, court, absent de `taken`.
+ *
+ * @param {Set<string>} taken
+ */
+function newOptionId(taken) {
+  let id;
+  do id = Math.random().toString(36).slice(2, 8);
+  while (taken.has(id) || id.length < 4);
+  taken.add(id);
+  return id;
+}
+
+/**
+ * Le sondage d'une question, depuis la ligne de commande.
+ *
+ * `input` : { choices?: string[] (« Libellé » ou « Libellé|image »),
+ * choicesEn?, choicesHe? (alignés sur choices), multiple?, closed?, remove? }.
+ * Sans `choices`, le sondage existant garde ses choix ; `multiple`, `closed`
+ * et les traductions changent seuls. Un choix dont le libellé français ne
+ * change pas garde son identifiant, donc ses votes, son image et ses
+ * traductions si on ne les redonne pas.
+ * L'image est une adresse https, ou un fichier local rendu sous la forme
+ * `{ file }` : le CLI l'envoie dans Storage avant d'écrire.
+ *
+ * @typedef {{ fr: string, en?: string, he?: string }} CliText
+ * @typedef {{ id: string, label: CliText, image: string | { file: string } | null }} CliPollOption
+ * @typedef {{ options: CliPollOption[], multiple: boolean, closed: boolean }} CliPoll
+ * @param {{ choices?: string[], choicesEn?: string[], choicesHe?: string[],
+ *   multiple?: boolean, closed?: boolean, remove?: boolean }} input
+ * @param {CliPoll | null} existing
+ * @returns {CliPoll | null}
+ */
+export function pollFields(input, existing) {
+  if (input.remove) return null;
+  const multiple = input.multiple ?? existing?.multiple === true;
+  const closed = input.closed ?? existing?.closed === true;
+  if (!input.choices?.length) {
+    if (!existing) {
+      if (
+        input.multiple !== undefined ||
+        input.closed !== undefined ||
+        input.choicesEn?.length ||
+        input.choicesHe?.length
+      ) {
+        throw new BackofficeInputError("Pas de sondage à régler : ajoutez d'abord des --choix.");
+      }
+      return null;
+    }
+    // --choix-en / --choix-he seuls traduisent les choix existants, dans l'ordre.
+    const options = existing.options.map((o, index) => ({
+      ...o,
+      label: localizedText(
+        o.label.fr,
+        input.choicesEn?.[index] || o.label.en,
+        input.choicesHe?.[index] || o.label.he,
+      ),
+    }));
+    return { options, multiple, closed };
+  }
+  if (input.choices.length < POLL_MIN_OPTIONS || input.choices.length > POLL_MAX_OPTIONS) {
+    throw new BackofficeInputError(
+      `Un sondage propose de ${POLL_MIN_OPTIONS} à ${POLL_MAX_OPTIONS} choix (--choix, une fois par choix).`,
+    );
+  }
+  const known = new Map((existing?.options ?? []).map((o) => [o.label?.fr, o]));
+  const taken = new Set((existing?.options ?? []).map((o) => o.id));
+  const options = input.choices.map((raw, index) => {
+    const [labelPart, ...rest] = String(raw).split("|");
+    const fr = clean(labelPart);
+    const imagePart = clean(rest.join("|"));
+    if (!fr) throw new BackofficeInputError(`Choix ${index + 1} sans libellé.`);
+    if (fr.length > TITLE_MAX) {
+      throw new BackofficeInputError(
+        `Choix ${index + 1} trop long : ${TITLE_MAX} caractères au plus.`,
+      );
+    }
+    const previous = known.get(fr);
+    known.delete(fr);
+    let image = previous?.image ?? null;
+    if (imagePart) image = /^https:\/\//i.test(imagePart) ? imagePart : { file: imagePart };
+    return {
+      id: previous?.id ?? newOptionId(taken),
+      // Une traduction non redonnée reste celle du choix, s'il ne change pas.
+      label: localizedText(
+        fr,
+        input.choicesEn?.[index] || previous?.label?.en,
+        input.choicesHe?.[index] || previous?.label?.he,
+      ),
+      image,
+    };
+  });
+  return { options, multiple, closed };
+}
+
 /**
  * Les champs d'une information à écrire, validés comme le fait le formulaire
  * du backoffice. `input` : { kind, title{fr,en,he}, body{…}, link, linkLabel{…},
- * version, resolved, published, notify }.
+ * version, fixedIn, resolved, poll, published, notify }.
  */
 export function announcementFields(input) {
   const kind = input.kind;
@@ -86,13 +205,21 @@ export function announcementFields(input) {
       "Le lien doit commencer par « / » (une page de l'app) ou par https://.",
     );
   }
+  const fixedIn = kind === "incident" && clean(input.fixedIn) ? versionOf(input.fixedIn) : null;
+  if (kind === "incident" && clean(input.fixedIn) && !fixedIn) {
+    throw new BackofficeInputError(`--corrige-dans attend une version X.Y.Z : ${input.fixedIn}.`);
+  }
   return {
     kind,
     title,
     body,
     link: url ? { url, label: input.linkLabel ?? { fr: "" } } : null,
+    // Les notes d'une version : la version qu'elles décrivent.
     version: kind === "release" && clean(input.version) ? clean(input.version) : null,
+    // Un incident : la version qui le corrige (champ à part, voir docs/informations.md).
+    fixedIn,
     resolved: kind === "incident" ? input.resolved === true : false,
+    poll: kind === "question" ? (input.poll ?? null) : null,
     published: input.published === true,
     notify: input.notify === true,
   };
@@ -177,6 +304,108 @@ export function parseList(value) {
     .split(",")
     .map((item) => item.trim())
     .filter(Boolean);
+}
+
+// ---- Le texte d'un chiour (voir src/services/chiourTexte.ts) ----------------------
+
+/** Le plus grand numéro de chapitre accepté (le Pélé Yoets compte ses sujets jusqu'à 391). */
+export const CHAPITRE_MAX = 10000;
+
+/**
+ * Les textes dont on ne précise pas de chapitre : un psaume, une tefila. Même
+ * règle que `hasChapitres` dans src/services/chiourTexte.ts.
+ */
+const TYPES_SANS_CHAPITRE = new Set(["Tehilim", "Sidour", "Brahot", "Moadim"]);
+
+const SANS = new Set(["", "aucun", "aucune", "-"]);
+
+/**
+ * `--livre` et `--chapitre` en champs `texteId` / `texteChapitre`, ceux-là
+ * seulement qui changent. Changer de texte oublie le chapitre de l'ancien ;
+ * `--livre aucun` retire les deux. Le chapitre se compte comme la
+ * bibliothèque (l'index de la section, 0 pour l'introduction d'une porte de
+ * 'Hovot Halévavot, le numéro du sujet du Pélé Yoets, le rang du bloc d'un
+ * texte d'une page) : il n'est vérifié qu'en bornes, le catalogue ne dit pas
+ * comment chaque fichier se découpe.
+ *
+ * @param {{ livre?: string, chapitre?: string }} input
+ * @param {{ id: number | string, type: string }[]} catalog
+ * @param {{ texteId?: number | null, texteChapitre?: number | null }} [current]
+ * @returns {{ texteId?: number | null, texteChapitre?: number | null }}
+ */
+export function texteFields(input, catalog, current = {}) {
+  const fields = {};
+  let texteId = typeof current.texteId === "number" ? current.texteId : null;
+  if (input.livre !== undefined) {
+    const raw = String(input.livre).trim().toLowerCase();
+    if (SANS.has(raw)) {
+      return { texteId: null, texteChapitre: null };
+    }
+    const id = Number(raw);
+    if (!Number.isInteger(id) || !catalog.some((entry) => Number(entry.id) === id)) {
+      throw new BackofficeInputError(
+        `Livre inconnu : ${input.livre} (voir livre:liste --recherche …).`,
+      );
+    }
+    if (id !== texteId) fields.texteChapitre = null;
+    fields.texteId = id;
+    texteId = id;
+  }
+  if (input.chapitre !== undefined) {
+    const raw = String(input.chapitre).trim().toLowerCase();
+    if (SANS.has(raw)) {
+      fields.texteChapitre = null;
+      return fields;
+    }
+    if (texteId === null) throw new BackofficeInputError("--chapitre demande un --livre.");
+    const entry = catalog.find((e) => Number(e.id) === texteId);
+    if (entry && TYPES_SANS_CHAPITRE.has(entry.type)) {
+      throw new BackofficeInputError(`Ce texte (${entry.type}) ne se découpe pas en chapitres.`);
+    }
+    const n = Number(raw);
+    if (!Number.isInteger(n) || n < 0 || n > CHAPITRE_MAX) {
+      throw new BackofficeInputError(`Chapitre invalide : ${input.chapitre}.`);
+    }
+    fields.texteChapitre = n;
+  }
+  return fields;
+}
+
+/**
+ * Un nom réduit à sa prononciation approchée, pour que les graphies d'un même
+ * nom se rejoignent : accents, apostrophes, espaces et tirets ôtés, puis
+ * « tz », « z » et « ts » confondus, comme « ch », « kh », « sh » et « h ».
+ * Ainsi « Vayetse » trouve « Vayetze », « Chaar Habitahon » trouve « Chaar
+ * Habita'hon », « Berachot » trouve « Berakhot ».
+ *
+ * @param {unknown} value
+ */
+export function foldTransliteration(value) {
+  return String(value)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]/gu, "")
+    .replace(/tz|ts|z/g, "s")
+    .replace(/[cks]h/g, "h");
+}
+
+/**
+ * Les textes du catalogue dont le nom ou le livre contient le terme, quelle
+ * que soit sa graphie (voir foldTransliteration) : de quoi trouver
+ * l'identifiant à passer à --livre.
+ *
+ * @template {{ name: string, livre: string }} T
+ * @param {T[]} catalog
+ * @param {string} term
+ * @returns {T[]}
+ */
+export function searchCatalog(catalog, term) {
+  const needle = foldTransliteration(term ?? "");
+  if (!needle) return catalog;
+  return catalog.filter((entry) =>
+    foldTransliteration(`${entry.name} ${entry.livre}`).includes(needle),
+  );
 }
 
 /** L'adresse publique du studio d'un auteur, pour un lien secret. */

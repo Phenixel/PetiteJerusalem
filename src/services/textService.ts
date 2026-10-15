@@ -13,6 +13,11 @@ import { parashaMark, type ParashaMark } from "./pageForm";
 
 /** Talmud: a daf side (e.g. "2a") with its lines, for continuous display with daf markers. */
 export interface DafBlock {
+  /**
+   * Le daf, vide pour un traité qui n'en a pas : Shekalim (Talmud de
+   * Jérusalem), Middot et Kinnim (la Michna seule) se rangent par chapitre,
+   * et l'on n'y invente pas de daf.
+   */
   daf: string;
   lines: string[];
   /**
@@ -58,7 +63,11 @@ export type SectionHeading =
   | { kind: "daf"; daf: string }
   | { kind: "chapterDaf"; n: number; from: string; to: string }
   /** Une strophe du psaume 119 : sa lettre, et son nom en lettres latines. */
-  | { kind: "letter"; letter: string; name: string };
+  | { kind: "letter"; letter: string; name: string }
+  /** Moussar : l'introduction (hakdama) d'une porte de 'Hovot Halévavot, section 0. */
+  | { kind: "introduction" }
+  /** Moussar : un sujet du Pélé Yoets, son numéro dans le livre et son nom hébreu. */
+  | { kind: "topic"; n: number; title: string };
 
 /**
  * Didascalie : la consigne de lecture qui accompagne un texte de tefila
@@ -481,8 +490,9 @@ export class MissingTextFileError extends Error {
 
 interface TalmudChapter {
   chapter: number;
-  startDaf: string;
-  endDaf: string;
+  /** Absents d'un traité rangé par chapitre (voir DafBlock.daf). */
+  startDaf?: string;
+  endDaf?: string;
   startIdx: number;
   endIdx: number;
 }
@@ -523,6 +533,9 @@ export function resolveFilePath(textStudy: TextStudyJsonEntry): string {
       const latin = textStudy.name.match(/\(([^)]+)\)\s*$/)?.[1] ?? String(textStudy.id);
       return `/texts/tefila/${tractateSlug(latin)}.json`;
     }
+    // Moussar : un fichier par entrée, nommé par son id, comme le Tanakh.
+    case "Moussar":
+      return `/texts/moussar/${textStudy.id}.json`;
     default:
       throw new Error(`Type non supporté : ${textStudy.type}`);
   }
@@ -661,6 +674,18 @@ function parseTalmud(
 
   if (chapterRanges.length > 0) {
     const sections = chapterRanges.map((range) => {
+      // Un traité rangé par chapitre : un seul bloc, sans daf.
+      if (!range.startDaf || !range.endDaf) {
+        const lines = normalizeLines(heDaf.slice(range.startIdx, range.endIdx + 1));
+        const heading: SectionHeading = { kind: "chapter", n: range.chapter };
+        return {
+          index: range.chapter,
+          label: chapterLabel(range.chapter),
+          heading,
+          he: lines,
+          dafBlocks: lines.length > 0 ? [{ daf: "", lines }] : [],
+        };
+      }
       const lines: string[] = [];
       const dafBlocks: DafBlock[] = [];
       // Each index in `he` is one daf side: index 0 = 2a, 1 = 2b, 2 = 3a…
@@ -1030,6 +1055,55 @@ function loadTefila(
 }
 
 /**
+ * Moussar (public/texts/moussar/<id>.json, voir download-texts.mjs) : des
+ * sections numérotées, `{ n, title?, he }`. Le numéro `n` est l'index de la
+ * section tel quel, celui de l'adresse et celui qu'un cours cite :
+ *   - 0, l'introduction (hakdama) d'une porte de 'Hovot Halévavot, dont les
+ *     chapitres gardent ensuite leur numéro (1 à n) ;
+ *   - le numéro du sujet dans tout le Pélé Yoets (1 à 391), avec son nom
+ *     hébreu (`title`) : la lettre Beth s'ouvre sur la section 22.
+ * Un texte d'un seul tenant (l'introduction de l'auteur) se lit en une
+ * section, 1, comme les autres.
+ */
+function loadMoussar(
+  textStudy: TextStudyJsonEntry,
+  data: { title?: string; sections?: unknown },
+): TextContent {
+  const title = data.title ?? textStudy.name;
+  const raw = (Array.isArray(data.sections) ? data.sections : []) as {
+    n?: unknown;
+    title?: unknown;
+    he?: unknown;
+  }[];
+  if ((textStudy.totalSections ?? 1) <= 1) {
+    const he = raw.flatMap((section) => normalizeLines(section?.he));
+    return { title, type: "Moussar", sections: [buildSection(1, textStudy.name, he)] };
+  }
+  const sections: TextSection[] = [];
+  for (const section of raw) {
+    const n = section?.n;
+    if (typeof n !== "number" || !Number.isInteger(n) || n < 0) continue;
+    const he = normalizeLines(section.he);
+    if (he.length === 0) continue;
+    const topic = typeof section.title === "string" ? cleanText(section.title) : "";
+    const heading: SectionHeading =
+      n === 0
+        ? { kind: "introduction" }
+        : topic
+          ? { kind: "topic", n, title: topic }
+          : { kind: "chapter", n };
+    const label =
+      heading.kind === "introduction"
+        ? "Introduction"
+        : heading.kind === "topic"
+          ? `Sujet ${n} : ${topic}`
+          : chapterLabel(n);
+    sections.push({ ...buildSection(n, label, he), heading });
+  }
+  return { title, type: "Moussar", sections };
+}
+
+/**
  * Pure parse of an already-loaded text file into ready-to-read sections.
  * Shared by the runtime reader (via {@link loadText}) and the SEO prerender
  * (which reads the files from disk), so both produce identical content.
@@ -1059,6 +1133,8 @@ export function parseContent(
     case "Brahot":
     case "Sidour":
       return loadTefila(textStudy, data as { title?: string; blocks?: TefilaFileBlock[] });
+    case "Moussar":
+      return loadMoussar(textStudy, data as { title?: string; sections?: unknown });
     default:
       throw new Error(`Type non supporté : ${textStudy.type}`);
   }

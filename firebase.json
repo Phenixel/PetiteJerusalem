@@ -98,6 +98,9 @@
     "redirects": [
       { "source": "/etude", "type": 301, "destination": "/bibliotheque" },
       { "source": "/etude/**", "type": 301, "destination": "/bibliotheque/:splat" },
+      { "source": "/bibliotheque/sidour", "type": 301, "destination": "/sidour" },
+      { "source": "/bibliotheque/moadim", "type": 301, "destination": "/sidour" },
+      { "source": "/bibliotheque/brahot", "type": 301, "destination": "/sidour" },
       { "source": "/bibliotheque/slihot", "type": 301, "destination": "/bibliotheque/moadim/slihot" },
       {
         "source": "/bibliotheque/slihot/slihot",

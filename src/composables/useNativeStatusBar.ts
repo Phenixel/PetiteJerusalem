@@ -5,7 +5,7 @@ import { useDarkMode } from "./useColorScheme";
 
 // Doit rester synchronisé avec les fonds de src/assets/main.css :
 // --color-bg-beige (body clair) et le gray-900 du body sombre.
-const LIGHT_BG = "#f4f1ea";
+const LIGHT_BG = "#fff9f3";
 const DARK_BG = "#111827";
 
 /**

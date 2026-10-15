@@ -26,7 +26,7 @@ const search = defineModel<string>("search", { default: "" });
         class="inline-flex shrink-0 items-center gap-1.5 rounded-pill px-3.5 py-1.5 text-sm font-semibold transition-colors"
         :class="
           filter === f.id
-            ? 'bg-primary text-white'
+            ? 'bg-brand text-on-brand'
             : 'bg-black/5 text-text-secondary hover:text-text-primary dark:bg-white/10'
         "
         :aria-pressed="filter === f.id"

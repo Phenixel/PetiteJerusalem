@@ -33,14 +33,18 @@ import {
   perpetualChainSession,
   announcementFields,
   audioExtension,
+  linkWithPollPage,
+  pollFields,
   downloadUrl,
   localizedText,
   parseKind,
   parseList,
   releaseAnnouncement,
   releaseAnnouncementId,
+  searchCatalog,
   slugify,
   studioLink,
+  texteFields,
   versionOf,
 } from "./lib/backoffice.mjs";
 
@@ -68,6 +72,15 @@ const OPTIONS = {
   lien: { type: "string" },
   "lien-texte": { type: "string" },
   version: { type: "string" },
+  "corrige-dans": { type: "string" },
+  choix: { type: "string", multiple: true },
+  "choix-en": { type: "string", multiple: true },
+  "choix-he": { type: "string", multiple: true },
+  "choix-multiples": { type: "boolean" },
+  "choix-unique": { type: "boolean" },
+  "sondage-clos": { type: "boolean" },
+  "sondage-ouvert": { type: "boolean" },
+  "sans-sondage": { type: "boolean" },
   publier: { type: "boolean" },
   depublier: { type: "boolean" },
   notifier: { type: "boolean" },
@@ -88,6 +101,8 @@ const OPTIONS = {
   duree: { type: "string" },
   filtre: { type: "string" },
   recherche: { type: "string" },
+  livre: { type: "string" },
+  chapitre: { type: "string" },
 };
 
 const { values: opts, positionals } = parseArgs({
@@ -232,7 +247,22 @@ function announcementInput(existing = null) {
     link: pick("lien", existing?.link?.url),
     linkLabel: localizedText(pick("lien-texte", existing?.link?.label?.fr)),
     version: pick("version", existing?.version),
+    fixedIn: pick("corrige-dans", existing?.fixedIn),
     resolved: opts.resolu ? true : opts["en-cours"] ? false : existing?.resolved === true,
+    poll:
+      kind === "question"
+        ? pollFields(
+            {
+              choices: opts.choix,
+              choicesEn: opts["choix-en"],
+              choicesHe: opts["choix-he"],
+              multiple: opts["choix-multiples"] ? true : opts["choix-unique"] ? false : undefined,
+              closed: opts["sondage-clos"] ? true : opts["sondage-ouvert"] ? false : undefined,
+              remove: opts["sans-sondage"] === true,
+            },
+            existing?.poll ?? null,
+          )
+        : null,
     published,
     notify: opts.notifier === true || existing?.notify === true,
   };
@@ -265,24 +295,102 @@ async function saveAnnouncement(id, fields, existing) {
   const { db, FieldValue, Timestamp } = firebase();
   const date = publicationDate();
   const publishedAt = date ? Timestamp.fromDate(date) : FieldValue.serverTimestamp();
+  // L'identifiant d'une nouvelle information est tiré d'avance : les images
+  // du sondage se rangent sous lui, et le lien de sa page de vote en dépend.
+  const ref = id ? db.collection("announcements").doc(id) : db.collection("announcements").doc();
+  const uploaded = fields.poll ? await uploadPollImages(ref.id, fields.poll) : null;
+  // Les identifiants des choix, contre lesquels les règles vérifient chaque
+  // vote (comme pollToStore dans src/services/announcements.ts).
+  const poll = uploaded ? { ...uploaded, optionIds: uploaded.options.map((o) => o.id) } : null;
   const data = {
     ...fields,
+    poll,
+    link: linkWithPollPage(ref.id, fields.link, poll),
     updatedAt: FieldValue.serverTimestamp(),
     updatedVia: VIA,
     ...(fields.published && (date || !existing?.publishedAt) ? { publishedAt } : {}),
   };
   if (existing) {
-    await db.collection("announcements").doc(id).update(data);
-    return id;
+    await ref.update(data);
+  } else {
+    await ref.set({
+      ...data,
+      publishedAt: fields.published ? publishedAt : null,
+      notifiedAt: null,
+      createdAt: FieldValue.serverTimestamp(),
+    });
   }
-  const ref = id ? db.collection("announcements").doc(id) : db.collection("announcements").doc();
-  await ref.set({
-    ...data,
-    publishedAt: fields.published ? publishedAt : null,
-    notifiedAt: null,
-    createdAt: FieldValue.serverTimestamp(),
-  });
-  return ref.id;
+  // Ce qui est écrit, et non ce qui a été saisi : le lien de la page de vote,
+  // les adresses des images envoyées.
+  return { id: ref.id, poll: data.poll, link: data.link };
+}
+
+const IMAGE_CONTENT_TYPES = {
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  png: "image/png",
+  webp: "image/webp",
+  gif: "image/gif",
+};
+
+/** Les images locales des choix (`{ file }`), envoyées dans Storage comme le backoffice. */
+async function uploadPollImages(id, poll) {
+  const { bucket } = firebase();
+  const options = [];
+  for (const option of poll.options) {
+    if (!option.image || typeof option.image === "string") {
+      options.push(option);
+      continue;
+    }
+    const file = option.image.file;
+    const ext = file.split(".").pop()?.toLowerCase() ?? "";
+    const destination = `announcements/${id}/${option.id}-${Date.now()}.${ext}`;
+    const token = randomUUID();
+    await bucket.upload(file, {
+      destination,
+      metadata: {
+        contentType: IMAGE_CONTENT_TYPES[ext],
+        cacheControl: "public, max-age=31536000, immutable",
+        metadata: { firebaseStorageDownloadTokens: token },
+      },
+    });
+    const image = downloadUrl(
+      bucket.name,
+      destination,
+      token,
+      process.env.FIREBASE_STORAGE_EMULATOR_HOST ?? null,
+    );
+    options.push({ ...option, image });
+  }
+  return { ...poll, options };
+}
+
+/** Une image locale de choix : présente, d'un format servi, 5 Mo au plus. */
+function checkPollImages(poll) {
+  for (const option of poll?.options ?? []) {
+    const file = option.image?.file;
+    if (!file) continue;
+    if (!existsSync(file)) fail(`image introuvable : ${file}`);
+    const ext = file.split(".").pop()?.toLowerCase() ?? "";
+    if (!IMAGE_CONTENT_TYPES[ext]) {
+      fail(
+        `format d'image non pris en charge (.${ext}) : ${Object.keys(IMAGE_CONTENT_TYPES).join(", ")}.`,
+      );
+    }
+    if (statSync(file).size > 5 * 1024 * 1024) fail(`image trop lourde (5 Mo au plus) : ${file}`);
+  }
+}
+
+/** Le sondage en clair, pour le résumé d'un essai. */
+function pollNote(poll) {
+  if (!poll) return "";
+  const choices = poll.options
+    .map(
+      (o) =>
+        `« ${o.label.fr} »${o.image ? (o.image.file ? ` + ${basename(o.image.file)}` : " + image") : ""}`,
+    )
+    .join(", ");
+  return ` Sondage${poll.multiple ? " à choix multiples" : ""}${poll.closed ? " (clos)" : ""} : ${choices}.`;
 }
 
 /** « , datée du 2026-07-21 » dans le résumé d'un essai, si --date est passé. */
@@ -314,6 +422,8 @@ function describeAnnouncement(id, a) {
   const extra = [
     a.kind === "incident" ? (a.resolved ? "résolu" : "EN COURS") : null,
     a.version ? `v${a.version}` : null,
+    a.fixedIn ? `corrigé en v${a.fixedIn}` : null,
+    a.poll ? `sondage${a.poll.closed ? " clos" : ""}, ${a.poll.options?.length ?? 0} choix` : null,
     a.notifiedAt ? `notifiée ${day(a.notifiedAt)}` : null,
   ]
     .filter(Boolean)
@@ -340,6 +450,15 @@ commands["info:voir"] = async ([id]) => {
       describeAnnouncement(id, a),
       "",
       a.body?.fr ?? "",
+      ...(a.poll
+        ? [
+            "",
+            ...(a.poll.options ?? []).map(
+              (o, i) =>
+                `Choix ${i + 1} [${o.id}] : ${o.label?.fr ?? ""}${o.image ? " (image)" : ""}`,
+            ),
+          ]
+        : []),
       ...(a.link ? ["", `Lien : ${a.link.url}`] : []),
       ...(a.title?.en ? ["", `EN : ${a.title.en}`] : []),
       ...(a.title?.he ? [`HE : ${a.title.he}`] : []),
@@ -350,10 +469,11 @@ commands["info:voir"] = async ([id]) => {
 
 commands["info:creer"] = async () => {
   const fields = announcementFields(announcementInput());
-  const summary = `Créer l'information « ${fields.title.fr} » (${fields.kind}, ${fields.published ? "publiée" : "brouillon"}${dateNote()}). ${notifyNote(fields, null)}`;
-  let id = null;
-  if (await write(summary, async () => (id = await saveAnnouncement(null, fields, null)))) {
-    out([`Information créée : ${id}`, notifyNote(fields, null)], { id, ...fields });
+  checkPollImages(fields.poll);
+  const summary = `Créer l'information « ${fields.title.fr} » (${fields.kind}, ${fields.published ? "publiée" : "brouillon"}${dateNote()}).${pollNote(fields.poll)} ${notifyNote(fields, null)}`;
+  let saved = null;
+  if (await write(summary, async () => (saved = await saveAnnouncement(null, fields, null)))) {
+    out([`Information créée : ${saved.id}`, notifyNote(fields, null)], { ...fields, ...saved });
   }
 };
 
@@ -361,9 +481,11 @@ commands["info:modifier"] = async ([id]) => {
   if (!id) fail("usage : info:modifier <id> [options]");
   const existing = await getAnnouncement(id);
   const fields = announcementFields(announcementInput(existing));
-  const summary = `Modifier ${id} (« ${fields.title.fr} », ${fields.published ? "publiée" : "brouillon"}). ${notifyNote(fields, existing)}`;
-  if (await write(summary, () => saveAnnouncement(id, fields, existing))) {
-    out([`Information modifiée : ${id}`, notifyNote(fields, existing)], { id, ...fields });
+  checkPollImages(fields.poll);
+  const summary = `Modifier ${id} (« ${fields.title.fr} », ${fields.published ? "publiée" : "brouillon"}).${pollNote(fields.poll)} ${notifyNote(fields, existing)}`;
+  let saved = null;
+  if (await write(summary, async () => (saved = await saveAnnouncement(id, fields, existing)))) {
+    out([`Information modifiée : ${id}`, notifyNote(fields, existing)], { ...fields, ...saved });
   }
 };
 
@@ -384,12 +506,48 @@ commands["info:resoudre"] = async ([id]) => {
   }
 };
 
+/** Les réponses à un sondage : un appareil, une voix, son dernier vote. */
+commands["info:resultats"] = async ([id]) => {
+  if (!id) fail("usage : info:resultats <id>");
+  const a = await getAnnouncement(id);
+  if (!a.poll?.options?.length) fail(`${id} n'a pas de sondage.`);
+  const votes = firebase().db.collection("announcements").doc(id).collection("votes");
+  const total = (await votes.count().get()).data().count;
+  const rows = await Promise.all(
+    a.poll.options.map(async (option) => ({
+      id: option.id,
+      label: option.label?.fr ?? "",
+      count: (await votes.where("choices", "array-contains", option.id).count().get()).data().count,
+    })),
+  );
+
+  const percent = (n) => (total ? Math.round((n / total) * 100) : 0);
+  out(
+    [
+      `« ${a.title?.fr ?? ""} » : ${total} réponse${total > 1 ? "s" : ""}${a.poll.closed ? " (sondage clos)" : ""}`,
+      ...rows.map(
+        (r) =>
+          `  ${String(r.count).padStart(5)}  ${String(percent(r.count)).padStart(3)} %  ${r.label}`,
+      ),
+    ],
+    { id, total, closed: a.poll.closed === true, options: rows },
+  );
+};
+
 commands["info:supprimer"] = async ([id]) => {
   if (!id) fail("usage : info:supprimer <id>");
   const existing = await getAnnouncement(id);
   if (
-    await write(`Supprimer définitivement ${id} (« ${existing.title?.fr} »).`, () =>
-      firebase().db.collection("announcements").doc(id).delete(),
+    await write(
+      `Supprimer définitivement ${id} (« ${existing.title?.fr} »)${existing.poll ? ", et les images de son sondage" : ""}.`,
+      async () => {
+        // Les images des choix, servies publiquement, ne survivent pas à
+        // l'information (comme adminService.deleteAnnouncement). D'abord
+        // elles : si leur suppression échoue, l'information est encore là et
+        // la commande se relance.
+        await firebase().bucket.deleteFiles({ prefix: `announcements/${id}/` });
+        await firebase().db.collection("announcements").doc(id).delete();
+      },
     )
   ) {
     out([`Information supprimée : ${id}`], { id, deleted: true });
@@ -522,6 +680,24 @@ async function checkSerie(serieId, auteurId) {
   if (snap.data().auteurId !== auteurId) fail(`la série ${serieId} n'est pas de ${auteurId}.`);
 }
 
+/** Le catalogue de la bibliothèque (les livres auxquels rattacher un chiour). */
+let catalogCache = null;
+function catalog() {
+  catalogCache ??= JSON.parse(
+    readFileSync(new URL("../src/datas/textStudies.json", import.meta.url), "utf8"),
+  ).textStudies;
+  return catalogCache;
+}
+
+/** « Livre : 404 שער הבטחון (Chaar Habita'hon), chapitre 4 », ou rien. */
+function describeTexte(c) {
+  if (typeof c.texteId !== "number") return "Livre : -";
+  const entry = catalog().find((e) => Number(e.id) === c.texteId);
+  const name = entry ? entry.name : "inconnu du catalogue";
+  const chapitre = typeof c.texteChapitre === "number" ? `, chapitre ${c.texteChapitre}` : "";
+  return `Livre : ${c.texteId} ${name}${chapitre}`;
+}
+
 function describeChiour(c) {
   const minutes = c.duration ? `${Math.round(c.duration / 60)} min` : "?";
   return `${c.slug}  [${c.published ? "publié" : "brouillon"}]  ${c.auteur ?? "sans auteur"}  ${minutes}  ${c.views ?? 0} vues  ${c.name}`;
@@ -535,6 +711,7 @@ commands["chiour:liste"] = async () => {
     publies: (c) => c.published,
     "sans-auteur": (c) => !c.auteurId,
     "sans-serie": (c) => !c.serieId,
+    "sans-livre": (c) => typeof c.texteId !== "number",
   };
   if (opts.filtre) {
     if (!filters[opts.filtre]) fail(`--filtre : ${Object.keys(filters).join(", ")}`);
@@ -556,6 +733,7 @@ commands["chiour:voir"] = async ([slug]) => {
     [
       describeChiour(c),
       `Série : ${c.serieId ?? "-"}${c.episode ? ` (épisode ${c.episode})` : ""}`,
+      describeTexte(c),
       `Catégories : ${(c.categories ?? []).join(", ") || "-"}`,
       `Audio : ${c.mediaUrl ?? "-"}`,
       "",
@@ -615,6 +793,7 @@ commands["chiour:modifier"] = async ([slug]) => {
     await checkSerie(opts.serie, auteurId);
     fields.serieId = opts.serie;
   }
+  Object.assign(fields, texteFields({ livre: opts.livre, chapitre: opts.chapitre }, catalog(), c));
   if (opts.publier) fields.published = true;
   if (opts.depublier) fields.published = false;
   if (fields.name === "") fail("le titre ne peut pas être vide.");
@@ -662,6 +841,7 @@ commands["chiour:ajouter"] = async ([file]) => {
   if (!opts.auteur) fail("--auteur <id> requis (voir auteur:liste).");
   const auteur = await getAuteur(opts.auteur);
   if (opts.serie) await checkSerie(opts.serie, auteur.id);
+  const texte = texteFields({ livre: opts.livre, chapitre: opts.chapitre }, catalog());
   const base = slugify(name);
   if (!base) fail("titre invalide.");
   const { db, FieldValue, bucket } = firebase();
@@ -702,6 +882,8 @@ commands["chiour:ajouter"] = async ([file]) => {
         niveau: opts.niveau?.trim() || null,
         serieId: opts.serie ?? null,
         episode: episodeOf(opts.episode),
+        texteId: texte.texteId ?? null,
+        texteChapitre: texte.texteChapitre ?? null,
         audioPath,
         mediaUrl,
         duration,
@@ -718,6 +900,17 @@ commands["chiour:ajouter"] = async ([file]) => {
       published,
     });
   }
+};
+
+// ---- Livres de la bibliothèque ----------------------------------------------------
+
+commands["livre:liste"] = async () => {
+  const found = searchCatalog(catalog(), opts.recherche ?? "");
+  const lines = found.map(
+    (e) =>
+      `${e.id}  ${e.type}  ${e.name}  (${e.livre}${e.totalSections > 1 ? `, ${e.totalSections} sections` : ""})`,
+  );
+  out(lines.length ? lines : ["Aucun livre."], found);
 };
 
 // ---- Auteurs et séries ---------------------------------------------------------
@@ -1035,22 +1228,34 @@ Informations
   info:voir <id>
   info:creer --type nouveaute|mise-a-jour|incident|question --titre … --texte …
              [--texte-fichier f.md] [--titre-en … --texte-en …] [--titre-he … --texte-he …]
-             [--lien /page|https://… --lien-texte …] [--version X.Y.Z]
+             [--lien /page|https://… --lien-texte …]
+             [--version X.Y.Z] (mise à jour : la version décrite)
+             [--corrige-dans X.Y.Z] (incident : la version qui le corrige)
+             [--choix "Libellé[|image.jpg|https://…]" …] [--choix-en … --choix-he …]
+             [--choix-multiples] (question : un sondage, de 2 à 8 choix)
              [--publier] [--notifier] [--date AAAA-MM-JJ]
   info:modifier <id> [mêmes options] [--publier|--depublier] [--resolu|--en-cours] [--notifier]
+                [--choix-unique] [--sondage-clos|--sondage-ouvert] [--sans-sondage]
   info:resoudre <id>
+  info:resultats <id>        (les réponses à un sondage)
   info:supprimer <id>
   info:depuis-release --tag vX.Y.Z [--brouillon] [--notifier] [--date …]
   info:depuis-release --version X.Y.Z --fichier note.md
 
 Chiourim
-  chiour:liste [--filtre brouillons|publies|sans-auteur|sans-serie] [--auteur <id>] [--recherche …]
+  chiour:liste [--filtre brouillons|publies|sans-auteur|sans-serie|sans-livre] [--auteur <id>]
+               [--recherche …]
   chiour:voir <slug>
   chiour:publier <slug>…     chiour:depublier <slug>…
   chiour:modifier <slug> [--titre … --description … --auteur <id> --serie <id>|--sans-serie
-                  --episode N --categories a,b --niveau … --publier|--depublier]
+                  --episode N --categories a,b --niveau … --livre <id>|aucun --chapitre N|aucun
+                  --publier|--depublier]
   chiour:ajouter <fichier.mp3> --titre … --auteur <id> [--description … --categories a,b
-                 --serie <id> --episode N --niveau … --duree <secondes> --publier]
+                 --serie <id> --episode N --niveau … --livre <id> --chapitre N
+                 --duree <secondes> --publier]
+
+Livres de la bibliothèque (pour --livre)
+  livre:liste [--recherche …]
 
 Auteurs et séries
   auteur:liste

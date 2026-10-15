@@ -80,11 +80,11 @@ const removeOverlay = pushOverlay(() => {
 /**
  * Fin de l'introduction, par la dernière page ou par un raccourci.
  *
- * « Composer ma lecture du jour » (via `daily`) est sur la page de
- * l'essentiel, après tout ce qu'il faut lire : il termine l'introduction
- * avant d'y conduire, sans les gestes, qu'on peut passer. Plus tôt, il la
- * coupait en deux (la page demande un compte, le routeur emmenait vers la
- * connexion, et l'introduction, notée comme vue, ne revenait jamais).
+ * « Me fixer un objectif » (via `daily`, le nom d'avant, quand il menait à
+ * la lecture du jour) est sur la page de l'essentiel, après tout ce qu'il
+ * faut lire : il termine l'introduction avant de conduire au premier
+ * objectif de Mon parcours, sans les gestes, qu'on peut passer. Plus tôt, il
+ * la coupait en deux (l'introduction, notée comme vue, ne revenait jamais).
  */
 function finish(via: string): void {
   const toDaily = via === "daily";
@@ -94,7 +94,7 @@ function finish(via: string): void {
     wants_daily_reading: toDaily,
   });
   completeOnboarding();
-  if (toDaily) void router.push("/bibliotheque/lecture-du-jour");
+  if (toDaily) void router.push("/parcours/nouveau");
 }
 
 function onConsent(newChoice: ConsentChoice): void {

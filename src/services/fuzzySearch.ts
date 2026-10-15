@@ -191,7 +191,11 @@ function tokenScore(
   if (field.words.some((w) => w.startsWith(norm))) return 95;
   if (!long && norm.length > 2 && field.compact.includes(norm)) return 85;
   if (field.wordKeys.some((k) => k.startsWith(key))) return 75;
-  if (!long && key.length > 2 && field.key.includes(key)) return 70;
+  // La clé de plusieurs mots collés (« babametsia ») se cherche elle aussi
+  // depuis un début de mot : au milieu d'un mot, « chabbat » (Habat) tombait
+  // dans « Ahavat » (aHabat) et ramenait le Chaar Ahavat Hachem.
+  if (!long && key.length > 2 && field.keyStarts.some((at) => field.key.startsWith(key, at)))
+    return 70;
   if (!typos || long || key.length < 4) return 0;
   const distance = approximateDistance(key, field.key, field.keyStarts);
   return distance <= (key.length < 8 ? 1 : 2) ? 50 - 10 * distance : 0;

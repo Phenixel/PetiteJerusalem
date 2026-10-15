@@ -78,6 +78,9 @@ const {
   buildCorpusBody,
   corpusJsonLd,
 } = await jiti.import("../src/content/etudeTexts.ts");
+const { SIDOUR_HUB_PATH, SIDOUR_SEO, buildSidourHubBody, sidourHubJsonLd } = await jiti.import(
+  "../src/content/sidourSeo.ts",
+);
 const { parseContent, resolveFilePath } = await jiti.import("../src/services/textService.ts");
 
 /** Read + parse a text file from `dist/texts`, memoized (Tehilim shares one file). */
@@ -253,8 +256,31 @@ function generateEtudePages(dist, template, lastmodOf) {
     sitemap.push({ path, priority: 0.7, changefreq: "monthly", lastmod: corpusDate });
   }
 
+  // Le Sidour : tous les textes de liturgie (tefilot, brahot, fêtes) sur une
+  // page, rangés comme dans l'app. Elle remplace les listes /bibliotheque/sidour,
+  // /moadim et /brahot, redirigées vers elle (firebase.json).
+  const sidourDate = lastmodOf([
+    "src/content/sidourSeo.ts",
+    "src/content/sidourGroups.ts",
+    "src/datas/textStudies.json",
+  ]);
+  writePage(dist, template, {
+    file: fileFor(SIDOUR_HUB_PATH),
+    path: SIDOUR_HUB_PATH,
+    title: SIDOUR_SEO.title,
+    description: SIDOUR_SEO.description,
+    bodyHtml: buildSidourHubBody(),
+    jsonLd: sidourHubJsonLd(),
+  });
+  sitemap.push({
+    path: SIDOUR_HUB_PATH,
+    priority: 0.8,
+    changefreq: "monthly",
+    lastmod: sidourDate,
+  });
+
   console.log(
-    `[prerender-seo] Generated ${sitemap.length} Bibliothèque page(s) (${LISTED_CORPORA.length} corpus lists).`,
+    `[prerender-seo] Generated ${sitemap.length} Bibliothèque page(s) (${LISTED_CORPORA.length} corpus lists, plus the Sidour).`,
   );
   return sitemap;
 }

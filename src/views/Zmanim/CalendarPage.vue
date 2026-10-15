@@ -220,31 +220,33 @@ const isPastRow = (row: CalendarRow): boolean =>
 /**
  * Ce qu'on vient chercher : la prochaine fête, et celle que l'adresse ouvre.
  *
- * Sa carte prend la couleur du thème, pleine, et son texte passe au blanc.
+ * Sa carte prend la couleur du thème, pleine, et son texte passe à la
+ * couleur qui s'écrit dessus.
  * Elle a porté un cadre et un fond teintés, tous deux en transparence, et ni
  * l'un ni l'autre ne la désignait : un cadre de plus dans une liste qui n'est
  * faite que de cadres passe inaperçu, et un fond à quelques pour cent de la
  * couleur ne se détache pas du beige. Une carte pleine, elle, se voit d'un
  * bout à l'autre de la page.
  *
- * Le blanc y descend en trois tons, comme sur le bandeau du profil, le seul
- * autre endroit où l'on écrit sur la couleur : le nom et les heures à plein,
- * les dates et les intitulés en dessous, la date hébraïque plus bas encore.
- * Sans quoi tout se vaudrait et la carte ne se lirait plus.
+ * Le texte posé sur la teinte (`on-brand` : le brun sur l'orange clair, le
+ * blanc sur une teinte de fête) y descend en trois tons, comme sur le
+ * bandeau du profil : le nom et les heures à plein, les dates et les
+ * intitulés en dessous, la date hébraïque plus bas encore. Sans quoi tout se
+ * vaudrait et la carte ne se lirait plus.
  */
 const isAhead = (key: string): boolean => key === nextKey.value || key === festivalKey.value;
 
 /** Le fond de la carte. */
-const surface = (key: string): string => (isAhead(key) ? "bg-primary" : "");
+const surface = (key: string): string => (isAhead(key) ? "bg-brand" : "");
 /** Le nom de la fête, et ses heures. */
-const ink = (key: string): string => (isAhead(key) ? "text-white" : "text-text-primary");
+const ink = (key: string): string => (isAhead(key) ? "text-on-brand" : "text-text-primary");
 /** Ce qui les accompagne : les dates civiles, les intitulés des heures. */
-const subInk = (key: string): string => (isAhead(key) ? "text-white/85" : "text-text-secondary");
+const subInk = (key: string): string => (isAhead(key) ? "text-on-brand/85" : "text-text-secondary");
 /** La date hébraïque, d'un ton plus bas. */
 const fadedInk = (key: string): string =>
-  isAhead(key) ? "text-white/70" : "text-text-secondary/80";
+  isAhead(key) ? "text-on-brand/70" : "text-text-secondary/80";
 /** Le filet qui sépare les heures des dates sur un téléphone. */
-const divider = (key: string): string => (isAhead(key) ? "border-white/25" : "border-line");
+const divider = (key: string): string => (isAhead(key) ? "border-on-brand/25" : "border-line");
 
 /** « Chabbat Roch Hachana » : le Chabbat qui prolonge une fête est du même bloc. */
 function title(entry: CalendarEntry): string {

@@ -1,4 +1,5 @@
 import type { CapacitorConfig } from '@capacitor/cli'
+import { ENV } from './scripts/lib/environments.mjs'
 
 /**
  * Capacitor emballe l'app Vue existante dans un shell natif iOS/Android.
@@ -11,8 +12,12 @@ import type { CapacitorConfig } from '@capacitor/cli'
  * changement.
  */
 const config: CapacitorConfig = {
+  // Toujours l'identifiant de production, même en staging : c'est aussi le
+  // package Java des sources natives (native/android/). L'app de staging
+  // reçoit le sien de setup-ios.mjs (bundle id) et setup-android.mjs
+  // (applicationId), voir docs/staging.md.
   appId: 'fr.petitejerusalem.app',
-  appName: 'Petite Jérusalem',
+  appName: ENV.appName,
   webDir: 'dist',
   // Pas de zoom de webview : il agrandit la page entière (barres comprises) et
   // la laisse décalée. Dans les pages de texte, le pincement règle la taille de

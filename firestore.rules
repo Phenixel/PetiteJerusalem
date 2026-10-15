@@ -274,9 +274,40 @@ service cloud.firestore {
     // le backoffice. Une requête publique doit donc filtrer sur
     // `published == true`. Écriture admin ; `notifiedAt` est posé par la
     // Cloud Function onAnnouncementWritten (SDK admin).
+    // Un sondage où l'on vote encore : publié, ouvert, des choix qui sont
+    // les siens, et le nombre de choix permis (un seul, sauf `multiple`).
+    function pollAcceptsVotes(announcement, choices) {
+      return announcement.published == true
+        && announcement.get('poll', null) != null
+        && announcement.poll.get('closed', false) != true
+        && choices.hasOnly(announcement.poll.get('optionIds', []))
+        && (choices.size() == 1 || announcement.poll.get('multiple', false) == true);
+    }
+
     match /announcements/{announcementId} {
       allow read: if resource.data.published == true || isAdmin();
       allow create, update, delete: if isAdmin();
+
+      // Les votes d'un sondage, un document par appareil (identifiant tiré au
+      // hasard et gardé sur l'appareil, voir useAnnouncements.answerPoll) :
+      // un nouveau vote remplace le précédent. Accepté seulement sur un
+      // sondage publié et ouvert ; un seul choix sauf sondage à choix
+      // multiples, et seulement parmi ses choix (`poll.optionIds`, posé à
+      // l'enregistrement). Personne ne relit les votes, sauf l'admin qui les
+      // compte. Sans compte, rien n'empêche un même appareil de voter sous
+      // plusieurs identifiants : c'est un sondage d'avis, pas un scrutin.
+      match /votes/{voterId} {
+        allow read: if isAdmin();
+        allow create, update: if voterId.size() >= 8 && voterId.size() <= 64
+          && request.resource.data.keys().hasOnly(['choices', 'votedAt'])
+          && request.resource.data.choices is list
+          && request.resource.data.choices.size() >= 1
+          && request.resource.data.choices.size() <= 8
+          && request.resource.data.votedAt == request.time
+          && pollAcceptsVotes(get(/databases/$(database)/documents/announcements/$(announcementId)).data,
+               request.resource.data.choices);
+        allow delete: if isAdmin();
+      }
     }
 
     // Préférences utilisateur (thème, lectures quotidiennes…) : privées
@@ -325,6 +356,20 @@ service cloud.firestore {
         // une clé courte, « posen » ou « ovadia ».
         && (!('zmanimOpinion' in request.resource.data) || (request.resource.data.zmanimOpinion is string && request.resource.data.zmanimOpinion.size() <= 20));
       allow delete: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Mon parcours (voir services/parcours/cloud.ts) : les objectifs par
+    // identifiant, et le journal des jours. Privé, comme les préférences. Les
+    // objectifs retirés restent, marqués : la borne est large. Les jours se
+    // comptent à 366 par an ; quatre mille, c'est plus de dix ans de suivi.
+    match /parcours/{userId} {
+      allow read, delete: if isAuthenticated() && request.auth.uid == userId;
+      allow create, update: if isAuthenticated()
+        && request.auth.uid == userId
+        && request.resource.data.keys().hasOnly(['v', 'objectives', 'days'])
+        && (!('v' in request.resource.data) || request.resource.data.v is int)
+        && (!('objectives' in request.resource.data) || (request.resource.data.objectives is map && request.resource.data.objectives.size() <= 400))
+        && (!('days' in request.resource.data) || (request.resource.data.days is map && request.resource.data.days.size() <= 4000));
     }
 
     // Toute autre collection : accès refusé par défaut (pas de règle catch-all).

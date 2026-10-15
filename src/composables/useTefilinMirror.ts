@@ -2,7 +2,8 @@ import { computed, ref } from "vue";
 import { analyticsService } from "../services/analyticsService";
 
 /**
- * Le miroir des téfilines, ouvert depuis le titre du passage où on les pose.
+ * Le miroir des téfilines, ouvert depuis le titre du passage où on les pose,
+ * le menu de lecture, ou la rangée d'outils de la page du Sidour.
  *
  * Le bayit de la tête se place à un endroit précis, et c'est le seul endroit
  * du corps qu'on ne voit pas : au-dessus de la naissance des cheveux, centré
@@ -20,8 +21,8 @@ const open = ref(false);
 /** La fenêtre est ouverte. */
 export const tefilinMirrorOpen = computed(() => open.value);
 
-/** D'où l'on ouvre le miroir : le titre du passage, ou le menu de lecture. */
-export type TefilinMirrorSource = "title" | "menu";
+/** D'où l'on ouvre le miroir : le titre du passage, le menu de lecture, le Sidour. */
+export type TefilinMirrorSource = "title" | "menu" | "sidour";
 
 export function openTefilinMirror(source: TefilinMirrorSource): void {
   open.value = true;

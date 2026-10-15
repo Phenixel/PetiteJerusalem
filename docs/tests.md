@@ -13,7 +13,7 @@ npm run test:unit          # vitest, mode interactif
 npx vitest run             # une seule passe, ce que fait `npm run verify`
 ```
 
-Les 219 fichiers vivent dans `src/__tests__/*.test.ts`. La configuration
+Les 257 fichiers vivent dans `src/__tests__/*.test.ts`. La configuration
 (`vitest.config.ts`) prend l'environnement `jsdom` par défaut ; les tests qui
 n'ont pas besoin du DOM (ceux qui lisent le dépôt ou lancent un script)
 commencent par `// @vitest-environment node`. Les dossiers `e2e/`, `android/`,
@@ -33,10 +33,15 @@ avec ce que chacun attend :
 | `searchInputs.test.ts` | Les barres de recherche lisent la frappe par `liveValue`, pas par `v-model` (qui attend la fin du mot sur un clavier à prédiction), et aucune ne filtre par un `toLowerCase().includes(…)` écrit sur place : toute recherche passe par `services/fuzzySearch`, qui trouve les autres graphies et pardonne les fautes (`docs/design.md`, « Une recherche trouve ce qu'on voulait dire »). |
 | `catalogSearch.test.ts` | Chaque clé des autres noms du catalogue (`src/datas/catalogAliases.ts`) désigne un texte ou un livre de `textStudies.json` : un texte renommé rendrait ses alias muets. Le même fichier rejoue sur le vrai catalogue ce que les gens tapent (« chabbat », « kidouchin », « psaume 23 », « genèse »). |
 | `cityAliases.test.ts` | Chaque ville des autres noms (`src/datas/cityAliases.ts`) figure dans `cities.json`, et « london », « ירושלים », « st etienne » trouvent leur ville en premier. |
+| `scopedStyles.test.ts` | Dans un `<style>` de composant, rien ne suit un `:global(…)` : le compilateur de Vue jette ce qui vient après la parenthèse, et `:global([dir="rtl"]) .mur` devient une règle sur tout élément en hébreu. Le sélecteur entier va dans `:global()`, ou l'ancêtre s'écrit sans lui (`:root.dark .planche`). |
+| `parcoursUnits.test.ts` | `src/datas/parcoursUnits.json` (ce que compte chaque chapitre des textes qu'un programme de Mon parcours peut finir) suit `public/texts/` : `node scripts/parcours-units.mjs` le réécrit, `--check` le vérifie. Un texte corrigé sans lui décalerait toutes les portions d'après (`docs/parcours.md`). |
 | `i18nUsage.test.ts` | Toute clé passée à `t("…")` ou `$t("…")` dans `src/` existe dans la locale française. |
 | `emailAuthErrors.test.ts` | Toute clé que `describeEmailAuthError` peut rendre (`EMAIL_AUTH_ERROR_KEYS`, les messages d'échec de l'écran de connexion) existe dans la locale française : elles sont choisies par une table, que `i18nUsage.test.ts` ne voit pas. |
 | `appLinks.test.ts` | La liste des chemins que l'app installée s'approprie (`scripts/lib/app-links.mjs`, servie sous `/.well-known/`) couvre les routes du routeur et n'attrape aucun chemin technique, `/__/auth/` en premier. |
 | `widgetParity.test.ts` | Les deux plateformes proposent les mêmes widgets : les noms du sélecteur iOS et Android coïncident, et le câblage Android est complet (provider, `appwidget-provider`, gabarit, libellés). |
+| `themeColors.test.ts` | Chaque couleur de thème se lit là où elle se pose (l'encre sur le fond, sur une carte et en sombre ; ce qui s'écrit sur la teinte, au repos et au survol), et rien dans `src` n'écrit du blanc ou l'encre sur la teinte (`bg-brand` avec `text-white` ou `text-primary`, ou une règle CSS qui pose `var(--color-brand)` en fond avec du blanc ou l'encre) : sur l'orange clair du thème par défaut, ni l'un ni l'autre ne se lirait (`docs/design.md`, « Les couleurs de thème »). |
+| `cardArt.test.ts` | Une carte qui porte son objet dessiné (`<CardArt`) n'a pas d'icône devant son titre (`docs/design.md`, « Une icône devant un titre doit dire quelque chose »). |
+| `playIcon.test.ts` | Le triangle de lecture (`play-solid`) a son centre de gravité au milieu de l'icône, et aucun `AppIcon` qui le porte n'ajoute de marge ni de décalage : il paraîtrait décalé dans son rond (`docs/design.md`, « Le triangle de lecture se centre sur son poids »). |
 | `seoTitles.test.ts` | Les titres du bloc `seo` échappent la barre verticale (`{'|'}`), que vue-i18n lirait sinon comme un séparateur de pluriel et tronquerait. |
 | `initialBundle.test.ts` | Le graphe des imports statiques depuis `src/main.ts` ne contient ni Firestore, ni hebcal, ni PostHog : ils se chargent à la demande, et un simple import ajouté dans un service touché par la racine les ramènerait dans le premier chargement. |
 | `prerenderSeo.test.ts` | Le prérendu (`seoPages.ts`) injecte titre, description, canonique, Open Graph, JSON-LD et corps explorable comme attendu, et les sitemaps se construisent à partir des mêmes listes de pages. |

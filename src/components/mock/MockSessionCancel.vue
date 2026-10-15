@@ -117,15 +117,15 @@ const { t } = useI18n();
 }
 
 .box-mine {
-  background-color: var(--color-primary);
-  color: #fff;
+  background-color: var(--color-brand);
+  color: var(--color-on-brand);
   animation: box-free 5.5s ease-in-out 1.2s infinite;
 }
 
 @keyframes box-free {
   0% {
-    background-color: var(--color-primary);
-    color: #fff;
+    background-color: var(--color-brand);
+    color: var(--color-on-brand);
   }
   3%,
   88% {
@@ -134,8 +134,8 @@ const { t } = useI18n();
   }
   95%,
   100% {
-    background-color: var(--color-primary);
-    color: #fff;
+    background-color: var(--color-brand);
+    color: var(--color-on-brand);
   }
 }
 

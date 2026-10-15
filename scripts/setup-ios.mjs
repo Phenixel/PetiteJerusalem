@@ -5,7 +5,8 @@
  * pendant iOS de scripts/setup-android.mjs).
  *
  * - Info.plist : nom affiché, langues, description d'usage de la position,
- *   background mode « remote-notification », déclaration de chiffrement
+ *   background modes « remote-notification » et « audio » (écoute des cours
+ *   écran verrouillé), déclaration de chiffrement
  *   (ITSAppUsesNonExemptEncryption) et schéma d'URL Google (REVERSED_CLIENT_ID)
  * - App.entitlements : Sign in with Apple + APNs (aps-environment piloté par
  *   la configuration : development en Debug, production en Release) +
@@ -48,11 +49,13 @@ import { createHash } from "node:crypto";
 import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { APP_LINK_DOMAIN } from "./lib/app-links.mjs";
+import { ENV, ENVIRONMENTS } from "./lib/environments.mjs";
 import { IOS_ICON_FILES, iosAppIconContents } from "./lib/app-icon.mjs";
 import {
   addAppSource,
   addWidgetExtension,
   APP_GROUP,
+  SOURCE_APP_GROUP,
   widgetEntitlements,
   registerViewController,
   widgetInfoPlist,
@@ -78,8 +81,12 @@ if (!existsSync(pbxprojPath)) {
   process.exit(1);
 }
 
-const BUNDLE_ID = "fr.petitejerusalem.app";
-const DISPLAY_NAME = "Petite Jérusalem";
+// Ceux de l'environnement visé (PJ_ENV) : « PJ Staging » a son propre bundle
+// id pour s'installer à côté de la vraie app (docs/staging.md).
+const BUNDLE_ID = ENV.appId;
+const DISPLAY_NAME = ENV.appName;
+/** L'appId de capacitor.config.ts, que `cap add` écrit dans le pbxproj. */
+const CAPACITOR_APP_ID = ENVIRONMENTS.production.appId;
 /** Widgets d'écran d'accueil : l'App ID de la cible d'extension. */
 const WIDGET_BUNDLE_ID = `${BUNDLE_ID}.${WIDGET_TARGET}`;
 /** Apple Watch : l'App ID de l'app de montre (suffixe imposé par Apple). */
@@ -235,12 +242,29 @@ addEntry(
   "NSCameraUsageDescription",
 );
 
-// Réception des notifications push quand l'app est en arrière-plan.
+// Modes d'arrière-plan :
+// - remote-notification : réception des notifications push app en arrière-plan ;
+// - audio : un cours continue de jouer écran verrouillé ou app quittée, et se
+//   commande depuis l'écran verrouillé et le centre de contrôle (la session
+//   média du WKWebView, voir src/services/mediaSession.ts). Sans ce mode, iOS
+//   coupe le son dès que l'app passe en arrière-plan.
+const BACKGROUND_MODES = ["remote-notification", "audio"];
 addEntry(
   "UIBackgroundModes",
-  "\t<array>\n\t\t<string>remote-notification</string>\n\t</array>",
-  "UIBackgroundModes (remote-notification)",
+  `\t<array>\n${BACKGROUND_MODES.map((mode) => `\t\t<string>${mode}</string>`).join("\n")}\n\t</array>`,
+  `UIBackgroundModes (${BACKGROUND_MODES.join(", ")})`,
 );
+// Un Info.plist d'avant l'écoute en arrière-plan a déjà la clé : addEntry
+// n'y touche pas, on complète le tableau.
+for (const mode of BACKGROUND_MODES) {
+  const modes = /<key>UIBackgroundModes<\/key>\s*<array>([\s\S]*?)<\/array>/.exec(infoPlist);
+  if (!modes || modes[1].includes(`<string>${mode}</string>`)) continue;
+  infoPlist = infoPlist.replace(
+    modes[0],
+    modes[0].replace(/(\s*)<\/array>$/, `\n\t\t<string>${mode}</string>$1</array>`),
+  );
+  console.log(`setup-ios: Info.plist, mode d'arrière-plan « ${mode} » ajouté`);
+}
 
 // Évite le questionnaire « export compliance » à chaque build TestFlight :
 // l'app n'utilise que le HTTPS du système (exemption standard).
@@ -534,13 +558,21 @@ const APP_PLUGIN_SOURCES = [
   "PjWatchPlugin.swift",
   "PjViewController.swift",
 ];
+/**
+ * Recopie une source Swift en y mettant l'App Group de l'environnement : les
+ * sources versionnées portent celui de la production en toutes lettres.
+ */
+function copySwiftSource(from, to) {
+  const source = readFileSync(from, "utf8");
+  writeFileSync(to, source.replaceAll(`"${SOURCE_APP_GROUP}"`, `"${APP_GROUP}"`));
+}
 for (const name of APP_PLUGIN_SOURCES) {
-  copyFileSync(join(nativeIosDir, "App", name), join(appDir, name));
+  copySwiftSource(join(nativeIosDir, "App", name), join(appDir, name));
 }
 
 const widgetDir = join(iosDir, "App", WIDGET_TARGET);
 mkdirSync(widgetDir, { recursive: true });
-copyFileSync(
+copySwiftSource(
   join(nativeIosDir, WIDGET_TARGET, `${WIDGET_TARGET}.swift`),
   join(widgetDir, `${WIDGET_TARGET}.swift`),
 );
@@ -640,7 +672,16 @@ addResource("PrivacyInfo.xcprivacy", "text.plist.xml");
 if (existsSync(gsDest)) addResource("GoogleService-Info.plist", "text.plist.xml");
 
 // Bundle id (cap add le pose depuis appId, on le rend explicite et idempotent).
-pbxproj = pbxproj.replaceAll("com.getcapacitor.App", BUNDLE_ID);
+// L'appId de capacitor.config.ts reste celui de la production en staging :
+// c'est lui que `cap add` écrit, et lui qu'il faut remplacer par celui de
+// l'environnement. Le point-virgule épargne les cibles suffixées (widgets,
+// montre), ajoutées plus bas avec leur propre identifiant.
+pbxproj = pbxproj
+  .replaceAll("com.getcapacitor.App", BUNDLE_ID)
+  .replaceAll(
+    `PRODUCT_BUNDLE_IDENTIFIER = ${CAPACITOR_APP_ID};`,
+    `PRODUCT_BUNDLE_IDENTIFIER = ${BUNDLE_ID};`,
+  );
 
 /** Pose ou remplace un réglage dans un bloc buildSettings. */
 function setSetting(block, key, value) {

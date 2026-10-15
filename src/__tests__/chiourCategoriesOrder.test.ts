@@ -23,6 +23,10 @@ const chiour = (categories: string[]): Chiour => ({
   auteurId: null,
   serieId: null,
   episode: null,
+  duration: null,
+  addedAt: null,
+  texteId: null,
+  texteChapitre: null,
 });
 
 describe("ordre des catégories", () => {

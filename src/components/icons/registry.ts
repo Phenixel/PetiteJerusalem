@@ -162,6 +162,11 @@ export const ICONS = {
   book: {
     body: '<path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/>',
   },
+  // Trois livres posés à plat l'un sur l'autre : la table d'étude, où l'on
+  // met de côté les textes en cours (voir useReadingTable).
+  books: {
+    body: '<rect x="3" y="16" width="18" height="5" rx="1"/><rect x="5" y="11" width="15" height="5" rx="1"/><rect x="4" y="6" width="14" height="5" rx="1"/><path d="M7 16v5"/><path d="M16 11v5"/><path d="M8 6v5"/>',
+  },
   "book-reader": {
     body: '<path d="M12 8v13"/><path d="M3 19a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/><circle cx="12" cy="3.5" r="1.5"/>',
   },
@@ -242,6 +247,33 @@ export const ICONS = {
     body: '<path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/>',
   },
   play: { body: '<polygon points="6 3 20 12 6 21 6 3"/>' },
+  // Les commandes du lecteur des cours, pleines : sur un bouton rond, un
+  // trait fin se perdait dans la couleur du thème. Le triangle est posé sur
+  // son centre de gravité (au tiers de sa largeur, côté base), pas sur sa
+  // boîte : dans un rond, c'est ainsi qu'il paraît au milieu. Un bouton
+  // n'ajoute donc pas de marge par-dessus (tenu par playIcon.test.ts).
+  "play-solid": {
+    filled: true,
+    body: '<path d="M7 4.4v15.2a1.2 1.2 0 0 0 1.84 1.01l11.9-7.6a1.2 1.2 0 0 0 0-2.02L8.84 3.39A1.2 1.2 0 0 0 7 4.4z"/>',
+  },
+  "pause-solid": {
+    filled: true,
+    body: '<rect x="5.5" y="3.5" width="4.5" height="17" rx="1.2"/><rect x="14" y="3.5" width="4.5" height="17" rx="1.2"/>',
+  },
+  "skip-back": {
+    filled: true,
+    body: '<path d="M19 4.6v14.8a1 1 0 0 1-1.55.83L7.6 13.6V19a1 1 0 0 1-2 0V5a1 1 0 0 1 2 0v5.4l9.85-6.63A1 1 0 0 1 19 4.6z"/>',
+  },
+  "skip-forward": {
+    filled: true,
+    body: '<path d="M5 4.6v14.8a1 1 0 0 0 1.55.83l9.85-6.63V19a1 1 0 0 0 2 0V5a1 1 0 0 0-2 0v5.4L6.55 3.77A1 1 0 0 0 5 4.6z"/>',
+  },
+  "rotate-ccw": {
+    body: '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>',
+  },
+  "rotate-cw": {
+    body: '<path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/>',
+  },
   pause: {
     body: '<rect x="14" y="4" width="4" height="16" rx="1"/><rect x="6" y="4" width="4" height="16" rx="1"/>',
   },

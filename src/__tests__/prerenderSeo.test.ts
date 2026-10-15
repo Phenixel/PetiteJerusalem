@@ -244,10 +244,16 @@ describe("seoPages buildSitemap", () => {
 });
 
 describe("seoPages maillage de la bibliothèque", () => {
-  it("/bibliotheque lie chaque page de corpus", () => {
+  it("/bibliotheque lie chaque page de corpus, et le Sidour", () => {
     const page = allPages.find((p) => p.path === "/bibliotheque")!;
-    for (const corpus of ["tehilim", "michna", "talmud", "tanakh", "sidour", "moadim", "brahot"]) {
+    for (const corpus of ["tehilim", "michna", "talmud", "tanakh"]) {
       expect(page.bodyHtml).toContain(`href="/bibliotheque/${corpus}"`);
+    }
+    // La liturgie n'a plus de liste par corpus (redirigées vers /sidour) :
+    // la bibliothèque mène à sa page.
+    expect(page.bodyHtml).toContain('href="/sidour"');
+    for (const corpus of ["sidour", "moadim", "brahot"]) {
+      expect(page.bodyHtml).not.toContain(`href="/bibliotheque/${corpus}"`);
     }
     // Les Sli'hot, le texte le plus cherché des Moadim, gardent leur lien
     // direct depuis la bibliothèque.

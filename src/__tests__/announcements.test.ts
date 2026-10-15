@@ -2,16 +2,29 @@ import { describe, expect, it } from "vitest";
 import {
   appliesToInstalled,
   FIRST_VISIT_WINDOW_MS,
+  fixedOnDevice,
   HOME_PREVIEW_MAX_AGE_MS,
   HOME_RECENT_WINDOW_MS,
   homeHighlights,
   isExternalLink,
+  isOngoingIncident,
   isNew,
+  linkWithPollPage,
   localized,
+  pollPageUrl,
+  pollToStore,
   sortAnnouncements,
   unreadAnnouncements,
+  visibleLink,
   type Announcement,
+  type Poll,
 } from "../services/announcements";
+import { parseAnnouncement } from "../services/announcementService";
+import {
+  linkWithPollPage as cliLinkWithPollPage,
+  pollFields,
+  pollPageUrl as cliPollPageUrl,
+} from "../../scripts/lib/backoffice.mjs";
 import {
   announcementTopic,
   buildAnnouncementMessages,
@@ -40,7 +53,9 @@ function make(overrides: Partial<Announcement> = {}): Announcement {
     updatedAt: null,
     link: null,
     version: null,
+    fixedIn: null,
     resolved: false,
+    poll: null,
     notify: false,
     notifiedAt: null,
     ...overrides,
@@ -160,13 +175,248 @@ describe("homeHighlights", () => {
     const news = make({ id: "n" });
     const h = homeHighlights([news, incident], NOW - 2 * DAY, null, NOW);
     expect(h[0].announcement.id).toBe("n");
-    expect(h[0].unreadCount).toBe(2);
+    // Réglé, il n'a plus rien à dire sur l'accueil : il n'y compte pas comme nouveauté.
+    expect(h[0].unreadCount).toBe(1);
   });
 
   it("ignore des notes de version pas encore installées", () => {
     const release = make({ kind: "release", version: "3.11.0" });
     expect(unreadAnnouncements([release], null, "3.10.0", NOW)).toEqual([]);
     expect(homeHighlights([release], null, "3.10.0", NOW)).toEqual([]);
+  });
+});
+
+describe("un incident corrigé par une version", () => {
+  const incident = make({ id: "i", kind: "incident", fixedIn: "3.10.11" });
+
+  it("reste en cours tant que la version du correctif n'est pas installée", () => {
+    expect(fixedOnDevice(incident, "3.10.10")).toBe(false);
+    expect(isOngoingIncident(incident, "3.10.10")).toBe(true);
+    const [first] = homeHighlights([incident], null, "3.10.10", NOW);
+    expect(first).toMatchObject({ announcement: incident, mode: "preview" });
+    // Lu, il reste en une ligne : l'appareil est toujours concerné.
+    const read = homeHighlights([incident], NOW, "3.10.10", NOW);
+    expect(read).toMatchObject([{ announcement: incident, mode: "compact" }]);
+  });
+
+  it("quitte l'accueil une fois le correctif installé, lu ou non", () => {
+    for (const installed of ["3.10.11", "3.11.0"]) {
+      expect(isOngoingIncident(incident, installed)).toBe(false);
+      expect(homeHighlights([incident], null, installed, NOW)).toEqual([]);
+      expect(homeHighlights([incident], NOW, installed, NOW)).toEqual([]);
+      expect(unreadAnnouncements([incident], null, installed, NOW)).toEqual([]);
+    }
+  });
+
+  it("reste en cours dans l'app tant qu'elle n'a pas lu sa version", () => {
+    // Ouvert depuis une notification, avant la liste : la version n'est pas encore lue.
+    expect(fixedOnDevice(incident, null, true)).toBe(false);
+    expect(isOngoingIncident(incident, null)).toBe(false); // le site, lui, est à jour
+  });
+
+  it("une version de correctif illisible ne corrige rien", () => {
+    for (const fixedIn of ["prochaine", "3.11", "3.11.0 (Android)"]) {
+      expect(fixedOnDevice({ ...incident, fixedIn }, "3.10.10")).toBe(false);
+      expect(fixedOnDevice({ ...incident, fixedIn }, null)).toBe(false);
+    }
+    expect(fixedOnDevice({ ...incident, fixedIn: "v3.10.11" }, "3.10.11")).toBe(true);
+  });
+
+  it("ne s'affiche pas sur le site, toujours à la dernière version", () => {
+    expect(fixedOnDevice(incident, null)).toBe(true);
+    expect(homeHighlights([incident], null, null, NOW)).toEqual([]);
+  });
+
+  it("laisse la place aux nouveautés là où il est corrigé", () => {
+    const news = make({ id: "n", publishedAt: new Date(NOW - 2 * DAY) });
+    const [first, second] = homeHighlights([incident, news], null, "3.10.11", NOW);
+    expect(first).toMatchObject({ announcement: news, mode: "preview", unreadCount: 1 });
+    expect(second).toBeUndefined();
+  });
+
+  it("sans version, un incident ne dépend que de « résolu »", () => {
+    const plain = make({ id: "p", kind: "incident" });
+    expect(fixedOnDevice(plain, null)).toBe(false);
+    expect(isOngoingIncident(plain, "9.9.9")).toBe(true);
+    expect(isOngoingIncident({ ...plain, resolved: true }, "9.9.9")).toBe(false);
+    // Une note de version n'est jamais « corrigée » : la règle ne vaut que pour un incident.
+    expect(fixedOnDevice(make({ kind: "release", fixedIn: "3.10.11" }), "3.10.11")).toBe(false);
+    // La version d'un incident ne vaut pas correctif : seul `fixedIn` compte.
+    expect(fixedOnDevice(make({ kind: "incident", version: "3.10.11" }), "3.10.11")).toBe(false);
+  });
+
+  it("réglé pour tous, il ne revient pas sur l'accueil, même jamais lu", () => {
+    const resolved = make({ id: "r", kind: "incident", resolved: true });
+    expect(homeHighlights([resolved], null, "3.10.11", NOW)).toEqual([]);
+    expect(homeHighlights([resolved], null, null, NOW)).toEqual([]);
+  });
+});
+
+describe("une note de version lue", () => {
+  const note = make({ id: "r", kind: "release", version: "3.10.11" });
+
+  it("ne revient pas sur l'accueil, même dans la semaine", () => {
+    expect(homeHighlights([note], NOW, "3.10.11", NOW)).toEqual([]);
+    expect(homeHighlights([note], NOW, null, NOW)).toEqual([]);
+  });
+
+  it("non lue, elle s'annonce toujours en aperçu", () => {
+    const [first] = homeHighlights([note], null, "3.10.11", NOW);
+    expect(first).toMatchObject({ announcement: note, mode: "preview" });
+  });
+
+  it("laisse la ligne de la semaine à la dernière annonce d'une autre nature", () => {
+    const news = make({ id: "n", publishedAt: new Date(NOW - 3 * DAY) });
+    const [first] = homeHighlights([note, news], NOW, "3.10.11", NOW);
+    expect(first).toMatchObject({ announcement: news, mode: "compact" });
+  });
+});
+
+describe("un sondage sur l'accueil", () => {
+  const poll: Poll = {
+    options: [
+      { id: "o1", label: { fr: "Oui" }, image: null },
+      { id: "o2", label: { fr: "Non" }, image: null },
+    ],
+    multiple: false,
+    closed: false,
+  };
+  const question = make({ id: "q", kind: "question", poll, publishedAt: new Date(NOW - 10 * DAY) });
+
+  it("non lu, il s'annonce en aperçu", () => {
+    const [first] = homeHighlights([question], NOW - 20 * DAY, null, NOW);
+    expect(first).toMatchObject({ announcement: question, mode: "preview" });
+  });
+
+  it("lu sans réponse, il reste en une ligne, au delà de la semaine", () => {
+    expect(homeHighlights([question], NOW, null, NOW)).toMatchObject([
+      { announcement: question, mode: "compact" },
+    ]);
+    // Une question sans sondage, elle, a quitté l'accueil après une semaine.
+    const plain = make({ id: "p", kind: "question", publishedAt: question.publishedAt });
+    expect(homeHighlights([plain], NOW, null, NOW)).toEqual([]);
+  });
+
+  it("pas plus d'un mois", () => {
+    const old = { ...question, publishedAt: new Date(NOW - HOME_PREVIEW_MAX_AGE_MS - DAY) };
+    expect(homeHighlights([old], NOW, null, NOW)).toEqual([]);
+  });
+
+  it("répondu, il quitte l'accueil, lu ou non", () => {
+    const answered = new Set(["q"]);
+    expect(homeHighlights([question], null, null, NOW, null, answered)).toEqual([]);
+    expect(homeHighlights([question], NOW, null, NOW, null, answered)).toEqual([]);
+  });
+
+  it("clos, il quitte l'accueil", () => {
+    const closed = { ...question, poll: { ...poll, closed: true } };
+    expect(homeHighlights([closed], null, null, NOW)).toEqual([]);
+    expect(homeHighlights([closed], NOW, null, NOW)).toEqual([]);
+  });
+
+  it("répondu, il laisse la place à la nouveauté de la semaine", () => {
+    const news = make({ id: "n", publishedAt: new Date(NOW - 2 * DAY) });
+    const [first] = homeHighlights([news, question], NOW, null, NOW, null, new Set(["q"]));
+    expect(first).toMatchObject({ announcement: news, mode: "compact" });
+  });
+});
+
+describe("le lien de la page de vote", () => {
+  const poll: Poll = {
+    options: [
+      { id: "o1", label: { fr: "Oui" }, image: null },
+      { id: "o2", label: { fr: "Non" }, image: null },
+    ],
+    multiple: false,
+    closed: false,
+  };
+
+  it("vise une page hors des liens d'application", () => {
+    expect(pollPageUrl("abc")).toBe("https://petite-jerusalem.fr/sondage/abc");
+  });
+
+  it("est posé sur un sondage sans lien, retiré avec le sondage", () => {
+    const link = linkWithPollPage("abc", null, poll);
+    expect(link?.url).toBe(pollPageUrl("abc"));
+    expect(linkWithPollPage("abc", link, null)).toBeNull();
+    // Un lien choisi par l'équipe reste, sondage ou non.
+    const own = { url: "/bibliotheque/sidour", label: { fr: "Sidour" } };
+    expect(linkWithPollPage("abc", own, poll)).toBe(own);
+    expect(linkWithPollPage("abc", own, null)).toBe(own);
+  });
+
+  it("est le même, posé par le backoffice ou par la ligne de commande", () => {
+    expect(cliPollPageUrl("abc")).toBe(pollPageUrl("abc"));
+    const cliPoll = pollFields({ choices: ["Oui", "Non"] }, null);
+    for (const link of [null, { url: "/sidour", label: { fr: "Sidour" } }]) {
+      expect(cliLinkWithPollPage("abc", link, cliPoll)).toEqual(
+        linkWithPollPage("abc", link, poll),
+      );
+      expect(cliLinkWithPollPage("abc", link, null)).toEqual(linkWithPollPage("abc", link, null));
+    }
+  });
+
+  it("s'enregistre avec la liste de ses choix, que les règles vérifient", () => {
+    expect(pollToStore(poll).optionIds).toEqual(["o1", "o2"]);
+    expect(pollToStore(poll).options).toBe(poll.options);
+  });
+
+  it("ne s'affiche pas là où le sondage s'affiche déjà", () => {
+    const a = make({
+      id: "abc",
+      kind: "question",
+      poll,
+      link: linkWithPollPage("abc", null, poll),
+    });
+    expect(visibleLink(a)).toBeNull();
+    // Sans sondage lisible (version qui ne le connaît pas), le lien reste.
+    expect(visibleLink({ ...a, poll: null })?.url).toBe(pollPageUrl("abc"));
+  });
+});
+
+describe("lecture d'une information", () => {
+  const doc = {
+    kind: "question",
+    title: { fr: "Quelle couverture ?" },
+    body: { fr: "Votez." },
+    published: true,
+    poll: {
+      options: [
+        { id: "o1", label: { fr: "Bleue", en: "Blue" }, image: "https://exemple.fr/b.jpg" },
+        { id: "o2", label: { fr: "Verte" }, image: "http://exemple.fr/v.jpg" },
+        { id: "o2", label: { fr: "Doublon" } },
+        { id: "o3", label: { fr: "Émulateur" }, image: "http://localhost:8472/v0/b/x/o/c.png" },
+        { label: { fr: "Sans identifiant" } },
+      ],
+      multiple: true,
+    },
+  };
+
+  it("lit un sondage, en écartant les choix mal formés", () => {
+    const a = parseAnnouncement("q", doc);
+    expect(a.poll).toEqual({
+      options: [
+        { id: "o1", label: { fr: "Bleue", en: "Blue" }, image: "https://exemple.fr/b.jpg" },
+        { id: "o2", label: { fr: "Verte" }, image: null },
+        // L'émulateur Storage sert en http : sans lui, rouvrir un sondage en local perdait ses images.
+        { id: "o3", label: { fr: "Émulateur" }, image: "http://localhost:8472/v0/b/x/o/c.png" },
+      ],
+      multiple: true,
+      closed: false,
+    });
+  });
+
+  it("ne voit pas de sondage avec moins de deux choix, ni hors d'une question", () => {
+    const one = { ...doc, poll: { options: [doc.poll.options[0]] } };
+    expect(parseAnnouncement("q", one).poll).toBeNull();
+    expect(parseAnnouncement("q", { ...doc, kind: "news" }).poll).toBeNull();
+  });
+
+  it("lit la version du correctif d'un incident, et d'un incident seulement", () => {
+    expect(parseAnnouncement("i", { kind: "incident", fixedIn: " 3.11.1 " }).fixedIn).toBe(
+      "3.11.1",
+    );
+    expect(parseAnnouncement("n", { kind: "news", fixedIn: "3.11.1" }).fixedIn).toBeNull();
   });
 });
 

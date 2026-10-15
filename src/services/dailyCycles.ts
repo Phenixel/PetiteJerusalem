@@ -476,6 +476,13 @@ export function activeOccasions(hd: HDate, il: boolean, walledCity = false): Set
     occ.add("hallel");
     const entier = hanukkah || (holHamoed && festival("Sukkot"));
     occ.add(entier ? "hallel-complet" : "hallel-abrege");
+    // Le Hallel abrégé (Roch Hodech, 'Hol haMoed de Pessah), hors d'Israël :
+    // on a pris l'habitude de le bénir quand même, au début et à la fin, là
+    // où l'usage d'Erets Israël le dit sans bénédiction. Le 'hazan seul dit
+    // les bénédictions, l'assemblée répond amen. Une clé nouvelle pour du
+    // contenu nouveau : les versions publiées n'en affichent rien, comme
+    // avant.
+    if (!entier && !il) occ.add("hallel-brakha-houts-laarets");
   }
   if (occ.has("shabbat") || occ.has("moed")) occ.add("shabbat-or-moed");
   // Les dix jours de pénitence : de Roch Hachana à Yom Kippour, 1 au 10 Tichri.
@@ -689,6 +696,36 @@ export function getTehilimOfHebrewDay(hd: HDate): TehilimCycle {
 /** Les psaumes du jour du mois hébraïque, au jour civil de `date`. */
 export function getTehilimOfDay(date: Date = new Date()): TehilimCycle {
   return getTehilimOfHebrewDay(new HDate(date));
+}
+
+/**
+ * Cycle hebdomadaire des Tehilim : le livre en une semaine, du dimanche
+ * (1 à 29) au Chabbat (120 à 150), selon la division d'usage.
+ */
+export const TEHILIM_WEEKLY: [number, number][] = [
+  [1, 29],
+  [30, 50],
+  [51, 72],
+  [73, 89],
+  [90, 106],
+  [107, 119],
+  [120, 150],
+];
+
+/** Les psaumes du jour de la semaine (0 dimanche à 6 Chabbat) ; `day` vaut le jour de la semaine, de 1 à 7. */
+export function getTehilimOfWeekday(weekday: number): TehilimCycle {
+  const index = ((weekday % 7) + 7) % 7;
+  return toCycle(index + 1, [TEHILIM_WEEKLY[index]]);
+}
+
+/**
+ * Les psaumes d'un jour civil (pris à midi) pour un cycle de Tehilim de Mon
+ * parcours : ceux du jour du mois hébraïque, ou ceux du jour de la semaine.
+ */
+export function tehilimOfCycle(cycle: "tehilim-month" | "tehilim-week", date: Date): TehilimCycle {
+  return cycle === "tehilim-week"
+    ? getTehilimOfWeekday(date.getDay())
+    : getTehilimOfHebrewDay(new HDate(date));
 }
 
 /**

@@ -6,9 +6,10 @@
  * - android/local.properties : chemin du SDK Android
  * - AndroidManifest.xml : permissions POST_NOTIFICATIONS (rappel de lecture,
  *   Android 13+), ACCESS_COARSE/FINE_LOCATION (horaires calculés pour la
- *   position de l'appareil) et READ/WRITE_EXTERNAL_STORAGE (téléchargement
- *   d'un livre hors ligne sous Android 11) : ces plugins livrent un manifest
- *   vide, l'app doit donc les déclarer elle-même. Et la petite icône des
+ *   position de l'appareil), READ/WRITE_EXTERNAL_STORAGE (téléchargement
+ *   d'un livre hors ligne sous Android 11) et FOREGROUND_SERVICE_MEDIA_PLAYBACK
+ *   (écoute des cours en arrière-plan, Android 14+) : ces plugins livrent un
+ *   manifest incomplet, l'app doit donc les déclarer elle-même. Et la petite icône des
  *   notifications push
  * - android/app/google-services.json : copié depuis la racine s'il s'y trouve
  *   (fichier téléchargé depuis la console Firebase, git-ignoré)
@@ -20,6 +21,8 @@
  *   et déclare les receivers dans le manifest (voir docs/app-widgets.md)
  * - App Links : intent-filter vérifié sur le domaine, un lien du site ouvre
  *   l'app quand elle est installée (voir docs/app-links.md)
+ * - Boussole du Kotel : le plugin PjCompass (étalonnage du magnétomètre),
+ *   copié avec les widgets et enregistré dans MainActivity
  * - Montre Wear OS : le module android/wear/ recopié depuis native/wear/,
  *   déclaré dans settings.gradle, ses icônes reprises de l'app et les Tehilim
  *   embarqués dans ses assets (voir docs/app-watch.md)
@@ -41,6 +44,7 @@ import {
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { buildAndroidIntentFilter, APP_LINK_DOMAIN } from "./lib/app-links.mjs";
+import { ENV } from "./lib/environments.mjs";
 import { buildTehilimAsset, TEHILIM_ASSET } from "./lib/watch-tehilim.mjs";
 import { ANDROID_DENSITIES, ANDROID_MONOCHROME, withMonochromeLayer } from "./lib/app-icon.mjs";
 
@@ -84,6 +88,11 @@ const PERMISSIONS = [
     comment: "Horaires (zmanim) calculés pour la position de l'appareil",
   },
   { name: "android.permission.ACCESS_FINE_LOCATION" },
+  {
+    name: "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
+    comment:
+      "Écoute des cours en arrière-plan : @capgo/capacitor-media-session tient la notification\n         de lecture dans un service de premier plan de type mediaPlayback. Son manifest ne\n         déclare que FOREGROUND_SERVICE ; depuis Android 14, démarrer ce service sans cette\n         permission-ci lève une SecurityException et ferme l'app à la première lecture.\n         Voir src/__tests__/mediaSessionAndroid.test.ts",
+  },
   {
     name: "android.permission.CAMERA",
     comment: "Miroir des téfilines (caméra frontale, rien n'est enregistré)",
@@ -162,7 +171,7 @@ if (existsSync(gsSource) && !existsSync(gsDest)) {
 } else if (!existsSync(gsDest)) {
   console.warn(
     "setup-android: ⚠️ google-services.json introuvable, l'auth native Google et le push ne fonctionneront pas.\n" +
-      "  Console Firebase → projet → app Android fr.petitejerusalem.app → télécharger google-services.json\n" +
+      `  Console Firebase → projet ${ENV.firebase.projectId} → app Android ${ENV.appId} → télécharger google-services.json\n` +
       "  puis le placer à la racine du repo ou dans android/app/.",
   );
 }
@@ -207,6 +216,33 @@ $1$2            signingConfig keystorePropertiesFile.exists() ? signingConfigs.r
     );
   writeFileSync(appBuildGradlePath, patched);
   console.log("setup-android: signingConfigs.release + versionName ajoutés à build.gradle");
+}
+
+// 4 bis. Identité de l'app selon l'environnement (PJ_ENV, voir
+//    scripts/lib/environments.mjs). `cap add` écrit l'applicationId et le nom
+//    de capacitor.config.ts, c'est-à-dire ceux de la production : l'app de
+//    staging reçoit ici les siens, pour s'installer à côté de la vraie
+//    (docs/staging.md). Le package Java, lui, ne change pas : les sources de
+//    native/android/ restent dans fr.petitejerusalem.app.
+{
+  const gradle = readFileSync(appBuildGradlePath, "utf8");
+  const withId = gradle.replace(/applicationId "[^"]+"/, `applicationId "${ENV.appId}"`);
+  if (withId !== gradle) {
+    writeFileSync(appBuildGradlePath, withId);
+    console.log(`setup-android: applicationId ${ENV.appId}`);
+  }
+  const stringsPath = join(androidDir, "app/src/main/res/values/strings.xml");
+  if (existsSync(stringsPath)) {
+    const strings = readFileSync(stringsPath, "utf8");
+    const named = strings.replace(
+      /(<string name="(?:app_name|title_activity_main)">)[^<]*(<\/string>)/g,
+      `$1${ENV.appName}$2`,
+    );
+    if (named !== strings) {
+      writeFileSync(stringsPath, named);
+      console.log(`setup-android: nom de l'app « ${ENV.appName} »`);
+    }
+  }
 }
 
 // 5. Modèle de keystore.properties (le vrai fichier reste git-ignoré et doit
@@ -311,11 +347,11 @@ if (styles.includes(noActionBarMarker) && !styles.includes("android:windowBackgr
     styles.replace(
       noActionBarMarker,
       `${noActionBarMarker}
-        <item name="android:statusBarColor">#F4F1EA</item>
+        <item name="android:statusBarColor">#FFF9F3</item>
         <item name="android:windowLightStatusBar">true</item>
         <item name="android:navigationBarColor">#FFFFFF</item>
         <item name="android:windowLightNavigationBar">true</item>
-        <item name="android:windowBackground">#F4F1EA</item>`,
+        <item name="android:windowBackground">#FFF9F3</item>`,
     ),
   );
   console.log("setup-android: couleurs de barre système ajoutées à styles.xml");
@@ -398,6 +434,16 @@ public class MainActivity extends BridgeActivity {
       `$1// Montre Wear OS (voir native/wear/ et docs/app-watch.md).$1registerPlugin(PjWatchPlugin.class);$1$2`,
     );
     console.log("setup-android: plugin PjWatch enregistré dans MainActivity");
+  }
+  if (!mainActivity.includes("PjCompassPlugin")) {
+    // L'étalonnage du magnétomètre, pour la précision de la boussole du
+    // Kotel (src/services/nativeCompassAccuracy.ts), même règle que
+    // ci-dessus.
+    mainActivity = mainActivity.replace(
+      /(\n\s*)(super\.onCreate\(savedInstanceState\);)/,
+      `$1// Précision de la boussole du Kotel (voir docs/app-native.md).$1registerPlugin(PjCompassPlugin.class);$1$2`,
+    );
+    console.log("setup-android: plugin PjCompass enregistré dans MainActivity");
   }
   if (!mainActivity.includes("setOverScrollMode")) {
     mainActivity = mainActivity.replace(
@@ -555,6 +601,13 @@ if (!appGradle.includes("play-services-wearable")) {
 const wearDir = join(androidDir, "wear");
 cpSync(join(root, "native/wear"), wearDir, { recursive: true });
 console.log("setup-android: module Wear OS copié depuis native/wear/");
+// La montre et le téléphone doivent partager l'applicationId pour se parler
+// (Data Layer) : celle de l'app de staging suit donc la sienne.
+{
+  const wearGradlePath = join(wearDir, "build.gradle");
+  const wearGradle = readFileSync(wearGradlePath, "utf8");
+  writeFileSync(wearGradlePath, wearGradle.replace(/applicationId "[^"]+"/, `applicationId "${ENV.appId}"`));
+}
 
 const settingsGradlePath = join(androidDir, "settings.gradle");
 const settingsGradle = readFileSync(settingsGradlePath, "utf8");

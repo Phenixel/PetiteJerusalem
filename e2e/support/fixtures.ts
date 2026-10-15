@@ -77,7 +77,11 @@ export const test = base.extend<Options & Fixtures>({
               "reading-menu",
               "reading-gestures",
               "share-reading",
-              "daily-reading",
+              // Le tutoriel de Mon parcours se montre aussi sur le site.
+              "parcours-home",
+              "parcours-page",
+              "parcours-create",
+              "parcours-program",
             ]),
           );
         } catch {

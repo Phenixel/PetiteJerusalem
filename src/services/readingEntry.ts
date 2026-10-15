@@ -11,7 +11,8 @@
  *
  *  - un **indice** laissé juste avant la navigation par ce que la page
  *    précédente ne peut pas dire par son adresse : un résultat de recherche,
- *    « Reprendre ma lecture », une notification. Il ne vaut que quelques
+ *    « Reprendre ma lecture », une notification, la table d'étude (un texte
+ *    mis de côté qu'on rouvre, voir useReadingTable). Il ne vaut que quelques
  *    secondes, pour qu'un indice oublié ne colle pas à une lecture suivante ;
  *  - sinon, **la page d'où l'on vient** (`history.state.back` de vue-router) :
  *    l'accueil, la bibliothèque, la lecture du jour, un autre texte... Pas de
@@ -27,9 +28,12 @@ export type ReadingEntry =
   | "search"
   | "resume"
   | "push"
+  | "table"
   | "home"
   | "library"
+  | "sidour"
   | "daily_reading"
+  | "parcours"
   | "chnei_mikra"
   | "tehilim_day"
   | "reading"
@@ -39,7 +43,7 @@ export type ReadingEntry =
   | "other";
 
 /** Ce que l'indice laissé avant la navigation peut valoir. */
-export type ReadingEntryHint = Extract<ReadingEntry, "search" | "resume" | "push">;
+export type ReadingEntryHint = Extract<ReadingEntry, "search" | "resume" | "push" | "table">;
 
 /** Au-delà, l'indice ne parle plus de la lecture qui s'ouvre. */
 export const READING_HINT_TTL_MS = 10_000;
@@ -67,6 +71,11 @@ export function readingEntryFromPath(backPath: string | null | undefined): Readi
   if (first === "share-reading" || first === "session-management") return "session";
   if (ZMANIM_SEGMENTS.has(first)) return "zmanim";
   if (CALENDAR_SEGMENTS.has(first)) return "calendar";
+  // La page du Sidour, d'où s'ouvrent les tefilot, les brahot et les textes
+  // des fêtes.
+  if (first === "sidour") return "sidour";
+  // Mon parcours : la journée, une tâche de l'accueil, la page d'un programme.
+  if (first === "parcours") return "parcours";
   if (first !== "bibliotheque") return "other";
   if (second === "lecture-du-jour") return "daily_reading";
   if (second === "chnei-mikra") return "chnei_mikra";

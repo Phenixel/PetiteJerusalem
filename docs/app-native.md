@@ -124,7 +124,10 @@ avec un leurre qui se comporte comme le vrai proxy, `then` compris.
   - `authoritative` : `tehilim.json` (~370 Ko) et `talmud-chapters.json`
     (~40 Ko), lus dans le binaire, qui fait foi pour eux ;
   - `revalidated` : le Sidour, les trois offices et les quatre textes qui les
-    accompagnent (`tefila/`, ~1 Mo). La copie du binaire s'ouvre tout de
+    accompagnent, et depuis la page du Sidour les treize brahot, Birkat
+    Hamazon en tête (`tefila/`, ~1,1 Mo) : tout ce que la page du Sidour liste
+    hors des fêtes s'ouvre sans réseau. Les textes des fêtes (Moadim) se
+    téléchargent d'eux-mêmes quand leur fête remonte en tête du Sidour. La copie du binaire s'ouvre tout de
     suite, sans rien attendre du réseau ; en fond, l'app demande au site s'il
     en sert une autre version (une correction de tefila n'attend pas une
     version de l'app) et la télécharge, vérifiée à l'empreinte : c'est elle
@@ -182,23 +185,26 @@ avec un leurre qui se comporte comme le vrai proxy, `then` compris.
 
 Vérification : télécharger un livre, activer le mode avion, l'ouvrir.
 
-## Lecture quotidienne hors-ligne
+## Mon parcours hors ligne
 
-La page **/bibliotheque/lecture-du-jour** est `offlineOk` dans l'app native :
-sans réseau, elle s'ouvre et se lit, à partir de deux copies locales.
+Les pages **/parcours** sont `offlineOk` dans l'app native, et se servent
+sans compte, comme la lecture du jour, **/bibliotheque/lecture-du-jour**,
+revenue sur sa page (les textes du jour à la suite). Le détail est dans
+`docs/parcours.md`.
 
-- **La liste et son suivi** : `userPreferencesService` garde le dernier
-  document `userPreferences` reçu en `localStorage` (clé `pj-preferences:<uid>`)
-  et le sert quand l'appareil est hors ligne. Il est effacé à la déconnexion et
-  à la suppression du compte.
-- **Les textes** : ceux que l'utilisateur a acceptés de télécharger. À l'ajout
-  d'un texte (ou à l'activation d'une lecture du moment) dont le livre n'est pas
-  sur l'appareil, une modale prévient qu'il ne sera pas lisible hors connexion
-  et propose de le télécharger. Un bandeau propose la même chose quand la
-  lecture du jour comporte des textes absents, la paracha de la semaine change
-  toute seule, par exemple. Rien n'est téléchargé sans cet accord :
-  `refreshStaleDownloads` ne fait que remettre au format courant des fichiers
-  **déjà** téléchargés.
+- **Le suivi** vit sur l'appareil (`localStorage`, clé `pj-parcours`, doublé
+  dans les Preferences de Capacitor, que le système ne vide pas avec le
+  stockage de la webview) : il sert dès le premier rendu, sans réseau ni
+  compte. Avec un compte, chaque changement part au document
+  `parcours/{uid}`, entrée par entrée ; une écriture qui échoue reste à faire
+  et repart au retour du réseau, après une nouvelle lecture du compte.
+- **Les textes** : ceux que l'utilisateur a acceptés de télécharger. Quand
+  des textes de la journée (la portion d'un programme, un texte du jour, les
+  psaumes du jour, la paracha de la semaine) ne sont pas sur l'appareil, Ma
+  journée le dit et propose de les télécharger
+  (`components/parcours/OfflineTextsNotice.vue`). Rien n'est téléchargé sans
+  cet accord : `refreshStaleDownloads` ne fait que remettre au format courant
+  des fichiers **déjà** téléchargés.
   Un livre supprimé pendant que cette mise à jour le reprend reste supprimé :
   `downloadFile` compte les suppressions demandées pour son chemin, et celle
   survenue en cours de route l'emporte (copie retirée, rien d'inscrit). Les
@@ -207,29 +213,8 @@ sans réseau, elle s'ouvre et se lit, à partir de deux copies locales.
   son tour. Tests : `offlineRemoveDuringDownload.test.ts`,
   `offlineRemoveDuringSync.test.ts`.
 
-**Synchronisation.** Deux règles, selon ce qu'on touche :
+**Synchronisation des lectures.**
 
-- **La composition de la liste appartient au serveur.** Hors connexion,
-  ajouter un texte, activer une lecture du moment ou régler les rappels affiche
-  « pas de connexion » au lieu d'enregistrer. Sans ce garde-fou, le cache
-  Firestore persistant (`src/firebase/firestore.ts`) garderait l'écriture en
-  attente et l'imposerait au serveur au retour du réseau, en écrasant ce qui a
-  pu changer ailleurs, `savePreferences` lève donc `OfflineWriteError` sans
-  rien tenter. Au retour du réseau, la page se réaligne sur le serveur.
-- **Une lecture faite ne se perd pas.** Le « marquer comme lu » s'enregistre
-  hors connexion (`saveDailyProgress` : suivi gardé en `localStorage`, clé
-  `pj-daily-progress-pending:<uid>`) et repart au serveur à la première lecture
-  réussie des préférences. `mergeDailyProgress` arbitre : **le « lu » gagne**
-  même jour, les deux suivis s'additionnent ; jours différents (la coupure a
-  passé minuit), le plus récent l'emporte ; le chnei mikra se fusionne à part,
-  à la semaine. Conséquence assumée : décocher hors ligne quelque chose que le
-  serveur sait déjà lu ne tient pas au retour du réseau.
-- **La page se relit au retour à l'écran.** Chaque coche réécrit tout le
-  suivi du jour : la lecture du jour relit donc le serveur quand on y revient,
-  sans quoi la coche suivante effaçait celle faite sur un autre appareil. Un
-  geste fait après minuit recharge d'abord le nouveau jour, puis s'y applique ;
-  au nouveau jour, ce qui était lu la veille se rouvre. Test :
-  `dailyReadingStaleState.test.ts`.
 - **Les marque-pages et positions de lecture s'écrivent après lecture du
   compte.** `readingProgressService` les fusionne avec ceux du compte à la
   connexion, et n'écrit rien au compte tant qu'il ne l'a pas lu : un échec de
@@ -473,6 +458,17 @@ le calcul est local, les coordonnées restent en `localStorage`.
   à `ios/App/App/Info.plist`. C'est indispensable, sans cette clé, iOS
   **ferme l'app** à la première demande de position.
 
+## Retours haptiques
+
+Le téléphone répond au doigt quand une tâche est faite, défaite, ou qu'un
+geste franchit son seuil (`src/services/haptics.ts`, vocabulaire dans
+`docs/design.md`, « Le toucher répond »). Le plugin `@capacitor/haptics`
+déclare lui-même la permission `VIBRATE` sur Android (permission normale,
+rien à demander) ; sur iOS, il passe par les générateurs de retour du
+système, qui suivent le réglage « Retours haptiques » de l'appareil. Le
+plugin se charge à la demande et se déstructure sur place (voir plus haut).
+Sur le site, `navigator.vibrate` prend le relais là où il existe.
+
 ## Retour arrière
 
 Chaque plateforme a son geste, et l'app doit câbler les deux.
@@ -512,6 +508,23 @@ mêmes payloads : le téléphone calcule, la montre affiche. Le transport change
 seul (Data Layer d'un côté, WatchConnectivity de l'autre), derrière le plugin
 maison PjWatch. Les deux plateformes sont scriptées de bout en bout, signature
 et publication comprises, voir `docs/app-watch.md`.
+
+## Précision de la boussole du Kotel
+
+Chrome donne le cap à la page, jamais sa précision, et la webview Android
+pas davantage. Le plugin maison PjCompass
+(`native/android/app/src/main/java/fr/petitejerusalem/app/PjCompassPlugin.java`)
+écoute le magnétomètre pendant que la boussole est ouverte et remonte son
+statut d'étalonnage (`SensorManager` : 3 haute, 2 moyenne, 1 basse,
+0 inutilisable), le même qui fait dire à Google Maps qu'il faut calibrer.
+Il s'éteint quand l'app passe en arrière-plan et reprend à son retour.
+`scripts/setup-android.mjs` le copie avec les widgets et l'enregistre dans
+`MainActivity`. Côté page, `src/services/nativeCompassAccuracy.ts` : rien
+hors de l'app Android, et rien non plus sur un binaire plus ancien que le
+plugin (la précision reste alors « inconnue », la boussole sert quand même).
+iOS n'en a pas besoin : Safari donne la précision avec le cap
+(`webkitCompassAccuracy`). Voir `docs/design.md`, « La boussole se demande
+en l'ouvrant, dit sa précision, et se tient à plat ».
 
 ## Icônes qui suivent le thème de l'appareil
 
@@ -575,6 +588,61 @@ branchent :
 
 La teinte du volet est l'or des pierres de l'icône (`#C79A3B`), déclarée aux
 deux endroits.
+
+La notification de lecture des cours (ci-dessous) prend la même silhouette, par
+une ressource qui remplace celle du plugin.
+
+## Écoute des cours en arrière-plan
+
+Un cours s'écoute comme une musique : il continue écran éteint ou app quittée,
+s'affiche dans la notification d'Android (et la carte du lecteur des réglages
+rapides, l'écran verrouillé) comme sur l'écran verrouillé et le centre de
+contrôle d'iOS, et s'y commande sans rouvrir l'app (lecture, pause, reculer de
+15 secondes, avancer de 30, cours précédent et suivant de la file, position).
+Le lecteur (`useAudioPlayer`) publie ce qui joue à `src/services/mediaSession.ts`,
+qui le transmet au système :
+
+- **site** : l'API Media Session du navigateur, comme avant ;
+- **Android** : la webview n'en fait rien. `@capgo/capacitor-media-session`
+  tient une vraie session média native, dans un service de premier plan de
+  type `mediaPlayback` qui garde aussi la lecture en vie. C'est l'état de
+  lecture qui ouvre et ferme la notification : « playing » ou « paused » la
+  montre, « none » (le lecteur fermé, ou « Arrêter » dans la notification) la
+  retire ;
+- **iOS** : le plugin repasse, à dessein, par l'API Media Session du WKWebView,
+  que le système relaie à l'écran verrouillé. Il y faut le mode d'arrière-plan
+  `audio`, sans lequel iOS coupe le son dès que l'app passe en arrière-plan.
+
+Ce que le natif exige, et que posent les scripts :
+
+- `setup-android.mjs` déclare `FOREGROUND_SERVICE_MEDIA_PLAYBACK` : le plugin
+  ne déclare que `FOREGROUND_SERVICE`, et depuis Android 14 démarrer son
+  service sans l'autre lève une `SecurityException`, l'app se fermerait à la
+  première lecture ;
+- `native/android/` remplace deux icônes du plugin par des ressources de même
+  nom : `ic_baseline_volume_up_24` (la petite icône : `ic_stat_pj` au lieu
+  d'un haut-parleur générique) et `ic_baseline_replay_30_24` (le bouton
+  « reculer », sans le « 30 » qui mentirait) ;
+- `setup-ios.mjs` ajoute `audio` aux `UIBackgroundModes`, y compris dans un
+  Info.plist qui avait déjà la clé.
+
+`src/__tests__/mediaSessionAndroid.test.ts` tient ces trois points ;
+`src/__tests__/mediaSessionNative.test.ts` tient le dialogue avec le plugin
+(ce qui part, les commandes reçues, la notification retirée à la fermeture et
+pas rouverte par la pause qui suit).
+
+La pochette affichée par le système est celle de l'app, dessinée en image
+(`components/chiourim/coverArtwork.ts`) : les pochettes de l'app sont du CSS,
+le système veut une image.
+
+Deux limites, propres au plugin : le canal de notification s'appelle
+« Playback » dans les réglages d'Android, et le texte de la notification est
+« artiste - album » (ici « le rav · la série - Petite Jérusalem »).
+
+À vérifier sur un appareil avant chaque publication qui touche au lecteur :
+lancer un cours, verrouiller l'écran, le commander depuis la notification (ou
+l'écran verrouillé), passer au suivant, fermer le lecteur et voir la
+notification partir.
 
 ## Liens du site qui ouvrent l'app
 

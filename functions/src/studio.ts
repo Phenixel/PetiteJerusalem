@@ -31,8 +31,9 @@ const AUDIO_EXTENSIONS = ["mp3", "m4a", "wav", "ogg", "aac"];
 
 // Bucket explicite (même valeur que le client et que la migration) : le
 // bucket "par défaut" résolu par firebase-admin peut différer (ancien suffixe
-// .appspot.com), notamment sous l'émulateur.
-const STORAGE_BUCKET = "petite-jerusalem-dev.firebasestorage.app";
+// .appspot.com), notamment sous l'émulateur. Celui de staging vient de
+// functions/.env.petite-jerusalem-staging (docs/staging.md).
+const STORAGE_BUCKET = process.env.STORAGE_BUCKET || "petite-jerusalem-dev.firebasestorage.app";
 
 function bucket() {
   return getStorage().bucket(STORAGE_BUCKET);
@@ -49,6 +50,14 @@ type ChiourMetadata = {
   newSerieName: string | null;
   episode: number | null;
   duration: number | null;
+  texteId: number | null;
+  texteChapitre: number | null;
+  /**
+   * Le client a-t-il envoyé le livre ? Un onglet du studio ouvert avant que
+   * le formulaire ne le propose n'envoie rien : sa mise à jour ne doit pas
+   * effacer le livre posé depuis le backoffice.
+   */
+  hasTexte: boolean;
 };
 
 /** Valide le token de studio et renvoie l'auteur associé. */
@@ -118,7 +127,48 @@ function parseMetadata(data: Record<string, unknown>): ChiourMetadata {
     }
   }
 
-  return { name, description, categories, niveau, serieId, newSerieName, episode, duration };
+  // Le livre de la bibliothèque que le cours étudie, et son chapitre (voir
+  // src/services/chiourTexte.ts). Le catalogue vit dans l'app : on ne vérifie
+  // ici que la forme, un identifiant inconnu n'y affiche simplement pas de lien.
+  let texteId: number | null = null;
+  if (data.texteId != null) {
+    if (typeof data.texteId !== "number" || !Number.isInteger(data.texteId) || data.texteId < 1 || data.texteId > 100000) {
+      throw new HttpsError("invalid-argument", "Champ invalide : texteId.");
+    }
+    texteId = data.texteId;
+  }
+  let texteChapitre: number | null = null;
+  if (data.texteChapitre != null) {
+    if (
+      texteId === null ||
+      typeof data.texteChapitre !== "number" ||
+      !Number.isInteger(data.texteChapitre) ||
+      data.texteChapitre < 0 ||
+      data.texteChapitre > 10000
+    ) {
+      throw new HttpsError("invalid-argument", "Champ invalide : texteChapitre.");
+    }
+    texteChapitre = data.texteChapitre;
+  }
+
+  return {
+    name,
+    description,
+    categories,
+    niveau,
+    serieId,
+    newSerieName,
+    episode,
+    duration,
+    texteId,
+    texteChapitre,
+    hasTexte: "texteId" in data,
+  };
+}
+
+/** Les champs du livre à écrire lors d'une mise à jour, s'ils ont été envoyés. */
+function texteUpdate(meta: ChiourMetadata): Record<string, unknown> {
+  return meta.hasTexte ? { texteId: meta.texteId, texteChapitre: meta.texteChapitre } : {};
 }
 
 /**
@@ -273,6 +323,8 @@ export const studioSubmitChiour = onCall(async (request) => {
       niveau: meta.niveau,
       serieId,
       episode: meta.episode,
+      texteId: meta.texteId,
+      texteChapitre: meta.texteChapitre,
       audioPath: audio.audioPath,
       mediaUrl: audio.mediaUrl,
       duration: meta.duration,
@@ -308,7 +360,8 @@ export const studioUpdateChiour = onCall(async (request) => {
 
   // Chiour publié : édition restreinte. L'auteur peut retoucher la
   // description, les catégories, la série (assigner, changer, retirer,
-  // y compris vers une nouvelle série) et le numéro d'épisode ; le titre,
+  // y compris vers une nouvelle série), le numéro d'épisode et le livre
+  // étudié avec son chapitre ; le titre,
   // le niveau et l'audio sont figés (c'est l'admin qui tranche).
   if (published) {
     if (data.stagingPath != null) {
@@ -324,6 +377,7 @@ export const studioUpdateChiour = onCall(async (request) => {
         categories: meta.categories,
         serieId,
         episode: meta.episode,
+        ...texteUpdate(meta),
         updatedAt: FieldValue.serverTimestamp(),
       },
       { merge: true },
@@ -340,6 +394,7 @@ export const studioUpdateChiour = onCall(async (request) => {
     niveau: meta.niveau,
     serieId,
     episode: meta.episode,
+    ...texteUpdate(meta),
     updatedAt: FieldValue.serverTimestamp(),
   };
 

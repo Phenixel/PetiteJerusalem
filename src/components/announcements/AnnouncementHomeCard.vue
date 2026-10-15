@@ -3,7 +3,14 @@ import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import AppIcon from "../icons/AppIcon.vue";
 import { dateTimeFormat } from "../../services/intlCache";
-import { ANNOUNCEMENT_ICONS, localized, type Announcement } from "../../services/announcements";
+import {
+  ANNOUNCEMENT_ICONS,
+  isOngoingIncident,
+  isPollOpen,
+  localized,
+  type Announcement,
+} from "../../services/announcements";
+import { useAnnouncements } from "../../composables/useAnnouncements";
 
 /**
  * Une information de l'équipe, telle que l'accueil la montre.
@@ -25,9 +32,10 @@ const props = defineProps<{
 defineEmits<{ (e: "open"): void }>();
 
 const { t, locale } = useI18n();
+const { installed } = useAnnouncements();
 
 const a = computed(() => props.announcement);
-const openIncident = computed(() => a.value.kind === "incident" && !a.value.resolved);
+const openIncident = computed(() => isOngoingIncident(a.value, installed.value));
 const title = computed(() => localized(a.value.title, locale.value));
 const excerpt = computed(() => localized(a.value.body, locale.value).replace(/\s+/g, " ").trim());
 const date = computed(() =>
@@ -35,10 +43,13 @@ const date = computed(() =>
     ? dateTimeFormat(locale.value, { day: "numeric", month: "long" }).format(a.value.publishedAt)
     : "",
 );
+const openPoll = computed(() => isPollOpen(a.value));
 const subtitle = computed(() =>
   openIncident.value
     ? t("announcements.home.incident")
-    : [t(`announcements.kinds.${a.value.kind}`), date.value].filter(Boolean).join(" · "),
+    : openPoll.value
+      ? t("announcements.home.poll")
+      : [t(`announcements.kinds.${a.value.kind}`), date.value].filter(Boolean).join(" · "),
 );
 </script>
 
@@ -64,7 +75,7 @@ const subtitle = computed(() =>
           <AppIcon :name="ANNOUNCEMENT_ICONS[a.kind]" :size="12" />
           {{ t(`announcements.kinds.${a.kind}`) }}
         </span>
-        <span class="chip bg-primary text-white">{{ t("announcements.new") }}</span>
+        <span class="chip bg-brand text-on-brand">{{ t("announcements.new") }}</span>
         <span class="ms-auto">{{ date }}</span>
       </span>
       <span
@@ -73,11 +84,13 @@ const subtitle = computed(() =>
       >
         {{ title }}
       </span>
-      <span class="mt-1 line-clamp-2 block text-sm leading-relaxed text-text-secondary">
+      <span class="mt-1 line-clamp-2 text-sm leading-relaxed text-text-secondary">
         {{ excerpt }}
       </span>
       <span class="mt-3 flex flex-wrap items-center justify-between gap-2 text-sm">
-        <span class="font-semibold text-primary">{{ t("announcements.home.readMore") }}</span>
+        <span class="font-semibold text-primary">{{
+          openPoll ? t("announcements.home.vote") : t("announcements.home.readMore")
+        }}</span>
         <span v-if="(unreadCount ?? 0) > 1" class="text-xs text-text-secondary">
           {{
             t(
@@ -93,7 +106,7 @@ const subtitle = computed(() =>
     <!-- Déjà lue : une ligne -->
     <span v-else class="flex items-center gap-3">
       <AppIcon
-        :name="openIncident ? 'alert-triangle' : 'bell'"
+        :name="openIncident ? 'alert-triangle' : openPoll ? 'list' : 'bell'"
         :size="20"
         class="shrink-0"
         :class="openIncident ? 'text-amber-600 dark:text-amber-400' : 'text-primary'"

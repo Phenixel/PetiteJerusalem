@@ -1,7 +1,16 @@
 <script setup lang="ts">
-import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from "vue";
+import { SIDOUR_PATH, isSidourPath } from "../../config/navSections";
+import {
+  ref,
+  computed,
+  defineAsyncComponent,
+  watch,
+  nextTick,
+  onMounted,
+  onBeforeUnmount,
+} from "vue";
 import { HDate } from "@hebcal/core";
-import { useRoute, useRouter, onBeforeRouteLeave } from "vue-router";
+import { useRoute, useRouter, onBeforeRouteLeave, onBeforeRouteUpdate } from "vue-router";
 import type { RouteLocationRaw } from "vue-router";
 import { useI18n } from "vue-i18n";
 import textStudiesJson from "../../datas/textStudies.json";
@@ -60,6 +69,7 @@ import {
   hubDescription,
   isLiturgy,
   latinName,
+  corpusOf,
   READING_LEAD,
   readingLead as readingLeadOf,
   SITE_URL,
@@ -89,6 +99,16 @@ import type { CommentarySummary } from "../../composables/useReadingSelection";
 import CommentaryPanel from "../../components/CommentaryPanel.vue";
 import MarkedText from "../../components/MarkedText.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
+// Les cours audio d'un texte : chargés à la demande, ils lisent Firestore et
+// ne servent qu'aux textes d'étude qui en ont.
+const TexteChiourim = defineAsyncComponent(
+  () => import("../../components/chiourim/TexteChiourim.vue"),
+);
+// La tâche de Mon parcours qui a mené à cette lecture : chargée à la demande,
+// elle tire le calendrier hébraïque, et ne sert qu'à qui vient du parcours.
+const ReaderTaskCard = defineAsyncComponent(
+  () => import("../../components/parcours/ReaderTaskCard.vue"),
+);
 import { useToast } from "../../composables/useToast";
 import { useReadingSize } from "../../composables/useReadingSize";
 import { readingProgressService } from "../../services/readingProgressService";
@@ -104,8 +124,20 @@ import { nightWithoutTachanun, withoutTachanun } from "../../services/tachanun";
 import { isWalledCityPlace, pastChatzotNight } from "../../services/zmanimService";
 import { useKeepAwake } from "../../composables/useKeepAwake";
 import { analyticsService } from "../../services/analyticsService";
+import { haptic } from "../../services/haptics";
 import { useLocalePath } from "../../composables/useLocalePath";
 import { useConfirm } from "../../composables/useConfirm";
+import {
+  hasTableRestore,
+  isOnTable,
+  refreshOnTable,
+  registerTableReader,
+  setAside,
+  takeTableRestore,
+  useReadingTable,
+  type TableText,
+} from "../../composables/useReadingTable";
+import { waitUntilPositionReachable } from "../../router/scrollRestoration";
 import {
   clearPassage,
   selectedPassageKey,
@@ -179,16 +211,9 @@ const {
 // navigation + metadata between the two.
 const isEtudeRoute = computed(() => route.params.corpus !== undefined);
 /** Corpus ayant leur page de bibliothèque (route `study-corpus`) : le retour
- * y ramène, plutôt qu'à l'accueil de la bibliothèque. */
-const LIBRARY_CORPORA = new Set([
-  "tehilim",
-  "michna",
-  "talmud",
-  "tanakh",
-  "moadim",
-  "brahot",
-  "sidour",
-]);
+ * y ramène, plutôt qu'à l'accueil de la bibliothèque. Les textes de liturgie
+ * (Sidour, Moadim, Brahot) remontent, eux, à la page du Sidour. */
+const LIBRARY_CORPORA = new Set(["tehilim", "michna", "talmud", "tanakh", "moussar"]);
 const etudeEntry = computed<TextStudyJsonEntry | null>(() =>
   isEtudeRoute.value
     ? entryByCorpusSlug(String(route.params.corpus), String(route.params.slug))
@@ -202,6 +227,10 @@ const sectionParam = computed(() =>
   route.params.section ? Number(route.params.section) : undefined,
 );
 const sessionSlug = computed(() => (route.query.session ? String(route.query.session) : null));
+/** L'objectif de Mon parcours qui a mené ici (`?objectif=`), s'il y en a un. */
+const parcoursObjective = computed(() =>
+  typeof route.query.objectif === "string" ? route.query.objectif : null,
+);
 
 /** Reading lead is shown on the public /bibliotheque pages (not in the session reader).
  * Les corpus liturgiques (non partageables) reçoivent la variante sans partage. */
@@ -511,7 +540,8 @@ const dafOffsets = computed<{ daf: string; offset: number }[]>(() => {
   const out: { daf: string; offset: number }[] = [];
   let offset = 0;
   for (const block of currentSection.value?.dafBlocks ?? []) {
-    out.push({ daf: block.daf, offset });
+    // Un bloc sans daf (traité rangé par chapitre) n'a rien à publier.
+    if (block.daf) out.push({ daf: block.daf, offset });
     offset += block.lines.length;
   }
   return out;
@@ -587,11 +617,19 @@ const showEncadrementAfter = computed(() => encadrement.value !== null && !hasNe
 // deux requêtes, et la première revenue écrirait le contenu de l'ancien texte
 // sous l'adresse du nouveau. Un résultat périmé est simplement ignoré.
 let loadSequence = 0;
+/**
+ * Le texte dont `content` est le contenu. En passant d'un texte à l'autre
+ * sans quitter la page, l'adresse change avant que le nouveau contenu
+ * n'arrive : la table d'étude ne doit pas replacer le texte attendu sur
+ * l'ancien (voir la reprise depuis la table, plus bas).
+ */
+let contentTextId: string | null = null;
 
 async function loadContent() {
   if (!textEntry.value) return;
   const sequence = ++loadSequence;
   const stale = () => sequence !== loadSequence;
+  const forText = textId.value;
   // Usage de la bibliothèque vs lecture dans le cadre d'une chaîne.
   analyticsService.capture("text_opened", {
     text_id: textEntry.value.id,
@@ -616,6 +654,7 @@ async function loadContent() {
   try {
     const loaded = await loadText(textEntry.value);
     if (stale()) return;
+    contentTextId = forText;
     content.value = loaded;
     // Sidour : le lundi et le jeudi, la lecture de la Torah de la semaine
     // (le début de la paracha, en trois montées) prend la place de son
@@ -653,6 +692,7 @@ async function loadContent() {
 // (next/previous) replaces it, since moving along is lateral navigation within
 // the same text rather than a new page to step back through.
 function goToSection(index: number, replace = false) {
+  rememberOnTable();
   userNavigated = true;
   const to =
     isEtudeRoute.value && textEntry.value
@@ -680,9 +720,13 @@ function isCurrentTextPath(path: string): boolean {
   return path === base || path.startsWith(`${base}/`);
 }
 
-/** La bibliothèque du corpus lu (Tehilim, Talmud…), à défaut son accueil. */
+/**
+ * La bibliothèque du corpus lu (Tehilim, Talmud…), à défaut son accueil ; le
+ * Sidour pour un texte de liturgie.
+ */
 function libraryLocation(): string {
   const corpus = isEtudeRoute.value ? String(route.params.corpus) : "";
+  if (isSidourPath(`/bibliotheque/${corpus}`)) return SIDOUR_PATH;
   return LIBRARY_CORPORA.has(corpus) ? `/bibliotheque/${corpus}` : "/bibliotheque";
 }
 
@@ -694,6 +738,7 @@ function libraryLocation(): string {
  * texte → chapitre, sans fin.
  */
 function goUp(target: RouteLocationRaw, preferHistory: boolean) {
+  rememberOnTable();
   const action = resolveBackNavigation({
     previousPath: previousHistoryPath(),
     parentPath: router.resolve(target).path,
@@ -770,6 +815,7 @@ const nextText = computed<TextStudyJsonEntry | null>(() =>
 // That way "Retour" (and the browser back button) returns to the list the
 // reader came from instead of stepping back through every text already read.
 function goToText(target: TextStudyJsonEntry) {
+  rememberOnTable();
   const to = isEtudeRoute.value
     ? hubPath(target)
     : { name: "text-reading", params: { textId: String(target.id) }, query: route.query };
@@ -845,6 +891,8 @@ const showResumeBanner = computed(() => {
   const p = savedPosition.value;
   if (!p || resumeDismissed.value || route.query.verset !== undefined || !content.value)
     return false;
+  // Rouvert depuis la table d'étude : il reprend déjà où on l'avait laissé.
+  if (hasTableRestore(route.path)) return false;
   if (isSingleSection.value) return p.line > 2;
   if (showSectionList.value) return true;
   return p.section !== sectionParam.value || p.line > 2;
@@ -904,6 +952,16 @@ watch([content, sectionParam, () => route.query.verset], ([loaded, , verset]) =>
   if (!loaded || verset === undefined) return;
   const line = Number(verset);
   if (Number.isInteger(line) && line >= 0) scrollToLine(line);
+});
+
+// Arrivée avec ?chapitre=N depuis un cours audio (voir chiourTexte) : sur un
+// texte d'une seule page, le N-ième bloc (le chapitre d'un livre des
+// Prophètes, la montée d'une paracha). On s'y rend comme à un verset.
+watch([content, () => route.query.chapitre], ([loaded, chapitre]) => {
+  if (!loaded || chapitre === undefined || route.query.verset !== undefined) return;
+  if (loaded.sections.length !== 1) return;
+  const block = loaded.sections[0].blocks?.[Number(chapitre) - 1];
+  if (block) scrollToLine(block.offset);
 });
 
 // Arrivée par un renvoi (#repère, voir TextLink) : la fin des Hochanot ramène
@@ -971,23 +1029,25 @@ function savePositionNow(line: number, sectionIndex = positionSection.value) {
   });
 }
 
+/**
+ * Le premier verset encore visible sous l'en-tête : c'est là qu'on reprendra,
+ * que ce soit par la reprise de lecture ou par la table d'étude.
+ */
+function firstVisibleVerse(root: ParentNode = document): HTMLElement | null {
+  for (const el of root.querySelectorAll<HTMLElement>("[data-line]")) {
+    if (el.getBoundingClientRect().bottom >= 96) return el;
+  }
+  return null;
+}
+
 function capturePosition() {
   if (!currentSection.value || showSectionList.value) return;
-  const els = document.querySelectorAll<HTMLElement>("[data-line]");
-  if (els.length === 0) {
+  if (!document.querySelector("[data-line]")) {
     // Talmud : pas d'éléments par verset, on retient le chapitre.
     savePositionNow(0);
     return;
   }
-  // Premier verset encore visible sous l'en-tête : c'est là qu'on reprendra.
-  let line = 0;
-  for (const el of els) {
-    if (el.getBoundingClientRect().bottom >= 96) {
-      line = Number(el.dataset.line ?? 0);
-      break;
-    }
-  }
-  savePositionNow(line);
+  savePositionNow(Number(firstVisibleVerse()?.dataset.line ?? 0));
 }
 
 // La position de lecture suit l'image partagée du défilement (useScrollFrame) :
@@ -1007,6 +1067,9 @@ function onScroll() {
   scrollSaveTimer = window.setTimeout(() => {
     scrollSaveTimer = null;
     capturePosition();
+    // Un texte posé sur la table suit la lecture : rouvert, il revient là
+    // même si l'app a été fermée entre-temps.
+    if (isOnTable(textId.value)) refreshOnTable(tableSnapshot(true));
   }, 600);
 }
 
@@ -1023,6 +1086,211 @@ watch(currentSection, (section) => {
   const deepElsewhere = saved !== null && saved.line > 2 && saved.section !== positionSection.value;
   if (!deepElsewhere) savePositionNow(0);
 });
+
+// --- La table d'étude (voir useReadingTable) ---
+// On met le texte de côté pour en consulter un autre ; il garde l'endroit
+// exact où on l'a laissé : le verset en haut de l'écran, à sa hauteur.
+const { texts: tableTexts } = useReadingTable();
+
+/**
+ * Pas dans une chaîne de lecture : on y lit sa part, on ne l'emporte pas. Ni
+ * sur un texte du Sidour (une tefila, une brakha, un texte de fête) : on y
+ * vient prier, d'un bout à l'autre, pas étudier en passant d'un livre à
+ * l'autre ; le Sidour a sa page à lui.
+ */
+const canSetAside = computed(
+  () => !!textEntry.value && !!content.value && sessionSlug.value === null && !isLiturgyText.value,
+);
+
+/** Le haut du texte dans le document : la table y compte son défilement. */
+function readingTop(): number {
+  return (readingRoot.value?.getBoundingClientRect().top ?? 0) + window.scrollY;
+}
+
+/**
+ * Ce que la table retient du texte à l'écran. `refresh` : la mise à jour
+ * d'un texte déjà posé, qui ne se fait que pendant la lecture. Remonté à la
+ * liste des chapitres, on a refermé le livre sans perdre sa page : la table
+ * garde le chapitre où l'on lisait.
+ */
+function tableSnapshot(refresh = false): TableText | null {
+  const entry = textEntry.value;
+  if (!entry || !content.value || !canSetAside.value) return null;
+  if (refresh && showSectionList.value) return null;
+  if (contentTextId !== textId.value) return null;
+  let line: number | null = null;
+  let offset = 0;
+  // La page où l'on en est, telle que la table la montre : sa première ligne.
+  let excerpt = "";
+  let daf = "";
+  const root = readingRoot.value;
+  if (currentSection.value && !showSectionList.value) {
+    // Le premier verset encore visible sous l'en-tête, comme la reprise.
+    const verse = root ? firstVisibleVerse(root) : null;
+    if (verse) {
+      line = Number(verse.dataset.line ?? 0);
+      offset = verse.getBoundingClientRect().top;
+      excerpt = (verse.querySelector(".reading-he, .reading-tl") ?? verse).textContent ?? "";
+    }
+    // Une Guemara n'a pas de versets repérés : le daf lu est le dernier dont
+    // le titre est passé sous l'en-tête, et sa page commence à son titre.
+    if (line === null && content.value.type === "Talmud Bavli") {
+      let current: HTMLElement | null = null;
+      for (const label of root?.querySelectorAll<HTMLElement>("[data-block-anchor]") ?? []) {
+        if (label.getBoundingClientRect().top <= 140 || !current) current = label;
+        else break;
+      }
+      daf = current?.textContent?.trim() ?? "";
+      excerpt = current?.nextElementSibling?.textContent ?? "";
+    }
+  }
+  const section =
+    currentSection.value && !isSingleSection.value && !showSectionList.value
+      ? currentSection.value
+      : null;
+  // Où l'on reprendra : « Chapitre 4 · verset 12 », « Daf 2b ».
+  const place = daf
+    ? daf
+    : line !== null
+      ? placeLabel(positionSection.value, line)
+      : section
+        ? sectionLabel(section)
+        : "";
+  // Le livre, en latin (« Berechit », « Zeraim ») : la table le dit au-dessus
+  // du nom, comme la tête de la page de lecture.
+  const livre = String(entry.livre ?? "");
+  return {
+    key: textId.value,
+    path: canonicalReadingPath.value,
+    // Le nom latin, court dans la barre (« Berakhot », et non « ברכות
+    // (Berakhot) », que le sens de lecture retourne ; « Tehilim 119 », sans
+    // son numéro en lettres) ; une Michna le dit, pour ne pas se confondre
+    // avec le traité du Talmud de même nom.
+    title: entry.type === "Mishna" ? `Michna ${latinName(entry)}` : latinName(entry),
+    place,
+    book: (livre.match(/\(([^)]+)\)\s*$/)?.[1] ?? livre).trim(),
+    excerpt: excerpt.replace(/\s+/g, " ").trim().slice(0, 160),
+    corpus: isEtudeRoute.value ? String(route.params.corpus) : (corpusOf(entry) ?? ""),
+    line,
+    offset,
+    // Compté depuis le haut du texte, et non de la page : ce qui le précède
+    // (une page qui s'en va, un bandeau) ne le décale pas.
+    scrollY: window.scrollY - readingTop(),
+    at: Date.now(),
+  };
+}
+
+/**
+ * Mettre de côté : le texte rejoint la table (ou y retient sa page), la page
+ * se réduit jusqu'à la barre du bas, et l'on retrouve la bibliothèque pour
+ * en chercher un autre.
+ */
+function setTextAside(from: "header" | "menu") {
+  const alreadyOnTable = isOnTable(textId.value);
+  // Depuis la liste des chapitres, un texte déjà posé garde le chapitre où
+  // l'on lisait : on le range sans rien en changer.
+  const text =
+    alreadyOnTable && showSectionList.value
+      ? (tableTexts.value.find((t) => t.key === textId.value) ?? null)
+      : tableSnapshot();
+  if (!text) return;
+  const rect = readingRoot.value?.getBoundingClientRect();
+  const top = rect ? Math.max(rect.top, 0) : 0;
+  const bottom = rect ? Math.min(rect.bottom, window.innerHeight) : 0;
+  setAside(
+    text,
+    rect && bottom > top ? { top, left: rect.left, width: rect.width, height: bottom - top } : null,
+  );
+  analyticsService.capture("text_set_aside", {
+    text_id: text.key,
+    corpus: text.corpus,
+    texts_count: tableTexts.value.length,
+    from,
+    already_on_table: alreadyOnTable,
+  });
+  void router.push("/bibliotheque");
+}
+
+// Le texte à l'écran se fait connaître de la table : elle le marque
+// « Ouvert », et peut l'y poser depuis son panneau. Pas en chaîne de lecture.
+let unregisterTableReader: (() => void) | null = null;
+onMounted(() => {
+  if (sessionSlug.value !== null) return;
+  unregisterTableReader = registerTableReader({
+    get key() {
+      return textId.value;
+    },
+    snapshot: tableSnapshot,
+  });
+});
+/** La page est démontée : une reprise encore en attente n'a plus d'objet. */
+let readerGone = false;
+onBeforeUnmount(() => {
+  readerGone = true;
+  unregisterTableReader?.();
+});
+
+// En quittant un texte posé sur la table (un autre texte, un autre chapitre,
+// la bibliothèque), il retient sa page : la page à l'écran est encore la sienne.
+// Les boutons de la page (chapitre suivant, « Retour », texte voisin) la
+// remettent en haut avant que la navigation ne parte : ils la font retenir
+// d'abord, et la garde de route, qui ne verrait plus que le haut de page,
+// s'abstient alors.
+function rememberOnTable() {
+  if (Date.now() - programmaticScrollAt < 300) return;
+  if (isOnTable(textId.value)) refreshOnTable(tableSnapshot(true));
+}
+onBeforeRouteLeave(rememberOnTable);
+onBeforeRouteUpdate(rememberOnTable);
+
+// Rouvert depuis la table : une fois le chapitre rendu, le verset retrouvé
+// revient à la hauteur où on l'avait laissé ; sans verset repéré (Guemara),
+// le défilement de la page. Le routeur n'a pas remis la page en haut
+// (hasTableRestore). Comme une reprise, ce n'est pas encore une lecture.
+watch(
+  [content, currentSection, () => route.path],
+  async ([loaded]) => {
+    if (!loaded || contentTextId !== textId.value) return;
+    const text = takeTableRestore(route.path);
+    if (!text) return;
+    resumeDismissed.value = true;
+    awaitingReaderGesture = true;
+    await nextTick();
+    await waitUntilPositionReachable(readingTop() + text.scrollY);
+    // L'attente peut durer : le lecteur a pu défiler, changer de texte ou
+    // quitter la page entre-temps. La table ne reprend alors pas la main.
+    const stillHere = () =>
+      !readerGone &&
+      awaitingReaderGesture &&
+      route.path === text.path &&
+      contentTextId === textId.value;
+    if (!stillHere()) return;
+    const place = () => {
+      const verse =
+        text.line !== null
+          ? readingRoot.value?.querySelector<HTMLElement>(`[data-line="${text.line}"]`)
+          : null;
+      const top = verse
+        ? verse.getBoundingClientRect().top + window.scrollY - text.offset
+        : readingTop() + text.scrollY;
+      markProgrammaticScroll();
+      window.scrollTo({ top: Math.max(0, top) });
+    };
+    place();
+    // App native : la page qu'on quitte reste dans le document le temps de
+    // sa transition, au-dessus du texte (App.vue) ; à son départ, le texte
+    // remontait de toute sa hauteur. Il se repose tant que le texte bouge
+    // encore dans la page, et que le lecteur n'y a pas touché.
+    let lastTop = readingTop();
+    for (let i = 0; i < 12 && stillHere(); i++) {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      const top = readingTop();
+      if (top !== lastTop && stillHere()) place();
+      lastTop = top;
+    }
+  },
+  { flush: "post" },
+);
 
 // --- Marque-pages (voir useVerseBookmarks) ---
 function isLineBookmarked(line: number): boolean {
@@ -1417,6 +1685,7 @@ async function toggleRead() {
   isReserving.value = true;
   try {
     await sessionService.markReservationAsCompleted(session.value.id, r.id, next);
+    haptic(next ? "done" : "undo");
     r.isCompleted = next;
     // La transaction a effacé l'échéance du tirage : l'état local doit suivre,
     // sinon « remettre en non lu » ferait réapparaître une réservation périmée
@@ -2007,10 +2276,22 @@ watch(textId, (_, previousTextId) => {
     class="mx-auto px-6 py-12 max-w-3xl w-full"
     :class="{ 'study-open': studyLine !== null }"
   >
-    <button @click="exitReading" class="back-link mb-8">
-      <AppIcon name="chevron-left" :size="14" />
-      {{ sessionSlug ? t("textReading.backToSession") : t("textReading.back") }}
-    </button>
+    <div class="mb-8 flex items-center justify-between gap-3">
+      <button @click="exitReading" class="back-link">
+        <AppIcon name="chevron-left" :size="14" />
+        {{ sessionSlug ? t("textReading.backToSession") : t("textReading.back") }}
+      </button>
+      <!-- La table d'étude : on pose ce texte pour en ouvrir un autre. -->
+      <button
+        v-if="canSetAside"
+        type="button"
+        class="btn btn-soft !px-3 !py-1.5 text-sm"
+        @click="setTextAside('header')"
+      >
+        <AppIcon name="books" :size="15" class="text-primary" />
+        {{ t("readingTable.setAside") }}
+      </button>
+    </div>
 
     <!-- Text not in catalog -->
     <div v-if="!textEntry" class="flex flex-col items-center justify-center py-16 text-center">
@@ -2090,6 +2371,13 @@ watch(textId, (_, previousTextId) => {
       <!-- Passage list (multi-section texts) -->
       <div v-if="showSectionList">
         <ReadingNav v-if="prevText || nextText" v-bind="siblingNavProps" class="mb-8" />
+        <!-- Les cours audio sur ce livre, avant ses chapitres -->
+        <TexteChiourim
+          v-if="textEntry && !isLiturgyText && !isSessionMode"
+          :entry="textEntry"
+          :chapitre="null"
+          class="mb-10"
+        />
         <p class="text-sm text-text-secondary mb-4">
           {{ t("textReading.sectionsCount", { count: content.sections.length }) }}
         </p>
@@ -2416,6 +2704,13 @@ watch(textId, (_, previousTextId) => {
           v-model:reservation-form="reservationForm"
         />
 
+        <!-- Venu de Mon parcours : la tâche du jour se coche là où l'on finit. -->
+        <ReaderTaskCard
+          v-if="parcoursObjective && !isSessionMode"
+          :objective-id="parcoursObjective"
+          class="mt-12"
+        />
+
         <!-- Sidour : à la fin de Min'ha, un geste suffit pour enchaîner
              avec Arvit. -->
         <RouterLink
@@ -2437,6 +2732,14 @@ watch(textId, (_, previousTextId) => {
             </span>
           </span>
         </RouterLink>
+
+        <!-- Les cours audio sur ce chapitre (ou ce texte), une fois lu -->
+        <TexteChiourim
+          v-if="textEntry && !isLiturgyText && !isSessionMode"
+          :entry="textEntry"
+          :chapitre="isSingleSection ? null : currentSection.index"
+          class="mt-12"
+        />
 
         <!-- Bottom navigation -->
         <ReadingNav v-if="!isSingleSection" v-bind="sectionNavProps" class="mt-12" />
@@ -2486,9 +2789,11 @@ watch(textId, (_, previousTextId) => {
         :share-title="shareTitle"
         :share-url="canonicalUrl"
         :concealed="studyLine !== null || (!sideBySide && selectedPassageKey !== null)"
+        :set-aside="canSetAside"
         @update:phonetic="setReadingMode($event ? 'phonetic' : 'hebrew')"
         @update:page-form-active="setReadingMode($event ? 'page' : 'hebrew')"
         @download="toggleDownload()"
+        @set-aside="setTextAside('menu')"
       />
       <ReadingProgressBar />
       <!-- Les gestes de lecture, une ouverture après le menu (gesturesTip). -->

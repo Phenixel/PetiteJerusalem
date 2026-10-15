@@ -19,7 +19,7 @@
  *
  * Voir docs/design.md, « Le profil de l'app est une liste, pas un menu ».
  */
-import { computed, onMounted, onUnmounted, ref } from "vue";
+import { computed, defineAsyncComponent, onMounted, onUnmounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { authService, type User } from "../../../services/authService";
 import { analyticsService } from "../../../services/analyticsService";
@@ -43,6 +43,13 @@ import type { IconName } from "../../../components/icons/registry";
 import HolidayOrnaments from "../../../components/holiday/HolidayOrnaments.vue";
 import SettingsGroup from "../../../components/settings/SettingsGroup.vue";
 import SettingsRow from "../../../components/settings/SettingsRow.vue";
+// Chargée à la demande : Mon parcours tire le calendrier hébraïque.
+const ProfileStreakPill = defineAsyncComponent(
+  () => import("../../../components/parcours/ProfileStreakPill.vue"),
+);
+const ProfileParcoursRow = defineAsyncComponent(
+  () => import("../../../components/parcours/ProfileParcoursRow.vue"),
+);
 
 const { t } = useI18n();
 const toast = useToast();
@@ -61,7 +68,7 @@ const { activeHolidayTheme } = useHolidayTheme();
 // Ce que le compte apporte : les mêmes entrées que l'invitation du site.
 const guestBenefits = computed<{ icon: IconName; label: string }[]>(() => [
   { icon: "users", label: t("profile.guestBenefits.sessions") },
-  { icon: "book", label: t("profile.guestBenefits.dailyReading") },
+  { icon: "book", label: t("profile.guestBenefits.parcours") },
   { icon: "bell", label: t("profile.guestBenefits.reminders") },
   { icon: "bookmark", label: t("profile.guestBenefits.sync") },
 ]);
@@ -191,11 +198,16 @@ onUnmounted(() => {
       <!-- Connecté : qui l'on est, d'un coup d'oeil. Le rond porte la couleur
            du thème, c'est la seule touche pleine de la page. -->
       <header v-if="currentUser" class="relative mb-8 flex flex-col items-center text-center">
-        <span
-          class="font-display flex h-20 w-20 items-center justify-center rounded-full bg-primary text-4xl text-white"
-          aria-hidden="true"
-        >
-          {{ initial }}
+        <!-- Le rond, et à cheval sur son bas, côté fin, la pastille de la
+             lumière de la série et de son compte (la toucher ouvre Mes lumières). -->
+        <span class="relative">
+          <span
+            class="font-display flex h-20 w-20 items-center justify-center rounded-full bg-brand text-4xl text-on-brand"
+            aria-hidden="true"
+          >
+            {{ initial }}
+          </span>
+          <ProfileStreakPill overlap class="absolute -bottom-2 -end-10" />
         </span>
         <h1 class="mt-4 text-2xl font-bold tracking-tight text-text-primary">
           {{ displayName }}
@@ -249,14 +261,13 @@ onUnmounted(() => {
       </template>
 
       <div class="flex flex-col gap-7">
-        <SettingsGroup v-if="currentUser" :title="t('profile.native.groups.reading')">
+        <!-- Mon parcours se tient sans compte, sur ce téléphone : sa ligne est
+             là pour tous, avec la journée. Les chaînes de lecture, elles,
+             suivent le compte. -->
+        <SettingsGroup :title="t('profile.native.groups.reading')">
+          <ProfileParcoursRow />
           <SettingsRow
-            icon="book"
-            :label="t('dailyReading.title')"
-            to="/bibliotheque/lecture-du-jour"
-            @click="trackShortcut('daily_reading')"
-          />
-          <SettingsRow
+            v-if="currentUser"
             icon="users"
             :label="t('home.dashboard.sessionsTitle')"
             to="/share-reading"

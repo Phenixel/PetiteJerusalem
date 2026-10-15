@@ -13,7 +13,8 @@ import { talmudOpenings } from "../services/pageForm";
  *
  * `anchored` pose l'ancre du menu de lecture sur chaque daf (l'offset de sa
  * première ligne dans la section) ; `phoneticByDaf` remplace l'hébreu par sa
- * translittération quand le lecteur l'a demandée.
+ * translittération quand le lecteur l'a demandée. Un bloc sans daf (traité
+ * rangé par chapitre) n'a pas de repère.
  *
  * `selectable` découpe le texte en passages (ceux de Sefaria, de l'ordre
  * d'une phrase), sans rien changer à sa lecture d'un seul tenant : chacun se
@@ -86,6 +87,7 @@ function offsetOf(index: number): number {
        rendu au mauvais bloc. -->
   <template v-for="(block, index) in blocks" :key="`${index}-${block.daf}`">
     <p
+      v-if="block.daf"
       :data-block-anchor="anchored ? offsetOf(index) : undefined"
       :class="
         variant === 'daily'

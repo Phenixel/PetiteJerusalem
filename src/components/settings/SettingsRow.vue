@@ -14,6 +14,9 @@
  *
  * `tone="danger"` : la déconnexion. Le rouge dit ce qu'elle fait, la ligne
  * reste une ligne.
+ *
+ * `progress` (de 0 à 1) : une barre fine sous le nom, ce qui est fait de ce
+ * qui est à faire (Mon parcours : la journée).
  */
 import { computed } from "vue";
 import { RouterLink } from "vue-router";
@@ -31,8 +34,17 @@ const props = withDefaults(
     to?: string;
     href?: string;
     tone?: "default" | "danger";
+    /** Ce qui est fait, de 0 à 1 : une barre sous le nom. */
+    progress?: number;
   }>(),
-  { value: undefined, warn: false, to: undefined, href: undefined, tone: "default" },
+  {
+    value: undefined,
+    warn: false,
+    to: undefined,
+    href: undefined,
+    tone: "default",
+    progress: undefined,
+  },
 );
 
 defineEmits<{ (e: "click", event: MouseEvent): void }>();
@@ -60,7 +72,12 @@ const danger = computed(() => props.tone === "danger");
       @click="$emit('click', $event)"
     >
       <AppIcon :name="icon" :size="19" class="shrink-0" :class="danger ? '' : 'text-primary'" />
-      <span class="min-w-0 flex-1 font-medium leading-snug">{{ label }}</span>
+      <span class="min-w-0 flex-1 font-medium leading-snug">
+        {{ label }}
+        <span v-if="progress !== undefined" class="settings-progress" aria-hidden="true">
+          <span :style="{ width: `${Math.round(Math.min(1, Math.max(0, progress)) * 100)}%` }" />
+        </span>
+      </span>
       <span
         v-if="value"
         class="max-w-[45%] shrink-0 text-end text-sm leading-snug"

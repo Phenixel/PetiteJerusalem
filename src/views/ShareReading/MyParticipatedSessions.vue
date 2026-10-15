@@ -14,6 +14,7 @@ import type { Session, TextStudy, TextStudyReservation } from "../../models/mode
 import type { User } from "../../services/authService";
 import { useToast } from "../../composables/useToast";
 import { analyticsService } from "../../services/analyticsService";
+import { haptic } from "../../services/haptics";
 import CollapseTransition from "../../components/CollapseTransition.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
 
@@ -105,6 +106,7 @@ const toggleReservationCompletion = async (
   const session = props.sessions.find((s) => s.id === sessionId);
   try {
     await reservationService.markReservationAsCompleted(sessionId, reservationId, isCompleted);
+    haptic(isCompleted ? "done" : "undo");
 
     const marked = session;
     // Troisième endroit d'où l'on coche « lu » (après la page de chaîne et le

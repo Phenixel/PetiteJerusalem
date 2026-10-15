@@ -32,10 +32,13 @@ Trois grands :
   quatre lignes ne tournent qu'à la chkia, et la limite du Chéma reste
   affichée une fois passée, puisque c'est son heure d'aujourd'hui que l'on
   vient lire.
-- **Lecture du jour** : une ligne, le dessin de la carte du tableau de bord
-  (`src/components/DailyReadingCard.vue`) : titre, « 2 sur 3 lus aujourd'hui »,
-  pourcentage et barre de progression, remise à zéro à minuit. Toucher le
-  widget ouvre `/bibliotheque/lecture-du-jour`.
+- **Lecture du jour** : une ligne, titre, « 2 sur 3 lus aujourd'hui »,
+  pourcentage et barre de progression, remise à zéro à minuit. Elle montre
+  les textes du jour et les lectures du calendrier de Mon parcours, tels que
+  l'appareil les tient, avec ou sans compte (`widgetService`, par
+  `legacyProjection`). Toucher le widget ouvre `/bibliotheque/lecture-du-jour`,
+  qui mène à l'accueil et à sa pile du jour : l'adresse est gravée dans les widgets déjà
+  installés.
 
 S'y ajoutent cinq **raccourcis**, au plus petit format que l'écran d'accueil
 propose, qui n'ouvrent chacun qu'une page :
@@ -43,7 +46,7 @@ propose, qui n'ouvrent chacun qu'une page :
 | Raccourci | Ouvre | Ce qu'il montre |
 |---|---|---|
 | Bibliothèque | `/bibliotheque` | une étagère de volumes reliés ; en format moyen, les quatre livres portent leur titre |
-| Sidour | `/bibliotheque/sidour` | le livre du sidour, titre sur la couverture |
+| Sidour | `/bibliotheque/sidour` (redirigé vers `/sidour`) | le livre du sidour, titre sur la couverture |
 | Tehilim | `/bibliotheque/tehilim` | le livre des Tehilim, idem |
 | Prochain horaire | `/horaires` | l'heure du prochain zman, en grand, et son nom en dessous |
 | Avancement de la lecture | `/bibliotheque/lecture-du-jour` | un anneau qui se remplit au fil des coches, et son pourcentage |

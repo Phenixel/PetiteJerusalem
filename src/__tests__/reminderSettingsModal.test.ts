@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { createApp, h, nextTick, ref } from "vue";
 import { createI18n } from "vue-i18n";
 import fr from "../locales/fr";
-import ReminderSettingsModal from "../views/Library/ReminderSettingsModal.vue";
+import ReminderSettingsModal from "../components/parcours/ReminderSettingsModal.vue";
 
 /**
  * La modale des rappels de lecture, ouverte par la cloche de la page.
