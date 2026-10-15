@@ -555,7 +555,8 @@
       "en"
     ],
     "/texts/talmud/ketubot.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/talmud/kiddushin.json": [
       "en"
@@ -587,7 +588,8 @@
       "en"
     ],
     "/texts/talmud/nedarim.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/talmud/niddah.json": [
       "en"
