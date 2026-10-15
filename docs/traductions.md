@@ -159,13 +159,13 @@ pas de guemara de Babylone :
 Mesuré en lignes du lecteur (un verset, une michna, une phrase de guemara) à
 la construction :
 
-| Corpus              | Anglais |                       Français |
-| ------------------- | ------: | -----------------------------: |
-| Tanakh et Tehilim   |   100 % |                          100 % |
-| Michna              |   100 % |   100 % (60 % humain, 40 % IA) |
-| Talmud              |  99,6 % | en cours (IA), Chekalim humain |
-| Rachi (chnei mikra) |  99,5 % |                    99,5 % (IA) |
-| 'Hovot Halévavot    |    98 % |                      98 % (IA) |
+| Corpus              | Anglais |                      Français |
+| ------------------- | ------: | ----------------------------: |
+| Tanakh et Tehilim   |   100 % |                         100 % |
+| Michna              |   100 % |  100 % (60 % humain, 40 % IA) |
+| Talmud              |  99,6 % | 99,6 % (IA ; Chekalim humain) |
+| Rachi (chnei mikra) |  99,5 % |                   99,5 % (IA) |
+| 'Hovot Halévavot    |    98 % |                     98 % (IA) |
 
 ### La traduction française assistée par IA
 
@@ -180,7 +180,10 @@ anglaise d'où elle vient (une adaptation la garde).
 
 `scripts/translate-ia.mjs` découpe le travail en lots et rassemble les
 résultats (vérifiés ligne à ligne : complets, en français, gras et italique
-gardés, typographie du dépôt) ; un lot refusé repasse au tour suivant.
+gardés, typographie du dépôt) ; un lot refusé repasse au tour suivant. Un
+gras ouvert dans un gras redevient l'italique de la source : c'est
+l'erreur que les agents font le plus souvent sur un terme translittéré du
+Talmud.
 
 Les quelques lignes sans traduction sont celles que l'alignement ne retrouve
 pas chez Sefaria (une phrase de guemara découpée autrement) : elles restent

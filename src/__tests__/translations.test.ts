@@ -151,6 +151,7 @@ describe("traductions des textes", () => {
       "Mishna/en": 0.99,
       "Mishna/fr": 0.99,
       "Talmud Bavli/en": 0.99,
+      "Talmud Bavli/fr": 0.99,
       "Moussar/en": 0.95,
       "Moussar/fr": 0.95,
     };

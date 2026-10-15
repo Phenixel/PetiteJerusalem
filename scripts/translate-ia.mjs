@@ -187,6 +187,23 @@ function balanced(s) {
   return stack.length === 0;
 }
 
+/**
+ * Un gras ouvert dans un gras : l'agent a pris pour du gras l'italique d'un
+ * terme translittéré au milieu d'un passage du Talmud (« <b>champs
+ * [<i>baguei</i>]</b> »). Le gras intérieur redevient l'italique de la source.
+ */
+function nestedBoldToItalic(s) {
+  const stack = [];
+  return s.replace(/<(\/?)b>/g, (tag, close) => {
+    if (!close) {
+      const inner = stack.includes("b");
+      stack.push(inner ? "i" : "b");
+      return inner ? "<i>" : tag;
+    }
+    return stack.pop() === "i" ? "</i>" : tag;
+  });
+}
+
 /** Une ligne qui semble encore en anglais (le modèle a recopié la source). */
 function looksEnglish(fr, en) {
   if (fr.trim() === en.trim() && words(en) > 3) return true;
@@ -222,7 +239,7 @@ if (command === "collect") {
     const problems = [];
     const accepted = {};
     for (const { k, en } of lot.items) {
-      const fr = typeof result[k] === "string" ? result[k].trim() : "";
+      const fr = typeof result[k] === "string" ? nestedBoldToItalic(result[k].trim()) : "";
       if (!fr) problems.push(`${k} : manquante`);
       else if (!balanced(fr)) problems.push(`${k} : gras ou italique déséquilibré`);
       else if (looksEnglish(fr, en)) problems.push(`${k} : encore en anglais`);
