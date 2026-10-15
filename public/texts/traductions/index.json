@@ -573,24 +573,28 @@
       "fr"
     ],
     "/texts/talmud/kinnim.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/talmud/makkot.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/talmud/megillah.json": [
       "en",
       "fr"
     ],
     "/texts/talmud/meilah.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/talmud/menachot.json": [
       "en",
       "fr"
     ],
     "/texts/talmud/middot.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/talmud/moed-katan.json": [
       "en",
@@ -605,7 +609,8 @@
       "fr"
     ],
     "/texts/talmud/niddah.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/talmud/pesachim.json": [
       "en",
@@ -644,7 +649,8 @@
       "fr"
     ],
     "/texts/talmud/tamid.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/talmud/temurah.json": [
       "en",
