@@ -62,7 +62,7 @@ describe("la lecture du jour quittée pendant son chargement", () => {
     // Le montage va jusqu'au bout : l'événement de fin de chargement part.
     await vi.waitFor(
       () => expect(capture).toHaveBeenCalledWith("daily_reading_viewed", expect.anything()),
-      { timeout: 5_000 },
+      { timeout: 15_000 },
     );
     await new Promise((resolve) => setTimeout(resolve, 0));
 
@@ -84,5 +84,8 @@ describe("la lecture du jour quittée pendant son chargement", () => {
     }
     expect([...live]).toEqual([]);
     host.remove();
-  });
+    // Le montage importe toute la lecture du jour : sur une machine chargée
+    // (la suite entière en parallèle), il dépasse les 5 s par défaut, que
+    // l'attente ci-dessus prenait déjà entières.
+  }, 20_000);
 });
