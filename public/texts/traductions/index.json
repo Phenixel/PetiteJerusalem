@@ -546,7 +546,8 @@
       "fr"
     ],
     "/texts/talmud/gittin.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/talmud/horayot.json": [
       "en"
@@ -559,7 +560,8 @@
       "fr"
     ],
     "/texts/talmud/kiddushin.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/talmud/kinnim.json": [
       "en"
@@ -585,7 +587,8 @@
       "fr"
     ],
     "/texts/talmud/nazir.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/talmud/nedarim.json": [
       "en",
@@ -617,7 +620,8 @@
       "en"
     ],
     "/texts/talmud/sotah.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/talmud/sukkah.json": [
       "en",
