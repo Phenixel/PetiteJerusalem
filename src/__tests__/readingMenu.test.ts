@@ -43,7 +43,18 @@ const SECTIONS = [
 ];
 
 /** Monte le menu, panneau ouvert. */
-async function ouvre(props: { tefila?: boolean; halakhot?: boolean; shareTitle?: string } = {}) {
+async function ouvre(
+  props: {
+    tefila?: boolean;
+    halakhot?: boolean;
+    shareTitle?: string;
+    phonetic?: boolean | null;
+    pageForm?: "daf" | "scroll" | null;
+    pageFormActive?: boolean;
+    "onUpdate:pageFormActive"?: (value: boolean) => void;
+    "onUpdate:phonetic"?: (value: boolean) => void;
+  } = {},
+) {
   const i18n = createI18n({ legacy: false, locale: "fr", messages: { fr } });
   const router: Router = createRouter({
     history: createMemoryHistory(),
@@ -311,5 +322,44 @@ describe("menu de lecture", () => {
     const liens = [...host.querySelectorAll<HTMLAnchorElement>("a.action-item")];
     expect(liens.length).toBeGreaterThan(0);
     for (const lien of liens) expect(lien.href).toMatch(/^https:\/\//);
+  });
+});
+
+describe("forme de la page", () => {
+  beforeEach(() => {
+    document.body.innerHTML = "";
+    localStorage.clear();
+  });
+
+  /** Les trois façons de montrer le texte : hébreu, forme de la page, phonétique. */
+  function modes(host: HTMLElement): HTMLButtonElement[] {
+    const groupe = [...host.querySelectorAll<HTMLElement>('[role="group"]')].find((g) =>
+      g.getAttribute("aria-label")?.startsWith(fr.textReading.hebrew),
+    )!;
+    return [...groupe.querySelectorAll<HTMLButtonElement>("button")];
+  }
+
+  it("ne propose la forme de la page qu'au texte qui en a une", async () => {
+    const { host } = await ouvre({ phonetic: false });
+    expect(modes(host)).toHaveLength(2);
+    expect(host.querySelector(`[title="${fr.textReading.pageForm.daf}"]`)).toBeNull();
+  });
+
+  it("l'offre entre l'hébreu et la phonétique, et dit laquelle s'affiche", async () => {
+    const choisie = vi.fn();
+    const { host } = await ouvre({
+      phonetic: false,
+      pageForm: "scroll",
+      pageFormActive: true,
+      "onUpdate:pageFormActive": choisie,
+    });
+    const [hebreu, page, phonetique] = modes(host);
+    expect(page.title).toBe(fr.textReading.pageForm.scroll);
+    // La forme de la page s'affiche : l'hébreu n'est plus le mode pressé.
+    expect(page.getAttribute("aria-pressed")).toBe("true");
+    expect(hebreu.getAttribute("aria-pressed")).toBe("false");
+    expect(phonetique.getAttribute("aria-pressed")).toBe("false");
+    page.click();
+    expect(choisie).toHaveBeenCalledWith(true);
   });
 });

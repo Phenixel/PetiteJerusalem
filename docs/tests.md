@@ -13,7 +13,7 @@ npm run test:unit          # vitest, mode interactif
 npx vitest run             # une seule passe, ce que fait `npm run verify`
 ```
 
-Les 248 fichiers vivent dans `src/__tests__/*.test.ts`. La configuration
+Les 264 fichiers vivent dans `src/__tests__/*.test.ts`. La configuration
 (`vitest.config.ts`) prend l'environnement `jsdom` par défaut ; les tests qui
 n'ont pas besoin du DOM (ceux qui lisent le dépôt ou lancent un script)
 commencent par `// @vitest-environment node`. Les dossiers `e2e/`, `android/`,
@@ -49,6 +49,9 @@ avec ce que chacun attend :
 | `bundledTexts.test.ts` | Chaque texte que l'app embarque existe dans `public/texts/`. Les Tehilim se lisent dans le binaire, sans rien demander au site ; le Sidour s'y ouvre aussi sans attendre le réseau, puis l'app télécharge en fond la version corrigée que le site servirait, vérifiée à l'empreinte (un portail captif ne la remplace pas). Que le Sidour soit embarqué tout entier, c'est `offlineDailyBooks.test.ts` qui le tient. |
 | `textsManifest.test.ts` | `public/texts/manifest.json` correspond aux fichiers de textes (`scripts/texts-manifest.mjs --check`) : un texte corrigé sans que le manifeste suive ne serait corrigé que pour qui n'a rien téléchargé. |
 | `translations.test.ts` | Chaque traduction (`public/texts/traductions/`) a la forme du fichier hébreu qu'elle traduit et donne à chaque section du lecteur autant de lignes que l'hébreu : sans quoi elle se décalerait d'un verset sans erreur. Chaque source a une licence libre de la liste (`docs/traductions.md`), un lien et rien d'une traduction automatique de Sefaria ; une version IA du dépôt (`data/traductions-ia/`) porte le drapeau `ai`, qui fait afficher l'avertissement au lecteur. Chaque corpus garde la couverture annoncée. |
+| `scopedGlobal.test.ts` | Dans un `<style scoped>`, aucun `:global(.a)` suivi d'un autre sélecteur : Vue jette tout ce qui suit la parenthèse et applique la règle à `.a` lui-même. Écrite `:global(.native-app) .volet`, elle stylait toute la page de l'app (`<html class="native-app">`) au lieu du volet ; le sélecteur entier va dans la parenthèse. |
+| `pageForm.test.ts` | La forme de la page : Rachi et Tossafot (`public/texts/talmud-meforshim/`) alignés amoud par amoud et passage par passage sur la guemara de chaque traité (jamais plus de passages commentés que de passages), une tranche de vingt amoudim par fichier ; une marque de paracha (petou'ha, setouma) par verset sur les 54 parachiot de la Torah, et nulle part ailleurs ; Az yachir et Haazinou trouvés, avec leur longueur, sans un mot perdu. Une guemara ou une paracha régénérée sans ses commentaires le fait échouer. |
+| `commentaryFiles.test.ts` | Le Bartenura et les Tossefot Yom Tov (`public/texts/mishna-meforshim/`) de chaque traité de Michna du catalogue, et Rachi (`public/texts/rashi/`) des 22 livres des Neviim et des Ketouvim, ont une case par ligne affichée dans chaque chapitre ; chacun des 150 psaumes lus seuls retrouve son chapitre dans Rachi sur Tehilim. Un texte régénéré sans ses commentaires le fait échouer (`node scripts/download-texts.mjs --only=commentaires`). |
 | `xcodeWidgets.test.ts` | La cible d'extension des widgets iOS que `scripts/lib/xcode-widgets.mjs` écrit dans le `project.pbxproj` est valide, à partir du vrai template Capacitor de `node_modules` ; personne n'a de macOS pour l'ouvrir dans Xcode. |
 | `xcodeWatch.test.ts` | Même chose pour la cible de l'app Apple Watch (`scripts/lib/xcode-watch.mjs`). |
 | `lastmod.test.ts` | Le `lastmod` du sitemap vient de git (`scripts/lib/lastmod.mjs`) : la date du dernier commit qui a touché le fichier de la page, vérifiée sur un dépôt jetable. |

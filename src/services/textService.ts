@@ -1,6 +1,7 @@
 import type { TextStudyJsonEntry } from "../models/models";
 import { formatNumberWithHebrew } from "./hebrewNumerals";
 import { fetchTextResponse } from "./offlineTextStore";
+import { parashaMark, type ParashaMark } from "./pageForm";
 
 /**
  * Loads the locally-stored texts under `public/texts/`.
@@ -19,6 +20,37 @@ export interface DafBlock {
    */
   daf: string;
   lines: string[];
+  /**
+   * L'index de l'amoud dans le fichier du traité (0 = le premier amoud du
+   * fichier), celui des commentaires de la page (voir loadDafMeforshim).
+   */
+  amud?: number;
+  /**
+   * Le passage source de chaque ligne dans l'amoud (Sefaria compte aussi les
+   * passages vides, que `lines` saute) : l'index des commentaires d'un passage.
+   */
+  passages?: number[];
+}
+
+/**
+ * Les lignes d'un amoud (passages de Sefaria), avec l'index de chacune parmi
+ * les passages de l'amoud : un passage vide n'est pas une ligne, mais il garde
+ * sa place dans la numérotation des commentaires.
+ */
+function amudLines(amud: unknown): { lines: string[]; passages: number[] } {
+  if (!Array.isArray(amud)) {
+    const lines = normalizeLines(amud);
+    return { lines, passages: lines.map(() => 0) };
+  }
+  const lines: string[] = [];
+  const passages: number[] = [];
+  amud.forEach((passage, p) => {
+    const line = normalizeLines(passage).join(" ");
+    if (!line) return;
+    lines.push(line);
+    passages.push(p);
+  });
+  return { lines, passages };
 }
 
 /**
@@ -387,6 +419,12 @@ export interface TextSection {
   blocks?: TextBlock[];
   /** Parachiot : Targoum Onkelos aligné ligne à ligne sur `he` (chnei mikra). */
   targum?: string[];
+  /**
+   * Torah : la marque qui suit chaque verset dans le Sefer Torah (petou'ha,
+   * setouma), alignée sur `he`. Sa présence ouvre la forme du Sefer Torah
+   * (voir pageForm.ts) : seuls les fichiers de la Torah la portent.
+   */
+  scrollMarks?: ParashaMark[];
   /** Tefila : les jours entre lesquels le texte change (voir TextDay). */
   days?: TextDay[];
 }
@@ -413,10 +451,30 @@ export function placeLabel(
   verseN: (n: number) => string,
   headingOf: (heading: SectionHeading | undefined, fallback: string) => string = (_, label) =>
     label,
+  passageN: (n: number) => string = verseN,
 ): string {
   const section = sections.find((s) => s.index === (sectionIndex ?? 1)) ?? sections[0] ?? null;
   const parts: string[] = [];
   if (section && sections.length > 1) parts.push(headingOf(section.heading, section.label));
+  // Guemara : le chapitre sans sa plage de dafim, le daf, puis le passage
+  // dans le daf (« Chapitre 1 · Daf 2a · passage 3 »).
+  if (section?.dafBlocks?.length) {
+    if (section.heading?.kind === "chapterDaf" && sections.length > 1) {
+      parts[parts.length - 1] = headingOf(
+        { kind: "chapter", n: section.heading.n },
+        `Chapitre ${formatNumberWithHebrew(section.heading.n)}`,
+      );
+    }
+    let offset = 0;
+    for (const block of section.dafBlocks) {
+      if (line < offset + block.lines.length) {
+        parts.push(headingOf({ kind: "daf", daf: block.daf }, `Daf ${block.daf}`));
+        parts.push(passageN(line - offset + 1));
+        return parts.join(" · ");
+      }
+      offset += block.lines.length;
+    }
+  }
   const block = section?.blocks?.length
     ? [...section.blocks].reverse().find((b) => b.offset <= line)
     : undefined;
@@ -691,13 +749,15 @@ function parseTalmud(
       const dafBlocks: DafBlock[] = [];
       // Each index in `he` is one daf side: index 0 = 2a, 1 = 2b, 2 = 3a…
       for (let i = range.startIdx; i <= range.endIdx && i < heDaf.length; i++) {
-        const dafLines = normalizeLines(heDaf[i]);
+        const { lines: dafLines, passages } = amudLines(heDaf[i]);
         if (dafLines.length === 0) continue;
         lines.push(...dafLines);
         if (tr) trLines.push(...alignTranslation(heDaf[i], tr[i]));
         dafBlocks.push({
           daf: `${Math.floor(i / 2) + 2}${i % 2 === 0 ? "a" : "b"}`,
           lines: dafLines,
+          amud: i,
+          passages,
         });
       }
       const dafRange =
@@ -738,6 +798,9 @@ function parseTalmud(
   return { title, type: "Talmud Bavli", sections };
 }
 
+/** Les livres de la Torah, tels que les fichiers de paracha les nomment (`fromBook`). */
+const TORAH_BOOKS = new Set(["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"]);
+
 function loadTanakh(
   textStudy: TextStudyJsonEntry,
   data: {
@@ -746,6 +809,7 @@ function loadTanakh(
     targum?: unknown[];
     blockLabels?: string[];
     chapters?: string;
+    fromBook?: string;
   },
   tr?: unknown[],
 ): TextContent {
@@ -765,6 +829,8 @@ function loadTanakh(
     const targumAll: string[] = [];
     const trAll: string[] = [];
     let hasTargum = false;
+    // Les marques de paracha, que cleanText retire du texte lu.
+    const marks: ParashaMark[] = [];
     let offset = 0;
     heChapters.forEach((group, i) => {
       const targumGroup = Array.isArray(data.targum?.[i]) ? (data.targum[i] as unknown[]) : null;
@@ -785,6 +851,7 @@ function loadTanakh(
                 : ""
               : alignTranslation(verse, trVerse).filter(Boolean).join(" "),
           );
+          marks.push(typeof verse === "string" ? parashaMark(verse) : null);
           const targumVerse = targumGroup[j];
           const cleaned = typeof targumVerse === "string" ? cleanText(targumVerse) : "";
           targumAll.push(cleaned);
@@ -792,8 +859,14 @@ function loadTanakh(
         });
       } else {
         lines = normalizeLines(group);
-        for (let k = 0; k < lines.length; k++) targumAll.push("");
+        const raw = Array.isArray(group) ? group.flat(Infinity) : [group];
+        const verses = raw.filter((v) => typeof v === "string" && cleanText(v));
         trAll.push(...alignTranslation(group, trGroup));
+        lines.forEach((_, k) => {
+          targumAll.push("");
+          // Même marche que normalizeLines : un verset brut par ligne gardée.
+          marks.push(verses.length === lines.length ? parashaMark(String(verses[k])) : null);
+        });
       }
       if (lines.length === 0) return;
       const named = data.blockLabels?.[i];
@@ -811,6 +884,7 @@ function loadTanakh(
     if (blocks.length > 1) section.blocks = blocks;
     if (hasTargum) section.targum = targumAll;
     if (tr) section.tr = trAll;
+    if (data.fromBook && TORAH_BOOKS.has(data.fromBook)) section.scrollMarks = marks;
     return { title, type: "Tanakh", sections: [section] };
   }
 
@@ -1359,27 +1433,32 @@ export function parseParashaRashi(
   data: { he?: unknown[] },
   translation?: { text?: unknown },
 ): RashiComment[][] {
-  const lines: RashiComment[][] = [];
-  const tr = Array.isArray(translation?.text) ? translation.text : undefined;
-  (data.he ?? []).forEach((group, g) => {
-    if (!Array.isArray(group)) return;
-    group.forEach((verse, v) => {
-      const trVerse = (tr?.[g] as unknown[] | undefined)?.[v];
-      lines.push(
-        (Array.isArray(verse) ? verse : [])
-          .map((comment, c) => {
-            const parsed = parseRashiComment(String(comment));
-            const trComment = Array.isArray(trVerse) ? trVerse[c] : undefined;
-            if (parsed && typeof trComment === "string" && trComment.trim()) {
-              parsed.tr = trComment.trim();
-            }
-            return parsed;
-          })
-          .filter((comment): comment is RashiComment => comment !== null),
-      );
-    });
-  });
-  return lines;
+  return parseCommentaryGroups(data.he, translation?.text).flat();
+}
+
+/**
+ * Une grille de commentaires (groupes × lignes × commentaires), telle que
+ * download-texts.mjs l'écrit : un groupe par groupe du fichier de texte
+ * (chapitre, montée), une case par ligne affichée. `tr`, la traduction de
+ * la grille (de même forme, voir download-translations.mjs), pose sur
+ * chaque commentaire la sienne.
+ */
+export function parseCommentaryGroups(groups: unknown, tr?: unknown): RashiComment[][][] {
+  const at = (value: unknown, i: number): unknown => (Array.isArray(value) ? value[i] : undefined);
+  return (Array.isArray(groups) ? groups : []).map((group, g) =>
+    (Array.isArray(group) ? group : []).map((line, l) =>
+      (Array.isArray(line) ? line : [])
+        .map((comment, c) => {
+          const parsed = parseRashiComment(String(comment));
+          const trComment = at(at(at(tr, g), l), c);
+          if (parsed && typeof trComment === "string" && trComment.trim()) {
+            parsed.tr = trComment.trim();
+          }
+          return parsed;
+        })
+        .filter((comment): comment is RashiComment => comment !== null),
+    ),
+  );
 }
 
 /**
@@ -1408,4 +1487,158 @@ export async function loadParashaRashi(
     ? (translation.sources as TranslationSource[])
     : [];
   return { lines, sources };
+}
+
+/** Le psaume d'une entrée de Tehilim (« …/Psalms.23 » → 23). */
+function psalmOf(textStudy: TextStudyJsonEntry): number {
+  return Number(String(textStudy.link).split(".").pop()) || 1;
+}
+
+/** L'entrée du livre de Tehilim au catalogue, dont le fichier Rachi sert aux psaumes. */
+const TEHILIM_BOOK_ID = 328;
+
+async function readCommentaryFile(path: string): Promise<Record<string, unknown>> {
+  const res = await fetchTextResponse(path);
+  if (!res.ok) {
+    if (res.status === 404) throw new MissingTextFileError();
+    throw new Error(`Commentaires non disponibles (${res.status})`);
+  }
+  return (await res.json()) as Record<string, unknown>;
+}
+
+/**
+ * Rachi sur un livre du Tanakh (public/texts/rashi/<id>.json), en groupes
+ * alignés sur ceux du fichier de texte. Un psaume lu seul (corpus Tehilim)
+ * prend son chapitre dans le fichier du livre de Tehilim : un seul groupe.
+ */
+export async function loadTanakhRashi(textStudy: TextStudyJsonEntry): Promise<RashiComment[][][]> {
+  if (String(textStudy.type) === "Tehilim") {
+    const data = await readCommentaryFile(`/texts/rashi/${TEHILIM_BOOK_ID}.json`);
+    const groups = parseCommentaryGroups(data.he);
+    return [groups[psalmOf(textStudy) - 1] ?? []];
+  }
+  const data = await readCommentaryFile(`/texts/rashi/${textStudy.id}.json`);
+  return parseCommentaryGroups(data.he);
+}
+
+// ---- Bartenura et Tossefot Yom Tov sur la Michna ----------------------------
+
+/** Les commentaires d'un traité de Michna, chapitre × michna × commentaires. */
+export interface MishnaMeforshim {
+  bartenura: RashiComment[][][];
+  tosafotYomTov: RashiComment[][][];
+}
+
+/** public/texts/mishna-meforshim/<traité>.json, voir download-texts.mjs. */
+export function parseMishnaMeforshim(data: Record<string, unknown>): MishnaMeforshim {
+  return {
+    bartenura: parseCommentaryGroups(data.bartenura),
+    tosafotYomTov: parseCommentaryGroups(data.tosafotYomTov),
+  };
+}
+
+export async function loadMishnaMeforshim(textStudy: TextStudyJsonEntry): Promise<MishnaMeforshim> {
+  const slug = tractateSlug(tractateFromLink(textStudy.link, true));
+  return parseMishnaMeforshim(await readCommentaryFile(`/texts/mishna-meforshim/${slug}.json`));
+}
+
+// ---- Rachi et Tossafot sur la guemara (forme de la page) -------------------
+
+/** Les commentaires d'un amoud, dans l'ordre de la page. */
+export interface DafMeforshim {
+  /**
+   * Rachi, passage par passage (`rashi[p]` : les commentaires du passage p de
+   * l'amoud, voir DafBlock.passages). En Bava Batra, le Rachbam là où Rachi
+   * s'arrête : `inner` le dit.
+   */
+  rashi: RashiComment[][];
+  tosafot: RashiComment[][];
+  /**
+   * Qui occupe la place de Rachi sur cet amoud : lui, ou celui qui prend son
+   * relais (le Rachbam en Bava Batra, le « מפרש » en Tamid).
+   */
+  inner: "rashi" | "rashbam" | "mefaresh";
+  /**
+   * Là où le livre imprime Rachi et le Rachbam (Pessa'him, à partir de 99b) :
+   * `rashbamAfter[p]` commentaires de `rashi[p]` sont de Rachi, les suivants
+   * du Rachbam.
+   */
+  rashbamAfter?: number[];
+  /** Le Ran, là où il occupe la place de Tossafot (Nedarim). */
+  outer?: "ran";
+  /** Tossafot, là où il n'est plus qu'en marge du livre (Nedarim) : pour le volet. */
+  margin?: RashiComment[][];
+}
+
+/** Tous les commentaires d'un amoud bout à bout, pour la page du daf. */
+export function flatMeforshim(m: DafMeforshim): { rashi: RashiComment[]; tosafot: RashiComment[] } {
+  return { rashi: m.rashi.flat(), tosafot: m.tosafot.flat() };
+}
+
+/** Amoudim par fichier : à garder d'accord avec download-texts.mjs. */
+export const MEFORSHIM_CHUNK = 20;
+
+/**
+ * Une tranche de commentaires (public/texts/talmud-meforshim/<slug>/<n>.json,
+ * voir download-texts.mjs) → les commentaires par index d'amoud du traité.
+ */
+export function parseDafMeforshim(data: {
+  from?: number;
+  rashi?: unknown[];
+  tosafot?: unknown[];
+  rashbam?: number[];
+  rashbamAfter?: Record<string, number[]>;
+  outer?: string;
+  margin?: unknown[];
+  second?: string;
+}): Map<number, DafMeforshim> {
+  const byAmud = new Map<number, DafMeforshim>();
+  const comments = (passage: unknown): RashiComment[] =>
+    (Array.isArray(passage) ? passage : [])
+      .map((c) => parseRashiComment(String(c)))
+      .filter((c): c is RashiComment => c !== null);
+  const passages = (amud: unknown): RashiComment[][] =>
+    (Array.isArray(amud) ? amud : []).map(comments);
+  const from = data.from ?? 0;
+  const rashbam = new Set(data.rashbam ?? []);
+  const count = Math.max(data.rashi?.length ?? 0, data.tosafot?.length ?? 0);
+  for (let i = 0; i < count; i++) {
+    byAmud.set(from + i, {
+      rashi: passages(data.rashi?.[i]),
+      tosafot: passages(data.tosafot?.[i]),
+      inner: !rashbam.has(i) ? "rashi" : data.second === "mefaresh" ? "mefaresh" : "rashbam",
+      ...(data.rashbamAfter?.[i] ? { rashbamAfter: data.rashbamAfter[i] } : {}),
+      ...(data.outer === "ran" ? { outer: "ran" as const } : {}),
+      ...(data.margin ? { margin: passages(data.margin[i]) } : {}),
+    });
+  }
+  return byAmud;
+}
+
+/**
+ * Rachi et Tossafot des amoudim demandés (index du fichier du traité). Un
+ * traité sans commentaires (Chekalim) ou une tranche introuvable rend
+ * des amoudim sans commentaire : la page se compose alors de la guemara seule.
+ * Une autre erreur (réseau) remonte, pour que la page puisse le dire.
+ */
+export async function loadDafMeforshim(
+  textStudy: TextStudyJsonEntry,
+  amudim: number[],
+): Promise<Map<number, DafMeforshim>> {
+  const slug = tractateSlug(tractateFromLink(textStudy.link));
+  const chunks = [...new Set(amudim.map((a) => Math.floor(a / MEFORSHIM_CHUNK)))];
+  const parts = await Promise.all(
+    chunks.map(async (chunk) => {
+      const res = await fetchTextResponse(`/texts/talmud-meforshim/${slug}/${chunk}.json`);
+      if (res.status === 404) return new Map<number, DafMeforshim>();
+      if (!res.ok) throw new Error(`Commentaires non disponibles (${res.status})`);
+      // Un hébergeur qui répond par la page de l'app à un fichier absent
+      // (réécriture des routes) : pas de commentaires, plutôt qu'une erreur.
+      const data = await res.json().catch(() => ({}));
+      return parseDafMeforshim(data);
+    }),
+  );
+  const byAmud = new Map<number, DafMeforshim>();
+  for (const part of parts) for (const [amud, m] of part) byAmud.set(amud, m);
+  return byAmud;
 }

@@ -44,6 +44,9 @@ const PRUNED_DIRS = [
   "texts/tanakh",
   "texts/moussar",
   "texts/rashi",
+  "texts/talmud-meforshim",
+  "texts/talmud-layout",
+  "texts/mishna-meforshim",
   "texts/tefila",
   // Les traductions (docs/traductions.md) : le Talmud anglais pèse à lui seul
   // plus que tous les textes hébreux. Lues en ligne, comme les corpus.

@@ -11,6 +11,9 @@ import { openFeedback } from "../composables/useFeedback";
 import { clearPassage, readingPassage } from "../composables/useReadingSelection";
 import { hasNiqqud, transliterate } from "../services/hebrewTransliteration";
 import { analyticsService } from "../services/analyticsService";
+import { COMMENTARY_LABELS } from "../composables/usePassageCommentaries";
+import { sideBySide } from "../composables/useSideBySide";
+import BottomSheet from "./BottomSheet.vue";
 
 /**
  * La bulle de commandes d'un passage choisi (voir useReadingSelection).
@@ -32,10 +35,28 @@ import { analyticsService } from "../services/analyticsService";
  * commande d'un verset choisi, elle rejoint les autres plutôt que de rester
  * seule sous le fil.
  *
+ * Là où le passage a des commentaires (une guemara, une paracha), une seconde
+ * rangée les propose, sur toute la largeur de la bulle : « Commentaires »,
+ * avec ce qu'il y a à lire (« Rachi 2 · Tossafot 1 »). Une cinquième colonne
+ * ne tiendrait pas sur un téléphone, et ce n'est pas une commande comme les
+ * autres : elle ouvre le panneau d'étude, qui suit ensuite la lecture.
+ *
  * Elle est posée une fois dans App.vue et suit le passage : la bulle glisse
  * avec lui au défilement, et s'efface quand il quitte l'écran, comme le fait
  * le menu qu'elle remplace.
+ *
+ * Sur un téléphone (app ou site, voir useSideBySide), les mêmes commandes
+ * montent dans un bottom sheet (BottomSheet.vue) au lieu d'une bulle posée
+ * sur le passage : c'est la forme qu'un téléphone donne à ce qui accompagne
+ * un écran, le pouce l'atteint, il se pousse vers le bas pour se fermer, et
+ * il ne cache jamais le passage qu'on vient de toucher. Le tirer vers le haut
+ * ouvre les commentaires du passage, comme l'appui sur leur rangée. Sur un
+ * écran large (tablette, pliant ouvert, ordinateur), la bulle reste contre le
+ * passage.
  */
+
+/** Téléphone : le volet au bas de l'écran ; écran large : la bulle. */
+const asSheet = computed(() => !sideBySide.value);
 
 const { t } = useI18n();
 const route = useRoute();
@@ -169,6 +190,24 @@ const bookmarkLabel = computed(() =>
   readingPassage.value?.bookmarked ? t("textReading.bookmarkRemove") : t("textReading.bookmarkAdd"),
 );
 
+/**
+ * Les commentaires du passage : la rangée ne paraît que s'il en a, ou le temps
+ * qu'on le sache. Le compte dit ce qu'on va trouver avant de l'ouvrir.
+ */
+const commentary = computed(() => readingPassage.value?.commentary?.summary() ?? null);
+const commentaryCounts = computed(() =>
+  commentary.value?.state === "ready"
+    ? commentary.value.counts.map((c) => `${t(COMMENTARY_LABELS[c.source])} ${c.count}`).join(" · ")
+    : "",
+);
+
+function openCommentaries(): void {
+  const passage = readingPassage.value;
+  if (!passage?.commentary) return;
+  track("commentaries");
+  passage.commentary.open();
+}
+
 /** Les premiers mots du passage : de quoi le reconnaître dans un signalement. */
 const EXCERPT_MAX = 160;
 function excerpt(hebrew: string): string {
@@ -228,7 +267,8 @@ function onPointerDown(event: PointerEvent): void {
   // sous les doigts de celui qui vient de l'ouvrir.
   if (showShare.value || !readingPassage.value) return;
   const target = event.target;
-  if (target instanceof Element && target.closest(".reading-pick, .reading-bubble")) return;
+  if (target instanceof Element && target.closest(".reading-pick, .reading-bubble, .bottom-sheet"))
+    return;
   clearPassage();
 }
 
@@ -258,15 +298,33 @@ onBeforeUnmount(() => {
   <!-- L'enveloppe tient toute la largeur et ne prend aucun appui : seule la
        bulle qu'elle centre en reçoit. La bulle se pose ainsi au milieu de la
        colonne de lecture, quelle que soit la longueur du passage. -->
-  <Transition name="bubble">
-    <div
-      v-if="readingPassage && spot && !showShare"
-      class="bubble-anchor"
-      :style="{ top: `${spot.top}px`, '--bubble-scale': bubbleScale }"
+  <!-- Sur un téléphone, l'enveloppe est un bottom sheet : même contenu,
+       posé au bas de l'écran plutôt que sur le passage. -->
+  <Transition :name="asSheet ? 'sheet' : 'bubble'">
+    <component
+      :is="asSheet ? BottomSheet : 'div'"
+      v-if="readingPassage && (asSheet || spot) && !showShare"
+      v-bind="
+        asSheet
+          ? {
+              label: t('textReading.selection.title'),
+              style: { '--bubble-scale': bubbleScale },
+              onClose: clearPassage,
+              // Tirer le volet vers le haut ouvre les commentaires, là où le
+              // passage en a : le geste vaut l'appui sur leur rangée.
+              expandable: !!commentary && commentary.state !== 'none',
+              onExpand: openCommentaries,
+            }
+          : {
+              class: 'bubble-anchor',
+              style: { top: `${spot?.top ?? 0}px`, '--bubble-scale': bubbleScale },
+            }
+      "
     >
       <div
         ref="bubble"
         class="reading-bubble"
+        :class="{ 'bubble-sheet': asSheet }"
         role="group"
         :aria-label="t('textReading.selection.title')"
       >
@@ -301,9 +359,24 @@ onBeforeUnmount(() => {
           </button>
         </div>
 
+        <!-- Les commentaires du passage : une rangée à part, sur toute la
+             largeur, avec ce qu'il y a à lire. -->
+        <button
+          v-if="view === 'actions' && commentary && commentary.state !== 'none'"
+          type="button"
+          class="bubble-commentary"
+          :disabled="commentary.state === 'loading'"
+          @click="openCommentaries"
+        >
+          <AppIcon name="book-reader" :size="iconSize" />
+          <span>{{ t("textReading.commentaries.open") }}</span>
+          <span v-if="commentaryCounts" class="bubble-counts">{{ commentaryCounts }}</span>
+          <span v-else class="bubble-counts">…</span>
+        </button>
+
         <!-- La phonétique du seul passage choisi : l'hébreu reste à l'écran
              dessous, on ne bascule pas toute la page pour un mot. -->
-        <div v-else class="bubble-phonetic">
+        <div v-else class="bubble-phonetic" data-sheet-nodrag>
           <div class="flex items-start justify-between gap-2">
             <p class="bubble-place">{{ readingPassage.place }}</p>
             <button
@@ -318,7 +391,7 @@ onBeforeUnmount(() => {
           <p dir="ltr" class="bubble-tl">{{ phonetic }}</p>
         </div>
       </div>
-    </div>
+    </component>
   </Transition>
 
   <!-- Le partage du passage : la même fenêtre que partout ailleurs, avec le
@@ -361,6 +434,20 @@ onBeforeUnmount(() => {
   box-shadow: var(--shadow-pop);
 }
 
+/* Dans le bottom sheet d'un téléphone : la largeur de l'écran, le fond et
+   l'ombre sont ceux du volet, les commandes se répartissent sur toute la
+   rangée. */
+.bubble-sheet {
+  max-width: none;
+  border-radius: 0;
+  background-color: transparent;
+  box-shadow: none;
+}
+
+.bubble-sheet > .flex {
+  justify-content: space-around;
+}
+
 /* Une commande : l'icône, puis son nom en petit, dans une colonne étroite.
    Quatre tiennent sur la largeur d'un téléphone. */
 .bubble-action {
@@ -389,6 +476,37 @@ onBeforeUnmount(() => {
 .bubble-action:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: -2px;
+}
+
+/* Les commentaires : une rangée sous les commandes, séparée d'un filet. */
+.bubble-commentary {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.85rem;
+  border-top: 1px solid color-mix(in srgb, var(--color-text-primary) 8%, transparent);
+  font-size: calc(0.8rem * var(--bubble-scale, 1));
+  font-weight: 600;
+  color: var(--color-text-primary);
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.bubble-commentary:hover:not(:disabled) {
+  background-color: color-mix(in srgb, var(--color-text-primary) 7%, transparent);
+  color: var(--color-primary);
+}
+
+.bubble-commentary:disabled {
+  color: var(--color-text-secondary);
+}
+
+.bubble-counts {
+  margin-inline-start: auto;
+  font-weight: 500;
+  color: var(--color-text-secondary);
 }
 
 /* La phonétique : un texte, pas une commande. Elle défile si le passage est
