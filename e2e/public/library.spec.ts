@@ -127,7 +127,8 @@ test.describe("lecteur", () => {
     // Le choix est gardé : la Torah s'ouvre à son tour dans le Sefer Torah.
     await gotoApp(page, "/bibliotheque/tanakh/haazinu");
     await expect(page.locator(".torah-scroll")).toBeVisible({ timeout: 20_000 });
-    await expect(page.locator(".scroll-row-2").first()).toBeVisible();
+    // Haazinou en deux moitiés, sur les lignes du rouleau (torah-layout).
+    await expect(page.locator(".scroll-line-halves").first()).toBeVisible();
     await page.getByRole("button", { name: "Hébreu", exact: true }).first().click();
     await expect(page.locator(".torah-scroll")).toHaveCount(0);
   });
