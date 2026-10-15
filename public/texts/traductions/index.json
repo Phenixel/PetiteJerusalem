@@ -509,26 +509,32 @@
       "fr"
     ],
     "/texts/talmud/arakhin.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/talmud/avodah-zarah.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/talmud/bava-batra.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/talmud/bava-kamma.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/talmud/bava-metzia.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/talmud/beitzah.json": [
       "en",
       "fr"
     ],
     "/texts/talmud/bekhorot.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/talmud/berakhot.json": [
       "en",
@@ -539,7 +545,8 @@
       "fr"
     ],
     "/texts/talmud/chullin.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/talmud/eruvin.json": [
       "en",
@@ -550,10 +557,12 @@
       "fr"
     ],
     "/texts/talmud/horayot.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/talmud/keritot.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/talmud/ketubot.json": [
       "en",
@@ -577,7 +586,8 @@
       "en"
     ],
     "/texts/talmud/menachot.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/talmud/middot.json": [
       "en"
@@ -606,7 +616,8 @@
       "fr"
     ],
     "/texts/talmud/sanhedrin.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/talmud/shabbat.json": [
       "en",
@@ -617,7 +628,8 @@
       "fr"
     ],
     "/texts/talmud/shevuot.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/talmud/sotah.json": [
       "en",
@@ -635,7 +647,8 @@
       "en"
     ],
     "/texts/talmud/temurah.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/talmud/yevamot.json": [
       "en",
@@ -646,7 +659,8 @@
       "fr"
     ],
     "/texts/talmud/zevachim.json": [
-      "en"
+      "en",
+      "fr"
     ],
     "/texts/tanakh/264.json": [
       "en",
