@@ -1,8 +1,15 @@
 import { describe, it, expect } from "vitest";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { DAF_LAYOUT_CHUNK, DAF_UNITS, type DafLayoutChunk } from "../services/dafLayout";
 import { gemaraPageText, scrollVerseWords } from "../services/pageForm";
-import { MEFORSHIM_CHUNK, parseRashiComment } from "../services/textService";
+import {
+  SCROLL_COLUMN_LINES,
+  scrollColumns,
+  type ScrollLayout,
+  type ScrollRow,
+} from "../services/scrollLayout";
+import { MEFORSHIM_CHUNK, cleanText, parseRashiComment } from "../services/textService";
 
 /**
  * Les coupures de ligne du livre imprimé (public/texts/talmud-layout et
@@ -33,24 +40,13 @@ const commentWords = (comments: string[]): string[] =>
     return parsed ? `${parsed.lead} ${parsed.text}`.split(/\s+/).filter(Boolean) : [];
   });
 
-type Run = [number, number, number] | [number, number, number, number];
-interface DafLayout {
-  title: string;
-  from: number;
-  edition: string;
-  through: number;
-  main: [number, number][][];
-  rashi: Run[][][];
-  tosafot: Run[][][];
-  absent: Partial<Record<"rashi" | "tosafot", Run[]>>[];
-}
 interface Meforshim {
   from: number;
   rashi: string[][][];
   tosafot: string[][][];
 }
 
-describe("coupures de la page de Vilna", () => {
+describe("lignes de la page de Vilna", () => {
   const tractates = folders("talmud-layout");
 
   it("ne couvre que des traités qu'on a", () => {
@@ -63,149 +59,318 @@ describe("coupures de la page de Vilna", () => {
     const gemara = read<{ he: string[][] }>(`talmud/${slug}.json`).he;
     const chunks = folders(`talmud-layout/${slug}`).map((file) => ({
       n: Number(file.replace(".json", "")),
-      data: read<DafLayout>(`talmud-layout/${slug}/${file}`),
+      data: read<DafLayoutChunk>(`talmud-layout/${slug}/${file}`),
     }));
-    const meforshim = new Map<number, Meforshim>();
+    const meforshim = new Map<number, Meforshim | null>();
     const comments = (zone: "rashi" | "tosafot", amud: number): string[][] => {
       const n = Math.floor(amud / MEFORSHIM_CHUNK);
-      if (!meforshim.has(n))
-        meforshim.set(n, read<Meforshim>(`talmud-meforshim/${slug}/${n}.json`));
-      const chunk = meforshim.get(n)!;
-      return chunk[zone][amud - chunk.from] ?? [];
+      if (!meforshim.has(n)) {
+        const path = `talmud-meforshim/${slug}/${n}.json`;
+        meforshim.set(n, existsSync(resolve(TEXTS, path)) ? read<Meforshim>(path) : null);
+      }
+      const chunk = meforshim.get(n);
+      return chunk ? (chunk[zone][amud - chunk.from] ?? []) : [];
     };
+    const pages = chunks.flatMap(({ data }) =>
+      data.pages.flatMap((page, i) => (page ? [{ amud: data.from + i, page }] : [])),
+    );
 
     it(`${slug} : des tranches de vingt amoudim, comme les commentaires`, () => {
+      expect(DAF_LAYOUT_CHUNK).toBe(MEFORSHIM_CHUNK);
       for (const { n, data } of chunks) {
-        expect(data.from).toBe(n * MEFORSHIM_CHUNK);
-        expect(data.through).toBeGreaterThanOrEqual(data.from);
-        expect(data.through).toBeLessThan(Math.min(data.from + MEFORSHIM_CHUNK, gemara.length));
-        for (const zone of ["main", "rashi", "tosafot", "absent"] as const) {
-          expect(data[zone].length, `${zone} de la tranche ${n}`).toBe(
-            data.through - data.from + 1,
-          );
-        }
+        expect(data.from).toBe(n * DAF_LAYOUT_CHUNK);
+        expect(data.pages.length).toBeLessThanOrEqual(DAF_LAYOUT_CHUNK);
+        expect(data.from + data.pages.length).toBeLessThanOrEqual(gemara.length);
       }
     });
 
-    it(`${slug} : les lignes de la guemara se partagent chaque amoud`, () => {
-      for (const { data } of chunks) {
-        data.main.forEach((lines, i) => {
-          const amud = data.from + i;
-          // La place de chaque mot de l'amoud, dans l'ordre de la page.
-          const order = new Map<string, number>();
-          gemara[amud].forEach((passage, p) =>
-            gemaraWords(passage).forEach((_, w) => order.set(`${p}:${w}`, order.size)),
-          );
-          const at = lines.map(([p, w]) => order.get(`${p}:${w}`));
-          expect(at, `amoud ${amud} : une place qui n'existe pas`).not.toContain(undefined);
-          // La première ligne commence au premier mot, les suivantes avancent :
-          // chaque mot appartient à une ligne et une seule.
-          expect(at[0], `amoud ${amud}`).toBe(0);
-          for (let k = 1; k < at.length; k++) {
-            expect(at[k]!, `amoud ${amud}, ligne ${k + 1}`).toBeGreaterThan(at[k - 1]!);
+    // Des millions de mots : on compte les fautes, on n'affirme qu'à la fin.
+    it(`${slug} : chaque ligne tient dans sa page`, () => {
+      const faults: string[] = [];
+      for (const { amud, page } of pages) {
+        if (!(page.height > 0)) faults.push(`amoud ${amud} : sans hauteur`);
+        for (const zone of ["main", "rashi", "tosafot"] as const) {
+          for (const [x, y, width] of page[zone]) {
+            if (x < 0 || x + width > DAF_UNITS + 2 || y < 0 || y > page.height || width <= 0)
+              faults.push(`amoud ${amud}, ${zone} : ${x}, ${y}, ${width}`);
           }
-        });
+        }
       }
+      expect(faults.slice(0, 5)).toEqual([]);
+    });
+
+    it(`${slug} : le mot d'ouverture, les mots en grand et la clôture sont à leur place`, () => {
+      const faults: string[] = [];
+      for (const { amud, page } of pages) {
+        const words = gemara[amud].map(gemaraWords);
+        for (const [x, y, width, height, p, w, count] of page.initial ?? []) {
+          if (x < 0 || x + width > DAF_UNITS + 2 || y < 0 || y > page.height || !(height > 0))
+            faults.push(`amoud ${amud} : mot d'ouverture hors de la page`);
+          if (count <= 0 || w + count > (words[p]?.length ?? -1))
+            faults.push(`amoud ${amud} : mot d'ouverture ${p}, ${w}, ${count} n'existe pas`);
+        }
+        // Ce que le livre écrit autrement que notre texte (une abréviation, une
+        // autre leçon) remplace des mots qui existent, par un texte court.
+        for (const [zone, p, w, count, text, other] of page.short ?? []) {
+          if (![0, 1, 2].includes(zone) || !(count >= 1) || !text || text.length > 120)
+            faults.push(`amoud ${amud} : abréviation ${zone}, ${p}, ${w}, ${count}`);
+          if (zone === 0 && other === undefined && w + count > (words[p]?.length ?? -1))
+            faults.push(`amoud ${amud} : abréviation ${p}, ${w}, ${count} n'existe pas`);
+        }
+        // Le texte du livre là où le nôtre n'a rien : des lettres hébraïques, dans la page.
+        for (const [zone, x, y, width, text, lead] of page.fill ?? []) {
+          if (
+            ![1, 2].includes(zone) ||
+            x < 0 ||
+            x + width > DAF_UNITS + 2 ||
+            y < 0 ||
+            y > page.height
+          )
+            faults.push(`amoud ${amud} : texte du livre hors de la page`);
+          if (!/[א-ת]{2}/.test(text) || /[^א-ת'"׳״.,:;()[\] -]/.test(text) || lead < 0)
+            faults.push(`amoud ${amud} : texte du livre « ${text} »`);
+        }
+        // La formule de clôture rangée à la page voisine : nos mots, rien d'autre.
+        for (const [x, y, width, height, text] of page.formula ?? []) {
+          if (x < 0 || x + width > DAF_UNITS + 2 || y < 0 || y > page.height || !(height > 0))
+            faults.push(`amoud ${amud} : formule hors de la page`);
+          if (!/^הדרן עלך [א-ת'"׳״ ]+$/.test(text))
+            faults.push(`amoud ${amud} : formule « ${text} »`);
+        }
+        for (const [p, w, count] of page.big ?? []) {
+          if (count <= 0 || w + count > (words[p]?.length ?? -1))
+            faults.push(`amoud ${amud} : mot en grand ${p}, ${w}, ${count} n'existe pas`);
+        }
+        for (const [x, y, width, height, p, w, count, zone] of page.closing ?? []) {
+          if (x < 0 || x + width > DAF_UNITS + 2 || y < 0 || y > page.height || !(height > 0))
+            faults.push(`amoud ${amud} : clôture hors de la page`);
+          if (zone) continue;
+          if (count <= 0 || w + count > (words[p]?.length ?? -1))
+            faults.push(`amoud ${amud} : clôture ${p}, ${w}, ${count} n'existe pas`);
+          else if (words[p][w] !== "הדרן")
+            faults.push(`amoud ${amud} : clôture « ${words[p][w]} »`);
+        }
+      }
+      expect(faults.slice(0, 5)).toEqual([]);
+    });
+
+    it(`${slug} : les lignes de la guemara portent tout son texte, mot pour mot`, () => {
+      const faults: string[] = [];
+      let total = 0;
+      let placed = 0;
+      for (const { amud, page } of pages) {
+        const words = gemara[amud].map(gemaraWords);
+        const seen = new Set<string>();
+        // Le mot d'ouverture et la clôture, écrits hors des lignes, sont de la guemara aussi.
+        const apart = [...(page.initial ?? []), ...(page.closing ?? []).filter((c) => !c[7])].map(
+          ([, , , , p, w, count]) => [p, w, count] as [number, number, number],
+        );
+        for (const [, , , ...runs] of [
+          ...page.main,
+          [0, 0, 0, ...apart] as (typeof page.main)[number],
+        ]) {
+          for (const [p, w, count] of runs) {
+            if (count <= 0 || w + count > (words[p]?.length ?? -1))
+              faults.push(`amoud ${amud} : ${p}, ${w}, ${count} n'existe pas`);
+            for (let k = w; k < w + count; k++) {
+              if (seen.has(`${p}:${k}`)) faults.push(`amoud ${amud} : ${p}:${k} deux fois`);
+              seen.add(`${p}:${k}`);
+            }
+          }
+        }
+        total += words.reduce((n, list) => n + list.length, 0);
+        placed += seen.size;
+      }
+      expect(faults.slice(0, 5)).toEqual([]);
+      // Un mot de notre fichier que la page n'a pas ne va sur aucune ligne :
+      // il n'y en a presque pas.
+      expect(placed / total).toBeGreaterThan(0.995);
     });
 
     for (const zone of ["rashi", "tosafot"] as const) {
-      it(`${slug} : chaque mot de ${zone} est sur une ligne, une seule fois`, () => {
-        const through = Math.max(...chunks.map((c) => c.data.through));
+      it(`${slug} : les lignes de ${zone} désignent son texte, sans le répéter`, () => {
+        const faults: string[] = [];
         const seen = new Set<string>();
-        const take = (amud: number, [p, w, count]: Run, where: string): void => {
-          const words = commentWords(comments(zone, amud)[p] ?? []);
-          expect(count, `${where} : un morceau vide`).toBeGreaterThan(0);
-          expect(
-            w + count,
-            `${where} : au-delà du passage ${p} de l'amoud ${amud}`,
-          ).toBeLessThanOrEqual(words.length);
-          for (let k = w; k < w + count; k++) {
-            const key = `${amud}:${p}:${k}`;
-            expect(seen.has(key), `${where} : le mot ${key} est pris deux fois`).toBe(false);
-            seen.add(key);
-          }
+        const cache = new Map<string, number>();
+        const size = (at: number, p: number): number => {
+          const key = `${at}:${p}`;
+          if (!cache.has(key)) cache.set(key, commentWords(comments(zone, at)[p] ?? []).length);
+          return cache.get(key)!;
         };
-        for (const { data } of chunks) {
-          data[zone].forEach((lines, i) => {
-            const amud = data.from + i;
-            lines.forEach((line, l) => {
-              expect(line.length, `amoud ${amud}, ligne ${l + 1} vide`).toBeGreaterThan(0);
-              for (const run of line) take(run[3] ?? amud, run, `amoud ${amud}, ligne ${l + 1}`);
-            });
-          });
-          data.absent.forEach((absent, i) => {
-            for (const run of absent[zone] ?? [])
-              take(data.from + i, run, `absent de ${data.from + i}`);
-          });
+        let total = 0;
+        for (const { amud, page } of pages) {
+          for (const [, , , ...runs] of page[zone]) {
+            for (const [p, w, count, other] of runs) {
+              const at = other ?? amud;
+              if (count <= 0 || w + count > size(at, p))
+                faults.push(`amoud ${amud} : ${p}, ${w}, ${count} de l'amoud ${at} n'existe pas`);
+              for (let k = w; k < w + count; k++) {
+                const key = `${at}:${p}:${k}`;
+                if (seen.has(key)) faults.push(`amoud ${amud} : ${key} deux fois`);
+                seen.add(key);
+              }
+            }
+          }
+          total += comments(zone, amud).reduce((n, list) => n + commentWords(list).length, 0);
         }
-        // Tout amoud d'avant le dernier est entièrement placé. Le dernier
-        // peut finir à la page suivante, qu'on n'a pas encore relevée.
-        for (let amud = 0; amud < through; amud++) {
-          comments(zone, amud).forEach((passage, p) => {
-            commentWords(passage).forEach((_, w) => {
-              expect(
-                seen.has(`${amud}:${p}:${w}`),
-                `le mot ${amud}:${p}:${w} n'est sur aucune ligne`,
-              ).toBe(true);
-            });
-          });
-        }
+        expect(faults.slice(0, 5)).toEqual([]);
+        // Ce qui manque est ce que notre fichier porte et que la page n'imprime
+        // pas : un doublon, un ajout entre crochets.
+        if (total) expect(seen.size / total).toBeGreaterThan(0.93);
       });
     }
   }
 });
 
-interface ScrollLayout {
-  title: string;
-  edition: string;
-  columns: { column: number; from: number; lines: [number, number][] }[];
-  blanks: [number, number][];
-  big: [number, number, number][];
-  small: [number, number, number][];
-}
-
 describe("colonnes du Sefer Torah", () => {
-  const files = folders("torah-layout");
+  /** Les parachiot de la Torah au catalogue (public/texts/tanakh). */
+  const PARASHIOT = Array.from({ length: 54 }, (_, k) => 264 + k);
+  /** Les colonnes qui ne commencent pas par un vav : « בי"ה שמ"ו » et les deux coutumes du chin. */
+  const NOT_VAV: Record<number, string> = {
+    1: "בראשית",
+    59: "יהודה",
+    78: "הבאים",
+    102: "שמר",
+    132: "שני",
+    184: "מה",
+  };
 
-  for (const file of files) {
-    const layout = read<ScrollLayout>(`torah-layout/${file}`);
-    const verses = (read<{ he: string[][] }>(`tanakh/${file}`).he.flat() as string[]).map(
-      scrollVerseWords,
-    );
-    const order = new Map<string, number>();
-    verses.forEach((words, v) => words.forEach((_, w) => order.set(`${v}:${w}`, order.size)));
+  const parashiot = PARASHIOT.map((id) => {
+    const text = read<{ fromBook: string; he: string[][] }>(`tanakh/${id}.json`);
+    const raw = text.he.flat();
+    return {
+      id,
+      book: text.fromBook,
+      raw,
+      verses: raw.map(scrollVerseWords),
+      layout: read<ScrollLayout>(`torah-layout/${id}.json`),
+    };
+  });
 
-    it(`${layout.title} : des colonnes de quarante-deux lignes, dans l'ordre`, () => {
-      let previous = 0;
-      for (const column of layout.columns) {
-        expect(column.column).toBeGreaterThan(previous);
-        previous = column.column;
-        expect(column.from).toBeGreaterThanOrEqual(0);
-        expect(column.from + column.lines.length).toBeLessThanOrEqual(42);
-      }
-      // Une colonne entamée va jusqu'au bout, sauf la dernière.
-      layout.columns.slice(0, -1).forEach((column) => {
-        expect(column.from + column.lines.length, `colonne ${column.column}`).toBe(42);
+  it("couvre toute la Torah, et rien d'autre", () => {
+    expect(folders("torah-layout")).toEqual(PARASHIOT.map((id) => `${id}.json`).sort());
+  });
+
+  it("compte les mots comme le lecteur, qui lit le texte nettoyé", () => {
+    for (const { id, raw, verses } of parashiot) {
+      raw.forEach((verse, v) => {
+        expect(verses[v].length, `paracha ${id}, verset ${v}`).toBeGreaterThan(0);
+        expect(scrollVerseWords(cleanText(verse)), `paracha ${id}, verset ${v}`).toEqual(verses[v]);
       });
-      layout.columns.slice(1).forEach((column) => expect(column.from).toBe(0));
-    });
+    }
+  });
 
-    it(`${layout.title} : chaque ligne commence à un mot du texte, après la précédente`, () => {
-      const at = layout.columns.flatMap((column) =>
-        column.lines.map(([v, w]) => order.get(`${v}:${w}`)),
-      );
-      expect(at).not.toContain(undefined);
-      for (let k = 1; k < at.length; k++) {
-        expect(at[k]!, `ligne ${k + 1}`).toBeGreaterThan(at[k - 1]!);
+  it("donne à chaque mot une ligne, une seule", () => {
+    for (const { id, layout, verses } of parashiot) {
+      const columns = scrollColumns(layout, verses);
+      expect(columns, `paracha ${id}`).not.toBeNull();
+      const written = columns!.flatMap((c) => c.rows.flatMap((r) => r.pieces));
+      const words = written.flatMap((p) => p.runs.flatMap((r) => r.words));
+      expect(words, `paracha ${id}`).toEqual(verses.flat());
+    }
+  });
+
+  it("tient les colonnes de quarante-deux lignes, d'un bout à l'autre du rouleau", () => {
+    let column = 1;
+    let line = 0;
+    let previousBook = "";
+    parashiot.forEach(({ id, book, layout }, n) => {
+      const first = layout.columns[0];
+      if (n > 0) {
+        // La paracha reprend où la précédente s'arrête : dans la même ligne
+        // après une setouma, sinon à la ligne suivante ; quatre lignes
+        // blanches plus bas d'un livre à l'autre, une avant Haazinou.
+        const shared = first.lines[0][0] === null;
+        const blank = (book !== previousBook ? 4 : 0) + (id === 316 ? 1 : 0);
+        const skipped = shared ? 0 : 1 + blank;
+        const at = (column - 1) * SCROLL_COLUMN_LINES + line + skipped;
+        expect(first.column, `paracha ${id}`).toBe(Math.floor(at / SCROLL_COLUMN_LINES) + 1);
+        expect(first.from, `paracha ${id}`).toBe(at % SCROLL_COLUMN_LINES);
+        if (shared) expect(parashiot[n - 1].layout.columns.at(-1)!.lines.at(-1)!.at(-1)).toBeNull();
+      } else {
+        expect([first.column, first.from]).toEqual([1, 0]);
       }
+      layout.columns.forEach((c, k) => {
+        expect(c.column, `paracha ${id}`).toBe(first.column + k);
+        if (k > 0) expect(c.from, `paracha ${id}, colonne ${c.column}`).toBe(0);
+        const last = k === layout.columns.length - 1;
+        if (!last) expect(c.from + c.lines.length, `colonne ${c.column}`).toBe(SCROLL_COLUMN_LINES);
+        else expect(c.from + c.lines.length).toBeLessThanOrEqual(SCROLL_COLUMN_LINES);
+      });
+      const end = layout.columns.at(-1)!;
+      column = end.column;
+      line = end.from + end.lines.length - 1;
+      previousBook = book;
     });
+    // Le rouleau finit avec sa deux cent quarante-cinquième colonne.
+    expect([column, line]).toEqual([245, SCROLL_COLUMN_LINES - 1]);
+  });
 
-    it(`${layout.title} : les blancs et les lettres à part désignent le texte`, () => {
-      for (const [v, w] of layout.blanks)
-        expect(order.has(`${v}:${w}`), `blanc ${v}:${w}`).toBe(true);
+  it("commence chaque colonne par un vav, sauf celles que la tradition nomme", () => {
+    const seen = new Set<number>();
+    for (const { layout, verses } of parashiot) {
+      for (const c of layout.columns) {
+        const head = c.lines[0][0];
+        if (c.from !== 0 || !head) continue;
+        const word = verses[head[0]][head[1]];
+        seen.add(c.column);
+        expect(word.startsWith("ו") || NOT_VAV[c.column] === word, `colonne ${c.column}`).toBe(
+          true,
+        );
+      }
+    }
+    expect(seen.size).toBe(245);
+  });
+
+  it("écrit les deux chirot comme la tradition les fixe", () => {
+    const heads = (rows: ScrollRow[], piece = 0): string[] =>
+      rows.map((row) => row.pieces[piece].runs[0].words[0]);
+    // Az yachir : trente lignes, une pleine puis trois morceaux et deux tour à
+    // tour ; une ligne blanche avant et après ; cinq lignes dessous, dont le
+    // Rema donne les premiers mots (Yoré Déa 275, 6).
+    const beshalach = parashiot.find((p) => p.id === 279)!;
+    const rows = scrollColumns(beshalach.layout, beshalach.verses)!.find(
+      (c) => c.column === 78,
+    )!.rows;
+    expect(rows).toHaveLength(SCROLL_COLUMN_LINES);
+    expect(heads(rows.slice(0, 5))).toEqual("הבאים ביבשה יהוה מת במצרים".split(" "));
+    expect(rows[5].kind).toBe("blank");
+    expect(rows.slice(6, 36).map((row) => row.pieces.length)).toEqual([
+      1,
+      ...Array.from({ length: 29 }, (_, k) => (k % 2 ? 2 : 3)),
+    ]);
+    expect(heads(rows.slice(6, 36))).toEqual(
+      (
+        "אז לאמר ורכבו לישועה אבי שמו שלשיו אבן יהוה קמיך אפיך נזלים אויב נפשי ברוחך " +
+        "אדירים כמכה פלא בחסדך קדשך אחז אדום כל ופחד יעבר קנית לשבתך ידיך בא הים"
+      ).split(" "),
+    );
+    expect(rows[36].kind).toBe("blank");
+    expect(heads(rows.slice(37))).toEqual("ותקח אחריה סוס ויצאו ויבאו".split(" "));
+
+    // Haazinou : soixante-dix lignes en deux moitiés (Rambam, Sefer Torah 8, 4),
+    // six lignes dessus, une ligne blanche de part et d'autre.
+    const haazinou = parashiot.find((p) => p.id === 316)!;
+    const vayelech = parashiot.find((p) => p.id === 315)!;
+    const song = scrollColumns(haazinou.layout, haazinou.verses)!.flatMap((c) => c.rows);
+    const halves = song.filter((row) => row.kind === "halves");
+    expect(halves).toHaveLength(70);
+    expect(heads(halves).slice(0, 3)).toEqual(["האזינו", "יערף", "כשעירם"]);
+    expect(heads(halves, 1).slice(0, 3)).toEqual(["ותשמע", "תזל", "וכרביבים"]);
+    // « ואילים » finit sa ligne : la suivante commence par « בני ».
+    expect(heads(halves)[22]).toBe("בני");
+    expect(song[70].kind).toBe("blank");
+    const before = scrollColumns(vayelech.layout, vayelech.verses)!.at(-1)!.rows;
+    expect(heads(before.slice(-6))).toEqual("ואעידה אחרי הדרך באחרית להכעיסו קהל".split(" "));
+  });
+
+  it("désigne des lettres du texte pour les grandes et les petites", () => {
+    for (const { id, layout, verses } of parashiot) {
       for (const [v, w, letter] of [...layout.big, ...layout.small]) {
-        expect(verses[v]?.[w]?.[letter], `lettre ${v}:${w}:${letter}`).toMatch(/[א-ת]/);
+        expect(verses[v]?.[w]?.[letter], `paracha ${id}, lettre ${v}:${w}:${letter}`).toMatch(
+          /[א-ת]/,
+        );
       }
-    });
-  }
+    }
+  });
 });

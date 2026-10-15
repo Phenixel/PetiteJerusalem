@@ -199,9 +199,9 @@ describe("forme de la page du daf", () => {
       expect(amudim, `${slug} : amoudim`).toBe(gemara.he.length);
       expect(commented / amudim, `${slug} : amoudim commentés`).toBeGreaterThan(0.6);
     }
-    // Tous les traités de guemara, sauf ceux que Vilna imprime sans Rachi
-    // ni Tossafot (Tamid) ou qui ne sont pas du Bavli (Chekalim).
-    expect(withPages).toBe(36);
+    // Tous les traités de guemara (Tamid avec son « מפרש »), sauf Chekalim,
+    // qui n'est pas du Bavli.
+    expect(withPages).toBe(37);
   });
 
   it("garde le dibbour hamat'hil en avant, comme sur la page", () => {
@@ -231,5 +231,35 @@ describe("forme de la page du daf", () => {
     // Index 55 du traité : le 29b.
     expect(parsed.get(55)!.inner).toBe("rashbam");
     expect(parsed.get(40)!.inner).toBe("rashi");
+  });
+
+  it("garde Rachi et le Rachbam côte à côte en Pessa'him, à partir de 99b", () => {
+    const parsed = parseDafMeforshim(read("talmud-meforshim/pesachim/9.json") as never);
+    // Index 197 du traité : le 100b, où le livre imprime les deux.
+    const amud = parsed.get(197)!;
+    expect(amud.inner).toBe("rashi");
+    expect(amud.rashbamAfter).toBeDefined();
+    const p = amud.rashbamAfter!.findIndex((n, k) => n < amud.rashi[k].length);
+    expect(p).toBeGreaterThanOrEqual(0);
+    // Avant 99b, Rachi seul.
+    expect(parsed.get(180)!.rashbamAfter).toBeUndefined();
+  });
+
+  it("donne au Ran la place de Tossafot en Nedarim, et garde Tossafot pour le volet", () => {
+    const parsed = parseDafMeforshim(read("talmud-meforshim/nedarim/0.json") as never);
+    const amud = parsed.get(2)!;
+    expect(amud.outer).toBe("ran");
+    expect(amud.tosafot.flat().length).toBeGreaterThan(0);
+    expect(amud.margin).toBeDefined();
+    // Ailleurs, Tossafot tient sa colonne.
+    const other = parseDafMeforshim(read("talmud-meforshim/berakhot/0.json") as never);
+    expect(other.get(0)!.outer).toBeUndefined();
+    expect(other.get(0)!.margin).toBeUndefined();
+  });
+
+  it("donne au « מפרש » la place de Rachi en Tamid", () => {
+    const parsed = parseDafMeforshim(read("talmud-meforshim/tamid/0.json") as never);
+    const amud = [...parsed.values()].find((m) => m.rashi.flat().length > 0)!;
+    expect(amud.inner).toBe("mefaresh");
   });
 });

@@ -588,7 +588,9 @@ def write_layout(slug: str, layout: dict[int, dict[str, list]], through: int) ->
     portent déjà pour les amoudim qu'on n'a pas refaits."""
     with open(os.path.join(TEXTS, "talmud", f"{slug}.json"), encoding="utf8") as f:
         title = json.load(f)["title"]
-    out_dir = os.path.join(TEXTS, "talmud-layout", slug)
+    # public/texts/talmud-layout porte les lignes lues par vilna.py, dans un
+    # autre format : ce relevé sur scan reste hors du dépôt.
+    out_dir = os.path.join(CACHE, "vilna-scan", "layout", slug)
     os.makedirs(out_dir, exist_ok=True)
     written = []
     for chunk in sorted({a // CHUNK for a in layout}):
@@ -633,7 +635,7 @@ def main() -> None:
     parser.add_argument("tractate", help="le traité, comme dans public/texts/talmud (berakhot)")
     parser.add_argument("--from", dest="first", default="2a")
     parser.add_argument("--to", dest="last", default=None)
-    parser.add_argument("--write", action="store_true", help="écrit public/texts/talmud-layout")
+    parser.add_argument("--write", action="store_true", help="écrit le relevé dans le cache (le dépôt porte les lignes de vilna.py)")
     parser.add_argument("--review", help="dossier des planches de contrôle (hors dépôt)")
     parser.add_argument("--pages-only", action="store_true",
                         help="avec --review : seulement la vue d'ensemble de chaque page")

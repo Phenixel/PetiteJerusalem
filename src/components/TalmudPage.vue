@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import type { RashiComment } from "../services/textService";
+import {
+  commentLinked,
+  commentedPassages,
+  linkLeads,
+  type DafLink,
+  type DafZone,
+} from "../services/dafLinks";
 import { amudOf, dafColumns, dafSides, gemaraPageText, talmudOpenings } from "../services/pageForm";
 import MarkedText from "./MarkedText.vue";
 
@@ -20,18 +27,37 @@ import MarkedText from "./MarkedText.vue";
  * l'écran mesure : où finit chaque commentaire, puis où finit la guemara
  * (dafColumns). La mesure se refait quand la largeur, la taille de lecture
  * ou les polices changent.
+ *
+ * Un passage et ses commentaires se répondent (dafLinks.ts) : on touche un
+ * passage que Rachi ou Tossafot explique, il se surligne avec eux ; on touche
+ * un commentaire, il se surligne avec son passage. Le surlignage ne change
+ * aucune largeur : la page ne se recompose pas.
  */
+type PageComment = RashiComment & { passage?: number };
+
 const props = defineProps<{
   /** « 2a » : dit le côté de la reliure. */
   daf: string;
   /** La guemara de l'amoud, telle que le fichier la porte (vocalisée). */
   lines: string[];
-  /** Rachi et Tossafot de l'amoud, bout à bout ; null : la guemara seule. */
-  meforshim: { rashi: RashiComment[]; tosafot: RashiComment[] } | null;
+  /**
+   * Rachi et Tossafot de l'amoud, bout à bout ; null : la guemara seule.
+   * `passage` : le passage que le commentaire explique (linkedMeforshim).
+   */
+  meforshim: { rashi: PageComment[]; tosafot: PageComment[] } | null;
+  /** Le passage de Sefaria dont vient chaque ligne (DafBlock.passages). */
+  passages?: number[];
+  /** Ce qu'on a touché sur cette page, s'il y a lieu (dafLinks.ts). */
+  linked?: DafLink | null;
   /** La taille de lecture (useReadingSize). */
   scale: number;
   /** Le premier amoud du traité : son premier mot ouvre la Michna, en gras. */
   tractateStart?: boolean;
+}>();
+
+const emit = defineEmits<{
+  /** On a touché un passage ou un commentaire ; `null` : un passage sans commentaire. */
+  (e: "link", touched: DafLink | null): void;
 }>();
 
 const sides = computed(() => dafSides(amudOf(props.daf)));
@@ -43,12 +69,48 @@ const mainLines = computed(() =>
   props.lines
     .map((line, k) => {
       const text = gemaraPageText([line]);
-      return { text, strong: talmudOpenings(text, props.tractateStart && k === 0) };
+      return {
+        text,
+        strong: talmudOpenings(text, props.tractateStart && k === 0),
+        passage: props.passages?.[k] ?? k,
+      };
     })
     .filter((l) => l.text),
 );
 const rashi = computed(() => props.meforshim?.rashi ?? []);
 const tosafot = computed(() => props.meforshim?.tosafot ?? []);
+
+// ---- Un passage et ses commentaires se répondent ---------------------------
+
+/** Les commentaires qui disent quel passage ils expliquent. */
+const linkable = computed(() => ({
+  rashi: rashi.value.flatMap((c) =>
+    c.passage === undefined ? [] : [{ ...c, passage: c.passage }],
+  ),
+  tosafot: tosafot.value.flatMap((c) =>
+    c.passage === undefined ? [] : [{ ...c, passage: c.passage }],
+  ),
+}));
+/** Les passages qu'on peut toucher : ceux qu'un commentaire explique. */
+const commented = computed(() => commentedPassages(linkable.value));
+/** Les mots du passage choisi que citent ses commentaires surlignés. */
+const linkedLeads = computed(() => {
+  const leads = linkLeads(props.linked ?? null, linkable.value);
+  return leads.length ? leads : null;
+});
+
+function touchPassage(passage: number): void {
+  emit("link", commented.value.has(passage) ? { passage } : null);
+}
+
+function touchComment(zone: DafZone, index: number, comment: PageComment): void {
+  if (comment.passage === undefined) return;
+  emit("link", { passage: comment.passage, comment: { zone, index } });
+}
+
+function isLinked(zone: DafZone, index: number, comment: PageComment): boolean {
+  return commentLinked(props.linked ?? null, zone, index, comment);
+}
 
 const root = ref<HTMLElement | null>(null);
 const mainHead = ref<HTMLElement | null>(null);
@@ -264,7 +326,19 @@ watch(
       ></div>
       <p class="daf-main">
         <template v-for="(line, k) in mainLines" :key="k"
-          ><MarkedText :text="line.text" :strong="line.strong" />{{ " " }}</template
+          ><span
+            class="daf-passage"
+            :class="{
+              'daf-linkable': commented.has(line.passage),
+              'daf-linked': linked?.passage === line.passage,
+            }"
+            :data-passage="line.passage"
+            @click="touchPassage(line.passage)"
+            ><MarkedText
+              :text="line.text"
+              :strong="line.strong"
+              :leads="linked?.passage === line.passage ? linkedLeads : null" /></span
+          >{{ " " }}</template
         ><span ref="mainEnd" class="daf-end"></span>
       </p>
     </div>
@@ -283,10 +357,19 @@ watch(
         :style="{ float: sides.tosafot, clear: sides.tosafot }"
       ></div>
       <p class="daf-side">
-        <template v-for="(c, i) in rashi" :key="i">
-          <b v-if="c.lead" class="daf-lead">{{ c.lead }}</b>
-          {{ c.text }}{{ " " }}
-        </template>
+        <template v-for="(c, i) in rashi" :key="i"
+          ><span
+            class="daf-comment"
+            :class="{
+              'daf-linkable': c.passage !== undefined,
+              'daf-linked': isLinked('rashi', i, c),
+            }"
+            :data-passage="c.passage"
+            @click="touchComment('rashi', i, c)"
+            ><b v-if="c.lead" class="daf-lead">{{ c.lead }}</b
+            >{{ c.lead ? " " : "" }}{{ c.text }}</span
+          >{{ " " }}</template
+        >
         <span ref="rashiEnd" class="daf-end"></span>
       </p>
     </div>
@@ -305,10 +388,19 @@ watch(
         :style="{ float: sides.rashi, clear: sides.rashi }"
       ></div>
       <p class="daf-side">
-        <template v-for="(c, i) in tosafot" :key="i">
-          <b v-if="c.lead" class="daf-lead">{{ c.lead }}</b>
-          {{ c.text }}{{ " " }}
-        </template>
+        <template v-for="(c, i) in tosafot" :key="i"
+          ><span
+            class="daf-comment"
+            :class="{
+              'daf-linkable': c.passage !== undefined,
+              'daf-linked': isLinked('tosafot', i, c),
+            }"
+            :data-passage="c.passage"
+            @click="touchComment('tosafot', i, c)"
+            ><b v-if="c.lead" class="daf-lead">{{ c.lead }}</b
+            >{{ c.lead ? " " : "" }}{{ c.text }}</span
+          >{{ " " }}</template
+        >
         <span ref="tosafotEnd" class="daf-end"></span>
       </p>
     </div>
@@ -343,10 +435,39 @@ watch(
 
 .daf-main,
 .daf-side {
-  pointer-events: auto;
   text-align: justify;
   text-align-last: center;
   hyphens: none;
+}
+
+/* Le doigt ne touche que le texte : un paragraphe couvre toute la largeur du
+   calque, blancs compris, et celui du dessus cacherait les deux autres. */
+.daf-passage,
+.daf-comment {
+  pointer-events: auto;
+  border-radius: var(--radius-sm);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  transition: background-color 0.2s;
+}
+
+/* Un passage que Rachi ou Tossafot explique, un commentaire : on les touche
+   pour voir à quoi ils répondent. */
+.daf-linkable {
+  cursor: pointer;
+}
+
+@media (hover: hover) {
+  .daf-linkable:hover {
+    background-color: color-mix(in srgb, var(--color-primary) 9%, transparent);
+  }
+}
+
+/* Le passage et ses commentaires, surlignés ensemble : la couleur du passage
+   choisi partout dans la lecture (`.reading-selected`). */
+.daf-linked,
+.daf-linkable.daf-linked:hover {
+  background-color: var(--color-selection);
 }
 
 /* La guemara en lettres carrées, dans la police hébraïque du lecteur. */

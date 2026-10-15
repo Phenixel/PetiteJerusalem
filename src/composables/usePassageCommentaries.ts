@@ -8,6 +8,7 @@ import {
   type RashiComment,
   type TextSection,
 } from "../services/textService";
+import { DAF_LAYOUT_REACH } from "../services/dafLayout";
 
 /**
  * Les commentaires d'un passage du texte ouvert :
@@ -27,7 +28,14 @@ import {
  */
 
 /** Les commentateurs, dans l'ordre où le panneau les présente. */
-export type CommentarySource = "rashi" | "rashbam" | "tosafot" | "bartenura" | "tosafotYomTov";
+export type CommentarySource =
+  | "rashi"
+  | "rashbam"
+  | "mefaresh"
+  | "tosafot"
+  | "ran"
+  | "bartenura"
+  | "tosafotYomTov";
 
 /** Un commentateur et ce qu'il dit du passage. */
 export interface CommentaryGroup {
@@ -101,10 +109,19 @@ export function talmudGroups(
   const place = talmudPassageOf(section, line);
   const amud = place ? meforshim.get(place.amud) : undefined;
   if (!place || !amud) return [];
-  return [
-    { source: amud.inner, comments: amud.rashi[place.passage] ?? [] },
-    { source: "tosafot" as const, comments: amud.tosafot[place.passage] ?? [] },
-  ].filter((g) => g.comments.length > 0);
+  const inner = amud.rashi[place.passage] ?? [];
+  // Rachi et le Rachbam sur la même page : chacun sous son nom.
+  const cut = amud.rashbamAfter ? (amud.rashbamAfter[place.passage] ?? inner.length) : null;
+  const groups: CommentaryGroup[] =
+    cut === null
+      ? [{ source: amud.inner, comments: inner }]
+      : [
+          { source: "rashi", comments: inner.slice(0, cut) },
+          { source: "rashbam", comments: inner.slice(cut) },
+        ];
+  groups.push({ source: amud.outer ?? "tosafot", comments: amud.tosafot[place.passage] ?? [] });
+  if (amud.margin) groups.push({ source: "tosafot", comments: amud.margin[place.passage] ?? [] });
+  return groups.filter((g) => g.comments.length > 0);
 }
 
 export function usePassageCommentaries(
@@ -143,9 +160,13 @@ export function usePassageCommentaries(
     state.value = "loading";
     try {
       if (corpus.value === "talmud") {
+        // Une page du livre porte parfois un commentaire que nos textes
+        // rangent plus tôt (jusqu'à six amoudim avant, là où est la michna) ou
+        // à l'amoud suivant : on charge aussi les tranches de ces voisins.
         const amudim = (open.dafBlocks ?? [])
           .map((b) => b.amud)
-          .filter((a): a is number => a !== undefined);
+          .filter((a): a is number => a !== undefined)
+          .flatMap((a) => [Math.max(0, a - DAF_LAYOUT_REACH), a, a + 1]);
         const loaded = await loadDafMeforshim(entry, amudim);
         if (mine !== request) return;
         talmud.value = loaded;
@@ -187,7 +208,9 @@ export function usePassageCommentaries(
 export const COMMENTARY_LABELS = {
   rashi: "textReading.commentaries.rashi",
   rashbam: "textReading.commentaries.rashbam",
+  mefaresh: "textReading.commentaries.mefaresh",
   tosafot: "textReading.commentaries.tosafot",
+  ran: "textReading.commentaries.ran",
   bartenura: "textReading.commentaries.bartenura",
   tosafotYomTov: "textReading.commentaries.tosafotYomTov",
 } as const satisfies Record<CommentarySource, string>;

@@ -11,28 +11,6 @@ import { tableBarVisible } from "./useReadingTable";
  */
 export const TABLE_BAR_REM = 5;
 
-/**
- * Hauteur occupée en bas de l'écran par les barres fixes empilées :
- *   1. la bottom bar de l'app native (toujours présente dans l'app) ;
- *   2. le mini-lecteur audio, posé juste au-dessus, quand il est ouvert ;
- *   3. la barre de la table d'étude, au-dessus encore, quand un texte y est
- *      posé (`table: false` pour s'arrêter sous elle, ce que fait la barre
- *      elle-même pour se placer).
- *
- * Sert à ancrer les éléments flottants du bas (barre de sélection multiple,
- * toasts, bouton retour-en-haut) AU-DESSUS de ces barres, pour qu'ils ne
- * soient plus masqués par la bottom bar native, le bug remonté sur l'app.
- *
- * Un bottom sheet ouvert au bas de l'écran (commandes d'un passage, panneau
- * des commentaires, BottomSheet.vue) s'y empile aussi, à sa hauteur du
- * moment : la pastille du défilement automatique et les toasts passent
- * au-dessus de lui au lieu de disparaître dessous, et le suivent quand on le
- * tire.
- *
- * Retourne une expression CSS `calc(...)` à passer en `style="{ bottom }"`.
- * `extra` ajoute un écart supplémentaire (ex. marge visuelle des toasts).
- */
-
 /** La hauteur de chaque volet ouvert au bas de l'écran, en px. */
 const openSheets = reactive(new Map<symbol, number>());
 
@@ -54,6 +32,28 @@ export function openSheetHeight(): number {
   for (const h of openSheets.values()) highest = Math.max(highest, h);
   return highest;
 }
+
+/**
+ * Hauteur occupée en bas de l'écran par les barres fixes empilées :
+ *   1. la bottom bar de l'app native (toujours présente dans l'app) ;
+ *   2. le mini-lecteur audio, posé juste au-dessus, quand il est ouvert ;
+ *   3. la barre de la table d'étude, au-dessus encore, quand un texte y est
+ *      posé (`table: false` pour s'arrêter sous elle, ce que fait la barre
+ *      elle-même pour se placer).
+ *
+ * Sert à ancrer les éléments flottants du bas (barre de sélection multiple,
+ * toasts, bouton retour-en-haut) AU-DESSUS de ces barres, pour qu'ils ne
+ * soient plus masqués par la bottom bar native, le bug remonté sur l'app.
+ *
+ * Un bottom sheet ouvert au bas de l'écran (commandes d'un passage, panneau
+ * des commentaires, BottomSheet.vue) s'y empile aussi, à sa hauteur du
+ * moment : la pastille du défilement automatique et les toasts passent
+ * au-dessus de lui au lieu de disparaître dessous, et le suivent quand on le
+ * tire.
+ *
+ * Retourne une expression CSS `calc(...)` à passer en `style="{ bottom }"`.
+ * `extra` ajoute un écart supplémentaire (ex. marge visuelle des toasts).
+ */
 export function useBottomChromeHeight(
   extra = "0px",
   { table = true }: { table?: boolean } = {},

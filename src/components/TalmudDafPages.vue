@@ -1,9 +1,13 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, nextTick, reactive, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import { dafZoomFrame } from "../services/dafZoom";
-import { flatMeforshim, type DafBlock, type DafMeforshim } from "../services/textService";
+import { useReadingColumn } from "../composables/useReadingColumn";
+import { loadDafLayout, type DafLayoutPage } from "../services/dafLayout";
+import { linkedMeforshim, nextLink, type DafLink } from "../services/dafLinks";
+import { pageZoomFrame } from "../services/pageZoom";
+import type { DafBlock, DafMeforshim } from "../services/textService";
 import TalmudPage from "./TalmudPage.vue";
+import TalmudPrintedPage from "./TalmudPrintedPage.vue";
 
 /**
  * Un chapitre de guemara dans la forme de la page : un amoud après l'autre,
@@ -21,56 +25,78 @@ import TalmudPage from "./TalmudPage.vue";
  * largeur (TalmudPage), ses proportions restent donc celles du livre. Elle
  * déborde d'abord de la colonne de lecture, dans la place libre de chaque
  * côté (un ordinateur en a) ; ce qui dépasse encore se rejoint en faisant
- * glisser la page de côté (dafZoom.ts).
+ * glisser la page de côté (pageZoom.ts).
  */
 const props = defineProps<{
   blocks: DafBlock[];
   meforshim: Map<number, DafMeforshim> | null;
   state: "loading" | "ready" | "error";
   scale: number;
+  /** Le traité (« beitzah ») : ses lignes imprimées portent ce nom (talmud-layout). */
+  tractate?: string | null;
 }>();
 
 const { t } = useI18n();
 
 /**
  * Les commentaires de chaque amoud, bout à bout : la page ne les découpe pas
- * par passage. Calculés une fois par chargement, pour que la page ne se
- * recompose pas à chaque rendu de la lecture.
+ * par passage, mais chacun garde le passage qu'il explique (dafLinks.ts).
+ * Calculés une fois par chargement, pour que la page ne se recompose pas à
+ * chaque rendu de la lecture.
  */
 const flat = computed(() => {
-  const byAmud = new Map<number, ReturnType<typeof flatMeforshim>>();
-  for (const [amud, m] of props.meforshim ?? []) byAmud.set(amud, flatMeforshim(m));
+  const byAmud = new Map<number, ReturnType<typeof linkedMeforshim>>();
+  for (const [amud, m] of props.meforshim ?? []) byAmud.set(amud, linkedMeforshim(m));
   return byAmud;
 });
 function pageMeforshim(block: DafBlock) {
   return block.amud !== undefined ? (flat.value.get(block.amud) ?? null) : null;
 }
 
-/** L'écart gardé entre la page agrandie et le bord de l'écran, ou le volet. */
-const GUTTER = 16;
+/**
+ * Le passage ou le commentaire qu'on a touché, et sa page : un seul à la fois
+ * dans le chapitre. Le toucher à nouveau le relâche.
+ */
+const linked = ref<(DafLink & { page: number }) | null>(null);
+function onLink(page: number, touched: DafLink | null): void {
+  const current = linked.value?.page === page ? linked.value : null;
+  const next = nextLink(current && { passage: current.passage, comment: current.comment }, touched);
+  linked.value = next && { ...next, page };
+}
+// Un autre chapitre : plus rien de choisi.
+watch(
+  () => props.blocks,
+  () => (linked.value = null),
+);
 
 /**
- * La colonne de lecture et la place libre autour d'elle, mesurées sur un
- * repère sans hauteur posé en tête : la colonne peut changer de place sans
- * changer de largeur (le volet des commentaires la pousse vers la gauche).
+ * Les lignes imprimées de chaque amoud (dafLayout.ts). `undefined` : on les
+ * attend, rien ne s'écrit encore ; `null` : il n'y en a pas (ou elles ne
+ * collent pas au texte), la page se compose à notre façon.
  */
-const ruler = ref<HTMLElement | null>(null);
-const column = ref(0);
-const free = ref({ left: 0, right: 0 });
+const printed = reactive(new Map<number, DafLayoutPage | null>());
+watch(
+  () => [props.tractate, props.blocks] as const,
+  ([tractate, blocks]) => {
+    printed.clear();
+    blocks.forEach((block, index) => {
+      if (!tractate || block.amud === undefined) {
+        printed.set(index, null);
+        return;
+      }
+      void loadDafLayout(tractate, block.amud).then((page) => {
+        if (props.tractate === tractate && props.blocks === blocks) printed.set(index, page);
+      });
+    });
+  },
+  { immediate: true },
+);
 
-function measure(): void {
-  const rect = ruler.value?.getBoundingClientRect();
-  if (!rect?.width) return;
-  // Le volet des commentaires, rangé à droite sur un écran large, borne la place.
-  const panel = document.querySelector(".commentary-panel.sheet-docked")?.getBoundingClientRect();
-  const edge =
-    panel?.width && panel.left >= rect.right ? panel.left : document.documentElement.clientWidth;
-  column.value = rect.width;
-  free.value = { left: rect.left - GUTTER, right: edge - rect.right - GUTTER };
-}
+/** La colonne de lecture et la place libre autour d'elle (useReadingColumn). */
+const { ruler, column, free } = useReadingColumn();
 
 const zoom = computed(() =>
-  dafZoomFrame(props.scale, column.value, free.value.left, free.value.right),
+  pageZoomFrame(props.scale, column.value, free.value.left, free.value.right),
 );
 /** Le cadre déborde de la colonne d'autant de chaque côté. */
 const frameStyle = computed(() => ({ marginInline: `${-zoom.value.grow}px` }));
@@ -78,36 +104,6 @@ const frameStyle = computed(() => ({ marginInline: `${-zoom.value.grow}px` }));
 const pageStyle = computed(() => ({
   width: column.value ? `${zoom.value.page}px` : `${Math.round(props.scale * 100)}%`,
 }));
-
-let frame = 0;
-const remeasure = (): void => {
-  cancelAnimationFrame(frame);
-  frame = requestAnimationFrame(measure);
-};
-let resizes: ResizeObserver | null = null;
-let moves: MutationObserver | null = null;
-
-onMounted(() => {
-  measure();
-  window.addEventListener("resize", remeasure);
-  if (typeof ResizeObserver !== "undefined" && ruler.value) {
-    resizes = new ResizeObserver(remeasure);
-    resizes.observe(ruler.value);
-  }
-  // L'ouverture du volet déplace la colonne par une classe de la page.
-  const page = ruler.value?.closest("main");
-  if (page && typeof MutationObserver !== "undefined") {
-    moves = new MutationObserver(remeasure);
-    moves.observe(page, { attributes: true, attributeFilter: ["class"] });
-  }
-});
-
-onBeforeUnmount(() => {
-  cancelAnimationFrame(frame);
-  window.removeEventListener("resize", remeasure);
-  resizes?.disconnect();
-  moves?.disconnect();
-});
 
 /**
  * Les cadres des pages, pour garder sous les yeux ce qu'on regardait quand
@@ -171,12 +167,28 @@ function offsetOf(index: number): number {
          façon partout ; la page, dedans, garde son sens. -->
     <div :ref="(el) => setFrame(index, el)" class="daf-zoom" dir="ltr" :style="frameStyle">
       <div class="daf-zoom-page" :style="pageStyle">
+        <TalmudPrintedPage
+          v-if="printed.get(index) && block.amud !== undefined"
+          :daf="block.daf"
+          :amud="block.amud"
+          :page="printed.get(index)!"
+          :lines="block.lines"
+          :passages="block.passages"
+          :meforshim="meforshim"
+          :linked="linked?.page === index ? linked : null"
+          @link="onLink(index, $event)"
+          @mismatch="printed.set(index, null)"
+        />
         <TalmudPage
+          v-else-if="printed.get(index) === null"
           :daf="block.daf"
           :lines="block.lines"
           :meforshim="pageMeforshim(block)"
+          :passages="block.passages"
+          :linked="linked?.page === index ? linked : null"
           :scale="1"
           :tractate-start="block.amud === 0"
+          @link="onLink(index, $event)"
         />
       </div>
     </div>

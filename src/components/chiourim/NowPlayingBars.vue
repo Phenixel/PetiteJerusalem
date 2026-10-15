@@ -58,7 +58,8 @@ defineProps<{ playing: boolean }>();
     animation: none;
   }
 }
-/* Rendu dégradé (useDevicePerf) : pas d'animation continue. */
+/* Rendu dégradé (useDevicePerf) : pas d'animation continue. Vue ne marque
+   que le dernier sélecteur (.bar) : la racine se nomme sans :global. */
 :root.perf-lite .playing .bar {
   animation: none;
 }
