@@ -68,6 +68,17 @@ export function truncateSlug(slug: string): string {
 }
 
 /**
+ * Le rang d'un texte dans le catalogue, qui est l'ordre où ses livres se
+ * lisent. Ce n'est pas celui des identifiants : un traité ajouté après coup
+ * (Edouyot, 442) prend un identifiant neuf et se range pourtant à sa place
+ * dans son seder, entre Shevuot et Avodah Zarah.
+ */
+const catalogRanks = new Map(
+  (textStudiesJson as TextStudiesJson).textStudies.map((text, rank) => [String(text.id), rank]),
+);
+const catalogRank = (id: string): number => catalogRanks.get(id) ?? Number.MAX_SAFE_INTEGER;
+
+/**
  * Qui tient cette réservation : un compte, un invité, ou personne de
  * nommable. Les deux comptages de participants (le nombre, puis les noms)
  * partagent cette règle, sinon la liste et le chiffre finiraient par diverger.
@@ -551,7 +562,7 @@ class SessionService {
         }
       }
 
-      return parseInt(a.id) - parseInt(b.id);
+      return catalogRank(a.id) - catalogRank(b.id);
     });
   }
 

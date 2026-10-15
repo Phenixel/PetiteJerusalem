@@ -29,6 +29,13 @@ import { useLocalePath } from "../composables/useLocalePath";
 /** Les pages traduites suivent l'espace de langue de l'URL ouverte. */
 const { localePath } = useLocalePath();
 
+/**
+ * `placeFirst` : l'accueil de Mon parcours (P2-Accueil) dit la date hébraïque
+ * sous la salutation ; la carte s'ouvre alors sur le lieu, et le temps qui
+ * reste passe dessous, seul.
+ */
+const props = withDefaults(defineProps<{ placeFirst?: boolean }>(), { placeFirst: false });
+
 const { t, locale } = useI18n();
 const { place } = useZmanimLocation();
 const countdown = useZmanCountdown();
@@ -114,27 +121,38 @@ const hebrewDate = computed(() =>
 <template>
   <RouterLink
     :to="localePath('horaires')"
-    class="card card-hover group flex flex-col justify-center p-5 md:p-6"
+    class="card card-hover group flex flex-col justify-center"
+    :class="props.placeFirst ? 'p-[18px]' : 'p-5 md:p-6'"
   >
     <template v-if="headline">
       <span class="flex items-center justify-between gap-4">
         <span class="min-w-0">
-          <span class="block text-sm text-text-secondary">{{ hebrewDate }}</span>
+          <span v-if="props.placeFirst" class="block text-[13px] text-text-secondary">{{
+            placeLabel
+          }}</span>
+          <span v-else class="block text-sm text-text-secondary">{{ hebrewDate }}</span>
           <!-- Ni troncature ni ellipse sur le nom : « Fin du Chéma (Maguen
                Avraham) » réduit à « Fin du Chéma… » ferait passer une heure
                pour l'autre, et les deux opinions sont séparées d'une bonne
                demi-heure. Il passe à la ligne s'il le faut. -->
           <span
-            class="mt-1 block font-semibold leading-snug text-text-primary transition-colors group-hover:text-primary"
+            class="block leading-snug text-text-primary transition-colors group-hover:text-primary"
+            :class="props.placeFirst ? 'mt-[3px] text-[17px] font-bold' : 'mt-1 font-semibold'"
           >
             {{ headline.label }}
           </span>
-          <span class="mt-1 block text-sm text-text-secondary">
+          <span v-if="props.placeFirst" class="mt-0.5 block text-sm text-text-secondary">
+            {{ headline.note }}
+          </span>
+          <span v-else class="mt-1 block text-sm text-text-secondary">
             <template v-if="headline.note">{{ headline.note }} · </template>{{ placeLabel }}
           </span>
         </span>
         <span
-          class="shrink-0 text-4xl font-bold leading-none text-primary tabular-nums md:text-5xl"
+          class="shrink-0 leading-none text-primary tabular-nums"
+          :class="
+            props.placeFirst ? 'text-[38px] font-extrabold' : 'text-4xl font-bold md:text-5xl'
+          "
         >
           {{ clock(headline.date) }}
         </span>

@@ -699,6 +699,36 @@ export function getTehilimOfDay(date: Date = new Date()): TehilimCycle {
 }
 
 /**
+ * Cycle hebdomadaire des Tehilim : le livre en une semaine, du dimanche
+ * (1 à 29) au Chabbat (120 à 150), selon la division d'usage.
+ */
+export const TEHILIM_WEEKLY: [number, number][] = [
+  [1, 29],
+  [30, 50],
+  [51, 72],
+  [73, 89],
+  [90, 106],
+  [107, 119],
+  [120, 150],
+];
+
+/** Les psaumes du jour de la semaine (0 dimanche à 6 Chabbat) ; `day` vaut le jour de la semaine, de 1 à 7. */
+export function getTehilimOfWeekday(weekday: number): TehilimCycle {
+  const index = ((weekday % 7) + 7) % 7;
+  return toCycle(index + 1, [TEHILIM_WEEKLY[index]]);
+}
+
+/**
+ * Les psaumes d'un jour civil (pris à midi) pour un cycle de Tehilim de Mon
+ * parcours : ceux du jour du mois hébraïque, ou ceux du jour de la semaine.
+ */
+export function tehilimOfCycle(cycle: "tehilim-month" | "tehilim-week", date: Date): TehilimCycle {
+  return cycle === "tehilim-week"
+    ? getTehilimOfWeekday(date.getDay())
+    : getTehilimOfHebrewDay(new HDate(date));
+}
+
+/**
  * Le titre d'une paracha tel que l'affichent l'encart du Tanakh, la page du
  * chnei mikra et la lecture du jour : les noms de ses entrées (deux pour une
  * paracha double), séparés d'un point médian.

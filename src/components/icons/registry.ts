@@ -162,6 +162,11 @@ export const ICONS = {
   book: {
     body: '<path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/>',
   },
+  // Trois livres posés à plat l'un sur l'autre : la table d'étude, où l'on
+  // met de côté les textes en cours (voir useReadingTable).
+  books: {
+    body: '<rect x="3" y="16" width="18" height="5" rx="1"/><rect x="5" y="11" width="15" height="5" rx="1"/><rect x="4" y="6" width="14" height="5" rx="1"/><path d="M7 16v5"/><path d="M16 11v5"/><path d="M8 6v5"/>',
+  },
   "book-reader": {
     body: '<path d="M12 8v13"/><path d="M3 19a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/><circle cx="12" cy="3.5" r="1.5"/>',
   },

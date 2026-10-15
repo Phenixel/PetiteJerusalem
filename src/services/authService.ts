@@ -389,6 +389,13 @@ class AuthService {
     } catch (error) {
       console.error("Erreur lors de la suppression des préférences utilisateur:", error);
     }
+    // Mon parcours : objectifs et journées, dans leur propre document.
+    try {
+      const { deleteAccountParcours } = await import("./parcours/cloud");
+      await deleteAccountParcours(user.uid);
+    } catch (error) {
+      console.error("Erreur lors de la suppression du parcours:", error);
+    }
 
     await deleteUser(user);
     // Le compte n'existe plus : rien à servir au prochain lancement.

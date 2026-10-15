@@ -6,6 +6,7 @@ import { isNativeApp } from "../composables/useNativeApp";
 import { DEFAULT_SEO_LOCALE, isSectionPath, localeOfPath } from "../content/seoLocales";
 import { applyLocale, type SupportedLocale } from "../i18n";
 import { waitUntilPositionReachable } from "./scrollRestoration";
+import { hasTableRestore } from "../composables/useReadingTable";
 
 /**
  * App native : pages posées en surcouche au-dessus de la page en cours
@@ -51,6 +52,9 @@ const router = createRouter({
     // haut ici annulait son défilement quand le chapitre était déjà chargé
     // (un autre chapitre du même texte), et le verset restait hors de l'écran.
     if (to.query.verset !== undefined) return false;
+    // Un texte rouvert depuis la table d'étude : le lecteur le replace à
+    // l'endroit où on l'avait laissé, une fois rendu (useReadingTable).
+    if (hasTableRestore(to.path)) return false;
     return { top: 0 };
   },
 });

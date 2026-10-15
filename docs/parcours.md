@@ -1,0 +1,168 @@
+# Mon parcours
+
+Ce qu'on se donne à tenir, et ce qu'on a tenu : finir un texte pour une date,
+une habitude, les Tehilim du mois, la paracha de la semaine, un texte relu
+chaque jour. La lecture du jour d'avant y est entrée : ses textes et ses
+lectures du calendrier sont des objectifs comme les autres.
+
+Ce document dit comment c'est fait. Le dessin est dans `docs/design.md`
+(« Mon parcours : le mur se bâtit en pierres, et seulement lui » et les
+sections qui suivent), le suivi d'audience dans `docs/tracking-plan.md`
+(« Mon parcours »).
+
+## Les pages
+
+| Adresse                           | Ce qu'on y trouve                                                                                 |
+| --------------------------------- | ------------------------------------------------------------------------------------------------- |
+| `/`                               | l'accueil : la lampe, le paquet du jour, le portefeuille, l'étagère (`components/parcours/home/`) |
+| `/parcours`                       | la série, le mur des cinq dernières semaines, l'étagère, les habitudes                            |
+| `/parcours/journee`               | l'adresse de Ma journée, retirée : elle mène à l'accueil                                          |
+| `/parcours/mur`                   | le mur entier                                                                                     |
+| `/parcours/nouveau`               | nouvel objectif, sur une seule page ; créé, il arrive sur `/parcours`                             |
+| `/parcours/objectif/:id`          | un programme (sa portion, son retard, sa semaine), ou les réglages d'un autre objectif            |
+| `/parcours/objectif/:id/reglages` | les réglages d'un programme                                                                       |
+| `/bibliotheque/lecture-du-jour`   | la lecture du jour : les textes du jour, à la suite ; leur liste s'y compose                      |
+
+Dans l'app, tout s'ouvre **sans compte** et hors ligne. Le site demande un
+compte : il n'a pas d'appareil où garder le suivi.
+
+Une lecture ouverte depuis le parcours porte `?objectif=` : le lecteur montre
+alors, au bas du texte, la tâche du jour à cocher (`ReaderTaskCard.vue`).
+
+## Le modèle
+
+`src/services/parcours/`, sans Vue :
+
+| Fichier                                    | Rôle                                                                                         |
+| ------------------------------------------ | -------------------------------------------------------------------------------------------- |
+| `model.ts`                                 | les objectifs (programme, habitude, cycle, texte du jour) et les journées                    |
+| `texts.ts`                                 | ce qu'un programme peut finir et ce qu'il compte, d'après `src/datas/parcoursUnits.json`     |
+| `plan.ts`                                  | la portion de chaque jour ou semaine, le retard, le rattrapage, l'avance, la reprise         |
+| `aliyot.ts`                                | le chnei mikra montée par montée : une par jour, ce qui reste dû                             |
+| `schedule.ts`                              | les tâches d'un jour, l'état d'un jour sur le mur, la série                                  |
+| `calendar.ts`                              | les jours de repos (Chabbat, les fêtes, en Israël ou en diaspora), les montées de la semaine |
+| `moments.ts`                               | le moment présent, l'ordre du paquet de l'accueil                                            |
+| `actions.ts`, `create.ts`                  | ce qu'on change, ce qu'on crée                                                               |
+| `merge.ts`                                 | la fusion de deux copies                                                                     |
+| `deviceStore.ts`, `cloud.ts`, `account.ts` | l'appareil, le compte, ce qui passe de l'un à l'autre                                        |
+| `legacyDailyReading.ts`                    | la lecture du jour d'avant                                                                   |
+| `entries.ts`                               | les textes qu'une tâche fait lire (le téléchargement hors ligne)                             |
+| `tracking.ts`                              | le suivi d'audience commun à plusieurs écrans                                                |
+| `occasions.ts`                             | les cartes d'occasion de la pile dites faites (la lune, le 'Omer, 'Hanouka), sur l'appareil  |
+
+`composables/useParcours.ts` réunit le tout pour les pages : un seul état
+partagé, démarré au premier usage (qui n'ouvre jamais le parcours ne charge
+rien).
+
+**Une journée** (`DayLog`) garde ce qui est fait (`done`), les unités lues
+par programme (`units`), ce qui est mis de côté (`skipped`) et l'heure de la
+dernière écriture (`at`). **Un objectif** garde sa propre heure
+(`updatedAt`) ; retiré, il reste en pierre tombale (`deletedAt`) : les jours
+passés gardent leur pierre, et un autre appareil apprend qu'il est parti.
+
+**Un programme** garde ses textes et son total d'unités ; sa position se
+déduit des journées. Son pas repart d'une base (`base` : un jour et une
+position) quand on change sa date ou son rythme. Un rattrapage ajoute des
+unités à des créneaux (`extra`), « Déjà fait » avance la position
+(`credit`).
+
+**Les unités** (michnayot, côtés de daf, chapitres, psaumes) viennent de
+`src/datas/parcoursUnits.json`, que `scripts/parcours-units.mjs` écrit à
+partir de `public/texts/` ; `--check` vérifie qu'il est à jour
+(`parcoursUnits.test.ts`). Un texte corrigé sans que ce fichier suive
+décalerait toutes les portions d'après.
+
+## Le stockage
+
+**L'appareil est le socle.** Tout vit dans `localStorage` (clé
+`pj-parcours`), doublé dans les Preferences de Capacitor dans l'app, que le
+système ne vide pas avec le stockage de la webview : `{ data, owner, dirty }`.
+Sans compte, c'est complet ; changer d'appareil sans compte perd le suivi, et
+la page de Mon parcours le dit.
+
+**Le compte emporte tout d'un appareil à l'autre.** Le document
+`parcours/{uid}` porte deux tables, `objectives` et `days` ; chaque
+changement s'y écrit entrée par entrée (`setDoc` avec `mergeFields`), jamais
+le document entier, pour ne pas écraser ce qu'un autre appareil a écrit.
+Les règles Firestore (`match /parcours/{userId}`) n'ouvrent le document qu'à
+son propriétaire, bornent les clés et la taille des tables.
+
+**On n'écrit jamais d'après une copie qu'on n'a pas relue.** À la connexion,
+au retour du réseau et au retour à l'écran après cinq minutes, le compte se
+relit depuis le serveur (pas depuis le cache), se fusionne avec l'appareil
+(`mergeParcours` : entrée par entrée, la plus récente l'emporte, les sortes
+d'objectifs inconnues sont gardées telles quelles), puis ce qui diffère part.
+Une écriture qui échoue reste à faire (`dirty`) et repart après la relecture
+suivante.
+
+**Un appareil partagé** : à la connexion, l'appareil verse dans le compte ce
+qui n'appartient à personne, ou à ce compte ; s'il suivait un autre compte,
+seulement ce qui a été fait depuis la déconnexion de celui-ci (`account.ts`,
+`owner.leftAt`). À la déconnexion, tout reste sur l'appareil.
+
+**La suppression du compte** efface aussi `parcours/{uid}`
+(`authService.deleteAccount`, `accountDeletion.test.ts`).
+
+## La lecture du jour d'avant
+
+Elle vivait dans `userPreferences/{uid}` : `dailyReadingIds`,
+`dailyReadingOptions`, `dailyReadingProgress`. Les versions de l'app déjà
+installées les lisent et les écrivent encore, comme le rappel du soir
+(`functions/src/dailyReminder.ts`). Mon parcours les reprend sans les
+remplacer (`legacyDailyReading.ts`) :
+
+- **à la connexion**, chaque texte devient un objectif `daily-text-<id>`, les
+  Tehilim du jour `daily-tehilim`, la paracha `daily-parasha` : des
+  identifiants tirés d'eux, les mêmes sur tous les appareils, qui ne se
+  doublent pas. Ce qui était lu aujourd'hui y est coché. Les listes d'avant ne
+  font qu'ajouter ;
+- **à chaque changement**, Mon parcours réécrit ces champs d'après lui
+  (`legacyProjection`), listes et journée chacune de son côté, seulement si
+  elles changent.
+
+Les **Tehilim de la semaine** (`cycle-tehilim-week`, du dimanche au Chabbat)
+sont nouveaux : ils n'ont pas de place dans la lecture du jour d'avant, et
+la projection les ignore.
+
+Le **chnei mikra montée par montée** est la paracha (`daily-parasha`) avec
+`split: "aliyot"` : une carte par jour, une montée du dimanche au jeudi, la
+sixième et la septième le vendredi (quatorze montées sur six jours pour une
+paracha double) ; une montée oubliée reste due le lendemain, ce qui reste
+le vendredi se lit le Chabbat (`aliyot.ts`). La carte ouvre la page du chnei
+mikra réduite à ses montées (`?montees=3-4`). Pour la lecture du jour
+d'avant, la semaine est lue quand la carte du vendredi ou du Chabbat l'est
+(`parashaProgress.completed`). Le champ est facultatif : sans lui, la paracha
+se lit dans la semaine, comme avant.
+
+**Prendre de l'avance** : une portion faite propose « Lire la suite », la
+portion du prochain créneau (`nextPortion`), marquée lue aujourd'hui au bas
+de la lecture (`?avance=1`). Les portions gardent leur taille ; la fin vient
+plus tôt. **La pause** d'un programme repousse sa fin d'autant de jours
+qu'elle en a duré, à la reprise (`resumeProgram`).
+
+Les **widgets et la montre** tirent la lecture du jour de l'appareil, avec ou
+sans compte (`widgetService`) ; un compte que l'appareil n'a pas encore repris
+garde celle de son profil.
+
+Le **rappel du soir** ne compte que les textes du jour et les lectures du
+calendrier, comme avant : il lit le profil, côté serveur, et ne sait rien des
+programmes ni des habitudes.
+
+## Les tests
+
+| Test                            | Ce qu'il tient                                                                                  |
+| ------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `parcoursUnits.test.ts`         | les unités des programmes suivent `public/texts/` (garde-fou, voir `docs/tests.md`)             |
+| `parcoursPlan.test.ts`          | les portions, le retard, les cinq rattrapages, l'avance, la reprise après une pause             |
+| `parcoursAliyot.test.ts`        | le chnei mikra : une montée par jour, l'oubliée revient le lendemain, le Chabbat finit          |
+| `parcoursSchedule.test.ts`      | les tâches d'un jour, le mur, la série (Chabbat et « Pas aujourd'hui » ne la coupent pas)       |
+| `parcoursCalendar.test.ts`      | les jours de repos, les moments, l'ordre du paquet                                              |
+| `parcoursMerge.test.ts`         | la fusion de deux copies                                                                        |
+| `parcoursSync.test.ts`          | sans compte, avec un compte, un appareil partagé                                                |
+| `parcoursCloud.test.ts`         | l'écriture du compte n'envoie aucun champ `undefined` (Firestore refuserait l'écriture entière) |
+| `parcoursLegacyDaily.test.ts`   | la lecture du jour d'avant, reprise et tenue à jour                                             |
+| `parcoursDeck.test.ts`          | le paquet de l'accueil : l'ordre, l'heure des offices, rattraper, la carte du 'Omer             |
+| `parcoursEntries.test.ts`       | les textes à télécharger pour la journée                                                        |
+| `parcoursTracking.test.ts`      | le suivi commun, et les événements de la lecture du jour qui continuent                         |
+| `widgetDailyParcours.test.ts`   | la lecture du jour des widgets, sans compte                                                     |
+| `e2e/firebase/parcours.spec.ts` | un texte du jour pris, coché, et suivi par le compte (émulateurs)                               |

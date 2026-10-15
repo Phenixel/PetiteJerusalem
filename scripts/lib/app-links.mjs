@@ -28,11 +28,17 @@
  * publiées dans les fichiers `.well-known`, elles n'ont rien de secret.
  */
 
-/** Domaine du site. Un seul host : chaque host déclaré doit servir sa preuve. */
-export const APP_LINK_DOMAIN = "petite-jerusalem.fr";
+import { ENV } from "./environments.mjs";
 
-/** Identifiant de l'app, commun aux deux plateformes (capacitor.config.ts). */
-export const APP_ID = "fr.petitejerusalem.app";
+/**
+ * Domaine du site. Un seul host : chaque host déclaré doit servir sa preuve.
+ * Celui de l'environnement visé (PJ_ENV) : le site de staging sert les preuves
+ * de l'app de staging, et elle seule les réclame (docs/staging.md).
+ */
+export const APP_LINK_DOMAIN = new URL(ENV.siteUrl).host;
+
+/** Identifiant de l'app, commun aux deux plateformes (environments.mjs). */
+export const APP_ID = ENV.appId;
 
 /** Écrites en dur si on préfère ne pas dépendre de l'environnement. */
 const ANDROID_SHA256_DEFAULT = [];
@@ -57,6 +63,7 @@ export const APP_LINK_PATHS = [
   "/en",
   "/he",
   "/a-propos",
+  "/accueil",
   "/admin",
   "/bibliotheque",
   "/calendrier",
@@ -70,6 +77,7 @@ export const APP_LINK_PATHS = [
   "/login",
   "/mentions-legales",
   "/paracha",
+  "/parcours",
   "/partage-tehilim",
   "/profile",
   "/session-management",
@@ -104,7 +112,7 @@ export const BROWSER_ONLY_PATHS = ["/sondage"];
  * Un chemin en sort quand la plus ancienne version encore en circulation le
  * connaît (voir docs/app-links.md). Tenu par src/__tests__/appLinks.test.ts.
  */
-export const IOS_DEFERRED_PATHS = ["/sidour"];
+export const IOS_DEFERRED_PATHS = ["/sidour", "/parcours", "/accueil"];
 
 /** Un chemin est-il de ceux que l'app ouvre ? (préfixe exact ou sous-chemin) */
 export function isAppLinkPath(path) {

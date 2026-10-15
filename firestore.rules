@@ -358,6 +358,20 @@ service cloud.firestore {
       allow delete: if isAuthenticated() && request.auth.uid == userId;
     }
 
+    // Mon parcours (voir services/parcours/cloud.ts) : les objectifs par
+    // identifiant, et le journal des jours. Privé, comme les préférences. Les
+    // objectifs retirés restent, marqués : la borne est large. Les jours se
+    // comptent à 366 par an ; quatre mille, c'est plus de dix ans de suivi.
+    match /parcours/{userId} {
+      allow read, delete: if isAuthenticated() && request.auth.uid == userId;
+      allow create, update: if isAuthenticated()
+        && request.auth.uid == userId
+        && request.resource.data.keys().hasOnly(['v', 'objectives', 'days'])
+        && (!('v' in request.resource.data) || request.resource.data.v is int)
+        && (!('objectives' in request.resource.data) || (request.resource.data.objectives is map && request.resource.data.objectives.size() <= 400))
+        && (!('days' in request.resource.data) || (request.resource.data.days is map && request.resource.data.days.size() <= 4000));
+    }
+
     // Toute autre collection : accès refusé par défaut (pas de règle catch-all).
   }
 }

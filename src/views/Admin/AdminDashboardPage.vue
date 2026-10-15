@@ -269,7 +269,7 @@ const todos = computed<Todo[]>(() => {
             <span class="mt-2 block font-semibold text-text-primary group-hover:text-primary">
               {{ summary.latestAnnouncement.value.title.fr }}
             </span>
-            <span class="mt-1 line-clamp-2 block text-sm text-text-secondary">
+            <span class="mt-1 line-clamp-2 text-sm text-text-secondary">
               {{ summary.latestAnnouncement.value.body.fr }}
             </span>
           </router-link>

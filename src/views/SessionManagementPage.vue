@@ -19,6 +19,7 @@ import type { Session, TextStudy, TextStudyReservation } from "../models/models"
 import type { User } from "../services/authService";
 import { seoService, pageTitle } from "../services/seoService";
 import { analyticsService } from "../services/analyticsService";
+import { haptic } from "../services/haptics";
 
 import BatchSelectionBar from "../components/BatchSelectionBar.vue";
 import EditSessionModal from "../components/EditSessionModal.vue";
@@ -547,6 +548,7 @@ const toggleReservationCompletion = async (
   // redessinait la page entière.
   const previous = reservation.isCompleted;
   reservation.isCompleted = isCompleted;
+  haptic(isCompleted ? "done" : "undo");
 
   try {
     await reservationService.markReservationAsCompleted(

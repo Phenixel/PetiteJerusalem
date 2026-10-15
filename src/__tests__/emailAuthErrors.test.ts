@@ -88,6 +88,8 @@ describe("loginReason", () => {
     [undefined, "direct"],
     ["/bibliotheque/lecture-du-jour", "daily_reading"],
     ["%2Fbibliotheque%2Flecture-du-jour", "daily_reading"],
+    ["/parcours/journee", "parcours"],
+    ["%2Fparcours", "parcours"],
     ["/share-reading/session/un-nom", "share_reading"],
     ["/en/profile", "profile"],
     ["/admin", "admin"],

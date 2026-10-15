@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed } from "vue";
+import { ref, onMounted, onUnmounted, computed, defineAsyncComponent } from "vue";
 import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import { authService } from "../services/authService";
@@ -13,6 +13,13 @@ import SecuritySettings from "./profilePage/SecuritySettings.vue";
 import AppearanceTab from "./profilePage/AppearanceTab.vue";
 import PreferencesTab from "./profilePage/PreferencesTab.vue";
 import { SITE_URL } from "../config/site";
+// Chargée à la demande : Mon parcours tire le calendrier hébraïque.
+const ProfileParcours = defineAsyncComponent(
+  () => import("../components/parcours/ProfileParcours.vue"),
+);
+const ProfileStreakPill = defineAsyncComponent(
+  () => import("../components/parcours/ProfileStreakPill.vue"),
+);
 
 const router = useRouter();
 const { t } = useI18n();
@@ -120,7 +127,12 @@ onUnmounted(() => {
 
     <!-- Sans compte, l'abonnement ci-dessus renvoie à l'accueil. -->
     <div v-else-if="currentUser">
-      <ProfileHeader :user-display-name="userDisplayName" />
+      <ProfileHeader :user-display-name="userDisplayName" :email="currentUser.email">
+        <!-- Mon parcours, dans le bandeau : la pastille de la lumière et de ses
+             jours à côté du nom, la journée en bas. -->
+        <template #name><ProfileStreakPill /></template>
+        <ProfileParcours />
+      </ProfileHeader>
 
       <div class="max-w-[1200px] mx-auto px-6 grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8">
         <nav class="lg:sticky lg:top-24 h-fit card p-3">
@@ -131,15 +143,15 @@ onUnmounted(() => {
           <ul class="flex flex-col gap-1 mb-4">
             <li>
               <RouterLink
-                to="/bibliotheque/lecture-du-jour"
+                to="/parcours"
                 class="flex items-center gap-3 px-4 py-3 rounded-btn font-medium text-text-secondary hover:bg-black/5 hover:text-text-primary transition-colors dark:hover:bg-white/10 group"
-                @click="trackShortcut('daily_reading')"
+                @click="trackShortcut('parcours')"
               >
                 <AppIcon name="book" :size="15" class="text-primary shrink-0" />
                 <span class="min-w-0">
-                  {{ t("dailyReading.title") }}
+                  {{ t("parcours.title") }}
                   <span class="block text-xs font-normal text-text-secondary/80">
-                    {{ t("profile.shortcuts.dailyReadingHint") }}
+                    {{ t("profile.shortcuts.parcoursHint") }}
                   </span>
                 </span>
               </RouterLink>

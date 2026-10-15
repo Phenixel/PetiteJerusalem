@@ -9,7 +9,8 @@ import { isAppLinkPath } from "../../scripts/lib/app-links.mjs";
  *
  * Entre le doigt et la page, trois pièces doivent s'accorder, et rien ne
  * signale leur désaccord : le widget porte une URL (`widgetURL`), le listener
- * `appUrlOpen` de src/main.ts n'accepte QUE l'hôte petite-jerusalem.fr, et le
+ * `appUrlOpen` de src/main.ts n'accepte QUE l'hôte petite-jerusalem.fr (et
+ * celui du site de staging dans l'app de staging, docs/staging.md), et le
  * routeur doit reconnaître le chemin. Une faute sur l'une des trois ouvre
  * l'app sur sa page d'accueil, sans erreur, sans trace : le widget a l'air de
  * marcher, il n'emmène simplement nulle part.
@@ -27,7 +28,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 
 /** Le schéma d'URL des widgets, celui que setup-ios.mjs déclare à iOS. */
 const SCHEME = "petitejerusalem";
-/** Le seul hôte que le listener de src/main.ts accepte de router. */
+/** L'hôte que le listener de src/main.ts route dans tous les environnements. */
 const HOST = "petite-jerusalem.fr";
 
 /** Les destinations des widgets, lues dans leur source Swift. */
@@ -120,7 +121,8 @@ describe("destinations des widgets", () => {
 
   it("ne route que l'hôte du site, dans src/main.ts", () => {
     const main = readFileSync(root + "/src/main.ts", "utf8");
-    expect(main).toContain(`parsed.hostname !== "${HOST}"`);
+    expect(main).toContain(`const hosts = ["${HOST}", new URL(__PJ_ENV__.siteUrl).hostname];`);
+    expect(main).toContain("if (!hosts.includes(parsed.hostname)) return;");
   });
 });
 

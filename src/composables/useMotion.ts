@@ -12,3 +12,14 @@ export function prefersLessMotion(): boolean {
   if (document.documentElement.classList.contains("perf-lite")) return true;
   return window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
 }
+
+/**
+ * La demande du système seule, sans `perf-lite` : pour les rares mouvements
+ * qui restent sur une petite machine parce qu'ils disent ce qui vient
+ * d'arriver (la pile de l'accueil, l'arrivée d'un objectif créé ; voir
+ * docs/design.md, « Le mouvement répond à un geste »).
+ */
+export function prefersReducedMotion(): boolean {
+  if (typeof window === "undefined") return true;
+  return window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+}
