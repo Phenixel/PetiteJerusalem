@@ -1707,6 +1707,14 @@ like the daily reading of Mon parcours:
   taken and one is still to read; and, right after a reservation that
   leaves such a list, the question « Les lire maintenant ? » ("Read them
   now?"). A guest who declines sees the signup dialog as before.
+- **On the perpetual chain, nothing is reserved, everything is read**: the
+  boxes say « Choisir » ("Pick"), the bar « Lire maintenant » ("Read now"),
+  and it opens the page straight away, without the question and without
+  asking a name (a guest reads anonymously, as with the draw). The reader's
+  group is « Mes Téhilim à lire », a psalm being read says « En lecture par
+  … », and « Tout lire maintenant » shows from one psalm. A psalm picked and
+  not read goes back to the chain after an hour, pushed back while the page
+  stays open (see `docs/chaine-perpetuelle.md`, « Read right away »).
 - **Tehilim chains only**: a psalm is read whole, in one slot. A chapter
   taken in a Talmud or Michna chain would need the reader to show that
   chapter alone.

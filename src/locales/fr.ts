@@ -1067,7 +1067,7 @@ const fr = {
     read: "Lu",
     backToSession: "Retour à la session",
     emptyTitle: "Aucun Téhilim à lire ici",
-    emptyText: "Réservez des Téhilim dans la session : ils s'afficheront ici, à la suite.",
+    emptyText: "Choisissez des Téhilim dans la session : ils s'afficheront ici, à la suite.",
   },
   detailSession: {
     loadingSession: "Chargement de la session...",
@@ -1099,10 +1099,18 @@ const fr = {
       title: "Un Téhilim au hasard",
       subtitle:
         "Laissez le hasard choisir pour vous : le Téhilim s'ouvre aussitôt, réservé à votre nom, même sans compte.",
+      subtitleReadNow:
+        "Laissez le hasard choisir pour vous : le Téhilim s'ouvre aussitôt, même sans compte.",
       button: "Tirer un Téhilim",
       noneAvailable: "Tous les Téhilim de cette session sont déjà réservés.",
       anonymous: "Anonyme",
       offline: "Le tirage a besoin d'une connexion ; réessayez une fois de retour en ligne.",
+    },
+    readNow: {
+      myGroup: "Mes Téhilim à lire",
+      label: "{count} Téhilim choisi | {count} Téhilim choisis",
+      button: "Lire maintenant",
+      opening: "Ouverture...",
     },
     batchReading: {
       button: "Tout lire maintenant",
@@ -1140,6 +1148,9 @@ const fr = {
       },
     },
     textList: {
+      pick: "Choisir",
+      picked: "Choisi",
+      beingReadBy: "En lecture par {name}",
       selected: "Sélectionné",
       reserve: "Réserver",
       read: "Lire",
@@ -1254,7 +1265,7 @@ const fr = {
     noNamesYet: "Proposez le premier nom pour lequel on y lira.",
     roundDone: "Tour terminé ! La chaîne repart du premier Téhilim dans un instant.",
     holdNote:
-      "Un Téhilim réservé se lit dans les 24 heures. Passé ce délai, il redevient libre pour un autre lecteur.",
+      "Ici, on ne réserve pas : on choisit ses Téhilim et on les lit tout de suite. Un Téhilim choisi qui n'est pas lu revient à la chaîne au bout d'une heure.",
     stats: {
       label: "Compteur de la chaîne",
       title: "Terminée depuis l'ouverture",
@@ -1351,6 +1362,7 @@ const fr = {
     seeParticipants: "Voir qui participe",
     total: "Total",
     read: "Lus",
+    beingRead: "En lecture",
     reserved: "Réservés",
     remaining: "Restants",
   },

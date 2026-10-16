@@ -417,6 +417,37 @@ test.describe("chaîne perpétuelle", () => {
     ).toBe(403);
     expect((await readDoc("sessions", own))?.perpetual).toBeUndefined();
   });
+  test("on n'y réserve pas : les Téhilim choisis s'ouvrent aussitôt, même sans nom", async ({
+    page,
+  }) => {
+    const chain = await seedPerpetualChain();
+    await gotoApp(page, `/share-reading/session/${chain.slug}`);
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    // No guest form: reading needs no name.
+    await expect(page.locator("#guest-form")).toHaveCount(0);
+
+    await page.getByLabel("Choisir").nth(0).check();
+    await page.getByLabel("Choisir").nth(0).check();
+    await page.getByRole("button", { name: "Lire maintenant" }).click();
+
+    await expect(page).toHaveURL(new RegExp(`/share-reading/session/${chain.slug}/lecture`));
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Mes Téhilim");
+    await expect(page.getByText("Lus\u00a0: 0 sur 2")).toBeVisible();
+
+    // Held for an hour, not the day: a psalm not read goes back to the chain.
+    const reservations = ((await readDoc("sessions", chain.id))?.reservations ?? []) as {
+      expiresAt?: string;
+      chosenByGuestId?: string;
+    }[];
+    expect(reservations).toHaveLength(2);
+    for (const r of reservations) {
+      expect(r.chosenByGuestId).toBeTruthy();
+      const left = new Date(r.expiresAt ?? 0).getTime() - Date.now();
+      expect(left).toBeGreaterThan(0);
+      expect(left).toBeLessThanOrEqual(3600 * 1000);
+    }
+  });
+
   test("un tour fini : la page relit la chaîne jusqu'au tour suivant", async ({ page }) => {
     const chain = await seedPerpetualChain({ reservations: readSlots(1, 150) });
     await gotoApp(page, `/share-reading/session/${chain.slug}`);

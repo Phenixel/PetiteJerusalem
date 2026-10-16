@@ -22,6 +22,13 @@ const props = defineProps<{
   selectedItems: Set<string>;
   /** Several Tehilim taken, one still to read: « Tout lire maintenant » heads « Mes réservations ». */
   readAll?: boolean;
+  /**
+   * The perpetual chain: psalms are picked to be read right away, not
+   * reserved (services/sessionBatchReading.ts). The words follow.
+   */
+  readNow?: boolean;
+  /** The name of the reader's own group, at the top (« Mes réservations » by default). */
+  myGroup?: string;
 }>();
 
 const emit = defineEmits<{
@@ -56,10 +63,12 @@ const toggleTextExpansion = (textId: string) => {
 
 const { t } = useI18n();
 
+const myGroupName = computed(() => props.myGroup ?? t("detailSession.myReservations"));
+
 const formatBookName = (bookName: string) => {
-  // Le groupe « Mes réservations » est une clé virtuelle injectée par la page
-  // parente, pas un nom de livre : ne pas le passer au formateur.
-  if (bookName === t("detailSession.myReservations")) return bookName;
+  // The reader's group (« Mes réservations ») is a virtual key set by the
+  // parent page, not a book name: it does not go through the formatter.
+  if (bookName === myGroupName.value) return bookName;
   return sessionService.formatBookName(bookName);
 };
 
@@ -211,7 +220,7 @@ const handleCardClick = (card: TextCard) => {
           {{ formatBookName(String(bookName)) }}
         </h3>
         <button
-          v-if="readAll && bookName === t('detailSession.myReservations')"
+          v-if="readAll && bookName === myGroupName"
           type="button"
           class="btn btn-primary"
           @click="emit('read-all')"
@@ -265,8 +274,16 @@ const handleCardClick = (card: TextCard) => {
                   <span class="text-sm font-medium text-text-secondary">
                     {{
                       card.single.selected
-                        ? t("detailSession.textList.selected")
-                        : t("detailSession.textList.reserve")
+                        ? t(
+                            readNow
+                              ? "detailSession.textList.picked"
+                              : "detailSession.textList.selected",
+                          )
+                        : t(
+                            readNow
+                              ? "detailSession.textList.pick"
+                              : "detailSession.textList.reserve",
+                          )
                     }}
                   </span>
                 </label>
@@ -319,9 +336,12 @@ const handleCardClick = (card: TextCard) => {
                     ? t("detailSession.textList.readBy", {
                         name: reservedByName(card.single.reservedBy),
                       })
-                    : t("detailSession.textList.reservedBy", {
-                        name: reservedByName(card.single.reservedBy),
-                      })
+                    : t(
+                        readNow
+                          ? "detailSession.textList.beingReadBy"
+                          : "detailSession.textList.reservedBy",
+                        { name: reservedByName(card.single.reservedBy) },
+                      )
                 }}
               </span>
 

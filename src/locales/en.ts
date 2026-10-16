@@ -1026,7 +1026,7 @@ const en: LocaleMessages = {
     read: "Read",
     backToSession: "Back to the session",
     emptyTitle: "No Tehilim to read here",
-    emptyText: "Reserve Tehilim in the session: they will show up here, one after the other.",
+    emptyText: "Pick Tehilim in the session: they will show up here, one after the other.",
   },
   detailSession: {
     loadingSession: "Loading session...",
@@ -1058,10 +1058,18 @@ const en: LocaleMessages = {
       title: "A random Tehilim",
       subtitle:
         "Let chance choose for you: the Tehilim opens right away, reserved under your name, even without an account.",
+      subtitleReadNow:
+        "Let chance choose for you: the Tehilim opens right away, even without an account.",
       button: "Draw a Tehilim",
       noneAvailable: "All the Tehilim of this session are already reserved.",
       anonymous: "Anonymous",
       offline: "Drawing needs a connection; try again once you are back online.",
+    },
+    readNow: {
+      myGroup: "My Tehilim to read",
+      label: "{count} Tehilim picked | {count} Tehilim picked",
+      button: "Read now",
+      opening: "Opening...",
     },
     batchReading: {
       button: "Read them all now",
@@ -1099,6 +1107,9 @@ const en: LocaleMessages = {
       },
     },
     textList: {
+      pick: "Pick",
+      picked: "Picked",
+      beingReadBy: "Being read by {name}",
       selected: "Selected",
       reserve: "Reserve",
       read: "Read",
@@ -1211,7 +1222,7 @@ const en: LocaleMessages = {
     noNamesYet: "Suggest the first name to be read for.",
     roundDone: "Round completed! The chain starts again from the first Tehilim in a moment.",
     holdNote:
-      "A reserved Tehilim is to be read within 24 hours. After that, it becomes free for another reader.",
+      "Here, nothing is reserved: you pick your Tehilim and read them right away. A Tehilim picked and not read goes back to the chain after an hour.",
     stats: {
       label: "Chain counter",
       title: "Completed since it opened",
@@ -1306,6 +1317,7 @@ const en: LocaleMessages = {
     seeParticipants: "See who is taking part",
     total: "Total",
     read: "Read",
+    beingRead: "Being read",
     reserved: "Reserved",
     remaining: "Remaining",
   },

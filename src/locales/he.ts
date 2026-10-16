@@ -1007,7 +1007,7 @@ const he: LocaleMessages = {
     read: "נקרא",
     backToSession: "חזרה לסשן",
     emptyTitle: "אין כאן תהילים לקריאה",
-    emptyText: "הזמינו פרקי תהילים בסשן: הם יופיעו כאן, ברצף.",
+    emptyText: "בחרו פרקי תהילים בסשן: הם יופיעו כאן, ברצף.",
   },
   detailSession: {
     loadingSession: "טוען סשן...",
@@ -1038,10 +1038,17 @@ const he: LocaleMessages = {
     randomDraw: {
       title: "פרק תהילים אקראי",
       subtitle: "תנו לגורל לבחור עבורכם: הפרק נפתח מיד, שמור על שמכם, גם בלי חשבון.",
+      subtitleReadNow: "תנו למזל לבחור בשבילכם: פרק התהילים נפתח מיד, גם בלי חשבון.",
       button: "הגרלת פרק תהילים",
       noneAvailable: "כל פרקי התהילים בסשן הזה כבר שמורים.",
       anonymous: "אנונימי",
       offline: "להגרלה נדרש חיבור לאינטרנט; נסו שוב כשתחזרו לרשת.",
+    },
+    readNow: {
+      myGroup: "התהילים שלי לקריאה",
+      label: "נבחר פרק תהילים אחד | נבחרו {count} פרקי תהילים",
+      button: "לקרוא עכשיו",
+      opening: "פותח...",
     },
     batchReading: {
       button: "לקרוא את כולם עכשיו",
@@ -1079,6 +1086,9 @@ const he: LocaleMessages = {
       },
     },
     textList: {
+      pick: "בחירה",
+      picked: "נבחר",
+      beingReadBy: "בקריאה אצל {name}",
       selected: "נבחר",
       reserve: "להזמין",
       read: "לקרוא",
@@ -1187,7 +1197,8 @@ const he: LocaleMessages = {
     readingForCount: "קוראים לזכות אדם אחד. | קוראים לזכות {n} אנשים.",
     noNamesYet: "הציעו את השם הראשון שלזכותו יקראו.",
     roundDone: "הסבב הושלם! השרשרת מתחילה מחדש מהפרק הראשון בעוד רגע.",
-    holdNote: "פרק שהוזמן נקרא בתוך 24 שעות. לאחר מכן הוא מתפנה לקורא אחר.",
+    holdNote:
+      "כאן לא מזמינים: בוחרים פרקי תהילים וקוראים אותם מיד. פרק שנבחר ולא נקרא חוזר לשרשרת לאחר שעה.",
     stats: {
       label: "מונה השרשרת",
       title: "הושלמה מאז הפתיחה",
@@ -1279,6 +1290,7 @@ const he: LocaleMessages = {
     seeParticipants: "לראות מי משתתף",
     total: 'סה"כ',
     read: "נקראו",
+    beingRead: "בקריאה",
     reserved: "הוזמנו",
     remaining: "נותרו",
   },

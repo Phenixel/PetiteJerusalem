@@ -6,7 +6,8 @@ import type {
   TextStudyReservation,
 } from "../models/models";
 import { EnumTypeTextStudy } from "../models/typeTextStudy";
-import { reservationService } from "./reservationService";
+import { isPerpetual } from "./perpetualChain";
+import { RANDOM_RESERVATION_TTL_MS, reservationService } from "./reservationService";
 
 /**
  * Reading every Tehilim you took in a chain at once
@@ -28,6 +29,42 @@ import { reservationService } from "./reservationService";
 
 /** From two Tehilim taken, the chain offers to read them at once. */
 export const BATCH_READING_MIN = 2;
+
+/**
+ * The perpetual chain has no reservations, only readings: whoever picks
+ * psalms there reads them right away. « Lire maintenant » ("Read now")
+ * takes them and opens them at once on the reading page, without asking
+ * for a name; a guest reads anonymously, as with the draw. Nobody owns the
+ * chain to free a forgotten slot: a slot picked and not read goes back to
+ * the chain after an hour (READ_NOW_TTL_MS), pushed back while the reading
+ * page stays open, instead of the day the Cloud Function gives to what an
+ * older version reserves (docs/chaine-perpetuelle.md).
+ */
+export function readsRightAway(session: Pick<Session, "perpetual"> | null | undefined): boolean {
+  return isPerpetual(session);
+}
+
+/** How long a psalm picked to be read right away holds its slot: the draw's hour. */
+export const READ_NOW_TTL_MS = RANDOM_RESERVATION_TTL_MS;
+
+/** The expiry of a psalm picked now. */
+export function readNowExpiry(now: number = Date.now()): string {
+  return new Date(now + READ_NOW_TTL_MS).toISOString();
+}
+
+/**
+ * Whether the reading page should push back a psalm's expiry: not read, and
+ * expiring within half an hour. A longer hold (the day an older version
+ * gets) is left alone: pushing it "back" would shorten it.
+ */
+export function needsRenewal(
+  reservation: Pick<TextStudyReservation, "isCompleted" | "expiresAt">,
+  now: number = Date.now(),
+): boolean {
+  if (reservation.isCompleted || reservation.expiresAt === undefined) return false;
+  const expiresAt = new Date(reservation.expiresAt).getTime();
+  return Number.isFinite(expiresAt) && expiresAt - now < READ_NOW_TTL_MS / 2;
+}
 
 const entries = (textStudiesJson as TextStudiesJson).textStudies;
 const entryById = new Map<string, TextStudyJsonEntry>(entries.map((e) => [String(e.id), e]));
@@ -73,9 +110,13 @@ export function batchReadings(
 }
 
 /**
- * Whether the chain shows « Lire mes Téhilim » ("Read my Tehilim"): several
- * psalms taken, and at least one still to read.
+ * Whether the chain shows « Tout lire maintenant » ("Read them all now"):
+ * several psalms taken (`min`; one is enough on the perpetual chain, where
+ * nothing is kept for later), and at least one still to read.
  */
-export function offersBatchReading(readings: readonly BatchReading[]): boolean {
-  return readings.length >= BATCH_READING_MIN && readings.some((r) => !r.reservation.isCompleted);
+export function offersBatchReading(
+  readings: readonly BatchReading[],
+  min: number = BATCH_READING_MIN,
+): boolean {
+  return readings.length >= min && readings.some((r) => !r.reservation.isCompleted);
 }

@@ -22,8 +22,11 @@ beforeAll(() => {
 
 import { guestService } from "../services/guestService";
 import {
+  READ_NOW_TTL_MS,
   batchReadings,
+  needsRenewal,
   offersBatchReading,
+  readsRightAway,
   supportsBatchReading,
 } from "../services/sessionBatchReading";
 
@@ -112,5 +115,30 @@ describe("reading the Tehilim of a chain at once", () => {
     expect(offersBatchReading(one)).toBe(false);
     expect(offersBatchReading(two)).toBe(true);
     expect(offersBatchReading(allRead)).toBe(false);
+  });
+
+  it("on the perpetual chain, one psalm is enough: nothing is kept for later", () => {
+    const one = batchReadings(tehilim([reservation({ textStudyId: T1 })]), user);
+    expect(offersBatchReading(one, 1)).toBe(true);
+  });
+});
+
+describe("the perpetual chain reads right away", () => {
+  it("applies to the perpetual chain only", () => {
+    expect(readsRightAway({ perpetual: true })).toBe(true);
+    expect(readsRightAway({})).toBe(false);
+    expect(readsRightAway(null)).toBe(false);
+  });
+
+  it("pushes back a psalm about to lose its slot, never a longer hold", () => {
+    const now = Date.now();
+    const at = (ms: number) => new Date(now + ms).toISOString();
+    expect(needsRenewal({ isCompleted: false, expiresAt: at(10 * 60_000) }, now)).toBe(true);
+    expect(needsRenewal({ isCompleted: false, expiresAt: at(READ_NOW_TTL_MS) }, now)).toBe(false);
+    // The day an older version gets: "pushing it back" would shorten it.
+    expect(needsRenewal({ isCompleted: false, expiresAt: at(24 * 3600_000) }, now)).toBe(false);
+    expect(needsRenewal({ isCompleted: true, expiresAt: at(60_000) }, now)).toBe(false);
+    expect(needsRenewal({ isCompleted: false }, now)).toBe(false);
+    expect(needsRenewal({ isCompleted: false, expiresAt: "illisible" }, now)).toBe(false);
   });
 });

@@ -14,7 +14,13 @@ const props = defineProps<{
   participants: SessionParticipant[];
   reserved: number;
   read: number;
+  /** The perpetual chain: nothing is reserved there, the taken psalms are being read. */
+  readNow?: boolean;
 }>();
+
+const reservedLabel = computed(() =>
+  props.readNow ? t("progressBar.beingRead") : t("progressBar.reserved"),
+);
 
 const stats = computed(() => {
   const { total, reserved, read } = props;
@@ -67,7 +73,7 @@ const showParticipants = ref(false);
           :value="stats.reservedPercentage"
           tone="info"
           size="md"
-          :label="t('progressBar.reserved')"
+          :label="reservedLabel"
         />
         <div class="absolute inset-0 [&>div]:!bg-transparent">
           <ProgressBar
@@ -86,7 +92,7 @@ const showParticipants = ref(false);
         </div>
         <div class="flex items-center gap-1.5 text-blue-600 dark:text-blue-400">
           <div class="w-2 h-2 rounded-full bg-blue-500"></div>
-          <span>{{ reserved }} {{ t("progressBar.reserved") }}</span>
+          <span>{{ reserved }} {{ reservedLabel }}</span>
         </div>
         <div class="flex items-center gap-1.5 text-text-secondary">
           <div class="w-2 h-2 rounded-full bg-text-secondary/60"></div>

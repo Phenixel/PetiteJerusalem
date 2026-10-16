@@ -10,6 +10,10 @@
  * (at the top on a phone) checks them off without scrolling: what is checked
  * is the reservation itself, as with the switch of the chain's list. Nothing
  * goes to Mon parcours. See services/sessionBatchReading.ts.
+ *
+ * A psalm picked on the perpetual chain holds its slot for an hour: while
+ * the page is open, that hour is pushed back (renewHolds), as the reader
+ * does for a draw, so that a long reading does not lose its psalms.
  */
 import { computed, onMounted, onUnmounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
@@ -20,6 +24,7 @@ import { reservationService, ReservationGoneError } from "../../services/reserva
 import { authService, type User } from "../../services/authService";
 import {
   batchReadings,
+  needsRenewal,
   supportsBatchReading,
   type BatchReading,
 } from "../../services/sessionBatchReading";
@@ -159,6 +164,46 @@ async function toggleDone(reading: BatchReading, source: "text" | "list"): Promi
   }
 }
 
+// --- Holding the slots while reading ---
+
+/** How often the page checks the expiries it holds. */
+const RENEW_CHECK_MS = 5 * 60 * 1000;
+let renewTimer: ReturnType<typeof setInterval> | null = null;
+let renewing = false;
+
+/** Pushes back the expiry of the unread psalms about to lose their slot. */
+async function renewHolds(): Promise<void> {
+  const current = session.value;
+  if (!current || renewing) return;
+  renewing = true;
+  try {
+    for (const { reservation } of readings.value.filter((r) => needsRenewal(r.reservation))) {
+      try {
+        reservation.expiresAt = await sessionService.renewRandomReservation(
+          current.id,
+          reservation.id,
+        );
+      } catch (err) {
+        // Already taken back: it leaves the page. Any other failure is
+        // retried at the next check.
+        if (err instanceof ReservationGoneError) {
+          const index = current.reservations.findIndex((r) => r.id === reservation.id);
+          if (index > -1) current.reservations.splice(index, 1);
+        } else {
+          console.error("Error while holding a psalm:", err);
+        }
+      }
+    }
+  } finally {
+    renewing = false;
+  }
+}
+
+/** Back on the page (a locked phone, another tab): the hour may be nearly gone. */
+function onVisibilityChange(): void {
+  if (document.visibilityState === "visible") void renewHolds();
+}
+
 const loadSession = async () => {
   try {
     isLoading.value = true;
@@ -176,6 +221,7 @@ const loadSession = async () => {
     }
     if (!Array.isArray(data.reservations)) data.reservations = [];
     session.value = data;
+    void renewHolds();
     seoService.setMeta({
       title: pageTitle(`${t("sessionReading.title")} · ${data.name}`),
       description: t("sessionReading.intro"),
@@ -196,9 +242,15 @@ onMounted(() => {
     currentUser.value = user;
   });
   void loadSession();
+  renewTimer = setInterval(() => void renewHolds(), RENEW_CHECK_MS);
+  document.addEventListener("visibilitychange", onVisibilityChange);
 });
 
-onUnmounted(() => unsubscribeAuth?.());
+onUnmounted(() => {
+  unsubscribeAuth?.();
+  if (renewTimer) clearInterval(renewTimer);
+  document.removeEventListener("visibilitychange", onVisibilityChange);
+});
 </script>
 
 <template>
