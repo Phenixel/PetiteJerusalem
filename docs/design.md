@@ -615,6 +615,17 @@ Tenu par `src/__tests__/sidourMoment.test.ts` (ce que la carte propose, à
 l'heure qu'il est) et `src/__tests__/sidourGroups.test.ts` (chaque texte
 rangé une fois et une seule, les fêtes qui remontent).
 
+### Un titre hébreu ne s'espace pas
+
+Les titres des livres dessinés (l'étagère de la bibliothèque, les volumes de
+Mon parcours) sont du texte SVG. Dès qu'un texte SVG porte un interlettrage
+(`letter-spacing`) ou un `textLength`, WebKit (Safari, l'app iPhone) pose ses
+lettres une à une, de gauche à droite : en hébreu, les mots se lisaient à
+l'envers. Un titre hébreu n'en porte donc jamais ; l'hébreu ne s'espace pas,
+de toute façon. L'interlettrage reste aux titres en lettres latines, et un
+mot hébreu trop long pour son cadre rapetisse au lieu de se resserrer. Tenu
+par `src/__tests__/hebrewSvgTitles.test.ts`.
+
 ### Un livre dit s'il est sur le téléphone
 
 Dans l'app, chaque livre de l'étagère porte dans l'angle haut de sa couverture
@@ -1093,6 +1104,37 @@ office ou une bénédiction se lisent du début, on n'y revient pas à un
 paragraphe comme à un verset de Tehilim ; le sommaire du menu y mène déjà à
 chaque passage.
 
+### Un marque-page par livre, et qui se voit
+
+Un livre n'a qu'un ruban : poser un marque-page retire celui que le texte
+portait déjà (dans la bibliothèque, et à part dans la lecture du jour).
+Ceux qu'une version précédente a laissés à plusieurs restent jusqu'au
+prochain posé (`readingProgressBookmarks.test.ts`).
+
+Le marque-page est un signet, comme celui d'un vrai livre
+(`BookmarkRibbon.vue`) : un ruban de soie rouge posé en travers de la page
+juste avant le verset marqué, dont le bout fendu en queue d'aronde pend
+dans la marge de gauche, du côté de la tranche d'un livre hébreu. Il se
+voit en faisant défiler, sans rien colorer du texte. Son rouge a son jeton,
+`--color-ribbon`, celui du signet du sidour dessiné sur l'accueil
+(`ArtSiddur.vue`), et non `--color-danger` : ce n'est pas une erreur. Dans
+la guemara et la lecture du jour, où les passages se suivent dans un même
+paragraphe, le signet ouvre une ligne avant le passage marqué. Seul le
+tikoun n'en reçoit pas : ses lignes sont celles du rouleau, on n'y glisse
+rien ; le passage y prend un fond léger et un trait plein du rouge du
+signet (`.reading-bookmarked`).
+
+### La barre d'outils du lecteur tient sur une ligne
+
+Au-dessus du texte, les marque-pages, la taille, la bascule hébreu / forme
+/ phonétique et la traduction tiennent sur une seule ligne, même sur un
+téléphone. Sous la largeur `sm`, la taille du texte quitte la barre (le
+menu de lecture la porte toujours), et la bascule prend les noms abrégés
+qu'elle a déjà dans le menu (א, le dessin de la forme, Aa), son nom entier
+restant dans l'infobulle et pour les lecteurs d'écran. La traduction n'est
+pas proposée dans la forme de la page (daf de Vilna, tikoun) : ni l'une ni
+l'autre ne la montre.
+
 ### La traduction se lit sous le verset
 
 La traduction (`docs/traductions.md`) n'est pas une autre page ni une autre
@@ -1128,7 +1170,10 @@ montrer le texte, entre l'hébreu verset par verset et la phonétique : un même
 groupe de trois boutons dans la barre d'outils (« Hébreu », la forme,
 « Phonétique ») et, en abrégé, dans le menu de lecture (א, l'icône de la
 forme, Aa). Le bouton de la forme porte son dessin et son nom : un livre ouvert et
-« Page » pour la guemara, un rouleau et « Sefer Torah » pour la Torah. Il
+« Page » pour la guemara, un rouleau et « Tikoun » pour la Torah (le nom du
+livre où l'on prépare la lecture, dont la colonne de droite est celle du
+Sefer Torah ; « Sefer Torah » se lisait comme un objet, pas comme une façon
+de lire). Il
 n'apparaît que sur les textes qui ont une forme (une guemara, une paracha) ;
 les Prophètes ont des petou'hot mais pas de colonne de Sefer Torah à
 reproduire. Le choix est gardé sur l'appareil (`usePageForm`, une seule
@@ -2225,7 +2270,11 @@ geste : plusieurs livres ouverts sur la table, chacun à sa page.
 - **Un livre, un geste.** Toucher un livre ouvre ce texte, à l'endroit où on
   l'a laissé : passer de l'un à l'autre ne demande qu'un appui. La flèche
   au bout de la barre, un appui ailleurs sur elle, un glissement vers le
-  haut, ou le livre qu'on lit ouvrent la table.
+  haut, ou le livre qu'on lit ouvrent la table. Le texte qu'on lisait, s'il
+  n'était pas encore sur la table, s'y pose en passant : aller voir un livre
+  mis de côté, c'est laisser l'autre ouvert à côté. Seulement depuis un
+  texte qu'on lit, pas depuis la liste des chapitres d'un livre
+  (`readingTable.test.ts`, « passer d'un texte à l'autre »).
 - **La table ouverte montre les pages.** Un panneau monte du bas, à la
   hauteur de ce qu'il porte et jamais plus des trois quarts de l'écran : la
   page reste visible derrière un voile léger, la table se pose dessus, elle

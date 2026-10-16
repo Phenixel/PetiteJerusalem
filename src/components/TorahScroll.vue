@@ -62,6 +62,8 @@ const props = defineProps<{
   aliyot: { offset: number; anchor: string; label: string }[];
   pickedLine?: number | null;
   highlightedLine?: number | null;
+  /** Les versets marqués d'un marque-page (`.reading-bookmarked`). */
+  bookmarkedLines?: number[];
   /** Le passage étudié et les dibbourim de ses commentaires (voir MarkedText). */
   leads?: { line: number; leads: string[] } | null;
   /** Le texte ouvert : son fichier de lignes porte ce numéro (torah-layout). */
@@ -445,6 +447,10 @@ function stateClass(line: number) {
   return {
     "bg-primary/10": props.highlightedLine === line,
     "reading-selected": props.pickedLine === line && props.highlightedLine !== line,
+    "reading-bookmarked":
+      props.bookmarkedLines?.includes(line) &&
+      props.pickedLine !== line &&
+      props.highlightedLine !== line,
   };
 }
 

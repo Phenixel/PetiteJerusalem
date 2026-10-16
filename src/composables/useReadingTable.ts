@@ -259,13 +259,23 @@ export function endFlight(): void {
 
 /**
  * Rouvre un texte de la table, à l'endroit où on l'a laissé. Le texte
- * qu'on quitte retient d'abord sa page s'il est lui aussi sur la table.
+ * qu'on quitte retient d'abord sa page s'il est lui aussi sur la table ;
+ * s'il n'y est pas, il s'y pose : passer d'un texte en cours de lecture à
+ * un autre de la table, c'est laisser le premier ouvert à côté. Seulement
+ * depuis un texte qu'on lit : la liste des chapitres d'un livre n'est pas
+ * une page à retrouver (le lecteur n'y donne rien, voir TableReader).
  * Le routeur ne le remet pas en haut (hasTableRestore), le lecteur le
  * replace une fois rendu (takeTableRestore).
  */
 export function openFromTable(key: string, router: Router): void {
-  refreshOpenReader();
   const text = texts.value.find((t) => t.key === key);
+  const current = reader.value;
+  if (current && current.key !== key && text && !isOnTable(current.key)) {
+    const left = current.snapshot(true);
+    if (left) placeOnTable(left);
+  } else {
+    refreshOpenReader();
+  }
   sheetOpen.value = false;
   if (!text) return;
   // Le texte déjà sous les yeux, à la page qu'il vient de retenir : rien à rouvrir.

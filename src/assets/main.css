@@ -123,6 +123,9 @@ body {
   --color-line: rgb(53 49 42 / 0.08);
   /* Ce qui se perd : retirer, ranger, supprimer. */
   --color-danger: #dc2626;
+  /* Le signet d'un livre (BookmarkRibbon.vue) : le rouge de la soie, celui
+     du signet du sidour dessiné sur l'accueil (ArtSiddur.vue). */
+  --color-ribbon: #b3262f;
 
   /* Le trait appuyé : la poignée d'une feuille, un contour en pointillé. */
   --color-line-strong: rgb(53 49 42 / 0.18);
@@ -182,6 +185,7 @@ body {
   --color-line: rgb(255 255 255 / 0.1);
   --color-line-strong: rgb(255 255 255 / 0.22);
   --color-danger: #f87171;
+  --color-ribbon: #d6404a;
   --shadow-card: 0 1px 2px rgb(0 0 0 / 0.3), 0 2px 8px rgb(0 0 0 / 0.25);
   --shadow-card-hover: 0 2px 4px rgb(0 0 0 / 0.35), 0 8px 24px rgb(0 0 0 / 0.4);
   --shadow-pop: 0 4px 12px rgb(0 0 0 / 0.4), 0 16px 40px rgb(0 0 0 / 0.5);
@@ -612,6 +616,18 @@ button,
   /* Le passage choisi : la couleur de la sélection, celle du thème. */
   .reading-selected {
     background-color: var(--color-selection);
+  }
+
+  /* Le verset marqué d'un marque-page, là où le signet (BookmarkRibbon.vue)
+     ne peut pas se poser avant lui : les lignes du tikoun sont celles du
+     rouleau, on n'y glisse rien. Un fond léger et un trait plein du rouge
+     du signet sous le passage, qui suit chaque ligne d'un passage coupé
+     (box-decoration-break). */
+  .reading-bookmarked {
+    background-color: color-mix(in srgb, var(--color-ribbon) 10%, transparent);
+    box-shadow: inset 0 -2px 0 var(--color-ribbon);
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
   }
 
   /* Modal building blocks, one modal style for the whole app. */

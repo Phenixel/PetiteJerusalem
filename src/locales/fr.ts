@@ -1562,7 +1562,7 @@ const fr = {
     phonetic: "Phonétique",
     pageForm: {
       daf: "Page",
-      scroll: "Sefer Torah",
+      scroll: "Tikoun",
       pointed: "Voyelles",
       dafHint: "La page de Vilna : la guemara au centre, Rachi et Tossafot autour",
       scrollHint: "Comme dans le Sefer Torah : sans voyelles, avec les petou'hot et les setoumot",

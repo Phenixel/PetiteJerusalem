@@ -1513,7 +1513,7 @@ const en: LocaleMessages = {
     phonetic: "Phonetic",
     pageForm: {
       daf: "Page",
-      scroll: "Torah scroll",
+      scroll: "Tikkun",
       pointed: "Vowels",
       dafHint: "The Vilna page: the Gemara in the center, Rashi and Tosafot around it",
       scrollHint: "As in a Torah scroll: no vowels, with the open and closed sections",

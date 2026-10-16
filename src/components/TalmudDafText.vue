@@ -4,6 +4,7 @@ import { useI18n } from "vue-i18n";
 import type { DafBlock } from "../services/textService";
 import TranslationText from "./TranslationText.vue";
 import MarkedText from "./MarkedText.vue";
+import BookmarkRibbon from "./BookmarkRibbon.vue";
 import { talmudOpenings } from "../services/pageForm";
 
 /**
@@ -46,6 +47,8 @@ const props = withDefaults(
     selectable?: boolean;
     selectedLine?: number | null;
     highlightedLine?: number | null;
+    /** Les passages marqués d'un marque-page (BookmarkRibbon). */
+    bookmarkedLines?: number[];
     /** Le passage étudié et les dibbourim de ses commentaires. */
     leads?: { line: number; leads: string[] } | null;
   }>(),
@@ -58,6 +61,7 @@ const props = withDefaults(
     selectable: false,
     selectedLine: null,
     highlightedLine: null,
+    bookmarkedLines: () => [],
     leads: null,
   },
 );
@@ -91,6 +95,11 @@ const offsets = computed(() => {
 function offsetOf(index: number): number {
   return offsets.value[index] ?? 0;
 }
+
+/** Le passage porte un marque-page : le signet se pose avant lui. */
+function bookmarked(line: number): boolean {
+  return props.bookmarkedLines.includes(line);
+}
 </script>
 
 <template>
@@ -112,6 +121,7 @@ function offsetOf(index: number): number {
     <!-- Avec la traduction : passage par passage, l'hébreu puis sa traduction. -->
     <div v-if="translationByDaf" class="space-y-5">
       <div v-for="(line, lineIndex) in block.lines" :key="lineIndex">
+        <BookmarkRibbon v-if="bookmarked(offsetOf(index) + lineIndex)" />
         <p
           v-if="!transliterate"
           dir="rtl"
@@ -156,7 +166,7 @@ function offsetOf(index: number): number {
       :class="variant === 'daily' ? 'daf-he-daily' : ''"
     >
       <template v-for="(line, k) in block.lines" :key="k"
-        ><span
+        ><BookmarkRibbon v-if="bookmarked(offsetOf(index) + k)" /><span
           :data-line="offsetOf(index) + k"
           class="reading-pick daf-passage"
           :class="{

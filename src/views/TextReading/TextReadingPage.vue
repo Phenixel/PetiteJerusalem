@@ -105,6 +105,7 @@ import MockPinch from "../../components/mock/MockPinch.vue";
 import MockAutoScroll from "../../components/mock/MockAutoScroll.vue";
 import { tipsOffered } from "../../composables/useFeatureTips";
 import ReadingSizeControl from "../../components/ReadingSizeControl.vue";
+import BookmarkRibbon from "../../components/BookmarkRibbon.vue";
 import ReadingProgressBar from "../../components/ReadingProgressBar.vue";
 import SessionReservationCard from "./SessionReservationCard.vue";
 import PrayerNamesLine from "./PrayerNamesLine.vue";
@@ -493,7 +494,11 @@ const translationFailed = ref(false);
 const translationLang = computed(() =>
   pickTranslationLang(textTranslationLangs.value, locale.value, translationLangChoice.value),
 );
-const canTranslate = computed(() => !isLiturgyText.value && translationLang.value !== null);
+// La forme de la page (la page de Vilna, le tikoun) ne montre pas de
+// traduction : la commande n'y est pas proposée.
+const canTranslate = computed(
+  () => !isLiturgyText.value && translationLang.value !== null && !showPageForm.value,
+);
 const showTranslation = computed(() => canTranslate.value && translationShown.value);
 
 /** Les lignes traduites de la section lue, alignées sur `he` (vide sans traduction). */
@@ -1416,6 +1421,15 @@ watch(
 function isLineBookmarked(line: number): boolean {
   return isBookmarked(positionSection.value, line);
 }
+
+/** Les versets marqués de la section lue (la guemara, le tikoun). */
+const bookmarkedLines = computed(() =>
+  isLiturgyText.value
+    ? []
+    : bookmarks.value
+        .filter((b) => (b.section ?? 0) === (positionSection.value ?? 0))
+        .map((b) => b.line),
+);
 
 function toggleBookmarkAt(line: number) {
   if (!textEntry.value) return;
@@ -2566,8 +2580,12 @@ watch(textId, (_, previousTextId) => {
         <ReadingNav v-if="!isSingleSection" v-bind="sectionNavProps" class="mb-8" />
         <ReadingNav v-else-if="prevText || nextText" v-bind="siblingNavProps" class="mb-8" />
 
-        <!-- Reading toolbar: text size + Hebrew / page / phonetic toggle + translation -->
-        <div class="flex flex-wrap items-center justify-end gap-3 mb-5">
+        <!-- Reading toolbar: text size + Hebrew / page / phonetic toggle + translation.
+             Une seule ligne, même sur un téléphone : la taille du texte n'y
+             paraît qu'à partir d'un écran moyen (le menu de lecture la porte
+             partout), et la bascule hébreu / forme / phonétique y prend ses
+             noms abrégés (א, le dessin de la forme, Aa), comme dans le menu. -->
+        <div class="flex flex-wrap items-center justify-end gap-2 sm:gap-3 mb-5">
           <button
             v-if="bookmarks.length && !isLiturgyText"
             @click="showBookmarksPanel = !showBookmarksPanel"
@@ -2580,11 +2598,13 @@ watch(textId, (_, previousTextId) => {
             <AppIcon name="bookmark" :size="14" />
             {{ bookmarks.length }}
           </button>
-          <ReadingSizeControl />
+          <span class="hidden sm:inline-flex">
+            <ReadingSizeControl />
+          </span>
 
           <!-- Hébreu, forme de la page (guemara, Torah), phonétique : trois
                façons de montrer le même texte, une seule à la fois. -->
-          <!-- Sefer Torah : les voyelles et les teamim, sur les mêmes lignes
+          <!-- Tikoun : les voyelles et les teamim, sur les mêmes lignes
                (TorahScroll.vue). Le même réglage que dans le menu de lecture. -->
           <button
             v-if="showPageForm && pageFormKind === 'scroll'"
@@ -2611,8 +2631,11 @@ watch(textId, (_, previousTextId) => {
                   : 'text-text-secondary'
               "
               :aria-pressed="readingMode === 'hebrew'"
+              :aria-label="t('textReading.hebrew')"
+              :title="t('textReading.hebrew')"
             >
-              {{ t("textReading.hebrew") }}
+              <span class="sm:hidden" aria-hidden="true">א</span>
+              <span class="hidden sm:inline">{{ t("textReading.hebrew") }}</span>
             </button>
             <button
               v-if="pageFormKind"
@@ -2622,10 +2645,11 @@ watch(textId, (_, previousTextId) => {
                 readingMode === 'page' ? 'bg-surface text-primary shadow-sm' : 'text-text-secondary'
               "
               :aria-pressed="readingMode === 'page'"
+              :aria-label="t(PAGE_FORM_LABELS[pageFormKind].label)"
               :title="t(PAGE_FORM_LABELS[pageFormKind].hint)"
             >
               <AppIcon :name="PAGE_FORM_LABELS[pageFormKind].icon" :size="14" />
-              {{ t(PAGE_FORM_LABELS[pageFormKind].label) }}
+              <span class="hidden sm:inline">{{ t(PAGE_FORM_LABELS[pageFormKind].label) }}</span>
             </button>
             <button
               v-if="canTransliterate"
@@ -2637,13 +2661,18 @@ watch(textId, (_, previousTextId) => {
                   : 'text-text-secondary'
               "
               :aria-pressed="readingMode === 'phonetic'"
+              :aria-label="t('textReading.phonetic')"
+              :title="t('textReading.phonetic')"
             >
-              {{ t("textReading.phonetic") }}
+              <span class="sm:hidden" aria-hidden="true">Aa</span>
+              <span class="hidden sm:inline">{{ t("textReading.phonetic") }}</span>
             </button>
           </div>
 
           <!-- La traduction, quand le texte en a une : une commande qui porte
-               son nom, et la couleur du thème quand elle est allumée. -->
+               son nom, et la couleur du thème quand elle est allumée. Pas dans
+               la forme de la page (daf de Vilna, tikoun) : ni l'une ni l'autre
+               ne montre de traduction. -->
           <button
             v-if="canTranslate"
             @click="toggleTranslation"
@@ -2744,6 +2773,7 @@ watch(textId, (_, previousTextId) => {
             :marks="currentSection.scrollMarks ?? []"
             :aliyot="scrollAliyot"
             :picked-line="selectedLine"
+            :bookmarked-lines="bookmarkedLines"
             :highlighted-line="highlightedLine"
             :leads="studyLeads"
             @pick="pickVerse"
@@ -2759,6 +2789,7 @@ watch(textId, (_, previousTextId) => {
             anchored
             selectable
             :selected-line="selectedLine"
+            :bookmarked-lines="bookmarkedLines"
             :highlighted-line="highlightedLine"
             :leads="studyLeads"
             :phonetic-by-daf="showPhonetic ? phoneticByDaf : null"
@@ -2812,6 +2843,8 @@ watch(textId, (_, previousTextId) => {
             </p>
             <div class="space-y-6 mb-6">
               <template v-for="(line, index) in block.lines" :key="block.offset + index">
+                <!-- Le signet, posé en travers avant le verset marqué. -->
+                <BookmarkRibbon v-if="isLineBookmarked(block.offset + index)" />
                 <div
                   :data-line="block.offset + index"
                   @click="pickVerse($event, block.offset + index, line)"
@@ -2825,15 +2858,10 @@ watch(textId, (_, previousTextId) => {
                   }"
                 >
                   <span
-                    v-if="showVerseNumbers || isLineBookmarked(block.offset + index)"
-                    class="mt-2 flex-shrink-0 w-6 flex flex-col items-end gap-1 text-right text-xs text-primary font-semibold select-none"
+                    v-if="showVerseNumbers"
+                    class="mt-2 flex-shrink-0 w-6 text-right text-xs text-primary font-semibold select-none"
                   >
-                    <span v-if="showVerseNumbers">{{ index + 1 }}</span>
-                    <AppIcon
-                      v-if="isLineBookmarked(block.offset + index)"
-                      name="bookmark"
-                      :size="11"
-                    />
+                    {{ index + 1 }}
                   </span>
                   <div class="flex-1 min-w-0">
                     <p
