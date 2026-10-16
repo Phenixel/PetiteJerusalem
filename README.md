@@ -247,7 +247,7 @@ The `scripts/*.mjs` scripts that have no npm command run with
 | `download-translations.mjs` | Downloads the selected free translations ([docs/traductions.md](docs/traductions.md)) and aligns them with the Hebrew texts, in `public/texts/traductions/`. |
 | `generate-cities.mjs` | Regenerates `src/datas/cities.json`, the city list of the prayer times picker, with geonames coordinates. |
 | `generate-hiloulot.mjs` | Regenerates `src/datas/hiloulot.json` and `hiloulot.he.json`, the hiloulot of the great rabbis day by day, from the Rabbi Ovadiah Yosef calendar (MIT). |
-| `generate-talmud-chapters.mjs` | Generates `public/texts/talmud-chapters.json` by finding chapter boundaries in the raw Talmud text (Sefaria). |
+| `generate-talmud-chapters.mjs` | Generates `public/texts/talmud-chapters.json` from the « הדרן עלך » markers of the local Talmud files (`--check` in the tests). |
 | `generate-torah-weekday.mjs` | Writes `src/datas/torahWeekday.json`, the Monday and Thursday morning Torah reading, portion by portion. |
 | `texts-manifest.mjs` | Writes `public/texts/manifest.json`; `--check` fails if the manifest no longer matches the files. |
 | `release-notes.mjs` | Release notes ("What's new") shared by both stores: the GitHub release body, otherwise the default sentence. |

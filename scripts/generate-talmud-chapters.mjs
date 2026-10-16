@@ -1,260 +1,190 @@
 /**
- * Génère public/texts/talmud-chapters.json en récupérant le texte brut (HTML)
- * du Talmud depuis l'export GCS de Sefaria et en y repérant les frontières de
- * chapitres.
- * Lancer avec : node scripts/generate-talmud-chapters.mjs
+ * Generates public/texts/talmud-chapters.json: where each chapter (perek) of
+ * each Bavli tractate starts and ends, as indices of public/texts/talmud/
+ * (index 0 = 2a, 1 = 2b, 2 = 3a...).
+ *
+ * Run with: node scripts/generate-talmud-chapters.mjs
+ *           node scripts/generate-talmud-chapters.mjs --check  (CI: is the file up to date?)
+ *
+ * The boundaries are read from the local files, not guessed:
+ *
+ *  1. Every chapter of the Vilna text closes with « הדרן עלך ». The next
+ *     chapter starts on that same amud when its mishna follows the marker
+ *     there, otherwise on the next amud.
+ *  2. A few markers are missing from the corpus (Bava Kamma 1, Sanhedrin 5,
+ *     Horayot 2). For those, the opening words of the chapter's first
+ *     mishna (public/texts/mishna/) are looked up after « מתני׳ »; a match
+ *     is only used when it is the only one in the tractate.
+ *  3. The number of chapters found must be that of the Mishna. Otherwise the
+ *     script stops: it used to fall back silently on a split proportional to
+ *     the number of mishnayot, which put every boundary of every tractate
+ *     several dafim away from the real one (Berakhot 2 read from 7b instead
+ *     of 13a).
+ *
+ * The ranges are contiguous, without overlap: the amud where a chapter ends
+ * and the next one begins belongs to the new chapter, so that each chapter
+ * opens on its mishna. Mon parcours counts amudim from the first one, so
+ * moving a boundary does not move anyone's place in a program.
+ *
+ * Shekalim (Yerushalmi), Middot and Kinnim (Mishna only) are stored one
+ * entry per chapter: their ranges are one entry each, without daf.
  */
 
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const ROOT = path.join(__dirname, "..");
+const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const TALMUD_DIR = path.join(ROOT, "public/texts/talmud");
+const MISHNA_DIR = path.join(ROOT, "public/texts/mishna");
 const OUTPUT = path.join(ROOT, "public/texts/talmud-chapters.json");
-const GCS = "https://storage.googleapis.com/sefaria-export/json";
 
-const SEDER_MAP = {
-  berakhot: "Seder Zeraim",
-  shabbat: "Seder Moed",
-  eruvin: "Seder Moed",
-  pesachim: "Seder Moed",
-  shekalim: "Seder Moed",
-  yoma: "Seder Moed",
-  sukkah: "Seder Moed",
-  beitzah: "Seder Moed",
-  "rosh-hashanah": "Seder Moed",
-  taanit: "Seder Moed",
-  megillah: "Seder Moed",
-  "moed-katan": "Seder Moed",
-  chagigah: "Seder Moed",
-  yevamot: "Seder Nashim",
-  ketubot: "Seder Nashim",
-  nedarim: "Seder Nashim",
-  nazir: "Seder Nashim",
-  sotah: "Seder Nashim",
-  gittin: "Seder Nashim",
-  kiddushin: "Seder Nashim",
-  "bava-kamma": "Seder Nezikin",
-  "bava-metzia": "Seder Nezikin",
-  "bava-batra": "Seder Nezikin",
-  sanhedrin: "Seder Nezikin",
-  makkot: "Seder Nezikin",
-  shevuot: "Seder Nezikin",
-  "avodah-zarah": "Seder Nezikin",
-  horayot: "Seder Nezikin",
-  zevachim: "Seder Kodashim",
-  menachot: "Seder Kodashim",
-  chullin: "Seder Kodashim",
-  bekhorot: "Seder Kodashim",
-  arakhin: "Seder Kodashim",
-  temurah: "Seder Kodashim",
-  keritot: "Seder Kodashim",
-  meilah: "Seder Kodashim",
-  tamid: "Seder Kodashim",
-  middot: "Seder Kodashim",
-  kinnim: "Seder Kodashim",
-  niddah: "Seder Tahorot",
-};
+/** The tractates, in the order of the file (that of the Shas). */
+const TRACTATES = [
+  "berakhot",
+  "shabbat",
+  "eruvin",
+  "pesachim",
+  "shekalim",
+  "yoma",
+  "sukkah",
+  "beitzah",
+  "rosh-hashanah",
+  "taanit",
+  "megillah",
+  "moed-katan",
+  "chagigah",
+  "yevamot",
+  "ketubot",
+  "nedarim",
+  "nazir",
+  "sotah",
+  "gittin",
+  "kiddushin",
+  "bava-kamma",
+  "bava-metzia",
+  "bava-batra",
+  "sanhedrin",
+  "makkot",
+  "shevuot",
+  "avodah-zarah",
+  "horayot",
+  "zevachim",
+  "menachot",
+  "chullin",
+  "bekhorot",
+  "arakhin",
+  "temurah",
+  "keritot",
+  "meilah",
+  "tamid",
+  "middot",
+  "kinnim",
+  "niddah",
+];
 
-function slugToGcsTitle(slug) {
-  const overrides = {
-    "rosh-hashanah": "Rosh Hashanah",
-    "moed-katan": "Moed Katan",
-    "bava-kamma": "Bava Kamma",
-    "bava-metzia": "Bava Metzia",
-    "bava-batra": "Bava Batra",
-    "avodah-zarah": "Avodah Zarah",
-  };
-  if (overrides[slug]) return overrides[slug];
-  return slug
-    .split("-")
-    .map((w) => w[0].toUpperCase() + w.slice(1))
-    .join(" ");
+/** Hebrew letters and spaces only: no vowels, cantillation, tags or punctuation. */
+function plain(text) {
+  return String(text ?? "")
+    .replace(/<[^>]+>/g, "")
+    .replace(/[֑-ׇ]/g, "")
+    .replace(/[^א-ת ]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
-async function fetchJson(url) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`HTTP ${res.status}: ${url}`);
-  return res.json();
+/** The lines of one amud, flattened and reduced to plain letters. */
+function amudLines(amud) {
+  return Array.isArray(amud) ? amud.flat(Infinity).map(plain) : [];
 }
 
-function stripNikkud(s) {
-  return s.replace(/[ְ-ׇ]/g, "");
+function dafLabel(index) {
+  return `${Math.floor(index / 2) + 2}${index % 2 === 0 ? "a" : "b"}`;
 }
 
-function findChapterGcsIndices(textArr) {
+/** Where chapters 2 and following start, from the « הדרן עלך » markers. */
+function startsFromHadran(amudim) {
   const starts = [];
+  amudim.forEach((amud, i) => {
+    const lines = amudLines(amud);
+    lines.forEach((line, j) => {
+      if (!line.startsWith("הדרן עלך")) return;
+      const followed = lines.slice(j + 1).some((next) => next && !next.startsWith("הדרן"));
+      starts.push(followed ? i : i + 1);
+    });
+  });
+  // The last marker closes the tractate.
+  return starts.filter((start) => start < amudim.length);
+}
 
-  for (let i = 0; i < textArr.length; i++) {
-    const daf = textArr[i];
-    if (!daf || !daf.length) continue;
+/** Where a chapter starts, from the opening words of its first mishna; null if not unique. */
+function startFromMishna(amudim, chapter) {
+  const first = plain(Array.isArray(chapter) ? chapter[0] : chapter)
+    .split(" ")
+    .slice(0, 3)
+    .join(" ");
+  if (!first) return null;
+  const hits = new Set();
+  amudim.forEach((amud, i) => {
+    if (amudLines(amud).some((line) => line.startsWith(`מתני ${first}`))) hits.add(i);
+  });
+  return hits.size === 1 ? [...hits][0] : null;
+}
 
-    for (let j = 0; j < daf.length; j++) {
-      const raw = (daf[j] || "").trim();
-      const stripped = stripNikkud(raw);
+function chapterRanges(slug) {
+  const amudim = JSON.parse(fs.readFileSync(path.join(TALMUD_DIR, `${slug}.json`), "utf8")).he;
+  const mishna = JSON.parse(fs.readFileSync(path.join(MISHNA_DIR, `${slug}.json`), "utf8")).he;
+  const count = mishna.length;
 
-      // Pattern 1 - Chapter 1: first non-empty daf, line j=0, starts with <big><strong> and not gemara
-      if (starts.length === 0 && j === 0 && raw.startsWith("<big><strong>") && !stripped.includes("גמ")) {
-        starts.push(i);
-        break;
-      }
+  // Stored one entry per chapter: nothing to find.
+  if (amudim.length === count) {
+    return amudim.map((_, i) => ({ chapter: i + 1, startIdx: i, endIdx: i }));
+  }
 
-      // Pattern 2 - Most chapters: "מתני׳" (plain) then bold chapter title
-      if (
-        starts.length > 0 &&
-        !stripped.startsWith("<big>") &&
-        (stripped.startsWith("מתני") || stripped.startsWith("מתנ")) &&
-        stripped.includes("<big><strong>")
-      ) {
-        starts.push(i);
-        break;
-      }
-
-      // Pattern 3 - Some chapters: "הדרן עלך" end-of-chapter marker, next chapter on same/next daf
-      if (raw.includes("הדרן")) {
-        // Look for מתני following it in same daf
-        let found = false;
-        for (let k = j + 1; k < daf.length; k++) {
-          const nl = stripNikkud((daf[k] || "").trim());
-          if (nl.includes("מתני")) {
-            starts.push(i);
-            found = true;
-            break;
-          }
-        }
-        if (!found) starts.push(Math.min(i + 1, textArr.length - 1));
-        break;
-      }
-
-      // Pattern 4 - Some chapters: bold matni at j=0 followed by bold gemara at j=1
-      if (j === 0 && starts.length > 0) {
-        const nextStripped = stripNikkud((daf[1] || "").trim());
-        if (
-          stripped.startsWith("<big><strong>") &&
-          stripped.includes("מתני") &&
-          nextStripped.startsWith("<big><strong>") &&
-          nextStripped.includes("גמ")
-        ) {
-          starts.push(i);
-          break;
-        }
-      }
+  const first = amudim.findIndex((amud) => amudLines(amud).some(Boolean));
+  const starts = new Set([first, ...startsFromHadran(amudim)]);
+  if (starts.size < count) {
+    for (const chapter of mishna.slice(1)) {
+      const start = startFromMishna(amudim, chapter);
+      if (start !== null) starts.add(start);
     }
   }
-
-  return starts;
-}
-
-function dafLabel(ourIdx) {
-  const daf = Math.floor(ourIdx / 2) + 2;
-  const side = ourIdx % 2 === 0 ? "a" : "b";
-  return `${daf}${side}`;
-}
-
-function countLeadingEmpty(textArr) {
-  let i = 0;
-  while (i < textArr.length && (!textArr[i] || textArr[i].length === 0)) i++;
-  return i;
-}
-
-// Also load mishna chapters for fallback proportional distribution
-function getMishnaChapterSizes(slug) {
-  const mishnaPath = path.join(ROOT, "public/texts/mishna", `${slug}.json`);
-  if (!fs.existsSync(mishnaPath)) return null;
-  const data = JSON.parse(fs.readFileSync(mishnaPath, "utf8"));
-  return (data.he ?? []).map((ch) => (Array.isArray(ch) ? ch.length : 1));
-}
-
-function proportionalDistribution(totalDafs, chapterSizes) {
-  // Un fichier qui a autant d'entrées que de chapitres est rangé par
-  // chapitre, pas par daf : Shekalim (Talmud de Jérusalem), Middot et Kinnim
-  // (la Michna seule). Chaque chapitre y est une entrée ; la répartition au
-  // prorata, elle, donnait deux fois le même début et un chapitre vide
-  // (Shekalim 3, la page 4 portant les chapitres 3 et 4).
-  if (totalDafs === chapterSizes.length) return chapterSizes.map((_, i) => i);
-  const totalMishnayot = chapterSizes.reduce((a, b) => a + b, 0);
-  const starts = [0];
-  let acc = 0;
-  for (let i = 0; i < chapterSizes.length - 1; i++) {
-    acc += chapterSizes[i];
-    starts.push(Math.round((acc / totalMishnayot) * totalDafs));
+  const sorted = [...starts].sort((a, b) => a - b);
+  if (sorted.length !== count) {
+    throw new Error(
+      `${slug}: ${sorted.length} chapter starts found (${sorted.map(dafLabel).join(", ")}), ` +
+        `the Mishna has ${count} chapters`,
+    );
   }
-  return starts;
-}
-
-// Les chapitres, de leur premier index à leur dernier. Un fichier rangé par
-// chapitre (une entrée par chapitre) n'a pas de daf : on n'en invente pas,
-// le lecteur n'affiche alors que le chapitre.
-function toRanges(starts, total) {
-  const byChapter = starts.length === total;
-  return starts.map((startIdx, i) => {
-    const endIdx = i + 1 < starts.length ? starts[i + 1] - 1 : total - 1;
-    return byChapter
-      ? { chapter: i + 1, startIdx, endIdx }
-      : { chapter: i + 1, startDaf: dafLabel(startIdx), endDaf: dafLabel(endIdx), startIdx, endIdx };
+  // The first chapter starts at the top of the file, even before its first line.
+  sorted[0] = 0;
+  return sorted.map((startIdx, i) => {
+    const endIdx = i + 1 < sorted.length ? sorted[i + 1] - 1 : amudim.length - 1;
+    return {
+      chapter: i + 1,
+      startDaf: dafLabel(startIdx),
+      endDaf: dafLabel(endIdx),
+      startIdx,
+      endIdx,
+    };
   });
 }
 
 const result = {};
-const slugs = Object.keys(SEDER_MAP);
+for (const slug of TRACTATES) result[slug] = chapterRanges(slug);
+const serialized = `${JSON.stringify(result, null, 2)}\n`;
 
-console.log(`Processing ${slugs.length} tractates...\n`);
-
-for (const slug of slugs) {
-  const seder = SEDER_MAP[slug];
-  const title = slugToGcsTitle(slug);
-  const url = `${GCS}/Talmud/Bavli/${encodeURIComponent(seder)}/${encodeURIComponent(title)}/Hebrew/merged.json`;
-
-  const localPath = path.join(TALMUD_DIR, `${slug}.json`);
-  if (!fs.existsSync(localPath)) {
-    console.warn(`⚠ ${title}: local file not found, skipping`);
-    result[slug] = [];
-    continue;
+if (process.argv.includes("--check")) {
+  const current = fs.existsSync(OUTPUT) ? fs.readFileSync(OUTPUT, "utf8") : null;
+  if (current !== serialized) {
+    console.error(
+      "generate-talmud-chapters: public/texts/talmud-chapters.json no longer matches the texts.\n" +
+        "Run « node scripts/generate-talmud-chapters.mjs » and commit the result.",
+    );
+    process.exit(1);
   }
-
-  const localData = JSON.parse(fs.readFileSync(localPath, "utf8"));
-  const ourTotal = (localData.he ?? []).length;
-  const mishnaSizes = getMishnaChapterSizes(slug);
-
-  try {
-    const data = await fetchJson(url);
-    const textArr = data.text ?? [];
-    const leadingEmpty = countLeadingEmpty(textArr);
-    const gcsStarts = findChapterGcsIndices(textArr);
-    const ourStarts = gcsStarts.map((gcsIdx) => Math.max(0, gcsIdx - leadingEmpty));
-
-    const expected = mishnaSizes ? mishnaSizes.length : "?";
-    const detected = ourStarts.length;
-
-    let finalStarts = ourStarts;
-    if (mishnaSizes && detected !== mishnaSizes.length) {
-      // Fallback: proportional distribution
-      console.warn(`  ⚠ ${title}: detected ${detected} chapters, expected ${expected}, using proportional fallback`);
-      finalStarts = proportionalDistribution(ourTotal, mishnaSizes);
-    }
-
-    const chapters = toRanges(finalStarts, ourTotal);
-
-    result[slug] = chapters;
-    const status = detected === expected ? "✓" : "~";
-    console.log(`${status} ${title}: ${chapters.length} chapters`);
-  } catch (e) {
-    // GCS fetch failed (Shekalim uses Yerushalmi, Middot/Kinnim are Mishna-only)
-    if (mishnaSizes && ourTotal > 0) {
-      const finalStarts = proportionalDistribution(ourTotal, mishnaSizes);
-      const chapters = toRanges(finalStarts, ourTotal);
-      result[slug] = chapters;
-      console.log(`~ ${title}: ${chapters.length} chapters (proportional, fetch failed: ${e.message.substring(0, 40)})`);
-    } else {
-      console.error(`✗ ${title}: ${e.message.substring(0, 50)}`);
-      result[slug] = [];
-    }
-  }
-
-  await new Promise((r) => setTimeout(r, 80));
+  console.log("generate-talmud-chapters: up to date.");
+} else {
+  fs.writeFileSync(OUTPUT, serialized);
+  console.log(`Wrote ${path.relative(ROOT, OUTPUT)} (${TRACTATES.length} tractates).`);
 }
-
-fs.writeFileSync(OUTPUT, JSON.stringify(result, null, 2));
-console.log(`\nWrote ${OUTPUT}`);
