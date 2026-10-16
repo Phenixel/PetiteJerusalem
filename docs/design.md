@@ -958,21 +958,32 @@ compte, les sous-pages où mène chaque ligne, l'état porté au bout.
 ### Un fil de messages se lit comme une conversation
 
 « Nous écrire » (`/contact`) et la fiche d'un message dans le backoffice
-montrent le même fil, par la même pièce (`SupportConversation.vue`) : chaque
-message dans une bulle à plat (rayon des surfaces, `rounded-control`), ceux
-de qui regarde côté fin, sur la teinte du thème à 10 %, ceux d'en face côté
-début, sur `surface-soft`. Sous chaque bulle, qui l'a écrit et quand, en
-petit. Les retours à la ligne de la personne sont gardés.
+montrent le même fil, par la même pièce (`SupportConversation.vue`), comme
+une messagerie : chaque message dans une bulle à plat (rayon des surfaces,
+`rounded-control`), ceux de qui regarde côté fin, sur la teinte du thème à
+15 %, ceux d'en face côté début, sur `surface-soft`. L'heure se lit en petit
+dans la bulle, le jour en séparateur quand il change, et le nom de l'autre
+côté au premier message d'une suite seulement. Les retours à la ligne de la
+personne sont gardés.
 
 - **Un fil a sa page.** La page de la personne liste ses messages en cartes :
   la nature (en gris), l'état et, s'il y a lieu, « Nouvelle réponse » sur la
   teinte pleine (la seule pastille qui réclame), la première ligne du
   message, puis le début de notre dernière réponse. Toute la carte ouvre la
-  page du fil (`/contact/:id`), sans flèche : en tête, l'état dit en une
-  phrase à la personne ce qu'il veut dire pour elle et comment la réponse lui
-  parviendra ; dessous, la conversation et le champ pour répondre ; en bas,
-  en lignes, ce qu'elle nous a envoyé. Déplier les cartes sur place mettait
-  plusieurs conversations et plusieurs champs de réponse sur la même page.
+  page du fil (`/contact/:id`), sans flèche. Déplier les cartes sur place
+  mettait plusieurs conversations et plusieurs champs de réponse sur la même
+  page.
+- **La page d'un fil est une messagerie.** Dans l'app, elle prend tout
+  l'écran, barre du bas comprise : un en-tête fixe (retour, sujet sur une
+  ligne, nature et état dessous, « Détails »), le fil qui défile seul et
+  s'ouvre sur le dernier message, et la barre pour écrire fixée en bas (un
+  champ arrondi qui grandit avec le texte jusqu'à six lignes, le bouton rond
+  d'envoi à côté), qui reste au-dessus du clavier. Sur le site, la même
+  messagerie tient dans une carte de la page. Il n'y a pas de cadre d'état
+  au-dessus du fil : l'état se dit comme une ligne de la messagerie, en
+  pastille grise centrée sous le dernier message (« Bien reçu. Nous le
+  lirons et vous répondrons ici. »). Ce que la personne a envoyé et la façon
+  dont la réponse lui parvient s'ouvrent par « Détails », dans une fenêtre.
 - **L'état parle à qui le lit.** La personne voit « Envoyé », « En cours »,
   « Répondu », « Terminé » ; l'équipe voit « À traiter » à la place
   d'« Envoyé », en ambre, comme tout ce qui attend une décision dans le
@@ -980,10 +991,6 @@ petit. Les retours à la ligne de la personne sont gardés.
   le backoffice, la nature (idée, bug, erreur) reste grise : sur le thème
   par défaut, la teinte du thème et l'ambre se confondaient, et seul le
   statut doit appeler l'œil.
-- **L'état tient en une carte, l'icône sur sa première ligne.** En tête de
-  la page d'un fil, la phrase d'état est précédée de son petit dessin, et
-  l'explication de dessous reprend toute la largeur de la carte : l'icône ne
-  creuse pas de marge pour le texte qui la suit.
 - **Une réponse non lue se compte sur l'onglet du profil.** Dans l'app, la
   barre du bas porte sur l'icône du profil (ou des réglages, sans compte) une
   pastille à son nombre, sur la teinte du thème, détachée d'un liseré de la

@@ -141,12 +141,14 @@ Le même travail se fait en ligne de commande : `support:liste`,
    envois par adresse IP (dix par dix minutes) et crée le fil.
 3. La page « Nous écrire » relit les fils par `listSupportThreads` (le compte,
    et la clé de l'appareil) et les montre en cartes, sans rien marquer lu.
-   Une carte ouvre la page du fil (`/contact/:id`, `SupportThreadPage.vue`) :
-   où il en est et ce que cela veut dire (« Bien reçu, nous vous répondrons
-   ici », « Nous vous avons répondu »…), comment la réponse arrive
-   (notification dans l'app, pastille du profil sur le site), la
-   conversation et de quoi répondre, puis ce que la personne a envoyé
-   (nature, date, depuis quoi, page concernée, contact laissé ou « aucun »).
+   Une carte ouvre la page du fil (`/contact/:id`, `SupportThreadPage.vue`),
+   une messagerie : l'en-tête (retour, sujet, nature et état, « Détails »),
+   le fil, et la barre pour écrire fixée en bas, plein écran dans l'app. Sous
+   le dernier message, une ligne dit où il en est (« Bien reçu, nous vous
+   répondrons ici », « Nous vous avons répondu »…). « Détails » montre ce que
+   la personne a envoyé (nature, date, depuis quoi, page concernée, contact
+   laissé ou « aucun ») et comment la réponse lui parvient (notification
+   dans l'app, pastille du profil sur le site).
    L'ouvrir marque ce fil-là lu (`markRead` porte son identifiant). Une
    relance passe par `replySupportThread`, qui vérifie que le fil est bien à
    l'appelant.

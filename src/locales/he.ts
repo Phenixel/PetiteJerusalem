@@ -2753,7 +2753,8 @@ const he: LocaleMessages = {
       notFound: "ההודעה לא נמצאה. ייתכן שנשלחה ממכשיר או מחשבון אחר.",
       deliveryApp: "התשובות שלנו מופיעות כאן, והתראה תודיע לכם אם ההתראות מופעלות בטלפון.",
       deliveryWeb: "התשובות שלנו מופיעות כאן, וסימון בפרופיל יציין אותן.",
-      reopenHint: "ההודעה הסתיימה. כתיבה כאן תפתח אותה מחדש.",
+      reopenHint: "כתבו כדי לפתוח מחדש את ההודעה…",
+      details: "פרטים",
       factsTitle: "מה ששלחתם לנו",
       facts: {
         kind: "סוג",
@@ -2771,10 +2772,8 @@ const he: LocaleMessages = {
       },
     },
     replyLabel: "תשובה",
-    replyPlaceholder: "להוסיף פרט, לענות על השאלה שלנו…",
+    replyPlaceholder: "כתיבת הודעה…",
     reply: "שליחה",
-    replySent: "ההודעה נוספה.",
-    you: "אתם",
     team: "צוות פטיט ירושלים",
     person: "הפונה",
     kinds: {

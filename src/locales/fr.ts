@@ -2909,7 +2909,8 @@ const fr = {
       deliveryApp:
         "Nos réponses s'affichent ici, et une notification vous prévient si elles sont activées sur ce téléphone.",
       deliveryWeb: "Nos réponses s'affichent ici, et une pastille les signale dans votre profil.",
-      reopenHint: "Ce message est terminé. Écrire ici le rouvre.",
+      reopenHint: "Écrire pour rouvrir ce message…",
+      details: "Détails",
       factsTitle: "Ce que vous nous avez envoyé",
       facts: {
         kind: "Nature",
@@ -2927,10 +2928,8 @@ const fr = {
       },
     },
     replyLabel: "Répondre",
-    replyPlaceholder: "Ajouter une précision, répondre à notre question…",
+    replyPlaceholder: "Écrire un message…",
     reply: "Envoyer",
-    replySent: "Message ajouté.",
-    you: "Vous",
     team: "L'équipe Petite Jérusalem",
     person: "La personne",
     kinds: {

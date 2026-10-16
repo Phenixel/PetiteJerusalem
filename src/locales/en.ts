@@ -2818,7 +2818,8 @@ const en: LocaleMessages = {
       deliveryApp:
         "Our replies show here, and a notification tells you if they are turned on for this phone.",
       deliveryWeb: "Our replies show here, and a badge points them out in your profile.",
-      reopenHint: "This message is closed. Writing here reopens it.",
+      reopenHint: "Write to reopen this message…",
+      details: "Details",
       factsTitle: "What you sent us",
       facts: {
         kind: "Kind",
@@ -2836,10 +2837,8 @@ const en: LocaleMessages = {
       },
     },
     replyLabel: "Reply",
-    replyPlaceholder: "Add a detail, answer our question…",
+    replyPlaceholder: "Write a message…",
     reply: "Send",
-    replySent: "Message added.",
-    you: "You",
     team: "The Petite Jérusalem team",
     person: "The person",
     kinds: {
