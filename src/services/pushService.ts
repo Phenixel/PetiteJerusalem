@@ -32,7 +32,7 @@ import type { ReminderPlace } from "./zmanimService";
 export interface ReminderSettings {
   /** Rappel à heure fixe. */
   daily: boolean;
-  /** Heure du rappel fixe (heure de Paris, minutes par pas de 5). */
+  /** Hour of the fixed reminder, in the device time zone (minutes in 5-minute steps). */
   hour: number;
   minute: number;
   /** Rappel « dernier appel » 20 minutes avant la chkia. */
@@ -43,6 +43,16 @@ export interface ReminderSettings {
    * n'est alors pas envoyée du tout.
    */
   place: ReminderPlace | null;
+}
+
+/** The device's time zone, as the place of a fixed-time reminder; null if unknown. */
+export function deviceTimeZonePlace(): { tzid: string } | null {
+  try {
+    const tzid = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    return tzid ? { tzid } : null;
+  } catch {
+    return null;
+  }
 }
 
 /** Ce que la déconnexion attend, au plus, pour retirer le jeton du compte. */
@@ -104,8 +114,8 @@ class PushService {
    * Active les rappels : permission système (Android 13+ et iOS affichent le
    * prompt), token FCM, puis enregistrement dans les préférences utilisateur.
    * `locale` fige la langue des notifications ; `settings` dit quels rappels
-   * envoyer, l'heure fixe (heure de Paris, minutes par pas de 5, cadence de
-   * la Cloud Function dailyReadingReminder) et/ou le dernier appel d'avant-chkia.
+   * envoyer, l'heure fixe (in the device time zone, minutes in 5-minute steps,
+   * the pace of the Cloud Function dailyReadingReminder) et/ou le dernier appel d'avant-chkia.
    */
   async enable(userId: string, locale: string, settings: ReminderSettings): Promise<void> {
     const permission = await FirebaseMessaging.requestPermissions();
@@ -125,9 +135,9 @@ class PushService {
         pushReminderHour: settings.hour,
         pushReminderMinute: settings.minute,
         pushSunsetReminderEnabled: settings.sunset,
-        // Rappel d'avant-chkia coupé : le lieu mémorisé est effacé plutôt que
-        // laissé à traîner dans le document.
-        pushReminderPlace: settings.sunset ? settings.place : null,
+        // Without the reminder before chkia, no position is kept: only the
+        // device's time zone, in which the server reads the fixed time.
+        pushReminderPlace: settings.sunset ? settings.place : deviceTimeZonePlace(),
         pushLocale: locale,
       },
       { merge: true },
