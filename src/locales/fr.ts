@@ -1224,7 +1224,6 @@ const fr = {
   },
   /* La chaîne perpétuelle de Tehilim (voir docs/chaine-perpetuelle.md). */
   perpetual: {
-    alwaysOpen: "Toujours ouverte",
     continuous: "Lecture continue",
     cycle: "Tour n° {n}",
     homeText: "Dès que le dernier Téhilim est lu, elle repart du premier.",

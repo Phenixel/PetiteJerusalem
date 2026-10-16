@@ -1181,7 +1181,6 @@ const en: LocaleMessages = {
   },
   /* The perpetual Tehilim chain (see docs/chaine-perpetuelle.md). */
   perpetual: {
-    alwaysOpen: "Always open",
     continuous: "Continuous reading",
     cycle: "Round {n}",
     homeText: "As soon as the last Tehilim is read, it starts again from the first.",

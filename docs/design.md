@@ -434,7 +434,11 @@ porte en plus l'objet de ce qu'elle annonce, dessiné aux couleurs du vrai
 - le **chofar** des Sli'hot, le pavillon ouvert en haut, vers l'avant, et
   l'embouchure en bas ;
 - le **loulav et l'etrog**, quand la fête de Souccot prend la carte ;
-- la **gerbe** d'orge du 'Omer.
+- la **gerbe** d'orge du 'Omer ;
+- le **volume** de l'étagère, à la reliure et au titre de son rayon, sur les
+  encarts qui ouvrent un rayon de la bibliothèque : le chnei mikra (Tanakh)
+  et les Tehilim du jour (Tehilim). Il remplace l'icône de livre qu'ils
+  portaient à gauche.
 
 Ces couleurs tranchent sur tout le reste de l'app, qui n'est fait que des
 tons du thème : c'est ce qu'on veut, un objet qui se reconnaît d'un coup
@@ -2750,6 +2754,16 @@ latin, le nombre de simanim), et la liste d'un livre s'ouvre à part, `/biblioth
 rangée par parties comme les autres (Ora'h Hayim, Yoré Déa...). Une
 recherche parcourt tout le rayon, ou le livre ouvert. Un livre de plus prend
 sa carte (`HALAKHA_WORKS` dans `content/etudeTexts.ts`).
+
+### Pas d'étiquette à icône au-dessus du titre d'une carte
+
+Une carte s'ouvre sur son titre. La petite ligne icône et mot coloré posée
+au-dessus (« Toujours ouverte » sur la chaîne perpétuelle) disait ce que la
+carte dit déjà : la description et le compteur de tours suffisent. Elle s'en
+va. Restent les lignes de texte qui portent une information propre (le
+moment d'une carte du parcours, le type d'une information), et une carte
+qui annonce un livre porte l'objet dans son coin plutôt qu'une icône (voir
+« Une carte mise en avant peut porter son objet »).
 
 ### La liste des chapitres est une liste
 

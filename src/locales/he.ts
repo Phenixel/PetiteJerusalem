@@ -1159,7 +1159,6 @@ const he: LocaleMessages = {
   },
   /* שרשרת התהילים התמידית (ראו docs/chaine-perpetuelle.md). */
   perpetual: {
-    alwaysOpen: "פתוחה תמיד",
     continuous: "קריאה רציפה",
     cycle: "סבב {n}",
     homeText: "ברגע שהפרק האחרון נקרא, היא מתחילה מחדש מהראשון.",
