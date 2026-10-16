@@ -67,6 +67,14 @@ watch(
   },
 );
 
+/**
+ * Un titre en hébreu ne prend pas d'interlettrage. WebKit (Safari, l'app
+ * iPhone) pose alors chaque lettre d'un texte SVG l'une après l'autre, de
+ * gauche à droite, et l'hébreu se lit à l'envers ; et l'hébreu ne s'espace
+ * pas, de toute façon.
+ */
+const HEBREW = /[\u0590-\u05ff]/;
+
 const emit = defineEmits<{ (e: "open", corpus: string): void }>();
 
 // Tranché une fois pour toute la page.
@@ -140,6 +148,7 @@ const playIntro = shouldPlayShelfIntro();
               <!-- titre horizontal, en serif, comme doré à chaud -->
               <text
                 class="book-title"
+                :class="{ 'book-title-spaced': !HEBREW.test(book.label) }"
                 x="49"
                 y="62"
                 text-anchor="middle"
@@ -257,6 +266,10 @@ const playIntro = shouldPlayShelfIntro();
   font-size: 13.5px;
   font-weight: 600;
   fill: #f3ead6;
+}
+
+/* L'interlettrage, pour un titre en lettres latines seulement (voir HEBREW). */
+.book-title-spaced {
   letter-spacing: 0.04em;
 }
 

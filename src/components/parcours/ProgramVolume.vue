@@ -55,6 +55,13 @@ const MIDDLE = (FRAME.left + FRAME.right) / 2;
 const CHAR = 0.55;
 const widthOf = (text: string, size: number): number => text.length * size * CHAR;
 
+/**
+ * Une ligne en hébreu ne se resserre pas par `textLength` : WebKit (Safari,
+ * l'app iPhone) pose alors chaque lettre l'une après l'autre, de gauche à
+ * droite, et l'hébreu se lit à l'envers. Elle rapetisse à la place.
+ */
+const HEBREW = /[\u0590-\u05ff]/;
+
 /** Les mots d'une ligne, rangés sur autant de lignes qu'il en faut à cette taille. */
 function wrap(text: string, size: number): string[] {
   const out: string[] = [];
@@ -80,7 +87,13 @@ function fit(lines: string[], max: number, oneLine: number, min: number, maxLine
     out.length <= maxLines && out.every((line) => widthOf(line, size) <= TEXT_WIDTH);
   const done = (out: string[], size: number) => ({
     size,
-    lines: out.map((text) => ({ text, squeeze: widthOf(text, size) > TEXT_WIDTH })),
+    lines: out.map((text) => {
+      const wide = widthOf(text, size) > TEXT_WIDTH;
+      if (wide && HEBREW.test(text)) {
+        return { text, squeeze: false, size: (size * TEXT_WIDTH) / widthOf(text, size) };
+      }
+      return { text, squeeze: wide, size };
+    }),
   });
   for (let size = max; size >= oneLine; size -= 0.5) {
     if (fits(source, size)) return done(source, size);
@@ -119,10 +132,8 @@ const layout = computed(() => {
     viewBox: `0 0 ${COVER_W + pages + 3} ${COVER_H + 18}`,
     leaves,
     title: title.lines.map((line, i) => ({ ...line, y: titleY(i) })),
-    titleSize: title.size,
     ornamentY,
     sub: sub.lines.map((line, i) => ({ ...line, y: subY(i) })),
-    subSize: sub.size,
     ribbonX: Math.round(3 + COVER_W * 0.7),
   };
 });
@@ -169,7 +180,7 @@ const BANDS = [0.13, 0.17, 0.83, 0.87].map((share) => `M4 ${3 + COVER_H * share}
       :y="line.y"
       text-anchor="middle"
       class="title"
-      :style="{ fontSize: `${layout.titleSize}px` }"
+      :style="{ fontSize: `${line.size}px` }"
       :textLength="line.squeeze ? TEXT_WIDTH : undefined"
       :lengthAdjust="line.squeeze ? 'spacingAndGlyphs' : undefined"
     >
@@ -190,7 +201,7 @@ const BANDS = [0.13, 0.17, 0.83, 0.87].map((share) => `M4 ${3 + COVER_H * share}
       :y="line.y"
       text-anchor="middle"
       class="sub"
-      :style="{ fontSize: `${layout.subSize}px` }"
+      :style="{ fontSize: `${line.size}px` }"
       :textLength="line.squeeze ? TEXT_WIDTH : undefined"
       :lengthAdjust="line.squeeze ? 'spacingAndGlyphs' : undefined"
     >

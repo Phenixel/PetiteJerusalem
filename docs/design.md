@@ -615,6 +615,17 @@ Tenu par `src/__tests__/sidourMoment.test.ts` (ce que la carte propose, à
 l'heure qu'il est) et `src/__tests__/sidourGroups.test.ts` (chaque texte
 rangé une fois et une seule, les fêtes qui remontent).
 
+### Un titre hébreu ne s'espace pas
+
+Les titres des livres dessinés (l'étagère de la bibliothèque, les volumes de
+Mon parcours) sont du texte SVG. Dès qu'un texte SVG porte un interlettrage
+(`letter-spacing`) ou un `textLength`, WebKit (Safari, l'app iPhone) pose ses
+lettres une à une, de gauche à droite : en hébreu, les mots se lisaient à
+l'envers. Un titre hébreu n'en porte donc jamais ; l'hébreu ne s'espace pas,
+de toute façon. L'interlettrage reste aux titres en lettres latines, et un
+mot hébreu trop long pour son cadre rapetisse au lieu de se resserrer. Tenu
+par `src/__tests__/hebrewSvgTitles.test.ts`.
+
 ### Un livre dit s'il est sur le téléphone
 
 Dans l'app, chaque livre de l'étagère porte dans l'angle haut de sa couverture
