@@ -72,7 +72,10 @@ A commit belongs to the repository owner, not to Claude: author and committer
 are `Phenixel <yonathancardoso@outlook.fr>`. Before committing, set the
 repository identity (`git config user.name "Phenixel"` and
 `git config user.email "yonathancardoso@outlook.fr"`) or pass `--author`.
-Claude only appears as a co-author, through the `Co-Authored-By` line.
+
+Never add a `Co-Authored-By` trailer, a "Generated with" line, or any other
+attribution to a commit, PR, issue or comment, even when other commits in the
+repository have one.
 
 ## Typography
 
