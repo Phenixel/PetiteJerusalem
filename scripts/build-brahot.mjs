@@ -49,7 +49,13 @@ function versetDuTanakh(id, chapitre, verset) {
 const chemaAlHamita = {
   file: "chema-al-hamita",
   title: "קריאת שמע שעל המיטה (Chema al Hamita)",
-  src: (t) => t["Bedtime Shema"],
+  // « Hachkivénou » n'est pas dans le Chema du coucher de ce siddour : on le
+  // prend dans Arvit (segment 10 de « The Shema »), sous un nom, à la suite
+  // des segments du coucher.
+  src: (t) =>
+    Object.assign([...t["Bedtime Shema"]], {
+      hachkivenou: t["Weekday Arvit"]["The Shema"][10],
+    }),
   blocks: [
     {
       halakha: {
@@ -145,6 +151,19 @@ const chemaAlHamita = {
         },
         { seg: 16 },
         { seg: 17 },
+        {
+          // Hachkivénou, que certains ajoutent au coucher (retour du 13
+          // octobre 2026) : sans la bénédiction qui le ferme à Arvit, qui ne
+          // se dit qu'à l'office.
+          seg: "hachkivenou",
+          until: "בָּרוּךְ אַתָּה",
+          muted: true,
+          rubric: {
+            fr: "Certains ajoutent Hachkivénou, sans la bénédiction finale\u00a0:",
+            en: "Some add Hashkivenu, without the closing blessing:",
+            he: "יש מוסיפים השכיבנו, בלא חתימה",
+          },
+        },
       ],
     },
     {

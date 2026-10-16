@@ -1,5 +1,6 @@
 import { addDays, weekdayOf, weekStart } from "./days";
-import type { DayKey, DayLog, Objective } from "./model";
+import { isAlive } from "./model";
+import type { CycleObjective, DayKey, DayLog, Objective, ParcoursData } from "./model";
 
 /**
  * Le chnei mikra, une montée par jour (le cycle de la paracha, `split:
@@ -10,6 +11,15 @@ import type { DayKey, DayLog, Objective } from "./model";
  * Une montée oubliée reste due : le lendemain, la carte en montre deux
  * (« 2e et 3e montées »), et ce qui reste le vendredi se lit encore le
  * Chabbat. Cocher la carte d'un jour vaut pour tout ce qu'elle montrait.
+ *
+ * Les montées se cochent aussi une à une, librement, sur la page du chnei
+ * mikra (la liste de la semaine, et la case de chaque montée dans le texte),
+ * avec ou sans objectif. Une coche s'écrit dans le journal du jour où on la
+ * pose, parmi ce qui est fait (`done`), sous le nom « aliya:3 » (la 3e
+ * montée de la semaine, comptée de 1) : une version d'avant, qui ne connaît
+ * pas ce nom, l'ignore et le garde en réécrivant le jour. Les coches et les
+ * cartes ne font qu'un : une carte cochée coche ses montées dans la liste, et
+ * une carte dont toutes les montées sont cochées est faite.
  *
  * Les montées se comptent de 0 sur la semaine, d'une paracha à l'autre pour
  * une double (0 à 6 la première, 7 à 13 la seconde) ; une plage est `from`
@@ -42,11 +52,74 @@ export function aliyotOfWeekday(count: number, weekday: number): { from: number;
   };
 }
 
+/** Jusqu'où va la carte d'un jour : ses montées, et celles d'avant (le Chabbat, toutes). */
+const cardEnd = (count: number, day: DayKey): number =>
+  weekdayOf(day) >= STUDY_DAYS ? count : aliyotOfWeekday(count, weekdayOf(day)).to;
+
+/**
+ * La première montée qui compte dans la semaine d'un jour : 0, ou celles du
+ * jour où l'on a commencé, pour une semaine commencée en route (`since`).
+ */
+export function aliyotFloor(since: DayKey, day: DayKey, count: number): number {
+  return since > weekStart(day) ? aliyotOfWeekday(count, weekdayOf(since)).from : 0;
+}
+
+/** Le nom d'une coche dans le journal : « aliya:1 » pour la 1re montée de la semaine. */
+const MARK_PREFIX = "aliya:";
+export const aliyaMark = (aliya: number): string => `${MARK_PREFIX}${aliya + 1}`;
+
+/** La montée d'une entrée du journal (comptée de 0), ou rien si ce n'est pas une coche. */
+export function markedAliya(entry: string): number | null {
+  if (!entry.startsWith(MARK_PREFIX)) return null;
+  const n = Number(entry.slice(MARK_PREFIX.length));
+  return Number.isInteger(n) && n >= 1 ? n - 1 : null;
+}
+
+/** Les jours de la semaine d'un jour, du dimanche au Chabbat (avant `before`, s'il est donné). */
+export function aliyotWeekDays(day: DayKey, before?: DayKey): DayKey[] {
+  const out: DayKey[] = [];
+  let d = weekStart(day);
+  for (let i = 0; i < 7; i++, d = addDays(d, 1)) {
+    if (before !== undefined && d >= before) break;
+    out.push(d);
+  }
+  return out;
+}
+
+/**
+ * Les montées cochées dans la semaine d'un jour (comptées de 0), une à une
+ * ou par la carte d'un jour : une carte cochée vaut pour ses montées et
+ * celles d'avant. `objective` : le chnei mikra montée par montée, s'il y en
+ * a un ; `before` : seulement ce qui a été coché avant ce jour.
+ */
+export function checkedAliyot(
+  days: Record<DayKey, DayLog>,
+  day: DayKey,
+  count: number,
+  objective?: Pick<Objective, "id" | "since"> | null,
+  before?: DayKey,
+): Set<number> {
+  const checked = new Set<number>();
+  const floor = objective ? aliyotFloor(objective.since, day, count) : 0;
+  for (const d of aliyotWeekDays(day, before)) {
+    for (const entry of days[d]?.done ?? []) {
+      const aliya = markedAliya(entry);
+      if (aliya !== null && aliya < count) checked.add(aliya);
+      if (objective && entry === objective.id) {
+        for (let m = floor; m < cardEnd(count, d); m++) checked.add(m);
+      }
+    }
+  }
+  return checked;
+}
+
 /**
  * Ce que la carte d'un jour demande : depuis la première montée pas encore
- * lue cette semaine jusqu'à celles du jour. Rien quand tout est déjà lu (en
- * avance, ou le Chabbat d'une semaine finie). Une semaine commencée en
- * route (`since`) part des montées du jour où l'on a commencé.
+ * lue cette semaine (par une carte ou une à une) jusqu'à celles du jour.
+ * Rien quand tout est déjà lu (en avance, ou le Chabbat d'une semaine finie).
+ * Une semaine commencée en route (`since`) part des montées du jour où l'on
+ * a commencé. Ce qui se coche le jour même ne déplace pas la carte : elle se
+ * fait (voir `aliyotCardDone`).
  */
 export function dueAliyot(
   objectiveId: string,
@@ -56,27 +129,49 @@ export function dueAliyot(
   since: DayKey,
 ): AliyotRange | null {
   if (count <= 0) return null;
-  const start = weekStart(day);
-  let read = since > start ? aliyotOfWeekday(count, weekdayOf(since)).from : 0;
-  for (let d = start; d < day; d = addDays(d, 1)) {
-    if (days[d]?.done.includes(objectiveId)) {
-      read = Math.max(read, aliyotOfWeekday(count, weekdayOf(d)).to);
-    }
-  }
-  const to = weekdayOf(day) >= STUDY_DAYS ? count : aliyotOfWeekday(count, weekdayOf(day)).to;
-  return read < to ? { from: read, to, count } : null;
+  const read = checkedAliyot(days, day, count, { id: objectiveId, since }, day);
+  let from = aliyotFloor(since, day, count);
+  while (read.has(from)) from++;
+  const to = cardEnd(count, day);
+  return from < to ? { from, to, count } : null;
+}
+
+/** La carte d'un jour est-elle faite par ses montées, cochées une à une jusqu'à ce jour ? */
+export function aliyotCardDone(
+  days: Record<DayKey, DayLog>,
+  day: DayKey,
+  range: { from: number; to: number },
+): boolean {
+  const checked = checkedAliyot(days, day, range.to, null, addDays(day, 1));
+  for (let m = range.from; m < range.to; m++) if (!checked.has(m)) return false;
+  return true;
 }
 
 /**
  * La semaine est-elle lue en entier ? Pour les champs d'avant Mon parcours
  * (`parashaProgress.completed`) : une carte cochée le vendredi ou le
- * Chabbat, qui couvrait les dernières montées.
+ * Chabbat, qui couvrait les dernières montées, ou toutes les montées
+ * cochées une à une (`count` : 7, ou 14 pour une paracha double).
  */
-export function aliyotWeekDone(days: Record<DayKey, DayLog>, id: string, day: DayKey): boolean {
-  for (let d = weekStart(day); d <= day; d = addDays(d, 1)) {
-    if (weekdayOf(d) >= STUDY_DAYS - 1 && days[d]?.done.includes(id)) return true;
+export function aliyotWeekDone(
+  days: Record<DayKey, DayLog>,
+  id: string,
+  day: DayKey,
+  count: number = ALIYOT_PER_PARASHA,
+): boolean {
+  // Le début de la semaine pour premier jour : une carte du vendredi vaut pour toutes.
+  const read = checkedAliyot(days, day, count, { id, since: weekStart(day) }, addDays(day, 1));
+  return read.size >= count;
+}
+
+/** Le chnei mikra montée par montée que l'on suit, s'il y en a un (le plus ancien). */
+export function aliyotObjective(data: ParcoursData): CycleObjective | null {
+  let found: CycleObjective | null = null;
+  for (const objective of Object.values(data.objectives)) {
+    if (objective.kind !== "cycle" || !isAlive(objective) || !readsByAliya(objective)) continue;
+    if (!found || objective.createdAt < found.createdAt) found = objective;
   }
-  return false;
+  return found;
 }
 
 /** De quoi écrire un libellé : la fonction de traduction de vue-i18n. */
@@ -116,4 +211,3 @@ export function parseAliyotQuery(value: unknown): { from: number; to: number } |
   const to = Number(match[2]);
   return from >= 0 && to > from ? { from, to } : null;
 }
-

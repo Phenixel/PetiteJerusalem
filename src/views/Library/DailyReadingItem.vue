@@ -46,7 +46,8 @@ import { appendHebrewNumeral } from "../../services/hebrewNumerals";
 import { analyticsService } from "../../services/analyticsService";
 import CollapseTransition from "../../components/CollapseTransition.vue";
 import TalmudDafText from "../../components/TalmudDafText.vue";
-import { aliyaKey, useChneiMikraChecks } from "../../composables/useChneiMikraChecks";
+import { takeLegacyChecks } from "../../composables/useChneiMikraChecks";
+import AliyaCheck from "../../components/AliyaCheck.vue";
 import BookmarkRibbon from "../../components/BookmarkRibbon.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
 
@@ -68,13 +69,20 @@ const props = defineProps<{
   blocks?: { from: number; to: number };
   /**
    * Chnei mikra (ChneiMikraPage) : la semaine de la paracha. Chaque montée
-   * porte alors sa case, à cocher une fois lue (useChneiMikraChecks).
+   * porte alors sa case, à cocher une fois lue (useChneiMikraChecks) ; la
+   * page tient les coches (`checkedAliyot`) et reçoit `toggle-aliya`.
    */
   aliyaWeek?: string;
+  /** Les montées cochées de ce texte, comptées de 0. */
+  checkedAliyot?: number[];
 }>();
 const emit = defineEmits<{
   "toggle-section": [index: number];
   "sections-loaded": [indexes: number[]];
+  /** Une montée de ce texte (comptée de 0) cochée ou décochée ; `label` : son titre. */
+  "toggle-aliya": [index: number, done: boolean, label: string];
+  /** Les montées cochées sur l'appareil par la version 3.10.11, à reprendre. */
+  "legacy-aliyot": [indexes: number[]];
 }>();
 const { t, locale } = useI18n();
 const { sectionLabel, headingLabel } = useTextLabels();
@@ -228,22 +236,33 @@ function goToBookmark(b: Bookmark) {
 }
 
 // --- Chnei mikra : une case par montée (voir aliyaWeek) ---
-const aliyaChecks = useChneiMikraChecks();
-function isAliyaChecked(block: TextBlock): boolean {
-  return (
-    !!props.aliyaWeek &&
-    aliyaChecks.isChecked(props.aliyaWeek, aliyaKey(props.entry.id, block.offset))
-  );
+/** Le rang d'une montée dans le texte (compté de 0), tel que la liste de la semaine le compte. */
+function aliyaIndex(section: TextSection, block: TextBlock): number {
+  return section.blocks?.indexOf(block) ?? 0;
 }
-function toggleAliya(block: TextBlock): void {
+function isAliyaChecked(section: TextSection, block: TextBlock): boolean {
+  return props.checkedAliyot?.includes(aliyaIndex(section, block)) ?? false;
+}
+function toggleAliya(section: TextSection, block: TextBlock): void {
   if (!props.aliyaWeek) return;
-  const done = aliyaChecks.toggle(props.aliyaWeek, aliyaKey(props.entry.id, block.offset));
-  analyticsService.capture("chnei_mikra_aliya_toggled", {
-    done,
-    text_id: props.entry.id,
-    aliya: block.label,
-  });
+  emit("toggle-aliya", aliyaIndex(section, block), !isAliyaChecked(section, block), block.label);
 }
+// Les coches de la version d'avant, sur l'appareil : reprises une fois, à
+// l'arrivée du texte, qui seul sait où commencent ses montées.
+watch(
+  () => [content.value, props.aliyaWeek] as const,
+  ([loaded, week]) => {
+    const blocks = loaded?.sections.find((section) => section.blocks)?.blocks;
+    if (!week || !blocks) return;
+    const taken = takeLegacyChecks(
+      week,
+      props.entry.id,
+      blocks.map((block) => block.offset),
+    );
+    if (taken.length > 0) emit("legacy-aliyot", taken);
+  },
+  { immediate: true },
+);
 
 /** Les blocs d'une section (chapitres, montées), réduits aux montées demandées. */
 function blocksOf(section: TextSection): TextBlock[] {
@@ -568,26 +587,20 @@ onUnmounted(() => {
                   <span class="text-xs font-semibold text-primary/70 dark:text-primary">
                     {{ headingLabel(block.heading, block.label) }}
                   </span>
-                  <button
-                    type="button"
-                    class="aliya-check"
-                    :class="{ 'aliya-check-done': isAliyaChecked(block) }"
-                    role="checkbox"
-                    :aria-checked="isAliyaChecked(block)"
-                    :aria-label="
+                  <AliyaCheck
+                    :checked="isAliyaChecked(section, block)"
+                    :label="
+                      isAliyaChecked(section, block)
+                        ? t('chneiMikra.aliyaDone')
+                        : t('chneiMikra.aliyaMark')
+                    "
+                    :spoken="
                       t('chneiMikra.aliyaCheck', {
                         aliya: headingLabel(block.heading, block.label),
                       })
                     "
-                    @click="toggleAliya(block)"
-                  >
-                    <span class="aliya-box" aria-hidden="true">
-                      <AppIcon v-if="isAliyaChecked(block)" name="check" :size="12" />
-                    </span>
-                    {{
-                      isAliyaChecked(block) ? t("chneiMikra.aliyaDone") : t("chneiMikra.aliyaMark")
-                    }}
-                  </button>
+                    @toggle="toggleAliya(section, block)"
+                  />
                 </div>
                 <p
                   v-else-if="block.label"
@@ -677,41 +690,6 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
-/* La case d'une montée du chnei mikra : une pastille qui porte son nom,
-   cochée à la couleur du thème. */
-.aliya-check {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 32px;
-  padding: 0 12px 0 8px;
-  border-radius: var(--radius-pill);
-  background: color-mix(in srgb, var(--color-text-primary) 6%, transparent);
-  color: var(--color-text-secondary);
-  font-size: 12px;
-  font-weight: 600;
-  transition:
-    background-color 0.15s ease,
-    color 0.15s ease;
-}
-.aliya-box {
-  display: grid;
-  place-items: center;
-  width: 16px;
-  height: 16px;
-  border-radius: 5px;
-  border: 2px solid currentColor;
-}
-.aliya-check-done {
-  background: color-mix(in srgb, var(--color-primary) 14%, transparent);
-  color: var(--color-primary);
-}
-.aliya-check-done .aliya-box {
-  border-color: var(--color-primary);
-  background: var(--color-primary);
-  color: var(--color-surface);
-}
-
 /* Un chapitre hors écran n'est ni mis en page ni peint tant qu'on n'en
    approche pas ; la taille estimée garde une barre de défilement stable. */
 .daily-section {

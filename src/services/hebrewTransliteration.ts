@@ -241,6 +241,22 @@ export function transliterate(input: string): string {
       // Le yod muet qui ferme un mot après un « a » se fait entendre :
       // אֲדֹנָי se dit « adonaï », שְׂפָתַי « sefataï ».
       const wordEnd = j >= text.length || !isLetter(text[j]);
+      // La finale ָיו se dit « av » : עָלָיו « alav », אֲבוֹתָיו « avotav ».
+      // Le yod est muet, mais le vav final, sans marque, est une consonne.
+      const avEnd =
+        ch === "י" &&
+        marks.size === 0 &&
+        !wordStart &&
+        out.endsWith("a") &&
+        text[j] === "ו" &&
+        (j + 1 >= text.length || !isLetter(text[j + 1]));
+      if (avEnd) {
+        out += "v";
+        prevHadSheva = false;
+        wordStart = false;
+        i = j + 1;
+        continue;
+      }
       if (ch === "י" && marks.size === 0 && !wordStart && wordEnd && out.endsWith("a")) {
         out += "ï";
       } else {
