@@ -63,8 +63,8 @@ nouveautés puis corrections, vérification par
 
 Publier une information (nouveauté, incident, question), clore un incident,
 publier ou ajouter un chiour, créer un auteur et son lien studio, modérer
-une session : tout se fait par `node scripts/admin.mjs`, sans passer par les
-pages `/admin`. Mode d'emploi complet dans `docs/backoffice-cli.md`.
+une session, lire et répondre aux messages des utilisateurs : tout se fait
+par `node scripts/admin.mjs`, sans passer par les pages `/admin`. Mode d'emploi complet dans `docs/backoffice-cli.md`.
 
 - Toujours lancer d'abord **sans** `--confirmer` (essai), montrer ce qui
   sera écrit, puis relancer avec `--confirmer`.

@@ -67,9 +67,9 @@ tags `vX.Y.Z` et `web-vX.Y.Z`.
 - Authentification : e-mail et mot de passe, anonyme, Apple. Domaines
   autorisés : `localhost` et les deux domaines Firebase du projet.
 - Règles Firestore, index et règles Storage déployés.
-- Secret `NOTION_API_KEY` créé avec une valeur factice : le formulaire de
-  retour échoue en staging au lieu d'écrire dans la base Notion des vrais
-  retours.
+- Secret `NOTION_API_KEY` créé avec une valeur factice, du temps où le
+  formulaire de retour écrivait dans Notion ; il ne sert plus (les messages
+  vont dans la collection `support` du projet, voir `docs/feedback.md`).
 - Contenu public recopié depuis la production (voir plus bas).
 - Connexion Google activée (nom public « PJ Staging »), clé APNs `JP8UH7DW9U`
   (la même que la production) importée pour l'app iOS.
@@ -206,7 +206,8 @@ dans le code de l'app fait échouer `src/__tests__/environments.test.ts`.
   en être une seconde adresse pour un moteur de recherche.
 - Les fichiers audio des chiourim sont ceux de la production (voir « Le
   contenu »).
-- Le formulaire de retour échoue (secret Notion factice).
+- Les messages de « Nous écrire » arrivent dans le backoffice du staging,
+  pas dans celui de la production.
 - Le site de staging est fermé aux robots (`robots.txt`).
 - Les widgets iOS ouvrent l'app par le schéma `petitejerusalem://`, commun aux
   deux apps : avec les deux installées, iOS choisit l'une ou l'autre.

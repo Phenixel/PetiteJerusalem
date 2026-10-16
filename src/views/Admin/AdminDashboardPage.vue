@@ -87,6 +87,15 @@ const todos = computed<Todo[]>(() => {
       tone: "danger",
     });
   }
+  if (summary.supportToHandle.value > 0) {
+    list.push({
+      label: tn("admin.dashboard.todo.support", summary.supportToHandle.value),
+      hint: t("admin.dashboard.todo.supportHint"),
+      icon: "message",
+      to: "/admin/messages",
+      tone: "warning",
+    });
+  }
   if (summary.drafts.value.length > 0) {
     list.push({
       label: tn("admin.dashboard.todo.drafts", summary.drafts.value.length),

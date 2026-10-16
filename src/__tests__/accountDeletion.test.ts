@@ -23,12 +23,14 @@ const {
   deleteUser,
   deletePreferences,
   deleteAccountParcours,
+  forgetSupportThreads,
 } = vi.hoisted(() => ({
   authMock: { currentUser: null as unknown },
   reauthenticateWithCredential: vi.fn(() => Promise.resolve()),
   deleteUser: vi.fn(() => Promise.resolve()),
   deletePreferences: vi.fn(() => Promise.resolve()),
   deleteAccountParcours: vi.fn(() => Promise.resolve()),
+  forgetSupportThreads: vi.fn(() => Promise.resolve()),
 }));
 
 vi.mock("../firebase/core", () => ({ app: {}, auth: authMock, googleAuthProvider: {} }));
@@ -64,6 +66,7 @@ vi.mock("../services/userPreferencesService", () => ({
   clearPreferencesCache: vi.fn(),
 }));
 vi.mock("../services/parcours/cloud", () => ({ deleteAccountParcours }));
+vi.mock("../services/feedbackService", () => ({ forgetSupportThreads }));
 vi.mock("../services/analyticsService", () => ({
   analyticsService: { capture: vi.fn(), captureException: vi.fn(), reset: vi.fn() },
 }));
@@ -93,6 +96,7 @@ beforeEach(() => {
   deleteUser.mockClear();
   deletePreferences.mockClear();
   deleteAccountParcours.mockClear();
+  forgetSupportThreads.mockClear();
   vi.useRealTimers();
 });
 
@@ -120,6 +124,8 @@ describe("authService.deleteAccount et l'horloge de l'appareil", () => {
     expect(deleteUser).toHaveBeenCalledTimes(1);
     // Mon parcours vit dans son propre document : il part avec le compte.
     expect(deleteAccountParcours).toHaveBeenCalledWith("u1");
+    // Les messages de Nous écrire aussi (docs/feedback.md).
+    expect(forgetSupportThreads).toHaveBeenCalledTimes(1);
   });
 
   it("repart anonyme dans le suivi, comme à la déconnexion", async () => {

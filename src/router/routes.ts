@@ -50,6 +50,8 @@ const TehilimPage = () => import("../views/TehilimPage.vue");
 const SeoGuidePage = () => import("../views/SeoGuidePage.vue");
 const ParashaPage = () => import("../views/Library/ParashaPage.vue");
 const AnnouncementsPage = () => import("../views/Announcements/AnnouncementsPage.vue");
+const SupportPage = () => import("../views/SupportPage.vue");
+const SupportThreadPage = () => import("../views/SupportThreadPage.vue");
 const AnnouncementDetailPage = () => import("../views/Announcements/AnnouncementDetailPage.vue");
 
 import type { NavigationGuardWithThis, RouteLocation, RouteRecordSingleView } from "vue-router";
@@ -69,6 +71,8 @@ const AdminAuteursPage = () => import("../views/Admin/AdminAuteursPage.vue");
 const AdminAuteurDetailPage = () => import("../views/Admin/AdminAuteurDetailPage.vue");
 const AdminSessionsPage = () => import("../views/Admin/AdminSessionsPage.vue");
 const AdminAnnouncementsPage = () => import("../views/Admin/AdminAnnouncementsPage.vue");
+const AdminSupportPage = () => import("../views/Admin/AdminSupportPage.vue");
+const AdminSupportThreadPage = () => import("../views/Admin/AdminSupportThreadPage.vue");
 const AdminAnnouncementEditPage = () => import("../views/Admin/AdminAnnouncementEditPage.vue");
 
 /**
@@ -429,6 +433,23 @@ export default [
     name: "announcements",
     component: AnnouncementsPage,
   },
+  // Nous écrire : les messages envoyés à l'équipe et ses réponses (voir
+  // docs/feedback.md), puis la page de chaque fil. L'app les relit sans
+  // compte, par la clé de l'appareil ; sur le site, seul un compte relie un
+  // message à la personne. La notification d'une réponse mène à la page du
+  // fil (functions/src/support.ts).
+  {
+    path: "/contact",
+    name: "support",
+    component: SupportPage,
+    meta: { requiresAuth: !isNativeApp },
+  },
+  {
+    path: "/contact/:id",
+    name: "support-thread",
+    component: SupportThreadPage,
+    meta: { requiresAuth: !isNativeApp },
+  },
   {
     path: "/informations/:id",
     name: "announcement",
@@ -463,6 +484,9 @@ export default [
       { path: "auteurs/:auteurId", name: "admin-auteur-detail", component: AdminAuteurDetailPage },
       // Modération des sessions signalées (exigence App Store 1.2).
       { path: "sessions", name: "admin-sessions", component: AdminSessionsPage },
+      // Nous écrire : les messages des utilisateurs, et les réponses.
+      { path: "messages", name: "admin-support", component: AdminSupportPage },
+      { path: "messages/:id", name: "admin-support-thread", component: AdminSupportThreadPage },
       // Informations de l'équipe : écrire, publier, notifier.
       { path: "informations", name: "admin-announcements", component: AdminAnnouncementsPage },
       {

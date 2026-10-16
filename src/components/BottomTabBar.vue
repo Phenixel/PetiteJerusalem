@@ -7,6 +7,7 @@ import type { IconName } from "./icons/registry";
 import { analyticsService } from "../services/analyticsService";
 import { authService } from "../services/authService";
 import { setRevealOrigin } from "../composables/useRevealOrigin";
+import { refreshSupportUnread, useSupportUnread } from "../composables/useSupportUnread";
 import { useHolidayTheme } from "../composables/useHolidayTheme";
 import HolidayFabShape from "./holiday/HolidayFabShape.vue";
 import { useLocalePath } from "../composables/useLocalePath";
@@ -22,13 +23,31 @@ const router = useRouter();
 // n'irait chercher des réglages sous un onglet « Profil » déconnecté.
 const isLoggedIn = ref(false);
 let unsubscribeAuth: (() => void) | null = null;
+
+// Nous écrire : une réponse de l'équipe pas encore lue se compte sur l'onglet
+// du profil, là où mène la ligne « Nous écrire ». Relu à chaque compte qui
+// arrive et au retour dans l'app (la réponse a pu arriver entre-temps), et
+// seulement si l'appareil a déjà écrit ou qu'un compte est connecté.
+const { unread: supportUnread } = useSupportUnread();
+let checkedFor: string | null | undefined;
+let removeResume: (() => void) | null = null;
 onMounted(() => {
   unsubscribeAuth = authService.onAuthChanged((user) => {
     isLoggedIn.value = user != null;
+    const id = user?.id ?? null;
+    if (id !== checkedFor) {
+      checkedFor = id;
+      void refreshSupportUnread(user != null);
+    }
   });
+  void import("@capacitor/app")
+    .then(({ App }) => App.addListener("resume", () => void refreshSupportUnread(isLoggedIn.value)))
+    .then((handle) => (removeResume = () => void handle.remove()))
+    .catch(() => {});
 });
 onUnmounted(() => {
   unsubscribeAuth?.();
+  removeResume?.();
 });
 
 /**
@@ -175,6 +194,13 @@ function toggleZmanim(event: MouseEvent) {
             @animationend="poppedTab = null"
           >
             <AppIcon :name="tab.icon" :size="21" />
+            <span
+              v-if="tab.to === '/profile' && supportUnread > 0"
+              class="tab-badge"
+              :aria-label="t('support.unreadCount', { n: supportUnread }, supportUnread)"
+            >
+              {{ supportUnread > 9 ? "9+" : supportUnread }}
+            </span>
           </span>
           <span class="text-[11px] font-medium leading-none">{{ t(tab.labelKey) }}</span>
         </RouterLink>
@@ -217,8 +243,30 @@ function toggleZmanim(event: MouseEvent) {
   color: var(--color-primary);
 }
 .tab-icon {
+  position: relative;
   display: inline-flex;
   transform-origin: center;
+}
+
+/* Une réponse de l'équipe pas encore lue (Nous écrire) : le compte, sur la
+   teinte du thème, à cheval sur le coin de l'icône du profil, détaché d'un
+   liseré de la couleur de la barre. */
+.tab-badge {
+  position: absolute;
+  top: -5px;
+  inset-inline-end: -9px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: 9999px;
+  background: var(--color-brand);
+  color: var(--color-on-brand);
+  box-shadow: 0 0 0 2px var(--color-surface);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 17px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Bouton rond central : posé au milieu de la barre, il déborde légèrement

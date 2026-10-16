@@ -13,6 +13,7 @@ import SecuritySettings from "./profilePage/SecuritySettings.vue";
 import AppearanceTab from "./profilePage/AppearanceTab.vue";
 import PreferencesTab from "./profilePage/PreferencesTab.vue";
 import { SITE_URL } from "../config/site";
+import { useSupportUnread } from "../composables/useSupportUnread";
 // Chargée à la demande : Mon parcours tire le calendrier hébraïque.
 const ProfileParcours = defineAsyncComponent(
   () => import("../components/parcours/ProfileParcours.vue"),
@@ -87,10 +88,18 @@ const updateUserInfo = (user: User) => {
   currentUser.value = user;
 };
 
+// Nous écrire : une réponse de l'équipe pas encore lue se voit sur le raccourci.
+const support = useSupportUnread();
+
 onMounted(() => {
+  let checked = false;
   unsubscribeAuth = authService.onAuthChanged((user) => {
     currentUser.value = user;
     isLoading.value = false;
+    if (user && !checked) {
+      checked = true;
+      void support.check(true);
+    }
     // La page reste réservée aux comptes (même comportement que la garde de
     // route, qui ne se rejoue pas à la déconnexion).
     if (!user) router.replace("/");
@@ -168,6 +177,30 @@ onUnmounted(() => {
                   <span class="block text-xs font-normal text-text-secondary/80">
                     {{ t("profile.shortcuts.mySessionsHint") }}
                   </span>
+                </span>
+              </RouterLink>
+            </li>
+            <li>
+              <RouterLink
+                to="/contact"
+                class="flex items-center gap-3 px-4 py-3 rounded-btn font-medium text-text-secondary hover:bg-black/5 hover:text-text-primary transition-colors dark:hover:bg-white/10 group"
+                @click="trackShortcut('support')"
+              >
+                <AppIcon name="message" :size="15" class="text-primary shrink-0" />
+                <span class="min-w-0 flex-1">
+                  {{ t("footer.reportIssue") }}
+                  <span class="block text-xs font-normal text-text-secondary/80">
+                    {{ t("profile.shortcuts.supportHint") }}
+                  </span>
+                </span>
+                <span
+                  v-if="support.unread.value > 0"
+                  class="min-w-5 shrink-0 rounded-pill bg-brand px-1.5 text-center text-xs font-semibold tabular-nums text-on-brand"
+                  :aria-label="
+                    t('support.unreadCount', { n: support.unread.value }, support.unread.value)
+                  "
+                >
+                  {{ support.unread.value }}
                 </span>
               </RouterLink>
             </li>

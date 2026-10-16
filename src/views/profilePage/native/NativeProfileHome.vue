@@ -37,7 +37,7 @@ import { useFeatureTips } from "../../../composables/useFeatureTips";
 import { useToast } from "../../../composables/useToast";
 import { useConfirm } from "../../../composables/useConfirm";
 import { useHolidayTheme } from "../../../composables/useHolidayTheme";
-import { openFeedback } from "../../../composables/useFeedback";
+import { useSupportUnread } from "../../../composables/useSupportUnread";
 import AppIcon from "../../../components/icons/AppIcon.vue";
 import type { IconName } from "../../../components/icons/registry";
 import HolidayOrnaments from "../../../components/holiday/HolidayOrnaments.vue";
@@ -151,12 +151,26 @@ const trackShortcut = (shortcut: string) => {
   analyticsService.capture("profile_shortcut_clicked", { shortcut });
 };
 
+// Nous écrire : une réponse de l'équipe pas encore lue se voit sur la ligne.
+const support = useSupportUnread();
+const supportValue = computed(() =>
+  support.unread.value > 0
+    ? t("support.unreadCount", { n: support.unread.value }, support.unread.value)
+    : undefined,
+);
+
 let unsubscribeAuth: (() => void) | null = null;
 
 onMounted(() => {
+  let checkedFor: string | null | undefined;
   unsubscribeAuth = authService.onAuthChanged((user) => {
     currentUser.value = user;
     isLoading.value = false;
+    const id = user?.id ?? null;
+    if (id !== checkedFor) {
+      checkedFor = id;
+      void support.check(!!user);
+    }
   });
   // La permission se change dans les réglages du téléphone, hors de l'app :
   // relue à chaque arrivée plutôt que de se fier au dernier état vu.
@@ -309,7 +323,13 @@ onUnmounted(() => {
         </SettingsGroup>
 
         <SettingsGroup :title="t('profile.native.groups.help')">
-          <SettingsRow icon="message" :label="t('footer.reportIssue')" @click="openFeedback()" />
+          <SettingsRow
+            icon="message"
+            :label="t('footer.reportIssue')"
+            :value="supportValue"
+            :warn="support.unread.value > 0"
+            to="/contact"
+          />
           <SettingsRow icon="rocket" :label="t('onboarding.replay')" @click="replayOnboarding" />
           <SettingsRow icon="lightbulb" :label="t('tips.replay')" @click="replayTips" />
         </SettingsGroup>

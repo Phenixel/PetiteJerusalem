@@ -11,6 +11,8 @@ import {
   where,
   writeBatch,
   serverTimestamp,
+  arrayUnion,
+  Timestamp,
 } from "firebase/firestore";
 import {
   ref as storageRef,
@@ -34,6 +36,8 @@ import { serieService } from "./serieService";
 import { firestoreService } from "./firestoreService";
 import { studioService } from "./studioService";
 import { announcementService, parseAnnouncement } from "./announcementService";
+import { parseAdminThread, type AdminSupportThread, type SupportStatus } from "./support";
+import type { FeedbackKind } from "./feedbackService";
 import {
   linkWithPollPage,
   pollToStore,
@@ -591,6 +595,54 @@ class AdminService {
     await batch.commit();
     chiourService.invalidateCache();
     serieService.invalidateCache();
+  }
+
+  // --- Nous écrire (voir docs/feedback.md) ---------------------------------
+
+  /** Tous les fils : quelques centaines tout au plus, triés à l'affichage. */
+  async listSupportThreads(): Promise<AdminSupportThread[]> {
+    const snap = await getDocs(collection(db, "support"));
+    return snap.docs.map((d) => parseAdminThread(d.id, d.data()));
+  }
+
+  /** Les fils à traiter, pour la pastille du menu et le tableau de bord. */
+  async countSupportToHandle(): Promise<number> {
+    const snap = await getCountFromServer(
+      query(collection(db, "support"), where("status", "==", "new")),
+    );
+    return snap.data().count;
+  }
+
+  async getSupportThread(id: string): Promise<AdminSupportThread | null> {
+    const snap = await getDoc(doc(db, "support", id));
+    return snap.exists() ? parseAdminThread(snap.id, snap.data()) : null;
+  }
+
+  /**
+   * La réponse de l'équipe : elle s'ajoute au fil, que la personne verra
+   * marqué « nouvelle réponse ». La Cloud Function onSupportThreadWritten
+   * prévient ses appareils. Le statut suit : « répondu », ou « terminé ».
+   */
+  async replySupportThread(id: string, text: string, status: SupportStatus): Promise<void> {
+    await updateDoc(doc(db, "support", id), {
+      messages: arrayUnion({ from: "team", text, at: Timestamp.now() }),
+      status,
+      lastFrom: "team",
+      unreadByUser: true,
+      updatedAt: serverTimestamp(),
+    });
+  }
+
+  /** Statut, nature ou note de l'équipe : ce qui se règle sans répondre. */
+  async updateSupportThread(
+    id: string,
+    fields: Partial<{ status: SupportStatus; kind: FeedbackKind; note: string }>,
+  ): Promise<void> {
+    await updateDoc(doc(db, "support", id), fields);
+  }
+
+  async deleteSupportThread(id: string): Promise<void> {
+    await deleteDoc(doc(db, "support", id));
   }
 }
 

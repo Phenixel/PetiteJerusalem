@@ -396,6 +396,13 @@ class AuthService {
     } catch (error) {
       console.error("Erreur lors de la suppression du parcours:", error);
     }
+    // Nous écrire : les messages envoyés depuis le compte et les réponses.
+    try {
+      const { forgetSupportThreads } = await import("./feedbackService");
+      await forgetSupportThreads();
+    } catch (error) {
+      console.error("Erreur lors de la suppression des messages:", error);
+    }
 
     await deleteUser(user);
     // Le compte n'existe plus : rien à servir au prochain lancement.

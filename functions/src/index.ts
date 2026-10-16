@@ -40,8 +40,15 @@ export {
 } from "./studio";
 // Modération : compteur de signalements + masquage auto au 3e signalement.
 export { onSessionReported } from "./moderation";
-// Formulaire de support : dépôt des messages dans la base Notion.
-export { submitFeedback } from "./feedback";
+// Nous écrire : les fils de messages des utilisateurs et les réponses de
+// l'équipe (backoffice /admin/messages), voir docs/feedback.md.
+export {
+  submitFeedback,
+  listSupportThreads,
+  replySupportThread,
+  forgetSupportThreads,
+  onSupportThreadWritten,
+} from "./feedback";
 // Informations de l'équipe : notification par canal FCM à la publication.
 export { onAnnouncementWritten } from "./announcements";
 // Chaîne perpétuelle de Tehilim : un tour fini, elle repart à zéro.

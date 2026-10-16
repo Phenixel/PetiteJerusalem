@@ -2,7 +2,8 @@
 
 `scripts/admin.mjs` fait ce que font les pages `/admin`, sans l'interface :
 publier une information, clore un incident, ajouter ou publier un chiour,
-créer un auteur et son lien studio, modérer une session. Il écrit exactement
+créer un auteur et son lien studio, modérer une session, répondre à un
+message d'utilisateur. Il écrit exactement
 ce qu'écrirait l'interface (mêmes champs, mêmes refus), et sert à trois
 usages :
 
@@ -125,9 +126,9 @@ un script, par exemple pour retrouver un identifiant).
 
 ### État
 
-| Commande | Ce qu'elle fait                                                                                                                                               |
-| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `etat`   | Ce que « À traiter » montre dans le backoffice : chiourim à relire, sans auteur, sessions signalées, incident en cours, brouillons, auteurs sans lien studio. |
+| Commande | Ce qu'elle fait                                                                                                                                                                   |
+| -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `etat`   | Ce que « À traiter » montre dans le backoffice : chiourim à relire, sans auteur, sessions signalées, incident en cours, brouillons, auteurs sans lien studio, messages à traiter. |
 
 ### Informations (collection `announcements`, voir `docs/informations.md`)
 
@@ -226,6 +227,21 @@ deux.
 | `session:signalements`   | Les sessions signalées et le motif de chaque signalement ouvert.                   |
 | `session:masquer <id>`   | Retire une session du public.                                                      |
 | `session:demasquer <id>` | La rend au public et résout ses signalements ouverts (le compteur repart de zéro). |
+
+### Nous écrire (collection `support`, voir `docs/feedback.md`)
+
+| Commande                       | Ce qu'elle fait                                                                                                                       |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `support:liste`                | Les messages, ce qui attend l'équipe d'abord. `--filtre ouverts` (défaut), `a-traiter`, `en-cours`, `repondus`, `termines` ou `tous`. |
+| `support:voir <id>`            | Un message en entier : qui, depuis quoi, la note de l'équipe, et chaque message du fil.                                               |
+| `support:repondre <id>`        | Ajoute la réponse (`--texte` ou `--texte-fichier`), le fil passe « répondu », ou « terminé » avec `--clore`.                          |
+| `support:statut <id> <statut>` | `a-traiter`, `en-cours`, `repondu` ou `termine`.                                                                                      |
+
+Une réponse s'affiche dans l'app ou sur le site de la personne, et la Cloud
+Function `onSupportThreadWritten` prévient ses appareils : une notification
+vers elle seule, pas une diffusion, d'où l'absence de `--notifier`. L'essai
+(sans `--confirmer`) dit où la réponse arrivera ; un message envoyé sans
+compte depuis une version d'avant les fils ne peut recevoir qu'un email.
 
 ### Chaîne perpétuelle (voir `docs/chaine-perpetuelle.md`)
 
