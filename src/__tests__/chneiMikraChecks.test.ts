@@ -1,43 +1,31 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import {
-  aliyaKey,
-  resetChneiMikraChecksForTests,
-  useChneiMikraChecks,
-} from "../composables/useChneiMikraChecks";
+import { takeLegacyChecks } from "../composables/useChneiMikraChecks";
 
-// Le chnei mikra : une case par montée, rangée par semaine (le Chabbat de la
-// paracha), gardée sur l'appareil.
+// Les coches de la version 3.10.11, gardées sur l'appareil par semaine
+// (« texte:début ») : reprises une fois dans Mon parcours, puis retirées.
 
-describe("les montées cochées du chnei mikra", () => {
-  beforeEach(() => {
-    localStorage.clear();
-    resetChneiMikraChecksForTests();
+const KEY = "pj-chnei-mikra-aliyot";
+
+describe("les montées cochées par la version d'avant", () => {
+  beforeEach(() => localStorage.clear());
+
+  it("rend le rang des montées cochées d'un texte, et les retire", () => {
+    localStorage.setItem(KEY, JSON.stringify({ "2026-10-17": ["264:0", "264:40", "265:0"] }));
+    expect(takeLegacyChecks("2026-10-17", 264, [0, 20, 40])).toEqual([0, 2]);
+    expect(JSON.parse(localStorage.getItem(KEY) ?? "{}")).toEqual({ "2026-10-17": ["265:0"] });
+    // Une seule fois.
+    expect(takeLegacyChecks("2026-10-17", 264, [0, 20, 40])).toEqual([]);
   });
 
-  it("une montée se coche puis se décoche, et la coche survit à un rechargement", () => {
-    const checks = useChneiMikraChecks();
-    const key = aliyaKey(264, 0);
-    expect(checks.toggle("2026-10-17", key)).toBe(true);
-    resetChneiMikraChecksForTests();
-    expect(useChneiMikraChecks().isChecked("2026-10-17", key)).toBe(true);
-    expect(checks.toggle("2026-10-17", key)).toBe(false);
-    expect(checks.isChecked("2026-10-17", key)).toBe(false);
+  it("ne touche pas aux autres semaines, et efface le stockage vidé", () => {
+    localStorage.setItem(KEY, JSON.stringify({ "2026-10-17": ["264:0"] }));
+    expect(takeLegacyChecks("2026-10-24", 264, [0])).toEqual([]);
+    expect(takeLegacyChecks("2026-10-17", 264, [0])).toEqual([0]);
+    expect(localStorage.getItem(KEY)).toBeNull();
   });
 
-  it("chaque semaine a ses coches : la suivante repart de zéro", () => {
-    const checks = useChneiMikraChecks();
-    checks.toggle("2026-10-17", aliyaKey(264, 0));
-    expect(checks.isChecked("2026-10-24", aliyaKey(264, 0))).toBe(false);
-  });
-
-  it("ne garde que les treize dernières semaines", () => {
-    const checks = useChneiMikraChecks();
-    for (let week = 1; week <= 15; week++) {
-      checks.toggle(`2026-${String(week).padStart(2, "0")}-01`, aliyaKey(1, 0));
-    }
-    expect(checks.isChecked("2026-01-01", aliyaKey(1, 0))).toBe(false);
-    expect(checks.isChecked("2026-02-01", aliyaKey(1, 0))).toBe(false);
-    expect(checks.isChecked("2026-03-01", aliyaKey(1, 0))).toBe(true);
-    expect(checks.isChecked("2026-15-01", aliyaKey(1, 0))).toBe(true);
+  it("un stockage illisible ne rend rien", () => {
+    localStorage.setItem(KEY, "{");
+    expect(takeLegacyChecks("2026-10-17", 264, [0])).toEqual([]);
   });
 });

@@ -160,18 +160,21 @@ class WidgetService {
    * La lecture du jour à montrer : celle que Mon parcours tient sur
    * l'appareil, sauf pour un compte qu'il n'a pas encore repris (une mise à
    * jour qu'on n'a pas encore ouverte jusqu'au parcours, un appareil neuf),
-   * qui garde celle de son profil.
+   * qui garde celle de son profil. `il` : le calendrier d'Israël, qui compte
+   * les montées de la semaine (une paracha double en a quatorze).
    */
-  private async dailyPrefs(): Promise<DailyWidgetPrefs> {
-    const [{ readDeviceState }, { legacyProjection }] = await Promise.all([
+  private async dailyPrefs(il: boolean): Promise<DailyWidgetPrefs> {
+    const [{ readDeviceState }, { legacyProjection }, { parashaAliyotCount }] = await Promise.all([
       import("./parcours/deviceStore"),
       import("./parcours/legacyDailyReading"),
+      import("./parcours/calendar"),
     ]);
     const device = readDeviceState();
     const user = this.user;
     const adopted = device.owner?.uid === user?.id && !device.owner?.leftAt;
     if (user && !adopted) return userPreferencesService.getPreferencesOrThrow(user.id);
-    return legacyProjection(device.data, localDayKey());
+    const today = localDayKey();
+    return legacyProjection(device.data, today, parashaAliyotCount(il)(today));
   }
 
   private async push(): Promise<void> {
@@ -217,7 +220,7 @@ class WidgetService {
       // (le test d'isIsraelPlace, sans tirer zmanimService dans ce module).
       const il = place.value.tzid === "Asia/Jerusalem";
       try {
-        const prefs = await this.dailyPrefs();
+        const prefs = await this.dailyPrefs(il);
         this.dailyJson = JSON.stringify(
           buildDailyReadingWidgetPayload(prefs, t, new Date(), accent, il),
         );

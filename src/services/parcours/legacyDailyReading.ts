@@ -1,5 +1,5 @@
 import { setTaskDone } from "./actions";
-import { aliyotWeekDone, readsByAliya } from "./aliyot";
+import { ALIYOT_PER_PARASHA, aliyotWeekDone, readsByAliya } from "./aliyot";
 import { weekOf, weekStart, addDays } from "./days";
 import { ALL_WEEK, isAlive } from "./model";
 import type { CycleObjective, DayKey, ParcoursData, TextObjective } from "./model";
@@ -185,7 +185,15 @@ const activeToday = (data: ParcoursData, id: string, today: DayKey): boolean => 
   );
 };
 
-export function legacyProjection(data: ParcoursData, today: DayKey): LegacyProjection {
+/**
+ * `aliyotCount` : les montées de la semaine, 7 ou 14 pour une paracha double
+ * (calendar.ts, `parashaAliyotCount`), pour la semaine lue montée à montée.
+ */
+export function legacyProjection(
+  data: ParcoursData,
+  today: DayKey,
+  aliyotCount: number = ALIYOT_PER_PARASHA,
+): LegacyProjection {
   const texts = Object.values(data.objectives).filter(
     (o): o is TextObjective => o.kind === "text" && activeToday(data, o.id, today),
   );
@@ -205,9 +213,10 @@ export function legacyProjection(data: ParcoursData, today: DayKey): LegacyProje
       completedOptions: done.has(LEGACY_TEHILIM_ID) ? ["tehilim-jour"] : [],
       parashaProgress: {
         week: weekOf(today),
-        // Montée par montée, la semaine est lue quand la carte du vendredi (ou du Chabbat) l'est.
+        // Montée par montée, la semaine est lue quand la carte du vendredi (ou
+        // du Chabbat) l'est, ou toutes ses montées.
         completed: readsParashaByAliya(data)
-          ? aliyotWeekDone(data.days, LEGACY_PARASHA_ID, today)
+          ? aliyotWeekDone(data.days, LEGACY_PARASHA_ID, today, aliyotCount)
           : doneThisWeek(data, LEGACY_PARASHA_ID, today),
       },
     },
