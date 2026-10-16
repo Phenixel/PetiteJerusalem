@@ -1719,6 +1719,9 @@ const fr = {
         "Coupé, le double appui ne lance plus rien, et un défilement en cours s'arrête. L'allure se règle pendant la lecture, dans la pastille du bas.",
       pill: "Défilement",
       speed: "Vitesse",
+      // Lus par les lecteurs d'écran sur le curseur (name est l'allure nommée, quand le cran en est une).
+      speedValue: "{level} sur {max}",
+      speedValueNamed: "{level} sur {max}, {name}",
       speeds: {
         slow: "Lent",
         medium: "Moyen",

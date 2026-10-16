@@ -42,14 +42,18 @@ export type AutoScrollSpeedId = "slow" | "medium" | "fast" | "veryFast";
 
 interface AutoScrollSpeed {
   id: AutoScrollSpeedId;
+  /** Le cran du curseur où tombe cette allure (voir AUTO_SCROLL_MAX_LEVEL). */
+  level: number;
   /** Pixels parcourus par seconde : l'allure d'une lecture posée. */
   pixelsPerSecond: number;
 }
 
 /**
- * Les allures proposées, de la plus lente à la plus rapide. L'ordre du tableau
- * est celui des crans du curseur (voir AutoScrollPill) : il se lit du plus lent
- * au plus rapide, et rien ne doit l'y ranger autrement.
+ * Les allures nommées, de la plus lente à la plus rapide. Elles étaient les
+ * seuls crans du curseur ; elles en sont devenues les repères (voir
+ * AUTO_SCROLL_MAX_LEVEL), et leurs vitesses n'ont pas bougé : une allure
+ * choisie avant le réglage fin se relit au pixel près. L'ordre du tableau se
+ * lit du plus lent au plus rapide, et rien ne doit l'y ranger autrement.
  *
  * La quatrième a été ajoutée pour qui lit vite, et parce que trois crans font
  * un curseur trop court pour qu'on le prenne pour un curseur. Elle reste une
@@ -63,28 +67,89 @@ interface AutoScrollSpeed {
  * image sur cinq, et le texte sautait au lieu de glisser. À 16, le pas tombe à
  * 62 ms, une image sur quatre, sans que l'allure cesse d'être celle d'une
  * lecture posée (une ligne de texte passe en un peu plus d'une seconde et
- * demie).
+ * demie). C'est aussi pourquoi le premier cran du réglage fin est cette
+ * allure-là, et rien de plus lent.
  */
 export const AUTO_SCROLL_SPEEDS: AutoScrollSpeed[] = [
-  { id: "slow", pixelsPerSecond: 16 },
-  { id: "medium", pixelsPerSecond: 26 },
-  { id: "fast", pixelsPerSecond: 48 },
-  { id: "veryFast", pixelsPerSecond: 72 },
+  { id: "slow", level: 1, pixelsPerSecond: 16 },
+  { id: "medium", level: 6, pixelsPerSecond: 26 },
+  { id: "fast", level: 13, pixelsPerSecond: 48 },
+  { id: "veryFast", level: 20, pixelsPerSecond: 72 },
 ];
 
+/**
+ * Le réglage fin : vingt crans, de 1 à 20, au lieu des quatre allures. Quatre
+ * crans laissaient entre « moyen » et « rapide » un saut du simple au double,
+ * trop grossier pour qui cherchait la sienne (retour d'un lecteur Android,
+ * version 3.10.9).
+ *
+ * Les bouts restent ceux d'avant (16 et 72 px/s) et les quatre allures
+ * nommées tombent chacune sur un cran. Entre deux repères, la vitesse croît
+ * d'un même rapport à chaque cran plutôt que d'un même nombre de pixels :
+ * l'oeil juge une allure en proportion, et deux pixels de plus se sentent à
+ * 16 px/s, pas à 70. D'où des écarts serrés en bas de l'échelle, plus larges
+ * en haut, et un cran qui change toujours quelque chose.
+ */
+export const AUTO_SCROLL_MIN_LEVEL = AUTO_SCROLL_SPEEDS[0].level;
+export const AUTO_SCROLL_MAX_LEVEL = AUTO_SCROLL_SPEEDS[AUTO_SCROLL_SPEEDS.length - 1].level;
+
+function clampLevel(level: number): number {
+  return Math.min(AUTO_SCROLL_MAX_LEVEL, Math.max(AUTO_SCROLL_MIN_LEVEL, Math.round(level)));
+}
+
+/** Pixels par seconde d'un cran ; un cran hors de l'échelle est ramené à son bout. */
+export function autoScrollPixelsPerSecond(level: number): number {
+  const clamped = clampLevel(level);
+  const index = AUTO_SCROLL_SPEEDS.findIndex((speed) => speed.level >= clamped);
+  const upper = AUTO_SCROLL_SPEEDS[index];
+  if (upper.level === clamped) return upper.pixelsPerSecond;
+  const lower = AUTO_SCROLL_SPEEDS[index - 1];
+  const share = (clamped - lower.level) / (upper.level - lower.level);
+  const value = lower.pixelsPerSecond * (upper.pixelsPerSecond / lower.pixelsPerSecond) ** share;
+  // Arrondi au dixième : rien ne se voit en deçà, et la valeur reste lisible.
+  return Math.round(value * 10) / 10;
+}
+
+/** L'allure nommée la plus proche d'un cran : le seul réglage des anciennes versions. */
+export function nearestAutoScrollSpeedId(level: number): AutoScrollSpeedId {
+  const clamped = clampLevel(level);
+  let nearest = AUTO_SCROLL_SPEEDS[0];
+  for (const speed of AUTO_SCROLL_SPEEDS) {
+    if (Math.abs(speed.level - clamped) < Math.abs(nearest.level - clamped)) nearest = speed;
+  }
+  return nearest.id;
+}
+
+/**
+ * Deux clés sur l'appareil. `pj-autoscroll-level` porte le cran, et c'est elle
+ * qu'on lit d'abord. `pj-autoscroll-speed` porte, comme avant, le nom d'une
+ * allure : elle est relue quand la première manque, pour qui avait réglé son
+ * allure avant le réglage fin, et elle continue d'être écrite (l'allure nommée
+ * la plus proche) pour qu'une version plus ancienne de l'app, réinstallée sur
+ * le même appareil, y trouve encore une valeur qu'elle connaît.
+ */
 const STORAGE_KEY = "pj-autoscroll-speed";
+const LEVEL_STORAGE_KEY = "pj-autoscroll-level";
 /** Où l'appareil garde l'interrupteur du geste. */
 const ENABLED_KEY = "pj-autoscroll-enabled";
-const DEFAULT_SPEED: AutoScrollSpeedId = "slow";
+const DEFAULT_LEVEL = AUTO_SCROLL_MIN_LEVEL;
 
-function readStoredSpeed(): AutoScrollSpeedId {
+/** Un cran lu du stockage : un entier de l'échelle, ou rien. */
+function parseLevel(value: string | null): number | null {
+  if (value === null || !/^\d+$/.test(value)) return null;
+  const level = Number(value);
+  return level >= AUTO_SCROLL_MIN_LEVEL && level <= AUTO_SCROLL_MAX_LEVEL ? level : null;
+}
+
+function readStoredLevel(): number {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return AUTO_SCROLL_SPEEDS.some((speed) => speed.id === stored)
-      ? (stored as AutoScrollSpeedId)
-      : DEFAULT_SPEED;
+    const level = parseLevel(localStorage.getItem(LEVEL_STORAGE_KEY));
+    if (level !== null) return level;
+    // Une allure réglée avant les vingt crans : elle se relit à l'identique.
+    const legacy = localStorage.getItem(STORAGE_KEY);
+    return AUTO_SCROLL_SPEEDS.find((speed) => speed.id === legacy)?.level ?? DEFAULT_LEVEL;
   } catch {
-    return DEFAULT_SPEED;
+    return DEFAULT_LEVEL;
   }
 }
 
@@ -104,7 +169,7 @@ const enabled = ref(storedEnabled ?? true);
 let enabledRestored = storedEnabled !== null;
 
 const running = ref(false);
-const speedId = ref<AutoScrollSpeedId>(readStoredSpeed());
+const level = ref(readStoredLevel());
 
 /** Position visée, en flottant : c'est elle qui est posée telle quelle (voir step). */
 let position = 0;
@@ -116,13 +181,15 @@ let startedAt = 0;
 /** La page a bougé sans nous : la prochaine image active repart d'où elle est. */
 let needsSync = false;
 
-const currentSpeed = computed(
-  () => AUTO_SCROLL_SPEEDS.find((speed) => speed.id === speedId.value) ?? AUTO_SCROLL_SPEEDS[0],
-);
+const currentPixelsPerSecond = computed(() => autoScrollPixelsPerSecond(level.value));
+const speedId = computed(() => nearestAutoScrollSpeedId(level.value));
 
 /** La pastille du bas et les pages lisent cet état ; elles ne l'écrivent pas directement. */
 export const isAutoScrolling = readonly(running);
-export const autoScrollSpeedId = readonly(speedId);
+/** Le cran du curseur, de AUTO_SCROLL_MIN_LEVEL à AUTO_SCROLL_MAX_LEVEL. */
+export const autoScrollLevel = readonly(level);
+/** L'allure nommée la plus proche du cran : ce que lit le suivi d'audience. */
+export const autoScrollSpeedId = speedId;
 /** Le geste est-il proposé ? Les réglages le lisent et l'écrivent (voir setAutoScrollEnabled). */
 export const autoScrollEnabled = readonly(enabled);
 
@@ -311,7 +378,7 @@ function step(now: number): void {
   const elapsed = lastFrameAt ? Math.min(now - lastFrameAt, MAX_FRAME_MS) : 0;
   lastFrameAt = now;
 
-  position = Math.min(position + (currentSpeed.value.pixelsPerSecond * elapsed) / 1000, limit);
+  position = Math.min(position + (currentPixelsPerSecond.value * elapsed) / 1000, limit);
   // La position part telle quelle, fraction comprise : WebKit (donc l'app iOS)
   // défile en sous-multiples de pixel, et le mouvement y est continu. Chromium
   // arrondit, lui, et c'est pour lui que l'allure lente a été relevée (voir
@@ -341,7 +408,10 @@ function startAutoScroll(): void {
   needsSync = false;
   lastFrameAt = 0;
   startedAt = Date.now();
-  analyticsService.capture("auto_scroll_started", { speed: speedId.value });
+  analyticsService.capture("auto_scroll_started", {
+    speed: speedId.value,
+    speed_level: level.value,
+  });
   frame = requestAnimationFrame(step);
 }
 
@@ -360,6 +430,7 @@ export function stopAutoScroll(reason: "user" | "bottom" | "leave"): void {
   analyticsService.capture("auto_scroll_stopped", {
     reason,
     speed: speedId.value,
+    speed_level: level.value,
     duration_ms: Date.now() - startedAt,
   });
 }
@@ -396,21 +467,55 @@ export async function restoreAutoScrollFromDevice(): Promise<void> {
   if (!saved) stopAutoScroll("user");
 }
 
-/** Change d'allure, défilement en cours ou non ; le choix est gardé sur l'appareil. */
-export function setAutoScrollSpeed(id: AutoScrollSpeedId): void {
-  if (!AUTO_SCROLL_SPEEDS.some((speed) => speed.id === id) || id === speedId.value) return;
-  const previous = speedId.value;
-  speedId.value = id;
+/**
+ * Le suivi d'un changement d'allure attend que le pouce s'arrête : un curseur
+ * poussé d'un bout à l'autre traverse vingt crans, et vingt événements n'en
+ * diraient pas plus que le premier cran et le dernier.
+ */
+const SPEED_TRACK_DELAY_MS = 800;
+let trackTimer: ReturnType<typeof setTimeout> | null = null;
+let trackedFrom: number | null = null;
+
+function trackSpeedChange(previous: number): void {
+  if (trackedFrom === null) trackedFrom = previous;
+  if (trackTimer) clearTimeout(trackTimer);
+  trackTimer = setTimeout(() => {
+    const from = trackedFrom ?? previous;
+    trackTimer = null;
+    trackedFrom = null;
+    // Revenu où il était : rien n'a changé.
+    if (from === level.value) return;
+    analyticsService.capture("auto_scroll_speed_changed", {
+      speed: speedId.value,
+      previous_speed: nearestAutoScrollSpeedId(from),
+      speed_level: level.value,
+      previous_speed_level: from,
+      running: running.value,
+    });
+  }, SPEED_TRACK_DELAY_MS);
+}
+
+/** Change de cran, défilement en cours ou non ; le choix est gardé sur l'appareil. */
+export function setAutoScrollLevel(value: number): void {
+  if (!Number.isFinite(value)) return;
+  const next = clampLevel(value);
+  if (next === level.value) return;
+  const previous = level.value;
+  level.value = next;
   try {
-    localStorage.setItem(STORAGE_KEY, id);
+    localStorage.setItem(LEVEL_STORAGE_KEY, String(next));
+    // L'ancienne clé suit, pour une version de l'app qui ne connaît qu'elle.
+    localStorage.setItem(STORAGE_KEY, speedId.value);
   } catch {
     // Stockage indisponible : l'allure vaut pour la lecture en cours.
   }
-  analyticsService.capture("auto_scroll_speed_changed", {
-    speed: id,
-    previous_speed: previous,
-    running: running.value,
-  });
+  trackSpeedChange(previous);
+}
+
+/** Pose l'une des allures nommées, c'est-à-dire son cran ; un nom inconnu ne change rien. */
+export function setAutoScrollSpeed(id: AutoScrollSpeedId): void {
+  const speed = AUTO_SCROLL_SPEEDS.find((candidate) => candidate.id === id);
+  if (speed) setAutoScrollLevel(speed.level);
 }
 
 /** Un double appui de plus arrête ce qu'un double appui a lancé. */

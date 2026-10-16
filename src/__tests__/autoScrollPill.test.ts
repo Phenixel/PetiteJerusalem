@@ -10,8 +10,9 @@ import { createMemoryHistory, createRouter } from "vue-router";
  * Ce qui doit tenir : un appui ouvre l'allure et le suivant arrête, la
  * pastille touchée pour ouvrir étant elle-même le bouton d'arrêt (voir
  * docs/design.md) ; un appui à côté referme sans rien arrêter, fermer et
- * arrêter n'étant pas le même geste ; et l'allure se règle à un curseur qui
- * porte un cran par allure, du plus lent au plus rapide.
+ * arrêter n'étant pas le même geste ; et l'allure se règle à un curseur de
+ * vingt crans, du plus lent au plus rapide, dont le cran choisi s'affiche en
+ * chiffre et où les quatre allures nommées restent marquées.
  */
 
 vi.mock("../services/analyticsService", () => ({
@@ -22,7 +23,10 @@ vi.mock("../composables/useNativeApp", () => ({ isNativeApp: false, appPlatform:
 import fr from "../locales/fr";
 import AutoScrollPill from "../components/AutoScrollPill.vue";
 import {
+  AUTO_SCROLL_MAX_LEVEL,
+  AUTO_SCROLL_MIN_LEVEL,
   AUTO_SCROLL_SPEEDS,
+  autoScrollLevel,
   autoScrollSpeedId,
   isAutoScrolling,
   setAutoScrollSpeed,
@@ -145,12 +149,21 @@ describe("pastille du défilement automatique", () => {
     expect(isAutoScrolling.value).toBe(true);
   });
 
-  it("porte un cran par allure, et les allures extrêmes à ses deux bouts", async () => {
+  it("compte vingt crans, marque les allures nommées et les nomme à ses deux bouts", async () => {
     const host = await lance();
     await appuie(pastille(host));
 
-    expect(curseur(host).max).toBe(String(AUTO_SCROLL_SPEEDS.length - 1));
-    expect(host.querySelectorAll(".speed-notches span")).toHaveLength(AUTO_SCROLL_SPEEDS.length);
+    expect(curseur(host).min).toBe(String(AUTO_SCROLL_MIN_LEVEL));
+    expect(curseur(host).max).toBe(String(AUTO_SCROLL_MAX_LEVEL));
+    expect(curseur(host).step).toBe("1");
+    // Un repère par allure nommée, posé sur la course à l'aplomb de son cran.
+    const course = AUTO_SCROLL_MAX_LEVEL - AUTO_SCROLL_MIN_LEVEL;
+    const reperes = [...host.querySelectorAll<HTMLElement>(".speed-notches span")];
+    expect(reperes.map((repere) => repere.style.insetInlineStart)).toEqual(
+      AUTO_SCROLL_SPEEDS.map(
+        (speed) => `${((speed.level - AUTO_SCROLL_MIN_LEVEL) / course) * 100}%`,
+      ),
+    );
 
     const bouts = [...host.querySelectorAll(".speed-ends span")].map(texte);
     const nom = (index: number) =>
@@ -160,13 +173,23 @@ describe("pastille du défilement automatique", () => {
     expect(bouts).toEqual([nom(0), nom(AUTO_SCROLL_SPEEDS.length - 1)]);
   });
 
-  it("change d'allure quand on pousse le curseur", async () => {
+  it("change d'allure cran par cran, et affiche le cran choisi", async () => {
     const host = await lance();
     await appuie(pastille(host));
-    expect(curseur(host).value).toBe("0");
+    expect(curseur(host).value).toBe("1");
+    expect(texte(host.querySelector(".speed-value"))).toBe("1");
+    expect(curseur(host).getAttribute("aria-valuetext")).toBe("1 sur 20, Lent");
+
+    // Un cran entre deux allures nommées : le chiffre suit, sans nom.
+    curseur(host).value = "9";
+    curseur(host).dispatchEvent(new Event("input"));
+    await settle();
+    expect(autoScrollLevel.value).toBe(9);
+    expect(texte(host.querySelector(".speed-value"))).toBe("9");
+    expect(curseur(host).getAttribute("aria-valuetext")).toBe("9 sur 20");
 
     // Poussé à fond : l'allure la plus rapide, prise au glissement même.
-    curseur(host).value = String(AUTO_SCROLL_SPEEDS.length - 1);
+    curseur(host).value = String(AUTO_SCROLL_MAX_LEVEL);
     curseur(host).dispatchEvent(new Event("input"));
     await settle();
 
