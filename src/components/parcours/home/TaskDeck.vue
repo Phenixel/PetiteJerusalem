@@ -160,6 +160,36 @@ interface Item {
   label: string | undefined;
   art: "big" | "small" | null;
   stamp: boolean;
+  /** Ce que le geste fera, accroché au bord de la carte qu'on glisse (voir cueOf). */
+  cue: Cue | null;
+}
+
+/**
+ * L'étiquette du geste en cours : « C'est fait » sort de sous le bord gauche
+ * de la carte glissée à droite, « Plus tard » de sous son bord droit. Elle
+ * suit la carte, à mi-hauteur, au lieu d'être posée sous la pile où elle
+ * venait se coller au bord de la carte du dessous. Elle se fonce à la
+ * couleur du thème une fois le seuil passé : lâchée, la carte agira.
+ */
+interface Cue {
+  side: "done" | "later";
+  text: string;
+  strength: number;
+  armed: boolean;
+}
+
+function cueOf(card: DeckCard, threshold: number): Cue | null {
+  if (drag.key !== card.key || drag.axis !== "x" || card.waiting || drag.dx === 0) return null;
+  const strength = clamp(Math.abs(drag.dx) / threshold, 0, 1);
+  if (drag.dx > 0) {
+    return { side: "done", text: t("parcours.hub.done"), strength, armed: strength >= 1 };
+  }
+  const text = card.skipped
+    ? t("parcours.hub.unskip")
+    : card.done
+      ? t("parcours.hub.undo")
+      : t("parcours.hub.later");
+  return { side: "later", text, strength, armed: strength >= 1 };
 }
 
 function releaseLabel(card: DeckCard): string | null {
@@ -210,6 +240,7 @@ function listItem(card: DeckCard, j: number): Item {
     }),
     art: card.art ? "small" : null,
     stamp: false,
+    cue: cueOf(card, LIST_THRESHOLD),
   };
 }
 
@@ -244,6 +275,7 @@ function topItem(card: DeckCard): Item {
     }),
     art: card.art ? "big" : null,
     stamp: false,
+    cue: cueOf(card, TOP_THRESHOLD),
   };
 }
 
@@ -272,6 +304,7 @@ function leavingItem(card: DeckCard): Item {
     label: undefined,
     art: card.art ? "big" : null,
     stamp: away.side === "right",
+    cue: null,
   };
 }
 
@@ -294,6 +327,7 @@ function ghostItem(card: DeckCard, i: number): Item {
     // Dessiné déjà, caché : il paraît quand la carte monte en tête.
     art: card.art ? "big" : null,
     stamp: false,
+    cue: null,
   };
 }
 
@@ -309,6 +343,7 @@ function stowedItem(card: DeckCard): Item {
     label: undefined,
     art: card.art ? "small" : null,
     stamp: false,
+    cue: null,
   };
 }
 
@@ -339,17 +374,6 @@ const deckHeight = computed(() => {
   const collapsed = n >= 3 ? 148 : n === 2 ? 136 : CARD_HEIGHT;
   return collapsed + pull.value * 1.1;
 });
-
-const revealDone = computed(() =>
-  !props.open && drag.key === top.value?.key && drag.axis === "x" && !top.value?.waiting
-    ? clamp(drag.dx / TOP_THRESHOLD, 0, 1)
-    : 0,
-);
-const revealLater = computed(() =>
-  !props.open && drag.key === top.value?.key && drag.axis === "x" && !top.value?.waiting
-    ? clamp(-drag.dx / TOP_THRESHOLD, 0, 1)
-    : 0,
-);
 
 /**
  * Le seuil d'un geste : lâchée maintenant, la carte agirait (faite, plus
@@ -586,13 +610,6 @@ onBeforeUnmount(() => {
     </div>
 
     <div class="deck" :class="{ 'deck-pulling': pull > 0 }" :style="{ height: `${deckHeight}px` }">
-      <span class="deck-reveal left-1.5" :style="{ opacity: revealDone }" aria-hidden="true">
-        {{ t("parcours.hub.done") }}
-      </span>
-      <span class="deck-reveal right-1.5" :style="{ opacity: revealLater }" aria-hidden="true">
-        {{ t("parcours.hub.later") }}
-      </span>
-
       <a
         v-for="item in items"
         :key="item.card.key"
@@ -640,6 +657,23 @@ onBeforeUnmount(() => {
         </span>
         <span class="dk-title">{{ item.card.title }}</span>
         <span class="dk-meta">{{ item.card.meta }}</span>
+        <!-- Ce que le geste fera, accroché au bord de la carte (voir cueOf). -->
+        <span
+          v-if="item.cue"
+          class="dk-cue"
+          :class="[`dk-cue-${item.cue.side}`, { 'dk-cue-armed': item.cue.armed }]"
+          :style="{ opacity: item.cue.strength }"
+          aria-hidden="true"
+        >
+          <svg viewBox="0 0 24 24" class="dk-cue-icon">
+            <path v-if="item.cue.side === 'done'" d="M5 12.5l4.5 4.5L19 7.5" />
+            <template v-else>
+              <circle cx="12" cy="12" r="8.5" />
+              <path d="M12 7.5V12l3 2" />
+            </template>
+          </svg>
+          {{ item.cue.text }}
+        </span>
         <!-- C'est fait : la coche, posée sur la carte avant qu'elle s'envole. -->
         <span v-if="item.stamp" class="dk-stamp">
           <svg viewBox="0 0 24 24" width="30" height="30">
@@ -683,16 +717,6 @@ onBeforeUnmount(() => {
 }
 .deck-pulling {
   transition: none;
-}
-/* Ce que le geste fera, découvert sous la carte qu'on pousse. */
-.deck-reveal {
-  position: absolute;
-  top: 44px;
-  z-index: 25;
-  font-size: 15px;
-  font-weight: 800;
-  color: var(--color-primary);
-  pointer-events: none;
 }
 .deck-more {
   display: inline-flex;
@@ -800,6 +824,51 @@ onBeforeUnmount(() => {
   transition:
     transform 0.3s cubic-bezier(0.4, 0, 1, 1),
     opacity 0.3s ease-in;
+}
+/* Ce que le geste fera : une pastille accrochée au bord de la carte glissée,
+   à mi-hauteur, dans la place qu'elle découvre. Claire tant que le geste se
+   cherche, à la couleur du thème une fois le seuil passé. */
+.dk-cue {
+  position: absolute;
+  top: 50%;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px 7px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-primary);
+  box-shadow: var(--shadow-pop);
+  font-size: 14px;
+  font-weight: 800;
+  white-space: nowrap;
+  pointer-events: none;
+  transform: translateY(-50%);
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+.dk.dk-ghost > .dk-cue {
+  opacity: 0;
+}
+.dk-cue-done {
+  right: calc(100% + 10px);
+}
+.dk-cue-later {
+  left: calc(100% + 10px);
+}
+.dk-cue-armed {
+  background: var(--color-brand);
+  color: var(--color-on-brand);
+}
+.dk-cue-icon {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 /* La coche, posée sur la carte faite, du côté qu'on voit encore. */
 .dk-stamp {

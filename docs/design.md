@@ -1112,10 +1112,15 @@ Ceux qu'une version précédente a laissés à plusieurs restent jusqu'au
 prochain posé (`readingProgressBookmarks.test.ts`).
 
 Le marque-page est un signet, comme celui d'un vrai livre
-(`BookmarkRibbon.vue`) : un ruban de soie rouge posé en travers de la page
-juste avant le verset marqué, dont le bout fendu en queue d'aronde pend
-dans la marge de gauche, du côté de la tranche d'un livre hébreu. Il se
-voit en faisant défiler, sans rien colorer du texte. Son rouge a son jeton,
+(`BookmarkRibbon.vue`), dans le dessin des signets qui sortent des volumes
+de l'app (`ArtVolume.vue`, `ArtSiddur.vue`) : un ruban de soie rouge couché
+sur la page juste avant le verset marqué. Il sort de la reliure, à droite
+(le dos d'un livre hébreu), dépasse un peu dans la marge, court sur
+quelques centimètres au-dessus du début du verset (8 rem, pas toute la
+largeur) et finit en queue d'aronde, le bout fendu qui dit « marque-page ».
+Le pli, plus sombre, est là où il sort de la page ; un filet clair dit la
+soie ; une ombre courte le pose sur la page. Il se voit en faisant
+défiler, sans rien colorer du texte. Son rouge a son jeton,
 `--color-ribbon`, celui du signet du sidour dessiné sur l'accueil
 (`ArtSiddur.vue`), et non `--color-danger` : ce n'est pas une erreur. Dans
 la guemara et la lecture du jour, où les passages se suivent dans un même
@@ -1951,8 +1956,13 @@ vient, l'heure en grand), l'étagère sans titre.
   fiche.
 - **Les gestes de la pile** : glisser à droite, c'est fait ; à gauche, plus
   tard (la carte passe sous la pile). En deçà de 110 px, la carte revient.
-  Ce que le geste fera se découvre sous elle (« C'est fait » à gauche,
-  « Plus tard » à droite). Tirée vers le bas, la pile s'étale, les cartes
+  Ce que le geste fera s'accroche au bord de la carte qu'on glisse : une
+  pastille claire (la coche et « C'est fait », sortie de sous son bord
+  gauche ; l'horloge et « Plus tard », de sous son bord droit), à
+  mi-hauteur, qui suit la carte et se fonce à la couleur du thème une fois
+  le seuil passé. Posé sous la pile, le mot venait se coller au bord de la
+  carte du dessous. Le portefeuille ouvert fait de même pour chaque carte
+  (« Pas fait », « Remettre aujourd'hui » selon son état). Tirée vers le bas, la pile s'étale, les cartes
   du dessous plus vite que celle du dessus, et s'ouvre au-delà de 50 px. Un
   appui long (550 ms) ouvre la fiche ; le clic droit et la touche du menu
   contextuel aussi. Un glissé n'ouvre jamais la page.
@@ -2603,9 +2613,11 @@ L'accueil de la bibliothèque pose ses grands rayons d'étude comme des livres
 sur une planche (`LibraryShelf.vue`) : Tehilim, Michna, Talmud, Tanakh,
 Moussar. La liturgie n'y est pas : elle a sa page, le Sidour.
 
-Cinq volumes au plus sur la planche : au-delà, le titre de la couverture
-devient trop petit pour se lire sur un téléphone. Un rayon de plus se pose
-donc sur une planche nouvelle, plutôt qu'en sixième volume.
+Trois volumes par planche, puis une planche nouvelle : cinq côte à côte
+rendaient chaque couverture trop petite sur un téléphone. Tous les volumes
+ont la même taille, le tiers de la planche, même seuls ou à deux sur la
+dernière, qui les centre ; à partir d'un écran moyen ils plafonnent à
+8 rem.
 
 Les reliures ne suivent pas le thème choisi : ce sont des objets, de teintes
 chaudes et mates de la même famille (terre cuite, bronze, brun), identiques en
