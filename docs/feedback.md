@@ -94,22 +94,37 @@ Les statuts reprennent les colonnes de la base Notion :
 - **À traiter** (`new`) : un message arrivé, ou une relance de la personne ;
 - **En cours** (`in_progress`) : l'équipe s'en occupe ; une relance l'y laisse ;
 - **Répondu** (`answered`) : posé par la réponse de l'équipe ;
-- **Terminé** (`done`) : posé à la main, ou par « Répondre et terminer ».
+- **Terminé** (`done`) : posé à la main, par « Répondre et terminer », ou par
+  la personne elle-même avec « C'est réglé » (ci-dessous).
 
 Une relance de la personne remet le fil « à traiter » (sauf s'il est en
 cours) ; un fil compte 60 messages au plus, au-delà la personne en ouvre un
 autre.
 
-## La pastille des réponses non lues
+**« C'est réglé ».** Tant qu'un fil n'est pas terminé, la personne peut le
+clore elle-même, sous la ligne d'état de la messagerie, après une
+confirmation. Le fil passe « terminé » et porte `resolvedByUser` (et
+`resolvedAt`) : le backoffice l'affiche « Réglé par la personne », la
+messagerie lui dit « Vous avez indiqué que c'est réglé ». Rien ne s'ajoute
+au fil et aucune notification ne part. Une nouvelle réponse, d'elle
+(`replySupportThread`) ou de l'équipe, rouvre le fil et efface la marque.
+Callable `resolveSupportThread`, qui vérifie comme les autres que le fil est
+bien à l'appelant.
+
+## Les réponses non lues
 
 Dans l'app, une réponse de l'équipe pas encore lue se compte en pastille sur
-l'onglet du profil de la barre du bas (`BottomTabBar.vue`), et sur la ligne
-« Nous écrire » du profil. Le compte est partagé
-(`composables/useSupportUnread.ts`) : relu à l'arrivée d'un compte et à
-chaque retour dans l'app, seulement si un compte est connecté ou que
-l'appareil a déjà écrit (sinon, aucun appel au serveur) ; ouvrir le fil le
-fait baisser aussitôt. Sur le site, le raccourci « Nous écrire » du profil
-porte le même compte.
+l'onglet du profil de la barre du bas (`BottomTabBar.vue`). En tête de la
+page du profil (app et site), un encart « 1 nouvelle réponse de l'équipe »
+montre le début de la réponse et mène droit au fil, ou à la liste quand
+plusieurs attendent (`SupportUnreadCard.vue`). Tant qu'il est là, la ligne
+« Nous écrire » (groupe Aide de l'app, raccourci du menu du site) quitte sa
+place ; une fois la réponse lue, l'encart disparaît et la ligne y revient.
+
+L'état est partagé (`composables/useSupportUnread.ts`) : relu à l'arrivée
+d'un compte et à chaque retour dans l'app, seulement si un compte est
+connecté ou que l'appareil a déjà écrit (sinon, aucun appel au serveur) ;
+ouvrir le fil l'éteint aussitôt partout.
 
 ## Le backoffice
 
@@ -176,7 +191,7 @@ Rien à configurer hors du dépôt : ni clé, ni secret. Il suffit de déployer
 les règles et les fonctions :
 
 ```bash
-firebase deploy --only firestore:rules,functions:submitFeedback,functions:listSupportThreads,functions:replySupportThread,functions:forgetSupportThreads,functions:onSupportThreadWritten --project petite-jerusalem-dev
+firebase deploy --only firestore:rules,functions:submitFeedback,functions:listSupportThreads,functions:replySupportThread,functions:resolveSupportThread,functions:forgetSupportThreads,functions:onSupportThreadWritten --project petite-jerusalem-dev
 ```
 
 Les notifications de réponse ont les prérequis des rappels de lecture (clé

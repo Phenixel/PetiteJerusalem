@@ -1135,7 +1135,7 @@ function describeThread(id, th) {
     .replace(/\s+/g, " ")
     .trim();
   const who = th.accountEmail || th.contact || (th.guestKeyHash ? "app sans compte" : "anonyme");
-  return `${id}  [${supportStatusLabel(th.status)}] ${th.kind}  ${day(th.updatedAt)}  ${who}  « ${first.slice(0, 80)}${first.length > 80 ? "…" : ""} »`;
+  return `${id}  [${supportStatusLabel(th.status)}${th.resolvedByUser ? ", réglé par la personne" : ""}] ${th.kind}  ${day(th.updatedAt)}  ${who}  « ${first.slice(0, 80)}${first.length > 80 ? "…" : ""} »`;
 }
 
 async function getThread(id) {
@@ -1207,6 +1207,7 @@ commands["support:repondre"] = async ([id]) => {
           status,
           lastFrom: "team",
           unreadByUser: true,
+          resolvedByUser: false,
           updatedAt: FieldValue.serverTimestamp(),
         }),
     )

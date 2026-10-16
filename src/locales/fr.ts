@@ -2921,6 +2921,7 @@ const fr = {
     newReply: "Nouvelle réponse",
     messagesCount: "1 message | {n} messages",
     unreadCount: "1 nouvelle réponse | {n} nouvelles réponses",
+    unreadTitle: "1 nouvelle réponse de l'équipe | {n} nouvelles réponses de l'équipe",
     ourReply: "Notre réponse :",
     sentOn: "Envoyé le {date}",
     thread: {
@@ -2932,6 +2933,10 @@ const fr = {
       deliveryWeb: "Nos réponses s'affichent ici, et une pastille les signale dans votre profil.",
       reopenHint: "Écrire pour rouvrir ce message…",
       details: "Détails",
+      resolve: "C'est réglé",
+      resolveConfirm: "Marquer ce message comme réglé ?",
+      resolveHint:
+        "Nous saurons que c'est bon pour vous. Si besoin, écrivez de nouveau ici : la conversation se rouvrira.",
       factsTitle: "Ce que vous nous avez envoyé",
       facts: {
         kind: "Nature",
@@ -2942,6 +2947,8 @@ const fr = {
         noContact: "Aucun, la réponse arrive seulement ici",
       },
       statusHelp: {
+        resolvedByUser:
+          "Vous avez indiqué que c'est réglé. Merci ! Écrire ici rouvre la conversation.",
         new: "Bien reçu. Nous le lirons et vous répondrons ici.",
         in_progress: "Nous nous en occupons. La réponse arrivera ici.",
         answered: "Nous vous avons répondu. Vous pouvez nous répondre à votre tour, plus bas.",
@@ -3222,6 +3229,7 @@ const fr = {
       anonymous: "Sans compte ni contact",
       messagesCount: "1 message | {n} messages",
       followUp: "Relance",
+      resolvedByUser: "Réglé par la personne",
       back: "Tous les messages",
       notFound: "Ce message n'existe plus.",
       replyLabel: "Votre réponse",

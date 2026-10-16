@@ -170,6 +170,12 @@ const platformLabel = (th: AdminSupportThread) =>
             <AdminStatus tone="neutral" :label="t(`admin.support.kinds.${th.kind}`)" />
             <AdminSupportStatus :status="th.status" />
             <AdminStatus
+              v-if="th.resolvedByUser && th.status === 'done'"
+              tone="success"
+              icon="check"
+              :label="t('admin.support.resolvedByUser')"
+            />
+            <AdminStatus
               v-if="th.status !== 'done' && th.lastFrom === 'user' && th.messages.length > 1"
               tone="warning"
               icon="message"

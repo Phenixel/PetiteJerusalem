@@ -736,6 +736,15 @@ message reste `feedback_sent` (existant, inchangé).
 
 Pas le texte : il est dans le fil, que seul le backoffice lit.
 
+### Nous écrire : `support_thread_resolved` (nouveau)
+
+La personne dit qu'un de ses messages est réglé (« C'est réglé », dans la
+messagerie d'un fil), dans l'app ou sur le site.
+
+| Propriété | Valeurs                                              |
+| --------- | ---------------------------------------------------- |
+| `kind`    | la nature du fil : `idea`, `bug`, `error` ou `other` |
+
 ## Cours audio : l'écoute en liste, et le lien vers les textes
 
 Les cours s'écoutent désormais comme dans une application d'écoute : une

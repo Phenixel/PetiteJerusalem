@@ -46,6 +46,7 @@ export {
   submitFeedback,
   listSupportThreads,
   replySupportThread,
+  resolveSupportThread,
   forgetSupportThreads,
   onSupportThreadWritten,
 } from "./feedback";

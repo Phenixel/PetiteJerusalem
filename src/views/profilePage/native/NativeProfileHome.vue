@@ -38,6 +38,7 @@ import { useToast } from "../../../composables/useToast";
 import { useConfirm } from "../../../composables/useConfirm";
 import { useHolidayTheme } from "../../../composables/useHolidayTheme";
 import { useSupportUnread } from "../../../composables/useSupportUnread";
+import SupportUnreadCard from "../../../components/SupportUnreadCard.vue";
 import AppIcon from "../../../components/icons/AppIcon.vue";
 import type { IconName } from "../../../components/icons/registry";
 import HolidayOrnaments from "../../../components/holiday/HolidayOrnaments.vue";
@@ -151,13 +152,9 @@ const trackShortcut = (shortcut: string) => {
   analyticsService.capture("profile_shortcut_clicked", { shortcut });
 };
 
-// Nous écrire : une réponse de l'équipe pas encore lue se voit sur la ligne.
+// Nous écrire : une réponse de l'équipe pas encore lue monte en tête de la
+// page (SupportUnreadCard) ; la ligne de l'Aide n'y revient qu'une fois lue.
 const support = useSupportUnread();
-const supportValue = computed(() =>
-  support.unread.value > 0
-    ? t("support.unreadCount", { n: support.unread.value }, support.unread.value)
-    : undefined,
-);
 
 let unsubscribeAuth: (() => void) | null = null;
 
@@ -209,6 +206,10 @@ onUnmounted(() => {
     </div>
 
     <template v-else>
+      <!-- Une réponse de l'équipe attend : tout en haut, avant le reste. La
+           ligne « Nous écrire » de l'Aide y revient une fois lue. -->
+      <SupportUnreadCard class="mb-6" />
+
       <!-- Connecté : qui l'on est, d'un coup d'oeil. Le rond porte la couleur
            du thème, c'est la seule touche pleine de la page. -->
       <header v-if="currentUser" class="relative mb-8 flex flex-col items-center text-center">
@@ -324,10 +325,9 @@ onUnmounted(() => {
 
         <SettingsGroup :title="t('profile.native.groups.help')">
           <SettingsRow
+            v-if="support.unread.value === 0"
             icon="message"
             :label="t('footer.reportIssue')"
-            :value="supportValue"
-            :warn="support.unread.value > 0"
             to="/contact"
           />
           <SettingsRow icon="rocket" :label="t('onboarding.replay')" @click="replayOnboarding" />

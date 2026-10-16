@@ -629,6 +629,8 @@ class AdminService {
       status,
       lastFrom: "team",
       unreadByUser: true,
+      // Une réponse rouvre la conversation, même si la personne l'avait dite réglée.
+      resolvedByUser: false,
       updatedAt: serverTimestamp(),
     });
   }

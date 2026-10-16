@@ -187,6 +187,16 @@ export function parseReply(data: unknown): ReplyInput {
   };
 }
 
+/** Le fil visé par la personne, et la clé de son appareil s'il y en a une. */
+export function parseThreadRef(data: unknown): { threadId: string; guestKey: string } {
+  const raw = (data && typeof data === "object" ? data : {}) as Record<string, unknown>;
+  const threadId = asTrimmedString(raw.threadId, "threadId", 100, true);
+  if (!/^[A-Za-z0-9_-]+$/.test(threadId)) {
+    throw new FeedbackValidationError("Champ invalide : threadId.");
+  }
+  return { threadId, guestKey: asGuestKey(raw.guestKey) };
+}
+
 /** Un email si la valeur en a la forme ; sinon c'est un numéro de téléphone. */
 export function isEmail(contact: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact);
@@ -223,6 +233,12 @@ export interface SupportThreadDoc<T = Date> {
   lastFrom: "user" | "team";
   /** Une réponse de l'équipe que la personne n'a pas encore ouverte. */
   unreadByUser: boolean;
+  /**
+   * La personne a dit que c'était réglé (le fil est alors « terminé »). Une
+   * nouvelle réponse, de l'équipe ou d'elle, l'efface. Absent des fils
+   * d'avant : lu comme faux.
+   */
+  resolvedByUser: boolean;
   createdAt: T;
   updatedAt: T;
 }
@@ -248,6 +264,7 @@ export function newThread(
     messages: [{ from: "user", text: input.details, at: now }],
     lastFrom: "user",
     unreadByUser: false,
+    resolvedByUser: false,
     createdAt: now,
     updatedAt: now,
   };
@@ -278,6 +295,7 @@ export function userReplyPatch(
   status: SupportStatus;
   lastFrom: "user";
   updatedAt: Date;
+  resolvedByUser: false;
   pushTokens?: string[];
 } {
   if (thread.messages.length >= MESSAGES_MAX) {
@@ -292,8 +310,22 @@ export function userReplyPatch(
     status: thread.status === "in_progress" ? "in_progress" : "new",
     lastFrom: "user",
     updatedAt: now,
+    resolvedByUser: false,
     ...(tokens ? { pushTokens: tokens } : {}),
   };
+}
+
+/**
+ * La personne dit que c'est réglé : le fil passe « terminé », et l'équipe voit
+ * que c'est elle qui l'a clos. Rien ne s'ajoute au fil : écrire de nouveau le
+ * rouvre (userReplyPatch).
+ */
+export function userResolvePatch(now: Date): {
+  status: "done";
+  resolvedByUser: true;
+  resolvedAt: Date;
+} {
+  return { status: "done", resolvedByUser: true, resolvedAt: now };
 }
 
 /** Une date Firestore (Timestamp), une Date, ou rien : en millisecondes. */
@@ -311,6 +343,8 @@ export interface PublicThread {
   otherKind: string;
   status: SupportStatus;
   unread: boolean;
+  /** La personne a dit que c'était réglé. */
+  resolvedByUser: boolean;
   createdAt: number;
   updatedAt: number;
   messages: SupportMessage<number>[];
@@ -335,6 +369,7 @@ export function publicThread(id: string, doc: Record<string, unknown>): PublicTh
     otherKind: typeof doc.otherKind === "string" ? doc.otherKind : "",
     status,
     unread: doc.unreadByUser === true,
+    resolvedByUser: doc.resolvedByUser === true,
     createdAt: millisOf(doc.createdAt),
     updatedAt: millisOf(doc.updatedAt),
     messages: messages

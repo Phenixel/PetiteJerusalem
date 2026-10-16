@@ -2829,6 +2829,7 @@ const en: LocaleMessages = {
     newReply: "New reply",
     messagesCount: "1 message | {n} messages",
     unreadCount: "1 new reply | {n} new replies",
+    unreadTitle: "1 new reply from the team | {n} new replies from the team",
     ourReply: "Our reply:",
     sentOn: "Sent on {date}",
     thread: {
@@ -2840,6 +2841,10 @@ const en: LocaleMessages = {
       deliveryWeb: "Our replies show here, and a badge points them out in your profile.",
       reopenHint: "Write to reopen this message…",
       details: "Details",
+      resolve: "It's solved",
+      resolveConfirm: "Mark this message as solved?",
+      resolveHint:
+        "We will know it's fine for you. If needed, write here again: the conversation will reopen.",
       factsTitle: "What you sent us",
       facts: {
         kind: "Kind",
@@ -2850,6 +2855,7 @@ const en: LocaleMessages = {
         noContact: "None, the reply only arrives here",
       },
       statusHelp: {
+        resolvedByUser: "You said it's solved. Thank you! Writing here reopens the conversation.",
         new: "Received. We will read it and reply here.",
         in_progress: "We are working on it. The reply will arrive here.",
         answered: "We replied. You can answer in turn, below.",
@@ -3129,6 +3135,7 @@ const en: LocaleMessages = {
       anonymous: "No account, no contact",
       messagesCount: "1 message | {n} messages",
       followUp: "Follow-up",
+      resolvedByUser: "Solved by the person",
       back: "All messages",
       notFound: "This message no longer exists.",
       replyLabel: "Your reply",

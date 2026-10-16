@@ -6,10 +6,15 @@ import AppIcon from "../components/icons/AppIcon.vue";
 import AppModal from "../components/AppModal.vue";
 import SupportConversation from "../components/SupportConversation.vue";
 import { isNativeApp } from "../composables/useNativeApp";
-import { setSupportUnread } from "../composables/useSupportUnread";
+import { syncSupportUnread } from "../composables/useSupportUnread";
 import { useToast } from "../composables/useToast";
+import { useConfirm } from "../composables/useConfirm";
 import { analyticsService } from "../services/analyticsService";
-import { listSupportThreads, replyToSupportThread } from "../services/feedbackService";
+import {
+  listSupportThreads,
+  replyToSupportThread,
+  resolveSupportThread,
+} from "../services/feedbackService";
 import { seoService } from "../services/seoService";
 import { dateTimeFormat } from "../services/intlCache";
 import { threadSubject, type SupportThreadView } from "../services/support";
@@ -33,6 +38,7 @@ const { t, locale } = useI18n();
 const route = useRoute();
 const router = useRouter();
 const toast = useToast();
+const { confirm } = useConfirm();
 
 const id = computed(() => String(route.params.id));
 const status = ref<"loading" | "ready" | "missing" | "error">("loading");
@@ -59,7 +65,7 @@ onMounted(async () => {
     status.value = thread.value ? "ready" : "missing";
     // Ce fil vient d'être marqué lu : la pastille de la barre du bas et du
     // profil ne compte plus que les autres.
-    setSupportUnread(list.filter((th) => th.unread && th.id !== id.value).length);
+    syncSupportUnread(list, id.value);
     void scrollToEnd();
   } catch (error) {
     console.error("Erreur lors du chargement du message:", error);
@@ -180,6 +186,42 @@ function onKeydown(event: KeyboardEvent): void {
   }
 }
 
+/**
+ * L'état du fil, dit à la personne. Un fil qu'elle a dit réglé le lui
+ * rappelle avec ses mots à elle, plutôt que « terminé » par l'équipe.
+ */
+const statusLine = computed(() => {
+  const th = thread.value;
+  if (!th) return "";
+  if (th.status === "done" && th.resolvedByUser)
+    return t("support.thread.statusHelp.resolvedByUser");
+  return t(`support.thread.statusHelp.${th.status}`);
+});
+
+/** « C'est réglé » : la personne clôt la conversation ; écrire ici la rouvre. */
+const resolving = ref(false);
+async function markResolved() {
+  const th = thread.value;
+  if (!th || resolving.value) return;
+  const accepted = await confirm({
+    title: t("support.thread.resolveConfirm"),
+    message: t("support.thread.resolveHint"),
+    confirmLabel: t("support.thread.resolve"),
+  });
+  if (!accepted) return;
+  resolving.value = true;
+  try {
+    thread.value = await resolveSupportThread(th.id);
+    analyticsService.capture("support_thread_resolved", { kind: th.kind });
+    void scrollToEnd(true);
+  } catch (error) {
+    console.error("Erreur lors de la clôture du message:", error);
+    toast.errorFromException(error, t("feedback.error"));
+  } finally {
+    resolving.value = false;
+  }
+}
+
 async function sendReply() {
   const th = thread.value;
   const text = draft.value.trim();
@@ -262,12 +304,26 @@ async function sendReply() {
              dans une messagerie ; un long remplit l'écran et défile. -->
         <div v-else-if="thread" class="flex min-h-full flex-col justify-end">
           <SupportConversation :messages="thread.messages" viewer="user">
-            <!-- L'état du fil, dit comme une ligne de la messagerie. -->
-            <p
-              class="mx-auto max-w-[85%] rounded-pill bg-black/5 px-3.5 py-1.5 text-center text-xs text-text-secondary dark:bg-white/10"
-            >
-              {{ t(`support.thread.statusHelp.${thread.status}`) }}
-            </p>
+            <!-- L'état du fil, dit comme une ligne de la messagerie, et, tant
+                 qu'il est ouvert, de quoi dire que c'est réglé. -->
+            <div class="flex flex-col items-center gap-2">
+              <p
+                class="max-w-[85%] rounded-pill bg-black/5 px-3.5 py-1.5 text-center text-xs text-text-secondary dark:bg-white/10"
+              >
+                {{ statusLine }}
+              </p>
+              <button
+                v-if="thread.status !== 'done'"
+                type="button"
+                class="btn btn-soft btn-sm"
+                :disabled="resolving"
+                @click="markResolved"
+              >
+                <AppIcon v-if="resolving" name="spinner" :size="13" class="animate-spin" />
+                <AppIcon v-else name="circle-check" :size="13" />
+                {{ t("support.thread.resolve") }}
+              </button>
+            </div>
           </SupportConversation>
         </div>
       </div>

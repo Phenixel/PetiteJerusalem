@@ -209,6 +209,16 @@ export async function replyToSupportThread(
   return data.thread;
 }
 
+/** La personne dit que c'est réglé : le fil passe terminé ; renvoie le fil à jour. */
+export async function resolveSupportThread(threadId: string): Promise<SupportThreadView> {
+  const [call, guestKey] = await Promise.all([
+    callable<Record<string, string>, { thread: SupportThreadView }>("resolveSupportThread"),
+    supportDeviceKey(),
+  ]);
+  const { data } = await call({ threadId, guestKey: guestKey ?? "" });
+  return data.thread;
+}
+
 /** Suppression du compte : ses fils partent avec lui. */
 export async function forgetSupportThreads(): Promise<void> {
   const call = await callable<Record<string, never>, { deleted: number }>("forgetSupportThreads");

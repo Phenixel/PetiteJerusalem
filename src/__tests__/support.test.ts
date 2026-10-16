@@ -9,9 +9,11 @@ import {
   parseFeedback,
   parseGuestKey,
   parseReply,
+  parseThreadRef,
   publicThread,
   readScope,
   userReplyPatch,
+  userResolvePatch,
   type SupportMessage,
 } from "../../functions/src/support";
 import {
@@ -167,6 +169,7 @@ describe("un fil", () => {
       otherKind: "",
       status: "new",
       unread: true,
+      resolvedByUser: false,
       createdAt: NOW.getTime(),
       updatedAt: NOW.getTime(),
       messages: [{ from: "user", text: "Le bouton ne répond pas.", at: NOW.getTime() }],
@@ -210,6 +213,39 @@ describe("un fil", () => {
     expect(() => userReplyPatch({ status: "new", messages }, "b", NOW)).toThrow(
       FeedbackValidationError,
     );
+  });
+});
+
+describe("« C'est réglé »", () => {
+  it("clôt le fil au nom de la personne", () => {
+    expect(userResolvePatch(NOW)).toEqual({
+      status: "done",
+      resolvedByUser: true,
+      resolvedAt: NOW,
+    });
+  });
+
+  it("se rouvre dès que la personne écrit de nouveau", () => {
+    const messages: SupportMessage[] = [{ from: "user", text: "a", at: NOW }];
+    const patch = userReplyPatch({ status: "done", messages }, "En fait non", NOW);
+    expect(patch.status).toBe("new");
+    expect(patch.resolvedByUser).toBe(false);
+  });
+
+  it("se dit à la personne quand elle relit le fil", () => {
+    const view = publicThread("f1", { status: "done", resolvedByUser: true, messages: [] });
+    expect(view).toMatchObject({ status: "done", resolvedByUser: true });
+    // Un fil d'avant le champ se lit « pas réglé par elle ».
+    expect(publicThread("f2", { status: "done", messages: [] }).resolvedByUser).toBe(false);
+  });
+
+  it("vise un fil par son identifiant, et rien d'autre", () => {
+    expect(parseThreadRef({ threadId: "abc", guestKey: KEY })).toEqual({
+      threadId: "abc",
+      guestKey: KEY,
+    });
+    expect(() => parseThreadRef({ threadId: "../x" })).toThrow(FeedbackValidationError);
+    expect(() => parseThreadRef({})).toThrow(FeedbackValidationError);
   });
 });
 

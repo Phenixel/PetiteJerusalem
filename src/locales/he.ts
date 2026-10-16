@@ -2766,6 +2766,7 @@ const he: LocaleMessages = {
     newReply: "תשובה חדשה",
     messagesCount: "הודעה אחת | {n} הודעות",
     unreadCount: "תשובה חדשה אחת | {n} תשובות חדשות",
+    unreadTitle: "תשובה חדשה אחת מהצוות | {n} תשובות חדשות מהצוות",
     ourReply: "התשובה שלנו:",
     sentOn: "נשלח ב־{date}",
     thread: {
@@ -2775,6 +2776,9 @@ const he: LocaleMessages = {
       deliveryWeb: "התשובות שלנו מופיעות כאן, וסימון בפרופיל יציין אותן.",
       reopenHint: "כתבו כדי לפתוח מחדש את ההודעה…",
       details: "פרטים",
+      resolve: "הבעיה נפתרה",
+      resolveConfirm: "לסמן את ההודעה כפתורה?",
+      resolveHint: "כך נדע שהכול בסדר. אם צריך, כתבו כאן שוב: השיחה תיפתח מחדש.",
       factsTitle: "מה ששלחתם לנו",
       facts: {
         kind: "סוג",
@@ -2785,6 +2789,7 @@ const he: LocaleMessages = {
         noContact: "אין, התשובה תגיע רק לכאן",
       },
       statusHelp: {
+        resolvedByUser: "ציינתם שהבעיה נפתרה. תודה! כתיבה כאן תפתח את השיחה מחדש.",
         new: "התקבל. נקרא ונשיב לכם כאן.",
         in_progress: "אנחנו מטפלים בזה. התשובה תגיע לכאן.",
         answered: "השבנו לכם. אפשר להגיב למטה.",
@@ -3056,6 +3061,7 @@ const he: LocaleMessages = {
       anonymous: "ללא חשבון וללא פרטי קשר",
       messagesCount: "הודעה אחת | {n} הודעות",
       followUp: "תגובה חוזרת",
+      resolvedByUser: "נפתר על ידי הפונה",
       back: "כל ההודעות",
       notFound: "ההודעה הזו כבר לא קיימת.",
       replyLabel: "התשובה שלכם",

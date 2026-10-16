@@ -226,6 +226,12 @@ async function remove() {
     <div class="mb-6 flex flex-wrap items-center gap-2">
       <AdminStatus tone="neutral" :label="t(`admin.support.kinds.${thread.kind}`)" />
       <AdminSupportStatus :status="thread.status" />
+      <AdminStatus
+        v-if="thread.resolvedByUser && thread.status === 'done'"
+        tone="success"
+        icon="check"
+        :label="t('admin.support.resolvedByUser')"
+      />
       <span v-if="thread.otherKind" class="text-sm text-text-secondary">
         {{ thread.otherKind }}
       </span>

@@ -30,6 +30,8 @@ export interface SupportThreadView {
   status: SupportStatus;
   /** Une réponse de l'équipe que la personne n'a pas encore ouverte. */
   unread: boolean;
+  /** La personne a dit que c'était réglé (le fil est alors terminé). */
+  resolvedByUser: boolean;
   createdAt: number;
   updatedAt: number;
   messages: SupportMessageView[];
@@ -83,6 +85,7 @@ export function parseAdminThread(id: string, doc: Record<string, unknown>): Admi
     otherKind: str(doc.otherKind),
     status,
     unread: doc.unreadByUser === true,
+    resolvedByUser: doc.resolvedByUser === true,
     createdAt: millisOf(doc.createdAt),
     updatedAt: millisOf(doc.updatedAt),
     messages: messages

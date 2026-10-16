@@ -993,11 +993,20 @@ personne sont gardés.
   le backoffice, la nature (idée, bug, erreur) reste grise : sur le thème
   par défaut, la teinte du thème et l'ambre se confondaient, et seul le
   statut doit appeler l'œil.
-- **Une réponse non lue se compte sur l'onglet du profil.** Dans l'app, la
-  barre du bas porte sur l'icône du profil (ou des réglages, sans compte) une
+- **Une réponse non lue monte en tête du profil.** Dans l'app, la barre du
+  bas porte sur l'icône du profil (ou des réglages, sans compte) une
   pastille à son nombre, sur la teinte du thème, détachée d'un liseré de la
-  couleur de la barre ; la ligne « Nous écrire » du profil dit « 1 nouvelle
-  réponse ». Ouvrir le fil les éteint toutes deux.
+  couleur de la barre. Le profil, lui, ouvre sur un encart tout en haut,
+  avant l'identité : le rond du message sur la teinte pleine, « 1 nouvelle
+  réponse de l'équipe », et le début de la réponse sur deux lignes ; toute
+  la carte mène au fil, sans flèche. La ligne « Nous écrire » quitte sa
+  place pendant ce temps : on ne voit pas deux fois la même entrée. Une fois
+  la réponse lue, l'encart disparaît et la ligne revient dans l'Aide.
+- **La personne peut dire que c'est réglé.** Sous la ligne d'état de la
+  messagerie, tant que le fil n'est pas terminé, un bouton discret
+  (`btn-soft`, coche et « C'est réglé »), confirmé avant d'agir. Le fil se
+  dit alors « Vous avez indiqué que c'est réglé » ; écrire de nouveau le
+  rouvre, la barre d'écriture le dit.
 - **Avant d'envoyer, on sait où la réponse arrivera.** Sous le champ de
   réponse du backoffice, une ligne le dit (dans l'app avec une notification,
   sans, par email seulement, nulle part), et les boutons qui n'auraient pas

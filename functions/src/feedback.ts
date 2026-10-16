@@ -38,12 +38,14 @@ import {
   parseFeedback,
   parseGuestKey,
   parseReply,
+  parseThreadRef,
   PLATFORMS,
   readScope,
   publicThread,
   sortThreads,
   SUPPORTS,
   userReplyPatch,
+  userResolvePatch,
   type PublicThread,
   type SupportIdentity,
 } from "./support";
@@ -187,6 +189,7 @@ export const replySupportThread = onCall<unknown, Promise<{ thread: PublicThread
         lastFrom: patch.lastFrom,
         updatedAt: Timestamp.fromDate(patch.updatedAt),
         unreadByUser: false,
+        resolvedByUser: false,
         ...(patch.pushTokens ? { pushTokens: patch.pushTokens } : {}),
       });
       return {
@@ -195,9 +198,42 @@ export const replySupportThread = onCall<unknown, Promise<{ thread: PublicThread
         status: patch.status,
         updatedAt: message.at,
         unreadByUser: false,
+        resolvedByUser: false,
       };
     });
     logger.info(`replySupportThread: relance sur le fil ${input.threadId}.`);
+    return { thread: publicThread(input.threadId, updated) };
+  },
+);
+
+/**
+ * La personne dit que c'est réglé : le fil passe « terminé ». Rien ne part
+ * vers elle (pas de notification), l'équipe le voit dans le backoffice.
+ */
+export const resolveSupportThread = onCall<unknown, Promise<{ thread: PublicThread }>>(
+  async (request) => {
+    assertNotRateLimited(request.rawRequest.ip);
+    const input = validated(() => parseThreadRef(request.data));
+    const uid = request.auth?.uid ?? null;
+    const guestKeyHash = hashKey(input.guestKey);
+    const ref = getFirestore().collection(COLLECTION).doc(input.threadId);
+
+    const updated = await getFirestore().runTransaction(async (tx) => {
+      const snap = await tx.get(ref);
+      const data = snap.data();
+      if (!data || !ownsThread(data, uid, guestKeyHash)) {
+        throw new HttpsError("not-found", "Fil introuvable.");
+      }
+      const patch = userResolvePatch(new Date());
+      tx.update(ref, {
+        status: patch.status,
+        resolvedByUser: patch.resolvedByUser,
+        resolvedAt: Timestamp.fromDate(patch.resolvedAt),
+        unreadByUser: false,
+      });
+      return { ...data, status: patch.status, resolvedByUser: true, unreadByUser: false };
+    });
+    logger.info(`resolveSupportThread: fil ${input.threadId} réglé par la personne.`);
     return { thread: publicThread(input.threadId, updated) };
   },
 );
