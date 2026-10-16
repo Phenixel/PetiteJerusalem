@@ -67,7 +67,12 @@ export type SectionHeading =
   /** Moussar : l'introduction (hakdama) d'une porte de 'Hovot Halévavot, section 0. */
   | { kind: "introduction" }
   /** Moussar : un sujet du Pélé Yoets, son numéro dans le livre et son nom hébreu. */
-  | { kind: "topic"; n: number; title: string };
+  | { kind: "topic"; n: number; title: string }
+  /**
+   * Halakha : un siman du Choulhan Aroukh ou du Kitsour, son numéro dans le
+   * livre et son intitulé hébreu (vide quand la source n'en donne pas).
+   */
+  | { kind: "siman"; n: number; title: string };
 
 /**
  * Didascalie : la consigne de lecture qui accompagne un texte de tefila
@@ -542,6 +547,9 @@ export function resolveFilePath(textStudy: TextStudyJsonEntry): string {
     // Moussar : un fichier par entrée, nommé par son id, comme le Tanakh.
     case "Moussar":
       return `/texts/moussar/${textStudy.id}.json`;
+    // Halakha : de même, un fichier par groupe de lois (Hilkhot Chabbat).
+    case "Halakha":
+      return `/texts/halakha/${textStudy.id}.json`;
     default:
       throw new Error(`Type non supporté : ${textStudy.type}`);
   }
@@ -1191,6 +1199,47 @@ function loadMoussar(
   return { title, type: "Moussar", sections };
 }
 
+/** « Siman 8 (ח) : הלכות ציצית », le libellé français d'un siman (prérendu compris). */
+const simanLabel = (n: number, title: string): string =>
+  title ? `Siman ${formatNumberWithHebrew(n)} : ${title}` : `Siman ${formatNumberWithHebrew(n)}`;
+
+/**
+ * Halakha (public/texts/halakha/<id>.json, voir download-texts.mjs) : des
+ * simanim, `{ n, title?, he }`, au format du moussar. `n` est le numéro du
+ * siman dans le livre, celui de l'adresse et celui qu'un cours cite (Hilkhot
+ * Tsitsit commence au siman 8) ; chaque ligne de `he` est un séif, dans
+ * l'ordre : la ligne 3 est le séif 3. Une entrée d'un seul siman (Hilkhot
+ * Melamdim, siman 245) se lit en une section, 1, comme tout texte d'un seul
+ * tenant ; son titre garde le numéro du siman.
+ */
+function loadHalakha(
+  textStudy: TextStudyJsonEntry,
+  data: { title?: string; sections?: unknown },
+): TextContent {
+  const title = data.title ?? textStudy.name;
+  const raw = (Array.isArray(data.sections) ? data.sections : []) as {
+    n?: unknown;
+    title?: unknown;
+    he?: unknown;
+  }[];
+  const sections: TextSection[] = [];
+  for (const section of raw) {
+    const n = section?.n;
+    if (typeof n !== "number" || !Number.isInteger(n) || n < 1) continue;
+    const he = normalizeLines(section.he);
+    if (he.length === 0) continue;
+    const simanTitle = typeof section.title === "string" ? cleanText(section.title) : "";
+    sections.push({
+      ...buildSection(n, simanLabel(n, simanTitle), he),
+      heading: { kind: "siman", n, title: simanTitle },
+    });
+  }
+  if ((textStudy.totalSections ?? 1) <= 1 && sections.length > 0) {
+    return { title, type: "Halakha", sections: [{ ...sections[0], index: 1 }] };
+  }
+  return { title, type: "Halakha", sections };
+}
+
 /**
  * Pure parse of an already-loaded text file into ready-to-read sections.
  * Shared by the runtime reader (via {@link loadText}) and the SEO prerender
@@ -1240,6 +1289,8 @@ export function parseContent(
       return loadTefila(textStudy, data as { title?: string; blocks?: TefilaFileBlock[] });
     case "Moussar":
       return loadMoussar(textStudy, data as { title?: string; sections?: unknown }, trList);
+    case "Halakha":
+      return loadHalakha(textStudy, data as { title?: string; sections?: unknown });
     default:
       throw new Error(`Type non supporté : ${textStudy.type}`);
   }
@@ -1540,6 +1591,42 @@ export function parseMishnaMeforshim(data: Record<string, unknown>): MishnaMefor
 export async function loadMishnaMeforshim(textStudy: TextStudyJsonEntry): Promise<MishnaMeforshim> {
   const slug = tractateSlug(tractateFromLink(textStudy.link, true));
   return parseMishnaMeforshim(await readCommentaryFile(`/texts/mishna-meforshim/${slug}.json`));
+}
+
+// ---- Les commentaires du Choulhan Aroukh ------------------------------------
+
+/** Simanim par fichier : à garder d'accord avec download-texts.mjs. */
+export const HALAKHA_MEFORSHIM_CHUNK = 5;
+
+/**
+ * Les commentaires d'un siman du Choulhan Aroukh, par commentateur, séif par
+ * séif (public/texts/halakha-meforshim/<id>/<tranche>.json, voir
+ * download-texts.mjs). Un commentateur absent de la partie (le Chakh sur
+ * Ora'h Hayim) n'y figure pas.
+ */
+export type HalakhaMeforshim = Record<string, RashiComment[][]>;
+
+/** Une tranche de commentaires → ceux du siman `n`, ou {} s'il n'y est pas. */
+export function parseHalakhaMeforshim(data: Record<string, unknown>, n: number): HalakhaMeforshim {
+  const simanim = Array.isArray(data.simanim) ? data.simanim : [];
+  const at = simanim.indexOf(n);
+  if (at < 0) return {};
+  const out: HalakhaMeforshim = {};
+  for (const [key, grid] of Object.entries(data)) {
+    if (key === "title" || key === "simanim" || !Array.isArray(grid)) continue;
+    out[key] = parseCommentaryGroups([grid[at]])[0] ?? [];
+  }
+  return out;
+}
+
+/** Les commentaires du siman `n` d'une entrée de halakha. */
+export async function loadHalakhaMeforshim(
+  textStudy: TextStudyJsonEntry,
+  n: number,
+): Promise<HalakhaMeforshim> {
+  const chunk = Math.floor(n / HALAKHA_MEFORSHIM_CHUNK);
+  const data = await readCommentaryFile(`/texts/halakha-meforshim/${textStudy.id}/${chunk}.json`);
+  return parseHalakhaMeforshim(data, n);
 }
 
 // ---- Rachi et Tossafot sur la guemara (forme de la page) -------------------

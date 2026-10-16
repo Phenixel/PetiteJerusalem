@@ -28,7 +28,7 @@ const { t, locale } = useI18n();
 const ctaBottom = useBottomChromeHeight("12px");
 
 /** Ce qu'on étudie : la liturgie a sa page, le Sidour. */
-const READABLE = new Set(["tehilim", "michna", "talmud", "tanakh", "moussar"]);
+const READABLE = new Set(["tehilim", "michna", "talmud", "tanakh", "moussar", "halakha"]);
 const texts = (textStudiesJson as TextStudiesJson).textStudies.filter((e) =>
   READABLE.has(corpusOf(e)),
 );

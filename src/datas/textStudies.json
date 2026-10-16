@@ -3103,6 +3103,1270 @@
       "link": "https://www.sefaria.org/Pele_Yoetz.376",
       "totalSections": 16,
       "type": "Moussar"
+    },
+    {
+      "id": 500,
+      "name": "הלכות הנהגת האדם בבוקר (Hilkhot Hanhagat Haadam Baboker)",
+      "livre": "שולחן ערוך, אורח חיים (Choulhan Aroukh, Ora'h Hayim)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Orach_Chayim.1",
+      "totalSections": 7,
+      "type": "Halakha"
+    },
+    {
+      "id": 501,
+      "name": "הלכות ציצית (Hilkhot Tsitsit)",
+      "livre": "שולחן ערוך, אורח חיים (Choulhan Aroukh, Ora'h Hayim)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Orach_Chayim.8",
+      "totalSections": 17,
+      "type": "Halakha"
+    },
+    {
+      "id": 502,
+      "name": "הלכות תפילין (Hilkhot Tefilin)",
+      "livre": "שולחן ערוך, אורח חיים (Choulhan Aroukh, Ora'h Hayim)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Orach_Chayim.25",
+      "totalSections": 22,
+      "type": "Halakha"
+    },
+    {
+      "id": 503,
+      "name": "הלכות ברכות השחר (Hilkhot Birkhot Hacha'har)",
+      "livre": "שולחן ערוך, אורח חיים (Choulhan Aroukh, Ora'h Hayim)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Orach_Chayim.47",
+      "totalSections": 11,
+      "type": "Halakha"
+    },
+    {
+      "id": 504,
+      "name": "הלכות קריאת שמע (Hilkhot Keriat Chema)",
+      "livre": "שולחן ערוך, אורח חיים (Choulhan Aroukh, Ora'h Hayim)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Orach_Chayim.58",
+      "totalSections": 31,
+      "type": "Halakha"
+    },
+    {
+      "id": 505,
+      "name": "הלכות תפילה (Hilkhot Tefila)",
+      "livre": "שולחן ערוך, אורח חיים (Choulhan Aroukh, Ora'h Hayim)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Orach_Chayim.89",
+      "totalSections": 39,
+      "type": "Halakha"
+    },
+    {
+      "id": 506,
+      "name": "הלכות נשיאת כפים (Hilkhot Nessiat Kapayim)",
+      "livre": "שולחן ערוך, אורח חיים (Choulhan Aroukh, Ora'h Hayim)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Orach_Chayim.128",
+      "totalSections": 8,
+      "type": "Halakha"
+    },
+    {
+      "id": 507,
+      "name": "הלכות קריאת התורה (Hilkhot Keriat Hatorah)",
+      "livre": "שולחן ערוך, אורח חיים (Choulhan Aroukh, Ora'h Hayim)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Orach_Chayim.136",
+      "totalSections": 14,
+      "type": "Halakha"
+    },
+    {
+      "id": 508,
+      "name": "הלכות בית הכנסת (Hilkhot Beit Haknesset)",
+      "livre": "שולחן ערוך, אורח חיים (Choulhan Aroukh, Ora'h Hayim)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Orach_Chayim.150",
+      "totalSections": 7,
+      "type": "Halakha"
+    },
+    {
+      "id": 509,
+      "name": "הלכות נטילת ידים (Hilkhot Netilat Yadayim)",
+      "livre": "שולחן ערוך, אורח חיים (Choulhan Aroukh, Ora'h Hayim)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Orach_Chayim.157",
+      "totalSections": 9,
+      "type": "Halakha"
+    },
+    {
+      "id": 510,
+      "name": "הלכות סעודה (Hilkhot Seouda)",
+      "livre": "שולחן ערוך, אורח חיים (Choulhan Aroukh, Ora'h Hayim)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Orach_Chayim.166",
+      "totalSections": 36,
+      "type": "Halakha"
+    },
+    {
+      "id": 511,
+      "name": "הלכות ברכת הפירות (Hilkhot Birkat Hapeirot)",
+      "livre": "שולחן ערוך, אורח חיים (Choulhan Aroukh, Ora'h Hayim)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Orach_Chayim.202",
+      "totalSections": 13,
+      "type": "Halakha"
+    },
+    {
+      "id": 512,
+      "name": "הלכות שאר ברכות (Hilkhot Chear Berakhot)",
+      "livre": "שולחן ערוך, אורח חיים (Choulhan Aroukh, Ora'h Hayim)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Orach_Chayim.215",
+      "totalSections": 27,
+      "type": "Halakha"
+    },
+    {
+      "id": 513,
+      "name": "הלכות שבת (Hilkhot Chabbat)",
+      "livre": "שולחן ערוך, אורח חיים (Choulhan Aroukh, Ora'h Hayim)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Orach_Chayim.242",
+      "totalSections": 103,
+      "type": "Halakha"
+    },
+    {
+      "id": 514,
+      "name": "הלכות עירובין (Hilkhot Erouvin)",
+      "livre": "שולחן ערוך, אורח חיים (Choulhan Aroukh, Ora'h Hayim)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Orach_Chayim.345",
+      "totalSections": 51,
+      "type": "Halakha"
+    },
+    {
+      "id": 515,
+      "name": "הלכות תחומין (Hilkhot Te'houmin)",
+      "livre": "שולחן ערוך, אורח חיים (Choulhan Aroukh, Ora'h Hayim)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Orach_Chayim.396",
+      "totalSections": 12,
+      "type": "Halakha"
+    },
+    {
+      "id": 516,
+      "name": "הלכות עירובי תחומין (Hilkhot Erouvei Te'houmin)",
+      "livre": "שולחן ערוך, אורח חיים (Choulhan Aroukh, Ora'h Hayim)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Orach_Chayim.408",
+      "totalSections": 9,
+      "type": "Halakha"
+    },
+    {
+      "id": 517,
+      "name": "הלכות ראש חודש (Hilkhot Roch Hodech)",
+      "livre": "שולחן ערוך, אורח חיים (Choulhan Aroukh, Ora'h Hayim)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Orach_Chayim.417",
+      "totalSections": 12,
+      "type": "Halakha"
+    },
+    {
+      "id": 518,
+      "name": "הלכות פסח (Hilkhot Pessa'h)",
+      "livre": "שולחן ערוך, אורח חיים (Choulhan Aroukh, Ora'h Hayim)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Orach_Chayim.429",
+      "totalSections": 66,
+      "type": "Halakha"
+    },
+    {
+      "id": 519,
+      "name": "הלכות יום טוב (Hilkhot Yom Tov)",
+      "livre": "שולחן ערוך, אורח חיים (Choulhan Aroukh, Ora'h Hayim)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Orach_Chayim.495",
+      "totalSections": 35,
+      "type": "Halakha"
+    },
+    {
+      "id": 520,
+      "name": "הלכות חול המועד (Hilkhot Hol Hamoed)",
+      "livre": "שולחן ערוך, אורח חיים (Choulhan Aroukh, Ora'h Hayim)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Orach_Chayim.530",
+      "totalSections": 19,
+      "type": "Halakha"
+    },
+    {
+      "id": 521,
+      "name": "הלכות תשעה באב (Hilkhot Tich'a Beav)",
+      "livre": "שולחן ערוך, אורח חיים (Choulhan Aroukh, Ora'h Hayim)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Orach_Chayim.549",
+      "totalSections": 13,
+      "type": "Halakha"
+    },
+    {
+      "id": 522,
+      "name": "הלכות תענית (Hilkhot Taanit)",
+      "livre": "שולחן ערוך, אורח חיים (Choulhan Aroukh, Ora'h Hayim)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Orach_Chayim.562",
+      "totalSections": 19,
+      "type": "Halakha"
+    },
+    {
+      "id": 523,
+      "name": "הלכות ראש השנה (Hilkhot Roch Hachana)",
+      "livre": "שולחן ערוך, אורח חיים (Choulhan Aroukh, Ora'h Hayim)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Orach_Chayim.581",
+      "totalSections": 23,
+      "type": "Halakha"
+    },
+    {
+      "id": 524,
+      "name": "הלכות יום הכיפורים (Hilkhot Yom Hakipourim)",
+      "livre": "שולחן ערוך, אורח חיים (Choulhan Aroukh, Ora'h Hayim)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Orach_Chayim.604",
+      "totalSections": 21,
+      "type": "Halakha"
+    },
+    {
+      "id": 525,
+      "name": "הלכות סוכה (Hilkhot Souka)",
+      "livre": "שולחן ערוך, אורח חיים (Choulhan Aroukh, Ora'h Hayim)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Orach_Chayim.625",
+      "totalSections": 20,
+      "type": "Halakha"
+    },
+    {
+      "id": 526,
+      "name": "הלכות לולב (Hilkhot Loulav)",
+      "livre": "שולחן ערוך, אורח חיים (Choulhan Aroukh, Ora'h Hayim)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Orach_Chayim.645",
+      "totalSections": 25,
+      "type": "Halakha"
+    },
+    {
+      "id": 527,
+      "name": "הלכות חנוכה (Hilkhot Hanouka)",
+      "livre": "שולחן ערוך, אורח חיים (Choulhan Aroukh, Ora'h Hayim)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Orach_Chayim.670",
+      "totalSections": 16,
+      "type": "Halakha"
+    },
+    {
+      "id": 528,
+      "name": "הלכות מגילה (Hilkhot Meguila)",
+      "livre": "שולחן ערוך, אורח חיים (Choulhan Aroukh, Ora'h Hayim)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Orach_Chayim.686",
+      "totalSections": 12,
+      "type": "Halakha"
+    },
+    {
+      "id": 540,
+      "name": "הלכות שחיטה (Hilkhot Che'hita)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.1",
+      "totalSections": 28,
+      "type": "Halakha"
+    },
+    {
+      "id": 541,
+      "name": "הלכות טריפות (Hilkhot Terefot)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.29",
+      "totalSections": 32,
+      "type": "Halakha"
+    },
+    {
+      "id": 542,
+      "name": "הלכות מתנות כהונה (Hilkhot Matnot Kehouna)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.61",
+      "totalSections": 1,
+      "type": "Halakha"
+    },
+    {
+      "id": 543,
+      "name": "הלכות אבר מן החי (Hilkhot Ever Min Ha'hai)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.62",
+      "totalSections": 1,
+      "type": "Halakha"
+    },
+    {
+      "id": 544,
+      "name": "הלכות בשר שנתעלם מן העין (Hilkhot Bassar Chenitalem Min Haayin)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.63",
+      "totalSections": 1,
+      "type": "Halakha"
+    },
+    {
+      "id": 545,
+      "name": "הלכות חלב (Hilkhot Helev)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.64",
+      "totalSections": 1,
+      "type": "Halakha"
+    },
+    {
+      "id": 546,
+      "name": "הלכות דם (Hilkhot Dam)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.65",
+      "totalSections": 4,
+      "type": "Halakha"
+    },
+    {
+      "id": 547,
+      "name": "הלכות מליחה (Hilkhot Meli'ha)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.69",
+      "totalSections": 10,
+      "type": "Halakha"
+    },
+    {
+      "id": 548,
+      "name": "סימני בהמה וחיה טהורה (Simanei Behema Ve'haya Tehora)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.79",
+      "totalSections": 2,
+      "type": "Halakha"
+    },
+    {
+      "id": 549,
+      "name": "דברים היוצאים מן החי (Devarim Hayotsim Min Ha'hai)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.81",
+      "totalSections": 1,
+      "type": "Halakha"
+    },
+    {
+      "id": 550,
+      "name": "דיני עוף טהור (Dinei Of Tahor)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.82",
+      "totalSections": 1,
+      "type": "Halakha"
+    },
+    {
+      "id": 551,
+      "name": "דיני דגים (Dinei Daguim)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.83",
+      "totalSections": 1,
+      "type": "Halakha"
+    },
+    {
+      "id": 552,
+      "name": "דיני תולעים (Dinei Tolaim)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.84",
+      "totalSections": 2,
+      "type": "Halakha"
+    },
+    {
+      "id": 553,
+      "name": "הלכות ביצים (Hilkhot Beitsim)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.86",
+      "totalSections": 1,
+      "type": "Halakha"
+    },
+    {
+      "id": 554,
+      "name": "הלכות בשר בחלב (Hilkhot Bassar Be'halav)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.87",
+      "totalSections": 11,
+      "type": "Halakha"
+    },
+    {
+      "id": 555,
+      "name": "הלכות תערובות (Hilkhot Taarovot)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.98",
+      "totalSections": 14,
+      "type": "Halakha"
+    },
+    {
+      "id": 556,
+      "name": "הלכות מאכלי עובדי כוכבים (Hilkhot Maakhalei Ovdei Kokhavim)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.112",
+      "totalSections": 8,
+      "type": "Halakha"
+    },
+    {
+      "id": 557,
+      "name": "הלכות הכשר כלים (Hilkhot Hekhcher Kelim)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.120",
+      "totalSections": 2,
+      "type": "Halakha"
+    },
+    {
+      "id": 558,
+      "name": "הלכות נותן טעם לפגם (Hilkhot Noten Taam Lifgam)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.122",
+      "totalSections": 1,
+      "type": "Halakha"
+    },
+    {
+      "id": 559,
+      "name": "הלכות יין נסך (Hilkhot Yayin Nessekh)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.123",
+      "totalSections": 12,
+      "type": "Halakha"
+    },
+    {
+      "id": 560,
+      "name": "הלכות כלי היין (Hilkhot Kelei Hayayin)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.135",
+      "totalSections": 4,
+      "type": "Halakha"
+    },
+    {
+      "id": 561,
+      "name": "הלכות עבודת כוכבים (Hilkhot Avodat Kokhavim)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.139",
+      "totalSections": 20,
+      "type": "Halakha"
+    },
+    {
+      "id": 562,
+      "name": "הלכות ריבית (Hilkhot Ribit)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.159",
+      "totalSections": 18,
+      "type": "Halakha"
+    },
+    {
+      "id": 563,
+      "name": "הלכות חוקות העובדי כוכבים (Hilkhot Houkot Haovdei Kokhavim)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.178",
+      "totalSections": 1,
+      "type": "Halakha"
+    },
+    {
+      "id": 564,
+      "name": "הלכות מעונן ומכשף (Hilkhot Meonen Oumekhachef)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.179",
+      "totalSections": 1,
+      "type": "Halakha"
+    },
+    {
+      "id": 565,
+      "name": "הלכות כתובת קעקע וקריחה (Hilkhot Ketovet Kaaka Oukeri'ha)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.180",
+      "totalSections": 1,
+      "type": "Halakha"
+    },
+    {
+      "id": 566,
+      "name": "הלכות גילוח (Hilkhot Guilou'ah)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.181",
+      "totalSections": 1,
+      "type": "Halakha"
+    },
+    {
+      "id": 567,
+      "name": "הלכות לא ילבש גבר (Hilkhot Lo Yilbach Guever)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.182",
+      "totalSections": 1,
+      "type": "Halakha"
+    },
+    {
+      "id": 568,
+      "name": "הלכות נדה (Hilkhot Nida)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.183",
+      "totalSections": 18,
+      "type": "Halakha"
+    },
+    {
+      "id": 569,
+      "name": "הלכות מקואות (Hilkhot Mikvaot)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.201",
+      "totalSections": 2,
+      "type": "Halakha"
+    },
+    {
+      "id": 570,
+      "name": "הלכות נדרים (Hilkhot Nedarim)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.203",
+      "totalSections": 33,
+      "type": "Halakha"
+    },
+    {
+      "id": 571,
+      "name": "הלכות שבועות (Hilkhot Chevouot)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.236",
+      "totalSections": 4,
+      "type": "Halakha"
+    },
+    {
+      "id": 572,
+      "name": "הלכות כבוד אב ואם (Hilkhot Kibboud Av Vaem)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.240",
+      "totalSections": 2,
+      "type": "Halakha"
+    },
+    {
+      "id": 573,
+      "name": "הלכות כבוד רבו (Hilkhot Kevod Rabo)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.242",
+      "totalSections": 1,
+      "type": "Halakha"
+    },
+    {
+      "id": 574,
+      "name": "הלכות כבוד תלמיד חכם (Hilkhot Kevod Talmid Hakham)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.243",
+      "totalSections": 2,
+      "type": "Halakha"
+    },
+    {
+      "id": 575,
+      "name": "הלכות מלמדים (Hilkhot Melamdim)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.245",
+      "totalSections": 1,
+      "type": "Halakha"
+    },
+    {
+      "id": 576,
+      "name": "הלכות תלמוד תורה (Hilkhot Talmoud Torah)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.246",
+      "totalSections": 1,
+      "type": "Halakha"
+    },
+    {
+      "id": 577,
+      "name": "הלכות צדקה (Hilkhot Tsedaka)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.247",
+      "totalSections": 13,
+      "type": "Halakha"
+    },
+    {
+      "id": 578,
+      "name": "הלכות מילה (Hilkhot Mila)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.260",
+      "totalSections": 7,
+      "type": "Halakha"
+    },
+    {
+      "id": 579,
+      "name": "הלכות עבדים (Hilkhot Avadim)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.267",
+      "totalSections": 1,
+      "type": "Halakha"
+    },
+    {
+      "id": 580,
+      "name": "הלכות גרים (Hilkhot Guerim)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.268",
+      "totalSections": 2,
+      "type": "Halakha"
+    },
+    {
+      "id": 581,
+      "name": "הלכות ספר תורה (Hilkhot Sefer Torah)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.270",
+      "totalSections": 15,
+      "type": "Halakha"
+    },
+    {
+      "id": 582,
+      "name": "הלכות מזוזה (Hilkhot Mezouza)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.285",
+      "totalSections": 7,
+      "type": "Halakha"
+    },
+    {
+      "id": 583,
+      "name": "הלכות שילוח הקן (Hilkhot Chilou'ah Haken)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.292",
+      "totalSections": 1,
+      "type": "Halakha"
+    },
+    {
+      "id": 584,
+      "name": "הלכות חדש (Hilkhot Hadach)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.293",
+      "totalSections": 1,
+      "type": "Halakha"
+    },
+    {
+      "id": 585,
+      "name": "הלכות ערלה (Hilkhot Orla)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.294",
+      "totalSections": 1,
+      "type": "Halakha"
+    },
+    {
+      "id": 586,
+      "name": "הלכות כלאי אילן (Hilkhot Kilei Ilan)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.295",
+      "totalSections": 1,
+      "type": "Halakha"
+    },
+    {
+      "id": 587,
+      "name": "הלכות כלאי הכרם (Hilkhot Kilei Hakerem)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.296",
+      "totalSections": 1,
+      "type": "Halakha"
+    },
+    {
+      "id": 588,
+      "name": "הלכות כלאי זרעים וכלאי בהמה (Hilkhot Kilei Zeraim Oukhilei Behema)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.297",
+      "totalSections": 1,
+      "type": "Halakha"
+    },
+    {
+      "id": 589,
+      "name": "הלכות כלאי בגדים (Hilkhot Kilei Beguadim)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.298",
+      "totalSections": 7,
+      "type": "Halakha"
+    },
+    {
+      "id": 590,
+      "name": "הלכות פדיון בכור (Hilkhot Pidyon Bekhor)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.305",
+      "totalSections": 1,
+      "type": "Halakha"
+    },
+    {
+      "id": 591,
+      "name": "הלכות בכור בהמה טהורה (Hilkhot Bekhor Behema Tehora)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.306",
+      "totalSections": 15,
+      "type": "Halakha"
+    },
+    {
+      "id": 592,
+      "name": "הלכות פטר חמור (Hilkhot Peter Hamor)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.321",
+      "totalSections": 1,
+      "type": "Halakha"
+    },
+    {
+      "id": 593,
+      "name": "הלכות חלה (Hilkhot Hala)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.322",
+      "totalSections": 9,
+      "type": "Halakha"
+    },
+    {
+      "id": 594,
+      "name": "הלכות תרומות ומעשרות (Hilkhot Teroumot Oumaasrot)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.331",
+      "totalSections": 3,
+      "type": "Halakha"
+    },
+    {
+      "id": 595,
+      "name": "הלכות נידוי וחרם (Hilkhot Nidouy Va'herem)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.334",
+      "totalSections": 1,
+      "type": "Halakha"
+    },
+    {
+      "id": 596,
+      "name": "הלכות ביקור חולים (Hilkhot Bikour Holim)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.335",
+      "totalSections": 5,
+      "type": "Halakha"
+    },
+    {
+      "id": 597,
+      "name": "הלכות קריעה (Hilkhot Keri'a)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.340",
+      "totalSections": 1,
+      "type": "Halakha"
+    },
+    {
+      "id": 598,
+      "name": "הלכות אנינות (Hilkhot Aninout)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.341",
+      "totalSections": 1,
+      "type": "Halakha"
+    },
+    {
+      "id": 599,
+      "name": "הלכות אבילות (Hilkhot Avelout)",
+      "livre": "שולחן ערוך, יורה דעה (Choulhan Aroukh, Yoré Déa)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Yoreh_De'ah.342",
+      "totalSections": 62,
+      "type": "Halakha"
+    },
+    {
+      "id": 610,
+      "name": "הלכות פריה ורביה (Hilkhot Peria Ourevia)",
+      "livre": "שולחן ערוך, אבן העזר (Choulhan Aroukh, Even Haezer)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Even_HaEzer.1",
+      "totalSections": 6,
+      "type": "Halakha"
+    },
+    {
+      "id": 611,
+      "name": "הלכות אישות (Hilkhot Ichout)",
+      "livre": "שולחן ערוך, אבן העזר (Choulhan Aroukh, Even Haezer)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Even_HaEzer.7",
+      "totalSections": 19,
+      "type": "Halakha"
+    },
+    {
+      "id": 612,
+      "name": "הלכות קידושין (Hilkhot Kiddouchin)",
+      "livre": "שולחן ערוך, אבן העזר (Choulhan Aroukh, Even Haezer)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Even_HaEzer.26",
+      "totalSections": 40,
+      "type": "Halakha"
+    },
+    {
+      "id": 613,
+      "name": "הלכות כתובות (Hilkhot Ketoubot)",
+      "livre": "שולחן ערוך, אבן העזר (Choulhan Aroukh, Even Haezer)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Even_HaEzer.66",
+      "totalSections": 53,
+      "type": "Halakha"
+    },
+    {
+      "id": 614,
+      "name": "הלכות גיטין (Hilkhot Guitin)",
+      "livre": "שולחן ערוך, אבן העזר (Choulhan Aroukh, Even Haezer)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Even_HaEzer.119",
+      "totalSections": 36,
+      "type": "Halakha"
+    },
+    {
+      "id": 615,
+      "name": "הלכות מיאון (Hilkhot Mioun)",
+      "livre": "שולחן ערוך, אבן העזר (Choulhan Aroukh, Even Haezer)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Even_HaEzer.155",
+      "totalSections": 1,
+      "type": "Halakha"
+    },
+    {
+      "id": 616,
+      "name": "הלכות יבום (Hilkhot Yiboum)",
+      "livre": "שולחן ערוך, אבן העזר (Choulhan Aroukh, Even Haezer)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Even_HaEzer.156",
+      "totalSections": 13,
+      "type": "Halakha"
+    },
+    {
+      "id": 617,
+      "name": "הלכות חליצה (Hilkhot Halitsa)",
+      "livre": "שולחן ערוך, אבן העזר (Choulhan Aroukh, Even Haezer)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Even_HaEzer.169",
+      "totalSections": 10,
+      "type": "Halakha"
+    },
+    {
+      "id": 620,
+      "name": "הלכות דיינים (Hilkhot Dayanim)",
+      "livre": "שולחן ערוך, חושן משפט (Choulhan Aroukh, Hochen Michpat)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Choshen_Mishpat.1",
+      "totalSections": 27,
+      "type": "Halakha"
+    },
+    {
+      "id": 621,
+      "name": "הלכות עדות (Hilkhot Edout)",
+      "livre": "שולחן ערוך, חושן משפט (Choulhan Aroukh, Hochen Michpat)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Choshen_Mishpat.28",
+      "totalSections": 11,
+      "type": "Halakha"
+    },
+    {
+      "id": 622,
+      "name": "הלכות הלואה (Hilkhot Halvaa)",
+      "livre": "שולחן ערוך, חושן משפט (Choulhan Aroukh, Hochen Michpat)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Choshen_Mishpat.39",
+      "totalSections": 36,
+      "type": "Halakha"
+    },
+    {
+      "id": 623,
+      "name": "הלכות טוען ונטען (Hilkhot Toen Venitan)",
+      "livre": "שולחן ערוך, חושן משפט (Choulhan Aroukh, Hochen Michpat)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Choshen_Mishpat.75",
+      "totalSections": 32,
+      "type": "Halakha"
+    },
+    {
+      "id": 624,
+      "name": "הלכות גביית חוב מהיתומים (Hilkhot Guviyat Hov Mehayetomim)",
+      "livre": "שולחן ערוך, חושן משפט (Choulhan Aroukh, Hochen Michpat)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Choshen_Mishpat.107",
+      "totalSections": 4,
+      "type": "Halakha"
+    },
+    {
+      "id": 625,
+      "name": "הלכות גביית חוב מנכסים משועבדים (Hilkhot Guviyat Hov Minekhassim Mechouabadim)",
+      "livre": "שולחן ערוך, חושן משפט (Choulhan Aroukh, Hochen Michpat)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Choshen_Mishpat.111",
+      "totalSections": 6,
+      "type": "Halakha"
+    },
+    {
+      "id": 626,
+      "name": "הלכות אפותיקי (Hilkhot Apotiki)",
+      "livre": "שולחן ערוך, חושן משפט (Choulhan Aroukh, Hochen Michpat)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Choshen_Mishpat.117",
+      "totalSections": 4,
+      "type": "Halakha"
+    },
+    {
+      "id": 627,
+      "name": "הלכות העושה שליח לגבות חובו (Hilkhot Haosse Chalia'h Ligbot Hovo)",
+      "livre": "שולחן ערוך, חושן משפט (Choulhan Aroukh, Hochen Michpat)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Choshen_Mishpat.121",
+      "totalSections": 1,
+      "type": "Halakha"
+    },
+    {
+      "id": 628,
+      "name": "הלכות הרשאה (Hilkhot Harchaa)",
+      "livre": "שולחן ערוך, חושן משפט (Choulhan Aroukh, Hochen Michpat)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Choshen_Mishpat.122",
+      "totalSections": 7,
+      "type": "Halakha"
+    },
+    {
+      "id": 629,
+      "name": "הלכות ערב (Hilkhot Arev)",
+      "livre": "שולחן ערוך, חושן משפט (Choulhan Aroukh, Hochen Michpat)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Choshen_Mishpat.129",
+      "totalSections": 24,
+      "type": "Halakha"
+    },
+    {
+      "id": 630,
+      "name": "הלכות נזקי שכנים (Hilkhot Nizkei Chekhenim)",
+      "livre": "שולחן ערוך, חושן משפט (Choulhan Aroukh, Hochen Michpat)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Choshen_Mishpat.153",
+      "totalSections": 4,
+      "type": "Halakha"
+    },
+    {
+      "id": 631,
+      "name": "הלכות שותפים בקרקע (Hilkhot Chouttafim Bekarka)",
+      "livre": "שולחן ערוך, חושן משפט (Choulhan Aroukh, Hochen Michpat)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Choshen_Mishpat.157",
+      "totalSections": 14,
+      "type": "Halakha"
+    },
+    {
+      "id": 632,
+      "name": "הלכות חלוקת שותפות ומצרנות (Hilkhot Haloukat Chouttafout Oumetsranout)",
+      "livre": "שולחן ערוך, חושן משפט (Choulhan Aroukh, Hochen Michpat)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Choshen_Mishpat.171",
+      "totalSections": 5,
+      "type": "Halakha"
+    },
+    {
+      "id": 633,
+      "name": "הלכות שותפים (Hilkhot Chouttafim)",
+      "livre": "שולחן ערוך, חושן משפט (Choulhan Aroukh, Hochen Michpat)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Choshen_Mishpat.176",
+      "totalSections": 6,
+      "type": "Halakha"
+    },
+    {
+      "id": 634,
+      "name": "הלכות שלוחין (Hilkhot Chelou'hin)",
+      "livre": "שולחן ערוך, חושן משפט (Choulhan Aroukh, Hochen Michpat)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Choshen_Mishpat.182",
+      "totalSections": 45,
+      "type": "Halakha"
+    },
+    {
+      "id": 635,
+      "name": "הלכות אונאה ומקח טעות (Hilkhot Onaa Oumika'h Taout)",
+      "livre": "שולחן ערוך, חושן משפט (Choulhan Aroukh, Hochen Michpat)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Choshen_Mishpat.227",
+      "totalSections": 14,
+      "type": "Halakha"
+    },
+    {
+      "id": 636,
+      "name": "הלכות מתנה (Hilkhot Matana)",
+      "livre": "שולחן ערוך, חושן משפט (Choulhan Aroukh, Hochen Michpat)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Choshen_Mishpat.241",
+      "totalSections": 9,
+      "type": "Halakha"
+    },
+    {
+      "id": 637,
+      "name": "הלכות מתנת שכיב מרע (Hilkhot Matnat Chekhiv Mera)",
+      "livre": "שולחן ערוך, חושן משפט (Choulhan Aroukh, Hochen Michpat)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Choshen_Mishpat.250",
+      "totalSections": 9,
+      "type": "Halakha"
+    },
+    {
+      "id": 638,
+      "name": "הלכות אבידה ומציאה (Hilkhot Aveda Oumetsia)",
+      "livre": "שולחן ערוך, חושן משפט (Choulhan Aroukh, Hochen Michpat)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Choshen_Mishpat.259",
+      "totalSections": 13,
+      "type": "Halakha"
+    },
+    {
+      "id": 639,
+      "name": "הלכות פריקה וטעינה (Hilkhot Perika Oute'ina)",
+      "livre": "שולחן ערוך, חושן משפט (Choulhan Aroukh, Hochen Michpat)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Choshen_Mishpat.272",
+      "totalSections": 1,
+      "type": "Halakha"
+    },
+    {
+      "id": 640,
+      "name": "הלכות הפקר ונכסי הגר (Hilkhot Hefker Ounikhsei Haguer)",
+      "livre": "שולחן ערוך, חושן משפט (Choulhan Aroukh, Hochen Michpat)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Choshen_Mishpat.273",
+      "totalSections": 3,
+      "type": "Halakha"
+    },
+    {
+      "id": 641,
+      "name": "הלכות נחלות (Hilkhot Na'halot)",
+      "livre": "שולחן ערוך, חושן משפט (Choulhan Aroukh, Hochen Michpat)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Choshen_Mishpat.276",
+      "totalSections": 14,
+      "type": "Halakha"
+    },
+    {
+      "id": 642,
+      "name": "הלכות אפוטרופוס (Hilkhot Apotropos)",
+      "livre": "שולחן ערוך, חושן משפט (Choulhan Aroukh, Hochen Michpat)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Choshen_Mishpat.290",
+      "totalSections": 1,
+      "type": "Halakha"
+    },
+    {
+      "id": 643,
+      "name": "הלכות פקדון (Hilkhot Pikadon)",
+      "livre": "שולחן ערוך, חושן משפט (Choulhan Aroukh, Hochen Michpat)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Choshen_Mishpat.291",
+      "totalSections": 12,
+      "type": "Halakha"
+    },
+    {
+      "id": 644,
+      "name": "הלכות שומר שכר (Hilkhot Chomer Sakhar)",
+      "livre": "שולחן ערוך, חושן משפט (Choulhan Aroukh, Hochen Michpat)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Choshen_Mishpat.303",
+      "totalSections": 3,
+      "type": "Halakha"
+    },
+    {
+      "id": 645,
+      "name": "הלכות אומנים (Hilkhot Oumanim)",
+      "livre": "שולחן ערוך, חושן משפט (Choulhan Aroukh, Hochen Michpat)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Choshen_Mishpat.306",
+      "totalSections": 1,
+      "type": "Halakha"
+    },
+    {
+      "id": 646,
+      "name": "הלכות שוכר (Hilkhot Sokher)",
+      "livre": "שולחן ערוך, חושן משפט (Choulhan Aroukh, Hochen Michpat)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Choshen_Mishpat.307",
+      "totalSections": 13,
+      "type": "Halakha"
+    },
+    {
+      "id": 647,
+      "name": "הלכות חכירות וקבלנות (Hilkhot Hakhirout Vekablanout)",
+      "livre": "שולחן ערוך, חושן משפט (Choulhan Aroukh, Hochen Michpat)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Choshen_Mishpat.320",
+      "totalSections": 11,
+      "type": "Halakha"
+    },
+    {
+      "id": 648,
+      "name": "הלכות שכירות פועלים (Hilkhot Sekhirout Poalim)",
+      "livre": "שולחן ערוך, חושן משפט (Choulhan Aroukh, Hochen Michpat)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Choshen_Mishpat.331",
+      "totalSections": 17,
+      "type": "Halakha"
+    },
+    {
+      "id": 649,
+      "name": "הלכות גניבה (Hilkhot Gueneva)",
+      "livre": "שולחן ערוך, חושן משפט (Choulhan Aroukh, Hochen Michpat)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Choshen_Mishpat.348",
+      "totalSections": 11,
+      "type": "Halakha"
+    },
+    {
+      "id": 650,
+      "name": "הלכות גזילה (Hilkhot Guezela)",
+      "livre": "שולחן ערוך, חושן משפט (Choulhan Aroukh, Hochen Michpat)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Choshen_Mishpat.359",
+      "totalSections": 19,
+      "type": "Halakha"
+    },
+    {
+      "id": 651,
+      "name": "הלכות נזיקין (Hilkhot Nezikin)",
+      "livre": "שולחן ערוך, חושן משפט (Choulhan Aroukh, Hochen Michpat)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Choshen_Mishpat.378",
+      "totalSections": 10,
+      "type": "Halakha"
+    },
+    {
+      "id": 652,
+      "name": "הלכות מוסר (Hilkhot Moser)",
+      "livre": "שולחן ערוך, חושן משפט (Choulhan Aroukh, Hochen Michpat)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Choshen_Mishpat.388",
+      "totalSections": 1,
+      "type": "Halakha"
+    },
+    {
+      "id": 653,
+      "name": "הלכות נזקי ממון (Hilkhot Nizkei Mamon)",
+      "livre": "שולחן ערוך, חושן משפט (Choulhan Aroukh, Hochen Michpat)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Choshen_Mishpat.389",
+      "totalSections": 31,
+      "type": "Halakha"
+    },
+    {
+      "id": 654,
+      "name": "הלכות חובל בחבירו (Hilkhot Hovel Ba'havero)",
+      "livre": "שולחן ערוך, חושן משפט (Choulhan Aroukh, Hochen Michpat)",
+      "link": "https://www.sefaria.org/Shulchan_Arukh,_Choshen_Mishpat.420",
+      "totalSections": 8,
+      "type": "Halakha"
+    },
+    {
+      "id": 660,
+      "name": "הנהגת הבוקר (Hanhagat Haboker)",
+      "livre": "קיצור שולחן ערוך (Kitsour Choulhan Aroukh)",
+      "link": "https://www.sefaria.org/Kitzur_Shulchan_Arukh.1",
+      "totalSections": 8,
+      "type": "Halakha"
+    },
+    {
+      "id": 661,
+      "name": "ציצית תפילין ומזוזה (Tsitsit, Tefilin Oumezouza)",
+      "livre": "קיצור שולחן ערוך (Kitsour Choulhan Aroukh)",
+      "link": "https://www.sefaria.org/Kitzur_Shulchan_Arukh.9",
+      "totalSections": 3,
+      "type": "Halakha"
+    },
+    {
+      "id": 662,
+      "name": "תפילה (Tefila)",
+      "livre": "קיצור שולחן ערוך (Kitsour Choulhan Aroukh)",
+      "link": "https://www.sefaria.org/Kitzur_Shulchan_Arukh.12",
+      "totalSections": 15,
+      "type": "Halakha"
+    },
+    {
+      "id": 663,
+      "name": "תלמוד תורה וספר תורה (Talmoud Torah Vesefer Torah)",
+      "livre": "קיצור שולחן ערוך (Kitsour Choulhan Aroukh)",
+      "link": "https://www.sefaria.org/Kitzur_Shulchan_Arukh.27",
+      "totalSections": 2,
+      "type": "Halakha"
+    },
+    {
+      "id": 664,
+      "name": "מידות ושמירת הגוף (Midot Ouchmirat Haguouf)",
+      "livre": "קיצור שולחן ערוך (Kitsour Choulhan Aroukh)",
+      "link": "https://www.sefaria.org/Kitzur_Shulchan_Arukh.29",
+      "totalSections": 5,
+      "type": "Halakha"
+    },
+    {
+      "id": 665,
+      "name": "צדקה וחלה (Tsedaka Ve'hala)",
+      "livre": "קיצור שולחן ערוך (Kitsour Choulhan Aroukh)",
+      "link": "https://www.sefaria.org/Kitzur_Shulchan_Arukh.34",
+      "totalSections": 2,
+      "type": "Halakha"
+    },
+    {
+      "id": 666,
+      "name": "מאכלות וסעודה (Maakhalot Ousseouda)",
+      "livre": "קיצור שולחן ערוך (Kitsour Choulhan Aroukh)",
+      "link": "https://www.sefaria.org/Kitzur_Shulchan_Arukh.36",
+      "totalSections": 12,
+      "type": "Halakha"
+    },
+    {
+      "id": 667,
+      "name": "ברכות (Berakhot)",
+      "livre": "קיצור שולחן ערוך (Kitsour Choulhan Aroukh)",
+      "link": "https://www.sefaria.org/Kitzur_Shulchan_Arukh.48",
+      "totalSections": 14,
+      "type": "Halakha"
+    },
+    {
+      "id": 668,
+      "name": "משא ומתן ונדרים (Massa Oumatan Ounedarim)",
+      "livre": "קיצור שולחן ערוך (Kitsour Choulhan Aroukh)",
+      "link": "https://www.sefaria.org/Kitzur_Shulchan_Arukh.62",
+      "totalSections": 6,
+      "type": "Halakha"
+    },
+    {
+      "id": 669,
+      "name": "הדרך מנחה ומעריב (Haderekh, Min'ha Vearvit)",
+      "livre": "קיצור שולחן ערוך (Kitsour Choulhan Aroukh)",
+      "link": "https://www.sefaria.org/Kitzur_Shulchan_Arukh.68",
+      "totalSections": 4,
+      "type": "Halakha"
+    },
+    {
+      "id": 670,
+      "name": "שבת (Chabbat)",
+      "livre": "קיצור שולחן ערוך (Kitsour Choulhan Aroukh)",
+      "link": "https://www.sefaria.org/Kitzur_Shulchan_Arukh.72",
+      "totalSections": 25,
+      "type": "Halakha"
+    },
+    {
+      "id": 671,
+      "name": "ראש חודש ויום טוב (Roch Hodech Veyom Tov)",
+      "livre": "קיצור שולחן ערוך (Kitsour Choulhan Aroukh)",
+      "link": "https://www.sefaria.org/Kitzur_Shulchan_Arukh.97",
+      "totalSections": 10,
+      "type": "Halakha"
+    },
+    {
+      "id": 672,
+      "name": "פסח וספירת העומר (Pessa'h Ousfirat Haomer)",
+      "livre": "קיצור שולחן ערוך (Kitsour Choulhan Aroukh)",
+      "link": "https://www.sefaria.org/Kitzur_Shulchan_Arukh.107",
+      "totalSections": 14,
+      "type": "Halakha"
+    },
+    {
+      "id": 673,
+      "name": "תעניות (Taaniyot)",
+      "livre": "קיצור שולחן ערוך (Kitsour Choulhan Aroukh)",
+      "link": "https://www.sefaria.org/Kitzur_Shulchan_Arukh.121",
+      "totalSections": 7,
+      "type": "Halakha"
+    },
+    {
+      "id": 674,
+      "name": "ימים נוראים (Yamim Noraim)",
+      "livre": "קיצור שולחן ערוך (Kitsour Choulhan Aroukh)",
+      "link": "https://www.sefaria.org/Kitzur_Shulchan_Arukh.128",
+      "totalSections": 6,
+      "type": "Halakha"
+    },
+    {
+      "id": 675,
+      "name": "סוכות (Souccot)",
+      "livre": "קיצור שולחן ערוך (Kitsour Choulhan Aroukh)",
+      "link": "https://www.sefaria.org/Kitzur_Shulchan_Arukh.134",
+      "totalSections": 5,
+      "type": "Halakha"
+    },
+    {
+      "id": 676,
+      "name": "חנוכה ופורים (Hanouka Oupourim)",
+      "livre": "קיצור שולחן ערוך (Kitsour Choulhan Aroukh)",
+      "link": "https://www.sefaria.org/Kitzur_Shulchan_Arukh.139",
+      "totalSections": 4,
+      "type": "Halakha"
+    },
+    {
+      "id": 677,
+      "name": "כיבוד אב ואם ורבו (Kibboud Av Vaem Verabo)",
+      "livre": "קיצור שולחן ערוך (Kitsour Choulhan Aroukh)",
+      "link": "https://www.sefaria.org/Kitzur_Shulchan_Arukh.143",
+      "totalSections": 2,
+      "type": "Halakha"
+    },
+    {
+      "id": 678,
+      "name": "אישות וצניעות (Ichout Outsniout)",
+      "livre": "קיצור שולחן ערוך (Kitsour Choulhan Aroukh)",
+      "link": "https://www.sefaria.org/Kitzur_Shulchan_Arukh.145",
+      "totalSections": 8,
+      "type": "Halakha"
+    },
+    {
+      "id": 679,
+      "name": "טהרת המשפחה (Taharat Hamich'pa'ha)",
+      "livre": "קיצור שולחן ערוך (Kitsour Choulhan Aroukh)",
+      "link": "https://www.sefaria.org/Kitzur_Shulchan_Arukh.153",
+      "totalSections": 10,
+      "type": "Halakha"
+    },
+    {
+      "id": 680,
+      "name": "מילה פדיון הבן וחינוך (Mila, Pidyon Haben Ve'hinoukh)",
+      "livre": "קיצור שולחן ערוך (Kitsour Choulhan Aroukh)",
+      "link": "https://www.sefaria.org/Kitzur_Shulchan_Arukh.163",
+      "totalSections": 3,
+      "type": "Halakha"
+    },
+    {
+      "id": 681,
+      "name": "חוקות העמים (Houkot Haamim)",
+      "livre": "קיצור שולחן ערוך (Kitsour Choulhan Aroukh)",
+      "link": "https://www.sefaria.org/Kitzur_Shulchan_Arukh.166",
+      "totalSections": 6,
+      "type": "Halakha"
+    },
+    {
+      "id": 682,
+      "name": "חדש ערלה כלאים ובכור (Hadach, Orla, Kilayim Oubekhor)",
+      "livre": "קיצור שולחן ערוך (Kitsour Choulhan Aroukh)",
+      "link": "https://www.sefaria.org/Kitzur_Shulchan_Arukh.172",
+      "totalSections": 7,
+      "type": "Halakha"
+    },
+    {
+      "id": 683,
+      "name": "ממונות ונזיקין (Mamonot Ounezikin)",
+      "livre": "קיצור שולחן ערוך (Kitsour Choulhan Aroukh)",
+      "link": "https://www.sefaria.org/Kitzur_Shulchan_Arukh.179",
+      "totalSections": 13,
+      "type": "Halakha"
+    },
+    {
+      "id": 684,
+      "name": "ביקור חולים (Bikour Holim)",
+      "livre": "קיצור שולחן ערוך (Kitsour Choulhan Aroukh)",
+      "link": "https://www.sefaria.org/Kitzur_Shulchan_Arukh.192",
+      "totalSections": 3,
+      "type": "Halakha"
+    },
+    {
+      "id": 685,
+      "name": "אבלות (Avelout)",
+      "livre": "קיצור שולחן ערוך (Kitsour Choulhan Aroukh)",
+      "link": "https://www.sefaria.org/Kitzur_Shulchan_Arukh.195",
+      "totalSections": 27,
+      "type": "Halakha"
     }
   ],
   "types": [
@@ -3114,6 +4378,7 @@
     "Moadim",
     "Brahot",
     "Sidour",
-    "Moussar"
+    "Moussar",
+    "Halakha"
   ]
 }

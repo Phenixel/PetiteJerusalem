@@ -9,7 +9,7 @@ import { readFileSync } from "node:fs";
  * compris (voir CLAUDE.md) ; ce test la tient, plutôt qu'une relecture.
  *
  * Deux exceptions, pour la même raison : les corpus importés sous
- * `public/texts/` (Talmud, Michna, Tanakh, Tehilim, Moussar), qui viennent de Sefaria,
+ * `public/texts/` (Talmud, Michna, Tanakh, Tehilim, Moussar, Halakha), qui viennent de Sefaria,
  * et la licence Creative Commons. Ce n'est pas de la rédaction, et leur
  * ponctuation appartient à leur source. Les fichiers de tefila, eux, sont
  * écrits ici : ils suivent la règle.

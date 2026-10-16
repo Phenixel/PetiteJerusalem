@@ -2636,7 +2636,8 @@ pages d'un jour, un passage partagé.
 
 L'accueil de la bibliothèque pose ses grands rayons d'étude comme des livres
 sur une planche (`LibraryShelf.vue`) : Tehilim, Michna, Talmud, Tanakh,
-Moussar. La liturgie n'y est pas : elle a sa page, le Sidour.
+Moussar, Halakha : deux planches de trois. La liturgie n'y est pas : elle a
+sa page, le Sidour.
 
 Trois volumes par planche, puis une planche nouvelle : cinq côte à côte
 rendaient chaque couverture trop petite sur un téléphone. Tous les volumes
@@ -2656,6 +2657,7 @@ confond pas avec ses voisins :
 | Talmud  | `#6d5743` |
 | Tanakh  | `#84483f` |
 | Moussar | `#86622f` |
+| Halakha | `#5e4535` |
 
 Le Moussar ('Hovot Halévavot, Pélé Yoets) est un rayon d'étude : il a sa page
 de liste et son volume sur la planche, ses marque-pages et sa reprise de
@@ -2665,6 +2667,22 @@ qu'un cours cite, et donc ceux de ses adresses : une porte de 'Hovot
 Halévavot s'ouvre sur son introduction, la section 0, et ses chapitres gardent
 leur numéro ; un sujet du Pélé Yoets garde son numéro dans tout le livre (la
 lettre Beth va du 22 au 41). Tenu par `moussar.test.ts`.
+
+La Halakha (Choulhan Aroukh, Kitsour Choulhan Aroukh) suit le Moussar : un
+rayon d'étude, sans partage de lecture. Une entrée par groupe de lois, les
+« hilkhot » du Choulhan Aroukh telles que Sefaria les découpe (Hilkhot
+Tsitsit : simanim 8 à 24), et des groupes de même nature pour le Kitsour
+(Chabbat : simanim 72 à 96), dont les adresses prennent le préfixe
+`kitsour-` pour ne pas disputer les leurs aux hilkhot. Chaque section porte le
+numéro de son siman dans le livre, celui qu'un cours cite
+(`/bibliotheque/halakha/hilkhot-chabbat/242`), et chaque ligne est un séif.
+Les commentaires du Choulhan Aroukh s'ouvrent séif par séif, dans le volet
+des commentaires : la Michna Broura, le Magen Avraham, le Taz, les Chaarei
+Techouva et le Ba'er Hétev sur Ora'h Hayim ; le Chakh, le Taz, les Pit'hei
+Techouva et le Ba'er Hétev sur Yoré Déa ; le Helkat Mehokek, le Beit Chmouel,
+le Taz, les Pit'hei Techouva et le Ba'er Hétev sur Even Haezer ; le Sma, le
+Chakh, le Ketsot Hahochen, les Pit'hei Techouva et le Ba'er Hétev sur Hochen
+Michpat. Le Kitsour n'en a pas. Tenu par `halakha.test.ts`.
 
 ## 3. Les rayons
 

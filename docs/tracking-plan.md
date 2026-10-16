@@ -459,11 +459,12 @@ la bulle ouvre le panneau d'étude, `commentaries_closed` quand on le ferme
 (croix, Échap, retour, changement de texte). Le second dit si le panneau
 sert à un passage ou à l'étude d'un daf entier. `corpus` dit lequel : une
 guemara (`talmud`), une paracha (`torah`), une michna (`mishna`), un verset
-des Neviim, des Ketouvim ou un psaume (`tanakh`).
+des Neviim, des Ketouvim ou un psaume (`tanakh`), un séif du Choulhan Aroukh
+(`halakha`, valeur ajoutée avec le rayon Halakha).
 
 | Événement             | Propriété         | Valeurs                                                    | Statut      |
 | --------------------- | ----------------- | ---------------------------------------------------------- | ----------- |
-| `commentaries_opened` | `corpus`          | `talmud`, `torah`, `mishna`, `tanakh` (Neviim, Ketouvim)   | **nouveau** |
+| `commentaries_opened` | `corpus`          | `talmud`, `torah`, `mishna`, `tanakh` (Neviim, Ketouvim), `halakha` (Choulhan Aroukh) | **nouveau** |
 | `commentaries_opened` | `text_id`         | l'id du texte dans le catalogue                            | **nouveau** |
 | `commentaries_opened` | `count`           | le nombre de commentaires du passage                       | **nouveau** |
 | `commentaries_closed` | `passages_viewed` | les passages vus dans le panneau, celui de l'ouverture compris | **nouveau** |
@@ -495,7 +496,7 @@ Un texte posé sur la table.
 | Propriété | Valeurs |
 | --- | --- |
 | `text_id` | l'identifiant du texte dans le catalogue |
-| `corpus` | son rayon (`tanakh`, `talmud`, `moussar`...) ; jamais un texte du Sidour, qui ne se pose pas sur la table |
+| `corpus` | son rayon (`tanakh`, `talmud`, `moussar`, `halakha`...) ; jamais un texte du Sidour, qui ne se pose pas sur la table |
 | `texts_count` | le nombre de textes sur la table une fois celui-ci posé |
 | `from` | `header` (le bouton en tête du texte), `menu` (le menu de lecture), `table` (« Poser aussi », depuis le panneau) |
 | `already_on_table` | le texte y était déjà, il n'a fait que retenir sa page (absent pour `from: table`) |
