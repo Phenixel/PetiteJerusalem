@@ -182,8 +182,12 @@ function breadcrumb(items: { name: string; path: string }[]): Record<string, unk
 
 // ---- SPA shell (fetched once, cached in the warm instance) ----
 
-let shellCache: { html: string; ts: number } | null = null;
-const SHELL_TTL = 10 * 60 * 1000;
+let shellCache: { html: string; ts: number; etag: string | null } | null = null;
+// Short: a site release deletes the old hashed chunks, and a warm instance
+// that kept the previous shell would serve pages whose main script no longer
+// exists (a blank page, which the CDN could then keep). Revalidating with the
+// ETag makes a refresh cost a 304 without a body.
+const SHELL_TTL = 60 * 1000;
 
 async function getShell(): Promise<string | null> {
   if (shellCache && Date.now() - shellCache.ts < SHELL_TTL) {
@@ -194,20 +198,27 @@ async function getShell(): Promise<string | null> {
   // would otherwise leak into every dynamic preview. app.html carries the
   // up-to-date asset hashes and is served statically (not routed to this function).
   try {
-    // Délai borné : sans lui, un visiteur humain attendrait le timeout de la
-    // fonction entière avant la redirection de secours vers le shell.
+    // Bounded delay: without it, a human visitor would wait for the timeout
+    // of the whole function before the fallback redirect to the shell.
     const res = await fetch(`${SITE_URL}/app`, {
-      headers: { "User-Agent": "PetiteJerusalem-SocialPreview" },
+      headers: {
+        "User-Agent": "PetiteJerusalem-SocialPreview",
+        ...(shellCache?.etag ? { "If-None-Match": shellCache.etag } : {}),
+      },
       signal: AbortSignal.timeout(5000),
     });
+    if (res.status === 304 && shellCache) {
+      shellCache.ts = Date.now();
+      return shellCache.html;
+    }
     if (!res.ok) throw new Error(`shell fetch: HTTP ${res.status}`);
     const html = await res.text();
-    shellCache = { html, ts: Date.now() };
+    shellCache = { html, ts: Date.now(), etag: res.headers.get("etag") };
     return html;
   } catch (err) {
-    // Origin injoignable : un shell périmé (vieux hashes d'assets) vaut mieux
-    // qu'une 500 sur une page visitée par des humains ; sans aucun cache, le
-    // caller redirige vers le shell statique.
+    // Origin unreachable: a stale shell (old asset hashes) is better than a
+    // 500 on a page humans visit; without any cache, the caller redirects to
+    // the static shell.
     console.error("[socialPreview] shell fetch failed:", err);
     return shellCache?.html ?? null;
   }
