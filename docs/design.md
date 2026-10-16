@@ -2744,9 +2744,9 @@ Chakh, le Ketsot Hahochen, les Pit'hei Techouva et le Ba'er Hétev sur Hochen
 Michpat. Le Kitsour n'en a pas. Tenu par `halakha.test.ts`.
 
 Ses entrées sont trop nombreuses pour une seule liste (plus de cent
-cinquante lois) : la page du rayon montre d'abord ses livres, une carte
-chacun (le nom, son nom hébreu, ce qu'il contient, le nombre de simanim), et
-la liste d'un livre s'ouvre à part, `/bibliotheque/halakha?livre=kitsour`,
+cinquante lois) : la page du rayon montre d'abord ses livres, dans les
+mêmes petites cartes que la liste des textes d'un rayon (le nom hébreu et
+latin, le nombre de simanim), et la liste d'un livre s'ouvre à part, `/bibliotheque/halakha?livre=kitsour`,
 rangée par parties comme les autres (Ora'h Hayim, Yoré Déa...). Une
 recherche parcourt tout le rayon, ou le livre ouvert. Un livre de plus prend
 sa carte (`HALAKHA_WORKS` dans `content/etudeTexts.ts`).
@@ -2754,12 +2754,13 @@ sa carte (`HALAKHA_WORKS` dans `content/etudeTexts.ts`).
 ### La liste des chapitres est une liste
 
 Les chapitres d'un texte (les chapitres d'un traité, les simanim d'une loi,
-les sujets du Pélé Yoets) se présentent en lignes dans une seule carte, un
-filet entre elles, un chevron au bout, comme « Aujourd'hui » dans la
-bibliothèque. Ce n'est plus une pile de cartes, chacune avec son numéro dans
-une pastille : le nom de la section dit déjà son numéro (« Chapitre 3 (ג) »,
-« Siman 8 : ... »), et la pastille le répétait. Les livres d'un rayon, eux,
-restent des cartes.
+les sujets du Pélé Yoets) se présentent en une liste nue, posée sur le fond
+de la page, sans carte autour : une ligne chacun, un filet entre elles, un
+chevron au bout ; au survol, le nom prend la couleur du thème. Ce n'est plus
+une pile de cartes, chacune avec son numéro dans une pastille : le nom de la
+section dit déjà son numéro (« Chapitre 3 (ג) », « Siman 8 : ... »), et la
+pastille le répétait. On évite les cartes autant qu'on peut ; les livres
+d'un rayon gardent les leurs, petites.
 
 ## 3. Les rayons
 

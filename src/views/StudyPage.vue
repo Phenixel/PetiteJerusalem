@@ -205,7 +205,6 @@ const halakhaWorks = computed(() =>
       work,
       hebrew: HALAKHA_WORK_META[work].hebrew,
       name: t(HALAKHA_WORK_META[work].nameKey),
-      desc: t(HALAKHA_WORK_META[work].descKey),
       count: t("study.halakhaWorks.simanim", { n: simanim.toLocaleString(locale.value) }),
     };
   }),
@@ -748,39 +747,23 @@ onMounted(() => {
     <!-- Tehilim : ce qu'on dit avant d'en lire, et ce qu'on dit après. -->
     <BookEncadrement v-if="showBookEncadrement" corpus="tehilim" class="max-w-5xl mx-auto mb-10" />
 
-    <!-- ===== Halakha : une carte par livre ===== -->
+    <!-- ===== Halakha : ses livres, dans les cartes de la liste des textes ===== -->
     <div
       v-if="showHalakhaWorks"
-      class="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-2 gap-4 animate-[fadeIn_0.5s_ease]"
+      class="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-3 animate-[fadeIn_0.5s_ease]"
     >
       <RouterLink
         v-for="book in halakhaWorks"
         :key="book.work"
         :to="{ path: '/bibliotheque/halakha', query: { livre: book.work } }"
-        class="card card-hover p-5 flex items-center gap-4 group"
+        class="card card-hover p-4 flex items-center justify-between gap-2 group"
       >
-        <span class="flex-1 min-w-0">
-          <span
-            class="block text-xl font-bold text-text-primary group-hover:text-primary transition-colors"
-          >
-            {{ book.name }}
+        <span class="min-w-0">
+          <span class="block font-medium text-text-primary">
+            {{ locale === "he" ? book.name : `${book.hebrew} (${book.name})` }}
           </span>
-          <!-- Le nom hébreu, sous le nom latin et aligné sur lui. -->
-          <span v-if="locale !== 'he'" class="block">
-            <span class="font-hebrew text-lg text-text-secondary" lang="he" dir="rtl">
-              {{ book.hebrew }}
-            </span>
-          </span>
-          <span class="block mt-2 text-sm text-text-secondary leading-relaxed">
-            {{ book.desc }}
-          </span>
-          <span class="block mt-2 text-xs font-semibold text-primary">{{ book.count }}</span>
+          <span class="text-xs text-text-secondary">{{ book.count }}</span>
         </span>
-        <AppIcon
-          name="chevron-right"
-          :size="18"
-          class="shrink-0 text-text-secondary rtl:rotate-180"
-        />
       </RouterLink>
     </div>
 

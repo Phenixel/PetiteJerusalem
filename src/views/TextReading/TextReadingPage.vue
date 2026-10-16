@@ -2531,10 +2531,11 @@ watch(textId, (_, previousTextId) => {
         <p class="text-sm text-text-secondary mb-4">
           {{ t("textReading.sectionsCount", { count: content.sections.length }) }}
         </p>
-        <!-- Les chapitres : une liste, une ligne chacun, un filet entre eux.
-             Le nom du chapitre dit déjà son numéro (« Chapitre 3 (ג) »,
-             « Siman 8 : ... ») : pas de pastille numérotée en plus. -->
-        <div class="card overflow-hidden">
+        <!-- Les chapitres : une liste nue, sur le fond de la page, une ligne
+             chacun et un filet entre eux. Le nom du chapitre dit déjà son
+             numéro (« Chapitre 3 (ג) », « Siman 8 : ... ») : pas de pastille
+             numérotée en plus. -->
+        <div>
           <button
             v-for="section in content.sections"
             :key="section.index"
@@ -3057,18 +3058,14 @@ watch(textId, (_, previousTextId) => {
 </template>
 
 <style scoped>
-/* La liste des chapitres : des lignes dans une carte, un filet entre elles
-   (comme « Aujourd'hui » dans la bibliothèque). */
+/* La liste des chapitres : des lignes sur le fond de la page, sans carte
+   autour, un filet entre elles. Au survol, le nom prend la couleur du thème. */
 .section-row {
   min-height: 3.25rem;
-  padding: 0.75rem 1rem;
+  padding: 0.75rem 0.25rem;
 }
 .section-row + .section-row {
   border-top: 1px solid var(--color-line);
-}
-.section-row:hover,
-.section-row:active {
-  background-color: color-mix(in srgb, var(--color-text-primary) 4%, transparent);
 }
 /* Le panneau d'étude ouvert (CommentaryPanel.vue). Sur un téléphone, la page
    réserve sous le texte la hauteur de son volet à mi-hauteur, pour qu'on lise
