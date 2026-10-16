@@ -30,7 +30,7 @@ const { unread, unreadTarget, unreadPreview } = useSupportUnread();
       <span class="block font-semibold text-text-primary">
         {{ t("support.unreadTitle", { n: unread }, unread) }}
       </span>
-      <span v-if="unreadPreview" class="mt-0.5 line-clamp-2 block text-sm text-text-secondary">
+      <span v-if="unreadPreview" class="mt-0.5 line-clamp-2 text-sm text-text-secondary">
         {{ unreadPreview }}
       </span>
     </span>

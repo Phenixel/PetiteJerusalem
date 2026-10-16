@@ -115,7 +115,7 @@ function goBack(): void {
               </span>
               <span
                 v-if="preview(thread)"
-                class="mt-1.5 line-clamp-2 block break-words text-sm text-text-secondary"
+                class="mt-1.5 line-clamp-2 break-words text-sm text-text-secondary"
               >
                 <span class="font-semibold">{{ t("support.ourReply") }}</span>
                 {{ preview(thread) }}
