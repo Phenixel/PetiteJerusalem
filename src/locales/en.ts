@@ -2636,6 +2636,17 @@ const en: LocaleMessages = {
     searchAllPlaceholder: "Search all texts…",
     noResults: "No text matches your search.",
     sections: "{count} sections",
+    halakhaWorks: {
+      choulhanAroukh: {
+        name: "Shulchan Arukh",
+        desc: "Rabbi Yosef Karo, with the glosses of the Rema: Orach Chayim, Yoreh De'ah, Even HaEzer and Choshen Mishpat, law by law, with their commentaries.",
+      },
+      kitsour: {
+        name: "Kitzur Shulchan Arukh",
+        desc: "Rabbi Shlomo Ganzfried: everyday halakhah, from waking to mourning, in vocalized Hebrew.",
+      },
+      simanim: "{n} simanim",
+    },
     textsCount: "{count} text | {count} texts",
     range: "{from} to {to}",
     inSidour: "In the Siddur",

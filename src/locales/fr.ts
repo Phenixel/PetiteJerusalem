@@ -2722,6 +2722,18 @@ const fr = {
     searchAllPlaceholder: "Rechercher dans tous les textes…",
     noResults: "Aucun texte ne correspond à votre recherche.",
     sections: "{count} sections",
+    // Les livres du rayon Halakha, une carte chacun sur sa page (StudyPage).
+    halakhaWorks: {
+      choulhanAroukh: {
+        name: "Choulhan Aroukh",
+        desc: "Rabbi Yossef Karo, avec les gloses du Rama : Ora'h Hayim, Yoré Déa, Even Haezer et Hochen Michpat, loi par loi, avec leurs commentaires.",
+      },
+      kitsour: {
+        name: "Kitsour Choulhan Aroukh",
+        desc: "Rabbi Chlomo Ganzfried : la halakha de tous les jours, du lever au deuil, en hébreu vocalisé.",
+      },
+      simanim: "{n} simanim",
+    },
     textsCount: "{count} texte | {count} textes",
     range: "{from} à {to}",
     // La recherche de la bibliothèque renvoie aux textes de la liturgie, qui

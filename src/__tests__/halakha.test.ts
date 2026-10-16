@@ -15,6 +15,8 @@ import {
   buildSectionBody,
   corpusOf,
   entryByCorpusSlug,
+  HALAKHA_WORKS,
+  halakhaWorkOfLivre,
   hubPath,
   isMultiSection,
   isShareable,
@@ -129,6 +131,14 @@ describe("rayon Halakha : le catalogue", () => {
     expect(wrongStart).toEqual([]);
     // Pour chaque livre, les simanim manquants ou déplacés : aucun.
     expect(Object.values(covered).flat()).toEqual([]);
+  });
+
+  it("range chaque loi dans un des livres que la page du rayon montre", () => {
+    const counts = Object.fromEntries(HALAKHA_WORKS.map((work) => [work, 0]));
+    for (const entry of halakha) counts[halakhaWorkOfLivre(entry.livre)]++;
+    // Le Choulhan Aroukh et ses quatre parties, puis le Kitsour.
+    expect(counts).toEqual({ "choulhan-aroukh": 132, kitsour: 26 });
+    expect(halakhaWorkOfLivre(byId(670).livre)).toBe("kitsour");
   });
 
   it("donne aux lois leurs adresses, le Kitsour préfixé", () => {
