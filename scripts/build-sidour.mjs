@@ -1295,7 +1295,12 @@ function psaumesDeLaFete(when, rubrique, extra = {}) {
     src,
     when,
     ...extra,
-    lines: [{ seg: 1, when: fete, rubric: rubrique(nom) }],
+    lines: [
+      { seg: 1, when: fete, rubric: rubrique(nom) },
+      // À Souccot, le psaume 42 se poursuit par « Chofténi Elohim » (psaume
+      // 43), que la source ne porte pas (retour du 1er octobre 2026).
+      ...(fete === "sukkot" ? [{ he: psaume(43), when: fete, tight: true }] : []),
+    ],
   }));
 }
 
@@ -2391,6 +2396,23 @@ function chaharitRecipe() {
           { seg: 5 },
         ],
       },
+      // La prière de 'Hana (Chemouel I 2, 1 à 10), que la source place entre
+      // les téfilines et la 'Akéda : beaucoup la disent avant la prière
+      // (retour du 15 octobre 2026).
+      {
+        src: "Hanna",
+        labelText: R("Prière de 'Hana", "Hannah's prayer", "תפילת חנה"),
+        lines: [
+          {
+            seg: 1,
+            rubric: R(
+              "Beaucoup ont l'usage de dire, avant la prière :",
+              "Many are accustomed to say, before the prayer:",
+              "נוהגים לומר קודם התפילה:",
+            ),
+          },
+        ],
+      },
       // Le léchem yi'houd, que la source place avant la 'Akéda : une intention,
       // pas un texte de l'office. Il reste en retrait, sans titre à lui, et
       // ne coupe pas le fil pour qui ne le dit pas.
@@ -2453,6 +2475,10 @@ function chaharitRecipe() {
       {
         src: "Incense Offering",
         lines: [
+          // « Mizmor léDavid, Adonaï mi yagour » (psaume 15), que certains
+          // disent avant la ketoret (retour du 15 octobre 2026) ; la source
+          // ne le porte pas ici.
+          { he: psaume(15), muted: true, rubric: RUBRIC.certains },
           // D'ici s'ouvre le parchemin du pitoum haketoret.
           { seg: 1, klaf: "ketoret" },
           { seg: 2 },
@@ -4508,6 +4534,7 @@ function sourcesFor(office) {
       "PP.Torah Blessings": pp["Torah Blessings"],
       Talit: ws["Order of Talit"],
       Tefillin: ws["Order of Tefillin"],
+      Hanna: ws["Hanna's Prayer"],
       "Morning Prayer": ws["Morning Prayer"],
       "Incense Offering": ws["Incense Offering"],
       Hodu: ws["Hodu"],

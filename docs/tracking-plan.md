@@ -60,10 +60,10 @@ else.
 
 Set when `/calendrier` and `/calendrier/<fete>` open.
 
-| Property   | Values                                                | Status          |
-| ---------- | ----------------------------------------------------- | --------------- |
-| `festival` | the holiday's French slug, or `null` on the hub page  | existing, kept  |
-| `holiday`  | the same value                                        | **new**         |
+| Property   | Values                                               | Status         |
+| ---------- | ---------------------------------------------------- | -------------- |
+| `festival` | the holiday's French slug, or `null` on the hub page | existing, kept |
+| `holiday`  | the same value                                       | **new**        |
 
 `holiday` duplicates `festival` without replacing it: it is the name used by
 the conversion events below, so the two can be crossed without any special
@@ -124,9 +124,9 @@ effect.
 
 ### `onboarding_started` (existing)
 
-| Property | Values                                                       |
-| -------- | ------------------------------------------------------------ |
-| `steps`  | number of pages: 5, or 4 if consent has already been given   |
+| Property | Values                                                     |
+| -------- | ---------------------------------------------------------- |
+| `steps`  | number of pages: 5, or 4 if consent has already been given |
 
 ### `onboarding_step_viewed` (existing)
 
@@ -141,11 +141,11 @@ merged into `essentials`, and the `library` gestures have their own page,
 
 ### `onboarding_finished` (existing)
 
-| Property              | Values                                           | Status          |
-| --------------------- | ------------------------------------------------ | --------------- |
-| `via`                 | `finish`, `skip`, `escape`, `daily`              | `daily` **new** |
-| `step`                | the page where the introduction ended            | existing        |
-| `wants_daily_reading` | true when it ends on the daily reading           | existing        |
+| Property              | Values                                 | Status          |
+| --------------------- | -------------------------------------- | --------------- |
+| `via`                 | `finish`, `skip`, `escape`, `daily`    | `daily` **new** |
+| `step`                | the page where the introduction ended  | existing        |
+| `wants_daily_reading` | true when it ends on the daily reading | existing        |
 
 `daily`: the « Composer ma lecture du jour » ("Build my daily reading")
 button on the `essentials` page, which ends the introduction and leads there.
@@ -170,10 +170,10 @@ with the same values; `app_platform` separates them.
 On the website, a menu tab; in the app, arriving on a sub-page
 (`/profile/<section>`), including through a back navigation or a direct link.
 
-| Property | Values                                                                                                   | Status        |
-| -------- | -------------------------------------------------------------------------------------------------------- | ------------- |
-| `tab`    | `my-info`, `security`, `appearance`, `preferences`, `notifications`, `about`                             | existing, kept |
-| `tab`    | `language` (app only: language has its own sub-page there; on the website, it is under `appearance`)    | **new value** |
+| Property | Values                                                                                               | Status         |
+| -------- | ---------------------------------------------------------------------------------------------------- | -------------- |
+| `tab`    | `my-info`, `security`, `appearance`, `preferences`, `notifications`, `about`                         | existing, kept |
+| `tab`    | `language` (app only: language has its own sub-page there; on the website, it is under `appearance`) | **new value**  |
 
 `notifications` and `about` only came from the app. `about` is no longer sent
 there: what it opened (information pages, support, cookies) now appears as
@@ -213,10 +213,10 @@ the sidour list disappeared along with its panel, and the holiday's texts
 rise to the top of the page on their own. The name stays reserved, and its
 past data keeps its meaning.
 
-| Property   | Values                                                    | Status  |
-| ---------- | --------------------------------------------------------- | ------- |
-| `source`   | `library_sidour`                                          | **new** |
-| `festival` | the holiday's book, `Souccot`, `Yamim Noraim`, `Hanouka`  | **new** |
+| Property   | Values                                                   | Status  |
+| ---------- | -------------------------------------------------------- | ------- |
+| `source`   | `library_sidour`                                         | **new** |
+| `festival` | the holiday's book, `Souccot`, `Yamim Noraim`, `Hanouka` | **new** |
 
 ### `sidour_brahot_opened` (new, no longer sent)
 
@@ -228,10 +228,10 @@ readers come looking for Birkat Hamazon or a brakha in the sidour.
 No longer sent since the Sidour page (October 2026): the brahot are there in
 the same list as the services. The name stays reserved.
 
-| Property     | Values                                            | Status  |
-| ------------ | ------------------------------------------------- | ------- |
-| `source`     | `library_sidour`                                  | **new** |
-| `had_search` | boolean: a search had been typed in the sidour    | **new** |
+| Property     | Values                                         | Status  |
+| ------------ | ---------------------------------------------- | ------- |
+| `source`     | `library_sidour`                               | **new** |
+| `had_search` | boolean: a search had been typed in the sidour | **new** |
 
 ### `chnei_mikra_aliya_toggled` (new)
 
@@ -239,11 +239,12 @@ An aliya checked or unchecked on the chnei mikra page
 (`/bibliotheque/chnei-mikra`, `useChneiMikraChecks`). It tells whether the
 checkbox is used, and how far into the week the reading goes.
 
-| Property | Values | Status |
-| --- | --- | --- |
-| `done` | true if the aliya has just been checked, false if unchecked | **new** |
-| `text_id` | the paracha's text (a double paracha has two) | **new** |
-| `aliya` | the aliya, as the text names it (`Rishon`, `Sheni`...) | **new** |
+| Property  | Values                                                                                                      | Status    |
+| --------- | ----------------------------------------------------------------------------------------------------------- | --------- |
+| `done`    | true if the aliya has just been checked, false if unchecked                                                 | **new**   |
+| `text_id` | the paracha's text (a double paracha has two)                                                               | **new**   |
+| `aliya`   | the aliya, as the text names it (`1re montée`, `2e montée`...)                                              | **new**   |
+| `source`  | `text` (the checkbox in the text), `list` (the week's list, above the text); absent before the list: `text` | **added** |
 
 ## Sidour and Study (October 2026)
 
@@ -258,22 +259,22 @@ Arriving on the Sidour page (`/sidour`). It tells what the "right now" card
 was offering at that moment: the denominator of `sidour_text_opened`, and a
 way to see whether people come to the Sidour at service times.
 
-| Property | Values | Status |
-| --- | --- | --- |
-| `hero` | `chaharit`, `minha`, `arvit` (the service whose time it is), `next_chaharit`, `next_minha`, `next_arvit` (the upcoming one, between two time windows), `hanouka`, `slihot`, `halevana` (the blessing of the moon, on the nights it is said), `feast` (between two services, the current holiday's text; `feast` says which one), or `null` | **new** |
-| `feast` | the holiday whose texts rise to the top: `tichri`, `souccot`, `hanouka`, or `null` | **new** |
+| Property | Values                                                                                                                                                                                                                                                                                                                                     | Status  |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------- |
+| `hero`   | `chaharit`, `minha`, `arvit` (the service whose time it is), `next_chaharit`, `next_minha`, `next_arvit` (the upcoming one, between two time windows), `hanouka`, `slihot`, `halevana` (the blessing of the moon, on the nights it is said), `feast` (between two services, the current holiday's text; `feast` says which one), or `null` | **new** |
+| `feast`  | the holiday whose texts rise to the top: `tichri`, `souccot`, `hanouka`, or `null`                                                                                                                                                                                                                                                         | **new** |
 
 ### `sidour_text_opened` (new)
 
 A text opened from the Sidour page. It tells whether the "right now" card is
 used, and what people look for in the list.
 
-| Property | Values | Status |
-| --- | --- | --- |
-| `text` | the text, `corpus/slug` (`sidour/chaharit`, `brahot/birkat-hamazon`...) | **new** |
-| `source` | `hero` (the "right now" card), `extra` (the row below it, on a special evening: the service or the havdala), `list` (the list) | **new** |
+| Property  | Values                                                                                                                                                        | Status  |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| `text`    | the text, `corpus/slug` (`sidour/chaharit`, `brahot/birkat-hamazon`...)                                                                                       | **new** |
+| `source`  | `hero` (the "right now" card), `extra` (the row below it, on a special evening: the service or the havdala), `list` (the list)                                | **new** |
 | `section` | for `list`, the group: `offices`, `soir`, `brahot`, `occasions`, `vie`, `fetes`, or the holiday at the top (`tichri`, `souccot`, `hanouka`); `null` otherwise | **new** |
-| `feast` | as on `sidour_viewed` | **new** |
+| `feast`   | as on `sidour_viewed`                                                                                                                                         | **new** |
 
 ### The tools: `kotel_compass_opened`, `tefilin_mirror_opened` (existing), `naanouim_compass_opened` (existing, one more property)
 
@@ -281,10 +282,10 @@ The Sidour page carries a row of tools (see `docs/design.md`, « Les outils du
 Sidour »): they keep their events, which say where they are opened from. The
 denominator of openings from the Sidour is `sidour_viewed`.
 
-| Event | Property | Values | Status |
-| --- | --- | --- | --- |
-| `kotel_compass_opened` | `source` | `title` (the passage title), `menu` (the reading menu), `sidour` (the row of tools) | `sidour` **new** |
-| `tefilin_mirror_opened` | `source` | `title`, `menu`, `sidour` | `sidour` **new** |
+| Event                     | Property | Values                                                                              | Status                             |
+| ------------------------- | -------- | ----------------------------------------------------------------------------------- | ---------------------------------- |
+| `kotel_compass_opened`    | `source` | `title` (the passage title), `menu` (the reading menu), `sidour` (the row of tools) | `sidour` **new**                   |
+| `tefilin_mirror_opened`   | `source` | `title`, `menu`, `sidour`                                                           | `sidour` **new**                   |
 | `naanouim_compass_opened` | `source` | `title` (the title of the loulav brahot), `rubric` (a Hallel instruction), `sidour` | **new**: the event had no property |
 
 ### `kotel_compass_calibration_opened` (new)
@@ -295,20 +296,20 @@ se tient à plat »). Compared with `kotel_compass_opened`, it tells how many
 people doubt the arrow; `accuracy` tells whether the displayed accuracy is
 what pushed them to it.
 
-| Property | Values | Status |
-| --- | --- | --- |
+| Property   | Values                                                                                                                                            | Status  |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
 | `accuracy` | the accuracy displayed at the moment of the tap: `high`, `medium`, `low`, or `unknown` when the device doesn't provide it (Chrome on the website) | **new** |
 
 ### Values added to existing properties
 
-| Event | Property | Added value | What it tells |
-| --- | --- | --- | --- |
-| `library_tab_switched` | `tab` | `chiourim` | the Study tabs are three: `reading` (the library), `chiourim`, `sharing`. The event keeps its original name. |
-| `text_opened` | `entry` | `sidour` | the reading opens from the Sidour page (`services/readingEntry.ts`). |
-| `tehilim_day_opened` | `source` | `library_today` | from « Aujourd'hui » ("Today"), at the bottom of the library. |
-| `chnei_mikra_opened` | `source` | `library_today` | same. |
-| `offline_download_started`, `offline_download_completed`, `offline_download_failed` | `scope` | `parcours` | the day's texts, downloaded from Mon parcours (app; Ma journée, where they used to be downloaded from, has been removed); the former daily reading page sent `daily_reading`. |
-| `offline_download_completed` | `scope` | `feast` | the holiday's texts, downloaded on their own when they rise to the top of the Sidour (app); `tab` then carries the holiday (`tichri`, `souccot`, `hanouka`). |
+| Event                                                                               | Property | Added value     | What it tells                                                                                                                                                                 |
+| ----------------------------------------------------------------------------------- | -------- | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `library_tab_switched`                                                              | `tab`    | `chiourim`      | the Study tabs are three: `reading` (the library), `chiourim`, `sharing`. The event keeps its original name.                                                                  |
+| `text_opened`                                                                       | `entry`  | `sidour`        | the reading opens from the Sidour page (`services/readingEntry.ts`).                                                                                                          |
+| `tehilim_day_opened`                                                                | `source` | `library_today` | from « Aujourd'hui » ("Today"), at the bottom of the library.                                                                                                                 |
+| `chnei_mikra_opened`                                                                | `source` | `library_today` | same.                                                                                                                                                                         |
+| `offline_download_started`, `offline_download_completed`, `offline_download_failed` | `scope`  | `parcours`      | the day's texts, downloaded from Mon parcours (app; Ma journée, where they used to be downloaded from, has been removed); the former daily reading page sent `daily_reading`. |
+| `offline_download_completed`                                                        | `scope`  | `feast`         | the holiday's texts, downloaded on their own when they rise to the top of the Sidour (app); `tab` then carries the holiday (`tichri`, `souccot`, `hanouka`).                  |
 
 `library_corpus_opened` now only carries the study corpora (`tehilim`,
 `michna`, `talmud`, `tanakh`): the liturgy lists lead to the Sidour.
@@ -406,10 +407,10 @@ class (`TextReadingPage.vue`): people tap there without asking for anything
 One more property on the batch (`scope: all`, « Tout télécharger »,
 "Download all"):
 
-| Property       | Values                                      | Status         |
-| -------------- | ------------------------------------------- | -------------- |
-| `books_count`  | the books actually brought back             | existing, kept |
-| `books_failed` | the books lost along the way, usually 0     | **new**        |
+| Property       | Values                                  | Status         |
+| -------------- | --------------------------------------- | -------------- |
+| `books_count`  | the books actually brought back         | existing, kept |
+| `books_failed` | the books lost along the way, usually 0 | **new**        |
 
 `books_failed` has the same name as on
 `onboarding_offline_download_finished`, which already set it. It becomes
@@ -425,10 +426,10 @@ unreachable). See `composables/useBookDownload.ts` and
 
 ### Reading: `text_opened` (existing)
 
-| Property | Values | Status |
-| --- | --- | --- |
-| `source` | `library`, `session` | existing, kept |
-| `entry` | `search`, `resume`, `push`, `home`, `library`, `sidour`, `daily_reading`, `parcours`, `chnei_mikra`, `tehilim_day`, `reading`, `zmanim`, `calendar`, `session`, `direct`, `other` | **new**; `parcours` (from a Mon parcours page) **added** |
+| Property | Values                                                                                                                                                                            | Status                                                   |
+| -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| `source` | `library`, `session`                                                                                                                                                              | existing, kept                                           |
+| `entry`  | `search`, `resume`, `push`, `home`, `library`, `sidour`, `daily_reading`, `parcours`, `chnei_mikra`, `tehilim_day`, `reading`, `zmanim`, `calendar`, `session`, `direct`, `other` | **new**; `parcours` (from a Mon parcours page) **added** |
 
 `entry` tells where the reader comes from (`services/readingEntry.ts`): a hint
 left just before navigation when the URL cannot tell (a search result,
@@ -446,11 +447,11 @@ forme de sa page »). It tells whether the layout is found, and for which
 corpus it is used. Only sent when the saved choice changes: switching to
 phonetics and back does not touch it.
 
-| Property  | Values                                                      | Status  |
-| --------- | ----------------------------------------------------------- | ------- |
-| `enabled` | `true` (the layout is shown), `false` (back to the Hebrew)  | **new** |
-| `form`    | `daf` (Vilna page), `scroll` (Sefer Torah)                  | **new** |
-| `text_id` | the text's id in the catalog (`textStudies.json`)           | **new** |
+| Property  | Values                                                     | Status  |
+| --------- | ---------------------------------------------------------- | ------- |
+| `enabled` | `true` (the layout is shown), `false` (back to the Hebrew) | **new** |
+| `form`    | `daf` (Vilna page), `scroll` (Sefer Torah)                 | **new** |
+| `text_id` | the text's id in the catalog (`textStudies.json`)          | **new** |
 
 ### Reading: `commentaries_opened`, `commentaries_closed` (new)
 
@@ -482,10 +483,35 @@ edge (or with the keyboard, through the arrow keys); a double tap on the edge
 restores its original width. The event is sent at the end of the gesture,
 once, and tells whether the default width suits people who study.
 
-| Event                  | Property         | Values                                                      | Status  |
-| ---------------------- | ---------------- | ----------------------------------------------------------- | ------- |
-| `commentaries_resized` | `width`          | the chosen width, in pixels; `null` when it is reset        | **new** |
-| `commentaries_resized` | `viewport_width` | the window width, in pixels                                 | **new** |
+| Event                  | Property         | Values                                               | Status  |
+| ---------------------- | ---------------- | ---------------------------------------------------- | ------- |
+| `commentaries_resized` | `width`          | the chosen width, in pixels; `null` when it is reset | **new** |
+| `commentaries_resized` | `viewport_width` | the window width, in pixels                          | **new** |
+
+### Reading: automatic scrolling (`auto_scroll_*`, existing)
+
+`auto_scroll_started`, `auto_scroll_stopped` and `auto_scroll_speed_changed`
+(`composables/useAutoScroll.ts`) carried the speed under its name (`speed`).
+Since the speed is set in twenty notches instead of four speeds (see
+`docs/design.md`, "The scroll pill is its own stop"), the notch is sent
+**alongside**, and `speed` keeps its meaning: it is the named speed closest to
+the notch, the only one previous versions knew. Analyses already built on
+`speed` remain correct.
+
+`auto_scroll_speed_changed` is no longer sent at each notch but once, when the
+slider stays still for 800 ms: a drag from one end to the other crosses twenty
+notches. It is therefore also sent when `speed` does not change (from 7 to 9,
+both « moyen », "medium"), and not at all when returning to the starting
+notch.
+
+| Event                       | Property                | Values                                                                           | Status         |
+| --------------------------- | ----------------------- | -------------------------------------------------------------------------------- | -------------- |
+| all three                   | `speed`                 | `slow`, `medium`, `fast`, `veryFast` (the closest to the notch)                  | existing, kept |
+| all three                   | `speed_level`           | the notch, from 1 to 20 (`slow` = 1, `medium` = 6, `fast` = 13, `veryFast` = 20) | **new**        |
+| `auto_scroll_speed_changed` | `previous_speed`        | the named speed closest to the notch left                                        | existing, kept |
+| `auto_scroll_speed_changed` | `previous_speed_level`  | the notch left, from 1 to 20                                                     | **new**        |
+| `auto_scroll_speed_changed` | `running`               | boolean: set during a scroll                                                     | existing, kept |
+| `auto_scroll_stopped`       | `reason`, `duration_ms` | `user`, `bottom`, `leave`; duration in ms                                        | existing, kept |
 
 ### The study table
 
@@ -496,13 +522,13 @@ textes mis de côté, sur la table »). All **new**.
 
 A text placed on the table.
 
-| Property | Values |
-| --- | --- |
-| `text_id` | the text's identifier in the catalog |
-| `corpus` | its shelf (`tanakh`, `talmud`, `moussar`, `halakha`...); never a Sidour text, which cannot be placed on the table |
-| `texts_count` | the number of texts on the table once this one is placed |
-| `from` | `header` (the button at the top of the text), `menu` (the reading menu), `table` (« Poser aussi », "Set aside too", from the panel) |
-| `already_on_table` | the text was already there, it only saved its page (absent for `from: table`) |
+| Property           | Values                                                                                                                              |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `text_id`          | the text's identifier in the catalog                                                                                                |
+| `corpus`           | its shelf (`tanakh`, `talmud`, `moussar`, `halakha`...); never a Sidour text, which cannot be placed on the table                   |
+| `texts_count`      | the number of texts on the table once this one is placed                                                                            |
+| `from`             | `header` (the button at the top of the text), `menu` (the reading menu), `table` (« Poser aussi », "Set aside too", from the panel) |
+| `already_on_table` | the text was already there, it only saved its page (absent for `from: table`)                                                       |
 
 #### `reading_table_opened`
 
@@ -514,13 +540,13 @@ read, an upward swipe). `texts_count`: the texts placed.
 A text reopened from the table: a book in the bar, or a row in the panel.
 The `text_opened` that follows carries `entry: table`.
 
-| Property | Values |
-| --- | --- |
-| `text_id` | the text's identifier |
-| `corpus` | its shelf |
-| `texts_count` | the texts placed |
-| `was_open` | it was the text already on screen (the panel just closes) |
-| `from` | `bar` (a book in the bar), `table` (a row in the panel) |
+| Property      | Values                                                    |
+| ------------- | --------------------------------------------------------- |
+| `text_id`     | the text's identifier                                     |
+| `corpus`      | its shelf                                                 |
+| `texts_count` | the texts placed                                          |
+| `was_open`    | it was the text already on screen (the panel just closes) |
+| `from`        | `bar` (a book in the bar), `table` (a row in the panel)   |
 
 #### `reading_table_text_removed`
 
@@ -547,21 +573,21 @@ an empty term.
 
 #### `library_search_performed` (new)
 
-| Property | Values |
-| --- | --- |
-| `scope` | `all` from the bookshelf, otherwise the shelf (`tehilim`, `sidour`...) |
-| `query` | the term, lowercased, whitespace collapsed, 40 characters at most |
-| `query_length` | its length |
-| `results_count` | the number of texts found |
+| Property        | Values                                                                 |
+| --------------- | ---------------------------------------------------------------------- |
+| `scope`         | `all` from the bookshelf, otherwise the shelf (`tehilim`, `sidour`...) |
+| `query`         | the term, lowercased, whitespace collapsed, 40 characters at most      |
+| `query_length`  | its length                                                             |
+| `results_count` | the number of texts found                                              |
 
 #### `library_search_result_opened` (new)
 
-| Property | Values |
-| --- | --- |
-| `scope` | as above |
-| `rank` | the text's rank in the results as they are displayed (by shelf, then by book), starting at 1 |
-| `corpus` | the text's type (`Tehilim`, `Sidour`...) |
-| `text_id` | its identifier in the catalog |
+| Property  | Values                                                                                       |
+| --------- | -------------------------------------------------------------------------------------------- |
+| `scope`   | as above                                                                                     |
+| `rank`    | the text's rank in the results as they are displayed (by shelf, then by book), starting at 1 |
+| `corpus`  | the text's type (`Tehilim`, `Sidour`...)                                                     |
+| `text_id` | its identifier in the catalog                                                                |
 
 #### `chiourim_search_performed` (new)
 
@@ -572,42 +598,42 @@ as for the library.
 
 #### `zmanim_day_changed` (new)
 
-| Property | Values |
-| --- | --- |
-| `via` | `arrow`, `picker` (the calendar under the date), `today` (« Revenir à aujourd'hui », "Back to today") |
-| `offset_days` | the gap with today after the change |
-| `arrow_streak` | the arrows tapped in a row, 0 outside the arrows |
+| Property       | Values                                                                                                |
+| -------------- | ----------------------------------------------------------------------------------------------------- |
+| `via`          | `arrow`, `picker` (the calendar under the date), `today` (« Revenir à aujourd'hui », "Back to today") |
+| `offset_days`  | the gap with today after the change                                                                   |
+| `arrow_streak` | the arrows tapped in a row, 0 outside the arrows                                                      |
 
 On the third consecutive tap on an arrow, the `zmanim-date` tip is triggered
 (see docs/design.md, "A tip plays out on the page, once").
 
 #### `zmanim_location_requested` (existing)
 
-| Property | Values | Status |
-| --- | --- | --- |
-| `granted` | boolean | existing, kept |
-| `source` | `sidour`, or absent on the times page | existing, kept |
-| `outcome` | `granted`, `denied` (refused by the user), `unavailable` (no signal, timeout) | **new** |
-| `duration_ms` | the wait for the answer | **new** |
+| Property      | Values                                                                        | Status         |
+| ------------- | ----------------------------------------------------------------------------- | -------------- |
+| `granted`     | boolean                                                                       | existing, kept |
+| `source`      | `sidour`, or absent on the times page                                         | existing, kept |
+| `outcome`     | `granted`, `denied` (refused by the user), `unavailable` (no signal, timeout) | **new**        |
+| `duration_ms` | the wait for the answer                                                       | **new**        |
 
 ### Sign-in
 
 #### `login_viewed` (new)
 
-| Property | Values |
-| --- | --- |
-| `reason` | what led there (`services/loginReason.ts`): `direct`, `daily_reading`, `parcours` (a Mon parcours page, on the website; **new value**), `share_reading`, `profile`, `admin`, `other` |
-| `mode` | `login` or `signup` on arrival |
-| `last_method` | the device's last sign-in method: `google`, `apple`, `email`, or `null` |
+| Property      | Values                                                                                                                                                                               |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `reason`      | what led there (`services/loginReason.ts`): `direct`, `daily_reading`, `parcours` (a Mon parcours page, on the website; **new value**), `share_reading`, `profile`, `admin`, `other` |
+| `mode`        | `login` or `signup` on arrival                                                                                                                                                       |
+| `last_method` | the device's last sign-in method: `google`, `apple`, `email`, or `null`                                                                                                              |
 
 #### `email_auth_failed` (existing)
 
-| Property | Values | Status |
-| --- | --- | --- |
-| `mode` | `login`, `signup` | existing |
-| `reason` | the Firebase code (`auth/...`), or `error` | existing |
-| `reason` | `password_mismatch` (the two passwords differ), `moderation` (display name rejected) | **new values**; until now they were sent as `error` |
-| `last_method` | as in `login_viewed` | **new** |
+| Property      | Values                                                                               | Status                                              |
+| ------------- | ------------------------------------------------------------------------------------ | --------------------------------------------------- |
+| `mode`        | `login`, `signup`                                                                    | existing                                            |
+| `reason`      | the Firebase code (`auth/...`), or `error`                                           | existing                                            |
+| `reason`      | `password_mismatch` (the two passwords differ), `moderation` (display name rejected) | **new values**; until now they were sent as `error` |
+| `last_method` | as in `login_viewed`                                                                 | **new**                                             |
 
 #### `google_signin_clicked`, `apple_signin_clicked`, `*_signin_failed` (existing)
 
@@ -619,36 +645,36 @@ how many failures give way on the second attempt (Apple error 1000).
 The way out offered under an email error (docs/design.md, « L'écran de
 connexion dit quoi faire »).
 
-| Property | Values |
-| --- | --- |
-| `help` | `signup` (create the account), `login` (sign in to it), `provider` (the button of the last method) |
-| `reason` | the failure reason that offered it, as in `email_auth_failed.reason` |
+| Property | Values                                                                                             |
+| -------- | -------------------------------------------------------------------------------------------------- |
+| `help`   | `signup` (create the account), `login` (sign in to it), `provider` (the button of the last method) |
+| `reason` | the failure reason that offered it, as in `email_auth_failed.reason`                               |
 
 #### `password_reset_opened` (new)
 
 « Mot de passe oublié ? » ("Forgot password?") tapped under the password
 field (docs/design.md, "The sign-in screen says what to do").
 
-| Property | Values |
-| --- | --- |
+| Property      | Values                                                                                                                                 |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
 | `after_error` | the reason of the failure displayed at that moment, as in `email_auth_failed.reason` (`auth/invalid-credential` most often), or `null` |
-| `last_method` | as in `login_viewed` |
+| `last_method` | as in `login_viewed`                                                                                                                   |
 
 #### `password_reset_requested` (new)
 
 Sending the reset email. Neither the address, nor whether it has an account:
 Firebase doesn't say, and an address without an account counts as `sent`.
 
-| Property | Values |
-| --- | --- |
-| `outcome` | `sent`, `failed` |
-| `reason` | the Firebase code of a failure (`auth/too-many-requests`, `auth/invalid-email`, `auth/network-request-failed`...), `error` without a code, `null` for `sent` |
+| Property  | Values                                                                                                                                                       |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `outcome` | `sent`, `failed`                                                                                                                                             |
+| `reason`  | the Firebase code of a failure (`auth/too-many-requests`, `auth/invalid-email`, `auth/network-request-failed`...), `error` without a code, `null` for `sent` |
 
 #### `account_delete_failed` (existing)
 
-| Property | Values | Status |
-| --- | --- | --- |
-| `reason` | `requires_recent_login`, `reauth_cancelled`, `error` | existing |
+| Property | Values                                                                                 | Status                                                      |
+| -------- | -------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| `reason` | `requires_recent_login`, `reauth_cancelled`, `error`                                   | existing                                                    |
 | `reason` | `wrong_password`: the password entered in the confirmation (password account) is wrong | **new value**, along with the confirmation's password field |
 
 After `account_deleted`, tracking is reset as on sign-out (`signed_out`): the
@@ -664,12 +690,12 @@ wallet is expanded (the whole day, in plain view), along with
 back, also sends it on arrival; `source` (**new property**) says from where:
 `wallet` (the home page wallet) or `page` (the daily reading).
 
-| Property | Values |
-| --- | --- |
-| `state` | `empty` (nothing planned), `in_progress`, `all_done`; `error` is no longer sent (nothing is loading) |
-| `total_count` | the day's tasks (the week's tasks, such as the chnei mikra, and those set aside are not counted) |
-| `done_count` | those already done |
-| `source` | `wallet` or `page` |
+| Property      | Values                                                                                               |
+| ------------- | ---------------------------------------------------------------------------------------------------- |
+| `state`       | `empty` (nothing planned), `in_progress`, `all_done`; `error` is no longer sent (nothing is loading) |
+| `total_count` | the day's tasks (the week's tasks, such as the chnei mikra, and those set aside are not counted)     |
+| `done_count`  | those already done                                                                                   |
+| `source`      | `wallet` or `page`                                                                                   |
 
 ### Chains
 
@@ -678,10 +704,10 @@ back, also sends it on arrival; `source` (**new property**) says from where:
 The confirmation requested when the deadline falls tonight or tomorrow night
 (`services/sessionDeadline.ts`).
 
-| Property | Values |
-| --- | --- |
+| Property        | Values                                                                                     |
+| --------------- | ------------------------------------------------------------------------------------------ |
 | `deadline_days` | 1 (tonight) or 2 (tomorrow night), the same calculation as `session_created.deadline_days` |
-| `confirmed` | true if the chain is created as is, false if the user goes back to the date |
+| `confirmed`     | true if the chain is created as is, false if the user goes back to the date                |
 
 #### `share_modal_opened`, `share_channel_selected` (existing)
 
@@ -693,11 +719,11 @@ what the second brings compared with the first.
 
 `occasion_opened` (existing, the home page banner) is kept. Alongside it:
 
-| Event | Properties |
-| --- | --- |
-| `occasions_opened` (new) | `source` (`calendar_button`, `calendar_row`), `occasions_count` (the dates already entered) |
-| `occasion_saved` (new) | `kind` (`yahrzeit`, `birthday`, `other`), `is_new`, `on_account` (the date follows the account, or stays on the device), `date_entry` (**new**: `hebrew` for a date entered in Hebrew, `civil` for a date entered by its civil date and converted) |
-| `occasion_removed` (new) | `kind` |
+| Event                    | Properties                                                                                                                                                                                                                                         |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `occasions_opened` (new) | `source` (`calendar_button`, `calendar_row`), `occasions_count` (the dates already entered)                                                                                                                                                        |
+| `occasion_saved` (new)   | `kind` (`yahrzeit`, `birthday`, `other`), `is_new`, `on_account` (the date follows the account, or stays on the device), `date_entry` (**new**: `hebrew` for a date entered in Hebrew, `civil` for a date entered by its civil date and converted) |
+| `occasion_removed` (new) | `kind`                                                                                                                                                                                                                                             |
 
 Neither the name nor the date: they identify a person.
 
@@ -718,11 +744,11 @@ from the website.
 A vote sent to a poll (see `docs/informations.md`), from the announcement
 page, in the app or on the website.
 
-| Property        | Values                                                          |
-| --------------- | --------------------------------------------------------------- |
-| `id`            | the announcement's identifier                                   |
+| Property        | Values                                                           |
+| --------------- | ---------------------------------------------------------------- |
+| `id`            | the announcement's identifier                                    |
 | `choices_count` | the number of options checked (1, except for multi-choice polls) |
-| `changed`       | `true` if the device changes a vote already sent                |
+| `changed`       | `true` if the device changes a vote already sent                 |
 
 Not the choice itself: answers are counted in Firestore
 (`announcements/{id}/votes`), and the backoffice displays them.
@@ -733,9 +759,9 @@ The person follows up on one of their messages from the « Nous écrire » page
 (`/contact`), in the app or on the website (see `docs/feedback.md`). The
 first message is still `feedback_sent` (existing, unchanged).
 
-| Property | Values                                                       |
-| -------- | ------------------------------------------------------------ |
-| `kind`   | the nature of the thread: `idea`, `bug`, `error` or `other`  |
+| Property | Values                                                      |
+| -------- | ----------------------------------------------------------- |
+| `kind`   | the nature of the thread: `idea`, `bug`, `error` or `other` |
 
 Not the text: it is in the thread, which only the backoffice reads.
 
@@ -748,12 +774,12 @@ studies (see `services/chiourTexte.ts`).
 
 ### `chiour_played` (existing, three more properties)
 
-| Property | Values | Status |
-| --- | --- | --- |
-| `chiour_slug`, `chiour_title`, `duration_seconds` |  | existing, kept |
-| `source` | `chiour` (the class page), `serie`, `auteur`, `catalogue`, `reprise` (the « Reprendre l'écoute », "Resume listening", row), `texte` (the classes under a library text) | **new** |
-| `autoplay` | true when the end of the previous class chained into it | **new** |
-| `resumed` | true when it resumes where it was left off | **new** |
+| Property                                          | Values                                                                                                                                                                 | Status         |
+| ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
+| `chiour_slug`, `chiour_title`, `duration_seconds` |                                                                                                                                                                        | existing, kept |
+| `source`                                          | `chiour` (the class page), `serie`, `auteur`, `catalogue`, `reprise` (the « Reprendre l'écoute », "Resume listening", row), `texte` (the classes under a library text) | **new**        |
+| `autoplay`                                        | true when the end of the previous class chained into it                                                                                                                | **new**        |
+| `resumed`                                         | true when it resumes where it was left off                                                                                                                             | **new**        |
 
 `source` is that of the action that started the queue: the classes it chains
 keep it, and carry `autoplay`.
@@ -768,12 +794,12 @@ it has none.
 From a class, a series or the full-screen player to its text (« Lire le
 texte », "Read the text").
 
-| Property | Values |
-| --- | --- |
-| `source` | `chiour`, `serie`, `lecteur` (the full-screen player) |
-| `chiour_slug` | the class, `null` from a series |
-| `texte_id` | the text's identifier in the catalog |
-| `chapitre` | the targeted chapter, `null` for the whole text |
+| Property      | Values                                                |
+| ------------- | ----------------------------------------------------- |
+| `source`      | `chiour`, `serie`, `lecteur` (the full-screen player) |
+| `chiour_slug` | the class, `null` from a series                       |
+| `texte_id`    | the text's identifier in the catalog                  |
+| `chapitre`    | the targeted chapter, `null` for the whole text       |
 
 ### `text_chiourim_shown` (new)
 
@@ -782,12 +808,12 @@ texte », "on this text") panel is displayed under a library text: the
 denominator of listens started from a text (`chiour_played`, `source`
 `texte`). Once per text and per chapter opened.
 
-| Property | Values |
-| --- | --- |
-| `texte_id` | the text's identifier |
-| `chapitre` | the open chapter, `null` on the whole text |
-| `chiourim_count` | the text's classes |
-| `chapter_count` | those of the open chapter |
+| Property         | Values                                     |
+| ---------------- | ------------------------------------------ |
+| `texte_id`       | the text's identifier                      |
+| `chapitre`       | the open chapter, `null` on the whole text |
+| `chiourim_count` | the text's classes                         |
+| `chapter_count`  | those of the open chapter                  |
 
 ### `chiourim_filters_opened` (new)
 
@@ -800,10 +826,10 @@ from this panel; `category` is `all` when it is removed.
 
 A rav chosen (or removed) in the catalog filters.
 
-| Property | Values |
-| --- | --- |
-| `auteur` | the rav's name, `null` when the filter is removed |
-| `results_count` | the classes displayed |
+| Property        | Values                                            |
+| --------------- | ------------------------------------------------- |
+| `auteur`        | the rav's name, `null` when the filter is removed |
+| `results_count` | the classes displayed                             |
 
 ## Translations (October 2026)
 
@@ -816,19 +842,19 @@ language it is read, and therefore where to complete the French.
 The « Traduction » ("Translation") command in the toolbar, or the switch in
 the reading settings.
 
-| Property | Values |
-| --- | --- |
-| `enabled` | `true` when turned on, `false` when turned off |
-| `lang` | the language of the open text's translation (`fr`, `en`), `null` if none |
+| Property  | Values                                                                   |
+| --------- | ------------------------------------------------------------------------ |
+| `enabled` | `true` when turned on, `false` when turned off                           |
+| `lang`    | the language of the open text's translation (`fr`, `en`), `null` if none |
 
 ### `translation_language_changed` (new)
 
 Another language chosen in the reading settings, on a text translated into
 both (the Tanakh, part of the Michna).
 
-| Property | Values |
-| --- | --- |
-| `lang` | the chosen language (`fr`, `en`) |
+| Property | Values                           |
+| -------- | -------------------------------- |
+| `lang`   | the chosen language (`fr`, `en`) |
 
 ## Mon parcours
 
@@ -841,11 +867,11 @@ through `src/services/parcours/tracking.ts`.
 
 On arriving at Mon parcours ("My journey").
 
-| Property | Values |
-| --- | --- |
-| `objectives_count` | the current goals |
-| `streak` | the current streak, in days |
-| `signed_in` | true with an account (without an account, everything stays on the device) |
+| Property           | Values                                                                    |
+| ------------------ | ------------------------------------------------------------------------- |
+| `objectives_count` | the current goals                                                         |
+| `streak`           | the current streak, in days                                               |
+| `signed_in`        | true with an account (without an account, everything stays on the device) |
 
 ### `parcours_wall_viewed` (new)
 
@@ -861,12 +887,12 @@ wall).
 
 A task checked or unchecked.
 
-| Property | Values |
-| --- | --- |
-| `done` | true when it is checked |
-| `kind` | `program`, `habit`, `cycle`, `text` |
-| `source` | from where: `home_deck_swipe` (the top card of the home page stack, swiped), `home_wallet_swipe` (a wallet card, swiped right or, to uncheck it, left), `home_sheet` (a card's sheet), `journee_row` (Ma journée, removed: no longer sent), `objective_swipe` (the day's or week's portion, swiped on a program page), `reader` (at the bottom of a reading opened from the parcours, the ring pulled up), `parcours_wall`, `parcours_full_wall` (a day of the wall), `daily_page` (**new value**: « Marquer comme lu », "Mark as read", on the daily reading page); the home page « Lecture du jour » ("Daily reading") card, swiped, sends one per text |
-| `days_ago` | 0 today, 1 yesterday...: what gets checked after the fact |
+| Property   | Values                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `done`     | true when it is checked                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| `kind`     | `program`, `habit`, `cycle`, `text`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `source`   | from where: `home_deck_swipe` (the top card of the home page stack, swiped), `home_wallet_swipe` (a wallet card, swiped right or, to uncheck it, left), `home_sheet` (a card's sheet), `journee_row` (Ma journée, removed: no longer sent), `objective_swipe` (the day's or week's portion, swiped on a program page), `reader` (at the bottom of a reading opened from the parcours, the ring pulled up), `parcours_wall`, `parcours_full_wall` (a day of the wall), `daily_page` (**new value**: « Marquer comme lu », "Mark as read", on the daily reading page); the home page « Lecture du jour » ("Daily reading") card, swiped, sends one per text |
+| `days_ago` | 0 today, 1 yesterday...: what gets checked after the fact                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 
 A task from the former daily reading (a daily text, a calendar reading),
 checked on the same day, also sends `daily_reading_marked_read` (existing,
@@ -899,11 +925,11 @@ down) or `day_bar` (the day bar tapped).
 An occasion card in the stack marked done, or undone: it doesn't count in the
 day, the device remembers it.
 
-| Property | Values |
-| --- | --- |
+| Property   | Values                                                                                      |
+| ---------- | ------------------------------------------------------------------------------------------- |
 | `occasion` | `halevana` (the blessing of the moon), `omer` (the evening count), `hanouka` (the lighting) |
-| `done` | true when it is done |
-| `source` | `home_deck_swipe`, `home_wallet_swipe`, `home_sheet` (as in `parcours_task_marked`) |
+| `done`     | true when it is done                                                                        |
+| `source`   | `home_deck_swipe`, `home_wallet_swipe`, `home_sheet` (as in `parcours_task_marked`)         |
 
 `birkat_halevana_opened` and `omer_opened` (existing) are still sent with
 `source: home` when their card is tapped in the stack, as when they were
@@ -942,21 +968,21 @@ suite » ("Read on", at the bottom of a completed portion, on the program
 page, or the home page volume tapped once the day's portion is done) and
 marked as read at the bottom of the reading.
 
-| Property | Values |
-| --- | --- |
+| Property | Values                                  |
+| -------- | --------------------------------------- |
 | `corpus` | `michna`, `talmud`, `tanakh`, `tehilim` |
-| `units` | the units of the portion read ahead |
+| `units`  | the units of the portion read ahead     |
 
 ### `parcours_objective_created` (new)
 
-| Property | Values |
-| --- | --- |
-| `kind` | `program`, `habit`, `cycle`, `text` |
-| `corpus`, `rhythm`, `parts_count`, `texts_count` | a program: `michna`, `talmud`, `tanakh`, `tehilim`; `daily`, `weekdays`, `weekly`; the parts chosen (sedarim, tractates, books); the texts they make up |
-| `preset`, `days_count` | a habit: `tefilot`, `chema-al-hamita`, `tsedaka`, `chmirat-halachon`, `limoud` (a study time, **new**), `custom` (« Avec mes mots », "In my own words"); `tefilin` and `birkat-hamazon` are no longer sent (creation no longer offers them); its days in the week |
-| `cycle` | a calendar reading: `tehilim-week`, `tehilim-month`, `parasha`; `parasha-aliyot` (**new value**), the chnei mikra one aliya per day |
-| `text_id` | a daily text; `texts_count` tells how many were picked at once (one event per text) |
-| `source` | **new property**: `daily_page`, a text added from the daily reading page (« Modifier ma liste », "Edit my list"); when absent, the goal comes from the creation page |
+| Property                                         | Values                                                                                                                                                                                                                                                            |
+| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `kind`                                           | `program`, `habit`, `cycle`, `text`                                                                                                                                                                                                                               |
+| `corpus`, `rhythm`, `parts_count`, `texts_count` | a program: `michna`, `talmud`, `tanakh`, `tehilim`; `daily`, `weekdays`, `weekly`; the parts chosen (sedarim, tractates, books); the texts they make up                                                                                                           |
+| `preset`, `days_count`                           | a habit: `tefilot`, `chema-al-hamita`, `tsedaka`, `chmirat-halachon`, `limoud` (a study time, **new**), `custom` (« Avec mes mots », "In my own words"); `tefilin` and `birkat-hamazon` are no longer sent (creation no longer offers them); its days in the week |
+| `cycle`                                          | a calendar reading: `tehilim-week`, `tehilim-month`, `parasha`; `parasha-aliyot` (**new value**), the chnei mikra one aliya per day                                                                                                                               |
+| `text_id`                                        | a daily text; `texts_count` tells how many were picked at once (one event per text)                                                                                                                                                                               |
+| `source`                                         | **new property**: `daily_page`, a text added from the daily reading page (« Modifier ma liste », "Edit my list"); when absent, the goal comes from the creation page                                                                                              |
 
 ### `parcours_objective_paused`, `parcours_objective_removed` (new)
 
@@ -977,11 +1003,11 @@ A streak light earned (the candle, the lantern... see
 its sheet slides up. Once per threshold and per device; nothing when the
 record jumps by several days at once (the count read again on a new device).
 
-| Property | Values |
-| --- | --- |
-| `light` | `candle`, `lantern`, `menorah`, `lighthouse`, `moon`, `sun`, `stars`, `galaxy`, `supernova`, `quasar`, `first-light` |
-| `days` | the threshold crossed, in consecutive days: 3, 7, 14, 21, 30, 50, 75, 100, 150, 250, 365 |
-| `streak` | the current streak |
+| Property | Values                                                                                                               |
+| -------- | -------------------------------------------------------------------------------------------------------------------- |
+| `light`  | `candle`, `lantern`, `menorah`, `lighthouse`, `moon`, `sun`, `stars`, `galaxy`, `supernova`, `quasar`, `first-light` |
+| `days`   | the threshold crossed, in consecutive days: 3, 7, 14, 21, 30, 50, 75, 100, 150, 250, 365                             |
+| `streak` | the current streak                                                                                                   |
 
 ### `parcours_lights_opened` (new)
 
@@ -994,12 +1020,12 @@ app, in the banner on the website), `celebration` (« Voir mes lumières »,
 
 A backlog caught up.
 
-| Property | Values |
-| --- | --- |
-| `option` | `week`, `remaining`, `oneDay`, `pushEnd`, `done` |
-| `behind` | the units behind |
-| `remember` | true if the user chose to do it this way without being asked |
-| `source` | `objective` (a program's « Rattraper » sheet), `home_deck_swipe`, `home_wallet_swipe` or `home_sheet` (the home page « Rattraper » card, marked done: `option` is then `done`) |
+| Property   | Values                                                                                                                                                                         |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `option`   | `week`, `remaining`, `oneDay`, `pushEnd`, `done`                                                                                                                               |
+| `behind`   | the units behind                                                                                                                                                               |
+| `remember` | true if the user chose to do it this way without being asked                                                                                                                   |
+| `source`   | `objective` (a program's « Rattraper » sheet), `home_deck_swipe`, `home_wallet_swipe` or `home_sheet` (the home page « Rattraper » card, marked done: `option` is then `done`) |
 
 ### What becomes of the daily reading events
 

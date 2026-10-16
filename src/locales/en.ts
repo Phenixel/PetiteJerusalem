@@ -1658,6 +1658,8 @@ const en: LocaleMessages = {
         "Turned off, a double tap does nothing and any scrolling in progress stops. The pace is set while reading, in the pill at the bottom.",
       pill: "Scrolling",
       speed: "Speed",
+      speedValue: "{level} of {max}",
+      speedValueNamed: "{level} of {max}, {name}",
       speeds: {
         slow: "Slow",
         medium: "Medium",
@@ -1899,6 +1901,17 @@ const en: LocaleMessages = {
     aliyaMark: "Mark read",
     aliyaDone: "Read",
     aliyaCheck: "{aliya} read",
+    listTitle: "This week's aliyot",
+    listCount: "{done} of {total}",
+    aliyaNames: {
+      n1: "Kohen",
+      n2: "Levi",
+      n3: "Shlishi",
+      n4: "Revi'i",
+      n5: "Chamishi",
+      n6: "Shishi",
+      n7: "Shevi'i",
+    },
   },
   tehilimDay: {
     title: "Daily Tehilim",

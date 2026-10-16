@@ -1616,6 +1616,8 @@ const he: LocaleMessages = {
         "כשהיא כבויה, הקשה כפולה אינה מפעילה דבר, וגלילה שכבר החלה נעצרת. את הקצב מכוונים תוך כדי הקריאה, בכפתור שלמטה.",
       pill: "גלילה",
       speed: "מהירות",
+      speedValue: "{level} מתוך {max}",
+      speedValueNamed: "{level} מתוך {max}, {name}",
       speeds: {
         slow: "איטית",
         medium: "בינונית",
@@ -1844,6 +1846,17 @@ const he: LocaleMessages = {
     aliyaMark: "לסמן כנקראה",
     aliyaDone: "נקראה",
     aliyaCheck: "{aliya} נקראה",
+    listTitle: "העליות של השבוע",
+    listCount: "{done} מתוך {total}",
+    aliyaNames: {
+      n1: "כהן",
+      n2: "לוי",
+      n3: "שלישי",
+      n4: "רביעי",
+      n5: "חמישי",
+      n6: "שישי",
+      n7: "שביעי",
+    },
   },
   tehilimDay: {
     title: "תהילים יומי",

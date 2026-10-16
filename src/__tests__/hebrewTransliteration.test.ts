@@ -30,4 +30,11 @@ describe("transliterate : le Nom", () => {
   it("fait entendre le yod qui ferme un mot après un « a »", () => {
     expect(transliterate("אֲדֹנָי שְׂפָתַי")).toBe("adonaï sefataï");
   });
+
+  it("lit la finale ָיו « av », pas « a » (retour du 8 octobre 2026)", () => {
+    expect(transliterate("עָלָיו הַשָּׁלוֹם")).toBe("alav hachalom");
+    expect(transliterate("בְּמִצְוֹתָיו")).toBe("bemitsotav");
+    expect(transliterate("אֲבוֹתָיו")).toBe("avotav");
+    expect(transliterate("עָלָיו, וְ")).toBe("alav, ve");
+  });
 });

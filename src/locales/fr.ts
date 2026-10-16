@@ -1719,6 +1719,9 @@ const fr = {
         "Coupé, le double appui ne lance plus rien, et un défilement en cours s'arrête. L'allure se règle pendant la lecture, dans la pastille du bas.",
       pill: "Défilement",
       speed: "Vitesse",
+      // Lus par les lecteurs d'écran sur le curseur (name est l'allure nommée, quand le cran en est une).
+      speedValue: "{level} sur {max}",
+      speedValueNamed: "{level} sur {max}, {name}",
       speeds: {
         slow: "Lent",
         medium: "Moyen",
@@ -1969,6 +1972,17 @@ const fr = {
     aliyaMark: "Marquer lue",
     aliyaDone: "Lue",
     aliyaCheck: "{aliya} lue",
+    listTitle: "Les montées de la semaine",
+    listCount: "{done} sur {total}",
+    aliyaNames: {
+      n1: "Cohen",
+      n2: "Lévi",
+      n3: "Chlichi",
+      n4: "Revi'i",
+      n5: "'Hamichi",
+      n6: "Chichi",
+      n7: "Chevi'i",
+    },
   },
   tehilimDay: {
     title: "Tehilim du jour",

@@ -4,10 +4,12 @@ import { useI18n } from "vue-i18n";
 import AppIcon from "./icons/AppIcon.vue";
 import { useBottomChromeHeight } from "../composables/useBottomChrome";
 import {
+  AUTO_SCROLL_MAX_LEVEL,
+  AUTO_SCROLL_MIN_LEVEL,
   AUTO_SCROLL_SPEEDS,
-  autoScrollSpeedId,
+  autoScrollLevel,
   isAutoScrolling,
-  setAutoScrollSpeed,
+  setAutoScrollLevel,
   stopAutoScroll,
 } from "../composables/useAutoScroll";
 
@@ -39,29 +41,39 @@ watch(isAutoScrolling, (scrolling) => {
  * L'allure se règle à un curseur, et non plus dans une liste de trois lignes.
  * Une liste demande de lire trois intitulés pour comprendre qu'ils forment une
  * échelle ; un curseur le montre, du plus lent à gauche au plus rapide à
- * droite, et se pousse d'un pouce sans viser une ligne. Les crans restent les
- * allures du tableau : c'est l'affichage qui change, pas le réglage.
+ * droite, et se pousse d'un pouce sans viser une ligne.
+ *
+ * Il avait quatre crans, un par allure nommée ; il en a vingt, et le cran
+ * choisi s'affiche en chiffre à côté de l'intitulé, pour qu'on retrouve le
+ * sien d'une lecture à l'autre (voir AUTO_SCROLL_SPEEDS). Les quatre allures
+ * restent sous le rail comme repères : un point à l'aplomb de chacune.
  */
-const speedIndex = computed(() => {
-  const index = AUTO_SCROLL_SPEEDS.findIndex((speed) => speed.id === autoScrollSpeedId.value);
-  return index === -1 ? 0 : index;
-});
+const speedName = (id: string) => t(`textReading.autoScroll.speeds.${id}`);
 
-/** Le nom de l'allure, pour qui n'a que la voix de son appareil pour la lire. */
-const speedLabel = computed(() => t(`textReading.autoScroll.speeds.${autoScrollSpeedId.value}`));
+/** Le cran, et le nom de l'allure quand il en est une, pour qui écoute son appareil. */
+const speedLabel = computed(() => {
+  const landmark = AUTO_SCROLL_SPEEDS.find((speed) => speed.level === autoScrollLevel.value);
+  const values = { level: autoScrollLevel.value, max: AUTO_SCROLL_MAX_LEVEL };
+  return landmark
+    ? t("textReading.autoScroll.speedValueNamed", { ...values, name: speedName(landmark.id) })
+    : t("textReading.autoScroll.speedValue", values);
+});
 
 // Les deux bouts du rail portent le nom des allures extrêmes, parce que ce
 // sont elles : un intitulé de plus, « le plus lent », en dirait moins.
-const speedName = (index: number) =>
-  t(`textReading.autoScroll.speeds.${AUTO_SCROLL_SPEEDS[index].id}`);
-const slowestLabel = computed(() => speedName(0));
-const fastestLabel = computed(() => speedName(AUTO_SCROLL_SPEEDS.length - 1));
+const slowestLabel = computed(() => speedName(AUTO_SCROLL_SPEEDS[0].id));
+const fastestLabel = computed(() =>
+  speedName(AUTO_SCROLL_SPEEDS[AUTO_SCROLL_SPEEDS.length - 1].id),
+);
+
+/** Où tombe un repère sur la course du pouce, de 0 à 100 %. */
+const landmarkPosition = (level: number) =>
+  `${((level - AUTO_SCROLL_MIN_LEVEL) / (AUTO_SCROLL_MAX_LEVEL - AUTO_SCROLL_MIN_LEVEL)) * 100}%`;
 
 // Au glissement et non au relâchement : on veut sentir l'allure changer sous
 // le pouce pendant qu'on cherche la sienne.
 function slide(event: Event) {
-  const speed = AUTO_SCROLL_SPEEDS[Number((event.target as HTMLInputElement).value)];
-  if (speed) setAutoScrollSpeed(speed.id);
+  setAutoScrollLevel(Number((event.target as HTMLInputElement).value));
 }
 
 function stop() {
@@ -106,21 +118,29 @@ onUnmounted(() => window.removeEventListener("keydown", onKeydown));
           v-if="open"
           class="pill-panel speed absolute bottom-full left-1/2 mb-2 w-52 -translate-x-1/2 rounded-xl bg-surface px-3 pt-2 pb-3 shadow-pop"
         >
-          <p class="speed-heading">{{ t("textReading.autoScroll.speed") }}</p>
+          <p class="speed-heading">
+            <span>{{ t("textReading.autoScroll.speed") }}</span>
+            <!-- Le cran en chiffre ; le curseur le dit déjà à qui l'écoute. -->
+            <span class="speed-value" aria-hidden="true">{{ autoScrollLevel }}</span>
+          </p>
           <input
             class="speed-range"
             type="range"
-            min="0"
-            :max="AUTO_SCROLL_SPEEDS.length - 1"
+            :min="AUTO_SCROLL_MIN_LEVEL"
+            :max="AUTO_SCROLL_MAX_LEVEL"
             step="1"
-            :value="speedIndex"
+            :value="autoScrollLevel"
             :aria-label="t('textReading.autoScroll.speed')"
             :aria-valuetext="speedLabel"
             @input="slide"
           />
-          <!-- Les crans, sous le rail, à l'aplomb des positions du curseur. -->
+          <!-- Les allures nommées, sous le rail, à l'aplomb de leur cran. -->
           <div class="speed-notches" aria-hidden="true">
-            <span v-for="speed in AUTO_SCROLL_SPEEDS" :key="speed.id"></span>
+            <span
+              v-for="speed in AUTO_SCROLL_SPEEDS"
+              :key="speed.id"
+              :style="{ insetInlineStart: landmarkPosition(speed.level) }"
+            ></span>
           </div>
           <p class="speed-ends">
             <span>{{ slowestLabel }}</span>
@@ -150,10 +170,21 @@ onUnmounted(() => window.removeEventListener("keydown", onKeydown));
 
 <style scoped>
 .speed-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
   padding-bottom: 0.35rem;
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--color-text-secondary);
+}
+
+/* Le chiffre change sous le pouce : des chiffres de même largeur l'empêchent
+   de danser d'un cran à l'autre. */
+.speed-value {
+  font-size: 0.875rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary);
 }
 
 /* La largeur du curseur, connue des crans et des deux bouts : c'est d'elle
@@ -213,16 +244,20 @@ onUnmounted(() => window.removeEventListener("keydown", onKeydown));
   background-color: var(--color-primary);
 }
 
-/* Un demi-curseur de retrait de chaque côté, moins la moitié d'un cran : les
-   points tombent alors sous le centre du curseur à chacune de ses positions. */
+/* Un demi-curseur de retrait de chaque côté : la boîte des points est alors
+   la course réelle du centre du pouce, et chaque point, centré sur sa
+   position (voir landmarkPosition), tombe sous le curseur posé à son cran. */
 .speed-notches {
-  display: flex;
-  justify-content: space-between;
-  padding-inline: calc(var(--thumb) / 2 - 0.09375rem);
+  position: relative;
+  height: 0.1875rem;
+  margin-inline: calc(var(--thumb) / 2);
   margin-top: 0.15rem;
 }
 
 .speed-notches span {
+  position: absolute;
+  top: 0;
+  translate: -50% 0;
   width: 0.1875rem;
   height: 0.1875rem;
   border-radius: var(--radius-pill);

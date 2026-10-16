@@ -2,7 +2,13 @@ import { localDayKey } from "../dateService";
 import { addDays, dayRange, weekOf, weekStart, weekdayOf } from "./days";
 import { isAlive } from "./model";
 import type { DayKey, DayLog, MomentId, Objective, ObjectiveKind, ParcoursData } from "./model";
-import { ALIYOT_PER_PARASHA, dueAliyot, readsByAliya, type AliyotRange } from "./aliyot";
+import {
+  ALIYOT_PER_PARASHA,
+  aliyotCardDone,
+  dueAliyot,
+  readsByAliya,
+  type AliyotRange,
+} from "./aliyot";
 import { programPlan, type ProgramPlan, type RestCalendar, type SlotState } from "./plan";
 
 /**
@@ -104,7 +110,13 @@ function objectiveTasks(objective: Objective, day: DayKey, ctx: ScheduleContext)
         : [];
     case "cycle": {
       if (readsByAliya(objective)) {
-        const aliyot = dueAliyot(objective.id, day, ctx.aliyotCount(day), ctx.days, objective.since);
+        const aliyot = dueAliyot(
+          objective.id,
+          day,
+          ctx.aliyotCount(day),
+          ctx.days,
+          objective.since,
+        );
         return aliyot ? [{ ...base, id: objective.id, weekly: false, aliyot }] : [];
       }
       return [{ ...base, id: objective.id, weekly: objective.cycle === "parasha" }];
@@ -153,6 +165,9 @@ export function taskProgress(data: ParcoursData, task: Task, day: DayKey): TaskP
   const done = task.weekly
     ? doneThisWeek(data, task.id, day)
     : (data.days[day]?.done.includes(task.id) ?? false);
+  // Le chnei mikra montée par montée : la carte est faite quand ses montées
+  // sont cochées une à une, depuis la liste de la semaine.
+  if (!done && task.aliyot) return aliyotCardDone(data.days, day, task.aliyot) ? "done" : "none";
   return done ? "done" : "none";
 }
 

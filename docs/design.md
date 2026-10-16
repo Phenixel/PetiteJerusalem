@@ -1235,9 +1235,20 @@ title: a pill carrying its name (« Marquer lue », "Mark as read", then
 the course of the week, an aliyah or two at a time; the box says where you
 stand. The checks are stored by week (the Chabbat of the paracha): the
 following week starts from zero, and browsing back to a past paracha finds
-its own. On the device only, like the study table (`useChneiMikraChecks`,
-`chneiMikraChecks.test.ts`). The daily reading, which also shows chnei
-mikra, does not carry them: it already has « Marquer lu » per section.
+its own. The daily reading, which also shows chnei mikra, does not carry
+them: it already has « Marquer lu » per section.
+
+Above the text, the week's list shows them all at a glance
+(`ChneiMikraChecklist.vue`): a card titled « Les montées de la semaine »
+("The week's aliyot"), the count on the right (« 3 sur 7 », "3 of 7"), then
+the name of the paracha and its seven aliyot by name (Cohen, Lévi, Chlichi,
+Revi'i, 'Hamichi, Chichi, Chevi'i), in the same pills as the boxes in the
+text (`AliyaCheck.vue`); a double paracha has both its names, each with its
+seven. The list and the boxes say the same thing, and are kept in Mon
+parcours, carried along by the account and tied to the « une montée par
+jour » ("one aliyah a day") chnei mikra (see `docs/parcours.md`). Feedback
+from a reader of the app asked for it: checking off without hunting for the
+aliyah in the text.
 
 ### The translation reads under the verse
 
@@ -1441,11 +1452,19 @@ and it is the broadest gesture that should do nothing.
 The speed is set with a notched slider, from slowest on the left to fastest
 on the right, and not in a list of labels. A list requires reading each row
 to understand that they form a scale; a slider shows it, and is pushed with
-the thumb without aiming at a row. The notches are the speeds themselves,
-drawn under the track directly beneath the slider positions: a smooth track
-would promise a continuous setting that does not exist. Both ends carry the
-names of the extreme speeds, because that is what they are. In Hebrew, the
-track flips with the page, and the slowest moves to the right.
+the thumb without aiming at a row.
+
+The slider has twenty notches, from 1 to 20; it used to have only four, one
+per named speed (slow, medium, fast, very fast), and a reader asked for finer
+steps. The chosen notch is shown as a number at the end of the « Vitesse »
+("Speed") label, in tabular figures so that it does not jump around under the
+thumb: a number is remembered from one reading to the next, "a little more
+than medium" is not. The four named speeds remain as landmarks, a dot under
+the track directly beneath their notch; twenty dots would make a ruler, not a
+setting. Both ends carry the names of the extreme speeds, because that is
+what they are. In Hebrew, the track flips with the page, and the slowest moves
+to the right; the landmarks are therefore placed from the start of the line
+(`inset-inline-start`), not from the left.
 
 ### What closes a page is read at the end
 

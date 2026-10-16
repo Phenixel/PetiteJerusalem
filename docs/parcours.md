@@ -137,6 +137,39 @@ the week counts as read when the Friday or Chabbat card is
 (`parashaProgress.completed`). The field is optional: without it, the
 paracha is read over the week, as before.
 
+**Aliyot can also be checked off one by one**, in any order, on the chnei
+mikra page: the week's list (Cohen, Lévi, Chlichi... under the name of the
+paracha, fourteen for a double paracha) and the checkbox of each aliya in the
+text, which say the same thing (`ChneiMikraChecklist.vue`,
+`useChneiMikraChecks`). No new field: a check is an entry of `done`, on the
+day it is set, under the name `aliya:3` (the 3rd aliya of the week, counted
+from 1). An earlier version ignores it, and keeps it when rewriting the day
+(it reads `done` back in full, whereas an unknown field of a `DayLog` was lost
+on reading back, see `parseDay`). A check for another week is written on the
+closest day of that week: the Chabbat of a past week, the Sunday of the
+paracha that opens on Saturday evening. It works with or without a goal, on
+the device and in the account, like the rest of the parcours.
+
+With the « une montée par jour » ("one aliya a day") chnei mikra, checks and
+cards are one and the same (`aliyot.ts`):
+
+- a day's card starts from the first missing aliya, checked neither by a card
+  nor one by one (the previous days);
+- it is done when all its aliyot are checked, even without having been
+  checked itself; unchecking it unchecks those aliyot;
+- a checked card checks its aliyot and the earlier ones in the list;
+  unchecking one of them undoes the card, and its other aliyot stay checked
+  one by one, on the same day;
+- the week is read (`parashaProgress.completed`) when all its aliyot are.
+
+The whole week (the cycle without `split`) is not tied to it: its card says
+« lue cette semaine » ("read this week"), the list says where you stand.
+
+The checks of version 3.10.11 lived on the device only
+(`pj-chnei-mikra-aliyot`, by week, « texte:début »): when the text is opened,
+the week's checks move once into Mon parcours and leave that storage
+(`takeLegacyChecks`).
+
 **Getting ahead**: a completed portion offers « Lire la suite » ("Read
 on"), the portion of the next slot (`nextPortion`), marked as read today at
 the bottom of the reading (`?avance=1`). Portions keep their size; the end
@@ -153,19 +186,20 @@ nothing about programs or habits.
 
 ## Tests
 
-| Test                            | What it enforces                                                                                    |
-| ------------------------------- | --------------------------------------------------------------------------------------------------- |
-| `parcoursUnits.test.ts`         | program units follow `public/texts/` (safeguard, see `docs/tests.md`)                               |
-| `parcoursPlan.test.ts`          | the portions, falling behind, the five catch-up modes, getting ahead, resuming after a pause        |
-| `parcoursAliyot.test.ts`        | chnei mikra: one aliya per day, a forgotten one comes back the next day, Chabbat finishes           |
-| `parcoursSchedule.test.ts`      | a day's tasks, the wall, the streak (Chabbat and « Pas aujourd'hui » do not break it)               |
-| `parcoursCalendar.test.ts`      | rest days, moments, the order of the deck                                                           |
-| `parcoursMerge.test.ts`         | merging two copies                                                                                  |
-| `parcoursSync.test.ts`          | without an account, with an account, a shared device                                                |
-| `parcoursCloud.test.ts`         | the account write sends no `undefined` field (Firestore would reject the whole write)               |
-| `parcoursLegacyDaily.test.ts`   | the former daily reading, taken over and kept up to date                                            |
-| `parcoursDeck.test.ts`          | the home deck: the order, prayer service times, catching up, the 'Omer card                         |
-| `parcoursEntries.test.ts`       | the texts to download for the day                                                                   |
-| `parcoursTracking.test.ts`      | shared tracking, and the daily reading events that continue                                         |
-| `widgetDailyParcours.test.ts`   | the widgets' daily reading, without an account                                                      |
-| `e2e/firebase/parcours.spec.ts` | a daily text picked, checked off, and tracked by the account (emulators)                            |
+| Test                            | What it enforces                                                                                                                                             |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `parcoursUnits.test.ts`         | program units follow `public/texts/` (safeguard, see `docs/tests.md`)                                                                                        |
+| `parcoursPlan.test.ts`          | the portions, falling behind, the five catch-up modes, getting ahead, resuming after a pause                                                                 |
+| `parcoursAliyot.test.ts`        | chnei mikra: one aliya per day, a forgotten one comes back the next day, Chabbat finishes; aliyot checked one by one make up the card, a card checks its own |
+| `chneiMikraChecks.test.ts`      | the checks of version 3.10.11, taken over once from the device                                                                                               |
+| `parcoursSchedule.test.ts`      | a day's tasks, the wall, the streak (Chabbat and « Pas aujourd'hui » do not break it)                                                                        |
+| `parcoursCalendar.test.ts`      | rest days, moments, the order of the deck                                                                                                                    |
+| `parcoursMerge.test.ts`         | merging two copies                                                                                                                                           |
+| `parcoursSync.test.ts`          | without an account, with an account, a shared device                                                                                                         |
+| `parcoursCloud.test.ts`         | the account write sends no `undefined` field (Firestore would reject the whole write)                                                                        |
+| `parcoursLegacyDaily.test.ts`   | the former daily reading, taken over and kept up to date                                                                                                     |
+| `parcoursDeck.test.ts`          | the home deck: the order, prayer service times, catching up, the 'Omer card                                                                                  |
+| `parcoursEntries.test.ts`       | the texts to download for the day                                                                                                                            |
+| `parcoursTracking.test.ts`      | shared tracking, and the daily reading events that continue                                                                                                  |
+| `widgetDailyParcours.test.ts`   | the widgets' daily reading, without an account                                                                                                               |
+| `e2e/firebase/parcours.spec.ts` | a daily text picked, checked off, and tracked by the account (emulators)                                                                                     |
