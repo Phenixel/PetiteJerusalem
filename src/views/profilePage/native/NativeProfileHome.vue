@@ -38,7 +38,6 @@ import { useToast } from "../../../composables/useToast";
 import { useConfirm } from "../../../composables/useConfirm";
 import { useHolidayTheme } from "../../../composables/useHolidayTheme";
 import { useSupportUnread } from "../../../composables/useSupportUnread";
-import SupportUnreadCard from "../../../components/SupportUnreadCard.vue";
 import AppIcon from "../../../components/icons/AppIcon.vue";
 import type { IconName } from "../../../components/icons/registry";
 import HolidayOrnaments from "../../../components/holiday/HolidayOrnaments.vue";
@@ -152,9 +151,13 @@ const trackShortcut = (shortcut: string) => {
   analyticsService.capture("profile_shortcut_clicked", { shortcut });
 };
 
-// Nous écrire : une réponse de l'équipe pas encore lue monte en tête de la
-// page (SupportUnreadCard) ; la ligne de l'Aide n'y revient qu'une fois lue.
+// Nous écrire : une réponse de l'équipe pas encore lue fait monter la ligne
+// juste sous le titre de la page, « 1 nouvelle réponse » au bout ; elle
+// redescend dans l'Aide une fois la réponse lue.
 const support = useSupportUnread();
+const supportValue = computed(() =>
+  t("support.unreadCount", { n: support.unread.value }, support.unread.value),
+);
 
 let unsubscribeAuth: (() => void) | null = null;
 
@@ -206,10 +209,6 @@ onUnmounted(() => {
     </div>
 
     <template v-else>
-      <!-- Une réponse de l'équipe attend : tout en haut, avant le reste. La
-           ligne « Nous écrire » de l'Aide y revient une fois lue. -->
-      <SupportUnreadCard class="mb-6" />
-
       <!-- Connecté : qui l'on est, d'un coup d'oeil. Le rond porte la couleur
            du thème, c'est la seule touche pleine de la page. -->
       <header v-if="currentUser" class="relative mb-8 flex flex-col items-center text-center">
@@ -248,6 +247,15 @@ onUnmounted(() => {
         <h1 class="mb-6 text-center text-3xl font-bold tracking-tight text-text-primary">
           {{ t("profile.guestTitle") }}
         </h1>
+        <SettingsGroup v-if="support.unread.value > 0" class="mb-6">
+          <SettingsRow
+            icon="message"
+            :label="t('footer.reportIssue')"
+            :value="supportValue"
+            warn
+            :to="support.unreadTarget.value"
+          />
+        </SettingsGroup>
         <section class="card mb-8 p-5">
           <p class="text-sm leading-relaxed text-text-secondary">
             {{ t("profile.guestSettingsHint") }}
@@ -274,6 +282,19 @@ onUnmounted(() => {
           </div>
         </section>
       </template>
+
+      <!-- Une réponse de l'équipe attend : la ligne « Nous écrire » monte
+           juste sous le titre, ici après l'en-tête du compte (sans compte, elle
+           se pose sous « Réglages », plus haut ; son autre place est l'Aide). -->
+      <SettingsGroup v-if="currentUser && support.unread.value > 0" class="mb-8">
+        <SettingsRow
+          icon="message"
+          :label="t('footer.reportIssue')"
+          :value="supportValue"
+          warn
+          :to="support.unreadTarget.value"
+        />
+      </SettingsGroup>
 
       <div class="flex flex-col gap-7">
         <!-- Mon parcours se tient sans compte, sur ce téléphone : sa ligne est

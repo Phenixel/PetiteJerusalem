@@ -14,7 +14,6 @@ import AppearanceTab from "./profilePage/AppearanceTab.vue";
 import PreferencesTab from "./profilePage/PreferencesTab.vue";
 import { SITE_URL } from "../config/site";
 import { useSupportUnread } from "../composables/useSupportUnread";
-import SupportUnreadCard from "../components/SupportUnreadCard.vue";
 // Chargée à la demande : Mon parcours tire le calendrier hébraïque.
 const ProfileParcours = defineAsyncComponent(
   () => import("../components/parcours/ProfileParcours.vue"),
@@ -89,8 +88,9 @@ const updateUserInfo = (user: User) => {
   currentUser.value = user;
 };
 
-// Nous écrire : une réponse de l'équipe pas encore lue monte en tête de la
-// page (SupportUnreadCard) ; le raccourci du menu n'y revient qu'une fois lue.
+// Nous écrire : une réponse de l'équipe pas encore lue fait monter le
+// raccourci en tête du menu, « 1 nouvelle réponse » dessous ; il redescend
+// parmi les raccourcis une fois la réponse lue.
 const support = useSupportUnread();
 
 onMounted(() => {
@@ -145,14 +145,24 @@ onUnmounted(() => {
         <ProfileParcours />
       </ProfileHeader>
 
-      <!-- Une réponse de l'équipe attend : en tête, avant le reste. Le
-           raccourci « Nous écrire » du menu y revient une fois lue. -->
-      <div v-if="support.unread.value > 0" class="max-w-[1200px] mx-auto px-6 mb-6">
-        <SupportUnreadCard />
-      </div>
-
       <div class="max-w-[1200px] mx-auto px-6 grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8">
         <nav class="lg:sticky lg:top-24 h-fit card p-3">
+          <!-- Une réponse de l'équipe attend : « Nous écrire » monte en tête
+               du menu ; il redescend parmi les raccourcis une fois lue. -->
+          <RouterLink
+            v-if="support.unread.value > 0"
+            :to="support.unreadTarget.value"
+            class="mb-3 flex items-center gap-3 px-4 py-3 rounded-btn font-medium text-text-primary bg-primary/10 hover:bg-primary/15 transition-colors"
+            @click="trackShortcut('support')"
+          >
+            <AppIcon name="message" :size="15" class="text-primary shrink-0" />
+            <span class="min-w-0 flex-1">
+              {{ t("footer.reportIssue") }}
+              <span class="block text-xs font-semibold text-primary">
+                {{ t("support.unreadCount", { n: support.unread.value }, support.unread.value) }}
+              </span>
+            </span>
+          </RouterLink>
           <!-- Raccourcis vers les fonctionnalités déplacées dans leurs sections. -->
           <p class="px-4 pt-2 pb-1 text-sm font-semibold text-text-secondary">
             {{ t("profile.shortcuts.title") }}

@@ -2829,7 +2829,6 @@ const en: LocaleMessages = {
     newReply: "New reply",
     messagesCount: "1 message | {n} messages",
     unreadCount: "1 new reply | {n} new replies",
-    unreadTitle: "1 new reply from the team | {n} new replies from the team",
     ourReply: "Our reply:",
     sentOn: "Sent on {date}",
     thread: {

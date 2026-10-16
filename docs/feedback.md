@@ -114,12 +114,12 @@ bien à l'appelant.
 ## Les réponses non lues
 
 Dans l'app, une réponse de l'équipe pas encore lue se compte en pastille sur
-l'onglet du profil de la barre du bas (`BottomTabBar.vue`). En tête de la
-page du profil (app et site), un encart « 1 nouvelle réponse de l'équipe »
-montre le début de la réponse et mène droit au fil, ou à la liste quand
-plusieurs attendent (`SupportUnreadCard.vue`). Tant qu'il est là, la ligne
-« Nous écrire » (groupe Aide de l'app, raccourci du menu du site) quitte sa
-place ; une fois la réponse lue, l'encart disparaît et la ligne y revient.
+l'onglet du profil de la barre du bas (`BottomTabBar.vue`). Dans le profil,
+la ligne « Nous écrire » monte juste sous le titre de la page (le nom, ou
+« Réglages » sans compte), « 1 nouvelle réponse » au bout, et mène droit au
+fil, ou à la liste quand plusieurs attendent. Sur le site, le raccourci
+monte de même en tête du menu du profil. Une fois la réponse lue, la ligne
+redescend dans le groupe Aide (le raccourci, parmi les autres).
 
 L'état est partagé (`composables/useSupportUnread.ts`) : relu à l'arrivée
 d'un compte et à chaque retour dans l'app, seulement si un compte est

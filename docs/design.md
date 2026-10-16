@@ -996,12 +996,14 @@ personne sont gardés.
 - **Une réponse non lue monte en tête du profil.** Dans l'app, la barre du
   bas porte sur l'icône du profil (ou des réglages, sans compte) une
   pastille à son nombre, sur la teinte du thème, détachée d'un liseré de la
-  couleur de la barre. Le profil, lui, ouvre sur un encart tout en haut,
-  avant l'identité : le rond du message sur la teinte pleine, « 1 nouvelle
-  réponse de l'équipe », et le début de la réponse sur deux lignes ; toute
-  la carte mène au fil, sans flèche. La ligne « Nous écrire » quitte sa
-  place pendant ce temps : on ne voit pas deux fois la même entrée. Une fois
-  la réponse lue, l'encart disparaît et la ligne revient dans l'Aide.
+  couleur de la barre. Dans le profil, pas d'encart en plus : c'est la
+  ligne « Nous écrire » elle-même qui monte, juste sous le titre (le nom,
+  ou « Réglages » sans compte), seule dans son panneau, avec « 1 nouvelle
+  réponse » au bout dans le ton qui demande attention ; elle mène droit au
+  fil. Sur le site, le raccourci monte de même en tête du menu, sur la
+  teinte du thème à 10 %. On ne voit jamais la même entrée deux fois : une
+  fois la réponse lue, la ligne redescend dans l'Aide (le raccourci, parmi
+  les autres).
 - **La personne peut dire que c'est réglé.** Sous la ligne d'état de la
   messagerie, tant que le fil n'est pas terminé, un bouton discret
   (`btn-soft`, coche et « C'est réglé »), confirmé avant d'agir. Le fil se

@@ -2766,7 +2766,6 @@ const he: LocaleMessages = {
     newReply: "תשובה חדשה",
     messagesCount: "הודעה אחת | {n} הודעות",
     unreadCount: "תשובה חדשה אחת | {n} תשובות חדשות",
-    unreadTitle: "תשובה חדשה אחת מהצוות | {n} תשובות חדשות מהצוות",
     ourReply: "התשובה שלנו:",
     sentOn: "נשלח ב־{date}",
     thread: {

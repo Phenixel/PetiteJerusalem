@@ -2921,7 +2921,6 @@ const fr = {
     newReply: "Nouvelle réponse",
     messagesCount: "1 message | {n} messages",
     unreadCount: "1 nouvelle réponse | {n} nouvelles réponses",
-    unreadTitle: "1 nouvelle réponse de l'équipe | {n} nouvelles réponses de l'équipe",
     ourReply: "Notre réponse :",
     sentOn: "Envoyé le {date}",
     thread: {

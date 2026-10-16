@@ -12,12 +12,13 @@
  * Le titre s'écrit en bas de casse, au corps d'un texte secondaire (« Mon
  * compte », pas « MON COMPTE »).
  */
-defineProps<{ title: string }>();
+/** `title` facultatif : une ligne mise en avant seule, en tête de page, n'a pas de groupe à nommer. */
+defineProps<{ title?: string }>();
 </script>
 
 <template>
   <section>
-    <h2 class="mb-2 px-1 text-sm font-semibold text-text-secondary">{{ title }}</h2>
+    <h2 v-if="title" class="mb-2 px-1 text-sm font-semibold text-text-secondary">{{ title }}</h2>
     <ul class="card flex flex-col divide-y divide-line overflow-hidden">
       <slot />
     </ul>
