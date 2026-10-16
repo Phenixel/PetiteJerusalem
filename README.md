@@ -300,6 +300,7 @@ initial bundle...).
 | [docs/ios-release-plan.md](docs/ios-release-plan.md) | iOS release plan, from "no Apple account" to "app on sale". |
 | [docs/audit-performance-2026-07.md](docs/audit-performance-2026-07.md) | July 2026 performance audit: slow site, HTML cache, fixes. |
 | [docs/audit-review-2026-09.md](docs/audit-review-2026-09.md) | September 2026 code and optimization review: fixed, work items, product ideas. |
+| [docs/audit-performance-2026-10.md](docs/audit-performance-2026-10.md) | October 2026 performance, storage and security audit: what was fixed, what remains. |
 | [docs/audit-seo-2026-09.md](docs/audit-seo-2026-09.md) | September 2026 SEO audit: HTML served to crawlers, files for crawlers, manual actions. |
 
 ## Contributing
