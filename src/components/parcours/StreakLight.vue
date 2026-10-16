@@ -8,10 +8,18 @@
  * Des objets aux couleurs du vrai, en aplats, à la taille de la lampe (80
  * sur 62) : ils prennent sa place sans rien déplacer. Ce qui brûle a sa
  * flamme, qui monte une journée pleine et baisse un jour manqué ; ce qui
- * rayonne a son halo, plus ou moins vif. Rien ne bouge de soi-même.
+ * rayonne a son halo, plus ou moins vif.
  *
- * `locked` : une lumière encore à gagner, réduite à une ombre floue. On sait
- * qu'il y a quelque chose, pas quoi.
+ * Elles vivent doucement, comme une vraie lumière : la flamme vacille, le
+ * halo respire, les étoiles scintillent, les rayons du soleil et de l'aube
+ * tournent lentement, le phare balaie, la galaxie se balance, la coque de la
+ * supernova s'éloigne, les jets du quasar pulsent. C'est l'exception admise
+ * à « Le mouvement répond à un geste » (docs/design.md) ; elle se coupe en
+ * mouvement réduit et en rendu allégé (`perf-lite`), où la lumière reste
+ * posée, entière.
+ *
+ * `locked` : une lumière encore à gagner, réduite à une ombre floue, et
+ * immobile. On sait qu'il y a quelque chose, pas quoi.
  */
 import { computed } from "vue";
 import type { LightId } from "../../services/parcours/lights";
@@ -199,10 +207,10 @@ const NOVA = {
         fill="#b5852f"
       />
       <g
-        v-for="x in MENORAH_CUPS"
+        v-for="(x, i) in MENORAH_CUPS"
         :key="`flame-${x}`"
         class="flame"
-        :style="{ transformOrigin: `${x}px 11.6px` }"
+        :style="{ transformOrigin: `${x}px 11.6px`, animationDelay: `${-0.37 * i}s` }"
       >
         <path :d="smallFlame(x)" fill="#f2a541" />
         <ellipse :cx="x" cy="9.2" rx="1.2" ry="1.6" fill="#fde6b0" />
@@ -211,8 +219,8 @@ const NOVA = {
 
     <!-- Le phare sur son rocher, et ses deux faisceaux. -->
     <template v-else-if="light === 'lighthouse'">
-      <path d="M40 16L3 8L3 24Z" class="glow" fill="#f2a541" />
-      <path d="M40 16L77 8L77 24Z" class="glow" fill="#f2a541" />
+      <path d="M40 16L3 8L3 24Z" class="glow beam" fill="#f2a541" />
+      <path d="M40 16L77 8L77 24Z" class="glow beam beam-late" fill="#f2a541" />
       <path d="M17 57C19 51 25 48.5 32 49L50 49C57 48.5 62 51.5 64 57Z" fill="#8c8273" />
       <path d="M30 49L34 22L46 22L50 49Z" fill="#f4ead2" />
       <path d="M30.59 45L31.33 40L48.67 40L49.41 45Z" fill="#c0533a" />
@@ -232,21 +240,33 @@ const NOVA = {
       <path d="M37.83 13.13A18 18 0 1 0 57.33 35.88A15 15 0 0 1 37.83 13.13Z" fill="#e9c46a" />
       <circle cx="30" cy="33" r="2.4" fill="#d6ad4c" />
       <circle cx="35" cy="43" r="1.6" fill="#d6ad4c" />
-      <path :d="sparkle(64, 11, 3.6)" fill="#e9c46a" />
-      <path :d="sparkle(71, 25, 2.4)" fill="#e9c46a" />
-      <path :d="sparkle(14, 12, 2.6)" fill="#e9c46a" />
+      <path :d="sparkle(64, 11, 3.6)" class="twinkle" fill="#e9c46a" />
+      <path
+        :d="sparkle(71, 25, 2.4)"
+        class="twinkle"
+        style="animation-delay: -1.1s"
+        fill="#e9c46a"
+      />
+      <path
+        :d="sparkle(14, 12, 2.6)"
+        class="twinkle"
+        style="animation-delay: -2.3s"
+        fill="#e9c46a"
+      />
     </template>
 
     <!-- Le soleil : son disque et ses douze rayons. -->
     <template v-else-if="light === 'sun'">
       <circle cx="40" cy="30" r="29" class="glow" fill="#f8cf73" />
-      <path
-        v-for="angle in SUN_RAYS"
-        :key="angle"
-        :d="angle % 60 === 0 ? 'M37.4 13L40 2.5L42.6 13Z' : 'M38 13L40 6L42 13Z'"
-        :transform="`rotate(${angle} 40 30)`"
-        fill="#f2a541"
-      />
+      <g class="turn" style="transform-origin: 40px 30px">
+        <path
+          v-for="angle in SUN_RAYS"
+          :key="angle"
+          :d="angle % 60 === 0 ? 'M37.4 13L40 2.5L42.6 13Z' : 'M38 13L40 6L42 13Z'"
+          :transform="`rotate(${angle} 40 30)`"
+          fill="#f2a541"
+        />
+      </g>
       <circle cx="40" cy="30" r="15" fill="#f6b93b" />
       <circle cx="40" cy="30" r="10.5" fill="#f9cf62" />
     </template>
@@ -254,14 +274,23 @@ const NOVA = {
     <!-- Les étoiles : une grande, et le ciel autour. -->
     <template v-else-if="light === 'stars'">
       <circle cx="40" cy="29" r="15" class="glow" fill="#f3d27a" />
-      <path :d="STARS.big" fill="#f2c14e" />
-      <path v-for="(d, i) in STARS.others" :key="i" :d="d" fill="#e9c46a" />
+      <path :d="STARS.big" class="twinkle twinkle-soft" fill="#f2c14e" />
+      <path
+        v-for="(d, i) in STARS.others"
+        :key="i"
+        :d="d"
+        class="twinkle"
+        :style="{ animationDelay: `${-0.8 * (i + 1)}s` }"
+        fill="#e9c46a"
+      />
       <circle
         v-for="([x, y, r], i) in STARS.tiny"
         :key="`tiny-${i}`"
         :cx="x"
         :cy="y"
         :r="r"
+        class="twinkle"
+        :style="{ animationDelay: `${-0.55 * i - 0.3}s` }"
         fill="#d8b25a"
       />
     </template>
@@ -277,36 +306,38 @@ const NOVA = {
         class="glow"
         fill="#b9a8f0"
       />
-      <path
-        v-for="(d, i) in GALAXY_ARMS"
-        :key="`wide-${i}`"
-        :d="d"
-        fill="none"
-        stroke="#c9bdf5"
-        stroke-width="6"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      />
-      <path
-        v-for="(d, i) in GALAXY_ARMS"
-        :key="`thin-${i}`"
-        :d="d"
-        fill="none"
-        stroke="#7e6cd6"
-        stroke-width="2.2"
-        stroke-linecap="round"
-        stroke-linejoin="round"
-      />
-      <ellipse cx="40" cy="31" rx="7.5" ry="5" transform="rotate(-15 40 31)" fill="#ffe39a" />
-      <ellipse cx="40" cy="31" rx="4" ry="2.6" transform="rotate(-15 40 31)" fill="#fffaf0" />
-      <circle
-        v-for="([x, y, r], i) in GALAXY_DUST"
-        :key="`dust-${i}`"
-        :cx="x"
-        :cy="y"
-        :r="r"
-        fill="#9d8fe0"
-      />
+      <g class="sway" style="transform-origin: 40px 31px">
+        <path
+          v-for="(d, i) in GALAXY_ARMS"
+          :key="`wide-${i}`"
+          :d="d"
+          fill="none"
+          stroke="#c9bdf5"
+          stroke-width="6"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+        <path
+          v-for="(d, i) in GALAXY_ARMS"
+          :key="`thin-${i}`"
+          :d="d"
+          fill="none"
+          stroke="#7e6cd6"
+          stroke-width="2.2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+        <ellipse cx="40" cy="31" rx="7.5" ry="5" transform="rotate(-15 40 31)" fill="#ffe39a" />
+        <ellipse cx="40" cy="31" rx="4" ry="2.6" transform="rotate(-15 40 31)" fill="#fffaf0" />
+        <circle
+          v-for="([x, y, r], i) in GALAXY_DUST"
+          :key="`dust-${i}`"
+          :cx="x"
+          :cy="y"
+          :r="r"
+          fill="#9d8fe0"
+        />
+      </g>
     </template>
 
     <!-- La supernova : l'éclat, sa coque qui s'éloigne, ses éclats. -->
@@ -319,10 +350,11 @@ const NOVA = {
         stroke="#e8794a"
         stroke-width="2"
         stroke-dasharray="3 4"
-        class="glow-strong"
+        class="glow-strong turn"
+        style="transform-origin: 40px 30px"
       />
       <circle cx="40" cy="30" r="24" class="glow" fill="#f6b26b" />
-      <path :d="NOVA.outer" fill="#ef8a45" />
+      <path :d="NOVA.outer" class="pulse" style="transform-origin: 40px 30px" fill="#ef8a45" />
       <path :d="NOVA.inner" fill="#f8c55a" />
       <circle cx="40" cy="30" r="5" fill="#fffaf0" />
       <circle v-for="([x, y], i) in NOVA.sparks" :key="i" :cx="x" :cy="y" r="1.3" fill="#e8794a" />
@@ -331,10 +363,12 @@ const NOVA = {
     <!-- Le quasar : son disque qui tourne, ses deux jets, son cœur. -->
     <template v-else-if="light === 'quasar'">
       <g transform="rotate(-12 40 31)">
-        <path d="M40 31L37.4 1.5L42.6 1.5Z" fill="#7fb3ef" />
-        <path d="M40 31L37.4 60.5L42.6 60.5Z" fill="#7fb3ef" />
-        <path d="M40 31L39.3 5L40.7 5Z" fill="#dbeafe" />
-        <path d="M40 31L39.3 57L40.7 57Z" fill="#dbeafe" />
+        <g class="jet">
+          <path d="M40 31L37.4 1.5L42.6 1.5Z" fill="#7fb3ef" />
+          <path d="M40 31L37.4 60.5L42.6 60.5Z" fill="#7fb3ef" />
+          <path d="M40 31L39.3 5L40.7 5Z" fill="#dbeafe" />
+          <path d="M40 31L39.3 57L40.7 57Z" fill="#dbeafe" />
+        </g>
         <circle cx="40" cy="31" r="13" class="glow" fill="#bcd7f7" />
         <ellipse cx="40" cy="31" rx="28" ry="6.5" fill="#e07b39" />
         <ellipse cx="40" cy="31" rx="20" ry="4.6" fill="#f2a541" />
@@ -347,18 +381,20 @@ const NOVA = {
     <template v-else-if="light === 'first-light'">
       <circle cx="40" cy="30" r="30" class="glow" fill="#f6d77b" />
       <circle cx="40" cy="30" r="21" class="glow" fill="#f6d77b" />
-      <line
-        v-for="angle in DAWN_RAYS"
-        :key="angle"
-        x1="40"
-        :y1="18"
-        x2="40"
-        :y2="angle % 30 === 0 ? 1.5 : 9"
-        :transform="`rotate(${angle} 40 30)`"
-        stroke="#e9b949"
-        stroke-width="1.6"
-        stroke-linecap="round"
-      />
+      <g class="turn turn-slow" style="transform-origin: 40px 30px">
+        <line
+          v-for="angle in DAWN_RAYS"
+          :key="angle"
+          x1="40"
+          :y1="18"
+          x2="40"
+          :y2="angle % 30 === 0 ? 1.5 : 9"
+          :transform="`rotate(${angle} 40 30)`"
+          stroke="#e9b949"
+          stroke-width="1.6"
+          stroke-linecap="round"
+        />
+      </g>
       <circle cx="40" cy="30" r="10" fill="#fff6dc" stroke="#e9b949" stroke-width="1.6" />
       <circle cx="40" cy="30" r="5.5" fill="#ffffff" />
     </template>
@@ -372,17 +408,144 @@ const NOVA = {
 :root.dark .shadow {
   fill: rgb(0 0 0 / 0.3);
 }
-/* La flamme grandit ou baisse depuis sa mèche. */
+/* La flamme grandit ou baisse depuis sa mèche, et vacille : le vacillement
+   passe par `scale` et `rotate`, qui s'ajoutent au `transform` du niveau. */
 .flame {
   transform: scale(var(--flame, 1));
   transform-box: view-box;
   transition: transform 0.4s ease;
+  animation: flame-flicker 2.6s ease-in-out infinite;
 }
+/* Le halo respire. */
 .glow {
   opacity: var(--glow, 0.22);
+  animation: glow-breathe 3.6s ease-in-out infinite;
 }
 .glow-strong {
   opacity: calc(var(--glow, 0.22) * 3);
+}
+/* Le phare balaie : un faisceau puis l'autre. */
+.beam {
+  animation: beam-sweep 4s ease-in-out infinite;
+}
+.beam-late {
+  animation-delay: -2s;
+}
+/* Les étoiles scintillent, chacune à son heure. */
+.twinkle {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: star-twinkle 2.8s ease-in-out infinite;
+}
+.twinkle-soft {
+  animation-name: star-twinkle-soft;
+  animation-duration: 3.4s;
+}
+/* Les rayons tournent lentement. */
+.turn {
+  transform-box: view-box;
+  animation: light-turn 40s linear infinite;
+}
+.turn-slow {
+  animation-duration: 90s;
+}
+/* La galaxie se balance. */
+.sway {
+  transform-box: view-box;
+  animation: galaxy-sway 9s ease-in-out infinite alternate;
+}
+/* L'éclat de la supernova bat. */
+.pulse {
+  transform-box: view-box;
+  animation: nova-pulse 2.4s ease-in-out infinite;
+}
+/* Les jets du quasar pulsent. */
+.jet {
+  animation: jet-pulse 1.8s ease-in-out infinite;
+}
+@keyframes flame-flicker {
+  0%,
+  100% {
+    scale: 1;
+    rotate: 0deg;
+  }
+  20% {
+    scale: 0.96 1.05;
+    rotate: -2deg;
+  }
+  45% {
+    scale: 1.03 0.96;
+    rotate: 1.5deg;
+  }
+  70% {
+    scale: 0.98 1.03;
+    rotate: -1deg;
+  }
+}
+@keyframes glow-breathe {
+  50% {
+    opacity: calc(var(--glow, 0.22) * 1.6);
+  }
+}
+@keyframes beam-sweep {
+  0%,
+  100% {
+    opacity: calc(var(--glow, 0.22) * 0.5);
+  }
+  50% {
+    opacity: calc(var(--glow, 0.22) * 2.4);
+  }
+}
+@keyframes star-twinkle {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(0.7);
+    opacity: 0.55;
+  }
+}
+@keyframes star-twinkle-soft {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(0.9) rotate(8deg);
+  }
+}
+@keyframes light-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes galaxy-sway {
+  from {
+    transform: rotate(-6deg);
+  }
+  to {
+    transform: rotate(6deg);
+  }
+}
+@keyframes nova-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.08);
+  }
+}
+@keyframes jet-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
 }
 /* Encore à gagner : une ombre floue, sans couleur ni détail. */
 .streak-light.is-locked {
@@ -393,7 +556,16 @@ const NOVA = {
   filter: brightness(0) invert(1) blur(3.5px);
   opacity: 0.2;
 }
+/* Une lumière à gagner reste immobile ; tout se fige en mouvement réduit et
+   en rendu allégé, sur l'état posé. */
+.streak-light.is-locked *,
+:root.perf-lite .streak-light * {
+  animation: none;
+}
 @media (prefers-reduced-motion: reduce) {
+  .streak-light * {
+    animation: none;
+  }
   .flame {
     transition: none;
   }

@@ -698,7 +698,8 @@ posent un à un sur l'étagère restent l'exception déjà admise, de loin en lo
 (voir `useShelfIntro`), avec une seconde : l'objet d'une carte mise en avant
 (le livre ou la lune qui se lèvent, la 'hanoukkia qui s'allume), une fois par
 session et par carte, parce que c'est l'occasion elle-même qui arrive (voir « Une carte
-mise en avant peut porter son objet »).
+mise en avant peut porter son objet »). Les lumières de la série vivent aussi d'elles-mêmes,
+doucement (voir « Les lumières de la série »).
 
 Tout se coupe quand le système demande moins d'animations, et sur une petite
 machine (`perf-lite`) : l'état final s'affiche d'emblée, rien ne manque, seul
@@ -1867,7 +1868,17 @@ premier jour au bout d'une année. Tenu par `parcoursLights.test.ts`.
   taille de la lampe (80 sur 62) : ils prennent sa place sur l'accueil, dans
   Mon parcours et le profil sans rien déplacer. Ce qui brûle garde sa
   flamme, qui monte et baisse comme celle de la lampe ; ce qui rayonne a un
-  halo, un aplat plus ou moins vif. Rien ne bouge de soi-même.
+  halo, un aplat plus ou moins vif.
+- **Elles vivent doucement**, partout où elles sont (accueil, Mon parcours,
+  profil, « Mes lumières », la feuille d'une lumière gagnée) : la flamme
+  vacille, le halo respire, les étoiles scintillent, les rayons du soleil et
+  de l'aube tournent lentement, le phare balaie d'un faisceau à l'autre, la
+  galaxie se balance, la coque de la supernova s'éloigne et son éclat bat,
+  les jets du quasar pulsent. C'est une exception voulue à « Le mouvement
+  répond à un geste » : une lumière qui ne vacille pas a l'air éteinte. Le
+  mouvement reste lent et petit, une lumière encore à gagner reste immobile,
+  et tout se fige en mouvement réduit et en rendu allégé (`perf-lite`), sur
+  l'état posé (`StreakLight.vue`, `ParcoursLamp.vue`).
 - **On voit la lumière de la série en cours ; on garde celles du record.**
   Une série qui retombe redescend la lumière montrée, jamais celles qu'on a
   gagnées : « Mes lumières » les garde toutes.
