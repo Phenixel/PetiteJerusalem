@@ -1,258 +1,261 @@
-# Widgets d'écran d'accueil (Android / iOS)
+# Home screen widgets (Android / iOS)
 
-Huit widgets accompagnent l'app native, les mêmes sur Android et sur iOS.
-Trois grands :
+Eight widgets accompany the native app, the same on Android and on iOS.
+Three large ones:
 
-- **Horaires** : la date hébraïque, le prochain zman du lieu de l'utilisateur
-  (à l'accent de son thème, comme la carte « prochain horaire » de la page),
-  ceux d'après, la paracha du Chabbat qui vient et le ta'hanoun (en gras les
-  jours où l'on n'en dit pas), mis à jour à chaque horaire passé. Toucher le
-  widget ouvre la page `/horaires`.
+- **Times**: the Hebrew date, the next zman for the user's location (in the
+  accent of their theme, like the « prochain horaire » ("next time") card on
+  the page), the ones after it, the paracha of the coming Shabbat and
+  ta'hanoun (in bold on days when it is not said), updated each time a zman
+  passes. Tapping the widget opens the `/horaires` page.
 
-  Autour des fêtes, deux choses changent :
+  Around holidays, two things change:
 
-  - **la fête prend la ligne de la paracha**, en grand (1,6 fois la taille de
-    la ligne), en gras et à l'accent : « Soukkot » le jour même, « 'Hol haMoed
-    Soukkot » pendant les demi-fêtes, « Soukkot ce samedi » quand elle tombe
-    d'ici au Chabbat. Une semaine de fête n'annonce pas de paracha : son
-    Chabbat n'en a pas, et le widget n'anticipe pas celle d'après comme le fait
-    le chnei mikra ;
-  - **l'entrée de Chabbat ou de fête passe devant** : la veille, dès l'aube
-    (`featuredFrom`), elle occupe la place du prochain horaire jusqu'à son
-    heure, libellée « Entrée de Chabbat » ou « Entrée de Chabbat et Soukkot ».
-    C'est l'heure que l'on vient chercher toute la journée du vendredi.
+  - **the holiday takes the paracha's line**, in large type (1.6 times the
+    line's size), in bold and in the accent color: « Soukkot » on the day
+    itself, « 'Hol haMoed Soukkot » during the intermediate days, « Soukkot
+    ce samedi » ("Soukkot this Saturday") when it falls between now and
+    Shabbat. A holiday week does not announce a paracha: its Shabbat has
+    none, and the widget does not anticipate the following one the way the
+    chnei mikra does;
+  - **the start of Shabbat or of a holiday comes first**: the day before,
+    from dawn (`featuredFrom`), it takes the place of the next time until
+    its hour, labeled « Entrée de Chabbat » ("Start of Shabbat") or « Entrée
+    de Chabbat et Soukkot ». It is the time people come looking for all day
+    Friday.
 
-  Les deux champs sont facultatifs (`festival`, `featuredFrom`, `v` reste 2) :
-  un binaire d'avant les ignore, garde la paracha et range l'entrée parmi les
-  horaires, à sa place dans le temps.
-- **Horaires essentiels** : les quatre horaires que l'on vient
-  vérifier le plus souvent, et rien d'autre : fin du Chéma et fin de la Amida
-  (au Gaon de Vilna, l'opinion la plus tardive, celle qui fait la limite), plag
-  haMin'ha, tsét haKokhavim. C'est un tableau du jour, pas une annonce : ses
-  quatre lignes ne tournent qu'à la chkia, et la limite du Chéma reste
-  affichée une fois passée, puisque c'est son heure d'aujourd'hui que l'on
-  vient lire.
-- **Lecture du jour** : une ligne, titre, « 2 sur 3 lus aujourd'hui »,
-  pourcentage et barre de progression, remise à zéro à minuit. Elle montre
-  les textes du jour et les lectures du calendrier de Mon parcours, tels que
-  l'appareil les tient, avec ou sans compte (`widgetService`, par
-  `legacyProjection`). Toucher le widget ouvre `/bibliotheque/lecture-du-jour`,
-  qui mène à l'accueil et à sa pile du jour : l'adresse est gravée dans les widgets déjà
-  installés.
+  Both fields are optional (`festival`, `featuredFrom`, `v` stays 2): an
+  older binary ignores them, keeps the paracha and files the start among the
+  times, at its place in time.
+- **Essential times**: the four times people come to check most often, and
+  nothing else: end of Shema and end of the Amida (according to the Vilna
+  Gaon, the latest opinion, the one that sets the limit), plag haMin'ha,
+  tsét haKokhavim. It is a table of the day, not an announcement: its four
+  lines only roll over at chkia, and the Shema limit stays displayed once
+  past, since it is today's time for it that people come to read.
+- **Daily reading**: one line, title, « 2 sur 3 lus aujourd'hui » ("2 of 3
+  read today"), percentage and progress bar, reset at midnight. It shows the
+  day's texts and the readings from the Mon parcours calendar, as the device
+  holds them, with or without an account (`widgetService`, through
+  `legacyProjection`). Tapping the widget opens
+  `/bibliotheque/lecture-du-jour`, which leads to the home page and its
+  daily stack: the address is baked into widgets already installed.
 
-S'y ajoutent cinq **raccourcis**, au plus petit format que l'écran d'accueil
-propose, qui n'ouvrent chacun qu'une page :
+On top of these come five **shortcuts**, at the smallest size the home
+screen offers, each of which opens a single page:
 
-| Raccourci | Ouvre | Ce qu'il montre |
+| Shortcut | Opens | What it shows |
 |---|---|---|
-| Bibliothèque | `/bibliotheque` | une étagère de volumes reliés ; en format moyen, les quatre livres portent leur titre |
-| Sidour | `/bibliotheque/sidour` (redirigé vers `/sidour`) | le livre du sidour, titre sur la couverture |
-| Tehilim | `/bibliotheque/tehilim` | le livre des Tehilim, idem |
-| Prochain horaire | `/horaires` | l'heure du prochain zman, en grand, et son nom en dessous |
-| Avancement de la lecture | `/bibliotheque/lecture-du-jour` | un anneau qui se remplit au fil des coches, et son pourcentage |
+| Library | `/bibliotheque` | a shelf of bound volumes; in medium size, the four books carry their titles |
+| Sidour | `/bibliotheque/sidour` (redirected to `/sidour`) | the sidour book, title on the cover |
+| Tehilim | `/bibliotheque/tehilim` | the Tehilim book, likewise |
+| Next time | `/horaires` | the time of the next zman, in large type, and its name below |
+| Reading progress | `/bibliotheque/lecture-du-jour` | a ring that fills up as checks are made, and its percentage |
 
-Les livres reprennent le dessin de `src/components/LibraryShelf.vue`, trait
-pour trait : reliure chaude, pli du dos, tranche de pages ivoire, cadre
-estampé et titre en serif. Comme dans l'app, ils sont **hors du thème** de
-l'utilisateur et identiques en mode sombre : ce sont des objets, pas de
-l'interface.
+The books reproduce the drawing of `src/components/LibraryShelf.vue`, stroke
+for stroke: warm binding, spine fold, ivory page edges, embossed frame and
+serif title. As in the app, they are **outside the user's theme** and
+identical in dark mode: they are objects, not interface.
 
-Tout le reste porte l'accent du thème choisi par l'utilisateur : il voyage
-dans le payload, le natif ne connaît aucune couleur de thème.
+Everything else carries the accent of the theme chosen by the user: it
+travels in the payload, the native side knows no theme color.
 
-Les apps de montre (Wear OS et Apple Watch) reprennent l'architecture décrite
-plus bas et réutilisent les deux mêmes payloads, `zmanim` et `daily`, tels
-quels : voir `docs/app-watch.md`.
+The watch apps (Wear OS and Apple Watch) follow the architecture described
+below and reuse the same two payloads, `zmanim` and `daily`, as is: see
+`docs/app-watch.md`.
 
-## Les formats, et ce qu'ils imposent
+## The sizes, and what they impose
 
-Sur iOS, un widget d'écran d'accueil n'a que les tailles du système, et le
-format moyen est exactement aussi **haut** que le petit, deux fois plus large
-seulement : il n'existe pas d'équivalent au 4×1 d'Android. Ce qu'un format
-moyen a en trop est de la largeur, jamais de la hauteur, et un dessin qui
-l'oublie déborde du cadre (les horaires suivants sont passés à côté de l'heure
-mise en avant pour cette raison).
+On iOS, a home screen widget only has the system's sizes, and the medium
+size is exactly as **tall** as the small one, only twice as wide: there is
+no equivalent to Android's 4×1. What a medium size has in excess is width,
+never height, and a layout that forgets this overflows its frame (the
+following times were moved next to the highlighted time for this reason).
 
-Les trois widgets acceptent aussi l'**écran verrouillé** (et StandBy), depuis
-iOS 16, en `accessoryRectangular`. Là, tout change : 72 pt de haut au lieu de
-164, aucun fond à nous (le système pose le sien), et le rendu « vibrant »
-délave les couleurs, l'accent du thème compris. Chaque widget y a donc un
-dessin à part, dépouillé, qui ne fait porter aucun sens à la couleur : la
-règle vaut aussi pour le vert de « tout est lu », qui n'y survit pas.
+The three widgets also support the **lock screen** (and StandBy), since iOS
+16, as `accessoryRectangular`. There, everything changes: 72 pt tall instead
+of 164, no background of our own (the system sets its own), and the
+"vibrant" rendering washes out colors, the theme accent included. Each
+widget therefore has a separate, stripped-down layout there, which makes
+color carry no meaning: the rule also applies to the green of "everything is
+read", which does not survive there.
 
-Côté Android, ce sont les tailles du launcher qui décident, et l'utilisateur
-peut les changer à tout moment. Le provider reçoit donc les dimensions de
-CHAQUE instance (`onUpdate`, puis `onAppWidgetOptionsChanged` au
-redimensionnement) et choisit son dessin comme iOS choisit sur la famille : à
-partir de quatre colonnes (220 dp), c'est le dessin du format moyen, avec la
-colonne d'horaires suivants ou le quatrième livre ; en deçà, celui du petit.
-Le widget « Horaires » a pour cela deux gabarits, `widget_horaires.xml` et
-`widget_horaires_medium.xml`, qui portent **les mêmes identifiants** : le
-provider les remplit du même code.
+On Android, the launcher's sizes decide, and the user can change them at
+any time. The provider therefore receives the dimensions of EACH instance
+(`onUpdate`, then `onAppWidgetOptionsChanged` on resize) and picks its
+layout the way iOS picks by family: from four columns (220 dp), it is the
+medium-size layout, with the column of following times or the fourth book;
+below that, the small one's. The "Horaires" ("Times") widget has two
+templates for this, `widget_horaires.xml` and `widget_horaires_medium.xml`,
+which carry **the same identifiers**: the provider fills them with the same
+code.
 
-L'écran verrouillé, lui, reste propre à iOS : Android ne l'ouvre pas aux
-applications tierces.
+The lock screen, for its part, remains specific to iOS: Android does not
+open it to third-party apps.
 
-Ce que RemoteViews ne sait pas composer est dessiné dans un bitmap par
-`WidgetGraphics` (la barre et l'anneau de progression, qu'il ne sait teindre à
-une couleur venue du payload, et l'étagère, avec ses dégradés, ses filets et
-son titre écrit sur la couverture), puis étiré par l'ImageView. Les livres y
-reprennent les coordonnées du SVG d'origine, dans son carton de 96 sur 140,
-comme le fait `ShelfBookView` en SwiftUI : un même dessin, trois fois.
+What RemoteViews cannot compose is drawn into a bitmap by `WidgetGraphics`
+(the progress bar and ring, which it cannot tint with a color coming from
+the payload, and the shelf, with its gradients, its rules and its title
+written on the cover), then stretched by the ImageView. The books there
+reuse the coordinates of the original SVG, in its 96 by 140 box, as
+`ShelfBookView` does in SwiftUI: the same drawing, three times.
 
-## Architecture : l'app calcule, le natif affiche
+## Architecture: the app computes, the native side displays
 
-Un widget natif ne peut pas exécuter le code de la webview (hebcal, i18n,
-Firestore). L'app pré-calcule donc **tout** ce que les widgets affichent et le
-leur pousse en JSON :
+A native widget cannot run the webview's code (hebcal, i18n, Firestore).
+The app therefore precomputes **everything** the widgets display and pushes
+it to them as JSON:
 
 ```
-webview (Vue)                        natif
-─────────────                        ─────
+webview (Vue)                        native
+─────────────                        ──────
 widgetService.refresh()
   └─ widgetPayloads.ts        ──►    plugin PjWidgets
-     (7 j d'horaires,                 ├─ Android : SharedPreferences "pj_widgets"
-      lecture du jour,                │  + broadcast vers les providers
-      titres de la biblio,            └─ iOS : App Group + reload WidgetKit
-      libellés localisés)
+     (7 days of times,                ├─ Android: SharedPreferences "pj_widgets"
+      daily reading,                  │  + broadcast to the providers
+      library titles,                 └─ iOS: App Group + WidgetKit reload
+      localized labels)
 ```
 
-Trois clés voyagent : `zmanim`, `daily` et `library`. La dernière ne porte que
-des titres (« Bibliothèque », « Sidour », « Tehilim »…) : ils ne bougent
-qu'avec la langue, mais ils ne peuvent pas pour autant s'écrire en dur côté
-natif, « Sidour » se disant « Siddur » en anglais et « סידור » en hébreu.
-Les deux plateformes lisent les trois clés, et chacune ne redessine que les
-widgets dont le payload a changé.
+Three keys travel: `zmanim`, `daily` and `library`. The last one only
+carries titles (« Bibliothèque », « Sidour », « Tehilim »…): they only change
+with the language, but they still cannot be hard-coded on the native side,
+since « Sidour » is "Siddur" in English and « סידור » in Hebrew. Both
+platforms read the three keys, and each only redraws the widgets whose
+payload has changed.
 
-- **Contrat** : `src/services/widgetPayloads.ts` (champ `v` pour les évolutions
-  incompatibles). Tout ce qui s'affiche vient du payload, déjà localisé ET
-  déjà formaté, heures comprises (`time: "17:42"`, date hébraïque, libellé du
-  ta'hanoun, `expiresAt` pour l'échéance de minuit) : le natif ne traduit rien,
-  ne formate rien, ne compare que des epochs. Les repères qui changent à la
-  chkia (date hébraïque, paracha, ta'hanoun) sont livrés jour par jour dans
-  `days`, chacun borné par les chkiot qui l'ouvrent et le ferment : le widget
-  choisit celui qui couvre l'instant affiché, et reste juste une semaine sans
-  que l'app soit rouverte. Les DateFormatter
-  natifs subiraient le réglage 12 h/24 h et le calendrier de l'appareil
-  (hébraïque chez une partie du public), qui fausseraient l'affichage. Seule
-  exception : le sélecteur de widgets du launcher et l'état « aucun payload »
-  (avant le premier lancement), portés par des ressources natives.
-  Deux valeurs échappent à la règle du « déjà formaté », faute de pouvoir être
-  calculées à l'avance : les nombres de la ligne de progression, qui dépendent
-  de l'heure qu'il sera (`progressTemplate` part avec ses `{done}`/`{total}`
-  intacts, comme le `then` des horaires), et l'accent du thème (`accent`), une
-  couleur et non un texte.
-- **Rafraîchi** au lancement, au retour au premier plan, à la
-  connexion/déconnexion, au changement de lieu des horaires, d'opinion suivie
-  ou d'écart d'allumage, au changement de langue, au changement de thème, et à
-  chaque progression de la lecture du jour (`src/services/widgetService.ts`).
-  Les horaires ne se recalculent que si leur clé change : elle porte donc tout
-  ce dont ils dépendent, opinion et écart d'allumage compris (test :
-  `widgetZmanimSettings.test.ts`). Un payload inchangé n'est pas renvoyé, et
-  le natif ne recharge que le widget dont le payload a changé (le budget de
-  rafraîchissement WidgetKit n'est pas extensible) ; la page Lecture du jour
-  fournit ses préférences en mémoire pour éviter une relecture Firestore.
-- **Entre deux ouvertures de l'app**, le natif vit sur ses réserves : une
-  semaine d'horaires est embarquée (le widget se replanifie au prochain zman),
-  et le payload lecture porte son échéance (passé `expiresAt`, les coches ne
-  comptent plus). Fenêtre épuisée → le widget invite à rouvrir l'app et cesse
-  de se replanifier jusqu'au prochain payload.
-- **Deep-links** : les widgets ouvrent l'app avec une URL du site ; le
-  listener `appUrlOpen` de `src/main.ts` ne route QUE les URLs de
-  `petite-jerusalem.fr` (un callback OAuth natif ou un intent tiers ne doit
-  pas naviguer) et attend `router.isReady()` pour survivre au démarrage à
-  froid.
-- **Cas particulier** : un utilisateur dont la seule lecture est la paracha
-  (chnei mikra hebdomadaire) est bien « configuré » ; la paracha devient alors
-  la lecture, et c'est son avancement, hebdomadaire, qui remplit la barre.
+- **Contract**: `src/services/widgetPayloads.ts` (`v` field for
+  incompatible changes). Everything displayed comes from the payload,
+  already localized AND already formatted, times included
+  (`time: "17:42"`, Hebrew date, ta'hanoun label, `expiresAt` for the
+  midnight expiry): the native side translates nothing, formats nothing, and
+  only compares epochs. The markers that change at chkia (Hebrew date,
+  paracha, ta'hanoun) are delivered day by day in `days`, each bounded by
+  the chkiot that open and close it: the widget picks the one covering the
+  displayed instant, and stays correct for a week without the app being
+  reopened. Native DateFormatters would be subject to the device's 12 h/24 h
+  setting and calendar (Hebrew for part of the audience), which would skew
+  the display. The only exception: the launcher's widget picker and the "no
+  payload" state (before the first launch), carried by native resources.
+  Two values escape the "already formatted" rule, since they cannot be
+  computed in advance: the numbers in the progress line, which depend on
+  what time it will be (`progressTemplate` is sent with its
+  `{done}`/`{total}` intact, like the times' `then`), and the theme accent
+  (`accent`), a color and not a text.
+- **Refreshed** at launch, on return to the foreground, on sign-in/sign-out,
+  on a change of location for the times, of followed opinion or of
+  candle-lighting offset, on a language change, on a theme change, and at
+  every progress of the daily reading (`src/services/widgetService.ts`).
+  The times are only recomputed if their key changes: it therefore carries
+  everything they depend on, opinion and candle-lighting offset included
+  (test: `widgetZmanimSettings.test.ts`). An unchanged payload is not
+  resent, and the native side only reloads the widget whose payload has
+  changed (the WidgetKit refresh budget is not extensible); the Daily
+  reading page supplies its preferences from memory to avoid a Firestore
+  reread.
+- **Between two openings of the app**, the native side lives on its
+  reserves: a week of times is embedded (the widget reschedules itself for
+  the next zman), and the reading payload carries its expiry (past
+  `expiresAt`, the checks no longer count). Window exhausted → the widget
+  invites the user to reopen the app and stops rescheduling itself until
+  the next payload.
+- **Deep links**: the widgets open the app with a site URL; the
+  `appUrlOpen` listener in `src/main.ts` ONLY routes URLs from
+  `petite-jerusalem.fr` (a native OAuth callback or a third-party intent
+  must not navigate) and waits for `router.isReady()` to survive a cold
+  start.
+- **Special case**: a user whose only reading is the paracha (weekly chnei
+  mikra) is indeed "configured"; the paracha then becomes the reading, and
+  it is its weekly progress that fills the bar.
 
-## Android : automatique
+## Android: automatic
 
-Le code natif est versionné dans `native/android/` (providers Java, layouts,
-couleurs jour/nuit) et recopié dans `android/` (git-ignoré, régénéré par la CI)
-par `scripts/setup-android.mjs`, qui déclare aussi un receiver par widget dans
-le manifest (liste `WIDGET_RECEIVERS`) et enregistre le plugin dans
-MainActivity. Rien à faire de plus :
+The native code is versioned in `native/android/` (Java providers, layouts,
+day/night colors) and copied into `android/` (git-ignored, regenerated by
+the CI) by `scripts/setup-android.mjs`, which also declares one receiver per
+widget in the manifest (`WIDGET_RECEIVERS` list) and registers the plugin
+in MainActivity. Nothing more to do:
 
 ```bash
-npx cap add android          # si android/ n'existe pas encore
+npx cap add android          # if android/ does not exist yet
 node scripts/setup-android.mjs
 npm run cap:android
 ```
 
-Tester : builder sur un appareil, poser les widgets depuis le sélecteur du
-launcher, ouvrir l'app une fois (elle pousse les payloads), vérifier que le
-widget Horaires bascule au passage d'un zman et que « marquer comme lu » met à
-jour le widget Lecture. Élargir un widget à quatre colonnes doit le faire
-passer au dessin du format moyen, sans le reposer.
+Testing: build on a device, add the widgets from the launcher's picker,
+open the app once (it pushes the payloads), check that the Times widget
+switches when a zman passes and that « marquer comme lu » ("mark as read")
+updates the Reading widget. Widening a widget to four columns must switch
+it to the medium-size layout, without re-adding it.
 
-## iOS : automatique aussi, sauf trois clics chez Apple
+## iOS: automatic too, except three clicks at Apple
 
-Le projet `ios/` est généré (`npx cap add ios`) et non versionné. Longtemps la
-cible d'extension s'y créait **à la main dans Xcode** : elle ne survivait donc
-à aucun `cap add ios`, et les builds de la CI partaient sur l'App Store sans le
-moindre widget, sans rien signaler. C'est la raison, et la seule, pour laquelle
-les widgets n'existaient pas sur iPhone.
+The `ios/` project is generated (`npx cap add ios`) and not versioned. For a
+long time the extension target was created there **by hand in Xcode**: it
+therefore did not survive any `cap add ios`, and the CI builds went to the
+App Store without a single widget, without any warning. That is the reason,
+and the only one, why the widgets did not exist on iPhone.
 
-`scripts/setup-ios.mjs` écrit désormais la cible lui-même, via
-`scripts/lib/xcode-widgets.mjs` (transformation de texte pure, testée sans
-macOS dans `src/__tests__/xcodeWidgets.test.ts`) :
+`scripts/setup-ios.mjs` now writes the target itself, via
+`scripts/lib/xcode-widgets.mjs` (a pure text transformation, tested without
+macOS in `src/__tests__/xcodeWidgets.test.ts`):
 
-| Fichier de `native/ios/` | Destination | Rôle |
+| File in `native/ios/` | Destination | Role |
 |---|---|---|
-| `App/PjWidgetsPlugin.swift` | cible App | reçoit les payloads, écrit l'App Group, recharge WidgetKit |
-| `App/PjViewController.swift` | cible App | enregistre le plugin (obligatoire depuis Capacitor 5) |
-| `PjWidgets/PjWidgets.swift` | cible PjWidgets | les huit widgets SwiftUI et leurs timelines |
+| `App/PjWidgetsPlugin.swift` | App target | receives the payloads, writes the App Group, reloads WidgetKit |
+| `App/PjViewController.swift` | App target | registers the plugin (required since Capacitor 5) |
+| `PjWidgets/PjWidgets.swift` | PjWidgets target | the eight SwiftUI widgets and their timelines |
 
-Le script pose aussi l'`Info.plist` de l'extension (point d'extension
-WidgetKit, versions alignées sur celles de l'app), ses entitlements (l'App
-Group), l'App Group sur la cible App, la classe `PjViewController` dans
-`Main.storyboard`, et le schéma d'URL `petitejerusalem` des deep-links, aux
-côtés du `REVERSED_CLIENT_ID` de Google (dans le **même** tableau
-`CFBundleURLTypes`, la clé étant unique).
+The script also sets up the extension's `Info.plist` (WidgetKit extension
+point, versions aligned with the app's), its entitlements (the App Group),
+the App Group on the App target, the `PjViewController` class in
+`Main.storyboard`, and the `petitejerusalem` URL scheme for deep links,
+alongside Google's `REVERSED_CLIENT_ID` (in the **same**
+`CFBundleURLTypes` array, the key being unique).
 
-> **Le `customModule` du storyboard n'est pas décoratif.** Une classe Swift n'a
-> pas de nom nu dans le runtime Objective-C : écrire
-> `customClass="PjViewController"` sans `customModule="App"` ni
-> `customModuleProvider="target"` fait chercher à UIKit une classe qu'il ne
-> trouve pas. Il instancie alors un `UIViewController` vide, et l'app se lance
-> sur un **écran noir**, sans webview, sans bridge, donc sans plugin et sans le
-> moindre payload pour les widgets. Rien n'échoue : ni le build, ni l'archive,
-> ni les logs. `registerViewController` (dans `scripts/lib/xcode-widgets.mjs`)
-> pose les trois attributs, et `src/__tests__/xcodeWidgets.test.ts` le vérifie.
+> **The storyboard's `customModule` is not decorative.** A Swift class has
+> no bare name in the Objective-C runtime: writing
+> `customClass="PjViewController"` without `customModule="App"` or
+> `customModuleProvider="target"` makes UIKit look for a class it cannot
+> find. It then instantiates an empty `UIViewController`, and the app
+> launches on a **black screen**, without a webview, without a bridge, and
+> therefore without plugins and without a single payload for the widgets.
+> Nothing fails: not the build, not the archive, not the logs.
+> `registerViewController` (in `scripts/lib/xcode-widgets.mjs`) sets all
+> three attributes, and `src/__tests__/xcodeWidgets.test.ts` checks it.
 
 ```bash
-npx cap add ios              # si ios/ n'existe pas encore
+npx cap add ios              # if ios/ does not exist yet
 node scripts/setup-ios.mjs
 npm run cap:ios
 ```
 
-**La seule chose qui reste à faire à la main**, une fois pour toutes :
-l'App Group côté Apple. L'API App Store Connect sait activer la capacité
-`APP_GROUPS`, mais ni créer un groupe ni l'attacher à un App ID. Sur
-developer.apple.com → Certificates, Identifiers & Profiles :
+**The only thing left to do by hand**, once and for all: the App Group on
+Apple's side. The App Store Connect API can enable the `APP_GROUPS`
+capability, but can neither create a group nor attach it to an App ID. On
+developer.apple.com → Certificates, Identifiers & Profiles:
 
-1. Identifiers → **App Groups** → + → identifiant `group.fr.petitejerusalem.app` ;
-2. Identifiers → `fr.petitejerusalem.app` → App Groups → Configure → cocher le groupe ;
-3. Identifiers → `fr.petitejerusalem.app.PjWidgets` → App Groups → Configure → idem.
+1. Identifiers → **App Groups** → + → identifier `group.fr.petitejerusalem.app`;
+2. Identifiers → `fr.petitejerusalem.app` → App Groups → Configure → check the group;
+3. Identifiers → `fr.petitejerusalem.app.PjWidgets` → App Groups → Configure → same.
 
-L'App ID de l'extension est créé par `scripts/ios-signing.mjs` au premier run
-de la CI ; en local, Xcode s'en charge à la première signature. Le script relit
-ensuite les profils et refuse de continuer si l'App Group n'y est pas
-(`docs/ios-ci-cd.md`).
+The extension's App ID is created by `scripts/ios-signing.mjs` on the first
+CI run; locally, Xcode takes care of it at the first signing. The script
+then rereads the profiles and refuses to continue if the App Group is not
+in them (`docs/ios-ci-cd.md`).
 
-Tester : lancer l'app sur un appareil, poser les widgets, puis vérifier zman
-suivant et progression comme sur Android.
+Testing: run the app on a device, add the widgets, then check the next zman
+and the progress as on Android.
 
-### Revoir le rendu sur simulateur
+### Reviewing the rendering on the simulator
 
-Le simulateur convient très bien à une passe visuelle, à deux conditions qui
-ne se devinent pas :
+The simulator is perfectly suited for a visual pass, under two conditions
+that cannot be guessed:
 
-1. **Les entitlements.** Un `xcodebuild -sdk iphonesimulator` en ligne de
-   commande n'embarque aucun entitlement : l'App Group n'existe donc pas, et
-   les widgets restent sur « ouvrez l'app » quoi qu'on pousse. Il faut
-   resigner l'app ET son `.appex` à la main avant d'installer :
+1. **The entitlements.** A command-line `xcodebuild -sdk iphonesimulator`
+   embeds no entitlements: the App Group therefore does not exist, and the
+   widgets stay on "open the app" whatever is pushed. You must re-sign the
+   app AND its `.appex` by hand before installing:
 
    ```bash
    codesign --force --sign - --entitlements ios/App/PjWidgets/PjWidgets.entitlements \
@@ -261,32 +264,33 @@ ne se devinent pas :
      Build/Products/Debug-iphonesimulator/App.app
    ```
 
-   `xcrun simctl get_app_container booted fr.petitejerusalem.app groups` doit
-   alors répondre un chemin ; tant qu'il répond le vide, rien ne marchera.
+   `xcrun simctl get_app_container booted fr.petitejerusalem.app groups`
+   must then return a path; as long as it returns nothing, nothing will
+   work.
 
-2. **Le rechargement.** Écrire un payload dans le plist de l'App Group ne
-   suffit pas : l'entrée déjà archivée par WidgetKit porte sa copie du
-   payload, et tuer `chronod` ne fait que la redessiner. Seule une
-   réinstallation de l'app (`xcrun simctl install`) invalide les timelines.
-   Écrire le payload **puis** réinstaller, dans cet ordre.
+2. **The reload.** Writing a payload into the App Group's plist is not
+   enough: the entry already archived by WidgetKit carries its copy of the
+   payload, and killing `chronod` only redraws it. Only reinstalling the app
+   (`xcrun simctl install`) invalidates the timelines. Write the payload
+   **then** reinstall, in that order.
 
-Le reste se pilote en ligne de commande : `xcrun simctl io booted screenshot`
-pour regarder, `xcrun simctl ui booted appearance dark|light` pour l'autre
-mode. Poser un widget, en revanche, ne s'automatise pas : c'est le seul geste
-qui reste à faire à la main.
+The rest is driven from the command line: `xcrun simctl io booted screenshot`
+to look, `xcrun simctl ui booted appearance dark|light` for the other mode.
+Adding a widget, on the other hand, cannot be automated: it is the only
+gesture left to do by hand.
 
-## Évolutions
+## Evolution
 
-- Toute nouvelle donnée affichée par un widget passe par le payload
-  (`widgetPayloads.ts`), jamais de calcul métier côté natif.
-- Champ retiré ou renommé : incrémenter `v` et faire lire les deux versions au
-  natif le temps d'une release (les payloads persistent sur l'appareil).
-- Les tests du contrat vivent dans `src/__tests__/widgetPayloads.test.ts`.
-- Un widget ajouté d'un seul côté ne casse rien : il manque simplement chez la
-  moitié du public, et personne ne le voit avant d'installer l'app. Deux tests
-  tiennent la parité, `src/__tests__/widgetParity.test.ts` (les deux
-  plateformes proposent les mêmes widgets, sous les mêmes noms, câblés de bout
-  en bout) et `src/__tests__/widgetDeepLinks.test.ts` (ils emmènent aux mêmes
-  pages). Un widget de plus, c'est donc : le SwiftUI et son entrée au
-  `WidgetBundle`, le provider Java, son gabarit, son fichier
-  `appwidget-provider`, ses deux chaînes, et sa ligne dans `WIDGET_RECEIVERS`.
+- Any new data displayed by a widget goes through the payload
+  (`widgetPayloads.ts`), never any business logic on the native side.
+- Field removed or renamed: increment `v` and have the native side read both
+  versions for one release (payloads persist on the device).
+- The contract tests live in `src/__tests__/widgetPayloads.test.ts`.
+- A widget added on only one side breaks nothing: it is simply missing for
+  half the audience, and nobody sees it before installing the app. Two tests
+  guard parity, `src/__tests__/widgetParity.test.ts` (both platforms offer
+  the same widgets, under the same names, wired end to end) and
+  `src/__tests__/widgetDeepLinks.test.ts` (they lead to the same pages). One
+  more widget therefore means: the SwiftUI and its entry in the
+  `WidgetBundle`, the Java provider, its template, its `appwidget-provider`
+  file, its two strings, and its line in `WIDGET_RECEIVERS`.

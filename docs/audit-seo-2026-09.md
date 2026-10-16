@@ -1,390 +1,389 @@
-# Audit SEO (septembre 2026)
+# SEO audit (September 2026)
 
-Passe complète sur ce qui rend le site trouvable : le HTML servi aux robots
-(build local des 2 020 pages prérendues, relu par script : titres,
-descriptions, h1, canoniques, hreflang, liens internes, JSON-LD), les fichiers
-pour robots (`robots.txt`, `sitemap.xml`, `llms.txt`), les fonctions qui
-servent les pages dynamiques, la chaîne de déploiement, et ce qui ne se voit
-pas dans le code (autorité du domaine, consoles des moteurs).
+A complete pass over what makes the site findable: the HTML served to robots
+(local build of the 2,020 prerendered pages, checked by script: titles,
+descriptions, h1, canonicals, hreflang, internal links, JSON-LD), the files
+for robots (`robots.txt`, `sitemap.xml`, `llms.txt`), the functions that
+serve dynamic pages, the deployment pipeline, and what cannot be seen in the
+code (domain authority, search engine consoles).
 
-Le site en production n'était pas joignable depuis l'environnement de
-l'audit : les vérifications en ligne (en-têtes, redirections `www`, état de la
-Search Console) sont dans la section 4, à faire à la main.
+The production site was not reachable from the audit environment: the online
+checks (headers, `www` redirects, Search Console status) are in section 4, to
+be done by hand.
 
-Complète `SEO.md` (comment le référencement est fabriqué) et le chantier
-« `lastmod` réel dans le sitemap » de `audit-review-2026-09.md`.
+Complements `SEO.md` (how search visibility is built) and the "real
+`lastmod` in the sitemap" item in `audit-review-2026-09.md`.
 
-## 1. Ce qui est déjà bien
+## 1. What is already good
 
-- **Tout est prérendu.** 2 020 pages HTML complètes, une par URL indexable,
-  toutes avec titre, description, canonique, `lang`/`dir`, JSON-LD valide et
-  un seul h1. Aucun lien interne cassé, aucun hreflang non réciproque.
-- **Une URL par langue** (`/`, `/en`, `/he`, segments traduits), hreflang
-  croisés dans le `<head>` et dans le sitemap, `x-default` sur le français.
-- **Pages calculées à forte demande** : 243 villes × 3 langues d'horaires de
-  Chabbat avec FAQ datée, 16 fêtes × 3 langues, la paracha de la semaine, les
-  Tehilim par intention, les zmanim expliqués.
-- **Données structurées** partout où elles ont un sens : `BreadcrumbList`
-  (2 015 pages), `FAQPage` (796), `CreativeWork` (1 100), `Article`,
-  `HowTo`, `WebApplication`, `WebSite`, `Organization`.
-- **Aperçus sociaux des pages dynamiques** (sessions, chiourim, séries,
-  auteurs) par la fonction `socialPreview`, carte Open Graph par session.
-- `robots.txt` ouvert aux crawlers IA, `llms.txt`, IndexNow après chaque
-  release, `noindex` sur les pages sans intérêt (`/login`, 404, `/lire`).
+- **Everything is prerendered.** 2,020 complete HTML pages, one per indexable
+  URL, all with a title, description, canonical, `lang`/`dir`, valid JSON-LD
+  and a single h1. No broken internal links, no non-reciprocal hreflang.
+- **One URL per language** (`/`, `/en`, `/he`, translated segments), hreflang
+  cross-references in the `<head>` and in the sitemap, `x-default` on French.
+- **High-demand computed pages**: 243 cities × 3 languages of Chabbat times
+  with a dated FAQ, 16 holidays × 3 languages, the weekly paracha, Tehilim by
+  intention, zmanim explained.
+- **Structured data** wherever it makes sense: `BreadcrumbList` (2,015
+  pages), `FAQPage` (796), `CreativeWork` (1,100), `Article`, `HowTo`,
+  `WebApplication`, `WebSite`, `Organization`.
+- **Social previews for dynamic pages** (sessions, chiourim, series, authors)
+  through the `socialPreview` function, an Open Graph card per session.
+- `robots.txt` open to AI crawlers, `llms.txt`, IndexNow after each release,
+  `noindex` on pages of no interest (`/login`, 404, `/lire`).
 
-## 2. Ce qui manquait, et ce que la PR corrige
+## 2. What was missing, and what the PR fixes
 
-### Maillage interne : 1 200 pages sans chemin depuis la bibliothèque
+### Internal linking: 1,200 pages with no path from the library
 
-La liste des livres d'un corpus (`/bibliotheque/talmud`, `/bibliotheque/michna`…)
-n'existait que dans la vue Vue : un robot sans JavaScript recevait la coquille
-vide (`app.html`), sans canonique. Les ~1 200 pages de lecture n'étaient
-reliées entre elles que par le sitemap et leurs voisines (chapitre suivant),
-et 31 pages n'avaient **aucun** lien entrant : les 14 brahot, les 6 pages du
-sidour, les Sli'hot, les pages légales et « À propos » dans les trois langues.
-Un moteur les trouvait par le sitemap, sans rien pour les classer.
+The list of books in a corpus (`/bibliotheque/talmud`, `/bibliotheque/michna`…)
+only existed in the Vue view: a robot without JavaScript received the empty
+shell (`app.html`), with no canonical. The ~1,200 reading pages were only
+linked to each other through the sitemap and their neighbors (next chapter),
+and 31 pages had **no** incoming link at all: the 14 brahot, the 6 sidour
+pages, the Sli'hot, the legal pages and « À propos » ("About") in all three
+languages. A search engine found them through the sitemap, with nothing to
+rank them.
 
-Corrigé :
+Fixed:
 
-- **Une page statique par corpus** (`/bibliotheque/tehilim`, `/michna`,
-  `/talmud`, `/tanakh`, `/sidour`, `/brahot`), avec chaque livre en lien,
-  groupé par seder, sefer ou livre, un titre et une description propres, un
-  fil d'Ariane et une `ItemList` en JSON-LD (`buildCorpusBody` dans
-  `src/content/etudeTexts.ts`). Le chemin accueil → bibliothèque → corpus →
-  livre → chapitre existe maintenant en HTML.
-- `/bibliotheque` lie les six corpus (et les Sli'hot directement, la
-  redirection `/bibliotheque/slihot` n'existant que côté client) ; chaque page
-  de lecture renvoie vers la liste de son corpus.
-- Le pied de page statique lie les pages légales dans chaque langue.
-- `StudyPage.vue` pose, en français, le même titre et la même description
-  que la page prérendue : Googlebot rend le JavaScript, et deux titres
-  différents lui laissaient le choix.
+- **One static page per corpus** (`/bibliotheque/tehilim`, `/michna`,
+  `/talmud`, `/tanakh`, `/sidour`, `/brahot`), with each book linked, grouped
+  by seder, sefer or book, its own title and description, a breadcrumb and
+  an `ItemList` in JSON-LD (`buildCorpusBody` in
+  `src/content/etudeTexts.ts`). The path home → library → corpus → book →
+  chapter now exists in HTML.
+- `/bibliotheque` links the six corpora (and the Sli'hot directly, since the
+  `/bibliotheque/slihot` redirect only exists client-side); each reading page
+  links back to its corpus list.
+- The static footer links the legal pages in each language.
+- `StudyPage.vue` sets, in French, the same title and description as the
+  prerendered page: Googlebot renders JavaScript, and two different titles
+  left it to choose.
 
-Résultat : plus aucune page orpheline (audit relancé sur le build).
+Result: no orphan pages left (audit rerun on the build).
 
-### Sitemap : `lastmod` mensonger et fichier unique
+### Sitemap: misleading `lastmod` and a single file
 
-Chaque URL portait la date du build : 2 000 pages « modifiées » à chaque
-déploiement, dont 1 200 pages de lecture dont le texte ne change jamais.
-Google dit n'utiliser `lastmod` que s'il est constamment exact ; le mentir
-partout revenait à ne rien dire, et l'aurait aggravé avec un déploiement
-hebdomadaire.
+Every URL carried the build date: 2,000 pages "modified" on every
+deployment, including 1,200 reading pages whose text never changes. Google
+says it only uses `lastmod` if it is consistently accurate; lying about it
+everywhere amounted to saying nothing, and a weekly deployment would have
+made it worse.
 
-Corrigé :
+Fixed:
 
-- **`lastmod` réel** : la date du dernier commit du fichier dont la page est
-  faite (le fichier de texte pour une page de lecture, `seoPages.ts` pour une
-  page de contenu), lue en un seul `git log` (`scripts/lib/lastmod.mjs`). Les
-  pages calculées (horaires, calendrier, paracha, parachiot datées) gardent
-  la date du build : elles changent réellement. Sans historique git (clone
-  superficiel), repli sur la date du build, comme avant. `deploy.yml` fait
-  donc son checkout avec tout l'historique.
-- **Un index de sitemaps** à `/sitemap.xml` (adresse inchangée) vers un
-  fichier par famille : `sitemap-pages.xml`, `sitemap-bibliotheque.xml`,
-  `sitemap-horaires.xml`, `sitemap-calendrier.xml`. La Search Console rend
-  compte de l'indexation sitemap par sitemap : on verra quelle famille
-  décroche.
-- **IndexNow lit les sitemaps** au lieu de la liste des pages déclarées : les
-  1 200 pages de lecture, jusqu'ici jamais soumises à Bing, le sont.
+- **Real `lastmod`**: the date of the last commit of the file the page is
+  made from (the text file for a reading page, `seoPages.ts` for a content
+  page), read in a single `git log` (`scripts/lib/lastmod.mjs`). Computed
+  pages (prayer times, calendar, paracha, dated parachiot) keep the build
+  date: they really do change. Without git history (shallow clone), it falls
+  back to the build date, as before. `deploy.yml` therefore checks out the
+  full history.
+- **A sitemap index** at `/sitemap.xml` (same address) pointing to one file
+  per family: `sitemap-pages.xml`, `sitemap-bibliotheque.xml`,
+  `sitemap-horaires.xml`, `sitemap-calendrier.xml`. Search Console reports
+  indexing sitemap by sitemap: we will see which family drops off.
+- **IndexNow reads the sitemaps** instead of the list of declared pages: the
+  1,200 reading pages, never submitted to Bing until now, now are.
 
-### Fraîcheur : des pages datées sans déploiement régulier
+### Freshness: dated pages without regular deployment
 
-Le déploiement ne partait que d'un tag. Or `/paracha` nomme « cette semaine »,
-les pages d'horaires couvrent douze semaines à partir du build, la FAQ des
-fêtes est datée : sans release pendant un mois, tout cela recule d'un mois.
-`SEO.md` demandait un déploiement hebdomadaire ; rien ne le garantissait.
+Deployment only ran from a tag. Yet `/paracha` names "this week", the prayer
+times pages cover twelve weeks from the build, and the holiday FAQ is dated:
+without a release for a month, all of that falls a month behind. `SEO.md`
+called for a weekly deployment; nothing guaranteed it.
 
-Corrigé : **`refresh-seo.yml`**, le dimanche et le mercredi à 03:00 UTC (et à
-la demande), rebâtit le **dernier tag déployé** (pas `main` : le site reste à
-la version publiée, seules les dates changent), déploie le hosting seul,
-vérifie que le sitemap servi porte la date du jour, et prévient IndexNow. Un
-groupe de concurrence l'empêche de se croiser avec une release.
+Fixed: **`refresh-seo.yml`**, on Sundays and Wednesdays at 03:00 UTC (and on
+demand), rebuilds the **last deployed tag** (not `main`: the site stays at
+the published version, only the dates change), deploys hosting only, checks
+that the served sitemap carries today's date, and notifies IndexNow. A
+concurrency group prevents it from overlapping with a release.
 
-### Doublons d'hôte
+### Duplicate hosts
 
-Le site répond aussi sur `petite-jerusalem-dev.web.app` et
-`.firebaseapp.com` (c'est ce que `deploy.yml` interroge pour vérifier la mise
-en ligne). Les canoniques pointent vers `.fr`, mais la coquille des routes
-profondes n'en a pas. Corrigé : `index.html` renvoie ces deux hôtes vers le
-domaine canonique (les canaux de prévisualisation des PR et l'app native ne
-sont pas concernés). Firebase Hosting ne sait pas faire une redirection 301
-selon l'hôte ; à défaut, c'est ce que voient les robots qui exécutent le
-JavaScript, Googlebot compris.
+The site also answers on `petite-jerusalem-dev.web.app` and
+`.firebaseapp.com` (that is what `deploy.yml` queries to check the release
+went live). Canonicals point to `.fr`, but the shell for deep routes has
+none. Fixed: `index.html` sends these two hosts to the canonical domain (PR
+preview channels and the native app are not affected). Firebase Hosting
+cannot do a host-based 301 redirect; failing that, this is what robots that
+execute JavaScript see, Googlebot included.
 
 ### `robots.txt`
 
-`/admin` et `/studio/` n'étaient protégés que par un `noindex` posé en
-JavaScript ; `/app` (la coquille) était crawlable avec le titre de l'accueil.
-Les trois sont maintenant `Disallow`. Ajout de `Claude-SearchBot`,
-`Applebot` (Siri, Spotlight) et `DuckAssistBot`.
+`/admin` and `/studio/` were only protected by a `noindex` set in
+JavaScript; `/app` (the shell) was crawlable with the home page title. All
+three are now `Disallow`. Added `Claude-SearchBot`, `Applebot` (Siri,
+Spotlight) and `DuckAssistBot`.
 
-### Données structurées des pages dynamiques
+### Structured data for dynamic pages
 
-Un chiour n'émettait aucun JSON-LD : il est maintenant un `AudioObject`
-(auteur, durée ISO 8601, URL du fichier, gratuit), avec son fil d'Ariane ; les
-sessions ont le leur.
+A chiour emitted no JSON-LD: it is now an `AudioObject` (author, ISO 8601
+duration, file URL, free), with its breadcrumb; sessions have theirs.
 
-### Carte Twitter
+### Twitter card
 
-`seoService` posait `twitter:card: summary` quand la vue ne précisait rien,
-alors que le HTML servi dit `summary_large_image` : la page rendue
-contredisait la page servie. Harmonisé sur la carte large.
+`seoService` set `twitter:card: summary` when the view specified nothing,
+whereas the served HTML says `summary_large_image`: the rendered page
+contradicted the served page. Aligned on the large card.
 
-### Identité
+### Identity
 
-`Organization` déclare ses `sameAs` (App Store, Play Store, GitHub, X) :
-c'est ce qui relie le site à ses fiches sur les stores dans le graphe de
-connaissances. `llms.txt` décrit les pages de corpus, le motif des URL de
-lecture, les intentions de Tehilim, le sitemap et les apps.
+`Organization` declares its `sameAs` (App Store, Play Store, GitHub, X):
+that is what links the site to its store listings in the knowledge graph.
+`llms.txt` describes the corpus pages, the reading URL pattern, the Tehilim
+intentions, the sitemap and the apps.
 
-## 3. Ce qui reste à faire dans le code (par ordre d'intérêt)
+## 3. What remains to be done in the code (by order of value)
 
-1. **Titres trop longs.** 1 588 titres dépassent 65 caractères, surtout les
-   pages de lecture (« Michna Arakhin Chapitre 1 (א) en hébreu et phonétique |
-   Petite Jérusalem », 72). Google coupe vers 60. Les mots-clés sont devant,
-   c'est la marque qui saute ; acceptable, mais « Michna Arakhin 1 : hébreu et
-   phonétique » gagnerait dix caractères. Fichier : `sectionTitle` dans
-   `src/content/etudeTexts.ts`. De même 816 descriptions dépassent 165
-   caractères (Talmud), coupées dans les résultats.
-2. **Livres du Tanakh en une seule page.** `/bibliotheque/tanakh/tehillim`
-   pèse 749 Ko (les 150 psaumes en un seul document, doublon des 150 pages
-   `/bibliotheque/tehilim/N`), Yirmiyahu 577 Ko. Paginer les livres des
-   Neviim et Ketouvim par chapitre (comme la Michna) donnerait des pages
-   indexables et des URL « Yechayahou chapitre 53 » ; pour Tehillim, une
-   canonique vers `/bibliotheque/tehilim` ou le retrait du doublon.
-3. **Image Open Graph par page.** Toutes les pages partagent `og-image.jpg`.
-   Une carte par ville (« Horaires de Chabbat à Lyon ») et par fête
-   augmenterait le taux de clic sur WhatsApp, premier canal de partage de la
-   communauté. La mécanique existe déjà (`functions/src/ogCard.ts`, resvg) :
-   une route `/og/horaires/<ville>.png` sur le modèle de `/og/session/`.
-4. **Flux RSS podcast des chiourim.** Un flux `/chiourim/feed.xml`
-   (`AudioObject` existants, `mediaUrl`, durée) permettrait de soumettre les
-   chiourim à Apple Podcasts, Spotify et YouTube Music : un canal de
-   découverte entier, hors Google. À générer par la fonction (les chiourim
-   vivent dans Firestore), ou par un export à chaque déploiement.
-5. **`/chiourim` sans liste pour les robots.** La page statique n'a que
-   trois paragraphes ; la liste des chiourim n'arrive qu'en JavaScript. Faire
-   servir `/chiourim` par `socialPreview` avec la liste (déjà en cache dans
-   la fonction) donnerait aux moteurs un chemin vers chaque chiour.
-6. **Polices Google bloquantes** (`index.html`) : deux familles chargées
-   depuis `fonts.googleapis.com` avant le premier rendu, ce que Lighthouse
-   compte dans le LCP. Déjà au chantier de `audit-review-2026-09.md` pour
-   l'app ; les embarquer en woff2 sous-ensemblés vaut aussi pour le site.
-7. **Soft 404.** Une ville inconnue (`/horaires/nulle-part`) et une fête
-   inconnue redirigent côté client vers le hub ; une URL inconnue rend la 404
-   en `noindex` mais avec un statut 200 (réécriture attrape-tout de Firebase).
-   Sans conséquence tant que Google rend le JavaScript ; rien à faire de
-   simple côté hosting.
-8. **Pages de contenu en anglais et en hébreu** : les Tehilim par intention
-   et la bibliothèque restent en français seul. Les intentions
-   (« tehillim for healing ») sont un vrai gisement en anglais.
+1. **Titles too long.** 1,588 titles exceed 65 characters, mostly reading
+   pages (« Michna Arakhin Chapitre 1 (א) en hébreu et phonétique | Petite
+   Jérusalem », 72). Google cuts around 60. The keywords come first, it is
+   the brand that gets dropped; acceptable, but « Michna Arakhin 1 : hébreu
+   et phonétique » would save ten characters. File: `sectionTitle` in
+   `src/content/etudeTexts.ts`. Likewise, 816 descriptions exceed 165
+   characters (Talmud), cut off in results.
+2. **Tanakh books on a single page.** `/bibliotheque/tanakh/tehillim` weighs
+   749 KB (all 150 psalms in one document, a duplicate of the 150
+   `/bibliotheque/tehilim/N` pages), Yirmiyahu 577 KB. Paginating the books
+   of Neviim and Ketouvim by chapter (like the Michna) would give indexable
+   pages and URLs like « Yechayahou chapitre 53 »; for Tehillim, a canonical
+   pointing to `/bibliotheque/tehilim` or removing the duplicate.
+3. **One Open Graph image per page.** All pages share `og-image.jpg`. A card
+   per city (« Horaires de Chabbat à Lyon ») and per holiday would raise the
+   click-through rate on WhatsApp, the community's main sharing channel. The
+   mechanism already exists (`functions/src/ogCard.ts`, resvg): a
+   `/og/horaires/<ville>.png` route modeled on `/og/session/`.
+4. **Podcast RSS feed for the chiourim.** A `/chiourim/feed.xml` feed
+   (existing `AudioObject`s, `mediaUrl`, duration) would allow submitting the
+   chiourim to Apple Podcasts, Spotify and YouTube Music: an entire discovery
+   channel, outside Google. To be generated by the function (the chiourim
+   live in Firestore), or by an export at each deployment.
+5. **`/chiourim` without a list for robots.** The static page only has three
+   paragraphs; the list of chiourim only arrives through JavaScript. Having
+   `socialPreview` serve `/chiourim` with the list (already cached in the
+   function) would give search engines a path to each chiour.
+6. **Render-blocking Google Fonts** (`index.html`): two families loaded from
+   `fonts.googleapis.com` before first render, which Lighthouse counts in the
+   LCP. Already on the list in `audit-review-2026-09.md` for the app;
+   bundling them as subsetted woff2 also applies to the site.
+7. **Soft 404.** An unknown city (`/horaires/nulle-part`) and an unknown
+   holiday redirect client-side to the hub; an unknown URL renders the 404 as
+   `noindex` but with a 200 status (Firebase catch-all rewrite). No
+   consequence as long as Google renders JavaScript; nothing simple to do on
+   the hosting side.
+8. **Content pages in English and Hebrew**: Tehilim by intention and the
+   library remain French-only. The intentions ("tehillim for healing") are a
+   real opportunity in English.
 
-## 4. Actions manuelles (hors dépôt)
+## 4. Manual actions (outside the repository)
 
-Rien de ce qui précède ne remplace ceci ; pour un domaine jeune, c'est même
-l'essentiel.
+None of the above replaces this; for a young domain, it is even the most
+important part.
 
-1. **Google Search Console** : vérifier que la propriété `petite-jerusalem.fr`
-   (propriété de domaine, DNS TXT) existe ; **soumettre à nouveau
-   `https://petite-jerusalem.fr/sitemap.xml`** (c'est maintenant un index ;
-   les quatre sitemaps enfants apparaissent dessous) ; lire le rapport Pages
-   (« Explorée, actuellement non indexée », « Détectée », « Page en double »)
-   famille par famille ; demander l'indexation des pages de corpus
-   (`/bibliotheque/talmud`, `/bibliotheque/tehilim`…) et de la page d'accueil.
-2. **Bing Webmaster Tools** : site ajouté, sitemap soumis, clé IndexNow
-   reconnue (rapport IndexNow). Bing alimente ChatGPT search et DuckDuckGo.
-3. **Vérifier en ligne** (le sandbox de l'audit ne pouvait pas) :
-   `https://www.petite-jerusalem.fr` doit rediriger en 301 vers l'apex ;
-   `petite-jerusalem.web.app` doit rester en 404 ;
-   `petite-jerusalem-dev.web.app` doit renvoyer vers `.fr` (script de cette
-   PR) ; `curl -s https://petite-jerusalem.fr/sitemap.xml | head` doit montrer
-   l'index ; `/bibliotheque/talmud` doit servir la liste des traités sans
-   JavaScript ; `/robots.txt` doit porter les nouveaux `Disallow`.
-4. **Lancer `Refresh SEO pages` à la main une fois** (Actions → workflow →
-   Run workflow) pour vérifier qu'il passe, puis contrôler le dimanche suivant
-   que le sitemap porte la date du jour.
-5. **Google Business / Knowledge Graph** : rien à faire, ce n'est pas un
-   commerce local.
-6. **Liens entrants**, le seul vrai levier pour un domaine sans autorité face
-   à un film homonyme : annuaires et sites communautaires (Consistoire, sites
-   de communautés, Torah-Box, Chiourim.com, Hamodia, Actualité Juive, blogs
-   de rabbanim), newsletters de synagogues, groupes WhatsApp et Facebook de
-   communautés, fiches des stores (déjà liées par `sameAs`). Ancrer les liens
-   sur l'usage (« finir le Chass à plusieurs », « horaires de Chabbat à
-   Lyon »), pas sur le nom.
-7. **Wikipédia / Wikidata** : une entrée Wikidata pour le site (instance de
-   « site web », langues, URL officielle, identifiants des stores) aide les
-   assistants à distinguer le site du film de 2005.
-8. **Suivre les Core Web Vitals** dans la Search Console (rapport Expérience)
-   et PageSpeed Insights sur `/`, `/horaires/paris`, `/bibliotheque/tehilim/23`.
+1. **Google Search Console**: check that the `petite-jerusalem.fr` property
+   (domain property, DNS TXT) exists; **resubmit
+   `https://petite-jerusalem.fr/sitemap.xml`** (it is now an index; the four
+   child sitemaps appear under it); read the Pages report (« Explorée,
+   actuellement non indexée » ("Crawled, currently not indexed"),
+   « Détectée » ("Discovered"), « Page en double » ("Duplicate page")) family
+   by family; request indexing of the corpus pages (`/bibliotheque/talmud`,
+   `/bibliotheque/tehilim`…) and of the home page.
+2. **Bing Webmaster Tools**: site added, sitemap submitted, IndexNow key
+   recognized (IndexNow report). Bing feeds ChatGPT search and DuckDuckGo.
+3. **Check online** (the audit sandbox could not):
+   `https://www.petite-jerusalem.fr` must 301 redirect to the apex;
+   `petite-jerusalem.web.app` must remain a 404;
+   `petite-jerusalem-dev.web.app` must send to `.fr` (script from this PR);
+   `curl -s https://petite-jerusalem.fr/sitemap.xml | head` must show the
+   index; `/bibliotheque/talmud` must serve the list of tractates without
+   JavaScript; `/robots.txt` must carry the new `Disallow` lines.
+4. **Run `Refresh SEO pages` by hand once** (Actions → workflow → Run
+   workflow) to check that it passes, then check the following Sunday that
+   the sitemap carries the current date.
+5. **Google Business / Knowledge Graph**: nothing to do, this is not a local
+   business.
+6. **Inbound links**, the only real lever for a domain with no authority
+   facing a film of the same name: directories and community sites
+   (Consistoire, community sites, Torah-Box, Chiourim.com, Hamodia, Actualité
+   Juive, rabbis' blogs), synagogue newsletters, community WhatsApp and
+   Facebook groups, store listings (already linked through `sameAs`). Anchor
+   links on the use case (« finir le Chass à plusieurs », « horaires de
+   Chabbat à Lyon »), not on the name.
+7. **Wikipedia / Wikidata**: a Wikidata entry for the site (instance of
+   "website", languages, official URL, store identifiers) helps assistants
+   tell the site apart from the 2005 film.
+8. **Monitor Core Web Vitals** in Search Console (Experience report) and
+   PageSpeed Insights on `/`, `/horaires/paris`, `/bibliotheque/tehilim/23`.
 
-## 5. Visibilité dans les assistants d'IA (ChatGPT, Claude, Gemini, Perplexity)
+## 5. Visibility in AI assistants (ChatGPT, Claude, Gemini, Perplexity)
 
-Un assistant ne « connaît » pas un site : il le retrouve dans un index de
-recherche au moment de la question, puis va lire la page. Trois conditions,
-et l'état du site pour chacune.
+An assistant does not "know" a site: it finds it in a search index at query
+time, then goes and reads the page. Three conditions, and the site's status
+for each.
 
-**1. Être dans l'index que l'assistant interroge.** Chacun a le sien :
+**1. Be in the index the assistant queries.** Each has its own:
 
-| Assistant | Index consulté | Ce qui le nourrit |
+| Assistant | Index queried | What feeds it |
 | --- | --- | --- |
 | ChatGPT (search), Copilot | Bing | Bing Webmaster Tools, IndexNow, `OAI-SearchBot` |
-| Gemini, AI Overviews | Google | Search Console, `Googlebot` (`Google-Extended` pour l'entraînement) |
-| Claude | Brave Search | pas de console : crawl de Brave à partir des liens entrants |
-| Perplexity | le sien + Bing | `PerplexityBot`, `Perplexity-User` |
+| Gemini, AI Overviews | Google | Search Console, `Googlebot` (`Google-Extended` for training) |
+| Claude | Brave Search | no console: Brave crawl from inbound links |
+| Perplexity | its own + Bing | `PerplexityBot`, `Perplexity-User` |
 | Mistral (Le Chat) | Brave | `MistralAI-User` |
-| Modèles ouverts (Llama, Mistral, DeepSeek…) | corpus d'entraînement | `CCBot` (Common Crawl) |
+| Open models (Llama, Mistral, DeepSeek…) | training corpus | `CCBot` (Common Crawl) |
 
-Test fait pendant l'audit avec un outil de recherche adossé à un index tiers
-(Brave) : sur `site:petite-jerusalem.fr`, **une seule URL du site remonte,
-`/lire/158`**, une ancienne adresse (aujourd'hui `noindex`, canonique vers
-`/bibliotheque`). Ni l'accueil, ni `/horaires`, ni `/finir-le-chass`. Sur
-« petite-jerusalem.fr » entre guillemets, uniquement le film de 2005. En
-revanche, sur « finir le Chass à plusieurs partage talmud », cette même URL
-`/lire/158` sort en troisième position, derrière Torah-Box et Techouvot :
-la preuve que le texte porte, dès qu'une page est indexée.
+Test run during the audit with a search tool backed by a third-party index
+(Brave): on `site:petite-jerusalem.fr`, **only one URL from the site comes
+up, `/lire/158`**, an old address (now `noindex`, canonical pointing to
+`/bibliotheque`). Neither the home page, nor `/horaires`, nor
+`/finir-le-chass`. On "petite-jerusalem.fr" in quotes, only the 2005 film.
+On the other hand, on « finir le Chass à plusieurs partage talmud », that
+same `/lire/158` URL comes out in third position, behind Torah-Box and
+Techouvot: proof that the text carries weight as soon as a page is indexed.
 
-Conclusion : le site est **quasiment absent des index** que les assistants
-utilisent, non par un défaut technique du HTML (tout est servi en clair), mais
-parce que ces index ne l'ont pas encore parcouru. C'est la Search Console et
-Bing Webmaster (section 4) qui débloquent Google et Bing ; Brave suit les
-liens entrants, d'où l'importance des liens (section 4, point 6).
+Conclusion: the site is **almost absent from the indexes** that assistants
+use, not because of a technical flaw in the HTML (everything is served in
+plain text), but because those indexes have not crawled it yet. Search
+Console and Bing Webmaster (section 4) unlock Google and Bing; Brave follows
+inbound links, hence the importance of links (section 4, item 6).
 
-**2. Être lisible sans JavaScript.** Acquis : les 2 025 pages sont servies en
-HTML complet, FAQ comprises, et `robots.txt` autorise chaque robot d'IA
-nommément (ajout dans cette PR de `Claude-User`, `Perplexity-User`,
-`MistralAI-User`, `Meta-ExternalAgent`, `Meta-ExternalFetcher`, `Amazonbot`,
-`Google-CloudVertexBot`, `cohere-ai`, `YouBot` et `CCBot`, en plus de
+**2. Be readable without JavaScript.** Done: all 2,025 pages are served as
+complete HTML, FAQs included, and `robots.txt` allows each AI robot by name
+(this PR adds `Claude-User`, `Perplexity-User`, `MistralAI-User`,
+`Meta-ExternalAgent`, `Meta-ExternalFetcher`, `Amazonbot`,
+`Google-CloudVertexBot`, `cohere-ai`, `YouBot` and `CCBot`, in addition to
 `GPTBot`, `OAI-SearchBot`, `ClaudeBot`, `Claude-SearchBot`, `PerplexityBot`,
 `Google-Extended`, `Applebot`, `DuckAssistBot`).
 
-**3. Donner la réponse en texte.** Acquis pour les questions datées (« quand
-tombe Pessah 2027 », « à quelle heure sort Chabbat à Lyon ») et les
-questions d'usage (« comment finir le Chass à plusieurs »), grâce aux FAQ.
-Cette PR ajoute **`llms-full.txt`** (125 Ko, généré à chaque build) : le
-texte des 37 pages principales en français, chacune sous son URL, pour
-l'assistant qui ne lit qu'un fichier ; `llms.txt` y renvoie.
+**3. Give the answer as text.** Done for dated questions (« quand tombe
+Pessah 2027 », "when is Pessah 2027"; « à quelle heure sort Chabbat à
+Lyon », "what time does Chabbat end in Lyon") and usage questions (« comment
+finir le Chass à plusieurs », "how to finish the Chass as a group"), thanks
+to the FAQs. This PR adds **`llms-full.txt`** (125 KB, generated at each
+build): the text of the 37 main pages in French, each under its URL, for the
+assistant that only reads one file; `llms.txt` points to it.
 
-**Comment vérifier soi-même** (protocole repris dans le prompt Cowork) :
-poser à chaque assistant, avec la recherche web activée, les mêmes six
-questions et noter si le site est cité et en quelle position :
-« Comment organiser une chaîne de Tehilim pour un malade ? », « Un site pour
-finir le Chass à plusieurs ? », « À quelle heure sort Chabbat à Marseille
-cette semaine ? », « Quand tombe Roch Hachana 2027 ? », « Où lire Tehilim 121
-en phonétique ? », « Quelle est la paracha de cette semaine ? ». À refaire
-un mois après la soumission des sitemaps.
+**How to check for yourself** (protocol reused in the Cowork prompt): ask
+each assistant, with web search enabled, the same six questions and note
+whether the site is cited and in what position: « Comment organiser une
+chaîne de Tehilim pour un malade ? », « Un site pour finir le Chass à
+plusieurs ? », « À quelle heure sort Chabbat à Marseille cette semaine ? »,
+« Quand tombe Roch Hachana 2027 ? », « Où lire Tehilim 121 en phonétique ? »,
+« Quelle est la paracha de cette semaine ? ». Repeat one month after
+submitting the sitemaps.
 
-## 6. Les mots-clés : ce qui est visé, ce que cherchent les gens, et les horizons non exploités
+## 6. Keywords: what is targeted, what people search for, and untapped opportunities
 
-### Le vocabulaire visé confronté au marché
+### The targeted vocabulary versus the market
 
-Pour chaque famille de pages, la requête telle qu'elle est tapée, et qui la
-gagne aujourd'hui (résultats relevés pendant l'audit) :
+For each family of pages, the query as it is typed (French queries are kept
+as typed), and who wins it today (results noted during the audit):
 
-| Famille | Requête tapée | Qui gagne | Verdict pour Petite Jérusalem |
+| Family | Query typed | Who wins | Verdict for Petite Jérusalem |
 | --- | --- | --- | --- |
-| Partage de Tehilim | « chaîne de Tehilim » | Torah-Box, Univers Torah, Amisrael, Tehilim Online, Joie 2 Vivre | Le site disait « partage de Tehilim », un mot que personne ne tape. **Corrigé dans cette PR** : titre, h1, chapeau et FAQ de `/partage-tehilim` disent « chaîne de Tehilim », et gardent « partage » en second. Concurrence forte : l'angle à tenir est « gratuit, sans compte, lien WhatsApp, suivi en temps réel de ce qui est lu ». |
-| Finir le Chass | « finir le Chass à plusieurs », « partage du Chass », « siyoum haShass » | Torah-Box (articles), Limoud Torah | Concurrence faible, vocabulaire juste. C'est la page qui sort déjà. À compléter par « chaîne de Michnayot » (voir horizons). |
-| Horaires | « horaires de Chabbat Lyon », « allumage des bougies Lyon » | Chabad, Hebcal, Torah-Box, Alloj, Amhazak, horaire-chabbat.fr | Requêtes de tête inaccessibles à court terme. La chance est la **longue traîne** : 83 villes françaises dont Sarcelles, Créteil, Saint-Mandé, Villeurbanne, Sarreguemines… où les gros sites n'ont pas de page dédiée en français. |
-| Fêtes | « quand tombe Roch Hachana 2026 », « date Kippour 2026 » | calendriergratuit.fr, icalendrier.fr, joursferies.fr, Loubavitch, Chabad | Les gagnants ont **l'année dans le titre**. Nos titres disaient « Roch Hachana : dates, heure d'entrée et de sortie », sans année. **Corrigé dans cette PR** : « Roch Hachana 2026 : dates, heure d'entrée et de sortie », l'année étant celle de la prochaine occurrence, recalculée par le rafraîchissement hebdomadaire. |
-| Paracha | « paracha de la semaine » | Chabad, Torah-Box, Wikipédia, Manitou | Requête de tête inaccessible ; la longue traîne « quand lit-on Ki Tétsé », « texte de la paracha en phonétique » est le bon angle, déjà en place. |
-| Bibliothèque | « Tehilim 121 phonétique », « Birkat Hamazon phonétique » | Torah-Box, Tehilim Online, Dayan Haemet, Chabad, bar-mitzvah.fr | Vocabulaire juste (« en hébreu et phonétique »). Les pages existent ; elles manquaient de liens entrants (corrigé : pages de corpus). |
-| Tehilim du jour | « Tehilim du jour », « Tehilim par jour du mois » | Chabad, Tehilim Online | La page `/bibliotheque/tehilim-du-jour` existe mais n'est **pas prérendue** (Vue seulement) : invisible pour les moteurs. À prérendre avec le tableau des 30 jours (voir horizons). |
+| Tehilim sharing | « chaîne de Tehilim » ("Tehilim chain") | Torah-Box, Univers Torah, Amisrael, Tehilim Online, Joie 2 Vivre | The site said « partage de Tehilim » ("Tehilim sharing"), a phrase nobody types. **Fixed in this PR**: the title, h1, lead and FAQ of `/partage-tehilim` say « chaîne de Tehilim », and keep « partage » second. Strong competition: the angle to hold is "free, no account, WhatsApp link, real-time tracking of what has been read". |
+| Finishing the Chass | « finir le Chass à plusieurs », « partage du Chass », « siyoum haShass » | Torah-Box (articles), Limoud Torah | Weak competition, the right vocabulary. This is the page that already ranks. To be complemented with « chaîne de Michnayot » (see opportunities). |
+| Prayer times | « horaires de Chabbat Lyon », « allumage des bougies Lyon » | Chabad, Hebcal, Torah-Box, Alloj, Amhazak, horaire-chabbat.fr | Head queries out of reach in the short term. The opportunity is the **long tail**: 83 French cities including Sarcelles, Créteil, Saint-Mandé, Villeurbanne, Sarreguemines… where the big sites have no dedicated page in French. |
+| Holidays | « quand tombe Roch Hachana 2026 », « date Kippour 2026 » | calendriergratuit.fr, icalendrier.fr, joursferies.fr, Loubavitch, Chabad | The winners have **the year in the title**. Our titles said « Roch Hachana : dates, heure d'entrée et de sortie », with no year. **Fixed in this PR**: « Roch Hachana 2026 : dates, heure d'entrée et de sortie », the year being that of the next occurrence, recomputed by the weekly refresh. |
+| Paracha | « paracha de la semaine » | Chabad, Torah-Box, Wikipédia, Manitou | Head query out of reach; the long tail « quand lit-on Ki Tétsé », « texte de la paracha en phonétique » is the right angle, already in place. |
+| Library | « Tehilim 121 phonétique », « Birkat Hamazon phonétique » | Torah-Box, Tehilim Online, Dayan Haemet, Chabad, bar-mitzvah.fr | The right vocabulary (« en hébreu et phonétique »). The pages exist; they lacked inbound links (fixed: corpus pages). |
+| Daily Tehilim | « Tehilim du jour », « Tehilim par jour du mois » | Chabad, Tehilim Online | The `/bibliotheque/tehilim-du-jour` page exists but is **not prerendered** (Vue only): invisible to search engines. To be prerendered with the 30-day table (see opportunities). |
 
-### Horizons non exploités, par intérêt décroissant
+### Untapped opportunities, by decreasing value
 
-Chaque ligne est une requête réelle, le contenu que le site pourrait y
-mettre avec ce qu'il a déjà, et pourquoi c'est jouable.
+Each line is a real query, the content the site could put there with what
+it already has, and why it is achievable.
 
-1. **« Chaîne de Michnayot » / « Michnayot pour un défunt ».** Répartir les
-   Michnayot à la mémoire d'un défunt (l'année de deuil, la hiloula) est un
-   usage courant, peu servi en français, et le site sait déjà partager la
-   Michna. Une page `/partage-michnayot` sur le modèle de `/partage-tehilim`
-   (intention, comment faire, FAQ), et le mot « Michnayot » dans l'accueil.
-2. **« Daf Hayomi du jour » / « daf yomi aujourd'hui ».** Les résultats sont
-   des cours vidéo, pas le texte. Une page `/daf-hayomi` calculée
-   (`@hebcal/learning` fournit `DafYomi`, comme `MishnaYomi`) qui donne le daf
-   du jour, la semaine à venir et le lien vers le chapitre dans la
-   bibliothèque, rafraîchie par le workflow hebdomadaire. Même mécanique pour
-   « Michna yomit ». Orthographe française : « Daf Hayomi » avant « daf yomi ».
-3. **Tehilim du jour, prérendus.** Le tableau des psaumes par jour du mois
-   hébraïque (1 : 1 à 9, 2 : 10 à 17…) est stable et très cherché ; la page
-   existe, il manque son HTML statique, avec le jour courant calculé au build.
-4. **L'année juive comme page.** « Calendrier juif 5787 », « calendrier
-   hébraïque 2026-2027 », « fêtes juives 2027 » : une page par année civile
-   (`/calendrier/2027`) listant toutes les fêtes et jeûnes de l'année, ce que
-   font les sites de calendrier génériques qui gagnent aujourd'hui.
-5. **« Date hébraïque aujourd'hui » / convertisseur de dates.** Tout est déjà
-   calculé sur l'appareil (hebcal) : une page `/date-hebraique` avec la date
-   du jour et un convertisseur, plus une FAQ (« quelle est la date hébraïque
-   de ma naissance »), viserait une requête quotidienne.
-6. **Le Omer et la lune.** « Compteur du Omer », « quel jour du Omer
-   aujourd'hui », « Birkat Halevana jusqu'à quand » : les bandeaux existent
-   dans l'app ; une page `/omer` (le compte du jour et les 49 jours datés) et
-   une section « Birkat Halevana » dans le calendrier les rendraient
-   trouvables.
-7. **Les prières une par une.** « Kaddish phonétique », « Chema Israël
+1. **« Chaîne de Michnayot » / « Michnayot pour un défunt ».** Dividing up
+   the Michnayot in memory of a deceased person (the year of mourning, the
+   hiloula) is a common custom, poorly served in French, and the site already
+   knows how to share the Michna. A `/partage-michnayot` page modeled on
+   `/partage-tehilim` (intention, how to do it, FAQ), and the word
+   « Michnayot » on the home page.
+2. **« Daf Hayomi du jour » / « daf yomi aujourd'hui ».** The results are
+   video lessons, not the text. A computed `/daf-hayomi` page
+   (`@hebcal/learning` provides `DafYomi`, like `MishnaYomi`) giving the
+   day's daf, the coming week and the link to the chapter in the library,
+   refreshed by the weekly workflow. Same mechanism for « Michna yomit ».
+   French spelling: « Daf Hayomi » before « daf yomi ».
+3. **Daily Tehilim, prerendered.** The table of psalms by day of the Hebrew
+   month (1: 1 to 9, 2: 10 to 17…) is stable and much searched; the page
+   exists, it lacks its static HTML, with the current day computed at build
+   time.
+4. **The Jewish year as a page.** « Calendrier juif 5787 », « calendrier
+   hébraïque 2026-2027 », « fêtes juives 2027 »: one page per civil year
+   (`/calendrier/2027`) listing all the holidays and fasts of the year, which
+   is what the generic calendar sites that win today do.
+5. **« Date hébraïque aujourd'hui » / date converter.** Everything is
+   already computed on the device (hebcal): a `/date-hebraique` page with
+   today's date and a converter, plus a FAQ (« quelle est la date hébraïque
+   de ma naissance »), would target a daily query.
+6. **The Omer and the moon.** « Compteur du Omer », « quel jour du Omer
+   aujourd'hui », « Birkat Halevana jusqu'à quand »: the banners exist in the
+   app; an `/omer` page (the day's count and the 49 dated days) and a
+   "Birkat Halevana" section in the calendar would make them findable.
+7. **Prayers one by one.** « Kaddish phonétique », « Chema Israël
    phonétique », « Modé ani phonétique », « Tefilat Haderekh phonétique »
-   (cette dernière existe déjà dans les brahot) : de fortes requêtes de
-   circonstance (deuil, voyage, enfants). Le sidour est découpé en offices ;
-   découper en plus les prières les plus cherchées en pages propres.
-8. **L'anglais sur les intentions.** « Tehillim for healing », « tehillim for
-   shidduch », « tehillim for parnassa » : le marché anglophone est grand et
-   les pages françaises existent déjà ; traduire les sept pages d'intention
-   sous `/en/tehillim/…`.
-9. **Villes manquantes.** La couverture française est bonne (83 villes),
-   mais quelques communautés cherchées manquent : Saint-Denis, Le
-   Kremlin-Bicêtre, Saint-Ouen, Pantin, Bagneux, Fontenay-sous-Bois, La
-   Garenne-Colombes, Levallois, Enghien-les-Bains, Deauville, Cagnes-sur-Mer,
-   Saint-Laurent-du-Var. Une ligne dans `cities.json` chacune.
-10. **Sarcelles.** Le film et le quartier de Sarcelles s'appellent « la
-    Petite Jérusalem » : une page « Horaires de Chabbat à Sarcelles » bien
-    faite est la seule façon de capter un peu de la requête de marque sans
-    la disputer au film.
+   (the latter already exists among the brahot): strong situational queries
+   (mourning, travel, children). The sidour is split into services; also
+   split the most searched prayers into their own pages.
+8. **English for the intentions.** "Tehillim for healing", "tehillim for
+   shidduch", "tehillim for parnassa": the English-speaking market is large
+   and the French pages already exist; translate the seven intention pages
+   under `/en/tehillim/…`.
+9. **Missing cities.** French coverage is good (83 cities), but a few
+   searched communities are missing: Saint-Denis, Le Kremlin-Bicêtre,
+   Saint-Ouen, Pantin, Bagneux, Fontenay-sous-Bois, La Garenne-Colombes,
+   Levallois, Enghien-les-Bains, Deauville, Cagnes-sur-Mer,
+   Saint-Laurent-du-Var. One line in `cities.json` each.
+10. **Sarcelles.** The film and the Sarcelles neighborhood are both called
+    « la Petite Jérusalem »: a well-made « Horaires de Chabbat à Sarcelles »
+    page is the only way to capture a bit of the brand query without
+    competing with the film for it.
 
-### Ce qu'il ne faut pas viser
+### What not to target
 
-- « Petite Jérusalem » seul : le film (Wikipédia, AlloCiné, IMDb, Amazon)
-  occupe tout ; un site sans autorité n'y entrera pas, et ce n'est pas la
-  requête de quelqu'un qui cherche à étudier.
-- Les requêtes de tête « horaires de Chabbat Paris », « paracha de la
-  semaine » : Chabad et Hebcal ont vingt ans d'avance ; la longue traîne
-  rapporte plus vite.
+- « Petite Jérusalem » alone: the film (Wikipedia, AlloCiné, IMDb, Amazon)
+  takes everything; a site with no authority will not get in, and it is not
+  the query of someone looking to study.
+- The head queries « horaires de Chabbat Paris », « paracha de la semaine »:
+  Chabad and Hebcal are twenty years ahead; the long tail pays off faster.
 
-## 7. Au-delà du référencement
+## 7. Beyond search
 
-Ce qui amène des visiteurs sans passer par un moteur, par rendement
-probable.
+What brings visitors without going through a search engine, by likely
+return.
 
-1. **WhatsApp.** C'est là que circulent les chaînes de Tehilim et les
-   horaires. Les cartes Open Graph par session existent ; une carte par
-   ville et par fête (section 3, point 3) fait de chaque partage une
-   publicité. Proposer un « partager les horaires de cette semaine » sur la
-   page ville, texte prêt à coller.
-2. **Les stores.** La fiche App Store et Play Store est un canal de recherche
-   à part entière (« horaires chabbat », « tehilim ») : titre, sous-titre et
-   mots-clés ASO valent une page SEO. Le `sameAs` de cette PR relie site et
-   fiches.
-3. **Newsletters et sites de communautés.** Une page « intégrer les horaires
-   de votre ville dans votre site ou votre newsletter » (un lien profond, ou
-   un petit encart) donne aux synagogues une raison de lier le site chaque
-   semaine.
-4. **Podcast.** Le flux RSS des chiourim (section 3, point 4) ouvre Apple
-   Podcasts, Spotify et YouTube Music.
-5. **YouTube / Instagram.** Une image par semaine « Horaires de Chabbat,
-   paracha, allumage à Paris, Marseille, Lyon » générée automatiquement
-   (même mécanique que les cartes Open Graph) et publiée avec le lien.
-6. **Google Ad Grants** (10 000 $ de publicité par mois offerts) exige un
-   statut d'association reconnue ; le site est édité par Phenixel. Si une
-   association loi 1901 portait le projet, ce serait le levier payant le plus
-   rentable, et gratuit.
-7. **Wikipédia / Wikidata** (section 4, point 7) : la source la plus lue par
-   les assistants pour désambiguïser « Petite Jérusalem ».
+1. **WhatsApp.** That is where Tehilim chains and prayer times circulate.
+   Open Graph cards per session exist; a card per city and per holiday
+   (section 3, item 3) turns every share into an ad. Offer a "share this
+   week's times" on the city page, with ready-to-paste text.
+2. **The stores.** The App Store and Play Store listing is a search channel
+   in its own right (« horaires chabbat », « tehilim »): title, subtitle and
+   ASO keywords are worth an SEO page. The `sameAs` from this PR links the
+   site and the listings.
+3. **Newsletters and community sites.** A page "embed your city's times in
+   your site or newsletter" (a deep link, or a small widget) gives synagogues
+   a reason to link to the site every week.
+4. **Podcast.** The chiourim RSS feed (section 3, item 4) opens up Apple
+   Podcasts, Spotify and YouTube Music.
+5. **YouTube / Instagram.** A weekly image "Chabbat times, paracha, candle
+   lighting in Paris, Marseille, Lyon" generated automatically (same
+   mechanism as the Open Graph cards) and posted with the link.
+6. **Google Ad Grants** ($10,000 of free advertising per month) requires
+   recognized nonprofit status; the site is published by Phenixel. If a
+   French "loi 1901" association carried the project, it would be the most
+   cost-effective paid lever, and free.
+7. **Wikipedia / Wikidata** (section 4, item 7): the source assistants read
+   most to disambiguate "Petite Jérusalem".
 
-### Prompt pour Claude Cowork
+### Prompt for Claude Cowork
 
-À coller dans une session Claude Cowork avec le navigateur (et, si
-possible, les connecteurs Gmail et Notion) :
+To paste into a Claude Cowork session with the browser (and, if possible,
+the Gmail and Notion connectors). The prompt stays in French, the language
+of the session and of the emails it drafts:
 
 ```
 Tu m'aides à finir le référencement de https://petite-jerusalem.fr (site trilingue

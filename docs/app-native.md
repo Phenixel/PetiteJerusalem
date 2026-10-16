@@ -1,702 +1,717 @@
-# App native (Capacitor) : générer, builder, tester
+# Native app (Capacitor): generating, building, testing
 
-L'app iOS/Android est le site Vue emballé dans un shell natif
-[Capacitor](https://capacitorjs.com/), décision actée après le POC de
-juillet 2026 (fluidité validée sur appareil, zéro réécriture, vs Flutter).
-Deux choix d'architecture en découlent :
+The iOS/Android app is the Vue website wrapped in a native
+[Capacitor](https://capacitorjs.com/) shell, a decision made after the
+July 2026 POC (smoothness validated on device, zero rewrite, vs Flutter).
+Two architecture choices follow from it:
 
-1. **Les corpus volumineux ne sont pas embarqués** dans le binaire : l'app
-   reste légère pendant que la bibliothèque grossit, les textes se
-   téléchargent à la demande (voir plus bas).
-2. **Les projets natifs (`android/`, `ios/`) sont générés localement et
-   git-ignorés** (code généré, lourd, dépendant de la machine). Tout
-   ajustement natif doit être scripté dans `scripts/setup-android.mjs` ou
-   `scripts/setup-ios.mjs` pour rester reproductible, la CI régénère les
-   deux de zéro à chaque release (voir `docs/android-ci-cd.md` et
+1. **Large corpora are not bundled** in the binary: the app stays light while
+   the library grows, and texts are downloaded on demand (see below).
+2. **The native projects (`android/`, `ios/`) are generated locally and
+   git-ignored** (generated code, heavy, machine-dependent). Every native
+   adjustment must be scripted in `scripts/setup-android.mjs` or
+   `scripts/setup-ios.mjs` to stay reproducible; CI regenerates both from
+   scratch on every release (see `docs/android-ci-cd.md` and
    `docs/ios-ci-cd.md`).
 
-## Prérequis
+## Prerequisites
 
-- Node 22 (déjà requis par le projet)
-- **Android** : Android Studio + un SDK Android installé + JDK 21
-- **iOS** : macOS + **Xcode 26** (exigé par Capacitor 8 et par l'App Store
-  depuis le 28 avril 2026). Le build passe par Swift Package Manager, mais la
-  CLI Capacitor exige quand même CocoaPods installé pour `cap add ios`
+- Node 22 (already required by the project)
+- **Android**: Android Studio + an installed Android SDK + JDK 21
+- **iOS**: macOS + **Xcode 26** (required by Capacitor 8 and by the App Store
+  since April 28, 2026). The build goes through Swift Package Manager, but the
+  Capacitor CLI still requires CocoaPods to be installed for `cap add ios`
   (`sudo gem install cocoapods`).
 
-## Démarrage
+## Getting started
 
 ```bash
-# 1. Installer les deps (Capacitor est déjà dans package.json)
+# 1. Install the deps (Capacitor is already in package.json)
 npm install
 
-# 2. Générer les projets natifs (une seule fois)
+# 2. Generate the native projects (once)
 npx cap add android
-node scripts/setup-android.mjs   # réapplique les ajustements natifs (permissions, signature…)
+node scripts/setup-android.mjs   # reapplies the native adjustments (permissions, signing…)
 
-npx cap add ios                  # macOS uniquement
+npx cap add ios                  # macOS only
 IOS_DEVELOPMENT_TEAM=XXXXXXXXXX node scripts/setup-ios.mjs
 
-# 3. Builder le web + synchroniser vers le natif, puis ouvrir l'IDE
-npm run cap:android      # ouvre Android Studio
-npm run cap:ios          # ouvre Xcode (macOS)
+# 3. Build the web + sync to native, then open the IDE
+npm run cap:android      # opens Android Studio
+npm run cap:ios          # opens Xcode (macOS)
 ```
 
-Dans Android Studio / Xcode : choisis un émulateur ou ton téléphone branché,
-puis **Run**. L'app démarre sur le bundle Vue (le même que le site).
+In Android Studio / Xcode: pick an emulator or your plugged-in phone, then
+**Run**. The app starts on the Vue bundle (the same as the website).
 
-> Après chaque `git pull` : `npm install && npm run app:build` avant de
-> rebuilder dans l'IDE, c'est le `cap sync` inclus qui pousse plugins et
-> bundle web dans `android/`.
+> After every `git pull`: `npm install && npm run app:build` before
+> rebuilding in the IDE; it is the included `cap sync` that pushes plugins
+> and the web bundle into `android/`.
 
-## Itération rapide (sans rebuild à chaque fois)
+## Fast iteration (without rebuilding every time)
 
-Plutôt que rebuilder + `cap copy` à chaque changement, pointe l'app sur le
-serveur de dev. `capacitor.config.ts` construit son bloc `server` à partir de
-la variable d'environnement `CAP_SERVER_URL` : rien à éditer dans le fichier.
+Rather than rebuilding + `cap copy` on every change, point the app at the dev
+server. `capacitor.config.ts` builds its `server` block from the
+`CAP_SERVER_URL` environment variable: nothing to edit in the file.
 
-1. `npm run dev -- --host` (expose Vite sur le réseau local ; le projet
-   utilise le port **5473**, pas le 5173 par défaut de Vite)
-2. `CAP_SERVER_URL=http://<ton-ip-locale>:5473 npx cap sync`, puis relance
-   depuis l'IDE. Le hot-reload du web fonctionne.
+1. `npm run dev -- --host` (exposes Vite on the local network; the project
+   uses port **5473**, not Vite's default 5173)
+2. `CAP_SERVER_URL=http://<your-local-ip>:5473 npx cap sync`, then relaunch
+   from the IDE. Web hot reload works.
 
-Sans la variable, `cap sync` revient au bundle embarqué : il n'y a rien à
-retirer avant un build destiné à un store, `npm run app:build` sans
-`CAP_SERVER_URL` suffit.
+Without the variable, `cap sync` falls back to the bundled build: there is
+nothing to remove before a build meant for a store, `npm run app:build`
+without `CAP_SERVER_URL` is enough.
 
 ## Scripts
 
-| Script | Rôle |
+| Script | Role |
 |---|---|
-| `npm run app:build` | build web + retrait des corpus volumineux (`app:prune`) + retrait des SDK OAuth inutilisés (`app:prune-spm`) + `cap sync` |
-| `npm run cap:sync` | synchronise web + plugins vers les projets natifs |
-| `npm run cap:android` | build + ouvre Android Studio |
-| `npm run cap:ios` | build + ouvre Xcode |
-| `npm run store:screenshots` | régénère les captures des fiches Play Store et App Store, les mêmes pour les deux (voir `store-assets/screenshots/README.md`) |
+| `npm run app:build` | web build + removal of the large corpora (`app:prune`) + removal of unused OAuth SDKs (`app:prune-spm`) + `cap sync` |
+| `npm run cap:sync` | syncs web + plugins to the native projects |
+| `npm run cap:android` | build + opens Android Studio |
+| `npm run cap:ios` | build + opens Xcode |
+| `npm run store:screenshots` | regenerates the screenshots for the Play Store and App Store listings, the same for both (see `store-assets/screenshots/README.md`) |
 
-## Un plugin ne traverse jamais une promesse
+## A plugin never goes through a promise
 
-Un plugin Capacitor n'est pas un objet, c'est un `Proxy` : **toute** propriété
-qu'on lui demande devient un appel natif, y compris celles qu'on ne lui
-demande pas exprès. `then` en fait partie, et c'est ce qui rend la règle
-nécessaire.
+A Capacitor plugin is not an object, it is a `Proxy`: **every** property
+asked of it becomes a native call, including those not asked on purpose.
+`then` is one of them, and that is what makes the rule necessary.
 
-Le faire traverser une promesse (le rendre depuis une fonction `async`, le
-résoudre dans un `.then`) suffit : le moteur JavaScript lit `.then` sur la
-valeur pour savoir s'il tient une promesse, le proxy lui rend une fonction
-comme pour n'importe quelle propriété, et le moteur appelle
-`Plugin.then(resolve, reject)`. Capacitor cherche alors une méthode native
-`then`, ne la trouve pas, et rend une promesse rejetée que personne n'attrape.
-Ni `resolve` ni `reject` n'ayant été appelés, **l'attente ne se règle jamais** :
-le `try` autour n'attrape rien, et tout ce qui suit reste en plan.
+Passing it through a promise (returning it from an `async` function,
+resolving it in a `.then`) is enough: the JavaScript engine reads `.then` on
+the value to find out whether it holds a promise, the proxy returns a
+function as for any property, and the engine calls
+`Plugin.then(resolve, reject)`. Capacitor then looks for a native `then`
+method, doesn't find it, and returns a rejected promise that nobody catches.
+Since neither `resolve` nor `reject` has been called, **the await never
+settles**: the surrounding `try` catches nothing, and everything that follows
+is left hanging.
 
-C'est ce qui a tué les rappels d'horaires en 3.10.0 (« `"LocalNotifications.then()"`
-is not implemented on android », remonté en erreur non gérée).
+This is what killed the zmanim reminders in 3.10.0
+(« `"LocalNotifications.then()"` is not implemented on android », reported as
+an unhandled error).
 
-La règle, donc : **on déstructure le plugin sur place**, dans la fonction qui
-s'en sert.
+So the rule is: **destructure the plugin on the spot**, in the function that
+uses it.
 
 ```ts
-// Oui : ce qui traverse la promesse est l'espace de noms du module.
+// Yes: what goes through the promise is the module namespace.
 const { LocalNotifications } = await import("@capacitor/local-notifications");
 await LocalNotifications.checkPermissions();
 
-// Non : la promesse se résout avec le proxy.
+// No: the promise resolves with the proxy.
 async function plugin() {
   const { LocalNotifications } = await import("@capacitor/local-notifications");
   return LocalNotifications;
 }
 ```
 
-Pas d'aide partagée pour aller chercher un plugin, donc, aussi tentant que ce
-soit quand trois fonctions du même fichier en ont besoin. Un garde-fou tient la
-règle pour les notifications locales (`src/__tests__/notificationPermission.test.ts`),
-avec un leurre qui se comporte comme le vrai proxy, `then` compris.
+So no shared helper to fetch a plugin, however tempting it is when three
+functions in the same file need one. A safeguard enforces the rule for local
+notifications (`src/__tests__/notificationPermission.test.ts`), with a decoy
+that behaves like the real proxy, `then` included.
 
-## Lecture hors-ligne : téléchargement à la demande
+## Offline reading: on-demand download
 
-- `npm run app:build` retire `dist/texts/{talmud,mishna,tanakh,rashi,tefila}`
-  (~38 Mo) et `dist/texts/manifest.json` (l'app va le chercher en ligne,
-  jamais dans son bundle) du bundle natif via
-  `scripts/prune-native-bundle.mjs`. Restent embarqués, pour se lire sans
-  réseau dès l'installation, les fichiers listés dans
-  `src/datas/bundledTexts.json` :
-  - `authoritative` : `tehilim.json` (~370 Ko) et `talmud-chapters.json`
-    (~40 Ko), lus dans le binaire, qui fait foi pour eux ;
-  - `revalidated` : le Sidour, les trois offices et les quatre textes qui les
-    accompagnent, et depuis la page du Sidour les treize brahot, Birkat
-    Hamazon en tête (`tefila/`, ~1,1 Mo) : tout ce que la page du Sidour liste
-    hors des fêtes s'ouvre sans réseau. Les textes des fêtes (Moadim) se
-    téléchargent d'eux-mêmes quand leur fête remonte en tête du Sidour. La copie du binaire s'ouvre tout de
-    suite, sans rien attendre du réseau ; en fond, l'app demande au site s'il
-    en sert une autre version (une correction de tefila n'attend pas une
-    version de l'app) et la télécharge, vérifiée à l'empreinte : c'est elle
-    qui s'ouvre la fois suivante, et la synchronisation la tient à jour.
+- `npm run app:build` removes `dist/texts/{talmud,mishna,tanakh,rashi,tefila}`
+  (~38 MB) and `dist/texts/manifest.json` (the app fetches it online, never
+  from its bundle) from the native bundle via
+  `scripts/prune-native-bundle.mjs`. The files listed in
+  `src/datas/bundledTexts.json` remain bundled, to be readable without a
+  network right from installation:
+  - `authoritative`: `tehilim.json` (~370 KB) and `talmud-chapters.json`
+    (~40 KB), read from the binary, which is authoritative for them;
+  - `revalidated`: the Sidour, the three services and the four texts that
+    go with them, and since the Sidour page, the thirteen brahot, Birkat
+    Hamazon first (`tefila/`, ~1.1 MB): everything the Sidour page lists
+    outside of holidays opens without a network. The holiday texts (Moadim)
+    download on their own when their holiday rises to the top of the Sidour.
+    The binary's copy opens right away, without waiting for anything from the
+    network; in the background, the app asks the website whether it serves
+    another version (a tefila fix doesn't wait for an app release) and
+    downloads it, verified by its hash: that is the one that opens the next
+    time, and sync keeps it up to date.
 
-  Un livre embarqué n'a ni bouton « Télécharger » ni place dans « Tout
-  télécharger ». Tests : `src/__tests__/bundledTexts.test.ts` (ordre de
-  lecture), `pruneNativeBundle.test.ts` (ce que le binaire garde).
-- Les livres se téléchargent depuis la bibliothèque (bouton sur chaque carte,
-  « Tout télécharger » par corpus) ou sur proposition de la lecture du jour
-  (voir plus bas). Stockage : `Directory.Data` en natif
-  (`@capacitor/file-transfer` + `@capacitor/filesystem`), Cache Storage sur le
-  web ; index dans `@capacitor/preferences` (`src/services/offlineTextStore.ts`
-  et `offlineLibraryService.ts`).
-- Android : le manifest déclare `READ_EXTERNAL_STORAGE` et
-  `WRITE_EXTERNAL_STORAGE`, bornées à `maxSdkVersion="29"`. Les fichiers vont
-  dans l'espace privé de l'app, qui n'exige aucune permission, mais
-  `@capacitor/file-transfer` les consulte avant tout transfert sous Android 11
-  et livre un manifest vide : non déclarées, Capacitor lève « Missing the
-  following permissions in AndroidManifest.xml » et plus un seul livre ne se
-  télécharge sous Android 10. Au-delà d'Android 10, le plugin ne les consulte
-  plus, et la borne évite de demander un accès large au stockage sur un
-  appareil récent. Ajoutées par `scripts/setup-android.mjs` (le dossier
-  `android/` est régénéré à chaque publication) ; test :
+  A bundled book has neither a « Télécharger » ("Download") button nor a
+  place in « Tout télécharger » ("Download all"). Tests:
+  `src/__tests__/bundledTexts.test.ts` (reading order),
+  `pruneNativeBundle.test.ts` (what the binary keeps).
+- Books are downloaded from the library (a button on each card, « Tout
+  télécharger » per corpus) or when offered by the daily reading (see below).
+  Storage: `Directory.Data` on native (`@capacitor/file-transfer` +
+  `@capacitor/filesystem`), Cache Storage on the web; index in
+  `@capacitor/preferences` (`src/services/offlineTextStore.ts` and
+  `offlineLibraryService.ts`).
+- Android: the manifest declares `READ_EXTERNAL_STORAGE` and
+  `WRITE_EXTERNAL_STORAGE`, capped at `maxSdkVersion="29"`. The files go into
+  the app's private storage, which requires no permission, but
+  `@capacitor/file-transfer` checks them before any transfer below Android 11
+  and ships an empty manifest: if they are not declared, Capacitor throws
+  « Missing the following permissions in AndroidManifest.xml » and not a
+  single book downloads on Android 10. Beyond Android 10, the plugin no longer
+  checks them, and the cap avoids asking for broad storage access on a recent
+  device. Added by `scripts/setup-android.mjs` (the `android/` folder is
+  regenerated on every release); test:
   `src/__tests__/androidStoragePermissions.test.ts`.
-- Android 10 et moins, la permission elle-même : le plugin la **demande**
-  (dialogue du système) avant chaque transfert, quel que soit le dossier.
-  Deux conséquences, tenues par
-  `src/__tests__/androidStoragePermissionDenied.test.ts` :
-  - une mise à jour de fond (la vérification du Sidour embarqué, la reprise
-    des livres périmés au lancement) ne part que si la permission est déjà
-    accordée (`backgroundDownloadAllowed`, qui la lit par
-    `checkPermissions` sans rien demander) ; sinon elle attend, et la copie
-    en place reste ce qu'on lit. Le dialogue ne surgit donc qu'après un
-    geste de téléchargement. La version d'Android se lit dans les
-    indications du client (`userAgentData`), puis dans l'agent utilisateur
-    de la webview : réduit, celui-ci annonce « Android 10; K » sur tout
-    appareil, où la permission n'est jamais accordée au-delà du SDK 29, et
-    s'y fier couperait les mises à jour de fond des téléphones récents
-    (`deviceAndroidMajor`). Au-delà d'Android 10, ou version inconnue, rien
-    n'est vérifié ;
-  - un refus (`OS-PLUG-FLTR-0006`) a son message (`downloads.permissionDenied`,
-    qui dit où l'autoriser) au lieu de « Vérifiez votre connexion ».
+- Android 10 and below, the permission itself: the plugin **requests** it
+  (system dialog) before every transfer, whatever the folder. Two
+  consequences, enforced by
+  `src/__tests__/androidStoragePermissionDenied.test.ts`:
+  - a background update (checking the bundled Sidour, refreshing stale books
+    at launch) only starts if the permission is already granted
+    (`backgroundDownloadAllowed`, which reads it through `checkPermissions`
+    without requesting anything); otherwise it waits, and the copy in place
+    stays what is read. The dialog therefore only shows up after a download
+    action. The Android version is read from the client hints
+    (`userAgentData`), then from the webview's user agent: when reduced, the
+    latter reports « Android 10; K » on every device, where the permission is
+    never granted beyond SDK 29, and relying on it would cut off background
+    updates on recent phones (`deviceAndroidMajor`). Beyond Android 10, or
+    with an unknown version, nothing is checked;
+  - a refusal (`OS-PLUG-FLTR-0006`) has its own message
+    (`downloads.permissionDenied`, which says where to allow it) instead of
+    « Vérifiez votre connexion » ("Check your connection").
 
-  Un chemin sans permission (HTTP natif, puis écriture dans
-  `Directory.Data`) a été écarté : `CapacitorHttp` réanalyse toute réponse
-  `application/json` côté natif, les octets écrits ne seraient plus ceux du
-  site, et l'empreinte ne correspondrait jamais (retéléchargement à chaque
-  synchronisation). Il faudrait pour cela un téléchargement natif qui ne
-  demande rien, donc un changement natif.
-- `textService.loadText` passe par `fetchTextResponse` : copie téléchargée à
-  jour d'abord, puis copie embarquée (et pour le Sidour, la vérification de
-  fond décrite plus haut), puis réseau (`https://petite-jerusalem.fr`), puis,
-  le réseau en échec, copie téléchargée périmée.
+  A permission-free path (native HTTP, then writing to `Directory.Data`) was
+  ruled out: `CapacitorHttp` re-parses any `application/json` response on the
+  native side, the bytes written would no longer be the website's, and the
+  hash would never match (re-download on every sync). That would require a
+  native download that asks for nothing, hence a native change.
+- `textService.loadText` goes through `fetchTextResponse`: up-to-date
+  downloaded copy first, then bundled copy (and for the Sidour, the background
+  check described above), then network (`https://petite-jerusalem.fr`), then,
+  if the network fails, the stale downloaded copy.
 
-Vérification : télécharger un livre, activer le mode avion, l'ouvrir.
+Check: download a book, turn on airplane mode, open it.
 
-## Mon parcours hors ligne
+## Mon parcours offline
 
-Les pages **/parcours** sont `offlineOk` dans l'app native, et se servent
-sans compte, comme la lecture du jour, **/bibliotheque/lecture-du-jour**,
-revenue sur sa page (les textes du jour à la suite). Le détail est dans
+The **/parcours** pages are `offlineOk` in the native app, and work without
+an account, like the daily reading, **/bibliotheque/lecture-du-jour**, back
+on its own page (the day's texts one after the other). The details are in
 `docs/parcours.md`.
 
-- **Le suivi** vit sur l'appareil (`localStorage`, clé `pj-parcours`, doublé
-  dans les Preferences de Capacitor, que le système ne vide pas avec le
-  stockage de la webview) : il sert dès le premier rendu, sans réseau ni
-  compte. Avec un compte, chaque changement part au document
-  `parcours/{uid}`, entrée par entrée ; une écriture qui échoue reste à faire
-  et repart au retour du réseau, après une nouvelle lecture du compte.
-- **Les textes** : ceux que l'utilisateur a acceptés de télécharger. Quand
-  des textes de la journée (la portion d'un programme, un texte du jour, les
-  psaumes du jour, la paracha de la semaine) ne sont pas sur l'appareil, Ma
-  journée le dit et propose de les télécharger
-  (`components/parcours/OfflineTextsNotice.vue`). Rien n'est téléchargé sans
-  cet accord : `refreshStaleDownloads` ne fait que remettre au format courant
-  des fichiers **déjà** téléchargés.
-  Un livre supprimé pendant que cette mise à jour le reprend reste supprimé :
-  `downloadFile` compte les suppressions demandées pour son chemin, et celle
-  survenue en cours de route l'emporte (copie retirée, rien d'inscrit). Les
-  livres suivants de la passe, retirés eux aussi entre-temps, ne sont pas
-  repris : la boucle vérifie qu'un livre est toujours sur l'appareil avant
-  son tour. Tests : `offlineRemoveDuringDownload.test.ts`,
+- **Progress tracking** lives on the device (`localStorage`, key
+  `pj-parcours`, mirrored in Capacitor's Preferences, which the system does
+  not clear along with the webview storage): it is available from the first
+  render, without network or account. With an account, every change goes to
+  the `parcours/{uid}` document, entry by entry; a failed write stays pending
+  and is retried when the network comes back, after reading the account
+  again.
+- **The texts**: those the user agreed to download. When texts of the day
+  (a program's portion, a daily text, the psalms of the day, the week's
+  paracha) are not on the device, Ma journée ("My day") says so and offers to
+  download them (`components/parcours/OfflineTextsNotice.vue`). Nothing is
+  downloaded without that consent: `refreshStaleDownloads` only brings files
+  that are **already** downloaded up to the current format.
+  A book deleted while this update is refreshing it stays deleted:
+  `downloadFile` counts the deletions requested for its path, and one that
+  happens along the way wins (copy removed, nothing recorded). The pass's
+  next books, also removed in the meantime, are not refreshed: the loop
+  checks that a book is still on the device before its turn. Tests:
+  `offlineRemoveDuringDownload.test.ts`,
   `offlineRemoveDuringSync.test.ts`.
 
-**Synchronisation des lectures.**
+**Syncing readings.**
 
-- **Les marque-pages et positions de lecture s'écrivent après lecture du
-  compte.** `readingProgressService` les fusionne avec ceux du compte à la
-  connexion, et n'écrit rien au compte tant qu'il ne l'a pas lu : un échec de
-  lecture n'est pas un compte vide, et pousser l'état de l'appareil seul
-  effacerait les marque-pages posés ailleurs. La copie locale du dernier
-  passage n'est pas le compte non plus : la fusion demande une vraie réponse
-  du serveur (`userPreferencesService.getPreferencesFromServer`), ni notre
-  copie ni le cache de Firestore. L'écriture suivante retente la fusion.
-  Tests : `readingProgressSyncFailure.test.ts`,
+- **Bookmarks and reading positions are written after reading the
+  account.** `readingProgressService` merges them with the account's on
+  sign-in, and writes nothing to the account until it has read it: a read
+  failure is not an empty account, and pushing the device's state alone
+  would erase bookmarks set elsewhere. The local copy from the last visit is
+  not the account either: the merge requires a real answer from the server
+  (`userPreferencesService.getPreferencesFromServer`), neither our copy nor
+  the Firestore cache. The next write retries the merge.
+  Tests: `readingProgressSyncFailure.test.ts`,
   `preferencesFromServer.test.ts`.
 
-Vérification : composer une liste, mode avion, rouvrir la lecture du jour (les
-textes téléchargés s'affichent, les autres disent qu'ils ne sont pas
-téléchargés), cocher une lecture (gardée), tenter d'ajouter un texte (refusé),
-revenir en ligne (la liste se resynchronise, la coche remonte).
+Check: build a list, airplane mode, reopen the daily reading (the downloaded
+texts show up, the others say they are not downloaded), check off a reading
+(kept), try to add a text (refused), go back online (the list resyncs, the
+check mark goes up).
 
-## Authentification native (Google / Apple)
+## Native authentication (Google / Apple)
 
-Les flux OAuth par popup/redirect du SDK JS Firebase ne fonctionnent pas dans
-une webview : l'app passe par `@capacitor-firebase/authentication`
-(`src/services/authService.ts`), sélecteur de compte Google natif (avec repli
-si le Credential Manager Android est cassé) et feuille « Sign in with Apple »
-système sur iOS, puis bridge du credential vers le SDK JS pour que
-`onAuthStateChanged` continue de fonctionner comme sur le web.
+The Firebase JS SDK's popup/redirect OAuth flows don't work in a webview: the
+app goes through `@capacitor-firebase/authentication`
+(`src/services/authService.ts`), with the native Google account picker (with
+a fallback if the Android Credential Manager is broken) and the system
+« Sign in with Apple » sheet on iOS, then bridges the credential to the JS SDK
+so that `onAuthStateChanged` keeps working as on the web.
 
-Apple **impose** « Sign in with Apple » sur l'app iOS dès qu'un autre login
-tiers (ici Google) est proposé (règle App Store 4.8). Le bouton est
-**affiché uniquement sur iOS**, invisible sur le site web et sur Android.
+Apple **requires** « Sign in with Apple » in the iOS app as soon as another
+third-party login (here Google) is offered (App Store rule 4.8). The button
+is **shown only on iOS**, invisible on the website and on Android.
 
-Le Package.swift du plugin embarque par défaut les SDK de **tous** ses
-providers, SDK Facebook complet compris, environ 15 Mo de frameworks pour un
-bouton qui n'existe pas dans l'app. `scripts/prune-spm-providers.mjs` (rejoué
-à chaque `app:build`, npm install restaurant le fichier d'origine) retire
-Facebook du build iOS ; sur Android le plugin ne l'embarque que sur opt-in,
-que `setup-android.mjs` ne donne pas. Si un provider s'ajoute un jour à
-l'app, adapter ce script en même temps que `capacitor.config.ts`.
+The plugin's Package.swift bundles by default the SDKs of **all** its
+providers, the full Facebook SDK included, about 15 MB of frameworks for a
+button that doesn't exist in the app. `scripts/prune-spm-providers.mjs`
+(rerun on every `app:build`, since npm install restores the original file)
+removes Facebook from the iOS build; on Android the plugin only bundles it on
+opt-in, which `setup-android.mjs` does not give. If a provider is ever added
+to the app, update this script along with `capacitor.config.ts`.
 
-Étapes **hors-code** à faire une fois pour iOS (détaillées dans
-`docs/ios-release-plan.md`) : activer le fournisseur **Apple** dans la console
-Firebase, et cocher la capacité **Sign in with Apple** sur l'App ID Apple
-Developer. Le *Service ID* et la *Sign in with Apple Key* ne servent qu'au
-flux web. Côté projet Xcode, `scripts/setup-ios.mjs` écrit l'entitlement.
+**Non-code** steps to do once for iOS (detailed in
+`docs/ios-release-plan.md`): enable the **Apple** provider in the Firebase
+console, and check the **Sign in with Apple** capability on the Apple
+Developer App ID. The *Service ID* and the *Sign in with Apple Key* are only
+used by the web flow. On the Xcode project side, `scripts/setup-ios.mjs`
+writes the entitlement.
 
-## Notifications push
+## Push notifications
 
-Implémentées côté client (`src/services/pushService.ts`,
-`@capacitor-firebase/messaging` : token FCM stocké dans
-`userPreferences/{uid}.fcmTokens`, deep-links au toucher) et côté serveur
-(Cloud Function planifiée `dailyReadingReminder`). Côté iOS, la clé APNs doit
-être uploadée dans la console Firebase et la capability Push Notifications
-ajoutée dans Xcode.
+Implemented client-side (`src/services/pushService.ts`,
+`@capacitor-firebase/messaging`: FCM token stored in
+`userPreferences/{uid}.fcmTokens`, deep links on tap) and server-side
+(scheduled Cloud Function `dailyReadingReminder`). On iOS, the APNs key must
+be uploaded to the Firebase console and the Push Notifications capability
+added in Xcode.
 
-La fonction relit les profils abonnés toutes les cinq minutes ; elle n'en
-demande que les champs qu'elle lit (`REMINDER_FIELDS`, projection `select`),
-pas les marque-pages ni les positions de lecture. Un champ lu doit y figurer,
-sans quoi il vaudrait `undefined` : `dailyReminderFields.test.ts` y veille.
+The function rereads the subscribed profiles every five minutes; it only
+requests the fields it reads (`REMINDER_FIELDS`, `select` projection), not
+the bookmarks or reading positions. A field that is read must be listed
+there, otherwise it would be `undefined`: `dailyReminderFields.test.ts`
+watches for this.
 
-Côté iOS, `scripts/setup-ios.mjs` pose l'entitlement `aps-environment` (sandbox
-en Debug, production en Release), le background mode `remote-notification` et
-les trois hooks APNs dans `AppDelegate.swift` ; la clé APNs doit être importée
-dans la console Firebase (voir `docs/ios-release-plan.md`).
+On iOS, `scripts/setup-ios.mjs` sets the `aps-environment` entitlement
+(sandbox in Debug, production in Release), the `remote-notification`
+background mode and the three APNs hooks in `AppDelegate.swift`; the APNs key
+must be imported into the Firebase console (see `docs/ios-release-plan.md`).
 
-Deux rappels, réglés depuis la cloche de la page **Lecture du jour** et
-envoyés tant que la lecture du jour n'est pas terminée : à l'heure fixe
-choisie, et 20 minutes avant la chkia (`pushSunsetReminderEnabled`). Le second
-a besoin d'un lieu, la Cloud Function ne pouvant pas interroger un téléphone
-endormi : `pushReminderPlace` reçoit la position arrondie au dixième de degré
-(voir `coarsePlace`) et le fuseau, effacés dès que le rappel est coupé. La
-chkia est recalculée côté serveur dans `functions/src/sunsetReminder.ts`
-`@hebcal/core`, qui la donne dans l'application, est publié en ESM seul quand
-`functions/` compile en CommonJS.
+Two reminders, set from the bell on the **Lecture du jour** ("Daily
+reading") page and sent as long as the daily reading isn't finished: at the
+chosen fixed time, and 20 minutes before chkia
+(`pushSunsetReminderEnabled`). The second needs a location, since the Cloud
+Function cannot query a sleeping phone: `pushReminderPlace` receives the
+position rounded to a tenth of a degree (see `coarsePlace`) and the time
+zone, both erased as soon as the reminder is turned off. Chkia is recomputed
+server-side in `functions/src/sunsetReminder.ts`: `@hebcal/core`, which
+provides it in the app, is published as ESM only, while `functions/`
+compiles to CommonJS.
 
-À la déconnexion, l'appareil se détache du compte qui part
-(`pushService.detachDevice`) : son jeton est retiré de `fcmTokens`, sans
-toucher `pushReminderEnabled` (les autres appareils du compte gardent leurs
-rappels). Sans cela, le téléphone recevait les rappels du compte parti une
-fois quelqu'un d'autre connecté. L'écriture n'attend pas plus de trois
-secondes.
+On sign-out, the device detaches from the departing account
+(`pushService.detachDevice`): its token is removed from `fcmTokens`, without
+touching `pushReminderEnabled` (the account's other devices keep their
+reminders). Without this, the phone kept receiving the departed account's
+reminders once someone else signed in. The write waits no more than three
+seconds.
 
-- Retiré du compte, le jeton reste sur l'appareil : il ne mène plus à ce
-  compte, et les informations de l'équipe y sont abonnées.
-- Resté dans le document (hors ligne, serveur muet), il est effacé de
-  l'appareil, pour ne plus mener nulle part ; la Cloud Function le purge au
-  premier envoi. L'effacement demande le réseau : sans lui, il est rejoué au
-  retour du réseau et au lancement suivant (`dropStaleToken`), puis les
-  informations de l'équipe se réabonnent avec le nouveau jeton.
-- L'appareil retient le compte parti (`pj_fcm_detached_from`). S'il revient,
-  ses rappels reprennent ici, s'ils sont toujours actifs et que le système
-  laisse notifier (`reattachDevice`, à chaque connexion et à chaque
-  lancement tant que ce n'est pas fait) ; sans cela ils restaient affichés
-  comme actifs sans plus arriver sur ce téléphone. Un autre compte efface le
-  repère : l'appareil ne s'inscrit pour lui que s'il active ses rappels.
+- Once removed from the account, the token stays on the device: it no longer
+  leads to that account, and the team announcements are subscribed to it.
+- If it remained in the document (offline, server silent), it is erased from
+  the device, so that it no longer leads anywhere; the Cloud Function purges
+  it on the first send. Erasing requires the network: without it, it is
+  replayed when the network comes back and on the next launch
+  (`dropStaleToken`), then the team announcements resubscribe with the new
+  token.
+- The device remembers the departed account (`pj_fcm_detached_from`). If it
+  comes back, its reminders resume here, if they are still active and the
+  system allows notifications (`reattachDevice`, on every sign-in and every
+  launch until it is done); without this they stayed displayed as active
+  without arriving on this phone anymore. Another account clears the marker:
+  the device only registers for it if it turns on its reminders.
 
-Tenu par `src/__tests__/pushDetachOnLogout.test.ts`.
+Enforced by `src/__tests__/pushDetachOnLogout.test.ts`.
 
-## Rappels d'horaires (notifications locales)
+## Zmanim reminders (local notifications)
 
-Posés depuis la page **Horaires**, en touchant l'horaire voulu, ou en tirant sa
-ligne vers la gauche : le geste franc pose ou retire le rappel avec le délai de
-la dernière fois, le geste retenu ouvre la ligne sur sa cloche (voir
-`docs/design.md`). Ils se comptent et se coupent depuis l'onglet
-**Notifications** du profil, où vit aussi le rappel de l'entrée du **Chabbat et
-des fêtes**, actif d'office, une heure avant l'allumage des bougies.
+Set from the **Horaires** ("Times") page, by tapping the desired time, or by
+swiping its row to the left: a decisive swipe sets or removes the reminder
+with the last delay used, a hesitant swipe opens the row on its bell (see
+`docs/design.md`). They are counted and turned off from the
+**Notifications** tab of the profile, which also hosts the reminder for the
+start of **Chabbat and holidays**, on by default, one hour before candle
+lighting.
 
-Rien ne passe par un serveur, contrairement au rappel de lecture : un horaire
-se calcule sur l'appareil, la notification est donc programmée sur l'appareil
-aussi (`@capacitor/local-notifications`). Aucune position n'est confiée à
-personne, et le téléphone sonne à l'heure dite même sans réseau.
+Nothing goes through a server, unlike the reading reminder: a time is
+computed on the device, so the notification is scheduled on the device too
+(`@capacitor/local-notifications`). No location is entrusted to anyone, and
+the phone rings at the stated time even without a network.
 
-Un horaire n'a pas d'heure fixe : une notification « tous les jours à 6 h 13 »
-serait fausse dès le lendemain. `src/services/zmanReminderService.ts` programme
-donc une suite d'instants exacts, chacun calculé pour son jour, et reprend la
-programmation à chaque retour au premier plan, au changement de lieu et au
-changement de langue. La fenêtre est partagée entre les rappels posés, iOS ne
-gardant que 64 notifications en attente par application : de deux à quatorze
-jours selon leur nombre. Les identifiants vivent dans une plage réservée, pour
-n'annuler que les nôtres et laisser les autres notifications de l'app en place.
+A zman has no fixed time: a notification "every day at 6:13" would be wrong
+by the next day. `src/services/zmanReminderService.ts` therefore schedules a
+series of exact instants, each computed for its own day, and redoes the
+scheduling every time the app returns to the foreground, when the location
+changes and when the language changes. The window is shared among the set
+reminders, since iOS only keeps 64 pending notifications per app: from two
+to fourteen days depending on their number. The identifiers live in a
+reserved range, so that only ours are cancelled and the app's other
+notifications stay in place.
 
-Les réglages restent sur l'appareil (`localStorage`, voir
-`src/composables/useZmanReminders.ts`) et ne montent pas dans le compte : c'est
-le téléphone qui fera sonner le rappel, à partir du lieu choisi sur ce
-téléphone-là.
+The settings stay on the device (`localStorage`, see
+`src/composables/useZmanReminders.ts`) and are not uploaded to the account:
+it is the phone that will ring the reminder, based on the location chosen on
+that very phone.
 
-- **Android** : `scripts/setup-android.mjs` ajoute `SCHEDULE_EXACT_ALARM`.
-  Sans elle, le système garde la notification pour sa prochaine fenêtre de
-  veille, et un rappel de dix minutes avant peut arriver après l'horaire qu'il
-  annonce ; la page de réglages propose alors d'ouvrir le réglage système
-  (`changeExactNotificationSetting`). Les rappels ont leur canal (`pj-zmanim`),
-  pour se couper séparément des rappels de lecture.
-- **iOS** : rien de plus à déclarer, c'est la permission de notification déjà
-  demandée pour les push.
+- **Android**: `scripts/setup-android.mjs` adds `SCHEDULE_EXACT_ALARM`.
+  Without it, the system holds the notification until its next maintenance
+  window, and a ten-minutes-before reminder can arrive after the time it
+  announces; the settings page then offers to open the system setting
+  (`changeExactNotificationSetting`). The reminders have their own channel
+  (`pj-zmanim`), so they can be turned off separately from the reading
+  reminders.
+- **iOS**: nothing more to declare, it is the notification permission
+  already requested for push.
 
-La permission est demandée au premier geste qui la réclame, jamais au
-lancement : poser un rappel, activer celui du Chabbat, ou ouvrir la page des
-horaires alors que celui du Chabbat est actif d'office.
+The permission is requested on the first action that needs it, never at
+launch: setting a reminder, turning on the Chabbat one, or opening the times
+page while the Chabbat one is on by default.
 
-## Dates personnelles du calendrier
+## Personal calendar dates
 
-Un anniversaire, un leilouy nichmat : des dates du calendrier **hébraïque**,
-qui reviennent chaque année à leur jour. Elles se posent depuis la page
-**Calendrier** (bouton « Mes dates »), s'y lisent au milieu des fêtes de
-l'année, et portent leur propre rappel, programmé comme les rappels d'horaires
-(`zmanReminderService`).
+A birthday, a leilouy nichmat: dates in the **Hebrew** calendar, which come
+back every year on their day. They are set from the **Calendrier**
+("Calendar") page (the « Mes dates », "My dates", button), are shown there
+among the year's holidays, and carry their own reminder, scheduled like the
+zmanim reminders (`zmanReminderService`).
 
-Deux particularités du calendrier sont tranchées dans
-`src/services/hebrewOccasions.ts`, plutôt que dans chaque écran :
+Two calendar particularities are settled in
+`src/services/hebrewOccasions.ts`, rather than in each screen:
 
-- une date d'**Adar** revient en **Adar II** les années à treize mois, l'usage
-  séfarade que suit le reste du site ;
-- le **30** d'un mois qui n'en compte que 29 ('Hechvan, Kislev selon l'année)
-  revient le 29, dernier jour du mois.
+- an **Adar** date comes back in **Adar II** in thirteen-month years, the
+  Sephardic custom followed by the rest of the site;
+- the **30th** of a month that only has 29 days ('Hechvan, Kislev depending
+  on the year) comes back on the 29th, the last day of the month.
 
-Trois moments de rappel, parce que le jour hébraïque commence la veille au
-soir : à l'entrée du jour (au coucher du soleil du lieu, le moment d'allumer
-une bougie), le matin du jour civil, ou une semaine avant. Les deux derniers
-partent à 9 h du fuseau de l'**appareil**, là où vit celui qui les reçoit, et
-non du lieu des horaires.
+Three reminder times, because the Hebrew day starts the evening before: at
+the start of the day (at sunset at the location, the time to light a
+candle), the morning of the civil day, or one week before. The last two go
+off at 9 am in the **device's** time zone, where the person receiving them
+lives, and not in that of the zmanim location.
 
-L'entrée du jour s'efface devant le Chabbat et les fêtes (`occasionEntryAt`) :
-une date qui tombe un samedi se rappelle à l'allumage du vendredi (au coucher
-du soleil, le Chabbat est déjà entré) ; une date qui suit un Chabbat, à sa
-sortie ; une date au milieu d'une fête, à l'allumage de ce jour-là. La veille
-se prend dans le calendrier du lieu, quel que soit le fuseau de l'appareil.
-Tenu par `src/__tests__/occasionEntry.test.ts`.
+The start of the day yields to Chabbat and holidays (`occasionEntryAt`): a
+date that falls on a Saturday is reminded at Friday's candle lighting (at
+sunset, Chabbat has already begun); a date that follows a Chabbat, at its
+end; a date in the middle of a holiday, at that day's candle lighting. The
+day before is taken from the location's calendar, whatever the device's
+time zone. Enforced by `src/__tests__/occasionEntry.test.ts`.
 
-Une date qui arrive dans les sept jours paraît aussi sur l'**accueil**
-(`OccasionsBanner.vue`, chargé à la demande comme les autres cartes du moment :
-il tire le calendrier hébraïque, qui n'a rien à faire dans le premier rendu).
+A date coming up within seven days also appears on the **home page**
+(`OccasionsBanner.vue`, loaded on demand like the other "right now" cards:
+it pulls in the Hebrew calendar, which has no business in the first render).
 
-Les dates vivent dans le `localStorage` (`src/composables/useHebrewOccasions.ts`)
-ET dans le compte (`userPreferences.hebrewOccasions`), et ce sont deux rôles
-distincts : l'appareil est le socle, lu en synchrone, qui sert sans compte et
-sans réseau et que `zmanReminderService` suit ; le compte les emporte d'un
-appareil à l'autre et jusqu'au site. Une date inscrite sur un téléphone se
-retrouve donc dans un navigateur, ce que l'écran qui les tient annonce.
+The dates live in `localStorage` (`src/composables/useHebrewOccasions.ts`)
+AND in the account (`userPreferences.hebrewOccasions`), and these are two
+distinct roles: the device is the foundation, read synchronously, which
+works without an account and without a network and which
+`zmanReminderService` follows; the account carries them from one device to
+another and all the way to the website. A date entered on a phone therefore
+shows up in a browser, as the screen that holds them states.
 
-L'adoption n'a lieu qu'une fois par compte et par appareil : à la première
-connexion, ce qui a été saisi sans compte rejoint le compte (union des deux
-listes, `mergeOccasions`) ; ensuite le compte fait foi et remplace la copie
-locale, sans quoi une date supprimée ailleurs serait ressuscitée à chaque
-connexion. Une écriture que le réseau refuse est retenue et repart au retour de
-la connexion. Le site porte donc les dates comme l'app ; seul le **rappel**
-reste l'affaire du téléphone, et son réglage ne paraît pas dans un navigateur.
+Adoption happens only once per account and per device: on the first
+sign-in, what was entered without an account joins the account (union of
+both lists, `mergeOccasions`); after that the account is authoritative and
+replaces the local copy, otherwise a date deleted elsewhere would be revived
+on every sign-in. A write refused by the network is held and retried when
+the connection comes back. The website therefore carries the dates like the
+app; only the **reminder** remains the phone's business, and its setting
+doesn't appear in a browser.
 
-## Réglages gardés sur l'appareil
+## Settings kept on the device
 
-Le `localStorage` d'une webview n'est pas durable : le système peut le vider
-sous la pression mémoire, et l'utilisateur au vidage du cache de l'app. Un
-réglage de confort perdu au lancement suivant, c'est peu, mais c'est agaçant.
+A webview's `localStorage` is not durable: the system can clear it under
+memory pressure, and the user when clearing the app's cache. A comfort
+setting lost on the next launch is a small thing, but it is annoying.
 
-Ces réglages-là passent donc tous par `services/devicePreference` : il écrit
-dans les deux stockages, le `localStorage` pour la lecture synchrone du
-premier rendu et les préférences natives pour la durée, et relit le natif
-quand le premier n'a rien à dire.
+So these settings all go through `services/devicePreference`: it writes to
+both storages, `localStorage` for the synchronous read of the first render
+and the native preferences for durability, and reads the native one again
+when the former has nothing to say.
 
-La **taille du texte** des pages de lecture (A− / A+ et le pincement,
-`useReadingSize`) est donc écrite deux fois : dans le `localStorage`, seul
-lisible en synchrone, donc dès le premier rendu ; et dans les préférences
-natives (`@capacitor/preferences` : SharedPreferences côté Android,
-UserDefaults côté iOS), qui survivent et servent de filet, relu au premier
-usage du réglage. Elle ne monte pas dans le compte : un téléphone tenu à bout
-de bras et un ordinateur ne demandent pas la même taille.
+The **text size** of the reading pages (A− / A+ and pinch, `useReadingSize`)
+is therefore written twice: in `localStorage`, the only one readable
+synchronously, hence from the first render; and in the native preferences
+(`@capacitor/preferences`: SharedPreferences on Android, UserDefaults on
+iOS), which survive and serve as a safety net, read again on the setting's
+first use. It is not uploaded to the account: a phone held at arm's length
+and a computer don't call for the same size.
 
-L'**avis suivi pour les horaires** (`useZmanimOpinion`) est écrit de la même
-façon, pour la même raison : les zmanim se calculent au premier rendu, et un
-réglage qui n'arriverait qu'après ferait sauter toutes les heures de la page
-sous les yeux. La différence est qu'il MONTE dans le compte : l'avis qu'on
-suit ne dépend pas de l'appareil qu'on a en main. Le compte l'emporte quand il
-en porte un, l'appareil décide sinon.
+The **opinion followed for zmanim** (`useZmanimOpinion`) is written the same
+way, for the same reason: the zmanim are computed at first render, and a
+setting that only arrived afterward would make every time on the page jump
+before the user's eyes. The difference is that it IS uploaded to the
+account: the opinion one follows doesn't depend on the device in hand. The
+account wins when it carries one; otherwise the device decides.
 
-Changer d'avis reprogramme les rappels d'horaires : ils sont posés sur des
-instants calculés, et ces instants viennent de bouger (voir
-`zmanReminderService`). Changer l'écart d'allumage aussi : l'entrée du
-Chabbat et des fêtes, et son rappel une heure avant, se lisent sur lui (test :
-`zmanReminderCandleLighting.test.ts`).
+Changing the opinion reschedules the zmanim reminders: they are set on
+computed instants, and those instants have just moved (see
+`zmanReminderService`). Changing the candle-lighting offset does too: the
+start of Chabbat and holidays, and its reminder one hour before, are based on
+it (test: `zmanReminderCandleLighting.test.ts`).
 
-Les **astuces vues** (`useFeatureTips`, clé `pj_tips_seen`) aussi : une
-astuce qui reviendrait à chaque vidage de cache finirait par agacer, et
-« Revoir les astuces » (profil de l'app, groupe Aide) est là pour qui la
-veut. Elles ne montent pas dans le compte : c'est sur cet écran-là qu'on a vu
-le geste.
+The **tips already seen** (`useFeatureTips`, key `pj_tips_seen`) as well: a
+tip that came back after every cache clear would end up being annoying, and
+« Revoir les astuces » ("See the tips again", app profile, Help group) is
+there for whoever wants it. They are not uploaded to the account: it is on
+that particular screen that the gesture was seen.
 
-L'**interrupteur du défilement automatique** (`useAutoScroll`) suit la même
-règle, et pour une raison plus forte encore : il se coupe précisément pour ne
-plus être surpris par un geste qu'on déclenche sans le vouloir. S'il revenait
-allumé au lancement suivant parce que le système a vidé le `localStorage`, le
-réglage n'aurait servi à rien. Il ne monte pas dans le compte : c'est l'écran
-tactile qui pose le problème, pas la personne.
+The **auto-scroll switch** (`useAutoScroll`) follows the same rule, for an
+even stronger reason: it is turned off precisely so as not to be surprised
+anymore by a gesture triggered unintentionally. If it came back on at the
+next launch because the system cleared `localStorage`, the setting would
+have been useless. It is not uploaded to the account: it is the touchscreen
+that causes the problem, not the person.
 
-## Géolocalisation (horaires du jour)
+## Geolocation (daily zmanim)
 
-La page **Horaires** calcule les zmanim pour la position de l'appareil quand
-l'utilisateur la partage (repli sur Paris sinon). Rien ne sort de l'appareil :
-le calcul est local, les coordonnées restent en `localStorage`.
+The **Horaires** page computes the zmanim for the device's position when the
+user shares it (falling back to Paris otherwise). Nothing leaves the device:
+the computation is local, the coordinates stay in `localStorage`.
 
-- **Android** : `scripts/setup-android.mjs` ajoute `ACCESS_COARSE_LOCATION` et
-  `ACCESS_FINE_LOCATION` au manifest. C'est indispensable, le manifest livré
-  par `@capacitor/geolocation` est **vide**, donc sans ces lignes
-  `requestPermissions()` est refusé d'office et la page reste sur Paris.
-- **iOS** : `scripts/setup-ios.mjs` ajoute `NSLocationWhenInUseUsageDescription`
-  à `ios/App/App/Info.plist`. C'est indispensable, sans cette clé, iOS
-  **ferme l'app** à la première demande de position.
+- **Android**: `scripts/setup-android.mjs` adds `ACCESS_COARSE_LOCATION` and
+  `ACCESS_FINE_LOCATION` to the manifest. This is essential: the manifest
+  shipped by `@capacitor/geolocation` is **empty**, so without these lines
+  `requestPermissions()` is refused outright and the page stays on Paris.
+- **iOS**: `scripts/setup-ios.mjs` adds `NSLocationWhenInUseUsageDescription`
+  to `ios/App/App/Info.plist`. This is essential: without this key, iOS
+  **closes the app** on the first location request.
 
-## Retours haptiques
+## Haptic feedback
 
-Le téléphone répond au doigt quand une tâche est faite, défaite, ou qu'un
-geste franchit son seuil (`src/services/haptics.ts`, vocabulaire dans
-`docs/design.md`, « Le toucher répond »). Le plugin `@capacitor/haptics`
-déclare lui-même la permission `VIBRATE` sur Android (permission normale,
-rien à demander) ; sur iOS, il passe par les générateurs de retour du
-système, qui suivent le réglage « Retours haptiques » de l'appareil. Le
-plugin se charge à la demande et se déstructure sur place (voir plus haut).
-Sur le site, `navigator.vibrate` prend le relais là où il existe.
+The phone responds to the finger when a task is done, undone, or when a
+gesture crosses its threshold (`src/services/haptics.ts`, vocabulary in
+`docs/design.md`, "Touch answers"). The `@capacitor/haptics` plugin
+itself declares the `VIBRATE` permission on Android (a normal permission,
+nothing to request); on iOS, it goes through the system's feedback
+generators, which follow the device's « Retours haptiques » ("Haptic
+feedback") setting. The plugin is loaded on demand and destructured on the
+spot (see above). On the website, `navigator.vibrate` takes over where it
+exists.
 
-## Retour arrière
+## Back navigation
 
-Chaque plateforme a son geste, et l'app doit câbler les deux.
+Each platform has its own gesture, and the app must wire both.
 
-- **Android** : le bouton (ou le geste) retour du système. Sans le listener
-  `backButton` de `src/main.ts`, il **quitte l'app** au lieu de revenir en
-  arrière dans la navigation ; sur l'accueil, il la met en arrière-plan, comme
-  toute app Android.
-- **iOS** : le glissement depuis le bord gauche de l'écran. Il est rendu par la
-  WebView, sur son propre historique, celui que le routeur alimente. Deux
-  réglages le conditionnent, et il ne se passe rien si l'un des deux manque :
-  - `allowsBackForwardNavigationGestures` sur la WKWebView, que
-    `scripts/setup-ios.mjs` pose dans l'`AppDelegate` (WKWebView le désactive
-    par défaut, et Capacitor n'expose pas d'option de configuration) ;
-  - `overscroll-behavior` laissé libre sur l'axe horizontal
-    (`src/assets/main.css`). La règle qui neutralise l'étirement vertical
-    d'Android vaut pour les deux axes si on ne la suffixe pas, et WebKit lit
-    l'horizontale comme l'ordre de couper la navigation par glissement.
+- **Android**: the system back button (or gesture). Without the
+  `backButton` listener in `src/main.ts`, it **exits the app** instead of
+  going back in the navigation; on the home page, it sends the app to the
+  background, like any Android app.
+- **iOS**: the swipe from the left edge of the screen. It is handled by the
+  WebView, on its own history, the one the router feeds. Two settings
+  condition it, and nothing happens if either is missing:
+  - `allowsBackForwardNavigationGestures` on the WKWebView, which
+    `scripts/setup-ios.mjs` sets in the `AppDelegate` (WKWebView disables it
+    by default, and Capacitor exposes no configuration option);
+  - `overscroll-behavior` left free on the horizontal axis
+    (`src/assets/main.css`). The rule that neutralizes Android's vertical
+    stretch applies to both axes if it isn't suffixed, and WebKit reads the
+    horizontal one as an order to disable swipe navigation.
 
-Un test tient les trois points (`src/__tests__/nativeBackNavigation.test.ts`).
+A test enforces all three points
+(`src/__tests__/nativeBackNavigation.test.ts`).
 
-## Widgets d'écran d'accueil
+## Home screen widgets
 
-Deux widgets (Horaires, Lecture du jour) accompagnent l'app : l'app pré-calcule
-leurs contenus et les pousse au natif via le plugin maison PjWidgets. Les deux
-plateformes sont scriptées, `native/android/` + `setup-android.mjs` d'un côté,
-`native/ios/` + `setup-ios.mjs` de l'autre, qui écrit jusqu'à la cible
-d'extension dans le projet Xcode. Seul l'App Group demande trois clics dans le
-portail Apple, une fois pour toutes, voir `docs/app-widgets.md`.
+Two widgets (Times, Daily reading) come with the app: the app precomputes
+their content and pushes it to native through the in-house PjWidgets plugin.
+Both platforms are scripted, `native/android/` + `setup-android.mjs` on one
+side, `native/ios/` + `setup-ios.mjs` on the other, which writes all the way
+to the extension target in the Xcode project. Only the App Group requires
+three clicks in the Apple portal, once and for all; see
+`docs/app-widgets.md`.
 
-## Montres connectées
+## Smartwatches
 
-Une app de montre accompagne l'app sur les deux plateformes (Wear OS et Apple
-Watch) : les horaires, la lecture du jour, et les Tehilim, qu'elle embarque pour
-les lire sans téléphone à portée. Même architecture que les widgets, et les
-mêmes payloads : le téléphone calcule, la montre affiche. Le transport change
-seul (Data Layer d'un côté, WatchConnectivity de l'autre), derrière le plugin
-maison PjWatch. Les deux plateformes sont scriptées de bout en bout, signature
-et publication comprises, voir `docs/app-watch.md`.
+A watch app comes with the app on both platforms (Wear OS and Apple Watch):
+the zmanim, the daily reading, and the Tehilim, which it bundles so they can
+be read without a phone within reach. Same architecture as the widgets, and
+the same payloads: the phone computes, the watch displays. Only the
+transport changes (Data Layer on one side, WatchConnectivity on the other),
+behind the in-house PjWatch plugin. Both platforms are scripted end to end,
+signing and publishing included; see `docs/app-watch.md`.
 
-## Précision de la boussole du Kotel
+## Kotel compass accuracy
 
-Chrome donne le cap à la page, jamais sa précision, et la webview Android
-pas davantage. Le plugin maison PjCompass
+Chrome gives the page the heading, never its accuracy, and neither does the
+Android webview. The in-house PjCompass plugin
 (`native/android/app/src/main/java/fr/petitejerusalem/app/PjCompassPlugin.java`)
-écoute le magnétomètre pendant que la boussole est ouverte et remonte son
-statut d'étalonnage (`SensorManager` : 3 haute, 2 moyenne, 1 basse,
-0 inutilisable), le même qui fait dire à Google Maps qu'il faut calibrer.
-Il s'éteint quand l'app passe en arrière-plan et reprend à son retour.
-`scripts/setup-android.mjs` le copie avec les widgets et l'enregistre dans
-`MainActivity`. Côté page, `src/services/nativeCompassAccuracy.ts` : rien
-hors de l'app Android, et rien non plus sur un binaire plus ancien que le
-plugin (la précision reste alors « inconnue », la boussole sert quand même).
-iOS n'en a pas besoin : Safari donne la précision avec le cap
-(`webkitCompassAccuracy`). Voir `docs/design.md`, « La boussole se demande
-en l'ouvrant, dit sa précision, et se tient à plat ».
+listens to the magnetometer while the compass is open and reports its
+calibration status (`SensorManager`: 3 high, 2 medium, 1 low, 0 unreliable),
+the same one that makes Google Maps say it needs calibrating. It turns off
+when the app goes to the background and resumes when it returns.
+`scripts/setup-android.mjs` copies it along with the widgets and registers it
+in `MainActivity`. On the page side, `src/services/nativeCompassAccuracy.ts`:
+nothing outside the Android app, and nothing either on a binary older than
+the plugin (the accuracy then stays "unknown", the compass still works). iOS
+doesn't need it: Safari gives the accuracy with the heading
+(`webkitCompassAccuracy`). See `docs/design.md`, « La boussole se demande en
+l'ouvrant, dit sa précision, et se tient à plat ».
 
-## Icônes qui suivent le thème de l'appareil
+## Icons that follow the device theme
 
-Les deux systèmes savent adapter l'icône d'une app au thème du téléphone, à
-condition qu'on leur en donne les variantes ; sinon ils laissent l'icône en
-couleurs telle quelle.
+Both systems can adapt an app's icon to the phone's theme, provided they are
+given the variants; otherwise they leave the color icon as is.
 
-| Variante | Où elle sert |
+| Variant | Where it is used |
 |---|---|
-| claire | l'icône d'origine, les boutiques, l'écran de lancement |
-| sombre | mode sombre d'iOS 18 |
-| teintée | iOS 18, teintée par la couleur choisie pour l'écran d'accueil |
-| monochrome | icônes thématiques d'Android 13+, teintées par le fond d'écran |
-| notification | petite icône de toutes les notifications Android, teintée par le système |
+| light | the original icon, the stores, the launch screen |
+| dark | iOS 18 dark mode |
+| tinted | iOS 18, tinted by the color chosen for the home screen |
+| monochrome | Android 13+ themed icons, tinted by the wallpaper |
+| notification | small icon of every Android notification, tinted by the system |
 
-C'est pour ça que le noir et blanc est nécessaire : les variantes teintée et
-monochrome sont lues comme des intensités, pas comme des images. Le système
-pose la couleur, l'app ne fournit que la forme.
+That is why black and white is necessary: the tinted and monochrome variants
+are read as intensities, not as images. The system applies the color; the
+app only provides the shape.
 
-Tout part d'une seule source, `scripts/lib/app-icon.mjs`, où le dessin est écrit
-en vecteur : les variantes n'en changent que la palette et le cadrage. Le
-cadrage de la variante claire reproduit au pixel près l'icône déjà publiée sur
-les boutiques, et un test le tient.
+Everything comes from a single source, `scripts/lib/app-icon.mjs`, where the
+drawing is written as vectors: the variants only change its palette and
+framing. The light variant's framing reproduces pixel for pixel the icon
+already published on the stores, and a test enforces it.
 
-Les PNG d'`assets/themed/` sont versionnés, et ce sont eux qui partent dans les
-projets natifs : `setup-android.mjs` et `setup-ios.mjs` se contentent de les
-recopier, un runner de CI n'a donc jamais besoin d'un navigateur pour fabriquer
-l'app. La rasterisation, elle, ne vit pas dans le dépôt : le jour où le dessin
-change, il faut produire les fichiers à part, aux noms et aux tailles
-qu'attendent les scripts d'installation, puis les remplacer dans `assets/`.
+The PNGs in `assets/themed/` are versioned, and they are what goes into the
+native projects: `setup-android.mjs` and `setup-ios.mjs` simply copy them, so
+a CI runner never needs a browser to build the app. Rasterization, however,
+does not live in the repository: the day the drawing changes, the files must
+be produced separately, with the names and sizes the setup scripts expect,
+then replaced in `assets/`.
 
-Deux contraintes valent d'être connues avant de retoucher le dessin :
+Two constraints are worth knowing before touching up the drawing:
 
-- Android masque l'icône. La toile fait 108 dp mais le lanceur peut manger tout
-  ce qui sort des 66 dp du centre, et son masque est rond aussi souvent que
-  carré. Le dessin y est donc inscrit par son cercle, pas par son rectangle.
-- Une silhouette a perdu ses couleurs, donc ses séparations. Le mur et le livre
-  se toucheraient et l'icône ne serait plus qu'une tache : ce sont les creux du
-  masque (joints des pierres, lignes des pages, bord haut du livre) qui la
-  gardent lisible.
+- Android masks the icon. The canvas is 108 dp but the launcher may eat
+  everything outside the central 66 dp, and its mask is round as often as
+  square. The drawing is therefore inscribed in its circle, not in its
+  rectangle.
+- A silhouette has lost its colors, and therefore its separations. The wall
+  and the book would touch and the icon would be nothing but a blob: it is
+  the hollows of the mask (stone joints, page lines, top edge of the book)
+  that keep it legible.
 
-### Petite icône des notifications
+### Small notification icon
 
-Android n'affiche de la petite icône d'une notification que son opacité. Sans
-icône déclarée, chaque source retombait sur la sienne : l'icône du lanceur
-réduite à une pastille pour les push reçues app fermée, le « i » générique du
-système pour les notifications locales (rappels d'horaires, rappel du Chabbat,
-push rejouées au premier plan).
+Android only displays the opacity of a notification's small icon. With no
+declared icon, each source fell back on its own: the launcher icon reduced
+to a dot for push notifications received while the app is closed, the
+system's generic "i" for local notifications (zmanim reminders, Chabbat
+reminder, push notifications replayed in the foreground).
 
-Toutes prennent désormais `ic_stat_pj`, la silhouette de l'icône cadrée pour
-24 dp. Ses PNG sont versionnés dans `native/android/app/src/main/res/drawable-*`
-(recopiés par `setup-android.mjs` avec les widgets) et se rasterisent comme les
-autres, depuis la variante `notification` de `scripts/lib/app-icon.mjs`, aux
-tailles de 24, 36, 48, 72 et 96 px (de mdpi à xxxhdpi). Deux déclarations la
-branchent :
+All of them now use `ic_stat_pj`, the icon's silhouette framed for 24 dp.
+Its PNGs are versioned in `native/android/app/src/main/res/drawable-*`
+(copied by `setup-android.mjs` with the widgets) and are rasterized like the
+others, from the `notification` variant of `scripts/lib/app-icon.mjs`, at
+sizes 24, 36, 48, 72 and 96 px (from mdpi to xxxhdpi). Two declarations wire
+it up:
 
-- `capacitor.config.ts`, `LocalNotifications.smallIcon` : toutes les
-  notifications locales ;
-- le manifest, meta-data `default_notification_icon` de Firebase (posée par
-  `setup-android.mjs`) : les push affichées par le système app fermée.
+- `capacitor.config.ts`, `LocalNotifications.smallIcon`: all local
+  notifications;
+- the manifest, Firebase's `default_notification_icon` meta-data (set by
+  `setup-android.mjs`): push notifications displayed by the system while the
+  app is closed.
 
-La teinte du volet est l'or des pierres de l'icône (`#C79A3B`), déclarée aux
-deux endroits.
+The shade's tint is the gold of the icon's stones (`#C79A3B`), declared in
+both places.
 
-La notification de lecture des cours (ci-dessous) prend la même silhouette, par
-une ressource qui remplace celle du plugin.
+The class playback notification (below) uses the same silhouette, through a
+resource that replaces the plugin's.
 
-## Écoute des cours en arrière-plan
+## Listening to classes in the background
 
-Un cours s'écoute comme une musique : il continue écran éteint ou app quittée,
-s'affiche dans la notification d'Android (et la carte du lecteur des réglages
-rapides, l'écran verrouillé) comme sur l'écran verrouillé et le centre de
-contrôle d'iOS, et s'y commande sans rouvrir l'app (lecture, pause, reculer de
-15 secondes, avancer de 30, cours précédent et suivant de la file, position).
-Le lecteur (`useAudioPlayer`) publie ce qui joue à `src/services/mediaSession.ts`,
-qui le transmet au système :
+A class plays like music: it keeps going with the screen off or the app
+closed, shows up in Android's notification (and the quick settings media
+player card, the lock screen) as on iOS's lock screen and Control Center,
+and can be controlled there without reopening the app (play, pause, back 15
+seconds, forward 30, previous and next class in the queue, position). The
+player (`useAudioPlayer`) publishes what is playing to
+`src/services/mediaSession.ts`, which passes it on to the system:
 
-- **site** : l'API Media Session du navigateur, comme avant ;
-- **Android** : la webview n'en fait rien. `@capgo/capacitor-media-session`
-  tient une vraie session média native, dans un service de premier plan de
-  type `mediaPlayback` qui garde aussi la lecture en vie. C'est l'état de
-  lecture qui ouvre et ferme la notification : « playing » ou « paused » la
-  montre, « none » (le lecteur fermé, ou « Arrêter » dans la notification) la
-  retire ;
-- **iOS** : le plugin repasse, à dessein, par l'API Media Session du WKWebView,
-  que le système relaie à l'écran verrouillé. Il y faut le mode d'arrière-plan
-  `audio`, sans lequel iOS coupe le son dès que l'app passe en arrière-plan.
+- **website**: the browser's Media Session API, as before;
+- **Android**: the webview does nothing with it.
+  `@capgo/capacitor-media-session` holds a real native media session, in a
+  `mediaPlayback` foreground service that also keeps playback alive. It is
+  the playback state that opens and closes the notification: « playing » or
+  « paused » shows it, « none » (the player closed, or « Arrêter », "Stop", in
+  the notification) removes it;
+- **iOS**: the plugin deliberately goes back through the WKWebView's Media
+  Session API, which the system relays to the lock screen. This requires the
+  `audio` background mode, without which iOS cuts the sound as soon as the
+  app goes to the background.
 
-Ce que le natif exige, et que posent les scripts :
+What native requires, and what the scripts set:
 
-- `setup-android.mjs` déclare `FOREGROUND_SERVICE_MEDIA_PLAYBACK` : le plugin
-  ne déclare que `FOREGROUND_SERVICE`, et depuis Android 14 démarrer son
-  service sans l'autre lève une `SecurityException`, l'app se fermerait à la
-  première lecture ;
-- `native/android/` remplace deux icônes du plugin par des ressources de même
-  nom : `ic_baseline_volume_up_24` (la petite icône : `ic_stat_pj` au lieu
-  d'un haut-parleur générique) et `ic_baseline_replay_30_24` (le bouton
-  « reculer », sans le « 30 » qui mentirait) ;
-- `setup-ios.mjs` ajoute `audio` aux `UIBackgroundModes`, y compris dans un
-  Info.plist qui avait déjà la clé.
+- `setup-android.mjs` declares `FOREGROUND_SERVICE_MEDIA_PLAYBACK`: the
+  plugin only declares `FOREGROUND_SERVICE`, and since Android 14 starting
+  its service without the other throws a `SecurityException`; the app would
+  close on the first playback;
+- `native/android/` replaces two of the plugin's icons with resources of the
+  same name: `ic_baseline_volume_up_24` (the small icon: `ic_stat_pj` instead
+  of a generic speaker) and `ic_baseline_replay_30_24` (the "back" button,
+  without the "30" that would be a lie);
+- `setup-ios.mjs` adds `audio` to `UIBackgroundModes`, including in an
+  Info.plist that already had the key.
 
-`src/__tests__/mediaSessionAndroid.test.ts` tient ces trois points ;
-`src/__tests__/mediaSessionNative.test.ts` tient le dialogue avec le plugin
-(ce qui part, les commandes reçues, la notification retirée à la fermeture et
-pas rouverte par la pause qui suit).
+`src/__tests__/mediaSessionAndroid.test.ts` enforces these three points;
+`src/__tests__/mediaSessionNative.test.ts` enforces the dialogue with the
+plugin (what is sent, the commands received, the notification removed on
+close and not reopened by the pause that follows).
 
-La pochette affichée par le système est celle de l'app, dessinée en image
-(`components/chiourim/coverArtwork.ts`) : les pochettes de l'app sont du CSS,
-le système veut une image.
+The artwork displayed by the system is the app's, drawn as an image
+(`components/chiourim/coverArtwork.ts`): the app's covers are CSS, the
+system wants an image.
 
-Deux limites, propres au plugin : le canal de notification s'appelle
-« Playback » dans les réglages d'Android, et le texte de la notification est
-« artiste - album » (ici « le rav · la série - Petite Jérusalem »).
+Two limitations, specific to the plugin: the notification channel is called
+« Playback » in Android's settings, and the notification text is
+« artiste - album » ("artist - album", here « le rav · la série - Petite
+Jérusalem », "the rav · the series - Petite Jérusalem").
 
-À vérifier sur un appareil avant chaque publication qui touche au lecteur :
-lancer un cours, verrouiller l'écran, le commander depuis la notification (ou
-l'écran verrouillé), passer au suivant, fermer le lecteur et voir la
-notification partir.
+To check on a device before every release that touches the player: start a
+class, lock the screen, control it from the notification (or the lock
+screen), skip to the next one, close the player and watch the notification
+go away.
 
-## Liens du site qui ouvrent l'app
+## Website links that open the app
 
-Un lien vers `petite-jerusalem.fr` (une session partagée reçue par message,
-par exemple) ouvre l'app quand elle est installée, et le navigateur sinon.
-Le domaine et l'app se reconnaissent par un fichier servi par le site
-(`/.well-known/`), les chemins concernés tiennent en une liste unique
-(`scripts/lib/app-links.mjs`) que les deux plateformes et un test partagent.
-Voir `docs/app-links.md`, notamment les deux valeurs de signature à fournir.
+A link to `petite-jerusalem.fr` (a shared session received by message, for
+example) opens the app when it is installed, and the browser otherwise. The
+domain and the app recognize each other through a file served by the website
+(`/.well-known/`); the paths concerned fit in a single list
+(`scripts/lib/app-links.mjs`) shared by both platforms and a test. See
+`docs/app-links.md`, in particular the two signing values to provide.
 
-## Bandeau « mise à jour disponible »
+## « Mise à jour disponible » ("Update available") banner
 
-Une app installée peut rester des mois en arrière (mises à jour automatiques
-désactivées) : les correctifs ne l'atteignent jamais. Au lancement, puis à
-chaque retour au premier plan, au plus une fois toutes les 6 h
-`src/services/appUpdateService.ts` demande au store de la plateforme si une
-mise à jour est disponible, et affiche un bandeau refusable en tête de l'app,
-avec un lien vers la fiche du store (`components/AppUpdateBanner.vue`). Un
-refus vaut jusqu'à la version suivante.
+An installed app can stay months behind (automatic updates turned off): the
+fixes never reach it. At launch, then every time the app returns to the
+foreground, at most once every 6 hours, `src/services/appUpdateService.ts`
+asks the platform's store whether an update is available, and shows a
+dismissable banner at the top of the app, with a link to the store listing
+(`components/AppUpdateBanner.vue`). A dismissal holds until the next
+version.
 
-La source, sur les deux plateformes, est le store lui-même, jamais le tag de
-release : une release peut attendre des jours la revue d'Apple ou de Google,
-et annoncer la mise à jour pendant cette fenêtre enverrait vers une fiche qui
-ne la propose pas encore.
+The source, on both platforms, is the store itself, never the release tag: a
+release can wait days for Apple's or Google's review, and announcing the
+update during that window would send people to a listing that doesn't offer
+it yet.
 
-- **Android** : l'API In-App Updates du Play Store
-  (`@capawesome/capacitor-app-update`), la réponse du store pour l'appareil
-  lui-même : revue Google passée, propagation faite, rollout progressif
-  compris.
-- **iOS** : `itunes.apple.com/lookup?bundleId=…`, l'API publique de l'App
-  Store, qui fait autorité. Tant que l'app n'y est pas publiée, le lookup ne
-  renvoie aucun résultat et le bandeau n'apparaît jamais sur iOS.
+- **Android**: the Play Store In-App Updates API
+  (`@capawesome/capacitor-app-update`), the store's answer for the device
+  itself: Google review passed, propagation done, staged rollout included.
+- **iOS**: `itunes.apple.com/lookup?bundleId=…`, the App Store's public API,
+  which is authoritative. As long as the app isn't published there, the
+  lookup returns no result and the banner never appears on iOS.
 
-`app-version.json`, l'ancienne source Android (plugin `appVersionManifest`
-dans `vite.config.ts`), annonçait la version dès la mise en ligne du site,
-donc pendant toute la revue Google : le bandeau redirigeait vers une fiche
-Play qui ne proposait pas encore la mise à jour. Le site continue de publier
-le fichier pour les versions déjà installées qui le consultent encore.
+`app-version.json`, the former Android source (the `appVersionManifest`
+plugin in `vite.config.ts`), announced the version as soon as the website
+went live, hence during the whole Google review: the banner redirected to a
+Play listing that didn't offer the update yet. The website keeps publishing
+the file for already-installed versions that still read it.
 
-Tout échec (hors ligne, store injoignable, build qui ne vient pas du store)
-laisse simplement le bandeau masqué, jamais de faux positif.
+Any failure (offline, store unreachable, build not coming from the store)
+simply leaves the banner hidden, never a false positive.
 
-## Publication
+## Publishing
 
-Un tag `vX.Y.Z` publie tout d'un coup :
+A `vX.Y.Z` tag publishes everything at once:
 
-| Workflow | Cible | Résultat |
+| Workflow | Target | Result |
 |---|---|---|
-| `deploy.yml` | site | mise en ligne de `petite-jerusalem.fr` |
-| `deploy-android.yml` | Play Store | AAB signé + fiche + notes de version, publiés (`docs/android-ci-cd.md`) |
-| `deploy-ios.yml` | App Store | IPA signé envoyé sur **TestFlight** + fiche (`docs/ios-ci-cd.md`) |
+| `deploy.yml` | website | `petite-jerusalem.fr` goes live |
+| `deploy-android.yml` | Play Store | signed AAB + listing + release notes, published (`docs/android-ci-cd.md`) |
+| `deploy-ios.yml` | App Store | signed IPA sent to **TestFlight** + listing (`docs/ios-ci-cd.md`) |
 
-Côté iOS, le tag envoie le binaire, soumet la version à l'examen et la met en
-vente dès l'accord d'Apple, sans clic dans App Store Connect. Le seul délai qui
-reste est celui de l'examen, quelques heures à quelques jours. Le chemin
-complet, compte Apple Developer, consoles, premier build, soumission, est
-décrit dans `docs/ios-release-plan.md`.
+On iOS, the tag uploads the binary, submits the version for review and
+releases it as soon as Apple approves, without a click in App Store Connect.
+The only remaining delay is the review, from a few hours to a few days. The
+full path (Apple Developer account, consoles, first build, submission) is
+described in `docs/ios-release-plan.md`.

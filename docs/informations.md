@@ -1,207 +1,216 @@
-# Les informations de l'équipe
+# Team information
 
-Un moyen de parler aux utilisateurs sans publier de mise à jour : une
-nouveauté, les notes d'une version, un incident en cours, une question ou un
-sondage. Tout s'écrit depuis le backoffice et s'affiche aussitôt dans l'app
-et sur le site.
+A way to talk to users without publishing an update: a new feature, a
+version's release notes, an ongoing incident, a question or a poll.
+Everything is written from the backoffice and shows up right away in the
+app and on the site.
 
-Chaque nature a sa raison d'être, et donc sa façon de quitter l'accueil :
+Each kind has its own purpose, and therefore its own way of leaving the
+home page:
 
-| Nature      | Pourquoi                                                    | Quitte l'accueil                                                                |
-| ----------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| Mise à jour | dire à qui vient de mettre à jour ce qui a changé           | une fois lue                                                                    |
-| Incident    | prévenir d'un problème avant que la correction n'arrive     | quand il est marqué résolu, ou sur l'appareil qui a la version qui le corrige   |
-| Question    | demander l'avis des utilisateurs, avec un sondage au besoin | lue, après une semaine ; un sondage, une fois répondu ou clos (un mois au plus) |
-| Nouveauté   | faire découvrir une fonction                                | lue, après une semaine                                                          |
+| Kind                              | Why                                                       | Leaves the home page                                                                  |
+| --------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Mise à jour ("Update")            | tell those who have just updated what changed             | once read                                                                             |
+| Incident                          | warn about a problem before the fix arrives               | when it is marked resolved, or on a device that has the version that fixes it         |
+| Question                          | ask users for their opinion, with a poll if needed        | once read, after a week; a poll, once answered or closed (one month at most)          |
+| Nouveauté ("New feature")         | introduce a feature                                       | once read, after a week                                                               |
 
-Dans tous les cas, l'information reste dans la liste (`/informations`).
+In every case, the information item stays in the list (`/informations`).
 
-## Publier
+## Publishing
 
-1. Se connecter avec le compte admin, ouvrir **Backoffice → Informations**
-   (`/admin/informations`), puis **Nouvelle information**.
-2. Choisir la nature :
-   - **Nouveauté** : une fonction à découvrir ;
-   - **Mise à jour** : les notes d'une version, avec son numéro (`3.11.0`) ;
-   - **Incident** : un problème connu, qui reste en tête de l'accueil tant
-     qu'il n'est pas marqué « résolu ». S'il se règle par une mise à jour,
-     indiquer la version qui le corrige (« Corrigé dans la version »,
-     `3.11.1`, toujours sous la forme X.Y.Z) : les appareils qui l'ont ne
-     le voient plus, ceux qui ne l'ont pas le voient jusqu'à ce qu'ils
-     mettent à jour. Tant que l'app n'a pas lu sa propre version, elle
-     garde l'incident en cours ;
-   - **Question** : l'annonce se termine par un bouton « Répondre », qui ouvre
-     le formulaire de support déjà amorcé ; la réponse arrive dans les
-     messages du backoffice (`/admin/messages`), comme les autres. **Ajouter un sondage**
-     en fait un choix à cocher (voir « Sondages » plus bas).
-3. Écrire le titre et le texte en français. L'anglais et l'hébreu sont
-   facultatifs : sans traduction, ces lecteurs voient le français.
-4. Un lien, facultatif : une page de l'app (`/bibliotheque/sidour`) ou une
-   adresse externe (`https://…`), avec le texte du bouton. Une information
-   est lue par toutes les versions installées : le lien vise une adresse que
-   les plus anciennes connaissent. `/bibliotheque/sidour` ouvre le Sidour
-   partout (les versions récentes la redirigent vers `/sidour`) ; `/sidour`
-   seul mène à une page introuvable dans une app pas encore à jour.
-5. Cocher **Publié**, et **Envoyer une notification** si elle doit partir.
-   Une confirmation le rappelle : une notification envoyée ne se rattrape pas.
+1. Sign in with the admin account, open **Backoffice → Informations**
+   (`/admin/informations`), then **Nouvelle information** ("New
+   information").
+2. Choose the kind:
+   - **Nouveauté**: a feature to discover;
+   - **Mise à jour**: a version's release notes, with its number
+     (`3.11.0`);
+   - **Incident**: a known problem, which stays at the top of the home
+     page as long as it is not marked « résolu » ("resolved"). If it is
+     solved by an update, enter the version that fixes it (« Corrigé dans
+     la version », "Fixed in version", `3.11.1`, always in the form
+     X.Y.Z): devices that have it no longer see it, those that do not see
+     it until they update. As long as the app has not read its own
+     version, it keeps the incident as ongoing;
+   - **Question**: the announcement ends with a « Répondre » ("Reply")
+     button, which opens the support form already prefilled; the answer
+     arrives in the backoffice messages (`/admin/messages`), like the
+     others. **Ajouter un sondage** ("Add a poll") turns it into a choice
+     to check (see "Polls" below).
+3. Write the title and the text in French. English and Hebrew are
+   optional: without a translation, those readers see the French.
+4. A link, optional: an app page (`/bibliotheque/sidour`) or an external
+   address (`https://…`), with the button text. An information item is
+   read by all installed versions: the link targets an address the oldest
+   ones know. `/bibliotheque/sidour` opens the Sidour everywhere (recent
+   versions redirect it to `/sidour`); `/sidour` alone leads to a
+   page-not-found in an app that is not yet up to date.
+5. Check **Publié** ("Published"), and **Envoyer une notification** ("Send
+   a notification") if one should go out. A confirmation reminds you: a
+   sent notification cannot be taken back.
 
-Corriger une annonce publiée ne la renvoie pas et ne la fait pas remonter :
-sa date de publication est fixée à la première publication. Pour clore un
-incident, rouvrir l'annonce, cocher « Incident résolu », enregistrer.
+Correcting a published announcement does not resend it and does not bump
+it up: its publication date is set at first publication. To close an
+incident, reopen the announcement, check « Incident résolu » ("Incident
+resolved"), save.
 
-## Sans l'interface
+## Without the interface
 
-Tout ce qui précède se fait aussi en ligne de commande, par Claude, par la CI
-ou à la main : `node scripts/admin.mjs info:creer …` (voir
-`docs/backoffice-cli.md`). Les notes de version deviennent d'elles-mêmes une
-information « Mise à jour » à la publication de la release GitHub.
+Everything above can also be done from the command line, by Claude, by the
+CI or by hand: `node scripts/admin.mjs info:creer …` (see
+`docs/backoffice-cli.md`). Release notes automatically become a « Mise à
+jour » information item when the GitHub release is published.
 
-## Ce que voient les utilisateurs
+## What users see
 
-- **La page Informations** (`/informations`), de la plus récente à la plus
-  ancienne, avec une pastille « Nouveau » sur ce qui a été publié depuis la
-  dernière visite. On y arrive par le pied de page du site et l'onglet
-  « À propos » du profil dans l'app ; l'accueil n'y mène plus que par sa
-  carte, quand il y a quelque chose.
-- **Une carte sur l'accueil**, seulement quand il y a quelque chose :
-  - une annonce pas encore lue s'y montre **en aperçu** (sa nature, le titre
-    et le début du texte, « Lire la suite »), pendant un mois au plus ;
-  - une fois lue, une nouveauté ou une question reste **une semaine en une
-    ligne** ; une note de version, elle, quitte l'accueil ;
-  - un incident en cours passe avant tout et reste jusqu'à ce qu'il soit
-    marqué résolu ; lu, il se réduit à une ligne et laisse la dernière
-    nouveauté non lue s'afficher en aperçu dessous. Résolu, il ne revient
-    pas sur l'accueil, même jamais lu ;
-  - un incident qui porte la version de son correctif ne s'affiche que là
-    où cette version manque : une fois la mise à jour faite, il quitte
-    l'accueil et n'est plus « Nouveau », lu ou non. Dans la liste, il se lit
-    « Résolu », avec « Corrigé dans la version… ». Le site, toujours à la
-    dernière version, ne le met jamais en avant ;
-  - un sondage ouvert reste en une ligne une fois lu, tant que l'appareil
-    n'y a pas répondu (« Sondage : votre avis compte »), un mois au plus.
-    Répondu ou clos, il quitte l'accueil.
-- **Une notification** dans l'app, qui ouvre l'annonce.
+- **The Informations page** (`/informations`), from most recent to oldest,
+  with a « Nouveau » ("New") badge on what was published since the last
+  visit. You reach it from the site footer and the « À propos » ("About")
+  tab of the profile in the app; the home page now only leads there
+  through its card, when there is something.
+- **A card on the home page**, only when there is something:
+  - an announcement not yet read shows there **as a preview** (its kind,
+    the title and the start of the text, « Lire la suite » ("Read more")),
+    for one month at most;
+  - once read, a new feature or a question stays **for a week as a single
+    line**; a release note, on the other hand, leaves the home page;
+  - an ongoing incident takes precedence over everything and stays until
+    it is marked resolved; once read, it shrinks to a single line and lets
+    the latest unread new feature show as a preview below it. Once
+    resolved, it does not come back to the home page, even if never read;
+  - an incident that carries the version of its fix only shows where that
+    version is missing: once the update is done, it leaves the home page
+    and is no longer « Nouveau », read or not. In the list, it reads
+    « Résolu », with « Corrigé dans la version… ». The site, always at the
+    latest version, never highlights it;
+  - an open poll stays as a single line once read, as long as the device
+    has not answered it (« Sondage : votre avis compte », "Poll: your
+    opinion matters"), for one month at most. Once answered or closed, it
+    leaves the home page.
+- **A notification** in the app, which opens the announcement.
 
-« Déjà vu » se retient sur l'appareil (`pj_announcements_seen`), sans compte.
-Au tout premier lancement, seules les annonces des quatorze derniers jours
-comptent comme nouvelles.
+"Already seen" is remembered on the device (`pj_announcements_seen`),
+without an account. On the very first launch, only announcements from the
+last fourteen days count as new.
 
-Les notes d'une version ne s'annoncent sur l'accueil de l'app qu'une fois
-cette version installée : publiées pendant la revue des stores, elles
-décriraient ce que l'app ne fait pas encore. Elles restent visibles dans la
-liste, sans pastille « Nouveau » tant que la version n'est pas là. Une note
-vue dans la liste avant l'installation redevient nouvelle une fois la version
-installée : l'appareil retient la version de sa dernière visite
-(`pj_announcements_seen_version`), et une note d'une version plus récente,
-désormais installée, est nouvelle quelle que soit sa date. Ouverte seule
-(depuis l'accueil ou une notification) avec sa version installée, elle avance
-ce repère jusqu'à sa version : elle est lue, sans attendre une visite de la
-liste. Tests : `announcements.test.ts` (« une note de version vue avant son
-installation ») et `announcementsSeenVersion.test.ts`.
+A version's release notes are only announced on the app's home page once
+that version is installed: published during store review, they would
+describe what the app does not do yet. They remain visible in the list,
+without a « Nouveau » badge as long as the version is not there. A note
+seen in the list before installation becomes new again once the version is
+installed: the device remembers the version of its last visit
+(`pj_announcements_seen_version`), and a note for a more recent version,
+now installed, is new whatever its date. Opened on its own (from the home
+page or a notification) with its version installed, it moves this marker
+up to its version: it is read, without waiting for a visit to the list.
+Tests: `announcements.test.ts` (« une note de version vue avant son
+installation ») and `announcementsSeenVersion.test.ts`.
 
-Tests : `announcements.test.ts` (« un incident corrigé par une version »,
+Tests: `announcements.test.ts` (« un incident corrigé par une version »,
 « une note de version lue », « un sondage sur l'accueil »).
 
-## Sondages
+## Polls
 
-Une question peut porter un sondage : de deux à huit choix, chacun avec son
-libellé (le français obligatoire, l'anglais et l'hébreu facultatifs) et, au
-besoin, une image. Un seul choix à cocher, ou plusieurs (« Plusieurs choix
-permis »). « Sondage clos » arrête les votes : les choix restent lisibles,
-celui de l'appareil marqué.
+A question can carry a poll: from two to eight choices, each with its
+label (French required, English and Hebrew optional) and, if needed, an
+image. A single choice to check, or several (« Plusieurs choix permis »,
+"Multiple choices allowed"). « Sondage clos » ("Poll closed") stops voting:
+the choices remain readable, with the device's choice marked.
 
-- **Sans compte.** Chaque appareil vote sous un identifiant tiré au hasard
-  et gardé sur l'appareil (`pj_poll_voter`) ; ses réponses s'y retiennent
-  aussi (`pj_poll_votes`). Un nouveau vote remplace le précédent. Rien ne
-  désigne la personne. Le revers : qui vide son stockage, ou vote depuis
-  l'app puis depuis le site, compte deux fois. C'est un sondage d'avis, pas
-  un scrutin.
-- **Les réponses** se lisent dans le backoffice, sous l'aperçu de
-  l'information, ou par `node scripts/admin.mjs info:resultats <id>`. Elles
-  ne sont pas montrées aux utilisateurs.
-- **Ne pas changer le sens d'un choix** qui a déjà reçu des réponses : les
-  votes désignent le choix par son identifiant, ils lui restent attachés.
-  Corriger une faute, oui ; remplacer « Bleu » par « Vert », non (retirer le
-  choix et en ajouter un autre).
-- **Les images** vont dans Storage, sous `announcements/{id}/`, 5 Mo au
-  plus. Tout le dossier part avec l'information, images remplacées
-  comprises ; d'ici là, une image remplacée reste en ligne. Une image
-  envoyée pour une information jamais enregistrée reste aussi.
+- **Without an account.** Each device votes under an identifier drawn at
+  random and kept on the device (`pj_poll_voter`); its answers are also
+  remembered there (`pj_poll_votes`). A new vote replaces the previous one.
+  Nothing identifies the person. The downside: anyone who clears their
+  storage, or votes from the app and then from the site, counts twice. It
+  is an opinion poll, not an election.
+- **The answers** can be read in the backoffice, below the information
+  item's preview, or through `node scripts/admin.mjs info:resultats <id>`.
+  They are not shown to users.
+- **Do not change the meaning of a choice** that has already received
+  answers: votes designate the choice by its identifier, they stay
+  attached to it. Fixing a typo, yes; replacing « Bleu » with « Vert », no
+  (remove the choice and add another one).
+- **Images** go into Storage, under `announcements/{id}/`, 5 MB at most.
+  The whole folder goes away with the information item, replaced images
+  included; until then, a replaced image stays online. An image uploaded
+  for an information item that was never saved also stays.
 
-## Les versions déjà installées
+## Versions already installed
 
-Une information est lue par toutes les versions de l'app qui la
-connaissent (depuis la 3.10.9), chacune avec son propre code. Ce qui est
-ajouté ici l'est sous des champs que les versions publiées ignorent sans
-rien afficher de faux :
+An information item is read by all app versions that know about them
+(since 3.10.9), each with its own code. What is added here is added under
+fields that published versions ignore without displaying anything wrong:
 
-| Ajout                   | Version qui le connaît        | Version plus ancienne                                                  |
-| ----------------------- | ----------------------------- | ---------------------------------------------------------------------- |
-| Note de version lue     | celle qui apporte cette règle | la garde une semaine en une ligne                                      |
-| `fixedIn` d'un incident | celle qui apporte cette règle | montre l'incident jusqu'à « résolu »                                   |
-| `poll` d'une question   | celle qui apporte cette règle | lit la question, avec « Répondre » et un bouton « Voter » vers le site |
+| Addition                       | Version that knows it          | Older version                                                                          |
+| ------------------------------ | ------------------------------ | -------------------------------------------------------------------------------------- |
+| Release note read              | the one that brings this rule  | keeps it for a week as a single line                                                   |
+| `fixedIn` of an incident       | the one that brings this rule  | shows the incident until « résolu »                                                    |
+| `poll` of a question           | the one that brings this rule  | reads the question, with « Répondre » and a « Voter » ("Vote") button to the site      |
 
-Deux conséquences :
+Two consequences:
 
-- **Un incident corrigé par une version** fonctionne partout dès que cette
-  version est postérieure à celle qui apporte la règle : les appareils plus
-  anciens ne l'ont pas, ils doivent voir l'incident, et le voient. Pour un
-  correctif déjà publié avant elle (le tahanoun, corrigé en 3.10.11), les
-  appareils à jour le verraient encore : le marquer résolu.
-- **Un sondage** reçoit, si son lien est vide, un bouton « Voter » vers
-  `https://petite-jerusalem.fr/sondage/{id}` (`pollPageUrl`). Cette adresse
-  est hors des liens d'application (`BROWSER_ONLY_PATHS`,
-  `scripts/lib/app-links.mjs`) : elle s'ouvre dans le navigateur, où le site
-  est toujours à la dernière version. Sous `/informations`, elle aurait
-  rouvert l'app elle-même, sur une page sans les choix. Les versions qui
-  connaissent les sondages ne montrent pas ce bouton (`visibleLink`). Un lien
-  choisi à la main est gardé : les anciennes versions ne pourront alors pas
-  voter. Tests : `announcements.test.ts` (« le lien de la page de vote »),
+- **An incident fixed by a version** works everywhere as soon as that
+  version is later than the one that brings the rule: older devices do not
+  have it, they must see the incident, and they do. For a fix already
+  published before it (the tahanoun, fixed in 3.10.11), up-to-date devices
+  would still see it: mark it resolved.
+- **A poll** receives, if its link is empty, a « Voter » button to
+  `https://petite-jerusalem.fr/sondage/{id}` (`pollPageUrl`). This address
+  is outside the app links (`BROWSER_ONLY_PATHS`,
+  `scripts/lib/app-links.mjs`): it opens in the browser, where the site is
+  always at the latest version. Under `/informations`, it would have
+  reopened the app itself, on a page without the choices. Versions that
+  know about polls do not show this button (`visibleLink`). A link chosen
+  by hand is kept: old versions will then not be able to vote. Tests:
+  `announcements.test.ts` (« le lien de la page de vote »),
   `appLinks.test.ts`.
 
-## Comment ça marche
+## How it works
 
-| Pièce                      | Où                                                         |
+| Piece                      | Where                                                      |
 | -------------------------- | ---------------------------------------------------------- |
-| Données                    | Firestore, collection `announcements`                      |
+| Data                       | Firestore, `announcements` collection                      |
 | Votes                      | `announcements/{id}/votes/{appareil}`                      |
-| Images des choix           | Storage, `announcements/{id}/`                             |
-| Règles                     | lecture publique des annonces publiées, écriture admin     |
+| Choice images              | Storage, `announcements/{id}/`                             |
+| Rules                      | public read of published announcements, admin write        |
 | Index                      | `published` + `publishedAt` (`firestore.indexes.json`)     |
-| Envoi des notifications    | `functions/src/announcements.ts` (`onAnnouncementWritten`) |
-| Abonnement de l'app        | `src/services/announcementTopics.ts`                       |
-| Logique (nouveau, accueil) | `src/services/announcements.ts`, testée                    |
+| Sending notifications      | `functions/src/announcements.ts` (`onAnnouncementWritten`) |
+| App subscription           | `src/services/announcementTopics.ts`                       |
+| Logic (new, home page)     | `src/services/announcements.ts`, tested                    |
 | Vote                       | `AnnouncementPoll.vue`, `useAnnouncements.answerPoll`      |
 
-Les notifications passent par des **canaux FCM** (topics), un par langue :
-`announcements-fr`, `announcements-en`, `announcements-he`. L'app s'abonne à
-celui de sa langue à chaque lancement et à chaque changement de langue ; la
-fonction publie un message par canal. Pas de jeton à stocker, pas de compte
-requis. La fonction pose `notifiedAt` dans une transaction avant l'envoi :
-une annonce ne part qu'une fois, même si le trigger est rejoué.
+Notifications go through **FCM channels** (topics), one per language:
+`announcements-fr`, `announcements-en`, `announcements-he`. The app
+subscribes to the one for its language at each launch and at each language
+change; the function publishes one message per channel. No token to store,
+no account required. The function sets `notifiedAt` in a transaction
+before sending: an announcement only goes out once, even if the trigger is
+replayed.
 
-Tout le monde est abonné par défaut ; l'interrupteur « Informations de
-l'équipe » de l'onglet Notifications du profil coupe l'abonnement. Le système
-n'affiche rien sans la permission de notifier, qu'on ne demande qu'au geste :
-l'interrupteur, ou le bouton « Me prévenir » de la page Informations.
+Everyone is subscribed by default; the « Informations de l'équipe » ("Team
+information") toggle in the profile's Notifications tab cuts the
+subscription. The system displays nothing without notification
+permission, which is only requested on a user gesture: the toggle, or the
+« Me prévenir » ("Notify me") button on the Informations page.
 
-Les règles d'un vote (`firestore.rules`) : le sondage est publié et ouvert,
-les choix sont les siens (`poll.optionIds`, posé à l'enregistrement par le
-backoffice et la CLI, `pollToStore`), un seul sauf sondage à choix
-multiples, et l'heure est celle du serveur. Personne ne relit les votes,
-sauf l'admin qui les compte.
+The rules for a vote (`firestore.rules`): the poll is published and open,
+the choices are its own (`poll.optionIds`, set at save time by the
+backoffice and the CLI, `pollToStore`), a single one unless the poll is
+multiple-choice, and the time is the server's. Nobody reads the votes back,
+except the admin who counts them.
 
-Le vote passe par Firestore Lite, dans l'app aussi : le SDK complet garde
-une écriture hors ligne en file et ne rend la main qu'à l'accusé du
-serveur. Lite échoue tout de suite, et l'écran le dit.
+The vote goes through Firestore Lite, in the app too: the full SDK queues
+an offline write and only returns once the server acknowledges it. Lite
+fails immediately, and the screen says so.
 
-## À savoir
+## Good to know
 
-- **Une version de l'app est nécessaire, une fois**, pour que les appareils
-  s'abonnent aux canaux. Avant elle, les annonces se lisent dans l'app
-  (la page et le bandeau viennent avec le même code), mais aucune notification
-  n'arrive.
-- **Émulateurs** : FCM n'est pas émulé. Une annonce publiée avec la
-  notification cochée dans `npm run dev:local` ferait partir un vrai envoi
-  depuis l'émulateur de fonctions : tester avec la case décochée.
-- Le site web ne reçoit pas de notifications ; il a la page et le bandeau.
+- **One app version is needed, once**, for devices to subscribe to the
+  channels. Before it, announcements can be read in the app (the page and
+  the banner come with the same code), but no notification arrives.
+- **Emulators**: FCM is not emulated. An announcement published with the
+  notification checked in `npm run dev:local` would trigger a real send
+  from the functions emulator: test with the box unchecked.
+- The website does not receive notifications; it has the page and the
+  banner.

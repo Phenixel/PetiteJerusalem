@@ -3,7 +3,7 @@
  * Les hiloulot du jour, en bas de la page des horaires.
  *
  * Pas de cadre : ce n'est pas une réponse à une question qu'on se pose en
- * ouvrant la page (voir docs/design.md, « Le cadre se mérite »), c'est ce
+ * ouvrant la page (voir docs/design.md, « The frame must be earned »), c'est ce
  * qu'on trouve en arrivant au bout, comme le calendrier imprimé le met au bas
  * de sa colonne. Un titre de groupe, comme ceux des moments de la journée, et
  * des noms.

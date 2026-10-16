@@ -14,7 +14,7 @@
  * halo respire, les étoiles scintillent, les rayons du soleil et de l'aube
  * tournent lentement, le phare balaie, les bras de la galaxie tournent, la
  * coque de la supernova s'éloigne, les jets du quasar tournent en pulsant. C'est l'exception admise
- * à « Le mouvement répond à un geste » (docs/design.md) ; elle se coupe en
+ * à « Motion answers a gesture » (docs/design.md) ; elle se coupe en
  * mouvement réduit et en rendu allégé (`perf-lite`), où la lumière reste
  * posée, entière.
  *

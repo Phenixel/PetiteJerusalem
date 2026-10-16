@@ -1,75 +1,76 @@
-# Le backoffice en ligne de commande
+# The command-line backoffice
 
-`scripts/admin.mjs` fait ce que font les pages `/admin`, sans l'interface :
-publier une information, clore un incident, ajouter ou publier un chiour,
-créer un auteur et son lien studio, modérer une session, répondre à un
-message d'utilisateur. Il écrit exactement
-ce qu'écrirait l'interface (mêmes champs, mêmes refus), et sert à trois
-usages :
+`scripts/admin.mjs` does what the `/admin` pages do, without the interface:
+publish an information item, close an incident, add or publish a chiour,
+create an author and their studio link, moderate a session, reply to a
+user's message. It writes exactly
+what the interface would write (same fields, same refusals), and serves three
+purposes:
 
-- **Claude**, quand on lui demande « ajoute une information pour la mise en
-  ligne », « publie les chiourim de Rav X », « clos l'incident » ;
-- **la CI**, qui fait de chaque note de version une information
-  (`.github/workflows/release-info.yml`) ;
-- **à la main**, depuis un terminal.
+- **Claude**, when asked "add an information item for the release", "publish
+  Rav X's chiourim", "close the incident";
+- **the CI**, which turns each release note into an information item
+  (`.github/workflows/release-info.yml`);
+- **by hand**, from a terminal.
 
 ```bash
 node scripts/admin.mjs aide
 ```
 
-(ou `npm run admin -- aide`)
+(or `npm run admin -- aide`)
 
-## Les garde-fous
+## The safeguards
 
-- **Rien n'est écrit sans `--confirmer`.** Sans lui, une commande qui écrit
-  décrit ce qu'elle ferait (« [essai, production] Créer l'information… ») et
-  s'arrête. On lit l'essai, puis on relance avec `--confirmer`.
-- **Une notification ne part qu'avec `--notifier`.** Jamais par défaut, ni
-  depuis la CI. L'essai le dit en toutes lettres : « UNE NOTIFICATION
-  PARTIRA vers tous les appareils abonnés ». Elle part une seule fois, au
-  moment où l'information devient publiée avec la case cochée (la Cloud
-  Function `onAnnouncementWritten`).
-- **La cible est la production** (`petite-jerusalem-dev`, qui porte le site
-  public malgré son nom). `--emulateur` vise les émulateurs de
-  `npm run dev:local` ; attention, même là, `--notifier` ferait partir une
-  vraie notification (FCM n'est pas émulé).
-- Chaque document écrit garde qui l'a écrit : `updatedVia`
-  (`cli (utilisateur@machine)` ou `ci (…)`).
+- **Nothing is written without `--confirmer`.** Without it, a command that
+  writes describes what it would do (« [essai, production] Créer
+  l'information… ») and stops. Read the dry run, then run it again with
+  `--confirmer`.
+- **A notification is only sent with `--notifier`.** Never by default, nor
+  from the CI. The dry run spells it out: « UNE NOTIFICATION PARTIRA vers
+  tous les appareils abonnés » ("A NOTIFICATION WILL BE SENT to all
+  subscribed devices"). It is sent only once, at the moment the information
+  item becomes published with the box checked (the Cloud Function
+  `onAnnouncementWritten`).
+- **The target is production** (`petite-jerusalem-dev`, which hosts the
+  public site despite its name). `--emulateur` targets the emulators of
+  `npm run dev:local`; careful, even there, `--notifier` would send a real
+  notification (FCM is not emulated).
+- Each written document records who wrote it: `updatedVia`
+  (`cli (utilisateur@machine)` or `ci (…)`).
 
-## Accès
+## Access
 
-Le script passe par le SDK admin de Firebase (celui des functions : lancer
-`npm ci --prefix functions` s'il manque), avec les identifiants par défaut de
-Google (ADC). Il n'est donc pas soumis aux règles Firestore : c'est le
-compte qui fait foi.
+The script goes through the Firebase admin SDK (the one from functions: run
+`npm ci --prefix functions` if it is missing), with Google's Application
+Default Credentials (ADC). It is therefore not subject to the Firestore
+rules: the account is what counts.
 
-- **En local**, une fois (le jeton finit par expirer, le script le dit) :
+- **Locally**, once (the token eventually expires, the script says so):
 
   ```bash
   gcloud auth application-default login
   ```
 
-  et choisir **admin@phenixel.fr** dans le navigateur. Le gcloud de la
-  machine a un autre compte par défaut, sans accès au projet : c'est bien
-  l'ADC qu'il faut renouveler, pas `gcloud auth login`.
+  and pick **admin@phenixel.fr** in the browser. The machine's gcloud has
+  another default account, without access to the project: it is indeed the
+  ADC that needs renewing, not `gcloud auth login`.
 
-- **En CI**, le compte de service `FIREBASE_SERVICE_ACCOUNT` posé par
-  `google-github-actions/auth`. Il lui faut `roles/datastore.user` pour
-  écrire dans Firestore (voir `docs/firebase-ci-cd.md`).
+- **In CI**, the `FIREBASE_SERVICE_ACCOUNT` service account set up by
+  `google-github-actions/auth`. It needs `roles/datastore.user` to write to
+  Firestore (see `docs/firebase-ci-cd.md`).
 
-### Dans une session cloud de Claude Code
+### In a Claude Code cloud session
 
-Une session cloud (claude.ai/code) tourne sur une machine distante, sans le
-gcloud du poste : elle s'identifie par une **clé de compte de service**,
-passée dans la variable `PJ_ADMIN_SERVICE_ACCOUNT` (le JSON de la clé, tel
-quel ou en base64). Le réseau par défaut des environnements cloud
-(« Trusted ») autorise déjà `*.googleapis.com` : rien à ouvrir.
+A cloud session (claude.ai/code) runs on a remote machine, without the
+workstation's gcloud: it authenticates with a **service account key**,
+passed in the `PJ_ADMIN_SERVICE_ACCOUNT` variable (the key's JSON, as is or
+base64-encoded). The default network of cloud environments ("Trusted")
+already allows `*.googleapis.com`: nothing to open.
 
-Mise en place, une fois, par le propriétaire du projet :
+Setup, once, by the project owner:
 
-1. Un compte de service dédié, aux droits limités à ce que fait le script
-   (documents Firestore, fichiers du bucket ; ni règles, ni functions, ni
-   IAM) :
+1. A dedicated service account, with rights limited to what the script does
+   (Firestore documents, bucket files; no rules, no functions, no IAM):
 
    ```bash
    gcloud iam service-accounts create claude-backoffice --project petite-jerusalem-dev --account=admin@phenixel.fr --display-name "Backoffice (sessions cloud de Claude)"
@@ -79,240 +80,241 @@ Mise en place, une fois, par le propriétaire du projet :
    base64 -i ~/claude-backoffice.json | tr -d '\n' | pbcopy
    ```
 
-   `--account=admin@phenixel.fr` : le gcloud du poste a un autre compte par
-   défaut, sans accès au projet (il demanderait son mot de passe). Si
-   admin@phenixel.fr n'est pas dans `gcloud auth list`,
-   `gcloud auth login admin@phenixel.fr` d'abord.
+   `--account=admin@phenixel.fr`: the workstation's gcloud has another
+   default account, without access to the project (it would ask for its
+   password). If admin@phenixel.fr is not in `gcloud auth list`, run
+   `gcloud auth login admin@phenixel.fr` first.
 
-   Fait le 2026-09-29 : le compte `claude-backoffice` existe, avec ces deux
-   rôles. Pour une nouvelle clé, seule la dernière commande est à relancer.
+   Done on 2026-09-29: the `claude-backoffice` account exists, with these two
+   roles. For a new key, only the last command needs to be run again.
 
-2. Dans claude.ai/code, réglages de l'environnement du dépôt, **variables
-   d'environnement** : une ligne `PJ_ADMIN_SERVICE_ACCOUNT=` suivie de ce qui
-   vient d'être copié. Puis supprimer `~/claude-backoffice.json` du poste.
+2. In claude.ai/code, in the repository's environment settings, **environment
+   variables**: a line `PJ_ADMIN_SERVICE_ACCOUNT=` followed by what was just
+   copied. Then delete `~/claude-backoffice.json` from the workstation.
 
-3. Facultatif, dans le **script d'installation** de l'environnement, pour ne
-   pas attendre l'installation à chaque session et mesurer la durée des
-   audios :
+3. Optional, in the environment's **setup script**, so as not to wait for
+   the installation in every session and to measure the duration of audio
+   files:
 
    ```bash
    npm ci --prefix functions
    apt-get install -y ffmpeg
    ```
 
-   Sans lui, la session lance `npm ci --prefix functions` quand le script le
-   demande, et `chiour:ajouter` veut `--duree <secondes>`.
+   Without it, the session runs `npm ci --prefix functions` when the script
+   asks for it, and `chiour:ajouter` requires `--duree <secondes>`.
 
-À savoir :
+Good to know:
 
-- la variable est lisible par toute personne qui utilise cet environnement
-  cloud : elle vaut un accès en écriture à Firestore et au bucket de
-  production. Pour la couper à tout moment :
+- the variable is readable by anyone who uses this cloud environment: it
+  grants write access to the production Firestore and bucket. To cut it off
+  at any time:
   `gcloud iam service-accounts keys list --iam-account claude-backoffice@petite-jerusalem-dev.iam.gserviceaccount.com`,
-  puis `gcloud iam service-accounts keys delete <id> --iam-account …` ;
-- les garde-fous ne changent pas (`--confirmer`, `--notifier`) ;
-- une session cloud n'a pas `gh` : `info:depuis-release --tag` y lit la
-  release par l'API publique de GitHub (le dépôt est public), avec `curl`,
-  qui passe par le relais réseau de la session, sans rien à configurer (le
-  `fetch` de Node l'ignorerait et se heurterait au quota GitHub anonyme
-  d'une adresse partagée). Elle ne peut en revanche ni créer de release, ni pousser de
-  tag (son `git push` ne vise que sa branche de travail) : les versions se
-  publient depuis le poste.
+  then `gcloud iam service-accounts keys delete <id> --iam-account …`;
+- the safeguards do not change (`--confirmer`, `--notifier`);
+- a cloud session does not have `gh`: `info:depuis-release --tag` reads the
+  release there through GitHub's public API (the repository is public), with
+  `curl`, which goes through the session's network relay, with nothing to
+  configure (Node's `fetch` would ignore it and run into GitHub's anonymous
+  quota for a shared address). It can, however, neither create a release nor
+  push a tag (its `git push` only targets its working branch): versions are
+  published from the workstation.
 
-## Les commandes
+## The commands
 
-Toutes acceptent `--confirmer`, `--emulateur` et `--json` (sortie lisible par
-un script, par exemple pour retrouver un identifiant).
+All of them accept `--confirmer`, `--emulateur` and `--json` (output readable
+by a script, for example to find an identifier).
 
-### État
+### Status
 
-| Commande | Ce qu'elle fait                                                                                                                                                                   |
-| -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `etat`   | Ce que « À traiter » montre dans le backoffice : chiourim à relire, sans auteur, sessions signalées, incident en cours, brouillons, auteurs sans lien studio, messages à traiter. |
+| Command | What it does                                                                                                                                                                                 |
+| ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `etat`  | What « À traiter » ("To do") shows in the backoffice: chiourim to review, without an author, reported sessions, ongoing incident, drafts, authors without a studio link, messages to handle. |
 
-### Informations (collection `announcements`, voir `docs/informations.md`)
+### Information items (`announcements` collection, see `docs/informations.md`)
 
-| Commande              | Ce qu'elle fait                                                                                                                     |
-| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `info:liste`          | Toutes les informations, brouillons compris, la plus récente d'abord, avec leur identifiant.                                        |
-| `info:voir <id>`      | Une information en entier.                                                                                                          |
-| `info:creer`          | Nouvelle information (options ci-dessous). Brouillon sauf `--publier`.                                                              |
-| `info:modifier <id>`  | Change ce qui est passé en option, garde le reste. `--publier` / `--depublier`, `--resolu` / `--en-cours`.                          |
-| `info:resoudre <id>`  | Clôt un incident : il quitte l'accueil.                                                                                             |
-| `info:resultats <id>` | Les réponses à un sondage : le nombre d'appareils par choix, et en tout.                                                            |
-| `info:supprimer <id>` | Supprime définitivement, avec les images de son sondage.                                                                            |
-| `info:depuis-release` | La note de version d'un tag en information « Mise à jour » (`--tag vX.Y.Z`, ou `--version X.Y.Z --fichier note.md`). Voir plus bas. |
+| Command               | What it does                                                                                                                               |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `info:liste`          | All information items, drafts included, most recent first, with their identifier.                                                          |
+| `info:voir <id>`      | One information item in full.                                                                                                              |
+| `info:creer`          | New information item (options below). Draft unless `--publier`.                                                                            |
+| `info:modifier <id>`  | Changes what is passed as an option, keeps the rest. `--publier` / `--depublier`, `--resolu` / `--en-cours`.                               |
+| `info:resoudre <id>`  | Closes an incident: it leaves the home page.                                                                                               |
+| `info:resultats <id>` | The answers to a poll: the number of devices per choice, and in total.                                                                     |
+| `info:supprimer <id>` | Deletes permanently, along with its poll's images.                                                                                         |
+| `info:depuis-release` | A tag's release note as a « Mise à jour » ("Update") information item (`--tag vX.Y.Z`, or `--version X.Y.Z --fichier note.md`). See below. |
 
-Options d'une information :
+Options of an information item:
 
-- `--type` : `nouveaute`, `mise-a-jour`, `incident` ou `question` ;
-- `--titre`, `--texte` (ou `--texte-fichier note.md`, `-` pour l'entrée
-  standard) : le français, obligatoire ;
-- `--titre-en`, `--texte-en`, `--titre-he`, `--texte-he` : les traductions,
-  facultatives (sans elles, ces lecteurs voient le français) ;
-- `--lien /page` ou `--lien https://…`, `--lien-texte` : le bouton ;
-- `--version X.Y.Z` : pour une mise à jour, la version décrite (l'app ne
-  l'annonce qu'une fois cette version installée) ;
-- `--corrige-dans X.Y.Z` : pour un incident, la version qui le corrige (les
-  appareils qui l'ont ne le voient plus sur l'accueil, les autres le voient
-  jusqu'à la mise à jour) ;
-- `--choix "Libellé"`, une fois par choix (de 2 à 8) : une question devient
-  un sondage. Une image se donne après une barre, adresse https ou fichier
-  local (envoyé dans Storage) : `--choix "Bleu|bleu.jpg"`. `--choix-en` et
-  `--choix-he`, dans le même ordre, traduisent les libellés.
-  `--choix-multiples` (ou `--choix-unique`) permet de cocher plusieurs
-  choix ; `--sondage-clos` (ou `--sondage-ouvert`) arrête les votes ;
-  `--sans-sondage` retire le sondage. Avec `info:modifier`, des `--choix`
-  remplacent la liste entière ; un choix dont le libellé français ne change
-  pas garde ses votes, son image et ses traductions. `--choix-en` ou
-  `--choix-he` seuls traduisent les choix existants, dans l'ordre ;
-- `--publier`, `--notifier` ;
-- `--date AAAA-MM-JJ` (ou une date ISO) : la date de publication, au lieu
-  de maintenant, pour reprendre un historique. Refusée dans le futur, et
-  jamais avec `--notifier` : on ne notifie pas un historique. Vaut aussi
-  pour `info:depuis-release`.
+- `--type`: `nouveaute`, `mise-a-jour`, `incident` or `question`;
+- `--titre`, `--texte` (or `--texte-fichier note.md`, `-` for standard
+  input): the French, required;
+- `--titre-en`, `--texte-en`, `--titre-he`, `--texte-he`: the translations,
+  optional (without them, these readers see the French);
+- `--lien /page` or `--lien https://…`, `--lien-texte`: the button;
+- `--version X.Y.Z`: for an update, the version described (the app only
+  announces it once that version is installed);
+- `--corrige-dans X.Y.Z`: for an incident, the version that fixes it
+  (devices that have it no longer see it on the home page, the others see it
+  until they update);
+- `--choix "Libellé"`, once per choice (from 2 to 8): a question becomes a
+  poll. An image is given after a bar, an https address or a local file
+  (uploaded to Storage): `--choix "Bleu|bleu.jpg"`. `--choix-en` and
+  `--choix-he`, in the same order, translate the labels.
+  `--choix-multiples` (or `--choix-unique`) allows checking several
+  choices; `--sondage-clos` (or `--sondage-ouvert`) stops the voting;
+  `--sans-sondage` removes the poll. With `info:modifier`, `--choix` options
+  replace the whole list; a choice whose French label does not change keeps
+  its votes, its image and its translations. `--choix-en` or `--choix-he`
+  alone translate the existing choices, in order;
+- `--publier`, `--notifier`;
+- `--date AAAA-MM-JJ` (or an ISO date): the publication date, instead of
+  now, to backfill a history. Refused in the future, and never with
+  `--notifier`: a history is not notified. Also applies to
+  `info:depuis-release`.
 
-Le texte suit la typographie du dépôt : pas de tiret long, et les espaces
-insécables du français (U+202F avant ! ? ;, U+00A0 avant : et dans « »).
+The text follows the repository's typography: no long dash, and French
+non-breaking spaces (U+202F before ! ? ;, U+00A0 before : and inside « »).
 
 ### Chiourim
 
-| Commande                   | Ce qu'elle fait                                                                                                                                                                                                                                                                           |
-| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `chiour:liste`             | `--filtre brouillons\|publies\|sans-auteur\|sans-serie\|sans-livre`, `--auteur <id>`, `--recherche …`. Le premier mot de chaque ligne est le slug.                                                                                                                                        |
-| `chiour:voir <slug>`       | Un chiour en entier (série, catégories, audio).                                                                                                                                                                                                                                           |
-| `chiour:publier <slug>…`   | Publie un ou plusieurs chiourim (les envois des auteurs arrivent en brouillon).                                                                                                                                                                                                           |
-| `chiour:depublier <slug>…` | Les retire de l'app.                                                                                                                                                                                                                                                                      |
-| `chiour:modifier <slug>`   | `--titre`, `--description`, `--auteur <id>`, `--serie <id>` ou `--sans-serie`, `--episode N`, `--categories a,b`, `--niveau`, `--livre <id>` (ou `aucun`), `--chapitre N` (ou `aucun`), `--publier` / `--depublier`.                                                                      |
-| `chiour:ajouter <fichier>` | Ajoute un chiour avec son audio (mp3, m4a, wav, ogg, aac), comme le studio d'un auteur : `--titre`, `--auteur <id>` requis ; `--description`, `--categories`, `--serie`, `--episode`, `--niveau`, `--publier`. Durée mesurée par `ffprobe` s'il est installé, sinon `--duree <secondes>`. |
+| Command                    | What it does                                                                                                                                                                                                                                                                               |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `chiour:liste`             | `--filtre brouillons\|publies\|sans-auteur\|sans-serie\|sans-livre`, `--auteur <id>`, `--recherche …`. The first word of each line is the slug.                                                                                                                                            |
+| `chiour:voir <slug>`       | One chiour in full (series, categories, audio).                                                                                                                                                                                                                                            |
+| `chiour:publier <slug>…`   | Publishes one or more chiourim (authors' uploads arrive as drafts).                                                                                                                                                                                                                        |
+| `chiour:depublier <slug>…` | Removes them from the app.                                                                                                                                                                                                                                                                 |
+| `chiour:modifier <slug>`   | `--titre`, `--description`, `--auteur <id>`, `--serie <id>` or `--sans-serie`, `--episode N`, `--categories a,b`, `--niveau`, `--livre <id>` (or `aucun`), `--chapitre N` (or `aucun`), `--publier` / `--depublier`.                                                                       |
+| `chiour:ajouter <fichier>` | Adds a chiour with its audio (mp3, m4a, wav, ogg, aac), like an author's studio: `--titre`, `--auteur <id>` required; `--description`, `--categories`, `--serie`, `--episode`, `--niveau`, `--publier`. Duration measured by `ffprobe` if it is installed, otherwise `--duree <secondes>`. |
 
-### Le livre d'un chiour
+### The book of a chiour
 
-Un cours peut dire le livre de la bibliothèque qu'il étudie, et son
-chapitre : il s'affiche alors à côté du texte, et le texte à côté du cours
-(voir `src/services/chiourTexte.ts`). Le livre se nomme par son identifiant
-dans `src/datas/textStudies.json`, que `livre:liste` retrouve :
+A class can state the library book it studies, and its chapter: it is then
+shown next to the text, and the text next to the class (see
+`src/services/chiourTexte.ts`). The book is named by its identifier in
+`src/datas/textStudies.json`, which `livre:liste` looks up:
 
-| Commande                    | Ce qu'elle fait                                                                                                                                                                                                                |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `livre:liste --recherche …` | Les livres dont le nom contient le terme, quelle que soit sa graphie (accents, apostrophes et espaces ignorés ; « Vayetse » trouve Vayetze, « Chaar Habitahon » trouve Chaar Habita'hon), avec leur identifiant et leur livre. |
+| Command                     | What it does                                                                                                                                                                                                      |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `livre:liste --recherche …` | The books whose name contains the term, whatever its spelling (accents, apostrophes and spaces ignored; "Vayetse" finds Vayetze, "Chaar Habitahon" finds Chaar Habita'hon), with their identifier and their book. |
 
-Puis `--livre <id>` et `--chapitre N` sur `chiour:modifier` ou
-`chiour:ajouter`. Le chapitre se compte comme la bibliothèque :
+Then `--livre <id>` and `--chapitre N` on `chiour:modifier` or
+`chiour:ajouter`. The chapter is counted the way the library counts it:
 
-- un texte en plusieurs pages : le numéro de sa page (le chapitre d'un
-  traité ; 0 pour l'introduction d'une porte de 'Hovot Halévavot, puis le
-  numéro du chapitre ; le numéro du sujet du Pélé Yoets dans tout le livre) ;
-- un texte d'une seule page : le rang du bloc (le chapitre d'un livre des
-  Prophètes, la montée d'une paracha) ;
-- un psaume ou une tefila : pas de chapitre.
+- a text over several pages: its page number (the chapter of a tractate; 0
+  for the introduction of a gate of 'Hovot Halévavot, then the chapter
+  number; the topic number of the Pélé Yoets across the whole book);
+- a single-page text: the rank of the block (the chapter of a book of the
+  Prophets, the aliyah of a paracha);
+- a psalm or a tefila: no chapter.
 
-Changer de livre oublie le chapitre de l'ancien ; `--livre aucun` retire les
-deux.
+Changing the book forgets the old one's chapter; `--livre aucun` removes
+both.
 
-### Auteurs et séries
+### Authors and series
 
-| Commande                       | Ce qu'elle fait                                                                       |
-| ------------------------------ | ------------------------------------------------------------------------------------- |
-| `auteur:liste`                 | Les auteurs, leurs chiourim publiés et en brouillon, s'ils ont un lien studio actif.  |
-| `auteur:voir <id>`             | Un auteur et ses séries (identifiants à passer à `--serie`).                          |
-| `auteur:creer "Nom"`           | Crée l'auteur et son lien studio, affiché une seule fois : le transmettre à l'auteur. |
-| `auteur:lien <id>`             | Nouveau lien studio ; l'ancien cesse de fonctionner.                                  |
-| `serie:creer <auteurId> "Nom"` | Crée une série de cet auteur.                                                         |
+| Command                        | What it does                                                                              |
+| ------------------------------ | ----------------------------------------------------------------------------------------- |
+| `auteur:liste`                 | The authors, their published and draft chiourim, whether they have an active studio link. |
+| `auteur:voir <id>`             | An author and their series (identifiers to pass to `--serie`).                            |
+| `auteur:creer "Nom"`           | Creates the author and their studio link, displayed only once: pass it on to the author.  |
+| `auteur:lien <id>`             | New studio link; the old one stops working.                                               |
+| `serie:creer <auteurId> "Nom"` | Creates a series for this author.                                                         |
 
-### Sessions (modération)
+### Sessions (moderation)
 
-| Commande                 | Ce qu'elle fait                                                                    |
-| ------------------------ | ---------------------------------------------------------------------------------- |
-| `session:signalements`   | Les sessions signalées et le motif de chaque signalement ouvert.                   |
-| `session:masquer <id>`   | Retire une session du public.                                                      |
-| `session:demasquer <id>` | La rend au public et résout ses signalements ouverts (le compteur repart de zéro). |
+| Command                  | What it does                                                                        |
+| ------------------------ | ----------------------------------------------------------------------------------- |
+| `session:signalements`   | The reported sessions and the reason for each open report.                          |
+| `session:masquer <id>`   | Removes a session from public view.                                                 |
+| `session:demasquer <id>` | Makes it public again and resolves its open reports (the counter starts from zero). |
 
-### Nous écrire (collection `support`, voir `docs/feedback.md`)
+### Nous écrire ("Write to us") (`support` collection, see `docs/feedback.md`)
 
-| Commande                       | Ce qu'elle fait                                                                                                                       |
-| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `support:liste`                | Les messages, ce qui attend l'équipe d'abord. `--filtre ouverts` (défaut), `a-traiter`, `en-cours`, `repondus`, `termines` ou `tous`. |
-| `support:voir <id>`            | Un message en entier : qui, depuis quoi, la note de l'équipe, et chaque message du fil.                                               |
-| `support:repondre <id>`        | Ajoute la réponse (`--texte` ou `--texte-fichier`), le fil passe « répondu », ou « terminé » avec `--clore`.                          |
-| `support:statut <id> <statut>` | `a-traiter`, `en-cours`, `repondu` ou `termine`.                                                                                      |
+| Command                        | What it does                                                                                                                       |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `support:liste`                | The messages, what awaits the team first. `--filtre ouverts` (default), `a-traiter`, `en-cours`, `repondus`, `termines` or `tous`. |
+| `support:voir <id>`            | One message in full: who, from what, the team's note, and each message in the thread.                                              |
+| `support:repondre <id>`        | Adds the reply (`--texte` or `--texte-fichier`); the thread becomes "replied", or "closed" with `--clore`.                         |
+| `support:statut <id> <statut>` | `a-traiter`, `en-cours`, `repondu` or `termine`.                                                                                   |
 
-Une réponse s'affiche dans l'app ou sur le site de la personne, et la Cloud
-Function `onSupportThreadWritten` prévient ses appareils : une notification
-vers elle seule, pas une diffusion, d'où l'absence de `--notifier`. L'essai
-(sans `--confirmer`) dit où la réponse arrivera ; un message envoyé sans
-compte depuis une version d'avant les fils ne peut recevoir qu'un email.
+A reply shows up in the person's app or on the site, and the Cloud Function
+`onSupportThreadWritten` alerts their devices: a notification to them alone,
+not a broadcast, hence the absence of `--notifier`. The dry run (without
+`--confirmer`) says where the reply will arrive; a message sent without an
+account from a version predating threads can only receive an email.
 
-### Chaîne perpétuelle (voir `docs/chaine-perpetuelle.md`)
+### Perpetual chain (see `docs/chaine-perpetuelle.md`)
 
-| Commande                  | Ce qu'elle fait                                                                                                       |
+| Command                   | What it does                                                                                                          |
 | ------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `chaine:creer`            | Crée la chaîne perpétuelle de Tehilim (`sessions/chaine-perpetuelle`), une seule fois ; refuse si elle existe déjà.   |
-| `chaine:noms`             | Son tour, ses tours terminés, et chaque nom avec son identifiant, son intention, son échéance ou sa date, son compte. |
-| `chaine:retirer-nom <id>` | Retire un nom (signalé, ou à la demande de son auteur).                                                               |
+| `chaine:creer`            | Creates the perpetual Tehilim chain (`sessions/chaine-perpetuelle`), only once; refuses if it already exists.         |
+| `chaine:noms`             | Its round, its completed rounds, and each name with its identifier, its intention, its deadline or date, its account. |
+| `chaine:retirer-nom <id>` | Removes a name (reported, or at its author's request).                                                                |
 
-## Les notes de version, automatiquement
+## Release notes, automatically
 
-Quand une release `vX.Y.Z` est publiée sur GitHub (ou son texte corrigé),
-`.github/workflows/release-info.yml` lance :
+When a `vX.Y.Z` release is published on GitHub (or its text corrected),
+`.github/workflows/release-info.yml` runs:
 
 ```bash
 node scripts/admin.mjs info:depuis-release --tag vX.Y.Z --confirmer
 ```
 
-Le texte de la release (le même que celui des stores, trois sections, voir
-`docs/notes-de-version.md`) devient l'information `release-vX.Y.Z`, publiée,
-**sans notification**, titrée « Version X.Y.Z : les nouveautés » dans chaque
-langue présente. Une release corrigée met l'information à jour sans changer
-sa date. Une release sans texte n'en crée pas. Pour la rattraper à la main :
-onglet Actions, « Information de version », avec le tag ; ou la même commande
-depuis un terminal.
+The release text (the same as the stores', three sections, see
+`docs/notes-de-version.md`) becomes the `release-vX.Y.Z` information item,
+published, **without a notification**, titled « Version X.Y.Z : les
+nouveautés » ("Version X.Y.Z: what's new") in each language present. A
+corrected release updates the information item without changing its date. A
+release without text does not create one. To catch it up by hand: Actions
+tab, « Information de version », with the tag; or the same command from a
+terminal.
 
-L'historique des versions 3.x a été repris ainsi le 2026-09-29, chaque note
-à la date de sa release (`info:depuis-release --tag vX.Y.Z --date …`), en
-sautant les releases sans texte, celles qui répétaient le texte d'une
-version précédente et les « Correction de bugs mineurs. ».
+The history of the 3.x versions was backfilled this way on 2026-09-29, each
+note at its release date (`info:depuis-release --tag vX.Y.Z --date …`),
+skipping releases without text, those that repeated a previous version's
+text, and the « Correction de bugs mineurs. » ("Minor bug fixes.") ones.
 
-Pour notifier une version en plus (rarement : l'app annonce déjà la note une
-fois la version installée) :
+To also notify about a version (rarely: the app already announces the note
+once the version is installed):
 
 ```bash
 node scripts/admin.mjs info:modifier release-vX.Y.Z --notifier --confirmer
 ```
 
-## Exemples
+## Examples
 
 ```bash
-# Annoncer une nouveauté, avec un bouton vers la page
+# Announce a new feature, with a button to the page
 node scripts/admin.mjs info:creer --type nouveaute \
   --titre "Les Hochanot sont dans le sidour" \
   --texte "Tout Souccot, les Hochanot du jour s'affichent dans l'office du matin." \
   --lien /bibliotheque/sidour --lien-texte "Ouvrir le sidour" --publier
-# … lire l'essai, puis relancer avec --confirmer
+# … read the dry run, then run again with --confirmer
 
-# Prévenir d'un incident, puis le clore
+# Warn about an incident, then close it
 node scripts/admin.mjs info:creer --type incident --titre "…" --texte "…" --publier --confirmer
 node scripts/admin.mjs info:liste
 node scripts/admin.mjs info:resoudre <id> --confirmer
 
-# Relire puis publier les envois des auteurs
+# Review then publish the authors' uploads
 node scripts/admin.mjs chiour:liste --filtre brouillons
 node scripts/admin.mjs chiour:publier <slug> <slug> --confirmer
 
-# Ajouter un cours enregistré
+# Add a recorded class
 node scripts/admin.mjs auteur:voir <auteurId>
 node scripts/admin.mjs chiour:ajouter ~/cours.mp3 --titre "…" --auteur <auteurId> \
   --serie <serieId> --episode 4 --categories "Michna" --confirmer
 
-# Rattacher un cours au chapitre 4 du Chaar Habita'hon
+# Attach a class to chapter 4 of the Chaar Habita'hon
 node scripts/admin.mjs livre:liste --recherche bitahon
 node scripts/admin.mjs chiour:modifier <slug> --livre 404 --chapitre 4 --confirmer
 ```
 
-## Pour faire évoluer le script
+## Evolving the script
 
-La partie pure (validation, mise en forme, notes de version) vit dans
-`scripts/lib/backoffice.mjs`, tenue par `src/__tests__/backofficeCli.test.ts`.
-Une règle changée dans le backoffice (un champ d'information, le dépôt du
-studio dans `functions/src/studio.ts`) se reporte ici, sinon les deux chemins
-écriraient des documents différents.
+The pure part (validation, formatting, release notes) lives in
+`scripts/lib/backoffice.mjs`, covered by `src/__tests__/backofficeCli.test.ts`.
+A rule changed in the backoffice (an information item field, the studio
+upload in `functions/src/studio.ts`) must be carried over here, otherwise the
+two paths would write different documents.

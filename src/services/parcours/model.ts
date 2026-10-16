@@ -47,7 +47,7 @@ export const MOMENTS: readonly MomentId[] = [
  *
  * Pas de rythme au mois : une portion mensuelle se remet au lendemain jusqu'à
  * la fin du mois, et un programme ainsi découpé s'abandonne. Voir
- * docs/design.md, « Un programme se lit au jour ou à la semaine ».
+ * docs/design.md, « A program is read by the day or by the week ».
  */
 export type Rhythm = "daily" | "weekdays" | "weekly";
 

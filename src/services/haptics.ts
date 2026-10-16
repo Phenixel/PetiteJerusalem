@@ -16,7 +16,7 @@ import { isNativeApp } from "../composables/useNativeApp";
  * réglage du système ; sur le site, la vibration du navigateur, là où elle
  * existe (Android) : l'iPhone ne la donne pas au web, le geste y reste muet.
  * Un retour qui échoue se tait : il n'empêche jamais ce qu'il accompagne.
- * Voir docs/design.md, « Le toucher répond ».
+ * Voir docs/design.md, « Touch answers ».
  */
 export type HapticKind = "done" | "undo" | "tick" | "press";
 
@@ -34,7 +34,7 @@ let lastTick = -Infinity;
 
 async function nativeHaptic(kind: HapticKind): Promise<void> {
   // Le plugin se déstructure sur place, jamais rendu par une promesse
-  // (docs/app-native.md, « Un plugin ne traverse jamais une promesse »).
+  // (docs/app-native.md, « A plugin never goes through a promise »).
   const { Haptics, ImpactStyle, NotificationType } = await import("@capacitor/haptics");
   if (kind === "done") await Haptics.notification({ type: NotificationType.Success });
   else if (kind === "press") await Haptics.impact({ style: ImpactStyle.Medium });

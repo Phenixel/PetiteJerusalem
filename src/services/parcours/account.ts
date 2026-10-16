@@ -4,7 +4,7 @@ import type { DeviceOwner } from "./deviceStore";
 
 /**
  * Ce que l'appareil verse dans le compte qui se connecte (docs/design.md,
- * « Ce qu'un compte laisse sur l'appareil ne rejoint pas le suivant »).
+ * « What an account leaves on the device does not join the next one »).
  *
  *  - Rien n'appartient à personne (avant toute connexion) : tout rejoint le
  *    compte, cela n'existe nulle part ailleurs.

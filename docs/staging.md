@@ -1,145 +1,145 @@
-# Environnement de staging
+# Staging environment
 
-Un second environnement, complet et séparé de la production, pour essayer
-« pour de vrai » ce qui partira à la prochaine release : sur le téléphone,
-avec un vrai backend, sans que personne d'autre ne le voie.
+A second environment, complete and separate from production, to try out
+"for real" what will ship in the next release: on the phone, with a real
+backend, without anyone else seeing it.
 
-|                   | Production                                     | Staging                                          |
-| ----------------- | ---------------------------------------------- | ------------------------------------------------ |
-| Projet Firebase   | `petite-jerusalem-dev` (oui, c'est la prod)    | `petite-jerusalem-staging`                       |
-| Site              | https://petite-jerusalem.fr                    | https://petite-jerusalem-staging.web.app         |
-| App               | « Petite Jérusalem », `fr.petitejerusalem.app` | « PJ Staging », `fr.petitejerusalem.app.staging` |
-| iOS               | App Store                                      | TestFlight seulement (testeurs internes)         |
-| Android           | Play Store, piste production                   | Play Store, piste de test interne                |
-| Mise à jour       | tag `vX.Y.Z`                                   | chaque fusion sur `main`                         |
-| Mesure d'audience | PostHog                                        | coupée                                           |
+|                    | Production                                     | Staging                                          |
+| ------------------ | ---------------------------------------------- | ------------------------------------------------ |
+| Firebase project   | `petite-jerusalem-dev` (yes, this is prod)     | `petite-jerusalem-staging`                       |
+| Site               | https://petite-jerusalem.fr                    | https://petite-jerusalem-staging.web.app         |
+| App                | « Petite Jérusalem », `fr.petitejerusalem.app` | « PJ Staging », `fr.petitejerusalem.app.staging` |
+| iOS                | App Store                                      | TestFlight only (internal testers)               |
+| Android            | Play Store, production track                   | Play Store, internal testing track               |
+| Update             | `vX.Y.Z` tag                                   | each merge into `main`                           |
+| Audience analytics | PostHog                                        | turned off                                       |
 
-Les deux apps ont des identifiants différents : elles s'installent côte à
-côte sur le même téléphone, et l'icône de staging porte un bandeau orange
-« STAGING » (`assets/staging/`). Chacune a ses comptes, ses sessions et ses
-données : un compte créé en staging n'existe pas en production.
+The two apps have different identifiers: they install side by side on the
+same phone, and the staging icon carries an orange « STAGING » banner
+(`assets/staging/`). Each has its own accounts, sessions and data: an
+account created in staging does not exist in production.
 
-## Comment ça se met à jour
+## How it gets updated
 
-[deploy-staging.yml](../.github/workflows/deploy-staging.yml) part à chaque
-fusion sur `main` (sauf si seule la documentation change) :
+[deploy-staging.yml](../.github/workflows/deploy-staging.yml) runs on each
+merge into `main` (unless only documentation changes):
 
-1. le site et tout le backend de staging : hosting, règles et index
-   Firestore, règles Storage, functions ;
-2. l'app Android, construite par `deploy-android.yml` avec
-   `environment: staging`, envoyée sur la piste de test interne ;
-3. l'app iOS, construite par `deploy-ios.yml` avec `environment: staging`,
-   envoyée sur TestFlight, sans fiche ni soumission à l'examen.
+1. the site and the whole staging backend: hosting, Firestore rules and
+   indexes, Storage rules, functions;
+2. the Android app, built by `deploy-android.yml` with
+   `environment: staging`, uploaded to the internal testing track;
+3. the iOS app, built by `deploy-ios.yml` with `environment: staging`,
+   uploaded to TestFlight, with no listing and no submission for review.
 
-Ce sont les workflows de production qui construisent les apps de staging :
-ce qui est testé en staging est ce qui partira au tag suivant. La version
-affichée est celle du prochain correctif (3.10.12 quand 3.10.11 est la
-dernière release), le numéro de build croît à chaque fusion.
+The production workflows are the ones that build the staging apps: what is
+tested in staging is what will ship at the next tag. The displayed version
+is that of the next patch (3.10.12 when 3.10.11 is the latest release),
+and the build number grows with each merge.
 
-Pour essayer une branche **avant** de la fusionner : Actions, « Deploy
-Staging », « Run workflow », choisir la branche. La case « Construire aussi
-les apps » décochée ne déploie que le site et le backend.
+To try a branch **before** merging it: Actions, "Deploy Staging", "Run
+workflow", choose the branch. With the « Construire aussi les apps » ("Also
+build the apps") box unchecked, only the site and the backend are
+deployed.
 
-La production n'est pas concernée : elle part toujours, et seulement, aux
-tags `vX.Y.Z` et `web-vX.Y.Z`.
+Production is not affected: it always ships, and only, on `vX.Y.Z` and
+`web-vX.Y.Z` tags.
 
-## Installer l'app de staging sur son téléphone
+## Installing the staging app on your phone
 
-- **iPhone** : installer TestFlight depuis l'App Store, accepter l'invitation
-  reçue par e-mail (groupe de testeurs internes de « PJ Staging »). Dans
-  TestFlight, activer les mises à jour automatiques : chaque fusion arrive
-  seule, une dizaine de minutes après la fin du run.
-- **Android** : ouvrir le lien d'inscription des testeurs internes (Play
-  Console, « PJ Staging », Tests internes, Testeurs, « Copier le lien »),
-  accepter, puis installer depuis le Play Store. Les mises à jour suivent
-  comme pour n'importe quelle app.
+- **iPhone**: install TestFlight from the App Store, accept the invitation
+  received by email (internal tester group of « PJ Staging »). In
+  TestFlight, enable automatic updates: each merge arrives on its own,
+  about ten minutes after the run finishes.
+- **Android**: open the internal testers sign-up link (Play Console,
+  « PJ Staging », Internal testing, Testers, "Copy link"), accept, then
+  install from the Play Store. Updates follow as for any other app.
 
-## Mise en place, une fois pour toutes
+## Setup, once and for all
 
-### Déjà fait (14 octobre 2026)
+### Already done (October 14, 2026)
 
-- Projet Firebase `petite-jerusalem-staging` créé, rattaché au compte de
-  facturation « Firebase Payment » (Blaze, indispensable aux functions).
-- Apps Firebase enregistrées : web, Android et iOS
+- Firebase project `petite-jerusalem-staging` created, attached to the
+  « Firebase Payment » billing account (Blaze, required for functions).
+- Firebase apps registered: web, Android and iOS
   (`fr.petitejerusalem.app.staging`).
-- API activées, base Firestore `(default)` en `nam5` comme la production,
-  bucket Storage par défaut.
-- Authentification : e-mail et mot de passe, anonyme, Apple. Domaines
-  autorisés : `localhost` et les deux domaines Firebase du projet.
-- Règles Firestore, index et règles Storage déployés.
-- Secret `NOTION_API_KEY` créé avec une valeur factice, du temps où le
-  formulaire de retour écrivait dans Notion ; il ne sert plus (les messages
-  vont dans la collection `support` du projet, voir `docs/feedback.md`).
-- Contenu public recopié depuis la production (voir plus bas).
-- Connexion Google activée (nom public « PJ Staging »), clé APNs `JP8UH7DW9U`
-  (la même que la production) importée pour l'app iOS.
-- Apple : App Group `group.fr.petitejerusalem.app.staging`, App ID
-  `fr.petitejerusalem.app.staging` et `fr.petitejerusalem.app.staging.PjWidgets`
-  rattachés au groupe, fiche App Store Connect « PJ Staging » (UGS
-  `pj-staging`), groupe TestFlight interne « Staging » en distribution
-  automatique.
-- Google Play : app « PJ Staging » créée, liste de testeurs internes
-  « PJ Staging » (distincte de celle des testeurs bêta), compte
-  `play-ci@` autorisé à déployer sur les canaux de test de cette app
-  seulement (jamais en production). Empreintes SHA-1 de la clé de debug, de
-  la clé d'importation et de la clé Play de la production ajoutées à l'app
-  Android de Firebase.
-- Secrets `GOOGLE_SERVICE_INFO_PLIST_STAGING` et
+- APIs enabled, Firestore `(default)` database in `nam5` like production,
+  default Storage bucket.
+- Authentication: email and password, anonymous, Apple. Authorized
+  domains: `localhost` and the project's two Firebase domains.
+- Firestore rules, indexes and Storage rules deployed.
+- `NOTION_API_KEY` secret created with a dummy value, from the time when
+  the feedback form wrote to Notion; it is no longer used (messages go to
+  the project's `support` collection, see `docs/feedback.md`).
+- Public content copied over from production (see below).
+- Google sign-in enabled (public name « PJ Staging »), APNs key
+  `JP8UH7DW9U` (the same as production) imported for the iOS app.
+- Apple: App Group `group.fr.petitejerusalem.app.staging`, App IDs
+  `fr.petitejerusalem.app.staging` and
+  `fr.petitejerusalem.app.staging.PjWidgets` attached to the group, App
+  Store Connect listing « PJ Staging » (SKU `pj-staging`), internal
+  TestFlight group « Staging » with automatic distribution.
+- Google Play: app « PJ Staging » created, internal testers list
+  « PJ Staging » (separate from the beta testers list), `play-ci@` account
+  authorized to deploy to this app's testing tracks only (never to
+  production). SHA-1 fingerprints of the debug key, the upload key and the
+  production Play key added to the Firebase Android app.
+- Secrets `GOOGLE_SERVICE_INFO_PLIST_STAGING` and
   `GOOGLE_SERVICES_JSON_STAGING`, variable `STAGING_PLAY_STATUS=draft`.
 
-### À faire par le propriétaire
+### To be done by the owner
 
-1. **Droits IAM.** `bash scripts/setup-staging-iam.sh` : compte de service de
-   la CI et ses rôles, rôles des agents de service (sans eux le build des
-   functions échoue), fédération d'identité de GitHub (l'organisation
-   interdit les clés de compte de service : la CI n'en a pas besoin). Puis
+1. **IAM permissions.** `bash scripts/setup-staging-iam.sh`: the CI service
+   account and its roles, service agent roles (without them the functions
+   build fails), GitHub identity federation (the organization forbids
+   service account keys: the CI does not need one). Then
    `firebase deploy --only functions --project petite-jerusalem-staging`.
 
-   Fait le 14 octobre 2026. Le script s'arrête encore à son étape 3 (il
-   tente une clé, que l'organisation refuse) : la fédération d'identité a été
-   posée à la main, avec `gcloud iam workload-identity-pools create github`,
+   Done on October 14, 2026. The script still stops at its step 3 (it
+   tries a key, which the organization refuses): identity federation was
+   set up by hand, with `gcloud iam workload-identity-pools create github`,
    `providers create-oidc github` (condition
-   `assertion.repository == 'Phenixel/PetiteJerusalem'`) et le rôle
-   `roles/iam.workloadIdentityUser` du compte `github-staging@` pour ce dépôt.
-   Les functions HTTP et appelables ont aussi reçu `roles/run.invoker` pour
-   `allUsers` (un premier déploiement raté les avait créées sans) : à rejouer
-   si elles sont un jour recréées, comme `socialPreview` en production.
+   `assertion.repository == 'Phenixel/PetiteJerusalem'`) and the
+   `roles/iam.workloadIdentityUser` role of the `github-staging@` account
+   for this repository. The HTTP and callable functions also received
+   `roles/run.invoker` for `allUsers` (a first failed deployment had
+   created them without it): to be replayed if they are ever recreated,
+   like `socialPreview` in production.
 
-2. **Connexion Google.** Console Firebase, `petite-jerusalem-staging`,
-   Authentication, Sign-in method, Google, Activer. Le client OAuth que cela
-   crée ne s'obtient pas par l'API.
-3. **Notifications iOS.** Console Firebase, Paramètres du projet, Cloud
-   Messaging, app iOS : téléverser la clé APNs (`.p8`), la même que celle de
-   la production.
-4. **Apple** (developer.apple.com puis App Store Connect) :
-   - Identifiers, App Groups : créer `group.fr.petitejerusalem.app.staging` ;
-   - Identifiers, App IDs : créer `fr.petitejerusalem.app.staging` (capacités
-     Push Notifications, Sign in with Apple, Associated Domains, App Groups,
-     avec le groupe ci-dessus) et `fr.petitejerusalem.app.staging.PjWidgets`
-     (App Groups, même groupe). Le premier run crée l'App ID de la montre ;
-   - App Store Connect, Apps, « + », Nouvelle app : nom « PJ Staging », bundle
-     id `fr.petitejerusalem.app.staging`, SKU `pj-staging`. Elle ne sera
-     jamais soumise à l'examen ;
-   - TestFlight, Tests internes : créer un groupe, s'y ajouter, cocher la
-     distribution automatique.
-5. **Google Play** (Play Console) :
-   - Créer une app « PJ Staging », package `fr.petitejerusalem.app.staging`
-     (le package est fixé au premier AAB envoyé) ;
-   - Utilisateurs et autorisations : donner au compte de service de la CI
-     (celui de `PLAY_SERVICE_ACCOUNT_JSON`) les droits de publication sur
-     cette app ;
-   - Tests internes : créer la liste de testeurs, s'y inscrire ;
-   - Tant que l'app n'a jamais été publiée, Google n'accepte que des
-     brouillons : poser la variable de repo `STAGING_PLAY_STATUS=draft`,
-     lancer le workflow, publier à la main la première version interne dans
-     la Play Console, puis supprimer la variable ;
-   - Intégrité de l'app : relever les empreintes SHA-1 et SHA-256 de la clé
-     de signature de l'app (et de la clé d'importation), ajouter les SHA-1 à
-     l'app Android dans Firebase
+2. **Google sign-in.** Firebase console, `petite-jerusalem-staging`,
+   Authentication, Sign-in method, Google, Enable. The OAuth client this
+   creates cannot be obtained through the API.
+3. **iOS notifications.** Firebase console, Project settings, Cloud
+   Messaging, iOS app: upload the APNs key (`.p8`), the same one as
+   production.
+4. **Apple** (developer.apple.com then App Store Connect):
+   - Identifiers, App Groups: create `group.fr.petitejerusalem.app.staging`;
+   - Identifiers, App IDs: create `fr.petitejerusalem.app.staging`
+     (capabilities Push Notifications, Sign in with Apple, Associated
+     Domains, App Groups, with the group above) and
+     `fr.petitejerusalem.app.staging.PjWidgets` (App Groups, same group).
+     The first run creates the watch App ID;
+   - App Store Connect, Apps, "+", New App: name « PJ Staging », bundle id
+     `fr.petitejerusalem.app.staging`, SKU `pj-staging`. It will never be
+     submitted for review;
+   - TestFlight, Internal Testing: create a group, add yourself to it,
+     check automatic distribution.
+5. **Google Play** (Play Console):
+   - Create an app « PJ Staging », package `fr.petitejerusalem.app.staging`
+     (the package is fixed by the first AAB uploaded);
+   - Users and permissions: give the CI service account (the one in
+     `PLAY_SERVICE_ACCOUNT_JSON`) release permissions on this app;
+   - Internal testing: create the testers list, sign up for it;
+   - As long as the app has never been published, Google only accepts
+     drafts: set the repo variable `STAGING_PLAY_STATUS=draft`, run the
+     workflow, publish the first internal version by hand in the Play
+     Console, then delete the variable;
+   - App integrity: note the SHA-1 and SHA-256 fingerprints of the app
+     signing key (and of the upload key), add the SHA-1s to the Android app
+     in Firebase
      (`firebase apps:android:sha:create <appId> <sha1> --project petite-jerusalem-staging`),
-     sans quoi la connexion Google échoue sur Android.
-6. **Secrets GitHub**, une fois les étapes 2 et 5 faites (les fichiers
-   contiennent alors les clients OAuth) :
+     otherwise Google sign-in fails on Android.
+6. **GitHub secrets**, once steps 2 and 5 are done (the files then contain
+   the OAuth clients):
 
    ```bash
    firebase apps:sdkconfig IOS 1:388713166885:ios:212434ccb7ae259b8967cc --project petite-jerusalem-staging -o GoogleService-Info.staging.plist
@@ -149,81 +149,80 @@ tags `vX.Y.Z` et `web-vX.Y.Z`.
    rm GoogleService-Info.staging.plist google-services.staging.json
    ```
 
-   Facultatif : `ANDROID_APP_LINK_SHA256_STAGING` (empreintes SHA-256 de
-   l'étape 5, séparées par des virgules), pour que les liens du site de
-   staging ouvrent l'app de staging sur Android.
+   Optional: `ANDROID_APP_LINK_SHA256_STAGING` (SHA-256 fingerprints from
+   step 5, separated by commas), so that links on the staging site open the
+   staging app on Android.
 
-Les autres secrets (clé App Store Connect, signature Android, compte Play)
-sont ceux de la production : même compte développeur, même clé
-d'importation.
+The other secrets (App Store Connect key, Android signing, Play account)
+are the production ones: same developer account, same upload key.
 
-## Le contenu
+## Content
 
-La base de staging part avec le contenu **public** de la production :
-chiourim, auteurs, séries et informations. Jamais les sessions, les
-signalements, les jetons du studio ni les préférences des comptes : ce sont
-des données personnelles (RGPD). Pour recopier :
+The staging database starts with production's **public** content:
+chiourim, authors, series and information items. Never sessions, reports,
+studio tokens or account preferences: those are personal data (GDPR). To
+copy:
 
 ```bash
 node scripts/staging-sync.mjs --compte admin@phenixel.fr              # essai
 node scripts/staging-sync.mjs --compte admin@phenixel.fr --confirmer  # copie
 ```
 
-Sans `--compte`, le script prend l'ADC du poste. Les fichiers audio ne sont
-pas copiés : les chiourim de staging lisent ceux de la production.
+Without `--compte`, the script uses the workstation's ADC. Audio files are
+not copied: staging chiourim play the production ones.
 
-## Construire en staging sur le poste
+## Building for staging on your workstation
 
-Tout ce qui dépend de l'environnement se lit dans
-[scripts/lib/environments.mjs](../scripts/lib/environments.mjs), selon la
-variable `PJ_ENV` (`staging`, ou rien pour la production) :
+Everything that depends on the environment is read from
+[scripts/lib/environments.mjs](../scripts/lib/environments.mjs), based on
+the `PJ_ENV` variable (`staging`, or nothing for production):
 
 ```bash
 PJ_ENV=staging npm run build
 PJ_ENV=staging npx cap add ios && cp -R assets/staging/. assets/ && PJ_ENV=staging node scripts/setup-ios.mjs
 ```
 
-`npm run dev` reste branché sur les émulateurs locaux, quel que soit
-`PJ_ENV`. Les dossiers `ios/` et `android/` gardent l'identité de
-l'environnement qui les a générés : les régénérer pour passer de l'un à
-l'autre (et remettre les icônes avec `git checkout assets/`).
+`npm run dev` stays wired to the local emulators, whatever `PJ_ENV` is.
+The `ios/` and `android/` folders keep the identity of the environment
+that generated them: regenerate them to switch from one to the other (and
+restore the icons with `git checkout assets/`).
 
-## Le staging vit tout seul
+## Staging stands on its own
 
-L'app de staging lit les textes qu'elle n'embarque pas (corpus, commentaires,
-lignes de Vilna) sur le site de staging, et ses liens de partage (un passage,
-une session, un chiour, un sondage) mènent au site de staging, que l'app de
-staging s'approprie : une nouveauté fusionnée sur main se voit dans l'app
-avant d'exister en production. L'adresse vient de `PJ_ENV` par
-`src/config/environment.ts` (`APP_SITE_URL`) ; en production, c'est
-`petite-jerusalem.fr`, comme avant. Une adresse de production écrite en dur
-dans le code de l'app fait échouer `src/__tests__/environments.test.ts`.
+The staging app reads the texts it does not bundle (corpus, commentaries,
+Vilna lines) from the staging site, and its share links (a passage, a
+session, a chiour, a poll) lead to the staging site, which the staging app
+claims: a new feature merged into main shows up in the app before it exists
+in production. The address comes from `PJ_ENV` through
+`src/config/environment.ts` (`APP_SITE_URL`); in production, it is
+`petite-jerusalem.fr`, as before. A production address hard-coded in the
+app's code fails `src/__tests__/environments.test.ts`.
 
-## Ce qui diffère encore de la production
+## What still differs from production
 
-- Les adresses canoniques et les données structurées pointent vers
-  `petite-jerusalem.fr`, exprès : le staging copie le site, il ne doit pas
-  en être une seconde adresse pour un moteur de recherche.
-- Les fichiers audio des chiourim sont ceux de la production (voir « Le
-  contenu »).
-- Les messages de « Nous écrire » arrivent dans le backoffice du staging,
-  pas dans celui de la production.
-- Le site de staging est fermé aux robots (`robots.txt`).
-- Les widgets iOS ouvrent l'app par le schéma `petitejerusalem://`, commun aux
-  deux apps : avec les deux installées, iOS choisit l'une ou l'autre.
-- L'App Store Connect plafonne le compte à trois certificats de
-  distribution : un run iOS de staging crée le sien et le garde tant
-  qu'Apple traite le build envoyé (marqueur « PetiteJerusalem CI staging
-  build 141 »), puis le run de signature suivant le révoque. Le révoquer dès
-  l'envoi faisait rejeter le build au traitement (« ITMS-90721: Certificate
-  Revoked », build 141 le 16 octobre 2026). Les runs de signature
-  (production et staging) passent l'un après l'autre (groupe de concurrence
-  `apple-signing`, voir `scripts/ios-signing.mjs` et
-  [ios-ci-cd.md](ios-ci-cd.md#le-quota-de-trois-certificats-de-distribution)).
+- Canonical addresses and structured data point to `petite-jerusalem.fr`,
+  on purpose: staging copies the site, it must not become a second address
+  for it in a search engine.
+- The chiourim audio files are the production ones (see "Content").
+- Messages from « Nous écrire » ("Write to us") arrive in the staging
+  backoffice, not in the production one.
+- The staging site is closed to crawlers (`robots.txt`).
+- The iOS widgets open the app through the `petitejerusalem://` scheme,
+  shared by both apps: with both installed, iOS picks one or the other.
+- App Store Connect caps the account at three distribution certificates: a
+  staging iOS run creates its own and keeps it while Apple processes the
+  uploaded build (marker « PetiteJerusalem CI staging build 141 »), then
+  the next signing run revokes it. Revoking it right after upload caused
+  the build to be rejected during processing ("ITMS-90721: Certificate
+  Revoked", build 141 on October 16, 2026). Signing runs (production and
+  staging) go one after the other (`apple-signing` concurrency group, see
+  `scripts/ios-signing.mjs` and
+  [ios-ci-cd.md](ios-ci-cd.md#the-quota-of-three-distribution-certificates)).
 
-## Coût
+## Cost
 
-Le projet est sur le forfait Blaze, comme la production. Au volume d'un
-testeur, tout tient dans les quotas gratuits (Firestore, Storage, functions,
-Hosting, Identity Platform jusqu'à 50 000 utilisateurs actifs par mois).
-Les runners macOS des builds iOS sont gratuits tant que le dépôt est public.
+The project is on the Blaze plan, like production. At the volume of one
+tester, everything fits within the free quotas (Firestore, Storage,
+functions, Hosting, Identity Platform up to 50,000 monthly active users).
+The macOS runners for iOS builds are free as long as the repository is
+public.

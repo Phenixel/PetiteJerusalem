@@ -2,7 +2,7 @@
 /**
  * Le bas des réglages d'un objectif : la pause, qui garde tout, et le
  * retrait, qui se confirme avec le nom de ce qu'on retire (docs/design.md,
- * « Ce qui est à soi se range avec le reste »).
+ * « What is yours is filed with the rest »).
  */
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";

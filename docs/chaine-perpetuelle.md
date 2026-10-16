@@ -1,214 +1,217 @@
-# La chaîne perpétuelle de Tehilim
+# The perpetual Tehilim chain
 
-Beaucoup créent une chaîne de Tehilim pour un malade ou un défunt et ne
-trouvent pas 150 lecteurs. La chaîne perpétuelle leur répond : une chaîne
-toujours ouverte, que tout le monde fait avancer, et qui repart du premier
-Téhilim dès que le dernier est lu. On n'y crée rien : on y confie un nom.
+Many people create a Tehilim chain for someone who is ill or has passed
+away and cannot find 150 readers. The perpetual chain answers them: a chain
+that is always open, that everyone moves forward, and that starts again
+from the first Tehilim as soon as the last one is read. You do not create
+anything there: you entrust a name to it.
 
-Les écrans sont dans le canevas de la proposition (accueil du partage, page
-de la chaîne, fenêtre « Proposer un nom », lecture, création d'une session) ;
-leurs règles d'apparence sont dans `docs/design.md`, « La chaîne perpétuelle ».
+The screens are in the proposal's canvas (sharing home, chain page,
+« Proposer un nom » ("Propose a name") dialog, reading, session creation);
+their appearance rules are in `docs/design.md`, "The perpetual chain".
 
-## Ce que voit le lecteur
+## What the reader sees
 
-- **Sur l'accueil du partage**, la chaîne a sa carte en tête, sous le bouton
-  de création (`PerpetualChainCard`), un cadre comme les autres chaînes. Elle
-  dit pour combien de personnes on lit, sans les nommer. Elle ne figure pas
-  dans « Sessions en cours » : elle ne s'y répète pas.
-- **Sur sa page**, la même que celle d'une session (`DetailSession`), avec
-  trois différences : l'en-tête dit « Lecture continue » et le numéro du tour
-  au lieu de la date limite et du créateur ; le compteur des tours
-  (`PerpetualStatsCard`) ; la liste des noms pour lesquels on lit
-  (`PrayerNamesCard`). Le tirage, la barre d'avancement, la réservation sans
-  compte et la liste des 150 Tehilim sont ceux de toute chaîne.
-- **Dans le lecteur**, sous la réservation d'un Téhilim de la chaîne : « Vous
-  lisez pour », et les noms en deux groupes, refoua chelema et leilouy
-  nichmat (`PrayerNamesLine`).
-- **À la création d'une session**, dès que le type Tehilim est choisi, une
-  ligne discrète propose aussi d'y confier le nom
-  (`?proposer=1` ouvre la fenêtre en arrivant). Elle ne promet pas de chiffre
-  de lecteurs.
+- **On the sharing home page**, the chain has its card at the top, below
+  the create button (`PerpetualChainCard`), a frame like the other chains.
+  It says for how many people we are reading, without naming them. It does
+  not appear in « Sessions en cours » ("Ongoing sessions"): it is not
+  repeated there.
+- **On its page**, the same as a session's (`DetailSession`), with three
+  differences: the header says « Lecture continue » ("Continuous reading")
+  and the round number instead of the deadline and the creator; the round
+  counter (`PerpetualStatsCard`); the list of names we are reading for
+  (`PrayerNamesCard`). The draw, the progress bar, reserving without an
+  account and the list of 150 Tehilim are those of any chain.
+- **In the reader**, below the reservation of a Tehilim from the chain:
+  « Vous lisez pour » ("You are reading for"), and the names in two groups,
+  refoua chelema and leilouy nichmat (`PrayerNamesLine`).
+- **When creating a session**, as soon as the Tehilim type is chosen, a
+  discreet line also offers to entrust the name to it (`?proposer=1` opens
+  the dialog on arrival). It does not promise any number of readers.
 
-## Les noms
+## Names
 
-Proposer un nom demande un compte : c'est lui qui permet d'y revenir pour le
-prolonger, le corriger ou le retirer. Sans compte, l'invitation à se
-connecter (`SignupPromptModal`, variante `prayer_name`).
+Proposing a name requires an account: that is what lets you come back to
+extend, correct or remove it. Without an account, the invitation to sign in
+(`SignupPromptModal`, `prayer_name` variant).
 
-Un nom se compose comme on le dit : « David ben Sarah », « Rivka bat Léa » ;
-homme ou femme décide du mot du milieu. Il porte l'intention : refoua
-chelema, ou leilouy nichmat. Deux façons d'être lu :
+A name is composed the way it is said: « David ben Sarah », « Rivka bat
+Léa »; man or woman decides the middle word. It carries the intention:
+refoua chelema, or leilouy nichmat. Two ways of being read:
 
-| Nom                                   | Lu                                                                                | Champs                                      |
-| ------------------------------------- | --------------------------------------------------------------------------------- | ------------------------------------------- |
-| Sans date (refoua, ou défunt)         | 30 jours, prolongeables d'un geste (« Prolonger »)                                | `expiresAt`                                 |
-| Leilouy nichmat avec la date du décès | Chaque année, la semaine qui précède l'anniversaire hébraïque, jusqu'au jour même | `deathDay`, `deathMonth`, `expiresAt: null` |
+| Name                                      | Read                                                                            | Fields                                      |
+| ----------------------------------------- | ------------------------------------------------------------------------------- | ------------------------------------------- |
+| Without a date (refoua, or deceased)      | 30 days, extendable in one gesture (« Prolonger », "Extend")                    | `expiresAt`                                 |
+| Leilouy nichmat with the date of death    | Every year, the week before the Hebrew anniversary, up to the day itself       | `deathDay`, `deathMonth`, `expiresAt: null` |
 
-La date se place dans l'année par les règles du calendrier
-(`services/hebrewOccasions`) : un décès d'Adar revient en Adar II une année
-embolismique, un 30 'Hechvan ou Kislev revient le 29 les années où le mois
-n'en a que 29. La fenêtre est celle de l'accueil pour les dates du calendrier
-(7 jours, `ANNIVERSARY_WINDOW_DAYS`).
+The date is placed in the year by the calendar rules
+(`services/hebrewOccasions`): a death in Adar comes back in Adar II in a
+leap year, a 30 'Hechvan or Kislev comes back on the 29th in years when the
+month has only 29 days. The window is the one the home page uses for
+calendar dates (7 days, `ANNIVERSARY_WINDOW_DAYS`).
 
-Un nom échu, ou un défunt hors de sa semaine, n'est plus lu ; son auteur le
-retrouve sous la liste (« Vos noms qui ne sont pas lus en ce moment ») pour le
-prolonger ou le retirer. Un compte tient dix noms au plus
-(`MAX_NAMES_PER_OWNER`) ; un prénom, 40 caractères. Le filtre de termes
-interdits s'y applique, comme aux noms d'invités.
+An expired name, or a deceased person outside their week, is no longer
+read; its author finds it below the list (« Vos noms qui ne sont pas lus en
+ce moment », "Your names not being read right now") to extend or remove it.
+An account holds ten names at most (`MAX_NAMES_PER_OWNER`); a first name,
+40 characters. The banned-terms filter applies, as it does to guest names.
 
-### Sans réseau
+### Without a network
 
-Écrire un nom (l'ajouter, le corriger, le prolonger, le retirer) demande le
-serveur. Le cache persistant de Firestore ne rend la main qu'une fois
-l'écriture confirmée : sans garde, la fenêtre restait figée, sans message,
-et l'écriture partait seule au retour du réseau, d'où un doublon si l'on
-avait réessayé entre-temps. `prayerNameService` reprend donc la parade de
-`userPreferencesService` (`OfflineWriteError`) :
+Writing a name (adding, correcting, extending, removing it) requires the
+server. Firestore's persistent cache only returns once the write is
+confirmed: without a guard, the dialog stayed frozen, with no message, and
+the write went out on its own when the network came back, hence a
+duplicate if you had retried in the meantime. `prayerNameService`
+therefore reuses the countermeasure from `userPreferencesService`
+(`OfflineWriteError`):
 
-- **appareil hors ligne** (`navigator.onLine` faux) : rien ne part, la
-  fenêtre le dit (`errors.prayerNameOffline`) et garde ce qui a été saisi.
-  En pratique, la page de la chaîne laisse alors place à « Connexion
-  impossible » ; la garde tient pour l'instant où l'événement n'est pas
-  encore arrivé ;
-- **appareil qui se croit en ligne, serveur muet** : la fenêtre rend la main
-  au bout de dix secondes (`SERVER_ACK_TIMEOUT_MS`) et dit que la demande
-  partira d'elle-même (`errors.prayerNamePending`). Firestore ne sait pas
-  annuler une écriture : elle reste en file. Un ajout réessayé pendant ce
-  temps reprend l'écriture en route au lieu d'en lancer une seconde, et quand
-  il arrive, le nom rejoint la liste comme un ajout ordinaire. Il ne
-  s'annonce qu'une fois, même réessayé avant d'arriver, et la fenêtre ne se
-  ferme à son arrivée que si elle montre encore cette saisie.
+- **device offline** (`navigator.onLine` false): nothing goes out, the
+  dialog says so (`errors.prayerNameOffline`) and keeps what was typed. In
+  practice, the chain page then gives way to « Connexion impossible »
+  ("Unable to connect"); the guard covers the moment when the event has not
+  arrived yet;
+- **device that thinks it is online, server silent**: the dialog returns
+  control after ten seconds (`SERVER_ACK_TIMEOUT_MS`) and says the request
+  will go out on its own (`errors.prayerNamePending`). Firestore cannot
+  cancel a write: it stays queued. An addition retried during this time
+  picks up the in-flight write instead of starting a second one, and when
+  it lands, the name joins the list like an ordinary addition. It is only
+  announced once, even if retried before landing, and the dialog only
+  closes when it lands if it is still showing that input.
 
-## Les données
+## Data
 
-La chaîne est une session ordinaire, `sessions/chaine-perpetuelle` (son slug
-est le même), créée par `node scripts/admin.mjs chaine:creer`. En plus des
-champs de toute session :
+The chain is an ordinary session, `sessions/chaine-perpetuelle` (its slug
+is the same), created by `node scripts/admin.mjs chaine:creer`. On top of
+the fields of any session:
 
-| Champ                   | Écrit par               | Rôle                                                    |
+| Field                   | Written by              | Role                                                    |
 | ----------------------- | ----------------------- | ------------------------------------------------------- |
-| `perpetual: true`       | `chaine:creer`          | Ce qui la distingue.                                    |
-| `slotCount`             | `chaine:creer`          | Les places d'un tour (150) : ce que la fonction compte. |
-| `cycle`                 | création, puis fonction | Le tour en cours, à partir de 1.                        |
-| `completedCycles`       | fonction                | Tours terminés depuis l'ouverture.                      |
-| `cycleStartedAt`        | création, puis fonction | Début du tour en cours.                                 |
-| `lastCycleStartedAt`    | fonction                | Début du dernier tour terminé.                          |
-| `lastCycleEndedAt`      | fonction                | Sa fin.                                                 |
-| `lastCycleParticipants` | fonction                | Ses lecteurs distincts (comptes et invités).            |
+| `perpetual: true`       | `chaine:creer`          | What sets it apart.                                     |
+| `slotCount`             | `chaine:creer`          | The slots in a round (150): what the function counts.   |
+| `cycle`                 | creation, then function | The current round, starting at 1.                       |
+| `completedCycles`       | function                | Rounds completed since opening.                         |
+| `cycleStartedAt`        | creation, then function | Start of the current round.                             |
+| `lastCycleStartedAt`    | function                | Start of the last completed round.                      |
+| `lastCycleEndedAt`      | function                | Its end.                                                |
+| `lastCycleParticipants` | function                | Its distinct readers (accounts and guests).             |
 
-Les noms vivent dans `sessions/chaine-perpetuelle/names/{id}` :
-`ownerId`, `gender` (`male`, `female`), `firstName`, `motherName`, `kind`
-(`refoua`, `leilouy`), `createdAt`, `updatedAt`, `expiresAt`, et pour un
-défunt daté `deathDay` (1 à 30) et `deathMonth` (mois hebcal, Adar gardé en
-`ADAR_I`).
+Names live in `sessions/chaine-perpetuelle/names/{id}`: `ownerId`,
+`gender` (`male`, `female`), `firstName`, `motherName`, `kind` (`refoua`,
+`leilouy`), `createdAt`, `updatedAt`, `expiresAt`, and for a dated
+deceased person `deathDay` (1 to 30) and `deathMonth` (hebcal month, Adar
+stored as `ADAR_I`).
 
-### Les règles Firestore
+### Firestore rules
 
-- Noms : lecture publique ; création par un compte, en son nom (`ownerId`),
-  sur une session `perpetual` seulement ; modification et suppression par
-  leur auteur, suppression aussi par l'admin. Les champs sont fermés et
-  bornés (`validPrayerName`) : soit une échéance à 31 jours au plus, soit un
-  leilouy nichmat daté sans échéance.
-- Session : les lecteurs n'y écrivent que le tableau des réservations, comme
-  partout. Le drapeau `perpetual`, `slotCount` et le compteur sont réservés à
-  `chaine:creer` et à la Cloud Function (SDK admin) : aucun compte ne les pose
-  à la création d'une session ni ne les change sur la sienne
-  (`perpetualFields`). Sans cela, une session quelconque portant `perpetual`
-  prendrait la carte de la chaîne sur l'accueil et échapperait au masquage du
-  troisième signalement.
+- Names: public read; creation by an account, in its own name (`ownerId`),
+  on a `perpetual` session only; update and deletion by their author,
+  deletion also by the admin. The fields are closed and bounded
+  (`validPrayerName`): either an expiry of 31 days at most, or a dated
+  leilouy nichmat without expiry.
+- Session: readers only write the reservations array there, as everywhere
+  else. The `perpetual` flag, `slotCount` and the counter are reserved for
+  `chaine:creer` and the Cloud Function (admin SDK): no account sets them
+  when creating a session or changes them on its own
+  (`perpetualFields`). Without this, any session carrying `perpetual`
+  would take the chain's card on the home page and escape being hidden on
+  the third report.
 
-## La fin d'un tour
+## The end of a round
 
-`onPerpetualSessionUpdated` (`functions/src/perpetualChain.ts`) se déclenche
-à chaque écriture d'une session et sort aussitôt de celles qui ne sont pas
-perpétuelles. Quand chaque place a une réservation lue
-(`isRoundComplete`, `functions/src/perpetualRound.ts`), elle vide les
-réservations et avance le compteur (`nextRound`), dans une transaction qui
-relit la session : sa propre écriture, ou une relance, ne compte jamais deux
-fois le même tour. Sans `slotCount` valide, le tour ne finit jamais : mieux
-vaut une chaîne qui ne repart pas qu'une chaîne vidée par erreur.
-Seules les places de la chaîne comptent : les Tehilim du catalogue, de
-`PERPETUAL_FIRST_TEXT_ID` (103) à 102 + `slotCount`. Les règles laissent
-chacun ajouter des réservations ; cent cinquante identifiants inventés, marqués
-lus, finissaient le tour en deux écritures. Tests : `perpetualChain.test.ts`
-(« ne compte que les places de la chaîne », « suit le catalogue »).
+`onPerpetualSessionUpdated` (`functions/src/perpetualChain.ts`) fires on
+every session write and immediately exits for those that are not
+perpetual. When every slot has a reservation marked read
+(`isRoundComplete`, `functions/src/perpetualRound.ts`), it clears the
+reservations and advances the counter (`nextRound`), in a transaction that
+rereads the session: its own write, or a retry, never counts the same round
+twice. Without a valid `slotCount`, the round never ends: better a chain
+that does not restart than a chain emptied by mistake. Only the chain's
+slots count: the catalog's Tehilim, from `PERPETUAL_FIRST_TEXT_ID` (103) to
+102 + `slotCount`. The rules let anyone add reservations; a hundred and
+fifty made-up identifiers, marked read, used to finish the round in two
+writes. Tests: `perpetualChain.test.ts` (« ne compte que les places de la
+chaîne », « suit le catalogue »).
 
-La page qui voit tout lu le dit (« Tour terminé ! »), puis relit la chaîne
-jusqu'à voir le tour suivant (`waitForNextRound`, `services/perpetualChain`) :
-cinq essais, de plus en plus espacés, une quarantaine de secondes en tout
-(`NEXT_ROUND_RETRY_DELAYS_MS`). La fonction répond d'habitude dans la seconde,
-mais un démarrage à froid peut prendre plusieurs secondes : un seul
-rechargement, cinq secondes après, laissait alors la page figée sans carte de
-tirage. L'attente est bornée, et se coupe quand on quitte la page.
+The page that sees everything read says so (« Tour terminé ! », "Round
+complete!"), then rereads the chain until it sees the next round
+(`waitForNextRound`, `services/perpetualChain`): five attempts,
+increasingly spaced out, about forty seconds in all
+(`NEXT_ROUND_RETRY_DELAYS_MS`). The function usually responds within a
+second, but a cold start can take several seconds: a single reload, five
+seconds later, used to leave the page frozen without a draw card. The wait
+is bounded, and stops when you leave the page.
 
-Le lecteur fait de même. « Un autre Téhilim » tire dans la copie de la chaîne
-chargée à l'ouverture du texte ; quand elle n'a plus de place libre, il relit
-la chaîne avant de dire qu'il n'y a plus rien. Si le tour y est entièrement
-lu (le lecteur vient de lire le dernier Téhilim), il le dit et attend le tour
-suivant de la même façon, puis tire dans celui-ci.
+The reader does the same. « Un autre Téhilim » ("Another Tehilim") draws
+from the copy of the chain loaded when the text was opened; when it has no
+free slot left, it rereads the chain before saying there is nothing left.
+If the round there is entirely read (the reader has just read the last
+Tehilim), it says so and waits for the next round in the same way, then
+draws from that one.
 
-## Une place réservée tient un jour
+## A reserved slot holds for one day
 
-Sur une chaîne ordinaire, le créateur libère une place réservée puis oubliée.
-Personne ne possède la chaîne perpétuelle : une seule place abandonnée
-arrêterait le tour à 149 sur 150, pour de bon. La même fonction donne donc une
-échéance à toute réservation non lue qui n'en porte pas (`withHoldExpiry`,
-24 heures, `PERPETUAL_HOLD_MS`). C'est l'échéance que l'app connaît déjà pour
-le tirage (`expiresAt`) : passée, la réservation est ignorée de tous les
-affichages et cède sa place à la suivante, dans les versions déjà installées
-comme dans celle-ci, et quelle que soit celle qui a réservé. Un tirage garde
-son heure, que l'app repousse tant qu'on lit ; une place lue n'a plus
-d'échéance. La page de la chaîne le dit en une ligne (`perpetual.holdNote`).
-Une échéance plus lointaine que ce jour (posée à la main par un client), ou
-qui ne se lit pas comme une date, revient à un jour : sans quoi elle tenait la
-place sans fin. Test : « ramène à un jour une échéance plus lointaine, ou
-illisible ».
+On an ordinary chain, the creator frees a slot that was reserved and then
+forgotten. Nobody owns the perpetual chain: a single abandoned slot would
+stop the round at 149 out of 150, for good. The same function therefore
+gives an expiry to every unread reservation that does not have one
+(`withHoldExpiry`, 24 hours, `PERPETUAL_HOLD_MS`). This is the expiry the
+app already knows for the draw (`expiresAt`): once passed, the reservation
+is ignored by every display and gives its slot to the next one, in
+versions already installed as in this one, and whichever version made the
+reservation. A draw keeps its time, which the app pushes back as long as
+you are reading; a read slot no longer has an expiry. The chain page says
+so in one line (`perpetual.holdNote`). An expiry further out than that day
+(set by hand by a client), or one that cannot be read as a date, is brought
+back to one day: otherwise it held the slot forever. Test: « ramène à un
+jour une échéance plus lointaine, ou illisible ».
 
-Une échéance ne désigne donc plus un tirage, sur cette chaîne. Le lecteur ne
-rend, quand on le quitte sans lire, que ce qu'il a lui-même tiré, jamais une
-place réservée à la main (`e2e/firebase/perpetualDraw.spec.ts`).
+An expiry therefore no longer designates a draw, on this chain. When you
+leave the reader without reading, it only gives back what it drew itself,
+never a slot reserved by hand (`e2e/firebase/perpetualDraw.spec.ts`).
 
-La règle compte une place par texte : elle ne vaut que pour des textes d'une
-seule section, ce que les 150 Tehilim sont. `chaine:creer` refuse un catalogue
-qui changerait ce fait.
+The rule counts one slot per text: it only holds for single-section texts,
+which the 150 Tehilim are. `chaine:creer` refuses a catalog that would
+change this fact.
 
-## La compatibilité
+## Compatibility
 
-Une app installée avant cette version lit la chaîne comme une session de
-Tehilim ordinaire : elle l'affiche dans la liste, avec sa date limite
-lointaine (1er janvier 2100, `PERPETUAL_DATE_LIMIT`), et y réserve comme
-ailleurs. Rien de ce qu'elle lit n'a disparu ; elle ignore les champs
-nouveaux et les noms.
+An app installed before this version reads the chain as an ordinary
+Tehilim session: it shows it in the list, with its distant deadline
+(January 1, 2100, `PERPETUAL_DATE_LIMIT`), and reserves in it as anywhere
+else. Nothing it reads has disappeared; it ignores the new fields and the
+names.
 
-## La modération
+## Moderation
 
-Les noms sont du contenu public écrit par les utilisateurs (règle 1.2 de
-l'App Store, voir `docs/moderation.md`) : filtre de termes à la saisie,
-signalement par le bouton « Signaler » de la chaîne (les précisions nomment
-le nom ; on peut en signaler un autre ensuite, et le créateur, l'équipe, ne
-s'y bloque pas),
-retrait par l'admin (`node scripts/admin.mjs chaine:noms`, puis
-`chaine:retirer-nom <id>`). La chaîne elle-même ne se masque pas toute seule
-au troisième signalement : trois comptes suffiraient à la retirer à tout le
-monde, alors qu'un signalement y vise un nom.
+Names are public content written by users (App Store rule 1.2, see
+`docs/moderation.md`): term filter on input, reporting through the chain's
+« Signaler » ("Report") button (the details name the name; you can report
+another one afterwards, and the creator, the team, is not blocked by it),
+removal by the admin (`node scripts/admin.mjs chaine:noms`, then
+`chaine:retirer-nom <id>`). The chain itself is not hidden automatically
+on the third report: three accounts would be enough to remove it for
+everyone, whereas a report there targets a name.
 
-## Ce qui est tenu par un test
+## What is enforced by a test
 
-`src/__tests__/prayerNameOffline.test.ts` : un nom ne s'écrit pas hors
-ligne, la main revient quand le serveur se tait, et un ajout réessayé ne
-s'écrit qu'une fois. `src/__tests__/prayerNameLateLanding.test.ts` : la
-fenêtre montée, à l'arrivée d'un ajout resté en route.
+`src/__tests__/prayerNameOffline.test.ts`: a name is not written offline,
+control returns when the server is silent, and a retried addition is only
+written once. `src/__tests__/prayerNameLateLanding.test.ts`: the mounted
+dialog, when an addition that was in flight lands.
 
-`src/__tests__/perpetualChain.test.ts` : la forme d'un nom (ben, bat), quand
-un nom est lu (échéance, semaine de l'anniversaire, passage d'une année à
-l'autre), l'ordre de la liste, le compteur, la règle de fin de tour et la
-remise à zéro, l'échéance d'une place réservée, l'attente bornée du tour suivant
-(`waitForNextRound`), le document écrit par `chaine:creer`, et la présence des textes `perpetual.*` dans les trois
-langues.
+`src/__tests__/perpetualChain.test.ts`: the form of a name (ben, bat),
+when a name is read (expiry, anniversary week, crossing from one year to
+the next), the order of the list, the counter, the end-of-round rule and
+the reset, the expiry of a reserved slot, the bounded wait for the next
+round (`waitForNextRound`), the document written by `chaine:creer`, and the
+presence of the `perpetual.*` texts in all three languages.
 
-`e2e/firebase/perpetualChain.spec.ts`, contre les émulateurs : la carte, les
-noms (un ajout sur un réseau muet n'arrive qu'une fois), la fin d'un tour (la page
-et le lecteur attendent le tour suivant quand la fonction tarde), et les
-règles Firestore (un nom ne s'écrit qu'en son nom et sur la
-chaîne ; le drapeau et le compteur de la chaîne ne s'écrivent pas depuis un
-compte).
+`e2e/firebase/perpetualChain.spec.ts`, against the emulators: the card,
+the names (an addition on a silent network only lands once), the end of a
+round (the page and the reader wait for the next round when the function
+is slow), and the Firestore rules (a name is only written in one's own
+name and on the chain; the chain's flag and counter cannot be written from
+an account).

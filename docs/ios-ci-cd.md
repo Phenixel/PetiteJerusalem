@@ -1,369 +1,371 @@
-# CI/CD iOS : envoi automatique sur TestFlight
+# iOS CI/CD: automatic upload to TestFlight
 
-Le workflow [.github/workflows/deploy-ios.yml](../.github/workflows/deploy-ios.yml)
-construit l'app iOS et l'envoie sur TestFlight **à chaque tag `vX.Y.Z`**, en
-parallèle de `deploy.yml` (site) et `deploy-android.yml` (Play Store). Un seul
-geste met donc en prod les trois :
+The workflow [.github/workflows/deploy-ios.yml](../.github/workflows/deploy-ios.yml)
+builds the iOS app and uploads it to TestFlight **on every `vX.Y.Z` tag**, in
+parallel with `deploy.yml` (site) and `deploy-android.yml` (Play Store). A
+single action therefore puts all three into production:
 
 ```bash
 git tag v3.7.0 && git push origin v3.7.0
 ```
 
-Le dossier `ios/` étant git-ignoré, la CI le régénère de zéro
-(`npx cap add ios` + `scripts/setup-ios.mjs`), aligne
-`CFBundleShortVersionString`/`CFBundleVersion` sur le tag (v3.7.0 → build
-3070000), archive, exporte l'IPA signé et l'envoie à Apple. L'IPA est aussi
-archivé en artifact du run (90 jours).
+Since the `ios/` folder is git-ignored, the CI regenerates it from scratch
+(`npx cap add ios` + `scripts/setup-ios.mjs`), aligns
+`CFBundleShortVersionString`/`CFBundleVersion` with the tag (v3.7.0 → build
+3070000), archives, exports the signed IPA and sends it to Apple. The IPA is
+also kept as a run artifact (90 days).
 
-**La soumission à l'examen est automatique** : après le job macOS, le job
-`submit` (Linux) attend la fin du traitement du build par Apple (15 à 40 min),
-l'attache à la version du tag et la soumet via l'API
-(`scripts/asc-submit.mjs`). Il s'arrête proprement si une soumission
-précédente est encore en examen, et se débraye avec la variable de repo
+**Submission for review is automatic**: after the macOS job, the `submit` job
+(Linux) waits for Apple to finish processing the build (15 to 40 min),
+attaches it to the tag's version and submits it through the API
+(`scripts/asc-submit.mjs`). It stops cleanly if a previous submission is
+still in review, and can be switched off with the repo variable
 `IOS_AUTO_SUBMIT=false`.
 
-**La mise en vente est automatique elle aussi** : `scripts/appstore-listing.mjs`
-pose la version en `releaseType AFTER_APPROVAL` (à chaque run, pas seulement à
-sa création), Apple la publie donc d'elle-même à l'issue de l'examen. Un tag
-suffit ainsi à publier, sans clic dans App Store Connect, comme pour le Play
-Store. Variable de repo `IOS_AUTO_RELEASE=false` pour revenir à la mise en
-vente au clic (voir
-[ios-release-plan.md](ios-release-plan.md#étape-8--soumission)).
+**Release to sale is automatic too**: `scripts/appstore-listing.mjs` sets the
+version to `releaseType AFTER_APPROVAL` (on every run, not only when it is
+created), so Apple publishes it on its own once review is over. A tag is thus
+enough to publish, with no click in App Store Connect, just like the Play
+Store. Repo variable `IOS_AUTO_RELEASE=false` to go back to releasing on
+click (see
+[ios-release-plan.md](ios-release-plan.md#step-8-submission)).
 
-## Les widgets, et l'unique manipulation manuelle
+## The widgets, and the only manual step
 
-Ce workflow régénère `ios/` de zéro à chaque tag : une cible créée à la main
-dans Xcode n'y survivrait pas, et c'est exactement pour cela que les widgets
-iOS n'ont longtemps atteint aucun iPhone, alors que leur code SwiftUI est
-versionné dans `native/ios/` depuis le début.
+This workflow regenerates `ios/` from scratch on every tag: a target created
+by hand in Xcode would not survive it, and that is exactly why the iOS
+widgets reached no iPhone for a long time, even though their SwiftUI code has
+been versioned in `native/ios/` from the start.
 
-La cible d'extension `PjWidgets` est donc écrite dans le `project.pbxproj` par
-`scripts/lib/xcode-widgets.mjs`, que `scripts/setup-ios.mjs` appelle : cible,
-phases de build, configurations, embarquement dans l'app et dépendance. Le
-module ne fait que transformer du texte, il se teste donc sans macOS
-(`src/__tests__/xcodeWidgets.test.ts`, contre le vrai template de Capacitor :
-une mise à jour qui déplacerait une ancre casse ces tests plutôt que le build
-de release).
+The `PjWidgets` extension target is therefore written into `project.pbxproj`
+by `scripts/lib/xcode-widgets.mjs`, which `scripts/setup-ios.mjs` calls:
+target, build phases, configurations, embedding in the app and dependency.
+The module only transforms text, so it can be tested without macOS
+(`src/__tests__/xcodeWidgets.test.ts`, against the real Capacitor template:
+an update that moved an anchor breaks these tests rather than the release
+build).
 
-**Reste une manipulation manuelle, à faire une seule fois** : l'API App Store
-Connect ne sait ni créer un App Group ni l'attacher à un App ID (elle sait
-seulement activer la capacité `APP_GROUPS`). Sur
+**One manual step remains, to be done only once**: the App Store Connect API
+can neither create an App Group nor attach it to an App ID (it can only
+enable the `APP_GROUPS` capability). On
 [developer.apple.com](https://developer.apple.com/account/resources/identifiers/list)
-→ Certificates, Identifiers & Profiles :
+→ Certificates, Identifiers & Profiles:
 
-1. Identifiers → **App Groups** → + → identifiant `group.fr.petitejerusalem.app` ;
-2. Identifiers → `fr.petitejerusalem.app` → App Groups → Configure → cocher le groupe ;
-3. Identifiers → `fr.petitejerusalem.app.PjWidgets` → App Groups → Configure → idem.
+1. Identifiers → **App Groups** → + → identifier `group.fr.petitejerusalem.app`;
+2. Identifiers → `fr.petitejerusalem.app` → App Groups → Configure → check the group;
+3. Identifiers → `fr.petitejerusalem.app.PjWidgets` → App Groups → Configure → same.
 
-L'App ID de l'extension, lui, est créé par `scripts/ios-signing.mjs` au premier
-run : il faut donc lancer le workflow une fois pour qu'il existe, faire les
-trois clics, puis relancer.
+The extension's App ID, on the other hand, is created by
+`scripts/ios-signing.mjs` on the first run: so you have to run the workflow
+once for it to exist, make the three clicks, then run it again.
 
-Le script relit les deux profils qu'il vient de créer et vérifie que l'App
-Group y figure : sans lui, le run s'arrête en une phrase, dans ses deux
-premières minutes, au lieu d'échouer un quart d'heure plus tard sur un
-« doesn't match the entitlements file » d'`xcodebuild`.
+The script re-reads the two profiles it has just created and checks that the
+App Group is in them: without it, the run stops with a one-sentence message
+within its first two minutes, instead of failing a quarter of an hour later
+on an `xcodebuild` "doesn't match the entitlements file".
 
-### Éprouver la signature sans poser de tag
+### Testing signing without pushing a tag
 
-Actions → **Deploy iOS** → Run workflow → cocher **debug_signing**. Ce mode
-fabrique le certificat et les deux profils, synchronise le minimum de
-Capacitor, tente une archive avec les journaux de provisioning verbeux, puis
-s'arrête. Il ne consomme aucun numéro de build côté App Store Connect (rien
-n'est envoyé, et le nettoyage révoque le certificat du run), ce qui en fait la
-répétition générale à faire avant un tag quand la signature a changé.
+Actions → **Deploy iOS** → Run workflow → check **debug_signing**. This mode
+creates the certificate and the two profiles, syncs the Capacitor minimum,
+attempts an archive with verbose provisioning logs, then stops. It uses up
+no build number on the App Store Connect side (nothing is sent, and the
+cleanup revokes the run's certificate), which makes it the dress rehearsal
+to do before a tag when signing has changed.
 
-Il saute le build web, mais **pas** `cap sync` : celui-ci déclare les paquets
-SPM des plugins, et sans lui l'archive échouait à la compilation
-(« Unable to find module dependency: 'FirebaseAuth' ») avant même d'atteindre
-la signature, c'est-à-dire avant ce que ce mode existe pour montrer. Un `dist/`
-réduit à une coquille vide suffit à `cap sync`.
+It skips the web build, but **not** `cap sync`: that step declares the
+plugins' SPM packages, and without it the archive failed at compile time
+("Unable to find module dependency: 'FirebaseAuth'") before even reaching
+signing, that is, before what this mode exists to show. A `dist/` reduced to
+an empty shell is enough for `cap sync`.
 
-## Signature « dans le nuage »
+## Signing "in the cloud"
 
-Aucun certificat ni profil de provisionnement n'est stocké dans le repo,
-contrairement au keystore Android. `scripts/ios-signing.mjs` en fabrique un jeu
-au début de chaque run à partir de la clé d'API App Store Connect : certificat
-de distribution, profils « App Store » (l'app et son extension de widgets),
-trousseau temporaire. Le nettoyage de fin (`--cleanup`, exécuté même quand le
-build échoue) détruit le trousseau et les profils ; le certificat, lui, ne part que si le run n'a rien envoyé chez
-Apple, voir le quota plus bas. La même clé sert à l'envoi de l'IPA et à la
-synchronisation de la fiche : c'est le seul secret sensible du workflow.
+No certificate or provisioning profile is stored in the repo, unlike the
+Android keystore. `scripts/ios-signing.mjs` creates a set at the start of
+each run from the App Store Connect API key: distribution certificate, "App
+Store" profiles (the app and its widgets extension), temporary keychain. The
+final cleanup (`--cleanup`, run even when the build fails) destroys the
+keychain and the profiles; the certificate, however, is only removed if the
+run sent nothing to Apple, see the quota below. The same key is used to
+upload the IPA and to sync the listing: it is the workflow's only sensitive
+secret.
 
-### Pourquoi manuelle et non automatique
+### Why manual rather than automatic
 
-`xcodebuild -allowProvisioningUpdates` (signature automatique) semblait plus
-simple, mais il est inutilisable ici : pour **archiver**, Xcode réclame un
-profil de *développement*, et Apple n'en délivre aucun à une équipe qui n'a pas
-au moins un appareil enregistré, ce compte individuel n'en a aucun. L'erreur
-remontait d'abord sous la forme trompeuse « Authentication failed: bearer
-token », puis, une fois Xcode épinglé en 26.2, en clair : « No profiles for
-'fr.petitejerusalem.app' were found ».
+`xcodebuild -allowProvisioningUpdates` (automatic signing) looked simpler,
+but it is unusable here: to **archive**, Xcode asks for a *development*
+profile, and Apple issues none to a team that has no registered device; this
+individual account has none. The error first surfaced in the misleading form
+"Authentication failed: bearer token", then, once Xcode was pinned to 26.2,
+plainly: "No profiles for 'fr.petitejerusalem.app' were found".
 
-Forcer `CODE_SIGN_IDENTITY="Apple Distribution"` par-dessus le mode automatique
-ne marche pas davantage : Xcode refuse le mélange (« has conflicting
-provisioning settings »), sur la cible App **et** sur chacun des paquets SPM.
+Forcing `CODE_SIGN_IDENTITY="Apple Distribution"` on top of automatic mode
+does not work either: Xcode refuses the mix ("has conflicting provisioning
+settings"), on the App target **and** on each of the SPM packages.
 
-Un profil « App Store », lui, n'exige aucun appareil. D'où le mode manuel, avec
-deux conséquences visibles dans `scripts/setup-ios.mjs` :
+An "App Store" profile, however, requires no device. Hence manual mode, with
+two consequences visible in `scripts/setup-ios.mjs`:
 
-- les réglages de signature sont écrits dans la **cible App du pbxproj**, jamais
-  passés en argument d'`xcodebuild` (un argument s'appliquerait aussi aux
-  paquets SPM, qui le rejettent) ;
-- l'entitlement `aps-environment` vaut `production` : il doit correspondre au
-  profil qui signe.
+- the signing settings are written into the **App target of the pbxproj**,
+  never passed as `xcodebuild` arguments (an argument would also apply to the
+  SPM packages, which reject it);
+- the `aps-environment` entitlement is `production`: it must match the
+  signing profile.
 
-Deux profils sont fabriqués à chaque run, l'app et son extension de widgets
-ayant chacune leur App ID. Celui de l'app porte le numéro de build dans son nom
-et survit à l'envoi (c'est lui qui dit quel certificat a signé quel binaire) ;
-celui de l'extension est jetable.
+Two profiles are created on each run, since the app and its widgets
+extension each have their own App ID. The app's profile carries the build
+number in its name and survives the upload (it is what tells which
+certificate signed which binary); the extension's is disposable.
 
-Les capacités de l'App ID nécessaires aux profils, notifications push, Sign in
-with Apple, domaines associés et App Groups, sont activées par le script
-lui-même, ce qu'Xcode faisait auparavant tout seul en mode automatique.
+The App ID capabilities required by the profiles, push notifications, Sign
+in with Apple, associated domains and App Groups, are enabled by the script
+itself, which Xcode used to do on its own in automatic mode.
 
-### Quand Apple répond 500
+### When Apple answers 500
 
-Le provisionnement d'Apple renvoie de temps en temps un `500 UNEXPECTED_ERROR` à
-une requête parfaitement valide, puis accepte la même quelques secondes plus
-tard. Le tag v3.9.3 est mort là-dessus : la création du profil des widgets a
-échoué 180 ms après celle du profil de l'app, avec le même certificat, le même
-App ID et le même code que le run vert de la veille. Il n'y avait rien à
-corriger dans la demande ; il fallait la redemander.
+Apple's provisioning occasionally returns a `500 UNEXPECTED_ERROR` to a
+perfectly valid request, then accepts the same one a few seconds later. The
+v3.9.3 tag died on this: creating the widgets profile failed 180 ms after
+creating the app profile, with the same certificate, the same App ID and the
+same code as the previous day's green run. There was nothing to fix in the
+request; it just had to be sent again.
 
-`scripts/lib/asc-retry.mjs` porte la règle, `src/__tests__/ascRetry.test.ts` la
-tient :
+`scripts/lib/asc-retry.mjs` carries the rule, and
+`src/__tests__/ascRetry.test.ts` holds it:
 
-- une panne passagère (5xx, 429, ou pas de réponse du tout) vaut jusqu'à trois
-  nouvelles tentatives, à trois secondes, six, puis douze ;
-- un 4xx n'en vaut aucune : il dit quelque chose de vrai sur la demande ;
-- seuls les GET et les DELETE sont rejoués d'office. Un POST, non : rejouer une
-  création de certificat mangerait une place du quota de trois. La création de
-  profil fait exception, mais relit d'abord le profil par son nom, Apple le
-  fabriquant parfois avant d'échouer à le renvoyer.
+- a transient failure (5xx, 429, or no response at all) gets up to three
+  retries, after three seconds, six, then twelve;
+- a 4xx gets none: it says something true about the request;
+- only GETs and DELETEs are replayed automatically. A POST is not: replaying
+  a certificate creation would eat a slot of the quota of three. Profile
+  creation is the exception, but it first re-reads the profile by name,
+  since Apple sometimes creates it before failing to return it.
 
-La même règle vaut pour le client partagé par la fiche, les captures et la
-soumission (`scripts/lib/asc-api.mjs`, tenu par `src/__tests__/ascApi.test.ts`),
-depuis le tag v3.10.8 : un 500 sur une simple lecture y avait coupé
-`appstore-listing.mjs` juste après la création de la version, avant qu'il en
-écrive les « Nouveautés ». L'étape, non bloquante, n'a laissé qu'un
-avertissement, et la soumission a échoué ensuite sur un 409 « not in valid
-state » : Apple refuse une version dont un champ obligatoire est vide. Ce
-client affiche désormais aussi les raisons détaillées qu'Apple range dans
-`meta.associatedErrors`, là où le journal ne disait que « please check
-associated errors to see why ».
+The same rule applies to the client shared by the listing, the screenshots
+and the submission (`scripts/lib/asc-api.mjs`, held by
+`src/__tests__/ascApi.test.ts`), since tag v3.10.8: a 500 on a simple read
+had cut `appstore-listing.mjs` off right after creating the version, before
+it wrote its « Nouveautés » ("What's New"). The step, being non-blocking,
+only left a warning, and the submission then failed on a 409 "not in valid
+state": Apple refuses a version with an empty required field. This client
+now also shows the detailed reasons Apple puts in `meta.associatedErrors`,
+where the log only said "please check associated errors to see why".
 
-Un run qui échoue quand même sur ce message n'a rien à corriger dans le repo :
-il se relance. Quand c'est l'étape « Mettre à jour la fiche App Store » qui a
-flanché, relancer le seul job `submit` ne suffit pas, il ne réécrit pas la
-fiche. Deux façons de reprendre la version restée en plan :
+A run that still fails on this message has nothing to fix in the repo: just
+rerun it. When the failing step is « Mettre à jour la fiche App Store »
+("Update the App Store listing"), rerunning only the `submit` job is not
+enough, since it does not rewrite the listing. Two ways to pick up the
+version left hanging:
 
-- remplir ce qui manque dans App Store Connect (les « Nouveautés » de chaque
-  langue), puis relancer le job `submit` (« Re-run failed jobs ») ;
-- ou pousser un nouveau tag (patch + 1) : `appstore-listing.mjs` renomme la
-  version modifiable restée en plan et la reprend depuis le début. Le tag
-  republie aussi le site et l'app Android.
+- fill in what is missing in App Store Connect (the « Nouveautés » for each
+  language), then rerun the `submit` job ("Re-run failed jobs");
+- or push a new tag (patch + 1): `appstore-listing.mjs` renames the editable
+  version left hanging and takes it over from the start. The tag also
+  republishes the site and the Android app.
 
-### Le quota de trois certificats de distribution
+### The quota of three distribution certificates
 
-Apple n'accepte que **trois certificats de distribution** par compte, et le
-certificat d'un run ne peut pas toujours partir avec lui : contrairement à ce
-qu'on a d'abord cru, Apple ne re-signe pas tout ce qui passe par TestFlight,
-il re-valide la signature **d'origine** à la mise en file d'examen. Le build
-3.7.3, accepté par TestFlight le 17 août 2026, a été rejeté à l'examen d'un
-« ITMS-90035: Invalid Signature » pour cette raison : son certificat avait été
-révoqué quelques minutes après l'envoi.
+Apple accepts only **three distribution certificates** per account, and a
+run's certificate cannot always leave with it: contrary to what was first
+believed, Apple does not re-sign everything that goes through TestFlight, it
+re-validates the **original** signature when the build is queued for review.
+Build 3.7.3, accepted by TestFlight on August 17, 2026, was rejected at
+review with an "ITMS-90035: Invalid Signature" for that reason: its
+certificate had been revoked a few minutes after the upload.
 
-Un certificat doit donc vivre aussi longtemps qu'un binaire signé avec lui est
-en examen ou en vente, mais pas plus, sinon le quota se remplit et le tag
-suivant échoue sur « You already have a current Distribution certificate »
-(c'est ce qui est arrivé au tag v3.7.8). Deux garde-fous s'en chargent, sans
-qu'aucun geste manuel ne soit nécessaire :
+A certificate must therefore live as long as a binary signed with it is in
+review or on sale, but no longer, otherwise the quota fills up and the next
+tag fails on "You already have a current Distribution certificate" (which is
+what happened to tag v3.7.8). Two safeguards take care of this, with no
+manual step needed:
 
-- en fin de run, `--cleanup` révoque le certificat **si rien n'est parti chez
-  Apple** : un run qui échoue avant l'envoi, ou un run de debug, ne laisse
-  donc rien derrière lui. La variable `IOS_BUILD_UPLOADED`, posée par le
-  workflow juste après l'envoi sur TestFlight, distingue les deux cas ;
-- si le binaire est parti, `--cleanup` **conserve le profil** au lieu de le
-  supprimer. Son nom porte le numéro de build (`PetiteJerusalem CI build
-  3070800`) et il référence le certificat signataire : c'est le seul endroit
-  où le lien entre un certificat et ce qu'il a signé existe, l'API App Store
-  Connect ne le donnant nulle part ;
-- à chaque run, `--setup` révoque, avant de créer le sien, les certificats
-  dont plus aucun binaire ne dépend, marqueur à l'appui. Sont protégés les
-  binaires attachés à une version qu'Apple a encore en main (examen,
-  traitement, publication en attente), celui de la version la plus récente de
-  la fiche quel qu'en soit l'état, le dernier binaire envoyé et ceux qu'Apple
-  traite encore. Le certificat du run précédent est gardé d'office.
+- at the end of the run, `--cleanup` revokes the certificate **if nothing
+  was sent to Apple**: a run that fails before the upload, or a debug run,
+  therefore leaves nothing behind. The `IOS_BUILD_UPLOADED` variable, set by
+  the workflow right after the TestFlight upload, tells the two cases apart;
+- if the binary was sent, `--cleanup` **keeps the profile** instead of
+  deleting it. Its name carries the build number (`PetiteJerusalem CI build
+  3070800`) and it references the signing certificate: it is the only place
+  where the link between a certificate and what it signed exists, since the
+  App Store Connect API provides it nowhere;
+- on each run, `--setup` revokes, before creating its own, the certificates
+  that no binary depends on anymore, based on the marker. Protected are the
+  binaries attached to a version that Apple still has in hand (review,
+  processing, pending release), that of the most recent version of the
+  listing whatever its state, the last binary sent and those Apple is still
+  processing. The previous run's certificate is kept as a matter of course.
 
-Un certificat **sans marqueur** (antérieur au mécanisme, ou laissé par un run
-tué avant son nettoyage) est jugé sur les dates : l'API date les certificats
-et les envois, un binaire est signé par le dernier certificat créé avant son
-envoi, et la fenêtre est élargie de deux heures pour absorber l'imprécision.
-C'est prudent, donc parfois trop : c'est ainsi que trois certificats se sont
-retrouvés protégés en même temps le 23 août 2026, et qu'il a fallu les
-révoquer à la main.
+A certificate **without a marker** (predating the mechanism, or left by a
+run killed before its cleanup) is judged by dates: the API dates
+certificates and uploads, a binary is signed by the last certificate created
+before its upload, and the window is widened by two hours to absorb the
+imprecision. This is cautious, and therefore sometimes too cautious: that is
+how three certificates ended up protected at the same time on August 23,
+2026, and had to be revoked by hand.
 
-Un build de **staging** (« PJ Staging », testeurs internes seulement) suit
-la même mécanique, avec un marqueur à part (`PetiteJerusalem CI staging build
-141`) pour que son numéro ne se confonde jamais avec celui d'un binaire de
-production. Il ne va jamais à l'examen, mais Apple vérifie la signature
-pendant le traitement qui suit l'envoi : son certificat est donc gardé tant
-que le build est en `PROCESSING`, puis révoqué au `--setup` suivant. Le
-révoquer dès la fin du run, comme on l'a fait un temps, a fait rejeter le
-build de staging 141 (3.10.12) le 16 octobre 2026 : « ITMS-90721:
-Certificate Revoked ». Règle tenue par `src/__tests__/certificateQuota.test.ts`
+A **staging** build ("PJ Staging", internal testers only) follows the same
+mechanics, with a separate marker (`PetiteJerusalem CI staging build 141`)
+so that its number is never confused with that of a production binary. It
+never goes to review, but Apple checks the signature during the processing
+that follows the upload: its certificate is therefore kept as long as the
+build is in `PROCESSING`, then revoked at the next `--setup`. Revoking it
+right at the end of the run, as was done for a while, got staging build 141
+(3.10.12) rejected on October 16, 2026: "ITMS-90721: Certificate Revoked".
+Rule held by `src/__tests__/certificateQuota.test.ts`
 (« garde le certificat d'un build de staging pendant son traitement »).
 
-Une version **déjà distribuée** ne retient rien, et c'est voulu : Apple le dit
-au moment de révoquer un certificat, sont invalidées les apps *soumises à
-l'examen* signées avec lui, celles déjà sur l'App Store ne sont pas touchées.
-Protéger les versions en vente gelait une place du quota par release passée,
-définitivement : au 23 août 2026, 3.7.5 et 3.7.6, toutes deux distribuées, en
-occupaient deux sur trois.
+A version **already distributed** holds nothing back, and that is
+intentional: as Apple says when you revoke a certificate, the apps
+*submitted for review* signed with it are invalidated, while those already
+on the App Store are not affected. Protecting the versions on sale froze one
+quota slot per past release, permanently: as of August 23, 2026, 3.7.5 and
+3.7.6, both distributed, occupied two out of three.
 
-Si plus rien n'est libérable, le run échoue en affichant la liste des
-certificats et ce qui retient chacun ; la décision revient alors à un humain,
-sur developer.apple.com.
+If nothing more can be freed, the run fails and displays the list of
+certificates and what holds each one; the decision then falls to a human,
+on developer.apple.com.
 
-Conséquence : la clé d'API doit avoir le rôle **Admin**. C'est contre-intuitif
-pour une clé de CI, mais Apple réserve la création des certificats de
-**distribution** à ce rôle, une clé « App Manager » suffit pour TestFlight et
-la fiche, pas pour signer l'archive. Et le rôle d'une clé **ne peut pas être
-modifié après création** : se tromper oblige à en générer une nouvelle.
+Consequence: the API key must have the **Admin** role. This is
+counterintuitive for a CI key, but Apple reserves the creation of
+**distribution** certificates to that role; an "App Manager" key is enough
+for TestFlight and the listing, not for signing the archive. And a key's
+role **cannot be changed after creation**: getting it wrong forces you to
+generate a new one.
 
-## Clé d'API App Store Connect (une fois, clics)
+## App Store Connect API key (once, clicks)
 
-1. [App Store Connect](https://appstoreconnect.apple.com) → **Utilisateurs et
-   accès** → onglet **Intégrations** → **API App Store Connect** → **Clés de
-   l'équipe** → `+`. La toute première fois, Apple demande d'abord d'activer
-   l'accès à l'API (case à cocher + Soumettre, approbation immédiate).
-2. Nom `github ci` (pas de tiret : Apple refuse les caractères spéciaux),
-   accès **Admin** → Générer.
-3. Télécharger le fichier `AuthKey_XXXXXXXXXX.p8`, **téléchargeable une seule
-   fois**, le ranger dans le gestionnaire de mots de passe.
-4. Noter sur la même page le **Key ID** (10 caractères) et l'**Issuer ID**
-   (un UUID, commun à toutes les clés du compte).
+1. [App Store Connect](https://appstoreconnect.apple.com) → **Users and
+   Access** → **Integrations** tab → **App Store Connect API** → **Team
+   Keys** → `+`. The very first time, Apple first asks you to enable API
+   access (checkbox + Submit, immediate approval).
+2. Name `github ci` (no hyphen: Apple refuses special characters), access
+   **Admin** → Generate.
+3. Download the `AuthKey_XXXXXXXXXX.p8` file, **downloadable only once**,
+   and store it in the password manager.
+4. On the same page, note the **Key ID** (10 characters) and the **Issuer
+   ID** (a UUID, shared by all the account's keys).
 
-## Secrets GitHub à créer (une fois)
+## GitHub secrets to create (once)
 
-Depuis la racine du repo, sur la machine qui possède la clé `.p8` et
-`GoogleService-Info.plist` :
+From the repo root, on the machine that has the `.p8` key and
+`GoogleService-Info.plist`:
 
 ```bash
-# 1-2. Identifiants de la clé d'API (page Clés API d'App Store Connect)
+# 1-2. API key identifiers (API Keys page of App Store Connect)
 gh secret set ASC_KEY_ID    --body "XXXXXXXXXX"
 gh secret set ASC_ISSUER_ID --body "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
 
-# 3. Contenu de la clé privée (fichier .p8 téléchargé)
+# 3. Contents of the private key (downloaded .p8 file)
 gh secret set ASC_PRIVATE_KEY < ~/Downloads/AuthKey_XXXXXXXXXX.p8
 
-# 4. Team ID Apple (10 caractères, page Membership de developer.apple.com)
+# 4. Apple Team ID (10 characters, Membership page of developer.apple.com)
 gh secret set IOS_DEVELOPMENT_TEAM --body "XXXXXXXXXX"
 
-# 5. Config Firebase de l'app iOS (racine du repo, git-ignoré)
+# 5. Firebase config of the iOS app (repo root, git-ignored)
 gh secret set GOOGLE_SERVICE_INFO_PLIST < GoogleService-Info.plist
 ```
 
-## Fiche App Store
+## App Store listing
 
-La fiche vit dans le repo, au format inspiré de fastlane, et est synchronisée à
-chaque publication par `node scripts/appstore-listing.mjs` (API App Store
-Connect, même clé) :
+The listing lives in the repo, in a fastlane-inspired format, and is synced
+on every release by `node scripts/appstore-listing.mjs` (App Store Connect
+API, same key):
 
 ```
 store-assets/metadata/ios/<locale>/   # fr-FR, en-US, he
-├── name.txt                 # ≤ 30 caractères
+├── name.txt                 # ≤ 30 characters
 ├── subtitle.txt             # ≤ 30
-├── keywords.txt             # ≤ 100, virgules SANS espace
-├── promotional_text.txt     # ≤ 170, modifiable sans nouvelle version
+├── keywords.txt             # ≤ 100, commas WITHOUT spaces
+├── promotional_text.txt     # ≤ 170, editable without a new version
 ├── description.txt          # ≤ 4000
-├── support_url.txt          # obligatoire
-├── marketing_url.txt        # optionnel
-└── privacy_url.txt          # obligatoire
+├── support_url.txt          # required
+├── marketing_url.txt        # optional
+└── privacy_url.txt          # required
 ```
 
-- Les « Nouveautés » ne viennent pas d'un fichier du repo : la CI passe au
-  script le corps de la release GitHub du tag (`--release-notes`), et à
-  défaut c'est la phrase par défaut de `scripts/release-notes.mjs`
-  (« Correction de bugs mineurs. », traduite par langue) qui part, même
-  logique que le Play Store. Écrit en trois sections (`## Français`,
-  `## English`, `## עברית`), chaque langue reçoit la sienne ; sans ces
-  titres, le corps ne va qu'à fr-FR, et une langue sans texte reçoit la
-  phrase par défaut. Le format est décrit dans
-  [android-ci-cd.md](android-ci-cd.md#notes-de-version-en-trois-langues).
-- `node scripts/appstore-listing.mjs --check` vérifie en local, sans réseau,
-  les limites de caractères **et** l'absence de caractères refusés par l'API
-  App Store Connect (émojis, symboles hors BMP…) : la CI le fait en début de
-  run et échoue avant les 40 minutes de build macOS, en indiquant fichier,
-  ligne et caractère fautif. Le Play Store, lui, accepte les émojis, les
-  fiches Android n'ont pas cette contrainte.
-- Le script écrit sur la version App Store **modifiable** (état
-  `PREPARE_FOR_SUBMISSION` et assimilés), et l'aligne sur le tag : il utilise
-  la version portant le bon numéro, sinon renomme la version modifiable
-  existante, sinon en crée une. Les versions en examen ou déjà publiées ne
-  sont jamais touchées. En cas d'échec malgré tout, le binaire est déjà parti
-  sur TestFlight : l'étape n'échoue pas le run, elle affiche un avertissement.
-- Apple refuse le champ « Nouveautés » sur la toute première version : le
-  script réessaie automatiquement sans.
+- The « Nouveautés » ("What's New") do not come from a file in the repo: the
+  CI passes the script the body of the tag's GitHub release
+  (`--release-notes`), and failing that, the default sentence from
+  `scripts/release-notes.mjs` (« Correction de bugs mineurs. », translated
+  per language) is sent, same logic as the Play Store. Written in three
+  sections (`## Français`, `## English`, `## עברית`), each language gets its
+  own; without these headings, the body only goes to fr-FR, and a language
+  without text gets the default sentence. The format is described in
+  [android-ci-cd.md](android-ci-cd.md#release-notes-in-three-languages).
+- `node scripts/appstore-listing.mjs --check` checks locally, without
+  network, the character limits **and** the absence of characters refused by
+  the App Store Connect API (emojis, non-BMP symbols...): the CI does it at
+  the start of the run and fails before the 40 minutes of macOS build,
+  pointing out the file, line and offending character. The Play Store, for
+  its part, accepts emojis; the Android listings do not have this
+  constraint.
+- The script writes to the **editable** App Store version (state
+  `PREPARE_FOR_SUBMISSION` and similar), and aligns it with the tag: it uses
+  the version carrying the right number, otherwise renames the existing
+  editable version, otherwise creates one. Versions in review or already
+  published are never touched. If it fails anyway, the binary has already
+  gone to TestFlight: the step does not fail the run, it displays a warning.
+- Apple refuses the « Nouveautés » field on the very first version: the
+  script automatically retries without it.
 
-### Captures d'écran
+### Screenshots
 
-Automatiques : à chaque tag, le workflow `store-screenshots.yml` génère UNE
-fois les captures des deux fiches avec `npm run store:screenshots`
-(émulateurs Firebase + données de démo fixes, puis Chrome headless qui rend
-l'interface de l'app, barre d'onglets comprise, aux dimensions exactes
-d'Apple). Le job `screenshots` de deploy-ios.yml les récupère (action
-`.github/actions/fetch-store-screenshots`) puis les envoie dans App Store
-Connect via `scripts/asc-screenshots.mjs`, qui joue le cérémonial d'envoi de
-l'API (réservation, morceaux, somme MD5) et remplace le jeu entier de chaque
-famille sur la version du tag. Non bloquant : si la génération échoue, ce
-sont les captures committées qui partent ; si l'envoi échoue, les captures
-déjà en place dans App Store Connect restent telles quelles et la
-soumission part quand même.
+Automatic: on every tag, the `store-screenshots.yml` workflow generates the
+screenshots for both listings ONCE with `npm run store:screenshots`
+(Firebase emulators + fixed demo data, then headless Chrome rendering the
+app's interface, tab bar included, at Apple's exact dimensions). The
+`screenshots` job of deploy-ios.yml fetches them (action
+`.github/actions/fetch-store-screenshots`) then sends them to App Store
+Connect via `scripts/asc-screenshots.mjs`, which performs the API's upload
+ceremony (reservation, chunks, MD5 checksum) and replaces the whole set of
+each family on the tag's version. Non-blocking: if generation fails, the
+committed screenshots are sent; if the upload fails, the screenshots already
+in place in App Store Connect stay as they are and the submission goes
+ahead anyway.
 
-L'app est universelle (iPhone + iPad), donc **deux séries** par langue,
-rangées dans `store-assets/screenshots/<locale>/` à côté de la série du
-Play Store (`phone-*`, qui n'est pas lue ici) :
+The app is universal (iPhone + iPad), hence **two series** per language,
+stored in `store-assets/screenshots/<locale>/` next to the Play Store series
+(`phone-*`, which is not read here):
 
-| Famille | Fichiers | Dimensions | displayType |
+| Family | Files | Dimensions | displayType |
 |---|---|---|---|
-| iPhone 6,9" | `iphone-*.jpg` | 1320 × 2868 (440 × 956 CSS @3x) | APP_IPHONE_67 |
+| iPhone 6.9" | `iphone-*.jpg` | 1320 × 2868 (440 × 956 CSS @3x) | APP_IPHONE_67 |
 | iPad 13" | `ipad-*.jpg` | 2064 × 2752 (1032 × 1376 CSS @2x) | APP_IPAD_PRO_3GEN_129 |
 
-JPEG sRGB **sans canal alpha** (Apple refuse l'alpha, d'où le JPEG), envoyés
-triés par nom. Apple redimensionne lui-même pour les appareils plus petits
-de chaque famille ; une locale sans dossier laisse sa fiche intacte (elle
-retombe sur la langue principale).
+sRGB JPEG **without an alpha channel** (Apple refuses alpha, hence JPEG),
+sent sorted by name. Apple itself resizes for the smaller devices of each
+family; a locale without a folder leaves its listing untouched (it falls
+back to the primary language).
 
-Les captures sont celles de la fiche Play, écran pour écran : l'interface de
-l'app, sans barre système d'aucune plateforme (le détail du rendu est dans
+The screenshots are those of the Play listing, screen for screen: the app's
+interface, with no system bar from any platform (rendering details are in
 [store-assets/screenshots/README.md](../store-assets/screenshots/README.md)).
-Pour reprendre la main avec un jeu fait au simulateur iOS (`⌘S`), déposer
-les fichiers dans le dossier ci-dessus en respectant les préfixes, puis
-`node scripts/asc-screenshots.mjs --version X.Y.Z` ; la CI, elle, enverra
-de nouveau le jeu généré au tag suivant.
+To take back control with a set made in the iOS simulator (`⌘S`), drop the
+files in the folder above respecting the prefixes, then
+`node scripts/asc-screenshots.mjs --version X.Y.Z`; the CI, for its part,
+will send the generated set again on the next tag.
 
 ## Notes
 
-- **Le numéro de version d'App Store Connect doit être identique au tag**,
-  sans quoi le build arrive bien dans TestFlight mais n'est pas proposé au
-  moment de choisir le build de la version. C'est désormais automatique :
-  `appstore-listing.mjs` renomme la version modifiable (ou en crée une) pour
-  qu'elle porte le numéro du tag. À la création de l'app, Apple ouvre une
-  version « 1.0 », le premier tag la renomme. Le geste manuel ne subsiste que
-  si la synchro de la fiche échoue (avertissement dans le journal du run).
-- Le `CFBundleVersion` est dérivé du semver du tag : re-publier exige un
-  nouveau tag (patch +1). App Store Connect refuse tout numéro de build déjà
-  utilisé pour une même version marketing.
-- Lancement manuel possible (onglet Actions → Deploy iOS → Run workflow) :
-  reprend le dernier tag atteignable depuis la branche choisie.
-- Le runner `macos-26` fournit Xcode 26, exigé par Capacitor 8 et par l'App
-  Store depuis le 28 avril 2026. Le workflow échoue explicitement si la
-  version de Xcode est plus ancienne.
-- Les runners macOS consomment les minutes GitHub Actions **10× plus vite**
-  que Linux (gratuit sur un repo public). Un build complet prend 10 à 20 min.
-- `xcrun altool --upload-app` est marqué déprécié en faveur de
-  `--upload-package` mais reste fonctionnel ; si Apple le retire, remplacer
-  l'étape « Envoyer sur TestFlight » par `xcrun altool --upload-package` ou
-  par `fastlane pilot upload`.
+- **The App Store Connect version number must be identical to the tag**,
+  otherwise the build does arrive in TestFlight but is not offered when
+  choosing the version's build. This is now automatic:
+  `appstore-listing.mjs` renames the editable version (or creates one) so
+  that it carries the tag's number. When the app is created, Apple opens a
+  "1.0" version, and the first tag renames it. The manual step only remains
+  if the listing sync fails (warning in the run log).
+- The `CFBundleVersion` is derived from the tag's semver: republishing
+  requires a new tag (patch +1). App Store Connect refuses any build number
+  already used for the same marketing version.
+- Manual launch possible (Actions tab → Deploy iOS → Run workflow): it uses
+  the latest tag reachable from the chosen branch.
+- The `macos-26` runner provides Xcode 26, required by Capacitor 8 and by
+  the App Store since April 28, 2026. The workflow fails explicitly if the
+  Xcode version is older.
+- macOS runners consume GitHub Actions minutes **10× faster** than Linux
+  (free on a public repo). A full build takes 10 to 20 min.
+- `xcrun altool --upload-app` is marked deprecated in favor of
+  `--upload-package` but still works; if Apple removes it, replace the
+  « Envoyer sur TestFlight » ("Upload to TestFlight") step with
+  `xcrun altool --upload-package` or with `fastlane pilot upload`.
