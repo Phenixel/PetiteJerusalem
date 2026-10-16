@@ -28,6 +28,13 @@ const FORBIDDEN = [
   { id: "@hebcal/core", label: "hebcal" },
   { id: "@hebcal/locales", label: "hebcal (locales)" },
   { id: "posthog-js", label: "PostHog" },
+  // The back office's French messages: loaded by the /admin route (i18n.ts).
+  { id: "src/locales/frAdmin.ts", label: "back office messages" },
+  { id: "src/locales/frAll.ts", label: "every French message (tests only)" },
+  // What only shows once under way: loaded on first appearance (App.vue).
+  { id: "src/composables/useAudioPlayer.ts", label: "the audio player" },
+  { id: "src/composables/useAutoScroll.ts", label: "the auto-scroll" },
+  { id: "src/components/FeatureTour.vue", label: "the feature tour" },
 ];
 
 /** Imports statiques d'un fichier : `import … from "x"`, `import "x"`, `export … from "x"`. */
