@@ -106,6 +106,11 @@ describe("i18n usage", () => {
       "admin.chiourim.filters.",
       "admin.chiourim.sort.",
       "admin.sessions.filters.",
+      // Nous écrire : statuts et natures des messages (backoffice et /contact).
+      "admin.support.filters.",
+      "admin.support.kinds.",
+      "admin.support.statuses.",
+      "support.statuses.",
       // Le corpus d'un livre à rattacher à un cours (ChiourTexteField).
       "chiourim.texte.types.",
       // Les informations de l'équipe : leur nature, et les langues de leurs

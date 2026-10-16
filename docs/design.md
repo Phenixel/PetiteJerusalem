@@ -955,6 +955,29 @@ garde le sien, qui lui convient.
 Le test `nativeProfile.test.ts` tient la page : ce qui paraît avec et sans
 compte, les sous-pages où mène chaque ligne, l'état porté au bout.
 
+### Un fil de messages se lit comme une conversation
+
+« Nous écrire » (`/contact`) et la fiche d'un message dans le backoffice
+montrent le même fil, par la même pièce (`SupportConversation.vue`) : chaque
+message dans une bulle à plat (rayon des surfaces, `rounded-control`), ceux
+de qui regarde côté fin, sur la teinte du thème à 10 %, ceux d'en face côté
+début, sur `surface-soft`. Sous chaque bulle, qui l'a écrit et quand, en
+petit. Les retours à la ligne de la personne sont gardés.
+
+- **Un fil se replie.** La page de la personne liste ses messages en cartes :
+  la nature, l'état et, s'il y a lieu, « Nouvelle réponse » sur la teinte
+  pleine (la seule pastille qui réclame), puis la première ligne du message.
+  La carte se déplie sur le fil et le champ pour relancer ; celles qui
+  portent une réponse nouvelle arrivent dépliées.
+- **L'état parle à qui le lit.** La personne voit « Envoyé », « En cours »,
+  « Répondu », « Terminé » ; l'équipe voit « À traiter » à la place
+  d'« Envoyé », en ambre, comme tout ce qui attend une décision dans le
+  backoffice (`AdminSupportStatus.vue`, les tons d'`AdminStatus`).
+- **Avant d'envoyer, on sait où la réponse arrivera.** Sous le champ de
+  réponse du backoffice, une ligne le dit (dans l'app avec une notification,
+  sans, par email seulement, nulle part), et les boutons qui n'auraient pas
+  d'effet n'apparaissent pas.
+
 ### Ce qui ne se modifie pas n'a pas l'air d'un champ
 
 Un cadre de champ (`.field`) promet qu'on peut écrire dedans. Dans le profil,

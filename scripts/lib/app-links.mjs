@@ -69,6 +69,7 @@ export const APP_LINK_PATHS = [
   "/calendrier",
   "/chiourim",
   "/conditions-utilisation",
+  "/contact",
   "/confidentialite",
   "/finir-le-chass",
   "/horaires",
@@ -112,7 +113,7 @@ export const BROWSER_ONLY_PATHS = ["/sondage"];
  * Un chemin en sort quand la plus ancienne version encore en circulation le
  * connaît (voir docs/app-links.md). Tenu par src/__tests__/appLinks.test.ts.
  */
-export const IOS_DEFERRED_PATHS = ["/sidour", "/parcours", "/accueil"];
+export const IOS_DEFERRED_PATHS = ["/sidour", "/parcours", "/accueil", "/contact"];
 
 /** Un chemin est-il de ceux que l'app ouvre ? (préfixe exact ou sous-chemin) */
 export function isAppLinkPath(path) {

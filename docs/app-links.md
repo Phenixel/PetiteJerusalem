@@ -130,7 +130,8 @@ Réglages → Développeur → Associated Domains Development.
   reste donc au navigateur sur iPhone (`IOS_DEFERRED_PATHS`) tant que des
   versions d'avant elle circulent ; elle en sort quand la plus ancienne
   version encore en circulation la connaît. Aujourd'hui : `/sidour`, arrivé
-  avec la page du Sidour, `/parcours`, arrivé avec Mon parcours, et
-  `/accueil` (le réglage de l'accueil, `/accueil/modifier`). Android n'a pas
+  avec la page du Sidour, `/parcours`, arrivé avec Mon parcours,
+  `/accueil` (le réglage de l'accueil, `/accueil/modifier`) et `/contact`
+  (Nous écrire, arrivé avec les réponses de l'équipe). Android n'a pas
   ce souci, son intent-filter étant figé dans chaque version. Tenu par
   `src/__tests__/appLinks.test.ts`.

@@ -31,6 +31,45 @@ export function parseKind(value) {
 /** Une erreur de saisie : le CLI l'affiche telle quelle et sort en 1. */
 export class BackofficeInputError extends Error {}
 
+/**
+ * Les statuts d'un message de Nous écrire (functions/src/support.ts), et les
+ * mots qui les nomment au CLI : ceux du backoffice, sans accent ni espace.
+ */
+const SUPPORT_STATUS_ALIASES = {
+  new: ["a-traiter", "nouveau", "new"],
+  in_progress: ["en-cours", "in-progress", "in_progress"],
+  answered: ["repondu", "answered"],
+  done: ["termine", "clos", "done"],
+};
+
+/** Le statut d'un message à partir de son nom français ou anglais, ou null. */
+export function parseSupportStatus(value) {
+  const word = String(value ?? "")
+    .trim()
+    .toLowerCase();
+  for (const [status, aliases] of Object.entries(SUPPORT_STATUS_ALIASES)) {
+    if (aliases.includes(word)) return status;
+  }
+  return null;
+}
+
+/** Le nom français d'un statut, pour l'affichage du CLI. */
+export function supportStatusLabel(status) {
+  return SUPPORT_STATUS_ALIASES[status]?.[0] ?? status;
+}
+
+/** Une réponse de l'équipe : un texte non vide, 2000 caractères au plus (comme l'interface). */
+export function supportReplyText(value) {
+  const text = String(value ?? "").trim();
+  if (!text) throw new BackofficeInputError("--texte requis : la réponse.");
+  if (text.length > 2000) {
+    throw new BackofficeInputError(
+      `réponse trop longue (${text.length} caractères, 2000 au plus).`,
+    );
+  }
+  return text;
+}
+
 const TITLE_MAX = 120;
 const BODY_MAX = 5000;
 

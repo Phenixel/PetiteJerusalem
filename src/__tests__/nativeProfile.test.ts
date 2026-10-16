@@ -42,6 +42,9 @@ vi.mock("../services/analyticsService", () => ({ analyticsService: { capture: vi
 vi.mock("../services/seoService", () => ({ seoService: { setMeta: vi.fn() } }));
 vi.mock("../services/feedbackService", () => ({
   feedbackContext: async () => ({ support: "app", platform: "android", version: "3.12.0 (120)" }),
+  // Nous écrire : cet appareil n'a jamais écrit, rien à relire.
+  hasSupportHistory: () => false,
+  listSupportThreads: async () => [],
 }));
 vi.mock("../composables/useTheme", async () => {
   const { ref } = await import("vue");

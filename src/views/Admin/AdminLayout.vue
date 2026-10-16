@@ -10,8 +10,8 @@ import type { IconName } from "../../components/icons/registry";
 /**
  * Le cadre du backoffice : son nom, et ses sections en onglets. Chaque onglet
  * porte le compte de ce qui y attend une décision (chiourim à relire,
- * sessions signalées, incident en cours), pour qu'on sache où aller sans
- * ouvrir chaque page.
+ * sessions signalées, messages à traiter, incident en cours), pour qu'on
+ * sache où aller sans ouvrir chaque page.
  */
 const { t } = useI18n();
 const route = useRoute();
@@ -55,6 +55,12 @@ const items = computed<NavItem[]>(() => [
     icon: "flag",
     badge: summary.reportedSessions.value,
     alert: true,
+  },
+  {
+    to: "/admin/messages",
+    label: t("admin.nav.support"),
+    icon: "message",
+    badge: summary.supportToHandle.value,
   },
   {
     to: "/admin/informations",

@@ -31,8 +31,8 @@ Dans tous les cas, l'information reste dans la liste (`/informations`).
      mettent à jour. Tant que l'app n'a pas lu sa propre version, elle
      garde l'incident en cours ;
    - **Question** : l'annonce se termine par un bouton « Répondre », qui ouvre
-     le formulaire de support déjà amorcé ; la réponse arrive dans la base
-     Notion du support, comme les autres messages. **Ajouter un sondage**
+     le formulaire de support déjà amorcé ; la réponse arrive dans les
+     messages du backoffice (`/admin/messages`), comme les autres. **Ajouter un sondage**
      en fait un choix à cocher (voir « Sondages » plus bas).
 3. Écrire le titre et le texte en français. L'anglais et l'hébreu sont
    facultatifs : sans traduction, ces lecteurs voient le français.

@@ -1,11 +1,20 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref, watch } from "vue";
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
+import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import AppModal from "./AppModal.vue";
 import AppIcon from "./icons/AppIcon.vue";
 import { useToast } from "../composables/useToast";
-import { feedbackPrefill, isFeedbackOpen, closeFeedback } from "../composables/useFeedback";
+import {
+  feedbackPrefill,
+  isFeedbackOpen,
+  closeFeedback,
+  stashFeedbackPrefill,
+  supportVersion,
+} from "../composables/useFeedback";
+import { isNativeApp } from "../composables/useNativeApp";
 import { analyticsService } from "../services/analyticsService";
+import { authService, type User } from "../services/authService";
 import {
   feedbackContext,
   sendFeedback,
@@ -15,17 +24,48 @@ import {
 
 /**
  * Le formulaire de support : une idée, un bug, une erreur dans un texte, ou
- * autre chose. Il remplace le formulaire Notion externe et alimente la même
- * base (Cloud Function `submitFeedback`).
+ * autre chose. Chaque message ouvre un fil que l'équipe traite dans le
+ * backoffice (Cloud Function `submitFeedback`) ; la réponse revient dans la
+ * page « Nous écrire » (/contact). Voir docs/feedback.md.
+ *
+ * Dans l'app, pas besoin de compte : l'appareil retrouve ses messages. Sur le
+ * site, il en faut un, sans quoi la réponse n'aurait nulle part où arriver :
+ * la fenêtre invite alors à se connecter, et garde ce qui était amorcé (un
+ * passage de texte signalé) pour le rouvrir après.
  *
  * La personne dit de quoi il s'agit et donne des détails ; elle laisse un
- * moyen de la recontacter seulement si elle coche la case. Le support, la
- * plateforme et la version partent avec le message, et la fenêtre le dit :
- * on n'envoie rien à son insu.
+ * email ou un téléphone seulement si elle veut aussi la réponse par là. Le
+ * support, la plateforme et la version partent avec le message, et la
+ * fenêtre le dit : on n'envoie rien à son insu.
  */
 
 const { t } = useI18n();
 const toast = useToast();
+const router = useRouter();
+
+const user = ref<User | null>(null);
+const authResolved = ref(authService.isAuthResolved());
+let unsubscribeAuth: (() => void) | null = null;
+onMounted(() => {
+  unsubscribeAuth = authService.onAuthChanged((u) => {
+    user.value = u;
+    authResolved.value = true;
+  });
+});
+onUnmounted(() => unsubscribeAuth?.());
+
+/**
+ * Sur le site sans compte, la réponse serait perdue : on se connecte
+ * d'abord. Tant que la session n'est pas connue, le formulaire reste (pas
+ * d'invitation qui clignote pour un compte déjà connecté).
+ */
+const needsAccount = computed(() => !isNativeApp && authResolved.value && !user.value);
+
+function goToLogin(): void {
+  stashFeedbackPrefill({ kind: kind.value, details: details.value });
+  closeFeedback();
+  void router.push({ path: "/login", query: { redirect: "/contact" } });
+}
 
 const KINDS: FeedbackKind[] = ["idea", "bug", "error", "other"];
 
@@ -101,6 +141,7 @@ async function submit(): Promise<void> {
     });
     analyticsService.capture("feedback_sent", { kind: kind.value, contact: canContact.value });
     toast.success(t("feedback.success"));
+    supportVersion.value++;
     closeFeedback();
   } catch (error) {
     console.error("Erreur lors de l'envoi du message de support:", error);
@@ -130,7 +171,24 @@ async function submit(): Promise<void> {
       {{ t("feedback.subtitle") }}
     </p>
 
-    <form class="space-y-5" @submit.prevent="submit">
+    <!-- Le site sans compte : se connecter d'abord, la réponse arrivera dans
+         le profil. Ce qui était amorcé est gardé pour après. -->
+    <div v-if="needsAccount" class="space-y-4">
+      <p class="rounded-control bg-primary/[0.06] p-4 text-sm text-text-primary">
+        {{ t("feedback.accountRequired") }}
+      </p>
+      <div class="flex gap-3">
+        <button type="button" class="btn btn-soft flex-1" @click="closeFeedback">
+          {{ t("common.cancel") }}
+        </button>
+        <button type="button" class="btn btn-primary flex-1" data-autofocus @click="goToLogin">
+          <AppIcon name="login" :size="15" />
+          {{ t("feedback.login") }}
+        </button>
+      </div>
+    </div>
+
+    <form v-else class="space-y-5" @submit.prevent="submit">
       <fieldset>
         <legend class="block text-sm font-semibold text-text-secondary mb-2">
           {{ t("feedback.kindLabel") }}

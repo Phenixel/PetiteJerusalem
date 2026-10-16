@@ -217,6 +217,17 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
+    // Nous écrire (voir docs/feedback.md) : un fil par message, avec les
+    // réponses de l'équipe. Créé et relu par la personne au travers des Cloud
+    // Functions (submitFeedback, listSupportThreads, replySupportThread), qui
+    // vérifient son compte ou la clé de son appareil et taisent la note de
+    // l'équipe : aucun accès direct hors de l'admin, qui le traite depuis le
+    // backoffice (statut, réponse, note).
+    match /support/{threadId} {
+      allow read, update, delete: if isAdmin();
+      allow create: if false;
+    }
+
     // Compteur de vues d'un chiour : ouvert aux visiteurs non connectés,
     // mais borné au strict incrément (+1 sur le seul champ `views`, chiour
     // publié uniquement). Même esprit que les réservations des sessions.

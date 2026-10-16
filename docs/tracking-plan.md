@@ -183,7 +183,8 @@ lignes sur la page du profil elle-même, sans sous-page à compter.
 
 Un raccourci du profil vers ce qui y vivait autrefois : `shortcut` vaut
 `parcours` (Mon parcours, **nouvelle valeur**, qui remplace `daily_reading`
-depuis que la lecture du jour y vit) ou `my_sessions`, sur le site comme dans
+depuis que la lecture du jour y vit), `my_sessions`, ou `support` (« Nous
+écrire », **nouvelle valeur**, site seulement), sur le site comme dans
 l'app (groupe « Mes lectures »). Dans l'app, la ligne de Mon parcours
 (qui dit désormais la journée) l'envoie, avec ou sans compte ; sur le site,
 le lien « Mon parcours » du bandeau du profil, et la ligne du menu, qui
@@ -721,6 +722,18 @@ l'information, dans l'app ou sur le site.
 
 Pas le choix lui-même : les réponses se comptent dans Firestore
 (`announcements/{id}/votes`), le backoffice les affiche.
+
+### Nous écrire : `support_reply_sent` (nouveau)
+
+La personne relance un de ses messages depuis la page « Nous écrire »
+(`/contact`), dans l'app ou sur le site (voir `docs/feedback.md`). Le premier
+message reste `feedback_sent` (existant, inchangé).
+
+| Propriété | Valeurs                                                          |
+| --------- | ---------------------------------------------------------------- |
+| `kind`    | la nature du fil : `idea`, `bug`, `error` ou `other`             |
+
+Pas le texte : il est dans le fil, que seul le backoffice lit.
 
 ## Cours audio : l'écoute en liste, et le lien vers les textes
 

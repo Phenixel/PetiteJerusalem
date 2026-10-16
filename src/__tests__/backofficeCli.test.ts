@@ -8,11 +8,14 @@ import {
   localizedText,
   parseKind,
   parseList,
+  parseSupportStatus,
   pollFields,
   releaseAnnouncement,
   releaseAnnouncementId,
   searchCatalog,
   slugify,
+  supportReplyText,
+  supportStatusLabel,
   texteFields,
   versionOf,
 } from "../../scripts/lib/backoffice.mjs";
@@ -328,5 +331,22 @@ describe("texteFields", () => {
     expect(searchCatalog(parachiot, "shaar habitahon").map((e) => e.id)).toEqual([404]);
     expect(searchCatalog(catalog, "Berachot").map((e) => e.id)).toEqual([1]);
     expect(searchCatalog(catalog, "Shaharit").map((e) => e.id)).toEqual([345]);
+  });
+});
+
+describe("Nous écrire au CLI", () => {
+  it("nomme les statuts comme le backoffice, en français ou en anglais", () => {
+    expect(parseSupportStatus("a-traiter")).toBe("new");
+    expect(parseSupportStatus("En-cours")).toBe("in_progress");
+    expect(parseSupportStatus("repondu")).toBe("answered");
+    expect(parseSupportStatus("clos")).toBe("done");
+    expect(parseSupportStatus("bientot")).toBeNull();
+    expect(supportStatusLabel("done")).toBe("termine");
+  });
+
+  it("refuse une réponse vide ou trop longue, comme l'interface", () => {
+    expect(supportReplyText("  Merci  ")).toBe("Merci");
+    expect(() => supportReplyText("  ")).toThrow(BackofficeInputError);
+    expect(() => supportReplyText("x".repeat(2001))).toThrow(BackofficeInputError);
   });
 });
