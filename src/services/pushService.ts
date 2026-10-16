@@ -111,11 +111,11 @@ class PushService {
   readonly isAvailable = isNativeApp;
 
   /**
-   * Active les rappels : permission système (Android 13+ et iOS affichent le
-   * prompt), token FCM, puis enregistrement dans les préférences utilisateur.
-   * `locale` fige la langue des notifications ; `settings` dit quels rappels
-   * envoyer, l'heure fixe (in the device time zone, minutes in 5-minute steps,
-   * the pace of the Cloud Function dailyReadingReminder) et/ou le dernier appel d'avant-chkia.
+   * Turns the reminders on: system permission (Android 13+ and iOS show the
+   * prompt), FCM token, then the user preferences. `locale` sets the language
+   * of the notifications; `settings` says which reminders to send: the fixed
+   * time (in the device time zone, minutes in 5-minute steps, the pace of the
+   * Cloud Function dailyReadingReminder) and/or the last call before chkia.
    */
   async enable(userId: string, locale: string, settings: ReminderSettings): Promise<void> {
     const permission = await FirebaseMessaging.requestPermissions();
