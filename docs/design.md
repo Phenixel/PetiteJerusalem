@@ -127,6 +127,12 @@ bibliothèque ne propose que la dernière : la refermer la fait disparaître, el
 ne remonte pas l'historique texte par texte (chaque texte, lui, rouvre toujours
 là où on l'avait laissé).
 
+Même règle pour « Comment ça marche », la frise de la page du partage de
+lecture : elle ne se montre plus qu'à qui découvre. Elle se retire pour de
+bon dès que le principe est connu, par « J'ai compris » sous la frise, ou
+d'elle-même à la première session créée ou rejointe ; l'appareil s'en
+souvient (`useShareHowItWorks`, `shareHowItWorks.test.ts`).
+
 ### Une astuce se joue sur la page, une fois
 
 L'introduction dit ce que l'app contient ; elle ne peut pas dire comment
@@ -1131,14 +1137,33 @@ signet (`.reading-bookmarked`).
 
 ### La barre d'outils du lecteur tient sur une ligne
 
-Au-dessus du texte, les marque-pages, la taille, la bascule hébreu / forme
-/ phonétique et la traduction tiennent sur une seule ligne, même sur un
-téléphone. Sous la largeur `sm`, la taille du texte quitte la barre (le
-menu de lecture la porte toujours), et la bascule prend les noms abrégés
-qu'elle a déjà dans le menu (א, le dessin de la forme, Aa), son nom entier
-restant dans l'infobulle et pour les lecteurs d'écran. La traduction n'est
-pas proposée dans la forme de la page (daf de Vilna, tikoun) : ni l'une ni
+Au-dessus du texte, les marque-pages, la taille, les voyelles du tikoun, la
+traduction et la bascule hébreu / forme / phonétique tiennent sur une
+seule ligne, même sur un téléphone. La bascule est toujours au bout de la
+ligne (à droite ; à gauche en hébreu, la ligne se lisant de droite à
+gauche) : les commandes qui vont et viennent selon le texte se rangent
+devant elle, sans jamais la déplacer, et la main la retrouve au même
+endroit d'un texte à l'autre. Sous la largeur `sm`, la taille du texte
+quitte la barre (le menu de lecture la porte toujours), et la bascule
+garde le nom du mode choisi ; les deux autres prennent les noms abrégés
+qu'ils ont dans le menu (א, le dessin de la forme, Aa), leur nom entier
+restant dans l'infobulle et pour les lecteurs d'écran. Tout abréger
+faisait perdre de vue le mode où l'on lit. La traduction n'est pas
+proposée dans la forme de la page (daf de Vilna, tikoun) : ni l'une ni
 l'autre ne la montre.
+
+### Le chnei mikra se coche montée par montée
+
+Sur la page du chnei mikra, chaque montée porte sa case, à côté de son
+titre : une pastille qui porte son nom (« Marquer lue », puis « Lue », la
+case pleine à la couleur du thème). On lit le chnei mikra au fil de la
+semaine, une montée ou deux à la fois ; la case dit où l'on en est. Les
+coches sont rangées par semaine (le Chabbat de la paracha) : la semaine
+suivante repart de zéro, feuilleter vers une paracha passée retrouve les
+siennes. Sur l'appareil seulement, comme la table d'étude
+(`useChneiMikraChecks`, `chneiMikraChecks.test.ts`). La lecture du jour,
+qui montre aussi le chnei mikra, ne les porte pas : elle a déjà « Marquer
+lu » par section.
 
 ### La traduction se lit sous le verset
 

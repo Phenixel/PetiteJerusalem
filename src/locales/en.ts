@@ -984,6 +984,7 @@ const en: LocaleMessages = {
       step3Desc: "Invite your community, family or friends, even without an account.",
       step4Title: "Track progress",
       step4Desc: "Everyone reserves and reads their passages; advance together to the siyum.",
+      understood: "Got it",
     },
   },
   newSession: {
@@ -1879,6 +1880,9 @@ const en: LocaleMessages = {
     doubleVerses: "Each verse twice",
     withRashi: "Rashi's commentary",
     rashiUnavailable: "Rashi's commentary could not be loaded.",
+    aliyaMark: "Mark read",
+    aliyaDone: "Read",
+    aliyaCheck: "{aliya} read",
   },
   tehilimDay: {
     title: "Daily Tehilim",

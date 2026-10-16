@@ -231,6 +231,18 @@ dans la même liste que les offices. Le nom reste réservé.
 | `source`     | `library_sidour`                                   | **nouveau** |
 | `had_search` | booléen : une recherche était tapée dans le sidour | **nouveau** |
 
+### `chnei_mikra_aliya_toggled` (nouveau)
+
+Une montée cochée ou décochée sur la page du chnei mikra
+(`/bibliotheque/chnei-mikra`, `useChneiMikraChecks`). Il dit si la case sert,
+et jusqu'où la semaine se lit.
+
+| Propriété | Valeurs | Statut |
+| --- | --- | --- |
+| `done` | vrai si la montée vient d'être cochée, faux si décochée | **nouveau** |
+| `text_id` | le texte de la paracha (une paracha double en a deux) | **nouveau** |
+| `aliya` | la montée, telle que le texte la nomme (`Rishon`, `Sheni`...) | **nouveau** |
+
 ## Sidour et Étude (octobre 2026)
 
 La barre du bas de l'app devient Accueil, Sidour, horaires, Étude, Profil

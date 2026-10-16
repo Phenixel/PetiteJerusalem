@@ -46,6 +46,7 @@ import { appendHebrewNumeral } from "../../services/hebrewNumerals";
 import { analyticsService } from "../../services/analyticsService";
 import CollapseTransition from "../../components/CollapseTransition.vue";
 import TalmudDafText from "../../components/TalmudDafText.vue";
+import { aliyaKey, useChneiMikraChecks } from "../../composables/useChneiMikraChecks";
 import BookmarkRibbon from "../../components/BookmarkRibbon.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
 
@@ -65,6 +66,11 @@ const props = defineProps<{
    * paracha, comptés de 0, `to` exclu) s'affichent.
    */
   blocks?: { from: number; to: number };
+  /**
+   * Chnei mikra (ChneiMikraPage) : la semaine de la paracha. Chaque montée
+   * porte alors sa case, à cocher une fois lue (useChneiMikraChecks).
+   */
+  aliyaWeek?: string;
 }>();
 const emit = defineEmits<{
   "toggle-section": [index: number];
@@ -218,6 +224,24 @@ function goToBookmark(b: Bookmark) {
   analyticsService.capture("reading_resumed", {
     text_id: props.entry.id,
     source: `${props.source ?? "daily_reading"}_bookmark`,
+  });
+}
+
+// --- Chnei mikra : une case par montée (voir aliyaWeek) ---
+const aliyaChecks = useChneiMikraChecks();
+function isAliyaChecked(block: TextBlock): boolean {
+  return (
+    !!props.aliyaWeek &&
+    aliyaChecks.isChecked(props.aliyaWeek, aliyaKey(props.entry.id, block.offset))
+  );
+}
+function toggleAliya(block: TextBlock): void {
+  if (!props.aliyaWeek) return;
+  const done = aliyaChecks.toggle(props.aliyaWeek, aliyaKey(props.entry.id, block.offset));
+  analyticsService.capture("chnei_mikra_aliya_toggled", {
+    done,
+    text_id: props.entry.id,
+    aliya: block.label,
   });
 }
 
@@ -536,17 +560,44 @@ onUnmounted(() => {
                  the background, with a marker at each chapter / montée block -->
             <template v-else>
               <template v-for="block in blocksOf(section)" :key="block.offset">
+                <!-- Chnei mikra : la montée et sa case, cochée une fois lue. -->
+                <div
+                  v-if="block.label && aliyaWeek"
+                  class="my-4 flex items-center justify-center gap-3"
+                >
+                  <span class="text-xs font-semibold text-primary/70 dark:text-primary">
+                    {{ headingLabel(block.heading, block.label) }}
+                  </span>
+                  <button
+                    type="button"
+                    class="aliya-check"
+                    :class="{ 'aliya-check-done': isAliyaChecked(block) }"
+                    role="checkbox"
+                    :aria-checked="isAliyaChecked(block)"
+                    :aria-label="
+                      t('chneiMikra.aliyaCheck', {
+                        aliya: headingLabel(block.heading, block.label),
+                      })
+                    "
+                    @click="toggleAliya(block)"
+                  >
+                    <span class="aliya-box" aria-hidden="true">
+                      <AppIcon v-if="isAliyaChecked(block)" name="check" :size="12" />
+                    </span>
+                    {{
+                      isAliyaChecked(block) ? t("chneiMikra.aliyaDone") : t("chneiMikra.aliyaMark")
+                    }}
+                  </button>
+                </div>
                 <p
-                  v-if="block.label"
+                  v-else-if="block.label"
                   class="my-4 text-xs font-semibold text-primary/70 dark:text-primary text-center"
                 >
                   {{ headingLabel(block.heading, block.label) }}
                 </p>
                 <p dir="rtl" class="font-hebrew text-text-primary daily-he">
                   <template v-for="(line, index) in block.lines" :key="block.offset + index">
-                    <BookmarkRibbon
-                      v-if="isVerseBookmarked(section.index, block.offset + index)"
-                    />
+                    <BookmarkRibbon v-if="isVerseBookmarked(section.index, block.offset + index)" />
                     <span
                       :data-verse="verseKey(section.index, block.offset + index)"
                       @click="pickVerse($event, section.index, block.offset + index, line)"
@@ -626,6 +677,41 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+/* La case d'une montée du chnei mikra : une pastille qui porte son nom,
+   cochée à la couleur du thème. */
+.aliya-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 12px 0 8px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--color-text-primary) 6%, transparent);
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+.aliya-box {
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 5px;
+  border: 2px solid currentColor;
+}
+.aliya-check-done {
+  background: color-mix(in srgb, var(--color-primary) 14%, transparent);
+  color: var(--color-primary);
+}
+.aliya-check-done .aliya-box {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-surface);
+}
+
 /* Un chapitre hors écran n'est ni mis en page ni peint tant qu'on n'en
    approche pas ; la taille estimée garde une barre de défilement stable. */
 .daily-section {

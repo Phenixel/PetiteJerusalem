@@ -2580,11 +2580,15 @@ watch(textId, (_, previousTextId) => {
         <ReadingNav v-if="!isSingleSection" v-bind="sectionNavProps" class="mb-8" />
         <ReadingNav v-else-if="prevText || nextText" v-bind="siblingNavProps" class="mb-8" />
 
-        <!-- Reading toolbar: text size + Hebrew / page / phonetic toggle + translation.
-             Une seule ligne, même sur un téléphone : la taille du texte n'y
-             paraît qu'à partir d'un écran moyen (le menu de lecture la porte
-             partout), et la bascule hébreu / forme / phonétique y prend ses
-             noms abrégés (א, le dessin de la forme, Aa), comme dans le menu. -->
+        <!-- Reading toolbar: marque-pages, taille, voyelles du tikoun,
+             traduction, puis la bascule hébreu / forme / phonétique, toujours
+             au bout de la ligne (à droite, à gauche en hébreu) : les
+             commandes qui vont et viennent selon le texte se rangent devant
+             elle, sans la déplacer. Une seule ligne, même sur un téléphone :
+             la taille du texte n'y paraît qu'à partir d'un écran moyen (le
+             menu de lecture la porte partout), et la bascule y garde le nom
+             du mode choisi, les deux autres en abrégé (א, le dessin de la
+             forme, Aa), comme dans le menu. -->
         <div class="flex flex-wrap items-center justify-end gap-2 sm:gap-3 mb-5">
           <button
             v-if="bookmarks.length && !isLiturgyText"
@@ -2602,8 +2606,6 @@ watch(textId, (_, previousTextId) => {
             <ReadingSizeControl />
           </span>
 
-          <!-- Hébreu, forme de la page (guemara, Torah), phonétique : trois
-               façons de montrer le même texte, une seule à la fois. -->
           <!-- Tikoun : les voyelles et les teamim, sur les mêmes lignes
                (TorahScroll.vue). Le même réglage que dans le menu de lecture. -->
           <button
@@ -2617,57 +2619,6 @@ watch(textId, (_, previousTextId) => {
           >
             {{ t("textReading.pageForm.pointed") }}
           </button>
-          <div
-            v-if="canTransliterate || pageFormKind"
-            class="inline-flex p-0.5 rounded-btn bg-black/5 dark:bg-white/10"
-            role="group"
-          >
-            <button
-              @click="setReadingMode('hebrew')"
-              class="px-3 py-1 rounded-control text-sm font-medium transition-colors"
-              :class="
-                readingMode === 'hebrew'
-                  ? 'bg-surface text-primary shadow-sm'
-                  : 'text-text-secondary'
-              "
-              :aria-pressed="readingMode === 'hebrew'"
-              :aria-label="t('textReading.hebrew')"
-              :title="t('textReading.hebrew')"
-            >
-              <span class="sm:hidden" aria-hidden="true">א</span>
-              <span class="hidden sm:inline">{{ t("textReading.hebrew") }}</span>
-            </button>
-            <button
-              v-if="pageFormKind"
-              @click="setReadingMode('page')"
-              class="inline-flex items-center gap-1.5 px-3 py-1 rounded-control text-sm font-medium transition-colors"
-              :class="
-                readingMode === 'page' ? 'bg-surface text-primary shadow-sm' : 'text-text-secondary'
-              "
-              :aria-pressed="readingMode === 'page'"
-              :aria-label="t(PAGE_FORM_LABELS[pageFormKind].label)"
-              :title="t(PAGE_FORM_LABELS[pageFormKind].hint)"
-            >
-              <AppIcon :name="PAGE_FORM_LABELS[pageFormKind].icon" :size="14" />
-              <span class="hidden sm:inline">{{ t(PAGE_FORM_LABELS[pageFormKind].label) }}</span>
-            </button>
-            <button
-              v-if="canTransliterate"
-              @click="setReadingMode('phonetic')"
-              class="px-3 py-1 rounded-control text-sm font-medium transition-colors"
-              :class="
-                readingMode === 'phonetic'
-                  ? 'bg-surface text-primary shadow-sm'
-                  : 'text-text-secondary'
-              "
-              :aria-pressed="readingMode === 'phonetic'"
-              :aria-label="t('textReading.phonetic')"
-              :title="t('textReading.phonetic')"
-            >
-              <span class="sm:hidden" aria-hidden="true">Aa</span>
-              <span class="hidden sm:inline">{{ t("textReading.phonetic") }}</span>
-            </button>
-          </div>
 
           <!-- La traduction, quand le texte en a une : une commande qui porte
                son nom, et la couleur du thème quand elle est allumée. Pas dans
@@ -2685,6 +2636,66 @@ watch(textId, (_, previousTextId) => {
             <AppIcon name="languages" :size="14" />
             {{ t("textReading.translation.toggle") }}
           </button>
+
+          <!-- Hébreu, forme de la page (guemara, Torah), phonétique : trois
+               façons de montrer le même texte, une seule à la fois. -->
+          <div
+            v-if="canTransliterate || pageFormKind"
+            class="inline-flex p-0.5 rounded-btn bg-black/5 dark:bg-white/10"
+            role="group"
+          >
+            <button
+              @click="setReadingMode('hebrew')"
+              class="px-2.5 sm:px-3 py-1 rounded-control text-sm font-medium transition-colors"
+              :class="
+                readingMode === 'hebrew'
+                  ? 'bg-surface text-primary shadow-sm'
+                  : 'text-text-secondary'
+              "
+              :aria-pressed="readingMode === 'hebrew'"
+              :aria-label="t('textReading.hebrew')"
+              :title="t('textReading.hebrew')"
+            >
+              <span v-if="readingMode !== 'hebrew'" class="sm:hidden" aria-hidden="true">א</span>
+              <span :class="readingMode === 'hebrew' ? '' : 'hidden sm:inline'">{{
+                t("textReading.hebrew")
+              }}</span>
+            </button>
+            <button
+              v-if="pageFormKind"
+              @click="setReadingMode('page')"
+              class="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-control text-sm font-medium transition-colors"
+              :class="
+                readingMode === 'page' ? 'bg-surface text-primary shadow-sm' : 'text-text-secondary'
+              "
+              :aria-pressed="readingMode === 'page'"
+              :aria-label="t(PAGE_FORM_LABELS[pageFormKind].label)"
+              :title="t(PAGE_FORM_LABELS[pageFormKind].hint)"
+            >
+              <AppIcon :name="PAGE_FORM_LABELS[pageFormKind].icon" :size="14" />
+              <span :class="readingMode === 'page' ? '' : 'hidden sm:inline'">{{
+                t(PAGE_FORM_LABELS[pageFormKind].label)
+              }}</span>
+            </button>
+            <button
+              v-if="canTransliterate"
+              @click="setReadingMode('phonetic')"
+              class="px-2.5 sm:px-3 py-1 rounded-control text-sm font-medium transition-colors"
+              :class="
+                readingMode === 'phonetic'
+                  ? 'bg-surface text-primary shadow-sm'
+                  : 'text-text-secondary'
+              "
+              :aria-pressed="readingMode === 'phonetic'"
+              :aria-label="t('textReading.phonetic')"
+              :title="t('textReading.phonetic')"
+            >
+              <span v-if="readingMode !== 'phonetic'" class="sm:hidden" aria-hidden="true">Aa</span>
+              <span :class="readingMode === 'phonetic' ? '' : 'hidden sm:inline'">{{
+                t("textReading.phonetic")
+              }}</span>
+            </button>
+          </div>
         </div>
 
         <p v-if="translationFallback" class="mb-5 text-sm text-text-secondary">
