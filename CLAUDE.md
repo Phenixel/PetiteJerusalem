@@ -1,83 +1,141 @@
 # Petite Jérusalem
 
-Conventions du dépôt, à respecter dans tout ce qui s'écrit ici : code,
-commentaires, textes de l'interface, contenus, documentation, messages de
-commit et de pull request.
+Repository conventions, to follow in everything written here: code, comments,
+interface strings, content, documentation, commit messages and pull requests.
 
-## Typographie
+## Language
 
-**Jamais de tiret long.** Ni le cadratin (U+2014), ni le demi-cadratin
-(U+2013). Nulle part : ni dans les commentaires, ni dans les chaînes traduites,
-ni dans les contenus, ni dans la documentation, ni dans les messages de commit.
-Un test le vérifie (`src/__tests__/typography.test.ts`), la vérification échoue
-s'il en reste un.
+The repository is written in **English**: README, documentation, code
+comments, commit messages, pull request titles and descriptions.
 
-Ce que l'on écrit à la place, selon ce que le tiret faisait :
-
-| Le tiret servait à         | On écrit                         |
-| -------------------------- | -------------------------------- |
-| introduire une explication | deux-points (`:`)                |
-| encadrer une incise        | des virgules, ou des parenthèses |
-| lier deux propositions     | un point-virgule (`;`)           |
-| donner une plage           | « du 12 au 14 »                  |
-| ouvrir une énumération     | une vraie liste                  |
-
-Le trait d'union (`-`) reste bien sûr en usage dans les mots composés, et les
-corpus importés (`public/texts/`, textes de Sefaria) gardent la ponctuation de
-leur source : ce n'est pas de la rédaction.
-
-Le français de l'interface veut ses espaces insécables : U+202F avant `!`, `?`
-et `;`, U+00A0 avant `:` et à l'intérieur des guillemets. Un test le vérifie
-aussi (`src/__tests__/frenchTypography.test.ts`).
-
-## Apparence
-
-L'apparence du site et de l'app suit `docs/design.md` : couleurs des trois
-thèmes, rayons (surfaces franches, commandes rondes), polices (Playfair
-Display pour les titres, Manrope pour le reste), et ce qui ne s'emploie pas,
-à commencer par les dégradés. Toute décision de design nouvelle s'y ajoute.
-
-## Langue
-
-Les commentaires et la documentation sont en français. Les identifiants de code
-suivent le fichier où ils vivent : l'anglais pour les noms techniques, le
-français pour le domaine liturgique.
+- New comments and documentation are in English. Some older comments and
+  identifiers are still in French: when you edit a passage, translate the
+  French comments you touch; do not rewrite unrelated files just to
+  translate them (it pollutes the diff).
+- Code identifiers follow the file they live in: English for technical
+  names, the transliterated Hebrew or French of the liturgical domain where
+  the file already uses it (`chiour`, `paracha`, `parcours`...). Do not
+  rename an existing identifier, Firestore field, i18n key, route or CLI
+  flag (`--confirmer`, `--emulateur`) only to translate it: published apps
+  and scripts still read them.
+- The product itself stays trilingual: the interface (`src/locales/`), the
+  release notes and team announcements are written in French, English and
+  Hebrew.
+- Doc file names are kept as they are (`docs/notes-de-version.md`,
+  `docs/chaine-perpetuelle.md`...): links, workflows and scripts point to
+  them.
 
 ## Commits
 
-Un commit appartient au propriétaire du dépôt, pas à Claude : l'auteur et le
-committeur sont `Phenixel <yonathancardoso@outlook.fr>`. Avant de commiter,
-on règle l'identité du dépôt (`git config user.name "Phenixel"` et
-`git config user.email "yonathancardoso@outlook.fr"`) ou l'on passe
-`--author`. Claude n'y figure qu'en co-auteur, par la ligne `Co-Authored-By`.
+### Message format: Conventional Commits
 
-## Notes de version
+Every commit message (and every pull request title) follows
+[Conventional Commits](https://www.conventionalcommits.org/), in English:
 
-« Rédige la note de patch » suffit : la marche à suivre (ce qui change
-depuis le dernier tag, format en trois langues, 500 caractères par langue,
-nouveautés puis corrections, vérification par
-`scripts/check-release-notes.mjs`) est dans `docs/notes-de-version.md`,
-à suivre à la lettre.
+```
+<type>(<scope>): <short summary in the imperative, lower case, no period>
 
-## Backoffice sans l'interface
+<optional body: what changes and why, wrapped at 72 columns>
+```
 
-Publier une information (nouveauté, incident, question), clore un incident,
-publier ou ajouter un chiour, créer un auteur et son lien studio, modérer
-une session, lire et répondre aux messages des utilisateurs : tout se fait
-par `node scripts/admin.mjs`, sans passer par les pages `/admin`. Mode d'emploi complet dans `docs/backoffice-cli.md`.
+Examples: `feat(library): add halakha books as cards`,
+`fix(sharing): keep the reservation when the session link is reopened`,
+`docs(readme): explain the project with screenshots`.
 
-- Toujours lancer d'abord **sans** `--confirmer` (essai), montrer ce qui
-  sera écrit, puis relancer avec `--confirmer`.
-- La cible par défaut est la **production** ; `--emulateur` pour les
-  émulateurs locaux.
-- **Jamais `--notifier` sans l'accord explicite du propriétaire** : une
-  notification part vers tous les téléphones et ne se rattrape pas.
-- Un texte d'information suit la typographie ci-dessus (pas de tiret long,
-  espaces insécables en français) ; l'anglais et l'hébreu sont facultatifs.
-- Identifiants : en local, l'ADC du poste (s'il a expiré, le script le dit ;
-  c'est au propriétaire de lancer `gcloud auth application-default login`,
-  compte admin@phenixel.fr). En session cloud, la clé
-  `PJ_ADMIN_SERVICE_ACCOUNT` de l'environnement ; si le script dit que
-  firebase-admin manque, lancer `npm ci --prefix functions`.
-- Les notes de version deviennent seules une information à la publication
-  de la release GitHub (`.github/workflows/release-info.yml`).
+| Type | When |
+| --- | --- |
+| `feat` | A new feature or visible behavior. |
+| `fix` | A bug fix. |
+| `docs` | Documentation only. |
+| `style` | Formatting, no change in behavior. |
+| `refactor` | Code change that neither fixes a bug nor adds a feature. |
+| `perf` | A performance improvement. |
+| `test` | Adding or fixing tests. |
+| `build` | Build system, dependencies, native bundle. |
+| `ci` | GitHub Actions workflows and CI scripts. |
+| `chore` | Maintenance that fits nowhere else. |
+| `revert` | Reverting an earlier commit. |
+
+The **scope** names the part of the project the change touches, in lower
+case: a feature area (`library`, `sharing`, `reading`, `zmanim`, `calendar`,
+`parcours`, `chiourim`, `perpetual-chain`, `announcements`, `support`,
+`profile`, `home`, `auth`, `admin`, `studio`, `widgets`, `watch`, `seo`,
+`i18n`, `tracking`) or a technical one (`functions`, `firestore`, `android`,
+`ios`, `native`, `texts`, `scripts`, `deps`, `readme`, `design`). Pick the
+closest existing scope rather than inventing a new one; when a change spans
+several areas, name the main one. A breaking change carries `!` after the
+scope (`feat(texts)!: ...`) and a `BREAKING CHANGE:` footer.
+
+### Author
+
+A commit belongs to the repository owner, not to Claude: author and committer
+are `Phenixel <yonathancardoso@outlook.fr>`. Before committing, set the
+repository identity (`git config user.name "Phenixel"` and
+`git config user.email "yonathancardoso@outlook.fr"`) or pass `--author`.
+Claude only appears as a co-author, through the `Co-Authored-By` line.
+
+## Typography
+
+**Never a long dash.** Neither the em dash (U+2014) nor the en dash (U+2013).
+Nowhere: not in comments, translated strings, content, documentation or
+commit messages. A test enforces it (`src/__tests__/typography.test.ts`); the
+check fails if one is left.
+
+What to write instead, depending on what the dash was doing:
+
+| The dash was used to          | Write instead                    |
+| ----------------------------- | -------------------------------- |
+| introduce an explanation      | a colon (`:`)                    |
+| set off an aside              | commas, or parentheses           |
+| join two clauses              | a semicolon (`;`)                |
+| give a range                  | "from 12 to 14"                  |
+| open an enumeration           | a real list                      |
+
+The hyphen (`-`) of course stays in compound words, and imported corpora
+(`public/texts/`, Sefaria texts) keep the punctuation of their source: that
+is not our writing.
+
+The French of the interface needs its non-breaking spaces: U+202F before `!`,
+`?` and `;`, U+00A0 before `:` and inside « » quotes. A test enforces it too
+(`src/__tests__/frenchTypography.test.ts`). The same rule applies to every
+French text we publish (release notes, announcements).
+
+## Appearance
+
+The look of the site and the app follows `docs/design.md`: colors of the three
+themes, radii (sharp surfaces, round controls), fonts (Playfair Display for
+headings, Manrope for the rest), and what is not used, starting with
+gradients. Every new design decision is added there.
+
+## Release notes
+
+"Write the patch note" ("Rédige la note de patch") is enough: the procedure
+(what changed since the last tag, three-language format, 500 characters per
+language, new features then fixes, check with
+`scripts/check-release-notes.mjs`) is in `docs/notes-de-version.md`, to be
+followed to the letter. The notes themselves stay in French, English and
+Hebrew.
+
+## Back office without the interface
+
+Publishing an announcement (new feature, incident, question), closing an
+incident, publishing or adding a chiour, creating an author and their studio
+link, moderating a session, reading and answering user messages: everything
+goes through `node scripts/admin.mjs`, without the `/admin` pages. Full
+manual in `docs/backoffice-cli.md`.
+
+- Always run first **without** `--confirmer` (dry run), show what will be
+  written, then run again with `--confirmer`.
+- The default target is **production**; `--emulateur` for the local
+  emulators.
+- **Never `--notifier` without the owner's explicit agreement**: a
+  notification goes to every phone and cannot be taken back.
+- An announcement text follows the typography above (no long dash,
+  non-breaking spaces in French); English and Hebrew are optional.
+- Credentials: locally, the machine's ADC (if it has expired, the script
+  says so; it is up to the owner to run
+  `gcloud auth application-default login`, account admin@phenixel.fr). In a
+  cloud session, the environment's `PJ_ADMIN_SERVICE_ACCOUNT` key; if the
+  script says firebase-admin is missing, run `npm ci --prefix functions`.
+- Release notes become an announcement on their own when the GitHub release
+  is published (`.github/workflows/release-info.yml`).
