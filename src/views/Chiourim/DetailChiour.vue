@@ -255,6 +255,9 @@ const loadChiour = async () => {
   try {
     isLoading.value = true;
     const single = await chiourService.getChiourBySlug(slug);
+    // Left for another chiour meanwhile (next episode, back): that page's
+    // own load owns the title, the canonical link and the view count.
+    if (route.params.slug !== slug) return;
     if (!single) {
       error.value = t("detailChiour.notFound");
     } else {
@@ -268,10 +271,11 @@ const loadChiour = async () => {
         .catch(() => {});
     }
   } catch (err) {
+    if (route.params.slug !== slug) return;
     console.error("Erreur lors du chargement du chiour:", err);
     error.value = err instanceof Error ? err.message : t("chiourim.loadError");
   } finally {
-    isLoading.value = false;
+    if (route.params.slug === slug) isLoading.value = false;
   }
 };
 

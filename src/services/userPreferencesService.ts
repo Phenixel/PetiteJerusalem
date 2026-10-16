@@ -59,17 +59,18 @@ export interface UserPreferences {
    * défaut à vrai, ici comme dans la Cloud Function.
    */
   pushReminderDailyEnabled: boolean;
-  /** Hour of day (0-23, Paris time) the reminder is sent at. */
+  /** Hour of day (0-23) the reminder is sent at, in the time zone of pushReminderPlace. */
   pushReminderHour: number;
   /** Minute of the hour (0-55, 5-minute steps) the reminder is sent at. */
   pushReminderMinute: number;
   /** Rappel « dernier appel » 20 minutes avant la chkia. */
   pushSunsetReminderEnabled: boolean;
   /**
-   * Lieu (arrondi) du calcul de la chkia, écrit seulement quand le rappel
-   * d'avant-chkia est actif, voir coarsePlace dans zmanimService.
+   * Lieu (arrondi) du calcul de la chkia quand le rappel d'avant-chkia est
+   * actif, voir coarsePlace dans zmanimService; otherwise only the device's
+   * time zone, which the fixed-time reminder is read in. Null when off.
    */
-  pushReminderPlace: ReminderPlace | null;
+  pushReminderPlace: ReminderPlace | { tzid: string } | null;
   /** Locale the reminder notifications are sent in (fr/en/he). */
   pushLocale: string;
   /** Slugs des chiourim déjà ouverts par l'utilisateur (marqueur « Vu »). */

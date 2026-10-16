@@ -105,7 +105,7 @@ onUnmounted(() => window.removeEventListener("keydown", onKeydown));
   <!-- Un appui hors du réglage le referme, sans voile sur le texte. -->
   <div v-if="open" class="fixed inset-0 z-40" aria-hidden="true" @click="open = false"></div>
 
-  <Transition name="pill">
+  <Transition name="pill" appear>
     <div
       v-if="isAutoScrolling"
       class="fixed left-1/2 z-50 -translate-x-1/2"

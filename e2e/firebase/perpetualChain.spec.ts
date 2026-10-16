@@ -86,20 +86,22 @@ async function writeName(uid: string, sessionId: string, fields: NameFields): Pr
 }
 
 /**
- * Écrit une session au nom de `uid`, comme le ferait un client qui parlerait à
- * Firestore sans passer par l'app, et rend le statut HTTP : 200 si les règles
- * l'acceptent, 403 sinon. Avec `only`, l'écriture ne touche que ces champs
- * d'une session qui existe déjà.
+ * Writes a session on behalf of `uid` (`null`: a guest, without an account),
+ * as a client talking to Firestore without the app would, and returns the
+ * HTTP status: 200 if the rules accept it, 403 otherwise. With `only`, the
+ * write touches only these fields of an existing session; a field named
+ * there but absent from `fields` is deleted.
  */
 async function writeSession(
-  uid: string,
+  uid: string | null,
   sessionId: string,
   fields: Record<string, unknown>,
   only?: string[],
 ): Promise<number> {
+  const auth: Record<string, string> = uid ? { Authorization: `Bearer ${fakeIdToken(uid)}` } : {};
   const res = await fetch(`http://localhost:${FIRESTORE_PORT}/v1/${DOCUMENTS}:commit`, {
     method: "POST",
-    headers: { Authorization: `Bearer ${fakeIdToken(uid)}`, "Content-Type": "application/json" },
+    headers: { ...auth, "Content-Type": "application/json" },
     body: JSON.stringify({
       writes: [
         {
@@ -417,6 +419,69 @@ test.describe("chaîne perpétuelle", () => {
     ).toBe(403);
     expect((await readDoc("sessions", own))?.perpetual).toBeUndefined();
   });
+  test("une réservation d'invité ne touche à aucun autre champ de la session", async () => {
+    const chain = await seedPerpetualChain();
+    const attacker = `compte-${uniqueId()}`;
+    const booking = (count: number) =>
+      Array.from({ length: count }, (_, i) => ({
+        id: `r-${i}`,
+        textStudyId: tehilimId(i + 1),
+        section: 1,
+        personName: "Invité",
+        isCompleted: false,
+      }));
+
+    // The legitimate writes of a guest: book, mark read, cancel.
+    expect(await writeSession(null, chain.id, { reservations: booking(2) }, ["reservations"])).toBe(
+      200,
+    );
+    const read = booking(2).map((r, i) => (i === 0 ? { ...r, isCompleted: true } : r));
+    expect(await writeSession(null, chain.id, { reservations: read }, ["reservations"])).toBe(200);
+    expect(await writeSession(null, chain.id, { reservations: booking(1) }, ["reservations"])).toBe(
+      200,
+    );
+
+    // Taking the session over: delete its owner with one booking, then set
+    // one's own uid with the next. Each write adds or removes a field, which
+    // the rule used to miss (changedKeys).
+    const takeOver = ["reservations", "personId"];
+    expect(await writeSession(null, chain.id, { reservations: booking(2) }, takeOver)).toBe(403);
+    expect(
+      await writeSession(
+        null,
+        chain.id,
+        { reservations: booking(0), personId: attacker },
+        takeOver,
+      ),
+    ).toBe(403);
+    // Hiding the session, or taking the chain out of the app.
+    expect(
+      await writeSession(null, chain.id, { reservations: booking(2), hidden: true }, [
+        "reservations",
+        "hidden",
+      ]),
+    ).toBe(403);
+    expect(
+      await writeSession(null, chain.id, { reservations: booking(2) }, [
+        "reservations",
+        "perpetual",
+      ]),
+    ).toBe(403);
+    // Padding the document with a field of its own.
+    expect(
+      await writeSession(null, chain.id, { reservations: booking(2), junk: "x".repeat(1000) }, [
+        "reservations",
+        "junk",
+      ]),
+    ).toBe(403);
+
+    const after = await readDoc("sessions", chain.id);
+    expect(after?.personId).toBe("petite-jerusalem");
+    expect(after?.perpetual).toBe(true);
+    expect(after?.hidden).toBeUndefined();
+    expect(after?.reservations).toHaveLength(1);
+  });
+
   test("un tour fini : la page relit la chaîne jusqu'au tour suivant", async ({ page }) => {
     const chain = await seedPerpetualChain({ reservations: readSlots(1, 150) });
     await gotoApp(page, `/share-reading/session/${chain.slug}`);

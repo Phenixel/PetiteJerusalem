@@ -1,6 +1,7 @@
 import HomeView from "../views/HomeView.vue";
 import NotFound from "../views/NotFound.vue";
 import { isNativeApp } from "../composables/useNativeApp";
+import { loadAdminMessages } from "../i18n";
 
 /**
  * Les anciennes pages d'un jour des Hochanot → la clé du jour dans le livre
@@ -474,6 +475,8 @@ export default [
     path: "/admin",
     component: AdminLayout,
     meta: { requiresAuth: true, requiresAdmin: true },
+    // Its French messages are not in the initial bundle (see loadAdminMessages).
+    beforeEnter: () => loadAdminMessages(),
     children: [
       { path: "", name: "admin-dashboard", component: AdminDashboardPage },
       { path: "chiourim", name: "admin-chiourim", component: AdminChiourimPage },

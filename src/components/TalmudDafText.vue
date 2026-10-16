@@ -75,9 +75,29 @@ function pick(event: MouseEvent, line: number, text: string): void {
 }
 
 /** Les mots en gras d'une ligne ; le tout premier passage du traité ouvre sa Michna. */
-function openings(block: DafBlock, k: number, line: string): [number, number][] {
+function lineOpenings(block: DafBlock, k: number, line: string): [number, number][] {
   const tractateStart = block.amud === 0 && (block.passages?.[k] ?? k) === 0;
   return talmudOpenings(line, tractateStart);
+}
+
+/**
+ * The bold words of every line, worked out once per text. Called from the
+ * template, talmudOpenings re-tokenized every passage on every render (a tap,
+ * a selection, a bookmark) and handed each MarkedText a new array, which
+ * re-rendered all of them: about 10 ms of script alone on a long chapter.
+ */
+const openingsByBlock = computed(
+  () =>
+    new Map(
+      props.blocks.map((block) => [
+        block,
+        block.lines.map((line, k) => lineOpenings(block, k, line)),
+      ]),
+    ),
+);
+
+function openings(block: DafBlock, k: number, line: string): [number, number][] {
+  return openingsByBlock.value.get(block)?.[k] ?? lineOpenings(block, k, line);
 }
 
 const { t } = useI18n();

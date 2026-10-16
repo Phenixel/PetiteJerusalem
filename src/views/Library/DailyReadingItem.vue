@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from "vue";
+import { ref, shallowRef, computed, onMounted, onUnmounted, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import type { TextStudyJsonEntry } from "../../models/models";
 import {
@@ -96,7 +96,8 @@ const missing = ref(false);
 // Hors connexion et texte absent de l'appareil : ce n'est pas une erreur, mais
 // un texte qui n'a pas été téléchargé, on le dit tel quel.
 const notDownloaded = ref(false);
-const content = ref<TextContent | null>(null);
+// shallowRef: a whole parsed text, always replaced as a whole (see TextReadingPage).
+const content = shallowRef<TextContent | null>(null);
 
 // Reference texts (more than one section) get verse numbers; texts read as a
 // whole (Tehilim, a full parasha) don't need them.

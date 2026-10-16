@@ -2,6 +2,7 @@
 import { SIDOUR_PATH, isSidourPath } from "../../config/navSections";
 import {
   ref,
+  shallowRef,
   computed,
   defineAsyncComponent,
   watch,
@@ -269,7 +270,10 @@ const textEntry = computed(() => allTexts.find((t) => String(t.id) === textId.va
 const loading = ref(false);
 const missingFile = ref(false);
 const error = ref(false);
-const content = ref<TextContent | null>(null);
+// shallowRef: a whole parsed text (up to thousands of lines), always
+// replaced as a whole, never changed in place. A deep ref put a proxy and a
+// tracked dependency on every line read by every render.
+const content = shallowRef<TextContent | null>(null);
 const showPhonetic = ref(false);
 
 // La translittération phonétique est une aide de lecture peu visible : mesurer
@@ -317,17 +321,27 @@ const occasionsDay = computed(() => new HDate(occasionsDayAbs.value));
 // le calendrier ne peut pas savoir, une brit mila ou un marié dans
 // l'assemblée. Le réglage ne vaut que le jour où il est posé ; c'est l'heure
 // du rendu qui en décide, comme des occasions elles-mêmes.
+//
+// The clock reaches the occasions only through these two booleans: a
+// computed whose value does not change does not wake what depends on it.
+// Read directly, each tick of the clock gave a new set of occasions, and the
+// whole office (thousands of nodes, retransliterated in phonetic mode) was
+// rebuilt every thirty seconds while one prays.
+const sansTahanounNow = computed(() => isLiturgyText.value && isSansTahanoun(now.value));
+const pastChatzotNow = computed(
+  () => isLiturgyText.value && pastChatzotNight(zmanimPlace.value, now.value),
+);
 const calendarOccasions = computed(() => {
   const il = zmanimPlace.value.tzid === "Asia/Jerusalem";
   const today = activeOccasions(occasionsDay.value, il, isWalledCityPlace(zmanimPlace.value));
-  const jour = isLiturgyText.value && isSansTahanoun(now.value) ? withoutTachanun(today) : today;
+  const jour = sansTahanounNow.value ? withoutTachanun(today) : today;
   if (!isLiturgyText.value) return jour;
   // Hatsot halayla ne se lit pas sur le calendrier : c'est une heure, elle
   // change au milieu de la nuit sans que le jour hébraïque bouge. Le Chema du
   // coucher s'en sert pour la bénédiction Hamapil, dont le Nom se pense au
   // lieu de se dire une fois hatsot passé, et pour son vidouy, qui ne se dit
   // pas à la sortie de Chabbat avant hatsot.
-  const pastChatzot = pastChatzotNight(zmanimPlace.value, now.value);
+  const pastChatzot = pastChatzotNow.value;
   const nuit = new Set(jour);
   if (pastChatzot) nuit.add("apres-hatsot");
   if (nightWithoutTachanun(occasionsDay.value, il, jour, pastChatzot)) {
@@ -489,7 +503,8 @@ const canTransliterate = computed(
 // l'interface, à défaut celle qui existe. Pas sur une tefila : le sidour se
 // prie en hébreu, et ses textes n'ont pas de traduction alignée.
 const textTranslationLangs = ref<string[]>([]);
-const translation = ref<TextTranslation | null>(null);
+// Same as `content`: replaced as a whole.
+const translation = shallowRef<TextTranslation | null>(null);
 /** Le texte dont `translation` est la traduction. */
 const translationTextId = ref<string | null>(null);
 const translationFailed = ref(false);

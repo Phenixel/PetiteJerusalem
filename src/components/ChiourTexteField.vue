@@ -19,6 +19,7 @@ import { hasChapitres, linkableTextes, texteOf, texteTitle } from "../services/c
 import { loadText } from "../services/textService";
 import { useTextLabels } from "../composables/useTextLabels";
 import { liveValue } from "../composables/liveInput";
+import { useDebouncedValue } from "../composables/useDebouncedValue";
 import AppSelect, { type SelectOption } from "./AppSelect.vue";
 import AppIcon from "./icons/AppIcon.vue";
 
@@ -36,9 +37,14 @@ const chapterId = `${props.id ?? "chiour-texte"}-chapitre`;
 const all = linkableTextes();
 
 const search = ref("");
+// The catalog is searched once typing pauses (see useDebouncedValue); an
+// emptied field, or a chosen text, empties the results at once.
+const searched = useDebouncedValue(search);
 const entry = computed(() => texteOf(texteId.value));
 const results = computed<TextStudyJsonEntry[]>(() =>
-  search.value.trim() ? filterBySearch(all, search.value).slice(0, MAX_RESULTS) : [],
+  search.value.trim() && searched.value.trim()
+    ? filterBySearch(all, searched.value).slice(0, MAX_RESULTS)
+    : [],
 );
 
 function choose(next: TextStudyJsonEntry) {

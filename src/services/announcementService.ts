@@ -4,6 +4,7 @@ import { isNativeApp } from "../composables/useNativeApp";
 import { cached } from "./cached";
 import {
   ANNOUNCEMENT_KINDS,
+  HOME_PREVIEW_MAX_AGE_MS,
   POLL_MAX_OPTIONS,
   POLL_MIN_OPTIONS,
   type Announcement,
@@ -11,6 +12,7 @@ import {
   type LocalizedText,
   type Poll,
   type PollOption,
+  sortAnnouncements,
 } from "./announcements";
 
 /**
@@ -135,14 +137,51 @@ class AnnouncementService {
     return snap.docs.map((d) => parseAnnouncement(d.id, d.data()));
   });
 
+  /**
+   * What the home page can show (see homeHighlights): the announcements of
+   * the last month, and the incidents, of any age, that may still be
+   * ongoing. Two small queries instead of the whole list: every release
+   * becomes an announcement, and the home page is the most visited one.
+   */
+  private readonly home = cached(CACHE_TTL, async () => {
+    const { fs, db } = await firestore();
+    const base = fs.collection(db, "announcements");
+    const since = new Date(Date.now() - HOME_PREVIEW_MAX_AGE_MS);
+    const [recent, incidents] = await Promise.all([
+      fs.getDocs(
+        fs.query(
+          base,
+          fs.where("published", "==", true),
+          fs.where("publishedAt", ">=", since),
+          fs.orderBy("publishedAt", "desc"),
+        ),
+      ),
+      fs.getDocs(
+        fs.query(base, fs.where("published", "==", true), fs.where("kind", "==", "incident")),
+      ),
+    ]);
+    const byId = new Map<string, Announcement>();
+    for (const d of [...recent.docs, ...incidents.docs]) {
+      byId.set(d.id, parseAnnouncement(d.id, d.data()));
+    }
+    return sortAnnouncements([...byId.values()]);
+  });
+
   /** Les annonces publiées, la plus récente d'abord. */
   getAll(): Promise<Announcement[]> {
     return this.list.get();
   }
 
+  /** The announcements the home page may show, from the full list when it is fresh. */
+  getHome(): Promise<Announcement[]> {
+    const fresh = this.list.isStale() ? null : this.list.peek();
+    return fresh ? Promise.resolve(fresh) : this.home.get();
+  }
+
   /** Oublie la liste : la prochaine lecture repart du serveur. */
   invalidate(): void {
     this.list.invalidate();
+    this.home.invalidate();
   }
 
   /**

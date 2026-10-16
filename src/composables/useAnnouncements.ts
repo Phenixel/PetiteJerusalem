@@ -75,6 +75,8 @@ function voterId(): string {
 
 const items = ref<Announcement[]>([]);
 const status = ref<"idle" | "loading" | "ready" | "error">("idle");
+/** What the home page reads (see announcementService.getHome), until the full list is there. */
+const homeItems = ref<Announcement[]>([]);
 const seenAt = ref<number | null>(readSeen());
 const seenVersion = ref<string | null>(readSeenVersion());
 /** Version de l'app installée (notes de version), nulle sur le site. */
@@ -122,6 +124,31 @@ function load(force = false): Promise<void> {
     }
   })();
   return loading;
+}
+
+let loadingHome: Promise<void> | null = null;
+
+/**
+ * Loads what the home page can show, without the whole list. A failure
+ * keeps what is shown: the home page simply says nothing.
+ */
+function loadHome(): Promise<void> {
+  if (loadingHome) return loadingHome;
+  loadingHome = (async () => {
+    try {
+      const [{ announcementService }, version] = await Promise.all([
+        import("../services/announcementService"),
+        installed.value === null ? readInstalledVersion() : Promise.resolve(installed.value),
+      ]);
+      installed.value = version;
+      homeItems.value = await announcementService.getHome();
+    } catch (error) {
+      console.warn("Informations indisponibles:", error);
+    } finally {
+      loadingHome = null;
+    }
+  })();
+  return loadingHome;
 }
 
 function saveSeen(time: number): void {
@@ -195,7 +222,7 @@ async function answerPoll(a: Announcement, choices: string[]): Promise<void> {
 export function useAnnouncements() {
   const highlights = computed(() =>
     homeHighlights(
-      items.value,
+      status.value === "ready" ? items.value : homeItems.value,
       seenAt.value,
       installed.value,
       Date.now(),
@@ -212,6 +239,7 @@ export function useAnnouncements() {
     votes,
     highlights,
     load,
+    loadHome,
     markAllSeen,
     markSeenUpTo,
     answerPoll,

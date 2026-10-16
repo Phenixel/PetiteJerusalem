@@ -14,7 +14,7 @@ import { useHomeAccountCta } from "../composables/useHomeAccountCta";
 import { openFeedback } from "../composables/useFeedback";
 import SiteFooter from "../components/SiteFooter.vue";
 import FeedbackNudge from "../components/FeedbackNudge.vue";
-import FeatureTour, { type TourStep } from "../components/FeatureTour.vue";
+import type { TourStep } from "../components/FeatureTour.vue";
 import { tipsOffered } from "../composables/useFeatureTips";
 import { useParcoursTours } from "../composables/useParcoursTours";
 import HomeDoors from "../components/HomeDoors.vue";
@@ -28,6 +28,9 @@ import HolidayGreeting from "../components/holiday/HolidayGreeting.vue";
 // (@hebcal/core), qui pèse plus lourd que tout le bundle initial réuni. Elle
 // apparaît juste après le rendu de l'accueil, sans le retarder.
 const ZmanimCard = defineAsyncComponent(() => import("../components/ZmanimCard.vue"));
+// The home tips only show in the app or once a parcours has begun: most
+// visitors of the site never render them, so they do not load them either.
+const FeatureTour = defineAsyncComponent(() => import("../components/FeatureTour.vue"));
 const BirkatHalevanaBanner = defineAsyncComponent(
   () => import("../components/BirkatHalevanaBanner.vue"),
 );

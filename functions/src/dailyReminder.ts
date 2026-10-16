@@ -7,7 +7,8 @@
  * ne soit pas terminée :
  *
  *  - à heure fixe (`pushReminderHour`/`pushReminderMinute`), le rappel
- *    historique ;
+ *    historique, lu dans le fuseau de l'appareil (`pushReminderPlace.tzid`,
+ *    Paris pour les documents plus anciens) ;
  *  - `SUNSET_OFFSET_MINUTES` avant la chkia (`pushSunsetReminderEnabled`), le
  *    dernier appel de qui n'a pas trouvé le temps de la journée. La chkia est
  *    calculée pour `pushReminderPlace`, le lieu (arrondi) que l'application a
@@ -23,7 +24,13 @@ import { onSchedule } from "firebase-functions/v2/scheduler";
 import { logger } from "firebase-functions/v2";
 import { FieldValue, getFirestore } from "firebase-admin/firestore";
 import { getMessaging } from "firebase-admin/messaging";
-import { isInCurrentSlot, readPlace, SLOT_MINUTES, sunsetReminderAt } from "./sunsetReminder";
+import {
+  isInCurrentSlot,
+  readPlace,
+  readTimeZone,
+  SLOT_MINUTES,
+  sunsetReminderAt,
+} from "./sunsetReminder";
 
 interface ReminderCopy {
   title: string;
@@ -90,19 +97,39 @@ export const INVALID_TOKEN_CODES = new Set([
  * et le rappel partait avec « il te reste N textes » alors que tout était lu.
  */
 function todayKey(timeZone: string, now: Date): string {
-  return new Intl.DateTimeFormat("en-CA", { timeZone }).format(now);
+  return formatter(dayFormatters, "en-CA", timeZone, () => ({ timeZone })).format(now);
+}
+
+// Building an Intl.DateTimeFormat costs far more than using one: kept per
+// time zone for the life of the instance, instead of two per profile and per
+// run (every five minutes, for every subscriber).
+const dayFormatters = new Map<string, Intl.DateTimeFormat>();
+const timeFormatters = new Map<string, Intl.DateTimeFormat>();
+
+function formatter(
+  cache: Map<string, Intl.DateTimeFormat>,
+  locale: string,
+  timeZone: string,
+  options: () => Intl.DateTimeFormatOptions,
+): Intl.DateTimeFormat {
+  let found = cache.get(timeZone);
+  if (!found) {
+    found = new Intl.DateTimeFormat(locale, options());
+    cache.set(timeZone, found);
+  }
+  return found;
 }
 
 /** Heure courante ({ hour, minute }) dans le fuseau du lieu de l'utilisateur. */
 function currentTime(timeZone: string, now: Date): { hour: number; minute: number } {
-  const parts = new Intl.DateTimeFormat("fr-FR", {
+  const parts = formatter(timeFormatters, "fr-FR", timeZone, () => ({
     timeZone,
     hour: "numeric",
     minute: "numeric",
     // h23, pas hour12: false : selon la version ICU, ce dernier peut donner
     // « 24 » à minuit, et un rappel réglé entre 00:00 et 00:55 ne partait jamais.
     hourCycle: "h23",
-  }).formatToParts(now);
+  })).formatToParts(now);
   const get = (type: string) => Number(parts.find((p) => p.type === type)?.value ?? 0);
   return { hour: get("hour"), minute: get("minute") };
 }
@@ -176,8 +203,13 @@ async function remindProfile(
 ): Promise<number> {
   const prefs = docSnap.data();
   const place = readPlace(prefs.pushReminderPlace);
-  const today = todayKey(place.tzid, nowDate);
-  const now = currentTime(place.tzid, nowDate);
+  // The device's time zone even without the reminder before chkia: the
+  // fixed time is the one the reader chose on their phone. It used to be
+  // read in Paris time whenever no place was sent (20:00 arrived at 21:00
+  // in Israel, at 14:00 in New York).
+  const timeZone = readTimeZone(prefs.pushReminderPlace);
+  const today = todayKey(timeZone, nowDate);
+  const now = currentTime(timeZone, nowDate);
   const currentSlot = toSlot(now.minute);
 
   // Rappel à heure fixe. Absent des profils antérieurs au rappel
