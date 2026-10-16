@@ -148,6 +148,42 @@ export function protectedUploads(versionsResponse, buildsResponse) {
 }
 
 /**
+ * La clé sous laquelle un build de staging figure dans les envois et dans les
+ * marqueurs. Les numéros de build des deux apps vivent sur des échelles
+ * différentes (141 en staging, 3070800 en production) mais rien ne les
+ * empêche de se croiser un jour : préfixer ceux de staging évite qu'un
+ * marqueur de l'une protège, ou libère, le certificat d'un binaire de l'autre.
+ *
+ * @param {string | number} buildNumber
+ * @returns {string}
+ */
+export const stagingBuildKey = (buildNumber) => `staging ${buildNumber}`;
+
+/**
+ * Les envois de « PJ Staging » dont la signature compte encore, à partir de
+ * /v1/builds trié par envoi décroissant : ceux qu'Apple traite encore.
+ *
+ * Un build de staging ne va qu'aux testeurs internes de TestFlight, jamais à
+ * l'examen ; mais Apple vérifie la signature d'origine pendant le traitement
+ * qui suit l'envoi. Le build 141 (3.10.12) a été rejeté là le 16 octobre 2026,
+ * « ITMS-90721: Certificate Revoked », son certificat ayant été révoqué une
+ * seconde après l'envoi. Une fois le traitement fini, plus rien ne regarde
+ * cette signature : le certificat peut partir.
+ *
+ * @param {any} buildsResponse
+ * @returns {Upload[]}
+ */
+export function stagingUploads(buildsResponse) {
+  return (buildsResponse.data ?? [])
+    .filter((build) => build.attributes?.processingState === "PROCESSING" && build.attributes?.uploadedDate)
+    .map((build) => ({
+      label: `build de staging ${build.attributes.version} (PROCESSING)`,
+      buildNumber: stagingBuildKey(build.attributes.version),
+      uploadedAt: Date.parse(build.attributes.uploadedDate),
+    }));
+}
+
+/**
  * Annote chaque certificat de ce qui le retient (`keptFor`) et rend ceux qui
  * peuvent partir, du plus ancien au plus récent. Le plus récent n'est jamais
  * de la partie : c'est celui du run précédent, dont le binaire vient peut-être
@@ -163,6 +199,7 @@ export function protectedUploads(versionsResponse, buildsResponse) {
  * @param {Certificate[]} certificates
  * @param {Upload[]} uploads
  * @param {Map<string, string>} [signedBuilds] id de certificat vers numéro de build
+ *   (préfixé par stagingBuildKey pour un build de staging)
  * @returns {Certificate[]}
  */
 export function revocableCertificates(certificates, uploads, signedBuilds = new Map()) {

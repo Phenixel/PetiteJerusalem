@@ -4,6 +4,8 @@ import {
   distributionCertificates,
   protectedUploads,
   revocableCertificates,
+  stagingBuildKey,
+  stagingUploads,
 } from "../../scripts/lib/certificate-quota.mjs";
 
 /**
@@ -219,6 +221,55 @@ describe("quota de certificats de distribution", () => {
 
     expect(revocable.map((c) => c.id)).toEqual(["T7X6S8JPNR"]);
     expect(list.find((c) => c.id === "R33A4CCD5R")?.keptFor).toContain("3070400");
+  });
+
+  it("garde le certificat d'un build de staging pendant son traitement", () => {
+    // Le build de staging 141 (3.10.12) a été rejeté le 16 octobre 2026,
+    // « ITMS-90721: Certificate Revoked » : son certificat était révoqué une
+    // seconde après l'envoi, alors qu'Apple vérifie la signature au
+    // traitement. Tant que le build est en PROCESSING, son certificat reste ;
+    // une fois traité, il part, examen ou pas.
+    const signedBuilds = new Map([
+      ["R33A4CCD5R", stagingBuildKey("141")],
+      ["T7X6S8JPNR", "3070500"],
+      ["SA7386DCQJ", stagingBuildKey("151")],
+    ]);
+    const production = protectedUploads({ data: [], included: [] }, { data: [] });
+    const staging = (processingState: string) =>
+      stagingUploads({
+        data: [build("s141", "141", "2026-10-16T10:28:52.000+00:00", processingState)],
+      });
+
+    const enTraitement = certificates();
+    expect(
+      revocableCertificates(
+        enTraitement,
+        [...production, ...staging("PROCESSING")],
+        signedBuilds,
+      ).map((c) => c.id),
+    ).toEqual(["T7X6S8JPNR"]);
+    expect(enTraitement.find((c) => c.id === "R33A4CCD5R")?.keptFor).toContain("staging 141");
+
+    expect(
+      revocableCertificates(certificates(), [...production, ...staging("VALID")], signedBuilds).map(
+        (c) => c.id,
+      ),
+    ).toEqual(["R33A4CCD5R", "T7X6S8JPNR"]);
+  });
+
+  it("ne confond pas un build de staging avec un build de production de même numéro", () => {
+    // Le marqueur de staging porte sa clé à part : un build de production 141
+    // en examen ne retient pas le certificat du build de staging 141.
+    const signedBuilds = new Map([["R33A4CCD5R", stagingBuildKey("141")]]);
+    const versions = {
+      data: [version("0.0.1", "IN_REVIEW", "p141", "2026-08-21T12:46:50.000+00:00")],
+      included: [build("p141", "141", "2026-08-21T12:46:30.000+00:00")],
+    };
+
+    const list = certificates();
+    revocableCertificates(list, protectedUploads(versions, { data: [] }), signedBuilds);
+
+    expect(list.find((c) => c.id === "R33A4CCD5R")?.keptFor).toBeUndefined();
   });
 
   it("ne révoque jamais le certificat le plus récent, même sans aucun envoi", () => {

@@ -212,10 +212,14 @@ dans le code de l'app fait échouer `src/__tests__/environments.test.ts`.
 - Les widgets iOS ouvrent l'app par le schéma `petitejerusalem://`, commun aux
   deux apps : avec les deux installées, iOS choisit l'une ou l'autre.
 - L'App Store Connect plafonne le compte à trois certificats de
-  distribution : un run iOS de staging crée le sien et le révoque à la fin,
-  et les runs de signature (production et staging) passent l'un après
-  l'autre (groupe de concurrence `apple-signing`, voir
-  `scripts/ios-signing.mjs`).
+  distribution : un run iOS de staging crée le sien et le garde tant
+  qu'Apple traite le build envoyé (marqueur « PetiteJerusalem CI staging
+  build 141 »), puis le run de signature suivant le révoque. Le révoquer dès
+  l'envoi faisait rejeter le build au traitement (« ITMS-90721: Certificate
+  Revoked », build 141 le 16 octobre 2026). Les runs de signature
+  (production et staging) passent l'un après l'autre (groupe de concurrence
+  `apple-signing`, voir `scripts/ios-signing.mjs` et
+  [ios-ci-cd.md](ios-ci-cd.md#le-quota-de-trois-certificats-de-distribution)).
 
 ## Coût
 

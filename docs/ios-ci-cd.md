@@ -204,6 +204,17 @@ C'est prudent, donc parfois trop : c'est ainsi que trois certificats se sont
 retrouvés protégés en même temps le 23 août 2026, et qu'il a fallu les
 révoquer à la main.
 
+Un build de **staging** (« PJ Staging », testeurs internes seulement) suit
+la même mécanique, avec un marqueur à part (`PetiteJerusalem CI staging build
+141`) pour que son numéro ne se confonde jamais avec celui d'un binaire de
+production. Il ne va jamais à l'examen, mais Apple vérifie la signature
+pendant le traitement qui suit l'envoi : son certificat est donc gardé tant
+que le build est en `PROCESSING`, puis révoqué au `--setup` suivant. Le
+révoquer dès la fin du run, comme on l'a fait un temps, a fait rejeter le
+build de staging 141 (3.10.12) le 16 octobre 2026 : « ITMS-90721:
+Certificate Revoked ». Règle tenue par `src/__tests__/certificateQuota.test.ts`
+(« garde le certificat d'un build de staging pendant son traitement »).
+
 Une version **déjà distribuée** ne retient rien, et c'est voulu : Apple le dit
 au moment de révoquer un certificat, sont invalidées les apps *soumises à
 l'examen* signées avec lui, celles déjà sur l'App Store ne sont pas touchées.
