@@ -451,8 +451,9 @@ jobs:
             echo "::error::altool a signalé un échec d'envoi, voir le journal ci-dessus"
             exit 1
           fi
-          # À partir d'ici, le certificat de ce run signe un binaire qu'Apple
-          # re-validera à l'examen : l'étape de nettoyage doit le garder.
+          # À partir d'ici, le certificat de ce run signe un binaire dont
+          # Apple vérifiera la signature au traitement, puis à l'examen
+          # (staging compris pour le traitement) : le nettoyage doit le garder.
           # Sans cette marque, elle le révoque, et le quota de trois
           # certificats de distribution ne se remplit plus pour rien.
           echo "IOS_BUILD_UPLOADED=1" >> "$GITHUB_ENV"

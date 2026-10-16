@@ -49,6 +49,16 @@
  *     plein, le run échoue avec la liste des certificats et la raison qui
  *     retient chacun.
  *
+ * Staging suit la même règle. On a cru un temps qu'un build de « PJ Staging »,
+ * qui ne va jamais à l'examen, pouvait perdre son certificat dès l'envoi :
+ * TestFlight l'avait bien gardé pour 3.7.3. Mais Apple vérifie aussi la
+ * signature pendant le traitement qui suit l'envoi, et le build de staging 141
+ * (3.10.12) a été rejeté le 16 octobre 2026, « ITMS-90721: Certificate
+ * Revoked », son certificat révoqué une seconde après l'envoi. Le certificat
+ * d'un build de staging vit donc jusqu'à la fin de ce traitement, marqueur à
+ * l'appui (« PetiteJerusalem CI staging build 141 »), puis part au --setup
+ * suivant.
+ *
  * Rien n'est stocké dans le repo : ni .p12, ni profil, ni mot de passe.
  *
  * Usage :
@@ -83,6 +93,8 @@ import {
   distributionCertificates,
   protectedUploads,
   revocableCertificates,
+  stagingBuildKey,
+  stagingUploads,
 } from "./lib/certificate-quota.mjs";
 import { ENV, ENVIRONMENTS } from "./lib/environments.mjs";
 import { APP_GROUP, WIDGET_TARGET } from "./lib/xcode-widgets.mjs";
@@ -92,8 +104,12 @@ import { WATCH_BUNDLE_SUFFIX } from "./lib/xcode-watch.mjs";
 // a son propre App ID et sa propre fiche App Store Connect (docs/staging.md).
 const BUNDLE_ID = ENV.appId;
 // Un run de staging ne publie que sur TestFlight, jamais à l'examen : son
-// certificat ne protège rien et part au nettoyage, avec son profil.
+// certificat ne vit que le temps du traitement Apple (cf. l'en-tête), et son
+// marqueur porte « staging » pour ne pas passer pour un binaire de production.
 const IS_STAGING = ENV.name === "staging";
+// Les builds de staging qu'Apple traite encore retiennent aussi leur
+// certificat, d'où l'inventaire de cette app-là, quel que soit le run.
+const STAGING_BUNDLE_ID = ENVIRONMENTS.staging.appId;
 // Les binaires qu'Apple regarde encore, et dont il faut garder les
 // certificats, sont ceux de l'app de PRODUCTION, quel que soit le run : un run
 // de staging qui ne regarderait que sa propre app jugerait révocable le
@@ -118,11 +134,25 @@ const PROFILE_PREFIX = "PetiteJerusalem CI";
 // porte le numéro de build et il référence le certificat signataire, ce que
 // l'API ne dit nulle part ailleurs. C'est ce marqueur qui permet, aux runs
 // suivants, de révoquer un certificat en sachant exactement ce qu'il a signé.
-const markerName = (buildNumber) => `${PROFILE_PREFIX} build ${buildNumber}`;
+// Celui d'un build de staging porte « staging » : son numéro ne doit pas
+// pouvoir passer pour celui d'un binaire de production.
+const markerName = (buildNumber) => `${PROFILE_PREFIX} ${IS_STAGING ? "staging " : ""}build ${buildNumber}`;
 const MARKER_PATTERN = new RegExp(`^${PROFILE_PREFIX} build (\\d+)$`);
-// En staging, aucun marqueur : son nom ne doit pas pouvoir passer pour celui
-// d'un binaire de production (voir profileName plus bas).
-const buildNumber = IS_STAGING ? undefined : process.env.IOS_BUILD_NUMBER?.trim();
+const STAGING_MARKER_PATTERN = new RegExp(`^${PROFILE_PREFIX} staging build (\\d+)$`);
+/**
+ * Le build qu'un profil marque, sous la clé des envois de
+ * scripts/lib/certificate-quota.mjs, ou undefined s'il n'est pas un marqueur.
+ *
+ * @param {string} name
+ * @returns {string | undefined}
+ */
+function markedBuild(name) {
+  const production = MARKER_PATTERN.exec(name)?.[1];
+  if (production) return production;
+  const staging = STAGING_MARKER_PATTERN.exec(name)?.[1];
+  return staging && stagingBuildKey(staging);
+}
+const buildNumber = process.env.IOS_BUILD_NUMBER?.trim();
 // Capacités que les profils doivent couvrir, sous peine d'échec de signature
 // (« doesn't match the entitlements file »). En signature automatique, Xcode
 // les activait lui-même sur l'App ID ; en manuel, c'est à nous. La capacité
@@ -242,11 +272,10 @@ const keychainPath = join(workDir, "petitejerusalem-signing.keychain-db");
 // dès qu'Apple la re-valide à la soumission à l'examen (ITMS-90035) : c'est
 // IOS_BUILD_UPLOADED qui tranche, l'en-tête du fichier détaille le cas.
 if (isCleanup) {
-  // En staging, rien n'est jamais conservé : le binaire ne va que sur
-  // TestFlight, qui le garde installable une fois le certificat révoqué (le
-  // build 3.7.3 l'a montré, cf. l'en-tête) ; seul l'examen re-valide la
-  // signature d'origine, et un build de staging n'y va jamais.
-  const uploaded = Boolean(process.env.IOS_BUILD_UPLOADED) && !IS_STAGING;
+  // Staging compris : Apple vérifie la signature pendant le traitement qui
+  // suit l'envoi, examen ou pas (ITMS-90721 sur le build de staging 141,
+  // cf. l'en-tête).
+  const uploaded = Boolean(process.env.IOS_BUILD_UPLOADED);
   const profileId = process.env.IOS_SIGNING_PROFILE_ID;
   if (profileId && uploaded) {
     // Le profil devient le marqueur du binaire envoyé : il dit au prochain run
@@ -413,13 +442,23 @@ async function pruneCertificates(certificates, signedBuilds) {
   let revocable;
   try {
     const apps = await api("GET", `/v1/apps?filter[bundleId]=${PRODUCTION_BUNDLE_ID}`);
-    const app = apps.data[0];
+    // Égalité exigée, comme pour les App ID : si le filtre d'Apple se
+    // contentait d'un « contains », celui de production rendrait aussi l'app
+    // de staging, dont le bundle id le prolonge.
+    const app = apps.data.find((entry) => entry.attributes?.bundleId === PRODUCTION_BUNDLE_ID);
     if (!app) throw new Error(`aucune app ${PRODUCTION_BUNDLE_ID} dans App Store Connect`);
-    const [versions, builds] = await Promise.all([
+    const stagingApps = await api("GET", `/v1/apps?filter[bundleId]=${STAGING_BUNDLE_ID}`);
+    const stagingApp = stagingApps.data.find((entry) => entry.attributes?.bundleId === STAGING_BUNDLE_ID);
+    const [versions, builds, stagingBuilds] = await Promise.all([
       api("GET", `/v1/apps/${app.id}/appStoreVersions?limit=20&include=build`),
       api("GET", `/v1/builds?filter[app]=${app.id}&sort=-uploadedDate&limit=5`),
+      // Sans app de staging dans App Store Connect, aucun build à protéger.
+      stagingApp
+        ? api("GET", `/v1/builds?filter[app]=${stagingApp.id}&sort=-uploadedDate&limit=10`)
+        : { data: [] },
     ]);
-    revocable = revocableCertificates(certificates, protectedUploads(versions, builds), signedBuilds);
+    const uploads = [...protectedUploads(versions, builds), ...stagingUploads(stagingBuilds)];
+    revocable = revocableCertificates(certificates, uploads, signedBuilds);
   } catch (error) {
     console.warn(`ios-signing: ⚠️ inventaire des binaires impossible, aucun certificat révoqué, ${error.message}`);
     return;
@@ -479,7 +518,7 @@ const profiles = await api("GET", "/v1/profiles?limit=200&include=certificates")
 /** @type {Map<string, string>} id de certificat vers numéro de build signé */
 const signedBuilds = new Map();
 for (const profile of profiles.data) {
-  const signed = MARKER_PATTERN.exec(profile.attributes?.name ?? "")?.[1];
+  const signed = markedBuild(profile.attributes?.name ?? "");
   if (!signed) continue;
   for (const linked of profile.relationships?.certificates?.data ?? []) signedBuilds.set(linked.id, signed);
 }
@@ -596,9 +635,7 @@ console.log(`ios-signing: identité installée, ${identity}`);
 // part chez Apple, et dira alors quel certificat l'a signé. Sans numéro de
 // build (lancement hors CI), le profil est nommé sans marqueur, donc traité
 // comme jetable.
-const runSuffix = buildNumber
-  ? `build ${buildNumber}`
-  : `${IS_STAGING ? "staging " : ""}${process.env.GITHUB_RUN_ID ?? Date.now()}`;
+const runSuffix = `${IS_STAGING ? "staging " : ""}${buildNumber ? `build ${buildNumber}` : (process.env.GITHUB_RUN_ID ?? Date.now())}`;
 const profileName = buildNumber ? markerName(buildNumber) : `${PROFILE_PREFIX} ${runSuffix}`;
 // Le profil de l'extension ne suit PAS le motif du marqueur : il est jetable,
 // le lien certificat/binaire étant déjà porté par celui de l'app.
@@ -625,7 +662,7 @@ for (const stale of profiles.data) {
     console.log(`ios-signing: ancien profil « ${name} » supprimé`);
     continue;
   }
-  const marks = MARKER_PATTERN.test(name) && name !== profileName;
+  const marks = Boolean(markedBuild(name)) && name !== profileName;
   const linked = stale.relationships?.certificates?.data ?? [];
   if (marks && linked.some((certificate) => liveCertificateIds.has(certificate.id))) continue;
   await api("DELETE", `/v1/profiles/${stale.id}`).catch(() => {});
