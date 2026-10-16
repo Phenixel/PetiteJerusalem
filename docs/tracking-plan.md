@@ -238,11 +238,12 @@ Une montée cochée ou décochée sur la page du chnei mikra
 (`/bibliotheque/chnei-mikra`, `useChneiMikraChecks`). Il dit si la case sert,
 et jusqu'où la semaine se lit.
 
-| Propriété | Valeurs | Statut |
-| --- | --- | --- |
-| `done` | vrai si la montée vient d'être cochée, faux si décochée | **nouveau** |
-| `text_id` | le texte de la paracha (une paracha double en a deux) | **nouveau** |
-| `aliya` | la montée, telle que le texte la nomme (`Rishon`, `Sheni`...) | **nouveau** |
+| Propriété | Valeurs                                                                                                              | Statut      |
+| --------- | -------------------------------------------------------------------------------------------------------------------- | ----------- |
+| `done`    | vrai si la montée vient d'être cochée, faux si décochée                                                              | **nouveau** |
+| `text_id` | le texte de la paracha (une paracha double en a deux)                                                                | **nouveau** |
+| `aliya`   | la montée, telle que le texte la nomme (`1re montée`, `2e montée`...)                                                | **nouveau** |
+| `source`  | `text` (la case dans le texte), `list` (la liste de la semaine, au-dessus du texte) ; absent avant la liste : `text` | **ajouté**  |
 
 ## Sidour et Étude (octobre 2026)
 
@@ -257,22 +258,22 @@ L'arrivée sur la page du Sidour (`/sidour`). Il dit ce que la carte du moment
 proposait à ce moment-là : le dénominateur de `sidour_text_opened`, et de quoi
 voir si l'on vient au Sidour à l'heure des offices.
 
-| Propriété | Valeurs | Statut |
-| --- | --- | --- |
-| `hero` | `chaharit`, `minha`, `arvit` (l'office dont c'est l'heure), `next_chaharit`, `next_minha`, `next_arvit` (celui qui vient, entre deux plages), `hanouka`, `slihot`, `halevana` (la bénédiction de la lune, les nuits où elle se dit), `feast` (entre deux offices, le texte de la fête en cours ; `feast` dit laquelle), ou `null` | **nouveau** |
-| `feast` | la fête dont les textes remontent en tête : `tichri`, `souccot`, `hanouka`, ou `null` | **nouveau** |
+| Propriété | Valeurs                                                                                                                                                                                                                                                                                                                           | Statut      |
+| --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
+| `hero`    | `chaharit`, `minha`, `arvit` (l'office dont c'est l'heure), `next_chaharit`, `next_minha`, `next_arvit` (celui qui vient, entre deux plages), `hanouka`, `slihot`, `halevana` (la bénédiction de la lune, les nuits où elle se dit), `feast` (entre deux offices, le texte de la fête en cours ; `feast` dit laquelle), ou `null` | **nouveau** |
+| `feast`   | la fête dont les textes remontent en tête : `tichri`, `souccot`, `hanouka`, ou `null`                                                                                                                                                                                                                                             | **nouveau** |
 
 ### `sidour_text_opened` (nouveau)
 
 Un texte ouvert depuis la page du Sidour. Il dit si la carte du moment sert,
 et ce qu'on cherche dans la liste.
 
-| Propriété | Valeurs | Statut |
-| --- | --- | --- |
-| `text` | le texte, `corpus/slug` (`sidour/chaharit`, `brahot/birkat-hamazon`...) | **nouveau** |
-| `source` | `hero` (la carte du moment), `extra` (la ligne sous elle, un soir d'occasion : l'office ou la havdala), `list` (la liste) | **nouveau** |
+| Propriété | Valeurs                                                                                                                                               | Statut      |
+| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
+| `text`    | le texte, `corpus/slug` (`sidour/chaharit`, `brahot/birkat-hamazon`...)                                                                               | **nouveau** |
+| `source`  | `hero` (la carte du moment), `extra` (la ligne sous elle, un soir d'occasion : l'office ou la havdala), `list` (la liste)                             | **nouveau** |
 | `section` | pour `list`, le groupe : `offices`, `soir`, `brahot`, `occasions`, `vie`, `fetes`, ou la fête en tête (`tichri`, `souccot`, `hanouka`) ; `null` sinon | **nouveau** |
-| `feast` | comme sur `sidour_viewed` | **nouveau** |
+| `feast`   | comme sur `sidour_viewed`                                                                                                                             | **nouveau** |
 
 ### Les outils : `kotel_compass_opened`, `tefilin_mirror_opened` (existants), `naanouim_compass_opened` (existant, une propriété de plus)
 
@@ -280,11 +281,11 @@ La page du Sidour porte une rangée d'outils (voir `docs/design.md`, « Les
 outils du Sidour ») : ils gardent leurs événements, qui disent d'où on les
 ouvre. Le dénominateur des ouvertures depuis le Sidour est `sidour_viewed`.
 
-| Événement | Propriété | Valeurs | Statut |
-| --- | --- | --- | --- |
-| `kotel_compass_opened` | `source` | `title` (le titre du passage), `menu` (le menu de lecture), `sidour` (la rangée d'outils) | `sidour` **nouveau** |
-| `tefilin_mirror_opened` | `source` | `title`, `menu`, `sidour` | `sidour` **nouveau** |
-| `naanouim_compass_opened` | `source` | `title` (le titre des brahot du loulav), `rubric` (une consigne du Hallel), `sidour` | **nouveau** : l'événement n'avait pas de propriété |
+| Événement                 | Propriété | Valeurs                                                                                   | Statut                                             |
+| ------------------------- | --------- | ----------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| `kotel_compass_opened`    | `source`  | `title` (le titre du passage), `menu` (le menu de lecture), `sidour` (la rangée d'outils) | `sidour` **nouveau**                               |
+| `tefilin_mirror_opened`   | `source`  | `title`, `menu`, `sidour`                                                                 | `sidour` **nouveau**                               |
+| `naanouim_compass_opened` | `source`  | `title` (le titre des brahot du loulav), `rubric` (une consigne du Hallel), `sidour`      | **nouveau** : l'événement n'avait pas de propriété |
 
 ### `kotel_compass_calibration_opened` (nouveau)
 
@@ -293,20 +294,20 @@ boussole se demande en l'ouvrant, dit sa précision, et se tient à plat »).
 Rapporté à `kotel_compass_opened`, il dit combien de gens doutent de la
 flèche ; `accuracy` dit si c'est la précision affichée qui les y a poussés.
 
-| Propriété | Valeurs | Statut |
-| --- | --- | --- |
+| Propriété  | Valeurs                                                                                                                                  | Statut      |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
 | `accuracy` | la précision affichée au moment du toucher : `high`, `medium`, `low`, ou `unknown` quand l'appareil ne la donne pas (Chrome sur le site) | **nouveau** |
 
 ### Valeurs ajoutées à des propriétés existantes
 
-| Événement | Propriété | Valeur ajoutée | Ce qu'elle dit |
-| --- | --- | --- | --- |
-| `library_tab_switched` | `tab` | `chiourim` | les onglets de l'Étude sont trois : `reading` (la bibliothèque), `chiourim`, `sharing`. Le nom de l'événement reste celui d'origine. |
-| `text_opened` | `entry` | `sidour` | la lecture s'ouvre depuis la page du Sidour (`services/readingEntry.ts`). |
-| `tehilim_day_opened` | `source` | `library_today` | depuis « Aujourd'hui », en bas de la bibliothèque. |
-| `chnei_mikra_opened` | `source` | `library_today` | idem. |
-| `offline_download_started`, `offline_download_completed`, `offline_download_failed` | `scope` | `parcours` | les textes de la journée, téléchargés depuis Mon parcours (app ; Ma journée, d'où ils partaient, a été retirée) ; l'ancienne page de la lecture du jour envoyait `daily_reading`. |
-| `offline_download_completed` | `scope` | `feast` | les textes de la fête, téléchargés d'eux-mêmes quand ils remontent en tête du Sidour (app) ; `tab` porte alors la fête (`tichri`, `souccot`, `hanouka`). |
+| Événement                                                                           | Propriété | Valeur ajoutée  | Ce qu'elle dit                                                                                                                                                                    |
+| ----------------------------------------------------------------------------------- | --------- | --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `library_tab_switched`                                                              | `tab`     | `chiourim`      | les onglets de l'Étude sont trois : `reading` (la bibliothèque), `chiourim`, `sharing`. Le nom de l'événement reste celui d'origine.                                              |
+| `text_opened`                                                                       | `entry`   | `sidour`        | la lecture s'ouvre depuis la page du Sidour (`services/readingEntry.ts`).                                                                                                         |
+| `tehilim_day_opened`                                                                | `source`  | `library_today` | depuis « Aujourd'hui », en bas de la bibliothèque.                                                                                                                                |
+| `chnei_mikra_opened`                                                                | `source`  | `library_today` | idem.                                                                                                                                                                             |
+| `offline_download_started`, `offline_download_completed`, `offline_download_failed` | `scope`   | `parcours`      | les textes de la journée, téléchargés depuis Mon parcours (app ; Ma journée, d'où ils partaient, a été retirée) ; l'ancienne page de la lecture du jour envoyait `daily_reading`. |
+| `offline_download_completed`                                                        | `scope`   | `feast`         | les textes de la fête, téléchargés d'eux-mêmes quand ils remontent en tête du Sidour (app) ; `tab` porte alors la fête (`tichri`, `souccot`, `hanouka`).                          |
 
 `library_corpus_opened` ne porte plus que les corpus d'étude (`tehilim`,
 `michna`, `talmud`, `tanakh`) : les listes de liturgie mènent au Sidour.
@@ -422,10 +423,10 @@ injoignable). Voir `composables/useBookDownload.ts` et
 
 ### Lecture : `text_opened` (existant)
 
-| Propriété | Valeurs | Statut |
-| --- | --- | --- |
-| `source` | `library`, `session` | existant, conservé |
-| `entry` | `search`, `resume`, `push`, `home`, `library`, `sidour`, `daily_reading`, `parcours`, `chnei_mikra`, `tehilim_day`, `reading`, `zmanim`, `calendar`, `session`, `direct`, `other` | **nouveau** ; `parcours` (depuis une page de Mon parcours) **ajouté** |
+| Propriété | Valeurs                                                                                                                                                                           | Statut                                                                |
+| --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| `source`  | `library`, `session`                                                                                                                                                              | existant, conservé                                                    |
+| `entry`   | `search`, `resume`, `push`, `home`, `library`, `sidour`, `daily_reading`, `parcours`, `chnei_mikra`, `tehilim_day`, `reading`, `zmanim`, `calendar`, `session`, `direct`, `other` | **nouveau** ; `parcours` (depuis une page de Mon parcours) **ajouté** |
 
 `entry` dit d'où l'on arrive (`services/readingEntry.ts`) : un indice laissé
 juste avant la navigation quand l'adresse ne peut pas le dire (un résultat de
@@ -463,12 +464,12 @@ guemara (`talmud`), une paracha (`torah`), une michna (`mishna`), un verset
 des Neviim, des Ketouvim ou un psaume (`tanakh`), un séif du Choulhan Aroukh
 (`halakha`, valeur ajoutée avec le rayon Halakha).
 
-| Événement             | Propriété         | Valeurs                                                    | Statut      |
-| --------------------- | ----------------- | ---------------------------------------------------------- | ----------- |
+| Événement             | Propriété         | Valeurs                                                                               | Statut      |
+| --------------------- | ----------------- | ------------------------------------------------------------------------------------- | ----------- |
 | `commentaries_opened` | `corpus`          | `talmud`, `torah`, `mishna`, `tanakh` (Neviim, Ketouvim), `halakha` (Choulhan Aroukh) | **nouveau** |
-| `commentaries_opened` | `text_id`         | l'id du texte dans le catalogue                            | **nouveau** |
-| `commentaries_opened` | `count`           | le nombre de commentaires du passage                       | **nouveau** |
-| `commentaries_closed` | `passages_viewed` | les passages vus dans le panneau, celui de l'ouverture compris | **nouveau** |
+| `commentaries_opened` | `text_id`         | l'id du texte dans le catalogue                                                       | **nouveau** |
+| `commentaries_opened` | `count`           | le nombre de commentaires du passage                                                  | **nouveau** |
+| `commentaries_closed` | `passages_viewed` | les passages vus dans le panneau, celui de l'ouverture compris                        | **nouveau** |
 
 `passage_action` (existant) prend une valeur de plus pour `action` :
 `commentaries`, l'appui sur la rangée de la bulle.
@@ -480,10 +481,10 @@ gauche (ou au clavier, par les flèches) ; un double appui sur le bord lui
 rend sa largeur d'origine. L'événement part à la fin du geste, une fois, et
 dit si la largeur par défaut convient à qui étudie.
 
-| Événement              | Propriété        | Valeurs                                                 | Statut      |
-| ---------------------- | ---------------- | ------------------------------------------------------- | ----------- |
+| Événement              | Propriété        | Valeurs                                                     | Statut      |
+| ---------------------- | ---------------- | ----------------------------------------------------------- | ----------- |
 | `commentaries_resized` | `width`          | la largeur choisie, en pixels ; `null` quand on la rétablit | **nouveau** |
-| `commentaries_resized` | `viewport_width` | la largeur de la fenêtre, en pixels                     | **nouveau** |
+| `commentaries_resized` | `viewport_width` | la largeur de la fenêtre, en pixels                         | **nouveau** |
 
 ### Lecture : le défilement automatique (`auto_scroll_*`, existants)
 
@@ -518,13 +519,13 @@ textes mis de côté, sur la table »). Tous **nouveaux**.
 
 Un texte posé sur la table.
 
-| Propriété | Valeurs |
-| --- | --- |
-| `text_id` | l'identifiant du texte dans le catalogue |
-| `corpus` | son rayon (`tanakh`, `talmud`, `moussar`, `halakha`...) ; jamais un texte du Sidour, qui ne se pose pas sur la table |
-| `texts_count` | le nombre de textes sur la table une fois celui-ci posé |
-| `from` | `header` (le bouton en tête du texte), `menu` (le menu de lecture), `table` (« Poser aussi », depuis le panneau) |
-| `already_on_table` | le texte y était déjà, il n'a fait que retenir sa page (absent pour `from: table`) |
+| Propriété          | Valeurs                                                                                                              |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------- |
+| `text_id`          | l'identifiant du texte dans le catalogue                                                                             |
+| `corpus`           | son rayon (`tanakh`, `talmud`, `moussar`, `halakha`...) ; jamais un texte du Sidour, qui ne se pose pas sur la table |
+| `texts_count`      | le nombre de textes sur la table une fois celui-ci posé                                                              |
+| `from`             | `header` (le bouton en tête du texte), `menu` (le menu de lecture), `table` (« Poser aussi », depuis le panneau)     |
+| `already_on_table` | le texte y était déjà, il n'a fait que retenir sa page (absent pour `from: table`)                                   |
 
 #### `reading_table_opened`
 
@@ -536,13 +537,13 @@ lu, un glissement vers le haut). `texts_count` : les textes posés.
 Un texte rouvert depuis la table : un livre de la barre, ou une ligne du
 panneau. Le `text_opened` qui suit porte `entry: table`.
 
-| Propriété | Valeurs |
-| --- | --- |
-| `text_id` | l'identifiant du texte |
-| `corpus` | son rayon |
-| `texts_count` | les textes posés |
-| `was_open` | c'était le texte déjà à l'écran (le panneau se referme seulement) |
-| `from` | `bar` (un livre de la barre), `table` (une ligne du panneau) |
+| Propriété     | Valeurs                                                           |
+| ------------- | ----------------------------------------------------------------- |
+| `text_id`     | l'identifiant du texte                                            |
+| `corpus`      | son rayon                                                         |
+| `texts_count` | les textes posés                                                  |
+| `was_open`    | c'était le texte déjà à l'écran (le panneau se referme seulement) |
+| `from`        | `bar` (un livre de la barre), `table` (une ligne du panneau)      |
 
 #### `reading_table_text_removed`
 
@@ -567,21 +568,21 @@ même terme, jamais un terme vide.
 
 #### `library_search_performed` (nouveau)
 
-| Propriété | Valeurs |
-| --- | --- |
-| `scope` | `all` depuis l'étagère, sinon le rayon (`tehilim`, `sidour`...) |
-| `query` | le terme, en minuscules, espaces resserrées, 40 caractères au plus |
-| `query_length` | sa longueur |
-| `results_count` | le nombre de textes trouvés |
+| Propriété       | Valeurs                                                            |
+| --------------- | ------------------------------------------------------------------ |
+| `scope`         | `all` depuis l'étagère, sinon le rayon (`tehilim`, `sidour`...)    |
+| `query`         | le terme, en minuscules, espaces resserrées, 40 caractères au plus |
+| `query_length`  | sa longueur                                                        |
+| `results_count` | le nombre de textes trouvés                                        |
 
 #### `library_search_result_opened` (nouveau)
 
-| Propriété | Valeurs |
-| --- | --- |
-| `scope` | comme ci-dessus |
-| `rank` | le rang du texte dans les résultats tels qu'ils s'affichent (par rayon, puis par livre), à partir de 1 |
-| `corpus` | le type du texte (`Tehilim`, `Sidour`...) |
-| `text_id` | son identifiant dans le catalogue |
+| Propriété | Valeurs                                                                                                |
+| --------- | ------------------------------------------------------------------------------------------------------ |
+| `scope`   | comme ci-dessus                                                                                        |
+| `rank`    | le rang du texte dans les résultats tels qu'ils s'affichent (par rayon, puis par livre), à partir de 1 |
+| `corpus`  | le type du texte (`Tehilim`, `Sidour`...)                                                              |
+| `text_id` | son identifiant dans le catalogue                                                                      |
 
 #### `chiourim_search_performed` (nouveau)
 
@@ -592,42 +593,42 @@ comme pour la bibliothèque.
 
 #### `zmanim_day_changed` (nouveau)
 
-| Propriété | Valeurs |
-| --- | --- |
-| `via` | `arrow`, `picker` (le calendrier sous la date), `today` (« Revenir à aujourd'hui ») |
-| `offset_days` | l'écart avec aujourd'hui après le changement |
-| `arrow_streak` | les flèches touchées à la suite, 0 hors flèche |
+| Propriété      | Valeurs                                                                             |
+| -------------- | ----------------------------------------------------------------------------------- |
+| `via`          | `arrow`, `picker` (le calendrier sous la date), `today` (« Revenir à aujourd'hui ») |
+| `offset_days`  | l'écart avec aujourd'hui après le changement                                        |
+| `arrow_streak` | les flèches touchées à la suite, 0 hors flèche                                      |
 
 Au troisième appui de suite sur une flèche, l'astuce `zmanim-date` est
 appelée (voir docs/design.md, « Une astuce se joue sur la page, une fois »).
 
 #### `zmanim_location_requested` (existant)
 
-| Propriété | Valeurs | Statut |
-| --- | --- | --- |
-| `granted` | booléen | existant, conservé |
-| `source` | `sidour`, ou absent sur la page des horaires | existant, conservé |
-| `outcome` | `granted`, `denied` (refus de l'utilisateur), `unavailable` (pas de signal, délai dépassé) | **nouveau** |
-| `duration_ms` | l'attente de la réponse | **nouveau** |
+| Propriété     | Valeurs                                                                                    | Statut             |
+| ------------- | ------------------------------------------------------------------------------------------ | ------------------ |
+| `granted`     | booléen                                                                                    | existant, conservé |
+| `source`      | `sidour`, ou absent sur la page des horaires                                               | existant, conservé |
+| `outcome`     | `granted`, `denied` (refus de l'utilisateur), `unavailable` (pas de signal, délai dépassé) | **nouveau**        |
+| `duration_ms` | l'attente de la réponse                                                                    | **nouveau**        |
 
 ### Connexion
 
 #### `login_viewed` (nouveau)
 
-| Propriété | Valeurs |
-| --- | --- |
-| `reason` | ce qui y a mené (`services/loginReason.ts`) : `direct`, `daily_reading`, `parcours` (une page de Mon parcours, sur le site ; **nouvelle valeur**), `share_reading`, `profile`, `admin`, `other` |
-| `mode` | `login` ou `signup` à l'arrivée |
-| `last_method` | la dernière méthode de connexion de l'appareil : `google`, `apple`, `email`, ou `null` |
+| Propriété     | Valeurs                                                                                                                                                                                         |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `reason`      | ce qui y a mené (`services/loginReason.ts`) : `direct`, `daily_reading`, `parcours` (une page de Mon parcours, sur le site ; **nouvelle valeur**), `share_reading`, `profile`, `admin`, `other` |
+| `mode`        | `login` ou `signup` à l'arrivée                                                                                                                                                                 |
+| `last_method` | la dernière méthode de connexion de l'appareil : `google`, `apple`, `email`, ou `null`                                                                                                          |
 
 #### `email_auth_failed` (existant)
 
-| Propriété | Valeurs | Statut |
-| --- | --- | --- |
-| `mode` | `login`, `signup` | existant |
-| `reason` | le code Firebase (`auth/...`), ou `error` | existant |
-| `reason` | `password_mismatch` (les deux mots de passe diffèrent), `moderation` (nom affiché refusé) | **nouvelles valeurs** ; elles partaient jusqu'ici sous `error` |
-| `last_method` | comme `login_viewed` | **nouveau** |
+| Propriété     | Valeurs                                                                                   | Statut                                                         |
+| ------------- | ----------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| `mode`        | `login`, `signup`                                                                         | existant                                                       |
+| `reason`      | le code Firebase (`auth/...`), ou `error`                                                 | existant                                                       |
+| `reason`      | `password_mismatch` (les deux mots de passe diffèrent), `moderation` (nom affiché refusé) | **nouvelles valeurs** ; elles partaient jusqu'ici sous `error` |
+| `last_method` | comme `login_viewed`                                                                      | **nouveau**                                                    |
 
 #### `google_signin_clicked`, `apple_signin_clicked`, `*_signin_failed` (existants)
 
@@ -639,20 +640,20 @@ dit combien d'échecs cèdent au deuxième essai (l'erreur Apple 1000).
 La sortie proposée sous une erreur email (docs/design.md, « L'écran de
 connexion dit quoi faire »).
 
-| Propriété | Valeurs |
-| --- | --- |
-| `help` | `signup` (créer le compte), `login` (s'y connecter), `provider` (le bouton de la dernière méthode) |
-| `reason` | la raison de l'échec qui l'a proposée, comme `email_auth_failed.reason` |
+| Propriété | Valeurs                                                                                            |
+| --------- | -------------------------------------------------------------------------------------------------- |
+| `help`    | `signup` (créer le compte), `login` (s'y connecter), `provider` (le bouton de la dernière méthode) |
+| `reason`  | la raison de l'échec qui l'a proposée, comme `email_auth_failed.reason`                            |
 
 #### `password_reset_opened` (nouveau)
 
 « Mot de passe oublié ? » touché sous le champ du mot de passe (docs/design.md,
 « L'écran de connexion dit quoi faire »).
 
-| Propriété | Valeurs |
-| --- | --- |
+| Propriété     | Valeurs                                                                                                                           |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | `after_error` | la raison de l'échec affiché à ce moment, comme `email_auth_failed.reason` (`auth/invalid-credential` le plus souvent), ou `null` |
-| `last_method` | comme `login_viewed` |
+| `last_method` | comme `login_viewed`                                                                                                              |
 
 #### `password_reset_requested` (nouveau)
 
@@ -660,17 +661,17 @@ L'envoi de l'email de réinitialisation. Ni l'adresse, ni le fait qu'elle ait un
 compte : Firebase ne le dit pas, et une adresse sans compte compte comme
 `sent`.
 
-| Propriété | Valeurs |
-| --- | --- |
-| `outcome` | `sent`, `failed` |
-| `reason` | le code Firebase d'un échec (`auth/too-many-requests`, `auth/invalid-email`, `auth/network-request-failed`...), `error` sans code, `null` pour `sent` |
+| Propriété | Valeurs                                                                                                                                               |
+| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `outcome` | `sent`, `failed`                                                                                                                                      |
+| `reason`  | le code Firebase d'un échec (`auth/too-many-requests`, `auth/invalid-email`, `auth/network-request-failed`...), `error` sans code, `null` pour `sent` |
 
 #### `account_delete_failed` (existant)
 
-| Propriété | Valeurs | Statut |
-| --- | --- | --- |
-| `reason` | `requires_recent_login`, `reauth_cancelled`, `error` | existant |
-| `reason` | `wrong_password` : le mot de passe saisi dans la confirmation (compte à mot de passe) est faux | **nouvelle valeur**, avec le champ de mot de passe de la confirmation |
+| Propriété | Valeurs                                                                                        | Statut                                                                |
+| --------- | ---------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| `reason`  | `requires_recent_login`, `reauth_cancelled`, `error`                                           | existant                                                              |
+| `reason`  | `wrong_password` : le mot de passe saisi dans la confirmation (compte à mot de passe) est faux | **nouvelle valeur**, avec le champ de mot de passe de la confirmation |
 
 Après `account_deleted`, le suivi est remis à zéro comme à la déconnexion
 (`signed_out`) : les événements suivants repartent anonymes.
@@ -685,12 +686,12 @@ parcours » plus bas). La page `/bibliotheque/lecture-du-jour`, revenue,
 l'envoie aussi à l'arrivée ; `source` (**nouvelle propriété**) dit d'où :
 `wallet` (le portefeuille de l'accueil) ou `page` (la lecture du jour).
 
-| Propriété | Valeurs |
-| --- | --- |
-| `state` | `empty` (rien de prévu), `in_progress`, `all_done` ; `error` ne part plus (rien ne se charge) |
+| Propriété     | Valeurs                                                                                                       |
+| ------------- | ------------------------------------------------------------------------------------------------------------- |
+| `state`       | `empty` (rien de prévu), `in_progress`, `all_done` ; `error` ne part plus (rien ne se charge)                 |
 | `total_count` | les tâches du jour (les tâches de la semaine, comme le chnei mikra, et celles mises de côté n'y comptent pas) |
-| `done_count` | celles déjà faites |
-| `source` | `wallet` ou `page` |
+| `done_count`  | celles déjà faites                                                                                            |
+| `source`      | `wallet` ou `page`                                                                                            |
 
 ### Chaînes
 
@@ -699,10 +700,10 @@ l'envoie aussi à l'arrivée ; `source` (**nouvelle propriété**) dit d'où :
 La confirmation demandée quand la date limite tombe ce soir ou demain soir
 (`services/sessionDeadline.ts`).
 
-| Propriété | Valeurs |
-| --- | --- |
+| Propriété       | Valeurs                                                                            |
+| --------------- | ---------------------------------------------------------------------------------- |
 | `deadline_days` | 1 (ce soir) ou 2 (demain soir), le même calcul que `session_created.deadline_days` |
-| `confirmed` | vrai si la chaîne est créée telle quelle, faux si l'on revient à la date |
+| `confirmed`     | vrai si la chaîne est créée telle quelle, faux si l'on revient à la date           |
 
 #### `share_modal_opened`, `share_channel_selected` (existants)
 
@@ -714,11 +715,11 @@ ce que le second rapporte au premier.
 
 `occasion_opened` (existant, le bandeau de l'accueil) est conservé. À côté :
 
-| Événement | Propriétés |
-| --- | --- |
-| `occasions_opened` (nouveau) | `source` (`calendar_button`, `calendar_row`), `occasions_count` (les dates déjà inscrites) |
-| `occasion_saved` (nouveau) | `kind` (`yahrzeit`, `birthday`, `other`), `is_new`, `on_account` (la date suit le compte, ou reste sur l'appareil), `date_entry` (**nouveau** : `hebrew` pour une date saisie en hébreu, `civil` pour une date saisie par sa date civile et convertie) |
-| `occasion_removed` (nouveau) | `kind` |
+| Événement                    | Propriétés                                                                                                                                                                                                                                             |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `occasions_opened` (nouveau) | `source` (`calendar_button`, `calendar_row`), `occasions_count` (les dates déjà inscrites)                                                                                                                                                             |
+| `occasion_saved` (nouveau)   | `kind` (`yahrzeit`, `birthday`, `other`), `is_new`, `on_account` (la date suit le compte, ou reste sur l'appareil), `date_entry` (**nouveau** : `hebrew` pour une date saisie en hébreu, `civil` pour une date saisie par sa date civile et convertie) |
+| `occasion_removed` (nouveau) | `kind`                                                                                                                                                                                                                                                 |
 
 Ni le nom ni la date : ils désignent une personne.
 
@@ -754,9 +755,9 @@ La personne relance un de ses messages depuis la page « Nous écrire »
 (`/contact`), dans l'app ou sur le site (voir `docs/feedback.md`). Le premier
 message reste `feedback_sent` (existant, inchangé).
 
-| Propriété | Valeurs                                                          |
-| --------- | ---------------------------------------------------------------- |
-| `kind`    | la nature du fil : `idea`, `bug`, `error` ou `other`             |
+| Propriété | Valeurs                                              |
+| --------- | ---------------------------------------------------- |
+| `kind`    | la nature du fil : `idea`, `bug`, `error` ou `other` |
 
 Pas le texte : il est dans le fil, que seul le backoffice lit.
 
@@ -769,12 +770,12 @@ bibliothèque qu'il étudie (voir `services/chiourTexte.ts`).
 
 ### `chiour_played` (existant, trois propriétés de plus)
 
-| Propriété | Valeurs | Statut |
-| --- | --- | --- |
-| `chiour_slug`, `chiour_title`, `duration_seconds` |  | existants, conservés |
-| `source` | `chiour` (la page du cours), `serie`, `auteur`, `catalogue`, `reprise` (la rangée « Reprendre l'écoute »), `texte` (les cours sous un texte de la bibliothèque) | **nouveau** |
-| `autoplay` | vrai quand la fin du cours précédent l'a enchaîné | **nouveau** |
-| `resumed` | vrai quand il reprend là où on l'avait laissé | **nouveau** |
+| Propriété                                         | Valeurs                                                                                                                                                         | Statut               |
+| ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
+| `chiour_slug`, `chiour_title`, `duration_seconds` |                                                                                                                                                                 | existants, conservés |
+| `source`                                          | `chiour` (la page du cours), `serie`, `auteur`, `catalogue`, `reprise` (la rangée « Reprendre l'écoute »), `texte` (les cours sous un texte de la bibliothèque) | **nouveau**          |
+| `autoplay`                                        | vrai quand la fin du cours précédent l'a enchaîné                                                                                                               | **nouveau**          |
+| `resumed`                                         | vrai quand il reprend là où on l'avait laissé                                                                                                                   | **nouveau**          |
 
 `source` est celle du geste qui a lancé la file : les cours qu'elle enchaîne
 la gardent, et portent `autoplay`.
@@ -788,12 +789,12 @@ s'il n'en a pas.
 
 D'un cours, d'une série ou du lecteur plein écran vers son texte (« Lire le texte »).
 
-| Propriété | Valeurs |
-| --- | --- |
-| `source` | `chiour`, `serie`, `lecteur` (le lecteur plein écran) |
-| `chiour_slug` | le cours, `null` depuis une série |
-| `texte_id` | l'identifiant du texte dans le catalogue |
-| `chapitre` | le chapitre visé, `null` pour le texte entier |
+| Propriété     | Valeurs                                               |
+| ------------- | ----------------------------------------------------- |
+| `source`      | `chiour`, `serie`, `lecteur` (le lecteur plein écran) |
+| `chiour_slug` | le cours, `null` depuis une série                     |
+| `texte_id`    | l'identifiant du texte dans le catalogue              |
+| `chapitre`    | le chapitre visé, `null` pour le texte entier         |
 
 ### `text_chiourim_shown` (nouveau)
 
@@ -802,12 +803,12 @@ texte de la bibliothèque : le dénominateur des écoutes lancées depuis un
 texte (`chiour_played`, `source` `texte`). Une fois par texte et par chapitre
 ouvert.
 
-| Propriété | Valeurs |
-| --- | --- |
-| `texte_id` | l'identifiant du texte |
-| `chapitre` | le chapitre ouvert, `null` sur le texte entier |
-| `chiourim_count` | les cours du texte |
-| `chapter_count` | ceux du chapitre ouvert |
+| Propriété        | Valeurs                                        |
+| ---------------- | ---------------------------------------------- |
+| `texte_id`       | l'identifiant du texte                         |
+| `chapitre`       | le chapitre ouvert, `null` sur le texte entier |
+| `chiourim_count` | les cours du texte                             |
+| `chapter_count`  | ceux du chapitre ouvert                        |
 
 ### `chiourim_filters_opened` (nouveau)
 
@@ -820,10 +821,10 @@ thème, depuis ce panneau ; `category` vaut `all` quand on le retire.
 
 Un rav choisi (ou retiré) dans les filtres du catalogue.
 
-| Propriété | Valeurs |
-| --- | --- |
-| `auteur` | le nom du rav, `null` quand le filtre est retiré |
-| `results_count` | les cours affichés |
+| Propriété       | Valeurs                                          |
+| --------------- | ------------------------------------------------ |
+| `auteur`        | le nom du rav, `null` quand le filtre est retiré |
+| `results_count` | les cours affichés                               |
 
 ## Traductions (octobre 2026)
 
@@ -836,19 +837,19 @@ trouvée, dans quelle langue on la lit, et donc où compléter le français.
 La commande « Traduction » de la barre d'outils, ou l'interrupteur des
 réglages de lecture.
 
-| Propriété | Valeurs |
-| --- | --- |
-| `enabled` | `true` à l'allumage, `false` à l'extinction |
-| `lang` | la langue de la traduction du texte ouvert (`fr`, `en`), `null` si aucune |
+| Propriété | Valeurs                                                                   |
+| --------- | ------------------------------------------------------------------------- |
+| `enabled` | `true` à l'allumage, `false` à l'extinction                               |
+| `lang`    | la langue de la traduction du texte ouvert (`fr`, `en`), `null` si aucune |
 
 ### `translation_language_changed` (nouveau)
 
 Une autre langue choisie dans les réglages de lecture, sur un texte traduit
 dans les deux (le Tanakh, une partie de la Michna).
 
-| Propriété | Valeurs |
-| --- | --- |
-| `lang` | la langue choisie (`fr`, `en`) |
+| Propriété | Valeurs                        |
+| --------- | ------------------------------ |
+| `lang`    | la langue choisie (`fr`, `en`) |
 
 ## Mon parcours
 
@@ -861,11 +862,11 @@ passe par `src/services/parcours/tracking.ts`.
 
 À l'arrivée sur Mon parcours.
 
-| Propriété | Valeurs |
-| --- | --- |
-| `objectives_count` | les objectifs en cours |
-| `streak` | la série en cours, en jours |
-| `signed_in` | vrai avec un compte (sans compte, tout reste sur l'appareil) |
+| Propriété          | Valeurs                                                      |
+| ------------------ | ------------------------------------------------------------ |
+| `objectives_count` | les objectifs en cours                                       |
+| `streak`           | la série en cours, en jours                                  |
+| `signed_in`        | vrai avec un compte (sans compte, tout reste sur l'appareil) |
 
 ### `parcours_wall_viewed` (nouveau)
 
@@ -881,12 +882,12 @@ entier).
 
 Une tâche cochée ou décochée.
 
-| Propriété | Valeurs |
-| --- | --- |
-| `done` | vrai quand elle est cochée |
-| `kind` | `program`, `habit`, `cycle`, `text` |
-| `source` | d'où : `home_deck_swipe` (la carte du dessus de la pile de l'accueil, glissée), `home_wallet_swipe` (une carte du portefeuille, glissée à droite ou, pour la décocher, à gauche), `home_sheet` (la fiche d'une carte), `journee_row` (Ma journée, retirée : ne part plus), `objective_swipe` (la portion du jour ou de la semaine, glissée sur la page d'un programme), `reader` (au bas d'une lecture ouverte depuis le parcours, l'anneau tiré vers le haut), `parcours_wall`, `parcours_full_wall` (un jour du mur), `daily_page` (**nouvelle valeur** : « Marquer comme lu » sur la page de la lecture du jour) ; la carte « Lecture du jour » de l'accueil, glissée, en envoie un par texte |
-| `days_ago` | 0 aujourd'hui, 1 hier... : ce qui se coche après coup |
+| Propriété  | Valeurs                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `done`     | vrai quand elle est cochée                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `kind`     | `program`, `habit`, `cycle`, `text`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `source`   | d'où : `home_deck_swipe` (la carte du dessus de la pile de l'accueil, glissée), `home_wallet_swipe` (une carte du portefeuille, glissée à droite ou, pour la décocher, à gauche), `home_sheet` (la fiche d'une carte), `journee_row` (Ma journée, retirée : ne part plus), `objective_swipe` (la portion du jour ou de la semaine, glissée sur la page d'un programme), `reader` (au bas d'une lecture ouverte depuis le parcours, l'anneau tiré vers le haut), `parcours_wall`, `parcours_full_wall` (un jour du mur), `daily_page` (**nouvelle valeur** : « Marquer comme lu » sur la page de la lecture du jour) ; la carte « Lecture du jour » de l'accueil, glissée, en envoie un par texte |
+| `days_ago` | 0 aujourd'hui, 1 hier... : ce qui se coche après coup                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 
 Une tâche de la lecture du jour d'avant (un texte du jour, une lecture du
 calendrier), cochée le jour même, envoie aussi `daily_reading_marked_read`
@@ -919,11 +920,11 @@ pile tirée vers le bas) ou `day_bar` (la barre de la journée touchée).
 Une carte d'occasion de la pile dite faite, ou défaite : elle ne compte pas
 dans la journée, l'appareil s'en souvient.
 
-| Propriété | Valeurs |
-| --- | --- |
+| Propriété  | Valeurs                                                                                    |
+| ---------- | ------------------------------------------------------------------------------------------ |
 | `occasion` | `halevana` (la bénédiction de la lune), `omer` (le compte du soir), `hanouka` (l'allumage) |
-| `done` | vrai quand elle est faite |
-| `source` | `home_deck_swipe`, `home_wallet_swipe`, `home_sheet` (comme `parcours_task_marked`) |
+| `done`     | vrai quand elle est faite                                                                  |
+| `source`   | `home_deck_swipe`, `home_wallet_swipe`, `home_sheet` (comme `parcours_task_marked`)        |
 
 `birkat_halevana_opened` et `omer_opened` (existants) partent toujours avec
 `source: home` quand leur carte est touchée dans la pile, comme quand elles
@@ -960,21 +961,21 @@ La suite d'un programme lue en avance : la portion d'après, ouverte par
 le volume de l'accueil touché quand la portion du jour est faite) et
 marquée lue au bas de la lecture.
 
-| Propriété | Valeurs |
-| --- | --- |
-| `corpus` | `michna`, `talmud`, `tanakh`, `tehilim` |
-| `units` | les unités de la portion lue en avance |
+| Propriété | Valeurs                                 |
+| --------- | --------------------------------------- |
+| `corpus`  | `michna`, `talmud`, `tanakh`, `tehilim` |
+| `units`   | les unités de la portion lue en avance  |
 
 ### `parcours_objective_created` (nouveau)
 
-| Propriété | Valeurs |
-| --- | --- |
-| `kind` | `program`, `habit`, `cycle`, `text` |
-| `corpus`, `rhythm`, `parts_count`, `texts_count` | un programme : `michna`, `talmud`, `tanakh`, `tehilim` ; `daily`, `weekdays`, `weekly` ; les parties prises (sedarim, traités, livres) ; les textes qu'elles font |
-| `preset`, `days_count` | une habitude : `tefilot`, `chema-al-hamita`, `tsedaka`, `chmirat-halachon`, `limoud` (un temps d'étude, **nouveau**), `custom` (« Avec mes mots ») ; `tefilin` et `birkat-hamazon` ne partent plus (la création ne les propose plus) ; ses jours dans la semaine |
-| `cycle` | une lecture du calendrier : `tehilim-week`, `tehilim-month`, `parasha` ; `parasha-aliyot` (**nouvelle valeur**), le chnei mikra une montée par jour |
-| `text_id` | un texte du jour ; `texts_count` dit combien ont été pris d'un coup (un événement par texte) |
-| `source` | **nouvelle propriété** : `daily_page`, un texte ajouté depuis la page de la lecture du jour (« Modifier ma liste ») ; absente, l'objectif vient de la page de création |
+| Propriété                                        | Valeurs                                                                                                                                                                                                                                                          |
+| ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `kind`                                           | `program`, `habit`, `cycle`, `text`                                                                                                                                                                                                                              |
+| `corpus`, `rhythm`, `parts_count`, `texts_count` | un programme : `michna`, `talmud`, `tanakh`, `tehilim` ; `daily`, `weekdays`, `weekly` ; les parties prises (sedarim, traités, livres) ; les textes qu'elles font                                                                                                |
+| `preset`, `days_count`                           | une habitude : `tefilot`, `chema-al-hamita`, `tsedaka`, `chmirat-halachon`, `limoud` (un temps d'étude, **nouveau**), `custom` (« Avec mes mots ») ; `tefilin` et `birkat-hamazon` ne partent plus (la création ne les propose plus) ; ses jours dans la semaine |
+| `cycle`                                          | une lecture du calendrier : `tehilim-week`, `tehilim-month`, `parasha` ; `parasha-aliyot` (**nouvelle valeur**), le chnei mikra une montée par jour                                                                                                              |
+| `text_id`                                        | un texte du jour ; `texts_count` dit combien ont été pris d'un coup (un événement par texte)                                                                                                                                                                     |
+| `source`                                         | **nouvelle propriété** : `daily_page`, un texte ajouté depuis la page de la lecture du jour (« Modifier ma liste ») ; absente, l'objectif vient de la page de création                                                                                           |
 
 ### `parcours_objective_paused`, `parcours_objective_removed` (nouveaux)
 
@@ -995,11 +996,11 @@ Une lumière de la série gagnée (la bougie, la lanterne... voir
 sa feuille monte. Une fois par palier et par appareil ; rien quand le record
 saute de plusieurs jours d'un coup (le compte relu sur un nouvel appareil).
 
-| Propriété | Valeurs |
-| --- | --- |
-| `light` | `candle`, `lantern`, `menorah`, `lighthouse`, `moon`, `sun`, `stars`, `galaxy`, `supernova`, `quasar`, `first-light` |
-| `days` | le palier franchi, en jours d'affilée : 3, 7, 14, 21, 30, 50, 75, 100, 150, 250, 365 |
-| `streak` | la série en cours |
+| Propriété | Valeurs                                                                                                              |
+| --------- | -------------------------------------------------------------------------------------------------------------------- |
+| `light`   | `candle`, `lantern`, `menorah`, `lighthouse`, `moon`, `sun`, `stars`, `galaxy`, `supernova`, `quasar`, `first-light` |
+| `days`    | le palier franchi, en jours d'affilée : 3, 7, 14, 21, 30, 50, 75, 100, 150, 250, 365                                 |
+| `streak`  | la série en cours                                                                                                    |
 
 ### `parcours_lights_opened` (nouveau)
 
@@ -1013,12 +1014,12 @@ gagnée).
 
 Un retard rattrapé.
 
-| Propriété | Valeurs |
-| --- | --- |
-| `option` | `week`, `remaining`, `oneDay`, `pushEnd`, `done` |
-| `behind` | les unités de retard |
-| `remember` | vrai si l'on a choisi de faire ainsi sans demander |
-| `source` | `objective` (la feuille « Rattraper » d'un programme), `home_deck_swipe`, `home_wallet_swipe` ou `home_sheet` (la carte « Rattraper » de l'accueil, dite faite : `option` vaut alors `done`) |
+| Propriété  | Valeurs                                                                                                                                                                                      |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `option`   | `week`, `remaining`, `oneDay`, `pushEnd`, `done`                                                                                                                                             |
+| `behind`   | les unités de retard                                                                                                                                                                         |
+| `remember` | vrai si l'on a choisi de faire ainsi sans demander                                                                                                                                           |
+| `source`   | `objective` (la feuille « Rattraper » d'un programme), `home_deck_swipe`, `home_wallet_swipe` ou `home_sheet` (la carte « Rattraper » de l'accueil, dite faite : `option` vaut alors `done`) |
 
 ### Ce que deviennent ceux de la lecture du jour
 

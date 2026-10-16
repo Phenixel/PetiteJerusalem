@@ -1972,6 +1972,17 @@ const fr = {
     aliyaMark: "Marquer lue",
     aliyaDone: "Lue",
     aliyaCheck: "{aliya} lue",
+    listTitle: "Les montées de la semaine",
+    listCount: "{done} sur {total}",
+    aliyaNames: {
+      n1: "Cohen",
+      n2: "Lévi",
+      n3: "Chlichi",
+      n4: "Revi'i",
+      n5: "'Hamichi",
+      n6: "Chichi",
+      n7: "Chevi'i",
+    },
   },
   tehilimDay: {
     title: "Tehilim du jour",

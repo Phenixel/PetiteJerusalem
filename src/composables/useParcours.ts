@@ -3,12 +3,14 @@ import { localDayKey } from "../services/dateService";
 import {
   putObjective,
   removeObjective,
+  setAliyaChecked,
   setPaused,
   setTaskDone,
   setTaskSkipped,
   setUnitsRead,
 } from "../services/parcours/actions";
 import { joiningEntries } from "../services/parcours/account";
+import { ALIYOT_PER_PARASHA } from "../services/parcours/aliyot";
 import { parashaAliyotCount, restCalendar } from "../services/parcours/calendar";
 import { fetchAccountParcours, writeAccountEntries } from "../services/parcours/cloud";
 import {
@@ -79,6 +81,8 @@ let pushTimer: ReturnType<typeof setTimeout> | undefined;
 let legacyLists: string | null = null;
 let legacyProgress: string | null = null;
 let started = false;
+/** Les montées de la paracha d'une semaine, au lieu des horaires (tenu par useParcours). */
+let weekAliyotCount: (day: DayKey) => number = () => ALIYOT_PER_PARASHA;
 
 /** Après une absence, on relit le compte : un autre appareil a pu écrire. */
 const REFRESH_AFTER_MS = 5 * 60_000;
@@ -174,7 +178,7 @@ const listsKey = (ids: number[], options: string[]): string =>
  * Le jour ne s'écrit que pour qui s'en sert encore : sans liste, rien à cocher.
  */
 async function writeLegacy(uid: string): Promise<void> {
-  const projection = legacyProjection(state.value.data, today());
+  const projection = legacyProjection(state.value.data, today(), weekAliyotCount(today()));
   const lists = listsKey(projection.dailyReadingIds, projection.dailyReadingOptions);
   const progress = JSON.stringify(projection.dailyReadingProgress);
   const used = projection.dailyReadingIds.length > 0 || projection.dailyReadingOptions.length > 0;
@@ -308,6 +312,7 @@ export function useParcours() {
   const todayKey = computed(() => localDayKey(now.value));
   const isRest = computed(() => restCalendar(isIsraelPlace(place.value)));
   const aliyotCount = computed(() => parashaAliyotCount(isIsraelPlace(place.value)));
+  weekAliyotCount = (day) => aliyotCount.value(day);
   const context = computed(() => scheduleContext(data.value, isRest.value, aliyotCount.value));
   const signedIn = computed(() => accountId.value !== null);
 
@@ -344,6 +349,13 @@ export function useParcours() {
     setSkipped(task: Task, day: DayKey, skipped: boolean, source: string) {
       commit(setTaskSkipped(data.value, task.id, day, skipped));
       trackTaskSkipped(task, skipped, source);
+    },
+    /**
+     * Coche ou décoche une montée du chnei mikra (comptée de 0) dans la
+     * semaine du Chabbat `week` ; `count` : 7, ou 14 pour une paracha double.
+     */
+    setAliyaChecked(week: DayKey, aliya: number, count: number, checked: boolean) {
+      commit(setAliyaChecked(data.value, week, aliya, count, checked, todayKey.value));
     },
     /** Les unités d'un programme lues ce jour-là. */
     setUnits(objectiveId: string, day: DayKey, units: number) {

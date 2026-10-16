@@ -1901,6 +1901,17 @@ const en: LocaleMessages = {
     aliyaMark: "Mark read",
     aliyaDone: "Read",
     aliyaCheck: "{aliya} read",
+    listTitle: "This week's aliyot",
+    listCount: "{done} of {total}",
+    aliyaNames: {
+      n1: "Kohen",
+      n2: "Levi",
+      n3: "Shlishi",
+      n4: "Revi'i",
+      n5: "Chamishi",
+      n6: "Shishi",
+      n7: "Shevi'i",
+    },
   },
   tehilimDay: {
     title: "Daily Tehilim",

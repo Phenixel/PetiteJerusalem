@@ -134,6 +134,41 @@ d'avant, la semaine est lue quand la carte du vendredi ou du Chabbat l'est
 (`parashaProgress.completed`). Le champ est facultatif : sans lui, la paracha
 se lit dans la semaine, comme avant.
 
+**Les montées se cochent aussi une à une**, dans l'ordre qu'on veut, sur la
+page du chnei mikra : la liste de la semaine (Cohen, Lévi, Chlichi… sous le
+nom de la paracha, quatorze pour une paracha double) et la case de chaque
+montée dans le texte, qui disent la même chose (`ChneiMikraChecklist.vue`,
+`useChneiMikraChecks`). Pas de champ nouveau : une coche est une entrée de
+`done`, au jour où on la pose, sous le nom `aliya:3` (la 3e montée de la
+semaine, comptée de 1). Une version d'avant l'ignore, et la garde en
+réécrivant le jour (elle relit `done` en entier, alors qu'un champ inconnu
+d'un `DayLog` se perdait à la relecture, voir `parseDay`). Une coche pour une
+autre semaine s'écrit au jour de cette semaine le plus proche : le Chabbat
+d'une semaine passée, le dimanche de la paracha qui s'ouvre le samedi soir.
+Elle sert avec ou sans objectif, sur l'appareil et dans le compte, comme le
+reste du parcours.
+
+Avec le chnei mikra « une montée par jour », coches et cartes ne font qu'un
+(`aliyot.ts`) :
+
+- la carte d'un jour part de la première montée qui manque, cochée ni par une
+  carte ni une à une (les jours d'avant) ;
+- elle est faite quand toutes ses montées sont cochées, même sans avoir été
+  cochée elle-même ; la décocher décoche ces montées ;
+- une carte cochée coche dans la liste ses montées et celles d'avant ;
+  décocher l'une d'elles défait la carte, et ses autres montées restent
+  cochées une à une, au même jour ;
+- la semaine est lue (`parashaProgress.completed`) quand toutes ses montées
+  le sont.
+
+La semaine entière (le cycle sans `split`) ne s'y lie pas : sa carte dit
+« lue cette semaine », la liste dit où l'on en est.
+
+Les coches de la version 3.10.11 vivaient sur l'appareil seulement
+(`pj-chnei-mikra-aliyot`, par semaine, « texte:début ») : à l'ouverture du
+texte, celles de la semaine passent une fois dans Mon parcours et quittent
+ce stockage (`takeLegacyChecks`).
+
 **Prendre de l'avance** : une portion faite propose « Lire la suite », la
 portion du prochain créneau (`nextPortion`), marquée lue aujourd'hui au bas
 de la lecture (`?avance=1`). Les portions gardent leur taille ; la fin vient
@@ -150,19 +185,20 @@ programmes ni des habitudes.
 
 ## Les tests
 
-| Test                            | Ce qu'il tient                                                                                  |
-| ------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `parcoursUnits.test.ts`         | les unités des programmes suivent `public/texts/` (garde-fou, voir `docs/tests.md`)             |
-| `parcoursPlan.test.ts`          | les portions, le retard, les cinq rattrapages, l'avance, la reprise après une pause             |
-| `parcoursAliyot.test.ts`        | le chnei mikra : une montée par jour, l'oubliée revient le lendemain, le Chabbat finit          |
-| `parcoursSchedule.test.ts`      | les tâches d'un jour, le mur, la série (Chabbat et « Pas aujourd'hui » ne la coupent pas)       |
-| `parcoursCalendar.test.ts`      | les jours de repos, les moments, l'ordre du paquet                                              |
-| `parcoursMerge.test.ts`         | la fusion de deux copies                                                                        |
-| `parcoursSync.test.ts`          | sans compte, avec un compte, un appareil partagé                                                |
-| `parcoursCloud.test.ts`         | l'écriture du compte n'envoie aucun champ `undefined` (Firestore refuserait l'écriture entière) |
-| `parcoursLegacyDaily.test.ts`   | la lecture du jour d'avant, reprise et tenue à jour                                             |
-| `parcoursDeck.test.ts`          | le paquet de l'accueil : l'ordre, l'heure des offices, rattraper, la carte du 'Omer             |
-| `parcoursEntries.test.ts`       | les textes à télécharger pour la journée                                                        |
-| `parcoursTracking.test.ts`      | le suivi commun, et les événements de la lecture du jour qui continuent                         |
-| `widgetDailyParcours.test.ts`   | la lecture du jour des widgets, sans compte                                                     |
-| `e2e/firebase/parcours.spec.ts` | un texte du jour pris, coché, et suivi par le compte (émulateurs)                               |
+| Test                            | Ce qu'il tient                                                                                                                                                    |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `parcoursUnits.test.ts`         | les unités des programmes suivent `public/texts/` (garde-fou, voir `docs/tests.md`)                                                                               |
+| `parcoursPlan.test.ts`          | les portions, le retard, les cinq rattrapages, l'avance, la reprise après une pause                                                                               |
+| `parcoursAliyot.test.ts`        | le chnei mikra : une montée par jour, l'oubliée revient le lendemain, le Chabbat finit ; les montées cochées une à une font la carte, une carte coche les siennes |
+| `chneiMikraChecks.test.ts`      | les coches de la version 3.10.11, reprises une fois depuis l'appareil                                                                                             |
+| `parcoursSchedule.test.ts`      | les tâches d'un jour, le mur, la série (Chabbat et « Pas aujourd'hui » ne la coupent pas)                                                                         |
+| `parcoursCalendar.test.ts`      | les jours de repos, les moments, l'ordre du paquet                                                                                                                |
+| `parcoursMerge.test.ts`         | la fusion de deux copies                                                                                                                                          |
+| `parcoursSync.test.ts`          | sans compte, avec un compte, un appareil partagé                                                                                                                  |
+| `parcoursCloud.test.ts`         | l'écriture du compte n'envoie aucun champ `undefined` (Firestore refuserait l'écriture entière)                                                                   |
+| `parcoursLegacyDaily.test.ts`   | la lecture du jour d'avant, reprise et tenue à jour                                                                                                               |
+| `parcoursDeck.test.ts`          | le paquet de l'accueil : l'ordre, l'heure des offices, rattraper, la carte du 'Omer                                                                               |
+| `parcoursEntries.test.ts`       | les textes à télécharger pour la journée                                                                                                                          |
+| `parcoursTracking.test.ts`      | le suivi commun, et les événements de la lecture du jour qui continuent                                                                                           |
+| `widgetDailyParcours.test.ts`   | la lecture du jour des widgets, sans compte                                                                                                                       |
+| `e2e/firebase/parcours.spec.ts` | un texte du jour pris, coché, et suivi par le compte (émulateurs)                                                                                                 |

@@ -24,6 +24,8 @@ import { useKeepAwake } from "../../composables/useKeepAwake";
 import { useChneiMikraOptions } from "../../composables/useChneiMikraOptions";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import ChneiMikraOptions from "../../components/ChneiMikraOptions.vue";
+import ChneiMikraChecklist from "../../components/ChneiMikraChecklist.vue";
+import { useChneiMikraChecks } from "../../composables/useChneiMikraChecks";
 import ReadingMenu from "../../components/ReadingMenu.vue";
 import ReadingProgressBar from "../../components/ReadingProgressBar.vue";
 import ReadingSizeControl from "../../components/ReadingSizeControl.vue";
@@ -103,15 +105,20 @@ const montees = computed(() =>
 const objectiveId = computed(() =>
   typeof route.query.objectif === "string" ? route.query.objectif : null,
 );
-type ShownEntry = { entry: TextStudyJsonEntry; blocks?: { from: number; to: number } };
+type ShownEntry = {
+  entry: TextStudyJsonEntry;
+  /** Son rang dans la semaine : 1 pour le second texte d'une paracha double. */
+  index: number;
+  blocks?: { from: number; to: number };
+};
 const shownEntries = computed(() =>
   (parasha.value?.entries ?? []).flatMap((entry, index): ShownEntry[] => {
     const range = montees.value;
-    if (!range) return [{ entry }];
+    if (!range) return [{ entry, index }];
     const start = index * ALIYOT_PER_PARASHA;
     const from = Math.max(range.from, start) - start;
     const to = Math.min(range.to, start + ALIYOT_PER_PARASHA) - start;
-    return to > from ? [{ entry, blocks: { from, to } }] : [];
+    return to > from ? [{ entry, index, blocks: { from, to } }] : [];
   }),
 );
 const monteesLabel = computed(() =>
@@ -123,6 +130,57 @@ const monteesLabel = computed(() =>
       )
     : "",
 );
+
+/**
+ * Les montées cochées de la semaine (useChneiMikraChecks), dans la liste et
+ * dans le texte : une seule chose, gardée par Mon parcours.
+ */
+const aliyaChecks = useChneiMikraChecks();
+const aliyotCount = computed(() => (parasha.value?.entries.length ?? 0) * ALIYOT_PER_PARASHA);
+const checkedAliyot = computed(() =>
+  parasha.value ? aliyaChecks.checked(parasha.value.weekKey, aliyotCount.value) : new Set<number>(),
+);
+const parashaNames = computed(() =>
+  (parasha.value?.entries ?? []).map((entry) => appendHebrewNumeral(entry.name)),
+);
+/** Les montées cochées d'un des textes de la semaine (le second d'une double part de 7). */
+function checkedIn(entryIndex: number): number[] {
+  const base = entryIndex * ALIYOT_PER_PARASHA;
+  return [...checkedAliyot.value].filter((a) => a >= base).map((a) => a - base);
+}
+/** Le titre d'une montée, comme le texte la nomme (« 2e montée »), pour la mesure d'audience. */
+const aliyaLabel = (n: number) => (n === 1 ? "1re montée" : `${n}e montée`);
+
+function setAliya(aliya: number, done: boolean, source: "list" | "text", label?: string): void {
+  const week = parasha.value;
+  if (!week) return;
+  aliyaChecks.setChecked(week.weekKey, aliya, aliyotCount.value, done);
+  const entry = week.entries[Math.floor(aliya / ALIYOT_PER_PARASHA)];
+  analyticsService.capture("chnei_mikra_aliya_toggled", {
+    done,
+    text_id: entry?.id ?? null,
+    aliya: label ?? aliyaLabel((aliya % ALIYOT_PER_PARASHA) + 1),
+    source,
+  });
+}
+function toggleFromList(aliya: number): void {
+  setAliya(aliya, !checkedAliyot.value.has(aliya), "list");
+}
+function toggleFromText(entryIndex: number, index: number, done: boolean, label: string): void {
+  setAliya(entryIndex * ALIYOT_PER_PARASHA + index, done, "text", label);
+}
+/** Les coches de la version d'avant, reprises une fois (voir takeLegacyChecks). */
+function adoptLegacy(entryIndex: number, indexes: number[]): void {
+  const week = parasha.value;
+  if (!week) return;
+  for (const index of indexes) {
+    const aliya = entryIndex * ALIYOT_PER_PARASHA + index;
+    if (!checkedAliyot.value.has(aliya)) {
+      aliyaChecks.setChecked(week.weekKey, aliya, aliyotCount.value, true);
+    }
+  }
+}
+
 function showWhole(): void {
   const query = { ...route.query };
   delete query.montees;
@@ -248,17 +306,25 @@ watch([title, locale, localeMessagesReady], applySeoMeta, { immediate: true });
         <!-- La paracha change : on remonte des composants neufs plutôt que de
              recycler ceux du texte précédent, marque-pages compris. -->
         <div :key="parasha.weekKey" class="mt-8 space-y-10">
-          <!-- Une montée par jour : celles de la carte, et de quoi lire tout le reste. -->
-          <div v-if="montees" class="card flex items-center justify-between gap-3 px-4 py-3">
-            <p class="min-w-0">
-              <span class="block text-[13px] font-semibold text-text-secondary">
-                {{ t("chneiMikra.today") }}
-              </span>
-              <span class="block font-bold">{{ monteesLabel }}</span>
-            </p>
-            <button type="button" class="btn btn-soft min-h-10 flex-none px-4" @click="showWhole">
-              {{ t("chneiMikra.whole") }}
-            </button>
+          <div class="space-y-3">
+            <!-- Une montée par jour : celles de la carte, et de quoi lire tout le reste. -->
+            <div v-if="montees" class="card flex items-center justify-between gap-3 px-4 py-3">
+              <p class="min-w-0">
+                <span class="block text-[13px] font-semibold text-text-secondary">
+                  {{ t("chneiMikra.today") }}
+                </span>
+                <span class="block font-bold">{{ monteesLabel }}</span>
+              </p>
+              <button type="button" class="btn btn-soft min-h-10 flex-none px-4" @click="showWhole">
+                {{ t("chneiMikra.whole") }}
+              </button>
+            </div>
+            <!-- Les montées de la semaine, à cocher une à une, dans l'ordre qu'on veut. -->
+            <ChneiMikraChecklist
+              :names="parashaNames"
+              :checked="checkedAliyot"
+              @toggle="toggleFromList"
+            />
           </div>
           <DailyReadingItem
             v-for="shown in shownEntries"
@@ -269,7 +335,13 @@ watch([title, locale, localeMessagesReady], applySeoMeta, { immediate: true });
             :double-verses="doubleVerses"
             :with-rashi="withRashi"
             :aliya-week="parasha.weekKey"
+            :checked-aliyot="checkedIn(shown.index)"
             source="library_chnei_mikra"
+            @toggle-aliya="
+              (index: number, done: boolean, label: string) =>
+                toggleFromText(shown.index, index, done, label)
+            "
+            @legacy-aliyot="(indexes: number[]) => adoptLegacy(shown.index, indexes)"
           />
           <ReaderTaskCard v-if="objectiveId" :objective-id="objectiveId" />
         </div>

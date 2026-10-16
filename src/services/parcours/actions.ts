@@ -1,3 +1,4 @@
+import { aliyaMark, aliyotObjective, aliyotWeekDays, checkedAliyot } from "./aliyot";
 import { addDays, weekStart } from "./days";
 import type { DayKey, DayLog, Objective, ParcoursData } from "./model";
 import type { Task } from "./schedule";
@@ -53,6 +54,22 @@ export function setTaskDone(
     }
     return data;
   }
+  if (!done && task.aliyot) {
+    // Décocher la carte d'un jour décoche aussi ses montées, cochées une à une
+    // dans la semaine : sans quoi elle resterait faite par elles.
+    const marks = new Set<string>();
+    for (let m = task.aliyot.from; m < task.aliyot.to; m++) marks.add(aliyaMark(m));
+    for (const d of aliyotWeekDays(day)) {
+      if (data.days[d]?.done.some((entry) => marks.has(entry))) {
+        data = withDay(
+          data,
+          d,
+          (log) => ({ ...log, done: log.done.filter((entry) => !marks.has(entry)) }),
+          now,
+        );
+      }
+    }
+  }
   return withDay(
     data,
     day,
@@ -68,6 +85,52 @@ export function setTaskDone(
     },
     now,
   );
+}
+
+/**
+ * Coche (ou décoche) une montée du chnei mikra dans la semaine de `week`
+ * (le Chabbat de la paracha), comptée de 0 ; `count` : les montées de la
+ * semaine. La coche s'écrit aujourd'hui, ou au jour de la semaine le plus
+ * proche pour une autre semaine : le Chabbat d'une semaine passée, le
+ * dimanche de la suivante (la paracha qui s'ouvre le samedi soir).
+ *
+ * Une montée cochée par la carte d'un jour se décoche en décochant cette
+ * carte ; les autres montées qu'elle cochait le restent, une à une, au même
+ * jour.
+ */
+export function setAliyaChecked(
+  data: ParcoursData,
+  week: DayKey,
+  aliya: number,
+  count: number,
+  checked: boolean,
+  today: DayKey,
+  now: number = Date.now(),
+): ParcoursData {
+  const mark = aliyaMark(aliya);
+  const days = aliyotWeekDays(week);
+  if (checked) {
+    const day = today < days[0] ? days[0] : today > days[6] ? days[6] : today;
+    return withDay(data, day, (log) => ({ ...log, done: [...without(log.done, mark), mark] }), now);
+  }
+  const objective = aliyotObjective(data);
+  for (const d of days) {
+    const log = data.days[d];
+    if (!log) continue;
+    let done = without(log.done, mark);
+    if (objective && done.includes(objective.id)) {
+      const card = checkedAliyot({ [d]: { ...log, done: [objective.id] } }, d, count, objective);
+      if (card.has(aliya)) {
+        card.delete(aliya);
+        const marks = [...card].map(aliyaMark);
+        done = [...done.filter((e) => e !== objective.id && !marks.includes(e)), ...marks];
+      }
+    }
+    if (done.length !== log.done.length || done.some((e, i) => e !== log.done[i])) {
+      data = withDay(data, d, (current) => ({ ...current, done }), now);
+    }
+  }
+  return data;
 }
 
 /** Les unités d'un programme lues ce jour-là (0 efface le jour). */

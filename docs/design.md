@@ -1212,10 +1212,19 @@ case pleine à la couleur du thème). On lit le chnei mikra au fil de la
 semaine, une montée ou deux à la fois ; la case dit où l'on en est. Les
 coches sont rangées par semaine (le Chabbat de la paracha) : la semaine
 suivante repart de zéro, feuilleter vers une paracha passée retrouve les
-siennes. Sur l'appareil seulement, comme la table d'étude
-(`useChneiMikraChecks`, `chneiMikraChecks.test.ts`). La lecture du jour,
-qui montre aussi le chnei mikra, ne les porte pas : elle a déjà « Marquer
-lu » par section.
+siennes. La lecture du jour, qui montre aussi le chnei mikra, ne les porte
+pas : elle a déjà « Marquer lu » par section.
+
+Au-dessus du texte, la liste de la semaine les montre toutes d'un coup
+d'œil (`ChneiMikraChecklist.vue`) : une carte titrée « Les montées de la
+semaine », le compte à droite (« 3 sur 7 »), puis le nom de la paracha et
+ses sept montées par leur nom (Cohen, Lévi, Chlichi, Revi'i, 'Hamichi,
+Chichi, Chevi'i), dans les mêmes pastilles que les cases du texte
+(`AliyaCheck.vue`) ; une paracha double a ses deux noms, chacun avec ses
+sept. La liste et les cases disent la même chose, et se gardent dans Mon
+parcours, emportées par le compte et liées au chnei mikra « une montée par
+jour » (voir `docs/parcours.md`). Le retour d'un lecteur de l'app le
+demandait : cocher sans chercher la montée dans le texte.
 
 ### La traduction se lit sous le verset
 
@@ -2284,8 +2293,7 @@ choisit sur une seule page »).
   montrait pas qu'on quittait le fil.
 - **Une date se donne en hébreu et en civil**, partout où Mon parcours en
   pose une (la fin d'un programme à sa création, sur sa page, dans ses
-  réglages, le rattrapage qui repousse la fin) : « 29 Elul 5787 (1 octobre
-  2027) ». La date hébraïque seule ne se situe pas d'un coup d'œil dans
+  réglages, le rattrapage qui repousse la fin) : « 29 Elul 5787 (1 octobre 2027) ». La date hébraïque seule ne se situe pas d'un coup d'œil dans
   l'année qu'on vit.
 
 ### La lecture du jour, revenue
