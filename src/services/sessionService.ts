@@ -305,7 +305,17 @@ class SessionService {
     currentUser: User | null,
     reservationForm: ReservationForm,
     guestEmailRequired: boolean = false,
+    /**
+     * Texts read right away (the perpetual chain, see
+     * services/sessionBatchReading.ts): each reservation carries
+     * `expiresAt`, and a guest needs no name, like for the draw: the
+     * reservation then goes out under `anonymousName`.
+     */
+    readNow?: { expiresAt: string; anonymousName: string },
   ): Promise<string[]> {
+    // The options only go out when there are some: the ordinary call stays
+    // as it was.
+    const extra = readNow ? [{ expiresAt: readNow.expiresAt }] : [];
     if (currentUser) {
       return await reservationService.createBatchReservations(
         sessionId,
@@ -314,16 +324,18 @@ class SessionService {
         undefined,
         currentUser.name,
         undefined,
+        ...extra,
       );
     }
-    reservationService.assertGuestFormValid(reservationForm, guestEmailRequired);
+    if (!readNow) reservationService.assertGuestFormValid(reservationForm, guestEmailRequired);
     return await reservationService.createBatchReservations(
       sessionId,
       items,
       undefined,
       reservationService.resolveGuestId(reservationForm),
       undefined,
-      reservationForm.name,
+      readNow ? reservationForm.name.trim() || readNow.anonymousName : reservationForm.name,
+      ...extra,
     );
   }
 
