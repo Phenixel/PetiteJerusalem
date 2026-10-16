@@ -1023,6 +1023,7 @@ const fr = {
       step3Desc: "Invitez votre communauté, votre famille ou vos amis, même sans compte.",
       step4Title: "Suivez la progression",
       step4Desc: "Chacun réserve ses passages et les lit ; avancez ensemble jusqu'au siyoum.",
+      understood: "J'ai compris",
     },
   },
   newSession: {
@@ -1948,6 +1949,9 @@ const fr = {
     doubleVerses: "Chaque verset deux fois",
     withRashi: "Commentaire de Rachi",
     rashiUnavailable: "Le commentaire de Rachi n'a pas pu être chargé.",
+    aliyaMark: "Marquer lue",
+    aliyaDone: "Lue",
+    aliyaCheck: "{aliya} lue",
   },
   tehilimDay: {
     title: "Tehilim du jour",

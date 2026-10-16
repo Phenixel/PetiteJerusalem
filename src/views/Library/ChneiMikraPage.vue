@@ -268,6 +268,7 @@ watch([title, locale, localeMessagesReady], applySeoMeta, { immediate: true });
             :with-targoum="true"
             :double-verses="doubleVerses"
             :with-rashi="withRashi"
+            :aliya-week="parasha.weekKey"
             source="library_chnei_mikra"
           />
           <ReaderTaskCard v-if="objectiveId" :objective-id="objectiveId" />

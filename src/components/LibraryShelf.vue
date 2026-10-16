@@ -10,7 +10,7 @@
 // seulement de loin en loin (voir useShelfIntro) : au quotidien, on vient
 // ouvrir un livre, pas regarder les livres arriver.
 
-import { reactive, watch } from "vue";
+import { computed, reactive, watch } from "vue";
 import { shouldPlayShelfIntro } from "../composables/useShelfIntro";
 import { prefersLessMotion } from "../composables/useMotion";
 import { bindingOf } from "../config/bindings";
@@ -79,121 +79,137 @@ const emit = defineEmits<{ (e: "open", corpus: string): void }>();
 
 // Tranché une fois pour toute la page.
 const playIntro = shouldPlayShelfIntro();
+
+/**
+ * Trois livres par rayon, chacun sur sa planche : tous de la même taille,
+ * qu'il y en ait trois ou un seul sur la dernière.
+ */
+const PER_ROW = 3;
+const rows = computed(() => {
+  const out: { book: ShelfBook; index: number }[][] = [];
+  props.books.forEach((book, index) => {
+    if (index % PER_ROW === 0) out.push([]);
+    out[out.length - 1].push({ book, index });
+  });
+  return out;
+});
 </script>
 
 <template>
-  <div class="shelf-wrap" :class="{ 'shelf-intro': playIntro }">
-    <div class="shelf-books" role="list">
-      <RouterLink
-        v-for="(book, index) in books"
-        :key="book.corpus"
-        :to="book.to"
-        class="book"
-        :class="{ 'book-landed': landed.has(book.corpus) }"
-        :style="{ '--i': startIndex + index, '--binding': bindingOf(book.corpus) }"
-        role="listitem"
-        :aria-label="book.ariaLabel ?? book.label"
-        @click="emit('open', book.corpus)"
-      >
-        <span class="book-rise">
-          <span class="book-lift">
-            <svg viewBox="0 0 96 140" fill="none" aria-hidden="true" class="book-svg">
-              <defs>
-                <linearGradient :id="`book-shine-${book.corpus}`" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0" stop-color="#fff" stop-opacity="0.09" />
-                  <stop offset="0.45" stop-color="#fff" stop-opacity="0.02" />
-                  <stop offset="1" stop-color="#000" stop-opacity="0.06" />
-                </linearGradient>
-              </defs>
-              <!-- tranche des pages, ivoire, qui dépasse à droite -->
-              <rect x="84" y="6" width="9" height="128" rx="2" fill="#efe5d0" />
-              <path d="M87 10v120M90 10v120" stroke="#d6c8ab" stroke-width="0.8" />
-              <!-- couverture -->
-              <rect x="3" y="3" width="84" height="134" rx="4" fill="var(--binding)" />
-              <!-- pli de la reliure, côté dos -->
-              <rect x="3" y="3" width="7" height="134" rx="3.5" fill="#000" opacity="0.16" />
-              <path d="M12 5v130" stroke="#fff" opacity="0.1" stroke-width="1" />
-              <!-- lumière douce sur la couverture -->
-              <rect
-                x="3"
-                y="3"
-                width="84"
-                height="134"
-                rx="4"
-                :fill="`url(#book-shine-${book.corpus})`"
-              />
-              <!-- cadre estampé, double filet crème -->
-              <rect
-                class="frame"
-                x="18"
-                y="14"
-                width="62"
-                height="112"
-                rx="1.5"
-                stroke="#ecdfc4"
-                stroke-width="1.4"
-                opacity="0.55"
-              />
-              <rect
-                class="frame frame-inner"
-                x="22.5"
-                y="18.5"
-                width="53"
-                height="103"
-                rx="1"
-                stroke="#ecdfc4"
-                stroke-width="0.7"
-                opacity="0.3"
-              />
-              <!-- titre horizontal, en serif, comme doré à chaud -->
-              <text
-                class="book-title"
-                :class="{ 'book-title-spaced': !HEBREW.test(book.label) }"
-                x="49"
-                y="62"
-                text-anchor="middle"
-                dominant-baseline="central"
-              >
-                {{ book.label }}
-              </text>
-              <!-- fine ornementation sous le titre -->
-              <g class="ornament" stroke="#ecdfc4" opacity="0.5">
-                <path d="M35 80h11M52 80h11" stroke-width="1" />
-                <path d="M49 77.2 51.6 80 49 82.8 46.4 80Z" fill="#ecdfc4" stroke="none" />
-              </g>
-            </svg>
-            <!-- dans l'angle de la couverture : le livre est sur le téléphone -->
-            <Transition name="book-badge">
-              <span
-                v-if="hasBadge(book)"
-                class="book-badge"
-                :class="{ 'book-badge-landed': landed.has(book.corpus) }"
-                aria-hidden="true"
-              >
-                <svg viewBox="0 0 20 20" class="book-badge-svg">
-                  <path v-if="isDone(book)" class="book-check" d="M6 10.4l2.7 2.7L14.2 7.6" />
-                  <template v-else>
-                    <circle class="book-ring-track" cx="10" cy="10" r="5.6" />
-                    <circle
-                      class="book-ring"
-                      cx="10"
-                      cy="10"
-                      r="5.6"
-                      :stroke-dasharray="ringDash(book)"
-                      transform="rotate(-90 10 10)"
-                    />
-                  </template>
-                </svg>
-              </span>
-            </Transition>
-            <!-- ombre portée sur la planche -->
-            <span class="book-shadow" aria-hidden="true"></span>
+  <div class="shelf-wrap" :class="{ 'shelf-intro': playIntro }" role="list">
+    <div v-for="(row, r) in rows" :key="r" class="shelf-row" role="none">
+      <div class="shelf-books" role="none">
+        <RouterLink
+          v-for="{ book, index } in row"
+          :key="book.corpus"
+          :to="book.to"
+          class="book"
+          :class="{ 'book-landed': landed.has(book.corpus) }"
+          :style="{ '--i': startIndex + index, '--binding': bindingOf(book.corpus) }"
+          role="listitem"
+          :aria-label="book.ariaLabel ?? book.label"
+          @click="emit('open', book.corpus)"
+        >
+          <span class="book-rise">
+            <span class="book-lift">
+              <svg viewBox="0 0 96 140" fill="none" aria-hidden="true" class="book-svg">
+                <defs>
+                  <linearGradient :id="`book-shine-${book.corpus}`" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="#fff" stop-opacity="0.09" />
+                    <stop offset="0.45" stop-color="#fff" stop-opacity="0.02" />
+                    <stop offset="1" stop-color="#000" stop-opacity="0.06" />
+                  </linearGradient>
+                </defs>
+                <!-- tranche des pages, ivoire, qui dépasse à droite -->
+                <rect x="84" y="6" width="9" height="128" rx="2" fill="#efe5d0" />
+                <path d="M87 10v120M90 10v120" stroke="#d6c8ab" stroke-width="0.8" />
+                <!-- couverture -->
+                <rect x="3" y="3" width="84" height="134" rx="4" fill="var(--binding)" />
+                <!-- pli de la reliure, côté dos -->
+                <rect x="3" y="3" width="7" height="134" rx="3.5" fill="#000" opacity="0.16" />
+                <path d="M12 5v130" stroke="#fff" opacity="0.1" stroke-width="1" />
+                <!-- lumière douce sur la couverture -->
+                <rect
+                  x="3"
+                  y="3"
+                  width="84"
+                  height="134"
+                  rx="4"
+                  :fill="`url(#book-shine-${book.corpus})`"
+                />
+                <!-- cadre estampé, double filet crème -->
+                <rect
+                  class="frame"
+                  x="18"
+                  y="14"
+                  width="62"
+                  height="112"
+                  rx="1.5"
+                  stroke="#ecdfc4"
+                  stroke-width="1.4"
+                  opacity="0.55"
+                />
+                <rect
+                  class="frame frame-inner"
+                  x="22.5"
+                  y="18.5"
+                  width="53"
+                  height="103"
+                  rx="1"
+                  stroke="#ecdfc4"
+                  stroke-width="0.7"
+                  opacity="0.3"
+                />
+                <!-- titre horizontal, en serif, comme doré à chaud -->
+                <text
+                  class="book-title"
+                  :class="{ 'book-title-spaced': !HEBREW.test(book.label) }"
+                  x="49"
+                  y="62"
+                  text-anchor="middle"
+                  dominant-baseline="central"
+                >
+                  {{ book.label }}
+                </text>
+                <!-- fine ornementation sous le titre -->
+                <g class="ornament" stroke="#ecdfc4" opacity="0.5">
+                  <path d="M35 80h11M52 80h11" stroke-width="1" />
+                  <path d="M49 77.2 51.6 80 49 82.8 46.4 80Z" fill="#ecdfc4" stroke="none" />
+                </g>
+              </svg>
+              <!-- dans l'angle de la couverture : le livre est sur le téléphone -->
+              <Transition name="book-badge">
+                <span
+                  v-if="hasBadge(book)"
+                  class="book-badge"
+                  :class="{ 'book-badge-landed': landed.has(book.corpus) }"
+                  aria-hidden="true"
+                >
+                  <svg viewBox="0 0 20 20" class="book-badge-svg">
+                    <path v-if="isDone(book)" class="book-check" d="M6 10.4l2.7 2.7L14.2 7.6" />
+                    <template v-else>
+                      <circle class="book-ring-track" cx="10" cy="10" r="5.6" />
+                      <circle
+                        class="book-ring"
+                        cx="10"
+                        cy="10"
+                        r="5.6"
+                        :stroke-dasharray="ringDash(book)"
+                        transform="rotate(-90 10 10)"
+                      />
+                    </template>
+                  </svg>
+                </span>
+              </Transition>
+              <!-- ombre portée sur la planche -->
+              <span class="book-shadow" aria-hidden="true"></span>
+            </span>
           </span>
-        </span>
-      </RouterLink>
+        </RouterLink>
+      </div>
+      <!-- la planche de l'étagère, en bois clair -->
+      <div class="shelf-board" aria-hidden="true"></div>
     </div>
-    <!-- la planche de l'étagère, en bois clair -->
-    <div class="shelf-board" aria-hidden="true"></div>
   </div>
 </template>
 
@@ -203,21 +219,29 @@ const playIntro = shouldPlayShelfIntro();
   margin-inline: auto;
 }
 
+/* Un rayon sous l'autre, chacun avec sa planche. */
+.shelf-row + .shelf-row {
+  margin-top: 1.75rem;
+}
+
 .shelf-books {
+  --shelf-gap: 0.9rem;
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  gap: 0.55rem;
+  gap: var(--shelf-gap);
 }
 
 @media (min-width: 640px) {
   .shelf-books {
-    gap: 1rem;
+    --shelf-gap: 1.5rem;
   }
 }
 
+/* Le tiers du rayon, gouttières comprises, quel que soit le nombre de
+   livres posés dessus : tous ont la même taille. */
 .book {
-  flex: 1 1 0;
+  flex: 0 0 calc((100% - 2 * var(--shelf-gap)) / 3);
   max-width: 8rem;
   min-width: 0;
   display: block;

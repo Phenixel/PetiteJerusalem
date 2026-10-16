@@ -17,6 +17,7 @@ import AccountCta from "../../components/AccountCta.vue";
 import FeatureTour, { type TourStep } from "../../components/FeatureTour.vue";
 import { tipsOffered } from "../../composables/useFeatureTips";
 import HowItWorksTimeline from "../../components/HowItWorksTimeline.vue";
+import { useShareHowItWorks } from "../../composables/useShareHowItWorks";
 import ShareModal from "../../components/ShareModal.vue";
 import EditSessionModal from "../../components/EditSessionModal.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
@@ -131,6 +132,14 @@ const createdOngoingCount = computed(
 const hasMySessions = computed(
   () => participatedSessions.value.length > 0 || createdSessions.value.length > 0,
 );
+
+// « Comment ça marche » se retire quand le principe est connu : « J'ai
+// compris », ou une première session créée ou rejointe (useShareHowItWorks).
+const howItWorks = useShareHowItWorks();
+watch(hasMySessions, (has) => {
+  if (has) howItWorks.markKnown();
+});
+const showHowItWorks = computed(() => !howItWorks.known.value && !hasMySessions.value);
 
 // Sous-onglet de « Mes sessions » : participation d'abord (le cas le plus
 // courant), création sinon.
@@ -374,7 +383,11 @@ const handleCreateClick = () => {
 
     <!-- Visiteur : comment ça marche, avant la liste (découverte). Les
          connectés retrouvent la timeline en bas de page. -->
-    <HowItWorksTimeline v-if="!isAuthenticated" class="mb-16" />
+    <HowItWorksTimeline
+      v-if="!isAuthenticated && showHowItWorks"
+      class="mb-16"
+      @understood="howItWorks.markKnown()"
+    />
 
     <!-- ===== Mes sessions : ce que je suis venu retrouver ===== -->
     <section
@@ -434,7 +447,11 @@ const handleCreateClick = () => {
 
     <!-- Connecté : la timeline explicative vit entre « Mes sessions » et la
          liste publique. -->
-    <HowItWorksTimeline v-if="isAuthenticated" class="mb-16" />
+    <HowItWorksTimeline
+      v-if="isAuthenticated && myTabInitialized && showHowItWorks"
+      class="mb-16"
+      @understood="howItWorks.markKnown()"
+    />
 
     <div class="relative max-w-7xl mx-auto">
       <!-- Titre de la liste publique : la distingue de « Mes sessions ». -->
