@@ -2379,17 +2379,29 @@ the page of the « Lecture du jour » volume and of the card of the same name.
 
 ### The home page to your taste
 
-The home page can be customized (P2-AccueilModifier, `/accueil/modifier`):
-the day's deck stays at the top, always; below, the blocks (the times, my
-volumes, the three doors, my dates, and « Reprendre », to be restored) are
-dragged to change order and hidden with a pill. They wobble a little, for
-the duration of the setting: you can pick them up. The block you hold
-follows the finger, the others move aside as it goes, and the spot where it
-will be dropped is drawn in dotted lines (the ink tint, a barely tinted
-background); released, it slides in there. You get there by a long
-press on a block (with a finger), or through « Modifier l'accueil » ("Edit
-the home page") at the bottom of the page. It is a device setting
-(`useHomeLayout`), and a block with nothing to say disappears on its own.
+The home page can be customized (P2-AccueilModifier), in place, on the
+home page itself: no separate page, no list of titles. The day's deck stays
+at the top, always (faded while the others move, it is not arranged); below,
+the blocks themselves (the times, my volumes, the three doors, my dates, and
+« Reprendre », to be restored) wobble a little, for the duration of the
+setting: you can pick them up. Each carries a « Masquer » ("Hide") pill;
+hidden blocks stay in view at the end, faded (40 % opacity) and still, with
+an « Afficher » ("Show") pill in the brand color. A block that has nothing
+to show right now keeps its place as a dashed outline under its name. You
+get there by a long press on a block (with a finger), which also picks that
+block up at once, or through « Modifier l'accueil » ("Edit the home page")
+at the bottom of the page; « Terminé » ("Done"), above the blocks and at the
+bottom, or Escape, leaves it. The old address `/accueil/modifier` opens the
+home page in this mode.
+
+In edit mode a finger holds a block a moment before it lifts (a quick swipe
+still scrolls the page), a mouse picks it up at once, and the up and down
+arrows move the focused block. The held block follows the pointer, lifted
+(the pop shadow); the others slide aside as soon as it passes the middle of
+one of them (`pickSlot`, held by `src/__tests__/homeLayout.test.ts`), and
+the page scrolls on its own near the top or bottom edge. Released, it slides
+into place (`useHomeArrange`). It is a device setting (`useHomeLayout`), and
+outside edit mode a block with nothing to say disappears on its own.
 
 ### Texts set aside, on the table
 
