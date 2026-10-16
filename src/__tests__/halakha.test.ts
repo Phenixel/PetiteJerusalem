@@ -25,6 +25,7 @@ import {
 import { HALAKHA_SOURCES, commentaryCorpusOf } from "../composables/usePassageCommentaries";
 import { chapitreKind, hasChapitres, texteRoute } from "../services/chiourTexte";
 import { filterBySearch, latinPart } from "../services/catalogSearch";
+import { EnumTypeTextStudy } from "../models/typeTextStudy";
 
 /**
  * Le rayon Halakha (Choulhan Aroukh, Kitsour Choulhan Aroukh) : ses
@@ -143,6 +144,8 @@ describe("rayon Halakha : le catalogue", () => {
   });
 
   it("est un rayon d'étude, sans partage de lecture", () => {
+    // La création d'un partage ne propose que ces types : pas la halakha.
+    expect(Object.values(EnumTypeTextStudy)).not.toContain("Halakha");
     const entry = byId(501);
     expect(isShareable(entry)).toBe(false);
     const content = load(entry);

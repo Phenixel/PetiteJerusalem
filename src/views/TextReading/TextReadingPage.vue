@@ -457,12 +457,15 @@ function blockLabelClass(index: number): string {
 // Whole short texts without blocks (a single psalm) stay unnumbered, and the
 // liturgy (Sli'hot, Brahot) too: on ne cite pas une bénédiction par numéro.
 // Un psaume reste sans numéros même découpé : les strophes du psaume 119
-// recommenceraient chacune à 1.
+// recommenceraient chacune à 1. Un siman de halakha lu seul (Hilkhot
+// Melamdim) garde ses numéros : ce sont ceux de ses séifim.
 const showVerseNumbers = computed(
   () =>
     !(textEntry.value && isLiturgy(textEntry.value)) &&
     String(textEntry.value?.type) !== "Tehilim" &&
-    ((textEntry.value?.totalSections ?? 1) > 1 || (currentSection.value?.blocks?.length ?? 0) > 0),
+    ((textEntry.value?.totalSections ?? 1) > 1 ||
+      String(textEntry.value?.type) === "Halakha" ||
+      (currentSection.value?.blocks?.length ?? 0) > 0),
 );
 
 const showSectionList = computed(() => !isSingleSection.value && sectionParam.value === undefined);
