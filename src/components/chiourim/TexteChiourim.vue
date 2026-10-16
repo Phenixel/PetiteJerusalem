@@ -67,11 +67,13 @@ watch(
     expanded.value = false;
     if (typeof navigator !== "undefined" && navigator.onLine === false) return;
     try {
-      // Les noms de séries, pour la pochette et le mini-lecteur.
-      void serieService.getAllSeries().catch(() => {});
       const found = await chiourService.getChiourimOfTexte(id);
       if (id !== texteId.value) return;
       all.value = found;
+      // The series names, for the cover and the mini-player: read only when
+      // a lesson of this text belongs to one. Most texts have no lesson, and
+      // this encart sits on every reading page (a whole collection read).
+      if (found.some((c) => c.serieId)) void serieService.getAllSeries().catch(() => {});
     } catch {
       all.value = [];
     }
