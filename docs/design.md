@@ -3161,7 +3161,10 @@ toasts (100). The end-to-end test of the perpetual chain
 On the **web**, the banner is transparent while you are at the top of the
 page: it lets the beige show through and weighs nothing. From the first
 scroll gesture, it takes a translucent, blurred background; otherwise the
-content would show through the links. On **mobile**, it is compact: the
+content would show through the links. The blur is for fine pointers (a
+mouse) only: on a touch screen, a full-width `backdrop-filter` is redrawn on
+every scroll frame over moving text, so the banner takes a nearly opaque
+background (95 % instead of 85 %) without blur. On **mobile**, it is compact: the
 title goes to body size, the tagline disappears, the vertical margins are
 halved. The banner publishes its real height in `--navbar-height`, on which
 the pages' sticky bars depend.
