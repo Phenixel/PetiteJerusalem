@@ -1,251 +1,247 @@
-# Audit de performance (juillet 2026)
+# Performance audit (July 2026)
 
-> Note : le signalement initial parlait d'un « site blanc » (erreur de
-> dictée vocale) ; le symptôme réel est un **site lent**. La section 1
-> (cache HTML → écran blanc post-déploiement) reste un bug réel confirmé
-> par l'Error tracking et les correctifs sont conservés, mais la cause du
-> signalement est à chercher en section 0.
+> Note: the initial report spoke of a "white site" (a voice dictation
+> error); the actual symptom is a **slow site**. Section 1 (HTML cache →
+> white screen after deployment) remains a real bug confirmed by Error
+> tracking and the fixes are kept, but the cause of the report is to be
+> found in section 0.
 
-Contexte : après l'ajout de PostHog, un testeur a signalé un site devenu
-**lent**, sur tout le site, ordinateur et téléphone, alors que le
-propriétaire ne voit rien sur sa machine. Cet audit couvre : les causes
-plausibles d'une lenteur généralisée, l'impact réel du tracking PostHog,
-et un état des lieux complet (bundle, Firestore, functions, rendu).
+Context: after PostHog was added, a tester reported that the site had become
+**slow**, across the whole site, on desktop and phone, while the owner sees
+nothing on their machine. This audit covers: the plausible causes of a
+general slowness, the real impact of PostHog tracking, and a full inventory
+(bundle, Firestore, functions, rendering).
 
-## 0. Lenteur généralisée sur un appareil donné : suspects et mitigations
+## 0. General slowness on a given device: suspects and mitigations
 
-Une lenteur qui touche *toutes* les pages chez un utilisateur (mais pas
-chez tout le monde) pointe vers ce qui tourne en continu, pas vers une
-page en particulier. Par ordre de probabilité :
+A slowness that affects *all* pages for one user (but not for everyone)
+points to what runs continuously, not to a particular page. In order of
+probability:
 
-1. **Session replay PostHog**, coûte du CPU pendant *toute* la visite :
-   rrweb observe et sérialise chaque mutation du DOM. Imperceptible sur une
-   machine récente, sensible sur un téléphone d'entrée de gamme ou un vieux
-   laptop. → **Réactivé, sauf machines en rendu dégradé** (verdict
-   `useDevicePerf` persisté en localStorage) ; si la sonde FPS conclut en
-   cours de session, l'enregistrement s'arrête immédiatement. Les événements
-   produit, l'Error tracking et les Web Vitals restent actifs partout.
-   Réglage complémentaire sans redéploiement : l'échantillonnage
-   (PostHog → Settings → Session replay → sampling).
-2. **Les illustrations SVG en animation infinie**, CONFIRMÉ par une trace
-   Firefox Profiler (le problème ne se reproduit pas sous Chrome) : 154
-   animations CSS actives sur la session, thread du site réveillé en
-   permanence (~18 repaints/s à vide), retards d'entrée jusqu'à 136 ms.
-   Deux aggravants : `illu-flow` anime `stroke-dashoffset`, que Firefox ne
-   peut pas composer sur GPU (repaint du SVG à chaque frame), et
-   `IllustrationProfil` (étincelles infinies) vit dans AccountCta, affiché
-   aux visiteurs non connectés sur plusieurs pages, d'où « tout le site »
-   lent. → **Corrigé** : les boucles d'attente des 4 illustrations sont
-   finies (2-3 itérations, ~10 s de vie après l'entrée, fin sur l'état de
-   repos) ; les animations de survol, auto-limitées, restent infinies.
-3. **Le mur de pierre animé** (`StoneWallBackground.vue`), deux halos de
-   60/45 vmax en animation infinie derrière un mask SVG plein écran, sur
-   toutes les pages, plus un `backdrop-filter: blur(12px)` sur les barres
-   de recherche sticky au-dessus d'un fond qui bouge en permanence : le
-   flou est recalculé à chaque frame même sans interaction. Aggravant décisif
-   sous Firefox : si le GPU est sur liste noire des drivers, Firefox rend en
-   **logiciel** (Software WebRender), mask, backdrop-filter et gradients
-   animés sont alors rasterisés au CPU à chaque frame, pendant que Chrome
-   garde l'accélération → « lent sous Firefox mais pas sous Chrome », avec un
-   thread principal presque idle dans le profiler (le coût vit dans le
-   processus GPU, absent de la trace fournie). Aggravant structurel chez
-   Gecko, indépendant du matériel : Firefox re-rasterise le mask SVG
-   (1600×1100 flouté) et le grain feTurbulence à chaque tick tant que du
-   contenu bouge derrière (bug Mozilla 1860510), figer les halos ne suffit
-   donc pas. → **Corrigé** (`StoneWallBackground` + `useDevicePerf`) :
-   - **Firefox : mur rasterisé une fois dans un `<canvas>`** (halos au repos +
-     mask + grain composés en pixels), décision **synchrone**, aucun frame
-     lent au démarrage. Plus aucun SVG à repeindre ; Chrome/Safari gardent la
-     version animée.
-   - Autres navigateurs : même rendu raster quand le rendu est dégradé
-     (a) peu de cœurs/RAM, (b) renderer WebGL logiciel
-     (llvmpipe/SwiftShader…) ou absent, (c) sonde rAF < 40 fps. Le verdict
-     des sondes est **persisté en localStorage** : les visites suivantes
-     démarrent directement en mode allégé.
-   - La classe `perf-lite` coupe aussi les backdrop-filter (navbar + barres
-     sticky) sur ces machines. Chaque déclenchement envoie
-     `perf_degraded_rendering` (raison + renderer) à PostHog.
-4. **Le mini-lecteur audio**, `currentTime` (ref globale) était publié
-   ~4×/s pendant toute l'écoute → re-rendus continus sur toutes les pages
-   tant qu'un chiour joue (et autant de mutations DOM à sérialiser pour le
-   replay). → **Corrigé** : publication au changement de seconde (1 Hz).
-5. **Le poids du chargement initial** (§4) et **les lectures Firestore
-   complètes** (§1), ils rendent chaque *navigation* lente sur petite
-   connexion, sans expliquer à eux seuls une lenteur d'interaction.
+1. **PostHog session replay**, costs CPU during the *whole* visit: rrweb
+   observes and serializes every DOM mutation. Imperceptible on a recent
+   machine, noticeable on a low-end phone or an old laptop. → **Re-enabled,
+   except on machines in degraded rendering** (`useDevicePerf` verdict
+   persisted in localStorage); if the FPS probe reaches its verdict during
+   the session, recording stops immediately. Product events, Error tracking
+   and Web Vitals remain active everywhere. Additional setting without
+   redeployment: sampling (PostHog → Settings → Session replay → sampling).
+2. **The SVG illustrations in infinite animation**, CONFIRMED by a Firefox
+   Profiler trace (the problem does not reproduce in Chrome): 154 CSS
+   animations active over the session, the site's thread constantly woken up
+   (~18 repaints/s while idle), input delays up to 136 ms. Two aggravating
+   factors: `illu-flow` animates `stroke-dashoffset`, which Firefox cannot
+   composite on the GPU (SVG repaint on every frame), and
+   `IllustrationProfil` (infinite sparkles) lives in AccountCta, shown to
+   signed-out visitors on several pages, hence "the whole site" being slow.
+   → **Fixed**: the idle loops of the 4 illustrations are finite (2-3
+   iterations, ~10 s of life after entry, ending on the resting state); the
+   hover animations, self-limiting, remain infinite.
+3. **The animated stone wall** (`StoneWallBackground.vue`), two halos of
+   60/45 vmax in infinite animation behind a full-screen SVG mask, on all
+   pages, plus a `backdrop-filter: blur(12px)` on the sticky search bars
+   above a background that moves constantly: the blur is recomputed on
+   every frame even without interaction. A decisive aggravating factor in
+   Firefox: if the GPU is on the driver blocklist, Firefox renders in
+   **software** (Software WebRender); mask, backdrop-filter and animated
+   gradients are then rasterized on the CPU on every frame, while Chrome
+   keeps acceleration → "slow in Firefox but not in Chrome", with a main
+   thread almost idle in the profiler (the cost lives in the GPU process,
+   absent from the provided trace). A structural aggravating factor in
+   Gecko, independent of hardware: Firefox re-rasterizes the SVG mask
+   (1600×1100 blurred) and the feTurbulence grain on every tick as long as
+   content moves behind it (Mozilla bug 1860510), so freezing the halos is
+   not enough. → **Fixed** (`StoneWallBackground` + `useDevicePerf`):
+   - **Firefox: wall rasterized once into a `<canvas>`** (resting halos +
+     mask + grain composited into pixels), **synchronous** decision, no slow
+     frame at startup. No more SVG to repaint; Chrome/Safari keep the
+     animated version.
+   - Other browsers: same raster rendering when rendering is degraded:
+     (a) few cores/little RAM, (b) software WebGL renderer
+     (llvmpipe/SwiftShader...) or none, (c) rAF probe < 40 fps. The probes'
+     verdict is **persisted in localStorage**: subsequent visits start
+     directly in lightweight mode.
+   - The `perf-lite` class also turns off backdrop-filters (navbar + sticky
+     bars) on these machines. Each trigger sends `perf_degraded_rendering`
+     (reason + renderer) to PostHog.
+4. **The audio mini-player**, `currentTime` (global ref) was published
+   ~4×/s during the whole playback → continuous re-renders on all pages as
+   long as a chiour is playing (and as many DOM mutations to serialize for
+   the replay). → **Fixed**: published when the second changes (1 Hz).
+5. **The weight of the initial load** (§4) and **full Firestore reads**
+   (§1); they make every *navigation* slow on a weak connection, without
+   explaining an interaction slowness on their own.
 
-Pour objectiver tout ça : les Core Web Vitals sont désormais capturés
-(INP en particulier mesure la lenteur d'interaction réelle, par page et
-par appareil), PostHog → Web analytics → Web vitals après déploiement.
+To make all this measurable: Core Web Vitals are now captured (INP in
+particular measures real interaction slowness, per page and per device),
+PostHog → Web analytics → Web vitals after deployment.
 
-- **Corrigé (octobre 2026), sur le site :** Firebase Auth gardait le compte
-  dans IndexedDB, dont la persistance sonde sa base toutes les 800 ms (25
-  transactions en 20 s sur l'accueil au repos). `src/firebase/core.ts` met
-  localStorage en tête, qui suit les autres onglets par l'événement `storage`
-  (sur navigateur mobile, Firebase relit localStorage chaque seconde, une
-  lecture synchrone bien plus légère) ; IndexedDB reste dans la liste, et un
-  compte qu'il garde encore y est retrouvé puis déplacé. Tenu par
-  `src/__tests__/authPersistence.test.ts` et l'e2e « un compte gardé dans
-  IndexedDB par une version précédente reste connecté ».
+- **Fixed (October 2026), on the site:** Firebase Auth kept the account in
+  IndexedDB, whose persistence polls its database every 800 ms (25
+  transactions in 20 s on the idle home page). `src/firebase/core.ts` puts
+  localStorage first, which follows the other tabs through the `storage`
+  event (in a mobile browser, Firebase rereads localStorage every second, a
+  synchronous read that is much lighter); IndexedDB stays in the list, and
+  an account it still holds is found there and then moved. Held by
+  `src/__tests__/authPersistence.test.ts` and the e2e « un compte gardé dans
+  IndexedDB par une version précédente reste connecté » ("an account kept in
+  IndexedDB by a previous version stays signed in").
 
-## 1. L'écran blanc : cache HTML + chunks hashés (corrigé)
+## 1. The white screen: HTML cache + hashed chunks (fixed)
 
-**PostHog n'est pas en cause.** Le mécanisme :
+**PostHog is not to blame.** The mechanism:
 
-1. Chaque build Vite génère des chunks JS avec un hash dans le nom
-   (`AdminChiourimPage-uB4ZZNbv.js`). À chaque déploiement, les anciens
-   fichiers disparaissent.
-2. `firebase.json` ne définissait **aucun** `Cache-Control` pour le HTML :
-   Firebase Hosting applique alors `max-age=3600` par défaut. Un navigateur
-   pouvait donc garder jusqu'à 1 h un HTML qui référence des chunks supprimés
-   → 404 sur le module principal → page blanche, sur tous les appareils de
-   l'utilisateur qui a visité le site juste avant un déploiement.
-3. Même problème en cours de session : un onglet ouvert sur l'ancienne
-   version obtient « Failed to fetch dynamically imported module » en
-   naviguant vers une page lazy-loadée. **Confirmé dans PostHog Error
-   tracking** (issue active du 2026-07-28 sur `AdminChiourimPage-uB4ZZNbv.js`).
+1. Each Vite build generates JS chunks with a hash in the name
+   (`AdminChiourimPage-uB4ZZNbv.js`). On each deployment, the old files
+   disappear.
+2. `firebase.json` defined **no** `Cache-Control` for the HTML: Firebase
+   Hosting then applies `max-age=3600` by default. A browser could
+   therefore keep for up to 1 h an HTML that references deleted chunks
+   → 404 on the main module → blank page, on all the devices of a user who
+   visited the site just before a deployment.
+3. Same problem during a session: a tab open on the old version gets
+   "Failed to fetch dynamically imported module" when navigating to a
+   lazy-loaded page. **Confirmed in PostHog Error tracking** (active issue
+   from 2026-07-28 on `AdminChiourimPage-uB4ZZNbv.js`).
 
-Correctifs appliqués :
+Fixes applied:
 
-- `firebase.json` : `Cache-Control: no-cache` sur `**` (le HTML est
-  revalidé à chaque visite ; les blocs `/assets/**`, immutable 1 an, et
-  `/texts/**`, 7 jours, passent après et gardent donc la priorité, la
-  règle Firebase étant « le dernier bloc qui matche gagne »). Les images
-  à la racine (favicons, og-image) gardent un cache d'un jour.
-- `src/main.ts` : écouteur `vite:preloadError`, si un chunk est
-  introuvable après un déploiement, la page se recharge une fois
-  (garde de 60 s en sessionStorage pour ne pas boucler hors ligne).
+- `firebase.json`: `Cache-Control: no-cache` on `**` (the HTML is
+  revalidated on every visit; the `/assets/**` blocks, immutable 1 year,
+  and `/texts/**`, 7 days, come after and therefore keep priority, since
+  the Firebase rule is "the last matching block wins"). Images at the root
+  (favicons, og-image) keep a one-day cache.
+- `src/main.ts`: `vite:preloadError` listener; if a chunk cannot be found
+  after a deployment, the page reloads once (60 s guard in sessionStorage
+  so as not to loop while offline).
 
-À savoir : l'Error tracking ne voit que les erreurs *après* chargement de
-PostHog (prod + consentement accordé). Un écran blanc au chargement initial
-n'apparaîtra jamais dans PostHog, le no-cache sur le HTML est la vraie
-protection.
+Good to know: Error tracking only sees errors *after* PostHog has loaded
+(prod + consent granted). A white screen on initial load will never show
+up in PostHog; the no-cache on the HTML is the real protection.
 
-## 2. PostHog ralentit-il le site ? Pas le tracking ; seul le replay pèse
+## 2. Does PostHog slow the site down? Not the tracking; only the replay weighs
 
-L'intégration (`src/services/analyticsService.ts`) est déjà faite dans les
-règles de l'art :
+The integration (`src/services/analyticsService.ts`) already follows best
+practices:
 
-- chargé **uniquement en prod**, par **import dynamique**, après le montage
-  de l'app : le SDK (~76 kB gzip) ne bloque jamais le premier rendu ;
-- soumis au **consentement** : la plupart des visiteurs anonymes qui
-  refusent ne chargent rien du tout ;
-- toutes les méthodes sont des no-ops si le SDK n'est pas chargé
-  (adblock, échec réseau) : aucun appel ne peut casser l'app.
+- loaded **only in prod**, through a **dynamic import**, after the app is
+  mounted: the SDK (~76 kB gzip) never blocks the first render;
+- subject to **consent**: most anonymous visitors who decline load nothing
+  at all;
+- all methods are no-ops if the SDK is not loaded (adblock, network
+  failure): no call can break the app.
 
-Le seul poste réellement coûteux côté client est le **session replay**
-(enregistrement rrweb : CPU + réseau en continu pendant toute la visite).
-Actif, sauf sur les machines en rendu dégradé (voir §0) ; s'il faut alléger
-davantage, passer par l'échantillonnage, et ne jamais toucher aux
-événements produit, qui ne coûtent rien.
+The only truly expensive item on the client side is **session replay**
+(rrweb recording: continuous CPU + network during the whole visit). Active,
+except on machines in degraded rendering (see §0); if it needs to be
+lightened further, use sampling, and never touch product events, which
+cost nothing.
 
-Ajout fait : `capture_performance: { web_vitals: true }` → l'onglet
-**Web analytics → Web vitals** de PostHog donnera des mesures terrain
-(LCP/INP/CLS/FCP) page par page pour objectiver la suite de cet audit.
+Addition made: `capture_performance: { web_vitals: true }` → PostHog's
+**Web analytics → Web vitals** tab will give field measurements
+(LCP/INP/CLS/FCP) page by page to make the rest of this audit measurable.
 
-## 3. Problèmes de performance identifiés (par priorité)
+## 3. Identified performance problems (by priority)
 
-> État (fin de la PR de performance) : tout ce qui suit est **corrigé**, sauf
-> (a) la dénormalisation Firestore de `sessions` (`participantIds`), elle
-> demande une migration de données coordonnée, hors périmètre d'une PR
-> front, et (b) le pré-découpage des textes par chapitre, qui touche le mode
-> hors-ligne et mérite sa propre PR testée. Détail des correctifs dans la
-> description de la PR.
+> Status (end of the performance PR): everything below is **fixed**, except
+> (a) the Firestore denormalization of `sessions` (`participantIds`), which
+> requires a coordinated data migration, out of scope for a front-end PR,
+> and (b) pre-splitting the texts by chapter, which affects offline mode and
+> deserves its own tested PR. Details of the fixes in the PR description.
 
-### Priorité 1. Firestore : lectures de collections entières
+### Priority 1. Firestore: reads of entire collections
 
-| Où | Problème |
+| Where | Problem |
 | --- | --- |
-| `src/services/firestoreService.ts:94` | `getDocs(collection(db, "sessions"))` sans `where`/`limit` : **toute** la collection (avec les tableaux `reservations` complets) est téléchargée. Utilisé par la home, le profil et la liste des sessions → le coût croît avec l'usage total du site, pas avec ce que l'utilisateur voit. |
-| `src/views/HomeView.vue:55`, `ProfilePage.vue:74` | Tout est chargé puis filtré côté client pour trouver les 2-3 sessions de l'utilisateur. Fix : champ dénormalisé `participantIds` + `array-contains`, ou requête `where("personId", "==", uid)`. |
-| `src/services/reservationService.ts:379` | `migrateGuestReservations` fait un **scan complet à chaque login** (appelé 3× depuis `loginView.vue`), même sans réservation invitée. Fix : ne lancer que si un id invité local existe + requête ciblée. |
-| `src/views/Chiourim/DetailChiour.vue:116` | Un visiteur qui ouvre un lien de chiour partagé télécharge tout le catalogue pour trouver un document. Fix : `getDoc(doc(db, "chiourim", slug))`. |
-| `src/views/ShareReading/NewSession.vue` | **Corrigé (octobre 2026)** : choisir Tehilim lisait toute la collection pour proposer la chaîne perpétuelle. Une requête `where("perpetual", "==", true)` suffit (`sessionService.getPerpetualSession`, tenu par `perpetualSessionQuery.test.ts`). |
-| `src/services/sessionService.ts:243` | `generateUniqueSlug` : une requête Firestore par itération jusqu'à trouver un slug libre. Fix : suffixe aléatoire court. |
+| `src/services/firestoreService.ts:94` | `getDocs(collection(db, "sessions"))` without `where`/`limit`: the **entire** collection (with the full `reservations` arrays) is downloaded. Used by the home page, the profile and the session list → the cost grows with the site's total usage, not with what the user sees. |
+| `src/views/HomeView.vue:55`, `ProfilePage.vue:74` | Everything is loaded then filtered on the client to find the user's 2-3 sessions. Fix: denormalized `participantIds` field + `array-contains`, or a `where("personId", "==", uid)` query. |
+| `src/services/reservationService.ts:379` | `migrateGuestReservations` does a **full scan on every login** (called 3× from `loginView.vue`), even without a guest booking. Fix: only run it if a local guest id exists + targeted query. |
+| `src/views/Chiourim/DetailChiour.vue:116` | A visitor opening a shared chiour link downloads the whole catalog to find one document. Fix: `getDoc(doc(db, "chiourim", slug))`. |
+| `src/views/ShareReading/NewSession.vue` | **Fixed (October 2026)**: choosing Tehilim read the whole collection to offer the perpetual chain. A `where("perpetual", "==", true)` query is enough (`sessionService.getPerpetualSession`, held by `perpetualSessionQuery.test.ts`). |
+| `src/services/sessionService.ts:243` | `generateUniqueSlug`: one Firestore query per iteration until a free slug is found. Fix: short random suffix. |
 
-### Priorité 2. Functions : `socialPreview` devant le trafic humain
+### Priority 2. Functions: `socialPreview` in front of human traffic
 
-- `firebase.json` route `/share-reading/session/**` **et** `/chiourim/**`
-  vers la function `socialPreview` : chaque visite humaine de ces pages
-  (les URL les plus partagées du site) paie un cold start + une requête
-  Firestore + un `fetch` du shell avant le premier octet de HTML.
-- `functions/src/index.ts:27` : `maxInstances: 3` **global**, un pic de
-  trafic sur un lien WhatsApp met les visiteurs en file d'attente.
-- Fixes : réserver la rewrite aux user-agents crawlers (ou prerender),
-  `maxInstances` par fonction + `minInstances: 1` sur `socialPreview`,
-  `getDoc` par slug au lieu du catalogue entier, sortir la lecture des
-  polices (1,23 Mo de TTF) du chemin par requête dans `ogCard.ts`.
+- `firebase.json` routes `/share-reading/session/**` **and** `/chiourim/**`
+  to the `socialPreview` function: every human visit to these pages (the
+  most shared URLs of the site) pays a cold start + a Firestore query + a
+  `fetch` of the shell before the first byte of HTML.
+- `functions/src/index.ts:27`: **global** `maxInstances: 3`; a traffic
+  spike on a WhatsApp link puts visitors in a queue.
+- Fixes: reserve the rewrite for crawler user agents (or prerender),
+  `maxInstances` per function + `minInstances: 1` on `socialPreview`,
+  `getDoc` by slug instead of the whole catalog, move the font loading
+  (1.23 MB of TTF) out of the per-request path in `ogCard.ts`.
 
-### Priorité 3. Lecture de textes : fichiers entiers pour un chapitre
+### Priority 3. Reading texts: whole files for one chapter
 
-- `textService.ts:238` : lire **un chapitre** télécharge et parse le
-  fichier du traité entier (jusqu'à **1,76 Mo**, `shabbat.json`), avec 9
-  passes regex sur tout le traité. Très lourd sur mobile.
-- `DailyReadingItem.vue:36` : chaque entrée de lecture du jour charge son
-  fichier complet en parallèle au montage du profil (~5 Mo pour 3 traités).
-- Fix : pré-découper les corpus par chapitre/daf au build
-  (`scripts/download-texts.mjs`) et ne récupérer que la section demandée ;
-  charger les items du profil à l'ouverture (accordéon/IntersectionObserver).
-- **Corrigé (octobre 2026) :** un même fichier partagé par plusieurs textes
-  ne se lit plus qu'une fois. Les 150 psaumes vivent dans `tehilim.json`
-  (1,2 Mo) ; le Tehilim du jour (jusqu'à neuf psaumes) le relisait et le
-  reparsait neuf fois, environ 690 ms sur un ordinateur de bureau, et le
-  lecteur une fois de plus à chaque psaume suivant. `loadText` garde les deux
-  derniers fichiers lus, déjà parsés ; un échec ne se garde pas. Tenu par
-  `src/__tests__/textFileCache.test.ts`.
+- `textService.ts:238`: reading **one chapter** downloads and parses the
+  file of the whole tractate (up to **1.76 MB**, `shabbat.json`), with 9
+  regex passes over the whole tractate. Very heavy on mobile.
+- `DailyReadingItem.vue:36`: each daily reading entry loads its full file
+  in parallel when the profile mounts (~5 MB for 3 tractates).
+- Fix: pre-split the corpora by chapter/daf at build time
+  (`scripts/download-texts.mjs`) and only fetch the requested section; load
+  the profile items when opened (accordion/IntersectionObserver).
+- **Fixed (October 2026):** a file shared by several texts is now read only
+  once. The 150 psalms live in `tehilim.json` (1.2 MB); the daily Tehilim
+  (up to nine psalms) reread and reparsed it nine times, about 690 ms on a
+  desktop computer, and the reader once more for each following psalm.
+  `loadText` keeps the last two files read, already parsed; a failure is not
+  kept. Held by `src/__tests__/textFileCache.test.ts`.
 
-### Priorité 4. Bundle initial et rendu
+### Priority 4. Initial bundle and rendering
 
-- Chunk `firebase` : **872 kB (214 kB gzip)** chargé dès la home (App.vue
-  importe `auth` en statique). Piste : séparer `firestore`/`storage` du
-  chunk, et différer ce qui n'est pas l'auth. → **Corrigé (2026-08)** :
-  `firebase.ts` éclaté en `src/firebase/{core,firestore,storage,functions}.ts`
-  - seul le cœur (app + auth, 201 kB / 40 kB gzip) reste dans le bundle
-  initial, Firestore et le reste se chargent à la demande. JS préchargé :
+- `firebase` chunk: **872 kB (214 kB gzip)** loaded from the home page
+  (App.vue imports `auth` statically). Lead: split `firestore`/`storage`
+  out of the chunk, and defer what is not auth. → **Fixed (2026-08)**:
+  `firebase.ts` split into `src/firebase/{core,firestore,storage,functions}.ts`
+  - only the core (app + auth, 201 kB / 40 kB gzip) stays in the initial
+  bundle, Firestore and the rest load on demand. Preloaded JS:
   321 → 143 kB gzip.
-- `index.html` : stylesheet Google Fonts **bloquante** avec 7 familles /
-  19 graisses, toutes les alternatives sélectionnables sont téléchargées
-  par tous les visiteurs. Fix : ne garder en bloquant que les familles par
-  défaut, charger les autres à la demande depuis `useFonts.ts`.
-- `sessionService.ts:16` importe `textStudies.json` (64 kB) en statique →
-  il atterrit dans le bundle initial via la home. Fix : import dynamique.
-- `i18n.ts` : les 3 locales (92 kB de source) sont toutes dans le bundle
-  initial. Fix : ne charger que la locale active, `import()` les autres.
-- `seoPages.ts` (94 kB) est tiré dans les chunks de `DetailSession`,
-  `DetailChiour` et `ProfilePage` **juste pour la constante `SITE_URL`**.
-  Fix : déplacer `SITE_URL` dans un petit `src/config/site.ts`.
-- **Corrigé (octobre 2026) :** depuis que les locales arrivent par
-  `import()`, l'app montait sans attendre la sienne : en `en-US`, premier
-  affichage à 396 ms encore en français, l'anglais à 482 ms ; en `he-IL`, du
-  français de droite à gauche puis toute la page recomposée. Hors français,
-  `main.ts` attend `localeReady` (une seconde au plus) avant `app.mount`.
-  Tenu par `src/__tests__/localeBeforeFirstRender.test.ts`.
+- `index.html`: **render-blocking** Google Fonts stylesheet with 7 families
+  / 19 weights; all the selectable alternatives are downloaded by every
+  visitor. Fix: keep only the default families as blocking, load the others
+  on demand from `useFonts.ts`.
+- `sessionService.ts:16` imports `textStudies.json` (64 kB) statically → it
+  lands in the initial bundle via the home page. Fix: dynamic import.
+- `i18n.ts`: the 3 locales (92 kB of source) are all in the initial bundle.
+  Fix: load only the active locale, `import()` the others.
+- `seoPages.ts` (94 kB) is pulled into the chunks of `DetailSession`,
+  `DetailChiour` and `ProfilePage` **just for the `SITE_URL` constant**.
+  Fix: move `SITE_URL` into a small `src/config/site.ts`.
+- **Fixed (October 2026):** since the locales arrive through `import()`,
+  the app mounted without waiting for its own: in `en-US`, first paint at
+  396 ms still in French, English at 482 ms; in `he-IL`, right-to-left
+  French then the whole page laid out again. Outside French, `main.ts`
+  waits for `localeReady` (one second at most) before `app.mount`. Held by
+  `src/__tests__/localeBeforeFirstRender.test.ts`.
 
-- **Corrigé (octobre 2026) :** l'accueil du site tirait le SDK Firestore
-  complet (671 kB, 173 kB gzip, un canal d'écoute, IndexedDB relu toutes les
-  quatre secondes) pour les seules informations de l'équipe. Sur le site,
-  elles se lisent par Firestore Lite (`src/firebase/firestoreLite.ts`) ;
-  l'app native garde le SDK complet et son cache hors ligne. Le petit module
-  que les deux partagent a désormais son propre chunk (`firebase-bloom`, dans
-  `vite.config.ts`) ; resté dans `firebase-firestore`, il y faisait charger
-  tout le SDK. Tenu par `src/__tests__/announcementsFirestoreLite.test.ts`.
+- **Fixed (October 2026):** the site's home page pulled the full Firestore
+  SDK (671 kB, 173 kB gzip, a listening channel, IndexedDB reread every four
+  seconds) just for the team's announcements. On the site, they are read
+  through Firestore Lite (`src/firebase/firestoreLite.ts`); the native app
+  keeps the full SDK and its offline cache. The small module both share now
+  has its own chunk (`firebase-bloom`, in `vite.config.ts`); left in
+  `firebase-firestore`, it caused the whole SDK to load. Held by
+  `src/__tests__/announcementsFirestoreLite.test.ts`.
 
-### Priorité 5. Rendu des grandes listes
+### Priority 5. Rendering large lists
 
-- `TextStudiesList.vue` : `isReserved()` / `getReservation()` etc. sont des
-  fonctions appelées depuis le template → recalcul en O(cartes × sections ×
-  réservations) à chaque frappe dans la recherche (150 cartes pour une
-  chaîne de Tehilim). Fix : précalculer une `Map` par session dans un
-  `computed`.
-- `useAudioPlayer.ts:94` : `currentTime` (ref singleton) mis à jour ~4×/s
-  pendant toute la lecture → re-rendus continus partout où le mini-player
-  est monté. Fix : throttle à ~1 Hz.
-- `TextReadingPage.vue:723` : `transliterate(line)` appelé dans le template,
-  jamais mémoïsé. Fix : `computed` par section.
+- `TextStudiesList.vue`: `isReserved()` / `getReservation()` etc. are
+  functions called from the template → recomputation in O(cards × sections
+  × bookings) on every keystroke in the search (150 cards for a Tehilim
+  chain). Fix: precompute a `Map` per session in a `computed`.
+- `useAudioPlayer.ts:94`: `currentTime` (singleton ref) updated ~4×/s during
+  the whole playback → continuous re-renders wherever the mini-player is
+  mounted. Fix: throttle to ~1 Hz.
+- `TextReadingPage.vue:723`: `transliterate(line)` called in the template,
+  never memoized. Fix: `computed` per section.
 
-### Points sains (rien à faire)
+### Healthy points (nothing to do)
 
-- Aucun `onSnapshot` qui fuit ; caches avec TTL et dédup des requêtes en
-  vol dans `firestoreService`/`chiourService`/`serieService`.
-- Aucune image lourde (max 76 kB) ; illustrations en SVG inline.
-- Toutes les routes sauf la home sont lazy-loadées.
-- `ChiourimPage.vue` : pattern cache-first bien fait.
+- No leaking `onSnapshot`; caches with TTL and deduplication of in-flight
+  requests in `firestoreService`/`chiourService`/`serieService`.
+- No heavy image (max 76 kB); illustrations as inline SVG.
+- All routes except the home page are lazy-loaded.
+- `ChiourimPage.vue`: cache-first pattern done well.

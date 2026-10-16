@@ -1,361 +1,352 @@
-# Revue de code et d'optimisation (septembre 2026)
+# Code and optimization review (September 2026)
 
-Passe complète sur le dépôt : failles, bugs, code mort, performance du site et
-de l'app, et pistes d'amélioration. Six lectures parallèles (services,
-composants et composables, vues, backend et règles, build et contenu, app
-native et hors ligne), chaque constat vérifié dans le code avant d'être
-retenu. Ce document distingue ce que la PR corrige de ce qu'elle laisse en
-chantier, avec pour chaque chantier le fichier où commencer.
+A complete pass over the repository: vulnerabilities, bugs, dead code,
+performance of the site and the app, and ideas for improvement. Six parallel
+readings (services, components and composables, views, backend and rules,
+build and content, native app and offline), each finding checked in the code
+before being kept. This document separates what the PR fixes from what it
+leaves as open work, giving for each open item the file where to start.
 
-Complète l'audit de performance de juillet (`audit-performance-2026-07.md`),
-dont il vérifie aussi les acquis : l'un d'eux avait sauté (section 1).
+It complements the July performance audit (`audit-performance-2026-07.md`),
+whose gains it also checks: one of them had regressed (section 1).
 
-Les chantiers de la section 2 sont suivis dans la base « Tâches » du Notion
-du projet (une tâche par chantier, étiquetée) ; cette section en garde la
-synthèse et le point d'entrée dans le code.
+The open items of section 2 are tracked in the « Tâches » ("Tasks") database
+of the project's Notion (one tagged task per item); this section keeps their
+summary and the entry point in the code.
 
-## 1. Corrigé dans cette PR
+## 1. Fixed in this PR
 
-### Poids du site et de l'app
+### Weight of the site and the app
 
-- **Firestore était revenu dans le chargement initial.** Depuis le découpage
-  de `src/firebase/`, `moderationService` importait `firebase/firestore` en
-  statique pour le signalement, et `authService` (donc App.vue) l'importe
-  pour le filtre de termes : le SDK Firestore entier (671 kB, 173 kB gzip)
-  était de nouveau préchargé par `index.html` sur chaque page, web et app.
-  Le signalement charge maintenant Firestore à la demande. JS préchargé :
-  335 kB gzip avant, 162 kB gzip après.
-- **Un test tient la frontière** (`src/__tests__/initialBundle.test.ts`) : il
-  suit les imports statiques depuis `main.ts` et refuse Firestore, Storage,
-  Functions, hebcal et PostHog dans ce graphe. Il échouait sur la base, il
-  passe maintenant ; un import ajouté par mégarde le fera échouer avec le
-  chemin exact.
-- **App.vue** : la barre du bas, le bandeau de mise à jour (et son service
-  Capacitor) et l'avis hors ligne passent en composants asynchrones ; le site
-  n'embarque plus une ligne de ce qui ne concerne que l'app.
-- **main.ts** : la synchronisation des textes téléchargés ne se lance que
-  dans l'app ; sur le site elle tirait le service, le catalogue et les shims
-  Capacitor (sept requêtes, ~18 kB gzip) pour lire une clé vide.
-- **index.html** : la famille Google « Noto Serif Hebrew » quittait l'URL
-  bloquante (le sous-ensemble embarqué dans `/fonts` passe avant elle dans
-  chaque pile, elle ne servait plus) ; ce sous-ensemble est préchargé.
-- Trois icônes jamais référencées retirées du registre embarqué.
-- `@tailwindcss/vite` passe en dépendance de développement ; `app:build` ne
-  prérend plus les 1 465 pages du site pour les supprimer aussitôt.
+- **Firestore had come back into the initial load.** Since `src/firebase/`
+  was split, `moderationService` imported `firebase/firestore` statically
+  for reporting, and `authService` (hence App.vue) imports it for the terms
+  filter: the entire Firestore SDK (671 kB, 173 kB gzip) was once again
+  preloaded by `index.html` on every page, web and app. Reporting now loads
+  Firestore on demand. Preloaded JS: 335 kB gzip before, 162 kB gzip after.
+- **A test holds the boundary** (`src/__tests__/initialBundle.test.ts`): it
+  follows the static imports from `main.ts` and refuses Firestore, Storage,
+  Functions, hebcal and PostHog in that graph. It failed on the base branch,
+  it passes now; an import added by mistake will make it fail with the exact
+  path.
+- **App.vue**: the bottom bar, the update banner (and its Capacitor service)
+  and the offline notice become async components; the site no longer ships a
+  single line of what only concerns the app.
+- **main.ts**: syncing downloaded texts only starts in the app; on the site
+  it pulled in the service, the catalog and the Capacitor shims (seven
+  requests, ~18 kB gzip) to read an empty key.
+- **index.html**: the Google family "Noto Serif Hebrew" leaves the blocking
+  URL (the subset shipped in `/fonts` comes before it in every stack, so it
+  was no longer used); that subset is preloaded.
+- Three icons never referenced removed from the shipped registry.
+- `@tailwindcss/vite` becomes a dev dependency; `app:build` no longer
+  prerenders the site's 1,465 pages only to delete them right away.
 
-### Fluidité (surtout petits téléphones)
+### Smoothness (especially on small phones)
 
-- **Pincement de lecture** (`useReadingPinch`) : l'écouteur `touchmove` non
-  passif n'est posé que pendant un geste à deux doigts. Posé en permanence
-  sur `document`, il forçait le navigateur à attendre le script avant chaque
-  défilement à un doigt, pendant toute la lecture : le texte « accrochait ».
-- **Barre de progression de lecture** : `transform: scaleX` au lieu d'une
-  largeur animée à chaque frame de défilement (mise en page et peinture
-  relancées à chacune).
-- **Liens** : `a { transition: all }` transitionnait aussi les propriétés de
-  mise en page de tous les liens du site ; restreint aux couleurs, opacité,
-  transformation et ombre.
-- **Mur de pierre** : inchangé. Les halos restent animés partout ; ils ne
-  sont figés que sur les appareils déjà détectés comme faibles
-  (`useDevicePerf`, verdict persisté), mécanisme existant. Si les Web Vitals
-  mobiles le justifient un jour, `stone-wall--static` sur `pointer: coarse`
-  est la piste (voir la tâche Notion « Fluidité »).
-- **Session replay PostHog dans l'app : mesuré plutôt que coupé.** Chaque
-  appareil natif tire une fois sa cohorte (replay actif ou non, gardée sur
-  l'appareil) et tous ses événements portent `replay_cohort` : les Web
-  Vitals (INP surtout) se comparent entre les deux moitiés dans PostHog. Le
-  web n'est pas concerné (`web`). À trancher après quelques semaines : replay
-  partout ou nulle part, et le tirage disparaît.
-- **Page de gestion d'une chaîne** : inscrire un invité ne remplace plus
-  toute la page par un spinner (liste démontée, défilement perdu).
-- **Lecteur audio** : la sonde de durée ne repart plus quand le morceau est
-  déjà dans le lecteur global, et elle relâche son téléchargement (`load()`)
-  à la navigation.
-- **Page de gestion d'une chaîne** : index de réservations en `computed`
-  (les fonctions du template refaisaient un parcours des réservations dix
-  fois par ligne, quadratique sur une chaîne du Talmud), chapitres mis en
-  cache.
-- **Lecture du jour, mode « gérer »** : filtrage du catalogue attendu 150 ms
-  après la dernière frappe (comme la bibliothèque), sélection en `Set`.
-- **Accueil** : une seule horloge partagée (`useNow`) pour les cartes
-  horaires, 'Omer, lune et sidour, au lieu de quatre `setInterval`.
-- **Widgets** : les payloads (hebcal, catalogue) sont importés à la demande
-  au premier calcul, plus au chargement de l'app.
-- **QR de partage** : module npm en `import()` (chunk hashé, immuable, typé)
-  à la place d'un script vendorisé de 57 kB servi sans cache ni hash.
+- **Reading pinch** (`useReadingPinch`): the non-passive `touchmove`
+  listener is only attached during a two-finger gesture. Attached
+  permanently on `document`, it forced the browser to wait for the script
+  before every one-finger scroll, during the whole reading: the text
+  "stuttered".
+- **Reading progress bar**: `transform: scaleX` instead of a width animated
+  on every scroll frame (layout and paint triggered again on each one).
+- **Links**: `a { transition: all }` also transitioned the layout properties
+  of every link on the site; restricted to colors, opacity, transform and
+  shadow.
+- **Stone wall**: unchanged. The halos remain animated everywhere; they are
+  only frozen on devices already detected as weak (`useDevicePerf`,
+  persisted verdict), an existing mechanism. If mobile Web Vitals justify it
+  one day, `stone-wall--static` on `pointer: coarse` is the lead (see the
+  Notion task « Fluidité », "Smoothness").
+- **PostHog session replay in the app: measured rather than turned off.**
+  Each native device draws its cohort once (replay active or not, kept on
+  the device) and all its events carry `replay_cohort`: Web Vitals (INP
+  above all) can be compared between the two halves in PostHog. The web is
+  not affected (`web`). To be decided after a few weeks: replay everywhere
+  or nowhere, and the draw goes away.
+- **Chain management page**: signing up a guest no longer replaces the
+  whole page with a spinner (list unmounted, scroll position lost).
+- **Audio player**: the duration probe no longer restarts when the track is
+  already in the global player, and it releases its download (`load()`) on
+  navigation.
+- **Chain management page**: booking index as a `computed` (the template
+  functions went through the bookings ten times per row, quadratic on a
+  Talmud chain), chapters cached.
+- **Daily reading, « gérer » ("manage") mode**: catalog filtering waits
+  150 ms after the last keystroke (like the library), selection as a `Set`.
+- **Home page**: a single shared clock (`useNow`) for the times, 'Omer,
+  moon and sidour cards, instead of four `setInterval`s.
+- **Widgets**: the payloads (hebcal, catalog) are imported on demand at the
+  first computation, no longer when the app loads.
+- **Sharing QR code**: npm module via `import()` (hashed, immutable, typed
+  chunk) instead of a vendored 57 kB script served with no cache or hash.
 
 ### Bugs
 
-- **Date limite décalée à chaque enregistrement** : la modale d'édition
-  affichait l'heure UTC dans un champ `datetime-local`, réinterprétée en heure
-  locale à la sauvegarde ; chaque « Enregistrer » sans toucher la date la
-  reculait de deux heures en France. Formatage local (`toDateTimeLocal`).
-- **Date limite d'une nouvelle chaîne** : `new Date("YYYY-MM-DD")` lit minuit
-  UTC, la veille au soir à l'ouest de Greenwich. La chaîne court maintenant
-  jusqu'à la fin locale du jour choisi (`endOfLocalDay`), et la règle « chaîne
-  terminée » vit une seule fois dans `sessionService.isSessionFinished`
-  (trois copies avant).
-- **Texte fantôme dans le lecteur** : deux textes enchaînés vite faisaient
-  partir deux requêtes, et la première revenue écrivait l'ancien texte sous
-  la nouvelle adresse. Jeton de requête dans `loadContent`.
-- **Lecteur en mode chaîne** : une chaîne introuvable ou hors ligne faisait
-  rejeter le montage en silence ; le texte reste lisible, l'erreur est
-  journalisée.
-- **Filtre de modération contourné par un « ! »** : la table leet convertit
-  « ! » en « i » sur tout le texte, donc « pute! » devenait « putei » et
-  passait. La substitution ne vaut plus qu'au contact d'une lettre ; test
-  ajouté.
-- **Suppression de compte** : les préférences, la progression et les
-  marque-pages étaient purgés AVANT `deleteUser`, que Firebase refuse sans
-  connexion récente ; un compte email pouvait se retrouver vidé mais
-  toujours là. La fraîcheur de la connexion est vérifiée avant la purge.
-- **Inscription email** : le pseudo n'était pas répercuté aux abonnés (la
-  navbar gardait l'email) ; un `setTimeout(100)` en tenait lieu.
-- **Textes corrigés invisibles une semaine sur le web** : `/texts/**` est
-  servi avec sept jours de cache et l'URL ne portait pas l'empreinte du
-  manifeste (jamais chargé sur le web). Le manifeste (12 kB, no-cache) est
-  chargé une fois par session avant le premier texte.
-- **Chapitres du Talmud** : un échec réseau sur `talmud-chapters.json` était
-  mémorisé pour toute la session (découpage daf par daf jusqu'au rechargement).
-- **Cache des séries** jamais invalidé par le backoffice (création,
-  suppression, renommage d'auteur).
-- **Signalement impossible** d'une chaîne au titre de plus de 300 caractères
-  (plafond des règles) : nom tronqué.
-- **Pages chiourim** : le rafraîchissement en arrière-plan reposait le chiour
-  précédent si l'on avait changé d'épisode entre-temps ; clé `v-for` sur le
-  nom (doublons possibles) remplacée par le slug ; rejet non géré dans le
+- **Deadline shifted on every save**: the edit modal displayed the UTC time
+  in a `datetime-local` field, reinterpreted as local time on save; each
+  « Enregistrer » ("Save") without touching the date moved it back two hours
+  in France. Local formatting (`toDateTimeLocal`).
+- **Deadline of a new chain**: `new Date("YYYY-MM-DD")` reads midnight UTC,
+  the evening before west of Greenwich. The chain now runs until the local
+  end of the chosen day (`endOfLocalDay`), and the "chain finished" rule
+  lives only once in `sessionService.isSessionFinished` (three copies
+  before).
+- **Ghost text in the reader**: two texts opened in quick succession sent
+  two requests, and the first to come back wrote the old text under the new
+  address. Request token in `loadContent`.
+- **Reader in chain mode**: a chain not found or offline made the mount
+  reject silently; the text remains readable, the error is logged.
+- **Moderation filter bypassed by a "!"**: the leet table converts "!" into
+  "i" across the whole text, so "pute!" became "putei" and got through. The
+  substitution now only applies next to a letter; test added.
+- **Account deletion**: preferences, progress and bookmarks were purged
+  BEFORE `deleteUser`, which Firebase refuses without a recent sign-in; an
+  email account could end up emptied but still there. Sign-in freshness is
+  checked before the purge.
+- **Email sign-up**: the username was not propagated to subscribers (the
+  navbar kept the email); a `setTimeout(100)` stood in for it.
+- **Corrected texts invisible for a week on the web**: `/texts/**` is served
+  with seven days of cache and the URL did not carry the manifest's
+  fingerprint (never loaded on the web). The manifest (12 kB, no-cache) is
+  loaded once per session before the first text.
+- **Talmud chapters**: a network failure on `talmud-chapters.json` was
+  remembered for the whole session (daf-by-daf splitting until reload).
+- **Series cache** never invalidated by the backoffice (creation, deletion,
+  author renaming).
+- **Reporting impossible** for a chain whose title is longer than 300
+  characters (cap in the rules): name truncated.
+- **Chiourim pages**: the background refresh put back the previous chiour
+  if one had switched episodes in the meantime; `v-for` key on the name
+  (possible duplicates) replaced by the slug; unhandled rejection in the
   studio.
-- **Balises sociales** : l'image `og:image` de la page précédente restait sur
-  la suivante.
-- **Barre de progression d'une chaîne** : classe `fill-mode-backwards`
-  inexistante en Tailwind 4, d'où un flash à chaque affichage.
-- **Accessibilité** : `aria-label` français en dur sur le bouton de remontée
-  (toutes langues) ; deux `h1` par page (le bandeau du site en portait un).
+- **Social tags**: the previous page's `og:image` stayed on the next one.
+- **Chain progress bar**: `fill-mode-backwards` class nonexistent in
+  Tailwind 4, hence a flash on every display.
+- **Accessibility**: hard-coded French `aria-label` on the back-to-top
+  button (all languages); two `h1`s per page (the site banner carried one).
 
-### Backend et règles
+### Backend and rules
 
-- **Masquage automatique forgeable** : trois signalements anonymes du même
-  appareil (identifiant invité librement choisi, ou absent, auquel cas la
-  fonction comptait le document lui-même) masquaient n'importe quelle chaîne.
-  Seuls les comptes pèsent maintenant dans le seuil ; les signalements
-  d'invités restent comptés et visibles dans le backoffice. Les règles
-  exigent un identifiant invité non vide pour un signalement sans compte.
-- **`setTitle` de l'aperçu social** : remplacement par chaîne, donc `$'`,
-  `$&` ou `$1` dans un nom de chaîne étaient interprétés (un titre « $' »
-  recopiait tout le HTML suivant dans la balise). Fonction de remplacement.
-- **Rappel quotidien** : jour et heure calculés dans le fuseau du lieu de
-  l'utilisateur (Paris avant : passé minuit à Paris, la progression d'un
-  lecteur en Israël était jugée périmée et le rappel partait à tort) ;
-  `hourCycle: "h23"` (certaines versions ICU donnent « 24 » à minuit) ;
-  délai porté à cinq minutes ; un profil en échec ne bloque plus les
-  suivants.
-- **Aperçu social** : délai de cinq secondes sur le `fetch` du shell (un
-  visiteur humain attendait sinon le timeout de la fonction) ; le binaire
-  resvg et ses 1,3 Mo de polices ne se chargent plus au démarrage à froid
-  des callables, du trigger et du scheduler.
-- **Carte OG** : la dernière ligne du titre ne recevait qu'un mot avant
-  l'ellipse (`maxLines - 1`).
-- **CI** : les Cloud Functions sont compilées sur chaque PR (avant, la
-  première compilation avait lieu au déploiement, après la mise en ligne du
-  site).
-- `firebase.json` : `trailingSlash: false` (`/horaires/` répondait 200 avec
-  le shell sans canonique) ; JSON-LD prérendu avec `<` échappé.
-- **Règles des sessions** : titre, description, slug, nom du créateur et
-  tableau de réservations typés et bornés à la création et à la mise à jour
-  par le propriétaire (rien ne les bornait, jusqu'au mégaoctet du document) ;
-  `personId` figé (plus de transfert de session par son propriétaire).
-- **Migration des réservations invité** : sessions candidates prises dans le
-  cache partagé au lieu d'une lecture complète de la collection à chaque
-  connexion (trois fois par page de connexion).
-- **Aperçu social** : `/chiourim/serie/:id` résolu par un seul document,
-  au lieu de tomber sur le scan du catalogue.
+- **Forgeable automatic hiding**: three anonymous reports from the same
+  device (guest identifier freely chosen, or absent, in which case the
+  function counted the document itself) hid any chain. Only accounts now
+  count toward the threshold; guest reports remain counted and visible in
+  the backoffice. The rules require a non-empty guest identifier for a
+  report without an account.
+- **`setTitle` of the social preview**: string replacement, so `$'`, `$&`
+  or `$1` in a chain name were interpreted (a "$'" title copied all the
+  following HTML into the tag). Replacement function.
+- **Daily reminder**: day and hour computed in the time zone of the user's
+  location (Paris before: past midnight in Paris, the progress of a reader
+  in Israel was deemed stale and the reminder went out wrongly);
+  `hourCycle: "h23"` (some ICU versions give "24" at midnight); delay raised
+  to five minutes; a failing profile no longer blocks the following ones.
+- **Social preview**: five-second timeout on the shell `fetch` (a human
+  visitor otherwise waited for the function's timeout); the resvg binary
+  and its 1.3 MB of fonts no longer load at the cold start of the callables,
+  the trigger and the scheduler.
+- **OG card**: the last line of the title only got one word before the
+  ellipsis (`maxLines - 1`).
+- **CI**: the Cloud Functions are compiled on every PR (before, the first
+  compilation happened at deployment, after the site went live).
+- `firebase.json`: `trailingSlash: false` (`/horaires/` answered 200 with
+  the shell and no canonical); prerendered JSON-LD with `<` escaped.
+- **Session rules**: title, description, slug, creator name and bookings
+  array typed and bounded on creation and on update by the owner (nothing
+  bounded them, up to the document's megabyte); `personId` frozen (no more
+  transfer of a session by its owner).
+- **Guest booking migration**: candidate sessions taken from the shared
+  cache instead of a full read of the collection on every sign-in (three
+  times per sign-in page).
+- **Social preview**: `/chiourim/serie/:id` resolved by a single document,
+  instead of falling back on the catalog scan.
 
-### App native
+### Native app
 
-- **Rotation du jeton FCM** : le nouveau jeton remplace l'ancien dans le
-  profil dès que le plugin le signale ; avant, les rappels s'éteignaient en
-  silence jusqu'à une réactivation à la main.
-- **Réglages hors ligne** : la page de profil (réglages sans compte dans
-  l'app) affichait « connexion impossible » pour changer un thème local.
-- **iOS** : `getToken()` juste après la permission peut échouer tant que le
-  jeton APNs n'est pas arrivé ; on attend l'événement du plugin avant de
-  conclure à un refus.
-- **Avis hors ligne** : « réessayer » rejoue la navigation au lieu de
-  redémarrer toute l'app.
-- **Bundle natif** : image de partage, preuve de propriété, manifeste des
-  textes et version publiée quittent le bundle (reliquats du site).
-- Commentaires périmés de `capacitor.config.ts` et d'App.vue remis d'accord
-  avec le code.
+- **FCM token rotation**: the new token replaces the old one in the profile
+  as soon as the plugin reports it; before, reminders went silent until
+  re-enabled by hand.
+- **Offline settings**: the profile page (settings without an account in
+  the app) displayed « connexion impossible » ("cannot connect") when
+  changing a local theme.
+- **iOS**: `getToken()` right after the permission can fail as long as the
+  APNs token has not arrived; we wait for the plugin's event before
+  concluding it was refused.
+- **Offline notice**: « réessayer » ("retry") replays the navigation
+  instead of restarting the whole app.
+- **Native bundle**: sharing image, ownership proof, texts manifest and
+  published version leave the bundle (leftovers from the site).
+- Outdated comments in `capacitor.config.ts` and App.vue brought back in
+  line with the code.
 
-### Code mort retiré
+### Dead code removed
 
-Onze `window.confirm` remplacés par la modale de l'app (`useConfirm`), les
-actions de `useZmanimLocation` renommées (`locateDevice`, `selectCity`,
-`resetPlace` : ce ne sont pas des composables), les canoniques et liens de
-partage sur `SITE_URL` dans quatorze vues (donnaient `capacitor://localhost`
-dans l'app), cinq tests sans DOM passés en environnement node.
+Eleven `window.confirm`s replaced by the app's modal (`useConfirm`), the
+actions of `useZmanimLocation` renamed (`locateDevice`, `selectCity`,
+`resetPlace`: they are not composables), the canonicals and share links
+based on `SITE_URL` in fourteen views (they gave `capacitor://localhost` in
+the app), five DOM-less tests moved to the node environment.
 
-Flux de connexion Google par redirection (six méthodes et l'aller-retour
-inutile de `getRedirectResult` au montage de la page de connexion),
-`getPermissionStatus` et `sendTest` du service push (la Cloud Function
-`sendTestNotification` reste, appelable à la main), `updateSerie`,
-`getSeriesForAuteur`, l'interface `Guest`, la prop `isReserving` (jamais
-alimentée, testée dans six expressions), l'état « succès » d'un message
-jamais atteint (`NewSession`), le store `readingNavSections` (écrit, jamais
-lu), la classe `menu-open` du body (aucune règle CSS), une condition RTL
-toujours fausse dans le sélecteur de langue, un double `applySessionSeo`.
+Google sign-in flow through redirect (six methods and the useless round
+trip of `getRedirectResult` when the sign-in page mounts),
+`getPermissionStatus` and `sendTest` of the push service (the Cloud Function
+`sendTestNotification` remains, callable by hand), `updateSerie`,
+`getSeriesForAuteur`, the `Guest` interface, the `isReserving` prop (never
+fed, tested in six expressions), the « succès » ("success") state of a
+message never reached (`NewSession`), the `readingNavSections` store
+(written, never read), the body's `menu-open` class (no CSS rule), an
+always-false RTL condition in the language picker, a duplicate
+`applySessionSeo`.
 
-## 2. Chantiers recommandés (non faits ici)
+## 2. Recommended open work (not done here)
 
-> Une partie de ces chantiers est traitée dans la revue de septembre 2026
-> (suite), voir `docs/audit-review-2026-09-suite.md`.
+> Part of this work is handled in the September 2026 review (continued),
+> see `docs/audit-review-2026-09-suite.md`.
 
-Par ordre de valeur. Chaque ligne donne le point d'entrée ; chacun a sa
-tâche dans la base Notion du projet.
+By order of value. Each line gives the entry point; each one has its task in
+the project's Notion database.
 
-### Sécurité et données
+### Security and data
 
-1. **Réservations modifiables par n'importe qui** (`firestore.rules`, règles
-   `isUpdateReservationOnly` / `isRemoveOneReservationOnly`). Sans compte,
-   tout client peut réécrire le tableau `reservations` d'une chaîne à taille
-   constante ou en retirer une, la sienne ou celle d'un autre ; côté
-   interface, saisir l'email d'un autre invité suffit à obtenir ses boutons
-   (`canUserDeleteReservation` compare à l'email tapé). C'est un choix
-   assumé (identité invité par email, sans compte), mais c'est le point le
-   plus exposé du modèle. Sortie : sous-collection
-   `sessions/{id}/reservations/{rid}` avec propriété par uid ou identifiant
-   invité vérifiée par les règles, ou un callable pour les mutations.
-   Migration de données à prévoir.
-3. **Chaînes masquées toujours lisibles** (`allow read: if true`) : le
-   masquage n'existe que côté client. `allow get` conditionné à `hidden`
-   après backfill du champ.
-4. **Chiourim non publiés listables** avec leur URL audio
-   (`chiourFirestoreRepository`, règles `chiourim`). `allow list` sur
-   `published == true`, et un callable pour les brouillons du studio.
-5. **Dépôts studio orphelins** (`storage.rules`, `studioUploads/`) : aucune
-   purge. Règle de cycle de vie GCS à poser à la main et à consigner.
-6. **Emails de tiers dans le bundle** (`src/config/analyticsAudience.ts`) :
-   comparer des empreintes, ou poser `user_type` côté serveur.
-7. **App Check** sur les callables (studio, notification de test).
-8. **Clé de compte de service à durée illimitée** dans les secrets GitHub :
+1. **Bookings editable by anyone** (`firestore.rules`, rules
+   `isUpdateReservationOnly` / `isRemoveOneReservationOnly`). Without an
+   account, any client can rewrite a chain's `reservations` array at
+   constant size or remove one from it, their own or someone else's; on the
+   interface side, typing another guest's email is enough to get their
+   buttons (`canUserDeleteReservation` compares with the typed email). It is
+   a deliberate choice (guest identity by email, without an account), but it
+   is the most exposed point of the model. Way out: subcollection
+   `sessions/{id}/reservations/{rid}` with ownership by uid or guest
+   identifier checked by the rules, or a callable for mutations. Data
+   migration to plan.
+3. **Hidden chains still readable** (`allow read: if true`): hiding exists
+   only on the client side. `allow get` conditioned on `hidden` after
+   backfilling the field.
+4. **Unpublished chiourim listable** with their audio URL
+   (`chiourFirestoreRepository`, `chiourim` rules). `allow list` on
+   `published == true`, and a callable for the studio's drafts.
+5. **Orphaned studio uploads** (`storage.rules`, `studioUploads/`): no
+   purge. GCS lifecycle rule to set by hand and to record.
+6. **Third-party emails in the bundle** (`src/config/analyticsAudience.ts`):
+   compare hashes, or set `user_type` on the server side.
+7. **App Check** on the callables (studio, test notification).
+8. **Service account key with unlimited lifetime** in the GitHub secrets:
    Workload Identity Federation.
 
-### Coût Firestore (grossit avec l'usage)
+### Firestore cost (grows with usage)
 
-1. **Toute la collection `sessions` à chaque visite** (`firestoreService`,
-   `getSessions`) et **à chaque connexion** (`migrateGuestReservations`,
-   appelé trois fois depuis la page de connexion). `where` sur `isEnded`,
-   `orderBy` + `limit`, réservations en sous-collection ou compteur ;
-   migration des invités depuis le cache déjà chargé, et seulement si un
-   identifiant local existe.
-2. **Rappel quotidien : scan de tous les profils toutes les cinq minutes**
-   (`functions/src/dailyReminder.ts`). Dénormaliser un créneau
-   (`pushReminderSlot`) côté client et requêter dessus ; précalculer le
-   créneau de chkia une fois par jour.
-3. **Aperçu social devant le trafic humain** : vérifier en production que
-   l'en-tête `Cache-Control: no-cache` du bloc `**` de `firebase.json` ne
-   l'emporte pas sur celui des fonctions (`curl -sI` sur une page chiour) ;
-   le cas échéant, blocs `headers` dédiés aux routes réécrites.
-4. `getChiourim()` (catalogue entier) dans la fonction pour les pages
-   auteur ; le filet pour documents hérités n'a plus d'objet depuis la
-   migration.
+1. **The whole `sessions` collection on every visit** (`firestoreService`,
+   `getSessions`) and **on every sign-in** (`migrateGuestReservations`,
+   called three times from the sign-in page). `where` on `isEnded`,
+   `orderBy` + `limit`, bookings as a subcollection or a counter; guest
+   migration from the already loaded cache, and only if a local identifier
+   exists.
+2. **Daily reminder: scan of all profiles every five minutes**
+   (`functions/src/dailyReminder.ts`). Denormalize a slot
+   (`pushReminderSlot`) on the client side and query on it; precompute the
+   chkia slot once a day.
+3. **Social preview in front of human traffic**: check in production that
+   the `Cache-Control: no-cache` header of the `**` block in `firebase.json`
+   does not override the functions' header (`curl -sI` on a chiour page);
+   if it does, dedicated `headers` blocks for the rewritten routes.
+4. `getChiourim()` (whole catalog) in the function for author pages; the
+   safety net for legacy documents has had no purpose since the migration.
 
-### Poids et démarrage
+### Weight and startup
 
-1. **`fr.ts` entier dans l'entrée** (18 kB gzip, dont ~12 kB d'espaces de
-   noms de pages lazy) : découper par espace de noms et fusionner à l'entrée
-   de la route, comme pour en et he. Gain ~10 kB gzip sur chaque première
-   page.
-2. **`seoPages.ts` en un seul chunk** (35 kB gzip) chargé entier par toute
-   page de contenu (mentions légales comprises) : helpers dans un petit
-   module, contenus par famille et par langue en `import()`.
-3. **Polices Google bloquantes dans l'app** : la coquille native attend
-   `fonts.googleapis.com` avant le premier rendu (portail captif, réseau
-   lent). Embarquer Inter et Frank Ruhl Libre en woff2 sous-ensemblés
-   (~150 kB) et retirer le lien Google de `app.html`. Licences OFL.
-4. **`TextZoom` natif** : régler `setTextZoom(100)` dans `MainActivity`
-   plutôt qu'après le montage (reflow visible sur Android à police système
-   agrandie), et retirer le plugin.
-5. `widgetService.init()` à lancer après `router.isReady()` et
-   `requestIdleCallback` (les payloads sont déjà importés à la demande).
-6. Un seul build par PR (`ci.yml` et `preview.yml` en font deux) ;
-   `firebase-tools` épinglé ; `lastmod` réel dans le sitemap (aujourd'hui la
-   date du build sur 1 465 URLs).
+1. **Entire `fr.ts` in the entry** (18 kB gzip, of which ~12 kB are
+   namespaces of lazy pages): split by namespace and merge on route entry,
+   as for en and he. Gain ~10 kB gzip on every first page.
+2. **`seoPages.ts` as a single chunk** (35 kB gzip) loaded in full by every
+   content page (legal notice included): helpers in a small module, contents
+   per family and per language via `import()`.
+3. **Blocking Google fonts in the app**: the native shell waits for
+   `fonts.googleapis.com` before the first render (captive portal, slow
+   network). Ship Inter and Frank Ruhl Libre as subsetted woff2 (~150 kB)
+   and remove the Google link from `app.html`. OFL licenses.
+4. **Native `TextZoom`**: set `setTextZoom(100)` in `MainActivity` rather
+   than after mount (visible reflow on Android with an enlarged system
+   font), and remove the plugin.
+5. `widgetService.init()` to be run after `router.isReady()` and
+   `requestIdleCallback` (the payloads are already imported on demand).
+6. A single build per PR (`ci.yml` and `preview.yml` make two);
+   `firebase-tools` pinned; real `lastmod` in the sitemap (today the build
+   date on 1,465 URLs).
 
-### Fluidité
+### Smoothness
 
-1. **Index de réservations** : `TextStudiesList` et `SessionManagementPage`
-   ont maintenant chacun les leurs ; les réunir dans un composable
-   `useReservationIndex(session)`.
-2. **Trois écouteurs de défilement** sur une page de lecture (ScrollToTop,
-   ReadingMenu, ReadingProgressBar) : un `useScrollFrame()` partagé.
-3. **Flou de la navbar** (`backdrop-blur-md`) re-rasterisé à chaque frame de
-   défilement sur mobile ; ne le garder qu'au pointeur fin.
-4. Bandes de progression restantes en `width` animée (cartes de session,
-   lecture du jour, lecteur audio) : même passage à `scaleX`.
+1. **Booking index**: `TextStudiesList` and `SessionManagementPage` now each
+   have their own; merge them into a `useReservationIndex(session)`
+   composable.
+2. **Three scroll listeners** on a reading page (ScrollToTop, ReadingMenu,
+   ReadingProgressBar): a shared `useScrollFrame()`.
+3. **Navbar blur** (`backdrop-blur-md`) re-rasterized on every scroll frame
+   on mobile; keep it only for fine pointers.
+4. Remaining progress bars with an animated `width` (session cards, daily
+   reading, audio player): same switch to `scaleX`.
 
-### App native
+### Native app
 
-1. **Bouton retour Android aveugle aux surcouches** : introduction, dialogue
-   de confirmation, modales et menu de lecture ne se ferment pas au geste
-   retour, qui navigue en dessous ou minimise l'app. Une pile de
-   gestionnaires (`useBackHandler`) consultée avant `router.back()`.
-2. **Textes téléchargés sauvegardés sur iCloud** (`Directory.Data` =
-   Documents sur iOS, ~40 Mo retéléchargeables) : motif de rejet possible
-   (guideline 2.23). Poser `NSURLIsExcludedFromBackupKey` sur
-   `Documents/texts` depuis le plugin Swift.
-3. **Rachi de la paracha jamais téléchargeable** : élagué du bundle mais
-   absent des livres hors ligne ; l'option Rachi du chnei mikra échoue sans
-   réseau.
-4. Éclair blanc au lancement Android : `setBackgroundColor(TRANSPARENT)` sur
-   la WebView dans `setup-android.mjs`, le fond jour/nuit de la fenêtre
-   transparaît.
+1. **Android back button blind to overlays**: introduction, confirmation
+   dialog, modals and reading menu do not close on the back gesture, which
+   navigates underneath or minimizes the app. A stack of handlers
+   (`useBackHandler`) consulted before `router.back()`.
+2. **Downloaded texts backed up to iCloud** (`Directory.Data` = Documents on
+   iOS, ~40 MB that can be downloaded again): possible rejection reason
+   (guideline 2.23). Set `NSURLIsExcludedFromBackupKey` on
+   `Documents/texts` from the Swift plugin.
+3. **Rachi of the paracha never downloadable**: pruned from the bundle but
+   absent from the offline books; the Rachi option of chnei mikra fails
+   without network.
+4. White flash at Android launch: `setBackgroundColor(TRANSPARENT)` on the
+   WebView in `setup-android.mjs`, so the window's day/night background shows
+   through.
 
-### Qualité et dette
+### Quality and debt
 
-- **Quatre composants de plus de mille lignes** (`DailyReading`,
-  `TextReadingPage`, `SessionManagementPage`, `DetailSession`). Le préalable
-  est d'extraire ce qui est écrit plusieurs fois : édition et fin de session
-  (quatre copies), réservation depuis le lecteur (copie de `DetailSession`),
-  filtrage du catalogue, le triptyque thème / polices / apparence des
-  composables de préférences (~150 lignes identiques).
-- **`sessionService`** : façade de délégation vers `reservationService`,
-  `SearchService`, `TextTypeService`, `DateService` (plus de vingt méthodes
-  d'une ligne), alors que les vues appellent aussi `reservationService`
-  directement.
-- **Chaînes françaises en dur** dans des vues traduites (« Session
-  introuvable », « Utilisateur », titres SEO de pages internes).
-- Outillage : `scripts/*.mjs` ni lintés ni typés ; `noUnusedLocals` absent ;
-  tous les tests en jsdom, y compris ceux qui n'en ont pas besoin ; `knip` en
-  CI trouverait les exports morts. Ceux que cette revue citait ont été
-  traités : `READING_LEAD_SOLO` et `hubHeading` (`src/content/etudeTexts.ts`),
+- **Four components of more than a thousand lines** (`DailyReading`,
+  `TextReadingPage`, `SessionManagementPage`, `DetailSession`). The
+  prerequisite is to extract what is written several times: session editing
+  and ending (four copies), booking from the reader (copy of
+  `DetailSession`), catalog filtering, the theme / fonts / appearance
+  triptych of the preference composables (~150 identical lines).
+- **`sessionService`**: delegation facade to `reservationService`,
+  `SearchService`, `TextTypeService`, `DateService` (more than twenty
+  one-line methods), while the views also call `reservationService`
+  directly.
+- **Hard-coded French strings** in translated views (« Session
+  introuvable », « Utilisateur », SEO titles of internal pages).
+- Tooling: `scripts/*.mjs` neither linted nor typed; `noUnusedLocals`
+  missing; all tests in jsdom, including those that do not need it; `knip`
+  in CI would find dead exports. Those this review cited have been handled:
+  `READING_LEAD_SOLO` and `hubHeading` (`src/content/etudeTexts.ts`),
   `localePrefix` (`seoLocales.ts`), `CITY_NAMES` (`zmanimCities.ts`),
-  `PARASHA_FR/EN/HE` (`parashaStrings.ts`) et `ZMANIM_GUIDE_FR/EN/HE`
-  (`zmanimGuideStrings.ts`) ne sont plus exportés et sont utilisés dans leur
-  propre module.
+  `PARASHA_FR/EN/HE` (`parashaStrings.ts`) and `ZMANIM_GUIDE_FR/EN/HE`
+  (`zmanimGuideStrings.ts`) are no longer exported and are used within their
+  own module.
 
-## 3. Pistes produit
+## 3. Product ideas
 
-- **Tableau de bord du créateur** sur la page de gestion : qui a réservé
-  quoi, qui n'a rien lu ; les données sont déjà là (`sessionGuests`).
-- **Lien vers un verset** : `?verset=N` fonctionne dans le lecteur, mais
-  aucune action ne le copie ; le bouton de sélection ne propose que le
-  marque-page.
-- **Nouvelle chaîne** : la sélection de livres part avec tout coché, d'où des
-  chaînes de 2 700 dafim par défaut ; choix explicite ou avertissement.
-- **Chaîne introuvable** : message non traduit et pas de retour vers le
-  partage ; hors ligne, la barre de réservation disparaît sans explication.
-- **Notifications** : après un refus définitif, proposer « Ouvrir les
-  réglages » ; glisser « il reste 2 lectures sur 3 » dans le rappel et
-  deep-linker sur le premier texte non lu (la fonction lit déjà la
-  progression).
-- **Widgets trilingues** (ressources `values-en` / `values-iw`,
-  `openAppFallback` en dur) ; widget Android « horaires essentiels » et
-  raccourcis bibliothèque (le payload existe déjà côté Android).
-- **Réglages manquants** dans l'app : « télécharger seulement en Wi-Fi » (ou
-  confirmation au-delà de 5 Mo), « vider les textes hors ligne »
-  (`removeBooks` existe).
-- **Introduction** : fusionner Bibliothèque et Hors ligne ; demander la
-  position depuis la page Horaires (la permission la plus utile aux widgets).
-- **Purge des signalements** résolus de plus de 90 jours (le backoffice lit
-  la collection entière).
+- **Creator dashboard** on the management page: who booked what, who has
+  read nothing; the data is already there (`sessionGuests`).
+- **Link to a verse**: `?verset=N` works in the reader, but no action
+  copies it; the selection button only offers the bookmark.
+- **New chain**: the book selection starts with everything checked, hence
+  chains of 2,700 dafim by default; explicit choice or a warning.
+- **Chain not found**: untranslated message and no way back to sharing;
+  offline, the booking bar disappears without explanation.
+- **Notifications**: after a permanent refusal, offer « Ouvrir les
+  réglages » ("Open settings"); slip "2 readings out of 3 left" into the
+  reminder and deep-link to the first unread text (the function already
+  reads the progress).
+- **Trilingual widgets** (`values-en` / `values-iw` resources,
+  hard-coded `openAppFallback`); Android "essential times" widget and
+  library shortcuts (the payload already exists on the Android side).
+- **Missing settings** in the app: "download only on Wi-Fi" (or a
+  confirmation above 5 MB), "clear offline texts" (`removeBooks` exists).
+- **Introduction**: merge Library and Offline; ask for location from the
+  Horaires (Times) page (the most useful permission for widgets).
+- **Purge of resolved reports** older than 90 days (the backoffice reads the
+  whole collection).

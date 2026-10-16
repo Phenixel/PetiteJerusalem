@@ -1,203 +1,200 @@
-# Revue de code (septembre 2026, suite) : propreté, doublons, fluidité, bout en bout
+# Code review (September 2026, continued): cleanliness, duplicates, smoothness, end to end
 
-Deuxième passe après `audit-review-2026-09.md`, à trois fins : rendre le code
-plus propre (doublons, code mort, chaînes en dur), améliorer la fluidité, et
-poser une suite de tests de bout en bout réutilisable, qui a servi à chercher
-des bugs existants. Quatre relectures parallèles (chaînes de lecture,
-bibliothèque et lecteur, coquille et préférences, documentation), chaque
-constat vérifié dans le code avant d'être corrigé ; puis la suite Playwright
-jouée sur le résultat.
+A second pass after `audit-review-2026-09.md`, with three goals: make the
+code cleaner (duplicates, dead code, hard-coded strings), improve
+smoothness, and set up a reusable end-to-end test suite, which was used to
+hunt for existing bugs. Four parallel reviews (reading chains, library and
+reader, shell and preferences, documentation), each finding checked in the
+code before being fixed; then the Playwright suite run on the result.
 
-Ce document dit ce qui a été fait ici et ce qui reste, avec le fichier où
-commencer. Les tests sont décrits dans `tests.md`.
+This document says what was done here and what remains, with the file where
+to start. The tests are described in `tests.md`.
 
-## 1. Tests de bout en bout (nouveau)
+## 1. End-to-end tests (new)
 
-- `playwright.config.ts`, `e2e/`, `scripts/e2e.mjs` : deux projets, `public`
-  (pages sans Firebase) et `firebase` (comptes, chaînes, chiourim, lecture du
-  jour, contre les émulateurs Auth et Firestore). `npm run test:e2e` réutilise
-  des émulateurs déjà lancés, sinon en démarre des vides avec le CLI firebase,
-  sinon joue le projet `public` seul.
-- Socle (`e2e/support/`) : consentement et introduction déjà réglés, échec sur
-  toute erreur JavaScript de la page, comptes et données posés par l'API REST
-  des émulateurs (`scripts/lib/firebase-emulator.mjs`, partagé avec les
-  captures des fiches des stores).
-- Job `e2e` dans `ci.yml`, en parallèle de la validation.
+- `playwright.config.ts`, `e2e/`, `scripts/e2e.mjs`: two projects, `public`
+  (pages without Firebase) and `firebase` (accounts, chains, chiourim, daily
+  reading, against the Auth and Firestore emulators). `npm run test:e2e`
+  reuses emulators already running, otherwise starts empty ones with the
+  firebase CLI, otherwise runs the `public` project alone.
+- Foundation (`e2e/support/`): consent and introduction already set, failure
+  on any JavaScript error of the page, accounts and data set through the
+  emulators' REST API (`scripts/lib/firebase-emulator.mjs`, shared with the
+  store listing screenshots).
+- `e2e` job in `ci.yml`, in parallel with validation.
 
-Ce que la suite a trouvé sur la base, corrigé ici :
+What the suite found on the base branch, fixed here:
 
-- **Page blanche sur `/lire/:id`** (ancienne adresse, marque-pages, liens
-  partagés) : la redirection canonique se faisait au montage de la vue, que le
-  routeur réutilise ; elle se joue maintenant dans un garde de route
-  (`src/router/lireRedirect.ts`).
-- **Pages sans `h1`** : accueil, accueil du partage, page d'une chaîne, lecture
-  du jour n'avaient qu'un `h2` depuis le retrait du `h1` du bandeau.
+- **Blank page on `/lire/:id`** (old address, bookmarks, shared links): the
+  canonical redirect happened when the view mounted, a view the router
+  reuses; it now runs in a route guard (`src/router/lireRedirect.ts`).
+- **Pages without an `h1`**: home page, sharing home page, chain page and
+  daily reading only had an `h2` since the banner's `h1` was removed.
 
-Ce sont les deux seuls constats que la suite a levés d'elle-même ; le reste de
-ce document vient de la relecture.
+These are the only two findings the suite raised on its own; the rest of
+this document comes from the review.
 
-## 2. Bugs corrigés
+## 2. Bugs fixed
 
-### Chaînes de lecture
+### Reading chains
 
-- Réservations expirées fantômes : après un tirage expiré, le « lu » et
-  l'annulation tombaient sur l'expirée (erreur, ou annulation muette). Les
-  recherches excluent l'expiration et la confirmation purge les expirées de
-  l'emplacement (`reservationService.findActiveReservation`,
-  `pruneExpiredForSlots`, testés).
-- Modale d'édition : un second watcher remplissait la date en UTC (chaque
-  réessai après échec reculait la date limite de deux heures) ; la modale
-  fermait avant de savoir si l'écriture avait réussi (saisie perdue). Elle
-  attend maintenant le résultat (`save` renvoie une promesse) et reste ouverte
-  en cas d'échec.
-- Un texte dont toutes les sections étaient prises ressortait « Disponible »
-  dès qu'une section portait deux réservations (`getTextDisplayStatus`
-  comparait le nombre de réservations au nombre de sections : un doublon le
-  faisait passer au-dessus, et aucune branche ne le rattrapait). Le compte
-  porte maintenant sur les sections distinctes. Le cas de plusieurs personnes
-  se partageant un texte complet, lui, était déjà traité.
-- `ReservationGoneError` n'était traitée que dans le lecteur : les trois autres
-  écrans affichaient une erreur technique et gardaient un interrupteur faux.
-- Sélection non purgée après rechargement, auth non écoutée sur la page d'une
-  chaîne (inscription depuis la modale invisible), changement de slug sans
-  rechargement, `deadline_days` calculé à minuit UTC.
+- Ghost expired bookings: after an expired draw, "read" and cancellation
+  landed on the expired one (error, or silent cancellation). Lookups exclude
+  expiration and confirmation purges expired bookings from the slot
+  (`reservationService.findActiveReservation`, `pruneExpiredForSlots`,
+  tested).
+- Edit modal: a second watcher filled in the date in UTC (each retry after a
+  failure moved the deadline back two hours); the modal closed before
+  knowing whether the write had succeeded (input lost). It now waits for the
+  result (`save` returns a promise) and stays open on failure.
+- A text whose sections were all taken showed up as « Disponible »
+  ("Available") again as soon as one section carried two bookings
+  (`getTextDisplayStatus` compared the number of bookings with the number of
+  sections: a duplicate pushed it above, and no branch caught it). The count
+  now covers distinct sections. The case of several people sharing a whole
+  text was already handled.
+- `ReservationGoneError` was only handled in the reader: the three other
+  screens showed a technical error and kept a wrong toggle.
+- Selection not purged after reload, auth not listened to on a chain's page
+  (sign-up from the modal invisible), slug change without reload,
+  `deadline_days` computed at midnight UTC.
 
-### Bibliothèque et lecteur
+### Library and reader
 
-- Recherche du catalogue : une apostrophe typographique ne trouvait rien
-  (« Sli’hot », « Min’ha » : zéro résultat, alors que le catalogue écrit
-  « Sli'hot »), et le nom d'un livre ou d'un seder ne ramenait pas ses traités
-  (« Zeraim » : zéro résultat, douze désormais ; « Moed » : deux, vingt-quatre
-  désormais). Les trois copies du filtre cherchaient bien, elles, le nom latin
-  entre parenthèses : « Berakhot » se trouvait déjà.
-- Lecture du jour laissée ouverte la nuit : la progression de la veille était
-  réécrite comme celle du jour (`ensureSameDay` avant chaque écriture et au
-  retour à l'écran).
-- Mode « gérer » : chercher un texte liturgique donnait une zone vide sans
-  message ; le menu de lecture et la barre de progression s'affichaient en mode
-  « gérer » et masquaient le bouton de remontée.
-- Menu de lecture : ancres dupliquées (marqueur sans ligne partageant son
-  offset avec le bloc suivant), saut au mauvais passage ; ancre par index de
-  bloc.
-- Tehilim du jour et paracha : jour civil sans chkia, et non réactif au temps
-  dans deux des trois consommateurs (`useTehilimDay`, `useWeeklyParasha`,
-  branchés sur l'horloge partagée et `visibilitychange`).
-- Métadonnées SEO figées au changement de langue (bibliothèque, chnei mikra,
-  lecteur), minuteurs de debounce et de surbrillance non nettoyés.
+- Catalog search: a typographic apostrophe found nothing (« Sli’hot »,
+  « Min’ha »: zero results, whereas the catalog writes « Sli'hot »), and the
+  name of a book or a seder did not bring up its tractates (« Zeraim »: zero
+  results, twelve now; « Moed »: two, twenty-four now). The three copies of
+  the filter did, however, search the Latin name in parentheses:
+  « Berakhot » was already found.
+- Daily reading left open overnight: the previous day's progress was
+  rewritten as today's (`ensureSameDay` before each write and when coming
+  back to the screen).
+- « gérer » ("manage") mode: searching for a liturgical text gave an empty
+  area with no message; the reading menu and progress bar showed in
+  « gérer » mode and hid the back-to-top button.
+- Reading menu: duplicated anchors (a marker without a line sharing its
+  offset with the next block), jump to the wrong passage; anchor by block
+  index.
+- Daily Tehilim and paracha: civil day without chkia, and not reactive to
+  time in two of the three consumers (`useTehilimDay`, `useWeeklyParasha`,
+  hooked to the shared clock and `visibilitychange`).
+- SEO metadata frozen on language change (library, chnei mikra, reader),
+  debounce and highlight timers not cleaned up.
 
-### Coquille, préférences, natif
+### Shell, preferences, native
 
-- **Bouton retour Android** : il naviguait sous les modales et minimisait
-  l'app depuis l'introduction. Pile de surcouches (`useOverlayStack`)
-  consultée avant `router.back()` ; composant `AppModal` (Teleport, Échap,
-  focus, fermeture à la navigation, verrou de défilement) pour les dialogues
-  de la coquille ; les modales de session s'inscrivent dans la pile.
-- **Analytics** : `capture` était un no-op tant que PostHog n'était pas
-  chargé ; `home_viewed` et le début du funnel d'introduction étaient perdus.
-  File bornée rejouée à l'initialisation ; `identify` seulement après le
-  premier verdict d'auth.
-- **Pages de ville** : visiter `/horaires/marseille` persistait Marseille
-  comme lieu de l'utilisateur (accueil, sidour, widgets) et émettait un
-  événement « ville choisie » à chaque chargement. Le lieu de la page ne se
-  persiste plus.
-- **Rotation du jeton push hors ligne** : les rappels s'éteignaient pour de
-  bon (préférences par défaut en cas d'échec de lecture). Lecture stricte,
-  rotation gardée en attente et rejouée au retour du réseau, une seule
-  écriture.
-- Préférences : un échec d'écriture verrouillait la valeur en mémoire (le
-  serveur n'était plus relu à la reconnexion).
-- Icône Apple absente du bouton de connexion (FontAwesome jamais chargé),
-  erreurs d'auth triées sur le message plutôt que le code, rejet non géré du
-  backoffice des chiourim, `watchEffect` qui se réveillait lui-même.
+- **Android back button**: it navigated under the modals and minimized the
+  app from the introduction. Overlay stack (`useOverlayStack`) consulted
+  before `router.back()`; `AppModal` component (Teleport, Escape, focus,
+  closing on navigation, scroll lock) for the shell's dialogs; session
+  modals register in the stack.
+- **Analytics**: `capture` was a no-op as long as PostHog was not loaded;
+  `home_viewed` and the start of the introduction funnel were lost. Bounded
+  queue replayed at initialization; `identify` only after the first auth
+  verdict.
+- **City pages**: visiting `/horaires/marseille` persisted Marseille as the
+  user's location (home page, sidour, widgets) and emitted a "city chosen"
+  event on every load. The page's location is no longer persisted.
+- **Push token rotation while offline**: reminders went off for good
+  (default preferences when reading failed). Strict read, rotation kept
+  pending and replayed when the network comes back, a single write.
+- Preferences: a write failure locked the value in memory (the server was
+  no longer reread on reconnection).
+- Apple icon missing from the sign-in button (FontAwesome never loaded),
+  auth errors sorted by message rather than by code, unhandled rejection in
+  the chiourim backoffice, a `watchEffect` that woke itself up.
 
-## 3. Fluidité
+## 3. Smoothness
 
-- **Un seul écouteur de défilement** (`useScrollFrame`, un `requestAnimationFrame`,
-  hauteur du document lue dans l'image) pour le bouton de remontée, le menu de
-  lecture (qui forçait un reflow à chaque événement), la barre de progression
-  et la position de lecture.
-- **Office recalculé toutes les minutes** : la chaîne horloge, jour hébraïque,
-  occasions, blocs visibles re-rendait tout le texte ; une clé scalaire du jour
-  la coupe. Trois `setInterval` remplacés par `useNow`.
-- **Bandes de progression en `scaleX`** (`ProgressBar.vue`), partout où une
-  largeur animée relançait mise en page et peinture (cartes, lecture du jour,
-  lecteur audio, envois).
-- Cartes de la bibliothèque : état de téléchargement en `Map` calculée (six
-  appels par carte, 150 cartes, avant). Lecture du jour : sections repliées en
-  `v-if` et `content-visibility: auto`. Page de gestion d'une chaîne :
-  sections disponibles et lignes de chapitres préparées en `computed`, bascule
-  « lu » optimiste au lieu d'une relecture Firestore.
-- `Intl.DateTimeFormat` mis en cache (`intlCache`), `computeZmanim` mémoïsé
-  par lieu et par jour, flou de la navbar réservé au pointeur fin, mur de
-  pierre généré après le premier rendu, widgets initialisés après
-  `router.isReady()` et à l'heure creuse, `CollapseTransition` sur
-  `transitionend` et `prefers-reduced-motion`.
+- **A single scroll listener** (`useScrollFrame`, one `requestAnimationFrame`,
+  document height read within the frame) for the back-to-top button, the
+  reading menu (which forced a reflow on every event), the progress bar and
+  the reading position.
+- **Office recomputed every minute**: the chain clock, Hebrew day,
+  occasions, visible blocks re-rendered the whole text; a scalar day key
+  cuts it. Three `setInterval`s replaced by `useNow`.
+- **Progress bars as `scaleX`** (`ProgressBar.vue`), wherever an animated
+  width triggered layout and paint again (cards, daily reading, audio
+  player, uploads).
+- Library cards: download state as a computed `Map` (six calls per card,
+  150 cards, before). Daily reading: collapsed sections as `v-if` and
+  `content-visibility: auto`. Chain management page: available sections and
+  chapter rows prepared as `computed`, optimistic "read" toggle instead of a
+  Firestore reread.
+- `Intl.DateTimeFormat` cached (`intlCache`), `computeZmanim` memoized per
+  location and per day, navbar blur reserved for fine pointers, stone wall
+  generated after the first render, widgets initialized after
+  `router.isReady()` and at idle time, `CollapseTransition` on
+  `transitionend` and `prefers-reduced-motion`.
 
-## 4. Doublons retirés
+## 4. Duplicates removed
 
-| Ce qui était écrit plusieurs fois | Où il vit maintenant |
+| What was written several times | Where it lives now |
 | --- | --- |
-| Index de réservations, cache de chapitres, clés d'emplacement, tout sélectionner (3 copies) | `composables/useReservationIndex.ts` |
-| Sauvegarde (4) et fin (2) d'une chaîne, avec analytics et toasts | `composables/useSessionEditing.ts` |
-| Filtrage du catalogue (3, divergentes) | `services/catalogSearch.ts`, `useCatalogSearch`, `CatalogSearchField.vue` |
-| Thème, polices, apparence (~150 lignes identiques) | `composables/createAccountPreference.ts` |
-| Marque-pages du lecteur et de la lecture du jour | `composables/useVerseBookmarks.ts` |
-| État et bascule de téléchargement d'un livre (2, télémétrie divergente) | `composables/useBookDownload.ts` |
-| Plage de psaumes (3), titre de paracha (3) | `composables/useTehilimDay.ts`, `dailyCycles.parashaTitle` |
-| Rendu du Talmud daf par daf (2) | `components/TalmudDafText.vue` |
-| Distance orthodromique (3), Firestore paresseux (2), cache TTL (2), tri des épisodes (2), connexion Google et Apple (2 blocs) | `services/geo.ts`, `firebase/lazy.ts`, `services/cached.ts`, `serieService.byEpisode`, `loginView.socialSignIn` |
-| Statistiques d'avancement d'une chaîne (4 définitions) | `sessionService.getSessionReservationStats` (hors expirées, un texte entier compte pour toutes ses places) |
-| Fin de journée locale (3), table des types de textes (2), validation du formulaire invité (2), appartenance d'une réservation (2, sans l'identifiant invité local) | `dateService.endOfLocalDay`, `TextTypeService`, `reservationService.assertGuestFormValid`, `isOwnReservation` |
-| Suffixe « | Petite Jérusalem » (6) | `seoService.pageTitle` |
+| Booking index, chapter cache, slot keys, select all (3 copies) | `composables/useReservationIndex.ts` |
+| Saving (4) and ending (2) a chain, with analytics and toasts | `composables/useSessionEditing.ts` |
+| Catalog filtering (3, diverging) | `services/catalogSearch.ts`, `useCatalogSearch`, `CatalogSearchField.vue` |
+| Theme, fonts, appearance (~150 identical lines) | `composables/createAccountPreference.ts` |
+| Bookmarks of the reader and of the daily reading | `composables/useVerseBookmarks.ts` |
+| Download state and toggle for a book (2, diverging telemetry) | `composables/useBookDownload.ts` |
+| Psalm range (3), paracha title (3) | `composables/useTehilimDay.ts`, `dailyCycles.parashaTitle` |
+| Daf-by-daf Talmud rendering (2) | `components/TalmudDafText.vue` |
+| Great-circle distance (3), lazy Firestore (2), TTL cache (2), episode sorting (2), Google and Apple sign-in (2 blocks) | `services/geo.ts`, `firebase/lazy.ts`, `services/cached.ts`, `serieService.byEpisode`, `loginView.socialSignIn` |
+| Progress statistics of a chain (4 definitions) | `sessionService.getSessionReservationStats` (expired ones excluded, a whole text counts for all its slots) |
+| Local end of day (3), text types table (2), guest form validation (2), booking ownership (2, without the local guest identifier) | `dateService.endOfLocalDay`, `TextTypeService`, `reservationService.assertGuestFormValid`, `isOwnReservation` |
+| « | Petite Jérusalem » suffix (6) | `seoService.pageTitle` |
 
-`sessionService` a perdu ses méthodes mortes et sept délégations d'une ligne ;
-il en garde huit, appelées par le lecteur (voir section 6).
+`sessionService` lost its dead methods and seven one-line delegations; it
+keeps eight, called by the reader (see section 6).
 
-## 5. Chaînes en dur et code mort
+## 5. Hard-coded strings and dead code
 
-- Les erreurs métier portent un code (`services/appError.ts` :
-  `SlotTakenError`, `GuestNameRequiredError`, `SessionMissingError`,
-  `AuthFlowError`, `PreferencesSaveError`…) et `useToast.errorFromException`
-  les traduit par `errors.*` ; plus aucun message de service n'est affiché
-  brut, et le lecteur ne détecte plus un conflit par `includes("déjà
+- Business errors carry a code (`services/appError.ts`: `SlotTakenError`,
+  `GuestNameRequiredError`, `SessionMissingError`, `AuthFlowError`,
+  `PreferencesSaveError`...) and `useToast.errorFromException` translates
+  them through `errors.*`; no service message is displayed raw anymore, and
+  the reader no longer detects a conflict through `includes("déjà
   réservée")`.
-- Libellés « Chapitre N », « Daf 2a à 7b » construits dans `textService` :
-  structurés (`heading`) et formatés par la vue (`useTextLabels`) ; le prérendu
-  garde le français.
-- Traduites : « Session introuvable », erreurs de chargement, titre SEO de la
-  page de gestion, page introuvable du guide des zmanim, intention introuvable,
-  liens de bas de page du lecteur, `aria-label` du pied de page, repli
-  « Utilisateur » (plus jamais écrit en base), ponctuation « libellé : valeur »
-  paramétrée.
-- Retirés : `Session.isCompleted` (jamais vrai), champ `available` des
-  réservations (jamais lu), branche `#full`, `useNativeApp()`, `resetPlace`,
-  `isRtl`, `watchDayKey`, l'emit `serieCreated`, deux méthodes mortes de
-  `sessionService`, dix-sept clés de traduction sans lecteur (dans les trois
-  langues), le mot-clé `export` sur treize classes doublées d'un singleton et
-  une douzaine de symboles à usage interne. Un test symétrique dans
-  `i18nUsage.test.ts` refuse désormais toute clé de `fr.ts` sans lecteur.
+- « Chapitre N », « Daf 2a à 7b » labels built in `textService`: structured
+  (`heading`) and formatted by the view (`useTextLabels`); the prerender
+  keeps French.
+- Translated: « Session introuvable » ("Session not found"), loading errors,
+  SEO title of the management page, not-found page of the zmanim guide,
+  intention not found, the reader's footer links, the footer's
+  `aria-label`, the « Utilisateur » ("User") fallback (never written to the
+  database anymore), parameterized « libellé : valeur » ("label: value")
+  punctuation.
+- Removed: `Session.isCompleted` (never true), the bookings' `available`
+  field (never read), the `#full` branch, `useNativeApp()`, `resetPlace`,
+  `isRtl`, `watchDayKey`, the `serieCreated` emit, two dead methods of
+  `sessionService`, seventeen translation keys with no reader (in all three
+  languages), the `export` keyword on thirteen classes doubled by a
+  singleton and a dozen internal-use symbols. A symmetric test in
+  `i18nUsage.test.ts` now refuses any key in `fr.ts` with no reader.
 
-## 6. Ce qui reste (par valeur)
+## 6. What remains (by value)
 
-1. **Réservation depuis le lecteur** : `TextReadingPage.vue` (`reserve`,
-   `cancelReservation`, `toggleRead`) reste une copie de `DetailSession` ;
-   un `useSessionReservation(session, user, form, source)` les réunirait, et
-   `sessionService` pourrait alors perdre ses huit dernières délégations
+1. **Booking from the reader**: `TextReadingPage.vue` (`reserve`,
+   `cancelReservation`, `toggleRead`) remains a copy of `DetailSession`; a
+   `useSessionReservation(session, user, form, source)` would bring them
+   together, and `sessionService` could then lose its last eight delegations
    (`deleteReservation`, `canUserDeleteReservation`, `createReservationForUser`,
    `createLocalReservation`, `isReservationExpired`, `isTextOrSectionReserved`,
    `markReservationAsCompleted`, `formatBookName`).
-2. **Modales de session sur `AppModal`** : `EditSessionModal`,
+2. **Session modals on `AppModal`**: `EditSessionModal`,
    `ReportSessionModal`, `ShareModal`, `GuestIdentityModal`,
-   `ReminderSettingsModal` et les deux modales inline de
-   `SessionManagementPage` s'inscrivent dans la pile du retour mais gardent
-   leur propre calque (ni Échap, ni piège de focus).
-3. **Composants de plus de mille lignes** : `TextReadingPage` (encore ~1 900
-   lignes), `DailyReading`, `SessionManagementPage`, `DetailSession`. Les
-   composables extraits ici sont le préalable ; la suite est de sortir la
-   barre d'outils et le rendu par type de texte du lecteur.
-4. **Taille de lecture** (`useReadingSize`) : le seul réglage qui ne suit pas
-   le compte (appareil seul), alors que thème et polices le font. À trancher.
-5. **`Chapitre`/`Daf` dans le prérendu** : reste en français, par choix ; les
-   pages `/en` et `/he` de la bibliothèque n'existent pas encore.
-6. Les chantiers de sécurité et de coût Firestore de la revue précédente
-   (`audit-review-2026-09.md`, section 2) restent entiers.
+   `ReminderSettingsModal` and the two inline modals of
+   `SessionManagementPage` register in the back stack but keep their own
+   layer (no Escape, no focus trap).
+3. **Components of more than a thousand lines**: `TextReadingPage` (still
+   ~1,900 lines), `DailyReading`, `SessionManagementPage`, `DetailSession`.
+   The composables extracted here are the prerequisite; the next step is to
+   move the toolbar and the per-text-type rendering out of the reader.
+4. **Reading size** (`useReadingSize`): the only setting that does not
+   follow the account (device only), whereas theme and fonts do. To be
+   decided.
+5. **`Chapitre`/`Daf` in the prerender**: stays in French, by choice; the
+   `/en` and `/he` pages of the library do not exist yet.
+6. The security and Firestore cost work items from the previous review
+   (`audit-review-2026-09.md`, section 2) remain untouched.
