@@ -13,7 +13,7 @@ npm run test:unit          # vitest, interactive mode
 npx vitest run             # a single pass, what `npm run verify` does
 ```
 
-The 278 files live in `src/__tests__/*.test.ts`. The configuration
+The 279 files live in `src/__tests__/*.test.ts`. The configuration
 (`vitest.config.ts`) uses the `jsdom` environment by default; tests that do
 not need the DOM (those that read the repository or run a script) start
 with `// @vitest-environment node`. The `e2e/`, `android/`, `ios/` and
@@ -50,6 +50,7 @@ documentation included; the French non-breaking-space rule
 | `playIcon.test.ts` | The play triangle (`play-solid`) has its center of gravity in the middle of the icon, and no `AppIcon` that carries it adds a margin or an offset: it would look off-center in its circle (`docs/design.md`, "The play triangle is centered on its weight"). |
 | `seoTitles.test.ts` | The titles of the `seo` block escape the vertical bar (`{'|'}`), which vue-i18n would otherwise read as a plural separator and truncate. |
 | `initialBundle.test.ts` | The graph of static imports from `src/main.ts` contains neither Firestore, nor hebcal, nor PostHog, nor what only shows once under way (the audio player, the auto-scroll, the feature tour) or only for the owner (the back office's French messages, `src/locales/frAdmin.ts`): they load on demand, and a simple import added to a service touched by the root would bring them back into the first load. |
+| `firebaseHostingConfig.test.ts` | Every redirect of `firebase.json` has a destination and a status, every header block its headers, and the routes rewritten to `socialPreview` state its cache policy: a header block slipped into `redirects` parses fine and only fails at deploy time. |
 | `talmudChapters.test.ts` | `public/texts/talmud-chapters.json` is what `scripts/generate-talmud-chapters.mjs` reads from the texts (`--check`): each chapter starts after the « הדרן עלך » that closes the one before (Berakhot 2 on 13a). The file used to come from a proportional split, several dafim off in every tractate. |
 | `prerenderSeo.test.ts` | The prerendering (`seoPages.ts`) injects title, description, canonical, Open Graph, JSON-LD and crawlable body as expected, and the sitemaps are built from the same page lists. |
 | `pruneNativeBundle.test.ts` | The native bundle keeps nothing of the SEO prerendering: generated HTML pages, sitemaps, `robots.txt`, `llms.txt`; the app starts on the bare `app.html` shell. Of the corpora, it only keeps the texts listed in `src/datas/bundledTexts.json` (Tehilim, Sidour). |
