@@ -194,7 +194,8 @@ manual step needed:
   binaries attached to a version that Apple still has in hand (review,
   processing, pending release), that of the most recent version of the
   listing whatever its state, the last binary sent and those Apple is still
-  processing. The previous run's certificate is kept as a matter of course.
+  processing. The previous run's certificate is kept as a matter of course,
+  unless it signed a staging build that Apple has finished processing.
 
 A certificate **without a marker** (predating the mechanism, or left by a
 run killed before its cleanup) is judged by dates: the API dates
@@ -209,7 +210,11 @@ mechanics, with a separate marker (`PetiteJerusalem CI staging build 141`)
 so that its number is never confused with that of a production binary. It
 never goes to review, but Apple checks the signature during the processing
 that follows the upload: its certificate is therefore kept as long as the
-build is in `PROCESSING`, then revoked at the next `--setup`. Revoking it
+build is in `PROCESSING`, then revoked at the next `--setup`, even when it
+is the most recent one. Keeping it as "the previous run's certificate"
+blocked staging run 16 on October 16, 2026: Apple refused a new certificate
+while only two were listed. Rule held by the test « libère le certificat du
+run précédent quand il a signé un build de staging traité ». Revoking it
 right at the end of the run, as was done for a while, got staging build 141
 (3.10.12) rejected on October 16, 2026: "ITMS-90721: Certificate Revoked".
 Rule held by `src/__tests__/certificateQuota.test.ts`

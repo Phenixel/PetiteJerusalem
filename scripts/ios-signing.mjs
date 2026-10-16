@@ -93,6 +93,7 @@ import {
   distributionCertificates,
   protectedUploads,
   revocableCertificates,
+  settledStagingBuilds,
   stagingBuildKey,
   stagingUploads,
 } from "./lib/certificate-quota.mjs";
@@ -458,7 +459,7 @@ async function pruneCertificates(certificates, signedBuilds) {
         : { data: [] },
     ]);
     const uploads = [...protectedUploads(versions, builds), ...stagingUploads(stagingBuilds)];
-    revocable = revocableCertificates(certificates, uploads, signedBuilds);
+    revocable = revocableCertificates(certificates, uploads, signedBuilds, settledStagingBuilds(stagingBuilds));
   } catch (error) {
     console.warn(`ios-signing: ⚠️ inventaire des binaires impossible, aucun certificat révoqué, ${error.message}`);
     return;
