@@ -17,7 +17,7 @@ import ToggleSwitch from "./ToggleSwitch.vue";
 import FeatureTour, { type TourExit, type TourStep } from "./FeatureTour.vue";
 import { useReadingSize } from "../composables/useReadingSize";
 import { detectStores, type StoreKey } from "../composables/useAppDownload";
-import { useMiniPlayerVisible } from "../composables/useAudioPlayer";
+import { useMiniPlayerVisible } from "../composables/audioPlayerState";
 import { TABLE_BAR_REM } from "../composables/useBottomChrome";
 import { tableBarVisible } from "../composables/useReadingTable";
 import { openFeedback } from "../composables/useFeedback";

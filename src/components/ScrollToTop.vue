@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, onUnmounted, watch } from "vue";
 import AppIcon from "./icons/AppIcon.vue";
-import { useMiniPlayerVisible } from "../composables/useAudioPlayer";
+import { useMiniPlayerVisible } from "../composables/audioPlayerState";
 import { isNativeApp } from "../composables/useNativeApp";
 import { readingNavActive } from "../composables/useReadingNav";
 import { useScrollFrame } from "../composables/useScrollFrame";

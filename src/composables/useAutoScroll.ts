@@ -10,6 +10,7 @@ import {
 } from "vue";
 import { analyticsService } from "../services/analyticsService";
 import { devicePreference } from "../services/devicePreference";
+import { autoScrollRunning } from "./autoScrollState";
 
 /**
  * Défilement automatique des pages de texte.
@@ -168,7 +169,7 @@ const enabled = ref(storedEnabled ?? true);
 /** Le choix est-il déjà celui d'une personne ? Sinon, le natif a son mot à dire. */
 let enabledRestored = storedEnabled !== null;
 
-const running = ref(false);
+const running = autoScrollRunning;
 const level = ref(readStoredLevel());
 
 /** Position visée, en flottant : c'est elle qui est posée telle quelle (voir step). */

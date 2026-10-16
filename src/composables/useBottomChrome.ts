@@ -1,5 +1,5 @@
 import { computed, reactive, type ComputedRef } from "vue";
-import { useMiniPlayerVisible } from "./useAudioPlayer";
+import { useMiniPlayerVisible } from "./audioPlayerState";
 import { isNativeApp } from "./useNativeApp";
 import { tableBarVisible } from "./useReadingTable";
 

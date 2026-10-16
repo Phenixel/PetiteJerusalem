@@ -8,7 +8,7 @@ import { effectScope } from "vue";
  */
 
 vi.mock("../composables/useNativeApp", () => ({ isNativeApp: false, appPlatform: "web" }));
-vi.mock("../composables/useAudioPlayer", async () => {
+vi.mock("../composables/audioPlayerState", async () => {
   const { ref } = await import("vue");
   return { useMiniPlayerVisible: () => ref(false) };
 });

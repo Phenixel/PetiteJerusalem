@@ -1,6 +1,7 @@
 import { ref, computed } from "vue";
 import { analyticsService } from "../services/analyticsService";
 import { useViewedChiourim } from "./useViewedChiourim";
+import { sheetOpen, track, useMiniPlayerVisible } from "./audioPlayerState";
 import { recordFinished, recordPosition, resumePosition } from "../services/listeningProgress";
 import {
   bindMediaActions,
@@ -47,7 +48,6 @@ export interface AudioTrack {
   episode?: number | null;
 }
 
-const track = ref<AudioTrack | null>(null);
 const isPlaying = ref(false);
 const currentTime = ref(0);
 const duration = ref(0);
@@ -58,11 +58,9 @@ const isLoaded = ref(false);
 /** La file en cours, et la place du morceau chargé dans cette file. */
 const queue = ref<AudioTrack[]>([]);
 const queueIndex = ref(-1);
-/**
- * Le lecteur plein écran (NowPlayingSheet) : ouvert d'un appui sur la barre
- * du bas, il y montre le cours qui joue, ses commandes, la suite de la file.
- */
-const sheetOpen = ref(false);
+// The full-screen player (NowPlayingSheet), opened by a tap on the bottom
+// bar, and the loaded track live in audioPlayerState: the app shell reads
+// them without loading this module.
 
 let audio: HTMLAudioElement | null = null;
 // Seek demandé avant que les métadonnées soient chargées (clic sur la barre
@@ -464,11 +462,4 @@ export function useAudioPlayer() {
   };
 }
 
-/**
- * La barre du lecteur est visible dès qu'un morceau est chargé, sur toutes
- * les pages (celle du cours comprise : elle n'a plus de lecteur à elle), sauf
- * quand le lecteur plein écran la recouvre.
- */
-export function useMiniPlayerVisible() {
-  return computed(() => !!track.value && !sheetOpen.value);
-}
+export { useMiniPlayerVisible };

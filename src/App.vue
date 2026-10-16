@@ -5,15 +5,14 @@ import Navbar from "./components/NavbarComponents.vue";
 import StoneWallBackground from "./components/StoneWallBackground.vue";
 import SiteFooter from "./components/SiteFooter.vue";
 import ScrollToTop from "./components/ScrollToTop.vue";
-import AutoScrollPill from "./components/AutoScrollPill.vue";
 import ToastContainer from "./components/ToastContainer.vue";
 import ConfirmDialog from "./components/ConfirmDialog.vue";
 import ConsentBanner from "./components/ConsentBanner.vue";
-import GlobalAudioPlayer from "./components/GlobalAudioPlayer.vue";
-import ReadingTableBar from "./components/readingTable/ReadingTableBar.vue";
 import { TABLE_BAR_REM } from "./composables/useBottomChrome";
+import ReadingTableBar from "./components/readingTable/ReadingTableBar.vue";
 import { tableBarVisible } from "./composables/useReadingTable";
-import { useMiniPlayerVisible } from "./composables/useAudioPlayer";
+import { track as audioTrack, useMiniPlayerVisible } from "./composables/audioPlayerState";
+import { autoScrollRunning } from "./composables/autoScrollState";
 import { useOnline } from "./composables/useOnline";
 import { isNativeApp } from "./composables/useNativeApp";
 import { isOnboardingOpen } from "./composables/useOnboarding";
@@ -70,6 +69,26 @@ const ReadingSelectionMenu = defineAsyncComponent(
 const selectionMounted = ref(false);
 watch(readingPassage, (passage) => {
   if (passage) selectionMounted.value = true;
+});
+
+// What only shows once something is under way (a lesson playing, the
+// automatic scrolling of a reading page) loads on its first appearance, then
+// stays mounted so its exit is animated. Before that, none of it weighs on
+// the first page. The study table bar stays eager: the flight of the first
+// text set aside starts from its watcher, which must already be listening.
+const GlobalAudioPlayer = defineAsyncComponent(() => import("./components/GlobalAudioPlayer.vue"));
+const audioPlayerMounted = ref(false);
+watch(
+  audioTrack,
+  (loaded) => {
+    if (loaded) audioPlayerMounted.value = true;
+  },
+  { immediate: true },
+);
+const AutoScrollPill = defineAsyncComponent(() => import("./components/AutoScrollPill.vue"));
+const autoScrollPillMounted = ref(false);
+watch(autoScrollRunning, (running) => {
+  if (running) autoScrollPillMounted.value = true;
 });
 
 // Le formulaire de support (pied de page, profil de l'app, bas de l'accueil) :
@@ -204,7 +223,7 @@ authService.onAuthChanged((user) => {
          légales…) vit en bas du profil de l'app. -->
     <SiteFooter v-if="!isHome && !isNativeApp" />
     <ScrollToTop />
-    <AutoScrollPill />
+    <AutoScrollPill v-if="autoScrollPillMounted" />
     <ToastContainer />
     <ConfirmDialog />
     <ConsentBanner />
@@ -219,7 +238,7 @@ authService.onAuthChanged((user) => {
       :style="{ height: `${TABLE_BAR_REM}rem` }"
       aria-hidden="true"
     ></div>
-    <GlobalAudioPlayer />
+    <GlobalAudioPlayer v-if="audioPlayerMounted" />
     <ReadingTableBar />
     <BottomTabBar v-if="isNativeApp" />
     <!-- App native : le flou en dégradé qui rend l'heure et la batterie
