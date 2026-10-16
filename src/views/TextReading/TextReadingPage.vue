@@ -105,6 +105,7 @@ import MockPinch from "../../components/mock/MockPinch.vue";
 import MockAutoScroll from "../../components/mock/MockAutoScroll.vue";
 import { tipsOffered } from "../../composables/useFeatureTips";
 import ReadingSizeControl from "../../components/ReadingSizeControl.vue";
+import BookmarkRibbon from "../../components/BookmarkRibbon.vue";
 import ReadingProgressBar from "../../components/ReadingProgressBar.vue";
 import SessionReservationCard from "./SessionReservationCard.vue";
 import PrayerNamesLine from "./PrayerNamesLine.vue";
@@ -2842,6 +2843,8 @@ watch(textId, (_, previousTextId) => {
             </p>
             <div class="space-y-6 mb-6">
               <template v-for="(line, index) in block.lines" :key="block.offset + index">
+                <!-- Le signet, posé en travers avant le verset marqué. -->
+                <BookmarkRibbon v-if="isLineBookmarked(block.offset + index)" />
                 <div
                   :data-line="block.offset + index"
                   @click="pickVerse($event, block.offset + index, line)"
@@ -2852,22 +2855,13 @@ watch(textId, (_, previousTextId) => {
                     'reading-selected':
                       selectedLine === block.offset + index &&
                       highlightedLine !== block.offset + index,
-                    'reading-bookmarked':
-                      isLineBookmarked(block.offset + index) &&
-                      selectedLine !== block.offset + index &&
-                      highlightedLine !== block.offset + index,
                   }"
                 >
                   <span
-                    v-if="showVerseNumbers || isLineBookmarked(block.offset + index)"
-                    class="mt-2 flex-shrink-0 w-6 flex flex-col items-end gap-1 text-right text-xs text-primary font-semibold select-none"
+                    v-if="showVerseNumbers"
+                    class="mt-2 flex-shrink-0 w-6 text-right text-xs text-primary font-semibold select-none"
                   >
-                    <span v-if="showVerseNumbers">{{ index + 1 }}</span>
-                    <AppIcon
-                      v-if="isLineBookmarked(block.offset + index)"
-                      name="bookmark-filled"
-                      :size="16"
-                    />
+                    {{ index + 1 }}
                   </span>
                   <div class="flex-1 min-w-0">
                     <p

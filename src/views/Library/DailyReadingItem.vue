@@ -46,6 +46,7 @@ import { appendHebrewNumeral } from "../../services/hebrewNumerals";
 import { analyticsService } from "../../services/analyticsService";
 import CollapseTransition from "../../components/CollapseTransition.vue";
 import TalmudDafText from "../../components/TalmudDafText.vue";
+import BookmarkRibbon from "../../components/BookmarkRibbon.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
 
 const props = defineProps<{
@@ -543,6 +544,9 @@ onUnmounted(() => {
                 </p>
                 <p dir="rtl" class="font-hebrew text-text-primary daily-he">
                   <template v-for="(line, index) in block.lines" :key="block.offset + index">
+                    <BookmarkRibbon
+                      v-if="isVerseBookmarked(section.index, block.offset + index)"
+                    />
                     <span
                       :data-verse="verseKey(section.index, block.offset + index)"
                       @click="pickVerse($event, section.index, block.offset + index, line)"
@@ -554,18 +558,8 @@ onUnmounted(() => {
                         'reading-selected':
                           isVerseSelected(section.index, block.offset + index) &&
                           highlightedVerse !== verseKey(section.index, block.offset + index),
-                        'reading-bookmarked':
-                          isVerseBookmarked(section.index, block.offset + index) &&
-                          !isVerseSelected(section.index, block.offset + index) &&
-                          highlightedVerse !== verseKey(section.index, block.offset + index),
                       }"
                     >
-                      <AppIcon
-                        v-if="isVerseBookmarked(section.index, block.offset + index)"
-                        name="bookmark-filled"
-                        :size="14"
-                        class="inline-block align-super text-primary"
-                      />
                       <span
                         v-if="showVerseNumbers || block.label"
                         class="text-xs align-super text-primary/60 select-none"

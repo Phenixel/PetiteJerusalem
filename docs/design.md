@@ -1098,11 +1098,20 @@ chaque passage.
 Un livre n'a qu'un ruban : poser un marque-page retire celui que le texte
 portait déjà (dans la bibliothèque, et à part dans la lecture du jour).
 Ceux qu'une version précédente a laissés à plusieurs restent jusqu'au
-prochain posé (`readingProgressBookmarks.test.ts`). Le verset marqué se
-voit en faisant défiler : un fond léger et un trait plein à la couleur du
-thème sous le passage (`.reading-bookmarked`), et le marque-page plein
-(`bookmark-filled`) à côté du numéro. Le trait vaut aussi dans la guemara
-et le tikoun, où le passage n'a pas de numéro à côté duquel se poser.
+prochain posé (`readingProgressBookmarks.test.ts`).
+
+Le marque-page est un signet, comme celui d'un vrai livre
+(`BookmarkRibbon.vue`) : un ruban de soie rouge posé en travers de la page
+juste avant le verset marqué, dont le bout fendu en queue d'aronde pend
+dans la marge de gauche, du côté de la tranche d'un livre hébreu. Il se
+voit en faisant défiler, sans rien colorer du texte. Son rouge a son jeton,
+`--color-ribbon`, celui du signet du sidour dessiné sur l'accueil
+(`ArtSiddur.vue`), et non `--color-danger` : ce n'est pas une erreur. Dans
+la guemara et la lecture du jour, où les passages se suivent dans un même
+paragraphe, le signet ouvre une ligne avant le passage marqué. Seul le
+tikoun n'en reçoit pas : ses lignes sont celles du rouleau, on n'y glisse
+rien ; le passage y prend un fond léger et un trait plein du rouge du
+signet (`.reading-bookmarked`).
 
 ### La barre d'outils du lecteur tient sur une ligne
 

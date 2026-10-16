@@ -4,6 +4,7 @@ import { useI18n } from "vue-i18n";
 import type { DafBlock } from "../services/textService";
 import TranslationText from "./TranslationText.vue";
 import MarkedText from "./MarkedText.vue";
+import BookmarkRibbon from "./BookmarkRibbon.vue";
 import { talmudOpenings } from "../services/pageForm";
 
 /**
@@ -46,7 +47,7 @@ const props = withDefaults(
     selectable?: boolean;
     selectedLine?: number | null;
     highlightedLine?: number | null;
-    /** Les passages marqués d'un marque-page (`.reading-bookmarked`). */
+    /** Les passages marqués d'un marque-page (BookmarkRibbon). */
     bookmarkedLines?: number[];
     /** Le passage étudié et les dibbourim de ses commentaires. */
     leads?: { line: number; leads: string[] } | null;
@@ -95,13 +96,9 @@ function offsetOf(index: number): number {
   return offsets.value[index] ?? 0;
 }
 
-/** Le passage porte un marque-page, et rien d'autre ne le colore déjà. */
+/** Le passage porte un marque-page : le signet se pose avant lui. */
 function bookmarked(line: number): boolean {
-  return (
-    props.bookmarkedLines.includes(line) &&
-    props.selectedLine !== line &&
-    props.highlightedLine !== line
-  );
+  return props.bookmarkedLines.includes(line);
 }
 </script>
 
@@ -124,6 +121,7 @@ function bookmarked(line: number): boolean {
     <!-- Avec la traduction : passage par passage, l'hébreu puis sa traduction. -->
     <div v-if="translationByDaf" class="space-y-5">
       <div v-for="(line, lineIndex) in block.lines" :key="lineIndex">
+        <BookmarkRibbon v-if="bookmarked(offsetOf(index) + lineIndex)" />
         <p
           v-if="!transliterate"
           dir="rtl"
@@ -139,7 +137,6 @@ function bookmarked(line: number): boolean {
               'reading-selected':
                 selectedLine === offsetOf(index) + lineIndex &&
                 highlightedLine !== offsetOf(index) + lineIndex,
-              'reading-bookmarked': bookmarked(offsetOf(index) + lineIndex),
             }"
             @click="pick($event, offsetOf(index) + lineIndex, line)"
             @contextmenu="pick($event, offsetOf(index) + lineIndex, line)"
@@ -169,14 +166,13 @@ function bookmarked(line: number): boolean {
       :class="variant === 'daily' ? 'daf-he-daily' : ''"
     >
       <template v-for="(line, k) in block.lines" :key="k"
-        ><span
+        ><BookmarkRibbon v-if="bookmarked(offsetOf(index) + k)" /><span
           :data-line="offsetOf(index) + k"
           class="reading-pick daf-passage"
           :class="{
             'bg-primary/10': highlightedLine === offsetOf(index) + k,
             'reading-selected':
               selectedLine === offsetOf(index) + k && highlightedLine !== offsetOf(index) + k,
-            'reading-bookmarked': bookmarked(offsetOf(index) + k),
           }"
           @click="pick($event, offsetOf(index) + k, line)"
           @contextmenu="pick($event, offsetOf(index) + k, line)"
