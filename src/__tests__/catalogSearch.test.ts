@@ -81,12 +81,14 @@ describe("recherche dans le vrai catalogue", () => {
   const found = (term: string) => filterBySearch(catalog, term).map((t) => latinPart(t.name));
 
   it.each([
-    ["chabbat", ["Shabbat", "Shabbat"]],
-    ["kidouchin", ["Kiddushin", "Kiddushin"]],
+    // Les traités, puis les lois du Choulhan Aroukh et le Kitsour.
+    ["chabbat", ["Shabbat", "Shabbat", "Hilkhot Chabbat", "Chabbat"]],
+    ["kidouchin", ["Kiddushin", "Kiddushin", "Hilkhot Kiddouchin"]],
     ["baba metsia", ["Bava Metzia", "Bava Metzia"]],
-    ["roch hachana", ["Rosh Hashanah", "Rosh Hashanah"]],
-    // Le traité, et le livre d'Esther par son autre nom, Meguilat Esther.
-    ["meguila", ["Megillah", "Megillah", "Esther"]],
+    ["roch hachana", ["Rosh Hashanah", "Rosh Hashanah", "Hilkhot Roch Hachana"]],
+    // Le traité, le livre d'Esther par son autre nom, Meguilat Esther, et
+    // ses lois.
+    ["meguila", ["Megillah", "Megillah", "Esther", "Hilkhot Meguila"]],
     ["pessahim", ["Pesachim", "Pesachim"]],
     ["kaddish", ["Kaddich"]],
     ["shacharit", ["Chaharit"]],
@@ -99,12 +101,14 @@ describe("recherche dans le vrai catalogue", () => {
     ["jonas", ["Trei Asar"]],
     ["pirke avot", ["Avot"]],
     ["edouyot", ["Eduyot"]],
-    ["עדויות", ["Eduyot"]],
+    // הלכות עדות est assez proche pour venir après.
+    ["עדויות", ["Eduyot", "Hilkhot Edout"]],
     ["be'hirta", ["Eduyot"]],
     ["psaume 23", ["Tehilim 23"]],
     ["תהילים כג", ["Tehilim 23"]],
     ["כי תשא", ["Ki Tisa"]],
-    ["hanukkah", ["Nerot Hanouka"]],
+    ["hanukkah", ["Nerot Hanouka", "Hilkhot Hanouka", "Hanouka Oupourim"]],
+    ["Hilchot Shabbat", ["Hilkhot Chabbat"]],
     ["circoncision", ["Brit Mila"]],
     ["150", ["Tehilim 150"]],
   ])("« %s »", (term, expected) => {
@@ -113,7 +117,7 @@ describe("recherche dans le vrai catalogue", () => {
 
   it("rattrape une faute de frappe", () => {
     expect(found("berakot").slice(0, 2)).toEqual(["Berakhot", "Berakhot"]);
-    expect(found("shabatt")).toEqual(["Shabbat", "Shabbat"]);
+    expect(found("shabatt")).toEqual(["Shabbat", "Shabbat", "Hilkhot Chabbat", "Chabbat"]);
   });
 
   it("trouve un livre de la Torah par son nom français", () => {

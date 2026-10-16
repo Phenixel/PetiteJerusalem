@@ -23,7 +23,7 @@ const GCS = 'https://storage.googleapis.com/sefaria-export/json';
 // sans quoi les appareils garderaient l'ancienne version.
 //
 // `--only=tanakh` (ou tehilim/mishna/talmud/rashi/meforshim/commentaires/
-// moussar) pour ne régénérer qu'un corpus. `tefila` n'est jamais du lot par
+// moussar/halakha) pour ne régénérer qu'un corpus. `tefila` n'est jamais du lot par
 // défaut : ses fichiers sont mis en forme à la main après téléchargement, il
 // faut le demander nommément (voir plus bas).
 //
@@ -1128,6 +1128,235 @@ if (shouldRun('moussar')) {
     });
   } catch (e) {
     console.error(`  ✗ Pélé Yoets: ${e.message}`);
+  }
+}
+
+// ---------- Halakha : Choulhan Aroukh et Kitsour Choulhan Aroukh ----------
+//
+// Le rayon d'étude de la halakha. Une entrée du catalogue par groupe de
+// lois : les « hilkhot » du Choulhan Aroukh, telles que Sefaria les découpe
+// (Hilkhot Tsitsit : simanim 8 à 24), et des groupes de même nature pour le
+// Kitsour, qui n'en a pas (Chabbat : simanim 72 à 96). Le catalogue donne le
+// premier siman de chaque entrée (son lien) ; elle va jusqu'à la veille de la
+// suivante du même livre, la dernière jusqu'à la fin du livre.
+//
+// public/texts/halakha/<id>.json : { title, sections: [{ n, title?, he }] },
+// comme le moussar. `n` est le numéro du siman dans le livre (celui des
+// références « Choulhan Aroukh, Ora'h Hayim 8 »), `title` son intitulé en
+// hébreu, `he` ses séifim, un par ligne : la ligne 3 est le séif 3. Le
+// Choulhan Aroukh écrit l'intitulé en tête du premier séif (« דין השכמת
+// הבוקר. ובו ט סעיפים: ») ; il en est retiré, sans le nombre de séifim. Le
+// Kitsour le tient de la table des matières de Sefaria. Un siman vide de la
+// source (Yoré Déa 169) n'a pas de section.
+//
+// public/texts/halakha-meforshim/<id>/<t>.json (Choulhan Aroukh seulement) :
+// les commentaires de chaque séif, par tranches de cinq simanim (la tranche t
+// tient les simanim 5t à 5t + 4 de l'entrée), pour que le volet ne charge que
+// ceux du siman ouvert : l'entrée la plus lourde, Hilkhot Halvaa, en pèse
+// 4,5 Mo. Le format est celui des commentaires de la Michna (voir plus
+// haut) : `simanim` donne les numéros des simanim de la tranche, dans
+// l'ordre, puis chaque commentateur une grille siman × séif × commentaires. Le texte de
+// Sefaria marque dans chaque séif l'endroit où s'accroche chaque commentaire
+// (<i data-commentator="Magen Avraham" data-order="3">, ou data-label="ג"
+// pour la Michna Broura) : c'est ce numéro qui range le commentaire sous son
+// séif. Un commentaire que le texte ne marque pas n'est pas repris.
+// `--only=halakha` pour ne régénérer que ce rayon.
+
+/** Les commentateurs de chaque partie : clé du fichier, nom dans les marques du texte, dossier Sefaria. */
+const HALAKHA_PARTS = {
+  'Shulchan Arukh, Orach Chayim': [
+    ['mishnaBerura', 'Mishnah Berurah', 'Mishnah Berurah/Mishnah Berurah'],
+    ['magenAvraham', 'Magen Avraham', 'Magen Avraham/Magen Avraham'],
+    ['taz', 'Turei Zahav', 'Turei Zahav/Turei Zahav on Shulchan Arukh, Orach Chayim'],
+    ['chaareiTechouva', "Sha'arei Teshuvah", "Sha'arei Teshuvah/Sha'arei Teshuvah on Shulchan Arukh, Orach Chayim"],
+    ['baerHetev', "Ba'er Hetev", "Ba'er Hetev/Ba'er Hetev on Shulchan Arukh, Orach Chayim"],
+  ],
+  "Shulchan Arukh, Yoreh De'ah": [
+    ['chakh', 'Siftei Kohen', "Siftei Kohen/Siftei Kohen on Shulchan Arukh, Yoreh De'ah"],
+    ['taz', 'Turei Zahav', "Turei Zahav/Turei Zahav on Shulchan Arukh, Yoreh De'ah"],
+    ['pithheiTechouva', 'Pithei Teshuva', "Pitchei Teshuvah/Pitchei Teshuva on Shulchan Arukh, Yoreh De'ah"],
+    ['baerHetev', "Ba'er Hetev", "Ba'er Hetev/Ba'er Hetev on Shulchan Arukh, Yoreh De'ah"],
+  ],
+  'Shulchan Arukh, Even HaEzer': [
+    ['helkatMehokek', 'Chelkat Mechokek', 'Chelkat Mechokek/Chelkat Mechokek'],
+    ['beitChmouel', 'Beit Shmuel', 'Beit Shmuel/Beit Shmuel'],
+    ['taz', 'Turei Zahav', 'Turei Zahav/Turei Zahav on Shulchan Arukh, Even HaEzer'],
+    ['pithheiTechouva', 'Pithei Teshuva', 'Pitchei Teshuvah/Pitchei Teshuva on Shulchan Arukh, Even HaEzer'],
+    ['baerHetev', "Ba'er Hetev", "Ba'er Hetev/Ba'er Hetev on Shulchan Arukh, Even HaEzer"],
+  ],
+  'Shulchan Arukh, Choshen Mishpat': [
+    ['sma', "Me'irat Einayim", "Me'irat Einayim/Me'irat Einayim on Shulchan Arukh, Choshen Mishpat"],
+    ['chakh', 'Siftei Kohen', 'Siftei Kohen/Siftei Kohen on Shulchan Arukh, Choshen Mishpat'],
+    ['ketsotHahochen', 'Ketzot HaChoshen', 'Ketzot HaChoshen/Ketzot HaChoshen on Shulchan Arukh, Choshen Mishpat'],
+    ['pithheiTechouva', 'Pithei Teshuva', 'Pitchei Teshuvah/Pitchei Teshuva on Shulchan Arukh, Choshen Mishpat'],
+    ['baerHetev', "Ba'er Hetev", "Ba'er Hetev/Ba'er Hetev on Shulchan Arukh, Choshen Mishpat"],
+  ],
+};
+
+/** Simanim par fichier de commentaires : à garder d'accord avec textService (HALAKHA_MEFORSHIM_CHUNK). */
+const HALAKHA_MEFORSHIM_CHUNK = 5;
+
+const HEBREW_LETTER_VALUES = {
+  א: 1, ב: 2, ג: 3, ד: 4, ה: 5, ו: 6, ז: 7, ח: 8, ט: 9, י: 10, כ: 20, ך: 20, ל: 30, מ: 40,
+  ם: 40, נ: 50, ן: 50, ס: 60, ע: 70, פ: 80, ף: 80, צ: 90, ץ: 90, ק: 100, ר: 200, ש: 300, ת: 400,
+};
+/** « קכג » → 123 : la valeur d'un nombre écrit en lettres hébraïques. */
+const hebrewNumber = s => [...String(s ?? '')].reduce((sum, c) => sum + (HEBREW_LETTER_VALUES[c] ?? 0), 0);
+
+const HALAKHA_MARK = /<i data-commentator="?([^">]+)"([^>]*)><\/i>/g;
+
+/** Les commentaires qu'un séif appelle : [nom du commentateur, numéro]. */
+function seifMarks(seif) {
+  return [...String(seif).matchAll(HALAKHA_MARK)].map(([, name, attrs]) => {
+    const order = attrs.match(/data-order="(\d+)"/);
+    const label = attrs.match(/data-label="([^"]*)"/);
+    return [name, order ? Number(order[1]) : hebrewNumber(label?.[1])];
+  });
+}
+
+/** Le texte d'un séif : sans balises ni marques, un <br> devenant une espace. */
+const seifText = seif => stripHtml(String(seif).replace(/<br\s*\/?>/gi, ' ')).replace(/\s+/g, ' ').trim();
+
+/**
+ * L'intitulé qu'un siman du Choulhan Aroukh porte en gras en tête de son
+ * premier séif, sans le nombre de séifim : « דין השכמת הבוקר. ובו ט
+ * סעיפים: » → « דין השכמת הבוקר ». Rend aussi le séif sans l'intitulé.
+ */
+function simanTitle(first) {
+  const m = String(first).match(/^\s*<b>([\s\S]*?)<\/b>\s*(?:<br\s*\/?>)?/);
+  if (!m) return { title: '', rest: first };
+  const title = seifText(m[1]).replace(/[.,]?\s*ובו\s+[^.]*?סעי(?:פים|ף(?:\s+אחד)?)\s*:?\s*$/, '').trim();
+  // Les marques de l'intitulé appartiennent au premier séif : on les garde.
+  const marks = m[1].match(/<i data-commentator[^>]*><\/i>/g) ?? [];
+  return { title, rest: marks.join('') + String(first).slice(m[0].length) };
+}
+
+/** Un commentaire de la source → son texte, le dibbour hamat'hil en gras. */
+function halakhaComment(raw) {
+  const text = (Array.isArray(raw) ? raw.flat(Infinity).join(' ') : String(raw ?? ''))
+    // Le numéro du séif katan, « (א) », que le volet n'affiche pas.
+    .replace(/^\s*\([א-ת"'׳״]{1,5}\)\s*/, '');
+  return /^\s*<b>/.test(text) ? commentText(text) : meforashComment(text);
+}
+
+if (shouldRun('halakha')) {
+  console.log('\n=== Halakha (Choulhan Aroukh, Kitsour Choulhan Aroukh) ===');
+  mkdirSync(`${OUT}/halakha`, { recursive: true });
+  // Les tranches se réécrivent de zéro : une tranche disparue de la source
+  // ne doit pas rester servie.
+  rmSync(`${OUT}/halakha-meforshim`, { recursive: true, force: true });
+  mkdirSync(`${OUT}/halakha-meforshim`, { recursive: true });
+
+  const entries = textStudies.filter(t => t.type === 'Halakha');
+  /** Le livre de Sefaria et le premier siman d'une entrée, lus dans son lien. */
+  const placeOf = entry => {
+    const m = decodeURIComponent(entry.link).match(/sefaria\.org\/(.+)\.(\d+)$/);
+    if (!m) throw new Error(`${entry.name} : lien illisible (${entry.link})`);
+    return { book: m[1].replace(/_/g, ' '), from: Number(m[2]) };
+  };
+  const books = [...new Set(entries.map(e => placeOf(e).book))];
+
+  for (const book of books) {
+    try {
+      const isKitsour = book === 'Kitzur Shulchan Arukh';
+      const path = isKitsour ? 'Halakhah/Kitzur Shulchan Arukh' : `Halakhah/Shulchan Arukh/${book}`;
+      const source = await withRetry(() => fetchJson(`${GCS}/${path}/Hebrew/merged.json`), book);
+      const simanim = textBody(source.text);
+
+      // Les intitulés du Kitsour : sa table des matières (« [סימן א] דיני השכמת הבקר »).
+      const kitsourTitles = isKitsour
+        ? (await withRetry(
+            () => fetchJson('https://storage.googleapis.com/sefaria-export/schemas/Kitzur_Shulchan_Arukh.json'),
+            'Kitzur schema',
+          )).alts?.Topic?.nodes?.map(node => String(node.heTitle ?? '').replace(/^\s*\[[^\]]*\]\s*/, '').trim()) ?? []
+        : [];
+      if (isKitsour && kitsourTitles.length !== simanim.length) {
+        throw new Error(`${kitsourTitles.length} intitulés pour ${simanim.length} simanim`);
+      }
+
+      // Chaque siman : son intitulé, ses séifim affichés, leurs marques.
+      const parsed = simanim.map((siman, s) => {
+        const seifim = Array.isArray(siman) ? siman.map(String) : [];
+        if (seifim.length === 0) return null;
+        let title = kitsourTitles[s] ?? '';
+        if (!isKitsour) {
+          const head = simanTitle(seifim[0]);
+          title = head.title;
+          seifim[0] = head.rest;
+        }
+        const he = seifim.map(seifText);
+        const empty = he.findIndex(line => !line);
+        if (empty >= 0) throw new Error(`siman ${s + 1} : séif ${empty + 1} vide`);
+        return { n: s + 1, title, he, marks: seifim.map(seifMarks) };
+      });
+
+      // Les commentateurs de la partie, téléchargés une fois pour toutes ses entrées.
+      const meforshim = [];
+      for (const [key, name, dir] of HALAKHA_PARTS[book] ?? []) {
+        const data = await withRetry(
+          () => fetchJson(`${GCS}/Halakhah/Shulchan Arukh/Commentary/${dir}/Hebrew/merged.json`),
+          dir,
+        );
+        meforshim.push({ key, name, text: textBody(data.text), missing: 0, total: 0 });
+      }
+
+      const bookEntries = entries.filter(e => placeOf(e).book === book).sort((a, b) => placeOf(a).from - placeOf(b).from);
+      bookEntries.forEach((entry, i) => {
+        const from = placeOf(entry).from;
+        const to = i + 1 < bookEntries.length ? placeOf(bookEntries[i + 1]).from - 1 : simanim.length;
+        const kept = parsed.slice(from - 1, to).filter(Boolean);
+        // Le catalogue annonce le nombre de sections (liste des simanim) : un
+        // écart veut dire que la source a bougé.
+        if (kept.length !== entry.totalSections) {
+          throw new Error(`${entry.name} : ${kept.length} simanim, le catalogue en annonce ${entry.totalSections}`);
+        }
+        const sections = kept.map(({ n, title, he }) => (title ? { n, title, he } : { n, he }));
+        writeFileSync(`${OUT}/halakha/${entry.id}.json`, JSON.stringify({ title: entry.name, sections }), 'utf8');
+
+        if (meforshim.length === 0) {
+          console.log(`  ✓ ${entry.name} → halakha/${entry.id}.json (${sections.length} simanim)`);
+          return;
+        }
+        const chunks = new Map();
+        for (const siman of kept) {
+          const t = Math.floor(siman.n / HALAKHA_MEFORSHIM_CHUNK);
+          if (!chunks.has(t)) chunks.set(t, { title: entry.name, simanim: [] });
+          chunks.get(t).simanim.push(siman.n);
+        }
+        for (const commentator of meforshim) for (const chunk of chunks.values()) chunk[commentator.key] = [];
+        for (const { n, marks } of kept) {
+          const chunk = chunks.get(Math.floor(n / HALAKHA_MEFORSHIM_CHUNK));
+          for (const commentator of meforshim) {
+            const comments = Array.isArray(commentator.text[n - 1]) ? commentator.text[n - 1] : [];
+            const seen = new Set();
+            chunk[commentator.key].push(marks.map(seifMarksList => seifMarksList
+              .filter(([name]) => name === commentator.name)
+              .flatMap(([, k]) => {
+                // Un commentaire appelé deux fois ne se lit qu'au premier appel.
+                if (seen.has(k)) return [];
+                seen.add(k);
+                commentator.total++;
+                const comment = k > 0 ? halakhaComment(comments[k - 1]) : '';
+                if (!comment) commentator.missing++;
+                return comment ? [comment] : [];
+              })));
+          }
+        }
+        mkdirSync(`${OUT}/halakha-meforshim/${entry.id}`, { recursive: true });
+        for (const [t, chunk] of chunks) {
+          writeFileSync(`${OUT}/halakha-meforshim/${entry.id}/${t}.json`, JSON.stringify(chunk), 'utf8');
+        }
+        console.log(`  ✓ ${entry.name} → halakha/${entry.id}.json, halakha-meforshim/${entry.id}/ (${sections.length} simanim)`);
+      });
+      for (const { name, missing, total } of meforshim) {
+        // Quelques marques sans commentaire, c'est la source ; au-delà d'un
+        // pour cent, c'est l'alignement qui a cassé.
+        if (missing > total / 100) throw new Error(`${name} : ${missing} marques sans commentaire sur ${total}`);
+        if (missing) console.warn(`  ⚠ ${book}, ${name} : ${missing} marques sans commentaire sur ${total}`);
+      }
+    } catch (e) {
+      console.error(`  ✗ ${book}: ${e.message}`);
+    }
   }
 }
 

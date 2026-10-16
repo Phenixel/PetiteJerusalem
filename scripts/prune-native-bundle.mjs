@@ -43,6 +43,8 @@ const PRUNED_DIRS = [
   "texts/mishna",
   "texts/tanakh",
   "texts/moussar",
+  "texts/halakha",
+  "texts/halakha-meforshim",
   "texts/rashi",
   "texts/talmud-meforshim",
   "texts/talmud-layout",

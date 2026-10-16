@@ -12,7 +12,8 @@ export type LampLevel = "low" | "normal" | "high";
  * baisse un jour manqué sans jamais s'éteindre. Pas de reproche.
  *
  * Un objet, aux couleurs du vrai et en aplats (voir CardArt) : elle ne suit
- * pas le thème. Elle ne vacille pas d'elle-même : rien ne bouge sans geste.
+ * pas le thème. Sa flamme vacille doucement, comme une vraie flamme (voir
+ * StreakLight) ; elle se fige en mouvement réduit et en rendu allégé.
  */
 import { computed } from "vue";
 
@@ -82,10 +83,37 @@ const flame = computed(() => ({ transform: `scale(${FLAME[props.level]})` }));
   transform-box: view-box;
   transform-origin: 62px 31px;
   transition: transform 0.4s ease;
+  animation: lamp-flicker 2.6s ease-in-out infinite;
+}
+/* Le vacillement passe par `scale` et `rotate`, qui s'ajoutent au
+   `transform` du niveau. */
+@keyframes lamp-flicker {
+  0%,
+  100% {
+    scale: 1;
+    rotate: 0deg;
+  }
+  20% {
+    scale: 0.96 1.05;
+    rotate: -2deg;
+  }
+  45% {
+    scale: 1.03 0.96;
+    rotate: 1.5deg;
+  }
+  70% {
+    scale: 0.98 1.03;
+    rotate: -1deg;
+  }
+}
+.parcours-lamp.is-locked .flame,
+:root.perf-lite .flame {
+  animation: none;
 }
 @media (prefers-reduced-motion: reduce) {
   .flame {
     transition: none;
+    animation: none;
   }
 }
 </style>

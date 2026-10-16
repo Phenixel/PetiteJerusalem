@@ -698,7 +698,8 @@ posent un à un sur l'étagère restent l'exception déjà admise, de loin en lo
 (voir `useShelfIntro`), avec une seconde : l'objet d'une carte mise en avant
 (le livre ou la lune qui se lèvent, la 'hanoukkia qui s'allume), une fois par
 session et par carte, parce que c'est l'occasion elle-même qui arrive (voir « Une carte
-mise en avant peut porter son objet »).
+mise en avant peut porter son objet »). Les lumières de la série vivent aussi d'elles-mêmes,
+doucement (voir « Les lumières de la série »).
 
 Tout se coupe quand le système demande moins d'animations, et sur une petite
 machine (`perf-lite`) : l'état final s'affiche d'emblée, rien ne manque, seul
@@ -1914,7 +1915,18 @@ premier jour au bout d'une année. Tenu par `parcoursLights.test.ts`.
   taille de la lampe (80 sur 62) : ils prennent sa place sur l'accueil, dans
   Mon parcours et le profil sans rien déplacer. Ce qui brûle garde sa
   flamme, qui monte et baisse comme celle de la lampe ; ce qui rayonne a un
-  halo, un aplat plus ou moins vif. Rien ne bouge de soi-même.
+  halo, un aplat plus ou moins vif.
+- **Elles vivent doucement**, partout où elles sont (accueil, Mon parcours,
+  profil, « Mes lumières », la feuille d'une lumière gagnée) : la flamme
+  vacille, le halo respire, les étoiles scintillent, les rayons du soleil et
+  de l'aube tournent lentement, le phare balaie d'un faisceau à l'autre, les
+  bras de la galaxie tournent dans leur disque vu de biais (pointes en
+  arrière), la coque de la supernova s'éloigne et son éclat bat, les jets du
+  quasar tournent autour de son cœur en pulsant. C'est une exception voulue à « Le mouvement
+  répond à un geste » : une lumière qui ne vacille pas a l'air éteinte. Le
+  mouvement reste lent et petit, une lumière encore à gagner reste immobile,
+  et tout se fige en mouvement réduit et en rendu allégé (`perf-lite`), sur
+  l'état posé (`StreakLight.vue`, `ParcoursLamp.vue`).
 - **On voit la lumière de la série en cours ; on garde celles du record.**
   Une série qui retombe redescend la lumière montrée, jamais celles qu'on a
   gagnées : « Mes lumières » les garde toutes.
@@ -2683,7 +2695,8 @@ pages d'un jour, un passage partagé.
 
 L'accueil de la bibliothèque pose ses grands rayons d'étude comme des livres
 sur une planche (`LibraryShelf.vue`) : Tehilim, Michna, Talmud, Tanakh,
-Moussar. La liturgie n'y est pas : elle a sa page, le Sidour.
+Moussar, Halakha : deux planches de trois. La liturgie n'y est pas : elle a
+sa page, le Sidour.
 
 Trois volumes par planche, puis une planche nouvelle : cinq côte à côte
 rendaient chaque couverture trop petite sur un téléphone. Tous les volumes
@@ -2703,6 +2716,7 @@ confond pas avec ses voisins :
 | Talmud  | `#6d5743` |
 | Tanakh  | `#84483f` |
 | Moussar | `#86622f` |
+| Halakha | `#5e4535` |
 
 Le Moussar ('Hovot Halévavot, Pélé Yoets) est un rayon d'étude : il a sa page
 de liste et son volume sur la planche, ses marque-pages et sa reprise de
@@ -2712,6 +2726,22 @@ qu'un cours cite, et donc ceux de ses adresses : une porte de 'Hovot
 Halévavot s'ouvre sur son introduction, la section 0, et ses chapitres gardent
 leur numéro ; un sujet du Pélé Yoets garde son numéro dans tout le livre (la
 lettre Beth va du 22 au 41). Tenu par `moussar.test.ts`.
+
+La Halakha (Choulhan Aroukh, Kitsour Choulhan Aroukh) suit le Moussar : un
+rayon d'étude, sans partage de lecture. Une entrée par groupe de lois, les
+« hilkhot » du Choulhan Aroukh telles que Sefaria les découpe (Hilkhot
+Tsitsit : simanim 8 à 24), et des groupes de même nature pour le Kitsour
+(Chabbat : simanim 72 à 96), dont les adresses prennent le préfixe
+`kitsour-` pour ne pas disputer les leurs aux hilkhot. Chaque section porte le
+numéro de son siman dans le livre, celui qu'un cours cite
+(`/bibliotheque/halakha/hilkhot-chabbat/242`), et chaque ligne est un séif.
+Les commentaires du Choulhan Aroukh s'ouvrent séif par séif, dans le volet
+des commentaires : la Michna Broura, le Magen Avraham, le Taz, les Chaarei
+Techouva et le Ba'er Hétev sur Ora'h Hayim ; le Chakh, le Taz, les Pit'hei
+Techouva et le Ba'er Hétev sur Yoré Déa ; le Helkat Mehokek, le Beit Chmouel,
+le Taz, les Pit'hei Techouva et le Ba'er Hétev sur Even Haezer ; le Sma, le
+Chakh, le Ketsot Hahochen, les Pit'hei Techouva et le Ba'er Hétev sur Hochen
+Michpat. Le Kitsour n'en a pas. Tenu par `halakha.test.ts`.
 
 ## 3. Les rayons
 

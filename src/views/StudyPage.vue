@@ -85,8 +85,9 @@ const bookState = (text: TextStudyJsonEntry): BookState =>
 
 // La bibliothèque est un tableau de bord : l'accueil ne montre que les grandes
 // sections (corpus) ; la liste détaillée des textes vit sur /bibliotheque/:corpus.
-// Cinq corpus d'étude, sur une étagère (le moussar en dernier). La liturgie (Sidour, Moadim, Brahot)
-// a sa page, le Sidour : elle ne vit plus ici (voir SidourPage).
+// Six corpus d'étude, sur une étagère (trois volumes par planche, voir
+// LibraryShelf). La liturgie (Sidour, Moadim, Brahot) a sa page, le Sidour :
+// elle ne vit plus ici (voir SidourPage).
 const CORPUS_META: {
   corpus: string;
   typeKey: string;
@@ -130,6 +131,15 @@ const CORPUS_META: {
     labelKey: "study.types.moussar",
     descKey: "study.corpus.moussarDesc",
     searchKey: "study.corpus.moussarSearch",
+  },
+  // Halakha : le Choulhan Aroukh et ses commentaires, le Kitsour. Un rayon
+  // d'étude, sans partage de lecture, comme le moussar.
+  {
+    corpus: "halakha",
+    typeKey: "Halakha",
+    labelKey: "study.types.halakha",
+    descKey: "study.corpus.halakhaDesc",
+    searchKey: "study.corpus.halakhaSearch",
   },
 ];
 

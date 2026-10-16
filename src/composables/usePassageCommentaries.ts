@@ -2,6 +2,7 @@ import { computed, ref, shallowRef, watch, type Ref } from "vue";
 import type { TextStudyJsonEntry } from "../models/models";
 import {
   loadDafMeforshim,
+  loadHalakhaMeforshim,
   loadMishnaMeforshim,
   loadTanakhRashi,
   type DafMeforshim,
@@ -15,7 +16,10 @@ import { DAF_LAYOUT_REACH } from "../services/dafLayout";
  * - une guemara : Rachi et Tossafot (le Rachbam en Bava Batra, là où il prend
  *   la place de Rachi) ;
  * - une michna : le Bartenura et les Tossefot Yom Tov ;
- * - un verset du Tanakh (paracha, Neviim, Ketouvim, un psaume) : Rachi.
+ * - un verset du Tanakh (paracha, Neviim, Ketouvim, un psaume) : Rachi ;
+ * - un séif du Choulhan Aroukh : ses commentateurs, selon la partie (la
+ *   Michna Broura et le Magen Avraham sur Ora'h Hayim, le Chakh sur Yoré
+ *   Déa...). Le Kitsour n'en a pas.
  *
  * Ils servent au bouton « Commentaires » de la bulle d'un passage et au
  * panneau d'étude (CommentaryPanel.vue), et, bout à bout, à la page du daf
@@ -24,7 +28,7 @@ import { DAF_LAYOUT_REACH } from "../services/dafLayout";
  * Rien ne se charge à l'ouverture du texte : les fichiers viennent au premier
  * passage touché, ou à l'ouverture de la page du daf (`ensure`). Un chapitre
  * de guemara en demande une ou deux tranches, un traité de Michna ou un livre
- * son fichier.
+ * son fichier, un siman du Choulhan Aroukh sa tranche de cinq simanim.
  */
 
 /** Les commentateurs, dans l'ordre où le panneau les présente. */
@@ -35,7 +39,28 @@ export type CommentarySource =
   | "tosafot"
   | "ran"
   | "bartenura"
-  | "tosafotYomTov";
+  | "tosafotYomTov"
+  | HalakhaSource;
+
+/**
+ * Les commentateurs du Choulhan Aroukh, dans l'ordre où le panneau les
+ * présente : ceux de la page imprimée d'abord, le Ba'er Hétev en dernier.
+ * Chaque partie n'en a que quelques-uns (voir download-texts.mjs).
+ */
+export const HALAKHA_SOURCES = [
+  "mishnaBerura",
+  "magenAvraham",
+  "chakh",
+  "sma",
+  "helkatMehokek",
+  "beitChmouel",
+  "taz",
+  "ketsotHahochen",
+  "chaareiTechouva",
+  "pithheiTechouva",
+  "baerHetev",
+] as const;
+export type HalakhaSource = (typeof HALAKHA_SOURCES)[number];
 
 /** Un commentateur et ce qu'il dit du passage. */
 export interface CommentaryGroup {
@@ -48,7 +73,10 @@ export interface CommentaryGroup {
  * paracha) et `tanakh` (Neviim, Ketouvim, Tehilim) ont tous deux Rachi ; on
  * les distingue pour la mesure d'audience.
  */
-export type CommentaryCorpus = "talmud" | "torah" | "mishna" | "tanakh" | null;
+export type CommentaryCorpus = "talmud" | "torah" | "mishna" | "tanakh" | "halakha" | null;
+
+/** Le livre de halakha qui n'a pas de commentaires : le Kitsour. */
+const isKitsour = (livre?: string) => Boolean(livre?.includes("Kitsour"));
 
 /** Les livres du catalogue qui ont Rachi, hors Torah. */
 const NACH_BOOKS = new Set(["Nevi'im (Prophets)", "Ketuvim (Writings)"]);
@@ -63,6 +91,7 @@ export function commentaryCorpusOf(
   // La forme du Sefer Torah et Rachi ont le même domaine : les parachiot.
   if (section.scrollMarks?.length) return "torah";
   if (type === "Mishna") return "mishna";
+  if (type === "Halakha") return livre && !isKitsour(livre) ? "halakha" : null;
   if (type === "Tehilim" || (type === "Tanakh" && livre && NACH_BOOKS.has(livre))) return "tanakh";
   return null;
 }
@@ -172,7 +201,17 @@ export function usePassageCommentaries(
         talmud.value = loaded;
       } else {
         const whole = entry.totalSections === 1;
-        if (corpus.value === "mishna") {
+        if (corpus.value === "halakha") {
+          // Le numéro du siman dans le livre : une entrée d'un seul siman se
+          // lit en section 1, son titre garde le vrai.
+          const n = open.heading?.kind === "siman" ? open.heading.n : open.index;
+          const loaded = await loadHalakhaMeforshim(entry, n);
+          if (mine !== request) return;
+          lines.value = HALAKHA_SOURCES.filter((source) => loaded[source]).map((source) => ({
+            source,
+            cells: loaded[source],
+          }));
+        } else if (corpus.value === "mishna") {
           const loaded = await loadMishnaMeforshim(entry);
           if (mine !== request) return;
           lines.value = [
@@ -213,4 +252,15 @@ export const COMMENTARY_LABELS = {
   ran: "textReading.commentaries.ran",
   bartenura: "textReading.commentaries.bartenura",
   tosafotYomTov: "textReading.commentaries.tosafotYomTov",
+  mishnaBerura: "textReading.commentaries.mishnaBerura",
+  magenAvraham: "textReading.commentaries.magenAvraham",
+  chakh: "textReading.commentaries.chakh",
+  sma: "textReading.commentaries.sma",
+  helkatMehokek: "textReading.commentaries.helkatMehokek",
+  beitChmouel: "textReading.commentaries.beitChmouel",
+  taz: "textReading.commentaries.taz",
+  ketsotHahochen: "textReading.commentaries.ketsotHahochen",
+  chaareiTechouva: "textReading.commentaries.chaareiTechouva",
+  pithheiTechouva: "textReading.commentaries.pithheiTechouva",
+  baerHetev: "textReading.commentaries.baerHetev",
 } as const satisfies Record<CommentarySource, string>;
