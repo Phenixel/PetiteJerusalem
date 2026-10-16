@@ -16,10 +16,14 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == resource.data.personId;
     }
 
-    // Ne permettre de modifier QUE le champ 'reservations'
+    // Only the 'reservations' field may move. affectedKeys, not changedKeys:
+    // changedKeys leaves out the keys a write adds or removes, so a guest
+    // booking could also delete `personId` and set it to their own uid (taking
+    // the session over), add `hidden`, or remove `perpetual`. Held by the e2e
+    // test "une réservation d'invité ne touche à aucun autre champ de la
+    // session" (e2e/firebase/perpetualChain.spec.ts).
     function onlyReservationsChanged() {
-      let keys = request.resource.data.diff(resource.data).changedKeys();
-      return keys.hasAll(['reservations']) && keys.size() == 1;
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['reservations']);
     }
 
     // Helper tailles de tableaux, compatible si 'reservations' absent dans la ressource
