@@ -55,6 +55,10 @@ test.describe("bannière de consentement", () => {
     await page.getByRole("button", { name: "Refuser" }).click();
     await expect(banner).toBeHidden();
 
+    // The home page reads the team's announcements: a reload that cuts the
+    // request short makes Firestore log an RPC error, which fails the test
+    // for a reason that is not its own.
+    await page.waitForLoadState("networkidle");
     await page.reload();
     await page.locator("#app > *").first().waitFor();
     await expect(page.getByText("Mesure d'audience")).toBeHidden();
