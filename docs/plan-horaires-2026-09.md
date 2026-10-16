@@ -1,188 +1,184 @@
-# Plan d'implémentation : fiabilité des horaires (septembre 2026)
+# Implementation plan: prayer times reliability (September 2026)
 
-Ce plan met en œuvre les constats de `docs/audit-horaires-2026-09.md`. Il
-s'adresse à qui exécute le travail dans une session à part : chaque lot dit
-ce qu'il change, dans quels fichiers, quels textes et quels tests, et à quoi
-on reconnaît qu'il est fini. Les lots sont indépendants sauf mention ; ils
-se livrent dans l'ordre donné, un commit (ou une PR) par lot.
+This plan implements the findings of `docs/audit-horaires-2026-09.md`. It is
+addressed to whoever does the work in a separate session: each batch says
+what it changes, in which files, which texts and which tests, and how to tell
+that it is done. The batches are independent unless stated otherwise; they
+are delivered in the order given, one commit (or one PR) per batch.
 
-## Principe directeur
+## Guiding principle
 
-Le lieu décide, et chaque avis donne l'heure que son luah imprime là où
-l'on est. Un avis n'est pas un jeu de paramètres fixes, c'est une source
-(un luah, un calendrier) qui elle-même s'adapte au pays : le calendrier
-Rabbi Ovadiah Yosef suit l'Or Ha'Haïm en Israël et l'Amudei Horaah ailleurs,
-l'usage de l'allumage change de ville en ville, le calendrier des fêtes et
-le tahanoun changent entre Israël et la diaspora. L'application doit donc
-tenir, pour chaque avis, une règle PAR RÉGION, choisie d'après la position
-(ville du catalogue ou position de l'appareil, `isIsraelPlace` tranche par
-le fuseau), sans rien demander à l'utilisateur. Toute décision « garder les
-paramètres d'un pays partout » est exclue : ce plan applique ce principe
-lot par lot, et un avis ajouté plus tard doit l'appliquer aussi.
+The location decides, and each opinion gives the time its luah prints where
+one is. An opinion is not a set of fixed parameters, it is a source (a luah,
+a calendar) that itself adapts to the country: the Rabbi Ovadiah Yosef
+calendar follows the Or Ha'Haïm in Israel and Amudei Horaah elsewhere, the
+candle-lighting custom changes from city to city, the holiday calendar and
+tahanoun change between Israel and the diaspora. The app must therefore
+hold, for each opinion, one rule PER REGION, chosen from the position
+(catalog city or device position, `isIsraelPlace` decides by time zone),
+without asking the user anything. Any decision to "keep one country's
+parameters everywhere" is ruled out: this plan applies the principle batch
+by batch, and an opinion added later must apply it too.
 
-## 0. Règles du chantier
+## 0. Ground rules
 
-- Lire `CLAUDE.md` avant d'écrire une ligne : jamais de tiret long ni
-  demi-cadratin, espaces insécables du français (U+202F avant `;`, `!`,
-  `?` ; U+00A0 avant `:` et dans les guillemets), commentaires et messages
-  de commit en français, identifiants du domaine liturgique en français.
-- Partir de `main` une fois la PR 228 fusionnée (elle touche
-  `zmanimService.ts`, `zmanimOpinions.ts`, `tachanun.ts`, les trois locales
-  et les tests). Si elle ne l'est pas encore, partir de sa branche
+- Read `CLAUDE.md` before writing a line: never an em dash or en dash,
+  French non-breaking spaces (U+202F before `;`, `!`, `?`; U+00A0 before `:`
+  and inside guillemets), comments and commit messages in French,
+  liturgical domain identifiers in French.
+- Start from `main` once PR 228 is merged (it touches `zmanimService.ts`,
+  `zmanimOpinions.ts`, `tachanun.ts`, the three locales and the tests). If it
+  is not merged yet, start from its branch
   `claude/rav-pozen-schedule-check-nfqf7n`.
-- Toute heure attendue dans un test se calcule et se justifie dans le
-  commentaire du test (lieu, date, définition), comme les tests existants.
-  Aucune valeur « ajustée pour que ça passe ».
-- Les trois locales (`src/locales/fr.ts`, `en.ts`, `he.ts`) reçoivent
-  chaque nouvelle clé ; `src/__tests__/i18nUsage.test.ts` échoue sinon.
-- Avant chaque commit : `npm run verify` (type-check, lint, tests). Les
-  tests `typography.test.ts` et `frenchTypography.test.ts` balayent aussi
-  la documentation.
-- Ne pas toucher au calcul de l'avis du Rav Posen (aube 16,1°, michéyakir
-  11,5°, tsét 8,5°, fin des jeûnes 7,083°, Rabbénou Tam 72 minutes fixes)
-  hors le lot 2 (arrondi), qui touche tous les avis.
+- Every expected time in a test is computed and justified in the test's
+  comment (location, date, definition), like the existing tests. No value
+  "adjusted to make it pass".
+- The three locales (`src/locales/fr.ts`, `en.ts`, `he.ts`) receive every
+  new key; `src/__tests__/i18nUsage.test.ts` fails otherwise.
+- Before each commit: `npm run verify` (type-check, lint, tests). The
+  `typography.test.ts` and `frenchTypography.test.ts` tests also scan the
+  documentation.
+- Do not touch the calculation of Rav Posen's opinion (dawn 16.1°,
+  michéyakir 11.5°, tsét 8.5°, end of fasts 7.083°, Rabbénou Tam 72 fixed
+  minutes) except in batch 2 (rounding), which affects all opinions.
 
-## 1. Une heure d'écart le jour où l'appareil change d'heure (audit 3.1)
+## 1. One hour off on the day the device changes its clock (audit 3.1)
 
-**Cause.** Dans `node_modules/@hebcal/core/dist/esm/zmanim.js`, `zdtToDate`
-fait `res.setMilliseconds(0)` et `sunriseOffset`/`sunsetOffset` font
-`sunset.setSeconds(0, 0)`. Les setters de `Date` reconstruisent l'instant
-depuis les champs locaux de l'appareil : dans l'heure ambiguë du retour à
-l'heure d'hiver, l'instant saute d'une heure. Reproduction : appareil réglé
-sur `America/New_York`, Paris, 1er novembre 2026, `sunrise()` rend 05:37 UTC
-au lieu de 06:37.
+**Cause.** In `node_modules/@hebcal/core/dist/esm/zmanim.js`, `zdtToDate`
+calls `res.setMilliseconds(0)` and `sunriseOffset`/`sunsetOffset` call
+`sunset.setSeconds(0, 0)`. `Date` setters rebuild the instant from the
+device's local fields: within the ambiguous hour of the return to standard
+time, the instant jumps by one hour. Reproduction: device set to
+`America/New_York`, Paris, November 1, 2026, `sunrise()` returns 05:37 UTC
+instead of 06:37.
 
-**Changement.** Poser un correctif local avec `patch-package` (dépendance de
-développement, script `postinstall: patch-package`, dossier `patches/`) sur
-`@hebcal/core` :
+**Change.** Apply a local fix with `patch-package` (dev dependency,
+`postinstall: patch-package` script, `patches/` folder) on `@hebcal/core`:
 
-- `zdtToDate` : `return new Date(Math.floor(zdt.epochMilliseconds / 1000) * 1000);`
-- `sunriseOffset` et `sunsetOffset`, branche `roundMinute` : calculer
-  `const secs = Math.floor((t.getTime() % 60000) / 1000)`, puis
-  `t = new Date(Math.floor(t.getTime() / 60000) * 60000)` et, pour un décalage
-  positif, `offset++` quand `secs >= 30` (même règle qu'avant, sans setter).
-- Le fichier `dist/bundle.js` porte le même code : le patch le couvre aussi,
-  ou l'on vérifie qu'aucun import ne passe par lui.
+- `zdtToDate`: `return new Date(Math.floor(zdt.epochMilliseconds / 1000) * 1000);`
+- `sunriseOffset` and `sunsetOffset`, `roundMinute` branch: compute
+  `const secs = Math.floor((t.getTime() % 60000) / 1000)`, then
+  `t = new Date(Math.floor(t.getTime() / 60000) * 60000)` and, for a positive
+  offset, `offset++` when `secs >= 30` (same rule as before, without a
+  setter).
+- The `dist/bundle.js` file carries the same code: the patch covers it too,
+  or we check that no import goes through it.
 
-Ouvrir une issue chez `hebcal/hebcal-es6` avec la reproduction (trois lignes)
-et le correctif, pour retirer le patch quand une version le porte.
+Open an issue at `hebcal/hebcal-es6` with the reproduction (three lines) and
+the fix, so the patch can be removed once a release includes it.
 
-**Test.** `src/__tests__/zmanimDeviceTimezone.test.ts` : Node relit
-`process.env.TZ` à l'affectation. Pour chaque fuseau d'appareil de
-`["UTC", "America/New_York", "America/Los_Angeles", "Europe/Paris"]`,
-poser `process.env.TZ`, vider le cache (`setZmanimOpinion` d'une autre
-opinion puis retour, ou exposer `clearZmanimCache`), calculer Paris le
-1er novembre 2026 et le 29 mars 2026, et exiger les mêmes instants qu'en UTC
-(netz `2026-11-01T06:37:17Z`, fin du Chéma GRA `09:05:32Z`, fin du Chéma MGA
-16,1° telle que calculée en UTC). Restaurer `TZ` dans `afterEach`. Le test
-doit échouer sans le patch et passer avec.
+**Test.** `src/__tests__/zmanimDeviceTimezone.test.ts`: Node rereads
+`process.env.TZ` on assignment. For each device time zone in
+`["UTC", "America/New_York", "America/Los_Angeles", "Europe/Paris"]`, set
+`process.env.TZ`, clear the cache (`setZmanimOpinion` to another opinion and
+back, or expose `clearZmanimCache`), compute Paris on November 1, 2026 and
+March 29, 2026, and require the same instants as in UTC (netz
+`2026-11-01T06:37:17Z`, end of Chéma GRA `09:05:32Z`, end of Chéma MGA 16.1°
+as computed in UTC). Restore `TZ` in `afterEach`. The test must fail without
+the patch and pass with it.
 
-**Fini quand** : le test ci-dessus passe, `npm ci` applique le patch
-(vérifier dans le journal), et `docs/tests.md` mentionne le patch et la
-raison.
+**Done when**: the test above passes, `npm ci` applies the patch (check the
+log), and `docs/tests.md` mentions the patch and the reason for it.
 
-## 2. Arrondi des heures de fin vers la minute supérieure (audit 3.3)
+## 2. Rounding end times up to the next minute (audit 3.3)
 
-**Règle.** Une LIMITE (dernier moment pour faire quelque chose) s'arrondit
-vers le bas, une FIN (moment à partir duquel une chose devient permise)
-vers le haut. L'arrondi se fait au calcul, pas à l'affichage : le décompte,
-les rappels, les widgets et la montre lisent alors la même minute que la
-page.
+**Rule.** A DEADLINE (last moment to do something) rounds down, an END
+(moment from which something becomes permitted) rounds up. Rounding happens
+at computation, not at display: the countdown, reminders, widgets and watch
+then read the same minute as the page.
 
-**Changement, `src/services/zmanimService.ts`.**
+**Change, `src/services/zmanimService.ts`.**
 
-- `ZMAN_DEFS` : ajouter un champ `round: "down" | "up"` par horaire. Vers le
-  haut : `tzeit`, `chatzotNight`, `chatzotNightDawn`. Vers le bas : tout le
-  reste (`sunrise`, `sunset`, les fins du Chéma et de la Amida, `chatzot`,
-  min'ha, plag, aube, michéyakir). Une fonction `roundMinute(date, round)`
-  (plancher ou plafond de `getTime()` au multiple de 60 000, jamais un
-  setter de `Date`, voir lot 1) s'applique dans `computeZmanimFor` avant de
-  pousser dans `times`.
-- `restPeriodAt` : `end` et `endRabbenouTam` arrondis vers le haut (le
-  Rabbénou Tam de hebcal l'est déjà à la minute ; le plafond est alors sans
-  effet). `start` reste l'arrondi vers le bas que hebcal fait déjà.
-- `fastAt` : `end` vers le haut, `start` vers le bas.
-- `nightfallOf` (bénédiction de la lune, sidour) : vers le haut.
-- `chametzAt` (PR 228) : les quatre limites vers le bas.
-- `slihotWindow` : `start` vers le haut, `end` vers le bas.
-- `formatZmanTime` ne change pas.
+- `ZMAN_DEFS`: add a `round: "down" | "up"` field per time. Up: `tzeit`,
+  `chatzotNight`, `chatzotNightDawn`. Down: everything else (`sunrise`,
+  `sunset`, the ends of Chéma and Amida, `chatzot`, min'ha, plag, dawn,
+  michéyakir). A `roundMinute(date, round)` function (floor or ceiling of
+  `getTime()` to a multiple of 60,000, never a `Date` setter, see batch 1)
+  is applied in `computeZmanimFor` before pushing into `times`.
+- `restPeriodAt`: `end` and `endRabbenouTam` rounded up (hebcal's Rabbénou
+  Tam already is, to the minute; the ceiling then has no effect). `start`
+  keeps the rounding down that hebcal already does.
+- `fastAt`: `end` up, `start` down.
+- `nightfallOf` (blessing of the moon, sidour): up.
+- `chametzAt` (PR 228): the four deadlines down.
+- `slihotWindow`: `start` up, `end` down.
+- `formatZmanTime` does not change.
 
-**Tests.** Mettre à jour les attendus que l'arrondi déplace, avec la seconde
-d'origine en commentaire : à Paris, Tzom Guedalia 5787 finit à 20:44:19,
-donc affiché 20:45 ; la sortie du Chabbat du 19 septembre 2026 est 20:42:09,
-donc 20:43. Ajouter dans `zmanim.test.ts` un test qui, pour un jour et un
-lieu, vérifie que chaque horaire `up` a `getSeconds() === 0` et n'est pas
-antérieur à la valeur brute de hebcal, et l'inverse pour `down`. Les tests
-de la PR 228 (`zmanimInvariants.test.ts`) doivent continuer de passer : un
-plafond ne casse pas l'ordre des horaires, sauf égalité de minute, à
-tolérer.
+**Tests.** Update the expected values that rounding moves, with the original
+second in a comment: in Paris, Tzom Guedalia 5787 ends at 20:44:19, so
+displayed 20:45; the end of Chabbat on September 19, 2026 is 20:42:09, so
+20:43. Add a test in `zmanim.test.ts` that, for one day and location, checks
+that every `up` time has `getSeconds() === 0` and is not earlier than
+hebcal's raw value, and the reverse for `down`. The PR 228 tests
+(`zmanimInvariants.test.ts`) must keep passing: a ceiling does not break the
+order of times, except for a tie within the same minute, to be tolerated.
 
-**Fini quand** : aucune heure de fin affichée n'est antérieure à son instant
-calculé.
+**Done when**: no displayed end time is earlier than its computed instant.
 
-## 3. L'avis du Rav Ovadia Yossef conforme à sa source (audit 3.2, 3.6, 3.7, 3.9)
+## 3. Rav Ovadia Yossef's opinion in line with its source (audit 3.2, 3.6, 3.7, 3.9)
 
-La source citée dans `zmanimOpinions.ts` est le calendrier Rabbi Ovadiah
-Yosef (`ROZmanimCalendar.java`, `ZmanimFactory.java`). Il fait deux choses :
-en Israël, le luah Or Ha'Haïm ; hors Israël, par défaut, le luah Amudei
-Horaah (Rav Léor Dahan). L'application n'applique qu'Israël, partout, avec
-deux paramètres faux. Ce lot rend l'avis fidèle, en deux modes, choisis
-d'après la position : c'est décidé, il n'y a pas d'option « Israël
-partout » à garder.
+The source cited in `zmanimOpinions.ts` is the Rabbi Ovadiah Yosef calendar
+(`ROZmanimCalendar.java`, `ZmanimFactory.java`). It does two things: in
+Israel, the Or Ha'Haïm luah; outside Israel, by default, the Amudei Horaah
+luah (Rav Leor Dahan). The app only applies Israel, everywhere, with two
+wrong parameters. This batch makes the opinion faithful, in two modes,
+chosen from the position: this is decided, there is no "Israel everywhere"
+option to keep.
 
-### 3a. Le lieu entre dans le calcul de l'opinion
+### 3a. The location enters the opinion's calculation
 
-`OpinionZmanim` : chaque fonction reçoit un second paramètre
-`ctx: { il: boolean }` (`il` = `isIsraelPlace(place)`), et
-`opinionZmanim(opinion)` ne change pas de signature. `zmanimService.ts`
-passe `{ il }` partout où il appelle une fonction d'opinion (`computeZmanimFor`,
-`restPeriodAt`, `nightfallOf`, `fastAt`, `chametzAt`). Les fonctions de
-`POSEN` ignorent `ctx`.
+`OpinionZmanim`: each function receives a second parameter
+`ctx: { il: boolean }` (`il` = `isIsraelPlace(place)`), and
+`opinionZmanim(opinion)` keeps its signature. `zmanimService.ts` passes
+`{ il }` wherever it calls an opinion function (`computeZmanimFor`,
+`restPeriodAt`, `nightfallOf`, `fastAt`, `chametzAt`). The `POSEN` functions
+ignore `ctx`.
 
-Les champs de description deviennent des règles typées, pour que la note
-sous le cadre dise exactement ce que le calcul fait :
+The description fields become typed rules, so that the note under the card
+says exactly what the calculation does:
 
 ```ts
 type EndRule =
-  | { kind: "degrees"; degrees: number } // sortie des étoiles à n degrés
-  | { kind: "fixed"; minutes: number } // n minutes fixes après la chkia
-  | { kind: "zmaniyot"; minutes: number } // n minutes zmaniyot après la chkia
-  | { kind: "amudeiHoraah" }; // 7,165° sous l'horizon, au moins 20 minutes
+  | { kind: "degrees"; degrees: number } // nightfall at n degrees
+  | { kind: "fixed"; minutes: number } // n fixed minutes after the chkia
+  | { kind: "zmaniyot"; minutes: number } // n zmaniyot minutes after the chkia
+  | { kind: "amudeiHoraah" }; // 7.165° below the horizon, at least 20 minutes
 ```
 
-`restEndRule(ctx)` et `fastEndRule(ctx)` remplacent `restEndMinutes` et
-`fastEndMinutes` ; `FastPeriod.endMinutes` devient `endRule: EndRule` ;
-`RestTimes.vue` et `FastTimes.vue` traduisent la règle par une clé de locale
-par `kind` (`zmanim.rest.exit.degrees`, `.fixed`, `.zmaniyot`,
-`.amudeiHoraah`, et de même sous `zmanim.fast.end.*`). Les anciennes clés
-`exitAtNightfall`, `exitAfterSunset`, `endStars`, `endAfterSunset` sont
-retirées des trois locales.
+`restEndRule(ctx)` and `fastEndRule(ctx)` replace `restEndMinutes` and
+`fastEndMinutes`; `FastPeriod.endMinutes` becomes `endRule: EndRule`;
+`RestTimes.vue` and `FastTimes.vue` translate the rule through one locale
+key per `kind` (`zmanim.rest.exit.degrees`, `.fixed`, `.zmaniyot`,
+`.amudeiHoraah`, and likewise under `zmanim.fast.end.*`). The old keys
+`exitAtNightfall`, `exitAfterSunset`, `endStars`, `endAfterSunset` are
+removed from the three locales.
 
-### 3b. Israël (Or Ha'Haïm), `ctx.il === true`
+### 3b. Israel (Or Ha'Haïm), `ctx.il === true`
 
-- **Fin des jeûnes** : `fromSunset(z, 20)` (20 minutes ZMANIYOT), règle
-  `{ kind: "zmaniyot", minutes: 20 }`. Source : `getTzeitLChumra()`,
+- **End of fasts**: `fromSunset(z, 20)` (20 ZMANIYOT minutes), rule
+  `{ kind: "zmaniyot", minutes: 20 }`. Source: `getTzeitLChumra()`,
   `20 * (getShaahZmanisGra() / 60)`.
-- **Sortie du Chabbat et des fêtes** : chkia + 30 minutes fixes
-  (`{ kind: "fixed", minutes: 30 }`). Source : « 30 minutes after sunset in
-  Israel », en-tête de `ROZmanimCalendar.java`.
-- **Michéyakir** : `fromSunrise(z, -60)`. Source :
-  `getMisheyakir60ZmaniyotMinutes`, l'heure du talith ; les 66 sont l'heure
-  « de grand besoin ».
-- Aube 72 zmaniyot, tsét 13,5 zmaniyot, Rabbénou Tam 72 zmaniyot, Maguen
-  Avraham de 72 à 72 zmaniyot, min'ha guedola « la plus tardive », plag
-  Yalkout Yossef : inchangés.
+- **End of Chabbat and holidays**: chkia + 30 fixed minutes
+  (`{ kind: "fixed", minutes: 30 }`). Source: "30 minutes after sunset in
+  Israel", header of `ROZmanimCalendar.java`.
+- **Michéyakir**: `fromSunrise(z, -60)`. Source:
+  `getMisheyakir60ZmaniyotMinutes`, the talith time; the 66 are the "great
+  need" time.
+- Dawn 72 zmaniyot, tsét 13.5 zmaniyot, Rabbénou Tam 72 zmaniyot, Maguen
+  Avraham from 72 to 72 zmaniyot, min'ha guedola "the latest", plag Yalkout
+  Yossef: unchanged.
 
-### 3c. Hors Israël (Amudei Horaah), `ctx.il === false`
+### 3c. Outside Israel (Amudei Horaah), `ctx.il === false`
 
-Principe (`getPercentOfShaahZmanisFromDegrees`) : on mesure, au lieu même,
-le 17 mars de l'année civile du jour calculé, combien d'heures zmaniyot
-(du Gaon) séparent le lever du soleil à n degrés sous l'horizon ; on
-applique ce pourcentage à l'heure zmanit du jour demandé.
+Principle (`getPercentOfShaahZmanisFromDegrees`): we measure, at the
+location itself, on March 17 of the civil year of the computed day, how many
+sha'ot zmaniyot (of the Gaon) separate sunrise from the sun at n degrees
+below the horizon; we apply that percentage to the sha'a zmanit of the
+requested day.
 
 ```ts
-// Part d'une heure zmanit qu'occupe la descente du soleil à `degrees`
-// sous l'horizon, mesurée à l'équinoxe (17 mars) au même lieu.
+// Share of a sha'a zmanit taken by the sun's descent to `degrees`
+// below the horizon, measured at the equinox (March 17) at the same location.
 function equinoxShare(
   z: Zmanim,
   degrees: number,
@@ -190,102 +186,101 @@ function equinoxShare(
 ): number | null;
 ```
 
-Se calcule avec un `new Zmanim(gloc, new Date(année, 2, 17, 12), false)` ;
-il faut donc la `GeoLocation` : ajouter `gloc` au `ctx`
-(`ctx: { il: boolean; gloc: GeoLocation }`), ou exposer une fabrique
-`equinoxZmanim(z)` dans `zmanimService`. Mémoïser par lieu et année. Quand
-l'angle n'est pas atteint à l'équinoxe (au-delà de 60° de latitude environ)
-la fonction rend `null` et l'horaire est absent, comme pour l'avis par
-degrés (`zmanimGap` de la PR 228 le signale déjà).
+Computed with `new Zmanim(gloc, new Date(année, 2, 17, 12), false)`; this
+therefore requires the `GeoLocation`: add `gloc` to `ctx`
+(`ctx: { il: boolean; gloc: GeoLocation }`), or expose an
+`equinoxZmanim(z)` factory in `zmanimService`. Memoize per location and
+year. When the angle is not reached at the equinox (beyond about 60° of
+latitude) the function returns `null` and the time is absent, as for the
+degree-based opinion (PR 228's `zmanimGap` already reports it).
 
-- **Aube** : `sunrise - share(16.04°, matin) × shaahZmanit`.
-- **Michéyakir** : la même part × 10/12 (60 minutes sur 72).
-- **Tsét ordinaire** : `sunset + share(3.7°, soir) × shaahZmanit`.
-- **Fin des jeûnes** : `sunset + share(5.075°, soir) × shaahZmanit`
-  (`getTzeitLChumra`, mode Amudei Horaah).
-- **Sortie du Chabbat et des fêtes** (`getTzeitShabbatAmudeiHoraah`) : le
-  soleil à 7,165° sous l'horizon (`z.tzeit(7.165)`) ; si chkia + 20 minutes
-  est plus tard, prendre chkia + 20 ; si le milieu de la nuit solaire est
-  plus tôt que 7,165°, prendre le milieu de la nuit. Règle
-  `{ kind: "amudeiHoraah" }`.
-- **Rabbénou Tam** : le plus tôt de chkia + 72 fixes et chkia + 72 zmaniyot
-  (`getTzais72ZmanisAmudeiHoraahLkulah`). `rabbenouTamZmaniyot` devient une
-  règle typée elle aussi (`"fixed" | "zmaniyot" | "earliest"`), avec sa clé
-  de locale.
-- **Maguen Avraham** : inchangé (la source garde
-  `getSofZmanShmaMGA72MinutesZmanis` dans ce mode).
-- **Plag** : inchangé dans sa formule, mais sur le tsét de ce mode.
-- **Min'ha guedola, min'ha ketana** : inchangés.
+- **Dawn**: `sunrise - share(16.04°, morning) × shaahZmanit`.
+- **Michéyakir**: the same share × 10/12 (60 minutes out of 72).
+- **Ordinary tsét**: `sunset + share(3.7°, evening) × shaahZmanit`.
+- **End of fasts**: `sunset + share(5.075°, evening) × shaahZmanit`
+  (`getTzeitLChumra`, Amudei Horaah mode).
+- **End of Chabbat and holidays** (`getTzeitShabbatAmudeiHoraah`): the sun
+  at 7.165° below the horizon (`z.tzeit(7.165)`); if chkia + 20 minutes is
+  later, take chkia + 20; if solar midnight is earlier than 7.165°, take
+  solar midnight. Rule `{ kind: "amudeiHoraah" }`.
+- **Rabbénou Tam**: the earlier of chkia + 72 fixed and chkia + 72 zmaniyot
+  (`getTzais72ZmanisAmudeiHoraahLkulah`). `rabbenouTamZmaniyot` also becomes
+  a typed rule (`"fixed" | "zmaniyot" | "earliest"`), with its locale key.
+- **Maguen Avraham**: unchanged (the source keeps
+  `getSofZmanShmaMGA72MinutesZmanis` in this mode).
+- **Plag**: formula unchanged, but based on this mode's tsét.
+- **Min'ha guedola, min'ha ketana**: unchanged.
 
-### 3d. Textes
+### 3d. Texts
 
-- `zmanim.opinions.ovadia.hint` (trois locales) décrit les deux modes en une
-  phrase chacun. Nom : « Rav Ovadia Yossef (Or Ha'Haïm en Israël, Amudei
-  Horaah ailleurs) ».
-- La note du cadre du jeûne et du repos suit la règle typée (3a).
-- `docs/` : l'en-tête de `zmanimOpinions.ts` est la documentation de
-  l'avis ; le réécrire avec les deux modes et les fonctions Java sources.
+- `zmanim.opinions.ovadia.hint` (three locales) describes the two modes in
+  one sentence each. Name: « Rav Ovadia Yossef (Or Ha'Haïm en Israël, Amudei
+  Horaah ailleurs) » ("Rav Ovadia Yossef (Or Ha'Haïm in Israel, Amudei
+  Horaah elsewhere)").
+- The note on the fast and rest cards follows the typed rule (3a).
+- `docs/`: the header of `zmanimOpinions.ts` is the documentation of the
+  opinion; rewrite it with the two modes and the source Java functions.
 
 ### 3e. Tests (`zmanimOpinions.test.ts`, `zmanimFasts.test.ts`)
 
-Valeurs à obtenir, tirées de l'audit (avis Ovadia) :
+Values to obtain, taken from the audit (Ovadia opinion):
 
-- Paris, Tzom Guedalia lundi 14 septembre 2026 : fin 20:26:57 avant arrondi
-  (chkia 20:05:50, heure zmanit 63,3 minutes), donc 20:27 avec le lot 2 ;
-  l'ancienne valeur 20:25 (20 fixes) doit échouer.
-- Paris, 17 Tamouz jeudi 2 juillet 2026 : la fin doit être 6 à 7 minutes
-  plus tard qu'avec 20 minutes fixes.
-- Jérusalem, Chabbat 12 septembre 2026 : sortie 19:19 (chkia 18:49 + 30),
-  non 19:29.
-- Paris, Chabbat 27 juin 2026 : sortie 22:51 (7,165°), non 22:38 ; Londres
-  22:21 ; Paris 26 décembre 2026 : 17:44.
-- Paris, 21 juin 2026 : michéyakir 60 zmaniyot, plus tard que les 66
-  d'avant.
-- Aube Amudei Horaah, Paris, 21 juin 2026 : environ 123 minutes avant le
-  lever (72 zmaniyot en donnaient 96). Vérifier l'ordre de grandeur, et
-  qu'à Jérusalem le 17 mars l'aube Amudei Horaah et l'aube 72 zmaniyot
-  coïncident à la minute (la méthode est calibrée pour cela).
-- Helsinki, 21 juin 2026 : aube et tsét Amudei Horaah existent (l'équinoxe
-  y atteint 16,04°), là où l'avis par degrés n'a rien.
-- Tromsø : `equinoxShare` rend `null` pour 16,04° si l'angle n'est pas
-  atteint le 17 mars ; sinon les horaires existent.
+- Paris, Tzom Guedalia Monday September 14, 2026: end 20:26:57 before
+  rounding (chkia 20:05:50, sha'a zmanit 63.3 minutes), so 20:27 with batch
+  2; the old value 20:25 (20 fixed) must fail.
+- Paris, 17 Tamouz Thursday July 2, 2026: the end must be 6 to 7 minutes
+  later than with 20 fixed minutes.
+- Jerusalem, Chabbat September 12, 2026: end 19:19 (chkia 18:49 + 30), not
+  19:29.
+- Paris, Chabbat June 27, 2026: end 22:51 (7.165°), not 22:38; London
+  22:21; Paris December 26, 2026: 17:44.
+- Paris, June 21, 2026: michéyakir 60 zmaniyot, later than the previous 66.
+- Amudei Horaah dawn, Paris, June 21, 2026: about 123 minutes before sunrise
+  (72 zmaniyot gave 96). Check the order of magnitude, and that in Jerusalem
+  on March 17 the Amudei Horaah dawn and the 72 zmaniyot dawn coincide to
+  the minute (the method is calibrated for that).
+- Helsinki, June 21, 2026: Amudei Horaah dawn and tsét exist (the equinox
+  reaches 16.04° there), where the degree-based opinion has nothing.
+- Tromsø: `equinoxShare` returns `null` for 16.04° if the angle is not
+  reached on March 17; otherwise the times exist.
 
-`zmanimInvariants.test.ts` (PR 228) balaye les deux avis : il doit passer
-avec les nouvelles règles (ordre des horaires, sortie après le tsét, fin de
-jeûne avant la sortie du Chabbat).
+`zmanimInvariants.test.ts` (PR 228) sweeps both opinions: it must pass with
+the new rules (order of times, end of Chabbat after tsét, end of fast before
+the end of Chabbat).
 
-**Fini quand** : sur les lieux ci-dessus, l'application donne les mêmes
-heures que les formules du calendrier source, à la minute.
+**Done when**: at the locations above, the app gives the same times as the
+source calendar's formulas, to the minute.
 
-## 4. Tahanoun : deux jours faux (audit 3.4)
+## 4. Tahanoun: two wrong days (audit 3.4)
 
-`src/services/tachanun.ts`, dans `saidTachanun`, avant l'appel à hebcal :
+`src/services/tachanun.ts`, in `saidTachanun`, before the call to hebcal:
 
-- **Lendemain de 'Hanouka.** hebcal retire le tahanoun du 25 au « 33 »
-  Kislev, ce qui déborde sur le 3 Tévet (Kislev de 30 jours) ou le 4 Tévet
-  (Kislev de 29 jours). Règle : si `hd` est en Tévet, jour 3 ou 4, et que
-  `getHolidaysOnDate(hd)` n'a aucun événement portant `flags.CHANUKAH_CANDLES`,
-  ne pas lire hebcal pour ce jour : `shacharit = true`, et `mincha` suit la
-  règle ordinaire (vrai sauf vendredi, et sauf si le lendemain est un jour
-  sans tahanoun : réutiliser `saidTachanun(hd.next())` avec l'exception
-  `keepsPreviousMincha`).
-- **Chouchan Pourim Katan.** Année embolismique, 15 Adar I :
+- **The day after 'Hanouka.** hebcal removes tahanoun from 25 to "33"
+  Kislev, which spills over onto 3 Tévet (30-day Kislev) or 4 Tévet (29-day
+  Kislev). Rule: if `hd` is in Tévet, day 3 or 4, and
+  `getHolidaysOnDate(hd)` has no event carrying `flags.CHANUKAH_CANDLES`, do
+  not read hebcal for that day: `shacharit = true`, and `mincha` follows the
+  ordinary rule (true except Friday, and except if the next day is a day
+  without tahanoun: reuse `saidTachanun(hd.next())` with the
+  `keepsPreviousMincha` exception).
+- **Chouchan Pourim Katan.** Leap year, 15 Adar I:
   `{ shacharit: false, mincha: false }` (Choul'han Aroukh, Ora'h 'Haïm
-  697, 1 : ni le 14 ni le 15 Adar I). La veille, 14 Adar I, est déjà sans
-  tahanoun.
+  697, 1: neither the 14th nor the 15th of Adar I). The day before, 14 Adar
+  I, is already without tahanoun.
 
-Tests, `src/__tests__/tachanun.test.ts` (créer s'il n'existe pas, sinon
-compléter) : 3 Tévet 5787 (13 décembre 2026) `full` ; 4 Tévet 5787 `full` ;
-2 Tévet 5787 `none` ('Hanouka) ; dans une année où Kislev a 29 jours (5790 : 'Hanouka
-court du 25 Kislev au 3 Tévet), 3 Tévet `none` et 4 Tévet (10 décembre 2029) `full` ; 15 Adar I 5787 (22 février 2027) `none` ; 15 Adar d'une
-année ordinaire inchangé.
+Tests, `src/__tests__/tachanun.test.ts` (create it if it does not exist,
+otherwise extend it): 3 Tévet 5787 (December 13, 2026) `full`; 4 Tévet 5787
+`full`; 2 Tévet 5787 `none` ('Hanouka); in a year where Kislev has 29 days
+(5790: 'Hanouka runs from 25 Kislev to 3 Tévet), 3 Tévet `none` and 4 Tévet
+(December 10, 2029) `full`; 15 Adar I 5787 (February 22, 2027) `none`; 15
+Adar of an ordinary year unchanged.
 
-Le sidour (`dailyCycles.activeOccasions`) et le widget lisent la même
-fonction : rien d'autre à changer, mais vérifier `sidourOccasions.test.ts`.
+The sidour (`dailyCycles.activeOccasions`) and the widget read the same
+function: nothing else to change, but check `sidourOccasions.test.ts`.
 
-## 5. Allumage des bougies en Israël (audit 3.5, manque 4.3)
+## 5. Candle lighting in Israel (audit 3.5, gap 4.3)
 
-`src/services/zmanimService.ts` :
+`src/services/zmanimService.ts`:
 
 ```ts
 const CANDLE_LIGHTING_BY_CITY: Record<string, number> = {
@@ -304,187 +299,193 @@ export function candleLightingMinutes(place: ZmanimPlace): number {
 }
 ```
 
-Une position d'appareil en Israël (fuseau `Asia/Jerusalem`) suit donc 20.
-Le commentaire au-dessus de la table cite les sources (luhot israéliens,
-`setCandleLightingOffset(20)` du calendrier Rabbi Ovadiah Yosef pour l'Or
-Ha'Haïm, Haïfa 30 chez hebcal et Chabad.org). Petah Tikva, Safed et
-Tibériade restent à 20 : usage partagé, c'est le réglage ci-dessous qui
-tranche.
+A device position in Israel (time zone `Asia/Jerusalem`) therefore follows
+20. The comment above the table cites the sources (Israeli luhot, the Rabbi
+Ovadiah Yosef calendar's `setCandleLightingOffset(20)` for the Or Ha'Haïm,
+Haifa 30 at hebcal and Chabad.org). Petah Tikva, Safed and Tiberias stay at
+20: the custom is split, and it is the setting below that decides.
 
-**Réglage utilisateur.** Une préférence d'appareil `pj_candle_minutes`
-(`devicePreference`, `null` = défaut du lieu), choix parmi 18, 20, 30, 40 :
-dans `ZmanimSettings.vue` (app) et dans `ZmanimOpinionModal.vue` (site), sous
-l'avis suivi, libellé « Allumage : n minutes avant la chkia (usage du lieu :
-n) ». `candleLightingMinutes(place)` lit la préférence d'abord. Le rappel
-d'entrée de Chabbat (`zmanReminderService.planRestReminders`) et les
-widgets passent par `restPeriodAt`, donc suivent.
+**User setting.** A device preference `pj_candle_minutes`
+(`devicePreference`, `null` = location default), choice among 18, 20, 30,
+40: in `ZmanimSettings.vue` (app) and in `ZmanimOpinionModal.vue` (site),
+under the followed opinion, label « Allumage : n minutes avant la chkia
+(usage du lieu : n) » ("Candle lighting: n minutes before the chkia (local
+custom: n)"). `candleLightingMinutes(place)` reads the preference first. The
+Chabbat start reminder (`zmanReminderService.planRestReminders`) and the
+widgets go through `restPeriodAt`, so they follow.
 
-Pages SEO (`src/content/zmanimSeoPages.ts`, `jerusalemNote`) : généraliser en
-une note quand `minutes !== 18` (« À Haïfa, l'usage est d'allumer 30 minutes
-avant la chkia »), clés `cityCandleNote` dans `zmanimGuideStrings.ts` pour
-les trois langues ; `zmanimSeoPages.test.ts` à compléter pour Haïfa et Tel
-Aviv.
+SEO pages (`src/content/zmanimSeoPages.ts`, `jerusalemNote`): generalize into
+a note when `minutes !== 18` (« À Haïfa, l'usage est d'allumer 30 minutes
+avant la chkia », "In Haifa, the custom is to light 30 minutes before the
+chkia"), `cityCandleNote` keys in `zmanimGuideStrings.ts` for the three
+languages; extend `zmanimSeoPages.test.ts` for Haifa and Tel Aviv.
 
-Tests : `candleLightingMinutes` pour Jérusalem (40), Haïfa (30), Tel Aviv
-(20), position d'appareil en `Asia/Jerusalem` (20), Paris (18), et la
-préférence qui prime.
+Tests: `candleLightingMinutes` for Jerusalem (40), Haifa (30), Tel Aviv
+(20), a device position in `Asia/Jerusalem` (20), Paris (18), and the
+preference taking precedence.
 
-## 6. Allumages intermédiaires d'un bloc de repos (manque 4.1) et érouv tavchilin (4.2)
+## 6. Intermediate candle lightings within a rest block (gap 4.1) and érouv tavchilin (4.2)
 
-`RestPeriod` gagne :
+`RestPeriod` gains:
 
 ```ts
-/** Un allumage à l'intérieur du bloc : chaque soir sauf le premier. */
+/** A candle lighting inside the block: every evening except the first. */
 export interface RestLighting {
-  /** Le jour hébraïque qui commence à cet allumage. */
+  /** The Hebrew day that begins with this lighting. */
   day: HDate;
   at: Date;
   rule: "beforeSunset" | "afterShabbat" | "afterNightfall";
 }
 lightings: RestLighting[];
-/** Le jour civil où faire l'érouv tavchilin, ou null. */
+/** The civil day on which to make the érouv tavchilin, or null. */
 eruvTavshilin: Date | null;
 ```
 
-Dans `restPeriodAt`, pour chaque jour `d` de `first` à `last.prev()`, le
-soir de `d` ouvre `d.next()` :
+In `restPeriodAt`, for each day `d` from `first` to `last.prev()`, the
+evening of `d` opens `d.next()`:
 
-- `d.next()` est un Chabbat (`getDay() === 6`) : `beforeSunset`, chkia de `d`
-  moins `candleLightingMinutes` (comme `start`), depuis une flamme existante
-  si `d` est Yom Tov.
-- `d` est un Chabbat et `d.next()` un Yom Tov : `afterShabbat`, à
-  `opinion.restEnd` de `d`.
-- `d` et `d.next()` sont deux Yom Tov : `afterNightfall`, à `opinion.tzeit`
-  de `d` pour le Rav Posen (8,5°), et à la fin de jeûne (tsét le'houmra, 20
-  zmaniyot ou 5,075° selon le mode) pour le Rav Ovadia : c'est ce que fait
-  `ZmanimFactory` (« Yom Tov going into Yom Tov : getTzeitLChumra »). Ajouter
-  pour cela `yomTovLighting(z, ctx)` à `OpinionZmanim`.
+- `d.next()` is a Chabbat (`getDay() === 6`): `beforeSunset`, chkia of `d`
+  minus `candleLightingMinutes` (like `start`), from an existing flame if `d`
+  is Yom Tov.
+- `d` is a Chabbat and `d.next()` a Yom Tov: `afterShabbat`, at
+  `opinion.restEnd` of `d`.
+- `d` and `d.next()` are both Yom Tov: `afterNightfall`, at `opinion.tzeit`
+  of `d` for Rav Posen (8.5°), and at the end of fast (tsét le'houmra, 20
+  zmaniyot or 5.075° depending on the mode) for Rav Ovadia: that is what
+  `ZmanimFactory` does ("Yom Tov going into Yom Tov: getTzeitLChumra"). To
+  that end, add `yomTovLighting(z, ctx)` to `OpinionZmanim`.
 
-Érouv tavchilin : si un jour Yom Tov du bloc a `getDay() === 5` (vendredi)
-et que le bloc continue sur le Chabbat, `eruvTavshilin` = le jour civil qui
-précède le premier Yom Tov du bloc (mercredi pour jeudi-vendredi, jeudi pour
-vendredi seul). Kippour ne tombe jamais un vendredi ; Roch Hachana un
-jeudi-vendredi en est le cas le plus fréquent.
+Érouv tavchilin: if a Yom Tov day of the block has `getDay() === 5`
+(Friday) and the block continues into Chabbat, `eruvTavshilin` = the civil
+day preceding the block's first Yom Tov (Wednesday for Thursday-Friday,
+Thursday for Friday alone). Kippour never falls on a Friday; Roch Hachana on
+Thursday-Friday is the most frequent case.
 
-`RestTimes.vue` : une ligne par allumage entre l'entrée et la sortie,
-libellé « Allumage du 2e soir (après la sortie des étoiles) », « Allumage de
-Chabbat (avant la chkia, depuis une flamme) », « Allumage après la sortie du
-Chabbat » ; sous la note, « Érouv tavchilin : mercredi 21 avril » quand il y
-en a un. Clés `zmanim.rest.lighting.beforeSunset`, `.afterShabbat`,
-`.afterNightfall`, `zmanim.rest.eruvTavshilin`, trois locales.
-`CalendarPage.vue` affiche les mêmes lignes sous l'entrée du bloc.
-`zmanReminderService` : un rappel d'entrée une heure avant chaque allumage
-`beforeSunset` du bloc, pas seulement le premier (le rappel existant se
-programme par bloc ; le programmer par allumage).
+`RestTimes.vue`: one row per candle lighting between the start and the end,
+labeled « Allumage du 2e soir (après la sortie des étoiles) » ("Second
+evening candle lighting (after nightfall)"), « Allumage de Chabbat (avant la
+chkia, depuis une flamme) » ("Chabbat candle lighting (before the chkia,
+from a flame)"), « Allumage après la sortie du Chabbat » ("Candle lighting
+after the end of Chabbat"); under the note, « Érouv tavchilin : mercredi 21
+avril » ("Érouv tavchilin: Wednesday April 21") when there is one. Keys
+`zmanim.rest.lighting.beforeSunset`, `.afterShabbat`, `.afterNightfall`,
+`zmanim.rest.eruvTavshilin`, three locales. `CalendarPage.vue` shows the
+same rows under the block's entry. `zmanReminderService`: a start reminder
+one hour before each `beforeSunset` candle lighting of the block, not only
+the first (the existing reminder is scheduled per block; schedule it per
+lighting).
 
-Tests, `zmanimRestLightings.test.ts` (Paris, Rav Posen, avant arrondi) :
+Tests, `zmanimRestLightings.test.ts` (Paris, Rav Posen, before rounding):
 
-- Roch Hachana 5787 (samedi 12 et dimanche 13 septembre 2026) : un allumage
-  `afterShabbat` le samedi à la sortie des étoiles, 20:58 (hebcal :
-  « Candle lighting: 8:58pm » le 12 septembre).
-- Pessah 5787 (jeudi 22 au samedi 24 avril 2027) : `afterNightfall` jeudi
-  21:44, `beforeSunset` vendredi 20:35 ; `eruvTavshilin` mercredi 21 avril.
-- Chavou'ot 5789 (dimanche 20 et lundi 21 mai 2029, bloc depuis le vendredi
-  18) : `afterShabbat` samedi, `afterNightfall` dimanche.
-- Un Chabbat ordinaire : `lightings` vide, `eruvTavshilin` null.
-- Test de recoupement : pour l'année 5787 à Paris, chaque événement
-  `LIGHT_CANDLES_TZEIS` ou `LIGHT_CANDLES` de
+- Roch Hachana 5787 (Saturday 12 and Sunday 13 September 2026): an
+  `afterShabbat` lighting on Saturday at nightfall, 20:58 (hebcal: "Candle
+  lighting: 8:58pm" on September 12).
+- Pessah 5787 (Thursday April 22 to Saturday April 24, 2027):
+  `afterNightfall` Thursday 21:44, `beforeSunset` Friday 20:35;
+  `eruvTavshilin` Wednesday April 21.
+- Chavou'ot 5789 (Sunday 20 and Monday 21 May 2029, block from Friday the
+  18th): `afterShabbat` Saturday, `afterNightfall` Sunday.
+- An ordinary Chabbat: `lightings` empty, `eruvTavshilin` null.
+- Cross-check test: for the year 5787 in Paris, each `LIGHT_CANDLES_TZEIS`
+  or `LIGHT_CANDLES` event of
   `HebrewCalendar.calendar({ candlelighting: true, candleLightingMins: 18, havdalahDeg: 8.5 })`
-  a un allumage dans un bloc de `yearCalendar`, à la même minute.
+  has a candle lighting in a `yearCalendar` block, at the same minute.
 
-## 7. Altitude (audit 3.8)
+## 7. Elevation (audit 3.8)
 
-Après le lot 3, parce qu'il ne concerne que l'avis du Rav Ovadia.
+After batch 3, because it only concerns Rav Ovadia's opinion.
 
-- `City` et `ZmanimPlace` gagnent `elevation?: number` (mètres).
-  `scripts/generate-cities.mjs` : la source actuelle n'a pas d'altitude ;
-  ajouter une table manuelle pour les villes d'Israël (les 35 du catalogue,
-  altitude geonames, colonne `dem`), et laisser les autres sans valeur pour
-  l'instant. Jérusalem 754, Safed 900, Tibériade -200 (hebcal refuse une
-  altitude négative : passer 0).
-- `geoLocationOf(place, useElevation)` : `new GeoLocation(name, lat, lon, place.elevation ?? 0, tzid)` ;
-  `new Zmanim(gloc, day, useElevation)` avec `useElevation = opinion === "ovadia" && place.elevation !== undefined`.
-  Attention : `chatzot()` reste au niveau de la mer chez hebcal, et les
-  angles (aube, tsét par degrés) ne dépendent pas de l'altitude ; seuls
-  lever, coucher et tout ce qui s'en déduit bougent. `getTemporalHourByDeg`
-  n'est pas concerné.
-- Position d'appareil : ne pas utiliser l'altitude du GPS (imprécise, souvent
-  nulle sur le web) ; la ville la plus proche (`nearestCity`) peut prêter la
-  sienne si elle est à moins de `IN_CITY_KM`.
-- `zmanim.disclaimer` : « niveau de la mer » devient « niveau de la mer, sauf
-  pour l'avis du Rav Ovadia dans les villes d'Israël, qui suit l'altitude du
-  lieu ».
+- `City` and `ZmanimPlace` gain `elevation?: number` (meters).
+  `scripts/generate-cities.mjs`: the current source has no elevation; add a
+  manual table for the Israeli cities (the 35 in the catalog, geonames
+  elevation, `dem` column), and leave the others without a value for now.
+  Jerusalem 754, Safed 900, Tiberias -200 (hebcal rejects a negative
+  elevation: pass 0).
+- `geoLocationOf(place, useElevation)`: `new GeoLocation(name, lat, lon, place.elevation ?? 0, tzid)`;
+  `new Zmanim(gloc, day, useElevation)` with `useElevation = opinion === "ovadia" && place.elevation !== undefined`.
+  Caution: `chatzot()` stays at sea level in hebcal, and the angles (dawn,
+  degree-based tsét) do not depend on elevation; only sunrise, sunset and
+  everything derived from them move. `getTemporalHourByDeg` is not
+  affected.
+- Device position: do not use the GPS elevation (imprecise, often zero on
+  the web); the nearest city (`nearestCity`) can lend its own if it is
+  within `IN_CITY_KM`.
+- `zmanim.disclaimer`: « niveau de la mer » ("sea level") becomes « niveau
+  de la mer, sauf pour l'avis du Rav Ovadia dans les villes d'Israël, qui
+  suit l'altitude du lieu » ("sea level, except for Rav Ovadia's opinion in
+  Israeli cities, which follows the location's elevation").
 
-Test : Jérusalem, 18 septembre 2026, avis Ovadia : chkia entre 4 et 5
-minutes plus tard qu'au niveau de la mer (18:41 devient environ 18:45), et
-le tsét, l'allumage et la fin de jeûne décalés d'autant ; avis Posen
-inchangé.
+Test: Jerusalem, September 18, 2026, Ovadia opinion: chkia between 4 and 5
+minutes later than at sea level (18:41 becomes about 18:45), and tsét,
+candle lighting and end of fast shifted by the same amount; Posen opinion
+unchanged.
 
-## 8. Birkat Halevana sur le molad (audit 3.10)
+## 8. Birkat Halevana based on the molad (audit 3.10)
 
-`src/services/zmanimService.ts` :
+`src/services/zmanimService.ts`:
 
 ```ts
-/** La fenêtre de la bénédiction de la lune pour le mois de `hd`. */
+/** The window for the blessing of the moon for the month of `hd`. */
 export function birkatHalevanaWindow(hd: HDate): { start: Date; end: Date };
 ```
 
-`start` = `new Molad(année, mois).getInstant()` + 7 jours ;
-`end` = molad + 14 jours 18 heures 22 minutes (la moitié de 29 j 12 h 793
-'halakim, Choul'han Aroukh Ora'h 'Haïm 426, 3, l'avis retenu par le Rav
-Ovadia Yossef). Vérifier d'abord la sémantique de `getInstant()` sur un molad
-publié (le molad de Tichri 5787 tel qu'annoncé au Chabbat Mevarekhim ; hebcal
-rend `2026-09-11T18:38:06Z`, à confronter à « vendredi 20 h 59 et 1 'helek »
-compté depuis 18 h la veille, temps de Jérusalem).
+`start` = `new Molad(année, mois).getInstant()` + 7 days;
+`end` = molad + 14 days 18 hours 22 minutes (half of 29 d 12 h 793
+'halakim, Choul'han Aroukh Ora'h 'Haïm 426, 3, the opinion adopted by Rav
+Ovadia Yossef). First check the semantics of `getInstant()` against a
+published molad (the molad of Tichri 5787 as announced on Chabbat
+Mevarekhim; hebcal returns `2026-09-11T18:38:06Z`, to be compared with
+"Friday 20:59 and 1 'helek" counted from 18:00 the day before, Jerusalem
+time).
 
-`saysBirkatHalevana(place, hd)` (signature élargie) : vrai si la nuit qui
-ouvre `hd`, c'est-à-dire `nightfallOf(place, hd.prev())`, est dans la
-fenêtre, avec les deux reports d'usage conservés (Av : pas avant la sortie
-de Tich'a beAv ; Tichri : pas avant la sortie de Kippour) et le tsét de
-l'avis suivi. `birkatHalevanaLastDay(place, hd)` : le dernier jour
-hébraïque dont la nuit d'ouverture précède `end`. Appelants :
-`BirkatHalevanaBanner.vue`, `hebrewOccasions.ts` (le commentaire de tête),
-le sidour s'il lit la bénédiction (`grep saysBirkatHalevana`).
+`saysBirkatHalevana(place, hd)` (widened signature): true if the night that
+opens `hd`, that is `nightfallOf(place, hd.prev())`, is within the window,
+with the two customary postponements kept (Av: not before the end of Tich'a
+beAv; Tichri: not before the end of Kippour) and the tsét of the followed
+opinion. `birkatHalevanaLastDay(place, hd)`: the last Hebrew day whose
+opening night precedes `end`. Callers: `BirkatHalevanaBanner.vue`,
+`hebrewOccasions.ts` (the header comment), the sidour if it reads the
+blessing (`grep saysBirkatHalevana`).
 
-Tests : Nissan 5787 à Paris, la nuit qui ouvre le 7 Nissan est permise
-(molad mardi 28 Adar II 14 h 07, plus 7 jours), la nuit qui ouvre le 14
-Nissan ne l'est plus (limite le 13 Nissan vers 8 h 30) ; Tichri 5787 : rien
-avant la nuit qui ouvre le 11, permis le 14.
+Tests: Nissan 5787 in Paris, the night that opens 7 Nissan is permitted
+(molad Tuesday 28 Adar II 14:07, plus 7 days), the night that opens 14
+Nissan no longer is (limit on 13 Nissan around 8:30 a.m.); Tichri 5787:
+nothing before the night that opens the 11th, permitted on the 14th.
 
-## 9. Calendrier : retirer ce qui n'est pas une fête (audit 3.11)
+## 9. Calendar: remove what is not a holiday (audit 3.11)
 
-`yearCalendar`, filtre sur `ev.basename()` avec les constantes
+`yearCalendar`, filter on `ev.basename()` with the constants
 `holidayDesc.LEIL_SELICHOT`, `holidayDesc.ROSH_HASHANA_LABEHEMOT`,
-`holidayDesc.CHAG_HABANOT` de `@hebcal/core` (exportées). Test : l'année
-5787 à Paris ne porte aucune des trois entrées ; 'Hanouka, Pourim, Tou
-biChvat, Lag ba'Omer y restent.
+`holidayDesc.CHAG_HABANOT` from `@hebcal/core` (exported). Test: the year
+5787 in Paris carries none of the three entries; 'Hanouka, Pourim, Tou
+biChvat, Lag ba'Omer remain.
 
-## 10. Kippour et Ta'anit Bekhorot (manques 4.4, 4.5)
+## 10. Kippour and Ta'anit Bekhorot (gaps 4.4, 4.5)
 
-- `RestTimes.vue` : quand `period.festivals` contient Kippour (reconnaître
-  l'événement par `flags.MAJOR_FAST` et `flags.CHAG` réunis dans
-  `restPeriodAt`, exposer `period.fastStarts: boolean`), la ligne d'entrée
-  s'intitule « Allumage et début du jeûne ». Clé
+- `RestTimes.vue`: when `period.festivals` contains Kippour (recognize the
+  event by `flags.MAJOR_FAST` and `flags.CHAG` together in `restPeriodAt`,
+  expose `period.fastStarts: boolean`), the start row is titled « Allumage
+  et début du jeûne » ("Candle lighting and start of the fast"). Key
   `zmanim.shabbat.candleLightingAndFast`.
-- `fastAt` : `FastPeriod.firstbornOnly: boolean` vrai pour Ta'anit Bekhorot
-  (`ev.basename() === "Ta'anit Bechorot"`, vérifier l'orthographe dans
-  `staticHolidays`). `ZmanimPage.vue` : ce jeûne ne passe jamais devant
-  (`fastFirst` faux) et son cadre porte la note « Jeûne des premiers-nés ;
-  un siyoum en dispense » (`zmanim.fast.noteFirstborn`). Le cadre du 'hamets
-  (PR 228) garde la première place ce jour-là.
+- `fastAt`: `FastPeriod.firstbornOnly: boolean` true for Ta'anit Bekhorot
+  (`ev.basename() === "Ta'anit Bechorot"`, check the spelling in
+  `staticHolidays`). `ZmanimPage.vue`: this fast never goes first
+  (`fastFirst` false) and its card carries the note « Jeûne des
+  premiers-nés ; un siyoum en dispense » ("Fast of the firstborn; a siyoum
+  exempts from it") (`zmanim.fast.noteFirstborn`). The 'hamets card (PR 228)
+  keeps first place that day.
 
-## 11. Livraison
+## 11. Delivery
 
-Chaque lot : commit en français, sans identifiant de modèle, message qui dit
-ce que l'utilisateur voit changer. Une PR par lot ou une PR pour les lots 1
-et 2 (touchent tous les avis), une pour le lot 3 (l'avis du Rav Ovadia), une
-pour 4, 5, 9, 10 (petits), une pour 6, une pour 7 et 8. Dans chaque
-description de PR : les heures avant et après sur Paris et Jérusalem pour un
-Chabbat, un jeûne et une fête, pour qu'un relecteur les pose à côté d'un
-luah.
+Each batch: commit in French, with no model identifier, a message that says
+what the user sees change. One PR per batch, or one PR for batches 1 and 2
+(they affect all opinions), one for batch 3 (Rav Ovadia's opinion), one for
+4, 5, 9, 10 (small), one for 6, one for 7 and 8. In each PR description: the
+times before and after for Paris and Jerusalem for a Chabbat, a fast and a
+holiday, so that a reviewer can set them next to a luah.
 
-Après le dernier lot, relancer la matrice de l'audit (59 lieux, 30 dates,
-trois fuseaux d'appareil : la méthode est décrite dans
-`docs/audit-horaires-2026-09.md`, section 1) et ajouter ses points fixes
-dans `zmanimInvariants.test.ts` : lever et coucher à moins de dix secondes
-des valeurs de référence pour cinq villes aux solstices et aux équinoxes.
+After the last batch, rerun the audit matrix (59 locations, 30 dates, three
+device time zones: the method is described in
+`docs/audit-horaires-2026-09.md`, section 1) and add its fixed points to
+`zmanimInvariants.test.ts`: sunrise and sunset within ten seconds of the
+reference values for five cities at the solstices and equinoxes.
