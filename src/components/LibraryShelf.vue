@@ -36,6 +36,12 @@ const props = withDefaults(
     books: ShelfBook[];
     /** Décalage de l'animation d'entrée : la 2e étagère se garnit après la 1re. */
     startIndex?: number;
+    /**
+     * Les places de la planche, quand elle n'est pas pleine : un volume seul
+     * sur la deuxième planche garde la largeur de ceux de la première, au
+     * lieu de s'étaler.
+     */
+    places?: number;
   }>(),
   { startIndex: 0 },
 );
@@ -83,7 +89,12 @@ const playIntro = shouldPlayShelfIntro();
 
 <template>
   <div class="shelf-wrap" :class="{ 'shelf-intro': playIntro }">
-    <div class="shelf-books" role="list">
+    <div
+      class="shelf-books"
+      :class="{ 'shelf-places': places }"
+      :style="places ? { '--places': places } : undefined"
+      role="list"
+    >
       <RouterLink
         v-for="(book, index) in books"
         :key="book.corpus"
@@ -204,16 +215,23 @@ const playIntro = shouldPlayShelfIntro();
 }
 
 .shelf-books {
+  --shelf-gap: 0.55rem;
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  gap: 0.55rem;
+  gap: var(--shelf-gap);
 }
 
 @media (min-width: 640px) {
   .shelf-books {
-    gap: 1rem;
+    --shelf-gap: 1rem;
   }
+}
+
+/* Une planche qui n'est pas pleine : chaque volume prend la largeur d'une
+   place, comme sur une planche garnie. */
+.shelf-places .book {
+  flex: 0 0 calc((100% - (var(--places) - 1) * var(--shelf-gap)) / var(--places));
 }
 
 .book {

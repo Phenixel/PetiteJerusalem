@@ -235,7 +235,7 @@ const isEtudeRoute = computed(() => route.params.corpus !== undefined);
 /** Corpus ayant leur page de bibliothèque (route `study-corpus`) : le retour
  * y ramène, plutôt qu'à l'accueil de la bibliothèque. Les textes de liturgie
  * (Sidour, Moadim, Brahot) remontent, eux, à la page du Sidour. */
-const LIBRARY_CORPORA = new Set(["tehilim", "michna", "talmud", "tanakh", "moussar"]);
+const LIBRARY_CORPORA = new Set(["tehilim", "michna", "talmud", "tanakh", "moussar", "halakha"]);
 const etudeEntry = computed<TextStudyJsonEntry | null>(() =>
   isEtudeRoute.value
     ? entryByCorpusSlug(String(route.params.corpus), String(route.params.slug))
@@ -977,15 +977,20 @@ const positionLabel = computed(() => {
 
 /**
  * "Chapitre 2 (ב) · 3e montée · verset 14" pour une position donnée ; dans la
- * Michna, "Chapitre 2 (ב) · michna 3".
+ * Michna, "Chapitre 2 (ב) · michna 3" ; dans la halakha, "Siman 242 · séif 1".
  */
 function placeLabel(sectionIndex: number | null, line: number): string {
-  const isMishna = String(textEntry.value?.type) === "Mishna";
+  const type = String(textEntry.value?.type);
   return describePlace(
     content.value?.sections ?? [],
     sectionIndex,
     line,
-    (n) => (isMishna ? t("textReading.mishnaN", { n }) : t("textReading.verseN", { n })),
+    (n) =>
+      type === "Mishna"
+        ? t("textReading.mishnaN", { n })
+        : type === "Halakha"
+          ? t("textReading.seifN", { n })
+          : t("textReading.verseN", { n }),
     headingLabel,
     (n) => t("textReading.passageN", { n }),
   );

@@ -5,6 +5,7 @@
  *   /bibliotheque/michna/{traite}        (hub) + /bibliotheque/michna/{traite}/{chapitre}
  *   /bibliotheque/talmud/{traite}        (hub) + /bibliotheque/talmud/{traite}/{chapitre}
  *   /bibliotheque/moussar/{livre}        (hub) + /bibliotheque/moussar/{livre}/{section}
+ *   /bibliotheque/halakha/{hilkhot}      (hub) + /bibliotheque/halakha/{hilkhot}/{siman}
  *
  * Le moussar est un rayon d'étude (sa page de liste, son livre sur l'étagère)
  * qu'on ne propose pas au partage de lecture, comme la liturgie. Ses numéros
@@ -12,6 +13,11 @@
  * s'ouvre sur son introduction, la section 0, puis ses chapitres gardent
  * leur numéro (1 à n) ; un sujet du Pélé Yoets garde son numéro dans tout le
  * livre (la lettre Beth va de 22 à 41). Voir loadMoussar dans textService.
+ *
+ * La halakha (Choulhan Aroukh, Kitsour Choulhan Aroukh) suit le même modèle :
+ * une entrée par groupe de lois (Hilkhot Chabbat), et chaque section porte
+ * le numéro de son siman dans le livre (/bibliotheque/halakha/hilkhot-chabbat/242).
+ * Voir loadHalakha dans textService.
  *
  * One canonical URL per piece of content (no more /lire ↔ /bibliotheque duplication).
  * The body markup is built here so it is shared by BOTH the build-time prerender
@@ -33,6 +39,7 @@ export type Corpus =
   | "michna"
   | "talmud"
   | "moussar"
+  | "halakha"
   | "moadim"
   | "brahot"
   | "sidour";
@@ -43,6 +50,7 @@ const TYPE_TO_CORPUS: Record<string, Corpus> = {
   Mishna: "michna",
   "Talmud Bavli": "talmud",
   Moussar: "moussar",
+  Halakha: "halakha",
   Moadim: "moadim",
   Brahot: "brahot",
   Sidour: "sidour",
@@ -54,6 +62,7 @@ const CORPUS_LABEL: Record<Corpus, string> = {
   michna: "Michna",
   talmud: "Talmud",
   moussar: "Moussar",
+  halakha: "Halakha",
   moadim: "Moadim",
   brahot: "Brahot",
   sidour: "Sidour",
@@ -75,9 +84,10 @@ export const isLiturgy = (entry: TextStudyJsonEntry): boolean =>
  * moussar, qui s'étudie à son rythme (un sujet du Pélé Yoets, une porte de
  * 'Hovot Halévavot) plutôt qu'il ne se répartit. Le moussar n'est pas pour
  * autant de la liturgie : marque-pages, reprise de lecture, numéros de
- * paragraphe et livres voisins restent les siens.
+ * paragraphe et livres voisins restent les siens. La halakha de même : un
+ * siman s'étudie, avec ses commentaires, plus qu'il ne se répartit.
  */
-const SOLO_CORPORA: ReadonlySet<Corpus> = new Set([...LITURGY_CORPORA, "moussar"]);
+const SOLO_CORPORA: ReadonlySet<Corpus> = new Set([...LITURGY_CORPORA, "moussar", "halakha"]);
 
 export const isShareable = (entry: TextStudyJsonEntry): boolean =>
   !SOLO_CORPORA.has(corpusOf(entry));
@@ -99,6 +109,7 @@ function baseSlug(entry: TextStudyJsonEntry): string {
   if (corpus === "talmud") return tractateSlug(tractateFromLink(entry.link));
   if (corpus === "michna") return tractateSlug(tractateFromLink(entry.link, true));
   if (corpus === "moussar") return moussarSlug(latinName(entry));
+  if (corpus === "halakha") return halakhaSlug(entry);
   return tractateSlug(latinName(entry)); // tanakh parasha / book
 }
 
@@ -147,6 +158,56 @@ function moussarSectionName(entry: TextStudyJsonEntry, section: TextSection): st
     ? `${book}, ${section.label}`
     : `${moussarName(entry)}, ${section.label}`;
 }
+
+/**
+ * Halakha : le Kitsour, qui reprend les noms des lois (Chabbat, Tefila),
+ * préfixe les siens pour ne pas les disputer au Choulhan Aroukh :
+ * « Hilkhot Chabbat » → hilkhot-chabbat, le Kitsour « Chabbat » →
+ * kitsour-chabbat.
+ */
+const isKitsour = (entry: TextStudyJsonEntry): boolean =>
+  latinLivre(entry.livre).startsWith("Kitsour");
+
+function halakhaSlug(entry: TextStudyJsonEntry): string {
+  const slug = moussarSlug(latinName(entry));
+  return isKitsour(entry) ? `kitsour-${slug}` : slug;
+}
+
+/**
+ * Halakha : le nom d'une entrée précédé de son livre (« Choulhan Aroukh,
+ * Hilkhot Chabbat », « Kitsour Choulhan Aroukh, Chabbat »). La partie du
+ * Choulhan Aroukh (Ora'h Hayim) n'y ajoute rien : les hilkhot la disent.
+ */
+function halakhaName(entry: TextStudyJsonEntry): string {
+  return `${isKitsour(entry) ? "Kitsour Choulhan Aroukh" : "Choulhan Aroukh"}, ${latinName(entry)}`;
+}
+
+/** Halakha : le numéro du siman d'une section, celui du livre. */
+const simanOf = (section: TextSection): number =>
+  section.heading?.kind === "siman" ? section.heading.n : section.index;
+
+/**
+ * Halakha : le titre d'une section, le siman sous son numéro (« Choulhan
+ * Aroukh, Hilkhot Chabbat, siman 242 ») ; son intitulé, en hébreu, reste
+ * dans la page.
+ */
+function halakhaSectionName(entry: TextStudyJsonEntry, section: TextSection): string {
+  return `${halakhaName(entry)}, siman ${simanOf(section)}`;
+}
+
+/** Ce que compte un livre de moussar ou de halakha, pour ses pages. */
+function bookUnit(entry: TextStudyJsonEntry): { one: string; many: string } {
+  if (corpusOf(entry) === "halakha") return { one: "siman", many: "Simanim" };
+  return moussarUnit(entry);
+}
+
+/** Le nom d'un livre de moussar ou de halakha, son ouvrage devant. */
+function bookName(entry: TextStudyJsonEntry): string {
+  return corpusOf(entry) === "halakha" ? halakhaName(entry) : moussarName(entry);
+}
+
+/** Le moussar et la halakha : des livres nommés par leur ouvrage, sans partage. */
+const isBookCorpus = (corpus: Corpus): boolean => corpus === "moussar" || corpus === "halakha";
 
 /**
  * Globally-unique slug per entry. A few entries share a name (e.g. two Tanakh
@@ -281,7 +342,7 @@ const READING_LEAD_SOLO =
 const READING_LEAD_MOUSSAR = "Texte intégral en hébreu, à étudier à son rythme.";
 
 export const readingLead = (entry: TextStudyJsonEntry): string =>
-  corpusOf(entry) === "moussar"
+  isBookCorpus(corpusOf(entry))
     ? READING_LEAD_MOUSSAR
     : isShareable(entry)
       ? READING_LEAD
@@ -299,11 +360,12 @@ export function sectionHeading(entry: TextStudyJsonEntry, section: TextSection):
   // n'apporteraient rien sur un texte unique.
   if (LITURGY_CORPORA.has(corpus)) return latinName(entry);
   if (corpus === "moussar") return moussarSectionName(entry, section);
+  if (corpus === "halakha") return halakhaSectionName(entry, section);
   return `${CORPUS_LABEL[corpus]} ${latinName(entry)}, ${section.label}`;
 }
 
 function hubHeading(entry: TextStudyJsonEntry): string {
-  if (corpusOf(entry) === "moussar") return moussarName(entry);
+  if (isBookCorpus(corpusOf(entry))) return bookName(entry);
   return `${CORPUS_LABEL[corpusOf(entry)]} ${latinName(entry)}`;
 }
 
@@ -323,6 +385,8 @@ export function sectionTitle(entry: TextStudyJsonEntry, section: TextSection): s
     return `${latinName(entry)} en hébreu et phonétique | Petite Jérusalem`;
   if (corpus === "moussar")
     return `${moussarSectionName(entry, section)} en hébreu | Petite Jérusalem`;
+  if (corpus === "halakha")
+    return `${halakhaSectionName(entry, section)} en hébreu | Petite Jérusalem`;
   return `${CORPUS_LABEL[corpus]} ${latinName(entry)} ${section.label} en hébreu et phonétique | Petite Jérusalem`;
 }
 
@@ -332,6 +396,13 @@ export function sectionDescription(entry: TextStudyJsonEntry, section: TextSecti
     // La phonétique, seulement là où le texte est vocalisé ('Hovot Halévavot).
     const how = section.he.some(hasNiqqud) ? "en hébreu vocalisé, avec la phonétique" : "en hébreu";
     return `Lisez ${moussarSectionName(entry, section)} ${how}. Texte intégral, à étudier à votre rythme.`;
+  }
+  if (corpus === "halakha") {
+    // Le Kitsour est vocalisé, le Choulhan Aroukh ne l'est pas ; ses
+    // commentaires (Michna Broura, Chakh...) s'ouvrent séif par séif.
+    const how = section.he.some(hasNiqqud) ? "en hébreu vocalisé, avec la phonétique" : "en hébreu";
+    const meforshim = isKitsour(entry) ? "" : ", avec ses commentaires séif par séif";
+    return `Lisez ${halakhaSectionName(entry, section)} ${how}${meforshim}. Texte intégral, à étudier à votre rythme.`;
   }
   const what =
     corpus === "tehilim"
@@ -351,15 +422,15 @@ export function sectionDescription(entry: TextStudyJsonEntry, section: TextSecti
 }
 
 export function hubTitle(entry: TextStudyJsonEntry): string {
-  if (corpusOf(entry) === "moussar")
-    return `${moussarName(entry)} en ligne, en hébreu | Petite Jérusalem`;
+  if (isBookCorpus(corpusOf(entry)))
+    return `${bookName(entry)} en ligne, en hébreu | Petite Jérusalem`;
   return `${CORPUS_LABEL[corpusOf(entry)]} ${latinName(entry)} en ligne (hébreu + phonétique) | Petite Jérusalem`;
 }
 
 export function hubDescription(entry: TextStudyJsonEntry): string {
-  if (corpusOf(entry) === "moussar") {
-    const { one } = moussarUnit(entry);
-    return `Lisez ${moussarName(entry)} en ligne, ${one} par ${one}, en hébreu. Texte intégral, à étudier à votre rythme.`;
+  if (isBookCorpus(corpusOf(entry))) {
+    const { one } = bookUnit(entry);
+    return `Lisez ${bookName(entry)} en ligne, ${one} par ${one}, en hébreu. Texte intégral, à étudier à votre rythme.`;
   }
   return `Lisez ${CORPUS_LABEL[corpusOf(entry)]} ${latinName(entry)} en ligne, chapitre par chapitre, en hébreu avec la phonétique. Texte intégral et partage de la lecture à plusieurs.`;
 }
@@ -372,7 +443,7 @@ function relatedLinksHtml(entry: TextStudyJsonEntry): string {
   const corpus = corpusOf(entry);
   const items: string[] = [];
   if (isMultiSection(entry)) {
-    const all = corpus === "moussar" ? moussarUnit(entry).many.toLowerCase() : "chapitres";
+    const all = isBookCorpus(corpus) ? bookUnit(entry).many.toLowerCase() : "chapitres";
     items.push(
       `<li><a href="${hubPath(entry)}">Tous les ${all} de ${esc(latinName(entry))}</a></li>`,
     );
@@ -404,7 +475,8 @@ export function buildSectionBody(
   note = "",
 ): string {
   const corpus = corpusOf(entry);
-  const numbered = (entry.totalSections ?? 1) > 1 || corpus === "tanakh";
+  // Un siman seul garde ses numéros de séif.
+  const numbered = (entry.totalSections ?? 1) > 1 || corpus === "tanakh" || corpus === "halakha";
 
   // Prev/next: adjacent chapter within a multi-section text, else adjacent entry.
   let nav = "";
@@ -462,10 +534,11 @@ export function buildHubBody(entry: TextStudyJsonEntry, content: TextContent): s
   const rows = content.sections
     .map((s) => `<li><a href="${sectionPath(entry, s.index)}">${esc(s.label)}</a></li>`)
     .join("\n        ");
-  // Moussar : des chapitres ou des sujets, et pas toujours de phonétique.
-  const moussar = corpusOf(entry) === "moussar" ? moussarUnit(entry) : null;
+  // Moussar et halakha : des chapitres, des sujets ou des simanim, et pas
+  // toujours de phonétique.
+  const moussar = isBookCorpus(corpusOf(entry)) ? bookUnit(entry) : null;
   const lead = moussar
-    ? `Lisez ${esc(moussarName(entry))} en ligne, ${moussar.one} par ${moussar.one}, en hébreu.`
+    ? `Lisez ${esc(bookName(entry))} en ligne, ${moussar.one} par ${moussar.one}, en hébreu.`
     : `Lisez ${esc(CORPUS_LABEL[corpusOf(entry)])} ${esc(latinName(entry))} en ligne, chapitre par
       chapitre, en hébreu avec la phonétique.`;
   return `
@@ -556,11 +629,18 @@ export function hubJsonLd(entry: TextStudyJsonEntry): Record<string, unknown>[] 
 // anciennes adresses y sont redirigées (firebase.json).
 
 /** Les corpus qui ont une page de liste dans la bibliothèque : l'étude. */
-export type ListedCorpus = "tehilim" | "michna" | "talmud" | "tanakh" | "moussar";
+export type ListedCorpus = "tehilim" | "michna" | "talmud" | "tanakh" | "moussar" | "halakha";
 
 export const corpusPath = (corpus: ListedCorpus): string => `${ETUDE}/${corpus}`;
 
-export const LISTED_CORPORA: ListedCorpus[] = ["tehilim", "michna", "talmud", "tanakh", "moussar"];
+export const LISTED_CORPORA: ListedCorpus[] = [
+  "tehilim",
+  "michna",
+  "talmud",
+  "tanakh",
+  "moussar",
+  "halakha",
+];
 
 const isListedCorpus = (corpus: Corpus): corpus is ListedCorpus =>
   (LISTED_CORPORA as Corpus[]).includes(corpus);
@@ -621,6 +701,14 @@ const CORPUS_SEO: Record<ListedCorpus, CorpusSeo> = {
     h1: "Moussar : 'Hovot Halévavot et Pélé Yoets",
     lead: "Le travail des midot, livre par livre : 'Hovot Halévavot de Rabbénou Ba'hya, l'introduction de l'auteur puis ses dix portes, chapitre par chapitre, en hébreu vocalisé avec la phonétique ; le Pélé Yoets de Rabbi Eliezer Papo, ses sujets rangés de Aleph à Tav, chacun sur sa page.",
     listLabel: "Tous les livres de moussar",
+  },
+  halakha: {
+    title: "Halakha : Choulhan Aroukh et Kitsour en hébreu | Petite Jérusalem",
+    description:
+      "La halakha en hébreu : le Choulhan Aroukh loi par loi, avec la Michna Broura, le Chakh, le Taz et les autres commentaires séif par séif, et le Kitsour Choulhan Aroukh vocalisé.",
+    h1: "Halakha : Choulhan Aroukh et Kitsour Choulhan Aroukh",
+    lead: "Le Choulhan Aroukh de Rabbi Yossef Karo, avec les gloses du Rama : Ora'h Hayim, Yoré Déa, Even Haezer et Hochen Michpat, rangés par lois (Hilkhot Chabbat, Hilkhot Pessa'h...), siman par siman, et pour chaque séif ses commentaires. Puis le Kitsour Choulhan Aroukh de Rabbi Chlomo Ganzfried, en hébreu vocalisé avec la phonétique.",
+    listLabel: "Tous les livres de halakha",
   },
 };
 

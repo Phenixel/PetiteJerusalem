@@ -1,6 +1,6 @@
 import { useI18n } from "vue-i18n";
 import type { SectionHeading, TextBlock, TextSection } from "../services/textService";
-import { formatNumberWithHebrew } from "../services/hebrewNumerals";
+import { formatNumberWithHebrew, toHebrewNumeral } from "../services/hebrewNumerals";
 
 /**
  * Les titres des divisions d'un texte (« Chapitre 2 (ב) », « Daf 2a à 5b »)
@@ -40,6 +40,14 @@ export function useTextLabels() {
         return t("textReading.labels.introduction");
       case "topic":
         return t("textReading.labels.topic", { n: heading.n, title: heading.title });
+      // Halakha : le siman sous son numéro (en lettres pour qui lit l'hébreu),
+      // et son intitulé quand la source en donne un.
+      case "siman": {
+        const n = locale.value === "he" ? toHebrewNumeral(heading.n) : heading.n;
+        return heading.title
+          ? t("textReading.labels.siman", { n, title: heading.title })
+          : t("textReading.labels.simanAlone", { n });
+      }
     }
   }
 
