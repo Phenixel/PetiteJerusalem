@@ -12,8 +12,8 @@
  *
  * Elles vivent doucement, comme une vraie lumière : la flamme vacille, le
  * halo respire, les étoiles scintillent, les rayons du soleil et de l'aube
- * tournent lentement, le phare balaie, la galaxie se balance, la coque de la
- * supernova s'éloigne, les jets du quasar pulsent. C'est l'exception admise
+ * tournent lentement, le phare balaie, les bras de la galaxie tournent, la
+ * coque de la supernova s'éloigne, les jets du quasar tournent en pulsant. C'est l'exception admise
  * à « Le mouvement répond à un geste » (docs/design.md) ; elle se coupe en
  * mouvement réduit et en rendu allégé (`perf-lite`), où la lumière reste
  * posée, entière.
@@ -62,18 +62,19 @@ function burst(n: number, outer: number, inner: number, turn = 0): string {
   return `M${points.join("L")}Z`;
 }
 
-/** Un bras de la galaxie : une spirale vue de biais, inclinée. */
+/**
+ * Un bras de la galaxie : une spirale tracée dans le plan de son disque,
+ * autour de (0, 0). Le dessin la couche et l'incline (vue de biais), pour
+ * qu'elle puisse tourner dans ce plan, comme une vraie galaxie.
+ */
 function arm(offset: number): string {
-  const tilt = (-15 * Math.PI) / 180;
   const points: string[] = [];
   for (let i = 0; i <= 44; i++) {
     const theta = 0.35 + (i / 44) * 3 * Math.PI;
     const r = 2.4 + 3 * theta;
     const x = r * Math.cos(theta + offset);
-    const y = r * Math.sin(theta + offset) * 0.5;
-    const rx = x * Math.cos(tilt) - y * Math.sin(tilt);
-    const ry = x * Math.sin(tilt) + y * Math.cos(tilt);
-    points.push(`${(40 + rx).toFixed(2)} ${(31 + ry).toFixed(2)}`);
+    const y = r * Math.sin(theta + offset);
+    points.push(`${x.toFixed(2)} ${y.toFixed(2)}`);
   }
   return `M${points.join("L")}`;
 }
@@ -306,27 +307,33 @@ const NOVA = {
         class="glow"
         fill="#b9a8f0"
       />
-      <g class="sway" style="transform-origin: 40px 31px">
-        <path
-          v-for="(d, i) in GALAXY_ARMS"
-          :key="`wide-${i}`"
-          :d="d"
-          fill="none"
-          stroke="#c9bdf5"
-          stroke-width="6"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        />
-        <path
-          v-for="(d, i) in GALAXY_ARMS"
-          :key="`thin-${i}`"
-          :d="d"
-          fill="none"
-          stroke="#7e6cd6"
-          stroke-width="2.2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-        />
+      <!-- Le disque vu de biais : couché de moitié, incliné de 15 degrés. Les
+           bras y tournent, leurs pointes en arrière. -->
+      <g transform="translate(40 31) rotate(-15) scale(1 0.5)">
+        <g class="arms">
+          <path
+            v-for="(d, i) in GALAXY_ARMS"
+            :key="`wide-${i}`"
+            :d="d"
+            fill="none"
+            stroke="#c9bdf5"
+            stroke-width="7"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+          <path
+            v-for="(d, i) in GALAXY_ARMS"
+            :key="`thin-${i}`"
+            :d="d"
+            fill="none"
+            stroke="#7e6cd6"
+            stroke-width="2.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
+        </g>
+      </g>
+      <g>
         <ellipse cx="40" cy="31" rx="7.5" ry="5" transform="rotate(-15 40 31)" fill="#ffe39a" />
         <ellipse cx="40" cy="31" rx="4" ry="2.6" transform="rotate(-15 40 31)" fill="#fffaf0" />
         <circle
@@ -335,6 +342,8 @@ const NOVA = {
           :cx="x"
           :cy="y"
           :r="r"
+          class="twinkle"
+          :style="{ animationDelay: `${-0.6 * i}s` }"
           fill="#9d8fe0"
         />
       </g>
@@ -360,14 +369,16 @@ const NOVA = {
       <circle v-for="([x, y], i) in NOVA.sparks" :key="i" :cx="x" :cy="y" r="1.3" fill="#e8794a" />
     </template>
 
-    <!-- Le quasar : son disque qui tourne, ses deux jets, son cœur. -->
+    <!-- Le quasar : son disque, ses deux jets qui tournent autour du cœur. -->
     <template v-else-if="light === 'quasar'">
       <g transform="rotate(-12 40 31)">
-        <g class="jet">
-          <path d="M40 31L37.4 1.5L42.6 1.5Z" fill="#7fb3ef" />
-          <path d="M40 31L37.4 60.5L42.6 60.5Z" fill="#7fb3ef" />
-          <path d="M40 31L39.3 5L40.7 5Z" fill="#dbeafe" />
-          <path d="M40 31L39.3 57L40.7 57Z" fill="#dbeafe" />
+        <g class="turn turn-jets" style="transform-origin: 40px 31px">
+          <g class="jet">
+            <path d="M40 31L37.4 1.5L42.6 1.5Z" fill="#7fb3ef" />
+            <path d="M40 31L37.4 60.5L42.6 60.5Z" fill="#7fb3ef" />
+            <path d="M40 31L39.3 5L40.7 5Z" fill="#dbeafe" />
+            <path d="M40 31L39.3 57L40.7 57Z" fill="#dbeafe" />
+          </g>
         </g>
         <circle cx="40" cy="31" r="13" class="glow" fill="#bcd7f7" />
         <ellipse cx="40" cy="31" rx="28" ry="6.5" fill="#e07b39" />
@@ -449,10 +460,14 @@ const NOVA = {
 .turn-slow {
   animation-duration: 90s;
 }
-/* La galaxie se balance. */
-.sway {
+.turn-jets {
+  animation-duration: 16s;
+}
+/* Les bras de la galaxie tournent dans leur disque, pointes en arrière. */
+.arms {
   transform-box: view-box;
-  animation: galaxy-sway 9s ease-in-out infinite alternate;
+  transform-origin: 0 0;
+  animation: arms-turn 24s linear infinite;
 }
 /* L'éclat de la supernova bat. */
 .pulse {
@@ -521,12 +536,9 @@ const NOVA = {
     transform: rotate(360deg);
   }
 }
-@keyframes galaxy-sway {
-  from {
-    transform: rotate(-6deg);
-  }
+@keyframes arms-turn {
   to {
-    transform: rotate(6deg);
+    transform: rotate(-360deg);
   }
 }
 @keyframes nova-pulse {

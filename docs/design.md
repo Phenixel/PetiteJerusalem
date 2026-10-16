@@ -1872,9 +1872,10 @@ premier jour au bout d'une année. Tenu par `parcoursLights.test.ts`.
 - **Elles vivent doucement**, partout où elles sont (accueil, Mon parcours,
   profil, « Mes lumières », la feuille d'une lumière gagnée) : la flamme
   vacille, le halo respire, les étoiles scintillent, les rayons du soleil et
-  de l'aube tournent lentement, le phare balaie d'un faisceau à l'autre, la
-  galaxie se balance, la coque de la supernova s'éloigne et son éclat bat,
-  les jets du quasar pulsent. C'est une exception voulue à « Le mouvement
+  de l'aube tournent lentement, le phare balaie d'un faisceau à l'autre, les
+  bras de la galaxie tournent dans leur disque vu de biais (pointes en
+  arrière), la coque de la supernova s'éloigne et son éclat bat, les jets du
+  quasar tournent autour de son cœur en pulsant. C'est une exception voulue à « Le mouvement
   répond à un geste » : une lumière qui ne vacille pas a l'air éteinte. Le
   mouvement reste lent et petit, une lumière encore à gagner reste immobile,
   et tout se fige en mouvement réduit et en rendu allégé (`perf-lite`), sur
