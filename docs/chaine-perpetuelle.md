@@ -8,7 +8,7 @@ anything there: you entrust a name to it.
 
 The screens are in the proposal's canvas (sharing home, chain page,
 « Proposer un nom » ("Propose a name") dialog, reading, session creation);
-their appearance rules are in `docs/design.md`, « La chaîne perpétuelle ».
+their appearance rules are in `docs/design.md`, "The perpetual chain".
 
 ## What the reader sees
 

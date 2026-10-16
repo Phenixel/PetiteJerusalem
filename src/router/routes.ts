@@ -157,7 +157,7 @@ export default [
     name: "profile",
     // Deux pages sous une adresse : le site garde son menu latéral, l'app a
     // sa page de réglages rangée en lignes et en sous-pages (voir
-    // docs/design.md, « Le profil de l'app est une liste, pas un menu »).
+    // docs/design.md, « The app profile is a list, not a menu »).
     component: isNativeApp ? NativeProfileHome : ProfilePage,
     // App native : la page sert aussi de page de réglages, accessible sans
     // compte (langue, thème, polices, à propos), et ces réglages sont locaux :

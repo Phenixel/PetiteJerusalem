@@ -7,7 +7,7 @@ a version. CLAUDE.md points here.
 The note comes from the description of the GitHub release for the `vX.Y.Z`
 tag: the CI sends each section to the language of the same name, on the
 Play Store (fr-FR, en-US, iw-IL) and on the App Store (fr-FR, en-US, he).
-See `docs/android-ci-cd.md`, section « Notes de version en trois langues ».
+See `docs/android-ci-cd.md`, section "Release notes in three languages".
 The same text becomes a « Mise à jour » ("Update") information item in the
 app and on the site when the release is published
 (`.github/workflows/release-info.yml`, see `docs/backoffice-cli.md`).

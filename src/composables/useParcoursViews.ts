@@ -431,7 +431,7 @@ export function useParcoursViews() {
   }
 
   /**
-   * Le volume d'un objectif (docs/design.md, « Un objectif, un volume ») : sa
+   * Le volume d'un objectif (docs/design.md, « One goal, one volume ») : sa
    * taille dit sa longueur (un traité seul, un petit livre ; plusieurs
    * sedarim, un volume épais ; tout le corpus, le plus gros), son titre ce
    * qu'on a pris, sur une ou deux lignes.

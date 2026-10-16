@@ -210,7 +210,7 @@ entry point, and `auto_scroll_stopped.duration_ms` already reveals the
 unintended starts. `password_reset_requested` awaits the forgotten-password
 flow, which does not exist yet. The address of app replays
 (`https://localhost/`) still needs to be rewritten. Event details are in
-`docs/tracking-plan.md`, « Ajouts d'octobre 2026 » ("October 2026
+`docs/tracking-plan.md`, "October 2026 additions" ("October 2026
 additions"). Also remaining is 5.1, which is settled in PostHog rather than
 in the code.
 

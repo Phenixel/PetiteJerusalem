@@ -74,7 +74,7 @@ const played = new Set<string>();
  * Sli'hot, le loulav et l'etrog de Souccot, la gerbe du 'Omer (les dessins
  * sont dans components/art). Il tranche sur le reste de la page par ses
  * couleurs, celles de l'objet, en aplats et sans dégradé (voir
- * docs/design.md, « Une carte mise en avant peut porter son objet »).
+ * docs/design.md, « A highlighted card can carry its object »).
  *
  * Il se pose dans le coin de fin de ligne de la carte (la droite en
  * français, la gauche en hébreu), derrière le texte, et ne sort de la carte

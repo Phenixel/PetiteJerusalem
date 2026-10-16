@@ -472,7 +472,7 @@ the computation is local, the coordinates stay in `localStorage`.
 
 The phone responds to the finger when a task is done, undone, or when a
 gesture crosses its threshold (`src/services/haptics.ts`, vocabulary in
-`docs/design.md`, « Le toucher répond »). The `@capacitor/haptics` plugin
+`docs/design.md`, "Touch answers"). The `@capacitor/haptics` plugin
 itself declares the `VIBRATE` permission on Android (a normal permission,
 nothing to request); on iOS, it goes through the system's feedback
 generators, which follow the device's « Retours haptiques » ("Haptic

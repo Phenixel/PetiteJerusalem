@@ -17,7 +17,7 @@
  *  - mon compte : sécurité, déconnexion ;
  *  - aide et informations : ce que le pied de page du site porte.
  *
- * Voir docs/design.md, « Le profil de l'app est une liste, pas un menu ».
+ * Voir docs/design.md, « The app profile is a list, not a menu ».
  */
 import { computed, defineAsyncComponent, onMounted, onUnmounted, ref } from "vue";
 import { useI18n } from "vue-i18n";

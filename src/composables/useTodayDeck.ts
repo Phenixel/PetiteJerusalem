@@ -31,7 +31,7 @@ import { useZmanimLocation } from "./useZmanimLocation";
 
 /**
  * Le paquet de l'accueil : les cartes d'aujourd'hui, dans l'ordre où elles se
- * présentent (docs/design.md, « Le paquet de l'accueil »).
+ * présentent (docs/design.md, « The home page deck »).
  *
  * Une carte dit son moment (« Ce matin », « Maintenant » pour l'office de
  * l'heure), son nom, et jusqu'à quand ou à partir de quand pour un office.

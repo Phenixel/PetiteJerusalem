@@ -161,7 +161,7 @@ introduction (51 downloads started over the same period).
 ## Profile
 
 The website and the app do not have the same profile (see docs/design.md,
-« Le profil de l'app est une liste, pas un menu »): a side menu on the
+"The app profile is a list, not a menu"): a side menu on the
 website, a list of rows and sub-pages in the app. Both send the same events,
 with the same values; `app_platform` separates them.
 
@@ -195,7 +195,7 @@ shows the day) sends it, with or without an account; on the website, the
 
 The « 'Hazara » button, at the end of an 'Amida that the 'hazan repeats: it
 goes back to the start of the 'Amida, with the 'hazan's passages expanded
-(see docs/design.md, « La 'hazara repart du début de la 'Amida »). No
+(see docs/design.md, "The 'hazara starts again from the beginning of the 'Amida"). No
 property of its own: `$current_url` gives the service. It tells whether the
 button is found, and whether it serves the communal service rather than
 praying alone.
@@ -248,7 +248,7 @@ checkbox is used, and how far into the week the reading goes.
 ## Sidour and Study (October 2026)
 
 The app's bottom bar becomes Home, Sidour, Times, Study, Profile (see
-`docs/design.md`, « Le Sidour s'ouvre sur le moment »). Nothing is renamed or
+`docs/design.md`, "The Sidour opens on the moment"). Nothing is renamed or
 removed: two events are added for the new page, and a few properties gain one
 more value.
 
@@ -579,7 +579,7 @@ as for the library.
 | `arrow_streak` | the arrows tapped in a row, 0 outside the arrows |
 
 On the third consecutive tap on an arrow, the `zmanim-date` tip is triggered
-(see docs/design.md, « Une astuce se joue sur la page, une fois »).
+(see docs/design.md, "A tip plays out on the page, once").
 
 #### `zmanim_location_requested` (existing)
 
@@ -627,7 +627,7 @@ connexion dit quoi faire »).
 #### `password_reset_opened` (new)
 
 « Mot de passe oublié ? » ("Forgot password?") tapped under the password
-field (docs/design.md, « L'écran de connexion dit quoi faire »).
+field (docs/design.md, "The sign-in screen says what to do").
 
 | Property | Values |
 | --- | --- |

@@ -7,7 +7,7 @@ reading has been folded into it: its texts and its calendar readings are
 objectives like any other.
 
 This document explains how it is built. The design is in `docs/design.md`
-(« Mon parcours : le mur se bâtit en pierres, et seulement lui » and the
+("Mon parcours: the wall is built in stones, and only it" and the
 following sections), audience tracking in `docs/tracking-plan.md`
 (« Mon parcours »).
 

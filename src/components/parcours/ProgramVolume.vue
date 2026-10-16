@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * Un volume de l'étagère de Mon parcours : un objectif, un volume (voir
- * docs/design.md, « Un objectif, un volume »).
+ * docs/design.md, « One goal, one volume »).
  *
  * Tous les volumes ont la même couverture, pour se tenir droits côte à côte
  * sur la planche ; c'est leur **épaisseur** qui dit leur longueur : un traité
