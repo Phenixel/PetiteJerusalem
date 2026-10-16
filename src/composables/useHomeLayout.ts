@@ -2,13 +2,14 @@ import { ref } from "vue";
 import { devicePreference } from "../services/devicePreference";
 
 /**
- * L'accueil à son goût (P2-AccueilModifier) : l'ordre des blocs sous le
- * paquet du jour, qui reste toujours en tête, et ceux qu'on a masqués. On y
- * arrive par un appui long sur un bloc, ou par « Modifier l'accueil » en bas
- * de page. Un bloc qui n'a rien à dire s'efface de lui-même, rangé ou non.
+ * The home page to one's liking (P2-AccueilModifier): the order of the blocks
+ * under the day's deck, which always stays first, and the ones hidden. They
+ * are arranged in place, on the home page itself (useHomeArrange), opened by
+ * a long press on a block or by « Modifier l'accueil » at the bottom of the
+ * page. A block with nothing to say disappears on its own, placed or not.
  *
- * Un réglage de l'appareil, comme la taille du texte : l'accueil d'un
- * téléphone n'est pas celui d'un ordinateur.
+ * A device setting, like the text size: a phone's home page is not a
+ * computer's.
  */
 export type HomeBlock = "volumes" | "horaires" | "portes" | "reprendre" | "dates";
 
@@ -31,22 +32,42 @@ export const DEFAULT_LAYOUT: HomeLayout = {
   hidden: ["reprendre"],
 };
 
-/**
- * Glisser un bloc : la place où il serait posé, d'après le chemin du doigt,
- * un pas par bloc. Tenu par src/__tests__/homeLayout.test.ts.
- */
-export function dropIndex(from: number, dy: number, step: number, count: number): number {
-  return Math.max(0, Math.min(count - 1, from + Math.round(dy / step)));
+/** A tile's box on screen, in viewport pixels; `wide` when it spans the row. */
+export interface TileBox {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+  wide: boolean;
 }
 
 /**
- * Pendant le glissé, de combien de places un autre bloc s'écarte pour
- * laisser voir la place du bloc tenu : -1 (il remonte), 0, ou 1 (il descend).
+ * Dragging a block on the home page: the place it takes, given the pointer.
+ * It takes the place of the tile under the pointer once the pointer has
+ * passed that tile's middle in the direction of travel (down or along the
+ * row, mirrored in Hebrew); otherwise it stays at `from`. Past the middle,
+ * the tile moves aside and the pointer lands back in the held block's own
+ * place, so nothing flips back and forth. Held by
+ * src/__tests__/homeLayout.test.ts.
  */
-export function makeRoom(index: number, from: number, to: number): number {
-  if (from < to && index > from && index <= to) return -1;
-  if (from > to && index >= to && index < from) return 1;
-  return 0;
+export function pickSlot(
+  x: number,
+  y: number,
+  from: number,
+  boxes: readonly TileBox[],
+  rtl = false,
+): number {
+  for (const [index, box] of boxes.entries()) {
+    if (index === from) continue;
+    if (x < box.left || x > box.left + box.width || y < box.top || y > box.top + box.height)
+      continue;
+    const past = box.wide
+      ? y - (box.top + box.height / 2)
+      : (rtl ? -1 : 1) * (x - (box.left + box.width / 2));
+    if (index > from && past > 0) return index;
+    if (index < from && past < 0) return index;
+  }
+  return from;
 }
 
 const isBlock = (value: unknown): value is HomeBlock =>

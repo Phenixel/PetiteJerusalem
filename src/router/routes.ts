@@ -34,7 +34,6 @@ const SerieChiourimPage = () => import("../views/Chiourim/SerieChiourimPage.vue"
 const TextReadingPage = () => import("../views/TextReading/TextReadingPage.vue");
 const StudyPage = () => import("../views/StudyPage.vue");
 const SidourPage = () => import("../views/SidourPage.vue");
-const HomeEditPage = () => import("../views/HomeEditPage.vue");
 const ParcoursPage = () => import("../views/Parcours/ParcoursPage.vue");
 const MurPage = () => import("../views/Parcours/MurPage.vue");
 const LectureDuJourPage = () => import("../views/Parcours/LectureDuJourPage.vue");
@@ -229,13 +228,12 @@ export default [
     name: "parcours-day",
     redirect: "/",
   },
-  // L'accueil à son goût : l'ordre des blocs, ceux qu'on masque. Un réglage
-  // de l'appareil ; sur le site, comme le tableau de bord, pour un compte.
+  // The home page to one's liking is now arranged in place, on the home page
+  // itself: the old address opens it in edit mode, for links kept.
   {
     path: "/accueil/modifier",
     name: "home-edit",
-    meta: { requiresAuth: !isNativeApp, offlineOk: isNativeApp },
-    component: HomeEditPage,
+    redirect: { path: "/", query: { modifier: "1" } },
   },
   // Mon parcours : programmes, habitudes, la journée et le mur. Dans l'app,
   // tout marche sans compte, sur l'appareil, et sans réseau ; sur le site,

@@ -45,18 +45,30 @@ describe("l'accueil à son goût", () => {
     expect(layout.hidden).toEqual(["dates", "reprendre"]);
   });
 
-  it("pendant le glissé, montre où le bloc sera posé et écarte les autres", async () => {
-    const { dropIndex, makeRoom } = await import("../composables/useHomeLayout");
-    // Un pas de 96 : la place change à mi-chemin d'un bloc, et ne sort pas de la liste.
-    expect(dropIndex(1, 40, 96, 4)).toBe(1);
-    expect(dropIndex(1, 50, 96, 4)).toBe(2);
-    expect(dropIndex(1, -200, 96, 4)).toBe(0);
-    expect(dropIndex(1, 900, 96, 4)).toBe(3);
-    // Descendu de la place 1 à la 3 : les blocs 2 et 3 remontent d'un cran.
-    expect([0, 1, 2, 3].map((i) => makeRoom(i, 1, 3))).toEqual([0, 0, -1, -1]);
-    // Remonté de la place 3 à la 0 : les blocs 0 à 2 descendent d'un cran.
-    expect([0, 1, 2, 3].map((i) => makeRoom(i, 3, 0))).toEqual([1, 1, 1, 0]);
-    // Sur place : personne ne bouge.
-    expect([0, 1, 2, 3].map((i) => makeRoom(i, 2, 2))).toEqual([0, 0, 0, 0]);
+  it("while dragging, a block takes a tile's place past its middle, and only then", async () => {
+    const { pickSlot } = await import("../composables/useHomeLayout");
+    // Three full-width tiles stacked, 100 high with a gap of 20.
+    const column = [0, 120, 240].map((top) => ({
+      left: 0,
+      top,
+      width: 300,
+      height: 100,
+      wide: true,
+    }));
+    // Held at 0, over the top half of tile 1: it stays; past its middle: it takes 1.
+    expect(pickSlot(150, 160, 0, column)).toBe(0);
+    expect(pickSlot(150, 180, 0, column)).toBe(1);
+    // Held at 2, moving up: it takes 1 above its middle only.
+    expect(pickSlot(150, 180, 2, column)).toBe(2);
+    expect(pickSlot(150, 160, 2, column)).toBe(1);
+    // Between two tiles, or outside them: it stays.
+    expect(pickSlot(150, 110, 0, column)).toBe(0);
+    expect(pickSlot(400, 180, 0, column)).toBe(0);
+
+    // Two half tiles side by side: along the row, mirrored in Hebrew.
+    const row = [0, 160].map((left) => ({ left, top: 0, width: 140, height: 100, wide: false }));
+    expect(pickSlot(200, 50, 0, row)).toBe(0);
+    expect(pickSlot(250, 50, 0, row)).toBe(1);
+    expect(pickSlot(200, 50, 0, row, true)).toBe(1);
   });
 });
