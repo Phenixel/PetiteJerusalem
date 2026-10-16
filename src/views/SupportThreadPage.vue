@@ -258,14 +258,18 @@ async function sendReply() {
           {{ t("support.thread.notFound") }}
         </p>
 
-        <SupportConversation v-else-if="thread" :messages="thread.messages" viewer="user">
-          <!-- L'état du fil, dit comme une ligne de la messagerie. -->
-          <p
-            class="mx-auto max-w-[85%] rounded-pill bg-black/5 px-3.5 py-1.5 text-center text-xs text-text-secondary dark:bg-white/10"
-          >
-            {{ t(`support.thread.statusHelp.${thread.status}`) }}
-          </p>
-        </SupportConversation>
+        <!-- Un fil court se pose en bas, contre la barre d'écriture, comme
+             dans une messagerie ; un long remplit l'écran et défile. -->
+        <div v-else-if="thread" class="flex min-h-full flex-col justify-end">
+          <SupportConversation :messages="thread.messages" viewer="user">
+            <!-- L'état du fil, dit comme une ligne de la messagerie. -->
+            <p
+              class="mx-auto max-w-[85%] rounded-pill bg-black/5 px-3.5 py-1.5 text-center text-xs text-text-secondary dark:bg-white/10"
+            >
+              {{ t(`support.thread.statusHelp.${thread.status}`) }}
+            </p>
+          </SupportConversation>
+        </div>
       </div>
 
       <!-- La barre pour écrire, fixée en bas. -->

@@ -976,7 +976,8 @@ personne sont gardés.
 - **La page d'un fil est une messagerie.** Dans l'app, elle prend tout
   l'écran, barre du bas comprise : un en-tête fixe (retour, sujet sur une
   ligne, nature et état dessous, « Détails »), le fil qui défile seul et
-  s'ouvre sur le dernier message, et la barre pour écrire fixée en bas (un
+  s'ouvre sur le dernier message (un fil court se pose en bas, contre la
+  barre d'écriture), et la barre pour écrire fixée en bas (un
   champ arrondi qui grandit avec le texte jusqu'à six lignes, le bouton rond
   d'envoi à côté), qui reste au-dessus du clavier. Sur le site, la même
   messagerie tient dans une carte de la page. Il n'y a pas de cadre d'état
