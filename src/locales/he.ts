@@ -1159,7 +1159,6 @@ const he: LocaleMessages = {
   },
   /* שרשרת התהילים התמידית (ראו docs/chaine-perpetuelle.md). */
   perpetual: {
-    alwaysOpen: "פתוחה תמיד",
     continuous: "קריאה רציפה",
     cycle: "סבב {n}",
     homeText: "ברגע שהפרק האחרון נקרא, היא מתחילה מחדש מהראשון.",
@@ -2574,6 +2573,17 @@ const he: LocaleMessages = {
     searchAllPlaceholder: "חיפוש בכל הטקסטים…",
     noResults: "לא נמצא טקסט תואם.",
     sections: "{count} פרקים",
+    halakhaWorks: {
+      choulhanAroukh: {
+        name: "שולחן ערוך",
+        desc: "רבי יוסף קארו, עם הגהות הרמ״א: אורח חיים, יורה דעה, אבן העזר וחושן משפט, הלכה אחר הלכה, עם המפרשים.",
+      },
+      kitsour: {
+        name: "קיצור שולחן ערוך",
+        desc: "רבי שלמה גנצפריד: הלכה לכל יום, מהשכמת הבוקר ועד האבלות, בניקוד.",
+      },
+      simanim: "{n} סימנים",
+    },
     textsCount: "טקסט אחד | {count} טקסטים",
     range: "{from} עד {to}",
     inSidour: "בסידור",

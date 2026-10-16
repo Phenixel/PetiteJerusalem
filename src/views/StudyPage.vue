@@ -14,6 +14,10 @@ import {
   corpusDescription,
   latinName,
   LISTED_CORPORA,
+  HALAKHA_WORKS,
+  halakhaWorkOfLivre,
+  isHalakhaWork,
+  type HalakhaWork,
   type ListedCorpus,
 } from "../content/etudeTexts";
 import { isNativeApp } from "../composables/useNativeApp";
@@ -165,6 +169,57 @@ const currentCorpus = computed(
   () => CORPUS_META.find((c) => c.corpus === String(route.params.corpus ?? "")) ?? null,
 );
 
+// --- Les livres de la halakha ---
+// Le rayon compte plus de cent cinquante groupes de lois : sa page montre
+// d'abord ses livres, une carte chacun, et la liste d'un livre s'ouvre à
+// part (/bibliotheque/halakha?livre=kitsour), rangée par parties comme les
+// autres. Une recherche, elle, parcourt tout le rayon.
+const HALAKHA_WORK_META: Record<HalakhaWork, { nameKey: string; descKey: string; hebrew: string }> =
+  {
+    "choulhan-aroukh": {
+      nameKey: "study.halakhaWorks.choulhanAroukh.name",
+      descKey: "study.halakhaWorks.choulhanAroukh.desc",
+      hebrew: "שולחן ערוך",
+    },
+    kitsour: {
+      nameKey: "study.halakhaWorks.kitsour.name",
+      descKey: "study.halakhaWorks.kitsour.desc",
+      hebrew: "קיצור שולחן ערוך",
+    },
+  };
+
+/** Le livre de halakha ouvert, ou null (la page des livres, ou un autre rayon). */
+const halakhaWork = computed<HalakhaWork | null>(() =>
+  currentCorpus.value?.corpus === "halakha" && isHalakhaWork(route.query.livre)
+    ? route.query.livre
+    : null,
+);
+
+const halakhaWorks = computed(() =>
+  HALAKHA_WORKS.map((work) => {
+    const texts = allTexts.filter(
+      (text) => text.type === "Halakha" && halakhaWorkOfLivre(text.livre) === work,
+    );
+    const simanim = texts.reduce((sum, text) => sum + (text.totalSections ?? 1), 0);
+    return {
+      work,
+      hebrew: HALAKHA_WORK_META[work].hebrew,
+      name: t(HALAKHA_WORK_META[work].nameKey),
+      count: t("study.halakhaWorks.simanim", { n: simanim.toLocaleString(locale.value) }),
+    };
+  }),
+);
+
+/**
+ * Le titre d'un livre dans la liste d'un livre de halakha : sa partie seule
+ * (« Ora'h Hayim »), le livre étant déjà le titre de la page ; rien quand la
+ * partie est le livre entier (le Kitsour).
+ */
+function halakhaGroupHeading(livre: string): string | null {
+  const name = formatBookName(livre).replace(/^Choulhan Aroukh,\s*/, "");
+  return name === formatBookName(livre) && halakhaWorkOfLivre(livre) === "kitsour" ? null : name;
+}
+
 // L'étagère : un livre par grande section, titre sur la couverture. Dans
 // l'app, chaque livre dit dans son angle s'il est sur le téléphone : la part
 // de ses livres téléchargés (les Tehilim, embarqués, le sont toujours).
@@ -230,7 +285,17 @@ const {
 // Les résultats de l'étude, par corpus puis par livre ; ceux de la liturgie
 // en une liste, sous « Dans le Sidour ».
 const studyResultGroups = computed(() =>
-  groupedByType.value.filter((group) => !LITURGY_TYPE_KEYS.has(group.key)),
+  groupedByType.value
+    .filter((group) => !LITURGY_TYPE_KEYS.has(group.key))
+    .map((group) => {
+      // Un livre de halakha ouvert : ses parties seules.
+      const work = halakhaWork.value;
+      if (!work) return group;
+      const groups = Object.fromEntries(
+        Object.entries(group.groups).filter(([livre]) => halakhaWorkOfLivre(livre) === work),
+      ) as typeof group.groups;
+      return { ...group, groups };
+    }),
 );
 const sidourResults = computed(() =>
   groupedByType.value
@@ -317,6 +382,11 @@ const showBookEncadrement = computed(() => browsingBook("tehilim"));
 // La liste détaillée s'affiche sur une page corpus, ou dès qu'on cherche
 // depuis l'accueil (la recherche reste la porte d'entrée la plus rapide).
 const showList = computed(() => currentCorpus.value !== null || hasSearch.value);
+
+// La page de la halakha, sans livre ouvert ni recherche : les cartes des livres.
+const showHalakhaWorks = computed(
+  () => currentCorpus.value?.corpus === "halakha" && !halakhaWork.value && !hasSearch.value,
+);
 
 // --- La reprise de lecture, en tête de la bibliothèque. ---
 // Dernière position de lecture : le vrai « Reprendre ma lecture ».
@@ -561,15 +631,22 @@ onMounted(() => {
           class="max-w-5xl mx-auto animate-[fadeIn_0.4s_ease]"
           :class="isNativeApp ? 'mb-4' : 'mb-8'"
         >
-          <RouterLink to="/bibliotheque" class="back-link mb-4">
+          <!-- Un livre de halakha ouvert remonte à la page des livres. -->
+          <RouterLink v-if="halakhaWork" to="/bibliotheque/halakha" class="back-link mb-4">
+            <AppIcon name="arrow-left" :size="14" class="rtl:rotate-180" />
+            {{ t(currentCorpus.labelKey) }}
+          </RouterLink>
+          <RouterLink v-else to="/bibliotheque" class="back-link mb-4">
             <AppIcon name="arrow-left" :size="14" class="rtl:rotate-180" />
             {{ t("study.title") }}
           </RouterLink>
           <h1 class="text-3xl md:text-4xl font-bold text-text-primary tracking-tight pb-1">
-            {{ t(currentCorpus.labelKey) }}
+            {{
+              halakhaWork ? t(HALAKHA_WORK_META[halakhaWork].nameKey) : t(currentCorpus.labelKey)
+            }}
           </h1>
           <p v-if="!isNativeApp" class="mt-2 text-lg text-text-secondary max-w-2xl leading-relaxed">
-            {{ t(currentCorpus.descKey) }}
+            {{ halakhaWork ? t(HALAKHA_WORK_META[halakhaWork].descKey) : t(currentCorpus.descKey) }}
           </p>
         </div>
 
@@ -670,8 +747,28 @@ onMounted(() => {
     <!-- Tehilim : ce qu'on dit avant d'en lire, et ce qu'on dit après. -->
     <BookEncadrement v-if="showBookEncadrement" corpus="tehilim" class="max-w-5xl mx-auto mb-10" />
 
+    <!-- ===== Halakha : ses livres, dans les cartes de la liste des textes ===== -->
+    <div
+      v-if="showHalakhaWorks"
+      class="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-3 animate-[fadeIn_0.5s_ease]"
+    >
+      <RouterLink
+        v-for="book in halakhaWorks"
+        :key="book.work"
+        :to="{ path: '/bibliotheque/halakha', query: { livre: book.work } }"
+        class="card card-hover p-4 flex items-center justify-between gap-2 group"
+      >
+        <span class="min-w-0">
+          <span class="block font-medium text-text-primary">
+            {{ locale === "he" ? book.name : `${book.hebrew} (${book.name})` }}
+          </span>
+          <span class="text-xs text-text-secondary">{{ book.count }}</span>
+        </span>
+      </RouterLink>
+    </div>
+
     <!-- ===== Accueil sans recherche : le tableau de bord ===== -->
-    <template v-if="!showList">
+    <template v-else-if="!showList">
       <!-- Reprendre la dernière lecture, au verset près : une simple ligne
            discrète juste sous la recherche. -->
       <div
@@ -749,6 +846,14 @@ onMounted(() => {
                 class="shrink-0 text-text-secondary"
               />
             </button>
+            <template v-else-if="halakhaWork">
+              <h3
+                v-if="halakhaGroupHeading(String(livre))"
+                class="text-xl font-bold text-text-primary mb-4"
+              >
+                {{ halakhaGroupHeading(String(livre)) }}
+              </h3>
+            </template>
             <h3 v-else class="text-xl font-bold text-text-primary mb-4">
               {{ formatBookName(String(livre)) }}
             </h3>

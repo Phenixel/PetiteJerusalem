@@ -2531,24 +2531,21 @@ watch(textId, (_, previousTextId) => {
         <p class="text-sm text-text-secondary mb-4">
           {{ t("textReading.sectionsCount", { count: content.sections.length }) }}
         </p>
-        <div class="space-y-2">
+        <!-- Les chapitres : une liste nue, sur le fond de la page, une ligne
+             chacun et un filet entre eux. Le nom du chapitre dit déjà son
+             numéro (« Chapitre 3 (ג) », « Siman 8 : ... ») : pas de pastille
+             numérotée en plus. -->
+        <div>
           <button
             v-for="section in content.sections"
             :key="section.index"
             @click="goToSection(section.index)"
-            class="card card-hover w-full flex items-center justify-between gap-3 p-4 transition-all text-left group"
+            class="section-row w-full flex items-center justify-between gap-3 text-start group"
           >
-            <span class="flex items-center gap-3 min-w-0">
-              <span
-                class="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-lg bg-primary/10 text-primary font-bold text-sm"
-              >
-                {{ section.index }}
-              </span>
-              <span
-                class="font-medium text-text-primary group-hover:text-primary transition-colors"
-              >
-                {{ sectionLabel(section) }}
-              </span>
+            <span
+              class="min-w-0 font-medium text-text-primary group-hover:text-primary transition-colors"
+            >
+              {{ sectionLabel(section) }}
             </span>
             <span class="flex items-center gap-2 flex-shrink-0">
               <AppIcon
@@ -2563,6 +2560,11 @@ watch(textId, (_, previousTextId) => {
                 name="user-clock"
                 :size="16"
                 class="text-amber-500"
+              />
+              <AppIcon
+                name="chevron-right"
+                :size="16"
+                class="text-text-secondary/60 rtl:rotate-180"
               />
             </span>
           </button>
@@ -3056,6 +3058,15 @@ watch(textId, (_, previousTextId) => {
 </template>
 
 <style scoped>
+/* La liste des chapitres : des lignes sur le fond de la page, sans carte
+   autour, un filet entre elles. Au survol, le nom prend la couleur du thème. */
+.section-row {
+  min-height: 3.25rem;
+  padding: 0.75rem 0.25rem;
+}
+.section-row + .section-row {
+  border-top: 1px solid var(--color-line);
+}
 /* Le panneau d'étude ouvert (CommentaryPanel.vue). Sur un téléphone, la page
    réserve sous le texte la hauteur de son volet à mi-hauteur, pour qu'on lise
    jusqu'au dernier passage. Dès que le texte et ses commentaires tiennent

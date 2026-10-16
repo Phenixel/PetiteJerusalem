@@ -168,6 +168,22 @@ function moussarSectionName(entry: TextStudyJsonEntry, section: TextSection): st
 const isKitsour = (entry: TextStudyJsonEntry): boolean =>
   latinLivre(entry.livre).startsWith("Kitsour");
 
+/**
+ * Les livres du rayon Halakha. Ses entrées sont des groupes de lois, cent
+ * cinquante et plus : la page du rayon montre d'abord ses livres, une carte
+ * chacun, et la liste d'un livre s'ouvre à part (`?livre=`, voir StudyPage).
+ */
+export type HalakhaWork = "choulhan-aroukh" | "kitsour";
+
+export const HALAKHA_WORKS: HalakhaWork[] = ["choulhan-aroukh", "kitsour"];
+
+/** Le livre de halakha d'un « livre » du catalogue (« Choulhan Aroukh, Yoré Déa »). */
+export const halakhaWorkOfLivre = (livre: string): HalakhaWork =>
+  latinLivre(livre).startsWith("Kitsour") ? "kitsour" : "choulhan-aroukh";
+
+export const isHalakhaWork = (value: unknown): value is HalakhaWork =>
+  (HALAKHA_WORKS as unknown[]).includes(value);
+
 function halakhaSlug(entry: TextStudyJsonEntry): string {
   const slug = moussarSlug(latinName(entry));
   return isKitsour(entry) ? `kitsour-${slug}` : slug;

@@ -4,14 +4,14 @@ import { useI18n } from "vue-i18n";
 import type { PrayerName, Session } from "../models/models";
 import { sessionService } from "../services/sessionService";
 import { analyticsService } from "../services/analyticsService";
-import AppIcon from "./icons/AppIcon.vue";
 import ProgressBar from "./ProgressBar.vue";
 
 /**
  * La chaîne perpétuelle en tête du partage : une carte comme les autres
  * chaînes, cliquable tout entière, placée sous le bouton de création. La
- * couleur du thème ne marque que ce qui la distingue (« Toujours ouverte »,
- * le nombre de tours terminés, l'avancement), et la carte ne nomme personne :
+ * couleur du thème ne marque que ce qui la distingue (le nombre de tours
+ * terminés, l'avancement) ; son nom ouvre la carte, sans étiquette au-dessus
+ * (docs/design.md), et la carte ne nomme personne :
  * elle dit pour combien de personnes on lit, les noms sont sur sa page.
  */
 const props = defineProps<{
@@ -50,10 +50,6 @@ const track = () => {
   >
     <div class="flex items-center gap-4">
       <div class="flex-1 min-w-0 flex flex-col gap-1">
-        <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-primary">
-          <AppIcon name="rotate" :size="13" />
-          {{ t("perpetual.alwaysOpen") }}
-        </span>
         <span
           class="text-xl font-bold leading-tight text-text-primary group-hover:text-primary transition-colors"
         >
