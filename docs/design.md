@@ -972,7 +972,10 @@ petit. Les retours à la ligne de la personne sont gardés.
 - **L'état parle à qui le lit.** La personne voit « Envoyé », « En cours »,
   « Répondu », « Terminé » ; l'équipe voit « À traiter » à la place
   d'« Envoyé », en ambre, comme tout ce qui attend une décision dans le
-  backoffice (`AdminSupportStatus.vue`, les tons d'`AdminStatus`).
+  backoffice (`AdminSupportStatus.vue`, les tons d'`AdminStatus`). Dans
+  le backoffice, la nature (idée, bug, erreur) reste grise : sur le thème
+  par défaut, la teinte du thème et l'ambre se confondaient, et seul le
+  statut doit appeler l'œil.
 - **Avant d'envoyer, on sait où la réponse arrivera.** Sous le champ de
   réponse du backoffice, une ligne le dit (dans l'app avec une notification,
   sans, par email seulement, nulle part), et les boutons qui n'auraient pas

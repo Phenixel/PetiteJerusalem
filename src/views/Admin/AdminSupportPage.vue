@@ -167,7 +167,7 @@ const platformLabel = (th: AdminSupportThread) =>
             </p>
           </div>
           <div class="flex shrink-0 flex-wrap items-center gap-1.5">
-            <AdminStatus tone="primary" :label="t(`admin.support.kinds.${th.kind}`)" />
+            <AdminStatus tone="neutral" :label="t(`admin.support.kinds.${th.kind}`)" />
             <AdminSupportStatus :status="th.status" />
             <AdminStatus
               v-if="th.status !== 'done' && th.lastFrom === 'user' && th.messages.length > 1"
