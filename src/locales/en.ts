@@ -1064,9 +1064,7 @@ const en: LocaleMessages = {
       offline: "Drawing needs a connection; try again once you are back online.",
     },
     batchReading: {
-      title: "Your Tehilim, one after the other",
-      text: "You have one Tehilim left to read: find it on a single page with the others, and check it off once read. | You have {count} Tehilim left to read: read them all at once, on a single page, and check each one off once read.",
-      button: "Read my Tehilim",
+      button: "Read them all now",
       promptTitle: "Read them now?",
       promptMessage:
         "Your Tehilim opens with the others, on a single page: check it off once read, and the session counts it right away. | Your {count} Tehilim open one after the other, on a single page: check each one off once read, and the session counts it right away.",

@@ -200,8 +200,10 @@ test.describe("chaînes de lecture", () => {
     await page.getByRole("button", { name: "Confirmer" }).click();
 
     // Right after the reservation: « Les lire maintenant ? ».
+    // Declined, the button beside « Mes réservations » still leads there.
     await expect(page.getByText("Les lire maintenant")).toBeVisible();
-    await page.getByRole("button", { name: "Lire maintenant" }).click();
+    await page.getByRole("button", { name: "Plus tard" }).click();
+    await page.getByRole("button", { name: "Tout lire maintenant" }).click();
 
     await expect(page).toHaveURL(new RegExp(`/share-reading/session/${session.slug}/lecture`));
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("Mes Téhilim");

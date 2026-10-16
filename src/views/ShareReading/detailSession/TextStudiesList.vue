@@ -20,6 +20,8 @@ const props = defineProps<{
   currentUser: User | null;
   guestEmail: string;
   selectedItems: Set<string>;
+  /** Several Tehilim taken, one still to read: « Tout lire maintenant » heads « Mes réservations ». */
+  readAll?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -36,6 +38,9 @@ const emit = defineEmits<{
   // le lecteur porte sa propre barre de réservation, une partie des
   // réservations part donc d'ici et pas de la case à cocher.
   (e: "read-clicked", textId: string, section?: number): void;
+  // « Tout lire maintenant »: the reader's Tehilim, one after the other
+  // (SessionReadingPage).
+  (e: "read-all"): void;
 }>();
 
 const expandedTexts = ref<Set<string>>(new Set());
@@ -201,9 +206,20 @@ const handleCardClick = (card: TextCard) => {
       :key="bookName"
       class="animate-[fadeIn_0.5s_ease]"
     >
-      <h3 class="text-2xl font-bold text-text-primary mb-6">
-        {{ formatBookName(String(bookName)) }}
-      </h3>
+      <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <h3 class="text-2xl font-bold text-text-primary">
+          {{ formatBookName(String(bookName)) }}
+        </h3>
+        <button
+          v-if="readAll && bookName === t('detailSession.myReservations')"
+          type="button"
+          class="btn btn-primary"
+          @click="emit('read-all')"
+        >
+          <AppIcon name="book" :size="16" />
+          {{ t("detailSession.batchReading.button") }}
+        </button>
+      </div>
 
       <!-- items-start : une carte dépliée s'allonge seule, sans étirer ses
            voisines repliées à la même hauteur. -->

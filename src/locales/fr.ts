@@ -1105,9 +1105,7 @@ const fr = {
       offline: "Le tirage a besoin d'une connexion ; réessayez une fois de retour en ligne.",
     },
     batchReading: {
-      title: "Vos Téhilim, à la suite",
-      text: "Il vous reste un Téhilim à lire : retrouvez-le sur une seule page avec les autres, et cochez-le une fois lu. | Il vous reste {count} Téhilim à lire : lisez-les d'un coup, sur une seule page, et cochez chacun une fois lu.",
-      button: "Lire mes Téhilim",
+      button: "Tout lire maintenant",
       promptTitle: "Les lire maintenant ?",
       promptMessage:
         "Votre Téhilim s'ouvre avec les autres, sur une seule page : cochez-le une fois lu, la session le compte aussitôt. | Vos {count} Téhilim s'ouvrent à la suite, sur une seule page : cochez chacun une fois lu, la session le compte aussitôt.",

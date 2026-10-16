@@ -1117,25 +1117,6 @@ watch(session, (s) => applySessionSeo(s));
         :participants="participants"
       />
 
-      <!-- Several Tehilim taken, some still to read: read them at once. -->
-      <div
-        v-if="showBatchReading"
-        class="card mb-8 flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between"
-      >
-        <div class="min-w-0">
-          <h3 class="text-lg font-bold text-text-primary">
-            {{ t("detailSession.batchReading.title") }}
-          </h3>
-          <p class="mt-0.5 text-sm text-text-secondary">
-            {{ t("detailSession.batchReading.text", { count: unreadCount }, unreadCount) }}
-          </p>
-        </div>
-        <button type="button" class="btn btn-primary shrink-0" @click="openBatchReading('button')">
-          <AppIcon name="book" :size="16" />
-          {{ t("detailSession.batchReading.button") }}
-        </button>
-      </div>
-
       <!-- Formulaire de réservation pour invités (composant unifié) -->
       <div id="guest-form" v-if="!currentUser" class="card p-5 mb-8">
         <h3 class="font-bold text-lg text-text-primary">
@@ -1218,6 +1199,8 @@ watch(session, (s) => applySessionSeo(s));
         @toggle-select-all="handleToggleSelectAll"
         @text-expanded="trackTextExpanded"
         @read-clicked="trackReadClicked"
+        :read-all="showBatchReading"
+        @read-all="openBatchReading('button')"
       />
 
       <!-- CTA : inviter le visiteur à créer sa propre session -->

@@ -1701,11 +1701,12 @@ like the daily reading of Mon parcours:
   counts it at once.
 - **Nothing goes to Mon parcours**: it is the reading of one chain, for
   now, not an objective on the shelf.
-- **Two doors**: the « Vos Téhilim, à la suite » card on the chain's page,
-  as long as there are several psalms taken and one is still to read; and,
-  right after a reservation that leaves such a list, the question « Les
-  lire maintenant ? » ("Read them now?"). A guest who declines sees the
-  signup dialog as before.
+- **Two doors**: « Tout lire maintenant » ("Read them all now"), a button
+  beside the « Mes réservations » heading of the chain's page (no extra
+  frame: the page is long enough), as long as there are several psalms
+  taken and one is still to read; and, right after a reservation that
+  leaves such a list, the question « Les lire maintenant ? » ("Read them
+  now?"). A guest who declines sees the signup dialog as before.
 - **Tehilim chains only**: a psalm is read whole, in one slot. A chapter
   taken in a Talmud or Michna chain would need the reader to show that
   chapter alone.
