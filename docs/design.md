@@ -1422,11 +1422,19 @@ geste, et c'est au geste le plus large de ne rien faire.
 L'allure se règle à un curseur à crans, du plus lent à gauche au plus rapide à
 droite, et non dans une liste d'intitulés. Une liste demande de lire chaque
 ligne pour comprendre qu'elles forment une échelle ; un curseur le montre, et
-se pousse du pouce sans viser une ligne. Les crans sont les allures
-elles-mêmes, dessinés sous le rail à l'aplomb des positions du curseur : un
-rail lisse promettrait un réglage continu qui n'existe pas. Les deux bouts
+se pousse du pouce sans viser une ligne.
+
+Le curseur a vingt crans, de 1 à 20 ; il n'en avait que quatre, un par allure
+nommée (lent, moyen, rapide, très rapide), et un lecteur a demandé plus fin.
+Le cran choisi s'affiche en chiffre au bout de l'intitulé « Vitesse », en
+chiffres de même largeur pour qu'il ne danse pas sous le pouce : un nombre se
+retient d'une lecture à l'autre, un « un peu plus que moyen » non. Les quatre
+allures nommées restent des repères, un point sous le rail à l'aplomb de leur
+cran ; vingt points feraient une règle graduée, pas un réglage. Les deux bouts
 portent le nom des allures extrêmes, parce que ce sont elles. En hébreu, le
-rail se retourne avec la page, et le plus lent passe à droite.
+rail se retourne avec la page, et le plus lent passe à droite ; les repères se
+placent donc depuis le début de la ligne (`inset-inline-start`), pas depuis
+la gauche.
 
 ### Ce qui clôt une page se lit à la fin
 

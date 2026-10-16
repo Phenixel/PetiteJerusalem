@@ -485,6 +485,30 @@ dit si la largeur par défaut convient à qui étudie.
 | `commentaries_resized` | `width`          | la largeur choisie, en pixels ; `null` quand on la rétablit | **nouveau** |
 | `commentaries_resized` | `viewport_width` | la largeur de la fenêtre, en pixels                     | **nouveau** |
 
+### Lecture : le défilement automatique (`auto_scroll_*`, existants)
+
+`auto_scroll_started`, `auto_scroll_stopped` et `auto_scroll_speed_changed`
+(`composables/useAutoScroll.ts`) portaient l'allure sous son nom (`speed`).
+Depuis que l'allure se règle en vingt crans au lieu de quatre allures (voir
+`docs/design.md`, « La pastille du défilement est son propre arrêt »), le cran
+part **à côté**, et `speed` garde son sens : c'est l'allure nommée la plus
+proche du cran, la seule que connaissaient les versions précédentes. Les
+analyses déjà construites sur `speed` restent justes.
+
+`auto_scroll_speed_changed` ne part plus à chaque cran mais une fois, quand le
+curseur reste immobile 800 ms : un glissement d'un bout à l'autre traverse
+vingt crans. Il part donc aussi quand `speed` ne change pas (de 7 à 9, tous
+deux « moyen »), et pas du tout quand on revient au cran de départ.
+
+| Événement                    | Propriété              | Valeurs                                         | Statut      |
+| ---------------------------- | ---------------------- | ----------------------------------------------- | ----------- |
+| les trois                    | `speed`                | `slow`, `medium`, `fast`, `veryFast` (le plus proche du cran) | existant, conservé |
+| les trois                    | `speed_level`          | le cran, de 1 à 20 (`slow` = 1, `medium` = 6, `fast` = 13, `veryFast` = 20) | **nouveau** |
+| `auto_scroll_speed_changed`  | `previous_speed`       | l'allure nommée la plus proche du cran quitté   | existant, conservé |
+| `auto_scroll_speed_changed`  | `previous_speed_level` | le cran quitté, de 1 à 20                       | **nouveau** |
+| `auto_scroll_speed_changed`  | `running`              | booléen : réglé pendant une descente            | existant, conservé |
+| `auto_scroll_stopped`        | `reason`, `duration_ms`| `user`, `bottom`, `leave` ; durée en ms         | existant, conservé |
+
 ### La table d'étude
 
 Les textes mis de côté pour passer de l'un à l'autre (docs/design.md, « Des

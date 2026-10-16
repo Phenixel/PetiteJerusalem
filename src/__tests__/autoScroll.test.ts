@@ -352,4 +352,123 @@ describe("défilement automatique", () => {
       expect(relaunched.autoScrollEnabled.value).toBe(false);
     });
   });
+
+  /**
+   * Le réglage fin : vingt crans au lieu de quatre allures (retour d'un
+   * lecteur Android, 3.10.9). Ce qui doit tenir : les quatre allures nommées
+   * tombent sur un cran à leur vitesse d'avant, au pixel près ; une allure
+   * enregistrée par une version précédente se relit à l'identique ; et
+   * l'ancienne clé reste écrite, pour une version plus ancienne réinstallée.
+   */
+  describe("réglage fin de l'allure", () => {
+    it("garde les quatre allures nommées à leur vitesse, sur un cran chacune", async () => {
+      const { AUTO_SCROLL_SPEEDS, AUTO_SCROLL_MIN_LEVEL, AUTO_SCROLL_MAX_LEVEL, ...module } =
+        await import("../composables/useAutoScroll");
+      expect(AUTO_SCROLL_MIN_LEVEL).toBe(1);
+      expect(AUTO_SCROLL_MAX_LEVEL).toBe(20);
+      const anciennes = { slow: 16, medium: 26, fast: 48, veryFast: 72 };
+      for (const speed of AUTO_SCROLL_SPEEDS) {
+        expect(speed.pixelsPerSecond).toBe(anciennes[speed.id]);
+        expect(module.autoScrollPixelsPerSecond(speed.level)).toBe(speed.pixelsPerSecond);
+        expect(module.nearestAutoScrollSpeedId(speed.level)).toBe(speed.id);
+      }
+    });
+
+    it("monte à chaque cran, sans sortir de l'échelle", async () => {
+      const { autoScrollPixelsPerSecond, AUTO_SCROLL_MIN_LEVEL, AUTO_SCROLL_MAX_LEVEL } =
+        await import("../composables/useAutoScroll");
+      for (let level = AUTO_SCROLL_MIN_LEVEL + 1; level <= AUTO_SCROLL_MAX_LEVEL; level++) {
+        expect(autoScrollPixelsPerSecond(level)).toBeGreaterThan(
+          autoScrollPixelsPerSecond(level - 1),
+        );
+      }
+      expect(autoScrollPixelsPerSecond(0)).toBe(16);
+      expect(autoScrollPixelsPerSecond(99)).toBe(72);
+    });
+
+    it.each([
+      ["slow", 1],
+      ["medium", 6],
+      ["fast", 13],
+      ["veryFast", 20],
+    ])("relit l'allure « %s » d'une version précédente au cran %i", async (id, level) => {
+      // Ce qu'écrivait la 3.10.9 : le nom de l'allure, et rien d'autre.
+      localStorage.setItem("pj-autoscroll-speed", id);
+      const module = await import("../composables/useAutoScroll");
+      expect(module.autoScrollLevel.value).toBe(level);
+      expect(module.autoScrollSpeedId.value).toBe(id);
+    });
+
+    it("préfère le cran à l'ancienne clé, et écarte une valeur qui n'en est pas un", async () => {
+      localStorage.setItem("pj-autoscroll-speed", "fast");
+      localStorage.setItem("pj-autoscroll-level", "9");
+      expect((await import("../composables/useAutoScroll")).autoScrollLevel.value).toBe(9);
+
+      // Hors de l'échelle ou illisible : on retombe sur l'ancienne clé.
+      for (const abime of ["0", "21", "7.5", "vite"]) {
+        vi.resetModules();
+        localStorage.setItem("pj-autoscroll-level", abime);
+        expect((await import("../composables/useAutoScroll")).autoScrollLevel.value).toBe(13);
+      }
+
+      // Ni l'une ni l'autre : l'allure la plus lente.
+      vi.resetModules();
+      localStorage.clear();
+      expect((await import("../composables/useAutoScroll")).autoScrollLevel.value).toBe(1);
+    });
+
+    it("garde le cran au lancement suivant, et l'allure la plus proche pour une version plus ancienne", async () => {
+      const module = await import("../composables/useAutoScroll");
+      module.setAutoScrollLevel(11);
+      expect(localStorage.getItem("pj-autoscroll-level")).toBe("11");
+      // Une version qui ne connaît que les quatre allures lit « rapide » (13),
+      // plus proche de 11 que « moyen » (6).
+      expect(localStorage.getItem("pj-autoscroll-speed")).toBe("fast");
+
+      vi.resetModules();
+      const relaunched = await import("../composables/useAutoScroll");
+      expect(relaunched.autoScrollLevel.value).toBe(11);
+    });
+
+    it("descend à la vitesse du cran choisi", async () => {
+      const { setAutoScrollLevel, autoScrollPixelsPerSecond } = await import(
+        "../composables/useAutoScroll"
+      );
+      const { host } = await mountReadingPage();
+      setAutoScrollLevel(9);
+      const perSecond = autoScrollPixelsPerSecond(9);
+      expect(perSecond).toBeGreaterThan(26);
+      expect(perSecond).toBeLessThan(48);
+
+      doubleClick(host.querySelector("p")!);
+      frame(16);
+      frames(60);
+      expect(scrollTop).toBeCloseTo((perSecond * 60 * 16) / 1000, 5);
+    });
+
+    it("ne signale qu'un changement d'allure quand le pouce s'arrête", async () => {
+      const capture = vi.fn();
+      vi.doMock("../services/analyticsService", () => ({ analyticsService: { capture } }));
+      vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+      try {
+        const { setAutoScrollLevel } = await import("../composables/useAutoScroll");
+        // Un glissement du premier cran au huitième, cran par cran.
+        for (let level = 2; level <= 8; level++) setAutoScrollLevel(level);
+        expect(capture).not.toHaveBeenCalled();
+
+        vi.runAllTimers();
+        expect(capture).toHaveBeenCalledTimes(1);
+        expect(capture).toHaveBeenCalledWith("auto_scroll_speed_changed", {
+          speed: "medium",
+          previous_speed: "slow",
+          speed_level: 8,
+          previous_speed_level: 1,
+          running: false,
+        });
+      } finally {
+        vi.useRealTimers();
+        vi.doUnmock("../services/analyticsService");
+      }
+    });
+  });
 });

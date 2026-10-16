@@ -1658,6 +1658,8 @@ const en: LocaleMessages = {
         "Turned off, a double tap does nothing and any scrolling in progress stops. The pace is set while reading, in the pill at the bottom.",
       pill: "Scrolling",
       speed: "Speed",
+      speedValue: "{level} of {max}",
+      speedValueNamed: "{level} of {max}, {name}",
       speeds: {
         slow: "Slow",
         medium: "Medium",
