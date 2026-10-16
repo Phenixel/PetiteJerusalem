@@ -614,6 +614,17 @@ button,
     background-color: var(--color-selection);
   }
 
+  /* Le verset marqué d'un marque-page : un fond léger et un trait plein à
+     la couleur du thème sous le passage, qu'on retrouve d'un coup d'œil en
+     faisant défiler. Le trait suit chaque ligne d'un passage qui se coupe
+     (box-decoration-break), dans la guemara comme dans la lecture du jour. */
+  .reading-bookmarked {
+    background-color: color-mix(in srgb, var(--color-primary) 8%, transparent);
+    box-shadow: inset 0 -2px 0 var(--color-primary);
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+  }
+
   /* Modal building blocks, one modal style for the whole app. */
   .modal-overlay {
     position: fixed;

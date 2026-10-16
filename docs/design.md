@@ -1093,6 +1093,28 @@ office ou une bénédiction se lisent du début, on n'y revient pas à un
 paragraphe comme à un verset de Tehilim ; le sommaire du menu y mène déjà à
 chaque passage.
 
+### Un marque-page par livre, et qui se voit
+
+Un livre n'a qu'un ruban : poser un marque-page retire celui que le texte
+portait déjà (dans la bibliothèque, et à part dans la lecture du jour).
+Ceux qu'une version précédente a laissés à plusieurs restent jusqu'au
+prochain posé (`readingProgressBookmarks.test.ts`). Le verset marqué se
+voit en faisant défiler : un fond léger et un trait plein à la couleur du
+thème sous le passage (`.reading-bookmarked`), et le marque-page plein
+(`bookmark-filled`) à côté du numéro. Le trait vaut aussi dans la guemara
+et le tikoun, où le passage n'a pas de numéro à côté duquel se poser.
+
+### La barre d'outils du lecteur tient sur une ligne
+
+Au-dessus du texte, les marque-pages, la taille, la bascule hébreu / forme
+/ phonétique et la traduction tiennent sur une seule ligne, même sur un
+téléphone. Sous la largeur `sm`, la taille du texte quitte la barre (le
+menu de lecture la porte toujours), et la bascule prend les noms abrégés
+qu'elle a déjà dans le menu (א, le dessin de la forme, Aa), son nom entier
+restant dans l'infobulle et pour les lecteurs d'écran. La traduction n'est
+pas proposée dans la forme de la page (daf de Vilna, tikoun) : ni l'une ni
+l'autre ne la montre.
+
 ### La traduction se lit sous le verset
 
 La traduction (`docs/traductions.md`) n'est pas une autre page ni une autre
@@ -1128,7 +1150,10 @@ montrer le texte, entre l'hébreu verset par verset et la phonétique : un même
 groupe de trois boutons dans la barre d'outils (« Hébreu », la forme,
 « Phonétique ») et, en abrégé, dans le menu de lecture (א, l'icône de la
 forme, Aa). Le bouton de la forme porte son dessin et son nom : un livre ouvert et
-« Page » pour la guemara, un rouleau et « Sefer Torah » pour la Torah. Il
+« Page » pour la guemara, un rouleau et « Tikoun » pour la Torah (le nom du
+livre où l'on prépare la lecture, dont la colonne de droite est celle du
+Sefer Torah ; « Sefer Torah » se lisait comme un objet, pas comme une façon
+de lire). Il
 n'apparaît que sur les textes qui ont une forme (une guemara, une paracha) ;
 les Prophètes ont des petou'hot mais pas de colonne de Sefer Torah à
 reproduire. Le choix est gardé sur l'appareil (`usePageForm`, une seule
@@ -2225,7 +2250,11 @@ geste : plusieurs livres ouverts sur la table, chacun à sa page.
 - **Un livre, un geste.** Toucher un livre ouvre ce texte, à l'endroit où on
   l'a laissé : passer de l'un à l'autre ne demande qu'un appui. La flèche
   au bout de la barre, un appui ailleurs sur elle, un glissement vers le
-  haut, ou le livre qu'on lit ouvrent la table.
+  haut, ou le livre qu'on lit ouvrent la table. Le texte qu'on lisait, s'il
+  n'était pas encore sur la table, s'y pose en passant : aller voir un livre
+  mis de côté, c'est laisser l'autre ouvert à côté. Seulement depuis un
+  texte qu'on lit, pas depuis la liste des chapitres d'un livre
+  (`readingTable.test.ts`, « passer d'un texte à l'autre »).
 - **La table ouverte montre les pages.** Un panneau monte du bas, à la
   hauteur de ce qu'il porte et jamais plus des trois quarts de l'écran : la
   page reste visible derrière un voile léger, la table se pose dessus, elle

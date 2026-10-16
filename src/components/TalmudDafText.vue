@@ -46,6 +46,8 @@ const props = withDefaults(
     selectable?: boolean;
     selectedLine?: number | null;
     highlightedLine?: number | null;
+    /** Les passages marqués d'un marque-page (`.reading-bookmarked`). */
+    bookmarkedLines?: number[];
     /** Le passage étudié et les dibbourim de ses commentaires. */
     leads?: { line: number; leads: string[] } | null;
   }>(),
@@ -58,6 +60,7 @@ const props = withDefaults(
     selectable: false,
     selectedLine: null,
     highlightedLine: null,
+    bookmarkedLines: () => [],
     leads: null,
   },
 );
@@ -90,6 +93,15 @@ const offsets = computed(() => {
 });
 function offsetOf(index: number): number {
   return offsets.value[index] ?? 0;
+}
+
+/** Le passage porte un marque-page, et rien d'autre ne le colore déjà. */
+function bookmarked(line: number): boolean {
+  return (
+    props.bookmarkedLines.includes(line) &&
+    props.selectedLine !== line &&
+    props.highlightedLine !== line
+  );
 }
 </script>
 
@@ -127,6 +139,7 @@ function offsetOf(index: number): number {
               'reading-selected':
                 selectedLine === offsetOf(index) + lineIndex &&
                 highlightedLine !== offsetOf(index) + lineIndex,
+              'reading-bookmarked': bookmarked(offsetOf(index) + lineIndex),
             }"
             @click="pick($event, offsetOf(index) + lineIndex, line)"
             @contextmenu="pick($event, offsetOf(index) + lineIndex, line)"
@@ -163,6 +176,7 @@ function offsetOf(index: number): number {
             'bg-primary/10': highlightedLine === offsetOf(index) + k,
             'reading-selected':
               selectedLine === offsetOf(index) + k && highlightedLine !== offsetOf(index) + k,
+            'reading-bookmarked': bookmarked(offsetOf(index) + k),
           }"
           @click="pick($event, offsetOf(index) + k, line)"
           @contextmenu="pick($event, offsetOf(index) + k, line)"

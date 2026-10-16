@@ -1476,7 +1476,7 @@ const he: LocaleMessages = {
     phonetic: "תעתיק",
     pageForm: {
       daf: "צורת הדף",
-      scroll: "ספר תורה",
+      scroll: "תיקון",
       pointed: "ניקוד",
       dafHint: "צורת הדף של דפוס וילנא: הגמרא באמצע, רש״י ותוספות סביבה",
       scrollHint: "כמו בספר תורה: בלי ניקוד, עם הפתוחות והסתומות",

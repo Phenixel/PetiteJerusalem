@@ -194,6 +194,36 @@ describe("passer d'un texte à l'autre", () => {
     unregister();
   });
 
+  it("le texte qu'on lisait, pas encore sur la table, s'y pose en passant à un autre", () => {
+    placeOnTable(text("b", { path: "/bibliotheque/talmud/b" }));
+    const unregister = registerTableReader({
+      key: "a",
+      snapshot: () => text("a", { line: 12, scrollY: 900 }),
+    });
+    const { router, push } = fakeRouter("/bibliotheque/tanakh/a/1");
+
+    openFromTable("b", router);
+
+    expect(useReadingTable().texts.value.map((t) => t.key)).toEqual(["b", "a"]);
+    expect(useReadingTable().texts.value[1]).toMatchObject({ line: 12, scrollY: 900 });
+    expect(push).toHaveBeenCalledWith("/bibliotheque/talmud/b");
+    unregister();
+  });
+
+  it("depuis la liste des chapitres d'un livre, rien ne se pose", () => {
+    placeOnTable(text("b", { path: "/bibliotheque/talmud/b" }));
+    const unregister = registerTableReader({
+      key: "a",
+      snapshot: (refresh) => (refresh ? null : text("a")),
+    });
+    const { router } = fakeRouter("/bibliotheque/tanakh/a");
+
+    openFromTable("b", router);
+
+    expect(useReadingTable().texts.value.map((t) => t.key)).toEqual(["b"]);
+    unregister();
+  });
+
   it("une reprise qui n'a pas abouti expire, et ne fait pas sauter une visite suivante", () => {
     placeOnTable(text("b", { path: "/bibliotheque/talmud/b" }));
     const { router } = fakeRouter("/bibliotheque");

@@ -554,12 +554,16 @@ onUnmounted(() => {
                         'reading-selected':
                           isVerseSelected(section.index, block.offset + index) &&
                           highlightedVerse !== verseKey(section.index, block.offset + index),
+                        'reading-bookmarked':
+                          isVerseBookmarked(section.index, block.offset + index) &&
+                          !isVerseSelected(section.index, block.offset + index) &&
+                          highlightedVerse !== verseKey(section.index, block.offset + index),
                       }"
                     >
                       <AppIcon
                         v-if="isVerseBookmarked(section.index, block.offset + index)"
-                        name="bookmark"
-                        :size="11"
+                        name="bookmark-filled"
+                        :size="14"
                         class="inline-block align-super text-primary"
                       />
                       <span
