@@ -420,11 +420,16 @@ describe.each(sidourEntries.map((entry) => [resolveFilePath(entry), entry] as co
         expect(talit).toBe(-1);
         return;
       }
-      // Les téfilines suivent le talit sans titre à eux, et le passage titré
-      // suivant est celui des korbanot : entre les deux, le léchem yi'houd se
-      // glisse sans titre non plus.
+      // Les téfilines suivent le talit sans titre à eux. Les passages titrés
+      // suivants sont la prière de 'Hana, que la source place avant la
+      // 'Akéda, puis les korbanot : le léchem yi'houd se glisse entre eux
+      // sans titre.
       expect(blocks[talit + 1].label).toBeFalsy();
-      expect(blocks.slice(talit + 1).find((b) => b.label)?.label).toBe("Korbanot");
+      const titres = blocks
+        .slice(talit + 1)
+        .filter((b) => b.label)
+        .map((b) => b.label);
+      expect(titres.slice(0, 2)).toEqual(["Prière de 'Hana", "Korbanot"]);
       // Les deux parachiot des téfilines se lisent dans le bloc des téfilines,
       // sans titre à elles : le menu de lecture n'a pas à les distinguer.
       const tefilines = blocks[talit + 1];
