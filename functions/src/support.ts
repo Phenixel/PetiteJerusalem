@@ -314,6 +314,12 @@ export interface PublicThread {
   createdAt: number;
   updatedAt: number;
   messages: SupportMessage<number>[];
+  /** Ce que la personne a elle-même laissé ou envoyé : sa fiche le lui rappelle. */
+  contact: string;
+  support: FeedbackSupport;
+  platform: FeedbackPlatform;
+  version: string;
+  page: string;
 }
 
 export function publicThread(id: string, doc: Record<string, unknown>): PublicThread {
@@ -338,7 +344,22 @@ export function publicThread(id: string, doc: Record<string, unknown>): PublicTh
         text: typeof m.text === "string" ? m.text : "",
         at: millisOf(m.at),
       })),
+    contact: typeof doc.contact === "string" ? doc.contact : "",
+    support: doc.support === "app" ? "app" : "web",
+    platform: doc.platform === "ios" || doc.platform === "android" ? doc.platform : "web",
+    version: typeof doc.version === "string" ? doc.version : "",
+    page: typeof doc.page === "string" ? doc.page : "",
   };
+}
+
+/**
+ * Ce que la lecture marque lu : tout (`true`), un seul fil (son identifiant,
+ * celui que la personne ouvre), ou rien.
+ */
+export function readScope(value: unknown): "all" | string | null {
+  if (value === true) return "all";
+  if (typeof value === "string" && /^[A-Za-z0-9_-]{1,100}$/.test(value)) return value;
+  return null;
 }
 
 /** Les fils d'une personne, le plus récemment actif en tête. */
@@ -381,8 +402,13 @@ function excerpt(text: string, max = BODY_MAX): string {
   return `${(lastSpace > max / 2 ? cut.slice(0, lastSpace) : cut).trimEnd()}…`;
 }
 
-/** La page de l'app où se lisent les fils : la notification y mène. */
+/** La page de l'app où se lisent les fils ; chaque fil a la sienne dessous. */
 export const SUPPORT_PAGE = "/contact";
+
+/** La page d'un fil : la notification de réponse y mène tout droit. */
+export function supportThreadPath(threadId: string): string {
+  return `${SUPPORT_PAGE}/${encodeURIComponent(threadId)}`;
+}
 
 export interface ReplyNotification {
   tokens: string[];
@@ -393,10 +419,12 @@ export interface ReplyNotification {
 
 /**
  * La notification de la dernière réponse de l'équipe, vers les appareils
- * connus (ceux du fil, ceux du compte), dans la langue du fil. Rien si aucun
- * appareil n'est connu : la réponse attend dans l'app.
+ * connus (ceux du fil, ceux du compte), dans la langue du fil ; la toucher
+ * ouvre la page du fil. Rien si aucun appareil n'est connu : la réponse
+ * attend dans l'app.
  */
 export function buildReplyNotification(
+  threadId: string,
   doc: Record<string, unknown>,
   accountTokens: string[],
 ): ReplyNotification | null {
@@ -416,7 +444,7 @@ export function buildReplyNotification(
       title: REPLY_TITLES[locale],
       body: excerpt(typeof last?.text === "string" ? last.text : ""),
     },
-    data: { url: SUPPORT_PAGE },
+    data: { url: supportThreadPath(threadId) },
     apns: { payload: { aps: { sound: "default" } } },
   };
 }

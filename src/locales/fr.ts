@@ -2881,8 +2881,12 @@ const fr = {
     sending: "Envoi…",
     success: "Merci, message bien arrivé. La réponse vous attendra dans Nous écrire.",
     error: "L'envoi a échoué. Réessayez dans un instant.",
-    accountRequired:
-      "Pour que notre réponse vous parvienne, connectez-vous : elle arrivera dans votre profil, rubrique Nous écrire. Ce que vous avez commencé à écrire est gardé.",
+    guestNotice:
+      "Vous n'êtes pas connecté : votre message nous arrivera, mais notre réponse ne pourra pas s'afficher dans un profil. Connectez-vous pour la retrouver ici, ou laissez un email ou un téléphone plus bas.",
+    contactHintGuest:
+      "Sans cela, nous lirons votre message, mais nous ne pourrons pas vous répondre.",
+    successGuest: "Merci, message bien arrivé. Nous vous répondrons par le contact laissé.",
+    successNoReply: "Merci, message bien arrivé.",
     login: "Se connecter",
   },
   support: {
@@ -2896,7 +2900,32 @@ const fr = {
     newReply: "Nouvelle réponse",
     messagesCount: "1 message | {n} messages",
     unreadCount: "1 nouvelle réponse | {n} nouvelles réponses",
-    waiting: "Bien reçu : nous vous répondons ici, dès que possible.",
+    ourReply: "Notre réponse :",
+    sentOn: "Envoyé le {date}",
+    thread: {
+      back: "Tous vos messages",
+      notFound:
+        "Ce message est introuvable. Il a peut-être été envoyé depuis un autre appareil ou un autre compte.",
+      deliveryApp:
+        "Nos réponses s'affichent ici, et une notification vous prévient si elles sont activées sur ce téléphone.",
+      deliveryWeb: "Nos réponses s'affichent ici, et une pastille les signale dans votre profil.",
+      reopenHint: "Ce message est terminé. Écrire ici le rouvre.",
+      factsTitle: "Ce que vous nous avez envoyé",
+      facts: {
+        kind: "Nature",
+        sentOn: "Envoyé le",
+        from: "Depuis",
+        page: "Page concernée",
+        contact: "Contact laissé",
+        noContact: "Aucun, la réponse arrive seulement ici",
+      },
+      statusHelp: {
+        new: "Bien reçu. Nous le lirons et vous répondrons ici.",
+        in_progress: "Nous nous en occupons. La réponse arrivera ici.",
+        answered: "Nous vous avons répondu. Vous pouvez nous répondre à votre tour, plus bas.",
+        done: "Ce message est terminé : c'est corrigé, ajouté, ou il n'y avait rien à faire.",
+      },
+    },
     replyLabel: "Répondre",
     replyPlaceholder: "Ajouter une précision, répondre à notre question…",
     reply: "Envoyer",
@@ -2904,6 +2933,12 @@ const fr = {
     you: "Vous",
     team: "L'équipe Petite Jérusalem",
     person: "La personne",
+    kinds: {
+      idea: "Idée",
+      bug: "Bug",
+      error: "Erreur",
+      other: "Autre",
+    },
     statuses: {
       new: "Envoyé",
       in_progress: "En cours",

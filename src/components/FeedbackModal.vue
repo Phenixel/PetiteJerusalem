@@ -29,9 +29,10 @@ import {
  * page « Nous écrire » (/contact). Voir docs/feedback.md.
  *
  * Dans l'app, pas besoin de compte : l'appareil retrouve ses messages. Sur le
- * site, il en faut un, sans quoi la réponse n'aurait nulle part où arriver :
- * la fenêtre invite alors à se connecter, et garde ce qui était amorcé (un
- * passage de texte signalé) pour le rouvrir après.
+ * site sans compte, on écrit aussi, mais notre réponse ne pourra s'afficher
+ * nulle part : la fenêtre le dit, propose de se connecter (en gardant ce qui
+ * était amorcé, un passage de texte signalé par exemple) et rappelle qu'un
+ * email ou un téléphone laissé est alors le seul moyen de répondre.
  *
  * La personne dit de quoi il s'agit et donne des détails ; elle laisse un
  * email ou un téléphone seulement si elle veut aussi la réponse par là. Le
@@ -55,11 +56,13 @@ onMounted(() => {
 onUnmounted(() => unsubscribeAuth?.());
 
 /**
- * Sur le site sans compte, la réponse serait perdue : on se connecte
- * d'abord. Tant que la session n'est pas connue, le formulaire reste (pas
- * d'invitation qui clignote pour un compte déjà connecté).
+ * Sur le site sans compte, on peut écrire, mais notre réponse ne pourra pas
+ * s'afficher dans le profil : la fenêtre le dit, propose de se connecter, et
+ * rappelle que seul un email ou un téléphone laissé permet de répondre. Tant
+ * que la session n'est pas connue, rien ne s'affiche (pas d'avertissement qui
+ * clignote pour un compte déjà connecté).
  */
-const needsAccount = computed(() => !isNativeApp && authResolved.value && !user.value);
+const isWebGuest = computed(() => !isNativeApp && authResolved.value && !user.value);
 
 function goToLogin(): void {
   stashFeedbackPrefill({ kind: kind.value, details: details.value });
@@ -140,7 +143,13 @@ async function submit(): Promise<void> {
       contact: canContact.value ? contact.value.trim() : "",
     });
     analyticsService.capture("feedback_sent", { kind: kind.value, contact: canContact.value });
-    toast.success(t("feedback.success"));
+    toast.success(
+      isWebGuest.value
+        ? canContact.value
+          ? t("feedback.successGuest")
+          : t("feedback.successNoReply")
+        : t("feedback.success"),
+    );
     supportVersion.value++;
     closeFeedback();
   } catch (error) {
@@ -171,24 +180,21 @@ async function submit(): Promise<void> {
       {{ t("feedback.subtitle") }}
     </p>
 
-    <!-- Le site sans compte : se connecter d'abord, la réponse arrivera dans
-         le profil. Ce qui était amorcé est gardé pour après. -->
-    <div v-if="needsAccount" class="space-y-4">
-      <p class="rounded-control bg-primary/[0.06] p-4 text-sm text-text-primary">
-        {{ t("feedback.accountRequired") }}
-      </p>
-      <div class="flex gap-3">
-        <button type="button" class="btn btn-soft flex-1" @click="closeFeedback">
-          {{ t("common.cancel") }}
-        </button>
-        <button type="button" class="btn btn-primary flex-1" data-autofocus @click="goToLogin">
-          <AppIcon name="login" :size="15" />
-          {{ t("feedback.login") }}
-        </button>
-      </div>
+    <!-- Le site sans compte : on écrit quand même, mais la réponse ne
+         s'affichera pas dans un profil. Se connecter reste possible, et ce
+         qui était amorcé est gardé pour après. -->
+    <div
+      v-if="isWebGuest"
+      class="mb-5 space-y-2.5 rounded-control bg-primary/[0.06] p-3.5 text-sm text-text-primary"
+    >
+      <p>{{ t("feedback.guestNotice") }}</p>
+      <button type="button" class="btn btn-soft btn-sm" @click="goToLogin">
+        <AppIcon name="login" :size="13" />
+        {{ t("feedback.login") }}
+      </button>
     </div>
 
-    <form v-else class="space-y-5" @submit.prevent="submit">
+    <form class="space-y-5" @submit.prevent="submit">
       <fieldset>
         <legend class="block text-sm font-semibold text-text-secondary mb-2">
           {{ t("feedback.kindLabel") }}
@@ -260,7 +266,7 @@ async function submit(): Promise<void> {
               {{ t("feedback.contactToggle") }}
             </span>
             <span class="block text-xs text-text-secondary mt-0.5">
-              {{ t("feedback.contactHint") }}
+              {{ isWebGuest ? t("feedback.contactHintGuest") : t("feedback.contactHint") }}
             </span>
           </span>
         </label>

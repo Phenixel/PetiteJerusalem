@@ -2790,8 +2790,11 @@ const en: LocaleMessages = {
     send: "Send",
     sending: "Sending…",
     success: "Thank you, message received. The reply will wait for you in Contact us.",
-    accountRequired:
-      "So that our reply reaches you, sign in: it will arrive in your profile, under Contact us. What you started writing is kept.",
+    guestNotice:
+      "You are not signed in: your message will reach us, but our reply cannot show in a profile. Sign in to find it here, or leave an email or phone below.",
+    contactHintGuest: "Without it, we will read your message but cannot reply to you.",
+    successGuest: "Thank you, message received. We will reply through the contact you left.",
+    successNoReply: "Thank you, message received.",
     login: "Sign in",
     error: "Sending failed. Please try again in a moment.",
   },
@@ -2806,7 +2809,32 @@ const en: LocaleMessages = {
     newReply: "New reply",
     messagesCount: "1 message | {n} messages",
     unreadCount: "1 new reply | {n} new replies",
-    waiting: "Received: we will answer you here as soon as we can.",
+    ourReply: "Our reply:",
+    sentOn: "Sent on {date}",
+    thread: {
+      back: "All your messages",
+      notFound:
+        "This message cannot be found. It may have been sent from another device or account.",
+      deliveryApp:
+        "Our replies show here, and a notification tells you if they are turned on for this phone.",
+      deliveryWeb: "Our replies show here, and a badge points them out in your profile.",
+      reopenHint: "This message is closed. Writing here reopens it.",
+      factsTitle: "What you sent us",
+      facts: {
+        kind: "Kind",
+        sentOn: "Sent on",
+        from: "From",
+        page: "Page",
+        contact: "Contact left",
+        noContact: "None, the reply only arrives here",
+      },
+      statusHelp: {
+        new: "Received. We will read it and reply here.",
+        in_progress: "We are working on it. The reply will arrive here.",
+        answered: "We replied. You can answer in turn, below.",
+        done: "This message is closed: fixed, added, or nothing to do.",
+      },
+    },
     replyLabel: "Reply",
     replyPlaceholder: "Add a detail, answer our question…",
     reply: "Send",
@@ -2814,6 +2842,12 @@ const en: LocaleMessages = {
     you: "You",
     team: "The Petite Jérusalem team",
     person: "The person",
+    kinds: {
+      idea: "Idea",
+      bug: "Bug",
+      error: "Mistake",
+      other: "Other",
+    },
     statuses: {
       new: "Sent",
       in_progress: "In progress",

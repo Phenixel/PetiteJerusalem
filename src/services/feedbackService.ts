@@ -179,12 +179,14 @@ export async function sendFeedback(message: FeedbackMessage): Promise<void> {
 
 /**
  * Les fils de la personne (son compte, et cet appareil dans l'app), le plus
- * récent en tête. `markRead` : elle les a sous les yeux, les réponses cessent
- * d'être nouvelles.
+ * récent en tête. `markRead` : l'identifiant du fil qu'elle ouvre, dont les
+ * réponses cessent d'être nouvelles ; la liste seule ne marque rien.
  */
-export async function listSupportThreads(markRead = false): Promise<SupportThreadView[]> {
+export async function listSupportThreads(
+  markRead: string | false = false,
+): Promise<SupportThreadView[]> {
   const [call, guestKey] = await Promise.all([
-    callable<{ guestKey: string; markRead: boolean }, { threads: SupportThreadView[] }>(
+    callable<{ guestKey: string; markRead: string | false }, { threads: SupportThreadView[] }>(
       "listSupportThreads",
     ),
     supportDeviceKey(),

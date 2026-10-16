@@ -111,6 +111,8 @@ describe("i18n usage", () => {
       "admin.support.kinds.",
       "admin.support.statuses.",
       "support.statuses.",
+      "support.kinds.",
+      "support.thread.statusHelp.",
       // Le corpus d'un livre à rattacher à un cours (ChiourTexteField).
       "chiourim.texte.types.",
       // Les informations de l'équipe : leur nature, et les langues de leurs

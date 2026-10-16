@@ -39,6 +39,7 @@ import {
   parseGuestKey,
   parseReply,
   PLATFORMS,
+  readScope,
   publicThread,
   sortThreads,
   SUPPORTS,
@@ -120,8 +121,10 @@ export const submitFeedback = onCall<unknown, Promise<{ ok: true; id: string }>>
 
 /**
  * Les fils de l'appelant (son compte, et la clé de son appareil), le plus
- * récent en tête. `markRead` : la personne les a sous les yeux, les réponses
- * cessent d'être « nouvelles ».
+ * récent en tête. `markRead` : la personne a sous les yeux tous ses fils
+ * (`true`) ou l'un d'eux (son identifiant), ses réponses cessent d'être
+ * « nouvelles ». La liste seule ne marque rien : la pastille reste jusqu'à
+ * l'ouverture du fil.
  */
 export const listSupportThreads = onCall<unknown, Promise<{ threads: PublicThread[] }>>(
   async (request) => {
@@ -139,9 +142,11 @@ export const listSupportThreads = onCall<unknown, Promise<{ threads: PublicThrea
 
     const threads = sortThreads([...docs.values()].map((d) => publicThread(d.id, d.data())));
 
-    const markRead = (request.data as { markRead?: unknown } | null)?.markRead === true;
-    const unread = [...docs.values()].filter((d) => d.data().unreadByUser === true);
-    if (markRead && unread.length > 0) {
+    const scope = readScope((request.data as { markRead?: unknown } | null)?.markRead);
+    const unread = [...docs.values()].filter(
+      (d) => d.data().unreadByUser === true && (scope === "all" || d.id === scope),
+    );
+    if (scope && unread.length > 0) {
       const batch = getFirestore().batch();
       unread.forEach((d) => batch.update(d.ref, { unreadByUser: false }));
       await batch.commit();
@@ -234,8 +239,8 @@ export const onSupportThreadWritten = onDocumentWritten(
       const tokens = prefs.data()?.fcmTokens;
       if (Array.isArray(tokens)) accountTokens = tokens.filter((t) => typeof t === "string");
     }
-    const message = buildReplyNotification(data, accountTokens);
     const id = event.params.threadId;
+    const message = buildReplyNotification(id, data, accountTokens);
     if (!message) {
       logger.info(`onSupportThreadWritten: fil ${id}, aucun appareil à prévenir.`);
       return;

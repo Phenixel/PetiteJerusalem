@@ -18,11 +18,16 @@ email. Les messages ne partent plus dans Notion ; ceux d'avant y restent.
   préférences natives, en double : perdre la clé, c'est perdre l'accès aux
   réponses). Les messages de l'appareil se relisent avec elle ; le serveur
   n'en garde que l'empreinte SHA-256. Connecté, on relit aussi ceux du compte.
-- **Sur le site, avec un compte seulement.** Sans compte, la réponse n'aurait
-  nulle part où arriver : la fenêtre invite à se connecter, garde ce qui était
-  déjà écrit (un passage de texte signalé, par exemple) et le rouvre sur la
-  page « Nous écrire » au retour (`stashFeedbackPrefill`, dans
-  `useFeedback.ts`). La page elle-même est réservée aux comptes sur le site.
+- **Sur le site, avec un compte**, les réponses s'affichent dans le profil.
+- **Sur le site sans compte, on écrit aussi**, mais rien ne relie le message
+  à la personne : notre réponse ne peut pas s'afficher chez elle. La fenêtre
+  le dit en tête, propose de se connecter (en gardant ce qui était déjà
+  écrit, un passage de texte signalé par exemple, rouvert sur la page « Nous
+  écrire » au retour : `stashFeedbackPrefill`, dans `useFeedback.ts`), et
+  rappelle sous la case du contact que sans email ni téléphone, on ne pourra
+  pas répondre. Le message arrive quand même dans le backoffice, marqué
+  « Ni compte, ni appareil, ni contact » s'il n'a rien laissé. La page « Nous
+  écrire » reste réservée aux comptes sur le site.
 - **Les versions de l'app d'avant les fils** continuent d'envoyer sans clé :
   leur message arrive dans le backoffice, mais seule une réponse par email
   peut atteindre la personne (si elle a laissé un contact).
@@ -56,7 +61,7 @@ nom et son email, pour pouvoir lui écrire).
 
 - la page « Nous écrire » (`/contact`), bouton « Nouveau message » ; on y
   arrive par le profil (ligne « Nous écrire » de l'app, raccourci du profil
-  du site), et par la notification d'une réponse ;
+  du site) ;
 - sur le site, le lien « Nous écrire » du pied de page ;
 - en bas de l'accueil, site et app, une ligne discrète sous la dédicace ;
 - d'un passage de texte (« Signaler une erreur »), déjà amorcé ;
@@ -95,6 +100,17 @@ Une relance de la personne remet le fil « à traiter » (sauf s'il est en
 cours) ; un fil compte 60 messages au plus, au-delà la personne en ouvre un
 autre.
 
+## La pastille des réponses non lues
+
+Dans l'app, une réponse de l'équipe pas encore lue se compte en pastille sur
+l'onglet du profil de la barre du bas (`BottomTabBar.vue`), et sur la ligne
+« Nous écrire » du profil. Le compte est partagé
+(`composables/useSupportUnread.ts`) : relu à l'arrivée d'un compte et à
+chaque retour dans l'app, seulement si un compte est connecté ou que
+l'appareil a déjà écrit (sinon, aucun appel au serveur) ; ouvrir le fil le
+fait baisser aussitôt. Sur le site, le raccourci « Nous écrire » du profil
+porte le même compte.
+
 ## Le backoffice
 
 `/admin/messages` liste les fils : par défaut ce qui n'est pas terminé (à
@@ -124,13 +140,21 @@ Le même travail se fait en ligne de commande : `support:liste`,
 2. `functions/src/feedback.ts` valide (`functions/src/support.ts`), borne les
    envois par adresse IP (dix par dix minutes) et crée le fil.
 3. La page « Nous écrire » relit les fils par `listSupportThreads` (le compte,
-   et la clé de l'appareil), qui les marque lus ; une relance passe par
-   `replySupportThread`, qui vérifie que le fil est bien à l'appelant.
+   et la clé de l'appareil) et les montre en cartes, sans rien marquer lu.
+   Une carte ouvre la page du fil (`/contact/:id`, `SupportThreadPage.vue`) :
+   où il en est et ce que cela veut dire (« Bien reçu, nous vous répondrons
+   ici », « Nous vous avons répondu »…), comment la réponse arrive
+   (notification dans l'app, pastille du profil sur le site), la
+   conversation et de quoi répondre, puis ce que la personne a envoyé
+   (nature, date, depuis quoi, page concernée, contact laissé ou « aucun »).
+   L'ouvrir marque ce fil-là lu (`markRead` porte son identifiant). Une
+   relance passe par `replySupportThread`, qui vérifie que le fil est bien à
+   l'appelant.
 4. L'équipe répond depuis le backoffice (écriture directe, réservée à l'admin
    par les règles) ou le CLI. La Cloud Function `onSupportThreadWritten`
    voit la réponse ajoutée et envoie une notification aux appareils du fil
    et à ceux du compte (`userPreferences/{uid}.fcmTokens`), dans la langue du
-   fil ; la toucher ouvre `/contact`. Un changement de statut ou de note
+   fil ; la toucher ouvre la page du fil. Un changement de statut ou de note
    n'envoie rien.
 
 Les règles Firestore ferment `support` à tous sauf l'admin : la personne ne

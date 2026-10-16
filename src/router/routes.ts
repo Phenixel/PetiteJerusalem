@@ -51,6 +51,7 @@ const SeoGuidePage = () => import("../views/SeoGuidePage.vue");
 const ParashaPage = () => import("../views/Library/ParashaPage.vue");
 const AnnouncementsPage = () => import("../views/Announcements/AnnouncementsPage.vue");
 const SupportPage = () => import("../views/SupportPage.vue");
+const SupportThreadPage = () => import("../views/SupportThreadPage.vue");
 const AnnouncementDetailPage = () => import("../views/Announcements/AnnouncementDetailPage.vue");
 
 import type { NavigationGuardWithThis, RouteLocation, RouteRecordSingleView } from "vue-router";
@@ -433,13 +434,20 @@ export default [
     component: AnnouncementsPage,
   },
   // Nous écrire : les messages envoyés à l'équipe et ses réponses (voir
-  // docs/feedback.md). L'app les relit sans compte, par la clé de l'appareil ;
-  // le site exige un compte, sans quoi la réponse serait perdue. La
-  // notification d'une réponse mène ici (functions/src/support.ts).
+  // docs/feedback.md), puis la page de chaque fil. L'app les relit sans
+  // compte, par la clé de l'appareil ; sur le site, seul un compte relie un
+  // message à la personne. La notification d'une réponse mène à la page du
+  // fil (functions/src/support.ts).
   {
     path: "/contact",
     name: "support",
     component: SupportPage,
+    meta: { requiresAuth: !isNativeApp },
+  },
+  {
+    path: "/contact/:id",
+    name: "support-thread",
+    component: SupportThreadPage,
     meta: { requiresAuth: !isNativeApp },
   },
   {

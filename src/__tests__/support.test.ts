@@ -10,6 +10,7 @@ import {
   parseGuestKey,
   parseReply,
   publicThread,
+  readScope,
   userReplyPatch,
   type SupportMessage,
 } from "../../functions/src/support";
@@ -169,6 +170,12 @@ describe("un fil", () => {
       createdAt: NOW.getTime(),
       updatedAt: NOW.getTime(),
       messages: [{ from: "user", text: "Le bouton ne répond pas.", at: NOW.getTime() }],
+      // Ce que la personne a elle-même envoyé : sa fiche le lui rappelle.
+      contact: "",
+      support: "app",
+      platform: "ios",
+      version: "1.4.2 (37)",
+      page: "",
     });
     expect(JSON.stringify(view)).not.toContain("piste interne");
     expect(JSON.stringify(view)).not.toContain("u1");
@@ -206,6 +213,15 @@ describe("un fil", () => {
   });
 });
 
+describe("la lecture", () => {
+  it("marque lu tout, un seul fil, ou rien", () => {
+    expect(readScope(true)).toBe("all");
+    expect(readScope("f1")).toBe("f1");
+    expect(readScope(false)).toBeNull();
+    expect(readScope("../x")).toBeNull();
+  });
+});
+
 describe("la notification de réponse", () => {
   const before = { messages: [{ from: "user", text: "Bonjour" }] };
   const after = {
@@ -226,21 +242,21 @@ describe("la notification de réponse", () => {
     expect(isTeamReplyTransition(before, undefined)).toBe(false);
   });
 
-  it("vise les appareils du fil et du compte, dans la langue du fil, vers /contact", () => {
-    const message = buildReplyNotification(after, ["t2", "t1"]);
+  it("vise les appareils du fil et du compte, dans la langue du fil, vers la page du fil", () => {
+    const message = buildReplyNotification("f1", after, ["t2", "t1"]);
     expect(message).toEqual({
       tokens: ["t1", "t2"],
       notification: {
         title: "Petite Jérusalem replied to you",
         body: "Merci, c'est corrigé dans la 1.5.",
       },
-      data: { url: "/contact" },
+      data: { url: "/contact/f1" },
       apns: { payload: { aps: { sound: "default" } } },
     });
   });
 
   it("ne part pas sans appareil connu", () => {
-    expect(buildReplyNotification({ ...after, pushTokens: [] }, [])).toBeNull();
+    expect(buildReplyNotification("f1", { ...after, pushTokens: [] }, [])).toBeNull();
   });
 });
 
@@ -302,5 +318,16 @@ describe("le backoffice", () => {
       "Une idée ici",
     );
     expect(unreadCount([{ unread: true }, { unread: false }, { unread: true }])).toBe(2);
+    // Trop long : coupé sur un mot entier.
+    const long = {
+      messages: [
+        {
+          from: "user" as const,
+          text: "Les horaires de chabbat ne s'affichent plus pour Lyon",
+          at: 0,
+        },
+      ],
+    };
+    expect(threadSubject(long, 30)).toBe("Les horaires de chabbat ne…");
   });
 });

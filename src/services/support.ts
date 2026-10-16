@@ -33,16 +33,17 @@ export interface SupportThreadView {
   createdAt: number;
   updatedAt: number;
   messages: SupportMessageView[];
-}
-
-/** Un fil tel que le backoffice le lit : tout, la note et le contact compris. */
-export interface AdminSupportThread extends SupportThreadView {
+  /** Ce que la personne a elle-même laissé ou envoyé, que sa fiche lui rappelle. */
   contact: string;
   support: "web" | "app";
   platform: "web" | "ios" | "android";
   version: string;
-  locale: string;
   page: string;
+}
+
+/** Un fil tel que le backoffice le lit : tout, la note de l'équipe comprise. */
+export interface AdminSupportThread extends SupportThreadView {
+  locale: string;
   uid: string | null;
   accountEmail: string | null;
   accountName: string | null;
@@ -107,11 +108,17 @@ export function parseAdminThread(id: string, doc: Record<string, unknown>): Admi
   };
 }
 
-/** Le premier message : ce dont il s'agit, la ligne qu'on lit dans une liste. */
+/**
+ * Le premier message : ce dont il s'agit, la ligne qu'on lit dans une liste.
+ * Trop long, il se coupe sur le dernier mot entier, jamais au milieu d'un mot.
+ */
 export function threadSubject(thread: Pick<SupportThreadView, "messages">, max = 140): string {
   const first = thread.messages[0]?.text ?? "";
   const flat = first.replace(/\s+/g, " ").trim();
-  return flat.length <= max ? flat : `${flat.slice(0, max - 1).trimEnd()}…`;
+  if (flat.length <= max) return flat;
+  const cut = flat.slice(0, max - 1);
+  const lastSpace = cut.lastIndexOf(" ");
+  return `${(lastSpace > max / 2 ? cut.slice(0, lastSpace) : cut).replace(/[\s,;:.]+$/, "")}…`;
 }
 
 /** Un email si la valeur en a la forme (un contact peut aussi être un téléphone). */
@@ -160,4 +167,11 @@ export function sortForTeam<T extends Pick<SupportThreadView, "status" | "update
 /** Le nombre de fils où une réponse de l'équipe attend la personne. */
 export function unreadCount(threads: Pick<SupportThreadView, "unread">[]): number {
   return threads.filter((t) => t.unread).length;
+}
+
+/** Le dernier message de l'équipe, s'il y en a un : l'aperçu d'une carte. */
+export function lastTeamMessage(
+  thread: Pick<SupportThreadView, "messages">,
+): SupportMessageView | null {
+  return [...thread.messages].reverse().find((m) => m.from === "team") ?? null;
 }
