@@ -1056,6 +1056,19 @@ const fr = {
       change: "Changer la date",
     },
   },
+  sessionReading: {
+    title: "Mes Téhilim",
+    intro:
+      "Les Téhilim que vous avez pris dans cette session, à la suite. Cochez chacun une fois lu : la session le compte aussitôt.",
+    progress: "Lus : {done} sur {total}",
+    allDone: "Tous vos Téhilim sont lus. Tizkou lemitsvot !",
+    markRead: "Marquer comme lu",
+    markReadNamed: "{name} : marquer comme lu",
+    read: "Lu",
+    backToSession: "Retour à la session",
+    emptyTitle: "Aucun Téhilim à lire ici",
+    emptyText: "Réservez des Téhilim dans la session : ils s'afficheront ici, à la suite.",
+  },
   detailSession: {
     loadingSession: "Chargement de la session...",
     guestTitle: "Vous voulez réserver sans compte ?",
@@ -1090,6 +1103,16 @@ const fr = {
       noneAvailable: "Tous les Téhilim de cette session sont déjà réservés.",
       anonymous: "Anonyme",
       offline: "Le tirage a besoin d'une connexion ; réessayez une fois de retour en ligne.",
+    },
+    batchReading: {
+      title: "Vos Téhilim, à la suite",
+      text: "Il vous reste un Téhilim à lire : retrouvez-le sur une seule page avec les autres, et cochez-le une fois lu. | Il vous reste {count} Téhilim à lire : lisez-les d'un coup, sur une seule page, et cochez chacun une fois lu.",
+      button: "Lire mes Téhilim",
+      promptTitle: "Les lire maintenant ?",
+      promptMessage:
+        "Votre Téhilim s'ouvre avec les autres, sur une seule page : cochez-le une fois lu, la session le compte aussitôt. | Vos {count} Téhilim s'ouvrent à la suite, sur une seule page : cochez chacun une fois lu, la session le compte aussitôt.",
+      promptConfirm: "Lire maintenant",
+      promptLater: "Plus tard",
     },
     instructions: {
       title: "Instructions",

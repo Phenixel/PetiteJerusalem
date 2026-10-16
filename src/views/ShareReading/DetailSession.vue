@@ -45,6 +45,7 @@ import { moderationService } from "../../services/moderationService";
 import { useConfirm } from "../../composables/useConfirm";
 import { parseSlotKey, slotKey, useReservationIndex } from "../../composables/useReservationIndex";
 import { useSessionEditing, type SessionEditData } from "../../composables/useSessionEditing";
+import { batchReadings, offersBatchReading } from "../../services/sessionBatchReading";
 
 const route = useRoute();
 const router = useRouter();
@@ -449,12 +450,12 @@ const submitReservations = async () => {
       source: "session_page",
     });
 
-    if (!currentUser.value) {
-      // Les invités voient la modale d'inscription, qui confirme déjà la réservation.
-      showSignupPrompt.value = true;
-    } else {
+    if (currentUser.value) {
       toast.success(t("detailSession.reservationsConfirmed", newReservations.length));
     }
+    // Not awaited: the bar and the guest dialog close without waiting for
+    // the answer.
+    void afterReservation();
   } catch (err) {
     console.error("Erreur lors de la confirmation globale:", err);
     analyticsService.capture("reservation_failed", {
@@ -559,6 +560,61 @@ const toggleReservationCompletion = async (textStudyId: string, section: number)
     if (error instanceof ReservationGoneError) removeLocalReservation(reservation.id);
     toast.errorFromException(error, t("detailSession.updateError"));
   }
+};
+
+// --- Reading one's Tehilim at once (services/sessionBatchReading.ts) ---
+
+/** The reader's psalms in this chain, read or not. */
+const myReadings = computed(() => batchReadings(session.value, currentUser.value));
+const unreadCount = computed(
+  () => myReadings.value.filter((reading) => !reading.reservation.isCompleted).length,
+);
+const showBatchReading = computed(() => offersBatchReading(myReadings.value));
+
+const openBatchReading = (trigger: "button" | "prompt") => {
+  const current = session.value;
+  if (!current) return;
+  analyticsService.capture("session_batch_reading_opened", {
+    session_id: current.id,
+    texts_count: myReadings.value.length,
+    unread_count: unreadCount.value,
+    trigger,
+    is_guest: currentUser.value == null,
+  });
+  void router.push({ name: "session-reading", params: { slug: current.slug ?? current.id } });
+};
+
+/**
+ * Right after a reservation that leaves several psalms to read: « Les lire
+ * maintenant ? » ("Read them now?"). Resolves to true when the reader goes
+ * to read them.
+ */
+const promptBatchReading = async (): Promise<boolean> => {
+  const count = unreadCount.value;
+  const accepted = await confirm({
+    title: t("detailSession.batchReading.promptTitle"),
+    message: t("detailSession.batchReading.promptMessage", { count }, count),
+    confirmLabel: t("detailSession.batchReading.promptConfirm"),
+    cancelLabel: t("detailSession.batchReading.promptLater"),
+  });
+  analyticsService.capture("session_batch_reading_prompted", {
+    session_id: session.value?.id,
+    unread_count: count,
+    accepted,
+    is_guest: currentUser.value == null,
+  });
+  if (accepted) openBatchReading("prompt");
+  return accepted;
+};
+
+/**
+ * Several Tehilim taken: offer to read them now, one after the other. A
+ * guest who declines (or has nothing to read at once) sees the signup
+ * dialog, which already confirms the reservation.
+ */
+const afterReservation = async () => {
+  if (showBatchReading.value && (await promptBatchReading())) return;
+  if (!currentUser.value) showSignupPrompt.value = true;
 };
 
 const clearSearch = () => {
@@ -1060,6 +1116,25 @@ watch(session, (s) => applySessionSeo(s));
         :read="progressStats.read"
         :participants="participants"
       />
+
+      <!-- Several Tehilim taken, some still to read: read them at once. -->
+      <div
+        v-if="showBatchReading"
+        class="card mb-8 flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between"
+      >
+        <div class="min-w-0">
+          <h3 class="text-lg font-bold text-text-primary">
+            {{ t("detailSession.batchReading.title") }}
+          </h3>
+          <p class="mt-0.5 text-sm text-text-secondary">
+            {{ t("detailSession.batchReading.text", { count: unreadCount }, unreadCount) }}
+          </p>
+        </div>
+        <button type="button" class="btn btn-primary shrink-0" @click="openBatchReading('button')">
+          <AppIcon name="book" :size="16" />
+          {{ t("detailSession.batchReading.button") }}
+        </button>
+      </div>
 
       <!-- Formulaire de réservation pour invités (composant unifié) -->
       <div id="guest-form" v-if="!currentUser" class="card p-5 mb-8">

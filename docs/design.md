@@ -1681,6 +1681,38 @@ sentence: remember to share it around you, so that others take part. The
 signal goes through the address (`?partager=1`), removed immediately: a
 reload does not reopen the window.
 
+### The Tehilim of a chain are read one after the other
+
+Someone who takes several psalms in a Tehilim chain used to open them one
+by one from the list, come back, mark each read, open the next. From two
+psalms taken (`BATCH_READING_MIN`), the chain offers to read them at once,
+on a page of their own (« Mes Téhilim », "My Tehilim",
+`/share-reading/session/:slug/lecture`, `SessionReadingPage.vue`), laid out
+like the daily reading of Mon parcours:
+
+- **The reader's psalms of this chain**, read or not, in the order of the
+  book; an abandoned draw (expired) is no longer theirs. A guest is
+  recognized by the device, as everywhere else. The Yehi ratson once
+  before, the three verses once after.
+- **Each psalm is checked where it is read** (« Marquer comme lu »), and
+  the list beside the text (at the top on a phone) checks it in one tap,
+  with where one stands (« Lus : 2 sur 5 », and its bar). What is checked
+  is the reservation itself, the switch of the chain's list: the chain
+  counts it at once.
+- **Nothing goes to Mon parcours**: it is the reading of one chain, for
+  now, not an objective on the shelf.
+- **Two doors**: the « Vos Téhilim, à la suite » card on the chain's page,
+  as long as there are several psalms taken and one is still to read; and,
+  right after a reservation that leaves such a list, the question « Les
+  lire maintenant ? » ("Read them now?"). A guest who declines sees the
+  signup dialog as before.
+- **Tehilim chains only**: a psalm is read whole, in one slot. A chapter
+  taken in a Talmud or Michna chain would need the reader to show that
+  chapter alone.
+
+Held by `src/__tests__/sessionBatchReading.test.ts` (« reading the Tehilim
+of a chain at once »).
+
 ### Remaining days are counted on the calendar
 
 The « Je participe » pill counts calendar days until the deadline, not

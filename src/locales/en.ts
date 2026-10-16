@@ -1015,6 +1015,19 @@ const en: LocaleMessages = {
       change: "Change the date",
     },
   },
+  sessionReading: {
+    title: "My Tehilim",
+    intro:
+      "The Tehilim you took in this session, one after the other. Check each one off once read: the session counts it right away.",
+    progress: "Read: {done} of {total}",
+    allDone: "All your Tehilim are read. Tizkou lemitsvot!",
+    markRead: "Mark as read",
+    markReadNamed: "{name}: mark as read",
+    read: "Read",
+    backToSession: "Back to the session",
+    emptyTitle: "No Tehilim to read here",
+    emptyText: "Reserve Tehilim in the session: they will show up here, one after the other.",
+  },
   detailSession: {
     loadingSession: "Loading session...",
     guestTitle: "Want to reserve without an account?",
@@ -1049,6 +1062,16 @@ const en: LocaleMessages = {
       noneAvailable: "All the Tehilim of this session are already reserved.",
       anonymous: "Anonymous",
       offline: "Drawing needs a connection; try again once you are back online.",
+    },
+    batchReading: {
+      title: "Your Tehilim, one after the other",
+      text: "You have one Tehilim left to read: find it on a single page with the others, and check it off once read. | You have {count} Tehilim left to read: read them all at once, on a single page, and check each one off once read.",
+      button: "Read my Tehilim",
+      promptTitle: "Read them now?",
+      promptMessage:
+        "Your Tehilim opens with the others, on a single page: check it off once read, and the session counts it right away. | Your {count} Tehilim open one after the other, on a single page: check each one off once read, and the session counts it right away.",
+      promptConfirm: "Read now",
+      promptLater: "Later",
     },
     instructions: {
       title: "Instructions",
