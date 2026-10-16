@@ -966,6 +966,7 @@ const he: LocaleMessages = {
       step3Desc: "הזמינו את הקהילה, המשפחה או החברים, גם בלי חשבון.",
       step4Title: "עקבו אחר ההתקדמות",
       step4Desc: "כל אחד מזמין וקורא את הקטעים שלו; התקדמו יחד עד הסיום.",
+      understood: "הבנתי",
     },
   },
   newSession: {
@@ -1840,6 +1841,9 @@ const he: LocaleMessages = {
     doubleVerses: "כל פסוק פעמיים",
     withRashi: "פירוש רש״י",
     rashiUnavailable: "לא ניתן לטעון את פירוש רש״י.",
+    aliyaMark: "לסמן כנקראה",
+    aliyaDone: "נקראה",
+    aliyaCheck: "{aliya} נקראה",
   },
   tehilimDay: {
     title: "תהילים יומי",

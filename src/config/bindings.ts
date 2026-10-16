@@ -15,8 +15,8 @@ const BINDINGS: Record<string, string> = {
   // Le moussar, cinquième volume de l'étude : un bronze plus doré que la
   // Michna, pour ne pas se confondre avec ses voisins de planche.
   moussar: "#86622f",
-  // La halakha, seule sur la deuxième planche : un châtaigne, le plus sombre
-  // des volumes, qui ne se confond ni avec le Talmud ni avec le Tanakh.
+  // La halakha, à côté du Tanakh et du moussar sur la deuxième planche : un
+  // châtaigne, le plus sombre des volumes, qui ne se confond avec aucun.
   halakha: "#5e4535",
 };
 

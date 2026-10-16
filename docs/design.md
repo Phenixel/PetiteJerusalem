@@ -127,6 +127,12 @@ bibliothèque ne propose que la dernière : la refermer la fait disparaître, el
 ne remonte pas l'historique texte par texte (chaque texte, lui, rouvre toujours
 là où on l'avait laissé).
 
+Même règle pour « Comment ça marche », la frise de la page du partage de
+lecture : elle ne se montre plus qu'à qui découvre. Elle se retire pour de
+bon dès que le principe est connu, par « J'ai compris » sous la frise, ou
+d'elle-même à la première session créée ou rejointe ; l'appareil s'en
+souvient (`useShareHowItWorks`, `shareHowItWorks.test.ts`).
+
 ### Une astuce se joue sur la page, une fois
 
 L'introduction dit ce que l'app contient ; elle ne peut pas dire comment
@@ -1112,10 +1118,15 @@ Ceux qu'une version précédente a laissés à plusieurs restent jusqu'au
 prochain posé (`readingProgressBookmarks.test.ts`).
 
 Le marque-page est un signet, comme celui d'un vrai livre
-(`BookmarkRibbon.vue`) : un ruban de soie rouge posé en travers de la page
-juste avant le verset marqué, dont le bout fendu en queue d'aronde pend
-dans la marge de gauche, du côté de la tranche d'un livre hébreu. Il se
-voit en faisant défiler, sans rien colorer du texte. Son rouge a son jeton,
+(`BookmarkRibbon.vue`), dans le dessin des signets qui sortent des volumes
+de l'app (`ArtVolume.vue`, `ArtSiddur.vue`) : un ruban de soie rouge couché
+sur la page juste avant le verset marqué. Il sort de la reliure, à droite
+(le dos d'un livre hébreu), dépasse un peu dans la marge, court sur
+quelques centimètres au-dessus du début du verset (8 rem, pas toute la
+largeur) et finit en queue d'aronde, le bout fendu qui dit « marque-page ».
+Le pli, plus sombre, est là où il sort de la page ; un filet clair dit la
+soie ; une ombre courte le pose sur la page. Il se voit en faisant
+défiler, sans rien colorer du texte. Son rouge a son jeton,
 `--color-ribbon`, celui du signet du sidour dessiné sur l'accueil
 (`ArtSiddur.vue`), et non `--color-danger` : ce n'est pas une erreur. Dans
 la guemara et la lecture du jour, où les passages se suivent dans un même
@@ -1126,14 +1137,33 @@ signet (`.reading-bookmarked`).
 
 ### La barre d'outils du lecteur tient sur une ligne
 
-Au-dessus du texte, les marque-pages, la taille, la bascule hébreu / forme
-/ phonétique et la traduction tiennent sur une seule ligne, même sur un
-téléphone. Sous la largeur `sm`, la taille du texte quitte la barre (le
-menu de lecture la porte toujours), et la bascule prend les noms abrégés
-qu'elle a déjà dans le menu (א, le dessin de la forme, Aa), son nom entier
-restant dans l'infobulle et pour les lecteurs d'écran. La traduction n'est
-pas proposée dans la forme de la page (daf de Vilna, tikoun) : ni l'une ni
+Au-dessus du texte, les marque-pages, la taille, les voyelles du tikoun, la
+traduction et la bascule hébreu / forme / phonétique tiennent sur une
+seule ligne, même sur un téléphone. La bascule est toujours au bout de la
+ligne (à droite ; à gauche en hébreu, la ligne se lisant de droite à
+gauche) : les commandes qui vont et viennent selon le texte se rangent
+devant elle, sans jamais la déplacer, et la main la retrouve au même
+endroit d'un texte à l'autre. Sous la largeur `sm`, la taille du texte
+quitte la barre (le menu de lecture la porte toujours), et la bascule
+garde le nom du mode choisi ; les deux autres prennent les noms abrégés
+qu'ils ont dans le menu (א, le dessin de la forme, Aa), leur nom entier
+restant dans l'infobulle et pour les lecteurs d'écran. Tout abréger
+faisait perdre de vue le mode où l'on lit. La traduction n'est pas
+proposée dans la forme de la page (daf de Vilna, tikoun) : ni l'une ni
 l'autre ne la montre.
+
+### Le chnei mikra se coche montée par montée
+
+Sur la page du chnei mikra, chaque montée porte sa case, à côté de son
+titre : une pastille qui porte son nom (« Marquer lue », puis « Lue », la
+case pleine à la couleur du thème). On lit le chnei mikra au fil de la
+semaine, une montée ou deux à la fois ; la case dit où l'on en est. Les
+coches sont rangées par semaine (le Chabbat de la paracha) : la semaine
+suivante repart de zéro, feuilleter vers une paracha passée retrouve les
+siennes. Sur l'appareil seulement, comme la table d'étude
+(`useChneiMikraChecks`, `chneiMikraChecks.test.ts`). La lecture du jour,
+qui montre aussi le chnei mikra, ne les porte pas : elle a déjà « Marquer
+lu » par section.
 
 ### La traduction se lit sous le verset
 
@@ -1951,8 +1981,13 @@ vient, l'heure en grand), l'étagère sans titre.
   fiche.
 - **Les gestes de la pile** : glisser à droite, c'est fait ; à gauche, plus
   tard (la carte passe sous la pile). En deçà de 110 px, la carte revient.
-  Ce que le geste fera se découvre sous elle (« C'est fait » à gauche,
-  « Plus tard » à droite). Tirée vers le bas, la pile s'étale, les cartes
+  Ce que le geste fera s'accroche au bord de la carte qu'on glisse : une
+  pastille claire (la coche et « C'est fait », sortie de sous son bord
+  gauche ; l'horloge et « Plus tard », de sous son bord droit), à
+  mi-hauteur, qui suit la carte et se fonce à la couleur du thème une fois
+  le seuil passé. Posé sous la pile, le mot venait se coller au bord de la
+  carte du dessous. Le portefeuille ouvert fait de même pour chaque carte
+  (« Pas fait », « Remettre aujourd'hui » selon son état). Tirée vers le bas, la pile s'étale, les cartes
   du dessous plus vite que celle du dessus, et s'ouvre au-delà de 50 px. Un
   appui long (550 ms) ouvre la fiche ; le clic droit et la touche du menu
   contextuel aussi. Un glissé n'ouvre jamais la page.
@@ -2601,15 +2636,14 @@ pages d'un jour, un passage partagé.
 
 L'accueil de la bibliothèque pose ses grands rayons d'étude comme des livres
 sur une planche (`LibraryShelf.vue`) : Tehilim, Michna, Talmud, Tanakh,
-Moussar, puis, sur une deuxième planche, Halakha. La liturgie n'y est pas :
-elle a sa page, le Sidour.
+Moussar, Halakha : deux planches de trois. La liturgie n'y est pas : elle a
+sa page, le Sidour.
 
-Cinq volumes au plus sur la planche : au-delà, le titre de la couverture
-devient trop petit pour se lire sur un téléphone. Un rayon de plus se pose
-donc sur une planche nouvelle, plutôt qu'en sixième volume. Une planche qui
-n'est pas pleine garde la largeur de place d'une planche garnie (`places`) :
-un volume seul n'y prend pas toute la planche, il a la taille de ses voisins
-du dessus.
+Trois volumes par planche, puis une planche nouvelle : cinq côte à côte
+rendaient chaque couverture trop petite sur un téléphone. Tous les volumes
+ont la même taille, le tiers de la planche, même seuls ou à deux sur la
+dernière, qui les centre ; à partir d'un écran moyen ils plafonnent à
+8 rem.
 
 Les reliures ne suivent pas le thème choisi : ce sont des objets, de teintes
 chaudes et mates de la même famille (terre cuite, bronze, brun), identiques en

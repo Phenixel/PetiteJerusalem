@@ -85,9 +85,9 @@ const bookState = (text: TextStudyJsonEntry): BookState =>
 
 // La bibliothèque est un tableau de bord : l'accueil ne montre que les grandes
 // sections (corpus) ; la liste détaillée des textes vit sur /bibliotheque/:corpus.
-// Six corpus d'étude, sur deux planches : cinq volumes au plus par planche
-// (docs/design.md), la halakha ouvre donc la seconde. La liturgie (Sidour,
-// Moadim, Brahot) a sa page, le Sidour : elle ne vit plus ici (voir SidourPage).
+// Six corpus d'étude, sur une étagère (trois volumes par planche, voir
+// LibraryShelf). La liturgie (Sidour, Moadim, Brahot) a sa page, le Sidour :
+// elle ne vit plus ici (voir SidourPage).
 const CORPUS_META: {
   corpus: string;
   typeKey: string;
@@ -142,9 +142,6 @@ const CORPUS_META: {
     searchKey: "study.corpus.halakhaSearch",
   },
 ];
-
-/** Volumes par planche : au-delà, le titre de la couverture ne se lit plus sur un téléphone. */
-const SHELF_SIZE = 5;
 
 /**
  * Les types de la liturgie, que la recherche de l'accueil parcourt aussi :
@@ -706,15 +703,7 @@ onMounted(() => {
            téléphone. Dans l'app, chacun dit dans son angle s'il est sur le
            téléphone. -->
       <div class="mt-2 md:mt-6">
-        <LibraryShelf :books="shelfBooks.slice(0, SHELF_SIZE)" @open="trackCorpusOpened" />
-        <LibraryShelf
-          v-if="shelfBooks.length > SHELF_SIZE"
-          class="mt-4"
-          :books="shelfBooks.slice(SHELF_SIZE)"
-          :start-index="SHELF_SIZE"
-          :places="SHELF_SIZE"
-          @open="trackCorpusOpened"
-        />
+        <LibraryShelf :books="shelfBooks" @open="trackCorpusOpened" />
       </div>
 
       <!-- Ce qui se lit aujourd'hui : les psaumes du jour, le chnei mikra, et
