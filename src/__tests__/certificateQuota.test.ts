@@ -4,6 +4,7 @@ import {
   distributionCertificates,
   protectedUploads,
   revocableCertificates,
+  settledStagingBuilds,
   stagingBuildKey,
   stagingUploads,
 } from "../../scripts/lib/certificate-quota.mjs";
@@ -255,6 +256,51 @@ describe("quota de certificats de distribution", () => {
         (c) => c.id,
       ),
     ).toEqual(["R33A4CCD5R", "T7X6S8JPNR"]);
+  });
+
+  it("libère le certificat du run précédent quand il a signé un build de staging traité", () => {
+    // On October 16, 2026, Apple refused a new certificate while only two
+    // were listed: the one of 3.10.11 on sale and the one of staging build
+    // 151, processed an hour earlier but kept as "the previous run's
+    // certificate". Processed, it goes; still processing, it stays.
+    const signedBuilds = new Map([
+      ["T7X6S8JPNR", "3070500"],
+      ["SA7386DCQJ", stagingBuildKey("151")],
+    ]);
+    const versions = {
+      data: [version("3.7.5", "READY_FOR_DISTRIBUTION", "b5", "2026-08-19T15:47:20.000+00:00")],
+      included: Object.values(BUILDS),
+    };
+    const production = protectedUploads(versions, { data: [BUILDS["3070500"]] });
+    const staging = (processingState: string) => ({
+      data: [build("s151", "151", "2026-10-16T11:31:45.000+00:00", processingState)],
+    });
+    const list = () => certificates().filter((c) => c.id !== "R33A4CCD5R");
+
+    const traité = staging("VALID");
+    expect(
+      revocableCertificates(
+        list(),
+        [...production, ...stagingUploads(traité)],
+        signedBuilds,
+        settledStagingBuilds(traité),
+      ).map((c) => c.id),
+    ).toEqual(["SA7386DCQJ"]);
+
+    const enTraitement = staging("PROCESSING");
+    expect(
+      revocableCertificates(
+        list(),
+        [...production, ...stagingUploads(enTraitement)],
+        signedBuilds,
+        settledStagingBuilds(enTraitement),
+      ),
+    ).toEqual([]);
+
+    // Not listed by the API yet: the most recent one stays, for lack of proof.
+    expect(
+      revocableCertificates(list(), production, signedBuilds, settledStagingBuilds({ data: [] })),
+    ).toEqual([]);
   });
 
   it("ne confond pas un build de staging avec un build de production de même numéro", () => {
