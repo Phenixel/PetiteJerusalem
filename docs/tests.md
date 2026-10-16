@@ -1,242 +1,248 @@
-# Tests : unitaires, garde-fous et bout en bout
+# Tests: unit, guard tests and end to end
 
-Trois familles se complètent : les tests unitaires Vitest, qui vérifient la
-logique et tiennent quelques règles du dépôt ; la suite de bout en bout
-Playwright, qui pilote l'app dans un vrai navigateur ; et, en voisin, le
-script de captures d'écran des fiches des stores, qui prépare ses données
-comme la suite de bout en bout.
+Three families complement each other: the Vitest unit tests, which check the
+logic and enforce a few repository rules; the Playwright end-to-end suite,
+which drives the app in a real browser; and, as a neighbor, the store
+listing screenshot script, which prepares its data like the end-to-end
+suite.
 
-## Tests unitaires (Vitest)
+## Unit tests (Vitest)
 
 ```bash
-npm run test:unit          # vitest, mode interactif
-npx vitest run             # une seule passe, ce que fait `npm run verify`
+npm run test:unit          # vitest, interactive mode
+npx vitest run             # a single pass, what `npm run verify` does
 ```
 
-Les 264 fichiers vivent dans `src/__tests__/*.test.ts`. La configuration
-(`vitest.config.ts`) prend l'environnement `jsdom` par défaut ; les tests qui
-n'ont pas besoin du DOM (ceux qui lisent le dépôt ou lancent un script)
-commencent par `// @vitest-environment node`. Les dossiers `e2e/`, `android/`,
-`ios/` et `.claude/` sont exclus.
+The 264 files live in `src/__tests__/*.test.ts`. The configuration
+(`vitest.config.ts`) uses the `jsdom` environment by default; tests that do
+not need the DOM (those that read the repository or run a script) start
+with `// @vitest-environment node`. The `e2e/`, `android/`, `ios/` and
+`.claude/` folders are excluded.
 
-### Les tests garde-fous
+### The guard tests
 
-Un certain nombre de tests ne vérifient pas une fonction mais une règle du
-dépôt ou un invariant de build. Ils font échouer `npm run verify` (donc la CI,
-sur chaque PR) pour des raisons qui ne se voient pas dans le diff. Les voici,
-avec ce que chacun attend :
+A number of tests do not check a function but a repository rule or a build
+invariant. They make `npm run verify` fail (and therefore the CI, on every
+PR) for reasons that do not show in the diff. Here they are, with what each
+one expects.
 
-| Test | Ce qu'il tient |
+The repository's documentation is now written in English, but the two
+typography guards keep their scope: the no-long-dash rule
+(`typography.test.ts`) still applies everywhere, in every language, code and
+documentation included; the French non-breaking-space rule
+(`frenchTypography.test.ts`) applies to the French UI locale.
+
+| Test | What it enforces |
 | --- | --- |
-| `typography.test.ts` | Aucun tiret long (U+2014) ni demi-cadratin (U+2013) dans les fichiers versionnés, code et contenus compris (CLAUDE.md) ; seules exceptions, les corpus importés sous `public/texts/` et la licence. |
-| `frenchTypography.test.ts` | Dans `src/locales/fr`, une espace insécable avant `!`, `?`, `;` (fine, U+202F), avant `:` et dans les guillemets « » (U+00A0), sans quoi le signe part seul à la ligne sur un téléphone ; le bloc `seo` est hors jeu. |
-| `searchInputs.test.ts` | Les barres de recherche lisent la frappe par `liveValue`, pas par `v-model` (qui attend la fin du mot sur un clavier à prédiction), et aucune ne filtre par un `toLowerCase().includes(…)` écrit sur place : toute recherche passe par `services/fuzzySearch`, qui trouve les autres graphies et pardonne les fautes (`docs/design.md`, « Une recherche trouve ce qu'on voulait dire »). |
-| `catalogSearch.test.ts` | Chaque clé des autres noms du catalogue (`src/datas/catalogAliases.ts`) désigne un texte ou un livre de `textStudies.json` : un texte renommé rendrait ses alias muets. Le même fichier rejoue sur le vrai catalogue ce que les gens tapent (« chabbat », « kidouchin », « psaume 23 », « genèse »). |
-| `cityAliases.test.ts` | Chaque ville des autres noms (`src/datas/cityAliases.ts`) figure dans `cities.json`, et « london », « ירושלים », « st etienne » trouvent leur ville en premier. |
-| `scopedStyles.test.ts` | Dans un `<style>` de composant, rien ne suit un `:global(…)` : le compilateur de Vue jette ce qui vient après la parenthèse, et `:global([dir="rtl"]) .mur` devient une règle sur tout élément en hébreu. Le sélecteur entier va dans `:global()`, ou l'ancêtre s'écrit sans lui (`:root.dark .planche`). |
-| `parcoursUnits.test.ts` | `src/datas/parcoursUnits.json` (ce que compte chaque chapitre des textes qu'un programme de Mon parcours peut finir) suit `public/texts/` : `node scripts/parcours-units.mjs` le réécrit, `--check` le vérifie. Un texte corrigé sans lui décalerait toutes les portions d'après (`docs/parcours.md`). |
-| `i18nUsage.test.ts` | Toute clé passée à `t("…")` ou `$t("…")` dans `src/` existe dans la locale française. |
-| `emailAuthErrors.test.ts` | Toute clé que `describeEmailAuthError` peut rendre (`EMAIL_AUTH_ERROR_KEYS`, les messages d'échec de l'écran de connexion) existe dans la locale française : elles sont choisies par une table, que `i18nUsage.test.ts` ne voit pas. |
-| `appLinks.test.ts` | La liste des chemins que l'app installée s'approprie (`scripts/lib/app-links.mjs`, servie sous `/.well-known/`) couvre les routes du routeur et n'attrape aucun chemin technique, `/__/auth/` en premier. |
-| `widgetParity.test.ts` | Les deux plateformes proposent les mêmes widgets : les noms du sélecteur iOS et Android coïncident, et le câblage Android est complet (provider, `appwidget-provider`, gabarit, libellés). |
-| `themeColors.test.ts` | Chaque couleur de thème se lit là où elle se pose (l'encre sur le fond, sur une carte et en sombre ; ce qui s'écrit sur la teinte, au repos et au survol), et rien dans `src` n'écrit du blanc ou l'encre sur la teinte (`bg-brand` avec `text-white` ou `text-primary`, ou une règle CSS qui pose `var(--color-brand)` en fond avec du blanc ou l'encre) : sur l'orange clair du thème par défaut, ni l'un ni l'autre ne se lirait (`docs/design.md`, « Les couleurs de thème »). |
-| `cardArt.test.ts` | Une carte qui porte son objet dessiné (`<CardArt`) n'a pas d'icône devant son titre (`docs/design.md`, « Une icône devant un titre doit dire quelque chose »). |
-| `playIcon.test.ts` | Le triangle de lecture (`play-solid`) a son centre de gravité au milieu de l'icône, et aucun `AppIcon` qui le porte n'ajoute de marge ni de décalage : il paraîtrait décalé dans son rond (`docs/design.md`, « Le triangle de lecture se centre sur son poids »). |
-| `seoTitles.test.ts` | Les titres du bloc `seo` échappent la barre verticale (`{'|'}`), que vue-i18n lirait sinon comme un séparateur de pluriel et tronquerait. |
-| `initialBundle.test.ts` | Le graphe des imports statiques depuis `src/main.ts` ne contient ni Firestore, ni hebcal, ni PostHog : ils se chargent à la demande, et un simple import ajouté dans un service touché par la racine les ramènerait dans le premier chargement. |
-| `prerenderSeo.test.ts` | Le prérendu (`seoPages.ts`) injecte titre, description, canonique, Open Graph, JSON-LD et corps explorable comme attendu, et les sitemaps se construisent à partir des mêmes listes de pages. |
-| `pruneNativeBundle.test.ts` | Le bundle natif ne garde rien du prérendu SEO : pages HTML générées, sitemaps, `robots.txt`, `llms.txt` ; l'app démarre sur la coquille nue `app.html`. Des corpus, il ne garde que les textes listés dans `src/datas/bundledTexts.json` (Tehilim, Sidour). |
-| `bundledTexts.test.ts` | Chaque texte que l'app embarque existe dans `public/texts/`. Les Tehilim se lisent dans le binaire, sans rien demander au site ; le Sidour s'y ouvre aussi sans attendre le réseau, puis l'app télécharge en fond la version corrigée que le site servirait, vérifiée à l'empreinte (un portail captif ne la remplace pas). Que le Sidour soit embarqué tout entier, c'est `offlineDailyBooks.test.ts` qui le tient. |
-| `textsManifest.test.ts` | `public/texts/manifest.json` correspond aux fichiers de textes (`scripts/texts-manifest.mjs --check`) : un texte corrigé sans que le manifeste suive ne serait corrigé que pour qui n'a rien téléchargé. |
-| `translations.test.ts` | Chaque traduction (`public/texts/traductions/`) a la forme du fichier hébreu qu'elle traduit et donne à chaque section du lecteur autant de lignes que l'hébreu : sans quoi elle se décalerait d'un verset sans erreur. Chaque source a une licence libre de la liste (`docs/traductions.md`), un lien et rien d'une traduction automatique de Sefaria ; une version IA du dépôt (`data/traductions-ia/`) porte le drapeau `ai`, qui fait afficher l'avertissement au lecteur. Chaque corpus garde la couverture annoncée. |
-| `scopedGlobal.test.ts` | Dans un `<style scoped>`, aucun `:global(.a)` suivi d'un autre sélecteur : Vue jette tout ce qui suit la parenthèse et applique la règle à `.a` lui-même. Écrite `:global(.native-app) .volet`, elle stylait toute la page de l'app (`<html class="native-app">`) au lieu du volet ; le sélecteur entier va dans la parenthèse. |
-| `pageForm.test.ts` | La forme de la page : Rachi et Tossafot (`public/texts/talmud-meforshim/`) alignés amoud par amoud et passage par passage sur la guemara de chaque traité (jamais plus de passages commentés que de passages), une tranche de vingt amoudim par fichier ; une marque de paracha (petou'ha, setouma) par verset sur les 54 parachiot de la Torah, et nulle part ailleurs ; Az yachir et Haazinou trouvés, avec leur longueur, sans un mot perdu. Une guemara ou une paracha régénérée sans ses commentaires le fait échouer. |
-| `environments.test.ts` | La production reste l'environnement par défaut, et le staging a une identité entièrement distincte (`scripts/lib/environments.mjs`). Le staging vit tout seul : aucune adresse de production écrite en dur dans le code de l'app hors des adresses canoniques et de la mesure d'audience, et l'app lit ses textes sur le site de son environnement (`APP_SITE_URL`, `src/config/environment.ts`) ; sans quoi l'app de staging irait chercher en production des fichiers qui n'y sont pas encore (docs/staging.md). |
-| `commentaryFiles.test.ts` | Le Bartenura et les Tossefot Yom Tov (`public/texts/mishna-meforshim/`) de chaque traité de Michna du catalogue, et Rachi (`public/texts/rashi/`) des 22 livres des Neviim et des Ketouvim, ont une case par ligne affichée dans chaque chapitre ; chacun des 150 psaumes lus seuls retrouve son chapitre dans Rachi sur Tehilim. Un texte régénéré sans ses commentaires le fait échouer (`node scripts/download-texts.mjs --only=commentaires`). |
-| `xcodeWidgets.test.ts` | La cible d'extension des widgets iOS que `scripts/lib/xcode-widgets.mjs` écrit dans le `project.pbxproj` est valide, à partir du vrai template Capacitor de `node_modules` ; personne n'a de macOS pour l'ouvrir dans Xcode. |
-| `xcodeWatch.test.ts` | Même chose pour la cible de l'app Apple Watch (`scripts/lib/xcode-watch.mjs`). |
-| `lastmod.test.ts` | Le `lastmod` du sitemap vient de git (`scripts/lib/lastmod.mjs`) : la date du dernier commit qui a touché le fichier de la page, vérifiée sur un dépôt jetable. |
-| `ignoredExceptions.test.ts` | Le filtre du bruit connu de l'Error tracking (`src/config/ignoredExceptions`) reconnaît les messages réellement observés dans PostHog, et seulement eux. |
-| `analyticsAudience.test.ts` | `resolveUserType` classe l'équipe, le compte de démonstration remis à Google et les testeurs du test fermé à part des vrais utilisateurs, quelle que soit la casse de l'email. |
-| `adminAccess.test.ts` | `isAdminEmail` n'accepte que le compte admin, et `generateStudioToken` produit un jeton de 64 caractères hexadécimaux jamais répété. |
-| `zmanimDeviceTimezone.test.ts` | Les horaires d'un lieu sont les mêmes instants quel que soit le fuseau de la MACHINE (`process.env.TZ` changé sous les pieds du calcul) : c'est le test qui tient le correctif posé sur `@hebcal/core`, décrit plus bas. |
-| `zmanimMatrice.test.ts` | La matrice de l'audit rejouée : 59 lieux, 30 dates, deux avis, sous trois fuseaux d'appareil. Plus de cent cinquante mille lignes, qui doivent toutes rendre le MÊME instant quel que soit le fuseau de la machine. |
-| `zmanimInvariants.test.ts` | Les rapports qui définissent chaque zman sur deux ans et sur les 243 villes du catalogue, et les points fixes du moteur solaire : lever et coucher à moins de dix secondes des valeurs de PyEphem, pour cinq villes aux quatre tournants de l'année. |
+| `typography.test.ts` | No em dash (U+2014) or en dash (U+2013) in versioned files, code and content included (CLAUDE.md); the only exceptions are the imported corpora under `public/texts/` and the license. |
+| `frenchTypography.test.ts` | In `src/locales/fr`, a non-breaking space before `!`, `?`, `;` (narrow, U+202F), before `:` and inside « » quotes (U+00A0), otherwise the sign wraps alone onto the next line on a phone; the `seo` block is out of scope. |
+| `searchInputs.test.ts` | Search bars read keystrokes through `liveValue`, not through `v-model` (which waits for the end of the word on a predictive keyboard), and none filters with a `toLowerCase().includes(…)` written in place: every search goes through `services/fuzzySearch`, which finds the other spellings and forgives typos (`docs/design.md`, « Une recherche trouve ce qu'on voulait dire »). |
+| `catalogSearch.test.ts` | Each key of the catalog's alternative names (`src/datas/catalogAliases.ts`) designates a text or a book from `textStudies.json`: a renamed text would make its aliases silent. The same file replays on the real catalog what people type (« chabbat », « kidouchin », « psaume 23 », « genèse »). |
+| `cityAliases.test.ts` | Each city among the alternative names (`src/datas/cityAliases.ts`) appears in `cities.json`, and "london", "ירושלים", "st etienne" find their city first. |
+| `scopedStyles.test.ts` | In a component's `<style>`, nothing follows a `:global(…)`: Vue's compiler drops what comes after the parenthesis, and `:global([dir="rtl"]) .mur` becomes a rule on every element in Hebrew. The entire selector goes into `:global()`, or the ancestor is written without it (`:root.dark .planche`). |
+| `parcoursUnits.test.ts` | `src/datas/parcoursUnits.json` (what each chapter counts in the texts that a Mon parcours program can finish) follows `public/texts/`: `node scripts/parcours-units.mjs` rewrites it, `--check` verifies it. A text corrected without it would shift all the following portions (`docs/parcours.md`). |
+| `i18nUsage.test.ts` | Every key passed to `t("…")` or `$t("…")` in `src/` exists in the French locale. |
+| `emailAuthErrors.test.ts` | Every key that `describeEmailAuthError` can return (`EMAIL_AUTH_ERROR_KEYS`, the sign-in screen's failure messages) exists in the French locale: they are chosen through a table, which `i18nUsage.test.ts` does not see. |
+| `appLinks.test.ts` | The list of paths that the installed app claims (`scripts/lib/app-links.mjs`, served under `/.well-known/`) covers the router's routes and catches no technical path, `/__/auth/` first of all. |
+| `widgetParity.test.ts` | Both platforms offer the same widgets: the iOS and Android picker names match, and the Android wiring is complete (provider, `appwidget-provider`, template, labels). |
+| `themeColors.test.ts` | Each theme color is readable where it is placed (the ink on the background, on a card and in dark mode; what is written on the tint, at rest and on hover), and nothing in `src` writes white or the ink on the tint (`bg-brand` with `text-white` or `text-primary`, or a CSS rule that sets `var(--color-brand)` as a background with white or the ink): on the light orange of the default theme, neither would be readable (`docs/design.md`, « Les couleurs de thème »). |
+| `cardArt.test.ts` | A card that carries its drawn object (`<CardArt`) has no icon in front of its title (`docs/design.md`, « Une icône devant un titre doit dire quelque chose »). |
+| `playIcon.test.ts` | The play triangle (`play-solid`) has its center of gravity in the middle of the icon, and no `AppIcon` that carries it adds a margin or an offset: it would look off-center in its circle (`docs/design.md`, « Le triangle de lecture se centre sur son poids »). |
+| `seoTitles.test.ts` | The titles of the `seo` block escape the vertical bar (`{'|'}`), which vue-i18n would otherwise read as a plural separator and truncate. |
+| `initialBundle.test.ts` | The graph of static imports from `src/main.ts` contains neither Firestore, nor hebcal, nor PostHog: they load on demand, and a simple import added to a service touched by the root would bring them back into the first load. |
+| `prerenderSeo.test.ts` | The prerendering (`seoPages.ts`) injects title, description, canonical, Open Graph, JSON-LD and crawlable body as expected, and the sitemaps are built from the same page lists. |
+| `pruneNativeBundle.test.ts` | The native bundle keeps nothing of the SEO prerendering: generated HTML pages, sitemaps, `robots.txt`, `llms.txt`; the app starts on the bare `app.html` shell. Of the corpora, it only keeps the texts listed in `src/datas/bundledTexts.json` (Tehilim, Sidour). |
+| `bundledTexts.test.ts` | Each text the app bundles exists in `public/texts/`. The Tehilim are read from the binary, without asking anything of the site; the Sidour also opens there without waiting for the network, then the app downloads in the background the corrected version the site would serve, verified by its hash (a captive portal does not replace it). That the Sidour is bundled in full is enforced by `offlineDailyBooks.test.ts`. |
+| `textsManifest.test.ts` | `public/texts/manifest.json` matches the text files (`scripts/texts-manifest.mjs --check`): a text corrected without the manifest following would only be corrected for those who have downloaded nothing. |
+| `translations.test.ts` | Each translation (`public/texts/traductions/`) has the shape of the Hebrew file it translates and gives each reader section as many lines as the Hebrew: otherwise it would shift by a verse without any error. Each source has a free license from the list (`docs/traductions.md`), a link and nothing of a Sefaria machine translation; an AI version from the repository (`data/traductions-ia/`) carries the `ai` flag, which makes the reader display the warning. Each corpus keeps the announced coverage. |
+| `scopedGlobal.test.ts` | In a `<style scoped>`, no `:global(.a)` followed by another selector: Vue drops everything after the parenthesis and applies the rule to `.a` itself. Written as `:global(.native-app) .volet`, it styled the app's whole page (`<html class="native-app">`) instead of the panel; the entire selector goes inside the parenthesis. |
+| `pageForm.test.ts` | The shape of the page: Rachi and Tossafot (`public/texts/talmud-meforshim/`) aligned amoud by amoud and passage by passage with the gemara of each tractate (never more commented passages than passages), a slice of twenty amoudim per file; a paracha mark (petou'ha, setouma) per verse across the 54 parachiot of the Torah, and nowhere else; Az yachir and Haazinou found, with their length, without a word lost. A gemara or a paracha regenerated without its commentaries makes it fail. |
+| `environments.test.ts` | Production remains the default environment, and staging has an entirely distinct identity (`scripts/lib/environments.mjs`). Staging stands on its own: no production address hard-coded in the app's code outside the canonical addresses and audience measurement, and the app reads its texts from its environment's site (`APP_SITE_URL`, `src/config/environment.ts`); otherwise the staging app would fetch from production files that are not there yet (docs/staging.md). |
+| `commentaryFiles.test.ts` | The Bartenura and the Tossefot Yom Tov (`public/texts/mishna-meforshim/`) of each Michna tractate in the catalog, and Rachi (`public/texts/rashi/`) on the 22 books of the Neviim and Ketouvim, have one slot per displayed line in each chapter; each of the 150 psalms read on its own finds its chapter in Rachi on Tehilim. A text regenerated without its commentaries makes it fail (`node scripts/download-texts.mjs --only=commentaires`). |
+| `xcodeWidgets.test.ts` | The iOS widget extension target that `scripts/lib/xcode-widgets.mjs` writes into `project.pbxproj` is valid, starting from the real Capacitor template in `node_modules`; nobody has macOS to open it in Xcode. |
+| `xcodeWatch.test.ts` | Same for the Apple Watch app target (`scripts/lib/xcode-watch.mjs`). |
+| `lastmod.test.ts` | The sitemap's `lastmod` comes from git (`scripts/lib/lastmod.mjs`): the date of the last commit that touched the page's file, checked on a throwaway repository. |
+| `ignoredExceptions.test.ts` | The filter for known Error tracking noise (`src/config/ignoredExceptions`) recognizes the messages actually observed in PostHog, and only those. |
+| `analyticsAudience.test.ts` | `resolveUserType` classifies the team, the demo account handed to Google and the closed-test testers apart from real users, whatever the email's case. |
+| `adminAccess.test.ts` | `isAdminEmail` only accepts the admin account, and `generateStudioToken` produces a 64-character hexadecimal token that is never repeated. |
+| `zmanimDeviceTimezone.test.ts` | A location's times are the same instants whatever the MACHINE's time zone (`process.env.TZ` changed under the computation's feet): it is the test that enforces the fix applied to `@hebcal/core`, described below. |
+| `zmanimMatrice.test.ts` | The audit matrix replayed: 59 locations, 30 dates, two opinions, under three device time zones. More than one hundred fifty thousand lines, which must all return the SAME instant whatever the machine's time zone. |
+| `zmanimInvariants.test.ts` | The ratios that define each zman over two years and across the catalog's 243 cities, and the fixed points of the solar engine: sunrise and sunset within ten seconds of PyEphem's values, for five cities at the four turning points of the year. |
 
-Quand une PR est rouge sans qu'aucun test fonctionnel ne semble concerné,
-c'est presque toujours l'un de ceux-là ; le message d'échec nomme le fichier
-et la règle.
+When a PR is red without any functional test seeming concerned, it is almost
+always one of these; the failure message names the file and the rule.
 
-### Le correctif posé sur `@hebcal/core`
+### The fix applied to `@hebcal/core`
 
-`patches/@hebcal+core+6.9.1.patch` corrige trois fonctions de
-`dist/esm/zmanim.js`, et `patch-package` le rejoue à chaque `npm ci` par le
-script `postinstall`. Sans lui, une installation neuve rendrait des horaires
-faux sans que rien ne le signale.
+`patches/@hebcal+core+6.9.1.patch` fixes three functions in
+`dist/esm/zmanim.js`, and `patch-package` replays it on every `npm ci`
+through the `postinstall` script. Without it, a fresh install would return
+wrong times without anything flagging it.
 
-Ce qu'il corrige : `zdtToDate` faisait `res.setMilliseconds(0)`, et
-`sunriseOffset` comme `sunsetOffset` faisaient `setSeconds(0, 0)`. Les setters
-de `Date` ne coupent pas l'instant, ils le RECALCULENT depuis les champs locaux
-de la machine. À l'heure ambiguë du retour à l'heure d'hiver, qui existe deux
-fois, JavaScript choisit l'autre occurrence ; l'instant recule d'une heure. Un
-appareil réglé sur `America/New_York` lisait ainsi le lever du soleil de Paris
-du 1er novembre 2026 à 05:37 UTC au lieu de 06:37, et un appareil californien
-la fin du Chéma à 08:05 au lieu de 09:05. Le lieu affiché n'y était pour
-rien : seul comptait le fuseau de l'appareil.
+What it fixes: `zdtToDate` did `res.setMilliseconds(0)`, and both
+`sunriseOffset` and `sunsetOffset` did `setSeconds(0, 0)`. `Date` setters do
+not truncate the instant, they RECOMPUTE it from the machine's local fields.
+At the ambiguous hour of the switch back to standard time, which exists
+twice, JavaScript picks the other occurrence; the instant moves back an
+hour. A device set to `America/New_York` thus read Paris's sunrise on
+November 1, 2026 at 05:37 UTC instead of 06:37, and a Californian device
+read the end of Shema at 08:05 instead of 09:05. The displayed location had
+nothing to do with it: only the device's time zone mattered.
 
-Le correctif tronque sur l'epoch (`Math.floor(ms / 1000) * 1000`), qui ne passe
-par aucun champ local. Il ne touche que `dist/esm/zmanim.js` : `dist/bundle.js`
-porte le même code, mais aucun import ne l'atteint, le champ `exports` du
-paquet n'exposant que `.` et `./dist/esm/*`.
+The fix truncates on the epoch (`Math.floor(ms / 1000) * 1000`), which goes
+through no local field. It only touches `dist/esm/zmanim.js`:
+`dist/bundle.js` carries the same code, but no import reaches it, since the
+package's `exports` field only exposes `.` and `./dist/esm/*`.
 
-Le correctif reste à proposer en amont, chez `hebcal/hebcal-es6` ; le patch se
-retire du dépôt dès qu'une version le porte. Voir
-`docs/audit-horaires-2026-09.md`, point 3.1.
+The fix is still to be proposed upstream, at `hebcal/hebcal-es6`; the patch
+is removed from the repository as soon as a version includes it. See
+`docs/audit-horaires-2026-09.md`, item 3.1.
 
-## Tests de bout en bout (Playwright)
+## End-to-end tests (Playwright)
 
-La suite pilote l'app dans Chromium, sur le serveur de dev Vite, et vérifie ce
-que voit un visiteur : accueil, bibliothèque, lecteur, horaires, calendrier,
-langues, puis comptes, chaînes de lecture et chiourim contre les émulateurs
-Firebase.
+The suite drives the app in Chromium, on the Vite dev server, and checks
+what a visitor sees: home, library, reader, times, calendar, languages, then
+accounts, reading chains and chiourim against the Firebase emulators.
 
 ### Configuration
 
-`playwright.config.ts` :
+`playwright.config.ts`:
 
-- `testDir` : `e2e/`, avec deux projets :
-  - `public` (`e2e/public/`) : les pages qui ne parlent pas à Firebase. Aucun
-    prérequis au-delà de Node et de Chromium.
-  - `firebase` (`e2e/firebase/`) : comptes, chaînes de lecture, réservations,
-    chaîne perpétuelle (ses noms, la fin d'un tour, et les règles Firestore
-    qui les gardent),
-    chiourim. Ces tests ont besoin des émulateurs Auth et Firestore.
-- Le serveur Vite est lancé par Playwright lui-même sur le port **5474**
-  (`E2E_PORT`), voisin du 5473 du dev pour tourner à côté d'une session de
-  dev sans lui prendre son serveur. Il tourne en mode DEV, donc branché sur
-  les émulateurs comme `npm run dev`. Le badge Vue DevTools est désactivé
-  (`STORE_SCREENSHOTS=1`), il recouvrirait des boutons en bas d'écran.
-- Locale `fr-FR`, fuseau `Europe/Paris`, profil « Desktop Chrome ».
-- Trace et capture d'écran conservées à l'échec seulement, dans
-  `test-results/` (git-ignoré, comme `playwright-report/`).
-- `E2E_CHROMIUM` : chemin d'un Chromium déjà présent sur la machine (image de
-  CI, bac à sable), à la place de celui que `npx playwright install`
-  téléchargerait.
-- En CI : deux workers, deux nouvelles tentatives par test, rapport HTML en
-  plus de la liste, et `test.only` interdit.
+- `testDir`: `e2e/`, with two projects:
+  - `public` (`e2e/public/`): the pages that do not talk to Firebase. No
+    prerequisites beyond Node and Chromium.
+  - `firebase` (`e2e/firebase/`): accounts, reading chains, bookings,
+    perpetual chain (its names, the end of a round, and the Firestore rules
+    that guard them),
+    chiourim. These tests need the Auth and Firestore emulators.
+- The Vite server is started by Playwright itself on port **5474**
+  (`E2E_PORT`), next to the dev server's 5473 so it can run alongside a dev
+  session without taking its server. It runs in DEV mode, so it is wired to
+  the emulators like `npm run dev`. The Vue DevTools badge is disabled
+  (`STORE_SCREENSHOTS=1`), as it would cover buttons at the bottom of the
+  screen.
+- Locale `fr-FR`, time zone `Europe/Paris`, "Desktop Chrome" profile.
+- Trace and screenshot kept on failure only, in `test-results/`
+  (git-ignored, like `playwright-report/`).
+- `E2E_CHROMIUM`: path to a Chromium already present on the machine (CI
+  image, sandbox), instead of the one `npx playwright install` would
+  download.
+- In CI: two workers, two retries per test, HTML report in addition to the
+  list, and `test.only` forbidden.
 
-### Lancer la suite
+### Running the suite
 
 ```bash
-npx playwright install chromium                   # une fois : le navigateur
-npm run test:e2e                                  # toute la suite
-npm run test:e2e:public                           # sans Firebase
-npm run test:e2e -- --headed e2e/public/library.spec.ts   # arguments passés à Playwright
+npx playwright install chromium                   # once: the browser
+npm run test:e2e                                  # the whole suite
+npm run test:e2e:public                           # without Firebase
+npm run test:e2e -- --headed e2e/public/library.spec.ts   # arguments passed to Playwright
 ```
 
-`npm run test:e2e` passe par `scripts/e2e.mjs`, qui s'occupe des émulateurs
-avant de lancer `playwright test` :
+`npm run test:e2e` goes through `scripts/e2e.mjs`, which takes care of the
+emulators before running `playwright test`:
 
-1. si des émulateurs Auth et Firestore répondent déjà (`npm run dev:local` ou
-   `npm run emulators` à côté), la suite s'y branche telle quelle ;
-2. sinon, si le CLI firebase est installé (`npm install -g firebase-tools`),
-   il en démarre des vides le temps de la suite
-   (`firebase emulators:exec --only auth,firestore`) et les arrête en
-   sortant ; il faut un JDK 21 ou plus, comme pour le dev ;
-3. sinon, la suite tourne quand même et les tests du projet `firebase` se
-   déclarent ignorés, avec la marche à suivre. En CI (`CI` posée), ce
-   troisième cas n'est pas un repli mais une erreur : un job vert doit vouloir
-   dire que la suite entière a tourné, pas qu'un tiers en a été sauté.
+1. if Auth and Firestore emulators are already responding (`npm run
+   dev:local` or `npm run emulators` alongside), the suite connects to them
+   as they are;
+2. otherwise, if the firebase CLI is installed (`npm install -g
+   firebase-tools`), it starts empty ones for the duration of the suite
+   (`firebase emulators:exec --only auth,firestore`) and stops them on the
+   way out; this needs JDK 21 or later, as for dev;
+3. otherwise, the suite runs anyway and the tests of the `firebase` project
+   report themselves as skipped, with the steps to follow. In CI (`CI`
+   set), this third case is not a fallback but an error: a green job must
+   mean that the whole suite ran, not that a third of it was skipped.
 
-Tout ce qui suit `--` est transmis à Playwright : `--headed`, `--project
-public`, `--debug`, un chemin de fichier, `-g "un titre"`.
+Everything after `--` is passed to Playwright: `--headed`, `--project
+public`, `--debug`, a file path, `-g "un titre"`.
 
-### Le socle : `e2e/support/fixtures.ts`
+### The foundation: `e2e/support/fixtures.ts`
 
-Tout test importe `test`, `expect` et `gotoApp` de ce fichier plutôt que de
-`playwright/test`. Il apporte deux choses que tout test veut sans le dire :
+Every test imports `test`, `expect` and `gotoApp` from this file rather than
+from `playwright/test`. It brings two things every test wants without
+saying so:
 
-- Un appareil « propre » mais qui a déjà répondu à la bannière de
-  consentement (refus par défaut : rien ne part vers PostHog) et vu
-  l'introduction, posés en `localStorage` avant le premier script de la page,
-  pour que ni l'une ni l'autre ne recouvre la page testée. L'option
-  `consent: "ask"` (`test.use({ consent: "ask" })`) remet la bannière, pour la
-  tester.
-- Un filet sur les erreurs JavaScript : toute exception non rattrapée
-  (`pageerror`) et tout `console.error` pendant le test le font échouer, même
-  si l'écran a l'air bon. C'est ainsi que la suite attrape une promesse
-  rejetée ou une erreur Vue dans un watcher. Une courte liste de bruit connu
-  est ignorée (le SDK Auth qui cherche l'émulateur absent, les ressources
-  réseau injoignables, les messages `[vite]`). Un message qui nomme un port
-  d'émulateur n'est écarté que s'il porte aussi la marque d'un échec réseau :
-  dans le projet `firebase`, où les émulateurs répondent, une erreur du SDK
-  journalisée avec son hôte doit faire échouer le test, pas disparaître.
+- A "clean" device that has nevertheless already answered the consent
+  banner (refusal by default: nothing goes to PostHog) and seen the
+  introduction, set in `localStorage` before the page's first script, so
+  that neither covers the tested page. The `consent: "ask"` option
+  (`test.use({ consent: "ask" })`) brings the banner back, to test it.
+- A net for JavaScript errors: any uncaught exception (`pageerror`) and any
+  `console.error` during the test make it fail, even if the screen looks
+  fine. This is how the suite catches a rejected promise or a Vue error in a
+  watcher. A short list of known noise is ignored (the Auth SDK looking for
+  the absent emulator, unreachable network resources, `[vite]` messages). A
+  message that names an emulator port is only dismissed if it also carries
+  the mark of a network failure: in the `firebase` project, where the
+  emulators respond, an SDK error logged with its host must make the test
+  fail, not disappear.
 
-`gotoApp(page, path)` ouvre une page de l'app et attend que Vue l'ait rendue
-(`#app` a un enfant) : le shell est vide tant que le bundle n'est pas arrivé.
+`gotoApp(page, path)` opens an app page and waits for Vue to have rendered
+it (`#app` has a child): the shell is empty until the bundle has arrived.
 
-### Firebase : `e2e/support/firebase.ts`
+### Firebase: `e2e/support/firebase.ts`
 
-Les tests du projet `firebase` importent `test` et `expect` de ce fichier, qui
-étend le socle :
+The tests of the `firebase` project import `test` and `expect` from this
+file, which extends the foundation:
 
-- une fixture de worker `emulators`, vraie si les émulateurs Auth et Firestore
-  répondent ; sinon chaque test s'ignore de lui-même (`test.skip`) avec le
-  message qui dit comment les lancer ;
-- `createAccount(label)` : un compte créé dans l'émulateur Auth, sans passer
-  par l'interface ;
-- `signIn(page, account, redirect?)` : connexion par le formulaire email de
-  `/login`, en attendant d'en sortir ;
-- `seedTehilimSession(owner, options)` : une chaîne de Tehilim posée dans
-  Firestore telle que l'app l'écrirait (mêmes champs que
-  `sessionService.createSession`) ;
-- `seedPerpetualChain(fields?)` : une chaîne perpétuelle telle que
-  `chaine:creer` l'écrirait, sous un identifiant unique, avec des champs en
-  plus si besoin (un tour déjà lu) ; voir `docs/chaine-perpetuelle.md` ;
-- `uniqueId()` : un suffixe unique par test et par processus ;
-- `readDoc` et `seedDoc`, réexportés, pour lire ou poser un document
-  quelconque.
+- an `emulators` worker fixture, true if the Auth and Firestore emulators
+  respond; otherwise each test skips itself (`test.skip`) with the message
+  that says how to start them;
+- `createAccount(label)`: an account created in the Auth emulator, without
+  going through the interface;
+- `signIn(page, account, redirect?)`: sign-in through the email form at
+  `/login`, waiting to leave it;
+- `seedTehilimSession(owner, options)`: a Tehilim chain set in Firestore as
+  the app would write it (same fields as `sessionService.createSession`);
+- `seedPerpetualChain(fields?)`: a perpetual chain as `chaine:creer` would
+  write it, under a unique identifier, with extra fields if needed (a round
+  already read); see `docs/chaine-perpetuelle.md`;
+- `uniqueId()`: a unique suffix per test and per process;
+- `readDoc` and `seedDoc`, re-exported, to read or set any document.
 
-Les données sont écrites par l'API REST des émulateurs, sans SDK, via
-`scripts/lib/firebase-emulator.mjs`, partagé avec
-`scripts/store-screenshots.mjs` : un compte créé dans l'émulateur Auth, des
-documents posés dans l'émulateur Firestore avec le jeton « owner » qui
-court-circuite les règles de sécurité. Les ports sont ceux de `firebase.json`
-(8470 Firestore, 8471 Auth).
+The data is written through the emulators' REST API, without an SDK, via
+`scripts/lib/firebase-emulator.mjs`, shared with
+`scripts/store-screenshots.mjs`: an account created in the Auth emulator,
+documents set in the Firestore emulator with the "owner" token that bypasses
+the security rules. The ports are those of `firebase.json` (8470 Firestore,
+8471 Auth).
 
-### Écrire un nouveau test
+### Writing a new test
 
-- Un fichier `*.spec.ts` dans `e2e/public/` ou `e2e/firebase/`, selon qu'il
-  parle à Firebase ou non, qui importe le socle correspondant.
-- Sélecteurs par rôle et libellé français, tels que l'utilisateur les voit :
+- A `*.spec.ts` file in `e2e/public/` or `e2e/firebase/`, depending on
+  whether it talks to Firebase or not, that imports the corresponding
+  foundation.
+- Selectors by role and French label, as the user sees them:
   `getByRole("heading", { level: 1, name: "Bibliothèque" })`,
   `getByRole("button", { name: "Phonétique" })`,
-  `getByPlaceholder("Rechercher un tehilim…")`. Jamais par classes Tailwind,
-  qui changent à la première retouche de style ; un `href` ou un `id` de
-  formulaire reste acceptable.
-- Un test crée ses propres données avec `uniqueId()` (comptes, chaînes) et ne
-  suppose rien de l'état de l'émulateur : la suite tolère un émulateur qui a
-  déjà servi, et les tests tournent en parallèle.
-- Pas de `waitForTimeout` : on attend une condition (`expect(...).toBeVisible()`,
-  `waitForURL`, `toHaveCount`), avec un `timeout` explicite si le délai est
-  connu (filtrage différé, par exemple).
-- Une erreur JavaScript pendant le test le fait échouer : si elle est
-  attendue et étrangère à l'app, ajouter le motif à `IGNORED_CONSOLE` dans
-  `fixtures.ts`, avec le pourquoi.
+  `getByPlaceholder("Rechercher un tehilim…")`. Never by Tailwind classes,
+  which change at the first style tweak; an `href` or a form `id` remains
+  acceptable.
+- A test creates its own data with `uniqueId()` (accounts, chains) and
+  assumes nothing about the emulator's state: the suite tolerates an
+  emulator that has already been used, and the tests run in parallel.
+- No `waitForTimeout`: wait for a condition (`expect(...).toBeVisible()`,
+  `waitForURL`, `toHaveCount`), with an explicit `timeout` if the delay is
+  known (deferred filtering, for example).
+- A JavaScript error during the test makes it fail: if it is expected and
+  unrelated to the app, add the pattern to `IGNORED_CONSOLE` in
+  `fixtures.ts`, with the reason why.
 
 ### CI
 
-Le job `e2e` de `.github/workflows/ci.yml` tourne sur chaque PR, en parallèle
-de `build-and-test` : Node 22, JDK 21, `firebase-tools` (pour les
-émulateurs), `npx playwright install --with-deps chromium`, puis
-`npm run test:e2e`. À l'échec, `playwright-report/` et `test-results/` (traces
-et captures) sont publiés en artefacts du run, conservés sept jours.
+The `e2e` job in `.github/workflows/ci.yml` runs on every PR, in parallel
+with `build-and-test`: Node 22, JDK 21, `firebase-tools` (for the
+emulators), `npx playwright install --with-deps chromium`, then
+`npm run test:e2e`. On failure, `playwright-report/` and `test-results/`
+(traces and screenshots) are published as run artifacts, kept for seven
+days.
 
-## Captures d'écran des fiches
+## Store listing screenshots
 
-`scripts/store-screenshots.mjs` (`npm run store:screenshots`) est le voisin de
-la suite de bout en bout : il pilote l'app avec Playwright contre des
-émulateurs Firebase éphémères peuplés de données de démo fixes (par le même
-`scripts/lib/firebase-emulator.mjs`), pour produire les captures des fiches
-Play Store et App Store de façon reproductible, les mêmes pour les deux. Voir
+`scripts/store-screenshots.mjs` (`npm run store:screenshots`) is the
+neighbor of the end-to-end suite: it drives the app with Playwright against
+ephemeral Firebase emulators populated with fixed demo data (through the
+same `scripts/lib/firebase-emulator.mjs`), to produce the Play Store and
+App Store listing screenshots reproducibly, the same for both. See
 `store-assets/screenshots/README.md`.

@@ -1,270 +1,271 @@
-# Traductions des textes : sources libres et couverture
+# Text translations: free sources and coverage
 
-Ce document dit où trouver une traduction **humaine et publiée** de chaque
-corpus de la bibliothèque, sous quelle licence, et quelle part du texte elle
-couvre. Il sert de registre : une traduction ne s'ajoute à l'app que si elle
-figure ici, avec sa licence et la manière de la citer.
+This document says where to find a **human, published** translation of each
+corpus in the library, under which license, and what share of the text it
+covers. It serves as a registry: a translation is only added to the app if
+it appears here, with its license and how to credit it.
 
-Pas de traduction automatique, ni par IA : c'est la règle de départ.
+No machine translation, nor AI translation: that is the starting rule.
 
-Les versions retenues ci-dessous sont **dans l'app** depuis octobre 2026 :
-voir « Dans l'app » pour où elles vivent, comment elles se reconstruisent et
-comment le lecteur les montre.
+The versions selected below have been **in the app** since October 2026:
+see "In the app" for where they live, how they are rebuilt and how the
+reader shows them.
 
-État des lieux d'octobre 2026, mesuré sur l'export public de Sefaria
-(`Sefaria-Export/books.json`, généré le 2 octobre 2026).
+State of play as of October 2026, measured on Sefaria's public export
+(`Sefaria-Export/books.json`, generated on October 2, 2026).
 
-## La licence de l'app nous ouvre le « non commercial »
+## The app's license opens "non-commercial" to us
 
-L'app et le site sont gratuits, sans publicité ni achat intégré, et publiés
-eux-mêmes sous CC BY-NC 4.0. Ils répondent à la définition de
-« NonCommercial » de Creative Commons : un usage qui ne vise pas d'abord un
-avantage commercial ou une rémunération. Les traductions en **CC BY-NC**
-nous sont donc ouvertes, au même titre que le domaine public, CC0, CC BY et
-CC BY-SA.
+The app and the site are free, without ads or in-app purchases, and are
+themselves published under CC BY-NC 4.0. They meet Creative Commons'
+definition of "NonCommercial": a use not primarily intended for commercial
+advantage or monetary compensation. Translations under **CC BY-NC** are
+therefore open to us, just like the public domain, CC0, CC BY and CC BY-SA.
 
-Ce choix nous engage : si l'app devenait payante, portait de la publicité ou
-des achats, les traductions NC (Talmud anglais, Tanakh anglais de JPS ou de
-Koren) devraient être retirées.
+This choice binds us: if the app became paid, carried ads or purchases, the
+NC translations (English Talmud, English Tanakh from JPS or Koren) would
+have to be removed.
 
-## Couverture, en part des mots hébreux de chaque corpus
+## Coverage, as a share of each corpus's Hebrew words
 
-Mesure : pour chaque version, la part des mots hébreux (segment par segment,
-sur le découpage de Sefaria, celui de nos fichiers) dont le segment a une
-traduction non vide.
+Measurement: for each version, the share of Hebrew words (segment by
+segment, on Sefaria's segmentation, the one our files use) whose segment
+has a non-empty translation.
 
-| Corpus              |  Mots hébreux |    Anglais libre | Français libre |
-| ------------------- | ------------: | ---------------: | -------------: |
-| Torah               |        70 130 |            100 % |          100 % |
-| Neviim              |       125 409 |            100 % |          100 % |
-| Ketouvim (Tehilim)  |        76 656 |            100 % |          100 % |
-| Mishna (63 traités) |       192 537 |            100 % |           58 % |
-| Talmud Bavli (37)   |     1 928 381 |           99,9 % |            0 % |
-| Rachi sur la Torah  |       166 480 |           99,7 % |            0 % |
-| Hovot Halévavot     |        89 075 |             96 % |            0 % |
-| Pélé Yoets          |       233 554 | 7 % (non fiable) |            0 % |
-| **Ensemble**        | **2 882 222** |         **92 %** |       **13 %** |
+| Corpus                |  Hebrew words |    Free English | Free French |
+| --------------------- | ------------: | --------------: | ----------: |
+| Torah                 |        70,130 |            100% |        100% |
+| Neviim                |       125,409 |            100% |        100% |
+| Ketouvim (Tehilim)    |        76,656 |            100% |        100% |
+| Mishna (63 tractates) |       192,537 |            100% |         58% |
+| Talmud Bavli (37)     |     1,928,381 |           99.9% |          0% |
+| Rachi on the Torah    |       166,480 |           99.7% |          0% |
+| Hovot Halévavot       |        89,075 |             96% |          0% |
+| Pélé Yoets            |       233,554 | 7% (unreliable) |          0% |
+| **Total**             | **2,882,222** |         **92%** |     **13%** |
 
-Pour la Torah, la Mishna et le Talmud réunis (2,19 millions de mots) :
-**99,9 % en anglais, 8 % en français**. Le Talmud pèse les deux tiers de
-toute la bibliothèque : c'est lui qui fait l'écart.
+For the Torah, the Mishna and the Talmud combined (2.19 million words):
+**99.9% in English, 8% in French**. The Talmud accounts for two thirds of
+the whole library: it is what makes the gap.
 
-## Les versions retenues
+## The selected versions
 
-### Anglais
+### English
 
-| Corpus               | Version (titre exact dans Sefaria)                                                | Licence                        | Remarques                                                                                                   |
-| -------------------- | --------------------------------------------------------------------------------- | ------------------------------ | ----------------------------------------------------------------------------------------------------------- |
-| Tanakh entier        | The Koren Jerusalem Bible                                                         | CC BY-NC                       | Une seule version pour tout le Tanakh, traduction orthodoxe.                                                |
-| Tanakh entier, repli | The Holy Scriptures A New Translation JPS 1917                                    | Domaine public                 | Anglais daté, mais sans aucune condition.                                                                   |
-| Torah, autre choix   | Metsudah Chumash, Metsudah Publications, 2009                                     | CC BY                          | Littérale ; la variante « with Onkelos » est en CC BY-NC.                                                   |
-| Mishna               | Mishnah Yomit by Dr. Joshua Kulp                                                  | CC BY 3.0                      | Les 63 traités, Avot compris, entièrement remplis.                                                          |
-| Talmud Bavli         | William Davidson Edition - English                                                | CC BY-NC 4.0                   | Koren Steinsaltz. Voir plus bas : traduction et explication sont mêlées.                                    |
-| Rachi                | Rashi Chumash, Metsudah Publications, 2009                                        | CC BY                          | 99,5 %.                                                                                                     |
-| Rachi, autre choix   | Pentateuch with Rashi's commentary by M. Rosenbaum and A.M. Silbermann, 1929-1934 | Domaine public (selon Sefaria) | Œuvre anglaise : aux États-Unis, chaque volume n'y entre que 95 ans après sa parution (le dernier en 2030). |
-| Hovot Halévavot      | Duties of the Heart, trans. Rabbi Yosef Sebag                                     | CC BY                          | 75 % ; complété par Hyamson (1925, domaine public) on atteint 96 %.                                         |
-| Pélé Yoets           | Sefaria Community Translation                                                     | CC0                            | 7 %, traducteurs anonymes et non relus : pas exploitable.                                                   |
+| Corpus                  | Version (exact title in Sefaria)                                                  | License                              | Notes                                                                                                                           |
+| ----------------------- | --------------------------------------------------------------------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------- |
+| Entire Tanakh           | The Koren Jerusalem Bible                                                         | CC BY-NC                             | A single version for the whole Tanakh, an Orthodox translation.                                                                 |
+| Entire Tanakh, fallback | The Holy Scriptures A New Translation JPS 1917                                    | Public domain                        | Dated English, but with no conditions at all.                                                                                   |
+| Torah, alternative      | Metsudah Chumash, Metsudah Publications, 2009                                     | CC BY                                | Literal; the "with Onkelos" variant is under CC BY-NC.                                                                          |
+| Mishna                  | Mishnah Yomit by Dr. Joshua Kulp                                                  | CC BY 3.0                            | All 63 tractates, Avot included, fully filled in.                                                                               |
+| Talmud Bavli            | William Davidson Edition - English                                                | CC BY-NC 4.0                         | Koren Steinsaltz. See below: translation and explanation are interwoven.                                                        |
+| Rachi                   | Rashi Chumash, Metsudah Publications, 2009                                        | CC BY                                | 99.5%.                                                                                                                          |
+| Rachi, alternative      | Pentateuch with Rashi's commentary by M. Rosenbaum and A.M. Silbermann, 1929-1934 | Public domain (according to Sefaria) | An English work: in the United States, each volume only enters the public domain 95 years after publication (the last in 2030). |
+| Hovot Halévavot         | Duties of the Heart, trans. Rabbi Yosef Sebag                                     | CC BY                                | 75%; supplemented by Hyamson (1925, public domain) it reaches 96%.                                                              |
+| Pélé Yoets              | Sefaria Community Translation                                                     | CC0                                  | 7%, anonymous and unreviewed translators: not usable.                                                                           |
 
-### Français
+### French
 
-| Corpus        | Version (titre exact dans Sefaria)                               | Licence        | Remarques                                                                                                                                                  |
-| ------------- | ---------------------------------------------------------------- | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Tanakh entier | Bible du Rabbinat 1899 [fr]                                      | Domaine public | Zadoc Kahn et le Rabbinat, 1899 et 1906 ; transcrite de Wikisource, verset par verset. Seuls Josué 21,36 et 21,37 manquent.                                |
-| Tanakh, repli | La Bible, Traduction Nouvelle, Samuel Cahen, 1831 [fr]           | Domaine public | Cahen est mort en 1862 (Sefaria affiche « unknown »).                                                                                                      |
-| Mishna        | Le Talmud de Jérusalem, traduit par Moise Schwab, 1878-1890 [fr] | Domaine public | 39 traités : ceux du Talmud de Jérusalem (Zeraïm, Moèd, Nachim, une partie de Nezikin, le début de Nida). Notes de bas de page retirées à la construction. |
-| Pirké Avot    | Maximes des Pères, trans. by Rabbi Rivon Krygier, 2023 [fr]      | CC BY-NC       | Traité complet.                                                                                                                                            |
+| Corpus           | Version (exact title in Sefaria)                                 | License       | Notes                                                                                                                                        |
+| ---------------- | ---------------------------------------------------------------- | ------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Entire Tanakh    | Bible du Rabbinat 1899 [fr]                                      | Public domain | Zadoc Kahn and the Rabbinate, 1899 and 1906; transcribed from Wikisource, verse by verse. Only Joshua 21:36 and 21:37 are missing.           |
+| Tanakh, fallback | La Bible, Traduction Nouvelle, Samuel Cahen, 1831 [fr]           | Public domain | Cahen died in 1862 (Sefaria shows "unknown").                                                                                                |
+| Mishna           | Le Talmud de Jérusalem, traduit par Moise Schwab, 1878-1890 [fr] | Public domain | 39 tractates: those of the Jerusalem Talmud (Zeraïm, Moèd, Nachim, part of Nezikin, the beginning of Nida). Footnotes removed at build time. |
+| Pirké Avot       | Maximes des Pères, trans. by Rabbi Rivon Krygier, 2023 [fr]      | CC BY-NC      | Complete tractate.                                                                                                                           |
 
-Ce qui manque en français, et pourquoi :
+What is missing in French, and why:
 
-- **Mishna** : tout Kodachim, tout Taharot sauf Nida (chapitres 1 à 4),
-  Édouyot. Le Talmud de Jérusalem ne les commente pas, Schwab ne les a donc
-  pas traduits. Maasser Chéni n'a que 7 mishnayot sur 57 chez Sefaria (trou
-  de numérisation : Schwab l'a traduit en entier).
-- **Talmud Bavli** : aucune traduction française libre et structurée. Les
-  traductions du XIXe siècle (Chiarini 1831 pour Berakhot ; Rabbinowicz,
-  de 1873 à 1880, pour les trois Bava, Sanhédrin et Makot) n'existent qu'en
-  scans, souvent abrégées ou réorganisées, et n'ont jamais été alignées sur
-  le daf. La traduction intégrale Steinsaltz en français (achevée en juin 2026) est protégée.
-- **Rachi** : aucune traduction française avant 1957 ; toutes les éditions
-  (Fondation Samuel et Odette Lévy, Colbo, Cerf) sont protégées.
-- **Hovot Halévavot** et **Pélé Yoets** : seulement des traductions récentes
-  (Chouraqui 1950, Frajerman 2018), protégées.
+- **Mishna**: all of Kodachim, all of Taharot except Nida (chapters 1 to
+  4), Édouyot. The Jerusalem Talmud does not comment on them, so Schwab did
+  not translate them. Maasser Chéni has only 7 mishnayot out of 57 at
+  Sefaria (a digitization gap: Schwab translated it in full).
+- **Talmud Bavli**: no free, structured French translation. The 19th-century
+  translations (Chiarini 1831 for Berakhot; Rabbinowicz, from 1873 to 1880,
+  for the three Bava, Sanhedrin and Makot) exist only as scans, often
+  abridged or reorganized, and have never been aligned with the daf. The
+  complete Steinsaltz translation into French (completed in June 2026) is
+  under copyright.
+- **Rachi**: no French translation before 1957; all editions (Fondation
+  Samuel et Odette Lévy, Colbo, Cerf) are under copyright.
+- **Hovot Halévavot** and **Pélé Yoets**: only recent translations
+  (Chouraqui 1950, Frajerman 2018), under copyright.
 
-## Pièges à éviter
+## Pitfalls to avoid
 
-- **Jamais les fichiers `merged`** pour une traduction. Ils assemblent,
-  segment par segment, des versions aux licences différentes (celui de la
-  Genèse commence par du JPS). `scripts/download-texts.mjs` lit aujourd'hui
-  `English/merged.json` : pour une traduction, il faut lire le fichier de
-  la version choisie, nommé par son titre exact.
-- **Sefaria publie aussi des traductions automatiques.** Elles portent
-  parfois un « ✧ » dans leur titre (« Sefaria Kli Yakar, 2026 Claude 3.7 »),
-  parfois la mention « DeepL » ou « établie à partir de la traduction
-  anglaise ». On ne prend que les versions listées ici.
-- **« Sefaria Community Translation »** est en CC0 mais anonyme et non
-  relue : on ne s'y fie pas, même là où elle est fournie (78 % de la
-  Mishna).
-- **Talmud anglais de Steinsaltz** : la traduction littérale est en gras
-  (`<b>`) et l'explication de Steinsaltz s'y glisse en romain, dans la même
-  phrase. Il faut afficher les deux et garder le gras, pas retirer
-  l'explication : le gras seul donne un texte haché.
-- **Les licences de Sefaria sont déclaratives.** Pour quelques versions,
-  seule Sefaria les affiche et l'éditeur ne les confirme nulle part :
-  JPS 1985, Metsudah, Sebag. Elles restent utilisables (Sefaria les
-  diffuse ainsi depuis des années), mais une version contestée devrait
-  sortir de l'app sans délai.
+- **Never the `merged` files** for a translation. They assemble, segment by
+  segment, versions with different licenses (the Genesis one starts with
+  JPS). `scripts/download-texts.mjs` currently reads `English/merged.json`:
+  for a translation, you must read the file of the chosen version, named by
+  its exact title.
+- **Sefaria also publishes machine translations.** They sometimes carry a
+  "✧" in their title ("Sefaria Kli Yakar, 2026 Claude 3.7"), sometimes the
+  mention "DeepL" or « établie à partir de la traduction anglaise » ("based
+  on the English translation"). We only take the versions listed here.
+- **"Sefaria Community Translation"** is CC0 but anonymous and unreviewed:
+  we do not rely on it, even where it is provided (78% of the Mishna).
+- **Steinsaltz's English Talmud**: the literal translation is in bold
+  (`<b>`) and Steinsaltz's explanation slips in in roman type, within the
+  same sentence. Both must be displayed and the bold kept, not the
+  explanation removed: the bold alone gives a choppy text.
+- **Sefaria's licenses are declarative.** For a few versions, only Sefaria
+  displays them and the publisher confirms them nowhere: JPS 1985,
+  Metsudah, Sebag. They remain usable (Sefaria has distributed them this way
+  for years), but a contested version should leave the app without delay.
 
-## Citer une traduction
+## Crediting a translation
 
-Au pied du texte, une seule ligne : « Traduction : » et le nom de celui qui a
-traduit (« Traduction : Moïse Schwab »), rien d'autre. Ni le titre de
-l'édition, ni la licence, ni Sefaria, ni ce qu'on a retouché : la page de
-lecture reste sobre (décision du propriétaire, octobre 2026).
+At the foot of the text, a single line: « Traduction : » ("Translation:")
+and the name of the person who translated (« Traduction : Moïse Schwab »),
+nothing else. Not the edition's title, not the license, not Sefaria, not
+what was retouched: the reading page stays uncluttered (owner's decision,
+October 2026).
 
-Le nom est un lien vers la traduction chez Sefaria, dont la page donne
-l'édition, l'éditeur et la licence. C'est ce qui nous garde en règle : les
-licences CC demandent de citer l'auteur, la licence et les modifications,
-mais admettent qu'on le fasse par un lien vers une page qui les porte. Le
-fichier de chaque traduction garde, lui, toutes ses sources (`sources` :
-nom, auteur, année, éditeur, licence et son lien).
+The name is a link to the translation on Sefaria, whose page gives the
+edition, the publisher and the license. That is what keeps us compliant: CC
+licenses require crediting the author, the license and the modifications,
+but allow doing so through a link to a page that carries them. Each
+translation's file, for its part, keeps all its sources (`sources`: name,
+author, year, publisher, license and its link).
 
-## Pour aller plus loin en français : demander
+## Going further in French: ask
 
-Le domaine public ne couvrira jamais le Talmud, Rachi ni le moussar en
-français. La seule voie est l'autorisation des ayants droit, comme Koren l'a
-accordée à Sefaria pour l'anglais :
+The public domain will never cover the Talmud, Rachi or musar in French.
+The only way is permission from the rights holders, as Koren granted Sefaria
+for English:
 
-- **Talmud** : le Steinsaltz Center et Biblieurope, pour la traduction
-  française achevée en 2026 ;
-- **Mishna** : le Rabbinat (Presses du Temps Présent), ou l'éditeur de la
-  Mishna Kehati en français, pour Kodachim et Taharot ;
-- **Rachi** : la Fondation Samuel et Odette Lévy, ou Colbo.
+- **Talmud**: the Steinsaltz Center and Biblieurope, for the French
+  translation completed in 2026;
+- **Mishna**: the Rabbinate (Presses du Temps Présent), or the publisher of
+  the Mishna Kehati in French, for Kodachim and Taharot;
+- **Rachi**: the Fondation Samuel et Odette Lévy, or Colbo.
 
-Une app gratuite, sans publicité, qui cite et renvoie vers l'éditeur, est la
-demande la plus facile à accepter.
+A free app, without ads, that credits and links back to the publisher, is
+the easiest request to accept.
 
-## Dans l'app
+## In the app
 
-### Ce qui est intégré
+### What is integrated
 
-Les versions des deux tableaux ci-dessus, sauf les « repli » et « autre
-choix », plus deux compléments pour les fichiers du rayon Talmud qui n'ont
-pas de guemara de Babylone :
+The versions from the two tables above, except the "fallback" and
+"alternative" ones, plus two supplements for the files in the Talmud
+section that have no Babylonian gemara:
 
-- **Chekalim** (`talmud/shekalim.json`), qui est du Talmud de Jérusalem :
-  Guggenheimer en anglais (« The Jerusalem Talmud », De Gruyter, CC BY) et
-  Schwab en français ;
-- **Kinim** et **Midot**, qui n'ont que leur michna : Kulp.
+- **Chekalim** (`talmud/shekalim.json`), which is from the Jerusalem
+  Talmud: Guggenheimer in English ("The Jerusalem Talmud", De Gruyter, CC
+  BY) and Schwab in French;
+- **Kinim** and **Midot**, which only have their michna: Kulp.
 
-Mesuré en lignes du lecteur (un verset, une michna, une phrase de guemara) à
-la construction :
+Measured in reader lines (a verse, a michna, a sentence of gemara) at build
+time:
 
-| Corpus              | Anglais |                      Français |
-| ------------------- | ------: | ----------------------------: |
-| Tanakh et Tehilim   |   100 % |                         100 % |
-| Michna              |   100 % |  100 % (60 % humain, 40 % IA) |
-| Talmud              |  99,6 % | 99,6 % (IA ; Chekalim humain) |
-| Rachi (chnei mikra) |  99,5 % |                   99,5 % (IA) |
-| 'Hovot Halévavot    |    98 % |                     98 % (IA) |
+| Corpus              | English |                     French |
+| ------------------- | ------: | -------------------------: |
+| Tanakh and Tehilim  |    100% |                       100% |
+| Michna              |    100% |   100% (60% human, 40% AI) |
+| Talmud              |   99.6% | 99.6% (AI; Chekalim human) |
+| Rachi (chnei mikra) |   99.5% |                 99.5% (AI) |
+| 'Hovot Halévavot    |     98% |                   98% (AI) |
 
-### La traduction française assistée par IA
+### The AI-assisted French translation
 
-Ce qui n'existe qu'en anglais est traduit en français par des agents (Claude
-Sonnet), à partir de la traduction anglaise humaine et de l'hébreu, en
-suivant `docs/traduction-ia.md` : c'est une première version, à relire. Les
-lignes traduites vivent dans `data/traductions-ia/fr/<fichier>`, à la clé de
-leur ligne, et `download-translations.mjs` les prend en dernier, après toute
-traduction humaine. Le pied du texte le dit : « Traduction : Joshua Kulp
-(traduit de l'anglais par IA) ». La licence est celle de la traduction
-anglaise d'où elle vient (une adaptation la garde).
+What exists only in English is translated into French by agents (Claude
+Sonnet), from the human English translation and the Hebrew, following
+`docs/traduction-ia.md`: it is a first version, to be reviewed. The
+translated lines live in `data/traductions-ia/fr/<fichier>`, keyed by their
+line, and `download-translations.mjs` takes them last, after any human
+translation. The foot of the text says so: « Traduction : Joshua Kulp
+(traduit de l'anglais par IA) » ("Translation: Joshua Kulp (translated from
+English by AI)"). The license is that of the English translation it comes
+from (an adaptation keeps it).
 
-`scripts/translate-ia.mjs` découpe le travail en lots et rassemble les
-résultats (vérifiés ligne à ligne : complets, en français, gras et italique
-gardés, typographie du dépôt) ; un lot refusé repasse au tour suivant. Un
-gras ouvert dans un gras redevient l'italique de la source : c'est
-l'erreur que les agents font le plus souvent sur un terme translittéré du
-Talmud.
+`scripts/translate-ia.mjs` splits the work into batches and gathers the
+results (checked line by line: complete, in French, bold and italics kept,
+repository typography); a rejected batch goes back in the next round. A bold
+opened inside a bold becomes the source's italics again: it is the mistake
+the agents make most often on a transliterated Talmud term.
 
-Les quelques lignes sans traduction sont celles que l'alignement ne retrouve
-pas chez Sefaria (une phrase de guemara découpée autrement) : elles restent
-vides plutôt que de recevoir la traduction d'une autre.
+The few lines without a translation are those that the alignment cannot
+find at Sefaria (a sentence of gemara split differently): they stay empty
+rather than receive another line's translation.
 
-### Où elles vivent
+### Where they live
 
-`public/texts/traductions/<langue>/`, au chemin du fichier hébreu qu'elles
-traduisent (`texts/mishna/berakhot.json` → `texts/traductions/fr/mishna/berakhot.json`),
-et un index (`texts/traductions/index.json`) qui donne, pour chaque fichier
-hébreu, ses langues. Un fichier de traduction a la forme de son hébreu, chaque
-chaîne remplacée par sa traduction, et porte ses sources (nom, auteur,
-licence, lien) : c'est lui qui dit comment le citer.
+`public/texts/traductions/<langue>/`, at the path of the Hebrew file they
+translate (`texts/mishna/berakhot.json` → `texts/traductions/fr/mishna/berakhot.json`),
+and an index (`texts/traductions/index.json`) that gives, for each Hebrew
+file, its languages. A translation file has the shape of its Hebrew, each
+string replaced by its translation, and carries its sources (name, author,
+license, link): it is what says how to credit it.
 
-À part de l'hébreu, et non dans le même fichier : qui lit en hébreu ne
-télécharge rien de plus, et le Talmud anglais (58 Mo pour l'anglais en tout)
-pèse à lui seul plus que tous les textes hébreux. Pour la même raison, l'app
-native ne les embarque pas (`scripts/prune-native-bundle.mjs`) : elles se
-lisent en ligne.
+Separate from the Hebrew, not in the same file: whoever reads in Hebrew
+downloads nothing more, and the English Talmud (58 MB for English in total)
+alone weighs more than all the Hebrew texts. For the same reason, the native
+app does not bundle them (`scripts/prune-native-bundle.mjs`): they are read
+online.
 
-### Les reconstruire
+### Rebuilding them
 
 ```bash
-node scripts/download-translations.mjs              # tout
+node scripts/download-translations.mjs              # everything
 node scripts/download-translations.mjs --only=mishna --lang=fr
-node scripts/texts-manifest.mjs                     # puis le manifeste
+node scripts/texts-manifest.mjs                     # then the manifest
 ```
 
-Le script lit chaque version par son titre exact (jamais un `merged`), refuse
-une licence hors de la liste et un titre qui trahit une traduction
-automatique, et aligne chaque ligne hébraïque de nos fichiers sur l'hébreu de
-Sefaria par ses seules lettres : nos fichiers redécoupent Sefaria (montées
-d'une paracha, Trei Asar, paragraphes du moussar), l'alignement par la
-position se tromperait. Ajouter une version, c'est l'ajouter à `VERSIONS` et
-`CREDITS` dans le script, et à ce registre.
+The script reads each version by its exact title (never a `merged`),
+refuses a license outside the list and a title that betrays a machine
+translation, and aligns each Hebrew line of our files with Sefaria's Hebrew
+by its letters alone: our files re-split Sefaria (aliyot of a paracha, Trei
+Asar, musar paragraphs), so alignment by position would go wrong. Adding a
+version means adding it to `VERSIONS` and `CREDITS` in the script, and to
+this registry.
 
-`src/__tests__/translations.test.ts` tient le reste : chaque fichier a la
-forme de son hébreu, chaque section du lecteur a autant de lignes traduites
-que de lignes hébraïques, chaque source a une licence de la liste et un lien,
-et chaque corpus garde au moins la couverture annoncée plus haut.
+`src/__tests__/translations.test.ts` covers the rest: each file has the
+shape of its Hebrew, each reader section has as many translated lines as
+Hebrew lines, each source has a license from the list and a link, and each
+corpus keeps at least the coverage announced above.
 
-### Dans le lecteur
+### In the reader
 
-Une commande « Traduction » dans la barre d'outils du texte, et le même
-réglage dans les réglages de lecture, avec le choix de la langue quand le
-texte en a deux (`composables/useTranslation.ts`). Éteinte au départ, elle
-tient ensuite d'un texte à l'autre. La langue suit le choix fait, puis celle
-de l'interface, puis ce qui existe : un francophone lit le Talmud en anglais,
-et une phrase le lui dit. La traduction se pose sous chaque verset ; dans le
-Talmud, la guemara passe alors de son bloc par daf à une suite de phrases,
-chacune suivie de la sienne. La lecture du jour et le chnei mikra suivent le
-même réglage, Rachi compris. Au pied du texte, le nom du traducteur
-(`TranslationCredit.vue`, voir « Citer une traduction »). Pas de traduction sur une tefila.
+A « Traduction » ("Translation") command in the text's toolbar, and the same
+setting in the reading settings, with the choice of language when the text
+has two (`composables/useTranslation.ts`). Off at first, it then persists
+from one text to the next. The language follows the choice made, then the
+interface's, then what exists: a French speaker reads the Talmud in English,
+and a sentence tells them so. The translation sits under each verse; in the
+Talmud, the gemara then goes from its block per daf to a series of
+sentences, each followed by its own. The daily reading and the chnei mikra
+follow the same setting, Rachi included. At the foot of the text, the
+translator's name (`TranslationCredit.vue`, see "Crediting a translation").
+No translation on a tefila.
 
-Une traduction faite par IA est annoncée en tête du texte, dans le lecteur
-comme dans la lecture du jour (Rachi compris) : « Traduction en français
-faite par IA à partir du texte anglais : elle peut contenir des erreurs »
-(`TranslationAiNotice.vue`). Le lecteur la reconnaît au drapeau `ai: true`
-que `download-translations.mjs` pose sur sa source ; une version
-ancienne de l'app l'ignore. `translations.test.ts` vérifie que toute source
-IA, et elle seule, le porte.
+An AI translation is announced at the top of the text, in the reader as in
+the daily reading (Rachi included): « Traduction en français faite par IA à
+partir du texte anglais : elle peut contenir des erreurs » ("French
+translation made by AI from the English text: it may contain errors")
+(`TranslationAiNotice.vue`). The reader recognizes it by the `ai: true` flag
+that `download-translations.mjs` sets on its source; an older version of the
+app ignores it. `translations.test.ts` checks that every AI source, and it
+alone, carries it.
 
-### Ce qui reste à faire
+### What remains to be done
 
-- **Le français assisté par IA** est à relire, et à remplacer par une
-  traduction humaine dès qu'on en obtient une (voir « Pour aller plus loin
-  en français : demander »).
-- **Le Pélé Yoets** n'a de traduction libre dans aucune langue.
-- **Hors ligne** : télécharger un livre ne télécharge pas sa traduction.
-  Hors connexion, la commande ne se propose pas (son index ne se lit pas) ;
-  allumée avant la coupure, une phrase dit que la traduction se lit en
-  ligne.
-- **Le prérendu** des pages de la bibliothèque (référencement) ne porte que
-  l'hébreu.
+- **The AI-assisted French** is to be reviewed, and replaced by a human
+  translation as soon as one is obtained (see "Going further in French:
+  ask").
+- **The Pélé Yoets** has no free translation in any language.
+- **Offline**: downloading a book does not download its translation.
+  Offline, the command is not offered (its index cannot be read); if it was
+  turned on before the connection dropped, a sentence says that the
+  translation is read online.
+- **The prerendering** of the library pages (search indexing) only carries
+  the Hebrew.
 
-## Comment refaire la mesure
+## How to redo the measurement
 
-1. Télécharger `https://raw.githubusercontent.com/Sefaria/Sefaria-Export/master/books.json`.
-2. Pour chaque livre, prendre l'hébreu `merged` et chaque version anglaise ou
-   française (une version française porte `"actualLanguage": "fr"` et un
-   titre en `[fr]`). Le champ `license` de chaque fichier de version donne
-   sa licence.
-3. Compter, segment par segment, les mots hébreux dont le segment traduit
-   n'est pas vide, et rapporter au total du corpus.
+1. Download `https://raw.githubusercontent.com/Sefaria/Sefaria-Export/master/books.json`.
+2. For each book, take the `merged` Hebrew and each English or French
+   version (a French version carries `"actualLanguage": "fr"` and a title
+   ending in `[fr]`). The `license` field of each version file gives its
+   license.
+3. Count, segment by segment, the Hebrew words whose translated segment is
+   not empty, and divide by the corpus total.
