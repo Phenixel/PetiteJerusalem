@@ -1,168 +1,171 @@
 # Mon parcours
 
-Ce qu'on se donne à tenir, et ce qu'on a tenu : finir un texte pour une date,
-une habitude, les Tehilim du mois, la paracha de la semaine, un texte relu
-chaque jour. La lecture du jour d'avant y est entrée : ses textes et ses
-lectures du calendrier sont des objectifs comme les autres.
+Mon parcours ("My journey") is what you set yourself to keep up, and what
+you have kept up: finishing a text by a date, a habit, the month's
+Tehilim, the week's paracha, a text reread every day. The former daily
+reading has been folded into it: its texts and its calendar readings are
+objectives like any other.
 
-Ce document dit comment c'est fait. Le dessin est dans `docs/design.md`
-(« Mon parcours : le mur se bâtit en pierres, et seulement lui » et les
-sections qui suivent), le suivi d'audience dans `docs/tracking-plan.md`
+This document explains how it is built. The design is in `docs/design.md`
+(« Mon parcours : le mur se bâtit en pierres, et seulement lui » and the
+following sections), audience tracking in `docs/tracking-plan.md`
 (« Mon parcours »).
 
-## Les pages
+## The pages
 
-| Adresse                           | Ce qu'on y trouve                                                                                 |
-| --------------------------------- | ------------------------------------------------------------------------------------------------- |
-| `/`                               | l'accueil : la lampe, le paquet du jour, le portefeuille, l'étagère (`components/parcours/home/`) |
-| `/parcours`                       | la série, le mur des cinq dernières semaines, l'étagère, les habitudes                            |
-| `/parcours/journee`               | l'adresse de Ma journée, retirée : elle mène à l'accueil                                          |
-| `/parcours/mur`                   | le mur entier                                                                                     |
-| `/parcours/nouveau`               | nouvel objectif, sur une seule page ; créé, il arrive sur `/parcours`                             |
-| `/parcours/objectif/:id`          | un programme (sa portion, son retard, sa semaine), ou les réglages d'un autre objectif            |
-| `/parcours/objectif/:id/reglages` | les réglages d'un programme                                                                       |
-| `/bibliotheque/lecture-du-jour`   | la lecture du jour : les textes du jour, à la suite ; leur liste s'y compose                      |
+| Address                           | What you find there                                                                                |
+| --------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `/`                               | home: the lamp, the day's deck, the wallet, the shelf (`components/parcours/home/`)                |
+| `/parcours`                       | the streak, the wall of the last five weeks, the shelf, the habits                                 |
+| `/parcours/journee`               | the address of Ma journée ("My day"), removed: it leads to home                                    |
+| `/parcours/mur`                   | the whole wall                                                                                     |
+| `/parcours/nouveau`               | new objective, on a single page; once created, it lands on `/parcours`                             |
+| `/parcours/objectif/:id`          | a program (its portion, how far behind it is, its week), or the settings of another objective      |
+| `/parcours/objectif/:id/reglages` | the settings of a program                                                                          |
+| `/bibliotheque/lecture-du-jour`   | the daily reading: the day's texts, one after the other; their list is put together there          |
 
-Dans l'app, tout s'ouvre **sans compte** et hors ligne. Le site demande un
-compte : il n'a pas d'appareil où garder le suivi.
+In the app, everything opens **without an account** and offline. The site
+requires an account: it has no device on which to keep the tracking.
 
-Une lecture ouverte depuis le parcours porte `?objectif=` : le lecteur montre
-alors, au bas du texte, la tâche du jour à cocher (`ReaderTaskCard.vue`).
+A reading opened from the journey carries `?objectif=`: the reader then
+shows, at the bottom of the text, the day's task to check off
+(`ReaderTaskCard.vue`).
 
-## Le modèle
+## The model
 
-`src/services/parcours/`, sans Vue :
+`src/services/parcours/`, without Vue:
 
-| Fichier                                    | Rôle                                                                                         |
+| File                                       | Role                                                                                         |
 | ------------------------------------------ | -------------------------------------------------------------------------------------------- |
-| `model.ts`                                 | les objectifs (programme, habitude, cycle, texte du jour) et les journées                    |
-| `texts.ts`                                 | ce qu'un programme peut finir et ce qu'il compte, d'après `src/datas/parcoursUnits.json`     |
-| `plan.ts`                                  | la portion de chaque jour ou semaine, le retard, le rattrapage, l'avance, la reprise         |
-| `aliyot.ts`                                | le chnei mikra montée par montée : une par jour, ce qui reste dû                             |
-| `schedule.ts`                              | les tâches d'un jour, l'état d'un jour sur le mur, la série                                  |
-| `calendar.ts`                              | les jours de repos (Chabbat, les fêtes, en Israël ou en diaspora), les montées de la semaine |
-| `moments.ts`                               | le moment présent, l'ordre du paquet de l'accueil                                            |
-| `actions.ts`, `create.ts`                  | ce qu'on change, ce qu'on crée                                                               |
-| `merge.ts`                                 | la fusion de deux copies                                                                     |
-| `deviceStore.ts`, `cloud.ts`, `account.ts` | l'appareil, le compte, ce qui passe de l'un à l'autre                                        |
-| `legacyDailyReading.ts`                    | la lecture du jour d'avant                                                                   |
-| `entries.ts`                               | les textes qu'une tâche fait lire (le téléchargement hors ligne)                             |
-| `tracking.ts`                              | le suivi d'audience commun à plusieurs écrans                                                |
-| `occasions.ts`                             | les cartes d'occasion de la pile dites faites (la lune, le 'Omer, 'Hanouka), sur l'appareil  |
+| `model.ts`                                 | the objectives (program, habit, cycle, daily text) and the days                              |
+| `texts.ts`                                 | what a program can finish and what it counts, based on `src/datas/parcoursUnits.json`        |
+| `plan.ts`                                  | each day's or week's portion, falling behind, catching up, getting ahead, resuming           |
+| `aliyot.ts`                                | chnei mikra aliya by aliya: one per day, what is still owed                                  |
+| `schedule.ts`                              | a day's tasks, a day's state on the wall, the streak                                         |
+| `calendar.ts`                              | rest days (Chabbat, holidays, in Israel or in the diaspora), the week's aliyot               |
+| `moments.ts`                               | the present moment, the order of the home deck                                               |
+| `actions.ts`, `create.ts`                  | what you change, what you create                                                             |
+| `merge.ts`                                 | merging two copies                                                                           |
+| `deviceStore.ts`, `cloud.ts`, `account.ts` | the device, the account, what passes from one to the other                                   |
+| `legacyDailyReading.ts`                    | the former daily reading                                                                     |
+| `entries.ts`                               | the texts a task has you read (offline download)                                             |
+| `tracking.ts`                              | audience tracking shared by several screens                                                  |
+| `occasions.ts`                             | the deck's occasion cards marked done (the moon, the 'Omer, 'Hanouka), on the device         |
 
-`composables/useParcours.ts` réunit le tout pour les pages : un seul état
-partagé, démarré au premier usage (qui n'ouvre jamais le parcours ne charge
-rien).
+`composables/useParcours.ts` brings it all together for the pages: a single
+shared state, started on first use (anyone who never opens the journey
+loads nothing).
 
-**Une journée** (`DayLog`) garde ce qui est fait (`done`), les unités lues
-par programme (`units`), ce qui est mis de côté (`skipped`) et l'heure de la
-dernière écriture (`at`). **Un objectif** garde sa propre heure
-(`updatedAt`) ; retiré, il reste en pierre tombale (`deletedAt`) : les jours
-passés gardent leur pierre, et un autre appareil apprend qu'il est parti.
+**A day** (`DayLog`) keeps what is done (`done`), the units read per
+program (`units`), what is set aside (`skipped`) and the time of the last
+write (`at`). **An objective** keeps its own time (`updatedAt`); once
+removed, it remains as a tombstone (`deletedAt`): past days keep their
+stone, and another device learns that it is gone.
 
-**Un programme** garde ses textes et son total d'unités ; sa position se
-déduit des journées. Son pas repart d'une base (`base` : un jour et une
-position) quand on change sa date ou son rythme. Un rattrapage ajoute des
-unités à des créneaux (`extra`), « Déjà fait » avance la position
-(`credit`).
+**A program** keeps its texts and its total number of units; its position
+is deduced from the days. Its pace restarts from a base (`base`: a day and
+a position) when you change its date or its rhythm. Catching up adds units
+to slots (`extra`), « Déjà fait » ("Already done") moves the position
+forward (`credit`).
 
-**Les unités** (michnayot, côtés de daf, chapitres, psaumes) viennent de
-`src/datas/parcoursUnits.json`, que `scripts/parcours-units.mjs` écrit à
-partir de `public/texts/` ; `--check` vérifie qu'il est à jour
-(`parcoursUnits.test.ts`). Un texte corrigé sans que ce fichier suive
-décalerait toutes les portions d'après.
+**The units** (michnayot, sides of a daf, chapters, psalms) come from
+`src/datas/parcoursUnits.json`, which `scripts/parcours-units.mjs` writes
+from `public/texts/`; `--check` verifies that it is up to date
+(`parcoursUnits.test.ts`). A text corrected without this file following
+would shift every portion after it.
 
-## Le stockage
+## Storage
 
-**L'appareil est le socle.** Tout vit dans `localStorage` (clé
-`pj-parcours`), doublé dans les Preferences de Capacitor dans l'app, que le
-système ne vide pas avec le stockage de la webview : `{ data, owner, dirty }`.
-Sans compte, c'est complet ; changer d'appareil sans compte perd le suivi, et
-la page de Mon parcours le dit.
+**The device is the foundation.** Everything lives in `localStorage` (key
+`pj-parcours`), mirrored in Capacitor Preferences in the app, which the
+system does not clear along with the webview storage:
+`{ data, owner, dirty }`. Without an account, this is complete; switching
+devices without an account loses the tracking, and the Mon parcours page
+says so.
 
-**Le compte emporte tout d'un appareil à l'autre.** Le document
-`parcours/{uid}` porte deux tables, `objectives` et `days` ; chaque
-changement s'y écrit entrée par entrée (`setDoc` avec `mergeFields`), jamais
-le document entier, pour ne pas écraser ce qu'un autre appareil a écrit.
-Les règles Firestore (`match /parcours/{userId}`) n'ouvrent le document qu'à
-son propriétaire, bornent les clés et la taille des tables.
+**The account carries everything from one device to another.** The
+`parcours/{uid}` document holds two tables, `objectives` and `days`; each
+change is written to it entry by entry (`setDoc` with `mergeFields`), never
+the whole document, so as not to overwrite what another device wrote. The
+Firestore rules (`match /parcours/{userId}`) open the document only to its
+owner, and bound the keys and the size of the tables.
 
-**On n'écrit jamais d'après une copie qu'on n'a pas relue.** À la connexion,
-au retour du réseau et au retour à l'écran après cinq minutes, le compte se
-relit depuis le serveur (pas depuis le cache), se fusionne avec l'appareil
-(`mergeParcours` : entrée par entrée, la plus récente l'emporte, les sortes
-d'objectifs inconnues sont gardées telles quelles), puis ce qui diffère part.
-Une écriture qui échoue reste à faire (`dirty`) et repart après la relecture
-suivante.
+**Never write based on a copy you have not reread.** On sign-in, when the
+network comes back and when returning to the screen after five minutes, the
+account is reread from the server (not from the cache), merged with the
+device (`mergeParcours`: entry by entry, the most recent wins, unknown
+kinds of objectives are kept as is), then whatever differs is sent. A write
+that fails remains pending (`dirty`) and is sent again after the next
+reread.
 
-**Un appareil partagé** : à la connexion, l'appareil verse dans le compte ce
-qui n'appartient à personne, ou à ce compte ; s'il suivait un autre compte,
-seulement ce qui a été fait depuis la déconnexion de celui-ci (`account.ts`,
-`owner.leftAt`). À la déconnexion, tout reste sur l'appareil.
+**A shared device**: on sign-in, the device pours into the account what
+belongs to nobody, or to this account; if it was tracking another account,
+only what was done since that account signed out (`account.ts`,
+`owner.leftAt`). On sign-out, everything stays on the device.
 
-**La suppression du compte** efface aussi `parcours/{uid}`
+**Deleting the account** also erases `parcours/{uid}`
 (`authService.deleteAccount`, `accountDeletion.test.ts`).
 
-## La lecture du jour d'avant
+## The former daily reading
 
-Elle vivait dans `userPreferences/{uid}` : `dailyReadingIds`,
-`dailyReadingOptions`, `dailyReadingProgress`. Les versions de l'app déjà
-installées les lisent et les écrivent encore, comme le rappel du soir
-(`functions/src/dailyReminder.ts`). Mon parcours les reprend sans les
-remplacer (`legacyDailyReading.ts`) :
+It lived in `userPreferences/{uid}`: `dailyReadingIds`,
+`dailyReadingOptions`, `dailyReadingProgress`. App versions already
+installed still read and write them, as does the evening reminder
+(`functions/src/dailyReminder.ts`). Mon parcours takes them over without
+replacing them (`legacyDailyReading.ts`):
 
-- **à la connexion**, chaque texte devient un objectif `daily-text-<id>`, les
-  Tehilim du jour `daily-tehilim`, la paracha `daily-parasha` : des
-  identifiants tirés d'eux, les mêmes sur tous les appareils, qui ne se
-  doublent pas. Ce qui était lu aujourd'hui y est coché. Les listes d'avant ne
-  font qu'ajouter ;
-- **à chaque changement**, Mon parcours réécrit ces champs d'après lui
-  (`legacyProjection`), listes et journée chacune de son côté, seulement si
-  elles changent.
+- **on sign-in**, each text becomes a `daily-text-<id>` objective, the
+  day's Tehilim `daily-tehilim`, the paracha `daily-parasha`: identifiers
+  derived from them, the same on every device, which do not get
+  duplicated. What was read today is checked off there. The former lists
+  only ever add;
+- **on each change**, Mon parcours rewrites these fields from its own data
+  (`legacyProjection`), the lists and the day each on its own side, only if
+  they change.
 
-Les **Tehilim de la semaine** (`cycle-tehilim-week`, du dimanche au Chabbat)
-sont nouveaux : ils n'ont pas de place dans la lecture du jour d'avant, et
-la projection les ignore.
+The **Tehilim of the week** (`cycle-tehilim-week`, from Sunday to Chabbat)
+are new: they have no place in the former daily reading, and the
+projection ignores them.
 
-Le **chnei mikra montée par montée** est la paracha (`daily-parasha`) avec
-`split: "aliyot"` : une carte par jour, une montée du dimanche au jeudi, la
-sixième et la septième le vendredi (quatorze montées sur six jours pour une
-paracha double) ; une montée oubliée reste due le lendemain, ce qui reste
-le vendredi se lit le Chabbat (`aliyot.ts`). La carte ouvre la page du chnei
-mikra réduite à ses montées (`?montees=3-4`). Pour la lecture du jour
-d'avant, la semaine est lue quand la carte du vendredi ou du Chabbat l'est
-(`parashaProgress.completed`). Le champ est facultatif : sans lui, la paracha
-se lit dans la semaine, comme avant.
+The **chnei mikra aliya by aliya** is the paracha (`daily-parasha`) with
+`split: "aliyot"`: one card per day, one aliya from Sunday to Thursday, the
+sixth and seventh on Friday (fourteen aliyot over six days for a double
+paracha); a forgotten aliya stays due the next day, and whatever remains on
+Friday is read on Chabbat (`aliyot.ts`). The card opens the chnei mikra
+page narrowed to its aliyot (`?montees=3-4`). For the former daily reading,
+the week counts as read when the Friday or Chabbat card is
+(`parashaProgress.completed`). The field is optional: without it, the
+paracha is read over the week, as before.
 
-**Prendre de l'avance** : une portion faite propose « Lire la suite », la
-portion du prochain créneau (`nextPortion`), marquée lue aujourd'hui au bas
-de la lecture (`?avance=1`). Les portions gardent leur taille ; la fin vient
-plus tôt. **La pause** d'un programme repousse sa fin d'autant de jours
-qu'elle en a duré, à la reprise (`resumeProgram`).
+**Getting ahead**: a completed portion offers « Lire la suite » ("Read
+on"), the portion of the next slot (`nextPortion`), marked as read today at
+the bottom of the reading (`?avance=1`). Portions keep their size; the end
+comes sooner. **Pausing** a program pushes its end back by as many days as
+the pause lasted, on resuming (`resumeProgram`).
 
-Les **widgets et la montre** tirent la lecture du jour de l'appareil, avec ou
-sans compte (`widgetService`) ; un compte que l'appareil n'a pas encore repris
-garde celle de son profil.
+The **widgets and the watch** take the daily reading from the device, with
+or without an account (`widgetService`); an account that the device has not
+yet taken over keeps the one from its profile.
 
-Le **rappel du soir** ne compte que les textes du jour et les lectures du
-calendrier, comme avant : il lit le profil, côté serveur, et ne sait rien des
-programmes ni des habitudes.
+The **evening reminder** only counts the daily texts and the calendar
+readings, as before: it reads the profile, on the server side, and knows
+nothing about programs or habits.
 
-## Les tests
+## Tests
 
-| Test                            | Ce qu'il tient                                                                                  |
-| ------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `parcoursUnits.test.ts`         | les unités des programmes suivent `public/texts/` (garde-fou, voir `docs/tests.md`)             |
-| `parcoursPlan.test.ts`          | les portions, le retard, les cinq rattrapages, l'avance, la reprise après une pause             |
-| `parcoursAliyot.test.ts`        | le chnei mikra : une montée par jour, l'oubliée revient le lendemain, le Chabbat finit          |
-| `parcoursSchedule.test.ts`      | les tâches d'un jour, le mur, la série (Chabbat et « Pas aujourd'hui » ne la coupent pas)       |
-| `parcoursCalendar.test.ts`      | les jours de repos, les moments, l'ordre du paquet                                              |
-| `parcoursMerge.test.ts`         | la fusion de deux copies                                                                        |
-| `parcoursSync.test.ts`          | sans compte, avec un compte, un appareil partagé                                                |
-| `parcoursCloud.test.ts`         | l'écriture du compte n'envoie aucun champ `undefined` (Firestore refuserait l'écriture entière) |
-| `parcoursLegacyDaily.test.ts`   | la lecture du jour d'avant, reprise et tenue à jour                                             |
-| `parcoursDeck.test.ts`          | le paquet de l'accueil : l'ordre, l'heure des offices, rattraper, la carte du 'Omer             |
-| `parcoursEntries.test.ts`       | les textes à télécharger pour la journée                                                        |
-| `parcoursTracking.test.ts`      | le suivi commun, et les événements de la lecture du jour qui continuent                         |
-| `widgetDailyParcours.test.ts`   | la lecture du jour des widgets, sans compte                                                     |
-| `e2e/firebase/parcours.spec.ts` | un texte du jour pris, coché, et suivi par le compte (émulateurs)                               |
+| Test                            | What it enforces                                                                                    |
+| ------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `parcoursUnits.test.ts`         | program units follow `public/texts/` (safeguard, see `docs/tests.md`)                               |
+| `parcoursPlan.test.ts`          | the portions, falling behind, the five catch-up modes, getting ahead, resuming after a pause        |
+| `parcoursAliyot.test.ts`        | chnei mikra: one aliya per day, a forgotten one comes back the next day, Chabbat finishes           |
+| `parcoursSchedule.test.ts`      | a day's tasks, the wall, the streak (Chabbat and « Pas aujourd'hui » do not break it)               |
+| `parcoursCalendar.test.ts`      | rest days, moments, the order of the deck                                                           |
+| `parcoursMerge.test.ts`         | merging two copies                                                                                  |
+| `parcoursSync.test.ts`          | without an account, with an account, a shared device                                                |
+| `parcoursCloud.test.ts`         | the account write sends no `undefined` field (Firestore would reject the whole write)               |
+| `parcoursLegacyDaily.test.ts`   | the former daily reading, taken over and kept up to date                                            |
+| `parcoursDeck.test.ts`          | the home deck: the order, prayer service times, catching up, the 'Omer card                         |
+| `parcoursEntries.test.ts`       | the texts to download for the day                                                                   |
+| `parcoursTracking.test.ts`      | shared tracking, and the daily reading events that continue                                         |
+| `widgetDailyParcours.test.ts`   | the widgets' daily reading, without an account                                                      |
+| `e2e/firebase/parcours.spec.ts` | a daily text picked, checked off, and tracked by the account (emulators)                            |

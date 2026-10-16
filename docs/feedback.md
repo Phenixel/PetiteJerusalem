@@ -1,203 +1,215 @@
-# Nous écrire : les messages et les réponses
+# Nous écrire: messages and replies
 
-Le site et l'app embarquent un formulaire (« Écrivez-nous ») et une page,
-« Nous écrire » (`/contact`), où chacun retrouve les messages qu'il a envoyés
-et les réponses de l'équipe. Côté équipe, les messages arrivent dans le
-backoffice (`/admin/messages`), où l'on les trie et y répond ; la réponse
-s'affiche chez la personne, dans l'app ou sur le site, avec une notification
-quand son téléphone l'accepte.
+The site and the app include a form (« Écrivez-nous », "Write to us") and a
+page, « Nous écrire » ("Write to us", `/contact`), where everyone finds the
+messages they have sent and the team's replies. On the team's side,
+messages arrive in the backoffice (`/admin/messages`), where they are
+sorted and answered; the reply shows up for the person, in the app or on
+the site, with a notification when their phone allows it.
 
-Jusqu'en octobre 2026, chaque message devenait une ligne de la base Notion
-« Formulaire de support » : on ne pouvait répondre qu'à qui avait laissé un
-email. Les messages ne partent plus dans Notion ; ceux d'avant y restent.
+Until October 2026, each message became a row in the Notion database
+« Formulaire de support »: you could only reply to those who had left an
+email. Messages no longer go to Notion; the older ones remain there.
 
-## Qui peut écrire, et relire les réponses
+## Who can write, and read the replies
 
-- **Dans l'app, avec ou sans compte.** Au premier message, l'app tire une clé
-  au hasard (32 octets) et la garde sur le téléphone (stockage de la page et
-  préférences natives, en double : perdre la clé, c'est perdre l'accès aux
-  réponses). Les messages de l'appareil se relisent avec elle ; le serveur
-  n'en garde que l'empreinte SHA-256. Connecté, on relit aussi ceux du compte.
-- **Sur le site, avec un compte**, les réponses s'affichent dans le profil.
-- **Sur le site sans compte, on écrit aussi**, mais rien ne relie le message
-  à la personne : notre réponse ne peut pas s'afficher chez elle. La fenêtre
-  le dit en tête, propose de se connecter (en gardant ce qui était déjà
-  écrit, un passage de texte signalé par exemple, rouvert sur la page « Nous
-  écrire » au retour : `stashFeedbackPrefill`, dans `useFeedback.ts`), et
-  rappelle sous la case du contact que sans email ni téléphone, on ne pourra
-  pas répondre. Le message arrive quand même dans le backoffice, marqué
-  « Ni compte, ni appareil, ni contact » s'il n'a rien laissé. La page « Nous
-  écrire » reste réservée aux comptes sur le site.
-- **Les versions de l'app d'avant les fils** continuent d'envoyer sans clé :
-  leur message arrive dans le backoffice, mais seule une réponse par email
-  peut atteindre la personne (si elle a laissé un contact).
+- **In the app, with or without an account.** On the first message, the
+  app draws a random key (32 bytes) and keeps it on the phone (page storage
+  and native preferences, in duplicate: losing the key means losing access
+  to the replies). The device's messages are read back with it; the server
+  only keeps its SHA-256 hash. When signed in, you also read those of the
+  account.
+- **On the site, with an account**, replies show up in the profile.
+- **On the site without an account, you can also write**, but nothing links
+  the message to the person: our reply cannot show up on their side. The
+  dialog says so at the top, offers to sign in (keeping what was already
+  written, a flagged text passage for example, reopened on the « Nous
+  écrire » page on return: `stashFeedbackPrefill`, in `useFeedback.ts`),
+  and reminds below the contact field that without an email or phone
+  number, we will not be able to reply. The message still arrives in the
+  backoffice, marked « Ni compte, ni appareil, ni contact » ("No account,
+  no device, no contact") if it left nothing. The « Nous écrire » page
+  remains reserved for accounts on the site.
+- **App versions from before threads** keep sending without a key: their
+  message arrives in the backoffice, but only an email reply can reach the
+  person (if they left a contact).
 
-## Ce qui part avec un message
+## What goes with a message
 
-Ce que la personne écrit :
+What the person writes:
 
-- de quoi il s'agit : une nouvelle idée, un bug, une erreur (dans un texte, un
-  horaire, une traduction) ou autre chose, avec un champ libre dans ce dernier
-  cas ;
-- des détails (obligatoire) ;
-- un email ou un numéro de téléphone, seulement si elle coche « Me répondre
-  aussi par email ou par téléphone ».
+- what it is about: a new idea, a bug, an error (in a text, a time, a
+  translation) or something else, with a free-text field in that last
+  case;
+- details (required);
+- an email or a phone number, only if they check « Me répondre aussi par
+  email ou par téléphone » ("Also reply to me by email or phone").
 
-Ce que l'app joint d'elle-même, et qu'elle annonce sous le formulaire :
+What the app attaches on its own, and announces below the form:
 
-- le support : site web ou application ;
-- la plateforme : web, iOS ou Android ;
-- la version : celle du binaire installé dans l'app (« 1.4.2 (37) », version
-  et build), celle du bundle sur le site ;
-- la langue, celle de la notification de réponse ;
-- la page d'où le message est parti (`/lire/tehilim`), utile pour un bug ;
-- dans l'app, la clé de l'appareil, et son jeton de notification s'il a déjà
-  la permission (on ne la demande jamais ici).
+- the medium: website or app;
+- the platform: web, iOS or Android;
+- the version: that of the installed binary in the app (« 1.4.2 (37) »,
+  version and build), that of the bundle on the site;
+- the language, which is that of the reply notification;
+- the page the message was sent from (`/lire/tehilim`), useful for a bug;
+- in the app, the device key, and its notification token if it already has
+  permission (it is never requested here).
 
-Le compte connecté est reconnu par la Cloud Function (son identifiant, son
-nom et son email, pour pouvoir lui écrire).
+The signed-in account is recognized by the Cloud Function (its ID, its name
+and its email, so as to be able to write to it).
 
-## Où le formulaire s'ouvre
+## Where the form opens
 
-- la page « Nous écrire » (`/contact`), bouton « Nouveau message » ; on y
-  arrive par le profil (ligne « Nous écrire » de l'app, raccourci du profil
-  du site) ;
-- sur le site, le lien « Nous écrire » du pied de page ;
-- en bas de l'accueil, site et app, une ligne discrète sous la dédicace ;
-- d'un passage de texte (« Signaler une erreur »), déjà amorcé ;
-- le bouton « Répondre » d'une information de type question.
+- the « Nous écrire » page (`/contact`), « Nouveau message » ("New
+  message") button; you reach it from the profile (« Nous écrire » row in
+  the app, profile shortcut on the site);
+- on the site, the « Nous écrire » link in the footer;
+- at the bottom of the home page, site and app, a discreet line below the
+  dedication;
+- from a text passage (« Signaler une erreur », "Report an error"), already
+  prefilled;
+- the « Répondre » ("Reply") button of a question-type information item.
 
-Une seule fenêtre (`src/components/FeedbackModal.vue`), montée dans App.vue à
-la première ouverture ; `useFeedback.ts` porte l'état partagé qui l'ouvre.
+A single dialog (`src/components/FeedbackModal.vue`), mounted in App.vue on
+first opening; `useFeedback.ts` holds the shared state that opens it.
 
-## Un fil, et ses statuts
+## A thread, and its statuses
 
-Chaque message ouvre un fil, document `support/{id}` dans Firestore :
+Each message opens a thread, a `support/{id}` document in Firestore:
 
-| Champ                                | Contenu                                                                     |
-| ------------------------------------ | --------------------------------------------------------------------------- |
-| `kind`, `otherKind`                  | la nature (`idea`, `bug`, `error`, `other`) et la précision libre           |
-| `messages`                           | `{ from: "user" \| "team", text, at }`, le premier est le message d'origine |
-| `status`                             | `new`, `in_progress`, `answered` ou `done` (ci-dessous)                     |
-| `note`                               | la note de l'équipe, jamais montrée à la personne                           |
-| `contact`                            | l'email ou le téléphone laissé, vide sinon                                  |
-| `support`, `platform`, `version`     | ce que l'app a joint                                                        |
-| `locale`, `page`                     | la langue et la page d'où le message est parti                              |
-| `uid`, `accountEmail`, `accountName` | le compte connecté, `null` sans compte                                      |
-| `guestKeyHash`                       | l'empreinte de la clé de l'appareil, `null` sur le site                     |
-| `pushTokens`                         | les jetons de notification de l'appareil (cinq au plus)                     |
-| `lastFrom`, `unreadByUser`           | qui a écrit en dernier ; une réponse que la personne n'a pas encore lue     |
-| `createdAt`, `updatedAt`             | l'arrivée, et le dernier message                                            |
+| Field                                | Content                                                                         |
+| ------------------------------------ | ------------------------------------------------------------------------------- |
+| `kind`, `otherKind`                  | the kind (`idea`, `bug`, `error`, `other`) and the free-text detail             |
+| `messages`                           | `{ from: "user" \| "team", text, at }`, the first one is the original message   |
+| `status`                             | `new`, `in_progress`, `answered` or `done` (below)                              |
+| `note`                               | the team's note, never shown to the person                                      |
+| `contact`                            | the email or phone number left, empty otherwise                                 |
+| `support`, `platform`, `version`     | what the app attached                                                           |
+| `locale`, `page`                     | the language and the page the message was sent from                             |
+| `uid`, `accountEmail`, `accountName` | the signed-in account, `null` without an account                                |
+| `guestKeyHash`                       | the hash of the device key, `null` on the site                                  |
+| `pushTokens`                         | the device's notification tokens (five at most)                                 |
+| `lastFrom`, `unreadByUser`           | who wrote last; a reply the person has not read yet                             |
+| `createdAt`, `updatedAt`             | arrival, and the last message                                                   |
 
-Les statuts reprennent les colonnes de la base Notion :
+The statuses mirror the columns of the Notion database:
 
-- **À traiter** (`new`) : un message arrivé, ou une relance de la personne ;
-- **En cours** (`in_progress`) : l'équipe s'en occupe ; une relance l'y laisse ;
-- **Répondu** (`answered`) : posé par la réponse de l'équipe ;
-- **Terminé** (`done`) : posé à la main, ou par « Répondre et terminer ».
+- **À traiter** ("To do", `new`): a message that arrived, or a follow-up
+  from the person;
+- **En cours** ("In progress", `in_progress`): the team is handling it; a
+  follow-up leaves it there;
+- **Répondu** ("Answered", `answered`): set by the team's reply;
+- **Terminé** ("Done", `done`): set by hand, or by « Répondre et terminer »
+  ("Reply and close").
 
-Une relance de la personne remet le fil « à traiter » (sauf s'il est en
-cours) ; un fil compte 60 messages au plus, au-delà la personne en ouvre un
-autre.
+A follow-up from the person puts the thread back to "to do" (unless it is
+in progress); a thread holds 60 messages at most, beyond which the person
+opens another one.
 
-## La pastille des réponses non lues
+## The unread replies badge
 
-Dans l'app, une réponse de l'équipe pas encore lue se compte en pastille sur
-l'onglet du profil de la barre du bas (`BottomTabBar.vue`), et sur la ligne
-« Nous écrire » du profil. Le compte est partagé
-(`composables/useSupportUnread.ts`) : relu à l'arrivée d'un compte et à
-chaque retour dans l'app, seulement si un compte est connecté ou que
-l'appareil a déjà écrit (sinon, aucun appel au serveur) ; ouvrir le fil le
-fait baisser aussitôt. Sur le site, le raccourci « Nous écrire » du profil
-porte le même compte.
+In the app, a team reply not yet read is counted as a badge on the profile
+tab of the bottom bar (`BottomTabBar.vue`), and on the « Nous écrire » row
+of the profile. The count is shared (`composables/useSupportUnread.ts`):
+reread when an account arrives and each time the app comes back to the
+foreground, only if an account is signed in or the device has already
+written (otherwise, no call to the server); opening the thread lowers it
+right away. On the site, the profile's « Nous écrire » shortcut carries the
+same count.
 
-## Le backoffice
+## The backoffice
 
-`/admin/messages` liste les fils : par défaut ce qui n'est pas terminé (à
-traiter d'abord, puis en cours, le plus récent en tête), avec un filtre par
-statut, un par nature, et une recherche dans les textes, les contacts et les
-versions. Une pastille « Relance » marque un fil où la personne a écrit
-après la première fois. L'onglet du menu porte le nombre de messages à
-traiter, et le tableau de bord les rappelle dans « À traiter ».
+`/admin/messages` lists the threads: by default what is not done (to do
+first, then in progress, most recent first), with a filter by status, one
+by kind, and a search across texts, contacts and versions. A « Relance »
+("Follow-up") badge marks a thread where the person wrote after the first
+time. The menu tab shows the number of messages to do, and the dashboard
+recalls them under « À traiter ».
 
-La fiche d'un fil (`/admin/messages/:id`) montre la conversation, la réponse à
-écrire, et à côté le statut, la nature (un « Autre » qui était un bug se
-reclasse), ce que l'app a joint (la page s'ouvre d'un clic) et la note de
-l'équipe. Sous la réponse, une ligne dit où elle arrivera : dans l'app avec
-une notification, dans l'app sans notification, par email seulement, ou nulle
-part. « Répondre par email » ouvre la messagerie, la réponse en cours déjà
-écrite et le message cité, vers le contact laissé ou l'email du compte.
+A thread's page (`/admin/messages/:id`) shows the conversation, the reply
+to write, and alongside it the status, the kind (an « Autre » ("Other")
+that was a bug can be reclassified), what the app attached (the page opens
+in one click) and the team's note. Below the reply, a line says where it
+will arrive: in the app with a notification, in the app without a
+notification, by email only, or nowhere. « Répondre par email » ("Reply by
+email") opens the mail client, with the reply in progress already written
+and the message quoted, to the contact left or the account's email.
 
-Le même travail se fait en ligne de commande : `support:liste`,
-`support:voir`, `support:repondre`, `support:statut` (voir
+The same work can be done from the command line: `support:liste`,
+`support:voir`, `support:repondre`, `support:statut` (see
 `docs/backoffice-cli.md`).
 
-## Le chemin d'un message, et d'une réponse
+## The path of a message, and of a reply
 
-1. `src/services/feedbackService.ts` complète le message (support,
-   plateforme, version, langue, page, clé et jeton de l'appareil), puis
-   appelle le callable `submitFeedback`.
-2. `functions/src/feedback.ts` valide (`functions/src/support.ts`), borne les
-   envois par adresse IP (dix par dix minutes) et crée le fil.
-3. La page « Nous écrire » relit les fils par `listSupportThreads` (le compte,
-   et la clé de l'appareil) et les montre en cartes, sans rien marquer lu.
-   Une carte ouvre la page du fil (`/contact/:id`, `SupportThreadPage.vue`),
-   une messagerie : l'en-tête (retour, sujet, nature et état, « Détails »),
-   le fil, et la barre pour écrire fixée en bas, plein écran dans l'app. Sous
-   le dernier message, une ligne dit où il en est (« Bien reçu, nous vous
-   répondrons ici », « Nous vous avons répondu »…). « Détails » montre ce que
-   la personne a envoyé (nature, date, depuis quoi, page concernée, contact
-   laissé ou « aucun ») et comment la réponse lui parvient (notification
-   dans l'app, pastille du profil sur le site).
-   L'ouvrir marque ce fil-là lu (`markRead` porte son identifiant). Une
-   relance passe par `replySupportThread`, qui vérifie que le fil est bien à
-   l'appelant.
-4. L'équipe répond depuis le backoffice (écriture directe, réservée à l'admin
-   par les règles) ou le CLI. La Cloud Function `onSupportThreadWritten`
-   voit la réponse ajoutée et envoie une notification aux appareils du fil
-   et à ceux du compte (`userPreferences/{uid}.fcmTokens`), dans la langue du
-   fil ; la toucher ouvre la page du fil. Un changement de statut ou de note
-   n'envoie rien.
+1. `src/services/feedbackService.ts` completes the message (medium,
+   platform, version, language, page, device key and token), then calls
+   the `submitFeedback` callable.
+2. `functions/src/feedback.ts` validates (`functions/src/support.ts`),
+   rate-limits submissions per IP address (ten per ten minutes) and creates
+   the thread.
+3. The « Nous écrire » page rereads the threads through
+   `listSupportThreads` (the account, and the device key) and shows them as
+   cards, without marking anything read. A card opens the thread page
+   (`/contact/:id`, `SupportThreadPage.vue`), a messaging view: the header
+   (back, subject, kind and state, « Détails » ("Details")), the thread,
+   and the compose bar pinned at the bottom, full screen in the app. Below
+   the last message, a line says where things stand (« Bien reçu, nous
+   vous répondrons ici », « Nous vous avons répondu »…). « Détails » shows
+   what the person sent (kind, date, from what, page concerned, contact
+   left or « aucun ») and how the reply reaches them (notification in the
+   app, profile badge on the site).
+   Opening it marks that thread read (`markRead` carries its ID). A
+   follow-up goes through `replySupportThread`, which checks that the
+   thread does belong to the caller.
+4. The team replies from the backoffice (direct write, restricted to the
+   admin by the rules) or the CLI. The `onSupportThreadWritten` Cloud
+   Function sees the added reply and sends a notification to the thread's
+   devices and to those of the account (`userPreferences/{uid}.fcmTokens`),
+   in the thread's language; tapping it opens the thread page. A change of
+   status or note sends nothing.
 
-Les règles Firestore ferment `support` à tous sauf l'admin : la personne ne
-lit ses fils qu'au travers des callables, qui taisent la note de l'équipe,
-les empreintes et les jetons. Supprimer son compte efface ses fils
-(`forgetSupportThreads`, appelé par `authService.deleteAccount`).
+The Firestore rules close `support` to everyone except the admin: the
+person only reads their threads through the callables, which withhold the
+team's note, the hashes and the tokens. Deleting one's account erases
+one's threads (`forgetSupportThreads`, called by
+`authService.deleteAccount`).
 
-Ce que tiennent les tests (`src/__tests__/support.test.ts`) : l'envoi d'une
-version d'avant les fils reste accepté ; un fil ne se relit que par son
-compte ou la clé de son appareil, sans la note ; seule une réponse de
-l'équipe fait partir une notification ; l'ordre du backoffice met ce qui
-attend l'équipe en tête.
+What the tests enforce (`src/__tests__/support.test.ts`): a submission from
+a version predating threads is still accepted; a thread can only be read
+back by its account or its device key, without the note; only a team reply
+triggers a notification; the backoffice ordering puts what is waiting for
+the team first.
 
-## Mise en place
+## Setup
 
-Rien à configurer hors du dépôt : ni clé, ni secret. Il suffit de déployer
-les règles et les fonctions :
+Nothing to configure outside the repository: no key, no secret. Just
+deploy the rules and the functions:
 
 ```bash
 firebase deploy --only firestore:rules,functions:submitFeedback,functions:listSupportThreads,functions:replySupportThread,functions:forgetSupportThreads,functions:onSupportThreadWritten --project petite-jerusalem-dev
 ```
 
-Les notifications de réponse ont les prérequis des rappels de lecture (clé
-APNs, voir `docs/app-native.md`). Le secret `NOTION_API_KEY` ne sert plus ;
-il peut être supprimé de Cloud Functions une fois le déploiement fait.
+Reply notifications have the same prerequisites as reading reminders (APNs
+key, see `docs/app-native.md`). The `NOTION_API_KEY` secret is no longer
+used; it can be deleted from Cloud Functions once the deployment is done.
 
-## La relance « Tout se passe bien ? »
+## The « Tout se passe bien ? » nudge
 
-Le site pose aussi la question de lui-même, à qui a un peu utilisé l'app :
-une petite carte en bas de l'accueil, avec deux réponses, « Tout va bien » et
-« J'ai quelque chose à dire » (qui ouvre le formulaire).
+The site also asks the question on its own, to those who have used the app
+a bit: a small card at the bottom of the home page, with two answers,
+« Tout va bien » ("All good") and « J'ai quelque chose à dire » ("I have
+something to say", which opens the form).
 
-- « Un peu utilisé » : l'app a été ouverte trois jours distincts. Les jours
-  sont notés sur l'appareil au démarrage (`recordUsageDay`, dans App.vue).
-- Sur l'accueil seulement, donc jamais pendant une lecture, et seulement quand
-  rien d'autre ne réclame l'attention : pas d'introduction, pas de fenêtre
-  ouverte, consentement déjà choisi, pas de chiour en cours d'écoute. Elle
-  attend quatre secondes après l'arrivée sur l'accueil.
-- Elle se tait pour de bon dès qu'on lui répond. Sans réponse, elle revient au
-  plus tôt une semaine plus tard, trois fois au maximum.
+- "Used a bit": the app was opened on three distinct days. The days are
+  recorded on the device at startup (`recordUsageDay`, in App.vue).
+- On the home page only, so never during a reading, and only when nothing
+  else demands attention: no introduction, no open dialog, consent already
+  chosen, no chiour currently playing. It waits four seconds after arriving
+  on the home page.
+- It goes quiet for good as soon as it is answered. Without an answer, it
+  comes back one week later at the earliest, three times at most.
 
-La règle et sa mémoire sont dans `src/services/feedbackNudge.ts` (testé dans
-`src/__tests__/feedbackNudge.test.ts`), la carte dans
+The rule and its memory are in `src/services/feedbackNudge.ts` (tested in
+`src/__tests__/feedbackNudge.test.ts`), the card in
 `src/components/FeedbackNudge.vue`.

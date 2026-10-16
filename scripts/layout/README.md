@@ -1,321 +1,324 @@
-# Les lignes du livre
+# The book's lines
 
-Ce dossier relève l'endroit où chaque ligne du livre se coupe, et l'écrit
-dans `public/texts/torah-layout/` (les colonnes du Sefer Torah, pour toute la
-Torah) et `public/texts/talmud-layout/` (la page de Vilna). Le
-format de ces fichiers est décrit dans `docs/compatibilite-textes.md`.
+This folder records where each line of the book breaks, and writes it into
+`public/texts/torah-layout/` (the columns of the Sefer Torah, for the whole
+Torah) and `public/texts/talmud-layout/` (the Vilna page). The format of
+these files is described in `docs/compatibilite-textes.md`.
 
-Rien n'est transcrit. Le texte, on l'a déjà (`public/texts/`) ; les sources
-ne servent qu'à savoir où les lignes se coupent. Sur une image, aucune lettre
-n'est lue : on y relève les lignes et la largeur de leurs mots, et l'on cale
-cette suite de largeurs sur les mots du texte, dont on sait prévoir la
-largeur dans le caractère du livre.
+Nothing is transcribed. We already have the text (`public/texts/`); the
+sources only serve to know where the lines break. On an image, no letter
+is read: we record the lines and the width of their words, and we align
+that sequence of widths with the words of the text, whose width in the
+book's typeface we can predict.
 
-## Le Sefer Torah
+## The Sefer Torah
 
-Le rouleau relevé est celui de **245 colonnes de 42 lignes**, où chaque
-colonne commence par un vav (« vavé ha'amoudim »), sauf les six de
-« בי"ה שמ"ו ». C'est la disposition des tikounim de lecture d'aujourd'hui.
+The scroll recorded is the one with **245 columns of 42 lines**, where
+each column begins with a vav (« vavé ha'amoudim »), except the six of
+« בי"ה שמ"ו ». This is the layout of today's reading tikounim.
 
 ```bash
-# Les sources (une fois).
+# The sources (once).
 python3 scripts/layout/fetch.py tikkun-io
 python3 scripts/layout/fetch.py scrollscraper
 python3 scripts/layout/fetch.py sefaria-torah
 
-# Le contrôle, sans rien écrire : ce qui est recalé, et pourquoi.
+# The check, without writing anything: what gets realigned, and why.
 python3 scripts/layout/scroll.py --check
 
-# Les 54 fichiers, puis le manifeste et les tests.
+# The 54 files, then the manifest and the tests.
 python3 scripts/layout/scroll.py --write
 node scripts/texts-manifest.mjs
 npx vitest run src/__tests__/textLayout.test.ts src/__tests__/scrollLayout.test.ts
 ```
 
-Trois sources, de la plus commode à la plus sûre (`scroll.py`) :
+Three sources, from the most convenient to the most reliable
+(`scroll.py`):
 
-1. **tikkun.io** (licence MIT) donne les 245 colonnes ligne par ligne, en
-   texte. Son texte est celui de Sefaria, comme le nôtre : les 79 977 mots se
-   suivent à l'identique, une ligne se note donc par la place d'un mot de
-   notre fichier, sans rien caler.
-2. **Les images du tikoun d'ORT** montrent les mêmes lignes. tikkun.io en a
-   vraisemblablement été tiré, par un partage des versets qui range parfois un mot
-   une ligne trop haut ou trop bas. Chaque ligne est donc recalée sur son
-   image, et l'image a raison : onze coupures corrigées (colonnes 16, 82, 83
-   et 88), et deux lignes que tikkun.io arrête avant le bord alors qu'elles
-   sont pleines.
-3. **La tradition écrite** fixe les lignes des deux chirot et de leurs
-   abords. Là où les deux sources s'en écartent, elle a raison : les cinq
-   lignes d'après Az yachir commencent par « ותקח, אחריה, סוס, ויצאו,
-   ויבאו » (Rema, Yoré Déa 275, 6) ; dans Haazinou, « ואילים » finit sa ligne
-   (Rambam, Hilkhot Sefer Torah 8, 4) ; la dernière ligne d'Az yachir est en
-   trois morceaux. Les lignes blanches suivent la règle : quatre entre deux
-   livres, une avant et une après chaque chira.
+1. **tikkun.io** (MIT license) gives the 245 columns line by line, as
+   text. Its text is Sefaria's, like ours: the 79,977 words follow one
+   another identically, so a line is recorded by the position of a word in
+   our file, without any alignment.
+2. **The images of the ORT tikoun** show the same lines. tikkun.io was
+   most likely derived from them, through a splitting of verses that
+   sometimes places a word one line too high or too low. Each line is
+   therefore realigned against its image, and the image is right: eleven
+   breaks corrected (columns 16, 82, 83 and 88), and two lines that
+   tikkun.io stops before the edge although they are full.
+3. **The written tradition** fixes the lines of the two chirot and their
+   surroundings. Where both sources depart from it, it is right: the five
+   lines after Az yachir begin with « ותקח, אחריה, סוס, ויצאו, ויבאו »
+   (Rema, Yoré Déa 275, 6); in Haazinou, « ואילים » ends its line (Rambam,
+   Hilkhot Sefer Torah 8, 4); the last line of Az yachir is in three
+   pieces. Blank lines follow the rule: four between two books, one before
+   and one after each chira.
 
-Ce que vaut le contrôle. `scroll.py --probe 9` déplace d'un mot une coupure
-sur neuf (1 075), puis demande au contrôle de les retrouver : il
-les retrouve toutes, sans fausse alerte. Les colonnes des deux chirot (78,
-242, 243) en sont exclues, leurs lettres étant étirées sur l'image : la
-tradition les fixe, et elles ont été relues à l'œil.
+What the check is worth. `scroll.py --probe 9` moves one break in nine
+(1,075) by one word, then asks the check to find them: it finds them all,
+with no false alarm. The columns of the two chirot (78, 242, 243) are
+excluded from this, their letters being stretched on the image: the
+tradition fixes them, and they were reviewed by eye.
 
-Ce que le relevé ne garantit pas :
+What the record does not guarantee:
 
-- **Un rouleau n'est pas l'autre.** Ces lignes sont celles du tikoun de 245
-  colonnes. Un rouleau écrit sur un autre tikoun (celui, plus espacé, de Rav
-  Davidovitch, un rouleau yéménite, un rouleau ancien) coupe ses lignes
-  ailleurs.
-- **Deux témoins, pas trois.** tikkun.io dérive des images d'ORT : hors des
-  chirot, rien d'autre ne les contrôle. Une ligne que le tikoun d'ORT
-  couperait autrement qu'un tikoun imprimé passerait inaperçue.
-- **Les six lignes d'après Haazinou** ne sont pas celles du Rema (cinq
-  lignes, qui demandent une colonne très large) : le rouleau de 245 colonnes
-  en écrit six, pour que la colonne suivante commence par un vav.
-- **Le texte** est celui de Sefaria (la Massora d'Alep). Les rouleaux
-  achkénazes et séfarades en diffèrent par quelques lettres (Berechit 9, 29 ;
-  Devarim 23, 2) : cela ne change aucune ligne, mais ce n'est pas la lettre
-  de tous les rouleaux.
-- Les nounim inversés de Bamidbar 10, 35 ne sont pas écrits.
+- **One scroll is not another.** These lines are those of the 245-column
+  tikoun. A scroll written on another tikoun (the more spaced-out one by
+  Rav Davidovitch, a Yemenite scroll, an old scroll) breaks its lines
+  elsewhere.
+- **Two witnesses, not three.** tikkun.io derives from the ORT images:
+  outside the chirot, nothing else checks them. A line that the ORT tikoun
+  broke differently from a printed tikoun would go unnoticed.
+- **The six lines after Haazinou** are not those of the Rema (five lines,
+  which require a very wide column): the 245-column scroll writes six, so
+  that the next column begins with a vav.
+- **The text** is Sefaria's (the Aleppo Masorah). Ashkenazi and Sephardi
+  scrolls differ from it by a few letters (Berechit 9, 29; Devarim 23, 2):
+  this changes no line, but it is not the letter of every scroll.
+- The inverted nounim of Bamidbar 10, 35 are not written.
 
-## La page de Vilna
+## The Vilna page
 
 ```bash
-python3 scripts/layout/vilna.py beitzah --fetch          # les pages (une par seconde)
-python3 scripts/layout/vilna.py beitzah --check          # ce que vaut le calage
+python3 scripts/layout/vilna.py beitzah --fetch          # the pages (one per second)
+python3 scripts/layout/vilna.py beitzah --check          # what the alignment is worth
 python3 scripts/layout/vilna.py beitzah --write          # public/texts/talmud-layout
-python3 scripts/layout/vilna.py all --write              # tout le Shas
+python3 scripts/layout/vilna.py all --write              # the whole Shas
 ```
 
-La source est une page par amoud, recomposée ligne pour ligne d'après Vilna,
-en PDF (lecteur de shas.org, voir `sources.json`). Le texte y est du texte :
-`vilna.py` en lit les mots, leur police et leur place.
+The source is one page per amoud, recomposed line for line after Vilna, as
+a PDF (shas.org reader, see `sources.json`). The text there is real text:
+`vilna.py` reads its words, their font and their position.
 
-- **Le mot** : ses lettres et sa boîte viennent de `pdftotext -bbox`, sa
-  police de `pdftohtml -xml`. On les rapproche par les lettres et par la
-  place, pas par le seul milieu de la boîte : dans la moitié des traités, les
-  polices annoncent de fausses hampes et la boîte d'un mot de dibbour tient
-  trois lignes de haut.
-- **La zone** vient de la police, et la police se reconnaît à ce qu'elle
-  écrit : celle dont les mots sont ceux de notre guemara, celle dont les mots
-  sont ceux de nos commentaires (Rachi et Tossafot la partagent, pas toujours
-  au même corps), celles des dibbourim. Le nom de la police ne sert pas :
-  dans quinze traités il ne dit rien, et une même écriture y est découpée en
-  plusieurs polices. Les marges ont les leurs, qu'on laisse.
-- **La ligne** vient de la place. Un mot à la boîte trop haute est remis à
-  sa ligne : celle que les mots du corps laissent libre à cet endroit
-  (`settle`). Un renvoi en petit corps, un mot entre crochets, un bout de
-  mot composé à part rejoignent la ligne qu'ils touchent (`adopt`) ; une
-  ligne de guemara seule dans sa police se reconnaît à sa place
-  (`missing_rows`). Les appels de note ne sont pas des mots.
-- **Les colonnes** : deux colonnes voisines se séparent à leur gouttière,
-  qui se retrouve au même endroit d'une rangée à l'autre. Un blanc de
-  justification peut en avoir l'air : deux morceaux d'une même rangée qui se
-  suivent dans notre texte sont recollés.
-- **À qui est une ligne de commentaire** : à Rachi ou à Tossafot selon la
-  police du dibbour qu'elle ouvre, sinon selon ses mots. Le côté ne le dit
-  pas : sur certaines pages Rachi tient les deux colonnes.
-- **Nos mots** : le texte de la page et le nôtre sont le même Talmud. On les
-  aligne mot à mot ; ce qui diffère entre deux mots retrouvés est une
-  abréviation (« ר' » pour « רבי », « א"ל » pour « אמר ליה »), et nos mots
-  prennent la ligne du mot imprimé qui leur répond. La page n'imprime pas
-  les commentaires dans l'ordre de notre fichier : les suites de mots restées
-  seules sont cherchées partout sur la page.
+- **The word**: its letters and its box come from `pdftotext -bbox`, its
+  font from `pdftohtml -xml`. They are matched by letters and by position,
+  not by the middle of the box alone: in half of the tractates, the fonts
+  report false ascenders and the box of a dibbour word is three lines
+  high.
+- **The zone** comes from the font, and the font is recognized by what it
+  writes: the one whose words are those of our guemara, the one whose words
+  are those of our commentaries (Rachi and Tossafot share it, not always at
+  the same size), those of the dibbourim. The font's name is not used: in
+  fifteen tractates it says nothing, and the same script is split into
+  several fonts there. The margins have their own, which we leave alone.
+- **The line** comes from the position. A word whose box is too tall is put
+  back on its line: the one the body words leave free at that spot
+  (`settle`). A cross-reference in small type, a word in square brackets, a
+  piece of a compound word set apart join the line they touch (`adopt`); a
+  guemara line alone in its font is recognized by its position
+  (`missing_rows`). Footnote markers are not words.
+- **The columns**: two neighboring columns are separated at their gutter,
+  which falls at the same spot from one row to the next. A justification
+  gap can look like one: two pieces of the same row that follow each other
+  in our text are joined back together.
+- **Whose commentary line it is**: Rachi's or Tossafot's according to the
+  font of the dibbour it opens, otherwise according to its words. The side
+  does not tell: on some pages Rachi takes up both columns.
+- **Our words**: the page's text and ours are the same Talmud. They are
+  aligned word by word; what differs between two matched words is an
+  abbreviation (« ר' » for « רבי », « א"ל » for « אמר ליה »), and our words
+  take the line of the printed word that corresponds to them. The page
+  does not print the commentaries in our file's order: sequences of words
+  left unmatched are searched for across the whole page.
 
-- **Ce que le livre écrit à part.** Le mot d'ouverture d'un traité ou d'un
-  chapitre, en très grand au-dessus de la guemara (`initial_words` : sa
-  boîte est mesurée sur l'encre, et il quitte la première ligne) ; « הדרן
-  עלך … » à la fin d'un chapitre (`closing_lines` ; nos commentaires la
-  répètent, le livre non : elle y est tenue pour posée) ; les mots écrits
-  plus grand dans leur ligne (`big_words`).
-- **Une ligne reste lisible.** Les mots de notre texte que la page n'a pas à
-  l'identique prennent la ligne de leurs voisins ; mais une ligne ne porte
-  pas bien plus de lettres que le livre n'en imprime. Au-delà (une addition
-  entre crochets de notre texte, que le livre n'a pas), ces mots-là en
-  sortent : mieux vaut un mot absent de la page qu'une ligne écrasée. Avant
-  cela, un mot au bord d'une ligne trop pleine passe à sa voisine si elle a
-  la place ; un renvoi où notre texte nomme le traité que le livre
-  sous-entend, ou une source que l'édition a ajoutée entre parenthèses,
-  reste comme le livre l'imprime. Et là où ce sont nos mots eux-mêmes qui
-  chargent la ligne (« המוציא מחברו עליו הראיה » pour « המע"ה »), le fichier
-  porte l'abréviation du livre (`short`). `--check` compte les lignes encore
-  trop chargées.
+- **What the book writes apart.** The opening word of a tractate or a
+  chapter, very large above the guemara (`initial_words`: its box is
+  measured on the ink, and it leaves the first line); « הדרן עלך … » at the
+  end of a chapter (`closing_lines`; our commentaries repeat it, the book
+  does not: it is treated as placed there); words written larger within
+  their line (`big_words`).
+- **A line stays readable.** Words of our text that the page does not have
+  identically take the line of their neighbors; but a line does not carry
+  many more letters than the book prints. Beyond that (an addition in
+  square brackets in our text, which the book does not have), those words
+  are left out: better a word missing from the page than a crushed line.
+  Before that, a word at the edge of an overfull line moves to its
+  neighbor if it has room; a cross-reference where our text names the
+  tractate that the book implies, or a source that the edition added in
+  parentheses, stays as the book prints it. And where it is our words
+  themselves that weigh down the line (« המוציא מחברו עליו הראיה » for
+  « המע"ה »), the file carries the book's abbreviation (`short`). `--check`
+  counts the lines that are still overloaded.
 
-- **Le texte que nous n'avons pas.** Le texte de Sefaria n'est pas toujours
-  celui de la page. Une ligne de nos colonnes sans aucun de nos mots, prise
-  entre deux lignes de notre commentaire, ou le bout d'une ligne que notre
-  texte n'a pas, s'écrit avec le texte du livre (`book_lines`, `fill` dans le
-  fichier), si la page rend bien ses lettres (le noun surtout). Un titre de
-  commentaire se reconnaît à ses mots dans les colonnes, même quand sa
-  police sert aussi aux notes de marge ; une ligne faite d'un seul titre
-  reste entière.
+- **The text we do not have.** Sefaria's text is not always the page's. A
+  line in our columns with none of our words, caught between two lines of
+  our commentary, or the end of a line that our text does not have, is
+  written with the book's text (`book_lines`, `fill` in the file), if the
+  page renders its letters properly (the noun above all). A commentary
+  title is recognized by its words in the columns, even when its font is
+  also used for margin notes; a line made of a single title stays whole.
 
-### Les témoins
+### The witnesses
 
-Un relevé qui paraît bon en chiffres peut être faux à l'écran. Trois témoins
-le disent :
+A record that looks good in figures can be wrong on screen. Three
+witnesses tell:
 
-1. **Le texte.** `--check` compte, par zone, les lignes dont les deux bords
-   sont retrouvés mot pour mot, les mots imprimés retrouvés dans notre
-   texte, et nos mots posés sur une ligne.
-2. **L'encre** (`ink_faults`). La même page est rendue en image, et pour
-   chaque ligne on regarde si l'encre s'arrête bien à ses deux bords : de
-   l'encre juste au-delà (il manque un mot à la ligne), du blanc juste en
-   deçà (sa boîte est trop longue). La couche de texte peut se tromper sans
-   le dire ; l'image, non.
-3. **Le scan du livre.** Les pages de shas.org sont une recomposition : il
-   faut savoir si elle suit Vilna. Les lignes de guemara de Berakhot (du 2a
-   au 10b) ont été comparées à celles lues sur le scan de l'édition Romm
-   (le pilote, plus bas, qui devine les mots à leur largeur) : même nombre
-   de lignes sur seize pages de dix-huit, 95 % des débuts de ligne
-   identiques, et les écarts, vus sur le scan, donnent raison au PDF.
+1. **The text.** `--check` counts, per zone, the lines whose two edges are
+   found word for word, the printed words found in our text, and our words
+   placed on a line.
+2. **The ink** (`ink_faults`). The same page is rendered as an image, and
+   for each line we check whether the ink does stop at both its edges: ink
+   just beyond (a word is missing from the line), blank just short of it
+   (its box is too long). The text layer can be wrong without saying so;
+   the image cannot.
+3. **The book's scan.** The shas.org pages are a recomposition: we need to
+   know whether it follows Vilna. The guemara lines of Berakhot (from 2a to
+   10b) were compared with those read on the scan of the Romm edition (the
+   pilot, below, which guesses words from their width): same number of
+   lines on sixteen pages out of eighteen, 95% of line beginnings
+   identical, and the differences, checked on the scan, prove the PDF
+   right.
 
-Une page ne s'écrit que si elle est sûre. Elle est écartée, et l'app la
-compose alors à sa façon, quand : quatre mots ou plus sont posés l'un sur
-l'autre dans les commentaires ; moins de 85 % des lignes de guemara ont
-leurs deux bords ; moins de 95 % de notre guemara est posée ; moins de 60 %
-des mots imprimés d'un commentaire se retrouvent chez nous ; l'encre dément
-plus de 6 % des lignes (et plus de quatre) ; plus de deux mots sur cinq
-d'un commentaire que nous avons ne sont imprimés ni sur sa page ni sur ses
-voisines. Un traité dont moins de
-la moitié des pages passent ne s'écrit pas du tout (aucun aujourd'hui).
+A page is only written if it is reliable. It is set aside, and the app then
+lays it out its own way, when: four or more words are placed on top of
+one another in the commentaries; fewer than 85% of guemara lines have both
+their edges; less than 95% of our guemara is placed; fewer than 60% of a
+commentary's printed words are found in ours; the ink contradicts more
+than 6% of the lines (and more than four); more than two words out of five
+of a commentary we have are printed neither on its page nor on its
+neighbors. A tractate where fewer than half of the pages pass is not
+written at all (none today).
 
-Les commentateurs qui prennent le relais de Rachi ou de Tossafot viennent
-de Sefaria comme eux (`scripts/download-texts.mjs`), et tiennent leur
-colonne : le Rachbam en Bava Batra (là où Rachi s'arrête) et en Pessa'him
-(à côté de Rachi, à partir de 99b) ; le Ran en Nedarim, à la place de
-Tossafot, qui n'y est qu'en marge du livre et ne reste qu'au volet des
-commentaires. Sans eux, la moitié de Nedarim ne passait pas les contrôles.
+The commentators who take over from Rachi or Tossafot come from Sefaria
+like them (`scripts/download-texts.mjs`), and hold their column: the
+Rachbam in Bava Batra (where Rachi stops) and in Pessa'him (next to Rachi,
+from 99b); the Ran in Nedarim, in place of Tossafot, which appears there
+only in the book's margin and remains only in the commentaries pane.
+Without them, half of Nedarim did not pass the checks.
 
-Le texte de la page est celui du livre. Nos mots (Sefaria) donnent à chaque
-ligne sa place dans le texte, le passage et le commentaire qu'on ouvre ; mais
-là où le livre écrit autre chose (une abréviation, « א"ר » pour « אמר רבי » ;
-une autre leçon ; un mot de plus ou de moins), le fichier le dit dans `short`
-et la page écrit le livre (`book_edits`). Notre texte ne tranche que là où la
-lecture du PDF est douteuse : une police qui ne rend pas ses nounim (on le
-voit à ce que le livre en écrit moins que nous sur les mêmes lignes), un mot
-troué ou imprimé deux fois, un appel de note collé au mot, un renvoi que la
-ligne lue ne referme pas, un mot à une lettre près du nôtre. Un mot qui
-passe d'une ligne à sa voisine ne bouge que s'il part d'un côté et arrive de
-l'autre ; sinon la coupure reste la nôtre. La ponctuation que Sefaria ajoute
-à la guemara reste là où les mots sont les mêmes.
+The page's text is the book's. Our words (Sefaria) give each line its place
+in the text, the passage and the commentary that are opened; but where the
+book writes something else (an abbreviation, « א"ר » for « אמר רבי »;
+another reading; one word more or less), the file says so in `short` and
+the page writes the book (`book_edits`). Our text only decides where the
+PDF reading is doubtful: a font that does not render its nounim (you can
+tell because the book writes fewer of them than we do on the same lines), a
+word with a hole or printed twice, a footnote marker stuck to the word, a
+cross-reference that the line read does not close, a word one letter away
+from ours. A word that moves from one line to its neighbor only moves if
+it leaves from one side and arrives from the other; otherwise the break
+stays ours. The punctuation that Sefaria adds to the guemara stays where
+the words are the same.
 
-Pour la guemara, un second témoin lève ce doute : le texte de Vilna de
-Wikisource, que Sefaria publie sous CC-BY-SA (`witness.py`, dans le cache).
-Ce qu'il confirme, mot pour mot et à la suite, avec le mot d'avant ou celui
-d'après, s'écrit comme il l'écrit, quelle que soit la police du PDF.
+For the guemara, a second witness removes this doubt: the Vilna text from
+Wikisource, which Sefaria publishes under CC-BY-SA (`witness.py`, in the
+cache). What it confirms, word for word and in sequence, with the word
+before or the one after, is written as it writes it, whatever the PDF's
+font.
 
-Ce que le relevé ne porte pas : les réclames et les notes des marges ; les
-commentaires que nous n'avons pas (le second Rachi de Mena'hot, le Rivan
-de Makkot, la Chita Mekoubétset), dont le texte, quand il est dans les
-colonnes de la page, s'écrit depuis le livre ; Kinnim ; Chekalim et
-Middot, que nos fichiers ne rangent pas par amoud. Les « תוספות » du pied
-de page (Keritot) s'écrivent aussi depuis le livre, dans leur petit corps.
+What the record does not carry: the catchwords and the margin notes; the
+commentaries we do not have (the second Rachi of Mena'hot, the Rivan of
+Makkot, the Chita Mekoubétset), whose text, when it is in the page's
+columns, is written from the book; Kinnim; Chekalim and Middot, which our
+files do not arrange by amoud. The « תוספות » at the foot of the page
+(Keritot) are also written from the book, in their small type.
 
-## Le pilote sur scan
+## The scan pilot
 
-## Ce qu'il faut
+## What you need
 
-- Python 3 avec `numpy`, `opencv-python` et `Pillow` ;
-- `pdftoppm` et `curl` (Poppler : `brew install poppler`) ;
-- pour les captures de notre rendu : l'app en marche (`npm run dev`) et le
-  Chromium de Playwright (`npx playwright install chromium`).
+- Python 3 with `numpy`, `opencv-python` and `Pillow`;
+- `pdftoppm` and `curl` (Poppler: `brew install poppler`);
+- for captures of our rendering: the app running (`npm run dev`) and
+  Playwright's Chromium (`npx playwright install chromium`).
 
-Les scans et tout ce qu'on en tire d'image restent hors du dépôt, dans un
-cache : `~/.cache/petite-jerusalem/layout` (ou `PJ_LAYOUT_CACHE`). **On ne
-commite ni image ni PDF** : seulement les fichiers de coupures, qui sont du
-texte.
+The scans and every image derived from them stay out of the repository, in
+a cache: `~/.cache/petite-jerusalem/layout` (or `PJ_LAYOUT_CACHE`). **We
+commit neither images nor PDFs**: only the break files, which are text.
 
-## Les sources
+## The sources
 
-`sources.json` dit d'où vient chaque source et sous quelle licence. Les
-scans viennent d'archive.org, marqués « Public Domain Mark 1.0 » :
+`sources.json` says where each source comes from and under which license.
+The scans come from archive.org, marked "Public Domain Mark 1.0":
 
-- le Shas de Vilna de la veuve et des frères Romm (1882 à 1887), numérisé par
-  la bibliothèque de l'université Duke ;
-- le tikoun soferim de Judah Pisa, _'Ezrat ha-Sofer_ (Amsterdam, 1769),
-  numérisé par la Bibliothèque nationale d'Israël.
+- the Vilna Shas of the Widow and Brothers Romm (from 1882 to 1887),
+  digitized by the Duke University library;
+- the tikoun soferim of Judah Pisa, _'Ezrat ha-Sofer_ (Amsterdam, 1769),
+  digitized by the National Library of Israel.
 
-La Bibliothèque nationale d'Israël et hebrewbooks.org ferment leurs pages aux
-programmes (contrôle anti-robot) : on ne les interroge pas.
+The National Library of Israel and hebrewbooks.org close their pages to
+programs (anti-bot check): we do not query them.
 
-## La marche
+## The procedure
 
 ```bash
-# 1. Le scan (une fois).
+# 1. The scan (once).
 python3 scripts/layout/fetch.py vilna v01
 python3 scripts/layout/fetch.py ezrat-hasofer
 
-# 2. La guemara : un passage d'un traité.
+# 2. The guemara: a passage of a tractate.
 python3 scripts/layout/talmud.py berakhot --from 2a --to 2b --review /tmp/relecture
 
-# 3. Le pilote de la Torah sur scan : une paracha du tikoun de Pisa (264
-#    colonnes). Rien n'en va dans le dépôt, qui porte le rouleau de 245
-#    colonnes (plus haut).
+# 3. The Torah pilot on a scan: one paracha of the Pisa tikoun (264
+#    columns). None of it goes into the repository, which carries the
+#    245-column scroll (above).
 python3 scripts/layout/torah.py 279 --review /tmp/relecture
 
-# 4. Le manifeste des textes, puis les tests.
+# 4. The texts manifest, then the tests.
 node scripts/texts-manifest.mjs
 npx vitest run src/__tests__/textLayout.test.ts
 ```
 
-Un traité se déclare dans `sources.json` : son volume, et la page du PDF qui
-porte son premier amoud (`firstPage`). Une paracha s'y déclare par les pages
-du tikoun qui la portent.
+A tractate is declared in `sources.json`: its volume, and the PDF page that
+carries its first amoud (`firstPage`). A paracha is declared there by the
+pages of the tikoun that carry it.
 
-Sans `--write`, rien n'est écrit dans le dépôt : le programme dit seulement,
-page par page, ce que vaut le calage (son coût par mot, les lignes douteuses,
-les commentaires que l'imprimé ne donne pas dans l'ordre du fichier).
+Without `--write`, nothing is written to the repository: the program only
+says, page by page, what the alignment is worth (its cost per word, the
+doubtful lines, the commentaries that the print does not give in the
+file's order).
 
-## Relire
+## Reviewing
 
-Le calage se trompe : il faut le regarder.
+The alignment makes mistakes: you have to look at it.
 
 ```bash
-# Chaque ligne du scan à côté des mots que le calage lui donne.
+# Each line of the scan next to the words the alignment gives it.
 python3 scripts/layout/talmud.py berakhot --from 2a --to 2b --review /tmp/relecture
 
-# Un échantillon tiré au hasard sur tout le passage, pour mesurer.
+# A random sample over the whole passage, to measure.
 python3 scripts/layout/talmud.py berakhot --from 2a --to 10b --review /tmp/relecture --sample 44
 
-# Le scan à gauche, notre rendu à droite.
+# The scan on the left, our rendering on the right.
 node scripts/layout/capture.mjs http://localhost:5173 /bibliotheque/talmud/berakhot/1 /tmp/rendu
 python3 scripts/layout/compare.py talmud berakhot 2a 7a /tmp/rendu --out /tmp/comparaison
 ```
 
-Sur une planche de relecture, les traits bleus sous l'image sont les mots que
-l'analyse a vus ; les traits orange, ceux qu'elle tient pour des renvois de
-marge. Une ligne en rouge est une ligne que le calage lui-même trouve
-douteuse.
+On a review sheet, the blue marks below the image are the words the
+analysis saw; the orange marks, those it takes for margin
+cross-references. A line in red is a line that the alignment itself finds
+doubtful.
 
-## Les fichiers
+## The files
 
-| Fichier        | Ce qu'il fait                                                       |
+| File           | What it does                                                        |
 | -------------- | ------------------------------------------------------------------- |
-| `fetch.py`     | télécharge une source dans le cache                                 |
-| `imaging.py`   | rend une page (`pdftoppm`), en tire l'encre, la redresse            |
-| `segment.py`   | les lettres, les gouttières, les lignes, les mots                   |
-| `daf.py`       | la page de Vilna : la guemara et les colonnes de commentaire        |
-| `align.py`     | le calage des mots vus sur les mots du texte                        |
-| `texts.py`     | les mots du texte, comptés comme le lecteur les compte              |
-| `talmud.py`    | le pilote : la guemara, Rachi et Tossafot lus sur un scan           |
-| `torah.py`     | le pilote : les colonnes d'une paracha lues sur le tikoun de Pisa   |
-| `scroll.py`    | les 245 colonnes du Sefer Torah, pour toute la Torah                |
-| `vilna.py`     | la page de Vilna ligne pour ligne, lue dans des pages composées     |
-| `review.py`    | les planches de relecture                                           |
-| `capture.mjs`  | la capture de notre rendu (Playwright)                              |
-| `compare.py`   | les images côte à côte                                              |
-| `fonts.json`   | la largeur des lettres de chaque caractère, mesurée (`--calibrate`) |
-| `sources.json` | les sources, leurs adresses, leurs licences, leurs pages            |
+| `fetch.py`     | downloads a source into the cache                                   |
+| `imaging.py`   | renders a page (`pdftoppm`), extracts the ink, straightens it       |
+| `segment.py`   | the letters, the gutters, the lines, the words                      |
+| `daf.py`       | the Vilna page: the guemara and the commentary columns              |
+| `align.py`     | aligning the words seen with the words of the text                  |
+| `texts.py`     | the words of the text, counted the way the reader counts them       |
+| `talmud.py`    | the pilot: the guemara, Rachi and Tossafot read on a scan           |
+| `torah.py`     | the pilot: the columns of a paracha read on the Pisa tikoun         |
+| `scroll.py`    | the 245 columns of the Sefer Torah, for the whole Torah             |
+| `vilna.py`     | the Vilna page line for line, read from typeset pages               |
+| `review.py`    | the review sheets                                                   |
+| `capture.mjs`  | the capture of our rendering (Playwright)                           |
+| `compare.py`   | the images side by side                                             |
+| `fonts.json`   | the letter widths of each typeface, measured (`--calibrate`)        |
+| `sources.json` | the sources, their addresses, their licenses, their pages           |
 
-## Ce que le calage ne sait pas faire
+## What the alignment cannot do
 
-- **Les abréviations de la guemara.** Notre texte écrit « הקדוש ברוך הוא » là
-  où Vilna imprime « הקב"ה ». Quand l'abréviation finit une ligne, le calage
-  laisse parfois un ou deux de ses mots à la ligne suivante.
-- **L'ordre des commentaires.** Sefaria range chaque commentaire sous le
-  passage qu'il explique ; la page les imprime dans son ordre à elle. Le
-  programme replace ceux qu'il reconnaît ; un commentaire court (trois ou
-  quatre mots) ne se reconnaît pas toujours.
-- **Ce que le fichier porte et que l'imprimé n'a pas** (un doublon, un ajout
-  entre crochets) : rangé sous `absent`, il n'appartient à aucune ligne.
-- **Les chirot.** Une ligne d'Az yachir tient parfois en un mot au bord de la
-  colonne : le calage y est moins sûr que dans la prose.
+- **The guemara's abbreviations.** Our text writes « הקדוש ברוך הוא »
+  where Vilna prints « הקב"ה ». When the abbreviation ends a line, the
+  alignment sometimes leaves one or two of its words on the next line.
+- **The order of the commentaries.** Sefaria places each commentary under
+  the passage it explains; the page prints them in its own order. The
+  program puts back those it recognizes; a short commentary (three or four
+  words) is not always recognized.
+- **What the file carries and the print does not have** (a duplicate, an
+  addition in square brackets): filed under `absent`, it belongs to no
+  line.
+- **The chirot.** A line of Az yachir sometimes holds a single word at the
+  edge of the column: the alignment is less reliable there than in prose.

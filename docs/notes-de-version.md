@@ -1,39 +1,38 @@
-# Notes de version
+# Release notes
 
-La marche à suivre quand on demande « rédige la note de patch » (ou les
-notes de version, le changelog, les « Nouveautés » d'une version).
-CLAUDE.md y renvoie.
+The procedure to follow when asked to « rédige la note de patch » ("write
+the patch note"), or the release notes, the changelog, the "What's new" of
+a version. CLAUDE.md points here.
 
-La note part de la description de la release GitHub du tag `vX.Y.Z` : la CI
-en envoie chaque section à la langue du même nom, sur le Play Store (fr-FR,
-en-US, iw-IL) et sur l'App Store (fr-FR, en-US, he). Voir
-`docs/android-ci-cd.md`, section « Notes de version en trois langues ».
-Le même texte devient une information « Mise à jour » dans l'app et sur le
-site, à la publication de la release (`.github/workflows/release-info.yml`,
-voir `docs/backoffice-cli.md`).
+The note comes from the description of the GitHub release for the `vX.Y.Z`
+tag: the CI sends each section to the language of the same name, on the
+Play Store (fr-FR, en-US, iw-IL) and on the App Store (fr-FR, en-US, he).
+See `docs/android-ci-cd.md`, section « Notes de version en trois langues ».
+The same text becomes a « Mise à jour » ("Update") information item in the
+app and on the site when the release is published
+(`.github/workflows/release-info.yml`, see `docs/backoffice-cli.md`).
 
-Le résultat attendu est UN bloc de texte prêt à coller, rien d'autre à
-faire pour le propriétaire du dépôt que le copier.
+The expected result is ONE block of text ready to paste, with nothing left
+for the repository owner to do but copy it.
 
-## 1. Trouver ce qui a changé
+## 1. Find what changed
 
-1. `git fetch --tags origin main`, puis le dernier tag de version de l'app :
-   `git tag -l 'v*' --sort=-v:refname | head -1` (les tags `web-v*` ne
-   comptent pas, ils ne publient que le site).
-2. Les PR fusionnées depuis : `git log --first-parent --format='%h %s' <tag>..origin/main`,
-   puis, pour chacune, le corps des commits de la branche fusionnée
-   (`git log --no-merges --format='%s%n%b' <merge>^1..<merge>^2`). Le
-   message de commit dit ce que la personne voit ; c'est là qu'on lit.
-3. Ne garder que ce qu'un utilisateur de l'app ou du site remarque. Laisser
-   de côté : CI, workflows, captures des fiches, tests, documentation,
-   nettoyage de code, suivi d'audience, remontées d'erreurs, refactorisations
-   sans effet visible.
-4. Relire au besoin les deux ou trois dernières releases GitHub pour le ton.
+1. `git fetch --tags origin main`, then the latest app version tag:
+   `git tag -l 'v*' --sort=-v:refname | head -1` (`web-v*` tags do not
+   count, they only publish the site).
+2. The PRs merged since: `git log --first-parent --format='%h %s' <tag>..origin/main`,
+   then, for each one, the body of the commits from the merged branch
+   (`git log --no-merges --format='%s%n%b' <merge>^1..<merge>^2`). The
+   commit message says what the person sees; that is where to read.
+3. Keep only what a user of the app or the site notices. Leave out: CI,
+   workflows, listing screenshots, tests, documentation, code cleanup,
+   audience tracking, error reporting, refactorings with no visible effect.
+4. If needed, reread the last two or three GitHub releases for the tone.
 
-## 2. Écrire
+## 2. Write
 
-Trois sections, dans cet ordre, sous ces titres exacts. Dans chacune, deux
-blocs : les nouveautés, puis les corrections. Un bloc sans rien s'omet.
+Three sections, in this order, under these exact headings. In each, two
+blocks: what's new, then fixes. An empty block is omitted.
 
 ```markdown
 ## Français
@@ -58,48 +57,47 @@ Fixes
 - …
 ```
 
-- **Court.** Le Play Store coupe à 500 caractères par langue (puces et
-  intitulés compris) : viser 3 ou 4 nouveautés et autant de corrections au
-  plus, une phrase courte chacune, la plus importante d'abord. Si tout ne
-  tient pas, regrouper (« Sidour : quatre lectures corrigées ») ou retirer
-  le moins visible, jamais tronquer une phrase.
-- **Du point de vue de l'utilisateur**, au présent : ce qu'il voit ou peut
-  faire désormais, pas comment c'est fait. Ni numéro de PR, ni nom de
-  fichier, ni jargon technique.
-- **Les trois langues disent la même chose**, dans le même ordre. L'anglais
-  et l'hébreu sont de vraies traductions, pas un résumé.
-- **Les libellés de l'interface** sont ceux de l'app dans chaque langue :
-  les reprendre de `src/locales/fr.ts`, `en.ts` et `he.ts` (noms des
-  onglets, des groupes du profil, des boutons).
-- **Termes liturgiques** : en français, la graphie du dépôt (Cha'harit,
-  Min'ha, Arvit, 'Hol haMoed, Tehilim, Sidour, Hochanot, Chabbat) ; en
-  anglais, la translittération courante (Shacharit, Mincha, Arvit, Chol
-  HaMoed, Tehilim, Siddur, Hoshanot, Shabbat) ; en hébreu, le mot hébreu
-  (שחרית, חול המועד, תהילים, סידור, הושענות, שבת). Une citation en hébreu
-  reste en hébreu dans les trois langues.
-- **Typographie** : jamais de tiret long (règle du dépôt, voir CLAUDE.md),
-  guillemets « » en français et " " en anglais et en hébreu, apostrophe
-  droite. Aucun émoji : App Store Connect les refuse.
+- **Short.** The Play Store cuts at 500 characters per language (bullets
+  and headings included): aim for 3 or 4 new features and as many fixes at
+  most, one short sentence each, the most important first. If everything
+  does not fit, group items (« Sidour : quatre lectures corrigées ») or
+  remove the least visible one; never truncate a sentence.
+- **From the user's point of view**, in the present tense: what they now
+  see or can do, not how it is done. No PR number, no file name, no
+  technical jargon.
+- **The three languages say the same thing**, in the same order. The
+  English and the Hebrew are real translations, not a summary.
+- **Interface labels** are the app's in each language: take them from
+  `src/locales/fr.ts`, `en.ts` and `he.ts` (names of tabs, profile groups,
+  buttons).
+- **Liturgical terms**: in French, the repository's spelling (Cha'harit,
+  Min'ha, Arvit, 'Hol haMoed, Tehilim, Sidour, Hochanot, Chabbat); in
+  English, the common transliteration (Shacharit, Mincha, Arvit, Chol
+  HaMoed, Tehilim, Siddur, Hoshanot, Shabbat); in Hebrew, the Hebrew word
+  (שחרית, חול המועד, תהילים, סידור, הושענות, שבת). A quotation in Hebrew
+  stays in Hebrew in all three languages.
+- **Typography**: never a long dash (repository rule, see CLAUDE.md),
+  guillemets « » in French and " " in English and Hebrew, straight
+  apostrophe. No emoji: App Store Connect rejects them.
 
-## 3. Vérifier
+## 3. Check
 
-Écrire la note dans un fichier de travail (le scratchpad de la session),
-puis :
+Write the note in a working file (the session's scratchpad), then:
 
 ```sh
 node scripts/check-release-notes.mjs <fichier>
 ```
 
-Il affiche la longueur de chaque langue et échoue sur une langue absente,
-un texte de plus de 500 caractères, un tiret long ou un émoji. Reprendre
-jusqu'à « note prête ».
+It prints the length of each language and fails on a missing language, a
+text longer than 500 characters, a long dash or an emoji. Rework until
+« note prête » ("note ready").
 
-## 4. Rendre
+## 4. Deliver
 
-- Le bloc complet, dans un seul bloc de code markdown, prêt à coller.
-- Sous le bloc, en une ligne : la longueur de chaque langue (sortie du
-  vérificateur), et le numéro de version suivant proposé (dernier tag,
-  patch + 1, sauf si les changements appellent plus).
-- Le rappel : créer la release GitHub avec ce texte AVANT de pousser le
-  tag, puisque c'est au tag que la CI lit la description.
-- Ne rien publier soi-même (ni release, ni tag) sans qu'on le demande.
+- The complete text, in a single markdown code block, ready to paste.
+- Below the block, in one line: the length of each language (the checker's
+  output), and the proposed next version number (latest tag, patch + 1,
+  unless the changes call for more).
+- The reminder: create the GitHub release with this text BEFORE pushing the
+  tag, since the CI reads the description at tag time.
+- Publish nothing yourself (no release, no tag) unless asked.

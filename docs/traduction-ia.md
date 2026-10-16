@@ -1,50 +1,51 @@
-# Guide de la traduction française assistée par IA
+# Guide to AI-assisted French translation
 
-Ce guide est celui que suit chaque agent qui traduit un lot (voir
-`scripts/translate-ia.mjs`). Il traduit en français une **traduction anglaise
-humaine et publiée** (Steinsaltz, Kulp, Metsudah, Sebag…), ligne par ligne,
-en s'aidant de l'hébreu quand le lot le donne. C'est une première version,
-relue ensuite : elle doit être fidèle avant d'être élégante.
+This guide is the one followed by every agent that translates a batch (see
+`scripts/translate-ia.mjs`). It translates into French a **human, published
+English translation** (Steinsaltz, Kulp, Metsudah, Sebag…), line by line,
+using the Hebrew as an aid when the batch provides it. It is a first
+version, reviewed afterwards: it must be faithful before it is elegant.
 
-## Ce qu'on rend
+## What to return
 
-Un lot est un fichier JSON : `{ id, rel, corpus, items: [{ k, en, he? }] }`.
-On écrit un seul objet JSON, `{ "<k>": "<traduction française>", … }`, avec
-**toutes** les clés `k` du lot, et rien d'autre (ni commentaire, ni clé en
-plus). Le JSON doit être valide : **aucun guillemet droit `"` dans le
-texte traduit**. Une citation prend les guillemets français « », même si
-l'anglais a des guillemets droits ou courbes.
+A batch is a JSON file: `{ id, rel, corpus, items: [{ k, en, he? }] }`.
+You write a single JSON object, `{ "<k>": "<traduction française>", … }`,
+with **all** the `k` keys of the batch, and nothing else (no comment, no
+extra key). The JSON must be valid: **no straight double quote `"` in the
+translated text**. A quotation takes French guillemets « », even if the
+English has straight or curly quotes.
 
-## La fidélité
+## Faithfulness
 
-- Traduire le sens de la phrase anglaise, tout le sens, rien que le sens. Ne
-  rien ajouter, ne rien résumer, ne rien expliquer de plus que la source.
-- L'hébreu (`he`), quand il est là, sert à lever une ambiguïté de l'anglais
-  (un nom, un terme, le sujet d'un verbe) ; on traduit quand même l'anglais.
-- Les crochets `[ ]` de la source (ce que le traducteur ajoute pour la
-  compréhension) restent des crochets, autour des mêmes mots.
-- Une ligne qui n'est qu'une référence ou un titre se traduit telle quelle.
+- Translate the meaning of the English sentence, the whole meaning, and
+  nothing but the meaning. Add nothing, summarize nothing, explain nothing
+  beyond the source.
+- The Hebrew (`he`), when present, serves to resolve an ambiguity in the
+  English (a name, a term, the subject of a verb); you still translate the
+  English.
+- Square brackets `[ ]` in the source (what the translator adds for
+  understanding) remain square brackets, around the same words.
+- A line that is only a reference or a title is translated as is.
 
-## Le gras et l'italique
+## Bold and italics
 
-Seules les balises `<b>…</b>` et `<i>…</i>` existent ; on n'en ajoute
-aucune autre, on n'en retire aucune.
+Only the `<b>…</b>` and `<i>…</i>` tags exist; add no other, remove none.
 
-- **Talmud (Steinsaltz)** : le gras est la traduction littérale du texte du
-  Talmud, le romain l'explication de Steinsaltz. Ce partage fait partie du
-  texte : chaque passage en gras de l'anglais devient un passage en gras du
-  français, qui traduit les mêmes mots ; le reste reste en romain. Les
-  en-têtes `<b>MISHNA:</b>`, `<b>GEMARA:</b>` deviennent `<b>MICHNA :</b>`,
+- **Talmud (Steinsaltz)**: bold is the literal translation of the Talmud
+  text, roman type is Steinsaltz's explanation. This split is part of the
+  text: each bold passage in the English becomes a bold passage in the
+  French, translating the same words; the rest stays in roman. The headers
+  `<b>MISHNA:</b>`, `<b>GEMARA:</b>` become `<b>MICHNA :</b>`,
   `<b>GUEMARA :</b>`.
-- **Rachi (Metsudah)** : le gras de tête est le passage du verset commenté
-  (le dibbour hamat'hil) ; il se traduit et reste en gras.
-- L'italique marque un terme hébreu translittéré (`<i>Shema</i>`) : il reste
-  en italique, dans sa graphie française (`<i>Chéma</i>`).
+- **Rashi (Metsudah)**: the leading bold is the passage of the verse being
+  commented on (the dibbour hamat'hil); it is translated and stays bold.
+- Italics mark a transliterated Hebrew term (`<i>Shema</i>`): it stays in
+  italics, in its French spelling (`<i>Chéma</i>`).
 
-## Les noms et les termes
+## Names and terms
 
-La graphie est celle du site : `ch` pour ש, `ts` pour צ, `ou` pour le son
-u, `h` pour ח et כ, `é` pour le e prononcé.
+The spelling is the site's: `ch` for ש, `ts` for צ, `ou` for the u sound,
+`h` for ח and כ, `é` for a pronounced e.
 
 | Anglais                                           | Français                                            |
 | ------------------------------------------------- | --------------------------------------------------- |
@@ -70,27 +71,27 @@ u, `h` pour ח et כ, `é` pour le e prononcé.
 | sela, dinar, zuz, perutah                         | séla, dinar, zouz, prouta                           |
 | cubit, handbreadth                                | coudée, palme                                       |
 
-Les personnages bibliques prennent leur nom français : Moïse, Aaron,
-Josué, Samuel, David, Salomon, Élie, Élisée, Isaïe, Jérémie, Ézéchiel,
-Abraham, Isaac, Jacob, Joseph, Rébecca, Rachel, Léa. Les Sages du Talmud
-gardent le leur, translittéré comme ci-dessus.
+Biblical figures take their French names: Moïse, Aaron, Josué, Samuel,
+David, Salomon, Élie, Élisée, Isaïe, Jérémie, Ézéchiel, Abraham, Isaac,
+Jacob, Joseph, Rébecca, Rachel, Léa. The Sages of the Talmud keep theirs,
+transliterated as above.
 
-Les livres de la Bible, dans une référence : Genèse, Exode, Lévitique,
-Nombres, Deutéronome, Josué, Juges, I Samuel, II Samuel, I Rois, II Rois,
-Isaïe, Jérémie, Ézéchiel, Osée, Joël, Amos, Abdias, Jonas, Michée, Nahoum,
+The books of the Bible, in a reference: Genèse, Exode, Lévitique, Nombres,
+Deutéronome, Josué, Juges, I Samuel, II Samuel, I Rois, II Rois, Isaïe,
+Jérémie, Ézéchiel, Osée, Joël, Amos, Abdias, Jonas, Michée, Nahoum,
 Habacuc, Sophonie, Aggée, Zacharie, Malachie, Psaumes, Proverbes, Job,
 Cantique des cantiques, Ruth, Lamentations, Ecclésiaste, Esther, Daniel,
-Ezra, Néhémie, I Chroniques, II Chroniques. La référence garde sa forme :
+Ezra, Néhémie, I Chroniques, II Chroniques. The reference keeps its form:
 « (Deutéronome 6:7) ».
 
-Une citation de la Torah se traduit dans la langue de la Bible du Rabbinat,
-qui est celle du site : on tutoie (« Tu aimeras l'Éternel, ton Dieu »).
+A quotation from the Torah is translated in the language of the Bible du
+Rabbinat, which is the site's: use the informal "tu" form (« Tu aimeras
+l'Éternel, ton Dieu »).
 
-## La typographie
+## Typography
 
-- Pas de tiret long, ni cadratin ni demi-cadratin : deux-points pour une
-  explication, virgules ou parenthèses pour une incise, point-virgule entre
-  deux propositions.
-- Guillemets français « » pour une citation, apostrophe droite `'`.
-- Des espaces ordinaires partout : les espaces insécables (avant `:` `;`
-  `!` `?`, dans « ») sont posées ensuite par le script.
+- No long dash, neither em dash nor en dash: a colon for an explanation,
+  commas or parentheses for an aside, a semicolon between two clauses.
+- French guillemets « » for a quotation, straight apostrophe `'`.
+- Ordinary spaces everywhere: the non-breaking spaces (before `:` `;` `!`
+  `?`, inside « ») are added afterwards by the script.

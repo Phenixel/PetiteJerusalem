@@ -292,7 +292,7 @@ store-assets/metadata/ios/<locale>/   # fr-FR, en-US, he
   sections (`## Français`, `## English`, `## עברית`), each language gets its
   own; without these headings, the body only goes to fr-FR, and a language
   without text gets the default sentence. The format is described in
-  [android-ci-cd.md](android-ci-cd.md#notes-de-version-en-trois-langues).
+  [android-ci-cd.md](android-ci-cd.md#release-notes-in-three-languages).
 - `node scripts/appstore-listing.mjs --check` checks locally, without
   network, the character limits **and** the absence of characters refused by
   the App Store Connect API (emojis, non-BMP symbols...): the CI does it at
