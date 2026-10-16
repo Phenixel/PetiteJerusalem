@@ -102,9 +102,13 @@ export function useHomeArrange(options: {
   function frame(): void {
     const root = options.root.value;
     if (!drag || !root) return;
-    // Near an edge of the screen, the page scrolls under the held block.
-    if (drag.y < EDGE) window.scrollBy(0, -SCROLL_STEP * (1 - Math.max(0, drag.y) / EDGE));
-    else if (drag.y > innerHeight - EDGE)
+    // Near an edge of the screen, the page scrolls under the held block, as
+    // long as there are blocks further on: the held block, carried along,
+    // lengthens the page and would otherwise scroll it forever.
+    const blocks = root.getBoundingClientRect();
+    if (drag.y < EDGE && blocks.top < EDGE)
+      window.scrollBy(0, -SCROLL_STEP * (1 - Math.max(0, drag.y) / EDGE));
+    else if (drag.y > innerHeight - EDGE && blocks.bottom > innerHeight - EDGE)
       window.scrollBy(0, SCROLL_STEP * (1 - Math.max(0, innerHeight - drag.y) / EDGE));
 
     const box = root.getBoundingClientRect();
