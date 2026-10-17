@@ -1671,6 +1671,14 @@ the tab only (`sessionStorage`, nothing goes to the server), restored on
 return and erased on creation. Held by
 `src/__tests__/newSessionDraft.test.ts`.
 
+### The selection bar has no icon
+
+The bar that appears when texts are checked (`BatchSelectionBar.vue`, on a
+chain's page and on its management page) says how many are selected and
+what the button will do, with the button on the right. The icon on its
+left (two checks in a tinted square) said nothing more and took the width
+a phone needs for the text.
+
 ### A chain is shared as soon as it is created
 
 A chain nobody sees stays empty: those that filled up had had from 6 to 24
@@ -1708,9 +1716,10 @@ like the daily reading of Mon parcours:
   leaves such a list, the question « Les lire maintenant ? » ("Read them
   now?"). A guest who declines sees the signup dialog as before.
 - **On the perpetual chain, nothing is reserved, everything is read**: the
-  boxes say « Choisir » ("Pick"), the bar « Lire maintenant » ("Read now"),
-  and it opens the page straight away, without the question and without
-  asking a name (a guest reads anonymously, as with the draw). The reader's
+  boxes say « Choisir » ("Pick"), the bar keeps « Confirmer », and the
+  question « Les lire maintenant ? » follows every confirmation, even for
+  one psalm, reminding that a psalm not read goes back to the chain within
+  the hour. No name is asked (a guest reads anonymously, as with the draw). The reader's
   group is « Mes Téhilim à lire », a psalm being read says « En lecture par
   … », and « Tout lire maintenant » shows from one psalm. A psalm picked and
   not read goes back to the chain after an hour, pushed back while the page

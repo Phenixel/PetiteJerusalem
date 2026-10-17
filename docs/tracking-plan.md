@@ -722,13 +722,13 @@ Tehilim of a chain are read one after the other »).
 
 `session_batch_reading_opened`: the page opened from the chain.
 
-| Property       | Values                                                                                                                                                                                                         |
-| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `session_id`   | the chain's identifier                                                                                                                                                                                         |
-| `texts_count`  | the reader's psalms in the chain, read or not                                                                                                                                                                  |
-| `unread_count` | those still to read                                                                                                                                                                                            |
-| `trigger`      | `button` (« Tout lire maintenant », beside « Mes réservations »), `prompt` (« Les lire maintenant ? ») or `after_reservation` (« Lire maintenant » on the perpetual chain, which opens the page straight away) |
-| `is_guest`     | boolean                                                                                                                                                                                                        |
+| Property       | Values                                                                                                                                                              |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `session_id`   | the chain's identifier                                                                                                                                              |
+| `texts_count`  | the reader's psalms in the chain, read or not                                                                                                                       |
+| `unread_count` | those still to read                                                                                                                                                 |
+| `trigger`      | `button` (« Tout lire maintenant », beside « Mes réservations ») or `prompt` (« Les lire maintenant ? », after any reservation of a Tehilim on the perpetual chain) |
+| `is_guest`     | boolean                                                                                                                                                             |
 
 `session_batch_reading_prompted`: the question asked right after a
 reservation, once answered; its share of `accepted` tells whether it is

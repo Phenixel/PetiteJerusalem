@@ -183,10 +183,13 @@ read them right away (`readsRightAway`, `services/sessionBatchReading.ts`).
 Reserving for later is what left slots waiting a day, and the round with
 them.
 
-- **The list says « Choisir »** ("Pick") instead of « Réserver », and the
-  bar « Lire maintenant » ("Read now"). It takes the psalms and opens them
-  at once on « Mes Téhilim » (`/share-reading/session/:slug/lecture`), the
-  page where they are read one after the other and checked off. The guest
+- **The list says « Choisir »** ("Pick") instead of « Réserver ». The bar
+  keeps « Confirmer »; once the psalms are taken, the question « Les lire
+  maintenant ? » ("Read them now?") follows every time, even for one psalm,
+  and reminds that a psalm not read goes back to the chain within the hour.
+  « Lire maintenant » opens « Mes Téhilim »
+  (`/share-reading/session/:slug/lecture`), the page where they are read
+  one after the other and checked off. The guest
   form is gone: reading needs no name, a guest reads anonymously, as with
   the draw.
 - **A picked psalm holds for an hour** (`READ_NOW_TTL_MS`, the draw's hour),

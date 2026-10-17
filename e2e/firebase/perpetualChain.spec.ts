@@ -428,6 +428,8 @@ test.describe("chaîne perpétuelle", () => {
 
     await page.getByLabel("Choisir").nth(0).check();
     await page.getByLabel("Choisir").nth(0).check();
+    await page.getByRole("button", { name: "Confirmer" }).click();
+    await expect(page.getByText("Les lire maintenant")).toBeVisible();
     await page.getByRole("button", { name: "Lire maintenant" }).click();
 
     await expect(page).toHaveURL(new RegExp(`/share-reading/session/${chain.slug}/lecture`));

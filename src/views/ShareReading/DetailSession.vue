@@ -481,12 +481,9 @@ const submitReservations = async () => {
       source: "session_page",
     });
 
-    // Perpetual chain: straight to the reading, nothing kept for later.
-    if (readNow.value) {
-      openBatchReading("after_reservation");
-      return;
-    }
-    if (currentUser.value) {
+    // The perpetual chain says nothing of a reservation: the question that
+    // follows is the confirmation.
+    if (currentUser.value && !readNow.value) {
       toast.success(t("detailSession.reservationsConfirmed", newReservations.length));
     }
     // Not awaited: the bar and the guest dialog close without waiting for
@@ -609,7 +606,7 @@ const showBatchReading = computed(() =>
   offersBatchReading(myReadings.value, readNow.value ? 1 : undefined),
 );
 
-const openBatchReading = (trigger: "button" | "prompt" | "after_reservation") => {
+const openBatchReading = (trigger: "button" | "prompt") => {
   const current = session.value;
   if (!current) return;
   analyticsService.capture("session_batch_reading_opened", {
@@ -630,8 +627,14 @@ const openBatchReading = (trigger: "button" | "prompt" | "after_reservation") =>
 const promptBatchReading = async (): Promise<boolean> => {
   const count = unreadCount.value;
   const accepted = await confirm({
-    title: t("detailSession.batchReading.promptTitle"),
-    message: t("detailSession.batchReading.promptMessage", { count }, count),
+    title: t("detailSession.batchReading.promptTitle", count),
+    message: t(
+      readNow.value
+        ? "detailSession.readNow.promptMessage"
+        : "detailSession.batchReading.promptMessage",
+      { count },
+      count,
+    ),
     confirmLabel: t("detailSession.batchReading.promptConfirm"),
     cancelLabel: t("detailSession.batchReading.promptLater"),
   });
@@ -1267,10 +1270,8 @@ watch(session, (s) => applySessionSeo(s));
       :count="selectedItems.size"
       :loading="isSubmittingBatch"
       :label="confirmButtonLabel"
-      :button-text="readNow ? t('detailSession.readNow.button') : t('common.confirm')"
-      :button-loading-text="
-        readNow ? t('detailSession.readNow.opening') : t('detailSession.reserving')
-      "
+      :button-text="t('common.confirm')"
+      :button-loading-text="readNow ? t('common.loading') : t('detailSession.reserving')"
       @confirm="confirmReservations"
     />
 
