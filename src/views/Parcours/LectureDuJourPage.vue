@@ -321,10 +321,12 @@ seoService.setMeta({
           <p class="font-semibold">{{ t("parcours.daily.allDone") }}</p>
         </div>
         <template v-else>
-          <!-- The count, not a percentage too: « 1 sur 4 » and « 25 % » said it twice. -->
-          <p class="mb-2 text-sm font-medium">
-            {{ t("parcours.daily.progress", { done: doneCount, total: daily.length }) }}
-          </p>
+          <div class="mb-2 flex items-center justify-between">
+            <span class="text-sm font-medium">
+              {{ t("parcours.daily.progress", { done: doneCount, total: daily.length }) }}
+            </span>
+            <span class="text-sm font-semibold text-primary">{{ percent }} %</span>
+          </div>
           <ProgressBar :value="percent" :label="name.title" />
         </template>
       </div>
