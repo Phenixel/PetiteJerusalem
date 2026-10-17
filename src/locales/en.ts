@@ -306,15 +306,14 @@ const en: LocaleMessages = {
   home: {
     edit: {
       title: "Your home page",
-      hint: "Drag a block to move it.",
+      hint: "Hold a block to move it; the faded ones are hidden.",
       done: "Done",
-      alwaysFirst: "Always first",
-      deck: "Today's deck",
       hide: "Hide",
       hideLabel: "Hide {name}",
-      tileLabel: "{name}, drag to move",
-      back: "To put back on the home page",
-      note: "You get here with a long press on any block of the home page, or with “Edit the home page” at the bottom. A block with nothing to say hides itself.",
+      show: "Show",
+      showLabel: "Show {name}",
+      empty: "nothing to show right now",
+      tileLabel: "{name}, up and down arrows to move",
       link: "Edit the home page",
       blocks: {
         volumes: { title: "My volumes", sub: "the programs in progress, on their shelf" },

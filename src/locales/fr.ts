@@ -308,15 +308,14 @@ const fr = {
   home: {
     edit: {
       title: "Votre accueil",
-      hint: "Glissez un bloc pour le déplacer.",
+      hint: "Maintenez un bloc pour le déplacer ; les blocs pâles sont masqués.",
       done: "Terminé",
-      alwaysFirst: "Toujours en tête",
-      deck: "Le paquet du jour",
       hide: "Masquer",
       hideLabel: "Masquer {name}",
-      tileLabel: "{name}, glisser pour déplacer",
-      back: "À remettre sur l'accueil",
-      note: "On arrive ici par un appui long sur n'importe quel bloc de l'accueil, ou par « Modifier l'accueil » en bas de page. Un bloc qui n'a rien à dire s'efface de lui-même.",
+      show: "Afficher",
+      showLabel: "Afficher {name}",
+      empty: "rien à montrer pour l'instant",
+      tileLabel: "{name}, flèches haut et bas pour déplacer",
       link: "Modifier l'accueil",
       blocks: {
         volumes: { title: "Mes volumes", sub: "les programmes en cours, sur leur planche" },

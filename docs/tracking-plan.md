@@ -983,8 +983,8 @@ sent: the daily reading card gave way to the deck.
 
 ### `home_block_moved`, `home_block_hidden`, `home_block_shown` (new)
 
-The home page to one's liking (`/accueil/modifier`): a block moved, hidden,
-or restored. `block`: `horaires`, `volumes`, `portes`, `reprendre`, `dates`;
+The home page to one's liking (edit mode, on the home page itself): a block
+moved, hidden, or restored. `block`: `horaires`, `volumes`, `portes`, `reprendre`, `dates`;
 and for a move, `to`, its new position (0 right under the day's deck).
 `home_card_clicked` also takes `card: resume`, the « Reprendre » ("Resume")
 block. `card: announcements` is no longer sent: the announcements link left
