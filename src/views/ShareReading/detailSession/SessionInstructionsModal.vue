@@ -83,7 +83,6 @@ function go(next: number): void {
   >
     <div class="mb-4 flex items-center justify-between gap-3">
       <h3 class="flex items-center gap-2 text-lg font-bold text-text-primary">
-        <AppIcon name="info" :size="18" class="text-primary" />
         {{ t("detailSession.instructions.title") }}
       </h3>
       <button

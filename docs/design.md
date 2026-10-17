@@ -1671,13 +1671,26 @@ the tab only (`sessionStorage`, nothing goes to the server), restored on
 return and erased on creation. Held by
 `src/__tests__/newSessionDraft.test.ts`.
 
-### The selection bar has no icon
+### No icon on the left of a bar or a dialog
 
-The bar that appears when texts are checked (`BatchSelectionBar.vue`, on a
-chain's page and on its management page) says how many are selected and
-what the button will do, with the button on the right. The icon on its
-left (two checks in a tinted square) said nothing more and took the width
-a phone needs for the text.
+Icons set on the left of a text are being removed, little by little: they
+repeat what the words say and take the width a phone needs. Where a picture
+helps, it is a small illustration, drawn like the others, not an icon in a
+tinted circle.
+
+- **The selection bar** (`BatchSelectionBar.vue`, on a chain's page and on
+  its management page) says how many texts are selected and what the
+  button will do, with the button on the right. The two checks in a tinted
+  square on its left are gone.
+- **The confirmation dialog** (`ConfirmDialog.vue`): the title and the
+  message, then the buttons. The question mark (or the warning triangle)
+  in a circle is gone; an action that cannot be undone is still told by
+  its red button.
+- **The titles of the dialogs**: no icon before the title (« Rappels de
+  lecture », « Instructions », « Convertir une date », « Mes dates », « Me
+  rappeler cet horaire », « Avis suivi pour les horaires »). A back arrow,
+  when the dialog has a second screen, stays: it is a command, not a
+  decoration.
 
 ### A chain is shared as soon as it is created
 

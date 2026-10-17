@@ -206,7 +206,6 @@ function confirm() {
           >
             <AppIcon name="chevron-left" :size="18" />
           </button>
-          <AppIcon v-else name="bell" :size="17" class="text-primary" />
           {{ view === "clock" ? t("notifications.pickTime") : t("notifications.title") }}
         </h3>
         <button @click="close" class="icon-btn" :aria-label="t('common.close')">
