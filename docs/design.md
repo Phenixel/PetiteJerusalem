@@ -1700,25 +1700,25 @@ a title and a card that repeats it) make the reader check that they agree.
 Keep the more precise one; where the big figure at the end of a line is
 the design (a download), keep it and drop the line that repeats it.
 
-| Where | Kept | Removed |
-| --- | --- | --- |
-| Selection bar, chain page | « 2 textes sélectionnés », the button | « Confirmer la réservation », « 2 Téhilim choisis » (a guest keeps « Finaliser en tant qu'invité ») |
-| Selection bar, management page | « Attribuer à un invité » for « Réserver » | « Supprimer les réservations sélectionnées », the mixed label, « (3) » on a lone button |
-| « Mes Téhilim », daily reading | « Lus : 1 sur 3 » and the bar | « 33 % » |
-| Library, Ma journée | « 2 sur 5 faits aujourd'hui » | the big « 40 % » |
-| Library, download in progress | the time left, the big « 50 % » | « 12 Mo sur 40 Mo » |
-| A text objective's page | the title | the same title in the « Aujourd'hui » card |
-| Perpetual chain counter | the big count | « Le tour 3 » in the sentence, the average after one round |
-| A program's portion or week, done | « Ce soir, c'est fait » and what was read | « Portion faite », « Semaine faite » |
-| New program, at one's own pace | the stepper | the same pace repeated in the card |
-| Mes dates | « 12 Adar », then the civil date | the Hebrew date again in brackets |
-| Audio queue | « 8 cours » | « (8) » on « Voir toute la file » |
-| A chain's card | « Complet » | « 100% réservé » |
-| Chain management card | each row's name | « Par : David » above, « 1 réservation » under « Réservé » |
-| Write to us | « Nouvelle réponse » | « Répondu » beside it |
-| Home day bar | « Journée pleine » | « 5 sur 5 » |
-| Paracha page | « Berechit », then « Lire » | « Lire Berechit » (a double paracha still names each half) |
-| A closed poll | the « Sondage clos » chip | « Ce sondage est clos. » |
+| Where                             | Kept                                       | Removed                                                                                             |
+| --------------------------------- | ------------------------------------------ | --------------------------------------------------------------------------------------------------- |
+| Selection bar, chain page         | « 2 textes sélectionnés », the button      | « Confirmer la réservation », « 2 Téhilim choisis » (a guest keeps « Finaliser en tant qu'invité ») |
+| Selection bar, management page    | « Attribuer à un invité » for « Réserver » | « Supprimer les réservations sélectionnées », the mixed label, « (3) » on a lone button             |
+| « Mes Téhilim », daily reading    | « Lus : 1 sur 3 » and the bar              | « 33 % »                                                                                            |
+| Library, Ma journée               | « 2 sur 5 faits aujourd'hui »              | the big « 40 % »                                                                                    |
+| Library, download in progress     | the time left, the big « 50 % »            | « 12 Mo sur 40 Mo »                                                                                 |
+| A text objective's page           | the title                                  | the same title in the « Aujourd'hui » card                                                          |
+| Perpetual chain counter           | the big count                              | « Le tour 3 » in the sentence, the average after one round                                          |
+| A program's portion or week, done | « Ce soir, c'est fait » and what was read  | « Portion faite », « Semaine faite »                                                                |
+| New program, at one's own pace    | the stepper                                | the same pace repeated in the card                                                                  |
+| Mes dates                         | « 12 Adar », then the civil date           | the Hebrew date again in brackets                                                                   |
+| Audio queue                       | « 8 cours »                                | « (8) » on « Voir toute la file »                                                                   |
+| A chain's card                    | « Complet »                                | « 100% réservé »                                                                                    |
+| Chain management card             | each row's name                            | « Par : David » above, « 1 réservation » under « Réservé »                                          |
+| Write to us                       | « Nouvelle réponse »                       | « Répondu » beside it                                                                               |
+| Home day bar                      | « Journée pleine »                         | « 5 sur 5 »                                                                                         |
+| Paracha page                      | « Berechit », then « Lire »                | « Lire Berechit » (a double paracha still names each half)                                          |
+| A closed poll                     | the « Sondage clos » chip                  | « Ce sondage est clos. »                                                                            |
 
 Held for the download line by `src/__tests__/libraryOffline.test.ts`.
 
