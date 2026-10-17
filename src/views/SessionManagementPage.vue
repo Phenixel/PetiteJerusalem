@@ -466,15 +466,18 @@ const deleteSelectedReservations = async () => {
   }
 };
 
-const batchLabel = computed(() => {
-  if (selectedItems.value.size > 0 && selectedReservations.value.size > 0) {
-    return t("sessionManagement.batchMixedLabel");
-  }
-  if (selectedReservations.value.size > 0) {
-    return t("sessionManagement.batchDeleteLabel");
-  }
-  return t("sessionManagement.batchLabel");
-});
+// The second line only when it adds something: « Réserver » alone does not say
+// for whom. « Supprimer les réservations sélectionnées » under « Supprimer »
+// said it twice.
+const batchLabel = computed(() =>
+  selectedItems.value.size > 0 && selectedReservations.value.size === 0
+    ? t("sessionManagement.batchLabel")
+    : undefined,
+);
+/** Both actions at once: each button gives its own count, the bar's total does not. */
+const mixedSelection = computed(
+  () => selectedItems.value.size > 0 && selectedReservations.value.size > 0,
+);
 
 // Le nom d'un invité vient de ce que le créateur a tapé : une faute de frappe
 // se corrige ici, et sur toutes ses réservations à la fois.
@@ -826,18 +829,11 @@ onMounted(() => {
                   </span>
                 </div>
 
-                <div class="flex items-center justify-between text-xs text-text-secondary">
-                  <span>{{
-                    t("sessionManagement.reservationsCount", { count: card.reservationsCount })
-                  }}</span>
-                  <span
-                    v-if="card.status.reservedBy"
-                    class="truncate max-w-[120px]"
-                    :title="card.status.reservedBy"
-                  >
-                    {{ t("sessionManagement.reservedBy", { name: card.status.reservedBy }) }}
-                  </span>
-                </div>
+                <!-- Who reserved is on each row below; a single-chapter text's
+                     « 1 réservation » repeated its « Réservé ». -->
+                <p v-if="card.text.totalSections > 1" class="text-xs text-text-secondary">
+                  {{ t("sessionManagement.reservationsCount", { count: card.reservationsCount }) }}
+                </p>
               </div>
 
               <!-- Gestion des réservations -->
@@ -956,7 +952,9 @@ onMounted(() => {
           {{
             isSubmittingBatch
               ? t("sessionManagement.batchLoading")
-              : `${t("sessionManagement.batchButton")} (${selectedItems.size})`
+              : mixedSelection
+                ? `${t("sessionManagement.batchButton")} (${selectedItems.size})`
+                : t("sessionManagement.batchButton")
           }}
         </button>
         <button
@@ -970,7 +968,9 @@ onMounted(() => {
           {{
             isDeletingBatch
               ? t("common.deleting")
-              : `${t("common.delete")} (${selectedReservations.size})`
+              : mixedSelection
+                ? `${t("common.delete")} (${selectedReservations.size})`
+                : t("common.delete")
           }}
         </button>
       </template>

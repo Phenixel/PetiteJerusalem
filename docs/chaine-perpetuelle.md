@@ -176,6 +176,39 @@ The rule counts one slot per text: it only holds for single-section texts,
 which the 150 Tehilim are. `chaine:creer` refuses a catalog that would
 change this fact.
 
+## Read right away
+
+On this chain, nothing is reserved for later: you pick your Tehilim and
+read them right away (`readsRightAway`, `services/sessionBatchReading.ts`).
+Reserving for later is what left slots waiting a day, and the round with
+them.
+
+- **The list says « Choisir »** ("Pick") instead of « Réserver », and the
+  bar has a single button, « Lire maintenant » ("Read now"), instead of
+  « Confirmer ». It takes the psalms and opens them at once on « Mes
+  Téhilim » (`/share-reading/session/:slug/lecture`), the page where they
+  are read one after the other and checked off; no question is asked, as
+  it is on the other chains. The guest
+  form is gone: reading needs no name, a guest reads anonymously, as with
+  the draw.
+- **A picked psalm holds for an hour** (`READ_NOW_TTL_MS`, the draw's hour),
+  not the day: its reservation carries `expiresAt` from the start, which
+  the Cloud Function leaves as is (it only gives a day to a reservation
+  without an expiry, and brings back a longer one). The reading page pushes
+  that hour back while it is open (`needsRenewal`: unread, less than half
+  an hour left), on a timer and when coming back to the page; a longer hold
+  is never shortened. Leaving the page releases nothing on its own: the
+  hour does it.
+- The chain's line says so (`perpetual.holdNote`). The progress bar counts
+  « En lecture » ("Being read") instead of « Réservés », and the draw card
+  no longer speaks of a reservation.
+
+Versions already installed still reserve as before: their reservations get
+the day from the Cloud Function, and this version reads them like any
+other. Tests: `src/__tests__/sessionBatchReading.test.ts` (« the perpetual
+chain reads right away »), `e2e/firebase/perpetualChain.spec.ts` (« on n'y
+réserve pas : les Téhilim choisis s'ouvrent aussitôt, même sans nom »).
+
 ## Compatibility
 
 An app installed before this version reads the chain as an ordinary

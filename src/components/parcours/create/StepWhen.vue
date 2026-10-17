@@ -297,10 +297,14 @@ const cardLine = computed(() => {
         :progress="0"
         :scale="0.75"
       />
-      <p class="text-[13px] font-semibold opacity-80">
-        {{ weekly ? t("parcours.create.eachWeek") : t("parcours.create.eachDay") }}
-      </p>
-      <p class="mt-1 text-[30px] font-extrabold leading-tight">{{ pace }}</p>
+      <!-- At one's own pace, the stepper above already shows it: the card
+           keeps only what follows from it. -->
+      <template v-if="choice !== 'pace'">
+        <p class="text-[13px] font-semibold opacity-80">
+          {{ weekly ? t("parcours.create.eachWeek") : t("parcours.create.eachDay") }}
+        </p>
+        <p class="mt-1 text-[30px] font-extrabold leading-tight">{{ pace }}</p>
+      </template>
       <p class="mt-1.5 text-sm opacity-90">{{ effort }}</p>
     </div>
     <p v-if="tight" class="mt-2.5 text-[13px] leading-normal">

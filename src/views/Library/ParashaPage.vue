@@ -131,7 +131,13 @@ watch([locale, localeMessagesReady, () => route.path], applyMeta);
           :to="hubPath(entry)"
           class="btn btn-primary"
         >
-          {{ t("paracha.read", { name: entry.name }) }}
+          <!-- The name is just above: one parasha reads « Lire », a double
+               one names each half. -->
+          {{
+            current.parasha.entries.length > 1
+              ? t("paracha.read", { name: entry.name })
+              : t("paracha.readOne")
+          }}
         </RouterLink>
         <RouterLink to="/bibliotheque/chnei-mikra" class="btn btn-soft">
           {{ t("paracha.chneiMikra") }}

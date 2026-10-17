@@ -291,6 +291,7 @@ class ReservationService {
     guestId: string | undefined,
     userName: string | undefined,
     guestName: string | undefined,
+    options?: { expiresAt?: string },
   ): Promise<string[]> {
     if (!userId && !guestId) {
       throw new ReservationOwnerRequiredError();
@@ -318,6 +319,7 @@ class ReservationService {
           userId,
           guestId,
           name: userName || guestName,
+          expiresAt: options?.expiresAt,
         });
       });
 

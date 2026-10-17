@@ -26,11 +26,12 @@ const view = computed(() => (task.value ? views.taskView(task.value, store.today
 const done = computed(() => view.value?.progress === "done");
 const target = computed(() => views.readRoute(props.objective, store.today.value));
 
-/** Ce qu'on lit : les psaumes ou la paracha du jour ; le nom du texte, pour un texte. */
+/**
+ * What is read: the day's psalms or paracha. A text is the page's own title,
+ * just above: the card does not repeat it.
+ */
 const reading = computed(() =>
-  props.objective.kind === "cycle" && view.value
-    ? view.value.meta
-    : views.objectiveTitle(props.objective),
+  props.objective.kind === "cycle" && view.value ? view.value.meta : null,
 );
 </script>
 
@@ -40,7 +41,9 @@ const reading = computed(() =>
       <span class="block text-[13px] font-semibold text-text-secondary">
         {{ done ? t("parcours.objective.todayDone") : t("parcours.objective.today") }}
       </span>
-      <span class="mt-0.5 block font-display text-xl font-bold leading-tight">{{ reading }}</span>
+      <span v-if="reading" class="mt-0.5 block font-display text-xl font-bold leading-tight">{{
+        reading
+      }}</span>
     </span>
     <RouterLink :to="target" class="btn btn-primary read-btn">
       <AppIcon name="book-open" class="size-4" />

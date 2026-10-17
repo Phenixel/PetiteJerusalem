@@ -108,14 +108,9 @@ function change(): void {
 
 <template>
   <section class="mt-6" :aria-label="t('announcements.poll.title')">
-    <p class="mb-3 text-sm font-semibold text-text-secondary">
-      {{
-        poll.closed
-          ? t("announcements.poll.closed")
-          : poll.multiple
-            ? t("announcements.poll.chooseMany")
-            : t("announcements.poll.chooseOne")
-      }}
+    <!-- Closed, the « Sondage clos » chip of the announcement just above says it. -->
+    <p v-if="!poll.closed" class="mb-3 text-sm font-semibold text-text-secondary">
+      {{ poll.multiple ? t("announcements.poll.chooseMany") : t("announcements.poll.chooseOne") }}
     </p>
 
     <div :class="hasImages ? 'grid grid-cols-2 gap-3 sm:grid-cols-3' : 'space-y-2'">

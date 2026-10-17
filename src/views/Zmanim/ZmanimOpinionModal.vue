@@ -34,7 +34,6 @@ useOverlay(
     <div class="modal-panel !max-w-sm animate-[scaleIn_0.3s_ease]" @click.stop>
       <div class="mb-1 flex items-center justify-between">
         <h3 class="flex items-center gap-2 text-lg font-bold text-text-primary">
-          <AppIcon name="clock" :size="17" class="text-primary" />
           {{ t("zmanim.opinions.title") }}
         </h3>
         <button type="button" class="icon-btn" :aria-label="t('common.close')" @click="close">

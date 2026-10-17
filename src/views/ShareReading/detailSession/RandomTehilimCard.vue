@@ -9,6 +9,11 @@ import AppIcon from "../../../components/icons/AppIcon.vue";
  * n'affiche la carte que s'il reste un chapitre à tirer.
  */
 
+defineProps<{
+  /** The perpetual chain: the psalm opens at once, nothing is said of a reservation. */
+  readNow?: boolean;
+}>();
+
 const emit = defineEmits<{
   (e: "draw"): void;
 }>();
@@ -22,7 +27,11 @@ const { t } = useI18n();
       {{ t("detailSession.randomDraw.title") }}
     </h3>
     <p class="text-sm text-text-secondary mt-0.5 mb-4">
-      {{ t("detailSession.randomDraw.subtitle") }}
+      {{
+        readNow
+          ? t("detailSession.randomDraw.subtitleReadNow")
+          : t("detailSession.randomDraw.subtitle")
+      }}
     </p>
     <!-- Aucun état de chargement : le clic ouvre la lecture sans attendre, la
          réservation se pose là-bas. -->

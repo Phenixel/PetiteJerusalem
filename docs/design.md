@@ -1671,6 +1671,58 @@ the tab only (`sessionStorage`, nothing goes to the server), restored on
 return and erased on creation. Held by
 `src/__tests__/newSessionDraft.test.ts`.
 
+### No icon on the left of a bar or a dialog
+
+Icons set on the left of a text are being removed, little by little: they
+repeat what the words say and take the width a phone needs. Where a picture
+helps, it is a small illustration, drawn like the others, not an icon in a
+tinted circle.
+
+- **The selection bar** (`BatchSelectionBar.vue`, on a chain's page and on
+  its management page) says how many texts are selected and what the
+  button will do, with the button on the right. The two checks in a tinted
+  square on its left are gone.
+- **The confirmation dialog** (`ConfirmDialog.vue`): the title and the
+  message, then the buttons. The question mark (or the warning triangle)
+  in a circle is gone; an action that cannot be undone is still told by
+  its red button.
+- **The titles of the dialogs**: no icon before the title (« Rappels de
+  lecture », « Instructions », « Convertir une date », « Mes dates », « Me
+  rappeler cet horaire », « Avis suivi pour les horaires »). A back arrow,
+  when the dialog has a second screen, stays: it is a command, not a
+  decoration.
+
+### One piece of information is said once
+
+In one block (a bar, a card, a dialog, a header), a fact is said once. Two
+ways of saying it (a count and a percentage, a status chip and a sentence,
+a title and a card that repeats it) make the reader check that they agree.
+Keep the more precise one; where the big figure at the end of a line is
+the design (a download), keep it and drop the line that repeats it.
+One exception, for the look: a progress card keeps its percentage beside
+the count (« Lus : 1 sur 3 » and « 33 % » on « Mes Téhilim », the daily
+reading, Ma journée in the library), and a chain's card keeps « 100%
+réservé » beside « Complet ».
+
+| Where                             | Kept                                       | Removed                                                                                             |
+| --------------------------------- | ------------------------------------------ | --------------------------------------------------------------------------------------------------- |
+| Selection bar, chain page         | « 2 textes sélectionnés », the button      | « Confirmer la réservation », « 2 Téhilim choisis » (a guest keeps « Finaliser en tant qu'invité ») |
+| Selection bar, management page    | « Attribuer à un invité » for « Réserver » | « Supprimer les réservations sélectionnées », the mixed label, « (3) » on a lone button             |
+| Library, download in progress     | the time left, the big « 50 % »            | « 12 Mo sur 40 Mo »                                                                                 |
+| A text objective's page           | the title                                  | the same title in the « Aujourd'hui » card                                                          |
+| Perpetual chain counter           | the big count                              | « Le tour 3 » in the sentence, the average after one round                                          |
+| A program's portion or week, done | « Ce soir, c'est fait » and what was read  | « Portion faite », « Semaine faite »                                                                |
+| New program, at one's own pace    | the stepper                                | the same pace repeated in the card                                                                  |
+| Mes dates                         | « 12 Adar », then the civil date           | the Hebrew date again in brackets                                                                   |
+| Audio queue                       | « 8 cours »                                | « (8) » on « Voir toute la file »                                                                   |
+| Chain management card             | each row's name                            | « Par : David » above, « 1 réservation » under « Réservé »                                          |
+| Write to us                       | « Nouvelle réponse »                       | « Répondu » beside it                                                                               |
+| Home day bar                      | « Journée pleine »                         | « 5 sur 5 »                                                                                         |
+| Paracha page                      | « Berechit », then « Lire »                | « Lire Berechit » (a double paracha still names each half)                                          |
+| A closed poll                     | the « Sondage clos » chip                  | « Ce sondage est clos. »                                                                            |
+
+Held for the download line by `src/__tests__/libraryOffline.test.ts`.
+
 ### A chain is shared as soon as it is created
 
 A chain nobody sees stays empty: those that filled up had had from 6 to 24
@@ -1680,6 +1732,47 @@ therefore opens on the existing share window (`ShareModal.vue`), titled
 sentence: remember to share it around you, so that others take part. The
 signal goes through the address (`?partager=1`), removed immediately: a
 reload does not reopen the window.
+
+### The Tehilim of a chain are read one after the other
+
+Someone who takes several psalms in a Tehilim chain used to open them one
+by one from the list, come back, mark each read, open the next. From two
+psalms taken (`BATCH_READING_MIN`), the chain offers to read them at once,
+on a page of their own (« Mes Téhilim », "My Tehilim",
+`/share-reading/session/:slug/lecture`, `SessionReadingPage.vue`), laid out
+like the daily reading of Mon parcours:
+
+- **The reader's psalms of this chain**, read or not, in the order of the
+  book; an abandoned draw (expired) is no longer theirs. A guest is
+  recognized by the device, as everywhere else. The Yehi ratson once
+  before, the three verses once after.
+- **Each psalm is checked where it is read** (« Marquer comme lu »), and
+  the list beside the text (at the top on a phone) checks it in one tap,
+  with where one stands (« Lus : 2 sur 5 », and its bar). What is checked
+  is the reservation itself, the switch of the chain's list: the chain
+  counts it at once.
+- **Nothing goes to Mon parcours**: it is the reading of one chain, for
+  now, not an objective on the shelf.
+- **Two doors**: « Tout lire maintenant » ("Read them all now"), a button
+  beside the « Mes réservations » heading of the chain's page (no extra
+  frame: the page is long enough), as long as there are several psalms
+  taken and one is still to read; and, right after a reservation that
+  leaves such a list, the question « Les lire maintenant ? » ("Read them
+  now?"). A guest who declines sees the signup dialog as before.
+- **On the perpetual chain, nothing is reserved, everything is read**: the
+  boxes say « Choisir » ("Pick") and the bar has a single button, « Lire
+  maintenant » ("Read now"): it opens the page straight away, without the
+  question asked on the other chains. No name is asked (a guest reads anonymously, as with the draw). The reader's
+  group is « Mes Téhilim à lire », a psalm being read says « En lecture par
+  … », and « Tout lire maintenant » shows from one psalm. A psalm picked and
+  not read goes back to the chain after an hour, pushed back while the page
+  stays open (see `docs/chaine-perpetuelle.md`, « Read right away »).
+- **Tehilim chains only**: a psalm is read whole, in one slot. A chapter
+  taken in a Talmud or Michna chain would need the reader to show that
+  chapter alone.
+
+Held by `src/__tests__/sessionBatchReading.test.ts` (« reading the Tehilim
+of a chain at once »).
 
 ### Remaining days are counted on the calendar
 

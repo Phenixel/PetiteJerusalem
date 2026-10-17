@@ -24,7 +24,8 @@ const STATUS_TONES: Record<SupportThreadView["status"], string> = {
     <span class="chip bg-black/5 text-text-secondary dark:bg-white/10">
       {{ t(`support.kinds.${thread.kind}`) }}
     </span>
-    <span class="chip" :class="STATUS_TONES[thread.status]">
+    <!-- « Nouvelle réponse » already says it was answered. -->
+    <span v-if="!thread.unread" class="chip" :class="STATUS_TONES[thread.status]">
       {{ t(`support.statuses.${thread.status}`) }}
     </span>
     <span v-if="thread.unread" class="chip bg-brand text-on-brand">

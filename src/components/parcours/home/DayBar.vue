@@ -55,7 +55,11 @@ const groups = computed(() => {
         <span v-for="cell in group.cells" :key="cell.key" class="day-cell" :class="cell.state" />
       </span>
     </span>
-    <span class="whitespace-nowrap text-[13px] font-bold tabular-nums">
+    <!-- A full day: « Journée pleine » above says it, not « 5 sur 5 » as well. -->
+    <span
+      v-if="count.done < count.total"
+      class="whitespace-nowrap text-[13px] font-bold tabular-nums"
+    >
       {{ t("parcours.hub.count", { done: count.done, total: count.total }) }}
     </span>
   </button>

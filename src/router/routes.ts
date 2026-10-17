@@ -27,6 +27,7 @@ const SessionManagementPage = () => import("../views/SessionManagementPage.vue")
 const ShareHomePage = () => import("../views/ShareReading/ShareHomePage.vue");
 const NewSession = () => import("../views/ShareReading/NewSession.vue");
 const DetailSession = () => import("../views/ShareReading/DetailSession.vue");
+const SessionReadingPage = () => import("../views/ShareReading/SessionReadingPage.vue");
 const ChiourimPage = () => import("../views/Chiourim/ChiourimPage.vue");
 const DetailChiour = () => import("../views/Chiourim/DetailChiour.vue");
 const AuteurChiourimPage = () => import("../views/Chiourim/AuteurChiourimPage.vue");
@@ -203,6 +204,14 @@ export default [
     path: "/share-reading/session/:slug",
     name: "detail-session",
     component: DetailSession,
+  },
+  // Every Tehilim the reader took in a chain, read one after the other
+  // (services/sessionBatchReading.ts). Without an account too: a guest is
+  // recognized by this device.
+  {
+    path: "/share-reading/session/:slug/lecture",
+    name: "session-reading",
+    component: SessionReadingPage,
   },
   {
     path: "/bibliotheque",

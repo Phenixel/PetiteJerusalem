@@ -45,6 +45,12 @@ import { moderationService } from "../../services/moderationService";
 import { useConfirm } from "../../composables/useConfirm";
 import { parseSlotKey, slotKey, useReservationIndex } from "../../composables/useReservationIndex";
 import { useSessionEditing, type SessionEditData } from "../../composables/useSessionEditing";
+import {
+  batchReadings,
+  offersBatchReading,
+  readNowExpiry,
+  readsRightAway,
+} from "../../services/sessionBatchReading";
 
 const route = useRoute();
 const router = useRouter();
@@ -211,6 +217,18 @@ const searchedIds = computed<Set<string> | null>(() => {
   );
 });
 
+/**
+ * The perpetual chain has no reservations, only readings
+ * (services/sessionBatchReading.ts): psalms are picked to be read right
+ * away, without a name, and « Lire maintenant » opens them.
+ */
+const readNow = computed(() => readsRightAway(session.value));
+
+/** The reader's own texts, at the top of the list. */
+const myGroup = computed(() =>
+  readNow.value ? t("detailSession.readNow.myGroup") : t("detailSession.myReservations"),
+);
+
 const myTextIds = computed(() => {
   const ids = new Set<string>();
   const user = currentUser.value;
@@ -241,7 +259,7 @@ const groupedTextStudies = computed(() => {
     if (kept.length > 0) groups[bookName] = kept;
   }
 
-  return myTexts.length > 0 ? { [t("detailSession.myReservations")]: myTexts, ...groups } : groups;
+  return myTexts.length > 0 ? { [myGroup.value]: myTexts, ...groups } : groups;
 });
 
 /** Qui participe, nommément : la liste que la barre d'avancement ouvre. */
@@ -255,11 +273,12 @@ const progressStats = computed(() =>
     : { total: 0, reserved: 0, read: 0, participants: 0, percentage: 0, readPercentage: 0 },
 );
 
-const confirmButtonLabel = computed(() => {
-  return !currentUser.value
-    ? t("detailSession.confirmAsGuest")
-    : t("detailSession.confirmReservation");
-});
+// The bar's second line only says what the button does not: a guest goes on
+// without an account. « Confirmer la réservation » under « Confirmer », or
+// « 2 Téhilim choisis » under « 2 textes sélectionnés », said it twice.
+const confirmButtonLabel = computed(() =>
+  !currentUser.value && !readNow.value ? t("detailSession.confirmAsGuest") : undefined,
+);
 
 // Absent sur les sessions créées avant l'introduction du réglage : l'email
 // des invités y est optionnel.
@@ -353,6 +372,12 @@ const confirmReservations = async () => {
     source: "session_page",
   });
 
+  // Perpetual chain: no name asked, the psalms open right away.
+  if (readNow.value) {
+    await submitReservations();
+    return;
+  }
+
   // Invité qui n'a pas rempli le formulaire en haut de page : plutôt qu'une
   // erreur qui l'oblige à remonter et à recliquer sur Confirmer, on lui demande
   // son nom dans une modale et la réservation part dans la foulée.
@@ -416,20 +441,27 @@ const submitReservations = async () => {
       return;
     }
 
+    const readNowOptions = readNow.value
+      ? {
+          expiresAt: readNowExpiry(),
+          anonymousName: t("detailSession.randomDraw.anonymous"),
+        }
+      : undefined;
     const reservationIds = await sessionService.createBatchReservationsForUser(
       current.id,
       unreservedItems,
       currentUser.value,
       reservationForm.value,
       guestEmailRequired.value,
+      readNowOptions,
     );
 
-    const newReservations = sessionService.createLocalReservations(
-      unreservedItems,
-      reservationIds,
-      currentUser.value,
-      reservationForm.value,
-    );
+    const newReservations = sessionService
+      .createLocalReservations(unreservedItems, reservationIds, currentUser.value, {
+        ...reservationForm.value,
+        name: reservationForm.value.name.trim() || readNowOptions?.anonymousName || "",
+      })
+      .map((r) => (readNowOptions ? { ...r, expiresAt: readNowOptions.expiresAt } : r));
 
     // Les tirages expirés que ces places tenaient encore partent avec : sinon
     // annuler ou marquer « lu » pouvait retomber sur eux plutôt que sur la
@@ -449,12 +481,18 @@ const submitReservations = async () => {
       source: "session_page",
     });
 
-    if (!currentUser.value) {
-      // Les invités voient la modale d'inscription, qui confirme déjà la réservation.
-      showSignupPrompt.value = true;
-    } else {
+    // Perpetual chain: no reservation, only reading. « Lire maintenant »
+    // opens the psalms straight away, without a question.
+    if (readNow.value) {
+      openBatchReading("after_pick");
+      return;
+    }
+    if (currentUser.value) {
       toast.success(t("detailSession.reservationsConfirmed", newReservations.length));
     }
+    // Not awaited: the bar and the guest dialog close without waiting for
+    // the answer.
+    void afterReservation();
   } catch (err) {
     console.error("Erreur lors de la confirmation globale:", err);
     analyticsService.capture("reservation_failed", {
@@ -559,6 +597,63 @@ const toggleReservationCompletion = async (textStudyId: string, section: number)
     if (error instanceof ReservationGoneError) removeLocalReservation(reservation.id);
     toast.errorFromException(error, t("detailSession.updateError"));
   }
+};
+
+// --- Reading one's Tehilim at once (services/sessionBatchReading.ts) ---
+
+/** The reader's psalms in this chain, read or not. */
+const myReadings = computed(() => batchReadings(session.value, currentUser.value));
+const unreadCount = computed(
+  () => myReadings.value.filter((reading) => !reading.reservation.isCompleted).length,
+);
+const showBatchReading = computed(() =>
+  offersBatchReading(myReadings.value, readNow.value ? 1 : undefined),
+);
+
+const openBatchReading = (trigger: "button" | "prompt" | "after_pick") => {
+  const current = session.value;
+  if (!current) return;
+  analyticsService.capture("session_batch_reading_opened", {
+    session_id: current.id,
+    texts_count: myReadings.value.length,
+    unread_count: unreadCount.value,
+    trigger,
+    is_guest: currentUser.value == null,
+  });
+  void router.push({ name: "session-reading", params: { slug: current.slug ?? current.id } });
+};
+
+/**
+ * Right after a reservation that leaves several psalms to read: « Les lire
+ * maintenant ? » ("Read them now?"). Resolves to true when the reader goes
+ * to read them.
+ */
+const promptBatchReading = async (): Promise<boolean> => {
+  const count = unreadCount.value;
+  const accepted = await confirm({
+    title: t("detailSession.batchReading.promptTitle", count),
+    message: t("detailSession.batchReading.promptMessage", { count }, count),
+    confirmLabel: t("detailSession.batchReading.promptConfirm"),
+    cancelLabel: t("detailSession.batchReading.promptLater"),
+  });
+  analyticsService.capture("session_batch_reading_prompted", {
+    session_id: session.value?.id,
+    unread_count: count,
+    accepted,
+    is_guest: currentUser.value == null,
+  });
+  if (accepted) openBatchReading("prompt");
+  return accepted;
+};
+
+/**
+ * Several Tehilim taken: offer to read them now, one after the other. A
+ * guest who declines (or has nothing to read at once) sees the signup
+ * dialog, which already confirms the reservation.
+ */
+const afterReservation = async () => {
+  if (showBatchReading.value && (await promptBatchReading())) return;
+  if (!currentUser.value) showSignupPrompt.value = true;
 };
 
 const clearSearch = () => {
@@ -1050,6 +1145,7 @@ watch(session, (s) => applySessionSeo(s));
            proposerait qu'un bouton éteint. -->
       <RandomTehilimCard
         v-if="isTehilimSession && randomAvailableCount > 0"
+        :read-now="readNow"
         @draw="drawRandomTehilim"
       />
 
@@ -1059,10 +1155,11 @@ watch(session, (s) => applySessionSeo(s));
         :reserved="progressStats.reserved"
         :read="progressStats.read"
         :participants="participants"
+        :read-now="readNow"
       />
 
       <!-- Formulaire de réservation pour invités (composant unifié) -->
-      <div id="guest-form" v-if="!currentUser" class="card p-5 mb-8">
+      <div id="guest-form" v-if="!currentUser && !readNow" class="card p-5 mb-8">
         <h3 class="font-bold text-lg text-text-primary">
           {{ t("detailSession.guestTitle") }}
         </h3>
@@ -1143,6 +1240,10 @@ watch(session, (s) => applySessionSeo(s));
         @toggle-select-all="handleToggleSelectAll"
         @text-expanded="trackTextExpanded"
         @read-clicked="trackReadClicked"
+        :read-all="showBatchReading"
+        :read-now="readNow"
+        :my-group="myGroup"
+        @read-all="openBatchReading('button')"
       />
 
       <!-- CTA : inviter le visiteur à créer sa propre session -->
@@ -1167,8 +1268,8 @@ watch(session, (s) => applySessionSeo(s));
       :count="selectedItems.size"
       :loading="isSubmittingBatch"
       :label="confirmButtonLabel"
-      :button-text="t('common.confirm')"
-      :button-loading-text="t('detailSession.reserving')"
+      :button-text="readNow ? t('detailSession.readNow.button') : t('common.confirm')"
+      :button-loading-text="readNow ? t('common.loading') : t('detailSession.reserving')"
       @confirm="confirmReservations"
     />
 

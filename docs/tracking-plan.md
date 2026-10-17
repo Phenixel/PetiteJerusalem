@@ -715,6 +715,43 @@ The confirmation requested when the deadline falls tonight or tomorrow night
 dialog that opens on its own right after a chain is created). It measures
 what the second brings compared with the first.
 
+#### Reading one's Tehilim at once (new)
+
+The page « Mes Téhilim » of a Tehilim chain (see `docs/design.md`, « The
+Tehilim of a chain are read one after the other »).
+
+`session_batch_reading_opened`: the page opened from the chain.
+
+| Property       | Values                                                                                                                                                                                                  |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `session_id`   | the chain's identifier                                                                                                                                                                                  |
+| `texts_count`  | the reader's psalms in the chain, read or not                                                                                                                                                           |
+| `unread_count` | those still to read                                                                                                                                                                                     |
+| `trigger`      | `button` (« Tout lire maintenant », beside « Mes réservations »), `prompt` (« Les lire maintenant ? ») or `after_pick` (« Lire maintenant » on the perpetual chain, which opens the page straight away) |
+| `is_guest`     | boolean                                                                                                                                                                                                 |
+
+`session_batch_reading_prompted`: the question asked right after a
+reservation, once answered; its share of `accepted` tells whether it is
+worth asking.
+
+| Property       | Values                       |
+| -------------- | ---------------------------- |
+| `session_id`   | the chain's identifier       |
+| `unread_count` | the psalms still to read     |
+| `accepted`     | true for « Lire maintenant » |
+| `is_guest`     | boolean                      |
+
+`session_batch_reading_completed`: the last psalm of the page checked.
+
+| Property      | Values                 |
+| ------------- | ---------------------- |
+| `session_id`  | the chain's identifier |
+| `texts_count` | the psalms of the page |
+| `is_guest`    | boolean                |
+
+`section_marked_read` and `section_mark_read_failed` (existing): one more
+value for `source`, `batch_reading`, a psalm checked on that page.
+
 ### My dates
 
 `occasion_opened` (existing, the home page banner) is kept. Alongside it:

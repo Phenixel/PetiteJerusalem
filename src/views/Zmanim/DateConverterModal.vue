@@ -249,7 +249,6 @@ watch(
         id="date-converter-title"
         class="flex min-w-0 items-center gap-2 text-lg font-bold text-text-primary"
       >
-        <AppIcon name="rotate" :size="17" class="shrink-0 text-primary" />
         <span class="truncate">{{ t("converter.title") }}</span>
       </h3>
       <button
