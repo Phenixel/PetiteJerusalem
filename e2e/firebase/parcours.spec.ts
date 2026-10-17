@@ -10,13 +10,16 @@ type Prefs = {
   dailyReadingProgress?: { completedIds?: number[] };
 };
 
-/** Le jour local, comme l'app l'écrit (localDayKey), décalé de `offset` jours. */
+/**
+ * The day as the app writes it (localDayKey), shifted by `offset` days. The
+ * app runs in the browser's time zone (Europe/Paris, playwright.config.ts),
+ * not the runner's: computed in UTC, the key was a day behind from midnight
+ * in Paris to midnight UTC, and the tests failed every evening.
+ */
 function todayKey(offset = 0): string {
-  const now = new Date();
-  now.setDate(now.getDate() + offset);
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-  const day = String(now.getDate()).padStart(2, "0");
-  return `${now.getFullYear()}-${month}-${day}`;
+  const day = new Date(Date.now() + offset * 24 * 3600 * 1000);
+  // en-CA writes dates as YYYY-MM-DD.
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" }).format(day);
 }
 
 test.describe("Mon parcours", () => {
