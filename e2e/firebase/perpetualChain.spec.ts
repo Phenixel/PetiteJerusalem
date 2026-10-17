@@ -428,8 +428,8 @@ test.describe("chaîne perpétuelle", () => {
 
     await page.getByLabel("Choisir").nth(0).check();
     await page.getByLabel("Choisir").nth(0).check();
-    await page.getByRole("button", { name: "Confirmer" }).click();
-    await expect(page.getByText("Les lire maintenant")).toBeVisible();
+    // A single button, no question: the psalms open straight away.
+    await expect(page.getByRole("button", { name: "Confirmer" })).toHaveCount(0);
     await page.getByRole("button", { name: "Lire maintenant" }).click();
 
     await expect(page).toHaveURL(new RegExp(`/share-reading/session/${chain.slug}/lecture`));

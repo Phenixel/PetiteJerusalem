@@ -1068,8 +1068,7 @@ const en: LocaleMessages = {
     readNow: {
       myGroup: "My Tehilim to read",
       label: "{count} Tehilim picked | {count} Tehilim picked",
-      promptMessage:
-        "Your Tehilim opens right away: check it off once read. Not read within the hour, it goes back to the chain. | Your {count} Tehilim open one after the other, on a single page: check each one off once read. Not read within the hour, they go back to the chain.",
+      button: "Read now",
     },
     batchReading: {
       button: "Read them all now",

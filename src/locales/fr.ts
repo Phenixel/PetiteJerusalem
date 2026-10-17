@@ -1109,8 +1109,7 @@ const fr = {
     readNow: {
       myGroup: "Mes Téhilim à lire",
       label: "{count} Téhilim choisi | {count} Téhilim choisis",
-      promptMessage:
-        "Votre Téhilim s'ouvre tout de suite : cochez-le une fois lu. Non lu dans l'heure, il revient à la chaîne. | Vos {count} Téhilim s'ouvrent à la suite, sur une seule page : cochez chacun une fois lu. Non lus dans l'heure, ils reviennent à la chaîne.",
+      button: "Lire maintenant",
     },
     batchReading: {
       button: "Tout lire maintenant",

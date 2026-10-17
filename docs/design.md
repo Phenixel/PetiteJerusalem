@@ -1729,10 +1729,9 @@ like the daily reading of Mon parcours:
   leaves such a list, the question « Les lire maintenant ? » ("Read them
   now?"). A guest who declines sees the signup dialog as before.
 - **On the perpetual chain, nothing is reserved, everything is read**: the
-  boxes say « Choisir » ("Pick"), the bar keeps « Confirmer », and the
-  question « Les lire maintenant ? » follows every confirmation, even for
-  one psalm, reminding that a psalm not read goes back to the chain within
-  the hour. No name is asked (a guest reads anonymously, as with the draw). The reader's
+  boxes say « Choisir » ("Pick") and the bar has a single button, « Lire
+  maintenant » ("Read now"): it opens the page straight away, without the
+  question asked on the other chains. No name is asked (a guest reads anonymously, as with the draw). The reader's
   group is « Mes Téhilim à lire », a psalm being read says « En lecture par
   … », and « Tout lire maintenant » shows from one psalm. A psalm picked and
   not read goes back to the chain after an hour, pushed back while the page
