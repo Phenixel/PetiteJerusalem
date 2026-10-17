@@ -47,7 +47,6 @@ const day = computed(() => {
   return {
     begun,
     to: begun ? "/" : "/parcours/nouveau",
-    percent: planned > 0 ? Math.round((done / planned) * 100) : null,
     line: !begun
       ? t("parcours.empty.cta")
       : planned === 0
@@ -107,8 +106,9 @@ function trackChneiMikra() {
           <span class="text-sm text-text-secondary">{{ parashaLabel }}</span>
         </span>
       </RouterLink>
-      <!-- Ma journée, avec ou sans compte : le chiffre en avant tombe au bout
-           de la ligne, comme sur l'accueil. -->
+      <!-- Ma journée, with or without an account: the line says where the day
+           stands (« 2 sur 5 faits aujourd'hui »); a percentage beside it said
+           it a second time. -->
       <RouterLink :to="day.to" class="today-row group">
         <AppIcon name="circle-check" :size="21" class="shrink-0 text-secondary" />
         <span class="flex flex-1 flex-col gap-0.5 min-w-0">
@@ -121,12 +121,6 @@ function trackChneiMikra() {
           >
             {{ day.line }}
           </span>
-        </span>
-        <span
-          v-if="day.percent !== null"
-          class="shrink-0 text-2xl font-bold leading-none tabular-nums text-primary"
-        >
-          {{ day.percent }}<span class="text-base">%</span>
         </span>
       </RouterLink>
     </div>

@@ -133,7 +133,8 @@ function nextLabel(occasion: HebrewOccasion): string {
     month: "long",
     year: "numeric",
   }).format(date.greg());
-  return t("occasions.nextOn", { civil, hebrew: formatHebrewDate(date, locale.value) });
+  // The Hebrew day is the line above (« 12 Adar »): only the civil date here.
+  return t("occasions.nextOn", { civil });
 }
 
 const dayOptions = computed(() =>

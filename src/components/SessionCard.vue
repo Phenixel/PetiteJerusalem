@@ -48,10 +48,12 @@ const isFull = computed(
     <!-- Pourcentage de réservation : indique s'il reste de la disponibilité -->
     <div v-if="reservationStats.total > 0">
       <div class="flex items-center justify-between mb-1.5 text-xs font-medium">
-        <span class="text-text-secondary">
+        <!-- Full, « Complet » says it: « 100% réservé » beside it said it twice. -->
+        <span v-if="!isFull" class="text-text-secondary">
           {{ t("shareReading.reservedPercent", { percent: reservationStats.percentage }) }}
         </span>
         <span
+          class="ms-auto"
           :class="isFull ? 'text-red-500 dark:text-red-400' : 'text-green-600 dark:text-green-400'"
         >
           {{ isFull ? t("shareReading.sessionFull") : t("shareReading.sessionAvailable") }}

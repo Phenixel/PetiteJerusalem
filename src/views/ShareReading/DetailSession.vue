@@ -273,12 +273,12 @@ const progressStats = computed(() =>
     : { total: 0, reserved: 0, read: 0, participants: 0, percentage: 0, readPercentage: 0 },
 );
 
-const confirmButtonLabel = computed(() => {
-  if (readNow.value) return t("detailSession.readNow.label", selectedItems.value.size);
-  return !currentUser.value
-    ? t("detailSession.confirmAsGuest")
-    : t("detailSession.confirmReservation");
-});
+// The bar's second line only says what the button does not: a guest goes on
+// without an account. « Confirmer la réservation » under « Confirmer », or
+// « 2 Téhilim choisis » under « 2 textes sélectionnés », said it twice.
+const confirmButtonLabel = computed(() =>
+  !currentUser.value && !readNow.value ? t("detailSession.confirmAsGuest") : undefined,
+);
 
 // Absent sur les sessions créées avant l'introduction du réglage : l'email
 // des invités y est optionnel.

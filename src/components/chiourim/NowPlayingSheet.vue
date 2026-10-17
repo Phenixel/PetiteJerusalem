@@ -548,7 +548,7 @@ const shareUrl = computed(() =>
                 class="w-full border-t border-white/10 px-5 py-3 text-start text-sm font-semibold opacity-80 hover:opacity-100"
                 @click="showWholeQueue = true"
               >
-                {{ t("chiourim.player.wholeQueue", { count: following.length }) }}
+                {{ t("chiourim.player.wholeQueue") }}
               </button>
             </template>
           </section>

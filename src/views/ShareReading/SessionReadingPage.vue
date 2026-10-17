@@ -309,12 +309,9 @@ onUnmounted(() => {
               <p class="font-semibold">{{ t("sessionReading.allDone") }}</p>
             </div>
             <template v-else>
-              <div class="mb-2 flex items-center justify-between">
-                <span class="text-sm font-medium">
-                  {{ t("sessionReading.progress", { done: doneCount, total: readings.length }) }}
-                </span>
-                <span class="text-sm font-semibold text-primary">{{ percent }} %</span>
-              </div>
+              <p class="mb-2 text-sm font-medium">
+                {{ t("sessionReading.progress", { done: doneCount, total: readings.length }) }}
+              </p>
               <ProgressBar :value="percent" :label="t('sessionReading.title')" />
             </template>
 
