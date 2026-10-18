@@ -2094,6 +2094,13 @@ grid of cards that all look alike; you browse, play, resume.
   queue, and « À propos du cours » ("About the class"), which leads to its
   page. On a wide screen, two columns: the class on the left, what follows on
   the right.
+- **The progress bar never goes back.** Released by the finger, it stays
+  where it was let go while the audio there downloads; back 15 s and forward
+  30 s, the system's controls and the start of the class move it at once.
+  It used to fall back to the old position until the seek landed, then jump
+  to the new one. A class resumed shows where it resumes before its audio
+  has loaded, and the time shown changes with the second the audio is at
+  (held by `playerSeek.test.ts`).
 - **The queue reads at a glance.** « En cours » ("Now playing") first, set
   apart: the cover, the full title, the chapter and what remains, the
   dancing bars. Then « À suivre » ("Up next"), ten rows and the rest one
