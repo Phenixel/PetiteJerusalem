@@ -259,7 +259,15 @@ export const TEXT_ALIASES: Record<string, string[]> = {
   "Nerot Hanouka": ["Maoz Tsour", "Allumage des bougies", "Menorah"],
 
   // Brahot : le nom de la bénédiction, ou ce qu'elle accompagne.
-  "Birkat Hamazon": ["Bénédiction après le repas", "Grace after meals", "Bentcher"],
+  "Birkat Hamazon": [
+    "Bénédiction après le repas",
+    "Grace after meals",
+    "Bentcher",
+    "Bencher",
+    "Bensch",
+    "Bentsch",
+    "Bentching",
+  ],
   "Brakha A'harona": ["Mé'ein Chaloch", "Al Hami'hya", "Boré Nefachot", "Bénédiction finale"],
   "Cheva Brahot": ["Mariage", "Wedding"],
   "Birkat Halevana": ["Kiddouch Levana", "Bénédiction de la lune", "Blessing of the Moon"],

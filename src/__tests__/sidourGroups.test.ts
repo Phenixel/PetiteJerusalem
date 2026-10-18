@@ -57,6 +57,9 @@ describe("the Sidour search", () => {
     expect(keys("ברכת המזון")).toContain("brahot/birkat-hamazon");
     expect(keys("birkat hamazone")).toContain("brahot/birkat-hamazon");
     expect(keys("havdala")).toContain("sidour/havdala");
+    // The names everyone types, whatever the spelling.
+    expect(keys("bensch")).toContain("brahot/birkat-hamazon");
+    expect(keys("bentcher")).toContain("brahot/birkat-hamazon");
   });
 
   it("answers nothing to an empty term, and keeps the order of the list", () => {

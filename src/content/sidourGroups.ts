@@ -195,7 +195,7 @@ export function sidourSections(currentFeast: FeastId | null = null): SidourSecti
  * The texts that answer a search on the Sidour page, in the order of its
  * list (the current holiday first). The library's own search
  * (services/catalogSearch): Hebrew and Latin names, the other names everyone
- * types (« Birkat Hamazon », « Bensher »...), whatever the spelling, and one
+ * types (« Grace after meals », « Bentcher », « Bensch »...), whatever the spelling, and one
  * typo away. An empty term answers nothing: the page then shows its list.
  */
 export function searchSidour(term: string, sections: SidourSection[]): SidourText[] {
