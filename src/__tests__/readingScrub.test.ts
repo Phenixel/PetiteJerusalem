@@ -7,9 +7,10 @@ import { createMemoryHistory, createRouter } from "vue-router";
  * The progress bar that slides, and the menu button that names the passage.
  *
  * What must hold: a finger on the bar takes the page to the same share of the
- * text (from the right in Hebrew); while it slides, the titles of the text
- * line up on an arc, the one being read large in the middle, its neighbors
- * smaller, lower and fainter, the next one growing as it comes nearer; and,
+ * text (from the right in Hebrew); the finger pulls the line up in a bump,
+ * which springs back when let go; the titles of the text sit on the line,
+ * the one being read large and straight on top of the bump, its neighbors
+ * small and leaning along the bar, the next one growing as it climbs; and,
  * on a text with landmarks, the round menu button grows around the title
  * being read as soon as one scrolls. See docs/design.md, "The progress bar
  * takes you through the text".
@@ -19,12 +20,24 @@ vi.mock("../services/analyticsService", () => ({
   analyticsService: { capture: vi.fn() },
 }));
 vi.mock("../composables/useNativeApp", () => ({ isNativeApp: false, appPlatform: "web" }));
+// Less motion: the line goes straight where it goes, frame for frame, which
+// the springs only reach after a while.
+vi.mock("../composables/useMotion", () => ({
+  prefersLessMotion: () => true,
+  prefersReducedMotion: () => true,
+}));
 
 import fr from "../locales/fr";
 import ReadingMenu from "../components/ReadingMenu.vue";
 import ReadingProgressBar from "../components/ReadingProgressBar.vue";
 import { analyticsService } from "../services/analyticsService";
-import { arcPlacement, scrubFraction } from "../composables/readingScrub";
+import {
+  BUMP_HEIGHT,
+  bumpHeight,
+  scrubFraction,
+  stepSpring,
+  titlePlacement,
+} from "../composables/readingScrub";
 import { readingScrubbing, readingSections, sectionPosition } from "../composables/useReadingNav";
 
 const SECTIONS = [
@@ -121,25 +134,56 @@ describe("the geometry of the slide", () => {
     expect(sectionPosition(TOPS, 4900)).toBe(2);
   });
 
-  it("puts the title reached large in the middle, and its neighbors smaller, lower, fainter", () => {
-    const middle = arcPlacement(0);
-    expect(middle).toMatchObject({ x: 0, y: 0, rotate: 0, scale: 1, opacity: 1 });
+  it("pulls the line up under the finger, in a bell that flattens on each side", () => {
+    expect(bumpHeight(200, 200, 1)).toBe(BUMP_HEIGHT);
+    expect(bumpHeight(260, 200, 1)).toBeLessThan(BUMP_HEIGHT);
+    expect(bumpHeight(140, 200, 1)).toBeCloseTo(bumpHeight(260, 200, 1));
+    expect(bumpHeight(500, 200, 1)).toBeLessThan(0.5);
+    // Let go, the line is flat.
+    expect(bumpHeight(200, 200, 0)).toBe(0);
+  });
 
-    const next = arcPlacement(1);
-    expect(next.x).toBeGreaterThan(0);
-    expect(next.y).toBeGreaterThan(0);
-    expect(next.scale).toBeLessThan(1);
+  it("carries the title reached on top, large and straight, its neighbors small along the bar", () => {
+    const top = titlePlacement(0, 200, 1);
+    expect(top).toMatchObject({ x: 200, rise: BUMP_HEIGHT, scale: 1, opacity: 1 });
+    expect(Math.abs(top.rotate)).toBe(0);
+
+    const next = titlePlacement(1, 200, 1);
+    expect(next.x).toBeGreaterThan(200);
+    expect(next.rise).toBeLessThan(top.rise);
+    expect(next.scale).toBeLessThan(0.6);
     expect(next.opacity).toBeLessThan(1);
-    // The arc is the same on both sides.
-    expect(arcPlacement(-1).y).toBe(next.y);
-    expect(arcPlacement(-1).x).toBe(-next.x);
+    // The same on both sides, leaning the other way.
+    const previous = titlePlacement(-1, 200, 1);
+    expect(previous.rise).toBeCloseTo(next.rise);
+    expect(Math.sign(previous.rotate)).toBe(-Math.sign(next.rotate));
 
-    // The next title grows as it comes nearer.
-    expect(arcPlacement(0.5).scale).toBeGreaterThan(next.scale);
-    expect(arcPlacement(0.5).scale).toBeLessThan(1);
+    // The next title grows and climbs as it comes nearer.
+    const halfway = titlePlacement(0.5, 200, 1);
+    expect(halfway.scale).toBeGreaterThan(next.scale);
+    expect(halfway.rise).toBeGreaterThan(next.rise);
 
     // In Hebrew, the text moves forward to the left.
-    expect(arcPlacement(1, true).x).toBe(-next.x);
+    expect(titlePlacement(1, 200, 1, true).x).toBeLessThan(200);
+  });
+
+  it("moves like a spring: it gets there, overshooting only when loosely held", () => {
+    const run = (damping: number) => {
+      const spring = { value: 0, velocity: 0 };
+      let highest = 0;
+      for (let i = 0; i < 120; i++) {
+        stepSpring(spring, 1, 1 / 60, 400, damping);
+        highest = Math.max(highest, spring.value);
+      }
+      return { end: spring.value, highest };
+    };
+    const firm = run(1);
+    expect(firm.end).toBeCloseTo(1, 2);
+    expect(firm.highest).toBeLessThanOrEqual(1.001);
+    // Let go: it bounces past and comes back.
+    const loose = run(0.3);
+    expect(loose.end).toBeCloseTo(1, 1);
+    expect(loose.highest).toBeGreaterThan(1.2);
   });
 });
 
@@ -163,6 +207,8 @@ describe("the progress bar", () => {
     expect(scrollTo).toHaveBeenLastCalledWith({ top: 2100, behavior: "instant" });
     expect(readingScrubbing.value).toBe(true);
     await frames();
+    // The line is pulled up under the finger.
+    expect(host.querySelector(".scrub-stage svg path")).not.toBeNull();
 
     // The reading line is in the second section: its title is in the middle,
     // the largest, and the third one is coming.
@@ -191,7 +237,7 @@ describe("the progress bar", () => {
     press(bar, "pointerup", 650);
     await frames();
     expect(readingScrubbing.value).toBe(false);
-    expect(host.querySelector(".scrub-panel")).toBeNull();
+    expect(host.querySelector(".scrub-stage")).toBeNull();
     expect(analyticsService.capture).toHaveBeenCalledWith("reading_scrubbed", {
       sections_count: 3,
       from_progress: 0,
@@ -208,7 +254,9 @@ describe("the progress bar", () => {
     await frames();
     expect(host.querySelector(".scrub-title")).toBeNull();
     // « 42 % », the sign never cut from its number.
-    expect(host.querySelector(".scrub-panel")?.textContent?.trim()).toMatch(/^42[\u00a0\u202f]%$/);
+    expect(host.querySelector(".scrub-percent")?.textContent?.trim()).toMatch(
+      /^42[\u00a0\u202f]%$/,
+    );
   });
 });
 

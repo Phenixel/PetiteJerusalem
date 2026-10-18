@@ -1270,22 +1270,32 @@ is also a slider. A finger (or the mouse) laid on it takes the page to the
 same share of the text, and the page follows while it slides: whoever looks
 for the Amida in a whole Shaharit, or the end of a long daf, gets there in
 one gesture instead of three screens of scrolling. The strip that catches
-the finger is taller than the line (1.25rem), which no finger would hit; the
-line thickens and a round thumb appears under the finger while it is held.
-In Hebrew the bar fills from the right, and slides the same way.
+the finger is taller than the line (1.25rem), which no finger would hit. In
+Hebrew the bar fills from the right, and slides the same way.
 
-While it slides, the titles of the text (the landmarks of the reading menu)
-line up above the bar on an arc, on a panel like the menu's: the one being
-read large, in the middle, in Playfair Display and in the primary color; its
-neighbors smaller, lower and fainter on each side, tilted along the curve.
-Nothing is animated: the finger drives the arc. The next title grows as it
-comes nearer, until it is the one in the middle, while the one it replaces
-shrinks away; crossing from one title to the next is felt as a threshold
-(`tick`, see "Touch answers"). The share reached (« 42 % ») always stays in
-the middle of the panel, above the titles: the titles say which passage, the
-share says how far into the text. A text without titles shows it alone,
-large. The round buttons of the menu step aside during the gesture, the
-panel taking their place.
+The finger pulls the line. Under it, the bar rises in a bump (64 px, a bell
+rather than a peak: the line is stretched, it does not break), like a string
+held between two fingers, with a round thumb on top; the paper under the
+line hides the text it rises over. The titles of the text (the landmarks of
+the reading menu) sit on the line, **with no frame**: the one being read
+rides on top of the bump, large and straight, in Playfair Display and in the
+primary color; the others lie along the bar on each side, small, leaning
+with the line, each kept to its share of it so that two neighbors never
+overlap. A halo of the page's color keeps them legible over the text. The
+share reached (« 42 % ») stays on top of the bump, just above the finger:
+the titles say which passage, the share how far into the text. A text
+without titles shows it alone, larger.
+
+It moves like something held: the bump follows the finger with a little
+give, the titles glide from one to the next (the next one climbs the slope
+and grows until it is on top, straightening up, while the one it replaces
+slides down and shrinks), and, let go, the line springs back flat with a
+small rebound. These are springs (`stepSpring`,
+`composables/readingScrub.ts`), run frame by frame and only while the line
+moves. When the system asks for less motion, the line goes straight where it
+is going, without give or rebound. Crossing from one title to the next is
+felt as a threshold (`tick`, see "Touch answers"). The round buttons of the
+menu step aside during the gesture.
 
 On the site, the mini player lies over the bottom of the screen: the bar is
 then a line again, and the player keeps its touches. Two touches in a row on
