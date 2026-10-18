@@ -23,7 +23,6 @@ import { useAutoScroll } from "../../composables/useAutoScroll";
 import { useKeepAwake } from "../../composables/useKeepAwake";
 import { useChneiMikraOptions } from "../../composables/useChneiMikraOptions";
 import AppIcon from "../../components/icons/AppIcon.vue";
-import ChneiMikraOptions from "../../components/ChneiMikraOptions.vue";
 import { useChneiMikraChecks } from "../../composables/useChneiMikraChecks";
 import ProgressBar from "../../components/ProgressBar.vue";
 import ReadingMenu from "../../components/ReadingMenu.vue";
@@ -59,7 +58,7 @@ const route = useRoute();
 const router = useRouter();
 // App native : pincer dans la page agrandit le texte lu, pas la page.
 useReadingPinch();
-// Verset écrit deux fois, Rachi : réglage partagé avec la lecture quotidienne.
+// Verse written twice, Rashi: set in the reading menu, shared with the daily reading.
 const { doubleVerses, withRashi } = useChneiMikraOptions();
 
 const WEEK_PARAM = "semaine";
@@ -308,9 +307,6 @@ watch([title, locale, localeMessagesReady], applySeoMeta, { immediate: true });
           <ProgressBar :value="aliyotPercent" :label="t('chneiMikra.title')" />
         </div>
 
-        <!-- Options de lecture : verset écrit deux fois, commentaire de Rachi -->
-        <ChneiMikraOptions class="mt-4" source="library_chnei_mikra" />
-
         <!-- La paracha change : on remonte des composants neufs plutôt que de
              recycler ceux du texte précédent, marque-pages compris. -->
         <div :key="parasha.weekKey" class="mt-8 space-y-10">
@@ -352,7 +348,7 @@ watch([title, locale, localeMessagesReady], applySeoMeta, { immediate: true });
 
     <!-- Comme les autres textes de la bibliothèque : le menu de lecture et la
          progression au bas de l'écran. -->
-    <ReadingMenu :share-title="shareTitle" />
+    <ReadingMenu :share-title="shareTitle" chnei-mikra />
     <ReadingProgressBar />
   </main>
 </template>

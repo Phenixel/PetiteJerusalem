@@ -1171,6 +1171,17 @@ should discover that a halakha existed on the day they would have needed
 it. The setting only shows on a text that carries some: offering to hide
 what the page does not display would suggest something was missed.
 
+On the chnei mikra page, its two options join them too: « Chaque verset deux
+fois » ("Each verse twice", on at the start: it is the practice itself) and
+« Commentaire de Rachi » ("Rashi's commentary"), each with its hint. They
+used to be two switches above the text, under the paracha's name: the only
+reading options of the library left outside the menu, and one more block
+between the title and the text. They stay shared with the daily reading
+(`useChneiMikraOptions`). Held by `src/__tests__/readingMenu.test.ts` (« ne
+propose les options du chnei mikra que sur sa page ») and
+`src/__tests__/chneiMikraPage.test.ts` (« propose les options de lecture
+dans le menu de lecture, et les retient »).
+
 Under the switches, a rule, then what is done with a gesture instead of
 being set: sharing the text being read, writing to the team, and, on the
 site, getting the app. These three were only in the footer or in the About

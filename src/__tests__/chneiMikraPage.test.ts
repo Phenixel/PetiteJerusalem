@@ -127,16 +127,27 @@ describe("ChneiMikraPage", () => {
     expect(page.text()).not.toContain("Lue Chabbat");
   });
 
-  it("propose les options de lecture et les retient", async () => {
+  it("propose les options de lecture dans le menu de lecture, et les retient", async () => {
     const page = mount(ChneiMikraPage);
     await page.router.push("/bibliotheque/chnei-mikra");
     await page.router.isReady();
     await nextTick();
 
-    expect(page.text()).toContain("Chaque verset deux fois");
-    expect(page.text()).toContain("Commentaire de Rachi");
-    const toggles = [...page.host.querySelectorAll('input[type="checkbox"]')] as HTMLInputElement[];
-    expect(toggles.length).toBe(2);
+    // Not above the text: in the reading settings, with the other options.
+    expect(page.text()).not.toContain("Chaque verset deux fois");
+    page.host.querySelector<HTMLButtonElement>('button[aria-haspopup="menu"]')!.click();
+    await nextTick();
+    page.host.querySelector<HTMLButtonElement>(".fab-second button")!.click();
+    // The menu view leaves (out-in transition) before the settings come in.
+    await nextTick();
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+    await nextTick();
+    const toggleOf = (label: string) =>
+      [...page.host.querySelectorAll<HTMLElement>(".setting-row")]
+        .find((row) => row.textContent?.includes(label))!
+        .querySelector<HTMLInputElement>('input[type="checkbox"]')!;
+    const toggles = [toggleOf("Chaque verset deux fois"), toggleOf("Commentaire de Rachi")];
     // Écrire le verset deux fois est la pratique même du chnei mikra : actif
     // par défaut. Rachi est un accompagnement : à activer soi-même.
     expect(toggles[0].checked).toBe(true);
