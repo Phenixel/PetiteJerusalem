@@ -34,7 +34,10 @@ let feastDownload: Promise<void> | null = null;
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import AppIcon from "../components/icons/AppIcon.vue";
+import CatalogSearchField from "../components/CatalogSearchField.vue";
 import CardArt, { type CardArtSpec } from "../components/CardArt.vue";
+import DoneCue from "../components/sidour/DoneCue.vue";
+import SidourLine from "../components/sidour/SidourLine.vue";
 import KotelCompass from "../components/KotelCompass.vue";
 import NaanouimCompass from "../components/NaanouimCompass.vue";
 import TefilinMirror from "../components/TefilinMirror.vue";
@@ -44,6 +47,7 @@ import { openTefilinMirror } from "../composables/useTefilinMirror";
 import { useNow } from "../composables/useNow";
 import { useOfficesDone } from "../composables/useOfficesDone";
 import { dragStyle, useSwipe } from "../composables/useSwipe";
+import { useSearchTracking } from "../composables/useSearchTracking";
 import { useZmanimLocation } from "../composables/useZmanimLocation";
 import { useZmanimPlaceLabel } from "../composables/useZmanimPlaceLabel";
 import { useLocalePath } from "../composables/useLocalePath";
@@ -58,6 +62,7 @@ import {
 } from "../services/sidourMoment";
 import {
   FEAST_LABEL_KEYS,
+  searchSidour,
   sidourSections,
   sidourText,
   type SidourSection,
@@ -88,6 +93,18 @@ const { localePath } = useLocalePath();
 const officesDone = useOfficesDone();
 const moment = computed(() => sidourMoment(place.value, now.value, officesDone.said));
 const sections = computed<SidourSection[]>(() => sidourSections(moment.value.feast));
+
+// --- The search, between the highlighted cards and the tools ---------------
+// It filters the page's own list, with the library's search (searchSidour):
+// while it holds a term, its results replace the tools and the list.
+const searchTerm = ref("");
+const searching = computed(() => searchTerm.value.trim() !== "");
+const searchResults = computed(() => searchSidour(searchTerm.value, sections.value));
+const searchTracking = useSearchTracking({
+  term: searchTerm,
+  resultsCount: () => searchResults.value.length,
+  track: (search) => analyticsService.capture("sidour_search_performed", search),
+});
 
 const time = (date: Date | undefined) =>
   date ? formatZmanTime(date, place.value.tzid, locale.value) : "";
@@ -229,7 +246,7 @@ const moonLine = computed(() => {
     key: text.key,
     path: text.path,
     name: textName(text),
-    meta: t(moon.now ? "sidour.halevana.lineNow" : "sidour.halevana.lineTonight", { date }),
+    meta: t("sidour.halevana.lineNow", { date }),
     art: { kind: "moon", age: moon.moonAge } satisfies CardArtSpec,
   };
 });
@@ -263,6 +280,37 @@ function markHero(): void {
     officesDone.markMoon(until, true, "sidour_swipe");
     remember(name, () => officesDone.markMoon(until, false, "sidour_undo"));
   } else return;
+  haptic("done");
+}
+
+/** The line under the card, swiped: havdala made, or the service said. */
+const extraSwipeable = computed(() => {
+  const e = moment.value.extra;
+  return (e?.key === "havdala" && !!e.evening) || (e?.key === "tefila" && !!e.now);
+});
+
+function sayExtra(): void {
+  const e = moment.value.extra;
+  const name = extra.value?.name ?? "";
+  if (e?.key === "havdala" && e.evening) {
+    const evening = e.evening;
+    officesDone.markHavdala(evening, true, "sidour_line_swipe");
+    remember(name, () => officesDone.markHavdala(evening, false, "sidour_undo"));
+  } else if (e?.key === "tefila" && e.now && e.tefila && e.start && e.end) {
+    const window = { tefila: e.tefila, start: e.start, end: e.end };
+    officesDone.markOffice(window, true, "sidour_line_swipe");
+    remember(name, () => officesDone.markOffice(window, false, "sidour_undo"));
+  } else return;
+  haptic("done");
+}
+
+/** The moon's line, swiped: it is blessed, and leaves the page for the month. */
+function sayMoon(): void {
+  const moon = moment.value.moon;
+  if (!moon) return;
+  const until = moon.until;
+  officesDone.markMoon(until, true, "sidour_line_swipe");
+  remember(moonLine.value?.name ?? "", () => officesDone.markMoon(until, false, "sidour_undo"));
   haptic("done");
 }
 
@@ -317,9 +365,11 @@ function heroValue(h: SidourHero | null): string | null {
 
 function trackOpen(
   text: SidourText | { key: string },
-  source: "hero" | "extra" | "moon" | "list",
+  source: "hero" | "extra" | "moon" | "list" | "search",
   section?: string,
 ) {
+  // The search that led somewhere leaves first.
+  if (source === "search") searchTracking.flush();
   analyticsService.capture("sidour_text_opened", {
     text: text.key,
     source,
@@ -447,18 +497,7 @@ onMounted(() => {
             </span>
           </span>
           <!-- What the gesture will do, coming out from under the left edge. -->
-          <span
-            v-if="heroCue"
-            class="sidour-cue"
-            :class="{ 'sidour-cue-armed': heroCue.armed }"
-            :style="{ opacity: heroCue.strength }"
-            aria-hidden="true"
-          >
-            <svg viewBox="0 0 24 24" class="sidour-cue-icon">
-              <path d="M5 12.5l4.5 4.5L19 7.5" />
-            </svg>
-            {{ t("parcours.hub.done") }}
-          </span>
+          <DoneCue v-if="heroCue" :strength="heroCue.strength" :armed="heroCue.armed" />
         </RouterLink>
       </Transition>
     </div>
@@ -471,38 +510,37 @@ onMounted(() => {
       </button>
     </p>
 
-    <!-- One line below, at most, and only on an occasion's evening; like every
-         highlighted line, it carries its object in the corner, not an icon. -->
-    <RouterLink
-      v-if="extra"
-      :to="extra.path"
-      class="card card-hover press-feedback group relative mt-3 flex min-h-16 items-center px-4 py-3.5 pe-24"
-      @click="trackOpen(extra, 'extra')"
-    >
-      <CardArt :art="extra.art" :scale="0.42" surface="plain" />
-      <span class="relative flex flex-col gap-0.5 min-w-0">
-        <span class="font-semibold text-text-primary group-hover:text-primary transition-colors">
-          {{ extra.name }}
-        </span>
-        <span class="text-sm text-text-secondary">{{ extra.meta }}</span>
-      </span>
-    </RouterLink>
-
-    <!-- The moon, all through its nights, as long as it does not hold the card. -->
-    <RouterLink
-      v-if="moonLine"
-      :to="moonLine.path"
-      class="card card-hover press-feedback group relative mt-3 flex min-h-16 items-center px-4 py-3.5 pe-24"
-      @click="trackOpen(moonLine, 'moon')"
-    >
-      <CardArt :art="moonLine.art" :scale="0.46" surface="plain" />
-      <span class="relative flex flex-col gap-0.5 min-w-0">
-        <span class="font-semibold text-text-primary group-hover:text-primary transition-colors">
-          {{ moonLine.name }}
-        </span>
-        <span class="text-sm text-text-secondary">{{ moonLine.meta }}</span>
-      </span>
-    </RouterLink>
+    <!-- One line below, at most, and only on an occasion's evening; then the
+         moon on its nights. Like every highlighted line, each carries its
+         object in the corner; what can be said now is swiped right. -->
+    <Transition name="sidour-next">
+      <SidourLine
+        v-if="extra"
+        :key="extra.key"
+        class="mt-3"
+        :to="extra.path"
+        :name="extra.name"
+        :meta="extra.meta"
+        :art="extra.art"
+        :swipeable="extraSwipeable"
+        @open="trackOpen(extra, 'extra')"
+        @done="sayExtra"
+      />
+    </Transition>
+    <Transition name="sidour-next">
+      <SidourLine
+        v-if="moonLine"
+        class="mt-3"
+        :to="moonLine.path"
+        :name="moonLine.name"
+        :meta="moonLine.meta"
+        :art="moonLine.art"
+        :art-scale="0.46"
+        swipeable
+        @open="trackOpen(moonLine, 'moon')"
+        @done="sayMoon"
+      />
+    </Transition>
 
     <p class="mt-4 flex justify-center">
       <RouterLink
@@ -514,12 +552,45 @@ onMounted(() => {
       </RouterLink>
     </p>
 
+    <!-- Search the Sidour: below the highlighted cards, above the tools. -->
+    <CatalogSearchField
+      v-model:term="searchTerm"
+      class="mt-6"
+      :placeholder="t('sidour.search.placeholder')"
+    />
+
+    <!-- Searching: the results take the place of the tools and the list. -->
+    <section v-if="searching" class="mt-6" aria-live="polite">
+      <h2 v-if="searchResults.length" class="mb-2 ms-1 text-sm font-semibold text-text-secondary">
+        {{ t("sidour.search.results", { n: searchResults.length }, searchResults.length) }}
+      </h2>
+      <div v-if="searchResults.length" class="card overflow-hidden">
+        <RouterLink
+          v-for="text in searchResults"
+          :key="text.key"
+          :to="text.path"
+          class="sidour-row group flex min-h-12 items-center justify-between gap-3 px-4 py-2.5"
+          @click="trackOpen(text, 'search')"
+        >
+          <span class="font-medium text-text-primary group-hover:text-primary transition-colors">
+            {{ text.latin }}
+          </span>
+          <span class="font-hebrew text-lg text-text-secondary" lang="he" dir="rtl">
+            {{ text.hebrew }}
+          </span>
+        </RouterLink>
+      </div>
+      <p v-else class="ms-1 text-sm text-text-secondary">
+        {{ t("sidour.search.none", { term: searchTerm.trim() }) }}
+      </p>
+    </section>
+
     <!-- Les outils, en une ligne qui défile : la pastille qui les ouvre
          depuis le texte, son dessin et son nom en toutes lettres ; celui du
          moment devant. Une ligne et pas des pastilles empilées : deux noms
          entiers ne tiennent pas côte à côte sur un téléphone, et la rangée
          doit garder sa hauteur quand les outils seront cinq. -->
-    <section v-if="tools.length" class="mt-8" aria-labelledby="sidour-tools">
+    <section v-if="tools.length && !searching" class="mt-8" aria-labelledby="sidour-tools">
       <h2 id="sidour-tools" class="mb-1 ms-1 text-sm font-semibold text-text-secondary">
         {{ t("sidour.tools.label") }}
       </h2>
@@ -540,7 +611,7 @@ onMounted(() => {
 
     <!-- Tous les textes, rangés par usage ; les fêtes en bas, celle du moment
          en tête. -->
-    <section v-for="section in sections" :key="section.id" class="mt-8">
+    <section v-for="section in searching ? [] : sections" :key="section.id" class="mt-8">
       <h2 class="mb-2 ms-1 flex items-center gap-2 text-sm font-semibold text-text-secondary">
         {{ t(section.labelKey) }}
         <span
@@ -612,46 +683,6 @@ onMounted(() => {
   .sidour-next-enter-active {
     transition: none;
   }
-}
-/* What the gesture will do: the stack's pill (TaskDeck, `.dk-cue`), outside
-   the card's left edge, light until the threshold, then in the theme color. */
-.sidour-cue {
-  position: absolute;
-  top: 50%;
-  right: calc(100% + 10px);
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 7px 13px 7px 10px;
-  border-radius: var(--radius-pill);
-  background: var(--color-surface);
-  color: var(--color-primary);
-  box-shadow: var(--shadow-pop);
-  font-size: 14px;
-  font-weight: 800;
-  white-space: nowrap;
-  pointer-events: none;
-  text-shadow: none;
-  transform: translateY(-50%);
-  transition:
-    background-color 0.15s ease,
-    color 0.15s ease;
-}
-.sidour-cue-armed {
-  background: var(--color-brand);
-  color: var(--color-on-brand);
-  box-shadow:
-    var(--shadow-pop),
-    0 0 0 1px var(--color-on-brand);
-}
-.sidour-cue-icon {
-  width: 16px;
-  height: 16px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2.6;
-  stroke-linecap: round;
-  stroke-linejoin: round;
 }
 /* Le texte sur un objet clair : un halo de la couleur de la carte, juste
    assez pour que le titre se lise là où il passe devant la lune (le brun de

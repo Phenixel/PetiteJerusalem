@@ -34,6 +34,9 @@ const occasionsDone = ref<string[]>(readOccasionsDone());
 export const officeKey = (window: Pick<TefilaWindow, "tefila" | "start">): string =>
   `tefila:${localDayKey(window.start)}-${window.tefila}`;
 
+/** The key of an evening's havdala, by its civil day: `havdala:2026-10-24`. */
+export const havdalaKey = (evening: Date): string => `havdala:${localDayKey(evening)}`;
+
 /** The key of a month's moon, by its last day: `halevana:5787-8`. */
 export const halevanaKey = (until: HDate): string =>
   `halevana:${until.getFullYear()}-${until.getMonth()}`;
@@ -95,8 +98,16 @@ export function useOfficesDone() {
     analyticsService.capture("parcours_occasion_marked", { occasion: "halevana", done, source });
   }
 
-  /** What sidourMoment needs to know. */
-  const said: SidourSaid = { office: isOfficeDone, moon: isMoonDone };
+  const isHavdalaDone = (evening: Date): boolean =>
+    occasionsDone.value.includes(havdalaKey(evening));
 
-  return { isOfficeDone, markOffice, isMoonDone, markMoon, said };
+  function markHavdala(evening: Date, done: boolean, source: string): void {
+    mark(havdalaKey(evening), done);
+    analyticsService.capture("parcours_occasion_marked", { occasion: "havdala", done, source });
+  }
+
+  /** What sidourMoment needs to know. */
+  const said: SidourSaid = { office: isOfficeDone, moon: isMoonDone, havdala: isHavdalaDone };
+
+  return { isOfficeDone, markOffice, isMoonDone, markMoon, isHavdalaDone, markHavdala, said };
 }

@@ -113,20 +113,20 @@ export interface SidourExtra {
   start?: Date;
   end?: Date;
   additions?: SidourAddition[];
+  /** Havdala: the civil day of its evening, which remembers it made. */
+  evening?: Date;
 }
 
 /**
- * The blessing of the moon, all through the nights it is said: the card
- * itself at night once Arvit is said, the line under the card the rest of
- * the time, by day too (« ce soir »), so that it is not missed.
+ * The blessing of the moon, on the nights it is said, from nightfall: the
+ * card itself once Arvit is said, the line under the card until then, so that
+ * it is not missed. Not by day: it is put forward only once it can be said.
  */
 export interface SidourMoon {
   /** The last day it is said. */
   until: HDate;
   /** The moon's age, in days since the molad (its drawing). */
   moonAge: number;
-  /** It can be said now (the night); otherwise tonight. */
-  now: boolean;
 }
 
 /** What has already been said: the Sidour page and the home deck read it from Mon parcours. */
@@ -135,13 +135,15 @@ export interface SidourSaid {
   office?: (window: TefilaWindow) => boolean;
   /** The moon already blessed, for its last day. */
   moon?: (until: HDate) => boolean;
+  /** Havdala already made, for the evening it is made (its civil day). */
+  havdala?: (evening: Date) => boolean;
 }
 
 export interface SidourMoment {
   hero: SidourHero | null;
   /** Au plus une ligne sous la carte, et pas tous les jours. */
   extra: SidourExtra | null;
-  /** The moon, from the first night it is said to the last, unless it is said already. */
+  /** The moon, on its nights from nightfall, unless it is said already. */
   moon: SidourMoon | null;
   /** La fête dont les textes remontent en tête de la liste. */
   feast: FeastId | null;
@@ -336,10 +338,20 @@ function havdalaEvening(
   if (occasionsOf(place, today.next()).has("tisha-beav")) return null;
   const rest = restPeriodAt(place, today, "fr");
   if (rest && rest.last.abs() === today.abs()) {
-    return { key: "havdala", text: MOMENT_TEXTS.havdala, start: rest.end ?? undefined };
+    return {
+      key: "havdala",
+      text: MOMENT_TEXTS.havdala,
+      start: rest.end ?? undefined,
+      evening: evening.day,
+    };
   }
   if (today.getDay() === 0 && occasionsOf(place, today).has("tisha-beav")) {
-    return { key: "havdala", text: MOMENT_TEXTS.havdala, start: times.get("tzeit") };
+    return {
+      key: "havdala",
+      text: MOMENT_TEXTS.havdala,
+      start: times.get("tzeit"),
+      evening: evening.day,
+    };
   }
   return null;
 }
@@ -407,15 +419,15 @@ function momentTools(
  * it above made three cards for one.
  *
  * The moon, which comes back about ten nights a month and gets missed for
- * lack of a reminder, also has its line of its own (`moon`), from the first
- * night it is said to the last, by day as well, as long as it is not said
- * and does not hold the card.
+ * lack of a reminder, also has its line of its own (`moon`) on its nights,
+ * from nightfall, as long as it is not said and does not hold the card.
  *
  * A service already said (`said.office`: checked off in Mon parcours, or its
  * card swiped) gives way: the card goes to what comes next (the moon at
  * night, the holiday, then the next service not yet said), and it is no
  * longer the line under an occasion. A moon already blessed
- * (`said.moon`) is neither card nor line.
+ * (`said.moon`) is neither card nor line, nor is a havdala already made
+ * (`said.havdala`).
  */
 export function sidourMoment(
   place: ZmanimPlace,
@@ -476,13 +488,13 @@ export function sidourMoment(
   const window = live ?? nextOpenWindow(place, now, isDone);
   const office = window ? officeOf(place, window) : null;
 
-  // The moon, all through its nights: until the instant the period closes
-  // (the last night, often before dawn); by day, the night to come.
-  const moon = moonOf(place, now, evening, night, times.get("sunset"), said.moon);
+  // The moon, on its nights: until the instant the period closes (the last
+  // night, often before dawn).
+  const moon = moonOf(place, now, evening, night, said.moon);
 
   // 3. The service whose time it is (at night, Arvit), when no occasion holds
   // the card; 4. the moon, once Arvit is said or its time is over.
-  if (!hero && moon?.now && !live) {
+  if (!hero && moon && !live) {
     hero = {
       kind: "halevana",
       text: MOMENT_TEXTS.halevana,
@@ -508,6 +520,8 @@ export function sidourMoment(
 
   // La ligne dessous : la havdala d'abord, sinon l'office sous une occasion.
   let extra: SidourExtra | null = havdalaEvening(place, now, currentEvening);
+  // Havdala already made leaves the line to the service, if any.
+  if (extra?.evening && said.havdala?.(extra.evening)) extra = null;
   if (!extra && occasion && office && !currentDone) {
     extra = {
       key: "tefila",
@@ -538,36 +552,21 @@ export function sidourMoment(
 }
 
 /**
- * The moon, if it is said tonight or now. At night, the night under way; by
- * day, the one that opens the next Hebrew day (after the chkia, the Hebrew
- * day has already turned).
+ * The moon, if it can be said now: at night, from nightfall, on the nights
+ * of its period, until the instant the period closes.
  */
 function moonOf(
   place: ZmanimPlace,
   now: Date,
   evening: HDate,
   night: boolean,
-  sunset: Date | undefined,
   blessed: ((until: HDate) => boolean) | undefined,
 ): SidourMoon | null {
-  const t = now.getTime();
-  let hd: HDate | null = null;
-  let isNow = false;
-  if (
-    night &&
-    saysBirkatHalevana(place, evening) &&
-    t <= birkatHalevanaWindow(evening).end.getTime()
-  ) {
-    hd = evening;
-    isNow = true;
-  } else {
-    const tonight = sunset && t >= sunset.getTime() ? evening : evening.next();
-    if (saysBirkatHalevana(place, tonight)) hd = tonight;
-  }
-  if (!hd) return null;
-  const until = birkatHalevanaLastDay(place, hd);
+  if (!night || !saysBirkatHalevana(place, evening)) return null;
+  if (now.getTime() > birkatHalevanaWindow(evening).end.getTime()) return null;
+  const until = birkatHalevanaLastDay(place, evening);
   if (blessed?.(until)) return null;
-  return { until, moonAge: moonAge(hd, now), now: isNow };
+  return { until, moonAge: moonAge(evening, now) };
 }
 
 /**

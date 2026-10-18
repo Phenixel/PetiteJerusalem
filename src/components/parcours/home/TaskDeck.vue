@@ -178,6 +178,13 @@ interface Cue {
   armed: boolean;
 }
 
+/**
+ * An extra card shows in light, the title in ink: it does not count in the
+ * day. Except the service whose time it is, without the « trois tefilot »
+ * habit: what you come looking for takes the color, solid, counted or not.
+ */
+const isPlain = (card: DeckCard): boolean => card.extra && card.occasion?.kind !== "tefila";
+
 function cueOf(card: DeckCard, threshold: number): Cue | null {
   if (drag.key !== card.key || drag.axis !== "x" || card.waiting || drag.dx === 0) return null;
   const strength = clamp(Math.abs(drag.dx) / threshold, 0, 1);
@@ -216,7 +223,7 @@ function listItem(card: DeckCard, j: number): Item {
     ? "dk-done"
     : card.waiting
       ? "dk-plain dk-wait"
-      : card.key === top.value?.key && !card.extra
+      : card.key === top.value?.key && !isPlain(card)
         ? ""
         : "dk-plain";
   return {
@@ -262,7 +269,7 @@ function topItem(card: DeckCard): Item {
     mode: "top",
     inert: false,
     classes: [
-      card.extra || card.waiting ? "dk-plain" : "",
+      isPlain(card) || card.waiting ? "dk-plain" : "",
       card.waiting ? "dk-wait" : "",
       "dk-top",
       arrived.value === card.key ? "dk-arrived" : "",
@@ -287,7 +294,7 @@ function leavingItem(card: DeckCard): Item {
     card,
     mode: "leaving",
     inert: true,
-    classes: [card.extra ? "dk-plain" : "", "dk-top", away.phase === "fly" ? "dk-fly" : ""],
+    classes: [isPlain(card) ? "dk-plain" : "", "dk-top", away.phase === "fly" ? "dk-fly" : ""],
     style:
       away.phase === "stamp"
         ? {

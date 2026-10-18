@@ -2003,7 +2003,11 @@ const en: LocaleMessages = {
     halevana: {
       until: "Until {date}",
       lineNow: "Tonight, until {date}",
-      lineTonight: "This evening, until {date}",
+    },
+    search: {
+      placeholder: "Search for a prayer, a blessing…",
+      results: "{n} text | {n} texts",
+      none: "No text matches “{term}”.",
     },
     said: {
       done: "{name}: done",

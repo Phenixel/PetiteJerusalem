@@ -1945,7 +1945,11 @@ const he: LocaleMessages = {
     halevana: {
       until: "עד {date}",
       lineNow: "הלילה, עד {date}",
-      lineTonight: "הערב, עד {date}",
+    },
+    search: {
+      placeholder: "חיפוש תפילה, ברכה…",
+      results: "טקסט אחד | {n} טקסטים",
+      none: "אין טקסט שמתאים ל״{term}״.",
     },
     said: {
       done: "{name}: נעשה",

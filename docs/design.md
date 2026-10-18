@@ -578,13 +578,17 @@ The page has three tiers (`SidourPage.vue`):
   at the end of the service's text: the ring pulled upward of the day's
   portion (`PullToMark`, see "An open volume, its settings, the reader"),
   « Fin de l'office » (`OfficeDoneCard.vue`), which leads back to the
-  Sidour;
-- **the moon, all through its nights**: from the first night it is said to
-  the last, the moon has its line under the card, at any hour (« Ce soir,
-  jusqu'au 15 'Hechvan » by day, « Cette nuit » at night), as long as it
+  Sidour. It stays a pull, not a tap: the same gesture as the day's
+  portion. The lines under the card are swiped the same way, when what they
+  announce can be said now (havdala, the moon, the service under an
+  occasion): a line said leaves the page (`SidourLine.vue`);
+- **the moon, from nightfall**: on the nights it is said, the moon has its
+  line under the card (« Cette nuit, jusqu'au 15 'Hechvan »), as long as it
   does not hold the card and is not marked done (by its card in the stack
   or on this page): it comes back about ten nights a month and gets missed
-  for lack of a reminder. It is a line of its own, alongside the one below;
+  for lack of a reminder. It is a line of its own, alongside the one below.
+  It is put forward only once it can be said: not by day, where « Ce soir »
+  announced it from the morning;
 - **one line below, at most** (besides the moon's), and only on an evening
   of an occasion: the service under the lighting, the Sli'hot or the moon,
   which preceded it in the card; havdala on the evening a Chabbat or a holiday ends. On other
@@ -592,7 +596,14 @@ The page has three tiers (`SidourPage.vue`):
   Chema, tikoun 'hatsot, the loulav, the Hochanot): three highlights meant
   highlighting none, and at Souccot the loulav and the Hochanot were
   repeated above the holiday's list, which moves up just below. The service
-  alone holds the card; the rest is one gesture further down;
+  alone holds the card; the rest is one gesture further down. On a motsaé
+  Chabbat of the moon, havdala and the moon are both there, one under the
+  other, until each is swiped;
+- **a search field**, under the highlighted cards and above the tools: it
+  filters the page's own texts with the library's search (Hebrew and Latin
+  names, the other names everyone types, one typo away: `searchSidour`, held
+  by `src/__tests__/sidourGroups.test.ts`). While it holds a term, its
+  results replace the tools and the list;
 - **all the texts**, in one list, without the books that separated them,
   but not without landmarks: light subheadings by use (the services, the
   evening, the brahot, the occasions, life stages), then the holidays at
@@ -2296,7 +2307,8 @@ time, the time in large type), the untitled shelf.
 - **The services are in the stack for everyone.** Without the « trois
   tefilot » habit (or on a day it leaves out), the service whose time it is
   still comes into the stack, as an extra card: « Maintenant », until when,
-  the sidour, in light. It opens the text, is swiped done like an occasion,
+  the sidour, in solid color like the habit's (what you come looking for
+  takes the color, counted or not). It opens the text, is swiped done like an occasion,
   and does not count in the day, on the wall or in the streak: only the
   habit, chosen, counts the services. It replaces the Sidour shortcut of
   the home page, which stays silent once the parcours has started. On a

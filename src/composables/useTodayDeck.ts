@@ -349,7 +349,7 @@ export function useTodayDeck() {
     }
     // The moon on the nights it is said, Arvit or not: the stack puts Arvit first.
     const moon = sidour.value.moon;
-    if (moon?.now) {
+    if (moon) {
       const until = moon.until;
       cards.push(
         occasionCard(

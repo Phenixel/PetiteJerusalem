@@ -2079,7 +2079,11 @@ const fr = {
     halevana: {
       until: "Jusqu'au {date}",
       lineNow: "Cette nuit, jusqu'au {date}",
-      lineTonight: "Ce soir, jusqu'au {date}",
+    },
+    search: {
+      placeholder: "Chercher une prière, une brakha…",
+      results: "{n} texte | {n} textes",
+      none: "Aucun texte ne répond à « {term} ».",
     },
     said: {
       done: "{name} : c'est fait",

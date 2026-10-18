@@ -112,20 +112,28 @@ describe("la carte du moment", () => {
     // Tuesday 20 October 2026, 10 'Hechvan: the moon is a little over nine days old.
     const moment = sidourMoment(DEFAULT_PLACE, at("2026-10-20T21:00:00+02:00"));
     expect(moment.hero).toMatchObject({ kind: "tefila", tefila: "arvit" });
-    expect(moment.moon?.now).toBe(true);
+    expect(moment.moon).not.toBeNull();
     expect(moment.moon?.until.getDate()).toBe(15);
     expect(moment.moon?.moonAge).toBeGreaterThan(9);
     expect(moment.moon?.moonAge).toBeLessThan(10);
   });
 
-  it("the moon keeps its line by day all through its period: « ce soir »", () => {
-    // Wednesday 21 October 2026, 10 a.m.: Cha'harit, and the moon tonight.
+  it("the moon is put forward only once it can be said: not by day", () => {
+    // Wednesday 21 October 2026, 10 a.m.: Cha'harit, and no moon yet.
     const moment = sidourMoment(DEFAULT_PLACE, at("2026-10-21T10:00:00+02:00"));
     expect(moment.hero?.tefila).toBe("chaharit");
-    expect(moment.moon).toMatchObject({ now: false });
-    expect(moment.moon?.until.getDate()).toBe(15);
-    // Outside the period (12 October, Roch 'Hodech), no line.
-    expect(sidourMoment(DEFAULT_PLACE, at("2026-10-12T10:00:00+02:00")).moon).toBeNull();
+    expect(moment.moon).toBeNull();
+    // At sunset, before nightfall, not yet either; at nightfall, its line.
+    expect(sidourMoment(DEFAULT_PLACE, at("2026-10-21T18:45:00+02:00")).moon).toBeNull();
+    expect(sidourMoment(DEFAULT_PLACE, at("2026-10-21T20:15:00+02:00")).moon).not.toBeNull();
+  });
+
+  it("havdala made: its line gives way", () => {
+    const made = sidourMoment(DEFAULT_PLACE, at("2026-10-24T21:00:00+02:00"), {
+      havdala: () => true,
+    });
+    expect(made.extra).toBeNull();
+    expect(made.moon).not.toBeNull();
   });
 
   it("un motsaé Chabbat de la lune : Arvit, la havdala, et la lune dessous", () => {
@@ -133,7 +141,7 @@ describe("la carte du moment", () => {
     const moment = sidourMoment(DEFAULT_PLACE, at("2026-10-24T21:00:00+02:00"));
     expect(moment.hero?.tefila).toBe("arvit");
     expect(moment.extra?.key).toBe("havdala");
-    expect(moment.moon?.now).toBe(true);
+    expect(moment.moon).not.toBeNull();
   });
 
   it("past Arvit's time, the moon takes the card on its own", () => {
