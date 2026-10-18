@@ -442,6 +442,8 @@ drawn in the colors of the real thing (`CardArt.vue`, the drawings in
   the mouthpiece at the bottom;
 - the **loulav and etrog**, when the Souccot holiday takes the card;
 - the **sheaf** of barley of the 'Omer;
+- the **havdala**: the braided candle, blue and white strands, several
+  wicks under a single flame, and beside it the silver cup of red wine;
 - the shelf **volume**, with the binding and title of its section, on the
   inserts that open a section of the library: chnei mikra (Tanakh) and the
   day's Tehilim (Tehilim). It replaces the book icon they carried on the
@@ -496,7 +498,9 @@ name has been read.
 On the home page, the cards of the moment carry the same object, small, on
 their light surface: the sidour on « Faire Cha'harit » ("Pray Cha'harit"),
 the moon on the blessing of the moon, the sheaf on the counting of the
-'Omer. The moon takes slightly deeper tones there to stand out from the
+'Omer. So do the lines under the Sidour's card: the sidour for a service,
+the havdala, the moon all through its nights; they used to carry an icon on
+the left, which said less and broke this rule. The moon takes slightly deeper tones there to stand out from the
 white.
 
 One more object is drawn in `components/art`, with these rules, and takes

@@ -23,7 +23,9 @@ export type CardArtSpec =
     }
   | { kind: "shofar" }
   | { kind: "loulav" }
-  | { kind: "omer" };
+  | { kind: "omer" }
+  /** The braided candle and the cup of wine, at the end of Chabbat or a holiday. */
+  | { kind: "havdala" };
 
 type ArtKind = CardArtSpec["kind"];
 
@@ -54,6 +56,7 @@ export const CARD_ART_GEOMETRY: Record<
   shofar: { size: 165, aspect: 100 / 140, rise: 0.14, end: 0.02 },
   loulav: { size: 185, aspect: 100 / 150, rise: 0.11, end: 0.03 },
   omer: { size: 140, aspect: 100 / 120, rise: 0.1, end: 0.04 },
+  havdala: { size: 150, aspect: 100 / 130, rise: 0.1, end: 0.04 },
 };
 
 const MAX_SHARE = 0.42;
@@ -89,6 +92,7 @@ const played = new Set<string>();
 import { computed, onMounted, onUnmounted, ref } from "vue";
 import { prefersLessMotion } from "../composables/useMotion";
 import ArtHanoukia from "./art/ArtHanoukia.vue";
+import ArtHavdala from "./art/ArtHavdala.vue";
 import ArtLoulav from "./art/ArtLoulav.vue";
 import ArtMoon from "./art/ArtMoon.vue";
 import ArtOmer from "./art/ArtOmer.vue";
@@ -177,6 +181,7 @@ onUnmounted(() => observer?.disconnect());
     />
     <ArtShofar v-else-if="art.kind === 'shofar'" class="art" />
     <ArtLoulav v-else-if="art.kind === 'loulav'" class="art" />
+    <ArtHavdala v-else-if="art.kind === 'havdala'" class="art" />
     <ArtOmer v-else class="art" />
   </span>
 </template>

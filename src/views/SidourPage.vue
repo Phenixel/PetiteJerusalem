@@ -35,7 +35,6 @@ import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import AppIcon from "../components/icons/AppIcon.vue";
 import CardArt, { type CardArtSpec } from "../components/CardArt.vue";
-import type { IconName } from "../components/icons/registry";
 import KotelCompass from "../components/KotelCompass.vue";
 import NaanouimCompass from "../components/NaanouimCompass.vue";
 import TefilinMirror from "../components/TefilinMirror.vue";
@@ -102,12 +101,6 @@ const dateLine = computed(() => {
 });
 
 // --- La carte du moment -----------------------------------------------------
-const TEFILA_ICONS: Record<TefilaKey, IconName> = {
-  chaharit: "sunrise",
-  minha: "sun",
-  arvit: "moon",
-};
-
 const DAY_LABELS: Record<NonNullable<SidourHero["day"]>, string> = {
   hanouka: "sidour.days.hanouka",
   pourim: "sidour.days.pourim",
@@ -220,7 +213,9 @@ const extra = computed(() => {
     path: text.path,
     name: e.tefila ? tefilaName(e.tefila) : textName(text),
     meta: extraMeta(e),
-    icon: e.tefila ? TEFILA_ICONS[e.tefila] : ("candle" as IconName),
+    // Its object in the corner, as on the cards of the home page: the sidour
+    // for a service, the candle and the cup for havdala.
+    art: (e.tefila ? { kind: "siddur" } : { kind: "havdala" }) satisfies CardArtSpec,
   };
 });
 
@@ -235,6 +230,7 @@ const moonLine = computed(() => {
     path: text.path,
     name: textName(text),
     meta: t(moon.now ? "sidour.halevana.lineNow" : "sidour.halevana.lineTonight", { date }),
+    art: { kind: "moon", age: moon.moonAge } satisfies CardArtSpec,
   };
 });
 
@@ -419,7 +415,7 @@ onMounted(() => {
           class="sidour-hero press-feedback relative block rounded-card bg-brand px-5 pt-4 pb-5 text-on-brand"
           :class="{ 'sidour-hero-light': hero.lightArt, 'sidour-hero-swipe': swipeable }"
           :style="heroStyle"
-        draggable="false"
+          draggable="false"
           v-bind="swipeable ? swipe.listeners : {}"
           @click="trackOpen(hero, 'hero')"
         >
@@ -475,15 +471,16 @@ onMounted(() => {
       </button>
     </p>
 
-    <!-- Une ligne dessous, au plus, et seulement un soir d'occasion. -->
+    <!-- One line below, at most, and only on an occasion's evening; like every
+         highlighted line, it carries its object in the corner, not an icon. -->
     <RouterLink
       v-if="extra"
       :to="extra.path"
-      class="card card-hover press-feedback group mt-3 flex items-center gap-4 px-4 py-3.5"
+      class="card card-hover press-feedback group relative mt-3 flex min-h-16 items-center px-4 py-3.5 pe-24"
       @click="trackOpen(extra, 'extra')"
     >
-      <AppIcon :name="extra.icon" :size="21" class="shrink-0 text-secondary" />
-      <span class="flex flex-col gap-0.5 min-w-0">
+      <CardArt :art="extra.art" :scale="0.42" surface="plain" />
+      <span class="relative flex flex-col gap-0.5 min-w-0">
         <span class="font-semibold text-text-primary group-hover:text-primary transition-colors">
           {{ extra.name }}
         </span>
@@ -495,11 +492,11 @@ onMounted(() => {
     <RouterLink
       v-if="moonLine"
       :to="moonLine.path"
-      class="card card-hover press-feedback group mt-3 flex items-center gap-4 px-4 py-3.5"
+      class="card card-hover press-feedback group relative mt-3 flex min-h-16 items-center px-4 py-3.5 pe-24"
       @click="trackOpen(moonLine, 'moon')"
     >
-      <AppIcon name="moon" :size="21" class="shrink-0 text-secondary" />
-      <span class="flex flex-col gap-0.5 min-w-0">
+      <CardArt :art="moonLine.art" :scale="0.46" surface="plain" />
+      <span class="relative flex flex-col gap-0.5 min-w-0">
         <span class="font-semibold text-text-primary group-hover:text-primary transition-colors">
           {{ moonLine.name }}
         </span>
