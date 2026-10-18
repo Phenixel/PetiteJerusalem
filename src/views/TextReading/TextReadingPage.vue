@@ -131,6 +131,11 @@ const TexteChiourim = defineAsyncComponent(
 const ReaderTaskCard = defineAsyncComponent(
   () => import("../../components/parcours/ReaderTaskCard.vue"),
 );
+// The end of a service's text, opened from anywhere else: the service is
+// marked done there. Same reason to load it on demand (the times engine).
+const OfficeDoneCard = defineAsyncComponent(
+  () => import("../../components/parcours/OfficeDoneCard.vue"),
+);
 import { useToast } from "../../composables/useToast";
 import { useReadingSize } from "../../composables/useReadingSize";
 import { readingProgressService } from "../../services/readingProgressService";
@@ -376,7 +381,8 @@ const recentChanges = computed(() =>
 /** Tefila (Sli'hot, Brahot, Sidour) : un rendu à part, voir LiturgyText. */
 const isLiturgyText = computed(() => !!textEntry.value && isLiturgy(textEntry.value));
 /** Un office du sidour : le menu de lecture y propose « sans tahanoun ». */
-const isTefila = computed(() => tefilaOf(textEntry.value ?? null) !== null);
+const textTefila = computed(() => tefilaOf(textEntry.value ?? null));
+const isTefila = computed(() => textTefila.value !== null);
 /**
  * Le texte porte-t-il, aujourd'hui, une consigne de loi ? Le réglage qui les
  * masque ne se montre que là où il a prise : proposer de masquer ce que la
@@ -2946,6 +2952,13 @@ watch(textId, (_, previousTextId) => {
         <ReaderTaskCard
           v-if="parcoursObjective && !isSessionMode"
           :objective-id="parcoursObjective"
+          class="mt-12"
+        />
+        <!-- A service, opened from the Sidour or elsewhere: it is marked
+             done where it ends, and the Sidour moves on. -->
+        <OfficeDoneCard
+          v-else-if="textTefila && !isSessionMode"
+          :tefila="textTefila"
           class="mt-12"
         />
 
