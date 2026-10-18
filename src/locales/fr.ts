@@ -323,6 +323,17 @@ const fr = {
         portes: { title: "Bibliothèque, Chiourim, Partage", sub: "les trois portes" },
         reprendre: { title: "Reprendre", sub: "le dernier texte lu" },
         dates: { title: "Mes dates", sub: "un anniversaire, un leilouy nichmat" },
+        livres: { title: "Livres épinglés", sub: "jusqu'à trois livres ou textes, à portée" },
+        ecoute: { title: "Reprendre l'écoute", sub: "les cours audio entamés" },
+      },
+      pinned: {
+        search: "Un livre, un texte, une prière…",
+        add: "Épingler",
+        added: "Épinglé",
+        remove: "Retirer {name}",
+        prayers: "Les trois offices",
+        full: "Trois livres sur l'étagère\u00a0: retirez-en un pour en épingler un autre.",
+        noResult: "Aucun texte ne correspond.",
       },
     },
     omer: {

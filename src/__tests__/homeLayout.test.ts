@@ -15,11 +15,11 @@ beforeEach(() => {
 });
 
 describe("l'accueil à son goût", () => {
-  it("part de l'accueil d'origine, Reprendre à remettre", async () => {
+  it("part de l'accueil d'origine, Reprendre, les livres épinglés et l'écoute à remettre", async () => {
     const { useHomeLayout } = await import("../composables/useHomeLayout");
     const { layout } = useHomeLayout();
     expect(layout.value.order).toEqual(["horaires", "volumes", "portes", "dates"]);
-    expect(layout.value.hidden).toEqual(["reprendre"]);
+    expect(layout.value.hidden).toEqual(["reprendre", "livres", "ecoute"]);
   });
 
   it("déplace, masque, remet, et l'appareil s'en souvient", async () => {
@@ -29,7 +29,7 @@ describe("l'accueil à son goût", () => {
     home.hide("portes");
     home.show("reprendre");
     expect(home.layout.value.order).toEqual(["volumes", "horaires", "dates", "reprendre"]);
-    expect(home.layout.value.hidden).toEqual(["portes"]);
+    expect(home.layout.value.hidden).toEqual(["livres", "ecoute", "portes"]);
     vi.resetModules();
     const again = (await import("../composables/useHomeLayout")).useHomeLayout();
     expect(again.layout.value.order).toEqual(["volumes", "horaires", "dates", "reprendre"]);
@@ -42,7 +42,7 @@ describe("l'accueil à son goût", () => {
       hidden: ["dates"],
     });
     expect(layout.order).toEqual(["portes", "horaires", "volumes"]);
-    expect(layout.hidden).toEqual(["dates", "reprendre"]);
+    expect(layout.hidden).toEqual(["dates", "reprendre", "livres", "ecoute"]);
   });
 
   it("while dragging, a block takes a tile's place past its middle, and only then", async () => {

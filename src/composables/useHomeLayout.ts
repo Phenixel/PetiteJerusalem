@@ -11,7 +11,14 @@ import { devicePreference } from "../services/devicePreference";
  * A device setting, like the text size: a phone's home page is not a
  * computer's.
  */
-export type HomeBlock = "volumes" | "horaires" | "portes" | "reprendre" | "dates";
+export type HomeBlock =
+  | "volumes"
+  | "horaires"
+  | "portes"
+  | "reprendre"
+  | "dates"
+  | "livres"
+  | "ecoute";
 
 export const HOME_BLOCKS: readonly HomeBlock[] = [
   "horaires",
@@ -19,6 +26,8 @@ export const HOME_BLOCKS: readonly HomeBlock[] = [
   "portes",
   "reprendre",
   "dates",
+  "livres",
+  "ecoute",
 ];
 
 export interface HomeLayout {
@@ -26,10 +35,13 @@ export interface HomeLayout {
   hidden: HomeBlock[];
 }
 
-/** L'accueil d'origine, celui de P2-Accueil : Reprendre se propose, à remettre. */
+/**
+ * The original home page, P2-Accueil's: « Reprendre », the pinned books
+ * (useHomePinned) and « Reprendre l'écoute » are offered, to be shown.
+ */
 export const DEFAULT_LAYOUT: HomeLayout = {
   order: ["horaires", "volumes", "portes", "dates"],
-  hidden: ["reprendre"],
+  hidden: ["reprendre", "livres", "ecoute"],
 };
 
 /** A tile's box on screen, in viewport pixels; `wide` when it spans the row. */
