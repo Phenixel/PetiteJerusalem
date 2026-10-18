@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { sidourSections, sidourTexts, unplacedTexts } from "../content/sidourGroups";
+import { searchSidour, sidourSections, sidourTexts, unplacedTexts } from "../content/sidourGroups";
 
 /**
  * La liste de la page du Sidour : chaque texte de liturgie du catalogue
@@ -45,5 +45,24 @@ describe("la liste du Sidour", () => {
       expect(text.latin).not.toBe("");
       expect(text.hebrew).toMatch(/[֐-׿]/);
     }
+  });
+});
+
+describe("the Sidour search", () => {
+  const sections = sidourSections(null);
+  const keys = (term: string) => searchSidour(term, sections).map((text) => text.key);
+
+  it("finds a text by its Latin name, its Hebrew name, or with a typo", () => {
+    expect(keys("birkat hamazon")).toContain("brahot/birkat-hamazon");
+    expect(keys("ברכת המזון")).toContain("brahot/birkat-hamazon");
+    expect(keys("birkat hamazone")).toContain("brahot/birkat-hamazon");
+    expect(keys("havdala")).toContain("sidour/havdala");
+  });
+
+  it("answers nothing to an empty term, and keeps the order of the list", () => {
+    expect(keys("  ")).toEqual([]);
+    const order = sections.flatMap((section) => section.items.map((text) => text.key));
+    const found = keys("a");
+    expect(found).toEqual([...found].sort((a, b) => order.indexOf(a) - order.indexOf(b)));
   });
 });
