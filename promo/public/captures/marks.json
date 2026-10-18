@@ -712,5 +712,29 @@
     "y": 874,
     "w": 358,
     "h": 52
+  },
+  "fr-parcours:streak": {
+    "x": 16,
+    "y": 112,
+    "w": 358,
+    "h": 232
+  },
+  "fr-traduction:notice": {
+    "x": 24,
+    "y": 356,
+    "w": 342,
+    "h": 40
+  },
+  "en-parcours:streak": {
+    "x": 16,
+    "y": 112,
+    "w": 358,
+    "h": 232
+  },
+  "he-parcours:streak": {
+    "x": 16,
+    "y": 112,
+    "w": 358,
+    "h": 232
   }
 }

@@ -260,9 +260,9 @@ When an update moves things around, those who knew the app before must be
 told where things went: 4.0 moved the library and the classes under
 « Étude » and gave the Sidour its own tab, and a reader looking for
 « Bibliothèque » in the bar would not find it. The first launch after the
-update plays a one-minute video of what changed (`WhatsNewVideo.vue`,
-`useWhatsNew.ts`), in the reader's language: where the tabs went first, then
-what is new.
+update plays a video of about eighty seconds on what changed
+(`WhatsNewVideo.vue`, `useWhatsNew.ts`), in the reader's language: where the
+tabs went first, then what is new.
 
 - **Once, and only to those who are updating.** A fresh install sees the
   introduction, never this video: it shows a change to someone who never
@@ -271,9 +271,9 @@ what is new.
   group next to the introduction and the tips, plays it again.
 - **Nothing shows while it loads.** The video is served by the site
   (`public/videos/`), not bundled: a few megabytes per language, for a
-  minute of viewing. At launch, the screen only appears once the video can
-  play; offline, nothing shows and nothing is noted, and it plays at a later
-  launch.
+  minute and a half of viewing. At launch, the screen only appears once the
+  video can play; offline, nothing shows and nothing is noted, and it plays
+  at a later launch.
 - **It is written to be read.** Every change is said in a sentence on the
   screen; the music only goes with it. Where the system refuses sound
   without a touch, it plays muted and offers « Activer le son » ("Turn the
@@ -3417,27 +3417,43 @@ counters, scrolling bands. Three rules keep it readable:
 The Hebrew of the videos is written in Frank Ruhl Libre and Heebo, as in
 the app, from right to left.
 
-### Version 4.0: the logo's colors, and where things moved
+### Version 4.0: one presentation, in the first series' language
 
-The 4.0 videos (`promo/src/v4/`) show the app after its recoloring: they
-take the logo's palette (section 2) and not the former vermilion, which
-stays with series 1 and 2, filmed on 3.10.
+The 4.0 video (`promo/src/v4/`) is a presentation rather than an ad: one
+video of about eighty seconds, which the app plays after the update in the
+reader's language and which goes to the networks in French, only its ending
+changing (the stores instead of where to watch it again). A first cut in
+series 2's manner was set aside: what the owner liked is series 1, slowed
+down.
 
+- **Series 1's language.** The phone held calmly, turning a little from one
+  moment to the next; two-line captions whose words rise one by one, the
+  second line in italics and in the orange ink; real gestures; what must be
+  read larger comes out of the screen (`PopOut`: the card of the moment, the
+  streak and its light, the Vilna page, a passage's commentaries, the
+  team's answer) rather than the phone zooming under the caption; color
+  wipes for the two big cuts; the end card where the logo builds.
+- **What it does not use.** Scrolling bands, phones with echo trails, the
+  stone mosaic, captions on plates, a shaking camera beyond the opening's
+  strikes, a music that stutters: series 2's vocabulary, which did not
+  convince.
+- **Slower.** Five to eight seconds per change (series 1 gave twelve to a
+  single feature, one beat to each of the others), and two beats per shot
+  in the closing montage. The phone never climbs under a caption.
+- **What moved is shown before what is new.** The video opens on the 3.10
+  tab bar above today's, filmed on both apps, with an arrow from each former
+  tab to the one that holds it now and a « Nouveau » tag on the new one; then
+  the 3.10 home page beside today's. The bars come from each language's
+  screenshots, so the arrows follow the mirrored bar in Hebrew, where
+  « before » also stands on the right.
 - **Brown on the light orange, never white.** The opening, the montage's
-  orange shots and the « 4.0 » stamp write `#3B2412` on `#FEA547`; a
-  subtitle's accent fills with the orange and its text turns brown. White
-  only goes on the blue and the night.
-- **What moved is shown before what is new.** The in-app video opens on the
-  3.10 tab bar above today's, filmed on both apps, with an arrow from each
-  former tab to the one that holds it now and a « Nouveau » tag on the new
-  one. The bars come from each language's screenshots, so the arrows follow
-  the mirrored bar in Hebrew.
-- **Two cuts, one grid.** The networks get eight chapters of three seconds;
-  the app gets a minute, chapters of four to six seconds, time enough to
-  read where things went. Both are written as data (`promo/src/v4/plan.ts`):
-  the gestures and the music's sounds fall on the same marked beats, and a
-  section always holds whole bars, or the music would run into the next one.
-- **The app speaks the reader's language.** The in-app video exists in
-  French, English and Hebrew, each filmed in its own interface; the
-  Hebrew one has no translation chapter (the translations go into French
-  and English), its commentaries chapter takes the time.
+  orange shots and the « 4.0 » pill write `#3B2412` on `#FEA547`; a
+  caption's accent takes the orange ink (`#D46D01`). White only goes on the
+  blue and the night. The former vermilion stays with series 1 and 2, filmed
+  on 3.10.
+- **One grid.** The cut is data (`promo/src/v4/plan.ts`): the gestures and
+  the music's sounds fall on the same marked beats, and a section always
+  holds whole bars, or the music would run into the next one.
+- **The reader's language.** French, English and Hebrew, each filmed in its
+  own interface; the Hebrew one has no translation chapter (the translations
+  go into French and English).

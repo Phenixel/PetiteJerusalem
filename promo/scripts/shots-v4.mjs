@@ -111,6 +111,7 @@ function shotsFor(locale) {
         await t.open("/parcours", { css: "main" });
         await hideOfflineNotice(t);
         await t.film(12, 110);
+        await t.mark("streak", t.page.locator("main section").first());
         await t.snapFull();
       },
     },
@@ -181,6 +182,9 @@ function shotsFor(locale) {
               await toggle.click();
               await t.wait(4000);
               await t.snap();
+              // The AI notice shows above a French translation only (the English one is Steinsaltz's).
+              const notice = t.page.locator(`p:has-text("${(await t.L("textReading.translation.aiNotice")).slice(0, 20)}")`);
+              if (await notice.count()) await t.mark("notice", notice);
               await translationOff(t);
             },
           },

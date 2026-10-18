@@ -11,37 +11,39 @@ swiping a card, setting a text aside) was really played, frame by frame.
 | ------ | --------------------------------------------------------- | --------- | ------------------------------- |
 | 1      | six videos of 23 seconds, one part of the app each        | 3.10      | `out/<id>.mp4`                  |
 | 2      | six stories of 31 seconds                                 | 3.10      | `out/s2-<id>.mp4`               |
-| 4      | version 4.0: the networks' video and the in-app one       | 4.0       | `out/<id>.mp4`, `../public/videos/` |
+| 4      | version 4.0: one presentation, in the app and the networks | 4.0       | `out/<id>.mp4`, `../public/videos/` |
 
 ## Version 4.0
 
-The biggest update of the app: the Sidour and Étude tabs, the home page
-deck, Mon parcours, the Talmud in the form of its page and in French, the
-commentaries of a passage, the study table, the full-screen classes, « Nous
-écrire » with its answers. Two cuts of the same footage (`src/v4/plan.ts`):
+The biggest update of the app, presented in one video of about eighty
+seconds, in series 1's language (a phone held calmly, two-line captions,
+real gestures, what must be read coming out of the screen), slowed down:
+a presentation rather than an ad. A first cut in series 2's manner
+(scrolling bands, echoes, stone mosaic, captions on plates) was set aside.
 
-| Video            | Length | Language                  | What it does                                                                                               |
-| ---------------- | ------ | ------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `v4`             | 37 s   | French                    | for the networks: « La plus grosse mise à jour de l'app », eight changes of three seconds, six more, the stores |
-| `nouveautes-fr`  | 60 s   | French                    | in the app, once after the update: where the tabs went (the 3.10 bar above today's), then what is new       |
-| `nouveautes-en`  | 60 s   | English                   | the same, filmed in the English interface                                                                    |
-| `nouveautes-he`  | 60 s   | Hebrew, right to left     | the same, filmed in the Hebrew interface; the commentaries take the place of the translation                 |
+| Video           | Language              | Ending                                      | Where it goes                         |
+| --------------- | --------------------- | ------------------------------------------- | ------------------------------------- |
+| `nouveautes-fr` | French                | « Bonne découverte ! », where to watch again | the app, once after the update        |
+| `nouveautes-en` | English               | the same                                    | the app                               |
+| `nouveautes-he` | Hebrew, right to left | the same; no translation chapter            | the app                               |
+| `v4`            | French                | « Gratuite, sans publicité », the stores     | the networks: the same video otherwise |
 
-| Chapter (in-app) | What it shows                                                               |
-| ---------------- | --------------------------------------------------------------------------- |
-| `bars`           | the 3.10 tab bar, then today's; Bibliothèque and Chiourim lead to Étude, Sidour is new |
-| `etude`          | Étude: Bibliothèque, Chiourim, Partage, the pill sliding from tab to tab   |
-| `sidour`         | the Sidour tab touched, its card of the moment                             |
-| `deck`           | the home deck, a card swiped « C'est fait », then the blocks to move       |
-| `parcours`       | the lamp touched, Mon parcours (the galaxy, the wall), a new goal          |
-| `daf`            | « Page »: the Talmud in the Vilna layout, the camera diving into it        |
-| `texte`          | the translation under the Hebrew, then a passage's commentaries            |
-| `table`          | « Mettre de côté »: the page flies into its book, a second one, the table   |
-| `audio`          | a class plays, the bar grows into the full-screen player                   |
-| `contact`        | the badge on the profile, « Nous écrire », the team's answer               |
+| Chapter        | What it shows                                                                                   |
+| -------------- | ----------------------------------------------------------------------------------------------- |
+| `bars`         | the 3.10 tab bar, then today's; Bibliothèque and Chiourim lead to Étude, Sidour is new          |
+| `etude`        | Étude: Bibliothèque, Chiourim, Partage, the pill sliding from tab to tab                        |
+| `sidour`       | the Sidour tab touched; its card of the moment comes out of the screen                          |
+| `accueil`      | the 3.10 home page beside today's; a card swiped « C'est fait »; the blocks to move              |
+| `parcours`     | the lamp touched; the streak and its galaxy out of the screen; the wall; a new goal             |
+| `daf`          | « Page »: the Vilna page out of the screen, Rachi and Tossafot around the gemara                 |
+| `translation`  | the translation under the Hebrew, with the AI notice in French (not in the Hebrew video)        |
+| `commentaries` | a passage touched, its sheet, then its commentaries out of the screen                           |
+| `table`        | « Mettre de côté »: the page flies into its book in the bar, a second one, the table            |
+| `audio`        | a class plays, its bar out of the screen, then the full-screen player                           |
+| `contact`      | the badge on the profile, « Nous écrire », the team's answer out of the screen                  |
 
-The in-app copies (720×1280, about 5 MB for a minute, their index at the
-front so they start before fully arriving, and a poster) are written by
+The in-app copies (720×1280, about 6 MB for eighty seconds, their index at
+the front so they start before fully arriving, and a poster) are written by
 `npm run render` into the app's `public/videos/`, served by the site and left
 out of the native bundle. The app reads them under the same names
 (`appFile` in `src/videos.ts`, `src/composables/useWhatsNew.ts`); see
@@ -126,8 +128,8 @@ and adjust a beat.
 cd promo
 npm ci
 npm run captures                 # about 15 minutes for 4.0, emulators included
-npm run render -- --series 4     # the four 4.0 videos, about 10 minutes
-npm run render -- --only v4      # the networks' one alone
+npm run render -- --series 4     # the four 4.0 files, about 15 minutes
+npm run render -- --only v4      # the networks' ending alone
 ```
 
 Requirements: those of `npm run store:screenshots` (firebase CLI, JDK 21),
@@ -165,15 +167,15 @@ live in `src/scenes2`, its effects in `src/components/Fx.tsx` and
 the music stutters before each drop and stops like a tape on « Mais
 aussi… ».
 
-Version 4.0 follows `src/v4/Update.tsx`. Its cut is data
-(`src/v4/plan.ts`): chapters, their length and their marked beats, from
-which `src/videos.ts` derives the grid and the music's sounds; the chapters
-live in `src/v4/chapters.tsx`, its building blocks (the « 4.0 » opening,
-the before and after bars, the montage, the two end cards) in
-`src/v4/parts.tsx`, its words in the three languages in `src/v4/strings.ts`.
-A section always holds whole bars (four beats): the music lays its chords
-and its piano bar by bar, and a bar running into the next section collides
-with it.
+Version 4.0 follows `src/v4/Update.tsx`, series 1's frame (`src/Promo.tsx`)
+with its feature section strung into chapters. Its cut is data
+(`src/v4/plan.ts`): chapters, their length and their marked beats, from which
+`src/videos.ts` derives the grid and the music's sounds; the chapters live in
+`src/v4/chapters.tsx`, its building blocks (the opening, the before and after
+bars, the montage, the end card) in `src/v4/parts.tsx`, its words in the
+three languages in `src/v4/strings.ts`. A section always holds whole bars
+(four beats): the music lays its chords bar by bar, and a bar running into
+the next section collides with it.
 
 To add a video: an entry in `VIDEOS` (`src/videos.ts`), a scene, its hook in
 `src/Root.tsx` (series 1 and 2) or its chapters in `src/v4/plan.ts`, and the

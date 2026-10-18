@@ -6,7 +6,7 @@
  * (scripts/music.mjs).
  *
  * The "what's new" videos of 4.0 (`appFile` in src/videos.ts) also get the
- * copy the app plays, lighter (720×1280, about 5 MB for a minute) and with
+ * copy the app plays, lighter (720×1280, about 6 MB for eighty seconds) and with
  * its index at the front so it starts before it has fully arrived, plus a
  * poster image: public/videos/ of the app, served by the site (see
  * docs/design.md, "What's new plays once, after the update").

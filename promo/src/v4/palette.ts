@@ -28,6 +28,3 @@ export const V4 = {
 
 /** The look of the 4.0 captures: the default theme, light. */
 export const LOOK_V4: Look = { theme: "sunset", dark: false };
-
-/** The subtitle's colors on the 4.0 background: the orange fill, brown on it. */
-export const SUBTITLE_V4 = { accent: V4.orange, onAccent: V4.onOrange, accentInk: V4.ink } as const;

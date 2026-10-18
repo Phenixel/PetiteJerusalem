@@ -42,16 +42,28 @@ export type Caption = {
   plate?: boolean;
 };
 
-export function Captions({ items, look }: { items: Caption[]; look: Look }) {
+export function Captions({
+  items,
+  look,
+  colors,
+  dir,
+}: {
+  items: Caption[];
+  look: Look;
+  /** Version 4.0: its own ink, accent and plate (src/v4/palette.ts). */
+  colors?: { ink: string; accent: string; plate: string };
+  /** « rtl » for Hebrew captions. */
+  dir?: "rtl";
+}) {
   const frame = useCurrentFrame();
-  const pal = palette(look);
+  const pal = colors ? { ...palette(look), ink: colors.ink, primary: colors.accent, bg: colors.plate } : palette(look);
   return (
     <>
       {items.map((c, i) => {
         if (frame < c.at - 2 || (c.out !== undefined && frame > c.out + 14)) return null;
         const plateIn = c.plate ? tween(frame, c.at - 2, c.at + 6, 0, 1) * (c.out === undefined ? 1 : tween(frame, c.out + 4, c.out + 12, 1, 0)) : 0;
         return (
-          <div key={i} style={{ position: "absolute", top: 210, left: 0, right: 0, padding: "30px 60px 40px", zIndex: 10 }}>
+          <div key={i} dir={dir} style={{ position: "absolute", top: 210, left: 0, right: 0, padding: "30px 60px 40px", zIndex: 10 }}>
             {c.plate ? (
               <div
                 style={{
@@ -64,7 +76,7 @@ export function Captions({ items, look }: { items: Caption[]; look: Look }) {
                 }}
               />
             ) : null}
-            <KineticTitle lines={c.lines} start={c.at} out={c.out} color={pal.ink} accent={pal.primary} size={c.size ?? 100} />
+            <KineticTitle lines={c.lines} start={c.at} out={c.out} color={pal.ink} accent={pal.primary} size={c.size ?? 100} dir={dir} />
           </div>
         );
       })}

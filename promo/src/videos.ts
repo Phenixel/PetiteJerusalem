@@ -10,7 +10,7 @@
  */
 import type { Look } from "./theme.ts";
 import { buildTimeline, type Cue, type CueSound, type Durations, type MusicStyle } from "./timeline.ts";
-import { appPlan, planDrops, planDurations, planMarks, PROMO_PLAN } from "./v4/plan.ts";
+import { planDurations, planMarks, presentationPlan } from "./v4/plan.ts";
 import type { Locale } from "./v4/strings.ts";
 
 export type MontageId =
@@ -54,9 +54,9 @@ export type VideoSpec = {
   marks: Record<string, { beat: number; sound?: CueSound }>;
   montage: MontageId[];
   /** 1 : la première série ; 2 : les histoires (gabarit Story, 31 s). */
-  /** 4: version 4.0 (src/v4/Update.tsx): the social video and the in-app one. */
+  /** 4: version 4.0 (src/v4/Update.tsx): the in-app video, and its networks ending. */
   series?: 1 | 2 | 4;
-  /** Version 4.0: which cut (src/v4/plan.ts) and which language. */
+  /** Version 4.0: which ending (the app's, or the networks') and which language. */
   cut?: "promo" | "app";
   locale?: Locale;
   /**
@@ -390,11 +390,19 @@ VIDEOS.push(
 // === Version 4.0 =====================================================================
 
 /**
- * The 4.0 update: one video for the networks (`v4`, French), and the
- * "what's new" video the app plays after the update, in each of its three
- * languages (`nouveautes-fr`, `-en`, `-he`). Their cut lives in
- * src/v4/plan.ts; the beats and sounds below are derived from it.
+ * The 4.0 update: one video, a presentation in the first series' manner
+ * (src/v4/Update.tsx), in each of the app's three languages
+ * (`nouveautes-fr`, `-en`, `-he`), which the app plays once after the
+ * update; the French one also goes to the networks (`v4`), ending on the
+ * stores instead. Their cut lives in src/v4/plan.ts; the beats and sounds
+ * below are derived from it.
  */
+const v4Music = (root: number): MusicStyle => ({
+  bpm: 120,
+  root,
+  motif: "nigoun",
+  progression: [[0, 4, 7], [1, 5, 8], [0, 4, 7], [-2, 1, 5]],
+});
 VIDEOS.push({
   id: "v4",
   title: "Petite Jérusalem 4.0",
@@ -403,20 +411,13 @@ VIDEOS.push({
   locale: "fr",
   montageStep: 2,
   look: { theme: "sunset", dark: false },
-  music: {
-    bpm: 120,
-    root: 62,
-    motif: "freygish",
-    genre: "mizrahi",
-    drops: planDrops(PROMO_PLAN),
-    progression: [[0, 4, 7], [1, 5, 8], [-2, 1, 5], [0, 4, 7]],
-  },
-  durations: planDurations(PROMO_PLAN),
-  marks: planMarks(PROMO_PLAN),
+  music: v4Music(60),
+  durations: planDurations(presentationPlan("fr")),
+  marks: planMarks(presentationPlan("fr")),
   montage: [],
 });
 for (const locale of ["fr", "en", "he"] as const) {
-  const plan = appPlan(locale);
+  const plan = presentationPlan(locale);
   VIDEOS.push({
     id: `nouveautes-${locale}`,
     title: { fr: "Les nouveautés de la 4.0", en: "What's new in 4.0", he: "מה חדש בגרסה 4.0" }[locale],
@@ -426,15 +427,7 @@ for (const locale of ["fr", "en", "he"] as const) {
     appFile: `nouveautes-4.0-${locale}`,
     montageStep: 2,
     look: { theme: "sunset", dark: false },
-    // Calmer than the networks': it plays on opening the app.
-    music: {
-      bpm: 120,
-      root: 64,
-      motif: "lumiere",
-      genre: "halftime",
-      drops: planDrops(plan),
-      progression: [[0, 3, 7], [-4, 0, 3], [3, 7, 10], [-2, 2, 5]],
-    },
+    music: v4Music(60),
     durations: planDurations(plan),
     marks: planMarks(plan),
     montage: [],

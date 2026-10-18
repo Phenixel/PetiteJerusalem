@@ -44,6 +44,7 @@ export function KineticTitle({
   style,
   font = DISPLAY,
   weight = 700,
+  dir,
 }: {
   lines: string[];
   start: number;
@@ -57,6 +58,8 @@ export function KineticTitle({
   style?: CSSProperties;
   font?: string;
   weight?: number;
+  /** « rtl »: Hebrew, which is never letter-spaced (docs/design.md). */
+  dir?: "rtl";
 }) {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -68,7 +71,7 @@ export function KineticTitle({
         fontWeight: weight,
         fontSize: size,
         lineHeight: 1.08,
-        letterSpacing: font === DISPLAY ? "-0.02em" : "-0.01em",
+        letterSpacing: dir ? undefined : font === DISPLAY ? "-0.02em" : "-0.01em",
         color,
         textAlign: align,
         ...style,

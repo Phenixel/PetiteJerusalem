@@ -20,7 +20,7 @@ import { PartageFeature } from "./scenes/Partage.tsx";
 import { SidourFeature } from "./scenes/Sidour.tsx";
 import { FPS, HEIGHT, WIDTH, totalFrames } from "./timeline.ts";
 import { Update } from "./v4/Update.tsx";
-import { appPlan, PROMO_PLAN } from "./v4/plan.ts";
+import { presentationPlan } from "./v4/plan.ts";
 import { VIDEOS, videoTimeline, type VideoSpec } from "./videos.ts";
 
 const NNBSP = "\u202f";
@@ -127,11 +127,10 @@ const SCENES: Record<string, { hook: HookLine[]; Feature: ComponentType<FeatureP
   },
 };
 
-/** Version 4.0: the cut decides the scenes (src/v4/plan.ts). */
+/** Version 4.0: one cut (src/v4/plan.ts), in the video's language, with its ending. */
 const v4 = (spec: VideoSpec) => {
   const locale = spec.locale ?? "fr";
-  const plan = spec.cut === "app" ? appPlan(locale) : PROMO_PLAN;
-  return <Update spec={spec} plan={plan} locale={locale} kind={spec.cut ?? "promo"} />;
+  return <Update spec={spec} plan={presentationPlan(locale)} locale={locale} kind={spec.cut ?? "app"} />;
 };
 
 export const Root = () => (

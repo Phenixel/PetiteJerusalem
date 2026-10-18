@@ -55,7 +55,7 @@ const PRUNED_DIRS = [
   "texts/traductions",
   // The "what's new" videos (useWhatsNew): a few megabytes per language, read
   // from the site once after an update; embedded, they would weigh on every
-  // install for a minute of viewing.
+  // install for a minute and a half of viewing.
   "videos",
 ].map((d) => join(root, d));
 // Ce que seul le site sert : plan du site, fichiers pour les robots, image

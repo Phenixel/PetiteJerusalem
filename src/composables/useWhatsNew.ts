@@ -6,7 +6,7 @@ import { isNativeApp } from "./useNativeApp";
 /**
  * The "what's new" video: after an update that moves things around (4.0
  * moved the library and the classes under « Étude », gave the Sidour its
- * tab), the app plays, once, a one-minute video of what changed, in the
+ * tab), the app plays, once, a short video of what changed, in the
  * reader's language. Made with the promotional videos (promo/README.md,
  * `nouveautes-*`), it is served by the site (`public/videos/`, left out of
  * the native bundle) so as not to weigh on the app.

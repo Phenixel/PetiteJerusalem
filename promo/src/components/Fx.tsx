@@ -46,17 +46,11 @@ export function Subtitle({
   size = 84,
   dir,
   accent,
-  onAccent = "#ffffff",
-  accentInk,
 }: {
   /** « rtl » pour une phrase en hébreu. */
   dir?: "rtl";
   /** La couleur de l'aplat d'accent, quand ce n'est pas celle du thème (une fête). */
   accent?: string;
-  /** The text color on the accent fill: white, or brown on the light orange of 4.0. */
-  onAccent?: string;
-  /** The accent words' color before their fill arrives (the fill color by default). */
-  accentInk?: string;
   lines: string[];
   start: number;
   /** Image où la phrase s'en va ; absente, elle reste. */
@@ -118,7 +112,7 @@ export function Subtitle({
                     fontSize: size,
                     lineHeight: 1.12,
                     letterSpacing: "-0.02em",
-                    color: word.accent ? onAccent : pal.ink,
+                    color: word.accent ? "#ffffff" : pal.ink,
                     padding: word.accent ? `0 ${size * 0.16}px` : undefined,
                     whiteSpace: "nowrap",
                     transform: `translateY(${(1 - p) * 30}px) scale(${0.7 + 0.3 * p})`,
@@ -137,7 +131,7 @@ export function Subtitle({
                       }}
                     />
                   ) : null}
-                  <span style={{ position: "relative", color: word.accent && fill < 50 ? accentInk ?? pal.primary : undefined }}>{word.text}</span>
+                  <span style={{ position: "relative", color: word.accent && fill < 50 ? pal.primary : undefined }}>{word.text}</span>
                 </span>
               );
             })}
