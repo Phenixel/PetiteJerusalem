@@ -3,7 +3,7 @@ import type { TextStudiesJson, TextStudyJsonEntry } from "../models/models";
 import { localDayFrom } from "./dateService";
 import { getParashaForShabbat, getTehilimOfDay, getWeeklyParasha } from "./dailyCycles";
 import { dateTimeFormat } from "./intlCache";
-import { dayKeyAt, nextDayStart } from "./parcours/days";
+import { dayKeyAt, nextDayStart } from "./parcours/dayStart";
 import {
   cholHamoedOn,
   computeZmanim,
@@ -19,6 +19,7 @@ import {
   tachanunStatus,
   type ZmanimPlace,
   placeDayAfter,
+  DEFAULT_PLACE,
 } from "./zmanimService";
 import type { HDate } from "@hebcal/core";
 import type { UserPreferences } from "./userPreferencesService";
@@ -310,11 +311,11 @@ export interface DailyReadingWidgetPayload {
   title: string;
   /**
    * The journey's day (YYYY-MM-DD) the `done` belong to: the civil day,
-   * which only turns in the morning (parcours/days.ts).
+   * which only turns at dawn (parcours/dayStart.ts).
    */
   date: string;
   /**
-   * Epoch ms of the start of the next day (4 a.m. local, not midnight): past
+   * Epoch ms of the start of the next day (dawn at the place, not midnight): past
    * this instant, the `done` no longer count and the native side starts
    * from zero. A numeric comparison, no calendar logic on the native side
    * (the device calendar may be Hebrew, which would distort any native date
@@ -351,7 +352,8 @@ const textById = new Map<string, TextStudyJsonEntry>(allTexts.map((e) => [String
  * personne n'est connecté : le widget invite alors à ouvrir l'app.
  *
  * `il` : le calendrier d'Israël pour la paracha du chnei mikra, celui du lieu
- * des horaires, comme la page de lecture du jour.
+ * des horaires, comme la page de lecture du jour. `place`: the place of the
+ * times, whose dawn turns the day (parcours/dayStart.ts).
  */
 export function buildDailyReadingWidgetPayload(
   prefs: Pick<
@@ -362,8 +364,9 @@ export function buildDailyReadingWidgetPayload(
   now: Date = new Date(),
   accent: string = DEFAULT_ACCENT,
   il = false,
+  place: ZmanimPlace = DEFAULT_PLACE,
 ): DailyReadingWidgetPayload {
-  const date = dayKeyAt(now);
+  const date = dayKeyAt(now, place);
   // The cycles follow the same day: at 1 a.m., the psalms of the evening before.
   const day = localDayFrom(date) ?? new Date(now);
   day.setHours(12);
@@ -371,7 +374,7 @@ export function buildDailyReadingWidgetPayload(
     v: 1 as const,
     title: t("dailyReading.widget.title"),
     date,
-    expiresAt: nextDayStart(now).getTime(),
+    expiresAt: nextDayStart(now, place).getTime(),
     emptyLabel: t("dailyReading.widget.empty"),
     allDoneLabel: t("dailyReading.allReadTitle"),
     // Les {done}/{total} doivent survivre à la traduction : sentinelles

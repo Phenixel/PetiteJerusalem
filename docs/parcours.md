@@ -44,6 +44,7 @@ shows, at the bottom of the text, the day's task to check off
 | `schedule.ts`                              | a day's tasks, a day's state on the wall, the streak                                         |
 | `calendar.ts`                              | rest days (Chabbat, holidays, in Israel or in the diaspora), the week's aliyot               |
 | `moments.ts`                               | the present moment, the order of the home deck                                               |
+| `dayStart.ts`                              | when the journey's day begins: at dawn, at the place of the times                            |
 | `actions.ts`, `create.ts`                  | what you change, what you create                                                             |
 | `merge.ts`                                 | merging two copies                                                                           |
 | `deviceStore.ts`, `cloud.ts`, `account.ts` | the device, the account, what passes from one to the other                                   |
@@ -56,17 +57,19 @@ shows, at the bottom of the text, the day's task to check off
 shared state, started on first use (anyone who never opens the journey
 loads nothing).
 
-**The journey's day turns at 4 a.m., not at midnight** (`days.ts`,
+**The journey's day turns at dawn, not at midnight** (`dayStart.ts`,
 `dayKeyAt`). Until then, the night belongs to the evening before: Arvit or
 the bedtime Chema checked at 1 a.m. count for that evening, as the Hebrew
-day only gives way to the next one in the morning, and the home deck keeps
-the evening's cards (the services are read on the evening's times,
-`useOfficeTimes`). The wall still shows civil days; only the turn moves.
-Not misheyakir: around 7 a.m. in a Paris winter, it would push a study done
-at 6 a.m. back to the day before. The widgets' daily reading follows the
-same day and expires at the same hour (`widgetPayloads.ts`). Held by
-`parcoursCalendar.test.ts`, `parcoursDeck.test.ts` and
-`widgetPayloads.test.ts`.
+night only ends at alot hachahar, and the home deck keeps the evening's
+cards (the services are read on the evening's times, `useOfficeTimes`).
+Dawn is the one of the place of the times, by the opinion chosen in the
+settings: before 3 a.m. at the end of June in Paris, near 7 a.m. in
+December. Where that opinion has none (Rav Posen's 16.1°, north of Lille
+some summer nights), misheyakir, then sunrise; only without a sunrise does
+the day turn at midnight. The wall still shows civil days; only the turn
+moves. The widgets' daily reading follows the same day and expires at the
+next dawn (`widgetPayloads.ts`). Held by `parcoursCalendar.test.ts`,
+`parcoursDeck.test.ts` and `widgetPayloads.test.ts`.
 
 **A day** (`DayLog`) keeps what is done (`done`), the units read per
 program (`units`), what is set aside (`skipped`) and the time of the last
@@ -205,7 +208,7 @@ nothing about programs or habits.
 | `parcoursAliyot.test.ts`        | chnei mikra: one aliya per day, a forgotten one comes back the next day, Chabbat finishes; aliyot checked one by one make up the card, a card checks its own |
 | `chneiMikraChecks.test.ts`      | the checks of version 3.10.11, taken over once from the device                                                                                               |
 | `parcoursSchedule.test.ts`      | a day's tasks, the wall, the streak (Chabbat and « Pas aujourd'hui » do not break it)                                                                        |
-| `parcoursCalendar.test.ts`      | rest days, moments, the order of the deck, the day turning at 4 a.m.                                                                                         |
+| `parcoursCalendar.test.ts`      | rest days, moments, the order of the deck, the day turning at dawn                                                                                           |
 | `parcoursMerge.test.ts`         | merging two copies                                                                                                                                           |
 | `parcoursSync.test.ts`          | without an account, with an account, a shared device                                                                                                         |
 | `parcoursCloud.test.ts`         | the account write sends no `undefined` field (Firestore would reject the whole write)                                                                        |

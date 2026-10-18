@@ -8,7 +8,7 @@ import {
   ZMANIM_WIDGET_DAYS,
 } from "../services/widgetPayloads";
 import { localDayKey } from "../services/dateService";
-import { DEFAULT_PLACE } from "../services/zmanimService";
+import { computeZmanim, DEFAULT_PLACE } from "../services/zmanimService";
 import textStudiesJson from "../datas/textStudies.json";
 import type { TextStudiesJson } from "../models/models";
 
@@ -164,12 +164,17 @@ describe("buildDailyReadingWidgetPayload", () => {
     expect(payload.date).toBe(today);
   });
 
-  it("expires when the journey's next day begins, at 4 a.m. (parcours/days.ts)", () => {
+  /** Dawn on 7 August at the place: the journey's next day begins (parcours/dayStart.ts). */
+  const nextDawn = computeZmanim(DEFAULT_PLACE, new Date(2026, 7, 7, 12)).find(
+    (z) => z.key === "alotHaShachar",
+  )!.date;
+
+  it("expires when the journey's next day begins, at dawn (parcours/dayStart.ts)", () => {
     const payload = buildDailyReadingWidgetPayload(null, t, now);
-    expect(new Date(payload.expiresAt)).toEqual(new Date(2026, 7, 7, 4, 0));
+    expect(new Date(payload.expiresAt)).toEqual(nextDawn);
   });
 
-  it("keeps the evening's day after midnight: date, expiry and the day's psalms", () => {
+  it("keeps the evening's day until dawn: date, expiry and the day's psalms", () => {
     // 1 a.m. on 7 August: the night still belongs to the 6th.
     const night = new Date(2026, 7, 7, 1, 0);
     const prefs = {
@@ -179,7 +184,7 @@ describe("buildDailyReadingWidgetPayload", () => {
     };
     const payload = buildDailyReadingWidgetPayload(prefs, t, night);
     expect(payload.date).toBe(today);
-    expect(new Date(payload.expiresAt)).toEqual(new Date(2026, 7, 7, 4, 0));
+    expect(new Date(payload.expiresAt)).toEqual(nextDawn);
     expect(payload.items[0].done).toBe(true);
     expect(payload.items[0].label).toBe(
       buildDailyReadingWidgetPayload(prefs, t, now).items[0].label,

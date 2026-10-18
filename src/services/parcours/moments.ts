@@ -1,20 +1,22 @@
-import { DAY_START_HOUR } from "./days";
 import type { MomentId } from "./model";
 
 /**
- * Les moments de la journée, et l'ordre dans lequel le paquet de l'accueil
- * présente les tâches.
+ * The moments of the day, and the order in which the home deck presents the
+ * tasks.
  *
- * Les bornes suivent le soleil quand on connaît le lieu : le matin jusqu'à
- * 'hatsot, l'après-midi jusqu'à la chkia, le soir ensuite, et le coucher à
- * partir de 22 h. Sans horaires, midi et 18 h en tiennent lieu.
+ * The bounds follow the sun at the place of the times: morning from dawn to
+ * 'hatsot, afternoon until the chkia, evening after it, and bedtime from
+ * 10 p.m. until dawn (the night belongs to the evening before, dayStart.ts).
+ * Without times, midnight, noon and 6 p.m. stand in for them.
  */
 
 /** Les moments qui ont une heure, dans l'ordre de la journée. */
 export const TIMED_MOMENTS: readonly MomentId[] = ["morning", "afternoon", "evening", "bedtime"];
 
-/** Les deux bornes du jour qui comptent ici. */
+/** Les bornes du jour qui comptent ici. */
 export interface DayTimes {
+  /** Dawn: until then, it is still the previous evening's bedtime (dayStart.ts). */
+  dayStart: Date;
   chatzot: Date;
   sunset: Date;
 }
@@ -23,9 +25,9 @@ const BEDTIME_HOUR = 22;
 
 /** Le moment d'un instant. */
 export function momentAt(now: Date, times: DayTimes | null): MomentId {
-  const hour = now.getHours();
+  if (now.getHours() >= BEDTIME_HOUR) return "bedtime";
   // Before the day begins, it is still the previous evening's bedtime.
-  if (hour >= BEDTIME_HOUR || hour < DAY_START_HOUR) return "bedtime";
+  if (now < (times?.dayStart ?? at(now, 0))) return "bedtime";
   const chatzot = times?.chatzot ?? at(now, 12);
   const sunset = times?.sunset ?? at(now, 18);
   if (now < chatzot) return "morning";

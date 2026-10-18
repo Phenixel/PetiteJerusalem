@@ -1,6 +1,7 @@
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
-import { DAY_START_HOUR } from "../services/parcours/days";
+import { localDayFrom } from "../services/dateService";
+import { dayKeyAt } from "../services/parcours/dayStart";
 import type { HabitAnchor } from "../services/parcours/model";
 import type { TefilaStep } from "../services/parcours/schedule";
 import { currentTefilaWindow, tefilaWindowsOfDay } from "../services/sidourService";
@@ -34,13 +35,13 @@ export function useOfficeTimes() {
 
   const office = computed(() => currentTefilaWindow(place.value, now.value));
   /**
-   * The services of the journey's day: until it begins (days.ts), those of
-   * the evening before. At 1 a.m., the bedtime Chema and Arvit are still
+   * The services of the journey's day: until dawn (dayStart.ts), those of the
+   * evening before. At 1 a.m., the bedtime Chema and Arvit are still
    * tonight's, not waiting for tomorrow evening.
    */
   const windows = computed(() => {
-    const day = new Date(now.value);
-    if (day.getHours() < DAY_START_HOUR) day.setDate(day.getDate() - 1);
+    const day = localDayFrom(dayKeyAt(now.value, place.value)) ?? new Date(now.value);
+    day.setHours(12);
     return tefilaWindowsOfDay(place.value, day);
   });
 

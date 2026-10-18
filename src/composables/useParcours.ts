@@ -26,7 +26,7 @@ import {
   legacyProjection,
   type LegacyDailyReading,
 } from "../services/parcours/legacyDailyReading";
-import { dayKeyAt } from "../services/parcours/days";
+import { dayKeyAt } from "../services/parcours/dayStart";
 import { changedEntries, hasChanges, mergeParcours } from "../services/parcours/merge";
 import type {
   CatchUpOption,
@@ -104,7 +104,8 @@ function refreshSurfaces(): void {
     });
 }
 
-const today = (): DayKey => dayKeyAt();
+/** The journey's day: it turns at dawn at the place of the times (dayStart.ts). */
+const today = (): DayKey => dayKeyAt(new Date(), useZmanimLocation().place.value);
 
 /** Applique des données nouvelles, les garde, et les envoie au compte. */
 function commit(next: ParcoursData): void {
@@ -309,8 +310,8 @@ export function useParcours() {
   const { place } = useZmanimLocation();
 
   const data = computed(() => state.value.data);
-  // The journey's day turns in the morning, not at midnight (days.ts).
-  const todayKey = computed(() => dayKeyAt(now.value));
+  // The journey's day turns at dawn, not at midnight (dayStart.ts).
+  const todayKey = computed(() => dayKeyAt(now.value, place.value));
   const isRest = computed(() => restCalendar(isIsraelPlace(place.value)));
   const aliyotCount = computed(() => parashaAliyotCount(isIsraelPlace(place.value)));
   weekAliyotCount = (day) => aliyotCount.value(day);

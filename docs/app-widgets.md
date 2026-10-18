@@ -34,9 +34,10 @@ Three large ones:
   lines only roll over at chkia, and the Shema limit stays displayed once
   past, since it is today's time for it that people come to read.
 - **Daily reading**: one line, title, « 2 sur 3 lus aujourd'hui » ("2 of 3
-  read today"), percentage and progress bar, reset at 4 a.m., when the
-  journey's day turns (`parcours/days.ts`). It shows the day's texts and the readings from the Mon parcours calendar, as the device
-  holds them, with or without an account (`widgetService`, through
+  read today"), percentage and progress bar, reset at dawn at the place of
+  the times, when the journey's day turns (`parcours/dayStart.ts`). It
+  shows the day's texts and the readings from the Mon parcours calendar, as
+  the device holds them, with or without an account (`widgetService`, through
   `legacyProjection`). Tapping the widget opens
   `/bibliotheque/lecture-du-jour`, which leads to the home page and its
   daily stack: the address is baked into widgets already installed.
@@ -128,7 +129,7 @@ payload has changed.
   incompatible changes). Everything displayed comes from the payload,
   already localized AND already formatted, times included
   (`time: "17:42"`, Hebrew date, ta'hanoun label, `expiresAt` for the
-  expiry at 4 a.m.): the native side translates nothing, formats nothing, and
+  expiry at dawn): the native side translates nothing, formats nothing, and
   only compares epochs. The markers that change at chkia (Hebrew date,
   paracha, ta'hanoun) are delivered day by day in `days`, each bounded by
   the chkiot that open and close it: the widget picks the one covering the

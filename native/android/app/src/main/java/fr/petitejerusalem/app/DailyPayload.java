@@ -8,8 +8,8 @@ import org.json.JSONObject;
  * Le payload « daily » (contrat : src/services/widgetPayloads.ts), lu par le
  * widget « Lecture du jour » et par le raccourci « Avancement de la lecture ».
  *
- * It carries its expiry (`expiresAt`, the next 4 a.m. local, when the
- * journey's day turns): past that instant, the checks no longer count and the
+ * It carries its expiry (`expiresAt`, the next dawn, computed by the app, when
+ * the journey's day turns): past that instant, the checks no longer count and the
  * progress starts from zero without waiting for the app to be reopened. A
  * plain comparison of epochs, no calendar logic here (the device calendar may
  * be Hebrew).
@@ -49,7 +49,7 @@ final class DailyPayload {
     final String parasha;
     final boolean parashaDone;
     final boolean configured;
-    /** Epoch ms of the next 4 a.m. local: beyond it, the checks no longer count. */
+    /** Epoch ms of the next dawn: beyond it, the checks no longer count. */
     final long expiresAt;
     final String accent;
     /** Les coches de la lecture du jour, une par texte de la liste. */
@@ -94,7 +94,7 @@ final class DailyPayload {
             return new State(parasha, parashaDone ? 1f : 0f, parashaDone, true);
         }
 
-        // The checks only hold until the payload's expiry (4 a.m. local).
+        // The checks only hold until the payload's expiry (the next dawn).
         boolean fresh = now < expiresAt;
         int read = 0;
         for (boolean item : done) {

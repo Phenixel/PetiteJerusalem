@@ -7,8 +7,8 @@ import org.json.JSONObject;
  * Lecture du payload de la lecture du jour, comme le widget d'écran d'accueil :
  * compter les coches encore valables et remplir le gabarit de progression.
  *
- * The checks carry their expiry (`expiresAt`, 4 a.m. local after the day
- * they belong to, when the journey's day turns): past that instant, they no
+ * The checks carry their expiry (`expiresAt`, the dawn after the day they
+ * belong to, when the journey's day turns): past that instant, they no
  * longer count and the watch starts from zero without anything being sent
  * again. A numeric comparison, no calendar logic here (the device calendar
  * may be Hebrew, which would distort any native date formatting).

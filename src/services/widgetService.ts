@@ -7,6 +7,7 @@ import { useZmanimOpinion } from "../composables/useZmanimOpinion";
 import { useCandleLighting } from "../composables/useCandleLighting";
 import { i18n, loadLocaleMessages, type SupportedLocale } from "../i18n";
 import { localDayKey } from "./dateService";
+import type { ZmanimPlace } from "./zmanimService";
 import { authService, type User } from "./authService";
 import { userPreferencesService, type UserPreferences } from "./userPreferencesService";
 import { PayloadSink } from "./payloadSink";
@@ -161,21 +162,22 @@ class WidgetService {
    * l'appareil, sauf pour un compte qu'il n'a pas encore repris (une mise à
    * jour qu'on n'a pas encore ouverte jusqu'au parcours, un appareil neuf),
    * qui garde celle de son profil. `il` : le calendrier d'Israël, qui compte
-   * les montées de la semaine (une paracha double en a quatorze).
+   * les montées de la semaine (une paracha double en a quatorze). `place`:
+   * the place of the times, whose dawn turns the journey's day.
    */
-  private async dailyPrefs(il: boolean): Promise<DailyWidgetPrefs> {
+  private async dailyPrefs(il: boolean, place: ZmanimPlace): Promise<DailyWidgetPrefs> {
     const [{ readDeviceState }, { legacyProjection }, { parashaAliyotCount }, { dayKeyAt }] =
       await Promise.all([
         import("./parcours/deviceStore"),
         import("./parcours/legacyDailyReading"),
         import("./parcours/calendar"),
-        import("./parcours/days"),
+        import("./parcours/dayStart"),
       ]);
     const device = readDeviceState();
     const user = this.user;
     const adopted = device.owner?.uid === user?.id && !device.owner?.leftAt;
     if (user && !adopted) return userPreferencesService.getPreferencesOrThrow(user.id);
-    const today = dayKeyAt();
+    const today = dayKeyAt(new Date(), place);
     return legacyProjection(device.data, today, parashaAliyotCount(il)(today));
   }
 
@@ -222,9 +224,9 @@ class WidgetService {
       // (le test d'isIsraelPlace, sans tirer zmanimService dans ce module).
       const il = place.value.tzid === "Asia/Jerusalem";
       try {
-        const prefs = await this.dailyPrefs(il);
+        const prefs = await this.dailyPrefs(il, place.value);
         this.dailyJson = JSON.stringify(
-          buildDailyReadingWidgetPayload(prefs, t, new Date(), accent, il),
+          buildDailyReadingWidgetPayload(prefs, t, new Date(), accent, il, place.value),
         );
       } catch {
         // Hors ligne : le dernier payload tient.

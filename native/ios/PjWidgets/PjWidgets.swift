@@ -23,8 +23,8 @@ import WidgetKit
  *   annonce le prochain zman.
  * - Lecture: one line, the same drawing as the dashboard card
  *   (src/components/DailyReadingCard.vue): title, progress, percentage, bar.
- *   One entry now, redrawn at the payload's expiry (expiresAt, 4 a.m. local,
- *   computed by the app).
+ *   One entry now, redrawn at the payload's expiry (expiresAt, the next
+ *   dawn, computed by the app).
  *
  * Fichier ajouté à la cible d'extension « PjWidgets » du projet Xcode par
  * scripts/setup-ios.mjs, voir docs/app-widgets.md.
@@ -690,7 +690,7 @@ struct DailyPayload: Decodable {
     let v: Int
     let title: String
     let date: String
-    /// Epoch ms of the next 4 a.m. local: beyond it, the `done` no longer count.
+    /// Epoch ms of the next dawn: beyond it, the `done` no longer count.
     let expiresAt: Double
     let configured: Bool
     let emptyLabel: String
@@ -723,7 +723,7 @@ struct DailyProvider: TimelineProvider {
         let now = Date()
         let payload = loadPayload("daily", as: DailyPayload.self)
         let entry = DailyEntry(date: now, payload: payload)
-        // Redraw at the payload's expiry (4 a.m. local, computed by the app):
+        // Redraw at the payload's expiry (the next dawn, computed by the app):
         // la vue re-filtre les coches, il suffit de rejouer le rendu. Échéance
         // passée ou payload absent : rien à attendre, le prochain push de
         // l'app rechargera la timeline.
@@ -778,7 +778,7 @@ extension DailyState {
         if !payload.configured {
             return DailyState(line: payload.emptyLabel, ratio: 0, allDone: false, measurable: false)
         }
-        // The checks only hold until the payload's expiry (4 a.m. local): a
+        // The checks only hold until the payload's expiry (the next dawn): a
         // plain comparison of epochs, no calendar involved.
         let fresh = instant < payload.expiryDate
         // Chnei mikra seul : la paracha EST la lecture, son avancement fait la

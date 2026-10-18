@@ -9,31 +9,6 @@ import type { DayKey } from "./model";
  * millisecondes y sautait ou doublait un jour.
  */
 
-/**
- * The hour the journey's day begins. Until then, the night still belongs to
- * the evening before: Arvit or the bedtime Chema said at 1 a.m. are the
- * previous day's, as they would be by the Hebrew day, which only gives way
- * to the next one in the morning. The wall keeps civil days; only the turn
- * moves from midnight to here.
- *
- * Not misheyakir: in winter it comes around 7 a.m. in Paris, and a study
- * done at 6 a.m. would have gone to the day before.
- */
-export const DAY_START_HOUR = 4;
-
-/** The journey's day at an instant: the previous civil day before {@link DAY_START_HOUR}. */
-export function dayKeyAt(now: Date = new Date()): DayKey {
-  const today = localDayKey(now);
-  return now.getHours() < DAY_START_HOUR ? addDays(today, -1) : today;
-}
-
-/** The instant the journey's next day begins: the checks of the day expire then. */
-export function nextDayStart(now: Date = new Date()): Date {
-  const start = localDayFrom(addDays(dayKeyAt(now), 1)) ?? new Date(now);
-  start.setHours(DAY_START_HOUR, 0, 0, 0);
-  return start;
-}
-
 /** Le jour décalé de `n` jours (négatif pour reculer). */
 export function addDays(day: DayKey, n: number): DayKey {
   const date = localDayFrom(day);

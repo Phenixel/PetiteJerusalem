@@ -10,7 +10,7 @@ import android.widget.RemoteViews;
  * progression, pourcentage, barre.
  *
  * The payload (src/services/widgetPayloads.ts) carries its expiry
- * (expiresAt, the next 4 a.m. local): past that instant, the checks no longer
+ * (expiresAt, the next dawn): past that instant, the checks no longer
  * count and the widget starts from zero without waiting for the app to be
  * reopened (see DailyPayload, where this lives, shared with the shortcut).
  *
@@ -57,7 +57,7 @@ public class LectureWidgetProvider extends PjWidgetProvider {
         long now = System.currentTimeMillis();
         views.setTextViewText(R.id.pj_lecture_title, payload.title);
         paint(context, views, payload.state(now), parseAccent(payload.accent));
-        // At the payload's expiry (4 a.m. local), the progress starts from zero.
+        // At the payload's expiry (the next dawn), the progress starts from zero.
         return new Rendered(views, now < payload.expiresAt ? payload.expiresAt + 1000 : 0);
     }
 

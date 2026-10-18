@@ -1,3 +1,4 @@
+import { GeoLocation, Zmanim } from "@hebcal/core";
 import type { Page } from "playwright/test";
 import { test, expect, createAccount, readDoc, seedDoc, signIn } from "../support/firebase";
 
@@ -10,27 +11,33 @@ type Prefs = {
   dailyReadingProgress?: { completedIds?: number[] };
 };
 
+/** Paris, the app's default place (zmanimService DEFAULT_PLACE). */
+const PARIS = new GeoLocation("Paris", 48.85341, 2.3488, 0, "Europe/Paris");
+
+/** The civil day in Paris, YYYY-MM-DD (en-CA writes dates that way). */
+const parisDay = (at: Date): string =>
+  new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" }).format(at);
+
 /**
- * The day as the app writes it (parcours/days.ts dayKeyAt), shifted by
+ * The day as the app writes it (parcours/dayStart.ts dayKeyAt), shifted by
  * `offset` days. The app runs in the browser's time zone (Europe/Paris,
  * playwright.config.ts), not the runner's: computed in UTC, the key was a
  * day behind from midnight in Paris to midnight UTC, and the tests failed
- * every evening. And the journey's day turns at 4 a.m., not at midnight:
- * before then, it is still the day before.
+ * every evening. And the journey's day turns at dawn in Paris, by the
+ * app's default opinion (Rav Posen, 16.1°), not at midnight: before then,
+ * it is still the day before.
  */
 function todayKey(offset = 0): string {
   const at = new Date(Date.now() + offset * 24 * 3600 * 1000);
-  const hour = Number(
-    new Intl.DateTimeFormat("en-GB", {
-      timeZone: "Europe/Paris",
-      hour: "numeric",
-      hourCycle: "h23",
-    }).format(at),
+  const [year, month, day] = parisDay(at).split("-").map(Number);
+  const zmanim = new Zmanim(PARIS, new Date(year, month - 1, day, 12), false);
+  const dawn = [zmanim.alotHaShachar(), zmanim.misheyakir(), zmanim.sunrise()].find(
+    (time) => !Number.isNaN(time.getTime()),
   );
-  // Before 4 a.m., twelve hours back lands in the afternoon of the day before.
-  const day = hour < 4 ? new Date(at.getTime() - 12 * 3600 * 1000) : at;
-  // en-CA writes dates as YYYY-MM-DD.
-  return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" }).format(day);
+  // The app rounds dawn down to the minute.
+  const start = dawn ? Math.floor(dawn.getTime() / 60_000) * 60_000 : 0;
+  // Before dawn, twelve hours back lands in the afternoon of the day before.
+  return parisDay(at.getTime() < start ? new Date(at.getTime() - 12 * 3600 * 1000) : at);
 }
 
 test.describe("Mon parcours", () => {
