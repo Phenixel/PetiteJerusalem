@@ -17,6 +17,8 @@ import { useMiniPlayerVisible } from "./composables/useAudioPlayer";
 import { useOnline } from "./composables/useOnline";
 import { isNativeApp } from "./composables/useNativeApp";
 import { isOnboardingOpen } from "./composables/useOnboarding";
+import { WHATS_NEW_TIP, isTipSeenNow } from "./composables/useFeatureTips";
+import { holdTabBarChange } from "./composables/useTabBarChange";
 import { isFeedbackOpen } from "./composables/useFeedback";
 import { readingPassage } from "./composables/useReadingSelection";
 import { recordUsageDay, restoreFeedbackNudge } from "./services/feedbackNudge";
@@ -56,6 +58,13 @@ const HolidayBackdrop = defineAsyncComponent(
   () => import("./components/holiday/HolidayBackdrop.vue"),
 );
 const AppUpdateBanner = defineAsyncComponent(() => import("./components/AppUpdateBanner.vue"));
+
+// What changed since the installed version, once, at the first opening after
+// the update (WhatsNewTour). The bottom bar is held in its old form from the
+// first frame, so that the change happens in front of people rather than
+// before they look; the tour lets it go as soon as it knows it is not due.
+const WhatsNewTour = defineAsyncComponent(() => import("./components/WhatsNewTour.vue"));
+if (isNativeApp && !isOnboardingOpen.value && !isTipSeenNow(WHATS_NEW_TIP)) holdTabBarChange();
 const OfflineNotice = defineAsyncComponent(() => import("./components/OfflineNotice.vue"));
 
 // La bulle de commandes d'un passage de texte (partager, phonétique, signaler
@@ -222,6 +231,7 @@ authService.onAuthChanged((user) => {
     <GlobalAudioPlayer />
     <ReadingTableBar />
     <BottomTabBar v-if="isNativeApp" />
+    <WhatsNewTour v-if="isNativeApp" />
     <!-- App native : le flou en dégradé qui rend l'heure et la batterie
          lisibles quand la page défile sous elles (l'app reste bord à bord). -->
     <StatusBarScrim v-if="isNativeApp" />

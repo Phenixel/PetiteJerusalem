@@ -230,6 +230,47 @@ nuisance. `?tips` in the address forces them wherever the command exists (or
 `?tips=reading-gestures` for a single one), to show and try them on the
 preview channels.
 
+### What's new plays out once, after an update
+
+A tip says how a screen is handled; it cannot say what moved. When the
+library tab became Étude and the Sidour took its place, people who had the
+app before found their bar changed without a word. The tour of what's new
+(`WhatsNewTour.vue`) shows it to them, once, at the first opening after the
+update:
+
+- **the bar changes in front of them.** It opens as they knew it (Accueil,
+  Bibliothèque, Chiourim, Profil): App.vue holds it in that form from the
+  first frame (`useTabBarChange`). Then the bar itself plays the change,
+  under the spotlight: the library book crouches, jumps over the times
+  circle, lands on the Chiourim tab and both shrink into each other; a ring
+  opens and the Étude reader pops out; Sidour rises in the empty slot. The
+  scene is drawn over the real slots and ends exactly where the real tabs
+  are, which take over without a jump. « Revoir » ("Replay"), in the
+  bubble, plays it again (a command with its drawing and its name);
+- **then the other novelties, as drawn screenshots** (`src/components/mock`):
+  Mon parcours (the stack of the day, a card swiped, the light growing), the
+  Talmud page (Rashi and Tosafot framing the Gemara, then the French
+  translation rising under it) and the class player (the bar rising, then
+  full screen). Four steps in all: the most visible changes, not the
+  release notes;
+- **a tip like the others**: once per device, one per opening, « Plus
+  tard », « Passer ». It is mounted by the app, not by a page: its first
+  step is the bar, which is on every page, and a tab touched through the
+  spotlight moves on to the next step instead of ending the tour with the
+  page that held it. It waits for the bar to be on screen;
+- **never to a fresh install.** Closing the first introduction records it
+  as seen (`completeOnboarding`): whoever never knew the old bar has
+  nothing to see change, the introduction already presents the new app. A
+  tip recorded as seen while it waited no longer shows (`claimTip`);
+- **one id per release** (`WHATS_NEW_TIP`, `whats-new-2026-10`): the next
+  tour of what's new gets a new id, and the old one, seen, never comes back.
+
+It is one more exception to "Motion answers a gesture": the change is what
+is new, and showing it is the point. Like the player bar, it is cut only at
+the system's request (reduced motion: the bar stays as it is, the bubble
+says what moved), not in lite mode: it only moves transforms and opacity.
+Held by `src/__tests__/whatsNew.test.ts`.
+
 ### The introduction sets things up first; gestures come last
 
 The first-opening introduction (`OnboardingFlow.vue`) sets a few settings,

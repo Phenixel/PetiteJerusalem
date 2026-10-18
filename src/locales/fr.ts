@@ -176,6 +176,25 @@ const fr = {
     stepOf: "Astuce {n} sur {total}",
     replay: "Revoir les astuces",
     replayed: "Les astuces se montreront à nouveau, page par page.",
+    whatsNew: {
+      replay: "Revoir",
+      tabs: {
+        title: "Le Sidour et l'Étude",
+        text: "La bibliothèque, les chiourim et le partage des lectures se retrouvent dans l'Étude. Le Sidour prend la place de la bibliothèque : l'office du moment s'y ouvre d'abord.",
+      },
+      parcours: {
+        title: "Mon parcours",
+        text: "Fixez-vous un objectif : finir un livre, suivre un cycle, tenir une habitude. Chaque jour, vos lectures vous attendent sur l'accueil, carte par carte.",
+      },
+      daf: {
+        title: "Le Talmud dans sa page",
+        text: "La guemara entourée de Rachi et des Tossafot, comme dans le livre. Et tout le Talmud se lit maintenant en français, traduit avec l'aide de l'IA.",
+      },
+      audio: {
+        title: "Les chiourim, comme une musique",
+        text: "Le lecteur reste en bas pendant que vous naviguez, s'ouvre en plein écran d'un appui et enchaîne les cours. Il se commande même écran verrouillé.",
+      },
+    },
     parcours: {
       deck: {
         title: "Votre journée, carte par carte",

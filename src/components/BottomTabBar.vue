@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from "vue";
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import AppIcon from "./icons/AppIcon.vue";
@@ -13,6 +13,7 @@ import HolidayFabShape from "./holiday/HolidayFabShape.vue";
 import { useLocalePath } from "../composables/useLocalePath";
 import { isSectionPath } from "../content/seoLocales";
 import { SIDOUR_PATH, STUDY_PATH, isSidourPath, isStudyPath } from "../config/navSections";
+import { stopTabBarChange, tabBarChange, tabBarChangeRun } from "../composables/useTabBarChange";
 
 const { t } = useI18n();
 const route = useRoute();
@@ -113,6 +114,51 @@ const tabs = computed<Tab[]>(() => {
 
 const zmanimPath = computed(() => localePath("horaires"));
 
+/**
+ * The bar replays its change (the "what's new" tour, useTabBarChange): the
+ * tabs of the previous version are drawn over the real slots, the library
+ * book jumps over the times circle to the Chiourim slot and merges
+ * into Étude, then Sidour rises where the book was. The real tabs are hidden
+ * meanwhile, and take over at the end, in the same place.
+ *
+ * The jump is measured between the two slots (the times circle sits between
+ * them), so that it lands right whatever the width and the direction of
+ * reading (Hebrew lays the bar out from the right).
+ */
+const tabRow = ref<HTMLElement | null>(null);
+const hop = ref(0);
+
+function measureHop(): void {
+  const slots = tabRow.value?.querySelectorAll<HTMLElement>(".change-slot");
+  if (!slots || slots.length < 3) return;
+  const from = slots[1].getBoundingClientRect();
+  const to = slots[2].getBoundingClientRect();
+  hop.value = to.left + to.width / 2 - (from.left + from.width / 2);
+}
+
+// Measured when the scene appears and again when it starts: the bar may
+// have been laid out anew in between (a rotation, the safe areas read late).
+watch(
+  [tabBarChangeRun, tabBarChange],
+  async () => {
+    await nextTick();
+    measureHop();
+  },
+  { immediate: true },
+);
+
+/** The last movement of the scene (Sidour settling) ends it. */
+function onChangeEnd(event: AnimationEvent): void {
+  if (tabBarChange.value === "playing" && event.animationName.includes("sidour-arrive")) {
+    stopTabBarChange();
+  }
+}
+
+const isHomeActive = computed(() => route.path === localePath("home"));
+const isProfileActive = computed(
+  () => route.path === "/profile" || route.path.startsWith("/profile/"),
+);
+
 // Le temps d'une fête, le rond prend la forme d'un objet de la fête (la
 // pomme de Roch Hachana, la soucca), l'horloge restant au milieu : c'est le
 // seul bouton que tout le monde touche tous les jours, et c'est là que la
@@ -173,9 +219,11 @@ function toggleZmanim(event: MouseEvent) {
 <template>
   <nav
     class="fixed bottom-0 inset-x-0 z-50 bg-surface border-t border-black/5 dark:border-white/10 pb-[var(--safe-bottom)]"
+    :class="{ 'tabs-staged': tabBarChange !== 'off' }"
     :aria-label="t('navbar.mainMenu')"
+    data-tour="tab-bar"
   >
-    <div class="relative flex items-stretch h-14">
+    <div ref="tabRow" class="tab-row relative flex items-stretch h-14">
       <template v-for="(tab, index) in tabs" :key="tab.to">
         <!-- Place réservée au bouton rond, à mi-parcours des onglets -->
         <span v-if="index === tabs.length / 2" class="w-16 shrink-0" aria-hidden="true"></span>
@@ -205,6 +253,70 @@ function toggleZmanim(event: MouseEvent) {
           <span class="text-[11px] font-medium leading-none">{{ t(tab.labelKey) }}</span>
         </RouterLink>
       </template>
+
+      <!-- The change replayed (what's new): the old tabs over the real
+           slots, under the times circle, which the book slips behind. -->
+      <div
+        v-if="tabBarChange !== 'off'"
+        :key="tabBarChangeRun"
+        class="tab-change"
+        :class="{ 'tab-change-held': tabBarChange === 'held' }"
+        :style="{ '--hop': `${hop}px` }"
+        aria-hidden="true"
+        @animationend="onChangeEnd"
+      >
+        <span class="tab-item change-slot" :class="{ 'tab-item-active': isHomeActive }">
+          <span class="tab-icon"><AppIcon name="home" :size="21" /></span>
+          <span class="text-[11px] font-medium leading-none">{{ t("common.home") }}</span>
+        </span>
+        <span class="change-slot change-stack">
+          <span class="tab-item change-library">
+            <span class="tab-icon change-library-icon"
+              ><AppIcon name="book-open" :size="21"
+            /></span>
+            <span class="text-[11px] font-medium leading-none change-library-label">
+              {{ t("study.title") }}
+            </span>
+          </span>
+          <span
+            class="tab-item change-sidour"
+            :class="{ 'tab-item-active': isSidourPath(route.path) }"
+          >
+            <span class="tab-icon"><AppIcon name="book-open" :size="21" /></span>
+            <span class="text-[11px] font-medium leading-none">{{ t("common.sidour") }}</span>
+          </span>
+        </span>
+        <span class="w-16 shrink-0"></span>
+        <span class="change-slot change-stack">
+          <span
+            class="tab-item change-chiourim"
+            :class="{ 'tab-item-active': route.path.startsWith('/chiourim') }"
+          >
+            <span class="tab-icon"><AppIcon name="headphones" :size="21" /></span>
+            <span class="text-[11px] font-medium leading-none">{{ t("common.chiourim") }}</span>
+          </span>
+          <span
+            class="tab-item change-study"
+            :class="{ 'tab-item-active': isStudyPath(route.path) }"
+          >
+            <span class="change-burst"></span>
+            <span class="tab-icon change-study-icon"
+              ><AppIcon name="book-reader" :size="21"
+            /></span>
+            <span class="text-[11px] font-medium leading-none change-study-label">
+              {{ t("common.study") }}
+            </span>
+          </span>
+        </span>
+        <span class="tab-item change-slot" :class="{ 'tab-item-active': isProfileActive }">
+          <span class="tab-icon"
+            ><AppIcon :name="isLoggedIn ? 'user' : 'settings'" :size="21"
+          /></span>
+          <span class="text-[11px] font-medium leading-none">
+            {{ t(isLoggedIn ? "common.profile" : "profile.guestTitle") }}
+          </span>
+        </span>
+      </div>
 
       <button
         type="button"
@@ -386,6 +498,173 @@ function toggleZmanim(event: MouseEvent) {
   }
   85% {
     transform: translateY(0) scale(1.05, 0.92);
+  }
+}
+
+/* --- The change replayed (what's new, useTabBarChange) ---
+   One timeline of 3.6 s, every piece on its own delay:
+   0.6 s   the library book crouches, then jumps (its label fades);
+   0.85 s  it flies over the times circle to the Chiourim slot;
+   1.7 s   it lands: the headphones and the book shrink into each other,
+           a ring opens, the Étude reader pops out;
+   2.5 s   Sidour rises in the empty slot, and the scene ends. */
+.tabs-staged .tab-row > .tab-item {
+  opacity: 0;
+}
+.tab-change {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: stretch;
+  pointer-events: none;
+}
+/* Held: every movement waits at its first frame, the old bar. */
+.tab-change-held,
+.tab-change-held * {
+  animation-play-state: paused !important;
+}
+.change-slot {
+  flex: 1;
+  min-width: 0;
+}
+.change-stack {
+  position: relative;
+  display: flex;
+}
+.change-stack > .tab-item {
+  position: absolute;
+  inset: 0;
+}
+.change-library {
+  animation: library-leap 1.25s cubic-bezier(0.45, 0, 0.3, 1) 0.6s both;
+}
+.change-library-icon {
+  animation: library-tumble 1.25s ease-in-out 0.6s both;
+}
+.change-library-label {
+  animation: label-out 0.3s ease-in 0.7s both;
+}
+.change-chiourim {
+  animation: chiourim-merge 0.4s ease-in 1.7s both;
+}
+.change-study-icon {
+  animation: study-pop 0.55s cubic-bezier(0.3, 1.5, 0.55, 1) 1.95s both;
+}
+.change-study-label {
+  animation: label-in 0.35s ease-out 2s both;
+}
+.change-burst {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 2.4rem;
+  height: 2.4rem;
+  margin: calc(-1.2rem - 7px) 0 0 -1.2rem;
+  border-radius: 9999px;
+  border: 2px solid var(--color-primary);
+  opacity: 0;
+  animation: burst 0.7s ease-out 1.85s both;
+}
+.change-sidour {
+  animation: sidour-arrive 0.65s cubic-bezier(0.3, 1.4, 0.55, 1) 2.5s both;
+}
+
+/* The book crouches, jumps over the times circle in an arc, and lands on
+   the other slot, shrinking into it. */
+@keyframes library-leap {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  12% {
+    transform: translate(0, 2px) scale(1.1, 0.85);
+  }
+  28% {
+    transform: translate(calc(var(--hop) * 0.2), -30px) scale(1.05);
+  }
+  50% {
+    transform: translate(calc(var(--hop) * 0.5), -46px) scale(1.1);
+  }
+  72% {
+    transform: translate(calc(var(--hop) * 0.8), -26px) scale(0.95);
+  }
+  88% {
+    transform: translate(var(--hop), 0) scale(0.75);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--hop), 0) scale(0.2);
+    opacity: 0;
+  }
+}
+@keyframes library-tumble {
+  0%,
+  14% {
+    transform: rotate(0deg);
+  }
+  45% {
+    transform: rotate(-14deg);
+  }
+  80%,
+  100% {
+    transform: rotate(8deg);
+  }
+}
+@keyframes label-out {
+  to {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+}
+@keyframes label-in {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes chiourim-merge {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  40% {
+    transform: scale(1.12);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.2);
+    opacity: 0;
+  }
+}
+@keyframes study-pop {
+  from {
+    transform: scale(0);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+@keyframes burst {
+  0% {
+    opacity: 0.8;
+    transform: scale(0.3);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.5);
+  }
+}
+@keyframes sidour-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: none;
   }
 }
 

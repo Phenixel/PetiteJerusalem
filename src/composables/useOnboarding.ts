@@ -1,5 +1,6 @@
 import { computed, ref } from "vue";
 import { isNativeApp } from "./useNativeApp";
+import { WHATS_NEW_TIP, useFeatureTips } from "./useFeatureTips";
 
 /**
  * Introduction de première ouverture (onboarding).
@@ -72,6 +73,11 @@ export const isOnboardingOpen = computed(
 export function useOnboarding() {
   /** Fin de l'introduction, quelle qu'en soit la porte de sortie. */
   function completeOnboarding(): void {
+    // A first introduction is a fresh install: it never knew the old app,
+    // the "what's new" tour would show it changes it never saw.
+    if (!replaying.value && seenVersion.value === null) {
+      useFeatureTips().markTipSeen(WHATS_NEW_TIP);
+    }
     replaying.value = false;
     forcedByUrl.value = false;
     seenVersion.value = ONBOARDING_VERSION;

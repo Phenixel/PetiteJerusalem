@@ -55,7 +55,17 @@ export type FeatureTipId =
   | "parcours-home"
   | "parcours-page"
   | "parcours-create"
-  | "parcours-program";
+  | "parcours-program"
+  | "whats-new-2026-10";
+
+/**
+ * What changed since the version people had installed (WhatsNewTour.vue),
+ * played once at the first opening after the update. Each release that
+ * deserves one gets a new id: the previous one, already seen, never comes
+ * back. A fresh install does not get it (see `completeOnboarding`): it
+ * never knew the old app, the introduction presents the new one.
+ */
+export const WHATS_NEW_TIP = "whats-new-2026-10" satisfies FeatureTipId;
 
 const STORAGE_KEY = "pj_tips_seen";
 
@@ -71,6 +81,7 @@ export const TIP_IDS: readonly FeatureTipId[] = [
   "parcours-page",
   "parcours-create",
   "parcours-program",
+  "whats-new-2026-10",
 ];
 
 /**
@@ -95,6 +106,15 @@ function parseSeen(raw: string | null): FeatureTipId[] | null {
 const seenStore = devicePreference<FeatureTipId[]>(STORAGE_KEY, parseSeen, JSON.stringify);
 
 const seen = ref<FeatureTipId[]>(seenStore.read() ?? []);
+
+/**
+ * Seen on this device, as far as the web storage knows, without waiting for
+ * the native preferences: for what must be decided before the first frame
+ * (the bottom bar held in its old form, see useTabBarChange).
+ */
+export function isTipSeenNow(id: FeatureTipId): boolean {
+  return seen.value.includes(id);
+}
 
 /** Paramètre d'adresse qui force les astuces, où qu'on soit. */
 const URL_PARAM = "tips";
@@ -185,11 +205,14 @@ export function useFeatureTips() {
   }
 
   /**
-   * L'astuce paraît : elle prend l'ouverture, et l'écran. Faux si une autre
-   * est déjà à l'écran, ou si l'ouverture vient d'être prise entre-temps.
+   * The tip appears: it takes the opening, and the screen. False if another
+   * one is already on screen, if the opening was taken in the meantime, or
+   * if the tip was recorded as seen while it waited (the "what's new" tour,
+   * marked seen when a fresh install closes the introduction).
    */
   function claimTip(id: FeatureTipId): boolean {
     if (activeTip !== null && activeTip !== id) return false;
+    if (!isForced(id) && seen.value.includes(id)) return false;
     if (launchSpent && !isForced(id)) return false;
     activeTip = id;
     launchSpent = true;

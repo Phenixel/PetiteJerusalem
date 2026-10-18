@@ -1082,3 +1082,14 @@ the screen continues:
   `parcours_objective_removed` (`kind` `text` or `cycle`), and texts missing
   from the device are offered through the Mon parcours banner
   (`offline_download_started`, `scope` `parcours`).
+
+## What's new after an update
+
+### Tips: `feature_tip_shown`, `feature_tip_finished` (existing)
+
+`tip` gets a **new value**, `whats-new-2026-10`: the tour of what changed
+since version 3.10.11, played once at the first opening after the update
+(`WhatsNewTour.vue`). `steps` is 4; `step`, in `feature_tip_finished`, tells
+how far people went: 0 the bottom bar (Sidour and Étude), 1 Mon parcours,
+2 the Talmud page, 3 the class player. A fresh install never sends it.
+No new property.

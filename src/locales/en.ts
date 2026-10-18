@@ -174,6 +174,25 @@ const en: LocaleMessages = {
     stepOf: "Tip {n} of {total}",
     replay: "Replay the tips",
     replayed: "The tips will show again, page by page.",
+    whatsNew: {
+      replay: "Replay",
+      tabs: {
+        title: "Siddur and Study",
+        text: "The library, the shiurim and shared readings now live together in Study. The Siddur takes the library's place: the prayer of the moment comes first.",
+      },
+      parcours: {
+        title: "My journey",
+        text: "Set yourself a goal: finish a book, follow a cycle, keep a habit. Each day, your readings wait for you on the home page, card by card.",
+      },
+      daf: {
+        title: "The Talmud in its page",
+        text: "The Gemara surrounded by Rashi and Tosafot, as in the printed book. And the whole Talmud can now be read in French, translated with the help of AI.",
+      },
+      audio: {
+        title: "Shiurim, like music",
+        text: "The player stays at the bottom while you browse, opens full screen with a tap and plays one class after another. It even works from the lock screen.",
+      },
+    },
     parcours: {
       deck: {
         title: "Your day, card by card",
