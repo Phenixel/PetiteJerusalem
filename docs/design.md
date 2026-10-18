@@ -1263,6 +1263,42 @@ blessing is read from the beginning; you do not come back to a paragraph as
 to a verse of Tehilim; the menu's table of contents already leads to each
 passage.
 
+### The progress bar takes you through the text
+
+The thin progress line at the bottom of a reading (`ReadingProgressBar.vue`)
+is also a slider. A finger (or the mouse) laid on it takes the page to the
+same share of the text, and the page follows while it slides: whoever looks
+for the Amida in a whole Shaharit, or the end of a long daf, gets there in
+one gesture instead of three screens of scrolling. The strip that catches the
+finger is taller than the line (1.25rem), which no finger would hit; the line
+thickens and a round thumb appears under the finger while it is held. In
+Hebrew the bar fills from the right, and slides the same way.
+
+While it slides, the titles of the text (the landmarks of the reading menu)
+line up above the bar on an arc, on a panel like the menu's: the one being
+read large, in the middle, in Playfair Display; its neighbors smaller, lower
+and fainter on each side, tilted along the curve. Nothing is animated: the
+finger drives the arc. The next title grows as it comes nearer, until it is
+the one in the middle, while the one it replaces shrinks away; crossing from
+one title to the next is felt as a threshold (`tick`, see "Touch answers"). A
+text without titles shows the share reached instead (« 42 % »). The round
+buttons of the menu step aside during the gesture, the panel taking their
+place.
+
+On the site, the mini player lies over the bottom of the screen: the bar is
+then a line again, and the player keeps its touches.
+
+On a text with landmarks, the round menu button names the one being read as
+soon as one scrolls: it grows to the left around the title, then shrinks
+back to a circle 1.8 s after the page stands still. Whoever sees the name of
+the passage appear there understands that the button leads to the passages,
+and that another one is a touch away. Not while the page scrolls by itself
+(the title would never leave the text), nor with the panel open, which lists
+them all. The button keeps its name for screen readers; the title is a hint
+for the eye.
+
+Held by `src/__tests__/readingScrub.test.ts`.
+
 ### One bookmark per book, and it shows
 
 A book has only one ribbon: placing a bookmark removes the one the text
