@@ -419,6 +419,7 @@ onMounted(() => {
           class="sidour-hero press-feedback relative block rounded-card bg-brand px-5 pt-4 pb-5 text-on-brand"
           :class="{ 'sidour-hero-light': hero.lightArt, 'sidour-hero-swipe': swipeable }"
           :style="heroStyle"
+        draggable="false"
           v-bind="swipeable ? swipe.listeners : {}"
           @click="trackOpen(hero, 'hero')"
         >
