@@ -1281,9 +1281,11 @@ neighbors smaller, lower and fainter on each side, tilted along the curve.
 Nothing is animated: the finger drives the arc. The next title grows as it
 comes nearer, until it is the one in the middle, while the one it replaces
 shrinks away; crossing from one title to the next is felt as a threshold
-(`tick`, see "Touch answers"). A text without titles shows the share reached
-instead (« 42 % »). The round buttons of the menu step aside during the
-gesture, the panel taking their place.
+(`tick`, see "Touch answers"). The share reached (« 42 % ») always stays in
+the middle of the panel, above the titles: the titles say which passage, the
+share says how far into the text. A text without titles shows it alone,
+large. The round buttons of the menu step aside during the gesture, the
+panel taking their place.
 
 On the site, the mini player lies over the bottom of the screen: the bar is
 then a line again, and the player keeps its touches. Two touches in a row on

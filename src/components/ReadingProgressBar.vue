@@ -27,8 +27,9 @@ import { analyticsService } from "../services/analyticsService";
  * line up above the bar on an arc: the one being read large, in the middle,
  * its neighbors smaller and lower on each side. The arc moves with the
  * finger: the next title grows as it comes nearer, until it is the one in
- * the middle, while the one it replaces shrinks away. A text without titles
- * shows the share reached instead. See docs/design.md, "The progress bar
+ * the middle, while the one it replaces shrinks away. The share reached
+ * stays in the middle, above the titles; a text without titles shows it
+ * alone, large. See docs/design.md, "The progress bar
  * takes you through the text".
  */
 // The measure comes from the shared frame (useScrollFrame): a single listener
@@ -137,7 +138,7 @@ const arc = computed(() =>
   }),
 );
 
-/** Without titles, the share reached: « 42 % » in French, with its thin space. */
+/** The share reached: « 42 % » in French, the sign never cut from its number. */
 const percent = computed(() =>
   new Intl.NumberFormat(locale.value, { style: "percent", maximumFractionDigits: 0 }).format(
     progress.value,
@@ -155,6 +156,9 @@ const percent = computed(() =>
         aria-hidden="true"
       >
         <template v-if="arc.length">
+          <!-- Where one stands, always in the middle above the titles: the
+               titles say which passage, the share says how far into it. -->
+          <p class="scrub-percent">{{ percent }}</p>
           <div
             v-for="item in arc"
             :key="item.section.anchor"
@@ -223,7 +227,18 @@ const percent = computed(() =>
 }
 
 .scrub-panel {
-  height: 6.5rem;
+  height: 7.5rem;
+}
+
+.scrub-percent {
+  position: absolute;
+  top: 0.55rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.8rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-secondary);
 }
 
 /* A title of the arc: anchored at its middle, it is the transform that
@@ -231,7 +246,7 @@ const percent = computed(() =>
    drives it. */
 .scrub-title {
   position: absolute;
-  top: 46%;
+  top: 56%;
   display: flex;
   width: 46%;
   flex-direction: column;

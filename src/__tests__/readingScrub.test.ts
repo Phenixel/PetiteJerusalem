@@ -175,6 +175,8 @@ describe("the progress bar", () => {
       expect.arrayContaining([expect.stringContaining("Les téfilines")]),
     );
     expect(scale("Les téfilines")).toBeGreaterThan(scale("Amida"));
+    // The share reached stays in the middle, above the titles.
+    expect(host.querySelector(".scrub-percent")?.textContent).toMatch(/^50[\u00a0\u202f]%$/);
     expect(scale("Les téfilines")).toBeGreaterThan(scale("Bénédictions du matin"));
 
     // Nearer to the Amida, it grows, and the téfilines shrink away.
