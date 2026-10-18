@@ -1269,24 +1269,27 @@ The thin progress line at the bottom of a reading (`ReadingProgressBar.vue`)
 is also a slider. A finger (or the mouse) laid on it takes the page to the
 same share of the text, and the page follows while it slides: whoever looks
 for the Amida in a whole Shaharit, or the end of a long daf, gets there in
-one gesture instead of three screens of scrolling. The strip that catches the
-finger is taller than the line (1.25rem), which no finger would hit; the line
-thickens and a round thumb appears under the finger while it is held. In
-Hebrew the bar fills from the right, and slides the same way.
+one gesture instead of three screens of scrolling. The strip that catches
+the finger is taller than the line (1.25rem), which no finger would hit; the
+line thickens and a round thumb appears under the finger while it is held.
+In Hebrew the bar fills from the right, and slides the same way.
 
 While it slides, the titles of the text (the landmarks of the reading menu)
 line up above the bar on an arc, on a panel like the menu's: the one being
-read large, in the middle, in Playfair Display; its neighbors smaller, lower
-and fainter on each side, tilted along the curve. Nothing is animated: the
-finger drives the arc. The next title grows as it comes nearer, until it is
-the one in the middle, while the one it replaces shrinks away; crossing from
-one title to the next is felt as a threshold (`tick`, see "Touch answers"). A
-text without titles shows the share reached instead (« 42 % »). The round
-buttons of the menu step aside during the gesture, the panel taking their
-place.
+read large, in the middle, in Playfair Display and in the primary color; its
+neighbors smaller, lower and fainter on each side, tilted along the curve.
+Nothing is animated: the finger drives the arc. The next title grows as it
+comes nearer, until it is the one in the middle, while the one it replaces
+shrinks away; crossing from one title to the next is felt as a threshold
+(`tick`, see "Touch answers"). A text without titles shows the share reached
+instead (« 42 % »). The round buttons of the menu step aside during the
+gesture, the panel taking their place.
 
 On the site, the mini player lies over the bottom of the screen: the bar is
-then a line again, and the player keeps its touches.
+then a line again, and the player keeps its touches. Two touches in a row on
+the bar are two slides: the double tap that starts the automatic scrolling
+does not apply there (`data-own-gestures`, held by
+`src/__tests__/autoScroll.test.ts`).
 
 On a text with landmarks, the round menu button names the one being read as
 soon as one scrolls: it grows to the left around the title, then shrinks

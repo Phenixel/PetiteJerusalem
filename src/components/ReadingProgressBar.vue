@@ -125,6 +125,7 @@ const arc = computed(() =>
     return [
       {
         section,
+        current: Math.abs(distance) < 0.5,
         style: {
           left: `${50 + place.x * 100}%`,
           opacity: place.opacity,
@@ -158,6 +159,7 @@ const percent = computed(() =>
             v-for="item in arc"
             :key="item.section.anchor"
             class="scrub-title"
+            :class="{ 'scrub-title-current': item.current }"
             :style="item.style"
           >
             <span class="scrub-label">{{ item.section.label }}</span>
@@ -176,9 +178,12 @@ const percent = computed(() =>
     </transition>
 
     <!-- The strip that catches the finger: taller than the line it carries,
-         which a finger would never hit. -->
+         which a finger would never hit. Two touches in a row on it are two
+         slides: the double tap that starts the automatic scrolling stays off
+         it (data-own-gestures, see useAutoScroll). -->
     <div
       class="scrub-strip relative flex h-5 items-end"
+      data-own-gestures
       :class="interactive ? 'pointer-events-auto cursor-pointer' : ''"
       @pointerdown="onPointerDown"
       @pointermove="onPointerMove"
@@ -218,7 +223,7 @@ const percent = computed(() =>
 }
 
 .scrub-panel {
-  height: 7.5rem;
+  height: 6.5rem;
 }
 
 /* A title of the arc: anchored at its middle, it is the transform that
@@ -226,7 +231,7 @@ const percent = computed(() =>
    drives it. */
 .scrub-title {
   position: absolute;
-  top: 42%;
+  top: 46%;
   display: flex;
   width: 46%;
   flex-direction: column;
@@ -242,10 +247,17 @@ const percent = computed(() =>
   -webkit-line-clamp: 2;
   line-clamp: 2;
   font-family: var(--font-display);
-  font-size: 1.2rem;
+  font-size: 1.5rem;
   font-weight: 700;
-  line-height: 1.2;
+  line-height: 1.15;
   color: var(--color-text-primary);
+  transition: color 0.15s ease;
+}
+
+/* The title the reading line stands on takes the color, solid (see "What you
+   come looking for takes the color, solid"). */
+.scrub-title-current .scrub-label {
+  color: var(--color-primary);
 }
 
 .scrub-he {

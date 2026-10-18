@@ -524,12 +524,17 @@ function toggleAutoScroll(): void {
   else startAutoScroll();
 }
 
-/** Un double appui sur un bouton, un lien ou un champ ne lance rien. */
+/**
+ * A double tap on a button, a link or a field starts nothing; nor on a
+ * control that owns its gestures (`data-own-gestures`), such as the progress
+ * bar, where two touches in a row are two slides, not a request to scroll.
+ */
 function isInteractive(target: EventTarget | null): boolean {
   return (
     target instanceof Element &&
-    target.closest("a, button, input, select, textarea, [role='button'], [contenteditable]") !==
-      null
+    target.closest(
+      "a, button, input, select, textarea, [role='button'], [contenteditable], [data-own-gestures]",
+    ) !== null
   );
 }
 

@@ -46,9 +46,9 @@ export function arcPlacement(distance: number, rtl = false): ArcPlacement {
   const reach = Math.abs(distance);
   return {
     x: side * distance * ARC_SPACING,
-    y: distance * distance * 16,
+    y: distance * distance * 14,
     rotate: side * distance * 6,
-    scale: Math.max(0.5, 1 - 0.24 * reach),
+    scale: Math.max(0.45, 1 - 0.32 * reach),
     opacity: Math.max(0, 1 - 0.5 * reach),
   };
 }
