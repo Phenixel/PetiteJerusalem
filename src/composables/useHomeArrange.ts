@@ -212,7 +212,7 @@ export function useHomeArrange(options: {
     onPointerdown(event: PointerEvent): void {
       const target = event.target as Element | null;
       const tile = target?.closest<HTMLElement>("[data-block]");
-      if (!target || !tile || target.closest(".tile-pill") || drag) return;
+      if (!target || !tile || target.closest(".tile-pill, .tile-controls") || drag) return;
       const block = tile.dataset.block as HomeBlock;
       const { pointerId, clientX: x, clientY: y } = event;
 
