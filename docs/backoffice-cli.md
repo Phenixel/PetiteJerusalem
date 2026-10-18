@@ -34,7 +34,9 @@ node scripts/admin.mjs aide
 - **The target is production** (`petite-jerusalem-dev`, which hosts the
   public site despite its name). `--emulateur` targets the emulators of
   `npm run dev:local`; careful, even there, `--notifier` would send a real
-  notification (FCM is not emulated).
+  notification (FCM is not emulated). `--staging` targets the staging
+  project (`petite-jerusalem-staging`, see `docs/staging.md`), with the
+  same key: see "Reaching staging" below.
 - Each written document records who wrote it: `updatedVia`
   (`cli (utilisateur@machine)` or `ci (…)`).
 
@@ -120,10 +122,27 @@ Good to know:
   push a tag (its `git push` only targets its working branch): versions are
   published from the workstation.
 
+### Reaching staging
+
+`--staging` writes to the staging project with the same credentials: the
+`claude-backoffice` account stays a production account, and staging grants
+it the same roles. Once, by the project owner:
+
+```bash
+gcloud projects add-iam-policy-binding petite-jerusalem-staging --account=admin@phenixel.fr --member="serviceAccount:claude-backoffice@petite-jerusalem-dev.iam.gserviceaccount.com" --role="roles/datastore.user"
+gcloud storage buckets add-iam-policy-binding gs://petite-jerusalem-staging.firebasestorage.app --account=admin@phenixel.fr --member="serviceAccount:claude-backoffice@petite-jerusalem-dev.iam.gserviceaccount.com" --role="roles/storage.objectAdmin"
+```
+
+Without them, a `--staging` command stops on « accès refusé ». Locally, the
+ADC of admin@phenixel.fr already reaches both projects. Careful:
+`scripts/staging-sync.mjs` replaces the staging chiourim with the
+production ones, so a change made only in staging (a book linked ahead of
+a release) is lost at the next copy and has to be made again.
+
 ## The commands
 
-All of them accept `--confirmer`, `--emulateur` and `--json` (output readable
-by a script, for example to find an identifier).
+All of them accept `--confirmer`, `--emulateur`, `--staging` and `--json`
+(output readable by a script, for example to find an identifier).
 
 ### Status
 
@@ -210,6 +229,28 @@ Then `--livre <id>` and `--chapitre N` on `chiour:modifier` or
 
 Changing the book forgets the old one's chapter; `--livre aucun` removes
 both.
+
+### The title of an episode
+
+An episode of a series is never shown alone: the series name sits above
+it (the series page, the « Épisode 9 · Shaar Habitahon » line of its page,
+the cover, the line « Rav · Série » in a list), its number beside it, and
+the chapter of its book under it once the book is linked. Its title says
+only what the class is about:
+
+- no series name, no episode number (« Shiour 9 », « cours n°8 »);
+- no chapter number once the class is linked to its chapter: the subject
+  of the chapter instead (« Les sept conditions de la confiance », not
+  « Chapitre 2 »); what the link cannot carry stays in the title (the
+  domain of a chapter cut into parts, a second chapter covered by the same
+  class);
+- a subject spread over several classes ends with its part: « (2/4) »;
+- a Hebrew term comes first, then its meaning: « Émouna, la foi »;
+- the French typography of the interface (U+00A0 before « : », U+202F
+  before « ; »).
+
+As long as a series is not linked to its book in an environment, its
+titles keep the chapter: removing it there would lose it.
 
 ### Authors and series
 

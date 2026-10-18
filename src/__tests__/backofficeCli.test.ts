@@ -14,6 +14,7 @@ import {
   releaseAnnouncementId,
   searchCatalog,
   slugify,
+  studioLink,
   supportReplyText,
   supportStatusLabel,
   texteFields,
@@ -258,6 +259,18 @@ describe("sondages", () => {
  * Le livre d'un chiour (`--livre`, `--chapitre`) : les champs texteId et
  * texteChapitre que lit src/services/chiourTexte.ts.
  */
+describe("studioLink", () => {
+  it("points to the production studio by default", () => {
+    expect(studioLink("abc")).toBe("https://petite-jerusalem.fr/studio/abc");
+  });
+
+  it("points to the staging studio under --staging", () => {
+    expect(studioLink("abc", "https://petite-jerusalem-staging.web.app")).toBe(
+      "https://petite-jerusalem-staging.web.app/studio/abc",
+    );
+  });
+});
+
 describe("texteFields", () => {
   const catalog = [
     { id: 1, type: "Talmud Bavli", name: "ברכות (Berakhot)", livre: "זרעים (Zeraim)" },

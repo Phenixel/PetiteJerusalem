@@ -447,9 +447,12 @@ export function searchCatalog(catalog, term) {
   );
 }
 
-/** L'adresse publique du studio d'un auteur, pour un lien secret. */
-export function studioLink(token) {
-  return `https://petite-jerusalem.fr/studio/${token}`;
+/**
+ * L'adresse publique du studio d'un auteur, pour un lien secret. The site is
+ * the target environment's (staging has its own studio).
+ */
+export function studioLink(token, site = "https://petite-jerusalem.fr") {
+  return `${site}/studio/${token}`;
 }
 
 /**

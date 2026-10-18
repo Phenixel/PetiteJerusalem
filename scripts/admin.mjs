@@ -11,7 +11,7 @@
  *   qu'on ne passe pas --confirmer ;
  * - une notification ne part qu'avec --notifier, jamais par défaut ;
  * - --emulateur vise les émulateurs locaux (npm run dev:local) au lieu de la
- *   production.
+ *   production, --staging le projet de staging (docs/staging.md).
  *
  * Accès : le SDK admin de Firebase (celui des functions, functions/node_modules),
  * avec les identifiants par défaut de Google (ADC). En local :
@@ -50,9 +50,8 @@ import {
   texteFields,
   versionOf,
 } from "./lib/backoffice.mjs";
+import { ENVIRONMENTS } from "./lib/environments.mjs";
 
-const PROJECT_ID = "petite-jerusalem-dev";
-const STORAGE_BUCKET = "petite-jerusalem-dev.firebasestorage.app";
 const REPO = "Phenixel/PetiteJerusalem";
 const EMULATORS = { firestore: "localhost:8470", storage: "localhost:8472" };
 
@@ -61,6 +60,7 @@ const EMULATORS = { firestore: "localhost:8470", storage: "localhost:8472" };
 const OPTIONS = {
   confirmer: { type: "boolean" },
   emulateur: { type: "boolean" },
+  staging: { type: "boolean" },
   json: { type: "boolean" },
   aide: { type: "boolean", short: "h" },
   // Informations
@@ -117,11 +117,19 @@ const { values: opts, positionals } = parseArgs({
 });
 const [command = "aide", ...args] = positionals;
 
+if (opts.emulateur && opts.staging) fail("--emulateur ou --staging, pas les deux.");
+// The target environment. The service account key always belongs to the
+// production project: staging grants it its roles (docs/backoffice-cli.md).
+const ENV = opts.staging ? ENVIRONMENTS.staging : ENVIRONMENTS.production;
+const PROJECT_ID = ENV.firebase.projectId;
+const STORAGE_BUCKET = ENV.firebase.storageBucket;
+const KEY_PROJECT_ID = ENVIRONMENTS.production.firebase.projectId;
+
 if (opts.emulateur) {
   process.env.FIRESTORE_EMULATOR_HOST = EMULATORS.firestore;
   process.env.FIREBASE_STORAGE_EMULATOR_HOST = EMULATORS.storage;
 }
-const target = opts.emulateur ? "émulateurs locaux" : `production (${PROJECT_ID})`;
+const target = opts.emulateur ? "émulateurs locaux" : `${ENV.name} (${PROJECT_ID})`;
 const apply = opts.confirmer === true;
 
 /** Qui écrit, gardé sur le document (`updatedVia`). */
@@ -149,9 +157,9 @@ function serviceAccount() {
   } catch {
     fail("PJ_ADMIN_SERVICE_ACCOUNT illisible : le JSON de la clé, tel quel ou en base64.");
   }
-  if (parsedKey.project_id !== PROJECT_ID) {
+  if (parsedKey.project_id !== KEY_PROJECT_ID) {
     fail(
-      `PJ_ADMIN_SERVICE_ACCOUNT est une clé du projet ${parsedKey.project_id}, pas ${PROJECT_ID}.`,
+      `PJ_ADMIN_SERVICE_ACCOUNT est une clé du projet ${parsedKey.project_id}, pas ${KEY_PROJECT_ID}.`,
     );
   }
   return parsedKey;
@@ -900,7 +908,7 @@ commands["chiour:ajouter"] = async ([file]) => {
       });
   });
   if (done) {
-    out([`Chiour ajouté : ${slug}`, `Fiche : https://petite-jerusalem.fr/admin/chiourim/${slug}`], {
+    out([`Chiour ajouté : ${slug}`, `Fiche : ${ENV.siteUrl}/admin/chiourim/${slug}`], {
       slug,
       published,
     });
@@ -1000,9 +1008,9 @@ commands["auteur:creer"] = async (words) => {
     out(
       [
         `Auteur créé : ${slug}`,
-        `Lien studio (à transmettre à l'auteur, il ne se remontre pas) : ${studioLink(token)}`,
+        `Lien studio (à transmettre à l'auteur, il ne se remontre pas) : ${studioLink(token, ENV.siteUrl)}`,
       ],
-      { id: slug, name, studioLink: studioLink(token) },
+      { id: slug, name, studioLink: studioLink(token, ENV.siteUrl) },
     );
   }
 };
@@ -1024,7 +1032,9 @@ commands["auteur:lien"] = async ([auteurId]) => {
     },
   );
   if (done) {
-    out([`Nouveau lien studio : ${studioLink(token)}`], { studioLink: studioLink(token) });
+    out([`Nouveau lien studio : ${studioLink(token, ENV.siteUrl)}`], {
+      studioLink: studioLink(token, ENV.siteUrl),
+    });
   }
 };
 
@@ -1337,7 +1347,8 @@ commands.aide = () => {
   node scripts/admin.mjs <commande> [arguments] [options]
 
 Une commande qui écrit n'est qu'un essai sans --confirmer.
---emulateur vise les émulateurs locaux ; --json pour une sortie lisible par un script.
+--emulateur vise les émulateurs locaux, --staging le projet de staging ;
+--json pour une sortie lisible par un script.
 
 État
   etat
