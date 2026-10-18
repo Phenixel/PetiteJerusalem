@@ -1287,13 +1287,6 @@ share says how far into the text. A text without titles shows it alone,
 large. The round buttons of the menu step aside during the gesture, the
 panel taking their place.
 
-The panel is a bubble (256 px wide, never closer than 16 px to the edges of
-the screen) that rides above the finger: centered on the thumb, it stops at
-the margin near the ends of the bar, and its pointer keeps on the thumb.
-The eye stays where the finger is, instead of going back and forth between
-the thumb and a panel fixed in the middle. This is a trial: on a phone the
-bubble is narrow, and the neighboring titles are mostly cut by its edges.
-
 On the site, the mini player lies over the bottom of the screen: the bar is
 then a line again, and the player keeps its touches. Two touches in a row on
 the bar are two slides: the double tap that starts the automatic scrolling
