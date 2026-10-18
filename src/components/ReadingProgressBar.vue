@@ -9,7 +9,12 @@ import {
   readingSections,
   useSectionPosition,
 } from "../composables/useReadingNav";
-import { ARC_REACH, arcPlacement, scrubFraction } from "../composables/readingScrub";
+import {
+  ARC_REACH,
+  arcPlacement,
+  bubblePlacement,
+  scrubFraction,
+} from "../composables/readingScrub";
 import { haptic } from "../services/haptics";
 import { analyticsService } from "../services/analyticsService";
 
@@ -63,6 +68,8 @@ const interactive = computed(
 const rtl = ref(false);
 let pointerId: number | null = null;
 let rect: DOMRect | null = null;
+/** The width of the strip, the screen's: the bubble is held inside it. */
+const stripWidth = ref(0);
 let startProgress = 0;
 
 function moveTo(clientX: number): void {
@@ -80,6 +87,7 @@ function onPointerDown(e: PointerEvent): void {
   strip.setPointerCapture?.(e.pointerId);
   pointerId = e.pointerId;
   rect = strip.getBoundingClientRect();
+  stripWidth.value = rect.width;
   rtl.value = getComputedStyle(strip).direction === "rtl";
   startProgress = scrollFrame.value.progress;
   // The titles may have moved since the last measure (an image, a fold).
@@ -117,6 +125,21 @@ onUnmounted(() => {
   if (scrubbing.value) readingScrubbing.value = false;
 });
 
+/**
+ * The bubble of titles rides above the finger: centered on the thumb, held
+ * inside the screen near its edges, its pointer always on the thumb.
+ */
+const BUBBLE_WIDTH = 256;
+const bubble = computed(() => {
+  const width = Math.min(BUBBLE_WIDTH, stripWidth.value - 32);
+  const share = rtl.value ? 1 - progress.value : progress.value;
+  const place = bubblePlacement(share * stripWidth.value, stripWidth.value, BUBBLE_WIDTH);
+  return {
+    style: { left: `${place.left}px`, width: `${width}px` },
+    caret: { left: `${place.caret}px` },
+  };
+});
+
 /** The titles near the reading line, placed on the arc. */
 const arc = computed(() =>
   items.value.flatMap((section, index) => {
@@ -152,32 +175,37 @@ const percent = computed(() =>
     <transition name="scrub-panel">
       <div
         v-if="scrubbing"
-        class="scrub-panel absolute inset-x-4 bottom-full mx-auto mb-4 max-w-md overflow-hidden rounded-xl bg-surface shadow-pop"
+        class="scrub-panel absolute bottom-full mb-4"
+        :style="bubble.style"
         aria-hidden="true"
       >
-        <template v-if="arc.length">
-          <!-- Where one stands, always in the middle above the titles: the
+        <!-- The pointer of the bubble, on the thumb. -->
+        <span class="scrub-caret" :style="bubble.caret"></span>
+        <div class="absolute inset-0 overflow-hidden rounded-xl bg-surface shadow-pop">
+          <template v-if="arc.length">
+            <!-- Where one stands, always in the middle above the titles: the
                titles say which passage, the share says how far into it. -->
-          <p class="scrub-percent">{{ percent }}</p>
-          <div
-            v-for="item in arc"
-            :key="item.section.anchor"
-            class="scrub-title"
-            :class="{ 'scrub-title-current': item.current }"
-            :style="item.style"
+            <p class="scrub-percent">{{ percent }}</p>
+            <div
+              v-for="item in arc"
+              :key="item.section.anchor"
+              class="scrub-title"
+              :class="{ 'scrub-title-current': item.current }"
+              :style="item.style"
+            >
+              <span class="scrub-label">{{ item.section.label }}</span>
+              <span v-if="item.section.hebrew" class="scrub-he" dir="rtl">{{
+                item.section.hebrew
+              }}</span>
+            </div>
+          </template>
+          <p
+            v-else
+            class="flex h-full items-center justify-center font-display text-3xl font-bold text-text-primary"
           >
-            <span class="scrub-label">{{ item.section.label }}</span>
-            <span v-if="item.section.hebrew" class="scrub-he" dir="rtl">{{
-              item.section.hebrew
-            }}</span>
-          </div>
-        </template>
-        <p
-          v-else
-          class="flex h-full items-center justify-center font-display text-3xl font-bold text-text-primary"
-        >
-          {{ percent }}
-        </p>
+            {{ percent }}
+          </p>
+        </div>
       </div>
     </transition>
 
@@ -230,6 +258,18 @@ const percent = computed(() =>
   height: 7.5rem;
 }
 
+/* A small square turned on its point, half under the bubble: the bubble
+   points at the finger. */
+.scrub-caret {
+  position: absolute;
+  bottom: -0.35rem;
+  width: 0.8rem;
+  height: 0.8rem;
+  transform: translateX(-50%) rotate(45deg);
+  background-color: var(--color-surface);
+  box-shadow: var(--shadow-pop);
+}
+
 .scrub-percent {
   position: absolute;
   top: 0.55rem;
@@ -248,7 +288,7 @@ const percent = computed(() =>
   position: absolute;
   top: 56%;
   display: flex;
-  width: 46%;
+  width: 56%;
   flex-direction: column;
   align-items: center;
   text-align: center;
@@ -262,7 +302,7 @@ const percent = computed(() =>
   -webkit-line-clamp: 2;
   line-clamp: 2;
   font-family: var(--font-display);
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: 700;
   line-height: 1.15;
   color: var(--color-text-primary);

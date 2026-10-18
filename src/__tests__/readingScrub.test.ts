@@ -24,7 +24,7 @@ import fr from "../locales/fr";
 import ReadingMenu from "../components/ReadingMenu.vue";
 import ReadingProgressBar from "../components/ReadingProgressBar.vue";
 import { analyticsService } from "../services/analyticsService";
-import { arcPlacement, scrubFraction } from "../composables/readingScrub";
+import { arcPlacement, bubblePlacement, scrubFraction } from "../composables/readingScrub";
 import { readingScrubbing, readingSections, sectionPosition } from "../composables/useReadingNav";
 
 const SECTIONS = [
@@ -140,6 +140,19 @@ describe("the geometry of the slide", () => {
 
     // In Hebrew, the text moves forward to the left.
     expect(arcPlacement(1, true).x).toBe(-next.x);
+  });
+});
+
+describe("the bubble above the finger", () => {
+  it("rides centered on the thumb, and stays inside the screen near its edges", () => {
+    // In the middle: centered, its pointer in its middle.
+    expect(bubblePlacement(195, 390, 256)).toEqual({ left: 67, caret: 128 });
+    // At the start, the bubble stops at the margin; the pointer goes on.
+    expect(bubblePlacement(20, 390, 256)).toEqual({ left: 16, caret: 16 });
+    // At the end, the same on the other side.
+    const end = bubblePlacement(380, 390, 256);
+    expect(end.left).toBe(390 - 16 - 256);
+    expect(end.caret).toBe(256 - 16);
   });
 });
 
