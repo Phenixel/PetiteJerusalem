@@ -52,6 +52,8 @@ const ParashaPage = () => import("../views/Library/ParashaPage.vue");
 const AnnouncementsPage = () => import("../views/Announcements/AnnouncementsPage.vue");
 const SupportPage = () => import("../views/SupportPage.vue");
 const SupportThreadPage = () => import("../views/SupportThreadPage.vue");
+const HelpCenterPage = () => import("../views/Help/HelpCenterPage.vue");
+const HelpGuidePage = () => import("../views/Help/HelpGuidePage.vue");
 const AnnouncementDetailPage = () => import("../views/Announcements/AnnouncementDetailPage.vue");
 
 import type { NavigationGuardWithThis, RouteLocation, RouteRecordSingleView } from "vue-router";
@@ -456,6 +458,20 @@ export default [
     name: "support-thread",
     component: SupportThreadPage,
     meta: { requiresAuth: !isNativeApp },
+  },
+  // The help center: its guides are in the bundle, it opens offline and
+  // without an account, on the site as in the app (docs/help-center.md).
+  {
+    path: "/aide",
+    name: "help",
+    component: HelpCenterPage,
+    meta: { offlineOk: true },
+  },
+  {
+    path: "/aide/:slug",
+    name: "help-guide",
+    component: HelpGuidePage,
+    meta: { offlineOk: true },
   },
   {
     path: "/informations/:id",

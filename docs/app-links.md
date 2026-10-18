@@ -129,7 +129,8 @@ profile and enable Settings → Developer → Associated Domains Development.
   circulation; it leaves the list when the oldest version still in
   circulation knows it. Currently: `/sidour`, which arrived with the Sidour
   page, `/parcours`, which arrived with Mon parcours ("My journey"),
-  `/accueil` (the home setting, `/accueil/modifier`) and `/contact`
-  (« Nous écrire » ("Write to us"), which arrived with the team's replies).
+  `/accueil` (the home setting, `/accueil/modifier`), `/contact`
+  (« Nous écrire » ("Write to us"), which arrived with the team's replies)
+  and `/aide`, the help center, which arrived with 4.0.
   Android does not have this issue, since its intent-filter is frozen in
   each version. Enforced by `src/__tests__/appLinks.test.ts`.

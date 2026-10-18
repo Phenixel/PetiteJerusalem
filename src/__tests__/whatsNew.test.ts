@@ -8,6 +8,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
  * Three promises: it plays once after an update, never on a fresh install
  * (the introduction is there for that), and only in the app; and the video it
  * asks the site for exists, in each language, under the name the code reads.
+ * And one leaves it at any time: « Passer » when it came on its own, « Fermer »
+ * when the help center's card asked for it.
  */
 
 vi.mock("../composables/useNativeApp", () => ({ isNativeApp: true, appPlatform: "ios" }));
@@ -69,6 +71,38 @@ describe("at launch", () => {
     const next = await import("../composables/useWhatsNew");
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(next.isWhatsNewOpen.value).toBe(false);
+  });
+});
+
+describe("the way out", () => {
+  async function headerButton(): Promise<string> {
+    const { createApp, h, nextTick } = await import("vue");
+    const { createI18n } = await import("vue-i18n");
+    const { default: fr } = await import("../locales/fr");
+    const { default: WhatsNewVideo } = await import("../components/WhatsNewVideo.vue");
+    const host = document.createElement("div");
+    document.body.appendChild(host);
+    const app = createApp({ render: () => h(WhatsNewVideo) });
+    app.use(createI18n({ legacy: false, locale: "fr", messages: { fr } }));
+    app.mount(host);
+    await nextTick();
+    const label = host.querySelector("header button")?.textContent?.trim() ?? "";
+    app.unmount();
+    host.remove();
+    return label;
+  }
+
+  it("is skipped when it came at launch, closed when it was asked for", async () => {
+    localStorage.setItem(ONBOARDING_KEY, "1");
+    const { isWhatsNewOpen, useWhatsNew } = await import("../composables/useWhatsNew");
+    await vi.waitFor(() => expect(isWhatsNewOpen.value).toBe(true));
+    expect(await headerButton()).toBe("Passer");
+
+    useWhatsNew().closeWhatsNew(true);
+    useWhatsNew().replayWhatsNew();
+    expect(useWhatsNew().whatsNewSource.value).toBe("help");
+    expect(await headerButton()).toBe("Fermer");
+    useWhatsNew().closeWhatsNew(true);
   });
 });
 

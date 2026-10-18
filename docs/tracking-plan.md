@@ -171,7 +171,7 @@ The video started playing.
 | Property  | Values                                                                                         |
 | --------- | ---------------------------------------------------------------------------------------------- |
 | `version` | the version whose video plays: `4.0`                                                           |
-| `source`  | `launch` (the first launch after the update), `profile` (« Revoir les nouveautés »), `link` (`?nouveautes`) |
+| `source`  | `launch` (the first launch after the update), `help` (its card in the help center), `link` (`?nouveautes`) |
 | `muted`   | true when the system refused the sound without a touch, and the video plays muted             |
 
 ### `whats_new_video_closed` (new)
@@ -182,13 +182,33 @@ The video left the screen.
 | ----------------- | --------------------------------------------------------------------------------------------------- |
 | `version`         | as above                                                                                            |
 | `source`          | as above                                                                                            |
-| `via`             | `close` (« Fermer »), `done` (« C'est parti », at the end), `back` (Android back, Escape), `error` (it did not load) |
+| `via`             | `close` (the button at the top: « Passer » at launch, « Fermer » otherwise), `done` (« C'est parti », at the end), `back` (Android back, Escape), `error` (it did not load) |
 | `watched_seconds` | the furthest point reached, in seconds                                                              |
 | `completed`       | true when the video was played to the end                                                           |
 
 `via` `error` with `source` `launch` is not seen by anyone: the screen only
 shows once the video can play, and the video is offered again at a later
 launch.
+
+`source` `profile` (a « Revoir les nouveautés » row of the profile) was
+replaced by `help` before 4.0 was released, when the row became the help
+center's card: it was never sent.
+
+## Help center (October 2026)
+
+The help center (`/aide`, see `docs/help-center.md`): its guides are pages,
+counted by `$pageview` (`/aide/<slug>`); what leaves the app is not, hence
+one event.
+
+### `help_video_opened` (new)
+
+A tutorial video was opened on YouTube (`HelpVideoCard.vue`).
+
+| Property | Values                                                                        |
+| -------- | ----------------------------------------------------------------------------- |
+| `video`  | its YouTube id                                                                |
+| `place`  | `center` (the help center's list), `guide` (the end of the guide it goes with) |
+| `guide`  | the guide's slug when `place` is `guide`, otherwise null                      |
 
 ## Profile
 

@@ -11,21 +11,23 @@ import AppIcon from "./icons/AppIcon.vue";
  * The "what's new" video, full screen (see useWhatsNew).
  *
  * At launch it stays invisible while it loads: offline, it never shows,
- * and comes back at a later launch. Opened by hand (the profile, the
- * address), it shows right away, with its poster.
+ * and comes back at a later launch. Opened by hand (the help center,
+ * the address), it shows right away, with its poster.
  *
  * It starts with the sound; where the system refuses sound without a touch,
  * it plays muted and offers « Activer le son » ("Turn the sound on"): the
  * video is written to be read, the music only goes with it. At the end, « C'est
- * parti » ("Let's go") closes it and « Revoir la vidéo » plays it again;
- * « Fermer » ("Close") leaves at any time, like the Android back gesture.
+ * parti » ("Let's go") closes it and « Revoir la vidéo » plays it again.
+ * One leaves at any time, like the Android back gesture: by « Passer »
+ * ("Skip") when it came on its own at launch, by « Fermer » ("Close") when
+ * it was asked for.
  */
 
 const { t, locale } = useI18n();
 const toast = useToast();
 const { whatsNewSource, closeWhatsNew } = useWhatsNew();
 
-const source = whatsNewSource.value ?? "profile";
+const source = whatsNewSource.value ?? "help";
 const src = whatsNewVideoUrl(locale.value);
 const poster = whatsNewVideoUrl(locale.value, "jpg");
 
@@ -42,6 +44,11 @@ let giveUp = 0;
 
 /** At launch, nothing shows until the video can play. */
 const visible = computed(() => source !== "launch" || ready.value);
+
+/** Came on its own, it is skipped; asked for, it is closed. */
+const leaveLabel = computed(() =>
+  source === "launch" && !ended.value ? t("whatsNew.skip") : t("whatsNew.close"),
+);
 
 /** Plays with the sound, or muted where the system wants a touch first. */
 async function play(): Promise<void> {
@@ -106,7 +113,7 @@ function toggle(): void {
 }
 
 /**
- * Leaves. `via`: `close` (« Fermer »), `done` (« C'est parti »), `back`
+ * Leaves. `via`: `close` (« Passer », « Fermer »), `done` (« C'est parti »), `back`
  * (Android back, Escape), `error` (the video did not load).
  */
 function close(via: "close" | "done" | "back" | "error"): void {
@@ -165,7 +172,7 @@ onBeforeUnmount(() => {
       </div>
       <button type="button" class="btn btn-soft btn-sm" @click="close('close')">
         <AppIcon name="x" :size="16" />
-        {{ t("whatsNew.close") }}
+        {{ leaveLabel }}
       </button>
     </header>
 

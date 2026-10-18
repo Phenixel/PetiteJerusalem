@@ -122,7 +122,7 @@ export const STRINGS: Record<Locale, V4Strings> = {
     },
     end: {
       title: `Bonne découverte${NNBSP}!`,
-      replay: `À revoir dans Profil, «${NBSP}Aide${NBSP}»`,
+      replay: `À revoir dans Profil, «${NBSP}Centre d'aide${NBSP}»`,
     },
   },
   en: {
@@ -188,7 +188,7 @@ export const STRINGS: Record<Locale, V4Strings> = {
     },
     end: {
       title: "Enjoy!",
-      replay: "Watch it again in Profile, “Help”",
+      replay: "Watch it again in Profile, “Help center”",
     },
   },
   he: {
@@ -255,7 +255,7 @@ export const STRINGS: Record<Locale, V4Strings> = {
     },
     end: {
       title: "תיהנו מהחידושים!",
-      replay: "לצפייה חוזרת: פרופיל, ״עזרה״",
+      replay: "לצפייה חוזרת: פרופיל, ״מרכז העזרה״",
     },
   },
 };

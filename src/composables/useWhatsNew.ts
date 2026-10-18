@@ -18,10 +18,10 @@ import { isNativeApp } from "./useNativeApp";
  * Shown once per version: the device notes the version it played (local
  * storage, and the native preferences as a safety net, see
  * devicePreference). If the video cannot load (no network at launch), nothing
- * shows and nothing is noted: it plays at a later launch. « Revoir les
- * nouveautés » ("Replay what's new", the profile's Help group) plays it
- * again, and `?nouveautes` in the address opens it anywhere, site included,
- * to show it or try it on a preview channel.
+ * shows and nothing is noted: it plays at a later launch. Its card at the
+ * top of the help center (WhatsNewCard, /aide) plays it again, and
+ * `?nouveautes` in the address opens it anywhere, site included, to show it
+ * or try it on a preview channel.
  *
  * Changing WHATS_NEW_VERSION offers a new video to everyone: only with that
  * video rendered and published under its name (promo, `appFile`).
@@ -38,8 +38,8 @@ const URL_PARAM = "nouveautes";
 const VIDEO_LOCALES = ["fr", "en", "he"] as const;
 type VideoLocale = (typeof VIDEO_LOCALES)[number];
 
-/** Where the video was opened from: at launch, from the profile, by its address. */
-export type WhatsNewSource = "launch" | "profile" | "link";
+/** Where the video was opened from: at launch, from the help center, by its address. */
+export type WhatsNewSource = "launch" | "help" | "link";
 
 /**
  * What to do at launch:
@@ -121,9 +121,9 @@ export function useWhatsNew() {
     source.value = null;
   }
 
-  /** « Revoir les nouveautés »: plays it again. */
+  /** The help center's card: plays it again. */
   function replayWhatsNew(): void {
-    source.value = "profile";
+    source.value = "help";
   }
 
   return { isWhatsNewOpen, whatsNewSource: source, closeWhatsNew, replayWhatsNew };

@@ -93,6 +93,13 @@
           { "key": "Cache-Control", "value": "no-cache" },
           { "key": "Access-Control-Allow-Origin", "value": "*" }
         ]
+      },
+      {
+        "source": "/help/videos.json",
+        "headers": [
+          { "key": "Cache-Control", "value": "no-cache" },
+          { "key": "Access-Control-Allow-Origin", "value": "*" }
+        ]
       }
     ],
     "redirects": [

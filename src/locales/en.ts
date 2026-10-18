@@ -114,8 +114,28 @@ const en: LocaleMessages = {
     soundOn: "Turn the sound on",
     again: "Watch again",
     done: "Let's go",
-    replay: "Replay what's new",
+    skip: "Skip",
     failed: "The video could not load. Check your connection and try again.",
+  },
+  help: {
+    title: "Help center",
+    subtitle: "Guides and videos to get to know the app, one part at a time.",
+    seoDescription:
+      "The Petite Jerusalem guides: the home page, the Siddur, reading, My journey, prayer times and reading chains, explained and shown.",
+    whatsNew: {
+      title: "What's new in {version}",
+      text: "Where the tabs went, what is new: all in one video.",
+      watch: "Watch",
+    },
+    videos: "Videos",
+    watchOnYoutube: "Watch on YouTube",
+    guides: "Guides",
+    replay: "See again",
+    more: "More guides",
+    contact: {
+      title: "A question left unanswered?",
+      text: "Write to us: the team answers you in the app.",
+    },
   },
   onboarding: {
     ariaLabel: "Introduction to Petite Jérusalem",

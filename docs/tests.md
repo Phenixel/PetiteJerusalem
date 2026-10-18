@@ -13,7 +13,7 @@ npm run test:unit          # vitest, interactive mode
 npx vitest run             # a single pass, what `npm run verify` does
 ```
 
-The 264 files live in `src/__tests__/*.test.ts`. The configuration
+The 277 files live in `src/__tests__/*.test.ts`. The configuration
 (`vitest.config.ts`) uses the `jsdom` environment by default; tests that do
 not need the DOM (those that read the repository or run a script) start
 with `// @vitest-environment node`. The `e2e/`, `android/`, `ios/` and
@@ -51,7 +51,8 @@ documentation included; the French non-breaking-space rule
 | `seoTitles.test.ts` | The titles of the `seo` block escape the vertical bar (`{'|'}`), which vue-i18n would otherwise read as a plural separator and truncate. |
 | `initialBundle.test.ts` | The graph of static imports from `src/main.ts` contains neither Firestore, nor hebcal, nor PostHog: they load on demand, and a simple import added to a service touched by the root would bring them back into the first load. |
 | `prerenderSeo.test.ts` | The prerendering (`seoPages.ts`) injects title, description, canonical, Open Graph, JSON-LD and crawlable body as expected, and the sitemaps are built from the same page lists. |
-| `whatsNew.test.ts` | The "what's new" video plays once after an update, never on a fresh install nor on the site, and comes back when it could not load; the files it asks the site for (`public/videos/nouveautes-<version>-<locale>.mp4` and their poster) exist in the three languages and stay light enough to stream (`docs/design.md`, "What's new plays once, after the update"). |
+| `whatsNew.test.ts` | The "what's new" video plays once after an update, never on a fresh install nor on the site, and comes back when it could not load; the files it asks the site for (`public/videos/nouveautes-<version>-<locale>.mp4` and their poster) exist in the three languages and stay light enough to stream (`docs/design.md`, "What's new plays once, after the update"); its way out reads « Passer » when it came at launch, « Fermer » when the help center's card asked for it. |
+| `helpCenter.test.ts` | Every help center guide (`src/content/help/catalog.ts`) reads in French, English and Hebrew (a borrowed text names a key the three locales have), its French follows the house typography, its address is unique, its drawn screenshots exist and its links lead to routes the app has; the list of videos the site serves (`public/help/videos.json`) is valid, and an entry an older app cannot read is left out rather than breaking the page (`docs/help-center.md`). |
 | `pruneNativeBundle.test.ts` | The native bundle keeps nothing of the SEO prerendering: generated HTML pages, sitemaps, `robots.txt`, `llms.txt`; the app starts on the bare `app.html` shell. Of the corpora, it only keeps the texts listed in `src/datas/bundledTexts.json` (Tehilim, Sidour). Nor does it keep the "what's new" videos (`public/videos/`), which the app streams from the site. |
 | `bundledTexts.test.ts` | Each text the app bundles exists in `public/texts/`. The Tehilim are read from the binary, without asking anything of the site; the Sidour also opens there without waiting for the network, then the app downloads in the background the corrected version the site would serve, verified by its hash (a captive portal does not replace it). That the Sidour is bundled in full is enforced by `offlineDailyBooks.test.ts`. |
 | `textsManifest.test.ts` | `public/texts/manifest.json` matches the text files (`scripts/texts-manifest.mjs --check`): a text corrected without the manifest following would only be corrected for those who have downloaded nothing. |

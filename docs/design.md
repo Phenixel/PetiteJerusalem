@@ -175,8 +175,8 @@ Four rules hold it:
   for: the next one waits for the next opening (an app relaunch, or a
   return to the foreground after half an hour elsewhere). On the same page,
   one tip can wait for another: the reading gestures come one opening after
-  the menu. « Revoir les astuces » ("See tips again", app profile, Help
-  group) puts them back in play, page by page;
+  the menu. « Revoir les astuces » ("See tips again", in the help
+  center) puts them back in play, page by page;
 - **« Plus tard »** ("Later"): you do not always have time to read. The
   bubble withdraws without counting the tip as seen, and it comes back, on
   the same page, at the next opening;
@@ -268,9 +268,9 @@ tabs went first, then what is new.
 
 - **Once, and only to those who are updating.** A fresh install sees the
   introduction, never this video: it shows a change to someone who never
-  knew the app before it. The device notes the version it played, and
-  « Revoir les nouveautés » ("Replay what's new"), in the profile's Help
-  group next to the introduction and the tips, plays it again.
+  knew the app before it. The device notes the version it played, and its
+  card at the top of the help center plays it again (see "The help center
+  shows how, part by part"); its last screen says where to find it.
 - **Nothing shows while it loads.** The video is served by the site
   (`public/videos/`), not bundled: a few megabytes per language, for a
   minute and a half of viewing. At launch, the screen only appears once the
@@ -280,8 +280,10 @@ tabs went first, then what is new.
   screen; the music only goes with it. Where the system refuses sound
   without a touch, it plays muted and offers « Activer le son » ("Turn the
   sound on").
-- **One can always leave.** « Fermer » ("Close") at the top, the Android
-  back gesture, Escape; at the end, « C'est parti » ("Let's go") closes it
+- **One can always leave.** The button at the top, the Android back
+  gesture, Escape. Come on its own at launch, the video is skipped:
+  « Passer » ("Skip"); asked for from the help center, it is closed:
+  « Fermer » ("Close"). At the end, « C'est parti » ("Let's go") closes it
   and « Revoir la vidéo » ("Watch again") replays it. The page behind does
   not move.
 - **It wears the page background** (`bg-bg-beige`), the same as the video's,
@@ -291,6 +293,63 @@ The video is made with the promotional videos (section 10, `promo/`, the
 `nouveautes-*` compositions) from the app's own screens. A next one changes
 `WHATS_NEW_VERSION` and is published under its name, in the three languages
 (`whatsNew.test.ts` checks that the files the code asks for exist).
+
+### The help center shows how, part by part
+
+The app has grown rich enough that much of it stays obscure until someone
+explains it: a card swiped to say a prayer is done, a reading bar that
+slides, home page blocks that move under a long press. A tip shows a
+gesture once, where it happens; the help center (`/aide`,
+`HelpCenterPage.vue`) is where one comes back to it, at any time, on the
+site as in the app. How to add to it: `docs/help-center.md`.
+
+- **Reached from the profile.** Its row opens the profile's Help group,
+  before « Nous écrire »; on the site, the footer links to it. The profile
+  tab stays lit on its pages, as on the profile's sub-pages. Its guides are
+  in the bundle: it opens offline and without an account.
+- **What's new first.** At the top, the "what's new" video as a card
+  (`WhatsNewCard.vue`): its own poster in its 9:16 format, the play button
+  on it, « Regarder » ("Watch") spelled out, the whole card playing it.
+  Whoever skipped it at launch finds it here.
+- **Guides by part of the app.** Grouped by topic (finding your way, the
+  home page, reading, Mon parcours, the times, reading together) like the
+  profile's groups: a panel per topic, a row per guide with its title and
+  one line of what it is about, the chevron of a row that opens a page. A
+  guide is a page of its own (`/aide/<slug>`): its topic in the theme color
+  above the centered title, its summary, then its points.
+- **It shows rather than explains.** A point is a title, two sentences and,
+  when it is a gesture, its drawn screenshot playing above them
+  (`src/components/mock`): the drawings of the introduction and of a
+  chain's instructions, which follow the theme, dark mode and the language,
+  weigh almost nothing and do not age from one redesign to the next. 4.0
+  added five: the tab bar and Étude's tabs, the card swiped « C'est fait »,
+  a home block carried under a long press, the reading bar slid, a times row
+  pulled to its bell. Like the introduction's, they loop on their own: they
+  are the explanation. When less motion is asked for, each stands still on
+  its key moment (the card at its threshold, the block lifted).
+- **The app's own words.** A guide that explains a gesture a tip already
+  explains borrows the tip's sentences (an i18n key rather than a new text):
+  the two must say it the same way, in the three languages.
+- **A way in.** A guide ends on a command into the part it explains
+  (« Modifier l'accueil », « Voir les horaires »), its name spelled out,
+  then on other guides, its topic first.
+- **The videos are YouTube's, listed by the site.** The team's tutorials
+  are YouTube videos, listed in a file the site serves
+  (`public/help/videos.json`), not in code: a new one reaches the installed
+  apps when the site is deployed, the app falling back on the list of its
+  build when offline. A video is a card: its picture, its title and its
+  length, opening YouTube (its app, on a phone); no player in the app and
+  no cookie, only the picture loads. One that goes with a guide also shows
+  at its end. No video, no section: nothing announces videos to come.
+- **What shows once comes back from here.** In the app, « Revoir
+  l'introduction » and « Revoir les astuces » moved from the profile to the
+  help center, with the video. At the bottom, « Nous écrire », for a
+  question no guide answered.
+
+Held by `src/__tests__/helpCenter.test.ts` (the guides in three languages
+and typeset, their screenshots and links, the list of videos) and
+`helpCenterPages.test.ts` (the card plays the video, the videos only when
+there are some, an unknown guide leads back to the help center).
 
 ### Neighboring pages, a set of tabs
 
@@ -1035,7 +1094,8 @@ its own, which suits it.
   the bar (`ProfileParcours.vue`). All in the banner's ink, in three tones.
 - **A page of rows, grouped.** Mes lectures (the shortcuts), Réglages
   (Settings: appearance, language, notifications, preferences), Mon compte
-  (My account: security, sign-out), Aide (Help), Informations. Each group is
+  (My account: security, sign-out), Aide (Help: the help center and « Nous
+  écrire »), Informations. Each group is
   a panel (`SettingsGroup`), a surface without `card-hover`, and its rows
   (`SettingsRow`) run edge to edge, separated by a rule. The group's title is
   written in lowercase, above.
@@ -1045,8 +1105,8 @@ its own, which suits it.
   What is wrong says so in place of the number: notifications blocked by the
   phone announce themselves as « Bloquées » ("Blocked"), in amber.
 - **Three forms, one look.** An app page (chevron), an in-place action (no
-  chevron: nothing opens behind it, « Revoir l'introduction », "See the
-  introduction again"), sign-out (in red). Each row is at least 52 px tall
+  chevron: nothing opens behind it, « Gérer les cookies », "Manage
+  cookies"), sign-out (in red). Each row is at least 52 px tall
   and responds to touch with a background, in the absence of hover.
 - **Sign-out asks the question, in the app only.** On the site, it is a
   separate button; here, a row among others, which a thumb touches by

@@ -32,10 +32,6 @@ import { useLocale } from "../../../composables/useLocale";
 import { refreshPermission, useZmanReminders } from "../../../composables/useZmanReminders";
 import { useZmanimOpinion } from "../../../composables/useZmanimOpinion";
 import { useConsent } from "../../../composables/useConsent";
-import { useOnboarding } from "../../../composables/useOnboarding";
-import { useWhatsNew } from "../../../composables/useWhatsNew";
-import { useFeatureTips } from "../../../composables/useFeatureTips";
-import { useToast } from "../../../composables/useToast";
 import { useConfirm } from "../../../composables/useConfirm";
 import { useHolidayTheme } from "../../../composables/useHolidayTheme";
 import { useSupportUnread } from "../../../composables/useSupportUnread";
@@ -53,7 +49,6 @@ const ProfileParcoursRow = defineAsyncComponent(
 );
 
 const { t } = useI18n();
-const toast = useToast();
 
 const currentUser = ref<User | null>(null);
 const isLoading = ref(true);
@@ -102,20 +97,10 @@ const notificationsValue = computed(() => {
 const { opinion } = useZmanimOpinion();
 const preferencesValue = computed(() => t(`zmanim.opinions.${opinion.value}.short`));
 
-// ---- Aide et informations ---------------------------------------------------
+// ---- Help and information ----------------------------------------------------
 
-// Réouvre la bannière de consentement (retrait possible à tout moment).
+// Reopens the consent banner (consent can be withdrawn at any time).
 const { reopen: reopenConsent } = useConsent();
-// L'introduction et les astuces ne se montrent qu'une fois : c'est d'ici
-// qu'on les revoit.
-const { replayOnboarding } = useOnboarding();
-const { replayWhatsNew } = useWhatsNew();
-const { resetFeatureTips } = useFeatureTips();
-
-function replayTips(): void {
-  resetFeatureTips();
-  toast.info(t("tips.replayed"));
-}
 
 const infoPages = [
   { to: "/informations", labelKey: "announcements.title", icon: "bell" },
@@ -324,7 +309,10 @@ onUnmounted(() => {
           <SettingsRow icon="logout" :label="t('common.logout')" tone="danger" @click="logout" />
         </SettingsGroup>
 
+        <!-- The help center holds the guides, the "what's new" video, the
+             introduction and the tips to see again (docs/help-center.md). -->
         <SettingsGroup :title="t('profile.native.groups.help')">
+          <SettingsRow icon="help" :label="t('help.title')" to="/aide" />
           <SettingsRow
             icon="message"
             :label="t('footer.reportIssue')"
@@ -332,9 +320,6 @@ onUnmounted(() => {
             :warn="support.unread.value > 0"
             to="/contact"
           />
-          <SettingsRow icon="rocket" :label="t('onboarding.replay')" @click="replayOnboarding" />
-          <SettingsRow icon="play" :label="t('whatsNew.replay')" @click="replayWhatsNew" />
-          <SettingsRow icon="lightbulb" :label="t('tips.replay')" @click="replayTips" />
         </SettingsGroup>
 
         <SettingsGroup :title="t('profile.native.groups.info')">
