@@ -38,6 +38,7 @@ import {
   stepSpring,
   titlePlacement,
 } from "../composables/readingScrub";
+import { HUMP_HEIGHT, humpHeight } from "../composables/tabBarHump";
 import { readingScrubbing, readingSections, sectionPosition } from "../composables/useReadingNav";
 
 const SECTIONS = [
@@ -184,6 +185,23 @@ describe("the geometry of the slide", () => {
     const loose = run(0.3);
     expect(loose.end).toBeCloseTo(1, 1);
     expect(loose.highest).toBeGreaterThan(1.2);
+  });
+});
+
+describe("the bump of the app's bottom bar", () => {
+  it("clears the round button, with a margin, and the line riding over it too", () => {
+    // The button: 52 px round, its bottom 0.6 rem (9.6 px) above the foot of
+    // the 56 px bar, so its center 20.4 px under the bar's top edge. With
+    // 4 px of white around it and the line's 2 px half-thickness on top.
+    const radius = 26 + 4 + 2;
+    const center = 56 - 9.6 - 26;
+    for (let dx = -radius; dx <= radius; dx += 1) {
+      const above = Math.sqrt(radius * radius - dx * dx) - center;
+      expect(humpHeight(dx)).toBeGreaterThanOrEqual(above);
+    }
+    expect(humpHeight(0)).toBe(HUMP_HEIGHT);
+    // Flat again past the button: the rest of the bar keeps its straight edge.
+    expect(humpHeight(90)).toBeLessThan(0.1);
   });
 });
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onUnmounted, ref, shallowRef, watch } from "vue";
+import { computed, onMounted, onUnmounted, ref, shallowRef, useId, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { isNativeApp } from "../composables/useNativeApp";
 import { useScrollFrame } from "../composables/useScrollFrame";
@@ -20,6 +20,7 @@ import {
   titlePlacement,
   type Spring,
 } from "../composables/readingScrub";
+import { HUMP_HEIGHT, humpHeight } from "../composables/tabBarHump";
 import { haptic } from "../services/haptics";
 import { analyticsService } from "../services/analyticsService";
 
@@ -71,12 +72,33 @@ const interactive = computed(
     scrollFrame.value.docHeight > scrollFrame.value.viewport,
 );
 
+/**
+ * In the app, the line runs along the top edge of the bottom bar, over it,
+ * and rides over the bump the bar makes around its round button
+ * (tabBarHump). Not while the mini player lies there: the line stays under
+ * it, flat, as before.
+ */
+const humped = computed(() => isNativeApp && !isMiniPlayerVisible.value);
+
+/** How high the bar's edge, and so the line at rest, stands at `x`. */
+function base(x: number): number {
+  return humped.value ? humpHeight(x - width.value / 2) : 0;
+}
+
 const rtl = ref(false);
 let pointerId: number | null = null;
 let rect: DOMRect | null = null;
 let startProgress = 0;
 /** The width of the strip (the screen's): the line is drawn across it. */
 const width = ref(0);
+
+function measureWidth(): void {
+  width.value = document.documentElement.clientWidth;
+}
+onMounted(() => {
+  measureWidth();
+  window.addEventListener("resize", measureWidth, { passive: true });
+});
 
 /**
  * The motion of the line, frame by frame: where the bump stands (`peak`,
@@ -185,6 +207,7 @@ watch(current, (now, before) => {
 });
 
 onUnmounted(() => {
+  window.removeEventListener("resize", measureWidth);
   if (raf) cancelAnimationFrame(raf);
   if (scrubbing.value) readingScrubbing.value = false;
 });
@@ -207,19 +230,25 @@ const line = computed(() => {
   const { peakX, lift: l } = pose.value;
   const w = width.value;
   const points: [number, number][] = [];
-  for (let x = 0; x <= w; x += 4) points.push([x, BASELINE - bumpHeight(x, peakX, l)]);
-  points.push([w, BASELINE - bumpHeight(w, peakX, l)]);
+  const height = (x: number) => base(x) + bumpHeight(x, peakX, l);
+  for (let x = 0; x <= w; x += 4) points.push([x, BASELINE - height(x)]);
+  points.push([w, BASELINE - height(w)]);
   const at = (p: [number, number]) => `${p[0].toFixed(1)},${p[1].toFixed(1)}`;
   const before = points.filter(([x]) => x <= peakX);
   const after = points.filter(([x]) => x >= peakX);
-  const top: [number, number] = [peakX, BASELINE - bumpHeight(peakX, peakX, l)];
+  const top: [number, number] = [peakX, BASELINE - height(peakX)];
   const left = [...before, top].map(at).join(" L");
   const right = [top, ...after].map(at).join(" L");
   const [done, rest] = rtl.value ? [right, left] : [left, right];
   return {
     done: `M${done}`,
     rest: `M${rest}`,
-    hill: `M0,${STAGE} L${points.map(at).join(" L")} L${w},${STAGE} Z`,
+    // Between the pulled line and the line at rest: in the app, the bar's
+    // bump stays visible under it.
+    hill: `M${points.map(at).join(" L")} L${[...points]
+      .reverse()
+      .map(([x]) => at([x, BASELINE - base(x) + STROKE / 2]))
+      .join(" L")} Z`,
     thumb: top,
   };
 });
@@ -251,7 +280,7 @@ const titles = computed(() => {
           // neighbors never overlap; the one coming on top takes the room.
           maxWidth: `${(TITLE_SPACING - 14) / place.scale + nearness * width.value * 0.84}px`,
           opacity: place.opacity,
-          transform: `translate(${place.x}px, ${BASELINE - place.rise - gap}px) translate(-${anchor * 100}%, -100%) rotate(${place.rotate}deg) scale(${place.scale})`,
+          transform: `translate(${place.x}px, ${BASELINE - base(place.x) - place.rise - gap}px) translate(-${anchor * 100}%, -100%) rotate(${place.rotate}deg) scale(${place.scale})`,
           transformOrigin: `${anchor * 100}% 100%`,
           zIndex: 10 - Math.round(Math.abs(distance) * 2),
         },
@@ -265,8 +294,30 @@ const percentStyle = computed(() => {
   const { peakX, lift: l } = pose.value;
   return {
     opacity: Math.min(1, l),
-    transform: `translate(${peakX}px, ${BASELINE - bumpHeight(peakX, peakX, l) - 8}px) translate(-50%, -100%)`,
+    transform: `translate(${peakX}px, ${BASELINE - base(peakX) - bumpHeight(peakX, peakX, l) - 8}px) translate(-50%, -100%)`,
   };
+});
+
+/**
+ * The line at rest in the app, over the bar's bump: drawn once for the width
+ * of the screen, the share read revealed by a clip that follows the scroll
+ * (a rectangle's width, no path rebuilt at each frame).
+ */
+const REST_HEIGHT = HUMP_HEIGHT + 6;
+const REST_BASELINE = REST_HEIGHT - 2;
+const restLine = computed(() => {
+  const w = width.value;
+  const points: string[] = [];
+  for (let x = 0; x <= w; x += 4) points.push(`${x},${(REST_BASELINE - base(x)).toFixed(2)}`);
+  points.push(`${w},${REST_BASELINE - base(w)}`);
+  return `M${points.join(" L")}`;
+});
+const clipId = `scrub-done-${useId()}`;
+const doneClip = computed(() => {
+  const share = progress.value * width.value;
+  const isRtl =
+    typeof document !== "undefined" && document.documentElement.getAttribute("dir") === "rtl";
+  return { x: isRtl ? width.value - share : 0, width: share };
 });
 
 /** The share reached: « 42 % » in French, the sign never cut from its number. */
@@ -278,7 +329,10 @@ const percent = computed(() =>
 </script>
 
 <template>
-  <div class="fixed inset-x-0 z-40 pointer-events-none" :class="bottomClass">
+  <div
+    class="fixed inset-x-0 pointer-events-none"
+    :class="[bottomClass, humped ? 'z-[55]' : 'z-40']"
+  >
     <!-- The line pulled up under the finger, and the titles on it. -->
     <div
       v-if="pulled"
@@ -318,10 +372,35 @@ const percent = computed(() =>
          which a finger would never hit. Two touches in a row on it are two
          slides: the double tap that starts the automatic scrolling stays off
          it (data-own-gestures, see useAutoScroll). -->
+    <!-- In the app, the line at rest over the bar's bump. -->
+    <svg
+      v-if="humped && !pulled && width > 0"
+      class="absolute inset-x-0 bottom-0"
+      :width="width"
+      :height="REST_HEIGHT"
+      aria-hidden="true"
+    >
+      <defs>
+        <clipPath :id="clipId">
+          <rect :x="doneClip.x" y="0" :width="doneClip.width" :height="REST_HEIGHT" />
+        </clipPath>
+      </defs>
+      <path :d="restLine" class="scrub-rest" stroke-width="4" />
+      <path :d="restLine" class="scrub-done" stroke-width="4" :clip-path="`url(#${clipId})`" />
+    </svg>
+
+    <!-- On the site, the strip reaches well above the line: the finger can
+         start the slide without touching the very bottom of the screen,
+         where the browser's own gesture leaves the page. In the app, a notch
+         leaves the round button of the bar its touches. -->
     <div
-      class="scrub-strip relative flex h-5 items-end"
+      class="scrub-strip relative flex items-end"
       data-own-gestures
-      :class="interactive ? 'pointer-events-auto cursor-pointer' : ''"
+      :class="[
+        interactive ? 'pointer-events-auto cursor-pointer' : '',
+        isNativeApp ? 'h-6' : 'h-12',
+        { 'scrub-strip-notched': humped },
+      ]"
       @pointerdown="onPointerDown"
       @pointermove="onPointerMove"
       @pointerup="endScrub"
@@ -330,7 +409,7 @@ const percent = computed(() =>
     >
       <div
         class="relative h-1 w-full bg-black/5 dark:bg-white/10"
-        :class="{ invisible: pulled }"
+        :class="{ invisible: pulled || humped }"
         role="progressbar"
         :aria-valuenow="Math.round(progress * 100)"
         aria-valuemin="0"
@@ -351,6 +430,21 @@ const percent = computed(() =>
 <style scoped>
 .scrub-strip {
   touch-action: none;
+}
+
+/* Over the round button of the app's bar, which rises into the strip, the
+   strip steps aside: the button keeps its touches. */
+.scrub-strip-notched {
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% 100%,
+    calc(50% + 2rem) 100%,
+    calc(50% + 2rem) calc(100% - 0.5rem),
+    calc(50% - 2rem) calc(100% - 0.5rem),
+    calc(50% - 2rem) 100%,
+    0 100%
+  );
 }
 
 /* The paper under the pulled line: the text it rises over goes under it. */

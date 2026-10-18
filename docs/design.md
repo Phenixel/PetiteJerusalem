@@ -1270,8 +1270,17 @@ is also a slider. A finger (or the mouse) laid on it takes the page to the
 same share of the text, and the page follows while it slides: whoever looks
 for the Amida in a whole Shaharit, or the end of a long daf, gets there in
 one gesture instead of three screens of scrolling. The strip that catches
-the finger is taller than the line (1.25rem), which no finger would hit. In
+the finger is taller than the line, which no finger would hit: on the site,
+3 rem, so that the slide can start well above the very bottom of the screen,
+where the browser's own gesture leaves the page; in the app, 1.5 rem. In
 Hebrew the bar fills from the right, and slides the same way.
+
+In the app, the line runs along the top edge of the bottom bar, over it, and
+the bar's white rises in a bump over its round times button instead of the
+button sticking out of it: the line rides over the bump
+(`composables/tabBarHump.ts`, one shape for both, a 12 px bell that clears
+the button with a margin). A notch in the strip leaves the button its
+touches. While the mini player lies there, the line stays flat, under it.
 
 The finger pulls the line. Under it, the bar rises in a bump (64 px, a bell
 rather than a peak: the line is stretched, it does not break), like a string
@@ -1312,7 +1321,9 @@ and that another one is a touch away. Not while the page scrolls by itself
 them all. The button keeps its name for screen readers; the title is a hint
 for the eye.
 
-Held by `src/__tests__/readingScrub.test.ts`.
+Held by `src/__tests__/readingScrub.test.ts` (the bump clearing the round
+button: « clears the round button, with a margin, and the line riding over
+it too »).
 
 ### One bookmark per book, and it shows
 

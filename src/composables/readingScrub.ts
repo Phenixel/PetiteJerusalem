@@ -76,11 +76,11 @@ export function titlePlacement(
   // The titles on the slopes lean with the line; the one coming on top
   // straightens up to be read.
   const slope = bumpSlope(x, peakX, lift);
-  const tilt = ((-Math.atan(slope) * 180) / Math.PI) * (1 - nearness);
+  const tilt = ((-Math.atan(slope) * 180) / Math.PI) * (1 - nearness) ** 2;
   return {
     x,
     rise: bumpHeight(x, peakX, lift),
-    rotate: Math.max(-40, Math.min(40, tilt)),
+    rotate: Math.max(-28, Math.min(28, tilt)),
     scale: 0.5 + 0.5 * nearness,
     opacity: Math.max(0, Math.min(1, lift)) * Math.max(0, 1 - 0.28 * reach),
   };
