@@ -113,12 +113,13 @@ function buildSvg({ title, label, tagline }: OgCardOptions): string {
     )
     .join("\n  ");
 
-  // Fond à plat, dans l'orange du thème « sunset » (la teinte de la palette du
-  // logo), le texte dans le brun qui s'écrit dessus : le blanc ne se lit pas
-  // sur cet orange clair. Le site n'emploie plus de dégradé nulle part, sa
-  // vignette de partage non plus (voir docs/design.md).
+  // A flat background in the solid orange of the "sunset" theme, the text in
+  // brown: the app writes white on this orange, but a share thumbnail is read
+  // small, by people who cannot switch to higher contrast, so it keeps the
+  // dark text. The site uses no gradient anywhere, its share thumbnail
+  // neither (see docs/design.md).
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${WIDTH}" height="${HEIGHT}" viewBox="0 0 ${WIDTH} ${HEIGHT}">
-  <rect width="${WIDTH}" height="${HEIGHT}" fill="#FEA547"/>
+  <rect width="${WIDTH}" height="${HEIGHT}" fill="#EB9F4F"/>
   <text x="${MARGIN}" y="110" font-family="${FONT_LATIN}" font-weight="700" font-size="34" fill="#3B2412" opacity="0.95">Petite Jérusalem</text>
   <text x="${MARGIN}" y="170" font-family="${FONT_LATIN}" font-weight="400" font-size="30" fill="#3B2412" opacity="0.85">${esc(label)}</text>
   ${titleSpans}

@@ -84,17 +84,16 @@ body {
 }
 
 @theme {
-  /* Couleurs : le fond est fixe, les trois thèmes sont au choix de
-     l'utilisateur et réécrits au vol par useTheme. Valeurs par défaut :
-     « sunset », l'orange et le bleu de la palette du logo. Chaque famille a
-     son encre (texte, liens, icônes : --color-primary, --color-secondary) ;
-     les fonds pleins prennent la teinte (--color-brand) et écrivent dessus
-     --color-on-brand, un brun sur l'orange clair ; -soft, la version claire.
-     Voir docs/design.md, « Les couleurs de thème ». */
+  /* Colors: the background is fixed, the three themes are the user's choice
+     and rewritten on the fly by useTheme. Default values: "sunset", the
+     orange and blue of the logo's palette. Each family has its ink (text,
+     links, icons: --color-primary, --color-secondary); solid fills take the
+     hue (--color-brand) and write --color-on-brand on it, white on the pastel
+     orange; -soft, the light version. See docs/design.md, "Theme colors". */
   --color-primary: #d46d01;
   --color-secondary: #328cdc;
-  --color-brand: #fea547;
-  --color-on-brand: #3b2412;
+  --color-brand: #eb9f4f;
+  --color-on-brand: #ffffff;
   --color-brand-soft: #ffd09e;
   --color-secondary-brand: #328cdc;
   --color-secondary-soft: #a9cceb;
@@ -189,6 +188,21 @@ body {
   --shadow-card: 0 1px 2px rgb(0 0 0 / 0.3), 0 2px 8px rgb(0 0 0 / 0.25);
   --shadow-card-hover: 0 2px 4px rgb(0 0 0 / 0.35), 0 8px 24px rgb(0 0 0 / 0.4);
   --shadow-pop: 0 4px 12px rgb(0 0 0 / 0.4), 0 16px 40px rgb(0 0 0 / 0.5);
+}
+
+/* Higher contrast (see useContrast): the neutrals strengthen too. The theme
+   colors are strengthened by useTheme; here, the secondary text darkens (or
+   lightens in dark mode) and the rules show more. */
+:root.contrast-more {
+  --color-text-secondary: #4f4a40;
+  --color-line: rgb(53 49 42 / 0.18);
+  --color-line-strong: rgb(53 49 42 / 0.32);
+}
+
+:root.dark.contrast-more {
+  --color-text-secondary: #d1d5db;
+  --color-line: rgb(255 255 255 / 0.2);
+  --color-line-strong: rgb(255 255 255 / 0.36);
 }
 
 /* ---- La sélection ---------------------------------------------------------

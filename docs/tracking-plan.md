@@ -189,6 +189,18 @@ the daily reading lives there), `my_sessions`, or `support` (« Nous écrire »,
 shows the day) sends it, with or without an account; on the website, the
 « Mon parcours » link in the profile banner, and the menu row, which stays.
 
+### `contrast_changed`, `contrast_change_failed` (new)
+
+The higher contrast switch, in the introduction or in the appearance
+settings (see docs/design.md, "Higher contrast"). `contrast_change_failed`
+is sent when the account's write is refused (the previous value is back on
+screen). Following the device setting sends nothing.
+
+| Property     | Values                                               |
+| ------------ | ---------------------------------------------------- |
+| `preference` | `more` (switched on), `standard` (switched off)      |
+| `scope`      | `device` (no account, kept on the device), `account` |
+
 ## Reading the tefila
 
 ### `hazara_opened` (new)
