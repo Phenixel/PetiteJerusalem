@@ -262,7 +262,7 @@ When an update moves things around, those who knew the app before must be
 told where things went: 4.0 moved the library and the classes under
 « Étude » and gave the Sidour its own tab, and a reader looking for
 « Bibliothèque » in the bar would not find it. The first launch after the
-update plays a video of about eighty seconds on what changed
+update plays a video of about ninety seconds on what changed
 (`WhatsNewVideo.vue`, `useWhatsNew.ts`), in the reader's language: where the
 tabs went first, then what is new.
 
@@ -3635,7 +3635,7 @@ the app, from right to left.
 ### Version 4.0: one presentation, in the first series' language
 
 The 4.0 video (`promo/src/v4/`) is a presentation rather than an ad: one
-video of about eighty seconds, which the app plays after the update in the
+video of about ninety seconds, which the app plays after the update in the
 reader's language and which goes to the networks in French, only its ending
 changing (the stores instead of where to watch it again). A first cut in
 series 2's manner was set aside: what the owner liked is series 1, slowed
@@ -3648,6 +3648,9 @@ down.
   streak and its light, the Vilna page, a passage's commentaries, the
   team's answer) rather than the phone zooming under the caption; color
   wipes for the two big cuts; the end card where the logo builds.
+- **It follows the app.** When the app changes before the release, the
+  video is filmed again on it: the cut is data and the shots replay
+  themselves (`npm run captures`, then `npm run render`).
 - **What it does not use.** Scrolling bands, phones with echo trails, the
   stone mosaic, captions on plates, a shaking camera beyond the opening's
   strikes, a music that stutters: series 2's vocabulary, which did not
@@ -3661,11 +3664,12 @@ down.
   the 3.10 home page beside today's. The bars come from each language's
   screenshots, so the arrows follow the mirrored bar in Hebrew, where
   « before » also stands on the right.
-- **Brown on the light orange, never white.** The opening, the montage's
-  orange shots and the « 4.0 » pill write `#3B2412` on `#FEA547`; a
-  caption's accent takes the orange ink (`#D46D01`). White only goes on the
-  blue and the night. The former vermilion stays with series 1 and 2, filmed
-  on 3.10.
+- **White on the pastel orange, as in the app.** The opening, the montage's
+  orange shots and the « 4.0 » pill write white on `#EB9F4F`, in large bold
+  type only (the app's documented exception, section 2); a small label on
+  the orange stays dark. A caption's accent takes the orange ink
+  (`#D46D01`). The former vermilion stays with series 1 and 2, filmed on
+  3.10.
 - **One grid.** The cut is data (`promo/src/v4/plan.ts`): the gestures and
   the music's sounds fall on the same marked beats, and a section always
   holds whole bars, or the music would run into the next one.

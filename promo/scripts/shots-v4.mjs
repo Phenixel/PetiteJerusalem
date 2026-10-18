@@ -223,14 +223,6 @@ function shotsFor(locale) {
       },
     },
     {
-      name: name("moussar"),
-      look: now,
-      async run(t) {
-        await t.open("/bibliotheque/moussar", { css: "main" });
-        await t.snap();
-      },
-    },
-    {
       // Haazinou in the form of the scroll.
       name: name("tikoun"),
       look: now,
@@ -267,12 +259,11 @@ function shotsFor(locale) {
       },
     },
     {
-      // The week's aliyot, the ones of the days already read checked (demo Mon parcours).
+      // The week's aliyot: « Montées lues » at the top, from the demo Mon parcours.
       name: name("chnei"),
       look: now,
       async run(t) {
         await t.open("/bibliotheque/chnei-mikra", { css: "main" });
-        await t.mark("list", t.page.locator(`section[aria-label="${await t.L("chneiMikra.listTitle")}"]`));
         await t.snap();
       },
     },
@@ -299,6 +290,50 @@ function shotsFor(locale) {
         await t.open("/?modifier=1", { css: "main" });
         await hideOfflineNotice(t);
         await t.film(6, 90);
+      },
+    },
+    {
+      // Searching the Sidour: a word, the prayers that answer it.
+      name: name("recherche"),
+      look: now,
+      async run(t) {
+        await t.open("/sidour", { css: "a.sidour-hero" });
+        const field = t.page.locator(`input[placeholder="${await t.L("sidour.search.placeholder")}"]`);
+        await field.click();
+        await field.type({ fr: "chema", en: "shema", he: "שמע" }[locale], { delay: 90 });
+        await t.wait(1500);
+        await t.page.evaluate(() => document.activeElement?.blur());
+        await t.wait(600);
+        await t.snap();
+      },
+    },
+    {
+      // Cha'harit's long text: the progress line slid with a finger, the
+      // titles riding on it, the page following.
+      name: name("progress"),
+      look: now,
+      frames: true,
+      async run(t) {
+        await t.open("/bibliotheque/sidour/chaharit", { css: "main" });
+        await t.page.mouse.wheel(0, 1500);
+        await t.wait(1500);
+        const strip = t.page.locator(".scrub-strip").first();
+        await t.mark("strip", strip);
+        await t.snap();
+        const box = await strip.boundingBox();
+        const y = box.y + box.height / 2;
+        const [from, to] = locale === "he" ? [350, 50] : [40, 340];
+        await t.page.mouse.move(from, y);
+        await t.page.mouse.down();
+        for (let i = 1; i <= 12; i++) {
+          await t.page.mouse.move(from + ((to - from) * i) / 12, y, { steps: 3 });
+          await t.wait(120);
+          await t.snap();
+        }
+        await t.page.mouse.up();
+        await t.film(4, 150);
+        await t.wait(1200);
+        await t.snap();
       },
     },
     {
@@ -381,6 +416,74 @@ function shotsFor(locale) {
         await t.slow(1);
         await t.wait(2500);
         await t.snap();
+      },
+    },
+    {
+      // The Sidour's card of the moment swiped « C'est fait »: Cha'harit is
+      // said, Min'ha takes the card.
+      name: name("sidour-swipe"),
+      look: now,
+      frames: true,
+      async run(t) {
+        // The services said earlier (the home deck's card of the hour) are
+        // forgotten: Cha'harit must hold the card again.
+        await t.page.evaluate(() => localStorage.removeItem("pj_parcours_occasions"));
+        await t.open("/sidour", { css: "a.sidour-hero" });
+        const hero = t.page.locator("a.sidour-hero");
+        await t.mark("hero", hero);
+        const box = await hero.boundingBox();
+        await t.snap();
+        const dir = locale === "he" ? -1 : 1;
+        const x0 = box.x + box.width * (dir > 0 ? 0.25 : 0.75);
+        const y = box.y + box.height / 2;
+        await t.touch("touchStart", x0, y);
+        for (let d = 0; d <= 200; d += 25) {
+          await t.touch("touchMove", x0 + d * dir, y);
+          await t.wait(40);
+          if (d % 50 === 0) await t.snap();
+        }
+        await t.touch("touchEnd", x0 + 200 * dir, y);
+        await t.film(4, 160);
+        await t.wait(1500);
+        await t.snap();
+      },
+    },
+    {
+      // Three books pinned on the home page, the block shown.
+      name: name("epingles"),
+      look: now,
+      async run(t) {
+        await t.page.evaluate(() => {
+          localStorage.setItem("pj_home_layout", JSON.stringify({ order: ["livres", "horaires", "volumes", "portes", "dates"], hidden: ["reprendre", "ecoute"] }));
+          localStorage.setItem("pj_home_pinned", JSON.stringify({ items: ["book:sidour", "book:tehilim", "book:talmud"] }));
+        });
+        await t.open("/", { css: '[data-block="livres"]' });
+        await hideOfflineNotice(t);
+        await t.snap();
+        await t.page.evaluate(() => {
+          localStorage.removeItem("pj_home_layout");
+          localStorage.removeItem("pj_home_pinned");
+        });
+      },
+    },
+    {
+      // The higher contrast mode, switched on as in the appearance settings,
+      // then back to following the device for the shots that come after.
+      name: name("contraste"),
+      look: now,
+      async run(t) {
+        const setContrast = (on) =>
+          t.page.evaluate(async (on) => {
+            const { useContrast } = await import("/src/composables/useContrast.ts");
+            const { auth } = await import("/src/firebase/core.ts");
+            await useContrast().setContrastMore(auth.currentUser?.uid ?? null, on);
+          }, on);
+        await t.open("/", { css: TAB("/sidour") });
+        await setContrast(true);
+        await hideOfflineNotice(t);
+        await t.wait(1500);
+        await t.snap();
+        await setContrast(false);
       },
     },
   ];

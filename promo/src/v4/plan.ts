@@ -24,6 +24,7 @@ export type ChapterId =
   | "accueil"
   | "parcours"
   | "daf"
+  | "progress"
   | "translation"
   | "commentaries"
   | "table"
@@ -34,7 +35,7 @@ export type Mark = { beat: number; sound?: CueSound };
 
 export type ChapterPlan = { id: ChapterId; beats: number; marks: Record<string, Mark> };
 
-export type MontageShot = "halakha" | "moussar" | "tikoun" | "chnei" | "signet" | "tehilim";
+export type MontageShot = "halakha" | "tikoun" | "chnei" | "signet" | "tehilim" | "recherche" | "epingles" | "contraste";
 
 export type CutPlan = {
   hook: number;
@@ -63,11 +64,14 @@ export function presentationPlan(locale: Locale): CutPlan {
         second: { beat: 4.8 },
         tap2: { beat: 6, sound: "tap" },
       }),
-      ch("sidour", 10, {
+      ch("sidour", 14, {
         tap: { beat: 1.2, sound: "tap" },
         push: { beat: 1.5, sound: "swipe" },
         second: { beat: 4.5 },
         pop: { beat: 5, sound: "pop" },
+        third: { beat: 9 },
+        swipe: { beat: 10, sound: "swipe" },
+        done: { beat: 11, sound: "chime" },
       }),
       ch("accueil", 16, {
         split: { beat: 0.2, sound: "whoosh" },
@@ -89,6 +93,12 @@ export function presentationPlan(locale: Locale): CutPlan {
         page: { beat: 1.7, sound: "impact" },
         zoom: { beat: 3, sound: "whoosh" },
         second: { beat: 6.5 },
+      }),
+      ch("progress", 12, {
+        push: { beat: 0, sound: "swipe" },
+        slide: { beat: 2.5, sound: "swipe" },
+        second: { beat: 6.5 },
+        release: { beat: 6.3, sound: "pop" },
       }),
       // The translations go into French and English: the Hebrew video has none.
       ...(locale === "he"
@@ -121,7 +131,7 @@ export function presentationPlan(locale: Locale): CutPlan {
         second: { beat: 6 },
       }),
     ],
-    montage: ["halakha", "moussar", "tikoun", "chnei", "signet", "tehilim"],
+    montage: ["halakha", "tikoun", "chnei", "signet", "tehilim", "recherche", "epingles", "contraste"],
     end: 8,
   };
 }

@@ -7,7 +7,7 @@
  *
  * Calmer than the first series, as befits a presentation: no camera shake
  * beyond the opening's strikes, no scrolling bands, no echoes. In the colors
- * of 4.0 (palette.ts): brown on the light orange, never white.
+ * of 4.0 (palette.ts): white on the pastel orange, as in the app.
  */
 import { AbsoluteFill, Img, interpolate, random, useCurrentFrame, useVideoConfig } from "remotion";
 import { B, FPB, clamp, springAt, tween } from "../anim.ts";
@@ -136,7 +136,8 @@ function Label({ text, at, x, y, dark, dir }: { text: string; at: number; x: num
           padding: "12px 32px",
           borderRadius: 999,
           background: dark ? V4.text : V4.orange,
-          color: dark ? V4.bg : V4.onOrange,
+          // A small label: white on the pastel orange is for large words only.
+          color: dark ? V4.bg : V4.text,
           fontFamily: SANS,
           fontWeight: 800,
           fontSize: 40,
@@ -295,7 +296,7 @@ export type MontageItemV4 = { label: string; src: string };
 /**
  * One more change every two beats (the first series gave one), each phone
  * coming in its own way: slid in, dropped, zoomed, turned. Backgrounds
- * alternate the orange (brown text), the night, the page and the blue.
+ * alternate the orange, the night, the page and the blue.
  */
 export function MontageV4({ items, tag, dir }: { items: MontageItemV4[]; tag: string; dir?: "rtl" }) {
   const frame = useCurrentFrame();
@@ -306,8 +307,10 @@ export function MontageV4({ items, tag, dir }: { items: MontageItemV4[]; tag: st
   const t = frame - k * step;
   const backs = [V4.orange, V4.night, V4.bg, V4.blue];
   const bg = backs[k % backs.length];
-  const onLight = bg === V4.bg || bg === V4.orange;
-  const text = bg === V4.orange ? V4.onOrange : bg === V4.bg ? V4.text : "#ffffff";
+  // The small pill is dark on the page and on the pastel orange (white in
+  // small type would not read there), white on the night and the blue.
+  const darkPill = bg === V4.bg || bg === V4.orange;
+  const text = bg === V4.bg ? V4.text : "#ffffff";
   const p = springAt(frame, fps, k * step, { damping: 13, stiffness: 180, mass: 0.6 });
   const style = k % 4;
   let x = 540;
@@ -341,8 +344,8 @@ export function MontageV4({ items, tag, dir }: { items: MontageItemV4[]; tag: st
           style={{
             padding: "14px 34px",
             borderRadius: 999,
-            background: onLight ? V4.text : "#ffffff",
-            color: onLight ? V4.bg : bg,
+            background: darkPill ? V4.text : "#ffffff",
+            color: darkPill ? V4.bg : bg,
             fontFamily: SANS,
             fontWeight: 800,
             fontSize: 36,
@@ -439,7 +442,10 @@ export function EndCardV4({ kind, strings, length }: { kind: "app" | "promo"; st
         <div style={{ transform: `scale(${0.6 + 0.4 * logoP})`, marginBottom: 10 }}>
           <Logo size={280} build={build} />
         </div>
-        <KineticTitle lines={["Petite Jérusalem"]} start={8} color={V4.text} size={104} stagger={4} />
+        {/* The name is Latin: its words keep their order in the Hebrew video. */}
+        <div dir="ltr">
+          <KineticTitle lines={["Petite Jérusalem"]} start={8} color={V4.text} size={104} stagger={4} />
+        </div>
         <div style={{ height: 22 }} />
         <VersionPill at={14} />
         <div style={{ height: 50 }} />

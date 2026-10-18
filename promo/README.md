@@ -15,7 +15,7 @@ swiping a card, setting a text aside) was really played, frame by frame.
 
 ## Version 4.0
 
-The biggest update of the app, presented in one video of about eighty
+The biggest update of the app, presented in one video of about ninety
 seconds, in series 1's language (a phone held calmly, two-line captions,
 real gestures, what must be read coming out of the screen), slowed down:
 a presentation rather than an ad. A first cut in series 2's manner
@@ -32,17 +32,23 @@ a presentation rather than an ad. A first cut in series 2's manner
 | -------------- | ----------------------------------------------------------------------------------------------- |
 | `bars`         | the 3.10 tab bar, then today's; Bibliothèque and Chiourim lead to Étude, Sidour is new          |
 | `etude`        | Étude: Bibliothèque, Chiourim, Partage, the pill sliding from tab to tab                        |
-| `sidour`       | the Sidour tab touched; its card of the moment comes out of the screen                          |
+| `sidour`       | the Sidour tab touched; its card of the moment comes out of the screen, then is swiped « C'est fait » |
 | `accueil`      | the 3.10 home page beside today's; a card swiped « C'est fait »; the blocks to move              |
 | `parcours`     | the lamp touched; the streak and its galaxy out of the screen; the wall; a new goal             |
 | `daf`          | « Page »: the Vilna page out of the screen, Rachi and Tossafot around the gemara                 |
+| `progress`     | Cha'harit's reading bar slid with a finger, its titles riding the line, out of the screen        |
 | `translation`  | the translation under the Hebrew, with the AI notice in French (not in the Hebrew video)        |
 | `commentaries` | a passage touched, its sheet, then its commentaries out of the screen                           |
 | `table`        | « Mettre de côté »: the page flies into its book in the bar, a second one, the table            |
 | `audio`        | a class plays, its bar out of the screen, then the full-screen player                           |
 | `contact`      | the badge on the profile, « Nous écrire », the team's answer out of the screen                  |
 
-The in-app copies (720×1280, about 6 MB for eighty seconds, their index at
+The closing montage passes eight more changes: Halakha and Moussar, the
+reader's Tikoun, chnei mikra aliyah by aliyah, one bookmark per book, the
+chain's Tehilim in one go, the Sidour's search, the pinned books of the home
+page, the higher contrast mode.
+
+The in-app copies (720×1280, about 6 MB for ninety seconds, their index at
 the front so they start before fully arriving, and a poster) are written by
 `npm run render` into the app's `public/videos/`, served by the site and left
 out of the native bundle. The app reads them under the same names
@@ -184,10 +190,10 @@ shots it is missing in `scripts/shots-v4.mjs`.
 ## The look
 
 The videos follow `docs/design.md` (section "The promotional videos"): the
-colors of the themes (the logo's palette for 4.0, brown on the light orange),
-the stone wall, Playfair Display for titles and Manrope for the rest
-(embedded from Fontsource, no network request at render time), flat colors
-and never a gradient, the French non-breaking spaces.
+colors of the themes (the logo's palette for 4.0, white on the pastel orange
+as in the app), the stone wall, Playfair Display for titles and Manrope for
+the rest (embedded from Fontsource, no network request at render time), flat
+colors and never a gradient, the French non-breaking spaces.
 
 ## Licenses
 

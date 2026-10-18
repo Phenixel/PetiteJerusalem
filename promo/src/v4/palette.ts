@@ -1,18 +1,20 @@
 /**
- * The colors of version 4.0 (docs/design.md, "Theme colors"): the logo's
- * light orange used as a solid fill with brown on it, its deepened ink for
- * orange text, the logo's blue, the warm page background. The 3.10 videos
- * keep their own (src/theme.ts, THEMES): they show the app of that time.
+ * The colors of version 4.0 (docs/design.md, "Theme colors"): a pastel of
+ * the logo's orange as a solid fill, with white on it as in the app, its
+ * deepened ink for orange text, the logo's blue, the warm page background.
+ * The 3.10 videos keep their own (src/theme.ts, THEMES): they show the app
+ * of that time.
  *
- * White never goes on the light orange (2:1): brown does (7.4:1).
+ * White on the pastel orange is the app's documented exception (2.2:1, APCA
+ * Lc 47): fine for large bold words, which is what the video writes there.
  */
 import type { Look } from "../theme.ts";
 
 export const V4 = {
-  /** The logo's orange, a solid fill (cards of the moment, buttons). */
-  orange: "#FEA547",
+  /** The pastel orange, a solid fill (cards of the moment, buttons). */
+  orange: "#EB9F4F",
   /** What is written on the orange. */
-  onOrange: "#3B2412",
+  onOrange: "#ffffff",
   /** Orange text: the same hue, deepened. */
   ink: "#D46D01",
   /** The logo's blue, deepened once and for all: it carries white. */

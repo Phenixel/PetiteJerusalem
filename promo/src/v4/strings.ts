@@ -33,10 +33,11 @@ export type V4Strings = {
   captions: {
     bars: [CaptionLines, CaptionLines];
     etude: [CaptionLines, CaptionLines];
-    sidour: [CaptionLines, CaptionLines];
+    sidour: [CaptionLines, CaptionLines, CaptionLines];
     accueil: [CaptionLines, CaptionLines, CaptionLines];
     parcours: [CaptionLines, CaptionLines, CaptionLines];
     daf: [CaptionLines, CaptionLines];
+    progress: [CaptionLines, CaptionLines];
     translation: [CaptionLines];
     commentaries: [CaptionLines];
     table: [CaptionLines, CaptionLines];
@@ -45,11 +46,13 @@ export type V4Strings = {
   };
   montage: {
     halakha: string;
-    moussar: string;
     tikoun: string;
     chnei: string;
     signet: string;
     tehilim: string;
+    recherche: string;
+    epingles: string;
+    contraste: string;
   };
   /** The in-app ending. */
   end: { title: string; replay: string };
@@ -75,6 +78,7 @@ export const STRINGS: Record<Locale, V4Strings> = {
       sidour: [
         ["Le *Sidour*", "a son onglet"],
         ["Il s'ouvre", "*sur le moment*"],
+        ["Un office dit,", "*d'un geste*"],
       ],
       accueil: [
         ["Un nouvel", "*accueil*"],
@@ -90,6 +94,10 @@ export const STRINGS: Record<Locale, V4Strings> = {
         ["Le Talmud", "*dans sa page*"],
         ["Rachi et Tossafot", "*autour du texte*"],
       ],
+      progress: [
+        ["La barre de lecture", "*se fait glisser*"],
+        ["Elle vous mène", "*au bon passage*"],
+      ],
       translation: [["La traduction", "*sous l'hébreu*"]],
       commentaries: [[`Touchez un passage${NBSP}:`, "*ses commentaires*"]],
       table: [
@@ -103,12 +111,14 @@ export const STRINGS: Record<Locale, V4Strings> = {
       ],
     },
     montage: {
-      halakha: "Un rayon Halakha",
-      moussar: "Un rayon Moussar",
+      halakha: "Halakha et Moussar",
       tikoun: "Le Tikoun du lecteur",
-      chnei: "Le chnei mikra à cocher",
+      chnei: "Le chnei mikra, montée après montée",
       signet: "Un signet par livre",
       tehilim: "Vos Tehilim d'une traite",
+      recherche: "Le Sidour se cherche",
+      epingles: "Vos livres épinglés",
+      contraste: "Un mode contraste élevé",
     },
     end: {
       title: `Bonne découverte${NNBSP}!`,
@@ -134,6 +144,7 @@ export const STRINGS: Record<Locale, V4Strings> = {
       sidour: [
         ["The *Siddur*", "has its own tab"],
         ["It opens", "*on the moment*"],
+        ["A service said,", "*in one swipe*"],
       ],
       accueil: [
         ["A new", "*home*"],
@@ -149,6 +160,10 @@ export const STRINGS: Record<Locale, V4Strings> = {
         ["The Talmud", "*as printed*"],
         ["Rashi and Tosafot", "*around the text*"],
       ],
+      progress: [
+        ["The reading bar", "*slides*"],
+        ["It takes you", "*to the right passage*"],
+      ],
       translation: [["The translation", "*under the Hebrew*"]],
       commentaries: [["Touch a passage:", "*its commentaries*"]],
       table: [
@@ -162,12 +177,14 @@ export const STRINGS: Record<Locale, V4Strings> = {
       ],
     },
     montage: {
-      halakha: "A Halakha shelf",
-      moussar: "A Mussar shelf",
+      halakha: "Halakha and Mussar",
       tikoun: "The reader's Tikkun",
       chnei: "Shnayim mikra, aliyah by aliyah",
       signet: "One bookmark per book",
       tehilim: "Your Tehilim in one go",
+      recherche: "Search the Siddur",
+      epingles: "Your pinned books",
+      contraste: "A higher contrast mode",
     },
     end: {
       title: "Enjoy!",
@@ -194,6 +211,7 @@ export const STRINGS: Record<Locale, V4Strings> = {
       sidour: [
         ["*לסידור*", "לשונית משלו"],
         ["הוא נפתח", "*ברגע הנכון*"],
+        ["תפילה שנאמרה,", "*בהחלקה אחת*"],
       ],
       accueil: [
         ["דף בית", "*חדש*"],
@@ -209,6 +227,10 @@ export const STRINGS: Record<Locale, V4Strings> = {
         ["התלמוד", "*בצורת הדף*"],
         ["רש״י ותוספות", "*סביב הטקסט*"],
       ],
+      progress: [
+        ["סרגל הקריאה", "*נגרר באצבע*"],
+        ["ומביא אתכם", "*לקטע הנכון*"],
+      ],
       translation: [["התרגום", "*מתחת לעברית*"]],
       commentaries: [["נגיעה בקטע:", "*המפרשים שלו*"]],
       table: [
@@ -222,12 +244,14 @@ export const STRINGS: Record<Locale, V4Strings> = {
       ],
     },
     montage: {
-      halakha: "מדף הלכה",
-      moussar: "מדף מוסר",
+      halakha: "הלכה ומוסר",
       tikoun: "תיקון קוראים",
       chnei: "שניים מקרא, עלייה אחר עלייה",
       signet: "סימנייה לכל ספר",
       tehilim: "כל התהילים שלכם ברצף",
+      recherche: "חיפוש בסידור",
+      epingles: "הספרים המוצמדים שלכם",
+      contraste: "מצב ניגודיות גבוהה",
     },
     end: {
       title: "תיהנו מהחידושים!",

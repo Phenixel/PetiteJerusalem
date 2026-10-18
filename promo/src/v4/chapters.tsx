@@ -146,11 +146,20 @@ function Sidour({ loc, strings, m, len }: ChapterProps) {
   const c = strings.captions.sidour;
   const tab = center(z(loc, "accueil:sidour"));
   const card = z(loc, "sidour:moment");
+  const hero = z(loc, "sidour-swipe:hero");
+  const rtl = loc === "he";
+  const sw = m("swipe");
+  const x0 = hero.x + hero.w * (rtl ? 0.75 : 0.25);
+  const y = hero.y + hero.h / 2;
+  const zoomCard = focus(195, hero.y + 160, 760);
   const pose = poseAt(frame, [
     [0, {}],
-    [m("tap") - 6, { ry: loc === "he" ? -6 : 6 }],
+    [m("tap") - 6, { ry: rtl ? -6 : 6 }],
     [m("push") + 12, {}],
-    [len, {}],
+    [m("third"), {}],
+    [sw - 10, zoomCard],
+    [m("done") + 24, zoomCard],
+    [len - 4, {}],
   ]);
   return (
     <Scene
@@ -160,15 +169,19 @@ function Sidour({ loc, strings, m, len }: ChapterProps) {
         <>
           <Push from={<Shot src={`${loc}-etude-14.jpg`} />} to={<Shot src={cap(loc, "sidour")} />} start={m("push")} />
           <Tap x={tab.x} y={tab.y} at={m("tap")} color={V4.ink} />
+          {/* Cha'harit swiped « C'est fait »: Min'ha takes the card. */}
+          {frame >= sw - 2 ? <Seq frames={frames(loc, "sidour-swipe", 0, 10)} at={[0, ...spread(sw, 5, 3), ...spread(sw + 16, 4, 4), sw + 34]} /> : null}
+          <Swipe x0={x0} y0={y} x1={x0 + 200 * (rtl ? -1 : 1)} y1={y} start={sw} end={sw + 13} />
         </>
       }
       captions={[
         { at: 4, out: m("second") - 8, lines: c[0] },
-        { at: m("second"), out: len - 6, lines: c[1] },
+        { at: m("second"), out: m("third") - 8, lines: c[1] },
+        { at: m("third"), out: len - 6, lines: c[2] },
       ]}
     >
       {/* The card of the moment comes out of the screen, to be read. */}
-      <PopOut src={cap(loc, "sidour")} zone={card} pose={pose} start={m("pop")} end={len - 14} to={{ x: 540, y: 1180, width: 960 }} />
+      <PopOut src={cap(loc, "sidour")} zone={card} pose={pose} start={m("pop")} end={m("third") - 12} to={{ x: 540, y: 1180, width: 960 }} />
     </Scene>
   );
 }
@@ -208,7 +221,7 @@ function Accueil({ loc, strings, m, len }: ChapterProps) {
   const x0 = card.x + card.w * (rtl ? 0.7 : 0.3);
   const screen = (
     <>
-      <Push from={<Shot src={cap(loc, "sidour")} />} to={<Shot src={cap(loc, "accueil")} />} start={0} />
+      <Push from={<Shot src={`${loc}-sidour-swipe-10.jpg`} />} to={<Shot src={cap(loc, "accueil")} />} start={0} />
       {frame >= s - 2 ? <Seq frames={frames(loc, "deck", 0, 12)} at={[0, ...spread(s, 5, 3), ...spread(s + 15, 6, 3), s + 34]} /> : null}
       <Swipe x0={x0} y0={cc.y} x1={x0 + 200 * (rtl ? -1 : 1)} y1={cc.y} start={s} end={s + 13} />
       <Fade start={edit} duration={6}>
@@ -340,6 +353,50 @@ function Daf({ loc, strings, m, len }: ChapterProps) {
   );
 }
 
+/** The last frame of the progress chapter: Cha'harit, where the slide left it. */
+const PROGRESS_LAST = 17;
+
+function Progress({ loc, strings, m, len }: ChapterProps) {
+  const frame = useCurrentFrame();
+  const c = strings.captions.progress;
+  const strip = z(loc, "progress:strip");
+  const sl = m("slide");
+  const step = 4;
+  const drag = spread(sl, 12, step);
+  const end = sl + 12 * step;
+  const at = [0, ...drag, ...spread(end + 3, 4, 3), end + 18];
+  const names = frames(loc, "progress", 0, PROGRESS_LAST);
+  let index = 0;
+  for (let i = 0; i < at.length; i++) if (frame >= at[i]) index = i;
+  const current = names[index];
+  const rtl = loc === "he";
+  const y = strip.y + strip.h / 2;
+  const pose = poseAt(frame, [
+    [0, {}],
+    [len, {}],
+  ]);
+  // The bottom of the screen, where the line rises and the titles ride it.
+  const bottom: Zone = { x: 0, y: 560, w: 390, h: 200 };
+  return (
+    <Scene
+      pose={pose}
+      strings={strings}
+      screen={
+        <>
+          <Push from={<Shot src={`${loc}-daf-06.jpg`} />} to={<Seq frames={names} at={at} />} start={m("push")} />
+          <Swipe x0={rtl ? 350 : 40} y0={y} x1={rtl ? 50 : 340} y1={y} start={sl} end={end} />
+        </>
+      }
+      captions={[
+        { at: 4, out: m("second") - 8, lines: c[0] },
+        { at: m("second"), out: len - 6, lines: c[1] },
+      ]}
+    >
+      <PopOut src={current} zone={bottom} pose={pose} start={sl + 6} end={m("release") + 22} to={{ x: 540, y: 1180, width: 1000 }} tilt={-1} />
+    </Scene>
+  );
+}
+
 function Translation({ loc, strings, m, len }: ChapterProps) {
   const frame = useCurrentFrame();
   const c = strings.captions.translation;
@@ -364,7 +421,7 @@ function Translation({ loc, strings, m, len }: ChapterProps) {
       strings={strings}
       screen={
         <>
-          <Shot src={`${loc}-daf-06.jpg`} />
+          <Shot src={`${loc}-progress-${PROGRESS_LAST}.jpg`} />
           <Fade start={0} duration={6}>
             <Shot src={`${loc}-daf-00.jpg`} />
           </Fade>
@@ -399,7 +456,7 @@ function Commentaries({ loc, strings, m, len }: ChapterProps) {
       strings={strings}
       screen={
         <>
-          <Shot src={loc === "he" ? `${loc}-daf-06.jpg` : cap(loc, "traduction")} />
+          <Shot src={loc === "he" ? `${loc}-progress-${PROGRESS_LAST}.jpg` : cap(loc, "traduction")} />
           <Fade start={0} duration={6}>
             <Seq frames={frames(loc, "commentaires", 0, 10)} at={[0, ...spread(p + 2, 4, 2), p + 11, ...spread(o + 2, 4, 2), o + 11]} />
           </Fade>
@@ -529,6 +586,7 @@ export const CHAPTERS: Record<ChapterId, ComponentType<ChapterProps>> = {
   accueil: Accueil,
   parcours: Parcours,
   daf: Daf,
+  progress: Progress,
   translation: Translation,
   commentaries: Commentaries,
   table: Table,
