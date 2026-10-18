@@ -143,7 +143,11 @@ export interface SidourMoment {
   hero: SidourHero | null;
   /** Au plus une ligne sous la carte, et pas tous les jours. */
   extra: SidourExtra | null;
-  /** The moon, on its nights from nightfall, unless it is said already. */
+  /**
+   * The moon, on its nights from nightfall, unless it is said already; also
+   * when it holds the card (the home deck reads it from here, the Sidour page
+   * then shows no line for it).
+   */
   moon: SidourMoon | null;
   /** La fête dont les textes remontent en tête de la liste. */
   feast: FeastId | null;
@@ -535,12 +539,15 @@ export function sidourMoment(
   }
   // Pas de havdala sous une carte qui n'est ni l'office du soir ni une
   // occasion (la havdala elle-même n'est pas une carte).
-  if (extra?.key === "havdala" && hero?.kind !== "tefila" && !occasion) extra = null;
+  // Arvit already said keeps it: havdala comes after it.
+  if (extra?.key === "havdala" && hero?.kind !== "tefila" && !occasion && !currentDone) {
+    extra = null;
+  }
 
   return {
     hero,
     extra,
-    moon: hero?.kind === "halevana" ? null : moon,
+    moon,
     feast,
     tools: momentTools(
       place,

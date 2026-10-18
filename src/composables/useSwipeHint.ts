@@ -82,10 +82,23 @@ export function useSwipeHint(ready: () => boolean) {
     idleTimer = setTimeout(fire, SWIPE_HINT_IDLE_MS);
   }
 
+  function listen(on: boolean): void {
+    for (const type of ACTIVITY) {
+      if (on) window.addEventListener(type, onActivity, { passive: true, capture: true });
+      else window.removeEventListener(type, onActivity, { capture: true });
+    }
+  }
+
+  /** Played, or not due: the page is left alone for the rest of the visit. */
+  function stop(): void {
+    played = true;
+    listen(false);
+  }
+
   function fire(): void {
     const now = Date.now();
     if (!swipeHintDue(memory(), now)) {
-      played = true;
+      stop();
       return;
     }
     const busy =
@@ -98,7 +111,7 @@ export function useSwipeHint(ready: () => boolean) {
       arm();
       return;
     }
-    played = true;
+    stop();
     store.write({ ...memory(), hintedAt: now });
     hinting.value = true;
     endTimer = setTimeout(() => (hinting.value = false), SWIPE_HINT_MS);
@@ -106,24 +119,19 @@ export function useSwipeHint(ready: () => boolean) {
 
   /** A touch, a key, a scroll: the person is doing something; the wait restarts. */
   function onActivity(): void {
-    if (hinting.value) hinting.value = false;
     arm();
   }
 
   onMounted(() => {
     if (!swipeHintDue(memory(), Date.now())) return;
-    for (const type of ACTIVITY) {
-      window.addEventListener(type, onActivity, { passive: true, capture: true });
-    }
+    listen(true);
     arm();
   });
 
   onUnmounted(() => {
     clearTimeout(idleTimer);
     clearTimeout(endTimer);
-    for (const type of ACTIVITY) {
-      window.removeEventListener(type, onActivity, { capture: true });
-    }
+    listen(false);
   });
 
   return { hinting };

@@ -241,7 +241,8 @@ const extra = computed(() => {
 const moonLine = computed(() => {
   const moon = moment.value.moon;
   const text = sidourText(MOMENT_TEXTS.halevana);
-  if (!moon || !text) return null;
+  // It holds the card: no line of its own.
+  if (!moon || !text || moment.value.hero?.kind === "halevana") return null;
   const date = formatHebrewDate(moon.until, locale.value);
   return {
     key: text.key,

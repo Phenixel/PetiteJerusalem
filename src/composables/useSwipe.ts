@@ -134,7 +134,9 @@ export function useSwipe(options: SwipeOptions) {
   function onClickCapture(event: MouseEvent): void {
     if (Date.now() - gestureEndedAt < CLICK_AFTER_GESTURE_MS) {
       event.preventDefault();
-      event.stopPropagation();
+      // Not only the parents: the element's own click listeners (a page
+      // opened, its audience event) must not take it for a touch.
+      event.stopImmediatePropagation();
     }
   }
 

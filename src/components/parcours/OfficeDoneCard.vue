@@ -25,8 +25,8 @@ const now = useNow();
 const { place } = useZmanimLocation();
 const offices = useOfficesDone();
 
-const window = computed(() => officeWindow(place.value, props.tefila, now.value));
-const done = computed(() => (window.value ? offices.isOfficeDone(window.value) : false));
+const office = computed(() => officeWindow(place.value, props.tefila, now.value));
+const done = computed(() => (office.value ? offices.isOfficeDone(office.value) : false));
 const name = computed(() => t(`home.sidourNow.names.${props.tefila}`));
 
 const label = computed(() => ({
@@ -41,15 +41,15 @@ const sub = computed(() => ({
 }));
 
 function mark(done: boolean): void {
-  if (!window.value) return;
+  if (!office.value) return;
   haptic(done ? "done" : "undo");
-  offices.markOffice(window.value, done, "reader");
+  offices.markOffice(office.value, done, "reader");
 }
 </script>
 
 <template>
   <PullToMark
-    v-if="window"
+    v-if="office"
     :done="done"
     :heading="t('sidour.said.end')"
     :aria="t('sidour.said.aria')"

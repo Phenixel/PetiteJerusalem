@@ -227,8 +227,15 @@ describe("a service already said gives way", () => {
     const moment = sidourMoment(DEFAULT_PLACE, at("2026-10-20T21:00:00+02:00"), said("arvit"));
     expect(moment.hero?.kind).toBe("halevana");
     expect(moment.extra).toBeNull();
-    // It holds the card: no line of its own.
-    expect(moment.moon).toBeNull();
+    // Still given: the home deck reads it (the Sidour page shows no line then).
+    expect(moment.moon).not.toBeNull();
+  });
+
+  it("Arvit said at the end of Chabbat: havdala keeps its line", () => {
+    // Saturday 17 October 2026, in the evening: no moon yet that week.
+    const moment = sidourMoment(DEFAULT_PLACE, at("2026-10-17T20:30:00+02:00"), said("arvit"));
+    expect(moment.hero?.kind).toBe("next-tefila");
+    expect(moment.extra?.key).toBe("havdala");
   });
 
   it("the moon already blessed: neither card nor line, the rest of the month", () => {

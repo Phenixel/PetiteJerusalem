@@ -19,8 +19,10 @@ import { useParcours } from "./useParcours";
  * the end of a service's text alike: a service checked off steps aside for
  * what comes next.
  *
- * A service is done when the « trois tefilot » habit checks it off on the day
- * its window opens, or, without that habit, when it was marked (its card in
+ * A service is done when the « trois tefilot » habit checks it off (the window
+ * under way on today's task, as in the home deck, Arvit after midnight
+ * included; another on the day it opens; held by officesDone.test.ts), or,
+ * without that habit, when it was marked (its card in
  * the deck or on the Sidour page swiped, the ring pulled at the end of its
  * text): the device remembers it with the occasions (the moon, the 'Omer),
  * outside the day's count (services/parcours/occasions.ts). With the habit,
@@ -66,10 +68,33 @@ export function useOfficesDone() {
   const store = useParcours();
   const { mark } = useOccasionsDone();
 
-  /** The habit's task for this service, on the day its window opens. */
+  // A day's tasks, computed once per day for the data at hand: sidourMoment
+  // asks for several windows on every tick of the clock.
+  let cache: { data: unknown; context: unknown; days: Map<string, Task[]> } | null = null;
+  function tasksOn(day: string): Task[] {
+    const data = store.data.value;
+    const context = store.context.value;
+    if (!cache || cache.data !== data || cache.context !== context) {
+      cache = { data, context, days: new Map() };
+    }
+    let tasks = cache.days.get(day);
+    if (!tasks) {
+      tasks = store.tasksOn(day);
+      cache.days.set(day, tasks);
+    }
+    return tasks;
+  }
+
+  /**
+   * The habit's task for this service: the window under way is today's, as
+   * in the home deck (Arvit after midnight included); another, the day its
+   * window opens.
+   */
   function habitTask(window: TefilaWindow): { task: Task; day: string } | null {
-    const day = localDayKey(window.start);
-    const task = store.tasksOn(day).find((candidate) => candidate.step === window.tefila);
+    const now = Date.now();
+    const current = window.start.getTime() <= now && now < window.end.getTime();
+    const day = current ? store.today.value : localDayKey(window.start);
+    const task = tasksOn(day).find((candidate) => candidate.step === window.tefila);
     return task ? { task, day } : null;
   }
 

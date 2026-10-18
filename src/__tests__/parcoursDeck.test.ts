@@ -122,6 +122,13 @@ describe("le paquet de l'accueil", () => {
     expect(localStorage.getItem("pj_parcours_occasions")).toContain("tefila:2026-10-14-chaharit");
   });
 
+  it("keeps the moon card past Arvit's time, when the moon holds the Sidour's card", async () => {
+    // Wednesday 21 October 2026, 1:45 a.m. in Paris: Arvit closed at 'hatsot.
+    vi.setSystemTime(new Date("2026-10-20T23:45:00Z"));
+    const { deck } = await mountDeck();
+    expect(deck.day.value.some((card) => card.occasion?.kind === "halevana")).toBe(true);
+  });
+
   it("on a night of the moon, offers Arvit first, then the moon once Arvit is said", async () => {
     // Tuesday 20 October 2026, 9 p.m. in Paris: Arvit, and the moon is blessed.
     vi.setSystemTime(new Date("2026-10-20T19:00:00Z"));
