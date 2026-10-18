@@ -28,6 +28,7 @@ import { authService } from "./services/authService";
 import { useTheme } from "./composables/useTheme";
 import { useFonts } from "./composables/useFonts";
 import { loadColorScheme, loadGuestColorScheme } from "./composables/useColorScheme";
+import { loadContrast, loadGuestContrast } from "./composables/useContrast";
 import { useHolidayTheme } from "./composables/useHolidayTheme";
 
 const route = useRoute();
@@ -146,6 +147,7 @@ const chromePadClass = computed(() => {
 loadGuestTheme();
 loadGuestFonts();
 loadGuestColorScheme();
+loadGuestContrast();
 loadGuestHolidayThemes();
 
 // Le jour d'ouverture, pour la relance du formulaire de support (« Tout se
@@ -166,12 +168,14 @@ authService.onAuthChanged((user) => {
     loadTheme(user.id);
     loadFonts(user.id);
     void loadColorScheme(user.id);
+    void loadContrast(user.id);
     void loadHolidayThemes(user.id);
   } else {
     // Sans compte (ou déconnecté) : les réglages de l'appareil.
     loadGuestTheme();
     loadGuestFonts();
     loadGuestColorScheme();
+    loadGuestContrast();
     loadGuestHolidayThemes();
   }
 });

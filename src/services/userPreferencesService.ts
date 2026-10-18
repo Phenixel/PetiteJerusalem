@@ -33,6 +33,8 @@ export interface UserPreferences {
   theme: string;
   /** Apparence claire, sombre, ou celle du système, voir useColorScheme. */
   colorScheme: string;
+  /** Higher contrast: `system`, `more` or `standard`, see useContrast. */
+  contrast: string;
   /**
    * Les thèmes des fêtes (couleurs, ornements et bouton des horaires le temps
    * d'une fête, voir useHolidayTheme) : allumés d'office, à couper ici.
@@ -103,6 +105,7 @@ export interface UserPreferences {
 const DEFAULT_PREFERENCES: UserPreferences = {
   theme: "sunset",
   colorScheme: "system",
+  contrast: "system",
   holidayThemes: true,
   fontLatin: "manrope",
   fontHebrew: "frank",
@@ -196,7 +199,10 @@ const GUEST_PREFS_KEY = "pj-preferences:guest";
 
 /** Champs réglables sans compte. */
 export type GuestPreferences = Partial<
-  Pick<UserPreferences, "theme" | "colorScheme" | "holidayThemes" | "fontLatin" | "fontHebrew">
+  Pick<
+    UserPreferences,
+    "theme" | "colorScheme" | "contrast" | "holidayThemes" | "fontLatin" | "fontHebrew"
+  >
 >;
 
 function readGuestPreferences(): GuestPreferences | null {
@@ -437,6 +443,9 @@ class UserPreferencesService {
     if (data.theme === undefined && guest.theme !== undefined) adopted.theme = guest.theme;
     if (data.colorScheme === undefined && guest.colorScheme !== undefined) {
       adopted.colorScheme = guest.colorScheme;
+    }
+    if (data.contrast === undefined && guest.contrast !== undefined) {
+      adopted.contrast = guest.contrast;
     }
     if (data.holidayThemes === undefined && guest.holidayThemes !== undefined) {
       adopted.holidayThemes = guest.holidayThemes;

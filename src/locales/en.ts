@@ -505,6 +505,9 @@ const en: LocaleMessages = {
       sunset: "Sunset",
       emerald: "Emerald",
     },
+    contrastTitle: "Higher contrast",
+    contrastHint:
+      "Stronger colors and darker text on buttons, easy to read in bright sunlight or with tired eyes. Follows your device setting until you change it.",
     holidayThemesTitle: "Holiday themes",
     holidayThemesHint:
       "During a holiday, the app takes on its colors and ornaments, then returns to your theme.",

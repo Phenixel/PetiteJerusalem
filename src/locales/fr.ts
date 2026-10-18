@@ -514,6 +514,9 @@ const fr = {
       sunset: "Coucher de soleil",
       emerald: "Émeraude",
     },
+    contrastTitle: "Contraste renforcé",
+    contrastHint:
+      "Des couleurs plus franches et un texte plus foncé sur les boutons, pour lire sans effort en plein soleil ou avec une vue fatiguée. Suit le réglage de votre appareil tant que vous n'y touchez pas.",
     holidayThemesTitle: "Thèmes des fêtes",
     holidayThemesHint:
       "Le temps d'une fête, l'application prend ses couleurs et ses ornements, puis retrouve votre thème.",
