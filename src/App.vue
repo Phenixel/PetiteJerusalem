@@ -17,6 +17,7 @@ import { useMiniPlayerVisible } from "./composables/useAudioPlayer";
 import { useOnline } from "./composables/useOnline";
 import { isNativeApp } from "./composables/useNativeApp";
 import { isOnboardingOpen } from "./composables/useOnboarding";
+import { isWhatsNewOpen } from "./composables/useWhatsNew";
 import { isFeedbackOpen } from "./composables/useFeedback";
 import { readingPassage } from "./composables/useReadingSelection";
 import { recordUsageDay, restoreFeedbackNudge } from "./services/feedbackNudge";
@@ -56,6 +57,8 @@ const HolidayBackdrop = defineAsyncComponent(
   () => import("./components/holiday/HolidayBackdrop.vue"),
 );
 const AppUpdateBanner = defineAsyncComponent(() => import("./components/AppUpdateBanner.vue"));
+// The video of what changed, once after an update (useWhatsNew).
+const WhatsNewVideo = defineAsyncComponent(() => import("./components/WhatsNewVideo.vue"));
 const OfflineNotice = defineAsyncComponent(() => import("./components/OfflineNotice.vue"));
 
 // La bulle de commandes d'un passage de texte (partager, phonétique, signaler
@@ -209,6 +212,7 @@ authService.onAuthChanged((user) => {
     <ConfirmDialog />
     <ConsentBanner />
     <OnboardingFlow v-if="isOnboardingOpen" />
+    <WhatsNewVideo v-if="isWhatsNewOpen && !isOnboardingOpen" />
     <FeedbackModal v-if="feedbackMounted" />
     <ReadingSelectionMenu v-if="selectionMounted" />
     <!-- La table d'étude : la place de sa barre au bas de la page, pour que

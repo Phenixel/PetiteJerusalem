@@ -107,6 +107,16 @@ const en: LocaleMessages = {
     accept: "Accept",
     decline: "Decline",
   },
+  // The video of what changed, once after an update (useWhatsNew).
+  whatsNew: {
+    ariaLabel: "What's new in 4.0",
+    close: "Close",
+    soundOn: "Turn the sound on",
+    again: "Watch again",
+    done: "Let's go",
+    replay: "Replay what's new",
+    failed: "The video could not load. Check your connection and try again.",
+  },
   onboarding: {
     ariaLabel: "Introduction to Petite Jérusalem",
     ariaProgress: "Introduction progress",

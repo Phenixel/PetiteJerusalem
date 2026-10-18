@@ -158,6 +158,38 @@ the daily reading); it now equals `via = daily`.
 Unchanged: choosing the texts to take along is still a page of the
 introduction (51 downloads started over the same period).
 
+## What's new in 4.0 (October 2026)
+
+The video the app plays once after the update (`WhatsNewVideo.vue`, see
+`docs/design.md`, "What's new plays once, after the update"). Does it reach
+those who update, and do they watch it to the end?
+
+### `whats_new_video_started` (new)
+
+The video started playing.
+
+| Property  | Values                                                                                         |
+| --------- | ---------------------------------------------------------------------------------------------- |
+| `version` | the version whose video plays: `4.0`                                                           |
+| `source`  | `launch` (the first launch after the update), `profile` (« Revoir les nouveautés »), `link` (`?nouveautes`) |
+| `muted`   | true when the system refused the sound without a touch, and the video plays muted             |
+
+### `whats_new_video_closed` (new)
+
+The video left the screen.
+
+| Property          | Values                                                                                              |
+| ----------------- | --------------------------------------------------------------------------------------------------- |
+| `version`         | as above                                                                                            |
+| `source`          | as above                                                                                            |
+| `via`             | `close` (« Fermer »), `done` (« C'est parti », at the end), `back` (Android back, Escape), `error` (it did not load) |
+| `watched_seconds` | the furthest point reached, in seconds                                                              |
+| `completed`       | true when the video was played to the end                                                           |
+
+`via` `error` with `source` `launch` is not seen by anyone: the screen only
+shows once the video can play, and the video is offered again at a later
+launch.
+
 ## Profile
 
 The website and the app do not have the same profile (see docs/design.md,

@@ -107,6 +107,16 @@ const fr = {
     accept: "Accepter",
     decline: "Refuser",
   },
+  // The video of what changed, once after an update (useWhatsNew).
+  whatsNew: {
+    ariaLabel: "Les nouveautés de la 4.0",
+    close: "Fermer",
+    soundOn: "Activer le son",
+    again: "Revoir la vidéo",
+    done: "C'est parti",
+    replay: "Revoir les nouveautés",
+    failed: "La vidéo n'a pas pu se charger. Vérifiez la connexion et réessayez.",
+  },
   onboarding: {
     ariaLabel: "Introduction à Petite Jérusalem",
     ariaProgress: "Avancement de l'introduction",

@@ -103,6 +103,16 @@ const he: LocaleMessages = {
     accept: "אישור",
     decline: "סירוב",
   },
+  // The video of what changed, once after an update (useWhatsNew).
+  whatsNew: {
+    ariaLabel: "מה חדש בגרסה 4.0",
+    close: "סגירה",
+    soundOn: "הפעלת הקול",
+    again: "לצפות שוב",
+    done: "בואו נתחיל",
+    replay: "לצפות שוב בחידושים",
+    failed: "לא הצלחנו לטעון את הסרטון. בדקו את החיבור ונסו שוב.",
+  },
   onboarding: {
     ariaLabel: "היכרות עם פטיט ירושלים",
     ariaProgress: "התקדמות ההיכרות",

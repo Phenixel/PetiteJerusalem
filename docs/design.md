@@ -254,6 +254,42 @@ button, Escape), at no cost: the same ones come back as tips on the reading
 page. A new page must earn its place against the others, and what is
 learned by doing goes with the gestures, not before.
 
+### What's new plays once, after the update
+
+When an update moves things around, those who knew the app before must be
+told where things went: 4.0 moved the library and the classes under
+« Étude » and gave the Sidour its own tab, and a reader looking for
+« Bibliothèque » in the bar would not find it. The first launch after the
+update plays a one-minute video of what changed (`WhatsNewVideo.vue`,
+`useWhatsNew.ts`), in the reader's language: where the tabs went first, then
+what is new.
+
+- **Once, and only to those who are updating.** A fresh install sees the
+  introduction, never this video: it shows a change to someone who never
+  knew the app before it. The device notes the version it played, and
+  « Revoir les nouveautés » ("Replay what's new"), in the profile's Help
+  group next to the introduction and the tips, plays it again.
+- **Nothing shows while it loads.** The video is served by the site
+  (`public/videos/`), not bundled: a few megabytes per language, for a
+  minute of viewing. At launch, the screen only appears once the video can
+  play; offline, nothing shows and nothing is noted, and it plays at a later
+  launch.
+- **It is written to be read.** Every change is said in a sentence on the
+  screen; the music only goes with it. Where the system refuses sound
+  without a touch, it plays muted and offers « Activer le son » ("Turn the
+  sound on").
+- **One can always leave.** « Fermer » ("Close") at the top, the Android
+  back gesture, Escape; at the end, « C'est parti » ("Let's go") closes it
+  and « Revoir la vidéo » ("Watch again") replays it. The page behind does
+  not move.
+- **It wears the page background** (`bg-bg-beige`), the same as the video's,
+  so the bars above and below the picture on a tall phone do not show.
+
+The video is made with the promotional videos (section 10, `promo/`, the
+`nouveautes-*` compositions) from the app's own screens. A next one changes
+`WHATS_NEW_VERSION` and is published under its name, in the three languages
+(`whatsNew.test.ts` checks that the files the code asks for exist).
+
 ### Neighboring pages, a set of tabs
 
 The app's bottom bar holds four tabs, not one more: Accueil (Home), Sidour,

@@ -33,6 +33,7 @@ import { refreshPermission, useZmanReminders } from "../../../composables/useZma
 import { useZmanimOpinion } from "../../../composables/useZmanimOpinion";
 import { useConsent } from "../../../composables/useConsent";
 import { useOnboarding } from "../../../composables/useOnboarding";
+import { useWhatsNew } from "../../../composables/useWhatsNew";
 import { useFeatureTips } from "../../../composables/useFeatureTips";
 import { useToast } from "../../../composables/useToast";
 import { useConfirm } from "../../../composables/useConfirm";
@@ -108,6 +109,7 @@ const { reopen: reopenConsent } = useConsent();
 // L'introduction et les astuces ne se montrent qu'une fois : c'est d'ici
 // qu'on les revoit.
 const { replayOnboarding } = useOnboarding();
+const { replayWhatsNew } = useWhatsNew();
 const { resetFeatureTips } = useFeatureTips();
 
 function replayTips(): void {
@@ -331,6 +333,7 @@ onUnmounted(() => {
             to="/contact"
           />
           <SettingsRow icon="rocket" :label="t('onboarding.replay')" @click="replayOnboarding" />
+          <SettingsRow icon="play" :label="t('whatsNew.replay')" @click="replayWhatsNew" />
           <SettingsRow icon="lightbulb" :label="t('tips.replay')" @click="replayTips" />
         </SettingsGroup>
 

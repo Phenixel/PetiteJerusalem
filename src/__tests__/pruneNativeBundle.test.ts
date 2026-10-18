@@ -57,6 +57,7 @@ describe("prune-native-bundle", () => {
     write(root, "texts/tefila/havdala.json", "{}");
     write(root, "texts/tefila/slihot.json", "{}");
     write(root, "assets/app.js", "//");
+    write(root, "videos/nouveautes-4.0-fr.mp4", "mp4");
     execFileSync("node", [SCRIPT, root]);
   });
 
@@ -90,6 +91,10 @@ describe("prune-native-bundle", () => {
     expect(existsSync(join(root, "texts/traductions"))).toBe(false);
     expect(existsSync(join(root, "texts/tehilim.json"))).toBe(true);
     expect(existsSync(join(root, "assets/app.js"))).toBe(true);
+  });
+
+  it("leaves the what's new videos to the site, which streams them", () => {
+    expect(existsSync(join(root, "videos"))).toBe(false);
   });
 
   it("garde le Sidour, et lui seul parmi les tefilot", () => {
