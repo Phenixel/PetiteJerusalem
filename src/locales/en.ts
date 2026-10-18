@@ -321,6 +321,17 @@ const en: LocaleMessages = {
         portes: { title: "Library, Shiurim, Sharing", sub: "the three doors" },
         reprendre: { title: "Resume", sub: "the last text read" },
         dates: { title: "My dates", sub: "a birthday, a leiluy nishmat" },
+        livres: { title: "Pinned books", sub: "up to three books or texts, at hand" },
+        ecoute: { title: "Resume listening", sub: "the audio courses begun" },
+      },
+      pinned: {
+        search: "A book, a text, a prayer…",
+        add: "Pin",
+        added: "Pinned",
+        remove: "Remove {name}",
+        prayers: "The three services",
+        full: "Three books on the shelf: remove one to pin another.",
+        noResult: "No text matches.",
       },
     },
     omer: {

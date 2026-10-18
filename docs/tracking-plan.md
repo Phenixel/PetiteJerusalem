@@ -997,13 +997,26 @@ sent: the daily reading card gave way to the deck.
 ### `home_block_moved`, `home_block_hidden`, `home_block_shown` (new)
 
 The home page to one's liking (edit mode, on the home page itself): a block
-moved, hidden, or restored. `block`: `horaires`, `volumes`, `portes`, `reprendre`, `dates`;
+moved, hidden, or restored. `block`: `horaires`, `volumes`, `portes`, `reprendre`, `dates`,
+`livres` (the pinned books), `ecoute` (« Reprendre l'écoute », the audio courses to resume);
 and for a move, `to`, its new position (0 right under the day's deck).
 `home_card_clicked` also takes `card: resume`, the « Reprendre » ("Resume")
-block. `card: announcements` is no longer sent: the announcements link left
+block, `card: pinned_<corpus>` (`pinned_sidour`, `pinned_talmud`...), a
+pinned book opened (the corpus of the section or of the text), and
+`card: listening_resume`, a course resumed from « Reprendre l'écoute ». `card: announcements` is no longer sent: the announcements link left
 the bottom of the home page (it remains in the website footer and in the
 app's profile); an announcement's card, for its part, still sends
 `announcement_opened`.
+
+### `home_book_pinned`, `home_book_unpinned` (new)
+
+A book pinned to the home page, or taken off it (edit mode, under the
+« Livres épinglés » block).
+
+| Property | Values                                                                                                          |
+| -------- | --------------------------------------------------------------------------------------------------------------- |
+| `kind`   | `section` (a whole section of the library), `text` (one text of the catalog), `prayers` (« Les trois offices ») |
+| `corpus` | `sidour`, `tehilim`, `michna`, `talmud`, `tanakh`, `moussar`, `halakha`, `moadim`, `brahot`                     |
 
 ### `parcours_units_marked` (new)
 

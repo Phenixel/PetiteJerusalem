@@ -2511,6 +2511,31 @@ the page scrolls on its own near the top or bottom edge. Released, it slides
 into place (`useHomeArrange`). It is a device setting (`useHomeLayout`), and
 outside edit mode a block with nothing to say disappears on its own.
 
+One block holds the **pinned books** (« Livres épinglés », `useHomePinned`):
+up to three volumes on one shelf, drawn like the library's (`LibraryShelf`),
+each a whole section (the Sidour, the Tehilim, the Talmud...) or one text of
+the catalog (Chaharit, Min'ha, Berakhot, a psalm), and each opening its page.
+A long title goes over two or three lines on the cover, smaller when a word
+alone is too long. In edit mode the block carries, under it
+(`HomePinnedEditor`, still while one types and never picked up): the pinned
+books as chips with their cross, « Les trois offices » ("The three
+services", the book drawn and its name), which puts Chaharit, Min'ha and
+Arvit in place of the others, and a search field over the whole catalog,
+the Sidour's texts included, whose answers carry « Épingler » ("Pin"); with
+three books on the shelf, a line says to remove one first. Pinning a book
+shows the block if it was hidden. The block is hidden by default, the
+Sidour and the Tehilim ready on its shelf; it is a device setting too
+(`pj_home_pinned`), and a book this version does not know stays off the
+shelf (held by `src/__tests__/homePinned.test.ts`). A pinned Sidour text
+takes the Sidour's binding.
+
+Another block, hidden by default, is **« Reprendre l'écoute »** ("Resume
+listening", `HomeListeningResume`): the audio courses begun and not finished
+on this device, in the same row of tiles as at the top of the Chiourim
+catalog (`ResumeTile`), a touch resuming the course where it was left. It
+spans both columns on a wide screen, and with nothing to resume it
+disappears.
+
 ### Texts set aside, on the table
 
 You rarely study a single book: you read a passage, go look at a
@@ -2940,6 +2965,7 @@ with its neighbors:
 | Tanakh  | `#84483f` |
 | Moussar | `#86622f` |
 | Halakha | `#5e4535` |
+| Sidour  | `#a06a3c` |
 
 Moussar ('Hovot Halévavot, Pélé Yoets) is a study section: it has its list
 page and its volume on the shelf, its bookmarks and its reading resume. It

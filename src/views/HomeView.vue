@@ -21,6 +21,7 @@ import HomeDoors from "../components/HomeDoors.vue";
 import HomeResume from "../components/HomeResume.vue";
 import { HOME_BLOCKS, useHomeLayout, type HomeBlock } from "../composables/useHomeLayout";
 import { useHomeArrange } from "../composables/useHomeArrange";
+import type { PinnedBook } from "../content/pinnedBooks";
 import { haptic } from "../services/haptics";
 import HolidayGreeting from "../components/holiday/HolidayGreeting.vue";
 
@@ -50,6 +51,14 @@ const ParcoursHub = defineAsyncComponent(
 );
 const HomeLamp = defineAsyncComponent(() => import("../components/parcours/home/HomeLamp.vue"));
 const HomeShelf = defineAsyncComponent(() => import("../components/parcours/home/HomeShelf.vue"));
+// The books pinned to the home page, and how they are chosen: they read the
+// catalog of texts, loaded on demand.
+const HomePinnedBooks = defineAsyncComponent(() => import("../components/HomePinnedBooks.vue"));
+const HomePinnedEditor = defineAsyncComponent(() => import("../components/HomePinnedEditor.vue"));
+// The audio courses to resume: they read the catalog of courses (Firestore).
+const HomeListeningResume = defineAsyncComponent(
+  () => import("../components/chiourim/HomeListeningResume.vue"),
+);
 const HomeHebrewDate = defineAsyncComponent(
   () => import("../components/parcours/home/HomeHebrewDate.vue"),
 );
@@ -175,8 +184,33 @@ const tiles = computed<HomeBlock[]>(() => {
   return editing.value ? [...order, ...hiddenBlocks.value] : order;
 });
 const isHidden = (block: HomeBlock): boolean => homeLayout.value.hidden.includes(block);
+/**
+ * The books pinned to the home page (useHomePinned), chosen in edit mode
+ * under their block (HomePinnedEditor). Pinning a book shows the block if
+ * it was hidden.
+ */
+function onBookPinned(book: PinnedBook | "prayers"): void {
+  haptic("tick");
+  if (isHidden("livres")) void arrange.animate(() => home.show("livres"));
+  analyticsService.capture(
+    "home_book_pinned",
+    book === "prayers"
+      ? { kind: "prayers", corpus: "sidour" }
+      : { kind: book.ref.startsWith("book:") ? "section" : "text", corpus: book.corpus },
+  );
+}
+
+function onBookUnpinned(book: PinnedBook): void {
+  haptic("tick");
+  analyticsService.capture("home_book_unpinned", {
+    kind: book.ref.startsWith("book:") ? "section" : "text",
+    corpus: book.corpus,
+  });
+}
+
 /** The blocks that span both columns on a wide screen. */
-const isWide = (block: HomeBlock): boolean => block === "volumes" || block === "portes";
+const isWide = (block: HomeBlock): boolean =>
+  block === "volumes" || block === "portes" || block === "ecoute";
 const blockName = (block: HomeBlock): string => t(`home.edit.blocks.${block}.title`);
 
 function toggleBlock(block: HomeBlock): void {
@@ -193,6 +227,8 @@ function toggleBlock(block: HomeBlock): void {
 /** With the keyboard, an up or down arrow moves the focused block. */
 function onTileKey(event: KeyboardEvent, block: HomeBlock): void {
   if (!editing.value || isHidden(block)) return;
+  // The arrows of a book list choose a book, they do not move the block.
+  if ((event.target as Element | null)?.closest(".tile-controls")) return;
   const index = savedOrder.value.indexOf(block);
   const to = event.key === "ArrowUp" ? index - 1 : event.key === "ArrowDown" ? index + 1 : -1;
   if (to < 0 || to >= savedOrder.value.length) return;
@@ -422,6 +458,18 @@ onUnmounted(() => {
             <!-- Ce qu'on a inscrit soi-même au calendrier : un anniversaire, un
                leilouy nichmat. Absent le reste de l'année. -->
             <OccasionsBanner v-else-if="block === 'dates'" />
+
+            <!-- The books one has pinned, up to three on their shelf. -->
+            <HomePinnedBooks
+              v-else-if="block === 'livres'"
+              @open="(corpus) => trackCard(`pinned_${corpus}`)"
+            />
+
+            <!-- The audio courses begun, to resume where they were left. -->
+            <HomeListeningResume
+              v-else-if="block === 'ecoute'"
+              @click="trackCard('listening_resume')"
+            />
           </div>
           <!-- In edit mode, a block with nothing to show for now keeps its
                place under its name (shown only when the body is empty). -->
@@ -431,6 +479,13 @@ onUnmounted(() => {
               {{ t(`home.edit.blocks.${block}.sub`) }} · {{ t("home.edit.empty") }}
             </p>
           </div>
+          <!-- In edit mode, the pinned books are chosen under their block. -->
+          <HomePinnedEditor
+            v-if="editing && block === 'livres'"
+            class="tile-controls"
+            @pinned="onBookPinned"
+            @unpinned="onBookUnpinned"
+          />
         </div>
       </div>
 
@@ -665,6 +720,14 @@ onUnmounted(() => {
 .is-hidden .tile-pill {
   background: var(--color-primary);
   color: var(--color-on-primary, var(--color-page));
+}
+/* The choice of the pinned books: solid, and still while one types. */
+.tile-controls {
+  margin-top: 12px;
+  cursor: default;
+}
+.is-editing .home-tile:focus-within {
+  animation: none;
 }
 .edit-done {
   min-height: 40px;
