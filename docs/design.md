@@ -3330,3 +3330,78 @@ These guidelines are being written as decisions are made.
   without losing links and verse numbers.
 - The app icon still carries the old blue: it will be redone later. The
   store listing screenshots are regenerated at the next CI run.
+
+## 10. The promotional videos
+
+The short videos for the networks, and the app's "what's new" video
+(`promo/`, how-to in `promo/README.md`), are the same house as the app, seen
+from further away. They take its tokens and what is not used in it, starting
+with gradients: the wipes that sweep the screen from one scene to the next,
+the backgrounds, the confetti of the siyoum are flat colors.
+
+- **What you see is the app.** Each screen is a screenshot of the native app
+  on demo data, each gesture was really played. Nothing is redrawn, except
+  what must grow to be read on a phone held in the hand (a chain's progress
+  card, the daily reading tracker), which then takes the app's layout at the
+  video's scale.
+- **The stone wall** is the background of every scene: courses in flat
+  colors barely lighter or darker than the background, sliding slowly. On a
+  theme color (the opening), the stones hardly show.
+- **The fonts**: Playfair Display for whatever reads as a title (the
+  opening, the captions, « Mais aussi… », the app's name), with one word in
+  italics and in the theme color for the punch line; Manrope for the pills,
+  which are round like the app's controls.
+- **One video, one look**: each video keeps the theme and the mode (light or
+  dark) of its screenshots, and the closing montage mixes the others, to show
+  in passing that the app can be set to one's taste.
+- **The safe zone**: the networks place their buttons at the bottom and on
+  the right. Captions stay at the top (below 210 px), nothing important goes
+  below 1,500 px; the phone, for its part, may leave through the bottom.
+- **The rhythm**: picture and music share a grid of 120 beats per minute. A
+  cut, a line that strikes, a tap fall on a beat, and the music plays the
+  gesture's sound at the same instant.
+
+### Series 2 moves more, and reads as much
+
+The stories (`promo/src/Story.tsx`) push the movement: phones that rush in,
+followed by two paler echoes as motion blur, fans of three phones, a mosaic
+of stones that lands then leaves between two chapters, a split-flap clock,
+counters, scrolling bands. Three rules keep it readable:
+
+- **one sentence per shot, held for the whole shot**: the subtitle
+  (`Subtitle`) arrives word by word then stays, on a surface plate that
+  sets it apart from what moves behind; its punch line fills with a flat
+  of the theme (or holiday) color;
+- **the closing montage goes to two beats per shot**: one second to read
+  « Le calendrier des fêtes », the camera diving on the detail on the
+  second beat;
+- **lining figures**: Playfair's, old-style by default, turn zero into an
+  « o », and « 0 € » read « o € ».
+
+The Hebrew of the videos is written in Frank Ruhl Libre and Heebo, as in
+the app, from right to left.
+
+### Version 4.0: the logo's colors, and where things moved
+
+The 4.0 videos (`promo/src/v4/`) show the app after its recoloring: they
+take the logo's palette (section 2) and not the former vermilion, which
+stays with series 1 and 2, filmed on 3.10.
+
+- **Brown on the light orange, never white.** The opening, the montage's
+  orange shots and the « 4.0 » stamp write `#3B2412` on `#FEA547`; a
+  subtitle's accent fills with the orange and its text turns brown. White
+  only goes on the blue and the night.
+- **What moved is shown before what is new.** The in-app video opens on the
+  3.10 tab bar above today's, filmed on both apps, with an arrow from each
+  former tab to the one that holds it now and a « Nouveau » tag on the new
+  one. The bars come from each language's screenshots, so the arrows follow
+  the mirrored bar in Hebrew.
+- **Two cuts, one grid.** The networks get eight chapters of three seconds;
+  the app gets a minute, chapters of four to six seconds, time enough to
+  read where things went. Both are written as data (`promo/src/v4/plan.ts`):
+  the gestures and the music's sounds fall on the same marked beats, and a
+  section always holds whole bars, or the music would run into the next one.
+- **The app speaks the reader's language.** The in-app video exists in
+  French, English and Hebrew, each filmed in its own interface; the
+  Hebrew one has no translation chapter (the translations go into French
+  and English), its commentaries chapter takes the time.

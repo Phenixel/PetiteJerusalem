@@ -1,0 +1,7 @@
+node_modules
+# Made by the scripts, never versioned: they are generated again.
+out/
+public/music/
+public/captures/*.jpg
+public/captures/*.png
+public/captures/*.mp3
