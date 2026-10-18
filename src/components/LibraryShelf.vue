@@ -18,6 +18,11 @@ import { bindingOf } from "../config/bindings";
 export interface ShelfBook {
   /** Identifiant de corpus (tehilim, michna, talmud, tanakh, moussar, sidour…). */
   corpus: string;
+  /**
+   * What tells two volumes apart when they share a corpus (two treatises of
+   * the Talmud pinned to the home page); the corpus otherwise.
+   */
+  id?: string;
   /** Destination du lien. */
   to: string;
   /** Titre écrit sur la couverture. */
@@ -77,6 +82,33 @@ const HEBREW = /[\u0590-\u05ff]/;
 
 const emit = defineEmits<{ (e: "open", corpus: string): void }>();
 
+const idOf = (book: ShelfBook): string => book.id ?? book.corpus;
+
+/**
+ * The title on the cover, on one line while it fits (the library's sections:
+ * « Tehilim », « Halakha »), otherwise over two or three (a text pinned to the
+ * home page: « Chema al Hamita »), smaller when a word alone is too long.
+ */
+const LINE_CHARS = 10;
+const MAX_LINES = 3;
+const TITLE_SIZE = 13.5;
+function coverLines(label: string): { lines: string[]; size: number } {
+  const lines: string[] = [];
+  for (const word of label.split(/\s+/).filter(Boolean)) {
+    const last = lines[lines.length - 1];
+    if (last !== undefined && last.length + 1 + word.length <= LINE_CHARS) {
+      lines[lines.length - 1] = `${last} ${word}`;
+    } else lines.push(word);
+  }
+  const kept =
+    lines.length > MAX_LINES
+      ? [...lines.slice(0, MAX_LINES - 1), lines.slice(MAX_LINES - 1).join(" ")]
+      : lines;
+  const longest = Math.max(1, ...kept.map((line) => line.length));
+  const size = longest > LINE_CHARS ? (TITLE_SIZE * LINE_CHARS) / longest : TITLE_SIZE;
+  return { lines: kept.length ? kept : [label], size };
+}
+
 // Tranché une fois pour toute la page.
 const playIntro = shouldPlayShelfIntro();
 
@@ -101,7 +133,7 @@ const rows = computed(() => {
       <div class="shelf-books" role="none">
         <RouterLink
           v-for="{ book, index } in row"
-          :key="book.corpus"
+          :key="idOf(book)"
           :to="book.to"
           class="book"
           :class="{ 'book-landed': landed.has(book.corpus) }"
@@ -114,7 +146,7 @@ const rows = computed(() => {
             <span class="book-lift">
               <svg viewBox="0 0 96 140" fill="none" aria-hidden="true" class="book-svg">
                 <defs>
-                  <linearGradient :id="`book-shine-${book.corpus}`" x1="0" y1="0" x2="0" y2="1">
+                  <linearGradient :id="`book-shine-${idOf(book)}`" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0" stop-color="#fff" stop-opacity="0.09" />
                     <stop offset="0.45" stop-color="#fff" stop-opacity="0.02" />
                     <stop offset="1" stop-color="#000" stop-opacity="0.06" />
@@ -135,7 +167,7 @@ const rows = computed(() => {
                   width="84"
                   height="134"
                   rx="4"
-                  :fill="`url(#book-shine-${book.corpus})`"
+                  :fill="`url(#book-shine-${idOf(book)})`"
                 />
                 <!-- cadre estampé, double filet crème -->
                 <rect
@@ -168,8 +200,20 @@ const rows = computed(() => {
                   y="62"
                   text-anchor="middle"
                   dominant-baseline="central"
+                  :style="{ fontSize: `${coverLines(book.label).size}px` }"
                 >
-                  {{ book.label }}
+                  <tspan
+                    v-for="(line, l) in coverLines(book.label).lines"
+                    :key="l"
+                    x="49"
+                    :dy="
+                      l === 0
+                        ? `${(-(coverLines(book.label).lines.length - 1) * 1.15) / 2}em`
+                        : '1.15em'
+                    "
+                  >
+                    {{ line }}
+                  </tspan>
                 </text>
                 <!-- fine ornementation sous le titre -->
                 <g class="ornament" stroke="#ecdfc4" opacity="0.5">

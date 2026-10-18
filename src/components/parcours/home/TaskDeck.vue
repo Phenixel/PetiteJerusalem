@@ -35,6 +35,7 @@ import { computed, onBeforeUnmount, reactive, ref, watch, type StyleValue } from
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import type { DeckCard } from "../../../composables/useTodayDeck";
+import { noteSwipe } from "../../../composables/useSwipeHint";
 import { haptic } from "../../../services/haptics";
 import DayBar from "./DayBar.vue";
 import DeckArt from "./DeckArt.vue";
@@ -49,6 +50,8 @@ const props = defineProps<{
   isLater: (card: DeckCard) => boolean;
   /** La carte d'une journée sans rien à faire : son moment, ce qu'elle dit. */
   rest: { kicker: string; title: string; meta: string };
+  /** The swipe shown: the top card moves right on its own, then comes back (useSwipeHint). */
+  hint?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -178,6 +181,13 @@ interface Cue {
   armed: boolean;
 }
 
+/**
+ * An extra card shows in light, the title in ink: it does not count in the
+ * day. Except the service whose time it is, without the « trois tefilot »
+ * habit: what you come looking for takes the color, solid, counted or not.
+ */
+const isPlain = (card: DeckCard): boolean => card.extra && card.occasion?.kind !== "tefila";
+
 function cueOf(card: DeckCard, threshold: number): Cue | null {
   if (drag.key !== card.key || drag.axis !== "x" || card.waiting || drag.dx === 0) return null;
   const strength = clamp(Math.abs(drag.dx) / threshold, 0, 1);
@@ -216,7 +226,7 @@ function listItem(card: DeckCard, j: number): Item {
     ? "dk-done"
     : card.waiting
       ? "dk-plain dk-wait"
-      : card.key === top.value?.key && !card.extra
+      : card.key === top.value?.key && !isPlain(card)
         ? ""
         : "dk-plain";
   return {
@@ -262,10 +272,11 @@ function topItem(card: DeckCard): Item {
     mode: "top",
     inert: false,
     classes: [
-      card.extra || card.waiting ? "dk-plain" : "",
+      isPlain(card) || card.waiting ? "dk-plain" : "",
       card.waiting ? "dk-wait" : "",
       "dk-top",
       arrived.value === card.key ? "dk-arrived" : "",
+      showsHint(card) ? "dk-hint" : "",
     ],
     style,
     kicker: card.kicker,
@@ -275,9 +286,15 @@ function topItem(card: DeckCard): Item {
     }),
     art: card.art ? "big" : null,
     stamp: false,
-    cue: cueOf(card, TOP_THRESHOLD),
+    cue: showsHint(card)
+      ? { side: "done", text: t("parcours.hub.done"), strength: 1, armed: false }
+      : cueOf(card, TOP_THRESHOLD),
   };
 }
+
+/** The swipe shown on the top card, if it can be swiped and is not being touched. */
+const showsHint = (card: DeckCard): boolean =>
+  !!props.hint && !card.waiting && drag.key !== card.key && leaving.value === null;
 
 /** La carte qui part : la coche posée là où on l'a lâchée, puis l'envol. */
 function leavingItem(card: DeckCard): Item {
@@ -287,7 +304,7 @@ function leavingItem(card: DeckCard): Item {
     card,
     mode: "leaving",
     inert: true,
-    classes: [card.extra ? "dk-plain" : "", "dk-top", away.phase === "fly" ? "dk-fly" : ""],
+    classes: [isPlain(card) ? "dk-plain" : "", "dk-top", away.phase === "fly" ? "dk-fly" : ""],
     style:
       away.phase === "stamp"
         ? {
@@ -519,11 +536,13 @@ function onUp(item: Item): void {
   // Pas encore l'heure : le glissé de côté ne marque rien, la carte revient.
   if (card.waiting && axis === "x") return;
   if (item.mode === "top") {
+    if (axis === "x" && Math.abs(dx) > TOP_THRESHOLD) noteSwipe();
     if (axis === "x" && dx > TOP_THRESHOLD) fly(card, "right", dx);
     else if (axis === "x" && dx < -TOP_THRESHOLD) fly(card, "left", dx);
     else if (axis === "y" && dy > PULL_OPEN) emit("unfold", "swipe");
     return;
   }
+  if (axis === "x" && Math.abs(dx) > LIST_THRESHOLD) noteSwipe();
   if (axis === "x" && dx > LIST_THRESHOLD) {
     if (card.done) return;
     haptic("done");
@@ -945,6 +964,50 @@ onBeforeUnmount(() => {
 }
 .dk-top {
   cursor: grab;
+}
+/*
+ * The swipe shown (useSwipeHint): the top card leaves a little to the right,
+ * the « C'est fait » pill appearing at its edge, then springs back past its
+ * place and settles, as if a finger had started the gesture and let go.
+ */
+.dk-hint {
+  animation: dk-hint 1.6s cubic-bezier(0.3, 0.7, 0.3, 1);
+}
+.dk-hint > .dk-cue {
+  animation: dk-hint-cue 1.6s ease;
+}
+@keyframes dk-hint {
+  0%,
+  8% {
+    transform: none;
+  }
+  36% {
+    transform: translateX(120px) rotate(3deg);
+  }
+  56% {
+    transform: translateX(-8px) rotate(-0.4deg);
+  }
+  70% {
+    transform: translateX(4px);
+  }
+  84%,
+  100% {
+    transform: none;
+  }
+}
+@keyframes dk-hint-cue {
+  0%,
+  20% {
+    opacity: 0;
+  }
+  34%,
+  44% {
+    opacity: 1;
+  }
+  58%,
+  100% {
+    opacity: 0;
+  }
 }
 .dk-pick {
   cursor: pointer;

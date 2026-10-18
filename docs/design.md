@@ -239,8 +239,10 @@ screenshots from the third one: nearly half of people skipped it, almost all
 from the first page after consent. It now has five, each one short:
 
 - **consent**, in three lines, because it requires a choice;
-- **settings**: the language, light or dark, the theme, nothing more
-  (`AppearanceSettings essentials`). Fonts and holiday themes wait in the
+- **settings**: the language, light or dark, the theme and higher
+  contrast, nothing more (`AppearanceSettings essentials`). Higher contrast
+  is there from the first launch because whoever needs it cannot read the
+  rest comfortably until it is on. Fonts and holiday themes wait in the
   profile;
 - **texts to take along**, the only setting that does something;
 - **the essentials**: the library, the times, the daily reading, one line
@@ -446,7 +448,7 @@ three levels of text.
 
 The calendar's next holiday therefore takes the theme tint at full strength,
 over its whole card, and its text switches to the color that is written on
-it (`on-brand`: brown on light orange, white on blue or green). It is the
+it (`on-brand`: white, or dark text in higher contrast). It is the
 only colored card on the page, and you find it without having to read.
 
 This text steps down in three tones there, as on the profile banner: the
@@ -478,6 +480,8 @@ drawn in the colors of the real thing (`CardArt.vue`, the drawings in
   the mouthpiece at the bottom;
 - the **loulav and etrog**, when the Souccot holiday takes the card;
 - the **sheaf** of barley of the 'Omer;
+- the **havdala**: the braided candle, blue and white strands, several
+  wicks under a single flame, and beside it the silver cup of red wine;
 - the shelf **volume**, with the binding and title of its section, on the
   inserts that open a section of the library: chnei mikra (Tanakh) and the
   day's Tehilim (Tehilim). It replaces the book icon they carried on the
@@ -532,7 +536,9 @@ name has been read.
 On the home page, the cards of the moment carry the same object, small, on
 their light surface: the sidour on « Faire Cha'harit » ("Pray Cha'harit"),
 the moon on the blessing of the moon, the sheaf on the counting of the
-'Omer. The moon takes slightly deeper tones there to stand out from the
+'Omer. So do the lines under the Sidour's card: the sidour for a service,
+the havdala, the moon all through its nights; they used to carry an icon on
+the left, which said less and broke this rule. The moon takes slightly deeper tones there to stand out from the
 white.
 
 One more object is drawn in `components/art`, with these rules, and takes
@@ -584,21 +590,58 @@ The page has three tiers (`SidourPage.vue`):
   the 'Omer...), the same occasions as those that color the text (see "What
   the day adds in a tefila"). A rare occasion goes ahead of the everyday
   service: the lighting on an evening of 'Hanouka, the Sli'hot from 'hatsot
-  until sunrise, the blessing of the moon on the nights it is said (a dozen
-  or so per month, and it gets missed for lack of a reminder). Between two
+  until sunrise. The blessing of the moon, on the nights it is said, comes
+  after Arvit, as in the home stack: it takes the card once Arvit is said
+  (or its time is over). Between two
   services, the current holiday takes the card if there is a text to say
   now or tonight (the loulav until chkia, the evening lighting, the night
   Sli'hot); otherwise the card announces the upcoming service rather than
   disappearing: on the home page, an empty card withdraws; here, it is the
   page's reason for being;
-- **one line below, at most**, and only on an evening of an occasion: the
-  service under the lighting, the Sli'hot or the moon, which preceded it in
-  the card; havdala on the evening a Chabbat or a holiday ends. On other
+- **a service already said gives way**: checked off in Mon parcours (the
+  « trois tefilot » habit) or swiped on the home page, it no longer holds
+  the card, which goes to what comes next (the holiday, then the next
+  service not yet said: Min'ha once Cha'harit is said, tomorrow's
+  Cha'harit after Arvit). Under an occasion, it is no longer the line
+  either (`useOfficesDone`, held by `src/__tests__/sidourMoment.test.ts`,
+  « a service already said gives way »);
+- **said with a swipe**: the card of the service whose time it is, or of
+  the moon, is swiped right to say it is done, as in the home stack (the
+  « C'est fait » pill coming out from under its left edge, darkening past
+  110 px). It flies off to the right and the next one rises in its place;
+  under it, « Arvit : c'est fait · Annuler » for a few seconds. A service
+  whose time has not come and a holiday text are not swiped. With the
+  « trois tefilot » habit, the swipe checks the habit's task; without it,
+  the device remembers it, as for the deck's extra card. The same is said
+  at the end of the service's text: the ring pulled upward of the day's
+  portion (`PullToMark`, see "An open volume, its settings, the reader"),
+  « Fin de l'office » (`OfficeDoneCard.vue`), which leads back to the
+  Sidour. It stays a pull, not a tap: the same gesture as the day's
+  portion. The lines under the card are swiped the same way, when what they
+  announce can be said now (havdala, the moon, the service under an
+  occasion): a line said leaves the page (`SidourLine.vue`);
+- **the moon, from nightfall**: on the nights it is said, the moon has its
+  line under the card (« Cette nuit, jusqu'au 15 'Hechvan »), as long as it
+  does not hold the card and is not marked done (by its card in the stack
+  or on this page): it comes back about ten nights a month and gets missed
+  for lack of a reminder. It is a line of its own, alongside the one below.
+  It is put forward only once it can be said: not by day, where « Ce soir »
+  announced it from the morning;
+- **one line below, at most** (besides the moon's), and only on an evening
+  of an occasion: the service under the lighting, the Sli'hot or the moon,
+  which preceded it in the card; havdala on the evening a Chabbat or a holiday ends. On other
   days, nothing. The card first announced up to three lines (the bedtime
   Chema, tikoun 'hatsot, the loulav, the Hochanot): three highlights meant
   highlighting none, and at Souccot the loulav and the Hochanot were
   repeated above the holiday's list, which moves up just below. The service
-  alone holds the card; the rest is one gesture further down;
+  alone holds the card; the rest is one gesture further down. On a motsaé
+  Chabbat of the moon, havdala and the moon are both there, one under the
+  other, until each is swiped;
+- **a search field**, under the highlighted cards and above the tools: it
+  filters the page's own texts with the library's search (Hebrew and Latin
+  names, the other names everyone types, one typo away: `searchSidour`, held
+  by `src/__tests__/sidourGroups.test.ts`). While it holds a term, its
+  results replace the tools and the list;
 - **all the texts**, in one list, without the books that separated them,
   but not without landmarks: light subheadings by use (the services, the
   evening, the brahot, the occasions, life stages), then the holidays at
@@ -768,6 +811,29 @@ arrived in front. The arrival of a goal you have just created is the third
 (the volume falling onto its shelf, the habit slipping into its list): it
 says where it has been filed (`prefersReducedMotion`,
 `composables/useMotion.ts`).
+
+### A gesture is shown, rarely
+
+The one motion that answers nothing: the swipe, shown. Whoever stays on the
+home page or the Sidour without a gesture may not know that the card is
+swiped. So the card that can be swiped (the stack's top card, the Sidour's
+card of the moment) leaves to the right on its own, as far as the gesture's
+threshold (120 px, a slight tilt), the « C'est fait » pill appearing whole at
+its edge as under a finger, then springs back past its place and settles:
+1.6 s, as if a finger had started the gesture and let go (`useSwipeHint`).
+
+It must stay rare to stay useful, and not become a fidget:
+
+- only to whoever has not swiped (done, later, a wallet card, a line of the
+  Sidour) on this device for three days, or ever: whoever swipes knows;
+- at most once a day, wherever it played, and once per visit of the page;
+- after eight seconds without a touch, a key or a scroll, the page in view;
+  never under a tip or the introduction, never on a card that cannot be
+  swiped (a service whose time has not come), nor in the home page's edit
+  mode, nor while the Sidour's search holds a term;
+- never when less motion is asked for, nor on a small machine (`perf-lite`).
+
+Held by `src/__tests__/swipeHint.test.ts`.
 
 ### Touch answers
 
@@ -1207,6 +1273,17 @@ should discover that a halakha existed on the day they would have needed
 it. The setting only shows on a text that carries some: offering to hide
 what the page does not display would suggest something was missed.
 
+On the chnei mikra page, its two options join them too: « Chaque verset deux
+fois » ("Each verse twice", on at the start: it is the practice itself) and
+« Commentaire de Rachi » ("Rashi's commentary"), each with its hint. They
+used to be two switches above the text, under the paracha's name: the only
+reading options of the library left outside the menu, and one more block
+between the title and the text. They stay shared with the daily reading
+(`useChneiMikraOptions`). Held by `src/__tests__/readingMenu.test.ts` (« ne
+propose les options du chnei mikra que sur sa page ») and
+`src/__tests__/chneiMikraPage.test.ts` (« propose les options de lecture
+dans le menu de lecture, et les retient »).
+
 Under the switches, a rule, then what is done with a gesture instead of
 being set: sharing the text being read, writing to the team, and, on the
 site, getting the app. These three were only in the footer or in the About
@@ -1221,6 +1298,68 @@ Corollary: no bookmark on a tefila (Sidour, Sli'hot, Brahot). A service or a
 blessing is read from the beginning; you do not come back to a paragraph as
 to a verse of Tehilim; the menu's table of contents already leads to each
 passage.
+
+### The progress bar takes you through the text
+
+The thin progress line at the bottom of a reading (`ReadingProgressBar.vue`)
+is also a slider. A finger (or the mouse) laid on it takes the page to the
+same share of the text, and the page follows while it slides: whoever looks
+for the Amida in a whole Shaharit, or the end of a long daf, gets there in
+one gesture instead of three screens of scrolling. The strip that catches
+the finger is taller than the line, which no finger would hit: on the site,
+3 rem, so that the slide can start well above the very bottom of the screen,
+where the browser's own gesture leaves the page; in the app, 1.5 rem. In
+Hebrew the bar fills from the right, and slides the same way.
+
+In the app, the line runs along the top edge of the bottom bar, over it, and
+the bar's white rises in a bump over its round times button instead of the
+button sticking out of it: the line rides over the bump
+(`composables/tabBarHump.ts`, one shape for both, a 12 px bell that clears
+the button with a margin). A notch in the strip leaves the button its
+touches. While the mini player lies there, the line stays flat, under it.
+
+The finger pulls the line. Under it, the bar rises in a bump (64 px, a bell
+rather than a peak: the line is stretched, it does not break), like a string
+held between two fingers, with a round thumb on top; the paper under the
+line hides the text it rises over. The titles of the text (the landmarks of
+the reading menu) sit on the line, **with no frame**: the one being read
+rides on top of the bump, large and straight, in Playfair Display and in the
+primary color; the others lie along the bar on each side, small, leaning
+with the line, each kept to its share of it so that two neighbors never
+overlap. A halo of the page's color keeps them legible over the text. The
+share reached (« 42 % ») stays on top of the bump, just above the finger:
+the titles say which passage, the share how far into the text. A text
+without titles shows it alone, larger.
+
+It moves like something held: the bump follows the finger with a little
+give, the titles glide from one to the next (the next one climbs the slope
+and grows until it is on top, straightening up, while the one it replaces
+slides down and shrinks), and, let go, the line springs back flat with a
+small rebound. These are springs (`stepSpring`,
+`composables/readingScrub.ts`), run frame by frame and only while the line
+moves. When the system asks for less motion, the line goes straight where it
+is going, without give or rebound. Crossing from one title to the next is
+felt as a threshold (`tick`, see "Touch answers"). The round buttons of the
+menu step aside during the gesture.
+
+On the site, the mini player lies over the bottom of the screen: the bar is
+then a line again, and the player keeps its touches. Two touches in a row on
+the bar are two slides: the double tap that starts the automatic scrolling
+does not apply there (`data-own-gestures`, held by
+`src/__tests__/autoScroll.test.ts`).
+
+On a text with landmarks, the round menu button names the one being read as
+soon as one scrolls: it grows to the left around the title, then shrinks
+back to a circle 1.8 s after the page stands still. Whoever sees the name of
+the passage appear there understands that the button leads to the passages,
+and that another one is a touch away. Not while the page scrolls by itself
+(the title would never leave the text), nor with the panel open, which lists
+them all. The button keeps its name for screen readers; the title is a hint
+for the eye.
+
+Held by `src/__tests__/readingScrub.test.ts` (the bump clearing the round
+button: « clears the round button, with a margin, and the line riding over
+it too »).
 
 ### One bookmark per book, and it shows
 
@@ -1265,26 +1404,28 @@ tikoun): neither one shows it.
 
 ### Chnei mikra is checked off aliyah by aliyah
 
-On the chnei mikra page, each aliyah carries its checkbox, next to its
-title: a pill carrying its name (« Marquer lue », "Mark as read", then
-« Lue », "Read", the box filled in the theme color). Chnei mikra is read over
-the course of the week, an aliyah or two at a time; the box says where you
-stand. The checks are stored by week (the Chabbat of the paracha): the
-following week starts from zero, and browsing back to a past paracha finds
-its own. The daily reading, which also shows chnei mikra, does not carry
-them: it already has « Marquer lu » per section.
+On the chnei mikra page, each aliyah ends with « Marquer comme lue » ("Mark
+as read", then « Lue », "Read", with its check in the theme color): the
+same button, at the same place, as a psalm of « Mes Téhilim » or a text of
+the daily reading. Chnei mikra is read over the course of the week, an
+aliyah or two at a time, and one checks it off where one stops reading. The
+aliyah's title above the text stays a plain marker.
 
-Above the text, the week's list shows them all at a glance
-(`ChneiMikraChecklist.vue`): a card titled « Les montées de la semaine »
-("The week's aliyot"), the count on the right (« 3 sur 7 », "3 of 7"), then
-the name of the paracha and its seven aliyot by name (Cohen, Lévi, Chlichi,
-Revi'i, 'Hamichi, Chichi, Chevi'i), in the same pills as the boxes in the
-text (`AliyaCheck.vue`); a double paracha has both its names, each with its
-seven. The list and the boxes say the same thing, and are kept in Mon
-parcours, carried along by the account and tied to the « une montée par
-jour » ("one aliyah a day") chnei mikra (see `docs/parcours.md`). Feedback
-from a reader of the app asked for it: checking off without hunting for the
-aliyah in the text.
+At the top of the page, under the paracha's name, a bar says where the week
+stands (« Montées lues : 3 sur 7 », "Aliyot read: 3 of 7", its percentage,
+and the `ProgressBar`), fourteen for a double paracha. No card around it
+and no list of the aliyot: an earlier version put a card « Les montées de
+la semaine » above the text, with the seven aliyot by name to tick, and a
+pill beside each title in the text; two ways of doing one thing, and a
+frame more at the top of a page that is already long. The owner asked for
+the pattern of the Tehilim instead.
+
+The checks are stored by week (the Chabbat of the paracha): the following
+week starts from zero, and browsing back to a past paracha finds its own.
+They are kept in Mon parcours, carried along by the account and tied to the
+« une montée par jour » ("one aliyah a day") chnei mikra (see
+`docs/parcours.md`). The daily reading, which also shows chnei mikra, does
+not carry them: it already has « Marquer lu » per section.
 
 ### The translation reads under the verse
 
@@ -2270,9 +2411,8 @@ time, the time in large type), the untitled shelf.
   programme » ("See the program"). Each gesture has its button there, for
   those who do not swipe, and on the site.
 - **The order**: the 'Hanouka lighting at its time, the service whose time
-  it is if it is in the parcours (the card says « Maintenant » ("Now") and
-  until when, and then replaces the Sidour shortcut), the moon and the
-  'Omer, then the present moment, those coming up, those already past,
+  it is (the card says « Maintenant » ("Now") and until when), the moon and
+  the 'Omer, then the present moment, those coming up, those already past,
   « Rattraper », and finally what was put off until later. A service says
   until when, or from when if it is upcoming.
 - **Not time yet.** A service whose time has not come (Min'ha in the
@@ -2300,6 +2440,19 @@ time, the time in large type), the untitled shelf.
   long as the parcours has started. They do not count in the day: once
   done, the device remembers them (`services/parcours/occasions.ts`), so
   that a blessed moon does not come back the following night.
+- **The services are in the stack for everyone.** Without the « trois
+  tefilot » habit (or on a day it leaves out), the service whose time it is
+  still comes into the stack, as an extra card: « Maintenant », until when,
+  the sidour, in solid color like the habit's (what you come looking for
+  takes the color, counted or not). It opens the text, is swiped done like an occasion,
+  and does not count in the day, on the wall or in the streak: only the
+  habit, chosen, counts the services. It replaces the Sidour shortcut of
+  the home page, which stays silent once the parcours has started. On a
+  night of the moon, Arvit comes first and the moon right after: once
+  Arvit is swiped, the moon is on top. What is swiped here is also what the
+  Sidour page knows is said, and what is said there (swiped, or at the end
+  of the text) leaves the stack (see "The Sidour opens on the moment").
+  Held by `src/__tests__/parcoursDeck.test.ts`.
 - **« Rattraper »** ("Catch up"), an extra card for a program that is behind
   (« si vous avez un moment », "if you have a moment"), leads to the catch-up
   sheet; swiped right, the backlog is marked as read.
@@ -2532,6 +2685,31 @@ the page scrolls on its own near the top or bottom edge. Released, it slides
 into place (`useHomeArrange`). It is a device setting (`useHomeLayout`), and
 outside edit mode a block with nothing to say disappears on its own.
 
+One block holds the **pinned books** (« Livres épinglés », `useHomePinned`):
+up to three volumes on one shelf, drawn like the library's (`LibraryShelf`),
+each a whole section (the Sidour, the Tehilim, the Talmud...) or one text of
+the catalog (Chaharit, Min'ha, Berakhot, a psalm), and each opening its page.
+A long title goes over two or three lines on the cover, smaller when a word
+alone is too long. In edit mode the block carries, under it
+(`HomePinnedEditor`, still while one types and never picked up): the pinned
+books as chips with their cross, « Les trois offices » ("The three
+services", the book drawn and its name), which puts Chaharit, Min'ha and
+Arvit in place of the others, and a search field over the whole catalog,
+the Sidour's texts included, whose answers carry « Épingler » ("Pin"); with
+three books on the shelf, a line says to remove one first. Pinning a book
+shows the block if it was hidden. The block is hidden by default, the
+Sidour and the Tehilim ready on its shelf; it is a device setting too
+(`pj_home_pinned`), and a book this version does not know stays off the
+shelf (held by `src/__tests__/homePinned.test.ts`). A pinned Sidour text
+takes the Sidour's binding.
+
+Another block, hidden by default, is **« Reprendre l'écoute »** ("Resume
+listening", `HomeListeningResume`): the audio courses begun and not finished
+on this device, in the same row of tiles as at the top of the Chiourim
+catalog (`ResumeTile`), a touch resuming the course where it was left. It
+spans both columns on a wide screen, and with nothing to resume it
+disappears.
+
 ### Texts set aside, on the table
 
 You rarely study a single book: you read a passage, go look at a
@@ -2616,33 +2794,41 @@ that gesture: several books open on the table, each at its page.
 Two colors, the orange and the blue of the logo's palette. The background
 and the wall also come from the logo.
 
-| Color           | Logo      | Ink       | Light     |
-| --------------- | --------- | --------- | --------- |
-| Orange          | `#FEA547` | `#D46D01` | `#FFD09E` |
-| Blue            | `#539EE2` | `#328CDC` | `#A9CCEB` |
-| Page background | `#FFF9F3` |           |           |
-| Bricks (wall)   | `#D6C4B8` |           |           |
+| Color           | Logo      | Solid fill | Ink       | Light     |
+| --------------- | --------- | ---------- | --------- | --------- |
+| Orange          | `#FEA547` | `#EB9F4F`  | `#D46D01` | `#FFD09E` |
+| Blue            | `#539EE2` | `#328CDC`  | `#328CDC` | `#A9CCEB` |
+| Page background | `#FFF9F3` |            |           |           |
+| Bricks (wall)   | `#D6C4B8` |            |           |           |
 
-The logo's orange is light: white does not read on it (2:1), and it cannot
-be written on the background (1.9:1). It is therefore used **as is as a
-solid fill**, with brown on top (`#3B2412`, 7.4:1), and orange text takes
-**the same hue, deepened just enough** to be readable: that is the ink. The
-logo's blue, also light, is taken deepened once and for all (`#328CDC`): it
-carries white and reads as ink.
+The solid orange is a **pastel of the logo's family** (`#EB9F4F`), with
+**white on top**. It cannot be written on the background, so orange text
+takes **the same family, deepened just enough** to be readable: that is the
+ink. The logo's blue, light too, is taken deepened once and for all
+(`#328CDC`): it carries white and reads as ink.
+
+White on the pastel orange is a **deliberate exception** to the readability
+rule. It reaches 2.2:1 by WCAG 2, below even the 3:1 that WCAG asks of large
+text; APCA, which weighs size and weight, gives it Lc 47, enough for large
+bold headlines (Lc 45) and not for small labels (Lc 75). We accept it for
+the look the owner chose, and the **higher contrast mode** (below) gives
+whoever needs it a version at the WCAG AA level everywhere.
 
 Rejected attempts for the orange, in order: the original vermilion
 (`#DE4F17`), which leaned red; the logo's orange deepened to carry white
 (`#D96507`), yellower than the vermilion but which leaned brown and made the
 app dull; brighter oranges between the two (`#E65D00`), which did not
-convince either. The price of the light orange: two oranges on the same
-screen, the hue in solid fills and the ink in text (the home page time, the
-active tab).
+convince either; the logo's orange itself (`#FEA547`) with brown on top,
+readable but dull, and white was wanted back. A vivid orange of the same
+lightness (`#FB8900`, white at 2.4:1) was close behind the pastel. The
+price of a light orange: two oranges on the same screen, the hue in solid
+fills and the ink in text (the home page time, the active tab).
 
 Three themes to choose from, in this order. The first is the original.
 
 | Theme            | Ink       | Solid fill | Text on it | Secondary |
 | ---------------- | --------- | ---------- | ---------- | --------- |
-| sunset (default) | `#D46D01` | `#FEA547`  | `#3B2412`  | blue      |
+| sunset (default) | `#D46D01` | `#EB9F4F`  | white      | blue      |
 | ocean            | `#328CDC` | `#328CDC`  | white      | orange    |
 | emerald          | `#059C66` | `#059C66`  | white      | orange    |
 
@@ -2652,9 +2838,14 @@ secondary. The readability rule is held by
 
 - the ink at 3.1:1 at least on the background, 3.5:1 on a white card, 3.3:1
   on the dark background;
-- what is written on the solid fill at 3.5:1 at least;
+- what is written on the solid fill at 3.5:1 at least, except the
+  documented exception of sunset (`ON_BRAND_EXCEPTIONS`), held instead to
+  APCA Lc 45, the minimum for large headlines;
+- in higher contrast, every theme, light and dark, at the WCAG AA level:
+  4.5:1 for the text on the fill and for the inks;
 - on hover, the solid button darkens, and its text still reads at this
-  threshold (white better than at rest, brown slightly less: 5.6:1);
+  threshold (white better than at rest; dark text, in higher contrast,
+  slightly less but still at 4.5:1);
 - on the solid fill, you write `on-brand`, never `text-white` or the ink:
   the test rereads the classes and CSS rules in `src`.
 
@@ -2663,7 +2854,7 @@ the bar's central button, the profile banner, the next holiday's card, the
 circles on the sharing timeline) take `--color-brand`, and what is written on
 them `--color-on-brand`. Colored text, links, icons, the active tab, rules,
 progress bars, switches and light tints (`bg-primary/10`) take
-`--color-primary`, the ink: the light orange would show too little there. A
+`--color-primary`, the ink: the pastel orange would show too little there. A
 holiday theme provides only its two colors, deep enough to serve both ways
 under white, and the rest is derived from them (`resolveThemeColors`).
 
@@ -2676,7 +2867,29 @@ theme, `#D46D01`: all three change together. The background (`#FFF9F3`) is
 reused in the browser color (`index.html`), the status bar
 (`useNativeStatusBar`, `scripts/setup-android.mjs`) and the widgets'
 background. The share thumbnail (`functions/src/ogCard.ts`) takes orange as
-the solid fill, with brown on top.
+the solid fill, with brown on top (6.6:1): it is read small, in other apps,
+by people who cannot switch to higher contrast.
+
+### Higher contrast
+
+An accessibility mode, offered in the introduction and in the appearance
+settings, as a switch under the themes (`useContrast`). It brings every
+theme to the WCAG AA level (4.5:1 for regular text), light and dark
+(`strengthenThemeColors` in `useTheme.ts`):
+
+- on the solid fill, the more readable of white and the dark text
+  (`#3B2412`); if neither reaches 4.5:1, the fill deepens under white. The
+  pastel orange thus keeps its color and takes the dark text (6.6:1); blue
+  and green deepen a little under white;
+- the inks deepen on the light background and lighten on the dark one until
+  they reach 4.5:1 on both the background and a card;
+- the neutrals follow (`:root.contrast-more` in `main.css`): darker
+  secondary text, more visible rules.
+
+Until someone chooses, it follows the device (`prefers-contrast: more`,
+"Increase contrast" on iOS and macOS). A choice made in the switch then
+holds, on the device or in the account like the theme. Held by
+`src/__tests__/themeColors.test.ts`.
 
 The secondary color holds the elements that are neither the main action nor
 text: the Sidour tools, the line under the card of the moment, the library's
@@ -2720,8 +2933,8 @@ text look the same.
 
 The ink (`primary`) and the solid fill (`brand`) are two tokens. For blue
 and green, it is the same color, taken deep enough to work both ways; for
-orange, the logo's hue stays light as a solid fill and the ink is its
-deepened version. The three inks hold at the same level: 3.4:1 on the beige,
+orange, the pastel stays light as a solid fill and the ink is its deepened
+version. The three inks hold at the same level: 3.4:1 on the beige,
 3.5:1 on white, 5:1 on the dark background. An ink brighter than these
 would no longer work as text: a lighter color goes in a solid fill, with dark
 text on it, not as ink.
@@ -2729,8 +2942,9 @@ text on it, not as ink.
 This is a **deliberate exception** to the AA level: 4.5 is the threshold
 for regular-size text, and none of the three inks reaches it on the beige.
 We accept it because the ink only carries short labels, in semibold,
-titles, and the day's additions in a tefila (see below). The text on the
-light orange, for its part, exceeds the threshold (7.4:1).
+titles, and the day's additions in a tefila (see below). White on the
+pastel orange is the second exception (see "Theme colors"); the higher
+contrast mode lifts both.
 
 ### Holiday themes
 
@@ -2925,6 +3139,7 @@ with its neighbors:
 | Tanakh  | `#84483f` |
 | Moussar | `#86622f` |
 | Halakha | `#5e4535` |
+| Sidour  | `#a06a3c` |
 
 Moussar ('Hovot Halévavot, Pélé Yoets) is a study section: it has its list
 page and its volume on the shelf, its bookmarks and its reading resume. It

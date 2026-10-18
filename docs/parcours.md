@@ -50,7 +50,7 @@ shows, at the bottom of the text, the day's task to check off
 | `legacyDailyReading.ts`                    | the former daily reading                                                                     |
 | `entries.ts`                               | the texts a task has you read (offline download)                                             |
 | `tracking.ts`                              | audience tracking shared by several screens                                                  |
-| `occasions.ts`                             | the deck's occasion cards marked done (the moon, the 'Omer, 'Hanouka), on the device         |
+| `occasions.ts`                             | the deck's occasion cards marked done (the moon, the 'Omer, 'Hanouka, a service), on the device |
 
 `composables/useParcours.ts` brings it all together for the pages: a single
 shared state, started on first use (anyone who never opens the journey
@@ -138,10 +138,9 @@ the week counts as read when the Friday or Chabbat card is
 paracha is read over the week, as before.
 
 **Aliyot can also be checked off one by one**, in any order, on the chnei
-mikra page: the week's list (Cohen, Lévi, Chlichi... under the name of the
-paracha, fourteen for a double paracha) and the checkbox of each aliya in the
-text, which say the same thing (`ChneiMikraChecklist.vue`,
-`useChneiMikraChecks`). No new field: a check is an entry of `done`, on the
+mikra page: « Marquer comme lue » at the end of each aliya in the text, and
+a bar at the top of the page that counts them (seven, fourteen for a double
+paracha; `useChneiMikraChecks`). No new field: a check is an entry of `done`, on the
 day it is set, under the name `aliya:3` (the 3rd aliya of the week, counted
 from 1). An earlier version ignores it, and keeps it when rewriting the day
 (it reads `done` back in full, whereas an unknown field of a `DayLog` was lost
@@ -163,7 +162,7 @@ cards are one and the same (`aliyot.ts`):
 - the week is read (`parashaProgress.completed`) when all its aliyot are.
 
 The whole week (the cycle without `split`) is not tied to it: its card says
-« lue cette semaine » ("read this week"), the list says where you stand.
+« lue cette semaine » ("read this week"), the page's bar says where you stand.
 
 The checks of version 3.10.11 lived on the device only
 (`pj-chnei-mikra-aliyot`, by week, « texte:début »): when the text is opened,
@@ -198,7 +197,7 @@ nothing about programs or habits.
 | `parcoursSync.test.ts`          | without an account, with an account, a shared device                                                                                                         |
 | `parcoursCloud.test.ts`         | the account write sends no `undefined` field (Firestore would reject the whole write)                                                                        |
 | `parcoursLegacyDaily.test.ts`   | the former daily reading, taken over and kept up to date                                                                                                     |
-| `parcoursDeck.test.ts`          | the home deck: the order, prayer service times, catching up, the 'Omer card                                                                                  |
+| `parcoursDeck.test.ts`          | the home deck: the order, prayer service times, catching up, the 'Omer card, the service of the hour without the habit                                      |
 | `parcoursEntries.test.ts`       | the texts to download for the day                                                                                                                            |
 | `parcoursTracking.test.ts`      | shared tracking, and the daily reading events that continue                                                                                                  |
 | `widgetDailyParcours.test.ts`   | the widgets' daily reading, without an account                                                                                                               |

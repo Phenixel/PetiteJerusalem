@@ -221,6 +221,18 @@ the daily reading lives there), `my_sessions`, or `support` (« Nous écrire »,
 shows the day) sends it, with or without an account; on the website, the
 « Mon parcours » link in the profile banner, and the menu row, which stays.
 
+### `contrast_changed`, `contrast_change_failed` (new)
+
+The higher contrast switch, in the introduction or in the appearance
+settings (see docs/design.md, "Higher contrast"). `contrast_change_failed`
+is sent when the account's write is refused (the previous value is back on
+screen). Following the device setting sends nothing.
+
+| Property     | Values                                               |
+| ------------ | ---------------------------------------------------- |
+| `preference` | `more` (switched on), `standard` (switched off)      |
+| `scope`      | `device` (no account, kept on the device), `account` |
+
 ## Reading the tefila
 
 ### `hazara_opened` (new)
@@ -269,14 +281,15 @@ the same list as the services. The name stays reserved.
 
 An aliya checked or unchecked on the chnei mikra page
 (`/bibliotheque/chnei-mikra`, `useChneiMikraChecks`). It tells whether the
-checkbox is used, and how far into the week the reading goes.
+« Marquer comme lue » button at the end of each aliya is used, and how far
+into the week the reading goes.
 
-| Property  | Values                                                                                                      | Status    |
-| --------- | ----------------------------------------------------------------------------------------------------------- | --------- |
-| `done`    | true if the aliya has just been checked, false if unchecked                                                 | **new**   |
-| `text_id` | the paracha's text (a double paracha has two)                                                               | **new**   |
-| `aliya`   | the aliya, as the text names it (`1re montée`, `2e montée`...)                                              | **new**   |
-| `source`  | `text` (the checkbox in the text), `list` (the week's list, above the text); absent before the list: `text` | **added** |
+| Property  | Values                                                                                                                                                                                    | Status    |
+| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
+| `done`    | true if the aliya has just been checked, false if unchecked                                                                                                                               | **new**   |
+| `text_id` | the paracha's text (a double paracha has two)                                                                                                                                             | **new**   |
+| `aliya`   | the aliya, as the text names it (`1re montée`, `2e montée`...)                                                                                                                            | **new**   |
+| `source`  | `text` (in the text: the checkbox, then « Marquer comme lue » at the end of the aliya), `list` (the week's list, above the text; removed, no longer sent); absent before the list: `text` | **added** |
 
 ## Sidour and Study (October 2026)
 
@@ -301,12 +314,12 @@ way to see whether people come to the Sidour at service times.
 A text opened from the Sidour page. It tells whether the "right now" card is
 used, and what people look for in the list.
 
-| Property  | Values                                                                                                                                                        | Status  |
-| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
-| `text`    | the text, `corpus/slug` (`sidour/chaharit`, `brahot/birkat-hamazon`...)                                                                                       | **new** |
-| `source`  | `hero` (the "right now" card), `extra` (the row below it, on a special evening: the service or the havdala), `list` (the list)                                | **new** |
-| `section` | for `list`, the group: `offices`, `soir`, `brahot`, `occasions`, `vie`, `fetes`, or the holiday at the top (`tichri`, `souccot`, `hanouka`); `null` otherwise | **new** |
-| `feast`   | as on `sidour_viewed`                                                                                                                                         | **new** |
+| Property  | Values                                                                                                                                                                                                                                         | Status  |
+| --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| `text`    | the text, `corpus/slug` (`sidour/chaharit`, `brahot/birkat-hamazon`...)                                                                                                                                                                        | **new** |
+| `source`  | `hero` (the "right now" card), `extra` (the row below it, on a special evening: the service or the havdala), `moon` (**new value**: the moon's row, on its nights), `search` (**new value**: a result of the page's search), `list` (the list) | **new** |
+| `section` | for `list`, the group: `offices`, `soir`, `brahot`, `occasions`, `vie`, `fetes`, or the holiday at the top (`tichri`, `souccot`, `hanouka`); `null` otherwise                                                                                  | **new** |
+| `feast`   | as on `sidour_viewed`                                                                                                                                                                                                                          | **new** |
 
 ### The tools: `kotel_compass_opened`, `tefilin_mirror_opened` (existing), `naanouim_compass_opened` (existing, one more property)
 
@@ -520,6 +533,20 @@ once, and tells whether the default width suits people who study.
 | `commentaries_resized` | `width`          | the chosen width, in pixels; `null` when it is reset | **new** |
 | `commentaries_resized` | `viewport_width` | the window width, in pixels                          | **new** |
 
+### Reading: `reading_scrubbed` (new)
+
+The reader slides a finger along the progress bar at the bottom of a text to
+reach a passage (`ReadingProgressBar.vue`, see `docs/design.md`, "The
+progress bar takes you through the text"). Sent once, when the finger is
+lifted. It tells whether the gesture is found, on which texts (with titles
+or not), and how far it carries.
+
+| Property         | Values                                                       | Status  |
+| ---------------- | ------------------------------------------------------------ | ------- |
+| `sections_count` | the titles shown above the bar (0: a text without landmarks) | **new** |
+| `from_progress`  | the share of the text where the gesture began, from 0 to 1   | **new** |
+| `to_progress`    | the share where it was let go, from 0 to 1                   | **new** |
+
 ### Reading: automatic scrolling (`auto_scroll_*`, existing)
 
 `auto_scroll_started`, `auto_scroll_stopped` and `auto_scroll_speed_changed`
@@ -620,6 +647,12 @@ an empty term.
 | `rank`    | the text's rank in the results as they are displayed (by shelf, then by book), starting at 1 |
 | `corpus`  | the text's type (`Tehilim`, `Sidour`...)                                                     |
 | `text_id` | its identifier in the catalog                                                                |
+
+#### `sidour_search_performed` (new)
+
+The search of the Sidour page, settled as above: `query`, `query_length`,
+`results_count` (the texts found). A result opened then sends
+`sidour_text_opened` with `source: search`.
 
 #### `chiourim_search_performed` (new)
 
@@ -956,12 +989,12 @@ wall).
 
 A task checked or unchecked.
 
-| Property   | Values                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `done`     | true when it is checked                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| `kind`     | `program`, `habit`, `cycle`, `text`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| `source`   | from where: `home_deck_swipe` (the top card of the home page stack, swiped), `home_wallet_swipe` (a wallet card, swiped right or, to uncheck it, left), `home_sheet` (a card's sheet), `journee_row` (Ma journée, removed: no longer sent), `objective_swipe` (the day's or week's portion, swiped on a program page), `reader` (at the bottom of a reading opened from the parcours, the ring pulled up), `parcours_wall`, `parcours_full_wall` (a day of the wall), `daily_page` (**new value**: « Marquer comme lu », "Mark as read", on the daily reading page); the home page « Lecture du jour » ("Daily reading") card, swiped, sends one per text |
-| `days_ago` | 0 today, 1 yesterday...: what gets checked after the fact                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| Property   | Values                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `done`     | true when it is checked                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `kind`     | `program`, `habit`, `cycle`, `text`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `source`   | from where: `home_deck_swipe` (the top card of the home page stack, swiped), `home_wallet_swipe` (a wallet card, swiped right or, to uncheck it, left), `home_sheet` (a card's sheet), `journee_row` (Ma journée, removed: no longer sent), `objective_swipe` (the day's or week's portion, swiped on a program page), `reader` (at the bottom of a reading opened from the parcours, the ring pulled up; also at the end of a service's text, with the « trois tefilot » habit), `sidour_swipe`, `sidour_line_swipe` and `sidour_undo` (**new values**: the Sidour page card or a row under it swiped right, and « Annuler » under it, with the habit), `parcours_wall`, `parcours_full_wall` (a day of the wall), `daily_page` (**new value**: « Marquer comme lu », "Mark as read", on the daily reading page); the home page « Lecture du jour » ("Daily reading") card, swiped, sends one per text |
+| `days_ago` | 0 today, 1 yesterday...: what gets checked after the fact                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 
 A task from the former daily reading (a daily text, a calendar reading),
 checked on the same day, also sends `daily_reading_marked_read` (existing,
@@ -994,11 +1027,11 @@ down) or `day_bar` (the day bar tapped).
 An occasion card in the stack marked done, or undone: it doesn't count in the
 day, the device remembers it.
 
-| Property   | Values                                                                                      |
-| ---------- | ------------------------------------------------------------------------------------------- |
-| `occasion` | `halevana` (the blessing of the moon), `omer` (the evening count), `hanouka` (the lighting) |
-| `done`     | true when it is done                                                                        |
-| `source`   | `home_deck_swipe`, `home_wallet_swipe`, `home_sheet` (as in `parcours_task_marked`)         |
+| Property   | Values                                                                                                                                                                                                                                                                                 |
+| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `occasion` | `halevana` (the blessing of the moon), `omer` (the evening count), `hanouka` (the lighting), `tefila` (the service whose time it is, without the « trois tefilot » habit), `havdala` (**new value**: its row on the Sidour page, swiped)                                               |
+| `done`     | true when it is done                                                                                                                                                                                                                                                                   |
+| `source`   | `home_deck_swipe`, `home_wallet_swipe`, `home_sheet` (as in `parcours_task_marked`); `sidour_swipe` (the Sidour page card, swiped right), `sidour_line_swipe` (a row under it, swiped right), `sidour_undo` (« Annuler » under it), `reader` (the ring at the end of a service's text) |
 
 `birkat_halevana_opened` and `omer_opened` (existing) are still sent with
 `source: home` when their card is tapped in the stack, as when they were
@@ -1016,13 +1049,26 @@ sent: the daily reading card gave way to the deck.
 ### `home_block_moved`, `home_block_hidden`, `home_block_shown` (new)
 
 The home page to one's liking (edit mode, on the home page itself): a block
-moved, hidden, or restored. `block`: `horaires`, `volumes`, `portes`, `reprendre`, `dates`;
+moved, hidden, or restored. `block`: `horaires`, `volumes`, `portes`, `reprendre`, `dates`,
+`livres` (the pinned books), `ecoute` (« Reprendre l'écoute », the audio courses to resume);
 and for a move, `to`, its new position (0 right under the day's deck).
 `home_card_clicked` also takes `card: resume`, the « Reprendre » ("Resume")
-block. `card: announcements` is no longer sent: the announcements link left
+block, `card: pinned_<corpus>` (`pinned_sidour`, `pinned_talmud`...), a
+pinned book opened (the corpus of the section or of the text), and
+`card: listening_resume`, a course resumed from « Reprendre l'écoute ». `card: announcements` is no longer sent: the announcements link left
 the bottom of the home page (it remains in the website footer and in the
 app's profile); an announcement's card, for its part, still sends
 `announcement_opened`.
+
+### `home_book_pinned`, `home_book_unpinned` (new)
+
+A book pinned to the home page, or taken off it (edit mode, under the
+« Livres épinglés » block).
+
+| Property | Values                                                                                                          |
+| -------- | --------------------------------------------------------------------------------------------------------------- |
+| `kind`   | `section` (a whole section of the library), `text` (one text of the catalog), `prayers` (« Les trois offices ») |
+| `corpus` | `sidour`, `tehilim`, `michna`, `talmud`, `tanakh`, `moussar`, `halakha`, `moadim`, `brahot`                     |
 
 ### `parcours_units_marked` (new)
 

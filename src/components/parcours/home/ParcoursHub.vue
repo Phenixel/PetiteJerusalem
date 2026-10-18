@@ -5,16 +5,17 @@
  * d'une carte. Sans objectif encore, l'invitation à en prendre un. Dans
  * l'app, avec ou sans compte ; sur le site, pour un compte.
  *
- * Il dit à l'accueil s'il porte les offices (l'habitude des trois tefilot) :
- * le raccourci du Sidour se tait alors, la carte de l'office est dans le
- * paquet. Et s'il a commencé : les bandeaux de la lune et du 'Omer se taisent
- * aussi, leurs cartes prennent place dans la pile.
+ * It tells the home page whether it has begun: the Sidour shortcut and the
+ * banners of the moon and the 'Omer then fall silent, their cards take their
+ * place in the stack (the service whose time it is too, with or without the
+ * « trois tefilot » habit).
  *
  * Chargé à la demande (voir HomeView) : il tire le calendrier hébraïque.
  */
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useParcours } from "../../../composables/useParcours";
+import { useSwipeHint } from "../../../composables/useSwipeHint";
 import { useTodayDeck, type DeckCard } from "../../../composables/useTodayDeck";
 import { analyticsService } from "../../../services/analyticsService";
 import { haptic, type HapticKind } from "../../../services/haptics";
@@ -25,7 +26,6 @@ import TaskDeck from "./TaskDeck.vue";
 import TaskSheet from "./TaskSheet.vue";
 
 const emit = defineEmits<{
-  (e: "offices", covered: boolean): void;
   (e: "begun", begun: boolean): void;
 }>();
 
@@ -36,7 +36,15 @@ const deck = useTodayDeck();
 const begun = computed(() => liveObjectives(store.data.value).length > 0);
 const open = ref(false);
 
-watch(deck.coversOffices, (covered) => emit("offices", covered), { immediate: true });
+// The swipe shown, rarely, to whoever stays on the home page without a
+// gesture: on the folded stack, a top card that can be swiped, outside the
+// home page's edit mode (where the deck is inert).
+const root = ref<HTMLElement | null>(null);
+const { hinting } = useSwipeHint(() => {
+  const top = deck.top.value;
+  return begun.value && !open.value && !!top && !top.waiting && !root.value?.closest("[inert]");
+});
+
 watch(begun, (value) => emit("begun", value), { immediate: true });
 
 /** La carte d'une pile vide : la journée pleine, et ce que devient la lampe. */
@@ -162,7 +170,7 @@ function fromSheet(action: (card: DeckCard) => void, feel: HapticKind): void {
 </script>
 
 <template>
-  <section :aria-label="t('parcours.hub.deck')">
+  <section ref="root" :aria-label="t('parcours.hub.deck')">
     <!-- Rien encore : le parcours commence par un objectif. -->
     <div v-if="!begun" class="card mt-[34px] px-5 py-5">
       <p class="font-display text-2xl font-bold leading-tight">{{ t("parcours.empty.title") }}</p>
@@ -180,6 +188,7 @@ function fromSheet(action: (card: DeckCard) => void, feel: HapticKind): void {
       :open="open"
       :is-later="deck.isLater"
       :rest="rest"
+      :hint="hinting"
       @done="done"
       @undo="undo"
       @later="later"

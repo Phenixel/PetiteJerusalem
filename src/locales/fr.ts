@@ -333,6 +333,17 @@ const fr = {
         portes: { title: "Bibliothèque, Chiourim, Partage", sub: "les trois portes" },
         reprendre: { title: "Reprendre", sub: "le dernier texte lu" },
         dates: { title: "Mes dates", sub: "un anniversaire, un leilouy nichmat" },
+        livres: { title: "Livres épinglés", sub: "jusqu'à trois livres ou textes, à portée" },
+        ecoute: { title: "Reprendre l'écoute", sub: "les cours audio entamés" },
+      },
+      pinned: {
+        search: "Un livre, un texte, une prière…",
+        add: "Épingler",
+        added: "Épinglé",
+        remove: "Retirer {name}",
+        prayers: "Les trois offices",
+        full: "Trois livres sur l'étagère\u00a0: retirez-en un pour en épingler un autre.",
+        noResult: "Aucun texte ne correspond.",
       },
     },
     omer: {
@@ -524,6 +535,9 @@ const fr = {
       sunset: "Coucher de soleil",
       emerald: "Émeraude",
     },
+    contrastTitle: "Contraste renforcé",
+    contrastHint:
+      "Des couleurs plus franches et un texte plus foncé sur les boutons, pour lire sans effort en plein soleil ou avec une vue fatiguée. Suit le réglage de votre appareil tant que vous n'y touchez pas.",
     holidayThemesTitle: "Thèmes des fêtes",
     holidayThemesHint:
       "Le temps d'une fête, l'application prend ses couleurs et ses ornements, puis retrouve votre thème.",
@@ -2004,22 +2018,14 @@ const fr = {
     backToThisWeek: "Revenir à la paracha de cette semaine",
     unavailable: "La paracha de cette semaine n'a pas pu être déterminée.",
     doubleVerses: "Chaque verset deux fois",
+    doubleVersesHint: "Chnayim mikra\u00a0: le verset s'écrit une seconde fois, avant son Targoum.",
     withRashi: "Commentaire de Rachi",
+    withRashiHint: "Les commentaires de Rachi sous le Targoum de chaque verset.",
     rashiUnavailable: "Le commentaire de Rachi n'a pas pu être chargé.",
-    aliyaMark: "Marquer lue",
+    aliyaMark: "Marquer comme lue",
     aliyaDone: "Lue",
     aliyaCheck: "{aliya} lue",
-    listTitle: "Les montées de la semaine",
-    listCount: "{done} sur {total}",
-    aliyaNames: {
-      n1: "Cohen",
-      n2: "Lévi",
-      n3: "Chlichi",
-      n4: "Revi'i",
-      n5: "'Hamichi",
-      n6: "Chichi",
-      n7: "Chevi'i",
-    },
+    progress: "Montées lues : {done} sur {total}",
   },
   tehilimDay: {
     title: "Tehilim du jour",
@@ -2086,7 +2092,25 @@ const fr = {
     },
     // La carte de la lune, les nuits où elle se bénit.
     thisNight: "Cette nuit",
-    halevana: { until: "Jusqu'au {date}" },
+    halevana: {
+      until: "Jusqu'au {date}",
+      lineNow: "Cette nuit, jusqu'au {date}",
+    },
+    search: {
+      placeholder: "Chercher une prière, une brakha…",
+      results: "{n} texte | {n} textes",
+      none: "Aucun texte ne répond à « {term} ».",
+    },
+    said: {
+      done: "{name} : c'est fait",
+      undo: "Annuler",
+      end: "Fin de l'office",
+      aria: "Marquer l'office fait",
+      pullSub: "pour marquer l'office fait",
+      releaseSub: "L'office sera marqué fait.",
+      doneSub: "Le Sidour passe à la suite.",
+      back: "Retour au Sidour",
+    },
     // Entre deux offices, à Souccot : le loulav se prend jusqu'à la chkia.
     loulav: { until: "Jusqu'au coucher du soleil, à {time}" },
     extras: {
