@@ -48,6 +48,7 @@ import { useNow } from "../composables/useNow";
 import { useOfficesDone } from "../composables/useOfficesDone";
 import { dragStyle, useSwipe } from "../composables/useSwipe";
 import { useSearchTracking } from "../composables/useSearchTracking";
+import { noteSwipe, useSwipeHint } from "../composables/useSwipeHint";
 import { useZmanimLocation } from "../composables/useZmanimLocation";
 import { useZmanimPlaceLabel } from "../composables/useZmanimPlaceLabel";
 import { useLocalePath } from "../composables/useLocalePath";
@@ -280,6 +281,7 @@ function markHero(): void {
     officesDone.markMoon(until, true, "sidour_swipe");
     remember(name, () => officesDone.markMoon(until, false, "sidour_undo"));
   } else return;
+  noteSwipe();
   haptic("done");
 }
 
@@ -301,6 +303,7 @@ function sayExtra(): void {
     officesDone.markOffice(window, true, "sidour_line_swipe");
     remember(name, () => officesDone.markOffice(window, false, "sidour_undo"));
   } else return;
+  noteSwipe();
   haptic("done");
 }
 
@@ -311,6 +314,7 @@ function sayMoon(): void {
   const until = moon.until;
   officesDone.markMoon(until, true, "sidour_line_swipe");
   remember(moonLine.value?.name ?? "", () => officesDone.markMoon(until, false, "sidour_undo"));
+  noteSwipe();
   haptic("done");
 }
 
@@ -330,6 +334,11 @@ const swipe = useSwipe({
   },
 });
 const heroStyle = computed(() => (swipeable.value ? dragStyle(swipe, { right: true }) : {}));
+// The swipe shown, rarely, to whoever stays on the page without a gesture
+// (useSwipeHint): the card leaves a little to the right and comes back.
+const { hinting } = useSwipeHint(() => swipeable.value && !searching.value);
+const showsHint = computed(() => hinting.value && swipeable.value && !swipe.dragging.value);
+
 /** What the gesture will do, attached to the card's left edge (as in the stack). */
 const heroCue = computed(() => {
   if (!swipe.dragging.value || swipe.axis.value !== "x" || swipe.dx.value <= 0) return null;
@@ -456,14 +465,18 @@ onMounted(() => {
     <!-- Le moment : la seule carte en couleur de la page, celle qu'on vient
          chercher (voir docs/design.md, « Ce qu'on vient chercher prend la
          couleur, pleine »). -->
-    <div class="sidour-hero-lane">
+    <div class="sidour-hero-lane -mx-6 px-6">
       <Transition name="sidour-next" mode="out-in">
         <RouterLink
           v-if="hero"
           :key="`${hero.kind}:${hero.key}:${hero.name}`"
           :to="hero.path"
           class="sidour-hero press-feedback relative block rounded-card bg-brand px-5 pt-4 pb-5 text-on-brand"
-          :class="{ 'sidour-hero-light': hero.lightArt, 'sidour-hero-swipe': swipeable }"
+          :class="{
+            'sidour-hero-light': hero.lightArt,
+            'sidour-hero-swipe': swipeable,
+            'sidour-hero-hint': showsHint,
+          }"
           :style="heroStyle"
           draggable="false"
           v-bind="swipeable ? swipe.listeners : {}"
@@ -498,6 +511,7 @@ onMounted(() => {
           </span>
           <!-- What the gesture will do, coming out from under the left edge. -->
           <DoneCue v-if="heroCue" :strength="heroCue.strength" :armed="heroCue.armed" />
+          <DoneCue v-else-if="showsHint" :strength="1" :armed="false" hint />
         </RouterLink>
       </Transition>
     </div>
@@ -517,7 +531,7 @@ onMounted(() => {
       <SidourLine
         v-if="extra"
         :key="extra.key"
-        class="mt-3"
+        class="-mx-6 mt-3 px-6"
         :to="extra.path"
         :name="extra.name"
         :meta="extra.meta"
@@ -530,7 +544,7 @@ onMounted(() => {
     <Transition name="sidour-next">
       <SidourLine
         v-if="moonLine"
-        class="mt-3"
+        class="-mx-6 mt-3 px-6"
         :to="moonLine.path"
         :name="moonLine.name"
         :meta="moonLine.meta"
@@ -650,13 +664,40 @@ onMounted(() => {
   box-shadow: var(--shadow-card-hover);
 }
 /* The card swiped right: the page does not scroll sideways under it, and the
-   drawing still comes out through the top. */
+   drawing still comes out through the top. The lane reaches the screen's
+   edges (the page's gutter, given back as padding), so that the « C'est
+   fait » pill reads whole in the space the card leaves. */
 .sidour-hero-lane {
   overflow-x: clip;
 }
 .sidour-hero-swipe {
   touch-action: pan-y;
   transition: transform 0.25s ease;
+}
+/* The swipe shown (useSwipeHint): the card leaves a little to the right, the
+   « C'est fait » pill at its edge, then springs back and settles, as the
+   home stack's top card does. */
+.sidour-hero-hint {
+  animation: sidour-hint 1.6s cubic-bezier(0.3, 0.7, 0.3, 1);
+}
+@keyframes sidour-hint {
+  0%,
+  8% {
+    transform: none;
+  }
+  36% {
+    transform: translateX(120px) rotate(3deg);
+  }
+  56% {
+    transform: translateX(-8px) rotate(-0.4deg);
+  }
+  70% {
+    transform: translateX(4px);
+  }
+  84%,
+  100% {
+    transform: none;
+  }
 }
 /* Said: the card flies off to the right, the next one rises in its place. */
 .sidour-next-leave-active {

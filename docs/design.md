@@ -774,6 +774,29 @@ arrived in front. The arrival of a goal you have just created is the third
 says where it has been filed (`prefersReducedMotion`,
 `composables/useMotion.ts`).
 
+### A gesture is shown, rarely
+
+The one motion that answers nothing: the swipe, shown. Whoever stays on the
+home page or the Sidour without a gesture may not know that the card is
+swiped. So the card that can be swiped (the stack's top card, the Sidour's
+card of the moment) leaves to the right on its own, as far as the gesture's
+threshold (120 px, a slight tilt), the « C'est fait » pill appearing whole at
+its edge as under a finger, then springs back past its place and settles:
+1.6 s, as if a finger had started the gesture and let go (`useSwipeHint`).
+
+It must stay rare to stay useful, and not become a fidget:
+
+- only to whoever has not swiped (done, later, a wallet card, a line of the
+  Sidour) on this device for three days, or ever: whoever swipes knows;
+- at most once a day, wherever it played, and once per visit of the page;
+- after eight seconds without a touch, a key or a scroll, the page in view;
+  never under a tip or the introduction, never on a card that cannot be
+  swiped (a service whose time has not come), nor in the home page's edit
+  mode, nor while the Sidour's search holds a term;
+- never when less motion is asked for, nor on a small machine (`perf-lite`).
+
+Held by `src/__tests__/swipeHint.test.ts`.
+
 ### Touch answers
 
 The phone answers the finger when something happens (`services/haptics.ts`),

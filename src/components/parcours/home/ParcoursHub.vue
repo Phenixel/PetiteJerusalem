@@ -15,6 +15,7 @@
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useParcours } from "../../../composables/useParcours";
+import { useSwipeHint } from "../../../composables/useSwipeHint";
 import { useTodayDeck, type DeckCard } from "../../../composables/useTodayDeck";
 import { analyticsService } from "../../../services/analyticsService";
 import { haptic, type HapticKind } from "../../../services/haptics";
@@ -34,6 +35,15 @@ const deck = useTodayDeck();
 
 const begun = computed(() => liveObjectives(store.data.value).length > 0);
 const open = ref(false);
+
+// The swipe shown, rarely, to whoever stays on the home page without a
+// gesture: on the folded stack, a top card that can be swiped, outside the
+// home page's edit mode (where the deck is inert).
+const root = ref<HTMLElement | null>(null);
+const { hinting } = useSwipeHint(() => {
+  const top = deck.top.value;
+  return begun.value && !open.value && !!top && !top.waiting && !root.value?.closest("[inert]");
+});
 
 watch(begun, (value) => emit("begun", value), { immediate: true });
 
@@ -160,7 +170,7 @@ function fromSheet(action: (card: DeckCard) => void, feel: HapticKind): void {
 </script>
 
 <template>
-  <section :aria-label="t('parcours.hub.deck')">
+  <section ref="root" :aria-label="t('parcours.hub.deck')">
     <!-- Rien encore : le parcours commence par un objectif. -->
     <div v-if="!begun" class="card mt-[34px] px-5 py-5">
       <p class="font-display text-2xl font-bold leading-tight">{{ t("parcours.empty.title") }}</p>
@@ -178,6 +188,7 @@ function fromSheet(action: (card: DeckCard) => void, feel: HapticKind): void {
       :open="open"
       :is-later="deck.isLater"
       :rest="rest"
+      :hint="hinting"
       @done="done"
       @undo="undo"
       @later="later"

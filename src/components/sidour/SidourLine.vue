@@ -70,7 +70,8 @@ const cue = computed(() => {
 
 <style scoped>
 /* Swiped right, the line does not make the page scroll sideways; its object
-   still comes out through the top. */
+   still comes out through the top. The page gives the lane its gutter
+   (`-mx-6 px-6`), so that the pill is not cut at the card's old edge. */
 .line-lane {
   overflow-x: clip;
 }

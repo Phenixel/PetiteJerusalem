@@ -13,6 +13,8 @@ defineProps<{
   /** From 0 to 1: how far toward the threshold. */
   strength: number;
   armed: boolean;
+  /** The swipe shown (useSwipeHint): the pill appears and fades with the card's motion. */
+  hint?: boolean;
 }>();
 
 const { t } = useI18n();
@@ -21,7 +23,7 @@ const { t } = useI18n();
 <template>
   <span
     class="done-cue"
-    :class="{ 'done-cue-armed': armed }"
+    :class="{ 'done-cue-armed': armed, 'done-cue-hint': hint }"
     :style="{ opacity: strength }"
     aria-hidden="true"
   >
@@ -63,6 +65,23 @@ const { t } = useI18n();
   box-shadow:
     var(--shadow-pop),
     0 0 0 1px var(--color-on-brand);
+}
+.done-cue-hint {
+  animation: done-cue-hint 1.6s ease;
+}
+@keyframes done-cue-hint {
+  0%,
+  20% {
+    opacity: 0;
+  }
+  34%,
+  44% {
+    opacity: 1;
+  }
+  58%,
+  100% {
+    opacity: 0;
+  }
 }
 .done-cue-icon {
   width: 16px;
