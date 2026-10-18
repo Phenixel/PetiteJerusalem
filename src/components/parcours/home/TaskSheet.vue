@@ -4,6 +4,8 @@
  * l'appui long sur la carte, ou au toucher d'une carte qui n'a pas de page à
  * ouvrir. Chaque geste y a son bouton, pour qui ne glisse pas : c'est fait,
  * l'ouvrir, plus tard, pas aujourd'hui ; et le programme qu'elle sert.
+ * An office whose time is over keeps only « C'est fait », for whoever
+ * prayed on time and forgot to check it: it is no longer offered.
  */
 import { useI18n } from "vue-i18n";
 import type { DeckCard } from "../../../composables/useTodayDeck";
@@ -39,7 +41,7 @@ const { t } = useI18n();
           {{ t("parcours.hub.done") }}
         </button>
         <RouterLink
-          v-if="card.route"
+          v-if="card.route && !card.missed"
           :to="card.route"
           class="btn btn-soft sheet-btn"
           @click="emit('opened')"
@@ -47,7 +49,7 @@ const { t } = useI18n();
           {{ t("parcours.hub.open") }}
         </RouterLink>
         <button
-          v-if="!card.done && !card.skipped"
+          v-if="!card.done && !card.skipped && !card.missed"
           type="button"
           class="btn btn-soft sheet-btn"
           @click="emit('later')"
@@ -55,7 +57,7 @@ const { t } = useI18n();
           {{ t("parcours.hub.later") }}
         </button>
         <button
-          v-if="!card.done"
+          v-if="!card.done && !card.missed"
           type="button"
           class="btn btn-soft sheet-btn"
           @click="emit('skip', !card.skipped)"

@@ -239,6 +239,36 @@ describe("le paquet de l'accueil", () => {
     expect(morning.store.today.value).toBe("2026-10-15");
   });
 
+  it("no longer offers an office whose time is over: Cha'harit after 'hatsot", async () => {
+    // Wednesday, 3 p.m. in Paris: Cha'harit (until 'hatsot, 1:36 p.m.) was not checked.
+    vi.setSystemTime(new Date("2026-10-14T13:00:00Z"));
+    const { deck, store } = await mountDeck();
+    const chaharit = deck.day.value.find((card) => card.view?.task.step === "chaharit");
+    expect(chaharit?.missed).toBe(true);
+    expect(chaharit?.kicker).toBe(fr.parcours.hub.missed);
+    expect(deck.pending.value.some((card) => card.key === chaharit?.key)).toBe(false);
+    // Min'ha, whose time it is, takes the top; the day still counts Cha'harit.
+    expect(deck.top.value?.view?.task.step).toBe("minha");
+    expect(deck.count.value.total).toBe(5);
+    // Prayed on time and forgot to check: « C'est fait » still records it.
+    store.setDone(chaharit!.view!.task, TODAY, true, "test");
+    const done = deck.day.value.find((card) => card.key === chaharit?.key);
+    expect(done?.done).toBe(true);
+    expect(done?.missed).toBe(false);
+  });
+
+  it("drops Arvit after 'hatsot of the night, and the bedtime Chema takes the top", async () => {
+    // Thursday 15 October, 3 a.m. on the device: 'hatsot of the night has passed
+    // in Paris, dawn has not come.
+    vi.setSystemTime(new Date(2026, 9, 15, 3));
+    const { deck, store } = await mountDeck();
+    expect(store.today.value).toBe(TODAY);
+    const arvit = deck.day.value.find((card) => card.view?.task.step === "arvit");
+    expect(arvit?.missed).toBe(true);
+    expect(deck.pending.value.map((card) => card.view?.task.step)).not.toContain("arvit");
+    expect(deck.top.value?.view?.objective.id).toBe("chema");
+  });
+
   it("met la carte du 'Omer dans la pile, le soir, et retient qu'il est compté", async () => {
     // Mercredi 5 mai 2027, 21 h 45 à Paris : la nuit du 'Omer.
     vi.setSystemTime(new Date("2027-05-05T19:45:00Z"));

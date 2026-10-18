@@ -45,6 +45,10 @@ const rest = computed(() => {
   if (deck.count.value.total === 0) {
     return { kicker, title: t("parcours.hub.nothing"), meta: "" };
   }
+  // Only missed offices left: the day is not full, but nothing is left to do.
+  if (deck.day.value.some((card) => card.missed)) {
+    return { kicker, title: t("parcours.hub.nothingLeft"), meta: "" };
+  }
   return {
     kicker,
     title: t("parcours.hub.full"),

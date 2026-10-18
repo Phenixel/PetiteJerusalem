@@ -52,6 +52,13 @@ import { useZmanimLocation } from "./useZmanimLocation";
  * se montre en retrait (« Pas encore l'heure », à partir de quand) et ne se
  * glisse pas. Une habitude attend de même son repère (le Chema du coucher,
  * la nuit venue : voir useOfficeTimes).
+ *
+ * An office whose time is over without being checked (Cha'harit after
+ * 'hatsot, Min'ha after the chkia, Arvit after 'hatsot of the night) is
+ * missed: it leaves the deck and is no longer offered, since it can no
+ * longer be said. My day still shows it, switched off (« L'heure est
+ * passée »), and its sheet keeps « C'est fait » for whoever prayed on time
+ * and forgot to check it.
  */
 
 /** Une occasion du calendrier, et sa fois (voir services/parcours/occasions.ts). */
@@ -96,6 +103,8 @@ export interface DeckCard {
   programId: string | null;
   /** Un office dont l'heure n'est pas encore venue : en retrait, il attend son heure. */
   waiting?: boolean;
+  /** An office whose time is over, not done: out of the deck, switched off in My day. */
+  missed?: boolean;
 }
 
 /** Ce qu'on a remis à plus tard, le jour où on l'a fait : la journée suivante repart de zéro. */
@@ -153,8 +162,14 @@ export function useTodayDeck() {
     return anchor !== null && offices.isAnchorAhead(anchor);
   }
 
+  /** An office of the day whose time is over, neither done nor set aside. */
+  function isMissed(view: TaskView): boolean {
+    return view.progress !== "done" && !view.skipped && offices.isPast(view.task.step);
+  }
+
   function kickerOf(view: TaskView): string {
     if (isNow(view)) return t("parcours.hub.now");
+    if (isMissed(view)) return t("parcours.hub.missed");
     if (isWaiting(view)) return t("parcours.hub.notYet");
     return view.kicker;
   }
@@ -232,6 +247,7 @@ export function useTodayDeck() {
       extra: false,
       programId: view.objective.kind === "program" ? view.objective.id : null,
       waiting: isWaiting(view),
+      missed: isMissed(view),
     };
   }
 
@@ -456,9 +472,11 @@ export function useTodayDeck() {
     return deckOrder(card.moment, moment.value);
   }
 
-  /** Ce qui reste à faire, la carte du dessus en premier. */
+  /** Ce qui reste à faire, la carte du dessus en premier ; un office manqué n'en est plus. */
   const pending = computed(() =>
-    day.value.filter((card) => !card.done && !card.skipped).sort((a, b) => rank(a) - rank(b)),
+    day.value
+      .filter((card) => !card.done && !card.skipped && !card.missed)
+      .sort((a, b) => rank(a) - rank(b)),
   );
 
   const top = computed<DeckCard | null>(() => pending.value[0] ?? null);

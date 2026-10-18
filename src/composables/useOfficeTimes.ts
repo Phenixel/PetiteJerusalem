@@ -62,6 +62,17 @@ export function useOfficeTimes() {
     return window !== undefined && now.value < window.start;
   }
 
+  /**
+   * A service of the journey's day whose time is over (Cha'harit after
+   * 'hatsot, Min'ha after the chkia, Arvit after 'hatsot of the night): it
+   * was missed, and is no longer offered.
+   */
+  function isPast(step: TefilaStep | undefined): boolean {
+    if (step === undefined || isNow(step)) return false;
+    const window = windows.value.find((w) => w.tefila === step);
+    return window !== undefined && now.value >= window.end;
+  }
+
   /** L'heure d'aujourd'hui où s'ouvre une habitude à ce repère ; null : dès le matin. */
   function anchorOpensAt(anchor: HabitAnchor): Date | null {
     const rule = ANCHOR_OPENS[anchor];
@@ -87,5 +98,5 @@ export function useOfficeTimes() {
       : t("parcours.hub.until", { time: time(window.end) });
   }
 
-  return { now, office, isNow, isAhead, anchorOpensAt, isAnchorAhead, officeMeta, time };
+  return { now, office, isNow, isAhead, isPast, anchorOpensAt, isAnchorAhead, officeMeta, time };
 }

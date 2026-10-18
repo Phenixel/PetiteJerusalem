@@ -2258,6 +2258,19 @@ time, the time in large type), the untitled shelf.
   for their part, never wait: their moment orders them, and study is done
   when you can. Held by
   `src/__tests__/parcoursDeck.test.ts`.
+- **Time over.** A service whose time has passed without being checked
+  (Cha'harit after 'hatsot, Min'ha after the chkia, Arvit after 'hatsot of
+  the night: the end of the window the card announced, « jusqu'à … ») is
+  missed. It can no longer be said, so it is no longer offered: it leaves
+  the stack, and never comes back to the top. My day still shows it,
+  switched off like a card done, « L'heure est passée » ("Time has passed")
+  and until when it ran; it cannot be swiped, and its sheet keeps only
+  « C'est fait », for whoever prayed on time and forgot to check it (no
+  « Ouvrir », no « Plus tard », no « Pas aujourd'hui »). It still counts in
+  the day: the day is not full. When only missed services are left, the
+  stack says « Plus rien à faire » ("Nothing left to do")
+  rather than « Journée pleine ». Held by
+  `src/__tests__/parcoursDeck.test.ts`.
 - **Occasion cards** (the moon on the nights it is blessed, the counting of
   the 'Omer in the evening, the 'Hanouka lighting) take their place in the
   stack, at their time, and open the same way; their banners stay silent as

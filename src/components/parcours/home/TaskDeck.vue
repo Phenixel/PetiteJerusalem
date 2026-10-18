@@ -19,7 +19,10 @@
  *
  * Un office dont l'heure n'est pas venue attend en retrait (`waiting`) :
  * claire et à plat, « Pas encore l'heure », elle résiste au glissé sans rien
- * marquer ; un toucher ouvre sa fiche.
+ * marquer ; un toucher ouvre sa fiche. An office whose time is over
+ * (`missed`) has left the deck; in the list it is switched off like a card
+ * done, « L'heure est passée », resists the swipe the same way, and a touch
+ * opens its sheet.
  *
  * La page défile sous le doigt, même posé sur une carte : la pile ne retient
  * un geste vertical que pour se déplier, quand on la tire vers le bas en
@@ -178,8 +181,11 @@ interface Cue {
   armed: boolean;
 }
 
+/** A card the swipe does not mark: not yet its time, or its time is over. */
+const still = (card: DeckCard): boolean => !!card.waiting || !!card.missed;
+
 function cueOf(card: DeckCard, threshold: number): Cue | null {
-  if (drag.key !== card.key || drag.axis !== "x" || card.waiting || drag.dx === 0) return null;
+  if (drag.key !== card.key || drag.axis !== "x" || still(card) || drag.dx === 0) return null;
   const strength = clamp(Math.abs(drag.dx) / threshold, 0, 1);
   if (drag.dx > 0) {
     return { side: "done", text: t("parcours.hub.done"), strength, armed: strength >= 1 };
@@ -193,7 +199,7 @@ function cueOf(card: DeckCard, threshold: number): Cue | null {
 }
 
 function releaseLabel(card: DeckCard): string | null {
-  if (drag.key !== card.key || drag.axis !== "x" || card.waiting) return null;
+  if (drag.key !== card.key || drag.axis !== "x" || still(card)) return null;
   if (drag.dx > LIST_THRESHOLD) return t("parcours.hub.releaseDone");
   if (drag.dx < -LIST_THRESHOLD) {
     if (card.skipped) return t("parcours.hub.releaseUnskip");
@@ -203,7 +209,7 @@ function releaseLabel(card: DeckCard): string | null {
 }
 
 function listItem(card: DeckCard, j: number): Item {
-  const off = card.done || card.skipped;
+  const off = card.done || card.skipped || card.missed;
   const dragging = drag.key === card.key && drag.axis === "x";
   const kicker = card.done
     ? card.doneKicker
@@ -229,7 +235,7 @@ function listItem(card: DeckCard, j: number): Item {
       zIndex: j + 1,
       ...(dragging
         ? {
-            transform: `translateX(${card.waiting ? resist(drag.dx) : drag.dx}px)`,
+            transform: `translateX(${still(card) ? resist(drag.dx) : drag.dx}px)`,
             transition: "none",
           }
         : {}),
@@ -384,7 +390,7 @@ const armedGesture = computed(() => {
   const card = props.open ? props.day.find((c) => c.key === drag.key) : top.value;
   if (!card || card.key !== drag.key) return null;
   if (drag.axis === "y") return !props.open && drag.dy > PULL_OPEN ? "pull" : null;
-  if (card.waiting) return null;
+  if (still(card)) return null;
   const limit = props.open ? LIST_THRESHOLD : TOP_THRESHOLD;
   return drag.dx > limit ? "right" : drag.dx < -limit ? "left" : null;
 });
@@ -516,8 +522,8 @@ function onUp(item: Item): void {
   const card = item.card;
   const { dx, dy, axis } = drag;
   reset();
-  // Pas encore l'heure : le glissé de côté ne marque rien, la carte revient.
-  if (card.waiting && axis === "x") return;
+  // Pas encore l'heure, or its time is over: the side swipe marks nothing.
+  if (still(card) && axis === "x") return;
   if (item.mode === "top") {
     if (axis === "x" && dx > TOP_THRESHOLD) fly(card, "right", dx);
     else if (axis === "x" && dx < -TOP_THRESHOLD) fly(card, "left", dx);
@@ -548,8 +554,8 @@ function onClick(event: MouseEvent, item: Item): void {
     return;
   }
   const card = item.card;
-  // Sans page, ou pas encore l'heure : le toucher ouvre la fiche.
-  if (!card.route || card.waiting) {
+  // Sans page, pas encore l'heure, or its time over: the touch opens the sheet.
+  if (!card.route || still(card)) {
     event.preventDefault();
     emit("sheet", card);
     return;
@@ -563,7 +569,7 @@ function onClick(event: MouseEvent, item: Item): void {
 
 /** Une carte sans page (ou qui attend son heure) est un bouton : Entrée et Espace l'ouvrent. */
 function onKeydown(event: KeyboardEvent, item: Item): void {
-  if ((item.card.route && !item.card.waiting) || item.inert) return;
+  if ((item.card.route && !still(item.card)) || item.inert) return;
   if (event.key === "Enter" || event.key === " ") {
     event.preventDefault();
     emit("sheet", item.card);
@@ -616,8 +622,8 @@ onBeforeUnmount(() => {
         class="dk"
         :class="item.classes"
         :style="item.style"
-        :href="item.inert || item.card.waiting ? undefined : hrefOf(item.card)"
-        :role="!item.inert && (!item.card.route || item.card.waiting) ? 'button' : undefined"
+        :href="item.inert || still(item.card) ? undefined : hrefOf(item.card)"
+        :role="!item.inert && (!item.card.route || still(item.card)) ? 'button' : undefined"
         :tabindex="item.inert ? -1 : 0"
         :aria-hidden="item.inert ? 'true' : undefined"
         :aria-label="item.label"
