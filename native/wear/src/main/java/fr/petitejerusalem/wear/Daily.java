@@ -7,11 +7,11 @@ import org.json.JSONObject;
  * Lecture du payload de la lecture du jour, comme le widget d'écran d'accueil :
  * compter les coches encore valables et remplir le gabarit de progression.
  *
- * Les coches portent leur échéance (`expiresAt`, le minuit local qui suit le
- * jour auquel elles se rapportent) : passé cet instant, elles ne comptent plus
- * et la montre repart de zéro sans que rien ne lui soit renvoyé. Comparaison
- * numérique, aucune logique de calendrier ici (le calendrier de l'appareil
- * peut être hébraïque, ce qui fausserait tout formatage de date natif).
+ * The checks carry their expiry (`expiresAt`, 4 a.m. local after the day
+ * they belong to, when the journey's day turns): past that instant, they no
+ * longer count and the watch starts from zero without anything being sent
+ * again. A numeric comparison, no calendar logic here (the device calendar
+ * may be Hebrew, which would distort any native date formatting).
  */
 public final class Daily {
 
@@ -69,7 +69,7 @@ public final class Daily {
             .replace("{total}", String.valueOf(progress.total));
     }
 
-    /** Une coche vaut-elle encore ? Faux passé minuit, quoi que dise l'item. */
+    /** Does a check still hold? False past the expiry, whatever the item says. */
     public static boolean isDone(JSONObject item, Progress progress) {
         return progress.fresh && item != null && item.optBoolean("done");
     }

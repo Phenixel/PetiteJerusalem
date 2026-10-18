@@ -11,13 +11,24 @@ type Prefs = {
 };
 
 /**
- * The day as the app writes it (localDayKey), shifted by `offset` days. The
- * app runs in the browser's time zone (Europe/Paris, playwright.config.ts),
- * not the runner's: computed in UTC, the key was a day behind from midnight
- * in Paris to midnight UTC, and the tests failed every evening.
+ * The day as the app writes it (parcours/days.ts dayKeyAt), shifted by
+ * `offset` days. The app runs in the browser's time zone (Europe/Paris,
+ * playwright.config.ts), not the runner's: computed in UTC, the key was a
+ * day behind from midnight in Paris to midnight UTC, and the tests failed
+ * every evening. And the journey's day turns at 4 a.m., not at midnight:
+ * before then, it is still the day before.
  */
 function todayKey(offset = 0): string {
-  const day = new Date(Date.now() + offset * 24 * 3600 * 1000);
+  const at = new Date(Date.now() + offset * 24 * 3600 * 1000);
+  const hour = Number(
+    new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Europe/Paris",
+      hour: "numeric",
+      hourCycle: "h23",
+    }).format(at),
+  );
+  // Before 4 a.m., twelve hours back lands in the afternoon of the day before.
+  const day = hour < 4 ? new Date(at.getTime() - 12 * 3600 * 1000) : at;
   // en-CA writes dates as YYYY-MM-DD.
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" }).format(day);
 }

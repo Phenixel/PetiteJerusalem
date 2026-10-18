@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { milestoneEve, restCalendar } from "../services/parcours/calendar";
+import { dayKeyAt, nextDayStart } from "../services/parcours/days";
 import { deckOrder, momentAt } from "../services/parcours/moments";
 
 /**
@@ -46,6 +47,18 @@ describe("les moments de la journée", () => {
     expect(momentAt(new Date(2026, 9, 14, 19, 30), times)).toBe("evening");
     expect(momentAt(new Date(2026, 9, 14, 23), times)).toBe("bedtime");
     expect(momentAt(new Date(2026, 9, 15, 1), times)).toBe("bedtime");
+  });
+
+  it("keep the night with the evening before: the day turns at 4 a.m., not at midnight", () => {
+    // Arvit or the bedtime Chema checked at 1 a.m. count for the evening's day.
+    expect(dayKeyAt(new Date(2026, 9, 14, 23, 30))).toBe("2026-10-14");
+    expect(dayKeyAt(new Date(2026, 9, 15, 1))).toBe("2026-10-14");
+    expect(dayKeyAt(new Date(2026, 9, 15, 3, 59))).toBe("2026-10-14");
+    expect(dayKeyAt(new Date(2026, 9, 15, 4))).toBe("2026-10-15");
+    expect(dayKeyAt(new Date(2026, 9, 1, 0, 30))).toBe("2026-09-30");
+    expect(nextDayStart(new Date(2026, 9, 14, 23, 30))).toEqual(new Date(2026, 9, 15, 4));
+    expect(nextDayStart(new Date(2026, 9, 15, 1))).toEqual(new Date(2026, 9, 15, 4));
+    expect(nextDayStart(new Date(2026, 9, 15, 9))).toEqual(new Date(2026, 9, 16, 4));
   });
 
   it("ouvrent le paquet sur le moment présent, puis ce qui vient, enfin ce qui est passé", () => {

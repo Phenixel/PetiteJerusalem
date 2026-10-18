@@ -218,6 +218,27 @@ describe("le paquet de l'accueil", () => {
     expect(tonight?.meta).toBe(fr.parcours.hub.beforeSleep);
   });
 
+  it("keeps the bedtime Chema and Arvit with the evening after midnight (parcours/days.ts)", async () => {
+    // Thursday 15 October, 1 a.m. on the device: the night still belongs to Wednesday.
+    vi.setSystemTime(new Date(2026, 9, 15, 1));
+    const { deck, store } = await mountDeck();
+    expect(store.today.value).toBe(TODAY);
+    const chema = deck.day.value.find((card) => card.view?.objective.id === "chema");
+    expect(chema?.waiting).toBe(false);
+    expect(chema?.meta).toBe(fr.parcours.hub.beforeSleep);
+    // Arvit is not put off until Thursday evening either.
+    const arvit = deck.day.value.find((card) => card.view?.task.step === "arvit");
+    expect(arvit?.waiting).toBe(false);
+    // Checked now, it counts for Wednesday, not for Thursday.
+    store.setDone(chema!.view!.task, store.today.value, true, "test");
+    expect(store.data.value.days[TODAY]?.done).toContain(chema!.view!.task.id);
+    expect(store.data.value.days["2026-10-15"]).toBeUndefined();
+    // At 4 a.m., Thursday begins.
+    vi.setSystemTime(new Date(2026, 9, 15, 4));
+    const morning = await mountDeck();
+    expect(morning.store.today.value).toBe("2026-10-15");
+  });
+
   it("met la carte du 'Omer dans la pile, le soir, et retient qu'il est compté", async () => {
     // Mercredi 5 mai 2027, 21 h 45 à Paris : la nuit du 'Omer.
     vi.setSystemTime(new Date("2027-05-05T19:45:00Z"));

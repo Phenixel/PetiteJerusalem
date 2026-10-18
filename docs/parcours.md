@@ -56,6 +56,18 @@ shows, at the bottom of the text, the day's task to check off
 shared state, started on first use (anyone who never opens the journey
 loads nothing).
 
+**The journey's day turns at 4 a.m., not at midnight** (`days.ts`,
+`dayKeyAt`). Until then, the night belongs to the evening before: Arvit or
+the bedtime Chema checked at 1 a.m. count for that evening, as the Hebrew
+day only gives way to the next one in the morning, and the home deck keeps
+the evening's cards (the services are read on the evening's times,
+`useOfficeTimes`). The wall still shows civil days; only the turn moves.
+Not misheyakir: around 7 a.m. in a Paris winter, it would push a study done
+at 6 a.m. back to the day before. The widgets' daily reading follows the
+same day and expires at the same hour (`widgetPayloads.ts`). Held by
+`parcoursCalendar.test.ts`, `parcoursDeck.test.ts` and
+`widgetPayloads.test.ts`.
+
 **A day** (`DayLog`) keeps what is done (`done`), the units read per
 program (`units`), what is set aside (`skipped`) and the time of the last
 write (`at`). **An objective** keeps its own time (`updatedAt`); once
@@ -193,12 +205,12 @@ nothing about programs or habits.
 | `parcoursAliyot.test.ts`        | chnei mikra: one aliya per day, a forgotten one comes back the next day, Chabbat finishes; aliyot checked one by one make up the card, a card checks its own |
 | `chneiMikraChecks.test.ts`      | the checks of version 3.10.11, taken over once from the device                                                                                               |
 | `parcoursSchedule.test.ts`      | a day's tasks, the wall, the streak (Chabbat and « Pas aujourd'hui » do not break it)                                                                        |
-| `parcoursCalendar.test.ts`      | rest days, moments, the order of the deck                                                                                                                    |
+| `parcoursCalendar.test.ts`      | rest days, moments, the order of the deck, the day turning at 4 a.m.                                                                                         |
 | `parcoursMerge.test.ts`         | merging two copies                                                                                                                                           |
 | `parcoursSync.test.ts`          | without an account, with an account, a shared device                                                                                                         |
 | `parcoursCloud.test.ts`         | the account write sends no `undefined` field (Firestore would reject the whole write)                                                                        |
 | `parcoursLegacyDaily.test.ts`   | the former daily reading, taken over and kept up to date                                                                                                     |
-| `parcoursDeck.test.ts`          | the home deck: the order, prayer service times, catching up, the 'Omer card                                                                                  |
+| `parcoursDeck.test.ts`          | the home deck: the order, prayer service times, catching up, the 'Omer card, the night kept with the evening                                                 |
 | `parcoursEntries.test.ts`       | the texts to download for the day                                                                                                                            |
 | `parcoursTracking.test.ts`      | shared tracking, and the daily reading events that continue                                                                                                  |
 | `widgetDailyParcours.test.ts`   | the widgets' daily reading, without an account                                                                                                               |

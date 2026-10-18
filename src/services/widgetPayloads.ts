@@ -1,8 +1,9 @@
 import textStudiesJson from "../datas/textStudies.json";
 import type { TextStudiesJson, TextStudyJsonEntry } from "../models/models";
-import { localDayKey } from "./dateService";
+import { localDayFrom } from "./dateService";
 import { getParashaForShabbat, getTehilimOfDay, getWeeklyParasha } from "./dailyCycles";
 import { dateTimeFormat } from "./intlCache";
+import { dayKeyAt, nextDayStart } from "./parcours/days";
 import {
   cholHamoedOn,
   computeZmanim,
@@ -307,13 +308,17 @@ export interface DailyWidgetItem {
 export interface DailyReadingWidgetPayload {
   v: 1;
   title: string;
-  /** Jour civil local (YYYY-MM-DD) auquel les `done` se rapportent. */
+  /**
+   * The journey's day (YYYY-MM-DD) the `done` belong to: the civil day,
+   * which only turns in the morning (parcours/days.ts).
+   */
   date: string;
   /**
-   * Epoch ms du minuit local qui suit : passé cet instant, les `done` ne
-   * comptent plus et le natif repart de zéro, comparaison numérique, aucune
-   * logique de calendrier côté natif (le calendrier de l'appareil peut être
-   * hébraïque, ce qui fausserait tout formatage de date natif).
+   * Epoch ms of the start of the next day (4 a.m. local, not midnight): past
+   * this instant, the `done` no longer count and the native side starts
+   * from zero. A numeric comparison, no calendar logic on the native side
+   * (the device calendar may be Hebrew, which would distort any native date
+   * formatting).
    */
   expiresAt: number;
   /** Faux tant que l'utilisateur n'a rien activé (ou n'est pas connecté). */
@@ -341,13 +346,6 @@ export interface DailyReadingWidgetPayload {
 const allTexts = (textStudiesJson as TextStudiesJson).textStudies;
 const textById = new Map<string, TextStudyJsonEntry>(allTexts.map((e) => [String(e.id), e]));
 
-/** Epoch ms du prochain minuit local : l'échéance des coches du jour. */
-function nextLocalMidnight(now: Date): number {
-  const midnight = new Date(now);
-  midnight.setHours(24, 0, 0, 0);
-  return midnight.getTime();
-}
-
 /**
  * La lecture du jour telle que le widget l'affichera. `prefs` vaut null quand
  * personne n'est connecté : le widget invite alors à ouvrir l'app.
@@ -365,12 +363,15 @@ export function buildDailyReadingWidgetPayload(
   accent: string = DEFAULT_ACCENT,
   il = false,
 ): DailyReadingWidgetPayload {
-  const date = localDayKey(now);
+  const date = dayKeyAt(now);
+  // The cycles follow the same day: at 1 a.m., the psalms of the evening before.
+  const day = localDayFrom(date) ?? new Date(now);
+  day.setHours(12);
   const base = {
     v: 1 as const,
     title: t("dailyReading.widget.title"),
     date,
-    expiresAt: nextLocalMidnight(now),
+    expiresAt: nextDayStart(now).getTime(),
     emptyLabel: t("dailyReading.widget.empty"),
     allDoneLabel: t("dailyReading.allReadTitle"),
     // Les {done}/{total} doivent survivre à la traduction : sentinelles
@@ -390,7 +391,7 @@ export function buildDailyReadingWidgetPayload(
 
   const items: DailyWidgetItem[] = [];
   if ((prefs.dailyReadingOptions ?? []).includes("tehilim-jour")) {
-    const cycle = getTehilimOfDay(now);
+    const cycle = getTehilimOfDay(day);
     items.push({
       key: "tehilim-jour",
       label: t("dailyReading.options.tehilimDayReading", { day: cycle.day }),
@@ -406,7 +407,7 @@ export function buildDailyReadingWidgetPayload(
   let parasha: string | null = null;
   let parashaDone = false;
   if ((prefs.dailyReadingOptions ?? []).includes("parasha")) {
-    const week = getWeeklyParasha(now, il);
+    const week = getWeeklyParasha(day, il);
     if (week) {
       // Libellé prêt à afficher ("Parachat Ekev") : le natif ne traduit rien.
       parasha = `${t("zmanim.shabbat.parasha")} ${week.entries.map((e) => e.name).join(" · ")}`;

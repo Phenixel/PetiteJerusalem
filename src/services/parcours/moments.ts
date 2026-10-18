@@ -1,3 +1,4 @@
+import { DAY_START_HOUR } from "./days";
 import type { MomentId } from "./model";
 
 /**
@@ -19,13 +20,12 @@ export interface DayTimes {
 }
 
 const BEDTIME_HOUR = 22;
-/** Avant 4 h, on est encore au coucher de la veille. */
-const NIGHT_END_HOUR = 4;
 
 /** Le moment d'un instant. */
 export function momentAt(now: Date, times: DayTimes | null): MomentId {
   const hour = now.getHours();
-  if (hour >= BEDTIME_HOUR || hour < NIGHT_END_HOUR) return "bedtime";
+  // Before the day begins, it is still the previous evening's bedtime.
+  if (hour >= BEDTIME_HOUR || hour < DAY_START_HOUR) return "bedtime";
   const chatzot = times?.chatzot ?? at(now, 12);
   const sunset = times?.sunset ?? at(now, 18);
   if (now < chatzot) return "morning";

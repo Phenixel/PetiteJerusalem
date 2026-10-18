@@ -164,16 +164,18 @@ class WidgetService {
    * les montées de la semaine (une paracha double en a quatorze).
    */
   private async dailyPrefs(il: boolean): Promise<DailyWidgetPrefs> {
-    const [{ readDeviceState }, { legacyProjection }, { parashaAliyotCount }] = await Promise.all([
-      import("./parcours/deviceStore"),
-      import("./parcours/legacyDailyReading"),
-      import("./parcours/calendar"),
-    ]);
+    const [{ readDeviceState }, { legacyProjection }, { parashaAliyotCount }, { dayKeyAt }] =
+      await Promise.all([
+        import("./parcours/deviceStore"),
+        import("./parcours/legacyDailyReading"),
+        import("./parcours/calendar"),
+        import("./parcours/days"),
+      ]);
     const device = readDeviceState();
     const user = this.user;
     const adopted = device.owner?.uid === user?.id && !device.owner?.leftAt;
     if (user && !adopted) return userPreferencesService.getPreferencesOrThrow(user.id);
-    const today = localDayKey();
+    const today = dayKeyAt();
     return legacyProjection(device.data, today, parashaAliyotCount(il)(today));
   }
 

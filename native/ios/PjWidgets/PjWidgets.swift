@@ -21,10 +21,10 @@ import WidgetKit
  * - Horaires essentiels : les quatre horaires du jour qu'on vérifie le plus,
  *   un tableau qui ne tourne qu'à la chkia, contrairement au précédent qui
  *   annonce le prochain zman.
- * - Lecture : une ligne, le même dessin que la carte du tableau de bord
- *   (src/components/DailyReadingCard.vue) : titre, progression, pourcentage,
- *   barre. Une entrée maintenant, redessin à l'échéance du payload
- *   (expiresAt, minuit local calculé côté app).
+ * - Lecture: one line, the same drawing as the dashboard card
+ *   (src/components/DailyReadingCard.vue): title, progress, percentage, bar.
+ *   One entry now, redrawn at the payload's expiry (expiresAt, 4 a.m. local,
+ *   computed by the app).
  *
  * Fichier ajouté à la cible d'extension « PjWidgets » du projet Xcode par
  * scripts/setup-ios.mjs, voir docs/app-widgets.md.
@@ -690,7 +690,7 @@ struct DailyPayload: Decodable {
     let v: Int
     let title: String
     let date: String
-    /// Epoch ms du minuit local qui suit : au-delà, les `done` ne comptent plus.
+    /// Epoch ms of the next 4 a.m. local: beyond it, the `done` no longer count.
     let expiresAt: Double
     let configured: Bool
     let emptyLabel: String
@@ -723,7 +723,7 @@ struct DailyProvider: TimelineProvider {
         let now = Date()
         let payload = loadPayload("daily", as: DailyPayload.self)
         let entry = DailyEntry(date: now, payload: payload)
-        // Redessin à l'échéance du payload (minuit local, calculé côté app) :
+        // Redraw at the payload's expiry (4 a.m. local, computed by the app):
         // la vue re-filtre les coches, il suffit de rejouer le rendu. Échéance
         // passée ou payload absent : rien à attendre, le prochain push de
         // l'app rechargera la timeline.
@@ -778,8 +778,8 @@ extension DailyState {
         if !payload.configured {
             return DailyState(line: payload.emptyLabel, ratio: 0, allDone: false, measurable: false)
         }
-        // Les coches ne valent que jusqu'au minuit local du payload, simple
-        // comparaison d'epochs, aucun calendrier en jeu.
+        // The checks only hold until the payload's expiry (4 a.m. local): a
+        // plain comparison of epochs, no calendar involved.
         let fresh = instant < payload.expiryDate
         // Chnei mikra seul : la paracha EST la lecture, son avancement fait la
         // progression, et il ne se remet pas à zéro chaque jour.

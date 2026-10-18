@@ -149,7 +149,7 @@ describe("buildDailyReadingWidgetPayload", () => {
   });
 
   it("laisse au natif les nombres de la ligne de progression", () => {
-    // Les coches ne valent que jusqu'à minuit : leur décompte se fait côté
+    // Les coches ne valent que jusqu'au matin : leur décompte se fait côté
     // natif, le gabarit part donc avec ses sentinelles intactes.
     const payload = buildDailyReadingWidgetPayload(null, t, now);
     expect(payload.progressTemplate).toContain("{done}");
@@ -164,13 +164,26 @@ describe("buildDailyReadingWidgetPayload", () => {
     expect(payload.date).toBe(today);
   });
 
-  it("expire au prochain minuit local", () => {
+  it("expires when the journey's next day begins, at 4 a.m. (parcours/days.ts)", () => {
     const payload = buildDailyReadingWidgetPayload(null, t, now);
-    const expiry = new Date(payload.expiresAt);
-    expect(payload.expiresAt).toBeGreaterThan(now.getTime());
-    expect(expiry.getHours()).toBe(0);
-    expect(expiry.getMinutes()).toBe(0);
-    expect(localDayKey(new Date(payload.expiresAt - 1000))).toBe(today);
+    expect(new Date(payload.expiresAt)).toEqual(new Date(2026, 7, 7, 4, 0));
+  });
+
+  it("keeps the evening's day after midnight: date, expiry and the day's psalms", () => {
+    // 1 a.m. on 7 August: the night still belongs to the 6th.
+    const night = new Date(2026, 7, 7, 1, 0);
+    const prefs = {
+      dailyReadingIds: [],
+      dailyReadingOptions: ["tehilim-jour"],
+      dailyReadingProgress: { date: today, completedIds: [], completedOptions: ["tehilim-jour"] },
+    };
+    const payload = buildDailyReadingWidgetPayload(prefs, t, night);
+    expect(payload.date).toBe(today);
+    expect(new Date(payload.expiresAt)).toEqual(new Date(2026, 7, 7, 4, 0));
+    expect(payload.items[0].done).toBe(true);
+    expect(payload.items[0].label).toBe(
+      buildDailyReadingWidgetPayload(prefs, t, now).items[0].label,
+    );
   });
 
   it("liste + option tehilim, progression du jour respectée", () => {

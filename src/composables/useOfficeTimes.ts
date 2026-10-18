@@ -1,5 +1,6 @@
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
+import { DAY_START_HOUR } from "../services/parcours/days";
 import type { HabitAnchor } from "../services/parcours/model";
 import type { TefilaStep } from "../services/parcours/schedule";
 import { currentTefilaWindow, tefilaWindowsOfDay } from "../services/sidourService";
@@ -32,7 +33,16 @@ export function useOfficeTimes() {
   const { place } = useZmanimLocation();
 
   const office = computed(() => currentTefilaWindow(place.value, now.value));
-  const windows = computed(() => tefilaWindowsOfDay(place.value, now.value));
+  /**
+   * The services of the journey's day: until it begins (days.ts), those of
+   * the evening before. At 1 a.m., the bedtime Chema and Arvit are still
+   * tonight's, not waiting for tomorrow evening.
+   */
+  const windows = computed(() => {
+    const day = new Date(now.value);
+    if (day.getHours() < DAY_START_HOUR) day.setDate(day.getDate() - 1);
+    return tefilaWindowsOfDay(place.value, day);
+  });
 
   /** Une heure, comme les horaires l'écrivent. */
   const time = (date: Date): string => formatZmanTime(date, place.value.tzid, locale.value);
