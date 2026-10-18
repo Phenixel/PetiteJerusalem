@@ -501,6 +501,20 @@ once, and tells whether the default width suits people who study.
 | `commentaries_resized` | `width`          | the chosen width, in pixels; `null` when it is reset | **new** |
 | `commentaries_resized` | `viewport_width` | the window width, in pixels                          | **new** |
 
+### Reading: `reading_scrubbed` (new)
+
+The reader slides a finger along the progress bar at the bottom of a text to
+reach a passage (`ReadingProgressBar.vue`, see `docs/design.md`, "The
+progress bar takes you through the text"). Sent once, when the finger is
+lifted. It tells whether the gesture is found, on which texts (with titles
+or not), and how far it carries.
+
+| Property         | Values                                                       | Status  |
+| ---------------- | ------------------------------------------------------------ | ------- |
+| `sections_count` | the titles shown above the bar (0: a text without landmarks) | **new** |
+| `from_progress`  | the share of the text where the gesture began, from 0 to 1   | **new** |
+| `to_progress`    | the share where it was let go, from 0 to 1                   | **new** |
+
 ### Reading: automatic scrolling (`auto_scroll_*`, existing)
 
 `auto_scroll_started`, `auto_scroll_stopped` and `auto_scroll_speed_changed`

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from "vue";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { APP_SITE_URL } from "../config/environment";
 import { useRoute } from "vue-router";
@@ -24,8 +24,11 @@ import { openFeedback } from "../composables/useFeedback";
 import { isNativeApp } from "../composables/useNativeApp";
 import {
   addReadingMenu,
+  readingScrubbing,
+  readingSections,
   removeReadingMenu,
   scrollToBlockAnchor,
+  useSectionPosition,
 } from "../composables/useReadingNav";
 import { useScrollFrame } from "../composables/useScrollFrame";
 import { useOverlay } from "../composables/useOverlayStack";
@@ -35,6 +38,7 @@ import { kotelCompassOffered, openKotelCompass } from "../composables/useKotelCo
 import { openTefilinMirror, tefilinMirrorOffered } from "../composables/useTefilinMirror";
 import {
   autoScrollEnabled,
+  isAutoScrolling,
   restoreAutoScrollFromDevice,
   setAutoScrollEnabled,
 } from "../composables/useAutoScroll";
@@ -190,6 +194,44 @@ const bottomRem = computed(() => {
 const scrollFrame = useScrollFrame();
 const atBottom = computed(() => scrollFrame.value.atBottom);
 
+/**
+ * A text with landmarks names the one being read in its button, as soon as
+ * one scrolls: the round button grows to the left around the title, then
+ * shrinks back once the page stands still. Whoever sees « Amida » appear
+ * there understands that the button leads to the passages, and that another
+ * one is a touch away. Not while the page scrolls by itself (the title would
+ * then never leave the text), nor with the panel open, which lists them all.
+ */
+const { current: currentSection } = useSectionPosition(() => props.sections);
+const PEEK_MS = 1800;
+const peeking = ref(false);
+/** The last title shown: it stays in the button while it shrinks. */
+const peekLabel = ref("");
+let peekTimer: ReturnType<typeof setTimeout> | undefined;
+
+watch(
+  () => scrollFrame.value.scrollY,
+  (y, before) => {
+    if (!props.sections.length || open.value || isAutoScrolling.value) return;
+    if (Math.abs(y - before) < 2) return;
+    peeking.value = true;
+    clearTimeout(peekTimer);
+    peekTimer = setTimeout(() => (peeking.value = false), PEEK_MS);
+  },
+);
+
+const peekShown = computed(() => peeking.value && !open.value && currentSection.value !== null);
+watch(currentSection, (section) => {
+  if (section) peekLabel.value = section.label;
+});
+
+// The progress bar shows the same titles while it is dragged.
+watch(
+  () => props.sections,
+  (sections) => (readingSections.value = sections),
+  { immediate: true },
+);
+
 function close() {
   open.value = false;
   view.value = "menu";
@@ -206,6 +248,7 @@ function trackNavOpened() {
 }
 
 function openMenu() {
+  peeking.value = false;
   open.value = true;
   view.value = "menu";
   trackNavOpened();
@@ -432,6 +475,9 @@ onMounted(() => {
 
 onUnmounted(() => {
   removeReadingMenu();
+  clearTimeout(peekTimer);
+  // The next page's menu may already have published its own.
+  if (readingSections.value === props.sections) readingSections.value = [];
   window.removeEventListener("keydown", onKeydown);
 });
 </script>
@@ -448,7 +494,7 @@ onUnmounted(() => {
     leave-to-class="transform translate-y-10 opacity-0"
   >
     <div
-      v-show="(!atBottom || open) && !concealed"
+      v-show="(!atBottom || open) && !concealed && !readingScrubbing"
       class="fixed right-6 z-50"
       :style="{ '--menu-bottom': `${bottomRem}rem`, bottom: `${bottomRem}rem` }"
     >
@@ -776,17 +822,26 @@ onUnmounted(() => {
       <!-- Les boutons ronds : celui du menu, toujours là, et celui des réglages
            qui paraît à sa droite quand le panneau est ouvert. -->
       <div class="flex items-center justify-end">
+        <!-- The title being read opens on the left of the icon (peekShown);
+             the button keeps its name for screen readers, the title being a
+             hint for the eye. -->
         <button
           ref="menuButton"
           @click="onMenuButton"
-          class="fab"
+          class="fab fab-menu"
           :aria-label="menuButtonLabel"
           aria-haspopup="menu"
           :aria-expanded="open"
+          dir="ltr"
         >
-          <transition name="fab-icon" mode="out-in">
-            <AppIcon :key="menuButtonIcon" :name="menuButtonIcon" :size="18" />
-          </transition>
+          <span class="fab-peek" :class="{ 'fab-peek-shown': peekShown }" aria-hidden="true">
+            <span class="fab-peek-text" dir="auto">{{ peekLabel }}</span>
+          </span>
+          <span class="fab-menu-icon">
+            <transition name="fab-icon" mode="out-in">
+              <AppIcon :key="menuButtonIcon" :name="menuButtonIcon" :size="18" />
+            </transition>
+          </span>
         </button>
         <transition name="fab-second">
           <div v-if="open" class="fab-second">
@@ -860,6 +915,47 @@ onUnmounted(() => {
 .fab:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
+}
+
+/* The menu button can grow to the left around the title being read: its
+   width follows the title, the icon keeps its circle at the right end. */
+.fab-menu {
+  width: auto;
+  min-width: 2.75rem;
+}
+
+.fab-menu-icon {
+  display: flex;
+  width: 2.75rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+}
+
+.fab-peek {
+  display: block;
+  max-width: 0;
+  overflow: hidden;
+  opacity: 0;
+  white-space: nowrap;
+  transition:
+    max-width 0.3s cubic-bezier(0.3, 1.1, 0.55, 1),
+    opacity 0.2s ease,
+    padding 0.3s cubic-bezier(0.3, 1.1, 0.55, 1);
+}
+
+.fab-peek-shown {
+  max-width: min(14rem, calc(100vw - 7rem));
+  padding-inline-start: 1rem;
+  opacity: 1;
+}
+
+.fab-peek-text {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.875rem;
+  font-weight: 600;
 }
 
 /* Le second bouton pousse le premier vers la gauche en prenant sa place :
@@ -1066,7 +1162,8 @@ onUnmounted(() => {
   .fab-second-enter-active,
   .fab-second-leave-active,
   .fab-icon-enter-active,
-  .fab-icon-leave-active {
+  .fab-icon-leave-active,
+  .fab-peek {
     transition: opacity 0.15s ease;
   }
 

@@ -127,6 +127,17 @@ describe("défilement automatique", () => {
     expect(isAutoScrolling.value).toBe(false);
   });
 
+  it("leaves the progress bar its own double tap: two slides in a row", async () => {
+    const { isAutoScrolling } = await import("../composables/useAutoScroll");
+    const { host } = await mountReadingPage();
+    const bar = document.createElement("div");
+    bar.dataset.ownGestures = "";
+    host.appendChild(bar);
+
+    doubleClick(bar);
+    expect(isAutoScrolling.value).toBe(false);
+  });
+
   it("descend à l'allure choisie, et s'arrête à la fin du texte", async () => {
     const { isAutoScrolling, setAutoScrollSpeed, AUTO_SCROLL_SPEEDS } = await import(
       "../composables/useAutoScroll"

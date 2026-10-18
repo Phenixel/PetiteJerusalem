@@ -1263,6 +1263,68 @@ blessing is read from the beginning; you do not come back to a paragraph as
 to a verse of Tehilim; the menu's table of contents already leads to each
 passage.
 
+### The progress bar takes you through the text
+
+The thin progress line at the bottom of a reading (`ReadingProgressBar.vue`)
+is also a slider. A finger (or the mouse) laid on it takes the page to the
+same share of the text, and the page follows while it slides: whoever looks
+for the Amida in a whole Shaharit, or the end of a long daf, gets there in
+one gesture instead of three screens of scrolling. The strip that catches
+the finger is taller than the line, which no finger would hit: on the site,
+3 rem, so that the slide can start well above the very bottom of the screen,
+where the browser's own gesture leaves the page; in the app, 1.5 rem. In
+Hebrew the bar fills from the right, and slides the same way.
+
+In the app, the line runs along the top edge of the bottom bar, over it, and
+the bar's white rises in a bump over its round times button instead of the
+button sticking out of it: the line rides over the bump
+(`composables/tabBarHump.ts`, one shape for both, a 12 px bell that clears
+the button with a margin). A notch in the strip leaves the button its
+touches. While the mini player lies there, the line stays flat, under it.
+
+The finger pulls the line. Under it, the bar rises in a bump (64 px, a bell
+rather than a peak: the line is stretched, it does not break), like a string
+held between two fingers, with a round thumb on top; the paper under the
+line hides the text it rises over. The titles of the text (the landmarks of
+the reading menu) sit on the line, **with no frame**: the one being read
+rides on top of the bump, large and straight, in Playfair Display and in the
+primary color; the others lie along the bar on each side, small, leaning
+with the line, each kept to its share of it so that two neighbors never
+overlap. A halo of the page's color keeps them legible over the text. The
+share reached (« 42 % ») stays on top of the bump, just above the finger:
+the titles say which passage, the share how far into the text. A text
+without titles shows it alone, larger.
+
+It moves like something held: the bump follows the finger with a little
+give, the titles glide from one to the next (the next one climbs the slope
+and grows until it is on top, straightening up, while the one it replaces
+slides down and shrinks), and, let go, the line springs back flat with a
+small rebound. These are springs (`stepSpring`,
+`composables/readingScrub.ts`), run frame by frame and only while the line
+moves. When the system asks for less motion, the line goes straight where it
+is going, without give or rebound. Crossing from one title to the next is
+felt as a threshold (`tick`, see "Touch answers"). The round buttons of the
+menu step aside during the gesture.
+
+On the site, the mini player lies over the bottom of the screen: the bar is
+then a line again, and the player keeps its touches. Two touches in a row on
+the bar are two slides: the double tap that starts the automatic scrolling
+does not apply there (`data-own-gestures`, held by
+`src/__tests__/autoScroll.test.ts`).
+
+On a text with landmarks, the round menu button names the one being read as
+soon as one scrolls: it grows to the left around the title, then shrinks
+back to a circle 1.8 s after the page stands still. Whoever sees the name of
+the passage appear there understands that the button leads to the passages,
+and that another one is a touch away. Not while the page scrolls by itself
+(the title would never leave the text), nor with the panel open, which lists
+them all. The button keeps its name for screen readers; the title is a hint
+for the eye.
+
+Held by `src/__tests__/readingScrub.test.ts` (the bump clearing the round
+button: « clears the round button, with a margin, and the line riding over
+it too »).
+
 ### One bookmark per book, and it shows
 
 A book has only one ribbon: placing a bookmark removes the one the text
