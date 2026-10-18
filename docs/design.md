@@ -548,8 +548,9 @@ The page has three tiers (`SidourPage.vue`):
   the 'Omer...), the same occasions as those that color the text (see "What
   the day adds in a tefila"). A rare occasion goes ahead of the everyday
   service: the lighting on an evening of 'Hanouka, the Sli'hot from 'hatsot
-  until sunrise, the blessing of the moon on the nights it is said (a dozen
-  or so per month, and it gets missed for lack of a reminder). Between two
+  until sunrise. The blessing of the moon, on the nights it is said, comes
+  after Arvit, as in the home stack: it takes the card once Arvit is said
+  (or its time is over). Between two
   services, the current holiday takes the card if there is a text to say
   now or tonight (the loulav until chkia, the evening lighting, the night
   Sli'hot); otherwise the card announces the upcoming service rather than
@@ -560,12 +561,29 @@ The page has three tiers (`SidourPage.vue`):
   the card, which goes to what comes next (the holiday, then the next
   service not yet said: Min'ha once Cha'harit is said, tomorrow's
   Cha'harit after Arvit). Under an occasion, it is no longer the line
-  either: on a night of the moon, once Arvit is said, the moon is alone
-  (`useOfficesDone`, held by `src/__tests__/sidourMoment.test.ts`, « a
-  service already said gives way »);
-- **one line below, at most**, and only on an evening of an occasion: the
-  service under the lighting, the Sli'hot or the moon, which preceded it in
-  the card; havdala on the evening a Chabbat or a holiday ends. On other
+  either (`useOfficesDone`, held by `src/__tests__/sidourMoment.test.ts`,
+  « a service already said gives way »);
+- **said with a swipe**: the card of the service whose time it is, or of
+  the moon, is swiped right to say it is done, as in the home stack (the
+  « C'est fait » pill coming out from under its left edge, darkening past
+  110 px). It flies off to the right and the next one rises in its place;
+  under it, « Arvit : c'est fait · Annuler » for a few seconds. A service
+  whose time has not come and a holiday text are not swiped. With the
+  « trois tefilot » habit, the swipe checks the habit's task; without it,
+  the device remembers it, as for the deck's extra card. The same is said
+  at the end of the service's text: the ring pulled upward of the day's
+  portion (`PullToMark`, see "An open volume, its settings, the reader"),
+  « Fin de l'office » (`OfficeDoneCard.vue`), which leads back to the
+  Sidour;
+- **the moon, all through its nights**: from the first night it is said to
+  the last, the moon has its line under the card, at any hour (« Ce soir,
+  jusqu'au 15 'Hechvan » by day, « Cette nuit » at night), as long as it
+  does not hold the card and is not marked done (by its card in the stack
+  or on this page): it comes back about ten nights a month and gets missed
+  for lack of a reminder. It is a line of its own, alongside the one below;
+- **one line below, at most** (besides the moon's), and only on an evening
+  of an occasion: the service under the lighting, the Sli'hot or the moon,
+  which preceded it in the card; havdala on the evening a Chabbat or a holiday ends. On other
   days, nothing. The card first announced up to three lines (the bedtime
   Chema, tikoun 'hatsot, the loulav, the Hochanot): three highlights meant
   highlighting none, and at Souccot the loulav and the Hochanot were
@@ -2280,8 +2298,9 @@ time, the time in large type), the untitled shelf.
   the home page, which stays silent once the parcours has started. On a
   night of the moon, Arvit comes first and the moon right after: once
   Arvit is swiped, the moon is on top. What is swiped here is also what the
-  Sidour page knows is said (see "The Sidour opens on the moment"). Held by
-  `src/__tests__/parcoursDeck.test.ts`.
+  Sidour page knows is said, and what is said there (swiped, or at the end
+  of the text) leaves the stack (see "The Sidour opens on the moment").
+  Held by `src/__tests__/parcoursDeck.test.ts`.
 - **« Rattraper »** ("Catch up"), an extra card for a program that is behind
   (« si vous avez un moment », "if you have a moment"), leads to the catch-up
   sheet; swiped right, the backlog is marked as read.

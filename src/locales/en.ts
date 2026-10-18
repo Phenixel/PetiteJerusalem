@@ -2000,7 +2000,21 @@ const en: LocaleMessages = {
       tonight: "Tonight, from {start} to {end}",
     },
     thisNight: "Tonight",
-    halevana: { until: "Until {date}" },
+    halevana: {
+      until: "Until {date}",
+      lineNow: "Tonight, until {date}",
+      lineTonight: "This evening, until {date}",
+    },
+    said: {
+      done: "{name}: done",
+      undo: "Undo",
+      end: "End of the service",
+      aria: "Mark the service done",
+      pullSub: "to mark the service done",
+      releaseSub: "The service will be marked done.",
+      doneSub: "The Sidour moves on to what comes next.",
+      back: "Back to the Sidour",
+    },
     loulav: { until: "Until sunset, at {time}" },
     extras: {
       havdala: "After Shabbat ends, at {time}",

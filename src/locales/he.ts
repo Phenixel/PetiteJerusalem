@@ -1942,7 +1942,21 @@ const he: LocaleMessages = {
       tonight: "הלילה, מ־{start} עד {end}",
     },
     thisNight: "הלילה",
-    halevana: { until: "עד {date}" },
+    halevana: {
+      until: "עד {date}",
+      lineNow: "הלילה, עד {date}",
+      lineTonight: "הערב, עד {date}",
+    },
+    said: {
+      done: "{name}: נעשה",
+      undo: "ביטול",
+      end: "סוף התפילה",
+      aria: "סימון התפילה כנעשתה",
+      pullSub: "כדי לסמן שהתפילה נעשתה",
+      releaseSub: "התפילה תסומן כנעשתה.",
+      doneSub: "הסידור עובר להמשך.",
+      back: "חזרה לסידור",
+    },
     loulav: { until: "עד השקיעה, ב־{time}" },
     extras: {
       havdala: "במוצאי שבת, ב־{time}",

@@ -23,7 +23,7 @@ import { MOMENT_TEXTS, sidourMoment } from "../services/sidourMoment";
 import { computeZmanim, formatHebrewDate, hebrewDateFor } from "../services/zmanimService";
 import { useCurrentMoment } from "./useCurrentMoment";
 import { useOfficeTimes } from "./useOfficeTimes";
-import { officeKey, useOccasionsDone } from "./useOfficesDone";
+import { halevanaKey, officeKey, useOccasionsDone } from "./useOfficesDone";
 import { useParcours } from "./useParcours";
 import { useParcoursViews, type TaskView } from "./useParcoursViews";
 import { psalmsLabel } from "./useTehilimDay";
@@ -347,17 +347,19 @@ export function useTodayDeck() {
         ),
       );
     }
-    if (hero?.kind === "halevana" && hero.until) {
-      const until = hero.until;
+    // The moon on the nights it is said, Arvit or not: the stack puts Arvit first.
+    const moon = sidour.value.moon;
+    if (moon?.now) {
+      const until = moon.until;
       cards.push(
         occasionCard(
-          { kind: "halevana", key: `halevana:${until.getFullYear()}-${until.getMonth()}` },
+          { kind: "halevana", key: halevanaKey(until) },
           {
             kicker: t("sidour.thisNight"),
             title: t("home.birkatHalevana.title"),
             meta: t("sidour.halevana.until", { date: formatHebrewDate(until, locale.value) }),
             route: textRoute(MOMENT_TEXTS.halevana),
-            art: { kind: "object", art: { kind: "moon", age: hero.moonAge ?? 10 } },
+            art: { kind: "object", art: { kind: "moon", age: moon.moonAge } },
           },
         ),
       );
