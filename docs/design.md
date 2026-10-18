@@ -444,6 +444,8 @@ drawn in the colors of the real thing (`CardArt.vue`, the drawings in
   the mouthpiece at the bottom;
 - the **loulav and etrog**, when the Souccot holiday takes the card;
 - the **sheaf** of barley of the 'Omer;
+- the **havdala**: the braided candle, blue and white strands, several
+  wicks under a single flame, and beside it the silver cup of red wine;
 - the shelf **volume**, with the binding and title of its section, on the
   inserts that open a section of the library: chnei mikra (Tanakh) and the
   day's Tehilim (Tehilim). It replaces the book icon they carried on the
@@ -498,7 +500,9 @@ name has been read.
 On the home page, the cards of the moment carry the same object, small, on
 their light surface: the sidour on « Faire Cha'harit » ("Pray Cha'harit"),
 the moon on the blessing of the moon, the sheaf on the counting of the
-'Omer. The moon takes slightly deeper tones there to stand out from the
+'Omer. So do the lines under the Sidour's card: the sidour for a service,
+the havdala, the moon all through its nights; they used to carry an icon on
+the left, which said less and broke this rule. The moon takes slightly deeper tones there to stand out from the
 white.
 
 One more object is drawn in `components/art`, with these rules, and takes
@@ -550,21 +554,58 @@ The page has three tiers (`SidourPage.vue`):
   the 'Omer...), the same occasions as those that color the text (see "What
   the day adds in a tefila"). A rare occasion goes ahead of the everyday
   service: the lighting on an evening of 'Hanouka, the Sli'hot from 'hatsot
-  until sunrise, the blessing of the moon on the nights it is said (a dozen
-  or so per month, and it gets missed for lack of a reminder). Between two
+  until sunrise. The blessing of the moon, on the nights it is said, comes
+  after Arvit, as in the home stack: it takes the card once Arvit is said
+  (or its time is over). Between two
   services, the current holiday takes the card if there is a text to say
   now or tonight (the loulav until chkia, the evening lighting, the night
   Sli'hot); otherwise the card announces the upcoming service rather than
   disappearing: on the home page, an empty card withdraws; here, it is the
   page's reason for being;
-- **one line below, at most**, and only on an evening of an occasion: the
-  service under the lighting, the Sli'hot or the moon, which preceded it in
-  the card; havdala on the evening a Chabbat or a holiday ends. On other
+- **a service already said gives way**: checked off in Mon parcours (the
+  « trois tefilot » habit) or swiped on the home page, it no longer holds
+  the card, which goes to what comes next (the holiday, then the next
+  service not yet said: Min'ha once Cha'harit is said, tomorrow's
+  Cha'harit after Arvit). Under an occasion, it is no longer the line
+  either (`useOfficesDone`, held by `src/__tests__/sidourMoment.test.ts`,
+  « a service already said gives way »);
+- **said with a swipe**: the card of the service whose time it is, or of
+  the moon, is swiped right to say it is done, as in the home stack (the
+  « C'est fait » pill coming out from under its left edge, darkening past
+  110 px). It flies off to the right and the next one rises in its place;
+  under it, « Arvit : c'est fait · Annuler » for a few seconds. A service
+  whose time has not come and a holiday text are not swiped. With the
+  « trois tefilot » habit, the swipe checks the habit's task; without it,
+  the device remembers it, as for the deck's extra card. The same is said
+  at the end of the service's text: the ring pulled upward of the day's
+  portion (`PullToMark`, see "An open volume, its settings, the reader"),
+  « Fin de l'office » (`OfficeDoneCard.vue`), which leads back to the
+  Sidour. It stays a pull, not a tap: the same gesture as the day's
+  portion. The lines under the card are swiped the same way, when what they
+  announce can be said now (havdala, the moon, the service under an
+  occasion): a line said leaves the page (`SidourLine.vue`);
+- **the moon, from nightfall**: on the nights it is said, the moon has its
+  line under the card (« Cette nuit, jusqu'au 15 'Hechvan »), as long as it
+  does not hold the card and is not marked done (by its card in the stack
+  or on this page): it comes back about ten nights a month and gets missed
+  for lack of a reminder. It is a line of its own, alongside the one below.
+  It is put forward only once it can be said: not by day, where « Ce soir »
+  announced it from the morning;
+- **one line below, at most** (besides the moon's), and only on an evening
+  of an occasion: the service under the lighting, the Sli'hot or the moon,
+  which preceded it in the card; havdala on the evening a Chabbat or a holiday ends. On other
   days, nothing. The card first announced up to three lines (the bedtime
   Chema, tikoun 'hatsot, the loulav, the Hochanot): three highlights meant
   highlighting none, and at Souccot the loulav and the Hochanot were
   repeated above the holiday's list, which moves up just below. The service
-  alone holds the card; the rest is one gesture further down;
+  alone holds the card; the rest is one gesture further down. On a motsaé
+  Chabbat of the moon, havdala and the moon are both there, one under the
+  other, until each is swiped;
+- **a search field**, under the highlighted cards and above the tools: it
+  filters the page's own texts with the library's search (Hebrew and Latin
+  names, the other names everyone types, one typo away: `searchSidour`, held
+  by `src/__tests__/sidourGroups.test.ts`). While it holds a term, its
+  results replace the tools and the list;
 - **all the texts**, in one list, without the books that separated them,
   but not without landmarks: light subheadings by use (the services, the
   evening, the brahot, the occasions, life stages), then the holidays at
@@ -734,6 +775,29 @@ arrived in front. The arrival of a goal you have just created is the third
 (the volume falling onto its shelf, the habit slipping into its list): it
 says where it has been filed (`prefersReducedMotion`,
 `composables/useMotion.ts`).
+
+### A gesture is shown, rarely
+
+The one motion that answers nothing: the swipe, shown. Whoever stays on the
+home page or the Sidour without a gesture may not know that the card is
+swiped. So the card that can be swiped (the stack's top card, the Sidour's
+card of the moment) leaves to the right on its own, as far as the gesture's
+threshold (120 px, a slight tilt), the « C'est fait » pill appearing whole at
+its edge as under a finger, then springs back past its place and settles:
+1.6 s, as if a finger had started the gesture and let go (`useSwipeHint`).
+
+It must stay rare to stay useful, and not become a fidget:
+
+- only to whoever has not swiped (done, later, a wallet card, a line of the
+  Sidour) on this device for three days, or ever: whoever swipes knows;
+- at most once a day, wherever it played, and once per visit of the page;
+- after eight seconds without a touch, a key or a scroll, the page in view;
+  never under a tip or the introduction, never on a card that cannot be
+  swiped (a service whose time has not come), nor in the home page's edit
+  mode, nor while the Sidour's search holds a term;
+- never when less motion is asked for, nor on a small machine (`perf-lite`).
+
+Held by `src/__tests__/swipeHint.test.ts`.
 
 ### Touch answers
 
@@ -2249,9 +2313,8 @@ time, the time in large type), the untitled shelf.
   programme » ("See the program"). Each gesture has its button there, for
   those who do not swipe, and on the site.
 - **The order**: the 'Hanouka lighting at its time, the service whose time
-  it is if it is in the parcours (the card says « Maintenant » ("Now") and
-  until when, and then replaces the Sidour shortcut), the moon and the
-  'Omer, then the present moment, those coming up, those already past,
+  it is (the card says « Maintenant » ("Now") and until when), the moon and
+  the 'Omer, then the present moment, those coming up, those already past,
   « Rattraper », and finally what was put off until later. A service says
   until when, or from when if it is upcoming.
 - **Not time yet.** A service whose time has not come (Min'ha in the
@@ -2279,6 +2342,19 @@ time, the time in large type), the untitled shelf.
   long as the parcours has started. They do not count in the day: once
   done, the device remembers them (`services/parcours/occasions.ts`), so
   that a blessed moon does not come back the following night.
+- **The services are in the stack for everyone.** Without the « trois
+  tefilot » habit (or on a day it leaves out), the service whose time it is
+  still comes into the stack, as an extra card: « Maintenant », until when,
+  the sidour, in solid color like the habit's (what you come looking for
+  takes the color, counted or not). It opens the text, is swiped done like an occasion,
+  and does not count in the day, on the wall or in the streak: only the
+  habit, chosen, counts the services. It replaces the Sidour shortcut of
+  the home page, which stays silent once the parcours has started. On a
+  night of the moon, Arvit comes first and the moon right after: once
+  Arvit is swiped, the moon is on top. What is swiped here is also what the
+  Sidour page knows is said, and what is said there (swiped, or at the end
+  of the text) leaves the stack (see "The Sidour opens on the moment").
+  Held by `src/__tests__/parcoursDeck.test.ts`.
 - **« Rattraper »** ("Catch up"), an extra card for a program that is behind
   (« si vous avez un moment », "if you have a moment"), leads to the catch-up
   sheet; swiped right, the backlog is marked as read.

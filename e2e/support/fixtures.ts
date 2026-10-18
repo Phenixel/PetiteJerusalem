@@ -84,6 +84,23 @@ export const test = base.extend<Options & Fixtures>({
               "parcours-program",
             ]),
           );
+          // The service whose time it is comes into the home stack for
+          // everyone, ahead of the goals: marked said for the day, it leaves
+          // each test its own cards on top, whatever the hour of the run.
+          if (!localStorage.getItem("pj_parcours_occasions")) {
+            const pad = (n: number) => String(n).padStart(2, "0");
+            const key = (d: Date) =>
+              `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+            const today = key(new Date());
+            const yesterday = key(new Date(Date.now() - 24 * 3600 * 1000));
+            localStorage.setItem(
+              "pj_parcours_occasions",
+              JSON.stringify([
+                ...["chaharit", "minha", "arvit"].map((tefila) => `tefila:${today}-${tefila}`),
+                `tefila:${yesterday}-arvit`,
+              ]),
+            );
+          }
         } catch {
           // Stockage indisponible : la bannière s'affichera, les tests qui la
           // supposent absente le diront.

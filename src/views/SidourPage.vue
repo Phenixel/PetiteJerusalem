@@ -16,9 +16,12 @@ let feastDownload: Promise<void> | null = null;
  * liste, rangée par usage (voir content/sidourGroups) : on ne se demande plus
  * dans quel livre est le Birkat Hamazon.
  *
- * En tête, le moment, comme sur l'accueil : l'office dont c'est l'heure (ou
- * celui qui vient), à pleine couleur, avec ce que le jour y ajoute ; puis deux
- * ou trois textes qui se disent aussi maintenant (voir services/sidourMoment).
+ * At the top, the moment, as on the home page: the service whose time it is
+ * (or the one coming up), in solid color, with what the day adds to it; then
+ * two or three texts that are also said now (see services/sidourMoment). A
+ * service already said steps aside (useOfficesDone): the card of the service
+ * or of the moon is swiped right to say it is done, as on the home page.
+ * The moon has its line under the card all through its nights.
  * Les fêtes restent en bas de la liste, et remontent en tête le temps de la
  * leur ; dans l'app, leurs textes se téléchargent alors d'eux-mêmes.
  *
@@ -28,11 +31,13 @@ let feastDownload: Promise<void> | null = null;
  *
  * Les textes gardent leur adresse sous /bibliotheque : elle est publiée.
  */
-import { computed, onMounted, watch } from "vue";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import AppIcon from "../components/icons/AppIcon.vue";
+import CatalogSearchField from "../components/CatalogSearchField.vue";
 import CardArt, { type CardArtSpec } from "../components/CardArt.vue";
-import type { IconName } from "../components/icons/registry";
+import DoneCue from "../components/sidour/DoneCue.vue";
+import SidourLine from "../components/sidour/SidourLine.vue";
 import KotelCompass from "../components/KotelCompass.vue";
 import NaanouimCompass from "../components/NaanouimCompass.vue";
 import TefilinMirror from "../components/TefilinMirror.vue";
@@ -40,6 +45,10 @@ import { openKotelCompass } from "../composables/useKotelCompass";
 import { openNaanouimCompass } from "../composables/useNaanouimCompass";
 import { openTefilinMirror } from "../composables/useTefilinMirror";
 import { useNow } from "../composables/useNow";
+import { useOfficesDone } from "../composables/useOfficesDone";
+import { dragStyle, useSwipe } from "../composables/useSwipe";
+import { useSearchTracking } from "../composables/useSearchTracking";
+import { noteSwipe, useSwipeHint } from "../composables/useSwipeHint";
 import { useZmanimLocation } from "../composables/useZmanimLocation";
 import { useZmanimPlaceLabel } from "../composables/useZmanimPlaceLabel";
 import { useLocalePath } from "../composables/useLocalePath";
@@ -54,6 +63,7 @@ import {
 } from "../services/sidourMoment";
 import {
   FEAST_LABEL_KEYS,
+  searchSidour,
   sidourSections,
   sidourText,
   type SidourSection,
@@ -69,6 +79,7 @@ import {
 } from "../services/zmanimService";
 import type { TefilaKey } from "../services/sidourService";
 import { analyticsService } from "../services/analyticsService";
+import { haptic } from "../services/haptics";
 import { pageTitle, seoService } from "../services/seoService";
 import { SITE_URL } from "../config/site";
 
@@ -78,8 +89,23 @@ const { place } = useZmanimLocation();
 const placeLabel = useZmanimPlaceLabel(place);
 const { localePath } = useLocalePath();
 
-const moment = computed(() => sidourMoment(place.value, now.value));
+// A service already said (checked off in Mon parcours, or swiped on the home
+// page) gives the card to what comes next.
+const officesDone = useOfficesDone();
+const moment = computed(() => sidourMoment(place.value, now.value, officesDone.said));
 const sections = computed<SidourSection[]>(() => sidourSections(moment.value.feast));
+
+// --- The search, between the highlighted cards and the tools ---------------
+// It filters the page's own list, with the library's search (searchSidour):
+// while it holds a term, its results replace the tools and the list.
+const searchTerm = ref("");
+const searching = computed(() => searchTerm.value.trim() !== "");
+const searchResults = computed(() => searchSidour(searchTerm.value, sections.value));
+const searchTracking = useSearchTracking({
+  term: searchTerm,
+  resultsCount: () => searchResults.value.length,
+  track: (search) => analyticsService.capture("sidour_search_performed", search),
+});
 
 const time = (date: Date | undefined) =>
   date ? formatZmanTime(date, place.value.tzid, locale.value) : "";
@@ -93,12 +119,6 @@ const dateLine = computed(() => {
 });
 
 // --- La carte du moment -----------------------------------------------------
-const TEFILA_ICONS: Record<TefilaKey, IconName> = {
-  chaharit: "sunrise",
-  minha: "sun",
-  arvit: "moon",
-};
-
 const DAY_LABELS: Record<NonNullable<SidourHero["day"]>, string> = {
   hanouka: "sidour.days.hanouka",
   pourim: "sidour.days.pourim",
@@ -211,8 +231,120 @@ const extra = computed(() => {
     path: text.path,
     name: e.tefila ? tefilaName(e.tefila) : textName(text),
     meta: extraMeta(e),
-    icon: e.tefila ? TEFILA_ICONS[e.tefila] : ("candle" as IconName),
+    // Its object in the corner, as on the cards of the home page: the sidour
+    // for a service, the candle and the cup for havdala.
+    art: (e.tefila ? { kind: "siddur" } : { kind: "havdala" }) satisfies CardArtSpec,
   };
+});
+
+// --- The moon, under the card all through its nights -------------------------
+const moonLine = computed(() => {
+  const moon = moment.value.moon;
+  const text = sidourText(MOMENT_TEXTS.halevana);
+  // It holds the card: no line of its own.
+  if (!moon || !text || moment.value.hero?.kind === "halevana") return null;
+  const date = formatHebrewDate(moon.until, locale.value);
+  return {
+    key: text.key,
+    path: text.path,
+    name: textName(text),
+    meta: t("sidour.halevana.lineNow", { date }),
+    art: { kind: "moon", age: moon.moonAge } satisfies CardArtSpec,
+  };
+});
+
+// --- « C'est fait », swiped on the card ----------------------------------------
+// As on the home page stack: swiped right past the threshold, the service (or
+// the moon) is said, and the card goes to what comes next. A service whose
+// time has not come, a holiday text, are not swiped.
+const SWIPE_THRESHOLD = 110;
+const swipeable = computed(() => hero.value?.kind === "tefila" || hero.value?.kind === "halevana");
+
+/** The last thing said by a swipe, the time to undo it. */
+const lastSaid = ref<{ name: string; undo: () => void } | null>(null);
+let lastSaidTimer: ReturnType<typeof setTimeout> | undefined;
+
+function remember(name: string, undo: () => void): void {
+  clearTimeout(lastSaidTimer);
+  lastSaid.value = { name, undo };
+  lastSaidTimer = setTimeout(() => (lastSaid.value = null), 8000);
+}
+
+function markHero(): void {
+  const h = moment.value.hero;
+  const name = hero.value?.name ?? "";
+  if (h?.kind === "tefila" && h.tefila && h.start && h.end) {
+    const window = { tefila: h.tefila, start: h.start, end: h.end };
+    officesDone.markOffice(window, true, "sidour_swipe");
+    remember(name, () => officesDone.markOffice(window, false, "sidour_undo"));
+  } else if (h?.kind === "halevana" && h.until) {
+    const until = h.until;
+    officesDone.markMoon(until, true, "sidour_swipe");
+    remember(name, () => officesDone.markMoon(until, false, "sidour_undo"));
+  } else return;
+  noteSwipe();
+  haptic("done");
+}
+
+/** The line under the card, swiped: havdala made, or the service said. */
+const extraSwipeable = computed(() => {
+  const e = moment.value.extra;
+  return (e?.key === "havdala" && !!e.evening) || (e?.key === "tefila" && !!e.now);
+});
+
+function sayExtra(): void {
+  const e = moment.value.extra;
+  const name = extra.value?.name ?? "";
+  if (e?.key === "havdala" && e.evening) {
+    const evening = e.evening;
+    officesDone.markHavdala(evening, true, "sidour_line_swipe");
+    remember(name, () => officesDone.markHavdala(evening, false, "sidour_undo"));
+  } else if (e?.key === "tefila" && e.now && e.tefila && e.start && e.end) {
+    const window = { tefila: e.tefila, start: e.start, end: e.end };
+    officesDone.markOffice(window, true, "sidour_line_swipe");
+    remember(name, () => officesDone.markOffice(window, false, "sidour_undo"));
+  } else return;
+  noteSwipe();
+  haptic("done");
+}
+
+/** The moon's line, swiped: it is blessed, and leaves the page for the month. */
+function sayMoon(): void {
+  const moon = moment.value.moon;
+  if (!moon) return;
+  const until = moon.until;
+  officesDone.markMoon(until, true, "sidour_line_swipe");
+  remember(moonLine.value?.name ?? "", () => officesDone.markMoon(until, false, "sidour_undo"));
+  noteSwipe();
+  haptic("done");
+}
+
+function undoSaid(): void {
+  lastSaid.value?.undo();
+  lastSaid.value = null;
+  haptic("undo");
+}
+
+onUnmounted(() => clearTimeout(lastSaidTimer));
+
+const swipe = useSwipe({
+  x: true,
+  threshold: SWIPE_THRESHOLD,
+  onSwipe: (direction) => {
+    if (direction === "right" && swipeable.value) markHero();
+  },
+});
+const heroStyle = computed(() => (swipeable.value ? dragStyle(swipe, { right: true }) : {}));
+// The swipe shown, rarely, to whoever stays on the page without a gesture
+// (useSwipeHint): the card leaves a little to the right and comes back.
+const { hinting } = useSwipeHint(() => swipeable.value && !searching.value);
+const showsHint = computed(() => hinting.value && swipeable.value && !swipe.dragging.value);
+
+/** What the gesture will do, attached to the card's left edge (as in the stack). */
+const heroCue = computed(() => {
+  if (!swipe.dragging.value || swipe.axis.value !== "x" || swipe.dx.value <= 0) return null;
+  const strength = Math.min(1, swipe.dx.value / SWIPE_THRESHOLD);
+  return { strength, armed: strength >= 1 };
 });
 
 // --- Les outils ---------------------------------------------------------------
@@ -243,9 +375,11 @@ function heroValue(h: SidourHero | null): string | null {
 
 function trackOpen(
   text: SidourText | { key: string },
-  source: "hero" | "extra" | "list",
+  source: "hero" | "extra" | "moon" | "list" | "search",
   section?: string,
 ) {
+  // The search that led somewhere leaves first.
+  if (source === "search") searchTracking.flush();
   analyticsService.capture("sidour_text_opened", {
     text: text.key,
     source,
@@ -332,55 +466,96 @@ onMounted(() => {
     <!-- Le moment : la seule carte en couleur de la page, celle qu'on vient
          chercher (voir docs/design.md, « Ce qu'on vient chercher prend la
          couleur, pleine »). -->
-    <RouterLink
-      v-if="hero"
-      :to="hero.path"
-      class="sidour-hero press-feedback relative block rounded-card bg-brand px-5 pt-4 pb-5 text-on-brand"
-      :class="{ 'sidour-hero-light': hero.lightArt }"
-      @click="trackOpen(hero, 'hero')"
-    >
-      <!-- L'objet du moment, derrière le texte : le sidour, la lune, la
-           'hanoukkia... Il ne sort de la carte que par le haut. -->
-      <CardArt :art="hero.art" />
-      <span class="relative block text-sm font-semibold text-on-brand/80">{{ hero.kicker }}</span>
-      <span class="relative mt-1 block font-display text-3xl font-bold leading-tight">
-        {{ hero.name }}
-      </span>
-      <span
-        class="relative mt-1 block text-[15px] font-medium text-on-brand/90"
-        :class="{ 'pe-[30%]': hero.lightArt }"
-        >{{ hero.meta }}</span
-      >
-      <span
-        v-if="hero.additions.length"
-        class="relative mt-3 flex flex-wrap gap-1.5"
-        :aria-label="t('sidour.additions.label')"
-      >
-        <span
-          v-for="label in hero.additions"
-          :key="label"
-          class="rounded-pill bg-on-brand/10 px-2.5 py-1 text-xs font-semibold text-on-brand"
+    <div class="sidour-hero-lane -mx-6 px-6">
+      <Transition name="sidour-next" mode="out-in">
+        <RouterLink
+          v-if="hero"
+          :key="`${hero.kind}:${hero.key}:${hero.name}`"
+          :to="hero.path"
+          class="sidour-hero press-feedback relative block rounded-card bg-brand px-5 pt-4 pb-5 text-on-brand"
+          :class="{
+            'sidour-hero-light': hero.lightArt,
+            'sidour-hero-swipe': swipeable,
+            'sidour-hero-hint': showsHint,
+          }"
+          :style="heroStyle"
+          draggable="false"
+          v-bind="swipeable ? swipe.listeners : {}"
+          @click="trackOpen(hero, 'hero')"
         >
-          {{ label }}
-        </span>
-      </span>
-    </RouterLink>
+          <!-- L'objet du moment, derrière le texte : le sidour, la lune, la
+           'hanoukkia... Il ne sort de la carte que par le haut. -->
+          <CardArt :art="hero.art" />
+          <span class="relative block text-sm font-semibold text-on-brand/80">{{
+            hero.kicker
+          }}</span>
+          <span class="relative mt-1 block font-display text-3xl font-bold leading-tight">
+            {{ hero.name }}
+          </span>
+          <span
+            class="relative mt-1 block text-[15px] font-medium text-on-brand/90"
+            :class="{ 'pe-[30%]': hero.lightArt }"
+            >{{ hero.meta }}</span
+          >
+          <span
+            v-if="hero.additions.length"
+            class="relative mt-3 flex flex-wrap gap-1.5"
+            :aria-label="t('sidour.additions.label')"
+          >
+            <span
+              v-for="label in hero.additions"
+              :key="label"
+              class="rounded-pill bg-on-brand/10 px-2.5 py-1 text-xs font-semibold text-on-brand"
+            >
+              {{ label }}
+            </span>
+          </span>
+          <!-- What the gesture will do, coming out from under the left edge. -->
+          <DoneCue v-if="heroCue" :strength="heroCue.strength" :armed="heroCue.armed" />
+          <DoneCue v-else-if="showsHint" :strength="1" :armed="false" hint />
+        </RouterLink>
+      </Transition>
+    </div>
 
-    <!-- Une ligne dessous, au plus, et seulement un soir d'occasion. -->
-    <RouterLink
-      v-if="extra"
-      :to="extra.path"
-      class="card card-hover press-feedback group mt-3 flex items-center gap-4 px-4 py-3.5"
-      @click="trackOpen(extra, 'extra')"
-    >
-      <AppIcon :name="extra.icon" :size="21" class="shrink-0 text-secondary" />
-      <span class="flex flex-col gap-0.5 min-w-0">
-        <span class="font-semibold text-text-primary group-hover:text-primary transition-colors">
-          {{ extra.name }}
-        </span>
-        <span class="text-sm text-text-secondary">{{ extra.meta }}</span>
-      </span>
-    </RouterLink>
+    <!-- Just said, by a swipe: the time to undo it. -->
+    <p v-if="lastSaid" class="mt-2 flex items-center justify-center gap-2 text-sm" role="status">
+      <span class="text-text-secondary">{{ t("sidour.said.done", { name: lastSaid.name }) }}</span>
+      <button type="button" class="font-bold text-primary" @click="undoSaid">
+        {{ t("sidour.said.undo") }}
+      </button>
+    </p>
+
+    <!-- One line below, at most, and only on an occasion's evening; then the
+         moon on its nights. Like every highlighted line, each carries its
+         object in the corner; what can be said now is swiped right. -->
+    <Transition name="sidour-next">
+      <SidourLine
+        v-if="extra"
+        :key="extra.key"
+        class="-mx-6 mt-3 px-6"
+        :to="extra.path"
+        :name="extra.name"
+        :meta="extra.meta"
+        :art="extra.art"
+        :swipeable="extraSwipeable"
+        @open="trackOpen(extra, 'extra')"
+        @done="sayExtra"
+      />
+    </Transition>
+    <Transition name="sidour-next">
+      <SidourLine
+        v-if="moonLine"
+        class="-mx-6 mt-3 px-6"
+        :to="moonLine.path"
+        :name="moonLine.name"
+        :meta="moonLine.meta"
+        :art="moonLine.art"
+        :art-scale="0.46"
+        swipeable
+        @open="trackOpen(moonLine, 'moon')"
+        @done="sayMoon"
+      />
+    </Transition>
 
     <p class="mt-4 flex justify-center">
       <RouterLink
@@ -392,12 +567,45 @@ onMounted(() => {
       </RouterLink>
     </p>
 
+    <!-- Search the Sidour: below the highlighted cards, above the tools. -->
+    <CatalogSearchField
+      v-model:term="searchTerm"
+      class="mt-6"
+      :placeholder="t('sidour.search.placeholder')"
+    />
+
+    <!-- Searching: the results take the place of the tools and the list. -->
+    <section v-if="searching" class="mt-6" aria-live="polite">
+      <h2 v-if="searchResults.length" class="mb-2 ms-1 text-sm font-semibold text-text-secondary">
+        {{ t("sidour.search.results", { n: searchResults.length }, searchResults.length) }}
+      </h2>
+      <div v-if="searchResults.length" class="card overflow-hidden">
+        <RouterLink
+          v-for="text in searchResults"
+          :key="text.key"
+          :to="text.path"
+          class="sidour-row group flex min-h-12 items-center justify-between gap-3 px-4 py-2.5"
+          @click="trackOpen(text, 'search')"
+        >
+          <span class="font-medium text-text-primary group-hover:text-primary transition-colors">
+            {{ text.latin }}
+          </span>
+          <span class="font-hebrew text-lg text-text-secondary" lang="he" dir="rtl">
+            {{ text.hebrew }}
+          </span>
+        </RouterLink>
+      </div>
+      <p v-else class="ms-1 text-sm text-text-secondary">
+        {{ t("sidour.search.none", { term: searchTerm.trim() }) }}
+      </p>
+    </section>
+
     <!-- Les outils, en une ligne qui défile : la pastille qui les ouvre
          depuis le texte, son dessin et son nom en toutes lettres ; celui du
          moment devant. Une ligne et pas des pastilles empilées : deux noms
          entiers ne tiennent pas côte à côte sur un téléphone, et la rangée
          doit garder sa hauteur quand les outils seront cinq. -->
-    <section v-if="tools.length" class="mt-8" aria-labelledby="sidour-tools">
+    <section v-if="tools.length && !searching" class="mt-8" aria-labelledby="sidour-tools">
       <h2 id="sidour-tools" class="mb-1 ms-1 text-sm font-semibold text-text-secondary">
         {{ t("sidour.tools.label") }}
       </h2>
@@ -418,7 +626,7 @@ onMounted(() => {
 
     <!-- Tous les textes, rangés par usage ; les fêtes en bas, celle du moment
          en tête. -->
-    <section v-for="section in sections" :key="section.id" class="mt-8">
+    <section v-for="section in searching ? [] : sections" :key="section.id" class="mt-8">
       <h2 class="mb-2 ms-1 flex items-center gap-2 text-sm font-semibold text-text-secondary">
         {{ t(section.labelKey) }}
         <span
@@ -455,6 +663,68 @@ onMounted(() => {
 <style scoped>
 .sidour-hero {
   box-shadow: var(--shadow-card-hover);
+}
+/* The card swiped right: the page does not scroll sideways under it, and the
+   drawing still comes out through the top. The lane reaches the screen's
+   edges (the page's gutter, given back as padding), so that the « C'est
+   fait » pill reads whole in the space the card leaves. */
+.sidour-hero-lane {
+  overflow-x: clip;
+}
+.sidour-hero-swipe {
+  touch-action: pan-y;
+  transition: transform 0.25s ease;
+}
+/* The swipe shown (useSwipeHint): the card leaves a little to the right, the
+   « C'est fait » pill at its edge, then springs back and settles, as the
+   home stack's top card does. */
+.sidour-hero-hint {
+  animation: sidour-hint 1.6s cubic-bezier(0.3, 0.7, 0.3, 1);
+}
+@keyframes sidour-hint {
+  0%,
+  8% {
+    transform: none;
+  }
+  36% {
+    transform: translateX(120px) rotate(3deg);
+  }
+  56% {
+    transform: translateX(-8px) rotate(-0.4deg);
+  }
+  70% {
+    transform: translateX(4px);
+  }
+  84%,
+  100% {
+    transform: none;
+  }
+}
+/* Said: the card flies off to the right, the next one rises in its place. */
+.sidour-next-leave-active {
+  transition:
+    transform 0.28s cubic-bezier(0.4, 0, 1, 1),
+    opacity 0.28s ease-in;
+}
+.sidour-next-leave-to {
+  transform: translateX(110%) rotate(6deg);
+  opacity: 0;
+}
+.sidour-next-enter-active {
+  transition:
+    transform 0.32s cubic-bezier(0.2, 0.9, 0.3, 1.2),
+    opacity 0.2s ease-out;
+}
+.sidour-next-enter-from {
+  transform: translateY(12px) scale(0.97);
+  opacity: 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sidour-hero-swipe,
+  .sidour-next-leave-active,
+  .sidour-next-enter-active {
+    transition: none;
+  }
 }
 /* Le texte sur un objet clair : un halo de la couleur de la carte, juste
    assez pour que le titre se lise là où il passe devant la lune (le brun de

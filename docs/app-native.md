@@ -445,7 +445,9 @@ The **tips already seen** (`useFeatureTips`, key `pj_tips_seen`) as well: a
 tip that came back after every cache clear would end up being annoying, and
 « Revoir les astuces » ("See the tips again", app profile, Help group) is
 there for whoever wants it. They are not uploaded to the account: it is on
-that particular screen that the gesture was seen.
+that particular screen that the gesture was seen. The **swipe shown**
+(`useSwipeHint`, key `pj_swipe_hint`: the last swipe, the last hint) is kept
+the same way, for the same reason.
 
 The **auto-scroll switch** (`useAutoScroll`) follows the same rule, for an
 even stronger reason: it is turned off precisely so as not to be surprised

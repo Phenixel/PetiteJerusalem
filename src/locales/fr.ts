@@ -2071,7 +2071,25 @@ const fr = {
     },
     // La carte de la lune, les nuits où elle se bénit.
     thisNight: "Cette nuit",
-    halevana: { until: "Jusqu'au {date}" },
+    halevana: {
+      until: "Jusqu'au {date}",
+      lineNow: "Cette nuit, jusqu'au {date}",
+    },
+    search: {
+      placeholder: "Chercher une prière, une brakha…",
+      results: "{n} texte | {n} textes",
+      none: "Aucun texte ne répond à « {term} ».",
+    },
+    said: {
+      done: "{name} : c'est fait",
+      undo: "Annuler",
+      end: "Fin de l'office",
+      aria: "Marquer l'office fait",
+      pullSub: "pour marquer l'office fait",
+      releaseSub: "L'office sera marqué fait.",
+      doneSub: "Le Sidour passe à la suite.",
+      back: "Retour au Sidour",
+    },
     // Entre deux offices, à Souccot : le loulav se prend jusqu'à la chkia.
     loulav: { until: "Jusqu'au coucher du soleil, à {time}" },
     extras: {
