@@ -189,6 +189,18 @@ the daily reading lives there), `my_sessions`, or `support` (« Nous écrire »,
 shows the day) sends it, with or without an account; on the website, the
 « Mon parcours » link in the profile banner, and the menu row, which stays.
 
+### `contrast_changed`, `contrast_change_failed` (new)
+
+The higher contrast switch, in the introduction or in the appearance
+settings (see docs/design.md, "Higher contrast"). `contrast_change_failed`
+is sent when the account's write is refused (the previous value is back on
+screen). Following the device setting sends nothing.
+
+| Property     | Values                                               |
+| ------------ | ---------------------------------------------------- |
+| `preference` | `more` (switched on), `standard` (switched off)      |
+| `scope`      | `device` (no account, kept on the device), `account` |
+
 ## Reading the tefila
 
 ### `hazara_opened` (new)
@@ -237,14 +249,15 @@ the same list as the services. The name stays reserved.
 
 An aliya checked or unchecked on the chnei mikra page
 (`/bibliotheque/chnei-mikra`, `useChneiMikraChecks`). It tells whether the
-checkbox is used, and how far into the week the reading goes.
+« Marquer comme lue » button at the end of each aliya is used, and how far
+into the week the reading goes.
 
-| Property  | Values                                                                                                      | Status    |
-| --------- | ----------------------------------------------------------------------------------------------------------- | --------- |
-| `done`    | true if the aliya has just been checked, false if unchecked                                                 | **new**   |
-| `text_id` | the paracha's text (a double paracha has two)                                                               | **new**   |
-| `aliya`   | the aliya, as the text names it (`1re montée`, `2e montée`...)                                              | **new**   |
-| `source`  | `text` (the checkbox in the text), `list` (the week's list, above the text); absent before the list: `text` | **added** |
+| Property  | Values                                                                                                                                                                                    | Status    |
+| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
+| `done`    | true if the aliya has just been checked, false if unchecked                                                                                                                               | **new**   |
+| `text_id` | the paracha's text (a double paracha has two)                                                                                                                                             | **new**   |
+| `aliya`   | the aliya, as the text names it (`1re montée`, `2e montée`...)                                                                                                                            | **new**   |
+| `source`  | `text` (in the text: the checkbox, then « Marquer comme lue » at the end of the aliya), `list` (the week's list, above the text; removed, no longer sent); absent before the list: `text` | **added** |
 
 ## Sidour and Study (October 2026)
 

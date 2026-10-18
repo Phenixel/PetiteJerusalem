@@ -6,6 +6,7 @@ import { useTheme, type ThemeOption } from "../../composables/useTheme";
 import { useColorScheme, type ColorSchemeOption } from "../../composables/useColorScheme";
 import { ensureAllFontsLoaded, useFonts, type FontOption } from "../../composables/useFonts";
 import { useHolidayTheme } from "../../composables/useHolidayTheme";
+import { useContrast } from "../../composables/useContrast";
 import AppIcon from "../icons/AppIcon.vue";
 import ToggleSwitch from "../ToggleSwitch.vue";
 
@@ -18,9 +19,9 @@ import ToggleSwitch from "../ToggleSwitch.vue";
  * Chaque famille tient sur une ligne de trois, y compris sur un téléphone :
  * les options se comparent d'un regard, ce qu'un empilement ne permet pas.
  *
- * `essentials` n'en garde que la langue, l'apparence et le thème : c'est ce que
- * l'introduction propose, le reste (polices, thèmes des fêtes) attend dans le
- * profil.
+ * `essentials` keeps only the language, the appearance, the theme and the
+ * higher contrast: that is what the introduction offers, the rest (fonts,
+ * holiday themes) waits in the profile.
  *
  * `userId` null (visiteur sans compte, réglages de l'app native) : les choix
  * sont gardés sur l'appareil, et le compte les adoptera à la connexion, voir
@@ -32,7 +33,7 @@ const props = withDefaults(
     userId: string | null;
     /** Titres pleins et explications (page de réglages) plutôt que de simples étiquettes. */
     withDescriptions?: boolean;
-    /** Langue, apparence et thème seulement (introduction de première ouverture). */
+    /** Language, appearance, theme and contrast only (first-launch introduction). */
     essentials?: boolean;
     /**
      * La langue en tête. Les réglages de l'app lui donnent sa propre ligne
@@ -60,6 +61,9 @@ const { currentLatinId, currentHebrewId, latinFonts, hebrewFonts, setLatinFont, 
 // de plus (voir useHolidayTheme). Les fêtes ne sont pas listées : le thème
 // arrive avec la fête, c'est une surprise, pas un catalogue.
 const { holidayThemesEnabled, setHolidayThemesEnabled } = useHolidayTheme();
+// Higher contrast: a switch under the themes, here and in the introduction,
+// so that whoever needs it finds it from the first launch (see useContrast).
+const { isContrastMore, setContrastMore } = useContrast();
 
 // Chaque option s'affiche dans sa propre police : les familles non embarquées
 // dans index.html n'arrivent qu'ici (voir useFonts). Sans les polices à
@@ -90,6 +94,10 @@ const selectTheme = (theme: ThemeOption) => {
   if (theme.id === currentThemeId.value) return;
   previewingId.value = null;
   apply(() => setTheme(props.userId, theme.id));
+};
+
+const toggleContrast = (enabled: boolean) => {
+  apply(() => setContrastMore(props.userId, enabled));
 };
 
 const toggleHolidayThemes = (enabled: boolean) => {
@@ -341,11 +349,33 @@ onUnmounted(() => {
       {{ t("profile.themeHint") }}
     </p>
 
+    <!-- Higher contrast: a switch row, like a setting (see docs/design.md,
+         "Higher contrast"). -->
+    <ul class="mt-6 flex flex-col divide-y divide-line border-t border-line">
+      <li>
+        <label class="flex cursor-pointer items-center justify-between gap-3 py-3">
+          <span class="min-w-0">
+            <span class="block font-semibold text-text-primary">
+              {{ t("profile.contrastTitle") }}
+            </span>
+            <span class="block text-sm leading-relaxed text-text-secondary">
+              {{ t("profile.contrastHint") }}
+            </span>
+          </span>
+          <ToggleSwitch
+            :model-value="isContrastMore"
+            :label="t('profile.contrastTitle')"
+            @update:model-value="toggleContrast"
+          />
+        </label>
+      </li>
+    </ul>
+
     <template v-if="!essentials">
       <!-- Thèmes des fêtes : une ligne d'interrupteur, comme un réglage (pas
          une carte, voir docs/design.md). Les fêtes ne sont pas listées : le
          thème arrive avec la fête, c'est une surprise, pas un catalogue. -->
-      <ul class="mt-6 flex flex-col divide-y divide-line border-t border-line">
+      <ul class="flex flex-col divide-y divide-line border-t border-line">
         <li>
           <label class="flex cursor-pointer items-center justify-between gap-3 py-3">
             <span class="min-w-0">

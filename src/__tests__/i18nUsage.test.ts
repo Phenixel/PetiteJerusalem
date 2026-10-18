@@ -135,8 +135,6 @@ describe("i18n usage", () => {
       // d'habitude et les options, nommés par leur clé (voir
       // composables/useParcoursViews et components/parcours).
       "home.edit.blocks.",
-      // Les noms des montées du chnei mikra (ChneiMikraChecklist), par leur rang.
-      "chneiMikra.aliyaNames.",
       "parcours.aliyot.ordinals.",
       "parcours.anchorKicker.",
       "parcours.anchorPoints.",

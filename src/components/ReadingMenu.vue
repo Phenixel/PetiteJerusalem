@@ -44,6 +44,7 @@ import {
   setHalakhotHidden,
 } from "../composables/useHalakhot";
 import { sansTahanoun, setSansTahanoun } from "../composables/useSansTahanoun";
+import { useChneiMikraOptions } from "../composables/useChneiMikraOptions";
 import {
   restoreTranslationFromDevice,
   setTranslationLang,
@@ -88,7 +89,9 @@ import { analyticsService } from "../services/analyticsService";
  * réglage « sans tahanoun », qui n'a de sens que devant un office, et un
  * texte qui porte des consignes de loi (`halakhot`), celui qui les masque.
  * Un texte traduit (`translationLangs`) y porte la traduction sous l'hébreu,
- * et le choix de sa langue quand il en a deux.
+ * et le choix de sa langue quand il en a deux. The chnei mikra page
+ * (`chneiMikra`) puts its two options there: each verse written twice, and
+ * Rashi's commentary (useChneiMikraOptions).
  *
  * Les réglages portent enfin trois commandes qui n'étaient qu'ailleurs :
  * partager le texte lu, écrire au support, et, sur le site, télécharger
@@ -107,6 +110,8 @@ const props = withDefaults(
     tefila?: boolean;
     /** Le texte porte des halakhot : le réglage qui les masque a prise. */
     halakhot?: boolean;
+    /** The chnei mikra: its options (verse written twice, Rashi) are offered. */
+    chneiMikra?: boolean;
     /** Les langues dans lesquelles le texte se lit traduit (vide : aucune). */
     translationLangs?: string[];
     /** Celle de la traduction affichée, ou qui le serait. */
@@ -133,6 +138,7 @@ const props = withDefaults(
     downloadState: "none",
     tefila: false,
     halakhot: false,
+    chneiMikra: false,
     translationLangs: () => [],
     translationLang: null,
     shareTitle: "",
@@ -229,6 +235,23 @@ const shareName = computed(() => props.shareTitle || t("textReading.pageTitle"))
 function share() {
   close();
   showShare.value = true;
+}
+
+/**
+ * The chnei mikra options, shared with the daily reading
+ * (useChneiMikraOptions). The `source` stays the one the page sent when the
+ * options sat above its text.
+ */
+const { doubleVerses, withRashi } = useChneiMikraOptions();
+
+function setChneiMikraOption(option: "double_verses" | "rashi", enabled: boolean) {
+  if (option === "double_verses") doubleVerses.value = enabled;
+  else withRashi.value = enabled;
+  analyticsService.capture("chnei_mikra_option_toggled", {
+    option,
+    enabled,
+    source: "library_chnei_mikra",
+  });
 }
 
 /** Le formulaire de support, ouvert depuis la lecture : la fenêtre vit dans App.vue. */
@@ -579,6 +602,34 @@ onUnmounted(() => {
                     />
                   </label>
                 </li>
+                <!-- The chnei mikra: the verse read twice, then Rashi under the
+                     Targum. -->
+                <template v-if="chneiMikra">
+                  <li>
+                    <label class="setting-row">
+                      <span class="min-w-0">
+                        <span class="setting-name">{{ t("chneiMikra.doubleVerses") }}</span>
+                        <span class="setting-hint">{{ t("chneiMikra.doubleVersesHint") }}</span>
+                      </span>
+                      <ToggleSwitch
+                        :model-value="doubleVerses"
+                        @update:model-value="setChneiMikraOption('double_verses', $event)"
+                      />
+                    </label>
+                  </li>
+                  <li>
+                    <label class="setting-row">
+                      <span class="min-w-0">
+                        <span class="setting-name">{{ t("chneiMikra.withRashi") }}</span>
+                        <span class="setting-hint">{{ t("chneiMikra.withRashiHint") }}</span>
+                      </span>
+                      <ToggleSwitch
+                        :model-value="withRashi"
+                        @update:model-value="setChneiMikraOption('rashi', $event)"
+                      />
+                    </label>
+                  </li>
+                </template>
                 <!-- Une tefila seulement : le tahanoun n'a pas sa place devant
                      une guemara. -->
                 <li v-if="tefila">

@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { resolveThemeColors, THEME_OPTIONS } from "../composables/useTheme";
+import {
+  AA_TEXT,
+  resolveThemeColors,
+  strengthenThemeColors,
+  THEME_OPTIONS,
+} from "../composables/useTheme";
 import { HOLIDAY_THEMES } from "../services/holidayThemes";
 
 /**
@@ -27,6 +32,28 @@ const FOND = "#fff9f3";
 const ON_BRAND_MIN = 3.5;
 const SURFACE = "#ffffff";
 const NUIT = "#111827";
+const NUIT_CARTE = "#1f2937";
+
+/**
+ * The documented exception (docs/design.md, "Theme colors"): white on the
+ * pastel orange of sunset, below the threshold, held instead to the APCA
+ * minimum for large headlines. The higher contrast mode brings it to AA.
+ */
+const ON_BRAND_EXCEPTIONS = new Set(["sunset"]);
+/** APCA Lc minimum for large, bold headlines (APCA bronze level). */
+const APCA_HEADLINE_MIN = 45;
+
+/** APCA 0.0.98G contrast of a text on a background, as a positive Lc. */
+const apca = (text: string, background: string) => {
+  const y = (hex: string) => {
+    const [r, g, b] = [1, 3, 5].map((i) => (parseInt(hex.slice(i, i + 2), 16) / 255) ** 2.4);
+    const lum = 0.2126729 * r! + 0.7151522 * g! + 0.072175 * b!;
+    return lum > 0.022 ? lum : lum + (0.022 - lum) ** 1.414;
+  };
+  const [t, b] = [y(text), y(background)];
+  const s = b > t ? (b ** 0.56 - t ** 0.57) * 1.14 : (b ** 0.65 - t ** 0.62) * 1.14;
+  return Math.abs(s) < 0.1 ? 0 : (Math.abs(s) - 0.027) * 100;
+};
 
 describe("les couleurs de thème", () => {
   it("l'encre se lit sur le fond clair, sur une carte et sur le fond sombre", () => {
@@ -49,12 +76,48 @@ describe("les couleurs de thème", () => {
 
   it("ce qui s'écrit sur la teinte s'y lit franchement", () => {
     for (const theme of [...THEME_OPTIONS, ...HOLIDAY_THEMES]) {
+      if (ON_BRAND_EXCEPTIONS.has(theme.id)) continue;
       const { brand, onBrand } = resolveThemeColors(theme);
       expect({ theme: theme.id, lisible: contrast(brand, onBrand) >= ON_BRAND_MIN }).toEqual({
         theme: theme.id,
         lisible: true,
       });
     }
+  });
+
+  it("the documented exception still reads on large headlines (APCA)", () => {
+    for (const id of ON_BRAND_EXCEPTIONS) {
+      const theme = THEME_OPTIONS.find((t) => t.id === id)!;
+      const { brand, onBrand } = resolveThemeColors(theme);
+      expect({ theme: id, lc: apca(onBrand, brand) >= APCA_HEADLINE_MIN }).toEqual({
+        theme: id,
+        lc: true,
+      });
+    }
+  });
+
+  it("higher contrast brings every theme to WCAG AA, light and dark", () => {
+    for (const theme of [...THEME_OPTIONS, ...HOLIDAY_THEMES]) {
+      const resolved = resolveThemeColors(theme);
+      const light = strengthenThemeColors(resolved, false);
+      const dark = strengthenThemeColors(resolved, true);
+      expect({
+        theme: theme.id,
+        onBrand: contrast(light.brand, light.onBrand) >= AA_TEXT,
+        onBrandDark: contrast(dark.brand, dark.onBrand) >= AA_TEXT,
+        inks: [light.primary, light.secondary].every(
+          (ink) => contrast(ink, FOND) >= AA_TEXT && contrast(ink, SURFACE) >= AA_TEXT,
+        ),
+        inksDark: [dark.primary, dark.secondary].every(
+          (ink) => contrast(ink, NUIT) >= AA_TEXT && contrast(ink, NUIT_CARTE) >= AA_TEXT,
+        ),
+      }).toEqual({ theme: theme.id, onBrand: true, onBrandDark: true, inks: true, inksDark: true });
+    }
+  });
+
+  it("higher contrast keeps the orange of sunset, with dark text on it", () => {
+    const sunset = strengthenThemeColors(resolveThemeColors(THEME_OPTIONS[0]!), false);
+    expect(sunset).toMatchObject({ brand: "#EB9F4F", onBrand: "#3B2412" });
   });
 
   it("au survol, le bouton plein se fonce, et son texte s'y lit toujours franchement", () => {
@@ -76,28 +139,34 @@ describe("les couleurs de thème", () => {
         .join("")}`;
     };
     for (const theme of [...THEME_OPTIONS, ...HOLIDAY_THEMES]) {
-      const { brand, onBrand } = resolveThemeColors(theme);
-      const hover = mix(brand);
-      const whiteText = luminance(onBrand) > luminance(brand);
-      expect({
-        theme: theme.id,
-        fonce: luminance(hover) < luminance(brand),
-        lisible: contrast(hover, onBrand) >= (whiteText ? contrast(brand, onBrand) : ON_BRAND_MIN),
-      }).toEqual({ theme: theme.id, fonce: true, lisible: true });
+      for (const [mode, colors, min] of [
+        ["standard", resolveThemeColors(theme), ON_BRAND_MIN],
+        ["higher contrast", strengthenThemeColors(resolveThemeColors(theme), false), AA_TEXT],
+      ] as const) {
+        const { brand, onBrand } = colors;
+        const hover = mix(brand);
+        const whiteText = luminance(onBrand) > luminance(brand);
+        expect({
+          theme: theme.id,
+          mode,
+          fonce: luminance(hover) < luminance(brand),
+          lisible: contrast(hover, onBrand) >= (whiteText ? contrast(brand, onBrand) : min),
+        }).toEqual({ theme: theme.id, mode, fonce: true, lisible: true });
+      }
     }
   });
 
-  it("l'orange clair porte le brun, le texte orange prend son encre, le bleu du logo reste", () => {
+  it("the pastel orange carries white, orange text takes its ink, the logo's blue stays", () => {
     const [sunset, ocean, emerald] = THEME_OPTIONS.map(resolveThemeColors);
     const orange = {
       secondary: "#D46D01",
-      secondaryBrand: "#FEA547",
+      secondaryBrand: "#EB9F4F",
       secondarySoft: "#FFD09E",
     };
     expect(sunset).toMatchObject({
       primary: "#D46D01",
-      brand: "#FEA547",
-      onBrand: "#3B2412",
+      brand: "#EB9F4F",
+      onBrand: "#FFFFFF",
       brandSoft: "#FFD09E",
       secondary: "#328CDC",
       secondarySoft: "#A9CCEB",
@@ -117,9 +186,10 @@ describe("les couleurs de thème", () => {
   });
 
   it("sur la teinte, on écrit on-brand : ni le blanc, ni l'encre", () => {
-    // Le blanc ne se lit pas sur l'orange clair (2:1), l'encre orange non plus
-    // (1,8:1). Une classe ou une règle qui pose la teinte en fond et écrit
-    // dessus autre chose que on-brand ne se lirait que sous certains thèmes.
+    // White is on-brand today, but not in the higher contrast mode (dark text
+    // on the orange), and the orange ink does not read on the fill. A class or
+    // a rule that puts the fill as background and writes anything other than
+    // on-brand on it would only read under some themes or modes.
     const files = (dir: string): string[] =>
       readdirSync(dir).flatMap((name) => {
         const path = join(dir, name);

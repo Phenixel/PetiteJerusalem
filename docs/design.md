@@ -239,8 +239,10 @@ screenshots from the third one: nearly half of people skipped it, almost all
 from the first page after consent. It now has five, each one short:
 
 - **consent**, in three lines, because it requires a choice;
-- **settings**: the language, light or dark, the theme, nothing more
-  (`AppearanceSettings essentials`). Fonts and holiday themes wait in the
+- **settings**: the language, light or dark, the theme and higher
+  contrast, nothing more (`AppearanceSettings essentials`). Higher contrast
+  is there from the first launch because whoever needs it cannot read the
+  rest comfortably until it is on. Fonts and holiday themes wait in the
   profile;
 - **texts to take along**, the only setting that does something;
 - **the essentials**: the library, the times, the daily reading, one line
@@ -410,7 +412,7 @@ three levels of text.
 
 The calendar's next holiday therefore takes the theme tint at full strength,
 over its whole card, and its text switches to the color that is written on
-it (`on-brand`: brown on light orange, white on blue or green). It is the
+it (`on-brand`: white, or dark text in higher contrast). It is the
 only colored card on the page, and you find it without having to read.
 
 This text steps down in three tones there, as on the profile banner: the
@@ -1235,6 +1237,17 @@ should discover that a halakha existed on the day they would have needed
 it. The setting only shows on a text that carries some: offering to hide
 what the page does not display would suggest something was missed.
 
+On the chnei mikra page, its two options join them too: « Chaque verset deux
+fois » ("Each verse twice", on at the start: it is the practice itself) and
+« Commentaire de Rachi » ("Rashi's commentary"), each with its hint. They
+used to be two switches above the text, under the paracha's name: the only
+reading options of the library left outside the menu, and one more block
+between the title and the text. They stay shared with the daily reading
+(`useChneiMikraOptions`). Held by `src/__tests__/readingMenu.test.ts` (« ne
+propose les options du chnei mikra que sur sa page ») and
+`src/__tests__/chneiMikraPage.test.ts` (« propose les options de lecture
+dans le menu de lecture, et les retient »).
+
 Under the switches, a rule, then what is done with a gesture instead of
 being set: sharing the text being read, writing to the team, and, on the
 site, getting the app. These three were only in the footer or in the About
@@ -1293,26 +1306,28 @@ tikoun): neither one shows it.
 
 ### Chnei mikra is checked off aliyah by aliyah
 
-On the chnei mikra page, each aliyah carries its checkbox, next to its
-title: a pill carrying its name (« Marquer lue », "Mark as read", then
-« Lue », "Read", the box filled in the theme color). Chnei mikra is read over
-the course of the week, an aliyah or two at a time; the box says where you
-stand. The checks are stored by week (the Chabbat of the paracha): the
-following week starts from zero, and browsing back to a past paracha finds
-its own. The daily reading, which also shows chnei mikra, does not carry
-them: it already has « Marquer lu » per section.
+On the chnei mikra page, each aliyah ends with « Marquer comme lue » ("Mark
+as read", then « Lue », "Read", with its check in the theme color): the
+same button, at the same place, as a psalm of « Mes Téhilim » or a text of
+the daily reading. Chnei mikra is read over the course of the week, an
+aliyah or two at a time, and one checks it off where one stops reading. The
+aliyah's title above the text stays a plain marker.
 
-Above the text, the week's list shows them all at a glance
-(`ChneiMikraChecklist.vue`): a card titled « Les montées de la semaine »
-("The week's aliyot"), the count on the right (« 3 sur 7 », "3 of 7"), then
-the name of the paracha and its seven aliyot by name (Cohen, Lévi, Chlichi,
-Revi'i, 'Hamichi, Chichi, Chevi'i), in the same pills as the boxes in the
-text (`AliyaCheck.vue`); a double paracha has both its names, each with its
-seven. The list and the boxes say the same thing, and are kept in Mon
-parcours, carried along by the account and tied to the « une montée par
-jour » ("one aliyah a day") chnei mikra (see `docs/parcours.md`). Feedback
-from a reader of the app asked for it: checking off without hunting for the
-aliyah in the text.
+At the top of the page, under the paracha's name, a bar says where the week
+stands (« Montées lues : 3 sur 7 », "Aliyot read: 3 of 7", its percentage,
+and the `ProgressBar`), fourteen for a double paracha. No card around it
+and no list of the aliyot: an earlier version put a card « Les montées de
+la semaine » above the text, with the seven aliyot by name to tick, and a
+pill beside each title in the text; two ways of doing one thing, and a
+frame more at the top of a page that is already long. The owner asked for
+the pattern of the Tehilim instead.
+
+The checks are stored by week (the Chabbat of the paracha): the following
+week starts from zero, and browsing back to a past paracha finds its own.
+They are kept in Mon parcours, carried along by the account and tied to the
+« une montée par jour » ("one aliyah a day") chnei mikra (see
+`docs/parcours.md`). The daily reading, which also shows chnei mikra, does
+not carry them: it already has « Marquer lu » per section.
 
 ### The translation reads under the verse
 
@@ -2656,33 +2671,41 @@ that gesture: several books open on the table, each at its page.
 Two colors, the orange and the blue of the logo's palette. The background
 and the wall also come from the logo.
 
-| Color           | Logo      | Ink       | Light     |
-| --------------- | --------- | --------- | --------- |
-| Orange          | `#FEA547` | `#D46D01` | `#FFD09E` |
-| Blue            | `#539EE2` | `#328CDC` | `#A9CCEB` |
-| Page background | `#FFF9F3` |           |           |
-| Bricks (wall)   | `#D6C4B8` |           |           |
+| Color           | Logo      | Solid fill | Ink       | Light     |
+| --------------- | --------- | ---------- | --------- | --------- |
+| Orange          | `#FEA547` | `#EB9F4F`  | `#D46D01` | `#FFD09E` |
+| Blue            | `#539EE2` | `#328CDC`  | `#328CDC` | `#A9CCEB` |
+| Page background | `#FFF9F3` |            |           |           |
+| Bricks (wall)   | `#D6C4B8` |            |           |           |
 
-The logo's orange is light: white does not read on it (2:1), and it cannot
-be written on the background (1.9:1). It is therefore used **as is as a
-solid fill**, with brown on top (`#3B2412`, 7.4:1), and orange text takes
-**the same hue, deepened just enough** to be readable: that is the ink. The
-logo's blue, also light, is taken deepened once and for all (`#328CDC`): it
-carries white and reads as ink.
+The solid orange is a **pastel of the logo's family** (`#EB9F4F`), with
+**white on top**. It cannot be written on the background, so orange text
+takes **the same family, deepened just enough** to be readable: that is the
+ink. The logo's blue, light too, is taken deepened once and for all
+(`#328CDC`): it carries white and reads as ink.
+
+White on the pastel orange is a **deliberate exception** to the readability
+rule. It reaches 2.2:1 by WCAG 2, below even the 3:1 that WCAG asks of large
+text; APCA, which weighs size and weight, gives it Lc 47, enough for large
+bold headlines (Lc 45) and not for small labels (Lc 75). We accept it for
+the look the owner chose, and the **higher contrast mode** (below) gives
+whoever needs it a version at the WCAG AA level everywhere.
 
 Rejected attempts for the orange, in order: the original vermilion
 (`#DE4F17`), which leaned red; the logo's orange deepened to carry white
 (`#D96507`), yellower than the vermilion but which leaned brown and made the
 app dull; brighter oranges between the two (`#E65D00`), which did not
-convince either. The price of the light orange: two oranges on the same
-screen, the hue in solid fills and the ink in text (the home page time, the
-active tab).
+convince either; the logo's orange itself (`#FEA547`) with brown on top,
+readable but dull, and white was wanted back. A vivid orange of the same
+lightness (`#FB8900`, white at 2.4:1) was close behind the pastel. The
+price of a light orange: two oranges on the same screen, the hue in solid
+fills and the ink in text (the home page time, the active tab).
 
 Three themes to choose from, in this order. The first is the original.
 
 | Theme            | Ink       | Solid fill | Text on it | Secondary |
 | ---------------- | --------- | ---------- | ---------- | --------- |
-| sunset (default) | `#D46D01` | `#FEA547`  | `#3B2412`  | blue      |
+| sunset (default) | `#D46D01` | `#EB9F4F`  | white      | blue      |
 | ocean            | `#328CDC` | `#328CDC`  | white      | orange    |
 | emerald          | `#059C66` | `#059C66`  | white      | orange    |
 
@@ -2692,9 +2715,14 @@ secondary. The readability rule is held by
 
 - the ink at 3.1:1 at least on the background, 3.5:1 on a white card, 3.3:1
   on the dark background;
-- what is written on the solid fill at 3.5:1 at least;
+- what is written on the solid fill at 3.5:1 at least, except the
+  documented exception of sunset (`ON_BRAND_EXCEPTIONS`), held instead to
+  APCA Lc 45, the minimum for large headlines;
+- in higher contrast, every theme, light and dark, at the WCAG AA level:
+  4.5:1 for the text on the fill and for the inks;
 - on hover, the solid button darkens, and its text still reads at this
-  threshold (white better than at rest, brown slightly less: 5.6:1);
+  threshold (white better than at rest; dark text, in higher contrast,
+  slightly less but still at 4.5:1);
 - on the solid fill, you write `on-brand`, never `text-white` or the ink:
   the test rereads the classes and CSS rules in `src`.
 
@@ -2703,7 +2731,7 @@ the bar's central button, the profile banner, the next holiday's card, the
 circles on the sharing timeline) take `--color-brand`, and what is written on
 them `--color-on-brand`. Colored text, links, icons, the active tab, rules,
 progress bars, switches and light tints (`bg-primary/10`) take
-`--color-primary`, the ink: the light orange would show too little there. A
+`--color-primary`, the ink: the pastel orange would show too little there. A
 holiday theme provides only its two colors, deep enough to serve both ways
 under white, and the rest is derived from them (`resolveThemeColors`).
 
@@ -2716,7 +2744,29 @@ theme, `#D46D01`: all three change together. The background (`#FFF9F3`) is
 reused in the browser color (`index.html`), the status bar
 (`useNativeStatusBar`, `scripts/setup-android.mjs`) and the widgets'
 background. The share thumbnail (`functions/src/ogCard.ts`) takes orange as
-the solid fill, with brown on top.
+the solid fill, with brown on top (6.6:1): it is read small, in other apps,
+by people who cannot switch to higher contrast.
+
+### Higher contrast
+
+An accessibility mode, offered in the introduction and in the appearance
+settings, as a switch under the themes (`useContrast`). It brings every
+theme to the WCAG AA level (4.5:1 for regular text), light and dark
+(`strengthenThemeColors` in `useTheme.ts`):
+
+- on the solid fill, the more readable of white and the dark text
+  (`#3B2412`); if neither reaches 4.5:1, the fill deepens under white. The
+  pastel orange thus keeps its color and takes the dark text (6.6:1); blue
+  and green deepen a little under white;
+- the inks deepen on the light background and lighten on the dark one until
+  they reach 4.5:1 on both the background and a card;
+- the neutrals follow (`:root.contrast-more` in `main.css`): darker
+  secondary text, more visible rules.
+
+Until someone chooses, it follows the device (`prefers-contrast: more`,
+"Increase contrast" on iOS and macOS). A choice made in the switch then
+holds, on the device or in the account like the theme. Held by
+`src/__tests__/themeColors.test.ts`.
 
 The secondary color holds the elements that are neither the main action nor
 text: the Sidour tools, the line under the card of the moment, the library's
@@ -2760,8 +2810,8 @@ text look the same.
 
 The ink (`primary`) and the solid fill (`brand`) are two tokens. For blue
 and green, it is the same color, taken deep enough to work both ways; for
-orange, the logo's hue stays light as a solid fill and the ink is its
-deepened version. The three inks hold at the same level: 3.4:1 on the beige,
+orange, the pastel stays light as a solid fill and the ink is its deepened
+version. The three inks hold at the same level: 3.4:1 on the beige,
 3.5:1 on white, 5:1 on the dark background. An ink brighter than these
 would no longer work as text: a lighter color goes in a solid fill, with dark
 text on it, not as ink.
@@ -2769,8 +2819,9 @@ text on it, not as ink.
 This is a **deliberate exception** to the AA level: 4.5 is the threshold
 for regular-size text, and none of the three inks reaches it on the beige.
 We accept it because the ink only carries short labels, in semibold,
-titles, and the day's additions in a tefila (see below). The text on the
-light orange, for its part, exceeds the threshold (7.4:1).
+titles, and the day's additions in a tefila (see below). White on the
+pastel orange is the second exception (see "Theme colors"); the higher
+contrast mode lifts both.
 
 ### Holiday themes
 
