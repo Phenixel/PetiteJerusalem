@@ -16,9 +16,10 @@ let feastDownload: Promise<void> | null = null;
  * liste, rangée par usage (voir content/sidourGroups) : on ne se demande plus
  * dans quel livre est le Birkat Hamazon.
  *
- * En tête, le moment, comme sur l'accueil : l'office dont c'est l'heure (ou
- * celui qui vient), à pleine couleur, avec ce que le jour y ajoute ; puis deux
- * ou trois textes qui se disent aussi maintenant (voir services/sidourMoment).
+ * At the top, the moment, as on the home page: the service whose time it is
+ * (or the one coming up), in solid color, with what the day adds to it; then
+ * two or three texts that are also said now (see services/sidourMoment). A
+ * service already said steps aside (useOfficesDone).
  * Les fêtes restent en bas de la liste, et remontent en tête le temps de la
  * leur ; dans l'app, leurs textes se téléchargent alors d'eux-mêmes.
  *
@@ -40,6 +41,7 @@ import { openKotelCompass } from "../composables/useKotelCompass";
 import { openNaanouimCompass } from "../composables/useNaanouimCompass";
 import { openTefilinMirror } from "../composables/useTefilinMirror";
 import { useNow } from "../composables/useNow";
+import { useOfficesDone } from "../composables/useOfficesDone";
 import { useZmanimLocation } from "../composables/useZmanimLocation";
 import { useZmanimPlaceLabel } from "../composables/useZmanimPlaceLabel";
 import { useLocalePath } from "../composables/useLocalePath";
@@ -78,7 +80,10 @@ const { place } = useZmanimLocation();
 const placeLabel = useZmanimPlaceLabel(place);
 const { localePath } = useLocalePath();
 
-const moment = computed(() => sidourMoment(place.value, now.value));
+// A service already said (checked off in Mon parcours, or swiped on the home
+// page) gives the card to what comes next.
+const { isOfficeDone } = useOfficesDone();
+const moment = computed(() => sidourMoment(place.value, now.value, isOfficeDone));
 const sections = computed<SidourSection[]>(() => sidourSections(moment.value.feast));
 
 const time = (date: Date | undefined) =>

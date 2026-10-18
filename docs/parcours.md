@@ -50,7 +50,7 @@ shows, at the bottom of the text, the day's task to check off
 | `legacyDailyReading.ts`                    | the former daily reading                                                                     |
 | `entries.ts`                               | the texts a task has you read (offline download)                                             |
 | `tracking.ts`                              | audience tracking shared by several screens                                                  |
-| `occasions.ts`                             | the deck's occasion cards marked done (the moon, the 'Omer, 'Hanouka), on the device         |
+| `occasions.ts`                             | the deck's occasion cards marked done (the moon, the 'Omer, 'Hanouka, a service), on the device |
 
 `composables/useParcours.ts` brings it all together for the pages: a single
 shared state, started on first use (anyone who never opens the journey
@@ -198,7 +198,7 @@ nothing about programs or habits.
 | `parcoursSync.test.ts`          | without an account, with an account, a shared device                                                                                                         |
 | `parcoursCloud.test.ts`         | the account write sends no `undefined` field (Firestore would reject the whole write)                                                                        |
 | `parcoursLegacyDaily.test.ts`   | the former daily reading, taken over and kept up to date                                                                                                     |
-| `parcoursDeck.test.ts`          | the home deck: the order, prayer service times, catching up, the 'Omer card                                                                                  |
+| `parcoursDeck.test.ts`          | the home deck: the order, prayer service times, catching up, the 'Omer card, the service of the hour without the habit                                      |
 | `parcoursEntries.test.ts`       | the texts to download for the day                                                                                                                            |
 | `parcoursTracking.test.ts`      | shared tracking, and the daily reading events that continue                                                                                                  |
 | `widgetDailyParcours.test.ts`   | the widgets' daily reading, without an account                                                                                                               |

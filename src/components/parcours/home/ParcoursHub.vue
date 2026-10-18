@@ -5,10 +5,10 @@
  * d'une carte. Sans objectif encore, l'invitation à en prendre un. Dans
  * l'app, avec ou sans compte ; sur le site, pour un compte.
  *
- * Il dit à l'accueil s'il porte les offices (l'habitude des trois tefilot) :
- * le raccourci du Sidour se tait alors, la carte de l'office est dans le
- * paquet. Et s'il a commencé : les bandeaux de la lune et du 'Omer se taisent
- * aussi, leurs cartes prennent place dans la pile.
+ * It tells the home page whether it has begun: the Sidour shortcut and the
+ * banners of the moon and the 'Omer then fall silent, their cards take their
+ * place in the stack (the service whose time it is too, with or without the
+ * « trois tefilot » habit).
  *
  * Chargé à la demande (voir HomeView) : il tire le calendrier hébraïque.
  */
@@ -25,7 +25,6 @@ import TaskDeck from "./TaskDeck.vue";
 import TaskSheet from "./TaskSheet.vue";
 
 const emit = defineEmits<{
-  (e: "offices", covered: boolean): void;
   (e: "begun", begun: boolean): void;
 }>();
 
@@ -36,7 +35,6 @@ const deck = useTodayDeck();
 const begun = computed(() => liveObjectives(store.data.value).length > 0);
 const open = ref(false);
 
-watch(deck.coversOffices, (covered) => emit("offices", covered), { immediate: true });
 watch(begun, (value) => emit("begun", value), { immediate: true });
 
 /** La carte d'une pile vide : la journée pleine, et ce que devient la lampe. */

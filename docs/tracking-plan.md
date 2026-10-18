@@ -962,11 +962,11 @@ down) or `day_bar` (the day bar tapped).
 An occasion card in the stack marked done, or undone: it doesn't count in the
 day, the device remembers it.
 
-| Property   | Values                                                                                      |
-| ---------- | ------------------------------------------------------------------------------------------- |
-| `occasion` | `halevana` (the blessing of the moon), `omer` (the evening count), `hanouka` (the lighting) |
-| `done`     | true when it is done                                                                        |
-| `source`   | `home_deck_swipe`, `home_wallet_swipe`, `home_sheet` (as in `parcours_task_marked`)         |
+| Property   | Values                                                                                                                                                                    |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `occasion` | `halevana` (the blessing of the moon), `omer` (the evening count), `hanouka` (the lighting), `tefila` (the service whose time it is, without the « trois tefilot » habit) |
+| `done`     | true when it is done                                                                                                                                                      |
+| `source`   | `home_deck_swipe`, `home_wallet_swipe`, `home_sheet` (as in `parcours_task_marked`)                                                                                       |
 
 `birkat_halevana_opened` and `omer_opened` (existing) are still sent with
 `source: home` when their card is tapped in the stack, as when they were

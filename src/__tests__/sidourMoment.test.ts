@@ -166,6 +166,45 @@ describe("la carte du moment", () => {
   });
 });
 
+describe("a service already said gives way", () => {
+  const said =
+    (...tefilot: string[]) =>
+    (window: { tefila: string }) =>
+      tefilot.includes(window.tefila);
+
+  it("Cha'harit said: the card announces Min'ha", () => {
+    // Monday 12 October 2026, Rosh 'Hodech, 9:40 a.m.
+    const { hero } = sidourMoment(DEFAULT_PLACE, at("2026-10-12T09:40:00+02:00"), said("chaharit"));
+    expect(hero?.kind).toBe("next-tefila");
+    expect(hero?.tefila).toBe("minha");
+  });
+
+  it("Cha'harit and Min'ha said in the morning: the card goes to Arvit", () => {
+    const { hero } = sidourMoment(
+      DEFAULT_PLACE,
+      at("2026-10-12T09:40:00+02:00"),
+      said("chaharit", "minha"),
+    );
+    expect(hero).toMatchObject({ kind: "next-tefila", tefila: "arvit" });
+  });
+
+  it("Arvit said on an ordinary evening: tomorrow's Cha'harit", () => {
+    const { hero, extra } = sidourMoment(
+      DEFAULT_PLACE,
+      at("2026-10-12T22:30:00+02:00"),
+      said("arvit"),
+    );
+    expect(hero).toMatchObject({ kind: "next-tefila", tefila: "chaharit" });
+    expect(extra).toBeNull();
+  });
+
+  it("Arvit said on a night of the moon: the moon alone, without the Arvit line", () => {
+    const moment = sidourMoment(DEFAULT_PLACE, at("2026-10-20T21:00:00+02:00"), said("arvit"));
+    expect(moment.hero?.kind).toBe("halevana");
+    expect(moment.extra).toBeNull();
+  });
+});
+
 describe("les bords de la nuit et des fêtes", () => {
   it("la lune s'efface à l'instant où le délai se ferme, même au milieu de la nuit", () => {
     // Nuit du 25 au 26 octobre 2026, la dernière : le délai se ferme vers 2 h 44.

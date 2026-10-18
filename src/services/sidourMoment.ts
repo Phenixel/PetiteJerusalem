@@ -365,25 +365,34 @@ function momentTools(
 }
 
 /**
- * Le moment, par ordre de priorité. La carte prend le premier qui vaut :
+ * The moment, in order of priority. The card takes the first one that holds:
  *
- * 1. l'allumage de 'Hanouka, le soir ;
- * 2. les Sli'hot, de 'hatsot au lever du soleil, en saison ;
- * 3. la bénédiction de la lune, les nuits où elle se dit : elle revient
- *    une dizaine de nuits par mois et se rate faute de rappel, quand Arvit,
- *    lui, se dit chaque soir ;
- * 4. l'office dont c'est l'heure ;
- * 5. entre deux offices, le texte de la fête en cours, s'il y en a un qui se
- *    dit maintenant ou cette nuit ;
- * 6. l'office qui vient.
+ * 1. the 'Hanouka lighting, in the evening;
+ * 2. the Sli'hot, from 'hatsot until sunrise, in season;
+ * 3. the blessing of the moon, on the nights it is said: it comes back about
+ *    ten nights a month and gets missed for lack of a reminder, whereas
+ *    Arvit is said every evening;
+ * 4. the service whose time it is;
+ * 5. between two services, the text of the current holiday, if one is said
+ *    now or tonight;
+ * 6. the service coming up.
  *
- * Une ligne dessous, au plus, et seulement sous une occasion : la havdala le
- * soir où sort un Chabbat ou une fête, sinon l'office sous les trois
- * premières. Le reste (le Chema du coucher, le loulav, les Hochanot) est dans
- * la liste, juste en dessous, et la fête en cours y remonte en tête : le
- * répéter au-dessus en faisait trois cartes pour une.
+ * One line below, at most, and only under an occasion: havdala on the
+ * evening a Chabbat or a holiday ends, otherwise the service under the first
+ * three. The rest (the bedtime Chema, the loulav, the Hochanot) is in the
+ * list, just below, and the current holiday moves up to its top: repeating
+ * it above made three cards for one.
+ *
+ * A service already said (`isDone`: checked off in Mon parcours, or its card
+ * swiped on the home page) gives way: the card goes to what comes next (the
+ * holiday, then the next service not yet said), and it is no longer the line
+ * under an occasion. The moon after Arvit is said is the moon alone.
  */
-export function sidourMoment(place: ZmanimPlace, now: Date = new Date()): SidourMoment {
+export function sidourMoment(
+  place: ZmanimPlace,
+  now: Date = new Date(),
+  isDone: (window: TefilaWindow) => boolean = () => false,
+): SidourMoment {
   const t = now.getTime();
   const times = zmanMap(place, now);
   const evening = hebrewDateFor(place, now, now);
@@ -447,12 +456,15 @@ export function sidourMoment(place: ZmanimPlace, now: Date = new Date()): Sidour
     };
   }
 
-  // 4. L'office en cours ; 6. celui qui vient.
+  // 4. The current service; 6. the one coming up. A service already said is
+  // neither: the next one not yet said takes its place.
   const current = currentTefilaWindow(place, now);
-  const window = current ?? nextTefilaWindow(place, now);
+  const currentDone = !!current && isDone(current);
+  const live = currentDone ? null : current;
+  const window = live ?? nextOpenWindow(place, now, isDone);
   const office = window ? officeOf(place, window) : null;
   const occasion = hero !== null;
-  if (!hero && office && current) {
+  if (!hero && office && live) {
     hero = { kind: "tefila", text: MOMENT_TEXTS[office.tefila], ...office };
   }
 
@@ -467,15 +479,15 @@ export function sidourMoment(place: ZmanimPlace, now: Date = new Date()): Sidour
 
   // La ligne dessous : la havdala d'abord, sinon l'office sous une occasion.
   let extra: SidourExtra | null = havdalaEvening(place, now, currentEvening);
-  if (!extra && occasion && office) {
+  if (!extra && occasion && office && !currentDone) {
     extra = {
       key: "tefila",
       text: MOMENT_TEXTS[office.tefila],
       tefila: office.tefila,
-      now: !!current,
+      now: !!live,
       start: office.start,
       end: office.end,
-      additions: current ? office.additions : [],
+      additions: live ? office.additions : [],
     };
   }
   // Pas de havdala sous une carte qui n'est ni l'office du soir ni une
@@ -489,10 +501,29 @@ export function sidourMoment(place: ZmanimPlace, now: Date = new Date()): Sidour
     tools: momentTools(
       place,
       now,
-      office ? { tefila: office.tefila, start: office.start, current: !!current } : null,
+      office ? { tefila: office.tefila, start: office.start, current: !!live } : null,
       day,
     ),
   };
+}
+
+/**
+ * The next service whose window has not opened yet and that is not already
+ * said (Min'ha checked off in the morning, from the wallet), within the three
+ * that follow.
+ */
+function nextOpenWindow(
+  place: ZmanimPlace,
+  now: Date,
+  isDone: (window: TefilaWindow) => boolean,
+): TefilaWindow | null {
+  let from = now;
+  for (let i = 0; i < 3; i++) {
+    const next = nextTefilaWindow(place, from);
+    if (!next || !isDone(next)) return next;
+    from = next.start;
+  }
+  return null;
 }
 
 /**

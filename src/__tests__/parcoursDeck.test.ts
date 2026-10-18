@@ -57,11 +57,14 @@ const objectives: Objective[] = [
 type Deck = ReturnType<typeof import("../composables/useTodayDeck").useTodayDeck>;
 type Store = ReturnType<typeof import("../composables/useParcours").useParcours>;
 
-async function mountDeck(extra: Objective[] = []): Promise<{ deck: Deck; store: Store }> {
+async function mountDeck(
+  extra: Objective[] = [],
+  base: Objective[] = objectives,
+): Promise<{ deck: Deck; store: Store }> {
   const { writeDeviceState } = await import("../services/parcours/deviceStore");
   const { emptyParcours } = await import("../services/parcours/model");
   const data = emptyParcours();
-  for (const objective of [...objectives, ...extra]) data.objectives[objective.id] = objective;
+  for (const objective of [...base, ...extra]) data.objectives[objective.id] = objective;
   writeDeviceState({ data, owner: null, dirty: { objectives: [], days: [] } });
 
   const { useTodayDeck } = await import("../composables/useTodayDeck");
@@ -96,7 +99,41 @@ describe("le paquet de l'accueil", () => {
     expect(deck.top.value?.view?.task.step).toBe("chaharit");
     expect(deck.top.value?.kicker).toBe(fr.parcours.hub.now);
     expect(deck.top.value?.meta).toMatch(/^jusqu'à \d{1,2}:\d{2}$/);
-    expect(deck.coversOffices.value).toBe(true);
+    // The habit carries the service: no second card for it.
+    expect(deck.day.value.some((card) => card.occasion?.kind === "tefila")).toBe(false);
+  });
+
+  it("puts the service whose time it is in the stack without the habit, outside the day's count", async () => {
+    const { deck } = await mountDeck(
+      [],
+      objectives.filter((objective) => objective.id !== "tef"),
+    );
+    const office = deck.top.value!;
+    expect(office.occasion).toMatchObject({ kind: "tefila", tefila: "chaharit" });
+    expect(office.kicker).toBe(fr.parcours.hub.now);
+    expect(office.meta).toMatch(/^jusqu'à \d{1,2}:\d{2}$/);
+    expect(office.extra).toBe(true);
+    // The daily text and the bedtime Chema: the service does not count.
+    expect(deck.count.value).toEqual({ done: 0, total: 2 });
+    // Swiped done, it leaves the stack and the device remembers it.
+    deck.markOccasion(office, true);
+    expect(deck.top.value?.view?.objective.id).toBe("t23");
+    expect(deck.day.value.find((card) => card.key === office.key)?.done).toBe(true);
+    expect(localStorage.getItem("pj_parcours_occasions")).toContain("tefila:2026-10-14-chaharit");
+  });
+
+  it("on a night of the moon, offers Arvit first, then the moon once Arvit is said", async () => {
+    // Tuesday 20 October 2026, 9 p.m. in Paris: Arvit, and the moon is blessed.
+    vi.setSystemTime(new Date("2026-10-20T19:00:00Z"));
+    const { deck } = await mountDeck(
+      [],
+      objectives.filter((objective) => objective.id !== "tef"),
+    );
+    const [first, second] = deck.pending.value;
+    expect(first.occasion).toMatchObject({ kind: "tefila", tefila: "arvit" });
+    expect(second.occasion?.kind).toBe("halevana");
+    deck.markOccasion(first, true);
+    expect(deck.top.value?.occasion?.kind).toBe("halevana");
   });
 
   it("passe dessous ce qu'on remet à plus tard, l'office compris", async () => {

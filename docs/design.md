@@ -555,6 +555,14 @@ The page has three tiers (`SidourPage.vue`):
   Sli'hot); otherwise the card announces the upcoming service rather than
   disappearing: on the home page, an empty card withdraws; here, it is the
   page's reason for being;
+- **a service already said gives way**: checked off in Mon parcours (the
+  « trois tefilot » habit) or swiped on the home page, it no longer holds
+  the card, which goes to what comes next (the holiday, then the next
+  service not yet said: Min'ha once Cha'harit is said, tomorrow's
+  Cha'harit after Arvit). Under an occasion, it is no longer the line
+  either: on a night of the moon, once Arvit is said, the moon is alone
+  (`useOfficesDone`, held by `src/__tests__/sidourMoment.test.ts`, « a
+  service already said gives way »);
 - **one line below, at most**, and only on an evening of an occasion: the
   service under the lighting, the Sli'hot or the moon, which preceded it in
   the card; havdala on the evening a Chabbat or a holiday ends. On other
@@ -2234,9 +2242,8 @@ time, the time in large type), the untitled shelf.
   programme » ("See the program"). Each gesture has its button there, for
   those who do not swipe, and on the site.
 - **The order**: the 'Hanouka lighting at its time, the service whose time
-  it is if it is in the parcours (the card says « Maintenant » ("Now") and
-  until when, and then replaces the Sidour shortcut), the moon and the
-  'Omer, then the present moment, those coming up, those already past,
+  it is (the card says « Maintenant » ("Now") and until when), the moon and
+  the 'Omer, then the present moment, those coming up, those already past,
   « Rattraper », and finally what was put off until later. A service says
   until when, or from when if it is upcoming.
 - **Not time yet.** A service whose time has not come (Min'ha in the
@@ -2264,6 +2271,17 @@ time, the time in large type), the untitled shelf.
   long as the parcours has started. They do not count in the day: once
   done, the device remembers them (`services/parcours/occasions.ts`), so
   that a blessed moon does not come back the following night.
+- **The services are in the stack for everyone.** Without the « trois
+  tefilot » habit (or on a day it leaves out), the service whose time it is
+  still comes into the stack, as an extra card: « Maintenant », until when,
+  the sidour, in light. It opens the text, is swiped done like an occasion,
+  and does not count in the day, on the wall or in the streak: only the
+  habit, chosen, counts the services. It replaces the Sidour shortcut of
+  the home page, which stays silent once the parcours has started. On a
+  night of the moon, Arvit comes first and the moon right after: once
+  Arvit is swiped, the moon is on top. What is swiped here is also what the
+  Sidour page knows is said (see "The Sidour opens on the moment"). Held by
+  `src/__tests__/parcoursDeck.test.ts`.
 - **« Rattraper »** ("Catch up"), an extra card for a program that is behind
   (« si vous avez un moment », "if you have a moment"), leads to the catch-up
   sheet; swiped right, the backlog is marked as read.

@@ -133,9 +133,11 @@ function dismissAccountCta() {
 // un compte, le visiteur a la page d'accueil du site. ---
 const dashboard = computed(() => user.value !== null || isNativeApp);
 
-/** Le paquet porte les offices du jour : le raccourci du Sidour se tait. */
-const officesInDeck = ref(false);
-/** Le parcours a commencé : la lune et le 'Omer sont des cartes de la pile. */
+/**
+ * The parcours has begun: the service whose time it is, the moon and the
+ * 'Omer are cards of the stack, and their shortcuts on the home page fall
+ * silent.
+ */
 const parcoursBegun = ref(false);
 
 /** The order of the blocks under the deck, and the hidden ones (useHomeLayout). */
@@ -350,7 +352,6 @@ onUnmounted(() => {
           class="dash-card"
           :class="{ 'deck-resting': editing }"
           :inert="editing || undefined"
-          @offices="(covered) => (officesInDeck = covered)"
           @begun="(begun) => (parcoursBegun = begun)"
         />
 
@@ -395,16 +396,13 @@ onUnmounted(() => {
                 @click="trackCard('zmanim')"
               />
 
-              <!-- C'est le temps d'une prière : le sidour à un geste, avec l'heure
-                 limite. Absent entre deux offices, et quand le paquet du
-                 parcours porte déjà les offices. -->
-              <SidourNowCard v-if="!officesInDeck" />
-
-              <!-- La bénédiction de la lune : une fenêtre de quelques nuits par
-                 mois, qui se rate faute de rappel. Absente le reste du temps,
-                 et quand le parcours a commencé : sa carte est dans la pile,
-                 avec celle du 'Omer. -->
+              <!-- Before the parcours begins: the sidour one gesture away
+                 while a service's time lasts, and the blessing of the moon (a
+                 few nights a month, missed for lack of a reminder) with the
+                 'Omer. Once it has begun, these are cards of the stack, with
+                 or without the « trois tefilot » habit. -->
               <template v-if="!parcoursBegun">
+                <SidourNowCard />
                 <BirkatHalevanaBanner />
                 <OmerBanner />
               </template>
