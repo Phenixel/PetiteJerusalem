@@ -47,6 +47,7 @@ async function ouvre(
   props: {
     tefila?: boolean;
     halakhot?: boolean;
+    chneiMikra?: boolean;
     shareTitle?: string;
     phonetic?: boolean | null;
     pageForm?: "daf" | "scroll" | null;
@@ -274,6 +275,20 @@ describe("menu de lecture", () => {
     await settle();
     expect(halakhotHidden.value).toBe(true);
     setHalakhotHidden(false);
+  });
+
+  it("ne propose les options du chnei mikra que sur sa page", async () => {
+    const guemara = await ouvre();
+    boutonReglages(guemara.host)!.click();
+    await settle();
+    expect(guemara.host.textContent).not.toContain(fr.chneiMikra.doubleVerses);
+    expect(guemara.host.textContent).not.toContain(fr.chneiMikra.withRashi);
+
+    const paracha = await ouvre({ chneiMikra: true });
+    boutonReglages(paracha.host)!.click();
+    await settle();
+    expect(interrupteur(paracha.host, fr.chneiMikra.doubleVerses)).toBeDefined();
+    expect(interrupteur(paracha.host, fr.chneiMikra.withRashi)).toBeDefined();
   });
 
   it("ouvre le formulaire de support depuis la lecture, et referme le panneau", async () => {

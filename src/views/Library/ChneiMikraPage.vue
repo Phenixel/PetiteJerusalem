@@ -23,9 +23,8 @@ import { useAutoScroll } from "../../composables/useAutoScroll";
 import { useKeepAwake } from "../../composables/useKeepAwake";
 import { useChneiMikraOptions } from "../../composables/useChneiMikraOptions";
 import AppIcon from "../../components/icons/AppIcon.vue";
-import ChneiMikraOptions from "../../components/ChneiMikraOptions.vue";
-import ChneiMikraChecklist from "../../components/ChneiMikraChecklist.vue";
 import { useChneiMikraChecks } from "../../composables/useChneiMikraChecks";
+import ProgressBar from "../../components/ProgressBar.vue";
 import ReadingMenu from "../../components/ReadingMenu.vue";
 import ReadingProgressBar from "../../components/ReadingProgressBar.vue";
 import ReadingSizeControl from "../../components/ReadingSizeControl.vue";
@@ -59,7 +58,7 @@ const route = useRoute();
 const router = useRouter();
 // App native : pincer dans la page agrandit le texte lu, pas la page.
 useReadingPinch();
-// Verset écrit deux fois, Rachi : réglage partagé avec la lecture quotidienne.
+// Verse written twice, Rashi: set in the reading menu, shared with the daily reading.
 const { doubleVerses, withRashi } = useChneiMikraOptions();
 
 const WEEK_PARAM = "semaine";
@@ -132,26 +131,25 @@ const monteesLabel = computed(() =>
 );
 
 /**
- * Les montées cochées de la semaine (useChneiMikraChecks), dans la liste et
- * dans le texte : une seule chose, gardée par Mon parcours.
+ * The week's checked aliyot (useChneiMikraChecks), kept by Mon parcours: each
+ * one is checked at its end in the text, and the bar at the top of the page
+ * says where the week stands.
  */
 const aliyaChecks = useChneiMikraChecks();
 const aliyotCount = computed(() => (parasha.value?.entries.length ?? 0) * ALIYOT_PER_PARASHA);
 const checkedAliyot = computed(() =>
   parasha.value ? aliyaChecks.checked(parasha.value.weekKey, aliyotCount.value) : new Set<number>(),
 );
-const parashaNames = computed(() =>
-  (parasha.value?.entries ?? []).map((entry) => appendHebrewNumeral(entry.name)),
+const aliyotDone = computed(() => checkedAliyot.value.size);
+const aliyotPercent = computed(() =>
+  aliyotCount.value > 0 ? Math.round((aliyotDone.value / aliyotCount.value) * 100) : 0,
 );
 /** Les montées cochées d'un des textes de la semaine (le second d'une double part de 7). */
 function checkedIn(entryIndex: number): number[] {
   const base = entryIndex * ALIYOT_PER_PARASHA;
   return [...checkedAliyot.value].filter((a) => a >= base).map((a) => a - base);
 }
-/** Le titre d'une montée, comme le texte la nomme (« 2e montée »), pour la mesure d'audience. */
-const aliyaLabel = (n: number) => (n === 1 ? "1re montée" : `${n}e montée`);
-
-function setAliya(aliya: number, done: boolean, source: "list" | "text", label?: string): void {
+function setAliya(aliya: number, done: boolean, label: string): void {
   const week = parasha.value;
   if (!week) return;
   aliyaChecks.setChecked(week.weekKey, aliya, aliyotCount.value, done);
@@ -159,15 +157,12 @@ function setAliya(aliya: number, done: boolean, source: "list" | "text", label?:
   analyticsService.capture("chnei_mikra_aliya_toggled", {
     done,
     text_id: entry?.id ?? null,
-    aliya: label ?? aliyaLabel((aliya % ALIYOT_PER_PARASHA) + 1),
-    source,
+    aliya: label,
+    source: "text",
   });
 }
-function toggleFromList(aliya: number): void {
-  setAliya(aliya, !checkedAliyot.value.has(aliya), "list");
-}
 function toggleFromText(entryIndex: number, index: number, done: boolean, label: string): void {
-  setAliya(entryIndex * ALIYOT_PER_PARASHA + index, done, "text", label);
+  setAliya(entryIndex * ALIYOT_PER_PARASHA + index, done, label);
 }
 /** Les coches de la version d'avant, reprises une fois (voir takeLegacyChecks). */
 function adoptLegacy(entryIndex: number, indexes: number[]): void {
@@ -300,31 +295,32 @@ watch([title, locale, localeMessagesReady], applySeoMeta, { immediate: true });
           <ReadingSizeControl />
         </div>
 
-        <!-- Options de lecture : verset écrit deux fois, commentaire de Rachi -->
-        <ChneiMikraOptions class="mt-4" source="library_chnei_mikra" />
+        <!-- Where the week stands: the aliyot checked at the end of each one in
+             the text, as on « Mes Téhilim » and the daily reading. -->
+        <div class="mt-4">
+          <div class="mb-2 flex items-center justify-between">
+            <span class="text-sm font-medium">
+              {{ t("chneiMikra.progress", { done: aliyotDone, total: aliyotCount }) }}
+            </span>
+            <span class="text-sm font-semibold text-primary">{{ aliyotPercent }} %</span>
+          </div>
+          <ProgressBar :value="aliyotPercent" :label="t('chneiMikra.title')" />
+        </div>
 
         <!-- La paracha change : on remonte des composants neufs plutôt que de
              recycler ceux du texte précédent, marque-pages compris. -->
         <div :key="parasha.weekKey" class="mt-8 space-y-10">
-          <div class="space-y-3">
-            <!-- Une montée par jour : celles de la carte, et de quoi lire tout le reste. -->
-            <div v-if="montees" class="card flex items-center justify-between gap-3 px-4 py-3">
-              <p class="min-w-0">
-                <span class="block text-[13px] font-semibold text-text-secondary">
-                  {{ t("chneiMikra.today") }}
-                </span>
-                <span class="block font-bold">{{ monteesLabel }}</span>
-              </p>
-              <button type="button" class="btn btn-soft min-h-10 flex-none px-4" @click="showWhole">
-                {{ t("chneiMikra.whole") }}
-              </button>
-            </div>
-            <!-- Les montées de la semaine, à cocher une à une, dans l'ordre qu'on veut. -->
-            <ChneiMikraChecklist
-              :names="parashaNames"
-              :checked="checkedAliyot"
-              @toggle="toggleFromList"
-            />
+          <!-- Une montée par jour : celles de la carte, et de quoi lire tout le reste. -->
+          <div v-if="montees" class="card flex items-center justify-between gap-3 px-4 py-3">
+            <p class="min-w-0">
+              <span class="block text-[13px] font-semibold text-text-secondary">
+                {{ t("chneiMikra.today") }}
+              </span>
+              <span class="block font-bold">{{ monteesLabel }}</span>
+            </p>
+            <button type="button" class="btn btn-soft min-h-10 flex-none px-4" @click="showWhole">
+              {{ t("chneiMikra.whole") }}
+            </button>
           </div>
           <DailyReadingItem
             v-for="shown in shownEntries"
@@ -352,7 +348,7 @@ watch([title, locale, localeMessagesReady], applySeoMeta, { immediate: true });
 
     <!-- Comme les autres textes de la bibliothèque : le menu de lecture et la
          progression au bas de l'écran. -->
-    <ReadingMenu :share-title="shareTitle" />
+    <ReadingMenu :share-title="shareTitle" chnei-mikra />
     <ReadingProgressBar />
   </main>
 </template>

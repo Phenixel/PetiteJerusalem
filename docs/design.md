@@ -1171,6 +1171,17 @@ should discover that a halakha existed on the day they would have needed
 it. The setting only shows on a text that carries some: offering to hide
 what the page does not display would suggest something was missed.
 
+On the chnei mikra page, its two options join them too: « Chaque verset deux
+fois » ("Each verse twice", on at the start: it is the practice itself) and
+« Commentaire de Rachi » ("Rashi's commentary"), each with its hint. They
+used to be two switches above the text, under the paracha's name: the only
+reading options of the library left outside the menu, and one more block
+between the title and the text. They stay shared with the daily reading
+(`useChneiMikraOptions`). Held by `src/__tests__/readingMenu.test.ts` (« ne
+propose les options du chnei mikra que sur sa page ») and
+`src/__tests__/chneiMikraPage.test.ts` (« propose les options de lecture
+dans le menu de lecture, et les retient »).
+
 Under the switches, a rule, then what is done with a gesture instead of
 being set: sharing the text being read, writing to the team, and, on the
 site, getting the app. These three were only in the footer or in the About
@@ -1229,26 +1240,28 @@ tikoun): neither one shows it.
 
 ### Chnei mikra is checked off aliyah by aliyah
 
-On the chnei mikra page, each aliyah carries its checkbox, next to its
-title: a pill carrying its name (« Marquer lue », "Mark as read", then
-« Lue », "Read", the box filled in the theme color). Chnei mikra is read over
-the course of the week, an aliyah or two at a time; the box says where you
-stand. The checks are stored by week (the Chabbat of the paracha): the
-following week starts from zero, and browsing back to a past paracha finds
-its own. The daily reading, which also shows chnei mikra, does not carry
-them: it already has « Marquer lu » per section.
+On the chnei mikra page, each aliyah ends with « Marquer comme lue » ("Mark
+as read", then « Lue », "Read", with its check in the theme color): the
+same button, at the same place, as a psalm of « Mes Téhilim » or a text of
+the daily reading. Chnei mikra is read over the course of the week, an
+aliyah or two at a time, and one checks it off where one stops reading. The
+aliyah's title above the text stays a plain marker.
 
-Above the text, the week's list shows them all at a glance
-(`ChneiMikraChecklist.vue`): a card titled « Les montées de la semaine »
-("The week's aliyot"), the count on the right (« 3 sur 7 », "3 of 7"), then
-the name of the paracha and its seven aliyot by name (Cohen, Lévi, Chlichi,
-Revi'i, 'Hamichi, Chichi, Chevi'i), in the same pills as the boxes in the
-text (`AliyaCheck.vue`); a double paracha has both its names, each with its
-seven. The list and the boxes say the same thing, and are kept in Mon
-parcours, carried along by the account and tied to the « une montée par
-jour » ("one aliyah a day") chnei mikra (see `docs/parcours.md`). Feedback
-from a reader of the app asked for it: checking off without hunting for the
-aliyah in the text.
+At the top of the page, under the paracha's name, a bar says where the week
+stands (« Montées lues : 3 sur 7 », "Aliyot read: 3 of 7", its percentage,
+and the `ProgressBar`), fourteen for a double paracha. No card around it
+and no list of the aliyot: an earlier version put a card « Les montées de
+la semaine » above the text, with the seven aliyot by name to tick, and a
+pill beside each title in the text; two ways of doing one thing, and a
+frame more at the top of a page that is already long. The owner asked for
+the pattern of the Tehilim instead.
+
+The checks are stored by week (the Chabbat of the paracha): the following
+week starts from zero, and browsing back to a past paracha finds its own.
+They are kept in Mon parcours, carried along by the account and tied to the
+« une montée par jour » ("one aliyah a day") chnei mikra (see
+`docs/parcours.md`). The daily reading, which also shows chnei mikra, does
+not carry them: it already has « Marquer lu » per section.
 
 ### The translation reads under the verse
 
