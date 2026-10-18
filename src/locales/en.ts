@@ -275,6 +275,10 @@ const en: LocaleMessages = {
         title: "Reading settings",
         text: "The second button holds auto-scroll, sharing the text and the form to write to us.",
       },
+      settingsAlone: {
+        title: "Reading settings",
+        text: "This button holds the text size, auto-scroll, the way back to the top, sharing the text and the form to write to us.",
+      },
       download: {
         title: "Read offline",
         text: "This command downloads the text to the device: it then opens without a network. A tick says it is there.",

@@ -113,6 +113,14 @@ const LOCALIZED_SECTIONS: LocalizedSection[] = [
   { section: "conditions", component: ContentPage },
 ];
 
+/**
+ * The pages that never show the back-to-top button (ScrollToTop.vue): the
+ * home page, sign-in, forms, profile and settings, message threads (read
+ * from the bottom), the 404. Pages that are merely short need nothing here:
+ * the button already stays away from a page with little to scroll.
+ */
+const NO_SCROLL_TO_TOP = { scrollToTop: false } as const;
+
 /** Une route par section traduite et par langue préfixée. */
 function localizedRoutes(): RouteRecordSingleView[] {
   const locales = SEO_LOCALES.filter(
@@ -123,7 +131,7 @@ function localizedRoutes(): RouteRecordSingleView[] {
       {
         path: sectionPath(section, locale),
         name: `${section}-${locale}`,
-        meta: { offlineOk: true },
+        meta: { offlineOk: true, ...(section === "home" ? NO_SCROLL_TO_TOP : {}) },
         component,
       },
       ...(child
@@ -144,13 +152,14 @@ export default [
   {
     path: "/",
     name: "home",
-    meta: { offlineOk: true },
+    meta: { offlineOk: true, ...NO_SCROLL_TO_TOP },
     component: HomeView,
   },
   {
     path: "/login",
     name: "login",
     component: LoginView,
+    meta: NO_SCROLL_TO_TOP,
   },
   {
     path: "/profile",
@@ -163,7 +172,7 @@ export default [
     // compte (langue, thème, polices, à propos), et ces réglages sont locaux :
     // elle se rend hors ligne aussi. Le web garde la garde de connexion : les
     // réglages n'y sont proposés qu'aux comptes.
-    meta: { requiresAuth: !isNativeApp, offlineOk: isNativeApp },
+    meta: { requiresAuth: !isNativeApp, offlineOk: isNativeApp, ...NO_SCROLL_TO_TOP },
   },
   // Les sous-pages du profil de l'app. Le site n'en a pas : son menu change
   // de panneau sur place. Les réglages d'appareil s'ouvrent sans compte et
@@ -174,13 +183,13 @@ export default [
           path: "/profile/:section(appearance|language|notifications|preferences)",
           name: "profile-settings",
           component: NativeProfileSection,
-          meta: { offlineOk: true },
+          meta: { offlineOk: true, ...NO_SCROLL_TO_TOP },
         },
         {
           path: "/profile/:section(account|security)",
           name: "profile-account",
           component: NativeProfileSection,
-          meta: { requiresAuth: true },
+          meta: { requiresAuth: true, ...NO_SCROLL_TO_TOP },
         },
       ]
     : []),
@@ -199,6 +208,7 @@ export default [
     path: "/share-reading/new-session",
     name: "new-session",
     component: NewSession,
+    meta: NO_SCROLL_TO_TOP,
   },
   {
     path: "/share-reading/session/:slug",
@@ -262,6 +272,7 @@ export default [
       path: "/parcours/nouveau",
       name: "parcours-new",
       component: NouvelObjectifPage,
+      meta: NO_SCROLL_TO_TOP,
     },
     {
       path: "/parcours/objectif/:id",
@@ -272,8 +283,12 @@ export default [
       path: "/parcours/objectif/:id/reglages",
       name: "parcours-objective-settings",
       component: ProgrammeReglagesPage,
+      meta: NO_SCROLL_TO_TOP,
     },
-  ].map((route) => ({ ...route, meta: { requiresAuth: !isNativeApp, offlineOk: isNativeApp } })),
+  ].map((route) => ({
+    ...route,
+    meta: { ...route.meta, requiresAuth: !isNativeApp, offlineOk: isNativeApp },
+  })),
   // Chnei mikra : la paracha de la semaine avec son Targoum, ouverte à tous.
   // La semaine se choisit en query (`?semaine=2026-08-15`) plutôt qu'en
   // segment, qui se confondrait avec /bibliotheque/:corpus/:slug.
@@ -449,13 +464,13 @@ export default [
     path: "/contact",
     name: "support",
     component: SupportPage,
-    meta: { requiresAuth: !isNativeApp },
+    meta: { requiresAuth: !isNativeApp, ...NO_SCROLL_TO_TOP },
   },
   {
     path: "/contact/:id",
     name: "support-thread",
     component: SupportThreadPage,
-    meta: { requiresAuth: !isNativeApp },
+    meta: { requiresAuth: !isNativeApp, ...NO_SCROLL_TO_TOP },
   },
   {
     path: "/informations/:id",
@@ -469,6 +484,7 @@ export default [
     path: "/sondage/:id",
     name: "announcement-poll",
     component: AnnouncementDetailPage,
+    meta: NO_SCROLL_TO_TOP,
   },
   // Studio auteurs : accès par lien secret distribué par l'admin (pas de
   // compte). Page volontairement absente de toute navigation, et noindex.
@@ -486,20 +502,31 @@ export default [
     children: [
       { path: "", name: "admin-dashboard", component: AdminDashboardPage },
       { path: "chiourim", name: "admin-chiourim", component: AdminChiourimPage },
-      { path: "chiourim/:slug", name: "admin-chiour-edit", component: AdminChiourEditPage },
+      {
+        path: "chiourim/:slug",
+        name: "admin-chiour-edit",
+        component: AdminChiourEditPage,
+        meta: NO_SCROLL_TO_TOP,
+      },
       { path: "auteurs", name: "admin-auteurs", component: AdminAuteursPage },
       { path: "auteurs/:auteurId", name: "admin-auteur-detail", component: AdminAuteurDetailPage },
       // Modération des sessions signalées (exigence App Store 1.2).
       { path: "sessions", name: "admin-sessions", component: AdminSessionsPage },
       // Nous écrire : les messages des utilisateurs, et les réponses.
       { path: "messages", name: "admin-support", component: AdminSupportPage },
-      { path: "messages/:id", name: "admin-support-thread", component: AdminSupportThreadPage },
+      {
+        path: "messages/:id",
+        name: "admin-support-thread",
+        component: AdminSupportThreadPage,
+        meta: NO_SCROLL_TO_TOP,
+      },
       // Informations de l'équipe : écrire, publier, notifier.
       { path: "informations", name: "admin-announcements", component: AdminAnnouncementsPage },
       {
         path: "informations/:id",
         name: "admin-announcement-edit",
         component: AdminAnnouncementEditPage,
+        meta: NO_SCROLL_TO_TOP,
       },
     ],
   },
@@ -606,7 +633,7 @@ export default [
   {
     path: "/:pathMatch(.*)*",
     name: "not-found",
-    meta: { offlineOk: true },
+    meta: { offlineOk: true, ...NO_SCROLL_TO_TOP },
     component: NotFound,
   },
 ];

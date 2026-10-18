@@ -135,10 +135,8 @@ describe("ChneiMikraPage", () => {
 
     // Not above the text: in the reading settings, with the other options.
     expect(page.text()).not.toContain("Chaque verset deux fois");
+    // No landmark in the menu: its single round button opens the settings.
     page.host.querySelector<HTMLButtonElement>('button[aria-haspopup="menu"]')!.click();
-    await nextTick();
-    page.host.querySelector<HTMLButtonElement>(".fab-second button")!.click();
-    // The menu view leaves (out-in transition) before the settings come in.
     await nextTick();
     await new Promise((resolve) => requestAnimationFrame(resolve));
     await new Promise((resolve) => requestAnimationFrame(resolve));

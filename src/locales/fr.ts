@@ -277,6 +277,10 @@ const fr = {
         title: "Les réglages de lecture",
         text: "Le second rond porte le défilement automatique, le partage du texte et le formulaire pour nous écrire.",
       },
+      settingsAlone: {
+        title: "Les réglages de lecture",
+        text: "Ce bouton porte la taille du texte, le défilement automatique, le retour en haut de page, le partage du texte et le formulaire pour nous écrire.",
+      },
       download: {
         title: "Lire hors ligne",
         text: "Cette commande télécharge le texte sur l'appareil : il s'ouvre ensuite sans réseau. Une coche dit qu'il y est.",

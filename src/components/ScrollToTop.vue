@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, onUnmounted, watch } from "vue";
+import { useRoute } from "vue-router";
 import AppIcon from "./icons/AppIcon.vue";
 import { useMiniPlayerVisible } from "../composables/useAudioPlayer";
 import { isNativeApp } from "../composables/useNativeApp";
@@ -9,6 +10,19 @@ import { TABLE_BAR_REM } from "../composables/useBottomChrome";
 import { tableBarVisible } from "../composables/useReadingTable";
 
 const isVisible = ref(false);
+
+/**
+ * Where the button has nothing to do:
+ * - a route that opts out with `meta: { scrollToTop: false }` (home page,
+ *   sign-in, forms, profile and settings, a message thread; see routes.ts);
+ * - a page with less than `MIN_SCROLL_SCREENS` screens to scroll back: a
+ *   flick of the thumb brings its top back, and the button would only cover
+ *   the content.
+ * Held by `src/__tests__/scrollToTop.test.ts`.
+ */
+const MIN_SCROLL_SCREENS = 2;
+const route = useRoute();
+const routeAllows = computed(() => route.meta.scrollToTop !== false);
 // Le pointeur survole le bouton : on ne le masque pas sous la main de
 // l'utilisateur qui s'apprête à cliquer.
 const isHovered = ref(false);
@@ -43,8 +57,10 @@ const armHideTimer = () => {
 // de défilement pour toute l'app, et rien à mesurer ici.
 const scrollFrame = useScrollFrame();
 
-const checkScroll = (scrollY: number) => {
-  if (scrollY > 300) {
+const checkScroll = () => {
+  const { scrollY, viewport, docHeight } = scrollFrame.value;
+  const longPage = docHeight - viewport >= MIN_SCROLL_SCREENS * viewport;
+  if (routeAllows.value && longPage && scrollY > 300) {
     isVisible.value = true;
     armHideTimer();
   } else {
@@ -71,6 +87,8 @@ const scrollToTop = () => {
 };
 
 watch(() => scrollFrame.value.scrollY, checkScroll);
+// A new page starts without the button, whatever the previous one showed.
+watch(() => route.path, checkScroll);
 
 onUnmounted(() => {
   if (hideTimer) clearTimeout(hideTimer);

@@ -1200,6 +1200,24 @@ change.
 In the app, the button is not repeated: the page there is already topped by
 two tabs and a bottom bar, and the settings are one gesture away.
 
+### Back to top, only where the way back is long
+
+The back-to-top button (`ScrollToTop.vue`) shows while scrolling, then fades
+out. It only shows where going back up takes effort:
+
+- **not on a short page**: under two screens to scroll back, a flick of the
+  thumb is enough, and the button would only cover the content;
+- **not on the pages that opt out** with `meta: { scrollToTop: false }`
+  (`NO_SCROLL_TO_TOP` in `src/router/routes.ts`): the home page (in the app,
+  touching its tab again goes back up), sign-in, the forms (new reading
+  session, new goal, a program's settings, the admin edit pages), the
+  profile and its settings, the contact page, a message thread (read from
+  the bottom, like a conversation), a poll and the 404.
+
+The confirmations and thanks are dialogs and toasts, not pages: they never
+had the button. On a library text, the reading menu takes its place (below).
+Held by `src/__tests__/scrollToTop.test.ts`.
+
 ### The reading menu opens above its button
 
 On a library text, a round button at the bottom right (`ReadingMenu.vue`)
@@ -1215,6 +1233,17 @@ one, which switches the panel from the table of contents to the settings.
 The two circles then swap roles: the left one takes back the table of
 contents icon and returns to it, the right one becomes the cross. The cross
 is always on the circle touched last: you leave from where you came in.
+
+A text whose table of contents would carry nothing but the text size and
+« Haut de page » (no landmark, no Hebrew / phonetic toggle, nothing to
+download or set aside, no compass or mirror: the daily Tehilim, the chnei
+mikra, a reading session) keeps **a single circle**, the settings one. A
+menu button that only led back to the top, next to the settings, was one
+button too many. The settings then open directly and take in the text size
+(at the top) and « Haut de page » (first of the commands under the
+switches); the circle becomes the cross that closes. Held by
+`src/__tests__/readingMenu.test.ts` (« garde un seul bouton rond, les
+réglages, quand le sommaire n'a rien d'autre que le haut de page »).
 
 These settings are the ones you change **while** reading, not before:
 auto-scroll (the same switch as in Preferences, see "A gesture that
