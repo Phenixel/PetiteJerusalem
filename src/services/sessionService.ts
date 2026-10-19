@@ -299,6 +299,24 @@ class SessionService {
     );
   }
 
+  /**
+   * Re-reads the reservations of a chain, in place, after a conflict
+   * (SlotTakenError): the view held the slot as free, and the transaction
+   * refused it. Without this re-read the section keeps showing as available,
+   * so the reader taps again and gets the same refusal (four attempts in one
+   * minute on 16 October 2026, `reservation_failed` with `reason: "conflict"`).
+   * The session object is mutated, like the local additions made after a
+   * successful reservation, so the views' reservation index rebuilds on its
+   * own. A chain that has disappeared leaves the local state untouched: the
+   * conflict message has already been shown, and the page says it on its next
+   * load.
+   */
+  async refreshReservations(session: Session): Promise<void> {
+    const latest = await this.getSessionById(session.id);
+    if (!latest) return;
+    session.reservations = Array.isArray(latest.reservations) ? latest.reservations : [];
+  }
+
   async createBatchReservationsForUser(
     sessionId: string,
     items: ReservationSlot[],

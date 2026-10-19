@@ -1786,6 +1786,13 @@ async function reserve() {
       error_message: e instanceof Error ? e.message : String(e),
       source: "reading_page",
     });
+    // The section was taken while the passage was open: the chain is re-read
+    // so the bar says who holds it instead of still offering it. Without it
+    // the reader pressed "Reserve" again and again on the same section (four
+    // attempts in one minute, in October 2026).
+    if (e instanceof SlotTakenError && session.value) {
+      await sessionService.refreshReservations(session.value);
+    }
     // Le message affiché vient du code de l'erreur (errors.*), jamais du
     // message brut du service.
     toast.errorFromException(e, t("textReading.reserveError"));
