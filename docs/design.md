@@ -1200,23 +1200,26 @@ change.
 In the app, the button is not repeated: the page there is already topped by
 two tabs and a bottom bar, and the settings are one gesture away.
 
-### Back to top, only where the way back is long
+### Back to top, only on long lists
 
-The back-to-top button (`ScrollToTop.vue`) shows while scrolling, then fades
-out. It only shows where going back up takes effort:
+The back-to-top button (`ScrollToTop.vue`) is the exception, not the rule.
+A page goes without it unless it asks for it with
+`meta: { scrollToTop: true }` (`SCROLL_TO_TOP` in `src/router/routes.ts`),
+and only long lists one goes down to pick an item ask for it:
 
-- **not on a short page**: under two screens to scroll back, a flick of the
-  thumb is enough, and the button would only cover the content;
-- **not on the pages that opt out** with `meta: { scrollToTop: false }`
-  (`NO_SCROLL_TO_TOP` in `src/router/routes.ts`): the home page (in the app,
-  touching its tab again goes back up), sign-in, the forms (new reading
-  session, new goal, a program's settings, the admin edit pages), the
-  profile and its settings, the contact page, a message thread (read from
-  the bottom, like a conversation), a poll and the 404.
+- the texts to take in a reading session (`detail-session`);
+- the texts of a library section (`study-corpus`);
+- the chapters, or the texts, inside a book (`etude-reading`,
+  `text-reading` and their section routes; once a chapter is open, the
+  reading menu takes the button's place, see below);
+- the audio classes: the list, an author, a series, a class
+  (`chiourim`, `auteur-chiourim`, `serie-chiourim`, `detail-chiour`).
 
-The confirmations and thanks are dialogs and toasts, not pages: they never
-had the button. On a library text, the reading menu takes its place (below).
-Held by `src/__tests__/scrollToTop.test.ts`.
+Even there, it only shows once the top is **more than three screens away**:
+closer than that, a few flicks of the thumb bring it back, and the button
+would only cover the content. It shows while scrolling, then fades out.
+Adding a page to the list is a decision: it is written here first. Held by
+`src/__tests__/scrollToTop.test.ts`.
 
 ### The reading menu opens above its button
 

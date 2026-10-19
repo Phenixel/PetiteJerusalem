@@ -4,11 +4,11 @@ import { createI18n } from "vue-i18n";
 import { createMemoryHistory, createRouter } from "vue-router";
 
 /**
- * The back-to-top button only shows where going back up takes effort: not on
- * a page with less than two screens to scroll back, and not on the routes
- * that opt out (`meta: { scrollToTop: false }`: home page, sign-in, forms,
- * profile and settings, message threads). See docs/design.md, "Back to top,
- * only where the way back is long".
+ * The back-to-top button is the exception: it only shows on the routes that
+ * ask for it (`meta: { scrollToTop: true }`: the texts of a session or of a
+ * library section, the chapters of a book, the audio classes), and only once
+ * the top is more than three screens away. See docs/design.md, "Back to top,
+ * only on long lists".
  */
 
 vi.mock("../composables/useNativeApp", () => ({ isNativeApp: false, appPlatform: "web" }));
@@ -52,7 +52,7 @@ async function mountAt(path: string) {
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [
-      { path: "/accueil", component: { render: () => null }, meta: { scrollToTop: false } },
+      { path: "/chiourim", component: { render: () => null }, meta: { scrollToTop: true } },
       { path: "/:chemin(.*)*", component: { render: () => null } },
     ],
   });
@@ -81,30 +81,29 @@ afterEach(() => {
 });
 
 describe("bouton de remontée", () => {
-  it("paraît en défilant une page longue", async () => {
-    stubPage(VIEWPORT * 6);
+  it("paraît sur une liste longue, à plus de trois écrans du haut", async () => {
+    stubPage(VIEWPORT * 10);
     await mountAt("/chiourim");
-    await scrollDown(1600);
+    await scrollDown(VIEWPORT * 3 + 100);
     expect(button()).not.toBeNull();
   });
 
-  it("ne paraît pas sur une page courte, qu'un geste suffit à remonter", async () => {
-    // Moins de deux écrans à remonter.
-    stubPage(VIEWPORT * 2.5);
+  it("attend d'être à plus de trois écrans du haut", async () => {
+    stubPage(VIEWPORT * 10);
     await mountAt("/chiourim");
-    await scrollDown(1100);
+    await scrollDown(VIEWPORT * 2.5);
     expect(button()).toBeNull();
   });
 
-  it("ne paraît pas sur une page qui s'en passe, même longue", async () => {
-    stubPage(VIEWPORT * 6);
-    await mountAt("/accueil");
-    await scrollDown(1600);
+  it("ne paraît pas sur une page qui ne le demande pas, même longue", async () => {
+    stubPage(VIEWPORT * 10);
+    await mountAt("/profile");
+    await scrollDown(VIEWPORT * 5);
     expect(button()).toBeNull();
   });
 });
 
-describe("pages sans bouton de remontée", () => {
+describe("pages avec bouton de remontée", () => {
   /** Every route record, children included, by name. */
   const byName = new Map<string, { meta?: Record<string, unknown> }>();
   const walk = (list: typeof routes) => {
@@ -115,32 +114,22 @@ describe("pages sans bouton de remontée", () => {
   };
   walk(routes);
 
-  it.each([
-    "home",
-    "login",
-    "profile",
-    "new-session",
-    "parcours-new",
-    "parcours-objective-settings",
-    "support",
-    "support-thread",
-    "announcement-poll",
-    "admin-chiour-edit",
-    "admin-announcement-edit",
-    "admin-support-thread",
-    "not-found",
-  ])("%s s'en passe", (name) => {
-    expect(byName.get(name)?.meta?.scrollToTop).toBe(false);
-  });
+  /** The opted-in pages: adding one is a decision, written in docs/design.md. */
+  const WITH_BUTTON = [
+    "detail-session",
+    "study-corpus",
+    "etude-reading",
+    "etude-reading-section",
+    "text-reading",
+    "text-reading-section",
+    "chiourim",
+    "auteur-chiourim",
+    "serie-chiourim",
+    "detail-chiour",
+  ];
 
-  it("le garde sur les pages longues à lire", () => {
-    for (const name of ["chiourim", "study", "confidentialite", "zmanim", "calendar"]) {
-      expect(byName.get(name)?.meta?.scrollToTop).not.toBe(false);
-    }
-  });
-
-  it("l'enlève aussi de l'accueil traduit", () => {
-    expect(byName.get("home-en")?.meta?.scrollToTop).toBe(false);
-    expect(byName.get("home-he")?.meta?.scrollToTop).toBe(false);
+  it("ne le propose qu'aux longues listes choisies", () => {
+    const opted = [...byName].filter(([, r]) => r.meta?.scrollToTop === true).map(([n]) => n);
+    expect(opted.sort()).toEqual([...WITH_BUTTON].sort());
   });
 });

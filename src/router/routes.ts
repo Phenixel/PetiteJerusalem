@@ -113,14 +113,6 @@ const LOCALIZED_SECTIONS: LocalizedSection[] = [
   { section: "conditions", component: ContentPage },
 ];
 
-/**
- * The pages that never show the back-to-top button (ScrollToTop.vue): the
- * home page, sign-in, forms, profile and settings, message threads (read
- * from the bottom), the 404. Pages that are merely short need nothing here:
- * the button already stays away from a page with little to scroll.
- */
-const NO_SCROLL_TO_TOP = { scrollToTop: false } as const;
-
 /** Une route par section traduite et par langue préfixée. */
 function localizedRoutes(): RouteRecordSingleView[] {
   const locales = SEO_LOCALES.filter(
@@ -131,7 +123,7 @@ function localizedRoutes(): RouteRecordSingleView[] {
       {
         path: sectionPath(section, locale),
         name: `${section}-${locale}`,
-        meta: { offlineOk: true, ...(section === "home" ? NO_SCROLL_TO_TOP : {}) },
+        meta: { offlineOk: true },
         component,
       },
       ...(child
@@ -148,18 +140,26 @@ function localizedRoutes(): RouteRecordSingleView[] {
   );
 }
 
+/**
+ * The pages that offer the back-to-top button (ScrollToTop.vue); every other
+ * page goes without it. Only long lists that one goes down to pick an item:
+ * the texts of a reading session, the texts of a library section, the
+ * chapters of a book, the audio classes. On a text being read, the reading
+ * menu takes its place.
+ */
+const SCROLL_TO_TOP = { scrollToTop: true } as const;
+
 export default [
   {
     path: "/",
     name: "home",
-    meta: { offlineOk: true, ...NO_SCROLL_TO_TOP },
+    meta: { offlineOk: true },
     component: HomeView,
   },
   {
     path: "/login",
     name: "login",
     component: LoginView,
-    meta: NO_SCROLL_TO_TOP,
   },
   {
     path: "/profile",
@@ -172,7 +172,7 @@ export default [
     // compte (langue, thème, polices, à propos), et ces réglages sont locaux :
     // elle se rend hors ligne aussi. Le web garde la garde de connexion : les
     // réglages n'y sont proposés qu'aux comptes.
-    meta: { requiresAuth: !isNativeApp, offlineOk: isNativeApp, ...NO_SCROLL_TO_TOP },
+    meta: { requiresAuth: !isNativeApp, offlineOk: isNativeApp },
   },
   // Les sous-pages du profil de l'app. Le site n'en a pas : son menu change
   // de panneau sur place. Les réglages d'appareil s'ouvrent sans compte et
@@ -183,13 +183,13 @@ export default [
           path: "/profile/:section(appearance|language|notifications|preferences)",
           name: "profile-settings",
           component: NativeProfileSection,
-          meta: { offlineOk: true, ...NO_SCROLL_TO_TOP },
+          meta: { offlineOk: true },
         },
         {
           path: "/profile/:section(account|security)",
           name: "profile-account",
           component: NativeProfileSection,
-          meta: { requiresAuth: true, ...NO_SCROLL_TO_TOP },
+          meta: { requiresAuth: true },
         },
       ]
     : []),
@@ -208,12 +208,12 @@ export default [
     path: "/share-reading/new-session",
     name: "new-session",
     component: NewSession,
-    meta: NO_SCROLL_TO_TOP,
   },
   {
     path: "/share-reading/session/:slug",
     name: "detail-session",
     component: DetailSession,
+    meta: SCROLL_TO_TOP,
   },
   // Every Tehilim the reader took in a chain, read one after the other
   // (services/sessionBatchReading.ts). Without an account too: a guest is
@@ -272,7 +272,6 @@ export default [
       path: "/parcours/nouveau",
       name: "parcours-new",
       component: NouvelObjectifPage,
-      meta: NO_SCROLL_TO_TOP,
     },
     {
       path: "/parcours/objectif/:id",
@@ -283,12 +282,8 @@ export default [
       path: "/parcours/objectif/:id/reglages",
       name: "parcours-objective-settings",
       component: ProgrammeReglagesPage,
-      meta: NO_SCROLL_TO_TOP,
     },
-  ].map((route) => ({
-    ...route,
-    meta: { ...route.meta, requiresAuth: !isNativeApp, offlineOk: isNativeApp },
-  })),
+  ].map((route) => ({ ...route, meta: { requiresAuth: !isNativeApp, offlineOk: isNativeApp } })),
   // Chnei mikra : la paracha de la semaine avec son Targoum, ouverte à tous.
   // La semaine se choisit en query (`?semaine=2026-08-15`) plutôt qu'en
   // segment, qui se confondrait avec /bibliotheque/:corpus/:slug.
@@ -315,7 +310,7 @@ export default [
   {
     path: "/bibliotheque/:corpus(tehilim|michna|talmud|tanakh|moussar|halakha)",
     name: "study-corpus",
-    meta: { offlineOk: true },
+    meta: { offlineOk: true, ...SCROLL_TO_TOP },
     component: StudyPage,
   },
   // Le Sidour : les tefilot, les brahot et les textes des fêtes, en une
@@ -383,13 +378,13 @@ export default [
   {
     path: "/bibliotheque/:corpus/:slug",
     name: "etude-reading",
-    meta: { offlineOk: true, plainBackground: true },
+    meta: { offlineOk: true, plainBackground: true, ...SCROLL_TO_TOP },
     component: TextReadingPage,
   },
   {
     path: "/bibliotheque/:corpus/:slug/:section",
     name: "etude-reading-section",
-    meta: { offlineOk: true, plainBackground: true },
+    meta: { offlineOk: true, plainBackground: true, ...SCROLL_TO_TOP },
     component: TextReadingPage,
   },
   // Horaires (zmanim) : tout est calculé sur l'appareil, aucune donnée à
@@ -432,21 +427,25 @@ export default [
     path: "/chiourim",
     name: "chiourim",
     component: ChiourimPage,
+    meta: SCROLL_TO_TOP,
   },
   {
     path: "/chiourim/auteur/:auteur",
     name: "auteur-chiourim",
     component: AuteurChiourimPage,
+    meta: SCROLL_TO_TOP,
   },
   {
     path: "/chiourim/serie/:serieId",
     name: "serie-chiourim",
     component: SerieChiourimPage,
+    meta: SCROLL_TO_TOP,
   },
   {
     path: "/chiourim/:slug",
     name: "detail-chiour",
     component: DetailChiour,
+    meta: SCROLL_TO_TOP,
   },
   // Informations de l'équipe (nouveautés, incidents, questions). Les
   // notifications ouvrent /informations/:id (voir functions/src/announcements.ts).
@@ -464,13 +463,13 @@ export default [
     path: "/contact",
     name: "support",
     component: SupportPage,
-    meta: { requiresAuth: !isNativeApp, ...NO_SCROLL_TO_TOP },
+    meta: { requiresAuth: !isNativeApp },
   },
   {
     path: "/contact/:id",
     name: "support-thread",
     component: SupportThreadPage,
-    meta: { requiresAuth: !isNativeApp, ...NO_SCROLL_TO_TOP },
+    meta: { requiresAuth: !isNativeApp },
   },
   {
     path: "/informations/:id",
@@ -484,7 +483,6 @@ export default [
     path: "/sondage/:id",
     name: "announcement-poll",
     component: AnnouncementDetailPage,
-    meta: NO_SCROLL_TO_TOP,
   },
   // Studio auteurs : accès par lien secret distribué par l'admin (pas de
   // compte). Page volontairement absente de toute navigation, et noindex.
@@ -502,31 +500,20 @@ export default [
     children: [
       { path: "", name: "admin-dashboard", component: AdminDashboardPage },
       { path: "chiourim", name: "admin-chiourim", component: AdminChiourimPage },
-      {
-        path: "chiourim/:slug",
-        name: "admin-chiour-edit",
-        component: AdminChiourEditPage,
-        meta: NO_SCROLL_TO_TOP,
-      },
+      { path: "chiourim/:slug", name: "admin-chiour-edit", component: AdminChiourEditPage },
       { path: "auteurs", name: "admin-auteurs", component: AdminAuteursPage },
       { path: "auteurs/:auteurId", name: "admin-auteur-detail", component: AdminAuteurDetailPage },
       // Modération des sessions signalées (exigence App Store 1.2).
       { path: "sessions", name: "admin-sessions", component: AdminSessionsPage },
       // Nous écrire : les messages des utilisateurs, et les réponses.
       { path: "messages", name: "admin-support", component: AdminSupportPage },
-      {
-        path: "messages/:id",
-        name: "admin-support-thread",
-        component: AdminSupportThreadPage,
-        meta: NO_SCROLL_TO_TOP,
-      },
+      { path: "messages/:id", name: "admin-support-thread", component: AdminSupportThreadPage },
       // Informations de l'équipe : écrire, publier, notifier.
       { path: "informations", name: "admin-announcements", component: AdminAnnouncementsPage },
       {
         path: "informations/:id",
         name: "admin-announcement-edit",
         component: AdminAnnouncementEditPage,
-        meta: NO_SCROLL_TO_TOP,
       },
     ],
   },
@@ -537,14 +524,14 @@ export default [
   {
     path: "/lire/:textId",
     name: "text-reading",
-    meta: { offlineOk: true, plainBackground: true },
+    meta: { offlineOk: true, plainBackground: true, ...SCROLL_TO_TOP },
     beforeEnter: redirectPublicLire,
     component: TextReadingPage,
   },
   {
     path: "/lire/:textId/:section",
     name: "text-reading-section",
-    meta: { offlineOk: true, plainBackground: true },
+    meta: { offlineOk: true, plainBackground: true, ...SCROLL_TO_TOP },
     beforeEnter: redirectPublicLire,
     component: TextReadingPage,
   },
@@ -633,7 +620,7 @@ export default [
   {
     path: "/:pathMatch(.*)*",
     name: "not-found",
-    meta: { offlineOk: true, ...NO_SCROLL_TO_TOP },
+    meta: { offlineOk: true },
     component: NotFound,
   },
 ];

@@ -12,17 +12,18 @@ import { tableBarVisible } from "../composables/useReadingTable";
 const isVisible = ref(false);
 
 /**
- * Where the button has nothing to do:
- * - a route that opts out with `meta: { scrollToTop: false }` (home page,
- *   sign-in, forms, profile and settings, a message thread; see routes.ts);
- * - a page with less than `MIN_SCROLL_SCREENS` screens to scroll back: a
- *   flick of the thumb brings its top back, and the button would only cover
- *   the content.
+ * The button is the exception, not the rule:
+ * - only on the routes that ask for it with `meta: { scrollToTop: true }`
+ *   (long lists one goes down to pick an item; see SCROLL_TO_TOP in
+ *   routes.ts);
+ * - and only once the top is more than `MIN_SCROLL_SCREENS` screens away:
+ *   closer than that, a few flicks of the thumb bring it back, and the
+ *   button would only cover the content.
  * Held by `src/__tests__/scrollToTop.test.ts`.
  */
-const MIN_SCROLL_SCREENS = 2;
+const MIN_SCROLL_SCREENS = 3;
 const route = useRoute();
-const routeAllows = computed(() => route.meta.scrollToTop !== false);
+const routeAllows = computed(() => route.meta.scrollToTop === true);
 // Le pointeur survole le bouton : on ne le masque pas sous la main de
 // l'utilisateur qui s'apprête à cliquer.
 const isHovered = ref(false);
@@ -58,9 +59,8 @@ const armHideTimer = () => {
 const scrollFrame = useScrollFrame();
 
 const checkScroll = () => {
-  const { scrollY, viewport, docHeight } = scrollFrame.value;
-  const longPage = docHeight - viewport >= MIN_SCROLL_SCREENS * viewport;
-  if (routeAllows.value && longPage && scrollY > 300) {
+  const { scrollY, viewport } = scrollFrame.value;
+  if (routeAllows.value && scrollY > MIN_SCROLL_SCREENS * viewport) {
     isVisible.value = true;
     armHideTimer();
   } else {
