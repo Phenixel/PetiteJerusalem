@@ -313,6 +313,28 @@ what pushed them to it.
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
 | `accuracy` | the accuracy displayed at the moment of the tap: `high`, `medium`, `low`, or `unknown` when the device doesn't provide it (Chrome on the website) | **new** |
 
+### `kotel_compass_aligned` (new)
+
+Set the first time, per opening of the Kotel compass, that the arrow points
+straight ahead of the phone (within 5°; see `docs/design.md`, « The compass
+fills when you face the Kotel »). Compared with `kotel_compass_opened`, it
+tells how many people find the direction; `seconds`, how long it takes them.
+Only devices that give the north can send it.
+
+| Property  | Values                                                       | Status  |
+| --------- | ------------------------------------------------------------ | ------- |
+| `seconds` | whole seconds between the opening of the window and the lock | **new** |
+
+### `kotel_compass_calibrated` (new)
+
+Set when, on the calibration screen, the accuracy turns good, just before the
+window goes back to the dial by itself. Compared with
+`kotel_compass_calibration_opened`, it tells how many calibrations take.
+
+| Property  | Values                                                                      | Status  |
+| --------- | --------------------------------------------------------------------------- | ------- |
+| `seconds` | whole seconds between the tap on « Calibrer » and the accuracy turning good | **new** |
+
 ### Values added to existing properties
 
 | Event                                                                               | Property | Added value     | What it tells                                                                                                                                                                 |
@@ -514,6 +536,22 @@ or not), and how far it carries.
 | `sections_count` | the titles shown above the bar (0: a text without landmarks) | **new** |
 | `from_progress`  | the share of the text where the gesture began, from 0 to 1   | **new** |
 | `to_progress`    | the share where it was let go, from 0 to 1                   | **new** |
+
+### Reading: `reading_size_changed` (existing, one more property)
+
+A− / A+ or a pinch in the app (`composables/useReadingSize.ts`). The form of
+the page (the Vilna daf, the Sefer Torah column) now has a size of its own,
+apart from the text's (see `docs/design.md`, "The form of the page has its
+own size"): `level` and `scale` are then those of the page's steps
+(`PAGE_FORM_SCALES`, from ×1 to ×2.1), not the text's (`READING_SCALES`,
+from ×0.85 to ×1.6). `form` tells them apart.
+
+| Property    | Values                                                               | Status         |
+| ----------- | -------------------------------------------------------------------- | -------------- |
+| `direction` | `increase`, `decrease`                                               | existing, kept |
+| `level`     | the step reached, from 0                                             | existing, kept |
+| `scale`     | the scale of that step                                               | existing, kept |
+| `form`      | `text`; `daf` (Vilna page), `scroll` (Sefer Torah) for the page size | **new**        |
 
 ### Reading: automatic scrolling (`auto_scroll_*`, existing)
 

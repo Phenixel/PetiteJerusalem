@@ -1,97 +1,184 @@
-import { ref, computed } from "vue";
+import { ref, computed, onBeforeUnmount, onMounted, type ComputedRef, type Ref } from "vue";
 
 /**
- * La taille du texte des pages de lecture (A− / A+, et le pincement dans
- * l'app).
+ * The text size of the reading pages (A− / A+, and the pinch in the app).
  *
- * Gardée sur l'appareil, pas dans le compte : c'est un réglage de confort qui
- * dépend de l'écran qu'on a en main, pas de la personne. Un téléphone tenu à
- * bout de bras et un ordinateur ne demandent pas la même taille.
+ * Kept on the device, not in the account: it is a comfort setting that
+ * depends on the screen in hand, not on the person. A phone held at arm's
+ * length and a computer don't call for the same size.
  *
- * Gardée deux fois sur l'appareil, comme les autres réglages de ce genre :
- * le `localStorage` pour la lire dès le premier rendu, les préférences
- * natives pour qu'elle survive au vidage du cache (voir devicePreference).
+ * Kept twice on the device, like the other settings of this kind:
+ * `localStorage` to read it from the first render, the native preferences so
+ * that it survives a cache wipe (see devicePreference).
+ *
+ * The form of the page (the Vilna daf, the Sefer Torah column) has a size of
+ * its own (usePageFormSize): its lines only hold between two bounds, and the
+ * size that suits the text of a prayer is not the one that suits a page.
+ * A− / A+ and the pinch drive whichever one is on screen
+ * (useReadingSizeControl).
  */
 import { analyticsService } from "../services/analyticsService";
 import { devicePreference } from "../services/devicePreference";
 
-const STORAGE_KEY = "pj-reading-size";
-const SCALES = [0.85, 1, 1.15, 1.35, 1.6];
-const DEFAULT_LEVEL = 1;
-
-/** Ce que vaut un niveau lu d'un stockage : un cran de la table, ou rien. */
-function parseLevel(value: string | null): number | null {
-  // `Number(null)` vaut 0, un niveau parfaitement valide : sans ce garde, qui
-  // n'a jamais touché à A− / A+ lisait tout le corpus un cran trop petit
-  // (×0,85), et le niveau par défaut ne servait qu'aux navigateurs sans
-  // stockage.
-  if (value === null || value === "") return null;
-  const raw = Number(value);
-  return Number.isInteger(raw) && raw >= 0 && raw < SCALES.length ? raw : null;
+/** The size a reading page reads and the A− / A+ control drives. */
+export interface ReadingSize {
+  level: Ref<number>;
+  scale: ComputedRef<number>;
+  canIncrease: ComputedRef<boolean>;
+  canDecrease: ComputedRef<boolean>;
+  increase(): void;
+  decrease(): void;
 }
 
-const store = devicePreference(STORAGE_KEY, parseLevel, String);
-
-const stored = store.read();
-const level = ref(stored ?? DEFAULT_LEVEL);
+/** What the size is applied to, as `reading_size_changed` reports it. */
+type SizedForm = "text" | PageFormKind;
+/** The two forms of the page (`page_form_toggled` names them the same way). */
+export type PageFormKind = "daf" | "scroll";
 
 /**
- * Le niveau est-il déjà celui d'un choix retrouvé ? Tant qu'il ne l'est pas,
- * les préférences natives ont quelque chose à nous apprendre.
+ * One device setting: its key, its steps and the step it starts from. The
+ * level stays in the module, so that every screen reads the same one.
  */
-let restored = stored !== null;
+function readingSizeSetting(
+  key: string,
+  scales: readonly number[],
+  defaultLevel: number,
+  formOf: () => SizedForm,
+): () => ReadingSize {
+  /** What a level read from storage is worth: a step of the table, or nothing. */
+  function parseLevel(value: string | null): number | null {
+    // `Number(null)` is 0, a perfectly valid level: without this guard,
+    // whoever had never touched A− / A+ read the whole corpus one step too
+    // small (×0.85), and the default level only served browsers without
+    // storage.
+    if (value === null || value === "") return null;
+    const raw = Number(value);
+    return Number.isInteger(raw) && raw >= 0 && raw < scales.length ? raw : null;
+  }
 
-function persist(): void {
-  store.write(level.value);
-}
+  const store = devicePreference(key, parseLevel, String);
+  const stored = store.read();
+  const level = ref(stored ?? defaultLevel);
 
-/** Reprend le niveau gardé par le natif quand le localStorage n'a rien. */
-async function restoreFromDevice(): Promise<void> {
-  if (restored) return;
-  restored = true;
-  const saved = await store.restore();
-  if (saved !== null) level.value = saved;
-}
+  /**
+   * Is the level already that of a recovered choice? Until it is, the native
+   * preferences have something to tell us.
+   */
+  let restored = stored !== null;
 
-export function useReadingSize() {
-  // Au premier usage : le module est chargé par les pages de lecture, la
-  // relecture native tombe donc avant que le texte ne s'affiche, et ne pèse
-  // jamais sur le démarrage de l'app.
-  void restoreFromDevice();
+  /** Takes back the level the native side kept when localStorage has none. */
+  async function restoreFromDevice(): Promise<void> {
+    if (restored) return;
+    restored = true;
+    const saved = await store.restore();
+    if (saved !== null) level.value = saved;
+  }
 
-  const scale = computed(() => SCALES[level.value]);
-  const canIncrease = computed(() => level.value < SCALES.length - 1);
+  const scale = computed(() => scales[level.value]);
+  const canIncrease = computed(() => level.value < scales.length - 1);
   const canDecrease = computed(() => level.value > 0);
 
   /**
-   * A− / A+ et le pincement dans l'app : le confort de lecture est le réglage
-   * le plus utilisé des pages de texte, et le seul qui n'était pas mesuré.
-   * Le niveau atteint dit s'il s'agit d'un ajustement ou d'un besoin
-   * d'accessibilité (niveau maximal tenu d'une lecture à l'autre).
+   * A− / A+ and the pinch in the app: reading comfort is the most used
+   * setting of the text pages, and the only one that was not measured. The
+   * level reached tells an adjustment from an accessibility need (the top
+   * level kept from one reading to the next). `form` tells which of the two
+   * settings moved (docs/tracking-plan.md).
    */
-  function trackSizeChanged(direction: "increase" | "decrease") {
+  function changed(direction: "increase" | "decrease") {
+    store.write(level.value);
     analyticsService.capture("reading_size_changed", {
       direction,
       level: level.value,
-      scale: SCALES[level.value],
+      scale: scales[level.value],
+      form: formOf(),
     });
   }
 
   function increase() {
-    if (canIncrease.value) {
-      level.value++;
-      persist();
-      trackSizeChanged("increase");
-    }
+    if (!canIncrease.value) return;
+    level.value++;
+    changed("increase");
   }
 
   function decrease() {
-    if (canDecrease.value) {
-      level.value--;
-      persist();
-      trackSizeChanged("decrease");
-    }
+    if (!canDecrease.value) return;
+    level.value--;
+    changed("decrease");
   }
 
-  return { level, scale, canIncrease, canDecrease, increase, decrease };
+  const size: ReadingSize = { level, scale, canIncrease, canDecrease, increase, decrease };
+  return () => {
+    // On first use: the module is loaded by the reading pages, so the native
+    // read lands before the text shows, and never weighs on the app's start.
+    void restoreFromDevice();
+    return size;
+  };
+}
+
+/** The text of every reading page. */
+export const READING_SCALES = [0.85, 1, 1.15, 1.35, 1.6] as const;
+
+/**
+ * The form of the page: the page as a whole, from its ordinary width (`1`,
+ * the reading column) to a little over twice that. Never smaller: the
+ * commentaries of the daf would fall below what a browser draws, come out
+ * larger than the lines measured for them and run into one another
+ * (MIN_DAF_PAGE in pageZoom.ts). Larger, the page slides sideways and keeps
+ * its lines.
+ */
+export const PAGE_FORM_SCALES = [1, 1.15, 1.35, 1.6, 1.85, 2.1] as const;
+
+/** The forms of the page on screen, and which one was shown last. */
+const pageForms = ref<PageFormKind[]>([]);
+const shownPageForm = computed(() => pageForms.value[pageForms.value.length - 1] ?? null);
+
+export const useReadingSize = readingSizeSetting(
+  "pj-reading-size",
+  READING_SCALES,
+  1,
+  () => "text",
+);
+
+export const usePageFormSize = readingSizeSetting(
+  "pj-page-form-size",
+  PAGE_FORM_SCALES,
+  0,
+  () => shownPageForm.value ?? "daf",
+);
+
+/**
+ * A component that draws a form of the page (TalmudDafPages, TorahScroll)
+ * says so while it is mounted: A− / A+ and the pinch then drive its size, not
+ * the text's. Returns that size.
+ */
+export function usePageFormShown(kind: PageFormKind): ReadingSize {
+  onMounted(() => (pageForms.value = [...pageForms.value, kind]));
+  onBeforeUnmount(() => {
+    const at = pageForms.value.lastIndexOf(kind);
+    if (at >= 0) pageForms.value = pageForms.value.filter((_, i) => i !== at);
+  });
+  return usePageFormSize();
+}
+
+/**
+ * What A− / A+ and the pinch drive: the size of the form of the page while
+ * one is on screen, the size of the text otherwise. The two are kept apart,
+ * so going from a daf to a prayer and back keeps each one where it was left.
+ */
+export function useReadingSizeControl(): ReadingSize {
+  const text = useReadingSize();
+  const page = usePageFormSize();
+  const active = (): ReadingSize => (shownPageForm.value ? page : text);
+  return {
+    level: computed({
+      get: () => active().level.value,
+      set: (value) => (active().level.value = value),
+    }),
+    scale: computed(() => active().scale.value),
+    canIncrease: computed(() => active().canIncrease.value),
+    canDecrease: computed(() => active().canDecrease.value),
+    increase: () => active().increase(),
+    decrease: () => active().decrease(),
+  };
 }

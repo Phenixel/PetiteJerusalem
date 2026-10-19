@@ -1825,19 +1825,25 @@ const fr = {
     kotel: {
       open: "Direction du Kotel",
       title: "Direction du Kotel",
-      intro:
-        "La 'Amida se dit face à Jérusalem : la flèche pointe vers le Kotel, le mur Occidental.",
       bearing: "{point}, à {deg}° du nord",
-      distance: "Le Kotel est à {km} km d'ici.",
-      live: "La flèche suit votre appareil : tournez-vous jusqu'à ce qu'elle pointe droit devant vous.",
+      // Under the dial, the figures in one line: the side, the angle, the
+      // distance.
+      facts: "Kotel : {point}, {deg}° · {km} km",
+      // The one line under the dial: what to do now (see docs/design.md,
+      // « The compass fills when you face the Kotel »).
+      status: {
+        turn: "Tournez-vous vers la flèche",
+        aligned: "Vous êtes face au Kotel",
+        flat: "Tenez le téléphone à plat",
+        calibrated: "Boussole calibrée",
+        lowAccuracy: "Calibrez avant de suivre la flèche",
+        searching: "Recherche du nord…",
+        locked: "Activez la boussole pour qu'elle vous guide",
+      },
       flat: "Tenez le téléphone à plat, l'écran vers le ciel : c'est à plat que la boussole s'oriente juste.",
-      fixed:
-        "Votre appareil ou votre navigateur ne permettent pas d'utiliser la boussole : le cadran garde le nord en haut, à vous de l'orienter.",
-      compassDenied: "L'accès à la boussole a été refusé : le cadran garde le nord en haut.",
+      fixed: "Pas de boussole sur cet appareil : le nord reste en haut du cadran.",
+      compassDenied: "Boussole refusée : le nord reste en haut du cadran.",
       enable: "Activer la boussole",
-      searching: "La boussole cherche le nord…",
-      locked: "Touchez « Activer la boussole » pour que la flèche suive votre appareil.",
-      flatOk: "Le téléphone est à plat : la boussole s'oriente juste.",
       calibrate: "Calibrer",
       // La précision estimée du cap, sous le cadran (voir docs/design.md,
       // « La boussole dit sa précision »).
@@ -1846,20 +1852,17 @@ const fr = {
         medium: "moyenne",
         low: "faible",
         line: "Précision {level}",
-        lineDegrees: "Précision {level}, à {deg}° près",
-        lowLine: "Précision faible : calibrez la boussole avant de la suivre.",
+        lineDegrees: "Précision {level}, ±{deg}°",
         unknown: "La flèche vous semble fausse ?",
       },
       calibration: {
-        title: "Calibrer la boussole",
-        away: "Éloignez-vous des objets en métal et des appareils électriques ; retirez l'étui s'il porte un aimant.",
-        eight:
-          "Décrivez lentement un 8 dans l'air avec le téléphone, trois ou quatre fois, en le faisant pivoter dans tous les sens.",
-        flat: "Reposez-le à plat, l'écran vers le ciel : la flèche reprend sa place.",
-        current: "Précision {level} pour l'instant : continuez le geste.",
-        done: "La boussole est calibrée.",
+        away: "Éloignez-vous du métal et retirez un étui aimanté.",
+        eight: "Dessinez un 8 dans l'air, trois ou quatre fois.",
+        flat: "Reposez le téléphone à plat.",
+        current: "Précision {level} : continuez le geste.",
+        done: "Boussole calibrée",
         unknown:
-          "Votre appareil ne dit pas sa précision : si la flèche reste fausse, refaites le geste.",
+          "Votre appareil ne dit pas sa précision : refaites le geste si la flèche semble fausse.",
         back: "Revenir à la boussole",
       },
       rose: { n: "N", e: "E", s: "S", o: "O" },

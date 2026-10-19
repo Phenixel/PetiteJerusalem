@@ -1,16 +1,25 @@
 <script setup lang="ts">
-import { computed, onUnmounted, ref, watch } from "vue";
+import { computed, onUnmounted, ref, useId, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import AppIcon from "./icons/AppIcon.vue";
 import AppModal from "./AppModal.vue";
 import { analyticsService } from "../services/analyticsService";
+import { haptic } from "../services/haptics";
 import { numberFormat } from "../services/intlCache";
 import { useZmanimLocation } from "../composables/useZmanimLocation";
 import { useZmanimPlaceLabel } from "../composables/useZmanimPlaceLabel";
 import { useCompassHeading } from "../composables/useCompassHeading";
 import { closeKotelCompass, kotelCompassOpen } from "../composables/useKotelCompass";
-import { prefersLessMotion } from "../composables/useMotion";
-import { accuracySpread, dialTilt, isFlat } from "../services/compassReading";
+import { prefersLessMotion, prefersReducedMotion } from "../composables/useMotion";
+import {
+  accuracySpread,
+  arrowOffset,
+  dialTilt,
+  fillLevel,
+  isAligned,
+  isFlat,
+  nextNotch,
+} from "../services/compassReading";
 import {
   arrowAngle,
   bearingToKotel,
@@ -28,6 +37,13 @@ import {
  * page, rien de nouveau à régler. Quand l'appareil donne le nord, le cadran
  * tourne avec lui et il suffit de suivre la flèche ; sinon le nord reste en
  * haut, la flèche garde son sens et c'est au lecteur de placer le nord.
+ *
+ * The window opens straight on the dial, with no title (the button that
+ * opened it said what it is). Under it, one status line and one line of
+ * figures. Facing the Kotel is felt and seen: the phone clicks as the arrow
+ * comes close and beats once when it is there, while the dial fills with the
+ * theme color from the bottom up (see docs/design.md, « The compass fills
+ * when you face the Kotel »).
  */
 const { t, locale } = useI18n();
 const { place, status: geoStatus, locateDevice } = useZmanimLocation();
@@ -99,6 +115,14 @@ const CARDINALS = [
 const TICKS = [0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330];
 
 /**
+ * The rose is drawn twice: once on the dial, once in the theme's "on" color,
+ * cut to the shape of what has filled the dial. As the color rises, the
+ * arrow and the letters it covers turn white with it, instead of sinking
+ * into it.
+ */
+const LAYERS = ["dry", "wet"] as const;
+
+/**
  * iOS ne donne l'orientation qu'après un geste. La permission se demande
  * dans celui qui ouvre la fenêtre (voir le `watch` plus bas) ; le bouton ne reste
  * que si ce geste n'a pas suffi. Il se pose alors sur le cadran éteint, et
@@ -123,6 +147,8 @@ const tiltStyle = computed(() => {
   // redessine pas.
   return `transform: rotateX(${x}deg) rotateY(${y}deg)`;
 });
+
+const flat = computed(() => tilt.value !== null && isFlat(tilt.value));
 
 /**
  * La précision, dessinée autour de la flèche : le secteur où le Kotel se
@@ -166,8 +192,7 @@ const accuracyLevel = computed(() =>
 /** La ligne de la précision, sous le cadran. */
 const accuracyText = computed(() => {
   if (accuracy.value === "unknown") return t("textReading.kotel.accuracy.unknown");
-  if (accuracy.value === "low") return t("textReading.kotel.accuracy.lowLine");
-  if (accuracyDegrees.value === null) {
+  if (accuracyDegrees.value === null || accuracy.value === "low") {
     return t("textReading.kotel.accuracy.line", { level: accuracyLevel.value });
   }
   return t("textReading.kotel.accuracy.lineDegrees", {
@@ -182,9 +207,11 @@ const accuracyText = computed(() => {
  * le montre, et suit la précision pendant qu'on le fait.
  */
 const calibrating = ref(false);
+let calibrationOpenedAt = 0;
 
 function openCalibration(): void {
   calibrating.value = true;
+  calibrationOpenedAt = Date.now();
   analyticsService.capture("kotel_compass_calibration_opened", { accuracy: accuracy.value });
 }
 
@@ -205,37 +232,240 @@ const calibrationText = computed(() => {
   return t("textReading.kotel.calibration.current", { level: accuracyLevel.value });
 });
 
+/** The three gestures, in order (written out whole: i18nUsage.test.ts reads them). */
+const CALIBRATION_STEPS = [
+  "textReading.kotel.calibration.away",
+  "textReading.kotel.calibration.eight",
+  "textReading.kotel.calibration.flat",
+] as const;
+
 /** Le chemin du 8, couché : deux boucles qui se croisent au centre. */
 const EIGHT =
   "M100 60 C125 25 175 25 175 60 C175 95 125 95 100 60 C75 25 25 25 25 60 C25 95 75 95 100 60 Z";
 
-/** Ce que la fenêtre dit du cadran, sous les chiffres. */
-const hint = computed(() => {
-  if (live.value) return t("textReading.kotel.live");
-  if (compassStatus.value === "denied") return t("textReading.kotel.compassDenied");
-  if (locked.value) return t("textReading.kotel.locked");
-  if (compassStatus.value === "unavailable") return t("textReading.kotel.fixed");
-  return t("textReading.kotel.searching");
+/**
+ * Calibration that takes brings you back to the dial by itself: whoever is
+ * tracing the 8 is not reading the screen, and kept tracing it after « La
+ * boussole est calibrée » had appeared. The phone beats once when accuracy
+ * turns good; the check stays a moment, then the dial returns, saying for a
+ * few seconds that the compass is calibrated. Only a change counts: opened
+ * with the accuracy already good, the screen waits for its button.
+ */
+const CALIBRATED_RETURN_MS = 1100;
+const CALIBRATED_NOTICE_MS = 3000;
+const justCalibrated = ref(false);
+let returnTimer: ReturnType<typeof setTimeout> | null = null;
+let noticeTimer: ReturnType<typeof setTimeout> | null = null;
+
+function clearCalibrationTimers(): void {
+  if (returnTimer) clearTimeout(returnTimer);
+  if (noticeTimer) clearTimeout(noticeTimer);
+  returnTimer = null;
+  noticeTimer = null;
+}
+
+watch(accuracy, (level, before) => {
+  if (!calibrating.value || level !== "high" || before === "high" || returnTimer) return;
+  haptic("done");
+  analyticsService.capture("kotel_compass_calibrated", {
+    seconds: Math.round((Date.now() - calibrationOpenedAt) / 1000),
+  });
+  returnTimer = setTimeout(() => {
+    returnTimer = null;
+    calibrating.value = false;
+    justCalibrated.value = true;
+    noticeTimer = setTimeout(() => {
+      noticeTimer = null;
+      justCalibrated.value = false;
+    }, CALIBRATED_NOTICE_MS);
+  }, CALIBRATED_RETURN_MS);
+});
+
+function backFromCalibration(): void {
+  clearCalibrationTimers();
+  calibrating.value = false;
+}
+
+/**
+ * Facing the Kotel. The arrow's offset from the top of the phone, only while
+ * the compass speaks: without it, the arrow is drawn for north up, and
+ * nothing says which way the phone points.
+ */
+const offset = computed(() =>
+  live.value && heading.value !== null && !calibrating.value
+    ? arrowOffset(arrowAngle(bearing.value, heading.value))
+    : null,
+);
+
+const aligned = ref(false);
+/** Bumped at each lock: replays the ripple around the dial. */
+const lockCount = ref(0);
+let notch: number | null = null;
+let openedAt = 0;
+let alignedOnce = false;
+
+watch(offset, (value) => {
+  if (value === null) {
+    aligned.value = false;
+    notch = null;
+    return;
+  }
+  const now = isAligned(value, aligned.value);
+  if (now && !aligned.value) {
+    haptic("done");
+    lockCount.value += 1;
+    if (!alignedOnce) {
+      alignedOnce = true;
+      analyticsService.capture("kotel_compass_aligned", {
+        seconds: Math.round((Date.now() - openedAt) / 1000),
+      });
+    }
+  }
+  aligned.value = now;
+  // The notches: one click every ten degrees as the arrow comes close, so
+  // that the way can be found by touch alone.
+  const next = nextNotch(value, notch);
+  if (!now && next !== null && next !== notch) haptic("tick");
+  notch = next;
 });
 
 /**
- * La consigne de tenir l'appareil à plat, tant que la boussole parle : le
- * magnétomètre donne son cap dans le plan de l'écran, un téléphone tenu
- * debout fait tourner la flèche avec l'inclinaison de la main. Une fois le
- * téléphone à plat, elle le confirme.
+ * The color that fills the dial: a level that rises as the arrow comes near,
+ * then fills it at once on the lock. Its surface is a slow wave, driven by a
+ * spring so that the fill overshoots a little and settles, like a liquid that
+ * has been moved; the faster it moves, the more the surface stirs. The frame
+ * loop only runs while the surface can be seen (neither empty nor full). Cut
+ * only at the system's request, not on a small machine: like the home page
+ * stack, the fill says that something has just happened (see docs/design.md,
+ * « Motion answers a gesture »). Then the level is set without its path, and
+ * the surface is flat.
  */
-const flatText = computed(() => {
-  if (!live.value) return null;
-  const flat = tilt.value !== null && isFlat(tilt.value);
-  return flat ? t("textReading.kotel.flatOk") : t("textReading.kotel.flat");
+const targetLevel = computed(() =>
+  offset.value === null ? 0 : fillLevel(offset.value, aligned.value),
+);
+
+const backWave = ref<SVGPathElement | null>(null);
+const frontWave = ref<SVGPathElement | null>(null);
+/** The same surface, cutting out the white copy of the rose. */
+const clipWave = ref<SVGPathElement | null>(null);
+
+const SPRING = 90;
+const DAMPING = 11;
+const WAVE_SPEED = 2.2;
+
+let level = 0;
+let velocity = 0;
+let phase = 0;
+let frame = 0;
+let lastFrame = 0;
+
+/** The liquid's outline: its surface at `surface`, a wave on top, the dial's bottom below. */
+function liquidPath(surface: number, amplitude: number, shift: number): string {
+  let path = "";
+  for (let x = 0; x <= 200; x += 5) {
+    const y = surface + amplitude * Math.sin((x / 200) * Math.PI * 3 + shift);
+    path += `${x === 0 ? "M" : "L"}${x} ${y.toFixed(2)} `;
+  }
+  return `${path}L200 210 L0 210 Z`;
+}
+
+function paint(): void {
+  // Empty, the surface sits under the dial; full, above it, waves included.
+  const surface = 208 - level * 224;
+  const stir = prefersReducedMotion() ? 0 : 4 + Math.min(6, Math.abs(velocity) * 10);
+  const front = liquidPath(surface, stir, phase);
+  frontWave.value?.setAttribute("d", front);
+  clipWave.value?.setAttribute("d", front);
+  backWave.value?.setAttribute("d", liquidPath(surface - 4, stir * 0.9, -phase * 1.2 + 2));
+}
+
+function step(now: number): void {
+  const dt = Math.min(0.05, (now - lastFrame) / 1000);
+  lastFrame = now;
+  const target = targetLevel.value;
+  velocity += (SPRING * (target - level) - DAMPING * velocity) * dt;
+  level += velocity * dt;
+  phase += dt * WAVE_SPEED;
+  const settled = Math.abs(target - level) < 0.002 && Math.abs(velocity) < 0.002;
+  if (settled && (target === 0 || target === 1)) {
+    level = target;
+    velocity = 0;
+    paint();
+    frame = 0;
+    return;
+  }
+  paint();
+  frame = requestAnimationFrame(step);
+}
+
+function stopLiquid(): void {
+  if (frame) cancelAnimationFrame(frame);
+  frame = 0;
+}
+
+watch(targetLevel, (target) => {
+  if (prefersReducedMotion() || typeof requestAnimationFrame === "undefined") {
+    level = target;
+    velocity = 0;
+    paint();
+    return;
+  }
+  if (frame) return;
+  lastFrame = performance.now();
+  frame = requestAnimationFrame(step);
 });
 
+// The dial comes back after the calibration screen: its liquid is redrawn
+// where it stood.
+watch([backWave, frontWave, clipWave], paint, { flush: "post" });
+
+const clipId = `kotel-liquid-${useId()}`;
+
+/**
+ * The one line under the dial: what to do now. Facing the Kotel, it says so;
+ * a low accuracy comes first, since the arrow cannot be trusted then.
+ */
+const statusText = computed(() => {
+  if (live.value) {
+    if (justCalibrated.value) return t("textReading.kotel.status.calibrated");
+    if (accuracy.value === "low") return t("textReading.kotel.status.lowAccuracy");
+    if (aligned.value) return t("textReading.kotel.status.aligned");
+    if (tilt.value !== null && !flat.value) return t("textReading.kotel.status.flat");
+    return t("textReading.kotel.status.turn");
+  }
+  if (compassStatus.value === "denied") return t("textReading.kotel.compassDenied");
+  if (locked.value) return t("textReading.kotel.status.locked");
+  if (compassStatus.value === "unavailable") return t("textReading.kotel.fixed");
+  return t("textReading.kotel.status.searching");
+});
+
+/** The status is a sentence that explains (no compass), not a short order. */
+const statusIsNote = computed(
+  () => compassStatus.value === "denied" || compassStatus.value === "unavailable",
+);
+
 const close = closeKotelCompass;
+
+function reset(): void {
+  stop();
+  stopLiquid();
+  clearCalibrationTimers();
+  calibrating.value = false;
+  justCalibrated.value = false;
+  aligned.value = false;
+  notch = null;
+  level = 0;
+  velocity = 0;
+}
 
 // Quitter la page emporte la fenêtre : sans cela, l'état partagé resterait
 // « ouverte » (le retour arrière d'Android navigue sans rien fermer) et la
 // boussole surgirait d'elle-même à l'office suivant.
-onUnmounted(closeKotelCompass);
+onUnmounted(() => {
+  closeKotelCompass();
+  stopLiquid();
+  clearCalibrationTimers();
+});
 
 // La boussole n'écoute que la fenêtre ouverte : les événements d'orientation
 // arrivent plusieurs fois par seconde, ils n'ont rien à faire derrière une
@@ -246,10 +476,11 @@ watch(
   kotelCompassOpen,
   (open) => {
     if (!open) {
-      stop();
-      calibrating.value = false;
+      reset();
       return;
     }
+    openedAt = Date.now();
+    alignedOnce = false;
     void start();
   },
   { flush: "sync" },
@@ -258,24 +489,23 @@ watch(
 
 <template>
   <AppModal :open="kotelCompassOpen" :label="t('textReading.kotel.title')" @close="close">
-    <template v-if="kotelCompassOpen">
-      <div class="flex items-center justify-between gap-3 mb-4">
-        <h3 class="text-lg font-bold text-text-primary flex items-center gap-2">
-          <AppIcon name="compass" :size="20" class="text-primary" />
-          {{ t("textReading.kotel.title") }}
-        </h3>
-        <button type="button" class="icon-btn" :aria-label="t('common.close')" @click="close">
-          <AppIcon name="x" :size="18" />
-        </button>
-      </div>
-
-      <p class="text-sm text-text-secondary leading-relaxed">{{ t("textReading.kotel.intro") }}</p>
+    <div v-if="kotelCompassOpen" class="relative">
+      <!-- No title: the button that opened the window named it already, and
+           the dial is what is looked at. Only the close command remains. -->
+      <button
+        type="button"
+        class="icon-btn absolute -top-2 -end-2 z-10"
+        :aria-label="t('common.close')"
+        @click="close"
+      >
+        <AppIcon name="x" :size="18" />
+      </button>
 
       <!-- Le calibrage prend la place du cadran : c'est lui qu'on regarde,
-           et l'on y revient d'un geste. -->
-      <div v-if="calibrating" class="my-5">
+           et l'on y revient d'un geste, ou de lui-même quand il a pris. -->
+      <div v-if="calibrating" class="pt-4">
         <svg viewBox="0 0 200 120" class="w-56 max-w-full mx-auto block" aria-hidden="true">
-          <path :d="EIGHT" class="kotel-eight" />
+          <path :d="EIGHT" class="kotel-eight" :class="{ 'kotel-eight-done': calibrated }" />
           <g :transform="animateCalibration ? undefined : 'translate(100 60)'">
             <rect x="-9" y="-15" width="18" height="30" rx="4" class="kotel-phone" />
             <line x1="-3" y1="-11" x2="3" y2="-11" class="kotel-phone-ear" />
@@ -288,23 +518,42 @@ watch(
             />
           </g>
         </svg>
-        <h4 class="mt-4 text-sm font-semibold text-text-primary">
-          {{ t("textReading.kotel.calibration.title") }}
-        </h4>
-        <ol class="mt-2 list-decimal ps-5 space-y-1.5 text-sm text-text-secondary leading-relaxed">
-          <li>{{ t("textReading.kotel.calibration.away") }}</li>
-          <li>{{ t("textReading.kotel.calibration.eight") }}</li>
-          <li>{{ t("textReading.kotel.calibration.flat") }}</li>
+        <ol class="mt-5 space-y-2 text-sm text-text-secondary">
+          <li
+            v-for="(key, index) in CALIBRATION_STEPS"
+            :key="key"
+            class="flex items-baseline gap-3"
+          >
+            <span class="kotel-step shrink-0">{{ index + 1 }}</span>
+            <span>{{ t(key) }}</span>
+          </li>
         </ol>
         <p
-          class="mt-4 flex items-center justify-center gap-2 text-sm font-medium"
+          class="mt-5 flex items-center justify-center gap-2 text-sm font-medium"
           :class="calibrated ? 'text-primary' : 'text-text-secondary'"
           aria-live="polite"
         >
-          <AppIcon v-if="calibrated" name="circle-check" :size="16" />
+          <AppIcon v-if="calibrated" name="circle-check" :size="16" class="kotel-done-check" />
+          <svg
+            v-else-if="accuracy !== 'unknown'"
+            viewBox="0 0 14 12"
+            class="w-3.5 h-3 shrink-0"
+            aria-hidden="true"
+          >
+            <rect
+              v-for="bar in BARS"
+              :key="bar"
+              :x="(bar - 1) * 5"
+              :y="12 - bar * 4"
+              width="3.5"
+              :height="bar * 4"
+              rx="1"
+              :class="bar <= barsLit ? 'kotel-bar-lit' : 'kotel-bar'"
+            />
+          </svg>
           {{ calibrationText }}
         </p>
-        <button type="button" class="btn btn-primary w-full mt-4" @click="calibrating = false">
+        <button type="button" class="btn btn-soft w-full mt-4" @click="backFromCalibration">
           <AppIcon name="compass" :size="16" />
           {{ t("textReading.kotel.calibration.back") }}
         </button>
@@ -313,61 +562,102 @@ watch(
       <template v-else>
         <!-- La scène donne la profondeur où le cadran penche ; le bouton
              d'activation se pose par-dessus le cadran éteint. -->
-        <div class="kotel-stage relative my-5 flex justify-center">
-          <div class="kotel-tilt" :class="{ 'kotel-off': locked }" :style="tiltStyle">
+        <div class="kotel-stage relative mt-3 mb-5 flex justify-center">
+          <div
+            class="kotel-tilt"
+            :class="{ 'kotel-off': locked, 'kotel-aligned': aligned }"
+            :style="tiltStyle"
+          >
             <svg
               viewBox="0 0 200 200"
-              class="w-56 h-56 max-w-full block"
+              class="w-60 h-60 max-w-full block overflow-visible"
               role="img"
               :aria-label="t('textReading.kotel.bearing', { deg: Math.round(bearing), point })"
             >
+              <defs>
+                <clipPath :id="`${clipId}-dial`">
+                  <circle cx="100" cy="100" r="94" />
+                </clipPath>
+                <clipPath :id="clipId">
+                  <path ref="clipWave" d="M0 210 L200 210 Z" />
+                </clipPath>
+              </defs>
               <circle cx="100" cy="100" r="94" class="kotel-dial" />
-              <!-- Le cadran (graduations et aires cardinales) tourne avec
-                   l'appareil ; sans boussole, il garde le nord en haut. -->
-              <g class="kotel-rose" :style="spin(roseAngle)">
-                <line
-                  v-for="tick in TICKS"
-                  :key="tick"
-                  x1="100"
-                  y1="10"
-                  x2="100"
-                  y2="20"
-                  class="kotel-tick"
-                  :style="spin(tick)"
-                />
+              <!-- The color that rises in the dial as you turn toward the
+                   Kotel: a lighter swell behind, the surface in front. -->
+              <g v-if="live" :clip-path="`url(#${clipId}-dial)`">
+                <path ref="backWave" d="M0 210 L200 210 Z" class="kotel-liquid-back" />
+                <path ref="frontWave" d="M0 210 L200 210 Z" class="kotel-liquid" />
               </g>
-              <!-- Les lettres se posent sur le cercle avec lui, mais restent
-                   droites : tourner avec le cadran mettrait le S à l'envers. -->
-              <text
-                v-for="cardinal in CARDINALS"
-                :key="cardinal.key"
-                x="100"
-                y="100"
-                text-anchor="middle"
-                dominant-baseline="middle"
-                class="kotel-cardinal kotel-rose"
-                :class="cardinal.key === 'n' ? 'kotel-north' : ''"
-                :style="cardinalStyle(cardinal.angle)"
+              <circle cx="100" cy="100" r="94" class="kotel-ring" />
+              <!-- The ripple of the lock, replayed at each one (and only then: the
+                   dial that comes back from calibration does not replay it). -->
+              <g v-if="aligned" :key="lockCount" class="kotel-ripples">
+                <circle cx="100" cy="100" r="94" class="kotel-ripple" />
+                <circle cx="100" cy="100" r="94" class="kotel-ripple kotel-ripple-late" />
+              </g>
+              <!-- The mark of "straight ahead", fixed to the phone: the arrow
+                   is to point there. -->
+              <path v-if="live" d="M100 4 L94 -5 L106 -5 Z" class="kotel-lubber" />
+              <g
+                v-for="layer in LAYERS"
+                :key="layer"
+                :class="layer === 'wet' ? 'kotel-wet' : ''"
+                :clip-path="layer === 'wet' ? `url(#${clipId})` : undefined"
               >
-                {{ t(`textReading.kotel.rose.${cardinal.key}`) }}
-              </text>
-              <!-- La précision : le secteur où se trouve le Kotel, de part
-                   et d'autre de la flèche. -->
-              <g v-if="wedgePath" class="kotel-rose" :style="spin(needleAngle)">
-                <path
-                  :d="wedgePath"
-                  class="kotel-spread"
-                  :class="{ 'kotel-spread-low': accuracy === 'low' }"
-                />
-              </g>
-              <!-- La flèche du Kotel : le seul élément qui compte, tout le
-                   reste du cadran n'est là que pour la situer. Éteinte tant
-                   que la boussole attend d'être activée. -->
-              <g v-if="!locked" class="kotel-rose" :style="spin(needleAngle)">
-                <path
-                  d="M100 40 L124 78 L107 78 L107 148 L93 148 L93 78 L76 78 Z"
-                  class="kotel-needle"
-                />
+                <template v-if="layer === 'dry' || live">
+                  <!-- Le cadran (graduations et aires cardinales) tourne avec
+                       l'appareil ; sans boussole, il garde le nord en haut. -->
+                  <g class="kotel-rose" :style="spin(roseAngle)">
+                    <line
+                      v-for="tick in TICKS"
+                      :key="tick"
+                      x1="100"
+                      y1="10"
+                      x2="100"
+                      y2="20"
+                      class="kotel-tick"
+                      :style="spin(tick)"
+                    />
+                  </g>
+                  <!-- Les lettres se posent sur le cercle avec lui, mais restent
+                       droites : tourner avec le cadran mettrait le S à l'envers. -->
+                  <text
+                    v-for="cardinal in CARDINALS"
+                    :key="cardinal.key"
+                    x="100"
+                    y="100"
+                    text-anchor="middle"
+                    dominant-baseline="middle"
+                    class="kotel-cardinal kotel-rose"
+                    :class="cardinal.key === 'n' ? 'kotel-north' : ''"
+                    :style="cardinalStyle(cardinal.angle)"
+                  >
+                    {{ t(`textReading.kotel.rose.${cardinal.key}`) }}
+                  </text>
+                  <!-- La précision : le secteur où se trouve le Kotel, de part
+                       et d'autre de la flèche. -->
+                  <g
+                    v-if="wedgePath && layer === 'dry'"
+                    class="kotel-rose"
+                    :style="spin(needleAngle)"
+                  >
+                    <path
+                      :d="wedgePath"
+                      class="kotel-spread"
+                      :class="{ 'kotel-spread-low': accuracy === 'low' }"
+                    />
+                  </g>
+                  <!-- La flèche du Kotel : le seul élément qui compte, tout le
+                       reste du cadran n'est là que pour la situer. Éteinte tant
+                       que la boussole attend d'être activée. -->
+                  <g v-if="!locked" class="kotel-rose" :style="spin(needleAngle)">
+                    <path
+                      d="M100 40 L124 78 L107 78 L107 148 L93 148 L93 78 L76 78 Z"
+                      class="kotel-needle"
+                    />
+                  </g>
+                </template>
               </g>
             </svg>
           </div>
@@ -379,15 +669,29 @@ watch(
           </div>
         </div>
 
-        <p class="text-center text-sm font-semibold text-text-primary">
-          {{ t("textReading.kotel.bearing", { deg: Math.round(bearing), point }) }}
+        <!-- What to do now, then the figures: two lines, no more. -->
+        <p
+          class="text-center leading-snug"
+          :class="
+            statusIsNote
+              ? 'text-sm text-text-secondary'
+              : [
+                  'text-base font-semibold transition-colors',
+                  aligned || justCalibrated ? 'text-primary' : 'text-text-primary',
+                ]
+          "
+          aria-live="polite"
+        >
+          <AppIcon
+            v-if="live && justCalibrated"
+            name="circle-check"
+            :size="16"
+            class="inline-block align-[-3px] me-1"
+          />
+          {{ statusText }}
         </p>
-        <p class="mt-1 text-center text-sm text-text-secondary">
-          {{ t("textReading.kotel.distance", { km: distance }) }}
-        </p>
-        <p class="mt-3 text-center text-xs text-text-secondary leading-relaxed">{{ hint }}</p>
-        <p v-if="flatText" class="mt-1 text-center text-xs text-text-secondary leading-relaxed">
-          {{ flatText }}
+        <p class="mt-1 text-center text-sm text-text-secondary tabular-nums">
+          {{ t("textReading.kotel.facts", { point, deg: Math.round(bearing), km: distance }) }}
         </p>
 
         <!-- La précision et de quoi la rétablir : sans elles, une boussole
@@ -438,7 +742,7 @@ watch(
       <!-- Le lieu du calcul : le cap change d'un continent à l'autre, il doit
            être clair qu'il vaut pour l'endroit affiché, et rectifiable. -->
       <div
-        class="mt-4 pt-3 border-t border-line flex flex-wrap items-center justify-between gap-2 text-sm"
+        class="mt-5 pt-3 border-t border-line flex flex-wrap items-center justify-between gap-2 text-sm"
       >
         <span class="flex items-center gap-1.5 min-w-0">
           <AppIcon name="map-pin" :size="14" class="text-primary shrink-0" />
@@ -464,7 +768,7 @@ watch(
       >
         {{ geoStatus === "denied" ? t("zmanim.place.denied") : t("zmanim.place.unavailable") }}
       </p>
-    </template>
+    </div>
   </AppModal>
 </template>
 
@@ -473,7 +777,9 @@ watch(
    degrés, et la transition la rend lisible plutôt que sautante. */
 .kotel-rose,
 .kotel-tick,
-.kotel-cardinal {
+.kotel-cardinal,
+.kotel-ripple,
+.kotel-needle {
   /* Les rotations se comptent dans le repère du cadran (le viewBox), pas
      dans la boîte de chaque forme : le centre est le même pour toutes. */
   transform-box: view-box;
@@ -500,16 +806,25 @@ watch(
   opacity: 0.35;
   filter: grayscale(1) blur(1px);
 }
-@media (prefers-reduced-motion: reduce) {
-  .kotel-rose,
-  .kotel-tilt {
-    transition: none;
-  }
-}
 .kotel-dial {
   fill: color-mix(in srgb, var(--color-text-primary) 4%, transparent);
+}
+.kotel-ring {
+  fill: none;
   stroke: var(--color-line);
   stroke-width: 2;
+  transition: stroke 0.3s ease;
+}
+.kotel-aligned .kotel-ring {
+  stroke: var(--color-brand);
+}
+/* The rising color: the theme's solid fill, and a lighter swell of the same
+   color behind it (two flat layers, not a gradient). */
+.kotel-liquid {
+  fill: var(--color-brand);
+}
+.kotel-liquid-back {
+  fill: color-mix(in srgb, var(--color-brand) 45%, transparent);
 }
 .kotel-tick {
   stroke: var(--color-line);
@@ -523,6 +838,33 @@ watch(
 }
 .kotel-north {
   fill: var(--color-text-primary);
+}
+/* What the color has covered is written on it. */
+.kotel-wet .kotel-tick {
+  stroke: color-mix(in srgb, var(--color-on-brand) 55%, transparent);
+}
+.kotel-wet .kotel-cardinal {
+  fill: var(--color-on-brand);
+}
+.kotel-wet .kotel-needle {
+  fill: var(--color-on-brand);
+  stroke: var(--color-on-brand);
+  filter: none;
+}
+/* "Straight ahead", fixed to the top of the phone; it takes the color when
+   the arrow points at it. */
+.kotel-lubber {
+  fill: var(--color-text-secondary);
+  stroke: var(--color-text-secondary);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  transition:
+    fill 0.3s ease,
+    stroke 0.3s ease;
+}
+.kotel-aligned .kotel-lubber {
+  fill: var(--color-brand);
+  stroke: var(--color-brand);
 }
 /* Le secteur de la précision : la couleur de la flèche, très diluée, pour
    qu'il se lise comme son halo et non comme une seconde aiguille. */
@@ -545,6 +887,10 @@ watch(
   stroke-width: 3;
   stroke-dasharray: 6 6;
   stroke-linecap: round;
+  transition: stroke 0.3s ease;
+}
+.kotel-eight-done {
+  stroke: var(--color-primary);
 }
 .kotel-phone {
   fill: var(--color-surface);
@@ -556,6 +902,19 @@ watch(
   stroke-width: 2;
   stroke-linecap: round;
 }
+/* The number of a calibration step, in a small round of the theme color. */
+.kotel-step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.375rem;
+  height: 1.375rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  background-color: color-mix(in srgb, var(--color-primary) 12%, transparent);
+}
 /* La flèche est dessinée anguleuse, puis arrondie par un trait épais aux
    jointures rondes : des angles vifs feraient un instrument de mesure, là où
    l'on veut un objet qu'on a envie de prendre en main. */
@@ -565,5 +924,48 @@ watch(
   stroke-width: 8;
   stroke-linejoin: round;
   filter: drop-shadow(0 2px 2px color-mix(in srgb, var(--color-primary) 30%, transparent));
+}
+/* The lock: the arrow swells for a beat, and two rings leave the dial. */
+.kotel-aligned .kotel-needle {
+  animation: kotel-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.kotel-ripple {
+  fill: none;
+  stroke: var(--color-brand);
+  stroke-width: 3;
+  opacity: 0;
+  animation: kotel-ripple 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.kotel-ripple-late {
+  animation-delay: 0.18s;
+}
+.kotel-done-check {
+  animation: kotel-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes kotel-pop {
+  40% {
+    transform: scale(1.12);
+  }
+}
+@keyframes kotel-ripple {
+  from {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.22);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .kotel-rose,
+  .kotel-tilt {
+    transition: none;
+  }
+  .kotel-aligned .kotel-needle,
+  .kotel-ripple,
+  .kotel-done-check {
+    animation: none;
+  }
 }
 </style>

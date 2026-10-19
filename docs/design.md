@@ -749,6 +749,9 @@ What moves, then:
   up on a phone), and the full screen that shrinks back into the bar when
   closed (or pulled down, and it follows the finger). See
   `components/chiourim/sheetMotion.ts`.
+- a bottom sheet, which rises from below the screen when it opens and goes
+  back down when it closes, from where the finger let it go if it was
+  pulled (see "A bottom sheet moves like the system's").
 
 What does not move: arriving on a page (beyond the simple fade already in
 place), a state already there at load time (a book downloaded yesterday
@@ -765,7 +768,8 @@ Everything is cut when the system asks for fewer animations, and on a small
 machine (`perf-lite`): the final state is displayed right away, nothing is
 missing, only the path disappears (`composables/useMotion.ts`). One
 exception: the transition from the player bar to full screen is cut only at
-the system's request. Lite mode turns on for a good share of Android phones
+the system's request, and so is a bottom sheet's motion, for the same
+reason (it says where the sheet comes from and where it goes). Lite mode turns on for a good share of Android phones
 (4 GB of declared memory is enough), and this movement, brief and tied to
 the gesture, says where the full screen comes from and where it goes back
 to: without it, the gesture of pulling it down would no longer make sense.
@@ -774,7 +778,9 @@ rising, the ring): these cues say that a card is done and that another has
 arrived in front. The arrival of a goal you have just created is the third
 (the volume falling onto its shelf, the habit slipping into its list): it
 says where it has been filed (`prefersReducedMotion`,
-`composables/useMotion.ts`).
+`composables/useMotion.ts`). The Kotel compass filling as you face it is the
+fourth: the jump of the color is what says "there" (see "The compass fills
+when you face the Kotel").
 
 ### A gesture is shown, rarely
 
@@ -807,7 +813,8 @@ with four kinds of feedback, always the same:
 - **done** (two beats, the system's "success"): a task done, via the stack,
   the wallet, the sheet, a program's portion, the player's ring or a day's
   leaf; a section of a reading chain marked read; a goal added; a streak
-  light earned;
+  light earned; facing the Kotel on the compass; a compass calibration that
+  takes;
 - **undone** (one light beat): a task unchecked or postponed, a section set
   back to unread;
 - **threshold** (barely): during a gesture, the moment when, released, it
@@ -815,7 +822,8 @@ with four kinds of feedback, always the same:
   enough, the ring full), the day thread's dot moving from one marker to
   the next, the volume you have just created touching its shelf, a home
   page block changing place, a unit box touched, the wall opening as you
-  pinch; at most one beat every 60 ms;
+  pinch, the Kotel compass's arrow crossing a ten-degree notch as it comes
+  close; at most one beat every 60 ms;
 - **long press** (one firm beat): a card's sheet, the home page setting.
 
 In the app, it is the phone's motor (`@capacitor/haptics`), which follows
@@ -1158,8 +1166,9 @@ wrong direction without anything saying so. Three rules came out of it.
   covers the sector where the Kotel lies: narrow, you follow the arrow; wide,
   you need to calibrate. « Calibrer » ("Calibrate") opens, in place of the
   dial, a phone tracing a figure 8 and the three gestures to perform;
-  accuracy is followed live there until « La boussole est calibrée » ("The
-  compass is calibrated"). The command is solid when accuracy is low,
+  accuracy is followed live there until « Boussole calibrée » ("Compass
+  calibrated"), and the dial comes back by itself (see "The compass fills
+  when you face the Kotel"). The command is solid when accuracy is low,
   discreet otherwise, and remains offered when the device says nothing about
   its accuracy (Chrome on the site): « La flèche vous semble fausse ? »
   ("Does the arrow seem wrong?"). The low level is written in amber, the
@@ -1171,9 +1180,9 @@ wrong direction without anything saying so. Three rules came out of it.
   the top of the dial sinks into the screen; laid flat, it faces you. You
   want to straighten it, and you lay the phone down. The tilt follows the
   hand (the hand is what produces it, see "Motion answers a gesture"),
-  capped at 55° so the arrow stays readable; the instruction « Tenez le
-  téléphone à plat » ("Hold the phone flat") becomes « Le téléphone est à
-  plat » ("The phone is flat") when it is. A bubble level in the center was
+  capped at 55° so the arrow stays readable; the status line under the
+  dial says « Tenez le téléphone à plat » ("Hold the phone flat") until it
+  is. A bubble level in the center was
   ruled out: less visible, and one more dot on a dial that has only one
   thing to show.
 
@@ -1181,6 +1190,62 @@ Held by `src/__tests__/kotelCompass.test.ts` (the permission requested in
 the opening gesture, the button placed on the dimmed dial, accuracy and
 calibration, the tilt) and `src/__tests__/nativeCompassAccuracy.test.ts`
 (the bridge to PjCompass).
+
+### The compass fills when you face the Kotel
+
+The compass window was a title, an introduction, the dial, then five lines
+of text and the accuracy: whoever opened it read a block before turning
+around. It now opens straight on the dial, and you find the way by feel as
+much as by eye.
+
+- **No icon, no title.** The button that opened it already said « Direction
+  du Kotel »; the window keeps that name for screen readers, and the close
+  cross alone sits in the corner (see "No icon on the left of a bar or a
+  dialog").
+- **Two lines under the dial, no more.** One status line says what to do
+  now, in a few words: « Tournez-vous vers la flèche », « Tenez le téléphone
+  à plat », « Calibrez avant de suivre la flèche » (low accuracy comes
+  first: the arrow cannot be trusted then), « Vous êtes face au Kotel ».
+  Then one line of figures: « Kotel : Est, 112° · 3 333 km ». The accuracy
+  and « Calibrer » stay on their own row; the place, under the rule. The
+  sentences that explained (the 'Amida said facing Jerusalem, "the arrow
+  follows your device", "the phone is flat") are gone: the dial shows them.
+- **A mark for "straight ahead".** A small triangle above the dial, fixed to
+  the phone, is where the arrow is to point. It takes the theme color when
+  you are there.
+- **The dial fills from the bottom up.** As the arrow comes within 45°, the
+  theme's solid fill rises in the dial, to a little under half; at 5° it
+  fills it at once. The slow rise says "warmer", the jump says "there". Its
+  surface is a slow wave on a spring (it overshoots a little and settles,
+  more stirred the faster it moves), with a lighter swell of the same color
+  behind it: two flat layers, not a gradient. What the color covers (the
+  arrow, the letters, the graduations) is drawn again in `on-brand` on top,
+  so the arrow turns white as the color reaches it instead of sinking into
+  it. On the lock, the ring takes the color, the arrow swells for a beat and
+  two rings leave the dial. You come out at 10°, not 5°: a trembling hand
+  does not lock and unlock at every reading.
+- **The phone clicks as you come close.** One `tick` every ten degrees within
+  45°, like the notches of a dial, then one `done` on the lock: the way can
+  be found without looking (see "Touch answers"). A notch only changes once
+  the arrow is two degrees past its edge, so a reading that hesitates on an
+  edge does not buzz.
+- **A calibration that takes brings you back.** Whoever is tracing the 8 is
+  not reading the screen, and kept tracing it after the text had said it was
+  done. When accuracy turns good, the phone beats (`done`), the 8 and its
+  check take the color, and 1.1 s later the dial comes back, its status
+  saying « Boussole calibrée » for three seconds. Only a change counts:
+  opened with the accuracy already good, the screen waits for its button.
+  The three steps are shortened to a line each, numbered in small rounds of
+  the theme color, without the title above them.
+
+Without a compass (a browser that gives no north, a refused permission),
+nothing fills and nothing clicks: the arrow is then drawn for north up, and
+nothing says which way the phone points. The fill and its wave are cut only
+when the system asks for less motion, not on a small machine (see "Motion
+answers a gesture"). Held by `src/__tests__/kotelCompass.test.ts` (« face au
+Kotel »: no title, the notches and the single lock, the threshold that
+holds; the return after calibration, and none when accuracy was already
+good).
 
 ### A setting goes where it can be reached
 
@@ -1523,7 +1588,7 @@ not been recorded is laid out our way, in the same form
 **The reading size is a magnifier there.** A− / A+, and pinching in the
 app, do not enlarge the text of the daf page: its lines would move, and a
 Vilna page is recognized by its lines. They enlarge the whole page
-(`TalmudDafPages.vue`): it takes from 85 to 160 % of the available width,
+(`TalmudDafPages.vue`): it takes from 100 to 210 % of the available width,
 its characters follow its width, its proportions remain those of the book.
 The enlarged page first overflows the reading column, equally on the left
 and the right, into the room the screen leaves around it (`pageZoom.ts`): on
@@ -1533,8 +1598,24 @@ and from the commentary pane when it is open. What still overflows, on a
 phone from the first step, is reached by sliding the page sideways. A page
 opened already enlarged presents itself by its middle, the gemara; when the
 magnifier changes, the middle of what you were looking at stays in place.
-The setting is the same as everywhere, a single one, kept on the device:
-whoever reads large also reads the page large.
+
+**The form of the page has its own size.** The daf page and the Sefer Torah
+column do not share the size of the text (`usePageFormSize`, key
+`pj-page-form-size` on the device, next to `useReadingSize`): the size that
+suits a prayer is not the one that keeps the lines of a page, and going from
+one to the other used to undo the size set for the page. While a form of the
+page is on screen, A− / A+ and the pinch drive its size
+(`useReadingSizeControl`); everywhere else, the text's. Each one stays where
+it was left. Its steps run from the page at its ordinary width (×1) to ×2.1,
+never smaller: **the daf page is never narrower than 400 px**
+(`MIN_DAF_PAGE`, `pageZoom.ts`). Rachi and Tossafot are written at about 2 %
+of the page's width, and a browser may refuse to draw text below a minimum
+(the Android WebView writes nothing smaller than 8 px): smaller, the
+commentaries came out larger than the lines measured for them, and ran into
+one another.
+On a phone, the page is therefore a little wider than the screen from the
+first step, and slides sideways. Enforced by
+`src/__tests__/pageFormSize.test.ts`.
 
 **The beginning of each part is in bold**, on the daf page as in the gemara
 read in one piece (`talmudOpenings`, `MarkedText.vue`): the « מתני׳ » that
@@ -2133,6 +2214,13 @@ grid of cards that all look alike; you browse, play, resume.
   queue, and « À propos du cours » ("About the class"), which leads to its
   page. On a wide screen, two columns: the class on the left, what follows on
   the right.
+- **The progress bar never goes back.** Released by the finger, it stays
+  where it was let go while the audio there downloads; back 15 s and forward
+  30 s, the system's controls and the start of the class move it at once.
+  It used to fall back to the old position until the seek landed, then jump
+  to the new one. A class resumed shows where it resumes before its audio
+  has loaded, and the time shown changes with the second the audio is at
+  (held by `playerSeek.test.ts`).
 - **The queue reads at a glance.** « En cours » ("Now playing") first, set
   apart: the cover, the full title, the chapter and what remains, the
   dancing bars. Then « À suivre » ("Up next"), ten rows and the rest one
@@ -3483,6 +3571,42 @@ it, as they sit on the tab bar. Without this, the pill that stops the
 scrolling would be hidden under the commentaries being read while
 scrolling. A wide screen's column announces nothing: it does not cover the
 bottom of the screen.
+
+### A bottom sheet moves like the system's
+
+Both sheets, the reading one (`BottomSheet.vue`) and the modal one of Mon
+parcours (`parcours/BottomSheet.vue`, with a veil), are drawn by the web
+view, not by iOS or Android: a native sheet can only hold native views, not
+the Vue page, and the website needs the same sheet. Flutter does the same:
+its sheets are its own drawing, not the platform's. So ours copy the
+system's behavior instead:
+
+- **It slides.** It rises from below the screen when it opens and goes back
+  down when it closes, whatever closes it (the cross, the veil, Escape,
+  Android back, the gesture). The modal sheet's veil darkens and clears with
+  it. The reading sheet is wrapped by its caller in
+  `<Transition name="bottom-sheet">`; the modal one goes through AppModal's
+  `sheet-modal` transition.
+- **It follows the finger.** Pulled down, it moves with the finger, with no
+  easing; the veil clears as it goes. Released past a third of its height
+  (the modal sheet; the reading sheet keeps its own rules, above), or
+  flicked down, it closes and keeps going down from where it was let go;
+  otherwise it comes back up. The modal sheet can be pulled from anywhere
+  on it, unless what is under the finger is scrolled (it scrolls back
+  first), is a field or a slider, or is marked `data-sheet-nodrag`; an
+  upward or sideways gesture stays the page's.
+- **Only what the compositor moves.** The motion is a translation and the
+  veil's color, never a height or a margin: below its lowest height, the
+  reading sheet slides instead of shrinking.
+- **One curve**, the one of the player's full screen
+  (`cubic-bezier(0.32, 0.72, 0, 1)`, `SHEET_EASING` in `sheetMotion.ts`):
+  a quick start, a soft landing, in 0.36 s (reading) and 0.4 s (modal).
+- Opening, the modal sheet gives the keyboard to its content without
+  scrolling to it: brought into view, it would scroll the veil instead of
+  rising.
+
+Held by `src/__tests__/bottomSheet.test.ts` (« la feuille de Mon parcours »
+and "pushed below its height, slides down instead of shrinking").
 
 ### A modal window fits within what is visible, keyboard included
 

@@ -21,6 +21,17 @@ export interface PageZoomFrame {
 }
 
 /**
+ * The narrowest daf page, in pixels. Rachi and Tossafot are written at about
+ * 2 % of the page's width (8 px on a 400 px page), and a browser may refuse
+ * to draw text below a minimum: the Android WebView writes nothing smaller
+ * than 8 px. Below that, the commentaries come out larger than the lines the
+ * page measured for them, and run into one another. On a phone, the page is
+ * therefore a little wider than the screen from the first step, and slides
+ * sideways; the size steps (usePageFormSize) start from there.
+ */
+export const MIN_DAF_PAGE = 400;
+
+/**
  * @param scale     la taille de lecture (1 : la page à sa largeur ordinaire)
  * @param column    la largeur de la colonne de lecture
  * @param freeLeft  la place libre à gauche de la colonne
@@ -28,6 +39,8 @@ export interface PageZoomFrame {
  *                  commentaires, s'il est ouvert)
  * @param natural   la largeur ordinaire de la page : celle de la colonne pour
  *                  la page du daf, pas plus de 21 cadratins pour le rouleau
+ * @param least     the narrowest the page may be at its ordinary size
+ *                  (MIN_DAF_PAGE for the daf); each step enlarges from there
  */
 export function pageZoomFrame(
   scale: number,
@@ -35,8 +48,9 @@ export function pageZoomFrame(
   freeLeft: number,
   freeRight: number,
   natural: number = column,
+  least = 0,
 ): PageZoomFrame {
-  const page = scale * Math.min(natural, column);
+  const page = scale * Math.max(Math.min(natural, column), least);
   const wanted = Math.max(0, (page - column) / 2);
   const room = Math.max(0, Math.min(freeLeft, freeRight));
   return { page, grow: Math.min(wanted, room) };
