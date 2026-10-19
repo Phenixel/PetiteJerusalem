@@ -131,11 +131,27 @@ function setFrame(index: number, el: unknown): void {
   }
   if (frames.get(index) === el) return;
   frames.set(index, el);
-  // Une page ouverte déjà agrandie se présente par son milieu : la guemara.
-  void nextTick(() => {
-    el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2;
-  });
+  void nextTick(() => present(el));
 }
+
+/**
+ * A page opened already enlarged presents itself by its middle: the gemara.
+ * Only once it overflows its frame: until its lines are written it has no
+ * height, so nothing overflows, and centring it then left it on its
+ * left-hand commentary.
+ */
+const presented = new WeakSet<HTMLElement>();
+function present(frame: HTMLElement): void {
+  const hidden = frame.scrollWidth - frame.clientWidth;
+  if (presented.has(frame) || hidden <= 0) return;
+  presented.add(frame);
+  frame.scrollLeft = hidden / 2;
+}
+watch(
+  () => [column.value, printed.size] as const,
+  () => frames.forEach(present),
+  { flush: "post" },
+);
 
 /** Le milieu visible d'un cadre, de 0 (bord gauche) à 1 (bord droit). */
 function centreOf(frame: HTMLElement): number {
