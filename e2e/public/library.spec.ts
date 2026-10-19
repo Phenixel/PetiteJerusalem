@@ -225,3 +225,36 @@ test.describe("lecteur", () => {
     await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
   });
 });
+
+test.describe("le volet d'un passage au doigt", () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
+
+  // The commands sheet is pulled from anywhere, not only by its handle. Its
+  // body is a scroll container: without its own `touch-action: none`
+  // (BottomSheet.vue), a finger rising from the commands was taken by the
+  // browser as a pan, which cancelled the gesture.
+  test("tiré vers le haut depuis ses commandes, il ouvre les commentaires", async ({ page }) => {
+    await gotoApp(page, "/bibliotheque/talmud/berakhot/1");
+    const passages = page.locator(".daf-passage");
+    await expect(passages.first()).toBeVisible({ timeout: 20_000 });
+    await passages.nth(0).tap();
+    await expect(page.locator(".bubble-commentary")).toBeVisible({ timeout: 20_000 });
+
+    const box = (await page.locator(".bubble-action").nth(1).boundingBox())!;
+    const x = box.x + box.width / 2;
+    const y = box.y + box.height / 2;
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x, y }] });
+    for (let step = 1; step <= 12; step++) {
+      await cdp.send("Input.dispatchTouchEvent", {
+        type: "touchMove",
+        touchPoints: [{ x, y: y - step * 12 }],
+      });
+      await page.waitForTimeout(16);
+    }
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+    await cdp.detach();
+
+    await expect(page.locator(".commentary-panel")).toContainText("Daf 2a · passage 1");
+  });
+});

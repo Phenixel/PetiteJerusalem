@@ -333,9 +333,15 @@ onBeforeUnmount(() => {
   cursor: auto;
 }
 
-/* Un volet à la hauteur de son contenu se tire de partout : le geste est le
-   nôtre sur toute sa surface, sauf là où le contenu défile lui-même. */
-.sheet-fit {
+/* A sheet at the height of its content is pulled from anywhere: the gesture
+   is ours over its whole surface, except where the content scrolls by
+   itself. The body says it again: it is a scroll container, and a
+   touch-action does not reach past one. Without it, a finger pulling up
+   from the commands (and not from the handle) is taken by the browser as a
+   pan of the body, which cancels the pointer: the sheet never opens on the
+   commentaries. */
+.sheet-fit,
+.sheet-fit .sheet-body {
   touch-action: none;
 }
 
