@@ -208,6 +208,58 @@ documents set in the Firestore emulator with the "owner" token that bypasses
 the security rules. The ports are those of `firebase.json` (8470 Firestore,
 8471 Auth).
 
+### Memory: `e2e/public/memory.spec.ts`
+
+The app is a single page that stays open for hours, and the installed app
+for days: whatever a page leaves behind when it is left adds up at every
+visit. This file walks the same round of thirteen public pages (home,
+library, a psalm, a Tanakh book, a daf, the Sidour, the times, the
+calendar, the paracha, the downloads, a content page) through client-side
+navigation, two rounds to warm up, then six measured ones, and reads after
+each round, through the Chrome DevTools Protocol and after a forced garbage
+collection:
+
+| Metric | What a leak there means |
+| --- | --- |
+| `JSEventListeners` | a listener on `window`, `document` or a shared element that a page adds and never removes |
+| `Nodes` | a DOM tree kept alive by a closure, a cache or such a listener |
+| `JSHeapUsedSize` | the rest: a module cache without bound, a watcher or an interval holding its component |
+| `Documents` | an iframe or a document that outlives its page |
+
+The verdict is the **median** of the round-to-round differences, not the
+total: a leak repeats at every round (one listener forgotten by one page
+gives a median of 1 and fails), while a transient (a request ending during
+the measure) moves a single sample and leaves the median at 0. Limits: no
+listener and at most 5 nodes per round, less than 4 MB of heap over the six
+rounds (observed: 0.8 to 1.6 MB, V8's caches of code compiled late). A
+second test leaves the home page open for an hour of fake time
+(`page.clock`): an interval that adds something at each tick shows there.
+
+Both tests run twice: as the site, then as the web view of the installed
+app, with Capacitor told it runs on Android (`CapacitorCustomPlatform`).
+The app then takes its native branches (`isNativeApp`, the `native-app`
+class, the visitor's dashboard on the home page, the times opening over the
+page, the bottom tab bar), with the plugins' web implementations behind
+them. The Java and Swift side (`native/`, the code injected by
+`scripts/setup-android.mjs` and `scripts/setup-ios.mjs`) cannot run here
+and was audited by reading in October 2026: sensors, receivers, Wear OS
+listeners, alarms and WatchConnectivity delegates are all released.
+
+Two traps the measure avoids, to keep in mind when touching it:
+
+- DevTools keeps the arguments of every console message alive, and a dev
+  build's Vue warnings carry the component that raised them: without
+  `Runtime.discardConsoleEntries` before each measure, a page that warns
+  looks like a page that leaks (it is what the native home page did, with
+  its "non-element root node" warning under the app's `<Transition>`).
+- In the app, the times fold back into the tab bar button after they are
+  left: each navigation waits for no `*-enter-active` or `*-leave-active`
+  class to remain, or the measure counts their whole page.
+
+The figures of each run are printed (`[memory]`) and attached to the
+report as an annotation. A failure names the metric; to find the culprit,
+walk each page alone against home and compare.
+
 ### Writing a new test
 
 - A `*.spec.ts` file in `e2e/public/` or `e2e/firebase/`, depending on
