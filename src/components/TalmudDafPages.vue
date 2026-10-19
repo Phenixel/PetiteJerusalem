@@ -2,9 +2,10 @@
 import { computed, nextTick, reactive, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useReadingColumn } from "../composables/useReadingColumn";
+import { usePageFormShown } from "../composables/useReadingSize";
 import { loadDafLayout, type DafLayoutPage } from "../services/dafLayout";
 import { linkedMeforshim, nextLink, type DafLink } from "../services/dafLinks";
-import { pageZoomFrame } from "../services/pageZoom";
+import { MIN_DAF_PAGE, pageZoomFrame } from "../services/pageZoom";
 import type { DafBlock, DafMeforshim } from "../services/textService";
 import TalmudPage from "./TalmudPage.vue";
 import TalmudPrintedPage from "./TalmudPrintedPage.vue";
@@ -26,6 +27,10 @@ import TalmudPrintedPage from "./TalmudPrintedPage.vue";
  * déborde d'abord de la colonne de lecture, dans la place libre de chaque
  * côté (un ordinateur en a) ; ce qui dépasse encore se rejoint en faisant
  * glisser la page de côté (pageZoom.ts).
+ *
+ * That size is the page form's own (usePageFormSize), not the text's: while
+ * the page is on screen, A− / A+ and the pinch drive it, between bounds that
+ * keep its lines. The page is never narrower than MIN_DAF_PAGE.
  */
 const props = defineProps<{
   blocks: DafBlock[];
@@ -37,6 +42,8 @@ const props = defineProps<{
 }>();
 
 const { t } = useI18n();
+// A− / A+ and the pinch drive the size of the page while it is on screen.
+usePageFormShown("daf");
 
 /**
  * Les commentaires de chaque amoud, bout à bout : la page ne les découpe pas
@@ -96,7 +103,14 @@ watch(
 const { ruler, column, free } = useReadingColumn();
 
 const zoom = computed(() =>
-  pageZoomFrame(props.scale, column.value, free.value.left, free.value.right),
+  pageZoomFrame(
+    props.scale,
+    column.value,
+    free.value.left,
+    free.value.right,
+    column.value,
+    MIN_DAF_PAGE,
+  ),
 );
 /** Le cadre déborde de la colonne d'autant de chaque côté. */
 const frameStyle = computed(() => ({ marginInline: `${-zoom.value.grow}px` }));

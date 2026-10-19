@@ -420,9 +420,11 @@ both storages, `localStorage` for the synchronous read of the first render
 and the native preferences for durability, and reads the native one again
 when the former has nothing to say.
 
-The **text size** of the reading pages (A− / A+ and pinch, `useReadingSize`)
-is therefore written twice: in `localStorage`, the only one readable
-synchronously, hence from the first render; and in the native preferences
+The **text size** of the reading pages (A− / A+ and pinch, `useReadingSize`),
+and the separate size of the form of the page (the daf, the Sefer Torah,
+`usePageFormSize`, key `pj-page-form-size`), are therefore written twice:
+in `localStorage`, the only one readable synchronously, hence from the
+first render; and in the native preferences
 (`@capacitor/preferences`: SharedPreferences on Android, UserDefaults on
 iOS), which survive and serve as a safety net, read again on the setting's
 first use. It is not uploaded to the account: a phone held at arm's length

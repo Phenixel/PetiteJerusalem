@@ -1484,7 +1484,7 @@ not been recorded is laid out our way, in the same form
 **The reading size is a magnifier there.** A− / A+, and pinching in the
 app, do not enlarge the text of the daf page: its lines would move, and a
 Vilna page is recognized by its lines. They enlarge the whole page
-(`TalmudDafPages.vue`): it takes from 85 to 160 % of the available width,
+(`TalmudDafPages.vue`): it takes from 100 to 210 % of the available width,
 its characters follow its width, its proportions remain those of the book.
 The enlarged page first overflows the reading column, equally on the left
 and the right, into the room the screen leaves around it (`pageZoom.ts`): on
@@ -1494,8 +1494,24 @@ and from the commentary pane when it is open. What still overflows, on a
 phone from the first step, is reached by sliding the page sideways. A page
 opened already enlarged presents itself by its middle, the gemara; when the
 magnifier changes, the middle of what you were looking at stays in place.
-The setting is the same as everywhere, a single one, kept on the device:
-whoever reads large also reads the page large.
+
+**The form of the page has its own size.** The daf page and the Sefer Torah
+column do not share the size of the text (`usePageFormSize`, key
+`pj-page-form-size` on the device, next to `useReadingSize`): the size that
+suits a prayer is not the one that keeps the lines of a page, and going from
+one to the other used to undo the size set for the page. While a form of the
+page is on screen, A− / A+ and the pinch drive its size
+(`useReadingSizeControl`); everywhere else, the text's. Each one stays where
+it was left. Its steps run from the page at its ordinary width (×1) to ×2.1,
+never smaller: **the daf page is never narrower than 400 px**
+(`MIN_DAF_PAGE`, `pageZoom.ts`). Rachi and Tossafot are written at about 2 %
+of the page's width, and a browser may refuse to draw text below a minimum
+(the Android WebView writes nothing smaller than 8 px): smaller, the
+commentaries came out larger than the lines measured for them, and ran into
+one another.
+On a phone, the page is therefore a little wider than the screen from the
+first step, and slides sideways. Enforced by
+`src/__tests__/pageFormSize.test.ts`.
 
 **The beginning of each part is in bold**, on the daf page as in the gemara
 read in one piece (`talmudOpenings`, `MarkedText.vue`): the « מתני׳ » that
