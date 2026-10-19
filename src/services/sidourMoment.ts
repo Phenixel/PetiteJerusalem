@@ -424,8 +424,9 @@ function momentTools(
  *    (or its time is over): it is said after Arvit;
  * 5. between two services, the text of the current holiday, if one is said
  *    now (the loulav, by day);
- * 6. the bedtime Chema, at night once Arvit is said (or its time is over),
- *    until dawn: the last text of the day;
+ * 6. the bedtime Chema, at night once Arvit is said, until 'hatsot of the
+ *    night (past midnight, still for the evening before): the last text of
+ *    the day;
  * 7. nothing: between two services, or once everything is said, there is
  *    nothing to say now, and no card (held by sidourMoment.test.ts, « only
  *    what is said now »).
@@ -534,7 +535,7 @@ export function sidourMoment(
 
   // 6. The bedtime Chema, once Arvit is said or its time is over.
   if (!hero) {
-    const chema = chemaNight(place, now, times);
+    const chema = chemaNight(now, currentEvening);
     if (chema && !said.chema?.(chema)) {
       hero = {
         kind: "chema",
@@ -602,15 +603,16 @@ function moonOf(
 
 /**
  * The night of the bedtime Chema, as the civil day of its evening: from
- * nightfall (when Arvit opens) until dawn. Between midnight and dawn, it is
- * still the previous evening's night.
+ * nightfall (when Arvit opens) until 'hatsot of the night, like Arvit. Past
+ * midnight, until 'hatsot, it is still the previous evening's (eveningOf):
+ * said then, it is not owed again before the next night.
  */
-function chemaNight(place: ZmanimPlace, now: Date, times: ZmanMap): Date | null {
+function chemaNight(now: Date, evening: { day: Date; times: ZmanMap }): Date | null {
   const t = now.getTime();
-  const dawn = times.get("alotHaShachar");
-  if (dawn && t < dawn.getTime()) return placeDayAfter(place, now, -1);
-  const tzeit = times.get("tzeit");
-  return tzeit && t >= tzeit.getTime() ? now : null;
+  const tzeit = evening.times.get("tzeit");
+  const end = evening.times.get("chatzotNight");
+  if (!tzeit || !end || t < tzeit.getTime() || t >= end.getTime()) return null;
+  return evening.day;
 }
 
 /**

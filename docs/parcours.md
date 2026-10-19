@@ -13,16 +13,16 @@ following sections), audience tracking in `docs/tracking-plan.md`
 
 ## The pages
 
-| Address                           | What you find there                                                                                |
-| --------------------------------- | -------------------------------------------------------------------------------------------------- |
-| `/`                               | home: the lamp, the day's deck, the wallet, the shelf (`components/parcours/home/`)                |
-| `/parcours`                       | the streak, the wall of the last five weeks, the shelf, the habits                                 |
-| `/parcours/journee`               | the address of Ma journée ("My day"), removed: it leads to home                                    |
-| `/parcours/mur`                   | the whole wall                                                                                     |
-| `/parcours/nouveau`               | new objective, on a single page; once created, it lands on `/parcours`                             |
-| `/parcours/objectif/:id`          | a program (its portion, how far behind it is, its week), or the settings of another objective      |
-| `/parcours/objectif/:id/reglages` | the settings of a program                                                                          |
-| `/bibliotheque/lecture-du-jour`   | the daily reading: the day's texts, one after the other; their list is put together there          |
+| Address                           | What you find there                                                                           |
+| --------------------------------- | --------------------------------------------------------------------------------------------- |
+| `/`                               | home: the lamp, the day's deck, the wallet, the shelf (`components/parcours/home/`)           |
+| `/parcours`                       | the streak, the wall of the last five weeks, the shelf, the habits                            |
+| `/parcours/journee`               | the address of Ma journée ("My day"), removed: it leads to home                               |
+| `/parcours/mur`                   | the whole wall                                                                                |
+| `/parcours/nouveau`               | new objective, on a single page; once created, it lands on `/parcours`                        |
+| `/parcours/objectif/:id`          | a program (its portion, how far behind it is, its week), or the settings of another objective |
+| `/parcours/objectif/:id/reglages` | the settings of a program                                                                     |
+| `/bibliotheque/lecture-du-jour`   | the daily reading: the day's texts, one after the other; their list is put together there     |
 
 In the app, everything opens **without an account** and offline. The site
 requires an account: it has no device on which to keep the tracking.
@@ -35,26 +35,35 @@ shows, at the bottom of the text, the day's task to check off
 
 `src/services/parcours/`, without Vue:
 
-| File                                       | Role                                                                                         |
-| ------------------------------------------ | -------------------------------------------------------------------------------------------- |
-| `model.ts`                                 | the objectives (program, habit, cycle, daily text) and the days                              |
-| `texts.ts`                                 | what a program can finish and what it counts, based on `src/datas/parcoursUnits.json`        |
-| `plan.ts`                                  | each day's or week's portion, falling behind, catching up, getting ahead, resuming           |
-| `aliyot.ts`                                | chnei mikra aliya by aliya: one per day, what is still owed                                  |
-| `schedule.ts`                              | a day's tasks, a day's state on the wall, the streak                                         |
-| `calendar.ts`                              | rest days (Chabbat, holidays, in Israel or in the diaspora), the week's aliyot               |
-| `moments.ts`                               | the present moment, the order of the home deck                                               |
-| `actions.ts`, `create.ts`                  | what you change, what you create                                                             |
-| `merge.ts`                                 | merging two copies                                                                           |
-| `deviceStore.ts`, `cloud.ts`, `account.ts` | the device, the account, what passes from one to the other                                   |
-| `legacyDailyReading.ts`                    | the former daily reading                                                                     |
-| `entries.ts`                               | the texts a task has you read (offline download)                                             |
-| `tracking.ts`                              | audience tracking shared by several screens                                                  |
+| File                                       | Role                                                                                            |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------------- |
+| `model.ts`                                 | the objectives (program, habit, cycle, daily text) and the days                                 |
+| `texts.ts`                                 | what a program can finish and what it counts, based on `src/datas/parcoursUnits.json`           |
+| `plan.ts`                                  | each day's or week's portion, falling behind, catching up, getting ahead, resuming              |
+| `aliyot.ts`                                | chnei mikra aliya by aliya: one per day, what is still owed                                     |
+| `schedule.ts`                              | a day's tasks, a day's state on the wall, the streak                                            |
+| `calendar.ts`                              | rest days (Chabbat, holidays, in Israel or in the diaspora), the week's aliyot                  |
+| `moments.ts`                               | the present moment, the order of the home deck                                                  |
+| `actions.ts`, `create.ts`                  | what you change, what you create                                                                |
+| `merge.ts`                                 | merging two copies                                                                              |
+| `deviceStore.ts`, `cloud.ts`, `account.ts` | the device, the account, what passes from one to the other                                      |
+| `legacyDailyReading.ts`                    | the former daily reading                                                                        |
+| `entries.ts`                               | the texts a task has you read (offline download)                                                |
+| `tracking.ts`                              | audience tracking shared by several screens                                                     |
 | `occasions.ts`                             | the deck's occasion cards marked done (the moon, the 'Omer, 'Hanouka, a service), on the device |
 
 `composables/useParcours.ts` brings it all together for the pages: a single
 shared state, started on first use (anyone who never opens the journey
 loads nothing).
+
+**A day** changes at 'hatsot of the night, not at midnight: between
+midnight and 'hatsot (around 1:40 in a Paris summer), the deck, the tasks
+and the streak are still the previous evening's, so Arvit or the bedtime
+Chema said at 0:30 count for that evening and are not owed again before
+the next night. When 'hatsot falls before midnight on the device's clock
+(a winter night in Paris), the day changes at midnight (`dayOfInstant` in
+`days.ts`, read by `useParcours`; held by `parcoursSchedule.test.ts`, « the
+day of an instant »).
 
 **A day** (`DayLog`) keeps what is done (`done`), the units read per
 program (`units`), what is set aside (`skipped`) and the time of the last
@@ -191,13 +200,13 @@ nothing about programs or habits.
 | `parcoursPlan.test.ts`          | the portions, falling behind, the five catch-up modes, getting ahead, resuming after a pause                                                                 |
 | `parcoursAliyot.test.ts`        | chnei mikra: one aliya per day, a forgotten one comes back the next day, Chabbat finishes; aliyot checked one by one make up the card, a card checks its own |
 | `chneiMikraChecks.test.ts`      | the checks of version 3.10.11, taken over once from the device                                                                                               |
-| `parcoursSchedule.test.ts`      | a day's tasks, the wall, the streak (Chabbat and « Pas aujourd'hui » do not break it)                                                                        |
+| `parcoursSchedule.test.ts`      | the day changing at 'hatsot of the night; a day's tasks, the wall, the streak (Chabbat and « Pas aujourd'hui » do not break it)                              |
 | `parcoursCalendar.test.ts`      | rest days, moments, the order of the deck                                                                                                                    |
 | `parcoursMerge.test.ts`         | merging two copies                                                                                                                                           |
 | `parcoursSync.test.ts`          | without an account, with an account, a shared device                                                                                                         |
 | `parcoursCloud.test.ts`         | the account write sends no `undefined` field (Firestore would reject the whole write)                                                                        |
 | `parcoursLegacyDaily.test.ts`   | the former daily reading, taken over and kept up to date                                                                                                     |
-| `parcoursDeck.test.ts`          | the home deck: the order, prayer service times, catching up, the 'Omer card, the service of the hour without the habit                                      |
+| `parcoursDeck.test.ts`          | the home deck: the order, prayer service times, catching up, the 'Omer card, the service of the hour without the habit                                       |
 | `parcoursEntries.test.ts`       | the texts to download for the day                                                                                                                            |
 | `parcoursTracking.test.ts`      | shared tracking, and the daily reading events that continue                                                                                                  |
 | `widgetDailyParcours.test.ts`   | the widgets' daily reading, without an account                                                                                                               |

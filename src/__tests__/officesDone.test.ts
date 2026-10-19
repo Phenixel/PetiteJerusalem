@@ -5,7 +5,8 @@ import type { Objective } from "../services/parcours/model";
 /**
  * What has already been said (composables/useOfficesDone.ts), shared by the
  * home deck, the Sidour page and the end of a service's text: the window
- * under way is today's, as in the deck, Arvit after midnight included.
+ * under way is today's, as in the deck; past midnight, until 'hatsot of the
+ * night, today is still the evening's day (parcours/days.ts, dayOfInstant).
  */
 
 vi.mock("../services/authService", () => ({
@@ -87,7 +88,6 @@ describe("what has already been said", () => {
     // Wednesday 21 October 2026, 0:30 on the machine's clock: the night of the 20th.
     vi.useFakeTimers({ now: new Date(2026, 9, 21, 0, 30), toFake: ["Date"] });
     const { offices, store } = await mount([CHEMA]);
-    expect(store.today.value).toBe("2026-10-21");
     const evening = new Date(2026, 9, 20, 12);
     const next = new Date(2026, 9, 21, 12);
     expect(offices.isChemaDone(evening)).toBe(false);

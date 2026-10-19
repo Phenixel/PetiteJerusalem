@@ -7,7 +7,7 @@ import {
   sidourMoment,
   tefilaAdditions,
 } from "../services/sidourMoment";
-import { DEFAULT_PLACE, type ZmanimPlace } from "../services/zmanimService";
+import { DEFAULT_PLACE, placeDayKey, type ZmanimPlace } from "../services/zmanimService";
 import { orderTools, SIDOUR_TOOLS } from "../content/sidourTools";
 import fr from "../locales/fr";
 import en from "../locales/en";
@@ -211,7 +211,7 @@ describe("a service already said gives way", () => {
       said("arvit"),
     );
     expect(hero).toMatchObject({ kind: "chema", text: "sidour/chema-al-hamita" });
-    expect(hero?.evening?.getDate()).toBe(12);
+    expect(hero?.evening && placeDayKey(DEFAULT_PLACE, hero.evening)).toBe("2026-10-12");
     expect(extra).toBeNull();
   });
 
@@ -241,6 +241,8 @@ describe("a service already said gives way", () => {
 });
 
 describe("only what is said now", () => {
+  const eveningDay = (hero: { evening?: Date } | null) =>
+    hero?.evening ? placeDayKey(DEFAULT_PLACE, hero.evening) : null;
   const all = { office: () => true, moon: () => true, havdala: () => true, chema: () => true };
 
   it("Arvit and the bedtime Chema said: nothing to say now, no card", () => {
@@ -256,16 +258,26 @@ describe("only what is said now", () => {
     expect(sidourMoment(DEFAULT_PLACE, night, blessed).hero?.kind).toBe("chema");
   });
 
-  it("past Arvit's time, the bedtime Chema until dawn, for the previous evening", () => {
-    // Tuesday 13 October 2026: Arvit closed at 1:38, dawn at 6:34.
-    const late = sidourMoment(DEFAULT_PLACE, at("2026-10-13T03:00:00+02:00")).hero;
+  it("the bedtime Chema until 'hatsot of the night, for the evening before past midnight", () => {
+    // Monday 12 October 2026, Arvit said; 'hatsot of the night at 1:38.
+    const arvit = { office: () => true };
+    const evening = sidourMoment(DEFAULT_PLACE, at("2026-10-12T23:30:00+02:00"), arvit).hero;
+    expect(evening?.kind).toBe("chema");
+    expect(eveningDay(evening)).toBe("2026-10-12");
+    // Past midnight, Tuesday on the calendar: still Monday evening's.
+    const late = sidourMoment(DEFAULT_PLACE, at("2026-10-13T01:00:00+02:00"), arvit).hero;
     expect(late?.kind).toBe("chema");
-    expect(late?.evening?.getDate()).toBe(12);
-    // Said: nothing more that night.
-    const said = sidourMoment(DEFAULT_PLACE, at("2026-10-13T03:00:00+02:00"), {
-      chema: (evening) => evening.getDate() === 12,
+    expect(eveningDay(late)).toBe("2026-10-12");
+    // Said at 23:30: not offered again at 0:30.
+    const said = sidourMoment(DEFAULT_PLACE, at("2026-10-13T00:30:00+02:00"), {
+      ...arvit,
+      chema: (day) => placeDayKey(DEFAULT_PLACE, day) === "2026-10-12",
     });
     expect(said.hero).toBeNull();
+    // Past 'hatsot: gone, until Tuesday's nightfall.
+    expect(sidourMoment(DEFAULT_PLACE, at("2026-10-13T03:00:00+02:00")).hero).toBeNull();
+    const tuesday = sidourMoment(DEFAULT_PLACE, at("2026-10-13T23:00:00+02:00"), arvit).hero;
+    expect(eveningDay(tuesday)).toBe("2026-10-13");
   });
 
   it("between dawn and misheyakir: no card, Cha'harit is not said yet", () => {

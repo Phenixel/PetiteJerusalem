@@ -5,7 +5,7 @@ import {
   removeObjective,
   setPaused,
 } from "../services/parcours/actions";
-import { addDays, weekdayOf } from "../services/parcours/days";
+import { addDays, dayOfInstant, weekdayOf } from "../services/parcours/days";
 import { emptyParcours } from "../services/parcours/model";
 import type { Objective, ParcoursData } from "../services/parcours/model";
 import {
@@ -56,6 +56,24 @@ const tefilot: Objective = {
 const parasha: Objective = { ...base, id: "par", kind: "cycle", cycle: "parasha", createdAt: 2 };
 
 const ctx = (d: ParcoursData) => scheduleContext(d, chabbat);
+
+describe("the day of an instant", () => {
+  // The device's clock: local times, whatever the machine's time zone.
+  const nightMiddle = new Date(2026, 9, 13, 1, 38);
+
+  it("between midnight and 'hatsot of the night, still the previous evening's day", () => {
+    expect(dayOfInstant(new Date(2026, 9, 12, 23, 30), nightMiddle)).toBe("2026-10-12");
+    expect(dayOfInstant(new Date(2026, 9, 13, 0, 30), nightMiddle)).toBe("2026-10-12");
+    expect(dayOfInstant(new Date(2026, 9, 13, 1, 38), nightMiddle)).toBe("2026-10-13");
+    expect(dayOfInstant(new Date(2026, 9, 13, 9, 0), nightMiddle)).toBe("2026-10-13");
+  });
+
+  it("'hatsot before midnight, or unknown: the day changes at midnight", () => {
+    const winter = new Date(2026, 11, 8, 23, 43);
+    expect(dayOfInstant(new Date(2026, 11, 8, 23, 30), winter)).toBe("2026-12-08");
+    expect(dayOfInstant(new Date(2026, 11, 9, 0, 10), null)).toBe("2026-12-09");
+  });
+});
 
 describe("les tâches d'un jour", () => {
   it("suit les jours d'une habitude, et donne un office par moment aux trois tefilot", () => {
