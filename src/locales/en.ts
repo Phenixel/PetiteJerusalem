@@ -1967,10 +1967,8 @@ const en: LocaleMessages = {
       "The Siddur online, in Hebrew with transliteration: Shacharit, Mincha, Arvit, Birkat Hamazon and the blessings, Selichot and the festival texts. The current prayer first.",
     placeLink: "Times for {place}",
     now: "Now",
-    next: "Next prayer",
     tonight: "Tonight",
     until: "until {time}",
-    from: "from {time}",
     nowPill: "now",
     tools: { label: "Tools" },
     days: {
@@ -2003,9 +2001,9 @@ const en: LocaleMessages = {
     },
     slihot: {
       now: "Before Shacharit, until sunrise at {time}",
-      tonight: "Tonight, from {start} to {end}",
     },
     thisNight: "Tonight",
+    chema: { meta: "Before going to sleep" },
     halevana: {
       until: "Until {date}",
       lineNow: "Tonight, until {date}",

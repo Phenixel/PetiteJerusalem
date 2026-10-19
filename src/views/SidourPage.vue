@@ -16,11 +16,13 @@ let feastDownload: Promise<void> | null = null;
  * liste, rangée par usage (voir content/sidourGroups) : on ne se demande plus
  * dans quel livre est le Birkat Hamazon.
  *
- * At the top, the moment, as on the home page: the service whose time it is
- * (or the one coming up), in solid color, with what the day adds to it; then
- * two or three texts that are also said now (see services/sidourMoment). A
- * service already said steps aside (useOfficesDone): the card of the service
- * or of the moon is swiped right to say it is done, as on the home page.
+ * At the top, the moment: the service whose time it is, in solid color, with
+ * what the day adds to it; then the texts that are also said now (see
+ * services/sidourMoment). Only what is said now: unlike the home deck, the
+ * page announces nothing whose time has not come, and shows no card when
+ * everything is said. A service already said steps aside (useOfficesDone):
+ * the card of the service, of the moon or of the bedtime Chema is swiped
+ * right to say it is done, as on the home page.
  * The moon has its line under the card all through its nights.
  * Les fêtes restent en bas de la liste, et remontent en tête le temps de la
  * leur ; dans l'app, leurs textes se téléchargent alors d'eux-mêmes.
@@ -160,14 +162,13 @@ const hero = computed(() => {
   if (!text) return null;
   let kicker = t("sidour.now");
   if (h.kind === "hanouka") kicker = t("sidour.tonight");
-  else if (h.kind === "halevana") kicker = t("sidour.thisNight");
-  else if (h.kind === "next-tefila") kicker = t("sidour.next");
+  else if (h.kind === "halevana" || h.kind === "chema") kicker = t("sidour.thisNight");
   else if (h.kind === "feast" && h.feast) kicker = t(FEAST_LABEL_KEYS[h.feast]);
   const day = h.day && h.kind !== "hanouka" ? ` · ${t(DAY_LABELS[h.day])}` : "";
   const name = h.tefila ? tefilaName(h.tefila) : textName(text);
   let meta = "";
   if (h.kind === "tefila") meta = t("sidour.until", { time: time(h.end) });
-  else if (h.kind === "next-tefila") meta = t("sidour.from", { time: time(h.start) });
+  else if (h.kind === "chema") meta = t("sidour.chema.meta");
   else if (h.kind === "slihot") meta = t("sidour.slihot.now", { time: time(h.end) });
   else if (h.kind === "halevana" && h.until)
     meta = t("sidour.halevana.until", { date: formatHebrewDate(h.until, locale.value) });
@@ -181,13 +182,12 @@ const hero = computed(() => {
         ? t("sidour.hanouka.nightOne")
         : t("sidour.hanouka.night", { n });
   } else if (h.text === MOMENT_TEXTS.loulav) meta = t("sidour.loulav.until", { time: time(h.end) });
-  else if (h.text === MOMENT_TEXTS.slihot)
-    meta = t("sidour.slihot.tonight", { start: time(h.start), end: time(h.end) });
 
   // L'objet du moment, dessiné dans la carte (voir CardArt) : le sidour pour
   // un office, et pour une occasion, son objet à elle.
   let art: CardArtSpec = { kind: "siddur" };
-  if (h.kind === "halevana" && h.moonAge !== undefined) art = { kind: "moon", age: h.moonAge };
+  if ((h.kind === "halevana" || h.kind === "chema") && h.moonAge !== undefined)
+    art = { kind: "moon", age: h.moonAge };
   else if (h.night) art = { kind: "hanoukia", night: h.night, lit: h.kind === "hanouka" };
   else if (h.text === MOMENT_TEXTS.slihot) art = { kind: "shofar" };
   else if (h.text === MOMENT_TEXTS.loulav) art = { kind: "loulav" };
@@ -214,9 +214,7 @@ function extraMeta(extra: SidourExtra): string {
       ? t("sidour.extras.havdala", { time: time(extra.start) })
       : t("sidour.extras.havdalaPlain");
   }
-  const when = extra.now
-    ? t("sidour.until", { time: time(extra.end) })
-    : t("sidour.from", { time: time(extra.start) });
+  const when = t("sidour.until", { time: time(extra.end) });
   const adds = (extra.additions ?? []).map(additionLabel).join(", ");
   const sentence = `${when.charAt(0).toLocaleUpperCase(locale.value)}${when.slice(1)}`;
   return adds ? `${sentence} · ${adds}` : sentence;
@@ -254,11 +252,14 @@ const moonLine = computed(() => {
 });
 
 // --- « C'est fait », swiped on the card ----------------------------------------
-// As on the home page stack: swiped right past the threshold, the service (or
-// the moon) is said, and the card goes to what comes next. A service whose
-// time has not come, a holiday text, are not swiped.
+// As on the home page stack: swiped right past the threshold, the service
+// (the moon, the bedtime Chema) is said, and the card goes to what is said
+// next, or leaves. A holiday text is not swiped.
 const SWIPE_THRESHOLD = 110;
-const swipeable = computed(() => hero.value?.kind === "tefila" || hero.value?.kind === "halevana");
+const swipeable = computed(() => {
+  const kind = hero.value?.kind;
+  return kind === "tefila" || kind === "halevana" || kind === "chema";
+});
 
 /** The last thing said by a swipe, the time to undo it. */
 const lastSaid = ref<{ name: string; undo: () => void } | null>(null);
@@ -281,6 +282,10 @@ function markHero(): void {
     const until = h.until;
     officesDone.markMoon(until, true, "sidour_swipe");
     remember(name, () => officesDone.markMoon(until, false, "sidour_undo"));
+  } else if (h?.kind === "chema" && h.evening) {
+    const evening = h.evening;
+    officesDone.markChema(evening, true, "sidour_swipe");
+    remember(name, () => officesDone.markChema(evening, false, "sidour_undo"));
   } else return;
   noteSwipe();
   haptic("done");
@@ -289,7 +294,7 @@ function markHero(): void {
 /** The line under the card, swiped: havdala made, or the service said. */
 const extraSwipeable = computed(() => {
   const e = moment.value.extra;
-  return (e?.key === "havdala" && !!e.evening) || (e?.key === "tefila" && !!e.now);
+  return (e?.key === "havdala" && !!e.evening) || e?.key === "tefila";
 });
 
 function sayExtra(): void {
@@ -299,7 +304,7 @@ function sayExtra(): void {
     const evening = e.evening;
     officesDone.markHavdala(evening, true, "sidour_line_swipe");
     remember(name, () => officesDone.markHavdala(evening, false, "sidour_undo"));
-  } else if (e?.key === "tefila" && e.now && e.tefila && e.start && e.end) {
+  } else if (e?.key === "tefila" && e.tefila && e.start && e.end) {
     const window = { tefila: e.tefila, start: e.start, end: e.end };
     officesDone.markOffice(window, true, "sidour_line_swipe");
     remember(name, () => officesDone.markOffice(window, false, "sidour_undo"));
@@ -365,11 +370,11 @@ const TOOL_OPENERS: Record<SidourToolId, () => void> = {
 };
 
 // --- Mesure d'audience -------------------------------------------------------
-// Ce que la carte proposait à l'arrivée : l'office, celui qui vient, la fête.
+// What the card offered on arrival: the service, the occasion, the holiday,
+// the bedtime Chema; null when nothing is said now.
 function heroValue(h: SidourHero | null): string | null {
   if (!h) return null;
   if (h.kind === "tefila") return h.tefila ?? null;
-  if (h.kind === "next-tefila") return `next_${h.tefila}`;
   return h.kind;
 }
 

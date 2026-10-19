@@ -2044,10 +2044,8 @@ const fr = {
       "Le Sidour en ligne, en hébreu avec la phonétique : Cha'harit, Min'ha, Arvit, le Birkat Hamazon et les brahot, les Sli'hot et les textes des fêtes. L'office du moment en tête.",
     placeLink: "Horaires de {place}",
     now: "En ce moment",
-    next: "Prochain office",
     tonight: "Ce soir",
     until: "jusqu'à {time}",
-    from: "à partir de {time}",
     nowPill: "en ce moment",
     // La rangée d'outils, sous la carte du moment (voir content/sidourTools).
     tools: { label: "Outils" },
@@ -2081,10 +2079,10 @@ const fr = {
     },
     slihot: {
       now: "Avant Cha'harit, jusqu'au lever du soleil à {time}",
-      tonight: "Cette nuit, de {start} à {end}",
     },
-    // La carte de la lune, les nuits où elle se bénit.
+    // The card of the moon, and of the bedtime Chema.
     thisNight: "Cette nuit",
+    chema: { meta: "Avant de dormir" },
     halevana: {
       until: "Jusqu'au {date}",
       lineNow: "Cette nuit, jusqu'au {date}",
