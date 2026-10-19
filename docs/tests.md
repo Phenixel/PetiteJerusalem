@@ -122,6 +122,11 @@ accounts, reading chains and chiourim against the Firebase emulators.
   (`STORE_SCREENSHOTS=1`), as it would cover buttons at the bottom of the
   screen.
 - Locale `fr-FR`, time zone `Europe/Paris`, "Desktop Chrome" profile.
+- A test that touches the home stack opens the browser at midday in Paris
+  (`page.clock.install`, as in `e2e/firebase/parcours.spec.ts`), then lets
+  time flow. From nightfall, the stack puts the cards of the night on top
+  (the blessing of the moon, a night of the Omer, a candle of 'Hanouka): a
+  test run in the evening on those nights touched the wrong card.
 - Trace and screenshot kept on failure only, in `test-results/`
   (git-ignored, like `playwright-report/`).
 - `E2E_CHROMIUM`: path to a Chromium already present on the machine (CI
