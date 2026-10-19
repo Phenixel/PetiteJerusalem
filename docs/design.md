@@ -749,6 +749,9 @@ What moves, then:
   up on a phone), and the full screen that shrinks back into the bar when
   closed (or pulled down, and it follows the finger). See
   `components/chiourim/sheetMotion.ts`.
+- a bottom sheet, which rises from below the screen when it opens and goes
+  back down when it closes, from where the finger let it go if it was
+  pulled (see "A bottom sheet moves like the system's").
 
 What does not move: arriving on a page (beyond the simple fade already in
 place), a state already there at load time (a book downloaded yesterday
@@ -765,7 +768,8 @@ Everything is cut when the system asks for fewer animations, and on a small
 machine (`perf-lite`): the final state is displayed right away, nothing is
 missing, only the path disappears (`composables/useMotion.ts`). One
 exception: the transition from the player bar to full screen is cut only at
-the system's request. Lite mode turns on for a good share of Android phones
+the system's request, and so is a bottom sheet's motion, for the same
+reason (it says where the sheet comes from and where it goes). Lite mode turns on for a good share of Android phones
 (4 GB of declared memory is enough), and this movement, brief and tied to
 the gesture, says where the full screen comes from and where it goes back
 to: without it, the gesture of pulling it down would no longer make sense.
@@ -3467,6 +3471,42 @@ it, as they sit on the tab bar. Without this, the pill that stops the
 scrolling would be hidden under the commentaries being read while
 scrolling. A wide screen's column announces nothing: it does not cover the
 bottom of the screen.
+
+### A bottom sheet moves like the system's
+
+Both sheets, the reading one (`BottomSheet.vue`) and the modal one of Mon
+parcours (`parcours/BottomSheet.vue`, with a veil), are drawn by the web
+view, not by iOS or Android: a native sheet can only hold native views, not
+the Vue page, and the website needs the same sheet. Flutter does the same:
+its sheets are its own drawing, not the platform's. So ours copy the
+system's behavior instead:
+
+- **It slides.** It rises from below the screen when it opens and goes back
+  down when it closes, whatever closes it (the cross, the veil, Escape,
+  Android back, the gesture). The modal sheet's veil darkens and clears with
+  it. The reading sheet is wrapped by its caller in
+  `<Transition name="bottom-sheet">`; the modal one goes through AppModal's
+  `sheet-modal` transition.
+- **It follows the finger.** Pulled down, it moves with the finger, with no
+  easing; the veil clears as it goes. Released past a third of its height
+  (the modal sheet; the reading sheet keeps its own rules, above), or
+  flicked down, it closes and keeps going down from where it was let go;
+  otherwise it comes back up. The modal sheet can be pulled from anywhere
+  on it, unless what is under the finger is scrolled (it scrolls back
+  first), is a field or a slider, or is marked `data-sheet-nodrag`; an
+  upward or sideways gesture stays the page's.
+- **Only what the compositor moves.** The motion is a translation and the
+  veil's color, never a height or a margin: below its lowest height, the
+  reading sheet slides instead of shrinking.
+- **One curve**, the one of the player's full screen
+  (`cubic-bezier(0.32, 0.72, 0, 1)`, `SHEET_EASING` in `sheetMotion.ts`):
+  a quick start, a soft landing, in 0.36 s (reading) and 0.4 s (modal).
+- Opening, the modal sheet gives the keyboard to its content without
+  scrolling to it: brought into view, it would scroll the veil instead of
+  rising.
+
+Held by `src/__tests__/bottomSheet.test.ts` (« la feuille de Mon parcours »
+and "pushed below its height, slides down instead of shrinking").
 
 ### A modal window fits within what is visible, keyboard included
 
