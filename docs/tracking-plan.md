@@ -515,6 +515,22 @@ or not), and how far it carries.
 | `from_progress`  | the share of the text where the gesture began, from 0 to 1   | **new** |
 | `to_progress`    | the share where it was let go, from 0 to 1                   | **new** |
 
+### Reading: `reading_size_changed` (existing, one more property)
+
+A− / A+ or a pinch in the app (`composables/useReadingSize.ts`). The form of
+the page (the Vilna daf, the Sefer Torah column) now has a size of its own,
+apart from the text's (see `docs/design.md`, "The form of the page has its
+own size"): `level` and `scale` are then those of the page's steps
+(`PAGE_FORM_SCALES`, from ×1 to ×2.1), not the text's (`READING_SCALES`,
+from ×0.85 to ×1.6). `form` tells them apart.
+
+| Property    | Values                                                               | Status         |
+| ----------- | -------------------------------------------------------------------- | -------------- |
+| `direction` | `increase`, `decrease`                                               | existing, kept |
+| `level`     | the step reached, from 0                                             | existing, kept |
+| `scale`     | the scale of that step                                               | existing, kept |
+| `form`      | `text`; `daf` (Vilna page), `scroll` (Sefer Torah) for the page size | **new**        |
+
 ### Reading: automatic scrolling (`auto_scroll_*`, existing)
 
 `auto_scroll_started`, `auto_scroll_stopped` and `auto_scroll_speed_changed`

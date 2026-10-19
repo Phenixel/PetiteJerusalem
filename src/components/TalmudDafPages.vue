@@ -2,9 +2,10 @@
 import { computed, nextTick, reactive, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useReadingColumn } from "../composables/useReadingColumn";
+import { usePageFormShown } from "../composables/useReadingSize";
 import { loadDafLayout, type DafLayoutPage } from "../services/dafLayout";
 import { linkedMeforshim, nextLink, type DafLink } from "../services/dafLinks";
-import { pageZoomFrame } from "../services/pageZoom";
+import { MIN_DAF_PAGE, pageZoomFrame } from "../services/pageZoom";
 import type { DafBlock, DafMeforshim } from "../services/textService";
 import TalmudPage from "./TalmudPage.vue";
 import TalmudPrintedPage from "./TalmudPrintedPage.vue";
@@ -26,6 +27,10 @@ import TalmudPrintedPage from "./TalmudPrintedPage.vue";
  * déborde d'abord de la colonne de lecture, dans la place libre de chaque
  * côté (un ordinateur en a) ; ce qui dépasse encore se rejoint en faisant
  * glisser la page de côté (pageZoom.ts).
+ *
+ * That size is the page form's own (usePageFormSize), not the text's: while
+ * the page is on screen, A− / A+ and the pinch drive it, between bounds that
+ * keep its lines. The page is never narrower than MIN_DAF_PAGE.
  */
 const props = defineProps<{
   blocks: DafBlock[];
@@ -37,6 +42,8 @@ const props = defineProps<{
 }>();
 
 const { t } = useI18n();
+// A− / A+ and the pinch drive the size of the page while it is on screen.
+usePageFormShown("daf");
 
 /**
  * Les commentaires de chaque amoud, bout à bout : la page ne les découpe pas
@@ -96,7 +103,14 @@ watch(
 const { ruler, column, free } = useReadingColumn();
 
 const zoom = computed(() =>
-  pageZoomFrame(props.scale, column.value, free.value.left, free.value.right),
+  pageZoomFrame(
+    props.scale,
+    column.value,
+    free.value.left,
+    free.value.right,
+    column.value,
+    MIN_DAF_PAGE,
+  ),
 );
 /** Le cadre déborde de la colonne d'autant de chaque côté. */
 const frameStyle = computed(() => ({ marginInline: `${-zoom.value.grow}px` }));
@@ -117,11 +131,27 @@ function setFrame(index: number, el: unknown): void {
   }
   if (frames.get(index) === el) return;
   frames.set(index, el);
-  // Une page ouverte déjà agrandie se présente par son milieu : la guemara.
-  void nextTick(() => {
-    el.scrollLeft = (el.scrollWidth - el.clientWidth) / 2;
-  });
+  void nextTick(() => present(el));
 }
+
+/**
+ * A page opened already enlarged presents itself by its middle: the gemara.
+ * Only once it overflows its frame: until its lines are written it has no
+ * height, so nothing overflows, and centring it then left it on its
+ * left-hand commentary.
+ */
+const presented = new WeakSet<HTMLElement>();
+function present(frame: HTMLElement): void {
+  const hidden = frame.scrollWidth - frame.clientWidth;
+  if (presented.has(frame) || hidden <= 0) return;
+  presented.add(frame);
+  frame.scrollLeft = hidden / 2;
+}
+watch(
+  () => [column.value, printed.size] as const,
+  () => frames.forEach(present),
+  { flush: "post" },
+);
 
 /** Le milieu visible d'un cadre, de 0 (bord gauche) à 1 (bord droit). */
 function centreOf(frame: HTMLElement): number {

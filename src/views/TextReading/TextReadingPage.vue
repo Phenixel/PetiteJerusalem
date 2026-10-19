@@ -137,7 +137,7 @@ const OfficeDoneCard = defineAsyncComponent(
   () => import("../../components/parcours/OfficeDoneCard.vue"),
 );
 import { useToast } from "../../composables/useToast";
-import { useReadingSize } from "../../composables/useReadingSize";
+import { usePageFormSize, useReadingSize } from "../../composables/useReadingSize";
 import { readingProgressService } from "../../services/readingProgressService";
 import type { Bookmark, ReadingPosition } from "../../services/readingProgressService";
 import { isNativeApp } from "../../composables/useNativeApp";
@@ -181,6 +181,8 @@ const { t, locale } = useI18n();
 const { confirm } = useConfirm();
 const toast = useToast();
 const readingSize = useReadingSize();
+// The form of the page (daf, Sefer Torah) has a size of its own.
+const pageFormSize = usePageFormSize();
 const { sectionLabel, blockLabel, dafLabel, headingLabel } = useTextLabels();
 // App native : pincer dans la page agrandit le texte lu, pas la page.
 useReadingPinch();
@@ -2779,20 +2781,20 @@ watch(textId, (_, previousTextId) => {
         <div
           v-if="showPageForm && pageFormKind === 'daf'"
           class="ph-no-deadclick"
-          :style="{ '--reading-scale': readingSize.scale.value }"
+          :style="{ '--reading-scale': pageFormSize.scale.value }"
         >
           <TalmudDafPages
             :tractate="textEntry ? tractateSlug(tractateFromLink(textEntry.link)) : null"
             :blocks="currentSection.dafBlocks ?? []"
             :meforshim="commentaries.talmud.value"
             :state="dafMeforshimState"
-            :scale="readingSize.scale.value"
+            :scale="pageFormSize.scale.value"
           />
         </div>
         <div
           v-else-if="showPageForm && pageFormKind === 'scroll'"
           class="ph-no-deadclick"
-          :style="{ '--reading-scale': readingSize.scale.value }"
+          :style="{ '--reading-scale': pageFormSize.scale.value }"
         >
           <TorahScroll
             :text-id="textEntry?.id ?? null"

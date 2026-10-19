@@ -1,16 +1,17 @@
 import { onBeforeUnmount, onMounted } from "vue";
 import { isNativeApp } from "./useNativeApp";
-import { useReadingSize } from "./useReadingSize";
+import { useReadingSizeControl } from "./useReadingSize";
 
 /**
- * App native : sur une page de texte, pincer agrandit le TEXTE lu, pas la
- * page. Le zoom de la webview est désactivé (voir main.ts) parce qu'il
- * agrandit tout, barres comprises, et laisse la page décalée ; le réflexe du
- * pincement reste le bon, il pilote ici le même réglage que les boutons
- * A− / A+ (useReadingSize).
+ * Native app: on a text page, pinching enlarges the TEXT being read, not the
+ * page. The webview's zoom is disabled (see main.ts) because it enlarges
+ * everything, bars included, and leaves the page shifted; the pinch reflex is
+ * still the right one, so here it drives the same setting as the A− / A+
+ * buttons (useReadingSizeControl: the text's size, or the page form's while
+ * one is on screen).
  *
- * À appeler dans les vues qui portent ce réglage : les écouteurs ne vivent que
- * le temps où elles sont montées, le geste n'a donc aucun effet ailleurs.
+ * To be called in the views that carry this setting: the listeners only live
+ * while they are mounted, so the gesture has no effect anywhere else.
  */
 
 /** Écarts relatifs des doigts qui valent un cran de taille (in / out). */
@@ -24,7 +25,7 @@ function distance(touches: TouchList): number {
 
 export function useReadingPinch(): void {
   if (!isNativeApp) return;
-  const readingSize = useReadingSize();
+  const readingSize = useReadingSizeControl();
   // Écart de départ du geste en cours ; 0 quand aucun pincement n'est actif.
   let baseline = 0;
 
