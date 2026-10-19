@@ -22,6 +22,7 @@ import { useReadingPinch } from "../../composables/useReadingPinch";
 import { useAutoScroll } from "../../composables/useAutoScroll";
 import { useKeepAwake } from "../../composables/useKeepAwake";
 import { useChneiMikraOptions } from "../../composables/useChneiMikraOptions";
+import { useEntriesTranslation } from "../../composables/useEntriesTranslation";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import { useChneiMikraChecks } from "../../composables/useChneiMikraChecks";
 import ProgressBar from "../../components/ProgressBar.vue";
@@ -217,6 +218,9 @@ function goTo(target: WeeklyParasha | null, direction: "previous" | "next" | "cu
   void router.push({ query });
 }
 
+/** The translation of the parasha and of Rashi: its setting in the reading menu. */
+const translation = useEntriesTranslation(() => shownEntries.value.map((shown) => shown.entry));
+
 /** Le nom sous lequel la page se partage (voir ReadingMenu). */
 const shareTitle = computed(() => `${t("chneiMikra.title")} · ${title.value}`);
 
@@ -348,7 +352,12 @@ watch([title, locale, localeMessagesReady], applySeoMeta, { immediate: true });
 
     <!-- Comme les autres textes de la bibliothèque : le menu de lecture et la
          progression au bas de l'écran. -->
-    <ReadingMenu :share-title="shareTitle" chnei-mikra />
+    <ReadingMenu
+      :share-title="shareTitle"
+      chnei-mikra
+      :translation-langs="translation.langs.value"
+      :translation-lang="translation.lang.value"
+    />
     <ReadingProgressBar />
   </main>
 </template>

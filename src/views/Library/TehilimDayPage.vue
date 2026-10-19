@@ -9,6 +9,7 @@ import { analyticsService } from "../../services/analyticsService";
 import { useReadingPinch } from "../../composables/useReadingPinch";
 import { useAutoScroll } from "../../composables/useAutoScroll";
 import { useKeepAwake } from "../../composables/useKeepAwake";
+import { useEntriesTranslation } from "../../composables/useEntriesTranslation";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import BookEncadrement from "../../components/BookEncadrement.vue";
 import ReadingMenu from "../../components/ReadingMenu.vue";
@@ -41,6 +42,8 @@ useReadingPinch();
  * bascule qu'entre deux passages.
  */
 const { cycle } = useTehilimDay({ live: false });
+/** The psalms' translation: its setting in the reading menu. */
+const translation = useEntriesTranslation(() => cycle.value.entries);
 
 // Double appui sur le texte : la page descend toute seule, à l'allure choisie
 // dans la pastille du bas (AutoScrollPill).
@@ -123,7 +126,10 @@ onMounted(() => {
 
     <!-- Comme les autres textes de la bibliothèque : le menu de lecture et la
          progression au bas de l'écran. -->
-    <ReadingMenu />
+    <ReadingMenu
+      :translation-langs="translation.langs.value"
+      :translation-lang="translation.lang.value"
+    />
     <ReadingProgressBar />
   </main>
 </template>

@@ -35,6 +35,7 @@ import { useZmanimLocation } from "../../composables/useZmanimLocation";
 import { useReadingPinch } from "../../composables/useReadingPinch";
 import { useAutoScroll } from "../../composables/useAutoScroll";
 import { useKeepAwake } from "../../composables/useKeepAwake";
+import { useEntriesTranslation } from "../../composables/useEntriesTranslation";
 import { anchorToElement } from "../../composables/scrollAnchor";
 import { devicePreference } from "../../services/devicePreference";
 import { encadrementBounds } from "../../services/encadrementService";
@@ -114,6 +115,8 @@ const daily = computed(() =>
         (catalogRank.get(Number(b.entry.id)) ?? Infinity),
     ),
 );
+/** The texts' translation: its setting in the reading menu. */
+const translation = useEntriesTranslation(() => daily.value.map((reading) => reading.entry));
 
 // Le Yehi ratson et ses pareils : une fois pour tout ce qu'on lit du même
 // corpus, la liste étant rangée dans l'ordre du catalogue, qui les tient groupés.
@@ -417,7 +420,11 @@ seoService.setMeta({
 
     <!-- Comme les autres textes : le menu de lecture et la progression au bas de l'écran. -->
     <template v-if="hasReading">
-      <ReadingMenu :share-title="name.title" />
+      <ReadingMenu
+        :share-title="name.title"
+        :translation-langs="translation.langs.value"
+        :translation-lang="translation.lang.value"
+      />
       <ReadingProgressBar />
     </template>
   </main>

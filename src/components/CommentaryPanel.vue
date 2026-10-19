@@ -3,11 +3,15 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { useI18n } from "vue-i18n";
 import AppIcon from "./icons/AppIcon.vue";
 import BottomSheet from "./BottomSheet.vue";
+import TranslationAiNotice from "./TranslationAiNotice.vue";
+import TranslationCredit from "./TranslationCredit.vue";
+import TranslationText from "./TranslationText.vue";
 import { sideBySide } from "../composables/useSideBySide";
 import { useOverlay } from "../composables/useOverlayStack";
 import { STUDY_MIN, TEXT_ROOM, useStudyWidth } from "../composables/useStudyWidth";
 import { analyticsService } from "../services/analyticsService";
 import { COMMENTARY_LABELS, type CommentaryGroup } from "../composables/usePassageCommentaries";
+import type { TranslationSource } from "../services/textService";
 
 /**
  * Le panneau d'étude : les commentaires du passage choisi (Rachi, Tossafot),
@@ -30,6 +34,11 @@ import { COMMENTARY_LABELS, type CommentaryGroup } from "../composables/usePassa
  * place (useStudyWidth) ; le texte à sa gauche suit. Au clavier, les flèches
  * gauche et droite la font grandir et rétrécir ; un double appui sur le bord
  * lui rend sa largeur d'origine.
+ *
+ * With the translation on, a translated commentary (Rashi on the Torah) has
+ * its translation under each comment, the AI notice above when it is the
+ * French made by AI, and the translator's name below (as at the foot of a
+ * text, see docs/traductions.md).
  */
 const props = defineProps<{
   /** Où se trouve le passage, en clair : « Daf 2a · passage 3 ». */
@@ -37,6 +46,8 @@ const props = defineProps<{
   /** Ses commentaires ; vide : le passage n'en a pas. */
   groups: CommentaryGroup[];
   state: "idle" | "loading" | "ready" | "error";
+  /** Who translated the commentaries, when they come translated. */
+  sources?: TranslationSource[];
 }>();
 
 const emit = defineEmits<{ (e: "close"): void }>();
@@ -54,6 +65,11 @@ watch(
 );
 
 const isEmpty = computed(() => props.state === "ready" && props.groups.length === 0);
+
+/** The sources of the translation, when the passage shows one. */
+const shownSources = computed<TranslationSource[]>(() =>
+  props.groups.some((g) => g.comments.some((c) => c.tr)) ? (props.sources ?? []) : [],
+);
 
 function onKeydown(event: KeyboardEvent): void {
   if (event.key === "Escape") emit("close");
@@ -213,18 +229,26 @@ onBeforeUnmount(() => {
       <p v-else-if="isEmpty" class="commentary-note">
         {{ t("textReading.commentaries.none") }}
       </p>
-      <section v-for="group in groups" v-else :key="group.source" class="commentary-group">
-        <h3 class="commentary-source">{{ t(COMMENTARY_LABELS[group.source]) }}</h3>
-        <p
-          v-for="(comment, i) in group.comments"
-          :key="i"
-          dir="rtl"
-          class="commentary-text font-hebrew"
-        >
-          <b v-if="comment.lead" class="commentary-lead">{{ comment.lead }}</b>
-          {{ comment.text }}
-        </p>
-      </section>
+      <template v-else>
+        <TranslationAiNotice :sources="shownSources" class="commentary-ai" />
+        <section v-for="group in groups" :key="group.source" class="commentary-group">
+          <h3 class="commentary-source">{{ t(COMMENTARY_LABELS[group.source]) }}</h3>
+          <div v-for="(comment, i) in group.comments" :key="i" class="commentary-item">
+            <p dir="rtl" class="commentary-text font-hebrew">
+              <b v-if="comment.lead" class="commentary-lead">{{ comment.lead }}</b>
+              {{ comment.text }}
+            </p>
+            <p v-if="comment.tr" dir="ltr" class="commentary-tr">
+              <TranslationText :text="comment.tr" />
+            </p>
+          </div>
+        </section>
+        <TranslationCredit
+          v-if="shownSources.length"
+          :sources="shownSources"
+          class="commentary-credit"
+        />
+      </template>
       <p class="commentary-hint">{{ t("textReading.commentaries.hint") }}</p>
     </div>
   </BottomSheet>
@@ -348,8 +372,27 @@ onBeforeUnmount(() => {
   color: var(--color-text-primary);
 }
 
-.commentary-text + .commentary-text {
+.commentary-item + .commentary-item {
   margin-top: 0.6rem;
+}
+
+/* The translation under its comment: the reading font, a little smaller, in
+   the secondary color like the translation under a verse. */
+.commentary-tr {
+  margin-top: 0.3rem;
+  font-family: var(--font-reading);
+  font-size: calc(0.95rem * var(--reading-scale, 1));
+  line-height: 1.6;
+  text-align: left;
+  color: var(--color-text-secondary);
+}
+
+.commentary-ai {
+  margin-bottom: 1rem;
+}
+
+.commentary-credit {
+  margin-top: 1.25rem;
 }
 
 .commentary-lead {
