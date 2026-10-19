@@ -313,6 +313,28 @@ what pushed them to it.
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
 | `accuracy` | the accuracy displayed at the moment of the tap: `high`, `medium`, `low`, or `unknown` when the device doesn't provide it (Chrome on the website) | **new** |
 
+### `kotel_compass_aligned` (new)
+
+Set the first time, per opening of the Kotel compass, that the arrow points
+straight ahead of the phone (within 5°; see `docs/design.md`, « The compass
+fills when you face the Kotel »). Compared with `kotel_compass_opened`, it
+tells how many people find the direction; `seconds`, how long it takes them.
+Only devices that give the north can send it.
+
+| Property  | Values                                                       | Status  |
+| --------- | ------------------------------------------------------------ | ------- |
+| `seconds` | whole seconds between the opening of the window and the lock | **new** |
+
+### `kotel_compass_calibrated` (new)
+
+Set when, on the calibration screen, the accuracy turns good, just before the
+window goes back to the dial by itself. Compared with
+`kotel_compass_calibration_opened`, it tells how many calibrations take.
+
+| Property  | Values                                                                      | Status  |
+| --------- | --------------------------------------------------------------------------- | ------- |
+| `seconds` | whole seconds between the tap on « Calibrer » and the accuracy turning good | **new** |
+
 ### Values added to existing properties
 
 | Event                                                                               | Property | Added value     | What it tells                                                                                                                                                                 |
