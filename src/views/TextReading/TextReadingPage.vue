@@ -115,7 +115,10 @@ import TalmudDafPages from "../../components/TalmudDafPages.vue";
 import TorahScroll from "../../components/TorahScroll.vue";
 import { PAGE_FORM_LABELS, usePageForm } from "../../composables/usePageForm";
 import { scrollPointed, setScrollPointed } from "../../composables/useScrollPointing";
-import { usePassageCommentaries } from "../../composables/usePassageCommentaries";
+import {
+  usePassageCommentaries,
+  type CommentaryLangPicker,
+} from "../../composables/usePassageCommentaries";
 import { sideBySide } from "../../composables/useSideBySide";
 import type { CommentarySummary } from "../../composables/useReadingSelection";
 import CommentaryPanel from "../../components/CommentaryPanel.vue";
@@ -638,7 +641,15 @@ function setReadingMode(mode: ReadingMode): void {
 // Rachi et Tossafot (guemara), Rachi (paracha) du chapitre ouvert : chargés au
 // premier passage touché ou à l'ouverture de la page du daf, jamais avant ;
 // la lecture seule ne les attend pas (usePassageCommentaries).
-const commentaries = usePassageCommentaries(textEntry, currentSection);
+// The translation on: the commentaries that have one (Rashi on the Torah)
+// come translated too, in the language the text would take.
+const commentaryLangPicker = computed<CommentaryLangPicker | null>(() => {
+  if (!translationShown.value || isLiturgyText.value) return null;
+  const lang = locale.value;
+  const choice = translationLangChoice.value;
+  return (available) => pickTranslationLang(available, lang, choice);
+});
+const commentaries = usePassageCommentaries(textEntry, currentSection, commentaryLangPicker);
 watch(
   () => (showPageForm.value && pageFormKind.value === "daf" ? currentSection.value : null),
   (section) => {
@@ -3067,6 +3078,7 @@ watch(textId, (_, previousTextId) => {
           :place="placeLabel(positionSection, studyLine)"
           :groups="studyGroups"
           :state="commentaries.state.value"
+          :sources="commentaries.sources.value"
           :style="{ '--reading-scale': readingSize.scale.value }"
           @close="closeStudy"
         />
