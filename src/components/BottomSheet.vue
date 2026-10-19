@@ -1,32 +1,38 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { bottomSheetSlot } from "../composables/useBottomChrome";
 
 /**
- * Le bottom sheet de l'app native : un volet qui monte du bas de l'écran,
- * par-dessus la barre d'onglets, avec sa poignée.
+ * The bottom sheet of the phone: a panel that rises from the bottom of the
+ * screen, over the tab bar, with its handle.
  *
- * C'est la forme qu'un téléphone donne à ce qui accompagne un écran sans le
- * quitter (les commandes d'un passage, ses commentaires) : on le tire par la
- * poignée pour l'agrandir, on le pousse vers le bas pour le fermer, un geste
- * franc vers le bas le ferme d'un coup. Il ne voile pas la page : on lit,
- * on touche le texte au-dessus.
+ * It is the form a phone gives to what accompanies a screen without leaving
+ * it (a passage's commands, its commentaries): you pull it by the handle to
+ * enlarge it, push it down to close it, and a decisive downward gesture
+ * closes it at once. It does not veil the page: you read and touch the text
+ * above.
  *
- * `snaps` donne ses crans, en part de la hauteur de l'écran (0,55 : à
- * mi-hauteur) ; sans crans, il prend la hauteur de son contenu et ne se tire
- * que vers le bas. La poignée et l'en-tête (slot `header`) portent le geste ;
- * le corps défile.
+ * `snaps` gives its detents, as a share of the screen height (0.55: half
+ * height); without detents, it takes the height of its content and is only
+ * pulled down. The handle and the header (`header` slot) carry the gesture;
+ * the body scrolls.
  *
- * `docked` le pose autrement, sans poignée ni geste : c'est à l'appelant de
- * dire où (le panneau d'étude en fait une colonne sur un écran large).
+ * `docked` places it elsewhere, with no handle and no gesture: the caller
+ * says where (the study panel makes it a column on a wide screen).
  *
- * Un volet à la hauteur de son contenu (les commandes d'un passage) se tire
- * de partout, pas seulement par sa poignée : le geste ne commence qu'au-delà
- * de quelques pixels, un simple appui reste un appui sur un bouton. S'il est
- * `expandable`, le tirer vers le haut l'ouvre sur la suite (`expand`) : les
- * commentaires du passage, sans avoir à viser leur bouton. Une zone qui
- * défile elle-même (la phonétique d'un long passage) se marque
- * `data-sheet-nodrag`.
+ * A sheet at the height of its content (a passage's commands) can be pulled
+ * from anywhere, not only by its handle: the gesture only starts beyond a few
+ * pixels, so a tap stays a tap on a button. When `expandable`, pulling it up
+ * opens what follows (`expand`): the passage's commentaries, without having
+ * to aim at their button. An area that scrolls by itself (the phonetics of a
+ * long passage) is marked `data-sheet-nodrag`.
+ *
+ * It moves like a system sheet: the caller wraps it in
+ * `<Transition name="bottom-sheet">`, and it slides up from below the screen
+ * when it opens and back down when it closes. Pushed below its lowest
+ * resting height, it is translated (a compositor move, no layout) rather
+ * than shrunk, so it follows the finger and, released low enough, keeps
+ * going down from where it was let go.
  */
 const props = withDefaults(
   defineProps<{
@@ -50,6 +56,10 @@ const sheet = ref<HTMLElement | null>(null);
 const snapIndex = ref(Math.min(props.initialSnap, Math.max(0, props.snaps.length - 1)));
 /** Pendant le geste, la hauteur suit le doigt ; null le reste du temps. */
 const dragHeight = ref<number | null>(null);
+/** How far the sheet is pushed below its lowest resting height, in px. */
+const dragOffset = ref(0);
+/** Under the finger: no easing, the sheet follows. */
+const dragging = ref(false);
 
 const height = computed(() => {
   if (props.docked) return undefined;
@@ -61,8 +71,16 @@ const height = computed(() => {
 /** Un geste plus rapide que cela (px/ms) décide seul, quelle que soit la hauteur. */
 const FLICK = 0.6;
 
-let start: { y: number; height: number; pointer: number; active: boolean } | null = null;
+let start: {
+  y: number;
+  height: number;
+  floor: number;
+  pointer: number;
+  active: boolean;
+} | null = null;
 let last = { y: 0, t: 0, vy: 0 };
+/** Where the finger would put the top of the sheet: the height it asks for. */
+let reach = 0;
 
 /** Un doigt bouge toujours un peu : en deçà, c'est un appui, pas un geste. */
 const SLOP = 6;
@@ -88,9 +106,13 @@ function onPointerDown(event: PointerEvent): void {
   if (props.snaps.length && (!target?.closest(".sheet-grip") || target.closest("button"))) {
     return;
   }
+  const height = sheet.value.getBoundingClientRect().height;
   start = {
     y: event.clientY,
-    height: sheet.value.getBoundingClientRect().height,
+    height,
+    // Below this height, the sheet slides down instead of shrinking: its
+    // first detent, or its own height when it fits its content.
+    floor: props.snaps.length ? Math.min(height, props.snaps[0] * window.innerHeight) : height,
     pointer: event.pointerId,
     active: false,
   };
@@ -102,26 +124,38 @@ function onPointerMove(event: PointerEvent): void {
   if (!start.active) {
     if (Math.abs(event.clientY - start.y) < SLOP) return;
     start.active = true;
+    dragging.value = true;
     sheet.value?.setPointerCapture?.(event.pointerId);
   }
   const vh = window.innerHeight;
   const max = props.snaps.length
     ? Math.max(...props.snaps) * vh
     : start.height + (props.expandable ? vh * 0.3 : 0);
-  dragHeight.value = Math.min(max, Math.max(0, start.height - (event.clientY - start.y)));
+  reach = Math.min(max, Math.max(0, start.height - (event.clientY - start.y)));
+  dragHeight.value = Math.max(reach, start.floor);
+  dragOffset.value = Math.max(0, start.floor - reach);
   const dt = event.timeStamp - last.t;
   if (dt > 0) last = { y: event.clientY, t: event.timeStamp, vy: (event.clientY - last.y) / dt };
 }
 
+/** Back to rest: the height of the detent, no offset, eased by the CSS. */
+function settle(): void {
+  dragging.value = false;
+  dragHeight.value = null;
+  dragOffset.value = 0;
+}
+
 function onPointerUp(event: PointerEvent): void {
   if (!start || event.pointerId !== start.pointer) return;
-  const moved = dragHeight.value;
+  const moved = reach;
   const startHeight = start.height;
   const active = start.active;
   start = null;
-  dragHeight.value = null;
-  // Un appui, pas un geste : le bouton touché répond comme d'habitude.
-  if (!active || moved === null) return;
+  // A tap, not a gesture: the button touched answers as usual.
+  if (!active) {
+    settle();
+    return;
+  }
   swallowNextClick();
   // Tiré vers le haut : la suite (les commentaires du passage).
   if (
@@ -129,6 +163,7 @@ function onPointerUp(event: PointerEvent): void {
     !props.snaps.length &&
     (moved > startHeight + EXPAND_PULL || (last.vy < -FLICK && moved > startHeight + SLOP))
   ) {
+    settle();
     emit("expand");
     return;
   }
@@ -136,13 +171,20 @@ function onPointerUp(event: PointerEvent): void {
   const heights = props.snaps.length ? props.snaps.map((s) => s * vh) : [startHeight];
   const lowest = heights[0];
   const flickDown = last.vy > FLICK && moved < startHeight;
-  // Fermé : poussé sous les deux tiers du premier cran, ou d'un geste franc
-  // vers le bas depuis le premier cran. Plus haut, le même geste le ramène
-  // d'un cran : on redescend un Tossafot lu en plein écran sans le perdre.
+  // Closed: pushed below two thirds of the first detent, or by a decisive
+  // downward gesture from the first detent. Higher up, the same gesture
+  // brings it down one detent: a Tossafot read in full screen is lowered
+  // without being lost.
   if (moved < lowest * 0.66 || (flickDown && snapIndex.value === 0)) {
-    emit("close");
+    // The height and the offset stay as they are: the leave transition
+    // carries the sheet down from where the finger let it go. It is told
+    // once the sheet has dropped `sheet-dragging`: removed with it, the
+    // sheet would have no transition and would vanish at once.
+    dragging.value = false;
+    void nextTick(() => emit("close"));
     return;
   }
+  settle();
   if (!props.snaps.length) return;
   if (flickDown) snapIndex.value = Math.max(0, snapIndex.value - 1);
   else if (last.vy < -FLICK) snapIndex.value = Math.min(heights.length - 1, snapIndex.value + 1);
@@ -186,14 +228,15 @@ onBeforeUnmount(() => {
     ref="sheet"
     class="bottom-sheet"
     :class="{
-      'sheet-dragging': dragHeight !== null,
+      'sheet-dragging': dragging,
+      'sheet-pushed': dragOffset > 0,
       'sheet-fit': !snaps.length && !docked,
       'sheet-docked': docked,
     }"
     role="dialog"
     aria-modal="false"
     :aria-label="label"
-    :style="{ height }"
+    :style="{ height, '--sheet-offset': dragOffset ? `${dragOffset}px` : undefined }"
     @pointerdown="onPointerDown"
     @pointermove="onPointerMove"
     @pointerup="onPointerUp"
@@ -223,8 +266,18 @@ onBeforeUnmount(() => {
   border-radius: var(--radius-xl) var(--radius-xl) 0 0;
   background-color: var(--color-surface);
   box-shadow: var(--shadow-pop);
-  transition: height 0.25s cubic-bezier(0.2, 0.8, 0.3, 1);
-  animation: sheet-in 0.25s cubic-bezier(0.2, 0.8, 0.3, 1);
+  /* The curve of the system sheets (see sheetMotion.ts): a quick start, a
+     soft landing. */
+  transition:
+    height 0.36s cubic-bezier(0.32, 0.72, 0, 1),
+    transform 0.36s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* Pushed below its lowest height: it slides, it does not shrink. No
+   transform at rest, so that the sheet does not become the containing block
+   of what is fixed inside it. */
+.sheet-pushed {
+  transform: translateY(var(--sheet-offset, 0px));
 }
 
 /* Dans l'app, le volet se pose sur la barre d'onglets (3,5 rem, plus la zone
@@ -268,15 +321,27 @@ onBeforeUnmount(() => {
   overscroll-behavior: contain;
 }
 
+/* Docked as a column, it neither slides nor eases: closed, it goes at once
+   (an inherited transition would keep it on screen for its duration). */
+.sheet-docked {
+  transition: none;
+}
+
 .sheet-docked .sheet-grip {
   padding-top: 0;
   touch-action: auto;
   cursor: auto;
 }
 
-/* Un volet à la hauteur de son contenu se tire de partout : le geste est le
-   nôtre sur toute sa surface, sauf là où le contenu défile lui-même. */
-.sheet-fit {
+/* A sheet at the height of its content is pulled from anywhere: the gesture
+   is ours over its whole surface, except where the content scrolls by
+   itself. The body says it again: it is a scroll container, and a
+   touch-action does not reach past one. Without it, a finger pulling up
+   from the commands (and not from the handle) is taken by the browser as a
+   pan of the body, which cancels the pointer: the sheet never opens on the
+   commentaries. */
+.sheet-fit,
+.sheet-fit .sheet-body {
   touch-action: none;
 }
 
@@ -289,16 +354,24 @@ onBeforeUnmount(() => {
   flex: 0 1 auto;
 }
 
-@keyframes sheet-in {
-  from {
-    transform: translateY(100%);
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .bottom-sheet {
     transition: none;
-    animation: none;
   }
+}
+</style>
+
+<style>
+/* The caller's <Transition name="bottom-sheet">: it rises from below the
+   screen and goes back down, from where the finger let it go
+   (`--sheet-offset`). A sheet docked as a column does not slide. Unscoped,
+   because the classes are the Transition's. */
+.bottom-sheet.bottom-sheet-enter-from:not(.sheet-docked),
+.bottom-sheet.bottom-sheet-leave-to:not(.sheet-docked) {
+  transform: translateY(calc(100% + var(--sheet-offset, 0px)));
+}
+
+.bottom-sheet.bottom-sheet-leave-active:not(.sheet-docked) {
+  pointer-events: none;
 }
 </style>

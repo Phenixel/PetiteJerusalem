@@ -3058,16 +3058,19 @@ watch(textId, (_, previousTextId) => {
         :steps="gesturesTip"
         :after="['reading-menu']"
       />
-      <!-- Le panneau d'étude : les commentaires du passage, qui suivent la
-           lecture tant qu'il est ouvert. -->
-      <CommentaryPanel
-        v-if="studyLine !== null"
-        :place="placeLabel(positionSection, studyLine)"
-        :groups="studyGroups"
-        :state="commentaries.state.value"
-        :style="{ '--reading-scale': readingSize.scale.value }"
-        @close="closeStudy"
-      />
+      <!-- The study panel: the passage's commentaries, which follow the
+           reading while it is open. On a phone it rises from the bottom and
+           goes back down (BottomSheet.vue). -->
+      <Transition name="bottom-sheet">
+        <CommentaryPanel
+          v-if="studyLine !== null"
+          :place="placeLabel(positionSection, studyLine)"
+          :groups="studyGroups"
+          :state="commentaries.state.value"
+          :style="{ '--reading-scale': readingSize.scale.value }"
+          @close="closeStudy"
+        />
+      </Transition>
     </template>
   </main>
 </template>
