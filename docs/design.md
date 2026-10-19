@@ -2525,8 +2525,9 @@ day, in the order in which it is done. What it alone offered has found
 another place:
 
 - a past day is completed from the Mon parcours wall, in that day's sheet;
-- the evening reminder and the notice about texts to download for offline
-  use are at the bottom and the top of Mon parcours;
+- the notice about texts to download for offline use is at the top of Mon
+  parcours; the evening reminder has become the reminders of the day (see
+  « Reminders of the day », below);
 - its address (`/parcours/journee`) leads to the home page; that of the
   daily reading (`/bibliotheque/lecture-du-jour`, which the widgets, the
   watch and the evening reminder keep) has got its page back (see below);
@@ -2701,7 +2702,8 @@ the page of the « Lecture du jour » volume and of the card of the same name.
   its bar).
 - The reading menu, the text size (next to « Modifier ma liste »),
   auto-scroll, the screen that stays on, the notice about texts to download
-  and the evening reminder, as before.
+  as before; at the bottom, in the app, the line of the reminders of the day
+  (see below), in place of the evening reminder's card.
 - **On the home page, a single card**: the day's texts, one or several, make
   the « Lecture du jour » card (« 3 textes · Tehilim 1 et 2 autres », "3
   texts · Tehilim 1 and 2 others"), which opens the page; swiped, it checks
@@ -2710,6 +2712,50 @@ the page of the « Lecture du jour » volume and of the card of the same name.
   text, the search can be redone as many times as you like, what you have
   checked waits above, and « Ajouter 3 textes » ("Add 3 texts"), stuck to the
   bottom of the screen, takes them all.
+
+### Reminders of the day
+
+The framed card « Le rappel du soir » ("The evening reminder"), at the
+bottom of Mon parcours, is gone: a place to go earns no frame, and the
+bottom of the page was the last place one looks. The reminders went up,
+in two places, both in the app only (the site has nothing to schedule):
+
+- **an alarm clock at the top right**, across from the back link, in
+  `icon-btn` and in ink. A dot of the theme color says that at least one
+  reminder rings. It is an alarm clock (`alarm-clock`), not the clock: the
+  clock is the round button of the tab bar (the times of the day), and the
+  two would be taken for each other;
+- **a line under the light**, without frame, touched whole: « Rappels :
+  Min'ha 18:33, Arvit 19:51 +2 » ("Reminders: ..."), the reminders still to
+  come today, two by name and the rest counted. With none left today, the
+  first of tomorrow (« Demain : Cha'harit 08:19 »); with none set, an offer
+  in the theme color, « Me rappeler mes objectifs » ("Remind me of my
+  goals"). The command carries its drawing and its name, as the alarm
+  clock alone does not.
+
+Both open **« Les heures de ma journée »** ("The hours of my day"), a bottom
+sheet (`ReminderSlotsSheet.vue`): a row per point of the day thread (Réveil,
+Cha'harit, Midi, Min'ha, Arvit, Coucher) and one for the day's summary
+(« Dans la journée »). A row says its name, what its hour follows (« Heure
+fixe », « 20 min avant Chkia »), how many of today's goals it gathers, its
+hour today, and its switch. Rows separated by a hairline, no frames, as in
+the settings. Touching a row opens its second screen, in the same sheet,
+with a back chevron: two segments, « Heure fixe » ("Fixed time") and
+« Selon le calendrier » ("By the calendar"). Fixed, the dial of the old
+evening reminder (`pickers/TimeDial.vue`); by the calendar, the zmanim of
+that moment as pills, each with its time today, then the offset: « Avant »
+or « Après » in two segments, and the minutes as pills. Below, the hour it
+gives today, large, in the display font, and what tomorrow's will be: the
+person sees that it follows the sun. « Enregistrer » turns the reminder on:
+choosing an hour is wanting it. Turning a reminder on asks for the
+permission of the system then, after the gesture, never before.
+
+The same sheet opens from the bottom of the daily reading, and from the
+notification settings, where its row says how many reminders are on.
+
+What rings is in `docs/parcours.md`, « Reminders ». The hours only ring:
+they do not move the order of the home page deck, nor the opening of a
+service, which keep their own rules (« The home page deck »).
 
 ### The home page to your taste
 

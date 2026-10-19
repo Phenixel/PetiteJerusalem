@@ -198,6 +198,11 @@ export const ICONS = {
   clock: {
     body: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
   },
+  // The reminders of Mon parcours: an alarm clock, not the clock of the
+  // tab bar (the times of the day), so that the two are not taken for each other.
+  "alarm-clock": {
+    body: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M5 3 2 6"/><path d="m22 6-3-3"/><path d="M6.38 18.7 4 21"/><path d="M17.64 18.67 20 21"/>',
+  },
   sunrise: {
     body: '<path d="M12 2v8"/><path d="m8 6 4-4 4 4"/><path d="M16 18a4 4 0 0 0-8 0"/><path d="m4.93 10.93 1.41 1.41"/><path d="m19.07 10.93-1.41 1.41"/><path d="M2 18h2"/><path d="M20 18h2"/><path d="M2 22h20"/>',
   },

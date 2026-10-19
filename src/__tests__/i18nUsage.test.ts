@@ -157,6 +157,7 @@ describe("i18n usage", () => {
       "parcours.lights.names.",
       "parcours.moments.",
       "parcours.pace.",
+      "parcours.reminders.notify.titles.",
       "parcours.rhythms.",
       "parcours.sedarim.",
       "parcours.settings.rhythmValue.",

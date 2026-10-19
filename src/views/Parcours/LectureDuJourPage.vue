@@ -13,7 +13,9 @@
  *    dernier coché coche le texte (les chapitres lus se gardent sur
  *    l'appareil, le temps de la journée) ;
  *  - le menu de lecture, la taille du texte, le défilement tout seul,
- *    l'écran qui reste allumé, les textes à télécharger, le rappel du soir ;
+ *    l'écran qui reste allumé, les textes à télécharger, les rappels (dans
+ *    l'app : la ligne des rappels du jour, qui ouvre « Les heures de ma
+ *    journée ») ;
  *  - la liste se compose ici même : « Modifier ma liste » montre les textes
  *    du jour, chacun se retire d'un toucher, et la recherche en ajoute
  *    plusieurs d'affilée.
@@ -57,7 +59,9 @@ import ReadingEncadrement from "../../components/ReadingEncadrement.vue";
 import ReadingMenu from "../../components/ReadingMenu.vue";
 import ReadingProgressBar from "../../components/ReadingProgressBar.vue";
 import ReadingSizeControl from "../../components/ReadingSizeControl.vue";
-import DailyReminderButton from "../../components/parcours/DailyReminderButton.vue";
+import ReminderSlotsSheet from "../../components/parcours/ReminderSlotsSheet.vue";
+import RemindersLine from "../../components/parcours/RemindersLine.vue";
+import { isNativeApp } from "../../composables/useNativeApp";
 import OfflineTextsNotice from "../../components/parcours/OfflineTextsNotice.vue";
 import StepText from "../../components/parcours/create/StepText.vue";
 import DailyReadingItem from "../Library/DailyReadingItem.vue";
@@ -141,6 +145,8 @@ const name = computed(() => views.dailyName(takenTexts.value));
 
 /** La liste ouverte : d'office quand il n'y a encore rien à lire. */
 const editing = ref(false);
+/** The reminders of the day, opened from the line at the bottom (in the app). */
+const remindersOpen = ref(false);
 watch(
   () => textObjectives.value.length === 0,
   (empty) => {
@@ -412,7 +418,16 @@ seoService.setMeta({
         </template>
       </div>
 
-      <DailyReminderButton class="mt-12" />
+      <template v-if="isNativeApp">
+        <div class="mt-12 text-center">
+          <RemindersLine @open="remindersOpen = true" />
+        </div>
+        <ReminderSlotsSheet
+          :open="remindersOpen"
+          source="daily_page"
+          @close="remindersOpen = false"
+        />
+      </template>
     </template>
 
     <!-- Comme les autres textes : le menu de lecture et la progression au bas de l'écran. -->
