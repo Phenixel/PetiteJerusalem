@@ -232,7 +232,10 @@ onBeforeUnmount(() => {
       <template v-else>
         <TranslationAiNotice :sources="shownSources" class="commentary-ai" />
         <section v-for="group in groups" :key="group.source" class="commentary-group">
-          <h3 class="commentary-source">{{ t(COMMENTARY_LABELS[group.source]) }}</h3>
+          <h3 class="commentary-source">
+            {{ t(COMMENTARY_LABELS[group.source]) }}
+            <span class="commentary-count">{{ group.comments.length }}</span>
+          </h3>
           <div v-for="(comment, i) in group.comments" :key="i" class="commentary-item">
             <p dir="rtl" class="commentary-text font-hebrew">
               <b v-if="comment.lead" class="commentary-lead">{{ comment.lead }}</b>
@@ -332,57 +335,87 @@ onBeforeUnmount(() => {
   padding-top: 0.9rem;
 }
 
+/* A group label, in lowercase (docs/design.md, « What we do not use »); the
+   place, what the panel is open on, comes first in the eye. */
 .commentary-title {
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  font-size: 0.8rem;
+  font-weight: 600;
   color: var(--color-primary);
 }
 
 .commentary-place {
-  margin-top: 0.15rem;
-  font-size: 0.85rem;
-  font-weight: 600;
+  margin-top: 0.1rem;
+  font-size: 1rem;
+  font-weight: 700;
   line-height: 1.3;
   color: var(--color-text-primary);
 }
 
 /* Le corps du volet défile (BottomSheet) : ici, la marge du texte seulement. */
 .commentary-body {
-  padding: 0.75rem 1.25rem 1.25rem;
+  padding: 1rem 1.25rem 1.5rem;
 }
 
+/* Each commentator opens with its name, a full-width rule above it after
+   the first: Rashi and Tossafot read as two parts. */
 .commentary-group + .commentary-group {
-  margin-top: 1.25rem;
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--color-line-strong);
 }
 
 .commentary-source {
-  margin-bottom: 0.4rem;
-  font-size: 0.8rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 1.05rem;
   font-weight: 700;
-  color: var(--color-text-secondary);
-}
-
-/* Le commentaire suit la taille de lecture : c'est un texte qu'on étudie,
-   pas une étiquette. */
-.commentary-text {
-  font-size: calc(1.05rem * var(--reading-scale, 1));
-  line-height: 1.7;
   color: var(--color-text-primary);
 }
 
-.commentary-item + .commentary-item {
-  margin-top: 0.6rem;
+.commentary-count {
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-secondary);
 }
 
-/* The translation under its comment: the reading font, a little smaller, in
-   the secondary color like the translation under a verse. */
+/* One comment (a dibbour hamat'hil and what follows), then a fine rule
+   before the next: a long Rashi no longer reads as a single block. */
+.commentary-item {
+  padding: 0.85rem 0;
+}
+
+.commentary-item + .commentary-item {
+  border-top: 1px solid var(--color-line);
+}
+
+.commentary-item:last-child {
+  padding-bottom: 0;
+}
+
+/* Le commentaire suit la taille de lecture : c'est un texte qu'on étudie,
+   pas une étiquette. One step below the verse of the reader (1.5 rem). */
+.commentary-text {
+  font-size: calc(1.25rem * var(--reading-scale, 1));
+  line-height: 1.8;
+  color: var(--color-text-primary);
+}
+
+/* The words of the verse being commented: what the eye looks for first, in
+   the theme color like the verse numbers. */
+.commentary-lead {
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+/* The translation under its comment: the reading font, one step below the
+   Hebrew, in the secondary color like the translation under a verse. */
 .commentary-tr {
-  margin-top: 0.3rem;
+  margin-top: 0.5rem;
   font-family: var(--font-reading);
-  font-size: calc(0.95rem * var(--reading-scale, 1));
-  line-height: 1.6;
+  font-size: calc(1rem * var(--reading-scale, 1));
+  line-height: 1.65;
   text-align: left;
   color: var(--color-text-secondary);
 }
@@ -392,11 +425,7 @@ onBeforeUnmount(() => {
 }
 
 .commentary-credit {
-  margin-top: 1.25rem;
-}
-
-.commentary-lead {
-  font-weight: 700;
+  margin-top: 1.5rem;
 }
 
 .commentary-note,

@@ -3403,8 +3403,20 @@ closing anything. On opening, the passage being studied is brought back into
 view if it was going under the sheet or sliding below the bottom of the
 screen as it narrowed. At the top, the location (« Chapitre 1 · Daf 2a ·
 passage 3 ») and the cross; below, Rachi (the Rachbam in Bava Batra, where
-it takes its place) then Tossafot, the dibbour hamat'hil in bold, at reading
-size: it is a text being studied. The panel **follows the reading**: as long
+it takes its place) then Tossafot, at reading size: it is a text being
+studied. Its Hebrew stands one step below the verse of the reader (1.25 rem
+against 1.5, both following the text size), and its translation, when the
+setting is on, sits under each comment like the translation under a verse.
+**The panel is divided like a page of commentaries**: each commentator
+opens with its name at the size of a card title and, next to it, how many
+comments it has on the passage (« Rachi 3 »), with a full-width rule
+(`--color-line-strong`) above it from the second one on; within a
+commentator, a fine rule (`--color-line`) separates one dibbour hamat'hil
+from the next, so that a long Rachi no longer reads as a single block. The
+dibbour hamat'hil, the words of the text being commented, is in bold and in
+the theme color, like the verse numbers: it is what the eye looks for first.
+The panel's label (« Commentaires ») is in lowercase, as every group label.
+The panel **follows the reading**: as long
 as it is open, touching another passage shows that passage's commentaries
 there, without reopening the commands; you study a daf with one gesture per
 passage. In the text, the words quoted by the dibbourim of the studied
