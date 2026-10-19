@@ -8,6 +8,7 @@ import { readingNavActive } from "../composables/useReadingNav";
 import { useScrollFrame } from "../composables/useScrollFrame";
 import { TABLE_BAR_REM } from "../composables/useBottomChrome";
 import { tableBarVisible } from "../composables/useReadingTable";
+import { scrollToTopRequested } from "../composables/useScrollToTop";
 
 const isVisible = ref(false);
 
@@ -15,7 +16,8 @@ const isVisible = ref(false);
  * The button is the exception, not the rule:
  * - only on the routes that ask for it with `meta: { scrollToTop: true }`
  *   (long lists one goes down to pick an item; see SCROLL_TO_TOP in
- *   routes.ts);
+ *   routes.ts), or while a page asks for it (requestScrollToTop: the
+ *   library home page, during a search);
  * - and only once the top is more than `MIN_SCROLL_SCREENS` screens away:
  *   closer than that, a few flicks of the thumb bring it back, and the
  *   button would only cover the content.
@@ -23,7 +25,7 @@ const isVisible = ref(false);
  */
 const MIN_SCROLL_SCREENS = 3;
 const route = useRoute();
-const routeAllows = computed(() => route.meta.scrollToTop === true);
+const routeAllows = computed(() => route.meta.scrollToTop === true || scrollToTopRequested.value);
 // Le pointeur survole le bouton : on ne le masque pas sous la main de
 // l'utilisateur qui s'apprête à cliquer.
 const isHovered = ref(false);

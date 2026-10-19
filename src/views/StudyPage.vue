@@ -41,6 +41,7 @@ import { readingProgressService, type ReadingPosition } from "../services/readin
 import { useToast } from "../composables/useToast";
 import { useConfirm } from "../composables/useConfirm";
 import { useSearchMode } from "../composables/useSearchMode";
+import { requestScrollToTop } from "../composables/useScrollToTop";
 import { useFoldedBooks } from "../composables/useFoldedBooks";
 import { useCatalogSearch } from "../composables/useCatalogSearch";
 import { useSearchTracking } from "../composables/useSearchTracking";
@@ -309,6 +310,10 @@ const { searching } = useSearchMode(searchTerm);
 watch(searchTerm, (value) => {
   if (value.trim()) trackLibrarySearchUsed();
 });
+
+// The library home page lists its results only while searching: the
+// back-to-top button comes with them (a section's page has it anyway).
+requestScrollToTop(() => searchTerm.value.trim() !== "");
 
 // Changer de page remet la recherche à zéro.
 watch(currentCorpus, () => {

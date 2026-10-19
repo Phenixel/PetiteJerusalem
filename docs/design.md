@@ -1214,6 +1214,13 @@ and only long lists one goes down to pick an item ask for it:
   reading menu takes the button's place, see below);
 - the audio classes: the list, an author, a series, a class
   (`chiourim`, `auteur-chiourim`, `serie-chiourim`, `detail-chiour`).
+- the team's announcements (`announcements`), a list that grows with time;
+- the library home page, **only while searching**: its results can run
+  long, its shelf does not (`requestScrollToTop` in `StudyPage.vue`).
+
+Left out on purpose: the Sidour (touching its tab again already goes back
+to the top), the Tehilim hub, the reading sessions home page, the admin
+lists, and every page not named here.
 
 Even there, it only shows once the top is **more than three screens away**:
 closer than that, a few flicks of the thumb bring it back, and the button

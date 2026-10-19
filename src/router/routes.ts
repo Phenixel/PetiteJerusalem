@@ -144,8 +144,9 @@ function localizedRoutes(): RouteRecordSingleView[] {
  * The pages that offer the back-to-top button (ScrollToTop.vue); every other
  * page goes without it. Only long lists that one goes down to pick an item:
  * the texts of a reading session, the texts of a library section, the
- * chapters of a book, the audio classes. On a text being read, the reading
- * menu takes its place.
+ * chapters of a book, the audio classes, the team's announcements. The
+ * library home page asks for it only while searching (requestScrollToTop).
+ * On a text being read, the reading menu takes its place.
  */
 const SCROLL_TO_TOP = { scrollToTop: true } as const;
 
@@ -453,6 +454,7 @@ export default [
     path: "/informations",
     name: "announcements",
     component: AnnouncementsPage,
+    meta: SCROLL_TO_TOP,
   },
   // Nous écrire : les messages envoyés à l'équipe et ses réponses (voir
   // docs/feedback.md), puis la page de chaque fil. L'app les relit sans

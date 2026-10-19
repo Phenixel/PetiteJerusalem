@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createApp, h, nextTick, type App } from "vue";
+import { createApp, effectScope, h, nextTick, ref, type App } from "vue";
 import { createI18n } from "vue-i18n";
 import { createMemoryHistory, createRouter } from "vue-router";
 
@@ -23,6 +23,7 @@ HTMLCanvasElement.prototype.getContext = (() =>
 import fr from "../locales/fr";
 import ScrollToTop from "../components/ScrollToTop.vue";
 import routes from "../router/routes";
+import { requestScrollToTop } from "../composables/useScrollToTop";
 
 const VIEWPORT = 800;
 let scrollY = 0;
@@ -95,6 +96,25 @@ describe("bouton de remontée", () => {
     expect(button()).toBeNull();
   });
 
+  it("paraît le temps qu'une page le demande (la bibliothèque en recherche)", async () => {
+    stubPage(VIEWPORT * 10);
+    await mountAt("/bibliotheque");
+    const searching = ref(true);
+    const scope = effectScope();
+    scope.run(() => requestScrollToTop(() => searching.value));
+    await scrollDown(VIEWPORT * 4);
+    expect(button()).not.toBeNull();
+
+    // Search cleared: the next scroll no longer shows it.
+    searching.value = false;
+    await nextTick();
+    await scrollDown(VIEWPORT * 5);
+    // Its leaving transition takes a frame more.
+    await frames();
+    expect(button()).toBeNull();
+    scope.stop();
+  });
+
   it("ne paraît pas sur une page qui ne le demande pas, même longue", async () => {
     stubPage(VIEWPORT * 10);
     await mountAt("/profile");
@@ -126,6 +146,7 @@ describe("pages avec bouton de remontée", () => {
     "auteur-chiourim",
     "serie-chiourim",
     "detail-chiour",
+    "announcements",
   ];
 
   it("ne le propose qu'aux longues listes choisies", () => {
