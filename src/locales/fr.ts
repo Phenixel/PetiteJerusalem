@@ -2177,7 +2177,7 @@ const fr = {
       unavailable: "Ce téléphone ne permet pas de le régler depuis l'app.",
     },
     always: "À chaque tefila",
-    never: "Ne plus afficher",
+    never: "Ne plus afficher la prochaine fois",
     farewell: "Vous retrouverez ces réglages dans Profil, Préférences, « Avant une tefila ».",
     close: "Fermer",
     back: "Revenir à la tefila",

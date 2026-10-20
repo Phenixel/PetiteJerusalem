@@ -17,7 +17,7 @@ import fr from "../locales/fr";
  *    phone goes back to how it was, except what the user changed again
  *    themselves; Min'ha then Arvit is one prayer; an app closed in the
  *    middle sets the phone back at the next launch;
- *  - « Ne plus afficher » stops the panel, « À chaque tefila » applies
+ *  - « Ne plus afficher la prochaine fois » stops the panel, « À chaque tefila » applies
  *    the modes on to the next ones without asking;
  *  - a change refused for lack of access opens the system list, and is made
  *    on return once the access is granted;
@@ -311,7 +311,7 @@ describe("the panel's choices", () => {
     expect(prayerQuiet.open).toBe(true);
   });
 
-  it("« Ne plus afficher » stops the panel, and still sets this prayer back", async () => {
+  it("« Ne plus afficher la prochaine fois » stops the panel, and still sets this prayer back", async () => {
     await enterPrayer();
     await toggleQuietMode("vibrate", true);
     choosePrayerQuiet("never");
@@ -430,7 +430,8 @@ describe("the panel, from the top of the screen", () => {
     await nextTick();
     expect(panel.querySelector(".quiet-tile")).toBeNull();
     expect(panel.textContent).toContain("Profil, Préférences");
-    expect(panel.textContent).toContain("Ne plus afficher");
+    expect(panel.textContent).toContain("Fermer");
+    expect(panel.textContent).toContain("Ne plus afficher la prochaine fois");
     expect(panel.style.minHeight).toBe("140px");
     expect(appDrop.offset).toBe(140);
     await vi.advanceTimersByTimeAsync(4900);
@@ -448,14 +449,30 @@ describe("the panel, from the top of the screen", () => {
     scrollTo.mockRestore();
   });
 
-  it("« Ne plus afficher », after « Fermer », stops the panel the next times", async () => {
+  it("« Fermer » again, on the message, closes it now and keeps it", async () => {
+    await enterPrayer();
+    const { unmount, panel } = mountPanel();
+    await vi.advanceTimersByTimeAsync(2000);
+    button(panel, "Fermer").click();
+    await nextTick();
+    button(panel, "Fermer").click();
+    await nextTick();
+    // At once, without waiting for the five seconds.
+    expect(appDrop.offset).toBe(0);
+    await vi.runAllTimersAsync();
+    expect(prayerQuiet.open).toBe(false);
+    expect(prayerQuietChoice.value.mode).toBe("offer");
+    unmount();
+  });
+
+  it("« Ne plus afficher la prochaine fois », after « Fermer », stops the panel the next times", async () => {
     await enterPrayer();
     const { unmount, panel } = mountPanel();
     await vi.advanceTimersByTimeAsync(2000);
     button(panel, "Fermer").click();
     await nextTick();
     expect(prayerQuietChoice.value.mode).toBe("offer");
-    button(panel, "Ne plus afficher").click();
+    button(panel, "Ne plus afficher la prochaine fois").click();
     await nextTick();
     expect(prayerQuietChoice.value.mode).toBe("never");
     expect(appDrop.offset).toBe(0);

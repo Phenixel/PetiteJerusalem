@@ -328,8 +328,9 @@ export async function settleLeftoverPrayer(): Promise<void> {
 }
 
 /**
- * The panel's choices, before it closes: « Ne plus afficher » ("Don't show
- * again", offered once « Fermer » is touched) stops offering the panel;
+ * The panel's choices, before it closes: « Ne plus afficher la prochaine
+ * fois » ("Don't show it next time", offered once « Fermer » is touched)
+ * stops offering the panel;
  * « À chaque tefila » ("Every tefila") applies the modes that are on to the
  * next ones. Each time, the phone is set back once this tefila is left.
  */

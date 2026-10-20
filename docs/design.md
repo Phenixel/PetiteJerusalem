@@ -3737,10 +3737,14 @@ app down, as when the screen is split in two (`PrayerQuietPanel.vue`,
 - **« Fermer » says where to find it again.** The whole content gives way,
   in the same room, to one sentence: these settings are found again in
   Profil, Préférences, « Avant une tefila » ("Profile, Preferences, Before a
-  tefila"); and one button, « Ne plus afficher » ("Don't show again"). The
-  panel retracts on its own five seconds later, or at once with that button
-  or a tap on the app. The way out of the panel is offered when it is being
-  closed, not alongside the modes, where it competed with them.
+  tefila"); and two buttons, « Fermer » ("Close", solid, the default) and
+  « Ne plus afficher la prochaine fois » ("Don't show it next time"). Each
+  retracts the panel at once; without an answer, it retracts on its own
+  five seconds later and comes back at the next tefila, as with « Fermer »
+  or a tap on the app. Whoever wants to close it now without giving it up
+  says so in one touch, as clearly as whoever gives it up. The way out of
+  the panel is offered when it is being closed, not alongside the modes,
+  where it competed with them.
 - **It retracts upward.** A choice, a tap on the lowered app, the app pushed
   back up with the finger (it follows, and released past a third of the way
   or flicked, it goes up), Escape or Android back: the app comes back up
@@ -3754,7 +3758,7 @@ app down, as when the screen is split in two (`PrayerQuietPanel.vue`,
   Min'ha then Arvit is one prayer (no second panel). An app closed in the
   middle of a tefila sets the phone back at its next launch.
 - **The choices.** « Fermer » keeps the modes for this prayer. « Ne plus
-  afficher » stops the panel. « À chaque tefila » keeps the modes that are
+  afficher la prochaine fois » stops the panel. « À chaque tefila » keeps the modes that are
   on and turns them on by themselves at every tefila, with a toast saying
   so, and still sets the phone back at the end; the panel comes instead if
   the phone refuses one (access withdrawn). With nothing on, it has nothing

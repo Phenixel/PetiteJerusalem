@@ -10,8 +10,9 @@
  * A few seconds later (or at the first touch), it grows by a row of two
  * choices: « À chaque tefila » ("Every tefila") and « Fermer » ("Close").
  * « Fermer » first replaces the whole content by where these settings are
- * found again, with « Ne plus afficher » ("Don't show again"); it retracts
- * on its own a few seconds later. A choice, a tap on the lowered app, the
+ * found again, with two buttons: « Fermer » again, and « Ne plus afficher
+ * la prochaine fois » ("Don't show it next time"); without an answer, it
+ * retracts on its own a few seconds later and comes back next time. A choice, a tap on the lowered app, the
  * app pushed back up with the finger, Escape or Android back: the panel
  * retracts upward as the app comes back up over it.
  *
@@ -74,7 +75,7 @@ const closing = ref(false);
 /** The panel has taken its place above the screen: it may move from now on. */
 const entered = ref(false);
 const showActions = ref(false);
-/** After « Fermer »: where to find the settings again, and « Ne plus afficher ». */
+/** After « Fermer »: where to find the settings again, and whether to show it next time. */
 const farewell = ref(false);
 /** The panel's height, read with the app's offset so that the two move together. */
 const height = ref(0);
@@ -251,9 +252,14 @@ function onPointerCancel(event: PointerEvent): void {
     <h2 id="prayer-quiet-title" class="sr-only">{{ t("prayerQuiet.title") }}</h2>
     <div v-if="farewell" class="quiet-farewell" role="status">
       <p class="text-sm text-text-primary">{{ t("prayerQuiet.farewell") }}</p>
-      <button type="button" class="btn btn-soft quiet-action" @click="choose('never')">
-        {{ t("prayerQuiet.never") }}
-      </button>
+      <div class="flex flex-wrap justify-center gap-1.5">
+        <button type="button" class="btn btn-primary quiet-action" @click="close">
+          {{ t("prayerQuiet.close") }}
+        </button>
+        <button type="button" class="btn btn-soft quiet-action" @click="choose('never')">
+          {{ t("prayerQuiet.never") }}
+        </button>
+      </div>
     </div>
     <template v-else>
       <div class="grid grid-cols-3 gap-2">
