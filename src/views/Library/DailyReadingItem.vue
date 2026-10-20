@@ -372,8 +372,9 @@ watch(
   { immediate: true },
 );
 
-// La traduction allumée ou éteinte : Rachi se recharge avec ou sans elle.
-watch(translationShown, () => {
+// La traduction allumée ou éteinte, ou une autre langue choisie : Rachi se
+// recharge avec ou sans elle.
+watch([translationShown, translationLangChoice], () => {
   if (!rashiLines.value) return;
   rashiLines.value = null;
   if (props.withRashi && content.value) void loadRashi();

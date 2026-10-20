@@ -57,6 +57,16 @@ const HolidayBackdrop = defineAsyncComponent(
   () => import("./components/holiday/HolidayBackdrop.vue"),
 );
 const AppUpdateBanner = defineAsyncComponent(() => import("./components/AppUpdateBanner.vue"));
+// App native : the reminders of Mon parcours name what is left to do, which
+// only a component can say (useParcoursViews). A component without a face
+// plans them, mounted once the first screen is drawn.
+const ParcoursReminderScheduler = defineAsyncComponent(
+  () => import("./components/parcours/ParcoursReminderScheduler.vue"),
+);
+const schedulerMounted = ref(false);
+if (isNativeApp) {
+  void router.isReady().then(() => setTimeout(() => (schedulerMounted.value = true), 1500));
+}
 const OfflineNotice = defineAsyncComponent(() => import("./components/OfflineNotice.vue"));
 
 // La bulle de commandes d'un passage de texte (partager, phonétique, signaler
@@ -194,6 +204,7 @@ authService.onAuthChanged((user) => {
     <!-- App native seulement : ne s'affiche que si le binaire installé est
          antérieur à la version publiée sur le store (appUpdateService). -->
     <AppUpdateBanner v-if="isNativeApp" />
+    <ParcoursReminderScheduler v-if="schedulerMounted" />
     <OfflineNotice v-if="showOfflineNotice" />
     <!-- App native seulement : la Transition porte la surcouche des horaires.
          Le web garde le RouterView nu (des vues multi-racines s'accommodent

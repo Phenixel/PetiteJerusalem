@@ -45,6 +45,7 @@ const SECTIONS = [
 /** Monte le menu, panneau ouvert. */
 async function ouvre(
   props: {
+    sections?: typeof SECTIONS;
     tefila?: boolean;
     halakhot?: boolean;
     chneiMikra?: boolean;
@@ -337,6 +338,44 @@ describe("menu de lecture", () => {
     const liens = [...host.querySelectorAll<HTMLAnchorElement>("a.action-item")];
     expect(liens.length).toBeGreaterThan(0);
     for (const lien of liens) expect(lien.href).toMatch(/^https:\/\//);
+  });
+});
+
+describe("réglages seuls", () => {
+  beforeEach(() => {
+    document.body.innerHTML = "";
+    localStorage.clear();
+  });
+
+  it("garde un seul bouton rond, les réglages, quand le sommaire n'a rien d'autre que le haut de page", async () => {
+    const montee = vi.spyOn(window, "scrollTo").mockImplementation(() => {});
+    // Ni repère, ni bascule hébreu / phonétique, ni téléchargement : le
+    // sommaire n'aurait porté que la taille du texte et « Haut de page ».
+    const { host } = await ouvre({ sections: [] });
+    await settle();
+
+    // Un seul rond, qui a ouvert les réglages tout droit et devient la croix.
+    expect(host.querySelectorAll(".fab")).toHaveLength(1);
+    expect(boutonReglages(host)).toBeNull();
+    expect(boutonMenu(host).getAttribute("aria-label")).toBe(fr.common.close);
+    expect(host.querySelector(".section-item")).toBeNull();
+    expect(interrupteur(host, fr.textReading.settings.autoScroll)).toBeTruthy();
+
+    // Les réglages reprennent la taille du texte et le retour en haut de page.
+    expect(host.querySelector(`[aria-label="${fr.textReading.textSize}"]`)).not.toBeNull();
+    commande(host, fr.textReading.navTop)!.click();
+    await settle();
+    expect(montee).toHaveBeenCalledWith({ top: 0, behavior: "smooth" });
+    expect(host.querySelector(".nav-panel")).toBeNull();
+    expect(boutonMenu(host).getAttribute("aria-label")).toBe(fr.textReading.settings.open);
+    montee.mockRestore();
+  });
+
+  it("rend le bouton du sommaire dès que le texte a un repère", async () => {
+    const { host } = await ouvre();
+    await settle();
+    expect(boutonReglages(host)).not.toBeNull();
+    expect(commande(host, fr.textReading.navTop)).toBeUndefined();
   });
 });
 

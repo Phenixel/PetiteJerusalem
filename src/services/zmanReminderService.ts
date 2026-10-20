@@ -85,11 +85,12 @@ function isOurId(id: number): boolean {
 }
 
 /**
- * Combien de notifications en attente on s'autorise. iOS en garde 64 par
- * application, les plus proches, et jette silencieusement le reste : on reste
- * en dessous pour que la coupe soit la nôtre et non la sienne.
+ * How many pending notifications these reminders allow themselves. iOS keeps
+ * 64 per app, the nearest, and silently drops the rest: with the share of
+ * the Mon parcours reminders (PARCOURS_MAX_PENDING, 20), we stay under it,
+ * so that the cut is ours and not the system's.
  */
-export const MAX_PENDING = 56;
+export const MAX_PENDING = 36;
 
 /** Au plus trois entrées de repos d'avance : un mois de calendrier suffit. */
 const REST_OCCURRENCES = 3;

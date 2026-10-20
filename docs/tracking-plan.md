@@ -1148,6 +1148,40 @@ A backlog caught up.
 | `remember` | true if the user chose to do it this way without being asked                                                                                                                   |
 | `source`   | `objective` (a program's « Rattraper » sheet), `home_deck_swipe`, `home_wallet_swipe` or `home_sheet` (the home page « Rattraper » card, marked done: `option` is then `done`) |
 
+### `parcours_reminders_opened` (new)
+
+« Les heures de ma journée » ("The hours of my day") opened, in the app.
+
+| Property       | Values                                                                                                                                                                                             |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `source`       | `parcours_header` (the alarm clock at the top of Mon parcours), `parcours_line` (the line under the light), `daily_page` (the bottom of the daily reading), `settings` (the notification settings) |
+| `active_count` | how many points of the day ring, when it opens (0 to 7)                                                                                                                                            |
+
+### `parcours_reminder_set` (new)
+
+A point of the day turned on or off, or given an hour (« Enregistrer »).
+
+| Property | Values                                                                             |
+| -------- | ---------------------------------------------------------------------------------- |
+| `slot`   | `wake`, `chaharit`, `noon`, `minha`, `arvit`, `bedtime`, `day` (the day's summary) |
+| `on`     | true if it rings                                                                   |
+| `kind`   | `fixed` (a fixed hour) or `zman` (tied to a zman)                                  |
+| `zman`   | the zman it follows (`sunset`, `tzeit`...), null for a fixed hour                  |
+| `offset` | the minutes from the zman, negative before, null for a fixed hour                  |
+| `hour`   | the fixed hour (0 to 23), null when tied to a zman                                 |
+
+### `parcours_reminder_opened` (new)
+
+A reminder of the day touched: it opens the home page. `slot`: as in
+`parcours_reminder_set`.
+
+### `parcours_reminders_migrated` (new)
+
+The evening reminder of the server carried over to the reminders of the
+day, once per device. `daily` (boolean): its fixed hour was on, and became
+the day's summary. `sunset` (boolean): its call before the chkia was on,
+and became the Min'ha point.
+
 ### What becomes of the daily reading events
 
 The `/bibliotheque/lecture-du-jour` page had given way to Ma journée, itself
@@ -1156,8 +1190,10 @@ the screen continues:
 
 - `daily_reading_viewed` and `daily_reading_marked_read`: see above;
 - `reminder_settings_opened`, `reminder_enabled`, `reminder_enable_failed`,
-  `reminder_disabled`, `reminder_disable_failed`: the reminders bell, with
-  the same properties, at the bottom of Mon parcours;
+  `reminder_disabled`, `reminder_disable_failed`: the evening reminder's
+  card, at the bottom of Mon parcours. It gave way to the reminders of the
+  day (`parcours_reminders_opened` and the events below): no longer sent by
+  the app, still sent by versions already installed;
 - `daily_reading_configured` (building the list), `daily_reading_tab_switched`
   (« Aujourd'hui » and « Cette semaine », "This week") and
   `daily_reading_offline_prompt` (the dialog for a text added without being

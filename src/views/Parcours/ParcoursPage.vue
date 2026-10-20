@@ -3,9 +3,13 @@
  * Mon parcours (P2-Parcours) : où j'en suis. La lampe et la série, le mur
  * des cinq dernières semaines (on y touche un jour pour le compléter, on
  * écarte deux doigts dessus pour le mur entier), les volumes de l'étagère,
- * les habitudes et leur semaine. Au bas, le rappel du soir ; et, quand un
- * texte d'aujourd'hui manque sur l'appareil, de quoi le télécharger (tous
- * deux vivaient sur Ma journée, retirée).
+ * les habitudes et leur semaine. Quand un texte d'aujourd'hui manque sur
+ * l'appareil, de quoi le télécharger.
+ *
+ * In the app, the reminders: an alarm clock at the top right, and under the
+ * light the line of those still to come today. Both open "The hours of my
+ * day" (ReminderSlotsSheet); the framed card that sat at the bottom is gone
+ * (docs/design.md, "Reminders of the day").
  *
  * On y arrive par la lampe de l'accueil, ou par le profil. Dans l'app, tout
  * marche sans compte, sur ce téléphone ; un compte le fait suivre d'un
@@ -19,15 +23,17 @@ import { HDate } from "@hebcal/core";
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
-import DailyReminderButton from "../../components/parcours/DailyReminderButton.vue";
 import DaySheet from "../../components/parcours/DaySheet.vue";
 import HabitWeek from "../../components/parcours/HabitWeek.vue";
 import OfflineTextsNotice from "../../components/parcours/OfflineTextsNotice.vue";
 import ParcoursBack from "../../components/parcours/ParcoursBack.vue";
+import ReminderSlotsSheet from "../../components/parcours/ReminderSlotsSheet.vue";
+import RemindersLine from "../../components/parcours/RemindersLine.vue";
 import LightCelebration from "../../components/parcours/LightCelebration.vue";
 import LightsSheet from "../../components/parcours/LightsSheet.vue";
 import StoneWall from "../../components/parcours/StoneWall.vue";
 import StreakLight from "../../components/parcours/StreakLight.vue";
+import AppIcon from "../../components/icons/AppIcon.vue";
 import VolumeShelf from "../../components/parcours/VolumeShelf.vue";
 import { prefersReducedMotion } from "../../composables/useMotion";
 import { isNativeApp } from "../../composables/useNativeApp";
@@ -35,6 +41,7 @@ import { takeArrival } from "../../composables/useParcoursArrival";
 import { useParcoursLamp } from "../../composables/useParcoursLamp";
 import { useParcours } from "../../composables/useParcours";
 import { useParcoursMeta } from "../../composables/useParcoursMeta";
+import { useParcoursReminders } from "../../composables/useParcoursReminders";
 import { useParcoursViews } from "../../composables/useParcoursViews";
 import { usePinchOpen } from "../../composables/usePinchOpen";
 import { useWallLabels } from "../../composables/useWallLabels";
@@ -97,6 +104,19 @@ function openLights(): void {
 }
 
 const picked = ref<DayKey | null>(null);
+
+/**
+ * The reminders ring on the phone (parcoursReminderService): the site has
+ * nothing to schedule, it shows neither the clock nor the line.
+ */
+const remindersShown = isNativeApp;
+const reminders = useParcoursReminders();
+const remindersOpen = ref(false);
+const remindersSource = ref("parcours_header");
+function openReminders(source: string): void {
+  remindersSource.value = source;
+  remindersOpen.value = true;
+}
 
 /** « depuis Iyar 5785 » : le mois hébraïque du premier jour du parcours. */
 const since = computed(() => {
@@ -176,7 +196,24 @@ onMounted(() => {
 
 <template>
   <main class="mx-auto w-full max-w-5xl px-4 pb-10 pt-[18px] md:px-6 md:py-12">
-    <ParcoursBack to="/" :label="t('parcours.day.back')" />
+    <div class="flex items-center justify-between">
+      <ParcoursBack to="/" :label="t('parcours.day.back')" />
+      <!-- The alarm clock, not the clock of the tab bar (the times of the day). -->
+      <button
+        v-if="remindersShown"
+        type="button"
+        class="icon-btn relative -me-2 text-text-primary"
+        :aria-label="t('parcours.reminders.title')"
+        @click="openReminders('parcours_header')"
+      >
+        <AppIcon name="alarm-clock" :size="21" />
+        <span
+          v-if="reminders.activeSlots.value.length > 0"
+          class="absolute end-1.5 top-1.5 h-[7px] w-[7px] rounded-full bg-primary ring-2 ring-page"
+          aria-hidden="true"
+        />
+      </button>
+    </div>
     <h1 class="mt-1 text-center text-[30px] font-bold md:text-4xl">
       {{ t("parcours.title") }}
     </h1>
@@ -220,6 +257,11 @@ onMounted(() => {
               }}
             </template>
           </p>
+          <RemindersLine
+            v-if="remindersShown"
+            class="mt-2"
+            @open="openReminders('parcours_line')"
+          />
         </section>
 
         <OfflineTextsNotice class="mt-6" :entries="entries" />
@@ -328,8 +370,6 @@ onMounted(() => {
           </RouterLink>
         </div>
 
-        <DailyReminderButton class="mt-8" />
-
         <!-- Sans compte, dans l'app : tout marche, mais sur ce téléphone seulement. -->
         <p
           v-if="isNativeApp && !store.signedIn.value"
@@ -345,6 +385,12 @@ onMounted(() => {
 
     <DaySheet :day="picked" source="parcours_wall" @close="picked = null" />
     <LightsSheet :open="lightsOpen" @close="lightsOpen = false" />
+    <ReminderSlotsSheet
+      v-if="remindersShown"
+      :open="remindersOpen"
+      :source="remindersSource"
+      @close="remindersOpen = false"
+    />
     <LightCelebration v-if="!empty" />
     <p class="sr-only" aria-live="polite">{{ arrivedNote }}</p>
     <!-- Le tutoriel : la lumière, le mur, l'étagère, un objectif de plus (aussi sur le site). -->

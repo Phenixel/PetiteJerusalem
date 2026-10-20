@@ -1271,6 +1271,34 @@ change.
 In the app, the button is not repeated: the page there is already topped by
 two tabs and a bottom bar, and the settings are one gesture away.
 
+### Back to top, only on long lists
+
+The back-to-top button (`ScrollToTop.vue`) is the exception, not the rule.
+A page goes without it unless it asks for it with
+`meta: { scrollToTop: true }` (`SCROLL_TO_TOP` in `src/router/routes.ts`),
+and only long lists one goes down to pick an item ask for it:
+
+- the texts to take in a reading session (`detail-session`);
+- the texts of a library section (`study-corpus`);
+- the chapters, or the texts, inside a book (`etude-reading`,
+  `text-reading` and their section routes; once a chapter is open, the
+  reading menu takes the button's place, see below);
+- the audio classes: the list, an author, a series, a class
+  (`chiourim`, `auteur-chiourim`, `serie-chiourim`, `detail-chiour`).
+- the team's announcements (`announcements`), a list that grows with time;
+- the library home page, **only while searching**: its results can run
+  long, its shelf does not (`requestScrollToTop` in `StudyPage.vue`).
+
+Left out on purpose: the Sidour (touching its tab again already goes back
+to the top), the Tehilim hub, the reading sessions home page, the admin
+lists, and every page not named here.
+
+Even there, it only shows once the top is **more than three screens away**:
+closer than that, a few flicks of the thumb bring it back, and the button
+would only cover the content. It shows while scrolling, then fades out.
+Adding a page to the list is a decision: it is written here first. Held by
+`src/__tests__/scrollToTop.test.ts`.
+
 ### The reading menu opens above its button
 
 On a library text, a round button at the bottom right (`ReadingMenu.vue`)
@@ -1286,6 +1314,17 @@ one, which switches the panel from the table of contents to the settings.
 The two circles then swap roles: the left one takes back the table of
 contents icon and returns to it, the right one becomes the cross. The cross
 is always on the circle touched last: you leave from where you came in.
+
+A text whose table of contents would carry nothing but the text size and
+« Haut de page » (no landmark, no Hebrew / phonetic toggle, nothing to
+download or set aside, no compass or mirror: the daily Tehilim, the chnei
+mikra, a reading session) keeps **a single circle**, the settings one. A
+menu button that only led back to the top, next to the settings, was one
+button too many. The settings then open directly and take in the text size
+(at the top) and « Haut de page » (first of the commands under the
+switches); the circle becomes the cross that closes. Held by
+`src/__tests__/readingMenu.test.ts` (« garde un seul bouton rond, les
+réglages, quand le sommaire n'a rien d'autre que le haut de page »).
 
 These settings are the ones you change **while** reading, not before:
 auto-scroll (the same switch as in Preferences, see "A gesture that
@@ -2531,8 +2570,9 @@ day, in the order in which it is done. What it alone offered has found
 another place:
 
 - a past day is completed from the Mon parcours wall, in that day's sheet;
-- the evening reminder and the notice about texts to download for offline
-  use are at the bottom and the top of Mon parcours;
+- the notice about texts to download for offline use is at the top of Mon
+  parcours; the evening reminder has become the reminders of the day (see
+  « Reminders of the day », below);
 - its address (`/parcours/journee`) leads to the home page; that of the
   daily reading (`/bibliotheque/lecture-du-jour`, which the widgets, the
   watch and the evening reminder keep) has got its page back (see below);
@@ -2707,7 +2747,8 @@ the page of the « Lecture du jour » volume and of the card of the same name.
   its bar).
 - The reading menu, the text size (next to « Modifier ma liste »),
   auto-scroll, the screen that stays on, the notice about texts to download
-  and the evening reminder, as before.
+  as before; at the bottom, in the app, the line of the reminders of the day
+  (see below), in place of the evening reminder's card.
 - **On the home page, a single card**: the day's texts, one or several, make
   the « Lecture du jour » card (« 3 textes · Tehilim 1 et 2 autres », "3
   texts · Tehilim 1 and 2 others"), which opens the page; swiped, it checks
@@ -2716,6 +2757,50 @@ the page of the « Lecture du jour » volume and of the card of the same name.
   text, the search can be redone as many times as you like, what you have
   checked waits above, and « Ajouter 3 textes » ("Add 3 texts"), stuck to the
   bottom of the screen, takes them all.
+
+### Reminders of the day
+
+The framed card « Le rappel du soir » ("The evening reminder"), at the
+bottom of Mon parcours, is gone: a place to go earns no frame, and the
+bottom of the page was the last place one looks. The reminders went up,
+in two places, both in the app only (the site has nothing to schedule):
+
+- **an alarm clock at the top right**, across from the back link, in
+  `icon-btn` and in ink. A dot of the theme color says that at least one
+  reminder rings. It is an alarm clock (`alarm-clock`), not the clock: the
+  clock is the round button of the tab bar (the times of the day), and the
+  two would be taken for each other;
+- **a line under the light**, without frame, touched whole: « Rappels :
+  Min'ha 18:33, Arvit 19:51 +2 » ("Reminders: ..."), the reminders still to
+  come today, two by name and the rest counted. With none left today, the
+  first of tomorrow (« Demain : Cha'harit 08:19 »); with none set, an offer
+  in the theme color, « Me rappeler mes objectifs » ("Remind me of my
+  goals"). The command carries its drawing and its name, as the alarm
+  clock alone does not.
+
+Both open **« Les heures de ma journée »** ("The hours of my day"), a bottom
+sheet (`ReminderSlotsSheet.vue`): a row per point of the day thread (Réveil,
+Cha'harit, Midi, Min'ha, Arvit, Coucher) and one for the day's summary
+(« Dans la journée »). A row says its name, what its hour follows (« Heure
+fixe », « 20 min avant Chkia »), how many of today's goals it gathers, its
+hour today, and its switch. Rows separated by a hairline, no frames, as in
+the settings. Touching a row opens its second screen, in the same sheet,
+with a back chevron: two segments, « Heure fixe » ("Fixed time") and
+« Selon le calendrier » ("By the calendar"). Fixed, the dial of the old
+evening reminder (`pickers/TimeDial.vue`); by the calendar, the zmanim of
+that moment as pills, each with its time today, then the offset: « Avant »
+or « Après » in two segments, and the minutes as pills. Below, the hour it
+gives today, large, in the display font, and what tomorrow's will be: the
+person sees that it follows the sun. « Enregistrer » turns the reminder on:
+choosing an hour is wanting it. Turning a reminder on asks for the
+permission of the system then, after the gesture, never before.
+
+The same sheet opens from the bottom of the daily reading, and from the
+notification settings, where its row says how many reminders are on.
+
+What rings is in `docs/parcours.md`, « Reminders ». The hours only ring:
+they do not move the order of the home page deck, nor the opening of a
+service, which keep their own rules (« The home page deck »).
 
 ### The home page to your taste
 
@@ -3474,8 +3559,20 @@ closing anything. On opening, the passage being studied is brought back into
 view if it was going under the sheet or sliding below the bottom of the
 screen as it narrowed. At the top, the location (« Chapitre 1 · Daf 2a ·
 passage 3 ») and the cross; below, Rachi (the Rachbam in Bava Batra, where
-it takes its place) then Tossafot, the dibbour hamat'hil in bold, at reading
-size: it is a text being studied. The panel **follows the reading**: as long
+it takes its place) then Tossafot, at reading size: it is a text being
+studied. Its Hebrew stands one step below the verse of the reader (1.25 rem
+against 1.5, both following the text size), and its translation, when the
+setting is on, sits under each comment like the translation under a verse.
+**The panel is divided like a page of commentaries**: each commentator
+opens with its name at the size of a card title and, next to it, how many
+comments it has on the passage (« Rachi 3 »), with a full-width rule
+(`--color-line-strong`) above it from the second one on; within a
+commentator, a fine rule (`--color-line`) separates one dibbour hamat'hil
+from the next, so that a long Rachi no longer reads as a single block. The
+dibbour hamat'hil, the words of the text being commented, is in bold and in
+the theme color, like the verse numbers: it is what the eye looks for first.
+The panel's label (« Commentaires ») is in lowercase, as every group label.
+The panel **follows the reading**: as long
 as it is open, touching another passage shows that passage's commentaries
 there, without reopening the commands; you study a daf with one gesture per
 passage. In the text, the words quoted by the dibbourim of the studied
