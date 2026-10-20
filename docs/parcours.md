@@ -51,6 +51,7 @@ shows, at the bottom of the text, the day's task to check off
 | `entries.ts`                               | the texts a task has you read (offline download)                                             |
 | `tracking.ts`                              | audience tracking shared by several screens                                                  |
 | `occasions.ts`                             | the deck's occasion cards marked done (the moon, the 'Omer, 'Hanouka, a service), on the device |
+| `reminders.ts`                             | the reminders of the day: the point of the day of a task, the hour of a point, what rings    |
 
 `composables/useParcours.ts` brings it all together for the pages: a single
 shared state, started on first use (anyone who never opens the journey
@@ -179,9 +180,57 @@ The **widgets and the watch** take the daily reading from the device, with
 or without an account (`widgetService`); an account that the device has not
 yet taken over keeps the one from its profile.
 
-The **evening reminder** only counts the daily texts and the calendar
-readings, as before: it reads the profile, on the server side, and knows
-nothing about programs or habits.
+The **evening reminder** of the server (`functions/src/dailyReminder.ts`)
+only counts the daily texts and the calendar readings: it reads the
+profile and knows nothing about programs or habits. Since the reminders of
+the day, the app no longer sets it; installed versions that still do keep
+it working (see below).
+
+## Reminders
+
+« Les heures de ma journée » ("The hours of my day"), opened by the alarm
+clock of Mon parcours (screens in `docs/design.md`, « Reminders of the
+day »). In the app only, with or without an account.
+
+- **Seven points can ring**: the six of the day thread (`wake`,
+  `chaharit`, `noon`, `minha`, `arvit`, `bedtime`) and the day's summary
+  (`day`). Each has an hour, **fixed** (bedtime at 00:00) or **tied to a
+  zman** with an offset in minutes (Min'ha 20 minutes before the chkia),
+  computed each day by `zmanimService` for the place of the zmanim. A fixed
+  hour before 04:00 belongs to the night of the day that ends.
+- **The point of a task** (`taskSlot`): its office for the three tefilot;
+  the anchor chosen on the thread (habits, programs); otherwise its moment
+  (morning with Cha'harit, afternoon with Min'ha, evening with Arvit,
+  bedtime with bedtime). A habit of the whole day (tsedaka, garder sa
+  langue) has none, and neither has a task of the week (the paracha, a
+  weekly program): only the summary names them.
+- **What rings**: a point names what is left to do there, neither done nor
+  set aside (« Pas aujourd'hui »). Nothing left, nothing rings. The summary
+  names what is left of the whole day, except what a later reminder of the
+  same day will name.
+- **On the phone**: `ParcoursReminderScheduler.vue` (mounted at the root of
+  the app, since only a component can name the goals) makes the plan, and
+  `parcoursReminderService` schedules it with
+  `@capacitor/local-notifications` (ids from 42 000 000, Android channel
+  `pj-parcours`). Three days ahead, redone at each change of the settings,
+  of the journey (a task checked removes it from today's reminder), of the
+  place, of the opinion or of the language, and at each return to the
+  foreground. At most 20 pending, and the zmanim reminders 36: together
+  under the 64 iOS keeps. A touch opens the home page.
+- **Kept on the device** (`pj_parcours_reminders`, `useParcoursReminders`),
+  like the zmanim reminders: a notification is scheduled by the phone that
+  receives it, from the place chosen there.
+- **The evening reminder of the server is carried over** once per device
+  (`migrateServerReminder`): its fixed hour becomes the summary, its call
+  before the chkia the Min'ha point (the default of Min'ha is that same
+  call, 20 minutes before), then the server stops it
+  (`pushReminderEnabled: false`, the token stays for the answers of the
+  support). Only with the permission of notifications already granted:
+  otherwise the server's reminder is left as it is rather than lost. The
+  fields stay read by `functions/src/dailyReminder.ts` for versions
+  already installed.
+- The **hours do not move the deck**: the order of the home page and the
+  opening of a service keep their rules (`moments.ts`, `useOfficeTimes`).
 
 ## Tests
 
@@ -199,6 +248,7 @@ nothing about programs or habits.
 | `parcoursLegacyDaily.test.ts`   | the former daily reading, taken over and kept up to date                                                                                                     |
 | `parcoursDeck.test.ts`          | the home deck: the order, prayer service times, catching up, the 'Omer card, the service of the hour without the habit                                      |
 | `parcoursEntries.test.ts`       | the texts to download for the day                                                                                                                            |
+| `parcoursReminders.test.ts`     | the reminders of the day: the point of a task, the hour tied to a zman, nothing rings for nothing, the share of pending notifications                         |
 | `parcoursTracking.test.ts`      | shared tracking, and the daily reading events that continue                                                                                                  |
 | `widgetDailyParcours.test.ts`   | the widgets' daily reading, without an account                                                                                                               |
 | `e2e/firebase/parcours.spec.ts` | a daily text picked, checked off, and tracked by the account (emulators)                                                                                     |
