@@ -1860,8 +1860,12 @@ const he: LocaleMessages = {
       left: "עוד {duration}",
       now: "עכשיו",
       arc: {
-        sunrise: "הנץ {time}",
-        sunset: "שקיעה {time}",
+        sunrise: "הנץ",
+        sunset: "שקיעה",
+      },
+      legend: {
+        window: "הזמן הראוי",
+        outside: "שלא בזמנו",
       },
       marks: {
         alot: "עלות השחר",

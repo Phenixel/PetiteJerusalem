@@ -552,16 +552,21 @@ disc, the sky of the moment, then what matters now.
   colors, the same in every theme. The skyline is the rampart and a tower
   of the walls, nothing else: no dome behind them, which would stand for a
   building that has no place in the sidour.
-- **Touched, it opens a sheet** (the bottom sheet of Mon parcours): the
-  title and the sky; the course of the sun (`ZmanArc.vue`), from sunrise to
-  sunset, or from sunset to sunrise for the night, with the moment's
-  window traced on it, what has passed of it in the theme color, each
-  landmark as a dot with its short name outside the arc, and the sun (the
-  moon at night) where it is now. Before sunrise, misheyakir falls a little
-  under the horizon, and the arc goes on below it, as the sun does. Then the
-  landmarks in a list, each with its time and how long until it comes,
-  « Maintenant » in its place among them, the next one in the theme color;
-  then the rule in full, as the « i » used to give it.
+- **Touched, it opens a sheet** (the bottom sheet of Mon parcours), closed
+  by the veil or by pulling it down, without a « Fermer » button at the
+  end: the title and the sky, then the cycle of the day (`ZmanArc.vue`).
+  The sun's course runs over the horizon, from sunrise on the left to
+  sunset on the right, and the night under it, back from sunset to
+  sunrise, so that every hour has its place and now always shows: the sun
+  by day, the moon by night. On it, the moment's window in the theme color
+  (what has passed of it a shade deeper), each landmark as a dot with its
+  short name, and the rest of the cycle as a dashed bar in the danger
+  color, « Hors de son temps ». Seen at 21:30 on Min'ha, the moon sits on
+  the dashed part, past the chkia: this is no longer its time. A small
+  legend under the drawing names the three (« Le bon moment », « Hors de
+  son temps », « Maintenant »). Then the landmarks in a list, each with its
+  time and how long until it comes, « Maintenant » in its place among
+  them, the next one in the theme color; then the rule in full.
 
 Held by `src/__tests__/tefilaZman.test.ts` (the windows, the phases, the
 night Arvit belongs to after midnight, the arc's ends).

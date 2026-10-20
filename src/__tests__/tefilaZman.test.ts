@@ -1,13 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { DEFAULT_PLACE, formatZmanTime } from "../services/zmanimService";
-import {
-  ZMAN_MOMENTS,
-  arcPosition,
-  zmanPhase,
-  zmanPlan,
-  zmanTarget,
-} from "../services/tefilaZman";
+import { ZMAN_MOMENTS, arcPosition, zmanPhase, zmanPlan, zmanTarget } from "../services/tefilaZman";
 
 /**
  * The time of a moment of prayer (the pill before what is read, and its
@@ -41,7 +35,6 @@ describe("l'horaire d'un moment de prière", () => {
     ]);
     expect(plan.start).toEqual(plan.marks[0].date);
     expect(plan.end).toEqual(plan.marks[3].date);
-    expect(plan.night).toBe(false);
   });
 
   it("compte vers l'ouverture avant, vers la fermeture pendant, et se dit passé après", () => {
@@ -61,7 +54,7 @@ describe("l'horaire d'un moment de prière", () => {
     const evening = zmanPlan("arvit", DEFAULT_PLACE, paris(23))!;
     const afterMidnight = zmanPlan("arvit", DEFAULT_PLACE, paris(1, 0, 5))!;
     expect(afterMidnight.start).toEqual(evening.start);
-    expect(afterMidnight.night).toBe(true);
+    expect(afterMidnight.cycle).toEqual(evening.cycle);
     // Before 'hatsot, by preference; after it, until dawn.
     expect(zmanPhase(evening, paris(23))).toBe("preferred");
     expect(zmanTarget(evening, "preferred")).toEqual(evening.preferred);
@@ -75,13 +68,27 @@ describe("l'horaire d'un moment de prière", () => {
     expect(plan.start.getTime() - paris(15).getTime()).toBeLessThan(12 * 3_600_000);
   });
 
-  it("place le lever du soleil au bout gauche de l'arc et misheyakir juste sous l'horizon", () => {
+  it("place toute heure dans le cycle : la nuit d'avant, le jour, la nuit d'après", () => {
     const plan = zmanPlan("chaharit", DEFAULT_PLACE, paris(8))!;
-    expect(arcPosition(plan, plan.from)).toBe(0);
-    expect(arcPosition(plan, plan.to)).toBe(1);
+    const { prevSunset, sunrise, sunset, nextSunrise } = plan.cycle;
+    expect(at(sunrise)).toBe("06:28");
+    expect([prevSunset, sunrise, sunset, nextSunrise].map((d) => arcPosition(plan, d))).toEqual([
+      -1, 0, 1, 2,
+    ]);
+    // Misheyakir: a little before sunrise, at the end of the night before.
     const misheyakir = plan.marks.find((mark) => mark.key === "misheyakir")!;
     expect(arcPosition(plan, misheyakir.date)).toBeLessThan(0);
-    expect(arcPosition(plan, misheyakir.date)).toBeGreaterThan(-0.15);
-    expect(at(plan.from)).toBe("06:28");
+    expect(arcPosition(plan, misheyakir.date)).toBeGreaterThan(-0.2);
+    // At 3 a.m., in the night before; at 11 p.m., in the night after: now always shows.
+    expect(arcPosition(plan, paris(3))).toBeGreaterThan(-1);
+    expect(arcPosition(plan, paris(3))).toBeLessThan(0);
+    expect(arcPosition(plan, paris(23))).toBeGreaterThan(1);
+    expect(arcPosition(plan, paris(23))).toBeLessThan(2);
+  });
+
+  it("met la fenêtre d'Arvit dans la nuit qui suit le jour du dessin", () => {
+    const plan = zmanPlan("arvit", DEFAULT_PLACE, paris(15))!;
+    expect(arcPosition(plan, plan.start)).toBeGreaterThan(1);
+    expect(arcPosition(plan, plan.end)).toBeLessThan(2);
   });
 });
