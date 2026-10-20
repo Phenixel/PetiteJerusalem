@@ -156,6 +156,7 @@ onUnmounted(() => {
                 class="flex items-center gap-3 px-4 py-3 rounded-btn font-medium text-text-secondary hover:bg-black/5 hover:text-text-primary transition-colors dark:hover:bg-white/10 group"
                 @click="trackShortcut('parcours')"
               >
+                <AppIcon name="book" :size="15" class="text-primary shrink-0" />
                 <span class="min-w-0">
                   {{ t("parcours.title") }}
                   <span class="block text-xs font-normal text-text-secondary/80">
@@ -170,6 +171,7 @@ onUnmounted(() => {
                 class="flex items-center gap-3 px-4 py-3 rounded-btn font-medium text-text-secondary hover:bg-black/5 hover:text-text-primary transition-colors dark:hover:bg-white/10 group"
                 @click="trackShortcut('my_sessions')"
               >
+                <AppIcon name="users" :size="15" class="text-primary shrink-0" />
                 <span class="min-w-0">
                   {{ t("home.dashboard.sessionsTitle") }}
                   <span class="block text-xs font-normal text-text-secondary/80">
@@ -184,6 +186,7 @@ onUnmounted(() => {
                 class="flex items-center gap-3 px-4 py-3 rounded-btn font-medium text-text-secondary hover:bg-black/5 hover:text-text-primary transition-colors dark:hover:bg-white/10 group"
                 @click="trackShortcut('support')"
               >
+                <AppIcon name="message" :size="15" class="text-primary shrink-0" />
                 <span class="min-w-0 flex-1">
                   {{ t("footer.reportIssue") }}
                   <span class="block text-xs font-normal text-text-secondary/80">

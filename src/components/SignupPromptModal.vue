@@ -122,6 +122,7 @@ const goToLogin = (mode: "signup" | "google" | "login") => {
     <div v-if="showBenefits" class="py-5">
       <div class="space-y-3">
         <div class="flex items-center gap-3">
+          <AppIcon name="check" :size="14" class="text-green-600 dark:text-green-400" />
           <span class="text-sm text-text-primary">{{ t("signupPrompt.benefits.recover") }}</span>
         </div>
         <div class="flex items-center gap-3">

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Une ligne de la page de réglages de l'app : un nom, et, au bout,
+ * Une ligne de la page de réglages de l'app : un dessin, un nom, et, au bout,
  * l'état en cours (« Océan · Système », « Français », « 2 rappels ») avant le
  * chevron. On lit ce qui est réglé sans ouvrir la sous-page, et le chevron dit
  * qu'une page s'ouvre derrière (voir docs/design.md, « La carte est cliquable,
@@ -21,9 +21,11 @@
 import { computed } from "vue";
 import { RouterLink } from "vue-router";
 import AppIcon from "../icons/AppIcon.vue";
+import type { IconName } from "../icons/registry";
 
 const props = withDefaults(
   defineProps<{
+    icon: IconName;
     label: string;
     /** L'état en cours, lu au bout de la ligne. */
     value?: string;
@@ -69,6 +71,7 @@ const danger = computed(() => props.tone === "danger");
       :class="danger ? 'text-red-600 dark:text-red-400' : 'text-text-primary'"
       @click="$emit('click', $event)"
     >
+      <AppIcon :name="icon" :size="19" class="shrink-0" :class="danger ? '' : 'text-primary'" />
       <span class="min-w-0 flex-1 font-medium leading-snug">
         {{ label }}
         <span v-if="progress !== undefined" class="settings-progress" aria-hidden="true">

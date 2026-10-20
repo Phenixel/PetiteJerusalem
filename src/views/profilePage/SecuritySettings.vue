@@ -283,6 +283,7 @@ const deleteAccount = async () => {
       <!-- Info compte Google - pas de changement de mot de passe -->
       <div v-else-if="isGoogleUser">
         <h3 class="text-xl font-bold text-text-primary mb-3 flex items-center gap-2">
+          <AppIcon name="google" :size="18" />
           {{ t("security.googleAccount") }}
         </h3>
         <p class="text-text-secondary">
@@ -302,6 +303,7 @@ const deleteAccount = async () => {
       <!-- Info compte Apple - la sécurité se gère chez Apple -->
       <div v-else-if="isAppleUser">
         <h3 class="text-xl font-bold text-text-primary mb-3 flex items-center gap-2">
+          <AppIcon name="apple" :size="18" />
           {{ t("security.appleAccount") }}
         </h3>
         <p class="text-text-secondary">

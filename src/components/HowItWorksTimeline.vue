@@ -18,18 +18,22 @@ let timelineObserver: IntersectionObserver | null = null;
 
 const howItWorksSteps = computed(() => [
   {
+    icon: "circle-plus" as const,
     title: t("shareReading.howItWorks.step1Title"),
     description: t("shareReading.howItWorks.step1Desc"),
   },
   {
+    icon: "book-open" as const,
     title: t("shareReading.howItWorks.step2Title"),
     description: t("shareReading.howItWorks.step2Desc"),
   },
   {
+    icon: "share" as const,
     title: t("shareReading.howItWorks.step3Title"),
     description: t("shareReading.howItWorks.step3Desc"),
   },
   {
+    icon: "flag" as const,
     title: t("shareReading.howItWorks.step4Title"),
     description: t("shareReading.howItWorks.step4Desc"),
   },
@@ -100,7 +104,7 @@ onUnmounted(() => {
           <span class="timeline__runner"></span>
         </span>
         <span class="timeline__node">
-          {{ index + 1 }}
+          <AppIcon :name="step.icon" :size="20" />
         </span>
         <div class="timeline__content">
           <h4 class="timeline__title text-text-primary">{{ step.title }}</h4>
@@ -155,9 +159,6 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.125rem;
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
   color: var(--color-on-brand);
   background: var(--color-brand);
   /* idle state before activation */

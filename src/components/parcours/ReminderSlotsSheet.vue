@@ -15,6 +15,7 @@
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import AppIcon from "../icons/AppIcon.vue";
+import type { IconName } from "../icons/registry";
 import ToggleSwitch from "../ToggleSwitch.vue";
 import BottomSheet from "./BottomSheet.vue";
 import TimeDial from "./pickers/TimeDial.vue";
@@ -52,6 +53,17 @@ const reminders = useParcoursReminders();
 const { permission } = useZmanReminders();
 const { place } = useZmanimLocation();
 const placeLabel = useZmanimPlaceLabel(place);
+
+/** A point of the day, drawn by what the sky does then. */
+const SLOT_ICON: Record<ReminderSlot, IconName> = {
+  wake: "sunrise",
+  chaharit: "sun",
+  noon: "sun",
+  minha: "sunset",
+  arvit: "moon",
+  bedtime: "moon",
+  day: "list",
+};
 
 /** The slot being set on the second screen, null on the list. */
 const editing = ref<ReminderSlot | null>(null);
@@ -109,6 +121,7 @@ const rows = computed(() =>
       slot,
       on: setting.on,
       name: slotName(slot),
+      icon: SLOT_ICON[slot],
       rule: ruleLabel(setting.time),
       time: timeLabel(setting.time),
       count,
@@ -255,6 +268,12 @@ async function save(): Promise<void> {
             :aria-label="t('parcours.reminders.editAria', { name: row.name })"
             @click="edit(row.slot)"
           >
+            <AppIcon
+              :name="row.icon"
+              :size="20"
+              class="shrink-0"
+              :class="row.on ? 'text-text-secondary' : 'text-text-secondary/60'"
+            />
             <span class="min-w-0 flex-1">
               <span
                 class="block text-[15px] font-bold"

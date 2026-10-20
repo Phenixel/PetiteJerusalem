@@ -36,6 +36,7 @@ function opened(): void {
 
 <template>
   <SettingsRow
+    icon="book"
     :label="t('parcours.title')"
     :value="value"
     :progress="progress"
