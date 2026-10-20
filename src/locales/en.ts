@@ -1770,18 +1770,6 @@ const en: LocaleMessages = {
       teshuva: "Addition for the Ten Days of Repentance",
       zimoun: "Zimun",
     },
-    slihotHours: "Selichot times",
-    slihotRange: "From {start} to {end}",
-    slihotHoursInfo: "About these times",
-    slihotWindowExplained:
-      "Selichot are said during the last watch of the night, the ashmoret haboker:",
-    slihotWindowNight:
-      "From chatzot, the middle of the night ({start}): the period when they may first be said.",
-    slihotWindowDawn:
-      "At the end of the night, before sunrise ({end}): the most fitting moment, right before the morning prayer.",
-    slihotWindowDay:
-      "During the day, if the night was not possible: they may still be said until shkia, sunset ({sunset}).",
-    slihotWindowPlace: "Times for {city}.",
     // Sidour: the parchment (klaf) opened from the text itself (see
     // KlafViewer.vue): pitum haketoret as a scribe writes it, psalm 67 in
     // the shape of a menorah.
@@ -1792,8 +1780,6 @@ const en: LocaleMessages = {
       previous: "Previous page",
       next: "Next page",
     },
-    // Siddur: the time of a moment of prayer, placed right before what is read
-    // (see TefilaZman.vue; keys d1..dN are the lines behind the "i").
     mirror: {
       open: "Mirror",
       title: "Tefillin mirror",
@@ -1865,12 +1851,14 @@ const en: LocaleMessages = {
       middle: "Up and down, in the middle of the dial, are not compass points.",
       live: "The dial follows your device: turn towards the number of the side you are waving.",
     },
+    // Siddur: the time of a moment of prayer, a pill set before what is
+    // read, and the sheet it opens (see TefilaZman.vue; keys d1..dN are the
+    // lines of the rule).
     zman: {
-      info: "About these times",
       place: "Times for {city}.",
       chaharit: {
         title: "Shacharit times",
-        main: "From {misheyakir} to {hatsot}",
+        name: "Shacharit",
         d1: "From misheyakir ({misheyakir}), when blue and white can be told apart, one may put on talit and tefillin and say the Shema.",
         d2: "The most fitting moment for the Amida is sunrise ({netz}), like the vatikin.",
         d3: "The Amida is best said within the first four solar hours, until {tefila}.",
@@ -1878,20 +1866,20 @@ const en: LocaleMessages = {
       },
       shema: {
         title: "Latest time for Shema",
-        main: "Say it before {shema}",
+        name: "Shema",
         d1: "The Shema is said within the first three solar hours of the day.",
         d2: "Magen Avraham, counting from dawn: {shemaMGA}.",
         d3: "Vilna Gaon, counting from sunrise: {shema}. Past that time it is still read, but without its mitzvah in its time.",
       },
       amida: {
         title: "Latest time for the Amida",
-        main: "Say it before {tefila}",
+        name: "Amida",
         d1: "The morning Amida is said within the first four solar hours: {tefilaMGA} per the Magen Avraham, {tefila} per the Vilna Gaon.",
         d2: "Past that time one may still pray until chatzot ({hatsot}), without the reward of a prayer said in its time.",
       },
       minha: {
         title: "Mincha times",
-        main: "From {minhaGuedola} to {chkia}",
+        name: "Mincha",
         d1: "Mincha gedola ({minhaGuedola}): half a solar hour after chatzot, the earliest time for Mincha.",
         d2: "Mincha ketana ({minhaKetana}): the most fitting moment for most opinions.",
         d3: "Plag hamincha ({plag}): after it, some already say Arvit.",
@@ -1899,10 +1887,62 @@ const en: LocaleMessages = {
       },
       arvit: {
         title: "Arvit times",
-        main: "From {tset}",
+        name: "Arvit",
         d1: "The evening Shema is said after nightfall ({tset}).",
         d2: "It is best to pray before midnight ({hatsotLayla}).",
         d3: "If prevented, Arvit may be said all night, until dawn.",
+      },
+      slihot: {
+        title: "Selichot times",
+        name: "Selichot",
+        d1: "Selichot are said during the last watch of the night, the ashmoret haboker:",
+        d2: "From chatzot, the middle of the night ({start}): the period when they may first be said.",
+        d3: "At the end of the night, before sunrise ({end}): the most fitting moment, right before the morning prayer.",
+        d4: "During the day, if the night was not possible: they may still be said until shkia, sunset ({sunset}).",
+      },
+      pill: {
+        before: "{name} from {time}",
+        preferred: "{name}, preferably before {time}",
+        during: "{name} until {time}",
+        after: "{name}: time has passed ({time})",
+      },
+      left: "{duration} left",
+      now: "Now",
+      arc: {
+        sunrise: "Sunrise {time}",
+        sunset: "Shkia {time}",
+      },
+      marks: {
+        alot: "Dawn (alot hashachar)",
+        misheyakir: "Misheyakir",
+        netz: "Sunrise (netz)",
+        shemaMGA: "End of Shema, Magen Avraham",
+        shema: "End of Shema, Vilna Gaon",
+        tefilaMGA: "End of the Amida, Magen Avraham",
+        tefila: "End of the Amida, Vilna Gaon",
+        hatsot: "Chatzot",
+        minhaGuedola: "Mincha gedola",
+        minhaKetana: "Mincha ketana",
+        plag: "Plag hamincha",
+        chkia: "Shkia, sunset",
+        tset: "Nightfall",
+        hatsotLayla: "Midnight (chatzot)",
+      },
+      short: {
+        alot: "dawn",
+        misheyakir: "misheyakir",
+        netz: "netz",
+        shemaMGA: "MGA",
+        shema: "Shema",
+        tefilaMGA: "MGA",
+        tefila: "Amida",
+        hatsot: "chatzot",
+        minhaGuedola: "gedola",
+        minhaKetana: "ketana",
+        plag: "plag",
+        chkia: "shkia",
+        tset: "stars",
+        hatsotLayla: "chatzot",
       },
     },
     // Siddur: at the end of Mincha, Arvit is one tap away.

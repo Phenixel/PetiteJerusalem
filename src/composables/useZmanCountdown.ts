@@ -13,19 +13,32 @@ import { useI18n } from "vue-i18n";
  */
 export function useZmanCountdown(): (date: Date, now: Date) => string {
   const { t } = useI18n();
+  const duration = useZmanDuration();
+
+  return (date: Date, now: Date): string => {
+    const left = duration(date, now);
+    return left ? t("zmanim.nextIn", { duration: left }) : "";
+  };
+}
+
+/**
+ * The time left before an instant, alone: « 2 h 15 », « 35 min ». Empty when
+ * it has passed. The pill of a moment of prayer says « encore 2 h 15 » as
+ * well as « dans 35 min », from the same count.
+ */
+export function useZmanDuration(): (date: Date, now: Date) => string {
+  const { t } = useI18n();
 
   return (date: Date, now: Date): string => {
     const minutes = Math.round((date.getTime() - now.getTime()) / 60_000);
     if (minutes <= 0) return "";
-    const duration =
-      minutes < 60
-        ? t("zmanim.durationM", { m: minutes })
-        : t("zmanim.durationHM", {
-            h: Math.floor(minutes / 60),
-            // « 4 h 02 » et non « 4 h 2 » : les minutes d'une durée se lisent
-            // comme celles d'une heure.
-            m: String(minutes % 60).padStart(2, "0"),
-          });
-    return t("zmanim.nextIn", { duration });
+    return minutes < 60
+      ? t("zmanim.durationM", { m: minutes })
+      : t("zmanim.durationHM", {
+          h: Math.floor(minutes / 60),
+          // « 4 h 02 » et non « 4 h 2 » : les minutes d'une durée se lisent
+          // comme celles d'une heure.
+          m: String(minutes % 60).padStart(2, "0"),
+        });
   };
 }

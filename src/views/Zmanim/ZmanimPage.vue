@@ -811,7 +811,13 @@ onMounted(() => {
     <p v-if="times.length === 0" class="mt-6 text-text-secondary">{{ t("zmanim.unavailable") }}</p>
 
     <!-- Le jeûne commencé passe devant, comme le repos -->
-    <FastTimes v-if="fast && fastFirst" :fast="fast" :tzid="place.tzid" class="mt-5" />
+    <FastTimes
+      v-if="fast && fastFirst"
+      :fast="fast"
+      :tzid="place.tzid"
+      :place="place"
+      class="mt-5"
+    />
 
     <!-- La veille de Pessah, les limites du 'hamets : le jour même, elles
          passent devant comme le jeûne ; la veille, elles attendent en bas. -->
@@ -878,7 +884,13 @@ onMounted(() => {
     </p>
 
     <!-- Le jeûne de demain, annoncé dès la veille, sous les horaires du jour -->
-    <FastTimes v-if="fast && !fastFirst" :fast="fast" :tzid="place.tzid" class="mt-5" />
+    <FastTimes
+      v-if="fast && !fastFirst"
+      :fast="fast"
+      :tzid="place.tzid"
+      :place="place"
+      class="mt-5"
+    />
 
     <ChametzTimes
       v-if="chametz && !chametzFirst"

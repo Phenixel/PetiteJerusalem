@@ -509,6 +509,61 @@ One more object is drawn in `components/art`, with these rules, and takes
 its place in `CARD_ART_GEOMETRY` (size, proportions, what sticks out at the
 top, inset from the edge).
 
+### The frames of the times page carry their object
+
+The three appointments of the times page lost their icon and took their
+object instead, in the corner of the card, next to the title only (the
+object is small, half the size of the Sidour's, so the rows keep the whole
+width):
+
+- **Chabbat** (and a holiday, `RestTimes.vue`): what comes next. The two
+  lit candles in their silver candlesticks (`ArtCandles.vue`) until the
+  entrance; the havdala once the rest has begun.
+- **The 'hamets** (`ChametzTimes.vue`): the candle, the feather and the
+  wooden spoon of the search (`ArtBedika.vue`).
+- **A fast** (`FastTimes.vue`) has no object: it is drawn in its day
+  (`FastDayBand.vue`). A band runs from two hours before to two hours after,
+  the night in deep blue with a few stars, the day in sand, and the fast as
+  a bar in the theme color from its start to its end; the hours of the
+  place that fall on a multiple of six are marked under it, and the length
+  of the fast (« 10 h 45 ») sits at the end of the title. A dawn fast shows
+  its hours of night before the sun; Tich'a beAv crosses a whole night. The
+  sky keeps its colors in every theme.
+
+### The time of a moment of prayer is a pill
+
+The times set before what is read (the start of Cha'harit, the end of the
+Chema before the Chema, the end of the 'Amida, Min'ha, Arvit, and the
+Sli'hot at the head of the Sli'hot) were a card each, with an icon and an
+« i » that unfolded the rule. Each one is now a pill in the theme color
+(`TefilaZman.vue`), like the other commands placed in a text: in a small
+disc, the sky of the moment, then what matters now.
+
+- **What the pill says follows the hour** (`services/tefilaZman.ts`):
+  « Min'ha à partir de 14:02 · dans 1 h 10 » before the window,
+  « Min'ha jusqu'à 18:51 · encore 2 h 21 » during it, « Min'ha : heure
+  passée (18:51) » after. Arvit says « de préférence avant » 'hatsot of the
+  night, then « jusqu'à » dawn. After midnight, Arvit and the Sli'hot are
+  still those of the night that began the evening before.
+- **The sky of the moment** (`ArtSky.vue`): the walls of Jerusalem under
+  the sky of each prayer. The sun rising behind them for Cha'harit,
+  climbing for the Chema and the 'Amida, going down for Min'ha; the three
+  stars of Arvit; the deep night and the crescent of the Sli'hot. Flat
+  colors, the same in every theme.
+- **Touched, it opens a sheet** (the bottom sheet of Mon parcours): the
+  title and the sky; the course of the sun (`ZmanArc.vue`), from sunrise to
+  sunset, or from sunset to sunrise for the night, with the moment's
+  window traced on it, what has passed of it in the theme color, each
+  landmark as a dot with its short name outside the arc, and the sun (the
+  moon at night) where it is now. Before sunrise, misheyakir falls a little
+  under the horizon, and the arc goes on below it, as the sun does. Then the
+  landmarks in a list, each with its time and how long until it comes,
+  « Maintenant » in its place among them, the next one in the theme color;
+  then the rule in full, as the « i » used to give it.
+
+Held by `src/__tests__/tefilaZman.test.ts` (the windows, the phases, the
+night Arvit belongs to after midnight, the arc's ends).
+
 ### An icon before a title must say something
 
 An icon to the left of a card title is placed only if nothing else says
@@ -1996,8 +2051,7 @@ shared by two different things (the same clock for the end of the Chema and
 the end of the 'Amida). Those icons are gone, on the site, in the app and
 in the back office:
 
-- **Cards and notices**: the times at the head of a tefila, the Sli'hot
-  hours, Chabbat, the fasts, the 'hamets, the hiloulot, a chain's
+- **Cards and notices**: the hiloulot, a chain's
   reservation in the reader, the resume banner, « Le texte étudié » of a
   class, the paused notice, the offline notice, « Mise à jour
   disponible », the series of the Studio, the figures and the to-do list of
@@ -2012,6 +2066,11 @@ in the back office:
 - **The groups of names**: « Refoua chelema » and « Leilouy nichmat » are
   told by their names, in the reader, on the chain and in the preview of a
   name.
+
+The times at the head of a tefila and of the Sli'hot became a pill (see
+"The time of a moment of prayer is a pill"); Chabbat, the fasts and the
+'hamets took their object (see "The frames of the times page carry their
+object").
 
 Where a card led nowhere new, it lost its frame with its icon:
 « Enchaîner avec Arvit », at the end of Min'ha, is now a link set on the
