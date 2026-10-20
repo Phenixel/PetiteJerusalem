@@ -543,6 +543,39 @@ doesn't need it: Safari gives the accuracy with the heading
 (`webkitCompassAccuracy`). See `docs/design.md`, « La boussole se demande en
 l'ouvrant, dit sa précision, et se tient à plat ».
 
+## Quiet modes when a tefila opens
+
+When a service opens, the Android app offers to quiet the phone
+(`docs/design.md`, « A tefila opens on the phone's quiet modes »). The
+in-house PjQuiet plugin
+(`native/android/app/src/main/java/fr/petitejerusalem/app/PjQuietPlugin.java`)
+reads the three states (`NotificationManager.getCurrentInterruptionFilter`,
+`AudioManager.getRingerMode`) and changes them: Do Not Disturb in
+`INTERRUPTION_FILTER_PRIORITY`, the ringer in silent, vibrate or normal.
+While the panel is open it listens to the system broadcasts (ringer mode,
+interruption filter, access granted) and pushes the state to the page; it
+re-reads it when the app comes back from the settings.
+
+Do Not Disturb, and since Android 7 any ringer change that toggles it
+(entering or leaving silent), need the "Do Not Disturb access" the user
+grants in the settings: a change refused for lack of it answers
+`applied: false, access: false`, and the page opens the list
+(`Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS`). For the app to be
+listed there at all, the manifest declares `ACCESS_NOTIFICATION_POLICY`.
+`scripts/setup-android.mjs` declares it, copies the plugin with the widgets
+and registers it in `MainActivity`. On the page side,
+`src/services/prayerQuiet.ts` and `src/composables/usePrayerQuiet.ts`:
+nothing outside the Android app, and nothing on a binary older than the
+plugin (the panel then stays closed).
+
+What the app changes is changed for the prayer, and undone when the tefila
+is left. The phone as it was before and what was changed since are kept in
+the two device storages (`pj-prayer-quiet-session`), so that an app killed
+in the middle of a tefila sets the phone back at its next launch. The
+panel's choice (offer, apply by itself, nothing) and the modes kept for
+every tefila live in `pj-prayer-quiet`. iOS has no public API for the
+ring/silent switch or for Focus. Test: `src/__tests__/prayerQuiet.test.ts`.
+
 ## Icons that follow the device theme
 
 Both systems can adapt an app's icon to the phone's theme, provided they are

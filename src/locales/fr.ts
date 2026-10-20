@@ -2160,6 +2160,36 @@ const fr = {
       hanouka: "'Hanouka",
     },
   },
+  // The phone's quiet modes, above the app lowered when a tefila opens
+  // (PrayerQuietPanel.vue).
+  prayerQuiet: {
+    title: "Avant de prier",
+    modes: {
+      dnd: "Ne pas déranger",
+      silent: "Silencieux",
+      vibrate: "Vibreur",
+    },
+    on: "Activé",
+    off: "Désactivé",
+    hint: {
+      access:
+        "Autorisez l'app dans « Accès Ne pas déranger », puis revenez : le réglage se fera tout seul.",
+      unavailable: "Ce téléphone ne permet pas de le régler depuis l'app.",
+    },
+    always: "À chaque tefila",
+    never: "Ne plus afficher la prochaine fois",
+    farewell: "Vous retrouverez ces réglages dans Profil, Préférences, « Avant une tefila ».",
+    close: "Fermer",
+    back: "Revenir à la tefila",
+    applied: "Vos modes de prière sont activés jusqu'à la fin de la tefila.",
+    settings: {
+      title: "Avant une tefila",
+      hint: "Ne pas déranger, silencieux ou vibreur : le téléphone revient comme avant à la fin de la tefila.",
+      offer: "Me proposer les modes",
+      always: "Les activer d'office ({modes})",
+      never: "Ne rien proposer",
+    },
+  },
   // Mon parcours : programmes, habitudes, la journée et le mur (voir
   // services/parcours et docs/parcours.md).
   parcours: {

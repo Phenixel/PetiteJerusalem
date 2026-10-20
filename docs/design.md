@@ -3709,6 +3709,75 @@ system's behavior instead:
 Held by `src/__tests__/bottomSheet.test.ts` (« la feuille de Mon parcours »
 and "pushed below its height, slides down instead of shrinking").
 
+### A tefila opens on the phone's quiet modes
+
+A phone that rings in the middle of the 'Amida is the first thing to avoid,
+and the gesture that prevents it is in the system settings, not in the
+Sidour. So in the Android app, when a service opens (Cha'harit, Min'ha,
+Arvit), a panel comes down from the top of the screen and pushes the whole
+app down, as when the screen is split in two (`PrayerQuietPanel.vue`,
+`usePrayerQuiet`).
+
+- **Under a fifth of the screen.** Three tiles side by side, like the
+  system's quick settings: « Ne pas déranger » ("Do not disturb"),
+  « Silencieux » ("Silent") and « Vibreur » ("Vibrate"), each with its
+  drawing, its name and the phone's **current** state (« Activé » /
+  « Désactivé », and solid in the theme color when on), read from the
+  system and followed while the panel is open. A mode already on shows on,
+  and a touch turns it off as well as on. The title is for screen readers
+  only: the tiles say what they are.
+- **It comes down, then grows.** The panel arrives from above the screen,
+  its lower edge glued to the app's upper edge: one translation moves both,
+  in the reading sheet's curve and duration (0.36 s). The text shows first,
+  then the panel comes (400 ms later): the motion answers the tap that
+  opened the tefila. Two seconds later, or at the first touch of a tile, it
+  grows by a row of two choices, and the app goes down a little further:
+  « À chaque tefila » ("Every tefila") and « Fermer » ("Close"). The modes
+  are read before the choices come.
+- **« Fermer » says where to find it again.** The whole content gives way,
+  in the same room, to one sentence: these settings are found again in
+  Profil, Préférences, « Avant une tefila » ("Profile, Preferences, Before a
+  tefila"); and two buttons, « Fermer » ("Close", solid, the default) and
+  « Ne plus afficher la prochaine fois » ("Don't show it next time"). Each
+  retracts the panel at once; without an answer, it retracts on its own
+  five seconds later and comes back at the next tefila, as with « Fermer »
+  or a tap on the app. Whoever wants to close it now without giving it up
+  says so in one touch, as clearly as whoever gives it up. The way out of
+  the panel is offered when it is being closed, not alongside the modes,
+  where it competed with them.
+- **It retracts upward.** A choice, a tap on the lowered app, the app pushed
+  back up with the finger (it follows, and released past a third of the way
+  or flicked, it goes up), Escape or Android back: the app comes back up
+  over the screen, at the scroll it was left at, and the panel goes up with
+  its edge.
+- **What is changed is changed for the prayer.** Once the tefila is left,
+  the phone goes back to how it was: Do Not Disturb turned on is turned off,
+  the ringer goes back to normal. Only what the app changed is undone: what
+  was already on before stays on, and a setting the user changed again from
+  the quick settings is theirs. The way back waits three seconds, so that
+  Min'ha then Arvit is one prayer (no second panel). An app closed in the
+  middle of a tefila sets the phone back at its next launch.
+- **The choices.** « Fermer » keeps the modes for this prayer. « Ne plus
+  afficher la prochaine fois » stops the panel. « À chaque tefila » keeps the modes that are
+  on and turns them on by themselves at every tefila, with a toast saying
+  so, and still sets the phone back at the end; the panel comes instead if
+  the phone refuses one (access withdrawn). With nothing on, it has nothing
+  to keep and is grayed out. Both are undone in Preferences, under « Avant
+  une tefila » ("Before a tefila"), the reading settings.
+- **Silent and vibrate are one ringer**: turning one on replaces the other,
+  turning it off goes back to the normal ringer. Do Not Disturb is turned on
+  in "priority only", so the user's own exceptions (alarms, favorite
+  contacts) still come through.
+- **The access is asked for by the tap**: Do Not Disturb, and silent which
+  Android counts as one, need the "Do Not Disturb access" granted in the
+  settings. The first tap opens that list, a line says what to do there,
+  and the change is made on its own on return, once the access is granted.
+- **Android only.** iOS gives an app neither the ring/silent switch nor
+  Focus, read or written, and the web even less: rather than tiles that
+  would not know the phone's state, the panel is not offered there.
+
+Held by `src/__tests__/prayerQuiet.test.ts`.
+
 ### A modal window fits within what is visible, keyboard included
 
 The veil of a modal window (`.modal-overlay`) does not cover the page: it

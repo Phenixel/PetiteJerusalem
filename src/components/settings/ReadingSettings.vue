@@ -1,19 +1,30 @@
 <script setup lang="ts">
 /**
- * La lecture, vue depuis les réglages.
+ * Reading, seen from the settings.
  *
- * Pour l'instant, une seule ligne : le défilement automatique se lance d'un
- * double appui sur le texte, et deux appuis rapprochés arrivent sans qu'on
- * l'ait voulu. Coupé ici, le geste ne répond plus du tout, et le texte ne se
- * met plus à descendre sans qu'on sache pourquoi. L'allure, elle, reste dans
- * la pastille du bas : elle se règle pendant qu'on lit, pas avant.
+ * Auto-scroll starts with a double tap on the text, and two close taps
+ * happen without being meant. Turned off here, the gesture no longer
+ * answers at all, and the text no longer starts moving down without anyone
+ * knowing why. The speed stays in the bottom pill: it is set while reading,
+ * not before.
  *
- * Des lignes séparées d'un filet, sans cadre : d'autres réglages viendront
- * s'ajouter à celle-ci, et la liste doit pouvoir s'allonger sans devenir un
- * empilement de boîtes (voir docs/design.md).
+ * In the Android app, a second row: what a tefila does with the phone's
+ * quiet modes when it opens (offer them, turn them on by themselves, or
+ * nothing).
+ *
+ * Rows separated by a rule, without a frame: the list must be able to grow
+ * without becoming a stack of boxes (see docs/design.md).
  */
-import { onMounted } from "vue";
+import { computed, onMounted } from "vue";
 import { useI18n } from "vue-i18n";
+import AppSelect, { type SelectOption } from "../AppSelect.vue";
+import {
+  prayerQuietChoice,
+  restorePrayerQuietChoice,
+  setPrayerQuietChoice,
+  type PrayerQuietChoice,
+} from "../../composables/usePrayerQuiet";
+import { quietModesSupported } from "../../services/prayerQuiet";
 import {
   autoScrollEnabled,
   restoreAutoScrollFromDevice,
@@ -27,6 +38,37 @@ const { t } = useI18n();
 // vidé par le système) : on le relit à l'ouverture de l'écran, sans quoi
 // l'interrupteur s'afficherait allumé alors qu'il est coupé.
 onMounted(() => void restoreAutoScrollFromDevice());
+
+// Android app: what a tefila does with the phone's quiet modes when it opens
+// (usePrayerQuiet). « Les activer d'office » is offered once the panel's
+// « À chaque tefila » has kept which ones; the choices of the panel are
+// undone here.
+onMounted(() => void restorePrayerQuietChoice());
+const prayerQuietOptions = computed<SelectOption[]>(() => {
+  const options: SelectOption[] = [{ value: "offer", label: t("prayerQuiet.settings.offer") }];
+  const wish = prayerQuietChoice.value.wish;
+  if (wish) {
+    const modes = [
+      wish.dnd ? t("prayerQuiet.modes.dnd") : null,
+      wish.ringer === "silent" ? t("prayerQuiet.modes.silent") : null,
+      wish.ringer === "vibrate" ? t("prayerQuiet.modes.vibrate") : null,
+    ].filter((mode): mode is string => mode !== null);
+    options.push({
+      value: "always",
+      label: t("prayerQuiet.settings.always", { modes: modes.join(", ") }),
+    });
+  }
+  options.push({ value: "never", label: t("prayerQuiet.settings.never") });
+  return options;
+});
+const prayerQuietMode = computed({
+  get: () => prayerQuietChoice.value.mode,
+  set: (mode: string) =>
+    setPrayerQuietChoice({
+      mode: mode as PrayerQuietChoice["mode"],
+      wish: prayerQuietChoice.value.wish,
+    }),
+});
 </script>
 
 <template>
@@ -52,6 +94,15 @@ onMounted(() => void restoreAutoScrollFromDevice());
             @update:model-value="setAutoScrollEnabled"
           />
         </label>
+      </li>
+      <li v-if="quietModesSupported" class="py-3">
+        <span class="block font-semibold text-text-primary">
+          {{ t("prayerQuiet.settings.title") }}
+        </span>
+        <span class="mb-2 block text-sm text-text-secondary leading-relaxed">
+          {{ t("prayerQuiet.settings.hint") }}
+        </span>
+        <AppSelect v-model="prayerQuietMode" :options="prayerQuietOptions" />
       </li>
     </ul>
   </section>

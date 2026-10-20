@@ -2023,6 +2023,35 @@ const he: LocaleMessages = {
       hanouka: "חנוכה",
     },
   },
+  // The phone's quiet modes, above the app lowered when a tefila opens
+  // (PrayerQuietPanel.vue).
+  prayerQuiet: {
+    title: "לפני התפילה",
+    modes: {
+      dnd: "נא לא להפריע",
+      silent: "שקט",
+      vibrate: "רטט",
+    },
+    on: "פועל",
+    off: "כבוי",
+    hint: {
+      access: "אשרו לאפליקציה \"גישה ל'נא לא להפריע'\" וחזרו: ההגדרה תתבצע מעצמה.",
+      unavailable: "הטלפון הזה אינו מאפשר לאפליקציה לשנות זאת.",
+    },
+    always: "לכל תפילה",
+    never: "לא להציג בפעם הבאה",
+    farewell: 'את ההגדרות האלה תמצאו בפרופיל, בהעדפות, תחת "לפני תפילה".',
+    close: "סגירה",
+    back: "חזרה לתפילה",
+    applied: "מצבי התפילה שלכם פועלים עד סוף התפילה.",
+    settings: {
+      title: "לפני תפילה",
+      hint: "נא לא להפריע, שקט או רטט: הטלפון חוזר למצבו הקודם בסוף התפילה.",
+      offer: "להציע לי את המצבים",
+      always: "להפעיל אותם מעצמם ({modes})",
+      never: "לא להציע דבר",
+    },
+  },
   parcours: {
     title: "המסלול שלי",
     pageDescription: "תוכניות הלימוד שלך, ההרגלים שלך והיום שלך: מה יש לעשות, ומה כבר בנית.",

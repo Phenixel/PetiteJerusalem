@@ -23,6 +23,9 @@
  *   l'app quand elle est installée (voir docs/app-links.md)
  * - Boussole du Kotel : le plugin PjCompass (étalonnage du magnétomètre),
  *   copié avec les widgets et enregistré dans MainActivity
+ * - Quiet modes when a tefila opens: the PjQuiet plugin (Do Not Disturb,
+ *   silent, vibrate) and its ACCESS_NOTIFICATION_POLICY permission, copied
+ *   with the widgets and registered in MainActivity
  * - Montre Wear OS : le module android/wear/ recopié depuis native/wear/,
  *   déclaré dans settings.gradle, ses icônes reprises de l'app et les Tehilim
  *   embarqués dans ses assets (voir docs/app-watch.md)
@@ -92,6 +95,11 @@ const PERMISSIONS = [
     name: "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
     comment:
       "Écoute des cours en arrière-plan : @capgo/capacitor-media-session tient la notification\n         de lecture dans un service de premier plan de type mediaPlayback. Son manifest ne\n         déclare que FOREGROUND_SERVICE ; depuis Android 14, démarrer ce service sans cette\n         permission-ci lève une SecurityException et ferme l'app à la première lecture.\n         Voir src/__tests__/mediaSessionAndroid.test.ts",
+  },
+  {
+    name: "android.permission.ACCESS_NOTIFICATION_POLICY",
+    comment:
+      "Quiet modes offered when a tefila opens (PjQuietPlugin): without this line the app\n         is not even listed under Do Not Disturb access, and Do Not Disturb and silent\n         cannot be set from it. See src/__tests__/prayerQuiet.test.ts",
   },
   {
     name: "android.permission.CAMERA",
@@ -444,6 +452,15 @@ public class MainActivity extends BridgeActivity {
       `$1// Précision de la boussole du Kotel (voir docs/app-native.md).$1registerPlugin(PjCompassPlugin.class);$1$2`,
     );
     console.log("setup-android: plugin PjCompass enregistré dans MainActivity");
+  }
+  if (!mainActivity.includes("PjQuietPlugin")) {
+    // The quiet modes offered when a tefila opens
+    // (src/services/prayerQuiet.ts), same rule as above.
+    mainActivity = mainActivity.replace(
+      /(\n\s*)(super\.onCreate\(savedInstanceState\);)/,
+      `$1// Quiet modes when a tefila opens (see docs/app-native.md).$1registerPlugin(PjQuietPlugin.class);$1$2`,
+    );
+    console.log("setup-android: plugin PjQuiet enregistré dans MainActivity");
   }
   if (!mainActivity.includes("setOverScrollMode")) {
     mainActivity = mainActivity.replace(

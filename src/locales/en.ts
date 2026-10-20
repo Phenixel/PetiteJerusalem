@@ -2081,6 +2081,36 @@ const en: LocaleMessages = {
       hanouka: "Hanukkah",
     },
   },
+  // The phone's quiet modes, above the app lowered when a tefila opens
+  // (PrayerQuietPanel.vue).
+  prayerQuiet: {
+    title: "Before you pray",
+    modes: {
+      dnd: "Do not disturb",
+      silent: "Silent",
+      vibrate: "Vibrate",
+    },
+    on: "On",
+    off: "Off",
+    hint: {
+      access:
+        'Allow the app under "Do Not Disturb access", then come back: the setting will be made on its own.',
+      unavailable: "This phone does not let the app change it.",
+    },
+    always: "Every tefila",
+    never: "Don't show it next time",
+    farewell: 'You will find these settings in Profile, Preferences, under "Before a tefila".',
+    close: "Close",
+    back: "Back to the tefila",
+    applied: "Your prayer modes are on until the end of the tefila.",
+    settings: {
+      title: "Before a tefila",
+      hint: "Do not disturb, silent or vibrate: the phone goes back to how it was at the end of the tefila.",
+      offer: "Offer me the modes",
+      always: "Turn them on by themselves ({modes})",
+      never: "Offer nothing",
+    },
+  },
   parcours: {
     title: "My journey",
     pageDescription:
