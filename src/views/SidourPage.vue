@@ -567,7 +567,6 @@ onMounted(() => {
         :to="localePath('horaires')"
         class="inline-flex items-center gap-1.5 text-xs text-text-secondary hover:text-primary transition-colors"
       >
-        <AppIcon name="map-pin" :size="12" />
         {{ t("sidour.placeLink", { place: placeLabel }) }}
       </RouterLink>
     </p>

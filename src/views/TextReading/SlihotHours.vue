@@ -43,7 +43,6 @@ const showInfo = ref(false);
   <div v-if="range" class="mb-6 card p-4">
     <div class="flex items-center justify-between gap-3">
       <div class="flex items-center gap-3 min-w-0">
-        <AppIcon name="moon" :size="18" class="text-primary flex-shrink-0" />
         <div class="min-w-0">
           <p class="text-sm font-semibold text-text-primary">
             {{ t("textReading.slihotHours") }}

@@ -171,7 +171,6 @@ const goToNewSession = () => {
                 :key="session.id"
                 class="flex items-center gap-2 py-2.5"
               >
-                <AppIcon name="flag" :size="12" class="shrink-0 text-text-secondary/60" />
                 <button
                   class="flex-1 min-w-0 text-left text-sm font-medium text-text-secondary truncate hover:text-primary transition-colors"
                   :title="t('shareReading.openSession')"

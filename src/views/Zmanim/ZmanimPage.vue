@@ -321,7 +321,6 @@ const placeButton = ref<HTMLElement | null>(null);
 const zmanimTip = computed<TourStep[]>(() => [
   {
     key: "reminder",
-    icon: "bell",
     title: t("tips.zmanim.reminder.title"),
     text: t("tips.zmanim.reminder.text"),
     target: () => root.value?.querySelector<HTMLElement>("[data-zman-list] > li") ?? null,
@@ -331,7 +330,6 @@ const zmanimTip = computed<TourStep[]>(() => [
   },
   {
     key: "place",
-    icon: "map-pin",
     title: t("tips.zmanim.place.title"),
     text: t("tips.zmanim.place.text"),
     target: () => placeButton.value,
@@ -349,7 +347,6 @@ const dateButton = ref<HTMLElement | null>(null);
 const dateTip = computed<TourStep[]>(() => [
   {
     key: "date",
-    icon: "calendar",
     title: t("tips.zmanim.date.title"),
     text: t("tips.zmanim.date.text"),
     target: () => dateButton.value,
@@ -783,7 +780,7 @@ onMounted(() => {
            est dans le texte, devant son premier mot : posée à côté du bloc,
            elle flottait au milieu d'une phrase sur deux lignes. -->
       <p v-if="nightNote" class="mt-1 text-sm text-primary">
-        <AppIcon name="moon" :size="13" class="me-1" />{{ nightNote }}
+        {{ nightNote }}
       </p>
     </div>
 
@@ -917,7 +914,6 @@ onMounted(() => {
     >
       <div class="mb-1 flex items-center justify-between">
         <h3 class="flex items-center gap-2 text-lg font-bold text-text-primary">
-          <AppIcon name="info" :size="17" class="text-primary" />
           {{ t("zmanim.about.title") }}
         </h3>
         <button

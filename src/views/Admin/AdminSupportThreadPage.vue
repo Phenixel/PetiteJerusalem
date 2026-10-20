@@ -256,7 +256,6 @@ async function remove() {
             :placeholder="t('admin.support.replyPlaceholder')"
           ></textarea>
           <p class="flex items-start gap-1.5 text-xs text-text-secondary">
-            <AppIcon name="info" :size="12" class="mt-0.5 shrink-0" />
             {{ deliveryNote }}
           </p>
           <div class="flex flex-wrap items-center gap-2">

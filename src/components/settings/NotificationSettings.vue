@@ -84,7 +84,6 @@ function delayLabel(minutes: number): string {
       v-if="blocked"
       class="mb-4 flex items-start gap-2 text-sm text-amber-600 dark:text-amber-400"
     >
-      <AppIcon name="alert-triangle" :size="15" class="mt-0.5 shrink-0" />
       {{ t("zmanim.reminder.permissionDenied") }}
     </p>
 

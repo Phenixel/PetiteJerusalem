@@ -463,7 +463,6 @@ const menuTip = computed<TourStep[]>(() => {
     return [
       {
         key: "settings",
-        icon: "settings",
         title: t("tips.reading.settingsAlone.title"),
         text: t("tips.reading.settingsAlone.text"),
         target: () => settingsOnlyButton.value,
@@ -474,7 +473,6 @@ const menuTip = computed<TourStep[]>(() => {
   const steps: TourStep[] = [
     {
       key: "menu",
-      icon: "list",
       title: t("tips.reading.menu.title"),
       text: t("tips.reading.menu.text"),
       target: () => menuButton.value,
@@ -484,7 +482,6 @@ const menuTip = computed<TourStep[]>(() => {
   if (props.downloadState !== "none") {
     steps.push({
       key: "download",
-      icon: "download",
       title: t("tips.reading.download.title"),
       text: t("tips.reading.download.text"),
       target: () => downloadButton.value,
@@ -493,7 +490,6 @@ const menuTip = computed<TourStep[]>(() => {
   }
   steps.push({
     key: "settings",
-    icon: "settings",
     title: t("tips.reading.settings.title"),
     text: t("tips.reading.settings.text"),
     target: () => settingsButton.value,
@@ -647,19 +643,15 @@ onUnmounted(() => {
               </div>
               <nav class="overflow-y-auto px-2 pb-2 min-h-0">
                 <button @click="goTop" class="section-item">
-                  <AppIcon name="arrow-up" :size="13" class="flex-shrink-0 text-text-secondary" />
                   {{ t("textReading.navTop") }}
                 </button>
                 <button v-if="setAside" @click="putAside" class="section-item">
-                  <AppIcon name="books" :size="13" class="flex-shrink-0 text-text-secondary" />
                   {{ t("readingTable.setAside") }}
                 </button>
                 <button v-if="kotelCompassOffered" @click="openKotel" class="section-item">
-                  <AppIcon name="compass" :size="13" class="flex-shrink-0 text-text-secondary" />
                   {{ t("textReading.kotel.title") }}
                 </button>
                 <button v-if="tefilinMirrorOffered" @click="openMirror" class="section-item">
-                  <AppIcon name="mirror" :size="13" class="flex-shrink-0 text-text-secondary" />
                   {{ t("textReading.mirror.title") }}
                 </button>
                 <p v-if="props.sections.length" class="section-heading">
@@ -840,15 +832,12 @@ onUnmounted(() => {
                    le site, prendre l'app. -->
               <div class="settings-actions">
                 <button v-if="settingsOnly" type="button" class="action-item" @click="goTop">
-                  <AppIcon name="arrow-up" :size="13" class="flex-shrink-0 text-text-secondary" />
                   {{ t("textReading.navTop") }}
                 </button>
                 <button type="button" class="action-item" @click="share">
-                  <AppIcon name="share" :size="13" class="flex-shrink-0 text-text-secondary" />
                   {{ t("textReading.settings.share") }}
                 </button>
                 <button type="button" class="action-item" @click="report">
-                  <AppIcon name="message" :size="13" class="flex-shrink-0 text-text-secondary" />
                   {{ t("footer.reportIssue") }}
                 </button>
                 <!-- Les deux liens quand l'appareil ne se laisse pas deviner

@@ -15,7 +15,6 @@
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { formatZmanDay, formatZmanTime, type ChametzDeadlines } from "../../services/zmanimService";
-import AppIcon from "../../components/icons/AppIcon.vue";
 
 const props = defineProps<{
   chametz: ChametzDeadlines;
@@ -56,9 +55,7 @@ const rows = computed(() => {
 <template>
   <section class="card p-5">
     <h2 class="mb-3 font-bold text-text-primary">
-      <AppIcon name="hourglass" :size="17" class="me-2 text-primary" />{{
-        t("zmanim.chametz.title")
-      }}
+      {{ t("zmanim.chametz.title") }}
     </h2>
 
     <ul class="flex flex-col divide-y divide-line">

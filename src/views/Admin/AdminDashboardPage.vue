@@ -2,7 +2,6 @@
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import AppIcon from "../../components/icons/AppIcon.vue";
-import type { IconName } from "../../components/icons/registry";
 import AdminStatus from "../../components/admin/AdminStatus.vue";
 import AdminSkeleton from "../../components/admin/AdminSkeleton.vue";
 import { useAdminSummary } from "../../composables/useAdminSummary";
@@ -23,7 +22,6 @@ interface Stat {
   label: string;
   value: string;
   detail: string;
-  icon: IconName;
   to: string;
 }
 
@@ -32,28 +30,24 @@ const stats = computed<Stat[]>(() => [
     label: t("admin.dashboard.stats.chiourim"),
     value: formatCount(summary.published.value.length),
     detail: tn("admin.dashboard.stats.chiourimDetail", summary.drafts.value.length),
-    icon: "headphones",
     to: "/admin/chiourim",
   },
   {
     label: t("admin.dashboard.stats.views"),
     value: formatCount(summary.totalViews.value),
     detail: t("admin.dashboard.stats.viewsDetail"),
-    icon: "eye",
     to: "/admin/chiourim?tri=views",
   },
   {
     label: t("admin.dashboard.stats.sessions"),
     value: formatCount(summary.sessions.value.total),
     detail: tn("admin.dashboard.stats.sessionsDetail", summary.sessions.value.hidden),
-    icon: "users",
     to: "/admin/sessions",
   },
   {
     label: t("admin.dashboard.stats.auteurs"),
     value: formatCount(summary.auteurs.value.length),
     detail: tn("admin.dashboard.stats.auteursDetail", summary.auteursWithoutLink.value.length),
-    icon: "teacher",
     to: "/admin/auteurs",
   },
 ]);
@@ -61,9 +55,7 @@ const stats = computed<Stat[]>(() => [
 interface Todo {
   label: string;
   hint: string;
-  icon: IconName;
   to: string;
-  tone: "danger" | "warning";
 }
 
 const todos = computed<Todo[]>(() => {
@@ -73,54 +65,42 @@ const todos = computed<Todo[]>(() => {
     list.push({
       label: t("admin.dashboard.todo.incident", { title: incident.title.fr }),
       hint: t("admin.dashboard.todo.incidentHint"),
-      icon: "alert-triangle",
       to: `/admin/informations/${incident.id}`,
-      tone: "danger",
     });
   }
   if (summary.reportedSessions.value > 0) {
     list.push({
       label: tn("admin.dashboard.todo.reports", summary.reportedSessions.value),
       hint: t("admin.dashboard.todo.reportsHint"),
-      icon: "flag",
       to: "/admin/sessions?filtre=reported",
-      tone: "danger",
     });
   }
   if (summary.supportToHandle.value > 0) {
     list.push({
       label: tn("admin.dashboard.todo.support", summary.supportToHandle.value),
       hint: t("admin.dashboard.todo.supportHint"),
-      icon: "message",
       to: "/admin/messages",
-      tone: "warning",
     });
   }
   if (summary.drafts.value.length > 0) {
     list.push({
       label: tn("admin.dashboard.todo.drafts", summary.drafts.value.length),
       hint: t("admin.dashboard.todo.draftsHint"),
-      icon: "headphones",
       to: "/admin/chiourim?filtre=draft",
-      tone: "warning",
     });
   }
   if (summary.noAuteur.value.length > 0) {
     list.push({
       label: tn("admin.dashboard.todo.noAuteur", summary.noAuteur.value.length),
       hint: t("admin.dashboard.todo.noAuteurHint"),
-      icon: "user",
       to: "/admin/chiourim?filtre=noAuteur",
-      tone: "warning",
     });
   }
   if (summary.announcementDrafts.value.length > 0) {
     list.push({
       label: tn("admin.dashboard.todo.announcementDrafts", summary.announcementDrafts.value.length),
       hint: t("admin.dashboard.todo.announcementDraftsHint"),
-      icon: "bell",
       to: "/admin/informations?filtre=draft",
-      tone: "warning",
     });
   }
   return list;
@@ -144,7 +124,6 @@ const todos = computed<Todo[]>(() => {
         class="card card-hover group flex flex-col gap-1 p-4 md:p-5"
       >
         <span class="flex items-center gap-2 text-sm font-semibold text-text-secondary">
-          <AppIcon :name="stat.icon" :size="15" />
           {{ stat.label }}
         </span>
         <span
@@ -163,11 +142,6 @@ const todos = computed<Todo[]>(() => {
           {{ t("admin.dashboard.todoTitle") }}
         </h3>
         <div v-if="todos.length === 0" class="card flex items-center gap-3 p-5 text-text-secondary">
-          <AppIcon
-            name="circle-check"
-            :size="22"
-            class="shrink-0 text-green-600 dark:text-green-400"
-          />
           {{ t("admin.dashboard.todoEmpty") }}
         </div>
         <ul v-else class="card divide-y divide-line overflow-hidden">
@@ -176,16 +150,6 @@ const todos = computed<Todo[]>(() => {
               :to="todo.to"
               class="group flex items-center gap-3 p-4 transition-colors hover:bg-black/[0.02] dark:hover:bg-white/5"
             >
-              <span
-                class="flex h-9 w-9 shrink-0 items-center justify-center rounded-control"
-                :class="
-                  todo.tone === 'danger'
-                    ? 'bg-red-600/10 text-red-600 dark:text-red-400'
-                    : 'bg-amber-500/15 text-amber-700 dark:text-amber-300'
-                "
-              >
-                <AppIcon :name="todo.icon" :size="17" />
-              </span>
               <span class="min-w-0 flex-1">
                 <span
                   class="block font-semibold leading-snug text-text-primary group-hover:text-primary"

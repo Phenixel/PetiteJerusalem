@@ -21,17 +21,14 @@ const { t } = useI18n();
 
 const points = [
   {
-    icon: "book-open",
     titleKey: "onboarding.essentials.libraryTitle",
     textKey: "onboarding.essentials.libraryText",
   },
   {
-    icon: "clock",
     titleKey: "onboarding.essentials.zmanimTitle",
     textKey: "onboarding.essentials.zmanimText",
   },
   {
-    icon: "check-double",
     titleKey: "onboarding.essentials.dailyTitle",
     textKey: "onboarding.essentials.dailyText",
   },
@@ -48,13 +45,8 @@ const points = [
     </p>
 
     <ul class="space-y-5">
-      <li v-for="point in points" :key="point.titleKey" class="flex items-start gap-4">
-        <span
-          class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"
-        >
-          <AppIcon :name="point.icon" :size="18" />
-        </span>
-        <span class="min-w-0">
+      <li v-for="point in points" :key="point.titleKey">
+        <span class="block">
           <span class="block font-semibold text-text-primary">{{ t(point.titleKey) }}</span>
           <span class="mt-0.5 block text-sm text-text-secondary">{{ t(point.textKey) }}</span>
         </span>

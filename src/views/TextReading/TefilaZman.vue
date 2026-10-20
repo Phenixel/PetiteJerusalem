@@ -5,7 +5,6 @@ import { computeZmanim, formatZmanTime, type ZmanKey } from "../../services/zman
 import { useZmanimLocation } from "../../composables/useZmanimLocation";
 import { useNow } from "../../composables/useNow";
 import AppIcon from "../../components/icons/AppIcon.vue";
-import type { IconName } from "../../components/icons/registry";
 
 /**
  * L'horaire d'un moment du sidour, posé juste avant ce qui se lit : la fin du
@@ -28,7 +27,6 @@ const { place } = useZmanimLocation();
 const now = useNow();
 
 interface ZmanCard {
-  icon: IconName;
   /** Heures sans lesquelles la ligne principale n'a pas de sens. */
   requires: (keyof ZmanParams)[];
   /** Nombre de lignes d'explication (textReading.zman.<clé>.d1..dN). */
@@ -36,11 +34,11 @@ interface ZmanCard {
 }
 
 const ZMAN_CARDS: Record<string, ZmanCard> = {
-  chaharit: { icon: "sunrise", requires: ["misheyakir", "hatsot"], details: 4 },
-  shema: { icon: "clock", requires: ["shema"], details: 3 },
-  amida: { icon: "clock", requires: ["tefila"], details: 2 },
-  minha: { icon: "sun", requires: ["minhaGuedola", "chkia"], details: 4 },
-  arvit: { icon: "moon", requires: ["tset"], details: 3 },
+  chaharit: { requires: ["misheyakir", "hatsot"], details: 4 },
+  shema: { requires: ["shema"], details: 3 },
+  amida: { requires: ["tefila"], details: 2 },
+  minha: { requires: ["minhaGuedola", "chkia"], details: 4 },
+  arvit: { requires: ["tset"], details: 3 },
 };
 
 interface ZmanParams {
@@ -115,7 +113,6 @@ const showInfo = ref(false);
   <div v-if="card && usable" class="my-6 card p-4">
     <div class="flex items-center justify-between gap-3">
       <div class="flex items-center gap-3 min-w-0">
-        <AppIcon :name="card.icon" :size="18" class="text-primary flex-shrink-0" />
         <div class="min-w-0">
           <p class="text-sm font-semibold text-text-primary">
             {{ t(`textReading.zman.${zman}.title`) }}

@@ -152,7 +152,6 @@ const occasionsButton = ref<HTMLElement | null>(null);
 const occasionsTip = computed<TourStep[]>(() => [
   {
     key: "occasions",
-    icon: "cake",
     title: t("tips.calendar.occasions.title"),
     text: t("tips.calendar.occasions.text"),
     target: () => occasionsButton.value,
@@ -453,7 +452,6 @@ onMounted(() => {
       {{ t("calendar.title") }}
     </h1>
     <p class="mt-2 flex items-center justify-center gap-1.5">
-      <AppIcon name="map-pin" :size="16" class="text-primary shrink-0" />
       <span class="font-semibold text-text-primary">{{ placeLabel }}</span>
     </p>
     <p class="mt-3 text-center text-sm text-text-secondary leading-relaxed">

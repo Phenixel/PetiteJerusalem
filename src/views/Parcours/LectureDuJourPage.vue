@@ -326,7 +326,6 @@ seoService.setMeta({
       <!-- La journée : où l'on en est. -->
       <div v-if="daily.length" class="card mt-6 p-5">
         <div v-if="allDone" class="flex items-start gap-3">
-          <AppIcon name="circle-check" :size="20" class="mt-0.5 text-primary" />
           <p class="font-semibold">{{ t("parcours.daily.allDone") }}</p>
         </div>
         <template v-else>

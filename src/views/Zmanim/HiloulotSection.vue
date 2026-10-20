@@ -19,7 +19,6 @@ import { useI18n } from "vue-i18n";
 import type { HDate } from "@hebcal/core";
 import { hiloulotOn, loadHiloulot, type HiloulotIndex } from "../../services/hiloulot";
 import { analyticsService } from "../../services/analyticsService";
-import AppIcon from "../../components/icons/AppIcon.vue";
 
 const props = defineProps<{ day: HDate }>();
 
@@ -67,7 +66,6 @@ function expand(): void {
 <template>
   <section v-if="names.length > 0" class="mt-5 border-t border-line pt-4">
     <h2 class="flex items-center gap-2 pb-1 text-base font-bold text-text-secondary">
-      <AppIcon name="candle" :size="16" class="text-primary" />
       {{ t("zmanim.hiloulot.title") }}
     </h2>
     <ul class="flex flex-col gap-0.5">

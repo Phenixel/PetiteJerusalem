@@ -524,7 +524,8 @@ object, by `src/__tests__/cardArt.test.ts`.
 The icon stays where it alone distinguishes: the cake of a birthday and the
 candle of a leilouy nichmat among the dates you have added, the
 « Aujourd'hui » ("Today") and « Hors ligne » ("Offline") rows of the
-library, the section titles of the times.
+library, the section titles of the times. Everywhere else, the icon on the
+left is gone (see "No icon on the left, anywhere else").
 
 ### The play triangle is centered on its weight
 
@@ -1015,7 +1016,8 @@ its own, which suits it.
   (Settings: appearance, language, notifications, preferences), Mon compte
   (My account: security, sign-out), Aide (Help), Informations. Each group is
   a panel (`SettingsGroup`), a surface without `card-hover`, and its rows
-  (`SettingsRow`) run edge to edge, separated by a rule. The group's title is
+  (`SettingsRow`) run edge to edge, separated by a rule. A row has no icon:
+  its name says where it leads. The group's title is
   written in lowercase, above.
 - **A row says where it leads and what is set there.** At the end, before
   the chevron: « Océan · Système », « Français », « 2 rappels » ("2
@@ -1832,8 +1834,8 @@ reserves.
 The names run on one after another, separated by a middle dot, like a
 dedication, and not in rows: twenty rows would have pushed the reading three
 screens down. Eight per group, the rest expands. Two groups, distinguished
-by their drawing: the heart for a refoua chelema, the candle for a leilouy
-nichmat (the same as for calendar dates). A name does not break across lines
+by their name, written above each one (« Refoua chelema », « Leilouy
+nichmat »), without a drawing (see "No icon on the left, anywhere else"). A name does not break across lines
 (`whitespace-nowrap`).
 
 The reader's own names are pills in the theme color, with a pencil, at the
@@ -1866,7 +1868,7 @@ connection returns, there is no need to redo it, and the name joins the list
 when it arrives.
 
 In the reader, « Vous lisez pour » ("You are reading for") keeps the two
-groups of the chain page, each with its drawing: a refoua chelema and a
+groups of the chain page, each under its name: a refoua chelema and a
 leilouy nichmat are not said the same way (`PrayerNamesLine`). Removing a
 name asks the question, with the name (`useConfirm`); extending it does not:
 it can be redone with a gesture.
@@ -1985,6 +1987,47 @@ tinted circle.
   rappeler cet horaire », « Avis suivi pour les horaires »). A back arrow,
   when the dialog has a second screen, stays: it is a command, not a
   decoration.
+
+### No icon on the left, anywhere else
+
+The rule above, carried to the end: an icon set before a title, a row or a
+sentence repeated what the words said, in a drawing that was often shared
+by two different things (the same clock for the end of the Chema and the
+end of the 'Amida, the same sun for Cha'harit and midday). They are gone
+from the whole app, the site and the back office.
+
+- **Cards and their titles**: the times at the head of a tefila, the
+  Sli'hot hours, Chabbat, the fasts, the 'hamets, the hiloulot, a chain's
+  reservation in the reader, the resume banner, « Le texte étudié » of a
+  class, the paused notice, the offline notice, « Mise à jour
+  disponible », the series of the Studio, the figures and the to-do list of
+  the back office. The title aligns with the edge of the card.
+- **Section titles** (« Mes sessions », « Toutes les sessions », « Cours
+  sur ce chapitre », « Dans le Sidour ») and the titles of the dialogs and
+  the tips (`FeatureTour.vue`: the bubble opens on its title, without the
+  solid round badge).
+- **List rows**: the app's settings (`SettingsRow.vue` takes no icon any
+  more), the reading menu, the reminder slots, the profile shortcuts, the
+  « C'est prêt » step of the introduction, the guest's benefits.
+- **Lines of state**: the date of a chain, « Tout lu », a finished chain,
+  a success or an error under a form, the toasts. The color and the
+  sentence say it.
+- **The groups of names**: « Refoua chelema » and « Leilouy nichmat » are
+  told by their names, in the reader, on the chain and in the preview of a
+  name.
+
+Where a card led nowhere new, it lost its frame with its icon:
+« Enchaîner avec Arvit », at the end of Min'ha, is now a link set on the
+page, its name in the theme color and its reason under it. The steps of
+« Comment ça marche » carry their number in their circle, which is what a
+timeline counts.
+
+What stays is not a decoration but a state or a command: the checkboxes
+and the radio marks of a choice, the download state of « Hors ligne », the
+check of a class already listened to, the waiting clock of a task of the
+day, the chips that state (« Complet », « Lu »), the back arrows, and the
+icon inside a pill that carries its name (see "A command placed in a text
+carries its name").
 
 ### One piece of information is said once
 

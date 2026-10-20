@@ -246,7 +246,6 @@ async function removeChiour(chiour: ChiourDoc) {
 
         <div class="flex flex-wrap items-center justify-between gap-4 mb-2">
           <h2 class="text-2xl font-bold text-text-primary flex items-center gap-2">
-            <AppIcon name="book-open" :size="20" class="text-secondary" />
             {{ openSerie.name }}
           </h2>
           <button class="btn btn-primary" @click="openAdd(openSerie.id)">
@@ -355,11 +354,6 @@ async function removeChiour(chiour: ChiourDoc) {
                 class="card card-hover p-4 flex items-center gap-3 w-full text-left"
                 @click="openSerieId = serie.id"
               >
-                <div
-                  class="flex items-center justify-center w-10 h-10 rounded-lg bg-secondary/10 text-secondary shrink-0"
-                >
-                  <AppIcon name="book-open" :size="17" />
-                </div>
                 <div class="min-w-0 flex-1">
                   <p class="font-semibold text-text-primary truncate">{{ serie.name }}</p>
                   <p class="text-sm text-text-secondary">

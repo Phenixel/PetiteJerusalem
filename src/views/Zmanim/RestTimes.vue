@@ -25,7 +25,6 @@ import {
   describeLightingRule,
   describeRabbenouTamRule,
 } from "../../services/zmanimRules";
-import AppIcon from "../../components/icons/AppIcon.vue";
 
 const props = defineProps<{
   period: RestPeriod;
@@ -72,9 +71,7 @@ const exitRule = computed(() =>
   t("zmanim.rest.exit", { rule: describeEndRule(props.period.endRule, t, locale.value) }),
 );
 
-const rabbenouTamNote = computed(() =>
-  describeRabbenouTamRule(props.period.rabbenouTamRule, t),
-);
+const rabbenouTamNote = computed(() => describeRabbenouTamRule(props.period.rabbenouTamRule, t));
 
 /**
  * Les allumages des soirs suivants, entre l'entrée et la sortie.
@@ -107,7 +104,7 @@ const eruvNote = computed(() =>
          icône enfermée dans son propre conteneur imposerait sa ligne de base au
          titre, et « Parachat » ne s'alignerait plus sur « Chabbat ». -->
     <h2 class="mb-3 font-bold text-text-primary">
-      <AppIcon name="candle" :size="17" class="me-2 text-primary" />{{ title
+      {{ title
       }}<span v-if="parasha" class="text-sm font-normal"
         >{{ " " }}<span class="text-text-secondary">{{ t("zmanim.shabbat.parasha") }}</span
         ><template v-for="(entry, index) in parasha.entries" :key="entry.id"

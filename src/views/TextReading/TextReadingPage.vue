@@ -218,7 +218,6 @@ const gesturesTip = computed<TourStep[]>(() => {
   if (!isLiturgyText.value) {
     steps.push({
       key: "bookmark",
-      icon: "bookmark",
       title: t("tips.reading.bookmark.title"),
       text: t("tips.reading.bookmark.text"),
       target: () => readingRoot.value?.querySelector<HTMLElement>("[data-line]") ?? null,
@@ -2522,7 +2521,6 @@ watch(textId, (_, previousTextId) => {
       <div v-if="showResumeBanner" class="mb-6 p-4 card flex items-center justify-between gap-3">
         <div class="min-w-0">
           <p class="text-sm font-semibold text-text-primary flex items-center gap-2">
-            <AppIcon name="book-open" :size="15" class="text-primary flex-shrink-0" />
             {{ t("textReading.resumeTitle") }}
           </p>
           <p class="text-sm text-text-secondary mt-0.5">{{ resumePlace }}</p>
@@ -2975,25 +2973,19 @@ watch(textId, (_, previousTextId) => {
           class="mt-12"
         />
 
-        <!-- Sidour : à la fin de Min'ha, un geste suffit pour enchaîner
-             avec Arvit. -->
+        <!-- Sidour: at the end of Min'ha, one gesture moves on to Arvit. A
+             place to go, not a piece of data: no frame, no icon, the name in
+             the theme color and the reason under it. -->
         <RouterLink
           v-if="sidourNextEntry"
           :to="hubPath(sidourNextEntry)"
-          class="mt-12 card card-hover p-4 flex items-center justify-between gap-3 group"
+          class="mt-12 block text-center group"
         >
-          <span class="flex items-center gap-3 min-w-0">
-            <AppIcon name="moon" :size="18" class="text-primary flex-shrink-0" />
-            <span class="min-w-0">
-              <span
-                class="block font-semibold text-text-primary group-hover:text-primary transition-colors"
-              >
-                {{ t("textReading.sidourNext", { name: latinName(sidourNextEntry) }) }}
-              </span>
-              <span class="block text-sm text-text-secondary">
-                {{ t("textReading.sidourNextHint") }}
-              </span>
-            </span>
+          <span class="block font-semibold text-primary group-hover:underline underline-offset-4">
+            {{ t("textReading.sidourNext", { name: latinName(sidourNextEntry) }) }}
+          </span>
+          <span class="mt-0.5 block text-sm text-text-secondary">
+            {{ t("textReading.sidourNextHint") }}
           </span>
         </RouterLink>
 

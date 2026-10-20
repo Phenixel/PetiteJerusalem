@@ -1127,7 +1127,6 @@ watch(session, (s) => applySessionSeo(s));
         v-if="session.hidden"
         class="mb-8 flex items-start gap-3 rounded-xl bg-amber-500/10 p-4 text-amber-800 dark:text-amber-200"
       >
-        <AppIcon name="alert-triangle" :size="18" class="mt-0.5 shrink-0" />
         <p class="text-sm font-medium">{{ t("moderation.hiddenOwnerBanner") }}</p>
       </div>
 

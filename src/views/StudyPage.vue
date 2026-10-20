@@ -785,7 +785,6 @@ onMounted(() => {
           class="group inline-flex items-center gap-1.5 min-w-0 text-sm text-text-secondary hover:text-primary transition-colors"
           @click="trackResume()"
         >
-          <AppIcon name="bookmark" :size="13" class="shrink-0 text-primary/70" />
           <span class="truncate">
             {{ t("home.dashboard.resumeCta", { label: lastReading.label }) }}
           </span>
@@ -938,7 +937,6 @@ onMounted(() => {
              renvoie, plutôt que de répondre qu'il n'y a rien. -->
         <section v-if="!currentCorpus && sidourResults.length" class="space-y-4">
           <h2 class="flex items-center gap-2.5 text-2xl font-bold text-text-primary">
-            <AppIcon name="book-open" :size="20" class="text-primary" />
             {{ t("study.inSidour") }}
           </h2>
           <div class="card overflow-hidden">

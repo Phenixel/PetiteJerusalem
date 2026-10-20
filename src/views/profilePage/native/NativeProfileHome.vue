@@ -39,7 +39,6 @@ import { useConfirm } from "../../../composables/useConfirm";
 import { useHolidayTheme } from "../../../composables/useHolidayTheme";
 import { useSupportUnread } from "../../../composables/useSupportUnread";
 import AppIcon from "../../../components/icons/AppIcon.vue";
-import type { IconName } from "../../../components/icons/registry";
 import HolidayOrnaments from "../../../components/holiday/HolidayOrnaments.vue";
 import SettingsGroup from "../../../components/settings/SettingsGroup.vue";
 import SettingsRow from "../../../components/settings/SettingsRow.vue";
@@ -66,11 +65,11 @@ const initial = computed(() => Array.from(displayName.value.trim())[0]?.toUpperC
 const { activeHolidayTheme } = useHolidayTheme();
 
 // Ce que le compte apporte : les mêmes entrées que l'invitation du site.
-const guestBenefits = computed<{ icon: IconName; label: string }[]>(() => [
-  { icon: "users", label: t("profile.guestBenefits.sessions") },
-  { icon: "book", label: t("profile.guestBenefits.parcours") },
-  { icon: "bell", label: t("profile.guestBenefits.reminders") },
-  { icon: "bookmark", label: t("profile.guestBenefits.sync") },
+const guestBenefits = computed<{ label: string }[]>(() => [
+  { label: t("profile.guestBenefits.sessions") },
+  { label: t("profile.guestBenefits.parcours") },
+  { label: t("profile.guestBenefits.reminders") },
+  { label: t("profile.guestBenefits.sync") },
 ]);
 
 // ---- Ce qui est réglé, lu au bout de chaque ligne --------------------------
@@ -116,10 +115,10 @@ function replayTips(): void {
 }
 
 const infoPages = [
-  { to: "/informations", labelKey: "announcements.title", icon: "bell" },
-  { to: "/a-propos", labelKey: "footer.about", icon: "info" },
-  { to: "/mentions-legales", labelKey: "footer.legal", icon: "align-left" },
-  { to: "/confidentialite", labelKey: "footer.privacy", icon: "eye" },
+  { to: "/informations", labelKey: "announcements.title" },
+  { to: "/a-propos", labelKey: "footer.about" },
+  { to: "/mentions-legales", labelKey: "footer.legal" },
+  { to: "/confidentialite", labelKey: "footer.privacy" },
 ] as const;
 
 // La version installée, au pied de la page : c'est elle qu'on demande à qui
@@ -254,10 +253,9 @@ onUnmounted(() => {
           <ul class="mt-3 space-y-2 text-sm leading-relaxed text-text-primary">
             <li
               v-for="benefit in guestBenefits"
-              :key="benefit.icon"
+              :key="benefit.label"
               class="flex items-start gap-2.5"
             >
-              <AppIcon :name="benefit.icon" :size="15" class="mt-1 shrink-0 text-primary" />
               <span>{{ benefit.label }}</span>
             </li>
           </ul>
@@ -282,7 +280,6 @@ onUnmounted(() => {
           <ProfileParcoursRow />
           <SettingsRow
             v-if="currentUser"
-            icon="users"
             :label="t('home.dashboard.sessionsTitle')"
             to="/share-reading"
             @click="trackShortcut('my_sessions')"
@@ -291,26 +288,22 @@ onUnmounted(() => {
 
         <SettingsGroup :title="t('profile.native.groups.settings')">
           <SettingsRow
-            icon="palette"
             :label="t('profile.tabs.appearance')"
             :value="appearanceValue"
             to="/profile/appearance"
           />
           <SettingsRow
-            icon="languages"
             :label="t('profile.languageTitle')"
             :value="languageValue"
             to="/profile/language"
           />
           <SettingsRow
-            icon="bell"
             :label="t('profile.tabs.notifications')"
             :value="notificationsValue"
             :warn="notificationsBlocked"
             to="/profile/notifications"
           />
           <SettingsRow
-            icon="settings"
             :label="t('profile.tabs.preferences')"
             :value="preferencesValue"
             to="/profile/preferences"
@@ -318,31 +311,29 @@ onUnmounted(() => {
         </SettingsGroup>
 
         <SettingsGroup v-if="currentUser" :title="t('profile.native.groups.account')">
-          <SettingsRow icon="lock" :label="t('security.title')" to="/profile/security" />
-          <SettingsRow icon="logout" :label="t('common.logout')" tone="danger" @click="logout" />
+          <SettingsRow :label="t('security.title')" to="/profile/security" />
+          <SettingsRow :label="t('common.logout')" tone="danger" @click="logout" />
         </SettingsGroup>
 
         <SettingsGroup :title="t('profile.native.groups.help')">
           <SettingsRow
-            icon="message"
             :label="t('footer.reportIssue')"
             :value="supportValue"
             :warn="support.unread.value > 0"
             to="/contact"
           />
-          <SettingsRow icon="rocket" :label="t('onboarding.replay')" @click="replayOnboarding" />
-          <SettingsRow icon="lightbulb" :label="t('tips.replay')" @click="replayTips" />
+          <SettingsRow :label="t('onboarding.replay')" @click="replayOnboarding" />
+          <SettingsRow :label="t('tips.replay')" @click="replayTips" />
         </SettingsGroup>
 
         <SettingsGroup :title="t('profile.native.groups.info')">
           <SettingsRow
             v-for="page in infoPages"
             :key="page.to"
-            :icon="page.icon"
             :label="t(page.labelKey)"
             :to="page.to"
           />
-          <SettingsRow icon="cookie" :label="t('footer.manageCookies')" @click="reopenConsent" />
+          <SettingsRow :label="t('footer.manageCookies')" @click="reopenConsent" />
         </SettingsGroup>
       </div>
 
