@@ -525,7 +525,7 @@ The icon stays where it alone distinguishes: the cake of a birthday and the
 candle of a leilouy nichmat among the dates you have added, the
 « Aujourd'hui » ("Today") and « Hors ligne » ("Offline") rows of the
 library, the section titles of the times. Everywhere else, the icon on the
-left is gone (see "No icon on the left, anywhere else").
+left of a frame is gone (see "No icon on the left of a frame").
 
 ### The play triangle is centered on its weight
 
@@ -1016,8 +1016,7 @@ its own, which suits it.
   (Settings: appearance, language, notifications, preferences), Mon compte
   (My account: security, sign-out), Aide (Help), Informations. Each group is
   a panel (`SettingsGroup`), a surface without `card-hover`, and its rows
-  (`SettingsRow`) run edge to edge, separated by a rule. A row has no icon:
-  its name says where it leads. The group's title is
+  (`SettingsRow`) run edge to edge, separated by a rule. The group's title is
   written in lowercase, above.
 - **A row says where it leads and what is set there.** At the end, before
   the chevron: « Océan · Système », « Français », « 2 rappels » ("2
@@ -1835,8 +1834,8 @@ The names run on one after another, separated by a middle dot, like a
 dedication, and not in rows: twenty rows would have pushed the reading three
 screens down. Eight per group, the rest expands. Two groups, distinguished
 by their name, written above each one (« Refoua chelema », « Leilouy
-nichmat »), without a drawing (see "No icon on the left, anywhere else"). A name does not break across lines
-(`whitespace-nowrap`).
+nichmat »), without a drawing (see "No icon on the left of a frame"). A
+name does not break across lines (`whitespace-nowrap`).
 
 The reader's own names are pills in the theme color, with a pencil, at the
 top of their group: they are the only ones that open, and that is the pill
@@ -1988,27 +1987,25 @@ tinted circle.
   when the dialog has a second screen, stays: it is a command, not a
   decoration.
 
-### No icon on the left, anywhere else
+### No icon on the left of a frame
 
-The rule above, carried to the end: an icon set before a title, a row or a
-sentence repeated what the words said, in a drawing that was often shared
-by two different things (the same clock for the end of the Chema and the
-end of the 'Amida, the same sun for Cha'harit and midday). They are gone
-from the whole app, the site and the back office.
+The rule above, carried to the end of the frames: a card, a notice or a
+section that opened on an icon in its top-left corner, meant to stand for
+what the frame holds, repeated what its title said, often with a drawing
+shared by two different things (the same clock for the end of the Chema and
+the end of the 'Amida). Those icons are gone, on the site, in the app and
+in the back office:
 
-- **Cards and their titles**: the times at the head of a tefila, the
-  Sli'hot hours, Chabbat, the fasts, the 'hamets, the hiloulot, a chain's
+- **Cards and notices**: the times at the head of a tefila, the Sli'hot
+  hours, Chabbat, the fasts, the 'hamets, the hiloulot, a chain's
   reservation in the reader, the resume banner, « Le texte étudié » of a
   class, the paused notice, the offline notice, « Mise à jour
   disponible », the series of the Studio, the figures and the to-do list of
   the back office. The title aligns with the edge of the card.
-- **Section titles** (« Mes sessions », « Toutes les sessions », « Cours
-  sur ce chapitre », « Dans le Sidour ») and the titles of the dialogs and
-  the tips (`FeatureTour.vue`: the bubble opens on its title, without the
-  solid round badge).
-- **List rows**: the app's settings (`SettingsRow.vue` takes no icon any
-  more), the reading menu, the reminder slots, the profile shortcuts, the
-  « C'est prêt » step of the introduction, the guest's benefits.
+- **Section and window titles** (« Mes sessions », « Toutes les sessions »,
+  « Cours sur ce chapitre », « Dans le Sidour », « À propos des horaires »)
+  and the bubbles of the tips (`FeatureTour.vue`: the bubble opens on its
+  title, without the solid round badge).
 - **Lines of state**: the date of a chain, « Tout lu », a finished chain,
   a success or an error under a form, the toasts. The color and the
   sentence say it.
@@ -2018,16 +2015,20 @@ from the whole app, the site and the back office.
 
 Where a card led nowhere new, it lost its frame with its icon:
 « Enchaîner avec Arvit », at the end of Min'ha, is now a link set on the
-page, its name in the theme color and its reason under it. The steps of
-« Comment ça marche » carry their number in their circle, which is what a
-timeline counts.
+page, its name in the theme color and its reason under it.
 
-What stays is not a decoration but a state or a command: the checkboxes
-and the radio marks of a choice, the download state of « Hors ligne », the
-check of a class already listened to, the waiting clock of a task of the
-day, the chips that state (« Complet », « Lu »), the back arrows, and the
-icon inside a pill that carries its name (see "A command placed in a text
-carries its name").
+**A list keeps its drawings.** In a list, the drawing at the start of each
+row is how the eye runs down it and finds its line without reading every
+name: the rows of the profile and the settings (`SettingsRow`), the
+shortcuts of the web profile, the reading menu, the reminder slots, the
+accounts of the security page, the steps of « Comment ça marche » and of
+« C'est prêt », the benefits of an account. These stay.
+
+So do what is a state or a command: the checkboxes and the radio marks of a
+choice, the download state of « Hors ligne », the check of a class already
+listened to, the waiting clock of a task of the day, the chips that state
+(« Complet », « Lu »), the back arrows, and the icon inside a pill that
+carries its name (see "A command placed in a text carries its name").
 
 ### One piece of information is said once
 
