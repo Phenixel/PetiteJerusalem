@@ -7,11 +7,13 @@
  * on, a touch turning it on or off (usePrayerQuiet, docs/design.md « A
  * tefila opens on the phone's quiet modes »).
  *
- * A few seconds later (or at the first touch), it grows by a row of three
- * choices: « À chaque tefila » ("Every tefila"), « Ne plus
- * proposer » ("Don't offer again") and « Fermer » ("Close"). A choice, a
- * tap on the lowered app, the app pushed back up with the finger, Escape or
- * Android back: the panel retracts upward as the app comes back up over it.
+ * A few seconds later (or at the first touch), it grows by a row of two
+ * choices: « À chaque tefila » ("Every tefila") and « Fermer » ("Close").
+ * « Fermer » first replaces the whole content by where these settings are
+ * found again, with « Ne plus afficher » ("Don't show again"); it retracts
+ * on its own a few seconds later. A choice, a tap on the lowered app, the
+ * app pushed back up with the finger, Escape or Android back: the panel
+ * retracts upward as the app comes back up over it.
  *
  * The panel's lower edge is glued to the app's upper edge: one translation,
  * the app's (`appDrop.offset`), moves both, the finger's included.
@@ -41,6 +43,8 @@ const route = useRoute();
 
 /** The time to look at the modes before the choices come. */
 const ACTIONS_DELAY_MS = 2000;
+/** The time to read where the settings are found again, before it retracts. */
+const FAREWELL_MS = 5000;
 
 // Keys written out, so that the i18n guard finds their reader.
 const MODES: { mode: QuietMode; icon: IconName; label: string }[] = [
@@ -70,14 +74,19 @@ const closing = ref(false);
 /** The panel has taken its place above the screen: it may move from now on. */
 const entered = ref(false);
 const showActions = ref(false);
+/** After « Fermer »: where to find the settings again, and « Ne plus afficher ». */
+const farewell = ref(false);
 /** The panel's height, read with the app's offset so that the two move together. */
 const height = ref(0);
 let returnFocus: HTMLElement | null = null;
 let closeTimer: number | undefined;
 let actionsTimer: number | undefined;
+let farewellTimer: number | undefined;
 let resizeObserver: ResizeObserver | null = null;
 
 const panelStyle = computed(() => ({
+  // The message takes the place of the modes without the panel jumping.
+  minHeight: farewell.value ? `${height.value}px` : undefined,
   transform: `translate3d(0, ${appDrop.offset - height.value}px, 0)`,
   transition:
     !entered.value || appDrop.dragging || prefersReducedMotion() ? "none" : DROP_TRANSITION,
@@ -104,9 +113,15 @@ function close(): void {
   );
 }
 
-function choose(action: "close" | "never" | "always"): void {
+function choose(action: "never" | "always"): void {
   choosePrayerQuiet(action);
   close();
+}
+
+/** « Fermer »: the modes stay for this prayer, and the panel says where they live. */
+function sayFarewell(): void {
+  farewell.value = true;
+  farewellTimer = window.setTimeout(close, FAREWELL_MS);
 }
 
 function onTile(mode: QuietMode, on: boolean): void {
@@ -152,13 +167,14 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   window.clearTimeout(closeTimer);
   window.clearTimeout(actionsTimer);
+  window.clearTimeout(farewellTimer);
   resizeObserver?.disconnect();
   document.removeEventListener("keydown", onKeydown);
   void releaseApp();
 });
 
 // The choices may make it grow: the app follows (the observer can be late).
-watch(showActions, () => void nextTick(lower));
+watch([showActions, farewell], () => void nextTick(lower));
 watch(
   () => prayerQuiet.hint,
   () => void nextTick(lower),
@@ -229,47 +245,53 @@ function onPointerCancel(event: PointerEvent): void {
     aria-modal="true"
     aria-labelledby="prayer-quiet-title"
     tabindex="-1"
+    :class="{ 'prayer-quiet-farewell': farewell }"
     :style="panelStyle"
   >
     <h2 id="prayer-quiet-title" class="sr-only">{{ t("prayerQuiet.title") }}</h2>
-    <div class="grid grid-cols-3 gap-2">
-      <button
-        v-for="tile in tiles"
-        :key="tile.mode"
-        type="button"
-        class="quiet-tile"
-        :class="{ 'quiet-tile-on': tile.on }"
-        :aria-pressed="tile.on"
-        @click="onTile(tile.mode, tile.on)"
-      >
-        <AppIcon :name="tile.icon" :size="18" />
-        <span class="text-xs font-semibold leading-tight">{{ t(tile.label) }}</span>
-        <span class="quiet-tile-state">
-          {{ tile.on ? t("prayerQuiet.on") : t("prayerQuiet.off") }}
-        </span>
+    <div v-if="farewell" class="quiet-farewell" role="status">
+      <p class="text-sm text-text-primary">{{ t("prayerQuiet.farewell") }}</p>
+      <button type="button" class="btn btn-soft quiet-action" @click="choose('never')">
+        {{ t("prayerQuiet.never") }}
       </button>
     </div>
-    <p v-if="prayerQuiet.hint" class="mt-2 text-xs text-text-secondary" role="status">
-      {{ t(HINTS[prayerQuiet.hint]) }}
-    </p>
-    <Transition name="quiet-actions">
-      <div v-if="showActions" class="mt-2 flex flex-wrap justify-center gap-1.5">
+    <template v-else>
+      <div class="grid grid-cols-3 gap-2">
         <button
+          v-for="tile in tiles"
+          :key="tile.mode"
           type="button"
-          class="btn btn-soft quiet-action"
-          :disabled="!anyOn"
-          @click="choose('always')"
+          class="quiet-tile"
+          :class="{ 'quiet-tile-on': tile.on }"
+          :aria-pressed="tile.on"
+          @click="onTile(tile.mode, tile.on)"
         >
-          {{ t("prayerQuiet.always") }}
-        </button>
-        <button type="button" class="btn btn-soft quiet-action" @click="choose('never')">
-          {{ t("prayerQuiet.never") }}
-        </button>
-        <button type="button" class="btn btn-primary quiet-action" @click="choose('close')">
-          {{ t("prayerQuiet.close") }}
+          <AppIcon :name="tile.icon" :size="18" />
+          <span class="text-xs font-semibold leading-tight">{{ t(tile.label) }}</span>
+          <span class="quiet-tile-state">
+            {{ tile.on ? t("prayerQuiet.on") : t("prayerQuiet.off") }}
+          </span>
         </button>
       </div>
-    </Transition>
+      <p v-if="prayerQuiet.hint" class="mt-2 text-xs text-text-secondary" role="status">
+        {{ t(HINTS[prayerQuiet.hint]) }}
+      </p>
+      <Transition name="quiet-actions">
+        <div v-if="showActions" class="mt-2 flex flex-wrap justify-center gap-1.5">
+          <button
+            type="button"
+            class="btn btn-soft quiet-action"
+            :disabled="!anyOn"
+            @click="choose('always')"
+          >
+            {{ t("prayerQuiet.always") }}
+          </button>
+          <button type="button" class="btn btn-primary quiet-action" @click="sayFarewell">
+            {{ t("prayerQuiet.close") }}
+          </button>
+        </div>
+      </Transition>
+    </template>
   </section>
   <!-- On the lowered app: it closes the panel, and the finger pushes it up. -->
   <Teleport to="#app-stage">
@@ -335,6 +357,26 @@ function onPointerCancel(event: PointerEvent): void {
   padding: 0.375rem 0.625rem;
   font-size: 0.8125rem;
 }
+.prayer-quiet-farewell {
+  display: flex;
+  flex-direction: column;
+}
+/* The message, in the room the modes held: centered, its button below. */
+.quiet-farewell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  gap: 0.5rem;
+  text-align: center;
+  animation: quiet-fade 0.2s ease;
+}
+@keyframes quiet-fade {
+  from {
+    opacity: 0;
+  }
+}
 .quiet-actions-enter-active {
   transition: opacity 0.2s ease;
 }
@@ -355,6 +397,9 @@ function onPointerCancel(event: PointerEvent): void {
   .quiet-tile,
   .quiet-actions-enter-active {
     transition: none;
+  }
+  .quiet-farewell {
+    animation: none;
   }
 }
 </style>

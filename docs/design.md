@@ -3731,10 +3731,16 @@ app down, as when the screen is split in two (`PrayerQuietPanel.vue`,
   in the reading sheet's curve and duration (0.36 s). The text shows first,
   then the panel comes (400 ms later): the motion answers the tap that
   opened the tefila. Two seconds later, or at the first touch of a tile, it
-  grows by a row of three choices, and the app goes down a little further:
-  « À chaque tefila » ("Every tefila"), « Ne plus proposer » ("Don't
-  offer again") and « Fermer » ("Close"). The modes are read before the
-  choices come.
+  grows by a row of two choices, and the app goes down a little further:
+  « À chaque tefila » ("Every tefila") and « Fermer » ("Close"). The modes
+  are read before the choices come.
+- **« Fermer » says where to find it again.** The whole content gives way,
+  in the same room, to one sentence: these settings are found again in
+  Profil, Préférences, « Avant une tefila » ("Profile, Preferences, Before a
+  tefila"); and one button, « Ne plus afficher » ("Don't show again"). The
+  panel retracts on its own five seconds later, or at once with that button
+  or a tap on the app. The way out of the panel is offered when it is being
+  closed, not alongside the modes, where it competed with them.
 - **It retracts upward.** A choice, a tap on the lowered app, the app pushed
   back up with the finger (it follows, and released past a third of the way
   or flicked, it goes up), Escape or Android back: the app comes back up
@@ -3748,12 +3754,12 @@ app down, as when the screen is split in two (`PrayerQuietPanel.vue`,
   Min'ha then Arvit is one prayer (no second panel). An app closed in the
   middle of a tefila sets the phone back at its next launch.
 - **The choices.** « Fermer » keeps the modes for this prayer. « Ne plus
-  proposer » stops the panel. « À chaque tefila » keeps the modes that are
+  afficher » stops the panel. « À chaque tefila » keeps the modes that are
   on and turns them on by themselves at every tefila, with a toast saying
   so, and still sets the phone back at the end; the panel comes instead if
   the phone refuses one (access withdrawn). With nothing on, it has nothing
-  to keep and is grayed out. All three are undone in Preferences, under
-  « Avant une tefila » ("Before a tefila"), the reading settings.
+  to keep and is grayed out. Both are undone in Preferences, under « Avant
+  une tefila » ("Before a tefila"), the reading settings.
 - **Silent and vibrate are one ringer**: turning one on replaces the other,
   turning it off goes back to the normal ringer. Do Not Disturb is turned on
   in "priority only", so the user's own exceptions (alarms, favorite

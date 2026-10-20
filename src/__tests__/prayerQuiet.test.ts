@@ -17,7 +17,7 @@ import fr from "../locales/fr";
  *    phone goes back to how it was, except what the user changed again
  *    themselves; Min'ha then Arvit is one prayer; an app closed in the
  *    middle sets the phone back at the next launch;
- *  - « Ne plus proposer » stops the panel, « À chaque tefila » applies
+ *  - « Ne plus afficher » stops the panel, « À chaque tefila » applies
  *    the modes on to the next ones without asking;
  *  - a change refused for lack of access opens the system list, and is made
  *    on return once the access is granted;
@@ -311,7 +311,7 @@ describe("the panel's choices", () => {
     expect(prayerQuiet.open).toBe(true);
   });
 
-  it("« Ne plus proposer » stops the panel, and still sets this prayer back", async () => {
+  it("« Ne plus afficher » stops the panel, and still sets this prayer back", async () => {
     await enterPrayer();
     await toggleQuietMode("vibrate", true);
     choosePrayerQuiet("never");
@@ -373,6 +373,12 @@ describe("the panel, from the top of the screen", () => {
     Object.defineProperty(HTMLElement.prototype, "offsetHeight", offsetHeight);
   });
 
+  function button(panel: HTMLElement, label: string): HTMLButtonElement {
+    const found = [...panel.querySelectorAll("button")].find((b) => b.textContent?.includes(label));
+    expect(found, `button « ${label} »`).toBeDefined();
+    return found!;
+  }
+
   function mountPanel(): { unmount: () => void; panel: HTMLElement } {
     const stage = document.createElement("div");
     stage.id = "app-stage";
@@ -415,15 +421,21 @@ describe("the panel, from the top of the screen", () => {
     panelHeight = 140;
     await vi.advanceTimersByTimeAsync(2000);
     expect(panel.textContent).toContain("Fermer");
-    expect(panel.textContent).toContain("Ne plus proposer");
     expect(panel.textContent).toContain("À chaque tefila");
     expect(appDrop.offset).toBe(140);
 
-    const close = [...panel.querySelectorAll("button")].find((b) =>
-      b.textContent?.includes("Fermer"),
-    );
-    close!.click();
+    // « Fermer »: the content gives way to where the settings live, in the
+    // same room, and the panel retracts on its own a few seconds later.
+    button(panel, "Fermer").click();
     await nextTick();
+    expect(panel.querySelector(".quiet-tile")).toBeNull();
+    expect(panel.textContent).toContain("Profil, Préférences");
+    expect(panel.textContent).toContain("Ne plus afficher");
+    expect(panel.style.minHeight).toBe("140px");
+    expect(appDrop.offset).toBe(140);
+    await vi.advanceTimersByTimeAsync(4900);
+    expect(appDrop.offset).toBe(140);
+    await vi.advanceTimersByTimeAsync(100);
     // Retracting: the app comes back up, the panel goes up above the screen.
     expect(appDrop.offset).toBe(0);
     expect(panel.style.transform).toBe("translate3d(0, -140px, 0)");
@@ -434,6 +446,22 @@ describe("the panel, from the top of the screen", () => {
 
     unmount();
     scrollTo.mockRestore();
+  });
+
+  it("« Ne plus afficher », after « Fermer », stops the panel the next times", async () => {
+    await enterPrayer();
+    const { unmount, panel } = mountPanel();
+    await vi.advanceTimersByTimeAsync(2000);
+    button(panel, "Fermer").click();
+    await nextTick();
+    expect(prayerQuietChoice.value.mode).toBe("offer");
+    button(panel, "Ne plus afficher").click();
+    await nextTick();
+    expect(prayerQuietChoice.value.mode).toBe("never");
+    expect(appDrop.offset).toBe(0);
+    await vi.runAllTimersAsync();
+    expect(prayerQuiet.open).toBe(false);
+    unmount();
   });
 
   it("a touch on a tile turns its mode off as well as on", async () => {

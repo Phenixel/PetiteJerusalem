@@ -328,13 +328,12 @@ export async function settleLeftoverPrayer(): Promise<void> {
 }
 
 /**
- * The panel's choice, before it closes: « Fermer » ("Close") keeps the
- * modes for this prayer; « Ne plus proposer » ("Don't offer again") stops
- * offering the panel; « À chaque tefila » ("Every tefila") applies
- * the modes that are on to the next ones. Each time, the phone is set back
- * once this tefila is left.
+ * The panel's choices, before it closes: « Ne plus afficher » ("Don't show
+ * again", offered once « Fermer » is touched) stops offering the panel;
+ * « À chaque tefila » ("Every tefila") applies the modes that are on to the
+ * next ones. Each time, the phone is set back once this tefila is left.
  */
-export function choosePrayerQuiet(action: "close" | "never" | "always"): void {
+export function choosePrayerQuiet(action: "never" | "always"): void {
   if (action === "never") setPrayerQuietChoice({ mode: "never", wish: choice.value.wish });
   if (action === "always" && prayerQuiet.state) {
     const { dnd, ringer } = prayerQuiet.state;
