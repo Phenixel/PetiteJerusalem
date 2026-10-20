@@ -222,7 +222,25 @@ type ChiourPreview = {
   /** L'URL de l'audio et sa durée (secondes), pour les données structurées. */
   mediaUrl?: string | null;
   duration?: number | null;
+  /** La série du cours : son titre ne la répète pas, l'aperçu la dit. */
+  serieId?: string | null;
 };
+
+/**
+ * Le titre d'un cours suivi de sa série, sauf s'il la contient déjà :
+ * « Chapitre 3 (2/7) · Shaar Habitahon ». Recopie de `titleWithSerie`
+ * (src/composables/useChiourPlayback.ts), pour que l'aperçu d'un lien partagé
+ * dise ce que dit l'onglet de la page.
+ */
+function titleWithSerie(title: string, serieName: string | null | undefined): string {
+  const fold = (value: string) =>
+    value
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase();
+  if (!serieName || fold(title).includes(fold(serieName))) return title;
+  return `${title} · ${serieName}`;
+}
 
 let chiourimCache: { data: ChiourPreview[]; ts: number } | null = null;
 const CHIOURIM_TTL = 10 * 60 * 1000;
@@ -250,6 +268,7 @@ async function getChiourim(): Promise<ChiourPreview[]> {
         auteur: (x.auteur as string | null) ?? null,
         mediaUrl: (x.mediaUrl as string | null) ?? null,
         duration: (x.duration as number | null) ?? null,
+        serieId: (x.serieId as string | null) ?? null,
       };
     });
   chiourimCache = { data, ts: Date.now() };
@@ -344,12 +363,22 @@ async function resolveChiourMeta(slug: string): Promise<Meta | null> {
       auteur: (directData.auteur as string | null) ?? null,
       mediaUrl: (directData.mediaUrl as string | null) ?? null,
       duration: (directData.duration as number | null) ?? null,
+      serieId: (directData.serieId as string | null) ?? null,
     };
   } else {
     const chiourim = await getChiourim();
     found = chiourim.find((c) => chiourSlug(c.name) === slug) ?? null;
   }
   if (!found) return null;
+
+  const serie = found.serieId
+    ? await db
+        .collection("series")
+        .doc(found.serieId)
+        .get()
+        .catch(() => null)
+    : null;
+  const name = titleWithSerie(found.name, serie?.data()?.name as string | undefined);
 
   const description = found.description
     ? clamp(found.description)
@@ -363,7 +392,7 @@ async function resolveChiourMeta(slug: string): Promise<Meta | null> {
   const audio: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "AudioObject",
-    name: found.name,
+    name,
     description,
     url,
     inLanguage: "fr",
@@ -375,7 +404,7 @@ async function resolveChiourMeta(slug: string): Promise<Meta | null> {
   if (found.duration) audio.duration = isoDuration(found.duration);
 
   return {
-    title: `${found.name}${author} | Chiour | Petite Jérusalem`,
+    title: `${name}${author} | Chiour | Petite Jérusalem`,
     description,
     url,
     type: "article",
@@ -383,7 +412,7 @@ async function resolveChiourMeta(slug: string): Promise<Meta | null> {
       breadcrumb([
         { name: "Accueil", path: "/" },
         { name: "Chiourim", path: "/chiourim" },
-        { name: found.name, path: `/chiourim/${slug}` },
+        { name, path: `/chiourim/${slug}` },
       ]),
       audio,
     ],

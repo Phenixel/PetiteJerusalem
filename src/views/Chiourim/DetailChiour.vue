@@ -6,7 +6,11 @@ import { chiourService } from "../../services/chiourService";
 import { analyticsService } from "../../services/analyticsService";
 import { serieService, type Serie } from "../../services/serieService";
 import { useViewedChiourim } from "../../composables/useViewedChiourim";
-import { chiourCover, useChiourPlayback } from "../../composables/useChiourPlayback";
+import {
+  chiourCover,
+  titleWithSerie,
+  useChiourPlayback,
+} from "../../composables/useChiourPlayback";
 import { formatMinutes } from "../../components/chiourim/duration";
 import { listeningOf, progressOf, resumePosition } from "../../services/listeningProgress";
 import { useTexteLabels } from "../../composables/useTexteLabels";
@@ -78,6 +82,11 @@ watch(
 );
 
 const cover = computed(() => (chiour.value ? chiourCover(chiour.value) : null));
+
+/** Le titre hors de la page, pour l'onglet et le partage : avec sa série. */
+const fullTitle = computed(() =>
+  chiour.value ? titleWithSerie(chiour.value.name, serie.value?.name) : "",
+);
 
 const current = computed(() => !!chiour.value && isCurrent(chiour.value.slug));
 const playing = computed(() => current.value && player.isPlaying.value);
@@ -213,13 +222,21 @@ function applyFound(found: Chiour): void {
     serieService
       .getSerie(found.serieId)
       .then((s) => {
-        // Le visiteur a pu naviguer vers un autre chiour entre-temps.
-        if (chiour.value?.serieId === s?.id) serie.value = s;
+        // Le visiteur a pu naviguer vers un autre chiour entre-temps : le
+        // titre de la page reste celui du chiour affiché.
+        if (!chiour.value || chiour.value.serieId !== s?.id) return;
+        serie.value = s;
+        setChiourMeta(chiour.value, s?.name);
       })
       .catch(() => {});
   }
+  const known = serieService.peekSeries()?.find((s) => s.id === found.serieId);
+  setChiourMeta(found, known?.name);
+}
+
+function setChiourMeta(found: Chiour, serieName: string | null | undefined): void {
   seoService.setMeta({
-    title: `${found.name} | Petite Jerusalem`,
+    title: `${titleWithSerie(found.name, serieName)} | Petite Jerusalem`,
     description: found.description || t("seo.chiourimDescription"),
     canonical: SITE_URL + `/chiourim/${found.slug}`,
   });
@@ -477,7 +494,7 @@ watch(() => route.params.slug, loadChiour);
     <ShareModal
       v-if="chiour"
       v-model:show="showShareModal"
-      :session-name="chiour.name"
+      :session-name="fullTitle"
       :share-url="shareUrl"
       title-key="shareModal.titleChiour"
       message-key="shareModal.inviteChiour"

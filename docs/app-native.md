@@ -656,8 +656,10 @@ system wants an image.
 
 Two limitations, specific to the plugin: the notification channel is called
 « Playback » in Android's settings, and the notification text is
-« artiste - album » ("artist - album", here « le rav · la série - Petite
-Jérusalem », "the rav · the series - Petite Jérusalem").
+« artiste - album » ("artist - album", here « le rav - la série », "the rav -
+the series", or « le rav - Petite Jérusalem » for a class outside any series).
+The series is the album, not part of the title: a class's title no longer
+repeats it (« Chapitre 3 (2/7) »).
 
 To check on a device before every release that touches the player: start a
 class, lock the screen, control it from the notification (or the lock

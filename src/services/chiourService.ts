@@ -4,6 +4,7 @@ import type { Chiour } from "../models/models";
 import { chiourFirestoreRepository } from "../repositories/chiourFirestoreRepository";
 import { cached } from "./cached";
 import { searchItems } from "./fuzzySearch";
+import { serieService, type Serie } from "./serieService";
 
 function generateChiourSlug(name: string): string {
   return name
@@ -132,13 +133,22 @@ class ChiourService {
   }
 
   /**
-   * Par titre, rav, catégorie ou description, graphies et fautes de frappe
-   * comprises (voir fuzzySearch), du plus pertinent au moins pertinent.
+   * Par titre, rav, série, catégorie ou description, graphies et fautes de
+   * frappe comprises (voir fuzzySearch), du plus pertinent au moins
+   * pertinent. La série compte : un titre ne la répète pas (« Chapitre 3
+   * (2/7) »), et « Pélé Yoets » doit trouver tous ses épisodes. Les séries
+   * déjà lues suffisent ; avant leur arrivée, on cherche sans elles.
    */
-  filterBySearch(chiourim: Chiour[], searchTerm: string): Chiour[] {
+  filterBySearch(
+    chiourim: Chiour[],
+    searchTerm: string,
+    series: Serie[] | null = serieService.peekSeries(),
+  ): Chiour[] {
+    const serieNames = new Map((series ?? []).map((s) => [s.id, s.name]));
     return searchItems(chiourim, searchTerm, (c) => [
       c.name,
       c.auteur,
+      c.serieId ? serieNames.get(c.serieId) : null,
       ...c.categories,
       { text: c.description, long: true },
     ]);
