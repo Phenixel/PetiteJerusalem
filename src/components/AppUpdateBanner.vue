@@ -19,7 +19,6 @@ const { t } = useI18n();
     <div v-if="updateAvailable" class="px-4 pt-4">
       <div class="mx-auto max-w-2xl card p-4" role="status" aria-live="polite">
         <div class="flex items-start gap-3">
-          <AppIcon name="download" :size="18" class="mt-0.5 shrink-0 text-primary" />
           <div class="min-w-0 flex-1">
             <p class="font-semibold text-text-primary">{{ t("appUpdate.title") }}</p>
             <!-- Sans numéro de version : sur Android, l'API In-App Updates ne

@@ -12,6 +12,8 @@
 // semaine, et le cadre marque cette différence de nature.
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
+import CardArt from "../../components/CardArt.vue";
+import { useNow } from "../../composables/useNow";
 import { hubPath } from "../../content/etudeTexts";
 import type { WeeklyParasha } from "../../services/dailyCycles";
 import {
@@ -25,7 +27,6 @@ import {
   describeLightingRule,
   describeRabbenouTamRule,
 } from "../../services/zmanimRules";
-import AppIcon from "../../components/icons/AppIcon.vue";
 
 const props = defineProps<{
   period: RestPeriod;
@@ -38,6 +39,18 @@ const props = defineProps<{
 }>();
 
 const { t, locale } = useI18n();
+const now = useNow();
+
+/**
+ * The object of the card is what comes next: the lit candles until the
+ * entrance, the havdala once the rest has begun (see docs/design.md, "The
+ * frames of the times page carry their object").
+ */
+const art = computed(() =>
+  now.value.getTime() < props.period.start.getTime()
+    ? ({ kind: "candles" } as const)
+    : ({ kind: "havdala" } as const),
+);
 
 const clock = (date: Date) => formatZmanTime(date, props.tzid, locale.value);
 const dayOf = (date: Date) => formatZmanDay(date, props.tzid, locale.value);
@@ -72,9 +85,7 @@ const exitRule = computed(() =>
   t("zmanim.rest.exit", { rule: describeEndRule(props.period.endRule, t, locale.value) }),
 );
 
-const rabbenouTamNote = computed(() =>
-  describeRabbenouTamRule(props.period.rabbenouTamRule, t),
-);
+const rabbenouTamNote = computed(() => describeRabbenouTamRule(props.period.rabbenouTamRule, t));
 
 /**
  * Les allumages des soirs suivants, entre l'entrée et la sortie.
@@ -101,13 +112,14 @@ const eruvNote = computed(() =>
 </script>
 
 <template>
-  <section class="card p-5">
+  <section class="card relative p-5">
+    <CardArt :art="art" :scale="0.5" surface="plain" />
     <!-- Le titre porte le nom de la paracha : c'est l'identité de ce Chabbat-là.
          Tout tient dans un seul flux de texte, sans boîte intermédiaire : une
          icône enfermée dans son propre conteneur imposerait sa ligne de base au
          titre, et « Parachat » ne s'alignerait plus sur « Chabbat ». -->
-    <h2 class="mb-3 font-bold text-text-primary">
-      <AppIcon name="candle" :size="17" class="me-2 text-primary" />{{ title
+    <h2 class="relative mb-3 pe-16 font-bold text-text-primary">
+      {{ title
       }}<span v-if="parasha" class="text-sm font-normal"
         >{{ " " }}<span class="text-text-secondary">{{ t("zmanim.shabbat.parasha") }}</span
         ><template v-for="(entry, index) in parasha.entries" :key="entry.id"
@@ -119,7 +131,7 @@ const eruvNote = computed(() =>
       >
     </h2>
 
-    <ul class="flex flex-col divide-y divide-line">
+    <ul class="relative flex flex-col divide-y divide-line">
       <li class="flex items-center justify-between gap-4 py-2">
         <span class="min-w-0">
           <span class="block font-medium leading-snug text-text-primary">
@@ -192,7 +204,7 @@ const eruvNote = computed(() =>
       </li>
     </ul>
 
-    <p class="mt-2.5 text-xs text-text-secondary">
+    <p class="relative mt-2.5 text-xs text-text-secondary">
       {{
         isFestival
           ? t("zmanim.rest.note", { minutes: candleMinutes, exit: exitRule })

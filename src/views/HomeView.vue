@@ -109,7 +109,6 @@ const homeTip = computed<TourStep[]>(() => {
   const steps: TourStep[] = [
     {
       key: "settings",
-      icon: "settings",
       title: t("tips.home.settings.title"),
       text: t("tips.home.settings.text"),
       target: () => document.querySelector<HTMLElement>('nav a[href^="/profile"]'),
@@ -122,7 +121,6 @@ const homeTip = computed<TourStep[]>(() => {
       homeRoot.value?.querySelector<HTMLElement>('a[href="/login?mode=signup"]') ?? null;
     steps.push({
       key: "account",
-      icon: "user",
       title: t("tips.home.account.title"),
       text: t("tips.home.account.text"),
       target: signup() ? signup : undefined,

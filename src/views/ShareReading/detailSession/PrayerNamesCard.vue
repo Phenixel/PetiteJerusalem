@@ -4,7 +4,6 @@ import { useI18n } from "vue-i18n";
 import type { PrayerName, PrayerNameKind } from "../../../models/models";
 import { formatPrayerName } from "../../../services/perpetualChain";
 import AppIcon from "../../../components/icons/AppIcon.vue";
-import type { IconName } from "../../../components/icons/registry";
 
 /**
  * Pour qui la chaîne perpétuelle lit : les noms, rangés en deux groupes (le
@@ -36,20 +35,19 @@ const { t } = useI18n();
 /** Au-delà, le groupe se déplie : la page se lit d'abord, la liste ensuite. */
 const FOLDED_COUNT = 8;
 
-const GROUPS: { kind: PrayerNameKind; icon: IconName; labelKey: string }[] = [
-  { kind: "refoua", icon: "heart", labelKey: "perpetual.names.refoua" },
-  { kind: "leilouy", icon: "candle", labelKey: "perpetual.names.leilouy" },
+const GROUPS: { kind: PrayerNameKind; labelKey: string }[] = [
+  { kind: "refoua", labelKey: "perpetual.names.refoua" },
+  { kind: "leilouy", labelKey: "perpetual.names.leilouy" },
 ];
 
 const expanded = ref<Set<PrayerNameKind>>(new Set());
 
 const groups = computed(() =>
-  GROUPS.map(({ kind, icon, labelKey }) => {
+  GROUPS.map(({ kind, labelKey }) => {
     const names = props.listed.filter((name) => name.kind === kind);
     const open = expanded.value.has(kind);
     return {
       kind,
-      icon,
       labelKey,
       count: names.length,
       shown: open ? names : names.slice(0, FOLDED_COUNT),
@@ -105,7 +103,6 @@ function toggle(kind: PrayerNameKind): void {
       :class="index > 0 ? 'pt-4 border-t border-line' : ''"
     >
       <h3 class="flex items-center gap-2 text-sm font-semibold text-text-secondary">
-        <AppIcon :name="group.icon" :size="16" class="text-primary" />
         {{ t(group.labelKey) }}
         <span class="font-medium">{{ group.count }}</span>
       </h3>

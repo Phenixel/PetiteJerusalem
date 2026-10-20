@@ -120,7 +120,6 @@ const save = async () => {
       v-if="successMessage"
       class="mb-6 flex items-center gap-2 font-medium text-green-700 dark:text-green-300"
     >
-      <AppIcon name="circle-check" :size="16" />
       {{ successMessage }}
     </p>
 
@@ -128,7 +127,6 @@ const save = async () => {
       v-if="errorMessage"
       class="mb-6 flex items-center gap-2 font-medium text-red-700 dark:text-red-300"
     >
-      <AppIcon name="alert-circle" :size="16" />
       {{ errorMessage }}
     </p>
 

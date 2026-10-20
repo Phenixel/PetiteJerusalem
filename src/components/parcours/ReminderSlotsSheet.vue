@@ -257,7 +257,6 @@ async function save(): Promise<void> {
         v-if="blocked"
         class="mt-3 flex items-start gap-2 text-sm text-amber-600 dark:text-amber-400"
       >
-        <AppIcon name="alert-triangle" :size="15" class="mt-0.5 shrink-0" />
         {{ t("notifications.permissionDenied") }}
       </p>
 

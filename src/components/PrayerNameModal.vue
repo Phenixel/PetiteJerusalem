@@ -490,11 +490,6 @@ const segmentClass = (active: boolean) =>
           class="flex items-center gap-2 font-semibold"
           :class="isComplete ? 'text-text-primary' : 'text-text-secondary/70'"
         >
-          <AppIcon
-            :name="kind === 'leilouy' ? 'candle' : 'heart'"
-            :size="16"
-            class="text-primary"
-          />
           {{ previewName }}
         </span>
       </div>

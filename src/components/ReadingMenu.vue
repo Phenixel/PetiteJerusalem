@@ -463,7 +463,6 @@ const menuTip = computed<TourStep[]>(() => {
     return [
       {
         key: "settings",
-        icon: "settings",
         title: t("tips.reading.settingsAlone.title"),
         text: t("tips.reading.settingsAlone.text"),
         target: () => settingsOnlyButton.value,
@@ -474,7 +473,6 @@ const menuTip = computed<TourStep[]>(() => {
   const steps: TourStep[] = [
     {
       key: "menu",
-      icon: "list",
       title: t("tips.reading.menu.title"),
       text: t("tips.reading.menu.text"),
       target: () => menuButton.value,
@@ -484,7 +482,6 @@ const menuTip = computed<TourStep[]>(() => {
   if (props.downloadState !== "none") {
     steps.push({
       key: "download",
-      icon: "download",
       title: t("tips.reading.download.title"),
       text: t("tips.reading.download.text"),
       target: () => downloadButton.value,
@@ -493,7 +490,6 @@ const menuTip = computed<TourStep[]>(() => {
   }
   steps.push({
     key: "settings",
-    icon: "settings",
     title: t("tips.reading.settings.title"),
     text: t("tips.reading.settings.text"),
     target: () => settingsButton.value,

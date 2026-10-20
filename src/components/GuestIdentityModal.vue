@@ -177,7 +177,6 @@ const submit = () => {
               v-if="error"
               class="text-sm text-red-600 dark:text-red-400 flex items-center gap-1.5"
             >
-              <AppIcon name="alert-circle" :size="14" />
               {{ error }}
             </p>
 

@@ -105,12 +105,6 @@ const subtitle = computed(() =>
 
     <!-- Déjà lue : une ligne -->
     <span v-else class="flex items-center gap-3">
-      <AppIcon
-        :name="openIncident ? 'alert-triangle' : openPoll ? 'list' : 'bell'"
-        :size="20"
-        class="shrink-0"
-        :class="openIncident ? 'text-amber-600 dark:text-amber-400' : 'text-primary'"
-      />
       <span class="min-w-0">
         <span
           class="block font-medium leading-snug text-text-primary"

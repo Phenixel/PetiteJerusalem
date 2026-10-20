@@ -682,12 +682,6 @@ watch(
           "
           aria-live="polite"
         >
-          <AppIcon
-            v-if="live && justCalibrated"
-            name="circle-check"
-            :size="16"
-            class="inline-block align-[-3px] me-1"
-          />
           {{ statusText }}
         </p>
         <p class="mt-1 text-center text-sm text-text-secondary tabular-nums">
@@ -745,7 +739,6 @@ watch(
         class="mt-5 pt-3 border-t border-line flex flex-wrap items-center justify-between gap-2 text-sm"
       >
         <span class="flex items-center gap-1.5 min-w-0">
-          <AppIcon name="map-pin" :size="14" class="text-primary shrink-0" />
           <span class="truncate text-text-secondary">{{ placeLabel }}</span>
         </span>
         <button

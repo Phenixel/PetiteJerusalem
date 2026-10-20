@@ -486,7 +486,6 @@ onUnmounted(() => {
     </div>
 
     <p v-else-if="notDownloaded" class="py-2 text-sm text-text-secondary flex items-center gap-1.5">
-      <AppIcon name="download" :size="14" class="text-text-secondary/60" />
       {{ t("dailyReading.offline.notDownloaded") }}
     </p>
 
@@ -494,7 +493,6 @@ onUnmounted(() => {
       v-else-if="missing || error"
       class="py-2 text-sm text-text-secondary flex items-center gap-1.5"
     >
-      <AppIcon name="alert-triangle" :size="14" class="text-amber-500" />
       {{ t("dailyReading.loadError") }}
       <button @click="load" class="ml-2 text-primary hover:underline">
         {{ t("textReading.retry") }}
@@ -505,7 +503,6 @@ onUnmounted(() => {
       <!-- Marque-pages posés dans cette lecture : retour direct au verset -->
       <div v-if="bookmarks.length" class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
         <span class="inline-flex items-center gap-1.5 text-text-secondary">
-          <AppIcon name="bookmark" :size="13" class="text-primary" />
           {{ t("textReading.bookmarks") }}
         </span>
         <button
@@ -526,7 +523,6 @@ onUnmounted(() => {
         v-if="withRashi && rashiFailed"
         class="text-sm text-text-secondary flex items-center gap-1.5"
       >
-        <AppIcon name="alert-triangle" :size="14" class="text-amber-500" />
         {{ t("chneiMikra.rashiUnavailable") }}
       </p>
 

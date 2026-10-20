@@ -343,11 +343,6 @@ const formatDate = (date: Date | undefined) => (date ? DateService.formatDate(da
             :key="report.id"
             class="flex items-start gap-3 text-sm"
           >
-            <AppIcon
-              name="flag"
-              :size="13"
-              class="mt-0.5 shrink-0 text-red-600 dark:text-red-400"
-            />
             <div class="min-w-0 flex-1">
               <p class="font-medium text-text-primary">
                 {{ t(`moderation.reasons.${report.reason}`) }}

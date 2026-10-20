@@ -474,7 +474,6 @@ const goBack = () => {
             v-if="showPerpetualHint"
             class="mt-2.5 flex items-start gap-2 text-xs leading-relaxed text-text-secondary animate-[fadeIn_0.3s_ease]"
           >
-            <AppIcon name="rotate" :size="13" class="mt-0.5 shrink-0 text-primary" />
             <span>
               {{ t("perpetual.creation.text") }}
               <RouterLink
@@ -537,7 +536,6 @@ const goBack = () => {
             v-if="selectedBooks.length === 0"
             class="text-xs text-red-600 mt-1.5 flex items-center gap-1 dark:text-red-400"
           >
-            <AppIcon name="alert-triangle" :size="13" />
             {{ t("newSession.selectAtLeastOne") }}
           </p>
         </div>
@@ -633,7 +631,6 @@ const goBack = () => {
       class="mt-6 flex items-center justify-center gap-2 text-center font-medium text-red-600 animate-[fadeIn_0.3s_ease] dark:text-red-400"
       role="alert"
     >
-      <AppIcon name="alert-circle" :size="15" />
       {{ message }}
     </div>
 

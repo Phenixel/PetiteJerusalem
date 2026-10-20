@@ -308,7 +308,6 @@ onUnmounted(() => {
         <aside class="lg:order-2">
           <div class="card p-5 lg:sticky lg:top-24">
             <div v-if="allDone" class="flex items-start gap-3">
-              <AppIcon name="circle-check" :size="20" class="mt-0.5 shrink-0 text-primary" />
               <p class="font-semibold">{{ t("sessionReading.allDone") }}</p>
             </div>
             <template v-else>

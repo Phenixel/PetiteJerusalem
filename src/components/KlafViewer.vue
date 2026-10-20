@@ -1,314 +1,265 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import AppIcon from "./icons/AppIcon.vue";
 import AppModal from "./AppModal.vue";
-import { KETORET_KLAF, KLAF_PHOTOS, MENORA_KLAF, MENORA_STEM } from "../content/klaf";
+import { KLAF_PHOTOS } from "../content/klaf";
 import { closeKlaf, klafOpen, KLAF_LABELS } from "../composables/useKlaf";
+import { usePinchZoom } from "../composables/usePinchZoom";
 
 /**
- * Le parchemin, ouvert depuis le paragraphe du sidour qui le porte : la
- * photo du klaf d'abord, telle qu'un sofer l'a écrit, puis, sur un second
- * onglet, sa retranscription dans la police hébraïque du lecteur.
+ * The parchment, opened from the paragraph of the sidour that carries it:
+ * its photo alone, edge to edge, in a window that takes the photo's shape.
+ * No title, no tabs, no caption: the photo is what you came to see, and the
+ * vocalized text is already in the flow of the service.
  *
- * La photo se lit de près : un toucher l'agrandit au double, et l'on fait
- * défiler ; un second toucher la ramène à la largeur de la fenêtre. La
- * retranscription est écrite dans l'écriture du sofer (police Stam Sefarad
- * CLM, ktav Sefaradi avec taguim) : le même rendu que le klaf, mais du texte,
- * qui suit la taille de lecture. Celle du pitoum haketoret suit les blancs du
- * parchemin ; celle du Lamnatséa'h reprend sa forme, sept branches et un
- * pied, en traits pleins : c'est une écriture, pas une illustration.
+ * It reads up close the way a photo does: two fingers pinch it open, one
+ * finger moves through it, a double tap enlarges where it lands (see
+ * usePinchZoom). The pitoum haketoret has two pages: a swipe or the arrows
+ * under the photo turn them. The cross, above it, closes it, like a touch on
+ * the veil. Neither sits on the photo: they would hide the writing.
  */
 const { t } = useI18n();
-
-type View = "photo" | "text";
-
-/** Les deux onglets, avec leurs clés en clair pour le test des clés. */
-const VIEWS: { id: View; labelKey: string }[] = [
-  { id: "photo", labelKey: "textReading.klaf.photo" },
-  { id: "text", labelKey: "textReading.klaf.text" },
-];
-
-const view = ref<View>("photo");
-const zoomed = ref(false);
-const photosEl = ref<HTMLElement | null>(null);
-
-/**
- * Agrandie, la photo déborde à droite et à gauche : on la fait commencer par
- * son bord droit, là où les lignes d'hébreu commencent, plutôt qu'au milieu
- * d'une ligne.
- */
-async function toggleZoom(): Promise<void> {
-  zoomed.value = !zoomed.value;
-  await nextTick();
-  if (zoomed.value && photosEl.value) photosEl.value.scrollLeft = photosEl.value.scrollWidth;
-}
-
-// Chaque ouverture repart de la photo, à la largeur de la fenêtre : c'est
-// elle qu'on vient voir, et ce qu'on avait agrandi la dernière fois ne dit
-// rien de ce qu'on cherche aujourd'hui.
-watch(klafOpen, (kind) => {
-  if (kind) {
-    view.value = "photo";
-    zoomed.value = false;
-  }
-});
 
 const kind = computed(() => klafOpen.value);
 const photos = computed(() => (kind.value ? KLAF_PHOTOS[kind.value] : []));
 const title = computed(() => (kind.value ? t(KLAF_LABELS[kind.value].title) : ""));
+
+const page = ref(0);
+const photo = computed(() => photos.value[page.value] ?? null);
+
+const stage = ref<HTMLElement | null>(null);
+const { view, gesturing, reset, handlers } = usePinchZoom(stage, (direction) => {
+  // The finger pushes the page away: toward the line start for the next
+  // one, which is the left in French and the right in Hebrew.
+  const rtl = stage.value ? getComputedStyle(stage.value).direction === "rtl" : false;
+  turn(direction === (rtl ? 1 : -1) ? 1 : -1);
+});
+
+function turn(step: number): void {
+  const next = page.value + step;
+  if (next < 0 || next >= photos.value.length) return;
+  page.value = next;
+  reset();
+}
+
+// Each opening starts from the first page, unzoomed: what was enlarged last
+// time says nothing about what you are looking for today.
+watch(klafOpen, (open) => {
+  if (open) {
+    page.value = 0;
+    reset();
+  }
+});
+
+const transform = computed(
+  () => `translate(${view.value.x}px, ${view.value.y}px) scale(${view.value.scale})`,
+);
 </script>
 
 <template>
   <AppModal
     :open="kind !== null"
     :label="title"
+    overlay-class="modal-overlay klaf-overlay"
     panel-class="klaf-panel animate-[scaleIn_0.3s_ease]"
     @close="closeKlaf"
   >
-    <div class="klaf-head">
-      <h3 class="text-lg font-bold text-text-primary">{{ title }}</h3>
-      <button type="button" class="icon-btn" :aria-label="t('common.close')" @click="closeKlaf">
+    <!-- Above the photo, at its end corner: the cross. The rest of the row
+         is still the veil, and closes like it. -->
+    <div class="klaf-bar" @click.self="closeKlaf">
+      <button
+        type="button"
+        class="klaf-control klaf-close"
+        :aria-label="t('common.close')"
+        @click="closeKlaf"
+      >
         <AppIcon name="x" :size="18" />
       </button>
     </div>
 
-    <!-- Photo ou texte : un groupe segmenté, comme les onglets des pages. -->
-    <div class="klaf-tabs">
-      <div
-        class="inline-flex p-0.5 rounded-btn bg-black/5 dark:bg-white/10"
-        role="group"
-        :aria-label="t('textReading.klaf.views')"
-      >
-        <button
-          v-for="tab in VIEWS"
-          :key="tab.id"
-          type="button"
-          class="rounded-segment px-5 py-1.5 text-sm font-semibold transition-colors"
-          :class="view === tab.id ? 'bg-surface text-primary shadow-sm' : 'text-text-secondary'"
-          :aria-pressed="view === tab.id"
-          @click="view = tab.id"
-        >
-          {{ t(tab.labelKey) }}
-        </button>
-      </div>
+    <div
+      v-if="photo"
+      ref="stage"
+      class="klaf-stage"
+      :style="{
+        '--klaf-ratio': `${photo.width} / ${photo.height}`,
+        '--klaf-chrome': photos.length > 1 ? '6.5rem' : '3.25rem',
+      }"
+      v-on="handlers"
+    >
+      <img
+        :key="photo.src"
+        :src="photo.src"
+        :width="photo.width"
+        :height="photo.height"
+        :alt="t('textReading.klaf.photoAlt', { title, n: page + 1 })"
+        class="klaf-photo"
+        :class="{ 'klaf-following': gesturing }"
+        :style="{ transform }"
+        decoding="async"
+        draggable="false"
+      />
     </div>
 
-    <div class="klaf-body">
-      <!-- Le parchemin lui-même, page après page. -->
-      <div
-        v-if="view === 'photo'"
-        ref="photosEl"
-        class="klaf-photos"
-        :class="{ 'klaf-zoomed': zoomed }"
-      >
-        <img
-          v-for="(src, i) in photos"
-          :key="src"
-          :src="src"
-          :alt="t('textReading.klaf.photoAlt', { title, n: i + 1 })"
-          decoding="async"
-          @click="toggleZoom"
-        />
-        <p class="klaf-hint">
-          {{ t(zoomed ? "textReading.klaf.zoomOut" : "textReading.klaf.zoomIn") }}
-        </p>
-      </div>
-
-      <!-- La retranscription : les blancs du parchemin, sans ses voyelles. -->
-      <div v-else-if="kind === 'ketoret'" class="klaf-text" dir="rtl">
-        <p v-for="(paragraph, i) in KETORET_KLAF" :key="i">{{ paragraph }}</p>
-        <p class="klaf-hint" dir="auto">{{ t("textReading.klaf.transcribed") }}</p>
-      </div>
-
-      <!-- Le psaume en menora : le titre en tête, sept branches lues de haut
-           en bas, de droite à gauche, la fin du verset du milieu au pied. -->
-      <div v-else class="klaf-menora" dir="rtl">
-        <p class="menora-title">{{ MENORA_KLAF.title }}</p>
-        <div class="menora-branches">
-          <div
-            v-for="(verse, i) in MENORA_KLAF.branches"
-            :key="i"
-            class="menora-branch"
-            :class="{ 'menora-stem': i === MENORA_STEM }"
-          >
-            <span class="menora-verse">{{ verse }}</span>
-            <span class="menora-arm" aria-hidden="true"></span>
-          </div>
-        </div>
-        <span class="menora-bar" aria-hidden="true"></span>
-        <span class="menora-foot" aria-hidden="true"></span>
-        <p class="menora-base">{{ MENORA_KLAF.base }}</p>
-        <p class="klaf-hint" dir="auto">{{ t("textReading.klaf.transcribed") }}</p>
+    <!-- Under the photo: the pages, when there are several. -->
+    <div v-if="photos.length > 1" class="klaf-bar klaf-bar-pages" @click.self="closeKlaf">
+      <div class="klaf-control klaf-pages">
+        <button
+          type="button"
+          class="klaf-turn"
+          :disabled="page === 0"
+          :aria-label="t('textReading.klaf.previous')"
+          @click="turn(-1)"
+        >
+          <AppIcon name="chevron-left" :size="18" class="rtl:-scale-x-100" />
+        </button>
+        <span class="klaf-count" aria-live="polite">{{ page + 1 }} / {{ photos.length }}</span>
+        <button
+          type="button"
+          class="klaf-turn"
+          :disabled="page === photos.length - 1"
+          :aria-label="t('textReading.klaf.next')"
+          @click="turn(1)"
+        >
+          <AppIcon name="chevron-right" :size="18" class="rtl:-scale-x-100" />
+        </button>
       </div>
     </div>
   </AppModal>
 </template>
 
-<!-- Le cadre est un élément d'AppModal, hors de la portée des styles scopés :
-     sa règle est globale, sous un nom qui n'appartient qu'au parchemin. -->
+<!-- The veil and the frame are AppModal's elements, out of reach of scoped
+     styles: their rules are global, under names that belong only to the
+     parchment. -->
 <style>
-/* Une fenêtre haute : la photo se lit page après page, le corps défile
-   dans le cadre, la tête et les onglets restent en place. */
+/* A darker veil than the other windows: a photo is looked at against the
+   dark, and the window is centered rather than set at the top. */
+.klaf-overlay {
+  align-items: center;
+  background-color: rgb(20 16 8 / 0.85);
+}
+
+/* The frame is only a column: the cross, the photo, the pages. It has no
+   surface of its own; the photo carries the rounding and the shadow. */
 .klaf-panel {
   display: flex;
   flex-direction: column;
-  width: 100%;
-  max-width: 36rem;
-  max-height: calc(100vh - 2rem);
-  overflow: hidden;
-  background-color: var(--color-surface);
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-pop);
+  align-items: stretch;
+  gap: 0.5rem;
+  margin-block: auto;
 }
 </style>
 
 <style scoped>
-.klaf-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  padding: 1.25rem 1.25rem 0.75rem;
+/* The stage takes the photo's shape and the largest size the screen allows,
+   its width or its height (less the rows of the cross and the pages,
+   `--klaf-chrome`), whichever runs out first. The photo covers it entirely:
+   no white around it. The black stands in while it loads. */
+.klaf-stage {
+  position: relative;
+  width: min(
+    calc(100vw - 2rem),
+    calc((var(--modal-viewport-height, 100dvh) - 2rem - var(--klaf-chrome)) * var(--klaf-ratio)),
+    56rem
+  );
+  aspect-ratio: var(--klaf-ratio);
+  overflow: hidden;
+  background: #000;
+  border-radius: var(--radius-xl);
+  box-shadow: 0 24px 60px rgb(0 0 0 / 0.45);
+  /* The fingers belong to the photo: the browser neither zooms nor scrolls
+     the page under them. */
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grab;
 }
 
-.klaf-tabs {
-  display: flex;
-  justify-content: center;
-  padding: 0 1.25rem 0.75rem;
+.klaf-stage:active {
+  cursor: grabbing;
 }
 
-.klaf-body {
-  min-height: 0;
-  overflow-y: auto;
-  padding: 0.25rem 1.25rem 1.25rem;
-  overscroll-behavior: contain;
-}
-
-/* La photo à la largeur de la fenêtre ; agrandie, elle en déborde et l'on
-   fait défiler, la fenêtre ne s'élargit pas. */
-.klaf-photos {
-  overflow-x: auto;
-}
-
-.klaf-photos img {
+.klaf-photo {
   display: block;
   width: 100%;
+  height: 100%;
   max-width: none;
-  height: auto;
-  border-radius: var(--radius-sm);
-  cursor: zoom-in;
+  object-fit: cover;
+  transform-origin: 0 0;
+  transition: transform 0.25s ease;
+  -webkit-user-drag: none;
+  pointer-events: none;
 }
 
-.klaf-photos img + img {
-  margin-top: 0.75rem;
+/* Under the finger, the photo follows without delay. */
+.klaf-following {
+  transition: none;
 }
 
-.klaf-zoomed img {
-  width: 200%;
-  cursor: zoom-out;
+@media (prefers-reduced-motion: reduce) {
+  .klaf-photo {
+    transition: none;
+  }
 }
 
-.klaf-hint {
-  margin-top: 0.75rem;
-  font-family: var(--font-sans);
-  font-size: 0.8rem;
-  line-height: 1.5;
-  text-align: center;
-  color: var(--color-text-secondary);
-}
-
-/* La retranscription, dans l'écriture du sofer (voir @font-face dans
-   main.css), à la taille de lecture du lecteur (A− / A+), justifiée comme le
-   parchemin. La police de lecture ne vient qu'en repli, le temps du
-   chargement. */
-.klaf-text {
-  font-family: "Stam Sefarad CLM", var(--font-hebrew);
-  font-size: calc(1.5rem * var(--reading-scale, 1));
-  line-height: 1.7;
-  text-align: justify;
-  color: var(--color-text-primary);
-}
-
-.klaf-text p + p {
-  margin-top: 1rem;
-}
-
-/* La menora : des traits pleins à la couleur du texte, ni ombre ni dégradé. */
-.klaf-menora {
+/* The rows above and under the photo, as wide as it: the cross at the end,
+   the pages in the middle. */
+.klaf-bar {
   display: flex;
-  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.klaf-bar-pages {
+  justify-content: center;
+}
+
+/* The commands around the photo, on the veil: white, on a light disk that
+   says where to touch without competing with the photo. */
+.klaf-control {
+  color: #fff;
+  background-color: rgb(255 255 255 / 0.14);
+  border-radius: var(--radius-pill);
+}
+
+.klaf-close {
+  display: flex;
   align-items: center;
-  font-family: "Stam Sefarad CLM", var(--font-hebrew);
-  color: var(--color-text-primary);
-  padding-top: 0.25rem;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  transition: background-color 0.15s ease;
 }
 
-.menora-title,
-.menora-base {
-  font-size: calc(1.2rem * var(--reading-scale, 1));
-  line-height: 1.4;
-  text-align: center;
+.klaf-close:hover {
+  background-color: rgb(255 255 255 / 0.24);
 }
 
-.menora-title {
-  margin-bottom: 0.75rem;
-}
-
-/* Sept branches côte à côte, la première à droite (le sens du texte), de
-   même hauteur : le verset le plus long donne la sienne, les autres se
-   prolongent d'un trait jusqu'à la barre qui les réunit. */
-.menora-branches {
+.klaf-pages {
   display: flex;
-  align-items: stretch;
-  gap: 0.3rem;
-}
-
-.menora-branch {
-  display: flex;
-  flex-direction: column;
   align-items: center;
-  width: 2.3rem;
+  gap: 0.25rem;
+  padding: 0.25rem;
 }
 
-/* Un verset lu de haut en bas : écrit verticalement, l'hébreu part du bas ;
-   retourné d'un demi-tour, il part du haut, comme sur le parchemin. */
-.menora-verse {
-  writing-mode: vertical-rl;
-  direction: rtl;
-  transform: rotate(180deg);
-  font-size: calc(1.05rem * var(--reading-scale, 1));
-  line-height: 1;
-  white-space: nowrap;
-  padding: 0.35rem 0;
+.klaf-turn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--radius-pill);
 }
 
-.menora-arm {
-  flex: 1;
-  width: 2px;
-  min-height: 0.75rem;
-  background-color: currentColor;
+.klaf-turn:disabled {
+  opacity: 0.35;
 }
 
-/* La tige porte le verset du milieu et descend seule jusqu'au pied. */
-.menora-stem .menora-arm {
-  min-height: 1.25rem;
-}
-
-/* La barre réunit les sept branches, d'un centre de branche à l'autre. */
-.menora-bar {
-  width: calc(7 * 2.3rem + 6 * 0.3rem - 2.3rem);
-  height: 2px;
-  background-color: currentColor;
-}
-
-.menora-foot {
-  width: 2px;
-  height: 2rem;
-  background-color: currentColor;
-}
-
-.menora-base {
-  margin-top: 0.25rem;
+.klaf-count {
+  min-width: 2.5rem;
+  text-align: center;
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 </style>

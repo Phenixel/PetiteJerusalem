@@ -121,7 +121,6 @@ function onChapterNumber(event: Event) {
   <div class="space-y-3">
     <!-- Le livre choisi -->
     <div v-if="entry" class="flex items-center gap-3 rounded-control bg-surface-soft px-4 py-3">
-      <AppIcon name="book-open" :size="18" class="shrink-0 text-primary" />
       <div class="min-w-0 flex-1">
         <p class="truncate font-semibold text-text-primary">{{ texteTitle(entry, locale) }}</p>
         <p class="truncate text-sm text-text-secondary">{{ contextOf(entry) }}</p>

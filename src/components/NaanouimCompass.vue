@@ -113,7 +113,6 @@ watch(
     <template v-if="naanouimCompassOpen">
       <div class="flex items-center justify-between gap-3 mb-4">
         <h3 class="text-lg font-bold text-text-primary flex items-center gap-2">
-          <AppIcon name="compass" :size="20" class="text-primary" />
           {{ t("textReading.naanouim.title") }}
         </h3>
         <button type="button" class="icon-btn" :aria-label="t('common.close')" @click="close">

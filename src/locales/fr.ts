@@ -1831,31 +1831,15 @@ const fr = {
       teshuva: "Ajout des dix jours de pénitence",
       zimoun: "Zimoun",
     },
-    slihotHours: "Horaire des Sli'hot",
-    slihotRange: "De {start} à {end}",
-    slihotHoursInfo: "À propos de cet horaire",
-    slihotWindowExplained:
-      "Les Sli\u2019hot se disent dans la dernière veille de la nuit, l\u2019achmoret haboker\u00a0:",
-    slihotWindowNight:
-      "À partir de hatsot, le milieu de la nuit ({start})\u00a0: c\u2019est le début de la période propice pour les dire.",
-    slihotWindowDawn:
-      "À la fin de la nuit, avant le lever du soleil ({end})\u00a0: le moment le plus recommandé, juste avant la prière du matin.",
-    slihotWindowDay:
-      "En journée, si la nuit n\u2019a pas été possible\u00a0: on peut encore les rattraper jusqu\u2019à la chkia, le coucher du soleil ({sunset}).",
-    slihotWindowPlace: "Heures pour {city}.",
     // Sidour : le parchemin (klaf) qu'on ouvre depuis le fil du texte (voir
     // KlafViewer.vue) : le pitoum haketoret écrit par un sofer, le psaume 67
     // en forme de menora.
     klaf: {
       ketoret: { open: "Voir le parchemin", title: "Pitoum haketoret sur parchemin" },
       menora: { open: "Voir la menora", title: "Le Lamnatséa'h en menora" },
-      views: "Photo ou retranscription",
-      photo: "Photo",
-      text: "Texte",
       photoAlt: "{title}, page {n}",
-      zoomIn: "Touchez la photo pour l'agrandir.",
-      zoomOut: "Touchez la photo pour la ramener à la largeur de la fenêtre.",
-      transcribed: "Retranscription du parchemin, lettre à lettre, dans l'écriture du sofer.",
+      previous: "Page précédente",
+      next: "Page suivante",
     },
     // Sidour : la direction du Kotel, ouverte depuis le titre des passages
     // qui se disent face à Jérusalem (voir KotelCompass.vue).
@@ -1938,14 +1922,14 @@ const fr = {
       middle: "Le haut et le bas, au centre du cadran, ne sont pas des points cardinaux.",
       live: "Le cadran suit votre appareil : tournez-vous vers le nombre du côté que vous agitez.",
     },
-    // Sidour : l'horaire d'un moment de la prière, posé avant ce qui se lit
-    // (voir TefilaZman.vue ; les clés d1..dN sont les lignes du « i »).
+    // Sidour : l'horaire d'un moment de prière, une pastille posée avant ce
+    // qui se lit, et la feuille qu'elle ouvre (voir TefilaZman.vue ; les clés
+    // d1..dN sont les lignes de la règle).
     zman: {
-      info: "À propos de cet horaire",
       place: "Heures pour {city}.",
       chaharit: {
         title: "Horaire de Cha'harit",
-        main: "De {misheyakir} à {hatsot}",
+        name: "Cha'harit",
         d1: "Dès misheyakir ({misheyakir}), quand on distingue le bleu du blanc, on peut mettre le talith et les tefilins et dire le Chéma.",
         d2: "Le moment le plus indiqué pour la Amida est le lever du soleil ({netz}), comme les vatikin.",
         d3: "La Amida se dit de préférence dans les quatre premières heures solaires, jusqu'à {tefila}.",
@@ -1953,20 +1937,20 @@ const fr = {
       },
       shema: {
         title: "Fin du Chéma",
-        main: "À dire avant {shema}",
+        name: "Chéma",
         d1: "Le Chéma se dit dans les trois premières heures solaires du jour.",
         d2: "Selon le Maguen Avraham, qui compte depuis l'aube : {shemaMGA}.",
         d3: "Selon le Gaon de Vilna, qui compte depuis le lever du soleil : {shema}. Passé l'heure, on le lit encore, mais sans sa mitsva à son heure.",
       },
       amida: {
         title: "Fin de la Amida",
-        main: "À dire avant {tefila}",
+        name: "Amida",
         d1: "La Amida du matin se dit dans les quatre premières heures solaires : {tefilaMGA} selon le Maguen Avraham, {tefila} selon le Gaon de Vilna.",
         d2: "Passé l'heure, on peut encore prier jusqu'à 'hatsot ({hatsot}), sans la récompense de la prière dite à son heure.",
       },
       minha: {
         title: "Horaire de Min'ha",
-        main: "De {minhaGuedola} à {chkia}",
+        name: "Min'ha",
         d1: "Min'ha guedola ({minhaGuedola}) : une demi-heure solaire après 'hatsot, le début du temps de Min'ha.",
         d2: "Min'ha ketana ({minhaKetana}) : le moment le plus indiqué selon la plupart des avis.",
         d3: "Plag hamin'ha ({plag}) : après lui, certains disent déjà Arvit.",
@@ -1974,10 +1958,62 @@ const fr = {
       },
       arvit: {
         title: "Horaire d'Arvit",
-        main: "À partir de {tset}",
+        name: "Arvit",
         d1: "Le Chéma du soir se dit après la sortie des étoiles ({tset}).",
         d2: "Le mieux est de prier avant 'hatsot de la nuit ({hatsotLayla}).",
         d3: "En cas d'empêchement, Arvit se dit toute la nuit, jusqu'à l'aube.",
+      },
+      slihot: {
+        title: "Horaire des Sli'hot",
+        name: "Sli'hot",
+        d1: "Les Sli\u2019hot se disent dans la dernière veille de la nuit, l\u2019achmoret haboker\u00a0:",
+        d2: "À partir de hatsot, le milieu de la nuit ({start})\u00a0: c\u2019est le début de la période propice pour les dire.",
+        d3: "À la fin de la nuit, avant le lever du soleil ({end})\u00a0: le moment le plus recommandé, juste avant la prière du matin.",
+        d4: "En journée, si la nuit n\u2019a pas été possible\u00a0: on peut encore les rattraper jusqu\u2019à la chkia, le coucher du soleil ({sunset}).",
+      },
+      pill: {
+        before: "{name} à partir de {time}",
+        preferred: "{name}, de préférence avant {time}",
+        during: "{name} jusqu'à {time}",
+        after: "{name}\u00a0: heure passée ({time})",
+      },
+      left: "encore {duration}",
+      now: "Maintenant",
+      arc: {
+        sunrise: "Lever {time}",
+        sunset: "Chkia {time}",
+      },
+      marks: {
+        alot: "Aube (alot hacha'har)",
+        misheyakir: "Misheyakir",
+        netz: "Lever du soleil (netz)",
+        shemaMGA: "Fin du Chéma, Maguen Avraham",
+        shema: "Fin du Chéma, Gaon de Vilna",
+        tefilaMGA: "Fin de la Amida, Maguen Avraham",
+        tefila: "Fin de la Amida, Gaon de Vilna",
+        hatsot: "'Hatsot",
+        minhaGuedola: "Min'ha guedola",
+        minhaKetana: "Min'ha ketana",
+        plag: "Plag hamin'ha",
+        chkia: "Chkia, le coucher du soleil",
+        tset: "Sortie des étoiles",
+        hatsotLayla: "'Hatsot de la nuit",
+      },
+      short: {
+        alot: "aube",
+        misheyakir: "misheyakir",
+        netz: "netz",
+        shemaMGA: "MGA",
+        shema: "Chéma",
+        tefilaMGA: "MGA",
+        tefila: "Amida",
+        hatsot: "'hatsot",
+        minhaGuedola: "guedola",
+        minhaKetana: "ketana",
+        plag: "plag",
+        chkia: "chkia",
+        tset: "étoiles",
+        hatsotLayla: "'hatsot",
       },
     },
     // Sidour : à la fin de Min'ha, Arvit est à un geste.

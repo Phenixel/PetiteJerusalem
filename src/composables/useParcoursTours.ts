@@ -19,14 +19,8 @@ const byTour = (name: string) => () => document.querySelector<HTMLElement>(`[dat
 export function useParcoursTours() {
   const { t } = useI18n();
 
-  const step = (
-    key: string,
-    icon: TourStep["icon"],
-    target: string | null,
-    radius = 18,
-  ): TourStep => ({
+  const step = (key: string, target: string | null, radius = 18): TourStep => ({
     key,
-    icon,
     title: t(`tips.parcours.${key}.title`),
     text: t(`tips.parcours.${key}.text`),
     target: target ? byTour(target) : undefined,
@@ -36,18 +30,18 @@ export function useParcoursTours() {
   /** L'accueil : la pile, la barre de la journée, la lumière, l'étagère. */
   const home = computed<TourStep[]>(() => [
     {
-      ...step("deck", "books", null),
+      ...step("deck", null),
       target: () => document.querySelector<HTMLElement>(".dk"),
       radius: 22,
     },
     {
-      ...step("dayBar", "list", null),
+      ...step("dayBar", null),
       target: () => document.querySelector<HTMLElement>(".day-bar"),
       radius: 14,
     },
-    step("lamp", "candle", "home-lamp", 9999),
+    step("lamp", "home-lamp", 9999),
     {
-      ...step("shelf", "book", null),
+      ...step("shelf", null),
       target: () => document.querySelector<HTMLElement>(".volume-shelf"),
       radius: 14,
     },
@@ -55,29 +49,29 @@ export function useParcoursTours() {
 
   /** Mon parcours : la lumière, le mur, l'étagère, un objectif de plus. */
   const page = computed<TourStep[]>(() => [
-    step("light", "candle", "parcours-light", 24),
-    step("wall", "calendar", "parcours-wall", 14),
+    step("light", "parcours-light", 24),
+    step("wall", "parcours-wall", 14),
     {
-      ...step("volumes", "book", null),
+      ...step("volumes", null),
       target: () => document.querySelector<HTMLElement>(".volume-shelf"),
       radius: 14,
     },
-    step("new", "plus", "parcours-new", 14),
+    step("new", "parcours-new", 14),
   ]);
 
   /** Nouvel objectif : choisir en haut, la suite se déplie dessous. */
   const create = computed<TourStep[]>(() => [
-    step("books", "book", "create-books", 14),
-    step("cycles", "calendar", "create-cycles", 14),
-    step("habits", "check", "create-habits", 14),
+    step("books", "create-books", 14),
+    step("cycles", "create-cycles", 14),
+    step("habits", "create-habits", 14),
   ]);
 
   /** Un programme : la portion, rattraper, la suite, les réglages. */
   const program = computed<TourStep[]>(() => [
-    step("portion", "book-open", "program-portion", 22),
-    step("catchUp", "rotate", "program-catch-up", 9999),
-    step("ahead", "chevron-right", "program-ahead", 9999),
-    step("edit", "settings", "program-edit", 9999),
+    step("portion", "program-portion", 22),
+    step("catchUp", "program-catch-up", 9999),
+    step("ahead", "program-ahead", 9999),
+    step("edit", "program-edit", 9999),
   ]);
 
   return { home, page, create, program };

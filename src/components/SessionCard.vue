@@ -6,7 +6,6 @@ import { TextTypeService } from "../services/textTypeService";
 import { DateService, deadlineOf, localDayFrom } from "../services/dateService";
 import { isNichmat, phaseOf } from "../services/nichmatChain";
 import { sessionService } from "../services/sessionService";
-import AppIcon from "./icons/AppIcon.vue";
 import ProgressBar from "./ProgressBar.vue";
 
 const { t } = useI18n();
@@ -82,7 +81,6 @@ const isFull = computed(
     </div>
 
     <span class="text-sm text-text-secondary flex items-center gap-2 mt-auto">
-      <AppIcon name="calendar" :size="15" />
       {{ dateLine }}
     </span>
   </div>

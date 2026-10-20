@@ -509,6 +509,63 @@ One more object is drawn in `components/art`, with these rules, and takes
 its place in `CARD_ART_GEOMETRY` (size, proportions, what sticks out at the
 top, inset from the edge).
 
+### The frames of the times page carry their object
+
+The three appointments of the times page lost their icon and took their
+object instead, in the corner of the card, next to the title only (the
+object is small, half the size of the Sidour's, so the rows keep the whole
+width):
+
+- **Chabbat** (and a holiday, `RestTimes.vue`): what comes next. The two
+  lit candles in their silver candlesticks (`ArtCandles.vue`) until the
+  entrance; the havdala once the rest has begun.
+- **The 'hamets** (`ChametzTimes.vue`): the candle, the feather and the
+  wooden spoon of the search (`ArtBedika.vue`).
+- **A fast** (`FastTimes.vue`) has no object: it is drawn in its day
+  (`FastDayBand.vue`). A band runs from two hours before to two hours after,
+  the night in deep blue with a few stars, the day in sand, and the fast as
+  a bar in the theme color from its start to its end; the hours of the
+  place that fall on a multiple of six are marked under it, and the length
+  of the fast (« 10 h 45 ») sits at the end of the title. A dawn fast shows
+  its hours of night before the sun; Tich'a beAv crosses a whole night. The
+  sky keeps its colors in every theme.
+
+### The time of a moment of prayer is a pill
+
+The times set before what is read (the start of Cha'harit, the end of the
+Chema before the Chema, the end of the 'Amida, Min'ha, Arvit, and the
+Sli'hot at the head of the Sli'hot) were a card each, with an icon and an
+« i » that unfolded the rule. Each one is now a pill in the theme color
+(`TefilaZman.vue`), like the other commands placed in a text: in a small
+disc, the sky of the moment, then what matters now.
+
+- **What the pill says follows the hour** (`services/tefilaZman.ts`):
+  « Min'ha à partir de 14:02 · dans 1 h 10 » before the window,
+  « Min'ha jusqu'à 18:51 · encore 2 h 21 » during it, « Min'ha : heure
+  passée (18:51) » after. Arvit says « de préférence avant » 'hatsot of the
+  night, then « jusqu'à » dawn. After midnight, Arvit and the Sli'hot are
+  still those of the night that began the evening before.
+- **The sky of the moment** (`ArtSky.vue`): the walls of Jerusalem under
+  the sky of each prayer. The sun rising behind them for Cha'harit,
+  climbing for the Chema and the 'Amida, going down for Min'ha; the three
+  stars of Arvit; the deep night and the crescent of the Sli'hot. Flat
+  colors, the same in every theme. The skyline is the rampart and a tower
+  of the walls, nothing else: no dome behind them, which would stand for a
+  building that has no place in the sidour.
+- **Touched, it opens a sheet** (the bottom sheet of Mon parcours): the
+  title and the sky; the course of the sun (`ZmanArc.vue`), from sunrise to
+  sunset, or from sunset to sunrise for the night, with the moment's
+  window traced on it, what has passed of it in the theme color, each
+  landmark as a dot with its short name outside the arc, and the sun (the
+  moon at night) where it is now. Before sunrise, misheyakir falls a little
+  under the horizon, and the arc goes on below it, as the sun does. Then the
+  landmarks in a list, each with its time and how long until it comes,
+  « Maintenant » in its place among them, the next one in the theme color;
+  then the rule in full, as the « i » used to give it.
+
+Held by `src/__tests__/tefilaZman.test.ts` (the windows, the phases, the
+night Arvit belongs to after midnight, the arc's ends).
+
 ### An icon before a title must say something
 
 An icon to the left of a card title is placed only if nothing else says
@@ -524,7 +581,8 @@ object, by `src/__tests__/cardArt.test.ts`.
 The icon stays where it alone distinguishes: the cake of a birthday and the
 candle of a leilouy nichmat among the dates you have added, the
 « Aujourd'hui » ("Today") and « Hors ligne » ("Offline") rows of the
-library, the section titles of the times.
+library, the section titles of the times. Everywhere else, the icon on the
+left of a frame is gone (see "No icon on the left of a frame").
 
 ### The play triangle is centered on its weight
 
@@ -1832,9 +1890,9 @@ reserves.
 The names run on one after another, separated by a middle dot, like a
 dedication, and not in rows: twenty rows would have pushed the reading three
 screens down. Eight per group, the rest expands. Two groups, distinguished
-by their drawing: the heart for a refoua chelema, the candle for a leilouy
-nichmat (the same as for calendar dates). A name does not break across lines
-(`whitespace-nowrap`).
+by their name, written above each one (« Refoua chelema », « Leilouy
+nichmat »), without a drawing (see "No icon on the left of a frame"). A
+name does not break across lines (`whitespace-nowrap`).
 
 The reader's own names are pills in the theme color, with a pencil, at the
 top of their group: they are the only ones that open, and that is the pill
@@ -1866,7 +1924,7 @@ connection returns, there is no need to redo it, and the name joins the list
 when it arrives.
 
 In the reader, « Vous lisez pour » ("You are reading for") keeps the two
-groups of the chain page, each with its drawing: a refoua chelema and a
+groups of the chain page, each under its name: a refoua chelema and a
 leilouy nichmat are not said the same way (`PrayerNamesLine`). Removing a
 name asks the question, with the name (`useConfirm`); extending it does not:
 it can be redone with a gesture.
@@ -1985,6 +2043,53 @@ tinted circle.
   rappeler cet horaire », « Avis suivi pour les horaires »). A back arrow,
   when the dialog has a second screen, stays: it is a command, not a
   decoration.
+
+### No icon on the left of a frame
+
+The rule above, carried to the end of the frames: a card, a notice or a
+section that opened on an icon in its top-left corner, meant to stand for
+what the frame holds, repeated what its title said, often with a drawing
+shared by two different things (the same clock for the end of the Chema and
+the end of the 'Amida). Those icons are gone, on the site, in the app and
+in the back office:
+
+- **Cards and notices**: the hiloulot, a chain's
+  reservation in the reader, the resume banner, « Le texte étudié » of a
+  class, the paused notice, the offline notice, « Mise à jour
+  disponible », the series of the Studio, the figures and the to-do list of
+  the back office. The title aligns with the edge of the card.
+- **Section and window titles** (« Mes sessions », « Toutes les sessions »,
+  « Cours sur ce chapitre », « Dans le Sidour », « À propos des horaires »)
+  and the bubbles of the tips (`FeatureTour.vue`: the bubble opens on its
+  title, without the solid round badge).
+- **Lines of state**: the date of a chain, « Tout lu », a finished chain,
+  a success or an error under a form, the toasts. The color and the
+  sentence say it.
+- **The groups of names**: « Refoua chelema » and « Leilouy nichmat » are
+  told by their names, in the reader, on the chain and in the preview of a
+  name.
+
+The times at the head of a tefila and of the Sli'hot became a pill (see
+"The time of a moment of prayer is a pill"); Chabbat, the fasts and the
+'hamets took their object (see "The frames of the times page carry their
+object").
+
+Where a card led nowhere new, it lost its frame with its icon:
+« Enchaîner avec Arvit », at the end of Min'ha, is now a link set on the
+page, its name in the theme color and its reason under it.
+
+**A list keeps its drawings.** In a list, the drawing at the start of each
+row is how the eye runs down it and finds its line without reading every
+name: the rows of the profile and the settings (`SettingsRow`), the
+shortcuts of the web profile, the reading menu, the reminder slots, the
+accounts of the security page, the steps of « Comment ça marche » and of
+« C'est prêt », the benefits of an account. These stay.
+
+So do what is a state or a command: the checkboxes and the radio marks of a
+choice, the download state of « Hors ligne », the check of a class already
+listened to, the waiting clock of a task of the day, the chips that state
+(« Complet », « Lu »), the back arrows, and the icon inside a pill that
+carries its name (see "A command placed in a text carries its name").
 
 ### One piece of information is said once
 
@@ -3232,14 +3337,28 @@ size of the stage directions, which opens a window (`KlafViewer.vue`). It is
 the only door: unlike the compass and the mirror, the reading menu does not
 offer the parchments; they are opened where they are read.
 
-The window first shows the photo of the parchment, as is (`public/klaf/`),
-which a touch enlarges to double size; a second tab gives its
-transcription, letter by letter and without vowels, in the sofer's script
-(the Stam Sefarad CLM font, see "The fonts") and at the reader's reading
-size: the same rendering as the klaf, but as text. For the psalm, the transcription
-reproduces the shape of the parchment: seven vertical branches, a bar, a
-base, in solid strokes in the text color, without shadow or gradient. It is
-writing, not an illustration.
+The window is the photo, and nothing else (`public/klaf/`, as the sofer
+wrote it): no title, no tabs, no caption, no white around it. It takes the
+photo's shape, as large as the screen allows, on a darker veil than the
+other windows. Nothing sits on the image, which would hide the writing:
+the round cross is above it, at its end corner, on the veil, and the rest
+of that row closes like the veil. The transcription that used to come in a second tab is gone:
+the vocalized text is already in the flow of the service, and two ways of
+seeing one parchment asked for a choice before showing anything.
+
+It reads up close the way a photo does, with a real zoom
+(`usePinchZoom.ts`): two fingers pinch it open around the spot they hold,
+one finger then moves through it, a double tap enlarges where it lands or
+brings it back, and on a computer the wheel zooms under the cursor. The
+photo never leaves its frame: zoomed out it fills it exactly, zoomed in its
+edges stop at the frame's. The old "a tap doubles the width, then scroll"
+is gone. The pitoum haketoret has two pages: a swipe turns them, or the
+arrows of the small pill under the photo, which says « 1 / 2 ». The
+sizes of the photos are written next to them (`content/klaf.ts`), so the
+window has its shape before the photo arrives. Held by
+`src/__tests__/klafViewer.test.ts` (the photo alone, the pages, the sizes
+matching the files) and `src/__tests__/pinchZoom.test.ts` (the pinched
+spot stays under the fingers, the edges hold).
 
 ### A prayer that goes through another book leads there with one gesture
 
@@ -3431,9 +3550,10 @@ looking for, and nowhere else (no title, no label):
 
 - **Stam Sefarad CLM** (Culmus project, GPL with embedding exception,
   `public/fonts/stam-sefarad-clm.LICENSE.txt`), the sofer's script, ktav
-  Sefaradi with taguim. It writes the transcription of the parchments
-  (`KlafViewer.vue`) and the paracha in the form of the Sefer Torah
-  (`TorahScroll.vue`, see "A text also reads in the form of its page").
+  Sefaradi with taguim. It writes the paracha in the form of the Sefer
+  Torah (`TorahScroll.vue`, see "A text also reads in the form of its
+  page"). The parchments of the sidour no longer have a transcription: their
+  photo is enough (see "The parchment opens from the text").
 - **Noto Rashi Hebrew** (OFL, `public/fonts/noto-rashi-hebrew.LICENSE.txt`),
   the Rachi script. It writes only Rachi and Tossafot on the daf page
   (`TalmudPage.vue`), where they are printed in this script; the dibbour
