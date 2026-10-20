@@ -1241,6 +1241,8 @@ const fr = {
     qrError: "Erreur lors de la génération du QR code",
     inviteTehilim:
       "Rejoignez la chaîne de Tehilim « {name} » 📖 Chacun lit quelques psaumes et l'on termine ensemble. Réservez les vôtres ici :",
+    inviteNichmat:
+      "Rejoignez « {name} » 🙏 40 personnes disent Nichmat chaque jour pendant 40 jours. Prenez une place ici :",
     inviteStudy:
       "Rejoignez l'étude partagée « {name} » 📖 Réservez vos passages et étudions ensemble :",
     titleChiour: "Partager ce chiour",
@@ -1366,6 +1368,54 @@ const fr = {
     creation: {
       text: "Pour un malade, ou un proche disparu ? Son nom peut aussi être lu dans la chaîne perpétuelle.",
       link: "Proposer son nom",
+    },
+  },
+  // Nichmat 40: forty readers, forty days (docs/nichmat-40-jours.md).
+  nichmat: {
+    someone: "Quelqu'un",
+    statusLabel: "Où en sont les 40 jours",
+    phase: {
+      waiting: "En attente des 40 lecteurs",
+      waitingText: "Les 40 jours commenceront le lendemain du jour où la 40e place sera prise.",
+      upcoming: "Les 40 jours commencent le {date}",
+      running: "Jour {day} sur {total}",
+      done: "Les 40 jours sont terminés. Tizkou lemitsvot !",
+    },
+    dates: "Du {start} au {end}",
+    chipWaiting: "Commence quand les 40 places sont prises",
+    dayChip: "Jour {day}/{total}",
+    placesTaken: "{taken} places prises sur {total}",
+    readsDone: "{reads} lectures sur {due} à ce jour",
+    myPlace: "Votre place : n° {place}",
+    myReads: "Aucun jour lu sur {total} | Un jour lu sur {total} | {count} jours lus sur {total}",
+    readText: "Lire Nichmat",
+    readToday: "J'ai dit Nichmat aujourd'hui",
+    readTodayDone: "Nichmat dit aujourd'hui",
+    notStarted: "Les 40 jours n'ont pas encore commencé.",
+    myDays: "Vos 40 jours",
+    dayLabel: "Jour {day}",
+    leave: "Libérer ma place",
+    leaveConfirm: "Libérer votre place ?",
+    takeTitle: "Prendre une place",
+    takeText:
+      "Il reste une place sur 40. Qui la prend s'engage à dire Nichmat chaque jour, pendant les 40 jours. | Il reste {count} places sur 40. Qui en prend une s'engage à dire Nichmat chaque jour, pendant les 40 jours.",
+    take: "Prendre une place",
+    placeTaken: "Place n° {place} prise. Tizkou lemitsvot !",
+    full: "Les 40 places sont prises.",
+    readers: "Les lecteurs ({taken}/{total})",
+    readerReads: "{read}/{due} jours",
+    freePlaces: "Encore une place libre | Encore {count} places libres",
+    guestMessage: "Indiquez votre nom : il s'affiche à votre place, dans la liste des lecteurs.",
+    offline: "Pas de connexion : une place ne se prend pas hors ligne.",
+    placeNumber: "Place {place}",
+    todayRow: "Nichmat d'aujourd'hui (jour {day})",
+    create: {
+      hint: "40 personnes disent Nichmat kol 'haï chaque jour, pendant 40 jours : chacune prend une place et coche ses jours.",
+      startLabel: "Début des 40 jours",
+      onDate: "À une date choisie",
+      startDay: "Premier jour",
+      whenFull: "Dès que les 40 places sont prises",
+      whenFullHint: "Les 40 jours commencent le lendemain du jour où la 40e place est prise.",
     },
   },
   progressBar: {

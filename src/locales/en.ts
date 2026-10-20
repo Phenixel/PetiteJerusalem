@@ -1199,6 +1199,8 @@ const en: LocaleMessages = {
     qrError: "Error generating QR code",
     inviteTehilim:
       "Join the Tehilim chain « {name} » 📖 Everyone reads a few psalms and we finish together. Reserve yours here:",
+    inviteNichmat:
+      "Join « {name} » 🙏 40 people say Nishmat every day for 40 days. Take a place here:",
     inviteStudy:
       "Join the shared study « {name} » 📖 Reserve your passages and let's learn together:",
     titleChiour: "Share this chiour",
@@ -1321,6 +1323,55 @@ const en: LocaleMessages = {
     creation: {
       text: "For someone who is ill, or a loved one who passed away? Their name can also be read in the perpetual chain.",
       link: "Suggest their name",
+    },
+  },
+  // Nichmat 40: forty readers, forty days (docs/nichmat-40-jours.md).
+  nichmat: {
+    someone: "Someone",
+    statusLabel: "Where the 40 days stand",
+    phase: {
+      waiting: "Waiting for the 40 readers",
+      waitingText: "The 40 days will begin the day after the 40th place is taken.",
+      upcoming: "The 40 days begin on {date}",
+      running: "Day {day} of {total}",
+      done: "The 40 days are over. Tizku lemitzvot!",
+    },
+    dates: "From {start} to {end}",
+    chipWaiting: "Starts when the 40 places are taken",
+    dayChip: "Day {day}/{total}",
+    placesTaken: "{taken} of {total} places taken",
+    readsDone: "{reads} of {due} readings so far",
+    myPlace: "Your place: no. {place}",
+    myReads:
+      "No day read out of {total} | One day read out of {total} | {count} of {total} days read",
+    readText: "Read Nishmat",
+    readToday: "I said Nishmat today",
+    readTodayDone: "Nishmat said today",
+    notStarted: "The 40 days have not started yet.",
+    myDays: "Your 40 days",
+    dayLabel: "Day {day}",
+    leave: "Give up my place",
+    leaveConfirm: "Give up your place?",
+    takeTitle: "Take a place",
+    takeText:
+      "One place left out of 40. Whoever takes it commits to saying Nishmat every day, for the 40 days. | {count} places left out of 40. Whoever takes one commits to saying Nishmat every day, for the 40 days.",
+    take: "Take a place",
+    placeTaken: "Place no. {place} is yours. Tizku lemitzvot!",
+    full: "All 40 places are taken.",
+    readers: "The readers ({taken}/{total})",
+    readerReads: "{read}/{due} days",
+    freePlaces: "One place still free | {count} places still free",
+    guestMessage: "Enter your name: it shows at your place, in the list of readers.",
+    offline: "No connection: a place cannot be taken offline.",
+    placeNumber: "Place {place}",
+    todayRow: "Today's Nishmat (day {day})",
+    create: {
+      hint: "40 people say Nishmat kol chai every day, for 40 days: each takes a place and ticks their days.",
+      startLabel: "Start of the 40 days",
+      onDate: "On a chosen day",
+      startDay: "First day",
+      whenFull: "As soon as the 40 places are taken",
+      whenFullHint: "The 40 days begin the day after the 40th place is taken.",
     },
   },
   progressBar: {

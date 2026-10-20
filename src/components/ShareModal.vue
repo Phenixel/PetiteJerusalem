@@ -98,9 +98,12 @@ const generateQRCode = async () => {
  * chelema de …"), so we interpolate it into the message.
  */
 const buildShareMessage = () => {
-  const key =
-    props.messageKey ??
-    (props.sessionType === "Tehilim" ? "shareModal.inviteTehilim" : "shareModal.inviteStudy");
+  const byType: Record<string, string> = {
+    Tehilim: "shareModal.inviteTehilim",
+    // Nichmat 40 has places to take, not passages to reserve.
+    Nichmat: "shareModal.inviteNichmat",
+  };
+  const key = props.messageKey ?? byType[props.sessionType ?? ""] ?? "shareModal.inviteStudy";
   return `${t(key, { name: props.sessionName })}\n\n${props.shareUrl}`;
 };
 

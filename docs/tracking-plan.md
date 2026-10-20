@@ -422,6 +422,95 @@ A name removed by its author (a recovery, a mistake).
 One more value for `variant`: `prayer_name`, the invitation to sign in shown
 in front of « Proposer un nom ».
 
+## Nichmat 40
+
+Forty readers who each say Nichmat every day for forty days (see
+`docs/nichmat-40-jours.md`). As on the perpetual chain, no name is sent: the
+chain's title often names someone, and readers are people.
+
+### `session_created` (existing, one more property and value)
+
+`text_type` takes the value `Nichmat`. For a Nichmat 40 chain,
+`deadline_days` is `null`: it has no deadline to choose, its forty days end
+it.
+
+| Property     | Values                                | Status  |
+| ------------ | ------------------------------------- | ------- |
+| `start_mode` | `date`, `when_full` (Nichmat 40 only) | **new** |
+
+### `nichmat_place_take_clicked` (new)
+
+« Prendre une place » ("Take a place") pressed, before a guest gives their
+name: the denominator of `nichmat_place_taken`.
+
+| Property     | Values                 | Status  |
+| ------------ | ---------------------- | ------- |
+| `session_id` | the chain's identifier | **new** |
+| `is_guest`   | boolean                | **new** |
+
+### `nichmat_place_taken` (new)
+
+A place taken. `places_taken` tells how fast chains fill, and whether the
+ones that start once full ever start.
+
+| Property       | Values                     | Status  |
+| -------------- | -------------------------- | ------- |
+| `session_id`   | the chain's identifier     | **new** |
+| `place`        | 1 to 40                    | **new** |
+| `places_taken` | places taken, this one too | **new** |
+| `is_guest`     | boolean                    | **new** |
+
+### `nichmat_place_take_failed` (new)
+
+| Property        | Values                 | Status  |
+| --------------- | ---------------------- | ------- |
+| `session_id`    | the chain's identifier | **new** |
+| `error_message` | the error's message    | **new** |
+| `is_guest`      | boolean                | **new** |
+
+### `nichmat_place_released` (new)
+
+A reader gives up their place before ticking any day.
+
+| Property     | Values                 | Status  |
+| ------------ | ---------------------- | ------- |
+| `session_id` | the chain's identifier | **new** |
+| `is_guest`   | boolean                | **new** |
+
+### `nichmat_day_marked` (new)
+
+A day ticked or unticked. `is_today` separates the daily reading from the
+catching up of a forgotten day; across the forty days, it tells where
+readers drop out.
+
+| Property     | Values                        | Status  |
+| ------------ | ----------------------------- | ------- |
+| `session_id` | the chain's identifier        | **new** |
+| `day`        | 1 to 40                       | **new** |
+| `marked`     | boolean (false: unticked)     | **new** |
+| `is_today`   | boolean                       | **new** |
+| `is_guest`   | boolean                       | **new** |
+| `source`     | `session_page`, `my_sessions` | **new** |
+
+### `nichmat_day_mark_failed` (new)
+
+| Property        | Values                        | Status  |
+| --------------- | ----------------------------- | ------- |
+| `session_id`    | the chain's identifier        | **new** |
+| `day`           | 1 to 40                       | **new** |
+| `error_message` | the error's message           | **new** |
+| `is_guest`      | boolean                       | **new** |
+| `source`        | `session_page`, `my_sessions` | **new** |
+
+### `nichmat_text_opened` (new)
+
+« Lire Nichmat » ("Read Nishmat") from the reader's place: whether readers
+say it from the app.
+
+| Property     | Values                 | Status  |
+| ------------ | ---------------------- | ------- |
+| `session_id` | the chain's identifier | **new** |
+
 ## October 2026 additions
 
 The following additions respond to the usage audit

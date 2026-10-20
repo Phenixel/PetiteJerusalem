@@ -107,7 +107,14 @@ service cloud.firestore {
                   && request.resource.data.creatorName.size() <= 100))
         && (!request.resource.data.keys().hasAny(['reservations'])
               || (request.resource.data.reservations is list
-                  && request.resource.data.reservations.size() <= 5000));
+                  && request.resource.data.reservations.size() <= 5000))
+        // Nichmat 40 (docs/nichmat-40-jours.md): the first of the forty days
+        // (YYYY-MM-DD), or a start once the forty places are taken.
+        && (!request.resource.data.keys().hasAny(['startDay'])
+              || (request.resource.data.startDay is string
+                  && request.resource.data.startDay.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')))
+        && (!request.resource.data.keys().hasAny(['startsWhenFull'])
+              || request.resource.data.startsWhenFull is bool);
     }
 
     // Sessions : lecture publique (le partage de lecture est ouvert à tous)

@@ -1,23 +1,22 @@
 /**
- * Construit les bénédictions et les rites qui les entourent (public/texts/tefila/*)
- * à partir du Siddur Edot HaMizrach de l'export public Sefaria, comme
- * build-sidour.mjs le fait des trois offices de semaine.
+ * Builds the blessings and the rites around them (public/texts/tefila/*)
+ * from the Siddur Edot HaMizrach of the public Sefaria export, as
+ * build-sidour.mjs does for the three weekday services.
  *
- * Lancer avec : node scripts/build-brahot.mjs
+ * Run with: node scripts/build-brahot.mjs
  *
- * Ce sont les textes qu'on cherche quand on n'est pas à l'office : le Chema du
- * coucher, la havdala, la prière du voyageur, les bénédictions sur ce dont on
- * jouit, l'allumage de Hanouka, le prélèvement de la halla et des maasrot, la
- * bénédiction des arbres, la brit mila, la hachkava, le tikoun hatsot.
+ * These are the texts people look for outside the service: the bedtime
+ * Shema, havdala, the traveler's prayer, the blessings on enjoyments, the
+ * Hanukkah lighting, separating halla and maasrot, the blessing of the
+ * trees, the brit mila, the hachkava, tikoun hatsot, Nichmat kol 'hai.
  *
- * La recette reste explicite, segment par segment : la source alterne des
- * consignes en hébreu et le texte lui-même, et chaque consigne retenue devient
- * une didascalie dans les trois langues (son hébreu vient de la source, le
- * français et l'anglais sont écrits ici). Le moteur qui les lit vit dans
- * scripts/lib/tefila-recipe.mjs, partagé avec build-moadim.mjs.
+ * The recipe stays explicit, segment by segment: the source alternates
+ * Hebrew instructions and the text itself, and each instruction kept becomes
+ * a stage direction in the three languages (its Hebrew comes from the source,
+ * the French and English are written here). The engine that reads them lives
+ * in scripts/lib/tefila-recipe.mjs, shared with build-moadim.mjs.
  *
- * Licence des textes : l'export Sefaria « merged » combine des sources du
- * domaine public.
+ * Texts license: the Sefaria "merged" export combines public domain sources.
  */
 
 import { readFileSync } from "fs";
@@ -406,6 +405,48 @@ const birkotHanehenin = {
       },
       halakhaSeg: 19,
       lines: [{ seg: 20 }],
+    },
+  ],
+};
+
+/**
+ * Nichmat kol 'haï: segments of the Shabbat « Pesukei D'Zimra ». The
+ * weekday Cha'harit does not carry it, and it is also said on its own (as
+ * a thanksgiving, or as a segoula), so it gets a page of its own. It runs up
+ * to Yichtaba'h, which closes it, without the closing blessing of
+ * Yichtaba'h: that blessing ends the Pesukei dezimra, it is not said here.
+ */
+const nichmat = {
+  file: "nichmat-kol-hai",
+  title: "נשמת כל חי (Nichmat Kol 'Hai)",
+  src: (t) => t["Shabbat Shacharit"]["Pesukei D'Zimra"],
+  blocks: [
+    {
+      halakha: {
+        fr: "Nichmat se dit le Chabbat et les jours de fête, à la fin des Pessouké dezimra. En le disant, on pense à recevoir le supplément d'âme du jour.",
+        en: "Nishmat is said on Shabbat and festivals, at the end of Pesukei dezimra. While saying it, one intends to receive the additional soul of the day.",
+      },
+      halakhaSeg: 18,
+      lines: [
+        { seg: 19 },
+        { seg: 20 },
+        { seg: 21 },
+        { seg: 22 },
+        { seg: 23, lead: true },
+        { seg: 24, tight: true },
+        { seg: 25, tight: true },
+        { seg: 26, tight: true },
+        { seg: 27 },
+      ],
+    },
+    {
+      label: "Yichtaba'h",
+      halakha: {
+        fr: "Les louanges de Yichtaba'h se disent posément, comme on énonce les louanges d'un roi, et non d'un seul souffle. Certains les comptent sur leurs doigts.",
+        en: "The praises of Yishtabach are said calmly, as one sets out a king's praises, not in a single breath. Some count them on their fingers.",
+      },
+      halakhaSeg: 28,
+      lines: [{ seg: 29, until: "בָּרוּךְ אַתָּה" }],
     },
   ],
 };
@@ -1081,6 +1122,7 @@ const RECIPES = [
   hafrashatHalla,
   havdala,
   nerotHanouka,
+  nichmat,
   teroumotOumaasrot,
   tefilatHaderekh,
   tikounHatsot,

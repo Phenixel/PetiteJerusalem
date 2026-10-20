@@ -1,18 +1,32 @@
 <script setup lang="ts">
+import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { sessionService } from "../../../services/sessionService";
 import { TextTypeService } from "../../../services/textTypeService";
-import { DateService, deadlineOf } from "../../../services/dateService";
+import { DateService, deadlineOf, localDayFrom } from "../../../services/dateService";
+import { isNichmat, phaseOf } from "../../../services/nichmatChain";
 import type { Session } from "../../../models/models";
 import AppIcon from "../../../components/icons/AppIcon.vue";
 
 const { t } = useI18n();
 
-defineProps<{
+const props = defineProps<{
   session: Session;
   isOwner?: boolean;
   hasReported?: boolean;
 }>();
+
+/**
+ * Nichmat 40 gives its forty days where an ordinary chain gives its
+ * deadline: from when to when, or that it waits for its readers.
+ */
+const nichmatDates = computed(() => {
+  if (!isNichmat(props.session)) return null;
+  const phase = phaseOf(props.session);
+  if (phase.kind === "waiting") return t("nichmat.chipWaiting");
+  const format = (day: string) => DateService.formatDate(localDayFrom(day) ?? new Date());
+  return t("nichmat.dates", { start: format(phase.start), end: format(phase.end) });
+});
 
 const emit = defineEmits<{
   (e: "share"): void;
@@ -45,7 +59,10 @@ const emit = defineEmits<{
         }}</span>
       </template>
       <template v-else>
-        <span class="chip bg-black/5 text-text-secondary dark:bg-white/10">{{
+        <span v-if="nichmatDates" class="chip bg-black/5 text-text-secondary dark:bg-white/10">{{
+          nichmatDates
+        }}</span>
+        <span v-else class="chip bg-black/5 text-text-secondary dark:bg-white/10">{{
           t("common.dateLimitValue", { date: DateService.formatDate(deadlineOf(session)) })
         }}</span>
         <span class="chip bg-black/5 text-text-secondary dark:bg-white/10">{{
@@ -56,7 +73,9 @@ const emit = defineEmits<{
            chaîne, plutôt qu'un bloc qui repousse les textes vers le bas. Seule
            de la rangée à porter une icône : les autres énoncent, celle-ci
            s'ouvre. -->
+      <!-- How to reserve texts: Nichmat 40 has none, its page says what to do. -->
       <button
+        v-if="!nichmatDates"
         type="button"
         class="chip bg-primary/10 text-primary transition-colors hover:bg-primary/20"
         :title="t('detailSession.instructions.title')"
