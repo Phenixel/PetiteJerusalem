@@ -29,7 +29,7 @@ interface Sky {
   small?: boolean;
   moon?: boolean;
   wall: string;
-  /** The lit face of the tower and the dome. */
+  /** The lit face of the tower. */
   lit: string;
   windows?: boolean;
 }
@@ -130,19 +130,16 @@ const TOWER_MERLONS = [18, 23, 28];
       fill="#f6e9c6"
     />
 
-    <!-- The walls: the rampart and its merlons, a tower, a dome. -->
+    <!-- The walls: the rampart and its merlons, and a tower. -->
     <rect y="56" width="120" height="24" :fill="sky.wall" />
     <rect v-for="x in MERLONS" :key="x" :x="x" y="52" width="4" height="4" :fill="sky.wall" />
     <rect x="18" y="42" width="15" height="16" :fill="sky.wall" />
     <rect v-for="x in TOWER_MERLONS" :key="x" :x="x" y="38" width="3" height="4" :fill="sky.wall" />
     <rect x="18" y="42" width="5" height="16" :fill="sky.lit" />
-    <rect x="78" y="46" width="22" height="12" :fill="sky.wall" />
-    <path d="M78 47A11 11 0 0 1 100 47Z" :fill="sky.lit" />
-    <rect x="88.4" y="31" width="1.2" height="6" :fill="sky.lit" />
     <path d="M52 80V66A6 6 0 0 1 64 66V80Z" :fill="sky.lit" opacity="0.55" />
     <template v-if="sky.windows">
       <rect x="24" y="47" width="2.4" height="3.6" fill="#f6c86a" />
-      <rect x="92" y="51" width="2.4" height="3.2" fill="#f6c86a" />
+      <rect x="92" y="60" width="2.4" height="3.2" fill="#f6c86a" />
       <rect x="60" y="60" width="2.4" height="3.2" fill="#f6c86a" />
     </template>
   </svg>

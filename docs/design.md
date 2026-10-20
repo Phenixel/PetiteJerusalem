@@ -549,7 +549,9 @@ disc, the sky of the moment, then what matters now.
   the sky of each prayer. The sun rising behind them for Cha'harit,
   climbing for the Chema and the 'Amida, going down for Min'ha; the three
   stars of Arvit; the deep night and the crescent of the Sli'hot. Flat
-  colors, the same in every theme.
+  colors, the same in every theme. The skyline is the rampart and a tower
+  of the walls, nothing else: no dome behind them, which would stand for a
+  building that has no place in the sidour.
 - **Touched, it opens a sheet** (the bottom sheet of Mon parcours): the
   title and the sky; the course of the sun (`ZmanArc.vue`), from sunrise to
   sunset, or from sunset to sunrise for the night, with the moment's
