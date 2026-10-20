@@ -413,8 +413,8 @@ const birkotHanehenin = {
  * Nichmat kol 'haï: segments of the Shabbat « Pesukei D'Zimra ». The
  * weekday Cha'harit does not carry it, and it is also said on its own (as
  * a thanksgiving, or as a segoula), so it gets a page of its own. It runs up
- * to Yichtaba'h, which closes it; the closing blessing of Yichtaba'h is a
- * line of its own, said only within the service.
+ * to Yichtaba'h, which closes it, without the closing blessing of
+ * Yichtaba'h: that blessing ends the Pesukei dezimra, it is not said here.
  */
 const nichmat = {
   file: "nichmat-kol-hai",
@@ -446,18 +446,7 @@ const nichmat = {
         en: "The praises of Yishtabach are said calmly, as one sets out a king's praises, not in a single breath. Some count them on their fingers.",
       },
       halakhaSeg: 28,
-      lines: [
-        { seg: 29, until: "בָּרוּךְ אַתָּה" },
-        {
-          seg: 29,
-          from: "בָּרוּךְ אַתָּה",
-          rubric: {
-            fr: "Dans l'office, on conclut par la bénédiction ; hors de l'office, on s'arrête avant elle.",
-            en: "Within the service, conclude with the blessing; outside it, stop before it.",
-            he: "בתוך התפלה חותם בברכה",
-          },
-        },
-      ],
+      lines: [{ seg: 29, until: "בָּרוּךְ אַתָּה" }],
     },
   ],
 };
