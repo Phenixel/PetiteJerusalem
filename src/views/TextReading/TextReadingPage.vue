@@ -2675,7 +2675,7 @@ watch(textId, (_, previousTextId) => {
           >
             <button
               @click="setReadingMode('hebrew')"
-              class="px-2.5 sm:px-3 py-1 rounded-control text-sm font-medium transition-colors"
+              class="px-2.5 sm:px-3 py-1 rounded-segment text-sm font-medium transition-colors"
               :class="
                 readingMode === 'hebrew'
                   ? 'bg-surface text-primary shadow-sm'
@@ -2693,7 +2693,7 @@ watch(textId, (_, previousTextId) => {
             <button
               v-if="pageFormKind"
               @click="setReadingMode('page')"
-              class="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-control text-sm font-medium transition-colors"
+              class="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-segment text-sm font-medium transition-colors"
               :class="
                 readingMode === 'page' ? 'bg-surface text-primary shadow-sm' : 'text-text-secondary'
               "
@@ -2709,7 +2709,7 @@ watch(textId, (_, previousTextId) => {
             <button
               v-if="canTransliterate"
               @click="setReadingMode('phonetic')"
-              class="px-2.5 sm:px-3 py-1 rounded-control text-sm font-medium transition-colors"
+              class="px-2.5 sm:px-3 py-1 rounded-segment text-sm font-medium transition-colors"
               :class="
                 readingMode === 'phonetic'
                   ? 'bg-surface text-primary shadow-sm'

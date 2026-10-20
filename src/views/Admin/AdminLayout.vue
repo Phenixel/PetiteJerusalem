@@ -91,7 +91,7 @@ const isActive = (item: NavItem) =>
             v-for="item in items"
             :key="item.to"
             :to="item.to"
-            class="inline-flex shrink-0 items-center gap-2 rounded-btn px-3.5 py-2 text-sm font-semibold transition-colors"
+            class="inline-flex shrink-0 items-center gap-2 rounded-control px-3.5 py-2 text-sm font-semibold transition-colors"
             :class="
               isActive(item)
                 ? 'bg-surface text-text-primary shadow-card'
