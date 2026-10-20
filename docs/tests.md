@@ -13,7 +13,7 @@ npm run test:unit          # vitest, interactive mode
 npx vitest run             # a single pass, what `npm run verify` does
 ```
 
-The 264 files live in `src/__tests__/*.test.ts`. The configuration
+The 281 files live in `src/__tests__/*.test.ts`. The configuration
 (`vitest.config.ts`) uses the `jsdom` environment by default; tests that do
 not need the DOM (those that read the repository or run a script) start
 with `// @vitest-environment node`. The `e2e/`, `android/`, `ios/` and
@@ -46,6 +46,7 @@ documentation included; the French non-breaking-space rule
 | `appLinks.test.ts` | The list of paths that the installed app claims (`scripts/lib/app-links.mjs`, served under `/.well-known/`) covers the router's routes and catches no technical path, `/__/auth/` first of all. |
 | `widgetParity.test.ts` | Both platforms offer the same widgets: the iOS and Android picker names match, and the Android wiring is complete (provider, `appwidget-provider`, template, labels). |
 | `themeColors.test.ts` | Each theme color is readable where it is placed (the ink on the background, on a card and in dark mode; what is written on the tint, at rest and on hover), and nothing in `src` writes white or the ink on the tint (`bg-brand` with `text-white` or `text-primary`, or a CSS rule that sets `var(--color-brand)` as a background with white or the ink): on the light orange of the default theme, neither would be readable (`docs/design.md`, « Les couleurs de thème »). |
+| `klafViewer.test.ts` | The sizes written for the parchment photos (`src/content/klaf.ts`) are those of the files in `public/klaf/`: the window takes its shape from them before the photo loads, and a photo replaced without them would be cut (`docs/design.md`, "The parchment opens from the text"). |
 | `cardArt.test.ts` | A card that carries its drawn object (`<CardArt`) has no icon in front of its title (`docs/design.md`, "An icon before a title must say something"). |
 | `playIcon.test.ts` | The play triangle (`play-solid`) has its center of gravity in the middle of the icon, and no `AppIcon` that carries it adds a margin or an offset: it would look off-center in its circle (`docs/design.md`, "The play triangle is centered on its weight"). |
 | `seoTitles.test.ts` | The titles of the `seo` block escape the vertical bar (`{'|'}`), which vue-i18n would otherwise read as a plural separator and truncate. |

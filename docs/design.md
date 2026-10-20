@@ -3232,14 +3232,27 @@ size of the stage directions, which opens a window (`KlafViewer.vue`). It is
 the only door: unlike the compass and the mirror, the reading menu does not
 offer the parchments; they are opened where they are read.
 
-The window first shows the photo of the parchment, as is (`public/klaf/`),
-which a touch enlarges to double size; a second tab gives its
-transcription, letter by letter and without vowels, in the sofer's script
-(the Stam Sefarad CLM font, see "The fonts") and at the reader's reading
-size: the same rendering as the klaf, but as text. For the psalm, the transcription
-reproduces the shape of the parchment: seven vertical branches, a bar, a
-base, in solid strokes in the text color, without shadow or gradient. It is
-writing, not an illustration.
+The window is the photo, and nothing else (`public/klaf/`, as the sofer
+wrote it): no title, no tabs, no caption, no white around it. It takes the
+photo's shape, as large as the screen allows, on a darker veil than the
+other windows; only a round cross, on a dark disk in the top corner, sits
+on the image. The transcription that used to come in a second tab is gone:
+the vocalized text is already in the flow of the service, and two ways of
+seeing one parchment asked for a choice before showing anything.
+
+It reads up close the way a photo does, with a real zoom
+(`usePinchZoom.ts`): two fingers pinch it open around the spot they hold,
+one finger then moves through it, a double tap enlarges where it lands or
+brings it back, and on a computer the wheel zooms under the cursor. The
+photo never leaves its frame: zoomed out it fills it exactly, zoomed in its
+edges stop at the frame's. The old "a tap doubles the width, then scroll"
+is gone. The pitoum haketoret has two pages: a swipe turns them, or the
+arrows of the small dark pill at the bottom, which says « 1 / 2 ». The
+sizes of the photos are written next to them (`content/klaf.ts`), so the
+window has its shape before the photo arrives. Held by
+`src/__tests__/klafViewer.test.ts` (the photo alone, the pages, the sizes
+matching the files) and `src/__tests__/pinchZoom.test.ts` (the pinched
+spot stays under the fingers, the edges hold).
 
 ### A prayer that goes through another book leads there with one gesture
 
@@ -3431,9 +3444,10 @@ looking for, and nowhere else (no title, no label):
 
 - **Stam Sefarad CLM** (Culmus project, GPL with embedding exception,
   `public/fonts/stam-sefarad-clm.LICENSE.txt`), the sofer's script, ktav
-  Sefaradi with taguim. It writes the transcription of the parchments
-  (`KlafViewer.vue`) and the paracha in the form of the Sefer Torah
-  (`TorahScroll.vue`, see "A text also reads in the form of its page").
+  Sefaradi with taguim. It writes the paracha in the form of the Sefer
+  Torah (`TorahScroll.vue`, see "A text also reads in the form of its
+  page"). The parchments of the sidour no longer have a transcription: their
+  photo is enough (see "The parchment opens from the text").
 - **Noto Rashi Hebrew** (OFL, `public/fonts/noto-rashi-hebrew.LICENSE.txt`),
   the Rachi script. It writes only Rachi and Tossafot on the daf page
   (`TalmudPage.vue`), where they are printed in this script; the dibbour

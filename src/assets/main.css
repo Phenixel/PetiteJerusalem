@@ -44,11 +44,11 @@
   unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F;
 }
 
-/* L'écriture du sofer (ktav Sefaradi avec taguim, police Stam Sefarad CLM du
-   projet Culmus, GPL avec exception d'embarquement, voir
-   public/fonts/stam-sefarad-clm.LICENSE.txt) : elle ne sert qu'à la
-   retranscription des parchemins (KlafViewer.vue), jamais au fil d'un texte.
-   Le navigateur ne la charge qu'à la première ouverture d'un parchemin. */
+/* The sofer's script (ktav Sefaradi with taguim, the Stam Sefarad CLM font
+   of the Culmus project, GPL with an embedding exception, see
+   public/fonts/stam-sefarad-clm.LICENSE.txt): it only serves the Torah
+   scroll (TorahScroll.vue), never the flow of a text. The browser loads it
+   only the first time a scroll is opened. */
 @font-face {
   font-family: "Stam Sefarad CLM";
   src: url("/fonts/stam-sefarad-clm.woff2") format("woff2");

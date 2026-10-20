@@ -1849,13 +1849,9 @@ const fr = {
     klaf: {
       ketoret: { open: "Voir le parchemin", title: "Pitoum haketoret sur parchemin" },
       menora: { open: "Voir la menora", title: "Le Lamnatséa'h en menora" },
-      views: "Photo ou retranscription",
-      photo: "Photo",
-      text: "Texte",
       photoAlt: "{title}, page {n}",
-      zoomIn: "Touchez la photo pour l'agrandir.",
-      zoomOut: "Touchez la photo pour la ramener à la largeur de la fenêtre.",
-      transcribed: "Retranscription du parchemin, lettre à lettre, dans l'écriture du sofer.",
+      previous: "Page précédente",
+      next: "Page suivante",
     },
     // Sidour : la direction du Kotel, ouverte depuis le titre des passages
     // qui se disent face à Jérusalem (voir KotelCompass.vue).
