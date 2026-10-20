@@ -56,14 +56,35 @@ export function isQuietModeOn(state: QuietState, mode: QuietMode): boolean {
   return state.ringer === mode;
 }
 
+/** Do Not Disturb on ("priority only") or off. */
+export async function setDnd(on: boolean): Promise<QuietResult> {
+  return PjQuiet.setDnd({ on });
+}
+
+/** The ringer: normal, vibrate or silent. */
+export async function setRinger(mode: RingerMode): Promise<QuietResult> {
+  return PjQuiet.setRinger({ mode });
+}
+
 /**
  * Turns a row on or off. Silent and vibrate are the two ends of the same
  * ringer: turning one on replaces the other, turning it off goes back to the
  * normal ringer.
  */
 export async function setQuietMode(mode: QuietMode, on: boolean): Promise<QuietResult> {
-  if (mode === "dnd") return PjQuiet.setDnd({ on });
-  return PjQuiet.setRinger({ mode: on ? mode : "normal" });
+  if (mode === "dnd") return setDnd(on);
+  return setRinger(on ? mode : "normal");
+}
+
+/** The phone's state, once; null outside the Android app or without the plugin. */
+export async function readQuietState(): Promise<QuietState | null> {
+  if (!quietModesSupported) return null;
+  try {
+    const { dnd, ringer, access } = await PjQuiet.getState();
+    return { dnd, ringer, access };
+  } catch {
+    return null;
+  }
 }
 
 /** Opens the Do Not Disturb access list; false when the phone has none. */

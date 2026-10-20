@@ -153,7 +153,7 @@ import { isSansTahanoun } from "../../composables/useSansTahanoun";
 import { nightWithoutTachanun, withoutTachanun } from "../../services/tachanun";
 import { isWalledCityPlace, pastChatzotNight } from "../../services/zmanimService";
 import { useKeepAwake } from "../../composables/useKeepAwake";
-import { offerPrayerQuiet, PRAYER_QUIET_DELAY_MS } from "../../composables/usePrayerQuiet";
+import { enterPrayer, leavePrayer, PRAYER_QUIET_DELAY_MS } from "../../composables/usePrayerQuiet";
 import { analyticsService } from "../../services/analyticsService";
 import { haptic } from "../../services/haptics";
 import { useLocalePath } from "../../composables/useLocalePath";
@@ -679,15 +679,19 @@ useAutoScroll(() => currentSection.value !== null);
 // L'écran ne s'éteint pas tant qu'un texte est ouvert : un office se dit sans
 // toucher au téléphone, et la veille tomberait au milieu de la 'amida.
 useKeepAwake(() => currentSection.value !== null);
-// A service that opens (Cha'harit, Min'ha, Arvit): the app goes down and the
-// phone's quiet modes open above it (usePrayerQuiet, Android app only). Once
-// the text is shown, so that the app that goes down is the tefila.
+// A service that opens (Cha'harit, Min'ha, Arvit): the phone's quiet modes
+// come down from the top of the screen (usePrayerQuiet, Android app only),
+// once the text is shown, so that the app pushed down is the tefila. Left,
+// the phone goes back to how it was before.
 watch(
   () => (isTefila.value && currentSection.value !== null ? textId.value : null),
   (id, _previous, onCleanup) => {
     if (!id) return;
-    const timer = window.setTimeout(() => void offerPrayerQuiet(), PRAYER_QUIET_DELAY_MS);
-    onCleanup(() => window.clearTimeout(timer));
+    const timer = window.setTimeout(() => void enterPrayer(), PRAYER_QUIET_DELAY_MS);
+    onCleanup(() => {
+      window.clearTimeout(timer);
+      leavePrayer();
+    });
   },
   { immediate: true },
 );

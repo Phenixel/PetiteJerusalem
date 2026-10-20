@@ -30,7 +30,12 @@ import { useFonts } from "./composables/useFonts";
 import { loadColorScheme, loadGuestColorScheme } from "./composables/useColorScheme";
 import { loadContrast, loadGuestContrast } from "./composables/useContrast";
 import { useHolidayTheme } from "./composables/useHolidayTheme";
-import { appDrop, DROP_TRANSITION, prayerQuiet } from "./composables/usePrayerQuiet";
+import {
+  appDrop,
+  DROP_TRANSITION,
+  prayerQuiet,
+  settleLeftoverPrayer,
+} from "./composables/usePrayerQuiet";
 import { prefersReducedMotion } from "./composables/useMotion";
 
 const route = useRoute();
@@ -76,6 +81,11 @@ const OfflineNotice = defineAsyncComponent(() => import("./components/OfflineNot
 // stage is the wrapper of the whole app that goes down; held, it is fixed to
 // the screen, its content kept where it was scrolled.
 const PrayerQuietPanel = defineAsyncComponent(() => import("./components/PrayerQuietPanel.vue"));
+// A tefila left by closing the app: the phone goes back to how it was before
+// it, once the first screen is drawn (unless that screen is a tefila).
+if (isNativeApp) {
+  void router.isReady().then(() => setTimeout(() => void settleLeftoverPrayer(), 1500));
+}
 const stageStyle = computed(() =>
   appDrop.held
     ? {

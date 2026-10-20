@@ -7,15 +7,22 @@ import { createI18n } from "vue-i18n";
 import fr from "../locales/fr";
 
 /**
- * When a tefila opens, the app goes down and the phone's quiet modes open
- * above it (usePrayerQuiet, PrayerQuietPanel.vue, PjQuietPlugin.java):
+ * When a tefila opens, the phone's quiet modes come down from the top of
+ * the screen and push the app down (usePrayerQuiet, PrayerQuietPanel.vue,
+ * PjQuietPlugin.java):
  *  - the native side: the plugin is registered and its permission declared,
  *    without which the app is not even listed under Do Not Disturb access;
- *  - the panel only opens in the Android app, with a plugin that answers,
- *    and not again right after it was closed;
+ *  - the panel only opens in the Android app, with a plugin that answers;
+ *  - what is changed is changed for the prayer: once the tefila is left, the
+ *    phone goes back to how it was, except what the user changed again
+ *    themselves; Min'ha then Arvit is one prayer; an app closed in the
+ *    middle sets the phone back at the next launch;
+ *  - « Ne plus proposer » stops the panel, « À chaque tefila » applies
+ *    the modes on to the next ones without asking;
  *  - a change refused for lack of access opens the system list, and is made
  *    on return once the access is granted;
- *  - the app goes down by the panel's height and comes back up where it was.
+ *  - the panel comes down from above the screen with the app, grows by its
+ *    choices after a moment, and retracts upward when one is made.
  */
 
 type State = { dnd: boolean; ringer: "normal" | "vibrate" | "silent"; access: boolean };
@@ -29,11 +36,13 @@ const phone = vi.hoisted(() => ({
 }));
 const plugin = vi.hoisted(() => ({
   start: vi.fn(),
+  getState: vi.fn(),
   stop: vi.fn(() => Promise.resolve()),
   setDnd: vi.fn(),
   setRinger: vi.fn(),
   openAccessSettings: vi.fn(),
 }));
+const toast = vi.hoisted(() => vi.fn());
 
 vi.mock("../composables/useNativeApp", () => ({
   get isNativeApp() {
@@ -47,6 +56,7 @@ vi.mock("../composables/useNativeApp", () => ({
 vi.mock("@capacitor/core", () => ({
   registerPlugin: () => ({
     start: plugin.start,
+    getState: plugin.getState,
     stop: plugin.stop,
     setDnd: plugin.setDnd,
     setRinger: plugin.setRinger,
@@ -68,17 +78,23 @@ vi.mock("../composables/useOnboarding", () => ({
   },
 }));
 
+vi.mock("../composables/useToast", () => ({ useToast: () => ({ info: toast }) }));
+
 const route = reactive({ fullPath: "/bibliotheque/sidour/chaharit" });
 vi.mock("vue-router", () => ({ useRoute: () => route }));
 
 import { quietModesSupported } from "../services/prayerQuiet";
 import {
   appDrop,
+  choosePrayerQuiet,
   closePrayerQuiet,
-  offerPrayerQuiet,
+  enterPrayer,
+  LEAVE_GRACE_MS,
+  leavePrayer,
   prayerQuiet,
-  REOFFER_AFTER_MS,
+  prayerQuietChoice,
   resetPrayerQuiet,
+  settleLeftoverPrayer,
   toggleQuietMode,
 } from "../composables/usePrayerQuiet";
 import { pushOverlay, resetOverlayStack } from "../composables/useOverlayStack";
@@ -94,24 +110,32 @@ function applyRinger(mode: State["ringer"]): State & { applied: boolean } {
   return { ...phone.state, applied: true };
 }
 
+/** The tefila left, and the grace after it run out. */
+async function leaveAndWait(): Promise<void> {
+  leavePrayer();
+  await vi.advanceTimersByTimeAsync(LEAVE_GRACE_MS);
+}
+
 beforeEach(() => {
+  vi.useFakeTimers();
+  localStorage.clear();
   resetPrayerQuiet();
   resetOverlayStack();
   plugin.stop.mockClear();
+  toast.mockClear();
   platform.native = true;
   platform.name = "android";
-  phone.state = { dnd: false, ringer: "normal", access: false };
+  phone.state = { dnd: false, ringer: "normal", access: true };
   phone.listener = null;
   phone.missing = false;
   phone.settings = true;
   onboarding.open = false;
-  plugin.start
-    .mockReset()
-    .mockImplementation(() =>
-      phone.missing
-        ? Promise.reject(new Error('"PjQuiet" plugin is not implemented on android'))
-        : Promise.resolve({ ...phone.state }),
-    );
+  const answer = () =>
+    phone.missing
+      ? Promise.reject(new Error('"PjQuiet" plugin is not implemented on android'))
+      : Promise.resolve({ ...phone.state });
+  plugin.start.mockReset().mockImplementation(answer);
+  plugin.getState.mockReset().mockImplementation(answer);
   plugin.setRinger
     .mockReset()
     .mockImplementation(({ mode }: { mode: State["ringer"] }) =>
@@ -151,19 +175,21 @@ describe("the native side of the quiet modes", () => {
     expect(java).toContain('@CapacitorPlugin(name = "PjQuiet")');
     expect(bridge).toContain('registerPlugin<PjQuietBridge>("PjQuiet")');
   });
+
+  it("is Android only (iOS gives no access to the silent switch or Focus)", () => {
+    // The flag is computed at load, from the platform of the mock.
+    expect(quietModesSupported).toBe(true);
+    expect(bridge).toMatch(/quietModesSupported = isNativeApp && appPlatform === "android"/);
+  });
 });
 
 describe("offering the quiet modes when a tefila opens", () => {
-  it("opens in the Android app, with the phone's state", async () => {
+  it("opens with the phone's state, already on or not, and follows it", async () => {
     phone.state = { dnd: true, ringer: "vibrate", access: true };
-    expect(await offerPrayerQuiet()).toBe(true);
+    await enterPrayer();
     expect(prayerQuiet.open).toBe(true);
     expect(prayerQuiet.state).toEqual({ dnd: true, ringer: "vibrate", access: true });
-  });
-
-  it("follows the phone while it is open, and lets go once closed", async () => {
-    await offerPrayerQuiet();
-    phone.listener?.({ dnd: false, ringer: "silent", access: false });
+    phone.listener?.({ dnd: false, ringer: "silent", access: true });
     expect(prayerQuiet.state?.ringer).toBe("silent");
     closePrayerQuiet();
     expect(plugin.stop).toHaveBeenCalledTimes(1);
@@ -171,45 +197,137 @@ describe("offering the quiet modes when a tefila opens", () => {
 
   it("stays closed on a binary older than the plugin", async () => {
     phone.missing = true;
-    expect(await offerPrayerQuiet()).toBe(false);
+    await enterPrayer();
     expect(prayerQuiet.open).toBe(false);
-  });
-
-  it("stays closed outside the Android app (iOS gives no access to these modes)", () => {
-    // The flag is computed at load, from the platform of the mock.
-    expect(quietModesSupported).toBe(true);
-    const source = readFileSync(join(root, "src/services/prayerQuiet.ts"), "utf8");
-    expect(source).toMatch(/quietModesSupported = isNativeApp && appPlatform === "android"/);
   });
 
   it("does not open over another window, nor over the introduction", async () => {
     onboarding.open = true;
-    expect(await offerPrayerQuiet()).toBe(false);
+    await enterPrayer();
+    expect(prayerQuiet.open).toBe(false);
+    await leaveAndWait();
     onboarding.open = false;
     pushOverlay(() => {});
-    expect(await offerPrayerQuiet()).toBe(false);
-  });
-
-  it("does not come back right after it was closed (Min'ha then Arvit)", async () => {
-    await offerPrayerQuiet(0);
-    closePrayerQuiet(1_000);
-    expect(await offerPrayerQuiet(1_000 + 60_000)).toBe(false);
-    expect(await offerPrayerQuiet(1_000 + REOFFER_AFTER_MS)).toBe(true);
+    await enterPrayer();
+    expect(prayerQuiet.open).toBe(false);
   });
 });
 
-describe("changing a mode from the panel", () => {
-  it("vibrate needs no access, and replaces the normal ringer", async () => {
-    await offerPrayerQuiet();
+describe("the phone set for the prayer, and back after it", () => {
+  it("leaving the tefila turns Do Not Disturb off again, and the ringer back", async () => {
+    await enterPrayer();
+    await toggleQuietMode("dnd", true);
     await toggleQuietMode("vibrate", true);
-    expect(prayerQuiet.state?.ringer).toBe("vibrate");
-    expect(plugin.openAccessSettings).not.toHaveBeenCalled();
-    await toggleQuietMode("vibrate", false);
-    expect(prayerQuiet.state?.ringer).toBe("normal");
+    closePrayerQuiet();
+    expect(phone.state).toMatchObject({ dnd: true, ringer: "vibrate" });
+
+    leavePrayer();
+    // Not right away: another tefila may open.
+    await vi.advanceTimersByTimeAsync(LEAVE_GRACE_MS - 100);
+    expect(phone.state.dnd).toBe(true);
+    await vi.advanceTimersByTimeAsync(100);
+    expect(phone.state).toMatchObject({ dnd: false, ringer: "normal" });
   });
 
-  it("without access, opens the system list, then makes the change on return", async () => {
-    await offerPrayerQuiet();
+  it("leaves alone what was already on before the prayer", async () => {
+    phone.state = { dnd: true, ringer: "normal", access: true };
+    await enterPrayer();
+    await toggleQuietMode("silent", true);
+    closePrayerQuiet();
+    await leaveAndWait();
+    expect(phone.state).toMatchObject({ dnd: true, ringer: "normal" });
+    expect(plugin.setDnd).not.toHaveBeenCalled();
+  });
+
+  it("leaves alone what the user changed again in the meantime", async () => {
+    await enterPrayer();
+    await toggleQuietMode("vibrate", true);
+    closePrayerQuiet();
+    phone.state = { ...phone.state, ringer: "silent" }; // from the quick settings
+    plugin.setRinger.mockClear();
+    await leaveAndWait();
+    expect(plugin.setRinger).not.toHaveBeenCalled();
+    expect(phone.state.ringer).toBe("silent");
+  });
+
+  it("Min'ha then Arvit is one prayer: no second panel, set back after the last", async () => {
+    await enterPrayer();
+    await toggleQuietMode("dnd", true);
+    closePrayerQuiet();
+    leavePrayer();
+    await vi.advanceTimersByTimeAsync(1000);
+    await enterPrayer();
+    expect(prayerQuiet.open).toBe(false);
+    await vi.advanceTimersByTimeAsync(LEAVE_GRACE_MS);
+    expect(phone.state.dnd).toBe(true);
+    await leaveAndWait();
+    expect(phone.state.dnd).toBe(false);
+  });
+
+  it("an app closed during the tefila sets the phone back at the next launch", async () => {
+    await enterPrayer();
+    await toggleQuietMode("vibrate", true);
+    const saved = localStorage.getItem("pj-prayer-quiet-session");
+    expect(saved).not.toBeNull();
+    // The app is killed, then launched again: only the device remembers.
+    resetPrayerQuiet();
+    localStorage.setItem("pj-prayer-quiet-session", saved!);
+    await settleLeftoverPrayer();
+    expect(phone.state.ringer).toBe("normal");
+    expect(localStorage.getItem("pj-prayer-quiet-session")).toBeNull();
+  });
+});
+
+describe("the panel's choices", () => {
+  it("« À chaque tefila » turns the same modes on by themselves the next times", async () => {
+    await enterPrayer();
+    await toggleQuietMode("dnd", true);
+    await toggleQuietMode("vibrate", true);
+    choosePrayerQuiet("always");
+    closePrayerQuiet();
+    expect(prayerQuietChoice.value).toEqual({
+      mode: "always",
+      wish: { dnd: true, ringer: "vibrate" },
+    });
+    await leaveAndWait();
+    expect(phone.state).toMatchObject({ dnd: false, ringer: "normal" });
+
+    await enterPrayer();
+    expect(prayerQuiet.open).toBe(false);
+    expect(phone.state).toMatchObject({ dnd: true, ringer: "vibrate" });
+    expect(toast).toHaveBeenCalledTimes(1);
+    await leaveAndWait();
+    expect(phone.state).toMatchObject({ dnd: false, ringer: "normal" });
+  });
+
+  it("« À chaque tefila » falls back to the panel when the phone refuses", async () => {
+    await enterPrayer();
+    await toggleQuietMode("dnd", true);
+    choosePrayerQuiet("always");
+    closePrayerQuiet();
+    await leaveAndWait();
+    phone.state = { ...phone.state, access: false }; // access withdrawn since
+    await enterPrayer();
+    expect(prayerQuiet.open).toBe(true);
+  });
+
+  it("« Ne plus proposer » stops the panel, and still sets this prayer back", async () => {
+    await enterPrayer();
+    await toggleQuietMode("vibrate", true);
+    choosePrayerQuiet("never");
+    closePrayerQuiet();
+    await leaveAndWait();
+    expect(phone.state.ringer).toBe("normal");
+    await enterPrayer();
+    expect(prayerQuiet.open).toBe(false);
+    expect(phone.state.ringer).toBe("normal");
+  });
+});
+
+describe("changing a mode without the access", () => {
+  it("opens the system list, then makes the change on return", async () => {
+    phone.state = { ...phone.state, access: false };
+    await enterPrayer();
     await toggleQuietMode("silent", true);
     expect(plugin.openAccessSettings).toHaveBeenCalledTimes(1);
     expect(prayerQuiet.hint).toBe("access");
@@ -223,21 +341,37 @@ describe("changing a mode from the panel", () => {
   });
 
   it("says so when the phone has no Do Not Disturb access list", async () => {
+    phone.state = { ...phone.state, access: false };
     phone.settings = false;
-    await offerPrayerQuiet();
+    await enterPrayer();
     await toggleQuietMode("dnd", true);
     expect(prayerQuiet.hint).toBe("unavailable");
     expect(prayerQuiet.state?.dnd).toBe(false);
   });
 });
 
-describe("the app lowered under the panel", () => {
+describe("the panel, from the top of the screen", () => {
   /** jsdom has no PointerEvent: a mouse event under its name, with an id. */
   function pointer(type: string, clientY: number): Event {
     const event = new MouseEvent(type, { clientY, bubbles: true });
     Object.defineProperty(event, "pointerId", { value: 1 });
     return event;
   }
+
+  let panelHeight = 100;
+  const offsetHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "offsetHeight")!;
+  beforeEach(() => {
+    panelHeight = 100;
+    Object.defineProperty(HTMLElement.prototype, "offsetHeight", {
+      configurable: true,
+      get() {
+        return (this as HTMLElement).classList.contains("prayer-quiet") ? panelHeight : 0;
+      },
+    });
+  });
+  afterEach(() => {
+    Object.defineProperty(HTMLElement.prototype, "offsetHeight", offsetHeight);
+  });
 
   function mountPanel(): { unmount: () => void; panel: HTMLElement } {
     const stage = document.createElement("div");
@@ -253,35 +387,46 @@ describe("the app lowered under the panel", () => {
     return { unmount: () => app.unmount(), panel };
   }
 
-  it("goes down by the panel's height, then comes back up where it was", async () => {
-    vi.useFakeTimers();
-    const offsetHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "offsetHeight")!;
-    Object.defineProperty(HTMLElement.prototype, "offsetHeight", {
-      configurable: true,
-      get() {
-        return (this as HTMLElement).classList.contains("prayer-quiet") ? 320 : 0;
-      },
-    });
+  it("comes down with the app, grows by its choices, and retracts upward", async () => {
     const scrollTo = vi.spyOn(window, "scrollTo").mockImplementation(() => {});
     Object.defineProperty(window, "scrollY", { configurable: true, value: 140 });
     phone.state = { dnd: false, ringer: "vibrate", access: true };
-    await offerPrayerQuiet();
+    await enterPrayer();
     const { unmount, panel } = mountPanel();
-    await nextTick();
-    await nextTick();
+    await vi.advanceTimersByTimeAsync(0);
 
+    // Glued to the app's top edge: both down by the panel's height.
     expect(appDrop.held).toBe(true);
     expect(appDrop.scrollY).toBe(140);
-    expect(appDrop.offset).toBe(320);
+    expect(appDrop.offset).toBe(100);
+    expect(panel.style.transform).toBe("translate3d(0, 0px, 0)");
     // The three modes, each with the phone's state.
-    const states = [...panel.querySelectorAll("label")].map((row) => row.textContent);
-    expect(states[0]).toContain("Désactivé");
-    expect(states[1]).toContain("Désactivé");
-    expect(states[2]).toContain("Activé");
+    const tiles = [...panel.querySelectorAll<HTMLButtonElement>(".quiet-tile")];
+    expect(tiles.map((tile) => tile.getAttribute("aria-pressed"))).toEqual([
+      "false",
+      "false",
+      "true",
+    ]);
+    expect(tiles[2].textContent).toContain("Activé");
+    expect(tiles[0].textContent).toContain("Désactivé");
 
-    panel.querySelector<HTMLButtonElement>(".btn-primary")!.click();
+    // A few seconds later, the choices: the panel grows, the app follows.
+    expect(panel.textContent).not.toContain("Fermer");
+    panelHeight = 140;
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(panel.textContent).toContain("Fermer");
+    expect(panel.textContent).toContain("Ne plus proposer");
+    expect(panel.textContent).toContain("À chaque tefila");
+    expect(appDrop.offset).toBe(140);
+
+    const close = [...panel.querySelectorAll("button")].find((b) =>
+      b.textContent?.includes("Fermer"),
+    );
+    close!.click();
+    await nextTick();
+    // Retracting: the app comes back up, the panel goes up above the screen.
     expect(appDrop.offset).toBe(0);
-    expect(prayerQuiet.open).toBe(true);
+    expect(panel.style.transform).toBe("translate3d(0, -140px, 0)");
     await vi.runAllTimersAsync();
     expect(prayerQuiet.open).toBe(false);
     expect(appDrop.held).toBe(false);
@@ -289,14 +434,25 @@ describe("the app lowered under the panel", () => {
 
     unmount();
     scrollTo.mockRestore();
-    Object.defineProperty(HTMLElement.prototype, "offsetHeight", offsetHeight);
+  });
+
+  it("a touch on a tile turns its mode off as well as on", async () => {
+    phone.state = { dnd: true, ringer: "normal", access: true };
+    await enterPrayer();
+    const { unmount, panel } = mountPanel();
+    await vi.advanceTimersByTimeAsync(0);
+    panel.querySelector<HTMLButtonElement>(".quiet-tile")!.click();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(phone.state.dnd).toBe(false);
+    // The first touch brings the choices without waiting.
+    expect(panel.textContent).toContain("Fermer");
+    unmount();
   });
 
   it("a tap on the lowered app closes it", async () => {
-    vi.useFakeTimers();
-    await offerPrayerQuiet();
+    await enterPrayer();
     const { unmount } = mountPanel();
-    await nextTick();
+    await vi.advanceTimersByTimeAsync(0);
     const catcher = document.querySelector<HTMLButtonElement>("#app-stage .prayer-quiet-catcher")!;
     expect(catcher).not.toBeNull();
     catcher.dispatchEvent(pointer("pointerdown", 500));

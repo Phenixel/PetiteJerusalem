@@ -1,26 +1,33 @@
 <script setup lang="ts">
 /**
- * The panel opened at the top of the screen when a tefila opens: the whole
- * app goes down below it, as when the screen is split in two, and the three
- * quiet modes of the phone (Do Not Disturb, silent, vibrate) sit there with
- * their current state (usePrayerQuiet, docs/design.md « A tefila opens on
- * the phone's quiet modes »).
+ * The panel that comes down from the top of the screen when a tefila opens.
+ * It pushes the whole app down below it, as when the screen is split in
+ * two, and stays under a fifth of the screen: the three quiet modes of the
+ * phone (Do Not Disturb, silent, vibrate) as tiles, solid when the mode is
+ * on, a touch turning it on or off (usePrayerQuiet, docs/design.md « A
+ * tefila opens on the phone's quiet modes »).
  *
- * It closes with « Commencer » ("Start"), a tap on the lowered app, the app
- * pushed back up with the finger, Escape or Android back; the app then rises
- * back over it, from where the finger let it go.
+ * A few seconds later (or at the first touch), it grows by a row of three
+ * choices: « À chaque tefila » ("Every tefila"), « Ne plus
+ * proposer » ("Don't offer again") and « Fermer » ("Close"). A choice, a
+ * tap on the lowered app, the app pushed back up with the finger, Escape or
+ * Android back: the panel retracts upward as the app comes back up over it.
+ *
+ * The panel's lower edge is glued to the app's upper edge: one translation,
+ * the app's (`appDrop.offset`), moves both, the finger's included.
  */
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 import AppIcon from "./icons/AppIcon.vue";
-import ToggleSwitch from "./ToggleSwitch.vue";
 import { prefersReducedMotion } from "../composables/useMotion";
 import { useOverlay } from "../composables/useOverlayStack";
 import {
   appDrop,
+  choosePrayerQuiet,
   closePrayerQuiet,
   DROP_MS,
+  DROP_TRANSITION,
   holdApp,
   prayerQuiet,
   releaseApp,
@@ -31,6 +38,9 @@ import type { IconName } from "./icons/registry";
 
 const { t } = useI18n();
 const route = useRoute();
+
+/** The time to look at the modes before the choices come. */
+const ACTIONS_DELAY_MS = 2000;
 
 // Keys written out, so that the i18n guard finds their reader.
 const MODES: { mode: QuietMode; icon: IconName; label: string }[] = [
@@ -44,7 +54,7 @@ const HINTS = {
   unavailable: "prayerQuiet.hint.unavailable",
 } as const;
 
-const rows = computed(() =>
+const tiles = computed(() =>
   MODES.map(({ mode, icon, label }) => ({
     mode,
     icon,
@@ -52,13 +62,26 @@ const rows = computed(() =>
     on: prayerQuiet.state ? isQuietModeOn(prayerQuiet.state, mode) : false,
   })),
 );
+/** « À chaque tefila » keeps what is on: nothing on, nothing to keep. */
+const anyOn = computed(() => tiles.value.some((tile) => tile.on));
 
 const panel = ref<HTMLElement | null>(null);
 const closing = ref(false);
+/** The panel has taken its place above the screen: it may move from now on. */
+const entered = ref(false);
+const showActions = ref(false);
+/** The panel's height, read with the app's offset so that the two move together. */
 const height = ref(0);
 let returnFocus: HTMLElement | null = null;
 let closeTimer: number | undefined;
+let actionsTimer: number | undefined;
 let resizeObserver: ResizeObserver | null = null;
+
+const panelStyle = computed(() => ({
+  transform: `translate3d(0, ${appDrop.offset - height.value}px, 0)`,
+  transition:
+    !entered.value || appDrop.dragging || prefersReducedMotion() ? "none" : DROP_TRANSITION,
+}));
 
 // Android back closes it, as Escape does.
 useOverlay(
@@ -81,9 +104,24 @@ function close(): void {
   );
 }
 
-/** The app goes down by the panel's height, and follows it if it changes. */
+function choose(action: "close" | "never" | "always"): void {
+  choosePrayerQuiet(action);
+  close();
+}
+
+function onTile(mode: QuietMode, on: boolean): void {
+  revealActions();
+  void toggleQuietMode(mode, !on);
+}
+
+function revealActions(): void {
+  window.clearTimeout(actionsTimer);
+  showActions.value = true;
+}
+
+/** The app goes down by the panel's height, and follows it when it grows. */
 function lower(): void {
-  if (!panel.value || closing.value) return;
+  if (!panel.value || closing.value || !entered.value) return;
   height.value = panel.value.offsetHeight;
   if (!appDrop.dragging) appDrop.offset = height.value;
 }
@@ -91,26 +129,40 @@ function lower(): void {
 onMounted(async () => {
   returnFocus = document.activeElement as HTMLElement | null;
   holdApp();
-  // The stage is first held where it is, then lowered: the translation
-  // starts from 0, so the browser animates it.
+  // First in place above the screen, without moving (`entered` is false):
+  // then the panel comes down and the app with it, from there.
   await nextTick();
+  if (!panel.value) return;
+  height.value = panel.value.offsetHeight;
+  await nextTick();
+  void panel.value.getBoundingClientRect();
+  entered.value = true;
   lower();
   // The panel takes the focus (the app below it is inert), without a ring
   // around a button nobody has reached with the keyboard.
-  panel.value?.focus({ preventScroll: true });
-  if (typeof ResizeObserver !== "undefined" && panel.value) {
+  panel.value.focus({ preventScroll: true });
+  if (typeof ResizeObserver !== "undefined") {
     resizeObserver = new ResizeObserver(() => lower());
     resizeObserver.observe(panel.value);
   }
+  actionsTimer = window.setTimeout(revealActions, ACTIONS_DELAY_MS);
   document.addEventListener("keydown", onKeydown);
 });
 
 onBeforeUnmount(() => {
   window.clearTimeout(closeTimer);
+  window.clearTimeout(actionsTimer);
   resizeObserver?.disconnect();
   document.removeEventListener("keydown", onKeydown);
   void releaseApp();
 });
+
+// The choices may make it grow: the app follows (the observer can be late).
+watch(showActions, () => void nextTick(lower));
+watch(
+  () => prayerQuiet.hint,
+  () => void nextTick(lower),
+);
 
 // Leaving the page (a link, the history) closes it with the page.
 watch(
@@ -177,40 +229,47 @@ function onPointerCancel(event: PointerEvent): void {
     aria-modal="true"
     aria-labelledby="prayer-quiet-title"
     tabindex="-1"
+    :style="panelStyle"
   >
-    <h2 id="prayer-quiet-title" class="font-display text-xl font-bold text-text-primary mb-3">
-      {{ t("prayerQuiet.title") }}
-    </h2>
-    <ul class="flex flex-col">
-      <li v-for="row in rows" :key="row.mode" class="quiet-row">
-        <label class="flex items-center gap-3 py-2.5 cursor-pointer">
-          <AppIcon
-            :name="row.icon"
-            :size="20"
-            class="shrink-0"
-            :class="row.on ? 'text-primary' : 'text-text-secondary'"
-          />
-          <span class="flex-1 min-w-0">
-            <span class="block font-semibold text-text-primary">
-              {{ t(row.label) }}
-            </span>
-            <span class="block text-sm text-text-secondary">
-              {{ row.on ? t("prayerQuiet.on") : t("prayerQuiet.off") }}
-            </span>
-          </span>
-          <ToggleSwitch
-            :model-value="row.on"
-            @update:model-value="toggleQuietMode(row.mode, $event)"
-          />
-        </label>
-      </li>
-    </ul>
-    <p v-if="prayerQuiet.hint" class="mt-2 text-sm text-text-secondary" role="status">
+    <h2 id="prayer-quiet-title" class="sr-only">{{ t("prayerQuiet.title") }}</h2>
+    <div class="grid grid-cols-3 gap-2">
+      <button
+        v-for="tile in tiles"
+        :key="tile.mode"
+        type="button"
+        class="quiet-tile"
+        :class="{ 'quiet-tile-on': tile.on }"
+        :aria-pressed="tile.on"
+        @click="onTile(tile.mode, tile.on)"
+      >
+        <AppIcon :name="tile.icon" :size="18" />
+        <span class="text-xs font-semibold leading-tight">{{ t(tile.label) }}</span>
+        <span class="quiet-tile-state">
+          {{ tile.on ? t("prayerQuiet.on") : t("prayerQuiet.off") }}
+        </span>
+      </button>
+    </div>
+    <p v-if="prayerQuiet.hint" class="mt-2 text-xs text-text-secondary" role="status">
       {{ t(HINTS[prayerQuiet.hint]) }}
     </p>
-    <button type="button" class="btn btn-primary w-full mt-4" @click="close">
-      {{ t("prayerQuiet.start") }}
-    </button>
+    <Transition name="quiet-actions">
+      <div v-if="showActions" class="mt-2 flex flex-wrap justify-center gap-1.5">
+        <button
+          type="button"
+          class="btn btn-soft quiet-action"
+          :disabled="!anyOn"
+          @click="choose('always')"
+        >
+          {{ t("prayerQuiet.always") }}
+        </button>
+        <button type="button" class="btn btn-soft quiet-action" @click="choose('never')">
+          {{ t("prayerQuiet.never") }}
+        </button>
+        <button type="button" class="btn btn-primary quiet-action" @click="choose('close')">
+          {{ t("prayerQuiet.close") }}
+        </button>
+      </div>
+    </Transition>
   </section>
   <!-- On the lowered app: it closes the panel, and the finger pushes it up. -->
   <Teleport to="#app-stage">
@@ -227,20 +286,60 @@ function onPointerCancel(event: PointerEvent): void {
 </template>
 
 <style scoped>
-/* Behind the app, at the top of the screen: the app goes down to uncover
-   it, and comes back up over it. */
+/* Behind the app, at the top of the screen: it comes down as the app goes
+   down, and retracts upward as the app comes back up over it. */
 .prayer-quiet {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   z-index: 0;
-  padding: calc(var(--safe-top) + 1rem) 1.5rem 1.25rem;
+  padding: calc(var(--safe-top) + 0.5rem) 0.75rem 0.625rem;
   background: var(--color-surface);
   outline: none;
+  will-change: transform;
 }
-.quiet-row + .quiet-row {
-  border-top: 1px solid var(--color-line);
+/* A mode, like a tile of the system's quick settings: its drawing, its
+   name and its state, solid in the theme color when it is on. */
+.quiet-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.125rem;
+  min-width: 0;
+  padding: 0.5rem 0.25rem;
+  border-radius: var(--radius-btn);
+  text-align: center;
+  color: var(--color-text-primary);
+  background-color: color-mix(in srgb, var(--color-text-primary) 6%, transparent);
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+.quiet-tile-on {
+  color: var(--color-on-brand);
+  background-color: var(--color-brand);
+}
+.quiet-tile:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+.quiet-tile-state {
+  font-size: 0.6875rem;
+  line-height: 1.2;
+  opacity: 0.8;
+}
+/* The three choices hold on one line of a 360 px phone. */
+.quiet-action {
+  padding: 0.375rem 0.625rem;
+  font-size: 0.8125rem;
+}
+.quiet-actions-enter-active {
+  transition: opacity 0.2s ease;
+}
+.quiet-actions-enter-from {
+  opacity: 0;
 }
 /* Above everything in the stage, the bottom bar included, which goes down
    with the rest. */
@@ -251,5 +350,11 @@ function onPointerCancel(event: PointerEvent): void {
   background: transparent;
   touch-action: none;
   cursor: pointer;
+}
+@media (prefers-reduced-motion: reduce) {
+  .quiet-tile,
+  .quiet-actions-enter-active {
+    transition: none;
+  }
 }
 </style>

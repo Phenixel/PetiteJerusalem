@@ -566,7 +566,14 @@ listed there at all, the manifest declares `ACCESS_NOTIFICATION_POLICY`.
 and registers it in `MainActivity`. On the page side,
 `src/services/prayerQuiet.ts` and `src/composables/usePrayerQuiet.ts`:
 nothing outside the Android app, and nothing on a binary older than the
-plugin (the panel then stays closed). iOS has no public API for the
+plugin (the panel then stays closed).
+
+What the app changes is changed for the prayer, and undone when the tefila
+is left. The phone as it was before and what was changed since are kept in
+the two device storages (`pj-prayer-quiet-session`), so that an app killed
+in the middle of a tefila sets the phone back at its next launch. The
+panel's choice (offer, apply by itself, nothing) and the modes kept for
+every tefila live in `pj-prayer-quiet`. iOS has no public API for the
 ring/silent switch or for Focus. Test: `src/__tests__/prayerQuiet.test.ts`.
 
 ## Icons that follow the device theme
