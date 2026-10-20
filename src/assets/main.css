@@ -159,11 +159,14 @@ body {
   --radius-xl: 8px;
   --radius-2xl: 10px;
   --radius-3xl: 14px;
-  /* Alias parlants : la carte de la maison, la petite commande (bouton
-     d'icône, champ, bouton d'un groupe segmenté), le bouton, la pastille. */
+  /* Speaking aliases: the house card, the small control (icon button,
+     field), the button, the pill. A segment is the button of a segmented
+     group: it hugs a shell of --radius-btn padded by 2 px, so it takes that
+     radius minus the padding (see docs/design.md, nested roundings). */
   --radius-card: 6px;
   --radius-control: 10px;
   --radius-btn: 14px;
+  --radius-segment: calc(var(--radius-btn) - 2px);
   --radius-pill: 999px;
 
   /* Soft, warm-tinted shadows, flat surfaces are separated from the beige

@@ -3373,13 +3373,14 @@ sharp, like stone, barely softened at the corners; **controls** are clearly
 round, to invite touch. It is the contrast between the two that makes a
 button read as a button.
 
-| Token                                  | Value                    | For                                                             |
-| -------------------------------------- | ------------------------ | --------------------------------------------------------------- |
-| `--radius-card` (`rounded-card`)       | 6 px                     | cards, panels, lists, tiles, skeletons                          |
-| `--radius-control` (`rounded-control`) | 10 px                    | small controls: icon button, field, button in a segmented group |
-| `--radius-btn` (`rounded-btn`)         | 14 px                    | buttons, segmented group shells, menu rows                      |
-| `--radius-pill` (`rounded-pill`)       | 999 px                   | chips, pills, sliders                                           |
-| `--radius-xs` … `--radius-3xl`         | 2, 3, 4, 6, 8, 10, 14 px | the Tailwind scale, tuned to the surface family                 |
+| Token                                  | Value                    | For                                                          |
+| -------------------------------------- | ------------------------ | ------------------------------------------------------------ |
+| `--radius-card` (`rounded-card`)       | 6 px                     | cards, panels, lists, tiles, skeletons                       |
+| `--radius-control` (`rounded-control`) | 10 px                    | small controls: icon button, field; a button in a 4 px shell |
+| `--radius-btn` (`rounded-btn`)         | 14 px                    | buttons, segmented group shells, menu rows                   |
+| `--radius-segment` (`rounded-segment`) | 12 px                    | a segment: the button or pill hugging a shell padded by 2 px |
+| `--radius-pill` (`rounded-pill`)       | 999 px                   | chips, pills, sliders                                        |
+| `--radius-xs` … `--radius-3xl`         | 2, 3, 4, 6, 8, 10, 14 px | the Tailwind scale, tuned to the surface family              |
 
 The numeric scale is only for surfaces: `rounded-lg` is 6 px, like `.card`
 (it is a surface's default value), `rounded-xl` 8 px for windows and
@@ -3389,10 +3390,15 @@ card's edge. Controls do not follow this scale: they take their aliases.
 ### Two nested roundings are never equal
 
 An element placed inside another takes the parent's radius minus its
-padding (a 14 px shell with 2 px of inner padding holds a 12 px button,
-rounded here to `rounded-control`; a 6 px card with 4 px of padding holds a
-2 px preview). Two concentric curves of the same radius are not parallel:
-the inner one looks rounder, and the eye sees it without knowing why. The
+padding, exactly, not rounded to the nearest token: a 14 px shell with 2 px
+of inner padding holds 12 px buttons (`rounded-segment`, written
+`calc(var(--radius-btn) - 2px)` so it follows the shell), one with 4 px of
+padding holds 10 px buttons (`rounded-control`), one with 3 px holds
+`calc(var(--radius-btn) - 3px)`; a 6 px card with 4 px of padding holds a
+2 px preview. Two concentric curves of the same radius are not parallel:
+the inner one looks rounder, and the eye sees it without knowing why; a
+rounding off by 2 px is already enough to see the gap widen at the
+corners. The
 rule applies to what **hugs** the parent's corners: the shell of a
 segmented group and its buttons, a card's header and its hover background,
 the rows of a list placed in a card, a preview in a card.
@@ -3402,6 +3408,10 @@ placed in the middle of a card (6 px) keeps its control radius; it is the
 contrast of the two families that makes it read as a button; a pill or a
 circle (999 px) is round everywhere, and two nested circles are always
 concentric.
+
+`src/__tests__/nestedRadius.test.ts` holds the rule for the thin shells
+(`p-0.5`, `p-1` and a radius token): every rounded child it lays out must
+carry the shell's radius minus the padding, pills aside.
 
 ## 4. Fonts
 

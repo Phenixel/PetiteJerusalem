@@ -577,7 +577,7 @@ onUnmounted(() => {
                   >
                     <button
                       @click="emit('update:phonetic', false)"
-                      class="px-2.5 py-1 rounded-control text-sm font-medium transition-colors"
+                      class="px-2.5 py-1 rounded-segment text-sm font-medium transition-colors"
                       :class="
                         !phonetic && !pageFormActive
                           ? 'bg-surface text-primary shadow-sm'
@@ -592,7 +592,7 @@ onUnmounted(() => {
                     <button
                       v-if="pageForm"
                       @click="emit('update:pageFormActive', true)"
-                      class="px-2.5 py-1 rounded-control text-sm font-medium transition-colors"
+                      class="px-2.5 py-1 rounded-segment text-sm font-medium transition-colors"
                       :class="
                         pageFormActive ? 'bg-surface text-primary shadow-sm' : 'text-text-secondary'
                       "
@@ -605,7 +605,7 @@ onUnmounted(() => {
                     <button
                       v-if="phonetic !== null"
                       @click="emit('update:phonetic', true)"
-                      class="px-2.5 py-1 rounded-control text-sm font-medium transition-colors"
+                      class="px-2.5 py-1 rounded-segment text-sm font-medium transition-colors"
                       :class="
                         phonetic ? 'bg-surface text-primary shadow-sm' : 'text-text-secondary'
                       "
@@ -777,7 +777,7 @@ onUnmounted(() => {
                       :key="lang"
                       type="button"
                       @click="setTranslationLang(lang)"
-                      class="px-3 py-1 rounded-control text-sm font-medium transition-colors"
+                      class="px-3 py-1 rounded-segment text-sm font-medium transition-colors"
                       :class="
                         lang === translationLang
                           ? 'bg-surface text-primary shadow-sm'
