@@ -27,10 +27,12 @@ import type { FeastId } from "../content/sidourGroups";
 import { orderTools, type SidourToolId } from "../content/sidourTools";
 
 /**
- * Ce que la page du Sidour met en tête, à l'heure qu'il est : un seul texte,
- * celui du moment, en carte pleine couleur ; une ligne dessous au plus, et
- * seulement un soir d'occasion (l'office sous l'allumage de 'Hanouka, la
- * havdala sous Arvit) ; et la fête dont les textes remontent dans la liste.
+ * What the Sidour page puts at the top, at the current time: one single
+ * text, the one said now, as a full-color card; at most one line below, and
+ * only on an occasion's evening (the service under the 'Hanouka lighting,
+ * havdala under Arvit); and the holiday whose texts move up the list. Only
+ * what is said now: nothing that is not yet its time (tomorrow's Cha'harit
+ * in the middle of the night), and nothing at all when everything is said.
  *
  * Tout se calcule sur l'appareil, au lieu des horaires, avec les mêmes règles
  * que le lecteur : les plages des offices de sidourService, les occasions de
@@ -72,14 +74,13 @@ export type DayKey =
 
 export interface SidourHero {
   /**
-   * `tefila` : l'office dont c'est l'heure ; `next-tefila` : celui qui vient,
-   * entre deux plages ; `hanouka` : l'allumage du soir ; `slihot` : les
-   * Sli'hot, de 'hatsot au lever du soleil, en saison ; `halevana` : la
-   * bénédiction de la lune, les nuits où elle se dit ; `feast` : entre deux
-   * offices, le texte de la fête en cours (le loulav, l'allumage du soir, les
-   * Sli'hot de la nuit qui vient).
+   * `tefila`: the service whose time it is; `hanouka`: the evening lighting;
+   * `slihot`: the Sli'hot, from 'hatsot until sunrise, in season;
+   * `halevana`: the blessing of the moon, on the nights it is said; `feast`:
+   * between two services, the current holiday's text said now (the loulav,
+   * by day); `chema`: the bedtime Chema, at night once Arvit is said.
    */
-  kind: "tefila" | "next-tefila" | "hanouka" | "slihot" | "halevana" | "feast";
+  kind: "tefila" | "hanouka" | "slihot" | "halevana" | "feast" | "chema";
   /** Le texte qu'ouvre la carte, « corpus/slug » (voir sidourGroups). */
   text: string;
   tefila?: TefilaKey;
@@ -95,8 +96,13 @@ export interface SidourHero {
   feast?: FeastId;
   /** Birkat halevana : le dernier jour où on la dit. */
   until?: HDate;
-  /** Birkat halevana : l'âge de la lune, en jours depuis le molad (son dessin). */
+  /**
+   * Birkat halevana, and the bedtime Chema: the moon's age, in days since
+   * the molad (its drawing).
+   */
   moonAge?: number;
+  /** The bedtime Chema: the civil day of its evening, which remembers it said. */
+  evening?: Date;
 }
 
 /**
@@ -107,9 +113,8 @@ export interface SidourHero {
 export interface SidourExtra {
   key: "tefila" | "havdala";
   text: string;
+  /** The service under way (never the one coming up: it is not said now). */
   tefila?: TefilaKey;
-  /** L'office en cours (true) ou celui qui vient (false). */
-  now?: boolean;
   start?: Date;
   end?: Date;
   additions?: SidourAddition[];
@@ -137,6 +142,8 @@ export interface SidourSaid {
   moon?: (until: HDate) => boolean;
   /** Havdala already made, for the evening it is made (its civil day). */
   havdala?: (evening: Date) => boolean;
+  /** The bedtime Chema already said, for its evening (its civil day). */
+  chema?: (evening: Date) => boolean;
 }
 
 export interface SidourMoment {
@@ -165,6 +172,7 @@ export const MOMENT_TEXTS = {
   hanouka: "moadim/nerot-hanouka",
   loulav: "moadim/netilat-loulav",
   slihot: "moadim/slihot",
+  chema: "sidour/chema-al-hamita",
 } as const;
 
 /**
@@ -405,7 +413,9 @@ function momentTools(
 }
 
 /**
- * The moment, in order of priority. The card takes the first one that holds:
+ * The moment, in order of priority. The card takes the first one that holds,
+ * and only what is said now: the home deck announces what comes next, the
+ * Sidour page does not.
  *
  * 1. the 'Hanouka lighting, in the evening;
  * 2. the Sli'hot, from 'hatsot until sunrise, in season;
@@ -413,25 +423,30 @@ function momentTools(
  * 4. the blessing of the moon, on the nights it is said, once Arvit is said
  *    (or its time is over): it is said after Arvit;
  * 5. between two services, the text of the current holiday, if one is said
- *    now or tonight;
- * 6. the service coming up.
+ *    now (the loulav, by day);
+ * 6. the bedtime Chema, at night once Arvit is said, until 'hatsot of the
+ *    night (past midnight, still for the evening before): the last text of
+ *    the day;
+ * 7. nothing: between two services, or once everything is said, there is
+ *    nothing to say now, and no card (held by sidourMoment.test.ts, « only
+ *    what is said now »).
  *
  * One line below, at most, and only under an occasion: havdala on the
- * evening a Chabbat or a holiday ends, otherwise the service under the first
- * three. The rest (the bedtime Chema, the loulav, the Hochanot) is in the
- * list, just below, and the current holiday moves up to its top: repeating
- * it above made three cards for one.
+ * evening a Chabbat or a holiday ends, otherwise the service under way under
+ * the first three. The rest (tikoun 'hatsot, the Hochanot) is in the list,
+ * just below, and the current holiday moves up to its top: repeating it
+ * above made three cards for one.
  *
  * The moon, which comes back about ten nights a month and gets missed for
  * lack of a reminder, also has its line of its own (`moon`) on its nights,
  * from nightfall, as long as it is not said and does not hold the card.
  *
  * A service already said (`said.office`: checked off in Mon parcours, or its
- * card swiped) gives way: the card goes to what comes next (the moon at
- * night, the holiday, then the next service not yet said), and it is no
+ * card swiped) gives way: the card goes to what is said now after it (the
+ * moon, then the bedtime Chema at night; the holiday by day), and it is no
  * longer the line under an occasion. A moon already blessed
  * (`said.moon`) is neither card nor line, nor is a havdala already made
- * (`said.havdala`).
+ * (`said.havdala`), nor a bedtime Chema already said (`said.chema`).
  */
 export function sidourMoment(
   place: ZmanimPlace,
@@ -484,13 +499,13 @@ export function sidourMoment(
     };
   }
 
-  // The current service; the one coming up. A service already said is
-  // neither: the next one not yet said takes its place.
+  // The current service, unless already said. The one coming up only orders
+  // the tools (the mirror before Cha'harit): it is not said now.
   const current = currentTefilaWindow(place, now);
   const currentDone = !!current && isDone(current);
   const live = currentDone ? null : current;
   const window = live ?? nextOpenWindow(place, now, isDone);
-  const office = window ? officeOf(place, window) : null;
+  const office = live ? officeOf(place, live) : null;
 
   // The moon, on its nights: until the instant the period closes (the last
   // night, often before dawn).
@@ -509,32 +524,42 @@ export function sidourMoment(
     };
   }
   const occasion = hero !== null;
-  if (!hero && office && live) {
+  if (!hero && office) {
     hero = { kind: "tefila", text: MOMENT_TEXTS[office.tefila], ...office };
   }
 
-  // 5. Entre deux offices, la fête.
+  // 5. Between two services, the holiday, if its text is said now.
   if (!hero && feast) {
-    hero = feastHero(place, now, feast, today, day, times.get("sunset"), slihot, slihotSeason);
+    hero = feastHero(place, feast, today, day, times.get("sunset"));
   }
 
-  if (!hero && office) {
-    hero = { kind: "next-tefila", text: MOMENT_TEXTS[office.tefila], ...office };
+  // 6. The bedtime Chema, once Arvit is said or its time is over.
+  if (!hero) {
+    const chema = chemaNight(now, currentEvening);
+    if (chema && !said.chema?.(chema)) {
+      hero = {
+        kind: "chema",
+        text: MOMENT_TEXTS.chema,
+        day: null,
+        additions: [],
+        evening: chema,
+        moonAge: moonAge(hebrewDateFor(place, now, now), now),
+      };
+    }
   }
 
   // La ligne dessous : la havdala d'abord, sinon l'office sous une occasion.
   let extra: SidourExtra | null = havdalaEvening(place, now, currentEvening);
   // Havdala already made leaves the line to the service, if any.
   if (extra?.evening && said.havdala?.(extra.evening)) extra = null;
-  if (!extra && occasion && office && !currentDone) {
+  if (!extra && occasion && office) {
     extra = {
       key: "tefila",
       text: MOMENT_TEXTS[office.tefila],
       tefila: office.tefila,
-      now: !!live,
       start: office.start,
       end: office.end,
-      additions: live ? office.additions : [],
+      additions: office.additions,
     };
   }
   // Pas de havdala sous une carte qui n'est ni l'office du soir ni une
@@ -552,7 +577,7 @@ export function sidourMoment(
     tools: momentTools(
       place,
       now,
-      office ? { tefila: office.tefila, start: office.start, current: !!live } : null,
+      window ? { tefila: window.tefila, start: window.start, current: !!live } : null,
       day,
     ),
   };
@@ -577,6 +602,20 @@ function moonOf(
 }
 
 /**
+ * The night of the bedtime Chema, as the civil day of its evening: from
+ * nightfall (when Arvit opens) until 'hatsot of the night, like Arvit. Past
+ * midnight, until 'hatsot, it is still the previous evening's (eveningOf):
+ * said then, it is not owed again before the next night.
+ */
+function chemaNight(now: Date, evening: { day: Date; times: ZmanMap }): Date | null {
+  const t = now.getTime();
+  const tzeit = evening.times.get("tzeit");
+  const end = evening.times.get("chatzotNight");
+  if (!tzeit || !end || t < tzeit.getTime() || t >= end.getTime()) return null;
+  return evening.day;
+}
+
+/**
  * The next service whose window has not opened yet and that is not already
  * said (Min'ha checked off in the morning, from the wallet), within the three
  * that follow.
@@ -596,51 +635,29 @@ function nextOpenWindow(
 }
 
 /**
- * La fête en carte, entre deux offices : le loulav le jour où on le prend,
- * l'allumage de 'Hanouka du soir qui vient, les Sli'hot de la nuit qui vient.
- * Rien pour une fête qui n'a pas de texte à dire maintenant : l'office qui
- * vient garde alors la carte.
+ * The holiday as the card, between two services, when its text is said now:
+ * the loulav on the days it is taken, until chkia. Not what is said tonight
+ * (the 'Hanouka lighting, the night's Sli'hot): they take the card at their
+ * own time, as occasions.
  */
 function feastHero(
   place: ZmanimPlace,
-  now: Date,
   feast: FeastId,
   today: HDate,
   day: boolean,
   sunset: Date | undefined,
-  slihot: ReturnType<typeof slihotWindow>,
-  slihotSeason: boolean,
 ): SidourHero | null {
-  if (feast === "souccot") {
-    // Le loulav se prend chaque jour de Souccot, Yom Tov compris, sauf le
-    // Chabbat : la même règle que la rangée des outils. (L'occasion `loulav`
-    // écarte le Yom Tov pour le texte de Cha'harit, pas pour la carte.)
-    if (!day || !occasionsOf(place, today).has("sukkot") || today.getDay() === 6) return null;
-    return {
-      kind: "feast",
-      feast,
-      text: MOMENT_TEXTS.loulav,
-      day: null,
-      additions: [],
-      end: sunset,
-    };
-  }
-  if (feast === "hanouka") {
-    // Passé la chkia, l'allumage du soir a sa carte jusqu'à 'hatsot, ou
-    // c'est le Chabbat qui est entré : « ce soir » serait déjà passé.
-    if (sunset && now.getTime() >= sunset.getTime()) return null;
-    const night = hanoukaNight(today.next());
-    if (night === null) return null;
-    return { kind: "feast", feast, text: MOMENT_TEXTS.hanouka, day: null, additions: [], night };
-  }
-  if (!slihot || !slihotSeason) return null;
+  if (feast !== "souccot") return null;
+  // Le loulav se prend chaque jour de Souccot, Yom Tov compris, sauf le
+  // Chabbat : la même règle que la rangée des outils. (L'occasion `loulav`
+  // écarte le Yom Tov pour le texte de Cha'harit, pas pour la carte.)
+  if (!day || !occasionsOf(place, today).has("sukkot") || today.getDay() === 6) return null;
   return {
     kind: "feast",
     feast,
-    text: MOMENT_TEXTS.slihot,
+    text: MOMENT_TEXTS.loulav,
     day: null,
     additions: [],
-    start: slihot.start,
-    end: slihot.end,
+    end: sunset,
   };
 }

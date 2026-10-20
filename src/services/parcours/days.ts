@@ -53,6 +53,20 @@ export function dayRange(from: DayKey, to: DayKey): DayKey[] {
   return out;
 }
 
+/**
+ * The day an instant counts for: its civil day, except between midnight and
+ * 'hatsot of the night (`nightMiddle`), which still belong to the previous
+ * evening. Arvit or the bedtime Chema said at 0:30 count for the evening
+ * before, and are not owed again before the next night. When 'hatsot falls
+ * before midnight on the device's clock (a winter night in Paris, or a
+ * place in another time zone), the day changes at midnight.
+ */
+export function dayOfInstant(now: Date, nightMiddle: Date | null): DayKey {
+  const day = localDayKey(now);
+  if (!nightMiddle || localDayKey(nightMiddle) !== day || nightMiddle.getHours() >= 12) return day;
+  return now.getTime() < nightMiddle.getTime() ? addDays(day, -1) : day;
+}
+
 /** Le plus petit des deux jours. */
 export const minDay = (a: DayKey, b: DayKey): DayKey => (a <= b ? a : b);
 

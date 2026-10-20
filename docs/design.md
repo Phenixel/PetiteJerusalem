@@ -556,27 +556,33 @@ The page has three tiers (`SidourPage.vue`):
   service: the lighting on an evening of 'Hanouka, the Sli'hot from 'hatsot
   until sunrise. The blessing of the moon, on the nights it is said, comes
   after Arvit, as in the home stack: it takes the card once Arvit is said
-  (or its time is over). Between two
-  services, the current holiday takes the card if there is a text to say
-  now or tonight (the loulav until chkia, the evening lighting, the night
-  Sli'hot); otherwise the card announces the upcoming service rather than
-  disappearing: on the home page, an empty card withdraws; here, it is the
-  page's reason for being;
+  (or its time is over), and the bedtime Chema after it, until 'hatsot of
+  the night (past midnight, it still counts for the evening before: said at
+  23:30, it is not offered again at 0:30): the last text of the night. Between two services, the current holiday takes
+  the card if its text is said now (the loulav until chkia);
+- **only what is said now**: unlike the home deck, which announces what
+  comes next (with its « Pas encore » look), the Sidour page never puts
+  forward what cannot be said yet: not tomorrow's Cha'harit in the middle
+  of the night, not Min'ha before min'ha guedola, not tonight's lighting at
+  noon. When nothing is to be said now (between two services, or once
+  Arvit, the moon and the bedtime Chema are said), there is no card at all,
+  and the page opens on its list. Held by
+  `src/__tests__/sidourMoment.test.ts`, « only what is said now »;
 - **a service already said gives way**: checked off in Mon parcours (the
   « trois tefilot » habit) or swiped on the home page, it no longer holds
-  the card, which goes to what comes next (the holiday, then the next
-  service not yet said: Min'ha once Cha'harit is said, tomorrow's
-  Cha'harit after Arvit). Under an occasion, it is no longer the line
-  either (`useOfficesDone`, held by `src/__tests__/sidourMoment.test.ts`,
+  the card, which goes to what is said now after it (the holiday by day;
+  the moon, then the bedtime Chema, at night), or leaves. Under an
+  occasion, it is no longer the line either (`useOfficesDone`, held by `src/__tests__/sidourMoment.test.ts`,
   « a service already said gives way »);
-- **said with a swipe**: the card of the service whose time it is, or of
-  the moon, is swiped right to say it is done, as in the home stack (the
+- **said with a swipe**: the card of the service whose time it is, of the
+  moon or of the bedtime Chema, is swiped right to say it is done, as in the home stack (the
   « C'est fait » pill coming out from under its left edge, darkening past
   110 px). It flies off to the right and the next one rises in its place;
-  under it, « Arvit : c'est fait · Annuler » for a few seconds. A service
-  whose time has not come and a holiday text are not swiped. With the
-  « trois tefilot » habit, the swipe checks the habit's task; without it,
-  the device remembers it, as for the deck's extra card. The same is said
+  under it, « Arvit : c'est fait · Annuler » for a few seconds. A holiday
+  text is not swiped. With the « trois tefilot » habit (the « Chéma du
+  coucher » habit for the bedtime Chema, counted on its evening's day even
+  after midnight), the swipe checks the habit's task; without it, the
+  device remembers it, as for the deck's extra card. The same is said
   at the end of the service's text: the ring pulled upward of the day's
   portion (`PullToMark`, see "An open volume, its settings, the reader"),
   « Fin de l'office » (`OfficeDoneCard.vue`), which leads back to the
@@ -592,8 +598,8 @@ The page has three tiers (`SidourPage.vue`):
   It is put forward only once it can be said: not by day, where « Ce soir »
   announced it from the morning;
 - **one line below, at most** (besides the moon's), and only on an evening
-  of an occasion: the service under the lighting, the Sli'hot or the moon,
-  which preceded it in the card; havdala on the evening a Chabbat or a holiday ends. On other
+  of an occasion: the service under way under the lighting, the Sli'hot or
+  the moon, which preceded it in the card (not the one coming up); havdala on the evening a Chabbat or a holiday ends. On other
   days, nothing. The card first announced up to three lines (the bedtime
   Chema, tikoun 'hatsot, the loulav, the Hochanot): three highlights meant
   highlighting none, and at Souccot the loulav and the Hochanot were

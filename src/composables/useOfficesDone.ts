@@ -20,13 +20,15 @@ import { useParcours } from "./useParcours";
  * what comes next.
  *
  * A service is done when the « trois tefilot » habit checks it off (the window
- * under way on today's task, as in the home deck, Arvit after midnight
- * included; another on the day it opens; held by officesDone.test.ts), or,
+ * under way on today's task, as in the home deck; past midnight, until
+ * 'hatsot of the night, today is still the evening's day, so Arvit counts
+ * for it; another on the day it opens; held by officesDone.test.ts), or,
  * without that habit, when it was marked (its card in
  * the deck or on the Sidour page swiped, the ring pulled at the end of its
  * text): the device remembers it with the occasions (the moon, the 'Omer),
  * outside the day's count (services/parcours/occasions.ts). With the habit,
  * marking a service checks the habit's task: the same gesture everywhere.
+ * The bedtime Chema goes the same way, with the « Chéma du coucher » habit.
  */
 
 /** The occasion cards marked done, shared by every screen that reads them. */
@@ -38,6 +40,9 @@ export const officeKey = (window: Pick<TefilaWindow, "tefila" | "start">): strin
 
 /** The key of an evening's havdala, by its civil day: `havdala:2026-10-24`. */
 export const havdalaKey = (evening: Date): string => `havdala:${localDayKey(evening)}`;
+
+/** The key of a night's bedtime Chema, by its evening's civil day: `chema:2026-10-18`. */
+export const chemaKey = (evening: Date): string => `chema:${localDayKey(evening)}`;
 
 /** The key of a month's moon, by its last day: `halevana:5787-8`. */
 export const halevanaKey = (until: HDate): string =>
@@ -87,8 +92,8 @@ export function useOfficesDone() {
 
   /**
    * The habit's task for this service: the window under way is today's, as
-   * in the home deck (Arvit after midnight included); another, the day its
-   * window opens.
+   * in the home deck (Arvit past midnight: the evening's day, which today
+   * still is until 'hatsot); another, the day its window opens.
    */
   function habitTask(window: TefilaWindow): { task: Task; day: string } | null {
     const now = Date.now();
@@ -131,8 +136,56 @@ export function useOfficesDone() {
     analyticsService.capture("parcours_occasion_marked", { occasion: "havdala", done, source });
   }
 
-  /** What sidourMoment needs to know. */
-  const said: SidourSaid = { office: isOfficeDone, moon: isMoonDone, havdala: isHavdalaDone };
+  /**
+   * The « Chéma du coucher » habit's task for a night: the one of its
+   * evening's day, past midnight too, as the home deck counts it until
+   * 'hatsot (marked at 0:30, it is not the next evening's Chema).
+   */
+  function chemaTask(evening: Date): { task: Task; day: string } | null {
+    const day = localDayKey(evening);
+    const objectives = store.data.value.objectives;
+    const task = tasksOn(day).find((candidate) => {
+      const objective = objectives[candidate.objectiveId];
+      return objective?.kind === "habit" && objective.preset === "chema-al-hamita";
+    });
+    return task ? { task, day } : null;
+  }
 
-  return { isOfficeDone, markOffice, isMoonDone, markMoon, isHavdalaDone, markHavdala, said };
+  function isChemaDone(evening: Date): boolean {
+    if (occasionsDone.value.includes(chemaKey(evening))) return true;
+    const habit = chemaTask(evening);
+    return habit !== null && taskProgress(store.data.value, habit.task, habit.day) === "done";
+  }
+
+  /** Marks the bedtime Chema said, or not: the habit's task if it has one, the device otherwise. */
+  function markChema(evening: Date, done: boolean, source: string): void {
+    const habit = chemaTask(evening);
+    if (habit) {
+      store.setDone(habit.task, habit.day, done, source);
+      if (!done) mark(chemaKey(evening), false);
+      return;
+    }
+    mark(chemaKey(evening), done);
+    analyticsService.capture("parcours_occasion_marked", { occasion: "chema", done, source });
+  }
+
+  /** What sidourMoment needs to know. */
+  const said: SidourSaid = {
+    office: isOfficeDone,
+    moon: isMoonDone,
+    havdala: isHavdalaDone,
+    chema: isChemaDone,
+  };
+
+  return {
+    isOfficeDone,
+    markOffice,
+    isMoonDone,
+    markMoon,
+    isHavdalaDone,
+    markHavdala,
+    isChemaDone,
+    markChema,
+    said,
+  };
 }

@@ -1898,10 +1898,8 @@ const he: LocaleMessages = {
       "הסידור באתר, בעברית ובתעתיק: שחרית, מנחה, ערבית, ברכת המזון והברכות, סליחות וטקסטים של המועדים. התפילה של השעה בראש.",
     placeLink: "זמנים ל{place}",
     now: "עכשיו",
-    next: "התפילה הבאה",
     tonight: "הערב",
     until: "עד {time}",
-    from: "החל מ־{time}",
     nowPill: "עכשיו",
     tools: { label: "כלים" },
     days: {
@@ -1934,9 +1932,9 @@ const he: LocaleMessages = {
     },
     slihot: {
       now: "לפני שחרית, עד הנץ ב־{time}",
-      tonight: "הלילה, מ־{start} עד {end}",
     },
     thisNight: "הלילה",
+    chema: { meta: "לפני השינה" },
     halevana: {
       until: "עד {date}",
       lineNow: "הלילה, עד {date}",

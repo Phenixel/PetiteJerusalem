@@ -45,7 +45,8 @@ import {
   type Task,
 } from "../services/parcours/schedule";
 import { trackTaskMarked, trackTaskSkipped } from "../services/parcours/tracking";
-import { isIsraelPlace } from "../services/zmanimService";
+import { dayOfInstant } from "../services/parcours/days";
+import { computeZmanim, isIsraelPlace } from "../services/zmanimService";
 import { isNativeApp } from "./useNativeApp";
 import { useNow } from "./useNow";
 import { useZmanimLocation } from "./useZmanimLocation";
@@ -309,7 +310,13 @@ export function useParcours() {
   const { place } = useZmanimLocation();
 
   const data = computed(() => state.value.data);
-  const todayKey = computed(() => localDayKey(now.value));
+  // The day changes at 'hatsot of the night, not at midnight (see dayOfInstant).
+  const todayKey = computed(() => {
+    const nightMiddle = computeZmanim(place.value, now.value).find(
+      (zman) => zman.key === "chatzotNightDawn",
+    );
+    return dayOfInstant(now.value, nightMiddle?.date ?? null);
+  });
   const isRest = computed(() => restCalendar(isIsraelPlace(place.value)));
   const aliyotCount = computed(() => parashaAliyotCount(isIsraelPlace(place.value)));
   weekAliyotCount = (day) => aliyotCount.value(day);
