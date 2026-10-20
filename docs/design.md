@@ -3235,8 +3235,9 @@ offer the parchments; they are opened where they are read.
 The window is the photo, and nothing else (`public/klaf/`, as the sofer
 wrote it): no title, no tabs, no caption, no white around it. It takes the
 photo's shape, as large as the screen allows, on a darker veil than the
-other windows; only a round cross, on a dark disk in the top corner, sits
-on the image. The transcription that used to come in a second tab is gone:
+other windows. Nothing sits on the image, which would hide the writing:
+the round cross is above it, at its end corner, on the veil, and the rest
+of that row closes like the veil. The transcription that used to come in a second tab is gone:
 the vocalized text is already in the flow of the service, and two ways of
 seeing one parchment asked for a choice before showing anything.
 
@@ -3247,7 +3248,7 @@ brings it back, and on a computer the wheel zooms under the cursor. The
 photo never leaves its frame: zoomed out it fills it exactly, zoomed in its
 edges stop at the frame's. The old "a tap doubles the width, then scroll"
 is gone. The pitoum haketoret has two pages: a swipe turns them, or the
-arrows of the small dark pill at the bottom, which says « 1 / 2 ». The
+arrows of the small pill under the photo, which says « 1 / 2 ». The
 sizes of the photos are written next to them (`content/klaf.ts`), so the
 window has its shape before the photo arrives. Held by
 `src/__tests__/klafViewer.test.ts` (the photo alone, the pages, the sizes

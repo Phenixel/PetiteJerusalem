@@ -16,7 +16,8 @@ import { usePinchZoom } from "../composables/usePinchZoom";
  * It reads up close the way a photo does: two fingers pinch it open, one
  * finger moves through it, a double tap enlarges where it lands (see
  * usePinchZoom). The pitoum haketoret has two pages: a swipe or the arrows
- * at the bottom turn them. The cross closes it, like a touch on the veil.
+ * under the photo turn them. The cross, above it, closes it, like a touch on
+ * the veil. Neither sits on the photo: they would hide the writing.
  */
 const { t } = useI18n();
 
@@ -64,11 +65,27 @@ const transform = computed(
     panel-class="klaf-panel animate-[scaleIn_0.3s_ease]"
     @close="closeKlaf"
   >
+    <!-- Above the photo, at its end corner: the cross. The rest of the row
+         is still the veil, and closes like it. -->
+    <div class="klaf-bar" @click.self="closeKlaf">
+      <button
+        type="button"
+        class="klaf-control klaf-close"
+        :aria-label="t('common.close')"
+        @click="closeKlaf"
+      >
+        <AppIcon name="x" :size="18" />
+      </button>
+    </div>
+
     <div
       v-if="photo"
       ref="stage"
       class="klaf-stage"
-      :style="{ '--klaf-ratio': `${photo.width} / ${photo.height}` }"
+      :style="{
+        '--klaf-ratio': `${photo.width} / ${photo.height}`,
+        '--klaf-chrome': photos.length > 1 ? '6.5rem' : '3.25rem',
+      }"
       v-on="handlers"
     >
       <img
@@ -85,35 +102,29 @@ const transform = computed(
       />
     </div>
 
-    <button
-      type="button"
-      class="klaf-control klaf-close"
-      :aria-label="t('common.close')"
-      @click="closeKlaf"
-    >
-      <AppIcon name="x" :size="18" />
-    </button>
-
-    <div v-if="photos.length > 1" class="klaf-control klaf-pages">
-      <button
-        type="button"
-        class="klaf-turn"
-        :disabled="page === 0"
-        :aria-label="t('textReading.klaf.previous')"
-        @click="turn(-1)"
-      >
-        <AppIcon name="chevron-left" :size="18" class="rtl:-scale-x-100" />
-      </button>
-      <span class="klaf-count" aria-live="polite">{{ page + 1 }} / {{ photos.length }}</span>
-      <button
-        type="button"
-        class="klaf-turn"
-        :disabled="page === photos.length - 1"
-        :aria-label="t('textReading.klaf.next')"
-        @click="turn(1)"
-      >
-        <AppIcon name="chevron-right" :size="18" class="rtl:-scale-x-100" />
-      </button>
+    <!-- Under the photo: the pages, when there are several. -->
+    <div v-if="photos.length > 1" class="klaf-bar klaf-bar-pages" @click.self="closeKlaf">
+      <div class="klaf-control klaf-pages">
+        <button
+          type="button"
+          class="klaf-turn"
+          :disabled="page === 0"
+          :aria-label="t('textReading.klaf.previous')"
+          @click="turn(-1)"
+        >
+          <AppIcon name="chevron-left" :size="18" class="rtl:-scale-x-100" />
+        </button>
+        <span class="klaf-count" aria-live="polite">{{ page + 1 }} / {{ photos.length }}</span>
+        <button
+          type="button"
+          class="klaf-turn"
+          :disabled="page === photos.length - 1"
+          :aria-label="t('textReading.klaf.next')"
+          @click="turn(1)"
+        >
+          <AppIcon name="chevron-right" :size="18" class="rtl:-scale-x-100" />
+        </button>
+      </div>
     </div>
   </AppModal>
 </template>
@@ -126,34 +137,37 @@ const transform = computed(
    dark, and the window is centered rather than set at the top. */
 .klaf-overlay {
   align-items: center;
-  background-color: rgb(20 16 8 / 0.75);
+  background-color: rgb(20 16 8 / 0.85);
 }
 
-/* The frame holds the photo and nothing else: its size is the stage's (see
-   below). The black stands in while the photo loads. */
+/* The frame is only a column: the cross, the photo, the pages. It has no
+   surface of its own; the photo carries the rounding and the shadow. */
 .klaf-panel {
-  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.5rem;
   margin-block: auto;
-  overflow: hidden;
-  background: #000;
-  border-radius: var(--radius-xl);
-  box-shadow: 0 24px 60px rgb(0 0 0 / 0.45);
 }
 </style>
 
 <style scoped>
 /* The stage takes the photo's shape and the largest size the screen allows,
-   its width or its height, whichever runs out first. The photo covers it
-   entirely: no white around it. */
+   its width or its height (less the rows of the cross and the pages,
+   `--klaf-chrome`), whichever runs out first. The photo covers it entirely:
+   no white around it. The black stands in while it loads. */
 .klaf-stage {
   position: relative;
   width: min(
     calc(100vw - 2rem),
-    calc((var(--modal-viewport-height, 100dvh) - 2rem) * var(--klaf-ratio)),
+    calc((var(--modal-viewport-height, 100dvh) - 2rem - var(--klaf-chrome)) * var(--klaf-ratio)),
     56rem
   );
   aspect-ratio: var(--klaf-ratio);
   overflow: hidden;
+  background: #000;
+  border-radius: var(--radius-xl);
+  box-shadow: 0 24px 60px rgb(0 0 0 / 0.45);
   /* The fingers belong to the photo: the browser neither zooms nor scrolls
      the page under them. */
   touch-action: none;
@@ -189,46 +203,51 @@ const transform = computed(
   }
 }
 
-/* The commands laid on the photo: round, on a dark disk that keeps them
-   readable on the light parchment as on its dark edge. */
+/* The rows above and under the photo, as wide as it: the cross at the end,
+   the pages in the middle. */
+.klaf-bar {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.klaf-bar-pages {
+  justify-content: center;
+}
+
+/* The commands around the photo, on the veil: white, on a light disk that
+   says where to touch without competing with the photo. */
 .klaf-control {
-  position: absolute;
   color: #fff;
-  background-color: rgb(0 0 0 / 0.5);
+  background-color: rgb(255 255 255 / 0.14);
   border-radius: var(--radius-pill);
 }
 
 .klaf-close {
-  top: 0.625rem;
-  inset-inline-end: 0.625rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 2.75rem;
+  height: 2.75rem;
   transition: background-color 0.15s ease;
 }
 
 .klaf-close:hover {
-  background-color: rgb(0 0 0 / 0.7);
+  background-color: rgb(255 255 255 / 0.24);
 }
 
 .klaf-pages {
-  bottom: 0.625rem;
-  left: 50%;
-  transform: translateX(-50%);
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  padding: 0.125rem;
+  padding: 0.25rem;
 }
 
 .klaf-turn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 2.25rem;
-  height: 2.25rem;
+  width: 2.5rem;
+  height: 2.5rem;
   border-radius: var(--radius-pill);
 }
 
