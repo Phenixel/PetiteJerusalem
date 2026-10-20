@@ -286,6 +286,7 @@ export const TEXT_ALIASES: Record<string, string[]> = {
   Arvit: ["Maariv", "מעריב", "Prière du soir", "Evening prayer"],
   "Chema al Hamita": ["Kriat Chema", "Chéma du coucher", "Bedtime Shema"],
   "Tikoun Hatsot": ["Prière de minuit", "Midnight prayer"],
+  "Nichmat Kol 'Hai": ["Nishmat Kol Chai", "Nishmas", "Yichtaba'h", "Yishtabach", "נשמת"],
 
   // Moussar : la porte qu'on vient le plus chercher, sous ses graphies.
   "Chaar Habita'hon": [
