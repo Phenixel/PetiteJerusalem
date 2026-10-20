@@ -1882,6 +1882,33 @@ When creating a Tehilim session, the perpetual chain is offered in a
 discreet line under the type, in small type: it does not divert from
 creation, and does not promise a reader count that is not known.
 
+### Nichmat 40 is ticked day by day
+
+A Nichmat 40 chain (`docs/nichmat-40-jours.md`) has no texts to share out:
+forty places and forty days. Its page therefore replaces the list of texts
+with three cards, in the order a reader needs them: where the forty days
+stand (a sentence, then a bar), their own place, then who reads.
+
+The reader's place leads with today: « J'ai dit Nichmat aujourd'hui » ("I
+said Nishmat today") is the solid theme button, full width, the only one on
+the page; once ticked, it turns soft and says it is done. « Lire Nichmat »
+("Read Nishmat") sits at the end of the place's title, a soft pill with its
+book and its name. Below, the forty days are forty round buttons (round
+controls), eight to a line on a phone, ten on a wider screen: a ticked day
+takes the theme tint at full strength, a day that can still be ticked stays
+grey, a day to come is faded and does not respond. Earlier days can be
+ticked: a forgotten tick is caught up, not lost.
+
+The readers are rows, not pills: forty names are read by place, with each
+one's days on the right, green once they are up to date. The free places are
+counted in one line below, not listed.
+
+The header and the card give the forty days, « Du 16 octobre au 24
+novembre », where another chain gives its deadline; a chain that waits for
+its readers says « Commence quand les 40 places sont prises » ("Starts when
+the 40 places are taken"). The « Instructions » pill does not appear: there
+is nothing to reserve section by section, and the page says what to do.
+
 ### The backoffice is a tool, and it reads like a dashboard
 
 The backoffice (`/admin`) is only for the team, most often on a computer

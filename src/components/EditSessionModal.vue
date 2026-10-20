@@ -6,6 +6,7 @@ import type { SessionEditData } from "../composables/useSessionEditing";
 import { useOverlay } from "../composables/useOverlayStack";
 import { useToast } from "../composables/useToast";
 import { deadlineDayOf } from "../services/dateService";
+import { isNichmat } from "../services/nichmatChain";
 import AppIcon from "./icons/AppIcon.vue";
 import AppDateField from "./AppDateField.vue";
 
@@ -141,7 +142,8 @@ watch([() => props.session, () => props.show], resetForm, { immediate: true });
           ></textarea>
         </div>
 
-        <div>
+        <!-- Nichmat 40 ends with its forty days: its deadline is not edited. -->
+        <div v-if="!isNichmat(session)">
           <label class="block text-sm font-semibold text-text-primary mb-2"
             >{{ t("common.dateLimit") }} *</label
           >

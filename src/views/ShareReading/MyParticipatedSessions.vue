@@ -15,6 +15,15 @@ import type { User } from "../../services/authService";
 import { useToast } from "../../composables/useToast";
 import { analyticsService } from "../../services/analyticsService";
 import { haptic } from "../../services/haptics";
+import {
+  NICHMAT_DAYS,
+  dayRecordTextId,
+  isNichmat,
+  lastTickableDay,
+  phaseOf,
+  progressOf,
+  type NichmatPlaceProgress,
+} from "../../services/nichmatChain";
 import CollapseTransition from "../../components/CollapseTransition.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
 
@@ -31,7 +40,24 @@ const props = defineProps<{
 const myReservations = (session: Session): TextStudyReservation[] =>
   reservationService.ownActiveReservations(session.reservations, props.currentUser);
 
+/** My place in a Nichmat 40 chain, with the days I ticked. */
+const myNichmatPlace = (session: Session): NichmatPlaceProgress | null =>
+  progressOf(session).places.find((p) =>
+    reservationService.isOwnReservation(p.reservation, props.currentUser),
+  ) ?? null;
+
+/** Today, in a Nichmat 40 chain: its day number, or null outside the forty days. */
+const nichmatToday = (session: Session): number | null => {
+  const phase = phaseOf(session);
+  return phase.kind === "running" ? phase.day : null;
+};
+
 const readCount = (session: Session) => {
+  // Nichmat 40: the days I ticked, out of those already begun.
+  if (isNichmat(session)) {
+    const mine = myNichmatPlace(session);
+    return { done: mine?.read.size ?? 0, total: mine ? lastTickableDay(phaseOf(session)) : 0 };
+  }
   const mine = myReservations(session);
   return { done: mine.filter((r) => r.isCompleted).length, total: mine.length };
 };
@@ -145,6 +171,50 @@ const toggleReservationCompletion = async (
   }
 };
 
+/** Ticks (or unticks) today's Nichmat, without opening the chain. */
+const toggleNichmatToday = async (session: Session, read: boolean) => {
+  const mine = myNichmatPlace(session);
+  const day = nichmatToday(session);
+  if (!mine || day === null) return;
+  try {
+    await reservationService.setNichmatDayRead(session.id, mine.place, day, read);
+    haptic(read ? "done" : "undo");
+    analyticsService.capture("nichmat_day_marked", {
+      session_id: session.id,
+      day,
+      marked: read,
+      is_today: true,
+      is_guest: false,
+      source: "my_sessions",
+    });
+    const textStudyId = dayRecordTextId(day);
+    const others = session.reservations.filter(
+      (r) => !(r.textStudyId === textStudyId && r.section === mine.place),
+    );
+    session.reservations = read
+      ? [
+          ...others,
+          {
+            id: `local-${day}`,
+            textStudyId,
+            section: mine.place,
+            isCompleted: true,
+            createdAt: new Date(),
+          },
+        ]
+      : others;
+  } catch (error) {
+    analyticsService.capture("nichmat_day_mark_failed", {
+      session_id: session.id,
+      day,
+      error_message: error instanceof Error ? error.message : String(error),
+      is_guest: false,
+      source: "my_sessions",
+    });
+    toast.errorFromException(error, t("profile.reservationUpdateError"));
+  }
+};
+
 const goToSession = (session: Session) => {
   router.push({ name: "detail-session", params: { slug: session.slug || session.id } });
 };
@@ -203,6 +273,18 @@ const goToSession = (session: Session) => {
                     <AppIcon name="rotate" :size="11" />
                     {{ t("perpetual.continuous") }}
                   </span>
+                  <!-- Nichmat 40: the day of the forty, or that it waits. -->
+                  <span
+                    v-else-if="isNichmat(session)"
+                    class="chip shrink-0 bg-black/5 text-text-secondary dark:bg-white/10"
+                  >
+                    <AppIcon name="calendar" :size="11" />
+                    {{
+                      nichmatToday(session) !== null
+                        ? t("nichmat.dayChip", { day: nichmatToday(session), total: NICHMAT_DAYS })
+                        : t("nichmat.chipWaiting")
+                    }}
+                  </span>
                   <span
                     v-else
                     class="chip shrink-0"
@@ -256,7 +338,29 @@ const goToSession = (session: Session) => {
           <!-- Mes réservations, à cocher sur place -->
           <CollapseTransition>
             <div v-show="expandedIds.has(session.id)">
-              <div class="ms-6 mb-3 space-y-1.5">
+              <!-- Nichmat 40: today's reading, ticked from here. -->
+              <div v-if="isNichmat(session)" class="ms-6 mb-3 space-y-1.5">
+                <label
+                  v-if="nichmatToday(session) !== null && myNichmatPlace(session)"
+                  class="flex items-center justify-between gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors bg-black/[0.03] hover:bg-black/[0.06] dark:bg-white/5 dark:hover:bg-white/10"
+                >
+                  <span class="text-sm font-medium text-text-primary">
+                    {{ t("nichmat.todayRow", { day: nichmatToday(session) }) }}
+                  </span>
+                  <input
+                    type="checkbox"
+                    class="w-5 h-5 rounded accent-primary cursor-pointer"
+                    :checked="myNichmatPlace(session)!.read.has(nichmatToday(session)!)"
+                    @change="
+                      toggleNichmatToday(session, ($event.target as HTMLInputElement).checked)
+                    "
+                  />
+                </label>
+                <p v-else class="text-sm text-text-secondary italic py-1">
+                  {{ t("nichmat.notStarted") }}
+                </p>
+              </div>
+              <div v-else class="ms-6 mb-3 space-y-1.5">
                 <p
                   v-if="myReservations(session).length === 0"
                   class="text-sm text-text-secondary italic py-1"
