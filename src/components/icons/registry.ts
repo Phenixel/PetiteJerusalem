@@ -42,6 +42,12 @@ export const ICONS = {
   "bell-off": {
     body: '<path d="M8.7 3A6 6 0 0 1 18 8c0 2.7.4 4.4.9 5.5"/><path d="M17 17H3s3-2 3-9a4.7 4.7 0 0 1 .3-1.7"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/><path d="m2 2 20 20"/>',
   },
+  // The phone's quiet modes (PrayerQuietPanel): Do Not Disturb draws the
+  // circle crossed by a bar that Android shows in its status bar.
+  "circle-minus": { body: '<circle cx="12" cy="12" r="10"/><path d="M8 12h8"/>' },
+  vibrate: {
+    body: '<path d="m2 8 2 2-2 2 2 2-2 2"/><path d="m22 8-2 2 2 2-2 2 2 2"/><rect width="8" height="14" x="8" y="5" rx="1"/>',
+  },
   check: { body: '<path d="M20 6 9 17l-5-5"/>' },
   "check-double": {
     body: '<path d="M18 6 7 17l-4-4"/><path d="m22 10-7.5 7.5L13 16"/>',

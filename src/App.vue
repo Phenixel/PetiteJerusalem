@@ -30,6 +30,8 @@ import { useFonts } from "./composables/useFonts";
 import { loadColorScheme, loadGuestColorScheme } from "./composables/useColorScheme";
 import { loadContrast, loadGuestContrast } from "./composables/useContrast";
 import { useHolidayTheme } from "./composables/useHolidayTheme";
+import { appDrop, DROP_TRANSITION, prayerQuiet } from "./composables/usePrayerQuiet";
+import { prefersReducedMotion } from "./composables/useMotion";
 
 const route = useRoute();
 const router = useRouter();
@@ -68,6 +70,20 @@ if (isNativeApp) {
   void router.isReady().then(() => setTimeout(() => (schedulerMounted.value = true), 1500));
 }
 const OfflineNotice = defineAsyncComponent(() => import("./components/OfflineNotice.vue"));
+
+// Native Android app: when a tefila opens, the app goes down and the quiet
+// modes of the phone open above it (usePrayerQuiet, PrayerQuietPanel). The
+// stage is the wrapper of the whole app that goes down; held, it is fixed to
+// the screen, its content kept where it was scrolled.
+const PrayerQuietPanel = defineAsyncComponent(() => import("./components/PrayerQuietPanel.vue"));
+const stageStyle = computed(() =>
+  appDrop.held
+    ? {
+        transform: `translate3d(0, ${appDrop.offset}px, 0)`,
+        transition: appDrop.dragging || prefersReducedMotion() ? "none" : DROP_TRANSITION,
+      }
+    : undefined,
+);
 
 // La bulle de commandes d'un passage de texte (partager, phonétique, signaler
 // une erreur, voir useReadingSelection) : posée une fois pour toute l'app, pour
@@ -192,58 +208,82 @@ authService.onAuthChanged((user) => {
 </script>
 
 <template>
-  <!-- The stone wall sits at z-index:-1, so this root div must stay
-       transparent (the dark background lives on <body>) or it would hide it. -->
   <div
-    class="min-h-screen flex flex-col text-text-primary transition-colors duration-300 dark:text-gray-100"
-    :class="chromePadClass"
+    id="app-stage"
+    :class="{ 'app-stage-held': appDrop.held, 'app-stage-lowered': appDrop.offset > 0 }"
+    :style="stageStyle"
   >
-    <StoneWallBackground v-show="showStoneWall" />
-    <HolidayBackdrop v-if="showStoneWall && !isHome" />
-    <Navbar />
-    <!-- App native seulement : ne s'affiche que si le binaire installé est
+    <!-- The stone wall sits at z-index:-1, so this root div must stay
+       transparent (the dark background lives on <body>) or it would hide it. -->
+    <div
+      class="min-h-screen flex flex-col text-text-primary transition-colors duration-300 dark:text-gray-100"
+      :class="chromePadClass"
+      :style="appDrop.held ? { position: 'relative', top: `${-appDrop.scrollY}px` } : undefined"
+      :inert="appDrop.held || undefined"
+    >
+      <StoneWallBackground v-show="showStoneWall" />
+      <HolidayBackdrop v-if="showStoneWall && !isHome" />
+      <Navbar />
+      <!-- App native seulement : ne s'affiche que si le binaire installé est
          antérieur à la version publiée sur le store (appUpdateService). -->
-    <AppUpdateBanner v-if="isNativeApp" />
-    <ParcoursReminderScheduler v-if="schedulerMounted" />
-    <OfflineNotice v-if="showOfflineNotice" />
-    <!-- App native seulement : la Transition porte la surcouche des horaires.
+      <AppUpdateBanner v-if="isNativeApp" />
+      <ParcoursReminderScheduler v-if="schedulerMounted" />
+      <OfflineNotice v-if="showOfflineNotice" />
+      <!-- App native seulement : la Transition porte la surcouche des horaires.
          Le web garde le RouterView nu (des vues multi-racines s'accommodent
          mal d'une Transition, et la surcouche ne concerne que l'app). -->
-    <RouterView v-else-if="isNativeApp" v-slot="{ Component }">
-      <Transition :name="pageTransition">
-        <component :is="Component" />
-      </Transition>
-    </RouterView>
-    <RouterView v-else />
-    <!-- App native : pas de footer de site ; l'essentiel (à propos, mentions
+      <RouterView v-else-if="isNativeApp" v-slot="{ Component }">
+        <Transition :name="pageTransition">
+          <component :is="Component" />
+        </Transition>
+      </RouterView>
+      <RouterView v-else />
+      <!-- App native : pas de footer de site ; l'essentiel (à propos, mentions
          légales…) vit en bas du profil de l'app. -->
-    <SiteFooter v-if="!isHome && !isNativeApp" />
-    <ScrollToTop />
-    <AutoScrollPill />
-    <ToastContainer />
-    <ConfirmDialog />
-    <ConsentBanner />
-    <OnboardingFlow v-if="isOnboardingOpen" />
-    <FeedbackModal v-if="feedbackMounted" />
-    <ReadingSelectionMenu v-if="selectionMounted" />
-    <!-- La table d'étude : la place de sa barre au bas de la page, pour que
+      <SiteFooter v-if="!isHome && !isNativeApp" />
+      <ScrollToTop />
+      <AutoScrollPill />
+      <ToastContainer />
+      <ConfirmDialog />
+      <ConsentBanner />
+      <OnboardingFlow v-if="isOnboardingOpen" />
+      <FeedbackModal v-if="feedbackMounted" />
+      <ReadingSelectionMenu v-if="selectionMounted" />
+      <!-- La table d'étude : la place de sa barre au bas de la page, pour que
          la fin du texte ne passe pas dessous, puis la barre elle-même. -->
-    <div
-      v-if="tableBarVisible"
-      class="flex-shrink-0"
-      :style="{ height: `${TABLE_BAR_REM}rem` }"
-      aria-hidden="true"
-    ></div>
-    <GlobalAudioPlayer />
-    <ReadingTableBar />
-    <BottomTabBar v-if="isNativeApp" />
-    <!-- App native : le flou en dégradé qui rend l'heure et la batterie
+      <div
+        v-if="tableBarVisible"
+        class="flex-shrink-0"
+        :style="{ height: `${TABLE_BAR_REM}rem` }"
+        aria-hidden="true"
+      ></div>
+      <GlobalAudioPlayer />
+      <ReadingTableBar />
+      <BottomTabBar v-if="isNativeApp" />
+      <!-- App native : le flou en dégradé qui rend l'heure et la batterie
          lisibles quand la page défile sous elles (l'app reste bord à bord). -->
-    <StatusBarScrim v-if="isNativeApp" />
+      <StatusBarScrim v-if="isNativeApp" />
+    </div>
   </div>
+  <PrayerQuietPanel v-if="prayerQuiet.open" />
 </template>
 
 <style scoped>
+/* The app held while it is lowered under the quiet modes (see stageStyle in
+   the script): fixed to the screen, so that its fixed bars go down with it,
+   and drawn as a surface of its own, over the panel it uncovers. */
+.app-stage-held {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  background-color: var(--color-page);
+  will-change: transform;
+}
+.app-stage-lowered {
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  box-shadow: var(--shadow-pop);
+}
 /* App native : les horaires en surcouche (voir pageTransition dans le script).
    Les classes s'appliquent aux racines des pages : un enfant reçoit aussi
    l'attribut de scope de son parent. La page épinglée reçoit le fond de
