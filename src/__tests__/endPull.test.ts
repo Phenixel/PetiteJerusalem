@@ -1,0 +1,182 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { createApp, h, nextTick, type App } from "vue";
+
+/**
+ * The end of a reading, marked by pushing the page past its end
+ * (PullToMark, docs/design.md, "An open volume, its settings, the reader").
+ *
+ * What must hold: the line takes no room and holds no touch back; only once
+ * the page can scroll no further does a finger rising, from anywhere on the
+ * page, fill the ring, and let go full, the reading is marked. The scroll
+ * that leads to the end counts for nothing, a sideways swipe or a pinch is
+ * not a pull, and a sheet keeps its own touches.
+ */
+
+vi.mock("../services/haptics", () => ({ haptic: vi.fn() }));
+
+import PullToMark from "../components/parcours/PullToMark.vue";
+import { END_PULL, NO_PULL, movePull, pullShare } from "../components/parcours/endPull";
+
+describe("movePull", () => {
+  it("counts nothing until the page reaches its end", () => {
+    let state = movePull(NO_PULL, 100, 600, false);
+    state = movePull(state, 100, 300, false);
+    expect(state.rise).toBe(0);
+    state = movePull(state, 100, 280, true);
+    expect(state.rise).toBe(0);
+    state = movePull(state, 100, 180, true);
+    expect(state.rise).toBe(100);
+  });
+
+  it("starts over when the page scrolls back up", () => {
+    let state = movePull(NO_PULL, 100, 600, true);
+    state = movePull(state, 100, 500, true);
+    expect(state.rise).toBe(100);
+    state = movePull(state, 100, 650, false);
+    expect(state).toEqual(NO_PULL);
+  });
+
+  it("does not take a sideways swipe for a pull", () => {
+    let state = movePull(NO_PULL, 100, 600, true);
+    state = movePull(state, 300, 520, true);
+    expect(state.rise).toBe(0);
+  });
+
+  it("fills the ring at END_PULL, no further", () => {
+    expect(pullShare(END_PULL / 2)).toBe(0.5);
+    expect(pullShare(END_PULL * 2)).toBe(1);
+  });
+});
+
+const VIEWPORT = 800;
+const DOC_HEIGHT = 3000;
+let scrollY = 0;
+
+function touch(type: string, points: Array<{ x: number; y: number }>, target: EventTarget) {
+  const event = new Event(type, { bubbles: true });
+  const touches = points.map((p) => ({ clientX: p.x, clientY: p.y }));
+  Object.defineProperty(event, "touches", { value: touches });
+  target.dispatchEvent(event);
+}
+
+let app: App | null = null;
+let host: HTMLElement;
+
+async function mountEnd(done = false) {
+  const marks = vi.fn();
+  host = document.createElement("div");
+  document.body.appendChild(host);
+  app = createApp({
+    render: () =>
+      h(
+        PullToMark,
+        {
+          done,
+          heading: "Fin de la portion du jour",
+          aria: "Marquer la portion faite",
+          label: { pull: "Tirez vers le haut", release: "Relâchez", done: "Portion faite" },
+          sub: {
+            pull: "pour la marquer",
+            release: "Elle sera marquée.",
+            done: "Le signet a avancé.",
+          },
+          onMark: marks,
+        },
+        () => h("button", "Annuler"),
+      ),
+  });
+  app.mount(host);
+  await nextTick();
+  const section = host.querySelector("section")!;
+  // The line stands at the bottom of the screen.
+  section.getBoundingClientRect = () => ({ top: VIEWPORT - 100, bottom: VIEWPORT }) as DOMRect;
+  return { marks, section };
+}
+
+/** A finger laid on the text, far from the line, pushed up by `rise`. */
+async function pull(rise: number, target: EventTarget = document.body) {
+  touch("touchstart", [{ x: 150, y: 400 }], target);
+  touch("touchmove", [{ x: 150, y: 400 - rise / 2 }], target);
+  touch("touchmove", [{ x: 150, y: 400 - rise }], target);
+  await nextTick();
+  touch("touchend", [], target);
+  await nextTick();
+}
+
+describe("PullToMark", () => {
+  beforeEach(() => {
+    scrollY = DOC_HEIGHT - VIEWPORT;
+    Object.defineProperty(window, "scrollY", { get: () => scrollY, configurable: true });
+    Object.defineProperty(window, "innerHeight", { value: VIEWPORT, configurable: true });
+    Object.defineProperty(document.documentElement, "scrollHeight", {
+      get: () => DOC_HEIGHT,
+      configurable: true,
+    });
+  });
+  afterEach(() => {
+    app?.unmount();
+    app = null;
+    host.remove();
+  });
+
+  it("is marked by pushing the page past its end, from anywhere", async () => {
+    const { marks, section } = await mountEnd();
+    expect(section.classList.contains("is-hint")).toBe(true);
+    touch("touchstart", [{ x: 150, y: 400 }], document.body);
+    touch("touchmove", [{ x: 150, y: 400 - END_PULL - 10 }], document.body);
+    await nextTick();
+    expect(section.textContent).toContain("Relâchez");
+    touch("touchend", [], document.body);
+    expect(marks).toHaveBeenCalledTimes(1);
+  });
+
+  it("is not marked by a short pull", async () => {
+    const { marks, section } = await mountEnd();
+    await pull(END_PULL / 2);
+    expect(marks).not.toHaveBeenCalled();
+    expect(section.textContent).toContain("Tirez vers le haut");
+  });
+
+  it("lets the page scroll before its end", async () => {
+    scrollY = 500;
+    const { marks } = await mountEnd();
+    await pull(END_PULL * 2);
+    expect(marks).not.toHaveBeenCalled();
+  });
+
+  it("leaves a pinch and a sheet alone", async () => {
+    const { marks } = await mountEnd();
+    touch("touchstart", [{ x: 150, y: 400 }], document.body);
+    touch(
+      "touchmove",
+      [
+        { x: 150, y: 200 },
+        { x: 250, y: 100 },
+      ],
+      document.body,
+    );
+    touch("touchmove", [{ x: 150, y: 100 }], document.body);
+    touch("touchend", [], document.body);
+    const sheet = document.createElement("div");
+    sheet.setAttribute("role", "dialog");
+    document.body.appendChild(sheet);
+    await pull(END_PULL * 2, sheet);
+    sheet.remove();
+    expect(marks).not.toHaveBeenCalled();
+  });
+
+  it("once done, shows the full card and listens no more", async () => {
+    const { marks, section } = await mountEnd(true);
+    expect(section.classList.contains("is-done")).toBe(true);
+    expect(section.textContent).toContain("Portion faite");
+    expect(section.textContent).toContain("Annuler");
+    await pull(END_PULL * 2);
+    expect(marks).not.toHaveBeenCalled();
+  });
+
+  it("stays a button for the keyboard", async () => {
+    const { marks, section } = await mountEnd();
+    section.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+    expect(marks).toHaveBeenCalledTimes(1);
+  });
+});

@@ -1,11 +1,11 @@
 <script setup lang="ts">
 /**
  * At the end of a service's text (Cha'harit, Min'ha, Arvit), opened from
- * anywhere but a goal's card: « Fin de l'office », and the ring pulled upward
- * to mark it done, as at the end of the day's portion (PullToMark). With the
- * « trois tefilot » habit, it checks the habit's task; without it, the
- * device remembers it (useOfficesDone). Either way, the home deck and the
- * Sidour page then move on to what comes next.
+ * anywhere but a goal's card: « Fin de l'office », and the page pushed up
+ * past its end to mark it done, as at the end of the day's portion
+ * (PullToMark). With the « trois tefilot » habit, it checks the habit's
+ * task; without it, the device remembers it (useOfficesDone). Either way,
+ * the home deck and the Sidour page then move on to what comes next.
  *
  * Loaded on demand (see TextReadingPage): it pulls the times engine.
  */
