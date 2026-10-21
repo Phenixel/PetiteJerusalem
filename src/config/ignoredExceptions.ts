@@ -23,6 +23,20 @@ const IGNORED_EXCEPTION_PATTERNS: RegExp[] = [
   // lequel il n'y a aucune prise. Le message exact, sans rien autour, pour ne
   // pas écarter une vraie erreur qui le citerait.
   /^Script error\.?$/,
+  // The Firestore SDK aborting its own channel request. The fetch shim of
+  // @firebase/webchannel-wrapper (1.0.6) keeps an AbortController per request
+  // and its abort() calls `controller.abort()` with no reason: the browser
+  // then builds this very DOMException, and the rejection surfaces as an
+  // unhandled one. Seen on 21 October 2026 on the website (Chrome 154,
+  // Windows), six times in one visit, on /share-reading and /chiourim, the
+  // two pages that load the full SDK: the whole stack sits inside the
+  // firebase-firestore chunk and ends on the SDK's abort(), not a single
+  // frame of ours. Nothing of ours holds that promise, so nothing of ours can
+  // catch it; the SDK re-opens its channel by itself and the pages went on
+  // loading. A read that really fails raises a FirestoreError
+  // ("unavailable", "permission-denied"), which this pattern does not touch.
+  // The exact message, anchored, so a real error quoting it stays visible.
+  /^AbortError: signal is aborted without reason\.?$/,
 ];
 
 /**
