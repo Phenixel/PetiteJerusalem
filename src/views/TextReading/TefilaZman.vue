@@ -190,10 +190,6 @@ const open = ref(false);
       <ul class="mt-4 space-y-1.5 text-sm leading-relaxed text-text-secondary">
         <li v-for="(line, i) in details" :key="i">{{ line }}</li>
       </ul>
-
-      <button type="button" class="btn btn-primary sheet-close" @click="open = false">
-        {{ t("common.close") }}
-      </button>
     </BottomSheet>
   </div>
 </template>

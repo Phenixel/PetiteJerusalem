@@ -1909,8 +1909,12 @@ const en: LocaleMessages = {
       left: "{duration} left",
       now: "Now",
       arc: {
-        sunrise: "Sunrise {time}",
-        sunset: "Shkia {time}",
+        sunrise: "Sunrise",
+        sunset: "Shkia",
+      },
+      legend: {
+        window: "The right time",
+        outside: "Outside its time",
       },
       marks: {
         alot: "Dawn (alot hashachar)",
