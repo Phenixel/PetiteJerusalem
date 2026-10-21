@@ -58,7 +58,10 @@ export { onPerpetualSessionUpdated } from "./perpetualChain";
 // sur le projet petite-jerusalem-staging (functions/.env.petite-jerusalem-staging,
 // que firebase-tools charge au déploiement vers ce projet, voir docs/staging.md).
 const SITE_URL = process.env.SITE_URL || "https://petite-jerusalem.fr";
-const OG_IMAGE = `${SITE_URL}/og-image.jpg`;
+// The designer's share banners (public/og/, mapped by src/content/ogBanners.ts):
+// the general one, and the reading sharing one for a session card that fails.
+const OG_IMAGE = `${SITE_URL}/og/site-fr.png`;
+const SESSION_FALLBACK_IMAGE = `${SITE_URL}/og/partage-lectures-fr.png`;
 
 const DEFAULT_TITLE = "Petite Jérusalem | Partage de lectures et d'études de Torah";
 const DEFAULT_DESCRIPTION =
@@ -326,7 +329,7 @@ async function resolveSessionCard(slug: string): Promise<OgCardOptions | null> {
   return {
     title: data.name,
     label: data.type === "Tehilim" ? "Chaîne de Tehilim" : "Partage d'étude",
-    tagline: "petite-jerusalem.fr · Rejoignez le partage",
+    callToAction: data.type === "Tehilim" ? "Rejoignez la chaîne." : "Rejoignez le partage.",
   };
 }
 
@@ -502,8 +505,8 @@ export const socialPreview = onRequest({ maxInstances: 10 }, async (req, res) =>
 /**
  * Per-session Open Graph image. Wired in firebase.json for /og/session/**.
  * Returns a 1200×630 PNG with the session name + label; on any error (unknown
- * session, render failure) it redirects to the static og-image.jpg so shared
- * links never end up without a preview.
+ * session, render failure) it redirects to the static reading sharing banner,
+ * so shared links never end up without a preview.
  */
 export const ogImage = onRequest({ maxInstances: 5 }, async (req, res) => {
   try {
@@ -512,7 +515,7 @@ export const ogImage = onRequest({ maxInstances: 5 }, async (req, res) => {
     const card = slug ? await resolveSessionCard(slug) : null;
 
     if (!card) {
-      res.redirect(302, OG_IMAGE);
+      res.redirect(302, SESSION_FALLBACK_IMAGE);
       return;
     }
 
@@ -527,6 +530,6 @@ export const ogImage = onRequest({ maxInstances: 5 }, async (req, res) => {
     res.status(200).send(png);
   } catch (err) {
     console.error("[ogImage] failed:", err);
-    res.redirect(302, OG_IMAGE);
+    res.redirect(302, SESSION_FALLBACK_IMAGE);
   }
 });
