@@ -5,39 +5,48 @@ import { createApp, h, nextTick, type App } from "vue";
  * The end of a reading, marked by pushing the page past its end
  * (PullToMark, docs/design.md, "An open volume, its settings, the reader").
  *
- * What must hold: the line takes no room and holds no touch back; only once
- * the page can scroll no further does a finger rising, from anywhere on the
- * page, fill the ring, and let go full, the reading is marked. The scroll
- * that leads to the end counts for nothing, a sideways swipe or a pinch is
- * not a pull, and a sheet keeps its own touches.
+ * What must hold: the line takes no room and holds no touch back; only a
+ * finger laid once the page can scroll no further, anywhere on the page,
+ * fills the ring as it rises, and let go full, the reading is marked. The
+ * finger that scrolls the page to its end never marks it, even if it keeps
+ * going; a sideways swipe or a pinch is not a pull, and a sheet keeps its
+ * own touches.
  */
 
 vi.mock("../services/haptics", () => ({ haptic: vi.fn() }));
 
 import PullToMark from "../components/parcours/PullToMark.vue";
-import { END_PULL, NO_PULL, movePull, pullShare } from "../components/parcours/endPull";
+import { END_PULL, NO_PULL, movePull, pullShare, startPull } from "../components/parcours/endPull";
 
 describe("movePull", () => {
-  it("counts nothing until the page reaches its end", () => {
-    let state = movePull(NO_PULL, 100, 600, false);
-    state = movePull(state, 100, 300, false);
-    expect(state.rise).toBe(0);
-    state = movePull(state, 100, 280, true);
-    expect(state.rise).toBe(0);
-    state = movePull(state, 100, 180, true);
+  it("pulls only with a finger laid at the end", () => {
+    let state = startPull(100, 600, true);
+    state = movePull(state, 100, 500, true);
     expect(state.rise).toBe(100);
   });
 
-  it("starts over when the page scrolls back up", () => {
-    let state = movePull(NO_PULL, 100, 600, true);
+  it("never pulls with the finger that scrolled the page to its end", () => {
+    // Laid before the end: the page scrolls, reaches its end, the finger
+    // keeps going well past the threshold.
+    let state = startPull(100, 640, false);
+    state = movePull(state, 100, 500, false);
+    state = movePull(state, 100, 480, true);
+    state = movePull(state, 100, 480 - END_PULL * 2, true);
+    expect(state.rise).toBe(0);
+  });
+
+  it("stops pulling when the page scrolls back up, until lifted", () => {
+    let state = startPull(100, 600, true);
     state = movePull(state, 100, 500, true);
     expect(state.rise).toBe(100);
     state = movePull(state, 100, 650, false);
     expect(state).toEqual(NO_PULL);
+    state = movePull(state, 100, 400, true);
+    expect(state.rise).toBe(0);
   });
 
   it("does not take a sideways swipe for a pull", () => {
-    let state = movePull(NO_PULL, 100, 600, true);
+    let state = startPull(100, 600, true);
     state = movePull(state, 300, 520, true);
     expect(state.rise).toBe(0);
   });
@@ -135,6 +144,22 @@ describe("PullToMark", () => {
     await pull(END_PULL / 2);
     expect(marks).not.toHaveBeenCalled();
     expect(section.textContent).toContain("Tirez vers le haut");
+  });
+
+  it("is never marked by the finger that scrolled to the end", async () => {
+    scrollY = DOC_HEIGHT - VIEWPORT - 130;
+    const { marks } = await mountEnd();
+    touch("touchstart", [{ x: 200, y: 640 }], document.body);
+    touch("touchmove", [{ x: 200, y: 560 }], document.body);
+    // The page reaches its end under the finger, which keeps going.
+    scrollY = DOC_HEIGHT - VIEWPORT;
+    touch("touchmove", [{ x: 200, y: 500 }], document.body);
+    touch("touchmove", [{ x: 200, y: 500 - END_PULL * 2 }], document.body);
+    touch("touchend", [], document.body);
+    expect(marks).not.toHaveBeenCalled();
+    // Laid again, now at the end: that one pulls.
+    await pull(END_PULL + 20);
+    expect(marks).toHaveBeenCalledTimes(1);
   });
 
   it("lets the page scroll before its end", async () => {

@@ -2768,17 +2768,18 @@ with weeks "behind" that you had chosen not to read.
   task, « Fermer » ("Close").
 - **At the bottom of a reading** coming from Mon parcours, the end of the
   portion: a small line, a ring and « Tirez vers le haut » ("Pull up"),
-  that takes no room from the text. Once the page can scroll no further,
-  pushing it up again, from anywhere on the page, fills the ring; released
-  full, the portion is done, and the full card says so (« Le signet a
-  avancé », "The ribbon has moved forward"), with « Annuler » ("Undo"). The
-  ring used to be pulled on a large zone of its own, which held the touches
-  back: whoever laid a finger on it could no longer scroll. Now the page
-  scrolls as usual, the line included; only what comes after its end counts
-  (`endPull.ts`), never the scroll that leads there, a sideways swipe, a
-  pinch or a sheet's gesture. With a mouse, the line is dragged upward; for
-  those who do not pull, it is a button. Held by
-  `src/__tests__/endPull.test.ts`.
+  that takes no room from the text. Once the page can scroll no further, a
+  finger laid anywhere on the page and pushing it up again fills the ring;
+  released full, the portion is done, and the full card says so (« Le
+  signet a avancé », "The ribbon has moved forward"), with « Annuler »
+  ("Undo"). The ring used to be pulled on a large zone of its own, which
+  held the touches back: whoever laid a finger on it could no longer
+  scroll. Now the page scrolls as usual, the line included. The pull is a
+  gesture of its own (`endPull.ts`): the finger that scrolls the page to its
+  end never marks it, even if it keeps going (a brisk scroll to the end of
+  the text would otherwise mark it); neither does a sideways swipe, a pinch
+  or a sheet's gesture. With a mouse, the line is dragged upward; for those
+  who do not pull, it is a button. Held by `src/__tests__/endPull.test.ts`.
 - The stones are in `components/parcours/stones.css`, which every component
   that lays them imports.
 

@@ -2,20 +2,21 @@
 /**
  * The end of a reading (P2-Lecteur): a small line, a ring and « Tirez vers le
  * haut », which takes no room from the text. Once the page can scroll no
- * further, pushing it up again, from anywhere on the page, fills the ring;
- * let go once it is full, it is done (endPull.ts). The page scrolls as
- * usual, the line included: the gesture only reads the touches, it holds
- * none of them back. With a mouse, the line is dragged upward; for whoever
- * does not pull, it is a button: Enter or Space do the same. Once done, the
- * full card says so, and the default slot holds what follows (undo, read
- * on).
+ * further, a finger laid anywhere on the page and pushing it up again fills
+ * the ring; let go once it is full, it is done (endPull.ts). The finger
+ * that scrolls the page to its end never marks it, even if it keeps going:
+ * the pull is a gesture of its own. The page scrolls as usual, the line
+ * included: the gesture only reads the touches, it holds none of them back.
+ * With a mouse, the line is dragged upward; for whoever does not pull, it is
+ * a button: Enter or Space do the same. Once done, the full card says so,
+ * and the default slot holds what follows (undo, read on).
  *
  * Shared by the day's portion (ReaderTaskCard) and the end of a service's
  * text (OfficeDoneCard): the same gesture wherever a reading ends.
  */
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { haptic } from "../../services/haptics";
-import { END_PULL, NO_PULL, movePull, pullShare, type EndPull } from "./endPull";
+import { END_PULL, movePull, pullShare, startPull, type EndPull } from "./endPull";
 
 const props = defineProps<{
   done: boolean;
@@ -77,14 +78,16 @@ function ignored(target: EventTarget | null): boolean {
 }
 
 // The finger, anywhere on the page. Passive listeners: the page scrolls as
-// it always does; the pull only counts what comes after its end.
+// it always does; only a finger laid at its end pulls.
 let touch: EndPull | null = null;
 
 function onTouchStart(event: TouchEvent): void {
   touch = null;
   if (props.done || event.touches.length !== 1 || ignored(event.target)) return;
   const finger = event.touches[0]!;
-  touch = movePull(NO_PULL, finger.clientX, finger.clientY, atEnd());
+  const laid = startPull(finger.clientX, finger.clientY, atEnd());
+  // Laid before the end, the finger scrolls: it will not pull, even there.
+  if (laid.anchorY !== null) touch = laid;
 }
 function onTouchMove(event: TouchEvent): void {
   if (!touch) return;
