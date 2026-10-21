@@ -945,14 +945,14 @@ const applySessionSeo = (s: typeof session.value) => {
       url,
       title: s.name,
       description,
-      image: `${SITE_URL}/og-image.jpg`,
+      image: `${SITE_URL}/og/partage-lectures-fr.png`,
       site_name: "Petite Jérusalem",
     },
     twitter: {
       card: "summary_large_image",
       title: s.name,
       description,
-      image: `${SITE_URL}/og-image.jpg`,
+      image: `${SITE_URL}/og/partage-lectures-fr.png`,
     },
   });
 };

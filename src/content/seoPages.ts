@@ -26,6 +26,7 @@
 import { SITE_URL, SITE_NAME, OG_IMAGE, LOGO_IMAGE } from "../config/site";
 import { APPLE_APP_ID } from "../config/stores";
 import { ZMANIM_GUIDE } from "./zmanimGuideStrings";
+import { ogImageOf } from "./ogBanners";
 import {
   DEFAULT_SEO_LOCALE,
   HREFLANG,
@@ -2292,6 +2293,11 @@ export function injectMeta(template: string, page: SeoPage): string {
   html = replaceMetaContent(html, "property", "og:url", url);
   html = replaceMetaContent(html, "name", "twitter:title", page.title);
   html = replaceMetaContent(html, "name", "twitter:description", page.description);
+  // The section's banner, in the page's language (src/content/ogBanners.ts).
+  const image = ogImageOf(page.path, locale);
+  html = replaceMetaContent(html, "property", "og:image", image.url);
+  html = replaceMetaContent(html, "property", "og:image:alt", image.alt);
+  html = replaceMetaContent(html, "name", "twitter:image", image.url);
   html = replaceCanonical(html, url);
   // Smart App Banner iOS : l'app doit s'ouvrir sur la page que Safari
   // affiche, pas sur l'accueil (voir index.html).
