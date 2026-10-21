@@ -1,111 +1,184 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { inflateSync } from "node:zlib";
 import { describe, expect, it } from "vitest";
 import {
+  ANDROID_CANVAS_DP,
   ANDROID_DENSITIES,
   ANDROID_MONOCHROME,
-  appIconSvg,
+  ANDROID_SAFE_DP,
+  ICON_BACKGROUND,
+  ICON_BACKGROUND_DARK,
+  ICON_FILES,
   ICON_VARIANTS,
   IOS_ICON_FILES,
   iosAppIconContents,
+  NOTIFICATION_CANVAS_DP,
+  NOTIFICATION_LIVE_DP,
   withMonochromeLayer,
 } from "../../scripts/lib/app-icon.mjs";
 
 /**
- * Icônes qui suivent le thème de l'appareil.
+ * Icons that follow the device theme.
  *
- * Rien ici ne peut se voir avant d'avoir posé l'app sur un vrai écran
- * d'accueil, et une icône ratée ne casse aucun build : elle s'installe, et
- * personne ne s'en aperçoit avant la boutique. Ce sont donc les quelques
- * conditions dont dépend l'effet qui sont tenues ici, plutôt que le rendu.
+ * Nothing here can be seen before the app is on a real home screen, and a
+ * failed icon breaks no build: it installs, and nobody notices before the
+ * store. So the few conditions the effect depends on are checked on the
+ * versioned PNGs themselves, rather than on how they look.
  */
 
-/** Le viewBox du SVG produit, sous forme de nombres. */
-function viewBox(svg: string): { x: number; y: number; size: number } {
-  const match = svg.match(/viewBox="([-\d. ]+)"/);
-  if (!match) throw new Error("SVG sans viewBox");
-  const [x, y, size] = match[1].split(" ").map(Number);
-  return { x, y, size };
+const ROOT = join(__dirname, "../..");
+
+type Png = { width: number; height: number; colorType: number; channels: number; data: Uint8Array };
+
+/** Minimal PNG reader: 8-bit, non-interlaced, which is all the icons are. */
+function readPng(path: string): Png {
+  const file = readFileSync(join(ROOT, path));
+  let offset = 8;
+  let width = 0;
+  let height = 0;
+  let colorType = 0;
+  const idat: Buffer[] = [];
+  while (offset < file.length) {
+    const length = file.readUInt32BE(offset);
+    const type = file.toString("ascii", offset + 4, offset + 8);
+    const body = file.subarray(offset + 8, offset + 8 + length);
+    if (type === "IHDR") {
+      width = body.readUInt32BE(0);
+      height = body.readUInt32BE(4);
+      if (body[8] !== 8 || body[12] !== 0)
+        throw new Error(`${path}: 8-bit non-interlaced PNG expected`);
+      colorType = body[9];
+    } else if (type === "IDAT") {
+      idat.push(body);
+    }
+    offset += 12 + length;
+  }
+  const channels = { 0: 1, 2: 3, 4: 2, 6: 4 }[colorType];
+  if (!channels) throw new Error(`${path}: unsupported color type ${colorType}`);
+  const raw = inflateSync(Buffer.concat(idat));
+  const stride = width * channels;
+  const data = new Uint8Array(height * stride);
+  for (let y = 0; y < height; y++) {
+    const filter = raw[y * (stride + 1)];
+    for (let x = 0; x < stride; x++) {
+      const value = raw[y * (stride + 1) + 1 + x];
+      const left = x >= channels ? data[y * stride + x - channels] : 0;
+      const up = y > 0 ? data[(y - 1) * stride + x] : 0;
+      const upLeft = x >= channels && y > 0 ? data[(y - 1) * stride + x - channels] : 0;
+      let predictor = 0;
+      if (filter === 1) predictor = left;
+      else if (filter === 2) predictor = up;
+      else if (filter === 3) predictor = (left + up) >> 1;
+      else if (filter === 4) {
+        const p = left + up - upLeft;
+        const [pa, pb, pc] = [Math.abs(p - left), Math.abs(p - up), Math.abs(p - upLeft)];
+        predictor = pa <= pb && pa <= pc ? left : pb <= pc ? up : upLeft;
+      }
+      data[y * stride + x] = (value + predictor) & 0xff;
+    }
+  }
+  return { width, height, colorType, channels, data };
 }
 
-describe("source vectorielle des icônes", () => {
-  it("donne un SVG carré pour chaque variante", () => {
-    const malformees = ICON_VARIANTS.filter((variant: string) => {
-      const svg = appIconSvg(variant);
-      return !svg.startsWith("<svg") || !svg.endsWith("</svg>") || viewBox(svg).size <= 0;
+/** The box of the pixels that are not fully transparent, in pixels. */
+function alphaBox(png: Png): { minX: number; minY: number; maxX: number; maxY: number } {
+  const box = { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity };
+  for (let y = 0; y < png.height; y++) {
+    for (let x = 0; x < png.width; x++) {
+      const alpha = png.data[(y * png.width + x) * png.channels + png.channels - 1];
+      if (alpha === 0) continue;
+      box.minX = Math.min(box.minX, x);
+      box.minY = Math.min(box.minY, y);
+      box.maxX = Math.max(box.maxX, x + 1);
+      box.maxY = Math.max(box.maxY, y + 1);
+    }
+  }
+  return box;
+}
+
+const hex = (png: Png, x: number, y: number): string => {
+  const i = (y * png.width + x) * png.channels;
+  return `#${[0, 1, 2].map((c) => png.data[i + c].toString(16).padStart(2, "0")).join("")}`.toUpperCase();
+};
+
+/** Android density factor of the n-th file of a five-density list (mdpi to xxxhdpi). */
+const DENSITY_FACTORS = [1, 1.5, 2, 3, 4];
+
+describe("app icon files", () => {
+  it("has a file for every variant", () => {
+    expect(Object.keys(ICON_FILES)).toEqual(ICON_VARIANTS);
+  });
+
+  it("gives the two colored icons 1024 px without transparency", () => {
+    // The App Store refuses an icon with an alpha channel, and iOS fills the
+    // transparent pixels with black.
+    for (const path of [...ICON_FILES.light, ...ICON_FILES.dark]) {
+      const png = readPng(path);
+      expect([path, png.width, png.height, png.colorType]).toEqual([path, 1024, 1024, 2]);
+    }
+  });
+
+  it("puts the light icon on the logo's cream and the dark one on the app's dark", () => {
+    expect(hex(readPng(ICON_FILES.light[0]), 2, 2)).toBe(ICON_BACKGROUND);
+    expect(hex(readPng(ICON_FILES.dark[0]), 2, 2)).toBe(ICON_BACKGROUND_DARK);
+  });
+
+  it("leaves no color in the variants the system tints", () => {
+    // iOS and Android tint these variants themselves: they read the
+    // luminosity, and a brand color left behind would come out as a dirty
+    // grey. Grey plus alpha, and only the white of the silhouette.
+    for (const path of [
+      ...ICON_FILES.tinted,
+      ...ICON_FILES.monochrome,
+      ...ICON_FILES.notification,
+    ]) {
+      const png = readPng(path);
+      expect([path, png.colorType]).toEqual([path, 4]);
+      const greys = new Set<number>();
+      for (let i = 0; i < png.data.length; i += 2) if (png.data[i + 1] > 0) greys.add(png.data[i]);
+      expect([path, [...greys]]).toEqual([path, [255]]);
+    }
+  });
+
+  it("keeps the monochrome drawing inside the Android safe zone", () => {
+    // The adaptive icon canvas is 108 dp, but the launcher mask may eat
+    // everything outside the central 66 dp. The book is wide and low: framed
+    // too big, it loses the corners of its pages on a round mask, and nobody
+    // sees it before publication.
+    ICON_FILES.monochrome.forEach((path: string, index: number) => {
+      const png = readPng(path);
+      const px = ANDROID_CANVAS_DP * DENSITY_FACTORS[index];
+      expect([path, png.width, png.height]).toEqual([path, px, px]);
+      expect(ANDROID_DENSITIES[index].px).toBe(px);
+      const box = alphaBox(png);
+      const dpPerPx = ANDROID_CANVAS_DP / px;
+      const radiusDp = (Math.hypot(box.maxX - box.minX, box.maxY - box.minY) / 2) * dpPerPx;
+      expect(radiusDp).toBeLessThanOrEqual(ANDROID_SAFE_DP / 2 + 0.5);
+      // And centered, or the safe zone is useless.
+      expect(Math.abs((box.minX + box.maxX) / 2 - px / 2) * dpPerPx).toBeLessThan(1);
+      expect(Math.abs((box.minY + box.maxY) / 2 - px / 2) * dpPerPx).toBeLessThan(1);
     });
-    expect(malformees).toEqual([]);
-  });
-
-  it("refuse une variante inconnue", () => {
-    expect(() => appIconSvg("sepia")).toThrow(/variante inconnue/);
-  });
-
-  it("garde à l'icône claire le cadrage déjà publié sur les boutiques", () => {
-    // Mesuré sur assets/logo.png : à ces valeurs le rendu se superpose au
-    // fichier d'origine. Les changer déplace l'icône des fiches Play et App
-    // Store, ce qui ne se fait pas par accident.
-    expect(viewBox(appIconSvg("light"))).toEqual({ x: 8, y: 13, size: 84 });
-  });
-
-  it("donne le même cadrage aux deux variantes en couleurs", () => {
-    // Le mode sombre du téléphone ne doit pas faire bouger le dessin d'un
-    // pixel, seulement changer ses couleurs.
-    expect(viewBox(appIconSvg("dark"))).toEqual(viewBox(appIconSvg("light")));
-  });
-
-  it("ne laisse aucune couleur dans les variantes que le système teinte", () => {
-    // iOS et Android teignent eux-mêmes ces deux variantes : ils lisent la
-    // luminosité, une couleur de marque qui traînerait ressortirait en gris
-    // sale. Seuls le blanc de la silhouette et le noir du masque ont cours.
-    const palettes = ["tinted", "monochrome", "notification"].map((variant) => [
-      variant,
-      [...new Set(appIconSvg(variant).match(/#[0-9a-fA-F]{3,6}/g) ?? [])].sort(),
-    ]);
-    expect(palettes).toEqual([
-      ["tinted", ["#000", "#fff"]],
-      ["monochrome", ["#000", "#fff"]],
-      ["notification", ["#000", "#fff"]],
-    ]);
-  });
-
-  it("creuse la silhouette au lieu de la laisser en aplat", () => {
-    // Sans les creux, le mur et le livre se touchent et l'icône teintée n'est
-    // plus qu'une tache : c'est le masque qui garde le dessin lisible une fois
-    // la couleur perdue.
-    const svg = appIconSvg("monochrome");
-    expect(svg).toContain("<mask");
-    expect(svg.match(/stroke="#000"/g)?.length).toBeGreaterThanOrEqual(4);
-  });
-
-  it("tient le dessin monochrome dans la zone sûre d'Android", () => {
-    // La toile d'une icône adaptative fait 108 dp, mais le masque du lanceur
-    // peut manger tout ce qui sort des 66 dp du centre. Le livre est large et
-    // bas : cadré trop grand, il perd les coins de ses pages sur un masque
-    // rond, et personne ne le voit avant la publication.
-    const { x, y, size } = viewBox(appIconSvg("monochrome"));
-    // La boîte du dessin, en unités du tracé (voir ART dans app-icon.mjs).
-    const art = { minX: 15, minY: 30.5, maxX: 85, maxY: 77 };
-    const scale = 108 / size;
-    const radiusDp = (Math.hypot(art.maxX - art.minX, art.maxY - art.minY) / 2) * scale;
-    expect(radiusDp).toBeLessThanOrEqual(66 / 2 + 0.001);
-    // Et le dessin est bien centré sur la toile, sinon la zone sûre ne sert à rien.
-    expect(((art.minX + art.maxX) / 2 - x) * scale).toBeCloseTo(54, 6);
-    expect(((art.minY + art.maxY) / 2 - y) * scale).toBeCloseTo(54, 6);
   });
 });
 
-describe("petite icône des notifications Android", () => {
-  it("tient le dessin dans les 22 dp utiles de la toile de 24 dp", () => {
-    // Android ne garde de cette icône que son opacité et la réduit à la
-    // hauteur d'une ligne de barre d'état : 1 dp de marge de chaque côté,
-    // et le dessin le plus grand possible dans ce qui reste.
-    const { x, y, size } = viewBox(appIconSvg("notification"));
-    const art = { minX: 15, minY: 30.5, maxX: 85, maxY: 77 };
-    const scale = 24 / size;
-    const widthDp = (art.maxX - art.minX) * scale;
-    const heightDp = (art.maxY - art.minY) * scale;
-    expect(Math.max(widthDp, heightDp)).toBeCloseTo(22, 6);
-    expect(((art.minX + art.maxX) / 2 - x) * scale).toBeCloseTo(12, 6);
-    expect(((art.minY + art.maxY) / 2 - y) * scale).toBeCloseTo(12, 6);
+describe("Android notification small icon", () => {
+  it("fills the useful 22 dp of the 24 dp canvas", () => {
+    // Android keeps only the opacity of this icon and shrinks it to the
+    // height of a status bar line: 1 dp margin on each side, and the drawing
+    // as big as possible in what is left.
+    ICON_FILES.notification.forEach((path: string, index: number) => {
+      const png = readPng(path);
+      const px = NOTIFICATION_CANVAS_DP * DENSITY_FACTORS[index];
+      expect([path, png.width, png.height]).toEqual([path, px, px]);
+      const box = alphaBox(png);
+      const dpPerPx = NOTIFICATION_CANVAS_DP / px;
+      const sizeDp = Math.max(box.maxX - box.minX, box.maxY - box.minY) * dpPerPx;
+      expect(sizeDp).toBeGreaterThan(NOTIFICATION_LIVE_DP - 1);
+      expect(sizeDp).toBeLessThanOrEqual(NOTIFICATION_LIVE_DP + 0.5);
+      expect(Math.abs((box.minX + box.maxX) / 2 - px / 2) * dpPerPx).toBeLessThan(1);
+      expect(Math.abs((box.minY + box.maxY) / 2 - px / 2) * dpPerPx).toBeLessThan(1);
+    });
   });
 });
 
