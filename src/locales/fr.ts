@@ -2216,7 +2216,6 @@ const fr = {
     never: "Ne plus afficher la prochaine fois",
     farewell: "Vous retrouverez ces réglages dans Profil, Préférences, « Avant une tefila ».",
     close: "Fermer",
-    back: "Revenir à la tefila",
     applied: "Vos modes de prière sont activés jusqu'à la fin de la tefila.",
     settings: {
       title: "Avant une tefila",

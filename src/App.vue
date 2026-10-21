@@ -90,7 +90,7 @@ const stageStyle = computed(() =>
   appDrop.held
     ? {
         transform: `translate3d(0, ${appDrop.offset}px, 0)`,
-        transition: appDrop.dragging || prefersReducedMotion() ? "none" : DROP_TRANSITION,
+        transition: prefersReducedMotion() ? "none" : DROP_TRANSITION,
       }
     : undefined,
 );
@@ -219,7 +219,6 @@ authService.onAuthChanged((user) => {
 
 <template>
   <div
-    id="app-stage"
     :class="{ 'app-stage-held': appDrop.held, 'app-stage-lowered': appDrop.offset > 0 }"
     :style="stageStyle"
   >

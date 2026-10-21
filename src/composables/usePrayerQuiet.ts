@@ -61,8 +61,6 @@ export const appDrop = reactive({
   held: false,
   offset: 0,
   scrollY: 0,
-  /** The finger is moving it: no easing, it follows. */
-  dragging: false,
 });
 
 /**
@@ -145,14 +143,20 @@ export function setPrayerQuietChoice(next: PrayerQuietChoice): void {
 }
 
 /**
- * The prayer under way: the phone before it, and what was changed since
- * (the value set, per setting). Kept on the device too, so that an app
- * closed in the middle of a tefila still sets the phone back the next time
- * it opens.
+ * The prayer under way: the phone before it, what was changed since (the
+ * value set, per setting), and whether the panel was closed with « Fermer »
+ * ("Close"). Kept on the device too, so that an app closed in the middle of
+ * a tefila still sets the phone back the next time it opens.
  */
 interface PrayerSession {
   before: { dnd: boolean; ringer: RingerMode };
   set: { dnd?: boolean; ringer?: RingerMode };
+  /**
+   * The panel was closed on purpose. Until then it is offered again
+   * whenever the tefila shows: back from another app, reopened, the app
+   * relaunched on it.
+   */
+  dismissed?: boolean;
 }
 
 function parseSession(raw: string | null): PrayerSession | null {
@@ -162,7 +166,7 @@ function parseSession(raw: string | null): PrayerSession | null {
     if (typeof value?.before?.dnd !== "boolean" || typeof value.before.ringer !== "string") {
       return null;
     }
-    return { before: value.before, set: value.set ?? {} };
+    return { before: value.before, set: value.set ?? {}, dismissed: value.dismissed === true };
   } catch {
     return null;
   }
@@ -184,8 +188,9 @@ const busy = new Set<QuietMode>();
 
 function remember(): void {
   if (!session) return;
-  if (session.set.dnd === undefined && session.set.ringer === undefined) sessionStore.clear();
-  else sessionStore.write(session);
+  const changed = session.set.dnd !== undefined || session.set.ringer !== undefined;
+  if (changed || session.dismissed) sessionStore.write(session);
+  else sessionStore.clear();
 }
 
 /** Records what the app has just set, against how the phone was before. */
@@ -203,19 +208,21 @@ function record(state: QuietState, mode: QuietMode): void {
 }
 
 /**
- * A tefila is shown. The same prayer continues if one was left a moment ago;
- * otherwise, following the choice made: the panel, the modes kept applied
- * without asking (the panel comes instead if the phone refuses one), or
- * nothing. Nothing outside the Android app, nor on a binary older than the
- * plugin.
+ * A tefila is shown. The same prayer continues if one was left a moment ago
+ * (and the panel comes back if it was not closed); otherwise, following the
+ * choice made: the panel, the modes kept applied without asking (the panel
+ * comes instead if the phone refuses one), or nothing. Nothing outside the
+ * Android app, nor on a binary older than the plugin.
  */
 export async function enterPrayer(): Promise<void> {
   if (!quietModesSupported || inPrayer) return;
   inPrayer = true;
   const entry = ++generation;
+  listenForReturn();
   if (revertTimer !== undefined) {
     clearTimeout(revertTimer);
     revertTimer = undefined;
+    await offerAgain(entry);
     return;
   }
   if (!choiceRestored) await restorePrayerQuietChoice();
@@ -228,10 +235,43 @@ export async function enterPrayer(): Promise<void> {
   session = leftover ?? { before: { dnd: state.dnd, ringer: state.ringer }, set: {} };
   const { mode, wish } = choice.value;
   if (mode === "never") return;
-  if (mode === "always" && wish && (await applyWish(wish, state, entry))) return;
-  if (entry !== generation) return;
+  if (mode === "always" && wish && (await applyWish(wish, state, entry))) {
+    // Applied by themselves: nothing is left to offer in this prayer.
+    session.dismissed = true;
+    return;
+  }
+  await offerAgain(entry);
+}
+
+/**
+ * The panel, unless it was closed on purpose in this prayer, the choice is
+ * not to offer it, it is already there, or something else holds the screen.
+ */
+async function offerAgain(entry: number): Promise<void> {
+  if (!session || session.dismissed || choice.value.mode === "never") return;
+  if (prayerQuiet.open || entry !== generation) return;
   if (isOnboardingOpen.value || hasOpenOverlay()) return;
   await openPanel(entry);
+}
+
+/**
+ * Back from another app (the home screen, a call) on a tefila whose panel
+ * was not closed: it is offered again right away.
+ */
+let returnListened = false;
+function listenForReturn(): void {
+  if (returnListened || typeof document === "undefined") return;
+  returnListened = true;
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible" && inPrayer) void offerAgain(generation);
+  });
+}
+
+/** « Fermer » touched: the panel stays away for the rest of this prayer. */
+export function dismissPrayerQuiet(): void {
+  if (!session) return;
+  session.dismissed = true;
+  remember();
 }
 
 /** The modes kept for every tefila; false if the phone refused one. */
@@ -335,6 +375,7 @@ export async function settleLeftoverPrayer(): Promise<void> {
  * next ones. Each time, the phone is set back once this tefila is left.
  */
 export function choosePrayerQuiet(action: "never" | "always"): void {
+  dismissPrayerQuiet();
   if (action === "never") setPrayerQuietChoice({ mode: "never", wish: choice.value.wish });
   if (action === "always" && prayerQuiet.state) {
     const { dnd, ringer } = prayerQuiet.state;
@@ -403,7 +444,6 @@ export async function releaseApp(): Promise<void> {
   const top = appDrop.scrollY;
   appDrop.held = false;
   appDrop.offset = 0;
-  appDrop.dragging = false;
   await nextTick();
   window.scrollTo({ top, behavior: "instant" });
 }
@@ -428,5 +468,4 @@ export function resetPrayerQuiet(): void {
   appDrop.held = false;
   appDrop.offset = 0;
   appDrop.scrollY = 0;
-  appDrop.dragging = false;
 }

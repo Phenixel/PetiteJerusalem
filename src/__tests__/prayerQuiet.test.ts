@@ -17,12 +17,15 @@ import fr from "../locales/fr";
  *    phone goes back to how it was, except what the user changed again
  *    themselves; Min'ha then Arvit is one prayer; an app closed in the
  *    middle sets the phone back at the next launch;
- *  - « Ne plus afficher la prochaine fois » stops the panel, « À chaque tefila » applies
- *    the modes on to the next ones without asking;
+ *  - the panel stays open until « Fermer », and comes back with the tefila
+ *    (reopened, back from another app) as long as it was not touched;
+ *  - « Ne plus afficher la prochaine fois » stops the panel, « À chaque
+ *    tefila » applies the modes on to the next ones without asking;
  *  - a change refused for lack of access opens the system list, and is made
  *    on return once the access is granted;
  *  - the panel comes down from above the screen with the app, grows by its
- *    choices after a moment, and retracts upward when one is made.
+ *    choices after a moment, and retracts upward when one is made, and
+ *    only then.
  */
 
 type State = { dnd: boolean; ringer: "normal" | "vibrate" | "silent"; access: boolean };
@@ -88,6 +91,7 @@ import {
   appDrop,
   choosePrayerQuiet,
   closePrayerQuiet,
+  dismissPrayerQuiet,
   enterPrayer,
   LEAVE_GRACE_MS,
   leavePrayer,
@@ -250,9 +254,10 @@ describe("the phone set for the prayer, and back after it", () => {
     expect(phone.state.ringer).toBe("silent");
   });
 
-  it("Min'ha then Arvit is one prayer: no second panel, set back after the last", async () => {
+  it("Min'ha then Arvit is one prayer: no second panel once closed, set back after the last", async () => {
     await enterPrayer();
     await toggleQuietMode("dnd", true);
+    dismissPrayerQuiet();
     closePrayerQuiet();
     leavePrayer();
     await vi.advanceTimersByTimeAsync(1000);
@@ -262,6 +267,32 @@ describe("the phone set for the prayer, and back after it", () => {
     expect(phone.state.dnd).toBe(true);
     await leaveAndWait();
     expect(phone.state.dnd).toBe(false);
+  });
+
+  it("the panel comes back with the tefila as long as « Fermer » was not touched", async () => {
+    await enterPrayer();
+    // Left with the panel still open (Android back): it goes with the page.
+    closePrayerQuiet();
+    leavePrayer();
+    await vi.advanceTimersByTimeAsync(1000);
+    await enterPrayer();
+    expect(prayerQuiet.open).toBe(true);
+  });
+
+  it("back from another app, the panel not closed comes back right away", async () => {
+    const remove = pushOverlay(() => {});
+    await enterPrayer();
+    expect(prayerQuiet.open).toBe(false); // another window held the screen
+    remove();
+    document.dispatchEvent(new Event("visibilitychange"));
+    await vi.waitFor(() => expect(prayerQuiet.open).toBe(true));
+
+    // Closed on purpose: back from another app, it stays away.
+    dismissPrayerQuiet();
+    closePrayerQuiet();
+    document.dispatchEvent(new Event("visibilitychange"));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(prayerQuiet.open).toBe(false);
   });
 
   it("an app closed during the tefila sets the phone back at the next launch", async () => {
@@ -351,17 +382,12 @@ describe("changing a mode without the access", () => {
 });
 
 describe("the panel, from the top of the screen", () => {
-  /** jsdom has no PointerEvent: a mouse event under its name, with an id. */
-  function pointer(type: string, clientY: number): Event {
-    const event = new MouseEvent(type, { clientY, bubbles: true });
-    Object.defineProperty(event, "pointerId", { value: 1 });
-    return event;
-  }
-
   let panelHeight = 100;
   const offsetHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "offsetHeight")!;
   beforeEach(() => {
     panelHeight = 100;
+    // jsdom does not scroll: the page given back its scroll is checked below.
+    vi.spyOn(window, "scrollTo").mockImplementation(() => {});
     Object.defineProperty(HTMLElement.prototype, "offsetHeight", {
       configurable: true,
       get() {
@@ -380,9 +406,6 @@ describe("the panel, from the top of the screen", () => {
   }
 
   function mountPanel(): { unmount: () => void; panel: HTMLElement } {
-    const stage = document.createElement("div");
-    stage.id = "app-stage";
-    document.body.appendChild(stage);
     const host = document.createElement("div");
     document.body.appendChild(host);
     const i18n = createI18n({ legacy: false, locale: "fr", messages: { fr } });
@@ -425,7 +448,7 @@ describe("the panel, from the top of the screen", () => {
     expect(appDrop.offset).toBe(140);
 
     // « Fermer »: the content gives way to where the settings live, in the
-    // same room, and the panel retracts on its own a few seconds later.
+    // same room, and stays until one of its two buttons is touched.
     button(panel, "Fermer").click();
     await nextTick();
     expect(panel.querySelector(".quiet-tile")).toBeNull();
@@ -434,9 +457,10 @@ describe("the panel, from the top of the screen", () => {
     expect(panel.textContent).toContain("Ne plus afficher la prochaine fois");
     expect(panel.style.minHeight).toBe("140px");
     expect(appDrop.offset).toBe(140);
-    await vi.advanceTimersByTimeAsync(4900);
+    await vi.advanceTimersByTimeAsync(60_000);
     expect(appDrop.offset).toBe(140);
-    await vi.advanceTimersByTimeAsync(100);
+    button(panel, "Fermer").click();
+    await nextTick();
     // Retracting: the app comes back up, the panel goes up above the screen.
     expect(appDrop.offset).toBe(0);
     expect(panel.style.transform).toBe("translate3d(0, -140px, 0)");
@@ -449,7 +473,7 @@ describe("the panel, from the top of the screen", () => {
     scrollTo.mockRestore();
   });
 
-  it("« Fermer » again, on the message, closes it now and keeps it", async () => {
+  it("« Fermer » again, on the message, closes it for this prayer and keeps it for the next", async () => {
     await enterPrayer();
     const { unmount, panel } = mountPanel();
     await vi.advanceTimersByTimeAsync(2000);
@@ -457,12 +481,19 @@ describe("the panel, from the top of the screen", () => {
     await nextTick();
     button(panel, "Fermer").click();
     await nextTick();
-    // At once, without waiting for the five seconds.
     expect(appDrop.offset).toBe(0);
     await vi.runAllTimersAsync();
     expect(prayerQuiet.open).toBe(false);
     expect(prayerQuietChoice.value.mode).toBe("offer");
     unmount();
+    // Back from another app: this prayer's panel was closed on purpose.
+    document.dispatchEvent(new Event("visibilitychange"));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(prayerQuiet.open).toBe(false);
+    // The next prayer offers it again.
+    await leaveAndWait();
+    await enterPrayer();
+    expect(prayerQuiet.open).toBe(true);
   });
 
   it("« Ne plus afficher la prochaine fois », after « Fermer », stops the panel the next times", async () => {
@@ -494,16 +525,14 @@ describe("the panel, from the top of the screen", () => {
     unmount();
   });
 
-  it("a tap on the lowered app closes it", async () => {
+  it("stays open until « Fermer »: nothing closes it on its own, nor Escape", async () => {
     await enterPrayer();
     const { unmount } = mountPanel();
-    await vi.advanceTimersByTimeAsync(0);
-    const catcher = document.querySelector<HTMLButtonElement>("#app-stage .prayer-quiet-catcher")!;
-    expect(catcher).not.toBeNull();
-    catcher.dispatchEvent(pointer("pointerdown", 500));
-    catcher.dispatchEvent(pointer("pointerup", 501));
-    await vi.runAllTimersAsync();
-    expect(prayerQuiet.open).toBe(false);
+    await vi.advanceTimersByTimeAsync(60_000);
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(prayerQuiet.open).toBe(true);
+    expect(appDrop.offset).toBe(100);
     unmount();
   });
 });
