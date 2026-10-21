@@ -2772,7 +2772,14 @@ with weeks "behind" that you had chosen not to read.
   finger laid anywhere on the page and pushing it up again fills the ring;
   released full, the portion is done, and the full card says so (« Le
   signet a avancé », "The ribbon has moved forward"), with « Annuler »
-  ("Undo"). The ring used to be pulled on a large zone of its own, which
+  ("Undo"). The line grows into that card as it is pulled, one shape and
+  never two that swap: the ring swells (from 20 to 76 px) and slides to the
+  middle, the line fades out beside it, the heading and the two lines come
+  in; full, it is the card itself, which then takes its place without a
+  jump. While it grows, it rises over the end of the text with the page's
+  color, its bottom fixed: the page keeps its height and stays at its end
+  under the finger. Let go short, it shrinks back into the line
+  (`endPullLayout`). The ring used to be pulled on a large zone of its own, which
   held the touches back: whoever laid a finger on it could no longer
   scroll. Now the page scrolls as usual, the line included. The pull is a
   gesture of its own (`endPull.ts`): the finger that scrolls the page to its

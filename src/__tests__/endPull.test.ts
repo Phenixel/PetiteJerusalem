@@ -5,7 +5,8 @@ import { createApp, h, nextTick, type App } from "vue";
  * The end of a reading, marked by pushing the page past its end
  * (PullToMark, docs/design.md, "An open volume, its settings, the reader").
  *
- * What must hold: the line takes no room and holds no touch back; only a
+ * What must hold: the line takes no room and holds no touch back; it grows
+ * into the card as it is pulled, one shape and never two that swap; only a
  * finger laid once the page can scroll no further, anywhere on the page,
  * fills the ring as it rises, and let go full, the reading is marked. The
  * finger that scrolls the page to its end never marks it, even if it keeps
@@ -16,7 +17,18 @@ import { createApp, h, nextTick, type App } from "vue";
 vi.mock("../services/haptics", () => ({ haptic: vi.fn() }));
 
 import PullToMark from "../components/parcours/PullToMark.vue";
-import { END_PULL, NO_PULL, movePull, pullShare, startPull } from "../components/parcours/endPull";
+import {
+  END_PULL,
+  FULL,
+  FULL_HEIGHT,
+  NO_PULL,
+  REST,
+  endPullLayout,
+  movePull,
+  pullGrowth,
+  pullShare,
+  startPull,
+} from "../components/parcours/endPull";
 
 describe("movePull", () => {
   it("pulls only with a finger laid at the end", () => {
@@ -54,6 +66,40 @@ describe("movePull", () => {
   it("fills the ring at END_PULL, no further", () => {
     expect(pullShare(END_PULL / 2)).toBe(0.5);
     expect(pullShare(END_PULL * 2)).toBe(1);
+  });
+});
+
+describe("endPullLayout", () => {
+  it("starts as the line: a small ring beside its text, centered together", () => {
+    const rest = endPullLayout(0, 200);
+    expect(rest.height).toBe(REST.height);
+    expect(rest.ring).toBe(REST.ring);
+    expect(rest.lineOpacity).toBe(1);
+    expect(rest.cardOpacity).toBe(0);
+    // Ring, gap and text, centered as one: as far from the middle on each side.
+    const start = rest.ringX - rest.ring / 2;
+    expect(rest.lineX + 200).toBeCloseTo(-start);
+  });
+
+  it("ends as the card shown once done", () => {
+    const full = endPullLayout(1, 200);
+    expect(full.height).toBe(FULL_HEIGHT);
+    expect(full.ring).toBe(FULL.ring);
+    expect(full.ringX).toBe(0);
+    expect(full.headingY).toBe(FULL.top);
+    expect(full.lineOpacity).toBe(0);
+    expect(full.cardOpacity).toBe(1);
+  });
+
+  it("grows step by step, never in one jump", () => {
+    let previous = endPullLayout(0, 200);
+    for (let i = 1; i <= 20; i++) {
+      const next = endPullLayout(pullGrowth(i / 20), 200);
+      expect(next.ring).toBeGreaterThan(previous.ring);
+      expect(next.height).toBeGreaterThan(previous.height);
+      expect(next.ring - previous.ring).toBeLessThan((FULL.ring - REST.ring) / 4);
+      previous = next;
+    }
   });
 });
 
@@ -130,7 +176,7 @@ describe("PullToMark", () => {
 
   it("is marked by pushing the page past its end, from anywhere", async () => {
     const { marks, section } = await mountEnd();
-    expect(section.classList.contains("is-hint")).toBe(true);
+    expect(section.classList.contains("is-growing")).toBe(true);
     touch("touchstart", [{ x: 150, y: 400 }], document.body);
     touch("touchmove", [{ x: 150, y: 400 - END_PULL - 10 }], document.body);
     await nextTick();
