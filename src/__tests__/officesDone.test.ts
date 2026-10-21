@@ -5,8 +5,8 @@ import type { Objective } from "../services/parcours/model";
 /**
  * What has already been said (composables/useOfficesDone.ts), shared by the
  * home deck, the Sidour page and the end of a service's text: the window
- * under way is today's, as in the deck; past midnight, until 'hatsot of the
- * night, today is still the evening's day (parcours/days.ts, dayOfInstant).
+ * under way is today's, as in the deck; past midnight, until dawn, today is
+ * still the evening's day (parcours/days.ts, dayOfInstant; services/nightBounds).
  */
 
 vi.mock("../services/authService", () => ({

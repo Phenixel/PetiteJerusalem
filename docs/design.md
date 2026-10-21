@@ -543,8 +543,9 @@ disc, the sky of the moment, then what matters now.
   « Min'ha à partir de 14:02 · dans 1 h 10 » before the window,
   « Min'ha jusqu'à 18:51 · encore 2 h 21 » during it, « Min'ha : heure
   passée (18:51) » after. Arvit says « de préférence avant » 'hatsot of the
-  night, then « jusqu'à » dawn. After midnight, Arvit and the Sli'hot are
-  still those of the night that began the evening before.
+  night, then « jusqu'à » dawn. After midnight, until dawn, Arvit and the
+  Sli'hot are still those of the night that began the evening before (the
+  rule of the night, `services/nightBounds.ts`, shared by every screen).
 - **The sky of the moment** (`ArtSky.vue`): the walls of Jerusalem under
   the sky of each prayer. The sun rising behind them for Cha'harit,
   climbing for the Chema and the 'Amida, going down for Min'ha; the three
@@ -619,9 +620,11 @@ The page has three tiers (`SidourPage.vue`):
   service: the lighting on an evening of 'Hanouka, the Sli'hot from 'hatsot
   until sunrise. The blessing of the moon, on the nights it is said, comes
   after Arvit, as in the home stack: it takes the card once Arvit is said
-  (or its time is over), and the bedtime Chema after it, until 'hatsot of
-  the night (past midnight, it still counts for the evening before: said at
-  23:30, it is not offered again at 0:30): the last text of the night. Between two services, the current holiday takes
+  (or its time is over, at dawn), and the bedtime Chema after it, until
+  dawn (past midnight, it still counts for the evening before: said at
+  23:30, it is not offered again at 2:00): the last text of the night.
+  Arvit itself is offered until dawn, past 'hatsot too: it can still be
+  said then, and whoever said it marks it done. Between two services, the current holiday takes
   the card if its text is said now (the loulav until chkia);
 - **only what is said now**: unlike the home deck, which announces what
   comes next (with its « Pas encore » look), the Sidour page never puts
