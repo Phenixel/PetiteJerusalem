@@ -13,7 +13,9 @@
 
 export const SITE_URL = "https://petite-jerusalem.fr";
 export const SITE_NAME = "Petite Jérusalem";
-export const OG_IMAGE = `${SITE_URL}/og-image.jpg`;
-/** Logo carré (favicon) pour les données structurées Organization ; l'og-image
- *  est une bannière large 1200×630, inadaptée au champ `logo`. */
-export const LOGO_IMAGE = `${SITE_URL}/favicon.png`;
+/** The general share banner, in French; each section has its own (src/content/ogBanners.ts). */
+export const OG_IMAGE = `${SITE_URL}/og/site-fr.png`;
+/** The whole logo, square, for the Organization structured data. Not the
+ *  favicon, which is the star alone (the logo is a smudge at tab size), nor
+ *  the og-image, a wide 1200×630 banner unfit for the `logo` field. */
+export const LOGO_IMAGE = `${SITE_URL}/logo.png`;

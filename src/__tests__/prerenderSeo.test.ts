@@ -27,7 +27,7 @@ const template = `<!doctype html>
     <meta property="og:title" content="OG base" />
     <meta property="og:description" content="OG desc base" />
     <meta property="og:url" content="https://petite-jerusalem.fr/" />
-    <meta property="og:image" content="https://petite-jerusalem.fr/og-image.jpg" />
+    <meta property="og:image" content="https://petite-jerusalem.fr/og/site-fr.png" />
     <meta name="twitter:title" content="TW base" />
     <meta name="twitter:description" content="TW desc base" />
     <meta name="robots" content="index, follow" />

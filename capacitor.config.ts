@@ -66,7 +66,7 @@ const config: CapacitorConfig = {
     // fermée prennent la même par le manifest (scripts/setup-android.mjs).
     LocalNotifications: {
       smallIcon: 'ic_stat_pj',
-      iconColor: '#C79A3B',
+      iconColor: '#FEA547',
     },
   },
 }

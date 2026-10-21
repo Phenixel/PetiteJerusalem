@@ -593,17 +593,30 @@ That is why black and white is necessary: the tinted and monochrome variants
 are read as intensities, not as images. The system applies the color; the
 app only provides the shape.
 
-Everything comes from a single source, `scripts/lib/app-icon.mjs`, where the
-drawing is written as vectors: the variants only change its palette and
-framing. The light variant's framing reproduces pixel for pixel the icon
-already published on the stores, and a test enforces it.
+The drawing is the designer's, delivered as PNG (no vector): `assets/logo.png`
+is the logo on its cream background (`#FFF9F3`), and `assets/brand/` keeps
+the designer's transparent masters (`logo-transparent.png`, the two stars). Every
+variant is derived from them, never redrawn; `scripts/lib/app-icon.mjs`
+describes each one (file, framing, colors) and `src/__tests__/appIcons.test.ts`
+checks the versioned PNGs: sizes, no alpha on the colored icons, no color on
+the tinted ones, the Android safe zone.
+
+| Variant | Derived from |
+|---|---|
+| light | `assets/logo.png` itself |
+| dark | `logo-transparent.png` on the app's dark background (`#111827`), same framing |
+| tinted, monochrome | the silhouette of `logo-transparent.png`: the saturated colors (orange stones, blue outline of the book) in white, the pale ones (mortar, inside of the pages) carved out |
+| notification | the orange star alone, in white |
 
 The PNGs in `assets/themed/` are versioned, and they are what goes into the
 native projects: `setup-android.mjs` and `setup-ios.mjs` simply copy them, so
-a CI runner never needs a browser to build the app. Rasterization, however,
-does not live in the repository: the day the drawing changes, the files must
-be produced separately, with the names and sizes the setup scripts expect,
-then replaced in `assets/`.
+a CI runner never needs an image tool to build the app. The derivation,
+however, does not live in the repository: the day the logo changes, the files
+must be produced separately, with the names and sizes the setup scripts
+expect (and the test checks), then replaced in `assets/`. The launcher icons
+and splash screens of an existing `android/` or `ios/` folder are only
+generated once (see the markers in the setup scripts): delete the marker, or
+run the `npx @capacitor/assets generate` line again, to pick up a new logo.
 
 Two constraints are worth knowing before touching up the drawing:
 
@@ -613,8 +626,8 @@ Two constraints are worth knowing before touching up the drawing:
   rectangle.
 - A silhouette has lost its colors, and therefore its separations. The wall
   and the book would touch and the icon would be nothing but a blob: it is
-  the hollows of the mask (stone joints, page lines, top edge of the book)
-  that keep it legible.
+  the hollows (stone joints, inside of the pages, the gap between the book and
+  the wall) that keep it legible.
 
 ### Small notification icon
 
@@ -624,9 +637,10 @@ to a dot for push notifications received while the app is closed, the
 system's generic "i" for local notifications (zmanim reminders, Chabbat
 reminder, push notifications replayed in the foreground).
 
-All of them now use `ic_stat_pj`, the icon's silhouette framed for 24 dp.
-Its PNGs are versioned in `native/android/app/src/main/res/drawable-*`
-(copied by `setup-android.mjs` with the widgets) and are rasterized like the
+All of them now use `ic_stat_pj`, the logo's star in white, framed for 24 dp
+(the whole logo is a smudge at that size; the star still reads in a status
+bar). Its PNGs are versioned in `native/android/app/src/main/res/drawable-*`
+(copied by `setup-android.mjs` with the widgets) and are derived like the
 others, from the `notification` variant of `scripts/lib/app-icon.mjs`, at
 sizes 24, 36, 48, 72 and 96 px (from mdpi to xxxhdpi). Two declarations wire
 it up:
@@ -637,10 +651,10 @@ it up:
   `setup-android.mjs`): push notifications displayed by the system while the
   app is closed.
 
-The shade's tint is the gold of the icon's stones (`#C79A3B`), declared in
-both places.
+The shade's tint is the orange of the logo (`#FEA547`), declared in both
+places.
 
-The class playback notification (below) uses the same silhouette, through a
+The class playback notification (below) uses the same star, through a
 resource that replaces the plugin's.
 
 ## Listening to classes in the background

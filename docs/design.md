@@ -3991,7 +3991,37 @@ strength, each masked at the bottom, add up. On a small machine
 (`perf-lite`), they are cut and only a veil in the background color remains,
 which is enough.
 
-## 8. What we do not use
+## 8. The logo and the share banners
+
+The logo and the banners are the designer's, delivered as PNG; we place them,
+we do not redraw them. They speak the illustrations' language rather than the
+interface's: the warm cream background (`#FFF9F3`, also the site's
+`theme-color`), a soft orange (`#FEA547`) and a sky blue (`#539EE2`), flat.
+
+- **The logo**: the wall, the tower, the dome and the cypresses in orange, an
+  open book in blue, a blue star above. It is the app icon on every system
+  (the variants that follow the device theme are derived from it, see
+  `docs/app-native.md`), the Apple touch icon (the home screen has room for
+  it) and the logo of the structured data (`public/logo.png`).
+- **The star alone** is the brand mark where the whole logo would be a
+  smudge: the site's favicon (the blue star, the one above the logo; at 16
+  and 32 px the wide logo is a few pixels high) and the Android notification
+  small icon (in white, tinted by the system).
+- **The share banners** (`public/og/`, 1200×630): the image a shared link
+  shows on WhatsApp, Facebook or X. One per section and per language: the
+  general one, the reading sharing, the library, the Shabbat times, the
+  holiday calendar. Every page of a section takes its section's banner, in
+  its language; a section not drawn in a language takes the general banner of
+  that language (`src/content/ogBanners.ts`). A new banner goes in
+  `public/og/<section>-<language>.png` and is declared there, with its text as
+  alt text.
+- **The session cards** (`functions/src/ogCardSvg.ts`): the card of a shared
+  chain is a banner with its subtitle and tagline taken out (built from the
+  designer's PSD: `functions/assets/session-card.png`), and, in their place,
+  ours in the same style: the kind of session in Playfair small capitals,
+  the session name in black, the call to join in blue, in Manrope.
+
+## 9. What we do not use
 
 - Decorative gradients, in all their forms. A gradient used to
   **disappear** is not one: the system bar veil fades out toward the bottom;
@@ -4008,11 +4038,11 @@ which is enough.
   ours (it starts auto-scroll on a text); where the browser zoomed at the
   same time, the two fought over the page.
 
-## 9. What remains to be done
+## 10. What remains to be done
 
 These guidelines are being written as decisions are made.
 
 - An ink token distinct from `--color-primary`, if we want brighter colors
   without losing links and verse numbers.
-- The app icon still carries the old blue: it will be redone later. The
-  store listing screenshots are regenerated at the next CI run.
+- The store listing screenshots are regenerated at the next CI run, with
+  the new icon.
