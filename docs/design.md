@@ -649,8 +649,9 @@ The page has three tiers (`SidourPage.vue`):
   coucher » habit for the bedtime Chema, counted on its evening's day even
   after midnight), the swipe checks the habit's task; without it, the
   device remembers it, as for the deck's extra card. The same is said
-  at the end of the service's text: the ring pulled upward of the day's
-  portion (`PullToMark`, see "An open volume, its settings, the reader"),
+  at the end of the service's text: the page pushed up past its end, as
+  for the day's portion (`PullToMark`, see "An open volume, its settings,
+  the reader"),
   « Fin de l'office » (`OfficeDoneCard.vue`), which leads back to the
   Sidour. It stays a pull, not a tap: the same gesture as the day's
   portion. The lines under the card are swiped the same way, when what they
@@ -2774,10 +2775,26 @@ with weeks "behind" that you had chosen not to read.
 - **A day of the wall** opens as a sheet: the day as title, one node per
   task, « Fermer » ("Close").
 - **At the bottom of a reading** coming from Mon parcours, the end of the
-  portion: a ring you pull upward; it fills as you go, and when released at
-  the end, the portion is done (« Le signet a avancé », "The ribbon has moved
-  forward"), with « Annuler » ("Undo"). For those who do not pull, the ring
-  is a button.
+  portion: a small line, a ring and « Tirez vers le haut » ("Pull up"),
+  that takes no room from the text. Once the page can scroll no further, a
+  finger laid anywhere on the page and pushing it up again fills the ring;
+  released full, the portion is done, and the full card says so (« Le
+  signet a avancé », "The ribbon has moved forward"), with « Annuler »
+  ("Undo"). The line grows into that card as it is pulled, one shape and
+  never two that swap: the ring swells (from 20 to 76 px) and slides to the
+  middle, the line fades out beside it, the heading and the two lines come
+  in; full, it is the card itself, which then takes its place without a
+  jump. While it grows, it rises over the end of the text with the page's
+  color, its bottom fixed: the page keeps its height and stays at its end
+  under the finger. Let go short, it shrinks back into the line
+  (`endPullLayout`). The ring used to be pulled on a large zone of its own, which
+  held the touches back: whoever laid a finger on it could no longer
+  scroll. Now the page scrolls as usual, the line included. The pull is a
+  gesture of its own (`endPull.ts`): the finger that scrolls the page to its
+  end never marks it, even if it keeps going (a brisk scroll to the end of
+  the text would otherwise mark it); neither does a sideways swipe, a pinch
+  or a sheet's gesture. With a mouse, the line is dragged upward; for those
+  who do not pull, it is a button. Held by `src/__tests__/endPull.test.ts`.
 - The stones are in `components/parcours/stones.css`, which every component
   that lays them imports.
 
