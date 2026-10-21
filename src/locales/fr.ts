@@ -1980,8 +1980,12 @@ const fr = {
       left: "encore {duration}",
       now: "Maintenant",
       arc: {
-        sunrise: "Lever {time}",
-        sunset: "Chkia {time}",
+        sunrise: "Lever",
+        sunset: "Chkia",
+      },
+      legend: {
+        window: "Le bon moment",
+        outside: "Hors de son temps",
       },
       marks: {
         alot: "Aube (alot hacha'har)",

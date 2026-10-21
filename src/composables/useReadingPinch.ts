@@ -1,5 +1,6 @@
 import { onBeforeUnmount, onMounted } from "vue";
 import { isNativeApp } from "./useNativeApp";
+import { hasOpenOverlay } from "./useOverlayStack";
 import { useReadingSizeControl } from "./useReadingSize";
 
 /**
@@ -12,6 +13,10 @@ import { useReadingSizeControl } from "./useReadingSize";
  *
  * To be called in the views that carry this setting: the listeners only live
  * while they are mounted, so the gesture has no effect anywhere else.
+ *
+ * Nor while a window is open over the text (a parchment's photo, a sheet,
+ * the compass): the fingers are on the window, and pinching the photo to
+ * zoom into it enlarged the text behind it.
  */
 
 /** Écarts relatifs des doigts qui valent un cran de taille (in / out). */
@@ -47,13 +52,13 @@ export function useReadingPinch(): void {
   // doigt sur trois laisserait le repère d'une géométrie qui n'existe plus, et
   // le premier mouvement à deux doigts sauterait aussitôt d'un cran.
   function reframe(event: TouchEvent) {
-    const pinching = event.touches.length === 2;
+    const pinching = event.touches.length === 2 && !hasOpenOverlay();
     baseline = pinching ? distance(event.touches) : 0;
     listen(pinching);
   }
 
   function onMove(event: TouchEvent) {
-    if (event.touches.length !== 2 || baseline === 0) return;
+    if (event.touches.length !== 2 || baseline === 0 || hasOpenOverlay()) return;
     // Le geste pilote la taille : il ne doit pas aussi faire défiler la page.
     event.preventDefault();
     const current = distance(event.touches);
