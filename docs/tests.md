@@ -13,7 +13,7 @@ npm run test:unit          # vitest, interactive mode
 npx vitest run             # a single pass, what `npm run verify` does
 ```
 
-The 283 files live in `src/__tests__/*.test.ts`. The configuration
+The 284 files live in `src/__tests__/*.test.ts`. The configuration
 (`vitest.config.ts`) uses the `jsdom` environment by default; tests that do
 not need the DOM (those that read the repository or run a script) start
 with `// @vitest-environment node`. The `e2e/`, `android/`, `ios/` and

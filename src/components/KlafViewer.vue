@@ -82,6 +82,7 @@ const transform = computed(
       v-if="photo"
       ref="stage"
       class="klaf-stage"
+      data-own-gestures
       :style="{
         '--klaf-ratio': `${photo.width} / ${photo.height}`,
         '--klaf-chrome': photos.length > 1 ? '6.5rem' : '3.25rem',

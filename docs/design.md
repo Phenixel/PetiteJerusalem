@@ -3365,6 +3365,13 @@ window has its shape before the photo arrives. Held by
 matching the files) and `src/__tests__/pinchZoom.test.ts` (the pinched
 spot stays under the fingers, the edges hold).
 
+While the window is open, the gestures of the reader behind it are silent:
+the pinch that sets the size of the text (`useReadingPinch`) and the double
+tap that starts the auto-scroll (`useAutoScroll`) do nothing as long as a
+window is open over the text (`hasOpenOverlay`). Pinching the photo used to
+enlarge the text behind it. Held by `src/__tests__/readingPinch.test.ts`
+and `src/__tests__/autoScroll.test.ts`.
+
 ### A prayer that goes through another book leads there with one gesture
 
 The Hochanot are said in the middle of Cha'harit, after the Hallel, but

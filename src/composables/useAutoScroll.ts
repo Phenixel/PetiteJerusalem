@@ -10,6 +10,7 @@ import {
 } from "vue";
 import { analyticsService } from "../services/analyticsService";
 import { devicePreference } from "../services/devicePreference";
+import { hasOpenOverlay } from "./useOverlayStack";
 
 /**
  * Défilement automatique des pages de texte.
@@ -527,9 +528,12 @@ function toggleAutoScroll(): void {
 /**
  * A double tap on a button, a link or a field starts nothing; nor on a
  * control that owns its gestures (`data-own-gestures`), such as the progress
- * bar, where two touches in a row are two slides, not a request to scroll.
+ * bar, where two touches in a row are two slides, not a request to scroll;
+ * nor anywhere while a window is open over the text: a double tap on a
+ * parchment's photo zooms into it, it does not scroll the text behind.
  */
 function isInteractive(target: EventTarget | null): boolean {
+  if (hasOpenOverlay()) return true;
   return (
     target instanceof Element &&
     target.closest(
