@@ -1980,8 +1980,12 @@ const fr = {
       left: "encore {duration}",
       now: "Maintenant",
       arc: {
-        sunrise: "Lever {time}",
-        sunset: "Chkia {time}",
+        sunrise: "Lever",
+        sunset: "Chkia",
+      },
+      legend: {
+        window: "Le bon moment",
+        outside: "Hors de son temps",
       },
       marks: {
         alot: "Aube (alot hacha'har)",
@@ -2216,7 +2220,6 @@ const fr = {
     never: "Ne plus afficher la prochaine fois",
     farewell: "Vous retrouverez ces réglages dans Profil, Préférences, « Avant une tefila ».",
     close: "Fermer",
-    back: "Revenir à la tefila",
     applied: "Vos modes de prière sont activés jusqu'à la fin de la tefila.",
     settings: {
       title: "Avant une tefila",

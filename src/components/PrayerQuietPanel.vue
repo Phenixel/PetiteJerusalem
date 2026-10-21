@@ -11,24 +11,27 @@
  * choices: « À chaque tefila » ("Every tefila") and « Fermer » ("Close").
  * « Fermer » first replaces the whole content by where these settings are
  * found again, with two buttons: « Fermer » again, and « Ne plus afficher
- * la prochaine fois » ("Don't show it next time"); without an answer, it
- * retracts on its own a few seconds later and comes back next time. A choice, a tap on the lowered app, the
- * app pushed back up with the finger, Escape or Android back: the panel
- * retracts upward as the app comes back up over it.
+ * la prochaine fois » ("Don't show it next time"). A choice retracts the
+ * panel upward as the app comes back up over it.
+ *
+ * It stays open until then: a tap on the lowered app does nothing, and
+ * nothing closes it on its own. Android back leaves the tefila, the panel
+ * with it, and it comes back with the tefila as long as « Fermer » was not
+ * touched (usePrayerQuiet).
  *
  * The panel's lower edge is glued to the app's upper edge: one translation,
- * the app's (`appDrop.offset`), moves both, the finger's included.
+ * the app's (`appDrop.offset`), moves both.
  */
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 import AppIcon from "./icons/AppIcon.vue";
 import { prefersReducedMotion } from "../composables/useMotion";
-import { useOverlay } from "../composables/useOverlayStack";
 import {
   appDrop,
   choosePrayerQuiet,
   closePrayerQuiet,
+  dismissPrayerQuiet,
   DROP_MS,
   DROP_TRANSITION,
   holdApp,
@@ -44,8 +47,6 @@ const route = useRoute();
 
 /** The time to look at the modes before the choices come. */
 const ACTIONS_DELAY_MS = 2000;
-/** The time to read where the settings are found again, before it retracts. */
-const FAREWELL_MS = 5000;
 
 // Keys written out, so that the i18n guard finds their reader.
 const MODES: { mode: QuietMode; icon: IconName; label: string }[] = [
@@ -82,27 +83,18 @@ const height = ref(0);
 let returnFocus: HTMLElement | null = null;
 let closeTimer: number | undefined;
 let actionsTimer: number | undefined;
-let farewellTimer: number | undefined;
 let resizeObserver: ResizeObserver | null = null;
 
 const panelStyle = computed(() => ({
   // The message takes the place of the modes without the panel jumping.
   minHeight: farewell.value ? `${height.value}px` : undefined,
   transform: `translate3d(0, ${appDrop.offset - height.value}px, 0)`,
-  transition:
-    !entered.value || appDrop.dragging || prefersReducedMotion() ? "none" : DROP_TRANSITION,
+  transition: !entered.value || prefersReducedMotion() ? "none" : DROP_TRANSITION,
 }));
-
-// Android back closes it, as Escape does.
-useOverlay(
-  computed(() => prayerQuiet.open && !closing.value),
-  () => close(),
-);
 
 function close(): void {
   if (closing.value) return;
   closing.value = true;
-  appDrop.dragging = false;
   appDrop.offset = 0;
   closeTimer = window.setTimeout(
     () => {
@@ -119,10 +111,14 @@ function choose(action: "never" | "always"): void {
   close();
 }
 
-/** « Fermer »: the modes stay for this prayer, and the panel says where they live. */
+/**
+ * « Fermer »: the modes stay for this prayer, the panel will not come back
+ * in it, and it says where the settings live. It closes with one of the
+ * message's two buttons.
+ */
 function sayFarewell(): void {
+  dismissPrayerQuiet();
   farewell.value = true;
-  farewellTimer = window.setTimeout(close, FAREWELL_MS);
 }
 
 function onTile(mode: QuietMode, on: boolean): void {
@@ -139,7 +135,7 @@ function revealActions(): void {
 function lower(): void {
   if (!panel.value || closing.value || !entered.value) return;
   height.value = panel.value.offsetHeight;
-  if (!appDrop.dragging) appDrop.offset = height.value;
+  appDrop.offset = height.value;
 }
 
 onMounted(async () => {
@@ -162,15 +158,12 @@ onMounted(async () => {
     resizeObserver.observe(panel.value);
   }
   actionsTimer = window.setTimeout(revealActions, ACTIONS_DELAY_MS);
-  document.addEventListener("keydown", onKeydown);
 });
 
 onBeforeUnmount(() => {
   window.clearTimeout(closeTimer);
   window.clearTimeout(actionsTimer);
-  window.clearTimeout(farewellTimer);
   resizeObserver?.disconnect();
-  document.removeEventListener("keydown", onKeydown);
   void releaseApp();
 });
 
@@ -186,56 +179,6 @@ watch(
   () => route.fullPath,
   () => close(),
 );
-
-function onKeydown(event: KeyboardEvent): void {
-  if (event.key === "Escape") close();
-}
-
-// The lowered app: a tap closes, pushed up it follows the finger, and
-// released past a third of the way (or flicked) it goes back up.
-let startY = 0;
-let startAt = 0;
-let pointer: number | null = null;
-
-function onPointerDown(event: PointerEvent): void {
-  if (closing.value || pointer !== null) return;
-  pointer = event.pointerId;
-  startY = event.clientY;
-  startAt = event.timeStamp;
-  (event.currentTarget as HTMLElement).setPointerCapture?.(event.pointerId);
-}
-
-function onPointerMove(event: PointerEvent): void {
-  if (event.pointerId !== pointer) return;
-  const dy = event.clientY - startY;
-  if (!appDrop.dragging && Math.abs(dy) < 8) return;
-  appDrop.dragging = true;
-  appDrop.offset = Math.min(height.value, Math.max(0, height.value + dy));
-}
-
-function onPointerUp(event: PointerEvent): void {
-  if (event.pointerId !== pointer) return;
-  pointer = null;
-  if (!appDrop.dragging) {
-    close();
-    return;
-  }
-  const dy = event.clientY - startY;
-  const speed = dy / Math.max(1, event.timeStamp - startAt);
-  if (appDrop.offset < (height.value * 2) / 3 || speed < -0.5) {
-    close();
-    return;
-  }
-  appDrop.dragging = false;
-  appDrop.offset = height.value;
-}
-
-function onPointerCancel(event: PointerEvent): void {
-  if (event.pointerId !== pointer) return;
-  pointer = null;
-  appDrop.dragging = false;
-  if (!closing.value) appDrop.offset = height.value;
-}
 </script>
 
 <template>
@@ -299,18 +242,6 @@ function onPointerCancel(event: PointerEvent): void {
       </Transition>
     </template>
   </section>
-  <!-- On the lowered app: it closes the panel, and the finger pushes it up. -->
-  <Teleport to="#app-stage">
-    <button
-      type="button"
-      class="prayer-quiet-catcher"
-      :aria-label="t('prayerQuiet.back')"
-      @pointerdown="onPointerDown"
-      @pointermove="onPointerMove"
-      @pointerup="onPointerUp"
-      @pointercancel="onPointerCancel"
-    ></button>
-  </Teleport>
 </template>
 
 <style scoped>
@@ -388,16 +319,6 @@ function onPointerCancel(event: PointerEvent): void {
 }
 .quiet-actions-enter-from {
   opacity: 0;
-}
-/* Above everything in the stage, the bottom bar included, which goes down
-   with the rest. */
-.prayer-quiet-catcher {
-  position: absolute;
-  inset: 0;
-  z-index: 2147483000;
-  background: transparent;
-  touch-action: none;
-  cursor: pointer;
 }
 @media (prefers-reduced-motion: reduce) {
   .quiet-tile,

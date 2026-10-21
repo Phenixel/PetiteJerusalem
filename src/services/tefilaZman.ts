@@ -46,13 +46,23 @@ export interface ZmanMark {
   date: Date;
 }
 
+/**
+ * The day the drawing is set on, with the nights on either side: the sun
+ * rises at `sunrise`, sets at `sunset`; the night before began at
+ * `prevSunset`, the night after ends at `nextSunrise`. Every instant of the
+ * moment, and now, falls somewhere in that cycle.
+ */
+export interface ZmanCycle {
+  prevSunset: Date;
+  sunrise: Date;
+  sunset: Date;
+  nextSunrise: Date;
+}
+
 export interface ZmanPlan {
   moment: ZmanMoment;
-  /** Drawn on the night arc (sunset to sunrise) rather than the day's. */
-  night: boolean;
-  /** The arc: the day from sunrise to sunset, or the night from sunset to sunrise. */
-  from: Date;
-  to: Date;
+  /** The day the moment belongs to (for Arvit and the Sli'hot, the evening's). */
+  cycle: ZmanCycle;
   /** When the moment opens; before it, the pill says « à partir de ». */
   start: Date;
   /** When it closes. */
@@ -72,6 +82,17 @@ export type ZmanPhase = "before" | "preferred" | "during" | "after";
 /** The day's times, by key; a time the place does not have is missing. */
 function timesOf(place: ZmanimPlace, day: Date): Map<ZmanKey, Date> {
   return new Map(computeZmanim(place, day).map((zman) => [zman.key, zman.date]));
+}
+
+/** The day of `day` and the nights around it; null where the sun gives none. */
+function cycleOf(place: ZmanimPlace, day: Date): ZmanCycle | null {
+  const today = timesOf(place, day);
+  const sunrise = today.get("sunrise");
+  const sunset = today.get("sunset");
+  const prevSunset = timesOf(place, placeDayAfter(place, day, -1)).get("sunset");
+  const nextSunrise = timesOf(place, placeDayAfter(place, day, 1)).get("sunrise");
+  if (!sunrise || !sunset || !prevSunset || !nextSunrise) return null;
+  return { prevSunset, sunrise, sunset, nextSunrise };
 }
 
 /** The landmarks of a moment: which time each one is, in the day's list. */
@@ -132,17 +153,16 @@ export function zmanPlan(moment: ZmanMoment, place: ZmanimPlace, now: Date): Zma
 
   const def = DAY_MARKS[moment];
   const times = timesOf(place, now);
-  const from = times.get("sunrise");
-  const to = times.get("sunset");
+  const cycle = cycleOf(place, now);
   const start = times.get(def.start);
   const end = times.get(def.end);
-  if (!from || !to || !start || !end) return null;
+  if (!cycle || !start || !end) return null;
   const marks: ZmanMark[] = [];
   for (const [key, zman] of def.marks) {
     const date = times.get(zman);
     if (date) marks.push({ key, date });
   }
-  return { moment, night: false, from, to, start, end, preferred: null, marks: marks.sort(byDate) };
+  return { moment, cycle, start, end, preferred: null, marks: marks.sort(byDate) };
 }
 
 /**
@@ -156,35 +176,31 @@ function arvitPlan(place: ZmanimPlace, now: Date): ZmanPlan | null {
     sunrise && now.getTime() < sunrise.getTime() ? placeDayAfter(place, now, -1) : now;
   const tonight = evening === now ? today : timesOf(place, evening);
   const morning = timesOf(place, placeDayAfter(place, evening, 1));
-  const from = tonight.get("sunset");
+  const cycle = cycleOf(place, evening);
   const start = tonight.get("tzeit");
   const preferred = tonight.get("chatzotNight") ?? null;
-  const to = morning.get("sunrise");
-  const end = morning.get("alotHaShachar") ?? to;
-  if (!from || !start || !to || !end) return null;
+  const end = morning.get("alotHaShachar") ?? cycle?.nextSunrise;
+  if (!cycle || !start || !end) return null;
   const marks: ZmanMark[] = [{ key: "tset", date: start }];
   if (preferred) marks.push({ key: "hatsotLayla", date: preferred });
   if (morning.get("alotHaShachar")) marks.push({ key: "alot", date: end });
-  return { moment: "arvit", night: true, from, to, start, end, preferred, marks };
+  return { moment: "arvit", cycle, start, end, preferred, marks };
 }
 
 /** The Sli'hot: from 'hatsot of the night to sunrise, tonight or the next night. */
 function slihotPlan(place: ZmanimPlace, now: Date): ZmanPlan | null {
   const window = slihotWindow(place, now);
   if (!window) return null;
-  const evening = timesOf(place, placeDayAfter(place, window.end, -1));
+  const cycle = cycleOf(place, placeDayAfter(place, window.end, -1));
   const morning = timesOf(place, window.end);
-  const from = evening.get("sunset");
-  if (!from) return null;
+  if (!cycle) return null;
   const marks: ZmanMark[] = [{ key: "hatsotLayla", date: window.start }];
   const alot = morning.get("alotHaShachar");
   if (alot) marks.push({ key: "alot", date: alot });
   marks.push({ key: "netz", date: window.end });
   return {
     moment: "slihot",
-    night: true,
-    from,
-    to: window.end,
+    cycle,
     start: window.start,
     end: window.end,
     preferred: null,
@@ -211,11 +227,17 @@ export function zmanTarget(plan: ZmanPlan, phase: ZmanPhase): Date {
 }
 
 /**
- * Where an instant falls on the arc: 0 at the left end (sunrise for the day,
- * sunset for the night), 1 at the right end. Outside, the sun is below the
- * horizon (by day) or above it (by night): misheyakir is a little under 0.
+ * Where an instant falls in the cycle of the drawing: from -1 (the sunset
+ * before) to 0 (sunrise) through the night before, from 0 to 1 (sunset)
+ * through the day, from 1 to 2 (the next sunrise) through the night after.
+ * Each part is measured against its own length: a night of 15 hours and a
+ * day of 9 take the same half of the drawing.
  */
 export function arcPosition(plan: ZmanPlan, date: Date): number {
-  const from = plan.from.getTime();
-  return (date.getTime() - from) / (plan.to.getTime() - from);
+  const { prevSunset, sunrise, sunset, nextSunrise } = plan.cycle;
+  const t = date.getTime();
+  const share = (from: Date, to: Date) => (t - from.getTime()) / (to.getTime() - from.getTime());
+  if (t < sunrise.getTime()) return Math.max(-1, share(prevSunset, sunrise) - 1);
+  if (t <= sunset.getTime()) return share(sunrise, sunset);
+  return Math.min(2, 1 + share(sunset, nextSunrise));
 }

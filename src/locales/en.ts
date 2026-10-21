@@ -1909,8 +1909,12 @@ const en: LocaleMessages = {
       left: "{duration} left",
       now: "Now",
       arc: {
-        sunrise: "Sunrise {time}",
-        sunset: "Shkia {time}",
+        sunrise: "Sunrise",
+        sunset: "Shkia",
+      },
+      legend: {
+        window: "The right time",
+        outside: "Outside its time",
       },
       marks: {
         alot: "Dawn (alot hashachar)",
@@ -2137,7 +2141,6 @@ const en: LocaleMessages = {
     never: "Don't show it next time",
     farewell: 'You will find these settings in Profile, Preferences, under "Before a tefila".',
     close: "Close",
-    back: "Back to the tefila",
     applied: "Your prayer modes are on until the end of the tefila.",
     settings: {
       title: "Before a tefila",

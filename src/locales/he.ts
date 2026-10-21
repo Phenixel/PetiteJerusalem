@@ -1860,8 +1860,12 @@ const he: LocaleMessages = {
       left: "עוד {duration}",
       now: "עכשיו",
       arc: {
-        sunrise: "הנץ {time}",
-        sunset: "שקיעה {time}",
+        sunrise: "הנץ",
+        sunset: "שקיעה",
+      },
+      legend: {
+        window: "הזמן הראוי",
+        outside: "שלא בזמנו",
       },
       marks: {
         alot: "עלות השחר",
@@ -2082,7 +2086,6 @@ const he: LocaleMessages = {
     never: "לא להציג בפעם הבאה",
     farewell: 'את ההגדרות האלה תמצאו בפרופיל, בהעדפות, תחת "לפני תפילה".',
     close: "סגירה",
-    back: "חזרה לתפילה",
     applied: "מצבי התפילה שלכם פועלים עד סוף התפילה.",
     settings: {
       title: "לפני תפילה",

@@ -552,16 +552,21 @@ disc, the sky of the moment, then what matters now.
   colors, the same in every theme. The skyline is the rampart and a tower
   of the walls, nothing else: no dome behind them, which would stand for a
   building that has no place in the sidour.
-- **Touched, it opens a sheet** (the bottom sheet of Mon parcours): the
-  title and the sky; the course of the sun (`ZmanArc.vue`), from sunrise to
-  sunset, or from sunset to sunrise for the night, with the moment's
-  window traced on it, what has passed of it in the theme color, each
-  landmark as a dot with its short name outside the arc, and the sun (the
-  moon at night) where it is now. Before sunrise, misheyakir falls a little
-  under the horizon, and the arc goes on below it, as the sun does. Then the
-  landmarks in a list, each with its time and how long until it comes,
-  « Maintenant » in its place among them, the next one in the theme color;
-  then the rule in full, as the « i » used to give it.
+- **Touched, it opens a sheet** (the bottom sheet of Mon parcours), closed
+  by the veil or by pulling it down, without a « Fermer » button at the
+  end: the title and the sky, then the cycle of the day (`ZmanArc.vue`).
+  The sun's course runs over the horizon, from sunrise on the left to
+  sunset on the right, and the night under it, back from sunset to
+  sunrise, so that every hour has its place and now always shows: the sun
+  by day, the moon by night. On it, the moment's window in the theme color
+  (what has passed of it a shade deeper), each landmark as a dot with its
+  short name, and the rest of the cycle as a dashed bar in the danger
+  color, « Hors de son temps ». Seen at 21:30 on Min'ha, the moon sits on
+  the dashed part, past the chkia: this is no longer its time. A small
+  legend under the drawing names the three (« Le bon moment », « Hors de
+  son temps », « Maintenant »). Then the landmarks in a list, each with its
+  time and how long until it comes, « Maintenant » in its place among
+  them, the next one in the theme color; then the rule in full.
 
 Held by `src/__tests__/tefilaZman.test.ts` (the windows, the phases, the
 night Arvit belongs to after midnight, the arc's ends).
@@ -3360,6 +3365,13 @@ window has its shape before the photo arrives. Held by
 matching the files) and `src/__tests__/pinchZoom.test.ts` (the pinched
 spot stays under the fingers, the edges hold).
 
+While the window is open, the gestures of the reader behind it are silent:
+the pinch that sets the size of the text (`useReadingPinch`) and the double
+tap that starts the auto-scroll (`useAutoScroll`) do nothing as long as a
+window is open over the text (`hasOpenOverlay`). Pinching the photo used to
+enlarge the text behind it. Held by `src/__tests__/readingPinch.test.ts`
+and `src/__tests__/autoScroll.test.ts`.
+
 ### A prayer that goes through another book leads there with one gesture
 
 The Hochanot are said in the middle of Cha'harit, after the Hallel, but
@@ -3859,27 +3871,33 @@ app down, as when the screen is split in two (`PrayerQuietPanel.vue`,
   Profil, Préférences, « Avant une tefila » ("Profile, Preferences, Before a
   tefila"); and two buttons, « Fermer » ("Close", solid, the default) and
   « Ne plus afficher la prochaine fois » ("Don't show it next time"). Each
-  retracts the panel at once; without an answer, it retracts on its own
-  five seconds later and comes back at the next tefila, as with « Fermer »
-  or a tap on the app. Whoever wants to close it now without giving it up
-  says so in one touch, as clearly as whoever gives it up. The way out of
-  the panel is offered when it is being closed, not alongside the modes,
-  where it competed with them.
-- **It retracts upward.** A choice, a tap on the lowered app, the app pushed
-  back up with the finger (it follows, and released past a third of the way
-  or flicked, it goes up), Escape or Android back: the app comes back up
-  over the screen, at the scroll it was left at, and the panel goes up with
-  its edge.
+  retracts the panel at once; « Fermer » keeps it for the next tefila.
+  Whoever wants to close it now without giving it up says so in one touch,
+  as clearly as whoever gives it up. The way out of the panel is offered
+  when it is being closed, not alongside the modes, where it competed with
+  them.
+- **It stays until « Fermer ».** Nothing closes it on its own, nor a tap on
+  the lowered app, nor Escape: a panel that went away at the first touch
+  of the page, or after a few seconds, was gone before it was read, and
+  did not come back. Android back leaves the tefila, the panel with it. As
+  long as « Fermer » has not been touched in this prayer, the panel comes
+  back with the tefila: reopened, back from another app (the home screen, a
+  call), the app relaunched on it.
+- **It retracts upward.** A choice made: the app comes back up over the
+  screen, at the scroll it was left at, and the panel goes up with its
+  edge.
 - **What is changed is changed for the prayer.** Once the tefila is left,
   the phone goes back to how it was: Do Not Disturb turned on is turned off,
   the ringer goes back to normal. Only what the app changed is undone: what
   was already on before stays on, and a setting the user changed again from
   the quick settings is theirs. The way back waits three seconds, so that
-  Min'ha then Arvit is one prayer (no second panel). An app closed in the
+  Min'ha then Arvit is one prayer (no second panel once « Fermer » was
+  touched). An app closed in the
   middle of a tefila sets the phone back at its next launch.
 - **The choices.** « Fermer » keeps the modes for this prayer. « Ne plus
-  afficher la prochaine fois » stops the panel. « À chaque tefila » keeps the modes that are
-  on and turns them on by themselves at every tefila, with a toast saying
+  afficher la prochaine fois » stops the panel. « À chaque tefila » keeps
+  the modes that are on and turns them on by themselves at every tefila,
+  with a toast saying
   so, and still sets the phone back at the end; the panel comes instead if
   the phone refuses one (access withdrawn). With nothing on, it has nothing
   to keep and is grayed out. Both are undone in Preferences, under « Avant
