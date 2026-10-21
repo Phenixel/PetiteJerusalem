@@ -1,3 +1,4 @@
+import { liturgicalDay, nightEndOf } from "./nightBounds";
 import {
   computeZmanim,
   placeDayAfter,
@@ -146,21 +147,19 @@ export function zmanPlan(moment: ZmanMoment, place: ZmanimPlace, now: Date): Zma
 }
 
 /**
- * Arvit: from the stars to dawn, by preference before 'hatsot. Before the
- * sun rises, the night in progress is the one that began yesterday evening.
+ * Arvit: from the stars to dawn, by preference before 'hatsot. Before dawn,
+ * the night in progress is the one that began yesterday evening (the rule
+ * of the night, services/nightBounds, the same as the home page's).
  */
 function arvitPlan(place: ZmanimPlace, now: Date): ZmanPlan | null {
-  const today = timesOf(place, now);
-  const sunrise = today.get("sunrise");
-  const evening =
-    sunrise && now.getTime() < sunrise.getTime() ? placeDayAfter(place, now, -1) : now;
-  const tonight = evening === now ? today : timesOf(place, evening);
+  const evening = liturgicalDay(place, now);
+  const tonight = timesOf(place, evening);
   const morning = timesOf(place, placeDayAfter(place, evening, 1));
   const from = tonight.get("sunset");
   const start = tonight.get("tzeit");
   const preferred = tonight.get("chatzotNight") ?? null;
   const to = morning.get("sunrise");
-  const end = morning.get("alotHaShachar") ?? to;
+  const end = nightEndOf(place, evening);
   if (!from || !start || !to || !end) return null;
   const marks: ZmanMark[] = [{ key: "tset", date: start }];
   if (preferred) marks.push({ key: "hatsotLayla", date: preferred });

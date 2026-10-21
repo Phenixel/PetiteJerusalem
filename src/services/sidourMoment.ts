@@ -16,13 +16,13 @@ import {
   isIsraelPlace,
   isWalledCityPlace,
   moonAge,
-  placeDayAfter,
   restPeriodAt,
   saysBirkatHalevana,
   slihotWindow,
   type ZmanKey,
   type ZmanimPlace,
 } from "./zmanimService";
+import { liturgicalDay, nightEndOf } from "./nightBounds";
 import type { FeastId } from "../content/sidourGroups";
 import { orderTools, type SidourToolId } from "../content/sidourTools";
 
@@ -283,16 +283,14 @@ function zmanMap(place: ZmanimPlace, day: Date): ZmanMap {
 
 /**
  * Le soir dont la nuit est en cours : celui du jour, ou celui de la veille
- * entre minuit et 'hatsot de la nuit, quand 'hatsot tombe après minuit. Un
- * soir d'occasion (l'allumage, la havdala) court jusqu'à 'hatsot : passé
- * minuit, les horaires du jour civil sont déjà ceux du lendemain, et il
- * s'effaçait à minuit.
+ * entre minuit et l'aube (la règle de la nuit, services/nightBounds). Passé
+ * minuit, les horaires du jour civil sont déjà ceux du lendemain : un soir
+ * d'occasion (l'allumage, la havdala, jusqu'à 'hatsot) et le Chema du coucher
+ * (jusqu'à l'aube) se lisent sur ceux de la veille.
  */
 function eveningOf(place: ZmanimPlace, now: Date, times: ZmanMap): { day: Date; times: ZmanMap } {
-  const dawnMidnight = times.get("chatzotNightDawn");
-  if (!dawnMidnight || now.getTime() >= dawnMidnight.getTime()) return { day: now, times };
-  const day = placeDayAfter(place, now, -1);
-  return { day, times: zmanMap(place, day) };
+  const day = liturgicalDay(place, now);
+  return day === now ? { day, times } : { day, times: zmanMap(place, day) };
 }
 
 /**
@@ -421,12 +419,11 @@ function momentTools(
  * 2. the Sli'hot, from 'hatsot until sunrise, in season;
  * 3. the service whose time it is;
  * 4. the blessing of the moon, on the nights it is said, once Arvit is said
- *    (or its time is over): it is said after Arvit;
+ *    (or its time is over, at dawn): it is said after Arvit;
  * 5. between two services, the text of the current holiday, if one is said
  *    now (the loulav, by day);
- * 6. the bedtime Chema, at night once Arvit is said, until 'hatsot of the
- *    night (past midnight, still for the evening before): the last text of
- *    the day;
+ * 6. the bedtime Chema, at night once Arvit is said, until dawn (past
+ *    midnight, still for the evening before): the last text of the day;
  * 7. nothing: between two services, or once everything is said, there is
  *    nothing to say now, and no card (held by sidourMoment.test.ts, « only
  *    what is said now »).
@@ -504,7 +501,10 @@ export function sidourMoment(
   const current = currentTefilaWindow(place, now);
   const currentDone = !!current && isDone(current);
   const live = currentDone ? null : current;
-  const window = live ?? nextOpenWindow(place, now, isDone);
+  // Arvit court jusqu'à l'aube : au petit matin, les outils regardent déjà
+  // Cha'harit qui vient (le miroir, dans l'heure qui la précède).
+  const window =
+    live && live.tefila !== "arvit" ? live : (nextOpenWindow(place, now, isDone) ?? live);
   const office = live ? officeOf(place, live) : null;
 
   // The moon, on its nights: until the instant the period closes (the last
@@ -535,7 +535,7 @@ export function sidourMoment(
 
   // 6. The bedtime Chema, once Arvit is said or its time is over.
   if (!hero) {
-    const chema = chemaNight(now, currentEvening);
+    const chema = chemaNight(place, now, currentEvening);
     if (chema && !said.chema?.(chema)) {
       hero = {
         kind: "chema",
@@ -577,7 +577,7 @@ export function sidourMoment(
     tools: momentTools(
       place,
       now,
-      window ? { tefila: window.tefila, start: window.start, current: !!live } : null,
+      window ? { tefila: window.tefila, start: window.start, current: window === live } : null,
       day,
     ),
   };
@@ -603,14 +603,18 @@ function moonOf(
 
 /**
  * The night of the bedtime Chema, as the civil day of its evening: from
- * nightfall (when Arvit opens) until 'hatsot of the night, like Arvit. Past
- * midnight, until 'hatsot, it is still the previous evening's (eveningOf):
- * said then, it is not owed again before the next night.
+ * nightfall (when Arvit opens) until dawn, like Arvit. Past midnight, until
+ * dawn, it is still the previous evening's (eveningOf): said then, it is not
+ * owed again before the next night.
  */
-function chemaNight(now: Date, evening: { day: Date; times: ZmanMap }): Date | null {
+function chemaNight(
+  place: ZmanimPlace,
+  now: Date,
+  evening: { day: Date; times: ZmanMap },
+): Date | null {
   const t = now.getTime();
   const tzeit = evening.times.get("tzeit");
-  const end = evening.times.get("chatzotNight");
+  const end = nightEndOf(place, evening.day);
   if (!tzeit || !end || t < tzeit.getTime() || t >= end.getTime()) return null;
   return evening.day;
 }

@@ -48,6 +48,12 @@ describe("les moments de la journée", () => {
     expect(momentAt(new Date(2026, 9, 15, 1), times)).toBe("bedtime");
   });
 
+  it("gardent le coucher jusqu'à l'aube, quand on la connaît", () => {
+    const dawn = { ...times, dawn: new Date(2026, 9, 14, 6, 40) };
+    expect(momentAt(new Date(2026, 9, 14, 5), dawn)).toBe("bedtime");
+    expect(momentAt(new Date(2026, 9, 14, 6, 40), dawn)).toBe("morning");
+  });
+
   it("ouvrent le paquet sur le moment présent, puis ce qui vient, enfin ce qui est passé", () => {
     const order = (["morning", "afternoon", "evening", "bedtime", "anytime"] as const)
       .slice()
