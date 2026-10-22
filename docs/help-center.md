@@ -56,7 +56,7 @@ Add an entry to `public/help/videos.json`:
   before `!`, `?` and `;` (in JSON, `\u00a0` and `\u202f`).
 - `duration` (optional): as YouTube writes it, shown on the picture.
 - `topic` (optional): one of the topics of `catalog.ts` (`start`, `home`,
-  `reading`, `parcours`, `zmanim`, `sharing`).
+  `prayer`, `reading`, `parcours`, `zmanim`, `sharing`).
 - `guide` (optional): the slug of a guide; the video then also shows at the
   end of that guide.
 
@@ -122,16 +122,21 @@ Then name it in `HELP_ILLUSTRATIONS` (`catalog.ts`) and in
 
 ## What to write next
 
-The first guides cover what 4.0 moved and the gestures nobody guesses. What
-the help center could hold next, by part of the app:
+The first guides cover what 4.0 moved and the gestures nobody guesses:
+where the tabs went, the day card by card, the home page to your taste,
+the prayer (the quiet modes, the time under its sky, marking a service
+said, the compass of the Kotel), the reading gestures and the reading bar,
+Mon parcours and the hours of the day, the times and their reminders,
+reading chains and Nichmat 40. What the help center could hold next, by
+part of the app:
 
-- **The Sidour**: the card of the moment, the search, the tools (the
-  direction of the Kotel, the tefilin mirror), the 'hazara, the texts that
-  change with the day.
+- **The Sidour**: the search, the tefilin mirror, the 'hazara, the texts
+  that change with the day.
 - **Étude**: the library and its shelves, downloading for offline reading,
   « Mettre de côté » and the study table, one bookmark per book.
 - **Reading**: the form of the page of the Talmud, the commentaries of a
-  passage, the translation under the Hebrew, chnei mikra aliyah by aliyah.
+  passage and their translation, the translation under the Hebrew, chnei
+  mikra aliyah by aliyah.
 - **Mon parcours**: a new goal step by step, catching up, the wall and the
   lights.
 - **Times and calendar**: your own dates (a birthday, a leilouy nichmat),

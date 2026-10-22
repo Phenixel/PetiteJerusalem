@@ -14,6 +14,7 @@ export const HELP_ILLUSTRATION_COMPONENTS: Record<HelpIllustration, Component> =
   "home-reorder": defineAsyncComponent(() => import("../mock/MockHomeReorder.vue")),
   "reading-scrub": defineAsyncComponent(() => import("../mock/MockReadingScrub.vue")),
   "zman-reminder": defineAsyncComponent(() => import("../mock/MockZmanReminder.vue")),
+  "end-pull": defineAsyncComponent(() => import("../mock/MockEndPull.vue")),
   "reading-menu": defineAsyncComponent(() => import("../mock/MockReadingMenu.vue")),
   pinch: defineAsyncComponent(() => import("../mock/MockPinch.vue")),
   "auto-scroll": defineAsyncComponent(() => import("../mock/MockAutoScroll.vue")),

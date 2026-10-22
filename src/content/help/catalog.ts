@@ -36,6 +36,7 @@ export const HELP_ILLUSTRATIONS = [
   "home-reorder",
   "reading-scrub",
   "zman-reminder",
+  "end-pull",
   "reading-menu",
   "pinch",
   "auto-scroll",
@@ -56,7 +57,14 @@ export type HelpBlock =
   /** A way into the part of the app the guide is about. */
   | { kind: "link"; to: string; label: HelpText };
 
-export type HelpTopicId = "start" | "home" | "reading" | "parcours" | "zmanim" | "sharing";
+export type HelpTopicId =
+  | "start"
+  | "home"
+  | "prayer"
+  | "reading"
+  | "parcours"
+  | "zmanim"
+  | "sharing";
 
 export type HelpTopic = { id: HelpTopicId; icon: IconName; title: HelpText };
 
@@ -77,6 +85,11 @@ export const HELP_TOPICS: HelpTopic[] = [
     title: { fr: "Se repérer", en: "Finding your way", he: "התמצאות" },
   },
   { id: "home", icon: "home", title: { key: "common.home" } },
+  {
+    id: "prayer",
+    icon: "book-open",
+    title: { fr: "La tefila", en: "Prayer", he: "התפילה" },
+  },
   {
     id: "reading",
     icon: "book-open",
@@ -226,6 +239,218 @@ export const HELP_GUIDES: HelpGuide[] = [
     ],
   },
   {
+    slug: "avant-la-tefila",
+    topic: "prayer",
+    title: {
+      fr: "Le téléphone se tait pendant la tefila",
+      en: "The phone goes quiet for the tefila",
+      he: "הטלפון שותק בזמן התפילה",
+    },
+    summary: {
+      fr: "Sur Android, Ne pas déranger, silencieux ou vibreur, d'une touche quand l'office s'ouvre.",
+      en: "On Android, Do not disturb, silent or vibrate, in one touch when the service opens.",
+      he: "באנדרואיד: נא לא להפריע, שקט או רטט, בנגיעה אחת כשהתפילה נפתחת.",
+    },
+    blocks: [
+      {
+        kind: "point",
+        title: { key: "prayerQuiet.title" },
+        text: {
+          fr: "Quand Cha'harit, Min'ha ou Arvit s'ouvre, un panneau descend du haut de l'écran : Ne pas déranger, Silencieux et Vibreur, chacun avec son état. L'app reste utilisable dessous.",
+          en: "When Shacharit, Mincha or Arvit opens, a panel comes down from the top of the screen: Do not disturb, Silent and Vibrate, each with its state. The app stays usable below it.",
+          he: "כששחרית, מנחה או ערבית נפתחות, לוח יורד מראש המסך: נא לא להפריע, שקט ורטט, כל אחד עם המצב שלו. האפליקציה שמתחתיו ממשיכה לעבוד.",
+        },
+      },
+      {
+        kind: "point",
+        title: { key: "prayerQuiet.settings.title" },
+        text: { key: "prayerQuiet.settings.hint" },
+      },
+      {
+        kind: "point",
+        title: {
+          fr: "Où le régler",
+          en: "Where to set it",
+          he: "איפה מגדירים",
+        },
+        text: { key: "prayerQuiet.farewell" },
+      },
+      {
+        kind: "text",
+        text: {
+          fr: "Sur iPhone, le système ne laisse pas une app changer ces modes : le panneau n'y vient pas.",
+          en: "On iPhone, the system lets no app change these modes: the panel does not come there.",
+          he: "באייפון המערכת לא מאפשרת לאפליקציה לשנות את המצבים האלה, ולכן הלוח לא מופיע שם.",
+        },
+      },
+      { kind: "link", to: "/sidour", label: { key: "common.sidour" } },
+    ],
+  },
+  {
+    slug: "heure-de-la-tefila",
+    topic: "prayer",
+    title: {
+      fr: "L'heure de la prière, sous son ciel",
+      en: "The time to pray, under its sky",
+      he: "זמן התפילה, תחת השמיים שלו",
+    },
+    summary: {
+      fr: "La pastille en tête d'un office, et le cycle du jour quand on la touche.",
+      en: "The pill at the head of a service, and the day's cycle when touched.",
+      he: "התווית בראש התפילה, ומחזור היום כשנוגעים בה.",
+    },
+    blocks: [
+      {
+        kind: "point",
+        title: {
+          fr: "Ce qui compte maintenant",
+          en: "What matters now",
+          he: "מה שחשוב עכשיו",
+        },
+        text: {
+          fr: "En tête de Cha'harit, de Min'ha ou d'Arvit, une pastille dit jusqu'à quand prier et combien de temps il reste, avec le ciel de ce moment.",
+          en: "At the head of Shacharit, Mincha or Arvit, a pill says until when to pray and how long is left, with the sky of that moment.",
+          he: "בראש שחרית, מנחה או ערבית, תווית אומרת עד מתי להתפלל וכמה זמן נשאר, עם השמיים של אותו רגע.",
+        },
+      },
+      {
+        kind: "point",
+        title: {
+          fr: "Le cycle du jour",
+          en: "The cycle of the day",
+          he: "מחזור היום",
+        },
+        text: {
+          fr: "Touchez-la : le jour et la nuit d'un trait, le bon moment en couleur, « Hors de son temps » en pointillé, et maintenant, le soleil ou la lune.",
+          en: "Touch it: day and night in one line, the right moment in color, “Out of its time” dashed, and now, the sun or the moon.",
+          he: "נגעו בה: היום והלילה בקו אחד, הזמן הנכון בצבע, ״מחוץ לזמנה״ בקו מקווקו, ועכשיו, השמש או הירח.",
+        },
+      },
+      {
+        kind: "point",
+        title: {
+          fr: "Les repères, un à un",
+          en: "Each landmark",
+          he: "ציוני הדרך, אחד אחד",
+        },
+        text: {
+          fr: "Sous le dessin, chaque horaire et le temps qui reste avant lui, puis la règle en entier.",
+          en: "Under the drawing, each time and how long until it comes, then the rule in full.",
+          he: "מתחת לציור, כל זמן וכמה נשאר עד אליו, ואחר כך הכלל במלואו.",
+        },
+      },
+      { kind: "link", to: "/sidour", label: { key: "common.sidour" } },
+    ],
+  },
+  {
+    slug: "office-dit",
+    topic: "prayer",
+    title: {
+      fr: "Marquer un office comme dit",
+      en: "Marking a service as said",
+      he: "לסמן תפילה כנאמרה",
+    },
+    summary: {
+      fr: "Au bout du texte, poussez la page ; ou glissez la carte du moment.",
+      en: "At the end of the text, push the page; or swipe the card of the moment.",
+      he: "בסוף הטקסט, דחפו את הדף; או החליקו את כרטיס הרגע.",
+    },
+    blocks: [
+      {
+        kind: "point",
+        illustration: "end-pull",
+        title: {
+          fr: "Poussez la page au-delà de sa fin",
+          en: "Push the page past its end",
+          he: "דחפו את הדף מעבר לסופו",
+        },
+        text: {
+          fr: "Au bout de l'office, posez le doigt n'importe où et poussez encore vers le haut : l'anneau se remplit. Relâché plein, l'office est noté.",
+          en: "At the end of the service, lay a finger anywhere and push up again: the ring fills. Let go full, the service is marked.",
+          he: "בסוף התפילה, הניחו אצבע בכל מקום ודחפו שוב למעלה: הטבעת מתמלאת. כשמשחררים אותה מלאה, התפילה נרשמת.",
+        },
+      },
+      {
+        kind: "point",
+        illustration: "card-swipe",
+        title: {
+          fr: "Ou glissez la carte du moment",
+          en: "Or swipe the card of the moment",
+          he: "או החליקו את כרטיס הרגע",
+        },
+        text: {
+          fr: "Sur le Sidour, la carte de l'office en cours se glisse à droite, comme celles de l'accueil.",
+          en: "On the Siddur, the card of the current service swipes to the right, like those of the home page.",
+          he: "בסידור, כרטיס התפילה הנוכחית מוחלק ימינה, כמו הכרטיסים של דף הבית.",
+        },
+      },
+      {
+        kind: "text",
+        text: {
+          fr: "Le Sidour passe alors à la suite : après Cha'harit, Min'ha ; après Arvit, le Chéma du coucher.",
+          en: "The Siddur then moves on: after Shacharit, Mincha; after Arvit, the bedtime Shema.",
+          he: "הסידור עובר אז הלאה: אחרי שחרית, מנחה; אחרי ערבית, קריאת שמע על המיטה.",
+        },
+      },
+    ],
+  },
+  {
+    slug: "boussole-du-kotel",
+    topic: "prayer",
+    title: {
+      fr: "Se tourner vers le Kotel",
+      en: "Facing the Kotel",
+      he: "לפנות אל הכותל",
+    },
+    summary: {
+      fr: "La boussole se remplit quand vous êtes face à Jérusalem.",
+      en: "The compass fills when you face Jerusalem.",
+      he: "המצפן מתמלא כשאתם פונים לירושלים.",
+    },
+    blocks: [
+      {
+        kind: "point",
+        title: {
+          fr: "Où la trouver",
+          en: "Where to find it",
+          he: "איפה למצוא אותו",
+        },
+        text: {
+          fr: "Dans les outils du Sidour, « Direction du Kotel », et au titre de la 'Amida.",
+          en: "Among the Siddur's tools, “Direction of the Kotel”, and at the title of the Amida.",
+          he: "בכלים של הסידור, ״כיוון הכותל״, ובכותרת של העמידה.",
+        },
+      },
+      {
+        kind: "point",
+        title: {
+          fr: "Elle se remplit",
+          en: "It fills",
+          he: "הוא מתמלא",
+        },
+        text: {
+          fr: "Tournez-vous : la couleur monte dans le cadran à l'approche, le téléphone vibre tous les dix degrés, et le cadran se remplit quand vous êtes face au Kotel.",
+          en: "Turn around: the color rises in the dial as you get close, the phone clicks every ten degrees, and the dial fills when you face the Kotel.",
+          he: "הסתובבו: הצבע עולה בחוגה ככל שמתקרבים, הטלפון רוטט כל עשר מעלות, והחוגה מתמלאת כשאתם מול הכותל.",
+        },
+      },
+      {
+        kind: "point",
+        title: {
+          fr: "Calibrer",
+          en: "Calibrating",
+          he: "כיול",
+        },
+        text: {
+          fr: "Si la précision est faible, « Calibrer » montre le geste : un 8 dans l'air, et la boussole revient d'elle-même.",
+          en: "When accuracy is low, “Calibrate” shows the gesture: a figure 8 in the air, and the compass comes back on its own.",
+          he: "כשהדיוק נמוך, ״כיול״ מראה את התנועה: שמונה באוויר, והמצפן חוזר מעצמו.",
+        },
+      },
+      { kind: "link", to: "/sidour", label: { key: "common.sidour" } },
+    ],
+  },
+  {
     slug: "gestes-de-lecture",
     topic: "reading",
     title: { key: "onboarding.gestures.title" },
@@ -342,6 +567,54 @@ export const HELP_GUIDES: HelpGuide[] = [
     ],
   },
   {
+    slug: "heures-de-ma-journee",
+    topic: "parcours",
+    title: { key: "parcours.reminders.title" },
+    summary: {
+      fr: "Un rappel aux moments de votre journée, s'il reste quelque chose à faire.",
+      en: "A reminder at the moments of your day, when something is left to do.",
+      he: "תזכורת ברגעי היום שלכם, כשנשאר משהו לעשות.",
+    },
+    blocks: [
+      {
+        kind: "point",
+        title: {
+          fr: "Le réveil, en haut de Mon parcours",
+          en: "The alarm clock, at the top of My journey",
+          he: "השעון המעורר, בראש המסלול שלי",
+        },
+        text: {
+          fr: "Il ouvre les heures de votre journée : Réveil, Cha'harit, Midi, Min'ha, Arvit et Coucher, chacune avec son interrupteur.",
+          en: "It opens the hours of your day: Wake-up, Shacharit, Midday, Mincha, Arvit and Bedtime, each with its switch.",
+          he: "הוא פותח את שעות היום שלכם: השכמה, שחרית, צהריים, מנחה, ערבית ושינה, כל אחת עם המתג שלה.",
+        },
+      },
+      {
+        kind: "point",
+        title: {
+          fr: "Une heure fixe, ou selon le calendrier",
+          en: "A fixed time, or by the calendar",
+          he: "שעה קבועה, או לפי הלוח",
+        },
+        text: {
+          fr: "Touchez un moment : une heure fixe, ou un horaire du jour avec un écart (« 20 min avant Chkia »). L'heure suit alors le soleil.",
+          en: "Touch a moment: a fixed time, or one of the day's times with an offset (“20 min before sunset”). The time then follows the sun.",
+          he: "נגעו ברגע: שעה קבועה, או אחד מזמני היום עם הפרש (״20 דקות לפני השקיעה״). השעה עוקבת אז אחרי השמש.",
+        },
+      },
+      {
+        kind: "point",
+        title: {
+          fr: "Seulement s'il reste à faire",
+          en: "Only when something is left",
+          he: "רק כשנשאר מה לעשות",
+        },
+        text: { key: "parcours.reminders.footer" },
+      },
+      { kind: "link", to: "/parcours", label: { key: "parcours.title" } },
+    ],
+  },
+  {
     slug: "horaires-et-rappels",
     topic: "zmanim",
     title: {
@@ -433,6 +706,62 @@ export const HELP_GUIDES: HelpGuide[] = [
         illustration: "session-read",
         title: { key: "detailSession.instructions.steps.read.title" },
         text: { key: "detailSession.instructions.steps.read.text" },
+      },
+      {
+        kind: "link",
+        to: "/share-reading",
+        label: {
+          fr: "Voir les chaînes",
+          en: "See the chains",
+          he: "לשרשראות",
+        },
+      },
+    ],
+  },
+  {
+    slug: "nichmat-40",
+    topic: "sharing",
+    title: {
+      fr: "Nichmat 40",
+      en: "Nishmat 40",
+      he: "נשמת 40",
+    },
+    summary: {
+      fr: "Quarante personnes disent Nichmat chaque jour, quarante jours durant.",
+      en: "Forty people say Nishmat every day, for forty days.",
+      he: "ארבעים איש אומרים נשמת כל יום, במשך ארבעים יום.",
+    },
+    blocks: [
+      {
+        kind: "point",
+        title: {
+          fr: "Une place, quarante jours",
+          en: "One place, forty days",
+          he: "מקום אחד, ארבעים יום",
+        },
+        text: {
+          fr: "Chaque lecteur prend une place et dit Nichmat kol 'hai chaque jour. La chaîne se crée comme les autres, en choisissant « Nichmat 40 ».",
+          en: "Each reader takes a place and says Nishmat kol chai every day. The chain is created like the others, by choosing “Nishmat 40”.",
+          he: "כל קורא לוקח מקום ואומר נשמת כל חי בכל יום. השרשרת נוצרת כמו האחרות, בבחירת ״נשמת 40״.",
+        },
+      },
+      {
+        kind: "point",
+        title: { key: "nichmat.readToday" },
+        text: {
+          fr: "Ce bouton coche le jour. Un jour oublié se rattrape : touchez-le dans la grille de vos quarante jours.",
+          en: "This button ticks the day. A forgotten day can be caught up: touch it in the grid of your forty days.",
+          he: "הכפתור הזה מסמן את היום. יום שנשכח אפשר להשלים: נגעו בו ברשת ארבעים הימים שלכם.",
+        },
+      },
+      {
+        kind: "point",
+        title: { key: "nichmat.statusLabel" },
+        text: {
+          fr: "En tête, le jour de la chaîne et les lectures faites ; en bas, les lecteurs et leurs jours.",
+          en: "At the top, the chain's day and the readings done; below, the readers and their days.",
+          he: "למעלה, היום של השרשרת והקריאות שנעשו; למטה, הקוראים והימים שלהם.",
+        },
       },
       {
         kind: "link",
