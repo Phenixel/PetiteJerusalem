@@ -16,6 +16,19 @@ const IGNORED_EXCEPTION_PATTERNS: RegExp[] = [
   // corriger côté app.
   /Connection to Indexed Database server lost/i,
   /database connection is closing/i,
+  // Même cause, dite autrement par WebKit : la page revient d'arrière-plan et
+  // ses transactions IndexedDB ne sont plus actives, la lecture en cours lève
+  // alors « Attempt to get a record from database without an in-progress
+  // transaction » (variantes selon l'appel : get, put, parcours d'un curseur).
+  // Observé le 9 octobre 2026 sur l'app iOS 18.7 (v3.10.11, la version
+  // publiée) : neuf rejets d'un coup, sans pile, à l'ouverture des horaires au
+  // retour dans l'app, exactement la signature de la perte de connexion
+  // ci-dessus (même page, même rafale de neuf, le 20 août). Aucun code de
+  // l'app n'ouvre IndexedDB : ces lectures sont celles du SDK Firebase (la
+  // persistance d'Auth, qui sonde sa base sur natif, et le cache local de
+  // Firestore). Rien à corriger ici, la page a fini de s'afficher
+  // (`zmanim_viewed` juste après) et la base revient au lancement suivant.
+  /without an in-progress transaction/i,
   // « Script error. » : une erreur cross-origin que le navigateur masque
   // entièrement (ni message réel, ni pile, mécanisme synthétique). Le site ne
   // charge aucun script cross-origin (les polices Google sont du CSS) : elle
