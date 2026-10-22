@@ -5,7 +5,8 @@
  * two, and stays under a fifth of the screen: the three quiet modes of the
  * phone (Do Not Disturb, silent, vibrate) as tiles, solid when the mode is
  * on, a touch turning it on or off (usePrayerQuiet, docs/design.md « A
- * tefila opens on the phone's quiet modes »).
+ * tefila opens on the phone's quiet modes »). The app below stays in use:
+ * it scrolls under the panel's lower edge, which stays put.
  *
  * A few seconds later (or at the first touch), it grows by a row of two
  * choices: « À chaque tefila » ("Every tefila") and « Fermer » ("Close").
@@ -14,13 +15,15 @@
  * la prochaine fois » ("Don't show it next time"). A choice retracts the
  * panel upward as the app comes back up over it.
  *
- * It stays open until then: a tap on the lowered app does nothing, and
- * nothing closes it on its own. Android back leaves the tefila, the panel
- * with it, and it comes back with the tefila as long as « Fermer » was not
- * touched (usePrayerQuiet).
+ * It stays open until then: reading, scrolling or touching the app below
+ * leaves it there, and nothing closes it on its own. Android back leaves
+ * the tefila, the panel with it, and it comes back with the tefila as long
+ * as « Fermer » was not touched (usePrayerQuiet). Modes applied by
+ * themselves (« À chaque tefila ») bring it too, as a reminder of what is
+ * on, until « Ne plus afficher la prochaine fois ».
  *
- * The panel's lower edge is glued to the app's upper edge: one translation,
- * the app's (`appDrop.offset`), moves both.
+ * The panel's lower edge is glued to the app's upper edge: one offset,
+ * the room the app leaves it (`appDrop.offset`), moves both.
  */
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
@@ -34,9 +37,8 @@ import {
   dismissPrayerQuiet,
   DROP_MS,
   DROP_TRANSITION,
-  holdApp,
+  isPrayerQuietKept,
   prayerQuiet,
-  releaseApp,
   toggleQuietMode,
 } from "../composables/usePrayerQuiet";
 import { isQuietModeOn, type QuietMode } from "../services/prayerQuiet";
@@ -70,6 +72,8 @@ const tiles = computed(() =>
 );
 /** « À chaque tefila » keeps what is on: nothing on, nothing to keep. */
 const anyOn = computed(() => tiles.value.some((tile) => tile.on));
+/** What is on is already kept for every tefila: the choice shows as made. */
+const kept = computed(() => isPrayerQuietKept(prayerQuiet.state));
 
 const panel = ref<HTMLElement | null>(null);
 const closing = ref(false);
@@ -92,15 +96,26 @@ const panelStyle = computed(() => ({
   transition: !entered.value || prefersReducedMotion() ? "none" : DROP_TRANSITION,
 }));
 
+/**
+ * Anchors and `scrollIntoView` land below the panel, not under it. Set on
+ * the root, the element that scrolls.
+ */
+function reserveScroll(offset: number): void {
+  document.documentElement.style.scrollPaddingTop = offset > 0 ? `${offset}px` : "";
+}
+
 function close(): void {
   if (closing.value) return;
   closing.value = true;
+  // The focus goes back where it was only if it is still in the panel: the
+  // app below may have taken it since.
+  const hadFocus = panel.value?.contains(document.activeElement) ?? false;
   appDrop.offset = 0;
+  reserveScroll(0);
   closeTimer = window.setTimeout(
     () => {
-      void releaseApp();
       closePrayerQuiet();
-      returnFocus?.focus?.({ preventScroll: true });
+      if (hadFocus) returnFocus?.focus?.({ preventScroll: true });
     },
     prefersReducedMotion() ? 0 : DROP_MS,
   );
@@ -136,11 +151,11 @@ function lower(): void {
   if (!panel.value || closing.value || !entered.value) return;
   height.value = panel.value.offsetHeight;
   appDrop.offset = height.value;
+  reserveScroll(height.value);
 }
 
 onMounted(async () => {
   returnFocus = document.activeElement as HTMLElement | null;
-  holdApp();
   // First in place above the screen, without moving (`entered` is false):
   // then the panel comes down and the app with it, from there.
   await nextTick();
@@ -150,8 +165,8 @@ onMounted(async () => {
   void panel.value.getBoundingClientRect();
   entered.value = true;
   lower();
-  // The panel takes the focus (the app below it is inert), without a ring
-  // around a button nobody has reached with the keyboard.
+  // The panel takes the focus, so that a screen reader reaches it first,
+  // without a ring around a button nobody has reached with the keyboard.
   panel.value.focus({ preventScroll: true });
   if (typeof ResizeObserver !== "undefined") {
     resizeObserver = new ResizeObserver(() => lower());
@@ -164,7 +179,8 @@ onBeforeUnmount(() => {
   window.clearTimeout(closeTimer);
   window.clearTimeout(actionsTimer);
   resizeObserver?.disconnect();
-  void releaseApp();
+  appDrop.offset = 0;
+  reserveScroll(0);
 });
 
 // The choices may make it grow: the app follows (the observer can be late).
@@ -185,8 +201,7 @@ watch(
   <section
     ref="panel"
     class="prayer-quiet"
-    role="dialog"
-    aria-modal="true"
+    role="region"
     aria-labelledby="prayer-quiet-title"
     tabindex="-1"
     :class="{ 'prayer-quiet-farewell': farewell }"
@@ -231,8 +246,10 @@ watch(
             type="button"
             class="btn btn-soft quiet-action"
             :disabled="!anyOn"
+            :aria-pressed="kept"
             @click="choose('always')"
           >
+            <AppIcon v-if="kept" name="check" :size="14" />
             {{ t("prayerQuiet.always") }}
           </button>
           <button type="button" class="btn btn-primary quiet-action" @click="sayFarewell">
@@ -245,18 +262,45 @@ watch(
 </template>
 
 <style scoped>
-/* Behind the app, at the top of the screen: it comes down as the app goes
-   down, and retracts upward as the app comes back up over it. */
+/* Over the app, at the top of the screen: it comes down as the app goes
+   down, and retracts upward as the app comes back up. The page scrolls
+   under its lower edge, which casts its shadow on it; under the native
+   sheets (45), the tab bar (50) and the status bar veil (55). */
 .prayer-quiet {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  z-index: 0;
+  z-index: 44;
   padding: calc(var(--safe-top) + 0.5rem) 0.75rem 0.625rem;
   background: var(--color-surface);
+  box-shadow: var(--shadow-pop);
   outline: none;
   will-change: transform;
+}
+/* The rounded upper corners of the app below, drawn by the panel: the page
+   scrolls under them as under the rest of its edge. Each is a square whose
+   inner corner is rounded, with a flat shadow in the panel's color clipped
+   to the square: a shadow is never drawn inside its own box, so what it
+   fills is what lies outside the curve. */
+.prayer-quiet::before,
+.prayer-quiet::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  width: var(--radius-xl);
+  height: var(--radius-xl);
+  box-shadow: 0 0 0 var(--radius-xl) var(--color-surface);
+  clip-path: inset(0);
+  pointer-events: none;
+}
+.prayer-quiet::before {
+  left: 0;
+  border-top-left-radius: var(--radius-xl);
+}
+.prayer-quiet::after {
+  right: 0;
+  border-top-right-radius: var(--radius-xl);
 }
 /* A mode, like a tile of the system's quick settings: its drawing, its
    name and its state, solid in the theme color when it is on. */
@@ -291,6 +335,9 @@ watch(
 }
 /* The three choices hold on one line of a 360 px phone. */
 .quiet-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
   padding: 0.375rem 0.625rem;
   font-size: 0.8125rem;
 }

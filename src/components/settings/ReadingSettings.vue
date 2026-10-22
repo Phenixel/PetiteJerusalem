@@ -9,8 +9,8 @@
  * not before.
  *
  * In the Android app, a second row: what a tefila does with the phone's
- * quiet modes when it opens (offer them, turn them on by themselves, or
- * nothing).
+ * quiet modes when it opens: which modes (chosen each time, or the same at
+ * every tefila), and whether the panel shows.
  *
  * Rows separated by a rule, without a frame: the list must be able to grow
  * without becoming a stack of boxes (see docs/design.md).
@@ -22,7 +22,6 @@ import {
   prayerQuietChoice,
   restorePrayerQuietChoice,
   setPrayerQuietChoice,
-  type PrayerQuietChoice,
 } from "../../composables/usePrayerQuiet";
 import { quietModesSupported } from "../../services/prayerQuiet";
 import {
@@ -40,35 +39,47 @@ const { t } = useI18n();
 onMounted(() => void restoreAutoScrollFromDevice());
 
 // Android app: what a tefila does with the phone's quiet modes when it opens
-// (usePrayerQuiet). « Les activer d'office » is offered once the panel's
-// « À chaque tefila » has kept which ones; the choices of the panel are
-// undone here.
+// (usePrayerQuiet). Two settings, independent like the panel's choices:
+// which modes (chosen each time, or the same at every tefila, offered once
+// the panel's « À chaque tefila » has kept them), and whether the panel
+// shows (« Fermer » then « Ne plus afficher la prochaine fois »). Modes
+// chosen each time without the panel is nothing at all: stored as "never",
+// which older apps read the same way.
 onMounted(() => void restorePrayerQuietChoice());
-const prayerQuietOptions = computed<SelectOption[]>(() => {
-  const options: SelectOption[] = [{ value: "offer", label: t("prayerQuiet.settings.offer") }];
+const prayerQuietWish = computed(() => {
   const wish = prayerQuietChoice.value.wish;
-  if (wish) {
-    const modes = [
-      wish.dnd ? t("prayerQuiet.modes.dnd") : null,
-      wish.ringer === "silent" ? t("prayerQuiet.modes.silent") : null,
-      wish.ringer === "vibrate" ? t("prayerQuiet.modes.vibrate") : null,
-    ].filter((mode): mode is string => mode !== null);
-    options.push({
-      value: "always",
-      label: t("prayerQuiet.settings.always", { modes: modes.join(", ") }),
-    });
-  }
-  options.push({ value: "never", label: t("prayerQuiet.settings.never") });
-  return options;
+  if (!wish) return null;
+  return [
+    wish.dnd ? t("prayerQuiet.modes.dnd") : null,
+    wish.ringer === "silent" ? t("prayerQuiet.modes.silent") : null,
+    wish.ringer === "vibrate" ? t("prayerQuiet.modes.vibrate") : null,
+  ]
+    .filter((mode): mode is string => mode !== null)
+    .join(", ");
 });
-const prayerQuietMode = computed({
-  get: () => prayerQuietChoice.value.mode,
-  set: (mode: string) =>
-    setPrayerQuietChoice({
-      mode: mode as PrayerQuietChoice["mode"],
-      wish: prayerQuietChoice.value.wish,
-    }),
+const prayerQuietOptions = computed<SelectOption[]>(() => [
+  { value: "offer", label: t("prayerQuiet.settings.offer") },
+  { value: "always", label: t("prayerQuiet.settings.always", { modes: prayerQuietWish.value }) },
+]);
+const prayerQuietShown = computed(() => {
+  const { mode, remind } = prayerQuietChoice.value;
+  return mode !== "never" && remind;
 });
+function savePrayerQuiet(always: boolean, shown: boolean): void {
+  const { wish } = prayerQuietChoice.value;
+  setPrayerQuietChoice(
+    always
+      ? { mode: "always", wish, remind: shown }
+      : { mode: shown ? "offer" : "never", wish, remind: true },
+  );
+}
+const prayerQuietModes = computed({
+  get: () => (prayerQuietChoice.value.mode === "always" ? "always" : "offer"),
+  set: (value: string) => savePrayerQuiet(value === "always", prayerQuietShown.value),
+});
+function setPrayerQuietShown(shown: boolean): void {
+  savePrayerQuiet(prayerQuietChoice.value.mode === "always", shown);
+}
 </script>
 
 <template>
@@ -102,7 +113,22 @@ const prayerQuietMode = computed({
         <span class="mb-2 block text-sm text-text-secondary leading-relaxed">
           {{ t("prayerQuiet.settings.hint") }}
         </span>
-        <AppSelect v-model="prayerQuietMode" :options="prayerQuietOptions" />
+        <AppSelect
+          v-if="prayerQuietWish !== null"
+          v-model="prayerQuietModes"
+          :options="prayerQuietOptions"
+        />
+        <label class="flex cursor-pointer items-center justify-between gap-3 pt-3">
+          <span class="min-w-0">
+            <span class="block font-semibold text-text-primary">
+              {{ t("prayerQuiet.settings.show") }}
+            </span>
+            <span class="block text-sm text-text-secondary leading-relaxed">
+              {{ t("prayerQuiet.settings.showHint") }}
+            </span>
+          </span>
+          <ToggleSwitch :model-value="prayerQuietShown" @update:model-value="setPrayerQuietShown" />
+        </label>
       </li>
     </ul>
   </section>

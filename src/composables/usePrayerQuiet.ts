@@ -1,4 +1,4 @@
-import { nextTick, reactive, ref } from "vue";
+import { reactive, ref } from "vue";
 import { i18n } from "../i18n";
 import { SHEET_EASING } from "../components/chiourim/sheetMotion";
 import { devicePreference } from "../services/devicePreference";
@@ -24,19 +24,20 @@ import { useToast } from "./useToast";
  * pushes the whole app down, to quiet the phone before praying: Do Not
  * Disturb, silent, vibrate, each with the phone's current state
  * (PrayerQuietPanel.vue, docs/design.md « A tefila opens on the phone's
- * quiet modes »).
+ * quiet modes »). The app stays usable below it, as on a split screen.
  *
  * What is changed is changed for the prayer: once the tefila is left, the
  * phone goes back to how it was (`enterPrayer` / `leavePrayer`). The panel
  * also offers to stop offering it, or to apply the same modes to every
- * tefila from then on (`prayerQuietChoice`).
+ * tefila from then on (`prayerQuietChoice`); it then still comes, as a
+ * reminder of what is on, until it is told not to.
  *
  * Three pieces of state live here, at the app's level:
  *  - the panel and the phone's state (`prayerQuiet`);
  *  - the prayer under way (`session`): the phone as it was before, and what
  *    was changed since, so that leaving undoes exactly that;
- *  - the app's stage (`appDrop`), the wrapper of everything in App.vue: held
- *    in place while it is lowered, and lowered by `offset` pixels.
+ *  - the room the panel takes above the app (`appDrop`): the app's stage,
+ *    the wrapper of everything in App.vue, starts `offset` pixels lower.
  */
 
 export const prayerQuiet = reactive({
@@ -51,16 +52,13 @@ export const prayerQuiet = reactive({
 });
 
 /**
- * The app's stage. Held (`held`), it is fixed to the screen and its content
- * keeps where it was scrolled (`scrollY`): what moves is then a translation
- * of the whole screen, bottom bar included, which a translation of the page
- * alone would leave behind (a fixed element follows the transformed box that
- * contains it, and the page is as tall as its text).
+ * The room the panel takes at the top of the screen. The app's stage starts
+ * that much lower (a top padding, not a translation: the page keeps its own
+ * scrolling and its fixed bars stay where they are), and scrolls on under
+ * the panel, which stays put above it.
  */
 export const appDrop = reactive({
-  held: false,
   offset: 0,
-  scrollY: 0,
 });
 
 /**
@@ -69,7 +67,8 @@ export const appDrop = reactive({
  * system's »).
  */
 export const DROP_MS = 360;
-export const DROP_TRANSITION = `transform ${DROP_MS}ms ${SHEET_EASING}`;
+export const DROP_TIMING = `${DROP_MS}ms ${SHEET_EASING}`;
+export const DROP_TRANSITION = `transform ${DROP_TIMING}`;
 
 /**
  * Between the tefila shown and the panel coming down: long enough to see
@@ -92,16 +91,23 @@ export interface PrayerQuietWish {
 
 /**
  * What a tefila does when it opens: offer the panel (the default), apply
- * the modes kept (`wish`) without asking, or nothing at all. The wish stays
+ * the modes kept (`wish`) by themselves, or nothing at all. The wish stays
  * when another choice is made, so that it can be chosen again from the
  * settings.
+ *
+ * Applied by themselves, the modes are still shown in the panel, as a
+ * reminder of what is on for this prayer, unless « Ne plus afficher la
+ * prochaine fois » was touched (`remind: false`): they are then only
+ * announced by a toast. Written only when false, so that a choice saved
+ * before the reminder existed shows it.
  */
 export interface PrayerQuietChoice {
   mode: "offer" | "always" | "never";
   wish: PrayerQuietWish | null;
+  remind: boolean;
 }
 
-const DEFAULT_CHOICE: PrayerQuietChoice = { mode: "offer", wish: null };
+const DEFAULT_CHOICE: PrayerQuietChoice = { mode: "offer", wish: null, remind: true };
 
 function parseChoice(raw: string | null): PrayerQuietChoice | null {
   if (!raw) return null;
@@ -113,14 +119,15 @@ function parseChoice(raw: string | null): PrayerQuietChoice | null {
     return {
       mode: value.mode === "always" && !wish ? "offer" : value.mode,
       wish: wish ? { dnd: wish.dnd === true, ringer } : null,
+      remind: value.remind !== false,
     };
   } catch {
     return null;
   }
 }
 
-const choiceStore = devicePreference("pj-prayer-quiet", parseChoice, (value) =>
-  JSON.stringify(value),
+const choiceStore = devicePreference("pj-prayer-quiet", parseChoice, ({ mode, wish, remind }) =>
+  JSON.stringify(remind ? { mode, wish } : { mode, wish, remind }),
 );
 const storedChoice = choiceStore.read();
 const choice = ref<PrayerQuietChoice>(storedChoice ?? DEFAULT_CHOICE);
@@ -210,9 +217,10 @@ function record(state: QuietState, mode: QuietMode): void {
 /**
  * A tefila is shown. The same prayer continues if one was left a moment ago
  * (and the panel comes back if it was not closed); otherwise, following the
- * choice made: the panel, the modes kept applied without asking (the panel
- * comes instead if the phone refuses one), or nothing. Nothing outside the
- * Android app, nor on a binary older than the plugin.
+ * choice made: the panel, the modes kept applied by themselves then the
+ * panel as a reminder (or a toast, without the reminder; the panel comes
+ * anyway if the phone refuses one), or nothing. Nothing outside the Android
+ * app, nor on a binary older than the plugin.
  */
 export async function enterPrayer(): Promise<void> {
   if (!quietModesSupported || inPrayer) return;
@@ -233,12 +241,15 @@ export async function enterPrayer(): Promise<void> {
   const leftover = session ?? sessionStore.read() ?? (await sessionStore.restore());
   if (entry !== generation) return;
   session = leftover ?? { before: { dnd: state.dnd, ringer: state.ringer }, set: {} };
-  const { mode, wish } = choice.value;
+  const { mode, wish, remind } = choice.value;
   if (mode === "never") return;
-  if (mode === "always" && wish && (await applyWish(wish, state, entry))) {
-    // Applied by themselves: nothing is left to offer in this prayer.
-    session.dismissed = true;
-    return;
+  if (mode === "always" && wish && (await applyWish(wish, state, entry, !remind))) {
+    // Applied by themselves, without the reminder: nothing is left to show
+    // in this prayer.
+    if (!remind) {
+      session.dismissed = true;
+      return;
+    }
   }
   await offerAgain(entry);
 }
@@ -274,11 +285,15 @@ export function dismissPrayerQuiet(): void {
   remember();
 }
 
-/** The modes kept for every tefila; false if the phone refused one. */
+/**
+ * The modes kept for every tefila; false if the phone refused one. A toast
+ * says so (`announce`) when the panel does not come to show them.
+ */
 async function applyWish(
   wish: PrayerQuietWish,
   state: QuietState,
   entry: number,
+  announce: boolean,
 ): Promise<boolean> {
   let changed = false;
   try {
@@ -297,7 +312,7 @@ async function applyWish(
   } catch {
     return false;
   }
-  if (changed && entry === generation) {
+  if (announce && changed && entry === generation) {
     useToast().info(i18n.global.t("prayerQuiet.applied"));
   }
   return true;
@@ -370,20 +385,36 @@ export async function settleLeftoverPrayer(): Promise<void> {
 /**
  * The panel's choices, before it closes: « Ne plus afficher la prochaine
  * fois » ("Don't show it next time", offered once « Fermer » is touched)
- * stops offering the panel;
+ * stops showing the panel: nothing is offered any more, or, when the modes
+ * are applied by themselves, they still are, without the reminder;
  * « À chaque tefila » ("Every tefila") applies the modes that are on to the
- * next ones. Each time, the phone is set back once this tefila is left.
+ * next ones, and the panel keeps reminding them. Each time, the phone is
+ * set back once this tefila is left.
  */
 export function choosePrayerQuiet(action: "never" | "always"): void {
   dismissPrayerQuiet();
-  if (action === "never") setPrayerQuietChoice({ mode: "never", wish: choice.value.wish });
+  const { mode, wish } = choice.value;
+  if (action === "never") {
+    setPrayerQuietChoice(
+      mode === "always" ? { mode, wish, remind: false } : { mode: "never", wish, remind: true },
+    );
+  }
   if (action === "always" && prayerQuiet.state) {
     const { dnd, ringer } = prayerQuiet.state;
     setPrayerQuietChoice({
       mode: "always",
       wish: { dnd, ringer: ringer === "normal" ? null : ringer },
+      remind: true,
     });
   }
+}
+
+/** The modes on are those kept for every tefila: « À chaque tefila » is already chosen. */
+export function isPrayerQuietKept(state: QuietState | null): boolean {
+  const { mode, wish } = choice.value;
+  if (mode !== "always" || !wish || !state) return false;
+  const ringer = state.ringer === "normal" ? null : state.ringer;
+  return wish.dnd === state.dnd && wish.ringer === ringer;
 }
 
 /** Closes the panel (once it has gone back up, see PrayerQuietPanel). */
@@ -430,24 +461,6 @@ export async function toggleQuietMode(mode: QuietMode, on: boolean): Promise<voi
   }
 }
 
-/** Holds the stage where it is, before lowering it. */
-export function holdApp(): void {
-  if (appDrop.held) return;
-  appDrop.scrollY = window.scrollY;
-  appDrop.offset = 0;
-  appDrop.held = true;
-}
-
-/** Gives the page back its scrolling, where it was. */
-export async function releaseApp(): Promise<void> {
-  if (!appDrop.held) return;
-  const top = appDrop.scrollY;
-  appDrop.held = false;
-  appDrop.offset = 0;
-  await nextTick();
-  window.scrollTo({ top, behavior: "instant" });
-}
-
 /** For tests: back to the start. */
 export function resetPrayerQuiet(): void {
   stopWatching?.();
@@ -465,7 +478,5 @@ export function resetPrayerQuiet(): void {
   prayerQuiet.open = false;
   prayerQuiet.state = null;
   prayerQuiet.hint = null;
-  appDrop.held = false;
   appDrop.offset = 0;
-  appDrop.scrollY = 0;
 }

@@ -32,7 +32,7 @@ import { loadContrast, loadGuestContrast } from "./composables/useContrast";
 import { useHolidayTheme } from "./composables/useHolidayTheme";
 import {
   appDrop,
-  DROP_TRANSITION,
+  DROP_TIMING,
   prayerQuiet,
   settleLeftoverPrayer,
 } from "./composables/usePrayerQuiet";
@@ -78,8 +78,9 @@ const OfflineNotice = defineAsyncComponent(() => import("./components/OfflineNot
 
 // Native Android app: when a tefila opens, the app goes down and the quiet
 // modes of the phone open above it (usePrayerQuiet, PrayerQuietPanel). The
-// stage is the wrapper of the whole app that goes down; held, it is fixed to
-// the screen, its content kept where it was scrolled.
+// stage is the wrapper of the whole app; it leaves the panel its room at the
+// top (a padding: the page keeps its scrolling, its fixed bars their place),
+// and scrolls on under it, as on a split screen.
 const PrayerQuietPanel = defineAsyncComponent(() => import("./components/PrayerQuietPanel.vue"));
 // A tefila left by closing the app: the phone goes back to how it was before
 // it, once the first screen is drawn (unless that screen is a tefila).
@@ -87,10 +88,10 @@ if (isNativeApp) {
   void router.isReady().then(() => setTimeout(() => void settleLeftoverPrayer(), 1500));
 }
 const stageStyle = computed(() =>
-  appDrop.held
+  prayerQuiet.open
     ? {
-        transform: `translate3d(0, ${appDrop.offset}px, 0)`,
-        transition: prefersReducedMotion() ? "none" : DROP_TRANSITION,
+        paddingTop: `${appDrop.offset}px`,
+        transition: prefersReducedMotion() ? "none" : `padding-top ${DROP_TIMING}`,
       }
     : undefined,
 );
@@ -218,17 +219,12 @@ authService.onAuthChanged((user) => {
 </script>
 
 <template>
-  <div
-    :class="{ 'app-stage-held': appDrop.held, 'app-stage-lowered': appDrop.offset > 0 }"
-    :style="stageStyle"
-  >
+  <div :style="stageStyle">
     <!-- The stone wall sits at z-index:-1, so this root div must stay
        transparent (the dark background lives on <body>) or it would hide it. -->
     <div
       class="min-h-screen flex flex-col text-text-primary transition-colors duration-300 dark:text-gray-100"
       :class="chromePadClass"
-      :style="appDrop.held ? { position: 'relative', top: `${-appDrop.scrollY}px` } : undefined"
-      :inert="appDrop.held || undefined"
     >
       <StoneWallBackground v-show="showStoneWall" />
       <HolidayBackdrop v-if="showStoneWall && !isHome" />
@@ -278,21 +274,6 @@ authService.onAuthChanged((user) => {
 </template>
 
 <style scoped>
-/* The app held while it is lowered under the quiet modes (see stageStyle in
-   the script): fixed to the screen, so that its fixed bars go down with it,
-   and drawn as a surface of its own, over the panel it uncovers. */
-.app-stage-held {
-  position: fixed;
-  inset: 0;
-  z-index: 1;
-  overflow: hidden;
-  background-color: var(--color-page);
-  will-change: transform;
-}
-.app-stage-lowered {
-  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-  box-shadow: var(--shadow-pop);
-}
 /* App native : les horaires en surcouche (voir pageTransition dans le script).
    Les classes s'appliquent aux racines des pages : un enfant reçoit aussi
    l'attribut de scope de son parent. La page épinglée reçoit le fond de
