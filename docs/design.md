@@ -3669,6 +3669,12 @@ Instead:
 They remain real controls: ARIA roles, keyboard (arrows, Enter, Escape),
 closing on outside click and Android back (`useOverlayStack`).
 
+`AppSelect`'s panel opens below the field when it fits there (the bars
+fixed at the bottom of the screen counted), and above it otherwise, when
+there is more room above: the last row of a settings screen, just above the
+tab bar, showed its first choice only. Only the list scrolls to the line the
+keyboard reaches, never the page. Held by `src/__tests__/appSelect.test.ts`.
+
 The calendar follows the approach of Android's (Material 3), because it is
 proven and people already know it: the selected date is written out in full
 at the top, the displayed month is a button that opens the list of years
@@ -3879,8 +3885,9 @@ app down, as when the screen is split in two (`PrayerQuietPanel.vue`,
   and a touch turns it off as well as on. The title is for screen readers
   only: the tiles say what they are.
 - **It comes down, then grows.** The panel arrives from above the screen,
-  its lower edge glued to the app's upper edge: one translation moves both,
-  in the reading sheet's curve and duration (0.36 s). The text shows first,
+  its lower edge glued to the app's upper edge: one offset moves both (the
+  panel's translation, the room the app leaves it at its top), in the
+  reading sheet's curve and duration (0.36 s). The text shows first,
   then the panel comes (400 ms later): the motion answers the tap that
   opened the tefila. Two seconds later, or at the first touch of a tile, it
   grows by a row of two choices, and the app goes down a little further:
@@ -3896,16 +3903,23 @@ app down, as when the screen is split in two (`PrayerQuietPanel.vue`,
   as clearly as whoever gives it up. The way out of the panel is offered
   when it is being closed, not alongside the modes, where it competed with
   them.
-- **It stays until « Fermer ».** Nothing closes it on its own, nor a tap on
-  the lowered app, nor Escape: a panel that went away at the first touch
+- **The app below stays in use, as on a split screen.** The panel is not a
+  modal window: the tefila below scrolls, its text and buttons answer, its
+  bars stay in their place. The app starts lower by the panel's height (a
+  top padding, not a translation, so that the page keeps its own scrolling
+  and its fixed bars), and scrolls on under the panel, which stays put and
+  draws the app's rounded upper corners at its lower edge, with its shadow
+  on the page. Anchors land below it (`scroll-padding-top`). It sits under
+  the sheets, the tab bar and the status bar veil.
+- **It stays until « Fermer ».** Nothing closes it on its own, nor a touch
+  of the app below, nor Escape: a panel that went away at the first touch
   of the page, or after a few seconds, was gone before it was read, and
   did not come back. Android back leaves the tefila, the panel with it. As
   long as « Fermer » has not been touched in this prayer, the panel comes
   back with the tefila: reopened, back from another app (the home screen, a
   call), the app relaunched on it.
-- **It retracts upward.** A choice made: the app comes back up over the
-  screen, at the scroll it was left at, and the panel goes up with its
-  edge.
+- **It retracts upward.** A choice made: the app comes back up into the
+  room the panel leaves, and the panel goes up with its edge.
 - **What is changed is changed for the prayer.** Once the tefila is left,
   the phone goes back to how it was: Do Not Disturb turned on is turned off,
   the ringer goes back to normal. Only what the app changed is undone: what
@@ -3914,14 +3928,20 @@ app down, as when the screen is split in two (`PrayerQuietPanel.vue`,
   Min'ha then Arvit is one prayer (no second panel once « Fermer » was
   touched). An app closed in the
   middle of a tefila sets the phone back at its next launch.
-- **The choices.** « Fermer » keeps the modes for this prayer. « Ne plus
-  afficher la prochaine fois » stops the panel. « À chaque tefila » keeps
-  the modes that are on and turns them on by themselves at every tefila,
-  with a toast saying
-  so, and still sets the phone back at the end; the panel comes instead if
-  the phone refuses one (access withdrawn). With nothing on, it has nothing
-  to keep and is grayed out. Both are undone in Preferences, under « Avant
-  une tefila » ("Before a tefila"), the reading settings.
+- **The choices.** « Fermer » keeps the modes for this prayer.
+  « À chaque tefila » keeps the modes that are on and turns them on by
+  themselves at every tefila, and still sets the phone back at the end.
+  The panel keeps coming then, as a reminder of what is on for this
+  prayer, with the same tiles to change it, and « À chaque tefila » checked
+  (a check mark, `aria-pressed`) while what is on is what is kept: a choice
+  made once that worked out of sight was forgotten, and nobody knew what
+  the phone was doing. With nothing on, it has nothing to keep and is
+  grayed out. « Ne plus afficher la prochaine fois » stops the panel: with
+  the modes offered, nothing comes any more; with the modes turned on by
+  themselves, they still are, announced by a toast only. All of it is
+  undone in Preferences, under « Avant une tefila » ("Before a tefila"),
+  the reading settings: offer the modes, turn them on by themselves with a
+  reminder, without a reminder, or offer nothing.
 - **Silent and vibrate are one ringer**: turning one on replaces the other,
   turning it off goes back to the normal ringer. Do Not Disturb is turned on
   in "priority only", so the user's own exceptions (alarms, favorite

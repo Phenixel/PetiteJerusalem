@@ -9,8 +9,8 @@
  * not before.
  *
  * In the Android app, a second row: what a tefila does with the phone's
- * quiet modes when it opens (offer them, turn them on by themselves, or
- * nothing).
+ * quiet modes when it opens (offer them, turn them on by themselves with or
+ * without the panel as a reminder, or nothing).
  *
  * Rows separated by a rule, without a frame: the list must be able to grow
  * without becoming a stack of boxes (see docs/design.md).
@@ -40,9 +40,9 @@ const { t } = useI18n();
 onMounted(() => void restoreAutoScrollFromDevice());
 
 // Android app: what a tefila does with the phone's quiet modes when it opens
-// (usePrayerQuiet). « Les activer d'office » is offered once the panel's
-// « À chaque tefila » has kept which ones; the choices of the panel are
-// undone here.
+// (usePrayerQuiet). « Les activer d'office », with the panel as a reminder or
+// without it, is offered once the panel's « À chaque tefila » has kept which
+// ones; the choices of the panel are undone here.
 onMounted(() => void restorePrayerQuietChoice());
 const prayerQuietOptions = computed<SelectOption[]>(() => {
   const options: SelectOption[] = [{ value: "offer", label: t("prayerQuiet.settings.offer") }];
@@ -52,21 +52,28 @@ const prayerQuietOptions = computed<SelectOption[]>(() => {
       wish.dnd ? t("prayerQuiet.modes.dnd") : null,
       wish.ringer === "silent" ? t("prayerQuiet.modes.silent") : null,
       wish.ringer === "vibrate" ? t("prayerQuiet.modes.vibrate") : null,
-    ].filter((mode): mode is string => mode !== null);
-    options.push({
-      value: "always",
-      label: t("prayerQuiet.settings.always", { modes: modes.join(", ") }),
-    });
+    ]
+      .filter((mode): mode is string => mode !== null)
+      .join(", ");
+    options.push(
+      { value: "always", label: t("prayerQuiet.settings.always", { modes }) },
+      { value: "alwaysHidden", label: t("prayerQuiet.settings.alwaysHidden", { modes }) },
+    );
   }
   options.push({ value: "never", label: t("prayerQuiet.settings.never") });
   return options;
 });
+/** « alwaysHidden »: the modes applied by themselves, without the panel. */
 const prayerQuietMode = computed({
-  get: () => prayerQuietChoice.value.mode,
-  set: (mode: string) =>
+  get: () => {
+    const { mode, remind } = prayerQuietChoice.value;
+    return mode === "always" && !remind ? "alwaysHidden" : mode;
+  },
+  set: (value: string) =>
     setPrayerQuietChoice({
-      mode: mode as PrayerQuietChoice["mode"],
+      mode: (value === "alwaysHidden" ? "always" : value) as PrayerQuietChoice["mode"],
       wish: prayerQuietChoice.value.wish,
+      remind: value !== "alwaysHidden",
     }),
 });
 </script>

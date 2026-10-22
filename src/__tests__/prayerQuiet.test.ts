@@ -20,12 +20,14 @@ import fr from "../locales/fr";
  *  - the panel stays open until « Fermer », and comes back with the tefila
  *    (reopened, back from another app) as long as it was not touched;
  *  - « Ne plus afficher la prochaine fois » stops the panel, « À chaque
- *    tefila » applies the modes on to the next ones without asking;
+ *    tefila » applies the modes on to the next ones without asking, and
+ *    the panel still comes as a reminder of them until it is told not to;
  *  - a change refused for lack of access opens the system list, and is made
  *    on return once the access is granted;
  *  - the panel comes down from above the screen with the app, grows by its
  *    choices after a moment, and retracts upward when one is made, and
- *    only then.
+ *    only then; the app below stays in use (no hold, no inert), as on a
+ *    split screen.
  */
 
 type State = { dnd: boolean; ringer: "normal" | "vibrate" | "silent"; access: boolean };
@@ -319,16 +321,75 @@ describe("the panel's choices", () => {
     expect(prayerQuietChoice.value).toEqual({
       mode: "always",
       wish: { dnd: true, ringer: "vibrate" },
+      remind: true,
     });
     await leaveAndWait();
     expect(phone.state).toMatchObject({ dnd: false, ringer: "normal" });
 
+    // Applied by themselves, and shown: the panel reminds what is on.
     await enterPrayer();
-    expect(prayerQuiet.open).toBe(false);
     expect(phone.state).toMatchObject({ dnd: true, ringer: "vibrate" });
-    expect(toast).toHaveBeenCalledTimes(1);
+    expect(prayerQuiet.open).toBe(true);
+    expect(prayerQuiet.state).toMatchObject({ dnd: true, ringer: "vibrate" });
+    expect(toast).not.toHaveBeenCalled();
+    closePrayerQuiet();
     await leaveAndWait();
     expect(phone.state).toMatchObject({ dnd: false, ringer: "normal" });
+  });
+
+  it("« À chaque tefila » shows its reminder at every tefila, until « Ne plus afficher la prochaine fois »", async () => {
+    await enterPrayer();
+    await toggleQuietMode("vibrate", true);
+    choosePrayerQuiet("always");
+    closePrayerQuiet();
+    await leaveAndWait();
+    for (let i = 0; i < 2; i++) {
+      await enterPrayer();
+      expect(prayerQuiet.open).toBe(true);
+      dismissPrayerQuiet();
+      closePrayerQuiet();
+      await leaveAndWait();
+    }
+
+    await enterPrayer();
+    choosePrayerQuiet("never");
+    closePrayerQuiet();
+    // The modes keep coming by themselves; only the reminder stops.
+    expect(prayerQuietChoice.value).toEqual({
+      mode: "always",
+      wish: { dnd: false, ringer: "vibrate" },
+      remind: false,
+    });
+    expect(JSON.parse(localStorage.getItem("pj-prayer-quiet")!)).toMatchObject({ remind: false });
+    await leaveAndWait();
+    await enterPrayer();
+    expect(prayerQuiet.open).toBe(false);
+    expect(phone.state.ringer).toBe("vibrate");
+    expect(toast).toHaveBeenCalledTimes(1);
+    // Back from another app: still nothing to show.
+    document.dispatchEvent(new Event("visibilitychange"));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(prayerQuiet.open).toBe(false);
+  });
+
+  it("a choice saved before the reminder existed shows it", async () => {
+    localStorage.setItem(
+      "pj-prayer-quiet",
+      JSON.stringify({ mode: "always", wish: { dnd: true, ringer: null } }),
+    );
+    vi.resetModules();
+    const fresh = await import("../composables/usePrayerQuiet");
+    expect(fresh.prayerQuietChoice.value).toEqual({
+      mode: "always",
+      wish: { dnd: true, ringer: null },
+      remind: true,
+    });
+    // Written back without the field when it is true: an older app reads it as before.
+    fresh.setPrayerQuietChoice(fresh.prayerQuietChoice.value);
+    expect(JSON.parse(localStorage.getItem("pj-prayer-quiet")!)).toEqual({
+      mode: "always",
+      wish: { dnd: true, ringer: null },
+    });
   });
 
   it("« À chaque tefila » falls back to the panel when the phone refuses", async () => {
@@ -386,8 +447,6 @@ describe("the panel, from the top of the screen", () => {
   const offsetHeight = Object.getOwnPropertyDescriptor(HTMLElement.prototype, "offsetHeight")!;
   beforeEach(() => {
     panelHeight = 100;
-    // jsdom does not scroll: the page given back its scroll is checked below.
-    vi.spyOn(window, "scrollTo").mockImplementation(() => {});
     Object.defineProperty(HTMLElement.prototype, "offsetHeight", {
       configurable: true,
       get() {
@@ -417,18 +476,19 @@ describe("the panel, from the top of the screen", () => {
   }
 
   it("comes down with the app, grows by its choices, and retracts upward", async () => {
-    const scrollTo = vi.spyOn(window, "scrollTo").mockImplementation(() => {});
-    Object.defineProperty(window, "scrollY", { configurable: true, value: 140 });
     phone.state = { dnd: false, ringer: "vibrate", access: true };
     await enterPrayer();
     const { unmount, panel } = mountPanel();
     await vi.advanceTimersByTimeAsync(0);
 
-    // Glued to the app's top edge: both down by the panel's height.
-    expect(appDrop.held).toBe(true);
-    expect(appDrop.scrollY).toBe(140);
+    // Glued to the app's top edge: both down by the panel's height. The app
+    // below stays in use, as on a split screen: a panel, not a modal
+    // window, and what scrolls into view lands below it.
     expect(appDrop.offset).toBe(100);
     expect(panel.style.transform).toBe("translate3d(0, 0px, 0)");
+    expect(panel.getAttribute("role")).toBe("region");
+    expect(panel.hasAttribute("aria-modal")).toBe(false);
+    expect(document.documentElement.style.scrollPaddingTop).toBe("100px");
     // The three modes, each with the phone's state.
     const tiles = [...panel.querySelectorAll<HTMLButtonElement>(".quiet-tile")];
     expect(tiles.map((tile) => tile.getAttribute("aria-pressed"))).toEqual([
@@ -464,13 +524,36 @@ describe("the panel, from the top of the screen", () => {
     // Retracting: the app comes back up, the panel goes up above the screen.
     expect(appDrop.offset).toBe(0);
     expect(panel.style.transform).toBe("translate3d(0, -140px, 0)");
+    expect(document.documentElement.style.scrollPaddingTop).toBe("");
     await vi.runAllTimersAsync();
     expect(prayerQuiet.open).toBe(false);
-    expect(appDrop.held).toBe(false);
-    expect(scrollTo).toHaveBeenCalledWith({ top: 140, behavior: "instant" });
 
     unmount();
-    scrollTo.mockRestore();
+  });
+
+  it("the app below is not held while it is open: it scrolls and takes touches", () => {
+    const app = readFileSync(join(root, "src/App.vue"), "utf8");
+    const template = app.slice(app.indexOf("<template>"));
+    expect(template).not.toMatch(/inert/);
+    expect(app).toMatch(/paddingTop: `\$\{appDrop\.offset\}px`/);
+  });
+
+  it("« À chaque tefila » shows as chosen when what is on is what is kept", async () => {
+    await enterPrayer();
+    await toggleQuietMode("vibrate", true);
+    choosePrayerQuiet("always");
+    closePrayerQuiet();
+    await leaveAndWait();
+    await enterPrayer();
+    const { unmount, panel } = mountPanel();
+    await vi.advanceTimersByTimeAsync(2000);
+    expect(button(panel, "À chaque tefila").getAttribute("aria-pressed")).toBe("true");
+    // Vibrate turned off for this prayer: no longer what is kept.
+    panel.querySelectorAll<HTMLButtonElement>(".quiet-tile")[2].click();
+    await vi.advanceTimersByTimeAsync(0);
+    expect(phone.state.ringer).toBe("normal");
+    expect(button(panel, "À chaque tefila").getAttribute("aria-pressed")).toBe("false");
+    unmount();
   });
 
   it("« Fermer » again, on the message, closes it for this prayer and keeps it for the next", async () => {
