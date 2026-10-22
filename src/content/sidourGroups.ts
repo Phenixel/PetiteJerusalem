@@ -95,6 +95,7 @@ const GROUPS: { id: SidourGroupId; labelKey: string; keys: string[] }[] = [
       "brahot/birkat-hailanot",
       "brahot/hafrashat-halla",
       "brahot/teroumot-oumaasrot",
+      "sidour/tikoun-haklali",
     ],
   },
   {
