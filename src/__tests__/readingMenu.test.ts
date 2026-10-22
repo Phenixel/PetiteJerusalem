@@ -396,7 +396,8 @@ describe("forme de la page", () => {
   it("ne propose la forme de la page qu'au texte qui en a une", async () => {
     const { host } = await ouvre({ phonetic: false });
     expect(modes(host)).toHaveLength(2);
-    expect(host.querySelector(`[title="${fr.textReading.pageForm.daf}"]`)).toBeNull();
+    const daf = `${fr.textReading.pageForm.daf} (${fr.textReading.pageForm.beta})`;
+    expect(host.querySelector(`[title="${daf}"]`)).toBeNull();
   });
 
   it("l'offre entre l'hébreu et la phonétique, et dit laquelle s'affiche", async () => {

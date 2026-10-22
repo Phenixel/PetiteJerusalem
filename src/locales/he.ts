@@ -1618,6 +1618,7 @@ const he: LocaleMessages = {
     phonetic: "תעתיק",
     pageForm: {
       daf: "צורת הדף",
+      beta: "בטא",
       scroll: "תיקון",
       pointed: "ניקוד",
       dafHint: "צורת הדף של דפוס וילנא: הגמרא באמצע, רש״י ותוספות סביבה",

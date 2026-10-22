@@ -4,7 +4,7 @@ import { useI18n } from "vue-i18n";
 import { APP_SITE_URL } from "../config/environment";
 import { useRoute } from "vue-router";
 import AppIcon from "./icons/AppIcon.vue";
-import { PAGE_FORM_LABELS } from "../composables/usePageForm";
+import { PAGE_FORM_LABELS, pageFormAriaLabel } from "../composables/usePageForm";
 import {
   scrollPeek,
   scrollPointed,
@@ -588,15 +588,20 @@ onUnmounted(() => {
                     <button
                       v-if="pageForm"
                       @click="emit('update:pageFormActive', true)"
-                      class="px-2.5 py-1 rounded-segment text-sm font-medium transition-colors"
+                      class="inline-flex items-center gap-1 px-2.5 py-1 rounded-segment text-sm font-medium transition-colors"
                       :class="
                         pageFormActive ? 'bg-surface text-primary shadow-sm' : 'text-text-secondary'
                       "
                       :aria-pressed="pageFormActive"
-                      :aria-label="t(PAGE_FORM_LABELS[pageForm].label)"
-                      :title="t(PAGE_FORM_LABELS[pageForm].label)"
+                      :aria-label="pageFormAriaLabel(pageForm, t)"
+                      :title="pageFormAriaLabel(pageForm, t)"
                     >
                       <AppIcon :name="PAGE_FORM_LABELS[pageForm].icon" :size="14" />
+                      <span
+                        v-if="PAGE_FORM_LABELS[pageForm].beta"
+                        class="rounded-full bg-primary/10 px-1.5 text-[10px] font-semibold leading-4 text-primary"
+                        >{{ t(PAGE_FORM_LABELS[pageForm].beta!) }}</span
+                      >
                     </button>
                     <button
                       v-if="phonetic !== null"

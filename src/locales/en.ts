@@ -1657,6 +1657,7 @@ const en: LocaleMessages = {
     phonetic: "Phonetic",
     pageForm: {
       daf: "Page",
+      beta: "Beta",
       scroll: "Tikkun",
       pointed: "Vowels",
       dafHint: "The Vilna page: the Gemara in the center, Rashi and Tosafot around it",
