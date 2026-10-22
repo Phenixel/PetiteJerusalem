@@ -2224,10 +2224,11 @@ const fr = {
     settings: {
       title: "Avant une tefila",
       hint: "Ne pas déranger, silencieux ou vibreur : le téléphone revient comme avant à la fin de la tefila.",
-      offer: "Me proposer les modes",
-      always: "Les activer d'office, avec un rappel ({modes})",
-      alwaysHidden: "Les activer d'office, sans rappel ({modes})",
-      never: "Ne rien proposer",
+      offer: "Les choisir à chaque tefila",
+      always: "Les mêmes à chaque tefila ({modes})",
+      show: "Afficher le panneau",
+      showHint:
+        "En haut de l'écran quand une tefila s'ouvre, avec l'état de chaque mode. Coupé, les modes gardés pour chaque tefila s'activent quand même.",
     },
   },
   // Mon parcours : programmes, habitudes, la journée et le mur (voir

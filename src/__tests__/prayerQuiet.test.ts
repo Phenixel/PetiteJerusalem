@@ -19,6 +19,8 @@ import fr from "../locales/fr";
  *    middle sets the phone back at the next launch;
  *  - the panel stays open until « Fermer », and comes back with the tefila
  *    (reopened, back from another app) as long as it was not touched;
+ *  - in the settings, which modes and whether the panel shows are two
+ *    independent settings, like the panel's choices;
  *  - « Ne plus afficher la prochaine fois » stops the panel, « À chaque
  *    tefila » applies the modes on to the next ones without asking, and
  *    the panel still comes as a reminder of them until it is told not to;
@@ -105,6 +107,7 @@ import {
 } from "../composables/usePrayerQuiet";
 import { pushOverlay, resetOverlayStack } from "../composables/useOverlayStack";
 import PrayerQuietPanel from "../components/PrayerQuietPanel.vue";
+import ReadingSettings from "../components/settings/ReadingSettings.vue";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 
@@ -616,6 +619,55 @@ describe("the panel, from the top of the screen", () => {
     await vi.advanceTimersByTimeAsync(1000);
     expect(prayerQuiet.open).toBe(true);
     expect(appDrop.offset).toBe(100);
+    unmount();
+  });
+});
+
+describe("the settings, « Avant une tefila »", () => {
+  function mountSettings(): { unmount: () => void; host: HTMLElement } {
+    const host = document.createElement("div");
+    document.body.appendChild(host);
+    const i18n = createI18n({ legacy: false, locale: "fr", messages: { fr } });
+    const app = createApp(ReadingSettings);
+    app.use(i18n);
+    app.mount(host);
+    return { unmount: () => app.unmount(), host };
+  }
+  const toggle = (host: HTMLElement) =>
+    [...host.querySelectorAll<HTMLElement>("label")]
+      .find((label) => label.textContent?.includes("Afficher le panneau"))!
+      .querySelector<HTMLElement>("button, input")!;
+
+  it("which modes and whether the panel shows are set apart", async () => {
+    await enterPrayer();
+    await toggleQuietMode("vibrate", true);
+    choosePrayerQuiet("always");
+    closePrayerQuiet();
+    const { unmount, host } = mountSettings();
+    await nextTick();
+    expect(host.textContent).toContain("Les mêmes à chaque tefila (Vibreur)");
+
+    // The panel hidden: the same modes still come by themselves.
+    toggle(host).click();
+    await nextTick();
+    expect(prayerQuietChoice.value).toMatchObject({ mode: "always", remind: false });
+    toggle(host).click();
+    await nextTick();
+    expect(prayerQuietChoice.value).toMatchObject({ mode: "always", remind: true });
+    unmount();
+  });
+
+  it("modes chosen each time without the panel is nothing at all", async () => {
+    const { unmount, host } = mountSettings();
+    await nextTick();
+    // Nothing kept yet: no choice of modes to make.
+    expect(host.querySelector("[role=combobox]")).toBeNull();
+    toggle(host).click();
+    await nextTick();
+    expect(prayerQuietChoice.value).toMatchObject({ mode: "never" });
+    toggle(host).click();
+    await nextTick();
+    expect(prayerQuietChoice.value).toMatchObject({ mode: "offer", remind: true });
     unmount();
   });
 });

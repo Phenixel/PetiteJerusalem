@@ -3940,8 +3940,14 @@ app down, as when the screen is split in two (`PrayerQuietPanel.vue`,
   the modes offered, nothing comes any more; with the modes turned on by
   themselves, they still are, announced by a toast only. All of it is
   undone in Preferences, under « Avant une tefila » ("Before a tefila"),
-  the reading settings: offer the modes, turn them on by themselves with a
-  reminder, without a reminder, or offer nothing.
+  the reading settings, as two settings independent like the panel's
+  choices: which modes (« Les choisir à chaque tefila », "Choose them at
+  each tefila", or « Les mêmes à chaque tefila », "The same at every
+  tefila", once some were kept), and « Afficher le panneau » ("Show the
+  panel"). « À chaque tefila » says which modes, never whether the panel
+  comes back: that is said by « Fermer » or « Ne plus afficher la
+  prochaine fois ». Modes chosen each time without the panel is nothing at
+  all.
 - **Silent and vibrate are one ringer**: turning one on replaces the other,
   turning it off goes back to the normal ringer. Do Not Disturb is turned on
   in "priority only", so the user's own exceptions (alarms, favorite

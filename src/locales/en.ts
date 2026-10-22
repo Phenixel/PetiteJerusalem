@@ -2145,10 +2145,11 @@ const en: LocaleMessages = {
     settings: {
       title: "Before a tefila",
       hint: "Do not disturb, silent or vibrate: the phone goes back to how it was at the end of the tefila.",
-      offer: "Offer me the modes",
-      always: "Turn them on by themselves, with a reminder ({modes})",
-      alwaysHidden: "Turn them on by themselves, no reminder ({modes})",
-      never: "Offer nothing",
+      offer: "Choose them at each tefila",
+      always: "The same at every tefila ({modes})",
+      show: "Show the panel",
+      showHint:
+        "At the top of the screen when a tefila opens, with the state of each mode. Off, the modes kept for every tefila still turn on.",
     },
   },
   parcours: {
