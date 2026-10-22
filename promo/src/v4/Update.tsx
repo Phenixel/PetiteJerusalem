@@ -3,7 +3,7 @@
  * the grid, as in the first series (src/Promo.tsx). The opening strikes
  * « 4.0 » on the orange; the feature section strings the chapters of the
  * cut (plan.ts), the phone going from one to the next on the same stone
- * wall; « Et aussi » breaks; the montage passes six more changes; the end
+ * wall; « Et aussi » breaks; the montage passes twelve more changes; the end
  * card builds the logo. Color wipes sweep the two big cuts.
  *
  * `kind`: `app` ends on a good discovery and holds its last image (the
@@ -19,15 +19,22 @@ import { videoTimeline, type VideoSpec } from "../videos.ts";
 import { CHAPTERS } from "./chapters.tsx";
 import { V4 } from "./palette.ts";
 import { BreakV4, EndCardV4, HookV4, MontageV4, type MontageItemV4 } from "./parts.tsx";
-import type { CutPlan } from "./plan.ts";
+import type { CutPlan, MontageShot } from "./plan.ts";
 import { STRINGS, type Locale } from "./strings.ts";
+
+/** The capture of a montage shot, when it is not named after it (shots-v4.mjs). */
+const MONTAGE_SHOTS: Partial<Record<MontageShot, string>> = {
+  sidourAjouts: "sidour-ajouts",
+  // The compass locked on the Kotel, its dial full.
+  boussole: "boussole-17",
+};
 
 export function Update({ spec, plan, locale, kind }: { spec: VideoSpec; plan: CutPlan; locale: Locale; kind: "promo" | "app" }) {
   const strings = STRINGS[locale];
   const timeline = videoTimeline(spec);
   const at = (k: string) => timeline.sections.find((s) => s.kind === k)!;
   const seq = (k: string) => ({ from: B(at(k).from), durationInFrames: B(at(k).beats) });
-  const items: MontageItemV4[] = plan.montage.map((id) => ({ label: strings.montage[id], src: `${locale}-${id}.jpg` }));
+  const items: MontageItemV4[] = plan.montage.map((id) => ({ label: strings.montage[id], src: `${locale}-${MONTAGE_SHOTS[id] ?? id}.jpg` }));
   let from = 0;
   const chapters = plan.chapters.map((chapter) => {
     const start = from;

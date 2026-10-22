@@ -262,7 +262,7 @@ When an update moves things around, those who knew the app before must be
 told where things went: 4.0 moved the library and the classes under
 « Étude » and gave the Sidour its own tab, and a reader looking for
 « Bibliothèque » in the bar would not find it. The first launch after the
-update plays a video of about ninety seconds on what changed
+update plays a video of about a hundred seconds on what changed
 (`WhatsNewVideo.vue`, `useWhatsNew.ts`), in the reader's language: where the
 tabs went first, then what is new.
 
@@ -272,8 +272,8 @@ tabs went first, then what is new.
   card at the top of the help center plays it again (see "The help center
   shows how, part by part"); its last screen says where to find it.
 - **Nothing shows while it loads.** The video is served by the site
-  (`public/videos/`), not bundled: a few megabytes per language, for a
-  minute and a half of viewing. At launch, the screen only appears once the
+  (`public/videos/`), not bundled: a few megabytes per language, for over
+  a minute and a half of viewing. At launch, the screen only appears once the
   video can play; offline, nothing shows and nothing is noted, and it plays
   at a later launch.
 - **It is written to be read.** Every change is said in a sentence on the
@@ -312,7 +312,8 @@ site as in the app. How to add to it: `docs/help-center.md`.
   on it, « Regarder » ("Watch") spelled out, the whole card playing it.
   Whoever skipped it at launch finds it here.
 - **Guides by part of the app.** Grouped by topic (finding your way, the
-  home page, reading, Mon parcours, the times, reading together) like the
+  home page, the prayer, reading, Mon parcours, the times, reading
+  together) like the
   profile's groups: a panel per topic, a row per guide with its title and
   one line of what it is about, the chevron of a row that opens a page. A
   guide is a page of its own (`/aide/<slug>`): its topic in the theme color
@@ -322,9 +323,9 @@ site as in the app. How to add to it: `docs/help-center.md`.
   (`src/components/mock`): the drawings of the introduction and of a
   chain's instructions, which follow the theme, dark mode and the language,
   weigh almost nothing and do not age from one redesign to the next. 4.0
-  added five: the tab bar and Étude's tabs, the card swiped « C'est fait »,
+  added six: the tab bar and Étude's tabs, the card swiped « C'est fait »,
   a home block carried under a long press, the reading bar slid, a times row
-  pulled to its bell. Like the introduction's, they loop on their own: they
+  pulled to its bell, the end of a service pushed up until it is said. Like the introduction's, they loop on their own: they
   are the explanation. When less motion is asked for, each stands still on
   its key moment (the card at its threshold, the block lifted).
 - **The app's own words.** A guide that explains a gesture a tip already
@@ -4242,7 +4243,7 @@ the app, from right to left.
 ### Version 4.0: one presentation, in the first series' language
 
 The 4.0 video (`promo/src/v4/`) is a presentation rather than an ad: one
-video of about ninety seconds, which the app plays after the update in the
+video of about a hundred seconds, which the app plays after the update in the
 reader's language and which goes to the networks in French, only its ending
 changing (the stores instead of where to watch it again). A first cut in
 series 2's manner was set aside: what the owner liked is series 1, slowed
@@ -4253,8 +4254,25 @@ down.
   second line in italics and in the orange ink; real gestures; what must be
   read larger comes out of the screen (`PopOut`: the card of the moment, the
   streak and its light, the Vilna page, a passage's commentaries, the
-  team's answer) rather than the phone zooming under the caption; color
-  wipes for the two big cuts; the end card where the logo builds.
+  team's answer, the quiet modes, the time of the moment) rather than the
+  phone zooming under the caption; color wipes for the two big cuts.
+- **It opens and ends like the banners.** The opening and the end card
+  speak the language of the designer's logo and share banners (section 8):
+  his cream, his stars in orange and blue scattered around what is said,
+  « בס״ד · פטיט ירושלים » in orange above, the name in capitals, the
+  « 4.0 » of the opening in the banners' blue. For the networks, the
+  general banner's promise follows, its three verbs in blue. The app's
+  screens keep the app's colors.
+- **The logo moves, it is not redrawn.** His PNG is cut into its pieces
+  when the video renders, by color and by place (the star, the flame, the
+  dome, the cypresses, the tower, the wall, the book:
+  `promo/src/v4/LogoMotion.tsx`), and each one moves on its own: the book
+  opens from its spine, the wall rises out of it, the tower and the dome
+  come up from behind the wall and the cypresses grow, the flame lights,
+  the star falls turning and lands with a few sparks; then the star
+  twinkles and the flame flickers. It builds in the middle of the opening
+  on the music's first hit, then rises above the words, and builds again on
+  the end card, before the name.
 - **It follows the app.** When the app changes before the release, the
   video is filmed again on it: the cut is data and the shots replay
   themselves (`npm run captures`, then `npm run render`).
@@ -4271,8 +4289,8 @@ down.
   the 3.10 home page beside today's. The bars come from each language's
   screenshots, so the arrows follow the mirrored bar in Hebrew, where
   « before » also stands on the right.
-- **White on the pastel orange, as in the app.** The opening, the montage's
-  orange shots and the « 4.0 » pill write white on `#EB9F4F`, in large bold
+- **White on the pastel orange, as in the app.** The montage's orange
+  shots and the « 4.0 » pill write white on `#EB9F4F`, in large bold
   type only (the app's documented exception, section 2); a small label on
   the orange stays dark. A caption's accent takes the orange ink
   (`#D46D01`). The former vermilion stays with series 1 and 2, filmed on

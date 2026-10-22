@@ -28,5 +28,18 @@ export const V4 = {
   nightSurface: "#1f2937",
 };
 
+/**
+ * The colors of the designer's logo and share banners (docs/design.md, "The
+ * logo and the share banners"), for the video's opening and end card, which
+ * speak their language: the soft orange of the walls, the sky blue of the
+ * book and the star, the near black of the banners' titles, on the same cream.
+ */
+export const BRAND = {
+  orange: "#FEA547",
+  blue: "#539EE2",
+  title: "#1E1B18",
+  bg: "#FFF9F3",
+};
+
 /** The look of the 4.0 captures: the default theme, light. */
 export const LOOK_V4: Look = { theme: "sunset", dark: false };

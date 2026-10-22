@@ -1,25 +1,30 @@
 /**
  * The building blocks of the version 4.0 video, in the first series'
- * language (src/components/Sections.tsx, Brand.tsx): an opening struck line
- * by line on the theme color, « Et aussi… » falling on the night, a montage
- * where each screen comes in its own way, the end card where the logo
- * builds; plus what 4.0 needs, the before and after tab bars.
+ * language (src/components/Sections.tsx): an opening struck line by line,
+ * « Et aussi… » falling on the night, a montage where each screen comes in
+ * its own way, the end card; plus what 4.0 needs, the before and after tab
+ * bars.
  *
  * Calmer than the first series, as befits a presentation: no camera shake
- * beyond the opening's strikes, no scrolling bands, no echoes. In the colors
- * of 4.0 (palette.ts): white on the pastel orange, as in the app.
+ * beyond the opening's strikes, no scrolling bands, no echoes. The app's
+ * screens are in the colors of 4.0 (palette.ts, white on the pastel orange,
+ * as in the app); the opening and the end card speak the language of the
+ * designer's logo and share banners (BRAND): the cream, his stars in orange
+ * and blue, « בס״ד · פטיט ירושלים » in orange, the name in capitals, the
+ * logo itself, cut into its pieces and set in motion, never redrawn
+ * (LogoMotion.tsx; public/brand/, copied from assets/brand/).
  */
-import { AbsoluteFill, Img, interpolate, random, useCurrentFrame, useVideoConfig } from "remotion";
+import { AbsoluteFill, Img, interpolate, random, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 import { B, FPB, clamp, springAt, tween } from "../anim.ts";
 import { StoneWall } from "../components/Backgrounds.tsx";
-import { Logo } from "../components/Brand.tsx";
 import { Phone } from "../components/Phone.tsx";
 import { SCREEN_W } from "../components/Phone.tsx";
 import { capture, Shot } from "../components/Screens.tsx";
 import { KineticTitle } from "../components/Text.tsx";
 import { DISPLAY, SANS, SHADOW_POP } from "../theme.ts";
 import type { Zone } from "../zones.ts";
-import { V4 } from "./palette.ts";
+import { LogoMotion } from "./LogoMotion.tsx";
+import { BRAND, V4 } from "./palette.ts";
 import type { V4Strings } from "./strings.ts";
 
 /** The captions' colors on the 4.0 background: the ink, the orange ink for the accent. */
@@ -39,34 +44,140 @@ function shake(frame: number, hits: number[], amp = 9) {
   return `translate(${x}px, ${y}px)`;
 }
 
+// --- The banners' language ---------------------------------------------------------------
+
+/** The line above the name on every banner, in orange. */
+const BRAND_LINE = "בס״ד · פטיט ירושלים";
+
+/** The name, in capitals, as the banners write it. */
+const BRAND_NAME = ["PETITE", "JERUSALEM"];
+
+type Star = { x: number; y: number; size: number; color: "blue" | "orange"; at: number };
+
+/**
+ * The designer's stars, scattered as on the banners, around what is said:
+ * each comes in with a spring, then twinkles a little, on its own phase.
+ */
+function Sparkles({ stars, from = 0 }: { stars: Star[]; from?: number }) {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  return (
+    <AbsoluteFill style={{ pointerEvents: "none" }}>
+      {stars.map((star, i) => {
+        const p = springAt(frame, fps, from + star.at, { damping: 10, stiffness: 160 });
+        const twinkle = 1 + 0.1 * Math.sin((frame + i * 23) / 11);
+        return (
+          <Img
+            key={i}
+            src={staticFile(`brand/star-${star.color}.png`)}
+            style={{
+              position: "absolute",
+              left: star.x - star.size / 2,
+              top: star.y - star.size / 2,
+              width: star.size,
+              height: star.size,
+              transform: `scale(${p * twinkle}) rotate(${(1 - p) * 40}deg)`,
+              opacity: Math.min(1, p * 2),
+            }}
+          />
+        );
+      })}
+    </AbsoluteFill>
+  );
+}
+
+/** The stars of the opening: above and below the words, none on them. */
+const HOOK_STARS: Star[] = [
+  { x: 150, y: 260, size: 120, color: "orange", at: 0 },
+  { x: 900, y: 330, size: 90, color: "blue", at: 4 },
+  { x: 560, y: 170, size: 64, color: "blue", at: 8 },
+  { x: 990, y: 640, size: 70, color: "orange", at: 12 },
+  { x: 90, y: 760, size: 60, color: "blue", at: 16 },
+  { x: 130, y: 1440, size: 96, color: "blue", at: 6 },
+  { x: 940, y: 1380, size: 120, color: "orange", at: 10 },
+  { x: 480, y: 1690, size: 72, color: "orange", at: 14 },
+  { x: 860, y: 1700, size: 58, color: "blue", at: 18 },
+  { x: 240, y: 1780, size: 50, color: "orange", at: 20 },
+];
+
+/** The stars of the end card, around the logo and the name. */
+const END_STARS: Star[] = [
+  { x: 170, y: 330, size: 100, color: "orange", at: 4 },
+  { x: 910, y: 290, size: 84, color: "blue", at: 8 },
+  { x: 960, y: 760, size: 60, color: "orange", at: 12 },
+  { x: 110, y: 860, size: 56, color: "blue", at: 14 },
+  { x: 150, y: 1560, size: 90, color: "blue", at: 10 },
+  { x: 940, y: 1680, size: 96, color: "orange", at: 6 },
+  { x: 560, y: 1790, size: 60, color: "blue", at: 16 },
+];
+
+/** « בס״ד · פטיט ירושלים », in the banners' orange. */
+function BrandLine({ at }: { at: number }) {
+  const frame = useCurrentFrame();
+  return (
+    <div
+      dir="rtl"
+      style={{
+        fontFamily: SANS,
+        fontWeight: 700,
+        fontSize: 46,
+        color: BRAND.orange,
+        opacity: interpolate(frame, [at, at + 8], [0, 1], clamp),
+        transform: `translateY(${tween(frame, at, at + 10, 16, 0)}px)`,
+      }}
+    >
+      {BRAND_LINE}
+    </div>
+  );
+}
+
 // --- The opening -------------------------------------------------------------------------
 
 /**
- * On the orange, the lines struck one per beat, the last one, « 4.0 », much
- * bigger; then a quieter line says what follows. The last half bar, it all
- * zooms toward the next screen, as in the first series.
+ * On the banners' cream, among the designer's stars, his logo builds itself
+ * in the middle on the music's first hit (LogoMotion), then rises to the
+ * top; under it, the orange line of the banners, then the lines struck one
+ * per beat, the last one, « 4.0 », much bigger and in their blue; then a
+ * quieter line says what follows. The last half bar, it all zooms toward the
+ * next screen, as in the first series.
  */
 export function HookV4({ strings, beats }: { strings: V4Strings; beats: number }) {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const hits = [0, 1.1, 2.4].map(B);
-  const subAt = B(4.6);
+  const hits = [3.1, 3.9, 4.8].map(B);
+  const subAt = B(5.8);
   const end = B(beats);
   const exit = tween(frame, end - 6, end, 0, 1);
   const last = strings.hook.length - 1;
+  // The logo, built in the middle, rises to the top before the words come.
+  const rise = tween(frame, B(2.4), B(3), 0, 1);
   return (
-    <AbsoluteFill style={{ transform: shake(frame, hits) }}>
-      <StoneWall bg={V4.orange} onColor drift={1} seed="v4-hook" />
+    <AbsoluteFill style={{ background: BRAND.bg, transform: shake(frame, hits, 6) }}>
+      <AbsoluteFill style={{ transform: `scale(${1 + exit * 0.6})`, opacity: 1 - exit }}>
+        <Sparkles stars={HOOK_STARS} />
+        <div
+          style={{
+            position: "absolute",
+            left: 540 - 280,
+            top: 900 - 280,
+            transform: `translateY(${-500 * rise}px) scale(${1 - 0.42 * rise})`,
+          }}
+        >
+          <LogoMotion size={560} speed={1.25} />
+        </div>
+      </AbsoluteFill>
       <AbsoluteFill
         dir={strings.dir}
         style={{
           alignItems: "center",
           justifyContent: "center",
-          padding: "0 70px",
+          padding: "260px 70px 0",
           transform: `scale(${1 + exit * 0.6})`,
           opacity: 1 - exit,
         }}
       >
+        <BrandLine at={B(2.8)} />
+        <div style={{ height: 40 }} />
         {strings.hook.map((text, i) => {
           if (frame < hits[i]) return <div key={i} style={{ height: 0 }} />;
           const p = springAt(frame, fps, hits[i], { damping: 11, stiffness: 220, mass: 0.6 });
@@ -76,11 +187,11 @@ export function HookV4({ strings, beats }: { strings: V4Strings; beats: number }
               key={i}
               style={{
                 fontFamily: DISPLAY,
-                fontWeight: 800,
+                fontWeight: big ? 800 : 700,
                 fontSize: big ? 330 : text.length > 12 ? 118 : 140,
                 lineHeight: big ? 1 : 1.06,
                 letterSpacing: strings.dir ? undefined : "-0.03em",
-                color: V4.onOrange,
+                color: big ? BRAND.blue : BRAND.title,
                 fontStyle: big ? "italic" : undefined,
                 fontVariantNumeric: "lining-nums",
                 textAlign: "center",
@@ -98,7 +209,7 @@ export function HookV4({ strings, beats }: { strings: V4Strings; beats: number }
             fontFamily: SANS,
             fontWeight: 700,
             fontSize: 52,
-            color: V4.onOrange,
+            color: BRAND.title,
             opacity: interpolate(frame, [subAt, subAt + 8], [0, 1], clamp),
             transform: `translateY(${tween(frame, subAt, subAt + 10, 24, 0)}px)`,
           }}
@@ -407,16 +518,16 @@ function VersionPill({ at }: { at: number }) {
 }
 
 /**
- * The end, as in the first series: the logo builds piece by piece, the
- * name, the version; then, in the app, a good discovery and where to watch
- * it again (the last image holds under « C'est parti »); for the networks,
- * the promise and the stores, then a fade.
+ * The end, in the banners' language: the designer's logo builds itself
+ * among his stars (LogoMotion), the orange line, the name in capitals, the
+ * version; then, in the
+ * app, a good discovery and where to watch it again (the last image holds
+ * under « C'est parti »); for the networks, the banners' promise, free and
+ * without ads, the stores, then a fade.
  */
 export function EndCardV4({ kind, strings, length }: { kind: "app" | "promo"; strings: V4Strings; length: number }) {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const build = tween(frame, 0, 22, 0, 1);
-  const logoP = springAt(frame, fps, 0, { damping: 12, stiffness: 120 });
   const fadeOut = kind === "promo" ? interpolate(frame, [length - 4, length + 26], [1, 0], clamp) : 1;
   const zoom = 1 + frame * 0.0009;
   const store = (label: string, at: number) => (
@@ -424,8 +535,8 @@ export function EndCardV4({ kind, strings, length }: { kind: "app" | "promo"; st
       style={{
         padding: "20px 40px",
         borderRadius: 999,
-        background: V4.text,
-        color: V4.bg,
+        background: BRAND.title,
+        color: BRAND.bg,
         fontFamily: SANS,
         fontWeight: 700,
         fontSize: 40,
@@ -435,46 +546,58 @@ export function EndCardV4({ kind, strings, length }: { kind: "app" | "promo"; st
       {label}
     </div>
   );
+  // A title waits for its turn, its room kept: nothing of it shows before.
+  const until = (at: number) => ({ visibility: frame < at ? ("hidden" as const) : ("visible" as const) });
+  const appear = (at: number) => ({
+    opacity: interpolate(frame, [at, at + 10], [0, 1], clamp),
+    transform: `translateY(${tween(frame, at, at + 12, 20, 0)}px)`,
+  });
   return (
-    <AbsoluteFill style={{ opacity: fadeOut }}>
-      <StoneWall bg={V4.bg} drift={0.4} seed="v4-end" />
+    <AbsoluteFill style={{ opacity: fadeOut, background: BRAND.bg }}>
+      <Sparkles stars={END_STARS} />
       <AbsoluteFill dir={strings.dir} style={{ alignItems: "center", justifyContent: "center", transform: `scale(${zoom})` }}>
-        <div style={{ transform: `scale(${0.6 + 0.4 * logoP})`, marginBottom: 10 }}>
-          <Logo size={280} build={build} />
+        <div style={{ margin: "-40px 0 -30px" }}>
+          <LogoMotion size={kind === "app" ? 440 : 380} />
         </div>
+        <BrandLine at={30} />
+        <div style={{ height: 14 }} />
         {/* The name is Latin: its words keep their order in the Hebrew video. */}
-        <div dir="ltr">
-          <KineticTitle lines={["Petite Jérusalem"]} start={8} color={V4.text} size={104} stagger={4} />
+        <div dir="ltr" style={until(32)}>
+          <KineticTitle lines={BRAND_NAME} start={32} color={BRAND.title} size={100} stagger={4} weight={600} />
         </div>
         <div style={{ height: 22 }} />
-        <VersionPill at={14} />
+        <VersionPill at={40} />
         <div style={{ height: 50 }} />
         {kind === "app" ? (
           <>
-            <KineticTitle lines={[strings.end.title]} start={20} color={V4.ink} size={strings.end.title.length > 18 ? 74 : 84} stagger={3} dir={strings.dir} />
+            <div style={until(46)}>
+              <KineticTitle lines={[strings.end.title]} start={46} color={V4.ink} size={strings.end.title.length > 18 ? 74 : 84} stagger={3} dir={strings.dir} />
+            </div>
             <div style={{ height: 30 }} />
-            <div
-              style={{
-                fontFamily: SANS,
-                fontWeight: 700,
-                fontSize: 40,
-                color: V4.textSoft,
-                opacity: interpolate(frame, [32, 42], [0, 1], clamp),
-              }}
-            >
+            <div style={{ fontFamily: SANS, fontWeight: 700, fontSize: 40, color: V4.textSoft, ...appear(56) }}>
               {strings.end.replay}
             </div>
           </>
         ) : (
           <>
-            <KineticTitle lines={["Gratuite, sans publicité"]} start={20} color={V4.ink} size={50} font={SANS} weight={700} stagger={2} />
-            <div style={{ height: 60 }} />
-            <div style={{ display: "flex", gap: 24 }}>
-              {store("App Store", 28)}
-              {store("Google Play", 32)}
+            {/* The general banner's promise, its three verbs in blue. */}
+            <div style={{ fontFamily: SANS, fontWeight: 600, fontSize: 46, color: BRAND.title, textAlign: "center", lineHeight: 1.35, ...appear(46) }}>
+              Étudier la Torah, ensemble.
+              <br />
+              <span style={{ color: BRAND.blue }}>Lire</span>, <span style={{ color: BRAND.blue }}>écouter</span>,{" "}
+              <span style={{ color: BRAND.blue }}>partager</span>, où que l'on soit.
             </div>
             <div style={{ height: 40 }} />
-            <div style={{ fontFamily: SANS, fontWeight: 600, fontSize: 36, color: V4.textSoft, opacity: interpolate(frame, [36, 46], [0, 1], clamp) }}>
+            <div style={until(54)}>
+              <KineticTitle lines={["Gratuite, sans publicité"]} start={54} color={V4.ink} size={50} font={SANS} weight={700} stagger={2} />
+            </div>
+            <div style={{ height: 50 }} />
+            <div style={{ display: "flex", gap: 24 }}>
+              {store("App Store", 60)}
+              {store("Google Play", 64)}
+            </div>
+            <div style={{ height: 36 }} />
+            <div style={{ fontFamily: SANS, fontWeight: 600, fontSize: 36, color: V4.textSoft, ...appear(68) }}>
               petite-jerusalem.fr
             </div>
           </>

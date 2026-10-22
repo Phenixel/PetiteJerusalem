@@ -6,7 +6,7 @@
  * (scripts/music.mjs).
  *
  * The "what's new" videos of 4.0 (`appFile` in src/videos.ts) also get the
- * copy the app plays, lighter (720×1280, about 6 MB for ninety seconds) and with
+ * copy the app plays, lighter (720×1280, about 7 MB for a hundred seconds) and with
  * its index at the front so it starts before it has fully arrived, plus a
  * poster image: public/videos/ of the app, served by the site (see
  * docs/design.md, "What's new plays once, after the update").
@@ -68,14 +68,14 @@ for (const video of videos) {
     execFileSync("ffmpeg", [
       "-y", "-loglevel", "error", "-i", file,
       "-vf", "scale=720:1280:flags=lanczos",
-      "-c:v", "libx264", "-preset", "slow", "-crf", "27", "-profile:v", "high", "-pix_fmt", "yuv420p",
+      "-c:v", "libx264", "-preset", "slow", "-crf", "28", "-profile:v", "high", "-pix_fmt", "yuv420p",
       "-c:a", "aac", "-b:a", "96k",
       "-movflags", "+faststart",
       app,
     ]);
-    // The poster: the « 4.0 » of the opening, shown while the video loads.
+    // The poster: the opening, its logo built and « 4.0 » struck, shown while the video loads.
     execFileSync("ffmpeg", [
-      "-y", "-loglevel", "error", "-ss", "1.4", "-i", file,
+      "-y", "-loglevel", "error", "-ss", "3.2", "-i", file,
       "-frames:v", "1", "-vf", "scale=540:960:flags=lanczos", "-q:v", "5",
       join(appVideos, `${video.appFile}.jpg`),
     ]);

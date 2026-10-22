@@ -23,6 +23,9 @@ export type ChapterId =
   | "sidour"
   | "accueil"
   | "parcours"
+  | "calme"
+  | "moment"
+  | "fin"
   | "daf"
   | "progress"
   | "translation"
@@ -35,7 +38,19 @@ export type Mark = { beat: number; sound?: CueSound };
 
 export type ChapterPlan = { id: ChapterId; beats: number; marks: Record<string, Mark> };
 
-export type MontageShot = "halakha" | "tikoun" | "chnei" | "signet" | "tehilim" | "recherche" | "epingles" | "contraste";
+export type MontageShot =
+  | "halakha"
+  | "tikoun"
+  | "chnei"
+  | "signet"
+  | "tehilim"
+  | "nichmat40"
+  | "sidourAjouts"
+  | "boussole"
+  | "recherche"
+  | "rappels"
+  | "epingles"
+  | "contraste";
 
 export type CutPlan = {
   hook: number;
@@ -64,35 +79,55 @@ export function presentationPlan(locale: Locale): CutPlan {
         second: { beat: 4.8 },
         tap2: { beat: 6, sound: "tap" },
       }),
-      ch("sidour", 14, {
+      ch("sidour", 10, {
         tap: { beat: 1.2, sound: "tap" },
         push: { beat: 1.5, sound: "swipe" },
         second: { beat: 4.5 },
         pop: { beat: 5, sound: "pop" },
-        third: { beat: 9 },
-        swipe: { beat: 10, sound: "swipe" },
-        done: { beat: 11, sound: "chime" },
+        open: { beat: 9, sound: "tap" },
       }),
-      ch("accueil", 16, {
+      // A tefila opens: the phone's quiet modes come down (the Android app).
+      ch("calme", 10, {
+        push: { beat: 0, sound: "swipe" },
+        drop: { beat: 1, sound: "whoosh" },
+        pop: { beat: 3, sound: "pop" },
+        second: { beat: 5.5 },
+        dnd: { beat: 6.5, sound: "tap" },
+      }),
+      // Its time, a pill with its sky; touched, the cycle of the day.
+      ch("moment", 12, {
+        pop: { beat: 1, sound: "pop" },
+        tap: { beat: 4.5, sound: "tap" },
+        sheet: { beat: 4.7, sound: "swipe" },
+        second: { beat: 6 },
+      }),
+      // At its end, the page pushed up: the service is said.
+      ch("fin", 10, {
+        push: { beat: 0, sound: "swipe" },
+        pull: { beat: 2, sound: "swipe" },
+        second: { beat: 5 },
+        done: { beat: 5.2, sound: "chime" },
+      }),
+      ch("accueil", 14, {
         split: { beat: 0.2, sound: "whoosh" },
         join: { beat: 4, sound: "whoosh" },
         swipe: { beat: 6, sound: "swipe" },
         done: { beat: 7, sound: "chime" },
         edit: { beat: 11, sound: "pop" },
       }),
-      ch("parcours", 16, {
+      ch("parcours", 14, {
         tap: { beat: 1, sound: "tap" },
         push: { beat: 1.3, sound: "swipe" },
         pop: { beat: 2.6, sound: "pop" },
-        wall: { beat: 7, sound: "whoosh" },
-        goal: { beat: 11.5, sound: "swipe" },
+        wall: { beat: 6.5, sound: "whoosh" },
+        goal: { beat: 10, sound: "swipe" },
       }),
-      ch("daf", 12, {
+      ch("daf", 10, {
         push: { beat: 0, sound: "swipe" },
         tap: { beat: 1.5, sound: "tap" },
         page: { beat: 1.7, sound: "impact" },
         zoom: { beat: 3, sound: "whoosh" },
-        second: { beat: 6.5 },
+        second: { beat: 6 },
       }),
       ch("progress", 12, {
         push: { beat: 0, sound: "swipe" },
@@ -110,28 +145,41 @@ export function presentationPlan(locale: Locale): CutPlan {
         open: { beat: 4, sound: "tap" },
         panel: { beat: 4.2, sound: "swipe" },
       }),
-      ch("table", 12, {
-        aside: { beat: 1.5, sound: "tap" },
-        fly: { beat: 1.6, sound: "whoosh" },
-        second: { beat: 6, sound: "whoosh" },
-        bar: { beat: 8, sound: "tap" },
-        sheet: { beat: 8.2, sound: "swipe" },
+      ch("table", 10, {
+        aside: { beat: 1.2, sound: "tap" },
+        fly: { beat: 1.3, sound: "whoosh" },
+        second: { beat: 5, sound: "whoosh" },
+        bar: { beat: 7, sound: "tap" },
+        sheet: { beat: 7.2, sound: "swipe" },
       }),
-      ch("audio", 10, {
+      ch("audio", 8, {
         push: { beat: 0, sound: "swipe" },
-        play: { beat: 1.5, sound: "tap" },
-        bar: { beat: 4.5, sound: "tap" },
-        full: { beat: 4.6, sound: "swipe" },
+        play: { beat: 1.2, sound: "tap" },
+        bar: { beat: 3.6, sound: "tap" },
+        full: { beat: 3.7, sound: "swipe" },
       }),
-      ch("contact", 12, {
+      ch("contact", 10, {
         push: { beat: 0, sound: "swipe" },
         badge: { beat: 1, sound: "pop" },
-        row: { beat: 3.5, sound: "tap" },
-        open: { beat: 3.8, sound: "swipe" },
-        second: { beat: 6 },
+        row: { beat: 3, sound: "tap" },
+        open: { beat: 3.3, sound: "swipe" },
+        second: { beat: 5 },
       }),
     ],
-    montage: ["halakha", "tikoun", "chnei", "signet", "tehilim", "recherche", "epingles", "contraste"],
+    montage: [
+      "halakha",
+      "tikoun",
+      "chnei",
+      "signet",
+      "tehilim",
+      "nichmat40",
+      "sidourAjouts",
+      "boussole",
+      "recherche",
+      "rappels",
+      "epingles",
+      "contraste",
+    ],
     end: 8,
   };
 }

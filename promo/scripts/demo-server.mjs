@@ -110,6 +110,62 @@ await seedDoc("sessions", "demo-session-tehilim", {
   reservations,
 });
 
+// A Nichmat 40 chain (docs/nichmat-40-jours.md): forty places, all taken,
+// on its tenth day the morning of the shots (src/services/nichmatChain.ts).
+// The demo account holds the first place and has said Nichmat the nine days
+// before; the others are a little ahead or behind.
+const NICHMAT_START = "2026-10-06";
+const nichmatNames = [
+  DEMO_NAME, "Yaël Benhamou", "Ruth Azoulay", "Avraham Toledano", "Myriam Cohen", "Ilan Sebag",
+  "Déborah Elfassi", "Nathan Amar", "Léa Bensoussan", "Shimon Attal", "Tamar Levy", "Gad Ohayon",
+  "Noémie Assouline", "Raphaël Dahan", "Sarah Zerbib", "Benjamin Halimi", "Judith Abitbol",
+  "Michaël Bitton", "Hadassa Knafo", "Eliahou Partouche", "Rachel Guedj", "Daniel Benchetrit",
+  "Orly Marciano", "Aaron Bokobza", "Naomi Benaim", "Yonathan Chiche", "Sophie Taieb",
+  "Mordekhaï Krief", "Esther Ben David", "Samuel Haddad", "Laura Elbaz", "Yaakov Benarroch",
+  "Talia Sitbon", "Ariel Fitoussi", "Hanna Bensimon", "Joseph Ifrah", "Dina Allouche",
+  "Lévi Zeitoun", "Batya Amsellem", "Yehouda Malka",
+];
+const nichmatReservations = [];
+nichmatNames.forEach((name, i) => {
+  const place = i + 1;
+  const entry = {
+    id: `demo-nichmat-place-${place}`,
+    textStudyId: "686",
+    section: place,
+    chosenByName: name,
+    available: false,
+    isCompleted: false,
+    createdAt: new Date(Date.UTC(2026, 9, 1, 8, place)).toISOString(),
+  };
+  if (place === 1) entry.chosenById = uid;
+  else entry.chosenByGuestId = `guest-nichmat-${place}`;
+  nichmatReservations.push(entry);
+  const daysRead = place === 1 ? 9 : 9 + ((place * 7) % 3) - 1;
+  for (let day = 1; day <= daysRead; day++) {
+    nichmatReservations.push({
+      id: `demo-nichmat-${place}-${day}`,
+      textStudyId: `686/${day}`,
+      section: place,
+      isCompleted: true,
+      createdAt: new Date(Date.UTC(2026, 9, 5 + day, 7)).toISOString(),
+    });
+  }
+});
+await seedDoc("sessions", "demo-session-nichmat", {
+  name: "Nichmat 40 pour la guérison de Rivka bat Sarah",
+  type: "Nichmat",
+  description: "Quarante personnes disent Nichmat chaque jour, quarante jours durant, pour la guérison de Rivka bat Sarah.",
+  startDay: NICHMAT_START,
+  dateLimitDay: "2026-11-14",
+  dateLimit: new Date("2026-11-14T23:59:59+01:00"),
+  createdAt: new Date("2026-10-01T08:00:00+02:00"),
+  personId: uid,
+  creatorName: DEMO_NAME,
+  slug: "nichmat-40-pour-rivka",
+  isCompleted: false,
+  reservations: nichmatReservations,
+});
+
 await seedDoc("userPreferences", uid, {
   theme: "sunset",
   holidayThemes: false,

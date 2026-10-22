@@ -110,7 +110,9 @@ const SILENCE = join(root, "public/captures/.silence.mp3");
  * - `holidays`: let the theme of the current holiday apply;
  * - `app`: "before" for the 3.10 app;
  * - `parcours`: lay down the demo Mon parcours (demo-parcours.mjs);
- * - `mocks`: the demo « Nous écrire » thread and the class audio.
+ * - `mocks`: the demo « Nous écrire » thread and the class audio;
+ * - `android`: the Android app, with a phone whose quiet modes answer
+ *   (the PjQuiet plugin, played here): the panel a tefila opens on.
  */
 async function appContext({
   theme = "sunset",
@@ -122,6 +124,7 @@ async function appContext({
   app = "now",
   parcours = false,
   mocks = false,
+  android = false,
 }) {
   const { url: baseUrl, flags } = APPS[app];
   const context = await browser.newContext({
@@ -136,8 +139,24 @@ async function appContext({
     permissions: ["geolocation", "notifications", "camera"],
   });
   await context.addInitScript(
-    ({ prefs, onboardingVersion, tipIds, locale }) => {
-      window.CapacitorCustomPlatform = { name: "promo-videos" };
+    ({ prefs, onboardingVersion, tipIds, locale, android }) => {
+      window.CapacitorCustomPlatform = { name: android ? "android" : "promo-videos" };
+      if (android) {
+        // The phone's quiet modes, as the PjQuiet plugin gives them: all off,
+        // Do Not Disturb access granted, each change applied.
+        const phone = { dnd: false, ringer: "normal", access: true };
+        const methods = ["getState", "start", "stop", "setDnd", "setRinger", "openAccessSettings"];
+        window.Capacitor = {
+          PluginHeaders: [{ name: "PjQuiet", methods: methods.map((name) => ({ name, rtype: "promise" })) }],
+          nativePromise: async (plugin, method, options) => {
+            if (plugin !== "PjQuiet") throw new Error(`${plugin} is not played here`);
+            if (method === "setDnd") phone.dnd = options.on;
+            if (method === "setRinger") phone.ringer = options.mode;
+            if (method === "openAccessSettings") return { opened: false };
+            return { ...phone, applied: true };
+          },
+        };
+      }
       localStorage.setItem("petite-jerusalem-locale", locale);
       localStorage.setItem("pj_analytics_consent", "denied");
       // Onboarding and tips seen: they would take over the screen.
@@ -154,6 +173,7 @@ async function appContext({
       onboardingVersion: flags.onboarding,
       tipIds: flags.tips,
       locale,
+      android,
     },
   );
   if (clock) await context.clock.setFixedTime(new Date(clock));

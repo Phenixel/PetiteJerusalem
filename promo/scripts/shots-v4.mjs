@@ -20,6 +20,8 @@ export const LOCALES = ["fr", "en", "he"];
 const CLOCK = "2026-10-15T08:40:00+02:00";
 
 const SESSION = "/share-reading/session/tehilim-pour-la-communaute";
+const NICHMAT = "/share-reading/session/nichmat-40-pour-rivka";
+const CHAHARIT = "/bibliotheque/sidour/chaharit";
 const BERAKHOT = "/bibliotheque/talmud/berakhot/1";
 
 /** A tab of the bottom bar, by its address (the same in every language, before and after). */
@@ -419,36 +421,6 @@ function shotsFor(locale) {
       },
     },
     {
-      // The Sidour's card of the moment swiped « C'est fait »: Cha'harit is
-      // said, Min'ha takes the card.
-      name: name("sidour-swipe"),
-      look: now,
-      frames: true,
-      async run(t) {
-        // The services said earlier (the home deck's card of the hour) are
-        // forgotten: Cha'harit must hold the card again.
-        await t.page.evaluate(() => localStorage.removeItem("pj_parcours_occasions"));
-        await t.open("/sidour", { css: "a.sidour-hero" });
-        const hero = t.page.locator("a.sidour-hero");
-        await t.mark("hero", hero);
-        const box = await hero.boundingBox();
-        await t.snap();
-        const dir = locale === "he" ? -1 : 1;
-        const x0 = box.x + box.width * (dir > 0 ? 0.25 : 0.75);
-        const y = box.y + box.height / 2;
-        await t.touch("touchStart", x0, y);
-        for (let d = 0; d <= 200; d += 25) {
-          await t.touch("touchMove", x0 + d * dir, y);
-          await t.wait(40);
-          if (d % 50 === 0) await t.snap();
-        }
-        await t.touch("touchEnd", x0 + 200 * dir, y);
-        await t.film(4, 160);
-        await t.wait(1500);
-        await t.snap();
-      },
-    },
-    {
       // Three books pinned on the home page, the block shown.
       name: name("epingles"),
       look: now,
@@ -484,6 +456,149 @@ function shotsFor(locale) {
         await t.wait(1500);
         await t.snap();
         await setContrast(false);
+      },
+    },
+    {
+      // The time of the moment, a pill with its sky at the head of
+      // Cha'harit; touched, the sheet and the cycle of the day.
+      name: name("moment"),
+      look: now,
+      frames: true,
+      async run(t) {
+        await t.open(CHAHARIT, { css: ".zman-pill" });
+        const pill = t.page.locator(".zman-pill").first();
+        await t.mark("pill", pill);
+        await t.snap();
+        await t.slow(0.3);
+        await t.tapOn(pill);
+        await t.film(6, 90);
+        await t.slow(1);
+        await t.wait(2000);
+        await t.snap();
+        await t.mark("sheet", t.page.locator("[role=dialog] >> visible=true").last());
+      },
+    },
+    {
+      // At the end of Cha'harit, the page pushed up past its end: the line
+      // grows into « Fin de l'office ».
+      name: name("fin"),
+      look: now,
+      frames: true,
+      async run(t) {
+        await t.page.evaluate(() => localStorage.removeItem("pj_parcours_occasions"));
+        await t.open(CHAHARIT, { css: "main" });
+        for (let i = 0; i < 6; i++) {
+          await t.page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+          await t.wait(700);
+        }
+        await t.mark("end", t.page.locator(".reader-end").first());
+        await t.snap();
+        const [x, y0] = [195, 560];
+        await t.touch("touchStart", x, y0);
+        for (let i = 1; i <= 12; i++) {
+          await t.touch("touchMove", x, y0 - i * 16);
+          await t.wait(70);
+          await t.snap();
+        }
+        await t.touch("touchEnd", x, y0 - 192);
+        await t.film(4, 150);
+        await t.wait(1500);
+        await t.snap();
+        await t.page.evaluate(() => localStorage.removeItem("pj_parcours_occasions"));
+      },
+    },
+    {
+      // A tefila opens on the phone's quiet modes (the Android app): the
+      // panel comes down, pushes the app down, then offers its choices;
+      // « Ne pas déranger » touched.
+      name: name("calme"),
+      look: { ...now, android: true },
+      frames: true,
+      async run(t) {
+        await t.open("/sidour", { css: "main" });
+        await t.page.goto(`${new URL(t.page.url()).origin}${CHAHARIT}`, { waitUntil: "load" });
+        await t.page.locator(".zman-pill >> visible=true").first().waitFor({ timeout: 20000 });
+        await t.slow(0.3);
+        await t.film(14, 90);
+        await t.slow(1);
+        await t.wait(3000);
+        await t.snap();
+        const tile = t.page.locator(".quiet-tile").first();
+        await t.mark("panel", t.page.locator(".prayer-quiet"));
+        await t.mark("dnd", tile);
+        await t.tapOn(tile);
+        await t.wait(1200);
+        await t.snap();
+      },
+    },
+    {
+      // The compass of the Kotel: the phone turns, the dial fills, then locks.
+      name: name("boussole"),
+      look: now,
+      frames: true,
+      async run(t) {
+        await t.open("/sidour", { css: "main" });
+        await t.page.evaluate(async () => {
+          const { openKotelCompass } = await import("/src/composables/useKotelCompass.ts");
+          openKotelCompass("sidour");
+        });
+        await t.wait(1500);
+        const turn = (heading) =>
+          t.page.evaluate((heading) => {
+            for (const type of ["deviceorientationabsolute", "deviceorientation"]) {
+              const event = new Event(type);
+              Object.defineProperties(event, {
+                alpha: { value: (360 - heading) % 360 },
+                beta: { value: 1 },
+                gamma: { value: 0 },
+                absolute: { value: true },
+                webkitCompassHeading: { value: heading },
+                webkitCompassAccuracy: { value: 6 },
+              });
+              window.dispatchEvent(event);
+            }
+          }, heading);
+        for (const heading of [20, 30, 40, 50, 60, 68, 76, 84, 92, 100, 106, 110, 112, 112, 112]) {
+          await turn(heading);
+          await t.wait(260);
+          await t.snap();
+        }
+        await t.film(4, 200);
+        await t.mark("dial", t.page.locator("[role=dialog] >> visible=true").last());
+      },
+    },
+    {
+      // « Les heures de ma journée »: the reminders of Mon parcours.
+      name: name("rappels"),
+      look: now,
+      async run(t) {
+        await t.open("/parcours", { css: "main" });
+        await t.page.locator(`button[aria-label="${await t.L("parcours.reminders.title")}"]`).first().click();
+        await t.wait(1800);
+        await t.snap();
+      },
+    },
+    {
+      // A Nichmat 40 chain on its tenth day: where the forty days stand, my place.
+      name: name("nichmat40"),
+      look: now,
+      async run(t) {
+        await t.open(NICHMAT, { css: "main" });
+        await t.wait(1000);
+        await t.snap();
+      },
+    },
+    {
+      // Nichmat kol 'hai among the services of the Sidour, the Tikoun haklali with the occasions.
+      name: name("sidour-ajouts"),
+      look: now,
+      async run(t) {
+        await t.open("/sidour", { css: 'a[href$="/sidour/nichmat-kol-hai"]' });
+        const row = t.page.locator('a[href$="/sidour/nichmat-kol-hai"]').first();
+        await row.evaluate((el) => el.scrollIntoView({ block: "center" }));
+        await t.wait(800);
+        await t.mark("nichmat", row);
+        await t.snap();
       },
     },
   ];

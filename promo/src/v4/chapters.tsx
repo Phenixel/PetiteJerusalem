@@ -146,19 +146,11 @@ function Sidour({ loc, strings, m, len }: ChapterProps) {
   const c = strings.captions.sidour;
   const tab = center(z(loc, "accueil:sidour"));
   const card = z(loc, "sidour:moment");
-  const hero = z(loc, "sidour-swipe:hero");
-  const rtl = loc === "he";
-  const sw = m("swipe");
-  const x0 = hero.x + hero.w * (rtl ? 0.75 : 0.25);
-  const y = hero.y + hero.h / 2;
-  const zoomCard = focus(195, hero.y + 160, 760);
+  const hero = center(card);
   const pose = poseAt(frame, [
     [0, {}],
-    [m("tap") - 6, { ry: rtl ? -6 : 6 }],
+    [m("tap") - 6, { ry: loc === "he" ? -6 : 6 }],
     [m("push") + 12, {}],
-    [m("third"), {}],
-    [sw - 10, zoomCard],
-    [m("done") + 24, zoomCard],
     [len - 4, {}],
   ]);
   return (
@@ -169,20 +161,171 @@ function Sidour({ loc, strings, m, len }: ChapterProps) {
         <>
           <Push from={<Shot src={`${loc}-etude-14.jpg`} />} to={<Shot src={cap(loc, "sidour")} />} start={m("push")} />
           <Tap x={tab.x} y={tab.y} at={m("tap")} color={V4.ink} />
-          {/* Cha'harit swiped « C'est fait »: Min'ha takes the card. */}
-          {frame >= sw - 2 ? <Seq frames={frames(loc, "sidour-swipe", 0, 10)} at={[0, ...spread(sw, 5, 3), ...spread(sw + 16, 4, 4), sw + 34]} /> : null}
-          <Swipe x0={x0} y0={y} x1={x0 + 200 * (rtl ? -1 : 1)} y1={y} start={sw} end={sw + 13} />
+          {/* The card of the moment touched: Cha'harit opens. */}
+          <Tap x={hero.x} y={hero.y} at={m("open")} color="#ffffff" />
         </>
       }
       captions={[
         { at: 4, out: m("second") - 8, lines: c[0] },
-        { at: m("second"), out: m("third") - 8, lines: c[1] },
-        { at: m("third"), out: len - 6, lines: c[2] },
+        { at: m("second"), out: len - 6, lines: c[1] },
       ]}
     >
       {/* The card of the moment comes out of the screen, to be read. */}
-      <PopOut src={cap(loc, "sidour")} zone={card} pose={pose} start={m("pop")} end={m("third") - 12} to={{ x: 540, y: 1180, width: 960 }} />
+      <PopOut src={cap(loc, "sidour")} zone={card} pose={pose} start={m("pop")} end={m("open") - 10} to={{ x: 540, y: 1180, width: 960 }} />
     </Scene>
+  );
+}
+
+/** The panel of the quiet modes, the frames of its coming down (shots-v4.mjs, `calme`). */
+const CALME_DROP = 14;
+
+function Calme({ loc, strings, m, len }: ChapterProps) {
+  const frame = useCurrentFrame();
+  const c = strings.captions.calme;
+  const panel = z(loc, "calme:panel");
+  const dnd = center(z(loc, "calme:dnd"));
+  const drop = m("drop");
+  const tap = m("dnd");
+  const zoom = focus(195, panel.y + panel.h / 2, 760);
+  const pose = poseAt(frame, [
+    [0, {}],
+    [m("second") - 6, {}],
+    [tap - 10, zoom],
+    [len - 14, zoom],
+    [len - 2, {}],
+  ]);
+  const popped = frame >= tap + 3 ? `${loc}-calme-${CALME_DROP + 1}.jpg` : `${loc}-calme-${CALME_DROP}.jpg`;
+  const popEnd = m("second") - 4;
+  return (
+    <Scene
+      pose={pose}
+      strings={strings}
+      screen={
+        <>
+          <Push
+            from={<Shot src={cap(loc, "sidour")} />}
+            to={
+              <Seq
+                frames={[`${loc}-moment-00.jpg`, ...frames(loc, "calme", 0, CALME_DROP + 1)]}
+                at={[0, ...spread(drop, CALME_DROP, 2), drop + 2 * CALME_DROP + 14, tap + 3]}
+              />
+            }
+            start={m("push")}
+          />
+          <Tap x={dnd.x} y={dnd.y} at={tap} color={V4.ink} />
+        </>
+      }
+      captions={[
+        { at: 4, out: m("second") - 8, lines: c[0] },
+        { at: m("second"), out: len - 6, lines: c[1] },
+      ]}
+    >
+      {/* The three modes, out of the screen; the app's, on Android. */}
+      <PopOut src={popped} zone={panel} pose={pose} start={m("pop")} end={popEnd} to={{ x: 540, y: 1000, width: 1000 }} />
+      {frame >= m("pop") + 6 && frame < popEnd ? (
+        <div style={{ position: "absolute", left: 0, right: 0, top: 690, display: "flex", justifyContent: "center" }}>
+          <div
+            style={{
+              padding: "12px 30px",
+              borderRadius: 999,
+              background: V4.text,
+              color: V4.bg,
+              fontFamily: '"Manrope", "Heebo", sans-serif',
+              fontWeight: 800,
+              fontSize: 36,
+              opacity: Math.min(1, (frame - m("pop") - 6) / 6, (popEnd - frame) / 6),
+            }}
+          >
+            {strings.android}
+          </div>
+        </div>
+      ) : null}
+    </Scene>
+  );
+}
+
+function Moment({ loc, strings, m, len }: ChapterProps) {
+  const frame = useCurrentFrame();
+  const c = strings.captions.moment;
+  const pill = z(loc, "moment:pill");
+  const sheet = z(loc, "moment:sheet");
+  const tap = m("tap");
+  const sheetIn = m("sheet");
+  // The sheet's sky and the cycle of the day, under its title.
+  const zoom = focus(195, sheet.y + 150, 780);
+  const pose = poseAt(frame, [
+    [0, {}],
+    [sheetIn + 14, {}],
+    [sheetIn + 30, zoom],
+    [len - 14, zoom],
+    [len - 2, {}],
+  ]);
+  return (
+    <Scene
+      pose={pose}
+      strings={strings}
+      screen={
+        <>
+          <Shot src={`${loc}-calme-${CALME_DROP + 1}.jpg`} />
+          <Fade start={0} duration={8}>
+            <Seq frames={frames(loc, "moment", 0, 7)} at={[0, ...spread(sheetIn + 2, 6, 3), sheetIn + 22]} />
+          </Fade>
+          <Tap x={center(pill).x} y={center(pill).y} at={tap} color="#ffffff" />
+        </>
+      }
+      captions={[
+        { at: 4, out: m("second") - 8, lines: c[0] },
+        { at: m("second"), out: len - 6, lines: c[1] },
+      ]}
+    >
+      {/* The pill: the sky of the moment, until when, how long still. */}
+      <PopOut src={`${loc}-moment-00.jpg`} zone={pill} pose={pose} start={m("pop")} end={tap - 10} to={{ x: 540, y: 1150, width: 1000 }} />
+    </Scene>
+  );
+}
+
+/** The frames of the end of the service pushed up (shots-v4.mjs, `fin`). */
+const FIN_PULL = 12;
+const FIN_LAST = 17;
+
+function Fin({ loc, strings, m, len }: ChapterProps) {
+  const frame = useCurrentFrame();
+  const c = strings.captions.fin;
+  const end = z(loc, "fin:end");
+  const pull = m("pull");
+  // The line, then the card it grows into, a little above it.
+  const zoom = focus(195, end.y - 60, 760);
+  const pose = poseAt(frame, [
+    [0, {}],
+    [pull - 10, zoom],
+    [len - 10, zoom],
+    [len, {}],
+  ]);
+  const release = pull + FIN_PULL * 3;
+  return (
+    <Scene
+      pose={pose}
+      strings={strings}
+      screen={
+        <>
+          <Push
+            from={<Shot src={`${loc}-moment-07.jpg`} />}
+            to={
+              <Seq
+                frames={frames(loc, "fin", 0, FIN_LAST)}
+                at={[0, ...spread(pull, FIN_PULL, 3), ...spread(release + 2, 4, 4), release + 22]}
+              />
+            }
+            start={m("push")}
+          />
+          <Swipe x0={195} y0={560} x1={195} y1={368} start={pull} end={release} />
+        </>
+      }
+      captions={[
+        { at: 4, out: m("second") - 8, lines: c[0] },
+        { at: m("second"), out: len - 6, lines: c[1] },
+      ]}
+    />
   );
 }
 
@@ -221,7 +364,7 @@ function Accueil({ loc, strings, m, len }: ChapterProps) {
   const x0 = card.x + card.w * (rtl ? 0.7 : 0.3);
   const screen = (
     <>
-      <Push from={<Shot src={`${loc}-sidour-swipe-10.jpg`} />} to={<Shot src={cap(loc, "accueil")} />} start={0} />
+      <Push from={<Shot src={`${loc}-fin-${FIN_LAST}.jpg`} />} to={<Shot src={cap(loc, "accueil")} />} start={0} />
       {frame >= s - 2 ? <Seq frames={frames(loc, "deck", 0, 12)} at={[0, ...spread(s, 5, 3), ...spread(s + 15, 6, 3), s + 34]} /> : null}
       <Swipe x0={x0} y0={cc.y} x1={x0 + 200 * (rtl ? -1 : 1)} y1={cc.y} start={s} end={s + 13} />
       <Fade start={edit} duration={6}>
@@ -583,6 +726,9 @@ export const CHAPTERS: Record<ChapterId, ComponentType<ChapterProps>> = {
   bars: Bars,
   etude: Etude,
   sidour: Sidour,
+  calme: Calme,
+  moment: Moment,
+  fin: Fin,
   accueil: Accueil,
   parcours: Parcours,
   daf: Daf,

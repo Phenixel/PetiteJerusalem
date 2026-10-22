@@ -15,11 +15,17 @@ swiping a card, setting a text aside) was really played, frame by frame.
 
 ## Version 4.0
 
-The biggest update of the app, presented in one video of about ninety
+The biggest update of the app, presented in one video of about a hundred
 seconds, in series 1's language (a phone held calmly, two-line captions,
 real gestures, what must be read coming out of the screen), slowed down:
 a presentation rather than an ad. A first cut in series 2's manner
 (scrolling bands, echoes, stone mosaic, captions on plates) was set aside.
+It opens and ends in the language of the designer's logo and share
+banners: the cream, his stars in orange and blue, « בס״ד · פטיט ירושלים »
+in orange, the name in capitals, and the logo itself in motion: cut into
+its pieces when the video renders (`src/v4/LogoMotion.tsx`), it builds
+itself, the book opening, the wall, the tower and the dome rising, the
+star falling (`public/brand/`, copied from the app's `assets/brand/`).
 
 | Video           | Language              | Ending                                      | Where it goes                         |
 | --------------- | --------------------- | ------------------------------------------- | ------------------------------------- |
@@ -32,7 +38,10 @@ a presentation rather than an ad. A first cut in series 2's manner
 | -------------- | ----------------------------------------------------------------------------------------------- |
 | `bars`         | the 3.10 tab bar, then today's; Bibliothèque and Chiourim lead to Étude, Sidour is new          |
 | `etude`        | Étude: Bibliothèque, Chiourim, Partage, the pill sliding from tab to tab                        |
-| `sidour`       | the Sidour tab touched; its card of the moment comes out of the screen, then is swiped « C'est fait » |
+| `sidour`       | the Sidour tab touched; its card of the moment comes out of the screen, then opens Cha'harit    |
+| `calme`        | the Android app: the quiet modes come down from the top, « Ne pas déranger » touched           |
+| `moment`       | the time of the moment, a pill with its sky, out of the screen; touched, the cycle of the day    |
+| `fin`          | the end of Cha'harit pushed up: the line grows into « Cha'harit : c'est fait »                   |
 | `accueil`      | the 3.10 home page beside today's; a card swiped « C'est fait »; the blocks to move              |
 | `parcours`     | the lamp touched; the streak and its galaxy out of the screen; the wall; a new goal             |
 | `daf`          | « Page »: the Vilna page out of the screen, Rachi and Tossafot around the gemara                 |
@@ -43,12 +52,17 @@ a presentation rather than an ad. A first cut in series 2's manner
 | `audio`        | a class plays, its bar out of the screen, then the full-screen player                           |
 | `contact`      | the badge on the profile, « Nous écrire », the team's answer out of the screen                  |
 
-The closing montage passes eight more changes: Halakha and Moussar, the
+The closing montage passes twelve more changes: Halakha and Moussar, the
 reader's Tikoun, chnei mikra aliyah by aliyah, one bookmark per book, the
-chain's Tehilim in one go, the Sidour's search, the pinned books of the home
-page, the higher contrast mode.
+chain's Tehilim in one go, Nichmat 40, Nichmat kol 'hai in the Sidour, the
+compass that fills facing the Kotel, the Sidour's search, the reminders of
+the day, the pinned books of the home page, the higher contrast mode.
 
-The in-app copies (720×1280, about 6 MB for ninety seconds, their index at
+The quiet modes are the Android app's: the captures play the phone's
+plugin (`android` in `scripts/captures.mjs`), and the demo data hold a
+Nichmat 40 chain on its tenth day (`scripts/demo-server.mjs`).
+
+The in-app copies (720×1280, about 7 MB for a hundred seconds, their index at
 the front so they start before fully arriving, and a poster) are written by
 `npm run render` into the app's `public/videos/`, served by the site and left
 out of the native bundle. The app reads them under the same names
@@ -190,10 +204,11 @@ shots it is missing in `scripts/shots-v4.mjs`.
 ## The look
 
 The videos follow `docs/design.md` (section "The promotional videos"): the
-colors of the themes (the logo's palette for 4.0, white on the pastel orange
-as in the app), the stone wall, Playfair Display for titles and Manrope for
-the rest (embedded from Fontsource, no network request at render time), flat
-colors and never a gradient, the French non-breaking spaces.
+colors of the themes (for 4.0, white on the pastel orange as in the app, and
+the colors of the designer's logo and banners at the opening and the end),
+the stone wall, Playfair Display for titles and Manrope for the rest
+(embedded from Fontsource, no network request at render time), flat colors
+and never a gradient, the French non-breaking spaces.
 
 ## Licenses
 

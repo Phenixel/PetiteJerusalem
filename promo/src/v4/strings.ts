@@ -28,12 +28,17 @@ export type V4Strings = {
   before: string;
   after: string;
   newTag: string;
+  /** Over the quiet modes panel: it is the Android app's. */
+  android: string;
   /** « Et aussi… », in two words. */
   also: [string, string];
   captions: {
     bars: [CaptionLines, CaptionLines];
     etude: [CaptionLines, CaptionLines];
-    sidour: [CaptionLines, CaptionLines, CaptionLines];
+    sidour: [CaptionLines, CaptionLines];
+    calme: [CaptionLines, CaptionLines];
+    moment: [CaptionLines, CaptionLines];
+    fin: [CaptionLines, CaptionLines];
     accueil: [CaptionLines, CaptionLines, CaptionLines];
     parcours: [CaptionLines, CaptionLines, CaptionLines];
     daf: [CaptionLines, CaptionLines];
@@ -50,7 +55,11 @@ export type V4Strings = {
     chnei: string;
     signet: string;
     tehilim: string;
+    nichmat40: string;
+    sidourAjouts: string;
+    boussole: string;
     recherche: string;
+    rappels: string;
     epingles: string;
     contraste: string;
   };
@@ -65,6 +74,7 @@ export const STRINGS: Record<Locale, V4Strings> = {
     before: "Avant",
     after: "Maintenant",
     newTag: "Nouveau",
+    android: "Sur Android",
     also: ["Et", "aussi"],
     captions: {
       bars: [
@@ -78,7 +88,18 @@ export const STRINGS: Record<Locale, V4Strings> = {
       sidour: [
         ["Le *Sidour*", "a son onglet"],
         ["Il s'ouvre", "*sur le moment*"],
-        ["Un office dit,", "*d'un geste*"],
+      ],
+      calme: [
+        ["Avant la tefila,", "*le téléphone se tait*"],
+        ["Ne pas déranger,", "*d'une touche*"],
+      ],
+      moment: [
+        ["L'heure de la tefila,", "*sous son ciel*"],
+        ["Toute la journée,", "*d'un coup d'œil*"],
+      ],
+      fin: [
+        ["Au bout de l'office,", "*poussez la page*"],
+        ["L'office est noté", "*comme dit*"],
       ],
       accueil: [
         ["Un nouvel", "*accueil*"],
@@ -116,7 +137,11 @@ export const STRINGS: Record<Locale, V4Strings> = {
       chnei: "Le chnei mikra, montée après montée",
       signet: "Un signet par livre",
       tehilim: "Vos Tehilim d'une traite",
+      nichmat40: "Nichmat 40, jour après jour",
+      sidourAjouts: "Nichmat kol 'hai au Sidour",
+      boussole: "La boussole se remplit face au Kotel",
       recherche: "Le Sidour se cherche",
+      rappels: "Des rappels à vos heures",
       epingles: "Vos livres épinglés",
       contraste: "Un mode contraste élevé",
     },
@@ -131,6 +156,7 @@ export const STRINGS: Record<Locale, V4Strings> = {
     before: "Before",
     after: "Now",
     newTag: "New",
+    android: "On Android",
     also: ["And", "more"],
     captions: {
       bars: [
@@ -144,7 +170,18 @@ export const STRINGS: Record<Locale, V4Strings> = {
       sidour: [
         ["The *Siddur*", "has its own tab"],
         ["It opens", "*on the moment*"],
-        ["A service said,", "*in one swipe*"],
+      ],
+      calme: [
+        ["Before the tefila,", "*the phone goes quiet*"],
+        ["Do not disturb,", "*in one touch*"],
+      ],
+      moment: [
+        ["The time to pray,", "*under its sky*"],
+        ["The whole day,", "*at a glance*"],
+      ],
+      fin: [
+        ["At the end of the service,", "*push the page*"],
+        ["The service is marked", "*as said*"],
       ],
       accueil: [
         ["A new", "*home*"],
@@ -182,7 +219,11 @@ export const STRINGS: Record<Locale, V4Strings> = {
       chnei: "Shnayim mikra, aliyah by aliyah",
       signet: "One bookmark per book",
       tehilim: "Your Tehilim in one go",
+      nichmat40: "Nishmat 40, day after day",
+      sidourAjouts: "Nishmat kol chai in the Siddur",
+      boussole: "The compass fills when you face the Kotel",
       recherche: "Search the Siddur",
+      rappels: "Reminders at your own hours",
       epingles: "Your pinned books",
       contraste: "A higher contrast mode",
     },
@@ -198,6 +239,7 @@ export const STRINGS: Record<Locale, V4Strings> = {
     before: "לפני",
     after: "עכשיו",
     newTag: "חדש",
+    android: "באנדרואיד",
     also: ["ועוד", "הרבה"],
     captions: {
       bars: [
@@ -211,7 +253,18 @@ export const STRINGS: Record<Locale, V4Strings> = {
       sidour: [
         ["*לסידור*", "לשונית משלו"],
         ["הוא נפתח", "*ברגע הנכון*"],
-        ["תפילה שנאמרה,", "*בהחלקה אחת*"],
+      ],
+      calme: [
+        ["לפני התפילה,", "*הטלפון משתתק*"],
+        ["נא לא להפריע,", "*בנגיעה אחת*"],
+      ],
+      moment: [
+        ["זמן התפילה,", "*תחת השמיים שלו*"],
+        ["כל היום,", "*במבט אחד*"],
+      ],
+      fin: [
+        ["בסוף התפילה,", "*דחפו את הדף*"],
+        ["התפילה מסומנת", "*כנאמרה*"],
       ],
       accueil: [
         ["דף בית", "*חדש*"],
@@ -249,7 +302,11 @@ export const STRINGS: Record<Locale, V4Strings> = {
       chnei: "שניים מקרא, עלייה אחר עלייה",
       signet: "סימנייה לכל ספר",
       tehilim: "כל התהילים שלכם ברצף",
+      nichmat40: "נשמת 40, יום אחר יום",
+      sidourAjouts: "נשמת כל חי בסידור",
+      boussole: "המצפן מתמלא מול הכותל",
       recherche: "חיפוש בסידור",
+      rappels: "תזכורות בשעות שלכם",
       epingles: "הספרים המוצמדים שלכם",
       contraste: "מצב ניגודיות גבוהה",
     },
