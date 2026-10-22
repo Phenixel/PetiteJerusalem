@@ -120,7 +120,7 @@ test.describe("lecteur", () => {
   test("la guemara et la Torah s'ouvrent dans la forme de leur page", async ({ page }) => {
     // La page de Vilna : la guemara au centre, Rachi et Tossafot autour.
     await gotoApp(page, "/bibliotheque/talmud/berakhot/1");
-    await page.getByRole("button", { name: "Page", exact: true }).first().click();
+    await page.getByRole("button", { name: "Page (Bêta)", exact: true }).first().click();
     const daf = page.locator(".daf-page").first();
     await expect(daf).toBeVisible({ timeout: 20_000 });
     await expect(daf.locator(".daf-lead").first()).toBeVisible({ timeout: 20_000 });
