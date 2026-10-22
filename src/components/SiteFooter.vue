@@ -61,6 +61,9 @@
         <RouterLink class="hover:text-primary transition-colors" to="/informations">
           {{ t("announcements.title") }}
         </RouterLink>
+        <RouterLink class="hover:text-primary transition-colors" to="/aide">
+          {{ t("help.title") }}
+        </RouterLink>
         <RouterLink class="hover:text-primary transition-colors" :to="localePath('aPropos')">
           {{ t("footer.about") }}
         </RouterLink>

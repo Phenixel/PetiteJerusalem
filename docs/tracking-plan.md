@@ -158,6 +158,64 @@ the daily reading); it now equals `via = daily`.
 Unchanged: choosing the texts to take along is still a page of the
 introduction (51 downloads started over the same period).
 
+## What's new in 4.0 (October 2026)
+
+The video the app plays once after the update (`WhatsNewVideo.vue`, see
+`docs/design.md`, "What's new plays once, after the update"). Does it reach
+those who update, and do they watch it to the end?
+
+### `whats_new_video_started` (new)
+
+The video started playing.
+
+| Property  | Values                                                                                         |
+| --------- | ---------------------------------------------------------------------------------------------- |
+| `version` | the version whose video plays: `4.0`                                                           |
+| `source`  | `launch` (the first launch after the update), `help` (its card in the help center), `link` (`?nouveautes`) |
+| `muted`   | true when the system refused the sound without a touch, and the video plays muted             |
+| `passage` | **new property**: the passage it was played from, on the page of the version (`/aide/nouveautes/4.0`): the chapter's id (`calme`, `fin`, `montage`...), otherwise null |
+
+### `whats_new_video_closed` (new)
+
+The video left the screen.
+
+| Property          | Values                                                                                              |
+| ----------------- | --------------------------------------------------------------------------------------------------- |
+| `version`         | as above                                                                                            |
+| `source`          | as above                                                                                            |
+| `via`             | `close` (the button at the top: « Passer » at launch, « Fermer » otherwise), `done` (« C'est parti », at the end), `more` (**new value**: « En savoir plus », at the end, which leads to the page of the version), `back` (Android back, Escape), `error` (it did not load) |
+| `watched_seconds` | the furthest point reached, in seconds                                                              |
+| `completed`       | true when the video was played to the end                                                           |
+| `passage`         | **new property**: as above                                                                          |
+
+`watched_seconds` of a video played from a passage counts from the start
+of the video, not of the passage: the passage's start is in
+`src/content/help/whatsNewChapters.json`.
+
+`via` `error` with `source` `launch` is not seen by anyone: the screen only
+shows once the video can play, and the video is offered again at a later
+launch.
+
+`source` `profile` (a « Revoir les nouveautés » row of the profile) was
+replaced by `help` before 4.0 was released, when the row became the help
+center's card: it was never sent.
+
+## Help center (October 2026)
+
+The help center (`/aide`, see `docs/help-center.md`): its guides are pages,
+counted by `$pageview` (`/aide/<slug>`); what leaves the app is not, hence
+one event.
+
+### `help_video_opened` (new)
+
+A tutorial video was opened on YouTube (`HelpVideoCard.vue`).
+
+| Property | Values                                                                        |
+| -------- | ----------------------------------------------------------------------------- |
+| `video`  | its YouTube id                                                                |
+| `place`  | `center` (the help center's list), `guide` (the end of the guide it goes with) |
+| `guide`  | the guide's slug when `place` is `guide`, otherwise null                      |
+
 ## Profile
 
 The website and the app do not have the same profile (see docs/design.md,

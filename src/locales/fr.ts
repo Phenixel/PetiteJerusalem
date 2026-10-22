@@ -107,6 +107,53 @@ const fr = {
     accept: "Accepter",
     decline: "Refuser",
   },
+  // The video of what changed, once after an update (useWhatsNew).
+  whatsNew: {
+    ariaLabel: "Les nouveautés de la 4.0",
+    close: "Fermer",
+    soundOn: "Activer le son",
+    again: "Revoir la vidéo",
+    done: "C'est parti",
+    skip: "Passer",
+    failed: "La vidéo n'a pas pu se charger. Vérifiez la connexion et réessayez.",
+    more: "En savoir plus",
+  },
+  // The help center (/aide): guides, videos, what's new. Its guides are in
+  // src/content/help/catalog.ts, its videos in public/help/videos.json.
+  help: {
+    title: "Centre d'aide",
+    subtitle: "Des guides et des vidéos pour prendre l'app en main, partie par partie.",
+    seoDescription:
+      "Les guides de Petite Jérusalem\u00a0: l'accueil, le Sidour, la lecture, Mon parcours, les horaires et les chaînes de lecture, expliqués et montrés.",
+    whatsNew: {
+      title: "Les nouveautés de la {version}",
+      text: "Où sont passés les onglets, ce qui est nouveau\u00a0: tout en une vidéo.",
+      watch: "Regarder",
+    },
+    videos: "Vidéos",
+    watchOnYoutube: "Voir sur YouTube",
+    guides: "Guides",
+    replay: "Revoir",
+    more: "D'autres guides",
+    // The page of a version (/aide/nouveautes/4.0): its video, passage by
+    // passage, and the questions each one raises (content/help/versions.ts).
+    faq: { title: "Questions fréquentes" },
+    versions: "Les versions",
+    version: {
+      row: "La {version}, passage par passage",
+      whole: "Toute la vidéo",
+      kicker: "Passage par passage",
+      passages: "Les passages de la vidéo",
+      play: "Revoir ce passage",
+      playLabel: "Revoir «\u00a0{title}\u00a0», à {time}",
+      seoDescription:
+        "Les nouveautés de la {version} de Petite Jérusalem, passage par passage\u00a0: la vidéo, et les réponses aux questions qu'elle pose.",
+    },
+    contact: {
+      title: "Une question sans réponse\u202f?",
+      text: "Écrivez-nous\u00a0: l'équipe vous répond dans l'app.",
+    },
+  },
   onboarding: {
     ariaLabel: "Introduction à Petite Jérusalem",
     ariaProgress: "Avancement de l'introduction",

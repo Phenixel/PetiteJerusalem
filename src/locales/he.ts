@@ -103,6 +103,51 @@ const he: LocaleMessages = {
     accept: "אישור",
     decline: "סירוב",
   },
+  // The video of what changed, once after an update (useWhatsNew).
+  whatsNew: {
+    ariaLabel: "מה חדש בגרסה 4.0",
+    close: "סגירה",
+    soundOn: "הפעלת הקול",
+    again: "לצפות שוב",
+    done: "בואו נתחיל",
+    skip: "דילוג",
+    failed: "לא הצלחנו לטעון את הסרטון. בדקו את החיבור ונסו שוב.",
+    more: "למידע נוסף",
+  },
+  help: {
+    title: "מרכז העזרה",
+    subtitle: "מדריכים וסרטונים להכרת האפליקציה, חלק אחר חלק.",
+    seoDescription:
+      "המדריכים של ירושלים הקטנה: דף הבית, הסידור, הקריאה, המסלול שלי, זמני היום ושרשראות הקריאה, בהסבר ובהדגמה.",
+    whatsNew: {
+      title: "מה חדש בגרסה {version}",
+      text: "לאן עברו הלשוניות ומה חדש: הכול בסרטון אחד.",
+      watch: "לצפייה",
+    },
+    videos: "סרטונים",
+    watchOnYoutube: "לצפייה ביוטיוב",
+    guides: "מדריכים",
+    replay: "לראות שוב",
+    more: "מדריכים נוספים",
+    // The page of a version (/aide/nouveautes/4.0): its video, passage by
+    // passage, and the questions each one raises (content/help/versions.ts).
+    faq: { title: "שאלות נפוצות" },
+    versions: "גרסאות",
+    version: {
+      row: "גרסה {version}, קטע אחר קטע",
+      whole: "הסרטון כולו",
+      kicker: "קטע אחר קטע",
+      passages: "הקטעים של הסרטון",
+      play: "לצפות שוב בקטע הזה",
+      playLabel: "לצפות שוב ב״{title}״, ב־{time}",
+      seoDescription:
+        "מה חדש בגרסה {version} של פטיט ירושלים, קטע אחר קטע: הסרטון, והתשובות לשאלות שהוא מעורר.",
+    },
+    contact: {
+      title: "נשארה שאלה בלי תשובה?",
+      text: "כתבו לנו: הצוות עונה לכם באפליקציה.",
+    },
+  },
   onboarding: {
     ariaLabel: "היכרות עם פטיט ירושלים",
     ariaProgress: "התקדמות ההיכרות",

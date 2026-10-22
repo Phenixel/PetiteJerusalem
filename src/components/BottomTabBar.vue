@@ -112,14 +112,15 @@ const tabs = computed<Tab[]>(() => {
       anim: "bow",
       isActive: isStudyPath,
     },
-    // Les sous-pages du profil (/profile/appearance...) sont des routes à
-    // part : l'onglet reste allumé tant qu'on y est.
+    // The profile's sub-pages (/profile/appearance...) are routes of their
+    // own, and so is the help center it opens: the tab stays lit there.
     {
       to: "/profile",
       icon: isLoggedIn.value ? "user" : "settings",
       labelKey: isLoggedIn.value ? "common.profile" : "profile.guestTitle",
       anim: "hop",
-      isActive: (p) => p === "/profile" || p.startsWith("/profile/"),
+      isActive: (p) =>
+        p === "/profile" || p.startsWith("/profile/") || p === "/aide" || p.startsWith("/aide/"),
     },
   ];
 });

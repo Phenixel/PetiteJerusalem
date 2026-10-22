@@ -175,8 +175,8 @@ Four rules hold it:
   for: the next one waits for the next opening (an app relaunch, or a
   return to the foreground after half an hour elsewhere). On the same page,
   one tip can wait for another: the reading gestures come one opening after
-  the menu. « Revoir les astuces » ("See tips again", app profile, Help
-  group) puts them back in play, page by page;
+  the menu. « Revoir les astuces » ("See tips again", in the help
+  center) puts them back in play, page by page;
 - **« Plus tard »** ("Later"): you do not always have time to read. The
   bubble withdraws without counting the tip as seen, and it comes back, on
   the same page, at the next opening;
@@ -255,6 +255,143 @@ short so that people read them. Only the gestures can be skipped (the
 button, Escape), at no cost: the same ones come back as tips on the reading
 page. A new page must earn its place against the others, and what is
 learned by doing goes with the gestures, not before.
+
+### What's new plays once, after the update
+
+When an update moves things around, those who knew the app before must be
+told where things went: 4.0 moved the library and the classes under
+« Étude » and gave the Sidour its own tab, and a reader looking for
+« Bibliothèque » in the bar would not find it. The first launch after the
+update plays a video of about a hundred seconds on what changed
+(`WhatsNewVideo.vue`, `useWhatsNew.ts`), in the reader's language: where the
+tabs went first, then what is new.
+
+- **Once, and only to those who are updating.** A fresh install sees the
+  introduction, never this video: it shows a change to someone who never
+  knew the app before it. The device notes the version it played, and its
+  card at the top of the help center plays it again (see "The help center
+  shows how, part by part"); its last screen says where to find it.
+- **Nothing shows while it loads.** The video is served by the site
+  (`public/videos/`), not bundled: a few megabytes per language, for over
+  a minute and a half of viewing. At launch, the screen only appears once the
+  video can play; offline, nothing shows and nothing is noted, and it plays
+  at a later launch.
+- **It is written to be read.** Every change is said in a sentence on the
+  screen; the music only goes with it. Where the system refuses sound
+  without a touch, it plays muted and offers « Activer le son » ("Turn the
+  sound on").
+- **One can always leave.** The button at the top, the Android back
+  gesture, Escape. Come on its own at launch, the video is skipped:
+  « Passer » ("Skip"); asked for from the help center, it is closed:
+  « Fermer » ("Close"). At the end, « C'est parti » ("Let's go") closes it,
+  « Revoir la vidéo » ("Watch again") replays it and « En savoir plus »
+  ("Learn more") leads to the page of the version, its passages and their
+  questions (see "The help center shows how, part by part"); opened from
+  that page, it does not offer the way back to it. The page behind does
+  not move.
+- **It wears the page background** (`bg-bg-beige`), the same as the video's,
+  so the bars above and below the picture on a tall phone do not show.
+
+The video is made with the promotional videos (section 11, `promo/`, the
+`nouveautes-*` compositions) from the app's own screens. A next one changes
+`WHATS_NEW_VERSION` and is published under its name, in the three languages
+(`whatsNew.test.ts` checks that the files the code asks for exist).
+
+### The help center shows how, part by part
+
+The app has grown rich enough that much of it stays obscure until someone
+explains it: a card swiped to say a prayer is done, a reading bar that
+slides, home page blocks that move under a long press. A tip shows a
+gesture once, where it happens; the help center (`/aide`,
+`HelpCenterPage.vue`) is where one comes back to it, at any time, on the
+site as in the app. How to add to it: `docs/help-center.md`.
+
+- **Reached from the profile.** Its row opens the profile's Help group,
+  then « Les nouveautés de la 4.0 », the page of the version, one touch
+  away, then « Nous écrire »; on the site, the footer links to it. The profile
+  tab stays lit on its pages, as on the profile's sub-pages. Its guides are
+  in the bundle: it opens offline and without an account.
+- **What's new first.** At the top, the "what's new" video as a card
+  (`WhatsNewCard.vue`): its own poster in its 9:16 format, the play button
+  on it, « Regarder » ("Watch") spelled out, the whole card playing it.
+  Whoever skipped it at launch finds it here.
+- **Each version, passage by passage.** Under the card, « Les versions »:
+  a row per version (« La 4.0, passage par passage »), opening its page
+  (`/aide/nouveautes/4.0`, `HelpVersionPage.vue`). What the version
+  changes in two sentences, the video's card, then its passages in the
+  video's order, as questions people ask: a card per passage, closed, its
+  title and where it starts in the video (« 0:20 », the theme color, in
+  figures that keep their width) on the side where one reads from, the
+  chevron at the other end. Opened, « Revoir ce passage » (the play
+  triangle and its name, solid: the one command of the card) plays the
+  video from that point; then the questions, in the text color and bold,
+  each answer under it in the secondary color, a fine rule between two;
+  then the guide that explains it further (the book and its title) and the
+  way into the app (its name and the arrow). A FAQ that reads like the
+  video: whoever wants one answer goes to the passage that shows it,
+  without watching a hundred seconds again. All closed, the sixteen
+  passages fit in two screens; an address ending in a passage
+  (`#calme`) opens on that one, for a link from a guide or a message. A
+  passage the language's video does not show (the translations, in the
+  Hebrew one) keeps its questions, without the command. An older version's
+  page keeps its questions without the video: only the current one is
+  served.
+- **Frequent questions, answered short.** After the versions,
+  « Questions fréquentes » ("Frequently asked questions", a heading in
+  Playfair, like « Guides » below it): a panel per topic (the app, reading
+  and praying, the times, reading together, your settings), like the
+  guides, each row a question in the reader's words with the chevron that
+  turns as it opens. Opened in place, its answer in two sentences at most,
+  then the guide that explains more (the book and its title) and the way
+  into the app. Closed, the questions read as a list one scans; no answer
+  is a page of its own, nobody leaves the list for two sentences. An
+  address ending in a question (`/aide#compte`) opens on it: the team
+  answers a message with a link (`HelpFaq.vue`, `content/help/faq.ts`).
+- **Guides by part of the app.** Grouped by topic (finding your way, the
+  home page, the prayer, reading, Mon parcours, the times, reading
+  together) like the
+  profile's groups: a panel per topic, a row per guide with its title and
+  one line of what it is about, the chevron of a row that opens a page. A
+  guide is a page of its own (`/aide/<slug>`): its topic in the theme color
+  above the centered title, its summary, then its points.
+- **It shows rather than explains.** A point is a title, two sentences and,
+  when it is a gesture, its drawn screenshot playing above them
+  (`src/components/mock`): the drawings of the introduction and of a
+  chain's instructions, which follow the theme, dark mode and the language,
+  weigh almost nothing and do not age from one redesign to the next. 4.0
+  added six: the tab bar and Étude's tabs, the card swiped « C'est fait »,
+  a home block carried under a long press, the reading bar slid, a times row
+  pulled to its bell, the end of a service pushed up until it is said. Like the introduction's, they loop on their own: they
+  are the explanation. When less motion is asked for, each stands still on
+  its key moment (the card at its threshold, the block lifted).
+- **The app's own words.** A guide that explains a gesture a tip already
+  explains borrows the tip's sentences (an i18n key rather than a new text):
+  the two must say it the same way, in the three languages.
+- **A way in.** A guide ends on a command into the part it explains
+  (« Modifier l'accueil », « Voir les horaires »), its name spelled out,
+  then on other guides, its topic first.
+- **The videos are YouTube's, listed by the site.** The team's tutorials
+  are YouTube videos, listed in a file the site serves
+  (`public/help/videos.json`), not in code: a new one reaches the installed
+  apps when the site is deployed, the app falling back on the list of its
+  build when offline. A video is a card: its picture, its title and its
+  length, opening YouTube (its app, on a phone); no player in the app and
+  no cookie, only the picture loads. One that goes with a guide also shows
+  at its end. No video, no section: nothing announces videos to come.
+- **What shows once comes back from here.** In the app, « Revoir
+  l'introduction » and « Revoir les astuces » moved from the profile to the
+  help center, with the video. At the bottom, « Nous écrire », for a
+  question no guide answered.
+
+Held by `src/__tests__/helpCenter.test.ts` (the guides in three languages
+and typeset, their screenshots and links, the list of videos) and
+`helpCenterPages.test.ts` (the card plays the video, the videos only when
+there are some, an unknown guide leads back to the help center, the
+questions closed and opening on their answer, `#compte`); the page
+of a version by `helpCenter.test.ts` (« the pages of the versions »: a
+passage for every chapter of the video and the other way round, its texts
+in three languages) and `helpCenterPages.test.ts` (« the page of a
+version »: closed passages, a passage playing from its start, `#fin`).
 
 ### Neighboring pages, a set of tabs
 
@@ -1080,7 +1217,8 @@ its own, which suits it.
   the bar (`ProfileParcours.vue`). All in the banner's ink, in three tones.
 - **A page of rows, grouped.** Mes lectures (the shortcuts), Réglages
   (Settings: appearance, language, notifications, preferences), Mon compte
-  (My account: security, sign-out), Aide (Help), Informations. Each group is
+  (My account: security, sign-out), Aide (Help: the help center and « Nous
+  écrire »), Informations. Each group is
   a panel (`SettingsGroup`), a surface without `card-hover`, and its rows
   (`SettingsRow`) run edge to edge, separated by a rule. The group's title is
   written in lowercase, above.
@@ -1090,8 +1228,8 @@ its own, which suits it.
   What is wrong says so in place of the number: notifications blocked by the
   phone announce themselves as « Bloquées » ("Blocked"), in amber.
 - **Three forms, one look.** An app page (chevron), an in-place action (no
-  chevron: nothing opens behind it, « Revoir l'introduction », "See the
-  introduction again"), sign-out (in red). Each row is at least 52 px tall
+  chevron: nothing opens behind it, « Gérer les cookies », "Manage
+  cookies"), sign-out (in red). Each row is at least 52 px tall
   and responds to touch with a background, in the absence of hover.
 - **Sign-out asks the question, in the app only.** On the site, it is a
   separate button; here, a row among others, which a thumb touches by
@@ -4092,3 +4230,115 @@ These guidelines are being written as decisions are made.
   without losing links and verse numbers.
 - The store listing screenshots are regenerated at the next CI run, with
   the new icon.
+
+## 11. The promotional videos
+
+The short videos for the networks, and the app's "what's new" video
+(`promo/`, how-to in `promo/README.md`), are the same house as the app, seen
+from further away. They take its tokens and what is not used in it, starting
+with gradients: the wipes that sweep the screen from one scene to the next,
+the backgrounds, the confetti of the siyoum are flat colors.
+
+- **What you see is the app.** Each screen is a screenshot of the native app
+  on demo data, each gesture was really played. Nothing is redrawn, except
+  what must grow to be read on a phone held in the hand (a chain's progress
+  card, the daily reading tracker), which then takes the app's layout at the
+  video's scale.
+- **The stone wall** is the background of every scene: courses in flat
+  colors barely lighter or darker than the background, sliding slowly. On a
+  theme color (the opening), the stones hardly show.
+- **The fonts**: Playfair Display for whatever reads as a title (the
+  opening, the captions, « Mais aussi… », the app's name), with one word in
+  italics and in the theme color for the punch line; Manrope for the pills,
+  which are round like the app's controls.
+- **One video, one look**: each video keeps the theme and the mode (light or
+  dark) of its screenshots, and the closing montage mixes the others, to show
+  in passing that the app can be set to one's taste.
+- **The safe zone**: the networks place their buttons at the bottom and on
+  the right. Captions stay at the top (below 210 px), nothing important goes
+  below 1,500 px; the phone, for its part, may leave through the bottom.
+- **The rhythm**: picture and music share a grid of 120 beats per minute. A
+  cut, a line that strikes, a tap fall on a beat, and the music plays the
+  gesture's sound at the same instant.
+
+### Series 2 moves more, and reads as much
+
+The stories (`promo/src/Story.tsx`) push the movement: phones that rush in,
+followed by two paler echoes as motion blur, fans of three phones, a mosaic
+of stones that lands then leaves between two chapters, a split-flap clock,
+counters, scrolling bands. Three rules keep it readable:
+
+- **one sentence per shot, held for the whole shot**: the subtitle
+  (`Subtitle`) arrives word by word then stays, on a surface plate that
+  sets it apart from what moves behind; its punch line fills with a flat
+  of the theme (or holiday) color;
+- **the closing montage goes to two beats per shot**: one second to read
+  « Le calendrier des fêtes », the camera diving on the detail on the
+  second beat;
+- **lining figures**: Playfair's, old-style by default, turn zero into an
+  « o », and « 0 € » read « o € ».
+
+The Hebrew of the videos is written in Frank Ruhl Libre and Heebo, as in
+the app, from right to left.
+
+### Version 4.0: one presentation, in the first series' language
+
+The 4.0 video (`promo/src/v4/`) is a presentation rather than an ad: one
+video of about a hundred seconds, which the app plays after the update in the
+reader's language and which goes to the networks in French, only its ending
+changing (the stores instead of where to watch it again). A first cut in
+series 2's manner was set aside: what the owner liked is series 1, slowed
+down.
+
+- **Series 1's language.** The phone held calmly, turning a little from one
+  moment to the next; two-line captions whose words rise one by one, the
+  second line in italics and in the orange ink; real gestures; what must be
+  read larger comes out of the screen (`PopOut`: the card of the moment, the
+  streak and its light, the Vilna page, a passage's commentaries, the
+  team's answer, the quiet modes, the time of the moment) rather than the
+  phone zooming under the caption; color wipes for the two big cuts.
+- **It opens and ends like the banners.** The opening and the end card
+  speak the language of the designer's logo and share banners (section 8):
+  the cream, the stars in orange and blue scattered around what is said,
+  « בס״ד · פטיט ירושלים » in orange above, the name in capitals, the
+  « 4.0 » of the opening in the banners' blue. For the networks, the
+  general banner's promise follows, its three verbs in blue. The app's
+  screens keep the app's colors.
+- **The logo moves, it is not redrawn.** His PNG is cut into its pieces
+  when the video renders, by color and by place (the star, the flame, the
+  dome, the cypresses, the tower, the wall, the book:
+  `promo/src/v4/LogoMotion.tsx`), and each one moves on its own: the book
+  opens from its spine, the wall rises out of it, the tower and the dome
+  come up from behind the wall and the cypresses grow, the flame lights,
+  the star falls turning and lands with a few sparks; then the star
+  twinkles and the flame flickers. It builds in the middle of the opening
+  on the music's first hit, then rises above the words, and builds again on
+  the end card, before the name.
+- **It follows the app.** When the app changes before the release, the
+  video is filmed again on it: the cut is data and the shots replay
+  themselves (`npm run captures`, then `npm run render`).
+- **What it does not use.** Scrolling bands, phones with echo trails, the
+  stone mosaic, captions on plates, a shaking camera beyond the opening's
+  strikes, a music that stutters: series 2's vocabulary, which did not
+  convince.
+- **Slower.** Five to eight seconds per change (series 1 gave twelve to a
+  single feature, one beat to each of the others), and two beats per shot
+  in the closing montage. The phone never climbs under a caption.
+- **What moved is shown before what is new.** The video opens on the 3.10
+  tab bar above today's, filmed on both apps, with an arrow from each former
+  tab to the one that holds it now and a « Nouveau » tag on the new one; then
+  the 3.10 home page beside today's. The bars come from each language's
+  screenshots, so the arrows follow the mirrored bar in Hebrew, where
+  « before » also stands on the right.
+- **White on the pastel orange, as in the app.** The montage's orange
+  shots and the « 4.0 » pill write white on `#EB9F4F`, in large bold
+  type only (the app's documented exception, section 2); a small label on
+  the orange stays dark. A caption's accent takes the orange ink
+  (`#D46D01`). The former vermilion stays with series 1 and 2, filmed on
+  3.10.
+- **One grid.** The cut is data (`promo/src/v4/plan.ts`): the gestures and
+  the music's sounds fall on the same marked beats, and a section always
+  holds whole bars, or the music would run into the next one.
+- **The reader's language.** French, English and Hebrew, each filmed in its
+  own interface; the Hebrew one has no translation chapter (the translations
+  go into French and English).

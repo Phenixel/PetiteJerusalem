@@ -53,6 +53,10 @@ const PRUNED_DIRS = [
   // Les traductions (docs/traductions.md) : le Talmud anglais pèse à lui seul
   // plus que tous les textes hébreux. Lues en ligne, comme les corpus.
   "texts/traductions",
+  // The "what's new" videos (useWhatsNew): a few megabytes per language, read
+  // from the site once after an update; embedded, they would weigh on every
+  // install for a minute and a half of viewing.
+  "videos",
 ].map((d) => join(root, d));
 // Ce que seul le site sert : plan du site, fichiers pour les robots, logo des
 // données structurées, preuve de propriété pour un moteur, manifeste des

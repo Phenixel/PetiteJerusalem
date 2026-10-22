@@ -107,6 +107,51 @@ const en: LocaleMessages = {
     accept: "Accept",
     decline: "Decline",
   },
+  // The video of what changed, once after an update (useWhatsNew).
+  whatsNew: {
+    ariaLabel: "What's new in 4.0",
+    close: "Close",
+    soundOn: "Turn the sound on",
+    again: "Watch again",
+    done: "Let's go",
+    skip: "Skip",
+    failed: "The video could not load. Check your connection and try again.",
+    more: "Learn more",
+  },
+  help: {
+    title: "Help center",
+    subtitle: "Guides and videos to get to know the app, one part at a time.",
+    seoDescription:
+      "The Petite Jerusalem guides: the home page, the Siddur, reading, My journey, prayer times and reading chains, explained and shown.",
+    whatsNew: {
+      title: "What's new in {version}",
+      text: "Where the tabs went, what is new: all in one video.",
+      watch: "Watch",
+    },
+    videos: "Videos",
+    watchOnYoutube: "Watch on YouTube",
+    guides: "Guides",
+    replay: "See again",
+    more: "More guides",
+    // The page of a version (/aide/nouveautes/4.0): its video, passage by
+    // passage, and the questions each one raises (content/help/versions.ts).
+    faq: { title: "Frequently asked questions" },
+    versions: "Versions",
+    version: {
+      row: "{version}, passage by passage",
+      whole: "The whole video",
+      kicker: "Passage by passage",
+      passages: "The passages of the video",
+      play: "Watch this passage again",
+      playLabel: "Watch “{title}” again, at {time}",
+      seoDescription:
+        "What's new in Petite Jérusalem {version}, passage by passage: the video, and the answers to the questions it raises.",
+    },
+    contact: {
+      title: "A question left unanswered?",
+      text: "Write to us: the team answers you in the app.",
+    },
+  },
   onboarding: {
     ariaLabel: "Introduction to Petite Jérusalem",
     ariaProgress: "Introduction progress",

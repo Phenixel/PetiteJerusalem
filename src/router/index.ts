@@ -55,6 +55,10 @@ const router = createRouter({
     // Un texte rouvert depuis la table d'étude : le lecteur le replace à
     // l'endroit où on l'avait laissé, une fois rendu (useReadingTable).
     if (hasTableRestore(to.path)) return false;
+    // A question of the help center (/aide#compte) or a passage of a
+    // version's page (/aide/nouveautes/4.0#calme): the page opens it and
+    // brings it into view itself (HelpFaq, HelpVersionPage).
+    if ((to.name === "help" || to.name === "help-version") && to.hash) return false;
     return { top: 0 };
   },
 });
