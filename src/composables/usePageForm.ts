@@ -46,16 +46,32 @@ export function usePageForm() {
 /**
  * Le nom et l'explication de chaque forme, en clés écrites en clair : le test
  * des clés de traduction (i18nUsage.test.ts) les cherche telles quelles.
+ * `beta` : la forme n'est pas encore sûre partout (des pages de Vilna restent
+ * à relire), le bouton le dit par une pastille.
  */
 export const PAGE_FORM_LABELS = {
   daf: {
     label: "textReading.pageForm.daf",
     hint: "textReading.pageForm.dafHint",
     icon: "book-open",
+    beta: "textReading.pageForm.beta",
   },
   scroll: {
     label: "textReading.pageForm.scroll",
     hint: "textReading.pageForm.scrollHint",
     icon: "scroll",
+    beta: null,
   },
 } as const;
+
+/**
+ * Le nom de la forme pour les lecteurs d'écran : la pastille « bêta » est
+ * dans le bouton, mais son aria-label la masquerait.
+ */
+export function pageFormAriaLabel(
+  kind: keyof typeof PAGE_FORM_LABELS,
+  t: (key: string) => string,
+): string {
+  const { label, beta } = PAGE_FORM_LABELS[kind];
+  return beta ? `${t(label)} (${t(beta)})` : t(label);
+}

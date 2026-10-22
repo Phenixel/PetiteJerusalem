@@ -1660,6 +1660,7 @@ const fr = {
     phonetic: "Phonétique",
     pageForm: {
       daf: "Page",
+      beta: "Bêta",
       scroll: "Tikoun",
       pointed: "Voyelles",
       dafHint: "La page de Vilna : la guemara au centre, Rachi et Tossafot autour",

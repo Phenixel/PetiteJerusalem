@@ -113,7 +113,7 @@ import ReadingNav from "../../components/ReadingNav.vue";
 import TalmudDafText from "../../components/TalmudDafText.vue";
 import TalmudDafPages from "../../components/TalmudDafPages.vue";
 import TorahScroll from "../../components/TorahScroll.vue";
-import { PAGE_FORM_LABELS, usePageForm } from "../../composables/usePageForm";
+import { PAGE_FORM_LABELS, pageFormAriaLabel, usePageForm } from "../../composables/usePageForm";
 import { scrollPointed, setScrollPointed } from "../../composables/useScrollPointing";
 import {
   usePassageCommentaries,
@@ -2713,13 +2713,18 @@ watch(textId, (_, previousTextId) => {
                 readingMode === 'page' ? 'bg-surface text-primary shadow-sm' : 'text-text-secondary'
               "
               :aria-pressed="readingMode === 'page'"
-              :aria-label="t(PAGE_FORM_LABELS[pageFormKind].label)"
+              :aria-label="pageFormAriaLabel(pageFormKind, t)"
               :title="t(PAGE_FORM_LABELS[pageFormKind].hint)"
             >
               <AppIcon :name="PAGE_FORM_LABELS[pageFormKind].icon" :size="14" />
               <span :class="readingMode === 'page' ? '' : 'hidden sm:inline'">{{
                 t(PAGE_FORM_LABELS[pageFormKind].label)
               }}</span>
+              <span
+                v-if="PAGE_FORM_LABELS[pageFormKind].beta"
+                class="rounded-full bg-primary/10 px-1.5 text-[10px] font-semibold leading-4 text-primary"
+                >{{ t(PAGE_FORM_LABELS[pageFormKind].beta!) }}</span
+              >
             </button>
             <button
               v-if="canTransliterate"
