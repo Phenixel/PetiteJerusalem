@@ -58,9 +58,10 @@ const PRUNED_DIRS = [
   // install for a minute and a half of viewing.
   "videos",
 ].map((d) => join(root, d));
-// Ce que seul le site sert : plan du site, fichiers pour les robots, image
-// de partage, preuve de propriété pour un moteur, manifeste des textes (l'app
-// va le chercher en ligne, jamais dans son bundle), version publiée.
+// Ce que seul le site sert : plan du site, fichiers pour les robots, logo des
+// données structurées, preuve de propriété pour un moteur, manifeste des
+// textes (l'app va le chercher en ligne, jamais dans son bundle), version
+// publiée.
 const PRUNED_FILES = [
   "sitemap.xml",
   "sitemap-pages.xml",
@@ -70,13 +71,14 @@ const PRUNED_FILES = [
   "robots.txt",
   "llms.txt",
   "llms-full.txt",
-  "og-image.jpg",
+  "logo.png",
   "7928be0e14242cf92e167550affa3215.txt",
   "texts/manifest.json",
   "app-version.json",
 ].map((f) => join(root, f));
-/** Ce que seul le site sert : les preuves des liens d'application. */
-const WEB_ONLY_DIRS = [".well-known"].map((d) => join(root, d));
+/** Web only: the app links proofs, and the share images (og/), read by
+ *  social networks on the site, never by the app. */
+const WEB_ONLY_DIRS = [".well-known", "og"].map((d) => join(root, d));
 
 /** Tous les fichiers sous `dir`, récursivement. */
 function allFiles(dir) {

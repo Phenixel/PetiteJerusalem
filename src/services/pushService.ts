@@ -157,6 +157,20 @@ class PushService {
   }
 
   /**
+   * Stops the evening reminder of the server, and only it: the token stays,
+   * since the answers of the support (functions/src/feedback.ts) go through
+   * it too. Used once its settings have moved to the device (Mon parcours
+   * reminders, see parcoursReminderService).
+   */
+  async stopServerReminder(userId: string): Promise<void> {
+    await setDoc(
+      doc(db, "userPreferences", userId),
+      { pushReminderEnabled: false, pushReminderPlace: null },
+      { merge: true },
+    );
+  }
+
+  /**
    * À la déconnexion : l'appareil cesse de recevoir les rappels du compte qui
    * part. Sans cela, le jeton restait dans `fcmTokens` de ce compte, et le
    * téléphone recevait ses rappels (avec ses lectures restantes) une fois

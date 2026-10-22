@@ -185,6 +185,9 @@ function ensureAudio(): HTMLAudioElement {
       if (pendingSeekSeconds < audio.duration) audio.currentTime = pendingSeekSeconds;
       pendingSeekSeconds = null;
     }
+    // The bars already showed the position asked for (see load and
+    // seekRatio): they settle on the one actually reached.
+    currentTime.value = audio.currentTime;
     updateMediaPosition();
   });
   // Un saut ou un changement de vitesse : le système recale sa barre.
@@ -192,11 +195,13 @@ function ensureAudio(): HTMLAudioElement {
   audio.addEventListener("ratechange", updateMediaPosition);
   audio.addEventListener("timeupdate", () => {
     if (!audio) return;
-    // timeupdate tire ~4×/s : publier chaque tick re-rendrait les composants
-    // abonnés (mini-lecteur monté sur toutes les pages) 4×/s pendant toute
-    // l'écoute. L'affichage est à la seconde (formatTime, barre de progression),
-    // on ne publie donc qu'au changement de seconde, les seeks passent aussi.
-    if (Math.abs(audio.currentTime - currentTime.value) >= 1) {
+    // timeupdate fires about 4 times a second: publishing every tick would
+    // re-render the subscribed components (the mini player, mounted on every
+    // page) 4 times a second for the whole listening. The display is to the
+    // second (formatTime, the progress bar), so we publish only when the
+    // second shown changes, at the moment it changes. Waiting for a full
+    // second of gap instead left the time shown up to a second behind.
+    if (Math.floor(audio.currentTime) !== Math.floor(currentTime.value)) {
       currentTime.value = audio.currentTime;
     }
     recordCurrent();
@@ -243,9 +248,7 @@ function ensureAudio(): HTMLAudioElement {
     seekbackward: () => skip(-15),
     seekforward: () => skip(30),
     seekto: ({ seekTime }) => {
-      if (audio && isLoaded.value && typeof seekTime === "number") {
-        audio.currentTime = Math.max(0, Math.min(duration.value, seekTime));
-      }
+      if (isLoaded.value && typeof seekTime === "number") seekTo(seekTime);
     },
     previoustrack: () => previous(),
     nexttrack: () => {
@@ -261,18 +264,20 @@ function ensureAudio(): HTMLAudioElement {
 function load(newTrack: AudioTrack) {
   const el = ensureAudio();
   if (track.value?.src === newTrack.src) {
-    // Même source : on rafraîchit juste les métadonnées (titre, slug).
+    // Same source: only refresh the metadata (title, slug).
     track.value = newTrack;
     updateMediaSession();
     return;
   }
   track.value = newTrack;
-  currentTime.value = 0;
+  pendingSeekSeconds = newTrack.slug ? resumePosition(newTrack.slug) : null;
+  // A class resumed shows where it resumes at once, not 0:00 until its
+  // metadata arrives.
+  currentTime.value = pendingSeekSeconds ?? 0;
   duration.value = 0;
   isLoaded.value = false;
   pendingSeekRatio = null;
   lastRecorded = 0;
-  pendingSeekSeconds = newTrack.slug ? resumePosition(newTrack.slug) : null;
   el.src = newTrack.src;
   el.volume = volume.value;
   el.playbackRate = playbackRate.value;
@@ -344,13 +349,13 @@ function playAt(index: number) {
 }
 
 /**
- * Comme partout : au-delà des premières secondes, revient au début du
- * morceau ; au début, passe au précédent de la file.
+ * As everywhere: past the first seconds, goes back to the start of the
+ * track; at the start, moves to the previous one in the queue.
  */
 function previous() {
   const before = queue.value[queueIndex.value - 1];
   if (audio && (audio.currentTime > 5 || !before)) {
-    audio.currentTime = 0;
+    seekTo(0);
     return;
   }
   if (!before) return;
@@ -366,18 +371,37 @@ function toggle() {
   else play();
 }
 
+/**
+ * Moves the playback to this second, and the bars with it at once. The
+ * element answers the new position as soon as it is set, but `timeupdate`
+ * only fires once the seek has landed, when the audio there has been
+ * downloaded: until then the seek bar, released by the finger, fell back to
+ * the old position, then jumped to the new one. The system's bar
+ * (notification, lock screen) is told at once too, not on `seeked`.
+ */
+function seekTo(seconds: number) {
+  if (!audio) return;
+  const target = Math.max(0, Math.min(duration.value, seconds));
+  audio.currentTime = target;
+  currentTime.value = target;
+  updateMediaPosition();
+}
+
 function skip(seconds: number) {
   if (!audio || !isLoaded.value) return;
-  audio.currentTime = Math.max(0, Math.min(duration.value, audio.currentTime + seconds));
+  seekTo(audio.currentTime + seconds);
 }
 
 function seekRatio(ratio: number) {
   const clamped = Math.max(0, Math.min(1, ratio));
   if (!audio || !isLoaded.value) {
+    // Applied on loadedmetadata; until then, the bar stays where it was
+    // released (its length is the one the catalog measured).
     pendingSeekRatio = clamped;
+    currentTime.value = clamped * (track.value?.duration || 0);
     return;
   }
-  audio.currentTime = clamped * duration.value;
+  seekTo(clamped * duration.value);
 }
 
 function setVolume(v: number) {
@@ -422,8 +446,10 @@ function close() {
 }
 
 const progress = computed(() => {
-  if (!duration.value) return 0;
-  return (currentTime.value / duration.value) * 100;
+  // Like PlayerSeek: the measured length while the metadata is on its way.
+  const total = duration.value || track.value?.duration || 0;
+  if (!total) return 0;
+  return Math.min(100, (currentTime.value / total) * 100);
 });
 
 const isMuted = computed(() => volume.value === 0);

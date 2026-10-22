@@ -4,9 +4,10 @@ import type { MomentId } from "./model";
  * Les moments de la journée, et l'ordre dans lequel le paquet de l'accueil
  * présente les tâches.
  *
- * Les bornes suivent le soleil quand on connaît le lieu : le matin jusqu'à
- * 'hatsot, l'après-midi jusqu'à la chkia, le soir ensuite, et le coucher à
- * partir de 22 h. Sans horaires, midi et 18 h en tiennent lieu.
+ * Les bornes suivent le soleil quand on connaît le lieu : le matin de l'aube
+ * à 'hatsot, l'après-midi jusqu'à la chkia, le soir ensuite, et le coucher à
+ * partir de 22 h, jusqu'à l'aube (la règle de la nuit, services/nightBounds).
+ * Sans horaires, midi, 18 h et 4 h en tiennent lieu.
  */
 
 /** Les moments qui ont une heure, dans l'ordre de la journée. */
@@ -16,16 +17,19 @@ export const TIMED_MOMENTS: readonly MomentId[] = ["morning", "afternoon", "even
 export interface DayTimes {
   chatzot: Date;
   sunset: Date;
+  /** L'aube de ce matin : avant elle, on est encore au coucher de la veille. */
+  dawn?: Date | null;
 }
 
 const BEDTIME_HOUR = 22;
-/** Avant 4 h, on est encore au coucher de la veille. */
+/** Sans aube connue, avant 4 h, on est encore au coucher de la veille. */
 const NIGHT_END_HOUR = 4;
 
 /** Le moment d'un instant. */
 export function momentAt(now: Date, times: DayTimes | null): MomentId {
   const hour = now.getHours();
-  if (hour >= BEDTIME_HOUR || hour < NIGHT_END_HOUR) return "bedtime";
+  const beforeDawn = times?.dawn ? now < times.dawn : hour < NIGHT_END_HOUR;
+  if (hour >= BEDTIME_HOUR || beforeDawn) return "bedtime";
   const chatzot = times?.chatzot ?? at(now, 12);
   const sunset = times?.sunset ?? at(now, 18);
   if (now < chatzot) return "morning";

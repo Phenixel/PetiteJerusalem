@@ -98,7 +98,7 @@ import { encadrementOf } from "../../services/encadrementService";
 import LiturgyText from "./LiturgyText.vue";
 import TefilaDays from "./TefilaDays.vue";
 import ReadingEncadrement from "../../components/ReadingEncadrement.vue";
-import SlihotHours from "./SlihotHours.vue";
+import TefilaZman from "./TefilaZman.vue";
 import ReadingMenu from "../../components/ReadingMenu.vue";
 import FeatureTour, { type TourStep } from "../../components/FeatureTour.vue";
 import MockPinch from "../../components/mock/MockPinch.vue";
@@ -115,7 +115,10 @@ import TalmudDafPages from "../../components/TalmudDafPages.vue";
 import TorahScroll from "../../components/TorahScroll.vue";
 import { PAGE_FORM_LABELS, usePageForm } from "../../composables/usePageForm";
 import { scrollPointed, setScrollPointed } from "../../composables/useScrollPointing";
-import { usePassageCommentaries } from "../../composables/usePassageCommentaries";
+import {
+  usePassageCommentaries,
+  type CommentaryLangPicker,
+} from "../../composables/usePassageCommentaries";
 import { sideBySide } from "../../composables/useSideBySide";
 import type { CommentarySummary } from "../../composables/useReadingSelection";
 import CommentaryPanel from "../../components/CommentaryPanel.vue";
@@ -137,7 +140,7 @@ const OfficeDoneCard = defineAsyncComponent(
   () => import("../../components/parcours/OfficeDoneCard.vue"),
 );
 import { useToast } from "../../composables/useToast";
-import { useReadingSize } from "../../composables/useReadingSize";
+import { usePageFormSize, useReadingSize } from "../../composables/useReadingSize";
 import { readingProgressService } from "../../services/readingProgressService";
 import type { Bookmark, ReadingPosition } from "../../services/readingProgressService";
 import { isNativeApp } from "../../composables/useNativeApp";
@@ -150,6 +153,7 @@ import { isSansTahanoun } from "../../composables/useSansTahanoun";
 import { nightWithoutTachanun, withoutTachanun } from "../../services/tachanun";
 import { isWalledCityPlace, pastChatzotNight } from "../../services/zmanimService";
 import { useKeepAwake } from "../../composables/useKeepAwake";
+import { enterPrayer, leavePrayer, PRAYER_QUIET_DELAY_MS } from "../../composables/usePrayerQuiet";
 import { analyticsService } from "../../services/analyticsService";
 import { haptic } from "../../services/haptics";
 import { useLocalePath } from "../../composables/useLocalePath";
@@ -181,6 +185,8 @@ const { t, locale } = useI18n();
 const { confirm } = useConfirm();
 const toast = useToast();
 const readingSize = useReadingSize();
+// The form of the page (daf, Sefer Torah) has a size of its own.
+const pageFormSize = usePageFormSize();
 const { sectionLabel, blockLabel, dafLabel, headingLabel } = useTextLabels();
 // App native : pincer dans la page agrandit le texte lu, pas la page.
 useReadingPinch();
@@ -213,7 +219,6 @@ const gesturesTip = computed<TourStep[]>(() => {
   if (!isLiturgyText.value) {
     steps.push({
       key: "bookmark",
-      icon: "bookmark",
       title: t("tips.reading.bookmark.title"),
       text: t("tips.reading.bookmark.text"),
       target: () => readingRoot.value?.querySelector<HTMLElement>("[data-line]") ?? null,
@@ -404,7 +409,7 @@ const encadrement = computed(() => {
   const passages = encadrementOf(textEntry.value ?? undefined);
   return passages?.place === "text" ? passages : null;
 });
-// Les Sli'hot, seul texte à afficher sa plage horaire (voir SlihotHours).
+// Les Sli'hot, seul texte à afficher sa plage horaire (voir TefilaZman).
 // Elles vivent dans les Moadim avec les autres textes de fête ; c'est le
 // texte qu'on reconnaît ici, pas son corpus.
 const slihotEntry = entryByCorpusSlug("moadim", "slihot");
@@ -636,7 +641,15 @@ function setReadingMode(mode: ReadingMode): void {
 // Rachi et Tossafot (guemara), Rachi (paracha) du chapitre ouvert : chargés au
 // premier passage touché ou à l'ouverture de la page du daf, jamais avant ;
 // la lecture seule ne les attend pas (usePassageCommentaries).
-const commentaries = usePassageCommentaries(textEntry, currentSection);
+// The translation on: the commentaries that have one (Rashi on the Torah)
+// come translated too, in the language the text would take.
+const commentaryLangPicker = computed<CommentaryLangPicker | null>(() => {
+  if (!translationShown.value || isLiturgyText.value) return null;
+  const lang = locale.value;
+  const choice = translationLangChoice.value;
+  return (available) => pickTranslationLang(available, lang, choice);
+});
+const commentaries = usePassageCommentaries(textEntry, currentSection, commentaryLangPicker);
 watch(
   () => (showPageForm.value && pageFormKind.value === "daf" ? currentSection.value : null),
   (section) => {
@@ -665,6 +678,22 @@ useAutoScroll(() => currentSection.value !== null);
 // L'écran ne s'éteint pas tant qu'un texte est ouvert : un office se dit sans
 // toucher au téléphone, et la veille tomberait au milieu de la 'amida.
 useKeepAwake(() => currentSection.value !== null);
+// A service that opens (Cha'harit, Min'ha, Arvit): the phone's quiet modes
+// come down from the top of the screen (usePrayerQuiet, Android app only),
+// once the text is shown, so that the app pushed down is the tefila. Left,
+// the phone goes back to how it was before.
+watch(
+  () => (isTefila.value && currentSection.value !== null ? textId.value : null),
+  (id, _previous, onCleanup) => {
+    if (!id) return;
+    const timer = window.setTimeout(() => void enterPrayer(), PRAYER_QUIET_DELAY_MS);
+    onCleanup(() => {
+      window.clearTimeout(timer);
+      leavePrayer();
+    });
+  },
+  { immediate: true },
+);
 // Un texte long se cherche par ses divisions : les sections d'un office
 // ('Amida, Chéma, ta'hanoun…), les montées d'une paracha, les dafim d'une
 // guemara. La page les publie au menu de lecture (ReadingMenu), qui remplace
@@ -2509,7 +2538,6 @@ watch(textId, (_, previousTextId) => {
       <div v-if="showResumeBanner" class="mb-6 p-4 card flex items-center justify-between gap-3">
         <div class="min-w-0">
           <p class="text-sm font-semibold text-text-primary flex items-center gap-2">
-            <AppIcon name="book-open" :size="15" class="text-primary flex-shrink-0" />
             {{ t("textReading.resumeTitle") }}
           </p>
           <p class="text-sm text-text-secondary mt-0.5">{{ resumePlace }}</p>
@@ -2580,8 +2608,8 @@ watch(textId, (_, previousTextId) => {
 
       <!-- Reading a passage -->
       <div v-else-if="currentSection">
-        <!-- Sli'hot : la plage horaire où elles se disent, avant le texte. -->
-        <SlihotHours v-if="isSlihot" />
+        <!-- Sli'hot: the window in which they are said, before the text. -->
+        <TefilaZman v-if="isSlihot" zman="slihot" />
         <!-- Reservation bar (session mode) -->
         <SessionReservationCard
           v-if="showReservationBar"
@@ -2662,7 +2690,7 @@ watch(textId, (_, previousTextId) => {
           >
             <button
               @click="setReadingMode('hebrew')"
-              class="px-2.5 sm:px-3 py-1 rounded-control text-sm font-medium transition-colors"
+              class="px-2.5 sm:px-3 py-1 rounded-segment text-sm font-medium transition-colors"
               :class="
                 readingMode === 'hebrew'
                   ? 'bg-surface text-primary shadow-sm'
@@ -2680,7 +2708,7 @@ watch(textId, (_, previousTextId) => {
             <button
               v-if="pageFormKind"
               @click="setReadingMode('page')"
-              class="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-control text-sm font-medium transition-colors"
+              class="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-segment text-sm font-medium transition-colors"
               :class="
                 readingMode === 'page' ? 'bg-surface text-primary shadow-sm' : 'text-text-secondary'
               "
@@ -2696,7 +2724,7 @@ watch(textId, (_, previousTextId) => {
             <button
               v-if="canTransliterate"
               @click="setReadingMode('phonetic')"
-              class="px-2.5 sm:px-3 py-1 rounded-control text-sm font-medium transition-colors"
+              class="px-2.5 sm:px-3 py-1 rounded-segment text-sm font-medium transition-colors"
               :class="
                 readingMode === 'phonetic'
                   ? 'bg-surface text-primary shadow-sm'
@@ -2779,20 +2807,20 @@ watch(textId, (_, previousTextId) => {
         <div
           v-if="showPageForm && pageFormKind === 'daf'"
           class="ph-no-deadclick"
-          :style="{ '--reading-scale': readingSize.scale.value }"
+          :style="{ '--reading-scale': pageFormSize.scale.value }"
         >
           <TalmudDafPages
             :tractate="textEntry ? tractateSlug(tractateFromLink(textEntry.link)) : null"
             :blocks="currentSection.dafBlocks ?? []"
             :meforshim="commentaries.talmud.value"
             :state="dafMeforshimState"
-            :scale="readingSize.scale.value"
+            :scale="pageFormSize.scale.value"
           />
         </div>
         <div
           v-else-if="showPageForm && pageFormKind === 'scroll'"
           class="ph-no-deadclick"
-          :style="{ '--reading-scale': readingSize.scale.value }"
+          :style="{ '--reading-scale': pageFormSize.scale.value }"
         >
           <TorahScroll
             :text-id="textEntry?.id ?? null"
@@ -2962,25 +2990,19 @@ watch(textId, (_, previousTextId) => {
           class="mt-12"
         />
 
-        <!-- Sidour : à la fin de Min'ha, un geste suffit pour enchaîner
-             avec Arvit. -->
+        <!-- Sidour: at the end of Min'ha, one gesture moves on to Arvit. A
+             place to go, not a piece of data: no frame, no icon, the name in
+             the theme color and the reason under it. -->
         <RouterLink
           v-if="sidourNextEntry"
           :to="hubPath(sidourNextEntry)"
-          class="mt-12 card card-hover p-4 flex items-center justify-between gap-3 group"
+          class="mt-12 block text-center group"
         >
-          <span class="flex items-center gap-3 min-w-0">
-            <AppIcon name="moon" :size="18" class="text-primary flex-shrink-0" />
-            <span class="min-w-0">
-              <span
-                class="block font-semibold text-text-primary group-hover:text-primary transition-colors"
-              >
-                {{ t("textReading.sidourNext", { name: latinName(sidourNextEntry) }) }}
-              </span>
-              <span class="block text-sm text-text-secondary">
-                {{ t("textReading.sidourNextHint") }}
-              </span>
-            </span>
+          <span class="block font-semibold text-primary group-hover:underline underline-offset-4">
+            {{ t("textReading.sidourNext", { name: latinName(sidourNextEntry) }) }}
+          </span>
+          <span class="mt-0.5 block text-sm text-text-secondary">
+            {{ t("textReading.sidourNextHint") }}
           </span>
         </RouterLink>
 
@@ -3056,16 +3078,20 @@ watch(textId, (_, previousTextId) => {
         :steps="gesturesTip"
         :after="['reading-menu']"
       />
-      <!-- Le panneau d'étude : les commentaires du passage, qui suivent la
-           lecture tant qu'il est ouvert. -->
-      <CommentaryPanel
-        v-if="studyLine !== null"
-        :place="placeLabel(positionSection, studyLine)"
-        :groups="studyGroups"
-        :state="commentaries.state.value"
-        :style="{ '--reading-scale': readingSize.scale.value }"
-        @close="closeStudy"
-      />
+      <!-- The study panel: the passage's commentaries, which follow the
+           reading while it is open. On a phone it rises from the bottom and
+           goes back down (BottomSheet.vue). -->
+      <Transition name="bottom-sheet">
+        <CommentaryPanel
+          v-if="studyLine !== null"
+          :place="placeLabel(positionSection, studyLine)"
+          :groups="studyGroups"
+          :state="commentaries.state.value"
+          :sources="commentaries.sources.value"
+          :style="{ '--reading-scale': readingSize.scale.value }"
+          @close="closeStudy"
+        />
+      </Transition>
     </template>
   </main>
 </template>

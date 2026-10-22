@@ -309,6 +309,10 @@ const fr = {
         title: "Les réglages de lecture",
         text: "Le second rond porte le défilement automatique, le partage du texte et le formulaire pour nous écrire.",
       },
+      settingsAlone: {
+        title: "Les réglages de lecture",
+        text: "Ce bouton porte la taille du texte, le défilement automatique, le retour en haut de page, le partage du texte et le formulaire pour nous écrire.",
+      },
       download: {
         title: "Lire hors ligne",
         text: "Cette commande télécharge le texte sur l'appareil : il s'ouvre ensuite sans réseau. Une coche dit qu'il y est.",
@@ -1269,6 +1273,8 @@ const fr = {
     qrError: "Erreur lors de la génération du QR code",
     inviteTehilim:
       "Rejoignez la chaîne de Tehilim « {name} » 📖 Chacun lit quelques psaumes et l'on termine ensemble. Réservez les vôtres ici :",
+    inviteNichmat:
+      "Rejoignez « {name} » 🙏 40 personnes disent Nichmat chaque jour pendant 40 jours. Prenez une place ici :",
     inviteStudy:
       "Rejoignez l'étude partagée « {name} » 📖 Réservez vos passages et étudions ensemble :",
     titleChiour: "Partager ce chiour",
@@ -1394,6 +1400,54 @@ const fr = {
     creation: {
       text: "Pour un malade, ou un proche disparu ? Son nom peut aussi être lu dans la chaîne perpétuelle.",
       link: "Proposer son nom",
+    },
+  },
+  // Nichmat 40: forty readers, forty days (docs/nichmat-40-jours.md).
+  nichmat: {
+    someone: "Quelqu'un",
+    statusLabel: "Où en sont les 40 jours",
+    phase: {
+      waiting: "En attente des 40 lecteurs",
+      waitingText: "Les 40 jours commenceront le lendemain du jour où la 40e place sera prise.",
+      upcoming: "Les 40 jours commencent le {date}",
+      running: "Jour {day} sur {total}",
+      done: "Les 40 jours sont terminés. Tizkou lemitsvot !",
+    },
+    dates: "Du {start} au {end}",
+    chipWaiting: "Commence quand les 40 places sont prises",
+    dayChip: "Jour {day}/{total}",
+    placesTaken: "{taken} places prises sur {total}",
+    readsDone: "{reads} lectures sur {due} à ce jour",
+    myPlace: "Votre place : n° {place}",
+    myReads: "Aucun jour lu sur {total} | Un jour lu sur {total} | {count} jours lus sur {total}",
+    readText: "Lire Nichmat",
+    readToday: "J'ai dit Nichmat aujourd'hui",
+    readTodayDone: "Nichmat dit aujourd'hui",
+    notStarted: "Les 40 jours n'ont pas encore commencé.",
+    myDays: "Vos 40 jours",
+    dayLabel: "Jour {day}",
+    leave: "Libérer ma place",
+    leaveConfirm: "Libérer votre place ?",
+    takeTitle: "Prendre une place",
+    takeText:
+      "Il reste une place sur 40. Qui la prend s'engage à dire Nichmat chaque jour, pendant les 40 jours. | Il reste {count} places sur 40. Qui en prend une s'engage à dire Nichmat chaque jour, pendant les 40 jours.",
+    take: "Prendre une place",
+    placeTaken: "Place n° {place} prise. Tizkou lemitsvot !",
+    full: "Les 40 places sont prises.",
+    readers: "Les lecteurs ({taken}/{total})",
+    readerReads: "{read}/{due} jours",
+    freePlaces: "Encore une place libre | Encore {count} places libres",
+    guestMessage: "Indiquez votre nom : il s'affiche à votre place, dans la liste des lecteurs.",
+    offline: "Pas de connexion : une place ne se prend pas hors ligne.",
+    placeNumber: "Place {place}",
+    todayRow: "Nichmat d'aujourd'hui (jour {day})",
+    create: {
+      hint: "40 personnes disent Nichmat kol 'haï chaque jour, pendant 40 jours : chacune prend une place et coche ses jours.",
+      startLabel: "Début des 40 jours",
+      onDate: "À une date choisie",
+      startDay: "Premier jour",
+      whenFull: "Dès que les 40 places sont prises",
+      whenFullHint: "Les 40 jours commencent le lendemain du jour où la 40e place est prise.",
     },
   },
   progressBar: {
@@ -1809,31 +1863,15 @@ const fr = {
       teshuva: "Ajout des dix jours de pénitence",
       zimoun: "Zimoun",
     },
-    slihotHours: "Horaire des Sli'hot",
-    slihotRange: "De {start} à {end}",
-    slihotHoursInfo: "À propos de cet horaire",
-    slihotWindowExplained:
-      "Les Sli\u2019hot se disent dans la dernière veille de la nuit, l\u2019achmoret haboker\u00a0:",
-    slihotWindowNight:
-      "À partir de hatsot, le milieu de la nuit ({start})\u00a0: c\u2019est le début de la période propice pour les dire.",
-    slihotWindowDawn:
-      "À la fin de la nuit, avant le lever du soleil ({end})\u00a0: le moment le plus recommandé, juste avant la prière du matin.",
-    slihotWindowDay:
-      "En journée, si la nuit n\u2019a pas été possible\u00a0: on peut encore les rattraper jusqu\u2019à la chkia, le coucher du soleil ({sunset}).",
-    slihotWindowPlace: "Heures pour {city}.",
     // Sidour : le parchemin (klaf) qu'on ouvre depuis le fil du texte (voir
     // KlafViewer.vue) : le pitoum haketoret écrit par un sofer, le psaume 67
     // en forme de menora.
     klaf: {
       ketoret: { open: "Voir le parchemin", title: "Pitoum haketoret sur parchemin" },
       menora: { open: "Voir la menora", title: "Le Lamnatséa'h en menora" },
-      views: "Photo ou retranscription",
-      photo: "Photo",
-      text: "Texte",
       photoAlt: "{title}, page {n}",
-      zoomIn: "Touchez la photo pour l'agrandir.",
-      zoomOut: "Touchez la photo pour la ramener à la largeur de la fenêtre.",
-      transcribed: "Retranscription du parchemin, lettre à lettre, dans l'écriture du sofer.",
+      previous: "Page précédente",
+      next: "Page suivante",
     },
     // Sidour : la direction du Kotel, ouverte depuis le titre des passages
     // qui se disent face à Jérusalem (voir KotelCompass.vue).
@@ -1853,19 +1891,25 @@ const fr = {
     kotel: {
       open: "Direction du Kotel",
       title: "Direction du Kotel",
-      intro:
-        "La 'Amida se dit face à Jérusalem : la flèche pointe vers le Kotel, le mur Occidental.",
       bearing: "{point}, à {deg}° du nord",
-      distance: "Le Kotel est à {km} km d'ici.",
-      live: "La flèche suit votre appareil : tournez-vous jusqu'à ce qu'elle pointe droit devant vous.",
+      // Under the dial, the figures in one line: the side, the angle, the
+      // distance.
+      facts: "Kotel : {point}, {deg}° · {km} km",
+      // The one line under the dial: what to do now (see docs/design.md,
+      // « The compass fills when you face the Kotel »).
+      status: {
+        turn: "Tournez-vous vers la flèche",
+        aligned: "Vous êtes face au Kotel",
+        flat: "Tenez le téléphone à plat",
+        calibrated: "Boussole calibrée",
+        lowAccuracy: "Calibrez avant de suivre la flèche",
+        searching: "Recherche du nord…",
+        locked: "Activez la boussole pour qu'elle vous guide",
+      },
       flat: "Tenez le téléphone à plat, l'écran vers le ciel : c'est à plat que la boussole s'oriente juste.",
-      fixed:
-        "Votre appareil ou votre navigateur ne permettent pas d'utiliser la boussole : le cadran garde le nord en haut, à vous de l'orienter.",
-      compassDenied: "L'accès à la boussole a été refusé : le cadran garde le nord en haut.",
+      fixed: "Pas de boussole sur cet appareil : le nord reste en haut du cadran.",
+      compassDenied: "Boussole refusée : le nord reste en haut du cadran.",
       enable: "Activer la boussole",
-      searching: "La boussole cherche le nord…",
-      locked: "Touchez « Activer la boussole » pour que la flèche suive votre appareil.",
-      flatOk: "Le téléphone est à plat : la boussole s'oriente juste.",
       calibrate: "Calibrer",
       // La précision estimée du cap, sous le cadran (voir docs/design.md,
       // « La boussole dit sa précision »).
@@ -1874,20 +1918,17 @@ const fr = {
         medium: "moyenne",
         low: "faible",
         line: "Précision {level}",
-        lineDegrees: "Précision {level}, à {deg}° près",
-        lowLine: "Précision faible : calibrez la boussole avant de la suivre.",
+        lineDegrees: "Précision {level}, ±{deg}°",
         unknown: "La flèche vous semble fausse ?",
       },
       calibration: {
-        title: "Calibrer la boussole",
-        away: "Éloignez-vous des objets en métal et des appareils électriques ; retirez l'étui s'il porte un aimant.",
-        eight:
-          "Décrivez lentement un 8 dans l'air avec le téléphone, trois ou quatre fois, en le faisant pivoter dans tous les sens.",
-        flat: "Reposez-le à plat, l'écran vers le ciel : la flèche reprend sa place.",
-        current: "Précision {level} pour l'instant : continuez le geste.",
-        done: "La boussole est calibrée.",
+        away: "Éloignez-vous du métal et retirez un étui aimanté.",
+        eight: "Dessinez un 8 dans l'air, trois ou quatre fois.",
+        flat: "Reposez le téléphone à plat.",
+        current: "Précision {level} : continuez le geste.",
+        done: "Boussole calibrée",
         unknown:
-          "Votre appareil ne dit pas sa précision : si la flèche reste fausse, refaites le geste.",
+          "Votre appareil ne dit pas sa précision : refaites le geste si la flèche semble fausse.",
         back: "Revenir à la boussole",
       },
       rose: { n: "N", e: "E", s: "S", o: "O" },
@@ -1913,14 +1954,14 @@ const fr = {
       middle: "Le haut et le bas, au centre du cadran, ne sont pas des points cardinaux.",
       live: "Le cadran suit votre appareil : tournez-vous vers le nombre du côté que vous agitez.",
     },
-    // Sidour : l'horaire d'un moment de la prière, posé avant ce qui se lit
-    // (voir TefilaZman.vue ; les clés d1..dN sont les lignes du « i »).
+    // Sidour : l'horaire d'un moment de prière, une pastille posée avant ce
+    // qui se lit, et la feuille qu'elle ouvre (voir TefilaZman.vue ; les clés
+    // d1..dN sont les lignes de la règle).
     zman: {
-      info: "À propos de cet horaire",
       place: "Heures pour {city}.",
       chaharit: {
         title: "Horaire de Cha'harit",
-        main: "De {misheyakir} à {hatsot}",
+        name: "Cha'harit",
         d1: "Dès misheyakir ({misheyakir}), quand on distingue le bleu du blanc, on peut mettre le talith et les tefilins et dire le Chéma.",
         d2: "Le moment le plus indiqué pour la Amida est le lever du soleil ({netz}), comme les vatikin.",
         d3: "La Amida se dit de préférence dans les quatre premières heures solaires, jusqu'à {tefila}.",
@@ -1928,20 +1969,20 @@ const fr = {
       },
       shema: {
         title: "Fin du Chéma",
-        main: "À dire avant {shema}",
+        name: "Chéma",
         d1: "Le Chéma se dit dans les trois premières heures solaires du jour.",
         d2: "Selon le Maguen Avraham, qui compte depuis l'aube : {shemaMGA}.",
         d3: "Selon le Gaon de Vilna, qui compte depuis le lever du soleil : {shema}. Passé l'heure, on le lit encore, mais sans sa mitsva à son heure.",
       },
       amida: {
         title: "Fin de la Amida",
-        main: "À dire avant {tefila}",
+        name: "Amida",
         d1: "La Amida du matin se dit dans les quatre premières heures solaires : {tefilaMGA} selon le Maguen Avraham, {tefila} selon le Gaon de Vilna.",
         d2: "Passé l'heure, on peut encore prier jusqu'à 'hatsot ({hatsot}), sans la récompense de la prière dite à son heure.",
       },
       minha: {
         title: "Horaire de Min'ha",
-        main: "De {minhaGuedola} à {chkia}",
+        name: "Min'ha",
         d1: "Min'ha guedola ({minhaGuedola}) : une demi-heure solaire après 'hatsot, le début du temps de Min'ha.",
         d2: "Min'ha ketana ({minhaKetana}) : le moment le plus indiqué selon la plupart des avis.",
         d3: "Plag hamin'ha ({plag}) : après lui, certains disent déjà Arvit.",
@@ -1949,10 +1990,66 @@ const fr = {
       },
       arvit: {
         title: "Horaire d'Arvit",
-        main: "À partir de {tset}",
+        name: "Arvit",
         d1: "Le Chéma du soir se dit après la sortie des étoiles ({tset}).",
         d2: "Le mieux est de prier avant 'hatsot de la nuit ({hatsotLayla}).",
         d3: "En cas d'empêchement, Arvit se dit toute la nuit, jusqu'à l'aube.",
+      },
+      slihot: {
+        title: "Horaire des Sli'hot",
+        name: "Sli'hot",
+        d1: "Les Sli\u2019hot se disent dans la dernière veille de la nuit, l\u2019achmoret haboker\u00a0:",
+        d2: "À partir de hatsot, le milieu de la nuit ({start})\u00a0: c\u2019est le début de la période propice pour les dire.",
+        d3: "À la fin de la nuit, avant le lever du soleil ({end})\u00a0: le moment le plus recommandé, juste avant la prière du matin.",
+        d4: "En journée, si la nuit n\u2019a pas été possible\u00a0: on peut encore les rattraper jusqu\u2019à la chkia, le coucher du soleil ({sunset}).",
+      },
+      pill: {
+        before: "{name} à partir de {time}",
+        preferred: "{name}, de préférence avant {time}",
+        during: "{name} jusqu'à {time}",
+        after: "{name}\u00a0: heure passée ({time})",
+      },
+      left: "encore {duration}",
+      now: "Maintenant",
+      arc: {
+        sunrise: "Lever",
+        sunset: "Chkia",
+      },
+      legend: {
+        window: "Le bon moment",
+        outside: "Hors de son temps",
+      },
+      marks: {
+        alot: "Aube (alot hacha'har)",
+        misheyakir: "Misheyakir",
+        netz: "Lever du soleil (netz)",
+        shemaMGA: "Fin du Chéma, Maguen Avraham",
+        shema: "Fin du Chéma, Gaon de Vilna",
+        tefilaMGA: "Fin de la Amida, Maguen Avraham",
+        tefila: "Fin de la Amida, Gaon de Vilna",
+        hatsot: "'Hatsot",
+        minhaGuedola: "Min'ha guedola",
+        minhaKetana: "Min'ha ketana",
+        plag: "Plag hamin'ha",
+        chkia: "Chkia, le coucher du soleil",
+        tset: "Sortie des étoiles",
+        hatsotLayla: "'Hatsot de la nuit",
+      },
+      short: {
+        alot: "aube",
+        misheyakir: "misheyakir",
+        netz: "netz",
+        shemaMGA: "MGA",
+        shema: "Chéma",
+        tefilaMGA: "MGA",
+        tefila: "Amida",
+        hatsot: "'hatsot",
+        minhaGuedola: "guedola",
+        minhaKetana: "ketana",
+        plag: "plag",
+        chkia: "chkia",
+        tset: "étoiles",
+        hatsotLayla: "'hatsot",
       },
     },
     // Sidour : à la fin de Min'ha, Arvit est à un geste.
@@ -2004,26 +2101,10 @@ const fr = {
     dismiss: "Masquer ce message",
   },
   notifications: {
-    title: "Rappels de lecture",
-    description: "Recevez une notification tant que votre lecture quotidienne n'est pas terminée.",
-    enable: "Activer les rappels",
-    dailyOption: "Rappel à heure fixe",
-    dailyOptionHint: "Chaque jour, à l'heure de votre choix.",
-    sunsetOption: "{minutes} minutes avant la chkia",
-    sunsetOptionHint: "Un dernier appel si la lecture n'est toujours pas faite.",
-    sunsetToday: "Chkia aujourd'hui à {time} ({place})",
-    pickAtLeastOne: "Choisissez au moins un rappel.",
-    pickTime: "Choisir l'heure",
     pickHour: "Choisir l'heure",
     pickMinute: "Choisir les minutes",
-    summaryDaily: "tous les jours à {time}",
-    summarySunset: "{minutes} minutes avant la chkia",
-    summaryJoin: ", et ",
-    enabledToast: "Rappels activés : {reminders}.",
-    disabledToast: "Rappels désactivés.",
     permissionDenied:
       "Les notifications sont bloquées pour cette application. Autorisez-les dans les réglages du téléphone, puis réessayez.",
-    error: "Impossible de modifier le réglage des notifications. Réessayez.",
   },
   chneiMikra: {
     today: "Aujourd'hui",
@@ -2073,10 +2154,8 @@ const fr = {
       "Le Sidour en ligne, en hébreu avec la phonétique : Cha'harit, Min'ha, Arvit, le Birkat Hamazon et les brahot, les Sli'hot et les textes des fêtes. L'office du moment en tête.",
     placeLink: "Horaires de {place}",
     now: "En ce moment",
-    next: "Prochain office",
     tonight: "Ce soir",
     until: "jusqu'à {time}",
-    from: "à partir de {time}",
     nowPill: "en ce moment",
     // La rangée d'outils, sous la carte du moment (voir content/sidourTools).
     tools: { label: "Outils" },
@@ -2110,10 +2189,10 @@ const fr = {
     },
     slihot: {
       now: "Avant Cha'harit, jusqu'au lever du soleil à {time}",
-      tonight: "Cette nuit, de {start} à {end}",
     },
-    // La carte de la lune, les nuits où elle se bénit.
+    // The card of the moon, and of the bedtime Chema.
     thisNight: "Cette nuit",
+    chema: { meta: "Avant de dormir" },
     halevana: {
       until: "Jusqu'au {date}",
       lineNow: "Cette nuit, jusqu'au {date}",
@@ -2151,6 +2230,37 @@ const fr = {
       tichri: "Yamim Noraim",
       souccot: "Souccot",
       hanouka: "'Hanouka",
+    },
+  },
+  // The phone's quiet modes, above the app lowered when a tefila opens
+  // (PrayerQuietPanel.vue).
+  prayerQuiet: {
+    title: "Avant de prier",
+    modes: {
+      dnd: "Ne pas déranger",
+      silent: "Silencieux",
+      vibrate: "Vibreur",
+    },
+    on: "Activé",
+    off: "Désactivé",
+    hint: {
+      access:
+        "Autorisez l'app dans « Accès Ne pas déranger », puis revenez : le réglage se fera tout seul.",
+      unavailable: "Ce téléphone ne permet pas de le régler depuis l'app.",
+    },
+    always: "À chaque tefila",
+    never: "Ne plus afficher la prochaine fois",
+    farewell: "Vous retrouverez ces réglages dans Profil, Préférences, « Avant une tefila ».",
+    close: "Fermer",
+    applied: "Vos modes de prière sont activés jusqu'à la fin de la tefila.",
+    settings: {
+      title: "Avant une tefila",
+      hint: "Ne pas déranger, silencieux ou vibreur : le téléphone revient comme avant à la fin de la tefila.",
+      offer: "Les choisir à chaque tefila",
+      always: "Les mêmes à chaque tefila ({modes})",
+      show: "Afficher le panneau",
+      showHint:
+        "En haut de l'écran quand une tefila s'ouvre, avec l'état de chaque mode. Coupé, les modes gardés pour chaque tefila s'activent quand même.",
     },
   },
   // Mon parcours : programmes, habitudes, la journée et le mur (voir
@@ -2509,11 +2619,53 @@ const fr = {
       aheadDoneSub: "Le signet a avancé ; la fin viendra plus tôt.",
       readAhead: "Lire la suite",
     },
-    reminder: {
-      title: "Le rappel du soir",
-      off: "Aucun rappel",
-      set: "Régler",
-      offline: "Les rappels se règlent avec une connexion.",
+    reminders: {
+      title: "Les heures de ma journée",
+      intro: "Aujourd'hui à {place}. Touchez un moment pour choisir son heure.",
+      footer: "Un rappel ne part que s'il reste quelque chose à faire à ce moment-là.",
+      day: "Dans la journée",
+      fixed: "Heure fixe",
+      before: "{minutes} min avant {zman}",
+      after: "{minutes} min après {zman}",
+      objectives: "Aucun objectif | {n} objectif | {n} objectifs",
+      editAria: "Choisir l'heure de {name}",
+      toggleAria: "Rappel de {name}",
+      modeLabel: "Comment fixer l'heure",
+      modeFixed: "Heure fixe",
+      modeZman: "Selon le calendrier",
+      relativeTo: "Par rapport à",
+      offset: "Décalage",
+      beforeShort: "Avant",
+      afterShort: "Après",
+      minutes: "{n} min",
+      previewToday: "Aujourd'hui à {place}.",
+      previewFixed: "Tous les jours à la même heure, quelle que soit la saison.",
+      previewMoves: "L'heure suit le calendrier : demain {time}.",
+      save: "Enregistrer",
+      line: "Rappels :",
+      lineTomorrow: "Demain :",
+      more: "+{n}",
+      lineNone: "Me rappeler mes objectifs",
+      settingsOption: "Les heures de ma journée",
+      settingsHint:
+        "Dans Mon parcours, un rappel à chaque moment de la journée, quand un objectif reste à faire.",
+      settingsCount: "Aucun | {n} actif | {n} actifs",
+      settingsNone: "Aucun",
+      channelName: "Rappels de Mon parcours",
+      channelDescription: "Les heures de votre journée, quand un objectif reste à faire.",
+      notify: {
+        titles: {
+          wake: "Au réveil",
+          chaharit: "Cha'harit",
+          noon: "À midi",
+          minha: "Min'ha",
+          arvit: "Arvit",
+          bedtime: "Au coucher",
+          day: "Votre journée",
+        },
+        body: "Encore à faire : {list}.",
+        others: "{n} autre | {n} autres",
+      },
     },
     form: {
       name: "Son nom",

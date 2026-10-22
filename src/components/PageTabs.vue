@@ -178,7 +178,7 @@ watch(activeIndex, (index, previous) => {
     >
       <span
         v-if="pill"
-        class="tabs-pill absolute top-0.5 bottom-0.5 left-0 rounded-control bg-surface shadow-sm"
+        class="tabs-pill absolute top-0.5 bottom-0.5 left-0 rounded-segment bg-surface shadow-sm"
         :class="{ 'tabs-pill-sliding': sliding }"
         :style="pillStyle"
         aria-hidden="true"
@@ -188,7 +188,7 @@ watch(activeIndex, (index, previous) => {
         :key="tab.id"
         :ref="(el) => setButton(el, index)"
         type="button"
-        class="relative rounded-control px-4 py-2 text-sm font-semibold transition-colors"
+        class="relative rounded-segment px-4 py-2 text-sm font-semibold transition-colors"
         :class="[
           activeId === tab.id ? 'text-primary' : 'text-text-secondary',
           activeId === tab.id && !pill ? 'bg-surface shadow-sm' : '',

@@ -300,7 +300,7 @@ onBeforeUnmount(() => {
        colonne de lecture, quelle que soit la longueur du passage. -->
   <!-- Sur un téléphone, l'enveloppe est un bottom sheet : même contenu,
        posé au bas de l'écran plutôt que sur le passage. -->
-  <Transition :name="asSheet ? 'sheet' : 'bubble'">
+  <Transition :name="asSheet ? 'bottom-sheet' : 'bubble'">
     <component
       :is="asSheet ? BottomSheet : 'div'"
       v-if="readingPassage && (asSheet || spot) && !showShare"

@@ -363,7 +363,7 @@ const segmentClass = (active: boolean) =>
             v-for="option in GENDERS"
             :key="option.gender"
             type="button"
-            class="rounded-control px-2 py-2.5 text-sm font-semibold transition-colors"
+            class="rounded-segment px-2 py-2.5 text-sm font-semibold transition-colors"
             :class="segmentClass(gender === option.gender)"
             :aria-pressed="gender === option.gender"
             @click="gender = option.gender"
@@ -430,7 +430,7 @@ const segmentClass = (active: boolean) =>
             v-for="option in KINDS"
             :key="option.kind"
             type="button"
-            class="rounded-control px-1.5 py-2.5 inline-flex items-center justify-center gap-1.5 text-sm font-semibold transition-colors"
+            class="rounded-segment px-1.5 py-2.5 inline-flex items-center justify-center gap-1.5 text-sm font-semibold transition-colors"
             :class="segmentClass(kind === option.kind)"
             :aria-pressed="kind === option.kind"
             @click="kind = option.kind"
@@ -490,11 +490,6 @@ const segmentClass = (active: boolean) =>
           class="flex items-center gap-2 font-semibold"
           :class="isComplete ? 'text-text-primary' : 'text-text-secondary/70'"
         >
-          <AppIcon
-            :name="kind === 'leilouy' ? 'candle' : 'heart'"
-            :size="16"
-            class="text-primary"
-          />
           {{ previewName }}
         </span>
       </div>

@@ -324,10 +324,10 @@ Arriving on the Sidour page (`/sidour`). It tells what the "right now" card
 was offering at that moment: the denominator of `sidour_text_opened`, and a
 way to see whether people come to the Sidour at service times.
 
-| Property | Values                                                                                                                                                                                                                                                                                                                                     | Status  |
-| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------- |
-| `hero`   | `chaharit`, `minha`, `arvit` (the service whose time it is), `next_chaharit`, `next_minha`, `next_arvit` (the upcoming one, between two time windows), `hanouka`, `slihot`, `halevana` (the blessing of the moon, on the nights it is said), `feast` (between two services, the current holiday's text; `feast` says which one), or `null` | **new** |
-| `feast`  | the holiday whose texts rise to the top: `tichri`, `souccot`, `hanouka`, or `null`                                                                                                                                                                                                                                                         | **new** |
+| Property | Values                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Status  |
+| -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
+| `hero`   | `chaharit`, `minha`, `arvit` (the service whose time it is), `hanouka`, `slihot`, `halevana` (the blessing of the moon, on the nights it is said), `feast` (between two services, the current holiday's text said now; `feast` says which one), `chema` (**new value**: the bedtime Chema, at night once Arvit is said), or `null` (nothing to say now: no card). `next_chaharit`, `next_minha`, `next_arvit` (the upcoming service) are no longer sent: the page only offers what is said now | **new** |
+| `feast`  | the holiday whose texts rise to the top: `tichri`, `souccot`, `hanouka`, or `null`                                                                                                                                                                                                                                                                                                                                                                                                             | **new** |
 
 ### `sidour_text_opened` (new)
 
@@ -364,6 +364,28 @@ what pushed them to it.
 | Property   | Values                                                                                                                                            | Status  |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ------- |
 | `accuracy` | the accuracy displayed at the moment of the tap: `high`, `medium`, `low`, or `unknown` when the device doesn't provide it (Chrome on the website) | **new** |
+
+### `kotel_compass_aligned` (new)
+
+Set the first time, per opening of the Kotel compass, that the arrow points
+straight ahead of the phone (within 5°; see `docs/design.md`, « The compass
+fills when you face the Kotel »). Compared with `kotel_compass_opened`, it
+tells how many people find the direction; `seconds`, how long it takes them.
+Only devices that give the north can send it.
+
+| Property  | Values                                                       | Status  |
+| --------- | ------------------------------------------------------------ | ------- |
+| `seconds` | whole seconds between the opening of the window and the lock | **new** |
+
+### `kotel_compass_calibrated` (new)
+
+Set when, on the calibration screen, the accuracy turns good, just before the
+window goes back to the dial by itself. Compared with
+`kotel_compass_calibration_opened`, it tells how many calibrations take.
+
+| Property  | Values                                                                      | Status  |
+| --------- | --------------------------------------------------------------------------- | ------- |
+| `seconds` | whole seconds between the tap on « Calibrer » and the accuracy turning good | **new** |
 
 ### Values added to existing properties
 
@@ -451,6 +473,95 @@ A name removed by its author (a recovery, a mistake).
 
 One more value for `variant`: `prayer_name`, the invitation to sign in shown
 in front of « Proposer un nom ».
+
+## Nichmat 40
+
+Forty readers who each say Nichmat every day for forty days (see
+`docs/nichmat-40-jours.md`). As on the perpetual chain, no name is sent: the
+chain's title often names someone, and readers are people.
+
+### `session_created` (existing, one more property and value)
+
+`text_type` takes the value `Nichmat`. For a Nichmat 40 chain,
+`deadline_days` is `null`: it has no deadline to choose, its forty days end
+it.
+
+| Property     | Values                                | Status  |
+| ------------ | ------------------------------------- | ------- |
+| `start_mode` | `date`, `when_full` (Nichmat 40 only) | **new** |
+
+### `nichmat_place_take_clicked` (new)
+
+« Prendre une place » ("Take a place") pressed, before a guest gives their
+name: the denominator of `nichmat_place_taken`.
+
+| Property     | Values                 | Status  |
+| ------------ | ---------------------- | ------- |
+| `session_id` | the chain's identifier | **new** |
+| `is_guest`   | boolean                | **new** |
+
+### `nichmat_place_taken` (new)
+
+A place taken. `places_taken` tells how fast chains fill, and whether the
+ones that start once full ever start.
+
+| Property       | Values                     | Status  |
+| -------------- | -------------------------- | ------- |
+| `session_id`   | the chain's identifier     | **new** |
+| `place`        | 1 to 40                    | **new** |
+| `places_taken` | places taken, this one too | **new** |
+| `is_guest`     | boolean                    | **new** |
+
+### `nichmat_place_take_failed` (new)
+
+| Property        | Values                 | Status  |
+| --------------- | ---------------------- | ------- |
+| `session_id`    | the chain's identifier | **new** |
+| `error_message` | the error's message    | **new** |
+| `is_guest`      | boolean                | **new** |
+
+### `nichmat_place_released` (new)
+
+A reader gives up their place before ticking any day.
+
+| Property     | Values                 | Status  |
+| ------------ | ---------------------- | ------- |
+| `session_id` | the chain's identifier | **new** |
+| `is_guest`   | boolean                | **new** |
+
+### `nichmat_day_marked` (new)
+
+A day ticked or unticked. `is_today` separates the daily reading from the
+catching up of a forgotten day; across the forty days, it tells where
+readers drop out.
+
+| Property     | Values                        | Status  |
+| ------------ | ----------------------------- | ------- |
+| `session_id` | the chain's identifier        | **new** |
+| `day`        | 1 to 40                       | **new** |
+| `marked`     | boolean (false: unticked)     | **new** |
+| `is_today`   | boolean                       | **new** |
+| `is_guest`   | boolean                       | **new** |
+| `source`     | `session_page`, `my_sessions` | **new** |
+
+### `nichmat_day_mark_failed` (new)
+
+| Property        | Values                        | Status  |
+| --------------- | ----------------------------- | ------- |
+| `session_id`    | the chain's identifier        | **new** |
+| `day`           | 1 to 40                       | **new** |
+| `error_message` | the error's message           | **new** |
+| `is_guest`      | boolean                       | **new** |
+| `source`        | `session_page`, `my_sessions` | **new** |
+
+### `nichmat_text_opened` (new)
+
+« Lire Nichmat » ("Read Nishmat") from the reader's place: whether readers
+say it from the app.
+
+| Property     | Values                 | Status  |
+| ------------ | ---------------------- | ------- |
+| `session_id` | the chain's identifier | **new** |
 
 ## October 2026 additions
 
@@ -566,6 +677,22 @@ or not), and how far it carries.
 | `sections_count` | the titles shown above the bar (0: a text without landmarks) | **new** |
 | `from_progress`  | the share of the text where the gesture began, from 0 to 1   | **new** |
 | `to_progress`    | the share where it was let go, from 0 to 1                   | **new** |
+
+### Reading: `reading_size_changed` (existing, one more property)
+
+A− / A+ or a pinch in the app (`composables/useReadingSize.ts`). The form of
+the page (the Vilna daf, the Sefer Torah column) now has a size of its own,
+apart from the text's (see `docs/design.md`, "The form of the page has its
+own size"): `level` and `scale` are then those of the page's steps
+(`PAGE_FORM_SCALES`, from ×1 to ×2.1), not the text's (`READING_SCALES`,
+from ×0.85 to ×1.6). `form` tells them apart.
+
+| Property    | Values                                                               | Status         |
+| ----------- | -------------------------------------------------------------------- | -------------- |
+| `direction` | `increase`, `decrease`                                               | existing, kept |
+| `level`     | the step reached, from 0                                             | existing, kept |
+| `scale`     | the scale of that step                                               | existing, kept |
+| `form`      | `text`; `daf` (Vilna page), `scroll` (Sefer Torah) for the page size | **new**        |
 
 ### Reading: automatic scrolling (`auto_scroll_*`, existing)
 
@@ -1013,7 +1140,7 @@ A task checked or unchecked.
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `done`     | true when it is checked                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | `kind`     | `program`, `habit`, `cycle`, `text`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| `source`   | from where: `home_deck_swipe` (the top card of the home page stack, swiped), `home_wallet_swipe` (a wallet card, swiped right or, to uncheck it, left), `home_sheet` (a card's sheet), `journee_row` (Ma journée, removed: no longer sent), `objective_swipe` (the day's or week's portion, swiped on a program page), `reader` (at the bottom of a reading opened from the parcours, the ring pulled up; also at the end of a service's text, with the « trois tefilot » habit), `sidour_swipe`, `sidour_line_swipe` and `sidour_undo` (**new values**: the Sidour page card or a row under it swiped right, and « Annuler » under it, with the habit), `parcours_wall`, `parcours_full_wall` (a day of the wall), `daily_page` (**new value**: « Marquer comme lu », "Mark as read", on the daily reading page); the home page « Lecture du jour » ("Daily reading") card, swiped, sends one per text |
+| `source`   | from where: `home_deck_swipe` (the top card of the home page stack, swiped), `home_wallet_swipe` (a wallet card, swiped right or, to uncheck it, left), `home_sheet` (a card's sheet), `journee_row` (Ma journée, removed: no longer sent), `objective_swipe` (the day's or week's portion, swiped on a program page), `reader` (at the bottom of a reading opened from the parcours, the page pushed up past its end; also at the end of a service's text, with the « trois tefilot » habit), `sidour_swipe`, `sidour_line_swipe` and `sidour_undo` (**new values**: the Sidour page card or a row under it swiped right, and « Annuler » under it, with the habit), `parcours_wall`, `parcours_full_wall` (a day of the wall), `daily_page` (**new value**: « Marquer comme lu », "Mark as read", on the daily reading page); the home page « Lecture du jour » ("Daily reading") card, swiped, sends one per text |
 | `days_ago` | 0 today, 1 yesterday...: what gets checked after the fact                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 
 A task from the former daily reading (a daily text, a calendar reading),
@@ -1047,11 +1174,11 @@ down) or `day_bar` (the day bar tapped).
 An occasion card in the stack marked done, or undone: it doesn't count in the
 day, the device remembers it.
 
-| Property   | Values                                                                                                                                                                                                                                                                                 |
-| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `occasion` | `halevana` (the blessing of the moon), `omer` (the evening count), `hanouka` (the lighting), `tefila` (the service whose time it is, without the « trois tefilot » habit), `havdala` (**new value**: its row on the Sidour page, swiped)                                               |
-| `done`     | true when it is done                                                                                                                                                                                                                                                                   |
-| `source`   | `home_deck_swipe`, `home_wallet_swipe`, `home_sheet` (as in `parcours_task_marked`); `sidour_swipe` (the Sidour page card, swiped right), `sidour_line_swipe` (a row under it, swiped right), `sidour_undo` (« Annuler » under it), `reader` (the ring at the end of a service's text) |
+| Property   | Values                                                                                                                                                                                                                                                                                                                                                 |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `occasion` | `halevana` (the blessing of the moon), `omer` (the evening count), `hanouka` (the lighting), `tefila` (the service whose time it is, without the « trois tefilot » habit), `havdala` (**new value**: its row on the Sidour page, swiped), `chema` (**new value**: the bedtime Chema's card on the Sidour page, without the « Chéma du coucher » habit) |
+| `done`     | true when it is done                                                                                                                                                                                                                                                                                                                                   |
+| `source`   | `home_deck_swipe`, `home_wallet_swipe`, `home_sheet` (as in `parcours_task_marked`); `sidour_swipe` (the Sidour page card, swiped right), `sidour_line_swipe` (a row under it, swiped right), `sidour_undo` (« Annuler » under it), `reader` (the ring at the end of a service's text)                                                                 |
 
 `birkat_halevana_opened` and `omer_opened` (existing) are still sent with
 `source: home` when their card is tapped in the stack, as when they were
@@ -1162,6 +1289,40 @@ A backlog caught up.
 | `remember` | true if the user chose to do it this way without being asked                                                                                                                   |
 | `source`   | `objective` (a program's « Rattraper » sheet), `home_deck_swipe`, `home_wallet_swipe` or `home_sheet` (the home page « Rattraper » card, marked done: `option` is then `done`) |
 
+### `parcours_reminders_opened` (new)
+
+« Les heures de ma journée » ("The hours of my day") opened, in the app.
+
+| Property       | Values                                                                                                                                                                                             |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `source`       | `parcours_header` (the alarm clock at the top of Mon parcours), `parcours_line` (the line under the light), `daily_page` (the bottom of the daily reading), `settings` (the notification settings) |
+| `active_count` | how many points of the day ring, when it opens (0 to 7)                                                                                                                                            |
+
+### `parcours_reminder_set` (new)
+
+A point of the day turned on or off, or given an hour (« Enregistrer »).
+
+| Property | Values                                                                             |
+| -------- | ---------------------------------------------------------------------------------- |
+| `slot`   | `wake`, `chaharit`, `noon`, `minha`, `arvit`, `bedtime`, `day` (the day's summary) |
+| `on`     | true if it rings                                                                   |
+| `kind`   | `fixed` (a fixed hour) or `zman` (tied to a zman)                                  |
+| `zman`   | the zman it follows (`sunset`, `tzeit`...), null for a fixed hour                  |
+| `offset` | the minutes from the zman, negative before, null for a fixed hour                  |
+| `hour`   | the fixed hour (0 to 23), null when tied to a zman                                 |
+
+### `parcours_reminder_opened` (new)
+
+A reminder of the day touched: it opens the home page. `slot`: as in
+`parcours_reminder_set`.
+
+### `parcours_reminders_migrated` (new)
+
+The evening reminder of the server carried over to the reminders of the
+day, once per device. `daily` (boolean): its fixed hour was on, and became
+the day's summary. `sunset` (boolean): its call before the chkia was on,
+and became the Min'ha point.
+
 ### What becomes of the daily reading events
 
 The `/bibliotheque/lecture-du-jour` page had given way to Ma journée, itself
@@ -1170,8 +1331,10 @@ the screen continues:
 
 - `daily_reading_viewed` and `daily_reading_marked_read`: see above;
 - `reminder_settings_opened`, `reminder_enabled`, `reminder_enable_failed`,
-  `reminder_disabled`, `reminder_disable_failed`: the reminders bell, with
-  the same properties, at the bottom of Mon parcours;
+  `reminder_disabled`, `reminder_disable_failed`: the evening reminder's
+  card, at the bottom of Mon parcours. It gave way to the reminders of the
+  day (`parcours_reminders_opened` and the events below): no longer sent by
+  the app, still sent by versions already installed;
 - `daily_reading_configured` (building the list), `daily_reading_tab_switched`
   (« Aujourd'hui » and « Cette semaine », "This week") and
   `daily_reading_offline_prompt` (the dialog for a text added without being

@@ -138,6 +138,20 @@ describe("défilement automatique", () => {
     expect(isAutoScrolling.value).toBe(false);
   });
 
+  it("ne part pas sous une fenêtre ouverte : le double appui est à la fenêtre", async () => {
+    const { isAutoScrolling } = await import("../composables/useAutoScroll");
+    const { useOverlay } = await import("../composables/useOverlayStack");
+    const { effectScope } = await import("vue");
+    const { host } = await mountReadingPage();
+    // A parchment's photo open over the text: a double tap zooms into it.
+    const scope = effectScope();
+    scope.run(() => useOverlay(ref(true), () => {}));
+
+    doubleClick(host.querySelector("p")!);
+    expect(isAutoScrolling.value).toBe(false);
+    scope.stop();
+  });
+
   it("descend à l'allure choisie, et s'arrête à la fin du texte", async () => {
     const { isAutoScrolling, setAutoScrollSpeed, AUTO_SCROLL_SPEEDS } = await import(
       "../composables/useAutoScroll"

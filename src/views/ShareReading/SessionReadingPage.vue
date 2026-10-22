@@ -39,6 +39,7 @@ import { useToast } from "../../composables/useToast";
 import { useReadingPinch } from "../../composables/useReadingPinch";
 import { useAutoScroll } from "../../composables/useAutoScroll";
 import { useKeepAwake } from "../../composables/useKeepAwake";
+import { useEntriesTranslation } from "../../composables/useEntriesTranslation";
 import { anchorToElement } from "../../composables/scrollAnchor";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import CollapseTransition from "../../components/CollapseTransition.vue";
@@ -68,6 +69,8 @@ const sessionPath = computed(
 
 /** The reader's psalms, in the order of the book. */
 const readings = computed(() => batchReadings(session.value, currentUser.value));
+/** The texts' translation: its setting in the reading menu. */
+const translation = useEntriesTranslation(() => readings.value.map((reading) => reading.entry));
 
 const keyOf = (reading: BatchReading) => reading.reservation.id;
 const titleOf = (reading: BatchReading) => appendHebrewNumeral(reading.entry.name);
@@ -305,7 +308,6 @@ onUnmounted(() => {
         <aside class="lg:order-2">
           <div class="card p-5 lg:sticky lg:top-24">
             <div v-if="allDone" class="flex items-start gap-3">
-              <AppIcon name="circle-check" :size="20" class="mt-0.5 shrink-0 text-primary" />
               <p class="font-semibold">{{ t("sessionReading.allDone") }}</p>
             </div>
             <template v-else>
@@ -432,7 +434,11 @@ onUnmounted(() => {
 
     <!-- Like the other texts: the reading menu and the progress at the bottom of the screen. -->
     <template v-if="hasReading">
-      <ReadingMenu :share-title="t('sessionReading.title')" />
+      <ReadingMenu
+        :share-title="t('sessionReading.title')"
+        :translation-langs="translation.langs.value"
+        :translation-lang="translation.lang.value"
+      />
       <ReadingProgressBar />
     </template>
   </main>

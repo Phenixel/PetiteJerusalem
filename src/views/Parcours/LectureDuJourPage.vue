@@ -13,7 +13,9 @@
  *    dernier coché coche le texte (les chapitres lus se gardent sur
  *    l'appareil, le temps de la journée) ;
  *  - le menu de lecture, la taille du texte, le défilement tout seul,
- *    l'écran qui reste allumé, les textes à télécharger, le rappel du soir ;
+ *    l'écran qui reste allumé, les textes à télécharger, les rappels (dans
+ *    l'app : la ligne des rappels du jour, qui ouvre « Les heures de ma
+ *    journée ») ;
  *  - la liste se compose ici même : « Modifier ma liste » montre les textes
  *    du jour, chacun se retire d'un toucher, et la recherche en ajoute
  *    plusieurs d'affilée.
@@ -35,6 +37,7 @@ import { useZmanimLocation } from "../../composables/useZmanimLocation";
 import { useReadingPinch } from "../../composables/useReadingPinch";
 import { useAutoScroll } from "../../composables/useAutoScroll";
 import { useKeepAwake } from "../../composables/useKeepAwake";
+import { useEntriesTranslation } from "../../composables/useEntriesTranslation";
 import { anchorToElement } from "../../composables/scrollAnchor";
 import { devicePreference } from "../../services/devicePreference";
 import { encadrementBounds } from "../../services/encadrementService";
@@ -57,7 +60,9 @@ import ReadingEncadrement from "../../components/ReadingEncadrement.vue";
 import ReadingMenu from "../../components/ReadingMenu.vue";
 import ReadingProgressBar from "../../components/ReadingProgressBar.vue";
 import ReadingSizeControl from "../../components/ReadingSizeControl.vue";
-import DailyReminderButton from "../../components/parcours/DailyReminderButton.vue";
+import ReminderSlotsSheet from "../../components/parcours/ReminderSlotsSheet.vue";
+import RemindersLine from "../../components/parcours/RemindersLine.vue";
+import { isNativeApp } from "../../composables/useNativeApp";
 import OfflineTextsNotice from "../../components/parcours/OfflineTextsNotice.vue";
 import StepText from "../../components/parcours/create/StepText.vue";
 import DailyReadingItem from "../Library/DailyReadingItem.vue";
@@ -114,6 +119,8 @@ const daily = computed(() =>
         (catalogRank.get(Number(b.entry.id)) ?? Infinity),
     ),
 );
+/** The texts' translation: its setting in the reading menu. */
+const translation = useEntriesTranslation(() => daily.value.map((reading) => reading.entry));
 
 // Le Yehi ratson et ses pareils : une fois pour tout ce qu'on lit du même
 // corpus, la liste étant rangée dans l'ordre du catalogue, qui les tient groupés.
@@ -141,6 +148,8 @@ const name = computed(() => views.dailyName(takenTexts.value));
 
 /** La liste ouverte : d'office quand il n'y a encore rien à lire. */
 const editing = ref(false);
+/** The reminders of the day, opened from the line at the bottom (in the app). */
+const remindersOpen = ref(false);
 watch(
   () => textObjectives.value.length === 0,
   (empty) => {
@@ -317,7 +326,6 @@ seoService.setMeta({
       <!-- La journée : où l'on en est. -->
       <div v-if="daily.length" class="card mt-6 p-5">
         <div v-if="allDone" class="flex items-start gap-3">
-          <AppIcon name="circle-check" :size="20" class="mt-0.5 text-primary" />
           <p class="font-semibold">{{ t("parcours.daily.allDone") }}</p>
         </div>
         <template v-else>
@@ -412,12 +420,25 @@ seoService.setMeta({
         </template>
       </div>
 
-      <DailyReminderButton class="mt-12" />
+      <template v-if="isNativeApp">
+        <div class="mt-12 text-center">
+          <RemindersLine @open="remindersOpen = true" />
+        </div>
+        <ReminderSlotsSheet
+          :open="remindersOpen"
+          source="daily_page"
+          @close="remindersOpen = false"
+        />
+      </template>
     </template>
 
     <!-- Comme les autres textes : le menu de lecture et la progression au bas de l'écran. -->
     <template v-if="hasReading">
-      <ReadingMenu :share-title="name.title" />
+      <ReadingMenu
+        :share-title="name.title"
+        :translation-langs="translation.langs.value"
+        :translation-lang="translation.lang.value"
+      />
       <ReadingProgressBar />
     </template>
   </main>

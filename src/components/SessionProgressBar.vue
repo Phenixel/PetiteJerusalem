@@ -148,11 +148,6 @@ const showParticipants = ref(false);
                 : 'text-text-secondary'
             "
           >
-            <AppIcon
-              v-if="participant.read === participant.reserved"
-              name="circle-check"
-              :size="13"
-            />
             {{
               t("shareReading.readCount", { done: participant.read, total: participant.reserved })
             }}

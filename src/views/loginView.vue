@@ -534,7 +534,6 @@ onMounted(async () => {
 
         <div v-if="errorMessage" class="mb-4" role="alert">
           <p class="flex items-start gap-2 text-sm text-red-600 dark:text-red-400">
-            <AppIcon name="alert-circle" :size="14" class="mt-0.5 shrink-0" />
             {{ errorMessage }}
           </p>
           <!-- La sortie qui va avec l'erreur : créer le compte, s'y connecter,

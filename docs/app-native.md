@@ -420,9 +420,11 @@ both storages, `localStorage` for the synchronous read of the first render
 and the native preferences for durability, and reads the native one again
 when the former has nothing to say.
 
-The **text size** of the reading pages (A− / A+ and pinch, `useReadingSize`)
-is therefore written twice: in `localStorage`, the only one readable
-synchronously, hence from the first render; and in the native preferences
+The **text size** of the reading pages (A− / A+ and pinch, `useReadingSize`),
+and the separate size of the form of the page (the daf, the Sefer Torah,
+`usePageFormSize`, key `pj-page-form-size`), are therefore written twice:
+in `localStorage`, the only one readable synchronously, hence from the
+first render; and in the native preferences
 (`@capacitor/preferences`: SharedPreferences on Android, UserDefaults on
 iOS), which survive and serve as a safety net, read again on the setting's
 first use. It is not uploaded to the account: a phone held at arm's length
@@ -541,6 +543,41 @@ doesn't need it: Safari gives the accuracy with the heading
 (`webkitCompassAccuracy`). See `docs/design.md`, « La boussole se demande en
 l'ouvrant, dit sa précision, et se tient à plat ».
 
+## Quiet modes when a tefila opens
+
+When a service opens, the Android app offers to quiet the phone
+(`docs/design.md`, « A tefila opens on the phone's quiet modes »). The
+in-house PjQuiet plugin
+(`native/android/app/src/main/java/fr/petitejerusalem/app/PjQuietPlugin.java`)
+reads the three states (`NotificationManager.getCurrentInterruptionFilter`,
+`AudioManager.getRingerMode`) and changes them: Do Not Disturb in
+`INTERRUPTION_FILTER_PRIORITY`, the ringer in silent, vibrate or normal.
+While the panel is open it listens to the system broadcasts (ringer mode,
+interruption filter, access granted) and pushes the state to the page; it
+re-reads it when the app comes back from the settings.
+
+Do Not Disturb, and since Android 7 any ringer change that toggles it
+(entering or leaving silent), need the "Do Not Disturb access" the user
+grants in the settings: a change refused for lack of it answers
+`applied: false, access: false`, and the page opens the list
+(`Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS`). For the app to be
+listed there at all, the manifest declares `ACCESS_NOTIFICATION_POLICY`.
+`scripts/setup-android.mjs` declares it, copies the plugin with the widgets
+and registers it in `MainActivity`. On the page side,
+`src/services/prayerQuiet.ts` and `src/composables/usePrayerQuiet.ts`:
+nothing outside the Android app, and nothing on a binary older than the
+plugin (the panel then stays closed).
+
+What the app changes is changed for the prayer, and undone when the tefila
+is left. The phone as it was before and what was changed since are kept in
+the two device storages (`pj-prayer-quiet-session`), so that an app killed
+in the middle of a tefila sets the phone back at its next launch. The
+panel's choice (offer, apply by itself, nothing), the modes kept for every
+tefila and whether the panel still reminds them (`remind`, written only
+when false, so that an older app reads the same choice) live in
+`pj-prayer-quiet`. iOS has no public API for the
+ring/silent switch or for Focus. Test: `src/__tests__/prayerQuiet.test.ts`.
+
 ## Icons that follow the device theme
 
 Both systems can adapt an app's icon to the phone's theme, provided they are
@@ -558,17 +595,30 @@ That is why black and white is necessary: the tinted and monochrome variants
 are read as intensities, not as images. The system applies the color; the
 app only provides the shape.
 
-Everything comes from a single source, `scripts/lib/app-icon.mjs`, where the
-drawing is written as vectors: the variants only change its palette and
-framing. The light variant's framing reproduces pixel for pixel the icon
-already published on the stores, and a test enforces it.
+The drawing is the designer's, delivered as PNG (no vector): `assets/logo.png`
+is the logo on its cream background (`#FFF9F3`), and `assets/brand/` keeps
+the designer's transparent masters (`logo-transparent.png`, the two stars). Every
+variant is derived from them, never redrawn; `scripts/lib/app-icon.mjs`
+describes each one (file, framing, colors) and `src/__tests__/appIcons.test.ts`
+checks the versioned PNGs: sizes, no alpha on the colored icons, no color on
+the tinted ones, the Android safe zone.
+
+| Variant | Derived from |
+|---|---|
+| light | `assets/logo.png` itself |
+| dark | `logo-transparent.png` on the app's dark background (`#111827`), same framing |
+| tinted, monochrome | the silhouette of `logo-transparent.png`: the saturated colors (orange stones, blue outline of the book) in white, the pale ones (mortar, inside of the pages) carved out |
+| notification | the orange star alone, in white |
 
 The PNGs in `assets/themed/` are versioned, and they are what goes into the
 native projects: `setup-android.mjs` and `setup-ios.mjs` simply copy them, so
-a CI runner never needs a browser to build the app. Rasterization, however,
-does not live in the repository: the day the drawing changes, the files must
-be produced separately, with the names and sizes the setup scripts expect,
-then replaced in `assets/`.
+a CI runner never needs an image tool to build the app. The derivation,
+however, does not live in the repository: the day the logo changes, the files
+must be produced separately, with the names and sizes the setup scripts
+expect (and the test checks), then replaced in `assets/`. The launcher icons
+and splash screens of an existing `android/` or `ios/` folder are only
+generated once (see the markers in the setup scripts): delete the marker, or
+run the `npx @capacitor/assets generate` line again, to pick up a new logo.
 
 Two constraints are worth knowing before touching up the drawing:
 
@@ -578,8 +628,8 @@ Two constraints are worth knowing before touching up the drawing:
   rectangle.
 - A silhouette has lost its colors, and therefore its separations. The wall
   and the book would touch and the icon would be nothing but a blob: it is
-  the hollows of the mask (stone joints, page lines, top edge of the book)
-  that keep it legible.
+  the hollows (stone joints, inside of the pages, the gap between the book and
+  the wall) that keep it legible.
 
 ### Small notification icon
 
@@ -589,9 +639,10 @@ to a dot for push notifications received while the app is closed, the
 system's generic "i" for local notifications (zmanim reminders, Chabbat
 reminder, push notifications replayed in the foreground).
 
-All of them now use `ic_stat_pj`, the icon's silhouette framed for 24 dp.
-Its PNGs are versioned in `native/android/app/src/main/res/drawable-*`
-(copied by `setup-android.mjs` with the widgets) and are rasterized like the
+All of them now use `ic_stat_pj`, the logo's star in white, framed for 24 dp
+(the whole logo is a smudge at that size; the star still reads in a status
+bar). Its PNGs are versioned in `native/android/app/src/main/res/drawable-*`
+(copied by `setup-android.mjs` with the widgets) and are derived like the
 others, from the `notification` variant of `scripts/lib/app-icon.mjs`, at
 sizes 24, 36, 48, 72 and 96 px (from mdpi to xxxhdpi). Two declarations wire
 it up:
@@ -602,10 +653,10 @@ it up:
   `setup-android.mjs`): push notifications displayed by the system while the
   app is closed.
 
-The shade's tint is the gold of the icon's stones (`#C79A3B`), declared in
-both places.
+The shade's tint is the orange of the logo (`#FEA547`), declared in both
+places.
 
-The class playback notification (below) uses the same silhouette, through a
+The class playback notification (below) uses the same star, through a
 resource that replaces the plugin's.
 
 ## Listening to classes in the background

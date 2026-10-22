@@ -23,6 +23,9 @@
  *   l'app quand elle est installée (voir docs/app-links.md)
  * - Boussole du Kotel : le plugin PjCompass (étalonnage du magnétomètre),
  *   copié avec les widgets et enregistré dans MainActivity
+ * - Quiet modes when a tefila opens: the PjQuiet plugin (Do Not Disturb,
+ *   silent, vibrate) and its ACCESS_NOTIFICATION_POLICY permission, copied
+ *   with the widgets and registered in MainActivity
  * - Montre Wear OS : le module android/wear/ recopié depuis native/wear/,
  *   déclaré dans settings.gradle, ses icônes reprises de l'app et les Tehilim
  *   embarqués dans ses assets (voir docs/app-watch.md)
@@ -94,6 +97,11 @@ const PERMISSIONS = [
       "Écoute des cours en arrière-plan : @capgo/capacitor-media-session tient la notification\n         de lecture dans un service de premier plan de type mediaPlayback. Son manifest ne\n         déclare que FOREGROUND_SERVICE ; depuis Android 14, démarrer ce service sans cette\n         permission-ci lève une SecurityException et ferme l'app à la première lecture.\n         Voir src/__tests__/mediaSessionAndroid.test.ts",
   },
   {
+    name: "android.permission.ACCESS_NOTIFICATION_POLICY",
+    comment:
+      "Quiet modes offered when a tefila opens (PjQuietPlugin): without this line the app\n         is not even listed under Do Not Disturb access, and Do Not Disturb and silent\n         cannot be set from it. See src/__tests__/prayerQuiet.test.ts",
+  },
+  {
     name: "android.permission.CAMERA",
     comment: "Miroir des téfilines (caméra frontale, rien n'est enregistré)",
   },
@@ -135,7 +143,7 @@ if (!manifest.includes('android:name="android.hardware.camera"')) {
 // Petite icône des notifications push. Sans ces deux meta-data, Firebase
 // affiche les push reçues app fermée avec l'icône du lanceur, qu'Android réduit
 // à sa seule opacité : une pastille pleine, ou l'icône générique du système.
-// ic_stat_pj (silhouette blanche de 24 dp, rasterisée depuis lib/app-icon.mjs)
+// ic_stat_pj (the logo's star in white, 24 dp, see lib/app-icon.mjs)
 // et sa teinte vivent dans native/android/, recopié plus bas avec les widgets.
 // Les notifications locales (rappels d'horaires, push rejouées au premier plan)
 // prennent la même icône par capacitor.config.ts.
@@ -263,7 +271,7 @@ if (!existsSync(keystorePropertiesExample)) {
 const generatedMarker = join(androidDir, "app/src/main/res/drawable-port-night-xxxhdpi/splash.png");
 if (!existsSync(generatedMarker)) {
   try {
-    execSync("npx @capacitor/assets generate --android --assetPath assets --iconBackgroundColor '#f5eedc' --iconBackgroundColorDark '#f5eedc'", {
+    execSync("npx @capacitor/assets generate --android --assetPath assets --iconBackgroundColor '#fff9f3' --iconBackgroundColorDark '#fff9f3'", {
       cwd: root,
       stdio: "inherit",
     });
@@ -271,14 +279,14 @@ if (!existsSync(generatedMarker)) {
   } catch {
     console.warn(
       "setup-android: ⚠️ génération des icônes échouée, lancer à la main :\n" +
-        "  npx @capacitor/assets generate --android --assetPath assets --iconBackgroundColor '#f5eedc' --iconBackgroundColorDark '#f5eedc'",
+        "  npx @capacitor/assets generate --android --assetPath assets --iconBackgroundColor '#fff9f3' --iconBackgroundColorDark '#fff9f3'",
     );
   }
 }
 
 // 7. Icône adaptative : @capacitor/assets insère la couche de fond avec un
 //    inset de 16.7 %, ce qui laisse un anneau autour de l'icône sur le
-//    launcher. On remplace le fond par une couleur pleine (le beige du logo),
+//    launcher. On remplace le fond par une couleur pleine (le crème du logo),
 //    seule la couche avant garde son inset.
 //
 //    On pose aussi la couche monochrome, celle des « icônes thématiques »
@@ -288,14 +296,14 @@ if (!existsSync(generatedMarker)) {
 //    Sans elle, Android n'a rien à teindre et laisse l'app en couleurs au
 //    milieu d'un écran d'accueil accordé : c'est le seul moyen, sur Android,
 //    d'avoir une icône qui suive le thème de l'appareil.
-//    Les PNG sont versionnés dans assets/themed/, rasterisés hors du dépôt
-//    depuis la source vectorielle de lib/app-icon.mjs.
+//    Les PNG sont versionnés dans assets/themed/, dérivés hors du dépôt
+//    des PNG de la graphiste (voir lib/app-icon.mjs).
 const launcherBgColor = join(androidDir, "app/src/main/res/values/ic_launcher_background.xml");
 const anydpiDir = join(androidDir, "app/src/main/res/mipmap-anydpi-v26");
 if (existsSync(anydpiDir)) {
   writeFileSync(
     launcherBgColor,
-    `<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <color name="ic_launcher_background">#F5EEDC</color>\n</resources>`,
+    `<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <color name="ic_launcher_background">#FFF9F3</color>\n</resources>`,
   );
 
   let monochromeCopied = 0;
@@ -312,7 +320,7 @@ if (existsSync(anydpiDir)) {
   } else {
     console.warn(
       "setup-android: ⚠️ assets/themed/ est vide, pas d'icône thématique.\n" +
-        "  Y déposer monochrome-<densité>.png, rasterisés depuis lib/app-icon.mjs.",
+        "  Y déposer monochrome-<densité>.png, dérivés du logo (voir lib/app-icon.mjs).",
     );
   }
 
@@ -444,6 +452,15 @@ public class MainActivity extends BridgeActivity {
       `$1// Précision de la boussole du Kotel (voir docs/app-native.md).$1registerPlugin(PjCompassPlugin.class);$1$2`,
     );
     console.log("setup-android: plugin PjCompass enregistré dans MainActivity");
+  }
+  if (!mainActivity.includes("PjQuietPlugin")) {
+    // The quiet modes offered when a tefila opens
+    // (src/services/prayerQuiet.ts), same rule as above.
+    mainActivity = mainActivity.replace(
+      /(\n\s*)(super\.onCreate\(savedInstanceState\);)/,
+      `$1// Quiet modes when a tefila opens (see docs/app-native.md).$1registerPlugin(PjQuietPlugin.class);$1$2`,
+    );
+    console.log("setup-android: plugin PjQuiet enregistré dans MainActivity");
   }
   if (!mainActivity.includes("setOverScrollMode")) {
     mainActivity = mainActivity.replace(

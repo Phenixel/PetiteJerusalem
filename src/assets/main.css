@@ -44,11 +44,11 @@
   unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F;
 }
 
-/* L'écriture du sofer (ktav Sefaradi avec taguim, police Stam Sefarad CLM du
-   projet Culmus, GPL avec exception d'embarquement, voir
-   public/fonts/stam-sefarad-clm.LICENSE.txt) : elle ne sert qu'à la
-   retranscription des parchemins (KlafViewer.vue), jamais au fil d'un texte.
-   Le navigateur ne la charge qu'à la première ouverture d'un parchemin. */
+/* The sofer's script (ktav Sefaradi with taguim, the Stam Sefarad CLM font
+   of the Culmus project, GPL with an embedding exception, see
+   public/fonts/stam-sefarad-clm.LICENSE.txt): it only serves the Torah
+   scroll (TorahScroll.vue), never the flow of a text. The browser loads it
+   only the first time a scroll is opened. */
 @font-face {
   font-family: "Stam Sefarad CLM";
   src: url("/fonts/stam-sefarad-clm.woff2") format("woff2");
@@ -159,11 +159,14 @@ body {
   --radius-xl: 8px;
   --radius-2xl: 10px;
   --radius-3xl: 14px;
-  /* Alias parlants : la carte de la maison, la petite commande (bouton
-     d'icône, champ, bouton d'un groupe segmenté), le bouton, la pastille. */
+  /* Speaking aliases: the house card, the small control (icon button,
+     field), the button, the pill. A segment is the button of a segmented
+     group: it hugs a shell of --radius-btn padded by 2 px, so it takes that
+     radius minus the padding (see docs/design.md, nested roundings). */
   --radius-card: 6px;
   --radius-control: 10px;
   --radius-btn: 14px;
+  --radius-segment: calc(var(--radius-btn) - 2px);
   --radius-pill: 999px;
 
   /* Soft, warm-tinted shadows, flat surfaces are separated from the beige
@@ -687,9 +690,16 @@ button,
     margin-block: auto;
   }
 
-  /* La feuille du bas (BottomSheet) : posée au pied de l'écran, arrondie en
-     haut seulement, avec sa poignée. Sur un grand écran, elle garde la largeur
-     d'un téléphone, centrée. */
+  /* The bottom sheet (parcours/BottomSheet.vue): set at the foot of the
+     screen, rounded at the top only, with its handle. On a large screen, it
+     keeps the width of a phone, centered.
+
+     It moves like the system's sheets: it rises from below the screen while
+     the veil darkens, and goes back down while the veil clears, from where
+     the finger let it go when it was pulled down (`--sheet-drag`, the veil
+     following with `--sheet-veil`). The curve is the one of the player's
+     full screen (SHEET_EASING, sheetMotion.ts): a quick start, a soft
+     landing. Only transform and the veil's color move: no layout. */
   .sheet-overlay {
     position: fixed;
     inset-inline: 0;
@@ -701,7 +711,8 @@ button,
     justify-content: center;
     overflow-y: auto;
     overscroll-behavior-y: contain;
-    background-color: rgb(30 26 18 / 0.38);
+    background-color: rgb(30 26 18 / calc(0.38 * var(--sheet-veil, 1)));
+    transition: background-color 0.4s cubic-bezier(0.32, 0.72, 0, 1);
   }
   .sheet-panel {
     width: 100%;
@@ -711,29 +722,44 @@ button,
     border-radius: var(--radius-3xl) var(--radius-3xl) 0 0;
     background-color: var(--color-surface);
     box-shadow: var(--shadow-pop);
-    animation: sheetUp 0.26s ease;
+    transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
   }
-  /* Une feuille plus haute que l'écran s'ouvre à mi-hauteur : le voile
-     défile, et la feuille glissée vers le haut se déploie (BottomSheet,
-     `tall`). Alignée en haut, sous sa marge : alignée en bas, le débordement
-     partait du bas, et la feuille s'ouvrait sur sa fin. */
+  /* A sheet taller than the screen opens at half height: the veil scrolls,
+     and the sheet swiped up unfolds (BottomSheet, `tall`). Aligned at the
+     top, under its margin: aligned at the bottom, the overflow started from
+     the bottom, and the sheet opened on its end. */
   .sheet-panel-tall {
     align-self: flex-start;
     margin-top: calc(var(--modal-viewport-height, 100vh) * 0.38);
   }
-  @keyframes sheetUp {
-    from {
-      transform: translateY(24px);
-      opacity: 0;
-    }
-    to {
-      transform: none;
-      opacity: 1;
-    }
+  /* Pulled down: the sheet sits where the finger holds it. No transform at
+     rest, so that the sheet does not become the containing block of what is
+     fixed inside it. */
+  .sheet-panel.sheet-held {
+    transform: translateY(var(--sheet-drag, 0px));
+  }
+  /* Under the finger, nothing eases: the sheet and the veil follow. */
+  .sheet-overlay.sheet-dragging,
+  .sheet-panel.sheet-dragging {
+    transition: none;
+  }
+  /* AppModal's Transition (`sheet-modal`). A sheet taller than the screen
+     travels one screen, not its whole height: it would cross it too fast. */
+  .sheet-modal-enter-from,
+  .sheet-modal-leave-to {
+    background-color: rgb(30 26 18 / 0);
+  }
+  .sheet-modal-enter-from .sheet-panel,
+  .sheet-modal-leave-to .sheet-panel {
+    transform: translateY(calc(min(100%, 100vh) + var(--sheet-drag, 0px)));
+  }
+  .sheet-modal-leave-active {
+    pointer-events: none;
   }
   @media (prefers-reduced-motion: reduce) {
+    .sheet-overlay,
     .sheet-panel {
-      animation: none;
+      transition: none;
     }
   }
 }

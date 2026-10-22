@@ -190,6 +190,11 @@ if (isNativeApp) {
       import("./services/zmanReminderService").then(({ zmanReminderService }) =>
         zmanReminderService.init(router),
       );
+      // The reminders of Mon parcours: their touch opens the home page. The
+      // plan itself is made by ParcoursReminderScheduler (App.vue).
+      import("./services/parcoursReminderService").then(({ parcoursReminderService }) =>
+        parcoursReminderService.init(router),
+      );
       // Informations de l'équipe : abonnement au canal de la langue, refait à
       // chaque lancement et à chaque changement de langue.
       import("./services/announcementTopics").then(({ syncAnnouncementTopic }) => {

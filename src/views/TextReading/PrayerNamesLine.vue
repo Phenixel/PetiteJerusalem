@@ -4,7 +4,6 @@ import { useI18n } from "vue-i18n";
 import type { PrayerName, PrayerNameKind } from "../../models/models";
 import { formatPrayerName } from "../../services/perpetualChain";
 import AppIcon from "../../components/icons/AppIcon.vue";
-import type { IconName } from "../../components/icons/registry";
 
 /**
  * « Vous lisez pour » : dans le lecteur, sous la réservation d'un Téhilim de
@@ -21,9 +20,9 @@ const { t } = useI18n();
 const FOLDED_COUNT = 3;
 const open = ref(false);
 
-const GROUPS: { kind: PrayerNameKind; icon: IconName; labelKey: string }[] = [
-  { kind: "refoua", icon: "heart", labelKey: "perpetual.names.refoua" },
-  { kind: "leilouy", icon: "candle", labelKey: "perpetual.names.leilouy" },
+const GROUPS: { kind: PrayerNameKind; labelKey: string }[] = [
+  { kind: "refoua", labelKey: "perpetual.names.refoua" },
+  { kind: "leilouy", labelKey: "perpetual.names.leilouy" },
 ];
 
 const groups = computed(() =>
@@ -47,7 +46,6 @@ const hidden = computed(() => groups.value.reduce((sum, group) => sum + group.hi
     </span>
     <div v-for="group in groups" :key="group.kind" class="flex flex-col gap-0.5">
       <span class="flex items-center gap-1.5 text-xs font-semibold text-text-secondary">
-        <AppIcon :name="group.icon" :size="13" class="text-primary" />
         {{ t(group.labelKey) }}
       </span>
       <ul class="text-sm font-medium leading-relaxed text-text-primary">

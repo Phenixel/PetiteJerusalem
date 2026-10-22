@@ -61,7 +61,13 @@ const GROUPS: { id: SidourGroupId; labelKey: string; keys: string[] }[] = [
   {
     id: "offices",
     labelKey: "sidour.groups.offices",
-    keys: ["sidour/chaharit", "sidour/minha", "sidour/arvit", "sidour/kaddich"],
+    keys: [
+      "sidour/chaharit",
+      "sidour/minha",
+      "sidour/arvit",
+      "sidour/kaddich",
+      "sidour/nichmat-kol-hai",
+    ],
   },
   {
     id: "soir",
@@ -89,6 +95,7 @@ const GROUPS: { id: SidourGroupId; labelKey: string; keys: string[] }[] = [
       "brahot/birkat-hailanot",
       "brahot/hafrashat-halla",
       "brahot/teroumot-oumaasrot",
+      "sidour/tikoun-haklali",
     ],
   },
   {

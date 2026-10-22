@@ -30,6 +30,8 @@ import TextStudiesList from "./detailSession/TextStudiesList.vue";
 import RandomTehilimCard from "./detailSession/RandomTehilimCard.vue";
 import PerpetualStatsCard from "./detailSession/PerpetualStatsCard.vue";
 import PrayerNamesCard from "./detailSession/PrayerNamesCard.vue";
+import NichmatChain from "./detailSession/NichmatChain.vue";
+import { isNichmat } from "../../services/nichmatChain";
 // La fenêtre d'un nom emporte le calendrier hébraïque (date du décès) : elle
 // ne se charge qu'à la première ouverture.
 const PrayerNameModal = defineAsyncComponent(() => import("../../components/PrayerNameModal.vue"));
@@ -763,6 +765,42 @@ watch(isRoundDone, (done) => {
   });
 });
 
+// --- Nichmat 40 (see docs/nichmat-40-jours.md) ---
+
+const isNichmatChain = computed(() => isNichmat(session.value));
+
+const onNichmatChanged = (reservations: Session["reservations"]) => {
+  if (session.value) session.value.reservations = reservations;
+};
+
+const onNichmatGuestReserved = (email: string) => {
+  reservationForm.value.email = email;
+  showSignupPrompt.value = true;
+};
+
+/**
+ * A chain that waited for its readers has its start once full: its
+ * creator's app records it (sessionService.recordNichmatStart), so that a
+ * place freed later does not move the forty days.
+ */
+watch([session, currentUser], async ([current, user]) => {
+  if (!current || !user || !isNichmat(current)) return;
+  try {
+    const recorded = await sessionService.recordNichmatStart(current, user);
+    if (recorded && session.value?.id === recorded.id) {
+      Object.assign(session.value, {
+        startDay: recorded.startDay,
+        dateLimit: recorded.dateLimit,
+        dateLimitDay: recorded.dateLimitDay,
+      });
+    }
+  } catch (err) {
+    // Not recorded now, recorded at the next visit: the start is still
+    // computed from the places in the meantime.
+    console.warn("Début de Nichmat 40 non enregistré :", err);
+  }
+});
+
 // --- Tirage aléatoire (sessions Tehilim uniquement) ---
 
 const isTehilimSession = computed(() => session.value?.type === EnumTypeTextStudy.Tehilim);
@@ -907,14 +945,14 @@ const applySessionSeo = (s: typeof session.value) => {
       url,
       title: s.name,
       description,
-      image: `${SITE_URL}/og-image.jpg`,
+      image: `${SITE_URL}/og/partage-lectures-fr.png`,
       site_name: "Petite Jérusalem",
     },
     twitter: {
       card: "summary_large_image",
       title: s.name,
       description,
-      image: `${SITE_URL}/og-image.jpg`,
+      image: `${SITE_URL}/og/partage-lectures-fr.png`,
     },
   });
 };
@@ -1089,7 +1127,6 @@ watch(session, (s) => applySessionSeo(s));
         v-if="session.hidden"
         class="mb-8 flex items-start gap-3 rounded-xl bg-amber-500/10 p-4 text-amber-800 dark:text-amber-200"
       >
-        <AppIcon name="alert-triangle" :size="18" class="mt-0.5 shrink-0" />
         <p class="text-sm font-medium">{{ t("moderation.hiddenOwnerBanner") }}</p>
       </div>
 
@@ -1140,111 +1177,123 @@ watch(session, (s) => applySessionSeo(s));
         </p>
       </div>
 
-      <!-- Tirage aléatoire : recevoir un Tehilim disponible en un clic,
-           avec ou sans compte. Plus rien à tirer, plus de carte : elle ne
-           proposerait qu'un bouton éteint. -->
-      <RandomTehilimCard
-        v-if="isTehilimSession && randomAvailableCount > 0"
-        :read-now="readNow"
-        @draw="drawRandomTehilim"
-      />
-
-      <!-- Barre de progression -->
-      <SessionProgressBar
-        :total="progressStats.total"
-        :reserved="progressStats.reserved"
-        :read="progressStats.read"
-        :participants="participants"
-        :read-now="readNow"
-      />
-
-      <!-- Formulaire de réservation pour invités (composant unifié) -->
-      <div id="guest-form" v-if="!currentUser && !readNow" class="card p-5 mb-8">
-        <h3 class="font-bold text-lg text-text-primary">
-          {{ t("detailSession.guestTitle") }}
-        </h3>
-        <p class="text-sm text-text-secondary mt-0.5 mb-4">
-          {{
-            guestEmailRequired
-              ? t("detailSession.guestSubtitleWithEmail")
-              : t("detailSession.guestSubtitle")
-          }}
-        </p>
-        <GuestForm
-          v-model:reservationForm="reservationForm"
-          :email-required="guestEmailRequired"
-          @first-input="trackGuestFormFilled"
-        />
-      </div>
-
-      <!-- Barre de recherche + filtre : collants ensemble en haut, pour rester
-           à portée pendant le défilement de la liste des textes. -->
-      <div class="sticky-under-chrome mb-8">
-        <div class="relative max-w-xl mx-auto">
-          <AppIcon
-            name="search"
-            :size="16"
-            class="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary/70 pointer-events-none"
-          />
-          <input
-            type="text"
-            :value="searchTerm"
-            @input="searchTerm = liveValue($event)"
-            :placeholder="t('detailSession.searchPlaceholder')"
-            class="field !pl-11 !pr-10 shadow-card"
-          />
-          <button
-            v-if="searchTerm"
-            @click="clearSearch"
-            class="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary/70 hover:text-text-primary transition-colors"
-            :title="t('detailSession.clearSearch')"
-          >
-            <AppIcon name="x" :size="14" />
-          </button>
-        </div>
-        <div v-if="searchTerm" class="text-center mt-2 text-sm text-text-secondary">
-          {{ t("detailSession.searchForValue", { term: searchTerm }) }}
-        </div>
-
-        <!-- Filtre : masquer les textes entièrement réservés. Fond opaque en
-             pastille : la liste défile juste en dessous. -->
-        <div class="flex justify-center mt-3">
-          <label
-            class="inline-flex items-center gap-2.5 cursor-pointer bg-surface rounded-full pl-3.5 pr-4 py-2 shadow-card"
-          >
-            <span class="relative inline-flex items-center">
-              <input type="checkbox" v-model="showOnlyAvailable" class="sr-only peer" />
-              <span
-                class="w-9 h-5 bg-black/15 rounded-full peer peer-checked:bg-primary transition-colors dark:bg-white/20"
-              ></span>
-              <span
-                class="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform peer-checked:translate-x-4"
-              ></span>
-            </span>
-            <span class="text-sm font-medium text-text-secondary">
-              {{ t("detailSession.availableOnly") }}
-            </span>
-          </label>
-        </div>
-      </div>
-
-      <!-- Liste des textes groupés par livre -->
-      <TextStudiesList
-        :grouped-text-studies="groupedTextStudies"
+      <!-- Nichmat 40: forty places and forty days instead of a list of texts. -->
+      <NichmatChain
+        v-if="isNichmatChain"
         :session="session"
         :current-user="currentUser"
-        :guest-email="reservationForm.email"
-        :selected-items="selectedItems"
-        @item-click="handleItemClick"
-        @toggle-completion="toggleReservationCompletion"
-        @toggle-select-all="handleToggleSelectAll"
-        @text-expanded="trackTextExpanded"
-        @read-clicked="trackReadClicked"
-        :read-all="showBatchReading"
-        :read-now="readNow"
-        :my-group="myGroup"
-        @read-all="openBatchReading('button')"
+        :guest-email-required="guestEmailRequired"
+        @changed="onNichmatChanged"
+        @guest-reserved="onNichmatGuestReserved"
       />
+
+      <template v-else>
+        <!-- Tirage aléatoire : recevoir un Tehilim disponible en un clic,
+           avec ou sans compte. Plus rien à tirer, plus de carte : elle ne
+           proposerait qu'un bouton éteint. -->
+        <RandomTehilimCard
+          v-if="isTehilimSession && randomAvailableCount > 0"
+          :read-now="readNow"
+          @draw="drawRandomTehilim"
+        />
+
+        <!-- Barre de progression -->
+        <SessionProgressBar
+          :total="progressStats.total"
+          :reserved="progressStats.reserved"
+          :read="progressStats.read"
+          :participants="participants"
+          :read-now="readNow"
+        />
+
+        <!-- Formulaire de réservation pour invités (composant unifié) -->
+        <div id="guest-form" v-if="!currentUser && !readNow" class="card p-5 mb-8">
+          <h3 class="font-bold text-lg text-text-primary">
+            {{ t("detailSession.guestTitle") }}
+          </h3>
+          <p class="text-sm text-text-secondary mt-0.5 mb-4">
+            {{
+              guestEmailRequired
+                ? t("detailSession.guestSubtitleWithEmail")
+                : t("detailSession.guestSubtitle")
+            }}
+          </p>
+          <GuestForm
+            v-model:reservationForm="reservationForm"
+            :email-required="guestEmailRequired"
+            @first-input="trackGuestFormFilled"
+          />
+        </div>
+
+        <!-- Barre de recherche + filtre : collants ensemble en haut, pour rester
+           à portée pendant le défilement de la liste des textes. -->
+        <div class="sticky-under-chrome mb-8">
+          <div class="relative max-w-xl mx-auto">
+            <AppIcon
+              name="search"
+              :size="16"
+              class="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary/70 pointer-events-none"
+            />
+            <input
+              type="text"
+              :value="searchTerm"
+              @input="searchTerm = liveValue($event)"
+              :placeholder="t('detailSession.searchPlaceholder')"
+              class="field !pl-11 !pr-10 shadow-card"
+            />
+            <button
+              v-if="searchTerm"
+              @click="clearSearch"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary/70 hover:text-text-primary transition-colors"
+              :title="t('detailSession.clearSearch')"
+            >
+              <AppIcon name="x" :size="14" />
+            </button>
+          </div>
+          <div v-if="searchTerm" class="text-center mt-2 text-sm text-text-secondary">
+            {{ t("detailSession.searchForValue", { term: searchTerm }) }}
+          </div>
+
+          <!-- Filtre : masquer les textes entièrement réservés. Fond opaque en
+             pastille : la liste défile juste en dessous. -->
+          <div class="flex justify-center mt-3">
+            <label
+              class="inline-flex items-center gap-2.5 cursor-pointer bg-surface rounded-full pl-3.5 pr-4 py-2 shadow-card"
+            >
+              <span class="relative inline-flex items-center">
+                <input type="checkbox" v-model="showOnlyAvailable" class="sr-only peer" />
+                <span
+                  class="w-9 h-5 bg-black/15 rounded-full peer peer-checked:bg-primary transition-colors dark:bg-white/20"
+                ></span>
+                <span
+                  class="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform peer-checked:translate-x-4"
+                ></span>
+              </span>
+              <span class="text-sm font-medium text-text-secondary">
+                {{ t("detailSession.availableOnly") }}
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Liste des textes groupés par livre -->
+        <TextStudiesList
+          :grouped-text-studies="groupedTextStudies"
+          :session="session"
+          :current-user="currentUser"
+          :guest-email="reservationForm.email"
+          :selected-items="selectedItems"
+          @item-click="handleItemClick"
+          @toggle-completion="toggleReservationCompletion"
+          @toggle-select-all="handleToggleSelectAll"
+          @text-expanded="trackTextExpanded"
+          @read-clicked="trackReadClicked"
+          :read-all="showBatchReading"
+          :read-now="readNow"
+          :my-group="myGroup"
+          @read-all="openBatchReading('button')"
+        />
+      </template>
 
       <!-- CTA : inviter le visiteur à créer sa propre session -->
       <section class="mt-14 mb-2">

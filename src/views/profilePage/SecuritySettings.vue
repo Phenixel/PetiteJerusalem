@@ -198,7 +198,6 @@ const deleteAccount = async () => {
       v-if="successMessage"
       class="mb-6 flex items-center gap-2 font-medium text-green-700 dark:text-green-300"
     >
-      <AppIcon name="circle-check" :size="16" />
       {{ successMessage }}
     </p>
 
@@ -206,7 +205,6 @@ const deleteAccount = async () => {
       v-if="errorMessage"
       class="mb-6 flex items-center gap-2 font-medium text-red-700 dark:text-red-300"
     >
-      <AppIcon name="alert-circle" :size="16" />
       {{ errorMessage }}
     </p>
 
@@ -325,7 +323,6 @@ const deleteAccount = async () => {
         <!-- Formulaire de confirmation -->
         <div v-if="showDeleteConfirmation" class="space-y-4 mb-4">
           <p class="text-sm font-medium text-red-700 dark:text-red-300 flex items-start gap-2">
-            <AppIcon name="alert-triangle" :size="16" class="mt-0.5" />
             <span v-if="needsGoogleReauth">
               {{ t("security.deleteConfirmGoogle") }}
             </span>

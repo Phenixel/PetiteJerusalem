@@ -31,6 +31,13 @@ import { useFonts } from "./composables/useFonts";
 import { loadColorScheme, loadGuestColorScheme } from "./composables/useColorScheme";
 import { loadContrast, loadGuestContrast } from "./composables/useContrast";
 import { useHolidayTheme } from "./composables/useHolidayTheme";
+import {
+  appDrop,
+  DROP_TIMING,
+  prayerQuiet,
+  settleLeftoverPrayer,
+} from "./composables/usePrayerQuiet";
+import { prefersReducedMotion } from "./composables/useMotion";
 
 const route = useRoute();
 const router = useRouter();
@@ -60,7 +67,37 @@ const HolidayBackdrop = defineAsyncComponent(
 const AppUpdateBanner = defineAsyncComponent(() => import("./components/AppUpdateBanner.vue"));
 // The video of what changed, once after an update (useWhatsNew).
 const WhatsNewVideo = defineAsyncComponent(() => import("./components/WhatsNewVideo.vue"));
+// App native : the reminders of Mon parcours name what is left to do, which
+// only a component can say (useParcoursViews). A component without a face
+// plans them, mounted once the first screen is drawn.
+const ParcoursReminderScheduler = defineAsyncComponent(
+  () => import("./components/parcours/ParcoursReminderScheduler.vue"),
+);
+const schedulerMounted = ref(false);
+if (isNativeApp) {
+  void router.isReady().then(() => setTimeout(() => (schedulerMounted.value = true), 1500));
+}
 const OfflineNotice = defineAsyncComponent(() => import("./components/OfflineNotice.vue"));
+
+// Native Android app: when a tefila opens, the app goes down and the quiet
+// modes of the phone open above it (usePrayerQuiet, PrayerQuietPanel). The
+// stage is the wrapper of the whole app; it leaves the panel its room at the
+// top (a padding: the page keeps its scrolling, its fixed bars their place),
+// and scrolls on under it, as on a split screen.
+const PrayerQuietPanel = defineAsyncComponent(() => import("./components/PrayerQuietPanel.vue"));
+// A tefila left by closing the app: the phone goes back to how it was before
+// it, once the first screen is drawn (unless that screen is a tefila).
+if (isNativeApp) {
+  void router.isReady().then(() => setTimeout(() => void settleLeftoverPrayer(), 1500));
+}
+const stageStyle = computed(() =>
+  prayerQuiet.open
+    ? {
+        paddingTop: `${appDrop.offset}px`,
+        transition: prefersReducedMotion() ? "none" : `padding-top ${DROP_TIMING}`,
+      }
+    : undefined,
+);
 
 // La bulle de commandes d'un passage de texte (partager, phonétique, signaler
 // une erreur, voir useReadingSelection) : posée une fois pour toute l'app, pour
@@ -185,55 +222,59 @@ authService.onAuthChanged((user) => {
 </script>
 
 <template>
-  <!-- The stone wall sits at z-index:-1, so this root div must stay
+  <div :style="stageStyle">
+    <!-- The stone wall sits at z-index:-1, so this root div must stay
        transparent (the dark background lives on <body>) or it would hide it. -->
-  <div
-    class="min-h-screen flex flex-col text-text-primary transition-colors duration-300 dark:text-gray-100"
-    :class="chromePadClass"
-  >
-    <StoneWallBackground v-show="showStoneWall" />
-    <HolidayBackdrop v-if="showStoneWall && !isHome" />
-    <Navbar />
-    <!-- App native seulement : ne s'affiche que si le binaire installé est
+    <div
+      class="min-h-screen flex flex-col text-text-primary transition-colors duration-300 dark:text-gray-100"
+      :class="chromePadClass"
+    >
+      <StoneWallBackground v-show="showStoneWall" />
+      <HolidayBackdrop v-if="showStoneWall && !isHome" />
+      <Navbar />
+      <!-- App native seulement : ne s'affiche que si le binaire installé est
          antérieur à la version publiée sur le store (appUpdateService). -->
-    <AppUpdateBanner v-if="isNativeApp" />
-    <OfflineNotice v-if="showOfflineNotice" />
-    <!-- App native seulement : la Transition porte la surcouche des horaires.
+      <AppUpdateBanner v-if="isNativeApp" />
+      <ParcoursReminderScheduler v-if="schedulerMounted" />
+      <OfflineNotice v-if="showOfflineNotice" />
+      <!-- App native seulement : la Transition porte la surcouche des horaires.
          Le web garde le RouterView nu (des vues multi-racines s'accommodent
          mal d'une Transition, et la surcouche ne concerne que l'app). -->
-    <RouterView v-else-if="isNativeApp" v-slot="{ Component }">
-      <Transition :name="pageTransition">
-        <component :is="Component" />
-      </Transition>
-    </RouterView>
-    <RouterView v-else />
-    <!-- App native : pas de footer de site ; l'essentiel (à propos, mentions
+      <RouterView v-else-if="isNativeApp" v-slot="{ Component }">
+        <Transition :name="pageTransition">
+          <component :is="Component" />
+        </Transition>
+      </RouterView>
+      <RouterView v-else />
+      <!-- App native : pas de footer de site ; l'essentiel (à propos, mentions
          légales…) vit en bas du profil de l'app. -->
-    <SiteFooter v-if="!isHome && !isNativeApp" />
-    <ScrollToTop />
-    <AutoScrollPill />
-    <ToastContainer />
-    <ConfirmDialog />
-    <ConsentBanner />
-    <OnboardingFlow v-if="isOnboardingOpen" />
-    <WhatsNewVideo v-if="isWhatsNewOpen && !isOnboardingOpen" />
-    <FeedbackModal v-if="feedbackMounted" />
-    <ReadingSelectionMenu v-if="selectionMounted" />
-    <!-- La table d'étude : la place de sa barre au bas de la page, pour que
+      <SiteFooter v-if="!isHome && !isNativeApp" />
+      <ScrollToTop />
+      <AutoScrollPill />
+      <ToastContainer />
+      <ConfirmDialog />
+      <ConsentBanner />
+      <OnboardingFlow v-if="isOnboardingOpen" />
+      <WhatsNewVideo v-if="isWhatsNewOpen && !isOnboardingOpen" />
+      <FeedbackModal v-if="feedbackMounted" />
+      <ReadingSelectionMenu v-if="selectionMounted" />
+      <!-- La table d'étude : la place de sa barre au bas de la page, pour que
          la fin du texte ne passe pas dessous, puis la barre elle-même. -->
-    <div
-      v-if="tableBarVisible"
-      class="flex-shrink-0"
-      :style="{ height: `${TABLE_BAR_REM}rem` }"
-      aria-hidden="true"
-    ></div>
-    <GlobalAudioPlayer />
-    <ReadingTableBar />
-    <BottomTabBar v-if="isNativeApp" />
-    <!-- App native : le flou en dégradé qui rend l'heure et la batterie
+      <div
+        v-if="tableBarVisible"
+        class="flex-shrink-0"
+        :style="{ height: `${TABLE_BAR_REM}rem` }"
+        aria-hidden="true"
+      ></div>
+      <GlobalAudioPlayer />
+      <ReadingTableBar />
+      <BottomTabBar v-if="isNativeApp" />
+      <!-- App native : le flou en dégradé qui rend l'heure et la batterie
          lisibles quand la page défile sous elles (l'app reste bord à bord). -->
-    <StatusBarScrim v-if="isNativeApp" />
+      <StatusBarScrim v-if="isNativeApp" />
+    </div>
   </div>
+  <PrayerQuietPanel v-if="prayerQuiet.open" />
 </template>
 
 <style scoped>

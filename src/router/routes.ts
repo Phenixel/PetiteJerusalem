@@ -142,6 +142,16 @@ function localizedRoutes(): RouteRecordSingleView[] {
   );
 }
 
+/**
+ * The pages that offer the back-to-top button (ScrollToTop.vue); every other
+ * page goes without it. Only long lists that one goes down to pick an item:
+ * the texts of a reading session, the texts of a library section, the
+ * chapters of a book, the audio classes, the team's announcements. The
+ * library home page asks for it only while searching (requestScrollToTop).
+ * On a text being read, the reading menu takes its place.
+ */
+const SCROLL_TO_TOP = { scrollToTop: true } as const;
+
 export default [
   {
     path: "/",
@@ -206,6 +216,7 @@ export default [
     path: "/share-reading/session/:slug",
     name: "detail-session",
     component: DetailSession,
+    meta: SCROLL_TO_TOP,
   },
   // Every Tehilim the reader took in a chain, read one after the other
   // (services/sessionBatchReading.ts). Without an account too: a guest is
@@ -302,7 +313,7 @@ export default [
   {
     path: "/bibliotheque/:corpus(tehilim|michna|talmud|tanakh|moussar|halakha)",
     name: "study-corpus",
-    meta: { offlineOk: true },
+    meta: { offlineOk: true, ...SCROLL_TO_TOP },
     component: StudyPage,
   },
   // Le Sidour : les tefilot, les brahot et les textes des fêtes, en une
@@ -370,13 +381,13 @@ export default [
   {
     path: "/bibliotheque/:corpus/:slug",
     name: "etude-reading",
-    meta: { offlineOk: true, plainBackground: true },
+    meta: { offlineOk: true, plainBackground: true, ...SCROLL_TO_TOP },
     component: TextReadingPage,
   },
   {
     path: "/bibliotheque/:corpus/:slug/:section",
     name: "etude-reading-section",
-    meta: { offlineOk: true, plainBackground: true },
+    meta: { offlineOk: true, plainBackground: true, ...SCROLL_TO_TOP },
     component: TextReadingPage,
   },
   // Horaires (zmanim) : tout est calculé sur l'appareil, aucune donnée à
@@ -419,21 +430,25 @@ export default [
     path: "/chiourim",
     name: "chiourim",
     component: ChiourimPage,
+    meta: SCROLL_TO_TOP,
   },
   {
     path: "/chiourim/auteur/:auteur",
     name: "auteur-chiourim",
     component: AuteurChiourimPage,
+    meta: SCROLL_TO_TOP,
   },
   {
     path: "/chiourim/serie/:serieId",
     name: "serie-chiourim",
     component: SerieChiourimPage,
+    meta: SCROLL_TO_TOP,
   },
   {
     path: "/chiourim/:slug",
     name: "detail-chiour",
     component: DetailChiour,
+    meta: SCROLL_TO_TOP,
   },
   // Informations de l'équipe (nouveautés, incidents, questions). Les
   // notifications ouvrent /informations/:id (voir functions/src/announcements.ts).
@@ -441,6 +456,7 @@ export default [
     path: "/informations",
     name: "announcements",
     component: AnnouncementsPage,
+    meta: SCROLL_TO_TOP,
   },
   // Nous écrire : les messages envoyés à l'équipe et ses réponses (voir
   // docs/feedback.md), puis la page de chaque fil. L'app les relit sans
@@ -526,14 +542,14 @@ export default [
   {
     path: "/lire/:textId",
     name: "text-reading",
-    meta: { offlineOk: true, plainBackground: true },
+    meta: { offlineOk: true, plainBackground: true, ...SCROLL_TO_TOP },
     beforeEnter: redirectPublicLire,
     component: TextReadingPage,
   },
   {
     path: "/lire/:textId/:section",
     name: "text-reading-section",
-    meta: { offlineOk: true, plainBackground: true },
+    meta: { offlineOk: true, plainBackground: true, ...SCROLL_TO_TOP },
     beforeEnter: redirectPublicLire,
     component: TextReadingPage,
   },

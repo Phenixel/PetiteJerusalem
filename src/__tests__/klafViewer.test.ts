@@ -1,15 +1,17 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createApp, h, nextTick } from "vue";
 import { createI18n } from "vue-i18n";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 
 /**
- * Le parchemin : la commande posée au paragraphe qui le porte, la fenêtre
- * qu'elle ouvre, et la retranscription du psaume en menora.
+ * The parchment: the command placed at the paragraph that carries it, and
+ * the window it opens, the photo alone, edge to edge.
  *
- * Ce qui se joue ici ne se voit pas dans un rendu par défaut : la commande
- * n'existe que sur les paragraphes marqués `klaf`, la fenêtre n'est montée
- * que si la page en porte un, et la menora doit avoir ses sept branches, la
- * cinquième (la tige) descendant seule jusqu'au pied.
+ * What is at stake here does not show in a default render: the command
+ * exists only on paragraphs marked `klaf`, the window is mounted only if the
+ * page carries one, and it shows the photo with nothing but its cross (and,
+ * for the two pages of the ketoret, the arrows that turn them).
  */
 
 vi.mock("../services/analyticsService", () => ({
@@ -20,7 +22,7 @@ import fr from "../locales/fr";
 import LiturgyText from "../views/TextReading/LiturgyText.vue";
 import { parseTefilaBlocks } from "../services/textService";
 import { closeKlaf, klafOpen } from "../composables/useKlaf";
-import { MENORA_KLAF } from "../content/klaf";
+import { KLAF_PHOTOS } from "../content/klaf";
 
 const AVEC_KLAF = parseTefilaBlocks([
   {
@@ -79,40 +81,73 @@ describe("le parchemin dans le fil du sidour", () => {
     app.unmount();
   });
 
-  it("ouvre le parchemin demandé, photo d'abord, puis sa retranscription", async () => {
+  it("ouvre la photo seule, sans onglets ni légende, et la referme d'une croix", async () => {
     const { host, app } = monte(AVEC_KLAF);
     const [, menora] = host.querySelectorAll<HTMLButtonElement>(".reading-klaf");
     menora.click();
     await nextTick();
     expect(klafOpen.value).toBe("menora");
     const panneau = document.body.querySelector<HTMLElement>(".klaf-panel")!;
-    expect(panneau.textContent).toContain(fr.textReading.klaf.menora.title);
-    expect(panneau.querySelectorAll("img")).toHaveLength(1);
-    expect(panneau.querySelector("img")?.getAttribute("src")).toBe("/klaf/menora.webp");
+    expect(panneau.getAttribute("aria-label")).toBe(fr.textReading.klaf.menora.title);
+    const photos = panneau.querySelectorAll("img");
+    expect(photos).toHaveLength(1);
+    expect(photos[0].getAttribute("src")).toBe("/klaf/menora.webp");
+    // Nothing but the photo: no title, no tabs, no text.
+    expect(panneau.querySelector("h3, [role='group'], p")).toBeNull();
+    expect(panneau.textContent?.trim()).toBe("");
+    // One page: no arrows.
+    expect(panneau.querySelector(".klaf-pages")).toBeNull();
 
-    // L'onglet du texte : sept branches, la tige au milieu, le pied.
-    const onglets = [...panneau.querySelectorAll<HTMLButtonElement>('[role="group"] button')];
-    onglets.find((b) => b.textContent?.trim() === fr.textReading.klaf.text)!.click();
-    await nextTick();
-    const branches = [...panneau.querySelectorAll(".menora-branch")];
-    expect(branches).toHaveLength(7);
-    expect(branches.map((b) => b.textContent?.trim())).toEqual([...MENORA_KLAF.branches]);
-    expect(branches[3].classList.contains("menora-stem")).toBe(true);
-    expect(panneau.querySelector(".menora-base")?.textContent?.trim()).toBe(MENORA_KLAF.base);
-
-    // Fermée, elle rend l'état partagé.
-    panneau.querySelector<HTMLButtonElement>(".icon-btn")!.click();
+    panneau.querySelector<HTMLButtonElement>(".klaf-close")!.click();
     await nextTick();
     expect(klafOpen.value).toBeNull();
     app.unmount();
   });
 
-  it("montre les deux pages du pitoum haketoret", async () => {
+  it("tourne les deux pages du pitoum haketoret", async () => {
     const { host, app } = monte(AVEC_KLAF);
     host.querySelector<HTMLButtonElement>(".reading-klaf")!.click();
     await nextTick();
     const panneau = document.body.querySelector<HTMLElement>(".klaf-panel")!;
-    expect(panneau.querySelectorAll("img")).toHaveLength(2);
+    const src = () => panneau.querySelector("img")?.getAttribute("src");
+    expect(src()).toBe("/klaf/ketoret-1.webp");
+    expect(panneau.querySelector(".klaf-count")?.textContent?.trim()).toBe("1 / 2");
+
+    const [precedente, suivante] = panneau.querySelectorAll<HTMLButtonElement>(".klaf-turn");
+    expect(precedente.disabled).toBe(true);
+    suivante.click();
+    await nextTick();
+    expect(src()).toBe("/klaf/ketoret-2.webp");
+    expect(suivante.disabled).toBe(true);
     app.unmount();
   });
 });
+
+describe("les photos des parchemins", () => {
+  // The window takes the photo's shape from the sizes written in
+  // content/klaf.ts: a photo replaced without updating them would be cut.
+  it("déclarent la taille réelle de leur fichier", () => {
+    for (const photo of Object.values(KLAF_PHOTOS).flat()) {
+      const size = webpSize(resolve("public", photo.src.slice(1)));
+      expect({ src: photo.src, ...size }).toEqual({
+        src: photo.src,
+        width: photo.width,
+        height: photo.height,
+      });
+    }
+  });
+});
+
+/** The size of a WebP image, read from its header (VP8, VP8L or VP8X). */
+function webpSize(path: string): { width: number; height: number } {
+  const bytes = readFileSync(path);
+  const chunk = bytes.toString("ascii", 12, 16);
+  if (chunk === "VP8X") {
+    return { width: 1 + bytes.readUIntLE(24, 3), height: 1 + bytes.readUIntLE(27, 3) };
+  }
+  if (chunk === "VP8L") {
+    const bits = bytes.readUInt32LE(21);
+    return { width: 1 + (bits & 0x3fff), height: 1 + ((bits >> 14) & 0x3fff) };
+  }
+  return { width: bytes.readUInt16LE(26) & 0x3fff, height: bytes.readUInt16LE(28) & 0x3fff };
+}

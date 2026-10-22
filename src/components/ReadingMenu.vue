@@ -83,6 +83,12 @@ import { analyticsService } from "../services/analyticsService";
  * propres boutons ; une page trop courte pour défiler ne le montre donc pas,
  * sa barre d'outils étant restée sous les yeux.
  *
+ * A text whose table of contents would hold nothing but the text size and
+ * the way back to the top (`settingsOnly`) keeps a single round button, the
+ * settings one: a menu button that only leads to the top of the page, next
+ * to the settings, was one button too many. The settings then take in the
+ * text size and « Haut de page ».
+ *
  * La page peut aussi lui confier deux commandes de sa barre d'outils, pour
  * qu'elles restent à portée en pleine lecture : la bascule hébreu /
  * phonétique (`phonetic`, null quand le texte ne se translittère pas), avec
@@ -324,6 +330,38 @@ function onMenuButton() {
   else close();
 }
 
+/**
+ * The table of contents would only carry the text size and « Haut de page »:
+ * no landmark, no Hebrew / phonetic toggle, nothing to download or set
+ * aside, no compass, no mirror. The settings then stand alone, behind a
+ * single round button, and take in those two commands (see the header).
+ */
+const settingsOnly = computed(
+  () =>
+    !props.sections.length &&
+    props.phonetic === null &&
+    !props.pageForm &&
+    props.downloadState === "none" &&
+    !props.setAside &&
+    !kotelCompassOffered.value &&
+    !tefilinMirrorOffered.value,
+);
+
+/** The single round button, when the settings stand alone: it opens them, then closes. */
+function onSettingsOnlyButton() {
+  if (open.value) {
+    close();
+    return;
+  }
+  open.value = true;
+  showSettings();
+}
+
+const settingsOnlyIcon = computed(() => (open.value ? "x" : "settings"));
+const settingsOnlyLabel = computed(() =>
+  open.value ? t("common.close") : t("textReading.settings.open"),
+);
+
 /** Le bouton de droite : les réglages depuis le sommaire, la croix depuis eux. */
 function onSettingsButton() {
   if (view.value === "menu") showSettings();
@@ -417,12 +455,24 @@ const tour = ref<InstanceType<typeof FeatureTour> | null>(null);
 const menuButton = ref<HTMLElement | null>(null);
 const downloadButton = ref<HTMLElement | null>(null);
 const settingsButton = ref<HTMLElement | null>(null);
+const settingsOnlyButton = ref<HTMLElement | null>(null);
 
 const menuTip = computed<TourStep[]>(() => {
+  // A single button: one step, which says all that it holds.
+  if (settingsOnly.value) {
+    return [
+      {
+        key: "settings",
+        title: t("tips.reading.settingsAlone.title"),
+        text: t("tips.reading.settingsAlone.text"),
+        target: () => settingsOnlyButton.value,
+        radius: 9999,
+      },
+    ];
+  }
   const steps: TourStep[] = [
     {
       key: "menu",
-      icon: "list",
       title: t("tips.reading.menu.title"),
       text: t("tips.reading.menu.text"),
       target: () => menuButton.value,
@@ -432,7 +482,6 @@ const menuTip = computed<TourStep[]>(() => {
   if (props.downloadState !== "none") {
     steps.push({
       key: "download",
-      icon: "download",
       title: t("tips.reading.download.title"),
       text: t("tips.reading.download.text"),
       target: () => downloadButton.value,
@@ -441,7 +490,6 @@ const menuTip = computed<TourStep[]>(() => {
   }
   steps.push({
     key: "settings",
-    icon: "settings",
     title: t("tips.reading.settings.title"),
     text: t("tips.reading.settings.text"),
     target: () => settingsButton.value,
@@ -525,7 +573,7 @@ onUnmounted(() => {
                   >
                     <button
                       @click="emit('update:phonetic', false)"
-                      class="px-2.5 py-1 rounded-control text-sm font-medium transition-colors"
+                      class="px-2.5 py-1 rounded-segment text-sm font-medium transition-colors"
                       :class="
                         !phonetic && !pageFormActive
                           ? 'bg-surface text-primary shadow-sm'
@@ -540,7 +588,7 @@ onUnmounted(() => {
                     <button
                       v-if="pageForm"
                       @click="emit('update:pageFormActive', true)"
-                      class="px-2.5 py-1 rounded-control text-sm font-medium transition-colors"
+                      class="px-2.5 py-1 rounded-segment text-sm font-medium transition-colors"
                       :class="
                         pageFormActive ? 'bg-surface text-primary shadow-sm' : 'text-text-secondary'
                       "
@@ -553,7 +601,7 @@ onUnmounted(() => {
                     <button
                       v-if="phonetic !== null"
                       @click="emit('update:phonetic', true)"
-                      class="px-2.5 py-1 rounded-control text-sm font-medium transition-colors"
+                      class="px-2.5 py-1 rounded-segment text-sm font-medium transition-colors"
                       :class="
                         phonetic ? 'bg-surface text-primary shadow-sm' : 'text-text-secondary'
                       "
@@ -632,6 +680,11 @@ onUnmounted(() => {
             <!-- Les réglages de lecture : des lignes séparées d'un filet, comme
                  l'écran des réglages, chacune avec son interrupteur. -->
             <div v-else key="settings" class="settings-view overflow-y-auto px-3 pt-2.5 pb-2">
+              <!-- Alone, the settings carry what the table of contents held:
+                   the text size here, the way back to the top below. -->
+              <div v-if="settingsOnly" class="flex items-center pb-1">
+                <ReadingSizeControl />
+              </div>
               <p class="section-heading !px-0">{{ t("textReading.settings.title") }}</p>
               <ul class="flex flex-col divide-y divide-line">
                 <li>
@@ -720,7 +773,7 @@ onUnmounted(() => {
                       :key="lang"
                       type="button"
                       @click="setTranslationLang(lang)"
-                      class="px-3 py-1 rounded-control text-sm font-medium transition-colors"
+                      class="px-3 py-1 rounded-segment text-sm font-medium transition-colors"
                       :class="
                         lang === translationLang
                           ? 'bg-surface text-primary shadow-sm'
@@ -782,6 +835,10 @@ onUnmounted(() => {
                    de se régler : partager le texte, écrire au support, et, sur
                    le site, prendre l'app. -->
               <div class="settings-actions">
+                <button v-if="settingsOnly" type="button" class="action-item" @click="goTop">
+                  <AppIcon name="arrow-up" :size="13" class="flex-shrink-0 text-text-secondary" />
+                  {{ t("textReading.navTop") }}
+                </button>
                 <button type="button" class="action-item" @click="share">
                   <AppIcon name="share" :size="13" class="flex-shrink-0 text-text-secondary" />
                   {{ t("textReading.settings.share") }}
@@ -820,12 +877,29 @@ onUnmounted(() => {
       </transition>
 
       <!-- Les boutons ronds : celui du menu, toujours là, et celui des réglages
-           qui paraît à sa droite quand le panneau est ouvert. -->
+           qui paraît à sa droite quand le panneau est ouvert. When the
+           settings stand alone (settingsOnly), a single round button opens
+           them and becomes the cross. -->
       <div class="flex items-center justify-end">
+        <button
+          v-if="settingsOnly"
+          ref="settingsOnlyButton"
+          @click="onSettingsOnlyButton"
+          class="fab"
+          :class="{ 'text-primary': open }"
+          :aria-label="settingsOnlyLabel"
+          aria-haspopup="menu"
+          :aria-expanded="open"
+        >
+          <transition name="fab-icon" mode="out-in">
+            <AppIcon :key="settingsOnlyIcon" :name="settingsOnlyIcon" :size="18" />
+          </transition>
+        </button>
         <!-- The title being read opens on the left of the icon (peekShown);
              the button keeps its name for screen readers, the title being a
              hint for the eye. -->
         <button
+          v-else
           ref="menuButton"
           @click="onMenuButton"
           class="fab fab-menu"
@@ -844,7 +918,7 @@ onUnmounted(() => {
           </span>
         </button>
         <transition name="fab-second">
-          <div v-if="open" class="fab-second">
+          <div v-if="open && !settingsOnly" class="fab-second">
             <button
               ref="settingsButton"
               @click="onSettingsButton"
