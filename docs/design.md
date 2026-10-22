@@ -4258,7 +4258,7 @@ down.
   phone zooming under the caption; color wipes for the two big cuts.
 - **It opens and ends like the banners.** The opening and the end card
   speak the language of the designer's logo and share banners (section 8):
-  his cream, his stars in orange and blue scattered around what is said,
+  the cream, the stars in orange and blue scattered around what is said,
   « בס״ד · פטיט ירושלים » in orange above, the name in capitals, the
   « 4.0 » of the opening in the banners' blue. For the networks, the
   general banner's promise follows, its three verbs in blue. The app's

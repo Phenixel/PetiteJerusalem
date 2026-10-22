@@ -9,7 +9,7 @@
  * beyond the opening's strikes, no scrolling bands, no echoes. The app's
  * screens are in the colors of 4.0 (palette.ts, white on the pastel orange,
  * as in the app); the opening and the end card speak the language of the
- * designer's logo and share banners (BRAND): the cream, his stars in orange
+ * designer's logo and share banners (BRAND): the cream, the stars in orange
  * and blue, « בס״ד · פטיט ירושלים » in orange, the name in capitals, the
  * logo itself, cut into its pieces and set in motion, never redrawn
  * (LogoMotion.tsx; public/brand/, copied from assets/brand/).
@@ -134,7 +134,7 @@ function BrandLine({ at }: { at: number }) {
 // --- The opening -------------------------------------------------------------------------
 
 /**
- * On the banners' cream, among the designer's stars, his logo builds itself
+ * On the banners' cream, among the designer's stars, the logo builds itself
  * in the middle on the music's first hit (LogoMotion), then rises to the
  * top; under it, the orange line of the banners, then the lines struck one
  * per beat, the last one, « 4.0 », much bigger and in their blue; then a
@@ -519,7 +519,7 @@ function VersionPill({ at }: { at: number }) {
 
 /**
  * The end, in the banners' language: the designer's logo builds itself
- * among his stars (LogoMotion), the orange line, the name in capitals, the
+ * among the stars (LogoMotion), the orange line, the name in capitals, the
  * version; then, in the
  * app, a good discovery and where to watch it again (the last image holds
  * under « C'est parti »); for the networks, the banners' promise, free and

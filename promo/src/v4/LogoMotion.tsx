@@ -3,9 +3,9 @@
  * lives quietly.
  *
  * Nothing is redrawn (docs/design.md, "The logo and the share banners"):
- * the pieces are cut from his PNG (public/brand/logo.png, copied from the
- * app's assets/brand/logo-transparent.png) when the video renders, by color
- * and by place, and each one moves on its own:
+ * the pieces are cut from the designer's PNG (public/brand/logo.png, copied
+ * from the app's assets/brand/logo-transparent.png) when the video renders,
+ * by color and by place, and each one moves on its own:
  *
  *  1. the book opens from its spine;
  *  2. the wall rises out of it;
@@ -15,7 +15,7 @@
  *  5. the star falls from above, turning, lands with a few sparks, and
  *     twinkles from then on, the flame flickering.
  *
- * The boundaries were measured on his 1024 px image (fractions below); a
+ * The boundaries were measured on the 1024 px image (fractions below); a
  * new logo would have its own.
  */
 import { useEffect, useState, type CSSProperties } from "react";

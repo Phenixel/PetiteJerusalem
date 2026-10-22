@@ -21,7 +21,7 @@ real gestures, what must be read coming out of the screen), slowed down:
 a presentation rather than an ad. A first cut in series 2's manner
 (scrolling bands, echoes, stone mosaic, captions on plates) was set aside.
 It opens and ends in the language of the designer's logo and share
-banners: the cream, his stars in orange and blue, « בס״ד · פטיט ירושלים »
+banners: the cream, the stars in orange and blue, « בס״ד · פטיט ירושלים »
 in orange, the name in capitals, and the logo itself in motion: cut into
 its pieces when the video renders (`src/v4/LogoMotion.tsx`), it builds
 itself, the book opening, the wall, the tower and the dome rising, the
