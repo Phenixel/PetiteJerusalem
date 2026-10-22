@@ -112,6 +112,7 @@ const he: LocaleMessages = {
     done: "בואו נתחיל",
     skip: "דילוג",
     failed: "לא הצלחנו לטעון את הסרטון. בדקו את החיבור ונסו שוב.",
+    more: "למידע נוסף",
   },
   help: {
     title: "מרכז העזרה",
@@ -128,6 +129,19 @@ const he: LocaleMessages = {
     guides: "מדריכים",
     replay: "לראות שוב",
     more: "מדריכים נוספים",
+    // The page of a version (/aide/nouveautes/4.0): its video, passage by
+    // passage, and the questions each one raises (content/help/versions.ts).
+    versions: "גרסאות",
+    version: {
+      row: "גרסה {version}, קטע אחר קטע",
+      whole: "הסרטון כולו",
+      kicker: "קטע אחר קטע",
+      passages: "הקטעים של הסרטון",
+      play: "לצפות שוב בקטע הזה",
+      playLabel: "לצפות שוב ב״{title}״, ב־{time}",
+      seoDescription:
+        "מה חדש בגרסה {version} של פטיט ירושלים, קטע אחר קטע: הסרטון, והתשובות לשאלות שהוא מעורר.",
+    },
     contact: {
       title: "נשארה שאלה בלי תשובה?",
       text: "כתבו לנו: הצוות עונה לכם באפליקציה.",

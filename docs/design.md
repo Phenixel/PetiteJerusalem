@@ -283,8 +283,11 @@ tabs went first, then what is new.
 - **One can always leave.** The button at the top, the Android back
   gesture, Escape. Come on its own at launch, the video is skipped:
   « Passer » ("Skip"); asked for from the help center, it is closed:
-  « Fermer » ("Close"). At the end, « C'est parti » ("Let's go") closes it
-  and « Revoir la vidéo » ("Watch again") replays it. The page behind does
+  « Fermer » ("Close"). At the end, « C'est parti » ("Let's go") closes it,
+  « Revoir la vidéo » ("Watch again") replays it and « En savoir plus »
+  ("Learn more") leads to the page of the version, its passages and their
+  questions (see "The help center shows how, part by part"); opened from
+  that page, it does not offer the way back to it. The page behind does
   not move.
 - **It wears the page background** (`bg-bg-beige`), the same as the video's,
   so the bars above and below the picture on a tall phone do not show.
@@ -304,13 +307,35 @@ gesture once, where it happens; the help center (`/aide`,
 site as in the app. How to add to it: `docs/help-center.md`.
 
 - **Reached from the profile.** Its row opens the profile's Help group,
-  before « Nous écrire »; on the site, the footer links to it. The profile
+  then « Les nouveautés de la 4.0 », the page of the version, one touch
+  away, then « Nous écrire »; on the site, the footer links to it. The profile
   tab stays lit on its pages, as on the profile's sub-pages. Its guides are
   in the bundle: it opens offline and without an account.
 - **What's new first.** At the top, the "what's new" video as a card
   (`WhatsNewCard.vue`): its own poster in its 9:16 format, the play button
   on it, « Regarder » ("Watch") spelled out, the whole card playing it.
   Whoever skipped it at launch finds it here.
+- **Each version, passage by passage.** Under the card, « Les versions »:
+  a row per version (« La 4.0, passage par passage »), opening its page
+  (`/aide/nouveautes/4.0`, `HelpVersionPage.vue`). What the version
+  changes in two sentences, the video's card, then its passages in the
+  video's order, as questions people ask: a card per passage, closed, its
+  title and where it starts in the video (« 0:20 », the theme color, in
+  figures that keep their width) on the side where one reads from, the
+  chevron at the other end. Opened, « Revoir ce passage » (the play
+  triangle and its name, solid: the one command of the card) plays the
+  video from that point; then the questions, in the text color and bold,
+  each answer under it in the secondary color, a fine rule between two;
+  then the guide that explains it further (the book and its title) and the
+  way into the app (its name and the arrow). A FAQ that reads like the
+  video: whoever wants one answer goes to the passage that shows it,
+  without watching a hundred seconds again. All closed, the sixteen
+  passages fit in two screens; an address ending in a passage
+  (`#calme`) opens on that one, for a link from a guide or a message. A
+  passage the language's video does not show (the translations, in the
+  Hebrew one) keeps its questions, without the command. An older version's
+  page keeps its questions without the video: only the current one is
+  served.
 - **Guides by part of the app.** Grouped by topic (finding your way, the
   home page, the prayer, reading, Mon parcours, the times, reading
   together) like the
@@ -350,7 +375,11 @@ site as in the app. How to add to it: `docs/help-center.md`.
 Held by `src/__tests__/helpCenter.test.ts` (the guides in three languages
 and typeset, their screenshots and links, the list of videos) and
 `helpCenterPages.test.ts` (the card plays the video, the videos only when
-there are some, an unknown guide leads back to the help center).
+there are some, an unknown guide leads back to the help center); the page
+of a version by `helpCenter.test.ts` (« the pages of the versions »: a
+passage for every chapter of the video and the other way round, its texts
+in three languages) and `helpCenterPages.test.ts` (« the page of a
+version »: closed passages, a passage playing from its start, `#fin`).
 
 ### Neighboring pages, a set of tabs
 

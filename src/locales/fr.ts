@@ -116,6 +116,7 @@ const fr = {
     done: "C'est parti",
     skip: "Passer",
     failed: "La vidéo n'a pas pu se charger. Vérifiez la connexion et réessayez.",
+    more: "En savoir plus",
   },
   // The help center (/aide): guides, videos, what's new. Its guides are in
   // src/content/help/catalog.ts, its videos in public/help/videos.json.
@@ -134,6 +135,19 @@ const fr = {
     guides: "Guides",
     replay: "Revoir",
     more: "D'autres guides",
+    // The page of a version (/aide/nouveautes/4.0): its video, passage by
+    // passage, and the questions each one raises (content/help/versions.ts).
+    versions: "Les versions",
+    version: {
+      row: "La {version}, passage par passage",
+      whole: "Toute la vidéo",
+      kicker: "Passage par passage",
+      passages: "Les passages de la vidéo",
+      play: "Revoir ce passage",
+      playLabel: "Revoir «\u00a0{title}\u00a0», à {time}",
+      seoDescription:
+        "Les nouveautés de la {version} de Petite Jérusalem, passage par passage\u00a0: la vidéo, et les réponses aux questions qu'elle pose.",
+    },
     contact: {
       title: "Une question sans réponse\u202f?",
       text: "Écrivez-nous\u00a0: l'équipe vous répond dans l'app.",

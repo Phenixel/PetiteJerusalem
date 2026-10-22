@@ -14,6 +14,7 @@ import { useFeatureTips } from "../../composables/useFeatureTips";
 import { useToast } from "../../composables/useToast";
 import { useHelpText } from "../../composables/useHelpText";
 import { guidesByTopic } from "../../content/help/catalog";
+import { HELP_VERSIONS } from "../../content/help/versions";
 import { loadHelpVideos, type HelpVideo } from "../../services/helpVideos";
 import { seoService } from "../../services/seoService";
 import { SITE_URL } from "../../config/site";
@@ -24,7 +25,8 @@ import { SITE_URL } from "../../config/site";
  * app nobody explained.
  *
  * From top to bottom:
- *  - the "what's new" video, for whoever skipped it at launch;
+ *  - the "what's new" video, for whoever skipped it at launch, and the
+ *    versions, each explained passage by passage (/aide/nouveautes/4.0);
  *  - the team's videos, published on YouTube (none yet: the section shows
  *    once the site lists one);
  *  - the guides, by part of the app, each a page of its own;
@@ -90,6 +92,16 @@ onMounted(() => {
 
     <div class="flex flex-col gap-8">
       <WhatsNewCard />
+
+      <SettingsGroup :title="t('help.versions')">
+        <SettingsRow
+          v-for="entry in HELP_VERSIONS"
+          :key="entry.version"
+          icon="list"
+          :label="t('help.version.row', { version: entry.version })"
+          :to="`/aide/nouveautes/${entry.version}`"
+        />
+      </SettingsGroup>
 
       <section v-if="videos.length">
         <h2 class="mb-3 px-1 text-sm font-semibold text-text-secondary">

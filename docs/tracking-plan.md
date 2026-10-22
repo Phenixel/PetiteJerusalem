@@ -173,6 +173,7 @@ The video started playing.
 | `version` | the version whose video plays: `4.0`                                                           |
 | `source`  | `launch` (the first launch after the update), `help` (its card in the help center), `link` (`?nouveautes`) |
 | `muted`   | true when the system refused the sound without a touch, and the video plays muted             |
+| `passage` | **new property**: the passage it was played from, on the page of the version (`/aide/nouveautes/4.0`): the chapter's id (`calme`, `fin`, `montage`...), otherwise null |
 
 ### `whats_new_video_closed` (new)
 
@@ -182,9 +183,14 @@ The video left the screen.
 | ----------------- | --------------------------------------------------------------------------------------------------- |
 | `version`         | as above                                                                                            |
 | `source`          | as above                                                                                            |
-| `via`             | `close` (the button at the top: « Passer » at launch, « Fermer » otherwise), `done` (« C'est parti », at the end), `back` (Android back, Escape), `error` (it did not load) |
+| `via`             | `close` (the button at the top: « Passer » at launch, « Fermer » otherwise), `done` (« C'est parti », at the end), `more` (**new value**: « En savoir plus », at the end, which leads to the page of the version), `back` (Android back, Escape), `error` (it did not load) |
 | `watched_seconds` | the furthest point reached, in seconds                                                              |
 | `completed`       | true when the video was played to the end                                                           |
+| `passage`         | **new property**: as above                                                                          |
+
+`watched_seconds` of a video played from a passage counts from the start
+of the video, not of the passage: the passage's start is in
+`src/content/help/whatsNewChapters.json`.
 
 `via` `error` with `source` `launch` is not seen by anyone: the screen only
 shows once the video can play, and the video is offered again at a later

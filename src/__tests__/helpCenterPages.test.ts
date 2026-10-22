@@ -4,6 +4,7 @@ import { createI18n } from "vue-i18n";
 import { createMemoryHistory, createRouter, RouterView } from "vue-router";
 import fr from "../locales/fr";
 import { HELP_GUIDES } from "../content/help/catalog";
+import { HELP_VERSIONS } from "../content/help/versions";
 import { parseHelpVideos } from "../services/helpVideos";
 
 /**
@@ -12,7 +13,10 @@ import { parseHelpVideos } from "../services/helpVideos";
  * - the page opens on the "what's new" video, and its card plays it;
  * - the guides by topic; the videos only when the site lists some;
  * - a guide's page shows its blocks, and an unknown guide leads back to the
- *   help center.
+ *   help center;
+ * - the page of a version lists the passages of its video, each opening on
+ *   its questions and playing the video from its start; `#calme` opens on
+ *   that passage.
  */
 
 const { videosToShow } = vi.hoisted(() => ({ videosToShow: { value: [] as unknown[] } }));
@@ -37,12 +41,14 @@ const mounted: App[] = [];
 async function mount(path: string) {
   const { default: HelpCenterPage } = await import("../views/Help/HelpCenterPage.vue");
   const { default: HelpGuidePage } = await import("../views/Help/HelpGuidePage.vue");
+  const { default: HelpVersionPage } = await import("../views/Help/HelpVersionPage.vue");
   const i18n = createI18n({ legacy: false, locale: "fr", messages: { fr } });
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [
       { path: "/aide", component: HelpCenterPage },
       { path: "/aide/:slug", component: HelpGuidePage },
+      { path: "/aide/nouveautes/:version", name: "help-version", component: HelpVersionPage },
       { path: "/:other(.*)*", component: { render: () => null } },
     ],
   });
@@ -112,6 +118,66 @@ describe("the help center page", () => {
 
     document.body.innerHTML = "";
     const lost = await mount("/aide/une-page-qui-n-existe-pas");
+    expect(lost.router.currentRoute.value.path).toBe("/aide");
+  });
+});
+
+describe("the page of a version", () => {
+  afterEach(() => {
+    for (const app of mounted.splice(0)) app.unmount();
+  });
+
+  beforeEach(() => {
+    document.body.innerHTML = "";
+    Element.prototype.scrollIntoView = vi.fn();
+  });
+
+  const version = HELP_VERSIONS.find((entry) => entry.version === "4.0")!;
+
+  it("is reached from the help center", async () => {
+    const page = await mount("/aide");
+    const row = page.host.querySelector('a[href="/aide/nouveautes/4.0"]');
+    expect(row?.textContent).toContain("La 4.0, passage par passage");
+  });
+
+  it("lists the passages of the video, closed, each with where it starts", async () => {
+    const page = await mount("/aide/nouveautes/4.0");
+    expect(page.host.querySelector("h1")?.textContent).toContain("Les nouveautés de la 4.0");
+    const passages = [...page.host.querySelectorAll("li.passage")];
+    expect(passages.map((li) => li.id)).toEqual(version.passages.map((p) => p.chapter));
+    expect(passages[0].querySelector("summary")?.textContent).toContain("0:04");
+    expect(passages[0].querySelector("summary")?.textContent).toContain("Les onglets changent");
+    expect(page.host.querySelectorAll("details[open]")).toHaveLength(0);
+  });
+
+  it("opens a passage on its questions, and plays the video from its start", async () => {
+    const page = await mount("/aide/nouveautes/4.0");
+    const details = page.host.querySelector<HTMLDetailsElement>("#calme details")!;
+    details.open = true;
+    details.dispatchEvent(new Event("toggle"));
+    await nextTick();
+    expect(details.textContent).toContain("Pourquoi n'apparaît-il pas sur iPhone");
+    expect(details.querySelector('a[href="/aide/avant-la-tefila"]')).not.toBeNull();
+
+    const play = [...details.querySelectorAll("button")].find((button) =>
+      button.textContent?.includes("Revoir ce passage"),
+    )!;
+    expect(play.getAttribute("aria-label")).toContain("à 0:20");
+    play.click();
+    const { isWhatsNewOpen, useWhatsNew } = await import("../composables/useWhatsNew");
+    expect(isWhatsNewOpen.value).toBe(true);
+    expect(useWhatsNew().whatsNewPassage.value).toEqual({ id: "calme", start: 20 });
+    useWhatsNew().closeWhatsNew(true);
+  });
+
+  it("opens on the passage its address names, and leads an unknown version back", async () => {
+    const page = await mount("/aide/nouveautes/4.0#fin");
+    expect(page.host.querySelector<HTMLDetailsElement>("#fin details")?.open).toBe(true);
+    expect(page.host.querySelectorAll("details[open]")).toHaveLength(1);
+    expect(Element.prototype.scrollIntoView).toHaveBeenCalled();
+
+    document.body.innerHTML = "";
+    const lost = await mount("/aide/nouveautes/9.9");
     expect(lost.router.currentRoute.value.path).toBe("/aide");
   });
 });

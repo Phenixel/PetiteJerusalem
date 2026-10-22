@@ -6,23 +6,30 @@ the app nobody explained to them. It holds three kinds of content:
 - **the "what's new" video** of the current version, as a card at the top
   (the same video the app plays once after the update, see
   `docs/design.md`, "What's new plays once, after the update");
+- **the page of each version** (`/aide/nouveautes/4.0`): what it changed,
+  passage by passage in the order of its video, each passage playing the
+  video from its start and answering the questions it raises;
 - **written guides**, one per thing to know, each with its drawn and
   animated screenshots;
 - **tutorial videos**, filmed by the team and published on YouTube.
 
 It is reached from the profile (the « Centre d'aide » row of the Help
-group) and from the site's footer. In the app it also holds « Revoir
+group, and « Les nouveautés de la 4.0 » under it for the page of the
+version), from the end of the video (« En savoir plus ») and from the
+site's footer. In the app it also holds « Revoir
 l'introduction » and « Revoir les astuces ». The design choices are in
 `docs/design.md`, "The help center shows how, part by part".
 
 | What                           | Where                                        |
 | ------------------------------ | -------------------------------------------- |
 | The guides and their topics    | `src/content/help/catalog.ts`                |
+| The versions, their questions  | `src/content/help/versions.ts`               |
+| Where each passage starts      | `src/content/help/whatsNewChapters.json` (written by `promo/scripts/chapters.mjs`) |
 | The drawn screenshots          | `src/components/mock/`, named in `src/components/help/illustrations.ts` |
 | The videos                     | `public/help/videos.json`                    |
 | The pages                      | `src/views/Help/`                            |
 | The words around them          | `help.*` in `src/locales/`                   |
-| The checks                     | `src/__tests__/helpCenter.test.ts`, `helpCenterPages.test.ts` |
+| The checks                     | `src/__tests__/helpCenter.test.ts`, `helpCenterPages.test.ts`, `whatsNew.test.ts` |
 
 ## Publishing a YouTube video
 
@@ -100,6 +107,51 @@ A guide is an entry of `HELP_GUIDES` in `src/content/help/catalog.ts`:
 
 The guides are in the bundle: a new or corrected guide reaches the apps
 with their next version (and the site at once).
+
+## Answering for a version
+
+The page of a version follows its "what's new" video passage by passage,
+and answers, under each one, the questions it raises: a FAQ in the order
+of the video. A version is an entry of `HELP_VERSIONS` in
+`src/content/help/versions.ts`:
+
+```ts
+{
+  version: "4.0",                       // its address, /aide/nouveautes/4.0
+  intro: { fr: "…", en: "…", he: "…" }, // what it changes, in two sentences
+  passages: [
+    {
+      chapter: "calme",                 // the chapter of the video it goes with
+      title: { fr: "…", en: "…", he: "…" },
+      questions: [{ question: { … }, answer: { … } }],
+      guides: ["avant-la-tefila"],      // optional: guides that explain it further
+      link: { to: "/sidour", label: { key: "common.sidour" } }, // optional
+    },
+  ],
+}
+```
+
+- **One passage per chapter of the video, in its order.** Where each
+  chapter starts, in each language's video, is not written by hand: the
+  promo project writes it (`src/content/help/whatsNewChapters.json`) when
+  it renders the videos (`npm run render`, or `node scripts/chapters.mjs`
+  alone), from the cut the videos are made of (`promo/src/v4/plan.ts`).
+  The montage of the end (« Et aussi ») is one passage, `montage`: a shot of
+  one second is too short to aim at.
+- **A question is what someone would type**, in their words (« Pourquoi
+  n'apparaît-il pas sur iPhone ? »); its answer, two sentences at most,
+  names the buttons as the app names them, in each language.
+- An answer can borrow the app's own words (`{ key: "tips.parcours.wall.text" }`),
+  like a guide.
+- `npm run verify` holds it (`helpCenter.test.ts`, « the pages of the
+  versions »): a chapter of the video without its passage, a passage the
+  video does not have, a missing language, a guide or a route that does
+  not exist fail there.
+
+A new version adds its entry; the previous ones stay, their questions
+still true for whoever updates late. Only the current version's video is
+served (`WHATS_NEW_VERSION`, `useWhatsNew.ts`): an older page keeps its
+questions without « Revoir ce passage ».
 
 ## Drawing a screenshot
 

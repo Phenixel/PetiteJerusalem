@@ -35,6 +35,7 @@ import { useConsent } from "../../../composables/useConsent";
 import { useConfirm } from "../../../composables/useConfirm";
 import { useHolidayTheme } from "../../../composables/useHolidayTheme";
 import { useSupportUnread } from "../../../composables/useSupportUnread";
+import { WHATS_NEW_VERSION } from "../../../composables/useWhatsNew";
 import AppIcon from "../../../components/icons/AppIcon.vue";
 import type { IconName } from "../../../components/icons/registry";
 import HolidayOrnaments from "../../../components/holiday/HolidayOrnaments.vue";
@@ -310,9 +311,16 @@ onUnmounted(() => {
         </SettingsGroup>
 
         <!-- The help center holds the guides, the "what's new" video, the
-             introduction and the tips to see again (docs/help-center.md). -->
+             introduction and the tips to see again (docs/help-center.md);
+             the version's own page, its passages and their questions, is
+             one touch away. -->
         <SettingsGroup :title="t('profile.native.groups.help')">
           <SettingsRow icon="help" :label="t('help.title')" to="/aide" />
+          <SettingsRow
+            icon="play"
+            :label="t('help.whatsNew.title', { version: WHATS_NEW_VERSION })"
+            :to="`/aide/nouveautes/${WHATS_NEW_VERSION}`"
+          />
           <SettingsRow
             icon="message"
             :label="t('footer.reportIssue')"

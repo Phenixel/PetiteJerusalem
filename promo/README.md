@@ -139,7 +139,13 @@ the final montage goes to two beats per feature.
    versioned).
 3. **Render** (`npm run render`): Remotion renders each composition in H.264
    and AAC into `out/<id>.mp4` (not versioned), then the in-app copies.
-   Composes the missing music first.
+   Composes the missing music first. Last, `scripts/chapters.mjs` writes
+   where each passage of the in-app videos starts
+   (`src/content/help/whatsNewChapters.json` of the app): the help center's
+   page of the version plays the video from a passage, and answers its
+   questions (`docs/help-center.md`, "Answering for a version"). A new
+   chapter in `src/v4/plan.ts` needs its questions there: the app's checks
+   fail until they are written.
 
 `npm run studio` opens the Remotion studio, to review a video frame by frame
 and adjust a beat.

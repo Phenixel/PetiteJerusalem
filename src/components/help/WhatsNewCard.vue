@@ -13,7 +13,12 @@ import AppIcon from "../icons/AppIcon.vue";
  * « Regarder » spelled out. The poster comes from the site like the video:
  * offline, the card keeps its play button on a plain tint, and the video
  * says itself that it could not load.
+ *
+ * `title`: on the page of the version, whose own title already names it,
+ * the card says « Toute la vidéo » ("The whole video").
  */
+
+const props = defineProps<{ title?: string }>();
 
 const { t, locale } = useI18n();
 const { replayWhatsNew } = useWhatsNew();
@@ -26,7 +31,7 @@ const posterFailed = ref(false);
   <button
     type="button"
     class="card card-hover press-feedback flex w-full items-center gap-4 p-3 text-start sm:gap-5"
-    @click="replayWhatsNew"
+    @click="replayWhatsNew()"
   >
     <span class="poster relative shrink-0 overflow-hidden" aria-hidden="true">
       <img
@@ -45,7 +50,7 @@ const posterFailed = ref(false);
     </span>
     <span class="min-w-0 flex-1 py-1">
       <span class="font-display block text-xl font-bold leading-tight text-text-primary">
-        {{ t("help.whatsNew.title", { version: WHATS_NEW_VERSION }) }}
+        {{ props.title ?? t("help.whatsNew.title", { version: WHATS_NEW_VERSION }) }}
       </span>
       <span class="mt-1.5 block text-sm leading-relaxed text-text-secondary">
         {{ t("help.whatsNew.text") }}

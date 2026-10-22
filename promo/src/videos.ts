@@ -10,7 +10,7 @@
  */
 import type { Look } from "./theme.ts";
 import { buildTimeline, type Cue, type CueSound, type Durations, type MusicStyle } from "./timeline.ts";
-import { planDurations, planMarks, presentationPlan } from "./v4/plan.ts";
+import { planChapters, planDurations, planMarks, presentationPlan, type Chapter } from "./v4/plan.ts";
 import type { Locale } from "./v4/strings.ts";
 
 export type MontageId =
@@ -65,6 +65,12 @@ export type VideoSpec = {
    * (src/composables/useWhatsNew.ts).
    */
   appFile?: string;
+  /**
+   * The passages of a "what's new" video, in beats from its start: the
+   * help center's page of the version plays one from its start
+   * (scripts/chapters.mjs writes them for the app).
+   */
+  chapters?: Chapter[];
   /** Temps par plan du montage (2 dans la série 2, pour avoir le temps de lire). */
   montageStep?: number;
 };
@@ -430,6 +436,7 @@ for (const locale of ["fr", "en", "he"] as const) {
     music: v4Music(60),
     durations: planDurations(plan),
     marks: planMarks(plan),
+    chapters: planChapters(plan),
     montage: [],
   });
 }

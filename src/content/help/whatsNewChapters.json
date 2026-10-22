@@ -1,0 +1,57 @@
+{
+  "4.0": {
+    "fr": [
+      { "id": "bars", "start": 4, "end": 10 },
+      { "id": "etude", "start": 10, "end": 15 },
+      { "id": "sidour", "start": 15, "end": 20 },
+      { "id": "calme", "start": 20, "end": 25 },
+      { "id": "moment", "start": 25, "end": 31 },
+      { "id": "fin", "start": 31, "end": 36 },
+      { "id": "accueil", "start": 36, "end": 43 },
+      { "id": "parcours", "start": 43, "end": 50 },
+      { "id": "daf", "start": 50, "end": 55 },
+      { "id": "progress", "start": 55, "end": 61 },
+      { "id": "translation", "start": 61, "end": 65 },
+      { "id": "commentaries", "start": 65, "end": 70 },
+      { "id": "table", "start": 70, "end": 75 },
+      { "id": "audio", "start": 75, "end": 79 },
+      { "id": "contact", "start": 79, "end": 84 },
+      { "id": "montage", "start": 84, "end": 97 }
+    ],
+    "en": [
+      { "id": "bars", "start": 4, "end": 10 },
+      { "id": "etude", "start": 10, "end": 15 },
+      { "id": "sidour", "start": 15, "end": 20 },
+      { "id": "calme", "start": 20, "end": 25 },
+      { "id": "moment", "start": 25, "end": 31 },
+      { "id": "fin", "start": 31, "end": 36 },
+      { "id": "accueil", "start": 36, "end": 43 },
+      { "id": "parcours", "start": 43, "end": 50 },
+      { "id": "daf", "start": 50, "end": 55 },
+      { "id": "progress", "start": 55, "end": 61 },
+      { "id": "translation", "start": 61, "end": 65 },
+      { "id": "commentaries", "start": 65, "end": 70 },
+      { "id": "table", "start": 70, "end": 75 },
+      { "id": "audio", "start": 75, "end": 79 },
+      { "id": "contact", "start": 79, "end": 84 },
+      { "id": "montage", "start": 84, "end": 97 }
+    ],
+    "he": [
+      { "id": "bars", "start": 4, "end": 10 },
+      { "id": "etude", "start": 10, "end": 15 },
+      { "id": "sidour", "start": 15, "end": 20 },
+      { "id": "calme", "start": 20, "end": 25 },
+      { "id": "moment", "start": 25, "end": 31 },
+      { "id": "fin", "start": 31, "end": 36 },
+      { "id": "accueil", "start": 36, "end": 43 },
+      { "id": "parcours", "start": 43, "end": 50 },
+      { "id": "daf", "start": 50, "end": 55 },
+      { "id": "progress", "start": 55, "end": 61 },
+      { "id": "commentaries", "start": 61, "end": 66 },
+      { "id": "table", "start": 66, "end": 71 },
+      { "id": "audio", "start": 71, "end": 75 },
+      { "id": "contact", "start": 75, "end": 80 },
+      { "id": "montage", "start": 80, "end": 93 }
+    ]
+  }
+}

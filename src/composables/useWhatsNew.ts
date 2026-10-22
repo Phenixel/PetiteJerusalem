@@ -19,7 +19,8 @@ import { isNativeApp } from "./useNativeApp";
  * storage, and the native preferences as a safety net, see
  * devicePreference). If the video cannot load (no network at launch), nothing
  * shows and nothing is noted: it plays at a later launch. Its card at the
- * top of the help center (WhatsNewCard, /aide) plays it again, and
+ * top of the help center (WhatsNewCard, /aide) plays it again, the page of
+ * the version (/aide/nouveautes/4.0) plays it from one of its passages, and
  * `?nouveautes` in the address opens it anywhere, site included, to show it
  * or try it on a preview channel.
  *
@@ -78,6 +79,11 @@ const store = devicePreference<string>(
 
 const source = ref<WhatsNewSource | null>(null);
 
+/** A passage to play from (the page of the version), or null for the whole video. */
+export type WhatsNewPassage = { id: string; start: number };
+
+const passage = ref<WhatsNewPassage | null>(null);
+
 function readOnboardingSeen(): string | null {
   try {
     return localStorage.getItem(ONBOARDING_KEY);
@@ -119,12 +125,23 @@ export function useWhatsNew() {
   function closeWhatsNew(seen: boolean): void {
     if (seen) store.write(WHATS_NEW_VERSION);
     source.value = null;
+    passage.value = null;
   }
 
-  /** The help center's card: plays it again. */
-  function replayWhatsNew(): void {
+  /**
+   * The help center plays it again: whole (its card), or from one of its
+   * passages (the page of the version).
+   */
+  function replayWhatsNew(from: WhatsNewPassage | null = null): void {
+    passage.value = from;
     source.value = "help";
   }
 
-  return { isWhatsNewOpen, whatsNewSource: source, closeWhatsNew, replayWhatsNew };
+  return {
+    isWhatsNewOpen,
+    whatsNewSource: source,
+    whatsNewPassage: passage,
+    closeWhatsNew,
+    replayWhatsNew,
+  };
 }

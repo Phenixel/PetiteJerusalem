@@ -13,7 +13,9 @@ import {
   guidesByTopic,
   relatedGuides,
 } from "../content/help/catalog";
+import { HELP_VERSIONS, passageChapter, videoChapters } from "../content/help/versions";
 import { HELP_ILLUSTRATION_COMPONENTS } from "../components/help/illustrations";
+import { WHATS_NEW_VERSION } from "../composables/useWhatsNew";
 import { parseHelpVideos } from "../services/helpVideos";
 
 /**
@@ -25,6 +27,9 @@ import { parseHelpVideos } from "../services/helpVideos";
  *   the three locales have, and the French follows the house typography;
  * - a guide's address is unique, its topic exists, its drawn screenshots
  *   exist, its links lead into the app;
+ * - the page of a version answers for every passage of its video, and
+ *   every passage it answers for is in the video
+ *   (src/content/help/whatsNewChapters.json, written by the promo project);
  * - the list of videos the site serves (public/help/videos.json) is valid,
  *   and a newer list an older app cannot read loses an entry, not the page;
  * - the app asks its site for that list, and falls back on its own copy.
@@ -61,6 +66,43 @@ function allTexts(): { where: string; text: HelpText }[] {
   return texts;
 }
 
+/** Every text of the versions' pages, with where it comes from. */
+function versionTexts(): { where: string; text: HelpText }[] {
+  const texts: { where: string; text: HelpText }[] = [];
+  for (const version of HELP_VERSIONS) {
+    texts.push({ where: `${version.version} intro`, text: version.intro });
+    for (const passage of version.passages) {
+      const where = `${version.version} ${passage.chapter}`;
+      texts.push({ where: `${where} title`, text: passage.title });
+      passage.questions.forEach(({ question, answer }, i) => {
+        texts.push({ where: `${where} question ${i}`, text: question });
+        texts.push({ where: `${where} answer ${i}`, text: answer });
+      });
+      if (passage.link) texts.push({ where: `${where} link`, text: passage.link.label });
+    }
+  }
+  return texts;
+}
+
+/** What is missing from texts that must read in the three languages. */
+function languageProblems(texts: { where: string; text: HelpText }[]): string[] {
+  const problems: string[] = [];
+  for (const { where, text } of texts) {
+    if ("key" in text) {
+      for (const [locale, messages] of Object.entries(LOCALES)) {
+        if (typeof lookup(messages, text.key) !== "string") {
+          problems.push(`${where}: ${text.key} missing in ${locale}`);
+        }
+      }
+    } else {
+      for (const locale of ["fr", "en", "he"] as const) {
+        if (!text[locale]?.trim()) problems.push(`${where}: no ${locale}`);
+      }
+    }
+  }
+  return problems;
+}
+
 /** The French typography rules of frenchTypography.test.ts, for one string. */
 function frenchTypographyErrors(value: string): string[] {
   const errors: string[] = [];
@@ -74,21 +116,7 @@ function frenchTypographyErrors(value: string): string[] {
 
 describe("the guides", () => {
   it("read in the three languages, borrowed texts included", () => {
-    const problems: string[] = [];
-    for (const { where, text } of allTexts()) {
-      if ("key" in text) {
-        for (const [locale, messages] of Object.entries(LOCALES)) {
-          if (typeof lookup(messages, text.key) !== "string") {
-            problems.push(`${where}: ${text.key} missing in ${locale}`);
-          }
-        }
-      } else {
-        for (const locale of ["fr", "en", "he"] as const) {
-          if (!text[locale]?.trim()) problems.push(`${where}: no ${locale}`);
-        }
-      }
-    }
-    expect(problems).toEqual([]);
+    expect(languageProblems(allTexts())).toEqual([]);
   });
 
   it("write French with its no-break spaces", () => {
@@ -137,6 +165,73 @@ describe("the guides", () => {
     const related = relatedGuides("barre-de-lecture");
     expect(related[0].topic).toBe("reading");
     expect(related.map((guide) => guide.slug)).not.toContain("barre-de-lecture");
+  });
+});
+
+describe("the pages of the versions", () => {
+  const routes = readFileSync(join(ROOT, "src/router/routes.ts"), "utf8");
+  const paths = [...routes.matchAll(/^\s*path: "(\/[^"]*)"/gm)].map(([, path]) => path);
+
+  it("read in the three languages, the French with its no-break spaces", () => {
+    expect(languageProblems(versionTexts())).toEqual([]);
+    const typography = versionTexts().flatMap(({ where, text }) =>
+      "key" in text ? [] : frenchTypographyErrors(text.fr).map((error) => `${where}: ${error}`),
+    );
+    expect(typography, "U+202F before ! ? ;, U+00A0 before : and inside « »").toEqual([]);
+  });
+
+  it("include the version whose video the app plays", () => {
+    expect(HELP_VERSIONS.map((version) => version.version)).toContain(WHATS_NEW_VERSION);
+  });
+
+  it("answer for every passage of the video, and only for those", () => {
+    for (const version of HELP_VERSIONS) {
+      const answered = version.passages.map((passage) => passage.chapter);
+      expect(new Set(answered).size, `${version.version}: a passage twice`).toBe(answered.length);
+      const videos = videoChapters(version.version);
+      for (const [locale, chapters] of Object.entries(videos)) {
+        const missing = chapters.map((c) => c.id).filter((id) => !answered.includes(id));
+        expect(missing, `${version.version} ${locale}: chapters without their questions`).toEqual(
+          [],
+        );
+      }
+      // Each passage is in the French video, which shows them all, in its order.
+      const french = (videos.fr ?? []).map((chapter) => chapter.id);
+      expect(answered, `${version.version}: passages not in the French video`).toEqual(french);
+    }
+  });
+
+  it("know where each passage starts, in each language's video", () => {
+    const chapters = videoChapters(WHATS_NEW_VERSION);
+    expect(Object.keys(chapters).sort()).toEqual(["en", "fr", "he"]);
+    for (const list of Object.values(chapters)) {
+      list.forEach((chapter, i) => {
+        expect(chapter.end).toBeGreaterThan(chapter.start);
+        if (i > 0) expect(chapter.start).toBe(list[i - 1].end);
+      });
+    }
+    // The Hebrew video has no passage on the translations (into French and
+    // English): its page keeps the questions, without « Revoir ce passage ».
+    expect(passageChapter(WHATS_NEW_VERSION, "he", "translation")).toBeNull();
+    expect(passageChapter(WHATS_NEW_VERSION, "fr", "translation")?.start).toBeGreaterThan(0);
+    // A language without its video reads the French one's.
+    expect(passageChapter(WHATS_NEW_VERSION, "de", "calme")).toEqual(
+      passageChapter(WHATS_NEW_VERSION, "fr", "calme"),
+    );
+  });
+
+  it("lead to guides that exist and into the app through routes it has", () => {
+    const slugs = new Set(HELP_GUIDES.map((guide) => guide.slug));
+    for (const version of HELP_VERSIONS) {
+      for (const passage of version.passages) {
+        const where = `${version.version} ${passage.chapter}`;
+        for (const slug of passage.guides ?? [])
+          expect(slugs, `${where} → ${slug}`).toContain(slug);
+        if (passage.link) expect(paths, `${where} → ${passage.link.to}`).toContain(passage.link.to);
+        expect(passage.questions.length, `${where}: no question`).toBeGreaterThan(0);
+      }
+    }
+    expect(paths).toContain("/aide/nouveautes/:version");
   });
 });
 

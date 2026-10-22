@@ -9,7 +9,8 @@
  * copy the app plays, lighter (720×1280, about 7 MB for a hundred seconds) and with
  * its index at the front so it starts before it has fully arrived, plus a
  * poster image: public/videos/ of the app, served by the site (see
- * docs/design.md, "What's new plays once, after the update").
+ * docs/design.md, "What's new plays once, after the update"); and where
+ * each of their passages starts (scripts/chapters.mjs).
  *
  * Usage: npm run render [-- --only v4] [-- --series 4]
  * PROMO_CHROMIUM: a Chromium to use instead of the one Remotion downloads
@@ -80,4 +81,9 @@ for (const video of videos) {
       join(appVideos, `${video.appFile}.jpg`),
     ]);
   }
+}
+
+// Where each passage starts, for the help center's page of the version.
+if (videos.some((video) => video.chapters)) {
+  execFileSync("node", [join(root, "scripts/chapters.mjs")], { stdio: "inherit" });
 }

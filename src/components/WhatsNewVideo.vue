@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
+import { useRouter } from "vue-router";
 import { pushOverlay } from "../composables/useOverlayStack";
 import { useToast } from "../composables/useToast";
 import { useWhatsNew, WHATS_NEW_VERSION, whatsNewVideoUrl } from "../composables/useWhatsNew";
@@ -17,7 +18,10 @@ import AppIcon from "./icons/AppIcon.vue";
  * It starts with the sound; where the system refuses sound without a touch,
  * it plays muted and offers « Activer le son » ("Turn the sound on"): the
  * video is written to be read, the music only goes with it. At the end, « C'est
- * parti » ("Let's go") closes it and « Revoir la vidéo » plays it again.
+ * parti » ("Let's go") closes it, « Revoir la vidéo » plays it again and
+ * « En savoir plus » ("Learn more") leads to the page of the version, its
+ * passages and their questions (/aide/nouveautes/4.0). Opened from that
+ * page, it starts at the passage asked for.
  * One leaves at any time, like the Android back gesture: by « Passer »
  * ("Skip") when it came on its own at launch, by « Fermer » ("Close") when
  * it was asked for.
@@ -25,9 +29,14 @@ import AppIcon from "./icons/AppIcon.vue";
 
 const { t, locale } = useI18n();
 const toast = useToast();
-const { whatsNewSource, closeWhatsNew } = useWhatsNew();
+const router = useRouter();
+const { whatsNewSource, whatsNewPassage, closeWhatsNew } = useWhatsNew();
 
 const source = whatsNewSource.value ?? "help";
+const passage = whatsNewPassage.value;
+const versionPage = `/aide/nouveautes/${WHATS_NEW_VERSION}`;
+/** Opened from the page of the version: « En savoir plus » would lead back to it. */
+const fromVersionPage = router.currentRoute.value.path === versionPage;
 const src = whatsNewVideoUrl(locale.value);
 const poster = whatsNewVideoUrl(locale.value, "jpg");
 
@@ -68,6 +77,7 @@ function onReady(): void {
   if (ready.value) return;
   ready.value = true;
   window.clearTimeout(giveUp);
+  if (passage && video.value) video.value.currentTime = passage.start;
   void play();
 }
 
@@ -78,6 +88,7 @@ function onPlaying(): void {
     version: WHATS_NEW_VERSION,
     source,
     muted: muted.value,
+    passage: passage?.id ?? null,
   });
 }
 
@@ -113,19 +124,27 @@ function toggle(): void {
 }
 
 /**
- * Leaves. `via`: `close` (« Passer », « Fermer »), `done` (« C'est parti »), `back`
- * (Android back, Escape), `error` (the video did not load).
+ * Leaves. `via`: `close` (« Passer », « Fermer »), `done` (« C'est parti »),
+ * `more` (« En savoir plus »), `back` (Android back, Escape), `error` (the
+ * video did not load).
  */
-function close(via: "close" | "done" | "back" | "error"): void {
+function close(via: "close" | "done" | "more" | "back" | "error"): void {
   analyticsService.capture("whats_new_video_closed", {
     version: WHATS_NEW_VERSION,
     source,
     via,
     watched_seconds: Math.round(watched),
     completed: ended.value,
+    passage: passage?.id ?? null,
   });
   // Not loaded at launch: it will be offered at a later launch.
   closeWhatsNew(!(via === "error" && source === "launch"));
+}
+
+/** « En savoir plus »: the page of the version, its passages and their questions. */
+function learnMore(): void {
+  close("more");
+  void router.push(versionPage);
 }
 
 function onError(): void {
@@ -208,6 +227,10 @@ onBeforeUnmount(() => {
         <button type="button" class="btn btn-soft" @click="again">
           <AppIcon name="rotate-ccw" :size="16" />
           {{ t("whatsNew.again") }}
+        </button>
+        <button v-if="!fromVersionPage" type="button" class="btn btn-soft" @click="learnMore">
+          <AppIcon name="help" :size="16" />
+          {{ t("whatsNew.more") }}
         </button>
         <button type="button" class="btn btn-primary" @click="close('done')">
           {{ t("whatsNew.done") }}

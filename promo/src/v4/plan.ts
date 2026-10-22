@@ -195,6 +195,27 @@ export function planDurations(plan: CutPlan): Durations {
   };
 }
 
+/** A passage one can go back to: a chapter, or the montage with its « Et aussi ». */
+export type Chapter = { id: ChapterId | "montage"; from: number; beats: number };
+
+/**
+ * The passages of the video, in beats from its very start (the opening
+ * before them): what the help center's page of the version lists and
+ * plays from (scripts/chapters.mjs). The montage is one passage, its
+ * « Et aussi » card included: a shot of two beats is too short to aim at.
+ */
+export function planChapters(plan: CutPlan): Chapter[] {
+  const chapters: Chapter[] = [];
+  let from = plan.hook;
+  for (const chapter of plan.chapters) {
+    chapters.push({ id: chapter.id, from, beats: chapter.beats });
+    from += chapter.beats;
+  }
+  const { break: pause, montage } = planDurations(plan);
+  chapters.push({ id: "montage", from, beats: pause + montage });
+  return chapters;
+}
+
 /** The chapters' marks, counted from the start of the feature section: the music's cues. */
 export function planMarks(plan: CutPlan): Record<string, Mark> {
   const out: Record<string, Mark> = {};
