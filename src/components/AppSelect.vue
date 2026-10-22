@@ -12,10 +12,15 @@
  * Elle reste une vraie commande : rôles ARIA de liste, clavier (flèches,
  * Entrée, Échap), fermeture au clic à côté, et le bouton retour d'Android la
  * referme avant de naviguer (useOverlay).
+ *
+ * The panel opens upward when it has no room below the field (the last row
+ * of a settings screen, above the tab bar) and more above it, as a system
+ * menu does.
  */
 import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
 import AppIcon from "./icons/AppIcon.vue";
 import { useOverlay } from "../composables/useOverlayStack";
+import { useBottomChromeHeight } from "../composables/useBottomChrome";
 
 export interface SelectOption {
   value: string;
@@ -42,6 +47,34 @@ const trigger = ref<HTMLButtonElement | null>(null);
 const panel = ref<HTMLElement | null>(null);
 /** Ligne survolée ou atteinte au clavier, pas encore choisie. */
 const activeIndex = ref(-1);
+/** The panel opens above the field. */
+const upward = ref(false);
+/** What the fixed bars hide at the bottom of the screen (tab bar, player...). */
+const bottomChrome = useBottomChromeHeight();
+
+/** A CSS length (a `calc()` of rem and safe areas) in pixels. */
+function toPixels(length: string): number {
+  const probe = document.createElement("div");
+  probe.style.cssText = `position:fixed;visibility:hidden;height:${length}`;
+  document.body.appendChild(probe);
+  const pixels = probe.offsetHeight;
+  probe.remove();
+  return pixels;
+}
+
+/**
+ * Before the panel is painted: below the field if it fits there, otherwise
+ * on the side with more room (its list scrolls in what is left).
+ */
+function place(): void {
+  const field = trigger.value?.getBoundingClientRect();
+  const list = panel.value;
+  if (!field || !list) return;
+  const needed = list.offsetHeight + 4;
+  const below = window.innerHeight - toPixels(bottomChrome.value) - field.bottom;
+  const above = field.top;
+  upward.value = below < needed && above > below;
+}
 
 /**
  * Identifiants des lignes : ils ne servent qu'à `aria-activedescendant`, qui
@@ -72,7 +105,9 @@ function show(): void {
   // entre-temps (une barre qui disparaît sous le panneau ouvert) : personne ne
   // le retirerait plus.
   void nextTick(() => {
-    if (alive) document.addEventListener("pointerdown", onPointerDown, true);
+    if (!alive) return;
+    place();
+    document.addEventListener("pointerdown", onPointerDown, true);
   });
 }
 
@@ -120,12 +155,19 @@ function onFocusOut(event: FocusEvent): void {
 /**
  * La ligne atteinte au clavier reste visible : le panneau s'arrête à 16 rem
  * et une liste de trente livres passe dessous sans cela, on validait une
- * ligne qu'on ne voyait pas.
+ * ligne qu'on ne voyait pas. Only the list scrolls, never the page: at
+ * opening, the panel may not have taken its side yet (see `place`).
  */
 watch(activeIndex, async (index) => {
   if (!open.value || index < 0) return;
   await nextTick();
-  panel.value?.children[index]?.scrollIntoView({ block: "nearest" });
+  const list = panel.value;
+  const row = list?.children[index] as HTMLElement | undefined;
+  if (!list || !row) return;
+  if (row.offsetTop < list.scrollTop) list.scrollTop = row.offsetTop;
+  else if (row.offsetTop + row.offsetHeight > list.scrollTop + list.clientHeight) {
+    list.scrollTop = row.offsetTop + row.offsetHeight - list.clientHeight;
+  }
 });
 
 function move(delta: number): void {
@@ -205,7 +247,8 @@ onBeforeUnmount(() => {
         :id="listId"
         ref="panel"
         role="listbox"
-        class="absolute inset-x-0 z-30 mt-1 max-h-64 overflow-y-auto rounded-xl bg-surface py-1 shadow-pop"
+        class="absolute inset-x-0 z-30 max-h-64 overflow-y-auto rounded-xl bg-surface py-1 shadow-pop"
+        :class="upward ? 'select-panel-up bottom-full mb-1' : 'mt-1'"
       >
         <!-- La ligne est la ligne : un bouton à l'intérieur d'un `option` se
              présente comme un bouton aux lecteurs d'écran, et le clavier reste
@@ -250,10 +293,17 @@ onBeforeUnmount(() => {
     transform 0.15s ease;
   transform-origin: top center;
 }
+.select-panel-up {
+  transform-origin: bottom center;
+}
 .select-panel-enter-from,
 .select-panel-leave-to {
   opacity: 0;
   transform: scaleY(0.96) translateY(-2px);
+}
+.select-panel-up.select-panel-enter-from,
+.select-panel-up.select-panel-leave-to {
+  transform: scaleY(0.96) translateY(2px);
 }
 
 @media (prefers-reduced-motion: reduce) {
