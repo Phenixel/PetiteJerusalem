@@ -6,6 +6,9 @@ the app nobody explained to them. It holds three kinds of content:
 - **the "what's new" video** of the current version, as a card at the top
   (the same video the app plays once after the update, see
   `docs/design.md`, "What's new plays once, after the update");
+- **frequently asked questions**, by topic, each opening on its short
+  answer (is it free, do I need an account, can I read offline, which
+  city are the times for...);
 - **the page of each version** (`/aide/nouveautes/4.0`): what it changed,
   passage by passage in the order of its video, each passage playing the
   video from its start and answering the questions it raises;
@@ -23,6 +26,7 @@ l'introduction » and « Revoir les astuces ». The design choices are in
 | What                           | Where                                        |
 | ------------------------------ | -------------------------------------------- |
 | The guides and their topics    | `src/content/help/catalog.ts`                |
+| The frequently asked questions | `src/content/help/faq.ts`                    |
 | The versions, their questions  | `src/content/help/versions.ts`               |
 | Where each passage starts      | `src/content/help/whatsNewChapters.json` (written by `promo/scripts/chapters.mjs`) |
 | The drawn screenshots          | `src/components/mock/`, named in `src/components/help/illustrations.ts` |
@@ -107,6 +111,32 @@ A guide is an entry of `HELP_GUIDES` in `src/content/help/catalog.ts`:
 
 The guides are in the bundle: a new or corrected guide reaches the apps
 with their next version (and the site at once).
+
+## Answering a frequent question
+
+A question is an entry of `HELP_FAQ` in `src/content/help/faq.ts`, under
+its topic:
+
+```ts
+{
+  id: "compte",                         // its anchor, /aide#compte: never changed once published
+  question: { fr: "Faut-il un compte ?", en: "…", he: "…" },
+  answer: { fr: "…", en: "…", he: "…" }, // two sentences at most
+  guide: "lire-a-plusieurs",            // optional: the guide that explains more
+  link: { to: "/horaires", label: { … } }, // optional: where it is done
+}
+```
+
+- **Written the way it is asked**, and answered in the app's words: a
+  button is named as the app names it, in each language, and an answer a
+  tip already gives borrows it (`{ key: "tips.zmanim.place.text" }`).
+- **Short.** What takes more than two sentences is a guide; the answer
+  then leads to it.
+- **The messages tell what to add.** A question the team answers twice in
+  « Nous écrire » belongs here; `/aide#<id>` opens on it, to send as a link.
+- `npm run verify` holds it (`helpCenter.test.ts`, « the frequently asked
+  questions »): three languages, French typography, unique anchors, guides
+  and routes that exist.
 
 ## Answering for a version
 

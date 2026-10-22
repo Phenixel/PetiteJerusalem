@@ -14,6 +14,7 @@ import {
   relatedGuides,
 } from "../content/help/catalog";
 import { HELP_VERSIONS, passageChapter, videoChapters } from "../content/help/versions";
+import { HELP_FAQ } from "../content/help/faq";
 import { HELP_ILLUSTRATION_COMPONENTS } from "../components/help/illustrations";
 import { WHATS_NEW_VERSION } from "../composables/useWhatsNew";
 import { parseHelpVideos } from "../services/helpVideos";
@@ -27,6 +28,8 @@ import { parseHelpVideos } from "../services/helpVideos";
  *   the three locales have, and the French follows the house typography;
  * - a guide's address is unique, its topic exists, its drawn screenshots
  *   exist, its links lead into the app;
+ * - the frequently asked questions read in the three languages, each with
+ *   its own anchor, leading to guides and routes that exist;
  * - the page of a version answers for every passage of its video, and
  *   every passage it answers for is in the video
  *   (src/content/help/whatsNewChapters.json, written by the promo project);
@@ -165,6 +168,39 @@ describe("the guides", () => {
     const related = relatedGuides("barre-de-lecture");
     expect(related[0].topic).toBe("reading");
     expect(related.map((guide) => guide.slug)).not.toContain("barre-de-lecture");
+  });
+});
+
+describe("the frequently asked questions", () => {
+  const texts = HELP_FAQ.flatMap((group) => [
+    { where: "faq group", text: group.title },
+    ...group.entries.flatMap((entry) => [
+      { where: `faq ${entry.id} question`, text: entry.question },
+      { where: `faq ${entry.id} answer`, text: entry.answer },
+      ...(entry.link ? [{ where: `faq ${entry.id} link`, text: entry.link.label }] : []),
+    ]),
+  ]);
+
+  it("read in the three languages, the French with its no-break spaces", () => {
+    expect(languageProblems(texts)).toEqual([]);
+    const typography = texts.flatMap(({ where, text }) =>
+      "key" in text ? [] : frenchTypographyErrors(text.fr).map((error) => `${where}: ${error}`),
+    );
+    expect(typography, "U+202F before ! ? ;, U+00A0 before : and inside « »").toEqual([]);
+  });
+
+  it("each have their own anchor, and lead to guides and routes that exist", () => {
+    const entries = HELP_FAQ.flatMap((group) => group.entries);
+    const ids = entries.map((entry) => entry.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    for (const id of ids) expect(id).toMatch(/^[a-z0-9]+(-[a-z0-9]+)*$/);
+    const slugs = new Set(HELP_GUIDES.map((guide) => guide.slug));
+    const routes = readFileSync(join(ROOT, "src/router/routes.ts"), "utf8");
+    const paths = [...routes.matchAll(/^\s*path: "(\/[^"]*)"/gm)].map(([, path]) => path);
+    for (const entry of entries) {
+      if (entry.guide) expect(slugs, `${entry.id} → ${entry.guide}`).toContain(entry.guide);
+      if (entry.link) expect(paths, `${entry.id} → ${entry.link.to}`).toContain(entry.link.to);
+    }
   });
 });
 

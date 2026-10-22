@@ -135,6 +135,7 @@ const en: LocaleMessages = {
     more: "More guides",
     // The page of a version (/aide/nouveautes/4.0): its video, passage by
     // passage, and the questions each one raises (content/help/versions.ts).
+    faq: { title: "Frequently asked questions" },
     versions: "Versions",
     version: {
       row: "{version}, passage by passage",

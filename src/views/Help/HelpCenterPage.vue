@@ -8,6 +8,7 @@ import SettingsRow from "../../components/settings/SettingsRow.vue";
 import WhatsNewCard from "../../components/help/WhatsNewCard.vue";
 import HelpVideoCard from "../../components/help/HelpVideoCard.vue";
 import HelpGuideRow from "../../components/help/HelpGuideRow.vue";
+import HelpFaq from "../../components/help/HelpFaq.vue";
 import { isNativeApp } from "../../composables/useNativeApp";
 import { useOnboarding } from "../../composables/useOnboarding";
 import { useFeatureTips } from "../../composables/useFeatureTips";
@@ -27,6 +28,7 @@ import { SITE_URL } from "../../config/site";
  * From top to bottom:
  *  - the "what's new" video, for whoever skipped it at launch, and the
  *    versions, each explained passage by passage (/aide/nouveautes/4.0);
+ *  - the frequently asked questions, each opening on its answer;
  *  - the team's videos, published on YouTube (none yet: the section shows
  *    once the site lists one);
  *  - the guides, by part of the app, each a page of its own;
@@ -103,6 +105,8 @@ onMounted(() => {
         />
       </SettingsGroup>
 
+      <HelpFaq />
+
       <section v-if="videos.length">
         <h2 class="mb-3 px-1 text-sm font-semibold text-text-secondary">
           {{ t("help.videos") }}
@@ -115,7 +119,9 @@ onMounted(() => {
       </section>
 
       <section class="flex flex-col gap-7">
-        <h2 class="sr-only">{{ t("help.guides") }}</h2>
+        <h2 class="font-display -mb-2 px-1 text-2xl font-bold text-text-primary">
+          {{ t("help.guides") }}
+        </h2>
         <SettingsGroup
           v-for="group in groups"
           :key="group.topic.id"

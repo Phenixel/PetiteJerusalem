@@ -336,6 +336,17 @@ site as in the app. How to add to it: `docs/help-center.md`.
   Hebrew one) keeps its questions, without the command. An older version's
   page keeps its questions without the video: only the current one is
   served.
+- **Frequent questions, answered short.** After the versions,
+  « Questions fréquentes » ("Frequently asked questions", a heading in
+  Playfair, like « Guides » below it): a panel per topic (the app, reading
+  and praying, the times, reading together, your settings), like the
+  guides, each row a question in the reader's words with the chevron that
+  turns as it opens. Opened in place, its answer in two sentences at most,
+  then the guide that explains more (the book and its title) and the way
+  into the app. Closed, the questions read as a list one scans; no answer
+  is a page of its own, nobody leaves the list for two sentences. An
+  address ending in a question (`/aide#compte`) opens on it: the team
+  answers a message with a link (`HelpFaq.vue`, `content/help/faq.ts`).
 - **Guides by part of the app.** Grouped by topic (finding your way, the
   home page, the prayer, reading, Mon parcours, the times, reading
   together) like the
@@ -375,7 +386,8 @@ site as in the app. How to add to it: `docs/help-center.md`.
 Held by `src/__tests__/helpCenter.test.ts` (the guides in three languages
 and typeset, their screenshots and links, the list of videos) and
 `helpCenterPages.test.ts` (the card plays the video, the videos only when
-there are some, an unknown guide leads back to the help center); the page
+there are some, an unknown guide leads back to the help center, the
+questions closed and opening on their answer, `#compte`); the page
 of a version by `helpCenter.test.ts` (« the pages of the versions »: a
 passage for every chapter of the video and the other way round, its texts
 in three languages) and `helpCenterPages.test.ts` (« the page of a

@@ -131,6 +131,7 @@ const he: LocaleMessages = {
     more: "מדריכים נוספים",
     // The page of a version (/aide/nouveautes/4.0): its video, passage by
     // passage, and the questions each one raises (content/help/versions.ts).
+    faq: { title: "שאלות נפוצות" },
     versions: "גרסאות",
     version: {
       row: "גרסה {version}, קטע אחר קטע",

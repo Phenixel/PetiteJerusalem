@@ -14,6 +14,8 @@ import { parseHelpVideos } from "../services/helpVideos";
  * - the guides by topic; the videos only when the site lists some;
  * - a guide's page shows its blocks, and an unknown guide leads back to the
  *   help center;
+ * - the frequently asked questions, closed, each opening on its answer;
+ *   `/aide#compte` opens on that one;
  * - the page of a version lists the passages of its video, each opening on
  *   its questions and playing the video from its start; `#calme` opens on
  *   that passage.
@@ -46,7 +48,7 @@ async function mount(path: string) {
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [
-      { path: "/aide", component: HelpCenterPage },
+      { path: "/aide", name: "help", component: HelpCenterPage },
       { path: "/aide/:slug", component: HelpGuidePage },
       { path: "/aide/nouveautes/:version", name: "help-version", component: HelpVersionPage },
       { path: "/:other(.*)*", component: { render: () => null } },
@@ -179,5 +181,39 @@ describe("the page of a version", () => {
     document.body.innerHTML = "";
     const lost = await mount("/aide/nouveautes/9.9");
     expect(lost.router.currentRoute.value.path).toBe("/aide");
+  });
+});
+
+describe("the frequently asked questions", () => {
+  afterEach(() => {
+    for (const app of mounted.splice(0)) app.unmount();
+  });
+
+  beforeEach(() => {
+    videosToShow.value = [];
+    document.body.innerHTML = "";
+    Element.prototype.scrollIntoView = vi.fn();
+  });
+
+  it("list their questions, closed, each opening on its answer", async () => {
+    const page = await mount("/aide");
+    expect(page.text()).toContain(fr.help.faq.title);
+    const questions = page.host.querySelectorAll("li.question details");
+    expect(questions.length).toBeGreaterThan(10);
+    expect(page.host.querySelectorAll("li.question details[open]")).toHaveLength(0);
+
+    const free = page.host.querySelector<HTMLDetailsElement>("#gratuite details")!;
+    expect(free.querySelector("summary")?.textContent).toContain("L'app est-elle gratuite");
+    free.open = true;
+    free.dispatchEvent(new Event("toggle"));
+    await nextTick();
+    expect(free.textContent).toContain("sans publicité");
+  });
+
+  it("open on the question the address names", async () => {
+    const page = await mount("/aide#compte");
+    expect(page.host.querySelector<HTMLDetailsElement>("#compte details")?.open).toBe(true);
+    expect(page.host.querySelectorAll("li.question details[open]")).toHaveLength(1);
+    expect(Element.prototype.scrollIntoView).toHaveBeenCalled();
   });
 });
