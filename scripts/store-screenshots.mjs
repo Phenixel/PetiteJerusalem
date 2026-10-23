@@ -120,6 +120,17 @@ const ONBOARDING_VERSION = (() => {
   return version;
 })();
 
+// Same for the what's new video (useWhatsNew), which an update plays once
+// over the app: marked as seen for the version it presents.
+const WHATS_NEW_VERSION = (() => {
+  const source = readFileSync(join(root, "src/composables/useWhatsNew.ts"), "utf8");
+  const version = source.match(/export const WHATS_NEW_VERSION = "([^"]+)"/)?.[1];
+  if (!version) {
+    throw new Error("WHATS_NEW_VERSION introuvable dans src/composables/useWhatsNew.ts");
+  }
+  return version;
+})();
+
 // --- Préparation de l'environnement -----------------------------------------
 
 // Les émulateurs Firebase exigent Java >= 21. Sur macOS, le JDK de Homebrew
@@ -400,10 +411,9 @@ await waitFor(baseUrl, "le serveur Vite");
  * `beforeShot` un dernier geste avant la capture.
  */
 const SCREENS = [
-  // L'accueil et la pile du jour : la lecture du compte (Tehilim 1 à 3, le
-  // premier coché) y entre d'elle-même : une seule carte, « Mes Tehilim »
-  // (que des psaumes), et un seul volume.
-  { name: "01-accueil", path: "/", readyText: "Mes Tehilim" },
+  // The home page: the account's reading (Tehilim 1 to 3) comes in on its
+  // own, a single volume on the shelf, "3 psaumes".
+  { name: "01-accueil", path: "/", readyText: "3 psaumes" },
   // Les horaires d'une ville nommée plutôt que ceux de « ma position » : la
   // capture dit Paris en toutes lettres, où que tourne le script.
   { name: "02-horaires", path: "/horaires/paris", readyText: "Paris" },
@@ -413,7 +423,8 @@ const SCREENS = [
     readyText: "Participe",
   },
   // URL canonique de Tehilim 1 (/lire/103 hors session redirige vers elle).
-  { name: "04-lecture-tehilim", path: "/bibliotheque/tehilim/1", readyText: "Phonétique" },
+  // The link to the next psalm: it comes with the loaded text.
+  { name: "04-lecture-tehilim", path: "/bibliotheque/tehilim/1", readyText: "Tehilim 2" },
   { name: "05-bibliotheque", path: "/bibliotheque", readyText: "Bibliothèque" },
   // Mon parcours : la lampe, le mur, l'étagère (Ma journée a été retirée,
   // la pile de l'accueil la montre).
@@ -456,22 +467,23 @@ async function newAppContext(browser, device) {
     permissions: ["geolocation"],
   });
   await context.addInitScript(
-    ({ tipIds, onboardingVersion }) => {
+    ({ tipIds, onboardingVersion, whatsNewVersion }) => {
       // Avant @capacitor/core : c'est ce qui fait de la page l'app native (voir
       // l'en-tête). Le nom n'est ni « ios » ni « android », pour qu'aucun
       // chemin propre à l'une des deux ne s'y trompe.
       window.CapacitorCustomPlatform = { name: "store-screenshots" };
-      // Français forcé comme le ferait le sélecteur de langue. Consentement
-      // analytics sur « denied » : la bannière recouvrirait le bas de chaque
-      // capture, et une session de captures n'a rien à mesurer. Introduction
-      // de première ouverture et astuces marquées vues : elles prendraient
-      // l'écran (useOnboarding, useFeatureTips).
+      // French forced as the language picker would. Analytics consent set to
+      // "denied": the banner would cover the bottom of every capture, and a
+      // capture session has nothing to measure. First-launch introduction,
+      // tips and the what's new video marked as seen: they would take the
+      // screen (useOnboarding, useFeatureTips, useWhatsNew).
       localStorage.setItem("petite-jerusalem-locale", "fr");
       localStorage.setItem("pj_analytics_consent", "denied");
       localStorage.setItem("pj_onboarding_seen", onboardingVersion);
       localStorage.setItem("pj_tips_seen", JSON.stringify(tipIds));
+      localStorage.setItem("pj_whats_new_seen", whatsNewVersion);
     },
-    { tipIds: TIP_IDS, onboardingVersion: ONBOARDING_VERSION },
+    { tipIds: TIP_IDS, onboardingVersion: ONBOARDING_VERSION, whatsNewVersion: WHATS_NEW_VERSION },
   );
   return context;
 }
