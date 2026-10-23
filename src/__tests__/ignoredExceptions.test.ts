@@ -10,11 +10,26 @@ const IDB_LOST =
   "UnknownError: Connection to Indexed Database server lost. Refresh the page to try again";
 const IDB_CLOSING =
   "InvalidStateError: Failed to execute 'transaction' on 'IDBDatabase': The database connection is closing.";
+const IDB_NO_TRANSACTION =
+  "UnknownError: Attempt to get a record from database without an in-progress transaction";
+const RO_LOOP_LIMIT = "ResizeObserver loop limit exceeded";
+const RO_LOOP_UNDELIVERED = "ResizeObserver loop completed with undelivered notifications.";
 
 describe("isIgnoredException", () => {
   it("écarte la perte de connexion IndexedDB (WebKit, polling Firebase Auth)", () => {
     expect(isIgnoredException([IDB_LOST])).toBe(true);
     expect(isIgnoredException([IDB_CLOSING])).toBe(true);
+  });
+
+  it("drops the IndexedDB transaction WebKit killed under an open read", () => {
+    expect(isIgnoredException([IDB_NO_TRANSACTION])).toBe(true);
+  });
+
+  it("drops the ResizeObserver loop the browser recovers from by itself", () => {
+    expect(isIgnoredException([RO_LOOP_LIMIT])).toBe(true);
+    expect(isIgnoredException([RO_LOOP_UNDELIVERED])).toBe(true);
+    // A real error quoting the message must stay visible.
+    expect(isIgnoredException([`TypeError: null is not an object (${RO_LOOP_LIMIT})`])).toBe(false);
   });
 
   it("écarte la « Script error. » opaque des scripts injectés cross-origin", () => {
