@@ -23,6 +23,25 @@ const IGNORED_EXCEPTION_PATTERNS: RegExp[] = [
   // lequel il n'y a aucune prise. Le message exact, sans rien autour, pour ne
   // pas écarter une vraie erreur qui le citerait.
   /^Script error\.?$/,
+  // WebKit does not only lose the IndexedDB connection, it also kills the
+  // transaction underneath an open one: a page coming back from the
+  // background finds the transaction gone, and every read on it throws. Same
+  // cause and same signature as the two patterns above (nine identical
+  // events inside the same millisecond, from the Firebase Auth persistence
+  // polling), with WebKit's other wording. The app keeps no IndexedDB store
+  // of its own: the only user is the Firebase SDK, so there is nothing to
+  // correct here either.
+  /without an in-progress transaction/i,
+  // A ResizeObserver callback whose own work resizes an observed element:
+  // the browser stops the delivery loop, reports this, and delivers again on
+  // the next frame. Nothing breaks for the reader, and the browser reports
+  // it through window.onerror, so the event carries no stack trace and names
+  // no code to correct. Observed on an Android System WebView still on
+  // Chrome 90, whose implementation predates the fix that made current
+  // engines far less eager to report the loop. The two exact wordings, so a
+  // real error quoting one stays visible.
+  /^ResizeObserver loop limit exceeded$/,
+  /^ResizeObserver loop completed with undelivered notifications\.?$/,
 ];
 
 /**
