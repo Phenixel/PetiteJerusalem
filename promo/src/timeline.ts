@@ -24,15 +24,16 @@ export type MusicStyle = {
   /** Tonique en MIDI (62 = ré). */
   root: number;
   /** Motif mélodique, voir MOTIFS dans scripts/music.mjs. */
-  motif: "freygish" | "envol" | "nigoun" | "lumiere" | "dabke";
+  motif: "freygish" | "envol" | "nigoun" | "lumiere" | "dabke" | "joie";
   /** Accords d'une mesure à l'autre, en demi-tons depuis la tonique. */
   progression: number[][];
   /**
    * Le genre (série 2) : « pop » est celui de la série 1 ; « mizrahi »,
    * « halftime » et « cinematic » changent la batterie et ajoutent piano,
-   * bégaiements avant les drops et arrêt de bande sur la coupure.
+   * bégaiements avant les drops et arrêt de bande sur la coupure ;
+   * « lumineux », la pop-house en majeur de la publicité (src/ad).
    */
-  genre?: "pop" | "mizrahi" | "halftime" | "cinematic";
+  genre?: "pop" | "mizrahi" | "halftime" | "cinematic" | "lumineux";
   /** Temps de la feature où la musique retombe, en drop. */
   drops?: number[];
 };

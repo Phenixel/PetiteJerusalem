@@ -19,6 +19,8 @@ import { LectureDuJourFeature } from "./scenes/LectureDuJour.tsx";
 import { PartageFeature } from "./scenes/Partage.tsx";
 import { SidourFeature } from "./scenes/Sidour.tsx";
 import { FPS, HEIGHT, WIDTH, totalFrames } from "./timeline.ts";
+import { Ad } from "./ad/Ad.tsx";
+import { adPlan } from "./ad/plan.ts";
 import { Update } from "./v4/Update.tsx";
 import { overviewPlan, presentationPlan } from "./v4/plan.ts";
 import { OVERVIEW_STRINGS, STRINGS } from "./v4/strings.ts";
@@ -134,6 +136,7 @@ const SCENES: Record<string, { hook: HookLine[]; Feature: ComponentType<FeatureP
  */
 const v4 = (spec: VideoSpec) => {
   const locale = spec.locale ?? "fr";
+  if (spec.subject === "ad") return <Ad spec={spec} plan={adPlan()} />;
   if (spec.subject === "app") {
     const strings = OVERVIEW_STRINGS[locale];
     if (!strings) throw new Error(`No words for the presentation in ${locale}`);

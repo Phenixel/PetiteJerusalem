@@ -4368,3 +4368,30 @@ with the app in a day.
   starts from the screen the previous one ended on, which the cut names
   (`from` in `promo/src/v4/plan.ts`), so the phone never jumps.
 
+### The advertisement tells, in motion design
+
+The presentation (above) comments the app's screens; the advertisement
+(`promo/out/pub.mp4`, 79 seconds) tells what the app does, drawn and
+animated, and keeps the screens for the end, as proof. Asked by the owner:
+a real ad, which makes the app attractive, much motion, a fluid telling,
+another music.
+
+- **One day as the thread.** Night, dawn, day, dusk, night: the sky
+  changes color from scene to scene (flat colors that turn, never a
+  gradient), and each part of the app comes at its hour. The sun rises
+  behind the logo's own wall and book.
+- **Show the idea, not the screen.** The times pop along the sun's path;
+  the phone rings then goes quiet; the volumes fall on the shelf and the
+  Talmud's opens into its page; 150 psalms fill in six readers' colors
+  until 150/150. The first series did this for the chain (its counter
+  rising to the siyoum); the advertisement does it everywhere.
+- **The brand's vocabulary.** The banners' cream, orange, blue and near
+  black; Playfair for the titles, two lines, the accent in italics; the
+  app's icons, a command with its drawing and its name; round chips as the
+  app's controls. A color sweeps each change of scene.
+- **True figures.** The times, the psalms and the days shown are those of
+  the demo data the screens are filmed on, the quiet modes say « Sur
+  Android ».
+- **Its own music.** A bright pop-house in a major key, marimba and
+  whistle: an ad's energy, far from the nigoun of the other videos.
+

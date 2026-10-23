@@ -15,6 +15,8 @@
 const FREYGISH = [0, 1, 4, 5, 7, 8, 10];
 // Mineur naturel, pour les motifs plus lumineux.
 const MINOR = [0, 2, 3, 5, 7, 8, 10];
+// Majeur : la publicité (genre « lumineux »), loin du nigoun des autres vidéos.
+const MAJOR = [0, 2, 4, 5, 7, 9, 11];
 
 /**
  * Motifs mélodiques de deux mesures, en doubles croches :
@@ -22,6 +24,13 @@ const MINOR = [0, 2, 3, 5, 7, 8, 10];
  * d'une octave, un degré négatif descend.
  */
 const MOTIFS = {
+  joie: {
+    scale: MAJOR,
+    notes: [
+      [0, 4, 2], [2, 4, 1], [3, 5, 1], [4, 7, 2], [6, 4, 2], [8, 5, 2], [10, 4, 1], [11, 2, 1], [12, 4, 4],
+      [16, 2, 2], [18, 2, 1], [19, 4, 1], [20, 5, 2], [22, 4, 2], [24, 2, 2], [26, 1, 2], [28, 0, 4],
+    ],
+  },
   freygish: {
     scale: FREYGISH,
     notes: [
@@ -404,110 +413,238 @@ window.renderTrack = async function renderTrack(spec) {
     const montage = section("montage");
     const end = section("end");
 
-    // Accroche : le filtre s'ouvre, le motif s'annonce, la darbouka seule.
-    at(0, () => {
-      musicFilter.frequency.setValueAtTime(1400, 0);
-      musicFilter.frequency.exponentialRampToValueAtTime(16000, beatTime(feature.from));
-    });
-    for (let b = hook.from; b < hook.from + hook.beats; b += 4) playPadBar(b, Math.min(4, hook.from + hook.beats - b));
-    // Les réseaux se jouent dans les deux premières secondes : l'accroche
-    // frappe d'entrée, un impact et l'accord, puis le motif.
-    playImpact(hook.from);
-    trig(chime, style.progression[0].map((n) => midiToFreq(style.root + 24 + n)), 0.8, beatTime(hook.from), 0.9);
-    playMotif(hook.from, Math.ceil(hook.beats / 4), { gain: 1, withShimmer: true });
-    for (let b = hook.from; b < hook.from + hook.beats; b++) {
-      grooveBeat(b, { full: false, hats: true, clapOn: true, darbuka: true });
-    }
-    playRiser(Math.max(hook.from, feature.from - 2), Math.min(2, hook.beats));
+    if (genre === "lumineux") {
+      // La publicité : une pop-house en majeur. Grosse caisse à chaque temps,
+      // claquements sur 2 et 4, charleston ouvert sur le contretemps, basse
+      // en octaves décalées, piano en accords sur le contretemps ; la
+      // mélodie passe du marimba au sifflet d'une phrase à l'autre.
+      const marimba = new Tone.PolySynth(Tone.FMSynth, {
+        harmonicity: 3, modulationIndex: 1.3,
+        oscillator: { type: "sine" }, modulation: { type: "sine" },
+        envelope: { attack: 0.001, decay: 0.55, sustain: 0, release: 0.4 },
+        modulationEnvelope: { attack: 0.001, decay: 0.09, sustain: 0, release: 0.1 },
+        volume: -8,
+      }).connect(leadBus);
+      const vibrato = new Tone.Vibrato(5.6, 0.14).connect(leadBus);
+      const whistle = new Tone.Synth({
+        oscillator: { type: "sine" },
+        envelope: { attack: 0.035, decay: 0.12, sustain: 0.75, release: 0.18 },
+        volume: -12,
+      }).connect(vibrato);
+      const melody = (fromBeat, bars, inst, { octave = 0, gain = 1 } = {}) => {
+        for (const [step, degree, len] of motif.notes) {
+          if (step >= bars * 16) continue;
+          const note = degreeToMidi(motif.scale, style.root + 12 + octave * 12, degree);
+          trig(inst, midiToFreq(note), len * s16 * (inst === whistle ? 0.92 : 1), beatTime(fromBeat) + step * s16, gain);
+        }
+      };
+      const stab = (b, gain = 0.55) => {
+        const chord = chordAt(b).map((n) => midiToFreq(style.root + n));
+        trig(keys, chord, s16 * 1.4, beatTime(b) + s16 * 2, gain);
+      };
+      const houseBeat = (b, { kickOn = true, hats = true, clapOn = true, shaker = true } = {}) => {
+        const t = beatTime(b);
+        const inBar = ((b % 4) + 4) % 4;
+        if (kickOn) playKick(t);
+        if (clapOn && (inBar === 1 || inBar === 3)) trig(clap, 0.08, t, 0.85);
+        if (hats) {
+          trig(openHat, 0.09, t + s16 * 2, 0.75);
+          trig(hat, 0.02, t + s16 * 1, 0.3);
+          trig(hat, 0.02, t + s16 * 3, 0.4);
+        }
+        if (shaker) for (let i = 0; i < 4; i++) trig(tamb, 0.04, t + i * s16, i % 2 ? 0.55 : 0.3);
+      };
+      const houseBass = (b, { eighths = false } = {}) => {
+        const rootNote = style.root - 24 + chordAt(b)[0];
+        const t = beatTime(b);
+        trig(sub, midiToFreq(rootNote), spb * 0.45, t, 0.7);
+        trig(bass, midiToFreq(rootNote + 12), s16 * 1.6, t + s16 * 2, 0.95);
+        if (eighths) trig(bass, midiToFreq(rootNote + 12), s16 * 1.2, t + s16 * 3, 0.6);
+      };
 
-    // Fonctionnalité : le groove entier, le motif en boucle.
-    playImpact(feature.from);
-    for (let b = feature.from; b < feature.from + feature.beats; b++) {
-      const fromStart = b - feature.from;
-      // Le temps qui précède un drop se vide : seul le bégaiement reste.
-      const preDrop = (style.drops ?? []).some((d) => fromStart === d - 1) || (genre !== "pop" && fromStart === feature.beats - 1);
-      grooveBeat(b, { full: !preDrop, darbuka: !preDrop, hats: fromStart >= 4 && !preDrop, clapOn: !preDrop });
-      if (preDrop) continue;
-      if (genre === "halftime") trig(sub, midiToFreq(style.root - 24 + chordAt(b)[0]), spb * 0.95, beatTime(b), 0.5);
-      else bassBeat(b, { offbeat: true });
-      if (fromStart % 4 === 0) playPadBar(b, Math.min(4, feature.from + feature.beats - b));
-    }
-    for (let b = feature.from; b < feature.from + feature.beats; b += 8) {
-      const bars = Math.min(2, Math.ceil((feature.from + feature.beats - b) / 4));
-      playMotif(b, bars, { gain: 0.9 });
-    }
-    // Arpège qui s'ajoute dans la seconde moitié.
-    const arpFrom = feature.from + Math.floor(feature.beats / 2 / 4) * 4;
-    for (let b = arpFrom; b < feature.from + feature.beats; b++) {
-      const chord = chordAt(b);
-      for (let i = 0; i < 4; i++) {
-        const n = style.root + 12 + chord[(i + b) % chord.length];
-        trig(arp, midiToFreq(n), s16, beatTime(b) + i * s16, 0.6);
+      // Accroche : l'accord et le marimba d'entrée, la grosse caisse au cinquième temps.
+      at(0, () => {
+        musicFilter.frequency.setValueAtTime(1800, 0);
+        musicFilter.frequency.exponentialRampToValueAtTime(16000, beatTime(feature.from));
+      });
+      playImpact(hook.from);
+      trig(chime, style.progression[0].map((n) => midiToFreq(style.root + 24 + n)), 0.8, beatTime(hook.from), 0.9);
+      for (let b = hook.from; b < hook.from + hook.beats; b += 4) playPadBar(b, Math.min(4, hook.from + hook.beats - b));
+      melody(hook.from, Math.ceil(hook.beats / 4), marimba);
+      for (let b = hook.from; b < hook.from + hook.beats; b++) {
+        stab(b, 0.45);
+        if (b - hook.from >= 4) houseBeat(b, { hats: false, shaker: true });
       }
-    }
-    playRiser(feature.from + feature.beats - 2, 2);
+      playRiser(Math.max(hook.from, feature.from - 2), 2);
 
-    // Série 2 : le piano porte les accords, et la longue section repart en
-    // deux temps (une mesure creuse, un bégaiement, puis le drop).
-    if (genre !== "pop") {
-      for (let b = feature.from; b < feature.from + feature.beats; b += 4) keysBar(b, 4);
+      // Le corps : le groove entier ; une phrase de seize temps au marimba,
+      // la suivante au sifflet ; un temps vide avant chaque relance.
+      playImpact(feature.from);
+      for (let b = feature.from; b < feature.from + feature.beats; b++) {
+        const fromStart = b - feature.from;
+        const lift = (style.drops ?? []).some((d) => fromStart === d - 1);
+        houseBeat(b, { kickOn: !lift, hats: fromStart >= 2 && !lift, clapOn: !lift, shaker: true });
+        if (lift) {
+          stutter(b, 1);
+          continue;
+        }
+        houseBass(b);
+        stab(b);
+        if (fromStart % 4 === 0) playPadBar(b, Math.min(4, feature.from + feature.beats - b));
+      }
       for (const drop of style.drops ?? []) {
-        stutter(feature.from + drop - 1, 1);
         playImpact(feature.from + drop);
+        trig(chime, chordAt(feature.from + drop).map((n) => midiToFreq(style.root + 24 + n)), 0.6, beatTime(feature.from + drop), 0.7);
       }
-      stutter(feature.from + feature.beats - 1, 1);
-    }
+      for (let b = feature.from; b < feature.from + feature.beats; b += 8) {
+        const phrase = Math.floor((b - feature.from) / 16);
+        const bars = Math.min(2, Math.ceil((feature.from + feature.beats - b) / 4));
+        if (phrase % 2 === 0) melody(b, bars, marimba, { gain: 0.95 });
+        else melody(b, bars, whistle, { octave: 1, gain: 0.8 });
+      }
+      playRiser(feature.from + feature.beats - 2, 2);
 
-    // Coupure « Mais aussi » : tout s'arrête sauf un accord en suspens.
-    const brkT = beatTime(brk.from);
-    if (genre !== "pop") tapeStop(brk.from);
-    trig(boom, 70, 1, brkT, 0.7);
-    trig(chime, 
-      style.progression[0].map((n) => midiToFreq(style.root + 24 + n)),
-      0.8, brkT, 0.9,
-    );
-    trig(pad, 
-      style.progression[0].map((n) => midiToFreq(style.root + n)),
-      brk.beats * spb, brkT, 0.9,
-    );
-    // Roulement de darbouka qui relance.
-    for (let i = 0; i < 8; i++) {
-      const t = beatTime(brk.from + brk.beats - 1) + i * (spb / 8);
-      trig(tek, 0.02, t, 0.3 + i * 0.08);
-    }
+      // La coupure : tout s'arrête, un accord en suspens, des claquements qui relancent.
+      const brkT = beatTime(brk.from);
+      trig(boom, 70, 1, brkT, 0.7);
+      trig(chime, style.progression[0].map((n) => midiToFreq(style.root + 24 + n)), 0.8, brkT, 0.9);
+      trig(pad, style.progression[0].map((n) => midiToFreq(style.root + n)), brk.beats * spb, brkT, 0.9);
+      for (let i = 0; i < 8; i++) trig(clap, 0.04, beatTime(brk.from + brk.beats - 1) + i * (spb / 8), 0.2 + i * 0.07);
 
-    // Montage : plus serré, basse en croches, une frappe par plan.
-    playImpact(montage.from);
-    for (let b = montage.from; b < montage.from + montage.beats; b++) {
-      grooveBeat(b, { full: true, darbuka: true, hats: true });
-      bassBeat(b, { eighths: true });
-      if ((b - montage.from) % 4 === 0) playPadBar(b, Math.min(4, montage.from + montage.beats - b));
-    }
-    for (let b = montage.from; b < montage.from + montage.beats; b += 8) {
-      playMotif(b, Math.min(2, Math.ceil((montage.from + montage.beats - b) / 4)), { octave: 1, gain: 0.75 });
-    }
-    // Caisse claire qui s'accélère sur la dernière mesure.
-    const rollFrom = montage.from + montage.beats - 2;
-    for (let i = 0; i < 16; i++) {
-      const t = beatTime(rollFrom) + i * (2 * spb / 16);
-      trig(clap, 0.05, t, 0.25 + i * 0.04);
-    }
+      // Le montage : plus serré, basse en croches, le sifflet à l'octave.
+      playImpact(montage.from);
+      for (let b = montage.from; b < montage.from + montage.beats; b++) {
+        houseBeat(b, {});
+        houseBass(b, { eighths: true });
+        stab(b, 0.6);
+        if ((b - montage.from) % 4 === 0) playPadBar(b, Math.min(4, montage.from + montage.beats - b));
+      }
+      for (let b = montage.from; b < montage.from + montage.beats; b += 8) {
+        melody(b, Math.min(2, Math.ceil((montage.from + montage.beats - b) / 4)), whistle, { octave: 1, gain: 0.85 });
+      }
+      const rollFrom = montage.from + montage.beats - 2;
+      for (let i = 0; i < 16; i++) trig(clap, 0.05, beatTime(rollFrom) + i * ((2 * spb) / 16), 0.25 + i * 0.04);
 
-    // Fin : l'accord final et le motif posé, puis la queue de réverbération.
-    playImpact(end.from);
-    playKick(beatTime(end.from));
-    const finalChord = style.progression[0];
-    trig(pad, finalChord.map((n) => midiToFreq(style.root - 12 + n)), end.beats * spb, beatTime(end.from), 1);
-    trig(sub, midiToFreq(style.root - 24), end.beats * spb * 0.6, beatTime(end.from), 0.8);
-    trig(chime, finalChord.map((n) => midiToFreq(style.root + 24 + n)), 2, beatTime(end.from), 0.8);
-    playMotif(end.from, 1, { gain: 0.7 });
-    for (let b = end.from; b < end.from + Math.min(4, end.beats); b++) {
-      grooveBeat(b, { full: false, darbuka: true, hats: false, clapOn: false });
+      // La fin : l'accord final, le marimba posé, le filtre qui se referme.
+      playImpact(end.from);
+      playKick(beatTime(end.from));
+      const finalChord = style.progression[0];
+      trig(pad, finalChord.map((n) => midiToFreq(style.root - 12 + n)), end.beats * spb, beatTime(end.from), 1);
+      trig(keys, finalChord.map((n) => midiToFreq(style.root + n)), spb * 3, beatTime(end.from), 0.7);
+      trig(sub, midiToFreq(style.root - 24), end.beats * spb * 0.6, beatTime(end.from), 0.8);
+      trig(chime, finalChord.map((n) => midiToFreq(style.root + 24 + n)), 2, beatTime(end.from), 0.8);
+      melody(end.from, 1, marimba, { gain: 0.8 });
+      at(beatTime(end.from + 2), () => {
+        musicFilter.frequency.setValueAtTime(16000, beatTime(end.from + 2));
+        musicFilter.frequency.exponentialRampToValueAtTime(900, beatTime(end.from + end.beats) + timeline.tail);
+      });
+    } else {
+
+      // Accroche : le filtre s'ouvre, le motif s'annonce, la darbouka seule.
+      at(0, () => {
+        musicFilter.frequency.setValueAtTime(1400, 0);
+        musicFilter.frequency.exponentialRampToValueAtTime(16000, beatTime(feature.from));
+      });
+      for (let b = hook.from; b < hook.from + hook.beats; b += 4) playPadBar(b, Math.min(4, hook.from + hook.beats - b));
+      // Les réseaux se jouent dans les deux premières secondes : l'accroche
+      // frappe d'entrée, un impact et l'accord, puis le motif.
+      playImpact(hook.from);
+      trig(chime, style.progression[0].map((n) => midiToFreq(style.root + 24 + n)), 0.8, beatTime(hook.from), 0.9);
+      playMotif(hook.from, Math.ceil(hook.beats / 4), { gain: 1, withShimmer: true });
+      for (let b = hook.from; b < hook.from + hook.beats; b++) {
+        grooveBeat(b, { full: false, hats: true, clapOn: true, darbuka: true });
+      }
+      playRiser(Math.max(hook.from, feature.from - 2), Math.min(2, hook.beats));
+
+      // Fonctionnalité : le groove entier, le motif en boucle.
+      playImpact(feature.from);
+      for (let b = feature.from; b < feature.from + feature.beats; b++) {
+        const fromStart = b - feature.from;
+        // Le temps qui précède un drop se vide : seul le bégaiement reste.
+        const preDrop = (style.drops ?? []).some((d) => fromStart === d - 1) || (genre !== "pop" && fromStart === feature.beats - 1);
+        grooveBeat(b, { full: !preDrop, darbuka: !preDrop, hats: fromStart >= 4 && !preDrop, clapOn: !preDrop });
+        if (preDrop) continue;
+        if (genre === "halftime") trig(sub, midiToFreq(style.root - 24 + chordAt(b)[0]), spb * 0.95, beatTime(b), 0.5);
+        else bassBeat(b, { offbeat: true });
+        if (fromStart % 4 === 0) playPadBar(b, Math.min(4, feature.from + feature.beats - b));
+      }
+      for (let b = feature.from; b < feature.from + feature.beats; b += 8) {
+        const bars = Math.min(2, Math.ceil((feature.from + feature.beats - b) / 4));
+        playMotif(b, bars, { gain: 0.9 });
+      }
+      // Arpège qui s'ajoute dans la seconde moitié.
+      const arpFrom = feature.from + Math.floor(feature.beats / 2 / 4) * 4;
+      for (let b = arpFrom; b < feature.from + feature.beats; b++) {
+        const chord = chordAt(b);
+        for (let i = 0; i < 4; i++) {
+          const n = style.root + 12 + chord[(i + b) % chord.length];
+          trig(arp, midiToFreq(n), s16, beatTime(b) + i * s16, 0.6);
+        }
+      }
+      playRiser(feature.from + feature.beats - 2, 2);
+
+      // Série 2 : le piano porte les accords, et la longue section repart en
+      // deux temps (une mesure creuse, un bégaiement, puis le drop).
+      if (genre !== "pop") {
+        for (let b = feature.from; b < feature.from + feature.beats; b += 4) keysBar(b, 4);
+        for (const drop of style.drops ?? []) {
+          stutter(feature.from + drop - 1, 1);
+          playImpact(feature.from + drop);
+        }
+        stutter(feature.from + feature.beats - 1, 1);
+      }
+
+      // Coupure « Mais aussi » : tout s'arrête sauf un accord en suspens.
+      const brkT = beatTime(brk.from);
+      if (genre !== "pop") tapeStop(brk.from);
+      trig(boom, 70, 1, brkT, 0.7);
+      trig(chime, 
+        style.progression[0].map((n) => midiToFreq(style.root + 24 + n)),
+        0.8, brkT, 0.9,
+      );
+      trig(pad, 
+        style.progression[0].map((n) => midiToFreq(style.root + n)),
+        brk.beats * spb, brkT, 0.9,
+      );
+      // Roulement de darbouka qui relance.
+      for (let i = 0; i < 8; i++) {
+        const t = beatTime(brk.from + brk.beats - 1) + i * (spb / 8);
+        trig(tek, 0.02, t, 0.3 + i * 0.08);
+      }
+
+      // Montage : plus serré, basse en croches, une frappe par plan.
+      playImpact(montage.from);
+      for (let b = montage.from; b < montage.from + montage.beats; b++) {
+        grooveBeat(b, { full: true, darbuka: true, hats: true });
+        bassBeat(b, { eighths: true });
+        if ((b - montage.from) % 4 === 0) playPadBar(b, Math.min(4, montage.from + montage.beats - b));
+      }
+      for (let b = montage.from; b < montage.from + montage.beats; b += 8) {
+        playMotif(b, Math.min(2, Math.ceil((montage.from + montage.beats - b) / 4)), { octave: 1, gain: 0.75 });
+      }
+      // Caisse claire qui s'accélère sur la dernière mesure.
+      const rollFrom = montage.from + montage.beats - 2;
+      for (let i = 0; i < 16; i++) {
+        const t = beatTime(rollFrom) + i * (2 * spb / 16);
+        trig(clap, 0.05, t, 0.25 + i * 0.04);
+      }
+
+      // Fin : l'accord final et le motif posé, puis la queue de réverbération.
+      playImpact(end.from);
+      playKick(beatTime(end.from));
+      const finalChord = style.progression[0];
+      trig(pad, finalChord.map((n) => midiToFreq(style.root - 12 + n)), end.beats * spb, beatTime(end.from), 1);
+      trig(sub, midiToFreq(style.root - 24), end.beats * spb * 0.6, beatTime(end.from), 0.8);
+      trig(chime, finalChord.map((n) => midiToFreq(style.root + 24 + n)), 2, beatTime(end.from), 0.8);
+      playMotif(end.from, 1, { gain: 0.7 });
+      for (let b = end.from; b < end.from + Math.min(4, end.beats); b++) {
+        grooveBeat(b, { full: false, darbuka: true, hats: false, clapOn: false });
+      }
+      at(beatTime(end.from + 2), () => {
+        musicFilter.frequency.setValueAtTime(16000, beatTime(end.from + 2));
+        musicFilter.frequency.exponentialRampToValueAtTime(900, beatTime(end.from + end.beats) + timeline.tail);
+      });
     }
-    at(beatTime(end.from + 2), () => {
-      musicFilter.frequency.setValueAtTime(16000, beatTime(end.from + 2));
-      musicFilter.frequency.exponentialRampToValueAtTime(900, beatTime(end.from + end.beats) + timeline.tail);
-    });
 
     // Bruitages de l'image.
     for (const cue of cues) {

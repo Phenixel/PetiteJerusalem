@@ -13,6 +13,7 @@ swiping a card, setting a text aside) was really played, frame by frame.
 | 2      | six stories of 31 seconds                                 | 3.10      | `out/s2-<id>.mp4`               |
 | 4      | version 4.0: one presentation, in the app and the networks | 4.0       | `out/<id>.mp4`, `../public/videos/` |
 | 4      | the whole app, presented in 86 seconds (`presentation`)    | 4.0       | `out/presentation.mp4`          |
+| 4      | the advertisement, in motion design, 79 seconds (`pub`)    | 4.0       | `out/pub.mp4`                   |
 
 ## Version 4.0
 
@@ -109,6 +110,40 @@ are `chaine` and `horaires` (`scripts/shots-v4.mjs`).
 ```bash
 npm run captures -- --only fr-chaine --only fr-horaires   # its own shots
 npm run render -- --only presentation
+```
+
+## The advertisement (`pub`)
+
+An advertisement, not a presentation: the app told in motion design rather
+than by commenting its screens, then the real screens as proof. One day,
+from dawn to night (`src/ad/`):
+
+| Scene      | What it tells                                                                                   |
+| ---------- | ----------------------------------------------------------------------------------------------- |
+| opening    | « Prier. Étudier. Partager. » struck on the first beats, then the logo builds, « La Torah au quotidien » |
+| `aube`     | the night, then the sun rising behind the logo's wall; the day's times pop along its path (Alot haCha'har, Netz, 'Hatsot, Chkia); the cities; the times page in a phone |
+| `tefila`   | the Sidour falls, opens on Cha'harit, « jusqu'à 13:35 »; a phone rings, the three quiet modes switch on, it goes silent (« Sur Android ») |
+| `etude`    | six volumes fall on the shelf in their bindings; the Talmud's opens into its page, the gemara, Rachi, Tossafot; the translation under the Hebrew |
+| `ecoute`   | the round button, the sound moving with the music, three topics                                |
+| `ensemble` | 150 psalms, six readers each take a share, the chain fills, 150/150 and confetti; shared by a link, the messages come back |
+| `parcours` | a stone a day for the wall, the light that grows (a flame, then the galaxy), a goal's ring; the night falls |
+| montage    | « Pour de vrai… », then eight real screens, two beats each                                     |
+| end        | the logo, the promise, « Gratuite, sans publicité », the stores, the site                     |
+
+Its music is its own: a pop-house in D major, four on the floor,
+claps on 2 and 4, open hats on the off-beat, piano chords, the melody on a
+marimba then a whistle (`genre: "lumineux"`, motif `joie` in
+`scripts/music-engine.js`), relaunched at the study and at the chain.
+Nothing of the nigoun the other videos share.
+
+The drawings are flat, in the logo's and the banners' colors, no
+gradient; the icons are the app's own (`src/components/icons/registry.ts`),
+and the skyline is the logo's pieces (`LogoPieces` in
+`src/v4/LogoMotion.tsx`). The times, the psalms and the days shown are
+those of the demo data the screens are filmed on.
+
+```bash
+npm run render -- --only pub
 ```
 
 ## Series 1 and 2

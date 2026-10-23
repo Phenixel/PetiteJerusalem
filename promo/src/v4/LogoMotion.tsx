@@ -22,7 +22,7 @@ import { useEffect, useState, type CSSProperties } from "react";
 import { continueRender, delayRender, Img, interpolate, staticFile, useCurrentFrame, useVideoConfig } from "remotion";
 import { clamp, springAt, tween } from "../anim.ts";
 
-type Piece = "star" | "flame" | "dome" | "cypress" | "tower" | "wall" | "book";
+export type Piece = "star" | "flame" | "dome" | "cypress" | "tower" | "wall" | "book";
 
 const PIECES: Piece[] = ["star", "flame", "dome", "cypress", "tower", "wall", "book"];
 
@@ -156,6 +156,19 @@ function Sparks({ size, at }: { size: number; at: number }) {
         );
       })}
     </>
+  );
+}
+
+/**
+ * Some pieces of the logo, still, on its square of `size` px: the skyline
+ * of the advertisement (src/ad), where the sun rises behind the wall.
+ */
+export function LogoPieces({ size, pieces, style }: { size: number; pieces: Piece[]; style?: CSSProperties }) {
+  const urls = useLogoPieces();
+  return (
+    <div style={{ position: "relative", width: size, height: size, ...style }}>
+      {urls ? pieces.map((piece) => <Img key={piece} src={urls[piece]} style={{ position: "absolute", inset: 0, width: size, height: size }} />) : null}
+    </div>
   );
 }
 

@@ -10,6 +10,7 @@
  */
 import type { Look } from "./theme.ts";
 import { buildTimeline, type Cue, type CueSound, type Durations, type MusicStyle } from "./timeline.ts";
+import { adDurations, adMarks, adPlan, adSceneStarts } from "./ad/plan.ts";
 import { overviewPlan, planChapters, planDurations, planMarks, presentationPlan, type Chapter } from "./v4/plan.ts";
 import type { Locale } from "./v4/strings.ts";
 
@@ -62,7 +63,7 @@ export type VideoSpec = {
    * Series 4: what the video presents, the 4.0 update (the default) or the
    * whole app, for whoever does not know it (plan.ts, `overviewPlan`).
    */
-  subject?: "update" | "app";
+  subject?: "update" | "app" | "ad";
   locale?: Locale;
   /**
    * The name of the copy the app plays (public/videos/<appFile>.mp4 and its
@@ -463,6 +464,36 @@ VIDEOS.push({
   music: v4Music(62),
   durations: planDurations(overviewPlan()),
   marks: planMarks(overviewPlan()),
+  montage: [],
+});
+
+/**
+ * The advertisement (src/ad): the app told in motion design along one day,
+ * then the real screens and the stores. Its own music, far from the nigoun
+ * of the other videos: a pop-house in D major, marimba and whistle
+ * (scripts/music-engine.js, « lumineux »), relaunched at the study and at
+ * the chain.
+ */
+const AD_STARTS = adSceneStarts(adPlan());
+VIDEOS.push({
+  id: "pub",
+  title: "Petite Jérusalem, la pub",
+  series: 4,
+  cut: "promo",
+  subject: "ad",
+  locale: "fr",
+  montageStep: 2,
+  look: { theme: "sunset", dark: false },
+  music: {
+    bpm: 120,
+    root: 62,
+    motif: "joie",
+    genre: "lumineux",
+    progression: [[0, 4, 7], [-5, -1, 2], [-3, 0, 4], [-7, -3, 0]],
+    drops: [AD_STARTS[2], AD_STARTS[4]],
+  },
+  durations: adDurations(adPlan()),
+  marks: adMarks(adPlan()),
   montage: [],
 });
 
