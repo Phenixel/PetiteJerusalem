@@ -1,0 +1,85 @@
+name: App Store resubmit
+
+# Redoes the App Store Connect part of a version whose binary Apple already
+# has, without building anything: the listing (scripts/appstore-listing.mjs,
+# which creates or renames the version and writes its "What's New"), the
+# captures (scripts/asc-screenshots.mjs) and the submission for review
+# (scripts/asc-submit.mjs). The same three steps as deploy-ios.yml, with the
+# code of the branch it is run from.
+#
+# For a tag whose binary went up but whose listing or submission failed: a
+# rerun of deploy-ios.yml would build again, and Apple refuses a build number
+# it already has. Android and the site are not touched.
+#
+# The release notes are read from the GitHub release of the tag, the captures
+# from the store-screenshots.yml run of the tag's commit (the committed ones
+# when that run is missing or failed).
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version (X.Y.Z), its tag vX.Y.Z must exist"
+        required: true
+      build_number:
+        description: "Build number already uploaded (4.0.0 → 4000000)"
+        required: true
+
+concurrency:
+  group: appstore-resubmit-${{ inputs.version }}
+  cancel-in-progress: false
+
+jobs:
+  appstore:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      # Reading the store-screenshots.yml run and its artifact.
+      actions: read
+    env:
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
+      VERSION: ${{ inputs.version }}
+      BUILD_NUMBER: ${{ inputs.build_number }}
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+        with:
+          # The tags, to find the commit of vX.Y.Z.
+          fetch-depth: 0
+
+      - name: Use Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Check the inputs
+        id: tag
+        run: |
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "::error::Invalid version: $VERSION (expected X.Y.Z)"; exit 1; }
+          [[ "$BUILD_NUMBER" =~ ^[0-9]+$ ]] || { echo "::error::Invalid build number: $BUILD_NUMBER"; exit 1; }
+          echo "commit=$(git rev-list -n 1 "v$VERSION")" >> "$GITHUB_OUTPUT"
+
+      - name: Update the App Store listing
+        env:
+          GH_TOKEN: ${{ github.token }}
+          IOS_AUTO_RELEASE: ${{ vars.IOS_AUTO_RELEASE }}
+        run: |
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/v$VERSION" \
+            --jq '.body // ""' > release-body.md || rm -f release-body.md
+          node scripts/appstore-listing.mjs --version "$VERSION" --release-notes release-body.md
+
+      - name: Fetch the tag's captures
+        uses: ./.github/actions/fetch-store-screenshots
+        with:
+          github-token: ${{ github.token }}
+          commit: ${{ steps.tag.outputs.commit }}
+
+      - name: Send the captures to App Store Connect
+        run: node scripts/asc-screenshots.mjs --version "$VERSION"
+
+      - name: Wait for the build and submit for review
+        if: ${{ vars.IOS_AUTO_SUBMIT != 'false' }}
+        run: node scripts/asc-submit.mjs --version "$VERSION" --build-number "$BUILD_NUMBER"

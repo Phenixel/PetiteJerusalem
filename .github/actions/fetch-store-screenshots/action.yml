@@ -20,6 +20,11 @@ inputs:
   timeout-minutes:
     description: Attente maximale du run de captures encore en cours.
     default: "20"
+  commit:
+    description: >-
+      Commit whose captures to take, the one being run by default (another
+      one when appstore-resubmit.yml publishes the captures of a tag).
+    default: ""
 
 outputs:
   source:
@@ -34,6 +39,7 @@ runs:
       env:
         GH_TOKEN: ${{ inputs.github-token }}
         TIMEOUT_MINUTES: ${{ inputs.timeout-minutes }}
+        COMMIT: ${{ inputs.commit || github.sha }}
       run: |
         set -euo pipefail
         dir=store-assets/screenshots
@@ -48,9 +54,9 @@ runs:
         # du tag, parti en même temps que les deploy, ou un lancement manuel.
         while :; do
           run="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow store-screenshots.yml \
-            --commit "$GITHUB_SHA" --limit 1 --json databaseId,status,conclusion \
+            --commit "$COMMIT" --limit 1 --json databaseId,status,conclusion \
             --jq '.[0] // empty')"
-          [ -z "$run" ] && keep_committed "Aucune génération de captures pour le commit $GITHUB_SHA"
+          [ -z "$run" ] && keep_committed "Aucune génération de captures pour le commit $COMMIT"
           id="$(jq -r .databaseId <<< "$run")"
           [ "$(jq -r .status <<< "$run")" = completed ] && break
           [ "$SECONDS" -ge "$deadline" ] &&

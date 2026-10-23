@@ -26,7 +26,7 @@
  *     node scripts/asc-submit.mjs --version 3.7.3 --build-number 3070300 \
  *       [--timeout-minutes 45]
  */
-import { createAscClient, EDITABLE_STATES, versionState } from "./lib/asc-api.mjs";
+import { createAscClient, EDITABLE_STATES, findApp, versionState } from "./lib/asc-api.mjs";
 
 const BUNDLE_ID = "fr.petitejerusalem.app";
 
@@ -61,8 +61,7 @@ const { api } = createAscClient({ keyId, issuerId, privateKeyPem });
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // --- App ---------------------------------------------------------------------
-const apps = await api("GET", `/v1/apps?filter[bundleId]=${BUNDLE_ID}`);
-const app = apps.data[0];
+const app = await findApp(api, BUNDLE_ID);
 if (!app) {
   console.error(`asc-submit: aucune app ${BUNDLE_ID} dans App Store Connect`);
   process.exit(1);
