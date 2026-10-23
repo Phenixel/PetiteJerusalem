@@ -12,6 +12,7 @@ swiping a card, setting a text aside) was really played, frame by frame.
 | 1      | six videos of 23 seconds, one part of the app each        | 3.10      | `out/<id>.mp4`                  |
 | 2      | six stories of 31 seconds                                 | 3.10      | `out/s2-<id>.mp4`               |
 | 4      | version 4.0: one presentation, in the app and the networks | 4.0       | `out/<id>.mp4`, `../public/videos/` |
+| 4      | the whole app, presented in 86 seconds (`presentation`)    | 4.0       | `out/presentation.mp4`          |
 
 ## Version 4.0
 
@@ -82,6 +83,33 @@ PROMO_BEFORE_DIR=$PWD/../pj-v3 npm run captures   # from promo/
 
 The demo server then also serves that app on port 5275, on the same
 emulators and demo account.
+
+## The whole app (`presentation`)
+
+For whoever does not know the app yet (the networks, the stores' preview,
+a message): what one does with it in a day, not what changed. Under a
+minute and a half (86 s), French, in the 4.0 video's language and frame
+(`src/v4/Update.tsx`), its own cut (`overviewPlan` in `src/v4/plan.ts`)
+and words (`OVERVIEW_STRINGS` in `src/v4/strings.ts`):
+
+- the opening builds the logo and strikes « Prier, étudier, ensemble »;
+- the chapters go from prayer to study to one's own path: the day's cards
+  (`jour`), the Sidour on the moment, the phone going quiet (Android), the
+  time of the moment, the day's times opening from the round button
+  (`horaires`), Étude's three tabs, a chain of Tehilim and the reader's
+  psalms (`chaine`), the daf page, the translation, the commentaries, the
+  study table, the full-screen player, Mon parcours;
+- the montage passes ten more things, the ending gives the stores and the
+  site, without the version.
+
+It strings the 4.0 chapters in another order: `from` in the plan names the
+screen each one starts from (the previous chapter's last). Its own shots
+are `chaine` and `horaires` (`scripts/shots-v4.mjs`).
+
+```bash
+npm run captures -- --only fr-chaine --only fr-horaires   # its own shots
+npm run render -- --only presentation
+```
 
 ## Series 1 and 2
 

@@ -252,6 +252,38 @@ function shotsFor(locale) {
       },
     },
     {
+      // The presentation of the app (`presentation`): Étude's Partage tab,
+      // the chain's card touched, its page; the reader's psalms follow
+      // (`tehilim`).
+      name: name("chaine"),
+      look: now,
+      frames: true,
+      async run(t) {
+        await t.open("/bibliotheque", { css: "[role=group] button" });
+        await t.tapOn(t.page.locator("[role=group] button").nth(2));
+        await t.wait(2600);
+        await t.mark("card", { card: "Tehilim pour la communauté" });
+        await t.snap();
+        await t.page.locator("text=Tehilim pour la communauté >> visible=true").first().click();
+        await t.page.locator("main >> visible=true").first().waitFor();
+        await t.wait(2600);
+        await t.snap();
+      },
+    },
+    {
+      // The presentation of the app: the day's times in Paris, the next one
+      // in large, then the whole list (for a scroll in the edit).
+      name: name("horaires"),
+      look: now,
+      async run(t) {
+        await t.open("/horaires/paris", { css: "[data-zman-list]" });
+        await t.mark("next", t.page.locator(".card.bg-primary\\/5"));
+        await t.mark("list", t.page.locator("[data-zman-list]"));
+        await t.snap();
+        await t.snapFull();
+      },
+    },
+    {
       // Every psalm taken in the chain, read one after the other.
       name: name("tehilim"),
       look: now,

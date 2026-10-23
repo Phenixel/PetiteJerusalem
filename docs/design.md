@@ -4304,7 +4304,7 @@ down.
   « 4.0 » of the opening in the banners' blue. For the networks, the
   general banner's promise follows, its three verbs in blue. The app's
   screens keep the app's colors.
-- **The logo moves, it is not redrawn.** His PNG is cut into its pieces
+- **The logo moves, it is not redrawn.** The designer's PNG is cut into its pieces
   when the video renders, by color and by place (the star, the flame, the
   dome, the cypresses, the tower, the wall, the book:
   `promo/src/v4/LogoMotion.tsx`), and each one moves on its own: the book
@@ -4342,3 +4342,29 @@ down.
 - **The reader's language.** French, English and Hebrew, each filmed in its
   own interface; the Hebrew one has no translation chapter (the translations
   go into French and English).
+
+### The whole app, in under a minute and a half
+
+Besides the 4.0 video, a presentation of the whole app
+(`promo/out/presentation.mp4`, 86 seconds) for whoever does not know it:
+the networks, the stores' preview, a link sent in a message. The same
+language and frame as 4.0 (the logo built in the opening, the stone wall,
+two-line captions, real gestures, what must be read coming out of the
+screen, the ending on the stores), but no before and after: what one does
+with the app in a day.
+
+- **A day's order.** The day's cards first, then prayer (the Sidour on the
+  moment, the phone going quiet, the time of the moment, the day's times),
+  then study (Étude's tabs, a chain of Tehilim, the daf page, the
+  translation, the commentaries, the study table, a class), then one's own
+  path (Mon parcours); ten more things in the montage.
+- **Under a minute and a half.** Five seconds or so per chapter, as in 4.0;
+  the montage at two beats a shot. Whatever else would make it longer goes
+  to the montage or out.
+- **No version on the ending.** The name, the promise, « Gratuite, sans
+  publicité », the stores and the site: the 4.0 pill is for the update's
+  video.
+- **The same chapters, another order.** The 4.0 chapters are reused; each
+  starts from the screen the previous one ended on, which the cut names
+  (`from` in `promo/src/v4/plan.ts`), so the phone never jumps.
+

@@ -48,6 +48,10 @@ export type V4Strings = {
     table: [CaptionLines, CaptionLines];
     audio: [CaptionLines];
     contact: [CaptionLines, CaptionLines];
+    /** The presentation of the whole app only (OVERVIEW_STRINGS). */
+    jour?: [CaptionLines, CaptionLines];
+    horaires?: [CaptionLines, CaptionLines];
+    chaine?: [CaptionLines, CaptionLines];
   };
   montage: {
     halakha: string;
@@ -313,6 +317,49 @@ export const STRINGS: Record<Locale, V4Strings> = {
     end: {
       title: "תיהנו מהחידושים!",
       replay: "לצפייה חוזרת: פרופיל, ״מרכז העזרה״",
+    },
+  },
+};
+
+/**
+ * The presentation of the whole app (`presentation`, plan.ts `overviewPlan`):
+ * the 4.0 video's words where a chapter says the same thing, its own where
+ * 4.0 spoke of a change (« a son onglet », « remplace la lecture du jour »).
+ * French only, like the networks' video.
+ */
+export const OVERVIEW_STRINGS: Partial<Record<Locale, V4Strings>> = {
+  fr: {
+    ...STRINGS.fr,
+    hook: ["Prier,", "étudier,", "ensemble"],
+    hookSub: "La Torah au quotidien",
+    captions: {
+      ...STRINGS.fr.captions,
+      jour: [
+        ["Votre journée,", "*carte après carte*"],
+        ["Glissez-la", "*quand c'est fait*"],
+      ],
+      sidour: [
+        ["Le *Sidour*", "complet"],
+        ["Il s'ouvre", "*sur le moment*"],
+      ],
+      horaires: [
+        ["Les horaires", "*de votre ville*"],
+        ["Chabbat et les fêtes,", "*à la minute*"],
+      ],
+      etude: [
+        ["Une *bibliothèque*", "dans la poche"],
+        ["Des cours,", "*des lectures à plusieurs*"],
+      ],
+      chaine: [
+        ["Lire *à plusieurs*", "chacun sa part"],
+        ["Vos psaumes,", "*l'un après l'autre*"],
+      ],
+      audio: [["Des cours audio,", "*en plein écran*"]],
+      parcours: [
+        ["*Mon parcours*", "jour après jour"],
+        ["Une pierre", "*par jour tenu*"],
+        ["Fixez-vous", "*un objectif*"],
+      ],
     },
   },
 };

@@ -20,7 +20,8 @@ import { PartageFeature } from "./scenes/Partage.tsx";
 import { SidourFeature } from "./scenes/Sidour.tsx";
 import { FPS, HEIGHT, WIDTH, totalFrames } from "./timeline.ts";
 import { Update } from "./v4/Update.tsx";
-import { presentationPlan } from "./v4/plan.ts";
+import { overviewPlan, presentationPlan } from "./v4/plan.ts";
+import { OVERVIEW_STRINGS, STRINGS } from "./v4/strings.ts";
 import { VIDEOS, videoTimeline, type VideoSpec } from "./videos.ts";
 
 const NNBSP = "\u202f";
@@ -127,10 +128,18 @@ const SCENES: Record<string, { hook: HookLine[]; Feature: ComponentType<FeatureP
   },
 };
 
-/** Version 4.0: one cut (src/v4/plan.ts), in the video's language, with its ending. */
+/**
+ * Series 4: the 4.0 update (src/v4/plan.ts), in the video's language, with
+ * its ending; or the whole app (`subject: "app"`), its own cut and words.
+ */
 const v4 = (spec: VideoSpec) => {
   const locale = spec.locale ?? "fr";
-  return <Update spec={spec} plan={presentationPlan(locale)} locale={locale} kind={spec.cut ?? "app"} />;
+  if (spec.subject === "app") {
+    const strings = OVERVIEW_STRINGS[locale];
+    if (!strings) throw new Error(`No words for the presentation in ${locale}`);
+    return <Update spec={spec} plan={overviewPlan()} locale={locale} kind={spec.cut ?? "promo"} strings={strings} version={false} />;
+  }
+  return <Update spec={spec} plan={presentationPlan(locale)} locale={locale} kind={spec.cut ?? "app"} strings={STRINGS[locale]} />;
 };
 
 export const Root = () => (

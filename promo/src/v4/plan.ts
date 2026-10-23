@@ -18,6 +18,9 @@ import type { CueSound, Durations } from "../timeline.ts";
 import type { Locale } from "./strings.ts";
 
 export type ChapterId =
+  | "jour"
+  | "horaires"
+  | "chaine"
   | "bars"
   | "etude"
   | "sidour"
@@ -36,7 +39,16 @@ export type ChapterId =
 
 export type Mark = { beat: number; sound?: CueSound };
 
-export type ChapterPlan = { id: ChapterId; beats: number; marks: Record<string, Mark> };
+export type ChapterPlan = {
+  id: ChapterId;
+  beats: number;
+  marks: Record<string, Mark>;
+  /**
+   * The screen the previous chapter ended on (a capture, without its
+   * language), when the cut is not the 4.0 one: the chapter starts from it.
+   */
+  from?: string;
+};
 
 export type MontageShot =
   | "halakha"
@@ -59,7 +71,7 @@ export type CutPlan = {
   end: number;
 };
 
-const ch = (id: ChapterId, beats: number, marks: Record<string, Mark>): ChapterPlan => ({ id, beats, marks });
+const ch = (id: ChapterId, beats: number, marks: Record<string, Mark>, from?: string): ChapterPlan => ({ id, beats, marks, from });
 
 export function presentationPlan(locale: Locale): CutPlan {
   return {
@@ -180,6 +192,141 @@ export function presentationPlan(locale: Locale): CutPlan {
       "epingles",
       "contraste",
     ],
+    end: 8,
+  };
+}
+
+/**
+ * The presentation of the whole app (`presentation`), for whoever does not
+ * know it yet: no before and after, what one does with it in a day. Under a
+ * minute and a half: an opening, thirteen chapters, ten more things in the
+ * montage, the stores.
+ *
+ * It strings the 4.0 chapters in another order, from prayer to study to
+ * one's own path, plus three of its own (the day's cards, the times, a
+ * reading chain); `from` names the screen each one starts from. French
+ * only, like the networks' 4.0 video.
+ */
+export function overviewPlan(): CutPlan {
+  return {
+    hook: 8,
+    chapters: [
+      // The phone rises on the home page: the day, card by card.
+      ch("jour", 12, {
+        rise: { beat: 0, sound: "whoosh" },
+        second: { beat: 5 },
+        swipe: { beat: 6, sound: "swipe" },
+        done: { beat: 7, sound: "chime" },
+      }),
+      ch(
+        "sidour",
+        10,
+        {
+          tap: { beat: 1.2, sound: "tap" },
+          push: { beat: 1.5, sound: "swipe" },
+          second: { beat: 4.5 },
+          pop: { beat: 5, sound: "pop" },
+          open: { beat: 9, sound: "tap" },
+        },
+        "deck-12",
+      ),
+      ch("calme", 10, {
+        push: { beat: 0, sound: "swipe" },
+        drop: { beat: 1, sound: "whoosh" },
+        pop: { beat: 3, sound: "pop" },
+        second: { beat: 5.5 },
+        dnd: { beat: 6.5, sound: "tap" },
+      }),
+      ch("moment", 10, {
+        pop: { beat: 1, sound: "pop" },
+        tap: { beat: 4.5, sound: "tap" },
+        sheet: { beat: 4.7, sound: "swipe" },
+        second: { beat: 6 },
+      }),
+      // The round button: the day's times, in a circle.
+      ch(
+        "horaires",
+        10,
+        {
+          tap: { beat: 1, sound: "tap" },
+          open: { beat: 1.2, sound: "whoosh" },
+          pop: { beat: 2.5, sound: "pop" },
+          second: { beat: 5.5 },
+          scroll: { beat: 5.5, sound: "swipe" },
+        },
+        "moment-07",
+      ),
+      ch(
+        "etude",
+        10,
+        {
+          tab: { beat: 0.8, sound: "tap" },
+          push: { beat: 1, sound: "swipe" },
+          tap1: { beat: 4, sound: "tap" },
+          second: { beat: 5.5 },
+          tap2: { beat: 6.8, sound: "tap" },
+        },
+        "horaires",
+      ),
+      // Partage's chain, its reservations, then the reader's psalms.
+      ch(
+        "chaine",
+        12,
+        {
+          pop: { beat: 0.8, sound: "pop" },
+          tap: { beat: 5, sound: "tap" },
+          push: { beat: 5.3, sound: "swipe" },
+          second: { beat: 6.5 },
+          read: { beat: 8.5, sound: "swipe" },
+        },
+        "etude-14",
+      ),
+      ch(
+        "daf",
+        10,
+        {
+          push: { beat: 0, sound: "swipe" },
+          tap: { beat: 1.5, sound: "tap" },
+          page: { beat: 1.7, sound: "impact" },
+          zoom: { beat: 3, sound: "whoosh" },
+          second: { beat: 6 },
+        },
+        "tehilim",
+      ),
+      ch("translation", 8, { tap: { beat: 1.2, sound: "tap" }, on: { beat: 1.5, sound: "pop" }, pop: { beat: 3, sound: "pop" } }, "daf-06"),
+      ch("commentaries", 8, {
+        passage: { beat: 1.5, sound: "tap" },
+        sheet: { beat: 1.7, sound: "swipe" },
+        open: { beat: 4, sound: "tap" },
+        panel: { beat: 4.2, sound: "swipe" },
+      }),
+      ch("table", 10, {
+        aside: { beat: 1.2, sound: "tap" },
+        fly: { beat: 1.3, sound: "whoosh" },
+        second: { beat: 5, sound: "whoosh" },
+        bar: { beat: 7, sound: "tap" },
+        sheet: { beat: 7.2, sound: "swipe" },
+      }),
+      ch("audio", 8, {
+        push: { beat: 0, sound: "swipe" },
+        play: { beat: 1.2, sound: "tap" },
+        bar: { beat: 3.6, sound: "tap" },
+        full: { beat: 3.7, sound: "swipe" },
+      }),
+      ch(
+        "parcours",
+        14,
+        {
+          tap: { beat: 1, sound: "tap" },
+          push: { beat: 1.3, sound: "swipe" },
+          pop: { beat: 2.6, sound: "pop" },
+          wall: { beat: 6.5, sound: "whoosh" },
+          goal: { beat: 10, sound: "swipe" },
+        },
+        "audio-08",
+      ),
+    ],
+    montage: ["halakha", "tikoun", "chnei", "signet", "nichmat40", "boussole", "recherche", "rappels", "epingles", "contraste"],
     end: 8,
   };
 }

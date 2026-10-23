@@ -9,6 +9,10 @@
  * `kind`: `app` ends on a good discovery and holds its last image (the
  * video the app plays); `promo` ends on the stores and fades (the same
  * video, for the networks).
+ *
+ * The same frame plays the presentation of the whole app (plan.ts,
+ * `overviewPlan`): its own cut and `strings`, an ending without the
+ * version (`version`).
  */
 import { AbsoluteFill, Audio, Sequence, staticFile } from "remotion";
 import { B } from "../anim.ts";
@@ -20,7 +24,7 @@ import { CHAPTERS } from "./chapters.tsx";
 import { V4 } from "./palette.ts";
 import { BreakV4, EndCardV4, HookV4, MontageV4, type MontageItemV4 } from "./parts.tsx";
 import type { CutPlan, MontageShot } from "./plan.ts";
-import { STRINGS, type Locale } from "./strings.ts";
+import type { Locale, V4Strings } from "./strings.ts";
 
 /** The capture of a montage shot, when it is not named after it (shots-v4.mjs). */
 const MONTAGE_SHOTS: Partial<Record<MontageShot, string>> = {
@@ -29,8 +33,21 @@ const MONTAGE_SHOTS: Partial<Record<MontageShot, string>> = {
   boussole: "boussole-17",
 };
 
-export function Update({ spec, plan, locale, kind }: { spec: VideoSpec; plan: CutPlan; locale: Locale; kind: "promo" | "app" }) {
-  const strings = STRINGS[locale];
+export function Update({
+  spec,
+  plan,
+  locale,
+  kind,
+  strings,
+  version = true,
+}: {
+  spec: VideoSpec;
+  plan: CutPlan;
+  locale: Locale;
+  kind: "promo" | "app";
+  strings: V4Strings;
+  version?: boolean;
+}) {
   const timeline = videoTimeline(spec);
   const at = (k: string) => timeline.sections.find((s) => s.kind === k)!;
   const seq = (k: string) => ({ from: B(at(k).from), durationInFrames: B(at(k).beats) });
@@ -70,7 +87,7 @@ export function Update({ spec, plan, locale, kind }: { spec: VideoSpec; plan: Cu
         <MontageV4 items={items} tag={strings.also.join(" ")} dir={strings.dir} />
       </Sequence>
       <Sequence from={B(at("end").from)} durationInFrames={B(at("end").beats) + Math.round(timeline.tail * FPS)}>
-        <EndCardV4 kind={kind} strings={strings} length={B(at("end").beats)} />
+        <EndCardV4 kind={kind} strings={strings} length={B(at("end").beats)} version={version} />
       </Sequence>
       <Wipe at={B(at("feature").from)} color={V4.blue} />
       <Wipe at={B(at("end").from)} color={V4.orange} />

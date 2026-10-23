@@ -10,7 +10,7 @@
  */
 import type { Look } from "./theme.ts";
 import { buildTimeline, type Cue, type CueSound, type Durations, type MusicStyle } from "./timeline.ts";
-import { planChapters, planDurations, planMarks, presentationPlan, type Chapter } from "./v4/plan.ts";
+import { overviewPlan, planChapters, planDurations, planMarks, presentationPlan, type Chapter } from "./v4/plan.ts";
 import type { Locale } from "./v4/strings.ts";
 
 export type MontageId =
@@ -58,6 +58,11 @@ export type VideoSpec = {
   series?: 1 | 2 | 4;
   /** Version 4.0: which ending (the app's, or the networks') and which language. */
   cut?: "promo" | "app";
+  /**
+   * Series 4: what the video presents, the 4.0 update (the default) or the
+   * whole app, for whoever does not know it (plan.ts, `overviewPlan`).
+   */
+  subject?: "update" | "app";
   locale?: Locale;
   /**
    * The name of the copy the app plays (public/videos/<appFile>.mp4 and its
@@ -440,6 +445,26 @@ for (const locale of ["fr", "en", "he"] as const) {
     montage: [],
   });
 }
+
+/**
+ * The presentation of the whole app, for the networks and the stores: in the
+ * 4.0 video's language, but what one does with the app in a day rather than
+ * what changed. Under a minute and a half (86 s).
+ */
+VIDEOS.push({
+  id: "presentation",
+  title: "Petite Jérusalem, l'app",
+  series: 4,
+  cut: "promo",
+  subject: "app",
+  locale: "fr",
+  montageStep: 2,
+  look: { theme: "sunset", dark: false },
+  music: v4Music(62),
+  durations: planDurations(overviewPlan()),
+  marks: planMarks(overviewPlan()),
+  montage: [],
+});
 
 export const videoTimeline = (v: VideoSpec) => buildTimeline(v.music.bpm, v.durations);
 

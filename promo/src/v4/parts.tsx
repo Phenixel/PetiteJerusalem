@@ -182,13 +182,15 @@ export function HookV4({ strings, beats }: { strings: V4Strings; beats: number }
           if (frame < hits[i]) return <div key={i} style={{ height: 0 }} />;
           const p = springAt(frame, fps, hits[i], { damping: 11, stiffness: 220, mass: 0.6 });
           const big = i === last;
+          // « 4.0 » fills the width; a word takes what its letters allow.
+          const bigSize = text.length <= 4 ? 330 : Math.min(230, Math.floor(1750 / text.length));
           return (
             <div
               key={i}
               style={{
                 fontFamily: DISPLAY,
                 fontWeight: big ? 800 : 700,
-                fontSize: big ? 330 : text.length > 12 ? 118 : 140,
+                fontSize: big ? bigSize : text.length > 12 ? 118 : 140,
                 lineHeight: big ? 1 : 1.06,
                 letterSpacing: strings.dir ? undefined : "-0.03em",
                 color: big ? BRAND.blue : BRAND.title,
@@ -525,7 +527,8 @@ function VersionPill({ at }: { at: number }) {
  * under « C'est parti »); for the networks, the banners' promise, free and
  * without ads, the stores, then a fade.
  */
-export function EndCardV4({ kind, strings, length }: { kind: "app" | "promo"; strings: V4Strings; length: number }) {
+/** `version`: the 4.0 pill under the name (not in the presentation of the whole app). */
+export function EndCardV4({ kind, strings, length, version = true }: { kind: "app" | "promo"; strings: V4Strings; length: number; version?: boolean }) {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const fadeOut = kind === "promo" ? interpolate(frame, [length - 4, length + 26], [1, 0], clamp) : 1;
@@ -565,8 +568,12 @@ export function EndCardV4({ kind, strings, length }: { kind: "app" | "promo"; st
         <div dir="ltr" style={until(32)}>
           <KineticTitle lines={BRAND_NAME} start={32} color={BRAND.title} size={100} stagger={4} weight={600} />
         </div>
-        <div style={{ height: 22 }} />
-        <VersionPill at={40} />
+        {version ? (
+          <>
+            <div style={{ height: 22 }} />
+            <VersionPill at={40} />
+          </>
+        ) : null}
         <div style={{ height: 50 }} />
         {kind === "app" ? (
           <>

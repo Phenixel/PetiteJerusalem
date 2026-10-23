@@ -17,7 +17,7 @@ import { AbsoluteFill, useCurrentFrame } from "remotion";
 import { B } from "../anim.ts";
 import { Phone, type PhonePose } from "../components/Phone.tsx";
 import { PopOut } from "../components/PopOut.tsx";
-import { Fade, Push, Scroll, Seq, Shot, seqFrames } from "../components/Screens.tsx";
+import { CircleReveal, Fade, Push, Scroll, Seq, Shot, seqFrames } from "../components/Screens.tsx";
 import { Captions, poseAt, type Caption } from "../components/Stage.tsx";
 import { Spotlight, Swipe, Tap } from "../components/Touch.tsx";
 import { center, zone, type Zone } from "../zones.ts";
@@ -37,6 +37,8 @@ export type ChapterProps = {
 };
 
 const cap = (loc: Locale, shot: string) => `${loc}-${shot}.jpg`;
+/** The screen a chapter starts from: the previous chapter's last, in the 4.0 cut unless the plan says. */
+const prev = (loc: Locale, plan: ChapterPlan, shot: string) => cap(loc, plan.from ?? shot);
 const frames = (loc: Locale, shot: string, from: number, to: number) => seqFrames(`${loc}-${shot}`, from, to);
 const z = (loc: Locale, key: string): Zone => zone(`${loc}-${key}`);
 
@@ -107,7 +109,11 @@ function Bars({ loc, strings, m, len }: ChapterProps) {
   );
 }
 
-function Etude({ loc, strings, m, len }: ChapterProps) {
+/**
+ * Étude's three tabs. In the 4.0 cut the phone rises with it on screen;
+ * after another chapter (`from`), Étude's tab is touched and the page comes.
+ */
+function Etude({ loc, strings, plan, m, len }: ChapterProps) {
   const frame = useCurrentFrame();
   const c = strings.captions.etude;
   const t1 = m("tap1");
@@ -115,33 +121,43 @@ function Etude({ loc, strings, m, len }: ChapterProps) {
   const tab1 = center(z(loc, "etude:tab1"));
   const tab2 = center(z(loc, "etude:tab2"));
   const zoom = focus(195, 300, 720);
+  const entered = plan.from !== undefined;
   const pose = poseAt(frame, [
-    [0, { y: 2700, rx: 30, rz: 8 }],
-    [B(1.2), {}],
+    entered ? [0, {}] : [0, { y: 2700, rx: 30, rz: 8 }],
+    entered ? [m("push") + 12, {}] : [B(1.2), {}],
     [t1 - 12, zoom],
     [t2 + 22, zoom],
     [len - 10, {}],
   ]);
+  const tabs = <Seq frames={frames(loc, "etude", 0, 14)} at={[0, ...spread(t1 + 2, 6), t1 + 15, ...spread(t2 + 2, 6), t2 + 15]} />;
+  const study = center(z(loc, "accueil:study"));
   return (
     <Scene
       pose={pose}
       strings={strings}
       screen={
         <>
-          <Seq frames={frames(loc, "etude", 0, 14)} at={[0, ...spread(t1 + 2, 6), t1 + 15, ...spread(t2 + 2, 6), t2 + 15]} />
+          {entered ? (
+            <>
+              <Push from={<Shot src={cap(loc, plan.from!)} />} to={tabs} start={m("push")} />
+              <Tap x={study.x} y={study.y} at={m("tab")} color={V4.ink} />
+            </>
+          ) : (
+            tabs
+          )}
           <Tap x={tab1.x} y={tab1.y} at={t1} color={V4.ink} />
           <Tap x={tab2.x} y={tab2.y} at={t2} color={V4.ink} />
         </>
       }
       captions={[
-        { at: B(0.6), out: m("second") - 8, lines: c[0] },
+        { at: entered ? 4 : B(0.6), out: m("second") - 8, lines: c[0] },
         { at: m("second"), out: len - 6, lines: c[1] },
       ]}
     />
   );
 }
 
-function Sidour({ loc, strings, m, len }: ChapterProps) {
+function Sidour({ loc, strings, plan, m, len }: ChapterProps) {
   const frame = useCurrentFrame();
   const c = strings.captions.sidour;
   const tab = center(z(loc, "accueil:sidour"));
@@ -159,7 +175,7 @@ function Sidour({ loc, strings, m, len }: ChapterProps) {
       strings={strings}
       screen={
         <>
-          <Push from={<Shot src={`${loc}-etude-14.jpg`} />} to={<Shot src={cap(loc, "sidour")} />} start={m("push")} />
+          <Push from={<Shot src={prev(loc, plan, "etude-14")} />} to={<Shot src={cap(loc, "sidour")} />} start={m("push")} />
           <Tap x={tab.x} y={tab.y} at={m("tap")} color={V4.ink} />
           {/* The card of the moment touched: Cha'harit opens. */}
           <Tap x={hero.x} y={hero.y} at={m("open")} color="#ffffff" />
@@ -413,7 +429,7 @@ function Accueil({ loc, strings, m, len }: ChapterProps) {
   );
 }
 
-function Parcours({ loc, strings, m, len }: ChapterProps) {
+function Parcours({ loc, strings, plan, m, len }: ChapterProps) {
   const frame = useCurrentFrame();
   const c = strings.captions.parcours;
   const lamp = center(z(loc, "accueil:lamp"));
@@ -444,7 +460,8 @@ function Parcours({ loc, strings, m, len }: ChapterProps) {
       strings={strings}
       screen={
         <>
-          <Shot src={loopFrame(frames(loc, "modifier", 0, 5), frame, 0, 4)} />
+          {/* The home page's blocks still wobbling (4.0), or the previous chapter's screen. */}
+          <Shot src={plan.from ? cap(loc, plan.from) : loopFrame(frames(loc, "modifier", 0, 5), frame, 0, 4)} />
           <Fade start={0} duration={6}>
             <Shot src={cap(loc, "accueil")} />
           </Fade>
@@ -465,7 +482,7 @@ function Parcours({ loc, strings, m, len }: ChapterProps) {
   );
 }
 
-function Daf({ loc, strings, m, len }: ChapterProps) {
+function Daf({ loc, strings, plan, m, len }: ChapterProps) {
   const frame = useCurrentFrame();
   const c = strings.captions.daf;
   const button = center(z(loc, "daf:page"));
@@ -482,7 +499,7 @@ function Daf({ loc, strings, m, len }: ChapterProps) {
       strings={strings}
       screen={
         <>
-          <Push from={<Shot src={cap(loc, "objectif")} />} to={<Seq frames={frames(loc, "daf", 0, 6)} at={[0, ...spread(m("page"), 5, 2), m("page") + 10]} />} start={m("push")} />
+          <Push from={<Shot src={prev(loc, plan, "objectif")} />} to={<Seq frames={frames(loc, "daf", 0, 6)} at={[0, ...spread(m("page"), 5, 2), m("page") + 10]} />} start={m("push")} />
           <Tap x={button.x} y={button.y} at={m("tap")} color={V4.ink} />
         </>
       }
@@ -540,7 +557,7 @@ function Progress({ loc, strings, m, len }: ChapterProps) {
   );
 }
 
-function Translation({ loc, strings, m, len }: ChapterProps) {
+function Translation({ loc, strings, plan, m, len }: ChapterProps) {
   const frame = useCurrentFrame();
   const c = strings.captions.translation;
   const toggle = center(z(loc, "traduction:toggle"));
@@ -564,7 +581,7 @@ function Translation({ loc, strings, m, len }: ChapterProps) {
       strings={strings}
       screen={
         <>
-          <Shot src={`${loc}-progress-${PROGRESS_LAST}.jpg`} />
+          <Shot src={prev(loc, plan, `progress-${PROGRESS_LAST}`)} />
           <Fade start={0} duration={6}>
             <Shot src={`${loc}-daf-00.jpg`} />
           </Fade>
@@ -722,7 +739,127 @@ function Contact({ loc, strings, m, len }: ChapterProps) {
   );
 }
 
+// --- The presentation of the whole app (plan.ts, overviewPlan) --------------------------
+
+/** The phone rises on the home page: the card of the moment, then swiped once done. */
+function Jour({ loc, strings, m, len }: ChapterProps) {
+  const frame = useCurrentFrame();
+  const c = strings.captions.jour!;
+  const rtl = loc === "he";
+  const s = m("swipe");
+  const card = z(loc, "deck:card");
+  const cc = center(card);
+  const zoomCard = focus(195, cc.y + 140, 780);
+  const pose = poseAt(frame, [
+    [0, { y: 2700, rx: 30, rz: 8 }],
+    [B(1.2), {}],
+    [s - 14, zoomCard],
+    [m("done") + 24, zoomCard],
+    [len - 8, {}],
+  ]);
+  const x0 = card.x + card.w * (rtl ? 0.7 : 0.3);
+  return (
+    <Scene
+      pose={pose}
+      strings={strings}
+      screen={
+        <>
+          <Shot src={cap(loc, "accueil")} />
+          {frame >= s - 2 ? <Seq frames={frames(loc, "deck", 0, 12)} at={[0, ...spread(s, 5, 3), ...spread(s + 15, 6, 3), s + 34]} /> : null}
+          <Swipe x0={x0} y0={cc.y} x1={x0 + 200 * (rtl ? -1 : 1)} y1={cc.y} start={s} end={s + 13} />
+        </>
+      }
+      captions={[
+        { at: B(0.6), out: m("second") - 8, lines: c[0] },
+        { at: m("second"), out: len - 6, lines: c[1] },
+      ]}
+    >
+      {/* The card of the moment, out of the screen: Cha'harit, until when. */}
+      <PopOut src={cap(loc, "accueil")} zone={card} pose={pose} start={B(1.8)} end={m("second") - 6} to={{ x: 540, y: 1150, width: 980 }} tilt={-2} />
+    </Scene>
+  );
+}
+
+/** The round button: the day's times open in a circle, the next one in large, then the day scrolls by to Chabbat. */
+function Horaires({ loc, strings, plan, m, len }: ChapterProps) {
+  const frame = useCurrentFrame();
+  const c = strings.captions.horaires!;
+  const bar = z(loc, "accueil:bar");
+  // The round button stands in the middle of the bar, raised above it.
+  const fab = { x: bar.x + bar.w / 2, y: bar.y + 14 };
+  const next = z(loc, "horaires:next");
+  const sc = m("scroll");
+  const pose = poseAt(frame, [
+    [0, {}],
+    [sc, {}],
+    [sc + 16, { ry: loc === "he" ? 6 : -6 }],
+    [len - 6, {}],
+  ]);
+  const times = <Scroll src={cap(loc, "horaires-full")} chrome={cap(loc, "horaires")} fromY={0} toY={1250} start={sc} end={len - 2} />;
+  return (
+    <Scene
+      pose={pose}
+      strings={strings}
+      screen={
+        <>
+          <CircleReveal under={<Shot src={prev(loc, plan, "moment-07")} />} over={times} cx={fab.x} cy={fab.y} start={m("open")} />
+          <Tap x={fab.x} y={fab.y} at={m("tap")} color="#ffffff" />
+        </>
+      }
+      captions={[
+        { at: 4, out: m("second") - 8, lines: c[0] },
+        { at: m("second"), out: len - 6, lines: c[1] },
+      ]}
+    >
+      <PopOut src={cap(loc, "horaires")} zone={next} pose={pose} start={m("pop")} end={sc - 6} to={{ x: 540, y: 1150, width: 1000 }} tilt={-2} />
+    </Scene>
+  );
+}
+
+/** Partage: a chain of Tehilim and its psalms, ticked; then the reader's own, one after the other. */
+function Chaine({ loc, strings, plan, m, len }: ChapterProps) {
+  const frame = useCurrentFrame();
+  const c = strings.captions.chaine!;
+  const card = z(loc, "chaine:card");
+  // The chain's own page opens from the arrow at the end of its title.
+  const open = { x: card.x + card.w - 26, y: card.y + 34 };
+  const pose = poseAt(frame, [
+    [0, {}],
+    [m("push") + 12, {}],
+    [m("read"), { ry: loc === "he" ? -6 : 6 }],
+    [len - 6, {}],
+  ]);
+  return (
+    <Scene
+      pose={pose}
+      strings={strings}
+      screen={
+        <>
+          <Shot src={prev(loc, plan, "chaine-00")} />
+          <Fade start={0} duration={4}>
+            <Shot src={`${loc}-chaine-00.jpg`} />
+          </Fade>
+          <Push from={null} to={<Shot src={cap(loc, "tehilim")} />} start={m("push")} />
+          <Tap x={open.x} y={open.y} at={m("tap")} color={V4.ink} />
+        </>
+      }
+      captions={[
+        { at: 4, out: m("second") - 8, lines: c[0] },
+        { at: m("second"), out: len - 6, lines: c[1] },
+      ]}
+    >
+      {/* The chain's psalms, those read ticked. */}
+      <PopOut src={`${loc}-chaine-00.jpg`} zone={card} pose={pose} start={m("pop")} end={m("tap") - 8} to={{ x: 540, y: 1180, width: 860 }} tilt={-2} />
+      {/* The reader's psalms and where they stand. */}
+      <PopOut src={cap(loc, "tehilim")} zone={{ x: 12, y: 238, w: 366, h: 300 }} pose={pose} start={m("read")} end={len - 10} to={{ x: 540, y: 1180, width: 980 }} tilt={-1.5} />
+    </Scene>
+  );
+}
+
 export const CHAPTERS: Record<ChapterId, ComponentType<ChapterProps>> = {
+  jour: Jour,
+  horaires: Horaires,
+  chaine: Chaine,
   bars: Bars,
   etude: Etude,
   sidour: Sidour,
