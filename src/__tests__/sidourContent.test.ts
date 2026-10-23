@@ -1263,6 +1263,20 @@ describe("Cha'harit : ce qui s'ajoute au psaume du jour", () => {
     for (const { i } of dates) expect(i).toBeGreaterThan(dernierJour);
   });
 
+  it("ne dit Hochiénou qu'une fois le vendredi", () => {
+    // The source closes Friday's psalm (93) with Hoshienu, which the block
+    // after the psalms of the day says every day already.
+    // Friday 19 Heshvan 5787.
+    // Only from the psalm of the day to the Kaddish: the verse is quoted
+    // elsewhere in the morning (Hodu, the supplications).
+    const debut = blocks.findIndex((b) => b.when === "jour-0");
+    const fin = blocks.findIndex((b) => b.label === "Kaddich yehé chelama");
+    const occ = activeOccasions(new HDate(19, months.CHESHVAN, 5787), false);
+    const lus = blocks.slice(debut, fin).filter((b) => saidOn(b.when, occ, b.unless) && !b.fold);
+    const texte = sansSignes(lus.map((b) => b.lines.join(" ")).join(" "));
+    expect(texte.split("וקבצנו מןהגוים להדות").length - 1).toBe(1);
+  });
+
   it("garde à part le psaume de la maison endeuillée, replié", () => {
     // Aucun calendrier ne sait où l'on prie : il est là tous les jours, mais
     // fermé, et c'est le lecteur qui l'ouvre.

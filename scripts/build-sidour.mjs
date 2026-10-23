@@ -2102,12 +2102,15 @@ function chaharitRecipe() {
     ["jour-2", 6, 7],
     ["jour-3", 8, 9],
     ["jour-4", 10, 11],
-    ["jour-5", 12, 13],
-  ].map(([when, intro, psaume]) => ({
+    // The source closes Friday's psalm with Hoshienu, which the block after
+    // the psalms (HOSHIENU) already says every day: cut it there so it is
+    // not read twice.
+    ["jour-5", 12, 13, "הושיענו"],
+  ].map(([when, intro, psaume, until]) => ({
     src: "Song of the Day",
     when,
     plain: true,
-    lines: [{ seg: intro }, { seg: psaume, tight: true }],
+    lines: [{ seg: intro }, { seg: psaume, tight: true, ...(until && { until }) }],
   }));
 
   /**
