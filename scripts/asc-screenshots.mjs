@@ -36,7 +36,7 @@
 import { createHash } from "node:crypto";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { createAscClient, EDITABLE_STATES, versionState } from "./lib/asc-api.mjs";
+import { createAscClient, EDITABLE_STATES, findApp, versionState } from "./lib/asc-api.mjs";
 
 const BUNDLE_ID = "fr.petitejerusalem.app";
 const screenshotsDir = join(import.meta.dirname, "../store-assets/screenshots");
@@ -90,8 +90,7 @@ if (locales.length === 0) {
 }
 
 // --- Résolution de l'app et de la version ------------------------------------
-const apps = await api("GET", `/v1/apps?filter[bundleId]=${BUNDLE_ID}`);
-const app = apps.data[0];
+const app = await findApp(api, BUNDLE_ID);
 if (!app) {
   console.error(`asc-screenshots: aucune app ${BUNDLE_ID} dans App Store Connect`);
   process.exit(1);
