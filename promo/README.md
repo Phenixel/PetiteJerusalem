@@ -13,6 +13,11 @@ swiping a card, setting a text aside) was really played, frame by frame.
 | 2      | six stories of 31 seconds                                 | 3.10      | `out/s2-<id>.mp4`               |
 | 4      | version 4.0: one presentation, in the app and the networks | 4.0       | `out/<id>.mp4`, `../public/videos/` |
 
+One video stands apart: the **shape loop** (`loop/`), 14 seconds for
+Instagram stories and WhatsApp statuses, entirely drawn in Canvas 2D (one
+shape going from « Réserver » to the siyoum, no screenshot). It has its own
+render script and storyboard: `loop/README.md`.
+
 ## Version 4.0
 
 The biggest update of the app, presented in one video of about a hundred
