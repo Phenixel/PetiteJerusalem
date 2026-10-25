@@ -11,6 +11,8 @@ const IDB_LOST =
 const IDB_CLOSING =
   "InvalidStateError: Failed to execute 'transaction' on 'IDBDatabase': The database connection is closing.";
 
+const ABORT = "AbortError: signal is aborted without reason";
+
 describe("isIgnoredException", () => {
   it("écarte la perte de connexion IndexedDB (WebKit, polling Firebase Auth)", () => {
     expect(isIgnoredException([IDB_LOST])).toBe(true);
@@ -22,6 +24,12 @@ describe("isIgnoredException", () => {
     expect(isIgnoredException(["Script error"])).toBe(true);
     // Une vraie erreur qui cite le message doit rester visible.
     expect(isIgnoredException(["Error: loading chunk failed after Script error."])).toBe(false);
+  });
+
+  it("écarte l'abandon de requête du SDK Firestore", () => {
+    expect(isIgnoredException([ABORT])).toBe(true);
+    // A real error quoting the message must stay visible.
+    expect(isIgnoredException([`TypeError: ${ABORT}`])).toBe(false);
   });
 
   it("laisse passer les vraies erreurs", () => {
