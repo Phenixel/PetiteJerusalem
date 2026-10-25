@@ -4342,3 +4342,22 @@ down.
 - **The reader's language.** French, English and Hebrew, each filmed in its
   own interface; the Hebrew one has no translation chapter (the translations
   go into French and English).
+
+### Series 3: the 4.0 ads, at series 1's pace
+
+Six ads of 23 seconds (`promo/src/ads/`), one 4.0 change each: Mon
+parcours, the Sidour first, the daf page, the study table, the home page,
+the classes in the background. Where the presentation explains calmly,
+they sell at series 1's speed, which is what the owner asked for.
+
+- **Series 1's frame, the 4.0 colors.** The hook strikes its lines on the
+  pastel orange, white in large bold type and the last line in the night
+  ink, then a « Nouveau dans la 4.0 » pill (dark, the small type does not
+  go white on the orange); 24 beats of feature; « Mais aussi… » on the
+  night; eight more changes at one beat each; the presentation's end card
+  for the networks (the designer's logo, the stores).
+- **The presentation's shots.** The screens, gestures and touched areas are
+  those of `scripts/shots-v4.mjs`, in French: one filming serves both.
+  The captions reuse the presentation's words where they sell, and say
+  only what the screen shows.
+

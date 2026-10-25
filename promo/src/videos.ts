@@ -12,6 +12,7 @@ import type { Look } from "./theme.ts";
 import { buildTimeline, type Cue, type CueSound, type Durations, type MusicStyle } from "./timeline.ts";
 import { planChapters, planDurations, planMarks, presentationPlan, type Chapter } from "./v4/plan.ts";
 import type { Locale } from "./v4/strings.ts";
+import type { AdShot } from "./ads/shots.ts";
 
 export type MontageId =
   | "horaires"
@@ -55,7 +56,10 @@ export type VideoSpec = {
   montage: MontageId[];
   /** 1 : la première série ; 2 : les histoires (gabarit Story, 31 s). */
   /** 4: version 4.0 (src/v4/Update.tsx): the in-app video, and its networks ending. */
-  series?: 1 | 2 | 4;
+  /** 3: the 4.0 ads (src/ads), series 1's frame in the 4.0 colors. */
+  series?: 1 | 2 | 3 | 4;
+  /** Series 3: the montage's eight changes (src/ads/shots.ts). */
+  adMontage?: AdShot[];
   /** Version 4.0: which ending (the app's, or the networks') and which language. */
   cut?: "promo" | "app";
   locale?: Locale;
@@ -440,6 +444,131 @@ for (const locale of ["fr", "en", "he"] as const) {
     montage: [],
   });
 }
+
+// === Series 3: the 4.0 ads ==========================================================
+
+/**
+ * Six ads of 23 seconds for version 4.0, one change each, in series 1's
+ * frame and pace (STD): the hook, 24 beats of feature, « Mais aussi… », eight
+ * more changes at one beat each, the end card. Marks count from the feature.
+ */
+const ad = (
+  id: string,
+  title: string,
+  music: MusicStyle,
+  marks: Record<string, { beat: number; sound?: CueSound }>,
+  adMontage: AdShot[],
+): VideoSpec => ({
+  id,
+  title,
+  series: 3,
+  look: { theme: "sunset", dark: false },
+  music,
+  durations: STD,
+  marks,
+  montage: [],
+  adMontage,
+});
+const FREYGISH: number[][] = [[0, 4, 7], [1, 5, 8], [-2, 1, 5], [0, 4, 7]];
+const MINOR: number[][] = [[0, 3, 7], [-4, 0, 3], [3, 7, 10], [-2, 2, 5]];
+
+VIDEOS.push(
+  ad(
+    "pub-parcours",
+    "Mon parcours",
+    { bpm: 120, root: 62, motif: "freygish", progression: FREYGISH },
+    {
+      rise: { beat: 0, sound: "whoosh" },
+      tap: { beat: 2.5, sound: "tap" },
+      push: { beat: 2.8, sound: "swipe" },
+      pop: { beat: 4, sound: "pop" },
+      wall: { beat: 9.5, sound: "whoosh" },
+      goal: { beat: 16, sound: "swipe" },
+      tag: { beat: 16.6, sound: "chime" },
+    },
+    ["sidour", "daf", "table", "accueil", "audio", "nichmat40", "calme", "boussole"],
+  ),
+  ad(
+    "pub-sidour",
+    "Le Sidour en premier",
+    { bpm: 120, root: 64, motif: "lumiere", progression: MINOR },
+    {
+      rise: { beat: 0, sound: "whoosh" },
+      tab: { beat: 2, sound: "tap" },
+      push: { beat: 2.3, sound: "swipe" },
+      pop: { beat: 3.5, sound: "pop" },
+      open: { beat: 8, sound: "tap" },
+      drop: { beat: 9, sound: "whoosh" },
+      dnd: { beat: 14, sound: "tap" },
+      fin: { beat: 16.5, sound: "swipe" },
+      pull: { beat: 18, sound: "swipe" },
+      done: { beat: 20.5, sound: "chime" },
+    },
+    ["parcours", "daf", "accueil", "table", "audio", "recherche", "rappels", "contraste"],
+  ),
+  ad(
+    "pub-daf",
+    "La page du daf",
+    { bpm: 120, root: 60, motif: "nigoun", progression: FREYGISH },
+    {
+      rise: { beat: 0, sound: "whoosh" },
+      tap: { beat: 2.5, sound: "tap" },
+      page: { beat: 2.7, sound: "impact" },
+      zoom: { beat: 4, sound: "whoosh" },
+      translation: { beat: 9.5, sound: "swipe" },
+      toggle: { beat: 10.5, sound: "tap" },
+      on: { beat: 10.8, sound: "pop" },
+      commentaries: { beat: 16, sound: "swipe" },
+      passage: { beat: 17, sound: "tap" },
+      open: { beat: 19, sound: "tap" },
+    },
+    ["parcours", "sidour", "table", "audio", "halakha", "chnei", "signet", "tehilim"],
+  ),
+  ad(
+    "pub-table",
+    "La table d'étude",
+    { bpm: 120, root: 67, motif: "envol", progression: MINOR },
+    {
+      rise: { beat: 0, sound: "whoosh" },
+      aside: { beat: 2.5, sound: "tap" },
+      fly: { beat: 2.6, sound: "whoosh" },
+      second: { beat: 8, sound: "whoosh" },
+      bar: { beat: 11, sound: "tap" },
+      sheet: { beat: 11.2, sound: "swipe" },
+      progress: { beat: 15, sound: "swipe" },
+      slide: { beat: 16.5, sound: "swipe" },
+    },
+    ["parcours", "sidour", "daf", "accueil", "audio", "commentaires", "nichmat40", "epingles"],
+  ),
+  ad(
+    "pub-accueil",
+    "Un accueil à votre main",
+    { bpm: 120, root: 65, motif: "dabke", progression: FREYGISH },
+    {
+      rise: { beat: 0, sound: "whoosh" },
+      swipe: { beat: 4.5, sound: "swipe" },
+      done: { beat: 5.5, sound: "chime" },
+      edit: { beat: 11, sound: "pop" },
+      pins: { beat: 17, sound: "whoosh" },
+    },
+    ["parcours", "sidour", "daf", "table", "audio", "rappels", "boussole", "contact"],
+  ),
+  ad(
+    "pub-cours",
+    "Les cours en arrière-plan",
+    { bpm: 120, root: 62, motif: "envol", progression: MINOR },
+    {
+      rise: { beat: 0, sound: "whoosh" },
+      tab: { beat: 2.5, sound: "tap" },
+      audio: { beat: 6, sound: "swipe" },
+      play: { beat: 7.2, sound: "tap" },
+      follow: { beat: 11, sound: "whoosh" },
+      bar: { beat: 15, sound: "tap" },
+      full: { beat: 15.1, sound: "swipe" },
+    },
+    ["parcours", "sidour", "daf", "table", "accueil", "halakha", "nichmat40", "contact"],
+  ),
+);
 
 export const videoTimeline = (v: VideoSpec) => buildTimeline(v.music.bpm, v.durations);
 

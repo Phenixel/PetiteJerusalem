@@ -36,12 +36,12 @@ export type ChapterProps = {
   len: number;
 };
 
-const cap = (loc: Locale, shot: string) => `${loc}-${shot}.jpg`;
-const frames = (loc: Locale, shot: string, from: number, to: number) => seqFrames(`${loc}-${shot}`, from, to);
-const z = (loc: Locale, key: string): Zone => zone(`${loc}-${key}`);
+export const cap = (loc: Locale, shot: string) => `${loc}-${shot}.jpg`;
+export const frames = (loc: Locale, shot: string, from: number, to: number) => seqFrames(`${loc}-${shot}`, from, to);
+export const z = (loc: Locale, key: string): Zone => zone(`${loc}-${key}`);
 
 /** Frames placed every `step` video frames from `start`. */
-const spread = (start: number, count: number, step = 2) => Array.from({ length: count }, (_, i) => start + i * step);
+export const spread = (start: number, count: number, step = 2) => Array.from({ length: count }, (_, i) => start + i * step);
 
 const PHONE_W = 416;
 const PHONE_H = 873;
@@ -54,7 +54,7 @@ const MIN_TOP = 520;
  * phone `width` wide; lowered if its top would climb under the caption. What
  * must be read larger than that comes out of the screen instead (PopOut).
  */
-function focus(sx: number, sy: number, width: number, cy = 1150): Partial<PhonePose> {
+export function focus(sx: number, sy: number, width: number, cy = 1150): Partial<PhonePose> {
   const s = width / PHONE_W;
   const y = cy - (47 + sy - PHONE_H / 2) * s;
   return { x: 540 - (sx - 195) * s, y: Math.max(y, MIN_TOP + (PHONE_H * s) / 2), width };
@@ -74,7 +74,7 @@ function Scene({ pose, screen, children, captions, strings }: { pose: PhonePose;
 }
 
 /** Loops a sequence's frames every `step` video frames (the galaxy turning, the blocks wobbling). */
-function loopFrame(names: string[], frame: number, start: number, step = 3) {
+export function loopFrame(names: string[], frame: number, start: number, step = 3) {
   return names[Math.max(0, Math.floor((frame - start) / step)) % names.length];
 }
 
@@ -177,7 +177,7 @@ function Sidour({ loc, strings, m, len }: ChapterProps) {
 }
 
 /** The panel of the quiet modes, the frames of its coming down (shots-v4.mjs, `calme`). */
-const CALME_DROP = 14;
+export const CALME_DROP = 14;
 
 function Calme({ loc, strings, m, len }: ChapterProps) {
   const frame = useCurrentFrame();
@@ -285,8 +285,8 @@ function Moment({ loc, strings, m, len }: ChapterProps) {
 }
 
 /** The frames of the end of the service pushed up (shots-v4.mjs, `fin`). */
-const FIN_PULL = 12;
-const FIN_LAST = 17;
+export const FIN_PULL = 12;
+export const FIN_LAST = 17;
 
 function Fin({ loc, strings, m, len }: ChapterProps) {
   const frame = useCurrentFrame();
@@ -497,7 +497,7 @@ function Daf({ loc, strings, m, len }: ChapterProps) {
 }
 
 /** The last frame of the progress chapter: Cha'harit, where the slide left it. */
-const PROGRESS_LAST = 17;
+export const PROGRESS_LAST = 17;
 
 function Progress({ loc, strings, m, len }: ChapterProps) {
   const frame = useCurrentFrame();

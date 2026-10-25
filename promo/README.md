@@ -11,6 +11,7 @@ swiping a card, setting a text aside) was really played, frame by frame.
 | ------ | --------------------------------------------------------- | --------- | ------------------------------- |
 | 1      | six videos of 23 seconds, one part of the app each        | 3.10      | `out/<id>.mp4`                  |
 | 2      | six stories of 31 seconds                                 | 3.10      | `out/s2-<id>.mp4`               |
+| 3      | six 4.0 ads of 23 seconds, one change each                | 4.0       | `out/pub-<id>.mp4`              |
 | 4      | version 4.0: one presentation, in the app and the networks | 4.0       | `out/<id>.mp4`, `../public/videos/` |
 
 ## Version 4.0
@@ -82,6 +83,33 @@ PROMO_BEFORE_DIR=$PWD/../pj-v3 npm run captures   # from promo/
 
 The demo server then also serves that app on port 5275, on the same
 emulators and demo account.
+
+## Series 3: the 4.0 ads
+
+Series 1 again, for version 4.0: one change per video, sold in 23
+seconds, then « Mais aussi… » and eight more at one beat each, in the 4.0
+colors and ending on the designer's logo and the stores. They use the
+presentation's French shots (`scripts/shots-v4.mjs`): filming 4.0 once
+serves both.
+
+| Video          | What it shows                                                                    |
+| -------------- | -------------------------------------------------------------------------------- |
+| `pub-parcours` | the lamp touched, the streak and its galaxy out of the screen, the wall, a goal   |
+| `pub-sidour`   | the Sidour tab, the card of the moment, the quiet modes (Android), the service said |
+| `pub-daf`      | « Page »: the Vilna page out of the screen, the translation, the commentaries     |
+| `pub-table`    | « Mettre de côté », a second text, the table, the reading bar slid                |
+| `pub-accueil`  | a card swiped « C'est fait », the blocks to move, the pinned books                |
+| `pub-cours`    | Chiourim in Étude, a class played, its bar out of the screen, the full player     |
+
+Their frame is `src/ads/Ad.tsx` (series 1's `src/Promo.tsx` with the 4.0
+hook, break, montage and end card), their scenes `src/ads/scenes.tsx`, their
+hooks `src/ads/ads.tsx`, their montage pool `src/ads/shots.ts`, and their
+grid, marks and music the `series: 3` entries of `src/videos.ts`.
+
+```bash
+npm run captures -- --only fr-accueil ...   # the French 4.0 shots (see the list in shots-v4.mjs)
+npm run render -- --series 3                # the six ads, about 8 minutes
+```
 
 ## Series 1 and 2
 

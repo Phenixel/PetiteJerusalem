@@ -20,6 +20,8 @@ import { PartageFeature } from "./scenes/Partage.tsx";
 import { SidourFeature } from "./scenes/Sidour.tsx";
 import { FPS, HEIGHT, WIDTH, totalFrames } from "./timeline.ts";
 import { Update } from "./v4/Update.tsx";
+import { Ad } from "./ads/Ad.tsx";
+import { ADS } from "./ads/ads.tsx";
 import { presentationPlan } from "./v4/plan.ts";
 import { VIDEOS, videoTimeline, type VideoSpec } from "./videos.ts";
 
@@ -140,6 +142,17 @@ export const Root = () => (
         key={spec.id}
         id={spec.id}
         component={() => v4(spec)}
+        durationInFrames={totalFrames(videoTimeline(spec))}
+        fps={FPS}
+        width={WIDTH}
+        height={HEIGHT}
+      />
+    ))}
+    {VIDEOS.filter((v) => v.series === 3 && ADS[v.id]).map((spec) => (
+      <Composition
+        key={spec.id}
+        id={spec.id}
+        component={() => <Ad spec={spec} {...ADS[spec.id]} />}
         durationInFrames={totalFrames(videoTimeline(spec))}
         fps={FPS}
         width={WIDTH}

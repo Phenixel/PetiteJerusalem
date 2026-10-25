@@ -409,10 +409,11 @@ export type MontageItemV4 = { label: string; src: string };
  * coming in its own way: slid in, dropped, zoomed, turned. Backgrounds
  * alternate the orange, the night, the page and the blue.
  */
-export function MontageV4({ items, tag, dir }: { items: MontageItemV4[]; tag: string; dir?: "rtl" }) {
+export function MontageV4({ items, tag, dir, beats = 2 }: { items: MontageItemV4[]; tag: string; dir?: "rtl"; beats?: number }) {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const step = 2 * FPB;
+  // Two beats per shot in the presentation; one in the ads (series 3), as in series 1.
+  const step = beats * FPB;
   const k = Math.min(items.length - 1, Math.floor(frame / step));
   const item = items[k];
   const t = frame - k * step;
