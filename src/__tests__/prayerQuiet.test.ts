@@ -534,6 +534,56 @@ describe("the panel, from the top of the screen", () => {
     unmount();
   });
 
+  /**
+   * Lowering the app resizes `<html>` and `<body>` (the room is a padding on
+   * the stage), both observed higher up in the tree than the panel: writing
+   * it from inside the panel's resize callback makes the browser report a
+   * « ResizeObserver loop completed with undelivered notifications » error,
+   * which reached the Error tracking (Android app v4.0.0, Chrome 155, on a
+   * Min'ha). The height is read in the callback, the room written on the
+   * next frame.
+   */
+  it("follows the panel's own resizes on the next frame, not during the callback", async () => {
+    const callbacks: ResizeObserverCallback[] = [];
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        constructor(callback: ResizeObserverCallback) {
+          callbacks.push(callback);
+        }
+        observe(): void {}
+        disconnect(): void {}
+        unobserve(): void {}
+      },
+    );
+    try {
+      await enterPrayer();
+      const { unmount } = mountPanel();
+      await vi.advanceTimersByTimeAsync(0);
+      expect(appDrop.offset).toBe(100);
+      expect(callbacks).toHaveLength(1);
+
+      // The panel has grown: its callback must leave the room untouched.
+      panelHeight = 160;
+      callbacks[0]([], {} as ResizeObserver);
+      expect(appDrop.offset).toBe(100);
+
+      // The frame after, the app goes down by the new height.
+      await vi.advanceTimersByTimeAsync(32);
+      expect(appDrop.offset).toBe(160);
+      expect(document.documentElement.style.scrollPaddingTop).toBe("160px");
+
+      // A height that has not changed writes nothing more.
+      callbacks[0]([], {} as ResizeObserver);
+      await vi.advanceTimersByTimeAsync(32);
+      expect(appDrop.offset).toBe(160);
+
+      unmount();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("the app below is not held while it is open: it scrolls and takes touches", () => {
     const app = readFileSync(join(root, "src/App.vue"), "utf8");
     const template = app.slice(app.indexOf("<template>"));
