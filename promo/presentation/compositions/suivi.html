@@ -4,25 +4,102 @@
       position: absolute;
       inset: 0;
     }
+    #suivi-t1,
+    #suivi-t2,
+    #suivi-t3 {
+      --titre: var(--encre);
+    }
+    /* « Jusqu'aux étoiles » is said at night: white, like the night's text. */
+    #suivi-t5 {
+      --titre: #ffffff;
+    }
+    #suivi-compteur {
+      position: absolute;
+      left: 0;
+      top: 586px;
+      width: 1080px;
+      display: flex;
+      justify-content: center;
+      align-items: baseline;
+      gap: 22px;
+      color: #ffffff;
+    }
+    #suivi-jours {
+      font-family: var(--police);
+      font-weight: 800;
+      font-size: 150px;
+      letter-spacing: -0.04em;
+      color: var(--orange);
+    }
+    #suivi-legende {
+      font-family: var(--police);
+      font-weight: 700;
+      font-size: 48px;
+    }
   </style>
   <div id="root" data-composition-id="suivi" data-width="1080" data-height="1920">
-    <!-- Mon parcours: the streak, « Chabbat et les fêtes ne la coupent pas ». -->
-    <div id="suivi-carte" class="clip" data-start="12.45" data-duration="2.05" data-track-index="0">
-      <div id="suivi-tel" class="telephone">
-        <div class="ecran"><img src="assets/ecrans/v4-parcours.jpg" alt="Mon parcours : 106 jours d'affilée" /></div>
+    <div id="suivi-t1" class="titre clip" data-start="0.5" data-duration="2.95" data-track-index="0">
+      <span class="ligne"><span class="mot">Jour après jour,</span></span>
+      <span class="ligne"><span class="mot">votre mur</span></span>
+    </div>
+    <div id="suivi-t2" class="titre clip" data-start="3.55" data-duration="0.6" data-track-index="0">
+      <span class="ligne"><span class="mot grand">Votre mois.</span></span>
+    </div>
+    <div id="suivi-t3" class="titre clip" data-start="4.15" data-duration="1.8" data-track-index="0">
+      <span class="ligne"><span class="mot grand">Votre année.</span></span>
+    </div>
+    <div id="suivi-t4" class="titre clip" data-start="6.0" data-duration="1.85" data-track-index="0">
+      <span class="ligne"><span class="mot">Votre série</span></span>
+      <span class="ligne"><span class="mot">allume</span></span>
+      <span class="ligne"><span class="mot">une lumière</span></span>
+    </div>
+    <div id="suivi-t5" class="titre clip" data-start="7.85" data-duration="2.7" data-track-index="0">
+      <span class="ligne"><span class="mot">Jusqu'aux</span></span>
+      <span class="ligne"><span class="mot grand">étoiles</span></span>
+    </div>
+    <div id="suivi-serie" class="clip" data-start="7.2" data-duration="3.35" data-track-index="1">
+      <div id="suivi-compteur">
+        <span id="suivi-jours">1</span><span id="suivi-legende">jour d'affilée</span>
       </div>
     </div>
   </div>
   <script>
     (function () {
       const tl = gsap.timeline({ paused: true });
+      const entrer = (sel, t, stagger = 0.1) =>
+        tl.fromTo(sel, { yPercent: 115, rotation: 4 }, { yPercent: 0, rotation: 0, duration: 0.42, ease: "back.out(1.6)", stagger }, t);
+      const sortir = (sel, t) => tl.to(sel, { yPercent: -120, opacity: 0, duration: 0.24, ease: "power3.in", stagger: 0.04 }, t);
+      entrer("#suivi-t1 .mot", 0.6, 0.14);
+      sortir("#suivi-t1 .mot", 3.17);
+      tl.fromTo("#suivi-t2 .mot", { scale: 1.8, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3, ease: "back.out(2)" }, 3.58);
+      tl.fromTo("#suivi-t3 .mot", { scale: 1.8, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3, ease: "back.out(2)" }, 4.18);
+      sortir("#suivi-t3 .mot", 5.68);
+      entrer("#suivi-t4 .mot", 6.1, 0.12);
+      sortir("#suivi-t4 .mot", 7.58);
+      entrer("#suivi-t5 .mot", 7.9, 0.14);
+      sortir("#suivi-t5 .mot", 10.25);
+      // The streak counts up to the galaxy's 106 days.
+      const serie = { n: 1 };
+      const jours = document.getElementById("suivi-jours");
+      const legende = document.getElementById("suivi-legende");
+      tl.fromTo("#suivi-compteur", { opacity: 0, y: 40 }, { opacity: 1, y: 0, duration: 0.35, ease: "power3.out" }, 7.2);
       tl.fromTo(
-        "#suivi-tel",
-        { opacity: 0, y: 140, scale: 0.92 },
-        { opacity: 1, y: 0, scale: 1, duration: 0.55, ease: "power3.out" },
-        12.5,
+        serie,
+        { n: 1 },
+        {
+          n: 106,
+          duration: 1.85,
+          ease: "power2.in",
+          onUpdate: () => {
+            const n = Math.round(serie.n);
+            jours.textContent = String(n);
+            legende.textContent = n === 1 ? "jour d'affilée" : "jours d'affilée";
+          },
+        },
+        7.2,
       );
-      tl.to("#suivi-tel", { opacity: 0, y: 90, scale: 0.95, duration: 0.35, ease: "power2.in" }, 14.1);
+      tl.fromTo("#suivi-jours", { scale: 1 }, { scale: 1.18, duration: 0.14, yoyo: true, repeat: 1, ease: "power1.inOut" }, 9.05);
+      tl.to("#suivi-compteur", { opacity: 0, y: -30, duration: 0.3, ease: "power2.in" }, 10.2);
       window.__timelines = window.__timelines || {};
       window.__timelines["suivi"] = tl;
     })();

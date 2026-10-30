@@ -3,26 +3,45 @@
     #root {
       position: absolute;
       inset: 0;
+      --pilule-encre: var(--bleu);
     }
   </style>
   <div id="root" data-composition-id="partage" data-width="1080" data-height="1920">
-    <!-- « Créez une session de lecture » : a real session, 150 Tehilim to share. -->
-    <div id="partage-carte" class="clip" data-start="2.0" data-duration="6.0" data-track-index="0">
-      <div id="partage-tel" class="telephone">
-        <div class="ecran"><img src="assets/ecrans/03-partage-session.jpg" alt="Session de lecture partagée" /></div>
-      </div>
+    <div id="partage-t1" class="titre clip" data-start="0.4" data-duration="2.0" data-track-index="0">
+      <span class="ligne"><span class="mot">Une chaîne</span></span>
+      <span class="ligne"><span class="mot">de lecture</span></span>
+    </div>
+    <div id="partage-t2" class="titre clip" data-start="2.45" data-duration="3.05" data-track-index="0">
+      <span class="ligne"><span class="mot grand">150</span></span>
+      <span class="ligne"><span class="mot">Tehilim</span></span>
+      <span class="ligne pilules"><span id="partage-lien" class="mot pilule" style="font-size: 84px">1 seul lien</span></span>
+    </div>
+    <div id="partage-t3" class="titre clip" data-start="5.5" data-duration="2.9" data-track-index="0">
+      <span class="ligne"><span class="mot">Chacun réserve,</span></span>
+      <span class="ligne"><span id="partage-lit" class="mot">lit, coche…</span></span>
+    </div>
+    <div id="partage-t4" class="titre clip" data-start="8.45" data-duration="1.85" data-track-index="0">
+      <span class="ligne pilules"><span id="partage-siyoum" class="mot pilule grand">Siyoum&#8239;!</span></span>
     </div>
   </div>
   <script>
     (function () {
       const tl = gsap.timeline({ paused: true });
-      tl.fromTo(
-        "#partage-tel",
-        { opacity: 0, y: 140, scale: 0.92 },
-        { opacity: 1, y: 0, scale: 1, duration: 0.6, ease: "power3.out" },
-        2.05,
-      );
-      tl.to("#partage-tel", { opacity: 0, y: 90, scale: 0.95, duration: 0.4, ease: "power2.in" }, 7.5);
+      const entrer = (sel, t, stagger = 0.1) =>
+        tl.fromTo(sel, { yPercent: 115, rotation: 4 }, { yPercent: 0, rotation: 0, duration: 0.42, ease: "back.out(1.6)", stagger }, t);
+      const claquer = (sel, t) => tl.fromTo(sel, { scale: 2.2, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.38, ease: "back.out(2)" }, t);
+      const sortir = (sel, t) => tl.to(sel, { yPercent: -120, opacity: 0, duration: 0.26, ease: "power3.in", stagger: 0.04 }, t);
+      entrer("#partage-t1 .mot", 0.5);
+      sortir("#partage-t1 .mot", 2.12);
+      entrer("#partage-t2 .ligne:nth-child(-n+2) .mot", 2.5, 0.14);
+      claquer("#partage-lien", 4.3);
+      sortir("#partage-t2 .mot", 5.2);
+      entrer("#partage-t3 .ligne:first-child .mot", 5.55);
+      entrer("#partage-lit", 7.3);
+      sortir("#partage-t3 .mot", 8.12);
+      claquer("#partage-siyoum", 8.72);
+      tl.to("#partage-siyoum", { scale: 1.08, duration: 0.12, yoyo: true, repeat: 1, ease: "power1.inOut" }, 9.1);
+      sortir("#partage-t4 .mot", 10.0);
       window.__timelines = window.__timelines || {};
       window.__timelines["partage"] = tl;
     })();

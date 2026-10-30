@@ -4,106 +4,41 @@
       position: absolute;
       inset: 0;
     }
-    /* The home page's card of the day, cut from the same screen to be swiped. */
-    #objectifs-trou,
-    #objectifs-jour {
-      position: absolute;
-      left: 21px;
-      top: 160px;
-      width: 525px;
-      height: 206px;
-      border-radius: 8px;
-    }
-    #objectifs-trou {
-      background: var(--fond);
-    }
-    #objectifs-jour {
-      background-image: url("assets/ecrans/v4-accueil.jpg");
-      background-size: 568px 1160px;
-      background-position: -21px -160px;
-    }
-    #objectifs-doigt {
-      position: absolute;
-      left: 380px;
-      top: 798px;
-      width: 76px;
-      height: 76px;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.92);
-      box-shadow: var(--ombre-pop);
-    }
-    #objectifs-rappel {
-      position: absolute;
-      left: 0;
-      top: 498px;
-      width: 1080px;
-      display: flex;
-      justify-content: center;
-    }
-    #objectifs-pastille {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      padding: 16px 34px;
-      border-radius: 999px;
-      background: var(--surface);
-      box-shadow: var(--ombre-pop);
-      font-family: var(--police);
-      font-weight: 700;
-      font-size: 36px;
-      color: var(--orange-encre);
-    }
-    #objectifs-pastille svg {
-      width: 40px;
-      height: 40px;
-    }
   </style>
   <div id="root" data-composition-id="objectifs" data-width="1080" data-height="1920">
-    <!-- The home page: the day's portion, its reminder, then done. -->
-    <div id="objectifs-carte" class="clip" data-start="7.25" data-duration="4.6" data-track-index="0">
-      <div id="objectifs-tel" class="telephone">
-        <div class="ecran">
-          <img src="assets/ecrans/v4-accueil.jpg" alt="L'accueil : Mes Tehilim, ce matin" />
-          <div id="objectifs-trou"></div>
-          <div id="objectifs-jour"></div>
-        </div>
-      </div>
-      <div id="objectifs-doigt"></div>
-      <div id="objectifs-rappel">
-        <div id="objectifs-pastille">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M6 9a6 6 0 0 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9" />
-            <path d="M10.3 20a1.9 1.9 0 0 0 3.4 0" />
-          </svg>
-          Me rappeler mes objectifs
-        </div>
-      </div>
+    <div id="objectifs-t1" class="titre clip" data-start="0.5" data-duration="1.95" data-track-index="0">
+      <span class="ligne"><span class="mot">Fixez-vous</span></span>
+      <span class="ligne"><span class="mot">un objectif</span></span>
+    </div>
+    <div id="objectifs-t2" class="titre clip" data-start="2.5" data-duration="2.0" data-track-index="0">
+      <span class="ligne"><span class="mot">La portion</span></span>
+      <span class="ligne"><span class="mot">du jour</span></span>
+    </div>
+    <div id="objectifs-t3" class="titre clip" data-start="4.55" data-duration="1.45" data-track-index="0">
+      <span class="ligne"><span class="mot">Et vous</span></span>
+      <span class="ligne"><span class="mot">la rappelle</span></span>
+    </div>
+    <div id="objectifs-t4" class="titre clip" data-start="6.05" data-duration="2.75" data-track-index="0">
+      <span class="ligne"><span class="mot">Un geste…</span></span>
+      <span class="ligne pilules"><span id="objectifs-fait" class="mot pilule grand">C'est fait&#8239;!</span></span>
     </div>
   </div>
   <script>
     (function () {
       const tl = gsap.timeline({ paused: true });
-      tl.fromTo(
-        "#objectifs-tel",
-        { opacity: 0, y: 140, scale: 0.92 },
-        { opacity: 1, y: 0, scale: 1, duration: 0.6, ease: "power3.out" },
-        7.3,
-      );
-      // « vous la rappelle » : the reminder comes out of the screen.
-      tl.fromTo(
-        "#objectifs-pastille",
-        { opacity: 0, y: 40, scale: 0.8 },
-        { opacity: 1, y: 0, scale: 1, duration: 0.45, ease: "back.out(1.7)" },
-        9.35,
-      );
-      tl.to("#objectifs-pastille svg", { keyframes: { rotation: [0, -16, 14, -10, 6, 0] }, duration: 0.6, ease: "none" }, 9.9);
-      tl.to("#objectifs-pastille", { opacity: 0, y: -20, duration: 0.3, ease: "power2.in" }, 11.05);
-      // « Un geste, et c'est fait » : the card of the day swiped away.
-      tl.fromTo("#objectifs-doigt", { opacity: 0, scale: 1.3, x: 0 }, { opacity: 1, scale: 1, duration: 0.25, ease: "power2.out" }, 10.85);
-      tl.to("#objectifs-doigt", { x: 300, duration: 0.45, ease: "power2.in" }, 11.1);
-      tl.to("#objectifs-doigt", { opacity: 0, duration: 0.2 }, 11.45);
-      tl.fromTo("#objectifs-jour", { x: 0, rotation: 0 }, { x: 470, rotation: 7, duration: 0.45, ease: "power2.in" }, 11.1);
-      tl.to("#objectifs-tel", { opacity: 0, y: 90, scale: 0.95, duration: 0.35, ease: "power2.in" }, 11.45);
+      const entrer = (sel, t, stagger = 0.1) =>
+        tl.fromTo(sel, { yPercent: 115, rotation: 4 }, { yPercent: 0, rotation: 0, duration: 0.42, ease: "back.out(1.6)", stagger }, t);
+      const sortir = (sel, t) => tl.to(sel, { yPercent: -120, opacity: 0, duration: 0.26, ease: "power3.in", stagger: 0.04 }, t);
+      entrer("#objectifs-t1 .mot", 0.6, 0.14);
+      sortir("#objectifs-t1 .mot", 2.17);
+      entrer("#objectifs-t2 .mot", 2.6);
+      sortir("#objectifs-t2 .mot", 4.22);
+      entrer("#objectifs-t3 .mot", 4.6);
+      sortir("#objectifs-t3 .mot", 5.72);
+      entrer("#objectifs-t4 .ligne:first-child .mot", 6.1);
+      // « c'est fait » lands with the giant check.
+      tl.fromTo("#objectifs-fait", { scale: 2.4, opacity: 0, rotation: -6 }, { scale: 1, opacity: 1, rotation: 0, duration: 0.36, ease: "back.out(2.2)" }, 7.12);
+      sortir("#objectifs-t4 .mot", 8.5);
       window.__timelines = window.__timelines || {};
       window.__timelines["objectifs"] = tl;
     })();

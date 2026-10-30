@@ -1,0 +1,37 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+    }
+    #marque-t1 .petit {
+      font-size: 70px;
+      margin: 0 12px;
+    }
+  </style>
+  <div id="root" data-composition-id="marque" data-width="1080" data-height="1920">
+    <div id="marque-t1" class="titre clip" data-start="1.7" data-duration="3.9" data-track-index="0">
+      <span class="ligne"><span class="mot">Petite Jérusalem</span></span>
+      <span class="ligne pilules"
+        ><span id="marque-gratuite" class="mot pilule petit">Gratuite</span>
+        <span id="marque-pub" class="mot pilule petit">Sans publicité</span></span
+      >
+    </div>
+  </div>
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      tl.fromTo(
+        "#marque-t1 .ligne:first-child .mot",
+        { yPercent: 115, rotation: 4 },
+        { yPercent: 0, rotation: 0, duration: 0.45, ease: "back.out(1.6)", stagger: 0.12 },
+        1.75,
+      );
+      tl.fromTo("#marque-gratuite", { scale: 2, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.36, ease: "back.out(2)" }, 3.42);
+      tl.fromTo("#marque-pub", { scale: 2, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.36, ease: "back.out(2)" }, 4.12);
+      tl.to("#marque-t1 .mot", { yPercent: -120, opacity: 0, duration: 0.28, ease: "power3.in", stagger: 0.04 }, 5.25);
+      window.__timelines = window.__timelines || {};
+      window.__timelines["marque"] = tl;
+    })();
+  </script>
+</template>

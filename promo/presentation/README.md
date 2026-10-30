@@ -1,40 +1,37 @@
-# The presentation in isometric 3D
+# The ad in isometric 3D
 
-A vertical video (1080 x 1920, 86 seconds, French) that says what the app is
-for: sharing a reading, turning the phone into a place of study, the whole
-prayer in one place, setting goals, keeping them, and seeing the month and
-the year at a glance. Unlike the other promo videos (Remotion, `../src/`),
-it is made with [HyperFrames](https://hyperframes.heygen.com) (HTML rendered
-to video) and narrated.
+A vertical ad (1080 x 1920, 68 seconds, French, narrated) for the app: what
+it is for, told as a world. Unlike the other promo videos (Remotion,
+`../src/`), it is made with [HyperFrames](https://hyperframes.heygen.com)
+(HTML rendered to video), and it was asked to look like none of them.
 
-The idea (`STORYLINES.md`): the app's name taken literally. A small
-Jerusalem in isometric stone, built from the logo's own pieces (the wall,
-the tower, the orange dome, the cypresses, the open blue book, the star),
-rises out of a phone lying on the page's cream; the camera then flies from
-district to district, one per use of the app, and the real screens rise
-out of the world, facing the viewer, when they prove what the voice says.
-`SPEC.md` holds the numbers: colors, type, motion, every shot by the second.
+The idea (`STORYLINES.md`): the camera dives into a phone; inside, its
+screen is a colored ground where an archipelago of isometric islands
+floats, one per use of the app, and at the end the camera flies back out
+until the whole archipelago stands on that phone's screen. `SPEC.md` holds
+the numbers: colors, type, motion, every shot by the second.
 
-| Seconds | Chapter     | What happens                                                                 |
-| ------- | ----------- | ---------------------------------------------------------------------------- |
-| 0-11    | `ouverture` | the city rises out of the phone, the star lands, the logo and the name       |
-| 11-26   | `partage`   | readers around a book, the session screen, the parts handed out and checked, the bar to the siyoum |
-| 26-39   | `etude`     | the shelf of the library, each book lifted as it is named, the library and a class |
-| 39-49.5 | `priere`    | back over the city: the Sidour on the moment, the times, the sun crossing Cha'harit, Min'ha, Arvit, night, the candles |
-| 49.5-62.5 | `objectifs` | three plinths (a tractate by a date, the daily Tehilim, a habit), the home page, the reminder, the card swiped |
-| 62.5-77 | `suivi`     | the wall of Mon parcours, a stone a day, the month, the year; the streak's lights; Mon parcours |
-| 77-86   | `fin`       | flight back to the city, the logo, « Gratuite, sans publicité », Android and iPhone |
+| Seconds   | Chapter     | What happens                                                                        |
+| --------- | ----------- | ----------------------------------------------------------------------------------- |
+| 0-4.2     | `ouverture` | a phone on the cream, « Et si votre téléphone devenait… une petite Jérusalem ? », the dive |
+| 4.2-10    | `marque`    | the island rises out of the screen, the city drops in block by block, the star lands |
+| 10-20.4   | `partage`   | readers walk in, the psalms fountain out of the book, each part flies, flips, the siyoum |
+| 20.4-30.6 | `etude`     | a tower of books, the named ones slide out, a play button, a plane round the tower  |
+| 30.6-38.4 | `priere`    | the Sidour opens, the sun crosses Cha'harit, Min'ha, Arvit, night, the candles      |
+| 38.4-47.4 | `objectifs` | a walker hops the stones of the days, the flag, the bell, the giant check           |
+| 47.4-58   | `suivi`     | the wall: the month, then the year; the streak's lights up to the galaxy, 106 days  |
+| 58-68     | `fin`       | back out of the phone, the logo, « Gratuite, sans publicité », Android, iPhone      |
 
 ## Files
 
-| Path                         | What                                                                        |
-| ---------------------------- | --------------------------------------------------------------------------- |
-| `index.html`                 | the root: fonts, the app's tokens, the phone that carries a screen, the audio |
-| `compositions/monde.html`    | the isometric world, one Three.js scene for the whole film, drawn from time alone |
-| `compositions/<chapter>.html`| what comes over the world in each chapter: the real screens, the logo, the end card |
-| `compositions/sous-titres.html` | the captions, generated: edit `scripts/sous-titres.mjs`                  |
-| `scripts/lignes.mjs`         | the narration, sentence by sentence, as written and as spoken               |
-| `voix.json`, `mots.json`     | where each sentence and each word falls (generated, versioned to be read)   |
+| Path                           | What                                                                          |
+| ------------------------------ | ----------------------------------------------------------------------------- |
+| `index.html`                   | the root: fonts, the app's tokens, the title styles, the music, voice and sounds |
+| `compositions/monde.html`      | the isometric world, one Three.js scene for the whole film, drawn from time alone |
+| `compositions/<chapter>.html`  | the kinetic titles of each chapter, and the end card                           |
+| `scripts/lignes.mjs`           | the narration, line by line, as written and as spoken                          |
+| `scripts/sons.mjs`             | every sound effect: the moment it hits, the sound, its volume                  |
+| `voix.json`, `mots.json`       | where each line and each word falls (generated, versioned to be read)          |
 | `assets/gsap.min.js`, `assets/three.min.js` | GSAP 3.14.2 and Three.js r159 (MIT), loaded locally: a render never fetches |
 
 ## Make it again
@@ -42,31 +39,35 @@ out of the world, facing the viewer, when they prove what the voice says.
 ```bash
 cd promo && npm ci            # Fontsource, Tone.js, Playwright
 cd presentation
-npm run assets                # screens, logo and fonts, from the repository
-npm run voix                  # narration, word timings, captions
-npm run musique               # the music bed and the picture's sounds
+npm run assets                # screens, logo, fonts and sounds
+npm run voix                  # narration, word timings, the audio tracks in index.html
+npm run musique               # the music bed
 npm run check                 # HyperFrames: lint, runtime, layout, contrast
-npm run render                # renders/presentation.mp4, about 15 minutes
+npm run render                # renders/petite-jerusalem-iso.mp4, about 30 minutes
 ```
 
-`npm run dev` opens the HyperFrames Studio to review and adjust a frame.
+`npm run dev` opens the HyperFrames Studio to review and adjust a frame;
+after editing `scripts/sons.mjs`, `npm run sons` places the sounds again.
 
-- **The screens are the app's.** The store listing screenshots
-  (`store-assets/screenshots/fr-FR`) and three screens cut out of the
-  published 4.0 video (`public/videos/nouveautes-4.0-fr.mp4`: the Sidour, the
-  home page at 106 days, Mon parcours), which films the app on its demo
-  data. Nothing in a phone is redrawn; only the world around it is.
+- **The screens are the app's.** Five real screens stand in the world as
+  phones facing the camera: two store listing screenshots
+  (`store-assets/screenshots/fr-FR`) and three cut out of the published 4.0
+  video (`public/videos/nouveautes-4.0-fr.mp4`), which films the app on its
+  demo data. Only the world around them is drawn.
 - **The voice is Kokoro** (`hyperframes tts`, the French voice `ff_siwis`,
-  on the machine, slowed to 0.92). Google's voices (Cloud Text-to-Speech or
-  Gemini) need an API key the session did not have. Words the phonemizer
-  misreads are respelled for the voice only (`dit` in `scripts/lignes.mjs`:
-  « Mishna », « Arvite », « Chaharite »). With a key, the sentences can be
-  voiced again and `npm run voix` rebuilds the timings and the captions.
-- **The word timings are measured, not transcribed.** No speech model can be
-  downloaded here: each clause boundary is placed on the pause the voice
-  really makes, and words share a clause by their syllables
-  (`scripts/mots.mjs`).
+  on the machine). Google's voices (Flow, Cloud Text-to-Speech, Gemini)
+  need the owner's Google account or an API key, which the session did not
+  have. Words the phonemizer misreads are respelled for the voice only
+  (`dit` in `scripts/lignes.mjs`). Voiced again elsewhere, the lines go to
+  `assets/voix/<id>.wav` and `npm run voix` rebuilds the timings.
+- **The word timings are measured, not transcribed** (`scripts/mots.mjs`):
+  no speech model can be downloaded here; each clause boundary is placed on
+  the pause the voice really makes, and words share a clause by their
+  syllables.
 - **The music** is composed by the promo videos' own engine
-  (`../scripts/music-engine.js`), at the 4.0 video's style, with no sample
-  and no royalties; its sounds fall on the picture's actions
-  (`scripts/musique.mjs`).
+  (`../scripts/music-engine.js`) in its « mizrahi » genre, with no sample and
+  no royalties. If Playwright's own Chromium is missing, `PROMO_CHROMIUM`
+  points to one, as in `../README.md`.
+- **The sound effects** are the HyperFrames library's (Pixabay Content
+  License: free for commercial use, no credit needed, not to be
+  redistributed as files), copied by `npm run assets` and never versioned.

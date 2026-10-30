@@ -7,8 +7,9 @@
  * (ffmpeg silencedetect, the closest pause to where the syllables expect
  * it); inside a clause, words share its time by their syllables.
  *
- * Output: mots.json, the words of each sentence with their start and end in
- * the film's time. Usage: node scripts/mots.mjs
+ * Output: mots.json, the words of each line with their start and end in the
+ * film's time, which the titles and the picture's moments are set on.
+ * Usage: node scripts/mots.mjs
  */
 import { execFileSync } from "node:child_process";
 import { readFileSync, writeFileSync } from "node:fs";

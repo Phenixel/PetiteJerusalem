@@ -4,33 +4,39 @@
       position: absolute;
       inset: 0;
     }
-    #priere-horaires {
-      z-index: 2;
+    /* Dawn and day are light grounds: the titles take the text color; at night, white. */
+    #priere-t1,
+    #priere-t2 {
+      --titre: var(--encre);
     }
   </style>
   <div id="root" data-composition-id="priere" data-width="1080" data-height="1920">
-    <!-- The Sidour opens on the moment, then the times of the city. -->
-    <div id="priere-carte" class="clip" data-start="2.95" data-duration="4.1" data-track-index="0">
-      <div id="priere-tel" class="telephone">
-        <div class="ecran">
-          <img id="priere-sidour" src="assets/ecrans/v4-sidour.jpg" alt="Le Sidour, ouvert sur l'office du moment" />
-          <img id="priere-horaires" src="assets/ecrans/02-horaires.jpg" alt="Les horaires de Paris" />
-        </div>
-      </div>
+    <div id="priere-t1" class="titre clip" data-start="0.3" data-duration="2.05" data-track-index="0">
+      <span class="ligne"><span class="mot">Toute la prière,</span></span>
+      <span class="ligne"><span id="priere-endroit" class="mot">au même endroit</span></span>
+    </div>
+    <div id="priere-t2" class="titre clip" data-start="2.4" data-duration="2.15" data-track-index="0">
+      <span class="ligne"><span class="mot">L'office</span></span>
+      <span class="ligne"><span class="mot">du moment</span></span>
+    </div>
+    <div id="priere-t3" class="titre clip" data-start="4.6" data-duration="3.0" data-track-index="0">
+      <span class="ligne"><span class="mot">Aux horaires</span></span>
+      <span class="ligne"><span class="mot">de votre ville</span></span>
     </div>
   </div>
   <script>
     (function () {
       const tl = gsap.timeline({ paused: true });
-      tl.fromTo(
-        "#priere-tel",
-        { opacity: 0, y: 140, scale: 0.92 },
-        { opacity: 1, y: 0, scale: 1, duration: 0.6, ease: "power3.out" },
-        3.0,
-      );
-      tl.fromTo("#priere-horaires", { xPercent: 100 }, { xPercent: 0, duration: 0.5, ease: "power3.inOut" }, 5.55);
-      tl.fromTo("#priere-sidour", { xPercent: 0 }, { xPercent: -30, duration: 0.5, ease: "power3.inOut" }, 5.55);
-      tl.to("#priere-tel", { opacity: 0, y: 90, scale: 0.95, duration: 0.4, ease: "power2.in" }, 6.6);
+      const entrer = (sel, t, stagger = 0.1) =>
+        tl.fromTo(sel, { yPercent: 115, rotation: 4 }, { yPercent: 0, rotation: 0, duration: 0.42, ease: "back.out(1.6)", stagger }, t);
+      const sortir = (sel, t) => tl.to(sel, { yPercent: -120, opacity: 0, duration: 0.26, ease: "power3.in", stagger: 0.04 }, t);
+      entrer("#priere-t1 .ligne:first-child .mot", 0.4);
+      entrer("#priere-endroit", 1.3);
+      sortir("#priere-t1 .mot", 2.07);
+      entrer("#priere-t2 .mot", 2.45);
+      sortir("#priere-t2 .mot", 4.27);
+      entrer("#priere-t3 .mot", 4.75, 0.14);
+      sortir("#priere-t3 .mot", 7.3);
       window.__timelines = window.__timelines || {};
       window.__timelines["priere"] = tl;
     })();

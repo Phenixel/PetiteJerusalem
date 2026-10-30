@@ -2,15 +2,16 @@
 /**
  * Synthesizes the narration (scripts/lignes.mjs) with Kokoro, the local
  * voice of the HyperFrames CLI (`hyperframes tts`, French voice ff_siwis),
- * slowed a little (0.92: at 1 it reads about 200 words a minute), then lays
- * the sentences on the music's grid (120 beats per minute): each starts on
- * a beat (0.5 s), after a breath, a longer one between two chapters.
+ * a touch under its natural pace (0.96), then lays the lines on the music's
+ * grid (120 beats per minute): each starts on a beat (0.5 s), after a
+ * breath, a longer one between two chapters, and after the room a line
+ * leaves for the picture (`apres`).
  *
- * Output: assets/voix/<id>.wav (one file per sentence, placed by the
- * composition) and voix.json (where each sentence starts and ends, which the
- * captions and the cut are built from).
+ * Output: assets/voix/<id>.wav (one file per line, placed by
+ * scripts/pistes.mjs) and voix.json (where each line starts and ends, which
+ * the cut is built on).
  *
- * Usage: node scripts/voix.mjs [--vitesse 0.92] [--force]
+ * Usage: node scripts/voix.mjs [--vitesse 0.96] [--force]
  */
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
@@ -25,7 +26,7 @@ const arg = (name, fallback) => {
   const i = process.argv.indexOf(name);
   return i === -1 ? fallback : process.argv[i + 1];
 };
-const vitesse = Number(arg("--vitesse", "0.92"));
+const vitesse = Number(arg("--vitesse", "0.96"));
 const force = process.argv.includes("--force");
 
 const BEAT = 0.5;
@@ -33,10 +34,10 @@ const BAR = 4 * BEAT;
 /** Silence before the first word, so the hook's picture lands first. */
 const DEBUT = 0.5;
 /** Breath between two sentences of a chapter, and between two chapters. */
-const SOUFFLE = 0.35;
-const PAUSE_CHAPITRE = 1;
+const SOUFFLE = 0.3;
+const PAUSE_CHAPITRE = 0.9;
 /** The end card holds after the last word. */
-const QUEUE = 3.2;
+const QUEUE = 4.0;
 
 const duree = (file) =>
   Number(
@@ -72,8 +73,8 @@ for (const ligne of LIGNES) {
   else if (ligne.chapitre !== chapitre) debut = Math.ceil((fin + PAUSE_CHAPITRE) / BEAT) * BEAT;
   else debut = Math.ceil((fin + SOUFFLE) / BEAT) * BEAT;
   chapitre = ligne.chapitre;
-  fin = debut + longueur;
-  lignes.push({ ...ligne, debut: +debut.toFixed(3), fin: +fin.toFixed(3), duree: +longueur.toFixed(3) });
+  fin = debut + longueur + (ligne.apres ?? 0);
+  lignes.push({ ...ligne, debut: +debut.toFixed(3), fin: +(debut + longueur).toFixed(3), duree: +longueur.toFixed(3) });
   console.log(`${ligne.id} ${ligne.chapitre.padEnd(10)} ${debut.toFixed(2)} → ${fin.toFixed(2)} (${longueur.toFixed(2)} s)`);
 }
 

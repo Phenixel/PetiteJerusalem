@@ -1,132 +1,166 @@
 {
-  "vitesse": 0.92,
-  "total": 86,
+  "vitesse": 0.96,
+  "total": 68,
   "lignes": [
     {
-      "id": "l01",
+      "id": "v01",
       "chapitre": "accroche",
-      "ecrit": "Étudier, prier, partager : et si tout tenait dans votre poche ?",
-      "dit": "Étudier, prier, partager : et si tout tenait dans votre poche ?",
+      "ecrit": "Et si votre téléphone devenait… une petite Jérusalem ?",
+      "dit": "Et si votre téléphone devenait… une petite Jérusalem ?",
+      "apres": 1.6,
       "debut": 0.5,
-      "fin": 3.889,
-      "duree": 3.389
+      "fin": 3.435,
+      "duree": 2.935
     },
     {
-      "id": "l02",
-      "chapitre": "accroche",
-      "ecrit": "Voici Petite Jérusalem : l'application gratuite et sans publicité pour vivre la Torah au quotidien.",
-      "dit": "Voici Petite Jérusalem : l'application gratuite et sans publicité pour vivre la Torah au quotidien.",
-      "debut": 4.5,
-      "fin": 10.344,
-      "duree": 5.844
+      "id": "v02",
+      "chapitre": "marque",
+      "ecrit": "Petite Jérusalem. L'appli gratuite, et sans publicité.",
+      "dit": "Petite Jérusalem. L'appli gratuite, et sans publicité.",
+      "debut": 6,
+      "fin": 9.226,
+      "duree": 3.226
     },
     {
-      "id": "l03",
+      "id": "v03",
       "chapitre": "partage",
-      "ecrit": "Tout commence à plusieurs. Créez une session de lecture : les 150 Tehilim pour un proche, ou le Talmud, traité par traité.",
-      "dit": "Tout commence à plusieurs. Créez une session de lecture : les cent cinquante Téhilim pour un proche, ou le Talmoude, traité par traité.",
-      "debut": 11.5,
-      "fin": 19.06,
-      "duree": 7.56
+      "ecrit": "Lancez une chaîne de lecture.",
+      "dit": "Lancez une chaîne de lecture.",
+      "debut": 10.5,
+      "fin": 11.987,
+      "duree": 1.487
     },
     {
-      "id": "l04",
+      "id": "v04",
       "chapitre": "partage",
-      "ecrit": "Partagez le lien : chacun réserve sa part, la coche une fois lue, et la barre avance jusqu'au siyoum.",
-      "dit": "Partagez le lien : chacun réserve sa part, la coche une fois lue, et la barre avance jusqu'au sioum.",
-      "debut": 19.5,
-      "fin": 25.109,
-      "duree": 5.609
+      "ecrit": "150 Tehilim, partagés en un seul lien.",
+      "dit": "Cent cinquante Téhilim, partagés en un seul lien.",
+      "debut": 12.5,
+      "fin": 15.176,
+      "duree": 2.676
     },
     {
-      "id": "l05",
+      "id": "v05",
+      "chapitre": "partage",
+      "ecrit": "Chacun réserve sa part, la lit, la coche… jusqu'au siyoum !",
+      "dit": "Chacun réserve sa part, la lit, la coche… jusqu'au sioum !",
+      "apres": 1.4,
+      "debut": 15.5,
+      "fin": 18.695,
+      "duree": 3.195
+    },
+    {
+      "id": "v06",
       "chapitre": "etude",
-      "ecrit": "Votre téléphone devient aussi un centre d'étude.",
-      "dit": "Votre téléphone devient aussi un centre d'étude.",
-      "debut": 26.5,
-      "fin": 29.175,
-      "duree": 2.675
+      "ecrit": "Votre téléphone devient un centre d'étude.",
+      "dit": "Votre téléphone devient un centre d'étude.",
+      "debut": 21,
+      "fin": 23.266,
+      "duree": 2.266
     },
     {
-      "id": "l06",
+      "id": "v07",
       "chapitre": "etude",
-      "ecrit": "Tehilim, Michna, Talmud, Tanakh, Halakha : toute une bibliothèque, lisible même hors connexion.",
-      "dit": "Téhilim, Mishna, Talmoude, Tanakh, Halakha : toute une bibliothèque, lisible même hors connexion.",
-      "debut": 30,
-      "fin": 35.518,
-      "duree": 5.518
+      "ecrit": "Tehilim, Michna, Talmud… et des chiourim à écouter.",
+      "dit": "Téhilim, Mishna, Talmoude… et des chiourim à écouter.",
+      "debut": 24,
+      "fin": 26.732,
+      "duree": 2.732
     },
     {
-      "id": "l07",
+      "id": "v08",
       "chapitre": "etude",
-      "ecrit": "Et des chiourim à écouter, quand vous voulez.",
-      "dit": "Et des chiourim à écouter, quand vous voulez.",
-      "debut": 36,
-      "fin": 38.047,
-      "duree": 2.047
+      "ecrit": "Même en avion, sans connexion.",
+      "dit": "Même en avion, sans connexion.",
+      "apres": 0.6,
+      "debut": 27.5,
+      "fin": 29.166,
+      "duree": 1.666
     },
     {
-      "id": "l08",
+      "id": "v09",
       "chapitre": "priere",
-      "ecrit": "La prière aussi est au même endroit.",
-      "dit": "La prière aussi est au même endroit.",
-      "debut": 39.5,
-      "fin": 41.388,
-      "duree": 1.888
+      "ecrit": "Toute la prière, au même endroit.",
+      "dit": "Toute la prière, au même endroit.",
+      "debut": 31,
+      "fin": 32.648,
+      "duree": 1.648
     },
     {
-      "id": "l09",
+      "id": "v10",
       "chapitre": "priere",
-      "ecrit": "Le Sidour s'ouvre sur l'office du moment, avec les horaires de votre ville : Cha'harit, Min'ha, Arvit, l'allumage des bougies.",
-      "dit": "Le Sidour s'ouvre sur l'office du moment, avec les horaires de votre ville : Chaharite, Minha, Arvite, l'allumage des bougies.",
-      "debut": 42,
-      "fin": 48.919,
-      "duree": 6.919
+      "ecrit": "Le Sidour s'ouvre sur l'office du moment, aux horaires de votre ville.",
+      "dit": "Le Sidour s'ouvre sur l'office du moment, aux horaires de votre ville.",
+      "apres": 1.2,
+      "debut": 33,
+      "fin": 36.487,
+      "duree": 3.487
     },
     {
-      "id": "l10",
+      "id": "v11",
       "chapitre": "objectifs",
-      "ecrit": "Fixez-vous des objectifs : finir un traité avant une date, lire vos Tehilim chaque jour, garder une habitude.",
-      "dit": "Fixez-vous des objectifs : finir un traité avant une date, lire vos Téhilim chaque jour, garder une habitude.",
-      "debut": 50,
-      "fin": 56.296,
-      "duree": 6.296
+      "ecrit": "Fixez-vous un objectif.",
+      "dit": "Fixez-vous un objectif.",
+      "debut": 39,
+      "fin": 40.385,
+      "duree": 1.385
     },
     {
-      "id": "l11",
+      "id": "v12",
       "chapitre": "objectifs",
-      "ecrit": "L'application calcule la portion du jour et vous la rappelle. Un geste, et c'est fait.",
-      "dit": "L'application calcule la portion du jour et vous la rappelle. Un geste, et c'est fait.",
-      "debut": 57,
-      "fin": 61.65,
-      "duree": 4.65
+      "ecrit": "L'appli calcule la portion du jour, et vous la rappelle.",
+      "dit": "L'appli calcule la portion du jour, et vous la rappelle.",
+      "debut": 41,
+      "fin": 43.939,
+      "duree": 2.939
     },
     {
-      "id": "l12",
+      "id": "v13",
+      "chapitre": "objectifs",
+      "ecrit": "Un geste… et c'est fait !",
+      "dit": "Un geste… et c'est fait !",
+      "apres": 1,
+      "debut": 44.5,
+      "fin": 45.692,
+      "duree": 1.192
+    },
+    {
+      "id": "v14",
       "chapitre": "suivi",
-      "ecrit": "Chaque jour accompli pose une pierre. Semaine après semaine, votre mur se construit : votre mois d'un coup d'œil, puis toute votre année.",
-      "dit": "Chaque jour accompli pose une pierre. Semaine après semaine, votre mur se construit : votre mois d'un coup d'œil, puis toute votre année.",
-      "debut": 63,
-      "fin": 70.437,
-      "duree": 7.437
+      "ecrit": "Jour après jour, votre mur se construit.",
+      "dit": "Jour après jour, votre mur se construit.",
+      "debut": 48,
+      "fin": 50.285,
+      "duree": 2.285
     },
     {
-      "id": "l13",
+      "id": "v15",
       "chapitre": "suivi",
-      "ecrit": "Votre série allume une lumière, de la vieille lampe jusqu'aux étoiles ; Chabbat et les fêtes ne la coupent pas.",
-      "dit": "Votre série allume une lumière, de la vieille lampe jusqu'aux étoiles ; Chabbate et les fêtes ne la coupent pas.",
-      "debut": 71,
-      "fin": 76.775,
-      "duree": 5.775
+      "ecrit": "Votre mois. Votre année.",
+      "dit": "Votre mois. Votre année.",
+      "apres": 0.6,
+      "debut": 51,
+      "fin": 52.229,
+      "duree": 1.229
     },
     {
-      "id": "l14",
+      "id": "v16",
+      "chapitre": "suivi",
+      "ecrit": "Et votre série allume une lumière… jusqu'aux étoiles.",
+      "dit": "Et votre série allume une lumière… jusqu'aux étoiles.",
+      "apres": 1.6,
+      "debut": 53.5,
+      "fin": 56.214,
+      "duree": 2.714
+    },
+    {
+      "id": "v17",
       "chapitre": "fin",
-      "ecrit": "Petite Jérusalem. Gratuite, sans publicité, sur Android et iPhone.",
-      "dit": "Petite Jérusalem. Gratuite, sans publicité, sur Android et aïfone.",
-      "debut": 78,
-      "fin": 82.246,
-      "duree": 4.246
+      "ecrit": "Petite Jérusalem. Gratuite, sans publicité. Sur Android et iPhone.",
+      "dit": "Petite Jérusalem. Gratuite, sans publicité. Sur Android et aïfone.",
+      "debut": 59,
+      "fin": 63.147,
+      "duree": 4.147
     }
   ]
 }

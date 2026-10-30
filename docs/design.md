@@ -4343,27 +4343,29 @@ down.
   own interface; the Hebrew one has no translation chapter (the translations
   go into French and English).
 
-### The isometric presentation: a world drawn, screens real
+### The isometric ad: a world in the phone, screens real
 
-The narrated presentation (`promo/presentation/`, HyperFrames) shows what
-the app is for in isometric 3D. Its world is drawn; what claims to be the
-app never is.
+The narrated ad (`promo/presentation/`, HyperFrames) shows what the app is
+for in isometric 3D, and was asked to look like none of the videos above.
+Its world is drawn; what claims to be the app never is.
 
-- **The world is the logo, in stone.** The wall, the tower, the orange
-  dome, the cypresses, the blue book and the star, as small isometric
-  volumes, flat colors under one warm light and a soft shadow, on the
-  page's cream (`#FFF9F3`). No gradient, no glow, no fog. Night, in the
-  prayer chapter, is the dark background (`#1F2937`) laid flat, and the
-  captions turn to its light text.
-- **The screens face the viewer.** A real screen (store listing, or cut
-  from the 4.0 video) rises out of the world in a phone held upright; it is
-  never tilted into the isometric view, where it could not be read. Only
-  the drawn objects tilt: book covers, tiles, stones.
+- **The world is in the phone.** The camera dives into a phone's screen;
+  inside, the screen is the ground, in the app's flat colors (orange, blue,
+  emerald, the light orange of dawn, the cream, the night), and the colors
+  change by waves that spread from the next island, never by a gradient.
+  At the end the camera flies back out and the archipelago stands on that
+  phone. The islands are the logo's stone, orange and blue.
+- **The screens are real and face the camera.** Five real screens (store
+  listing, or cut from the 4.0 video) stand on the islands as phones that
+  turn with the camera, seen at its 35 degrees of elevation and no more.
+  Only the drawn objects tilt freely.
 - **The wall is built from the bottom.** Mon parcours draws Sunday at the
   top; in stone, a week rises from Sunday at the bottom to Chabbat, white,
   on top, so that no stone hangs in the air while the wall is laid.
-- **Captions at the top**, below 222 px, two lines at most, the word that
-  matters in italics and in the orange ink; the end card says the last
-  sentence instead of a caption.
-- **The voice** reads at a calm pace (0.92 of Kokoro's); the music of the
-  promo engine sits far under it, its sounds on the picture's actions.
+- **Titles, not captions.** A few big words per beat (Manrope 800, white
+  on the colored grounds, the text color on light ones), a word that hits
+  in a white pill; the end card in Playfair Display.
+- **Sound on every action.** The promo engine's music (« mizrahi ») under
+  the voice, and an effect on what moves: whooshes on flights and waves,
+  pops and clicks on what lands, a bass impact for the siyoum, the check
+  and the galaxy.

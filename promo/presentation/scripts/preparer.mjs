@@ -6,16 +6,21 @@
  * - the app's screens: the store listing screenshots (store-assets/), and
  *   three screens cut out of the published 4.0 video (public/videos/), which
  *   films the app on its demo data: the Sidour on the moment, the home page
- *   at 106 days and Mon parcours;
+ *   at 106 days and Mon parcours; each stands in the world as a phone;
  * - the designer's logo (assets/brand/);
  * - the fonts, Manrope and Playfair Display, from promo/'s Fontsource
- *   packages (`npm ci` in promo/ first).
+ *   packages (`npm ci` in promo/ first), and the app's Noto Serif Hebrew;
+ * - the sound effects, from the HyperFrames skills' library (Pixabay
+ *   Content License: free to use, not to redistribute as files, hence not
+ *   versioned); HF_SFX points to it when it is not in ~/.claude/skills.
  *
  * Usage: node scripts/preparer.mjs
  */
 import { execFileSync } from "node:child_process";
 import { copyFileSync, existsSync, mkdirSync } from "node:fs";
+import { homedir } from "node:os";
 import { join } from "node:path";
+import { PICS } from "./sons.mjs";
 
 const root = join(import.meta.dirname, "..");
 const depot = join(root, "../..");
@@ -26,7 +31,7 @@ const dossier = (...p) => {
 };
 
 const ecrans = dossier("ecrans");
-const STORE = ["02-horaires", "03-partage-session", "05-bibliotheque", "07-chiour"];
+const STORE = ["03-partage-session", "05-bibliotheque"];
 for (const nom of STORE) {
   copyFileSync(join(depot, "store-assets/screenshots/fr-FR", `phone-${nom}.jpg`), join(ecrans, `${nom}.jpg`));
 }
@@ -59,4 +64,14 @@ for (const w of [400, 500, 600, 700]) {
     copyFileSync(join(fontsource, "playfair-display/files", nom), join(polices, nom));
   }
 }
-console.log("assets: screens, logo and fonts in place");
+// The Hebrew of the Sidour's cover, from the app's own fonts.
+copyFileSync(join(depot, "public/fonts/noto-serif-hebrew-var.woff2"), join(polices, "noto-serif-hebrew-var.woff2"));
+const SFX = [
+  process.env.HF_SFX,
+  join(homedir(), ".claude/skills/media-use/audio/assets/sfx"),
+  join(homedir(), ".agents/skills/media-use/audio/assets/sfx"),
+].find((d) => d && existsSync(d));
+if (!SFX) throw new Error("Sound effects not found: npx skills add heygen-com/hyperframes, or set HF_SFX");
+const sons = dossier("sfx");
+for (const nom of Object.keys(PICS)) copyFileSync(join(SFX, `${nom}.mp3`), join(sons, `${nom}.mp3`));
+console.log("assets: screens, logo, fonts and sounds in place");

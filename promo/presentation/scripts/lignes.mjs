@@ -1,93 +1,86 @@
 /**
- * The narration, one sentence per line. `ecrit` is what the captions show
- * (French typography: U+202F before ? ! ;, U+00A0 before :), `dit` what the
- * voice reads, respelled where the French phonemizer misreads a Hebrew word
- * (Mishna, Arvite, Chaharite, sioum, aïfone). `chapitre` groups the lines into
- * the film's chapters: the first line of a chapter starts on a bar.
+ * The narration, one line per beat of the film. `ecrit` is the line as
+ * written (French typography: U+202F before ? ! ;, U+00A0 before :), `dit`
+ * what the voice reads, respelled where the French phonemizer misreads a
+ * word (Téhilim, Mishna, Talmoude, sioum, aïfone). `chapitre` groups the
+ * lines into the film's chapters; `apres` leaves room, in seconds, for what
+ * the picture does after the line (the siyoum, the slam, the galaxy).
  */
 export const LIGNES = [
   {
-    id: "l01",
+    id: "v01",
     chapitre: "accroche",
-    ecrit: "Étudier, prier, partager : et si tout tenait dans votre poche ?",
-    dit: "Étudier, prier, partager : et si tout tenait dans votre poche ?",
+    ecrit: "Et si votre téléphone devenait… une petite Jérusalem ?",
+    dit: "Et si votre téléphone devenait… une petite Jérusalem ?",
+    apres: 1.6,
   },
   {
-    id: "l02",
-    chapitre: "accroche",
-    ecrit: "Voici Petite Jérusalem : l'application gratuite et sans publicité pour vivre la Torah au quotidien.",
-    dit: "Voici Petite Jérusalem : l'application gratuite et sans publicité pour vivre la Torah au quotidien.",
+    id: "v02",
+    chapitre: "marque",
+    ecrit: "Petite Jérusalem. L'appli gratuite, et sans publicité.",
+    dit: "Petite Jérusalem. L'appli gratuite, et sans publicité.",
   },
+  { id: "v03", chapitre: "partage", ecrit: "Lancez une chaîne de lecture.", dit: "Lancez une chaîne de lecture." },
   {
-    id: "l03",
+    id: "v04",
     chapitre: "partage",
-    ecrit: "Tout commence à plusieurs. Créez une session de lecture : les 150 Tehilim pour un proche, ou le Talmud, traité par traité.",
-    dit: "Tout commence à plusieurs. Créez une session de lecture : les cent cinquante Téhilim pour un proche, ou le Talmoude, traité par traité.",
+    ecrit: "150 Tehilim, partagés en un seul lien.",
+    dit: "Cent cinquante Téhilim, partagés en un seul lien.",
   },
   {
-    id: "l04",
+    id: "v05",
     chapitre: "partage",
-    ecrit: "Partagez le lien : chacun réserve sa part, la coche une fois lue, et la barre avance jusqu'au siyoum.",
-    dit: "Partagez le lien : chacun réserve sa part, la coche une fois lue, et la barre avance jusqu'au sioum.",
+    ecrit: "Chacun réserve sa part, la lit, la coche… jusqu'au siyoum !",
+    dit: "Chacun réserve sa part, la lit, la coche… jusqu'au sioum !",
+    apres: 1.4,
   },
   {
-    id: "l05",
+    id: "v06",
     chapitre: "etude",
-    ecrit: "Votre téléphone devient aussi un centre d'étude.",
-    dit: "Votre téléphone devient aussi un centre d'étude.",
+    ecrit: "Votre téléphone devient un centre d'étude.",
+    dit: "Votre téléphone devient un centre d'étude.",
   },
   {
-    id: "l06",
+    id: "v07",
     chapitre: "etude",
-    ecrit: "Tehilim, Michna, Talmud, Tanakh, Halakha : toute une bibliothèque, lisible même hors connexion.",
-    dit: "Téhilim, Mishna, Talmoude, Tanakh, Halakha : toute une bibliothèque, lisible même hors connexion.",
+    ecrit: "Tehilim, Michna, Talmud… et des chiourim à écouter.",
+    dit: "Téhilim, Mishna, Talmoude… et des chiourim à écouter.",
   },
+  { id: "v08", chapitre: "etude", ecrit: "Même en avion, sans connexion.", dit: "Même en avion, sans connexion.", apres: 0.6 },
+  { id: "v09", chapitre: "priere", ecrit: "Toute la prière, au même endroit.", dit: "Toute la prière, au même endroit." },
   {
-    id: "l07",
-    chapitre: "etude",
-    ecrit: "Et des chiourim à écouter, quand vous voulez.",
-    dit: "Et des chiourim à écouter, quand vous voulez.",
-  },
-  {
-    id: "l08",
+    id: "v10",
     chapitre: "priere",
-    ecrit: "La prière aussi est au même endroit.",
-    dit: "La prière aussi est au même endroit.",
+    ecrit: "Le Sidour s'ouvre sur l'office du moment, aux horaires de votre ville.",
+    dit: "Le Sidour s'ouvre sur l'office du moment, aux horaires de votre ville.",
+    apres: 1.2,
   },
+  { id: "v11", chapitre: "objectifs", ecrit: "Fixez-vous un objectif.", dit: "Fixez-vous un objectif." },
   {
-    id: "l09",
-    chapitre: "priere",
-    ecrit: "Le Sidour s'ouvre sur l'office du moment, avec les horaires de votre ville : Cha'harit, Min'ha, Arvit, l'allumage des bougies.",
-    dit: "Le Sidour s'ouvre sur l'office du moment, avec les horaires de votre ville : Chaharite, Minha, Arvite, l'allumage des bougies.",
-  },
-  {
-    id: "l10",
+    id: "v12",
     chapitre: "objectifs",
-    ecrit: "Fixez-vous des objectifs : finir un traité avant une date, lire vos Tehilim chaque jour, garder une habitude.",
-    dit: "Fixez-vous des objectifs : finir un traité avant une date, lire vos Téhilim chaque jour, garder une habitude.",
+    ecrit: "L'appli calcule la portion du jour, et vous la rappelle.",
+    dit: "L'appli calcule la portion du jour, et vous la rappelle.",
   },
+  { id: "v13", chapitre: "objectifs", ecrit: "Un geste… et c'est fait !", dit: "Un geste… et c'est fait !", apres: 1.0 },
   {
-    id: "l11",
-    chapitre: "objectifs",
-    ecrit: "L'application calcule la portion du jour et vous la rappelle. Un geste, et c'est fait.",
-    dit: "L'application calcule la portion du jour et vous la rappelle. Un geste, et c'est fait.",
-  },
-  {
-    id: "l12",
+    id: "v14",
     chapitre: "suivi",
-    ecrit: "Chaque jour accompli pose une pierre. Semaine après semaine, votre mur se construit : votre mois d'un coup d'œil, puis toute votre année.",
-    dit: "Chaque jour accompli pose une pierre. Semaine après semaine, votre mur se construit : votre mois d'un coup d'œil, puis toute votre année.",
+    ecrit: "Jour après jour, votre mur se construit.",
+    dit: "Jour après jour, votre mur se construit.",
   },
+  { id: "v15", chapitre: "suivi", ecrit: "Votre mois. Votre année.", dit: "Votre mois. Votre année.", apres: 0.6 },
   {
-    id: "l13",
+    id: "v16",
     chapitre: "suivi",
-    ecrit: "Votre série allume une lumière, de la vieille lampe jusqu'aux étoiles ; Chabbat et les fêtes ne la coupent pas.",
-    dit: "Votre série allume une lumière, de la vieille lampe jusqu'aux étoiles ; Chabbate et les fêtes ne la coupent pas.",
+    ecrit: "Et votre série allume une lumière… jusqu'aux étoiles.",
+    dit: "Et votre série allume une lumière… jusqu'aux étoiles.",
+    apres: 1.6,
   },
   {
-    id: "l14",
+    id: "v17",
     chapitre: "fin",
-    ecrit: "Petite Jérusalem. Gratuite, sans publicité, sur Android et iPhone.",
-    dit: "Petite Jérusalem. Gratuite, sans publicité, sur Android et aïfone.",
+    ecrit: "Petite Jérusalem. Gratuite, sans publicité. Sur Android et iPhone.",
+    dit: "Petite Jérusalem. Gratuite, sans publicité. Sur Android et aïfone.",
   },
 ];

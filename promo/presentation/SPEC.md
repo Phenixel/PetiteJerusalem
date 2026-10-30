@@ -1,65 +1,61 @@
-# Spec: Petite Jérusalem, the presentation in isometric 3D
+# Spec: Petite Jérusalem, the ad in isometric 3D
 
 ```text
-GOAL:    a stranger knows, after 86 s, that one free app lets them read with others,
-         study, pray, set goals, keep them and see their month and year at a glance.
-OUTPUT:  HyperFrames, 1080 x 1920, 30 fps, French.
-TIME:    86 s x 30 = 2580 frames; 120 BPM, 15 frames a beat; the narration is the clock
-         (voix.json: each sentence starts on a beat).
-LOOK:    ground #FFF9F3 flat, the same as the app's page background, no texture;
-         Jerusalem stone #E3D3C5 (light), #D6C4B8 (bricks), #C2AE9F (shade);
-         orange #FEA547 (logo), #EB9F4F (solid fill), #D46D01 (ink, the only orange for text);
-         blue #539EE2 (logo), #328CDC (ink); text #35312A, secondary #6D6759;
-         night (prayer, Arvit) #1F2937 with text #F3F4F6.
-         3D: orthographic camera at the true isometric angle (azimuth 45 deg, elevation 35.26 deg),
-         Lambert materials, flat shading, a warm key light from upper left, hemisphere fill,
-         one soft shadow (PCF, opacity 0.16, tinted #7A5A40); no bloom, no fog, no gradient.
-         Type: captions Playfair Display 600, 62 px, line height 1.18, tracking -0.01 em,
-         one key word per caption in italic #D46D01; labels Manrope 700, 34 to 44 px;
-         the name in Playfair Display 700, 96 px.
-         Screens: the app's real screenshots (store listing, fr-FR) and four screens cut from
-         the published 4.0 video (Sidour, Mes sessions, the home page at 106 days, Mon parcours),
-         in a phone 470 px wide, radius 56 px, bezel #1E1B18 14 px, facing the viewer, never tilted.
-OBJECTS: the little Jerusalem (the logo's pieces in stone: a crenellated wall, a tower, an orange
-         dome on a drum, two orange cypresses, an open blue book, a blue five-pointed star);
-         readers (a body cylinder and a head sphere, orange, blue or stone) around a book;
-         stone tiles that fly and turn orange once read; a 10-segment progress bar;
-         a shelf with six bound books in the library's bindings (Tehilim, Michna, Talmud, Tanakh,
-         Moussar, Halakha); nine orange audio bars; a sun that crosses an arc, two candles;
-         three goal plinths (a dated book, the Tehilim volume with its red ribbon, a habit week);
-         the wall of Mon parcours (one column per week, Sunday at the top, Chabbat white at the
-         bottom), five weeks, then 52; the streak's lights (lamp, candle, menorah, moon, stars).
-MOTION:  enter: back.out(1.4) on scale for objects rising, 0.5 s; power3.out for cards, 0.6 s;
-         camera moves between districts: power2.inOut, 1.2 s, the zoom easing 20% further out at
-         mid-move; words of a caption rise 24 px and fade in over 0.28 s, at their spoken time;
-         nothing loops; nothing moves while it is read except the world behind.
-SHOTS:   0.0-11.0   hook: the phone lies on the ground, the city rises out of it (0.4-3.6),
-                    the star falls on the tower (3.9), « Voici Petite Jérusalem »: the logo and
-                    the name come out above the city (4.5-10.3). Whoosh into the next district.
-         11.0-26.0  sharing: six readers around an open book; a session card (Mes sessions)
-                    rises at « Créez une session » (14.0); tiles fly to the readers at
-                    « chacun réserve sa part » (21.2), turn orange at « la coche » (22.6),
-                    the bar fills to the siyoum (23.4-25.1), flat confetti.
-         26.0-39.0  study: the shelf builds (26.5), the phone shows the library (28.3), each book
-                    lifts as it is named (30.0-32.7), « hors connexion »; the audio bars and the
-                    class screen at « des chiourim » (36.0-38.0).
-         39.0-49.5  prayer: back over the little city at dawn; the Sidour screen opens on the
-                    moment (42.0), the times of the city (44.6); the sun crosses Cha'harit, Min'ha,
-                    Arvit (46.2-47.8), night falls flat, the two candles light (47.9).
-         49.5-62.5  goals: three plinths rise as each goal is named (51.6, 53.4, 55.0); the home
-                    screen with the day's portion (57.0), a bell for the reminder (59.4),
-                    the card swiped, done (60.4).
-         62.5-77.0  the wall: stones drop one a day (63.0), the weeks fill (65.2), the month is
-                    framed (67.8), the camera pulls back to the year, 52 columns (69.1); the lights
-                    rise with the streak (71.0-74.0); the Mon parcours screen: Chabbat does not
-                    break it (74.2).
-         77.0-86.0  end card: flight back to the city, the logo, « Petite Jérusalem »,
-                    « Gratuite, sans publicité », Android and iPhone, held to the end.
-BANNED:  the defaults of the HyperFrames spec; gradients of any kind; borders on cards; glow,
-         bloom, particles as decoration; product UI tilted in 3D; a dark void; the logo docked
-         in a corner; capital letters with wide tracking on labels; any screen that is not the app.
-QA:      1.0 (hook readable with no sound), 7.0 (logo and name), 15.5 (session card),
-         23.5 (tiles orange, bar), 31.0 (library and a lifted book), 37.0 (class),
-         43.0 (Sidour), 47.4 (night), 52.0 (plinths), 58.0 (home screen), 64.5 (stones),
-         70.3 (the year), 73.0 (lights), 75.5 (Mon parcours), 82.0 (end card).
+GOAL:    a stranger wants the app after 68 s: it shares a reading, holds a library, the
+         whole prayer, goals and their follow-up, and it is free, with no ads.
+OUTPUT:  HyperFrames, 1080 x 1920, 30 fps, French, narrated.
+TIME:    68 s x 30 = 2040 frames; 120 BPM, 15 frames a beat; the voice is the clock
+         (voix.json), the sounds are placed on the picture (scripts/sons.mjs).
+LOOK:    grounds: the giant phone's screen in the app's colors, changed by waves that spread
+         from the next island: orange #EB9F4F, blue #328CDC, emerald #059C66, dawn #FFD09E,
+         cream #FFF9F3, night #1F2937; outside the phone, cream.
+         Islands: a stone slab #EFE4D6 over a stepped underside #D9C8B6, #C2AE9F, floating
+         9 units over the ground, bobbing 0.14 units; the logo's orange #FEA547 and blue #539EE2.
+         3D: orthographic camera at the isometric elevation (35.26 deg), azimuth 45 deg except
+         when it turns; Lambert materials, flat; warm key light from upper left, hemisphere
+         fill; one PCF shadow on the ground (opacity 0.2, tinted #5A3D28). No gradient, no glow.
+         Type: titles Manrope 800, 118 px (156 px for a word that hits), tracking -0.035 em,
+         white on colored grounds, #35312A on light ones; white pills with the ground's color
+         as ink; the end card in Playfair Display 700, 104 px.
+         Screens: five real screens of the app, standing in the world as phones that face the
+         camera (store listing, and the Sidour, the home page, Mon parcours from the 4.0 video).
+OBJECTS: a phone (rounded body #1E1B18, notch, buttons) at two scales; the little Jerusalem
+         (tower, crenellated wall, domed house, cypresses, open book, star); readers (a body,
+         a head, a navy kippa); numbered tiles that flip to orange with a check; 30 small tiles
+         in a fountain; a ring of 24 segments; confetti; a tower of seven bound books; a play
+         button and its sound rings; a plane; a domed house, the Sidour (navy, gold « סידור »)
+         whose cover opens, the sun, stars, two candles; a path of seven stones, a walker,
+         a flag, a bell, a giant check; the wall of 52 weeks; the lights (lamp, candle, menorah,
+         moon, stars, a galaxy of 220 points).
+MOTION:  things land: dropped from 9 to 12 units with a bounce (0.6 to 0.75 s), or pop with
+         back.out(1.6) (0.45 s); flights between islands 1.2 to 1.4 s, the view widening 35%
+         at mid-flight; the dive and the pull-back move the zoom on a log scale; titles rise
+         into a mask with back.out(1.6), 0.42 s, 0.1 s between words, leave upwards in 0.26 s;
+         a word that hits slams from 2.2 times its size.
+SHOTS:   0-4.2    a phone floats on the cream, the question; the camera dives into its screen.
+         4.2-10   inside: the island rises out of the screen, the city drops in block by block,
+                  the star lands (6.45); « Petite Jérusalem », « Gratuite », « Sans publicité ».
+         10-20.4  blue wave; readers walk in (10.7); the psalms fountain (12.5), « 150 Tehilim »,
+                  « 1 seul lien »; parts fly to the readers (15.6), flip, checked (17.75); the
+                  ring lights; the siyoum: confetti, « Siyoum ! » (18.75).
+         20.4-30.6 emerald wave; seven books drop into a tower (21.2); named books slide out;
+                  a play button and its rings (25.85); a plane circles (27.2).
+         30.6-38.4 dawn wave; the sun rises; the Sidour opens (33.3); Cha'harit, Min'ha, Arvit
+                  on the sun's course while the camera turns 55 degrees; day, then night
+                  (35.3); stars, the candles light (35.9).
+         38.4-47.4 orange wave; the path's stones, the flag drops (39.6); the walker hops the
+                  days (41.2-43.0); the bell rings (43.4); the check slams (45.35), confetti.
+         47.4-58  cream wave; the month builds (48.2-50.3), « Votre mois. »; the camera pulls
+                  back as the year rushes in (51.6), « Votre année. »; night; the lamp lights,
+                  then candle, menorah, moon, stars, the galaxy (56.45), counter to 106.
+         58-68    orange wave; the camera flies out until the archipelago stands on a phone;
+                  the logo, the name (59.2), « Gratuite, sans publicité », Android, iPhone.
+BANNED:  the defaults of the HyperFrames spec; gradients; glow, bloom, particles as decoration
+         (the confetti fall and rest); product UI tilted beyond the camera's elevation; a dark
+         void; the logo docked in a corner; block capitals with wide tracking; any screen that
+         is not the app; the first cut's language (phones held upright as cards, two-line
+         captions on cream).
+QA:      0 (question and phone), 4.5 (all orange), 6.6 (city and name), 15.2 (150 Tehilim),
+         18.9 (siyoum), 25.5 (books named), 28.4 (plane), 34.5 (sun and labels), 36.6 (night),
+         42.3 (walker), 46.2 (check), 51.2 (month), 52.6 (year), 56.9 (galaxy), 63 (end card).
 ```

@@ -12,7 +12,7 @@ swiping a card, setting a text aside) was really played, frame by frame.
 | 1      | six videos of 23 seconds, one part of the app each        | 3.10      | `out/<id>.mp4`                  |
 | 2      | six stories of 31 seconds                                 | 3.10      | `out/s2-<id>.mp4`               |
 | 4      | version 4.0: one presentation, in the app and the networks | 4.0       | `out/<id>.mp4`, `../public/videos/` |
-| 3D     | what the app is for, narrated, in isometric 3D (HyperFrames) | 4.0     | `presentation/renders/`         |
+| 3D     | an ad in isometric 3D, narrated (HyperFrames)              | 4.0       | `presentation/renders/`         |
 
 ## Version 4.0
 
@@ -84,16 +84,16 @@ PROMO_BEFORE_DIR=$PWD/../pj-v3 npm run captures   # from promo/
 The demo server then also serves that app on port 5275, on the same
 emulators and demo account.
 
-## The isometric presentation
+## The isometric ad
 
-A narrated presentation of the whole app in 86 seconds, in isometric 3D:
-a small Jerusalem built from the logo's pieces rises out of a phone, and
-the camera flies from district to district (sharing, study, prayer, goals,
-the wall of Mon parcours) while the real screens rise out of the world. It
-is a separate HyperFrames project, with its own README:
+A narrated ad of the whole app in 68 seconds, in isometric 3D, made to look
+like none of the videos above: the camera dives into a phone, flies over an
+archipelago of islands (the little Jerusalem, sharing, study, prayer, goals,
+the wall of Mon parcours) floating over its screen, and flies back out at
+the end. It is a separate HyperFrames project, with its own README:
 [`presentation/`](presentation/README.md). It reuses this folder's music
-engine and fonts, and the app's screens from the store listing and the
-4.0 video.
+engine and fonts, and the app's screens from the store listing and the 4.0
+video.
 
 ## Series 1 and 2
 

@@ -1,48 +1,48 @@
 # Storylines
 
-The request: a vertical presentation of the app, in isometric 3D, narrated,
-between one minute and a minute and a half, saying what the app is for:
-sharing a reading, turning the phone into a place of study, the whole
-prayer in one place, setting goals, keeping them, and following it all
-over the month and the year.
+The request: a vertical video in isometric 3D, narrated, between one minute
+and a minute and a half, saying what the app is for (sharing a reading,
+turning the phone into a place of study, the whole prayer in one place,
+setting goals, keeping them, following it all over the month and the year),
+and, after a first cut, the owner's direction: **an ad, nothing like the
+promo videos already made**, a world with its sound design, to test what
+the tool can do in motion design.
 
-## A. The little Jerusalem (picked)
+The first cut (the world as a backdrop, the real screens in a phone held
+upright, two-line captions) was set aside: it read as the house's earlier
+presentations.
 
-- **Device and form:** the object is the explanation, as a flight through
-  one world. The app's name taken literally: a small Jerusalem in
-  isometric stone, the logo's own pieces (the wall, the tower, the dome, the
-  cypresses, the open book, the star), and next to it one district per use
-  of the app. The camera travels from district to district; the real
-  screens rise out of the world, facing the viewer, when they prove what the
-  voice says.
-- **First two seconds:** a phone lies on the cream ground, seen from above
-  at the isometric angle; « Étudier, prier, partager » is already written;
-  the city starts rising out of the screen.
-- **Beats:** hook (the city rises) → the name → sharing (readers around a
-  book, parts handed out, the bar to the siyoum) → study (the shelf, the
-  library, the classes) → prayer (the sun crosses the dome, evening, the
-  candles) → goals (three plinths, the day's portion, done) → the wall
-  (a stone per day, the month, then the year) → the lights → end card.
-- **Look:** the page background `#FFF9F3`, Jerusalem stone, the logo's
-  orange and blue, flat colors, soft contact shadows; Playfair Display and
-  Manrope.
-- **Sound:** the narration is the clock; the app's own music engine
-  (`promo/scripts/music-engine.js`) under it, its sounds on the visible
-  actions.
+## A. The world in your phone (picked)
 
-## B. A day in the app
+- **Device and form:** the feature as the hook, then a flight through one
+  world. The camera dives into a phone; inside, its screen is a colored
+  ground where an archipelago of isometric islands floats, one island per
+  use of the app. At the end the camera flies back out and the whole
+  archipelago turns out to stand on that phone's screen.
+- **First two seconds:** a phone on the cream, its orange screen bearing the
+  logo in white; « Et si votre téléphone » is already written.
+- **Beats:** the question → the dive → the little Jerusalem rises out of the
+  screen and builds itself, block by block → sharing (readers walk in, 150
+  psalms fountain out of a book, each takes a part, the siyoum) → study (a
+  tower of books, a play button, a plane round the tower) → prayer (the sun
+  crosses the sky, night falls, the candles) → goals (a walker hops the
+  stones of the days, a bell, a giant check) → the wall (a stone a day, the
+  month, the year), the lights up to a galaxy → back out of the phone, the
+  name, the stores.
+- **Look:** the app's palette used as grounds (orange, blue, emerald, a dawn
+  orange, cream, night), the logo's stone and orange on the islands, flat
+  colors, one soft shadow; huge Manrope words, white pills.
+- **Sound:** the promo engine's music in its « mizrahi » genre, and a sound
+  on almost every action: whooshes on flights and waves, pops and clicks on
+  what lands, a bass impact on the siyoum, the check and the galaxy.
 
-A single phone on an isometric desk through one day: dawn (Cha'harit), the
-morning study, the shared Tehilim at noon, Min'ha, the evening wall. Calmer,
-but the month and the year have no place in one day.
+## B. The day of a phone
 
-## C. The wall as the spine
+One phone on an isometric desk from dawn to night, the app's features as
+the day's moments. Rejected: too close to series 2's « journée ».
 
-The whole film is the wall of Mon parcours being built: every feature lays
-its stone (a shared Tehilim, a page studied, a prayer said), the wall grows
-from a day to a week to a year, and the camera pulls back at the end. Bold,
-but sharing and study become abstract stones instead of what they look
-like.
+## C. A board game
 
-A was picked: it carries all six uses, each with its own picture, and the
-wall of C becomes its last chapter.
+The app as a board game: a pawn moves square by square, each square a
+feature, dice rolled on the music. Bold, but the year and the wall had no
+square of their own.

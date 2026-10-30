@@ -7,20 +7,20 @@
     #fin-logo {
       position: absolute;
       left: 440px;
-      top: 214px;
+      top: 200px;
       width: 200px;
       height: 200px;
     }
     #fin-nom {
       position: absolute;
       left: 0;
-      top: 420px;
+      top: 404px;
       width: 1080px;
       text-align: center;
       font-family: var(--police-titre);
       font-weight: 700;
-      font-size: 96px;
-      line-height: 1.1;
+      font-size: 104px;
+      line-height: 1.08;
       letter-spacing: -0.01em;
       color: var(--encre);
     }
@@ -31,47 +31,47 @@
     #fin-promesse {
       position: absolute;
       left: 0;
-      top: 548px;
+      top: 540px;
       width: 1080px;
       text-align: center;
       font-family: var(--police);
       font-weight: 700;
-      font-size: 46px;
+      font-size: 48px;
       color: var(--encre-douce);
     }
     #fin-magasins {
       position: absolute;
       left: 0;
-      top: 628px;
+      top: 1420px;
       width: 1080px;
       display: flex;
       justify-content: center;
       gap: 28px;
     }
     .fin-magasin {
-      padding: 16px 44px;
+      padding: 18px 48px;
       border-radius: 999px;
       background: var(--surface);
       box-shadow: var(--ombre-pop);
       font-family: var(--police);
-      font-weight: 700;
-      font-size: 42px;
+      font-weight: 800;
+      font-size: 44px;
       color: var(--encre);
     }
     #fin-site {
       position: absolute;
       left: 0;
-      top: 744px;
+      top: 1544px;
       width: 1080px;
       text-align: center;
       font-family: var(--police);
-      font-weight: 600;
-      font-size: 32px;
+      font-weight: 700;
+      font-size: 34px;
       color: var(--orange-encre);
     }
   </style>
   <div id="root" data-composition-id="fin" data-width="1080" data-height="1920">
-    <div id="fin-carte" class="clip" data-start="0.3" data-duration="8.7" data-track-index="0">
+    <div id="fin-carte" class="clip" data-start="1.1" data-duration="8.9" data-track-index="0">
       <img id="fin-logo" src="assets/marque/logo-transparent.png" alt="Petite Jérusalem" />
       <div id="fin-nom">Petite <em>Jérusalem</em></div>
       <div id="fin-promesse">Gratuite, sans publicité</div>
@@ -85,22 +85,12 @@
   <script>
     (function () {
       const tl = gsap.timeline({ paused: true });
-      tl.fromTo(
-        "#fin-logo",
-        { opacity: 0, scale: 0.5, y: 80, rotation: -10 },
-        { opacity: 1, scale: 1, y: 0, rotation: 0, duration: 0.75, ease: "back.out(1.6)" },
-        0.35,
-      );
-      tl.fromTo(
-        "#fin-nom",
-        { clipPath: "inset(0% 100% 0% 0%)", y: 12 },
-        { clipPath: "inset(0% 0% 0% 0%)", y: 0, duration: 0.7, ease: "power3.out" },
-        1.0,
-      );
-      tl.fromTo("#fin-promesse", { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.45, ease: "power3.out" }, 2.4);
-      tl.fromTo("#fin-android", { opacity: 0, y: 40, scale: 0.85 }, { opacity: 1, y: 0, scale: 1, duration: 0.45, ease: "back.out(1.7)" }, 4.05);
-      tl.fromTo("#fin-iphone", { opacity: 0, y: 40, scale: 0.85 }, { opacity: 1, y: 0, scale: 1, duration: 0.45, ease: "back.out(1.7)" }, 4.65);
-      tl.fromTo("#fin-site", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power2.out" }, 5.4);
+      tl.fromTo("#fin-logo", { opacity: 0, scale: 0.4, y: 90, rotation: -12 }, { opacity: 1, scale: 1, y: 0, rotation: 0, duration: 0.7, ease: "back.out(1.8)" }, 1.15);
+      tl.fromTo("#fin-nom", { clipPath: "inset(0% 100% 0% 0%)", y: 14 }, { clipPath: "inset(0% 0% 0% 0%)", y: 0, duration: 0.6, ease: "power3.out" }, 1.3);
+      tl.fromTo("#fin-promesse", { opacity: 0, y: 26 }, { opacity: 1, y: 0, duration: 0.45, ease: "power3.out" }, 2.3);
+      tl.fromTo("#fin-android", { opacity: 0, y: 50, scale: 0.8 }, { opacity: 1, y: 0, scale: 1, duration: 0.42, ease: "back.out(1.8)" }, 4.05);
+      tl.fromTo("#fin-iphone", { opacity: 0, y: 50, scale: 0.8 }, { opacity: 1, y: 0, scale: 1, duration: 0.42, ease: "back.out(1.8)" }, 4.65);
+      tl.fromTo("#fin-site", { opacity: 0 }, { opacity: 1, duration: 0.5, ease: "power2.out" }, 5.2);
       window.__timelines = window.__timelines || {};
       window.__timelines["fin"] = tl;
     })();

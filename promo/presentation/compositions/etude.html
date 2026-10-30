@@ -3,34 +3,49 @@
     #root {
       position: absolute;
       inset: 0;
+      --pilule-encre: var(--emeraude);
     }
-    #etude-chiour {
-      z-index: 2;
+    #etude-t2 .mot {
+      font-size: 84px;
     }
   </style>
   <div id="root" data-composition-id="etude" data-width="1080" data-height="1920">
-    <!-- The library, then a class to listen to, on the same phone. -->
-    <div id="etude-carte" class="clip" data-start="6.6" data-duration="5.9" data-track-index="0">
-      <div id="etude-tel" class="telephone">
-        <div class="ecran">
-          <img id="etude-bibliotheque" src="assets/ecrans/05-bibliotheque.jpg" alt="La bibliothèque" />
-          <img id="etude-chiour" src="assets/ecrans/07-chiour.jpg" alt="Un chiour" />
-        </div>
-      </div>
+    <div id="etude-t1" class="titre clip" data-start="0.5" data-duration="2.8" data-track-index="0">
+      <span class="ligne"><span class="mot">Un centre</span></span>
+      <span class="ligne"><span class="mot">d'étude</span></span>
+    </div>
+    <div id="etude-t2" class="titre clip" data-start="3.5" data-duration="2.0" data-track-index="0">
+      <span class="ligne pilules"><span id="etude-tehilim" class="mot pilule">Tehilim</span></span>
+      <span class="ligne pilules"><span id="etude-michna" class="mot pilule">Michna</span></span>
+      <span class="ligne pilules"><span id="etude-talmud" class="mot pilule">Talmud</span></span>
+    </div>
+    <div id="etude-t3" class="titre clip" data-start="5.5" data-duration="1.45" data-track-index="0">
+      <span class="ligne"><span class="mot">Des chiourim</span></span>
+      <span class="ligne"><span class="mot">à écouter</span></span>
+    </div>
+    <div id="etude-t4" class="titre clip" data-start="7.0" data-duration="2.95" data-track-index="0">
+      <span class="ligne"><span class="mot">Même en avion,</span></span>
+      <span class="ligne"><span id="etude-connexion" class="mot">sans connexion</span></span>
     </div>
   </div>
   <script>
     (function () {
       const tl = gsap.timeline({ paused: true });
-      tl.fromTo(
-        "#etude-tel",
-        { opacity: 0, y: 140, scale: 0.92 },
-        { opacity: 1, y: 0, scale: 1, duration: 0.6, ease: "power3.out" },
-        6.65,
-      );
-      tl.fromTo("#etude-chiour", { xPercent: 100 }, { xPercent: 0, duration: 0.5, ease: "power3.inOut" }, 9.75);
-      tl.fromTo("#etude-bibliotheque", { xPercent: 0 }, { xPercent: -30, duration: 0.5, ease: "power3.inOut" }, 9.75);
-      tl.to("#etude-tel", { opacity: 0, y: 90, scale: 0.95, duration: 0.4, ease: "power2.in" }, 12.0);
+      const entrer = (sel, t, stagger = 0.1) =>
+        tl.fromTo(sel, { yPercent: 115, rotation: 4 }, { yPercent: 0, rotation: 0, duration: 0.42, ease: "back.out(1.6)", stagger }, t);
+      const claquer = (sel, t) => tl.fromTo(sel, { scale: 2.2, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.34, ease: "back.out(2)" }, t);
+      const sortir = (sel, t) => tl.to(sel, { yPercent: -120, opacity: 0, duration: 0.26, ease: "power3.in", stagger: 0.04 }, t);
+      entrer("#etude-t1 .mot", 0.6);
+      sortir("#etude-t1 .mot", 3.02);
+      claquer("#etude-tehilim", 3.6);
+      claquer("#etude-michna", 4.2);
+      claquer("#etude-talmud", 4.85);
+      sortir("#etude-t2 .mot", 5.22);
+      entrer("#etude-t3 .mot", 5.55);
+      sortir("#etude-t3 .mot", 6.68);
+      entrer("#etude-t4 .ligne:first-child .mot", 7.1);
+      entrer("#etude-connexion", 8.0);
+      sortir("#etude-t4 .mot", 9.65);
       window.__timelines = window.__timelines || {};
       window.__timelines["etude"] = tl;
     })();
