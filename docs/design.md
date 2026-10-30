@@ -4342,3 +4342,28 @@ down.
 - **The reader's language.** French, English and Hebrew, each filmed in its
   own interface; the Hebrew one has no translation chapter (the translations
   go into French and English).
+
+### The isometric presentation: a world drawn, screens real
+
+The narrated presentation (`promo/presentation/`, HyperFrames) shows what
+the app is for in isometric 3D. Its world is drawn; what claims to be the
+app never is.
+
+- **The world is the logo, in stone.** The wall, the tower, the orange
+  dome, the cypresses, the blue book and the star, as small isometric
+  volumes, flat colors under one warm light and a soft shadow, on the
+  page's cream (`#FFF9F3`). No gradient, no glow, no fog. Night, in the
+  prayer chapter, is the dark background (`#1F2937`) laid flat, and the
+  captions turn to its light text.
+- **The screens face the viewer.** A real screen (store listing, or cut
+  from the 4.0 video) rises out of the world in a phone held upright; it is
+  never tilted into the isometric view, where it could not be read. Only
+  the drawn objects tilt: book covers, tiles, stones.
+- **The wall is built from the bottom.** Mon parcours draws Sunday at the
+  top; in stone, a week rises from Sunday at the bottom to Chabbat, white,
+  on top, so that no stone hangs in the air while the wall is laid.
+- **Captions at the top**, below 222 px, two lines at most, the word that
+  matters in italics and in the orange ink; the end card says the last
+  sentence instead of a caption.
+- **The voice** reads at a calm pace (0.92 of Kokoro's); the music of the
+  promo engine sits far under it, its sounds on the picture's actions.

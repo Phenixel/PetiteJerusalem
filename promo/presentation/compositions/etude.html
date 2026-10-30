@@ -1,0 +1,38 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+    }
+    #etude-chiour {
+      z-index: 2;
+    }
+  </style>
+  <div id="root" data-composition-id="etude" data-width="1080" data-height="1920">
+    <!-- The library, then a class to listen to, on the same phone. -->
+    <div id="etude-carte" class="clip" data-start="6.6" data-duration="5.9" data-track-index="0">
+      <div id="etude-tel" class="telephone">
+        <div class="ecran">
+          <img id="etude-bibliotheque" src="assets/ecrans/05-bibliotheque.jpg" alt="La bibliothèque" />
+          <img id="etude-chiour" src="assets/ecrans/07-chiour.jpg" alt="Un chiour" />
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      tl.fromTo(
+        "#etude-tel",
+        { opacity: 0, y: 140, scale: 0.92 },
+        { opacity: 1, y: 0, scale: 1, duration: 0.6, ease: "power3.out" },
+        6.65,
+      );
+      tl.fromTo("#etude-chiour", { xPercent: 100 }, { xPercent: 0, duration: 0.5, ease: "power3.inOut" }, 9.75);
+      tl.fromTo("#etude-bibliotheque", { xPercent: 0 }, { xPercent: -30, duration: 0.5, ease: "power3.inOut" }, 9.75);
+      tl.to("#etude-tel", { opacity: 0, y: 90, scale: 0.95, duration: 0.4, ease: "power2.in" }, 12.0);
+      window.__timelines = window.__timelines || {};
+      window.__timelines["etude"] = tl;
+    })();
+  </script>
+</template>

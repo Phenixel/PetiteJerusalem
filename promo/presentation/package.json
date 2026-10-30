@@ -1,0 +1,14 @@
+{
+  "name": "presentation",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "assets": "node scripts/preparer.mjs",
+    "voix": "node scripts/voix.mjs && node scripts/mots.mjs && node scripts/sous-titres.mjs",
+    "musique": "node scripts/musique.mjs",
+    "dev": "npx --yes hyperframes@0.8.221 preview",
+    "check": "npx --yes hyperframes@0.8.221 check",
+    "render": "npx --yes hyperframes@0.8.221 render --quality delivery --output renders/presentation.mp4",
+    "publish": "npx --yes hyperframes@0.8.221 publish"
+  }
+}

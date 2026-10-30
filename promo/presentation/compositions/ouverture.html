@@ -1,0 +1,67 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+    }
+    #ouverture-marque {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1080px;
+      height: 1920px;
+    }
+    #ouverture-logo {
+      position: absolute;
+      left: 450px;
+      top: 500px;
+      width: 180px;
+      height: 180px;
+    }
+    #ouverture-nom {
+      position: absolute;
+      left: 0;
+      top: 690px;
+      width: 1080px;
+      text-align: center;
+      font-family: var(--police-titre);
+      font-weight: 700;
+      font-size: 84px;
+      line-height: 1.1;
+      letter-spacing: -0.01em;
+      color: var(--encre);
+    }
+    #ouverture-nom em {
+      font-style: normal;
+      color: var(--orange-encre);
+    }
+  </style>
+  <div id="root" data-composition-id="ouverture" data-width="1080" data-height="1920">
+    <div id="ouverture-marque" class="clip" data-start="4.6" data-duration="6.3" data-track-index="0">
+      <img id="ouverture-logo" src="assets/marque/logo-transparent.png" alt="Petite Jérusalem" />
+      <div id="ouverture-nom">Petite <em>Jérusalem</em></div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      // The logo lands on « Voici », the name wipes in under it.
+      tl.fromTo(
+        "#ouverture-logo",
+        { opacity: 0, scale: 0.55, y: 60, rotation: -8 },
+        { opacity: 1, scale: 1, y: 0, rotation: 0, duration: 0.7, ease: "back.out(1.6)" },
+        4.6,
+      );
+      tl.fromTo(
+        "#ouverture-nom",
+        { clipPath: "inset(0% 100% 0% 0%)", y: 12 },
+        { clipPath: "inset(0% 0% 0% 0%)", y: 0, duration: 0.7, ease: "power3.out" },
+        5.1,
+      );
+      tl.to("#ouverture-logo", { opacity: 0, y: -40, scale: 0.9, duration: 0.4, ease: "power2.in" }, 10.4);
+      tl.to("#ouverture-nom", { opacity: 0, y: -30, duration: 0.4, ease: "power2.in" }, 10.45);
+      window.__timelines = window.__timelines || {};
+      window.__timelines["ouverture"] = tl;
+    })();
+  </script>
+</template>

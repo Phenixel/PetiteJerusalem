@@ -1,0 +1,30 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+    }
+  </style>
+  <div id="root" data-composition-id="suivi" data-width="1080" data-height="1920">
+    <!-- Mon parcours: the streak, « Chabbat et les fêtes ne la coupent pas ». -->
+    <div id="suivi-carte" class="clip" data-start="12.45" data-duration="2.05" data-track-index="0">
+      <div id="suivi-tel" class="telephone">
+        <div class="ecran"><img src="assets/ecrans/v4-parcours.jpg" alt="Mon parcours : 106 jours d'affilée" /></div>
+      </div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      tl.fromTo(
+        "#suivi-tel",
+        { opacity: 0, y: 140, scale: 0.92 },
+        { opacity: 1, y: 0, scale: 1, duration: 0.55, ease: "power3.out" },
+        12.5,
+      );
+      tl.to("#suivi-tel", { opacity: 0, y: 90, scale: 0.95, duration: 0.35, ease: "power2.in" }, 14.1);
+      window.__timelines = window.__timelines || {};
+      window.__timelines["suivi"] = tl;
+    })();
+  </script>
+</template>

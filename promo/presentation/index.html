@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <script src="assets/gsap.min.js"></script>
+    <style>
+      @font-face {
+        font-family: "Manrope";
+        font-weight: 400;
+        src: url("assets/fonts/manrope-latin-400-normal.woff2") format("woff2");
+      }
+      @font-face {
+        font-family: "Manrope";
+        font-weight: 500;
+        src: url("assets/fonts/manrope-latin-500-normal.woff2") format("woff2");
+      }
+      @font-face {
+        font-family: "Manrope";
+        font-weight: 600;
+        src: url("assets/fonts/manrope-latin-600-normal.woff2") format("woff2");
+      }
+      @font-face {
+        font-family: "Manrope";
+        font-weight: 700;
+        src: url("assets/fonts/manrope-latin-700-normal.woff2") format("woff2");
+      }
+      @font-face {
+        font-family: "Manrope";
+        font-weight: 800;
+        src: url("assets/fonts/manrope-latin-800-normal.woff2") format("woff2");
+      }
+      @font-face {
+        font-family: "Playfair Display";
+        font-weight: 500;
+        src: url("assets/fonts/playfair-display-latin-500-normal.woff2") format("woff2");
+      }
+      @font-face {
+        font-family: "Playfair Display";
+        font-weight: 600;
+        src: url("assets/fonts/playfair-display-latin-600-normal.woff2") format("woff2");
+      }
+      @font-face {
+        font-family: "Playfair Display";
+        font-weight: 700;
+        src: url("assets/fonts/playfair-display-latin-700-normal.woff2") format("woff2");
+      }
+      @font-face {
+        font-family: "Playfair Display";
+        font-style: italic;
+        font-weight: 600;
+        src: url("assets/fonts/playfair-display-latin-600-italic.woff2") format("woff2");
+      }
+      @font-face {
+        font-family: "Playfair Display";
+        font-style: italic;
+        font-weight: 700;
+        src: url("assets/fonts/playfair-display-latin-700-italic.woff2") format("woff2");
+      }
+      /* The app's tokens (docs/design.md, sections 1, 2 and 8). */
+      :root {
+        --fond: #fff9f3;
+        --surface: #ffffff;
+        --encre: #35312a;
+        --encre-douce: #6d6759;
+        --orange-logo: #fea547;
+        --orange: #eb9f4f;
+        --orange-encre: #d46d01;
+        --bleu-logo: #539ee2;
+        --bleu: #328cdc;
+        --nuit: #1f2937;
+        --nuit-encre: #f3f4f6;
+        --boitier: #1e1b18;
+        --ombre-carte: 0 2px 6px rgba(122, 90, 64, 0.1), 0 10px 28px rgba(122, 90, 64, 0.14);
+        --ombre-pop: 0 6px 16px rgba(122, 90, 64, 0.16), 0 24px 56px rgba(122, 90, 64, 0.24);
+        --police-titre: "Playfair Display", Georgia, serif;
+        --police: "Manrope", sans-serif;
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+        background: var(--fond);
+      }
+      #root {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        font-family: var(--police);
+        color: var(--encre);
+      }
+      /* The phone that carries a real screen, facing the viewer, never tilted. */
+      .telephone {
+        position: absolute;
+        left: 240px;
+        top: 556px;
+        width: 600px;
+        height: 1040px;
+        padding: 16px;
+        border-radius: 74px;
+        background: var(--boitier);
+        box-shadow: var(--ombre-pop);
+      }
+      .telephone .ecran {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        border-radius: 58px;
+        overflow: hidden;
+        background: var(--fond);
+      }
+      .telephone .ecran img {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: top;
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      id="root"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="86"
+      data-width="1080"
+      data-height="1920"
+    >
+      <div
+        id="monde"
+        data-composition-id="monde"
+        data-composition-src="compositions/monde.html"
+        data-start="0"
+        data-duration="86"
+        data-track-index="0"
+        data-track-kind="graphics"
+        data-width="1080"
+        data-height="1920"
+      ></div>
+      <div
+        id="ouverture"
+        data-composition-id="ouverture"
+        data-composition-src="compositions/ouverture.html"
+        data-start="0"
+        data-duration="11"
+        data-track-index="1"
+        data-track-kind="graphics"
+        data-width="1080"
+        data-height="1920"
+      ></div>
+      <div
+        id="partage"
+        data-composition-id="partage"
+        data-composition-src="compositions/partage.html"
+        data-start="11"
+        data-duration="15"
+        data-track-index="1"
+        data-track-kind="graphics"
+        data-width="1080"
+        data-height="1920"
+      ></div>
+      <div
+        id="etude"
+        data-composition-id="etude"
+        data-composition-src="compositions/etude.html"
+        data-start="26"
+        data-duration="13"
+        data-track-index="1"
+        data-track-kind="graphics"
+        data-width="1080"
+        data-height="1920"
+      ></div>
+      <div
+        id="priere"
+        data-composition-id="priere"
+        data-composition-src="compositions/priere.html"
+        data-start="39"
+        data-duration="10.5"
+        data-track-index="1"
+        data-track-kind="graphics"
+        data-width="1080"
+        data-height="1920"
+      ></div>
+      <div
+        id="objectifs"
+        data-composition-id="objectifs"
+        data-composition-src="compositions/objectifs.html"
+        data-start="49.5"
+        data-duration="13"
+        data-track-index="1"
+        data-track-kind="graphics"
+        data-width="1080"
+        data-height="1920"
+      ></div>
+      <div
+        id="suivi"
+        data-composition-id="suivi"
+        data-composition-src="compositions/suivi.html"
+        data-start="62.5"
+        data-duration="14.5"
+        data-track-index="1"
+        data-track-kind="graphics"
+        data-width="1080"
+        data-height="1920"
+      ></div>
+      <div
+        id="fin"
+        data-composition-id="fin"
+        data-composition-src="compositions/fin.html"
+        data-start="77"
+        data-duration="9"
+        data-track-index="1"
+        data-track-kind="graphics"
+        data-width="1080"
+        data-height="1920"
+      ></div>
+      <div
+        id="sous-titres"
+        data-composition-id="sous-titres"
+        data-composition-src="compositions/sous-titres.html"
+        data-start="0"
+        data-duration="86"
+        data-track-index="2"
+        data-track-kind="captions"
+        data-width="1080"
+        data-height="1920"
+      ></div>
+      <audio
+        id="musique"
+        src="assets/musique.wav"
+        data-start="0"
+        data-duration="86"
+        data-track-index="10"
+        data-volume="0.18"
+        data-fade-out="2.5"
+      ></audio>
+      <audio id="voix-l01" src="assets/voix/l01.wav" data-start="0.5" data-duration="3.389" data-track-index="11" data-volume="1.58"></audio>
+      <audio id="voix-l02" src="assets/voix/l02.wav" data-start="4.5" data-duration="5.844" data-track-index="11" data-volume="1.58"></audio>
+      <audio id="voix-l03" src="assets/voix/l03.wav" data-start="11.5" data-duration="7.56" data-track-index="11" data-volume="1.58"></audio>
+      <audio id="voix-l04" src="assets/voix/l04.wav" data-start="19.5" data-duration="5.609" data-track-index="11" data-volume="1.58"></audio>
+      <audio id="voix-l05" src="assets/voix/l05.wav" data-start="26.5" data-duration="2.675" data-track-index="11" data-volume="1.58"></audio>
+      <audio id="voix-l06" src="assets/voix/l06.wav" data-start="30" data-duration="5.518" data-track-index="11" data-volume="1.58"></audio>
+      <audio id="voix-l07" src="assets/voix/l07.wav" data-start="36" data-duration="2.047" data-track-index="11" data-volume="1.58"></audio>
+      <audio id="voix-l08" src="assets/voix/l08.wav" data-start="39.5" data-duration="1.888" data-track-index="11" data-volume="1.58"></audio>
+      <audio id="voix-l09" src="assets/voix/l09.wav" data-start="42" data-duration="6.919" data-track-index="11" data-volume="1.58"></audio>
+      <audio id="voix-l10" src="assets/voix/l10.wav" data-start="50" data-duration="6.296" data-track-index="11" data-volume="1.58"></audio>
+      <audio id="voix-l11" src="assets/voix/l11.wav" data-start="57" data-duration="4.65" data-track-index="11" data-volume="1.58"></audio>
+      <audio id="voix-l12" src="assets/voix/l12.wav" data-start="63" data-duration="7.437" data-track-index="11" data-volume="1.58"></audio>
+      <audio id="voix-l13" src="assets/voix/l13.wav" data-start="71" data-duration="5.775" data-track-index="11" data-volume="1.58"></audio>
+      <audio id="voix-l14" src="assets/voix/l14.wav" data-start="78" data-duration="4.246" data-track-index="11" data-volume="1.58"></audio>
+    </div>
+    <script>
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = gsap.timeline({ paused: true });
+    </script>
+  </body>
+</html>

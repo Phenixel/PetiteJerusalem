@@ -1,0 +1,30 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+    }
+  </style>
+  <div id="root" data-composition-id="partage" data-width="1080" data-height="1920">
+    <!-- « Créez une session de lecture » : a real session, 150 Tehilim to share. -->
+    <div id="partage-carte" class="clip" data-start="2.0" data-duration="6.0" data-track-index="0">
+      <div id="partage-tel" class="telephone">
+        <div class="ecran"><img src="assets/ecrans/03-partage-session.jpg" alt="Session de lecture partagée" /></div>
+      </div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      tl.fromTo(
+        "#partage-tel",
+        { opacity: 0, y: 140, scale: 0.92 },
+        { opacity: 1, y: 0, scale: 1, duration: 0.6, ease: "power3.out" },
+        2.05,
+      );
+      tl.to("#partage-tel", { opacity: 0, y: 90, scale: 0.95, duration: 0.4, ease: "power2.in" }, 7.5);
+      window.__timelines = window.__timelines || {};
+      window.__timelines["partage"] = tl;
+    })();
+  </script>
+</template>

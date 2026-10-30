@@ -1,0 +1,1132 @@
+[
+ {
+  "id": "l01",
+  "chapitre": "accroche",
+  "debut": 0.5,
+  "fin": 3.889,
+  "mots": [
+   {
+    "mot": "Étudier,",
+    "debut": 0.5,
+    "fin": 1.069
+   },
+   {
+    "mot": "prier,",
+    "debut": 1.189,
+    "fin": 1.311
+   },
+   {
+    "mot": "partager :",
+    "debut": 1.431,
+    "fin": 2.025
+   },
+   {
+    "mot": "et",
+    "debut": 2.266,
+    "fin": 2.474
+   },
+   {
+    "mot": "si",
+    "debut": 2.474,
+    "fin": 2.682
+   },
+   {
+    "mot": "tout",
+    "debut": 2.682,
+    "fin": 2.89
+   },
+   {
+    "mot": "tenait",
+    "debut": 2.89,
+    "fin": 3.265
+   },
+   {
+    "mot": "dans",
+    "debut": 3.265,
+    "fin": 3.473
+   },
+   {
+    "mot": "votre",
+    "debut": 3.473,
+    "fin": 3.681
+   },
+   {
+    "mot": "poche ?",
+    "debut": 3.681,
+    "fin": 3.889
+   }
+  ],
+  "pauses": 1,
+  "clauses": 4
+ },
+ {
+  "id": "l02",
+  "chapitre": "accroche",
+  "debut": 4.5,
+  "fin": 10.344,
+  "mots": [
+   {
+    "mot": "Voici",
+    "debut": 4.5,
+    "fin": 4.93
+   },
+   {
+    "mot": "Petite",
+    "debut": 4.93,
+    "fin": 5.361
+   },
+   {
+    "mot": "Jérusalem :",
+    "debut": 5.361,
+    "fin": 6.174
+   },
+   {
+    "mot": "l'application",
+    "debut": 6.417,
+    "fin": 7.12
+   },
+   {
+    "mot": "gratuite",
+    "debut": 7.12,
+    "fin": 7.492
+   },
+   {
+    "mot": "et",
+    "debut": 7.492,
+    "fin": 7.698
+   },
+   {
+    "mot": "sans",
+    "debut": 7.698,
+    "fin": 7.905
+   },
+   {
+    "mot": "publicité",
+    "debut": 7.905,
+    "fin": 8.608
+   },
+   {
+    "mot": "pour",
+    "debut": 8.608,
+    "fin": 8.815
+   },
+   {
+    "mot": "vivre",
+    "debut": 8.815,
+    "fin": 9.021
+   },
+   {
+    "mot": "la",
+    "debut": 9.021,
+    "fin": 9.228
+   },
+   {
+    "mot": "Torah",
+    "debut": 9.228,
+    "fin": 9.6
+   },
+   {
+    "mot": "au",
+    "debut": 9.6,
+    "fin": 9.807
+   },
+   {
+    "mot": "quotidien.",
+    "debut": 9.807,
+    "fin": 10.344
+   }
+  ],
+  "pauses": 2,
+  "clauses": 2
+ },
+ {
+  "id": "l03",
+  "chapitre": "partage",
+  "debut": 11.5,
+  "fin": 19.06,
+  "mots": [
+   {
+    "mot": "Tout",
+    "debut": 11.5,
+    "fin": 11.734
+   },
+   {
+    "mot": "commence",
+    "debut": 11.734,
+    "fin": 12.155
+   },
+   {
+    "mot": "à",
+    "debut": 12.155,
+    "fin": 12.389
+   },
+   {
+    "mot": "plusieurs.",
+    "debut": 12.389,
+    "fin": 12.81
+   },
+   {
+    "mot": "Créez",
+    "debut": 13.102,
+    "fin": 13.338
+   },
+   {
+    "mot": "une",
+    "debut": 13.338,
+    "fin": 13.574
+   },
+   {
+    "mot": "session",
+    "debut": 13.574,
+    "fin": 13.999
+   },
+   {
+    "mot": "de",
+    "debut": 13.999,
+    "fin": 14.235
+   },
+   {
+    "mot": "lecture :",
+    "debut": 14.235,
+    "fin": 14.66
+   },
+   {
+    "mot": "les",
+    "debut": 14.865,
+    "fin": 15.103
+   },
+   {
+    "mot": "150",
+    "debut": 15.103,
+    "fin": 15.722
+   },
+   {
+    "mot": "Tehilim",
+    "debut": 15.722,
+    "fin": 16.341
+   },
+   {
+    "mot": "pour",
+    "debut": 16.341,
+    "fin": 16.58
+   },
+   {
+    "mot": "un",
+    "debut": 16.58,
+    "fin": 16.818
+   },
+   {
+    "mot": "proche,",
+    "debut": 16.818,
+    "fin": 17.056
+   },
+   {
+    "mot": "ou",
+    "debut": 17.177,
+    "fin": 17.397
+   },
+   {
+    "mot": "le",
+    "debut": 17.397,
+    "fin": 17.617
+   },
+   {
+    "mot": "Talmud,",
+    "debut": 17.617,
+    "fin": 18.013
+   },
+   {
+    "mot": "traité",
+    "debut": 18.094,
+    "fin": 18.472
+   },
+   {
+    "mot": "par",
+    "debut": 18.472,
+    "fin": 18.682
+   },
+   {
+    "mot": "traité.",
+    "debut": 18.682,
+    "fin": 19.06
+   }
+  ],
+  "pauses": 7,
+  "clauses": 5
+ },
+ {
+  "id": "l04",
+  "chapitre": "partage",
+  "debut": 19.5,
+  "fin": 25.109,
+  "mots": [
+   {
+    "mot": "Partagez",
+    "debut": 19.5,
+    "fin": 20.036
+   },
+   {
+    "mot": "le",
+    "debut": 20.036,
+    "fin": 20.242
+   },
+   {
+    "mot": "lien :",
+    "debut": 20.242,
+    "fin": 20.448
+   },
+   {
+    "mot": "chacun",
+    "debut": 20.701,
+    "fin": 21.075
+   },
+   {
+    "mot": "réserve",
+    "debut": 21.075,
+    "fin": 21.449
+   },
+   {
+    "mot": "sa",
+    "debut": 21.449,
+    "fin": 21.657
+   },
+   {
+    "mot": "part,",
+    "debut": 21.657,
+    "fin": 21.864
+   },
+   {
+    "mot": "la",
+    "debut": 21.984,
+    "fin": 22.224
+   },
+   {
+    "mot": "coche",
+    "debut": 22.224,
+    "fin": 22.464
+   },
+   {
+    "mot": "une",
+    "debut": 22.464,
+    "fin": 22.703
+   },
+   {
+    "mot": "fois",
+    "debut": 22.703,
+    "fin": 22.943
+   },
+   {
+    "mot": "lue,",
+    "debut": 22.943,
+    "fin": 23.183
+   },
+   {
+    "mot": "et",
+    "debut": 23.417,
+    "fin": 23.619
+   },
+   {
+    "mot": "la",
+    "debut": 23.619,
+    "fin": 23.82
+   },
+   {
+    "mot": "barre",
+    "debut": 23.82,
+    "fin": 24.021
+   },
+   {
+    "mot": "avance",
+    "debut": 24.021,
+    "fin": 24.384
+   },
+   {
+    "mot": "jusqu'au",
+    "debut": 24.384,
+    "fin": 24.908
+   },
+   {
+    "mot": "siyoum.",
+    "debut": 24.908,
+    "fin": 25.109
+   }
+  ],
+  "pauses": 2,
+  "clauses": 4
+ },
+ {
+  "id": "l05",
+  "chapitre": "etude",
+  "debut": 26.5,
+  "fin": 29.175,
+  "mots": [
+   {
+    "mot": "Votre",
+    "debut": 26.5,
+    "fin": 26.743
+   },
+   {
+    "mot": "téléphone",
+    "debut": 26.743,
+    "fin": 27.375
+   },
+   {
+    "mot": "devient",
+    "debut": 27.375,
+    "fin": 27.813
+   },
+   {
+    "mot": "aussi",
+    "debut": 27.813,
+    "fin": 28.251
+   },
+   {
+    "mot": "un",
+    "debut": 28.251,
+    "fin": 28.494
+   },
+   {
+    "mot": "centre",
+    "debut": 28.494,
+    "fin": 28.737
+   },
+   {
+    "mot": "d'étude.",
+    "debut": 28.737,
+    "fin": 29.175
+   }
+  ],
+  "pauses": 1,
+  "clauses": 1
+ },
+ {
+  "id": "l06",
+  "chapitre": "etude",
+  "debut": 30,
+  "fin": 35.518,
+  "mots": [
+   {
+    "mot": "Tehilim,",
+    "debut": 30,
+    "fin": 31.062
+   },
+   {
+    "mot": "Michna,",
+    "debut": 31.222,
+    "fin": 31.708
+   },
+   {
+    "mot": "Talmud,",
+    "debut": 31.794,
+    "fin": 31.884
+   },
+   {
+    "mot": "Tanakh,",
+    "debut": 32.004,
+    "fin": 32.094
+   },
+   {
+    "mot": "Halakha :",
+    "debut": 32.214,
+    "fin": 32.668
+   },
+   {
+    "mot": "toute",
+    "debut": 32.836,
+    "fin": 33.034
+   },
+   {
+    "mot": "une",
+    "debut": 33.034,
+    "fin": 33.231
+   },
+   {
+    "mot": "bibliothèque,",
+    "debut": 33.231,
+    "fin": 33.903
+   },
+   {
+    "mot": "lisible",
+    "debut": 34.02,
+    "fin": 34.442
+   },
+   {
+    "mot": "même",
+    "debut": 34.442,
+    "fin": 34.676
+   },
+   {
+    "mot": "hors",
+    "debut": 34.676,
+    "fin": 34.91
+   },
+   {
+    "mot": "connexion.",
+    "debut": 34.91,
+    "fin": 35.518
+   }
+  ],
+  "pauses": 4,
+  "clauses": 7
+ },
+ {
+  "id": "l07",
+  "chapitre": "etude",
+  "debut": 36,
+  "fin": 38.047,
+  "mots": [
+   {
+    "mot": "Et",
+    "debut": 36,
+    "fin": 36.175
+   },
+   {
+    "mot": "des",
+    "debut": 36.175,
+    "fin": 36.35
+   },
+   {
+    "mot": "chiourim",
+    "debut": 36.35,
+    "fin": 36.665
+   },
+   {
+    "mot": "à",
+    "debut": 36.665,
+    "fin": 36.84
+   },
+   {
+    "mot": "écouter,",
+    "debut": 36.84,
+    "fin": 37.295
+   },
+   {
+    "mot": "quand",
+    "debut": 37.42,
+    "fin": 37.585
+   },
+   {
+    "mot": "vous",
+    "debut": 37.585,
+    "fin": 37.75
+   },
+   {
+    "mot": "voulez.",
+    "debut": 37.75,
+    "fin": 38.047
+   }
+  ],
+  "pauses": 1,
+  "clauses": 2
+ },
+ {
+  "id": "l08",
+  "chapitre": "priere",
+  "debut": 39.5,
+  "fin": 41.388,
+  "mots": [
+   {
+    "mot": "La",
+    "debut": 39.5,
+    "fin": 39.72
+   },
+   {
+    "mot": "prière",
+    "debut": 39.72,
+    "fin": 39.939
+   },
+   {
+    "mot": "aussi",
+    "debut": 39.939,
+    "fin": 40.334
+   },
+   {
+    "mot": "est",
+    "debut": 40.334,
+    "fin": 40.554
+   },
+   {
+    "mot": "au",
+    "debut": 40.554,
+    "fin": 40.773
+   },
+   {
+    "mot": "même",
+    "debut": 40.773,
+    "fin": 40.993
+   },
+   {
+    "mot": "endroit.",
+    "debut": 40.993,
+    "fin": 41.388
+   }
+  ],
+  "pauses": 1,
+  "clauses": 1
+ },
+ {
+  "id": "l09",
+  "chapitre": "priere",
+  "debut": 42,
+  "fin": 48.919,
+  "mots": [
+   {
+    "mot": "Le",
+    "debut": 42,
+    "fin": 42.24
+   },
+   {
+    "mot": "Sidour",
+    "debut": 42.24,
+    "fin": 42.673
+   },
+   {
+    "mot": "s'ouvre",
+    "debut": 42.673,
+    "fin": 42.913
+   },
+   {
+    "mot": "sur",
+    "debut": 42.913,
+    "fin": 43.154
+   },
+   {
+    "mot": "l'office",
+    "debut": 43.154,
+    "fin": 43.586
+   },
+   {
+    "mot": "du",
+    "debut": 43.586,
+    "fin": 43.827
+   },
+   {
+    "mot": "moment,",
+    "debut": 43.827,
+    "fin": 44.067
+   },
+   {
+    "mot": "avec",
+    "debut": 44.339,
+    "fin": 44.714
+   },
+   {
+    "mot": "les",
+    "debut": 44.714,
+    "fin": 44.922
+   },
+   {
+    "mot": "horaires",
+    "debut": 44.922,
+    "fin": 45.297
+   },
+   {
+    "mot": "de",
+    "debut": 45.297,
+    "fin": 45.505
+   },
+   {
+    "mot": "votre",
+    "debut": 45.505,
+    "fin": 45.713
+   },
+   {
+    "mot": "ville :",
+    "debut": 45.713,
+    "fin": 45.922
+   },
+   {
+    "mot": "Cha'harit,",
+    "debut": 46.13,
+    "fin": 47.168
+   },
+   {
+    "mot": "Min'ha,",
+    "debut": 47.281,
+    "fin": 47.371
+   },
+   {
+    "mot": "Arvit,",
+    "debut": 47.491,
+    "fin": 47.581
+   },
+   {
+    "mot": "l'allumage",
+    "debut": 47.701,
+    "fin": 48.287
+   },
+   {
+    "mot": "des",
+    "debut": 48.287,
+    "fin": 48.513
+   },
+   {
+    "mot": "bougies.",
+    "debut": 48.513,
+    "fin": 48.919
+   }
+  ],
+  "pauses": 3,
+  "clauses": 6
+ },
+ {
+  "id": "l10",
+  "chapitre": "objectifs",
+  "debut": 50,
+  "fin": 56.296,
+  "mots": [
+   {
+    "mot": "Fixez-vous",
+    "debut": 50,
+    "fin": 50.586
+   },
+   {
+    "mot": "des",
+    "debut": 50.586,
+    "fin": 50.811
+   },
+   {
+    "mot": "objectifs :",
+    "debut": 50.811,
+    "fin": 51.397
+   },
+   {
+    "mot": "finir",
+    "debut": 51.632,
+    "fin": 51.987
+   },
+   {
+    "mot": "un",
+    "debut": 51.987,
+    "fin": 52.184
+   },
+   {
+    "mot": "traité",
+    "debut": 52.184,
+    "fin": 52.539
+   },
+   {
+    "mot": "avant",
+    "debut": 52.539,
+    "fin": 52.893
+   },
+   {
+    "mot": "une",
+    "debut": 52.893,
+    "fin": 53.09
+   },
+   {
+    "mot": "date,",
+    "debut": 53.09,
+    "fin": 53.287
+   },
+   {
+    "mot": "lire",
+    "debut": 53.481,
+    "fin": 53.689
+   },
+   {
+    "mot": "vos",
+    "debut": 53.689,
+    "fin": 53.896
+   },
+   {
+    "mot": "Tehilim",
+    "debut": 53.896,
+    "fin": 54.436
+   },
+   {
+    "mot": "chaque",
+    "debut": 54.436,
+    "fin": 54.81
+   },
+   {
+    "mot": "jour,",
+    "debut": 54.81,
+    "fin": 55.018
+   },
+   {
+    "mot": "garder",
+    "debut": 55.115,
+    "fin": 55.509
+   },
+   {
+    "mot": "une",
+    "debut": 55.509,
+    "fin": 55.727
+   },
+   {
+    "mot": "habitude.",
+    "debut": 55.727,
+    "fin": 56.296
+   }
+  ],
+  "pauses": 5,
+  "clauses": 4
+ },
+ {
+  "id": "l11",
+  "chapitre": "objectifs",
+  "debut": 57,
+  "fin": 61.65,
+  "mots": [
+   {
+    "mot": "L'application",
+    "debut": 57,
+    "fin": 57.738
+   },
+   {
+    "mot": "calcule",
+    "debut": 57.738,
+    "fin": 58.129
+   },
+   {
+    "mot": "la",
+    "debut": 58.129,
+    "fin": 58.346
+   },
+   {
+    "mot": "portion",
+    "debut": 58.346,
+    "fin": 58.737
+   },
+   {
+    "mot": "du",
+    "debut": 58.737,
+    "fin": 58.954
+   },
+   {
+    "mot": "jour",
+    "debut": 58.954,
+    "fin": 59.171
+   },
+   {
+    "mot": "et",
+    "debut": 59.171,
+    "fin": 59.389
+   },
+   {
+    "mot": "vous",
+    "debut": 59.389,
+    "fin": 59.606
+   },
+   {
+    "mot": "la",
+    "debut": 59.606,
+    "fin": 59.823
+   },
+   {
+    "mot": "rappelle.",
+    "debut": 59.823,
+    "fin": 60.214
+   },
+   {
+    "mot": "Un",
+    "debut": 60.498,
+    "fin": 60.692
+   },
+   {
+    "mot": "geste,",
+    "debut": 60.692,
+    "fin": 60.885
+   },
+   {
+    "mot": "et",
+    "debut": 61.005,
+    "fin": 61.22
+   },
+   {
+    "mot": "c'est",
+    "debut": 61.22,
+    "fin": 61.435
+   },
+   {
+    "mot": "fait.",
+    "debut": 61.435,
+    "fin": 61.65
+   }
+  ],
+  "pauses": 2,
+  "clauses": 3
+ },
+ {
+  "id": "l12",
+  "chapitre": "suivi",
+  "debut": 63,
+  "fin": 70.437,
+  "mots": [
+   {
+    "mot": "Chaque",
+    "debut": 63,
+    "fin": 63.425
+   },
+   {
+    "mot": "jour",
+    "debut": 63.425,
+    "fin": 63.662
+   },
+   {
+    "mot": "accompli",
+    "debut": 63.662,
+    "fin": 64.276
+   },
+   {
+    "mot": "pose",
+    "debut": 64.276,
+    "fin": 64.512
+   },
+   {
+    "mot": "une",
+    "debut": 64.512,
+    "fin": 64.748
+   },
+   {
+    "mot": "pierre.",
+    "debut": 64.748,
+    "fin": 64.985
+   },
+   {
+    "mot": "Semaine",
+    "debut": 65.322,
+    "fin": 65.72
+   },
+   {
+    "mot": "après",
+    "debut": 65.72,
+    "fin": 66.117
+   },
+   {
+    "mot": "semaine,",
+    "debut": 66.117,
+    "fin": 66.514
+   },
+   {
+    "mot": "votre",
+    "debut": 66.612,
+    "fin": 66.881
+   },
+   {
+    "mot": "mur",
+    "debut": 66.881,
+    "fin": 67.151
+   },
+   {
+    "mot": "se",
+    "debut": 67.151,
+    "fin": 67.42
+   },
+   {
+    "mot": "construit :",
+    "debut": 67.42,
+    "fin": 67.905
+   },
+   {
+    "mot": "votre",
+    "debut": 68.123,
+    "fin": 68.363
+   },
+   {
+    "mot": "mois",
+    "debut": 68.363,
+    "fin": 68.602
+   },
+   {
+    "mot": "d'un",
+    "debut": 68.602,
+    "fin": 68.841
+   },
+   {
+    "mot": "coup",
+    "debut": 68.841,
+    "fin": 69.081
+   },
+   {
+    "mot": "d'œil,",
+    "debut": 69.081,
+    "fin": 69.32
+   },
+   {
+    "mot": "puis",
+    "debut": 69.423,
+    "fin": 69.634
+   },
+   {
+    "mot": "toute",
+    "debut": 69.634,
+    "fin": 69.846
+   },
+   {
+    "mot": "votre",
+    "debut": 69.846,
+    "fin": 70.057
+   },
+   {
+    "mot": "année.",
+    "debut": 70.057,
+    "fin": 70.437
+   }
+  ],
+  "pauses": 5,
+  "clauses": 5
+ },
+ {
+  "id": "l13",
+  "chapitre": "suivi",
+  "debut": 71,
+  "fin": 76.775,
+  "mots": [
+   {
+    "mot": "Votre",
+    "debut": 71,
+    "fin": 71.258
+   },
+   {
+    "mot": "série",
+    "debut": 71.258,
+    "fin": 71.721
+   },
+   {
+    "mot": "allume",
+    "debut": 71.721,
+    "fin": 72.185
+   },
+   {
+    "mot": "une",
+    "debut": 72.185,
+    "fin": 72.443
+   },
+   {
+    "mot": "lumière,",
+    "debut": 72.443,
+    "fin": 72.906
+   },
+   {
+    "mot": "de",
+    "debut": 73.149,
+    "fin": 73.359
+   },
+   {
+    "mot": "la",
+    "debut": 73.359,
+    "fin": 73.569
+   },
+   {
+    "mot": "vieille",
+    "debut": 73.569,
+    "fin": 73.778
+   },
+   {
+    "mot": "lampe",
+    "debut": 73.778,
+    "fin": 73.988
+   },
+   {
+    "mot": "jusqu'aux",
+    "debut": 73.988,
+    "fin": 74.533
+   },
+   {
+    "mot": "étoiles ;",
+    "debut": 74.533,
+    "fin": 74.911
+   },
+   {
+    "mot": "Chabbat",
+    "debut": 75.124,
+    "fin": 75.462
+   },
+   {
+    "mot": "et",
+    "debut": 75.462,
+    "fin": 75.65
+   },
+   {
+    "mot": "les",
+    "debut": 75.65,
+    "fin": 75.837
+   },
+   {
+    "mot": "fêtes",
+    "debut": 75.837,
+    "fin": 76.025
+   },
+   {
+    "mot": "ne",
+    "debut": 76.025,
+    "fin": 76.212
+   },
+   {
+    "mot": "la",
+    "debut": 76.212,
+    "fin": 76.4
+   },
+   {
+    "mot": "coupent",
+    "debut": 76.4,
+    "fin": 76.587
+   },
+   {
+    "mot": "pas.",
+    "debut": 76.587,
+    "fin": 76.775
+   }
+  ],
+  "pauses": 4,
+  "clauses": 3
+ },
+ {
+  "id": "l14",
+  "chapitre": "fin",
+  "debut": 78,
+  "fin": 82.246,
+  "mots": [
+   {
+    "mot": "Petite",
+    "debut": 78,
+    "fin": 78.396
+   },
+   {
+    "mot": "Jérusalem.",
+    "debut": 78.396,
+    "fin": 79.144
+   },
+   {
+    "mot": "Gratuite,",
+    "debut": 79.413,
+    "fin": 79.688
+   },
+   {
+    "mot": "sans",
+    "debut": 79.808,
+    "fin": 80.031
+   },
+   {
+    "mot": "publicité,",
+    "debut": 80.031,
+    "fin": 80.787
+   },
+   {
+    "mot": "sur",
+    "debut": 80.907,
+    "fin": 81.146
+   },
+   {
+    "mot": "Android",
+    "debut": 81.146,
+    "fin": 81.577
+   },
+   {
+    "mot": "et",
+    "debut": 81.577,
+    "fin": 81.816
+   },
+   {
+    "mot": "iPhone.",
+    "debut": 81.816,
+    "fin": 82.246
+   }
+  ],
+  "pauses": 1,
+  "clauses": 4
+ }
+]

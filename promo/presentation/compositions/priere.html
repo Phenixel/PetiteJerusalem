@@ -1,0 +1,38 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+    }
+    #priere-horaires {
+      z-index: 2;
+    }
+  </style>
+  <div id="root" data-composition-id="priere" data-width="1080" data-height="1920">
+    <!-- The Sidour opens on the moment, then the times of the city. -->
+    <div id="priere-carte" class="clip" data-start="2.95" data-duration="4.1" data-track-index="0">
+      <div id="priere-tel" class="telephone">
+        <div class="ecran">
+          <img id="priere-sidour" src="assets/ecrans/v4-sidour.jpg" alt="Le Sidour, ouvert sur l'office du moment" />
+          <img id="priere-horaires" src="assets/ecrans/02-horaires.jpg" alt="Les horaires de Paris" />
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      const tl = gsap.timeline({ paused: true });
+      tl.fromTo(
+        "#priere-tel",
+        { opacity: 0, y: 140, scale: 0.92 },
+        { opacity: 1, y: 0, scale: 1, duration: 0.6, ease: "power3.out" },
+        3.0,
+      );
+      tl.fromTo("#priere-horaires", { xPercent: 100 }, { xPercent: 0, duration: 0.5, ease: "power3.inOut" }, 5.55);
+      tl.fromTo("#priere-sidour", { xPercent: 0 }, { xPercent: -30, duration: 0.5, ease: "power3.inOut" }, 5.55);
+      tl.to("#priere-tel", { opacity: 0, y: 90, scale: 0.95, duration: 0.4, ease: "power2.in" }, 6.6);
+      window.__timelines = window.__timelines || {};
+      window.__timelines["priere"] = tl;
+    })();
+  </script>
+</template>

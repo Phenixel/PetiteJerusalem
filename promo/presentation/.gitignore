@@ -1,0 +1,9 @@
+# Made by the scripts (README.md), never versioned: they are generated again.
+assets/ecrans/
+assets/marque/
+assets/fonts/
+assets/voix/
+assets/musique.wav
+renders/
+# HyperFrames' own state: snapshots, history, preview.
+.hyperframes/

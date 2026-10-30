@@ -1,0 +1,1025 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+    }
+    #monde-canvas {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1080px;
+      height: 1920px;
+    }
+    .monde-etiquette {
+      position: absolute;
+      left: 0;
+      top: 0;
+      opacity: 0;
+      padding: 12px 28px;
+      border-radius: 999px;
+      background: var(--surface);
+      box-shadow: var(--ombre-carte);
+      font-family: var(--police);
+      font-weight: 700;
+      font-size: 38px;
+      color: var(--encre);
+      white-space: nowrap;
+    }
+    .monde-semaine {
+      position: absolute;
+      left: 0;
+      top: 0;
+      opacity: 0;
+      font-family: var(--police);
+      font-weight: 600;
+      font-size: 30px;
+      color: var(--encre-douce);
+      white-space: nowrap;
+    }
+    .monde-compteur {
+      position: absolute;
+      left: 0;
+      top: 0;
+      opacity: 0;
+      display: flex;
+      align-items: baseline;
+      gap: 14px;
+      padding: 14px 30px;
+      border-radius: 999px;
+      background: var(--surface);
+      box-shadow: var(--ombre-carte);
+      white-space: nowrap;
+    }
+    #monde-jours {
+      font-family: var(--police-titre);
+      font-weight: 700;
+      font-size: 54px;
+      color: var(--orange-encre);
+    }
+    #monde-nom {
+      font-family: var(--police);
+      font-weight: 700;
+      font-size: 34px;
+      color: var(--encre);
+    }
+  </style>
+  <div id="root" data-composition-id="monde" data-width="1080" data-height="1920">
+    <canvas id="monde-canvas" width="1080" height="1920"></canvas>
+    <div id="monde-chaharit" class="monde-etiquette">Cha'harit</div>
+    <div id="monde-minha" class="monde-etiquette">Min'ha</div>
+    <div id="monde-arvit" class="monde-etiquette">Arvit</div>
+    <div id="monde-s1" class="monde-semaine">Haazinu</div>
+    <div id="monde-s2" class="monde-semaine">26&nbsp;sept.</div>
+    <div id="monde-s3" class="monde-semaine">3&nbsp;oct.</div>
+    <div id="monde-s4" class="monde-semaine">Berechit</div>
+    <div id="monde-s5" class="monde-semaine">Noah</div>
+    <div id="monde-lumiere" class="monde-compteur">
+      <span id="monde-jours">1</span><span id="monde-nom">La vieille lampe</span>
+    </div>
+  </div>
+  <script src="assets/three.min.js"></script>
+  <script>
+    (function () {
+      // The isometric world: one Three.js scene for the whole film, drawn
+      // from timeline time alone (a linear GSAP clock calls render(t)).
+      const THREE = window.THREE;
+      const W = 1080;
+      const H = 1920;
+      const DUREE = 86;
+
+      const horloge = { t: 0 };
+      let dessiner = null;
+      window.__hf = window.__hf || {};
+      window.__hf.buildReady = window.__hf.buildReady || {};
+      let pret;
+      window.__hf.buildReady["monde"] = new Promise((r) => (pret = r));
+      const tl = gsap.timeline({ paused: true });
+      tl.to(horloge, {
+        t: DUREE,
+        duration: DUREE,
+        ease: "none",
+        onUpdate: () => dessiner && dessiner(horloge.t),
+      });
+      window.__timelines = window.__timelines || {};
+      window.__timelines["monde"] = tl;
+
+      // --- Palette: docs/design.md, sections 1, 2 and 8 -------------------
+      const C = {
+        fond: 0xfff9f3,
+        nuit: 0x1f2937,
+        pierre: 0xe6d8ca,
+        brique: 0xd6c4b8,
+        joint: 0xc2ae9f,
+        orange: 0xfea547,
+        plein: 0xeb9f4f,
+        bleu: 0x539ee2,
+        bleuFonce: 0x328cdc,
+        papier: 0xfbf4ea,
+        boitier: 0x1e1b18,
+        bouton: 0x2e2925,
+        bois: 0xbfa27f,
+        dore: 0xd9a441,
+        terre: 0xb5603a,
+        cire: 0xf6eedf,
+        ruban: 0xc0392b,
+        peau: 0xf0dcc6,
+      };
+      const RELIURES = {
+        Tehilim: "#8b4a3a",
+        Michna: "#6a6234",
+        Talmud: "#6e4a30",
+        Tanakh: "#8c3a32",
+        Halakha: "#70452e",
+        Moussar: "#8a6a2c",
+      };
+
+      // --- Time helpers -----------------------------------------------------
+      const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+      const p = (t, a, d) => clamp((t - a) / d);
+      const outBack = (x) => {
+        const s = 1.5;
+        const y = x - 1;
+        return 1 + (s + 1) * y * y * y + s * y * y;
+      };
+      const outCubic = (x) => 1 - Math.pow(1 - x, 3);
+      const inOut = (x) => (x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2);
+      const lerp = (a, b, x) => a + (b - a) * x;
+      function hasard(seed) {
+        return function () {
+          seed = (seed + 0x6d2b79f5) | 0;
+          let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+          t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+          return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+      }
+      const anims = [];
+
+      // --- Renderer, camera, light ------------------------------------------
+      const canvas = document.getElementById("monde-canvas");
+      const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
+      renderer.setPixelRatio(1);
+      renderer.setSize(W, H, false);
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+      const scene = new THREE.Scene();
+      const FOND = new THREE.Color(C.fond);
+      const NUIT = new THREE.Color(C.nuit);
+      scene.background = FOND.clone();
+
+      const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 1, 400);
+      // The true isometric angle: azimuth 45 degrees, elevation 35.26.
+      const VISEE = new THREE.Vector3(1, 1, 1).normalize();
+      // Screen right and back, on the ground.
+      const DROITE = new THREE.Vector3(1, 0, -1).normalize();
+      const ARRIERE = new THREE.Vector3(-1, 0, -1).normalize();
+      const cible = new THREE.Vector3();
+      function placerCamera(V) {
+        const h = V / 2;
+        const w = h * (W / H);
+        camera.left = -w;
+        camera.right = w;
+        camera.top = h;
+        camera.bottom = -h;
+        camera.updateProjectionMatrix();
+        camera.position.copy(cible).addScaledVector(VISEE, 150);
+        camera.lookAt(cible);
+        // The focus sits 80 px below the frame's centre: the captions own the top.
+        camera.translateY(V * (80 / H));
+        camera.updateMatrixWorld();
+      }
+
+      const ciel = new THREE.HemisphereLight(0xffffff, 0xd9c4ae, 1.35);
+      scene.add(ciel);
+      const LUMIERE = new THREE.Vector3(0.42, 1, 0.78).normalize();
+      const soleil = new THREE.DirectionalLight(0xfff1e2, 2.2);
+      soleil.castShadow = true;
+      soleil.shadow.mapSize.set(2048, 2048);
+      soleil.shadow.bias = -0.0004;
+      soleil.shadow.normalBias = 0.03;
+      scene.add(soleil, soleil.target);
+
+      const solMat = new THREE.MeshBasicMaterial({ color: C.fond });
+      const sol = new THREE.Mesh(new THREE.PlaneGeometry(800, 800), solMat);
+      sol.rotation.x = -Math.PI / 2;
+      scene.add(sol);
+      const ombreMat = new THREE.ShadowMaterial({ color: 0x7a5a40, opacity: 0.16 });
+      const ombreSol = new THREE.Mesh(new THREE.PlaneGeometry(800, 800), ombreMat);
+      ombreSol.rotation.x = -Math.PI / 2;
+      ombreSol.position.y = 0.003;
+      ombreSol.receiveShadow = true;
+      scene.add(ombreSol);
+
+      // --- Builders ---------------------------------------------------------
+      const mats = new Map();
+      const mat = (c) => {
+        if (!mats.has(c)) mats.set(c, new THREE.MeshLambertMaterial({ color: c }));
+        return mats.get(c);
+      };
+      const plat = (c) => new THREE.MeshBasicMaterial({ color: c });
+      function maille(geo, m, parent, x = 0, y = 0, z = 0) {
+        const o = new THREE.Mesh(geo, typeof m === "number" ? mat(m) : m);
+        o.position.set(x, y, z);
+        o.castShadow = true;
+        o.receiveShadow = true;
+        parent.add(o);
+        return o;
+      }
+      // A box standing on y (its base), centred on x and z.
+      function boite(parent, w, h, d, m, x = 0, y = 0, z = 0) {
+        return maille(new THREE.BoxGeometry(w, h, d), m, parent, x, y + h / 2, z);
+      }
+      function cylindre(parent, r1, r2, h, m, x = 0, y = 0, z = 0, seg = 28) {
+        return maille(new THREE.CylinderGeometry(r1, r2, h, seg), m, parent, x, y + h / 2, z);
+      }
+      function groupe(parent, x = 0, y = 0, z = 0) {
+        const g = new THREE.Group();
+        g.position.set(x, y, z);
+        parent.add(g);
+        return g;
+      }
+      function rondRect(w, h, r) {
+        const s = new THREE.Shape();
+        const x = -w / 2;
+        const y = -h / 2;
+        s.moveTo(x + r, y);
+        s.lineTo(x + w - r, y);
+        s.quadraticCurveTo(x + w, y, x + w, y + r);
+        s.lineTo(x + w, y + h - r);
+        s.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+        s.lineTo(x + r, y + h);
+        s.quadraticCurveTo(x, y + h, x, y + h - r);
+        s.lineTo(x, y + r);
+        s.quadraticCurveTo(x, y, x + r, y);
+        return s;
+      }
+      function etoile(parent, r, prof, m) {
+        const s = new THREE.Shape();
+        for (let i = 0; i < 10; i++) {
+          const a = Math.PI / 2 + (i * Math.PI) / 5;
+          const rr = i % 2 ? r * 0.45 : r;
+          if (i) s.lineTo(Math.cos(a) * rr, Math.sin(a) * rr);
+          else s.moveTo(Math.cos(a) * rr, Math.sin(a) * rr);
+        }
+        s.closePath();
+        const geo = new THREE.ExtrudeGeometry(s, {
+          depth: prof,
+          bevelEnabled: true,
+          bevelThickness: prof * 0.25,
+          bevelSize: r * 0.06,
+          bevelSegments: 1,
+        });
+        geo.center();
+        const o = maille(geo, m, parent);
+        o.rotation.y = Math.PI / 4;
+        return o;
+      }
+      function flamme(parent, x, y, z, s = 1) {
+        const g = groupe(parent, x, y, z);
+        const ext = new THREE.Mesh(new THREE.ConeGeometry(0.1 * s, 0.34 * s, 14), plat(C.orange));
+        ext.position.y = 0.17 * s;
+        const int = new THREE.Mesh(new THREE.ConeGeometry(0.05 * s, 0.18 * s, 12), plat(0xffe3ad));
+        int.position.y = 0.1 * s;
+        g.add(ext, int);
+        return g;
+      }
+
+      // Text drawn on a canvas, for book covers, tiles and the calendar.
+      const textures = [];
+      function texture(w, h, dessin) {
+        const c = document.createElement("canvas");
+        c.width = w;
+        c.height = h;
+        const tex = new THREE.CanvasTexture(c);
+        tex.colorSpace = THREE.SRGBColorSpace;
+        tex.anisotropy = 4;
+        textures.push({ c, tex, dessin });
+        return tex;
+      }
+      function couverture(titre, couleur, sous = "") {
+        return texture(360, 500, (g, w, h) => {
+          g.fillStyle = couleur;
+          g.fillRect(0, 0, w, h);
+          g.strokeStyle = "#e3c27a";
+          g.lineWidth = 6;
+          g.strokeRect(26, 26, w - 52, h - 52);
+          g.lineWidth = 2;
+          g.strokeRect(40, 40, w - 80, h - 80);
+          g.fillStyle = "#ecd08e";
+          g.textAlign = "center";
+          g.textBaseline = "middle";
+          let taille = 78;
+          g.font = `600 ${taille}px "Playfair Display"`;
+          while (g.measureText(titre).width > w - 100 && taille > 30) {
+            taille -= 2;
+            g.font = `600 ${taille}px "Playfair Display"`;
+          }
+          g.fillText(titre, w / 2, h * 0.44);
+          // The fleuron: a diamond between two rules.
+          g.fillRect(w / 2 - 70, h * 0.56 - 1.5, 46, 3);
+          g.fillRect(w / 2 + 24, h * 0.56 - 1.5, 46, 3);
+          g.beginPath();
+          g.moveTo(w / 2, h * 0.56 - 12);
+          g.lineTo(w / 2 + 12, h * 0.56);
+          g.lineTo(w / 2, h * 0.56 + 12);
+          g.lineTo(w / 2 - 12, h * 0.56);
+          g.fill();
+          if (sous) {
+            g.font = `600 36px "Playfair Display"`;
+            g.fillText(sous, w / 2, h * 0.67);
+          }
+        });
+      }
+      function tuile(numero, couleur, encre, coche) {
+        const tex = texture(256, 256, (g, w, h) => {
+          g.fillStyle = couleur;
+          g.fillRect(0, 0, w, h);
+          g.fillStyle = encre;
+          g.textAlign = "center";
+          g.textBaseline = "middle";
+          g.font = `800 ${numero.length > 2 ? 104 : 124}px "Manrope"`;
+          g.fillText(numero, w / 2, coche ? h * 0.42 : h / 2);
+          if (coche) {
+            g.strokeStyle = encre;
+            g.lineWidth = 16;
+            g.lineCap = "round";
+            g.lineJoin = "round";
+            g.beginPath();
+            g.moveTo(w * 0.36, h * 0.76);
+            g.lineTo(w * 0.47, h * 0.86);
+            g.lineTo(w * 0.66, h * 0.66);
+            g.stroke();
+          }
+        });
+        return tex;
+      }
+
+      // ======================================================================
+      // The little Jerusalem, on the phone (the logo's pieces, in stone)
+      // ======================================================================
+      const ville = groupe(scene, 0, 0, 0);
+      const corps = maille(
+        new THREE.ExtrudeGeometry(rondRect(5.8, 11.4, 0.95), {
+          depth: 0.36,
+          bevelEnabled: true,
+          bevelThickness: 0.035,
+          bevelSize: 0.05,
+          bevelSegments: 2,
+          curveSegments: 10,
+        }).rotateX(-Math.PI / 2),
+        C.boitier,
+        ville,
+      );
+      const BASE = 0.4;
+      const ecranMat = plat(C.fond);
+      const ecran = new THREE.Mesh(new THREE.ShapeGeometry(rondRect(5.25, 10.85, 0.68), 10).rotateX(-Math.PI / 2), ecranMat);
+      ecran.position.y = BASE + 0.001;
+      ville.add(ecran);
+      const ecranOmbre = new THREE.Mesh(
+        new THREE.ShapeGeometry(rondRect(5.25, 10.85, 0.68), 10).rotateX(-Math.PI / 2),
+        new THREE.ShadowMaterial({ color: 0x7a5a40, opacity: 0.18 }),
+      );
+      ecranOmbre.position.y = BASE + 0.004;
+      ecranOmbre.receiveShadow = true;
+      ville.add(ecranOmbre);
+      const encoche = new THREE.Mesh(new THREE.ShapeGeometry(rondRect(1.7, 0.42, 0.21)).rotateX(-Math.PI / 2), plat(C.boitier));
+      encoche.position.set(0, BASE + 0.006, -4.98);
+      ville.add(encoche);
+      boite(ville, 0.08, 0.16, 1.3, C.bouton, 2.93, 0.12, -2.3);
+      boite(ville, 0.08, 0.16, 0.8, C.bouton, -2.93, 0.12, -2.9);
+
+      // The tower, at the back.
+      const tour = groupe(ville, -1.45, BASE, -3.3);
+      boite(tour, 1.6, 3.5, 1.6, C.brique);
+      for (const [cx, cz] of [
+        [-0.6, -0.6],
+        [0, -0.6],
+        [0.6, -0.6],
+        [-0.6, 0],
+        [0.6, 0],
+        [-0.6, 0.6],
+        [0, 0.6],
+        [0.6, 0.6],
+      ]) {
+        boite(tour, 0.4, 0.42, 0.4, C.brique, cx, 3.5, cz);
+      }
+      boite(tour, 0.2, 0.75, 0.05, 0x7a6352, 0, 2.2, 0.81);
+      boite(tour, 0.05, 0.75, 0.2, 0x7a6352, 0.81, 2.2, 0);
+      boite(tour, 0.05, 0.5, 0.2, 0x7a6352, 0.81, 1.0, 0);
+
+      // The wall, coming towards the viewer, with its battlements.
+      const muraille = groupe(ville, -1.6, BASE, 0);
+      {
+        const r = hasard(7);
+        const teintes = [0xe3d1c0, 0xd9c5b2, 0xe8d9c9, 0xd2bda9];
+        for (let rang = 0; rang < 3; rang++) {
+          const decal = rang % 2 ? 0.5 : 0;
+          for (let z = -2.4 + decal; z < 2.2; z += 1) {
+            const long = Math.min(0.96, 2.6 - z);
+            if (long < 0.3) continue;
+            boite(muraille, 0.8, 0.5, long, teintes[Math.floor(r() * 4)], 0, rang * 0.52, z + long / 2 - 0.48);
+          }
+        }
+        for (let z = -2.3; z < 2.2; z += 0.9) boite(muraille, 0.8, 0.38, 0.45, C.brique, 0, 1.56, z);
+      }
+
+      // The domed house, its drum and its orange dome.
+      const maison = groupe(ville, 0.95, BASE, -1.5);
+      boite(maison, 2.3, 1.3, 2.3, C.pierre);
+      cylindre(maison, 0.95, 0.95, 0.75, C.brique, 0, 1.3, 0, 32);
+      const coupole = maille(new THREE.SphereGeometry(0.98, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2), C.orange, maison, 0, 2.05, 0);
+      cylindre(maison, 0.05, 0.05, 0.45, C.plein, 0, 3.0, 0, 10);
+      maille(new THREE.SphereGeometry(0.12, 14, 10), C.plein, maison, 0, 3.5, 0);
+      boite(maison, 0.5, 0.8, 0.05, 0x7a6352, 0, 0, 1.16);
+
+      // Two cypresses, orange as in the logo.
+      function cypres(x, z, h) {
+        const g = groupe(ville, x, BASE, z);
+        cylindre(g, 0.08, 0.1, 0.4, 0x8a5a3a, 0, 0, 0, 10);
+        const f = maille(new THREE.SphereGeometry(0.5, 20, 16), C.plein, g, 0, 0.35 + h / 2, 0);
+        f.scale.set(0.85, h, 0.85);
+        return g;
+      }
+      const cypres1 = cypres(2.1, -3.7, 2.6);
+      const cypres2 = cypres(2.1, 0.75, 2.0);
+
+      // The open book, in front, blue as in the logo.
+      function livreOuvert(parent, x, y, z, s = 1) {
+        const g = groupe(parent, x, y, z);
+        g.scale.setScalar(s);
+        boite(g, 3.5, 0.1, 2.3, C.bleuFonce);
+        const gauche = boite(g, 1.62, 0.2, 2.1, C.papier, -0.84, 0.1, 0);
+        gauche.rotation.z = 0.12;
+        const droite = boite(g, 1.62, 0.2, 2.1, C.papier, 0.84, 0.1, 0);
+        droite.rotation.z = -0.12;
+        boite(g, 0.08, 0.12, 2.12, C.bleuFonce, 0, 0.1, 0);
+        return g;
+      }
+      const livre = livreOuvert(ville, 0.45, BASE, 3.75);
+
+      // The star, falling onto the city.
+      const etoileVille = etoile(ville, 0.85, 0.3, C.bleu);
+
+      // The candles of the prayer chapter, left of the book.
+      const bougies = [];
+      const chandeliers = [];
+      for (const z of [3.2, 4.1]) {
+        const g = groupe(ville, -2.25, BASE, z);
+        cylindre(g, 0.19, 0.19, 0.07, C.dore, 0, 0, 0, 18);
+        cylindre(g, 0.15, 0.15, 1.05, C.cire, 0, 0.07, 0, 18);
+        const f = flamme(g, 0, 1.12, 0, 2.0);
+        bougies.push(f);
+        chandeliers.push(g);
+      }
+
+      // The sun of the prayer chapter, and the stars of the evening.
+      const astre = new THREE.Mesh(new THREE.SphereGeometry(0.78, 28, 18), plat(C.orange));
+      scene.add(astre);
+      const soirees = [];
+      {
+        const pos = [
+          [-4.3, 6.4, 0x539ee2, 0.42],
+          [-2.5, 7.6, 0xfea547, 0.32],
+          [3.4, 7.3, 0x539ee2, 0.46],
+          [4.6, 5.2, 0xfea547, 0.3],
+          [-4.9, 4.4, 0xfea547, 0.34],
+        ];
+        for (const [dx, y, c, r] of pos) {
+          const e = etoile(scene, r, 0.12, plat(c));
+          e.castShadow = false;
+          e.position.copy(DROITE.clone().multiplyScalar(dx).addScaledVector(ARRIERE, 3.5)).setY(y);
+          soirees.push(e);
+        }
+      }
+
+      // Rising out of the screen, in the hook.
+      function surgir(obj, debut, duree = 0.55, profondeur = 4.5) {
+        const y0 = obj.position.y;
+        anims.push((t) => {
+          const x = p(t, debut, duree);
+          obj.visible = t >= debut;
+          obj.position.y = y0 - (1 - outBack(x)) * profondeur;
+        });
+      }
+      function eclore(obj, debut, duree = 0.45, fin = Infinity) {
+        anims.push((t) => {
+          const x = p(t, debut, duree);
+          obj.visible = t >= debut && t < fin;
+          obj.scale.setScalar(Math.max(0.0001, outBack(x)));
+        });
+      }
+      surgir(livre, 0.35, 0.6, 1.2);
+      surgir(tour, 0.9, 0.6, 4.4);
+      surgir(muraille, 1.15, 0.6, 2.4);
+      surgir(maison, 1.45, 0.6, 3.6);
+      surgir(cypres1, 1.75, 0.55, 3.2);
+      surgir(cypres2, 1.95, 0.55, 3.2);
+      chandeliers.forEach((g, i) => surgir(g, 2.15 + i * 0.1, 0.5, 1.4));
+      anims.push((t) => {
+        const x = p(t, 3.2, 0.7);
+        etoileVille.visible = t >= 3.2;
+        const e = 1 - Math.pow(1 - x, 2.2);
+        etoileVille.position.set(-0.3, lerp(15, 6.5, e) + (x >= 1 ? 0 : 0), -2.4);
+        etoileVille.rotation.y = Math.PI / 4 + (1 - outCubic(x)) * Math.PI * 4;
+        const rebond = x >= 1 ? Math.max(0, 1 - (t - 3.9) / 0.35) : 0;
+        etoileVille.scale.setScalar(1 + 0.18 * Math.sin(rebond * Math.PI));
+      });
+
+      // ======================================================================
+      // Sharing: readers around a book, their parts, the bar to the siyoum
+      // ======================================================================
+      const PARTAGE = new THREE.Vector3(0, 0, -24);
+      const partage = groupe(scene, PARTAGE.x, 0, PARTAGE.z);
+      cylindre(partage, 3.1, 3.1, 0.36, C.pierre, 0, 0, 0, 56);
+      boite(partage, 1.3, 0.75, 1.0, C.brique, 0, 0.36, 0);
+      livreOuvert(partage, 0, 1.11, 0, 0.42);
+      const lecteurs = [];
+      const COULEURS_LECTEURS = [C.plein, C.bleu, 0xc9b29c, C.plein, C.bleu, 0xc9b29c];
+      for (let i = 0; i < 6; i++) {
+        const a = ((i * 60 + 30) * Math.PI) / 180;
+        const g = groupe(partage, Math.cos(a) * 2.35, 0.36, Math.sin(a) * 2.35);
+        cylindre(g, 0.3, 0.42, 1.0, COULEURS_LECTEURS[i], 0, 0, 0, 22);
+        maille(new THREE.SphereGeometry(0.3, 20, 14), C.peau, g, 0, 1.3, 0);
+        lecteurs.push(g);
+        eclore(g, 11.65 + i * 0.12, 0.45);
+      }
+      const NUMEROS = ["1", "23", "51", "91", "121", "150"];
+      const tuiles = NUMEROS.map((n, i) => {
+        const pierre = mat(C.pierre);
+        const faces = [
+          pierre,
+          pierre,
+          new THREE.MeshLambertMaterial({ map: tuile(n, "#e6d8ca", "#35312a", false) }),
+          new THREE.MeshLambertMaterial({ map: tuile(n, "#eb9f4f", "#ffffff", true) }),
+          pierre,
+          pierre,
+        ];
+        const o = maille(new THREE.BoxGeometry(0.82, 0.12, 0.82), faces, partage);
+        const l = lecteurs[i].position;
+        const depart = new THREE.Vector3(0, 1.45, 0);
+        const arrivee = new THREE.Vector3(l.x * 0.96, 2.35, l.z * 0.96);
+        anims.push((t) => {
+          const apparition = 20.35 + i * 0.05;
+          const vol = 20.8 + i * 0.1;
+          const retourne = 22.15 + i * 0.09;
+          o.visible = t >= apparition;
+          const s = outBack(p(t, apparition, 0.3));
+          o.scale.setScalar(Math.max(0.0001, s));
+          const e = inOut(p(t, vol, 0.6));
+          o.position.lerpVectors(depart, arrivee, e);
+          o.position.y += Math.sin(Math.PI * e) * 1.3 + (e === 0 ? i * 0.13 : 0);
+          o.rotation.x = Math.PI * inOut(p(t, retourne, 0.32));
+        });
+        return o;
+      });
+      const barre = [];
+      {
+        const devant = new THREE.Vector3(3.15, 0, 3.15);
+        for (let i = 0; i < 10; i++) {
+          const pos = devant.clone().addScaledVector(DROITE, (i - 4.5) * 0.64);
+          const seg = boite(partage, 0.58, 0.26, 0.5, C.brique, pos.x, 0, pos.z);
+          seg.rotation.y = Math.PI / 4;
+          barre.push(seg);
+          anims.push((t) => {
+            const x = p(t, 19.6 + i * 0.04, 0.35);
+            seg.visible = t >= 19.6 + i * 0.04;
+            seg.scale.set(1, Math.max(0.0001, outBack(x)), 1);
+            const plein = t >= 23.45 + i * 0.15;
+            seg.material = mat(plein ? C.plein : C.brique);
+            const saut = plein ? Math.sin(Math.PI * p(t, 23.45 + i * 0.15, 0.22)) : 0;
+            seg.position.y = 0.13 + saut * 0.25;
+          });
+        }
+      }
+      // The siyoum: flat confetti, thrown once, at rest where they land.
+      {
+        const r = hasard(41);
+        const couleurs = [C.plein, C.bleu, C.orange, 0xffffff, C.bleuFonce];
+        const origine = new THREE.Vector3(3.15, 0.4, 3.15);
+        for (let i = 0; i < 46; i++) {
+          const o = maille(new THREE.BoxGeometry(0.18, 0.03, 0.11), couleurs[i % couleurs.length], partage);
+          o.castShadow = false;
+          const v = new THREE.Vector3((r() - 0.5) * 6, 7 + r() * 5, (r() - 0.5) * 6);
+          const w = new THREE.Vector3(r() * 14, r() * 14, r() * 14);
+          const debut = 25.0 + r() * 0.12;
+          const G = 20;
+          anims.push((t) => {
+            o.visible = t >= debut;
+            if (!o.visible) return;
+            let dt = t - debut;
+            const sol = Math.hypot(origine.x + v.x * dt, origine.z + v.z * dt) < 3.05 ? 0.39 : 0.02;
+            // The time it reaches the ground, solved once per frame.
+            const a = -G / 2;
+            const disc = v.y * v.y - 4 * a * (origine.y - sol);
+            const tSol = (-v.y - Math.sqrt(disc)) / (2 * a);
+            if (dt > tSol) dt = tSol;
+            o.position.set(origine.x + v.x * dt * 0.55, origine.y + v.y * dt + a * dt * dt, origine.z + v.z * dt * 0.55);
+            o.rotation.set(w.x * dt, w.y * dt, w.z * dt);
+            if (dt >= tSol) o.rotation.set(0, w.y * dt, 0);
+          });
+        }
+      }
+
+      // ======================================================================
+      // Study: the shelf of the library, and its books
+      // ======================================================================
+      const ETUDE = new THREE.Vector3(24, 0, -24);
+      const etude = groupe(scene, ETUDE.x, 0, ETUDE.z);
+      const etagere = groupe(etude, 0, 0, 0);
+      boite(etagere, 0.6, 0.85, 1.6, C.brique, -3.6, 0, 0);
+      boite(etagere, 0.6, 0.85, 1.6, C.brique, 3.6, 0, 0);
+      boite(etagere, 8.2, 0.24, 1.8, C.bois, 0, 0.85, 0);
+      boite(etagere, 8.2, 2.3, 0.2, C.bois, 0, 0.85, -0.8);
+      surgir(etagere, 26.55, 0.6, 3.5);
+      const TITRES = ["Tehilim", "Michna", "Talmud", "Tanakh", "Halakha", "Moussar"];
+      const NOMMES = [30.0, 31.2, 31.8, 32.0, 32.2];
+      TITRES.forEach((titre, i) => {
+        const reliure = new THREE.MeshLambertMaterial({ color: RELIURES[titre] });
+        const pages = mat(C.papier);
+        const faces = [reliure, pages, pages, pages, new THREE.MeshLambertMaterial({ map: couverture(titre, RELIURES[titre]) }), reliure];
+        const g = groupe(etude, -3.25 + i * 1.3, 1.09, 0.05);
+        const o = maille(new THREE.BoxGeometry(1.12, 1.6, 0.34), faces, g, 0, 0.8, 0);
+        o.rotation.x = -0.08;
+        anims.push((t) => {
+          const x = p(t, 26.95 + i * 0.1, 0.45);
+          g.visible = t >= 26.95 + i * 0.1;
+          g.scale.setScalar(Math.max(0.0001, outBack(x)));
+          let leve = 0;
+          if (i < NOMMES.length) leve = Math.max(leve, Math.sin(Math.PI * p(t, NOMMES[i], 0.9)));
+          leve = Math.max(leve, 0.6 * Math.sin(Math.PI * p(t, 32.8 + i * 0.05, 0.5)));
+          g.position.y = 1.09 + leve * 0.55;
+          g.position.z = 0.05 + leve * 0.35;
+        });
+      });
+
+      // ======================================================================
+      // Goals: three plinths, one per kind of goal
+      // ======================================================================
+      const OBJECTIFS = new THREE.Vector3(24, 0, 0);
+      const objectifs = groupe(scene, OBJECTIFS.x, 0, OBJECTIFS.z);
+      const socles = [0, 1, 2].map((j) => {
+        const pos = DROITE.clone().multiplyScalar((j - 1) * 2.75);
+        const g = groupe(objectifs, pos.x, 0, pos.z);
+        boite(g, 2.4, 0.8, 2.4, C.pierre);
+        return g;
+      });
+      // 1. Finish a tractate by a date: the book, and the date on a calendar.
+      {
+        const g = groupe(socles[0], 0, 0.8, 0);
+        const talmud = new THREE.MeshLambertMaterial({ color: RELIURES.Talmud });
+        const pages = mat(C.papier);
+        maille(
+          new THREE.BoxGeometry(1.3, 0.3, 1.7),
+          [talmud, pages, new THREE.MeshLambertMaterial({ map: couverture("Talmud", RELIURES.Talmud) }), talmud, pages, pages],
+          g,
+          -0.3,
+          0.15,
+          0.2,
+        ).rotation.y = Math.PI / 2;
+        const cal = maille(
+          new THREE.BoxGeometry(0.95, 1.05, 0.2),
+          [
+            mat(0xffffff),
+            mat(0xffffff),
+            mat(C.plein),
+            mat(0xffffff),
+            new THREE.MeshLambertMaterial({
+              map: texture(256, 280, (c, w, h) => {
+                c.fillStyle = "#ffffff";
+                c.fillRect(0, 0, w, h);
+                c.fillStyle = "#eb9f4f";
+                c.fillRect(0, 0, w, 70);
+                c.fillStyle = "#35312a";
+                c.textAlign = "center";
+                c.textBaseline = "middle";
+                c.font = `800 120px "Manrope"`;
+                c.fillText("13", w / 2, 160);
+                c.font = `700 40px "Manrope"`;
+                c.fillStyle = "#6d6759";
+                c.fillText("nov.", w / 2, 238);
+              }),
+            }),
+            mat(0xffffff),
+          ],
+          g,
+          0.55,
+          0.52,
+          -0.55,
+        );
+        cal.rotation.y = -0.25;
+        socles[0].userData.objet = g;
+      }
+      // 2. Read your Tehilim every day: the volume, its red ribbon waiting.
+      let ruban;
+      {
+        const g = groupe(socles[1], 0, 0.8, 0);
+        const rel = new THREE.MeshLambertMaterial({ color: RELIURES.Tehilim });
+        const pages = mat(C.papier);
+        maille(
+          new THREE.BoxGeometry(1.35, 0.34, 1.8),
+          [rel, rel, new THREE.MeshLambertMaterial({ map: couverture("Tehilim", RELIURES.Tehilim, "Chaque jour") }), rel, pages, pages],
+          g,
+          0,
+          0.17,
+          0,
+        );
+        ruban = groupe(g, 0.35, 0.16, 0.9);
+        boite(ruban, 0.16, 0.025, 0.34, C.ruban, 0, 0, 0.17);
+        boite(ruban, 0.16, 0.6, 0.025, C.ruban, 0, -0.6, 0.34);
+        socles[1].userData.objet = g;
+      }
+      // 3. Keep a habit: its week, seven boxes ticked one by one.
+      const semaine = [];
+      {
+        const g = groupe(socles[2], 0, 0.8, 0);
+        for (let i = 0; i < 7; i++) {
+          const pos = DROITE.clone().multiplyScalar((i - 3) * 0.32);
+          const o = boite(g, 0.27, 0.27, 0.27, C.brique, pos.x, 0, pos.z);
+          semaine.push(o);
+          anims.push((t) => {
+            const fait = t >= 55.3 + i * 0.14;
+            o.material = mat(fait ? C.plein : C.brique);
+            o.position.y = 0.135 + (fait ? Math.sin(Math.PI * p(t, 55.3 + i * 0.14, 0.25)) * 0.3 : 0);
+          });
+        }
+        socles[2].userData.objet = g;
+      }
+      [51.5, 53.35, 55.0].forEach((debut, j) => {
+        surgir(socles[j], debut, 0.55, 1.6);
+        eclore(socles[j].userData.objet, debut + 0.2, 0.45);
+      });
+      anims.push((t) => {
+        const x = p(t, 61.45, 0.35);
+        ruban.visible = x < 1;
+        ruban.scale.set(1, Math.max(0.0001, 1 - outCubic(x)), Math.max(0.0001, 1 - outCubic(x)));
+      });
+
+      // ======================================================================
+      // The wall of Mon parcours: a stone a day, a column a week. The app
+      // draws Sunday at the top; built in stone, the week rises from Sunday
+      // at the bottom to Chabbat, white, on top, so no stone hangs in the air.
+      // ======================================================================
+      const SUIVI = new THREE.Vector3(0, 0, 26);
+      const suivi = groupe(scene, SUIVI.x, 0, SUIVI.z);
+      const COLONNES = 52;
+      const colX = (k) => (k - (COLONNES - 1)) * 0.98 + 0.1;
+      {
+        const r = hasard(1306);
+        const teintes = [0xe6d5bf, 0xddc9af, 0xe9ddca, 0xd9c3a6];
+        // The month: the last five weeks, in the order of the days.
+        const mois = [];
+        for (let k = COLONNES - 5; k < COLONNES; k++) {
+          for (let rang = 0; rang < 7; rang++) {
+            if (k === COLONNES - 1 && rang > 4) continue; // Friday and Chabbat: still to come
+            mois.push([k, rang]);
+          }
+        }
+        const quand = new Map();
+        mois.forEach(([k, rang], i) => {
+          const t = i < 3 ? 63.75 + i * 0.45 : lerp(65.2, 67.3, (i - 3) / (mois.length - 4));
+          quand.set(`${k}-${rang}`, t);
+        });
+        for (let k = 0; k < COLONNES; k++) {
+          for (let rang = 0; rang < 7; rang++) {
+            const cle = `${k}-${rang}`;
+            const auMois = quand.has(cle);
+            if (k === COLONNES - 1 && rang > 4) continue;
+            const chabbat = rang === 6;
+            const tirage = r();
+            const aujourdhui = k === COLONNES - 1 && rang === 4;
+            // A hollow: a day with nothing checked. Never in the first stones shown.
+            if (!chabbat && !aujourdhui && tirage < 0.035 && !(auMois && mois.findIndex(([a, b]) => a === k && b === rang) < 3)) continue;
+            const moitie = !chabbat && !aujourdhui && tirage > 0.93;
+            const couleur = aujourdhui ? 0xf3c08c : chabbat ? 0xfbf7f0 : teintes[Math.floor(r() * 4)];
+            const prof = moitie ? 0.3 : 0.62;
+            const o = boite(suivi, 0.92, 0.46, prof, couleur, colX(k), rang * 0.5, moitie ? -0.16 : 0);
+            const debut = auMois ? quand.get(cle) : 69.3 + (COLONNES - 6 - k) * 0.026 + rang * 0.012;
+            const duree = auMois ? 0.32 : 0.26;
+            const z0 = o.position.z;
+            anims.push((t) => {
+              const x = p(t, debut, duree);
+              o.visible = t >= debut;
+              o.scale.setScalar(Math.max(0.0001, outBack(x)));
+              o.position.z = z0 + (1 - outCubic(x)) * 1.4;
+            });
+          }
+        }
+      }
+      // The pedestal of the streak's lights, at today's end of the wall.
+      const PIED = new THREE.Vector3(3.9, 0, 0);
+      const pied = groupe(suivi, PIED.x, 0, PIED.z);
+      boite(pied, 1.2, 1.1, 1.2, C.brique);
+      surgir(pied, 71.5, 0.55, 2.0);
+      const lumieres = groupe(suivi, PIED.x, 1.1, PIED.z);
+      lumieres.scale.setScalar(1.45);
+      const lampe = groupe(lumieres);
+      {
+        const corpsLampe = maille(new THREE.SphereGeometry(0.5, 24, 16), C.terre, lampe, 0, 0.22, 0);
+        corpsLampe.scale.set(1.1, 0.48, 0.72);
+        const bec = maille(new THREE.CylinderGeometry(0.1, 0.14, 0.5, 14), C.terre, lampe, 0.55, 0.26, 0);
+        bec.rotation.z = Math.PI / 2 - 0.25;
+        maille(new THREE.TorusGeometry(0.16, 0.05, 8, 18, Math.PI), C.terre, lampe, -0.6, 0.3, 0).rotation.y = Math.PI / 2;
+      }
+      const flammeLampe = flamme(lampe, 0.8, 0.3, 0, 1.5);
+      const bougie = groupe(lumieres);
+      cylindre(bougie, 0.18, 0.18, 0.95, C.cire, 0, 0, 0, 20);
+      flamme(bougie, 0, 0.95, 0, 1.4);
+      const menorah = groupe(lumieres);
+      {
+        cylindre(menorah, 0.35, 0.4, 0.12, C.dore, 0, 0, 0, 24);
+        cylindre(menorah, 0.06, 0.06, 0.8, C.dore, 0, 0.12, 0, 12);
+        const bras = boite(menorah, 1.6, 0.08, 0.08, C.dore, 0, 0.88, 0);
+        bras.rotation.y = Math.PI / 4;
+        for (let i = 0; i < 7; i++) {
+          const pos = DROITE.clone().multiplyScalar((i - 3) * 0.25);
+          cylindre(menorah, 0.045, 0.045, 0.2, C.cire, pos.x, 0.96, pos.z, 10);
+          flamme(menorah, pos.x, 1.16, pos.z, 0.8);
+        }
+      }
+      const lune = groupe(lumieres);
+      maille(new THREE.SphereGeometry(0.5, 28, 20), 0xf1e4c3, lune, 0, 0.8, 0);
+      const etoiles = groupe(lumieres);
+      etoile(etoiles, 0.42, 0.14, C.orange).position.set(0, 0.95, 0);
+      etoile(etoiles, 0.28, 0.12, C.bleu).position.set(-0.55, 0.55, 0.3);
+      etoile(etoiles, 0.24, 0.1, C.bleu).position.set(0.5, 1.45, -0.3);
+      const SERIE = [
+        [lampe, 72.0, "1", "La vieille lampe"],
+        [bougie, 73.55, "3", "La bougie"],
+        [menorah, 73.85, "14", "La ménorah"],
+        [lune, 74.15, "30", "La lune"],
+        [etoiles, 74.45, "75", "Les étoiles"],
+      ];
+      SERIE.forEach(([o, debut], i) => {
+        const fin = SERIE[i + 1] ? SERIE[i + 1][1] : Infinity;
+        eclore(o, debut, i === 0 ? 0.45 : 0.22, fin);
+      });
+      anims.push((t) => {
+        flammeLampe.scale.setScalar(Math.max(0.0001, outBack(p(t, 72.3, 0.4))));
+      });
+
+      // --- The camera's route -------------------------------------------------
+      // [time, target x, y, z, view height in world units, flight]
+      const ROUTE = [
+        [0, 0.1, 1.3, 0.2, 22.5, 0],
+        [3.8, 0.1, 1.5, 0.2, 21.6, 0],
+        [5.6, 0.2, 6.0, 0.4, 25.0, 0],
+        [10.8, 0.2, 6.0, 0.4, 25.6, 0],
+        [12.5, 0, 1.4, -24, 18.5, 1],
+        [25.8, 0, 1.4, -24, 19.2, 0],
+        [27.5, 24, 1.6, -24, 18.0, 1],
+        [38.9, 24, 1.6, -24, 18.6, 0],
+        [40.8, 0.2, 2.6, 0.4, 22.0, 1],
+        [49.4, 0.2, 2.6, 0.4, 22.6, 0],
+        [51.2, 24, 1.2, 0, 18.6, 1],
+        [62.5, 24, 1.2, 0, 19.2, 0],
+        [63.6, -1.86, 1.75, 26, 12.5, 1],
+        [69.2, -1.86, 1.75, 26, 13.4, 0],
+        [70.8, -22, 2.0, 26, 64, 0],
+        [71.2, -22, 2.0, 26, 64.5, 0],
+        [72.5, 2.4, 2.1, 26, 12.0, 0],
+        [77.0, 2.4, 2.1, 26, 12.6, 0],
+        [78.7, 0.2, 6.1, 0.4, 25.0, 1],
+        [86, 0.2, 6.1, 0.4, 25.6, 0],
+      ];
+      function route(t) {
+        let i = 0;
+        while (i < ROUTE.length - 2 && t >= ROUTE[i + 1][0]) i++;
+        const a = ROUTE[i];
+        const b = ROUTE[i + 1];
+        const e = inOut(p(t, a[0], b[0] - a[0]));
+        cible.set(lerp(a[1], b[1], e), lerp(a[2], b[2], e), lerp(a[3], b[3], e));
+        let V = lerp(a[4], b[4], e);
+        if (b[5]) V += Math.sin(Math.PI * e) * 0.3 * Math.max(a[4], b[4]);
+        return V;
+      }
+
+      // --- The prayer: the sun's course, evening, the candles -------------------
+      const COURSE = [
+        [39.2, 178],
+        [41.6, 150],
+        [46.0, 150],
+        [46.35, 128],
+        [46.6, 128],
+        [46.95, 74],
+        [47.15, 74],
+        [47.75, -16],
+      ];
+      function angleSoleil(t) {
+        let i = 0;
+        while (i < COURSE.length - 2 && t >= COURSE[i + 1][0]) i++;
+        const a = COURSE[i];
+        const b = COURSE[i + 1];
+        return lerp(a[1], b[1], inOut(p(t, a[0], b[0] - a[0])));
+      }
+      const posSoleil = (deg) => {
+        const th = (deg * Math.PI) / 180;
+        return DROITE.clone()
+          .multiplyScalar(Math.cos(th) * 4.8)
+          .addScaledVector(ARRIERE, 3.5)
+          .setY(0.5 + Math.sin(th) * 5.8);
+      };
+      const nuit = (t) => Math.min(p(t, 47.35, 0.45), 1 - p(t, 49.25, 0.7));
+
+      // --- Labels anchored in the world ---------------------------------------
+      const v = new THREE.Vector3();
+      function versEcran(pos) {
+        v.copy(pos).project(camera);
+        return [((v.x + 1) / 2) * W, ((1 - v.y) / 2) * H];
+      }
+      function poser(el, pos, opacite, dy = 0, monte = 0) {
+        el.style.opacity = opacite.toFixed(3);
+        if (opacite <= 0) return;
+        const [x, y] = versEcran(pos);
+        el.style.transform = `translate(${x.toFixed(1)}px, ${(y + dy + monte).toFixed(1)}px) translate(-50%, -50%)`;
+      }
+      const fondu = (t, debut, fin, d = 0.25) => Math.min(p(t, debut, d), 1 - p(t, fin, d));
+      const etiquettes = [
+        [document.getElementById("monde-chaharit"), 46.15, 128],
+        [document.getElementById("monde-minha"), 46.75, 74],
+        [document.getElementById("monde-arvit"), 47.35, 16],
+      ];
+      const semaines = [1, 2, 3, 4, 5].map((i) => document.getElementById(`monde-s${i}`));
+      const compteur = document.getElementById("monde-lumiere");
+      const jours = document.getElementById("monde-jours");
+      const nom = document.getElementById("monde-nom");
+      const couleurNuit = new THREE.Color();
+
+      dessiner = (t) => {
+        for (const a of anims) a(t);
+
+        // Evening falls flat: the ground and the light, never a gradient.
+        const n = nuit(t);
+        couleurNuit.copy(FOND).lerp(NUIT, n);
+        scene.background.copy(couleurNuit);
+        solMat.color.copy(couleurNuit);
+        ciel.intensity = lerp(1.35, 0.75, n);
+        soleil.intensity = lerp(2.2, 0.55, n);
+        soleil.color.setHex(n > 0.5 ? 0xa9c4eb : 0xfff1e2);
+        ombreMat.opacity = lerp(0.16, 0.3, n);
+        const th = angleSoleil(t);
+        astre.visible = t >= 39.2 && t < 47.75;
+        astre.position.copy(posSoleil(th));
+        soirees.forEach((e, i) => {
+          const x = p(t, 47.6 + i * 0.07, 0.3) * (1 - p(t, 49.2, 0.4));
+          e.visible = x > 0;
+          e.scale.setScalar(Math.max(0.0001, outBack(Math.min(1, x))));
+        });
+        bougies.forEach((f, i) => {
+          f.visible = t >= 47.95 + i * 0.18;
+          f.scale.setScalar(Math.max(0.0001, outBack(p(t, 47.95 + i * 0.18, 0.35))));
+        });
+
+        // The camera, and the shadow that follows it.
+        const V = route(t);
+        placerCamera(V);
+        const r = V * 0.8;
+        soleil.position.copy(cible).addScaledVector(LUMIERE, 60);
+        soleil.target.position.copy(cible);
+        const sc = soleil.shadow.camera;
+        sc.left = -r;
+        sc.right = r;
+        sc.top = r;
+        sc.bottom = -r;
+        sc.near = 1;
+        sc.far = 140;
+        sc.updateProjectionMatrix();
+
+        renderer.render(scene, camera);
+
+        // Labels, placed on what they name.
+        for (const [el, debut, deg] of etiquettes) {
+          poser(el, posSoleil(deg), fondu(t, debut, 47.95), -92, (1 - outCubic(p(t, debut, 0.3))) * 20);
+        }
+        semaines.forEach((el, i) => {
+          const pos = new THREE.Vector3(SUIVI.x + colX(COLONNES - 5 + i), 0, SUIVI.z + 0.9);
+          poser(el, pos, fondu(t, 67.9 + i * 0.08, 69.15, 0.22), 30, (1 - outCubic(p(t, 67.9 + i * 0.08, 0.3))) * 16);
+        });
+        let palier = SERIE[0];
+        for (const s of SERIE) if (t >= s[1]) palier = s;
+        if (jours.textContent !== palier[2]) jours.textContent = palier[2];
+        if (nom.textContent !== palier[3]) nom.textContent = palier[3];
+        const piedHaut = new THREE.Vector3(SUIVI.x + PIED.x, 3.9, SUIVI.z + PIED.z);
+        poser(compteur, piedHaut, fondu(t, 72.2, 75.0, 0.3), -40);
+      };
+
+      // The covers and tiles are drawn once the fonts are there.
+      Promise.all([
+        document.fonts.load('600 80px "Playfair Display"'),
+        document.fonts.load('800 80px "Manrope"'),
+        document.fonts.load('700 40px "Manrope"'),
+      ])
+        .catch(() => null)
+        .then(() => {
+          for (const { c, tex, dessin } of textures) {
+            dessin(c.getContext("2d"), c.width, c.height);
+            tex.needsUpdate = true;
+          }
+          dessiner(horloge.t);
+          pret();
+        });
+      dessiner(0);
+    })();
+  </script>
+</template>
