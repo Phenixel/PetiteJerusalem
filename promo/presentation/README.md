@@ -43,7 +43,7 @@ npm run assets                # screens, logo, fonts and sounds
 npm run voix                  # narration, word timings, the audio tracks in index.html
 npm run musique               # the music bed
 npm run check                 # HyperFrames: lint, runtime, layout, contrast
-npm run render                # renders/petite-jerusalem-iso.mp4, about 30 minutes
+npm run render                # renders/petite-jerusalem-iso.mp4 (about 20 minutes), sound at -14 LUFS
 ```
 
 `npm run dev` opens the HyperFrames Studio to review and adjust a frame;

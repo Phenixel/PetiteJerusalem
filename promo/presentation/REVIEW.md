@@ -25,6 +25,10 @@
   and the review sheets (`snapshot --review`).
 - The voice, the music and the sounds were **measured, not heard**: levels
   (`npx hyperframes audio`), and each effect placed on its measured peak.
+  The render came out at -17.2 LUFS; `scripts/normaliser.mjs` brings it to
+  -14.3 LUFS with its true peak at -1.3 dBTP, no clipping. The rendered file
+  is 68 s, 1080 x 1920, H.264 and AAC, and its decoded frames match the
+  snapshots.
   The word timings are estimated from the voice's pauses and the syllables,
   not transcribed: a title can lead or trail its word by a few tenths.
 - Nobody checked the Kokoro pronunciation by ear; the respellings
