@@ -1531,6 +1531,18 @@ switches); the circle becomes the cross that closes. Held by
 `src/__tests__/readingMenu.test.ts` (« garde un seul bouton rond, les
 réglages, quand le sommaire n'a rien d'autre que le haut de page »).
 
+A chapter of Mishna and a siman of halakha have no heading inside them, yet
+one looks for a precise mishna or se'if in them: without landmarks they fell
+under the rule above, and whoever wanted the fourth mishna of a chapter had
+to scroll for it. Each mishna, each se'if is therefore a landmark of its
+own (`lineLandmarks`, `useReadingNav.ts`): « Michna 4 » or « Séif 4 », then
+its opening words in Hebrew, cut by an ellipsis, since a mishna is
+remembered by how it opens more than by its number. The two circles come
+back. A Tanakh chapter, the daily Tehilim or the chnei mikra keep a single
+circle: they are read through, not searched verse by verse. Held by
+`src/__tests__/readingMenu.test.ts` (« fait de chaque michna un repère, sous
+son numéro et ses premiers mots »).
+
 These settings are the ones you change **while** reading, not before:
 auto-scroll (the same switch as in Preferences, see "A gesture that
 surprises must be able to be turned off") and, on a service, « sans
@@ -1690,14 +1702,28 @@ the daily reading. Chnei mikra is read over the course of the week, an
 aliyah or two at a time, and one checks it off where one stops reading. The
 aliyah's title above the text stays a plain marker.
 
-At the top of the page, under the paracha's name, a bar says where the week
-stands (« Montées lues : 3 sur 7 », "Aliyot read: 3 of 7", its percentage,
-and the `ProgressBar`), fourteen for a double paracha. No card around it
-and no list of the aliyot: an earlier version put a card « Les montées de
-la semaine » above the text, with the seven aliyot by name to tick, and a
-pill beside each title in the text; two ways of doing one thing, and a
-frame more at the top of a page that is already long. The owner asked for
-the pattern of the Tehilim instead.
+At the top of the page, right under the paracha's name, seven dots say
+where the week stands: one per aliyah, solid in the theme color once read,
+a ring until then (fourteen for a double paracha, a wider gap between its
+two halves). They replace the bar « Montées lues : 3 sur 7 » that sat lower
+down with its percentage: the dots say the same thing in the place one
+looks first, and they also say **which** aliyot are read, not only how
+many. The sentence stays for screen readers. They show the same way when
+the page is opened from Mon parcours (« une montée par jour ») or on its
+own.
+
+The paracha's name is the button that opens the week's aliyot, in a bottom
+sheet (`ChneiMikraAliyotSheet.vue`): a row per aliyah, the ring of
+« Marquer comme lue » filling with its check. It is there for whoever reads
+chnei mikra in a printed book, or has read an aliyah elsewhere, and does not
+want to scroll to the end of an aliyah to check it off. These are the same
+checks as the buttons in the text. An earlier version had put the list
+in a card « Les montées de la semaine » above the text, always open, with a
+pill beside each title in the text: two ways of doing one thing in plain
+sight, and a frame more at the top of a long page. The list now waits
+behind the name, closed until asked for. Held by
+`src/__tests__/chneiMikraPage.test.ts` (« dit sous le nom de la paracha les
+montées lues, et les coche depuis ce nom »).
 
 The checks are stored by week (the Chabbat of the paracha): the following
 week starts from zero, and browsing back to a past paracha finds its own.
@@ -1705,6 +1731,24 @@ They are kept in Mon parcours, carried along by the account and tied to the
 « une montée par jour » ("one aliyah a day") chnei mikra (see
 `docs/parcours.md`). The daily reading, which also shows chnei mikra, does
 not carry them: it already has « Marquer lu » per section.
+
+### The verse number opens the verse, and the text is justified
+
+In a text that numbers its verses (a chapter of Tanakh, of Mishna, a siman
+of halakha), the number is written at the start of the verse, inside its
+first line, small, in the theme color and in Manrope (`.verse-num`), as in
+a printed book. It used to hold a column of its own in the margin, and all
+the height of the verse under it was lost width; in Hebrew, where the text
+starts on the right, the column took even more. It stays out of a selection
+and out of what the table of study sets aside.
+
+Every reading text is **justified**: the Hebrew, the phonetics, the
+translation, the Targum and Rashi of the chnei mikra, the gemara and the
+commentaries of the study panel, like the tefilot already were. Aligned on
+both edges, a verse fills the width of a small phone instead of leaving a
+ragged margin. The last line of a paragraph stays aligned to its start, and
+the Latin text is hyphenated (`hyphens: auto`) so that justified lines do
+not open wide gaps.
 
 ### The translation reads under the verse
 

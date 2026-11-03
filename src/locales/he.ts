@@ -2018,6 +2018,8 @@ const he: LocaleMessages = {
     aliyaDone: "נקראה",
     aliyaCheck: "{aliya} נקראה",
     progress: "עליות שנקראו: {done} מתוך {total}",
+    aliyotTitle: "עליות השבוע",
+    aliyotHint: "סמנו את העליות שקראתם, כאן או בספר.",
   },
   tehilimDay: {
     title: "תהילים יומי",
