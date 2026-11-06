@@ -10,11 +10,35 @@ const IDB_LOST =
   "UnknownError: Connection to Indexed Database server lost. Refresh the page to try again";
 const IDB_CLOSING =
   "InvalidStateError: Failed to execute 'transaction' on 'IDBDatabase': The database connection is closing.";
+const IDB_NO_TRANSACTION =
+  "UnknownError: Attempt to get a record from database without an in-progress transaction";
+const FIRESTORE_ABORT = "AbortError: signal is aborted without reason";
 
 describe("isIgnoredException", () => {
   it("écarte la perte de connexion IndexedDB (WebKit, polling Firebase Auth)", () => {
     expect(isIgnoredException([IDB_LOST])).toBe(true);
     expect(isIgnoredException([IDB_CLOSING])).toBe(true);
+  });
+
+  it("drops the read left without a transaction by the same WebKit suspension", () => {
+    expect(isIgnoredException([IDB_NO_TRANSACTION])).toBe(true);
+  });
+
+  it("drops the stream Firestore aborts when a listener goes away", () => {
+    expect(isIgnoredException([FIRESTORE_ABORT])).toBe(true);
+    // A real abort of ours, with its reason, stays visible.
+    expect(isIgnoredException(["AbortError: signal is aborted without reason, twice"])).toBe(false);
+  });
+
+  it("drops the resize notifications the browser could not deliver in one frame", () => {
+    expect(isIgnoredException(["ResizeObserver loop limit exceeded"])).toBe(true);
+    expect(
+      isIgnoredException(["ResizeObserver loop completed with undelivered notifications."]),
+    ).toBe(true);
+    // An error of ours that names a ResizeObserver stays visible.
+    expect(isIgnoredException(["TypeError: ResizeObserver loop guard is not a function"])).toBe(
+      false,
+    );
   });
 
   it("écarte la « Script error. » opaque des scripts injectés cross-origin", () => {
