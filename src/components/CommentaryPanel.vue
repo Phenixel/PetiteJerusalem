@@ -10,6 +10,7 @@ import { sideBySide } from "../composables/useSideBySide";
 import { useOverlay } from "../composables/useOverlayStack";
 import { STUDY_MIN, TEXT_ROOM, useStudyWidth } from "../composables/useStudyWidth";
 import { analyticsService } from "../services/analyticsService";
+import { prefersLessMotion } from "../composables/useMotion";
 import { COMMENTARY_LABELS, type CommentaryGroup } from "../composables/usePassageCommentaries";
 import type { TranslationSource } from "../services/textService";
 
@@ -65,6 +66,72 @@ watch(
 );
 
 const isEmpty = computed(() => props.state === "ready" && props.groups.length === 0);
+
+// ---- Moving between commentators -------------------------------------------
+// With several commentaries (Bartenura and Tossefot Yom Tov, Rashi and
+// Tossafot), a row of tabs at the top of the panel names them: a tap scrolls
+// to that commentator, and the tab of the one being read follows the reading.
+
+/** The tabs only show when there is more than one commentator to reach. */
+const showNav = computed(() => props.state === "ready" && props.groups.length > 1);
+const activeSource = ref<string | null>(null);
+const sections = new Map<string, HTMLElement>();
+function setSection(source: string, el: unknown): void {
+  if (el instanceof HTMLElement) sections.set(source, el);
+  else sections.delete(source);
+}
+
+/** The panel's scrolling body (BottomSheet), where the commentators follow each other. */
+function scroller(): HTMLElement | null {
+  return body.value?.closest(".sheet-body") ?? null;
+}
+
+/** Room left above a commentator reached from its tab. */
+const JUMP_MARGIN = 12;
+/** A scroll caused by a tap does not move the tabs on its way down. */
+let jumping: ReturnType<typeof setTimeout> | undefined;
+
+function jumpTo(source: string, index: number): void {
+  const el = sections.get(source);
+  const box = scroller();
+  if (!el || !box) return;
+  activeSource.value = source;
+  clearTimeout(jumping);
+  jumping = setTimeout(() => (jumping = undefined), 600);
+  const top = el.getBoundingClientRect().top - box.getBoundingClientRect().top + box.scrollTop;
+  box.scrollTo({
+    top: Math.max(0, top - JUMP_MARGIN),
+    behavior: prefersLessMotion() ? "auto" : "smooth",
+  });
+  analyticsService.capture("commentaries_jumped", { source, position: index });
+}
+
+/** The commentator being read: the last one whose name has gone past the top. */
+function followReading(): void {
+  if (!showNav.value || jumping !== undefined) return;
+  const box = scroller();
+  if (!box) return;
+  const limit = box.getBoundingClientRect().top + JUMP_MARGIN * 3;
+  let current = props.groups[0]?.source ?? null;
+  for (const group of props.groups) {
+    const el = sections.get(group.source);
+    if (el && el.getBoundingClientRect().top <= limit) current = group.source;
+  }
+  // At the very bottom, the last commentator is the one read, however short.
+  if (box.scrollTop + box.clientHeight >= box.scrollHeight - 2) {
+    current = props.groups[props.groups.length - 1]?.source ?? current;
+  }
+  activeSource.value = current;
+}
+
+// Each passage starts again on its first commentator.
+watch(
+  () => [props.place, props.groups] as const,
+  () => {
+    activeSource.value = props.groups[0]?.source ?? null;
+  },
+  { immediate: true },
+);
 
 /** The sources of the translation, when the passage shows one. */
 const shownSources = computed<TranslationSource[]>(() =>
@@ -161,13 +228,18 @@ function captureResize(): void {
 }
 
 watch(sideBySide, () => void nextTick(measureWidth));
+let scrollBox: HTMLElement | null = null;
 onMounted(() => {
+  scrollBox = scroller();
+  scrollBox?.addEventListener("scroll", followReading, { passive: true });
   window.addEventListener("keydown", onKeydown);
   window.addEventListener("resize", measureWidth);
   measureWidth();
 });
 onBeforeUnmount(() => {
   open.value = false;
+  clearTimeout(jumping);
+  scrollBox?.removeEventListener("scroll", followReading);
   window.removeEventListener("keydown", onKeydown);
   window.removeEventListener("resize", measureWidth);
   setResizing(false);
@@ -203,7 +275,7 @@ onBeforeUnmount(() => {
       >
         <span class="study-resizer-grip" aria-hidden="true"></span>
       </div>
-      <header class="commentary-head">
+      <header class="commentary-head" :class="{ 'has-nav': showNav }">
         <div class="min-w-0">
           <p class="commentary-title">{{ t("textReading.commentaries.title") }}</p>
           <p class="commentary-place">{{ place }}</p>
@@ -217,6 +289,27 @@ onBeforeUnmount(() => {
           <AppIcon name="x" :size="16" />
         </button>
       </header>
+      <!-- Several commentators: one tab each, to go from one to the other. -->
+      <div v-if="showNav" class="commentary-nav-wrap">
+        <nav
+          class="commentary-nav"
+          data-sheet-nodrag
+          :aria-label="t('textReading.commentaries.nav')"
+        >
+          <button
+            v-for="(group, index) in groups"
+            :key="group.source"
+            type="button"
+            class="commentary-tab"
+            :class="{ 'is-active': activeSource === group.source }"
+            :aria-current="activeSource === group.source ? 'true' : undefined"
+            @click="jumpTo(group.source, index)"
+          >
+            {{ t(COMMENTARY_LABELS[group.source]) }}
+            <span class="commentary-tab-count">{{ group.comments.length }}</span>
+          </button>
+        </nav>
+      </div>
     </template>
 
     <div ref="body" class="commentary-body">
@@ -231,7 +324,12 @@ onBeforeUnmount(() => {
       </p>
       <template v-else>
         <TranslationAiNotice :sources="shownSources" class="commentary-ai" />
-        <section v-for="group in groups" :key="group.source" class="commentary-group">
+        <section
+          v-for="group in groups"
+          :key="group.source"
+          :ref="(el) => setSection(group.source, el)"
+          class="commentary-group"
+        >
           <h3 class="commentary-source">
             {{ t(COMMENTARY_LABELS[group.source]) }}
             <span class="commentary-count">{{ group.comments.length }}</span>
@@ -349,6 +447,77 @@ onBeforeUnmount(() => {
   font-weight: 700;
   line-height: 1.3;
   color: var(--color-text-primary);
+}
+
+/* The commentators, one tab each, under the place: the segmented control of
+   the reading menu (a tinted track, the active one on a surface pill). It
+   scrolls sideways when the names do not fit, without dragging the sheet. */
+/* Under the place, the tabs take the header's rule below them. */
+.commentary-head.has-nav {
+  padding-bottom: 0.5rem;
+  border-bottom: 0;
+}
+
+.commentary-nav-wrap {
+  padding: 0 1rem 0.6rem 1.25rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-text-primary) 8%, transparent);
+}
+
+.commentary-nav {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.125rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  touch-action: pan-x;
+  border-radius: var(--radius-btn);
+  background-color: color-mix(in srgb, var(--color-text-primary) 6%, transparent);
+}
+
+.commentary-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.commentary-tab {
+  display: inline-flex;
+  flex: 1 0 auto;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.35rem;
+  min-height: 2.25rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: var(--radius-segment);
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--color-text-secondary);
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.commentary-tab.is-active {
+  background-color: var(--color-surface);
+  color: var(--color-primary);
+  box-shadow: var(--shadow-card);
+}
+
+.commentary-tab:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
+
+.commentary-tab-count {
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.75;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .commentary-tab {
+    transition: none;
+  }
 }
 
 /* Le corps du volet défile (BottomSheet) : ici, la marge du texte seulement. */

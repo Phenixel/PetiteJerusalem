@@ -1628,6 +1628,7 @@ const he: LocaleMessages = {
     commentaries: {
       open: "מפרשים",
       title: "מפרשים",
+      nav: "המפרשים על הקטע",
       rashi: "רש״י",
       rashbam: "רשב״ם",
       mefaresh: "מפרש",

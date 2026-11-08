@@ -1718,6 +1718,7 @@ const fr = {
     commentaries: {
       open: "Commentaires",
       title: "Commentaires",
+      nav: "Les commentaires du passage",
       rashi: "Rachi",
       rashbam: "Rachbam",
       mefaresh: "Méfarech",
