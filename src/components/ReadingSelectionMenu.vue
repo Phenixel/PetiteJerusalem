@@ -384,8 +384,11 @@ onBeforeUnmount(() => {
         </button>
 
         <!-- La phonétique du seul passage choisi : l'hébreu reste à l'écran
-             dessous, on ne bascule pas toute la page pour un mot. -->
-        <div v-else class="bubble-phonetic" data-sheet-nodrag>
+             dessous, on ne bascule pas toute la page pour un mot. Its own
+             condition, not a v-else of the commentaries row: on a passage
+             without commentary, it showed empty under the commands (the
+             text's name and a close button). -->
+        <div v-if="view === 'phonetic'" class="bubble-phonetic" data-sheet-nodrag>
           <div class="flex items-start justify-between gap-2">
             <p class="bubble-place">{{ readingPassage.place }}</p>
             <button
