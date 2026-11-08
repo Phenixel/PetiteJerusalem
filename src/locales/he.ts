@@ -2014,7 +2014,7 @@ const he: LocaleMessages = {
     withRashi: "פירוש רש״י",
     withRashiHint: "פירוש רש״י מתחת לתרגום של כל פסוק.",
     rashiUnavailable: "לא ניתן לטעון את פירוש רש״י.",
-    aliyaMark: "לסמן כנקראה",
+    aliyaSwipe: "החליקו ימינה לאחר הקריאה",
     aliyaDone: "נקראה",
     aliyaCheck: "{aliya} נקראה",
     progress: "עליות שנקראו: {done} מתוך {total}",
