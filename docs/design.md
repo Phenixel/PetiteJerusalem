@@ -4001,6 +4001,31 @@ from the next, so that a long Rachi no longer reads as a single block. The
 dibbour hamat'hil, the words of the text being commented, is in bold and in
 the theme color, like the verse numbers: it is what the eye looks for first.
 The panel's label (« Commentaires ») is in lowercase, as every group label.
+
+**Several commentators, one tab each.** When the passage has more than one
+commentator (Bartenura and Tossefot Yom Tov, Rashi and Tossafot), a row of
+tabs sits at the top of the panel, under the place and above the header's
+rule, so that it stays in view while the commentaries scroll: each tab
+carries the commentator's name and its count (« Bartenura 10 »), in the
+segmented control of the reading menu (a tinted track, the active tab on a
+surface pill in the theme color). A tap scrolls the panel to that
+commentator, its rule just under the top; scrolling by hand moves the active
+tab to the commentator being read (the last one whose name has gone past the
+top, the last one at the very bottom). The row scrolls sideways if the names
+do not fit, without dragging the sheet. With a single commentator there is
+nothing to move between, and no tabs. Before, the second commentator was
+only reached by scrolling past all of the first, ten comments of Bartenura
+before the first Tossefot Yom Tov. Held by
+`src/__tests__/commentaryNav.test.ts`.
+
+**A passage without commentary shows only its commands.** On a service of
+the Sidour, the sheet holds Partager, Phonétique, Signaler and nothing
+below: the phonetic view, written as the `v-else` of the commentaries row,
+showed empty under the commands of a passage without commentary (the text's
+name and a cross, which said nothing). Held by
+`src/__tests__/readingSelection.test.ts` (« shows only its commands on a
+text without commentary »).
+
 The panel **follows the reading**: as long
 as it is open, touching another passage shows that passage's commentaries
 there, without reopening the commands; you study a daf with one gesture per

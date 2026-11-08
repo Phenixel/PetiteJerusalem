@@ -1668,6 +1668,7 @@ const en: LocaleMessages = {
     commentaries: {
       open: "Commentaries",
       title: "Commentaries",
+      nav: "The passage's commentaries",
       rashi: "Rashi",
       rashbam: "Rashbam",
       mefaresh: "Mefaresh",
