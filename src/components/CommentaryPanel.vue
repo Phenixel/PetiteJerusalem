@@ -394,11 +394,13 @@ onBeforeUnmount(() => {
   padding-bottom: 0;
 }
 
-/* Le commentaire suit la taille de lecture : c'est un texte qu'on étudie,
-   pas une étiquette. One step below the verse of the reader (1.5 rem). */
+/* The commentary follows the reading size: it is a text one studies, not a
+   label. One step below the verse of the reader (1.5 rem), and justified
+   like it. */
 .commentary-text {
   font-size: calc(1.25rem * var(--reading-scale, 1));
   line-height: 1.8;
+  text-align: justify;
   color: var(--color-text-primary);
 }
 
@@ -416,7 +418,9 @@ onBeforeUnmount(() => {
   font-family: var(--font-reading);
   font-size: calc(1rem * var(--reading-scale, 1));
   line-height: 1.65;
-  text-align: left;
+  text-align: justify;
+  text-align-last: left;
+  hyphens: auto;
   color: var(--color-text-secondary);
 }
 

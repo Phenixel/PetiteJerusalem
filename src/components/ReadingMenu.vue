@@ -672,7 +672,14 @@ onUnmounted(() => {
                   @click="goTo(section.anchor)"
                   class="section-item"
                 >
-                  <span class="section-name">{{ section.label }}</span>
+                  <span class="section-name" :class="{ 'is-unit': section.excerpt }">{{
+                    section.label
+                  }}</span>
+                  <!-- A mishna, a se'if: its opening words, which say more
+                       than its number. -->
+                  <span v-if="section.excerpt" class="section-excerpt" dir="rtl">{{
+                    section.excerpt
+                  }}</span>
                   <!-- Le nom hébreu, celui du sidour de papier : c'est souvent lui
                        que l'œil cherche. -->
                   <span v-if="section.hebrew" class="section-he" dir="rtl">{{
@@ -1163,6 +1170,27 @@ onUnmounted(() => {
 .section-name {
   flex: 1 1 auto;
   min-width: 0;
+}
+
+/* Next to the opening words of a mishna, the number keeps its width: the
+   words give way and end in an ellipsis. */
+.section-name.is-unit {
+  flex: none;
+}
+
+.section-excerpt {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  font-family: var(--font-hebrew);
+  font-size: 0.95em;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.section-item:hover .section-excerpt {
+  color: inherit;
 }
 
 .section-he {
