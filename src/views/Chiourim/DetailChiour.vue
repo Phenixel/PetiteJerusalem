@@ -83,7 +83,7 @@ watch(
 
 const cover = computed(() => (chiour.value ? chiourCover(chiour.value) : null));
 
-/** Le titre hors de la page, pour l'onglet et le partage : avec sa série. */
+/** The title outside the page, for the tab and sharing: with its series. */
 const fullTitle = computed(() =>
   chiour.value ? titleWithSerie(chiour.value.name, serie.value?.name) : "",
 );
@@ -222,8 +222,8 @@ function applyFound(found: Chiour): void {
     serieService
       .getSerie(found.serieId)
       .then((s) => {
-        // Le visiteur a pu naviguer vers un autre chiour entre-temps : le
-        // titre de la page reste celui du chiour affiché.
+        // The visitor may have moved to another chiour in the meantime: the
+        // page title stays the one of the chiour shown.
         if (!chiour.value || chiour.value.serieId !== s?.id) return;
         serie.value = s;
         setChiourMeta(chiour.value, s?.name);

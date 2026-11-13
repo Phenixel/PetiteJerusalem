@@ -133,11 +133,11 @@ class ChiourService {
   }
 
   /**
-   * Par titre, rav, série, catégorie ou description, graphies et fautes de
-   * frappe comprises (voir fuzzySearch), du plus pertinent au moins
-   * pertinent. La série compte : un titre ne la répète pas (« Chapitre 3
-   * (2/7) »), et « Pélé Yoets » doit trouver tous ses épisodes. Les séries
-   * déjà lues suffisent ; avant leur arrivée, on cherche sans elles.
+   * By title, rav, series, category or description, spelling variants and
+   * typos included (see fuzzySearch), from most to least relevant. The
+   * series counts: a title no longer repeats it (« Chapitre 3 (2/7) »), and
+   * « Pélé Yoets » must find all its episodes. The series already read are
+   * enough; before they arrive, the search runs without them.
    */
   filterBySearch(
     chiourim: Chiour[],

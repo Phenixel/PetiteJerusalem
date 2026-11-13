@@ -3,9 +3,9 @@ import type { Chiour } from "../models/models";
 import type { Serie } from "../services/serieService";
 
 /**
- * Le titre d'un épisode ne répète plus sa série (« Chapitre 3 (2/7) ») : la
- * recherche des chiourim la lit à part, pour que « Pélé Yoets » ou « Chaar
- * Habitahon » trouvent encore tous les épisodes.
+ * An episode's title no longer repeats its series (« Chapitre 3 (2/7) »): the
+ * chiourim search reads it separately, so that « Pélé Yoets » or « Chaar
+ * Habitahon » still find every episode.
  */
 
 vi.mock("../firebase/firestore", () => ({ db: {} }));
@@ -38,8 +38,8 @@ const catalogue = [
 ];
 const slugs = (found: Chiour[]) => found.map((c) => c.slug);
 
-describe("recherche des chiourim par série", () => {
-  it("trouve un épisode par le nom de sa série, dans toutes ses graphies", () => {
+describe("chiourim search by series", () => {
+  it("finds an episode by its series name, in every spelling", () => {
     expect(slugs(chiourService.filterBySearch(catalogue, "Shaar Habitahon", series))).toEqual([
       "bita-12",
     ]);
@@ -48,13 +48,13 @@ describe("recherche des chiourim par série", () => {
     ]);
   });
 
-  it("garde la recherche par titre", () => {
+  it("keeps the search by title", () => {
     expect(slugs(chiourService.filterBySearch(catalogue, "chapitre 3", series))).toEqual([
       "bita-12",
     ]);
   });
 
-  it("cherche sans les séries tant qu'elles ne sont pas lues", () => {
+  it("searches without the series while they are not loaded", () => {
     expect(slugs(chiourService.filterBySearch(catalogue, "Shaar Habitahon", null))).toEqual([]);
   });
 });

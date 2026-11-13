@@ -26,7 +26,7 @@ export function chiourCover(chiour: Chiour, serieName = serieNameOf(chiour)) {
   return { seed: chiour.slug, label: chiour.name };
 }
 
-/** Accents et majuscules ôtés, pour comparer un titre et un nom de série. */
+/** Accents and case removed, to compare a title with a series name. */
 const fold = (value: string) =>
   value
     .normalize("NFD")
@@ -34,10 +34,10 @@ const fold = (value: string) =>
     .toLowerCase();
 
 /**
- * Le titre d'un cours là où sa série n'est pas dite (la recherche, l'onglet,
- * le partage) : suivi du nom de la série, sauf s'il le contient déjà.
- * « Chapitre 3 (2/7) » devient « Chapitre 3 (2/7) · Shaar Habitahon » ;
- * « Shaar Habitahon Shiour 12 » reste tel quel.
+ * A class's title where its series is not said (search, the tab, sharing):
+ * followed by the series name, unless it already contains it.
+ * « Chapitre 3 (2/7) » becomes « Chapitre 3 (2/7) · Shaar Habitahon »;
+ * « Shaar Habitahon Shiour 12 » stays as it is.
  */
 export function titleWithSerie(title: string, serieName: string | null | undefined): string {
   if (!serieName || fold(title).includes(fold(serieName))) return title;

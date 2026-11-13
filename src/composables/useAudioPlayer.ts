@@ -40,7 +40,7 @@ export interface AudioTrack {
   duration?: number | null;
   /** D'où vient la file : la série, le rav, le texte (« Lecture depuis… »). */
   context?: string | null;
-  /** La série du cours, l'album de l'écran verrouillé : le titre ne la répète pas. */
+  /** The class's series, the lock screen's album: the title does not repeat it. */
   serie?: string | null;
   /** Le texte étudié et son chapitre (voir chiourTexte), pour la file du lecteur. */
   texteId?: number | null;

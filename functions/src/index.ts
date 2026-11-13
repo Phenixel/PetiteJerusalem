@@ -225,15 +225,15 @@ type ChiourPreview = {
   /** L'URL de l'audio et sa durée (secondes), pour les données structurées. */
   mediaUrl?: string | null;
   duration?: number | null;
-  /** La série du cours : son titre ne la répète pas, l'aperçu la dit. */
+  /** The class's series: its title no longer repeats it, the preview says it. */
   serieId?: string | null;
 };
 
 /**
- * Le titre d'un cours suivi de sa série, sauf s'il la contient déjà :
- * « Chapitre 3 (2/7) · Shaar Habitahon ». Recopie de `titleWithSerie`
- * (src/composables/useChiourPlayback.ts), pour que l'aperçu d'un lien partagé
- * dise ce que dit l'onglet de la page.
+ * A class's title followed by its series, unless it already contains it:
+ * « Chapitre 3 (2/7) · Shaar Habitahon ». Copy of `titleWithSerie`
+ * (src/composables/useChiourPlayback.ts), so the preview of a shared link
+ * says what the page's tab says.
  */
 function titleWithSerie(title: string, serieName: string | null | undefined): string {
   const fold = (value: string) =>
