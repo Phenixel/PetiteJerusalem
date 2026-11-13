@@ -33,8 +33,8 @@ import { DAF_LAYOUT_REACH } from "../services/dafLayout";
  *
  * When the translation is on, the page gives `pickLang`, which chooses a
  * language among those a commentary file is translated into: Rashi on the
- * Torah then carries its translation under each comment, and `sources` says
- * who made it. Turning the translation on or off, or changing its language,
+ * Tanakh and the Tosafot Yom Tov on Avot then carry their translation under
+ * each comment, and `sources` says who made it. Turning the translation on or off, or changing its language,
  * reloads what was loaded.
  */
 
@@ -234,12 +234,13 @@ export function usePassageCommentaries(
             cells: loaded[source],
           }));
         } else if (corpus.value === "mishna") {
-          const loaded = await loadMishnaMeforshim(entry);
+          const loaded = await loadMishnaMeforshim(entry, pickLang.value);
           if (mine !== request) return;
           lines.value = [
             { source: "bartenura", cells: sectionCells(loaded.bartenura, open, whole) },
             { source: "tosafotYomTov", cells: sectionCells(loaded.tosafotYomTov, open, whole) },
           ];
+          sources.value = loaded.sources;
         } else {
           const loaded = await loadTanakhRashi(entry, pickLang.value);
           if (mine !== request) return;

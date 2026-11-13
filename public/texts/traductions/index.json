@@ -1,5 +1,8 @@
 {
   "files": {
+    "/texts/mishna-meforshim/avot.json": [
+      "en"
+    ],
     "/texts/mishna/arakhin.json": [
       "en",
       "fr"
@@ -507,6 +510,72 @@
     "/texts/rashi/317.json": [
       "en",
       "fr"
+    ],
+    "/texts/rashi/318.json": [
+      "en"
+    ],
+    "/texts/rashi/319.json": [
+      "en"
+    ],
+    "/texts/rashi/320.json": [
+      "en"
+    ],
+    "/texts/rashi/321.json": [
+      "en"
+    ],
+    "/texts/rashi/322.json": [
+      "en"
+    ],
+    "/texts/rashi/323.json": [
+      "en"
+    ],
+    "/texts/rashi/324.json": [
+      "en"
+    ],
+    "/texts/rashi/325.json": [
+      "en"
+    ],
+    "/texts/rashi/326.json": [
+      "en"
+    ],
+    "/texts/rashi/327.json": [
+      "en"
+    ],
+    "/texts/rashi/328.json": [
+      "en"
+    ],
+    "/texts/rashi/329.json": [
+      "en"
+    ],
+    "/texts/rashi/330.json": [
+      "en"
+    ],
+    "/texts/rashi/331.json": [
+      "en"
+    ],
+    "/texts/rashi/332.json": [
+      "en"
+    ],
+    "/texts/rashi/333.json": [
+      "en"
+    ],
+    "/texts/rashi/334.json": [
+      "en"
+    ],
+    "/texts/rashi/335.json": [
+      "en"
+    ],
+    "/texts/rashi/336.json": [
+      "en"
+    ],
+    "/texts/rashi/337.json": [
+      "en"
+    ],
+    "/texts/rashi/338.json": [
+      "en"
+    ],
+    "/texts/rashi/339.json": [
+      "en"
     ],
     "/texts/talmud/arakhin.json": [
       "en",

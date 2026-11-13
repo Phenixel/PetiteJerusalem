@@ -7,8 +7,9 @@ import type { TextStudiesJson } from "../models/models";
 /**
  * The translation in the library reaches the commentaries: with the setting
  * on, Rashi on the Torah comes translated in the study panel as in the chnei
- * mikra, in the language the reader would take; Rashi on the Nach, which has
- * no translation, stays in Hebrew without failing. And every page that reads
+ * mikra, in the language the reader would take; so do Rashi on the Nach and
+ * the Tosafot Yom Tov on Avot, while the Bartenura, which has no translation
+ * we may take, stays in Hebrew without failing. And every page that reads
  * texts one after the other (DailyReadingItem, which follows the setting)
  * offers the « Translation » command in its reading menu: otherwise a
  * translation turned on elsewhere shows there without a way to turn it off.
@@ -64,12 +65,69 @@ describe("Rashi in the study panel, translation on", () => {
     expect(sources).toEqual([]);
   });
 
-  it("reads Rashi on the Nach in Hebrew, without translation and without failing", async () => {
+  it("carries the translation of Rashi on the Nach", async () => {
     const { loadTanakhRashi } = await import("../services/textService");
-    const { groups, sources } = await loadTanakhRashi(josue, prefer("fr"));
-    expect(groups.flat(2).length).toBeGreaterThan(0);
-    expect(groups.flat(2).some((comment) => comment.tr)).toBe(false);
-    expect(sources).toEqual([]);
+    const en = await loadTanakhRashi(josue, prefer("en"));
+    const first = en.groups.flat(2)[0];
+    expect(first.lead.replace(/[\u0591-\u05c7]/g, "")).toMatch(/^ויהי אחרי מות משה/);
+    expect(first.tr).toMatch(/^<b>And after the death of Moshe\.<\/b>/);
+    expect(en.sources.map((source) => source.by)).toEqual(["Yaakov Y. H. Pupko"]);
+  });
+
+  it("gives a psalm read alone the translation of its chapter in the book of Tehilim", async () => {
+    const { loadTanakhRashi } = await import("../services/textService");
+    const psalm = entries.find((e) => String(e.type) === "Tehilim" && /\.23$/.test(e.link))!;
+    const { groups, sources } = await loadTanakhRashi(psalm, prefer("en"));
+    expect(groups).toHaveLength(1);
+    expect(groups[0].flat().some((comment) => comment.tr)).toBe(true);
+    expect(sources.map((source) => source.by)).toEqual(["A. J. Rosenberg"]);
+  });
+});
+
+describe("the commentaries of the Mishna, translation on", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    fetchTextResponse.mockReset();
+    fetchTextResponse.mockImplementation(serve);
+  });
+
+  const avot = entries.find((e) => e.type === "Mishna" && /Pirkei_Avot|Avot/.test(e.link))!;
+  const berakhot = entries.find((e) => e.type === "Mishna" && /Berakhot/.test(e.link))!;
+
+  it("translates the Tosafot Yom Tov on Avot, and leaves the Bartenura in Hebrew", async () => {
+    const { loadMishnaMeforshim } = await import("../services/textService");
+    for (const lang of ["en"]) {
+      const m = await loadMishnaMeforshim(avot, prefer(lang));
+      const tyt = m.tosafotYomTov.flat(2);
+      expect(tyt.length, `${lang}`).toBeGreaterThan(300);
+      expect(
+        tyt.every((comment) => comment.tr),
+        `${lang}`,
+      ).toBe(true);
+      expect(
+        m.bartenura.flat(2).some((comment) => comment.tr),
+        `${lang}`,
+      ).toBe(false);
+      expect(
+        m.sources.some((source) => source.ai),
+        `${lang}`,
+      ).toBe(lang === "fr");
+    }
+  });
+
+  it("reads a tractate without translation in Hebrew, without failing", async () => {
+    const { loadMishnaMeforshim } = await import("../services/textService");
+    const m = await loadMishnaMeforshim(berakhot, prefer("fr"));
+    expect(m.bartenura.flat(2).length).toBeGreaterThan(0);
+    expect(m.bartenura.flat(2).some((comment) => comment.tr)).toBe(false);
+    expect(m.sources).toEqual([]);
+  });
+
+  it("stays in Hebrew when the translation is off", async () => {
+    const { loadMishnaMeforshim } = await import("../services/textService");
+    const m = await loadMishnaMeforshim(avot, null);
+    expect(m.tosafotYomTov.flat(2).some((comment) => comment.tr)).toBe(false);
+    expect(m.sources).toEqual([]);
   });
 });
 

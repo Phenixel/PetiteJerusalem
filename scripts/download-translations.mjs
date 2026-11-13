@@ -102,6 +102,37 @@ const CREDITS = {
     year: "2009",
     publisher: "Metsudah Publications",
   },
+  // Rashi on the Nach: Rosenberg (Judaica Press) for most books, Metsudah
+  // for Joshua, Judges, Samuel and Kings, which Judaica Press lacks at
+  // Sefaria. In the Metsudah Tanach series, Davis translates the verses and
+  // Pupko Rashi.
+  "The Judaica Press complete Tanach with Rashi, translated by A. J. Rosenberg": {
+    name: "The Judaica Press Complete Tanach with Rashi",
+    by: "A. J. Rosenberg",
+    publisher: "Judaica Press",
+  },
+  "The Metsudah Tanach series, Lakewood, N.J": {
+    name: "The Metsudah Tanach",
+    by: "Yaakov Y. H. Pupko",
+    publisher: "Metsudah Publications",
+  },
+  "The Book of Joshua, Metsudah Publications, 1997": {
+    name: "The Metsudah Book of Joshua",
+    by: "Yaakov Y. H. Pupko",
+    year: "1997",
+    publisher: "Metsudah Publications",
+  },
+  "The Metsudah Five Megillot, Lakewood, N.J., 2001": {
+    name: "The Metsudah Five Megillot",
+    by: "Avrohom Davis",
+    year: "2001",
+    publisher: "Metsudah Publications",
+  },
+  "Tosafot Yom Tov on Avot, trans. Dov Dukhovny, 2018": {
+    name: "Tosafot Yom Tov on Avot",
+    by: "Dov Dukhovny",
+    year: "2018",
+  },
   "Duties of the Heart, trans. Rabbi Yosef Sebag": {
     name: "Duties of the Heart",
     by: "Yosef Sebag",
@@ -150,7 +181,17 @@ const VERSIONS = {
       "The Jerusalem Talmud, translation and commentary by Heinrich W. Guggenheimer. Berlin, De Gruyter, 1999-2015",
       "Mishnah Yomit by Dr. Joshua Kulp",
     ],
-    rashi: ["Rashi Chumash, Metsudah Publications, 2009"],
+    rashi: [
+      "Rashi Chumash, Metsudah Publications, 2009",
+      "The Judaica Press complete Tanach with Rashi, translated by A. J. Rosenberg",
+      "The Metsudah Tanach series, Lakewood, N.J",
+      "The Book of Joshua, Metsudah Publications, 1997",
+      "The Metsudah Five Megillot, Lakewood, N.J., 2001",
+    ],
+    // Bartenura has an English translation at Sefaria (Robert Alpert,
+    // 2020-2022), but under no stated license: it stays out
+    // (docs/traductions.md).
+    "mishna-meforshim": ["Tosafot Yom Tov on Avot, trans. Dov Dukhovny, 2018"],
     moussar: [
       "Duties of the Heart, trans. Rabbi Yosef Sebag",
       "Duties of the Heart, trans. by Rabbi Moses Hyamson, New York, 1925",
@@ -166,6 +207,7 @@ const VERSIONS = {
     talmud: ["Le Talmud de Jérusalem, traduit par Moise Schwab, 1878-1890 [fr]"],
     // Pas de traduction française humaine : seul le dépôt IA les remplit.
     rashi: [],
+    "mishna-meforshim": [],
     moussar: [],
   },
 };
@@ -193,9 +235,53 @@ const isBavli = (b) =>
   b.categories[0] === "Talmud" &&
   b.categories[1] === "Bavli" &&
   /^Seder /.test(b.categories[2] ?? "");
+/** Rashi on the Tanakh: the Torah (chnei mikra), then the Nach (study panel). */
 const RASHI = new Set(
-  ["Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy"].map((b) => `Rashi on ${b}`),
+  [
+    "Genesis",
+    "Exodus",
+    "Leviticus",
+    "Numbers",
+    "Deuteronomy",
+    "Joshua",
+    "Judges",
+    "I Samuel",
+    "II Samuel",
+    "I Kings",
+    "II Kings",
+    "Isaiah",
+    "Jeremiah",
+    "Ezekiel",
+    "Hosea",
+    "Joel",
+    "Amos",
+    "Obadiah",
+    "Jonah",
+    "Micah",
+    "Nahum",
+    "Habakkuk",
+    "Zephaniah",
+    "Haggai",
+    "Zechariah",
+    "Malachi",
+    "Psalms",
+    "Proverbs",
+    "Job",
+    "Song of Songs",
+    "Ruth",
+    "Lamentations",
+    "Ecclesiastes",
+    "Esther",
+    "Daniel",
+    "Ezra",
+    "Nehemiah",
+    "I Chronicles",
+    "II Chronicles",
+  ].map((b) => `Rashi on ${b}`),
 );
+/** The commentaries of the Mishna (Bartenura, Tosafot Yom Tov), by title. */
+const isMishnaCommentary = (b) =>
+  b.categories[0] === "Mishnah" && ["Bartenura", "Tosafot Yom Tov"].includes(b.categories[2]);
 
 /** Les fichiers d'un dossier de public/texts, en chemin relatif à public/texts. */
 const filesIn = (dir) =>
@@ -238,6 +324,13 @@ const CORPORA = {
     files: () => filesIn("rashi"),
     titles: (b) => RASHI.has(b.title),
     root: (data) => data.he,
+  },
+  // One file per tractate, its commentators side by side: `text` has the
+  // file's shape without its title ({ bartenura, tosafotYomTov }).
+  "mishna-meforshim": {
+    files: () => filesIn("mishna-meforshim"),
+    titles: isMishnaCommentary,
+    root: (data) => Object.fromEntries(Object.entries(data).filter(([k]) => k !== "title")),
   },
   moussar: {
     // 'Hovot Halévavot (400 à 410) ; le Pélé Yoets n'a pas de traduction.

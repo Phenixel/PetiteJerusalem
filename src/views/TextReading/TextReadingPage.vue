@@ -641,8 +641,8 @@ function setReadingMode(mode: ReadingMode): void {
 // Rachi et Tossafot (guemara), Rachi (paracha) du chapitre ouvert : chargés au
 // premier passage touché ou à l'ouverture de la page du daf, jamais avant ;
 // la lecture seule ne les attend pas (usePassageCommentaries).
-// The translation on: the commentaries that have one (Rashi on the Torah)
-// come translated too, in the language the text would take.
+// The translation on: the commentaries that have one (Rashi on the Tanakh,
+// the Tosafot Yom Tov on Avot) come translated too, in the language the text would take.
 const commentaryLangPicker = computed<CommentaryLangPicker | null>(() => {
   if (!translationShown.value || isLiturgyText.value) return null;
   const lang = locale.value;

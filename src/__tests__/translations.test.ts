@@ -46,7 +46,19 @@ function hebrewRoot(path: string, data: Record<string, unknown>): unknown {
   if (path.startsWith("/texts/moussar/")) {
     return (data.sections as { he: unknown }[]).map((s) => s.he);
   }
+  // A tractate's commentaries: each commentator's grid, side by side.
+  if (path.startsWith("/texts/mishna-meforshim/")) {
+    return Object.fromEntries(Object.entries(data).filter(([key]) => key !== "title"));
+  }
   return data.he;
+}
+
+/** The strings of a nested value, in reading order. */
+function leaves(value: unknown): string[] {
+  if (typeof value === "string") return [value];
+  if (Array.isArray(value)) return value.flatMap(leaves);
+  if (value && typeof value === "object") return Object.values(value).flatMap(leaves);
+  return [];
 }
 
 /** Le premier endroit où deux valeurs n'ont pas la même forme, ou null. */
@@ -92,7 +104,9 @@ describe("traductions des textes", () => {
         expect(shapeMismatch(he, tr), `${file}`).toBeNull();
       }
     }
-  });
+    // Some 300 files, a hundred megabytes of JSON: longer than the default
+    // five seconds when the suites run side by side.
+  }, 30_000);
 
   it("ne reprend que des traductions humaines, sous une licence libre, citées", () => {
     for (const [path, langs] of Object.entries(index)) {
@@ -201,6 +215,46 @@ describe("traductions des textes", () => {
       const count = counts.get(key);
       expect(count, `${key}`).toBeDefined();
       expect(count!.translated / count!.lines, `${key}`).toBeGreaterThanOrEqual(minimum);
+    }
+  });
+
+  /**
+   * The commentaries the registry announces as translated (docs/traductions.md,
+   * « In the app »): Rashi on the Torah and on the Nach, the Tosafot Yom Tov
+   * on Avot. Counted in comments, the unit of the study panel.
+   */
+  it("translates at least the commentaries the registry announces", () => {
+    const rashi = (from: number, to: number) =>
+      Object.keys(index).filter((path) => {
+        const id = Number(path.match(/^\/texts\/rashi\/(\d+)\.json$/)?.[1]);
+        return id >= from && id <= to;
+      });
+    const corpora: Record<string, { files: string[]; grid: (data: unknown) => unknown }> = {
+      "Rashi on the Torah": { files: rashi(264, 317), grid: (d) => d },
+      "Rashi on the Nach": { files: rashi(318, 339), grid: (d) => d },
+      "Tosafot Yom Tov on Avot": {
+        files: ["/texts/mishna-meforshim/avot.json"],
+        grid: (d) => (d as { tosafotYomTov: unknown }).tosafotYomTov,
+      },
+    };
+    const MINIMUM: Record<string, Record<string, number>> = {
+      "Rashi on the Torah": { en: 0.99, fr: 0.99 },
+      "Rashi on the Nach": { en: 0.98 },
+      "Tosafot Yom Tov on Avot": { en: 0.99 },
+    };
+    for (const [name, { files, grid }] of Object.entries(corpora)) {
+      for (const [lang, minimum] of Object.entries(MINIMUM[name])) {
+        let comments = 0;
+        let translated = 0;
+        for (const path of files) {
+          comments += leaves(grid(hebrewRoot(path, read(path) as Record<string, unknown>))).length;
+          if (!index[path]?.includes(lang)) continue;
+          const tr = (read(translationOf(path, lang)) as { text: unknown }).text;
+          translated += leaves(grid(tr)).filter(Boolean).length;
+        }
+        expect(comments, `${name}`).toBeGreaterThan(0);
+        expect(translated / comments, `${name} (${lang})`).toBeGreaterThanOrEqual(minimum);
+      }
     }
   });
 

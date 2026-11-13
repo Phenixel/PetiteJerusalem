@@ -59,6 +59,10 @@ function hebrewRoot(rel, data) {
     return Object.fromEntries(Object.entries(data).map(([n, psalm]) => [n, psalm.he]));
   }
   if (rel.startsWith("moussar/")) return data.sections.map((s) => s.he);
+  // A tractate's commentaries: each commentator's grid, side by side.
+  if (rel.startsWith("mishna-meforshim/")) {
+    return Object.fromEntries(Object.entries(data).filter(([k]) => k !== "title"));
+  }
   return data.he;
 }
 

@@ -40,9 +40,10 @@ has a non-empty translation.
 | Mishna (63 tractates) |       192,537 |            100% |         58% |
 | Talmud Bavli (37)     |     1,928,381 |           99.9% |          0% |
 | Rachi on the Torah    |       166,480 |           99.7% |          0% |
+| Rachi on the Nach     |       335,646 |           99.4% |          0% |
 | Hovot Halévavot       |        89,075 |             96% |          0% |
 | Pélé Yoets            |       233,554 | 7% (unreliable) |          0% |
-| **Total**             | **2,882,222** |         **92%** |     **13%** |
+| **Total**             | **3,217,868** |         **93%** |     **11%** |
 
 For the Torah, the Mishna and the Talmud combined (2.19 million words):
 **99.9% in English, 8% in French**. The Talmud accounts for two thirds of
@@ -60,6 +61,11 @@ the whole library: it is what makes the gap.
 | Mishna                  | Mishnah Yomit by Dr. Joshua Kulp                                                  | CC BY 3.0                            | All 63 tractates, Avot included, fully filled in.                                                                               |
 | Talmud Bavli            | William Davidson Edition - English                                                | CC BY-NC 4.0                         | Koren Steinsaltz. See below: translation and explanation are interwoven.                                                        |
 | Rachi                   | Rashi Chumash, Metsudah Publications, 2009                                        | CC BY                                | 99.5%.                                                                                                                          |
+| Rachi on the Nach       | The Judaica Press complete Tanach with Rashi, translated by A. J. Rosenberg       | CC BY                                | 28 books: all the Nach but Joshua, Judges, Samuel and Kings.                                                                    |
+| Rachi on the Nach       | The Metsudah Tanach series, Lakewood, N.J                                         | CC BY                                | Judges, Samuel, Kings; Rashi translated by Yaakov Y. H. Pupko.                                                                  |
+| Rachi on the Nach       | The Book of Joshua, Metsudah Publications, 1997                                   | CC BY                                | Joshua, same series.                                                                                                            |
+| Rachi on the Nach       | The Metsudah Five Megillot, Lakewood, N.J., 2001                                  | CC BY                                | The five megillot, behind Judaica Press: it only fills its gaps.                                                                |
+| Tosafot Yom Tov on Avot | Tosafot Yom Tov on Avot, trans. Dov Dukhovny, 2018                                | CC BY                                | Complete. The Tosafot Yom Tov on the other tractates has no translation.                                                        |
 | Rachi, alternative      | Pentateuch with Rashi's commentary by M. Rosenbaum and A.M. Silbermann, 1929-1934 | Public domain (according to Sefaria) | An English work: in the United States, each volume only enters the public domain 95 years after publication (the last in 2030). |
 | Hovot Halévavot         | Duties of the Heart, trans. Rabbi Yosef Sebag                                     | CC BY                                | 75%; supplemented by Hyamson (1925, public domain) it reaches 96%.                                                              |
 | Pélé Yoets              | Sefaria Community Translation                                                     | CC0                                  | 7%, anonymous and unreviewed translators: not usable.                                                                           |
@@ -89,6 +95,34 @@ What is missing in French, and why:
   Samuel et Odette Lévy, Colbo, Cerf) are under copyright.
 - **Hovot Halévavot** and **Pélé Yoets**: only recent translations
   (Chouraqui 1950, Frajerman 2018), under copyright.
+
+### The commentaries
+
+Measured in November 2026 on the same export (generated on November 2,
+2026), commentary by commentary, against what the study panel shows:
+
+| Commentary                          | English                                                                            | French |
+| ----------------------------------- | ---------------------------------------------------------------------------------- | ------ |
+| Rachi on the Torah                  | Metsudah, 99.7%                                                                    | none   |
+| Rachi on the Nach                   | Judaica Press and Metsudah, 99.4%                                                  | none   |
+| Bartenura (Mishna)                  | Robert Alpert, 98%, **license not stated**                                         | none   |
+| Tosafot Yom Tov (Mishna)            | Avot only (Dukhovny, CC BY)                                                        | none   |
+| Rachi on the gemara                 | only the Sefaria Community Translation                                             | none   |
+| Tosafot on the gemara               | six tractates, from 5 to 62% (Buckler, CC BY; Piekarski, CC BY-NC); none elsewhere | none   |
+| Rachbam, Ran                        | only the Sefaria Community Translation                                             | none   |
+| Commentaries of the Choulhan Aroukh | scattered segments, no license stated                                              | none   |
+
+"French: none" means a handful of segments at most (a Michna Broura note,
+nine Tosafot on Berakhot), entered by volunteers without a license: nothing
+to build on.
+
+The **Bartenura** is the one that hurts: Rabbi Robert Alpert translated it
+entirely (2020 to 2022, 62 tractates, 98% of the comments), but Sefaria
+gives its license as "unknown", and no other source states one. Under the
+rule of this registry, it does not enter. A single permission, from the
+translator or from Sefaria, would open it: it is then one line in
+`VERSIONS` and in `CREDITS` (`scripts/download-translations.mjs`), and a
+round of AI translation for the French.
 
 ## Pitfalls to avoid
 
@@ -138,6 +172,8 @@ for English:
 - **Mishna**: the Rabbinate (Presses du Temps Présent), or the publisher of
   the Mishna Kehati in French, for Kodachim and Taharot;
 - **Rachi**: the Fondation Samuel et Odette Lévy, or Colbo.
+- **Bartenura in English**: Rabbi Robert Alpert, or Sefaria, for a license
+  on his translation (see "The commentaries").
 
 A free app, without ads, that credits and links back to the publisher, is
 the easiest request to accept.
@@ -158,13 +194,15 @@ section that have no Babylonian gemara:
 Measured in reader lines (a verse, a michna, a sentence of gemara) at build
 time:
 
-| Corpus              | English |                     French |
-| ------------------- | ------: | -------------------------: |
-| Tanakh and Tehilim  |    100% |                       100% |
-| Michna              |    100% |   100% (60% human, 40% AI) |
-| Talmud              |   99.6% | 99.6% (AI; Chekalim human) |
-| Rachi (chnei mikra) |   99.5% |                 99.5% (AI) |
-| 'Hovot Halévavot    |     98% |                   98% (AI) |
+| Corpus                | English |                     French |
+| --------------------- | ------: | -------------------------: |
+| Tanakh and Tehilim    |    100% |                       100% |
+| Michna                |    100% |   100% (60% human, 40% AI) |
+| Talmud                |   99.6% | 99.6% (AI; Chekalim human) |
+| Rachi (chnei mikra)   |   99.5% |                 99.5% (AI) |
+| Rachi on the Nach     |   99.4% |           in progress (AI) |
+| Tosafot Yom Tov, Avot |    100% |           in progress (AI) |
+| 'Hovot Halévavot      |     98% |                   98% (AI) |
 
 ### The AI-assisted French translation
 
@@ -239,12 +277,21 @@ translator's name (`TranslationCredit.vue`, see "Crediting a translation").
 No translation on a tefila.
 
 The commentaries follow it too: in the study panel (`CommentaryPanel.vue`),
-Rachi on the Torah has its translation under each comment, in the language
-the text would take, with the AI notice above and the translator's name
-below (`loadTanakhRashi`, `usePassageCommentaries`). Turning the setting on
-or off, or changing the language, reloads the open panel. The other
-commentaries (Rachi on the Nach, those of the gemara, the Michna and the
-Choulhan Aroukh) have no translation yet and stay in Hebrew.
+Rachi on the Torah and on the Nach, and the Tosafot Yom Tov on Avot, have
+their translation under each comment, in the language the text would take,
+with the AI notice above and the translator's name below
+(`loadTanakhRashi`, `loadMishnaMeforshim`, `usePassageCommentaries`).
+Turning the setting on or off, or changing the language, reloads the open
+panel. The other commentaries (the Bartenura, those of the gemara and of
+the Choulhan Aroukh) have no translation we may take (see "The
+commentaries") and stay in Hebrew.
+
+A commentary's translation file has the shape of its Hebrew file, like the
+others: the grid of Rashi (`texts/traductions/fr/rashi/<id>.json`), or, for
+the Michna, the grids of its commentators side by side
+(`texts/traductions/fr/mishna-meforshim/<traité>.json`: `{ bartenura,
+tosafotYomTov }`, the empty one included). A psalm read alone takes its
+chapter from the book of Tehilim (`rashi/328.json`), translation included.
 
 The pages that read several texts one after the other (the chnei mikra, the
 Tehilim of the day, the daily reading of Mon parcours, a session's texts)
@@ -269,6 +316,12 @@ alone, carries it.
   translation as soon as one is obtained (see "Going further in French:
   ask").
 - **The Pélé Yoets** has no free translation in any language.
+- **The Bartenura** waits for a license (see "The commentaries").
+- **Tosafot on the gemara**: Buckler (CC BY) and Piekarski (CC BY-NC)
+  cover part of six tractates. Not integrated: the coverage is patchy (5% of
+  Bava Metsia, 36% of Berakhot), Piekarski's is an explanation more than a
+  translation (six English words for one Hebrew), and the Talmud's
+  commentary files would need their own translation files, by chunk.
 - **Offline**: downloading a book does not download its translation.
   Offline, the command is not offered (its index cannot be read); if it was
   turned on before the connection dropped, a sentence says that the

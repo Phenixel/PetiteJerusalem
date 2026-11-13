@@ -1589,9 +1589,8 @@ async function readCommentaryFile(path: string): Promise<Record<string, unknown>
  * prend son chapitre dans le fichier du livre de Tehilim : un seul groupe.
  *
  * With `pickLang` (the translation is on), each comment also carries its
- * translation (`tr`) in the language it picks among those the file has (Rashi
- * on the Torah; Rashi on the Nach has none), and `sources` says who
- * translated it.
+ * translation (`tr`) in the language it picks among those the file has, and
+ * `sources` says who translated it.
  */
 export async function loadTanakhRashi(
   textStudy: TextStudyJsonEntry,
@@ -1619,17 +1618,41 @@ export interface MishnaMeforshim {
   tosafotYomTov: RashiComment[][][];
 }
 
-/** public/texts/mishna-meforshim/<traité>.json, voir download-texts.mjs. */
-export function parseMishnaMeforshim(data: Record<string, unknown>): MishnaMeforshim {
+/**
+ * public/texts/mishna-meforshim/<traité>.json, voir download-texts.mjs.
+ * `tr`, the file's translation (`{ bartenura, tosafotYomTov }`, each grid
+ * of the same shape, see download-translations.mjs), puts its own under
+ * each comment.
+ */
+export function parseMishnaMeforshim(data: Record<string, unknown>, tr?: unknown): MishnaMeforshim {
+  const grid = (key: string): unknown =>
+    tr && typeof tr === "object" ? (tr as Record<string, unknown>)[key] : undefined;
   return {
-    bartenura: parseCommentaryGroups(data.bartenura),
-    tosafotYomTov: parseCommentaryGroups(data.tosafotYomTov),
+    bartenura: parseCommentaryGroups(data.bartenura, grid("bartenura")),
+    tosafotYomTov: parseCommentaryGroups(data.tosafotYomTov, grid("tosafotYomTov")),
   };
 }
 
-export async function loadMishnaMeforshim(textStudy: TextStudyJsonEntry): Promise<MishnaMeforshim> {
+/**
+ * The commentaries of a Mishna tractate. With `pickLang` (the translation is
+ * on), the comments that have a translation (the Tosafot Yom Tov on Avot)
+ * carry it, in the language it picks, and `sources` says who translated it.
+ */
+export async function loadMishnaMeforshim(
+  textStudy: TextStudyJsonEntry,
+  pickLang?: ((available: readonly string[]) => string | null) | null,
+): Promise<MishnaMeforshim & { sources: TranslationSource[] }> {
   const slug = tractateSlug(tractateFromLink(textStudy.link, true));
-  return parseMishnaMeforshim(await readCommentaryFile(`/texts/mishna-meforshim/${slug}.json`));
+  const path = `/texts/mishna-meforshim/${slug}.json`;
+  const lang = pickLang ? pickLang(await translationLangsOfPath(path)) : null;
+  const [data, translation] = await Promise.all([
+    readCommentaryFile(path),
+    lang ? readCommentaryTranslation(path, lang) : undefined,
+  ]);
+  return {
+    ...parseMishnaMeforshim(data, translation?.text),
+    sources: commentarySources(translation),
+  };
 }
 
 // ---- Les commentaires du Choulhan Aroukh ------------------------------------

@@ -2,7 +2,8 @@
 
 This guide is the one followed by every agent that translates a batch (see
 `scripts/translate-ia.mjs`). It translates into French a **human, published
-English translation** (Steinsaltz, Kulp, Metsudah, Sebag…), line by line,
+English translation** (Steinsaltz, Kulp, Metsudah, Sebag, Rosenberg,
+Dukhovny…), line by line,
 using the Hebrew as an aid when the batch provides it. It is a first
 version, reviewed afterwards: it must be faithful before it is elegant.
 
@@ -39,6 +40,18 @@ Only the `<b>…</b>` and `<i>…</i>` tags exist; add no other, remove none.
   `<b>GUEMARA :</b>`.
 - **Rashi (Metsudah)**: the leading bold is the passage of the verse being
   commented on (the dibbour hamat'hil); it is translated and stays bold.
+- **Rashi on the Nach (Judaica Press, Metsudah)**: same leading bold. The
+  Hebrew words the translator quotes stay in Hebrew letters, untouched
+  (« Heb. קֹנֵהוּ » becomes « Héb. קֹנֵהוּ »). Rashi's Old French glosses
+  stay as written, and « in Old French » becomes « en vieux français »
+  (« livras moi in French » becomes « livras moi en français »). A
+  reference to a grammarian or a page (« Menachem (p. 125) ») stays as is,
+  the name in its French spelling (Ména'hem, Dounach).
+- **Tosafot Yom Tov on Avot (Dukhovny)**: the words of the mishna the
+  comment starts from are in capitals (« MOSES RECEIVED THE TORAH AT
+  SINAI. »): they stay in capitals in French. The bold names a cited
+  authority (<b>Rav</b>, <b>Rambam</b>), the italics a quotation from a
+  book: both stay where they are.
 - Italics mark a transliterated Hebrew term (`<i>Shema</i>`): it stays in
   italics, in its French spelling (`<i>Chéma</i>`).
 
