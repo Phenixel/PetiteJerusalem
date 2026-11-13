@@ -1942,6 +1942,7 @@
     "/texts/traductions/fr/mishna/yoma.json": "6e508751fa0c",
     "/texts/traductions/fr/mishna/zavim.json": "605f6bc50092",
     "/texts/traductions/fr/mishna/zevachim.json": "aab2b044ae06",
+    "/texts/traductions/fr/mishna-meforshim/avot.json": "b4477f7bca4f",
     "/texts/traductions/fr/moussar/400.json": "b9cb0d68d222",
     "/texts/traductions/fr/moussar/401.json": "164cd59d4c69",
     "/texts/traductions/fr/moussar/402.json": "8d6aae7ff17c",
@@ -2124,6 +2125,6 @@
     "/texts/traductions/fr/tanakh/338.json": "65f9395f1b3d",
     "/texts/traductions/fr/tanakh/339.json": "1ac91bcc1935",
     "/texts/traductions/fr/tehilim.json": "12a0cc95ea28",
-    "/texts/traductions/index.json": "080483387c92"
+    "/texts/traductions/index.json": "8d3633b9bac6"
   }
 }

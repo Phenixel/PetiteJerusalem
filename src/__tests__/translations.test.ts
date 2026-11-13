@@ -240,7 +240,7 @@ describe("traductions des textes", () => {
     const MINIMUM: Record<string, Record<string, number>> = {
       "Rashi on the Torah": { en: 0.99, fr: 0.99 },
       "Rashi on the Nach": { en: 0.98 },
-      "Tosafot Yom Tov on Avot": { en: 0.99 },
+      "Tosafot Yom Tov on Avot": { en: 0.99, fr: 0.99 },
     };
     for (const [name, { files, grid }] of Object.entries(corpora)) {
       for (const [lang, minimum] of Object.entries(MINIMUM[name])) {

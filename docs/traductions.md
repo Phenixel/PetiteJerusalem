@@ -201,7 +201,7 @@ time:
 | Talmud                |   99.6% | 99.6% (AI; Chekalim human) |
 | Rachi (chnei mikra)   |   99.5% |                 99.5% (AI) |
 | Rachi on the Nach     |   99.4% |           in progress (AI) |
-| Tosafot Yom Tov, Avot |    100% |           in progress (AI) |
+| Tosafot Yom Tov, Avot |    100% |                  100% (AI) |
 | 'Hovot Halévavot      |     98% |                   98% (AI) |
 
 ### The AI-assisted French translation

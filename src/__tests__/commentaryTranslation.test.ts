@@ -96,7 +96,7 @@ describe("the commentaries of the Mishna, translation on", () => {
 
   it("translates the Tosafot Yom Tov on Avot, and leaves the Bartenura in Hebrew", async () => {
     const { loadMishnaMeforshim } = await import("../services/textService");
-    for (const lang of ["en"]) {
+    for (const lang of ["en", "fr"]) {
       const m = await loadMishnaMeforshim(avot, prefer(lang));
       const tyt = m.tosafotYomTov.flat(2);
       expect(tyt.length, `${lang}`).toBeGreaterThan(300);
