@@ -220,13 +220,15 @@ function bookmarked(line: number): boolean {
 </template>
 
 <style scoped>
-/* Tailles pilotées par le réglage A− / A+ (useReadingSize), héritées de la
-   page par `--reading-scale`. L'interligne de l'hébreu est volontairement
-   plus serré que leading-loose : assez d'air pour les voyelles et les teamim,
-   sans étirer la lecture. */
+/* Sizes follow the A− / A+ control (useReadingSize), inherited from the
+   page through `--reading-scale`. The Hebrew line height is deliberately
+   tighter than leading-loose: enough air for the vowels and the
+   cantillation marks, without stretching the reading. Justified, like every
+   reading: the text fills the width of the screen. */
 .daf-he {
   font-size: calc(1.5rem * var(--reading-scale, 1));
   line-height: 1.7;
+  text-align: justify;
 }
 .daf-he-daily {
   font-size: calc(1.25rem * var(--reading-scale, 1));
@@ -242,10 +244,14 @@ function bookmarked(line: number): boolean {
 .daf-tl {
   font-family: var(--font-reading);
   font-size: calc(1.125rem * var(--reading-scale, 1));
+  text-align: justify;
+  hyphens: auto;
 }
 .daf-tr {
   font-family: var(--font-reading);
   font-size: calc(1.0625rem * var(--reading-scale, 1));
   line-height: 1.65;
+  text-align: justify;
+  hyphens: auto;
 }
 </style>

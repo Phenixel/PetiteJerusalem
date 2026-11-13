@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { generateKeyPairSync } from "node:crypto";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createAscClient, describeAscErrors } from "../../scripts/lib/asc-api.mjs";
+import { createAscClient, describeAscErrors, findApp } from "../../scripts/lib/asc-api.mjs";
 
 /**
  * Le client App Store Connect des scripts de release (fiche, captures,
@@ -155,5 +155,33 @@ describe("describeAscErrors", () => {
       "    Nouveautés : vides",
       "    SCREENSHOT_REQUIRED :",
     ]);
+  });
+});
+
+describe("findApp", () => {
+  const production = { id: "6798778029", attributes: { bundleId: "fr.petitejerusalem.app" } };
+  const staging = { id: "6822751432", attributes: { bundleId: "fr.petitejerusalem.app.staging" } };
+
+  // Tag v4.0.0: Apple returned the staging app first for the production
+  // bundle id, and the listing went to it.
+  it("takes the app whose bundle id is exactly the one asked, not one that extends it", async () => {
+    stubFetch(reply(200, { data: [staging, production] }));
+    const { api } = client();
+
+    await expect(findApp(api, "fr.petitejerusalem.app")).resolves.toEqual(production);
+  });
+
+  it("finds the staging app by its own bundle id", async () => {
+    stubFetch(reply(200, { data: [staging] }));
+    const { api } = client();
+
+    await expect(findApp(api, "fr.petitejerusalem.app.staging")).resolves.toEqual(staging);
+  });
+
+  it("returns null when only a longer bundle id matches", async () => {
+    stubFetch(reply(200, { data: [staging] }));
+    const { api } = client();
+
+    await expect(findApp(api, "fr.petitejerusalem.app")).resolves.toBeNull();
   });
 });

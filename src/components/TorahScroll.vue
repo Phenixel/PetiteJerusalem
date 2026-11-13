@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from "vue";
 import { useReadingColumn } from "../composables/useReadingColumn";
-import { useReadingSize } from "../composables/useReadingSize";
+import { usePageFormShown } from "../composables/useReadingSize";
 import { restoreScrollPointing, scrollPeek, scrollPointed } from "../composables/useScrollPointing";
 import { pageZoomFrame } from "../services/pageZoom";
 import {
@@ -52,6 +52,8 @@ import MarkedText from "./MarkedText.vue";
  * replie pas. La taille de lecture (A− / A+, le pincement) l'agrandit tout
  * entière, comme la page du daf : elle déborde de la colonne de lecture tant
  * qu'il y a de la place, puis se fait glisser de côté (pageZoom.ts).
+ *
+ * That size is the page form's own (usePageFormSize), not the text's.
  */
 const props = defineProps<{
   /** Les versets de la paracha, à plat (la section du lecteur). */
@@ -632,7 +634,9 @@ const scrollEms = computed(() =>
 /** La taille ordinaire de son écriture, en rem (voir le style). */
 const SCROLL_REM = 1.5;
 
-const readingSize = useReadingSize();
+// The column has the page form's own size (usePageFormSize), which A− / A+
+// and the pinch drive while it is on screen.
+const readingSize = usePageFormShown("scroll");
 const { ruler, column, free } = useReadingColumn();
 const frame = ref<HTMLElement | null>(null);
 const rem = ref(16);

@@ -312,7 +312,6 @@ async function save() {
     </div>
 
     <p v-if="errorMessage" class="text-sm text-red-600 flex items-center gap-1.5 dark:text-red-400">
-      <AppIcon name="alert-circle" :size="14" />
       {{ errorMessage }}
     </p>
 

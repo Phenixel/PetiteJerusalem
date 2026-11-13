@@ -351,6 +351,26 @@ files in the folder above respecting the prefixes, then
 `node scripts/asc-screenshots.mjs --version X.Y.Z`; the CI, for its part,
 will send the generated set again on the next tag.
 
+### Redoing the listing and the submission of a tag
+
+When the binary went up but the listing, the screenshots or the submission
+failed, rerunning `deploy-ios.yml` would build again, and Apple refuses a
+build number it already has. The manual workflow
+[`appstore-resubmit.yml`](../.github/workflows/appstore-resubmit.yml) redoes
+only those three steps, with the code of the branch it is run from:
+
+```sh
+gh workflow run appstore-resubmit.yml -f version=4.0.0 -f build_number=4000000
+```
+
+It reads the release notes of the tag's GitHub release and the screenshots of
+the tag's `store-screenshots.yml` run. Android and the site are not touched.
+
+The App Store Connect scripts look the app up by its exact bundle id
+(`findApp`, `scripts/lib/asc-api.mjs`): Apple's `filter[bundleId]` also
+returns the staging app, whose bundle id extends the production one, and
+tag v4.0.0 sent its listing there.
+
 ## Notes
 
 - **The App Store Connect version number must be identical to the tag**,

@@ -225,11 +225,22 @@ describe("la bulle de commandes", () => {
     expect(ouvrePanneau).toHaveBeenCalledOnce();
   });
 
+  it("shows only its commands on a text without commentary, not its name", async () => {
+    // A service of the Sidour has no commentary: the phonetic block, then a
+    // v-else of the commentaries row, showed empty under the commands (the
+    // text's name and a close button).
+    const host = await ouvre(passage());
+    expect(host.querySelector(".bubble-commentary")).toBeNull();
+    expect(host.querySelector(".bubble-phonetic")).toBeNull();
+    expect(host.textContent).not.toContain("Tehilim 23 · verset 4");
+  });
+
   it("ne propose rien d'un passage sans commentaire, et attend ceux qui arrivent", async () => {
     const sans = await ouvre(
       passage({ commentary: { summary: () => ({ state: "none" }), open: vi.fn() } }),
     );
     expect(sans.querySelector(".bubble-commentary")).toBeNull();
+    expect(sans.querySelector(".bubble-phonetic")).toBeNull();
     monte?.unmount();
     clearPassage();
 
@@ -270,6 +281,23 @@ describe("la place des commandes", () => {
       .querySelector(".sheet-grip")!
       .dispatchEvent(new MouseEvent("pointerdown", { bubbles: true }));
     expect(readingPassage.value).not.toBeNull();
+  });
+
+  /**
+   * The auto-scroll pill floats above the sheet. Touching it used to release
+   * the passage: the sheet left, the pill dropped under the finger, and the
+   * tap fell on the verse below, which reopened the sheet.
+   */
+  it("do not release the passage when the auto-scroll pill is touched", async () => {
+    await ouvre(passage());
+    const pill = document.createElement("div");
+    pill.dataset.keepPassage = "";
+    const button = document.createElement("button");
+    pill.appendChild(button);
+    document.body.appendChild(pill);
+    button.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true }));
+    expect(readingPassage.value).not.toBeNull();
+    pill.remove();
   });
 });
 

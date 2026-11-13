@@ -110,3 +110,72 @@ export function dialTilt(tilt: DeviceTilt): { x: number; y: number } {
   // `+ 0` : un zéro négatif écrirait « -0deg » dans le style.
   return { x: Math.round(x) + 0, y: Math.round(y) + 0 };
 }
+
+/**
+ * The guidance toward the Kotel: how far the arrow is from the top of the
+ * phone, and what the dial and the motor make of it. Turning until the arrow
+ * points straight ahead should be felt as much as seen: notches as it comes
+ * close, a lock when it is there.
+ */
+
+/**
+ * The arrow's angle on screen, brought back to (-180, 180]: 0 when it points
+ * straight ahead, negative to the left, positive to the right.
+ */
+export function arrowOffset(angle: number): number {
+  const turned = ((angle % 360) + 360) % 360;
+  return turned > 180 ? turned - 360 : turned;
+}
+
+/**
+ * Facing the Kotel: within 5° to get in, 10° to get out. The gap keeps the
+ * hand that trembles around the threshold from locking and unlocking at every
+ * reading, which would make the phone buzz without end.
+ */
+const ALIGN_ENTER_DEGREES = 5;
+const ALIGN_LEAVE_DEGREES = 10;
+
+export function isAligned(offset: number, wasAligned: boolean): boolean {
+  return Math.abs(offset) <= (wasAligned ? ALIGN_LEAVE_DEGREES : ALIGN_ENTER_DEGREES);
+}
+
+/** Within this angle, the dial starts filling and the notches are felt. */
+const NEAR_DEGREES = 45;
+/** One notch every ten degrees, like the clicks of a dial. */
+const NOTCH_DEGREES = 10;
+/** How far past a notch the arrow must go before it counts as crossed. */
+const NOTCH_MARGIN_DEGREES = 2;
+
+/**
+ * The notch the arrow is in, from 1 (the last ten degrees) to 5, or null when
+ * it is too far for any. A notch only changes once the arrow is clearly past
+ * its edge: the heading moves by whole degrees, and an offset that hesitates
+ * between 9.6° and 10.6° must not tick on every reading.
+ */
+export function nextNotch(offset: number, previous: number | null): number | null {
+  const away = Math.abs(offset);
+  if (away > NEAR_DEGREES) {
+    return previous !== null && away <= NEAR_DEGREES + NOTCH_MARGIN_DEGREES ? previous : null;
+  }
+  const notch = Math.max(1, Math.ceil(away / NOTCH_DEGREES));
+  if (previous === null || notch === previous) return notch;
+  // Moving away: past the outer edge of the previous notch, by the margin.
+  if (notch > previous)
+    return away >= previous * NOTCH_DEGREES + NOTCH_MARGIN_DEGREES ? notch : previous;
+  // Coming closer: past its inner edge, by the margin.
+  return away <= (previous - 1) * NOTCH_DEGREES - NOTCH_MARGIN_DEGREES ? notch : previous;
+}
+
+/**
+ * How full the dial is, from 0 to 1. It rises as the arrow comes within 45°,
+ * to a little under half, then fills at once when it locks: the jump is what
+ * says "there", the slow rise before it says "warmer".
+ */
+const NEAR_FILL = 0.45;
+
+export function fillLevel(offset: number, aligned: boolean): number {
+  if (aligned) return 1;
+  const away = Math.abs(offset);
+  if (away >= NEAR_DEGREES) return 0;
+  return NEAR_FILL * (1 - away / NEAR_DEGREES);
+}

@@ -46,6 +46,10 @@ always open, that everyone moves forward, and that starts over from the first
 psalm as soon as the last one is read. Nobody creates it; people entrust a
 name to it.
 
+**Nichmat 40** follows a custom of its own: forty people each say Nichmat
+kol 'hai every day for forty days. Each takes a place and ticks their days;
+the forty days begin on a chosen day, or once the forty places are taken.
+
 ### Daily reading and "My journey"
 
 Pick the texts you want to read every day (a few Tehilim, a chapter of
@@ -284,6 +288,7 @@ initial bundle...).
 | [docs/traductions.md](docs/traductions.md) | The free translations shipped with the texts. |
 | [docs/parcours.md](docs/parcours.md) | "My journey": goals, habits and the daily reading. |
 | [docs/chaine-perpetuelle.md](docs/chaine-perpetuelle.md) | The perpetual Tehilim chain. |
+| [docs/nichmat-40-jours.md](docs/nichmat-40-jours.md) | Nichmat 40: forty readers, forty days. |
 | [docs/informations.md](docs/informations.md) | Team announcements: what's new, incidents, questions and polls. |
 | [docs/feedback.md](docs/feedback.md) | "Write to us": user messages and the team's replies. |
 | [docs/moderation.md](docs/moderation.md) | Session moderation (App Store requirements, guideline 1.2). |

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { shortTitle } from "../composables/useChiourPlayback";
+import { shortTitle, titleWithSerie } from "../composables/useChiourPlayback";
 
 /**
  * Dans une liste où la série est déjà dite (la page d'une série, la file du
@@ -28,5 +28,30 @@ describe("titre court d'un cours", () => {
     );
     expect(shortTitle("Shaar Habitahon", "Shaar Habitahon")).toBe("Shaar Habitahon");
     expect(shortTitle("Shaar Habitahon 1", null)).toBe("Shaar Habitahon 1");
+  });
+});
+
+/**
+ * Where the series is not said (the tab, sharing, a link preview), a title
+ * that no longer repeats it takes it after itself (titleWithSerie).
+ */
+describe("a class title with its series", () => {
+  it("adds the series to a title that does not say it", () => {
+    expect(titleWithSerie("Chapitre 3 (2/7)", "Shaar Habitahon")).toBe(
+      "Chapitre 3 (2/7) · Shaar Habitahon",
+    );
+  });
+
+  it("does not repeat it when the title already contains it, ignoring accents and case", () => {
+    expect(titleWithSerie("Shaar Habitahon Shiour 12", "Shaar Habitahon")).toBe(
+      "Shaar Habitahon Shiour 12",
+    );
+    expect(titleWithSerie("PELE YOETS - Emet", "Pélé Yoets")).toBe("PELE YOETS - Emet");
+  });
+
+  it("leaves the title alone without a series", () => {
+    expect(titleWithSerie("Se taire : la force maîtresse", null)).toBe(
+      "Se taire : la force maîtresse",
+    );
   });
 });

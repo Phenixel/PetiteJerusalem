@@ -28,6 +28,7 @@ const SessionManagementPage = () => import("../views/SessionManagementPage.vue")
 const ShareHomePage = () => import("../views/ShareReading/ShareHomePage.vue");
 const NewSession = () => import("../views/ShareReading/NewSession.vue");
 const DetailSession = () => import("../views/ShareReading/DetailSession.vue");
+const SessionReadingPage = () => import("../views/ShareReading/SessionReadingPage.vue");
 const ChiourimPage = () => import("../views/Chiourim/ChiourimPage.vue");
 const DetailChiour = () => import("../views/Chiourim/DetailChiour.vue");
 const AuteurChiourimPage = () => import("../views/Chiourim/AuteurChiourimPage.vue");
@@ -35,7 +36,6 @@ const SerieChiourimPage = () => import("../views/Chiourim/SerieChiourimPage.vue"
 const TextReadingPage = () => import("../views/TextReading/TextReadingPage.vue");
 const StudyPage = () => import("../views/StudyPage.vue");
 const SidourPage = () => import("../views/SidourPage.vue");
-const HomeEditPage = () => import("../views/HomeEditPage.vue");
 const ParcoursPage = () => import("../views/Parcours/ParcoursPage.vue");
 const MurPage = () => import("../views/Parcours/MurPage.vue");
 const LectureDuJourPage = () => import("../views/Parcours/LectureDuJourPage.vue");
@@ -53,6 +53,9 @@ const ParashaPage = () => import("../views/Library/ParashaPage.vue");
 const AnnouncementsPage = () => import("../views/Announcements/AnnouncementsPage.vue");
 const SupportPage = () => import("../views/SupportPage.vue");
 const SupportThreadPage = () => import("../views/SupportThreadPage.vue");
+const HelpCenterPage = () => import("../views/Help/HelpCenterPage.vue");
+const HelpGuidePage = () => import("../views/Help/HelpGuidePage.vue");
+const HelpVersionPage = () => import("../views/Help/HelpVersionPage.vue");
 const AnnouncementDetailPage = () => import("../views/Announcements/AnnouncementDetailPage.vue");
 
 import type { NavigationGuardWithThis, RouteLocation, RouteRecordSingleView } from "vue-router";
@@ -141,6 +144,16 @@ function localizedRoutes(): RouteRecordSingleView[] {
   );
 }
 
+/**
+ * The pages that offer the back-to-top button (ScrollToTop.vue); every other
+ * page goes without it. Only long lists that one goes down to pick an item:
+ * the texts of a reading session, the texts of a library section, the
+ * chapters of a book, the audio classes, the team's announcements. The
+ * library home page asks for it only while searching (requestScrollToTop).
+ * On a text being read, the reading menu takes its place.
+ */
+const SCROLL_TO_TOP = { scrollToTop: true } as const;
+
 export default [
   {
     path: "/",
@@ -205,6 +218,15 @@ export default [
     path: "/share-reading/session/:slug",
     name: "detail-session",
     component: DetailSession,
+    meta: SCROLL_TO_TOP,
+  },
+  // Every Tehilim the reader took in a chain, read one after the other
+  // (services/sessionBatchReading.ts). Without an account too: a guest is
+  // recognized by this device.
+  {
+    path: "/share-reading/session/:slug/lecture",
+    name: "session-reading",
+    component: SessionReadingPage,
   },
   {
     path: "/bibliotheque",
@@ -230,13 +252,12 @@ export default [
     name: "parcours-day",
     redirect: "/",
   },
-  // L'accueil à son goût : l'ordre des blocs, ceux qu'on masque. Un réglage
-  // de l'appareil ; sur le site, comme le tableau de bord, pour un compte.
+  // The home page to one's liking is now arranged in place, on the home page
+  // itself: the old address opens it in edit mode, for links kept.
   {
     path: "/accueil/modifier",
     name: "home-edit",
-    meta: { requiresAuth: !isNativeApp, offlineOk: isNativeApp },
-    component: HomeEditPage,
+    redirect: { path: "/", query: { modifier: "1" } },
   },
   // Mon parcours : programmes, habitudes, la journée et le mur. Dans l'app,
   // tout marche sans compte, sur l'appareil, et sans réseau ; sur le site,
@@ -294,7 +315,7 @@ export default [
   {
     path: "/bibliotheque/:corpus(tehilim|michna|talmud|tanakh|moussar|halakha)",
     name: "study-corpus",
-    meta: { offlineOk: true },
+    meta: { offlineOk: true, ...SCROLL_TO_TOP },
     component: StudyPage,
   },
   // Le Sidour : les tefilot, les brahot et les textes des fêtes, en une
@@ -362,13 +383,13 @@ export default [
   {
     path: "/bibliotheque/:corpus/:slug",
     name: "etude-reading",
-    meta: { offlineOk: true, plainBackground: true },
+    meta: { offlineOk: true, plainBackground: true, ...SCROLL_TO_TOP },
     component: TextReadingPage,
   },
   {
     path: "/bibliotheque/:corpus/:slug/:section",
     name: "etude-reading-section",
-    meta: { offlineOk: true, plainBackground: true },
+    meta: { offlineOk: true, plainBackground: true, ...SCROLL_TO_TOP },
     component: TextReadingPage,
   },
   // Horaires (zmanim) : tout est calculé sur l'appareil, aucune donnée à
@@ -411,21 +432,25 @@ export default [
     path: "/chiourim",
     name: "chiourim",
     component: ChiourimPage,
+    meta: SCROLL_TO_TOP,
   },
   {
     path: "/chiourim/auteur/:auteur",
     name: "auteur-chiourim",
     component: AuteurChiourimPage,
+    meta: SCROLL_TO_TOP,
   },
   {
     path: "/chiourim/serie/:serieId",
     name: "serie-chiourim",
     component: SerieChiourimPage,
+    meta: SCROLL_TO_TOP,
   },
   {
     path: "/chiourim/:slug",
     name: "detail-chiour",
     component: DetailChiour,
+    meta: SCROLL_TO_TOP,
   },
   // Informations de l'équipe (nouveautés, incidents, questions). Les
   // notifications ouvrent /informations/:id (voir functions/src/announcements.ts).
@@ -433,6 +458,7 @@ export default [
     path: "/informations",
     name: "announcements",
     component: AnnouncementsPage,
+    meta: SCROLL_TO_TOP,
   },
   // Nous écrire : les messages envoyés à l'équipe et ses réponses (voir
   // docs/feedback.md), puis la page de chaque fil. L'app les relit sans
@@ -450,6 +476,28 @@ export default [
     name: "support-thread",
     component: SupportThreadPage,
     meta: { requiresAuth: !isNativeApp },
+  },
+  // The help center: its guides are in the bundle, it opens offline and
+  // without an account, on the site as in the app (docs/help-center.md).
+  {
+    path: "/aide",
+    name: "help",
+    component: HelpCenterPage,
+    meta: { offlineOk: true },
+  },
+  {
+    path: "/aide/:slug",
+    name: "help-guide",
+    component: HelpGuidePage,
+    meta: { offlineOk: true },
+  },
+  // What a version changed, passage by passage: its video and the questions
+  // each passage raises (content/help/versions.ts).
+  {
+    path: "/aide/nouveautes/:version",
+    name: "help-version",
+    component: HelpVersionPage,
+    meta: { offlineOk: true },
   },
   {
     path: "/informations/:id",
@@ -506,14 +554,14 @@ export default [
   {
     path: "/lire/:textId",
     name: "text-reading",
-    meta: { offlineOk: true, plainBackground: true },
+    meta: { offlineOk: true, plainBackground: true, ...SCROLL_TO_TOP },
     beforeEnter: redirectPublicLire,
     component: TextReadingPage,
   },
   {
     path: "/lire/:textId/:section",
     name: "text-reading-section",
-    meta: { offlineOk: true, plainBackground: true },
+    meta: { offlineOk: true, plainBackground: true, ...SCROLL_TO_TOP },
     beforeEnter: redirectPublicLire,
     component: TextReadingPage,
   },

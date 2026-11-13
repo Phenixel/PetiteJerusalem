@@ -92,8 +92,10 @@ const hero = computed(() => {
   if (!s || !task.value) return null;
   if (done.value) {
     return {
+      // « Cette semaine, c'est fait », then what was read: « Semaine faite »
+      // under it said the same thing twice.
       kicker: t("parcours.program.weekDoneKicker"),
-      title: t("parcours.program.weekDone"),
+      title: views.portionText(task.value, props.program),
       meta: nextWeek.value ? t("parcours.program.weekNext", { portion: nextWeek.value }) : "",
     };
   }

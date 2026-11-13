@@ -5,8 +5,12 @@ import {
   accuracyFromAndroidStatus,
   accuracyFromDegrees,
   accuracySpread,
+  arrowOffset,
   dialTilt,
+  fillLevel,
+  isAligned,
   isFlat,
+  nextNotch,
 } from "../services/compassReading";
 
 /**
@@ -22,12 +26,20 @@ import {
  *   ne le dise : la précision s'affiche, et le calibrage se propose ;
  * - le cap ne vaut qu'à plat : le cadran penche à l'opposé du téléphone tant
  *   qu'il ne l'est pas.
+ *
+ * And since the redesign (docs/design.md, « The compass fills when you face
+ * the Kotel »): the window opens on the dial with no title; facing the Kotel
+ * is felt (notches, then a lock) and seen (the dial fills); a calibration
+ * that takes brings you back to the dial by itself, with a beat.
  */
 
 const capture = vi.fn();
 vi.mock("../services/analyticsService", () => ({
   analyticsService: { capture },
 }));
+
+const haptic = vi.fn();
+vi.mock("../services/haptics", () => ({ haptic }));
 
 // L'étalonnage d'Android passe par un plugin natif, absent ici : son pont a
 // son propre test (nativeCompassAccuracy.test.ts).
@@ -90,6 +102,7 @@ function boutonActiver(): HTMLButtonElement | undefined {
 
 beforeEach(() => {
   capture.mockClear();
+  haptic.mockClear();
   localStorage.clear();
 });
 
@@ -116,7 +129,7 @@ describe("boussole du Kotel : la permission", () => {
     // Une seule demande : pas de second appui.
     expect(requestPermission).toHaveBeenCalledTimes(1);
     expect(boutonActiver()).toBeUndefined();
-    expect(document.body.textContent).toContain(fr.textReading.kotel.live);
+    expect(document.body.textContent).toContain(fr.textReading.kotel.status.turn);
   });
 
   it("pose le bouton sur le cadran éteint quand le geste n'a pas suffi", async () => {
@@ -157,7 +170,7 @@ describe("boussole du Kotel : la permission", () => {
     await attend();
 
     expect(boutonActiver()).toBeUndefined();
-    expect(document.body.textContent).toContain(fr.textReading.kotel.live);
+    expect(document.body.textContent).toContain(fr.textReading.kotel.status.turn);
   });
 });
 
@@ -171,7 +184,8 @@ describe("boussole du Kotel : la précision", () => {
     oriente({ webkitCompassHeading: 120, webkitCompassAccuracy: 45 });
     await attend();
 
-    expect(document.body.textContent).toContain(fr.textReading.kotel.accuracy.lowLine);
+    expect(document.body.textContent).toContain(fr.textReading.kotel.status.lowAccuracy);
+    expect(document.body.textContent).toContain("Précision faible");
     // Le secteur de l'incertitude est dessiné autour de la flèche.
     expect(document.querySelector(".kotel-spread")).not.toBeNull();
 
@@ -182,13 +196,41 @@ describe("boussole du Kotel : la précision", () => {
     calibrer!.click();
     await attend();
 
-    expect(document.body.textContent).toContain(fr.textReading.kotel.calibration.title);
+    expect(document.body.textContent).toContain(fr.textReading.kotel.calibration.eight);
     expect(capture).toHaveBeenCalledWith("kotel_compass_calibration_opened", { accuracy: "low" });
 
     // Le geste fait son effet : la fenêtre le dit.
     oriente({ webkitCompassHeading: 120, webkitCompassAccuracy: 10 });
     await attend();
     expect(document.body.textContent).toContain(fr.textReading.kotel.calibration.done);
+    expect(haptic).toHaveBeenCalledWith("done");
+    expect(capture).toHaveBeenCalledWith("kotel_compass_calibrated", { seconds: 0 });
+
+    // Then back to the dial by itself, saying it is calibrated.
+    await new Promise((resolve) => setTimeout(resolve, 1200));
+    await attend();
+    expect(document.querySelector(".kotel-stage")).not.toBeNull();
+    expect(document.body.textContent).toContain(fr.textReading.kotel.status.calibrated);
+  });
+
+  it("ne revient pas de lui-même quand la précision était déjà bonne", async () => {
+    iosDemande(() => Promise.resolve("granted"));
+    const { openKotelCompass } = await monte();
+    openKotelCompass("title");
+    await attend();
+    oriente({ webkitCompassHeading: 120, webkitCompassAccuracy: 10 });
+    await attend();
+
+    [...document.querySelectorAll<HTMLButtonElement>("button")]
+      .find((button) => button.textContent?.trim() === fr.textReading.kotel.calibrate)!
+      .click();
+    await attend();
+    oriente({ webkitCompassHeading: 121, webkitCompassAccuracy: 9 });
+    await new Promise((resolve) => setTimeout(resolve, 1200));
+    await attend();
+
+    expect(document.querySelector(".kotel-stage")).toBeNull();
+    expect(haptic).not.toHaveBeenCalledWith("done");
   });
 
   it("chiffre une bonne précision quand l'appareil la donne", async () => {
@@ -200,7 +242,7 @@ describe("boussole du Kotel : la précision", () => {
     oriente({ webkitCompassHeading: 120, webkitCompassAccuracy: 12 });
     await attend();
 
-    expect(document.body.textContent).toContain("Précision bonne, à 12° près");
+    expect(document.body.textContent).toContain("Précision bonne, ±12°");
   });
 
   it("propose le calibrage même quand la précision est inconnue", async () => {
@@ -229,15 +271,119 @@ describe("boussole du Kotel : à plat", () => {
     await attend();
     const cadran = document.querySelector<HTMLElement>(".kotel-tilt")!;
     expect(cadran.style.transform).toBe("rotateX(40deg) rotateY(10deg)");
-    expect(document.body.textContent).toContain(fr.textReading.kotel.flat);
+    expect(document.body.textContent).toContain(fr.textReading.kotel.status.flat);
 
     oriente({ absolute: true, alpha: 0, beta: 2, gamma: 1 });
     await attend();
-    expect(document.body.textContent).toContain(fr.textReading.kotel.flatOk);
+    expect(document.body.textContent).not.toContain(fr.textReading.kotel.status.flat);
+    expect(document.body.textContent).toContain(fr.textReading.kotel.status.turn);
+  });
+});
+
+describe("boussole du Kotel : face au Kotel", () => {
+  /** Le cap du Kotel depuis Paris, le lieu par défaut. */
+  async function capDeParis(): Promise<number> {
+    const { bearingToKotel } = await import("../services/kotelDirection");
+    return bearingToKotel(48.8566, 2.3522);
+  }
+
+  it("s'ouvre sur le cadran, sans icône ni titre", async () => {
+    vi.stubGlobal("DeviceOrientationEvent", class {});
+    const { openKotelCompass } = await monte();
+    openKotelCompass("title");
+    await attend();
+
+    expect(document.querySelector("h3")).toBeNull();
+    expect(document.body.textContent).not.toContain(fr.textReading.kotel.title);
+    // The window keeps its name for screen readers.
+    expect(document.querySelector('[role="dialog"]')?.getAttribute("aria-label")).toBe(
+      fr.textReading.kotel.title,
+    );
+  });
+
+  it("clique en approchant, bat une fois face au Kotel, et le dit", async () => {
+    iosDemande(() => Promise.resolve("granted"));
+    const cap = await capDeParis();
+    const { openKotelCompass } = await monte();
+    openKotelCompass("title");
+    await attend();
+
+    oriente({ webkitCompassHeading: cap - 90, webkitCompassAccuracy: 10 });
+    await attend();
+    expect(haptic).not.toHaveBeenCalled();
+
+    // Within 45°: the notches.
+    oriente({ webkitCompassHeading: cap - 30, webkitCompassAccuracy: 10 });
+    await attend();
+    expect(haptic).toHaveBeenLastCalledWith("tick");
+
+    oriente({ webkitCompassHeading: cap - 1, webkitCompassAccuracy: 10 });
+    await attend();
+    expect(haptic).toHaveBeenLastCalledWith("done");
+    expect(document.body.textContent).toContain(fr.textReading.kotel.status.aligned);
+    expect(document.querySelector(".kotel-aligned")).not.toBeNull();
+    expect(capture).toHaveBeenCalledWith("kotel_compass_aligned", { seconds: 0 });
+
+    // The hand trembles around the lock: no second beat.
+    haptic.mockClear();
+    oriente({ webkitCompassHeading: cap - 7, webkitCompassAccuracy: 10 });
+    await attend();
+    oriente({ webkitCompassHeading: cap - 2, webkitCompassAccuracy: 10 });
+    await attend();
+    expect(haptic).not.toHaveBeenCalled();
+    expect(document.querySelector(".kotel-aligned")).not.toBeNull();
+  });
+
+  it("ne guide pas sans boussole", async () => {
+    vi.stubGlobal("DeviceOrientationEvent", class {});
+    const { openKotelCompass } = await monte();
+    openKotelCompass("title");
+    await new Promise((resolve) => setTimeout(resolve, 2100));
+    await attend();
+
+    expect(document.body.textContent).toContain(fr.textReading.kotel.fixed);
+    expect(document.querySelector(".kotel-liquid")).toBeNull();
+    expect(haptic).not.toHaveBeenCalled();
   });
 });
 
 describe("lecture de la boussole", () => {
+  it("ramène l'angle de la flèche de part et d'autre du haut", () => {
+    expect(arrowOffset(0)).toBe(0);
+    expect(arrowOffset(30)).toBe(30);
+    expect(arrowOffset(330)).toBe(-30);
+    expect(arrowOffset(-30)).toBe(-30);
+    expect(arrowOffset(180)).toBe(180);
+  });
+
+  it("entre face au Kotel à 5°, n'en sort qu'à 10°", () => {
+    expect(isAligned(4, false)).toBe(true);
+    expect(isAligned(7, false)).toBe(false);
+    expect(isAligned(-9, true)).toBe(true);
+    expect(isAligned(11, true)).toBe(false);
+  });
+
+  it("compte les crans sans cliquer sur un bord qui hésite", () => {
+    expect(nextNotch(90, null)).toBeNull();
+    expect(nextNotch(44, null)).toBe(5);
+    expect(nextNotch(-25, 5)).toBe(3);
+    // Just past an edge, the previous notch holds; clearly past, it changes.
+    expect(nextNotch(10.6, 1)).toBe(1);
+    expect(nextNotch(12.5, 1)).toBe(2);
+    expect(nextNotch(9.6, 2)).toBe(2);
+    expect(nextNotch(7.5, 2)).toBe(1);
+    expect(nextNotch(46, 5)).toBe(5);
+    expect(nextNotch(50, 5)).toBeNull();
+  });
+
+  it("remplit le cadran peu à peu, puis d'un coup face au Kotel", () => {
+    expect(fillLevel(90, false)).toBe(0);
+    expect(fillLevel(45, false)).toBe(0);
+    expect(fillLevel(0, false)).toBeCloseTo(0.45);
+    expect(fillLevel(-22.5, false)).toBeCloseTo(0.225);
+    expect(fillLevel(3, true)).toBe(1);
+  });
+
   it("range la précision de Safari en trois niveaux", () => {
     expect(accuracyFromDegrees(10)).toBe("high");
     expect(accuracyFromDegrees(15)).toBe("high");

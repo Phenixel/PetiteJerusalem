@@ -47,9 +47,10 @@ import { analyticsService } from "../../services/analyticsService";
 import CollapseTransition from "../../components/CollapseTransition.vue";
 import TalmudDafText from "../../components/TalmudDafText.vue";
 import { takeLegacyChecks } from "../../composables/useChneiMikraChecks";
-import AliyaCheck from "../../components/AliyaCheck.vue";
 import BookmarkRibbon from "../../components/BookmarkRibbon.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
+import AliyaCheck from "../../components/AliyaCheck.vue";
+import { aliyaAnchor } from "../../services/parcours/aliyot";
 
 const props = defineProps<{
   entry: TextStudyJsonEntry;
@@ -68,13 +69,26 @@ const props = defineProps<{
    */
   blocks?: { from: number; to: number };
   /**
-   * Chnei mikra (ChneiMikraPage) : la semaine de la paracha. Chaque montée
-   * porte alors sa case, à cocher une fois lue (useChneiMikraChecks) ; la
-   * page tient les coches (`checkedAliyot`) et reçoit `toggle-aliya`.
+   * Chnei mikra (ChneiMikraPage): the week of the paracha. Each aliyah then
+   * carries its check above and below its text (AliyaCheck, swiped right
+   * once read; useChneiMikraChecks); the page holds the checks
+   * (`checkedAliyot`) and receives `toggle-aliya`.
    */
   aliyaWeek?: string;
   /** Les montées cochées de ce texte, comptées de 0. */
   checkedAliyot?: number[];
+  /**
+   * Chnei mikra opened from Mon parcours for a single aliyah: the pull at the
+   * end of the day's portion (ReaderTaskCard) already checks it, so the
+   * aliyah carries no check of its own (the same thing asked twice).
+   */
+  hideAliyaChecks?: boolean;
+  /**
+   * Chnei mikra: the rank in the week of this text's first aliyah (7 for the
+   * second of a double paracha). Each aliyah title then carries its landmark
+   * (aliyaAnchor), where the reading menu scrolls to.
+   */
+  aliyaBase?: number;
 }>();
 const emit = defineEmits<{
   "toggle-section": [index: number];
@@ -236,17 +250,19 @@ function goToBookmark(b: Bookmark) {
   });
 }
 
-// --- Chnei mikra : une case par montée (voir aliyaWeek) ---
-/** Le rang d'une montée dans le texte (compté de 0), tel que la liste de la semaine le compte. */
+// --- Chnei mikra: each aliyah is checked off above and below its text (see aliyaWeek) ---
+/** The aliyot carry their check (AliyaCheck), unless the reading's end marks it all. */
+const aliyaChecks = computed(() => Boolean(props.aliyaWeek) && !props.hideAliyaChecks);
+/** The rank of an aliyah in the text (counted from 0), as the week counts it. */
 function aliyaIndex(section: TextSection, block: TextBlock): number {
   return section.blocks?.indexOf(block) ?? 0;
 }
 function isAliyaChecked(section: TextSection, block: TextBlock): boolean {
   return props.checkedAliyot?.includes(aliyaIndex(section, block)) ?? false;
 }
-function toggleAliya(section: TextSection, block: TextBlock): void {
-  if (!props.aliyaWeek) return;
-  emit("toggle-aliya", aliyaIndex(section, block), !isAliyaChecked(section, block), block.label);
+function setAliya(section: TextSection, block: TextBlock, done: boolean): void {
+  if (!props.aliyaWeek || done === isAliyaChecked(section, block)) return;
+  emit("toggle-aliya", aliyaIndex(section, block), done, block.label);
 }
 // Les coches de la version d'avant, sur l'appareil : reprises une fois, à
 // l'arrivée du texte, qui seul sait où commencent ses montées.
@@ -373,8 +389,9 @@ watch(
   { immediate: true },
 );
 
-// La traduction allumée ou éteinte : Rachi se recharge avec ou sans elle.
-watch(translationShown, () => {
+// La traduction allumée ou éteinte, ou une autre langue choisie : Rachi se
+// recharge avec ou sans elle.
+watch([translationShown, translationLangChoice], () => {
   if (!rashiLines.value) return;
   rashiLines.value = null;
   if (props.withRashi && content.value) void loadRashi();
@@ -486,7 +503,6 @@ onUnmounted(() => {
     </div>
 
     <p v-else-if="notDownloaded" class="py-2 text-sm text-text-secondary flex items-center gap-1.5">
-      <AppIcon name="download" :size="14" class="text-text-secondary/60" />
       {{ t("dailyReading.offline.notDownloaded") }}
     </p>
 
@@ -494,7 +510,6 @@ onUnmounted(() => {
       v-else-if="missing || error"
       class="py-2 text-sm text-text-secondary flex items-center gap-1.5"
     >
-      <AppIcon name="alert-triangle" :size="14" class="text-amber-500" />
       {{ t("dailyReading.loadError") }}
       <button @click="load" class="ml-2 text-primary hover:underline">
         {{ t("textReading.retry") }}
@@ -505,7 +520,6 @@ onUnmounted(() => {
       <!-- Marque-pages posés dans cette lecture : retour direct au verset -->
       <div v-if="bookmarks.length" class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
         <span class="inline-flex items-center gap-1.5 text-text-secondary">
-          <AppIcon name="bookmark" :size="13" class="text-primary" />
           {{ t("textReading.bookmarks") }}
         </span>
         <button
@@ -526,7 +540,6 @@ onUnmounted(() => {
         v-if="withRashi && rashiFailed"
         class="text-sm text-text-secondary flex items-center gap-1.5"
       >
-        <AppIcon name="alert-triangle" :size="14" class="text-amber-500" />
         {{ t("chneiMikra.rashiUnavailable") }}
       </p>
 
@@ -580,31 +593,23 @@ onUnmounted(() => {
                  the background, with a marker at each chapter / montée block -->
             <template v-else>
               <template v-for="block in blocksOf(section)" :key="block.offset">
-                <!-- Chnei mikra : la montée et sa case, cochée une fois lue. -->
-                <div
-                  v-if="block.label && aliyaWeek"
-                  class="my-4 flex items-center justify-center gap-3"
-                >
-                  <span class="text-xs font-semibold text-primary/70 dark:text-primary">
-                    {{ headingLabel(block.heading, block.label) }}
-                  </span>
-                  <AliyaCheck
-                    :checked="isAliyaChecked(section, block)"
-                    :label="
-                      isAliyaChecked(section, block)
-                        ? t('chneiMikra.aliyaDone')
-                        : t('chneiMikra.aliyaMark')
-                    "
-                    :spoken="
-                      t('chneiMikra.aliyaCheck', {
-                        aliya: headingLabel(block.heading, block.label),
-                      })
-                    "
-                    @toggle="toggleAliya(section, block)"
-                  />
-                </div>
+                <!-- Chnei mikra: the aliyah's check takes the place of its title,
+                     to check it off without scrolling to its end. -->
+                <AliyaCheck
+                  v-if="block.label && aliyaChecks"
+                  class="mt-10 mb-5 first:mt-4"
+                  :done="isAliyaChecked(section, block)"
+                  :name="headingLabel(block.heading, block.label)"
+                  :data-block-anchor="aliyaAnchor((aliyaBase ?? 0) + aliyaIndex(section, block))"
+                  @toggle="(done: boolean) => setAliya(section, block, done)"
+                />
                 <p
                   v-else-if="block.label"
+                  :data-block-anchor="
+                    aliyaWeek
+                      ? aliyaAnchor((aliyaBase ?? 0) + aliyaIndex(section, block))
+                      : undefined
+                  "
                   class="my-4 text-xs font-semibold text-primary/70 dark:text-primary text-center"
                 >
                   {{ headingLabel(block.heading, block.label) }}
@@ -681,6 +686,14 @@ onUnmounted(() => {
                     />
                   </template>
                 </p>
+                <!-- Chnei mikra: and where it ends, for whoever has just read it. -->
+                <AliyaCheck
+                  v-if="block.label && aliyaChecks"
+                  class="mt-4"
+                  :done="isAliyaChecked(section, block)"
+                  :name="headingLabel(block.heading, block.label)"
+                  @toggle="(done: boolean) => setAliya(section, block, done)"
+                />
               </template>
             </template>
           </div>
@@ -697,24 +710,29 @@ onUnmounted(() => {
   content-visibility: auto;
   contain-intrinsic-size: auto 40rem;
 }
-/* Tailles pilotées par le réglage A− / A+ (useReadingSize), comme le lecteur.
-   L'interligne de l'hébreu est volontairement plus serré que leading-loose :
-   assez d'air pour les voyelles et les teamim, sans étirer la lecture. */
+/* Sizes follow the A− / A+ control (useReadingSize), as in the reader.
+   The Hebrew line height is deliberately tighter than leading-loose: enough
+   air for the vowels and the cantillation marks, without stretching the
+   reading. Justified, like the reader: the text fills the width of the
+   screen, the Targum and Rashi under each verse included. */
 .daily-he {
   font-size: calc(1.25rem * var(--reading-scale, 1));
   line-height: 1.7;
+  text-align: justify;
 }
 .daily-tl {
   font-family: var(--font-reading);
   font-size: calc(1rem * var(--reading-scale, 1));
 }
-/* La traduction d'un verset ou d'un commentaire de Rachi : la police de
-   lecture latine, à gauche, sous l'hébreu qu'elle traduit. */
+/* The translation of a verse or of a Rashi comment: the Latin reading font,
+   justified from the left, under the Hebrew it translates. */
 .daily-tr {
   font-family: var(--font-reading);
   font-size: calc(0.95rem * var(--reading-scale, 1));
   line-height: 1.6;
-  text-align: left;
+  text-align: justify;
+  text-align-last: left;
+  hyphens: auto;
 }
 /* Rachi : sous le Targoum, plus petit et en retrait derrière un filet
    (côté droit : le texte est en hébreu). */

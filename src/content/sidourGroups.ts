@@ -17,6 +17,7 @@
  */
 import textStudiesJson from "../datas/textStudies.json";
 import type { TextStudiesJson, TextStudyJsonEntry } from "../models/models";
+import { filterBySearch } from "../services/catalogSearch";
 import { corpusOf, hubPath, latinName, slugOf } from "./etudeTexts";
 import { MOADIM_BOOK_BY_THEME } from "./moadimNow";
 
@@ -60,7 +61,13 @@ const GROUPS: { id: SidourGroupId; labelKey: string; keys: string[] }[] = [
   {
     id: "offices",
     labelKey: "sidour.groups.offices",
-    keys: ["sidour/chaharit", "sidour/minha", "sidour/arvit", "sidour/kaddich"],
+    keys: [
+      "sidour/chaharit",
+      "sidour/minha",
+      "sidour/arvit",
+      "sidour/kaddich",
+      "sidour/nichmat-kol-hai",
+    ],
   },
   {
     id: "soir",
@@ -88,6 +95,7 @@ const GROUPS: { id: SidourGroupId; labelKey: string; keys: string[] }[] = [
       "brahot/birkat-hailanot",
       "brahot/hafrashat-halla",
       "brahot/teroumot-oumaasrot",
+      "sidour/tikoun-haklali",
     ],
   },
   {
@@ -188,4 +196,22 @@ export function sidourSections(currentFeast: FeastId | null = null): SidourSecti
   if (later.length > 0)
     sections.push({ kind: "feasts", id: "fetes", labelKey: "sidour.groups.fetes", items: later });
   return sections;
+}
+
+/**
+ * The texts that answer a search on the Sidour page, in the order of its
+ * list (the current holiday first). The library's own search
+ * (services/catalogSearch): Hebrew and Latin names, the other names everyone
+ * types (« Grace after meals », « Bentcher », « Bensch »...), whatever the spelling, and one
+ * typo away. An empty term answers nothing: the page then shows its list.
+ */
+export function searchSidour(term: string, sections: SidourSection[]): SidourText[] {
+  if (!term.trim()) return [];
+  const texts = sections.flatMap((section) => section.items);
+  const searchable = texts.map((text) => ({
+    name: text.entry.name,
+    livre: text.entry.livre,
+    text,
+  }));
+  return filterBySearch(searchable, term).map((found) => found.text);
 }

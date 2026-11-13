@@ -249,7 +249,6 @@ watch(
         id="date-converter-title"
         class="flex min-w-0 items-center gap-2 text-lg font-bold text-text-primary"
       >
-        <AppIcon name="rotate" :size="17" class="shrink-0 text-primary" />
         <span class="truncate">{{ t("converter.title") }}</span>
       </h3>
       <button
@@ -273,7 +272,7 @@ watch(
         v-for="option in TOOLS"
         :key="option.tool"
         type="button"
-        class="rounded-control px-1 py-2 text-sm font-semibold transition-colors"
+        class="rounded-segment px-1 py-2 text-sm font-semibold transition-colors"
         :class="segmentClass(tool === option.tool)"
         :aria-pressed="tool === option.tool"
         @click="tool = option.tool"
@@ -398,7 +397,7 @@ watch(
           v-for="option in KINDS"
           :key="option.kind"
           type="button"
-          class="rounded-control px-2 py-2 text-sm font-semibold transition-colors"
+          class="rounded-segment px-2 py-2 text-sm font-semibold transition-colors"
           :class="segmentClass(mitzvahKind === option.kind)"
           :aria-pressed="mitzvahKind === option.kind"
           @click="mitzvahKind = option.kind"

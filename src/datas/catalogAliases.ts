@@ -259,7 +259,15 @@ export const TEXT_ALIASES: Record<string, string[]> = {
   "Nerot Hanouka": ["Maoz Tsour", "Allumage des bougies", "Menorah"],
 
   // Brahot : le nom de la bénédiction, ou ce qu'elle accompagne.
-  "Birkat Hamazon": ["Bénédiction après le repas", "Grace after meals", "Bentcher"],
+  "Birkat Hamazon": [
+    "Bénédiction après le repas",
+    "Grace after meals",
+    "Bentcher",
+    "Bencher",
+    "Bensch",
+    "Bentsch",
+    "Bentching",
+  ],
   "Brakha A'harona": ["Mé'ein Chaloch", "Al Hami'hya", "Boré Nefachot", "Bénédiction finale"],
   "Cheva Brahot": ["Mariage", "Wedding"],
   "Birkat Halevana": ["Kiddouch Levana", "Bénédiction de la lune", "Blessing of the Moon"],
@@ -278,6 +286,19 @@ export const TEXT_ALIASES: Record<string, string[]> = {
   Arvit: ["Maariv", "מעריב", "Prière du soir", "Evening prayer"],
   "Chema al Hamita": ["Kriat Chema", "Chéma du coucher", "Bedtime Shema"],
   "Tikoun Hatsot": ["Prière de minuit", "Midnight prayer"],
+  "Tikoun Haklali": [
+    "Tikkun HaKlali",
+    "Tikoun Hakelali",
+    "Tikkoun Haklali",
+    "Remède général",
+    "General remedy",
+    "Dix psaumes",
+    "Ten psalms",
+    "Rabbi Nachman",
+    "Breslev",
+    "Breslov",
+  ],
+  "Nichmat Kol 'Hai": ["Nishmat Kol Chai", "Nishmas", "Yichtaba'h", "Yishtabach", "נשמת"],
 
   // Moussar : la porte qu'on vient le plus chercher, sous ses graphies.
   "Chaar Habita'hon": [

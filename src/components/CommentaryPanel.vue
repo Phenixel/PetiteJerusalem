@@ -3,11 +3,16 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { useI18n } from "vue-i18n";
 import AppIcon from "./icons/AppIcon.vue";
 import BottomSheet from "./BottomSheet.vue";
+import TranslationAiNotice from "./TranslationAiNotice.vue";
+import TranslationCredit from "./TranslationCredit.vue";
+import TranslationText from "./TranslationText.vue";
 import { sideBySide } from "../composables/useSideBySide";
 import { useOverlay } from "../composables/useOverlayStack";
 import { STUDY_MIN, TEXT_ROOM, useStudyWidth } from "../composables/useStudyWidth";
 import { analyticsService } from "../services/analyticsService";
+import { prefersLessMotion } from "../composables/useMotion";
 import { COMMENTARY_LABELS, type CommentaryGroup } from "../composables/usePassageCommentaries";
+import type { TranslationSource } from "../services/textService";
 
 /**
  * Le panneau d'étude : les commentaires du passage choisi (Rachi, Tossafot),
@@ -30,6 +35,11 @@ import { COMMENTARY_LABELS, type CommentaryGroup } from "../composables/usePassa
  * place (useStudyWidth) ; le texte à sa gauche suit. Au clavier, les flèches
  * gauche et droite la font grandir et rétrécir ; un double appui sur le bord
  * lui rend sa largeur d'origine.
+ *
+ * With the translation on, a translated commentary (Rashi on the Torah) has
+ * its translation under each comment, the AI notice above when it is the
+ * French made by AI, and the translator's name below (as at the foot of a
+ * text, see docs/traductions.md).
  */
 const props = defineProps<{
   /** Où se trouve le passage, en clair : « Daf 2a · passage 3 ». */
@@ -37,6 +47,8 @@ const props = defineProps<{
   /** Ses commentaires ; vide : le passage n'en a pas. */
   groups: CommentaryGroup[];
   state: "idle" | "loading" | "ready" | "error";
+  /** Who translated the commentaries, when they come translated. */
+  sources?: TranslationSource[];
 }>();
 
 const emit = defineEmits<{ (e: "close"): void }>();
@@ -54,6 +66,77 @@ watch(
 );
 
 const isEmpty = computed(() => props.state === "ready" && props.groups.length === 0);
+
+// ---- Moving between commentators -------------------------------------------
+// With several commentaries (Bartenura and Tossefot Yom Tov, Rashi and
+// Tossafot), a row of tabs at the top of the panel names them: a tap scrolls
+// to that commentator, and the tab of the one being read follows the reading.
+
+/** The tabs only show when there is more than one commentator to reach. */
+const showNav = computed(() => props.state === "ready" && props.groups.length > 1);
+const activeSource = ref<string | null>(null);
+const sections = new Map<string, HTMLElement>();
+function setSection(source: string, el: unknown): void {
+  if (el instanceof HTMLElement) sections.set(source, el);
+  else sections.delete(source);
+}
+
+/** The panel's scrolling body (BottomSheet), where the commentators follow each other. */
+function scroller(): HTMLElement | null {
+  return body.value?.closest(".sheet-body") ?? null;
+}
+
+/** Room left above a commentator reached from its tab. */
+const JUMP_MARGIN = 12;
+/** A scroll caused by a tap does not move the tabs on its way down. */
+let jumping: ReturnType<typeof setTimeout> | undefined;
+
+function jumpTo(source: string, index: number): void {
+  const el = sections.get(source);
+  const box = scroller();
+  if (!el || !box) return;
+  activeSource.value = source;
+  clearTimeout(jumping);
+  jumping = setTimeout(() => (jumping = undefined), 600);
+  const top = el.getBoundingClientRect().top - box.getBoundingClientRect().top + box.scrollTop;
+  box.scrollTo({
+    top: Math.max(0, top - JUMP_MARGIN),
+    behavior: prefersLessMotion() ? "auto" : "smooth",
+  });
+  analyticsService.capture("commentaries_jumped", { source, position: index });
+}
+
+/** The commentator being read: the last one whose name has gone past the top. */
+function followReading(): void {
+  if (!showNav.value || jumping !== undefined) return;
+  const box = scroller();
+  if (!box) return;
+  const limit = box.getBoundingClientRect().top + JUMP_MARGIN * 3;
+  let current = props.groups[0]?.source ?? null;
+  for (const group of props.groups) {
+    const el = sections.get(group.source);
+    if (el && el.getBoundingClientRect().top <= limit) current = group.source;
+  }
+  // At the very bottom, the last commentator is the one read, however short.
+  if (box.scrollTop + box.clientHeight >= box.scrollHeight - 2) {
+    current = props.groups[props.groups.length - 1]?.source ?? current;
+  }
+  activeSource.value = current;
+}
+
+// Each passage starts again on its first commentator.
+watch(
+  () => [props.place, props.groups] as const,
+  () => {
+    activeSource.value = props.groups[0]?.source ?? null;
+  },
+  { immediate: true },
+);
+
+/** The sources of the translation, when the passage shows one. */
+const shownSources = computed<TranslationSource[]>(() =>
+  props.groups.some((g) => g.comments.some((c) => c.tr)) ? (props.sources ?? []) : [],
+);
 
 function onKeydown(event: KeyboardEvent): void {
   if (event.key === "Escape") emit("close");
@@ -145,13 +228,18 @@ function captureResize(): void {
 }
 
 watch(sideBySide, () => void nextTick(measureWidth));
+let scrollBox: HTMLElement | null = null;
 onMounted(() => {
+  scrollBox = scroller();
+  scrollBox?.addEventListener("scroll", followReading, { passive: true });
   window.addEventListener("keydown", onKeydown);
   window.addEventListener("resize", measureWidth);
   measureWidth();
 });
 onBeforeUnmount(() => {
   open.value = false;
+  clearTimeout(jumping);
+  scrollBox?.removeEventListener("scroll", followReading);
   window.removeEventListener("keydown", onKeydown);
   window.removeEventListener("resize", measureWidth);
   setResizing(false);
@@ -187,7 +275,7 @@ onBeforeUnmount(() => {
       >
         <span class="study-resizer-grip" aria-hidden="true"></span>
       </div>
-      <header class="commentary-head">
+      <header class="commentary-head" :class="{ 'has-nav': showNav }">
         <div class="min-w-0">
           <p class="commentary-title">{{ t("textReading.commentaries.title") }}</p>
           <p class="commentary-place">{{ place }}</p>
@@ -201,6 +289,27 @@ onBeforeUnmount(() => {
           <AppIcon name="x" :size="16" />
         </button>
       </header>
+      <!-- Several commentators: one tab each, to go from one to the other. -->
+      <div v-if="showNav" class="commentary-nav-wrap">
+        <nav
+          class="commentary-nav"
+          data-sheet-nodrag
+          :aria-label="t('textReading.commentaries.nav')"
+        >
+          <button
+            v-for="(group, index) in groups"
+            :key="group.source"
+            type="button"
+            class="commentary-tab"
+            :class="{ 'is-active': activeSource === group.source }"
+            :aria-current="activeSource === group.source ? 'true' : undefined"
+            @click="jumpTo(group.source, index)"
+          >
+            {{ t(COMMENTARY_LABELS[group.source]) }}
+            <span class="commentary-tab-count">{{ group.comments.length }}</span>
+          </button>
+        </nav>
+      </div>
     </template>
 
     <div ref="body" class="commentary-body">
@@ -213,18 +322,34 @@ onBeforeUnmount(() => {
       <p v-else-if="isEmpty" class="commentary-note">
         {{ t("textReading.commentaries.none") }}
       </p>
-      <section v-for="group in groups" v-else :key="group.source" class="commentary-group">
-        <h3 class="commentary-source">{{ t(COMMENTARY_LABELS[group.source]) }}</h3>
-        <p
-          v-for="(comment, i) in group.comments"
-          :key="i"
-          dir="rtl"
-          class="commentary-text font-hebrew"
+      <template v-else>
+        <TranslationAiNotice :sources="shownSources" class="commentary-ai" />
+        <section
+          v-for="group in groups"
+          :key="group.source"
+          :ref="(el) => setSection(group.source, el)"
+          class="commentary-group"
         >
-          <b v-if="comment.lead" class="commentary-lead">{{ comment.lead }}</b>
-          {{ comment.text }}
-        </p>
-      </section>
+          <h3 class="commentary-source">
+            {{ t(COMMENTARY_LABELS[group.source]) }}
+            <span class="commentary-count">{{ group.comments.length }}</span>
+          </h3>
+          <div v-for="(comment, i) in group.comments" :key="i" class="commentary-item">
+            <p dir="rtl" class="commentary-text font-hebrew">
+              <b v-if="comment.lead" class="commentary-lead">{{ comment.lead }}</b>
+              {{ comment.text }}
+            </p>
+            <p v-if="comment.tr" dir="ltr" class="commentary-tr">
+              <TranslationText :text="comment.tr" />
+            </p>
+          </div>
+        </section>
+        <TranslationCredit
+          v-if="shownSources.length"
+          :sources="shownSources"
+          class="commentary-credit"
+        />
+      </template>
       <p class="commentary-hint">{{ t("textReading.commentaries.hint") }}</p>
     </div>
   </BottomSheet>
@@ -308,52 +433,172 @@ onBeforeUnmount(() => {
   padding-top: 0.9rem;
 }
 
+/* A group label, in lowercase (docs/design.md, « What we do not use »); the
+   place, what the panel is open on, comes first in the eye. */
 .commentary-title {
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  font-size: 0.8rem;
+  font-weight: 600;
   color: var(--color-primary);
 }
 
 .commentary-place {
-  margin-top: 0.15rem;
-  font-size: 0.85rem;
-  font-weight: 600;
+  margin-top: 0.1rem;
+  font-size: 1rem;
+  font-weight: 700;
   line-height: 1.3;
   color: var(--color-text-primary);
 }
 
-/* Le corps du volet défile (BottomSheet) : ici, la marge du texte seulement. */
-.commentary-body {
-  padding: 0.75rem 1.25rem 1.25rem;
+/* The commentators, one tab each, under the place: the segmented control of
+   the reading menu (a tinted track, the active one on a surface pill). It
+   scrolls sideways when the names do not fit, without dragging the sheet. */
+/* Under the place, the tabs take the header's rule below them. */
+.commentary-head.has-nav {
+  padding-bottom: 0.5rem;
+  border-bottom: 0;
 }
 
+.commentary-nav-wrap {
+  padding: 0 1rem 0.6rem 1.25rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-text-primary) 8%, transparent);
+}
+
+.commentary-nav {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.125rem;
+  overflow-x: auto;
+  scrollbar-width: none;
+  touch-action: pan-x;
+  border-radius: var(--radius-btn);
+  background-color: color-mix(in srgb, var(--color-text-primary) 6%, transparent);
+}
+
+.commentary-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.commentary-tab {
+  display: inline-flex;
+  flex: 1 0 auto;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.35rem;
+  min-height: 2.25rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: var(--radius-segment);
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--color-text-secondary);
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.commentary-tab.is-active {
+  background-color: var(--color-surface);
+  color: var(--color-primary);
+  box-shadow: var(--shadow-card);
+}
+
+.commentary-tab:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
+
+.commentary-tab-count {
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.75;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .commentary-tab {
+    transition: none;
+  }
+}
+
+/* Le corps du volet défile (BottomSheet) : ici, la marge du texte seulement. */
+.commentary-body {
+  padding: 1rem 1.25rem 1.5rem;
+}
+
+/* Each commentator opens with its name, a full-width rule above it after
+   the first: Rashi and Tossafot read as two parts. */
 .commentary-group + .commentary-group {
-  margin-top: 1.25rem;
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--color-line-strong);
 }
 
 .commentary-source {
-  margin-bottom: 0.4rem;
-  font-size: 0.8rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 1.05rem;
   font-weight: 700;
-  color: var(--color-text-secondary);
-}
-
-/* Le commentaire suit la taille de lecture : c'est un texte qu'on étudie,
-   pas une étiquette. */
-.commentary-text {
-  font-size: calc(1.05rem * var(--reading-scale, 1));
-  line-height: 1.7;
   color: var(--color-text-primary);
 }
 
-.commentary-text + .commentary-text {
-  margin-top: 0.6rem;
+.commentary-count {
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-secondary);
 }
 
+/* One comment (a dibbour hamat'hil and what follows), then a fine rule
+   before the next: a long Rashi no longer reads as a single block. */
+.commentary-item {
+  padding: 0.85rem 0;
+}
+
+.commentary-item + .commentary-item {
+  border-top: 1px solid var(--color-line);
+}
+
+.commentary-item:last-child {
+  padding-bottom: 0;
+}
+
+/* The commentary follows the reading size: it is a text one studies, not a
+   label. One step below the verse of the reader (1.5 rem), and justified
+   like it. */
+.commentary-text {
+  font-size: calc(1.25rem * var(--reading-scale, 1));
+  line-height: 1.8;
+  text-align: justify;
+  color: var(--color-text-primary);
+}
+
+/* The words of the verse being commented: what the eye looks for first, in
+   the theme color like the verse numbers. */
 .commentary-lead {
   font-weight: 700;
+  color: var(--color-primary);
+}
+
+/* The translation under its comment: the reading font, one step below the
+   Hebrew, in the secondary color like the translation under a verse. */
+.commentary-tr {
+  margin-top: 0.5rem;
+  font-family: var(--font-reading);
+  font-size: calc(1rem * var(--reading-scale, 1));
+  line-height: 1.65;
+  text-align: justify;
+  text-align-last: left;
+  hyphens: auto;
+  color: var(--color-text-secondary);
+}
+
+.commentary-ai {
+  margin-bottom: 1rem;
+}
+
+.commentary-credit {
+  margin-top: 1.5rem;
 }
 
 .commentary-note,

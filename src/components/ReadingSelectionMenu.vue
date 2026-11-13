@@ -258,16 +258,25 @@ function bookmark(): void {
 }
 
 /**
- * Un appui hors du passage et hors de la bulle relâche le choix. Les passages
- * sont exclus pour que le second appui les relâche eux-mêmes : sans cela, cet
- * écouteur aurait relâché le choix juste avant que l'appui ne le repose.
+ * A tap outside the passage and outside the bubble releases the choice. The
+ * passages are excluded so that the second tap releases them itself: without
+ * this, this listener would have released the choice just before the tap set
+ * it again.
+ *
+ * What floats above the sheet and carries its own commands (the auto-scroll
+ * pill and its speed panel, `data-keep-passage`) is excluded too: touching
+ * it is not touching beside the passage. It used to close the sheet under
+ * the finger, the pill dropped with it, and the tap fell on the text below.
  */
 function onPointerDown(event: PointerEvent): void {
-  // La fenêtre de partage porte le passage : le relâcher la ferait disparaître
-  // sous les doigts de celui qui vient de l'ouvrir.
+  // The share window carries the passage: releasing it would make it vanish
+  // under the fingers of the person who just opened it.
   if (showShare.value || !readingPassage.value) return;
   const target = event.target;
-  if (target instanceof Element && target.closest(".reading-pick, .reading-bubble, .bottom-sheet"))
+  if (
+    target instanceof Element &&
+    target.closest(".reading-pick, .reading-bubble, .bottom-sheet, [data-keep-passage]")
+  )
     return;
   clearPassage();
 }
@@ -300,7 +309,7 @@ onBeforeUnmount(() => {
        colonne de lecture, quelle que soit la longueur du passage. -->
   <!-- Sur un téléphone, l'enveloppe est un bottom sheet : même contenu,
        posé au bas de l'écran plutôt que sur le passage. -->
-  <Transition :name="asSheet ? 'sheet' : 'bubble'">
+  <Transition :name="asSheet ? 'bottom-sheet' : 'bubble'">
     <component
       :is="asSheet ? BottomSheet : 'div'"
       v-if="readingPassage && (asSheet || spot) && !showShare"
@@ -375,8 +384,11 @@ onBeforeUnmount(() => {
         </button>
 
         <!-- La phonétique du seul passage choisi : l'hébreu reste à l'écran
-             dessous, on ne bascule pas toute la page pour un mot. -->
-        <div v-else class="bubble-phonetic" data-sheet-nodrag>
+             dessous, on ne bascule pas toute la page pour un mot. Its own
+             condition, not a v-else of the commentaries row: on a passage
+             without commentary, it showed empty under the commands (the
+             text's name and a close button). -->
+        <div v-if="view === 'phonetic'" class="bubble-phonetic" data-sheet-nodrag>
           <div class="flex items-start justify-between gap-2">
             <p class="bubble-place">{{ readingPassage.place }}</p>
             <button

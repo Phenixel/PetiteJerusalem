@@ -3,9 +3,9 @@ import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import type { Session } from "../models/models";
 import { TextTypeService } from "../services/textTypeService";
-import { DateService, deadlineOf } from "../services/dateService";
+import { DateService, deadlineOf, localDayFrom } from "../services/dateService";
+import { isNichmat, phaseOf } from "../services/nichmatChain";
 import { sessionService } from "../services/sessionService";
-import AppIcon from "./icons/AppIcon.vue";
 import ProgressBar from "./ProgressBar.vue";
 
 const { t } = useI18n();
@@ -21,6 +21,21 @@ defineEmits<{
 
 // Aperçu de la disponibilité : pourcentage de sections déjà réservées.
 const reservationStats = computed(() => sessionService.getSessionReservationStats(props.session));
+/**
+ * Nichmat 40 gives its forty days instead of a deadline, or says it waits
+ * for its readers: a year away, its deadline is only there for the
+ * published versions of the app.
+ */
+const dateLine = computed(() => {
+  if (!isNichmat(props.session)) {
+    return t("common.dateLimitValue", { date: DateService.formatDate(deadlineOf(props.session)) });
+  }
+  const phase = phaseOf(props.session);
+  if (phase.kind === "waiting") return t("nichmat.chipWaiting");
+  const format = (day: string) => DateService.formatDate(localDayFrom(day) ?? new Date());
+  return t("nichmat.dates", { start: format(phase.start), end: format(phase.end) });
+});
+
 const isFull = computed(
   () =>
     reservationStats.value.total > 0 &&
@@ -66,8 +81,7 @@ const isFull = computed(
     </div>
 
     <span class="text-sm text-text-secondary flex items-center gap-2 mt-auto">
-      <AppIcon name="calendar" :size="15" />
-      {{ t("common.dateLimitValue", { date: DateService.formatDate(deadlineOf(session)) }) }}
+      {{ dateLine }}
     </span>
   </div>
 </template>

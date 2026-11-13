@@ -1,0 +1,902 @@
+{
+  "sunset-accueil:fab": {
+    "x": 169,
+    "y": 738,
+    "w": 52,
+    "h": 52
+  },
+  "sunset-accueil:occasion": {
+    "x": 16,
+    "y": 108,
+    "w": 358,
+    "h": 70
+  },
+  "sunset-accueil:daily": {
+    "x": 16,
+    "y": 210,
+    "w": 358,
+    "h": 107
+  },
+  "sunset-horaires:next": {
+    "x": 24,
+    "y": 307,
+    "w": 342,
+    "h": 74
+  },
+  "sunset-horaires:city": {
+    "x": 75,
+    "y": 104,
+    "w": 104,
+    "h": 35
+  },
+  "sunset-horaires:position": {
+    "x": 187,
+    "y": 104,
+    "w": 128,
+    "h": 35
+  },
+  "sunset-horaires-swipe:row": {
+    "x": 24,
+    "y": 554,
+    "w": 342,
+    "h": 63
+  },
+  "ocean-session:share": {
+    "x": 246,
+    "y": 307,
+    "w": 107,
+    "h": 32
+  },
+  "ocean-session-reserver:box42": {
+    "x": 44,
+    "y": 220,
+    "w": 213,
+    "h": 22
+  },
+  "ocean-session-reserver:box43": {
+    "x": 44,
+    "y": 382,
+    "w": 213,
+    "h": 22
+  },
+  "ocean-session-reserver:box44": {
+    "x": 44,
+    "y": 544,
+    "w": 213,
+    "h": 22
+  },
+  "ocean-session-reserver:confirm": {
+    "x": 223,
+    "y": 659,
+    "w": 135,
+    "h": 43
+  },
+  "emerald-bibliotheque:download": {
+    "x": 106,
+    "y": 198,
+    "w": 178,
+    "h": 43
+  },
+  "emerald-bibliotheque:tehilim": {
+    "x": 45,
+    "y": 318,
+    "w": 39,
+    "h": 12
+  },
+  "emerald-tehilim-23:phonetique": {
+    "x": 269,
+    "y": 265,
+    "w": 95,
+    "h": 28
+  },
+  "emerald-tehilim-23:plus": {
+    "x": 140,
+    "y": 261,
+    "w": 45,
+    "h": 36
+  },
+  "emerald-tehilim-23-defilement:pill": {
+    "x": 135,
+    "y": 692,
+    "w": 121,
+    "h": 36
+  },
+  "emerald-lecture-du-jour:gerer": {
+    "x": 76,
+    "y": 139,
+    "w": 162,
+    "h": 43
+  },
+  "emerald-lecture-du-jour:cloche": {
+    "x": 24,
+    "y": 138,
+    "w": 44,
+    "h": 44
+  },
+  "emerald-lecture-du-jour:suivi": {
+    "x": 24,
+    "y": 266,
+    "w": 342,
+    "h": 104
+  },
+  "oceanNight-calendrier:mesDates": {
+    "x": 24,
+    "y": 202,
+    "w": 137,
+    "h": 43
+  },
+  "oceanNight-calendrier:convertir": {
+    "x": 169,
+    "y": 202,
+    "w": 197,
+    "h": 43
+  },
+  "oceanNight-accueil:occasion": {
+    "x": 16,
+    "y": 108,
+    "w": 358,
+    "h": 70
+  },
+  "night-chaharit:horaire": {
+    "x": 24,
+    "y": 253,
+    "w": 342,
+    "h": 72
+  },
+  "night-chaharit:menu": {
+    "x": 322,
+    "y": 644,
+    "w": 44,
+    "h": 44
+  },
+  "night-sidour:chaharit": {
+    "x": 24,
+    "y": 363,
+    "w": 342,
+    "h": 56
+  },
+  "night-chaharit-amida:kotel": {
+    "x": 209,
+    "y": 160,
+    "w": 157,
+    "h": 26
+  },
+  "fete-hanouka-accueil:greeting": {
+    "x": 16,
+    "y": 24,
+    "w": 358,
+    "h": 48
+  },
+  "fete-hanouka-accueil:fab": {
+    "x": 169,
+    "y": 738,
+    "w": 52,
+    "h": 52
+  },
+  "fete-pourim-accueil:greeting": {
+    "x": 16,
+    "y": 24,
+    "w": 358,
+    "h": 44
+  },
+  "fete-pourim-accueil:fab": {
+    "x": 169,
+    "y": 738,
+    "w": 52,
+    "h": 52
+  },
+  "fete-pessah-accueil:greeting": {
+    "x": 16,
+    "y": 24,
+    "w": 358,
+    "h": 44
+  },
+  "fete-pessah-accueil:fab": {
+    "x": 169,
+    "y": 738,
+    "w": 52,
+    "h": 52
+  },
+  "fete-souccot-accueil:greeting": {
+    "x": 16,
+    "y": 24,
+    "w": 358,
+    "h": 44
+  },
+  "fete-souccot-accueil:fab": {
+    "x": 169,
+    "y": 738,
+    "w": 52,
+    "h": 52
+  },
+  "fete-tichri-accueil:greeting": {
+    "x": 16,
+    "y": 24,
+    "w": 358,
+    "h": 44
+  },
+  "fete-tichri-accueil:fab": {
+    "x": 169,
+    "y": 738,
+    "w": 52,
+    "h": 52
+  },
+  "ocean-nouvelle-chaine:name": {
+    "x": 48,
+    "y": 256,
+    "w": 294,
+    "h": 46
+  },
+  "ocean-nouvelle-chaine:type": {
+    "x": 48,
+    "y": 533,
+    "w": 294,
+    "h": 46
+  },
+  "ocean-nouvelle-chaine:date": {
+    "x": 48,
+    "y": 907,
+    "w": 294,
+    "h": 46
+  },
+  "ocean-nouvelle-chaine:submit": {
+    "x": 48,
+    "y": 571,
+    "w": 294,
+    "h": 43
+  },
+  "ocean-intention-refoua:cta": {
+    "x": 24,
+    "y": 400,
+    "w": 342,
+    "h": 78
+  },
+  "fr-accueil:bar": {
+    "x": 0,
+    "y": 743,
+    "w": 390,
+    "h": 57
+  },
+  "fr-accueil:home": {
+    "x": 0,
+    "y": 744,
+    "w": 82,
+    "h": 56
+  },
+  "fr-accueil:sidour": {
+    "x": 82,
+    "y": 744,
+    "w": 82,
+    "h": 56
+  },
+  "fr-accueil:study": {
+    "x": 227,
+    "y": 744,
+    "w": 82,
+    "h": 56
+  },
+  "fr-accueil:profile": {
+    "x": 309,
+    "y": 744,
+    "w": 82,
+    "h": 56
+  },
+  "fr-sidour:moment": {
+    "x": 24,
+    "y": 144,
+    "w": 342,
+    "h": 124
+  },
+  "fr-etude:tab0": {
+    "x": 47,
+    "y": 50,
+    "w": 117,
+    "h": 36
+  },
+  "fr-etude:tab1": {
+    "x": 165,
+    "y": 50,
+    "w": 93,
+    "h": 36
+  },
+  "fr-etude:tab2": {
+    "x": 258,
+    "y": 50,
+    "w": 85,
+    "h": 36
+  },
+  "fr-daf:page": {
+    "x": 293,
+    "y": 306,
+    "w": 34,
+    "h": 28
+  },
+  "fr-traduction:toggle": {
+    "x": 99,
+    "y": 304,
+    "w": 115,
+    "h": 32
+  },
+  "fr-commentaires:open": {
+    "x": 0,
+    "y": 685,
+    "w": 390,
+    "h": 39
+  },
+  "fr-contact:profile": {
+    "x": 309,
+    "y": 744,
+    "w": 82,
+    "h": 56
+  },
+  "fr-deck:card": {
+    "x": 16,
+    "y": 131,
+    "w": 358,
+    "h": 124
+  },
+  "fr-table:aside": {
+    "x": 221,
+    "y": 48,
+    "w": 145,
+    "h": 32
+  },
+  "fr-table:bar": {
+    "x": 8,
+    "y": 688,
+    "w": 374,
+    "h": 48
+  },
+  "fr-audio:play": {
+    "x": 310,
+    "y": 464,
+    "w": 56,
+    "h": 56
+  },
+  "fr-audio:bar": {
+    "x": 8,
+    "y": 670,
+    "w": 374,
+    "h": 62
+  },
+  "fr-avant:bar": {
+    "x": 0,
+    "y": 743,
+    "w": 390,
+    "h": 57
+  },
+  "fr-avant:home": {
+    "x": 0,
+    "y": 744,
+    "w": 82,
+    "h": 56
+  },
+  "fr-avant:library": {
+    "x": 82,
+    "y": 744,
+    "w": 82,
+    "h": 56
+  },
+  "fr-avant:chiourim": {
+    "x": 227,
+    "y": 744,
+    "w": 82,
+    "h": 56
+  },
+  "fr-avant:profile": {
+    "x": 309,
+    "y": 744,
+    "w": 82,
+    "h": 56
+  },
+  "fr-chnei:list": {
+    "x": 24,
+    "y": 406,
+    "w": 342,
+    "h": 196
+  },
+  "en-avant:bar": {
+    "x": 0,
+    "y": 743,
+    "w": 390,
+    "h": 57
+  },
+  "en-avant:home": {
+    "x": 0,
+    "y": 744,
+    "w": 82,
+    "h": 56
+  },
+  "en-avant:library": {
+    "x": 82,
+    "y": 744,
+    "w": 82,
+    "h": 56
+  },
+  "en-avant:chiourim": {
+    "x": 227,
+    "y": 744,
+    "w": 82,
+    "h": 56
+  },
+  "en-avant:profile": {
+    "x": 309,
+    "y": 744,
+    "w": 82,
+    "h": 56
+  },
+  "en-accueil:bar": {
+    "x": 0,
+    "y": 743,
+    "w": 390,
+    "h": 57
+  },
+  "en-accueil:home": {
+    "x": 0,
+    "y": 744,
+    "w": 82,
+    "h": 56
+  },
+  "en-accueil:sidour": {
+    "x": 82,
+    "y": 744,
+    "w": 82,
+    "h": 56
+  },
+  "en-accueil:study": {
+    "x": 227,
+    "y": 744,
+    "w": 82,
+    "h": 56
+  },
+  "en-accueil:profile": {
+    "x": 309,
+    "y": 744,
+    "w": 82,
+    "h": 56
+  },
+  "en-sidour:moment": {
+    "x": 24,
+    "y": 144,
+    "w": 342,
+    "h": 124
+  },
+  "en-etude:tab0": {
+    "x": 73,
+    "y": 50,
+    "w": 78,
+    "h": 36
+  },
+  "en-etude:tab1": {
+    "x": 150,
+    "y": 50,
+    "w": 83,
+    "h": 36
+  },
+  "en-etude:tab2": {
+    "x": 234,
+    "y": 50,
+    "w": 84,
+    "h": 36
+  },
+  "en-daf:page": {
+    "x": 293,
+    "y": 306,
+    "w": 34,
+    "h": 28
+  },
+  "en-traduction:toggle": {
+    "x": 95,
+    "y": 304,
+    "w": 118,
+    "h": 32
+  },
+  "en-commentaires:open": {
+    "x": 0,
+    "y": 685,
+    "w": 390,
+    "h": 39
+  },
+  "en-chnei:list": {
+    "x": 24,
+    "y": 382,
+    "w": 342,
+    "h": 196
+  },
+  "en-contact:profile": {
+    "x": 309,
+    "y": 744,
+    "w": 82,
+    "h": 56
+  },
+  "en-deck:card": {
+    "x": 16,
+    "y": 131,
+    "w": 358,
+    "h": 124
+  },
+  "en-table:aside": {
+    "x": 257,
+    "y": 48,
+    "w": 109,
+    "h": 32
+  },
+  "en-table:bar": {
+    "x": 8,
+    "y": 688,
+    "w": 374,
+    "h": 48
+  },
+  "en-audio:play": {
+    "x": 310,
+    "y": 468,
+    "w": 56,
+    "h": 56
+  },
+  "en-audio:bar": {
+    "x": 8,
+    "y": 670,
+    "w": 374,
+    "h": 62
+  },
+  "he-avant:bar": {
+    "x": 0,
+    "y": 743,
+    "w": 390,
+    "h": 57
+  },
+  "he-avant:home": {
+    "x": 309,
+    "y": 744,
+    "w": 82,
+    "h": 56
+  },
+  "he-avant:library": {
+    "x": 227,
+    "y": 744,
+    "w": 82,
+    "h": 56
+  },
+  "he-avant:chiourim": {
+    "x": 82,
+    "y": 744,
+    "w": 82,
+    "h": 56
+  },
+  "he-avant:profile": {
+    "x": 0,
+    "y": 744,
+    "w": 82,
+    "h": 56
+  },
+  "he-accueil:bar": {
+    "x": 0,
+    "y": 743,
+    "w": 390,
+    "h": 57
+  },
+  "he-accueil:home": {
+    "x": 309,
+    "y": 744,
+    "w": 82,
+    "h": 56
+  },
+  "he-accueil:sidour": {
+    "x": 227,
+    "y": 744,
+    "w": 82,
+    "h": 56
+  },
+  "he-accueil:study": {
+    "x": 82,
+    "y": 744,
+    "w": 82,
+    "h": 56
+  },
+  "he-accueil:profile": {
+    "x": 0,
+    "y": 744,
+    "w": 82,
+    "h": 56
+  },
+  "he-sidour:moment": {
+    "x": 24,
+    "y": 144,
+    "w": 342,
+    "h": 124
+  },
+  "he-etude:tab0": {
+    "x": 233,
+    "y": 50,
+    "w": 76,
+    "h": 36
+  },
+  "he-etude:tab1": {
+    "x": 151,
+    "y": 50,
+    "w": 82,
+    "h": 36
+  },
+  "he-etude:tab2": {
+    "x": 80,
+    "y": 50,
+    "w": 71,
+    "h": 36
+  },
+  "he-daf:page": {
+    "x": 63,
+    "y": 306,
+    "w": 34,
+    "h": 28
+  },
+  "he-commentaires:open": {
+    "x": 0,
+    "y": 685,
+    "w": 390,
+    "h": 39
+  },
+  "he-chnei:list": {
+    "x": 24,
+    "y": 354,
+    "w": 342,
+    "h": 156
+  },
+  "he-contact:profile": {
+    "x": 0,
+    "y": 744,
+    "w": 82,
+    "h": 56
+  },
+  "he-deck:card": {
+    "x": 16,
+    "y": 131,
+    "w": 358,
+    "h": 124
+  },
+  "he-table:aside": {
+    "x": 24,
+    "y": 48,
+    "w": 110,
+    "h": 32
+  },
+  "he-table:bar": {
+    "x": 8,
+    "y": 688,
+    "w": 374,
+    "h": 48
+  },
+  "he-audio:play": {
+    "x": 24,
+    "y": 468,
+    "w": 56,
+    "h": 56
+  },
+  "he-audio:bar": {
+    "x": 8,
+    "y": 670,
+    "w": 374,
+    "h": 62
+  },
+  "fr-accueil:lamp": {
+    "x": 298,
+    "y": 18,
+    "w": 76,
+    "h": 79
+  },
+  "fr-contact:row": {
+    "x": 16,
+    "y": 938,
+    "w": 358,
+    "h": 52
+  },
+  "en-accueil:lamp": {
+    "x": 298,
+    "y": 18,
+    "w": 76,
+    "h": 79
+  },
+  "en-contact:row": {
+    "x": 16,
+    "y": 927,
+    "w": 358,
+    "h": 52
+  },
+  "he-accueil:lamp": {
+    "x": 16,
+    "y": 18,
+    "w": 76,
+    "h": 79
+  },
+  "he-contact:row": {
+    "x": 16,
+    "y": 927,
+    "w": 358,
+    "h": 52
+  },
+  "fr-parcours:streak": {
+    "x": 16,
+    "y": 112,
+    "w": 358,
+    "h": 270
+  },
+  "fr-traduction:notice": {
+    "x": 24,
+    "y": 356,
+    "w": 342,
+    "h": 40
+  },
+  "en-parcours:streak": {
+    "x": 16,
+    "y": 112,
+    "w": 358,
+    "h": 270
+  },
+  "he-parcours:streak": {
+    "x": 16,
+    "y": 112,
+    "w": 358,
+    "h": 270
+  },
+  "fr-progress:strip": {
+    "x": 0,
+    "y": 720,
+    "w": 390,
+    "h": 24
+  },
+  "fr-sidour-swipe:hero": {
+    "x": 24,
+    "y": 144,
+    "w": 342,
+    "h": 124
+  },
+  "en-progress:strip": {
+    "x": 0,
+    "y": 720,
+    "w": 390,
+    "h": 24
+  },
+  "en-sidour-swipe:hero": {
+    "x": 24,
+    "y": 144,
+    "w": 342,
+    "h": 124
+  },
+  "he-progress:strip": {
+    "x": 0,
+    "y": 720,
+    "w": 390,
+    "h": 24
+  },
+  "he-sidour-swipe:hero": {
+    "x": 24,
+    "y": 144,
+    "w": 342,
+    "h": 124
+  },
+  "fr-moment:pill": {
+    "x": 24,
+    "y": 245,
+    "w": 310,
+    "h": 36
+  },
+  "fr-moment:sheet": {
+    "x": 0,
+    "y": 34,
+    "w": 390,
+    "h": 766
+  },
+  "fr-fin:end": {
+    "x": 24,
+    "y": 652,
+    "w": 342,
+    "h": 44
+  },
+  "fr-boussole:dial": {
+    "x": 16,
+    "y": 166,
+    "w": 358,
+    "h": 469
+  },
+  "fr-sidour-ajouts:nichmat": {
+    "x": 24,
+    "y": 375,
+    "w": 342,
+    "h": 49
+  },
+  "fr-calme:panel": {
+    "x": 0,
+    "y": 0,
+    "w": 390,
+    "h": 124
+  },
+  "fr-calme:dnd": {
+    "x": 12,
+    "y": 8,
+    "w": 117,
+    "h": 66
+  },
+  "en-moment:pill": {
+    "x": 24,
+    "y": 245,
+    "w": 283,
+    "h": 36
+  },
+  "en-moment:sheet": {
+    "x": 0,
+    "y": 57,
+    "w": 390,
+    "h": 743
+  },
+  "en-fin:end": {
+    "x": 24,
+    "y": 652,
+    "w": 342,
+    "h": 44
+  },
+  "en-boussole:dial": {
+    "x": 16,
+    "y": 166,
+    "w": 358,
+    "h": 469
+  },
+  "en-sidour-ajouts:nichmat": {
+    "x": 24,
+    "y": 375,
+    "w": 342,
+    "h": 49
+  },
+  "en-calme:panel": {
+    "x": 0,
+    "y": 0,
+    "w": 390,
+    "h": 124
+  },
+  "en-calme:dnd": {
+    "x": 12,
+    "y": 8,
+    "w": 117,
+    "h": 66
+  },
+  "he-moment:pill": {
+    "x": 91,
+    "y": 245,
+    "w": 275,
+    "h": 36
+  },
+  "he-moment:sheet": {
+    "x": 0,
+    "y": 102,
+    "w": 390,
+    "h": 698
+  },
+  "he-fin:end": {
+    "x": 24,
+    "y": 652,
+    "w": 342,
+    "h": 44
+  },
+  "he-boussole:dial": {
+    "x": 16,
+    "y": 166,
+    "w": 358,
+    "h": 469
+  },
+  "he-sidour-ajouts:nichmat": {
+    "x": 24,
+    "y": 375,
+    "w": 342,
+    "h": 49
+  },
+  "he-calme:panel": {
+    "x": 0,
+    "y": 0,
+    "w": 390,
+    "h": 124
+  },
+  "he-calme:dnd": {
+    "x": 261,
+    "y": 8,
+    "w": 117,
+    "h": 66
+  }
+}

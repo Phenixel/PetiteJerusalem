@@ -30,6 +30,8 @@ const props = withDefaults(
     describedby?: string;
     overlayClass?: string;
     panelClass?: string;
+    /** The name of the Transition: the bottom sheet slides instead of fading. */
+    transition?: string;
   }>(),
   {
     role: "dialog",
@@ -38,6 +40,7 @@ const props = withDefaults(
     describedby: undefined,
     overlayClass: "modal-overlay",
     panelClass: "modal-panel animate-[scaleIn_0.3s_ease]",
+    transition: "modal",
   },
 );
 const emit = defineEmits<{ close: [] }>();
@@ -60,7 +63,11 @@ async function focusInitial(): Promise<void> {
   const root = panel.value;
   if (!root) return;
   const preferred = root.querySelector<HTMLElement>("[data-autofocus]");
-  (preferred ?? focusables()[0] ?? root).focus();
+  // A bottom sheet is still below the screen when it takes the keyboard:
+  // brought into view, it would scroll the veil instead of rising.
+  (preferred ?? focusables()[0] ?? root).focus({
+    preventScroll: props.transition === "sheet-modal",
+  });
 }
 
 function onKeydown(event: KeyboardEvent): void {
@@ -153,7 +160,7 @@ function unlockScroll(): void {
   <Teleport to="body">
     <!-- `appear` : une fenêtre montée déjà ouverte (chargée à la demande) fond
          comme les autres au lieu de surgir. -->
-    <Transition name="modal" appear>
+    <Transition :name="transition" appear>
       <div v-if="open" :class="overlayClass" @click="close" @keydown="onKeydown">
         <div
           ref="panel"

@@ -52,7 +52,6 @@ defineEmits<{
       :to="`/share-reading/session/${sessionSlug}`"
       class="flex items-center gap-2 mb-3 text-sm font-semibold text-text-primary hover:text-primary transition-colors"
     >
-      <AppIcon name="users" :size="16" class="text-primary flex-shrink-0" />
       <span class="truncate">{{ sessionName }}</span>
     </router-link>
 

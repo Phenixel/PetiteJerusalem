@@ -108,14 +108,9 @@ function change(): void {
 
 <template>
   <section class="mt-6" :aria-label="t('announcements.poll.title')">
-    <p class="mb-3 text-sm font-semibold text-text-secondary">
-      {{
-        poll.closed
-          ? t("announcements.poll.closed")
-          : poll.multiple
-            ? t("announcements.poll.chooseMany")
-            : t("announcements.poll.chooseOne")
-      }}
+    <!-- Closed, the « Sondage clos » chip of the announcement just above says it. -->
+    <p v-if="!poll.closed" class="mb-3 text-sm font-semibold text-text-secondary">
+      {{ poll.multiple ? t("announcements.poll.chooseMany") : t("announcements.poll.chooseOne") }}
     </p>
 
     <div :class="hasImages ? 'grid grid-cols-2 gap-3 sm:grid-cols-3' : 'space-y-2'">
@@ -173,7 +168,6 @@ function change(): void {
         </button>
         <template v-else>
           <p class="flex items-center gap-1.5 text-sm font-medium text-primary">
-            <AppIcon name="circle-check" :size="16" />
             {{ t("announcements.poll.thanks") }}
           </p>
           <button type="button" class="btn btn-soft" @click="change">
@@ -190,7 +184,6 @@ function change(): void {
       v-if="failed"
       class="mt-3 flex items-center justify-center gap-1.5 text-sm text-red-600 dark:text-red-400"
     >
-      <AppIcon name="alert-circle" :size="14" />
       {{ failed === "refused" ? t("announcements.poll.refused") : t("announcements.poll.error") }}
     </p>
   </section>

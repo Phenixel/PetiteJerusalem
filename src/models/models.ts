@@ -79,6 +79,15 @@ export interface Session {
   lastCycleEndedAt?: Date;
   /** Lecteurs distincts du dernier tour terminé (comptes et invités). */
   lastCycleParticipants?: number;
+
+  // === NICHMAT 40 (see docs/nichmat-40-jours.md) ===
+  // Published versions of the app ignore these fields: they show the chain
+  // with its deadline and nothing to reserve.
+
+  /** First of the forty days (YYYY-MM-DD): chosen at creation, or recorded once full. */
+  startDay?: string;
+  /** The forty days begin the day after the fortieth place is taken. */
+  startsWhenFull?: boolean;
 }
 
 // === NOMS DE LA CHAÎNE PERPÉTUELLE ===

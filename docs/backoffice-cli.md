@@ -41,19 +41,32 @@ node scripts/admin.mjs aide
 ## Access
 
 The script goes through the Firebase admin SDK (the one from functions: run
-`npm ci --prefix functions` if it is missing), with Google's Application
-Default Credentials (ADC). It is therefore not subject to the Firestore
-rules: the account is what counts.
+`npm ci --prefix functions` if it is missing). It is therefore not subject to
+the Firestore rules: the account is what counts. It picks its credentials in
+this order:
 
-- **Locally**, once (the token eventually expires, the script says so):
+1. a service account key in `PJ_ADMIN_SERVICE_ACCOUNT` (cloud sessions, see
+   below);
+2. a **gcloud account**: the one named by `--compte <email>` (or the
+   `PJ_ADMIN_COMPTE` variable), otherwise **admin@phenixel.fr** if it is
+   signed in to gcloud (`gcloud auth list`). The script asks gcloud for a
+   token for that account only, without touching the active account or the
+   ADC;
+3. Google's Application Default Credentials (ADC).
+
+- **Locally**, the gcloud account is the way: the machine switches between
+  a work and a personal account, and the ADC (one account for the whole
+  machine) follows those switches, while gcloud keeps every signed-in account
+  side by side. Once, and again whenever Google asks to re-authenticate (the
+  script says so):
 
   ```bash
-  gcloud auth application-default login
+  gcloud auth login admin@phenixel.fr
   ```
 
-  and pick **admin@phenixel.fr** in the browser. The machine's gcloud has
-  another default account, without access to the project: it is indeed the
-  ADC that needs renewing, not `gcloud auth login`.
+  This adds the account without changing the work you do with the other
+  one. Without it, the script falls back to the ADC
+  (`gcloud auth application-default login`, picking admin@phenixel.fr).
 
 - **In CI**, the `FIREBASE_SERVICE_ACCOUNT` service account set up by
   `google-github-actions/auth`. It needs `roles/datastore.user` to write to

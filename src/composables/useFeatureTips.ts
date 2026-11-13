@@ -164,6 +164,11 @@ export function resetFeatureTipsForTests(): void {
   forcedByUrl.value = askedByUrl();
 }
 
+/** A tip is on screen now: a gesture shown on its own (useSwipeHint) waits for it to leave. */
+export function tipOnScreen(): boolean {
+  return activeTip !== null;
+}
+
 export function useFeatureTips() {
   /**
    * L'astuce doit-elle se montrer ? Attend la relecture native si besoin.

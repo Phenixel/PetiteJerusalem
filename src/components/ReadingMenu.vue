@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from "vue";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { APP_SITE_URL } from "../config/environment";
 import { useRoute } from "vue-router";
 import AppIcon from "./icons/AppIcon.vue";
-import { PAGE_FORM_LABELS } from "../composables/usePageForm";
+import { PAGE_FORM_LABELS, pageFormAriaLabel } from "../composables/usePageForm";
 import {
   scrollPeek,
   scrollPointed,
@@ -24,8 +24,11 @@ import { openFeedback } from "../composables/useFeedback";
 import { isNativeApp } from "../composables/useNativeApp";
 import {
   addReadingMenu,
+  readingScrubbing,
+  readingSections,
   removeReadingMenu,
   scrollToBlockAnchor,
+  useSectionPosition,
 } from "../composables/useReadingNav";
 import { useScrollFrame } from "../composables/useScrollFrame";
 import { useOverlay } from "../composables/useOverlayStack";
@@ -35,6 +38,7 @@ import { kotelCompassOffered, openKotelCompass } from "../composables/useKotelCo
 import { openTefilinMirror, tefilinMirrorOffered } from "../composables/useTefilinMirror";
 import {
   autoScrollEnabled,
+  isAutoScrolling,
   restoreAutoScrollFromDevice,
   setAutoScrollEnabled,
 } from "../composables/useAutoScroll";
@@ -44,6 +48,7 @@ import {
   setHalakhotHidden,
 } from "../composables/useHalakhot";
 import { sansTahanoun, setSansTahanoun } from "../composables/useSansTahanoun";
+import { useChneiMikraOptions } from "../composables/useChneiMikraOptions";
 import {
   restoreTranslationFromDevice,
   setTranslationLang,
@@ -78,6 +83,12 @@ import { analyticsService } from "../services/analyticsService";
  * propres boutons ; une page trop courte pour défiler ne le montre donc pas,
  * sa barre d'outils étant restée sous les yeux.
  *
+ * A text whose table of contents would hold nothing but the text size and
+ * the way back to the top (`settingsOnly`) keeps a single round button, the
+ * settings one: a menu button that only leads to the top of the page, next
+ * to the settings, was one button too many. The settings then take in the
+ * text size and « Haut de page ».
+ *
  * La page peut aussi lui confier deux commandes de sa barre d'outils, pour
  * qu'elles restent à portée en pleine lecture : la bascule hébreu /
  * phonétique (`phonetic`, null quand le texte ne se translittère pas), avec
@@ -88,7 +99,9 @@ import { analyticsService } from "../services/analyticsService";
  * réglage « sans tahanoun », qui n'a de sens que devant un office, et un
  * texte qui porte des consignes de loi (`halakhot`), celui qui les masque.
  * Un texte traduit (`translationLangs`) y porte la traduction sous l'hébreu,
- * et le choix de sa langue quand il en a deux.
+ * et le choix de sa langue quand il en a deux. The chnei mikra page
+ * (`chneiMikra`) puts its two options there: each verse written twice, and
+ * Rashi's commentary (useChneiMikraOptions).
  *
  * Les réglages portent enfin trois commandes qui n'étaient qu'ailleurs :
  * partager le texte lu, écrire au support, et, sur le site, télécharger
@@ -107,6 +120,8 @@ const props = withDefaults(
     tefila?: boolean;
     /** Le texte porte des halakhot : le réglage qui les masque a prise. */
     halakhot?: boolean;
+    /** The chnei mikra: its options (verse written twice, Rashi) are offered. */
+    chneiMikra?: boolean;
     /** Les langues dans lesquelles le texte se lit traduit (vide : aucune). */
     translationLangs?: string[];
     /** Celle de la traduction affichée, ou qui le serait. */
@@ -133,6 +148,7 @@ const props = withDefaults(
     downloadState: "none",
     tefila: false,
     halakhot: false,
+    chneiMikra: false,
     translationLangs: () => [],
     translationLang: null,
     shareTitle: "",
@@ -184,6 +200,44 @@ const bottomRem = computed(() => {
 const scrollFrame = useScrollFrame();
 const atBottom = computed(() => scrollFrame.value.atBottom);
 
+/**
+ * A text with landmarks names the one being read in its button, as soon as
+ * one scrolls: the round button grows to the left around the title, then
+ * shrinks back once the page stands still. Whoever sees « Amida » appear
+ * there understands that the button leads to the passages, and that another
+ * one is a touch away. Not while the page scrolls by itself (the title would
+ * then never leave the text), nor with the panel open, which lists them all.
+ */
+const { current: currentSection } = useSectionPosition(() => props.sections);
+const PEEK_MS = 1800;
+const peeking = ref(false);
+/** The last title shown: it stays in the button while it shrinks. */
+const peekLabel = ref("");
+let peekTimer: ReturnType<typeof setTimeout> | undefined;
+
+watch(
+  () => scrollFrame.value.scrollY,
+  (y, before) => {
+    if (!props.sections.length || open.value || isAutoScrolling.value) return;
+    if (Math.abs(y - before) < 2) return;
+    peeking.value = true;
+    clearTimeout(peekTimer);
+    peekTimer = setTimeout(() => (peeking.value = false), PEEK_MS);
+  },
+);
+
+const peekShown = computed(() => peeking.value && !open.value && currentSection.value !== null);
+watch(currentSection, (section) => {
+  if (section) peekLabel.value = section.label;
+});
+
+// The progress bar shows the same titles while it is dragged.
+watch(
+  () => props.sections,
+  (sections) => (readingSections.value = sections),
+  { immediate: true },
+);
+
 function close() {
   open.value = false;
   view.value = "menu";
@@ -200,6 +254,7 @@ function trackNavOpened() {
 }
 
 function openMenu() {
+  peeking.value = false;
   open.value = true;
   view.value = "menu";
   trackNavOpened();
@@ -231,6 +286,23 @@ function share() {
   showShare.value = true;
 }
 
+/**
+ * The chnei mikra options, shared with the daily reading
+ * (useChneiMikraOptions). The `source` stays the one the page sent when the
+ * options sat above its text.
+ */
+const { doubleVerses, withRashi } = useChneiMikraOptions();
+
+function setChneiMikraOption(option: "double_verses" | "rashi", enabled: boolean) {
+  if (option === "double_verses") doubleVerses.value = enabled;
+  else withRashi.value = enabled;
+  analyticsService.capture("chnei_mikra_option_toggled", {
+    option,
+    enabled,
+    source: "library_chnei_mikra",
+  });
+}
+
 /** Le formulaire de support, ouvert depuis la lecture : la fenêtre vit dans App.vue. */
 function report() {
   close();
@@ -257,6 +329,38 @@ function onMenuButton() {
   else if (view.value === "settings") view.value = "menu";
   else close();
 }
+
+/**
+ * The table of contents would only carry the text size and « Haut de page »:
+ * no landmark, no Hebrew / phonetic toggle, nothing to download or set
+ * aside, no compass, no mirror. The settings then stand alone, behind a
+ * single round button, and take in those two commands (see the header).
+ */
+const settingsOnly = computed(
+  () =>
+    !props.sections.length &&
+    props.phonetic === null &&
+    !props.pageForm &&
+    props.downloadState === "none" &&
+    !props.setAside &&
+    !kotelCompassOffered.value &&
+    !tefilinMirrorOffered.value,
+);
+
+/** The single round button, when the settings stand alone: it opens them, then closes. */
+function onSettingsOnlyButton() {
+  if (open.value) {
+    close();
+    return;
+  }
+  open.value = true;
+  showSettings();
+}
+
+const settingsOnlyIcon = computed(() => (open.value ? "x" : "settings"));
+const settingsOnlyLabel = computed(() =>
+  open.value ? t("common.close") : t("textReading.settings.open"),
+);
 
 /** Le bouton de droite : les réglages depuis le sommaire, la croix depuis eux. */
 function onSettingsButton() {
@@ -351,12 +455,24 @@ const tour = ref<InstanceType<typeof FeatureTour> | null>(null);
 const menuButton = ref<HTMLElement | null>(null);
 const downloadButton = ref<HTMLElement | null>(null);
 const settingsButton = ref<HTMLElement | null>(null);
+const settingsOnlyButton = ref<HTMLElement | null>(null);
 
 const menuTip = computed<TourStep[]>(() => {
+  // A single button: one step, which says all that it holds.
+  if (settingsOnly.value) {
+    return [
+      {
+        key: "settings",
+        title: t("tips.reading.settingsAlone.title"),
+        text: t("tips.reading.settingsAlone.text"),
+        target: () => settingsOnlyButton.value,
+        radius: 9999,
+      },
+    ];
+  }
   const steps: TourStep[] = [
     {
       key: "menu",
-      icon: "list",
       title: t("tips.reading.menu.title"),
       text: t("tips.reading.menu.text"),
       target: () => menuButton.value,
@@ -366,7 +482,6 @@ const menuTip = computed<TourStep[]>(() => {
   if (props.downloadState !== "none") {
     steps.push({
       key: "download",
-      icon: "download",
       title: t("tips.reading.download.title"),
       text: t("tips.reading.download.text"),
       target: () => downloadButton.value,
@@ -375,7 +490,6 @@ const menuTip = computed<TourStep[]>(() => {
   }
   steps.push({
     key: "settings",
-    icon: "settings",
     title: t("tips.reading.settings.title"),
     text: t("tips.reading.settings.text"),
     target: () => settingsButton.value,
@@ -409,6 +523,9 @@ onMounted(() => {
 
 onUnmounted(() => {
   removeReadingMenu();
+  clearTimeout(peekTimer);
+  // The next page's menu may already have published its own.
+  if (readingSections.value === props.sections) readingSections.value = [];
   window.removeEventListener("keydown", onKeydown);
 });
 </script>
@@ -425,7 +542,7 @@ onUnmounted(() => {
     leave-to-class="transform translate-y-10 opacity-0"
   >
     <div
-      v-show="(!atBottom || open) && !concealed"
+      v-show="(!atBottom || open) && !concealed && !readingScrubbing"
       class="fixed right-6 z-50"
       :style="{ '--menu-bottom': `${bottomRem}rem`, bottom: `${bottomRem}rem` }"
     >
@@ -456,7 +573,7 @@ onUnmounted(() => {
                   >
                     <button
                       @click="emit('update:phonetic', false)"
-                      class="px-2.5 py-1 rounded-control text-sm font-medium transition-colors"
+                      class="px-2.5 py-1 rounded-segment text-sm font-medium transition-colors"
                       :class="
                         !phonetic && !pageFormActive
                           ? 'bg-surface text-primary shadow-sm'
@@ -471,20 +588,25 @@ onUnmounted(() => {
                     <button
                       v-if="pageForm"
                       @click="emit('update:pageFormActive', true)"
-                      class="px-2.5 py-1 rounded-control text-sm font-medium transition-colors"
+                      class="inline-flex items-center gap-1 px-2.5 py-1 rounded-segment text-sm font-medium transition-colors"
                       :class="
                         pageFormActive ? 'bg-surface text-primary shadow-sm' : 'text-text-secondary'
                       "
                       :aria-pressed="pageFormActive"
-                      :aria-label="t(PAGE_FORM_LABELS[pageForm].label)"
-                      :title="t(PAGE_FORM_LABELS[pageForm].label)"
+                      :aria-label="pageFormAriaLabel(pageForm, t)"
+                      :title="pageFormAriaLabel(pageForm, t)"
                     >
                       <AppIcon :name="PAGE_FORM_LABELS[pageForm].icon" :size="14" />
+                      <span
+                        v-if="PAGE_FORM_LABELS[pageForm].beta"
+                        class="rounded-full bg-primary/10 px-1.5 text-[10px] font-semibold leading-4 text-primary"
+                        >{{ t(PAGE_FORM_LABELS[pageForm].beta!) }}</span
+                      >
                     </button>
                     <button
                       v-if="phonetic !== null"
                       @click="emit('update:phonetic', true)"
-                      class="px-2.5 py-1 rounded-control text-sm font-medium transition-colors"
+                      class="px-2.5 py-1 rounded-segment text-sm font-medium transition-colors"
                       :class="
                         phonetic ? 'bg-surface text-primary shadow-sm' : 'text-text-secondary'
                       "
@@ -550,7 +672,14 @@ onUnmounted(() => {
                   @click="goTo(section.anchor)"
                   class="section-item"
                 >
-                  <span class="section-name">{{ section.label }}</span>
+                  <span class="section-name" :class="{ 'is-unit': section.excerpt }">{{
+                    section.label
+                  }}</span>
+                  <!-- A mishna, a se'if: its opening words, which say more
+                       than its number. -->
+                  <span v-if="section.excerpt" class="section-excerpt" dir="rtl">{{
+                    section.excerpt
+                  }}</span>
                   <!-- Le nom hébreu, celui du sidour de papier : c'est souvent lui
                        que l'œil cherche. -->
                   <span v-if="section.hebrew" class="section-he" dir="rtl">{{
@@ -563,6 +692,11 @@ onUnmounted(() => {
             <!-- Les réglages de lecture : des lignes séparées d'un filet, comme
                  l'écran des réglages, chacune avec son interrupteur. -->
             <div v-else key="settings" class="settings-view overflow-y-auto px-3 pt-2.5 pb-2">
+              <!-- Alone, the settings carry what the table of contents held:
+                   the text size here, the way back to the top below. -->
+              <div v-if="settingsOnly" class="flex items-center pb-1">
+                <ReadingSizeControl />
+              </div>
               <p class="section-heading !px-0">{{ t("textReading.settings.title") }}</p>
               <ul class="flex flex-col divide-y divide-line">
                 <li>
@@ -579,6 +713,34 @@ onUnmounted(() => {
                     />
                   </label>
                 </li>
+                <!-- The chnei mikra: the verse read twice, then Rashi under the
+                     Targum. -->
+                <template v-if="chneiMikra">
+                  <li>
+                    <label class="setting-row">
+                      <span class="min-w-0">
+                        <span class="setting-name">{{ t("chneiMikra.doubleVerses") }}</span>
+                        <span class="setting-hint">{{ t("chneiMikra.doubleVersesHint") }}</span>
+                      </span>
+                      <ToggleSwitch
+                        :model-value="doubleVerses"
+                        @update:model-value="setChneiMikraOption('double_verses', $event)"
+                      />
+                    </label>
+                  </li>
+                  <li>
+                    <label class="setting-row">
+                      <span class="min-w-0">
+                        <span class="setting-name">{{ t("chneiMikra.withRashi") }}</span>
+                        <span class="setting-hint">{{ t("chneiMikra.withRashiHint") }}</span>
+                      </span>
+                      <ToggleSwitch
+                        :model-value="withRashi"
+                        @update:model-value="setChneiMikraOption('rashi', $event)"
+                      />
+                    </label>
+                  </li>
+                </template>
                 <!-- Une tefila seulement : le tahanoun n'a pas sa place devant
                      une guemara. -->
                 <li v-if="tefila">
@@ -623,7 +785,7 @@ onUnmounted(() => {
                       :key="lang"
                       type="button"
                       @click="setTranslationLang(lang)"
-                      class="px-3 py-1 rounded-control text-sm font-medium transition-colors"
+                      class="px-3 py-1 rounded-segment text-sm font-medium transition-colors"
                       :class="
                         lang === translationLang
                           ? 'bg-surface text-primary shadow-sm'
@@ -685,6 +847,10 @@ onUnmounted(() => {
                    de se régler : partager le texte, écrire au support, et, sur
                    le site, prendre l'app. -->
               <div class="settings-actions">
+                <button v-if="settingsOnly" type="button" class="action-item" @click="goTop">
+                  <AppIcon name="arrow-up" :size="13" class="flex-shrink-0 text-text-secondary" />
+                  {{ t("textReading.navTop") }}
+                </button>
                 <button type="button" class="action-item" @click="share">
                   <AppIcon name="share" :size="13" class="flex-shrink-0 text-text-secondary" />
                   {{ t("textReading.settings.share") }}
@@ -723,22 +889,48 @@ onUnmounted(() => {
       </transition>
 
       <!-- Les boutons ronds : celui du menu, toujours là, et celui des réglages
-           qui paraît à sa droite quand le panneau est ouvert. -->
+           qui paraît à sa droite quand le panneau est ouvert. When the
+           settings stand alone (settingsOnly), a single round button opens
+           them and becomes the cross. -->
       <div class="flex items-center justify-end">
         <button
-          ref="menuButton"
-          @click="onMenuButton"
+          v-if="settingsOnly"
+          ref="settingsOnlyButton"
+          @click="onSettingsOnlyButton"
           class="fab"
-          :aria-label="menuButtonLabel"
+          :class="{ 'text-primary': open }"
+          :aria-label="settingsOnlyLabel"
           aria-haspopup="menu"
           :aria-expanded="open"
         >
           <transition name="fab-icon" mode="out-in">
-            <AppIcon :key="menuButtonIcon" :name="menuButtonIcon" :size="18" />
+            <AppIcon :key="settingsOnlyIcon" :name="settingsOnlyIcon" :size="18" />
           </transition>
         </button>
+        <!-- The title being read opens on the left of the icon (peekShown);
+             the button keeps its name for screen readers, the title being a
+             hint for the eye. -->
+        <button
+          v-else
+          ref="menuButton"
+          @click="onMenuButton"
+          class="fab fab-menu"
+          :aria-label="menuButtonLabel"
+          aria-haspopup="menu"
+          :aria-expanded="open"
+          dir="ltr"
+        >
+          <span class="fab-peek" :class="{ 'fab-peek-shown': peekShown }" aria-hidden="true">
+            <span class="fab-peek-text" dir="auto">{{ peekLabel }}</span>
+          </span>
+          <span class="fab-menu-icon">
+            <transition name="fab-icon" mode="out-in">
+              <AppIcon :key="menuButtonIcon" :name="menuButtonIcon" :size="18" />
+            </transition>
+          </span>
+        </button>
         <transition name="fab-second">
-          <div v-if="open" class="fab-second">
+          <div v-if="open && !settingsOnly" class="fab-second">
             <button
               ref="settingsButton"
               @click="onSettingsButton"
@@ -809,6 +1001,47 @@ onUnmounted(() => {
 .fab:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
+}
+
+/* The menu button can grow to the left around the title being read: its
+   width follows the title, the icon keeps its circle at the right end. */
+.fab-menu {
+  width: auto;
+  min-width: 2.75rem;
+}
+
+.fab-menu-icon {
+  display: flex;
+  width: 2.75rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+}
+
+.fab-peek {
+  display: block;
+  max-width: 0;
+  overflow: hidden;
+  opacity: 0;
+  white-space: nowrap;
+  transition:
+    max-width 0.3s cubic-bezier(0.3, 1.1, 0.55, 1),
+    opacity 0.2s ease,
+    padding 0.3s cubic-bezier(0.3, 1.1, 0.55, 1);
+}
+
+.fab-peek-shown {
+  max-width: min(14rem, calc(100vw - 7rem));
+  padding-inline-start: 1rem;
+  opacity: 1;
+}
+
+.fab-peek-text {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 0.875rem;
+  font-weight: 600;
 }
 
 /* Le second bouton pousse le premier vers la gauche en prenant sa place :
@@ -939,6 +1172,27 @@ onUnmounted(() => {
   min-width: 0;
 }
 
+/* Next to the opening words of a mishna, the number keeps its width: the
+   words give way and end in an ellipsis. */
+.section-name.is-unit {
+  flex: none;
+}
+
+.section-excerpt {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  font-family: var(--font-hebrew);
+  font-size: 0.95em;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.section-item:hover .section-excerpt {
+  color: inherit;
+}
+
 .section-he {
   flex: 0 0 auto;
   font-family: var(--font-hebrew);
@@ -1015,7 +1269,8 @@ onUnmounted(() => {
   .fab-second-enter-active,
   .fab-second-leave-active,
   .fab-icon-enter-active,
-  .fab-icon-leave-active {
+  .fab-icon-leave-active,
+  .fab-peek {
     transition: opacity 0.15s ease;
   }
 

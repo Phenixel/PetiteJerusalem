@@ -238,6 +238,22 @@ follow the same setting, Rachi included. At the foot of the text, the
 translator's name (`TranslationCredit.vue`, see "Crediting a translation").
 No translation on a tefila.
 
+The commentaries follow it too: in the study panel (`CommentaryPanel.vue`),
+Rachi on the Torah has its translation under each comment, in the language
+the text would take, with the AI notice above and the translator's name
+below (`loadTanakhRashi`, `usePassageCommentaries`). Turning the setting on
+or off, or changing the language, reloads the open panel. The other
+commentaries (Rachi on the Nach, those of the gemara, the Michna and the
+Choulhan Aroukh) have no translation yet and stay in Hebrew.
+
+The pages that read several texts one after the other (the chnei mikra, the
+Tehilim of the day, the daily reading of Mon parcours, a session's texts)
+follow the setting text by text (`DailyReadingItem.vue`), and carry the same
+command in their reading menu, with the choice of language
+(`composables/useEntriesTranslation.ts`): a translation turned on in the
+library must be turned off where it shows. `commentaryTranslation.test.ts`
+checks both.
+
 An AI translation is announced at the top of the text, in the reader as in
 the daily reading (Rachi included): « Traduction en français faite par IA à
 partir du texte anglais : elle peut contenir des erreurs » ("French

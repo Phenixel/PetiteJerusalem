@@ -8,6 +8,7 @@ import {
   type DafMeforshim,
   type RashiComment,
   type TextSection,
+  type TranslationSource,
 } from "../services/textService";
 import { DAF_LAYOUT_REACH } from "../services/dafLayout";
 
@@ -29,6 +30,12 @@ import { DAF_LAYOUT_REACH } from "../services/dafLayout";
  * passage touché, ou à l'ouverture de la page du daf (`ensure`). Un chapitre
  * de guemara en demande une ou deux tranches, un traité de Michna ou un livre
  * son fichier, un siman du Choulhan Aroukh sa tranche de cinq simanim.
+ *
+ * When the translation is on, the page gives `pickLang`, which chooses a
+ * language among those a commentary file is translated into: Rashi on the
+ * Torah then carries its translation under each comment, and `sources` says
+ * who made it. Turning the translation on or off, or changing its language,
+ * reloads what was loaded.
  */
 
 /** Les commentateurs, dans l'ordre où le panneau les présente. */
@@ -153,9 +160,13 @@ export function talmudGroups(
   return groups.filter((g) => g.comments.length > 0);
 }
 
+/** Chooses the translation language among those a file has, or null (none shown). */
+export type CommentaryLangPicker = (available: readonly string[]) => string | null;
+
 export function usePassageCommentaries(
   textEntry: Ref<TextStudyJsonEntry | null>,
   section: Ref<TextSection | null>,
+  pickLang: Ref<CommentaryLangPicker | null> = ref(null),
 ) {
   const corpus = computed<CommentaryCorpus>(() =>
     commentaryCorpusOf(
@@ -169,14 +180,25 @@ export function usePassageCommentaries(
   const talmud = shallowRef<Map<number, DafMeforshim> | null>(null);
   /** Michna, Tanakh : chaque commentateur, ligne par ligne, aligné sur `he`. */
   const lines = shallowRef<{ source: CommentarySource; cells: RashiComment[][] }[] | null>(null);
+  /** Who translated the commentaries shown, when they are translated. */
+  const sources = shallowRef<TranslationSource[]>([]);
 
   let request = 0;
-  // Un autre texte, un autre chapitre : ce qui était chargé ne vaut plus.
-  watch([textEntry, section], () => {
+  function reset(): void {
     request++;
     state.value = "idle";
     talmud.value = null;
     lines.value = null;
+    sources.value = [];
+  }
+  // Un autre texte, un autre chapitre : ce qui était chargé ne vaut plus.
+  watch([textEntry, section], reset);
+  // The translation turned on or off, or another language: what was loaded
+  // comes back in the new one, without waiting for the next passage touched.
+  watch(pickLang, () => {
+    const loaded = state.value !== "idle";
+    reset();
+    if (loaded) void ensure();
   });
 
   /** Charge les commentaires de la section ouverte, une fois. */
@@ -219,9 +241,10 @@ export function usePassageCommentaries(
             { source: "tosafotYomTov", cells: sectionCells(loaded.tosafotYomTov, open, whole) },
           ];
         } else {
-          const loaded = await loadTanakhRashi(entry);
+          const loaded = await loadTanakhRashi(entry, pickLang.value);
           if (mine !== request) return;
-          lines.value = [{ source: "rashi", cells: sectionCells(loaded, open, whole) }];
+          lines.value = [{ source: "rashi", cells: sectionCells(loaded.groups, open, whole) }];
+          sources.value = loaded.sources;
         }
       }
       state.value = "ready";
@@ -240,7 +263,7 @@ export function usePassageCommentaries(
       .filter((g) => g.comments.length > 0);
   }
 
-  return { corpus, state, talmud, ensure, groupsAt };
+  return { corpus, state, talmud, sources, ensure, groupsAt };
 }
 
 /** Le nom de chaque commentateur, en clés écrites en clair (i18nUsage.test.ts). */

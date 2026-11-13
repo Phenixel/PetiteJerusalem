@@ -9,46 +9,101 @@
    useColorScheme qui pose la classe, système compris. */
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* ---- Repli des teamim -----------------------------------------------------
-   Aucune des polices hébraïques proposées (Frank Ruhl Libre, David Libre,
-   Heebo) ne dessine les teamim : chaque mot cantilé bascule alors entier vers
-   la police de repli, Noto Serif Hebrew. Ses lettres sont plus grandes à corps
-   égal (alef à 0,657 em, contre 0,597 chez Frank, 0,550 chez David, 0,575 chez
-   Heebo) : ces mots ressortaient plus gros que le reste du verset. On sert
-   donc le sous-ensemble hébreu de Noto (embarqué, léger) en trois familles de
-   repli, une par police principale, chacune ramenée à la taille de sa police
-   par size-adjust (rapport des hauteurs de lettres). Les piles hébraïques de
-   useFonts.ts les référencent ; à garder d'accord avec elles. */
+/* ---- Hebrew reading fonts -------------------------------------------------
+   The Hebrew of the three reading fonts (Frank Ruhl Libre, David Libre,
+   Heebo) is served from /fonts, built by scripts/hebrew-fonts.py, and not
+   from Google Fonts: the qamats qatan (U+05C7, read "o", as in כׇּל) has a
+   longer stem there, the way printed siddurim mark it. As published, every
+   font draws it within a few hundredths of an em of the qamats: the reader
+   could not tell them apart. The Google stylesheet still serves the Latin
+   letters of these fonts. See docs/design.md, "Hebrew reading fonts". */
 @font-face {
-  font-family: "Noto Teamim Frank";
-  src: url("/fonts/noto-serif-hebrew-var.woff2") format("woff2");
-  font-weight: 100 900;
+  font-family: "Frank Ruhl Libre PJ";
+  src: url("/fonts/frank-ruhl-libre-hebrew-var.woff2") format("woff2");
+  font-weight: 300 900;
   font-display: swap;
-  size-adjust: 91%;
   unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F;
 }
 @font-face {
-  font-family: "Noto Teamim David";
-  src: url("/fonts/noto-serif-hebrew-var.woff2") format("woff2");
-  font-weight: 100 900;
+  font-family: "David Libre PJ";
+  src: url("/fonts/david-libre-hebrew-400.woff2") format("woff2");
+  font-weight: 400;
   font-display: swap;
-  size-adjust: 84%;
   unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F;
 }
 @font-face {
-  font-family: "Noto Teamim Heebo";
-  src: url("/fonts/noto-serif-hebrew-var.woff2") format("woff2");
+  font-family: "David Libre PJ";
+  src: url("/fonts/david-libre-hebrew-500.woff2") format("woff2");
+  font-weight: 500;
+  font-display: swap;
+  unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F;
+}
+@font-face {
+  font-family: "David Libre PJ";
+  src: url("/fonts/david-libre-hebrew-700.woff2") format("woff2");
+  font-weight: 700;
+  font-display: swap;
+  unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F;
+}
+@font-face {
+  font-family: "Heebo PJ";
+  src: url("/fonts/heebo-hebrew-var.woff2") format("woff2");
   font-weight: 100 900;
   font-display: swap;
-  size-adjust: 88%;
   unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F;
 }
 
-/* L'écriture du sofer (ktav Sefaradi avec taguim, police Stam Sefarad CLM du
-   projet Culmus, GPL avec exception d'embarquement, voir
-   public/fonts/stam-sefarad-clm.LICENSE.txt) : elle ne sert qu'à la
-   retranscription des parchemins (KlafViewer.vue), jamais au fil d'un texte.
-   Le navigateur ne la charge qu'à la première ouverture d'un parchemin. */
+/* ---- Teamim fallback ------------------------------------------------------
+   None of the three fonts draws the teamim: a cantillated word falls back to
+   Taamey Frank (Culmus project, GPL with an embedding exception, renamed
+   "Taamey Frank PJ" since its qatan is lengthened too; see
+   public/fonts/hebrew-reading-fonts.LICENSE.txt). It carries the Biblical
+   Hebrew layout of SBL Hebrew and leaves room between a vowel and a te'am
+   under the same letter; Noto Serif Hebrew, the fallback before it, set them
+   against each other (רַ֣, מָֽ). One family per main font, each brought to the
+   letter height of its font by size-adjust (alef at 0.555 em, against 0.590
+   in Frank, 0.528 in David, 0.575 in Heebo). Only its Medium: the Bold has
+   empty teamim, and a bold word would lose them; declared at 400 alone, the
+   Medium is thickened by the browser for bold text. The Hebrew stacks of
+   useFonts.ts reference these families; keep the two in step. */
+@font-face {
+  font-family: "Teamim Frank";
+  src: url("/fonts/taamey-frank-pj-medium.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+  size-adjust: 106%;
+  unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F;
+}
+@font-face {
+  font-family: "Teamim David";
+  src: url("/fonts/taamey-frank-pj-medium.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+  size-adjust: 95%;
+  unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F;
+}
+@font-face {
+  font-family: "Teamim Heebo";
+  src: url("/fonts/taamey-frank-pj-medium.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+  size-adjust: 104%;
+  unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F;
+}
+
+/* The qamats qatan of these fonts is a color glyph (COLR): it is painted
+   with the first entry of the font palette, which useTheme sets to the
+   theme ink (@font-palette-values --pj-qatan). Before that rule exists,
+   the palette falls back to the font's own, the ink of the default theme. */
+:root {
+  font-palette: --pj-qatan;
+}
+
+/* The sofer's script (ktav Sefaradi with taguim, the Stam Sefarad CLM font
+   of the Culmus project, GPL with an embedding exception, see
+   public/fonts/stam-sefarad-clm.LICENSE.txt): it only serves the Torah
+   scroll (TorahScroll.vue), never the flow of a text. The browser loads it
+   only the first time a scroll is opened. */
 @font-face {
   font-family: "Stam Sefarad CLM";
   src: url("/fonts/stam-sefarad-clm.woff2") format("woff2");
@@ -84,17 +139,16 @@ body {
 }
 
 @theme {
-  /* Couleurs : le fond est fixe, les trois thèmes sont au choix de
-     l'utilisateur et réécrits au vol par useTheme. Valeurs par défaut :
-     « sunset », l'orange et le bleu de la palette du logo. Chaque famille a
-     son encre (texte, liens, icônes : --color-primary, --color-secondary) ;
-     les fonds pleins prennent la teinte (--color-brand) et écrivent dessus
-     --color-on-brand, un brun sur l'orange clair ; -soft, la version claire.
-     Voir docs/design.md, « Les couleurs de thème ». */
+  /* Colors: the background is fixed, the three themes are the user's choice
+     and rewritten on the fly by useTheme. Default values: "sunset", the
+     orange and blue of the logo's palette. Each family has its ink (text,
+     links, icons: --color-primary, --color-secondary); solid fills take the
+     hue (--color-brand) and write --color-on-brand on it, white on the pastel
+     orange; -soft, the light version. See docs/design.md, "Theme colors". */
   --color-primary: #d46d01;
   --color-secondary: #328cdc;
-  --color-brand: #fea547;
-  --color-on-brand: #3b2412;
+  --color-brand: #eb9f4f;
+  --color-on-brand: #ffffff;
   --color-brand-soft: #ffd09e;
   --color-secondary-brand: #328cdc;
   --color-secondary-soft: #a9cceb;
@@ -142,7 +196,7 @@ body {
   --font-serif: "Lora", "Georgia", serif;
   --font-reading: var(--font-sans);
   --font-hebrew:
-    "Frank Ruhl Libre", "Noto Teamim Frank", "Noto Serif Hebrew", "David Libre", Georgia, serif;
+    "Frank Ruhl Libre PJ", "Teamim Frank", "Frank Ruhl Libre", "Noto Serif Hebrew", Georgia, serif;
 
   /* Rayons. Deux familles, et elles vont en sens contraire : les surfaces
      (cartes, panneaux, fenêtres) sont taillées franc, comme la pierre dont le
@@ -160,11 +214,14 @@ body {
   --radius-xl: 8px;
   --radius-2xl: 10px;
   --radius-3xl: 14px;
-  /* Alias parlants : la carte de la maison, la petite commande (bouton
-     d'icône, champ, bouton d'un groupe segmenté), le bouton, la pastille. */
+  /* Speaking aliases: the house card, the small control (icon button,
+     field), the button, the pill. A segment is the button of a segmented
+     group: it hugs a shell of --radius-btn padded by 2 px, so it takes that
+     radius minus the padding (see docs/design.md, nested roundings). */
   --radius-card: 6px;
   --radius-control: 10px;
   --radius-btn: 14px;
+  --radius-segment: calc(var(--radius-btn) - 2px);
   --radius-pill: 999px;
 
   /* Soft, warm-tinted shadows, flat surfaces are separated from the beige
@@ -189,6 +246,21 @@ body {
   --shadow-card: 0 1px 2px rgb(0 0 0 / 0.3), 0 2px 8px rgb(0 0 0 / 0.25);
   --shadow-card-hover: 0 2px 4px rgb(0 0 0 / 0.35), 0 8px 24px rgb(0 0 0 / 0.4);
   --shadow-pop: 0 4px 12px rgb(0 0 0 / 0.4), 0 16px 40px rgb(0 0 0 / 0.5);
+}
+
+/* Higher contrast (see useContrast): the neutrals strengthen too. The theme
+   colors are strengthened by useTheme; here, the secondary text darkens (or
+   lightens in dark mode) and the rules show more. */
+:root.contrast-more {
+  --color-text-secondary: #4f4a40;
+  --color-line: rgb(53 49 42 / 0.18);
+  --color-line-strong: rgb(53 49 42 / 0.32);
+}
+
+:root.dark.contrast-more {
+  --color-text-secondary: #d1d5db;
+  --color-line: rgb(255 255 255 / 0.2);
+  --color-line-strong: rgb(255 255 255 / 0.36);
 }
 
 /* ---- La sélection ---------------------------------------------------------
@@ -673,9 +745,16 @@ button,
     margin-block: auto;
   }
 
-  /* La feuille du bas (BottomSheet) : posée au pied de l'écran, arrondie en
-     haut seulement, avec sa poignée. Sur un grand écran, elle garde la largeur
-     d'un téléphone, centrée. */
+  /* The bottom sheet (parcours/BottomSheet.vue): set at the foot of the
+     screen, rounded at the top only, with its handle. On a large screen, it
+     keeps the width of a phone, centered.
+
+     It moves like the system's sheets: it rises from below the screen while
+     the veil darkens, and goes back down while the veil clears, from where
+     the finger let it go when it was pulled down (`--sheet-drag`, the veil
+     following with `--sheet-veil`). The curve is the one of the player's
+     full screen (SHEET_EASING, sheetMotion.ts): a quick start, a soft
+     landing. Only transform and the veil's color move: no layout. */
   .sheet-overlay {
     position: fixed;
     inset-inline: 0;
@@ -687,7 +766,8 @@ button,
     justify-content: center;
     overflow-y: auto;
     overscroll-behavior-y: contain;
-    background-color: rgb(30 26 18 / 0.38);
+    background-color: rgb(30 26 18 / calc(0.38 * var(--sheet-veil, 1)));
+    transition: background-color 0.4s cubic-bezier(0.32, 0.72, 0, 1);
   }
   .sheet-panel {
     width: 100%;
@@ -697,29 +777,44 @@ button,
     border-radius: var(--radius-3xl) var(--radius-3xl) 0 0;
     background-color: var(--color-surface);
     box-shadow: var(--shadow-pop);
-    animation: sheetUp 0.26s ease;
+    transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
   }
-  /* Une feuille plus haute que l'écran s'ouvre à mi-hauteur : le voile
-     défile, et la feuille glissée vers le haut se déploie (BottomSheet,
-     `tall`). Alignée en haut, sous sa marge : alignée en bas, le débordement
-     partait du bas, et la feuille s'ouvrait sur sa fin. */
+  /* A sheet taller than the screen opens at half height: the veil scrolls,
+     and the sheet swiped up unfolds (BottomSheet, `tall`). Aligned at the
+     top, under its margin: aligned at the bottom, the overflow started from
+     the bottom, and the sheet opened on its end. */
   .sheet-panel-tall {
     align-self: flex-start;
     margin-top: calc(var(--modal-viewport-height, 100vh) * 0.38);
   }
-  @keyframes sheetUp {
-    from {
-      transform: translateY(24px);
-      opacity: 0;
-    }
-    to {
-      transform: none;
-      opacity: 1;
-    }
+  /* Pulled down: the sheet sits where the finger holds it. No transform at
+     rest, so that the sheet does not become the containing block of what is
+     fixed inside it. */
+  .sheet-panel.sheet-held {
+    transform: translateY(var(--sheet-drag, 0px));
+  }
+  /* Under the finger, nothing eases: the sheet and the veil follow. */
+  .sheet-overlay.sheet-dragging,
+  .sheet-panel.sheet-dragging {
+    transition: none;
+  }
+  /* AppModal's Transition (`sheet-modal`). A sheet taller than the screen
+     travels one screen, not its whole height: it would cross it too fast. */
+  .sheet-modal-enter-from,
+  .sheet-modal-leave-to {
+    background-color: rgb(30 26 18 / 0);
+  }
+  .sheet-modal-enter-from .sheet-panel,
+  .sheet-modal-leave-to .sheet-panel {
+    transform: translateY(calc(min(100%, 100vh) + var(--sheet-drag, 0px)));
+  }
+  .sheet-modal-leave-active {
+    pointer-events: none;
   }
   @media (prefers-reduced-motion: reduce) {
+    .sheet-overlay,
     .sheet-panel {
-      animation: none;
+      transition: none;
     }
   }
 }

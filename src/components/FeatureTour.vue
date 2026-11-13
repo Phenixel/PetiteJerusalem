@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch, type Component } from "vue";
 import { useI18n } from "vue-i18n";
-import AppIcon from "./icons/AppIcon.vue";
-import type { IconName } from "./icons/registry";
 import { useFeatureTips, type FeatureTipId } from "../composables/useFeatureTips";
 import { isOnboardingOpen } from "../composables/useOnboarding";
 import { hasOpenOverlay, pushOverlay } from "../composables/useOverlayStack";
@@ -47,8 +45,6 @@ export interface TourStep {
   key: string;
   title: string;
   text: string;
-  /** Dessin posé devant le titre. */
-  icon?: IconName;
   /**
    * La commande à éclairer, résolue au moment où le pas commence. Sans
    * cible, la bulle se pose au milieu de l'écran (un geste sur le texte).
@@ -477,16 +473,7 @@ watch(index, async () => {
           </button>
         </div>
 
-        <h2
-          :id="`tour-title-${step.key}`"
-          class="mt-2 flex items-center gap-2 text-lg font-bold text-text-primary"
-        >
-          <span
-            v-if="step.icon"
-            class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand text-on-brand"
-          >
-            <AppIcon :name="step.icon" :size="15" />
-          </span>
+        <h2 :id="`tour-title-${step.key}`" class="mt-2 text-lg font-bold text-text-primary">
           {{ step.title }}
         </h2>
         <p class="mt-1.5 text-sm leading-relaxed text-text-secondary">

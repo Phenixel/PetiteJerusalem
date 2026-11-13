@@ -18,6 +18,10 @@ const BINDINGS: Record<string, string> = {
   // La halakha, à côté du Tanakh et du moussar sur la deuxième planche : un
   // châtaigne, le plus sombre des volumes, qui ne se confond avec aucun.
   halakha: "#5e4535",
+  // The Sidour, a volume of its own only when pinned to the home page
+  // (HomePinnedBooks): a caramel, the lightest of the bindings, apart from
+  // the Tehilim it usually stands next to.
+  sidour: "#a06a3c",
 };
 
 /** La reliure d'un rayon ; celle de la Michna pour un autre livre. */

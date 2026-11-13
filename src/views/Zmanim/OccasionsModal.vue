@@ -133,7 +133,8 @@ function nextLabel(occasion: HebrewOccasion): string {
     month: "long",
     year: "numeric",
   }).format(date.greg());
-  return t("occasions.nextOn", { civil, hebrew: formatHebrewDate(date, locale.value) });
+  // The Hebrew day is the line above (« 12 Adar »): only the civil date here.
+  return t("occasions.nextOn", { civil });
 }
 
 const dayOptions = computed(() =>
@@ -289,7 +290,6 @@ useOverlay(
           >
             <AppIcon name="chevron-left" :size="18" class="rtl:rotate-180" />
           </button>
-          <AppIcon v-else name="calendar" :size="17" class="shrink-0 text-primary" />
           <span class="truncate">
             {{ view === "form" ? t("occasions.formTitle") : t("occasions.title") }}
           </span>
@@ -340,7 +340,6 @@ useOverlay(
                   v-if="occasion.reminder !== 'none'"
                   class="mt-0.5 flex items-center gap-1 text-xs text-primary"
                 >
-                  <AppIcon name="bell" :size="11" class="shrink-0" />
                   {{ t(`occasions.reminders.${occasion.reminder}`) }}
                 </span>
               </span>
@@ -357,7 +356,6 @@ useOverlay(
         </ul>
 
         <p v-if="full" class="mt-4 flex items-center gap-1.5 text-sm text-text-secondary">
-          <AppIcon name="alert-triangle" :size="14" class="shrink-0" />
           {{ t("occasions.full") }}
         </p>
 

@@ -58,7 +58,10 @@ export { onPerpetualSessionUpdated } from "./perpetualChain";
 // sur le projet petite-jerusalem-staging (functions/.env.petite-jerusalem-staging,
 // que firebase-tools charge au déploiement vers ce projet, voir docs/staging.md).
 const SITE_URL = process.env.SITE_URL || "https://petite-jerusalem.fr";
-const OG_IMAGE = `${SITE_URL}/og-image.jpg`;
+// The designer's share banners (public/og/, mapped by src/content/ogBanners.ts):
+// the general one, and the reading sharing one for a session card that fails.
+const OG_IMAGE = `${SITE_URL}/og/site-fr.png`;
+const SESSION_FALLBACK_IMAGE = `${SITE_URL}/og/partage-lectures-fr.png`;
 
 const DEFAULT_TITLE = "Petite Jérusalem | Partage de lectures et d'études de Torah";
 const DEFAULT_DESCRIPTION =
@@ -233,7 +236,25 @@ type ChiourPreview = {
   /** L'URL de l'audio et sa durée (secondes), pour les données structurées. */
   mediaUrl?: string | null;
   duration?: number | null;
+  /** The class's series: its title no longer repeats it, the preview says it. */
+  serieId?: string | null;
 };
+
+/**
+ * A class's title followed by its series, unless it already contains it:
+ * « Chapitre 3 (2/7) · Shaar Habitahon ». Copy of `titleWithSerie`
+ * (src/composables/useChiourPlayback.ts), so the preview of a shared link
+ * says what the page's tab says.
+ */
+function titleWithSerie(title: string, serieName: string | null | undefined): string {
+  const fold = (value: string) =>
+    value
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase();
+  if (!serieName || fold(title).includes(fold(serieName))) return title;
+  return `${title} · ${serieName}`;
+}
 
 let chiourimCache: { data: ChiourPreview[]; ts: number } | null = null;
 const CHIOURIM_TTL = 10 * 60 * 1000;
@@ -261,6 +282,7 @@ async function getChiourim(): Promise<ChiourPreview[]> {
         auteur: (x.auteur as string | null) ?? null,
         mediaUrl: (x.mediaUrl as string | null) ?? null,
         duration: (x.duration as number | null) ?? null,
+        serieId: (x.serieId as string | null) ?? null,
       };
     });
   chiourimCache = { data, ts: Date.now() };
@@ -337,7 +359,7 @@ async function resolveSessionCard(slug: string): Promise<OgCardOptions | null> {
   return {
     title: data.name,
     label: data.type === "Tehilim" ? "Chaîne de Tehilim" : "Partage d'étude",
-    tagline: "petite-jerusalem.fr · Rejoignez le partage",
+    callToAction: data.type === "Tehilim" ? "Rejoignez la chaîne." : "Rejoignez le partage.",
   };
 }
 
@@ -355,12 +377,22 @@ async function resolveChiourMeta(slug: string): Promise<Meta | null> {
       auteur: (directData.auteur as string | null) ?? null,
       mediaUrl: (directData.mediaUrl as string | null) ?? null,
       duration: (directData.duration as number | null) ?? null,
+      serieId: (directData.serieId as string | null) ?? null,
     };
   } else {
     const chiourim = await getChiourim();
     found = chiourim.find((c) => chiourSlug(c.name) === slug) ?? null;
   }
   if (!found) return null;
+
+  const serie = found.serieId
+    ? await db
+        .collection("series")
+        .doc(found.serieId)
+        .get()
+        .catch(() => null)
+    : null;
+  const name = titleWithSerie(found.name, serie?.data()?.name as string | undefined);
 
   const description = found.description
     ? clamp(found.description)
@@ -374,7 +406,7 @@ async function resolveChiourMeta(slug: string): Promise<Meta | null> {
   const audio: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "AudioObject",
-    name: found.name,
+    name,
     description,
     url,
     inLanguage: "fr",
@@ -386,7 +418,7 @@ async function resolveChiourMeta(slug: string): Promise<Meta | null> {
   if (found.duration) audio.duration = isoDuration(found.duration);
 
   return {
-    title: `${found.name}${author} | Chiour | Petite Jérusalem`,
+    title: `${name}${author} | Chiour | Petite Jérusalem`,
     description,
     url,
     type: "article",
@@ -394,7 +426,7 @@ async function resolveChiourMeta(slug: string): Promise<Meta | null> {
       breadcrumb([
         { name: "Accueil", path: "/" },
         { name: "Chiourim", path: "/chiourim" },
-        { name: found.name, path: `/chiourim/${slug}` },
+        { name, path: `/chiourim/${slug}` },
       ]),
       audio,
     ],
@@ -513,8 +545,8 @@ export const socialPreview = onRequest({ maxInstances: 10 }, async (req, res) =>
 /**
  * Per-session Open Graph image. Wired in firebase.json for /og/session/**.
  * Returns a 1200×630 PNG with the session name + label; on any error (unknown
- * session, render failure) it redirects to the static og-image.jpg so shared
- * links never end up without a preview.
+ * session, render failure) it redirects to the static reading sharing banner,
+ * so shared links never end up without a preview.
  */
 export const ogImage = onRequest({ maxInstances: 5 }, async (req, res) => {
   try {
@@ -523,7 +555,7 @@ export const ogImage = onRequest({ maxInstances: 5 }, async (req, res) => {
     const card = slug ? await resolveSessionCard(slug) : null;
 
     if (!card) {
-      res.redirect(302, OG_IMAGE);
+      res.redirect(302, SESSION_FALLBACK_IMAGE);
       return;
     }
 
@@ -538,6 +570,6 @@ export const ogImage = onRequest({ maxInstances: 5 }, async (req, res) => {
     res.status(200).send(png);
   } catch (err) {
     console.error("[ogImage] failed:", err);
-    res.redirect(302, OG_IMAGE);
+    res.redirect(302, SESSION_FALLBACK_IMAGE);
   }
 });

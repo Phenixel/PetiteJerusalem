@@ -76,8 +76,10 @@ const portion = computed(() => {
   if (!v || !task.value || !s) return null;
   if (done.value) {
     return {
+      // « Ce soir, c'est fait », then what was read: « Portion faite » under
+      // it said the same thing twice.
       kicker: t("parcours.program.doneKicker", { kicker: v.kicker }),
-      title: t("parcours.program.portionDone"),
+      title: views.portionText(task.value, props.program),
       sub: next.value,
     };
   }

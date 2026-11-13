@@ -127,16 +127,37 @@ describe("ChneiMikraPage", () => {
     expect(page.text()).not.toContain("Lue Chabbat");
   });
 
-  it("propose les options de lecture et les retient", async () => {
+  it("propose les options de lecture dans le menu de lecture, et les retient", async () => {
     const page = mount(ChneiMikraPage);
     await page.router.push("/bibliotheque/chnei-mikra");
     await page.router.isReady();
     await nextTick();
 
-    expect(page.text()).toContain("Chaque verset deux fois");
-    expect(page.text()).toContain("Commentaire de Rachi");
-    const toggles = [...page.host.querySelectorAll('input[type="checkbox"]')] as HTMLInputElement[];
-    expect(toggles.length).toBe(2);
+    // Not above the text: in the reading settings, with the other options.
+    expect(page.text()).not.toContain("Chaque verset deux fois");
+    const settle = async () => {
+      await nextTick();
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      await nextTick();
+    };
+    page.host.querySelector<HTMLButtonElement>('button[aria-haspopup="menu"]')!.click();
+    await settle();
+    // The menu lists the week's aliyot, to go to the seventh without
+    // scrolling through the first six; the settings are one button away.
+    const landmarks = [...page.host.querySelectorAll(".section-item .section-name")].map((el) =>
+      el.textContent?.trim(),
+    );
+    expect(landmarks).toHaveLength(7);
+    expect(landmarks[0]).toBe("1re montée");
+    expect(landmarks[6]).toBe("7e montée");
+    page.host.querySelector<HTMLButtonElement>(`button[aria-label="Réglages de lecture"]`)?.click();
+    await settle();
+    const toggleOf = (label: string) =>
+      [...page.host.querySelectorAll<HTMLElement>(".setting-row")]
+        .find((row) => row.textContent?.includes(label))!
+        .querySelector<HTMLInputElement>('input[type="checkbox"]')!;
+    const toggles = [toggleOf("Chaque verset deux fois"), toggleOf("Commentaire de Rachi")];
     // Écrire le verset deux fois est la pratique même du chnei mikra : actif
     // par défaut. Rachi est un accompagnement : à activer soi-même.
     expect(toggles[0].checked).toBe(true);
@@ -156,6 +177,43 @@ describe("ChneiMikraPage", () => {
       doubleVerses: true,
       withRashi: false,
     });
+  });
+
+  it("dit sous le nom de la paracha les montées lues, et les coche depuis ce nom", async () => {
+    const page = mount(ChneiMikraPage);
+    await page.router.push("/bibliotheque/chnei-mikra");
+    await page.router.isReady();
+    await nextTick();
+
+    // Seven dots, one per aliyah, none lit at the start of the week.
+    const dots = () => [...page.host.querySelectorAll(".aliya-dot")];
+    expect(dots()).toHaveLength(7);
+    expect(dots().filter((d) => d.classList.contains("is-done"))).toHaveLength(0);
+    expect(page.text()).toContain("Montées lues : 0 sur 7");
+
+    // The name opens the week's aliyot (the sheet goes to the body).
+    await page.click(page.host.querySelector(".parasha-name")!);
+    const rows = () => [...document.body.querySelectorAll<HTMLElement>(".aliya-row")];
+    expect(rows()).toHaveLength(7);
+    expect(rows()[2].textContent).toContain("3e montée");
+
+    // Ticking the third aliyah lights the third dot.
+    await page.click(rows()[2]);
+    expect(rows()[2].getAttribute("aria-checked")).toBe("true");
+    expect(dots().map((d) => d.classList.contains("is-done"))).toEqual([
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+    ]);
+    expect(page.text()).toContain("Montées lues : 1 sur 7");
+
+    // The week's state is shared: unticked for the following tests.
+    await page.click(rows()[2]);
+    expect(dots().filter((d) => d.classList.contains("is-done"))).toHaveLength(0);
   });
 
   it("retombe sur la semaine en cours quand l'URL ne vaut rien", async () => {

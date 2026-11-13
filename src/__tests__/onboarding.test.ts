@@ -174,12 +174,14 @@ describe("introduction de première ouverture", () => {
     expect(localStorage.getItem(SEEN_KEY)).toBe("1");
   });
 
-  it("ne propose, dans les réglages, que la langue, l'apparence et le thème", async () => {
+  it("ne propose, dans les réglages, que la langue, l'apparence, le thème et le contraste", async () => {
     const { host } = await mountComponent(
       () => import("../components/onboarding/OnboardingFlow.vue"),
     );
     await click(button(host, fr.onboarding.consent.accept));
 
+    // Higher contrast is offered from the first launch, for whoever needs it.
+    expect(host.textContent).toContain(fr.profile.contrastTitle);
     // Les polices et les thèmes des fêtes attendent dans le profil.
     expect(host.textContent).not.toContain(fr.profile.fontsTitle);
     expect(host.textContent).not.toContain(fr.profile.holidayThemesTitle);

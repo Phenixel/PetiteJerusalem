@@ -17,13 +17,13 @@ import { weekdayOf } from "../services/parcours/days";
 import { dayOrder, deckOrder } from "../services/parcours/moments";
 import { portionMinutes } from "../services/parcours/plan";
 import { habitAnchor } from "../services/parcours/create";
-import { readOccasionsDone, writeOccasionDone } from "../services/parcours/occasions";
-import { liveObjectives } from "../services/parcours/schedule";
+import { TEFILOT_STEPS, liveObjectives, type TefilaStep } from "../services/parcours/schedule";
 import { unitOf } from "../services/parcours/texts";
 import { MOMENT_TEXTS, sidourMoment } from "../services/sidourMoment";
 import { computeZmanim, formatHebrewDate, hebrewDateFor } from "../services/zmanimService";
 import { useCurrentMoment } from "./useCurrentMoment";
 import { useOfficeTimes } from "./useOfficeTimes";
+import { halevanaKey, officeKey, useOccasionsDone } from "./useOfficesDone";
 import { useParcours } from "./useParcours";
 import { useParcoursViews, type TaskView } from "./useParcoursViews";
 import { psalmsLabel } from "./useTehilimDay";
@@ -41,11 +41,14 @@ import { useZmanimLocation } from "./useZmanimLocation";
  * paquet, le temps de la journée ; ce qui est fait, ou mis de côté pour
  * aujourd'hui, le quitte et se retrouve dans le portefeuille.
  *
- * Avec les tâches, les cartes en plus, qui ne comptent pas dans la journée :
- * les cartes d'occasion, à leur heure (la lune les nuits où on la bénit, le
- * compte du 'Omer le soir, l'allumage de 'Hanouka), qui s'ouvrent de même ;
- * et, après tout le reste, « Rattraper » pour un programme en retard, « si
- * vous avez un moment ».
+ * Along with the tasks come the extra cards, which do not count in the day:
+ * the occasion cards, at their time (the moon on the nights it is blessed,
+ * the counting of the 'Omer in the evening, the 'Hanouka lighting), which
+ * open the same way; the service whose time it is, when no goal carries it
+ * (without the « trois tefilot » habit, or on a day it leaves out): the
+ * services are in the deck for everyone, and only the habit counts them in
+ * the day; and, after everything else, « Rattraper » for a program that is
+ * behind, « si vous avez un moment ».
  *
  * Un office dont l'heure n'est pas encore venue (Min'ha au matin) passe
  * après tout ce qui se fait maintenant, même remis à plus tard ; en tête, il
@@ -56,11 +59,13 @@ import { useZmanimLocation } from "./useZmanimLocation";
 
 /** Une occasion du calendrier, et sa fois (voir services/parcours/occasions.ts). */
 export interface DeckOccasion {
-  kind: "hanouka" | "halevana" | "omer";
+  kind: "hanouka" | "halevana" | "omer" | "tefila";
   /** La clé retenue sur l'appareil une fois faite. */
   key: string;
   /** Le soir du 'Omer, la bougie de 'Hanouka. */
   n?: number;
+  /** The service, for the card of the service whose time it is. */
+  tefila?: TefilaStep;
 }
 
 /** Une carte du paquet, ou du portefeuille. */
@@ -104,14 +109,13 @@ const postponed = ref<{ day: DayKey; keys: string[] }>({ day: "", keys: [] });
 /** Les cartes en plus mises de côté pour aujourd'hui (« Pas aujourd'hui »). */
 const dismissed = ref<{ day: DayKey; keys: string[] }>({ day: "", keys: [] });
 
-/** Les occasions faites, retenues sur l'appareil. */
-const occasionsDone = ref<string[]>(readOccasionsDone());
-
 /**
- * Le rang d'une occasion dans la pile : l'allumage de 'Hanouka passe devant
- * l'office du soir, la lune et le 'Omer juste après lui.
+ * The rank of an occasion in the stack: the 'Hanouka lighting goes ahead of
+ * the evening service, the moon and the 'Omer just after it. The service
+ * whose time it is ranks the same with or without the habit.
  */
 const HANOUKA_RANK = -2;
+const NOW_RANK = -1;
 const OCCASION_RANK = -0.5;
 /** Rattraper se range après les tâches, avant ce qu'on a remis à plus tard. */
 const EXTRA_RANK = 50;
@@ -127,6 +131,7 @@ export function useTodayDeck() {
   const offices = useOfficeTimes();
   const now = offices.now;
   const { place } = useZmanimLocation();
+  const occasionsDone = useOccasionsDone();
 
   const today = store.today;
   const later = computed(() => (postponed.value.day === today.value ? postponed.value.keys : []));
@@ -264,14 +269,15 @@ export function useTodayDeck() {
   function occasionCard(
     occasion: DeckOccasion,
     look: Pick<DeckCard, "kicker" | "title" | "meta" | "route" | "art">,
+    moment: MomentId = "evening",
   ): DeckCard {
-    const done = occasionsDone.value.includes(occasion.key);
+    const done = occasionsDone.keys.value.includes(occasion.key);
     return {
       key: `${today.value}:${occasion.key}`,
       view: null,
       catchUp: null,
       occasion,
-      moment: "evening",
+      moment,
       doneKicker: t("parcours.kickerDone.other"),
       ...look,
       done,
@@ -291,6 +297,13 @@ export function useTodayDeck() {
     return (!!sunset && now.value >= sunset) || (!!sunrise && now.value < sunrise);
   });
 
+  /** The service whose time it is, unless today's tasks already carry it. */
+  const freeOffice = computed(() => {
+    const office = offices.office.value;
+    if (!office) return null;
+    return store.todayTasks.value.some((task) => task.step === office.tefila) ? null : office;
+  });
+
   const occasions = computed<DeckCard[]>(() => {
     const cards: DeckCard[] = [];
     const hero = sidour.value.hero;
@@ -302,6 +315,23 @@ export function useTodayDeck() {
       return text ? (locale.value === "he" ? text.hebrew : text.latin) : "";
     };
 
+    const office = freeOffice.value;
+    if (office) {
+      const step = office.tefila;
+      cards.push(
+        occasionCard(
+          { kind: "tefila", key: officeKey(office), tefila: step },
+          {
+            kicker: t("parcours.hub.now"),
+            title: t(`home.sidourNow.names.${step}`),
+            meta: t("parcours.hub.until", { time: offices.time(office.end) }),
+            route: textRoute(MOMENT_TEXTS[step]),
+            art: { kind: "siddur" },
+          },
+          TEFILOT_STEPS.find((s) => s.step === step)?.moment,
+        ),
+      );
+    }
     if (hero?.kind === "hanouka" && hero.night) {
       const n = hero.night;
       cards.push(
@@ -317,17 +347,19 @@ export function useTodayDeck() {
         ),
       );
     }
-    if (hero?.kind === "halevana" && hero.until) {
-      const until = hero.until;
+    // The moon on the nights it is said, Arvit or not: the stack puts Arvit first.
+    const moon = sidour.value.moon;
+    if (moon) {
+      const until = moon.until;
       cards.push(
         occasionCard(
-          { kind: "halevana", key: `halevana:${until.getFullYear()}-${until.getMonth()}` },
+          { kind: "halevana", key: halevanaKey(until) },
           {
             kicker: t("sidour.thisNight"),
             title: t("home.birkatHalevana.title"),
             meta: t("sidour.halevana.until", { date: formatHebrewDate(until, locale.value) }),
             route: textRoute(MOMENT_TEXTS.halevana),
-            art: { kind: "object", art: { kind: "moon", age: hero.moonAge ?? 10 } },
+            art: { kind: "object", art: { kind: "moon", age: moon.moonAge } },
           },
         ),
       );
@@ -450,9 +482,11 @@ export function useTodayDeck() {
     if (card.waiting) return WAITING_RANK + dayOrder(card.moment);
     const delayed = later.value.indexOf(card.key);
     if (delayed >= 0) return LATER_RANK + delayed;
-    if (card.occasion) return card.occasion.kind === "hanouka" ? HANOUKA_RANK : OCCASION_RANK;
+    if (card.occasion?.kind === "hanouka") return HANOUKA_RANK;
+    if (card.occasion?.kind === "tefila") return NOW_RANK;
+    if (card.occasion) return OCCASION_RANK;
     if (card.extra) return EXTRA_RANK;
-    if (card.view && isNow(card.view)) return -1;
+    if (card.view && isNow(card.view)) return NOW_RANK;
     return deckOrder(card.moment, moment.value);
   }
 
@@ -468,9 +502,6 @@ export function useTodayDeck() {
     done: tasks.value.filter((card) => card.done).length,
     total: tasks.value.length,
   }));
-
-  /** Le parcours porte les offices : le raccourci du Sidour de l'accueil se tait. */
-  const coversOffices = computed(() => tasks.value.some((card) => card.view?.task.step));
 
   /** « Plus tard » : la carte passe sous le paquet (Ma journée aussi la remet). */
   function postpone(card: Pick<DeckCard, "key">): void {
@@ -488,7 +519,7 @@ export function useTodayDeck() {
   /** Une occasion faite, ou défaite : l'appareil s'en souvient. */
   function markOccasion(card: DeckCard, done: boolean): void {
     if (!card.occasion) return;
-    occasionsDone.value = writeOccasionDone(occasionsDone.value, card.occasion.key, done);
+    occasionsDone.mark(card.occasion.key, done);
   }
 
   /** Remise à plus tard aujourd'hui : son moment le dit dans le portefeuille. */
@@ -500,7 +531,6 @@ export function useTodayDeck() {
     top,
     count,
     moment,
-    coversOffices,
     postpone,
     setAside,
     markOccasion,

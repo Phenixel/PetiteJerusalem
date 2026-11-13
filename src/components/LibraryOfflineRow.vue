@@ -113,13 +113,6 @@ const etaLine = computed(() => {
   if (seconds < 90) return t("study.offline.etaSeconds", { n: Math.round(seconds / 5) * 5 });
   return t("study.offline.etaMinutes", { n: Math.round(seconds / 60) });
 });
-const progressLine = computed(() =>
-  t("study.offline.progress", {
-    done: size(bulkDownload.bytesDone),
-    total: size(bulkDownload.bytesTotal),
-  }),
-);
-
 // --- Le geste, et sa réponse ---
 // La flèche plonge vers son plateau au toucher ; à la fin d'un lot lancé
 // d'ici, la coche se trace. Rien ne bouge à l'arrivée sur la page.
@@ -192,7 +185,8 @@ async function removeAll() {
             <span class="font-semibold text-text-primary">
               {{ t("study.offline.downloading") }}
             </span>
-            <span class="text-sm text-text-secondary">{{ etaLine }} · {{ progressLine }}</span>
+            <!-- The time left; « 12 Mo sur 40 Mo » repeated the percentage. -->
+            <span class="text-sm text-text-secondary">{{ etaLine }}</span>
           </span>
           <span class="shrink-0 text-2xl font-bold leading-none tabular-nums text-primary">
             {{ percent }}<span class="text-base">%</span>

@@ -2713,6 +2713,14 @@
       "type": "Sidour"
     },
     {
+      "id": 686,
+      "name": "נשמת כל חי (Nichmat Kol 'Hai)",
+      "livre": "סידור (Sidour)",
+      "link": "https://www.sefaria.org/Siddur_Edot_HaMizrach,_Shabbat_Shacharit,_Pesukei_D'Zimra",
+      "totalSections": 1,
+      "type": "Sidour"
+    },
+    {
       "id": 348,
       "name": "קריאת שמע שעל המיטה (Chema al Hamita)",
       "livre": "סידור (Sidour)",
@@ -2725,6 +2733,14 @@
       "name": "תיקון חצות (Tikoun Hatsot)",
       "livre": "סידור (Sidour)",
       "link": "https://www.sefaria.org/Siddur_Edot_HaMizrach,_The_Midnight_Rite",
+      "totalSections": 1,
+      "type": "Sidour"
+    },
+    {
+      "id": 687,
+      "name": "תיקון הכללי (Tikoun Haklali)",
+      "livre": "סידור (Sidour)",
+      "link": "https://www.sefaria.org/Tikkun_HaKlali",
       "totalSections": 1,
       "type": "Sidour"
     },

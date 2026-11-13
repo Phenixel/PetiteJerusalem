@@ -1,15 +1,16 @@
 <script setup lang="ts">
 import { useI18n } from "vue-i18n";
-import { useReadingSize } from "../composables/useReadingSize";
+import { useReadingSizeControl } from "../composables/useReadingSize";
 
 /**
- * Le réglage de la taille du texte (A− / A+), partagé par tous les écrans de
- * lecture : le lecteur de la bibliothèque, le chnei mikra, la lecture du jour
- * et le menu de lecture flottant. La préférence, elle, est commune à toute
- * l'application (useReadingSize).
+ * The text size control (A− / A+), shared by every reading screen: the
+ * library reader, chnei mikra, the daily reading and the floating reading
+ * menu. The text's size is common to the whole app (useReadingSize); while a
+ * form of the page is on screen (the daf, the Sefer Torah), the control
+ * drives that form's own size (usePageFormSize).
  */
 const { t } = useI18n();
-const readingSize = useReadingSize();
+const readingSize = useReadingSizeControl();
 </script>
 
 <template>

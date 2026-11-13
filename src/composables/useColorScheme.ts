@@ -82,7 +82,7 @@ const schemePreference: AccountPreference<ColorSchemeId> = createAccountPreferen
 const currentSchemeId = schemePreference.current;
 
 /** Fond sombre en ce moment ? (le choix explicite, ou le système à défaut) */
-const isDark: ComputedRef<boolean> = computed(
+export const isDark: ComputedRef<boolean> = computed(
   () =>
     currentSchemeId.value === "dark" ||
     (currentSchemeId.value === "system" && systemPrefersDark.value),
