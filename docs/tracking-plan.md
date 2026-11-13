@@ -49,10 +49,14 @@ Set by `register()` and by `before_send`, including on the automatic
 | `is_logged_in`  | boolean                 | Segmenting anonymous / signed in.                |
 | `locale`        | `fr`, `en`, `he`        | Segmenting by language.                          |
 
-In the app, the `https://localhost` origin of the Capacitor webview is
-rewritten as `app://ios` / `app://android`: `$current_url` therefore stays
-readable and does carry the route, on `$exception` events as on everything
-else.
+In the app, the origin of the Capacitor webview is rewritten as
+`app://ios` / `app://android`: `$current_url` therefore stays readable and
+does carry the route, on `$exception` events as on everything else. The
+scheme of that origin depends on the platform (`https://localhost` on
+Android, `capacitor://localhost` on iOS): the rewrite takes any scheme, the
+`localhost` host being enough to recognize the webview. Events the iOS app
+sent before this fix keep their `capacitor://localhost` origin: a per-page
+analysis reaching further back has to count both.
 
 ## Calendar and holiday pages
 
