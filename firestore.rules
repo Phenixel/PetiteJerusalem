@@ -139,6 +139,18 @@ service cloud.firestore {
       return request.resource.data.get('createdAt', null) == resource.data.get('createdAt', null);
     }
 
+    // A slug is set once. The oldest session that carries a slug owns it, so
+    // the owner of an old session could give it the slug of a newer one and
+    // take its links, with no backdating at all. The app never changes a slug
+    // already set (sessionService.updateSession, since 3.5.2); only a legacy
+    // session without one may still receive it.
+    function slugUntouched() {
+      return !resource.data.keys().hasAny(['slug'])
+        || !(resource.data.slug is string)
+        || resource.data.slug.size() == 0
+        || request.resource.data.get('slug', null) == resource.data.slug;
+    }
+
     // Sessions : lecture publique (le partage de lecture est ouvert à tous)
     match /sessions/{sessionId} {
       allow read: if true;
@@ -162,6 +174,7 @@ service cloud.firestore {
             && perpetualFieldsUntouched()
             && validSessionFields()
             && createdAtUntouched()
+            && slugUntouched()
             && request.resource.data.personId == resource.data.personId)
         || isAdmin()
         || ((isAppendReservationsOnly() || isRemoveOneReservationOnly() || isUpdateReservationOnly()) && sessionNotHidden());
@@ -238,6 +251,9 @@ service cloud.firestore {
         && request.resource.data.details is string
         && request.resource.data.details.size() <= 1000
         && request.resource.data.status == 'open'
+        // The date is a date: with no check on its type, this field took a
+        // string or a map of close to 1 MiB, from anyone, as often as wanted.
+        && request.resource.data.createdAt is timestamp
         && (isAuthenticated()
               ? (request.resource.data.reporterId == request.auth.uid
                   && request.resource.data.reporterGuestId == null)

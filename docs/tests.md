@@ -125,7 +125,9 @@ accounts, reading chains and chiourim against the Firebase emulators.
     perpetual chain (its names, the end of a round, and the Firestore rules
     that guard them, a guest booking that touches nothing but the
     bookings included),
-    chiourim. These tests need the Auth and Firestore emulators.
+    chiourim, and the Firestore security rules block by block
+    (`rules.spec.ts`, without a page). These tests need the Auth and
+    Firestore emulators.
 - The Vite server is started by Playwright itself on port **5474**
   (`E2E_PORT`), next to the dev server's 5473 so it can run alongside a dev
   session without taking its server. It runs in DEV mode, so it is wired to
@@ -223,6 +225,43 @@ The data is written through the emulators' REST API, without an SDK, via
 documents set in the Firestore emulator with the "owner" token that bypasses
 the security rules. The ports are those of `firebase.json` (8470 Firestore,
 8471 Auth).
+
+### The security rules: `e2e/firebase/rules.spec.ts`
+
+`firestore.rules` has its own spec, which opens no page: it asks the
+Firestore emulator over REST, as a client talking to Firestore without the
+app would, and reads the HTTP status (200 when the rules accept, 403 when
+they refuse). One `test.describe` per block of the rules (sessions, names of
+the perpetual chain, reports, support, chiourim, auteurs, series, studio
+tokens, announcements and poll votes, user preferences, parcours, the admin,
+and the default refusal), each test named after the rule it holds, with the
+attempts an attacker would make listed by name.
+
+Its foundation is `e2e/support/rules.ts`:
+
+- `create`, `update` (with its field mask), `remove`, `get`, `list` and
+  `query`, each taking the caller first: `GUEST` (no token), `account()` (a
+  uid), `admin()` (the admin's address, verified) or `unverifiedAdmin()`
+  (the same address on an account nobody verified, which the rules must not
+  take for the admin);
+- `serverTime: [...]` on a write sets fields to the time of the server, as
+  `serverTimestamp()` does in the app;
+- its `test` replaces the JavaScript error net of the foundation, which
+  would open a page for every test: no browser starts.
+
+The starting data is set with `seedDoc`, past the rules. A refusal is always
+compared to 403 exactly, so a malformed request (400) is never read as a
+rule that holds. Two kinds of tests are not guarantees: the one titled
+"known limit" states a weakness the model cannot close yet (a guest
+rewrites a booking that is not theirs, the reservations being an array on
+the session), and a `test.fixme` marks a hole that was found and reported
+but not fixed; it becomes a plain `test` with the rule that closes it.
+
+`storage.rules` has no test: the suite starts the Auth and Firestore
+emulators only.
+
+When a rule changes, its test changes in the same PR; a new `match` block
+comes with its `test.describe`.
 
 ### Writing a new test
 
