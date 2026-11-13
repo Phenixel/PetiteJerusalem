@@ -87,18 +87,33 @@ in this order:
 1. **Why it exists.** What prompted it: the owner's request (one sentence,
    close to their words), a bug report, a PostHog error (link the issue,
    give the counts, platform and app version), an audit, the follow-up of
-   another PR (link it). A PR opened by a routine (the morning error
-   review...) says so.
-2. **What changes**, from the user's side first, then in the code: the areas
+   another PR (link it). A PR opened by a routine or an unattended session
+   (the morning error review, an audit...) says so, and names it.
+2. **How the problem was found, and the evidence.** Not only that something
+   is wrong, but how it is known, so the owner can check it without
+   redoing the work:
+   - the source: the PostHog query or issue, the log, the user report, the
+     page of the reference text (Sefaria, the Vilna edition, a halakhic
+     source with its siman), the specification or documentation of the
+     library;
+   - what was observed, with numbers: counts, dates, versions, the value
+     found against the value expected;
+   - for data or liturgical content (texts, chapter limits, zmanim, what is
+     said on which day), at least one concrete example the owner can look
+     up, and a way to check the rest (a test, a script, a query).
+   A claim with no evidence is marked as such ("suspected, not
+   reproduced"). Without an owner's request and without evidence, the PR
+   is not opened: the finding goes into an issue or a report instead.
+3. **What changes**, from the user's side first, then in the code: the areas
    and files, the decisions taken and the alternatives set aside.
-3. **What it sits next to.** Before opening, look for an open PR on the same
+4. **What it sits next to.** Before opening, look for an open PR on the same
    topic or files (`gh pr list`, `gh pr list --search <file or word>`) and
    for what `main` already does. Do not open a second PR for what an open one
    already proposes: update that one. Name the PRs it overlaps, replaces or
    depends on (`#123`).
-4. **How it was checked**: the tests run and added, what was tried in the app
+5. **How it was checked**: the tests run and added, what was tried in the app
    (web, iOS, Android), and what was NOT checked.
-5. **What is left for the owner**: a check on a device, a deploy that a merge
+6. **What is left for the owner**: a check on a device, a deploy that a merge
    does not do (rules, functions), a data change, a decision.
 
 ### Screenshots for visible changes

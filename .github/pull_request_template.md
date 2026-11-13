@@ -7,6 +7,10 @@ Delete a section only when it truly does not apply.
 
 <!-- What prompted this PR: the owner's request, a bug, a PostHog error (link, counts, platform, version), an audit, a follow-up of #... Opened by a routine? Say so. -->
 
+## How it was found
+
+<!-- The source and the evidence: PostHog query or issue, log, user report, reference text (Sefaria, Vilna, siman), library docs. Numbers: counts, dates, versions, value found vs expected. For data or liturgical content, one example the owner can look up and a way to check the rest. Unproven? Say "suspected, not reproduced". -->
+
 ## What changes
 
 <!-- For the user first, then in the code: areas, files, decisions taken, alternatives set aside. -->

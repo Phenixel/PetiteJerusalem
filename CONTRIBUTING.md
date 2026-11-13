@@ -47,7 +47,7 @@ A feature idea?
    request title follows the same format.
 6. Push your branch (`git push origin feat/my-new-feature`).
 7. Open a pull request against the main repository. Its description says
-   why it exists, what changes, what it sits next to, how it was checked and
+   why it exists, how the problem was found (sources, evidence), what changes, what it sits next to, how it was checked and
    what is left; a visible change comes with before and after screenshots.
    The template fills in when you open it, and the rules are in
    [CLAUDE.md](CLAUDE.md#pull-requests).
