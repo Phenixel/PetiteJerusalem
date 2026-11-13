@@ -281,6 +281,7 @@ initial bundle...).
 | [CLAUDE.md](CLAUDE.md) | Repository conventions: language (English), commit messages (Conventional Commits), typography, design, back office. |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | How to report a bug, suggest an improvement, open a pull request. |
 | [SEO.md](SEO.md) | How the site is made findable by search engines and AI assistants: prerender, sitemaps, IndexNow, weekly refresh. |
+| [docs/architecture.md](docs/architecture.md) | A map of the repository: what lives where, which way the dependencies go, what loads when. |
 | [docs/design.md](docs/design.md) | Visual guidelines: colors and themes, radii, fonts, navigation bar, what is not used. |
 | [docs/tests.md](docs/tests.md) | Unit tests, guard tests, Playwright end to end suite. |
 | [docs/tracking-plan.md](docs/tracking-plan.md) | PostHog tracking plan: events, properties, consent. |
@@ -290,6 +291,8 @@ initial bundle...).
 | [docs/chaine-perpetuelle.md](docs/chaine-perpetuelle.md) | The perpetual Tehilim chain. |
 | [docs/nichmat-40-jours.md](docs/nichmat-40-jours.md) | Nichmat 40: forty readers, forty days. |
 | [docs/informations.md](docs/informations.md) | Team announcements: what's new, incidents, questions and polls. |
+| [docs/help-center.md](docs/help-center.md) | The help center (`/aide`): the "what's new" video, the frequently asked questions, the page of each version. |
+| [docs/traduction-ia.md](docs/traduction-ia.md) | The guide followed for the AI-assisted French translations (`scripts/translate-ia.mjs`). |
 | [docs/feedback.md](docs/feedback.md) | "Write to us": user messages and the team's replies. |
 | [docs/moderation.md](docs/moderation.md) | Session moderation (App Store requirements, guideline 1.2). |
 | [docs/backoffice-cli.md](docs/backoffice-cli.md) | The command line back office (`scripts/admin.mjs`). |
@@ -305,8 +308,13 @@ initial bundle...).
 | [docs/ios-release-plan.md](docs/ios-release-plan.md) | iOS release plan, from "no Apple account" to "app on sale". |
 | [docs/audit-performance-2026-07.md](docs/audit-performance-2026-07.md) | July 2026 performance audit: slow site, HTML cache, fixes. |
 | [docs/audit-review-2026-09.md](docs/audit-review-2026-09.md) | September 2026 code and optimization review: fixed, work items, product ideas. |
+| [docs/audit-review-2026-09-suite.md](docs/audit-review-2026-09-suite.md) | September 2026 review, continued: duplicates, dead code, smoothness, the end to end suite. |
+| [docs/audit-horaires-2026-09.md](docs/audit-horaires-2026-09.md) | September 2026 prayer times audit: every time compared against independent tools, at 59 locations. |
+| [docs/plan-horaires-2026-09.md](docs/plan-horaires-2026-09.md) | The implementation plan that followed the prayer times audit. |
+| [docs/audit-usage-posthog-2026-10.md](docs/audit-usage-posthog-2026-10.md) | October 2026 usage audit: what users manage to do and where they get lost, from thirty days of PostHog data. |
 | [docs/audit-performance-2026-10.md](docs/audit-performance-2026-10.md) | October 2026 performance, storage and security audit: what was fixed, what remains. |
 | [docs/audit-seo-2026-09.md](docs/audit-seo-2026-09.md) | September 2026 SEO audit: HTML served to crawlers, files for crawlers, manual actions. |
+| [docs/audit-review-2026-11.md](docs/audit-review-2026-11.md) | November 2026 global review (security, performance, code quality): what was fixed, and the open work by priority. |
 
 ## Contributing
 
