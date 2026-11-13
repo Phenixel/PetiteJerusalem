@@ -161,6 +161,20 @@ router.afterEach((to, from) => {
 });
 
 const isHome = computed(() => route.name === "home");
+
+// The footer waits for the first route. Before it, the route has no name:
+// the app is not known to be on the home page, and the footer was drawn
+// right under the navbar, then pushed a full screen down when the page's
+// chunk arrived (the largest layout shift of the site). main.ts already
+// holds the first render for the route, one second at most; this covers the
+// network slower than that.
+const firstRouteReady = ref(false);
+void router
+  .isReady()
+  .catch(() => undefined)
+  .then(() => {
+    firstRouteReady.value = true;
+  });
 const isMiniPlayerVisible = useMiniPlayerVisible();
 
 // Pages de lecture (meta.plainBackground) : le mur de pierre disparaît pour
@@ -267,7 +281,7 @@ authService.onAuthChanged((user) => {
       <RouterView v-else />
       <!-- App native : pas de footer de site ; l'essentiel (à propos, mentions
          légales…) vit en bas du profil de l'app. -->
-      <SiteFooter v-if="!isHome && !isNativeApp" />
+      <SiteFooter v-if="firstRouteReady && !isHome && !isNativeApp" />
       <ScrollToTop />
       <AutoScrollPill v-if="autoScrollPillMounted" />
       <ToastContainer />

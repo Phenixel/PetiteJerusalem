@@ -130,18 +130,26 @@ app.config.errorHandler = (err, _instance, info) => {
   );
 };
 
-// Hors français, le premier rendu attend les messages de la langue (un
-// chunk d'environ 25 kB gzip), une seconde au plus : un réseau qui traîne ne
-// doit pas laisser la page blanche, le repli français s'affiche alors.
-const LOCALE_WAIT_MS = 1_000;
-if (waitsForLocale) {
-  void Promise.race([
-    localeReady,
-    new Promise<void>((resolve) => setTimeout(resolve, LOCALE_WAIT_MS)),
-  ]).then(() => app.mount("#app"));
-} else {
-  app.mount("#app");
-}
+// The first render waits for two things, one second at most: a slow network
+// must not leave the page blank.
+//
+//  - The first route. Every route but the home page is a chunk loaded on
+//    demand: mounted before it arrived, the app drew the navbar over an empty
+//    page, replaced the prerendered content with nothing, then pushed
+//    everything down when the page came (a layout shift of 0.56 to 0.81 on
+//    /horaires, /bibliotheque and the reader, measured in November 2026).
+//    Until then the prerendered page, or the bare shell, stays as it is.
+//  - Outside French, the messages of the language (a chunk of about 40 kB
+//    gzip); the French fallback shows otherwise.
+//
+// A first navigation that fails (a chunk gone after a release) must not keep
+// the app from mounting: router.onError above handles it.
+const FIRST_RENDER_WAIT_MS = 1_000;
+const firstRoute = router.isReady().catch(() => undefined);
+void Promise.race([
+  waitsForLocale ? Promise.all([firstRoute, localeReady]) : firstRoute,
+  new Promise<void>((resolve) => setTimeout(resolve, FIRST_RENDER_WAIT_MS)),
+]).then(() => app.mount("#app"));
 
 // Suivi produit + traque d'erreurs (PostHog, prod uniquement). Import
 // dynamique et best-effort : jamais bloquant pour le démarrage.
