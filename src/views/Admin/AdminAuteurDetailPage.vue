@@ -208,7 +208,7 @@ async function removeAuteur() {
     await adminService.deleteAuteur(auteur.value.id);
     toast.success(t("admin.auteurDetail.deleted"));
     void refreshAdminSummary(true);
-    router.push("/admin/auteurs");
+    void router.push("/admin/auteurs");
   } catch (error) {
     console.error("Erreur lors de la suppression de l'auteur:", error);
     toast.error(

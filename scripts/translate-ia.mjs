@@ -167,7 +167,10 @@ function repairJson(text) {
     const m = line.match(/^\s*"([^"]+)"\s*:\s*"(.*)"\s*,?\s*$/);
     if (!m) continue;
     let open = false;
-    const value = m[2].replace(/(?<!\\)"/g, () => ((open = !open) ? "« " : " »"));
+    const value = m[2].replace(/(?<!\\)"/g, () => {
+      open = !open;
+      return open ? "« " : " »";
+    });
     try {
       out[m[1]] = JSON.parse(`"${value}"`);
     } catch {

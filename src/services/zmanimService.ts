@@ -1111,7 +1111,7 @@ export function restPeriodAt(place: ZmanimPlace, hd: HDate, locale: string): Res
   const endRabbenouTam =
     restEnd && rabbenouTam && rabbenouTam.getTime() > restEnd.getTime() ? rabbenouTam : null;
 
-  const lightings = restLightings(place, first, last, il, opinion);
+  const lightings = restLightings(place, first, last, opinion);
   const eruvTavshilin = eruvTavshilinDay(first, last, il);
 
   const festivals: string[] = [];
@@ -1160,7 +1160,6 @@ function restLightings(
   place: ZmanimPlace,
   first: HDate,
   last: HDate,
-  il: boolean,
   opinion: OpinionZmanim,
 ): RestLighting[] {
   const gloc = geoLocationOf(place);

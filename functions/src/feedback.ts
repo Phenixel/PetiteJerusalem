@@ -256,7 +256,7 @@ export const onSupportThreadWritten = onDocumentWritten(
     const result = await getMessaging().sendEachForMulticast(message);
     // Les jetons morts du fil s'oublient ; ceux du compte, la fonction des
     // rappels les purge déjà.
-    const dead = message.tokens.filter((token, i) => {
+    const dead = message.tokens.filter((_token, i) => {
       const code = result.responses[i]?.error?.code;
       return (
         code === "messaging/registration-token-not-registered" ||

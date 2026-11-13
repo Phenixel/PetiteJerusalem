@@ -163,8 +163,8 @@ watch(
         content_id: props.contentId ?? null,
         trigger: props.trigger ?? "button",
       });
-      nextTick(() => {
-        generateQRCode();
+      void nextTick(() => {
+        void generateQRCode();
       });
     }
   },

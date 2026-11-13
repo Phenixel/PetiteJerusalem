@@ -238,8 +238,8 @@ if (isNativeApp) {
 // dès le premier rendu au lieu d'arriver quelques secondes plus tard.
 authService.onAuthChanged((user) => {
   if (user) {
-    loadTheme(user.id);
-    loadFonts(user.id);
+    void loadTheme(user.id);
+    void loadFonts(user.id);
     void loadColorScheme(user.id);
     void loadContrast(user.id);
     void loadHolidayThemes(user.id);

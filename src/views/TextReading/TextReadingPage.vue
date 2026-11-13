@@ -906,8 +906,8 @@ function goToSection(index: number, replace = false) {
           params: { textId: textId.value, section: index },
           query: route.query,
         };
-  if (replace) router.replace(to);
-  else router.push(to);
+  if (replace) void router.replace(to);
+  else void router.push(to);
   scrollTopProgrammatic();
 }
 
@@ -956,7 +956,7 @@ function goUp(target: RouteLocationRaw, preferHistory: boolean) {
     router.back();
     return;
   }
-  router.replace(target);
+  void router.replace(target);
   scrollTopProgrammatic();
 }
 
@@ -972,7 +972,7 @@ function backToSectionList() {
 
 function exitReading() {
   if (sessionSlug.value) {
-    router.push(`/share-reading/session/${sessionSlug.value}`);
+    void router.push(`/share-reading/session/${sessionSlug.value}`);
     return;
   }
   // While reading a chapter, "back" returns to this text's chapter list rather
@@ -1023,7 +1023,7 @@ function goToText(target: TextStudyJsonEntry) {
   const to = isEtudeRoute.value
     ? hubPath(target)
     : { name: "text-reading", params: { textId: String(target.id) }, query: route.query };
-  router.replace(to);
+  void router.replace(to);
   scrollTopProgrammatic();
 }
 
@@ -1122,7 +1122,7 @@ function goToPlace(section: number | null, line: number) {
             params: { textId: textId.value, section },
             query: { ...route.query, verset: String(line) },
           };
-    router.push(to);
+    void router.push(to);
   } else {
     scrollToLine(line);
   }
@@ -2059,7 +2059,7 @@ async function claimDrawnText() {
     // Le texte annoncé a été pris pendant le trajet : on bascule sur celui qui
     // a effectivement été retenu, sauf si le lecteur est déjà reparti.
     if (result.text.id !== from && stillReading(from)) {
-      router.replace({
+      void router.replace({
         name: "text-reading",
         params: { textId: result.text.id },
         query: route.query,
@@ -2264,7 +2264,7 @@ async function drawAnother() {
 
     noteReadingActivity();
     if (stillReading(from)) {
-      router.replace({
+      void router.replace({
         name: "text-reading",
         params: { textId: result.text.id },
         query: route.query,

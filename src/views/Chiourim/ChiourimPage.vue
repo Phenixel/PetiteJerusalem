@@ -246,7 +246,7 @@ function auteurPath(name: string): string {
 }
 
 onMounted(() => {
-  loadChiourim();
+  void loadChiourim();
   analyticsService.capture("chiourim_viewed");
   const url = SITE_URL + "/chiourim";
   seoService.setMeta({

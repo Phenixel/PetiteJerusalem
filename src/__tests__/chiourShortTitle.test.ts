@@ -13,9 +13,7 @@ describe("titre court d'un cours", () => {
     expect(shortTitle("Pélé Yoets - Ahava (l'amour de HaShem) n°1", "Pélé Yoets")).toBe(
       "Ahava (l'amour de HaShem) n°1",
     );
-    expect(shortTitle("Pélé Yoets cours n°8 : l'amour", "Pélé Yoets")).toBe(
-      "Cours n°8 : l'amour",
-    );
+    expect(shortTitle("Pélé Yoets cours n°8 : l'amour", "Pélé Yoets")).toBe("Cours n°8 : l'amour");
   });
 
   it("ignore accents et majuscules pour comparer", () => {

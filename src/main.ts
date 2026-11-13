@@ -125,7 +125,7 @@ app.config.errorHandler = (err, _instance, info) => {
   // rechargement, il n'a rien à faire dans les erreurs de rendu.
   if (handleChunkLoadError(err, "vue")) return;
   console.error("Erreur Vue non gérée:", err, info);
-  import("./services/analyticsService").then(({ analyticsService }) =>
+  void import("./services/analyticsService").then(({ analyticsService }) =>
     analyticsService.captureException(err, { vue_error_info: info }),
   );
 };
@@ -153,7 +153,7 @@ void Promise.race([
 
 // Suivi produit + traque d'erreurs (PostHog, prod uniquement). Import
 // dynamique et best-effort : jamais bloquant pour le démarrage.
-import("./services/analyticsService").then(({ analyticsService }) => analyticsService.init());
+void import("./services/analyticsService").then(({ analyticsService }) => analyticsService.init());
 
 // Textes gardés sur l'appareil : si le site en sert une version plus récente
 // (un passage ajouté, une correction), on la reprend en tâche de fond. Sans
@@ -180,7 +180,7 @@ function whenIdle(task: () => void): void {
 // initial du site web.
 if (isNativeApp) {
   // Notifications push : deep-links au toucher + affichage en premier plan.
-  import("./services/pushService").then(({ pushService }) => pushService.init(router));
+  void import("./services/pushService").then(({ pushService }) => pushService.init(router));
   // Widgets d'écran d'accueil : pousse les horaires et la lecture du jour au
   // natif (lancement, retour au premier plan, changement de lieu…). Lancé
   // après le premier rendu de la page et à l'heure creuse : la mise à jour
@@ -188,24 +188,24 @@ if (isNativeApp) {
   // premier écran, et les widgets attendent sans dommage une seconde de plus.
   void router.isReady().then(() =>
     whenIdle(() => {
-      import("./services/widgetService").then(({ widgetService }) => widgetService.init());
+      void import("./services/widgetService").then(({ widgetService }) => widgetService.init());
       // Rappels d'horaires posés depuis la page Horaires : programmés sur
       // l'appareil (aucun serveur), et replanifiés à chaque retour au premier
       // plan. Ils tirent le moteur d'horaires comme les widgets, ils partent
       // donc avec eux, après le premier rendu : l'événement du toucher d'une
       // notification est retenu par Capacitor jusqu'à ce qu'on l'écoute, un
       // lancement à froid depuis un rappel n'est donc pas perdu.
-      import("./services/zmanReminderService").then(({ zmanReminderService }) =>
+      void import("./services/zmanReminderService").then(({ zmanReminderService }) =>
         zmanReminderService.init(router),
       );
       // The reminders of Mon parcours: their touch opens the home page. The
       // plan itself is made by ParcoursReminderScheduler (App.vue).
-      import("./services/parcoursReminderService").then(({ parcoursReminderService }) =>
+      void import("./services/parcoursReminderService").then(({ parcoursReminderService }) =>
         parcoursReminderService.init(router),
       );
       // Informations de l'équipe : abonnement au canal de la langue, refait à
       // chaque lancement et à chaque changement de langue.
-      import("./services/announcementTopics").then(({ syncAnnouncementTopic }) => {
+      void import("./services/announcementTopics").then(({ syncAnnouncementTopic }) => {
         const locale = i18n.global.locale as unknown as { value: string };
         void syncAnnouncementTopic(locale.value);
         watch(
@@ -217,7 +217,9 @@ if (isNativeApp) {
   );
   // Bandeau de mise à jour : compare le binaire installé à la version publiée
   // sur le store (lancement, puis retour au premier plan).
-  import("./services/appUpdateService").then(({ appUpdateService }) => appUpdateService.init());
+  void import("./services/appUpdateService").then(({ appUpdateService }) =>
+    appUpdateService.init(),
+  );
   // La WebView Android applique l'échelle de police système (textZoom), ce qui
   // casse les mises en page (textes agrandis, débordements). On la neutralise :
   // la taille de lecture se règle dans l'app (useReadingSize).
@@ -228,7 +230,7 @@ if (isNativeApp) {
     });
   // Bouton retour matériel Android : sans listener, il quitte l'app au lieu
   // de revenir en arrière dans la navigation.
-  import("@capacitor/app").then(({ App: CapacitorApp }) => {
+  void import("@capacitor/app").then(({ App: CapacitorApp }) => {
     // Deux façons d'entrer dans l'app par une URL, même traitement :
     //  - toucher un widget, dont l'intent porte une URL du site (https sur
     //    Android, scheme petitejerusalem:// sur iOS) ;
@@ -240,7 +242,7 @@ if (isNativeApp) {
     // OAuth natif, intent tiers) doit laisser l'app où elle est, sous peine
     // d'arracher l'utilisateur vers une 404 en pleine connexion Google par
     // exemple.
-    CapacitorApp.addListener("appUrlOpen", ({ url }) => {
+    void CapacitorApp.addListener("appUrlOpen", ({ url }) => {
       let parsed: URL;
       try {
         parsed = new URL(url);
@@ -256,7 +258,7 @@ if (isNativeApp) {
       // deep-link ne soit pas écarté par elle.
       void router.isReady().then(() => router.push(parsed.pathname + parsed.search + parsed.hash));
     });
-    CapacitorApp.addListener("backButton", ({ canGoBack }) => {
+    void CapacitorApp.addListener("backButton", ({ canGoBack }) => {
       // Une surcouche ouverte (modale, menu, introduction) se ferme avant
       // toute navigation, comme Échap le fait : sans cela, le retour
       // naviguait sous la fenêtre, ou quittait l'app depuis l'introduction.
@@ -265,7 +267,7 @@ if (isNativeApp) {
         router.back();
       } else {
         // Sur la home : comportement Android standard, l'app passe en arrière-plan.
-        CapacitorApp.minimizeApp();
+        void CapacitorApp.minimizeApp();
       }
     });
   });

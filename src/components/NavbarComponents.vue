@@ -114,11 +114,11 @@ async function logout() {
   await authService.logout();
   username.value = null;
   closeMobileMenu();
-  router.push("/");
+  void router.push("/");
 }
 function goToLogin() {
   const currentPath = router.currentRoute.value.path;
-  router.push(`/login?redirect=${encodeURIComponent(currentPath)}`);
+  void router.push(`/login?redirect=${encodeURIComponent(currentPath)}`);
   closeMobileMenu();
 }
 </script>
