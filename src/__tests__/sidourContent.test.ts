@@ -507,7 +507,10 @@ describe.each(sidourEntries.map((entry) => [resolveFilePath(entry), entry] as co
       expect(sansSignes((runs[anenou] as { text: string }).text)).toContain("עננו אבינו");
       expect((runs[anenou] as { accent?: boolean }).accent).toBe(true);
       expect(runs[anenou - 1].kind).toBe("rubric");
-      expect(sansSignes((runs[0] as { text: string }).text)).toContain("שמע קולנו");
+      // Shacharit cuts Shema kolenu for the prayer for livelihood: Anenu's
+      // paragraph then opens on "Oumilefanekha malkenou".
+      expect(sansSignes((runs[0] as { text: string }).text)).toMatch(/שמע קולנו|ומלפניך מלכנו/);
+      expect(sansSignes(blocks[chacun].lines.join(" "))).toContain("שמע קולנו");
       expect(sansSignes((runs[anenou + 1] as { text: string }).text)).toContain("כי אתה שומע");
     });
   },
@@ -524,7 +527,9 @@ describe("Min'ha : le jeûne qu'on prend sur soi", () => {
     expect(sansSignes(blocks[i].lines[0])).toContain("רבון העולמים, הריני לפניך");
     // Avant lui, la fin de la 'Amida ; après lui, le jour du jeûne seulement,
     // puis 'Ossé chalom dans le fil.
-    expect(sansSignes(blocks[i - 1].lines.at(-1)!)).toContain("יהיו לרצון");
+    // ("Yihyu leratzon", then Rav's prayer that some add there.)
+    expect(sansSignes(blocks[i - 1].lines.at(-2)!)).toContain("יהיו לרצון");
+    expect(sansSignes(blocks[i - 1].lines.at(-1)!)).toContain("שתתן לנו חיים ארוכים");
     expect(blocks[i + 1].when).toBe("taanit");
     expect(sansSignes(blocks[i + 1].lines[0])).toContain("גלוי לפניך");
     expect(sansSignes(blocks[i + 2].lines[0])).toContain("שלום במרומיו");
@@ -611,7 +616,8 @@ describe("Min'ha : la veille de Kippour", () => {
     const suite = blocks[debut + 4];
     expect(suite.when).toBeUndefined();
     expect(sansSignes(suite.lines[0])).toContain("אלהי, נצר לשוני מרע");
-    expect(sansSignes(suite.lines.at(-1)!)).toContain("יהיו לרצון");
+    expect(sansSignes(suite.lines.at(-2)!)).toContain("יהיו לרצון");
+    expect(sansSignes(suite.lines.at(-1)!)).toContain("שתתן לנו חיים ארוכים");
     // Quatre blocs, tous à ce jour-là, tous dans le fil ordinaire : la
     // couleur du thème dit « l'ajout du jour » sur une ligne, elle serait
     // illisible sur cinquante.
@@ -910,6 +916,7 @@ describe("Cha'harit : Moussaf, et les Kaddich qui l'entourent", () => {
     return lus.slice(debut + 1, fin).flatMap((b) => (b.label ? [b.label] : []));
   }
   const MOUSSAF = [
+    "Beit Ya'akov",
     "Dans une maison endeuillée",
     "Demi-Kaddich (le 'hazan)",
     "Moussaf",
@@ -924,6 +931,8 @@ describe("Cha'harit : Moussaf, et les Kaddich qui l'entourent", () => {
     // Le dimanche 14 Hechvan 5787.
     expect(titres(new HDate(14, months.CHESHVAN, 5787))).toEqual([
       "Kaddich Titkabal (le 'hazan)",
+      "Tefila leDavid",
+      "Beit Ya'akov",
       "Dans une maison endeuillée",
       "Kaddich yehé chelama",
     ]);

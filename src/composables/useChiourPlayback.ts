@@ -26,6 +26,24 @@ export function chiourCover(chiour: Chiour, serieName = serieNameOf(chiour)) {
   return { seed: chiour.slug, label: chiour.name };
 }
 
+/** Accents and case removed, to compare a title with a series name. */
+const fold = (value: string) =>
+  value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
+/**
+ * A class's title where its series is not said (search, the tab, sharing):
+ * followed by the series name, unless it already contains it.
+ * « Chapitre 3 (2/7) » becomes « Chapitre 3 (2/7) · Shaar Habitahon »;
+ * « Shaar Habitahon Shiour 12 » stays as it is.
+ */
+export function titleWithSerie(title: string, serieName: string | null | undefined): string {
+  if (!serieName || fold(title).includes(fold(serieName))) return title;
+  return `${title} · ${serieName}`;
+}
+
 /**
  * Le titre d'un cours sans le nom de sa série quand il le répète, pour une
  * liste où la série est déjà dite : « Shaar Habitahon Shiour 10 Chapitre 2 »
@@ -36,11 +54,6 @@ export function chiourCover(chiour: Chiour, serieName = serieNameOf(chiour)) {
  */
 export function shortTitle(title: string, prefix: string | null | undefined): string {
   if (!prefix) return title;
-  const fold = (value: string) =>
-    value
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .toLowerCase();
   if (!fold(title).startsWith(fold(prefix))) return title;
   const rest = title.slice(prefix.length).replace(/^[\s\-\u2013:,.·]+/, "");
   if (!rest) return title;
@@ -57,6 +70,7 @@ export function chiourTrack(chiour: Chiour, context: string | null = null): Audi
     cover: chiourCover(chiour, serieName),
     duration: chiour.duration,
     context: context ?? serieName ?? chiour.auteur,
+    serie: serieName,
     texteId: chiour.texteId,
     texteChapitre: chiour.texteChapitre,
     episode: chiour.episode,

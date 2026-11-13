@@ -65,7 +65,8 @@ describe("encadrements des lectures", () => {
   it("porte le Léchem yihoud du Cantique des cantiques, avant et après", () => {
     const passages = encadrementOf(CHIR_HACHIRIM)!;
     expect(passages.before[0].lines[0]).toContain("לְשֵׁם יִחוּד");
-    expect(passages.after[0].lines[0]).toContain("רִבּוֹן כָּל הָעוֹלָמִים");
+    // The qamats of כל is written as a qamats qatan on loading (qamatsQatan.ts).
+    expect(passages.after[0].lines[0]).toContain("רִבּוֹן כׇּל הָעוֹלָמִים");
   });
 
   it("ne laisse aucun bloc sans titre ni sans texte", () => {

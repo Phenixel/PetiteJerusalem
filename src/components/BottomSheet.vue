@@ -216,10 +216,35 @@ onMounted(() => {
 });
 watch(() => props.docked, publish);
 
+/**
+ * The sheet keeps its place until it has really left the screen. Vue calls
+ * `onBeforeUnmount` as soon as the sheet starts sliding down, not when its
+ * leave transition ends; announcing nothing at that moment dropped the pill
+ * at once, under the finger that was touching it: the tap that closed the
+ * sheet then landed on the verse below the pill, which reopened the sheet,
+ * and the pill went back up (the "dance" reported with the auto-scroll pill).
+ * The height is therefore withdrawn once the element has left the page,
+ * checked on each frame, which also covers a sheet removed without a
+ * transition.
+ */
+const LEAVE_CAP_MS = 1000;
+function announceWhenGone(el: HTMLElement | null): void {
+  if (!el || !el.isConnected || typeof requestAnimationFrame === "undefined") {
+    announce(null);
+    return;
+  }
+  const until = Date.now() + LEAVE_CAP_MS;
+  const check = () => {
+    if (!el.isConnected || Date.now() > until) announce(null);
+    else requestAnimationFrame(check);
+  };
+  requestAnimationFrame(check);
+}
+
 onBeforeUnmount(() => {
   start = null;
   sizes?.disconnect();
-  announce(null);
+  announceWhenGone(props.docked ? null : sheet.value);
 });
 </script>
 

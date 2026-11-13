@@ -2071,6 +2071,8 @@ const en: LocaleMessages = {
     aliyaDone: "Read",
     aliyaCheck: "{aliya} read",
     progress: "Aliyot read: {done} of {total}",
+    aliyotTitle: "This week's aliyot",
+    aliyotHint: "Check the ones you have read, here or in a book.",
   },
   tehilimDay: {
     title: "Daily Tehilim",

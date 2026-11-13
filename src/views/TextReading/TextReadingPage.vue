@@ -145,7 +145,7 @@ import { readingProgressService } from "../../services/readingProgressService";
 import type { Bookmark, ReadingPosition } from "../../services/readingProgressService";
 import { isNativeApp } from "../../composables/useNativeApp";
 import { ensureManifestLoaded } from "../../services/offlineTextStore";
-import { scrollToBlockAnchor } from "../../composables/useReadingNav";
+import { lineAnchor, lineLandmarks, scrollToBlockAnchor } from "../../composables/useReadingNav";
 import type { ReadingNavSection } from "../../composables/useReadingNav";
 import { useReadingPinch } from "../../composables/useReadingPinch";
 import { useAutoScroll } from "../../composables/useAutoScroll";
@@ -733,10 +733,36 @@ const navSections = computed<ReadingNavSection[]>(() => {
       label: dafLabel(daf),
     }));
   }
+  if (unitLandmarks.value) {
+    const key = String(textEntry.value?.type) === "Mishna" ? "mishnaN" : "seifN";
+    return lineLandmarks(currentSection.value.he, (n) =>
+      capitalize(t(`textReading.${key}`, { n })),
+    );
+  }
   return verseBlocks.value
     .filter((b) => b.label)
     .map((b) => ({ anchor: anchorOf(b), offset: b.offset, label: blockLabel(b) }));
 });
+
+/**
+ * A chapter of Mishna, a siman of halakha: no heading inside, only numbered
+ * units that one looks for one by one. Each mishna, each se'if is then a
+ * landmark of the reading menu (lineLandmarks), and its line carries the
+ * anchor. A Tanakh chapter keeps none: it is read through, not searched
+ * verse by verse.
+ */
+const unitLandmarks = computed(() => {
+  const type = String(textEntry.value?.type);
+  return (
+    (type === "Mishna" || type === "Halakha") &&
+    showVerseNumbers.value &&
+    verseBlocks.value.length === 1 &&
+    !verseBlocks.value[0].label
+  );
+});
+
+const capitalize = (text: string): string =>
+  text.charAt(0).toLocaleUpperCase(locale.value) + text.slice(1);
 
 /** Le repère d'un bloc pour le menu de lecture (voir TextBlock.anchor). */
 const anchorOf = (block: TextBlock): string => block.anchor ?? String(block.offset);
@@ -1298,7 +1324,10 @@ function tableSnapshot(refresh = false): TableText | null {
     if (verse) {
       line = Number(verse.dataset.line ?? 0);
       offset = verse.getBoundingClientRect().top;
-      excerpt = (verse.querySelector(".reading-he, .reading-tl") ?? verse).textContent ?? "";
+      // The text itself, without the verse number that opens it.
+      const text = (verse.querySelector(".reading-he, .reading-tl") ?? verse).cloneNode(true);
+      if (text instanceof HTMLElement) text.querySelector(".verse-num")?.remove();
+      excerpt = text.textContent ?? "";
     }
     // Une Guemara n'a pas de versets repérés : le daf lu est le dernier dont
     // le titre est passé sous l'en-tête, et sa page commence à son titre.
@@ -1815,6 +1844,13 @@ async function reserve() {
       error_message: e instanceof Error ? e.message : String(e),
       source: "reading_page",
     });
+    // The section was taken while the passage was open: the chain is re-read
+    // so the bar says who holds it instead of still offering it. Without it
+    // the reader pressed "Reserve" again and again on the same section (four
+    // attempts in one minute, in October 2026).
+    if (e instanceof SlotTakenError && session.value) {
+      await sessionService.refreshReservations(session.value);
+    }
     // Le message affiché vient du code de l'erreur (errors.*), jamais du
     // message brut du service.
     toast.errorFromException(e, t("textReading.reserveError"));
@@ -2905,11 +2941,15 @@ watch(textId, (_, previousTextId) => {
               <template v-for="(line, index) in block.lines" :key="block.offset + index">
                 <!-- Le signet, posé en travers avant le verset marqué. -->
                 <BookmarkRibbon v-if="isLineBookmarked(block.offset + index)" />
+                <!-- The verse number opens the verse, inside its first
+                     line, rather than holding a column of its own in the
+                     margin: the text gets the whole width of the screen. -->
                 <div
                   :data-line="block.offset + index"
+                  :data-block-anchor="unitLandmarks ? lineAnchor(block.offset + index) : undefined"
                   @click="pickVerse($event, block.offset + index, line)"
                   @contextmenu="pickVerse($event, block.offset + index, line)"
-                  class="reading-pick flex items-start gap-3 rounded-lg transition-colors duration-500 -mx-2 px-2"
+                  class="reading-pick rounded-lg transition-colors duration-500 -mx-2 px-2"
                   :class="{
                     'bg-primary/10': highlightedLine === block.offset + index,
                     'reading-selected':
@@ -2917,40 +2957,30 @@ watch(textId, (_, previousTextId) => {
                       highlightedLine !== block.offset + index,
                   }"
                 >
-                  <span
-                    v-if="showVerseNumbers"
-                    class="mt-2 flex-shrink-0 w-6 text-right text-xs text-primary font-semibold select-none"
+                  <p
+                    v-if="!showPhonetic"
+                    dir="rtl"
+                    class="font-hebrew text-text-primary reading-he"
                   >
-                    {{ index + 1 }}
-                  </span>
-                  <div class="flex-1 min-w-0">
-                    <p
-                      v-if="!showPhonetic"
-                      dir="rtl"
-                      class="font-hebrew text-text-primary reading-he"
-                    >
-                      <MarkedText
-                        :text="line"
-                        :leads="studyLeads?.line === block.offset + index ? studyLeads.leads : null"
-                      />
-                    </p>
-                    <p
-                      v-else
-                      dir="ltr"
-                      class="leading-relaxed italic text-text-secondary reading-tl"
-                    >
-                      {{ phoneticLines[block.offset + index] }}
-                    </p>
-                    <!-- La traduction du verset, sous lui, dans la police de
-                         lecture latine. -->
-                    <p
-                      v-if="trLines[block.offset + index]"
-                      dir="ltr"
-                      class="mt-2 text-text-secondary reading-tr"
-                    >
-                      <TranslationText :text="trLines[block.offset + index]" />
-                    </p>
-                  </div>
+                    <span v-if="showVerseNumbers" class="verse-num">{{ index + 1 }}</span
+                    ><MarkedText
+                      :text="line"
+                      :leads="studyLeads?.line === block.offset + index ? studyLeads.leads : null"
+                    />
+                  </p>
+                  <p v-else dir="ltr" class="leading-relaxed italic text-text-secondary reading-tl">
+                    <span v-if="showVerseNumbers" class="verse-num">{{ index + 1 }}</span
+                    >{{ phoneticLines[block.offset + index] }}
+                  </p>
+                  <!-- La traduction du verset, sous lui, dans la police de
+                       lecture latine. -->
+                  <p
+                    v-if="trLines[block.offset + index]"
+                    dir="ltr"
+                    class="mt-2 text-text-secondary reading-tr"
+                  >
+                    <TranslationText :text="trLines[block.offset + index]" />
+                  </p>
                 </div>
               </template>
             </div>
@@ -3159,17 +3189,22 @@ main {
 }
 
 /* Reader text sizes follow the A− / A+ control (useReadingSize).
-   L'interligne de l'hébreu est volontairement plus serré que leading-loose :
-   assez d'air pour les voyelles et les teamim, sans étirer la lecture. */
+   The Hebrew line height is deliberately tighter than leading-loose: enough
+   air for the vowels and the cantillation marks, without stretching the
+   reading. The text is justified, like a printed book: aligned on both edges, it
+   fills the width of a small phone instead of leaving a ragged margin. */
 .reading-he {
   font-size: calc(1.5rem * var(--reading-scale, 1));
   line-height: 1.7;
+  text-align: justify;
 }
 .reading-tl {
   /* La police latine choisie dans les réglages (useFonts) ne vaut que pour le
      texte des lectures : le reste de l'app garde Manrope. */
   font-family: var(--font-reading);
   font-size: calc(1.125rem * var(--reading-scale, 1));
+  text-align: justify;
+  hyphens: auto;
 }
 /* La traduction sous un verset : la police de lecture latine, un cran sous
    l'hébreu, qui reste le texte qu'on lit. */
@@ -3177,5 +3212,18 @@ main {
   font-family: var(--font-reading);
   font-size: calc(1.0625rem * var(--reading-scale, 1));
   line-height: 1.65;
+  text-align: justify;
+  hyphens: auto;
+}
+/* The verse number, at the start of the verse's first line: small, in the
+   theme color, in the interface font, and left out of a selection. */
+.verse-num {
+  margin-inline-end: 0.4em;
+  font-family: var(--font-sans);
+  font-size: max(0.75rem, 0.55em);
+  font-style: normal;
+  font-weight: 600;
+  color: var(--color-primary);
+  user-select: none;
 }
 </style>

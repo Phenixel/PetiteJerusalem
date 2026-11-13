@@ -103,8 +103,14 @@ const isCreatorBlocked = ref(false);
 // Les réservations vivent dans `session.reservations` : une seule source, que
 // la liste des textes et les index lisent. (Une deuxième référence vers le
 // même tableau demandait de les garder alignées à la main.)
-const { activeReservations, reservationAt, isSlotReserved, statusIndex, selectAllAvailable } =
-  useReservationIndex(session, textStudies);
+const {
+  activeReservations,
+  reservationAt,
+  isSlotReserved,
+  statusIndex,
+  selectAllAvailable,
+  dropReservedFrom,
+} = useReservationIndex(session, textStudies);
 
 // Funnel réservation : un seul événement par visite pour la 1re sélection et
 // la 1re recherche, sinon chaque clic de chapitre noierait les stats.
@@ -504,6 +510,15 @@ const submitReservations = async () => {
       error_message: err instanceof Error ? err.message : String(err),
       source: "session_page",
     });
+    // A slot was taken between the selection and the confirmation: the chain
+    // is re-read, and the sections somebody else now holds leave the
+    // selection. Without it the confirmation bar offered them again, and the
+    // reader kept getting the same refusal (four attempts in one minute, in
+    // October 2026).
+    if (err instanceof SlotTakenError) {
+      await sessionService.refreshReservations(current);
+      dropReservedFrom(selectedItems.value);
+    }
     toast.errorFromException(err, t("detailSession.reservationError"));
   } finally {
     isSubmittingBatch.value = false;

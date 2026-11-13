@@ -2146,6 +2146,8 @@ const fr = {
     aliyaDone: "Lue",
     aliyaCheck: "{aliya} lue",
     progress: "Montées lues : {done} sur {total}",
+    aliyotTitle: "Les montées de la semaine",
+    aliyotHint: "Cochez celles que vous avez lues, ici ou dans un livre.",
   },
   tehilimDay: {
     title: "Tehilim du jour",

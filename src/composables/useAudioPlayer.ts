@@ -40,6 +40,8 @@ export interface AudioTrack {
   duration?: number | null;
   /** D'où vient la file : la série, le rav, le texte (« Lecture depuis… »). */
   context?: string | null;
+  /** The class's series, the lock screen's album: the title does not repeat it. */
+  serie?: string | null;
   /** Le texte étudié et son chapitre (voir chiourTexte), pour la file du lecteur. */
   texteId?: number | null;
   texteChapitre?: number | null;
@@ -147,7 +149,7 @@ function updateMediaSession() {
   const info = {
     title: current.title,
     artist: current.subtitle || "Petite Jérusalem",
-    album: "Petite Jérusalem",
+    album: current.serie || "Petite Jérusalem",
   };
   metadataFor = current;
   publishMetadata(info);

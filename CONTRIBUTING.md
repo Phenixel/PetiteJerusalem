@@ -46,7 +46,11 @@ A feature idea?
    Types and scopes are listed in [CLAUDE.md](CLAUDE.md#commits). The pull
    request title follows the same format.
 6. Push your branch (`git push origin feat/my-new-feature`).
-7. Open a pull request against the main repository.
+7. Open a pull request against the main repository. Its description says
+   why it exists, how the problem was found (sources, evidence), what changes, what it sits next to, how it was checked and
+   what is left; a visible change comes with before and after screenshots.
+   The template fills in when you open it, and the rules are in
+   [CLAUDE.md](CLAUDE.md#pull-requests).
 
 ## Repository conventions
 

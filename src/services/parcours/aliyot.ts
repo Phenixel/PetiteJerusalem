@@ -202,6 +202,17 @@ export function aliyotLabel(range: { from: number; to: number }, names: string[]
   return parts.join(" · ");
 }
 
+/** "1re montée", "2e montée"...: an aliyah of its paracha, counted from 0. */
+export const aliyaName = (index: number, t: Translate): string =>
+  t("parcours.aliyot.one", { n: t(`parcours.aliyot.ordinals.n${index + 1}`) });
+
+/**
+ * The landmark of an aliyah on the chnei mikra page (counted from 0 across
+ * the week): the reading menu scrolls to it, to reach the 7th aliyah without
+ * scrolling through the first six.
+ */
+export const aliyaAnchor = (aliya: number): string => `montee-${aliya + 1}`;
+
 /** `?montees=2-3` (comptées de 1, la page du chnei mikra) : la plage, ou rien. */
 export function parseAliyotQuery(value: unknown): { from: number; to: number } | null {
   if (typeof value !== "string") return null;

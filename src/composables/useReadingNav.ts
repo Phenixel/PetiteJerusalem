@@ -30,6 +30,42 @@ export interface ReadingNavSection {
    * papier posé à côté.
    */
   hebrew?: string;
+  /**
+   * The first words of the passage, when the landmark is a numbered unit
+   * (a mishna, a se'if) whose number alone says nothing: one looks for a
+   * mishna by how it opens (see lineLandmarks).
+   */
+  excerpt?: string;
+}
+
+/** The anchor of a line published as its own landmark (see lineLandmarks). */
+export const lineAnchor = (line: number): string => `line-${line}`;
+
+/** The opening words of a passage, at most `words` of them. */
+export function incipit(text: string, words = 6): string {
+  const all = text.trim().split(/\s+/).filter(Boolean);
+  return all.length > words ? `${all.slice(0, words).join(" ")}…` : all.join(" ");
+}
+
+/**
+ * A chapter of Mishna or a siman of halakha has no heading inside it, only
+ * its numbered units (the mishnayot, the se'ifim): each one becomes a
+ * landmark of the reading menu, under its number and its opening words, so
+ * that a mishna is found without scrolling the whole chapter. `labelOf`
+ * names the unit from its number (counted from 1). Fewer than two units:
+ * nothing to look for, no landmark.
+ */
+export function lineLandmarks(
+  lines: readonly string[],
+  labelOf: (n: number) => string,
+): ReadingNavSection[] {
+  if (lines.length < 2) return [];
+  return lines.map((line, index) => ({
+    anchor: lineAnchor(index),
+    offset: index,
+    label: labelOf(index + 1),
+    excerpt: incipit(line),
+  }));
 }
 
 // Menus montés : un compteur plutôt qu'un drapeau, le temps qu'une page de

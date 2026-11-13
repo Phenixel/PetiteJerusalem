@@ -49,10 +49,14 @@ Set by `register()` and by `before_send`, including on the automatic
 | `is_logged_in`  | boolean                 | Segmenting anonymous / signed in.                |
 | `locale`        | `fr`, `en`, `he`        | Segmenting by language.                          |
 
-In the app, the `https://localhost` origin of the Capacitor webview is
-rewritten as `app://ios` / `app://android`: `$current_url` therefore stays
-readable and does carry the route, on `$exception` events as on everything
-else.
+In the app, the origin of the Capacitor webview is rewritten as
+`app://ios` / `app://android`: `$current_url` therefore stays readable and
+does carry the route, on `$exception` events as on everything else. The
+scheme of that origin depends on the platform (`https://localhost` on
+Android, `capacitor://localhost` on iOS): the rewrite takes any scheme, the
+`localhost` host being enough to recognize the webview. Events the iOS app
+sent before this fix keep their `capacitor://localhost` origin: a per-page
+analysis reaching further back has to count both.
 
 ## Calendar and holiday pages
 
@@ -310,12 +314,12 @@ An aliya checked or unchecked on the chnei mikra page
 « Marquer comme lue » button at the end of each aliya is used, and how far
 into the week the reading goes.
 
-| Property  | Values                                                                                                                                                                                    | Status    |
-| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
-| `done`    | true if the aliya has just been checked, false if unchecked                                                                                                                               | **new**   |
-| `text_id` | the paracha's text (a double paracha has two)                                                                                                                                             | **new**   |
-| `aliya`   | the aliya, as the text names it (`1re montée`, `2e montée`...)                                                                                                                            | **new**   |
-| `source`  | `text` (in the text: the checkbox, then « Marquer comme lue » at the end of the aliya), `list` (the week's list, above the text; removed, no longer sent); absent before the list: `text` | **added** |
+| Property  | Values                                                                                                                                                                                                                                                                                                                                | Status    |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
+| `done`    | true if the aliya has just been checked, false if unchecked                                                                                                                                                                                                                                                                           | **new**   |
+| `text_id` | the paracha's text (a double paracha has two)                                                                                                                                                                                                                                                                                         | **new**   |
+| `aliya`   | the aliya, as the text names it (`1re montée`, `2e montée`...)                                                                                                                                                                                                                                                                        | **new**   |
+| `source`  | `text` (in the text: the checkbox, then « Marquer comme lue » at the end of the aliya), `list` (the week's list, above the text; removed, no longer sent), `sheet` (the week's aliyot, opened from the paracha's name; the `aliya` is then named as in the text, `1re montée`, whatever the language); absent before the list: `text` | **added** |
 
 ## Sidour and Study (October 2026)
 

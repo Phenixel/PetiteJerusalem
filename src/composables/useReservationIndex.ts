@@ -141,6 +141,25 @@ export function useReservationIndex(
     return true;
   };
 
+  /**
+   * Drops from `selected` every slot that is now reserved, and returns how
+   * many left. Used after a conflict (SlotTakenError): the chain has just
+   * been re-read, and the sections somebody else took must leave the
+   * selection, otherwise the confirmation bar offers them again and every new
+   * tap fails the same way.
+   */
+  const dropReservedFrom = (selected: Set<string>): number => {
+    let dropped = 0;
+    for (const key of Array.from(selected)) {
+      const { textStudyId, section } = parseSlotKey(key);
+      if (isSlotReserved(textStudyId, section)) {
+        selected.delete(key);
+        dropped++;
+      }
+    }
+    return dropped;
+  };
+
   return {
     activeReservations,
     slotIndex,
@@ -151,5 +170,6 @@ export function useReservationIndex(
     availableSections,
     allAvailableSelected,
     selectAllAvailable,
+    dropReservedFrom,
   };
 }

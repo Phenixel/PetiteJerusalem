@@ -90,7 +90,7 @@ describe("liens d'application", () => {
       "/og/session/exemple.png",
       "/texts/tehilim.json",
       "/assets/index-abc123.js",
-      "/fonts/noto-serif-hebrew-var.woff2",
+      "/fonts/frank-ruhl-libre-hebrew-var.woff2",
       "/.well-known/assetlinks.json",
       "/sitemap.xml",
       // La page de vote des versions qui ne savent pas afficher un sondage.

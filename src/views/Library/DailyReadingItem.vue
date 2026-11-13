@@ -50,6 +50,7 @@ import { takeLegacyChecks } from "../../composables/useChneiMikraChecks";
 import BookmarkRibbon from "../../components/BookmarkRibbon.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import AliyaCheck from "../../components/AliyaCheck.vue";
+import { aliyaAnchor } from "../../services/parcours/aliyot";
 
 const props = defineProps<{
   entry: TextStudyJsonEntry;
@@ -82,6 +83,12 @@ const props = defineProps<{
    * aliyah carries no check of its own (the same thing asked twice).
    */
   hideAliyaChecks?: boolean;
+  /**
+   * Chnei mikra: the rank in the week of this text's first aliyah (7 for the
+   * second of a double paracha). Each aliyah title then carries its landmark
+   * (aliyaAnchor), where the reading menu scrolls to.
+   */
+  aliyaBase?: number;
 }>();
 const emit = defineEmits<{
   "toggle-section": [index: number];
@@ -592,10 +599,16 @@ onUnmounted(() => {
                   class="mt-10 mb-5 first:mt-4"
                   :done="isAliyaChecked(section, block)"
                   :name="headingLabel(block.heading, block.label)"
+                  :data-block-anchor="aliyaAnchor((aliyaBase ?? 0) + aliyaIndex(section, block))"
                   @toggle="(done: boolean) => setAliya(section, block, done)"
                 />
                 <p
                   v-else-if="block.label"
+                  :data-block-anchor="
+                    aliyaWeek
+                      ? aliyaAnchor((aliyaBase ?? 0) + aliyaIndex(section, block))
+                      : undefined
+                  "
                   class="my-4 text-xs font-semibold text-primary/70 dark:text-primary text-center"
                 >
                   {{ headingLabel(block.heading, block.label) }}
@@ -696,24 +709,29 @@ onUnmounted(() => {
   content-visibility: auto;
   contain-intrinsic-size: auto 40rem;
 }
-/* Tailles pilotées par le réglage A− / A+ (useReadingSize), comme le lecteur.
-   L'interligne de l'hébreu est volontairement plus serré que leading-loose :
-   assez d'air pour les voyelles et les teamim, sans étirer la lecture. */
+/* Sizes follow the A− / A+ control (useReadingSize), as in the reader.
+   The Hebrew line height is deliberately tighter than leading-loose: enough
+   air for the vowels and the cantillation marks, without stretching the
+   reading. Justified, like the reader: the text fills the width of the
+   screen, the Targum and Rashi under each verse included. */
 .daily-he {
   font-size: calc(1.25rem * var(--reading-scale, 1));
   line-height: 1.7;
+  text-align: justify;
 }
 .daily-tl {
   font-family: var(--font-reading);
   font-size: calc(1rem * var(--reading-scale, 1));
 }
-/* La traduction d'un verset ou d'un commentaire de Rachi : la police de
-   lecture latine, à gauche, sous l'hébreu qu'elle traduit. */
+/* The translation of a verse or of a Rashi comment: the Latin reading font,
+   justified from the left, under the Hebrew it translates. */
 .daily-tr {
   font-family: var(--font-reading);
   font-size: calc(0.95rem * var(--reading-scale, 1));
   line-height: 1.6;
-  text-align: left;
+  text-align: justify;
+  text-align-last: left;
+  hyphens: auto;
 }
 /* Rachi : sous le Targoum, plus petit et en retrait derrière un filet
    (côté droit : le texte est en hébreu). */
