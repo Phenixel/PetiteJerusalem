@@ -82,6 +82,17 @@ const PARNASSA =
   "אַתָּה הוּא יְהֹוָה הָאֱלֹהִים. הַזָּן וּמְפַרְנֵס וּמְכַלְכֵּל מִקַרְנֵי רְאֵמִים עַד בֵּיצֵי כִנִּים. הַטְרִיפֵנִי לֶחֶם חֻקִּי. וְהַמְצֵא לִי וּלְכָל בְּנֵי בֵיתִי מְזוֹנוֹתַי קוֹדֶם שֶׁאֶצְטָרֵךְ לָהֶם. בְּנַחַת וְלֹא בְצַעַר. בְּהֶתֵּר וְלֹא בְאִסּוּר. בְּכָבוֹד וְלֹא בְּבִזָּיוֹן. לְחַיִּים וּלְשָׁלוֹם. מִשֶּׁפַע בְּרָכָה וְהַצְלָחָה. מִשֶּׁפַע בְּרֵכָה עֶלְיוֹנָה. כְּדֵי שֶׁאוּכַל לַעֲשׂוֹת רְצוֹנֶךָ. וְלַעֲסוֹק בְּתוֹרָתֶךָ. וּלְקַיֵּם מִצְוֹתֶיךָ. וְאַל תַּצְרִיכֵנִי לִידֵי מַתְּנַת בָּשָׂר וָדָם. וִיקֻיַּם בִּי מִקְרָא שֶׁכָּתוּב. פּוֹתֵחַ אֶת יָדֶיךָ וּמַשְׂבִּיעַ לְכָל חַי רָצוֹן:";
 
 /**
+ * The yehi ratson for tikkun habrit (the drops of seed lost), said in Teka
+ * beshofar. Neither the siddur export nor Sefaria carries it; text of Rabbi
+ * Meir Poppers' Or Tzadikim (siman 2, Shaar haTefila 41), as quoted by Kav
+ * Halacha, unvocalized like its source. It ends here before its own closing
+ * ("barukh ata... mekabets nidhei amo Yisrael"), which is the blessing's
+ * regular closing, said right after it.
+ */
+const TIKOUN_HABRIT =
+  "יהי רצון מלפניך ה' אלהי ואלהינו ואלהי אבותינו אלהי אברהם אלהי יצחק ואלהי יעקב שכל טיפה וטיפה שיצאה ממני שלא במקום מצוה הן באונס הן ברצון, בין בשוגג בין במזיד, בין ער בין ישן, בין במתכוין בין שלא במתכוין שתחזירם למקום הקדושה למען שמך הגדול והקדוש היוצא מפסוק חיל בלע ויקיאנו והטוב בעיניך עשה.";
+
+/**
  * Les fichiers de textes que l'application sert déjà (public/texts), lus une
  * fois chacun : un livre des Nevi'im sert à plusieurs haftarot.
  */
@@ -884,7 +895,28 @@ function amidaBlocks(src, ix, opts = {}) {
     lines: [{ seg: ix.barekhAlenu }],
   });
 
-  blocks.push({ src, lines: [{ seg: ix.teka }] });
+  // The yehi ratson for tikkun habrit, which some insert into Teka
+  // beshofar after "vekabetsenu yahad mearba kanfot haarets", before the
+  // closing blessing: at Shacharit only (`opts.tikounHabrit`), like the
+  // prayer for livelihood (feedback of November 5, 2026).
+  blocks.push({
+    src,
+    lines: opts.tikounHabrit
+      ? [
+          { seg: ix.teka, until: "ברוך אתה" },
+          {
+            he: TIKOUN_HABRIT,
+            muted: true,
+            rubric: R(
+              "Certains ajoutent ici le yehi ratson du tikoun habrit (Or tsadikim)\u00a0:",
+              "Some add here the yehi ratzon for tikkun habrit (Or Tzadikim):",
+              "יש מוסיפים כאן יהי רצון לתיקון הברית (אור צדיקים):",
+            ),
+          },
+          { seg: ix.teka, from: "ברוך אתה", tight: true },
+        ]
+      : [{ seg: ix.teka }],
+  });
   // Hachiva : la conclusion change aux dix jours de techouva.
   blocks.push({
     src,
@@ -2138,6 +2170,7 @@ function chaharitRecipe() {
     },
     {
       parnassa: true,
+      tikounHabrit: true,
       kohanim: birkatKohanimBlock("Amida", {
         bracha: 53,
         versets: [55, 56, 57],
