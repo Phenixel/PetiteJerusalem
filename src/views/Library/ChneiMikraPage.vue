@@ -32,7 +32,14 @@ import ReadingSizeControl from "../../components/ReadingSizeControl.vue";
 import type { TextStudyJsonEntry } from "../../models/models";
 import DailyReadingItem from "./DailyReadingItem.vue";
 import { appendHebrewNumeral } from "../../services/hebrewNumerals";
-import { ALIYOT_PER_PARASHA, aliyotLabel, parseAliyotQuery } from "../../services/parcours/aliyot";
+import {
+  ALIYOT_PER_PARASHA,
+  aliyaAnchor,
+  aliyaName,
+  aliyotLabel,
+  parseAliyotQuery,
+} from "../../services/parcours/aliyot";
+import type { ReadingNavSection } from "../../composables/useReadingNav";
 
 // Venu de Mon parcours : la fin de la lecture coche la carte du jour (chargée
 // à la demande, elle tire le calendrier hébraïque).
@@ -245,6 +252,29 @@ function goTo(target: WeeklyParasha | null, direction: "previous" | "next" | "cu
 /** The translation of the parasha and of Rashi: its setting in the reading menu. */
 const translation = useEntriesTranslation(() => shownEntries.value.map((shown) => shown.entry));
 
+/**
+ * The aliyot shown, as landmarks of the reading menu: one goes to the 7th
+ * without scrolling through the first six (feedback of November 2, 2026). A
+ * double paracha names its own in front of each aliyah.
+ */
+const navSections = computed<ReadingNavSection[]>(() =>
+  shownEntries.value.flatMap((shown) => {
+    const from = shown.blocks?.from ?? 0;
+    const to = shown.blocks?.to ?? ALIYOT_PER_PARASHA;
+    const double = (parasha.value?.entries.length ?? 1) > 1;
+    return Array.from({ length: to - from }, (_, k) => {
+      const index = from + k;
+      const aliya = shown.index * ALIYOT_PER_PARASHA + index;
+      const name = aliyaName(index, t);
+      return {
+        anchor: aliyaAnchor(aliya),
+        offset: aliya,
+        label: double ? `${entryNames.value[shown.index]} · ${name}` : name,
+      };
+    });
+  }),
+);
+
 /** Le nom sous lequel la page se partage (voir ReadingMenu). */
 const shareTitle = computed(() => `${t("chneiMikra.title")} · ${title.value}`);
 
@@ -367,6 +397,7 @@ watch([title, locale, localeMessagesReady], applySeoMeta, { immediate: true });
             :with-rashi="withRashi"
             :aliya-week="parasha.weekKey"
             :checked-aliyot="checkedIn(shown.index)"
+            :aliya-base="shown.index * ALIYOT_PER_PARASHA"
             source="library_chnei_mikra"
             @toggle-aliya="
               (index: number, done: boolean, label: string) =>
@@ -394,6 +425,7 @@ watch([title, locale, localeMessagesReady], applySeoMeta, { immediate: true });
          progression au bas de l'écran. -->
     <ReadingMenu
       :share-title="shareTitle"
+      :sections="navSections"
       chnei-mikra
       :translation-langs="translation.langs.value"
       :translation-lang="translation.lang.value"

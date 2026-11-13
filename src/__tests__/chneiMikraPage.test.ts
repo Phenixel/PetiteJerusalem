@@ -135,12 +135,24 @@ describe("ChneiMikraPage", () => {
 
     // Not above the text: in the reading settings, with the other options.
     expect(page.text()).not.toContain("Chaque verset deux fois");
-    // No landmark in the menu: its single round button opens the settings.
+    const settle = async () => {
+      await nextTick();
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      await nextTick();
+    };
     page.host.querySelector<HTMLButtonElement>('button[aria-haspopup="menu"]')!.click();
-    await nextTick();
-    await new Promise((resolve) => requestAnimationFrame(resolve));
-    await new Promise((resolve) => requestAnimationFrame(resolve));
-    await nextTick();
+    await settle();
+    // The menu lists the week's aliyot, to go to the seventh without
+    // scrolling through the first six; the settings are one button away.
+    const landmarks = [...page.host.querySelectorAll(".section-item .section-name")].map((el) =>
+      el.textContent?.trim(),
+    );
+    expect(landmarks).toHaveLength(7);
+    expect(landmarks[0]).toBe("1re montée");
+    expect(landmarks[6]).toBe("7e montée");
+    page.host.querySelector<HTMLButtonElement>(`button[aria-label="Réglages de lecture"]`)?.click();
+    await settle();
     const toggleOf = (label: string) =>
       [...page.host.querySelectorAll<HTMLElement>(".setting-row")]
         .find((row) => row.textContent?.includes(label))!
