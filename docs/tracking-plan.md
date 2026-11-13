@@ -674,6 +674,19 @@ once, and tells whether the default width suits people who study.
 | `commentaries_resized` | `width`          | the chosen width, in pixels; `null` when it is reset | **new** |
 | `commentaries_resized` | `viewport_width` | the window width, in pixels                          | **new** |
 
+### Reading: `commentaries_jumped` (new)
+
+With several commentators on a passage, the study panel has one tab per
+commentator at its top (see `docs/design.md`, « Several commentators, one
+tab each »); a tap scrolls to that commentator. The event is sent on each
+tap, and tells whether the tabs are found and which commentator people go
+to past the first.
+
+| Event                 | Property   | Values                                                                        | Status  |
+| --------------------- | ---------- | ----------------------------------------------------------------------------- | ------- |
+| `commentaries_jumped` | `source`   | the commentator touched: `rashi`, `tosafot`, `bartenura`, `tosafotYomTov`...  | **new** |
+| `commentaries_jumped` | `position` | its rank among the passage's commentators, from 0                             | **new** |
+
 ### Reading: `reading_scrubbed` (new)
 
 The reader slides a finger along the progress bar at the bottom of a text to
