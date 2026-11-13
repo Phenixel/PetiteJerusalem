@@ -15,7 +15,6 @@ import { serieService } from "../../services/serieService";
 import { chiourimOfTexte, hasChapitres, texteTitle } from "../../services/chiourTexte";
 import { useTexteLabels } from "../../composables/useTexteLabels";
 import { analyticsService } from "../../services/analyticsService";
-import AppIcon from "../icons/AppIcon.vue";
 import ChiourTrackRow from "./ChiourTrackRow.vue";
 
 const props = defineProps<{
@@ -100,7 +99,6 @@ watch(
 <template>
   <section v-if="ordered.length" :aria-label="title">
     <h2 class="mb-2 flex items-center gap-2 text-lg font-bold text-text-primary">
-      <AppIcon name="headphones" :size="18" class="text-primary" />
       {{ title }}
     </h2>
     <div class="-mx-2">

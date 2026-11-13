@@ -62,6 +62,9 @@ function isDebugOverride(): boolean {
  * fiable au moment de l'init est donc `isNativeApp`.
  */
 function isProductionSurface(): boolean {
+  // Le build de staging (app « PJ Staging » et son site) n'est jamais de la
+  // production, même installé comme une vraie app (docs/staging.md).
+  if (__PJ_ENV__.name !== "production") return false;
   return isNativeApp || PRODUCTION_HOSTS.includes(window.location.hostname);
 }
 
@@ -73,7 +76,7 @@ function isTrackedSurface(): boolean {
 }
 
 /** Super propriétés (A2) : contexte de release attaché à chaque événement. */
-const APP_ENV = isProductionSurface() ? "production" : "preview";
+const APP_ENV = isProductionSurface() ? "production" : __PJ_ENV__.name === "staging" ? "staging" : "preview";
 const APP_VERSION = __APP_VERSION__;
 
 /**
@@ -110,19 +113,19 @@ const SUPER_PROPERTIES = {
 } as const;
 
 /**
- * Dans l'app, la webview Capacitor sert le bundle depuis `localhost` : les
- * événements arrivent avec la même URL que du vrai trafic web local, et `$lib`
- * vaut « web » (c'est bien posthog-js qui tourne). On réécrit donc l'origine
- * en `app://android` / `app://ios` pour que l'app soit lisible d'un coup
- * d'œil dans PostHog, sans toucher au chemin (les insights par page restent
- * comparables entre le site et l'app).
+ * In the app, the Capacitor webview serves the bundle from `localhost`: events
+ * arrive with the same URL as real local web traffic, and `$lib` is "web" (it
+ * really is posthog-js running). The origin is therefore rewritten as
+ * `app://android` / `app://ios` so the app can be told apart at a glance in
+ * PostHog, without touching the path (per-page insights stay comparable
+ * between the site and the app).
  *
- * Le schéma n'est pas le même d'une plateforme à l'autre : Android sert en
- * `https://localhost`, iOS en `capacitor://localhost` (et Capacitor 2 servait
- * en `ionic://localhost`). N'attendre que `http`/`https` laissait toutes les
- * adresses de l'app iOS en `capacitor://localhost/...`, hors des analyses par
- * page de l'app Android et du site. Tout schéma est donc accepté, l'hôte
- * `localhost` suffisant à reconnaître la webview (voir
+ * The scheme differs from one platform to the other: Android serves from
+ * `https://localhost`, iOS from `capacitor://localhost` (and Capacitor 2
+ * served from `ionic://localhost`). Expecting only `http`/`https` left every
+ * address of the iOS app as `capacitor://localhost/...`, outside the per-page
+ * analyses of the Android app and the site. Any scheme is therefore accepted,
+ * the `localhost` host being enough to recognize the webview (see
  * `analyticsNativeUrls.test.ts`).
  */
 const NATIVE_ORIGIN = /^[a-z][a-z\d+.-]*:\/\/localhost(?::\d+)?/i;

@@ -17,9 +17,9 @@
  *  - mon compte : sécurité, déconnexion ;
  *  - aide et informations : ce que le pied de page du site porte.
  *
- * Voir docs/design.md, « Le profil de l'app est une liste, pas un menu ».
+ * Voir docs/design.md, « The app profile is a list, not a menu ».
  */
-import { computed, onMounted, onUnmounted, ref } from "vue";
+import { computed, defineAsyncComponent, onMounted, onUnmounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { authService, type User } from "../../../services/authService";
 import { analyticsService } from "../../../services/analyticsService";
@@ -32,20 +32,24 @@ import { useLocale } from "../../../composables/useLocale";
 import { refreshPermission, useZmanReminders } from "../../../composables/useZmanReminders";
 import { useZmanimOpinion } from "../../../composables/useZmanimOpinion";
 import { useConsent } from "../../../composables/useConsent";
-import { useOnboarding } from "../../../composables/useOnboarding";
-import { useFeatureTips } from "../../../composables/useFeatureTips";
-import { useToast } from "../../../composables/useToast";
 import { useConfirm } from "../../../composables/useConfirm";
 import { useHolidayTheme } from "../../../composables/useHolidayTheme";
-import { openFeedback } from "../../../composables/useFeedback";
+import { useSupportUnread } from "../../../composables/useSupportUnread";
+import { WHATS_NEW_VERSION } from "../../../composables/useWhatsNew";
 import AppIcon from "../../../components/icons/AppIcon.vue";
 import type { IconName } from "../../../components/icons/registry";
 import HolidayOrnaments from "../../../components/holiday/HolidayOrnaments.vue";
 import SettingsGroup from "../../../components/settings/SettingsGroup.vue";
 import SettingsRow from "../../../components/settings/SettingsRow.vue";
+// Chargée à la demande : Mon parcours tire le calendrier hébraïque.
+const ProfileStreakPill = defineAsyncComponent(
+  () => import("../../../components/parcours/ProfileStreakPill.vue"),
+);
+const ProfileParcoursRow = defineAsyncComponent(
+  () => import("../../../components/parcours/ProfileParcoursRow.vue"),
+);
 
 const { t } = useI18n();
-const toast = useToast();
 
 const currentUser = ref<User | null>(null);
 const isLoading = ref(true);
@@ -61,7 +65,7 @@ const { activeHolidayTheme } = useHolidayTheme();
 // Ce que le compte apporte : les mêmes entrées que l'invitation du site.
 const guestBenefits = computed<{ icon: IconName; label: string }[]>(() => [
   { icon: "users", label: t("profile.guestBenefits.sessions") },
-  { icon: "book", label: t("profile.guestBenefits.dailyReading") },
+  { icon: "book", label: t("profile.guestBenefits.parcours") },
   { icon: "bell", label: t("profile.guestBenefits.reminders") },
   { icon: "bookmark", label: t("profile.guestBenefits.sync") },
 ]);
@@ -94,19 +98,10 @@ const notificationsValue = computed(() => {
 const { opinion } = useZmanimOpinion();
 const preferencesValue = computed(() => t(`zmanim.opinions.${opinion.value}.short`));
 
-// ---- Aide et informations ---------------------------------------------------
+// ---- Help and information ----------------------------------------------------
 
-// Réouvre la bannière de consentement (retrait possible à tout moment).
+// Reopens the consent banner (consent can be withdrawn at any time).
 const { reopen: reopenConsent } = useConsent();
-// L'introduction et les astuces ne se montrent qu'une fois : c'est d'ici
-// qu'on les revoit.
-const { replayOnboarding } = useOnboarding();
-const { resetFeatureTips } = useFeatureTips();
-
-function replayTips(): void {
-  resetFeatureTips();
-  toast.info(t("tips.replayed"));
-}
 
 const infoPages = [
   { to: "/informations", labelKey: "announcements.title", icon: "bell" },
@@ -144,12 +139,26 @@ const trackShortcut = (shortcut: string) => {
   analyticsService.capture("profile_shortcut_clicked", { shortcut });
 };
 
+// Nous écrire : une réponse de l'équipe pas encore lue se voit sur la ligne.
+const support = useSupportUnread();
+const supportValue = computed(() =>
+  support.unread.value > 0
+    ? t("support.unreadCount", { n: support.unread.value }, support.unread.value)
+    : undefined,
+);
+
 let unsubscribeAuth: (() => void) | null = null;
 
 onMounted(() => {
+  let checkedFor: string | null | undefined;
   unsubscribeAuth = authService.onAuthChanged((user) => {
     currentUser.value = user;
     isLoading.value = false;
+    const id = user?.id ?? null;
+    if (id !== checkedFor) {
+      checkedFor = id;
+      void support.check(!!user);
+    }
   });
   // La permission se change dans les réglages du téléphone, hors de l'app :
   // relue à chaque arrivée plutôt que de se fier au dernier état vu.
@@ -191,11 +200,16 @@ onUnmounted(() => {
       <!-- Connecté : qui l'on est, d'un coup d'oeil. Le rond porte la couleur
            du thème, c'est la seule touche pleine de la page. -->
       <header v-if="currentUser" class="relative mb-8 flex flex-col items-center text-center">
-        <span
-          class="font-display flex h-20 w-20 items-center justify-center rounded-full bg-brand text-4xl text-on-brand"
-          aria-hidden="true"
-        >
-          {{ initial }}
+        <!-- Le rond, et à cheval sur son bas, côté fin, la pastille de la
+             lumière de la série et de son compte (la toucher ouvre Mes lumières). -->
+        <span class="relative">
+          <span
+            class="font-display flex h-20 w-20 items-center justify-center rounded-full bg-brand text-4xl text-on-brand"
+            aria-hidden="true"
+          >
+            {{ initial }}
+          </span>
+          <ProfileStreakPill overlap class="absolute -bottom-2 -end-10" />
         </span>
         <h1 class="mt-4 text-2xl font-bold tracking-tight text-text-primary">
           {{ displayName }}
@@ -249,14 +263,13 @@ onUnmounted(() => {
       </template>
 
       <div class="flex flex-col gap-7">
-        <SettingsGroup v-if="currentUser" :title="t('profile.native.groups.reading')">
+        <!-- Mon parcours se tient sans compte, sur ce téléphone : sa ligne est
+             là pour tous, avec la journée. Les chaînes de lecture, elles,
+             suivent le compte. -->
+        <SettingsGroup :title="t('profile.native.groups.reading')">
+          <ProfileParcoursRow />
           <SettingsRow
-            icon="book"
-            :label="t('dailyReading.title')"
-            to="/bibliotheque/lecture-du-jour"
-            @click="trackShortcut('daily_reading')"
-          />
-          <SettingsRow
+            v-if="currentUser"
             icon="users"
             :label="t('home.dashboard.sessionsTitle')"
             to="/share-reading"
@@ -297,10 +310,24 @@ onUnmounted(() => {
           <SettingsRow icon="logout" :label="t('common.logout')" tone="danger" @click="logout" />
         </SettingsGroup>
 
+        <!-- The help center holds the guides, the "what's new" video, the
+             introduction and the tips to see again (docs/help-center.md);
+             the version's own page, its passages and their questions, is
+             one touch away. -->
         <SettingsGroup :title="t('profile.native.groups.help')">
-          <SettingsRow icon="message" :label="t('footer.reportIssue')" @click="openFeedback()" />
-          <SettingsRow icon="rocket" :label="t('onboarding.replay')" @click="replayOnboarding" />
-          <SettingsRow icon="lightbulb" :label="t('tips.replay')" @click="replayTips" />
+          <SettingsRow icon="help" :label="t('help.title')" to="/aide" />
+          <SettingsRow
+            icon="play"
+            :label="t('help.whatsNew.title', { version: WHATS_NEW_VERSION })"
+            :to="`/aide/nouveautes/${WHATS_NEW_VERSION}`"
+          />
+          <SettingsRow
+            icon="message"
+            :label="t('footer.reportIssue')"
+            :value="supportValue"
+            :warn="support.unread.value > 0"
+            to="/contact"
+          />
         </SettingsGroup>
 
         <SettingsGroup :title="t('profile.native.groups.info')">

@@ -1,391 +1,389 @@
-# Audit d'usage PostHog (octobre 2026)
+# PostHog usage audit (October 2026)
 
-Ce que les utilisateurs arrivent à faire, ce qui leur coûte, où ils se
-perdent et où ça casse, d'après trente jours de données PostHog (du 2
-septembre au 1er octobre 2026). La dernière section dit ce qui manque au
-suivi pour mieux voir la prochaine fois.
+What users manage to do, what costs them effort, where they get lost and
+where things break, based on thirty days of PostHog data (from September 2
+to October 1, 2026). The last section says what the tracking lacks to see
+better next time.
 
-**Périmètre.** Événements `env = production`, comptes de l'équipe, testeurs
-et compte de review Google retirés (`user_type` de la personne). Environ 640
-personnes : 428 sur le site, 113 sur iOS, 108 sur Android. Les chiffres sont
-des requêtes ponctuelles, pas des définitions enregistrées dans PostHog ; ils
-sont petits, et se lisent comme des tendances.
+**Scope.** `env = production` events, with team accounts, testers and the
+Google review account removed (the person's `user_type`). About 640 people:
+428 on the site, 113 on iOS, 108 on Android. The figures come from one-off
+queries, not definitions saved in PostHog; they are small, and should be
+read as trends.
 
-## 1. Ce qu'ils arrivent à faire
+## 1. What they manage to do
 
-- **Lire.** C'est l'usage qui porte l'app : 89 des 112 utilisateurs iOS et
-  70 des 105 utilisateurs Android ouvrent au moins un texte. Une visite de
-  rayon débouche sur un texte dans 66 à 90 % des cas (sidour et brahot au-delà
-  de 82 %, tanakh et moadim les plus bas, autour de 70 %).
-- **La nouvelle introduction tient ses promesses.** « Passer » terminait 45 %
-  des introductions dans l'ancienne forme (62 sur 139), 18 % dans la nouvelle
-  (9 sur 51) ; 86 % vont jusqu'au bout.
-- **Les horaires** : vus par 67 utilisateurs iOS et 48 Android sur trente
-  jours, c'est le deuxième usage.
-- **Le hors ligne** : 95 utilisateurs de l'app ont téléchargé des textes,
-  pour 7 échecs (voir 4).
-- **Google sur Android** : 19 connexions pour 23 personnes qui essaient ;
-  les autres ont annulé d'elles-mêmes.
-- **Les mises à jour** : sur 86 personnes à qui le bandeau a proposé une
-  nouvelle version, 58 l'ont installée dans le mois.
-- **La fidélité de l'app** : la moitié des utilisateurs reviennent au moins
-  deux jours sur trente, et 19 sont là dix jours ou plus. Sur le site, 374
-  visiteurs sur 419 ne viennent qu'un jour.
+- **Read.** This is the use that carries the app: 89 of the 112 iOS users
+  and 70 of the 105 Android users open at least one text. A visit to a
+  shelf section leads to a text in 66 to 90% of cases (sidour and brahot
+  above 82%, tanakh and moadim the lowest, around 70%).
+- **The new introduction delivers.** « Passer » ("Skip") ended 45% of
+  introductions in the old version (62 out of 139), 18% in the new one (9
+  out of 51); 86% go all the way through.
+- **Prayer times**: seen by 67 iOS users and 48 Android users over thirty
+  days, this is the second use.
+- **Offline**: 95 app users downloaded texts, with 7 failures (see 4).
+- **Google on Android**: 19 sign-ins for 23 people who try; the others
+  canceled on their own.
+- **Updates**: of 86 people to whom the banner offered a new version, 58
+  installed it within the month.
+- **App loyalty**: half of the users come back at least two days out of
+  thirty, and 19 are there ten days or more. On the site, 374 visitors out
+  of 419 come only one day.
 
-## 2. Ce qui leur demande un effort
+## 2. What takes them effort
 
-Par ordre d'impact.
+By order of impact.
 
-### 2.1 Se connecter par email : le mauvais mode, et pas de mot de passe oublié
+### 2.1 Signing in by email: the wrong mode, and no forgotten password
 
-Onze personnes ont tenté une connexion par email (mode « Se connecter ») ;
-quatre seulement y sont arrivées. Sur Android, aucune : 13 tentatives, 13
-`auth/invalid-credential`. En suivant chacune :
+Eleven people attempted an email sign-in (« Se connecter » ("Sign in")
+mode); only four succeeded. On Android, none: 13 attempts, 13
+`auth/invalid-credential`. Following each one:
 
-- trois n'avaient pas de compte, sont passées à l'inscription et ont réussi ;
-- deux sont passées à Google, où elles avaient leur compte, et s'y sont
-  connectées ;
-- deux ont abandonné, dont une après cinq essais.
+- three had no account, switched to sign-up and succeeded;
+- two switched to Google, where they had their account, and signed in
+  there;
+- two gave up, one of them after five tries.
 
-À l'inverse, trois personnes ont voulu s'inscrire avec une adresse déjà
-inscrite (`auth/email-already-in-use`) ; l'une a recommencé six fois sans
-jamais basculer vers la connexion.
+Conversely, three people tried to sign up with an already registered
+address (`auth/email-already-in-use`); one of them tried again six times
+without ever switching to sign-in.
 
-Firebase répond `invalid-credential` sans dire si l'adresse existe : l'écran
-ne peut donc pas trancher, mais il peut proposer les trois sorties à la
-première erreur (« Pas encore de compte ? Créer un compte », « Inscrit avec
-Google ou Apple ? », « Mot de passe oublié ? »), et basculer de lui-même vers
-la connexion sur `email-already-in-use`. **Il n'existe aujourd'hui aucun
-parcours de mot de passe oublié** (`loginView.vue`, `authService.ts`) :
-quelqu'un qui a vraiment oublié le sien n'a aucune issue.
+Firebase answers `invalid-credential` without saying whether the address
+exists: the screen therefore cannot decide, but it can offer the three ways
+out at the first error (« Pas encore de compte ? Créer un compte » ("No
+account yet? Create an account"), « Inscrit avec Google ou Apple ? »
+("Signed up with Google or Apple?"), « Mot de passe oublié ? » ("Forgot your
+password?")), and switch to sign-in by itself on `email-already-in-use`.
+**There is currently no forgotten-password flow at all** (`loginView.vue`,
+`authService.ts`): someone who has really forgotten theirs has no way out.
 
-### 2.2 La lecture du jour derrière un mur de connexion
+### 2.2 The daily reading behind a sign-in wall
 
-La lecture du jour demande un compte : 24 sessions sont arrivées sur `/login`
-avec `redirect=/bibliotheque/lecture-du-jour`, 13 se sont connectées, **11 sont
-reparties sans même essayer**. C'est aussi là que mène « Composer ma lecture
-du jour » à la fin de l'introduction : sur 25 personnes qui ont choisi ce
-bouton, 9 ont fini par configurer une lecture du jour, une seule en a marqué
-une comme lue. L'introduction promet une chose et ouvre un écran de connexion
-sans dire pourquoi.
+The daily reading requires an account: 24 sessions landed on `/login` with
+`redirect=/bibliotheque/lecture-du-jour`, 13 signed in, **11 left without
+even trying**. This is also where « Composer ma lecture du jour » ("Compose
+my daily reading") at the end of the introduction leads: of 25 people who
+chose that button, 9 ended up setting up a daily reading, only one marked
+one as read. The introduction promises one thing and opens a sign-in screen
+without saying why.
 
-Pistes : dire sur l'écran de connexion ce qu'on y gagne quand on y arrive par
-la lecture du jour, ou laisser composer la lecture sans compte (sur
-l'appareil) et ne proposer le compte que pour la synchroniser.
+Leads: say on the sign-in screen what one gains when arriving there from the
+daily reading, or let users compose the reading without an account (on the
+device) and only offer the account to sync it.
 
-Les arrivées sur `/login` sans redirection aboutissent mieux : 54 connexions
-pour 84 sessions.
+Arrivals on `/login` without a redirect do better: 54 sign-ins for 84
+sessions.
 
-### 2.3 Les horaires d'un autre jour : jusqu'à 37 appuis sur « Jour suivant »
+### 2.3 Times for another day: up to 37 taps on « Jour suivant »
 
-Le clic de rage le plus fréquent de tout le produit porte sur les flèches de
-jour de `/horaires`, « Jour suivant » surtout (12 personnes). Ce n'est pas une flèche en panne :
-on cherche une date lointaine (le prochain Chabbat, une fête) et on y va jour
-par jour. Depuis l'arrivée du sélecteur de date (17 septembre), 12 sessions
-ont appuyé au moins trois fois sur la flèche, dont 9 entre 8 et 37 fois ; deux
-seulement ont ouvert le sélecteur. Sur trente jours : 27 sessions (18
-personnes), 4 avec le sélecteur.
+The most frequent rage click in the whole product is on the day arrows of
+`/horaires`, « Jour suivant » ("Next day") above all (12 people). It is not
+a broken arrow: people look for a distant date (the next Chabbat, a
+holiday) and get there day by day. Since the date picker arrived (September
+17), 12 sessions tapped the arrow at least three times, 9 of them between 8
+and 37 times; only two opened the picker. Over thirty days: 27 sessions (18
+people), 4 with the picker.
 
-Le sélecteur est caché dans le titre de date, qui ne se lit pas comme un
-bouton. Pistes : une icône calendrier à côté de la date, et des raccourcis
-« Chabbat » et « Prochaine fête ».
+The picker is hidden in the date title, which does not read as a button.
+Leads: a calendar icon next to the date, and « Chabbat » and « Prochaine
+fête » ("Next holiday") shortcuts.
 
-### 2.4 Apple et Google sur iOS
+### 2.4 Apple and Google on iOS
 
-- **Apple** : 24 personnes, 18 connexions. Six ont reçu l'erreur 1000
-  (`AuthorizationError`), que l'écran présente comme une limite de l'appareil
-  (« indisponible ») ; or deux ont réussi en réessayant aussitôt, une est
-  passée à Google, trois ont abandonné. L'erreur 1000 n'est donc pas toujours
-  définitive : le message devrait inviter à réessayer avant de renvoyer vers
-  Google ou l'email.
-- **Google sur iOS** : 12 personnes, 7 connexions, 4 échecs suivis d'un
-  abandon (Safari indisponible pour deux d'entre elles).
+- **Apple**: 24 people, 18 sign-ins. Six got error 1000
+  (`AuthorizationError`), which the screen presents as a device limitation
+  (« indisponible », "unavailable"); yet two succeeded by retrying right
+  away, one switched to Google, three gave up. Error 1000 is therefore not
+  always final: the message should invite a retry before pointing to Google
+  or email.
+- **Google on iOS**: 12 people, 7 sign-ins, 4 failures followed by
+  abandonment (Safari unavailable for two of them).
 
-### 2.5 Les pages du calendrier restent des impasses
+### 2.5 The calendar pages remain dead ends
 
-C'est la première porte du site : 422 sessions y commencent sur trente jours
-(224 sur `/calendrier`, 198 sur la page d'une fête, presque toutes
-Yom Kippour), surtout depuis un moteur de recherche. **9 seulement ouvrent
-une seconde page (2 %).** Ce qu'on y clique : « Mes dates » (11 sessions,
-les dates personnelles), l'année suivante ou précédente, « Fermer ».
+This is the site's main entrance: 422 sessions start there over thirty days
+(224 on `/calendrier`, 198 on a holiday page, almost all Yom Kippour),
+mostly from a search engine. **Only 9 open a second page (2%).** What gets
+clicked there: « Mes dates » ("My dates") (11 sessions, personal dates), the
+next or previous year, « Fermer » ("Close").
 
-`calendar_cta_clicked` (posé le 22 septembre) n'a encore rien reçu, mais les
-pages de fête n'ont été vues que trois fois par une version qui l'envoie (les
-vingt autres vues depuis venaient d'un site encore en cache) : il est trop tôt
-pour conclure, à revoir après la prochaine fête qui amène du trafic.
+`calendar_cta_clicked` (added on September 22) has not received anything
+yet, but the holiday pages have only been viewed three times by a version
+that sends it (the twenty other views since then came from a still-cached
+site): it is too early to conclude; revisit after the next holiday that
+brings traffic.
 
-### 2.6 La recherche globale de la bibliothèque aboutit rarement
+### 2.6 The library's global search rarely succeeds
 
-Recherche lancée depuis l'étagère (`scope = all`) : 16 sessions, 3 seulement
-ouvrent un texte dans les trois minutes. La recherche dans un rayon fait
-mieux (environ une fois sur deux). On ne sait pas ce qui était cherché (voir
-3.2) ; les replays ne le disent pas non plus, les saisies y étant masquées.
+Search launched from the shelf (`scope = all`): 16 sessions, only 3 open a
+text within three minutes. Search within a section does better (about one
+time in two). We do not know what was searched for (see 3.2); the replays do
+not say either, since input is masked in them.
 
-### 2.7 Les petites frictions
+### 2.7 Small frictions
 
-- **L'onglet actif ne fait rien.** « Accueil » touché sur l'accueil : 129
-  appuis, 38 personnes. Sur iOS comme sur Android, toucher l'onglet où l'on
-  est remonte en haut de la page ; ici rien ne se passe.
-- **La géolocalisation.** À l'ouverture d'un office, Android refuse la
-  position pour 17 des 40 personnes qui la voient demander (24 refus sur 200
-  demandes) ; iOS presque jamais (7 sur 207). Sur iOS, « Utiliser ma
-  position » (sidour) et « Ma position » (horaires) sont touchés à répétition
-  par 5 personnes : le bouton reste désactivé le temps de la recherche, sans
-  autre signe qu'un spinner.
-- **Les chiourim.** 157 personnes voient la liste, 61 ouvrent un cours, 39
-  l'écoutent. Le filtre le plus choisi, Halakha (24 personnes), ne renvoie
-  qu'un cours ; Paracha (16 personnes), quatre. C'est une demande de contenu
-  plus qu'un problème d'interface.
-- **Le défilement automatique** : un arrêt sur six par l'utilisateur survient
-  moins de trois secondes après le départ, ce qui ressemble à un double appui
-  involontaire (le geste qui le lance).
-- **Créer une chaîne** : 14 personnes commencent, 8 vont au bout ; 5 échecs
-  de validation (le champ manquant n'était pas encore nommé dans l'événement,
-  c'est corrigé).
-- **Le profil** : des appuis répétés sur l'email et l'identifiant, affichés
-  comme des champs alors qu'ils ne se modifient pas.
+- **The active tab does nothing.** « Accueil » ("Home") tapped on the home
+  page: 129 taps, 38 people. On iOS as on Android, tapping the tab you are
+  on scrolls back to the top of the page; here nothing happens.
+- **Geolocation.** When opening a service, Android denies the location for
+  17 of the 40 people who see it requested (24 denials out of 200 requests);
+  iOS almost never (7 out of 207). On iOS, « Utiliser ma position » ("Use my
+  location") (sidour) and « Ma position » ("My location") (prayer times) are
+  tapped repeatedly by 5 people: the button stays disabled during the
+  lookup, with no other sign than a spinner.
+- **Chiourim.** 157 people see the list, 61 open a lesson, 39 listen to it.
+  The most chosen filter, Halakha (24 people), returns only one lesson;
+  Paracha (16 people), four. This is a request for content more than an
+  interface problem.
+- **Auto-scroll**: one stop in six by the user happens less than three
+  seconds after the start, which looks like an unintended double tap (the
+  gesture that launches it).
+- **Creating a chain**: 14 people start, 8 finish; 5 validation failures
+  (the missing field was not yet named in the event, that is fixed).
+- **Profile**: repeated taps on the email and username, displayed as fields
+  even though they cannot be edited.
 
-## 3. Navigation : orientés, ou en recherche ?
+## 3. Navigation: oriented, or searching?
 
-Dans l'app, environ 80 % des sessions atteignent un contenu (texte, horaires,
-cours, chaîne...). Environ 4 % errent : quatre pages ou plus sans rien
-ouvrir. Trois motifs reviennent :
+In the app, about 80% of sessions reach some content (text, prayer times,
+lesson, chain...). About 4% wander: four pages or more without opening
+anything. Three patterns recur:
 
-1. **Le tour des onglets** (accueil, bibliothèque, chiourim, profil, accueil) :
-   surtout des nouveaux venus qui découvrent, sans signe de blocage.
-2. **Les allers-retours entre rayons** (tanakh, moadim, talmud, tehilim...,
-   avec retour à l'étagère entre chaque) : quelqu'un cherche un texte et ne
-   sait pas dans quel rayon il range. C'est le cas que la recherche globale
-   devrait couvrir, et c'est là qu'elle échoue le plus (2.6). En pleine
-   période de fêtes, un raccourci « Textes de la fête » sur l'étagère, comme
-   l'encart déjà posé en tête du sidour, est une piste.
-3. **Le ping-pong avec la lecture du jour** (accueil, lecture du jour,
-   accueil, lecture du jour) : la page ne retient pas, sans qu'on sache ce
-   qu'elle affichait (vide, demande de connexion ?), faute d'événement (3.7).
+1. **The tab tour** (home, library, chiourim, profile, home): mostly
+   newcomers exploring, with no sign of being stuck.
+2. **Back-and-forth between sections** (tanakh, moadim, talmud,
+   tehilim..., with a return to the shelf in between): someone is looking
+   for a text and does not know which section it is filed in. This is the
+   case the global search should cover, and it is where it fails the most
+   (2.6). In the middle of the holiday season, a « Textes de la fête »
+   ("Texts for the holiday") shortcut on the shelf, like the box already
+   placed at the top of the sidour, is a lead.
+3. **Ping-pong with the daily reading** (home, daily reading, home, daily
+   reading): the page does not hold attention, and we do not know what it
+   displayed (empty, sign-in request?), for lack of an event (3.7).
 
-Sur le site, la navigation se résume aux pages du calendrier (2.5) : on y
-entre, on y lit, on s'en va.
+On the site, navigation comes down to the calendar pages (2.5): people come
+in, read, and leave.
 
-## 4. Là où ça casse
+## 4. Where it breaks
 
-L'Error tracking est calme : 109 exceptions en trente jours, chez 28
-personnes.
+Error tracking is quiet: 109 exceptions in thirty days, from 28 people.
 
-| Erreur                                                      | Qui                              | État                                                     |
+| Error                                                       | Who                              | Status                                                   |
 | ----------------------------------------------------------- | -------------------------------- | -------------------------------------------------------- |
-| `"LocalNotifications.then()" is not implemented`            | 64 exceptions, v3.10.0 seulement | disparu des versions suivantes                           |
-| `AuthorizationError` 1000 (Apple)                           | 9 exceptions, toutes versions    | voir 2.4 : le message, pas un correctif natif            |
-| `Unable to open Safari` (Google, iOS)                       | 4 exceptions, v3.7               | anciennes versions                                       |
-| Téléchargement refusé (permissions Android 10)             | 1 personne, v3.10.7              | corrigé le 1er octobre (d50b58e), pas encore publié      |
-| `section_mark_read_failed` (« Réservation introuvable », conflit de version) | 3 personnes, site | à suivre : une section marquée lue qui ne l'est pas     |
-| Chunk servi en `text/html` (déploiement)                    | 2 personnes, site                | rechargement déjà prévu (`chunk_load_error`)             |
+| `"LocalNotifications.then()" is not implemented`            | 64 exceptions, v3.10.0 only      | gone from later versions                                 |
+| `AuthorizationError` 1000 (Apple)                           | 9 exceptions, all versions       | see 2.4: the message, not a native fix                   |
+| `Unable to open Safari` (Google, iOS)                       | 4 exceptions, v3.7               | old versions                                             |
+| Download denied (Android 10 permissions)                    | 1 person, v3.10.7                | fixed on October 1 (d50b58e), not yet released           |
+| `section_mark_read_failed` (« Réservation introuvable », "Reservation not found", version conflict) | 3 people, site | to watch: a section marked read that is not             |
+| Chunk served as `text/html` (deployment)                    | 2 people, site                   | reload already planned (`chunk_load_error`)              |
 
-Côté performance, deux signaux :
+On the performance side, two signals:
 
-- **Décalages de mise en page (CLS)** : le 75e centile est mauvais (au-delà
-  de 0,25 ; bon : moins de 0,1) sur toutes les pages de l'app Android, et
-  proche de 1 sur la moitié d'entre elles. Sur le site ordinateur, 39
-  mesures sur 60 sont mauvaises, dont 14 sur 19 pour `/calendrier`, la page
-  d'entrée qui compte pour le référencement. Une part
-  peut venir de l'accumulation du CLS au fil d'une session SPA ; à vérifier
-  sur un replay avant d'y passer du temps.
-- **iOS ne mesure rien** : la webview WKWebView n'expose ni LCP, ni CLS, ni
-  INP. Il n'y a aucun `$web_vitals` iOS ; seul `perf_degraded_rendering`
-  dit quelque chose de la fluidité sur iPhone.
+- **Layout shifts (CLS)**: the 75th percentile is poor (above 0.25; good:
+  below 0.1) on every page of the Android app, and close to 1 on half of
+  them. On the desktop site, 39 measurements out of 60 are poor, including
+  14 out of 19 for `/calendrier`, the entry page that matters for search.
+  Part of it may come from CLS accumulating over an SPA session; check on a
+  replay before spending time on it.
+- **iOS measures nothing**: the WKWebView webview exposes neither LCP, nor
+  CLS, nor INP. There is no iOS `$web_vitals`; only
+  `perf_degraded_rendering` says anything about smoothness on iPhone.
 
-Replays qui illustrent ces constats (conservés trente jours) :
+Replays that illustrate these findings (kept for thirty days):
 
-- [11 appuis sur « Jour suivant »](https://eu.posthog.com/project/233968/replay/01a0e8bd-7fe3-7561-befd-23eb7b5b00c8)
-  (Android, 28 septembre) ;
-- [inscription refusée trois fois (adresse déjà prise), connexion refusée, puis Google](https://eu.posthog.com/project/233968/replay/01a0e8c5-84b0-74b0-8360-a6da3d8c858d)
-  (Android, 28 septembre) ;
-- recherche globale sans texte ouvert :
-  [1er octobre](https://eu.posthog.com/project/233968/replay/01a0f884-4829-7822-b7a9-c6ee6d0ea915),
-  [30 septembre](https://eu.posthog.com/project/233968/replay/01a0f0c2-273e-790a-8123-0502da1ac0f0).
+- [11 taps on « Jour suivant »](https://eu.posthog.com/project/233968/replay/01a0e8bd-7fe3-7561-befd-23eb7b5b00c8)
+  (Android, September 28);
+- [sign-up rejected three times (address already taken), sign-in rejected, then Google](https://eu.posthog.com/project/233968/replay/01a0e8c5-84b0-74b0-8360-a6da3d8c858d)
+  (Android, September 28);
+- global search with no text opened:
+  [October 1](https://eu.posthog.com/project/233968/replay/01a0f884-4829-7822-b7a9-c6ee6d0ea915),
+  [September 30](https://eu.posthog.com/project/233968/replay/01a0f0c2-273e-790a-8123-0502da1ac0f0).
 
-## 5. Ce qui manque au suivi
+## 5. What the tracking lacks
 
-**Mis en place le 1er octobre 2026** (même branche) : 5.2 à 5.8, sauf
-trois points. `trigger` sur le défilement automatique n'a pas lieu d'être :
-le double appui en est la seule porte d'entrée, et
-`auto_scroll_stopped.duration_ms` dit déjà les départs involontaires.
-`password_reset_requested` attend le parcours de mot de passe oublié, qui
-n'existe pas encore. L'adresse des replays de l'app (`https://localhost/`)
-reste à réécrire. Le détail des événements est dans `docs/tracking-plan.md`,
-« Ajouts d'octobre 2026 ». Reste aussi 5.1, qui se règle dans PostHog et non
-dans le code.
+**Implemented on October 1, 2026** (same branch): 5.2 to 5.8, except three
+points. `trigger` on auto-scroll is not needed: the double tap is its only
+entry point, and `auto_scroll_stopped.duration_ms` already reveals the
+unintended starts. `password_reset_requested` awaits the forgotten-password
+flow, which does not exist yet. The address of app replays
+(`https://localhost/`) still needs to be rewritten. Event details are in
+`docs/tracking-plan.md`, "October 2026 additions" ("October 2026
+additions"). Also remaining is 5.1, which is settled in PostHog rather than
+in the code.
 
-Les règles du plan de suivi (`docs/tracking-plan.md`) valent pour chaque
-ajout : rien n'est renommé ni supprimé, une propriété mal nommée reçoit sa
-remplaçante à côté, et chaque événement ou propriété ajouté s'y documente
-dans le même changement.
+The tracking plan rules (`docs/tracking-plan.md`) apply to every addition:
+nothing is renamed or deleted, a badly named property gets its replacement
+alongside it, and every event or property added is documented there in the
+same change.
 
-### 5.1 Le filtre des comptes de test ne filtre presque rien
+### 5.1 The test account filter filters almost nothing
 
-Le filtre de PostHog (« Filter out internal and test users ») repose sur la
-cohorte 193531, qui ne retient que les adresses `@phenixel.fr` : une personne.
-Il laisse passer `contact.phenixel@gmail.com`, le testeur et le compte de
-review, que `user_type` sait pourtant reconnaître : **26 % des événements
-Android du mois** (10 242 sur 39 505) viennent de ces comptes. Tout insight
-qui coche le filtre est faussé côté Android.
+PostHog's filter ("Filter out internal and test users") relies on cohort
+193531, which only keeps `@phenixel.fr` addresses: one person. It lets
+through `contact.phenixel@gmail.com`, the tester and the review account,
+which `user_type` can nonetheless recognize: **26% of the month's Android
+events** (10,242 out of 39,505) come from these accounts. Any insight that
+checks the filter is skewed on the Android side.
 
-À faire dans les réglages du projet (pas de code) : définir la cohorte par
-`user_type` ∈ {`internal`, `tester`, `google_review`}, et ajouter
-`env = production` aux filtres de test. Reste le cas connu des appareils de
-l'équipe avant connexion, que rien ne permet d'étiqueter.
+To do in the project settings (no code): define the cohort by
+`user_type` ∈ {`internal`, `tester`, `google_review`}, and add
+`env = production` to the test filters. What remains is the known case of
+team devices before sign-in, which nothing allows to tag.
 
-### 5.2 La recherche ne dit ni quoi, ni combien, ni si elle a servi
+### 5.2 Search says neither what, nor how many, nor whether it helped
 
-`library_search_used` part à la première frappe avec la seule portée ;
-`chiourim_search_used` avec la seule catégorie. On ne peut répondre à aucune
-des questions de 2.6. À ajouter, débouncé (une fois la saisie posée) :
+`library_search_used` fires on the first keystroke with only the scope;
+`chiourim_search_used` with only the category. None of the questions in 2.6
+can be answered. To add, debounced (once input has settled):
 
-| Événement                     | Propriétés                                                                                       |
-| ----------------------------- | ------------------------------------------------------------------------------------------------ |
-| `library_search_performed`    | `scope`, `query` (normalisée, tronquée à 40 caractères), `query_length`, `results_count`         |
-| `library_search_result_opened` | `scope`, `rank`, `corpus`, `text_id`                                                            |
-| `chiourim_search_performed`   | `category`, `query`, `results_count`                                                             |
+| Event                          | Properties                                                                                       |
+| ------------------------------ | ------------------------------------------------------------------------------------------------ |
+| `library_search_performed`     | `scope`, `query` (normalized, truncated to 40 characters), `query_length`, `results_count`       |
+| `library_search_result_opened` | `scope`, `rank`, `corpus`, `text_id`                                                             |
+| `chiourim_search_performed`    | `category`, `query`, `results_count`                                                             |
 
-La requête elle-même est utile (ce qu'on cherche et qu'on n'a pas) et peu
-risquée : ce sont des noms de livres. Un `results_count = 0` fréquent sur un
-même terme est exactement la liste des textes à ajouter.
+The query itself is useful (what people look for and do not find) and
+low-risk: these are book names. A frequent `results_count = 0` on the same
+term is exactly the list of texts to add.
 
-### 5.3 D'où vient la lecture
+### 5.3 Where reading comes from
 
-`text_opened.source` ne vaut que `library` ou `session` : une ouverture
-depuis la recherche, une carte de l'accueil, « Reprendre ma lecture », la
-lecture du jour, un lien profond, une notification ou l'office suivant se
-confondent. À ajouter à côté : `entry` (`corpus_list`, `search`,
+`text_opened.source` only takes `library` or `session`: an open from
+search, a home card, « Reprendre ma lecture » ("Resume my reading"), the
+daily reading, a deep link, a notification or the next service are all
+lumped together. To add alongside: `entry` (`corpus_list`, `search`,
 `home_card`, `resume`, `daily_reading`, `next_tefila`, `deep_link`, `push`,
 `widget`, `session`).
 
-### 5.4 Les horaires d'un autre jour
+### 5.4 Times for another day
 
-Aucun événement quand on change de jour : les constats de 2.3 viennent des
-clics automatiques. À ajouter : `zmanim_day_changed` avec `via` (`arrow`,
-`picker`, `today`) et `offset_days`. On saura alors quelles dates on vient
-chercher, et si un raccourci « Chabbat » fait reculer les flèches.
+No event when the day changes: the findings in 2.3 come from autocaptured
+clicks. To add: `zmanim_day_changed` with `via` (`arrow`, `picker`, `today`)
+and `offset_days`. We will then know which dates people come looking for,
+and whether a « Chabbat » shortcut reduces arrow use.
 
-### 5.5 Pourquoi la position échoue
+### 5.5 Why location fails
 
-`zmanim_location_requested` ne porte que `granted`, alors que le code
-distingue déjà le refus (`denied`) de la panne (`unavailable`). À ajouter à
-côté : `outcome` (`granted`, `denied`, `unavailable`) et `duration_ms`
-(l'attente qui fait tapoter le bouton sur iOS).
+`zmanim_location_requested` only carries `granted`, whereas the code already
+distinguishes denial (`denied`) from failure (`unavailable`). To add
+alongside: `outcome` (`granted`, `denied`, `unavailable`) and `duration_ms`
+(the wait that makes people tap the button repeatedly on iOS).
 
-### 5.6 Le parcours de connexion
+### 5.6 The sign-in flow
 
-- `login_viewed` avec `reason` : la fonction qui y a mené (lecture du jour,
-  chaînes, profil, introduction, rien). Aujourd'hui on la devine dans l'URL.
-- `email_auth_failed` : `reason = error` cache la confirmation de mot de
-  passe différente ; lui donner sa valeur (`password_mismatch`).
-- `attempt` (rang de l'essai dans la visite) sur `*_signin_clicked` et
-  `*_signin_failed` : il dirait combien d'erreurs Apple 1000 cèdent au
-  deuxième essai.
-- `password_reset_requested` le jour où le parcours existe.
+- `login_viewed` with `reason`: the feature that led there (daily reading,
+  chains, profile, introduction, none). Today we guess it from the URL.
+- `email_auth_failed`: `reason = error` hides the mismatched password
+  confirmation; give it its own value (`password_mismatch`).
+- `attempt` (the attempt's rank within the visit) on `*_signin_clicked` and
+  `*_signin_failed`: it would tell how many Apple 1000 errors give way on
+  the second try.
+- `password_reset_requested` the day the flow exists.
 
-### 5.7 Ce que montre la lecture du jour
+### 5.7 What the daily reading shows
 
-Pas d'événement d'arrivée sur `/bibliotheque/lecture-du-jour` : on ne sait
-pas ce que voient ceux qui en repartent aussitôt (3, motif 3). À ajouter :
-`daily_reading_viewed` avec `state` (`logged_out`, `empty`, `configured`),
-`total_count` et `done_count`.
+No arrival event on `/bibliotheque/lecture-du-jour`: we do not know what
+those who leave right away see (3, pattern 3). To add:
+`daily_reading_viewed` with `state` (`logged_out`, `empty`, `configured`),
+`total_count` and `done_count`.
 
-### 5.8 Le reste
+### 5.8 The rest
 
-- **Clics morts** : `capture_dead_clicks` est désactivé dans les réglages du
-  projet. Activé, il aurait signalé de lui-même le titre de date des horaires
-  qu'on ne prend pas pour un bouton, ou les champs du profil.
-- **Défilement automatique** : `trigger` (`double_tap`, `menu`) sur
-  `auto_scroll_started`, pour séparer les départs voulus des doubles appuis
-  involontaires.
-- **Mes dates** : c'est le bouton le plus cliqué des pages du calendrier
-  (2.5), et la fenêtre n'envoie rien (`occasion_opened` ne part que du
-  bandeau de l'accueil, et n'a rien reçu en trente jours). À ajouter :
-  `occasions_opened` avec `source`, `occasion_added` avec `kind` ; on saura
-  si ce point d'entrée fait des habitués.
-- **Page introuvable** : la page 404 n'envoie rien ; `not_found_viewed` avec
-  `path` et `$referrer` dirait quels liens sont morts.
-- **Replays de l'app** : leur `start_url` reste `https://localhost/` (la
-  réécriture en `app://` ne s'applique qu'aux événements), ce qui gêne le
-  filtrage des replays par page.
-- **Le plan de suivi** ne documente qu'une partie des événements envoyés
-  (calendrier, introduction, profil, quelques autres) : la recherche, les
-  chaînes, la connexion ou le hors ligne n'y figurent pas. Les compléter au
-  fil des ajouts ci-dessus.
+- **Dead clicks**: `capture_dead_clicks` is disabled in the project
+  settings. Enabled, it would have flagged on its own the prayer times date
+  title that is not taken for a button, or the profile fields.
+- **Auto-scroll**: `trigger` (`double_tap`, `menu`) on
+  `auto_scroll_started`, to separate intended starts from unintended double
+  taps.
+- **My dates**: it is the most clicked button on the calendar pages (2.5),
+  and the window sends nothing (`occasion_opened` only fires from the home
+  banner, and has received nothing in thirty days). To add:
+  `occasions_opened` with `source`, `occasion_added` with `kind`; we will
+  know whether this entry point creates regulars.
+- **Page not found**: the 404 page sends nothing; `not_found_viewed` with
+  `path` and `$referrer` would tell which links are dead.
+- **App replays**: their `start_url` stays `https://localhost/` (the rewrite
+  to `app://` only applies to events), which hampers filtering replays by
+  page.
+- **The tracking plan** only documents part of the events sent (calendar,
+  introduction, profile, a few others): search, chains, sign-in and offline
+  are not in it. Fill them in along with the additions above.
 
-## 6. Trois questions du propriétaire
+## 6. Three questions from the owner
 
-### 6.1 La bibliothèque : trouve-t-on ce qu'on cherche ?
+### 6.1 The library: do people find what they are looking for?
 
-Sur 724 sessions de l'app passées par la bibliothèque :
+Out of 724 app sessions that went through the library:
 
-- **81 % ouvrent un texte**, en 5 à 8 secondes (médiane) ; le chemin
-  étagère, rayon, texte suffit dans 68 % des cas. 34 sessions ont eu besoin
-  de cinq pages de bibliothèque ou plus.
-- **19 % n'ouvrent rien**, mais la plupart n'ont fait que passer sur
-  l'étagère (100 sur 120 s'y arrêtent, souvent pour aller ailleurs dans
-  l'app). Une quarantaine de sessions (6 %) parcourent trois pages ou plus
-  sans rien ouvrir : ce sont les vraies recherches infructueuses.
-- **Un mauvais texte ouvert** (retour à la liste en moins de 15 secondes) :
-  40 % des ouvertures de Michna, 31 % du Talmud, 25 % du Tanakh, environ
-  20 % de Moadim et Slihot, contre 10 % du sidour et 9 % des Tehilim.
-- **Les Tehilim se parcourent un par un** : 39 % des psaumes ouverts cèdent
-  la place au suivant en moins de 15 secondes ; 21 enchaînements de trois
-  psaumes ou plus, dont 4 de dix ou plus. Même motif que les jours des
-  horaires (2.3) : on avance pas à pas vers un numéro.
-- **La recherche sert peu** : 5 % des sessions de bibliothèque, 29 des 176
-  utilisateurs de la bibliothèque de l'app en un mois, 9 depuis l'étagère.
+- **81% open a text**, in 5 to 8 seconds (median); the path shelf, section,
+  text is enough in 68% of cases. 34 sessions needed five library pages or
+  more.
+- **19% open nothing**, but most only passed by the shelf (100 out of 120
+  stop there, often to go elsewhere in the app). About forty sessions (6%)
+  browse three pages or more without opening anything: these are the real
+  unsuccessful searches.
+- **A wrong text opened** (back to the list in under 15 seconds): 40% of
+  Michna opens, 31% of Talmud, 25% of Tanakh, about 20% of Moadim and
+  Slihot, versus 10% of the sidour and 9% of Tehilim.
+- **Tehilim are browsed one by one**: 39% of opened psalms give way to the
+  next one in under 15 seconds; 21 sequences of three psalms or more,
+  including 4 of ten or more. Same pattern as the days in prayer times
+  (2.3): people step forward toward a number.
+- **Search is rarely used**: 5% of library sessions, 29 of the 176 app
+  library users in a month, 9 from the shelf.
 
-### 6.2 Les autres fonctionnalités
+### 6.2 The other features
 
-Personnes distinctes sur trente jours (environ 217 dans l'app, 430 sur le
-site), et parmi elles celles qui y reviennent un autre jour.
+Distinct people over thirty days (about 217 in the app, 430 on the site),
+and among them those who come back on another day.
 
-| Fonctionnalité            | Site | App | Revenues un autre jour |
-| ------------------------- | ---: | --: | ---------------------: |
-| Calendrier des fêtes      |  308 |  30 |                     45 |
-| Chiourim (liste)          |    5 | 152 |                     49 |
-| Horaires                  |   19 | 115 |                     42 |
-| Chaînes (vues)            |   30 |  59 |                     27 |
-| Lecture du jour (page)    |    1 |  55 |                     17 |
-| Chiour écouté             |    4 |  36 |                      5 |
-| Boussole du Kotel         |    0 |  18 |                      6 |
-| Rappels d'horaires        |    0 |  12 |                      1 |
-| Chnei mikra               |    0 |  12 |                      1 |
-| Miroir des tefilin        |    0 |  11 |                      3 |
-| Marque-pages              |    1 |  10 |                      2 |
-| Tehilim du jour           |    0 |   7 |                      0 |
+| Feature                   | Site | App | Came back another day |
+| ------------------------- | ---: | --: | --------------------: |
+| Holiday calendar          |  308 |  30 |                    45 |
+| Chiourim (list)           |    5 | 152 |                    49 |
+| Prayer times              |   19 | 115 |                    42 |
+| Chains (viewed)           |   30 |  59 |                    27 |
+| Daily reading (page)      |    1 |  55 |                    17 |
+| Chiour listened to        |    4 |  36 |                     5 |
+| Kotel compass             |    0 |  18 |                     6 |
+| Prayer time reminders     |    0 |  12 |                     1 |
+| Chnei mikra               |    0 |  12 |                     1 |
+| Tefilin mirror            |    0 |  11 |                     3 |
+| Bookmarks                 |    1 |  10 |                     2 |
+| Daily Tehilim             |    0 |   7 |                     0 |
 
-- Les **horaires** sont bien utilisés : la moitié des utilisateurs de l'app,
-  dont 17 cinq jours ou plus. Widgets et montre n'envoient rien : l'usage
-  réel est plus haut.
-- Le **calendrier** vit sur le site (trafic des moteurs) ; dans l'app,
-  14 % des utilisateurs l'ouvrent.
-- La **lecture du jour** : 56 personnes ont vu la page, 24 l'ont composée,
-  9 ont marqué au moins une lecture, 5 ont fini au moins une journée (22
-  journées complètes en tout).
-- Les **chiourim** attirent (70 % des utilisateurs de l'app ouvrent la
-  liste) mais retiennent peu : 17 % écoutent un cours.
+- **Prayer times** are well used: half of the app's users, 17 of them on
+  five days or more. Widgets and the watch send nothing: real usage is
+  higher.
+- The **calendar** lives on the site (search engine traffic); in the app,
+  14% of users open it.
+- The **daily reading**: 56 people saw the page, 24 composed it, 9 marked
+  at least one reading, 5 completed at least one day (22 complete days in
+  all).
+- The **chiourim** attract (70% of app users open the list) but retain
+  little: 17% listen to a lesson.
 
-### 6.3 Les chaînes de lecture
+### 6.3 Reading chains
 
-Lu dans Firestore (lecture seule) le 1er octobre : 28 chaînes depuis
-février, 9 créées depuis le 1er septembre.
+Read from Firestore (read-only) on October 1: 28 chains since February, 9
+created since September 1.
 
-- Sur ces 9 : une remplie (11 sections sur 11, en quelques heures), une
-  partiellement (18 psaumes sur 150, tous lus), trois à 2 sections, quatre
-  vides.
-- La dernière vraie réussite date du 24 août : 150 psaumes sur 150
-  réservés, 140 lus, 14 participants.
-- **Aucune chaîne n'a été close par son créateur depuis juillet** (une
-  seule dans toute l'histoire) : elles finissent en expirant, même pleines.
-- **Une chaîne se remplit quand elle circule** : celles qui réussissent ont
-  de 6 à 24 visiteurs distincts dans PostHog, les vides jamais plus de 2.
-  Le bouton de partage de l'app n'a servi que pour 6 chaînes en deux mois.
-- 3 des 9 chaînes récentes avaient pour date limite le jour même de leur
-  création ; deux sont restées vides.
-- Six chaînes créées le même jour de juillet (Talmud et Michna, jusqu'en
-  2027) n'ont aucune ou une seule réservation, et restent affichées en
-  cours. Les grandes chaînes de Michna sont réservées de 83 à 99 % mais
-  lues à 3 ou 4 % : on réserve, on ne marque pas la lecture.
+- Of those 9: one filled (11 sections out of 11, within a few hours), one
+  partially (18 psalms out of 150, all read), three at 2 sections, four
+  empty.
+- The last real success dates from August 24: 150 psalms out of 150
+  reserved, 140 read, 14 participants.
+- **No chain has been closed by its creator since July** (only one in the
+  whole history): they end by expiring, even when full.
+- **A chain fills up when it circulates**: the successful ones have from 6
+  to 24 distinct visitors in PostHog, the empty ones never more than 2. The
+  app's share button was only used for 6 chains in two months.
+- 3 of the 9 recent chains had their deadline on the very day they were
+  created; two stayed empty.
+- Six chains created on the same day in July (Talmud and Michna, running
+  until 2027) have zero or one reservation, and are still shown as in
+  progress. The large Michna chains are 83 to 99% reserved but only 3 or 4%
+  read: people reserve, they do not mark the reading.

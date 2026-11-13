@@ -38,6 +38,9 @@ import {
   downloadUrl,
   localizedText,
   parseKind,
+  parseSupportStatus,
+  supportReplyText,
+  supportStatusLabel,
   parseList,
   releaseAnnouncement,
   releaseAnnouncementId,
@@ -103,6 +106,8 @@ const OPTIONS = {
   recherche: { type: "string" },
   livre: { type: "string" },
   chapitre: { type: "string" },
+  // Nous écrire
+  clore: { type: "boolean" },
 };
 
 const { values: opts, positionals } = parseArgs({
@@ -1112,6 +1117,117 @@ commands["session:demasquer"] = async ([sessionId]) => {
   }
 };
 
+// ---- Nous écrire (voir docs/feedback.md) -------------------------------------------
+
+const SUPPORT_FILTERS = {
+  "a-traiter": (s) => s === "new",
+  ouverts: (s) => s === "new" || s === "in_progress",
+  "en-cours": (s) => s === "in_progress",
+  repondus: (s) => s === "answered",
+  termines: (s) => s === "done",
+  tous: () => true,
+};
+
+const millis = (value) => value?.toMillis?.() ?? (value instanceof Date ? value.getTime() : 0);
+
+function describeThread(id, th) {
+  const first = String(th.messages?.[0]?.text ?? "")
+    .replace(/\s+/g, " ")
+    .trim();
+  const who = th.accountEmail || th.contact || (th.guestKeyHash ? "app sans compte" : "anonyme");
+  return `${id}  [${supportStatusLabel(th.status)}] ${th.kind}  ${day(th.updatedAt)}  ${who}  « ${first.slice(0, 80)}${first.length > 80 ? "…" : ""} »`;
+}
+
+async function getThread(id) {
+  if (!id) fail("identifiant du message requis (les identifiants : support:liste)");
+  const snap = await firebase().db.collection("support").doc(id).get();
+  if (!snap.exists) fail(`message introuvable : ${id}`);
+  return snap;
+}
+
+commands["support:liste"] = async () => {
+  const name = opts.filtre ?? "ouverts";
+  const keep = SUPPORT_FILTERS[name];
+  if (!keep) fail(`--filtre : ${Object.keys(SUPPORT_FILTERS).join(", ")}`);
+  const snap = await firebase().db.collection("support").get();
+  const rank = { new: 0, in_progress: 1, answered: 2, done: 3 };
+  const list = snap.docs
+    .map((d) => ({ id: d.id, ...d.data() }))
+    .filter((th) => keep(th.status))
+    .sort(
+      (a, b) =>
+        (rank[a.status] ?? 0) - (rank[b.status] ?? 0) || millis(b.updatedAt) - millis(a.updatedAt),
+    );
+  out(
+    list.length ? list.map((th) => describeThread(th.id, th)) : ["Aucun message."],
+    list.map((th) => ({ ...th, guestKeyHash: undefined, pushTokens: undefined })),
+  );
+};
+
+commands["support:voir"] = async ([id]) => {
+  const snap = await getThread(id);
+  const th = snap.data();
+  const lines = [
+    describeThread(id, th),
+    `De : ${[th.accountName, th.accountEmail].filter(Boolean).join(" · ") || (th.guestKeyHash ? "app sans compte" : "anonyme")}${th.contact ? `  (contact : ${th.contact})` : ""}`,
+    `Depuis : ${th.support} ${th.platform} ${th.version ?? ""}${th.page ? `  page ${th.page}` : ""}  langue ${th.locale ?? "fr"}`,
+    ...(th.note ? [`Note : ${th.note}`] : []),
+    "",
+    ...(th.messages ?? []).flatMap((m) => [
+      `${m.from === "team" ? "Équipe" : "Personne"}, ${day(m.at)} :`,
+      ...String(m.text ?? "")
+        .split("\n")
+        .map((l) => `    ${l}`),
+    ]),
+  ];
+  out(lines, { id, ...th, guestKeyHash: undefined, pushTokens: undefined });
+};
+
+/**
+ * La réponse de l'équipe, comme depuis le backoffice : elle s'ajoute au fil,
+ * qui passe « répondu » (« terminé » avec --clore), et la Cloud Function
+ * onSupportThreadWritten prévient les appareils de la personne, elle seule.
+ */
+commands["support:repondre"] = async ([id]) => {
+  const text = supportReplyText(readText(opts.texte, opts["texte-fichier"]));
+  const snap = await getThread(id);
+  const { Timestamp, FieldValue } = firebase();
+  const status = opts.clore ? "done" : "answered";
+  const th = snap.data();
+  const reach =
+    th.uid || th.guestKeyHash
+      ? "dans l'app ou sur le site de la personne"
+      : "nulle part dans l'app (ancienne version, sans compte) : répondre par email";
+  if (
+    await write(
+      `Répondre au message ${id} (statut ${supportStatusLabel(status)}), réponse visible ${reach} :\n${text}`,
+      () =>
+        snap.ref.update({
+          messages: FieldValue.arrayUnion({ from: "team", text, at: Timestamp.now() }),
+          status,
+          lastFrom: "team",
+          unreadByUser: true,
+          updatedAt: FieldValue.serverTimestamp(),
+        }),
+    )
+  ) {
+    out([`Réponse envoyée : ${id}`], { id, status, replied: true });
+  }
+};
+
+commands["support:statut"] = async ([id, value]) => {
+  const status = parseSupportStatus(value);
+  if (!status) fail("usage : support:statut <id> a-traiter|en-cours|repondu|termine");
+  const snap = await getThread(id);
+  if (
+    await write(`Passer le message ${id} en « ${supportStatusLabel(status)} ».`, () =>
+      snap.ref.update({ status }),
+    )
+  ) {
+    out([`Statut changé : ${id} → ${supportStatusLabel(status)}`], { id, status });
+  }
+};
+
 // ---- Chaîne perpétuelle (voir docs/chaine-perpetuelle.md) ------------------------
 
 function perpetualRef() {
@@ -1175,12 +1291,13 @@ commands["chaine:retirer-nom"] = async ([nameId]) => {
 /** Ce que la vue d'ensemble du backoffice met dans « À traiter ». */
 commands.etat = async () => {
   const { db } = firebase();
-  const [chiourim, reports, announcements, tokens, auteurs] = await Promise.all([
+  const [chiourim, reports, announcements, tokens, auteurs, support] = await Promise.all([
     db.collection("chiourim").get(),
     db.collection("reports").where("status", "==", "open").get(),
     db.collection("announcements").get(),
     db.collection("studioTokens").where("active", "==", true).get(),
     db.collection("auteurs").get(),
+    db.collection("support").where("status", "==", "new").get(),
   ]);
   const list = chiourim.docs.map((d) => d.data());
   const anns = announcements.docs.map((d) => ({ id: d.id, ...d.data() }));
@@ -1194,6 +1311,7 @@ commands.etat = async () => {
     ongoingIncidents: incidents.map((a) => a.id),
     announcementDrafts: anns.filter((a) => !a.published).map((a) => a.id),
     authorsWithoutStudioLink: auteurs.docs.filter((d) => !linked.has(d.id)).map((d) => d.id),
+    supportToHandle: support.docs.map((d) => d.id),
   };
   out(
     [
@@ -1205,6 +1323,7 @@ commands.etat = async () => {
       `Incidents en cours : ${incidents.length ? incidents.map((a) => `${a.id} « ${a.title?.fr} »`).join(", ") : "aucun"}`,
       `Informations en brouillon : ${state.announcementDrafts.length}`,
       `Auteurs sans lien studio : ${state.authorsWithoutStudioLink.length}`,
+      `Messages à traiter : ${state.supportToHandle.length}`,
     ],
     state,
   );
@@ -1267,6 +1386,12 @@ Auteurs et séries
 Sessions
   session:signalements
   session:masquer <id>       session:demasquer <id>
+
+Nous écrire (messages des utilisateurs)
+  support:liste [--filtre ouverts|a-traiter|en-cours|repondus|termines|tous]
+  support:voir <id>
+  support:repondre <id> --texte … [--texte-fichier f.md] [--clore]
+  support:statut <id> a-traiter|en-cours|repondu|termine
 
 Chaîne perpétuelle
   chaine:creer

@@ -44,16 +44,29 @@
   unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F;
 }
 
-/* L'écriture du sofer (ktav Sefaradi avec taguim, police Stam Sefarad CLM du
-   projet Culmus, GPL avec exception d'embarquement, voir
-   public/fonts/stam-sefarad-clm.LICENSE.txt) : elle ne sert qu'à la
-   retranscription des parchemins (KlafViewer.vue), jamais au fil d'un texte.
-   Le navigateur ne la charge qu'à la première ouverture d'un parchemin. */
+/* The sofer's script (ktav Sefaradi with taguim, the Stam Sefarad CLM font
+   of the Culmus project, GPL with an embedding exception, see
+   public/fonts/stam-sefarad-clm.LICENSE.txt): it only serves the Torah
+   scroll (TorahScroll.vue), never the flow of a text. The browser loads it
+   only the first time a scroll is opened. */
 @font-face {
   font-family: "Stam Sefarad CLM";
   src: url("/fonts/stam-sefarad-clm.woff2") format("woff2");
   font-display: swap;
   unicode-range: U+0590-05FF, U+FB1D-FB4F;
+}
+
+/* L'écriture de Rachi (Noto Rashi Hebrew, OFL, voir
+   public/fonts/noto-rashi-hebrew.LICENSE.txt), celle des commentaires sur la
+   page du daf (TalmudPage.vue) : Rachi et Tossafot y sont imprimés dans cette
+   écriture depuis Venise. Variable (400 à 700), 18 Ko, chargée à la
+   première page de daf ouverte. */
+@font-face {
+  font-family: "Noto Rashi Hebrew";
+  src: url("/fonts/noto-rashi-hebrew-var.woff2") format("woff2");
+  font-weight: 400 700;
+  font-display: swap;
+  unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F;
 }
 
 /* Neutralise l'auto-agrandissement du texte des navigateurs mobiles (font
@@ -71,17 +84,16 @@ body {
 }
 
 @theme {
-  /* Couleurs : le fond est fixe, les trois thèmes sont au choix de
-     l'utilisateur et réécrits au vol par useTheme. Valeurs par défaut :
-     « sunset », l'orange et le bleu de la palette du logo. Chaque famille a
-     son encre (texte, liens, icônes : --color-primary, --color-secondary) ;
-     les fonds pleins prennent la teinte (--color-brand) et écrivent dessus
-     --color-on-brand, un brun sur l'orange clair ; -soft, la version claire.
-     Voir docs/design.md, « Les couleurs de thème ». */
+  /* Colors: the background is fixed, the three themes are the user's choice
+     and rewritten on the fly by useTheme. Default values: "sunset", the
+     orange and blue of the logo's palette. Each family has its ink (text,
+     links, icons: --color-primary, --color-secondary); solid fills take the
+     hue (--color-brand) and write --color-on-brand on it, white on the pastel
+     orange; -soft, the light version. See docs/design.md, "Theme colors". */
   --color-primary: #d46d01;
   --color-secondary: #328cdc;
-  --color-brand: #fea547;
-  --color-on-brand: #3b2412;
+  --color-brand: #eb9f4f;
+  --color-on-brand: #ffffff;
   --color-brand-soft: #ffd09e;
   --color-secondary-brand: #328cdc;
   --color-secondary-soft: #a9cceb;
@@ -91,6 +103,11 @@ body {
   --color-bg-secondary: #f8f9fa;
   --color-bg-dark: #181818;
   --color-bg-beige: #fff9f3;
+
+  /* Le fond de la page, sous tout le reste ; il fonce en sombre. Ce qui
+     doit se confondre avec lui (une ligne du fil de Ma journée qu'on
+     glisse) le prend. */
+  --color-page: #fff9f3;
 
   /* Surfaces (cards, panels, modals). Flipped in dark mode below. */
   --color-surface: #ffffff;
@@ -103,6 +120,14 @@ body {
 
   /* Hairlines for the few separators that remain. */
   --color-line: rgb(53 49 42 / 0.08);
+  /* Ce qui se perd : retirer, ranger, supprimer. */
+  --color-danger: #dc2626;
+  /* Le signet d'un livre (BookmarkRibbon.vue) : le rouge de la soie, celui
+     du signet du sidour dessiné sur l'accueil (ArtSiddur.vue). */
+  --color-ribbon: #b3262f;
+
+  /* Le trait appuyé : la poignée d'une feuille, un contour en pointillé. */
+  --color-line-strong: rgb(53 49 42 / 0.18);
 
   /* Polices. Deux familles portent toute l'interface :
      Playfair Display (--font-display) pour les titres principaux et le peu
@@ -134,11 +159,14 @@ body {
   --radius-xl: 8px;
   --radius-2xl: 10px;
   --radius-3xl: 14px;
-  /* Alias parlants : la carte de la maison, la petite commande (bouton
-     d'icône, champ, bouton d'un groupe segmenté), le bouton, la pastille. */
+  /* Speaking aliases: the house card, the small control (icon button,
+     field), the button, the pill. A segment is the button of a segmented
+     group: it hugs a shell of --radius-btn padded by 2 px, so it takes that
+     radius minus the padding (see docs/design.md, nested roundings). */
   --radius-card: 6px;
   --radius-control: 10px;
   --radius-btn: 14px;
+  --radius-segment: calc(var(--radius-btn) - 2px);
   --radius-pill: 999px;
 
   /* Soft, warm-tinted shadows, flat surfaces are separated from the beige
@@ -151,14 +179,33 @@ body {
 /* Dark mode: flip the semantic tokens so most components adapt without
    per-element dark: overrides. */
 :root.dark {
+  --color-page: #111827;
   --color-surface: #1f2937;
   --color-surface-soft: #273244;
   --color-text-primary: #f3f4f6;
   --color-text-secondary: #9ca3af;
   --color-line: rgb(255 255 255 / 0.1);
+  --color-line-strong: rgb(255 255 255 / 0.22);
+  --color-danger: #f87171;
+  --color-ribbon: #d6404a;
   --shadow-card: 0 1px 2px rgb(0 0 0 / 0.3), 0 2px 8px rgb(0 0 0 / 0.25);
   --shadow-card-hover: 0 2px 4px rgb(0 0 0 / 0.35), 0 8px 24px rgb(0 0 0 / 0.4);
   --shadow-pop: 0 4px 12px rgb(0 0 0 / 0.4), 0 16px 40px rgb(0 0 0 / 0.5);
+}
+
+/* Higher contrast (see useContrast): the neutrals strengthen too. The theme
+   colors are strengthened by useTheme; here, the secondary text darkens (or
+   lightens in dark mode) and the rules show more. */
+:root.contrast-more {
+  --color-text-secondary: #4f4a40;
+  --color-line: rgb(53 49 42 / 0.18);
+  --color-line-strong: rgb(53 49 42 / 0.32);
+}
+
+:root.dark.contrast-more {
+  --color-text-secondary: #d1d5db;
+  --color-line: rgb(255 255 255 / 0.2);
+  --color-line-strong: rgb(255 255 255 / 0.36);
 }
 
 /* ---- La sélection ---------------------------------------------------------
@@ -204,7 +251,7 @@ body {
 body {
   font-family: var(--font-sans);
   color: var(--color-text-primary);
-  background-color: var(--color-bg-beige);
+  background-color: var(--color-page);
   scrollbar-gutter: stable;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -214,7 +261,6 @@ body {
 }
 
 :root.dark body {
-  background-color: #111827; /* gray-900 */
   color: #f3f4f6; /* gray-100 */
 }
 
@@ -251,6 +297,22 @@ body {
   /* Hauteur réelle du bandeau de site, publiée par NavbarComponents. Reste à
      0 dans l'app native, où le bandeau n'est pas rendu. */
   --navbar-height: 0px;
+  /* La colonne des commentaires quand le texte et eux tiennent côte à côte
+     (dès 640 px de large, voir useSideBySide). Elle prend la place que la
+     colonne de lecture (48 rem) et ses marges (4 rem) laissent libre, entre
+     17 rem (de quoi lire un Tossafot sur un pliant) et 32 rem (au-delà, les
+     lignes deviendraient trop longues) : un grand écran lui donne de l'air
+     sans rien retirer au texte, un petit le partage. */
+  --study-width: clamp(17rem, calc(100vw - 52rem), 32rem);
+}
+
+/* On tire le bord de la colonne des commentaires (CommentaryPanel.vue) : la
+   flèche de redimensionnement partout, et pas de texte sélectionné au
+   passage du doigt. Une largeur choisie s'écrit sur la racine, en pixels,
+   par-dessus `--study-width` (useStudyWidth). */
+.study-resizing {
+  cursor: col-resize;
+  user-select: none;
 }
 
 #app {
@@ -493,6 +555,21 @@ button,
     outline: 2px solid var(--color-primary);
     outline-offset: -2px;
   }
+  /* Sous le nom d'une ligne : ce qui est fait de ce qui est à faire. */
+  .settings-progress {
+    display: block;
+    height: 5px;
+    margin-top: 0.45rem;
+    overflow: hidden;
+    border-radius: var(--radius-pill);
+    background-color: color-mix(in srgb, var(--color-text-primary) 8%, transparent);
+  }
+  .settings-progress > span {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background-color: var(--color-brand);
+  }
 
   /* Quiet back / breadcrumb link at the top of detail pages. */
   .back-link {
@@ -558,6 +635,18 @@ button,
     background-color: var(--color-selection);
   }
 
+  /* Le verset marqué d'un marque-page, là où le signet (BookmarkRibbon.vue)
+     ne peut pas se poser avant lui : les lignes du tikoun sont celles du
+     rouleau, on n'y glisse rien. Un fond léger et un trait plein du rouge
+     du signet sous le passage, qui suit chaque ligne d'un passage coupé
+     (box-decoration-break). */
+  .reading-bookmarked {
+    background-color: color-mix(in srgb, var(--color-ribbon) 10%, transparent);
+    box-shadow: inset 0 -2px 0 var(--color-ribbon);
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+  }
+
   /* Modal building blocks, one modal style for the whole app. */
   .modal-overlay {
     position: fixed;
@@ -599,6 +688,79 @@ button,
     /* Centré tant qu'il tient dans la fenêtre, posé en haut et défilant
        dès qu'il déborde (voir le voile ci-dessus). */
     margin-block: auto;
+  }
+
+  /* The bottom sheet (parcours/BottomSheet.vue): set at the foot of the
+     screen, rounded at the top only, with its handle. On a large screen, it
+     keeps the width of a phone, centered.
+
+     It moves like the system's sheets: it rises from below the screen while
+     the veil darkens, and goes back down while the veil clears, from where
+     the finger let it go when it was pulled down (`--sheet-drag`, the veil
+     following with `--sheet-veil`). The curve is the one of the player's
+     full screen (SHEET_EASING, sheetMotion.ts): a quick start, a soft
+     landing. Only transform and the veil's color move: no layout. */
+  .sheet-overlay {
+    position: fixed;
+    inset-inline: 0;
+    top: var(--modal-viewport-top, 0px);
+    height: var(--modal-viewport-height, 100%);
+    z-index: 60;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    background-color: rgb(30 26 18 / calc(0.38 * var(--sheet-veil, 1)));
+    transition: background-color 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  .sheet-panel {
+    width: 100%;
+    max-width: 32rem;
+    margin-top: auto;
+    padding: 10px 18px calc(26px + env(safe-area-inset-bottom, 0px));
+    border-radius: var(--radius-3xl) var(--radius-3xl) 0 0;
+    background-color: var(--color-surface);
+    box-shadow: var(--shadow-pop);
+    transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+  /* A sheet taller than the screen opens at half height: the veil scrolls,
+     and the sheet swiped up unfolds (BottomSheet, `tall`). Aligned at the
+     top, under its margin: aligned at the bottom, the overflow started from
+     the bottom, and the sheet opened on its end. */
+  .sheet-panel-tall {
+    align-self: flex-start;
+    margin-top: calc(var(--modal-viewport-height, 100vh) * 0.38);
+  }
+  /* Pulled down: the sheet sits where the finger holds it. No transform at
+     rest, so that the sheet does not become the containing block of what is
+     fixed inside it. */
+  .sheet-panel.sheet-held {
+    transform: translateY(var(--sheet-drag, 0px));
+  }
+  /* Under the finger, nothing eases: the sheet and the veil follow. */
+  .sheet-overlay.sheet-dragging,
+  .sheet-panel.sheet-dragging {
+    transition: none;
+  }
+  /* AppModal's Transition (`sheet-modal`). A sheet taller than the screen
+     travels one screen, not its whole height: it would cross it too fast. */
+  .sheet-modal-enter-from,
+  .sheet-modal-leave-to {
+    background-color: rgb(30 26 18 / 0);
+  }
+  .sheet-modal-enter-from .sheet-panel,
+  .sheet-modal-leave-to .sheet-panel {
+    transform: translateY(calc(min(100%, 100vh) + var(--sheet-drag, 0px)));
+  }
+  .sheet-modal-leave-active {
+    pointer-events: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .sheet-overlay,
+    .sheet-panel {
+      transition: none;
+    }
   }
 }
 

@@ -8,7 +8,7 @@ import NewSession from "../views/ShareReading/NewSession.vue";
 
 /**
  * Créer une chaîne qui se termine ce soir ou demain soir demande une
- * confirmation (docs/design.md, « Une chaîne courte se confirme ») : la
+ * confirmation (docs/design.md, « A short chain is confirmed ») : la
  * refuser ramène au champ de la date sans rien créer. Une fois créée, la
  * chaîne s'ouvre sur sa page avec `?partager=1`, qui y appelle la fenêtre de
  * partage.

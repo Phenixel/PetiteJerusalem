@@ -17,14 +17,21 @@ import fr from "../locales/fr";
  *   compte restait, vide. Le contrôle compare deux instants du serveur.
  */
 
-const { authMock, reauthenticateWithCredential, deleteUser, deletePreferences } = vi.hoisted(
-  () => ({
-    authMock: { currentUser: null as unknown },
-    reauthenticateWithCredential: vi.fn(() => Promise.resolve()),
-    deleteUser: vi.fn(() => Promise.resolve()),
-    deletePreferences: vi.fn(() => Promise.resolve()),
-  }),
-);
+const {
+  authMock,
+  reauthenticateWithCredential,
+  deleteUser,
+  deletePreferences,
+  deleteAccountParcours,
+  forgetSupportThreads,
+} = vi.hoisted(() => ({
+  authMock: { currentUser: null as unknown },
+  reauthenticateWithCredential: vi.fn(() => Promise.resolve()),
+  deleteUser: vi.fn(() => Promise.resolve()),
+  deletePreferences: vi.fn(() => Promise.resolve()),
+  deleteAccountParcours: vi.fn(() => Promise.resolve()),
+  forgetSupportThreads: vi.fn(() => Promise.resolve()),
+}));
 
 vi.mock("../firebase/core", () => ({ app: {}, auth: authMock, googleAuthProvider: {} }));
 vi.mock("../firebase/firestore", () => ({ db: {} }));
@@ -58,6 +65,8 @@ vi.mock("../services/userPreferencesService", () => ({
   userPreferencesService: { deletePreferences },
   clearPreferencesCache: vi.fn(),
 }));
+vi.mock("../services/parcours/cloud", () => ({ deleteAccountParcours }));
+vi.mock("../services/feedbackService", () => ({ forgetSupportThreads }));
 vi.mock("../services/analyticsService", () => ({
   analyticsService: { capture: vi.fn(), captureException: vi.fn(), reset: vi.fn() },
 }));
@@ -86,6 +95,8 @@ beforeEach(() => {
   reauthenticateWithCredential.mockClear();
   deleteUser.mockClear();
   deletePreferences.mockClear();
+  deleteAccountParcours.mockClear();
+  forgetSupportThreads.mockClear();
   vi.useRealTimers();
 });
 
@@ -100,6 +111,7 @@ describe("authService.deleteAccount et l'horloge de l'appareil", () => {
       code: "auth/requires-recent-login",
     });
     expect(deletePreferences).not.toHaveBeenCalled();
+    expect(deleteAccountParcours).not.toHaveBeenCalled();
     expect(deleteUser).not.toHaveBeenCalled();
   });
 
@@ -110,6 +122,10 @@ describe("authService.deleteAccount et l'horloge de l'appareil", () => {
 
     await authService.deleteAccount();
     expect(deleteUser).toHaveBeenCalledTimes(1);
+    // Mon parcours vit dans son propre document : il part avec le compte.
+    expect(deleteAccountParcours).toHaveBeenCalledWith("u1");
+    // Les messages de Nous écrire aussi (docs/feedback.md).
+    expect(forgetSupportThreads).toHaveBeenCalledTimes(1);
   });
 
   it("repart anonyme dans le suivi, comme à la déconnexion", async () => {

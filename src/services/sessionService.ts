@@ -20,7 +20,17 @@ import type {
 } from "../models/models";
 import { EnumTypeTextStudy } from "../models/typeTextStudy";
 import { TextTypeService } from "./textTypeService";
-import { deadlineOf, endOfLocalDay } from "./dateService";
+import { deadlineOf, endOfLocalDay, localDayKey } from "./dateService";
+import {
+  NICHMAT_PLACES,
+  NICHMAT_TEXT_ID,
+  deadlineDayFor,
+  isNichmat,
+  isNichmatFinished,
+  placesOf,
+  progressOf,
+  startToRecord,
+} from "./nichmatChain";
 import textStudiesJson from "../datas/textStudies.json";
 
 /**
@@ -68,6 +78,17 @@ export function truncateSlug(slug: string): string {
 }
 
 /**
+ * Le rang d'un texte dans le catalogue, qui est l'ordre où ses livres se
+ * lisent. Ce n'est pas celui des identifiants : un traité ajouté après coup
+ * (Edouyot, 442) prend un identifiant neuf et se range pourtant à sa place
+ * dans son seder, entre Shevuot et Avodah Zarah.
+ */
+const catalogRanks = new Map(
+  (textStudiesJson as TextStudiesJson).textStudies.map((text, rank) => [String(text.id), rank]),
+);
+const catalogRank = (id: string): number => catalogRanks.get(id) ?? Number.MAX_SAFE_INTEGER;
+
+/**
  * Qui tient cette réservation : un compte, un invité, ou personne de
  * nommable. Les deux comptages de participants (le nombre, puis les noms)
  * partagent cette règle, sinon la liste et le chiffre finiraient par diverger.
@@ -107,17 +128,19 @@ class SessionService {
     const label = TextTypeService.formatType(type);
     const all = (textStudiesJson as TextStudiesJson).textStudies;
 
-    return all
-      .filter((t: TextStudyJsonEntry) => t.type === label)
-      .map((t: TextStudyJsonEntry) => ({
-        id: String(t.id),
-        name: t.name,
-        livre: t.livre,
-        link: t.link,
-        totalSections: t.totalSections,
-        type,
-        createdAt: new Date(),
-      })) as unknown as TextStudy[];
+    // Nichmat 40: one text, whose forty sections are the forty places.
+    const matches = (t: TextStudyJsonEntry) =>
+      type === EnumTypeTextStudy.Nichmat ? String(t.id) === NICHMAT_TEXT_ID : t.type === label;
+
+    return all.filter(matches).map((t: TextStudyJsonEntry) => ({
+      id: String(t.id),
+      name: t.name,
+      livre: t.livre,
+      link: t.link,
+      totalSections: type === EnumTypeTextStudy.Nichmat ? NICHMAT_PLACES : t.totalSections,
+      type,
+      createdAt: new Date(),
+    })) as unknown as TextStudy[];
   }
 
   async getTextStudiesByType(type: EnumTypeTextStudy): Promise<TextStudy[]> {
@@ -151,6 +174,7 @@ class SessionService {
     session: Session,
     textStudies: TextStudy[] = this.getSessionTextStudies(session),
   ): SessionReservationStats {
+    if (isNichmat(session)) return this.nichmatStats(session);
     const sectionsByText = new Map(textStudies.map((text) => [text.id, text.totalSections]));
     const total = textStudies.reduce((acc, text) => acc + text.totalSections, 0);
 
@@ -179,6 +203,30 @@ class SessionService {
       participants: participants.size,
       percentage: percent(reserved),
       readPercentage: percent(read),
+    };
+  }
+
+  /**
+   * Nichmat 40 counts places: taken out of forty, and read once their forty
+   * days are all ticked. The day reads are not reservations of their own
+   * (see services/nichmatChain.ts).
+   */
+  private nichmatStats(session: Session): SessionReservationStats {
+    const progress = progressOf(session);
+    const participants = new Set(
+      progress.places.map((p) => participantKey(p.reservation)).filter(Boolean),
+    );
+    const percent = (count: number) => {
+      const rounded = Math.round((count / NICHMAT_PLACES) * 100);
+      return count < NICHMAT_PLACES ? Math.min(rounded, 99) : rounded;
+    };
+    return {
+      total: NICHMAT_PLACES,
+      reserved: progress.places.length,
+      read: progress.completedPlaces,
+      participants: participants.size,
+      percentage: percent(progress.places.length),
+      readPercentage: percent(progress.completedPlaces),
     };
   }
 
@@ -226,6 +274,8 @@ class SessionService {
   }
 
   async getBooksByType(type: EnumTypeTextStudy): Promise<string[]> {
+    // Nichmat 40 reads a single text: no book to choose.
+    if (type === EnumTypeTextStudy.Nichmat) return [];
     const texts = await this.getTextStudiesByType(type);
     const books = new Set(texts.map((t) => t.livre));
     return Array.from(books);
@@ -294,7 +344,17 @@ class SessionService {
     currentUser: User | null,
     reservationForm: ReservationForm,
     guestEmailRequired: boolean = false,
+    /**
+     * Texts read right away (the perpetual chain, see
+     * services/sessionBatchReading.ts): each reservation carries
+     * `expiresAt`, and a guest needs no name, like for the draw: the
+     * reservation then goes out under `anonymousName`.
+     */
+    readNow?: { expiresAt: string; anonymousName: string },
   ): Promise<string[]> {
+    // The options only go out when there are some: the ordinary call stays
+    // as it was.
+    const extra = readNow ? [{ expiresAt: readNow.expiresAt }] : [];
     if (currentUser) {
       return await reservationService.createBatchReservations(
         sessionId,
@@ -303,16 +363,18 @@ class SessionService {
         undefined,
         currentUser.name,
         undefined,
+        ...extra,
       );
     }
-    reservationService.assertGuestFormValid(reservationForm, guestEmailRequired);
+    if (!readNow) reservationService.assertGuestFormValid(reservationForm, guestEmailRequired);
     return await reservationService.createBatchReservations(
       sessionId,
       items,
       undefined,
       reservationService.resolveGuestId(reservationForm),
       undefined,
-      reservationForm.name,
+      readNow ? reservationForm.name.trim() || readNow.anonymousName : reservationForm.name,
+      ...extra,
     );
   }
 
@@ -504,6 +566,68 @@ class SessionService {
   }
 
   /**
+   * A Nichmat 40 chain: forty places, and a start chosen now (`startDay`,
+   * YYYY-MM-DD) or, when null, the day after the fortieth place is taken.
+   * Its deadline is the last of the forty days, or a year away while it
+   * waits for its readers: the lists and the published versions of the app
+   * read it (see deadlineDayFor).
+   */
+  async createNichmatSession(
+    name: string,
+    description: string,
+    startDay: string | null,
+    personId: string,
+    creatorName: string,
+    guestEmailRequired: boolean = false,
+  ): Promise<string> {
+    if (!name || !description || !personId || !creatorName) {
+      throw new SessionFieldsRequiredError();
+    }
+    moderationService.assertClean(name, description);
+    const slug = await this.generateUniqueSlug(name);
+    const deadlineDay = deadlineDayFor(startDay, localDayKey());
+
+    return await this.createSession({
+      name,
+      description,
+      type: EnumTypeTextStudy.Nichmat,
+      dateLimit: endOfLocalDay(deadlineDay),
+      dateLimitDay: deadlineDay,
+      personId,
+      creatorName,
+      slug,
+      guestEmailRequired,
+      ...(startDay ? { startDay } : { startsWhenFull: true }),
+    });
+  }
+
+  /**
+   * A chain that waited for its readers has its start once the fortieth
+   * place is taken: its creator's app records it, with the deadline that
+   * follows, so that a place freed later does not move the forty days.
+   * Returns the session as recorded, or null when there was nothing to do.
+   */
+  async recordNichmatStart(session: Session, currentUser: User | null): Promise<Session | null> {
+    if (!isNichmat(session) || !this.canManageSession(session, currentUser)) return null;
+    const startDay = startToRecord(session);
+    if (!startDay) return null;
+    const deadlineDay = deadlineDayFor(startDay);
+    const changes = {
+      startDay,
+      dateLimit: endOfLocalDay(deadlineDay),
+      dateLimitDay: deadlineDay,
+      updatedAt: new Date(),
+    };
+    await firestoreService.updateSession(session.id, changes);
+    return { ...session, ...changes };
+  }
+
+  /** The places of a Nichmat 40 chain still free. */
+  nichmatFreePlaces(session: Session): number {
+    return NICHMAT_PLACES - placesOf(session).size;
+  }
+
+  /**
    * Les types des chaînes que la liste publique « En cours » montre : ni
    * masquées, ni d'un créateur bloqué, ni terminées, ni la chaîne perpétuelle.
    */
@@ -551,7 +675,7 @@ class SessionService {
         }
       }
 
-      return parseInt(a.id) - parseInt(b.id);
+      return catalogRank(a.id) - catalogRank(b.id);
     });
   }
 
@@ -650,6 +774,8 @@ class SessionService {
     // La chaîne perpétuelle ne finit pas : sa date limite lointaine n'est là
     // que pour les versions de l'app qui ne la connaissent pas.
     if (session.perpetual) return false;
+    // Nichmat 40 ends with its forty days, wherever they fall.
+    if (isNichmat(session)) return isNichmatFinished(session);
     return Date.now() > deadlineOf(session).getTime();
   }
 

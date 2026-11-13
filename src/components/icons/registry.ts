@@ -42,6 +42,12 @@ export const ICONS = {
   "bell-off": {
     body: '<path d="M8.7 3A6 6 0 0 1 18 8c0 2.7.4 4.4.9 5.5"/><path d="M17 17H3s3-2 3-9a4.7 4.7 0 0 1 .3-1.7"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/><path d="m2 2 20 20"/>',
   },
+  // The phone's quiet modes (PrayerQuietPanel): Do Not Disturb draws the
+  // circle crossed by a bar that Android shows in its status bar.
+  "circle-minus": { body: '<circle cx="12" cy="12" r="10"/><path d="M8 12h8"/>' },
+  vibrate: {
+    body: '<path d="m2 8 2 2-2 2 2 2-2 2"/><path d="m22 8-2 2 2 2-2 2 2 2"/><rect width="8" height="14" x="8" y="5" rx="1"/>',
+  },
   check: { body: '<path d="M20 6 9 17l-5-5"/>' },
   "check-double": {
     body: '<path d="M18 6 7 17l-4-4"/><path d="m22 10-7.5 7.5L13 16"/>',
@@ -162,6 +168,11 @@ export const ICONS = {
   book: {
     body: '<path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H19a1 1 0 0 1 1 1v18a1 1 0 0 1-1 1H6.5a1 1 0 0 1 0-5H20"/>',
   },
+  // Trois livres posés à plat l'un sur l'autre : la table d'étude, où l'on
+  // met de côté les textes en cours (voir useReadingTable).
+  books: {
+    body: '<rect x="3" y="16" width="18" height="5" rx="1"/><rect x="5" y="11" width="15" height="5" rx="1"/><rect x="4" y="6" width="14" height="5" rx="1"/><path d="M7 16v5"/><path d="M16 11v5"/><path d="M8 6v5"/>',
+  },
   "book-reader": {
     body: '<path d="M12 8v13"/><path d="M3 19a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/><circle cx="12" cy="3.5" r="1.5"/>',
   },
@@ -192,6 +203,11 @@ export const ICONS = {
   // --- horaires (zmanim) : course du soleil et repères de la journée ---
   clock: {
     body: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+  },
+  // The reminders of Mon parcours: an alarm clock, not the clock of the
+  // tab bar (the times of the day), so that the two are not taken for each other.
+  "alarm-clock": {
+    body: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M5 3 2 6"/><path d="m22 6-3-3"/><path d="M6.38 18.7 4 21"/><path d="M17.64 18.67 20 21"/>',
   },
   sunrise: {
     body: '<path d="M12 2v8"/><path d="m8 6 4-4 4 4"/><path d="M16 18a4 4 0 0 0-8 0"/><path d="m4.93 10.93 1.41 1.41"/><path d="m19.07 10.93-1.41 1.41"/><path d="M2 18h2"/><path d="M20 18h2"/><path d="M2 22h20"/>',

@@ -188,6 +188,39 @@ test.describe("chaînes de lecture", () => {
     await expect.poll(async () => (await reservationsOf(session.id)).length).toBe(0);
   });
 
+  test("plusieurs psaumes réservés se lisent d'un coup et se cochent à côté", async ({ page }) => {
+    const owner = await createAccount("proprio");
+    const reader = await createAccount("lecteur");
+    const session = await seedTehilimSession(owner);
+    await signIn(page, reader, `/share-reading/session/${session.slug}`);
+
+    await expect(page.getByRole("heading", { level: 1 })).toContainText(session.name);
+    await page.getByLabel("Réserver").nth(0).check();
+    await page.getByLabel("Réserver").nth(0).check();
+    await page.getByRole("button", { name: "Confirmer" }).click();
+
+    // Right after the reservation: « Les lire maintenant ? ».
+    // Declined, the button beside « Mes réservations » still leads there.
+    await expect(page.getByText("Les lire maintenant")).toBeVisible();
+    await page.getByRole("button", { name: "Plus tard" }).click();
+    await page.getByRole("button", { name: "Tout lire maintenant" }).click();
+
+    await expect(page).toHaveURL(new RegExp(`/share-reading/session/${session.slug}/lecture`));
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText("Mes Téhilim");
+    await expect(page.getByText("Lus\u00a0: 0 sur 2")).toBeVisible();
+
+    // The list beside the text checks the reservation itself.
+    await page.getByRole("button", { name: /^Tehilim 1.*marquer comme lu$/ }).click();
+    await expect
+      .poll(
+        async () =>
+          (await reservationsOf(session.id)).find((r) => r.textStudyId === tehilimId(1))
+            ?.isCompleted,
+      )
+      .toBe(true);
+    await expect(page.getByText("Lus\u00a0: 1 sur 2")).toBeVisible();
+  });
+
   test("un invité réserve en donnant seulement son nom", async ({ page }) => {
     const owner = await createAccount("proprio");
     const session = await seedTehilimSession(owner);

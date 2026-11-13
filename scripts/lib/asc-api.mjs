@@ -36,6 +36,19 @@ export const EDITABLE_STATES = [
 export const versionState = (v) => v.attributes.appVersionState ?? v.attributes.appStoreState;
 
 /**
+ * The App Store Connect app whose bundle id is exactly `bundleId`, or null.
+ *
+ * Apple's `filter[bundleId]` also returns the apps whose bundle id extends
+ * it: the production one (`fr.petitejerusalem.app`) brings back the staging
+ * app (`fr.petitejerusalem.app.staging`) as well, sometimes first. Taking
+ * the first entry sent the listing of tag v4.0.0 to the staging app.
+ */
+export async function findApp(api, bundleId) {
+  const apps = await api("GET", `/v1/apps?filter[bundleId]=${encodeURIComponent(bundleId)}`);
+  return apps.data.find((entry) => entry.attributes?.bundleId === bundleId) ?? null;
+}
+
+/**
  * Le texte d'une réponse d'erreur de l'API, raisons détaillées comprises.
  *
  * Quand Apple refuse une version entière (le 409 de la soumission à l'examen),

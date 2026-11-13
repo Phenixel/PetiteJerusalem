@@ -19,6 +19,8 @@ import type { Session, TextStudy, TextStudyReservation } from "../models/models"
 import type { User } from "../services/authService";
 import { seoService, pageTitle } from "../services/seoService";
 import { analyticsService } from "../services/analyticsService";
+import { haptic } from "../services/haptics";
+import { isNichmat } from "../services/nichmatChain";
 
 import BatchSelectionBar from "../components/BatchSelectionBar.vue";
 import EditSessionModal from "../components/EditSessionModal.vue";
@@ -106,6 +108,16 @@ const loadData = async () => {
     if (!sessionService.canManageSession(session.value, currentUser.value)) {
       router.push("/share-reading");
       return;
+    }
+
+    // Nichmat 40: a chain that waited for its readers records its start
+    // before anything here frees a place (see recordNichmatStart).
+    try {
+      session.value =
+        (await sessionService.recordNichmatStart(session.value, currentUser.value)) ??
+        session.value;
+    } catch (error) {
+      console.warn("Début de Nichmat 40 non enregistré :", error);
     }
 
     // Les textes de la chaîne (livres retenus à la création), comme sur la
@@ -465,15 +477,18 @@ const deleteSelectedReservations = async () => {
   }
 };
 
-const batchLabel = computed(() => {
-  if (selectedItems.value.size > 0 && selectedReservations.value.size > 0) {
-    return t("sessionManagement.batchMixedLabel");
-  }
-  if (selectedReservations.value.size > 0) {
-    return t("sessionManagement.batchDeleteLabel");
-  }
-  return t("sessionManagement.batchLabel");
-});
+// The second line only when it adds something: « Réserver » alone does not say
+// for whom. « Supprimer les réservations sélectionnées » under « Supprimer »
+// said it twice.
+const batchLabel = computed(() =>
+  selectedItems.value.size > 0 && selectedReservations.value.size === 0
+    ? t("sessionManagement.batchLabel")
+    : undefined,
+);
+/** Both actions at once: each button gives its own count, the bar's total does not. */
+const mixedSelection = computed(
+  () => selectedItems.value.size > 0 && selectedReservations.value.size > 0,
+);
 
 // Le nom d'un invité vient de ce que le créateur a tapé : une faute de frappe
 // se corrige ici, et sur toutes ses réservations à la fois.
@@ -547,6 +562,7 @@ const toggleReservationCompletion = async (
   // redessinait la page entière.
   const previous = reservation.isCompleted;
   reservation.isCompleted = isCompleted;
+  haptic(isCompleted ? "done" : "undo");
 
   try {
     await reservationService.markReservationAsCompleted(
@@ -824,18 +840,11 @@ onMounted(() => {
                   </span>
                 </div>
 
-                <div class="flex items-center justify-between text-xs text-text-secondary">
-                  <span>{{
-                    t("sessionManagement.reservationsCount", { count: card.reservationsCount })
-                  }}</span>
-                  <span
-                    v-if="card.status.reservedBy"
-                    class="truncate max-w-[120px]"
-                    :title="card.status.reservedBy"
-                  >
-                    {{ t("sessionManagement.reservedBy", { name: card.status.reservedBy }) }}
-                  </span>
-                </div>
+                <!-- Who reserved is on each row below; a single-chapter text's
+                     « 1 réservation » repeated its « Réservé ». -->
+                <p v-if="card.text.totalSections > 1" class="text-xs text-text-secondary">
+                  {{ t("sessionManagement.reservationsCount", { count: card.reservationsCount }) }}
+                </p>
               </div>
 
               <!-- Gestion des réservations -->
@@ -885,9 +894,11 @@ onMounted(() => {
                     <div class="flex flex-col min-w-0 flex-1">
                       <span class="font-medium text-text-primary">
                         {{
-                          card.text.totalSections > 1
-                            ? `${t("common.chapter")} ${formatNumberWithHebrew(row.section)}`
-                            : t("sessionManagement.fullText")
+                          isNichmat(session)
+                            ? t("nichmat.placeNumber", { place: row.section })
+                            : card.text.totalSections > 1
+                              ? `${t("common.chapter")} ${formatNumberWithHebrew(row.section)}`
+                              : t("sessionManagement.fullText")
                         }}
                       </span>
                       <span
@@ -954,7 +965,9 @@ onMounted(() => {
           {{
             isSubmittingBatch
               ? t("sessionManagement.batchLoading")
-              : `${t("sessionManagement.batchButton")} (${selectedItems.size})`
+              : mixedSelection
+                ? `${t("sessionManagement.batchButton")} (${selectedItems.size})`
+                : t("sessionManagement.batchButton")
           }}
         </button>
         <button
@@ -968,7 +981,9 @@ onMounted(() => {
           {{
             isDeletingBatch
               ? t("common.deleting")
-              : `${t("common.delete")} (${selectedReservations.size})`
+              : mixedSelection
+                ? `${t("common.delete")} (${selectedReservations.size})`
+                : t("common.delete")
           }}
         </button>
       </template>
@@ -1052,7 +1067,6 @@ onMounted(() => {
               v-if="selectedGuestId"
               class="flex items-center gap-2 text-xs text-text-secondary mt-2"
             >
-              <AppIcon name="check" :size="12" class="text-primary shrink-0" />
               {{ t("sessionManagement.guestLinkedTo", { name: guestForm.name }) }}
               <button
                 type="button"

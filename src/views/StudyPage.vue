@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, defineAsyncComponent, onMounted, onUnmounted, watch } from "vue";
+import { ref, computed, defineAsyncComponent, onMounted, watch } from "vue";
 import { useRoute } from "vue-router";
 import { useI18n } from "vue-i18n";
 import textStudiesJson from "../datas/textStudies.json";
@@ -7,7 +7,6 @@ import type { TextStudiesJson, TextStudyJsonEntry } from "../models/models";
 import { localeMessagesReady } from "../i18n";
 import { bookName } from "../services/catalogSearch";
 import { pageTitle, seoService } from "../services/seoService";
-import { localDayKey } from "../services/dateService";
 import { appendHebrewNumeral } from "../services/hebrewNumerals";
 import {
   hubPath,
@@ -15,6 +14,10 @@ import {
   corpusDescription,
   latinName,
   LISTED_CORPORA,
+  HALAKHA_WORKS,
+  halakhaWorkOfLivre,
+  isHalakhaWork,
+  type HalakhaWork,
   type ListedCorpus,
 } from "../content/etudeTexts";
 import { isNativeApp } from "../composables/useNativeApp";
@@ -35,11 +38,10 @@ import {
 } from "../services/offlineLibraryService";
 import { ensureManifestLoaded } from "../services/offlineTextStore";
 import { readingProgressService, type ReadingPosition } from "../services/readingProgressService";
-import { authService, type User } from "../services/authService";
-import { countDailyProgress, userPreferencesService } from "../services/userPreferencesService";
 import { useToast } from "../composables/useToast";
 import { useConfirm } from "../composables/useConfirm";
 import { useSearchMode } from "../composables/useSearchMode";
+import { requestScrollToTop } from "../composables/useScrollToTop";
 import { useFoldedBooks } from "../composables/useFoldedBooks";
 import { useCatalogSearch } from "../composables/useCatalogSearch";
 import { useSearchTracking } from "../composables/useSearchTracking";
@@ -88,8 +90,9 @@ const bookState = (text: TextStudyJsonEntry): BookState =>
 
 // La bibliothèque est un tableau de bord : l'accueil ne montre que les grandes
 // sections (corpus) ; la liste détaillée des textes vit sur /bibliotheque/:corpus.
-// Cinq corpus d'étude, sur une étagère (le moussar en dernier). La liturgie (Sidour, Moadim, Brahot)
-// a sa page, le Sidour : elle ne vit plus ici (voir SidourPage).
+// Six corpus d'étude, sur une étagère (trois volumes par planche, voir
+// LibraryShelf). La liturgie (Sidour, Moadim, Brahot) a sa page, le Sidour :
+// elle ne vit plus ici (voir SidourPage).
 const CORPUS_META: {
   corpus: string;
   typeKey: string;
@@ -134,6 +137,15 @@ const CORPUS_META: {
     descKey: "study.corpus.moussarDesc",
     searchKey: "study.corpus.moussarSearch",
   },
+  // Halakha : le Choulhan Aroukh et ses commentaires, le Kitsour. Un rayon
+  // d'étude, sans partage de lecture, comme le moussar.
+  {
+    corpus: "halakha",
+    typeKey: "Halakha",
+    labelKey: "study.types.halakha",
+    descKey: "study.corpus.halakhaDesc",
+    searchKey: "study.corpus.halakhaSearch",
+  },
 ];
 
 /**
@@ -157,6 +169,57 @@ const allTexts = (textStudiesJson as TextStudiesJson).textStudies;
 const currentCorpus = computed(
   () => CORPUS_META.find((c) => c.corpus === String(route.params.corpus ?? "")) ?? null,
 );
+
+// --- Les livres de la halakha ---
+// Le rayon compte plus de cent cinquante groupes de lois : sa page montre
+// d'abord ses livres, une carte chacun, et la liste d'un livre s'ouvre à
+// part (/bibliotheque/halakha?livre=kitsour), rangée par parties comme les
+// autres. Une recherche, elle, parcourt tout le rayon.
+const HALAKHA_WORK_META: Record<HalakhaWork, { nameKey: string; descKey: string; hebrew: string }> =
+  {
+    "choulhan-aroukh": {
+      nameKey: "study.halakhaWorks.choulhanAroukh.name",
+      descKey: "study.halakhaWorks.choulhanAroukh.desc",
+      hebrew: "שולחן ערוך",
+    },
+    kitsour: {
+      nameKey: "study.halakhaWorks.kitsour.name",
+      descKey: "study.halakhaWorks.kitsour.desc",
+      hebrew: "קיצור שולחן ערוך",
+    },
+  };
+
+/** Le livre de halakha ouvert, ou null (la page des livres, ou un autre rayon). */
+const halakhaWork = computed<HalakhaWork | null>(() =>
+  currentCorpus.value?.corpus === "halakha" && isHalakhaWork(route.query.livre)
+    ? route.query.livre
+    : null,
+);
+
+const halakhaWorks = computed(() =>
+  HALAKHA_WORKS.map((work) => {
+    const texts = allTexts.filter(
+      (text) => text.type === "Halakha" && halakhaWorkOfLivre(text.livre) === work,
+    );
+    const simanim = texts.reduce((sum, text) => sum + (text.totalSections ?? 1), 0);
+    return {
+      work,
+      hebrew: HALAKHA_WORK_META[work].hebrew,
+      name: t(HALAKHA_WORK_META[work].nameKey),
+      count: t("study.halakhaWorks.simanim", { n: simanim.toLocaleString(locale.value) }),
+    };
+  }),
+);
+
+/**
+ * Le titre d'un livre dans la liste d'un livre de halakha : sa partie seule
+ * (« Ora'h Hayim »), le livre étant déjà le titre de la page ; rien quand la
+ * partie est le livre entier (le Kitsour).
+ */
+function halakhaGroupHeading(livre: string): string | null {
+  const name = formatBookName(livre).replace(/^Choulhan Aroukh,\s*/, "");
+  return name === formatBookName(livre) && halakhaWorkOfLivre(livre) === "kitsour" ? null : name;
+}
 
 // L'étagère : un livre par grande section, titre sur la couverture. Dans
 // l'app, chaque livre dit dans son angle s'il est sur le téléphone : la part
@@ -223,7 +286,17 @@ const {
 // Les résultats de l'étude, par corpus puis par livre ; ceux de la liturgie
 // en une liste, sous « Dans le Sidour ».
 const studyResultGroups = computed(() =>
-  groupedByType.value.filter((group) => !LITURGY_TYPE_KEYS.has(group.key)),
+  groupedByType.value
+    .filter((group) => !LITURGY_TYPE_KEYS.has(group.key))
+    .map((group) => {
+      // Un livre de halakha ouvert : ses parties seules.
+      const work = halakhaWork.value;
+      if (!work) return group;
+      const groups = Object.fromEntries(
+        Object.entries(group.groups).filter(([livre]) => halakhaWorkOfLivre(livre) === work),
+      ) as typeof group.groups;
+      return { ...group, groups };
+    }),
 );
 const sidourResults = computed(() =>
   groupedByType.value
@@ -237,6 +310,10 @@ const { searching } = useSearchMode(searchTerm);
 watch(searchTerm, (value) => {
   if (value.trim()) trackLibrarySearchUsed();
 });
+
+// The library home page lists its results only while searching: the
+// back-to-top button comes with them (a section's page has it anyway).
+requestScrollToTop(() => searchTerm.value.trim() !== "");
 
 // Changer de page remet la recherche à zéro.
 watch(currentCorpus, () => {
@@ -311,14 +388,12 @@ const showBookEncadrement = computed(() => browsingBook("tehilim"));
 // depuis l'accueil (la recherche reste la porte d'entrée la plus rapide).
 const showList = computed(() => currentCorpus.value !== null || hasSearch.value);
 
-// --- Connecté : lecture du jour et reprise de lecture, en tête de la
-// bibliothèque (ces fonctionnalités vivaient dans le profil). ---
-const user = ref<User | null>(null);
-let unsubscribeAuth: (() => void) | null = null;
-const dailyLoading = ref(false);
-const readingTotal = ref(0);
-const readingDone = ref(0);
+// La page de la halakha, sans livre ouvert ni recherche : les cartes des livres.
+const showHalakhaWorks = computed(
+  () => currentCorpus.value?.corpus === "halakha" && !halakhaWork.value && !hasSearch.value,
+);
 
+// --- La reprise de lecture, en tête de la bibliothèque. ---
 // Dernière position de lecture : le vrai « Reprendre ma lecture ».
 const lastReading = ref<ReadingPosition | null>(null);
 const resumeLink = computed(() =>
@@ -348,29 +423,6 @@ function dismissResume() {
     text_id: current.textId,
     source: "library",
   });
-}
-
-async function loadDailySummary(u: User) {
-  dailyLoading.value = true;
-  try {
-    const prefs = await userPreferencesService.getPreferences(u.id);
-    // Même règle de comptage que la page Lecture du jour (chnei mikra
-    // hebdomadaire exclu, complétions intersectées avec les listes actives).
-    const progress = prefs.dailyReadingProgress;
-    const isToday = progress?.date === localDayKey();
-    const counts = countDailyProgress({
-      textIds: prefs.dailyReadingIds ?? [],
-      options: prefs.dailyReadingOptions ?? [],
-      completedTextIds: isToday ? (progress.completedIds ?? []) : [],
-      completedOptions: isToday ? (progress.completedOptions ?? []) : [],
-    });
-    readingTotal.value = counts.total;
-    readingDone.value = counts.done;
-  } catch (error) {
-    console.error("Erreur lors du chargement de la lecture du jour:", error);
-  } finally {
-    dailyLoading.value = false;
-  }
 }
 
 function trackCorpusOpened(corpus: string) {
@@ -564,23 +616,10 @@ onMounted(() => {
     bookmarkCounts.value = readingProgressService.getBookmarkCounts();
     lastReading.value = readingProgressService.getResumePosition();
   });
-  unsubscribeAuth = authService.onAuthChanged((u) => {
-    user.value = u;
-    if (u) {
-      loadDailySummary(u);
-    } else {
-      readingTotal.value = 0;
-      readingDone.value = 0;
-    }
-  });
   if (isNativeApp) {
     ensureManifestLoaded();
   }
   applySeoMeta();
-});
-
-onUnmounted(() => {
-  unsubscribeAuth?.();
 });
 </script>
 
@@ -597,15 +636,22 @@ onUnmounted(() => {
           class="max-w-5xl mx-auto animate-[fadeIn_0.4s_ease]"
           :class="isNativeApp ? 'mb-4' : 'mb-8'"
         >
-          <RouterLink to="/bibliotheque" class="back-link mb-4">
+          <!-- Un livre de halakha ouvert remonte à la page des livres. -->
+          <RouterLink v-if="halakhaWork" to="/bibliotheque/halakha" class="back-link mb-4">
+            <AppIcon name="arrow-left" :size="14" class="rtl:rotate-180" />
+            {{ t(currentCorpus.labelKey) }}
+          </RouterLink>
+          <RouterLink v-else to="/bibliotheque" class="back-link mb-4">
             <AppIcon name="arrow-left" :size="14" class="rtl:rotate-180" />
             {{ t("study.title") }}
           </RouterLink>
           <h1 class="text-3xl md:text-4xl font-bold text-text-primary tracking-tight pb-1">
-            {{ t(currentCorpus.labelKey) }}
+            {{
+              halakhaWork ? t(HALAKHA_WORK_META[halakhaWork].nameKey) : t(currentCorpus.labelKey)
+            }}
           </h1>
           <p v-if="!isNativeApp" class="mt-2 text-lg text-text-secondary max-w-2xl leading-relaxed">
-            {{ t(currentCorpus.descKey) }}
+            {{ halakhaWork ? t(HALAKHA_WORK_META[halakhaWork].descKey) : t(currentCorpus.descKey) }}
           </p>
         </div>
 
@@ -706,8 +752,28 @@ onUnmounted(() => {
     <!-- Tehilim : ce qu'on dit avant d'en lire, et ce qu'on dit après. -->
     <BookEncadrement v-if="showBookEncadrement" corpus="tehilim" class="max-w-5xl mx-auto mb-10" />
 
+    <!-- ===== Halakha : ses livres, dans les cartes de la liste des textes ===== -->
+    <div
+      v-if="showHalakhaWorks"
+      class="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-3 animate-[fadeIn_0.5s_ease]"
+    >
+      <RouterLink
+        v-for="book in halakhaWorks"
+        :key="book.work"
+        :to="{ path: '/bibliotheque/halakha', query: { livre: book.work } }"
+        class="card card-hover p-4 flex items-center justify-between gap-2 group"
+      >
+        <span class="min-w-0">
+          <span class="block font-medium text-text-primary">
+            {{ locale === "he" ? book.name : `${book.hebrew} (${book.name})` }}
+          </span>
+          <span class="text-xs text-text-secondary">{{ book.count }}</span>
+        </span>
+      </RouterLink>
+    </div>
+
     <!-- ===== Accueil sans recherche : le tableau de bord ===== -->
-    <template v-if="!showList">
+    <template v-else-if="!showList">
       <!-- Reprendre la dernière lecture, au verset près : une simple ligne
            discrète juste sous la recherche. -->
       <div
@@ -719,7 +785,6 @@ onUnmounted(() => {
           class="group inline-flex items-center gap-1.5 min-w-0 text-sm text-text-secondary hover:text-primary transition-colors"
           @click="trackResume()"
         >
-          <AppIcon name="bookmark" :size="13" class="shrink-0 text-primary/70" />
           <span class="truncate">
             {{ t("home.dashboard.resumeCta", { label: lastReading.label }) }}
           </span>
@@ -743,13 +808,8 @@ onUnmounted(() => {
       </div>
 
       <!-- Ce qui se lit aujourd'hui : les psaumes du jour, le chnei mikra, et
-           pour un compte, la lecture du jour. -->
-      <StudyToday
-        class="max-w-3xl mx-auto mt-12 animate-[fadeIn_0.5s_ease]"
-        :signed-in="!!user && !dailyLoading"
-        :done="readingDone"
-        :total="readingTotal"
-      />
+           Ma journée (elle mène à la pile de l'accueil). -->
+      <StudyToday class="max-w-3xl mx-auto mt-12 animate-[fadeIn_0.5s_ease]" />
 
       <!-- App native : tout télécharger, en bas de page, une ligne parmi les
            autres. -->
@@ -790,6 +850,14 @@ onUnmounted(() => {
                 class="shrink-0 text-text-secondary"
               />
             </button>
+            <template v-else-if="halakhaWork">
+              <h3
+                v-if="halakhaGroupHeading(String(livre))"
+                class="text-xl font-bold text-text-primary mb-4"
+              >
+                {{ halakhaGroupHeading(String(livre)) }}
+              </h3>
+            </template>
             <h3 v-else class="text-xl font-bold text-text-primary mb-4">
               {{ formatBookName(String(livre)) }}
             </h3>
@@ -869,7 +937,6 @@ onUnmounted(() => {
              renvoie, plutôt que de répondre qu'il n'y a rien. -->
         <section v-if="!currentCorpus && sidourResults.length" class="space-y-4">
           <h2 class="flex items-center gap-2.5 text-2xl font-bold text-text-primary">
-            <AppIcon name="book-open" :size="20" class="text-primary" />
             {{ t("study.inSidour") }}
           </h2>
           <div class="card overflow-hidden">

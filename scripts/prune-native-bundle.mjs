@@ -43,12 +43,25 @@ const PRUNED_DIRS = [
   "texts/mishna",
   "texts/tanakh",
   "texts/moussar",
+  "texts/halakha",
+  "texts/halakha-meforshim",
   "texts/rashi",
+  "texts/talmud-meforshim",
+  "texts/talmud-layout",
+  "texts/mishna-meforshim",
   "texts/tefila",
+  // Les traductions (docs/traductions.md) : le Talmud anglais pèse à lui seul
+  // plus que tous les textes hébreux. Lues en ligne, comme les corpus.
+  "texts/traductions",
+  // The "what's new" videos (useWhatsNew): a few megabytes per language, read
+  // from the site once after an update; embedded, they would weigh on every
+  // install for a minute and a half of viewing.
+  "videos",
 ].map((d) => join(root, d));
-// Ce que seul le site sert : plan du site, fichiers pour les robots, image
-// de partage, preuve de propriété pour un moteur, manifeste des textes (l'app
-// va le chercher en ligne, jamais dans son bundle), version publiée.
+// Ce que seul le site sert : plan du site, fichiers pour les robots, logo des
+// données structurées, preuve de propriété pour un moteur, manifeste des
+// textes (l'app va le chercher en ligne, jamais dans son bundle), version
+// publiée.
 const PRUNED_FILES = [
   "sitemap.xml",
   "sitemap-pages.xml",
@@ -58,13 +71,14 @@ const PRUNED_FILES = [
   "robots.txt",
   "llms.txt",
   "llms-full.txt",
-  "og-image.jpg",
+  "logo.png",
   "7928be0e14242cf92e167550affa3215.txt",
   "texts/manifest.json",
   "app-version.json",
 ].map((f) => join(root, f));
-/** Ce que seul le site sert : les preuves des liens d'application. */
-const WEB_ONLY_DIRS = [".well-known"].map((d) => join(root, d));
+/** Web only: the app links proofs, and the share images (og/), read by
+ *  social networks on the site, never by the app. */
+const WEB_ONLY_DIRS = [".well-known", "og"].map((d) => join(root, d));
 
 /** Tous les fichiers sous `dir`, récursivement. */
 function allFiles(dir) {

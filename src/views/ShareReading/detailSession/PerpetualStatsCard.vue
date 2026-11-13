@@ -28,10 +28,10 @@ const spoken = (duration: SpokenDuration): string =>
     : t("perpetual.stats.days", { n: duration.value }, duration.value);
 
 const lastRoundLine = computed(() => {
-  const { lastCycle, lastCycleEndedAt, completedCycles } = stats.value;
+  const { lastCycle, lastCycleEndedAt } = stats.value;
   if (!lastCycle || !lastCycleEndedAt) return "";
+  // The round's number is the big count beside it: the sentence does not repeat it.
   return t("perpetual.stats.lastRound", {
-    n: completedCycles,
     date: DateService.formatDate(lastCycleEndedAt),
     duration: spoken(lastCycle),
   });
@@ -79,7 +79,11 @@ const totalReadLabel = computed(() =>
             {{ stats.lastCycleParticipants }}
           </dd>
         </div>
-        <div v-if="stats.averageCycle" class="flex flex-col-reverse gap-0.5">
+        <!-- After one round, the average is that round's duration, already in the sentence. -->
+        <div
+          v-if="stats.averageCycle && stats.completedCycles > 1"
+          class="flex flex-col-reverse gap-0.5"
+        >
           <dt class="text-xs text-text-secondary">{{ t("perpetual.stats.average") }}</dt>
           <dd class="text-lg font-bold text-text-primary tabular-nums">
             {{ spoken(stats.averageCycle) }}

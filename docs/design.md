@@ -1,2089 +1,4451 @@
-# Charte graphique
-
-Ce document est la référence de l'apparence du site et de l'app. Il dit ce
-qu'on emploie, et surtout ce qu'on n'emploie plus. Toute nouvelle page s'y
-range ; toute exception se discute et s'écrit ici.
-
-Le fil conducteur tient en une image : la pierre de Jérusalem. Des surfaces
-franches, chaudes, posées à plat ; des couleurs pleines qui accrochent l'oeil
-là où il faut agir ; rien de vaporeux.
-
-## 1. Le fond, les surfaces
-
-| Rôle                              | Jeton                    | Clair      | Sombre       |
-| --------------------------------- | ------------------------ | ---------- | ------------ |
-| Fond de page                      | `--color-bg-beige`       | `#fff9f3`  | `#111827`    |
-| Surface (carte, panneau, fenêtre) | `--color-surface`        | `#ffffff`  | `#1f2937`    |
-| Surface douce                     | `--color-surface-soft`   | `#f8f5ef`  | `#273244`    |
-| Texte                             | `--color-text-primary`   | `#35312a`  | `#f3f4f6`    |
-| Texte secondaire                  | `--color-text-secondary` | `#6d6759`  | `#9ca3af`    |
-| Filet                             | `--color-line`           | noir à 8 % | blanc à 10 % |
-
-Une surface se détache du fond par son ombre, jamais par une bordure. Les
-trois ombres (`--shadow-card`, `--shadow-card-hover`, `--shadow-pop`) sont
-teintées chaud pour rester dans la famille du beige.
-
-### La carte est cliquable, et elle le dit sans flèche
-
-Une carte mène quelque part : elle est un lien ou un bouton, entièrement, y
-compris ses marges. Le petit chevron gris posé au bout ne servait qu'à répéter
-ce que la carte fait déjà comprendre, il ajoutait une cible qui n'en est pas
-une (le clic marche partout) et il volait la place du contenu. Il n'y en a
-plus sur une carte.
-
-Trois flèches restent, parce qu'elles ne disent pas « cliquable » :
-
-- la **direction** (le chiour suivant, le chapitre précédent, le mois d'après) ;
-- le **dépliement** (une flèche qui pivote sur un bloc qui s'ouvre) ;
-- la **ligne de liste** dans un panneau (les pages du profil), qui n'a ni
-  cadre ni ombre et où le chevron est la seule marque du lien.
-
-Corollaire : un bloc qui ne mène nulle part n'est pas une carte cliquable. Il
-peut rester une surface (un panneau de réglages, un formulaire), mais il ne
-prend jamais `card-hover`, dont l'ombre qui se creuse promet un clic.
-
-### Une commande posée dans un texte porte son nom
-
-Dans un texte, une icône seule ne se lit pas comme une commande. Le lecteur y
-voit un ornement du passage, une marque de plus dans une page qui en porte
-déjà (numéros de verset, didascalies, renvois), et il ne l'appuie pas. La
-boussole du Kotel et le miroir des téfilines sont restés à côté de leur titre
-sans que personne ne devine qu'on pouvait les toucher.
-
-Une commande posée dans un texte est donc une pastille à la couleur du thème,
-qui porte son dessin ET son nom en toutes lettres : « Direction du Kotel »,
-« Miroir », le parchemin d'un paragraphe. Le fond, même léger, la détache du
-texte ; le nom dit ce qu'elle fait avant qu'on l'ait touchée.
-
-Au titre d'un passage, elle se pose en face du titre, au bout de sa ligne, et
-non collée au dernier mot : collée, elle passe pour la suite du titre. Sa
-taille ne suit pas celle du texte lu, à la différence de la pastille d'un
-parchemin, qui vit dans le fil de la lecture : une commande de titre est un
-objet de l'interface, et deux d'entre elles se ressemblent exactement, sur
-n'importe quelle page et à n'importe quelle taille de lecture.
-
-### Le cadre se mérite
-
-Tout n'a pas à être dans une carte. Une carte dit « voici une réponse à une
-question que vous vous posez » : ma lecture du jour, l'heure qui vient, une
-session en cours. Elle contient une donnée, un état, quelque chose qui change.
-
-Un simple endroit où aller n'en est pas une : les trois portes du site, sur
-l'accueil, sont posées à même le beige, rien entre elles qu'un écart, avec le
-titre qui prend la couleur au survol pendant que le dessin s'anime. Pas de
-filet non plus : une ligne entre elles redessinait les cases dont on venait de
-les sortir. Encadrées, elles se disputaient le regard avec
-les cartes du tableau de bord et la page devenait un empilement de boîtes ;
-sans cadre, les seules surfaces blanches sont celles qui répondent, et la page
-se lit en deux temps.
-
-Rien n'indique le clic en plus : ni chevron posé au bout, ni flèche qui
-apparaît au survol. La couleur qui vient sur le titre suffit, et sur un écran
-tactile aucune de ces marques ne se voit de toute façon.
-
-Dans l'app, ces trois portes tiennent sur une seule ligne, un dessin et un
-titre, sans la phrase de présentation : l'écran est étroit, la barre du bas
-attend juste en dessous, et on sait ce qu'est la bibliothèque quand on a
-installé l'app. La phrase sert au visiteur du site, pas à l'habitué.
-
-Sur la page des horaires, deux rendez-vous prennent ainsi un cadre au milieu
-des lignes de la journée : le repos (le Chabbat, une fête, avec son entrée et
-sa sortie) et le jeûne (son début et sa fin). Ce ne sont pas des moments de la
-journée mais des rendez-vous de la semaine, et tous deux s'annoncent la veille,
-en bas de la page, puis passent devant les horaires le jour où ils commencent :
-le vendredi, l'heure d'allumage est ce qu'on vient vérifier ; la veille d'un
-jeûne, on regarde jusqu'à quelle heure on peut manger.
-
-### Le mode d'emploi ne tient pas la page
-
-Une explication se lit une fois. « Instructions », posé en clair entre
-l'avancement d'une chaîne et la liste de ses textes, repoussait les textes de
-quatre lignes à chaque visite, y compris pour l'habitué qui sait depuis
-longtemps comment on réserve. Elle rejoint la rangée de pastilles qui décrivent
-la chaîne (le type, la date limite, le créateur) et s'ouvre en fenêtre quand on
-la touche.
-
-Et elle montre plutôt qu'elle n'explique : chaque geste (chercher, réserver,
-rendre, marquer lu, lire) s'y joue en petit, dans une capture **dessinée**
-(`src/components/mock`), qui suit le thème et la langue, ne pèse presque rien
-et ne vieillit pas d'une refonte à l'autre comme le ferait une vidéo. Une
-phrase seule (« cochez les cases pour réserver ») ne dit pas grand-chose
-tant qu'on n'a pas vu la case se cocher.
-
-D'où la règle de cette rangée : une pastille **énonce**, sauf celle qui porte
-une **icône**, qui **ouvre**. Rien d'autre ne la distingue, ni chevron ni
-flèche ; au survol, sa teinte se fonce, et sur un écran tactile l'icône suffit.
-
-Un **chiffre qui compte des gens s'ouvre sur leurs noms** de la même façon : la
-barre d'avancement dit combien participent, la toucher dit qui, et où chacun en
-est de ses lectures.
-
-Corollaire : ce qui ne propose plus rien s'efface au lieu de s'éteindre. La
-carte du tirage au sort disparaît quand tous les Tehilim sont pris, plutôt que
-d'offrir un bouton grisé. Dans « Je participe », la chaîne dépliée d'office est
-la première où il me reste à lire, pas la première de la liste : celle dont j'ai
-tout lu n'attend plus rien de moi. Et la ligne « Reprendre ma lecture » de la
-bibliothèque ne propose que la dernière : la refermer la fait disparaître, elle
-ne remonte pas l'historique texte par texte (chaque texte, lui, rouvre toujours
-là où on l'avait laissé).
-
-### Une astuce se joue sur la page, une fois
-
-L'introduction dit ce que l'app contient ; elle ne peut pas dire comment
-chaque écran se manie. Une ligne d'horaire qui se tire pour poser un rappel,
-le bouton rond d'une page de lecture qui ouvre le sommaire et les réglages :
-personne ne devine un geste, et une commande qu'on ne connaît pas ne sert à
-personne. Ces deux-là avaient été expliquées nulle part, et donc jamais
-employées.
-
-L'astuce se joue donc **là où la commande est**, la première fois qu'on
-arrive sur la page (`FeatureTour.vue`, `useFeatureTips`) : un voile assombrit
-la page, un projecteur découpe la commande, un liseré de la couleur du thème
-respire autour, et une bulle avec sa flèche dit en deux phrases ce qu'elle
-fait. Quatre règles la tiennent :
-
-- **la commande reste vivante sous le projecteur.** Le voile n'est pas peint
-  à cet endroit : la toucher fait ce qu'elle fait d'habitude, et l'astuce
-  passe au pas suivant ou s'en va, on a compris. Elle **montre** aussi quand
-  elle le peut : sur les horaires, un doigt dessiné (`MockTouch`) se pose sur la première ligne, la tire vers la
-  gauche jusqu'à sa cloche et la lâche, le temps du pas, puis le nom de la
-  ville, qui est le bouton qui la change, prend le projecteur ; sur une
-  lecture, l'astuce ouvre le panneau pour éclairer le téléchargement du
-  texte, puis le rond des réglages ;
-- **elle se passe d'un geste** : « Passer », le voile, Échap ou le retour
-  Android. Le voile n'écoute qu'une fois l'astuce posée (`VEIL_GRACE_MS`) : un
-  appui dans l'instant où elle paraît est le geste d'avant qui continue (la
-  flèche des horaires touchée une fois de plus), et il la fermait pour de bon
-  avant qu'on l'ait lue. « Suivant » ou « Compris » la mènent au bout. Jamais
-  plus de deux ou trois pas. Un pas sans commande à éclairer (pincer le
-  texte, le double appui) pose la bulle au milieu et **montre** le geste dans
-  une capture dessinée (`src/components/mock`) ;
-- **une fois par appareil, et une seule par ouverture de l'app.** Close, elle
-  est notée vue (dans les deux stockages, voir docs/app-native.md), même si
-  l'on quitte la page au milieu : une astuce qui revient n'est plus une aide.
-  Et quatre bulles à la suite en changeant de page seraient un tutoriel
-  qu'on n'a pas demandé : la suivante attend la prochaine ouverture (une
-  relance de l'app, ou un retour au premier plan après une demi-heure
-  ailleurs). Sur une même page, une astuce peut en attendre une autre : les
-  gestes de lecture viennent une ouverture après le menu. « Revoir les
-  astuces » (profil de l'app, groupe Aide) les remet en jeu, page par page ;
-- **« Plus tard »** : on n'a pas toujours le temps de lire. La bulle se
-  retire sans compter l'astuce vue, et celle-ci revient, sur la même page, à
-  l'ouverture suivante ;
-- **jamais par-dessus autre chose** : ni l'introduction, ni une fenêtre
-  ouverte, ni une autre astuce, ni une commande hors de l'écran ; et elle
-  attend que la page se soit posée. Sous l'introduction, elle attend qu'elle
-  se ferme : c'est le cas de l'astuce de l'accueil, à la première ouverture.
-
-L'accueil porte la première : où l'app se règle à son goût (l'onglet en bas
-à droite, thème, police, mode sombre), puis le compte, ce qu'il apporte
-(partager des lectures, la lecture du jour, ses réglages sur un autre
-appareil) et, avant tout, qu'il n'est pas obligatoire. Elle éclaire le bouton
-« Créer un compte » tant que l'accueil le porte, et ne se propose pas à qui a
-déjà un compte.
-
-Les autres, chacune sur sa page : les horaires (le rappel d'un geste, le
-lieu), le calendrier (ses propres dates, qui reviennent sur l'accueil et se
-rappellent), la lecture (le menu, lire hors ligne, les réglages ; puis les
-gestes, une ouverture plus tard), le partage de lectures (créer une chaîne,
-en rejoindre une, la première de la liste sous le projecteur) et la lecture
-du jour (composer sa liste, la cloche du rappel). Une astuce ne présente que
-ce que la page propose : pas de rappel sur le site, pas de téléchargement
-quand le texte n'en a pas.
-
-Une astuce peut aussi être **appelée par un geste** plutôt que par
-l'arrivée sur la page : celle du calendrier des horaires (`zmanim-date`) ne
-se montre qu'au troisième appui de suite sur une flèche de jour. On en a vu
-toucher la flèche jusqu'à 37 fois pour atteindre un Chabbat ou une fête, le
-calendrier restant ignoré sous le titre de la date
-(`docs/audit-usage-posthog-2026-10.md`, 2.3). Le projecteur se pose sur la
-date, qui est le bouton du calendrier ; qui l'a ouvert de lui-même ne la
-verra jamais. Les règles des autres valent pour elle : une fois par appareil,
-une seule par ouverture de l'app.
-
-App native seulement, comme l'introduction : un visiteur du site arrive par
-une page précise et une bulle en travers de ce qu'il vient lire serait une
-gêne. `?tips` dans l'adresse les force partout où la commande existe (ou
-`?tips=reading-gestures` pour une seule), pour les montrer et les essayer sur
-les canaux de preview.
-
-### L'introduction règle d'abord, les gestes viennent en dernier
-
-L'introduction de première ouverture (`OnboardingFlow.vue`) pose quelques
-réglages, dit ce que l'app contient, puis montre les gestes à qui veut les
-voir. Elle comptait six pages, consentement compris, avec des captures
-animées dès la troisième : près de la moitié des gens la passaient, presque
-tous dès la première page après le consentement. Elle en compte cinq, chacune
-courte :
-
-- **le consentement**, en trois lignes, parce qu'il demande un choix ;
-- **les réglages** : la langue, clair ou sombre, le thème, rien de plus
-  (`AppearanceSettings essentials`). Les polices et les thèmes des fêtes
-  attendent dans le profil ;
-- **les textes à emporter**, le seul réglage qui fasse quelque chose ;
-- **l'essentiel** : la bibliothèque, les horaires, la lecture du jour, une
-  ligne chacun, et le bouton qui compose la lecture du jour ;
-- **les gestes** : le menu de lecture, le pincement, le double appui, en
-  captures, avec les textes des astuces du lecteur.
-
-Les quatre premières n'ont pas de « Passer » : on tient à ce qu'elles soient
-lues, et elles sont courtes pour qu'on les lise. Seuls les gestes se passent
-(le bouton, Échap), sans dommage : les mêmes reviennent en astuces sur la
-page de lecture. Une page nouvelle doit gagner sa place contre les autres,
-et ce qui s'apprend en le faisant va avec les gestes, pas avant.
-
-### Des pages voisines, un jeu d'onglets
-
-La barre du bas de l'app tient quatre onglets, pas un de plus : Accueil,
-Sidour, Étude et Profil, le rond des horaires au milieu (voir « Le bandeau de
-navigation »). Des pages qui vont ensemble n'y ont donc pas toutes leur
-place, et elles finissaient introuvables : le partage de lectures n'était
-atteignable que par l'accueil, le calendrier des fêtes par un petit lien perdu
-sous le titre des horaires. Elles se rangent ensemble, là où l'on est déjà
-(`PageTabs.vue`, app native seulement) :
-
-- **Bibliothèque**, **Chiourim** et **Partage**, en tête de l'Étude : lire un
-  texte, écouter un cours, se répartir une lecture à plusieurs ;
-- **Horaires** et **Calendrier** : les horaires du jour, ou les fêtes de
-  l'année.
-
-Sur le site, ces onglets ne servent pas : le bandeau y mène d'un clic (le
-calendrier des fêtes y a son entrée depuis).
-
-Trois onglets ne tenaient pas avec la marge des deux : « Bibliothèque »,
-« Chiourim » et « Partage » demandaient environ 356 px pour 327 sur un
-téléphone de 375 px. Chaque onglet a donc 16 px de marge de chaque côté
-(`px-4`), et les trois tiennent dans les trois langues.
-
-Changer d'onglet fait **glisser la pastille blanche** de l'onglet quitté à
-celui qu'on a touché, en s'étirant à sa largeur : la barre du nouvel onglet
-(une autre page, donc une autre instance) reprend la position notée au
-toucher. Arrivé autrement (barre du bas, lien), la pastille est simplement à
-sa place, sans mouvement (voir « Le mouvement répond à un geste »).
-
-Deux règles y tiennent :
-
-- ce sont deux **vraies pages**, pas deux panneaux. Chacune garde son adresse,
-  donc son lien partageable, son retour Android et sa reprise de défilement ;
-  l'onglet ne fait que les relier.
-- les onglets **tiennent lieu de titre** sur ces pages. « Lecture » au-dessus
-  de « Bibliothèque » disait deux fois la même chose et coûtait deux lignes en
-  haut d'un écran de téléphone ; le `h1` reste, en `sr-only`, pour les lecteurs
-  d'écran.
-
-### Un titre de page est centré
-
-Sur le site comme dans l'app, le titre d'une page est centré, et ce qui le
-sert (le lieu de calcul des horaires, une phrase d'explication) reste centré
-sous lui. Une page qui alignait son titre à gauche pendant que les autres le
-centraient donnait l'impression d'avoir été oubliée.
-
-Les commandes qui l'accompagnent sont de vrais boutons (`btn`), centrés à leur
-tour : en petits liens colorés, sur un téléphone, personne ne voyait qu'on
-pouvait les toucher, et le pouce les manquait.
-
-Sous le titre des horaires, le lieu tient sur **une ligne** : le nom de la
-ville, qui est le bouton qui la change, et « Ma position », qui la relève. Les
-deux sont de petits boutons (`btn-sm`), et le second ne dit que cela : « Utiliser
-ma position » et « Actualiser ma position » renvoyaient le bouton à la ligne dès
-que la ville avait un nom un peu long, et la distinction ne vaut que pour
-l'étiquette lue par un lecteur d'écran. Si le nom de la ville ne tient toujours
-pas, c'est lui qui cède, rogné, plutôt que la ligne qui se replie : c'est une
-des boîtes physiquement figées où la troncature reste admise (voir « Rien ne se
-coupe »).
-
-La phrase qui dit ce que sont ces horaires et ce qu'il advient de la position
-ne tient pas la page non plus : un petit « i », à côté des coordonnées, l'ouvre
-en fenêtre (voir « Le mode d'emploi ne tient pas la page »). Un refus de la
-position, lui, reste en clair : il est urgent, et il change ce qui est affiché.
-
-Dans la barre du bas, c'est l'onglet Étude qui reste allumé sur la
-bibliothèque, ses corpus, les chiourim et tout le partage ; l'onglet Sidour,
-sur sa page et sur chaque texte de liturgie, bien que ces textes vivent sous
-/bibliotheque (`config/navSections.ts` : c'est l'adresse qui décide, le
-`active-class` de RouterLink comparant les routes déclarées et non les
-adresses). Tenu par `src/__tests__/bottomTabBar.test.ts`.
-
-### L'accueil de l'app salue, il ne présente pas
-
-Dans l'app, l'accueil d'un visiteur non connecté s'ouvre sur une salutation
-(« Bonjour », « Bonsoir »), alignée à gauche comme celle d'un visiteur
-connecté, et sur les boutons du compte en taille ordinaire. L'accroche du site
-(grand titre et paragraphe de présentation) n'y paraît pas : qui a installé
-l'app n'a plus à être convaincu, et ces lignes repoussaient les horaires et
-les trois portes sous le pli. Le site, lui, garde son accroche centrée.
-
-### Une ligne de liste peut devenir une commande
-
-Dans l'app, une ligne d'horaire n'est plus seulement du texte : la toucher pose
-un rappel, la tirer vers la gauche découvre, du côté de l'heure, un fond de la
-couleur du thème portant une cloche (voir `ZmanRow.vue`). Sur le site, la même ligne reste du
-texte : il n'y a rien à programmer dans un navigateur, et une commande qui ne
-mène nulle part serait pire que pas de commande du tout.
-
-Quatre règles en découlent, valables pour toute liste qui s'anime ainsi.
-
-Le geste a trois issues, et c'est le doigt qui choisit laquelle. Retenu, il
-laisse la ligne revenir. Arrêté en chemin, il l'ouvre sur sa cloche, qu'on
-touche alors pour ouvrir les réglages : on a le temps de lire ce qu'on
-déclenche. Poussé franchement, au-delà de la moitié de la ligne ou d'un coup
-sec, il agit seul et la ligne se referme sur son résultat, annoncé par un
-toast. Le raccourci récompense l'assurance sans piéger l'hésitation, et il ne
-pose aucune question : le rappel qu'il pose reprend le dernier délai réglé
-(15 minutes avant tant qu'on n'en a pas choisi un autre), car qui règle ses
-rappels à une demi-heure les veut tous ainsi.
-
-Le fond découvert est plein, de la couleur du thème, et il occupe exactement
-la place que la ligne libère en partant : il n'y a ni cadre ni surface
-intermédiaire, et son icône se tient au milieu de ce qu'on a découvert, jamais
-à cheval sur ce qui reste. Le repère d'angle, lui, s'efface le temps du geste :
-posé contre un tiroir de la même couleur, il n'aurait plus été un repère mais
-une bavure.
-
-Le premier mouvement franc arbitre entre défiler et glisser. Sans cet
-arbitrage, un pouce qui parcourt la page ouvrait les lignes au passage. Et une
-seule ligne reste ouverte à la fois, sinon la liste se couvre de tiroirs
-entrouverts.
-
-Ce qu'un geste a produit se voit sans être lu. Un rappel posé marque sa ligne
-d'un petit triangle plein dans l'angle, du côté de l'heure : une cloche posée
-dans le texte aurait mangé la place du nom sur un téléphone, et une ligne sur
-deux marquée aurait fait une colonne d'icônes. L'angle, lui, ne prend la place
-de rien et se repère d'un coup d'oeil en parcourant la liste. Le triangle suit
-le sens de lecture (bordures logiques), il change donc de côté en hébreu.
-
-### Deux colonnes sur un téléphone, seulement si la seconde se plafonne
-
-Une carte du calendrier porte deux choses : le nom de la fête avec ses dates,
-et ses heures. Côte à côte sur un téléphone, elles ne tiennent pas. Le libellé
-le plus long de la colonne des heures (« Allumage après la sortie du Chabbat »)
-décidait seul de sa largeur, qui prenait la carte entière : il ne restait au
-nom que la largeur d'un mot, « Chabbat Roch Hachanah » descendait en escalier,
-et les deux colonnes finissaient par se chevaucher.
-
-D'où la règle, valable pour toute carte à deux colonnes. Tant que l'écran est
-étroit, la seconde passe sous la première, séparée par un filet, chaque heure
-finissant sa ligne comme sur la page des horaires. Dès qu'il y a de la place
-(`sm`), elle revient à côté, mais plafonnée en largeur : une colonne qui se
-dimensionne sur son plus long libellé mange la carte, et ce qu'on lit en
-premier, le nom, passe en dernier.
-
-Une plage de dates, enfin, n'écrit qu'une fois ce que ses deux bouts
-répètent : « du 1 au 2 Tichri 5787 », et non « du 1 Tichri 5787 au 2 Tichri
-5787 ». Trois lignes de moins sur un téléphone, et rien de perdu
-(`formatHebrewRangeStart`).
-
-### Ce qu'on vient chercher prend la couleur, pleine
-
-Mettre une carte en avant sans poser de couleur sur elle ne marche pas. Un
-cadre teinté est une bordure de plus dans une page qui n'est faite que de
-bordures ; un fond à quelques pour cent de la couleur du thème ne se détache
-pas du beige ; et l'encre seule, qui suffit à marquer le prochain horaire de
-la journée dans une liste de lignes (`ZmanRow`), se perd dans une liste de
-cartes, où chacune porte déjà trois niveaux de texte.
-
-La prochaine fête du calendrier prend donc la teinte du thème à plein, sur
-toute sa carte, et son texte passe à la couleur qui s'écrit dessus
-(`on-brand` : le brun sur l'orange clair, le blanc sur le bleu ou le vert).
-C'est la seule carte colorée de la page, et on la trouve sans avoir à lire.
-
-Ce texte y descend en trois tons, comme sur le bandeau du profil : le nom de
-la fête et ses heures à plein, les dates et les intitulés des heures en
-dessous, la date hébraïque plus bas encore. Sans quoi tout se vaudrait et la
-carte ne se lirait plus.
-
-Les dates passées, elles, gardent leur effacement : s'effacer et ressortir
-sont deux moyens opposés, ils ne se gênent pas.
-
-### Une carte mise en avant peut porter son objet
-
-La carte du moment dit déjà, par sa couleur, qu'on vient la chercher. Elle
-porte en plus l'objet de ce qu'elle annonce, dessiné aux couleurs du vrai
-(`CardArt.vue`, les dessins dans `components/art`) :
-
-- le **sidour**, relié de cuir bleu nuit, titre doré, signet rouge, pour un
-  office, celui de l'heure ou celui qui vient ;
-- la **lune**, à sa phase du soir, les nuits de la bénédiction : la face
-  visible, aux gris de la vraie. Les contours des mers sont relevés sur une
-  photo de la pleine lune (floutée, seuillée au tiers le plus sombre, bords
-  simplifiés), pas dessinés de mémoire : elles se rejoignent d'un seul
-  tenant, de l'Océan des Tempêtes à la Fécondité, avec les baies claires de
-  Copernic et de Kepler, leurs fonds plus sombres, les Crises seules au bord
-  est, Tycho et ses rayons fins dans les hautes terres du sud ;
-- la **'hanoukkia** les soirs de 'Hanouka ;
-- le **chofar** des Sli'hot, le pavillon ouvert en haut, vers l'avant, et
-  l'embouchure en bas ;
-- le **loulav et l'etrog**, quand la fête de Souccot prend la carte ;
-- la **gerbe** d'orge du 'Omer.
-
-Ces couleurs tranchent sur tout le reste de l'app, qui n'est fait que des
-tons du thème : c'est ce qu'on veut, un objet qui se reconnaît d'un coup
-d'œil avant qu'on ait lu le nom.
-
-- **La carte ne grandit pas pour lui.** L'objet a sa taille à lui, et c'est
-  lui qui passe sous le bord bas quand la carte est courte. Une première
-  version réservait au dessin une marge de fin : le titre passait à la
-  ligne, la carte prenait soixante pixels pour rien, et paraissait grande
-  pour être grande. Il ne prend pas non plus plus de 42 % de la largeur de
-  la carte : sur un petit téléphone, il rapetisse plutôt que de manger le
-  titre.
-- **Derrière le texte.** Le titre passe devant l'objet quand il est long ;
-  sur un objet sombre (le livre, le loulav, les bougies), le texte de la
-  carte se lit tel quel. Sur un objet clair (la lune, le chofar), il prend un
-  halo de la couleur de la carte, et seule la ligne d'heure lui laisse sa
-  place. Les pastilles d'un office (Hallel, Moussaf...) passent devant le
-  livre.
-- **Dans le coin de fin de ligne** (la droite en français, la gauche en
-  hébreu), et **hors de la carte, seulement par le haut** : le haut du
-  livre, les bougies et leurs flammes, la pointe du chofar, la palme du
-  loulav passent la ligne de la carte. La lune, plus grande, est en plus
-  coupée par le bord de la carte, mais seulement sous le haut de la carte :
-  ce qui dépasse en haut est une calotte entière, jamais une coupe droite
-  prolongée au-dessus de la carte. Tenu par `src/__tests__/cardArt.test.ts`.
-- **La forme suit le jour.** La lune est à sa phase du soir (son âge depuis
-  le molad, `moonAge`) : gibbeuse le 10 du mois, presque pleine le 14,
-  éclairée par la droite comme on la voit croître depuis la France ; sa part
-  sombre est un voile à peine plus clair que le fond, la lumière cendrée. La
-  'hanoukkia porte autant de bougies que le soir en compte, posées de droite
-  à gauche, plus le chamach : des bougies de boîte, de toutes les couleurs,
-  et grandes, c'est elles qu'on doit voir. Allumées le soir venu, éteintes
-  quand la carte annonce l'allumage de ce soir.
-- **Il se lève une fois.** À sa première apparition de la session, l'objet
-  monte en biais depuis le coin bas de la carte, le bord bas faisant
-  l'horizon ; la 'hanoukkia s'allume ensuite dans l'ordre où on l'allume :
-  le chamach, la bougie du soir (la plus à gauche), puis les autres vers la
-  droite. Revenir sur la page le trouve à sa place, sans mouvement (voir « Le
-  mouvement répond à un geste » : c'est la seule arrivée qui bouge, parce
-  que c'est l'occasion elle-même qui arrive). Chaque carte a son lever. Jamais
-  en mouvement réduit, ni en rendu dégradé (`perf-lite`).
-- **En aplats.** Deux ou trois tons par matière (la face et l'ombre de
-  l'argent, la cire et son flanc, la flamme et son cœur), jamais de dégradé.
-- **Avec son ombre**, comme les cartes : une ombre portée légère détache ce
-  qui dépasse du fond de la page. Sans elle, la lune claire se fondait dans
-  le beige au-dessus de la carte, et paraissait coupée au bord haut.
-
-Sur l'accueil, les cartes du moment portent le même objet, en petit, sur
-leur surface claire : le sidour sur « Faire Cha'harit », la lune sur la
-bénédiction de la lune, la gerbe sur le compte du 'Omer. La lune y prend des
-tons un peu plus soutenus pour se détacher du blanc.
-
-Un objet de plus se dessine dans `components/art`, avec ces règles, et prend
-sa place dans `CARD_ART_GEOMETRY` (taille, proportions, ce qui dépasse en
-haut, retrait du bord).
-
-### Une icône devant un titre doit dire quelque chose
-
-Une icône à gauche d'un titre de carte ne se pose que si rien d'autre ne dit
-ce qu'est la carte. Quand la carte porte déjà son objet (le sidour, la lune,
-la gerbe) ou son chiffre en grand à droite (l'heure de la carte des horaires,
-le pourcentage de la lecture du jour), l'icône le redit en moins bien : un
-soleil levant devant « Faire Cha'harit » à côté du livre, une horloge devant
-« Netz haHama » à côté de 08:08, un sablier devant le compte du 'Omer à côté
-de la gerbe. Ces cartes n'en ont donc pas, et leur titre s'aligne sur le
-bord de la carte. Tenu, pour les cartes qui portent leur objet, par
-`src/__tests__/cardArt.test.ts`.
-
-L'icône reste là où elle est seule à distinguer : le gâteau d'un
-anniversaire et la bougie d'un leilouy nichmat parmi les dates qu'on a
-posées, les lignes « Aujourd'hui » et « Hors ligne » de la bibliothèque, les
-titres de section des horaires.
-
-### Le triangle de lecture se centre sur son poids
-
-Un triangle centré sur sa boîte paraît décalé vers sa base : son poids est
-au tiers de sa largeur. L'icône de lecture (`play-solid`) est donc dessinée
-avec son centre de gravité au milieu, et sa pointe déborde d'autant. Le
-bouton rond qui la porte la centre comme n'importe quelle icône, sans marge
-de plus : une marge la poussait de 1 à 2 px vers la pointe, et le triangle
-paraissait décalé à droite. Tenu par `src/__tests__/playIcon.test.ts`.
-
-### Le Sidour s'ouvre sur le moment
-
-Ce qu'on dit (les tefilot, les brahot, les textes des fêtes) vivait dans trois
-livres de la bibliothèque, mêlés à ce qu'on étudie. Il a sa page, le Sidour,
-deuxième onglet de la barre du bas, à la place et sous le dessin de l'ancienne
-bibliothèque : c'est par ce livre ouvert qu'on allait chercher l'office, le
-geste ne change pas, il mène plus vite.
-
-La page tient en trois étages (`SidourPage.vue`) :
-
-- **le moment**, en carte pleine couleur, la seule de la page (voir « Ce qu'on
-  vient chercher prend la couleur, pleine ») : **une seule chose**, la plus
-  importante à cette heure. L'office dont c'est l'heure, avec l'heure jusqu'à
-  laquelle il se dit et, en pastilles, ce que le jour y ajoute (Ya'alé
-  véyavo, Hallel, Moussaf, 'Al hanissim, Ata 'honantanou, le compte du
-  'Omer...), les mêmes occasions que celles qui colorent le texte (voir « Ce
-  que le jour ajoute dans une tefila »). Une occasion rare passe devant
-  l'office de tous les jours : l'allumage un soir de 'Hanouka, les Sli'hot de
-  'hatsot au lever du soleil, la bénédiction de la lune les nuits où elle se
-  dit (une dizaine par mois, et elle se rate faute de rappel). Entre deux
-  offices, la fête en cours prend la carte s'il y a un texte à dire
-  maintenant ou cette nuit (le loulav jusqu'à la chkia, l'allumage du soir,
-  les Sli'hot de la nuit) ; sinon la carte annonce l'office qui vient plutôt
-  que de disparaître : sur l'accueil, une carte vide se retire ; ici, c'est la
-  raison d'être de la page ;
-- **une ligne dessous, au plus**, et seulement un soir d'occasion : l'office
-  sous l'allumage, les Sli'hot ou la lune, qui l'ont précédé dans la carte ;
-  la havdala le soir où sort un Chabbat ou une fête. Les autres jours, rien.
-  La carte annonçait d'abord jusqu'à trois lignes (le Chema du coucher, le
-  tikoun 'hatsot, le loulav, les Hochanot) : trois mises en avant, c'était
-  n'en faire aucune, et à Souccot le loulav et les Hochanot se répétaient
-  au-dessus de la liste de la fête, qui remonte juste en dessous. L'office
-  seul tient la carte ; le reste est un geste plus bas ;
-- **tous les textes**, en une liste, sans les livres qui les séparaient, mais
-  pas sans repères : de légers intertitres par usage (les offices, le soir,
-  les brahot, les occasions, les étapes de la vie), puis les fêtes en bas. Le
-  temps d'une fête (d'Eloul à Kippour, de Kippour à Sim'hat Torah, 'Hanouka),
-  ses textes remontent en tête, marqués « en ce moment ». Dans l'app, ils se
-  téléchargent alors d'eux-mêmes : ils doivent s'ouvrir sans réseau, à la
-  synagogue comme ailleurs.
-
-Entre le moment et la liste, une rangée d'**outils** : les petits instruments
-qui servent pendant qu'on prie (voir « Les outils du Sidour » ci-dessous).
-
-Les textes gardent leur adresse sous /bibliotheque : elle est publiée (le
-widget Sidour, les liens partagés, les pages indexées, les positions de
-lecture synchronisées) et une version installée de l'app la lit encore. Les
-anciennes listes /bibliotheque/sidour, /moadim et /brahot mènent à /sidour
-(routes.ts, et firebase.json côté serveur). Le Birkat Hamazon et les brahot
-voyagent désormais avec l'app, comme le reste du Sidour
+# Design guidelines
+
+This document is the reference for how the site and the app look. It says
+what we use, and above all what we no longer use. Every new page fits into
+it; every exception is discussed and written down here.
+
+The guiding thread fits in one image: Jerusalem stone. Plain, warm surfaces
+laid flat; solid colors that catch the eye where action is needed; nothing
+hazy.
+
+## 1. The background, the surfaces
+
+| Role                          | Token                    | Light        | Dark          |
+| ----------------------------- | ------------------------ | ------------ | ------------- |
+| Page background               | `--color-bg-beige`       | `#fff9f3`    | `#111827`     |
+| Surface (card, panel, window) | `--color-surface`        | `#ffffff`    | `#1f2937`     |
+| Soft surface                  | `--color-surface-soft`   | `#f8f5ef`    | `#273244`     |
+| Text                          | `--color-text-primary`   | `#35312a`    | `#f3f4f6`     |
+| Secondary text                | `--color-text-secondary` | `#6d6759`    | `#9ca3af`     |
+| Rule                          | `--color-line`           | black at 8 % | white at 10 % |
+
+A surface stands out from the background through its shadow, never through a
+border. The three shadows (`--shadow-card`, `--shadow-card-hover`,
+`--shadow-pop`) are tinted warm to stay in the beige family.
+
+### The card is clickable, and says so without an arrow
+
+A card leads somewhere: it is a link or a button, entirely, margins
+included. The little gray chevron at its end only repeated what the card
+already made clear; it added a target that is not one (the click works
+everywhere) and it stole room from the content. There are none on cards
+anymore.
+
+Three arrows remain, because they do not say "clickable":
+
+- **direction** (the next chiour, the previous chapter, the following month);
+- **expansion** (an arrow that rotates on a block that opens);
+- the **list row** in a panel (the profile pages), which has neither frame
+  nor shadow and where the chevron is the only mark of the link.
+
+Corollary: a block that leads nowhere is not a clickable card. It may remain
+a surface (a settings panel, a form), but it never takes `card-hover`, whose
+deepening shadow promises a click.
+
+### A command placed in a text carries its name
+
+In a text, an icon alone does not read as a command. The reader sees an
+ornament of the passage, one more mark in a page that already carries many
+(verse numbers, stage directions, cross-references), and does not tap it.
+The Kotel compass and the tefilin mirror sat next to their titles without
+anyone guessing they could be touched.
+
+A command placed in a text is therefore a pill in the theme color, carrying
+its drawing AND its name spelled out: « Direction du Kotel » ("Direction of
+the Kotel"), « Miroir » ("Mirror"), the scroll of a paragraph. The
+background, even a light one, sets it apart from the text; the name says
+what it does before it is touched.
+
+At a passage's title, it sits opposite the title, at the end of its line,
+and not stuck to the last word: stuck there, it passes for the rest of the
+title. Its size does not follow that of the text being read, unlike the pill
+of a scroll, which lives in the flow of reading: a title command is an
+interface object, and two of them look exactly alike, on any page and at
+any reading size.
+
+### The frame must be earned
+
+Not everything has to be in a card. A card says "here is an answer to a
+question you are asking yourself": my reading for today, the upcoming time,
+a session in progress. It holds a piece of data, a state, something that
+changes.
+
+A mere place to go is not one: the site's three doors, on the home page, sit
+directly on the beige, nothing between them but a gap, with the title taking
+on color on hover while the drawing comes alive. No rule either: a line
+between them redrew the boxes they had just been taken out of. Framed, they
+competed for attention with
+the dashboard cards and the page became a stack of boxes; without a frame,
+the only white surfaces are the ones that answer, and the page reads in two
+steps.
+
+Nothing else signals the click: no chevron at the end, no arrow appearing on
+hover. The color that comes onto the title is enough, and on a touch screen
+none of these marks show anyway.
+
+In the app, these three doors fit on a single line, a drawing and a title,
+without the introductory sentence: the screen is narrow, the bottom bar
+waits just below, and you know what the library is once you have installed
+the app. The sentence serves the site visitor, not the regular.
+
+On the times page, two appointments likewise take a frame amid the lines of
+the day: rest (Chabbat, a holiday, with its start and end) and the fast (its
+start and end). These are not moments of the day but appointments of the
+week, and both announce themselves the day before, at the bottom of the
+page, then move ahead of the times on the day they begin: on Friday, the
+candle-lighting time is what you come to check; on the eve of a fast, you
+look up until what time you can eat.
+
+### The instructions do not hold the page
+
+An explanation is read once. « Instructions », laid out in full between the
+progress of a chain and the list of its texts, pushed the texts down by four
+lines on every visit, including for the regular who has long known how to
+reserve. It joins the row of pills describing the chain (the type, the
+deadline, the creator) and opens in a window when touched.
+
+And it shows rather than explains: each gesture (search, reserve, return,
+mark as read, read) plays out in miniature, in a **drawn** screenshot
+(`src/components/mock`), which follows the theme and the language, weighs
+almost nothing and does not age from one redesign to the next as a video
+would. A sentence alone ("check the boxes to reserve") does not say much
+until you have seen the box get checked.
+
+Hence the rule of this row: a pill **states**, except the one that carries
+an **icon**, which **opens**. Nothing else distinguishes it, neither chevron
+nor arrow; on hover its tint darkens, and on a touch screen the icon is
+enough.
+
+A **number that counts people opens onto their names** in the same way: the
+progress bar says how many take part, touching it says who, and where each
+one stands in their readings.
+
+Corollary: what no longer offers anything disappears instead of being
+grayed out. The random draw card disappears when all the Tehilim are taken,
+rather than offering a grayed-out button. In « Je participe » ("I'm taking
+part"), the chain expanded by default is the first one where I still have
+something to read, not the first in the list: one I have fully read no
+longer expects anything from me. And the library's « Reprendre ma lecture »
+("Resume my reading") row offers only the last one: closing it makes it
+disappear, it does not walk back through the history text by text (each
+text, for its part, always reopens where it was left).
+
+Same rule for « Comment ça marche » ("How it works"), the timeline on the
+reading-sharing page: it now only shows to those discovering it. It
+withdraws for good as soon as the principle is known, through « J'ai
+compris » ("Got it") under the timeline, or on its own at the first session
+created or joined; the device remembers it (`useShareHowItWorks`,
+`shareHowItWorks.test.ts`).
+
+### A tip plays out on the page, once
+
+The introduction says what the app contains; it cannot say how each screen
+is handled. A times row you pull to set a reminder, the round button on a
+reading page that opens the table of contents and the settings: nobody
+guesses a gesture, and a command nobody knows about serves nobody. These two
+had been explained nowhere, and so were never used.
+
+The tip therefore plays out **where the command is**, the first time you
+arrive on the page (`FeatureTour.vue`, `useFeatureTips`): a veil darkens the
+page, a spotlight cuts out the command, a border in the theme color breathes
+around it, and a bubble with its arrow says in two sentences what it does.
+Four rules hold it:
+
+- **the command stays live under the spotlight.** The veil is not painted
+  there: touching it does what it usually does, and the tip moves to the
+  next step or goes away; you have understood. It also **shows** when it
+  can: on the times page, a drawn finger (`MockTouch`) lands on the first row, pulls it to the
+  left up to its bell and lets go, for the length of the step, then the
+  city name, which is the button that changes it, takes the spotlight; on a
+  reading, the tip opens the panel to light up the text download, then the
+  settings circle;
+- **it can be skipped with one gesture**: « Passer » ("Skip"), the veil,
+  Escape or the Android back button. The veil only listens once the tip has
+  settled (`VEIL_GRACE_MS`): a tap in the instant it appears is the previous
+  gesture continuing (the times arrow tapped one more time), and it used to
+  close the tip for good before it had been read. « Suivant » ("Next") or
+  « Compris » ("Got it") take it to the end. Never more than two or three
+  steps. A step with no command to light up (pinching the text, the double
+  tap) places the bubble in the middle and **shows** the gesture in a drawn
+  screenshot (`src/components/mock`);
+- **once per device, and only one per app opening.** Once closed, it is
+  recorded as seen (in both storages, see docs/app-native.md), even if you
+  leave the page midway: a tip that comes back is no longer help. And four
+  bubbles in a row while changing pages would be a tutorial nobody asked
+  for: the next one waits for the next opening (an app relaunch, or a
+  return to the foreground after half an hour elsewhere). On the same page,
+  one tip can wait for another: the reading gestures come one opening after
+  the menu. « Revoir les astuces » ("See tips again", in the help
+  center) puts them back in play, page by page;
+- **« Plus tard »** ("Later"): you do not always have time to read. The
+  bubble withdraws without counting the tip as seen, and it comes back, on
+  the same page, at the next opening;
+- **never on top of something else**: not the introduction, not an open
+  window, not another tip, not a command off screen; and it waits for the
+  page to settle. Under the introduction, it waits for it to close: that is
+  the case of the home page tip, at the first opening.
+
+**The Mon parcours tutorial** (`useParcoursTours`) is an exception to two
+rules. Its gestures cannot be guessed (swiping a card, pulling the stack,
+long-pressing a volume, pinching the wall): one tour per screen, of three
+or four steps, on the first visit to each; the home page (the stack, the
+day bar, the light, the shelf), Mon parcours (the light, the wall, the
+shelf, « Nouvel objectif » ("New goal")), Nouvel objectif (finishing a text,
+a cycle, a habit), a program (the portion, « Rattraper » ("Catch up"),
+« Lire la suite » ("Read on"), « Modifier » ("Edit")). A step whose command
+is not on screen (no backlog, nothing further to read) is skipped. And it
+also shows **on the site** (`web`): nobody arrives there from a search
+engine with an account, and the gestures are the same. On the home page, it
+comes before the settings tip, which waits for the next opening. The
+commands are found by their `data-tour` marker.
+
+The home page carries the first one: where the app is adjusted to your
+taste (the tab at the bottom right, theme, font, dark mode), then the
+account, what it brings (sharing readings, the daily reading, your settings
+on another device) and, above all, that it is not mandatory. It lights up
+the « Créer un compte » ("Create an account") button as long as the home
+page shows it, and is not offered to those who already have an account.
+
+The others, each on its own page: the times (the reminder by gesture, the
+location), the calendar (your own dates, which come back on the home page
+and send reminders), the reading (the menu, reading offline, the settings;
+then the gestures, one opening later), reading sharing (creating a chain,
+joining one, the first in the list under the spotlight) and the daily
+reading (composing your list, the reminder bell). A tip only presents what
+the page offers: no reminder on the site, no download when the text has
+none.
+
+A tip can also be **called up by a gesture** rather than by arriving on the
+page: the one for the times calendar (`zmanim-date`) only shows on the
+third tap in a row on a day arrow. People were seen tapping the arrow up to
+37 times to reach a Chabbat or a holiday, the calendar remaining ignored
+under the date title (`docs/audit-usage-posthog-2026-10.md`, 2.3). The
+spotlight lands on the date, which is the calendar button; whoever has
+opened it on their own will never see it. The others' rules apply to it:
+once per device, only one per app opening.
+
+Native app only, like the introduction: a site visitor arrives through a
+specific page, and a bubble across what they came to read would be a
+nuisance. `?tips` in the address forces them wherever the command exists (or
+`?tips=reading-gestures` for a single one), to show and try them on the
+preview channels.
+
+### The introduction sets things up first; gestures come last
+
+The first-opening introduction (`OnboardingFlow.vue`) sets a few settings,
+says what the app contains, then shows the gestures to those who want to see
+them. It used to have six pages, consent included, with animated
+screenshots from the third one: nearly half of people skipped it, almost all
+from the first page after consent. It now has five, each one short:
+
+- **consent**, in three lines, because it requires a choice;
+- **settings**: the language, light or dark, the theme and higher
+  contrast, nothing more (`AppearanceSettings essentials`). Higher contrast
+  is there from the first launch because whoever needs it cannot read the
+  rest comfortably until it is on. Fonts and holiday themes wait in the
+  profile;
+- **texts to take along**, the only setting that does something;
+- **the essentials**: the library, the times, the daily reading, one line
+  each, and the button that composes the daily reading;
+- **gestures**: the reading menu, pinching, double tap, as screenshots, with
+  the texts of the reader's tips.
+
+The first four have no « Passer » ("Skip"): we want them read, and they are
+short so that people read them. Only the gestures can be skipped (the
+button, Escape), at no cost: the same ones come back as tips on the reading
+page. A new page must earn its place against the others, and what is
+learned by doing goes with the gestures, not before.
+
+### What's new plays once, after the update
+
+When an update moves things around, those who knew the app before must be
+told where things went: 4.0 moved the library and the classes under
+« Étude » and gave the Sidour its own tab, and a reader looking for
+« Bibliothèque » in the bar would not find it. The first launch after the
+update plays a video of about a hundred seconds on what changed
+(`WhatsNewVideo.vue`, `useWhatsNew.ts`), in the reader's language: where the
+tabs went first, then what is new.
+
+- **Once, and only to those who are updating.** A fresh install sees the
+  introduction, never this video: it shows a change to someone who never
+  knew the app before it. The device notes the version it played, and its
+  card at the top of the help center plays it again (see "The help center
+  shows how, part by part"); its last screen says where to find it.
+- **Nothing shows while it loads.** The video is served by the site
+  (`public/videos/`), not bundled: a few megabytes per language, for over
+  a minute and a half of viewing. At launch, the screen only appears once the
+  video can play; offline, nothing shows and nothing is noted, and it plays
+  at a later launch.
+- **It is written to be read.** Every change is said in a sentence on the
+  screen; the music only goes with it. Where the system refuses sound
+  without a touch, it plays muted and offers « Activer le son » ("Turn the
+  sound on").
+- **One can always leave.** The button at the top, the Android back
+  gesture, Escape. Come on its own at launch, the video is skipped:
+  « Passer » ("Skip"); asked for from the help center, it is closed:
+  « Fermer » ("Close"). At the end, « C'est parti » ("Let's go") closes it,
+  « Revoir la vidéo » ("Watch again") replays it and « En savoir plus »
+  ("Learn more") leads to the page of the version, its passages and their
+  questions (see "The help center shows how, part by part"); opened from
+  that page, it does not offer the way back to it. The page behind does
+  not move.
+- **It wears the page background** (`bg-bg-beige`), the same as the video's,
+  so the bars above and below the picture on a tall phone do not show.
+
+The video is made with the promotional videos (section 11, `promo/`, the
+`nouveautes-*` compositions) from the app's own screens. A next one changes
+`WHATS_NEW_VERSION` and is published under its name, in the three languages
+(`whatsNew.test.ts` checks that the files the code asks for exist).
+
+### The help center shows how, part by part
+
+The app has grown rich enough that much of it stays obscure until someone
+explains it: a card swiped to say a prayer is done, a reading bar that
+slides, home page blocks that move under a long press. A tip shows a
+gesture once, where it happens; the help center (`/aide`,
+`HelpCenterPage.vue`) is where one comes back to it, at any time, on the
+site as in the app. How to add to it: `docs/help-center.md`.
+
+- **Reached from the profile.** Its row opens the profile's Help group,
+  then « Les nouveautés de la 4.0 », the page of the version, one touch
+  away, then « Nous écrire »; on the site, the footer links to it. The profile
+  tab stays lit on its pages, as on the profile's sub-pages. Its guides are
+  in the bundle: it opens offline and without an account.
+- **What's new first.** At the top, the "what's new" video as a card
+  (`WhatsNewCard.vue`): its own poster in its 9:16 format, the play button
+  on it, « Regarder » ("Watch") spelled out, the whole card playing it.
+  Whoever skipped it at launch finds it here.
+- **Each version, passage by passage.** Under the card, « Les versions »:
+  a row per version (« La 4.0, passage par passage »), opening its page
+  (`/aide/nouveautes/4.0`, `HelpVersionPage.vue`). What the version
+  changes in two sentences, the video's card, then its passages in the
+  video's order, as questions people ask: a card per passage, closed, its
+  title and where it starts in the video (« 0:20 », the theme color, in
+  figures that keep their width) on the side where one reads from, the
+  chevron at the other end. Opened, « Revoir ce passage » (the play
+  triangle and its name, solid: the one command of the card) plays the
+  video from that point; then the questions, in the text color and bold,
+  each answer under it in the secondary color, a fine rule between two;
+  then the guide that explains it further (the book and its title) and the
+  way into the app (its name and the arrow). A FAQ that reads like the
+  video: whoever wants one answer goes to the passage that shows it,
+  without watching a hundred seconds again. All closed, the sixteen
+  passages fit in two screens; an address ending in a passage
+  (`#calme`) opens on that one, for a link from a guide or a message. A
+  passage the language's video does not show (the translations, in the
+  Hebrew one) keeps its questions, without the command. An older version's
+  page keeps its questions without the video: only the current one is
+  served.
+- **Frequent questions, answered short.** After the versions,
+  « Questions fréquentes » ("Frequently asked questions", a heading in
+  Playfair, like « Guides » below it): a panel per topic (the app, reading
+  and praying, the times, reading together, your settings), like the
+  guides, each row a question in the reader's words with the chevron that
+  turns as it opens. Opened in place, its answer in two sentences at most,
+  then the guide that explains more (the book and its title) and the way
+  into the app. Closed, the questions read as a list one scans; no answer
+  is a page of its own, nobody leaves the list for two sentences. An
+  address ending in a question (`/aide#compte`) opens on it: the team
+  answers a message with a link (`HelpFaq.vue`, `content/help/faq.ts`).
+- **Guides by part of the app.** Grouped by topic (finding your way, the
+  home page, the prayer, reading, Mon parcours, the times, reading
+  together) like the
+  profile's groups: a panel per topic, a row per guide with its title and
+  one line of what it is about, the chevron of a row that opens a page. A
+  guide is a page of its own (`/aide/<slug>`): its topic in the theme color
+  above the centered title, its summary, then its points.
+- **It shows rather than explains.** A point is a title, two sentences and,
+  when it is a gesture, its drawn screenshot playing above them
+  (`src/components/mock`): the drawings of the introduction and of a
+  chain's instructions, which follow the theme, dark mode and the language,
+  weigh almost nothing and do not age from one redesign to the next. 4.0
+  added six: the tab bar and Étude's tabs, the card swiped « C'est fait »,
+  a home block carried under a long press, the reading bar slid, a times row
+  pulled to its bell, the end of a service pushed up until it is said. Like the introduction's, they loop on their own: they
+  are the explanation. When less motion is asked for, each stands still on
+  its key moment (the card at its threshold, the block lifted).
+- **The app's own words.** A guide that explains a gesture a tip already
+  explains borrows the tip's sentences (an i18n key rather than a new text):
+  the two must say it the same way, in the three languages.
+- **A way in.** A guide ends on a command into the part it explains
+  (« Modifier l'accueil », « Voir les horaires »), its name spelled out,
+  then on other guides, its topic first.
+- **The videos are YouTube's, listed by the site.** The team's tutorials
+  are YouTube videos, listed in a file the site serves
+  (`public/help/videos.json`), not in code: a new one reaches the installed
+  apps when the site is deployed, the app falling back on the list of its
+  build when offline. A video is a card: its picture, its title and its
+  length, opening YouTube (its app, on a phone); no player in the app and
+  no cookie, only the picture loads. One that goes with a guide also shows
+  at its end. No video, no section: nothing announces videos to come.
+- **What shows once comes back from here.** In the app, « Revoir
+  l'introduction » and « Revoir les astuces » moved from the profile to the
+  help center, with the video. At the bottom, « Nous écrire », for a
+  question no guide answered.
+
+Held by `src/__tests__/helpCenter.test.ts` (the guides in three languages
+and typeset, their screenshots and links, the list of videos) and
+`helpCenterPages.test.ts` (the card plays the video, the videos only when
+there are some, an unknown guide leads back to the help center, the
+questions closed and opening on their answer, `#compte`); the page
+of a version by `helpCenter.test.ts` (« the pages of the versions »: a
+passage for every chapter of the video and the other way round, its texts
+in three languages) and `helpCenterPages.test.ts` (« the page of a
+version »: closed passages, a passage playing from its start, `#fin`).
+
+### Neighboring pages, a set of tabs
+
+The app's bottom bar holds four tabs, not one more: Accueil (Home), Sidour,
+Étude (Study) and Profil (Profile), with the times circle in the middle (see
+"The navigation banner"). Pages that belong together therefore do not all
+have a place there, and they ended up impossible to find: reading sharing
+was only reachable from the home page, the holiday calendar through a small
+link lost under the times title. They are grouped together, where you
+already are (`PageTabs.vue`, native app only):
+
+- **Bibliothèque** (Library), **Chiourim** and **Partage** (Sharing), at the
+  top of Study: reading a text, listening to a class, sharing a reading
+  among several people;
+- **Horaires** (Times) and **Calendrier** (Calendar): today's times, or the
+  year's holidays.
+
+On the site, these tabs are not used: the banner leads there in one click
+(the holiday calendar has had its own entry there since).
+
+Three tabs did not fit with the two-tab padding: « Bibliothèque »,
+« Chiourim » and « Partage » needed about 356 px for 327 on a 375 px phone.
+Each tab therefore has 16 px of padding on each side (`px-4`), and all three
+fit in all three languages.
+
+Changing tabs makes **the white pill slide** from the tab left to the one
+touched, stretching to its width: the new tab's bar (another page, hence
+another instance) picks up the position recorded on touch. Arriving any
+other way (bottom bar, link), the pill is simply in place, without movement
+(see "Motion answers a gesture").
+
+Two rules hold there:
+
+- these are two **real pages**, not two panels. Each keeps its address, and
+  hence its shareable link, its Android back behavior and its scroll
+  restoration; the tab only links them.
+- the tabs **stand in for the title** on these pages. « Lecture »
+  ("Reading") above « Bibliothèque » said the same thing twice and cost two
+  lines at the top of a phone screen; the `h1` remains, as `sr-only`, for
+  screen readers.
+
+### A page title is centered
+
+On the site as in the app, a page's title is centered, and what serves it
+(the location the times are computed for, an explanatory sentence) stays
+centered beneath it. A page that aligned its title left while the others
+centered it gave the impression of having been forgotten.
+
+The commands that accompany it are real buttons (`btn`), centered in turn:
+as small colored links, on a phone, nobody saw that they could be touched,
+and thumbs missed them.
+
+Under the times title, the location fits on **one line**: the city name,
+which is the button that changes it, and « Ma position » ("My location"),
+which picks it up. Both are small buttons (`btn-sm`), and the second says
+only that: « Utiliser ma position » ("Use my location") and « Actualiser ma
+position » ("Update my location") wrapped the button onto the next line as
+soon as the city had a slightly long name, and the distinction only matters
+for the label read by a screen reader. If the city name still does not fit,
+it is the one that gives way, clipped, rather than the line wrapping: it is
+one of the physically fixed boxes where truncation remains allowed (see
+"Nothing gets cut off").
+
+The sentence saying what these times are and what happens to the location
+does not hold the page either: a small "i", next to the coordinates, opens
+it in a window (see "The instructions do not hold the page"). A location
+refusal, on the other hand, stays in plain view: it is urgent, and it
+changes what is displayed.
+
+In the bottom bar, the Study tab stays lit on the library, its corpora, the
+chiourim and all of sharing; the Sidour tab, on its page and on each
+liturgy text, even though these texts live under /bibliotheque
+(`config/navSections.ts`: the address decides, since RouterLink's
+`active-class` compares declared routes and not addresses). Held by
+`src/__tests__/bottomTabBar.test.ts`.
+
+### The app's home page greets; it does not pitch
+
+In the app, the home page for a signed-out visitor opens on a greeting
+(« Bonjour », « Bonsoir »: "Good morning", "Good evening"), aligned left like
+that of a signed-in visitor, and on the account buttons at regular size. The
+site's hook (big title and introductory paragraph) does not appear: whoever
+has installed the app no longer needs convincing, and those lines pushed the
+times and the three doors below the fold. The site, for its part, keeps its
+centered hook.
+
+### A list row can become a command
+
+In the app, a times row is no longer just text: touching it sets a
+reminder, pulling it to the left reveals, on the time side, a background in
+the theme color carrying a bell (see `ZmanRow.vue`). On the site, the same row stays
+text: there is nothing to schedule in a browser, and a command that leads
+nowhere would be worse than no command at all.
+
+Four rules follow, valid for any list animated this way.
+
+The gesture has three outcomes, and the finger chooses which. Held back, it
+lets the row return. Stopped midway, it opens the row onto its bell, which
+you then touch to open the settings: you have time to read what you are
+triggering. Pushed decisively, past half the row or with a quick flick, it
+acts on its own and the row closes on its result, announced by a toast. The
+shortcut rewards confidence without trapping hesitation, and it asks no
+question: the reminder it sets reuses the last delay chosen (15 minutes
+before until another one is chosen), because whoever sets reminders half an
+hour ahead wants them all that way.
+
+The revealed background is solid, in the theme color, and it occupies
+exactly the room the row frees as it moves away: there is no frame and no
+intermediate surface, and its icon sits in the middle of what was revealed,
+never straddling what remains. The corner marker, for its part, fades out
+during the gesture: placed against a drawer of the same color, it would no
+longer have been a marker but a smudge.
+
+The first decisive movement arbitrates between scrolling and swiping.
+Without this arbitration, a thumb running down the page opened rows along
+the way. And only one row stays open at a time, otherwise the list gets
+covered in half-open drawers.
+
+What a gesture has produced is seen without being read. A reminder that has
+been set marks its row with a small solid triangle in the corner, on the
+time side: a bell placed in the text would have eaten the room for the name
+on a phone, and every other row marked would have made a column of icons.
+The corner takes nobody's place and can be spotted at a glance when scanning
+the list. The triangle follows the reading direction (logical borders), so
+it switches sides in Hebrew.
+
+### Two columns on a phone, only if the second one is capped
+
+A calendar card carries two things: the holiday's name with its dates, and
+its times. Side by side on a phone, they do not fit. The longest label in
+the times column (« Allumage après la sortie du Chabbat », "Lighting after
+Chabbat ends") alone decided its width, which took the whole card: the name
+was left the width of one word, « Chabbat Roch Hachanah » came down like a
+staircase, and the two columns ended up overlapping.
+
+Hence the rule, valid for any two-column card. As long as the screen is
+narrow, the second goes under the first, separated by a rule, each time
+ending its line as on the times page. As soon as there is room (`sm`), it
+comes back alongside, but capped in width: a column that sizes itself to
+its longest label eats the card, and what you read first, the name, comes
+last.
+
+A date range, finally, writes only once what its two ends repeat: « du 1 au
+2 Tichri 5787 », and not « du 1 Tichri 5787 au 2 Tichri 5787 ». Three lines
+fewer on a phone, and nothing lost (`formatHebrewRangeStart`).
+
+### What you come looking for takes the color, solid
+
+Highlighting a card without putting color on it does not work. A tinted
+frame is one more border in a page made only of borders; a background at a
+few percent of the theme color does not stand out from the beige; and ink
+alone, which is enough to mark the day's next time in a list of rows
+(`ZmanRow`), gets lost in a list of cards, where each one already carries
+three levels of text.
+
+The calendar's next holiday therefore takes the theme tint at full strength,
+over its whole card, and its text switches to the color that is written on
+it (`on-brand`: white, or dark text in higher contrast). It is the
+only colored card on the page, and you find it without having to read.
+
+This text steps down in three tones there, as on the profile banner: the
+holiday's name and its times at full strength, the dates and time labels
+below, the Hebrew date lower still. Otherwise everything would weigh the
+same and the card would no longer read.
+
+Past dates keep their fading: fading and standing out are two opposite
+means; they do not get in each other's way.
+
+### A highlighted card can carry its object
+
+The card of the moment already says, through its color, that it is what you
+come looking for. It additionally carries the object of what it announces,
+drawn in the colors of the real thing (`CardArt.vue`, the drawings in
+`components/art`):
+
+- the **sidour**, bound in midnight-blue leather, gilt title, red ribbon,
+  for a service, the current one or the upcoming one;
+- the **moon**, at its evening phase, on the nights of the blessing: the
+  visible face, in the grays of the real one. The outlines of the seas are
+  traced from a photo of the full moon (blurred, thresholded at the darkest
+  third, edges simplified), not drawn from memory: they join in one piece,
+  from the Ocean of Storms to Fecundity, with the bright bays of Copernicus
+  and Kepler, their darker floors, Crises alone on the eastern edge, Tycho
+  and its fine rays in the southern highlands;
+- the **'hanoukkia** on the evenings of 'Hanouka;
+- the **chofar** of Sli'hot, the bell open at the top, facing forward, and
+  the mouthpiece at the bottom;
+- the **loulav and etrog**, when the Souccot holiday takes the card;
+- the **sheaf** of barley of the 'Omer;
+- the **havdala**: the braided candle, blue and white strands, several
+  wicks under a single flame, and beside it the silver cup of red wine;
+- the shelf **volume**, with the binding and title of its section, on the
+  inserts that open a section of the library: chnei mikra (Tanakh) and the
+  day's Tehilim (Tehilim). It replaces the book icon they carried on the
+  left.
+
+These colors contrast with everything else in the app, which is made only of
+theme tones: that is the point, an object recognized at a glance before the
+name has been read.
+
+- **The card does not grow for it.** The object has its own size, and it is
+  the one that slips under the bottom edge when the card is short. A first
+  version reserved an end margin for the drawing: the title wrapped, the
+  card took sixty pixels for nothing, and looked big for the sake of being
+  big. Nor does it take more than 42 % of the card's width: on a small
+  phone, it shrinks rather than eating the title.
+- **Behind the text.** The title passes in front of the object when it is
+  long; on a dark object (the book, the loulav, the candles), the card's
+  text reads as is. On a light object (the moon, the chofar), it takes a
+  halo in the card's color, and only the time line leaves it its place. A
+  service's pills (Hallel, Moussaf...) pass in front of the book.
+- **In the line-end corner** (the right in French, the left in Hebrew), and
+  **outside the card, only through the top**: the top of the book, the
+  candles and their flames, the tip of the chofar, the loulav's palm cross
+  the card's line. The moon, larger, is additionally cut by the card's edge,
+  but only below the top of the card: what sticks out at the top is a whole
+  cap, never a straight cut extended above the card. Held by
+  `src/__tests__/cardArt.test.ts`.
+- **The shape follows the day.** The moon is at its evening phase (its age
+  since the molad, `moonAge`): gibbous on the 10th of the month, nearly full
+  on the 14th, lit from the right as it is seen waxing from France; its dark
+  part is a veil barely lighter than the background, the earthshine. The
+  'hanoukkia carries as many candles as the evening counts, placed from
+  right to left, plus the chamach: box candles, in every color, and tall;
+  they are what must be seen. Lit once evening has come, unlit when the card
+  announces tonight's lighting.
+- **It rises once.** On its first appearance of the session, the object
+  rises diagonally from the bottom corner of the card, the bottom edge
+  serving as the horizon; the 'hanoukkia then lights up in the order in
+  which it is lit: the chamach, the evening's candle (the leftmost), then
+  the others toward the right. Coming back to the page finds it in place,
+  without movement (see "Motion answers a gesture": it is the only arrival
+  that moves, because it is the occasion itself that is arriving). Each card
+  has its own rise. Never in reduced motion, nor in degraded rendering
+  (`perf-lite`).
+- **In flat colors.** Two or three tones per material (the face and the
+  shadow of silver, the wax and its side, the flame and its core), never a
+  gradient.
+- **With its shadow**, like the cards: a light drop shadow sets what sticks
+  out apart from the page background. Without it, the light moon melted into
+  the beige above the card, and looked cut at the top edge.
+
+On the home page, the cards of the moment carry the same object, small, on
+their light surface: the sidour on « Faire Cha'harit » ("Pray Cha'harit"),
+the moon on the blessing of the moon, the sheaf on the counting of the
+'Omer. So do the lines under the Sidour's card: the sidour for a service,
+the havdala, the moon all through its nights; they used to carry an icon on
+the left, which said less and broke this rule. The moon takes slightly deeper tones there to stand out from the
+white.
+
+One more object is drawn in `components/art`, with these rules, and takes
+its place in `CARD_ART_GEOMETRY` (size, proportions, what sticks out at the
+top, inset from the edge).
+
+### The frames of the times page carry their object
+
+The three appointments of the times page lost their icon and took their
+object instead, in the corner of the card, next to the title only (the
+object is small, half the size of the Sidour's, so the rows keep the whole
+width):
+
+- **Chabbat** (and a holiday, `RestTimes.vue`): what comes next. The two
+  lit candles in their silver candlesticks (`ArtCandles.vue`) until the
+  entrance; the havdala once the rest has begun.
+- **The 'hamets** (`ChametzTimes.vue`): the candle, the feather and the
+  wooden spoon of the search (`ArtBedika.vue`).
+- **A fast** (`FastTimes.vue`) has no object: it is drawn in its day
+  (`FastDayBand.vue`). A band runs from two hours before to two hours after,
+  the night in deep blue with a few stars, the day in sand, and the fast as
+  a bar in the theme color from its start to its end; the hours of the
+  place that fall on a multiple of six are marked under it, and the length
+  of the fast (« 10 h 45 ») sits at the end of the title. A dawn fast shows
+  its hours of night before the sun; Tich'a beAv crosses a whole night. The
+  sky keeps its colors in every theme.
+
+### The time of a moment of prayer is a pill
+
+The times set before what is read (the start of Cha'harit, the end of the
+Chema before the Chema, the end of the 'Amida, Min'ha, Arvit, and the
+Sli'hot at the head of the Sli'hot) were a card each, with an icon and an
+« i » that unfolded the rule. Each one is now a pill in the theme color
+(`TefilaZman.vue`), like the other commands placed in a text: in a small
+disc, the sky of the moment, then what matters now.
+
+- **What the pill says follows the hour** (`services/tefilaZman.ts`):
+  « Min'ha à partir de 14:02 · dans 1 h 10 » before the window,
+  « Min'ha jusqu'à 18:51 · encore 2 h 21 » during it, « Min'ha : heure
+  passée (18:51) » after. Arvit says « de préférence avant » 'hatsot of the
+  night, then « jusqu'à » dawn. After midnight, until dawn, Arvit and the
+  Sli'hot are still those of the night that began the evening before (the
+  rule of the night, `services/nightBounds.ts`, shared by every screen).
+- **The sky of the moment** (`ArtSky.vue`): the walls of Jerusalem under
+  the sky of each prayer. The sun rising behind them for Cha'harit,
+  climbing for the Chema and the 'Amida, going down for Min'ha; the three
+  stars of Arvit; the deep night and the crescent of the Sli'hot. Flat
+  colors, the same in every theme. The skyline is the rampart and a tower
+  of the walls, nothing else: no dome behind them, which would stand for a
+  building that has no place in the sidour.
+- **Touched, it opens a sheet** (the bottom sheet of Mon parcours), closed
+  by the veil or by pulling it down, without a « Fermer » button at the
+  end: the title and the sky, then the cycle of the day (`ZmanArc.vue`).
+  The sun's course runs over the horizon, from sunrise on the left to
+  sunset on the right, and the night under it, back from sunset to
+  sunrise, so that every hour has its place and now always shows: the sun
+  by day, the moon by night. On it, the moment's window in the theme color
+  (what has passed of it a shade deeper), each landmark as a dot with its
+  short name, and the rest of the cycle as a dashed bar in the danger
+  color, « Hors de son temps ». Seen at 21:30 on Min'ha, the moon sits on
+  the dashed part, past the chkia: this is no longer its time. A small
+  legend under the drawing names the three (« Le bon moment », « Hors de
+  son temps », « Maintenant »). Then the landmarks in a list, each with its
+  time and how long until it comes, « Maintenant » in its place among
+  them, the next one in the theme color; then the rule in full.
+
+Held by `src/__tests__/tefilaZman.test.ts` (the windows, the phases, the
+night Arvit belongs to after midnight, the arc's ends).
+
+### An icon before a title must say something
+
+An icon to the left of a card title is placed only if nothing else says
+what the card is. When the card already carries its object (the sidour, the
+moon, the sheaf) or its large number on the right (the time on the times
+card, the percentage of the daily reading), the icon says it again, less
+well: a rising sun before « Faire Cha'harit » next to the book, a clock
+before « Netz haHama » next to 08:08, an hourglass before the counting of
+the 'Omer next to the sheaf. These cards therefore have none, and their
+title aligns with the edge of the card. Held, for the cards that carry their
+object, by `src/__tests__/cardArt.test.ts`.
+
+The icon stays where it alone distinguishes: the cake of a birthday and the
+candle of a leilouy nichmat among the dates you have added, the
+« Aujourd'hui » ("Today") and « Hors ligne » ("Offline") rows of the
+library, the section titles of the times. Everywhere else, the icon on the
+left of a frame is gone (see "No icon on the left of a frame").
+
+### The play triangle is centered on its weight
+
+A triangle centered on its box looks shifted toward its base: its weight is
+at a third of its width. The play icon (`play-solid`) is therefore drawn
+with its center of gravity in the middle, and its tip overflows
+accordingly. The round button carrying it centers it like any other icon,
+with no extra margin: a margin pushed it 1 to 2 px toward the tip, and the
+triangle looked shifted to the right. Held by
+`src/__tests__/playIcon.test.ts`.
+
+### The Sidour opens on the moment
+
+What is said (the tefilot, the brahot, the holiday texts) lived in three
+books of the library, mixed with what is studied. It has its own page, the
+Sidour, the second tab of the bottom bar, in the place and under the drawing
+of the former library: it was through this open book that you went to find
+the service; the gesture does not change, it just leads there faster.
+
+The page has three tiers (`SidourPage.vue`):
+
+- **the moment**, as a full-color card, the only one on the page (see "What
+  you come looking for takes the color, solid"): **one single thing**, the
+  most important at this hour. The service whose time it is, with the time
+  until which it is said and, as pills, what the day adds to it (Ya'alé
+  véyavo, Hallel, Moussaf, 'Al hanissim, Ata 'honantanou, the counting of
+  the 'Omer...), the same occasions as those that color the text (see "What
+  the day adds in a tefila"). A rare occasion goes ahead of the everyday
+  service: the lighting on an evening of 'Hanouka, the Sli'hot from 'hatsot
+  until sunrise. The blessing of the moon, on the nights it is said, comes
+  after Arvit, as in the home stack: it takes the card once Arvit is said
+  (or its time is over, at dawn), and the bedtime Chema after it, until
+  dawn (past midnight, it still counts for the evening before: said at
+  23:30, it is not offered again at 2:00): the last text of the night.
+  Arvit itself is offered until dawn, past 'hatsot too: it can still be
+  said then, and whoever said it marks it done. Between two services, the current holiday takes
+  the card if its text is said now (the loulav until chkia);
+- **only what is said now**: unlike the home deck, which announces what
+  comes next (with its « Pas encore » look), the Sidour page never puts
+  forward what cannot be said yet: not tomorrow's Cha'harit in the middle
+  of the night, not Min'ha before min'ha guedola, not tonight's lighting at
+  noon. When nothing is to be said now (between two services, or once
+  Arvit, the moon and the bedtime Chema are said), there is no card at all,
+  and the page opens on its list. Held by
+  `src/__tests__/sidourMoment.test.ts`, « only what is said now »;
+- **a service already said gives way**: checked off in Mon parcours (the
+  « trois tefilot » habit) or swiped on the home page, it no longer holds
+  the card, which goes to what is said now after it (the holiday by day;
+  the moon, then the bedtime Chema, at night), or leaves. Under an
+  occasion, it is no longer the line either (`useOfficesDone`, held by `src/__tests__/sidourMoment.test.ts`,
+  « a service already said gives way »);
+- **said with a swipe**: the card of the service whose time it is, of the
+  moon or of the bedtime Chema, is swiped right to say it is done, as in the home stack (the
+  « C'est fait » pill coming out from under its left edge, darkening past
+  110 px). It flies off to the right and the next one rises in its place;
+  under it, « Arvit : c'est fait · Annuler » for a few seconds. A holiday
+  text is not swiped. With the « trois tefilot » habit (the « Chéma du
+  coucher » habit for the bedtime Chema, counted on its evening's day even
+  after midnight), the swipe checks the habit's task; without it, the
+  device remembers it, as for the deck's extra card. The same is said
+  at the end of the service's text: the page pushed up past its end, as
+  for the day's portion (`PullToMark`, see "An open volume, its settings,
+  the reader"),
+  « Fin de l'office » (`OfficeDoneCard.vue`), which leads back to the
+  Sidour. It stays a pull, not a tap: the same gesture as the day's
+  portion. The lines under the card are swiped the same way, when what they
+  announce can be said now (havdala, the moon, the service under an
+  occasion): a line said leaves the page (`SidourLine.vue`);
+- **the moon, from nightfall**: on the nights it is said, the moon has its
+  line under the card (« Cette nuit, jusqu'au 15 'Hechvan »), as long as it
+  does not hold the card and is not marked done (by its card in the stack
+  or on this page): it comes back about ten nights a month and gets missed
+  for lack of a reminder. It is a line of its own, alongside the one below.
+  It is put forward only once it can be said: not by day, where « Ce soir »
+  announced it from the morning;
+- **one line below, at most** (besides the moon's), and only on an evening
+  of an occasion: the service under way under the lighting, the Sli'hot or
+  the moon, which preceded it in the card (not the one coming up); havdala on the evening a Chabbat or a holiday ends. On other
+  days, nothing. The card first announced up to three lines (the bedtime
+  Chema, tikoun 'hatsot, the loulav, the Hochanot): three highlights meant
+  highlighting none, and at Souccot the loulav and the Hochanot were
+  repeated above the holiday's list, which moves up just below. The service
+  alone holds the card; the rest is one gesture further down. On a motsaé
+  Chabbat of the moon, havdala and the moon are both there, one under the
+  other, until each is swiped;
+- **a search field**, under the highlighted cards and above the tools: it
+  filters the page's own texts with the library's search (Hebrew and Latin
+  names, the other names everyone types, one typo away: `searchSidour`, held
+  by `src/__tests__/sidourGroups.test.ts`). While it holds a term, its
+  results replace the tools and the list;
+- **all the texts**, in one list, without the books that separated them,
+  but not without landmarks: light subheadings by use (the services, the
+  evening, the brahot, the occasions, life stages), then the holidays at
+  the bottom. During a holiday season (from Eloul to Kippour, from Kippour
+  to Sim'hat Torah, 'Hanouka), its texts move up to the top, marked « en ce
+  moment » ("right now"). In the app, they then download on their own: they
+  must open without a network, at the synagogue as anywhere else.
+
+Between the moment and the list, a row of **tools**: the small instruments
+used while praying (see "The Sidour tools" below).
+
+The texts keep their address under /bibliotheque: it is published (the
+Sidour widget, shared links, indexed pages, synced reading positions) and an
+installed version of the app still reads it. The old lists
+/bibliotheque/sidour, /moadim and /brahot lead to /sidour (routes.ts, and
+firebase.json on the server side). The Birkat Hamazon and the brahot now
+travel with the app, like the rest of the Sidour
 (`src/datas/bundledTexts.json`).
 
-### Les outils du Sidour
+### The Sidour tools
 
-La direction du Kotel, le miroir des téfilines et, le temps de Souccot, les
-six côtés du na'anou'a s'ouvraient seulement depuis le texte où ils servent :
-le titre de la 'Amida, celui de la pose des téfilines, les brahot du loulav.
-Qui les cherchait sans passer par un office (le voyageur qui veut savoir de
-quel côté se tourner, celui qui pose ses téfilines avant d'ouvrir son sidour)
-ne les trouvait pas. La page du Sidour les réunit, sur l'app comme sur le
-site.
+The direction of the Kotel, the tefilin mirror and, during Souccot, the six
+directions of the na'anou'a could only be opened from the text where they
+are used: the title of the 'Amida, that of putting on tefilin, the brahot of
+the loulav. Whoever looked for them without going through a service (the
+traveler who wants to know which way to face, the person putting on tefilin
+before opening their sidour) could not find them. The Sidour page brings
+them together, in the app as on the site.
 
-- **La même pastille que dans le texte.** Un outil se reconnaît partout : la
-  pastille à la couleur du thème, son dessin et son nom en toutes lettres
-  (voir « Une commande posée dans un texte porte son nom »), un peu plus
-  grande puisqu'elle est seule à porter son nom. Sur la page, aucun titre de
-  passage ne précise ce qu'elle ouvre : elle prend le nom entier
-  (« Miroir des téfilines », pas « Miroir »).
-- **Une ligne qui défile**, sous l'intertitre « Outils », et non des pastilles
-  qui passent à la ligne : deux noms entiers ne tiennent pas côte à côte sur
-  un téléphone, et empilées, elles prenaient la hauteur de trois cartes. La
-  pastille coupée au bord de l'écran dit qu'il y en a d'autres ; la rangée
-  garde sa hauteur quand les outils seront cinq.
-- **Celui du moment devant**, comme le texte du moment : le miroir le matin
-  d'un jour où l'on met les téfilines (Cha'harit en cours, ou qui s'ouvre
-  dans l'heure ; ni Chabbat, ni Yom Tov, ni 'Hol hamoed, ni le 9 Av, où on
-  les met à Min'ha), les six côtés le jour où l'on prend le loulav. La
-  boussole tient la tête le reste du temps : elle sert à chaque 'Amida.
-- **Un outil de saison ne se montre qu'en saison** : les six côtés, de
-  l'entrée de Souccot à la fin de Hochana Rabba. Hors saison, ils restent au
-  texte qui les porte, comme les textes des fêtes restent en bas de la liste.
-- **Au survol, le dessin s'anime** (l'aiguille de la boussole cherche son cap,
-  le miroir pivote sur son manche), comme celui des portes de l'accueil. Au
-  toucher, la fenêtre s'ouvre aussitôt : pas d'autre mouvement à voir.
+- **The same pill as in the text.** A tool is recognizable everywhere: the
+  pill in the theme color, its drawing and its name spelled out (see "A
+  command placed in a text carries its name"), a little larger since it
+  alone carries its name. On the page, no passage title specifies what it
+  opens: it takes the full name (« Miroir des téfilines », "Tefilin mirror",
+  not « Miroir »).
+- **A scrolling row**, under the « Outils » ("Tools") subheading, and not
+  pills that wrap: two full names do not fit side by side on a phone, and
+  stacked, they took the height of three cards. The pill cut off at the
+  screen edge says there are others; the row keeps its height when there
+  are five tools.
+- **The one for the moment in front**, like the text of the moment: the
+  mirror in the morning of a day when tefilin are worn (Cha'harit in
+  progress, or opening within the hour; not Chabbat, Yom Tov, 'Hol hamoed,
+  or the 9th of Av, when they are put on at Min'ha), the six directions on
+  the day the loulav is taken. The compass leads the rest of the time: it
+  serves at every 'Amida.
+- **A seasonal tool only shows in season**: the six directions, from the
+  start of Souccot to the end of Hochana Rabba. Out of season, they remain
+  with the text that carries them, just as the holiday texts remain at the
+  bottom of the list.
+- **On hover, the drawing comes alive** (the compass needle seeks its
+  heading, the mirror pivots on its handle), like that of the home page
+  doors. On touch, the window opens immediately: no other movement to see.
 
-Les fenêtres se montent avec la page, fermées : le miroir doit demander la
-caméra dans le geste même qui l'ouvre (Safari refuse sans rien demander un
-tour de boucle plus tard), une fenêtre chargée après coup arriverait trop
-tard.
+The windows are mounted with the page, closed: the mirror must request the
+camera within the very gesture that opens it (Safari refuses without asking
+anything one loop turn later); a window loaded after the fact would arrive
+too late.
 
-Ajouter un outil : une entrée dans `src/content/sidourTools.ts`, sa fenêtre et
-son ouverture dans `SidourPage.vue` (`TOOL_OPENERS`), et, s'il a un moment ou
-une saison, sa règle dans `momentTools` (`services/sidourMoment.ts`). L'ordre
-est tenu par `src/__tests__/sidourMoment.test.ts` (« les outils du moment »,
-« la rangée d'outils »).
+Adding a tool: an entry in `src/content/sidourTools.ts`, its window and its
+opener in `SidourPage.vue` (`TOOL_OPENERS`), and, if it has a moment or a
+season, its rule in `momentTools` (`services/sidourMoment.ts`). The order is
+held by `src/__tests__/sidourMoment.test.ts` (« les outils du moment », « la
+rangée d'outils »).
 
-La recherche de la bibliothèque parcourt aussi la liturgie : qui tape
-« Birkat Hamazon » dans l'étude ne repart pas bredouille, le résultat se range
-à part, « Dans le Sidour ».
+The library search also covers the liturgy: whoever types « Birkat
+Hamazon » in Study does not leave empty-handed; the result is filed
+separately, « Dans le Sidour » ("In the Sidour").
 
-Tenu par `src/__tests__/sidourMoment.test.ts` (ce que la carte propose, à
-l'heure qu'il est) et `src/__tests__/sidourGroups.test.ts` (chaque texte
-rangé une fois et une seule, les fêtes qui remontent).
+Held by `src/__tests__/sidourMoment.test.ts` (what the card offers, at the
+current time) and `src/__tests__/sidourGroups.test.ts` (each text filed once
+and only once, the holidays that move up).
 
-### Un livre dit s'il est sur le téléphone
+### A Hebrew title is not letter-spaced
 
-Dans l'app, chaque livre de l'étagère porte dans l'angle haut de sa couverture
-une petite pastille blanche : une coche quand tout le livre est sur le
-téléphone (le même signe que sur chaque texte de sa liste), un anneau qui se
-remplit quand il ne l'est qu'en partie, rien du tout sinon. L'étagère reste
-nue tant qu'on n'a rien téléchargé ; les Tehilim, embarqués, portent leur
-coche d'emblée. La part se compte en livres du corpus, comme la liste que
-l'on trouve en l'ouvrant. Le lien l'annonce aux lecteurs d'écran
-(« Talmud, en partie sur ce téléphone »).
+The titles of the drawn books (the library shelf, the volumes of Mon
+parcours) are SVG text. As soon as an SVG text carries letter spacing
+(`letter-spacing`) or a `textLength`, WebKit (Safari, the iPhone app) places
+its letters one by one, from left to right: in Hebrew, the words read
+backward. A Hebrew title therefore never carries any; Hebrew is not
+letter-spaced anyway. Letter spacing stays for titles in Latin script, and a
+Hebrew word too long for its frame shrinks instead of tightening. Held by
+`src/__tests__/hebrewSvgTitles.test.ts`.
 
-Le bouton « Tout télécharger » ne tient plus le haut de la bibliothèque, entre
-la recherche et l'étagère, pour une action qu'on fait une fois : il devient
-une ligne en bas de page, « Hors ligne », dans le même dessin que les lignes
-d'« Aujourd'hui » (`LibraryOfflineRow.vue`). La ligne entière lance le
-téléchargement ; la corbeille est à son bout.
+### A book says whether it is on the phone
 
-Elle dit ce qui compte à chaque moment :
+In the app, each book on the shelf carries in the top corner of its cover a
+small white pill: a check mark when the whole book is on the phone (the same
+sign as on each text in its list), a ring that fills when it is only partly
+there, nothing at all otherwise. The shelf stays bare as long as nothing has
+been downloaded; the Tehilim, bundled, carry their check mark from the
+start. The share is counted in books of the corpus, like the list you find
+when opening it. The link announces it to screen readers (« Talmud, en
+partie sur ce téléphone », "Talmud, partly on this phone").
 
-- **avant**, la taille de ce qui reste, et ce qui est déjà là. C'est une
-  estimation (le poids du corpus réparti entre ses livres) : un livre n'a de
-  taille sur l'appareil qu'une fois téléchargé, et un ordre de grandeur suffit
-  à décider ;
-- **pendant**, le pourcentage en grand au bout de la ligne (voir « Le chiffre
-  en avant tombe toujours au même endroit »), le temps restant, déduit de la
-  vitesse tenue depuis le début et arrondi à cinq secondes ou à la minute pour
-  ne pas danser, et une barre fine au pied de la carte ;
-- **après**, ce que tout occupe, et la corbeille.
+The « Tout télécharger » ("Download all") button no longer holds the top of
+the library, between the search and the shelf, for an action done once: it
+becomes a row at the bottom of the page, « Hors ligne » ("Offline"), in the
+same design as the « Aujourd'hui » ("Today") rows (`LibraryOfflineRow.vue`).
+The whole row starts the download; the trash can is at its end.
 
-Un second appui pendant le lot ne relance rien (`useBookDownload`). Tenu par
-`src/__tests__/libraryOffline.test.ts` et
+It says what matters at each moment:
+
+- **before**, the size of what remains, and what is already there. It is an
+  estimate (the weight of the corpus spread across its books): a book only
+  has a size on the device once downloaded, and an order of magnitude is
+  enough to decide;
+- **during**, the percentage in large type at the end of the row (see "The
+  number up front always lands in the same place"), the time remaining,
+  deduced from the speed held since the start and rounded to five seconds
+  or to the minute so as not to jump around, and a thin bar at the foot of
+  the card;
+- **after**, what everything takes up, and the trash can.
+
+A second tap during the batch restarts nothing (`useBookDownload`). Held by
+`src/__tests__/libraryOffline.test.ts` and
 `src/__tests__/offlineDownloadAll.test.ts`.
 
-### Le mouvement répond à un geste
+### Motion answers a gesture
 
-L'app a le droit de bouger, à une condition : que ce soit en réponse à
-quelque chose qu'on vient de faire. Le mouvement dit alors que le geste a été
-reçu, et ce qu'il a produit ; il prolonge le doigt. Ce qui bouge de soi-même,
-à chaque arrivée sur une page, finit par lasser, et passe pour tapageur.
+The app is allowed to move, on one condition: that it is in response to
+something you have just done. Motion then says that the gesture was
+received, and what it produced; it extends the finger. What moves by
+itself, at every arrival on a page, ends up tiresome, and comes across as
+showy.
 
-Ce qui bouge, donc :
+What moves, then:
 
-- l'icône d'un onglet de la barre du bas qu'on touche (le livre du Sidour
-  penche et se redresse, le lecteur de l'Étude se balance) ;
-- la pastille des onglets d'une page, qui glisse jusqu'à celui qu'on a touché ;
-- une carte ou une ligne qu'on presse, qui s'enfonce à peine sous le doigt
-  (`.press-feedback`, `main.css`) ;
-- « Tout télécharger » : la flèche plonge dans son plateau au toucher, les
-  anneaux des livres se remplissent à mesure, un livre arrivé en entier fait
-  tracer sa coche et se soulève un instant de la planche, et la coche de la
-  ligne se trace à la fin du lot ; la pastille s'efface quand on supprime ;
-- la barre du lecteur des cours, qui s'agrandit en plein écran quand on la
-  touche (ou qu'on la glisse vers le haut sur un téléphone), et le plein
-  écran qui se réduit jusqu'à redevenir la barre quand on le referme (ou
-  qu'on le tire vers le bas, et il suit le doigt). Voir
+- the icon of a bottom-bar tab you touch (the Sidour book tilts and
+  straightens, the Study reader sways);
+- the pill of a page's tabs, which slides to the one touched;
+- a card or a row you press, which sinks barely under the finger
+  (`.press-feedback`, `main.css`);
+- a light of the streak you have just earned, which grows in its leaf and
+  whose halo opens (the completed task lit it);
+- « Tout télécharger »: the arrow dives into its tray on touch, the books'
+  rings fill as it goes, a book that has fully arrived traces its check mark
+  and lifts for a moment from the shelf, and the row's check mark is traced
+  at the end of the batch; the pill fades when you delete;
+- the class player bar, which expands to full screen when touched (or swiped
+  up on a phone), and the full screen that shrinks back into the bar when
+  closed (or pulled down, and it follows the finger). See
   `components/chiourim/sheetMotion.ts`.
+- a bottom sheet, which rises from below the screen when it opens and goes
+  back down when it closes, from where the finger let it go if it was
+  pulled (see "A bottom sheet moves like the system's").
 
-Ce qui ne bouge pas : l'arrivée sur une page (au-delà du simple fondu déjà en
-place), un état déjà là au chargement (un livre téléchargé hier n'anime pas sa
-coche), et tout ce qui changerait sans qu'on ait rien fait. Les livres qui se
-posent un à un sur l'étagère restent l'exception déjà admise, de loin en loin
-(voir `useShelfIntro`), avec une seconde : l'objet d'une carte mise en avant
-(le livre ou la lune qui se lèvent, la 'hanoukkia qui s'allume), une fois par
-session et par carte, parce que c'est l'occasion elle-même qui arrive (voir « Une carte
-mise en avant peut porter son objet »).
+What does not move: arriving on a page (beyond the simple fade already in
+place), a state already there at load time (a book downloaded yesterday
+does not animate its check mark), and anything that would change without
+you having done anything. The books that land one by one on the shelf
+remain the exception already allowed, now and then (see `useShelfIntro`),
+with a second one: the object of a highlighted card (the book or the moon
+rising, the 'hanoukkia lighting up), once per session and per card, because
+it is the occasion itself that is arriving (see "A highlighted card can
+carry its object"). The streak lights also live on their own, gently (see
+"The streak lights").
 
-Tout se coupe quand le système demande moins d'animations, et sur une petite
-machine (`perf-lite`) : l'état final s'affiche d'emblée, rien ne manque, seul
-le trajet disparaît (`composables/useMotion.ts`). Une exception : le passage
-de la barre du lecteur au plein écran ne se coupe qu'à la demande du système.
-Le mode allégé s'allume sur une bonne part des téléphones Android (4 Go de
-mémoire déclarés suffisent), et ce mouvement-là, bref et au geste, dit d'où
-vient le plein écran et où il repart : sans lui, le geste de le tirer vers le
-bas n'aurait plus de sens.
+Everything is cut when the system asks for fewer animations, and on a small
+machine (`perf-lite`): the final state is displayed right away, nothing is
+missing, only the path disappears (`composables/useMotion.ts`). One
+exception: the transition from the player bar to full screen is cut only at
+the system's request, and so is a bottom sheet's motion, for the same
+reason (it says where the sheet comes from and where it goes). Lite mode turns on for a good share of Android phones
+(4 GB of declared memory is enough), and this movement, brief and tied to
+the gesture, says where the full screen comes from and where it goes back
+to: without it, the gesture of pulling it down would no longer make sense.
+The home page stack is the second exception (the check mark, the next card
+rising, the ring): these cues say that a card is done and that another has
+arrived in front. The arrival of a goal you have just created is the third
+(the volume falling onto its shelf, the habit slipping into its list): it
+says where it has been filed (`prefersReducedMotion`,
+`composables/useMotion.ts`). The Kotel compass filling as you face it is the
+fourth: the jump of the color is what says "there" (see "The compass fills
+when you face the Kotel").
 
-### Ce qui est à soi se range avec le reste
+### A gesture is shown, rarely
 
-Les dates qu'on ajoute au calendrier (un anniversaire, un leilouy nichmat) ne
-font pas une liste à part, sous les fêtes ou derrière un onglet. Elles se
-rangent dans le calendrier de l'année, à leur date, entre Chemini Atzéret et
-'Hanouka s'il le faut : la question posée est la même, « qu'est-ce qui vient
-cette année », et deux listes obligeaient à la poser deux fois.
+The one motion that answers nothing: the swipe, shown. Whoever stays on the
+home page or the Sidour without a gesture may not know that the card is
+swiped. So the card that can be swiped (the stack's top card, the Sidour's
+card of the moment) leaves to the right on its own, as far as the gesture's
+threshold (120 px, a slight tilt), the « C'est fait » pill appearing whole at
+its edge as under a finger, then springs back past its place and settles:
+1.6 s, as if a finger had started the gesture and let go (`useSwipeHint`).
 
-Ce qui les distingue est le dessin qui les ouvre, pas un cadre ni une couleur
-de fond : une bougie pour un leilouy nichmat, un gâteau pour un anniversaire.
-Une carte se lit alors comme une fête, et son icône dit d'un coup d'oeil qu'
-elle est à nous. Elle est de surcroît la seule qui se touche : on retombe sur
-son réglage, là où on l'a posée.
+It must stay rare to stay useful, and not become a fidget:
 
-Mais le calendrier, on n'y va pas tous les jours, et une date qu'on a pris la
-peine d'inscrire mérite de venir au-devant : elle paraît sur l'accueil la
-semaine où elle arrive, dans la colonne du moment, avec le sidour de l'office
-et la bénédiction de la lune, puis s'efface le reste de l'année. Trois au
-plus : au-delà, ce n'est plus un rappel mais une liste, et la liste a sa place
-dans le calendrier.
+- only to whoever has not swiped (done, later, a wallet card, a line of the
+  Sidour) on this device for three days, or ever: whoever swipes knows;
+- at most once a day, wherever it played, and once per visit of the page;
+- after eight seconds without a touch, a key or a scroll, the page in view;
+  never under a tip or the introduction, never on a card that cannot be
+  swiped (a service whose time has not come), nor in the home page's edit
+  mode, nor while the Sidour's search holds a term;
+- never when less motion is asked for, nor on a small machine (`perf-lite`).
 
-Une date pareille survit à un téléphone : elle suit le compte, et se pose donc
-aussi bien depuis le site. Ce qui reste propre à l'app, c'est le rappel, que
-seul un téléphone peut faire sonner : son réglage ne paraît pas là où il ne
-tiendrait pas parole.
+Held by `src/__tests__/swipeHint.test.ts`.
 
-Elle ne s'efface pas non plus d'un doigt qui glisse : la corbeille pose la
-question, avec le nom de la date, avant d'agir (`useConfirm`). C'est la règle
-de tout ce qui part sans retour, et seulement de cela : ce qu'on peut refaire
-d'un geste, une case cochée, un rappel posé, ne se fait pas confirmer, sans
-quoi la question ne voudrait plus rien dire.
+### Touch answers
 
-### Une date se saisit comme on la connaît
+The phone answers the finger when something happens (`services/haptics.ts`),
+with four kinds of feedback, always the same:
 
-Une date personnelle revient à sa date hébraïque, et c'est elle qu'on demande
-d'abord : le jour et le mois, sans année. Mais beaucoup ne connaissent que la
-date civile d'une naissance ou d'un décès. Un bouton sous les deux listes,
-« Saisir la date civile », ouvre le calendrier de la maison, année comprise
-(la liste des années remonte jusqu'en 1900, une date de naissance va plus
-loin qu'une date limite) ; la date hébraïque se calcule et s'affiche sous le
-champ, et c'est elle seule qui s'enregistre. Le formulaire ne change pas de
-nature, il gagne un chemin, et l'on en revient d'un geste par le même bouton.
+- **done** (two beats, the system's "success"): a task done, via the stack,
+  the wallet, the sheet, a program's portion, the player's ring or a day's
+  leaf; a section of a reading chain marked read; a goal added; a streak
+  light earned; facing the Kotel on the compass; a compass calibration that
+  takes;
+- **undone** (one light beat): a task unchecked or postponed, a section set
+  back to unread;
+- **threshold** (barely): during a gesture, the moment when, released, it
+  would act (the card or row swiped far enough, the stack pulled down far
+  enough, the ring full), the day thread's dot moving from one marker to
+  the next, the volume you have just created touching its shelf, a home
+  page block changing place, a unit box touched, the wall opening as you
+  pinch, the Kotel compass's arrow crossing a ten-degree notch as it comes
+  close; at most one beat every 60 ms;
+- **long press** (one firm beat): a card's sheet, the home page setting.
 
-Une date civile ne donne pas sa date hébraïque à coup sûr : le jour hébraïque
-commence au coucher du soleil. Toute saisie dans ce sens porte donc un
-interrupteur « Après le coucher du soleil », éteint par défaut, plutôt que de
-laisser un leilouy nichmat se graver avec un jour d'écart.
+In the app, it is the phone's motor (`@capacitor/haptics`), which follows
+the system setting; on the site, the browser's vibration where it exists
+(Android), nothing on iPhone, which does not offer it to the web. Feedback
+that fails stays silent without hindering the gesture. Held by
+`src/__tests__/haptics.test.ts`.
 
-La date civile sait aussi ce que la date hébraïque seule ne dit pas : l'année.
-Une date tombée en Adar I d'une année à treize mois s'enregistre comme telle
-(`firstAdar`), et revient en Adar I ces années-là, non en Adar II, un mois
-après son jour. Le choix du mois ne propose toujours qu'un Adar, celui de la
-date qu'on pose ; « Adar I » ne s'y ajoute que pour la date qui en vient, et
-la liste la nomme de même (`hebrewDateConverter.test.ts`,
+### What is yours is filed with the rest
+
+The dates you add to the calendar (a birthday, a leilouy nichmat) do not
+form a separate list, under the holidays or behind a tab. They are filed in
+the year's calendar, on their date, between Chemini Atzéret and 'Hanouka if
+need be: the question asked is the same, "what is coming this year", and
+two lists forced you to ask it twice.
+
+What distinguishes them is the drawing that opens them, not a frame or a
+background color: a candle for a leilouy nichmat, a cake for a birthday. A
+card then reads like a holiday, and its icon says at a glance that it is
+ours. It is moreover the only one that can be touched: you land back on its
+setting, where you put it.
+
+But the calendar is not somewhere you go every day, and a date you took the
+trouble to enter deserves to come forward: it appears on the home page in
+the week it arrives, in the column of the moment, with the service's sidour
+and the blessing of the moon, then fades for the rest of the year. Three at
+most: beyond that, it is no longer a reminder but a list, and the list
+belongs in the calendar.
+
+Such a date outlives a phone: it follows the account, and can therefore be
+added from the site just as well. What remains specific to the app is the
+reminder, which only a phone can ring: its setting does not appear where it
+could not keep its word.
+
+Nor is it deleted by a sliding finger: the trash can asks the question, with
+the date's name, before acting (`useConfirm`). This is the rule for
+everything that goes away with no way back, and only for that: what can be
+redone with a gesture, a checked box, a reminder set, is not asked for
+confirmation, otherwise the question would no longer mean anything.
+
+### A date is entered the way you know it
+
+A personal date recurs on its Hebrew date, and that is what is asked for
+first: the day and the month, without the year. But many people only know
+the civil date of a birth or a death. A button under the two lists,
+« Saisir la date civile » ("Enter the civil date"), opens the house
+calendar, year included (the list of years goes back to 1900; a birth date
+goes further back than a deadline); the Hebrew date is computed and shown
+under the field, and it alone is saved. The form does not change its
+nature; it gains a path, and you come back from it with one gesture through
+the same button.
+
+A civil date does not give its Hebrew date with certainty: the Hebrew day
+begins at sunset. Any entry in this direction therefore carries a switch
+« Après le coucher du soleil » ("After sunset"), off by default, rather than
+letting a leilouy nichmat be engraved one day off.
+
+The civil date also knows what the Hebrew date alone does not tell: the
+year. A date that fell in Adar I of a thirteen-month year is saved as such
+(`firstAdar`), and comes back in Adar I in those years, not in Adar II, a
+month after its day. The month picker still offers only one Adar, the one of
+the date being set; « Adar I » is added only for the date that comes from
+it, and the list names it likewise (`hebrewDateConverter.test.ts`,
 `occasionCivilEntry.test.ts`).
 
-Pour un leilouy nichmat, une ligne sous l'intitulé de la date dit laquelle
-poser : celle du décès, d'où se comptent les années. Seule la première fait
-exception : quand le décès vient d'arriver, la première année se compte du
-jour de l'enterrement. La ligne ne paraît que pour ce choix ; elle ne dit
-rien à qui inscrit un anniversaire (`occasionCivilEntry.test.ts`).
+For a leilouy nichmat, a line under the date's label says which one to
+enter: the date of death, from which the years are counted. Only the first
+one is an exception: when the death has just occurred, the first year is
+counted from the day of the burial. The line appears only for this choice;
+it says nothing to someone entering a birthday
+(`occasionCivilEntry.test.ts`).
 
-Le même calcul sert le convertisseur du calendrier, à côté de « Mes dates » :
-une fenêtre, trois onglets nommés par ce qu'on connaît déjà (une date
-hébraïque, une date civile, la naissance d'un enfant pour sa bar-mitsvah). La
-réponse se lit dans un bloc de surface douce, sous le formulaire, sans bouton
-à presser : elle change avec chaque réglage. Ce n'est pas une page de plus,
-c'est une question qu'on se pose devant le calendrier, et elle s'y pose.
+The same computation serves the calendar's converter, next to « Mes dates »
+("My dates"): a window, three tabs named after what you already know (a
+Hebrew date, a civil date, a child's birth for their bar-mitsvah). The answer
+reads in a soft-surface block, under the form, with no button to press: it
+changes with each setting. It is not one more page; it is a question you ask
+yourself in front of the calendar, and it is asked there.
 
-### Un choix ne s'oublie pas d'une année à l'autre
+### A choice is not forgotten from one year to the next
 
-Le convertisseur garde le jour et le mois **choisis** à part de ce qu'il
-montre pour l'année en cours. Une année qui n'a pas ce mois ou ce jour montre
-le plus proche (Adar II devient Adar une année ordinaire, le 30 'Hechvan
-devient le 29 quand le mois n'en a que 29), et l'année suivante retrouve le
-choix : le 14 Adar II revient en Adar II, le 30 au 30. Ramener le choix sur
-place l'effaçait ; trois flèches plus loin, Pourim était devenu Pourim Katan.
+The converter keeps the **chosen** day and month separate from what it shows
+for the current year. A year that lacks that month or that day shows the
+nearest one (Adar II becomes Adar in a regular year, 30 'Hechvan becomes the
+29th when the month only has 29 days), and the following year finds the
+choice again: 14 Adar II comes back in Adar II, the 30th on the 30th.
+Bringing the choice back in place erased it; three arrows later, Pourim had
+become Pourim Katan.
 
-Adar choisi dans une année ordinaire se lit comme Adar II les années à treize
-mois : c'est la règle des dates personnelles et de hebcal pour les
-anniversaires, et Pourim y tombe. Adar I choisi dans une année à treize mois
-reste Adar I. Tenu par `src/__tests__/dateConverterChoice.test.ts`.
+Adar chosen in a regular year reads as Adar II in thirteen-month years: that
+is the rule for personal dates and hebcal's rule for birthdays, and Pourim
+falls there. Adar I chosen in a thirteen-month year stays Adar I. Held by
+`src/__tests__/dateConverterChoice.test.ts`.
 
-### Une recherche trouve ce qu'on voulait dire
+### A search finds what you meant
 
-Un même nom s'écrit de dix façons : « Chabbat », « Shabbat », « Shabat » ;
-« Berakhot », « Brakhot », « Brahot » ; « Pessa'him », « Pesachim ». Le
-catalogue lui-même mélange l'anglais de Sefaria et le français. Une barre de
-recherche qui ne rend que la graphie exacte ne trouve donc que ceux qui ont
-deviné la nôtre, et répond « aucun résultat » à tous les autres.
+The same name is spelled ten ways: « Chabbat », « Shabbat », « Shabat »;
+« Berakhot », « Brakhot », « Brahot »; « Pessa'him », « Pesachim ». The
+catalog itself mixes Sefaria's English and French. A search bar that only
+returns the exact spelling therefore only finds those who guessed ours, and
+answers "no results" to everyone else.
 
-Toutes les barres du site (bibliothèque, lecture du jour, chaînes de lecture
-et leurs textes, chiourim, villes des horaires, invités, administration)
-passent par la même recherche, `services/fuzzySearch`, qui répond en trois
-rangs :
+All the site's search bars (library, daily reading, reading chains and
+their texts, chiourim, cities for the times, guests, administration) go
+through the same search, `services/fuzzySearch`, which answers in three
+tiers:
 
-1. le texte tel quel, sans casse, accents, apostrophes ni voyelles
-   hébraïques ;
-2. sa clé phonétique, où les graphies d'un même son se confondent (ch, sh,
-   kh et h ; tz et ts ; b et v ; k, c et q ; le e du chva qu'on écrit ou
-   non ; les lettres doublées) ;
-3. la même clé à une ou deux fautes de frappe près, selon sa longueur.
+1. the text as is, ignoring case, accents, apostrophes and Hebrew vowels;
+2. its phonetic key, where the spellings of a single sound merge (ch, sh,
+   kh and h; tz and ts; b and v; k, c and q; the e of the chva whether
+   written or not; doubled letters);
+3. the same key within one or two typos, depending on its length.
 
-Le troisième rang ne parle que faute de mieux : dès qu'un résultat répond aux
-deux premiers, les approchants se taisent. Sans quoi « bava » ramènerait
-« Shabbat », à une lettre près, et la liste perdrait sa franchise.
+The third tier only speaks for lack of anything better: as soon as a result
+matches the first two, the near matches stay silent. Otherwise « bava »
+would bring back « Shabbat », one letter off, and the list would lose its
+straightforwardness.
 
-Plusieurs mots se cherchent chacun de leur côté, dans n'importe quel ordre, et
-tous doivent répondre ; un nombre se cherche comme un nombre (« 23 » trouve
-le Tehilim 23, jamais le 123 ni le 24). Deux lettres ne comptent qu'en début
-de mot, et une description ne s'explore que par débuts de mots, sans fautes :
-sur une phrase entière, tout répondrait à tout. La clé phonétique, elle aussi,
-ne se cherche qu'à partir d'un début de mot (« babametsia », tapé d'un trait,
-trouve Bava Metzia) : au milieu d'un mot, « chabbat » tombait dans le
-« Ahavat » du Chaar Ahavat Hachem (tenu par `fuzzySearch.test.ts`).
+Several words are each searched on their own, in any order, and all must
+match; a number is searched as a number (« 23 » finds Tehilim 23, never 123
+or 24). Two letters only count at the start of a word, and a description is
+only explored by word beginnings, with no typos: across a whole sentence,
+everything would match everything. The phonetic key, too, is only searched
+from the start of a word (« babametsia », typed in one go, finds Bava
+Metzia): in the middle of a word, « chabbat » landed in the « Ahavat » of
+Chaar Ahavat Hachem (held by `fuzzySearch.test.ts`).
 
-Ce que la phonétique ne devine pas s'écrit : « Genèse » pour Berechit,
-« Maariv » pour Arvit, « Psaume 23 », les noms hébreux des parachiot
-(`datas/catalogAliases`), « London » ou « ירושלים » pour les villes
-(`datas/cityAliases`). Ces autres noms ne s'affichent jamais, ils ne servent
-qu'à trouver. Quand quelqu'un ne trouve pas un texte qu'il cherchait, c'est
-là qu'on ajoute le mot qu'il a tapé.
+What phonetics cannot guess is written down: « Genèse » for Berechit,
+« Maariv » for Arvit, « Psaume 23 », the Hebrew names of the parachiot
+(`datas/catalogAliases`), « London » or « ירושלים » for cities
+(`datas/cityAliases`). These other names are never displayed; they only
+serve for finding. When someone cannot find a text they were looking for,
+that is where the word they typed gets added.
 
-La bibliothèque garde l'ordre du catalogue, ses résultats se rangeant par
-corpus et par livre ; les autres listes rangent du plus pertinent au moins
-pertinent, le nom qui commence par la recherche en tête (« lon » : Londres
-avant Toulon).
+The library keeps the catalog order, its results grouped by corpus and by
+book; the other lists sort from most to least relevant, the name that starts
+with the query first (« lon »: Londres before Toulon).
 
-### Trois onglets de réglages, trois questions
+### Three settings tabs, three questions
 
-Les réglages ne font pas une seule liste. **Apparence** répond à « à quoi
-cela ressemble » (thème, polices, taille du texte), **Notifications** à « ce
-qui sonne », **Préférences** à « comment l'application se comporte » : l'avis
-suivi pour les horaires, le défilement automatique, et ce qui viendra s'y
-ranger. Un même écran mêlant les trois obligeait à lire toute la page pour
-trouver la ligne qu'on cherchait.
+The settings do not form a single list. **Appearance** answers "what it
+looks like" (theme, fonts, text size), **Notifications** "what rings",
+**Preferences** "how the application behaves": the opinion followed for the
+times, auto-scroll, and whatever will come to be filed there. A single
+screen mixing all three forced you to read the whole page to find the line
+you were looking for.
 
-Ce qui atterrit dans Préférences y arrive en **section**, avec son titre, et
-la section est faite de LIGNES séparées d'un filet, comme la liste des
-horaires. Pas de carte : une carte répond à une question qu'on est venu poser
-(voir « Le cadre se mérite »), un réglage est une ligne qu'on touche. Mises en
-cartes, trois sections empilées sur un fond beige donnaient trois boîtes
-blanches à la suite, et l'onglet ne fera que s'allonger. Les sections se
-séparent du même filet que leurs lignes.
+What lands in Preferences arrives as a **section**, with its title, and the
+section is made of ROWS separated by a rule, like the list of times. No
+card: a card answers a question you came to ask (see "The frame must be
+earned"); a setting is a row you touch. Put in cards, three sections stacked
+on a beige background gave three white boxes in a row, and the tab will only
+get longer. The sections are separated by the same rule as their rows.
 
-### Le profil de l'app est une liste, pas un menu
+### The app profile is a list, not a menu
 
-Sur le site, le profil est un menu à gauche et un panneau à droite : il y a la
-place, et un clic change de panneau. Posé tel quel sur un téléphone, ce menu
-passait en tête de page, le panneau dessous, et chaque onglet faisait défiler
-jusqu'à son contenu : on ne savait jamais sur quel onglet on était, ni ce qui
-était réglé sans l'ouvrir. L'app a donc son propre profil
-(`NativeProfileHome.vue`), rangé comme les réglages d'un téléphone ; le site
-garde le sien, qui lui convient.
+On the site, the profile is a menu on the left and a panel on the right:
+there is room, and a click switches panels. Placed as is on a phone, that
+menu went to the top of the page, the panel below, and each tab scrolled
+down to its content: you never knew which tab you were on, nor what was set
+without opening it. The app therefore has its own profile
+(`NativeProfileHome.vue`), organized like a phone's settings; the site keeps
+its own, which suits it.
 
-- **Une page de lignes, rangées par groupe.** Mes lectures (les raccourcis),
-  Réglages (apparence, langue, notifications, préférences), Mon compte
-  (sécurité, déconnexion), Aide, Informations. Chaque groupe est un panneau
-  (`SettingsGroup`), une surface sans `card-hover`, et ses lignes
-  (`SettingsRow`) vont d'un bord à l'autre, séparées d'un filet. Le titre du
-  groupe s'écrit en bas de casse, au-dessus.
-- **Une ligne dit où elle mène et ce qui y est réglé.** Au bout, avant le
-  chevron : « Océan · Système », « Français », « 2 rappels », « Rav Posen ».
-  On lit l'état sans ouvrir la page. Ce qui ne va pas le dit à la place du
-  nombre : des notifications bloquées par le téléphone s'annoncent
-  « Bloquées », en ambre.
-- **Trois formes, une allure.** Une page de l'app (chevron), une action sur
-  place (sans chevron : rien ne s'ouvre derrière, « Revoir l'introduction »),
-  la déconnexion (en rouge). Chaque ligne fait au moins 52 px de haut et
-  répond au toucher par un fond, faute de survol.
-- **La déconnexion pose la question, dans l'app seulement.** Sur le site,
-  c'est un bouton à part ; ici, une ligne parmi d'autres, qu'un pouce touche
-  par mégarde en visant sa voisine, et se reconnecter demande un mot de passe
-  et le réseau. Elle ne part donc pas sans retour, mais son retour coûte trop
-  pour la règle « ce qui se refait d'un geste ne se confirme pas ».
-- **Les sous-pages sont de vraies pages** (`NativeProfileSection.vue`,
+- **Mon parcours, on the circle and in a row.** Signed in, the streak pill
+  (the light and the count of consecutive days, together, on a light
+  background) straddles the bottom of the initial circle, on the end side,
+  set off by a border in the page color (`ProfileStreakPill.vue`); touching
+  it opens « Mes lumières » ("My lights"). The « Mon parcours » row, at the
+  top of Mes lectures ("My readings") and there for everyone, leads to the
+  page and tells the day: « 1 sur 4 » ("1 of 4") at the end, and its bar
+  under the name (`ProfileParcoursRow.vue`, the `progress` option of
+  `SettingsRow`).
+- **The site's profile banner** (`ProfileHeader.vue`): flat, in the theme
+  tint. At the top, the initial circle (as soon as there is room; on a
+  phone, the name takes the line), the name and, next to it, the same streak
+  pill, the address below. On the light pill, the light reads whatever its
+  color (a golden menorah got lost in the orange), and so does the count.
+  Below, without a rule, across the full width: the day (« Aujourd'hui, 1
+  sur 4 », "Today, 1 of 4", the light and the record), « Mon parcours », and
+  the bar (`ProfileParcours.vue`). All in the banner's ink, in three tones.
+- **A page of rows, grouped.** Mes lectures (the shortcuts), Réglages
+  (Settings: appearance, language, notifications, preferences), Mon compte
+  (My account: security, sign-out), Aide (Help: the help center and « Nous
+  écrire »), Informations. Each group is
+  a panel (`SettingsGroup`), a surface without `card-hover`, and its rows
+  (`SettingsRow`) run edge to edge, separated by a rule. The group's title is
+  written in lowercase, above.
+- **A row says where it leads and what is set there.** At the end, before
+  the chevron: « Océan · Système », « Français », « 2 rappels » ("2
+  reminders"), « Rav Posen ». You read the state without opening the page.
+  What is wrong says so in place of the number: notifications blocked by the
+  phone announce themselves as « Bloquées » ("Blocked"), in amber.
+- **Three forms, one look.** An app page (chevron), an in-place action (no
+  chevron: nothing opens behind it, « Gérer les cookies », "Manage
+  cookies"), sign-out (in red). Each row is at least 52 px tall
+  and responds to touch with a background, in the absence of hover.
+- **Sign-out asks the question, in the app only.** On the site, it is a
+  separate button; here, a row among others, which a thumb touches by
+  accident when aiming at its neighbor, and signing back in requires a
+  password and a network. So it is not irreversible, but undoing it costs
+  too much for the rule "what can be redone with a gesture is not
+  confirmed".
+- **The sub-pages are real pages** (`NativeProfileSection.vue`,
   `/profile/appearance`, `/profile/language`, `/profile/notifications`,
-  `/profile/preferences`, et pour un compte `/profile/account`,
-  `/profile/security`) : leur adresse, leur retour Android, leur glissement
-  iOS. Un lien discret en haut (« Profil », ou « Réglages » sans compte)
-  remonte l'historique plutôt que d'en empiler, et le titre est centré. Elles
-  reprennent les réglages du site tels quels : seule la façon d'y arriver
-  change. L'onglet de la barre du bas reste allumé dessus (`activeOn`).
-- **La langue a sa ligne.** Sur le site, elle ouvre l'onglet Apparence ; dans
-  l'app, on la change rarement, et trois langues se lisent mieux en liste
-  cochée qu'en tuiles (`AppearanceSettings`, `with-language` à faux).
-- **L'identité en tête, sans bandeau.** Connecté : un rond à l'initiale, de la
-  couleur du thème (la seule touche pleine de la page), le nom, l'adresse et
-  « Modifier mon profil ». Sans compte : le titre « Réglages » et une carte
-  qui propose le compte, deux boutons, sans insister.
-- **Le pied de page du site finit la page,** en petit : qui fait l'app, ses
-  réseaux et la version installée, qu'on demande à qui écrit pour un bug.
+  `/profile/preferences`, and for an account `/profile/account`,
+  `/profile/security`): their own address, their Android back behavior,
+  their iOS swipe. A discreet link at the top (« Profil », or « Réglages »
+  without an account) goes back in the history rather than stacking it, and
+  the title is centered. They reuse the site's settings as they are: only
+  the way of getting there changes. The bottom bar tab stays lit on them
+  (`activeOn`).
+- **Language has its own row.** On the site, it opens the Appearance tab; in
+  the app, it is rarely changed, and three languages read better as a
+  checked list than as tiles (`AppearanceSettings`, `with-language` set to
+  false).
+- **Identity at the top, without a banner.** Signed in: an initial circle,
+  in the theme color (the only solid touch on the page), the streak light
+  straddling it, the name, the address and « Modifier mon profil » ("Edit my
+  profile"). Without an account: the title « Réglages » and a card offering
+  an account, two buttons, without insisting.
+- **The site footer ends the page,** in small type: who makes the app, its
+  social networks and the installed version, which we ask for from anyone
+  writing about a bug.
 
-Le test `nativeProfile.test.ts` tient la page : ce qui paraît avec et sans
-compte, les sous-pages où mène chaque ligne, l'état porté au bout.
+The test `nativeProfile.test.ts` holds the page: what appears with and
+without an account, the sub-pages each row leads to, the state shown at the
+end.
 
-### Ce qui ne se modifie pas n'a pas l'air d'un champ
+### A message thread reads like a conversation
 
-Un cadre de champ (`.field`) promet qu'on peut écrire dedans. Dans le profil,
-l'adresse email et l'identifiant du compte en portaient un sans pouvoir se
-modifier, et ils étaient touchés à répétition (audit PostHog d'octobre 2026,
-2.7). Ils se lisent désormais comme un texte, sous leur étiquette ; seul le
-nom affiché garde son champ, puisqu'il se modifie. L'identifiant se
-sélectionne d'un appui, pour qui doit le copier en écrivant à l'équipe.
+« Nous écrire » ("Write to us", `/contact`) and a message's sheet in the
+backoffice show the same thread, through the same component
+(`SupportConversation.vue`), like a messaging app: each message in a flat
+bubble (surface radius, `rounded-control`), those of the viewer on the end
+side, on the theme tint at 15 %, those of the other party on the start side,
+on `surface-soft`. The time reads in small type in the bubble, the day as a
+separator when it changes, and the other side's name only on the first
+message of a run. The person's line breaks are kept.
 
-### Supprimer son compte se confirme avec ce qui l'a ouvert
+- **A thread has its own page.** The person's page lists their messages as
+  cards: the kind (in gray), the state and, when applicable, « Nouvelle
+  réponse » ("New reply") on the solid tint (the only pill that demands
+  attention), the first line of the message, then the beginning of our last
+  reply. The whole card opens the thread's page (`/contact/:id`), without an
+  arrow. Expanding cards in place put several conversations and several
+  reply fields on the same page.
+- **A thread's page is a messaging app.** In the app, it takes the whole
+  screen, bottom bar included: a fixed header (back, subject on one line,
+  kind and state below, « Détails » ("Details")), the thread scrolling on
+  its own and opening on the last message (a short thread sits at the
+  bottom, against the compose bar), and the compose bar fixed at the bottom
+  (a
+  rounded field that grows with the text up to six lines, the round send
+  button beside it), which stays above the keyboard. On the site, the same
+  messaging app fits in a card on the page. There is no state frame above
+  the thread: the state is told like a line of the messaging app, as a gray
+  pill centered under the last message (« Bien reçu. Nous le lirons et vous
+  répondrons ici. », "Received. We will read it and reply to you here."). What
+  the person sent and how the reply will reach them open through « Détails »,
+  in a window.
+- **The state speaks to whoever reads it.** The person sees « Envoyé »
+  ("Sent"), « En cours » ("In progress"), « Répondu » ("Replied"),
+  « Terminé » ("Closed"); the team sees « À traiter » ("To handle") in place
+  of « Envoyé », in amber, like everything awaiting a decision in the
+  backoffice (`AdminSupportStatus.vue`, the tones of `AdminStatus`). In the
+  backoffice, the kind (idea, bug, error) stays gray: on the default theme,
+  the theme tint and amber blended together, and only the status should draw
+  the eye.
+- **An unread reply is counted on the profile tab.** In the app, the bottom
+  bar carries on the profile icon (or the settings icon, without an account)
+  a pill with its number, on the theme tint, set off by a border in the bar's
+  color; the profile's « Nous écrire » row says « 1 nouvelle réponse » ("1
+  new reply"). Opening the thread turns both off.
+- **Before sending, you know where the reply will arrive.** Under the
+  backoffice reply field, a line says so (in the app with a notification,
+  without one, by email only, nowhere), and the buttons that would have no
+  effect do not appear.
 
-Firebase n'accepte la suppression d'un compte qu'après une connexion de
-moins de cinq minutes. Google et Apple se confirment par leur propre fenêtre ;
-un compte à mot de passe n'avait, lui, aucun moyen de le faire depuis l'écran,
-et devait se déconnecter puis se reconnecter. La confirmation de suppression
-lui demande donc son mot de passe (« Mot de passe actuel »), et le bouton
-reste éteint tant qu'il est vide. Tenu par
-`src/__tests__/accountDeletion.test.ts`.
+### What cannot be edited does not look like a field
 
-### Un geste qui surprend doit pouvoir se couper
+A field frame (`.field`) promises that you can type in it. In the profile,
+the email address and the account ID carried one without being editable,
+and they were tapped repeatedly (PostHog audit of October 2026, 2.7). They
+now read as text, under their label; only the display name keeps its field,
+since it can be edited. The ID is selected with one tap, for whoever needs
+to copy it when writing to the team.
 
-Le double appui qui lance le défilement automatique se fait tout seul : deux
-appuis rapprochés sur un téléphone, cela arrive, et le texte se met à
-descendre sans qu'on sache d'où cela vient. Un interrupteur des Préférences le
-retire alors complètement, geste compris, plutôt que de laisser chercher
-comment l'arrêter à chaque fois.
+### Deleting your account is confirmed with what opened it
 
-Ce n'est pas la même chose que d'éteindre une fonctionnalité par défaut :
-elle reste proposée à tous, et seul qui s'en plaint la coupe. Ce réglage-là
-est gardé sur l'appareil, et deux fois plutôt qu'une (voir
-docs/app-native.md) : un réglage posé pour ne PLUS être surpris ne doit pas
-revenir tout seul au lancement suivant.
+Firebase only accepts deleting an account after a sign-in less than five
+minutes old. Google and Apple confirm through their own window; a password
+account, however, had no way to do so from the screen, and had to sign out
+and sign back in. The deletion confirmation therefore asks for its password
+(« Mot de passe actuel », "Current password"), and the button stays disabled
+as long as it is empty. Held by `src/__tests__/accountDeletion.test.ts`.
 
-### Une permission se demande après un geste, jamais en fond
+### A gesture that surprises must be able to be turned off
 
-Le dialogue d'une permission du système ne surgit qu'après un geste qui la
-réclame : toucher « Télécharger », activer un rappel. Une tâche de fond qui
-en aurait besoin attend qu'elle soit accordée, sans la demander. Sous
-Android 10, la mise à jour silencieuse du Sidour faisait ainsi surgir la
-permission de stockage à l'ouverture d'un office, sans que personne n'ait
-rien demandé (`docs/app-native.md`). Et un refus se dit pour ce qu'il est,
-avec l'endroit où revenir dessus, plutôt que d'envoyer vérifier la connexion.
+The double tap that starts auto-scroll happens by itself: two taps close
+together on a phone happen, and the text starts moving down without anyone
+knowing why. A switch in Preferences then removes it completely, gesture
+included, rather than leaving people to figure out how to stop it every
+time.
 
-### La boussole se demande en l'ouvrant, dit sa précision, et se tient à plat
+This is not the same as turning a feature off by default: it remains
+offered to everyone, and only whoever complains turns it off. That setting
+is kept on the device, and twice rather than once (see docs/app-native.md):
+a setting made in order NOT to be surprised anymore must not come back by
+itself at the next launch.
 
-La boussole du Kotel (`KotelCompass.vue`) envoyait parfois prier de travers
-sans que rien ne le dise. Trois règles en sont sorties.
+### A double tap is two taps on a still page
 
-- **La permission part avec le geste qui ouvre la fenêtre.** iOS ne donne
-  l'orientation qu'après un geste ; la fenêtre la demandait un tour de boucle
-  trop tard, Safari refusait sans rien demander, et il fallait toucher
-  « Activer la boussole » juste après avoir touché « Direction du Kotel ».
-  La fenêtre démarre désormais la boussole dans le geste même (un `watch`
-  synchrone, comme le miroir des téfilines pour la caméra). Quand le
-  bouton reste nécessaire (un geste qui n'a pas porté), il se pose **sur le
-  cadran éteint** (grisé, flou, la flèche retirée), et non sous lui : un
-  cadran qui a l'air de marcher ne fait chercher aucun bouton, et sa flèche,
-  figée nord en haut, enverrait du mauvais côté.
-- **La précision se voit, et se rétablit.** Sous le cadran, trois barres
-  comme celles du réseau et un mot (bonne, moyenne, faible), chiffré en
-  degrés quand l'appareil le donne (Safari). Sur le cadran, un halo de la
-  couleur de la flèche couvre le secteur où se trouve le Kotel : étroit, on
-  suit la flèche ; large, il faut calibrer. « Calibrer » ouvre, à la place du
-  cadran, un téléphone qui décrit un 8 et les trois gestes à faire ; la
-  précision s'y suit en direct jusqu'à « La boussole est calibrée ». La
-  commande est pleine quand la précision est faible, discrète sinon, et
-  reste proposée quand l'appareil ne dit rien de sa précision (Chrome sur le
-  site) : « La flèche vous semble fausse ? ». Le niveau faible s'écrit en
-  ambre, la teinte d'avertissement déjà employée par les informations. D'où vient la précision :
-  `webkitCompassAccuracy` sur iOS, le statut d'étalonnage du magnétomètre
-  dans l'app Android (plugin PjCompass, `docs/app-native.md`).
-- **Le cadran penche à l'opposé du téléphone.** Il reste à l'horizontale,
-  comme la rose d'une boussole de marine sur son cardan : le haut du
-  téléphone relevé, le haut du cadran s'enfonce dans l'écran ; à plat, il se
-  présente de face. On a envie de le redresser, et on pose le téléphone.
-  L'inclinaison suit la main (c'est elle qui la produit, voir « Le mouvement
-  répond à un geste »), plafonnée à 55° pour que la flèche reste lisible ;
-  la consigne « Tenez le téléphone à plat » devient « Le téléphone est à
-  plat » quand il l'est. Un niveau à bulle au centre a été écarté : moins
-  visible, et un point de plus sur un cadran qui n'a qu'une chose à montrer.
+The switch is for whoever still gets surprised; most of the surprises came
+from the gesture itself. It used to be enough for two fingers to be lifted
+close together, in time and space, and that is also what two quick swipes
+in a row look like: people scrolling a little fast started the auto-scroll
+without wanting to. A double tap (`useAutoScroll`) is now:
 
-Tenu par `src/__tests__/kotelCompass.test.ts` (la permission demandée dans
-le geste d'ouverture, le bouton posé sur le cadran éteint, la précision et le
-calibrage, l'inclinaison) et `src/__tests__/nativeCompassAccuracy.test.ts`
-(le pont vers PjCompass).
+- two real taps: each finger barely moved (12 px at most) and was lifted
+  quickly (300 ms at most), so a swipe, however short, never counts;
+- on a still page: the page did not scroll in the 300 ms before the first
+  tap, nor between the two. The touch that catches a coasting page is a
+  brake, not a tap.
 
-### Un réglage se pose là où il est atteignable
+While the auto-scroll runs, only the reader's own scrolling counts, not the
+page moving by itself: a double tap still stops it. The `dblclick` that
+browsers send after a double tap only counts if the touch listeners saw two
+real taps. Held by `src/__tests__/autoScroll.test.ts` ("the double tap,
+told apart from a fast scroll").
 
-L'avis suivi pour les horaires (Rav Posen, Rav Ovadia Yossef) gouverne toutes
-les heures de l'application : il a donc sa place avec les autres réglages,
-dans l'onglet Préférences du profil. Sauf que sur le site, la page de réglages
-est réservée aux comptes, et l'avis qu'on suit ne doit pas l'être : un bouton
-le porte alors sur la page des horaires elle-même, à côté du nom de la ville,
-et il annonce l'avis en cours plutôt qu'un mot vague comme « Réglages ».
+### A permission is requested after a gesture, never in the background
 
-C'est la même règle que pour le lieu de calcul : le nom de la ville EST le
-bouton qui la change. Ce qu'on lit et ce qu'on règle sont au même endroit, et
-le bouton dit l'état avant de proposer le changement.
+The system permission dialog only appears after a gesture that requires it:
+touching « Télécharger » ("Download"), enabling a reminder. A background task
+that would need it waits until it is granted, without asking for it. On
+Android 10, the silent update of the Sidour thus made the storage permission
+pop up when opening a service, without anyone having asked for anything
+(`docs/app-native.md`). And a refusal is stated for what it is, with where to
+go to change it, rather than sending people off to check their connection.
 
-Dans l'app, le bouton n'est pas repris : la page y est déjà coiffée de deux
-onglets et d'une barre du bas, et les réglages sont à un geste.
+### The compass is requested on opening, states its accuracy, and is held flat
 
-### Le menu de lecture s'ouvre au-dessus de son bouton
+The Kotel compass (`KotelCompass.vue`) sometimes sent people praying in the
+wrong direction without anything saying so. Three rules came out of it.
 
-Sur un texte de la bibliothèque, un bouton rond en bas à droite
-(`ReadingMenu.vue`) tient lieu de bouton de remontée : il ouvre le sommaire
-du texte, la taille des caractères et la bascule hébreu / phonétique. Le
-panneau surgit **au-dessus** du bouton, et le bouton reste : il devient la
-croix qui referme. Ce qu'on a touché pour ouvrir est ce qu'on touche pour
-fermer, au même endroit, sans chercher une croix dans le panneau ; le panneau
-ne remplace jamais ce qui l'a ouvert.
+- **The permission goes out with the gesture that opens the window.** iOS
+  only gives the orientation after a gesture; the window requested it one
+  loop turn too late, Safari refused without asking anything, and you had to
+  touch « Activer la boussole » ("Enable the compass") right after touching
+  « Direction du Kotel ». The window now starts the compass within the
+  gesture itself (a synchronous `watch`, like the tefilin mirror for the
+  camera). When the button remains necessary (a gesture that did not take),
+  it sits **on the dimmed dial** (grayed, blurred, the arrow removed), and
+  not under it: a dial that looks like it works makes nobody look for a
+  button, and its arrow, frozen with north at the top, would point the wrong
+  way.
+- **Accuracy is visible, and can be restored.** Under the dial, three bars
+  like network bars and a word (good, medium, low), given in degrees when
+  the device provides it (Safari). On the dial, a halo in the arrow's color
+  covers the sector where the Kotel lies: narrow, you follow the arrow; wide,
+  you need to calibrate. « Calibrer » ("Calibrate") opens, in place of the
+  dial, a phone tracing a figure 8 and the three gestures to perform;
+  accuracy is followed live there until « Boussole calibrée » ("Compass
+  calibrated"), and the dial comes back by itself (see "The compass fills
+  when you face the Kotel"). The command is solid when accuracy is low,
+  discreet otherwise, and remains offered when the device says nothing about
+  its accuracy (Chrome on the site): « La flèche vous semble fausse ? »
+  ("Does the arrow seem wrong?"). The low level is written in amber, the
+  warning tint already used by the information notices. Where accuracy comes from:
+  `webkitCompassAccuracy` on iOS, the magnetometer calibration status in the
+  Android app (PjCompass plugin, `docs/app-native.md`).
+- **The dial tilts opposite to the phone.** It stays horizontal, like the
+  card of a marine compass on its gimbal: with the top of the phone raised,
+  the top of the dial sinks into the screen; laid flat, it faces you. You
+  want to straighten it, and you lay the phone down. The tilt follows the
+  hand (the hand is what produces it, see "Motion answers a gesture"),
+  capped at 55° so the arrow stays readable; the status line under the
+  dial says « Tenez le téléphone à plat » ("Hold the phone flat") until it
+  is. A bubble level in the center was
+  ruled out: less visible, and one more dot on a dial that has only one
+  thing to show.
 
-À la droite de cette croix paraît un second rond, celui des réglages de
-lecture, qui fait passer le panneau du sommaire aux réglages. Les deux ronds
-échangent alors leurs rôles : celui de gauche reprend l'icône du sommaire et y
-ramène, celui de droite devient la croix. La croix est toujours sur le rond
-touché en dernier : on quitte d'où l'on est arrivé.
+Held by `src/__tests__/kotelCompass.test.ts` (the permission requested in
+the opening gesture, the button placed on the dimmed dial, accuracy and
+calibration, the tilt) and `src/__tests__/nativeCompassAccuracy.test.ts`
+(the bridge to PjCompass).
 
-Ces réglages-là sont ceux qu'on change **pendant** qu'on lit, pas avant : le
-défilement automatique (le même interrupteur que dans les Préférences, voir
-« Un geste qui surprend doit pouvoir se couper ») et, sur un office, « sans
-tahanoun ». Ce dernier dit à l'application ce que le calendrier ne peut pas
-savoir : une brit mila, un marié ou un bar-mitsva dans l'assemblée, une maison
-de deuil. Le texte est alors refait comme un jour où le tahanoun ne se dit
-pas, avec ce qui tombe et ce qui vient à sa place. Il ne vaut que **la
-journée** où il est posé et s'éteint au lendemain : une simhá est une affaire
-d'un jour, et un interrupteur oublié retirerait le tahanoun des semaines
-durant sans que rien ne le montre, la page ne disant jamais ce qu'elle tait.
+### The compass fills when you face the Kotel
 
-« Masquer les halakhot » les rejoint, là où le texte lu en porte : les
-consignes de loi qui accompagnent un passage (ce qu'on reprend en cas d'oubli)
-quittent alors le fil. Elles sont là pour qui doute et encombrent qui sait, et
-un office se dit tous les jours. À la différence de « sans tahanoun », c'est
-un parti pris de lecture, pas une affaire d'un jour : il tient jusqu'à ce
-qu'on le change, et il est éteint au départ, personne ne devant découvrir
-qu'une halakha existait le jour où il en aurait eu besoin. Le réglage ne se
-montre que sur un texte qui en porte : proposer de masquer ce que la page
-n'affiche pas laisserait croire qu'on a raté quelque chose.
+The compass window was a title, an introduction, the dial, then five lines
+of text and the accuracy: whoever opened it read a block before turning
+around. It now opens straight on the dial, and you find the way by feel as
+much as by eye.
 
-Sous les interrupteurs, un filet, puis ce qui se fait d'un geste au lieu de se
-régler : partager le texte lu, écrire à l'équipe, et, sur le site, prendre
-l'app. Ces trois-là n'étaient qu'au pied de page ou dans l'onglet À propos,
-c'est-à-dire là où l'on finit ; or c'est en lisant qu'on veut envoyer un texte
-à quelqu'un, et en lisant qu'on voit la coquille à signaler. Ce sont des
-lignes, comme les repères du sommaire, et non des boutons pleins : le panneau
-reste un panneau de lecture, pas une barre d'outils. Le partage porte
-l'adresse **publique** du texte, celle du site, jamais celle de la page en
-session ni l'adresse locale de la webview de l'app, que personne d'autre ne
-saurait ouvrir.
+- **No icon, no title.** The button that opened it already said « Direction
+  du Kotel »; the window keeps that name for screen readers, and the close
+  cross alone sits in the corner (see "No icon on the left of a bar or a
+  dialog").
+- **Two lines under the dial, no more.** One status line says what to do
+  now, in a few words: « Tournez-vous vers la flèche », « Tenez le téléphone
+  à plat », « Calibrez avant de suivre la flèche » (low accuracy comes
+  first: the arrow cannot be trusted then), « Vous êtes face au Kotel ».
+  Then one line of figures: « Kotel : Est, 112° · 3 333 km ». The accuracy
+  and « Calibrer » stay on their own row; the place, under the rule. The
+  sentences that explained (the 'Amida said facing Jerusalem, "the arrow
+  follows your device", "the phone is flat") are gone: the dial shows them.
+- **A mark for "straight ahead".** A small triangle above the dial, fixed to
+  the phone, is where the arrow is to point. It takes the theme color when
+  you are there.
+- **The dial fills from the bottom up.** As the arrow comes within 45°, the
+  theme's solid fill rises in the dial, to a little under half; at 5° it
+  fills it at once. The slow rise says "warmer", the jump says "there". Its
+  surface is a slow wave on a spring (it overshoots a little and settles,
+  more stirred the faster it moves), with a lighter swell of the same color
+  behind it: two flat layers, not a gradient. What the color covers (the
+  arrow, the letters, the graduations) is drawn again in `on-brand` on top,
+  so the arrow turns white as the color reaches it instead of sinking into
+  it. On the lock, the ring takes the color, the arrow swells for a beat and
+  two rings leave the dial. You come out at 10°, not 5°: a trembling hand
+  does not lock and unlock at every reading.
+- **The phone clicks as you come close.** One `tick` every ten degrees within
+  45°, like the notches of a dial, then one `done` on the lock: the way can
+  be found without looking (see "Touch answers"). A notch only changes once
+  the arrow is two degrees past its edge, so a reading that hesitates on an
+  edge does not buzz.
+- **A calibration that takes brings you back.** Whoever is tracing the 8 is
+  not reading the screen, and kept tracing it after the text had said it was
+  done. When accuracy turns good, the phone beats (`done`), the 8 and its
+  check take the color, and 1.1 s later the dial comes back, its status
+  saying « Boussole calibrée » for three seconds. Only a change counts:
+  opened with the accuracy already good, the screen waits for its button.
+  The three steps are shortened to a line each, numbered in small rounds of
+  the theme color, without the title above them.
 
-Corollaire : pas de marque-page sur une tefila (Sidour, Sli'hot, Brahot). Un
-office ou une bénédiction se lisent du début, on n'y revient pas à un
-paragraphe comme à un verset de Tehilim ; le sommaire du menu y mène déjà à
-chaque passage.
+Without a compass (a browser that gives no north, a refused permission),
+nothing fills and nothing clicks: the arrow is then drawn for north up, and
+nothing says which way the phone points. The fill and its wave are cut only
+when the system asks for less motion, not on a small machine (see "Motion
+answers a gesture"). Held by `src/__tests__/kotelCompass.test.ts` (« face au
+Kotel »: no title, the notches and the single lock, the threshold that
+holds; the return after calibration, and none when accuracy was already
+good).
 
-### La pastille du défilement est son propre arrêt
+### A setting goes where it can be reached
 
-Pendant une descente automatique, une pastille au bas de l'écran
-(`AutoScrollPill.vue`) dit que la page avance toute seule, et c'est le seul
-signe qu'elle en donne. Un appui l'ouvre sur l'allure, le suivant arrête.
+The opinion followed for the times (Rav Posen, Rav Ovadia Yossef) governs
+all the times in the application: it therefore belongs with the other
+settings, in the profile's Preferences tab. Except that on the site, the
+settings page is reserved for accounts, and the opinion you follow must not
+be: a button then carries it on the times page itself, next to the city
+name, and it announces the current opinion rather than a vague word like
+« Réglages ».
 
-C'est la règle du menu de lecture, juste au-dessus : ce qu'on a touché pour
-ouvrir est ce qu'on touche pour en finir, au même endroit. L'arrêt était une
-ligne de plus dans le panneau, sous les allures, c'est-à-dire là où l'on ne
-pense pas à revenir quand on veut simplement que cela cesse. Un appui à côté
-referme le réglage sans rien arrêter : fermer et arrêter ne sont pas le même
-geste, et c'est au geste le plus large de ne rien faire.
+It is the same rule as for the location used for the computation: the city
+name IS the button that changes it. What you read and what you set are in
+the same place, and the button states the current state before offering the
+change.
 
-L'allure se règle à un curseur à crans, du plus lent à gauche au plus rapide à
-droite, et non dans une liste d'intitulés. Une liste demande de lire chaque
-ligne pour comprendre qu'elles forment une échelle ; un curseur le montre, et
-se pousse du pouce sans viser une ligne. Les crans sont les allures
-elles-mêmes, dessinés sous le rail à l'aplomb des positions du curseur : un
-rail lisse promettrait un réglage continu qui n'existe pas. Les deux bouts
-portent le nom des allures extrêmes, parce que ce sont elles. En hébreu, le
-rail se retourne avec la page, et le plus lent passe à droite.
+In the app, the button is not repeated: the page there is already topped by
+two tabs and a bottom bar, and the settings are one gesture away.
 
-### Ce qui clôt une page se lit à la fin
+### Back to top, only on long lists
 
-Les hiloulot du jour ferment la page des horaires, sous la dernière heure et
-avant la note de bas de page, comme le calendrier imprimé les met au bas de sa
-colonne. Pas de carte : une carte répond à une question qu'on est venu poser,
-celle-ci ne se pose pas en ouvrant la page (voir « Le cadre se mérite »). Un
-titre de groupe, le même que ceux des moments de la journée, et des noms.
+The back-to-top button (`ScrollToTop.vue`) is the exception, not the rule.
+A page goes without it unless it asks for it with
+`meta: { scrollToTop: true }` (`SCROLL_TO_TOP` in `src/router/routes.ts`),
+and only long lists one goes down to pick an item ask for it:
 
-Certains jours en portent dix-neuf. On en montre quatre, le reste se déplie :
-la page se termine sur une ligne, pas sur un annuaire.
+- the texts to take in a reading session (`detail-session`);
+- the texts of a library section (`study-corpus`);
+- the chapters, or the texts, inside a book (`etude-reading`,
+  `text-reading` and their section routes; once a chapter is open, the
+  reading menu takes the button's place, see below);
+- the audio classes: the list, an author, a series, a class
+  (`chiourim`, `auteur-chiourim`, `serie-chiourim`, `detail-chiour`).
+- the team's announcements (`announcements`), a list that grows with time;
+- the library home page, **only while searching**: its results can run
+  long, its shelf does not (`requestScrollToTop` in `StudyPage.vue`).
 
-### Écrire à l'équipe se propose où l'on finit, pas où l'on commence
+Left out on purpose: the Sidour (touching its tab again already goes back
+to the top), the Tehilim hub, the reading sessions home page, the admin
+lists, and every page not named here.
 
-Le formulaire de support (une idée, un bug, une erreur dans un texte) est une
-fenêtre, pas une page : on l'ouvre de là où l'on est et l'on y revient en la
-fermant, sans perdre la lecture en cours. Il s'ouvre de trois endroits, tous
-en fin de parcours : le pied de page du site, le profil de l'app (groupe Aide), et
-le bas de l'accueil.
+Even there, it only shows once the top is **more than three screens away**:
+closer than that, a few flicks of the thumb bring it back, and the button
+would only cover the content. It shows while scrolling, then fades out.
+Adding a page to the list is a decision: it is written here first. Held by
+`src/__tests__/scrollToTop.test.ts`.
 
-Une quatrième porte s'ouvre en pleine lecture, dans les réglages du menu
-(voir « Le menu de lecture s'ouvre au-dessus de son bouton ») : c'est là qu'on
-voit l'erreur dans un texte, et remonter jusqu'au pied de page pour la dire,
-c'est perdre sa ligne. Elle ne contredit pas la règle : c'est toujours la
-personne qui va la chercher, derrière deux gestes, et non l'application qui
-lui coupe la parole.
+### The reading menu opens above its button
 
-Sur l'accueil, il tient en une ligne sous la dédicace, en petit et en gris,
-avec le seul lien souligné : « Une idée, un problème ? Écrivez-nous ». Pas de
-carte ni de bouton plein : l'accueil n'est pas venu poser cette question, et
-un bouton coloré tout en bas se disputerait le regard avec les portes du site.
-Discret donc, mais visible : la ligne existe dans l'app comme sur le site, là
-où l'on arrive après avoir tout vu.
+On a library text, a round button at the bottom right (`ReadingMenu.vue`)
+stands in for the back-to-top button: it opens the text's table of
+contents, the font size and the Hebrew / phonetic toggle. The panel pops up
+**above** the button, and the button stays: it becomes the cross that
+closes. What you touched to open is what you touch to close, in the same
+place, without looking for a cross in the panel; the panel never replaces
+what opened it.
 
-La fenêtre dit ce qu'elle joint sans le demander (le support, la plateforme,
-la version) sous le formulaire, en petit : rien ne part à l'insu de la
-personne, et personne n'a à recopier un numéro de version.
+To the right of this cross appears a second circle, the reading settings
+one, which switches the panel from the table of contents to the settings.
+The two circles then swap roles: the left one takes back the table of
+contents icon and returns to it, the right one becomes the cross. The cross
+is always on the circle touched last: you leave from where you came in.
 
-Le site pose aussi la question de lui-même, une fois : « Tout se passe
-bien ? », une petite carte en bas de l'accueil, à qui a ouvert l'app trois
-jours différents. Sur l'accueil seulement, jamais sur une page de lecture ni
-pendant l'écoute d'un chiour, et jamais par-dessus autre chose (introduction,
-fenêtre ouverte, bannière de consentement encore sans réponse) : une question
-qu'on pose à quelqu'un d'occupé est une interruption, pas une attention. Elle
-attend quelques secondes après l'arrivée, se retire dès qu'on lui répond
-(« Tout va bien » ou le formulaire) et n'insiste pas : au plus trois fois, à
-une semaine d'écart, puis plus jamais.
+A text whose table of contents would carry nothing but the text size and
+« Haut de page » (no landmark, no Hebrew / phonetic toggle, nothing to
+download or set aside, no compass or mirror: the daily Tehilim, the chnei
+mikra, a reading session) keeps **a single circle**, the settings one. A
+menu button that only led back to the top, next to the settings, was one
+button too many. The settings then open directly and take in the text size
+(at the top) and « Haut de page » (first of the commands under the
+switches); the circle becomes the cross that closes. Held by
+`src/__tests__/readingMenu.test.ts` (« garde un seul bouton rond, les
+réglages, quand le sommaire n'a rien d'autre que le haut de page »).
 
-### L'équipe prend la parole quand elle a quelque chose à dire
+A chapter of Mishna and a siman of halakha have no heading inside them, yet
+one looks for a precise mishna or se'if in them: without landmarks they fell
+under the rule above, and whoever wanted the fourth mishna of a chapter had
+to scroll for it. Each mishna, each se'if is therefore a landmark of its
+own (`lineLandmarks`, `useReadingNav.ts`): « Michna 4 » or « Séif 4 », then
+its opening words in Hebrew, cut by an ellipsis, since a mishna is
+remembered by how it opens more than by its number. The two circles come
+back. A Tanakh chapter, the daily Tehilim or the chnei mikra keep a single
+circle: they are read through, not searched verse by verse. Held by
+`src/__tests__/readingMenu.test.ts` (« fait de chaque michna un repère, sous
+son numéro et ses premiers mots »).
 
-Les informations de l'équipe (une nouveauté, un incident, une question, voir
-`docs/informations.md`) n'ont pas de place réservée sur l'accueil. Une carte
-n'y apparaît que lorsqu'il y a du nouveau, et elle se range en tête des
-raccourcis du moment, à côté de la salutation : un incident explique
-peut-être ce qui ne marche pas plus bas, il se lit avant.
+These settings are the ones you change **while** reading, not before:
+auto-scroll (the same switch as in Preferences, see "A gesture that
+surprises must be able to be turned off") and, on a service, « sans
+tahanoun » ("without tahanoun"). The latter tells the application what the
+calendar cannot know: a brit mila, a groom or a bar-mitsva in the
+congregation, a house of mourning. The text is then rebuilt as on a day when
+tahanoun is not said, with what drops out and what comes in its place. It is
+valid only for **the day** it is set and turns off the next day: a simhá is
+a one-day affair, and a forgotten switch would remove tahanoun for weeks
+without anything showing it, the page never saying what it leaves out.
 
-Elle a deux formes. Pas encore lue, l'annonce se montre en aperçu : sa nature
-en pastille, « Nouveau » en pastille pleine, le titre en gras et deux lignes du
-texte, de quoi savoir de quoi il s'agit sans l'ouvrir, puis « Lire la suite ».
-Lue, elle se réduit pendant une semaine à la forme des autres raccourcis (un
-dessin, une ligne, une précision en petit) : on sait que l'équipe a parlé, et
-elle ne prend plus la place d'une nouvelle. Son dessin est une cloche, ou,
-pour un incident, le triangle ambré des avertissements.
+« Masquer les halakhot » ("Hide the halakhot") joins them, where the text
+being read carries some: the legal instructions accompanying a passage (what
+to repeat in case of omission) then leave the flow. They are there for
+whoever is in doubt and clutter whoever knows, and a service is said every
+day. Unlike « sans tahanoun », it is a reading preference, not a one-day
+affair: it holds until changed, and it is off at the start, since nobody
+should discover that a halakha existed on the day they would have needed
+it. The setting only shows on a text that carries some: offering to hide
+what the page does not display would suggest something was missed.
 
-Le reste du temps, la liste reste à un lien, en bas de l'accueil, juste
-au-dessus de « Écrivez-nous » : l'une donne des nouvelles, l'autre en
-demande, les deux vivent à la fin du parcours. Sur la page elle-même, chaque
-annonce est une carte (elle répond à « qu'est-ce qui a changé ? »), avec sa
-nature en pastille et « Nouveau » en pastille pleine, calculé sur la visite
-précédente.
+On the chnei mikra page, its two options join them too: « Chaque verset deux
+fois » ("Each verse twice", on at the start: it is the practice itself) and
+« Commentaire de Rachi » ("Rashi's commentary"), each with its hint. They
+used to be two switches above the text, under the paracha's name: the only
+reading options of the library left outside the menu, and one more block
+between the title and the text. They stay shared with the daily reading
+(`useChneiMikraOptions`). Held by `src/__tests__/readingMenu.test.ts` (« ne
+propose les options du chnei mikra que sur sa page ») and
+`src/__tests__/chneiMikraPage.test.ts` (« propose les options de lecture
+dans le menu de lecture, et les retient »).
 
-### La chaîne perpétuelle se confie un nom, elle ne se crée pas
+Under the switches, a rule, then what is done with a gesture instead of
+being set: sharing the text being read, writing to the team, and, on the
+site, getting the app. These three were only in the footer or in the About
+tab, that is, where you finish; yet it is while reading that you want to
+send a text to someone, and while reading that you see the typo to report.
+They are rows, like the table of contents entries, and not solid buttons:
+the panel stays a reading panel, not a toolbar. Sharing carries the text's
+**public** address, the site's, never that of the in-session page nor the
+local address of the app's webview, which nobody else could open.
 
-La chaîne perpétuelle de Tehilim (`docs/chaine-perpetuelle.md`) est la seule
-chaîne qu'on peut toujours rejoindre. Sur l'accueil du partage, elle se
-pose sous le bouton de création (`PerpetualChainCard`), dans une carte comme
-celles des autres chaînes : un cadre blanc, cliquable tout entier, dont le
-titre prend la couleur au survol. Elle ne prend pas la couleur du thème en
-aplat : sur une page de chaînes, une carte pleine se lisait comme une
-publicité au milieu des autres. La couleur ne marque que ce qui la distingue,
-« Toujours ouverte », le chiffre en avant et la barre d'avancement. Ce
-chiffre, au bout de la ligne, est le nombre de fois qu'elle a été terminée ;
-au premier tour, il n'y a rien à compter, et il ne paraît pas.
+Corollary: no bookmark on a tefila (Sidour, Sli'hot, Brahot). A service or a
+blessing is read from the beginning; you do not come back to a paragraph as
+to a verse of Tehilim; the menu's table of contents already leads to each
+passage.
 
-La carte ne nomme personne : « On y lit pour 5 personnes ». Les noms sont
-ceux de malades et de défunts ; ils se lisent sur la page de la chaîne, où
-l'on vient pour eux, et non en passant sur l'accueil.
+### The progress bar takes you through the text
 
-Sur sa page, l'en-tête dit « Lecture continue » et le tour en cours là où une
-chaîne ordinaire dit sa date limite et son créateur. Viennent ensuite le
-compteur (un seul chiffre en grand, trois en dessous qui le servent), puis
-« Pour qui l'on lit », avant le tirage : on dit les noms avant de lire. Une
-ligne les suit, en petit : un Téhilim réservé se lit dans les 24 heures, puis
-redevient libre. Personne ne possède la chaîne pour libérer une place
-oubliée ; autant le dire à qui réserve.
+The thin progress line at the bottom of a reading (`ReadingProgressBar.vue`)
+is also a slider. A finger (or the mouse) laid on it takes the page to the
+same share of the text, and the page follows while it slides: whoever looks
+for the Amida in a whole Shaharit, or the end of a long daf, gets there in
+one gesture instead of three screens of scrolling. The strip that catches
+the finger is taller than the line, which no finger would hit: on the site,
+3 rem, so that the slide can start well above the very bottom of the screen,
+where the browser's own gesture leaves the page; in the app, 1.5 rem. In
+Hebrew the bar fills from the right, and slides the same way.
 
-Les noms courent à la suite, séparés d'un point médian, comme une dédicace,
-et non en lignes : vingt lignes auraient repoussé la lecture sous trois
-écrans. Huit par groupe, le reste se déplie. Deux groupes, que le dessin
-distingue : le cœur pour une refoua chelema, la bougie pour un leilouy
-nichmat (celle des dates du calendrier). Un nom ne se coupe pas d'une ligne à
-l'autre (`whitespace-nowrap`).
+In the app, the line runs along the top edge of the bottom bar, over it, and
+the bar's white rises in a bump over its round times button instead of the
+button sticking out of it: the line rides over the bump
+(`composables/tabBarHump.ts`, one shape for both, a 12 px bell that clears
+the button with a margin). A notch in the strip leaves the button its
+touches. While the mini player lies there, the line stays flat, under it.
 
-Les noms du lecteur sont des pastilles à la couleur du thème, avec un crayon,
-en tête de leur groupe : ce sont les seuls qui s'ouvrent, et c'est la règle
-des pastilles (« une pastille énonce, sauf celle qui porte une icône, qui
-ouvre »). Ceux qui ne sont pas lus en ce moment (échus, ou un défunt hors de
-la semaine de son anniversaire) restent à portée de leur auteur, en pastilles
-grises sous la liste.
+The finger pulls the line. Under it, the bar rises in a bump (64 px, a bell
+rather than a peak: the line is stretched, it does not break), like a string
+held between two fingers, with a round thumb on top; the paper under the
+line hides the text it rises over. The titles of the text (the landmarks of
+the reading menu) sit on the line, **with no frame**: the one being read
+rides on top of the bump, large and straight, in Playfair Display and in the
+primary color; the others lie along the bar on each side, small, leaning
+with the line, each kept to its share of it so that two neighbors never
+overlap. A halo of the page's color keeps them legible over the text. The
+share reached (« 42 % ») stays on top of the bump, just above the finger:
+the titles say which passage, the share how far into the text. A text
+without titles shows it alone, larger.
 
-La fenêtre « Proposer un nom » compose le nom comme on le dit : les deux
-prénoms côte à côte, et entre eux « ben » ou « bat », qui suit le choix homme
-ou femme sous les yeux. Un aperçu montre la ligne telle qu'elle paraîtra. Pour
-un leilouy nichmat, la date du décès se choisit comme une date du calendrier
-(jour, mois hébraïque), et la phrase sous les champs dit, avant même qu'on
-la choisisse, ce que la date change : sans elle, le nom est lu trente jours ;
-avec elle, il revient tous les ans, la semaine qui précède l'anniversaire.
+It moves like something held: the bump follows the finger with a little
+give, the titles glide from one to the next (the next one climbs the slope
+and grows until it is on top, straightening up, while the one it replaces
+slides down and shrinks), and, let go, the line springs back flat with a
+small rebound. These are springs (`stepSpring`,
+`composables/readingScrub.ts`), run frame by frame and only while the line
+moves. When the system asks for less motion, the line goes straight where it
+is going, without give or rebound. Crossing from one title to the next is
+felt as a threshold (`tick`, see "Touch answers"). The round buttons of the
+menu step aside during the gesture.
 
-« Signaler », sur la chaîne, vise un nom : le bouton ne s'éteint pas après
-un premier signalement, et la fenêtre demande le nom en cause au lieu de
-promettre un masquage au troisième. La case « Bloquer ce créateur » n'y paraît
-pas : le créateur est l'équipe, la bloquer effaçait la chaîne de l'appareil.
+On the site, the mini player lies over the bottom of the screen: the bar is
+then a line again, and the player keeps its touches. Two touches in a row on
+the bar are two slides: the double tap that starts the automatic scrolling
+does not apply there (`data-own-gestures`, held by
+`src/__tests__/autoScroll.test.ts`).
 
-Sans réseau, la fenêtre d'un nom ne se fige pas : elle dit ce qui se passe
-et garde ce qui a été saisi. Hors ligne, rien ne part. Si l'appareil se croit
-en ligne mais que le serveur se tait, elle rend la main au bout de dix
-secondes : la demande partira d'elle-même au retour de la connexion, il est
-inutile de la refaire, et le nom rejoint la liste quand il arrive.
+On a text with landmarks, the round menu button names the one being read as
+soon as one scrolls: it grows to the left around the title, then shrinks
+back to a circle 1.8 s after the page stands still. Whoever sees the name of
+the passage appear there understands that the button leads to the passages,
+and that another one is a touch away. Not while the page scrolls by itself
+(the title would never leave the text), nor with the panel open, which lists
+them all. The button keeps its name for screen readers; the title is a hint
+for the eye.
 
-Dans le lecteur, « Vous lisez pour » garde les deux groupes de la page de la
-chaîne, chacun avec son dessin : on ne dit pas de la même façon une refoua
-chelema et un leilouy nichmat (`PrayerNamesLine`). Retirer un nom pose la
-question, avec le nom (`useConfirm`) ; le prolonger, non : cela se refait
-d'un geste.
+Held by `src/__tests__/readingScrub.test.ts` (the bump clearing the round
+button: « clears the round button, with a margin, and the line riding over
+it too »).
 
-Un tour fini se dit (« Tour terminé ! ») et ne fige rien : la page, comme
-« Un autre Téhilim » dans le lecteur, attend le tour suivant d'elle-même,
-quelques essais en une quarantaine de secondes, puis montre la carte de
-tirage. Au-delà, elle n'insiste pas : une chaîne qui ne repart pas est une
-panne, que le rechargement de la page dira, pas une attente sans fin.
+### One bookmark per book, and it shows
 
-À la création d'une session de Tehilim, la chaîne perpétuelle se propose en
-une ligne discrète sous le type, en petit : elle ne détourne pas de la
-création, et ne promet pas de chiffre de lecteurs qu'on ne connaît pas.
+A book has only one ribbon: placing a bookmark removes the one the text
+already carried (in the library, and separately in the daily reading).
+Those that a previous version left in multiples remain until the next one
+is placed (`readingProgressBookmarks.test.ts`).
 
-### Le backoffice est un outil, et il se lit comme un tableau de bord
+The bookmark is a ribbon, like that of a real book (`BookmarkRibbon.vue`),
+in the design of the ribbons that come out of the app's volumes
+(`ArtVolume.vue`, `ArtSiddur.vue`): a red silk ribbon lying on the page just
+before the marked verse. It comes out of the binding, on the right (the
+spine of a Hebrew book), sticks out a little into the margin, runs a few
+centimeters above the start of the verse (8 rem, not the full width) and
+ends in a swallowtail, the split end that says "bookmark". The fold, darker,
+is where it comes out of the page; a light line suggests the silk; a short
+shadow sets it on the page. It is visible while scrolling, without coloring
+any of the text. Its red has its own token, `--color-ribbon`, that of the
+ribbon of the sidour drawn on the home page (`ArtSiddur.vue`), and not
+`--color-danger`: it is not an error. In the gemara and the daily reading,
+where passages follow one another within the same paragraph, the ribbon
+opens a line before the marked passage. Only the tikoun does not get one:
+its lines are those of the scroll, nothing is slipped in; there the passage
+takes a light background and a solid stroke in the ribbon's red
+(`.reading-bookmarked`).
 
-Le backoffice (`/admin`) ne sert qu'à l'équipe, sur un écran d'ordinateur le
-plus souvent. Il garde la charte (le beige, les surfaces sans bordure, les
-commandes rondes, Playfair pour les titres de section) mais pas la mise en
-page des pages publiques : ses titres sont alignés à gauche, ses listes sont
-denses, et il va droit à ce qui attend une décision.
+### The reader toolbar fits on one line
 
-- **Il s'ouvre sur une vue d'ensemble** : quatre chiffres (chiourim en ligne,
-  écoutes, sessions, auteurs), puis « À traiter », une liste de lignes qui
-  mènent chacune à la liste déjà filtrée (`?filtre=draft`). Quand il n'y a
-  rien à traiter, la page le dit en une phrase, avec une coche verte.
-- **Les onglets comptent ce qui attend** : une pastille couleur du thème pour
-  un travail en attente (chiourim à relire), rouge pour un problème
-  (sessions signalées, incident en cours).
-- **Une liste est un seul panneau** de lignes séparées d'un filet, et non une
-  pile de cartes : on la parcourt d'un regard. Ses filtres sont des pastilles
-  qui portent leur compte ; le filtre actif prend la couleur pleine.
-- **Les états ont cinq tons, toujours les mêmes** (`AdminStatus`) : vert pour
-  ce qui est en ligne, ambre pour ce qui attend (brouillon, à relire), rouge
-  pour ce qui est retiré ou signalé, la couleur du thème pour une nature, gris
-  pour un détail. Une pastille d'état énonce ; elle ne se touche pas.
-- **Le geste courant est un bouton, pas la pastille** : « Publier » à côté
-  d'un brouillon. Dépublier, plus rare et plus lourd, reste sur la fiche ou
-  dans le traitement en masse, derrière une confirmation.
-- **Une sélection fait apparaître sa barre en bas de l'écran**, qui reste à
-  portée pendant qu'on coche, et disparaît quand on la vide.
-- **Une fiche met en tête ce qu'on vient vérifier** : pour un chiour, le
-  lecteur audio, puis le contenu à gauche et le rangement à droite. Ce qui
-  supprime est en bas, en rouge, jamais à côté d'« Enregistrer ».
+Above the text, the bookmarks, the size, the tikoun vowels, the translation
+and the Hebrew / form / phonetic toggle fit on a single line, even on a
+phone. The toggle is always at the end of the line (on the right; on the
+left in Hebrew, since the line reads from right to left): the commands that
+come and go depending on the text line up in front of it, without ever
+moving it, and the hand finds it in the same place from one text to the
+next. Below the `sm` width, the text size leaves the bar (the reading menu
+still carries it), and the toggle keeps the name of the chosen mode; the
+other two take the abbreviated names they have in the menu (א, the drawing
+of the form, Aa), their full name remaining in the tooltip and for screen
+readers. Abbreviating everything made you lose sight of the mode you were
+reading in. The translation is not offered in the page form (Vilna daf,
+tikoun): neither one shows it.
 
-### Une chaîne courte se confirme
+### Chnei mikra is checked off aliyah by aliyah
 
-Une date limite qui tombe ce soir ou demain soir (`services/sessionDeadline.ts`)
-ne s'interdit pas : une veillée, une refoua chelema urgente tiennent en un
-jour. Mais en septembre 2026, trois chaînes sur neuf avaient pour date
-limite le jour même de leur création, et deux sont restées vides. Le bouton
-« Créer » pose donc d'abord la question (`useConfirm`) : « Attention, votre
-date semble proche d'aujourd'hui », la fin dite en clair (ce soir, demain
-soir). « Oui, créer la session » crée ; « Changer la date » ramène au champ.
-Au-delà de demain, rien ne s'interpose. Tenu par
-`src/__tests__/newSessionDeadline.test.ts` et `sessionDeadline.test.ts`.
+On the chnei mikra page, each aliyah ends with « Marquer comme lue » ("Mark
+as read", then « Lue », "Read", with its check in the theme color): the
+same button, at the same place, as a psalm of « Mes Téhilim » or a text of
+the daily reading. Chnei mikra is read over the course of the week, an
+aliyah or two at a time, and one checks it off where one stops reading. The
+aliyah's title above the text stays a plain marker.
 
-### La saisie d'une chaîne survit à la connexion
+At the top of the page, right under the paracha's name, seven dots say
+where the week stands: one per aliyah, solid in the theme color once read,
+a ring until then (fourteen for a double paracha, a wider gap between its
+two halves). They replace the bar « Montées lues : 3 sur 7 » that sat lower
+down with its percentage: the dots say the same thing in the place one
+looks first, and they also say **which** aliyot are read, not only how
+many. The sentence stays for screen readers. They show the same way when
+the page is opened from Mon parcours (« une montée par jour ») or on its
+own.
 
-Créer une chaîne demande un compte, mais le formulaire s'ouvre sans : le
-visiteur remplit tout, clique « Créer », et l'invite l'envoie se connecter.
-Au retour, le formulaire était vide. La saisie (titre, description, type,
-livres retenus, date, email des invités) se garde donc à ce moment-là, pour
-l'onglet seulement (`sessionStorage`, rien ne part au serveur), se remet en
-place au retour et s'efface à la création. Tenu par
+The paracha's name is the button that opens the week's aliyot, in a bottom
+sheet (`ChneiMikraAliyotSheet.vue`): a row per aliyah, the ring of
+« Marquer comme lue » filling with its check. It is there for whoever reads
+chnei mikra in a printed book, or has read an aliyah elsewhere, and does not
+want to scroll to the end of an aliyah to check it off. These are the same
+checks as the buttons in the text. An earlier version had put the list
+in a card « Les montées de la semaine » above the text, always open, with a
+pill beside each title in the text: two ways of doing one thing in plain
+sight, and a frame more at the top of a long page. The list now waits
+behind the name, closed until asked for. Held by
+`src/__tests__/chneiMikraPage.test.ts` (« dit sous le nom de la paracha les
+montées lues, et les coche depuis ce nom »).
+
+The checks are stored by week (the Chabbat of the paracha): the following
+week starts from zero, and browsing back to a past paracha finds its own.
+They are kept in Mon parcours, carried along by the account and tied to the
+« une montée par jour » ("one aliyah a day") chnei mikra (see
+`docs/parcours.md`). The daily reading, which also shows chnei mikra, does
+not carry them: it already has « Marquer lu » per section.
+
+### The verse number opens the verse, and the text is justified
+
+In a text that numbers its verses (a chapter of Tanakh, of Mishna, a siman
+of halakha), the number is written at the start of the verse, inside its
+first line, small, in the theme color and in Manrope (`.verse-num`), as in
+a printed book. It used to hold a column of its own in the margin, and all
+the height of the verse under it was lost width; in Hebrew, where the text
+starts on the right, the column took even more. It stays out of a selection
+and out of what the table of study sets aside.
+
+Every reading text is **justified**: the Hebrew, the phonetics, the
+translation, the Targum and Rashi of the chnei mikra, the gemara and the
+commentaries of the study panel, like the tefilot already were. Aligned on
+both edges, a verse fills the width of a small phone instead of leaving a
+ragged margin. The last line of a paragraph stays aligned to its start, and
+the Latin text is hyphenated (`hyphens: auto`) so that justified lines do
+not open wide gaps.
+
+### The translation reads under the verse
+
+The translation (`docs/traductions.md`) is not another page or another
+column: it sits under each verse, in the Latin reading font
+(`--font-reading`), one step below the Hebrew and in the secondary text
+color. The Hebrew remains the text being read; the translation accompanies
+it, and two columns would not fit on a phone. In the Talmud, the daf stops
+being a single block: each sentence of the gemara is followed by its own,
+otherwise you would no longer know what translates what. Steinsaltz's bold
+stays there (the literal translation), in the text color, and his
+explanation in roman: the difference is part of the text.
+
+The command sits in the toolbar, after the Hebrew / phonetic toggle, with
+its drawing and its name (« Traduction », "Translation"); when on, it takes
+the theme color. It only appears on a translated text, and not on a tefila.
+The same setting lives in the menu's reading settings, with the choice of
+language when the text has two, the interface language first. When the
+reader's language is missing (the Talmud, which we only have in English), a
+sentence says so above the text before showing the other: nobody discovers
+an English translation without knowing why.
+
+Who translated it reads at the end of the text, where what closes a page is
+read, in one line: « Traduction : » and the translator's name, nothing else.
+The name leads to the translation on Sefaria, which carries the edition and
+the license (`docs/traductions.md`, "Crediting a translation").
+
+### A text also reads in the form of its page
+
+The gemara and the Torah have a form the reader knows by heart: the Vilna
+page, identical from one edition to the next (one cites "the top of 2b"), and
+the column of the Sefer Torah. The reader offers them as a third way of
+showing the text, between Hebrew verse by verse and phonetics: a single
+group of three buttons in the toolbar (« Hébreu » ("Hebrew"), the form,
+« Phonétique » ("Phonetic")) and, abbreviated, in the reading menu (א, the
+form's icon, Aa). The form button carries its drawing and its name: an open book and
+« Page » for the gemara, a scroll and « Tikoun » for the Torah (the name of
+the book in which the reading is prepared, whose right-hand column is that
+of the Sefer Torah; « Sefer Torah » read like an object, not like a way of
+reading). It
+only appears on texts that have a form (a gemara, a paracha); the Prophets
+have petou'hot but no Sefer Torah column to reproduce. The choice is kept on
+the device (`usePageForm`, a single preference for both); phonetics takes
+precedence while it is being read and gives back the form when returning to
+Hebrew.
+
+**The daf page** (`TalmudDafPages.vue`, `TalmudPage.vue`): one amoud per
+page, under its « Daf 2a » marker (the reading menu's anchor). The gemara is
+in the center, without vowels or modern punctuation, in square letters
+(`--font-hebrew`); Rachi is on the binding side (on the right on amoud a,
+the left-hand page of the open book, on the left on amoud b), Tossafot on
+the edge side, in Rachi script. The commentaries share the first four lines,
+run alongside the gemara, and the one that outlasts it passes beneath it in
+its half; the one that ends earlier lets it widen. The layout is measured on
+screen (floating blanks over three stacked layers, in the manner of
+daf-renderer) and redone when the width, the reading size or the fonts
+change. The sizes follow the page's width, to keep its proportions, without
+going below 13 px for the gemara, then the reading size. The page has no
+frame or background of its own: the text draws the form. Rachi and Tossafot
+only load when the page is opened; if they are missing, a line says so and
+the gemara remains alone in the center.
+
+**The daf page is the book's, line for line.** Each line of the gemara, of
+Rachi and of Tossafot is placed where Vilna prints it, with the words it
+puts there (`TalmudPrintedPage.vue`, `dafLayout.ts`,
+`public/texts/talmud-layout`): same lines, same page shape, on every screen.
+Our fonts do not have the widths of the book's: the size of each script is
+the one that makes its median line fit without distorting it. **Each line
+fills its box from edge to edge**: shorter, it is justified (its spaces open
+up, its letters widen only slightly); longer, it tightens. Both edges of a
+column are therefore straight, as in the book. The true width of each line
+is read on screen once written, not estimated. **The opening word** of a
+tractate or a chapter is written very large, in bold, in the blank the
+commentaries leave above the gemara, without a frame; « מתני׳ », « גמ׳ » and
+the first word of a chapter beginning mid-page are in bold within their
+line; « הדרן עלך … » is centered, in bold, at the end of the chapter. **A
+line stays readable**: where our text spells out in full what the book
+abbreviates, to the point that the line would be crushed, the page writes
+the book's abbreviation (« המע"ה »); everywhere else our words stay whole.
+Only the pages near the screen are written: a thirty-page chapter opens as
+fast as a single page. The
+dibbour hamat'hil is
+in bold square letters, including when the file does not mark it (it then
+ends at the first period). **Where our text has nothing and the book has lines** (a word, a
+paragraph Sefaria does not provide), the page writes the book's text, in
+its column's script: it has no hole. What the book prints and we do not
+have is not invented: not the catchwords, not the marginal notes, not a
+commentary we do not have (its place stays blank). A page whose lines have
+not been recorded is laid out our way, in the same form
+(`TalmudPage.vue`).
+
+**The reading size is a magnifier there.** A− / A+, and pinching in the
+app, do not enlarge the text of the daf page: its lines would move, and a
+Vilna page is recognized by its lines. They enlarge the whole page
+(`TalmudDafPages.vue`): it takes from 100 to 210 % of the available width,
+its characters follow its width, its proportions remain those of the book.
+The enlarged page first overflows the reading column, equally on the left
+and the right, into the room the screen leaves around it (`pageZoom.ts`): on
+a computer it can be read whole, without sliding anything, which a mouse
+without a touchpad cannot do. It keeps 16 px from the edge of the screen,
+and from the commentary pane when it is open. What still overflows, on a
+phone from the first step, is reached by sliding the page sideways. A page
+opened already enlarged presents itself by its middle, the gemara; when the
+magnifier changes, the middle of what you were looking at stays in place.
+
+**The form of the page has its own size.** The daf page and the Sefer Torah
+column do not share the size of the text (`usePageFormSize`, key
+`pj-page-form-size` on the device, next to `useReadingSize`): the size that
+suits a prayer is not the one that keeps the lines of a page, and going from
+one to the other used to undo the size set for the page. While a form of the
+page is on screen, A− / A+ and the pinch drive its size
+(`useReadingSizeControl`); everywhere else, the text's. Each one stays where
+it was left. Its steps run from the page at its ordinary width (×1) to ×2.1,
+never smaller: **the daf page is never narrower than 400 px**
+(`MIN_DAF_PAGE`, `pageZoom.ts`). Rachi and Tossafot are written at about 2 %
+of the page's width, and a browser may refuse to draw text below a minimum
+(the Android WebView writes nothing smaller than 8 px): smaller, the
+commentaries came out larger than the lines measured for them, and ran into
+one another.
+On a phone, the page is therefore a little wider than the screen from the
+first step, and slides sideways. Enforced by
+`src/__tests__/pageFormSize.test.ts`.
+
+**The beginning of each part is in bold**, on the daf page as in the gemara
+read in one piece (`talmudOpenings`, `MarkedText.vue`): the « מתני׳ » that
+opens a Michna and the « גמ׳ » that opens the Guemara, with the word that
+follows them, the first word of the tractate (its Michna has no « מתני׳ »),
+and the formula « הדרן עלך … » that closes a chapter. That is what the
+printed page does, and it is how you find at a glance where you are. On the
+daf page, Rachi and Tossafot likewise have their dibbour hamat'hil in bold
+square letters.
+
+**A passage and its commentaries answer each other.** On the daf page, you
+touch a passage of the gemara that Rachi or Tossafot explains: it is
+highlighted, and all its commentaries with it, each in its column; the words
+they quote are underlined in the passage. You touch a commentary: it is
+highlighted alone, with its passage, where its own words are underlined. The
+color is that of the selected passage everywhere in reading
+(`--color-selection`), for the passage as for the commentary: it is what says
+they go together. Only one selection at a time in the chapter; touching it
+again releases it, and so does touching a passage without commentary. Under
+a mouse, what can be touched takes a light tint. Nothing changes width; the
+page is not re-laid out (`dafLinks.ts`, `TalmudPage.vue`).
+
+**The Sefer Torah** (`TorahScroll.vue`): the letters alone, in the sofer's
+script, **line for line and column for column like the scroll**. The scroll
+is the one with 245 columns of 42 lines, where each column begins with a
+vav: its lines are recorded for the whole Torah
+(`public/texts/torah-layout`, `scrollLayout.ts`, `scripts/layout/scroll.py`).
+The petou'ha ends the line, the setouma leaves a blank within the line, Az
+yachir is written in bricks and Haazinou in two halves, where the scroll
+puts them; a paracha that begins in the middle of a line begins in the
+middle there. The large and small letters are large and small. Each verse
+remains a passage for the reader: you touch it to open its commentaries,
+and it is highlighted across all the lines it spans.
+
+**A line fills the column the way the sofer fills it.** He does not spread
+his words apart: he widens or narrows his letters. Each line is therefore
+stretched in width, letters and spaces together, from 0.86 to 1.16
+(`fitLine`); beyond that, the spaces take the rest, which only happens on
+one line in two hundred. The column is 16.75 em wide, the width of the
+scroll's median line in the sofer's script: half the lines stretch, the
+other half tighten, almost all by less than a tenth. The pieces of a line
+with blanks keep their script, and it is the blanks that take up the room. A
+column wider than the others in the scroll (that of Az yachir, by a third)
+is written smaller, to fit in the same page.
+
+**Three blank lines separate two columns.** Nothing is written there, no
+number and no rule: the blank is what says column. The scroll's blank lines
+(before and after a chira) are, for their part, blank lines.
+
+**The aliyah marker is in the margin**, as in a tikoun: a small label in the
+theme color, in the interface font, written top to bottom to the right of
+the line where the aliyah begins. It takes no room in the line. A thin
+stroke above the first word of the aliyah says where it begins in the line.
+
+**The column keeps its lines on every screen.** It is 18 em wide everywhere,
+margin included: on a phone it is its characters that shrink (18 px instead
+of 24 on a 375 px screen); it does not wrap. The reading size enlarges it as
+a whole, like the daf page (`pageZoom.ts`, `useReadingColumn.ts`): it
+overflows the reading column as long as there is room, then can be slid
+sideways. Enlarged beyond the screen, it presents itself by its right edge,
+where the lines begin.
+
+**Without the scroll's lines, the column is written our way.** The line file
+may be missing (no network) or no longer match the text: the column is then
+justified over 21 em, with the marks and chirot recognized in the text
+(`pageForm.ts`), a blank every forty-two lines (`scrollPages.ts`). While the
+file is awaited, nothing is written: the column is not written twice.
+
+**Vowels and teamim sit on it without moving anything.** A « Voyelles »
+("Vowels") button, at the top of the page next to the forms, and a switch in
+the reading menu display them on the column (`useScrollPointing.ts`). The
+read word sits over the written word, in the same place
+(`scrollPointing.ts`): the lines, the blanks and the chirot do not move. It
+is in the reading font, which the reader chooses, since the sofer's script
+does not carry these signs; the qri is read in place of the ktiv. A second
+switch in the menu, « Appui long pour basculer » ("Long press to toggle"),
+shows the other form as long as you keep pressing on the text, and returns
+when you let go. It is off at the start: a long press usually serves to
+select a passage, and this setting disables text selection and the system
+menu on the column.
+
+### The scroll pill is its own stop
+
+During automatic scrolling, a pill at the bottom of the screen
+(`AutoScrollPill.vue`) says that the page is moving on its own, and it is
+the only sign of it. One tap opens it onto the speed, the next one stops.
+
+It is the rule of the reading menu, just above: what you touched to open is
+what you touch to finish, in the same place. Stopping used to be one more
+row in the panel, under the speeds, that is, where you do not think to go
+back when you simply want it to stop. A tap beside it closes the setting
+without stopping anything: closing and stopping are not the same gesture,
+and it is the broadest gesture that should do nothing.
+
+The speed is set with a notched slider, from slowest on the left to fastest
+on the right, and not in a list of labels. A list requires reading each row
+to understand that they form a scale; a slider shows it, and is pushed with
+the thumb without aiming at a row.
+
+The slider has twenty notches, from 1 to 20; it used to have only four, one
+per named speed (slow, medium, fast, very fast), and a reader asked for finer
+steps. The chosen notch is shown as a number at the end of the « Vitesse »
+("Speed") label, in tabular figures so that it does not jump around under the
+thumb: a number is remembered from one reading to the next, "a little more
+than medium" is not. The four named speeds remain as landmarks, a dot under
+the track directly beneath their notch; twenty dots would make a ruler, not a
+setting. Both ends carry the names of the extreme speeds, because that is
+what they are. In Hebrew, the track flips with the page, and the slowest moves
+to the right; the landmarks are therefore placed from the start of the line
+(`inset-inline-start`), not from the left.
+
+### The auto-scroll lets go of the page until it is at rest
+
+On iPhone, the page is scrolled by the system (the web view's
+UIScrollView), in another process than the script. WebKit's sources show
+what a script's scroll does there: `scrollTo` sends an absolute position,
+computed from a `scrollY` that lags behind the screen, and the web view
+applies it without stopping the finger's drag nor the momentum that follows
+(`_scrollToContentScrollPosition`, `interruptAnimation` off). Each frame,
+the page was brought back to where the script believed it was, then pushed
+on by iOS: the frantic back-and-forth that was reported. Three rules
+follow (`useAutoScroll`, "the reader's hand"):
+
+- **Nothing is set while the page is the reader's**: a finger on it, a
+  burst of wheel or keyboard, and the momentum that follows a swipe.
+- **The end of the momentum is read from the `scroll` events**, not from
+  two frames reading the same `scrollY`: the auto-scroll takes over once
+  none has come for a quarter of a second, however long the momentum lasts.
+  On iOS, `scrollY` is an integer, and a fast swipe coasts for close to
+  three seconds, the last of them at less than a pixel per frame: two
+  frames read the same value while the page still slides. The old code took
+  that for a page at rest (or gave up waiting after two seconds), which is
+  why slow scrolling was calm and fast scrolling still fought.
+- **The page is moved by steps, never to a position** (`scrollBy`, whole
+  pixels, the fraction kept for the next frame). WebKit sends a step as a
+  delta added in the web view to where the page really is: it never pulls
+  the page back, and a jump made elsewhere (an anchor, the reader's own
+  scrolling) is simply where the next step starts.
+
+Held by `src/__tests__/autoScroll.test.ts` ("waits for the end of a long
+momentum, however long it lasts", "moves the page by steps, and never
+pulls it back").
+
+### What closes a page is read at the end
+
+The day's hiloulot close the times page, under the last time and before the
+footnote, just as the printed calendar puts them at the bottom of its
+column. No card: a card answers a question you came to ask, and this one is
+not asked when opening the page (see "The frame must be earned"). A group
+title, the same as those for the moments of the day, and names.
+
+Some days carry nineteen. Four are shown, the rest expands: the page ends on
+a line, not on a directory.
+
+### Writing to the team is offered where you finish, not where you start
+
+The support form (an idea, a bug, an error in a text) is a window, not a
+page: you open it from where you are and come back by closing it, without
+losing the reading in progress. It opens from three places, all at the end
+of a path: the site footer, the app profile (Help group), and
+the bottom of the home page.
+
+A fourth door opens in the middle of reading, in the menu settings (see "The
+reading menu opens above its button"): that is where you see the error in a
+text, and scrolling up to the footer to report it means losing your line. It
+does not contradict the rule: it is still the person who goes looking for
+it, behind two gestures, and not the application interrupting them.
+
+On the home page, it fits in one line under the dedication, small and gray,
+with the only underlined link: « Une idée, un problème ? Écrivez-nous »
+("An idea, a problem? Write to us"). No card or solid button: the home page
+did not come to ask this question, and a colored button at the very bottom
+would compete for attention with the site's doors. Discreet then, but
+visible: the line exists in the app as on the site, where you arrive after
+having seen everything.
+
+The window says what it attaches without asking (the medium, the platform,
+the version) under the form, in small type: nothing goes out without the
+person knowing, and nobody has to copy down a version number.
+
+The site also asks the question on its own, once: « Tout se passe bien ? »
+("Is everything going well?"), a small card at the bottom of the home page,
+for those who have opened the app on three different days. On the home page
+only, never on a reading page or while listening to a chiour, and never on
+top of something else (introduction, open window, consent banner still
+unanswered): a question asked of someone busy is an interruption, not a
+kindness. It waits a few seconds after arrival, withdraws as soon as it is
+answered (« Tout va bien », "All good", or the form) and does not insist: at
+most three times, a week apart, then never again.
+
+### The team speaks up when it has something to say
+
+The team's information notices (a new feature, an incident, a question, see
+`docs/informations.md`) have no reserved spot on the home page. A card only
+appears there when there is something new, and it goes at the top of the
+shortcuts of the moment, next to the greeting: an incident may explain what
+is not working further down, so it is read first.
+
+It has two forms. Not yet read, the announcement shows as a preview: its kind
+as a pill, « Nouveau » ("New") as a solid pill, the title in bold and two
+lines of the text, enough to know what it is about without opening it, then
+« Lire la suite » ("Read more"). Once read, it shrinks for a week to the form
+of the other shortcuts (a drawing, a line, a detail in small type): you know
+the team has spoken, and it no longer takes the place of something new. Its
+drawing is a bell, or, for an incident, the amber warning triangle.
+
+The rest of the time, the list is not on the home page: it is found in the
+site footer and in the app profile (the home page keeps, at the very bottom,
+only « Écrivez-nous »). On the page itself, each
+announcement is a card (it answers "what has changed?"), with its kind as a
+pill and « Nouveau » as a solid pill, computed from the previous visit.
+
+### The perpetual chain is entrusted with a name; it is not created
+
+The perpetual Tehilim chain (`docs/chaine-perpetuelle.md`) is the only chain
+you can always join. On the sharing home page, it sits under the create
+button (`PerpetualChainCard`), in a card like those of the other chains: a
+white frame, clickable as a whole, whose title takes on color on hover. It
+does not take the theme color as a flat fill: on a page of chains, a solid
+card read like an ad among the others. Color only marks what sets it apart,
+« Toujours ouverte » ("Always open"), the number up front and the progress
+bar. That number, at the end of the line, is the number of times it has
+been completed; on the first round, there is nothing to count, and it does
+not appear.
+
+The card names nobody: « On y lit pour 5 personnes » ("We read for 5 people
+here"). The names are those of the sick and the departed; they are read on
+the chain's page, where people come for them, and not in passing on the home
+page.
+
+On its page, the header says « Lecture continue » ("Continuous reading") and
+the current round where an ordinary chain gives its deadline and its
+creator. Next come the counter (a single large number, three below that
+support it), then « Pour qui l'on lit » ("Who we read for"), before the
+draw: the names are said before reading. A line follows them, in small type:
+a reserved Tehilim is read within 24 hours, then becomes free again. Nobody
+owns the chain to free a forgotten spot; might as well tell whoever
+reserves.
+
+The names run on one after another, separated by a middle dot, like a
+dedication, and not in rows: twenty rows would have pushed the reading three
+screens down. Eight per group, the rest expands. Two groups, distinguished
+by their name, written above each one (« Refoua chelema », « Leilouy
+nichmat »), without a drawing (see "No icon on the left of a frame"). A
+name does not break across lines (`whitespace-nowrap`).
+
+The reader's own names are pills in the theme color, with a pencil, at the
+top of their group: they are the only ones that open, and that is the pill
+rule ("a pill states, except the one that carries an icon, which opens").
+Those not being read at the moment (expired, or a departed person outside
+the week of their anniversary) stay within reach of their author, as gray
+pills under the list.
+
+The « Proposer un nom » ("Suggest a name") window composes the name the way
+it is said: the two first names side by side, and between them « ben » or
+« bat », which follows the man or woman choice in view. A preview shows the
+line as it will appear. For a leilouy nichmat, the date of death is chosen
+like a calendar date (day, Hebrew month), and the sentence under the fields
+says, even before it is chosen, what the date changes: without it, the name
+is read for thirty days; with it, it comes back every year, in the week
+before the anniversary.
+
+« Signaler » ("Report"), on the chain, targets a name: the button does not
+turn off after a first report, and the window asks for the name in question
+instead of promising hiding at the third report. The « Bloquer ce créateur »
+("Block this creator") checkbox does not appear: the creator is the team,
+and blocking it erased the chain from the device.
+
+Without a network, a name's window does not freeze: it says what is
+happening and keeps what was entered. Offline, nothing goes out. If the
+device believes it is online but the server is silent, it gives control
+back after ten seconds: the request will go out on its own when the
+connection returns, there is no need to redo it, and the name joins the list
+when it arrives.
+
+In the reader, « Vous lisez pour » ("You are reading for") keeps the two
+groups of the chain page, each under its name: a refoua chelema and a
+leilouy nichmat are not said the same way (`PrayerNamesLine`). Removing a
+name asks the question, with the name (`useConfirm`); extending it does not:
+it can be redone with a gesture.
+
+A finished round is announced (« Tour terminé ! », "Round complete!") and
+freezes nothing: the page, like « Un autre Téhilim » ("Another Tehilim") in
+the reader, waits for the next round on its own, a few attempts over about
+forty seconds, then shows the draw card. Beyond that, it does not insist: a
+chain that does not restart is a failure, which reloading the page will
+reveal, not an endless wait.
+
+When creating a Tehilim session, the perpetual chain is offered in a
+discreet line under the type, in small type: it does not divert from
+creation, and does not promise a reader count that is not known.
+
+### Nichmat 40 is ticked day by day
+
+A Nichmat 40 chain (`docs/nichmat-40-jours.md`) has no texts to share out:
+forty places and forty days. Its page therefore replaces the list of texts
+with three cards, in the order a reader needs them: where the forty days
+stand (a sentence, then a bar), their own place, then who reads.
+
+The reader's place leads with today: « J'ai dit Nichmat aujourd'hui » ("I
+said Nishmat today") is the solid theme button, full width, the only one on
+the page; once ticked, it turns soft and says it is done. « Lire Nichmat »
+("Read Nishmat") sits at the end of the place's title, a soft pill with its
+book and its name. Below, the forty days are forty round buttons (round
+controls), eight to a line on a phone, ten on a wider screen: a ticked day
+takes the theme tint at full strength, a day that can still be ticked stays
+grey, a day to come is faded and does not respond. Earlier days can be
+ticked: a forgotten tick is caught up, not lost.
+
+The readers are rows, not pills: forty names are read by place, with each
+one's days on the right, green once they are up to date. The free places are
+counted in one line below, not listed.
+
+The header and the card give the forty days, « Du 16 octobre au 24
+novembre », where another chain gives its deadline; a chain that waits for
+its readers says « Commence quand les 40 places sont prises » ("Starts when
+the 40 places are taken"). The « Instructions » pill does not appear: there
+is nothing to reserve section by section, and the page says what to do.
+
+### The backoffice is a tool, and it reads like a dashboard
+
+The backoffice (`/admin`) is only for the team, most often on a computer
+screen. It keeps the design guidelines (the beige, the borderless surfaces,
+the round controls, Playfair for section titles) but not the layout of the
+public pages: its titles are left-aligned, its lists are dense, and it goes
+straight to what awaits a decision.
+
+- **It opens on an overview**: four numbers (chiourim online, listens,
+  sessions, authors), then « À traiter » ("To handle"), a list of rows that
+  each lead to the already filtered list (`?filtre=draft`). When there is
+  nothing to handle, the page says so in one sentence, with a green check
+  mark.
+- **Tabs count what is waiting**: a pill in the theme color for pending work
+  (chiourim to review), red for a problem (reported sessions, ongoing
+  incident).
+- **A list is a single panel** of rows separated by a rule, and not a stack
+  of cards: you scan it at a glance. Its filters are pills carrying their
+  count; the active filter takes the solid color.
+- **States have five tones, always the same** (`AdminStatus`): green for
+  what is online, amber for what is waiting (draft, to review), red for what
+  is withdrawn or reported, the theme color for a kind, gray for a detail. A
+  state pill states; it is not touched.
+- **The common action is a button, not the pill**: « Publier » ("Publish")
+  next to a draft. Unpublishing, rarer and heavier, stays on the detail
+  sheet or in bulk processing, behind a confirmation.
+- **A selection brings up its bar at the bottom of the screen**, which stays
+  within reach while you check items, and disappears when you clear it.
+- **A detail sheet puts first what you came to check**: for a chiour, the
+  audio player, then the content on the left and the filing on the right.
+  What deletes is at the bottom, in red, never next to « Enregistrer »
+  ("Save").
+
+### A short chain is confirmed
+
+A deadline that falls tonight or tomorrow night (`services/sessionDeadline.ts`)
+is not forbidden: a vigil, an urgent refoua chelema fit in one day. But in
+September 2026, three chains out of nine had as their deadline the very day
+they were created, and two stayed empty. The « Créer » ("Create") button
+therefore first asks the question (`useConfirm`): « Attention, votre date
+semble proche d'aujourd'hui » ("Careful, your date seems close to today"),
+the end stated plainly (tonight, tomorrow night). « Oui, créer la session »
+("Yes, create the session") creates; « Changer la date » ("Change the date")
+returns to the field. Beyond tomorrow, nothing intervenes. Held by
+`src/__tests__/newSessionDeadline.test.ts` and `sessionDeadline.test.ts`.
+
+### What was entered for a chain survives signing in
+
+Creating a chain requires an account, but the form opens without one: the
+visitor fills everything in, clicks « Créer », and the prompt sends them to
+sign in. On return, the form was empty. The input (title, description, type,
+selected books, date, guests' emails) is therefore saved at that moment, for
+the tab only (`sessionStorage`, nothing goes to the server), restored on
+return and erased on creation. Held by
 `src/__tests__/newSessionDraft.test.ts`.
 
-### Une chaîne se partage dès sa création
+### No icon on the left of a bar or a dialog
 
-Une chaîne que personne ne voit reste vide : celles qui se sont remplies
-avaient eu de 6 à 24 visiteurs, les vides jamais plus de deux. À la création,
-la page de la chaîne s'ouvre donc sur la fenêtre de partage qui existe déjà
-(`ShareModal.vue`), titrée « Votre session est prête » et précédée d'une
-phrase : penser à la partager autour de soi, pour que d'autres y participent.
-Le signal passe par l'adresse (`?partager=1`), retiré aussitôt : un
-rechargement ne rouvre pas la fenêtre.
+Icons set on the left of a text are being removed, little by little: they
+repeat what the words say and take the width a phone needs. Where a picture
+helps, it is a small illustration, drawn like the others, not an icon in a
+tinted circle.
 
-### Les jours restants se comptent sur le calendrier
+- **The selection bar** (`BatchSelectionBar.vue`, on a chain's page and on
+  its management page) says how many texts are selected and what the
+  button will do, with the button on the right. The two checks in a tinted
+  square on its left are gone.
+- **The confirmation dialog** (`ConfirmDialog.vue`): the title and the
+  message, then the buttons. The question mark (or the warning triangle)
+  in a circle is gone; an action that cannot be undone is still told by
+  its red button.
+- **The titles of the dialogs**: no icon before the title (« Rappels de
+  lecture », « Instructions », « Convertir une date », « Mes dates », « Me
+  rappeler cet horaire », « Avis suivi pour les horaires »). A back arrow,
+  when the dialog has a second screen, stays: it is a command, not a
+  decoration.
 
-La pastille de « Je participe » compte les jours du calendrier jusqu'à la
-date limite, pas les heures arrondies : « J-1 » la veille, et le jour même
-**« Jour J »** (« Last day », « היום האחרון ») plutôt qu'un « J-0 » qui se lit
-mal. Chaque langue a ses trois formes, l'hébreu accordant le singulier
-(« עוד יום אחד »). Tenu par `src/__tests__/myParticipatedSessions.test.ts`
-(« Je participe : jours restants »).
+### No icon on the left of a frame
 
-### Un nom public n'est jamais une adresse email
+The rule above, carried to the end of the frames: a card, a notice or a
+section that opened on an icon in its top-left corner, meant to stand for
+what the frame holds, repeated what its title said, often with a drawing
+shared by two different things (the same clock for the end of the Chema and
+the end of the 'Amida). Those icons are gone, on the site, in the app and
+in the back office:
 
-Un compte créé par email sans « Nom affiché » (le champ est facultatif)
-prenait son adresse pour nom, et ce nom part tel quel dans les données
-lisibles par tous : « Créée par jean.dupont@exemple.fr » sur la carte d'une
-chaîne, le nom d'une réservation. Sans nom affiché, le nom du compte est
-désormais ce qui précède « @ » (« jean.dupont »). Les chaînes et réservations
-déjà enregistrées gardent ce qu'elles portent. Tenu par
-`src/__tests__/publicNameWithoutEmail.test.ts`.
+- **Cards and notices**: the hiloulot, a chain's
+  reservation in the reader, the resume banner, « Le texte étudié » of a
+  class, the paused notice, the offline notice, « Mise à jour
+  disponible », the series of the Studio, the figures and the to-do list of
+  the back office. The title aligns with the edge of the card.
+- **Section and window titles** (« Mes sessions », « Toutes les sessions »,
+  « Cours sur ce chapitre », « Dans le Sidour », « À propos des horaires »)
+  and the bubbles of the tips (`FeatureTour.vue`: the bubble opens on its
+  title, without the solid round badge).
+- **Lines of state**: the date of a chain, « Tout lu », a finished chain,
+  a success or an error under a form, the toasts. The color and the
+  sentence say it.
+- **The groups of names**: « Refoua chelema » and « Leilouy nichmat » are
+  told by their names, in the reader, on the chain and in the preview of a
+  name.
 
-### « Complet » veut dire qu'il ne reste aucune place
+The times at the head of a tefila and of the Sli'hot became a pill (see
+"The time of a moment of prayer is a pill"); Chabbat, the fasts and the
+'hamets took their object (see "The frames of the times page carry their
+object").
 
-Le pourcentage d'une chaîne (`getSessionReservationStats`) s'arrondit à
-l'unité, sauf qu'il ne dit jamais 100 % tant qu'une place reste libre : il
-plafonne alors à 99. Sur le Talmud (327 places), 326 réservées affichaient
-« 100 % » et « Complet » en rouge, et la dernière place ne trouvait plus
-personne. La carte décide de « Complet » d'après les places elles-mêmes,
-plus d'après le pourcentage. Tenu par
-`src/__tests__/reservationHelpers.test.ts` (« ne dit pas 100 % tant qu'il
-reste une place »).
+Where a card led nowhere new, it lost its frame with its icon:
+« Enchaîner avec Arvit », at the end of Min'ha, is now a link set on the
+page, its name in the theme color and its reason under it.
 
-### Un invité reste lui-même d'une visite à l'autre
+**A list keeps its drawings.** In a list, the drawing at the start of each
+row is how the eye runs down it and finds its line without reading every
+name: the rows of the profile and the settings (`SettingsRow`), the
+shortcuts of the web profile, the reading menu, the reminder slots, the
+accounts of the security page, the steps of « Comment ça marche » and of
+« C'est prêt », the benefits of an account. These stay.
 
-Un invité qui réserve avec son email en fait l'identifiant de sa réservation
-(`chosenByGuestId`). Le formulaire se vide au rechargement : l'appareil ne
-savait plus qui il était, et l'invité ne pouvait plus ni annuler ni marquer
-lue sa propre lecture. L'appareil retient donc les emails avec lesquels on y
-a réservé (`guestService.rememberGuestEmail`, clé `pj_guest_emails`, les cinq
-plus récents), comme il retient déjà l'identité locale des invités sans email,
-et ils comptent dans l'identité de l'invité (`getGuestIdentifiers`). Même
-portée que l'identité locale : ce navigateur, pas un autre appareil. Tenu par
-`src/__tests__/guestEmailIdentity.test.ts`.
+So do what is a state or a command: the checkboxes and the radio marks of a
+choice, the download state of « Hors ligne », the check of a class already
+listened to, the waiting clock of a task of the day, the chips that state
+(« Complet », « Lu »), the back arrows, and the icon inside a pill that
+carries its name (see "A command placed in a text carries its name").
 
-### La date limite d'une chaîne est la même dans tous les fuseaux
+### One piece of information is said once
 
-Le créateur choisit un jour ; la chaîne finit à la fin de ce jour-là, là où
-se trouve qui la regarde. On l'enregistrait comme un instant (fin de journée
-dans le fuseau du créateur), relu dans le fuseau du lecteur : créée à Paris
-pour le 5 octobre, une chaîne se lisait « 6 octobre » à Jérusalem, et la
-modale de modification la réenregistrait au 6 à qui ne corrigeait que le
-titre, de Montréal à Paris. Les chaînes portent donc aussi le jour choisi
-(`dateLimitDay`, « YYYY-MM-DD »), que les versions publiées ignorent ;
-l'affichage, la fin de la chaîne, les jours restants et la modale le lisent
-par `deadlineDayOf` (`services/dateService.ts`). Il ne fait foi que s'il
-concorde avec l'instant : une ancienne version qui déplace la date réécrit
-l'instant sans le connaître, et c'est alors l'instant qui compte. Les
-chaînes créées avant gardent leur lecture d'avant. Tenu par
+In one block (a bar, a card, a dialog, a header), a fact is said once. Two
+ways of saying it (a count and a percentage, a status chip and a sentence,
+a title and a card that repeats it) make the reader check that they agree.
+Keep the more precise one; where the big figure at the end of a line is
+the design (a download), keep it and drop the line that repeats it.
+One exception, for the look: a progress card keeps its percentage beside
+the count (« Lus : 1 sur 3 » and « 33 % » on « Mes Téhilim », the daily
+reading, Ma journée in the library), and a chain's card keeps « 100%
+réservé » beside « Complet ».
+
+| Where                             | Kept                                       | Removed                                                                                             |
+| --------------------------------- | ------------------------------------------ | --------------------------------------------------------------------------------------------------- |
+| Selection bar, chain page         | « 2 textes sélectionnés », the button      | « Confirmer la réservation », « 2 Téhilim choisis » (a guest keeps « Finaliser en tant qu'invité ») |
+| Selection bar, management page    | « Attribuer à un invité » for « Réserver » | « Supprimer les réservations sélectionnées », the mixed label, « (3) » on a lone button             |
+| Library, download in progress     | the time left, the big « 50 % »            | « 12 Mo sur 40 Mo »                                                                                 |
+| A text objective's page           | the title                                  | the same title in the « Aujourd'hui » card                                                          |
+| Perpetual chain counter           | the big count                              | « Le tour 3 » in the sentence, the average after one round                                          |
+| A program's portion or week, done | « Ce soir, c'est fait » and what was read  | « Portion faite », « Semaine faite »                                                                |
+| New program, at one's own pace    | the stepper                                | the same pace repeated in the card                                                                  |
+| Mes dates                         | « 12 Adar », then the civil date           | the Hebrew date again in brackets                                                                   |
+| Audio queue                       | « 8 cours »                                | « (8) » on « Voir toute la file »                                                                   |
+| Chain management card             | each row's name                            | « Par : David » above, « 1 réservation » under « Réservé »                                          |
+| Write to us                       | « Nouvelle réponse »                       | « Répondu » beside it                                                                               |
+| Home day bar                      | « Journée pleine »                         | « 5 sur 5 »                                                                                         |
+| Paracha page                      | « Berechit », then « Lire »                | « Lire Berechit » (a double paracha still names each half)                                          |
+| A closed poll                     | the « Sondage clos » chip                  | « Ce sondage est clos. »                                                                            |
+
+Held for the download line by `src/__tests__/libraryOffline.test.ts`.
+
+### A chain is shared as soon as it is created
+
+A chain nobody sees stays empty: those that filled up had had from 6 to 24
+visitors, the empty ones never more than two. On creation, the chain's page
+therefore opens on the existing share window (`ShareModal.vue`), titled
+« Votre session est prête » ("Your session is ready") and preceded by a
+sentence: remember to share it around you, so that others take part. The
+signal goes through the address (`?partager=1`), removed immediately: a
+reload does not reopen the window.
+
+### The Tehilim of a chain are read one after the other
+
+Someone who takes several psalms in a Tehilim chain used to open them one
+by one from the list, come back, mark each read, open the next. From two
+psalms taken (`BATCH_READING_MIN`), the chain offers to read them at once,
+on a page of their own (« Mes Téhilim », "My Tehilim",
+`/share-reading/session/:slug/lecture`, `SessionReadingPage.vue`), laid out
+like the daily reading of Mon parcours:
+
+- **The reader's psalms of this chain**, read or not, in the order of the
+  book; an abandoned draw (expired) is no longer theirs. A guest is
+  recognized by the device, as everywhere else. The Yehi ratson once
+  before, the three verses once after.
+- **Each psalm is checked where it is read** (« Marquer comme lu »), and
+  the list beside the text (at the top on a phone) checks it in one tap,
+  with where one stands (« Lus : 2 sur 5 », and its bar). What is checked
+  is the reservation itself, the switch of the chain's list: the chain
+  counts it at once.
+- **Nothing goes to Mon parcours**: it is the reading of one chain, for
+  now, not an objective on the shelf.
+- **Two doors**: « Tout lire maintenant » ("Read them all now"), a button
+  beside the « Mes réservations » heading of the chain's page (no extra
+  frame: the page is long enough), as long as there are several psalms
+  taken and one is still to read; and, right after a reservation that
+  leaves such a list, the question « Les lire maintenant ? » ("Read them
+  now?"). A guest who declines sees the signup dialog as before.
+- **On the perpetual chain, nothing is reserved, everything is read**: the
+  boxes say « Choisir » ("Pick") and the bar has a single button, « Lire
+  maintenant » ("Read now"): it opens the page straight away, without the
+  question asked on the other chains. No name is asked (a guest reads anonymously, as with the draw). The reader's
+  group is « Mes Téhilim à lire », a psalm being read says « En lecture par
+  … », and « Tout lire maintenant » shows from one psalm. A psalm picked and
+  not read goes back to the chain after an hour, pushed back while the page
+  stays open (see `docs/chaine-perpetuelle.md`, « Read right away »).
+- **Tehilim chains only**: a psalm is read whole, in one slot. A chapter
+  taken in a Talmud or Michna chain would need the reader to show that
+  chapter alone.
+
+Held by `src/__tests__/sessionBatchReading.test.ts` (« reading the Tehilim
+of a chain at once »).
+
+### Remaining days are counted on the calendar
+
+The « Je participe » pill counts calendar days until the deadline, not
+rounded hours: « J-1 » the day before, and on the day itself **« Jour J »**
+(« Last day », « היום האחרון ») rather than a « J-0 » that reads poorly. Each
+language has its three forms, with Hebrew agreeing in the singular (« עוד
+יום אחד »). Held by `src/__tests__/myParticipatedSessions.test.ts` (« Je
+participe : jours restants »).
+
+### A public name is never an email address
+
+An account created by email without a « Nom affiché » ("Display name") (the
+field is optional) took its address as its name, and that name goes out as
+is into data readable by everyone: « Créée par jean.dupont@exemple.fr »
+("Created by jean.dupont@exemple.fr") on a chain's card, the name on a
+reservation. Without a display name, the account name is now what precedes
+"@" (« jean.dupont »). Chains and reservations already saved keep what they
+carry. Held by `src/__tests__/publicNameWithoutEmail.test.ts`.
+
+### « Complet » means there is no spot left
+
+A chain's percentage (`getSessionReservationStats`) is rounded to the unit,
+except that it never says 100 % as long as a spot remains free: it then caps
+at 99. On the Talmud (327 spots), 326 reserved displayed « 100 % » and
+« Complet » ("Full") in red, and the last spot no longer found anyone. The
+card decides « Complet » based on the spots themselves, no longer on the
+percentage. Held by `src/__tests__/reservationHelpers.test.ts` (« ne dit pas
+100 % tant qu'il reste une place »).
+
+### A guest stays themselves from one visit to the next
+
+A guest who reserves with their email makes it the identifier of their
+reservation (`chosenByGuestId`). The form emptied on reload: the device no
+longer knew who they were, and the guest could neither cancel nor mark as
+read their own reading. The device therefore remembers the emails used to
+reserve on it (`guestService.rememberGuestEmail`, key `pj_guest_emails`, the
+five most recent), just as it already remembers the local identity of
+guests without email, and they count in the guest's identity
+(`getGuestIdentifiers`). Same scope as the local identity: this browser, not
+another device. Held by `src/__tests__/guestEmailIdentity.test.ts`.
+
+### A chain's deadline is the same in every time zone
+
+The creator chooses a day; the chain ends at the end of that day, wherever
+the person looking at it is. It used to be saved as an instant (end of day
+in the creator's time zone), read back in the reader's time zone: created in
+Paris for October 5, a chain read « 6 octobre » ("October 6") in Jerusalem,
+and the edit modal saved it again as the 6th for someone who only corrected
+the title, from Montreal to Paris. Chains therefore also carry the chosen
+day (`dateLimitDay`, « YYYY-MM-DD »), which published versions ignore; the
+display, the end of the chain, the remaining days and the modal read it
+through `deadlineDayOf` (`services/dateService.ts`). It is authoritative only
+if it matches the instant: an older version that moves the date rewrites the
+instant without knowing about it, and then the instant is what counts.
+Chains created before keep their previous reading. Held by
 `src/__tests__/deadlineAcrossTimezones.test.ts`.
 
-### L'écran de connexion dit quoi faire
+### The sign-in screen says what to do
 
-Un échec ne montre jamais l'erreur brute de Firebase (« Firebase: Error
-(auth/invalid-credential). », en anglais dans une app en français) : chaque
-code connu a sa phrase (`describeEmailAuthError`, `services/authErrors.ts`),
-et le message brut part seulement vers PostHog, où il sert. Sous la phrase,
-**la sortie qui va avec**, une commande avec son dessin et son nom :
+A failure never shows Firebase's raw error (« Firebase: Error
+(auth/invalid-credential). », in English in an app in French): each known
+code has its sentence (`describeEmailAuthError`, `services/authErrors.ts`),
+and the raw message only goes to PostHog, where it is useful. Under the
+sentence, **the way out that goes with it**, a command with its drawing and
+its name:
 
-- l'adresse ou le mot de passe refusés : « Créer un compte avec cette
-  adresse », en gardant ce qui a été saisi. Firebase ne dit pas si l'adresse
-  existe ; la phrase couvre donc aussi le compte créé avec Google ou Apple ;
-- l'adresse déjà inscrite : « Me connecter avec cette adresse » ;
-- la dernière connexion de l'appareil s'est faite avec Google ou Apple : la
-  phrase le rappelle, et la sortie est ce bouton-là.
+- the address or password rejected: « Créer un compte avec cette adresse »
+  ("Create an account with this address"), keeping what was entered.
+  Firebase does not say whether the address exists; the sentence therefore
+  also covers an account created with Google or Apple;
+- the address already registered: « Me connecter avec cette adresse » ("Sign
+  in with this address");
+- the device's last sign-in was with Google or Apple: the sentence recalls
+  it, and the way out is that button.
 
-Un mot de passe perdu a sa sortie à lui, toujours là sous le champ du mot de
-passe : **« Mot de passe oublié ? »**, un cadenas et son nom. Sans elle,
-l'aide tournait en rond : le mot de passe refusé proposait de créer le compte,
-l'adresse déjà inscrite proposait de s'y connecter. Elle garde l'adresse
-saisie, efface le mot de passe, et n'a qu'un champ ; l'email part par Firebase
-Auth (`sendPasswordResetEmail`, dans la langue de l'écran), et « Retour à la
-connexion » ramène au formulaire. La réponse est **la même que l'adresse ait
-un compte ou non** (« Si un compte existe avec l'adresse… ») : l'écran ne sert
-pas à vérifier qui est inscrit. Tenu par
-`src/__tests__/loginPasswordReset.test.ts` et `e2e/firebase/auth.spec.ts`.
+A lost password has its own way out, always there under the password field:
+**« Mot de passe oublié ? »** ("Forgot password?"), a padlock and its name.
+Without it, the help went in circles: the rejected password offered to create
+the account, the already registered address offered to sign in to it. It
+keeps the entered address, clears the password, and has only one field; the
+email goes out through Firebase Auth (`sendPasswordResetEmail`, in the
+screen's language), and « Retour à la connexion » ("Back to sign-in")
+returns to the form. The answer is **the same whether or not the address has
+an account** (« Si un compte existe avec l'adresse… », "If an account exists
+with the address…"): the screen is not a way to check who is registered.
+Held by `src/__tests__/loginPasswordReset.test.ts` and
+`e2e/firebase/auth.spec.ts`.
 
-La dernière méthode employée sur l'appareil (`services/lastAuthMethod.ts`)
-porte aussi une pastille, **« Dernière utilisation »**, posée sur le bord haut
-de son bouton, hors du bouton dont le libellé reste celui de la commande ;
-pour l'email, à côté de l'étiquette du champ. Elle survit à la déconnexion :
-c'est justement après qu'on en a besoin. Le piège qu'elle évite était le plus
-courant de l'écran : un compte créé d'un toucher avec Google, puis, des
-semaines plus tard, une adresse et un mot de passe qui n'ont jamais existé.
-Tenu par `src/__tests__/loginEmailErrors.test.ts` et `emailAuthErrors.test.ts`.
+The last method used on the device (`services/lastAuthMethod.ts`) also
+carries a pill, **« Dernière utilisation »** ("Last used"), placed on the top
+edge of its button, outside the button whose label remains that of the
+command; for email, next to the field's label. It survives sign-out: that is
+precisely when it is needed. The trap it avoids was the most common on the
+screen: an account created with one tap with Google, then, weeks later, an
+address and password that never existed. Held by
+`src/__tests__/loginEmailErrors.test.ts` and `emailAuthErrors.test.ts`.
 
-### Ce qu'un compte laisse sur l'appareil ne rejoint pas le suivant
+### What an account leaves on the device does not join the next one
 
-À la déconnexion, marque-pages, positions de lecture et dates personnelles
-restent sur l'appareil : ils y ont autant leur place qu'avant la connexion.
-Mais à la connexion d'un autre compte (téléphone de famille, ordinateur de la
-synagogue), la fusion les versait dans le sien, hazkarot et anniversaires
-d'une autre famille compris.
+On sign-out, bookmarks, reading positions and personal dates stay on the
+device: they belong there as much as before signing in. But when another
+account signed in (a family phone, the synagogue computer), the merge poured
+them into that account, another family's hazkarot and birthdays included.
 
-L'appareil retient donc le dernier compte suivi, et de quoi reconnaître ce
-qui est à lui : pour la lecture, l'instant de son départ
-(`pj-reading-owner`), tout ce qui est daté d'avant étant sien ; pour les
-dates, qui ne portent pas d'horodatage, la liste de celles que le compte
-portait (`pj_hebrew_occasions_owner`). Un autre compte qui se connecte
-retrouve les siens à la place.
+The device therefore remembers the last account it followed, and enough to
+recognize what belongs to it: for reading, the moment it left
+(`pj-reading-owner`), everything dated before being its own; for dates,
+which carry no timestamp, the list of those the account carried
+(`pj_hebrew_occasions_owner`). Another account that signs in finds its own
+instead.
 
-Ce qui a été saisi sans compte rejoint toujours le compte qui se connecte,
-que ce soit avant toute connexion ou après le départ d'un compte : cela
-n'existe nulle part ailleurs, l'écarter le perdrait. Le même compte qui
-revient retrouve tout, et ce qui a été saisi en son absence avec.
+What was entered without an account always joins the account that signs in,
+whether before any sign-in or after an account left: it exists nowhere else,
+and setting it aside would lose it. The same account coming back finds
+everything, along with what was entered in its absence.
 
-Deux comptes d'une même personne (Google, puis adresse) sont deux comptes :
-l'appareil ne sait pas les rapprocher, et dans le doute il ne verse pas les
-données de l'un dans l'autre. Chacun garde les siennes, rien n'est perdu.
+Two accounts of the same person (Google, then address) are two accounts: the
+device cannot link them, and when in doubt it does not pour one's data into
+the other. Each keeps its own; nothing is lost.
 
-Un appareil d'avant cette règle ne sait pas dire à qui sont ses dates : il
-applique une dernière fois la règle d'alors (tout rejoint un compte jamais
-adopté) plutôt que d'en écarter à l'aveugle. Tenu par
+A device from before this rule cannot tell whose dates it holds: it applies
+the old rule one last time (everything joins an account never adopted)
+rather than setting things aside blindly. Held by
 `src/__tests__/accountSwitchLocalData.test.ts`.
 
-### Les cours s'écoutent comme une liste de lecture
+### Classes are listened to like a playlist
 
-Les cours audio ont pris la forme que tout le monde connaît des applications
-d'écoute : une série est une playlist, un rav un artiste, un cours un
-morceau. On ne lit plus une grille de cartes qui se ressemblent toutes ; on
-parcourt, on lance, on reprend.
+Audio classes have taken the form everyone knows from listening apps: a
+series is a playlist, a rav an artist, a class a track. You no longer read a
+grid of cards that all look alike; you browse, play, resume.
 
-- **Le catalogue en rangées.** « Reprendre l'écoute » (les cours entamés sur
-  cet appareil), les séries, les rabbanim, puis les nouveautés et tous les
-  cours en lignes. Une rangée défile de côté et déborde jusqu'au bord de
-  l'écran pour le dire ; sur ordinateur, deux flèches la font défiler. Une
-  recherche ou un thème resserre tout en une seule liste.
-- **Les filtres se demandent.** En haut, la recherche et, à côté, un
-  bouton « Filtres » (son dessin et son nom ; le nombre de filtres posés en
-  pastille). Il ouvre un panneau, les thèmes puis les rabbanim, qu'on
-  referme sur « Voir les N cours ». Fermé, chaque filtre posé reste sous la
-  recherche en pastille pleine, qu'on retire d'un geste. Une rangée de
-  thèmes toujours ouverte faisait de l'en-tête un nuage de mots-clés avant
-  même le premier cours.
-- **Une ligne joue.** Toute la ligne d'un cours le lance, et la liste
-  affichée devient la file du lecteur : la fin d'un cours enchaîne le
-  suivant. Toucher le cours qui joue le met en pause. Il prend la couleur du
-  thème et ses trois barres, qui se figent en pause et ne bougent pas en
-  mouvement réduit. Un cours entamé porte une barre fine de ce qui est
-  écouté, et ce qu'il en reste à la place de sa durée ; un cours fini, une
-  coche.
-- **Une série, un cours, un rav : une page de playlist.** La pochette, le
-  titre, le rav (son rond et son nom), la durée ; puis une ligne d'actions,
-  « Lire le texte » ou partager d'un côté, le grand bouton rond d'écoute au
-  bout (il reprend l'épisode entamé, et dit lequel aux lecteurs d'écran) ;
-  puis la liste. La page d'un cours n'a pas de lecteur à elle : c'est la
-  page qu'on partage, avec le texte étudié, la description, la série.
-- **Le lecteur est en bas.** Une barre qui flotte au-dessus de la barre de
-  l'app et suit d'une page à l'autre : la pochette, le titre et le rav, la
-  lecture, le cours suivant pendant l'écoute (fermer, en pause), la
-  progression au bord bas. Sur un écran large, elle prend toute la largeur
-  avec les commandes et la barre de lecture au milieu, la vitesse et fermer
-  à droite.
-- **Le lecteur plein écran.** Un appui n'importe où sur la barre l'ouvre
-  (ses boutons gardent leur rôle), comme un glissement vers le haut sur un
-  téléphone : la barre s'agrandit jusqu'à couvrir l'écran. La flèche du
-  haut, le retour, Échap, ou sur un téléphone le plein écran tiré vers le
-  bas (il suit le doigt) le referment : il se réduit jusqu'à redevenir la
-  barre. Il fallait viser la pochette ou la flèche, et rien ne disait d'où
-  sortait cette page (tenu par `playerBarOpen.test.ts`). D'où vient l'écoute (« Lecture depuis
-  Chaar Habitahon »), la grande pochette, le titre et le rav, la barre de
-  lecture, puis reculer de 15 s, précédent, la lecture en grand rond,
-  suivant, avancer de 30 s. La vitesse, à droite du titre (sur un écran
-  large, dans la barre, à droite) : une pastille qui la dit, et qui ouvre la
-  liste des vitesses, de 0,75× à 2×, la sienne cochée ; on touche celle
-  qu'on veut (tenu par `playerSpeed.test.ts`). La faire défiler d'appui en
-  appui obligeait à passer par toutes pour revenir en arrière. Plus bas, le texte étudié, ce qui suit dans la
-  file, et « À propos du cours », qui mène à sa page. Sur un écran large,
-  deux colonnes : le cours à gauche, la suite à droite.
-- **La file se lit d'un coup d'œil.** « En cours » d'abord, à part : la
-  pochette, le titre entier, le chapitre et ce qu'il reste, les barres qui
-  dansent. Puis « À suivre », dix lignes et la suite à un geste : une ligne
-  par cours, séparées d'un filet, le numéro, le titre sur deux lignes au
-  plus et, dessous, le chapitre étudié et la durée. Une liste compacte
-  d'une ligne par cours ne laissait pas voir où l'on en était. Au-dessus
-  d'« En cours », repliés, les cours d'avant : une ligne « Précédents » et
-  leur nombre, qu'un appui déplie dans le même dessin, dans l'ordre de la
-  série. Un cours lancé au milieu d'une série n'en montrait que la suite,
-  et le début de la file était perdu (tenu par `nowPlayingQueue.test.ts`).
-- **Un titre ne répète pas sa série.** Dans une liste où la série est déjà
-  dite (la page d'une série, la file du lecteur), « Shaar Habitahon Shiour
-  10 Chapitre 2 » devient « Shiour 10 Chapitre 2 » (`shortTitle`).
-- **La couleur du lecteur.** La barre et le plein écran prennent la reliure
-  de la série, assombrie, en aplat (`playerTone`), et y écrivent en crème ;
-  le bouton de lecture est un rond crème qui porte la reliure. C'est le seul
-  endroit où une surface de l'app sort du thème : comme la carte de la fête,
-  on reconnaît d'un coup d'œil ce qui joue. Pas de dégradé, contrairement à
-  Spotify.
-- **La pochette.** Les cours n'ont pas d'image : chaque série reçoit une
-  reliure, comme les volumes de l'étagère, d'une teinte chaude et mate tirée
-  de son identifiant (la même à chaque visite). Dans un cadre estampé, son
-  titre en Playfair, au centre, aussi grand que la pochette le permet : sa
-  taille suit la largeur de la pochette (unités de conteneur) et la longueur
-  du titre, sans qu'un mot ne déborde, sur des lignes équilibrées. En bas,
-  sous un fleuron (deux traits, un losange), le rav en petites capitales.
-  Un titre écrit petit dans un coin se perdait dans la teinte. En petit, les
-  initiales de la série. Un rav a la même reliure, ronde. Hors thème, identique en mode sombre, en aplats, le titre
-  crème à 4,5:1 au moins sur chaque teinte (`components/chiourim/cover.ts`,
-  tenu par `chiourCover.test.ts`).
-- **Hors de l'app, comme une musique.** Le cours qui joue s'affiche dans la
-  notification d'Android et sur l'écran verrouillé d'iOS, avec sa pochette :
-  la même reliure, dessinée en image (`components/chiourim/coverArtwork.ts`),
-  son titre, le rav et la série. Les commandes y sont celles du lecteur
-  (reculer de 15 secondes, avancer de 30, cours précédent et suivant). Voir
-  `docs/app-native.md`, « Écoute des cours en arrière-plan ».
-- **Les titres gardent leur langue.** Un titre, un nom de série ou de rav,
-  une description sont écrits par les auteurs : en hébreu dans l'interface
-  française, en français dans l'interface hébraïque. Ils portent
-  `dir="auto"` : coupés, ils perdent leur fin et pas leur début, et leurs
-  signes restent à leur place ; ils s'alignent pourtant comme la page autour
-  d'eux, et un mot sans fin passe à la ligne au lieu de déborder (règle
-  `[dir="auto"]` de `assets/main.css`). Un titre long se borne à deux
-  lignes dans les tuiles et la file du lecteur, trois sous la pochette du
-  plein écran ; `line-clamp` pose son propre `display`, on ne lui adjoint
-  jamais `block`, qui l'annule.
-- **Le texte étudié.** Un cours rattaché à un livre de la bibliothèque
-  (`services/chiourTexte.ts`) le dit sur sa page et dans le lecteur plein
-  écran, par une carte qui mène au livre au chapitre près (« Chaar
-  Habita'hon · Chapitre 4 ») ; une série, par « Lire le texte ». Dans
-  l'autre sens, sous le chapitre qu'on vient de lire (ou en tête d'un
-  livre), « Cours sur ce chapitre » : ceux du chapitre d'abord, trois à cinq
-  lignes, la suite à un geste. Rien sous une tefila : on y vient prier.
+- **The catalog in rows.** « Reprendre l'écoute » ("Resume listening", the
+  classes started on this device), the series, the rabbanim, then new
+  releases and all classes as rows. A row scrolls sideways and overflows to
+  the screen edge to say so; on a computer, two arrows scroll it. A search
+  or a topic narrows everything into a single list.
+- **Filters are asked for.** At the top, the search and, next to it, a
+  « Filtres » ("Filters") button (its drawing and its name; the number of
+  filters set as a pill). It opens a panel, the topics then the rabbanim,
+  which closes on « Voir les N cours » ("See the N classes"). Closed, each
+  filter set stays under the search as a solid pill, removed with one
+  gesture. An always-open row of topics turned the header into a keyword
+  cloud before the first class even appeared.
+- **A row plays.** The whole row of a class starts it, and the displayed
+  list becomes the player's queue: the end of a class chains into the next.
+  Touching the playing class pauses it. It takes the theme color and its
+  three bars, which freeze when paused and do not move in reduced motion. A
+  started class carries a thin bar of what has been listened to, and what
+  remains in place of its duration; a finished class, a check mark.
+- **A series, a class, a rav: a playlist page.** The cover, the title, the
+  rav (their circle and name), the duration; then a row of actions, « Lire le
+  texte » ("Read the text") or share on one side, the big round listen button
+  at the end (it resumes the started episode, and says which one to screen
+  readers); then the list. A class page has no player of its own: it is the
+  page you share, with the text studied, the description, the series.
+- **The player is at the bottom.** A bar floating above the app's bar that
+  follows from one page to another: the cover, the title and the rav,
+  play, the next class while listening (close, when paused), the progress
+  along the bottom edge. On a wide screen, it takes the full width with the
+  controls and the progress bar in the middle, the speed and close on the
+  right.
+- **The full-screen player.** A tap anywhere on the bar opens it (its
+  buttons keep their role), as does an upward swipe on a phone: the bar
+  grows until it covers the screen. The arrow at the top, back, Escape, or
+  on a phone the full screen pulled down (it follows the finger) close it:
+  it shrinks until it becomes the bar again. You used to have to aim at the
+  cover or the arrow, and nothing said where this page came from (held by
+  `playerBarOpen.test.ts`). Where the listening comes from (« Lecture depuis
+  Chaar Habitahon », "Playing from Chaar Habitahon"), the large cover, the
+  title and the rav, the progress bar, then back 15 s, previous, play as a
+  large circle, next, forward 30 s. The speed, to the right of the title (on
+  a wide screen, in the bar, on the right): a pill that states it, and opens
+  the list of speeds, from 0.75× to 2×, the current one checked; you touch
+  the one you want (held by `playerSpeed.test.ts`). Cycling through it tap by
+  tap forced you through all of them to go back. Further down, the text
+  studied, what follows in the
+  queue, and « À propos du cours » ("About the class"), which leads to its
+  page. On a wide screen, two columns: the class on the left, what follows on
+  the right.
+- **The progress bar never goes back.** Released by the finger, it stays
+  where it was let go while the audio there downloads; back 15 s and forward
+  30 s, the system's controls and the start of the class move it at once.
+  It used to fall back to the old position until the seek landed, then jump
+  to the new one. A class resumed shows where it resumes before its audio
+  has loaded, and the time shown changes with the second the audio is at
+  (held by `playerSeek.test.ts`).
+- **The queue reads at a glance.** « En cours » ("Now playing") first, set
+  apart: the cover, the full title, the chapter and what remains, the
+  dancing bars. Then « À suivre » ("Up next"), ten rows and the rest one
+  gesture away: one row per class, separated by a rule, the number, the
+  title on two lines at most and, below, the chapter studied and the
+  duration. A compact list of one line per class did not show where you
+  were. Above « En cours », collapsed, the earlier classes: a « Précédents »
+  ("Previous") row and their count, which one tap expands in the same
+  design, in series order. A class started in the middle of a series showed
+  only what followed, and the start of the queue was lost (held by
+  `nowPlayingQueue.test.ts`).
+- **A title does not repeat its series.** In a list where the series is
+  already stated (a series page, the player's queue), « Shaar Habitahon
+  Shiour 10 Chapitre 2 » becomes « Shiour 10 Chapitre 2 » (`shortTitle`).
+- **The player's color.** The bar and the full screen take on the series'
+  binding, darkened, as a flat fill (`playerTone`), and write on it in
+  cream; the play button is a cream circle carrying the binding. It is the
+  only place where an app surface leaves the theme: like the holiday card,
+  you recognize at a glance what is playing. No gradient, unlike Spotify.
+- **The cover.** Classes have no image: each series receives a binding, like
+  the shelf volumes, in a warm matte tint derived from its identifier (the
+  same on every visit). In an embossed frame, its title in Playfair, in the
+  center, as large as the cover allows: its size follows the cover's width
+  (container units) and the title's length, without any word overflowing, on
+  balanced lines. At the bottom, under a fleuron (two strokes, a diamond),
+  the rav in small caps. A title written small in a corner got lost in the
+  tint. At small sizes, the series' initials. A rav has the same binding,
+  round. Outside the theme, identical in dark mode, in flat colors, the title
+  cream at 4.5:1 at least on each tint (`components/chiourim/cover.ts`, held
+  by `chiourCover.test.ts`).
+- **Outside the app, like music.** The playing class shows in the Android
+  notification and on the iOS lock screen, with its cover: the same binding,
+  drawn as an image (`components/chiourim/coverArtwork.ts`), its title, the
+  rav and the series. The controls there are the player's (back 15 seconds,
+  forward 30, previous and next class). See `docs/app-native.md`, « Écoute
+  des cours en arrière-plan ».
+- **Titles keep their language.** A title, a series or rav name, a
+  description are written by the authors: in Hebrew in the French interface,
+  in French in the Hebrew interface. They carry `dir="auto"`: when cut, they
+  lose their end and not their beginning, and their punctuation stays in
+  place; they still align like the page around them, and an endless word
+  wraps instead of overflowing (the `[dir="auto"]` rule in
+  `assets/main.css`). A long title is limited to two lines in tiles and the
+  player's queue, three under the full-screen cover; `line-clamp` sets its
+  own `display`, so it is never paired with `block`, which cancels it.
+- **The text studied.** A class attached to a library book
+  (`services/chiourTexte.ts`) says so on its page and in the full-screen
+  player, through a card that leads to the book down to the chapter (« Chaar
+  Habita'hon · Chapitre 4 »); a series, through « Lire le texte ». In the
+  other direction, under the chapter you have just read (or at the top of a
+  book), « Cours sur ce chapitre » ("Classes on this chapter"): those of the
+  chapter first, three to five rows, the rest one gesture away. Nothing under
+  a tefila: people come there to pray.
 
-Aucune image, aucun dégradé : la barre de lecture est une piste en deux
-aplats sous le curseur natif.
+No image, no gradient: the progress bar is a track in two flat colors under
+the native slider.
 
-## 2. Les couleurs de thème
+### Mon parcours: the wall is built in stones, and only it
 
-Deux couleurs, l'orange et le bleu de la palette du logo. Le fond et le mur
-viennent eux aussi du logo.
+Mon parcours (`/parcours`) tracks what you have set yourself to keep up: a
+text to finish by a date, a habit, the month's Tehilim, the week's paracha, a
+text reread every day. What has been done shows as a wall being built, one
+stone per day (`components/parcours/StoneWall.vue`): one column per week,
+from Sunday at the top to Chabbat at the bottom, the highest row like a
+foundation course.
 
-| Couleur       | Logo      | Encre     | Claire    |
-| ------------- | --------- | --------- | --------- |
-| Orange        | `#FEA547` | `#D46D01` | `#FFD09E` |
-| Bleu          | `#539EE2` | `#328CDC` | `#A9CCEB` |
-| Fond de page  | `#FFF9F3` |           |           |
-| Briques (mur) | `#D6C4B8` |           |           |
+- **Stones are for history, and only for it.** The wall of the last five
+  weeks, the whole wall, its legend. A stone laid, everything done; half
+  laid, part of it; white, Chabbat, a holiday or nothing planned; a hollow,
+  nothing checked; the dotted spot, yet to come. What is planned or chosen
+  stays **flat**: a program's week is a bar chart (`WeekBars.vue`), a habit's
+  week flat boxes, like the choice of days. In the middle of a page,
+  stones said "built" for what was only a plan.
+- **Stones are outside the theme**, like bindings: the tint of Jerusalem
+  stone, in flat colors with a mineral grain (a texture, not a gradient),
+  shared by the global class `.pj-stone`. Only the mortar darkens in dark
+  mode.
+- **The wall opens on today**, at the end of the reading direction (on the
+  right in French, on the left in Hebrew), and fills the screen's width; you
+  go back in time by swiping. A touched stone opens and can be completed,
+  months later if need be.
 
-L'orange du logo est clair : le blanc ne s'y lit pas (2:1), et il ne s'écrit
-pas sur le fond (1,9:1). Il sert donc **tel quel de fond plein**, avec un
-brun dessus (`#3B2412`, 7,4:1), et le texte orange prend la **même teinte,
-soutenue juste assez** pour se lire : c'est l'encre. Le bleu du logo, clair
-lui aussi, est pris soutenu une fois pour toutes (`#328CDC`) : il porte le
-blanc et se lit en encre.
+### Nothing counts against you
 
-Essais écartés pour l'orange, dans l'ordre : le vermillon d'origine
-(`#DE4F17`), qui tirait au rouge ; l'orange du logo soutenu pour porter le
-blanc (`#D96507`), plus jaune que le vermillon mais qui tirait au brun et
-rendait l'app terne ; des oranges plus vifs entre les deux (`#E65D00`), qui
-n'ont pas convaincu non plus. Le prix de l'orange clair : deux oranges sur un
-même écran, la teinte dans les fonds pleins et l'encre dans le texte (l'heure
-de l'accueil, l'onglet actif).
+The streak (consecutive days on which you did something) carries a
+terracotta lamp, drawn as in the mockup (`ParcoursLamp.vue`): its flame
+rises when the day is full, and lowers on a missed day without ever going
+out. Chabbat and holidays do not break it: nothing is asked then. « Pas
+aujourd'hui » ("Not today") removes a task from the day without counting it
+missed. Today breaks nothing as long as it is not over. A past day can be
+checked afterward, from the wall (that day's sheet). A backlog is stated
+(« 6 michnayot de retard », "6 michnayot behind") with « Rien ne presse »
+("No rush"), and is caught up as you choose (the week, by the end, all at
+once, by pushing back the end, or « Déjà fait », "Already done"); the day's
+portion never grows on its own.
 
-Trois thèmes au choix, dans cet ordre. Le premier est celui d'origine.
+### The streak lights
 
-| Thème           | Encre     | Fond plein | Texte dessus | Secondaire |
-| --------------- | --------- | ---------- | ------------ | ---------- |
-| sunset (défaut) | `#D46D01` | `#FEA547`  | `#3B2412`    | bleu       |
-| ocean           | `#328CDC` | `#328CDC`  | blanc        | orange     |
-| emerald         | `#059C66` | `#059C66`  | blanc        | orange     |
+The higher the streak, the bigger what gives light
+(`services/parcours/lights.ts`, `StreakLight.vue`): the old lamp at the
+start, the candle at 3 days, the lantern at 7, the menorah at 14, the
+lighthouse at 21, the moon at 30, the sun at 50 (from Pessa'h to Chavouot),
+the stars at 75, the galaxy at 100, the supernova at 150, the quasar at 250,
+and the light of the first day after a year. Held by
+`parcoursLights.test.ts`.
 
-L'orange et le bleu sont l'un en second de l'autre ; le vert prend l'orange
-en second. La règle de lisibilité est tenue par
-`src/__tests__/themeColors.test.ts` :
+- **Objects, not icons**, in the colors of the real thing and in flat
+  colors, at the lamp's size (80 by 62): they take its place on the home
+  page, in Mon parcours and the profile without moving anything. What burns
+  keeps its flame, which rises and lowers like the lamp's; what radiates has
+  a halo, a more or less vivid flat fill.
+- **They live gently**, wherever they are (home page, Mon parcours,
+  profile, « Mes lumières », the sheet of an earned light): the flame
+  flickers, the halo breathes, the stars twinkle, the rays of the sun and of
+  dawn turn slowly, the lighthouse sweeps from one beam to the other, the
+  galaxy's arms turn in their disk seen at an angle (tips trailing), the
+  supernova's shell moves away and its glow pulses, the quasar's jets turn
+  around its core while pulsing. This is a deliberate exception to "Motion
+  answers a gesture": a light that does not flicker looks out. The
+  movement stays slow and small, a light still to be earned stays still, and
+  everything freezes in reduced motion and lite rendering (`perf-lite`), on
+  the settled state (`StreakLight.vue`, `ParcoursLamp.vue`).
+- **You see the light of the current streak; you keep those of the
+  record.** A streak that falls back lowers the light shown, never those you
+  have earned: « Mes lumières » keeps them all.
+- **« Mes lumières » is a list** (a sheet, `LightsSheet.vue`): the text at
+  the start of the row (the name, the threshold, the sentence), the light at
+  the end, placed without a background; the one for the current streak
+  circled, « Votre lumière » ("Your light"). Taller than the screen, the
+  sheet opens at half height, on its title, and unfolds when swiped up
+  (`BottomSheet`, `tall`); it is the veil that scrolls, with no gesture to
+  program.
+- **What is coming stays in the shadow.** A light to be earned is only a
+  blurred shadow, « À découvrir » ("To discover"), with its threshold (the
+  next one says in how many days): you can make out a shape, nothing more.
+  Slightly enlarged and pushed toward the edge, it overflows its card, which
+  cuts it. You know there is something, not what.
+- **An earned light is celebrated, once** (`LightCelebration.vue`): a
+  moment after the gesture that lit it, a sheet rises, the light grows in it
+  and its halo opens twice, with its name, its sentence and « Voir mes
+  lumières » ("See my lights"). The last celebrated record is kept on the
+  device; the first time, and when the record jumps all at once (the account
+  read back on a new device), nothing is celebrated: we only celebrate what
+  you have just done. Held by `e2e/firebase/parcours.spec.ts` (« la série
+  qui franchit un palier allume une lumière, une fois »).
+- **The light opens with a touch**, with no button beside it: on Mon
+  parcours and in the profile (its pill, on the circle in the app, next to
+  the name on the site), touching the light opens « Mes lumières ». It is the
+  object itself, like
+  the home page lamp that leads to Mon parcours; on Mon parcours, its name
+  is written just below (« La ménorah · prochaine lumière dans 1 jour », "The
+  menorah · next light in 1 day"), and its accessible name says so
+  everywhere (« Mes lumières, La ménorah »).
 
-- l'encre à 3,1:1 au moins sur le fond, 3,5:1 sur une carte blanche, 3,3:1
-  sur le fond sombre ;
-- ce qui s'écrit sur le fond plein à 3,5:1 au moins ;
-- au survol, le bouton plein se fonce, et son texte s'y lit encore à ce
-  seuil (le blanc mieux qu'au repos, le brun un peu moins : 5,6:1) ;
-- sur le fond plein, on écrit `on-brand`, jamais `text-white` ni l'encre :
-  le test relit les classes et les règles CSS de `src`.
+### One goal, one volume
 
-Les fonds pleins (la carte du moment, les boutons, les pastilles et segments
-choisis, le bouton central de la barre, le bandeau du profil, la carte de la
-prochaine fête, les ronds de la frise du partage) prennent `--color-brand`,
-et ce qui s'écrit dessus `--color-on-brand`. Le texte en couleur, les liens,
-les icônes, l'onglet actif, les filets, les barres d'avancement, les
-interrupteurs et les teintes légères (`bg-primary/10`) prennent
-`--color-primary`, l'encre : l'orange clair s'y verrait trop peu. Un thème
-de fête ne donne que ses deux couleurs, assez soutenues pour servir des deux
-sous du blanc, et le reste s'en déduit (`resolveThemeColors`).
+What is read (a program, a calendar reading, the day's texts) is a bound
+volume on the shelf of Mon parcours and of the home page
+(`ProgramVolume.vue`, `VolumeShelf.vue`), in the binding of its section
+(`config/bindings.ts`, the same as the library shelf). A red ribbon sticks
+out when the day's portion is waiting; the gilt border goes around the
+cover as you advance, and a line under the volume says where you stand.
+Habits are not books: they have their list, and their week in flat boxes.
 
-Ils vivent dans `src/composables/useTheme.ts`, qui réécrit les variables sur
-la racine. L'accent des widgets natifs et de la montre suit le thème : c'est
-son encre, qui s'écrit en texte et en barre sur le fond du widget. Sa valeur
-de repli (`DEFAULT_ACCENT` dans `widgetPayloads.ts`, les constantes
-`FALLBACK_ACCENT` côté natif) est celle du thème par défaut, `#D46D01` : les
-trois se changent ensemble. Le fond (`#FFF9F3`) se reprend dans la couleur du
-navigateur (`index.html`), la barre d'état (`useNativeStatusBar`,
-`scripts/setup-android.mjs`) et le fond des widgets. La vignette de partage
-(`functions/src/ogCard.ts`) prend l'orange en fond plein, avec le brun
-dessus.
+- **All the same size, not the same thickness.** Volumes of different heights
+  make a wobbly shelf: the cover is the same for all, and it is the page edge
+  that tells the length (thin for a tractate or few texts of the day,
+  ordinary for a seder or a calendar reading, thick for several sedarim, the
+  thickest for the whole corpus).
+- **Bound like the sidour** (`ArtSiddur`): the spine one tone lighter, its
+  gilt bands and its hinge; a double gilt rule around the title (the border
+  that fills up, and a fine rule inside); the title in gilt letters, a
+  fleuron, the subtitle smaller below.
+- **The title fits in its frame**, never beyond the border: it shrinks a
+  little on its line (« Tehilim 1 » is not split for so little), then goes
+  onto several lines, word by word (« Kodachim / Toharot »), three at most;
+  a word too long even at the smallest size tightens rather than
+  overflowing.
+- **The day's texts make a single volume**, « Lecture du jour » ("Daily
+  reading"): two psalms, ten, a page you love do not make ten books on the
+  shelf. When they are only psalms, it is called « Mes Tehilim journaliers »
+  ("My daily Tehilim") (« Tehilim » on the cover, « Chaque jour », "Every
+  day", below), so that you know at a glance what it holds; the page takes
+  the same name, the home page card its short form, « Mes Tehilim », which
+  fits next to the volume it carries (`dailyName`). A text from another
+  corpus brings everything back to « Lecture du jour ».
+  Its thickness says how many it holds, its border fills with the texts read
+  today, and it opens their page (see "The daily reading, back again"),
+  where the list is composed.
 
-La couleur secondaire tient les éléments qui ne sont ni l'action principale
-ni le texte : les outils du Sidour, la ligne sous la carte du moment, les
-icônes « Aujourd'hui » de la bibliothèque, la pastille « sur le téléphone »
-des livres, les traits d'accent des illustrations, les puces d'une seconde
-catégorie. Elle ne sert pas à faire un dégradé avec la principale.
+- **A volume touched on the home page opens the text**, at the place where
+  you are (`readRoute`): a program's day portion if it is waiting, otherwise
+  the continuation of what you have read; the daily reading; the day's
+  Tehilim; the paracha. A long press, or a right-click, opens its page and
+  its settings; a paused or finished goal opens its page. It used to open
+  its page, which for a daily text or a cycle was made only of settings. In
+  Mon parcours, the volume always opens its page; that of a text or a cycle
+  begins with what there is to read today and « Lire » ("Read")
+  (`ObjectiveTodayCard.vue`).
+- **With a mouse, several shelves.** With a finger, the shelf scrolls
+  sideways; with a mouse, it does not scroll (not everyone has a touchpad):
+  the volumes move onto one more shelf, each row with its own shelf across,
+  as in a bookcase.
 
-Le mur de pierre du fond prend la teinte des briques : c'est la lumière qui
-passe par ses joints (`--sw-glow-rgb`, `StoneWallBackground.vue`).
+Choosing what you read happens on the same shelf: the sedarim standing up,
+one touch takes one, another puts it back, you take as many as you like. A
+single tractate is found by its name (the search) and comes out of its seder
+like a thin book, placed in front of it.
 
-**Pas de dégradé.** Nulle part : ni sur un fond, ni sur un texte
-(`bg-clip-text`), ni sur une vignette de partage. Une couleur pleine ressort
-mieux qu'un fondu, et deux couleurs fondues en donnent une troisième qui
-n'existe nulle part ailleurs dans l'app. Quand il faut montrer les deux
-couleurs d'un duo (l'aperçu des thèmes dans les réglages), on les pose côte à
-côte, à plat.
+### A program is read by the day or by the week
 
-Deux couleurs échappent au thème, parce qu'elles disent un état et non un
-goût : le danger (rouge, `.btn-danger`) et l'échéance qui approche (ambre).
-Elles ne bougent pas quand on change de thème.
+Three rhythms: every day, every day except Chabbat and holidays, or by the
+week (the week's portion, to be spread as you like). No monthly rhythm: a
+monthly portion gets put off until the next day until the end of the month,
+and a program split that way gets abandoned. The pace is
+shown before starting (« 3 michnayot par jour, 12 min environ », "3
+michnayot per day, about 12 min"); changing the date or the rhythm restarts
+from today, at the position reached.
 
-Les objets dessinés sur une carte mise en avant (le sidour, la lune, la
-'hanoukkia, voir « Une carte mise en avant peut porter son objet »)
-échappent aussi au thème : ils ont les couleurs du vrai, le cuir, l'argent,
-la cire, la flamme, la lune. Elles vivent dans leurs dessins
-(`components/art`), et restent des aplats : pas de dégradé pour arrondir une
-lune.
+### The home page deck
 
-### La sélection prend la couleur du thème
+On the home page (in the app, with or without an account; on the site, for
+an account), Mon parcours follows the P2-Accueil mockup to the letter
+(`components/parcours/home/`): the greeting and the Hebrew date, the lamp
+beside them, the deck, its bar, the times card (the location, the upcoming
+time, the time in large type), the untitled shelf.
 
-Sélectionner du texte posait derrière lui le bleu du navigateur, la seule
-couleur de l'app que personne n'avait choisie, et elle traversait les trois
-thèmes sans broncher. `::selection` prend donc `primary` en transparence
-(jeton `--color-selection`, dans `main.css`) : le texte garde son encre, seul
-le fond change. La transparence est plus appuyée en sombre, où la même teinte,
-posée sur du gris nuit au lieu du beige, ne se voyait presque plus.
+- **The stack.** The top card, in solid color at the dimensions of the
+  Sidour's card of the moment (124 px, the title in Playfair, the object
+  that only sticks out through the top), says what there is to do now; two
+  cards can be made out underneath, offset and reduced, paler and paler. An
+  extra card (catch up) shows in light, the title in ink.
+- **Touching opens the page**, directly (the text, the service), without a
+  second touch. A card with no page (tefilin, guarding your tongue) opens its
+  sheet.
+- **The stack's gestures**: swipe right, it is done; left, later (the card
+  goes under the stack). Below 110 px, the card comes back. What the gesture
+  will do attaches to the edge of the card being swiped: a light pill (the
+  check mark and « C'est fait » ("Done"), coming out from under its left
+  edge; the clock and « Plus tard » ("Later"), from under its right edge),
+  at mid-height, which follows the card and darkens to the theme color once
+  the threshold is passed. Placed under the stack, the word used to stick to
+  the edge of the card below. The open wallet does the same for each card
+  (« Pas fait » ("Not done"), « Remettre aujourd'hui » ("Put back today")
+  depending on its state). Pulled down, the stack spreads out, the cards
+  underneath faster than the top one, and opens beyond 50 px. A
+  long press (550 ms) opens the sheet; so do a right-click and the context
+  menu key. A swipe never opens the page.
+- **You see the next one arriving.** Once done, the card receives a check
+  mark (a light circle, on the left side still visible, 260 ms), then flies
+  off to the right, accelerating; at the same time, the card underneath
+  rises to take its place, with a decisive step that carries it a little
+  beyond before settling, and takes on its color; then an ink ring escapes
+  from it once. Put off until later, the card flies off to the left, the
+  next one rises the same way, and it goes back under the stack. It never
+  comes back from the side it left: you do not confuse it with the next
+  one. A screen reader hears « C'est fait. Ensuite : Arvit » ("Done. Next:
+  Arvit"). These cues say what has just happened: a small machine
+  (`perf-lite`) keeps them, and only the system setting asking for fewer
+  animations makes everything happen at once.
+- **The stack and scrolling.** With a finger, the page scrolls, even when
+  resting on a card: the stack keeps a vertical gesture only to unfold,
+  pulled down when the page is at the top. The open wallet scrolls like the
+  rest of the page too; you fold it with « Replier » ("Fold") (with a mouse,
+  by pushing it up). Sideways gestures remain for the cards. Held by
+  `e2e/firebase/parcours.spec.ts` (« l'accueil au doigt »).
+- **The wallet**: all the day's cards, from morning to bedtime, overlapping
+  every 80 px, the object small in the corner. The top card keeps its solid
+  color, those to do wait on a light background, those that are done go dim
+  (soft background, gray text, faded drawing). Swipe right: done, even after
+  the fact; left: later, or not done if it was. At the top, « Aujourd'hui, 3
+  sur 8 » ("Today, 3 of 8") and « Replier ». No checkbox: the gesture is
+  enough, and the sheet says it again as buttons. Each card keeps its
+  element from one state to another: unfolding makes them slide from the
+  stack to their place, those already done coming out from under the stack.
+- **The sheet** is a panel rising from the bottom (`BottomSheet.vue`, the
+  handle at the top): the moment, the name in large type, what there is to
+  do, then two buttons per row (done, open, later, not today) and « Voir le
+  programme » ("See the program"). Each gesture has its button there, for
+  those who do not swipe, and on the site.
+- **The order**: the 'Hanouka lighting at its time, the service whose time
+  it is (the card says « Maintenant » ("Now") and until when), the moon and
+  the 'Omer, then the present moment, those coming up, those already past,
+  « Rattraper », and finally what was put off until later. A service says
+  until when, or from when if it is upcoming.
+- **Not time yet.** A service whose time has not come (Min'ha in the
+  morning) goes after everything that is done now, even what was put off
+  until later: the stack never offers in solid color what cannot be done
+  yet. When it is the only one left, it waits at the top, set back: the card
+  light and flat (a rule, no shadow), a clock and « Pas encore l'heure »
+  ("Not time yet"), from when, the sidour faded. It cannot be swiped (pulled
+  sideways, it comes back without marking anything); a touch opens its
+  sheet, from which you can check it anyway. At its time, it takes back its
+  color and its place. A habit likewise waits for its marker (chosen on the
+  bar for study, the template's otherwise): « à midi » ("at midday") from
+  'hatsot, « avec Min'ha » ("with Min'ha")
+  from Min'ha guedola, « avec Arvit » ("with Arvit") and « au coucher » ("at
+  bedtime") from nightfall (the bedtime Chema is not offered in the
+  morning); « au réveil » ("on waking"), « avec Cha'harit » ("with
+  Cha'harit") and « toute la journée » ("all day") do not wait. A habit from
+  before markers, set at bedtime, also waits for night. Programs and cycles,
+  for their part, never wait: their moment orders them, and study is done
+  when you can. Held by
+  `src/__tests__/parcoursDeck.test.ts`.
+- **Occasion cards** (the moon on the nights it is blessed, the counting of
+  the 'Omer in the evening, the 'Hanouka lighting) take their place in the
+  stack, at their time, and open the same way; their banners stay silent as
+  long as the parcours has started. They do not count in the day: once
+  done, the device remembers them (`services/parcours/occasions.ts`), so
+  that a blessed moon does not come back the following night.
+- **The services are in the stack for everyone.** Without the « trois
+  tefilot » habit (or on a day it leaves out), the service whose time it is
+  still comes into the stack, as an extra card: « Maintenant », until when,
+  the sidour, in solid color like the habit's (what you come looking for
+  takes the color, counted or not). It opens the text, is swiped done like an occasion,
+  and does not count in the day, on the wall or in the streak: only the
+  habit, chosen, counts the services. It replaces the Sidour shortcut of
+  the home page, which stays silent once the parcours has started. On a
+  night of the moon, Arvit comes first and the moon right after: once
+  Arvit is swiped, the moon is on top. What is swiped here is also what the
+  Sidour page knows is said, and what is said there (swiped, or at the end
+  of the text) leaves the stack (see "The Sidour opens on the moment").
+  Held by `src/__tests__/parcoursDeck.test.ts`.
+- **« Rattraper »** ("Catch up"), an extra card for a program that is behind
+  (« si vous avez un moment », "if you have a moment"), leads to the catch-up
+  sheet; swiped right, the backlog is marked as read.
+- **The day bar**, under the folded stack, is a button: one round box per
+  task, ordered by moment; in ink, done; half tinted, the top card; gray,
+  what is coming. The count at the end (« 3 sur 8 »). Touching it opens the
+  wallet.
+- **Under the home page volumes**, what is waiting and where (« ce soir
+  7:1 », "tonight 7:1"), what is done (« fait ce soir », "done tonight"), or
+  the position (« 72 sur 150 », "72 of 150"); in Mon parcours, the progress
+  and the backlog (« 6 % · 9 en retard », "6 % · 9 behind").
 
-C'est vrai partout, site et app, et le passage choisi dans un texte reprend
-exactement la même teinte (`.reading-selected`) : les deux façons de désigner
-du texte se voient pareil.
+### Ma journée, removed
 
-### Lisibilité
+Ma journée ("My day", `/parcours/journee`, the P2-Journee mockup) has been
+removed, to simplify: the home page's stack and wallet already show the
+day, in the order in which it is done. What it alone offered has found
+another place:
 
-L'encre (`primary`) et le fond plein (`brand`) sont deux jetons. Pour le bleu
-et le vert, c'est la même couleur, prise assez soutenue pour tenir dans les
-deux sens ; pour l'orange, la teinte du logo reste claire en fond plein et
-l'encre est sa version soutenue. Les trois encres tiennent au même niveau :
-3,4:1 sur le beige, 3,5:1 sur le blanc, 5:1 sur le fond sombre. Une encre
-plus vive que celles-ci ne passerait plus en texte : une couleur plus claire
-se pose en fond plein, avec un texte sombre dessus, pas en encre.
+- a past day is completed from the Mon parcours wall, in that day's sheet;
+- the notice about texts to download for offline use is at the top of Mon
+  parcours; the evening reminder has become the reminders of the day (see
+  « Reminders of the day », below);
+- its address (`/parcours/journee`) leads to the home page; that of the
+  daily reading (`/bibliotheque/lecture-du-jour`, which the widgets, the
+  watch and the evening reminder keep) has got its page back (see below);
+- « Ma journée », in the study tab, also leads to the home page.
 
-C'est une **exception assumée** au niveau AA : 4,5 est le seuil d'un texte de
-taille courante, et aucune des trois encres ne l'atteint sur le beige. On
-l'accepte parce que l'encre ne porte que des libellés courts, en demi-gras,
-des titres, et les ajouts du jour dans une tefila (voir plus bas). Le texte
-posé sur l'orange clair, lui, dépasse le seuil (7,4:1).
+Two decisions remain from it: the back link at the top of Mon parcours pages
+is a chevron and a name, in ink (`ParcoursBack.vue`); the page background
+has its own token, `--color-page`, which darkens in dark mode.
 
-### Les thèmes des fêtes
+### An open volume, its settings, the reader
 
-Le temps d'une fête, l'app change d'habit, puis retrouve le thème choisi. Un
-thème de fête ne se choisit pas : le calendrier le pose et le retire
-(`src/services/holidayThemes.ts`, `useHolidayTheme.ts`), et un seul
-interrupteur, dans les réglages d'apparence sous les thèmes, l'autorise ou
-non pour toutes les fêtes à la fois. Il est allumé d'office : c'est une
-attention, pas une option à découvrir ; qui n'en veut pas la coupe une fois.
-Les réglages ne listent pas les fêtes qui ont un thème, ni ne les montrent en
-aperçu : le thème arrive avec la fête, c'est une surprise, pas un catalogue.
+A paused goal is visible without opening its settings: on the shelf, its
+volume fades and carries an « En pause » ("Paused") pill (the drawing and the
+word); at the top of its page, a strip says since when, that nothing is
+lost, and « Reprendre » ("Resume") with one touch (`PausedNotice.vue`). The
+pause used to be readable only in a switch, at the bottom of the settings. A
+paused program shows no backlog; on resuming, its end moves back by as many
+days as the pause lasted, and the pace restarts from where you were
+(`resumeProgram`, held by `parcoursPlan.test.ts`). Otherwise you resumed
+with weeks "behind" that you had chosen not to read.
 
-| Fête        | Période                                                  | `primary`                | `secondary`         | Bouton des horaires  | Ornements                  |
-| ----------- | -------------------------------------------------------- | ------------------------ | ------------------- | -------------------- | -------------------------- |
-| Tichri      | du 16 Eloul (deux semaines avant Roch Hachana) à Kippour | `#D8322F` rouge pomme    | `#D9A21B` miel      | une pomme            | un chofar, un pot de miel  |
-| Souccot     | du lendemain de Kippour au lendemain de Sim'hat Torah    | `#4E8A2E` vert loulav    | `#D9B324` étrog     | une soucca           | un loulav, un étrog        |
-| 'Hanouka    | les huit jours                                           | `#9F7A00` jaune moutarde | `#FFD23F` flamme    | une toupie           | un beignet, une 'hanoukkia |
-| Tou Bichvat | le jour même                                             | `#9A4FC0` violet figue   | `#79B043` feuille   | une figue            | une grappe, une figue      |
-| Pourim      | de la veille au lendemain                                | `#CC2E70` framboise      | `#F2B705` or        | une meguila          | une crécelle, un masque    |
-| Pessah      | d'une semaine avant au lendemain de la fête              | `#2A86A3` bleu de mer    | `#D8B570` matsa     | une matsa            | un verre de vin, une matsa |
-| Chavouot    | d'une semaine avant au lendemain de la fête              | `#3F72B8` bleuet         | `#D4A017` or du blé | les tables de la loi | un épi de blé, les tables  |
+- **A daily program** (P2-Programme): the volume in large size, its gilt
+  border showing progress and its ribbon when a portion is waiting; « Vous
+  en êtes à » ("You are at") and the position; the year's track; the day's
+  portion, the only colored surface, which you open with « Lire » and swipe
+  right when it is done (it then shows the next one); the backlog, without
+  alarm (« Environ 4 jours. Rien ne presse. », "About 4 days. No rush."); the
+  week as a bar chart; the planned end, the eve of the holiday when it is
+  one.
+- **A weekly program** (P2-Semaine): « Semaine 3 sur 52 » ("Week 3 of 52"),
+  the week's card (the one on the home page), the portion's boxes to touch
+  (« Où j'en suis cette semaine », "Where I am this week"), and the weeks,
+  one stone each, named after their paracha.
+- **Getting ahead.** Once a portion is done (daily or weekly), its page
+  offers « Lire la suite », the next portion, and the volume touched on the
+  home page leads there too; at the bottom of the reading, the ring marks it
+  read today (« Lu en avance », "Read ahead"), and still offers what comes
+  next. The lead is stated under the portion (« 4 michnayot d'avance », "4
+  michnayot ahead"), without fanfare: the portions keep their size, the end
+  comes sooner. Lightening the upcoming portions would change what you
+  promised yourself without your having asked.
+- **Chnei mikra, one aliyah a day** (`aliyot.ts`): one card each day, the
+  sixth and seventh aliyot on Friday; a forgotten aliyah does not disappear,
+  the next day's card shows two (« Noah, 3e et 4e montées », "Noah, 3rd and
+  4th aliyot"). It opens the chnei mikra page reduced to these aliyot, with
+  « Toute la paracha » ("The whole paracha") for the rest, and at the bottom
+  the ring that checks it. The paracha setting switches from one to the
+  other (« Une montée par jour », "One aliyah a day").
+- **Rattraper** rises from the bottom like the sheet: the five ways as
+  pills, the week redrawn with each choice, what was planned in the stone
+  tint and what the catch-up adds in color.
+- **Modifier** ("Edit", P2-Reglages): grouped rows, like the phone's
+  settings (the rhythm, the moment, then pause and « Ranger le volume » ("Put
+  the volume away"), in red, `--color-danger`); a touched row opens its
+  sheet.
+- **The whole wall** states above it the months being viewed (« De Av 5786
+  à Tichri 5787 », "From Av 5786 to Tichri 5787"); the Mon parcours wall also
+  opens there by spreading two fingers on it.
+- **A day of the wall** opens as a sheet: the day as title, one node per
+  task, « Fermer » ("Close").
+- **At the bottom of a reading** coming from Mon parcours, the end of the
+  portion: a small line, a ring and « Tirez vers le haut » ("Pull up"),
+  that takes no room from the text. Once the page can scroll no further, a
+  finger laid anywhere on the page and pushing it up again fills the ring;
+  released full, the portion is done, and the full card says so (« Le
+  signet a avancé », "The ribbon has moved forward"), with « Annuler »
+  ("Undo"). The line grows into that card as it is pulled, one shape and
+  never two that swap: the ring swells (from 20 to 76 px) and slides to the
+  middle, the line fades out beside it, the heading and the two lines come
+  in; full, it is the card itself, which then takes its place without a
+  jump. While it grows, it rises over the end of the text with the page's
+  color, its bottom fixed: the page keeps its height and stays at its end
+  under the finger. Let go short, it shrinks back into the line
+  (`endPullLayout`). The ring used to be pulled on a large zone of its own, which
+  held the touches back: whoever laid a finger on it could no longer
+  scroll. Now the page scrolls as usual, the line included. The pull is a
+  gesture of its own (`endPull.ts`): the finger that scrolls the page to its
+  end never marks it, even if it keeps going (a brisk scroll to the end of
+  the text would otherwise mark it); neither does a sideways swipe, a pinch
+  or a sheet's gesture. With a mouse, the line is dragged upward; for those
+  who do not pull, it is a button. Held by `src/__tests__/endPull.test.ts`.
+- The stones are in `components/parcours/stones.css`, which every component
+  that lays them imports.
 
-Trois choses changent, pas une de plus :
+### New goal, on a single page
 
-- **les couleurs** : le duo de la fête prend la place de `primary` et
-  `secondary`, partout où ils servent, widgets et montre compris. Les mêmes
-  bornes de lisibilité que les thèmes choisis s'appliquent (voir
-  « Lisibilité ») ; le vert de Souccot est pris plus franc et plus jaune que
-  l'émeraude, pour qu'on ne les confonde pas ;
-- **les ornements** : deux dessins par fête, dans le style des illustrations
-  des portes (`src/components/holiday`). En tête de l'accueil, de part et
-  d'autre d'un souhait ; à côté du nom du site dans le bandeau et en tête du
-  pied de page ; en blanc sur le bandeau du profil ; et, sur toutes les autres
-  pages, en filigrane dans les coins hauts (`HolidayBackdrop`), là où le mur
-  de pierre se voit, jamais sur une page de lecture. Toujours à même le fond,
-  jamais en carte : c'est une parure, pas une réponse. Un ornement qui se
-  pose à l'arrivée s'écrit dans `OrnamentPose`, qui porte le trait, la seconde
-  couleur (`.accent`) et l'animation : il n'y met que son dessin ;
-- **le bouton rond des horaires** de l'app native, dont le rond prend la forme
-  d'un objet de la fête (une pomme, une soucca, `HolidayFabShape`), l'horloge
-  restant au milieu : c'est toujours le bouton des horaires, il a seulement
-  changé d'habit. C'est le bouton que tout le monde touche chaque jour, et
-  c'est là que la fête se voit d'abord.
+Creation follows P2-Creer1 to 3 and P2-Habitude, but on a single page: at
+the top, the back link to Mon parcours, then the question in large type,
+aligned to the start. What you choose at the top stays marked (the volume
+pulled out of its shelf, the others set back; the pill in color), and the
+next step unfolds below, under a rule, the page sliding down to it: the
+part, then « d'ici quand ? » ("by when?") after « Suivant »; or the habit to
+set; or the text to search for. Changing your mind happens at the top,
+without going back. The choice no longer goes into the address: each address
+change brings the page back to the top, and the page has to slide to the
+section.
 
-Ce qui passe devant quoi : le survol d'un thème dans les réglages, puis la
-fête en cours, puis le thème choisi. Le choix reste le choix
-pendant la fête, on le retrouve après. Une fenêtre se compte en jours civils,
-pas à la chkia : un thème qui change dans la nuit ne trompe personne, un thème
-qui changerait à 19 h 42 le ferait sous les yeux. Le lendemain de Kippour
-appartient à Souccot, le jour où l'on commence la soucca.
+Once created, the goal does not open: you return to Mon parcours, which
+slides to it and makes it arrive before your eyes (`useParcoursArrival`). A
+volume falls onto its shelf, bounces twice and raises a golden dust (the
+bindings' border), then its line appears; a habit slips into its list, in
+the theme tint which fades, and the boxes of its week settle one by one.
+Only once: nothing replays on reload. Held by
+`e2e/firebase/parcours.spec.ts` (« un volume se choisit sur une seule
+page »).
 
-À 'Hanouka, la 'hanoukkia de l'accueil est vivante (`HanoukkiaLive`) : elle
-porte autant de lumières que le soir en compte, la chkia faisant foi comme
-pour le compte du 'Omer, et la toucher ouvre le texte de l'allumage. Le jaune
-de 'Hanouka est pris en moutarde : un jaune vif ne tient pas en encre sur le
-blanc, alors la flamme, vive, est en seconde couleur, là où le jaune se voit.
+- **Que voulez-vous accomplir ?** ("What do you want to accomplish?") The
+  volumes standing on their shelf (Michna, Talmud, Tanakh, Tehilim); the
+  cycles as pills (Tehilim every week, every month, Chnei mikra, one text
+  every day); the habits as pills, and « Avec mes mots » ("In my own words")
+  outlined, in ink. The habits offered are done every day without too
+  precise a moment to keep: the three tefilot, the bedtime Chéma, tsédaka,
+  guarding your tongue, a study period (the card opens the library). Tefilin
+  and Birkat Hamazon are no longer there (the tefilot and the meal carry
+  them); a habit already taken still reads.
+- **A template is confirmed.** Touching a ready-made habit or a cycle adds
+  nothing: a sheet rises (`PresetSheet.vue`), which says what it asks, its
+  days and its moment as labels, then « Ajouter à mon parcours » ("Add to my
+  parcours") in large type, « Régler les jours » ("Set the days") for a habit,
+  and « Annuler » ("Cancel"). The button only accepts touch after 400 ms (the
+  time for the sheet to rise): a double tap on the list does not reach it.
+  « Ajouter à mon parcours », under a habit being set, waits likewise.
+- **Only once.** A template already taken (a habit, a cycle, the Tehilim
+  program) is no longer offered; removed from the parcours, it comes back.
+  The sedarim, tractates and books that a current program studies stay
+  dimmed on the shelf, « Déjà sur votre étagère » ("Already on your shelf").
+  Adding anyway (a saved address, two touches) leads to the one you already
+  have. Held by `e2e/firebase/parcours.spec.ts` (« un modèle se confirme »).
+- **By when?** Four answers as a list: the eve of Roch Hachana, of Pessa'h
+  (with the number of days), another date, or « à mon rythme » ("at my own
+  pace": so much per day or per week, from which the end date is deduced).
+  The rhythm in three segments; the answer in solid color, with its volume:
+  what each study day requires, in units and in minutes, and the end. « Plus
+  soutenu. » ("More intensive.") beyond half an hour a day. For weekly, the
+  days on which the card comes to the home page, written out in full
+  (Sunday, Wednesday and Friday by default). Then the moment, on the day
+  thread of a habit (after Arvit by default), with what it does: the
+  portion's card goes to the top of the home page at that moment, without
+  waiting set back for all that; you open it whenever you like. It is saved
+  (`anchor`) and changed in the program's settings, on the same thread.
+- **A habit**: its name, its days as flat boxes (Chabbat paused for tefilin
+  and tsédaka), and its moment. Only a study period and an « avec mes mots »
+  habit choose it, by sliding the dot along the day thread: on waking, with
+  Cha'harit, at midday, with Min'ha, with Arvit, at bedtime; that is where the
+  question makes sense. The
+  others have their own, by default, stated without a bar: the tefilot each
+  service at its time, the Chéma at bedtime, tsédaka and guarding your
+  tongue all day. The marker is saved (`anchor`), stated on the card (« Ce
+  soir, après Arvit », "Tonight, after Arvit") along with when it opens: a
+  line says so (« La carte vient à la nuit tombée ; avant, elle attend en
+  retrait », "The card comes at nightfall; before that, it waits set back").
+  The settings of a habit already taken reuse the same screen.
+- **« Toute la journée » is a switch**, above the thread (`AnchorTrack`), for
+  a program as for a habit: on, the thread goes dim and can no longer be
+  touched; off, the dot returns to the last marker chosen. A link « ou toute
+  la journée » ("or all day") written after the moment's name (« Toute la
+  journée ») said the same thing twice, and did not show that you were
+  leaving the thread.
+- **A date is given in Hebrew and civil form**, wherever Mon parcours sets
+  one (a program's end at its creation, on its page, in its settings, the
+  catch-up that pushes back the end): « 29 Elul 5787 (1 octobre 2027) ». The
+  Hebrew date alone cannot be placed at a glance in the year you are living.
 
-Les fêtes se comptent comme en diaspora quand le thème doit choisir (la fin
-de Souccot, de Pessah, de Chavouot) : le thème ne sait pas où l'on est, et un
-jour de plus ne gêne personne. Pourim est celui d'Adar II les années
-embolismiques.
+### The daily reading, back again
 
-### Ce que le jour ajoute dans une tefila
+The daily reading page from before Mon parcours is back
+(`/bibliotheque/lecture-du-jour`, `LectureDuJourPage.vue`), fed by it,
+without losing anything it knew how to do: you often have several texts on
+the same day (several psalms), and you read them one after the other. It is
+the page of the « Lecture du jour » volume and of the card of the same name.
 
-Dans le lecteur de liturgie (`LiturgyText.vue`), `primary` sert d'encre à
-ce que le jour ajoute ou change dans le fil du texte, comme le rouge d'un
-siddour imprimé : Hamélekh hakadoch aux dix jours de techouva, Zokhrénou au
-milieu d'Avot, Ya'alé véyavo à Roch Hodech, 'Al hanissim à 'Hanouka, le
-compte du 'Omer de ce soir. Le passage se lit à sa place, dans le paragraphe
-qu'il complète, et il n'est là que le jour où il se dit : le reste de
-l'année, le texte ordinaire tient la place, à la couleur du texte.
+- **The day's texts, nothing else**, in catalog order. The calendar readings
+  (the month's or the week's Tehilim, the paracha) are no longer there: each
+  has its volume, its card and its page. The previous daily reading mixed
+  them, and the paracha had a « Cette semaine » ("This week") tab there, for
+  lack of anywhere else. What is said before and after (the Yehi ratson of
+  the Tehilim) is placed once for everything you read from the same corpus.
+- **The list is composed on the page**: « Modifier ma liste » ("Edit my
+  list") shows the day's texts, each removed with one touch (the cross and
+  its name, « Retirer Tehilim 23 », "Remove Tehilim 23"), and the search adds
+  several in a row. It opens by default when the list is empty. Held by
+  `e2e/firebase/parcours.spec.ts` (« plusieurs textes d'affilée, lus à la
+  suite dans la lecture du jour »).
+- **Each text is checked off** (« Marquer comme lu », "Mark as read") and
+  folds; a touched title folds or reopens it. A text's chapters are checked
+  off one by one (« 3/8 »), and the last one checks the text. The day is
+  stated at the top (« 1 sur 4 lus aujourd'hui », "1 of 4 read today", and
+  its bar).
+- The reading menu, the text size (next to « Modifier ma liste »),
+  auto-scroll, the screen that stays on, the notice about texts to download
+  as before; at the bottom, in the app, the line of the reminders of the day
+  (see below), in place of the evening reminder's card.
+- **On the home page, a single card**: the day's texts, one or several, make
+  the « Lecture du jour » card (« 3 textes · Tehilim 1 et 2 autres », "3
+  texts · Tehilim 1 and 2 others"), which opens the page; swiped, it checks
+  them all. The profile counts the day the same way.
+- **Several texts in a row**: at creation as on the page, a touch checks a
+  text, the search can be redone as many times as you like, what you have
+  checked waits above, and « Ajouter 3 textes » ("Add 3 texts"), stuck to the
+  bottom of the screen, takes them all.
 
-Ce qui ne se colore pas : un passage entier conditionnel (le Hallel, Avinou
-Malkénou, le psaume du jour, le tahanoun), dont le titre suffit à dire
-l'occasion et qu'une colonne entière de `primary` rendrait illisible ; et le
-texte de saison (morid hatal, Barekh 'alénou), qui est le texte ordinaire de
-six mois, sauf les trois premières semaines d'une bascule, où c'est là qu'on
-se trompe (`recentSeasonalChanges`). Ce que l'application ne peut pas
-trancher (en Terre d'Israël, à dix convives) reste en gris : une possibilité
-signalée, pas une lecture imposée.
+### Reminders of the day
 
-Le second plan dit autre chose que la couleur du jour. Un passage que l'on ne
-dit pas partout (la supplique « Chema' koli » avant Min'ha d'un jeûne, le
-léchem yihoud d'Arvit, la seconde liste du vidouy de la veille de Kippour, que
-Tunis ne disait pas) se lit en `text-secondary`, sous la note qui l'explique :
-le gris montre jusqu'où va le passage dont la note parle, quand la note seule
-laisserait chercher. Le fil que l'on lit d'un bout à l'autre garde, lui, sa
-pleine encre. Aucune règle ne fixe donc de couleur sur `.reading-he` : elle
-vient du bloc ou du paragraphe, et une couleur posée là les couvrirait tous
-les deux.
+The framed card « Le rappel du soir » ("The evening reminder"), at the
+bottom of Mon parcours, is gone: a place to go earns no frame, and the
+bottom of the page was the last place one looks. The reminders went up,
+in two places, both in the app only (the site has nothing to schedule):
 
-C'est l'exception à « `primary` ne porte jamais un texte de lecture » : un
-fragment court, dans un paragraphe qu'on lit d'un trait. La halakha de
-l'oubli (« si l'on a conclu haEl hakadoch, on recommence ») accompagne le
-passage, en didascalie, les jours où elle sert.
+- **an alarm clock at the top right**, across from the back link, in
+  `icon-btn` and in ink. A dot of the theme color says that at least one
+  reminder rings. It is an alarm clock (`alarm-clock`), not the clock: the
+  clock is the round button of the tab bar (the times of the day), and the
+  two would be taken for each other;
+- **a line under the light**, without frame, touched whole: « Rappels :
+  Min'ha 18:33, Arvit 19:51 +2 » ("Reminders: ..."), the reminders still to
+  come today, two by name and the rest counted. With none left today, the
+  first of tomorrow (« Demain : Cha'harit 08:19 »); with none set, an offer
+  in the theme color, « Me rappeler mes objectifs » ("Remind me of my
+  goals"). The command carries its drawing and its name, as the alarm
+  clock alone does not.
 
-Le jour suit le lieu des horaires. À Jérusalem, ville entourée d'une muraille
-depuis Josué, Pourim se fête le 15 Adar (Chouchan Pourim) : 'Al hanissim, la
-lecture de Vayavo Amalek, Migdol et le psaume de Pourim y viennent le 15, et
-pas le 14. Jérusalem, c'est la ville du catalogue, ou une position à moins de
-7 km de son centre (ses quartiers, pas Maalé Adoumim ni Mevasseret ;
-`isWalledCityPlace`). Tenu par `src/__tests__/purimJerusalem.test.ts`.
+Both open **« Les heures de ma journée »** ("The hours of my day"), a bottom
+sheet (`ReminderSlotsSheet.vue`): a row per point of the day thread (Réveil,
+Cha'harit, Midi, Min'ha, Arvit, Coucher) and one for the day's summary
+(« Dans la journée »). A row says its name, what its hour follows (« Heure
+fixe », « 20 min avant Chkia »), how many of today's goals it gathers, its
+hour today, and its switch. Rows separated by a hairline, no frames, as in
+the settings. Touching a row opens its second screen, in the same sheet,
+with a back chevron: two segments, « Heure fixe » ("Fixed time") and
+« Selon le calendrier » ("By the calendar"). Fixed, the dial of the old
+evening reminder (`pickers/TimeDial.vue`); by the calendar, the zmanim of
+that moment as pills, each with its time today, then the offset: « Avant »
+or « Après » in two segments, and the minutes as pills. Below, the hour it
+gives today, large, in the display font, and what tomorrow's will be: the
+person sees that it follows the sun. « Enregistrer » turns the reminder on:
+choosing an hour is wanting it. Turning a reminder on asks for the
+permission of the system then, after the gesture, never before.
 
-### Le parchemin s'ouvre depuis le texte
+The same sheet opens from the bottom of the daily reading, and from the
+notification settings, where its row says how many reminders are on.
 
-Deux passages du sidour ont leur forme propre sur un parchemin : le pitoum
-haketoret, que beaucoup lisent sur un klaf écrit par un sofer, et le psaume
-67 (Lamnatséa'h binguinot), qu'il est bon de dire en regardant la menora dans
-laquelle il est écrit. L'app ne les redessine pas dans le fil : elle pose, au
-paragraphe où ils se disent, une petite commande ronde (`.reading-klaf`,
-dans `LiturgyText.vue`), une pastille à la couleur du thème, à la taille des
-didascalies, qui ouvre une fenêtre (`KlafViewer.vue`). C'est la seule porte :
-à la différence de la boussole et du miroir, le menu de lecture ne propose pas
-les parchemins, on les ouvre à l'endroit où on les lit.
+What rings is in `docs/parcours.md`, « Reminders ». The hours only ring:
+they do not move the order of the home page deck, nor the opening of a
+service, which keep their own rules (« The home page deck »).
 
-La fenêtre montre d'abord la photo du parchemin, telle quelle
-(`public/klaf/`), qu'un toucher agrandit au double ; un second onglet en donne
-la retranscription, lettre à lettre et sans voyelles, dans l'écriture du sofer
-(la police Stam Sefarad CLM, voir « Les polices ») et à la taille de lecture
-du lecteur : le même rendu que le klaf, mais du texte. Pour le psaume, la retranscription
-reprend la forme du parchemin : sept branches verticales, une barre, un pied,
-en traits pleins à la couleur du texte, sans ombre ni dégradé. C'est une
-écriture, pas une illustration.
+### The home page to your taste
 
-### Une prière qui passe par un autre livre y mène d'un geste
+The home page can be customized (P2-AccueilModifier), in place, on the
+home page itself: no separate page, no list of titles. The day's deck stays
+at the top, always (faded while the others move, it is not arranged); below,
+the blocks themselves (the times, my volumes, the three doors, my dates, and
+« Reprendre », to be restored) wobble a little, for the duration of the
+setting: you can pick them up. Each carries a « Masquer » ("Hide") pill;
+hidden blocks stay in view at the end, faded (40 % opacity) and still, with
+an « Afficher » ("Show") pill in the brand color. A block that has nothing
+to show right now keeps its place as a dashed outline under its name. You
+get there by a long press on a block (with a finger), which also picks that
+block up at once, or through « Modifier l'accueil » ("Edit the home page")
+at the bottom of the page; « Terminé » ("Done"), above the blocks and at the
+bottom, or Escape, leaves it. The old address `/accueil/modifier` opens the
+home page in this mode.
 
-Les Hochanot se disent au milieu de Cha'harit, après le Hallel, mais leur
-texte vit dans le livre Moadim : il pèse trop pour l'office de tous les
-jours. Là où la prière change de livre, le bloc porte un renvoi, une pastille
-à la couleur du thème qui porte son dessin et son nom (« Lire les Hochanot du
-jour »), posée sous le texte qu'elle prolonge (`.reading-link`, dans
-`LiturgyText.vue`). C'est une commande de l'interface : sa taille est celle
-des commandes de titre, elle ne suit pas celle du texte lu. La fin des
-Hochanot porte le renvoi inverse, qui ramène à Cha'harit au passage qui suit
-(le Kaddich Titkabal) et non en haut de l'office. Quand on vient de
-Cha'harit, le renvoi y revient au lieu de l'empiler une seconde fois : le
-bouton « précédent » ne fait pas la navette entre les deux textes.
+In edit mode a finger holds a block a moment before it lifts (a quick swipe
+still scrolls the page), a mouse picks it up at once, and the up and down
+arrows move the focused block. The held block follows the pointer, lifted
+(the pop shadow); the others slide aside as soon as it passes the middle of
+one of them (`pickSlot`, held by `src/__tests__/homeLayout.test.ts`), and
+the page scrolls on its own near the top or bottom edge. Released, it slides
+into place (`useHomeArrange`). It is a device setting (`useHomeLayout`), and
+outside edit mode a block with nothing to say disappears on its own.
 
-### La 'hazara repart du début de la 'Amida
+One block holds the **pinned books** (« Livres épinglés », `useHomePinned`):
+up to three volumes on one shelf, drawn like the library's (`LibraryShelf`),
+each a whole section (the Sidour, the Tehilim, the Talmud...) or one text of
+the catalog (Chaharit, Min'ha, Berakhot, a psalm), and each opening its page.
+A long title goes over two or three lines on the cover, smaller when a word
+alone is too long. In edit mode the block carries, under it
+(`HomePinnedEditor`, still while one types and never picked up): the pinned
+books as chips with their cross, « Les trois offices » ("The three
+services", the book drawn and its name), which puts Chaharit, Min'ha and
+Arvit in place of the others, and a search field over the whole catalog,
+the Sidour's texts included, whose answers carry « Épingler » ("Pin"); with
+three books on the shelf, a line says to remove one first. Pinning a book
+shows the block if it was hidden. The block is hidden by default, the
+Sidour and the Tehilim ready on its shelf; it is a device setting too
+(`pj_home_pinned`), and a book this version does not know stays off the
+shelf (held by `src/__tests__/homePinned.test.ts`). A pinned Sidour text
+takes the Sidour's binding.
 
-Les passages que le 'hazan dit pendant la répétition (Kedoucha, Modim
-dérabanan, Birkat kohanim, 'Anénou) restent repliés dans la 'Amida : on la
-prie d'abord à voix basse, et ils couperaient le fil. Quand le 'hazan
-reprend, le lecteur est en bas de la 'Amida et doit remonter les déplier un
-à un. La fin de chaque 'Amida répétée (Cha'harit, Min'ha, Moussaf ; pas
-Arvit) porte donc une pastille « 'Hazara », la même que celle d'un renvoi
-(`.reading-link`, dans `LiturgyText.vue`), posée sous « 'Ossé chalom » :
-elle remonte au titre de la 'Amida et déplie en chemin les passages du
-'hazan, et eux seuls (le Kaddich qui suit reste replié). Le marqueur vient de
-la recette (`hazara`, dans `scripts/build-sidour.mjs`) ; un test tient sa
-place (`sidourContent.test.ts`), un autre ce que fait le bouton
+Another block, hidden by default, is **« Reprendre l'écoute »** ("Resume
+listening", `HomeListeningResume`): the audio courses begun and not finished
+on this device, in the same row of tiles as at the top of the Chiourim
+catalog (`ResumeTile`), a touch resuming the course where it was left. It
+spans both columns on a wide screen, and with nothing to resume it
+disappears.
+
+### Texts set aside, on the table
+
+You rarely study a single book: you read a passage, go look at a
+commentary, a michna, a psalm, then come back. The study table reproduces
+that gesture: several books open on the table, each at its page.
+
+- **Setting aside.** At the top of each library text, to the right of
+  « Retour » ("Back"), a « Mettre de côté » ("Set aside") button (the three
+  books laid down and its name); the same in the reading menu, under « Haut
+  de page » ("Top of page"), because it is in the middle of a chapter that
+  you need it. The text joins the table and the head of its page (the book
+  in the theme ink, the name in Playfair) shrinks down to its book in the
+  bottom bar; you are back in the library. Not in a reading chain: there you
+  read your share, you do not take it away. Nor on a Sidour text (a tefila,
+  a brakha, a holiday text): people come there to pray from start to finish,
+  not to study by moving from one book to another, and the Sidour has its
+  own page.
+- **The table bar, books standing up.** It sits at the bottom of the screen
+  like the audio player, above it and the app bar, and follows from one page
+  to another. Each text set down is a small standing book there, drawn like
+  the volumes on the library shelf: the cover in its section's binding, the
+  page edge at the end, a double cream rule, the title in serif
+  (`config/bindings.ts`). Set on the bar
+  as on a shelf, a book never sticks out at the bottom, and its head sticks
+  out by a quarter at the top; the text being read is pulled out of the
+  row, taller than its neighbors. The last one set down goes at the end;
+  when they no longer fit, the row scrolls sideways, the book being read
+  staying in view. A title is never cut in the middle of a word: it shrinks
+  instead, based on its longest word. Nothing in front of the books: a stack
+  and its count used to precede them, but you can see them, you can count
+  them. Two versions before this one: small
+  labels with a colored border, a design found nowhere else on the site,
+  then a set of tabs stuck to one another, where nothing separated one text
+  from the next. The floating buttons at the bottom (reading menu, back to
+  top, toasts) rise by as much, book heads included
+  (`TABLE_BAR_REM`, `useBottomChromeHeight`).
+- **One book, one gesture.** Touching a book opens that text, at the place
+  where you left it: switching from one to another takes only one tap. The
+  arrow at the end of the bar, a tap elsewhere on it, an upward swipe, or
+  the book being read open the table. The text you were reading, if it was
+  not yet on the table, is set down there in passing: going to look at a
+  book set aside means leaving the other one open beside it. Only from a
+  text being read, not from a book's chapter list
+  (`readingTable.test.ts`, « passer d'un texte à l'autre »).
+- **The open table shows the pages.** A panel rises from the bottom, at the
+  height of what it holds and never more than three quarters of the screen:
+  the page stays visible behind a light veil; the table sits on top of it,
+  it does not replace it. Each text shows its open page there, in the design
+  of the head of a reading page: its section and its book in small type, in
+  the theme ink (« Tanakh · Berechit »), its name, then the first line of
+  the page where it was left, in its language and its reading font, and the
+  location (« 1re montée · verset 22 », "1st aliyah · verse 22", « Daf 2b »
+  for a Guemara). One row per text, separated by a rule like the player's
+  queue, in the bar's order; « Ouvert » ("Open") marks the one being read, a
+  cross puts a text away, « Tout ranger » ("Put everything away") clears the
+  table after confirmation, and « Retour à la bibliothèque » ("Back to the
+  library") leads there to look for another text (except from the library
+  itself). Opened from
+  a text that is not on it yet, it offers to set it down too, with a command
+  in the theme color carrying its name. Escape, the Android back button, a
+  tap around it or the panel pulled down close it.
+- **Each text reopens at its page.** The table remembers the verse at the
+  top of the screen and its height in the window; reopened, the text comes
+  back exactly there, to the pixel, whatever text size was chosen in the
+  meantime. A text without identified verses (a Guemara) gets its scroll
+  position back, counted from the top of the text. The text you leave, if it
+  is on the table, first records its page, and keeps following it during
+  reading: a closed app does not lose it. The buttons that bring the page
+  back to the top before navigating (« Retour », next chapter, neighboring
+  text) make it record before that jump, and the chapter list never erases
+  the chapter where you were reading. In the app, the page you leave stays
+  above the text for a moment during its transition: the text settles back
+  at its starting point. Held by `readingTable.test.ts`.
+- **On the device.** The table is that of a study session: it survives a
+  reload or a closed app (localStorage), but does not follow the account
+  from one device to another. The site open in two tabs shares the same
+  table: what is set down in one appears in the other. Twenty-four texts at
+  most, the oldest one set down leaving first.
+
+## 2. Theme colors
+
+Two colors, the orange and the blue of the logo's palette. The background
+and the wall also come from the logo.
+
+| Color           | Logo      | Solid fill | Ink       | Light     |
+| --------------- | --------- | ---------- | --------- | --------- |
+| Orange          | `#FEA547` | `#EB9F4F`  | `#D46D01` | `#FFD09E` |
+| Blue            | `#539EE2` | `#328CDC`  | `#328CDC` | `#A9CCEB` |
+| Page background | `#FFF9F3` |            |           |           |
+| Bricks (wall)   | `#D6C4B8` |            |           |           |
+
+The solid orange is a **pastel of the logo's family** (`#EB9F4F`), with
+**white on top**. It cannot be written on the background, so orange text
+takes **the same family, deepened just enough** to be readable: that is the
+ink. The logo's blue, light too, is taken deepened once and for all
+(`#328CDC`): it carries white and reads as ink.
+
+White on the pastel orange is a **deliberate exception** to the readability
+rule. It reaches 2.2:1 by WCAG 2, below even the 3:1 that WCAG asks of large
+text; APCA, which weighs size and weight, gives it Lc 47, enough for large
+bold headlines (Lc 45) and not for small labels (Lc 75). We accept it for
+the look the owner chose, and the **higher contrast mode** (below) gives
+whoever needs it a version at the WCAG AA level everywhere.
+
+Rejected attempts for the orange, in order: the original vermilion
+(`#DE4F17`), which leaned red; the logo's orange deepened to carry white
+(`#D96507`), yellower than the vermilion but which leaned brown and made the
+app dull; brighter oranges between the two (`#E65D00`), which did not
+convince either; the logo's orange itself (`#FEA547`) with brown on top,
+readable but dull, and white was wanted back. A vivid orange of the same
+lightness (`#FB8900`, white at 2.4:1) was close behind the pastel. The
+price of a light orange: two oranges on the same screen, the hue in solid
+fills and the ink in text (the home page time, the active tab).
+
+Three themes to choose from, in this order. The first is the original.
+
+| Theme            | Ink       | Solid fill | Text on it | Secondary |
+| ---------------- | --------- | ---------- | ---------- | --------- |
+| sunset (default) | `#D46D01` | `#EB9F4F`  | white      | blue      |
+| ocean            | `#328CDC` | `#328CDC`  | white      | orange    |
+| emerald          | `#059C66` | `#059C66`  | white      | orange    |
+
+Orange and blue are each other's secondary; green takes orange as
+secondary. The readability rule is held by
+`src/__tests__/themeColors.test.ts`:
+
+- the ink at 3.1:1 at least on the background, 3.5:1 on a white card, 3.3:1
+  on the dark background;
+- what is written on the solid fill at 3.5:1 at least, except the
+  documented exception of sunset (`ON_BRAND_EXCEPTIONS`), held instead to
+  APCA Lc 45, the minimum for large headlines;
+- in higher contrast, every theme, light and dark, at the WCAG AA level:
+  4.5:1 for the text on the fill and for the inks;
+- on hover, the solid button darkens, and its text still reads at this
+  threshold (white better than at rest; dark text, in higher contrast,
+  slightly less but still at 4.5:1);
+- on the solid fill, you write `on-brand`, never `text-white` or the ink:
+  the test rereads the classes and CSS rules in `src`.
+
+Solid fills (the card of the moment, buttons, selected pills and segments,
+the bar's central button, the profile banner, the next holiday's card, the
+circles on the sharing timeline) take `--color-brand`, and what is written on
+them `--color-on-brand`. Colored text, links, icons, the active tab, rules,
+progress bars, switches and light tints (`bg-primary/10`) take
+`--color-primary`, the ink: the pastel orange would show too little there. A
+holiday theme provides only its two colors, deep enough to serve both ways
+under white, and the rest is derived from them (`resolveThemeColors`).
+
+They live in `src/composables/useTheme.ts`, which rewrites the variables on
+the root. The accent of the native widgets and the watch follows the theme:
+it is its ink, written as text and as a bar on the widget's background. Its
+fallback value (`DEFAULT_ACCENT` in `widgetPayloads.ts`, the
+`FALLBACK_ACCENT` constants on the native side) is that of the default
+theme, `#D46D01`: all three change together. The background (`#FFF9F3`) is
+reused in the browser color (`index.html`), the status bar
+(`useNativeStatusBar`, `scripts/setup-android.mjs`) and the widgets'
+background. The share thumbnail (`functions/src/ogCard.ts`) takes orange as
+the solid fill, with brown on top (6.6:1): it is read small, in other apps,
+by people who cannot switch to higher contrast.
+
+### Higher contrast
+
+An accessibility mode, offered in the introduction and in the appearance
+settings, as a switch under the themes (`useContrast`). It brings every
+theme to the WCAG AA level (4.5:1 for regular text), light and dark
+(`strengthenThemeColors` in `useTheme.ts`):
+
+- on the solid fill, the more readable of white and the dark text
+  (`#3B2412`); if neither reaches 4.5:1, the fill deepens under white. The
+  pastel orange thus keeps its color and takes the dark text (6.6:1); blue
+  and green deepen a little under white;
+- the inks deepen on the light background and lighten on the dark one until
+  they reach 4.5:1 on both the background and a card;
+- the neutrals follow (`:root.contrast-more` in `main.css`): darker
+  secondary text, more visible rules.
+
+Until someone chooses, it follows the device (`prefers-contrast: more`,
+"Increase contrast" on iOS and macOS). A choice made in the switch then
+holds, on the device or in the account like the theme. Held by
+`src/__tests__/themeColors.test.ts`.
+
+The secondary color holds the elements that are neither the main action nor
+text: the Sidour tools, the line under the card of the moment, the library's
+« Aujourd'hui » icons, the books' "on the phone" pill, the accent strokes of
+illustrations, the bullets of a second category. It is not used to make a
+gradient with the primary.
+
+The background stone wall takes the brick tint: it is the light passing
+through its joints (`--sw-glow-rgb`, `StoneWallBackground.vue`).
+
+**No gradients.** Anywhere: not on a background, not on text
+(`bg-clip-text`), not on a share thumbnail. A solid color stands out better
+than a blend, and two blended colors produce a third that exists nowhere
+else in the app. When the two colors of a pair must be shown (the theme
+preview in settings), they are placed side by side, flat.
+
+Two colors escape the theme, because they express a state and not a taste:
+danger (red, `.btn-danger`) and an approaching deadline (amber). They do not
+move when the theme changes.
+
+The objects drawn on a highlighted card (the sidour, the moon, the
+'hanoukkia, see "A highlighted card can carry its object") also escape the
+theme: they have the colors of the real thing, the leather, the silver, the
+wax, the flame, the moon. These colors live in their drawings
+(`components/art`), and remain flat: no gradient to round out a moon.
+
+### Selection takes the theme color
+
+Selecting text used to put the browser's blue behind it, the only color in
+the app that nobody had chosen, and it crossed all three themes unchanged.
+`::selection` therefore takes `primary` with transparency (token
+`--color-selection`, in `main.css`): the text keeps its ink, only the
+background changes. The transparency is stronger in dark mode, where the
+same tint, laid on night gray instead of beige, could barely be seen.
+
+This holds everywhere, site and app, and the selected passage in a text
+reuses exactly the same tint (`.reading-selected`): both ways of pointing at
+text look the same.
+
+### Readability
+
+The ink (`primary`) and the solid fill (`brand`) are two tokens. For blue
+and green, it is the same color, taken deep enough to work both ways; for
+orange, the pastel stays light as a solid fill and the ink is its deepened
+version. The three inks hold at the same level: 3.4:1 on the beige,
+3.5:1 on white, 5:1 on the dark background. An ink brighter than these
+would no longer work as text: a lighter color goes in a solid fill, with dark
+text on it, not as ink.
+
+This is a **deliberate exception** to the AA level: 4.5 is the threshold
+for regular-size text, and none of the three inks reaches it on the beige.
+We accept it because the ink only carries short labels, in semibold,
+titles, and the day's additions in a tefila (see below). White on the
+pastel orange is the second exception (see "Theme colors"); the higher
+contrast mode lifts both.
+
+### Holiday themes
+
+During a holiday, the app changes its dress, then returns to the chosen
+theme. A holiday theme is not chosen: the calendar puts it on and takes it
+off (`src/services/holidayThemes.ts`, `useHolidayTheme.ts`), and a single
+switch, in the appearance settings under the themes, allows it or not for
+all holidays at once. It is on by default: it is a kind touch, not an option
+to discover; whoever does not want it turns it off once. The settings do
+not list the holidays that have a theme, nor show them in preview: the
+theme arrives with the holiday; it is a surprise, not a catalog.
+
+| Holiday     | Period                                                    | `primary`                | `secondary`          | Times button           | Ornaments                    |
+| ----------- | --------------------------------------------------------- | ------------------------ | -------------------- | ---------------------- | ---------------------------- |
+| Tichri      | from 16 Eloul (two weeks before Roch Hachana) to Kippour  | `#D8322F` apple red      | `#D9A21B` honey      | an apple               | a chofar, a honey pot        |
+| Souccot     | from the day after Kippour to the day after Sim'hat Torah | `#4E8A2E` loulav green   | `#D9B324` etrog      | a soucca               | a loulav, an etrog           |
+| 'Hanouka    | the eight days                                            | `#9F7A00` mustard yellow | `#FFD23F` flame      | a dreidel              | a doughnut, a 'hanoukkia     |
+| Tou Bichvat | the day itself                                            | `#9A4FC0` fig purple     | `#79B043` leaf       | a fig                  | a bunch of grapes, a fig     |
+| Pourim      | from the day before to the day after                      | `#CC2E70` raspberry      | `#F2B705` gold       | a meguila              | a gragger, a mask            |
+| Pessah      | from a week before to the day after the holiday           | `#2A86A3` sea blue       | `#D8B570` matsa      | a matsa                | a glass of wine, a matsa     |
+| Chavouot    | from a week before to the day after the holiday           | `#3F72B8` cornflower     | `#D4A017` wheat gold | the tablets of the law | an ear of wheat, the tablets |
+
+Three things change, not one more:
+
+- **the colors**: the holiday's pair takes the place of `primary` and
+  `secondary`, wherever they are used, widgets and watch included. The same
+  readability limits as the chosen themes apply (see "Readability"); the
+  Souccot green is taken bolder and yellower than the emerald, so they are
+  not confused;
+- **the ornaments**: two drawings per holiday, in the style of the doors'
+  illustrations (`src/components/holiday`). At the top of the home page, on
+  either side of a greeting; next to the site name in the banner and at the
+  top of the footer; in white on the profile banner; and, on all other
+  pages, as a watermark in the top corners (`HolidayBackdrop`), where the
+  stone wall shows, never on a reading page. Always directly on the
+  background, never in a card: it is an adornment, not an answer. An
+  ornament that settles on arrival is written in `OrnamentPose`, which
+  carries the stroke, the second color (`.accent`) and the animation: it
+  only puts its drawing there;
+- **the round times button** of the native app, whose circle takes the
+  shape of a holiday object (an apple, a soucca, `HolidayFabShape`), the
+  clock staying in the middle: it is still the times button; it has only
+  changed its dress. It is the button everyone touches every day, and that
+  is where the holiday shows first.
+
+What takes precedence over what: hovering a theme in settings, then the
+current holiday, then the chosen theme. The choice remains the choice
+during the holiday; you find it again afterward. A window is counted in
+civil days, not at chkia: a theme that changes during the night fools
+nobody; a theme that changed at 7:42 p.m. would do so before your eyes. The
+day after Kippour belongs to Souccot, the day you start building the soucca.
+
+At 'Hanouka, the home page 'hanoukkia is live (`HanoukkiaLive`): it carries
+as many lights as the evening counts, chkia being authoritative as for the
+counting of the 'Omer, and touching it opens the lighting text. The
+'Hanouka yellow is taken as mustard: a bright yellow does not hold as ink on
+white, so the flame, bright, is in the second color, where yellow shows.
+
+Holidays are counted as in the diaspora when the theme must choose (the end
+of Souccot, of Pessah, of Chavouot): the theme does not know where you are,
+and one more day bothers nobody. Pourim is that of Adar II in leap years.
+
+### What the day adds in a tefila
+
+In the liturgy reader (`LiturgyText.vue`), `primary` serves as the ink for
+what the day adds or changes within the flow of the text, like the red of a
+printed siddour: Hamélekh hakadoch during the ten days of techouva,
+Zokhrénou in the middle of Avot, Ya'alé véyavo on Roch Hodech, 'Al hanissim
+at 'Hanouka, tonight's counting of the 'Omer. The passage reads in its
+place, in the paragraph it completes, and it is only there on the day it is
+said: the rest of the year, the ordinary text holds the place, in the text
+color.
+
+What is not colored: an entire conditional passage (the Hallel, Avinou
+Malkénou, the psalm of the day, tahanoun), whose title is enough to state
+the occasion and which a whole column of `primary` would make unreadable;
+and the seasonal text (morid hatal, Barekh 'alénou), which is the ordinary
+text for six months, except during the first three weeks after a switch,
+which is when people make mistakes (`recentSeasonalChanges`). What the
+application cannot decide (in the Land of Israel, with ten diners) stays in
+gray: a possibility pointed out, not a reading imposed.
+
+The background layer says something other than the color of the day. A
+passage that is not said everywhere (the supplication « Chema' koli » before
+Min'ha on a fast day, the léchem yihoud of Arvit, the second list of the
+vidouy on the eve of Kippour, which Tunis did not say) reads in
+`text-secondary`, under the note that explains it: the gray shows how far
+the passage the note refers to extends, where the note alone would leave
+you searching. The flow you read from start to finish keeps its full ink.
+No rule therefore sets a color on `.reading-he`: it comes from the block or
+the paragraph, and a color set there would override both.
+
+This is the exception to "`primary` never carries reading text": a short
+fragment, in a paragraph read in one go. The halakha for omission ("if one
+concluded haEl hakadoch, one starts over") accompanies the passage, as a
+stage direction, on the days it applies.
+
+The day follows the location of the times. In Jerusalem, a city surrounded
+by a wall since Joshua, Pourim is celebrated on 15 Adar (Chouchan Pourim):
+'Al hanissim, the reading of Vayavo Amalek, Migdol and the Pourim psalm come
+on the 15th there, and not the 14th. Jerusalem means the catalog city, or a
+position less than 7 km from its center (its neighborhoods, not Maalé
+Adoumim or Mevasseret; `isWalledCityPlace`). Held by
+`src/__tests__/purimJerusalem.test.ts`.
+
+### The parchment opens from the text
+
+Two passages of the sidour have their own form on a parchment: the pitoum
+haketoret, which many read from a klaf written by a sofer, and psalm 67
+(Lamnatséa'h binguinot), which it is good to say while looking at the
+menora in which it is written. The app does not redraw them in the flow: it
+places, at the paragraph where they are said, a small round command
+(`.reading-klaf`, in `LiturgyText.vue`), a pill in the theme color, at the
+size of the stage directions, which opens a window (`KlafViewer.vue`). It is
+the only door: unlike the compass and the mirror, the reading menu does not
+offer the parchments; they are opened where they are read.
+
+The window is the photo, and nothing else (`public/klaf/`, as the sofer
+wrote it): no title, no tabs, no caption, no white around it. It takes the
+photo's shape, as large as the screen allows, on a darker veil than the
+other windows. Nothing sits on the image, which would hide the writing:
+the round cross is above it, at its end corner, on the veil, and the rest
+of that row closes like the veil. The transcription that used to come in a second tab is gone:
+the vocalized text is already in the flow of the service, and two ways of
+seeing one parchment asked for a choice before showing anything.
+
+It reads up close the way a photo does, with a real zoom
+(`usePinchZoom.ts`): two fingers pinch it open around the spot they hold,
+one finger then moves through it, a double tap enlarges where it lands or
+brings it back, and on a computer the wheel zooms under the cursor. The
+photo never leaves its frame: zoomed out it fills it exactly, zoomed in its
+edges stop at the frame's. The old "a tap doubles the width, then scroll"
+is gone. The pitoum haketoret has two pages: a swipe turns them, or the
+arrows of the small pill under the photo, which says « 1 / 2 ». The
+sizes of the photos are written next to them (`content/klaf.ts`), so the
+window has its shape before the photo arrives. Held by
+`src/__tests__/klafViewer.test.ts` (the photo alone, the pages, the sizes
+matching the files) and `src/__tests__/pinchZoom.test.ts` (the pinched
+spot stays under the fingers, the edges hold).
+
+While the window is open, the gestures of the reader behind it are silent:
+the pinch that sets the size of the text (`useReadingPinch`) and the double
+tap that starts the auto-scroll (`useAutoScroll`) do nothing as long as a
+window is open over the text (`hasOpenOverlay`). Pinching the photo used to
+enlarge the text behind it. Held by `src/__tests__/readingPinch.test.ts`
+and `src/__tests__/autoScroll.test.ts`.
+
+### A prayer that goes through another book leads there with one gesture
+
+The Hochanot are said in the middle of Cha'harit, after the Hallel, but
+their text lives in the Moadim book: it weighs too much for the everyday
+service. Where the prayer changes books, the block carries a cross-reference,
+a pill in the theme color carrying its drawing and its name (« Lire les
+Hochanot du jour », "Read today's Hochanot"), placed under the text it
+continues (`.reading-link`, in `LiturgyText.vue`). It is an interface
+command: its size is that of title commands; it does not follow that of the
+text being read. The end of the Hochanot carries the reverse
+cross-reference, which leads back to Cha'harit at the following passage (the
+Kaddich Titkabal) and not to the top of the service. When you come from
+Cha'harit, the cross-reference goes back there instead of stacking it a
+second time: the "previous" button does not shuttle between the two texts.
+
+### The 'hazara starts again from the beginning of the 'Amida
+
+The passages the 'hazan says during the repetition (Kedoucha, Modim
+dérabanan, Birkat kohanim, 'Anénou) stay collapsed in the 'Amida: it is first
+prayed silently, and they would break the flow. When the 'hazan resumes, the
+reader is at the bottom of the 'Amida and has to scroll back up to expand
+them one by one. The end of each repeated 'Amida (Cha'harit, Min'ha,
+Moussaf; not Arvit) therefore carries a « 'Hazara » pill, the same as a
+cross-reference's (`.reading-link`, in `LiturgyText.vue`), placed under
+« 'Ossé chalom »: it goes back up to the title of the 'Amida and expands
+along the way the 'hazan's passages, and only those (the Kaddich that
+follows stays collapsed). The marker comes from the recipe (`hazara`, in
+`scripts/build-sidour.mjs`); one test holds its place
+(`sidourContent.test.ts`), another what the button does
 (`liturgyHazara.test.ts`).
 
-### Un texte qui change avec le jour s'ouvre sur le jour
+### A text that changes with the day opens on the day
 
-Un livre qui porte une suite par jour (les Hochanot : six jours, Hochana
-Rabba, le Chabbat) n'en montre qu'une, celle du jour du calendrier. Au-dessus
-du texte, une rangée de pastilles nomme les jours (`TefilaDays.vue`) : celle
-du jour lu est pleine, à la couleur du thème ; celle du jour du calendrier
-porte un point, pour qu'on la retrouve après avoir lu un autre jour. Hors de
-la fête, le livre s'ouvre sur le premier. Le choix ne se retient pas : rouvrir
-le livre, c'est retrouver le jour qu'il est. Une adresse peut nommer le jour
-(`?jour=hoshana-rabba`) : le lien de la page de Hochaana Rabba, les anciennes
-pages d'un jour, un passage partagé.
+A book that carries one sequence per day (the Hochanot: six days, Hochana
+Rabba, Chabbat) shows only one, that of the calendar day. Above the text, a
+row of pills names the days (`TefilaDays.vue`): the one for the day being
+read is solid, in the theme color; the one for the calendar day carries a
+dot, so you can find it again after reading another day. Outside the
+holiday, the book opens on the first. The choice is not remembered:
+reopening the book means finding the day it is. An address can name the day
+(`?jour=hoshana-rabba`): the link on the Hochaana Rabba page, the old
+per-day pages, a shared passage.
 
-### L'étagère de la bibliothèque : des volumes reliés, hors thème
+### The library shelf: bound volumes, outside the theme
 
-L'accueil de la bibliothèque pose ses grands rayons d'étude comme des livres
-sur une planche (`LibraryShelf.vue`) : Tehilim, Michna, Talmud, Tanakh,
-Moussar. La liturgie n'y est pas : elle a sa page, le Sidour.
+The library's home page sets out its large study sections like books on a
+shelf (`LibraryShelf.vue`): Tehilim, Michna, Talmud, Tanakh, Moussar,
+Halakha: two shelves of three. The liturgy is not there: it has its own
+page, the Sidour.
 
-Cinq volumes au plus sur la planche : au-delà, le titre de la couverture
-devient trop petit pour se lire sur un téléphone. Un rayon de plus se pose
-donc sur une planche nouvelle, plutôt qu'en sixième volume.
+Three volumes per shelf, then a new shelf: five side by side made each
+cover too small on a phone. All volumes are the same size, a third of the
+shelf, even alone or two on the last one, which centers them; from a
+medium screen up they cap at 8 rem.
 
-Les reliures ne suivent pas le thème choisi : ce sont des objets, de teintes
-chaudes et mates de la même famille (terre cuite, bronze, brun), identiques en
-mode sombre. Un volume nouveau prend une teinte de cette famille qui ne se
-confond pas avec ses voisins :
+The bindings do not follow the chosen theme: they are objects, in warm,
+matte tints of the same family (terracotta, bronze, brown), identical in
+dark mode. A new volume takes a tint from this family that does not blend
+with its neighbors:
 
-| Rayon   | Reliure   |
+| Section | Binding   |
 | ------- | --------- |
 | Tehilim | `#96604a` |
 | Michna  | `#7d6a4c` |
 | Talmud  | `#6d5743` |
 | Tanakh  | `#84483f` |
 | Moussar | `#86622f` |
+| Halakha | `#5e4535` |
+| Sidour  | `#a06a3c` |
 
-Le Moussar ('Hovot Halévavot, Pélé Yoets) est un rayon d'étude : il a sa page
-de liste et son volume sur la planche, ses marque-pages et sa reprise de
-lecture. Il ne se propose pas au partage de lecture, comme la liturgie
-(`isShareable` dans `content/etudeTexts.ts`). Ses numéros de section sont ceux
-qu'un cours cite, et donc ceux de ses adresses : une porte de 'Hovot
-Halévavot s'ouvre sur son introduction, la section 0, et ses chapitres gardent
-leur numéro ; un sujet du Pélé Yoets garde son numéro dans tout le livre (la
-lettre Beth va du 22 au 41). Tenu par `moussar.test.ts`.
+Moussar ('Hovot Halévavot, Pélé Yoets) is a study section: it has its list
+page and its volume on the shelf, its bookmarks and its reading resume. It
+is not offered for reading sharing, like the liturgy (`isShareable` in
+`content/etudeTexts.ts`). Its section numbers are those a class cites, and
+therefore those of its addresses: a gate of 'Hovot Halévavot opens on its
+introduction, section 0, and its chapters keep their number; a topic of the
+Pélé Yoets keeps its number throughout the book (the letter Beth runs from
+22 to 41). Held by `moussar.test.ts`.
 
-## 3. Les rayons
+Halakha (Choulhan Aroukh, Kitsour Choulhan Aroukh) follows Moussar: a study
+section, without reading sharing. One entry per group of laws, the
+"hilkhot" of the Choulhan Aroukh as Sefaria divides them (Hilkhot Tsitsit:
+simanim 8 to 24), and groups of the same nature for the Kitsour (Chabbat:
+simanim 72 to 96), whose addresses take the prefix `kitsour-` so as not to
+compete with those of the hilkhot. Each section carries the number of its
+siman in the book, the one a class cites
+(`/bibliotheque/halakha/hilkhot-chabbat/242`), and each line is a séif. The
+commentaries of the Choulhan Aroukh open séif by séif, in the commentary
+pane: the Michna Broura, the Magen Avraham, the Taz, the Chaarei Techouva and
+the Ba'er Hétev on Ora'h Hayim; the Chakh, the Taz, the Pit'hei Techouva and
+the Ba'er Hétev on Yoré Déa; the Helkat Mehokek, the Beit Chmouel, the Taz,
+the Pit'hei Techouva and the Ba'er Hétev on Even Haezer; the Sma, the Chakh,
+the Ketsot Hahochen, the Pit'hei Techouva and the Ba'er Hétev on Hochen
+Michpat. The Kitsour has none. Held by `halakha.test.ts`.
 
-Deux familles, et elles vont en sens contraire. Les **surfaces** sont taillées
-franc, comme la pierre, à peine adoucies aux angles ; les **commandes** sont
-nettement rondes, pour se donner à toucher. C'est le contraste entre les deux
-qui fait lire un bouton comme un bouton.
+Its entries are too numerous for a single list (more than a hundred and
+fifty laws): the section page first shows its books, in the same small
+cards as a section's list of texts (the Hebrew and Latin name, the number of
+simanim), and a book's list opens separately,
+`/bibliotheque/halakha?livre=kitsour`, organized by parts like the others
+(Ora'h Hayim, Yoré Déa...). A search covers the whole section, or the open
+book. One more book gets its card (`HALAKHA_WORKS` in
+`content/etudeTexts.ts`).
 
-| Jeton                                  | Valeur                   | Pour                                                                   |
-| -------------------------------------- | ------------------------ | ---------------------------------------------------------------------- |
-| `--radius-card` (`rounded-card`)       | 6 px                     | cartes, panneaux, listes, tuiles, squelettes                           |
-| `--radius-control` (`rounded-control`) | 10 px                    | petites commandes : bouton d'icône, champ, bouton d'un groupe segmenté |
-| `--radius-btn` (`rounded-btn`)         | 14 px                    | boutons, coques de groupes segmentés, lignes de menu                   |
-| `--radius-pill` (`rounded-pill`)       | 999 px                   | puces, pastilles, curseurs                                             |
-| `--radius-xs` … `--radius-3xl`         | 2, 3, 4, 6, 8, 10, 14 px | l'échelle Tailwind, réglée sur la famille des surfaces                 |
+### No icon label above a card title
 
-L'échelle numérique ne sert qu'aux surfaces : `rounded-lg` vaut 6 px, comme
-`.card` (c'est la valeur par défaut d'une surface), `rounded-xl` 8 px pour les
-fenêtres et les panneaux flottants, `rounded-xs` 2 px pour un aperçu posé à
-quelques pixels du bord d'une carte. Les commandes ne suivent pas cette
-échelle : elles prennent leurs alias.
+A card opens on its title. The small line of icon and colored word placed
+above it (« Toujours ouverte » on the perpetual chain) said what the card
+already says: the description and the round counter are enough. It goes.
+What remains are the lines of text carrying information of their own (the
+moment of a parcours card, the kind of an information notice), and a card
+announcing a book carries the object in its corner rather than an icon (see
+"A highlighted card can carry its object").
 
-### Deux arrondis emboîtés ne sont jamais égaux
+### The chapter list is a list
 
-Un élément posé dans un autre prend le rayon du parent moins son rembourrage
-(une coque à 14 px avec 2 px de marge intérieure tient un bouton à 12 px,
-arrondi ici à `rounded-control` ; une carte à 6 px avec 4 px de marge tient un
-aperçu à 2 px). Deux courbes concentriques de même rayon ne sont pas
-parallèles : l'intérieure paraît plus ronde, et l'oeil le voit sans savoir
-pourquoi. La règle vaut pour ce qui **épouse** les angles du parent : la
-coque d'un groupe segmenté et ses boutons, l'en-tête d'une carte et son fond
-de survol, les lignes d'une liste posée dans une carte, un aperçu dans une
-carte.
+A text's chapters (the chapters of a tractate, the simanim of a law, the
+topics of the Pélé Yoets) are presented as a bare list, laid on the page
+background, without a card around it: one row each, a rule between them, a
+chevron at the end; on hover, the name takes the theme color. It is no
+longer a stack of cards, each with its number in a pill: the section's name
+already states its number (« Chapitre 3 (ג) », « Siman 8 : ... »), and the
+pill repeated it. Cards are avoided as much as possible; a section's books
+keep theirs, small.
 
-Elle ne vaut pas pour ce qui ne partage pas les angles : un bouton (14 px)
-posé au milieu d'une carte (6 px) garde son rayon de commande, c'est le
-contraste des deux familles qui le fait lire comme un bouton ; une pastille
-ou un rond (999 px) est rond partout, et deux ronds emboîtés sont toujours
-concentriques.
+## 3. Radii
 
-## 4. Les polices
+Two families, and they go in opposite directions. **Surfaces** are cut
+sharp, like stone, barely softened at the corners; **controls** are clearly
+round, to invite touch. It is the contrast between the two that makes a
+button read as a button.
 
-Deux familles portent toute l'interface, et elles ne se règlent pas : ce sont
-elles, l'identité du site.
+| Token                                  | Value                    | For                                                          |
+| -------------------------------------- | ------------------------ | ------------------------------------------------------------ |
+| `--radius-card` (`rounded-card`)       | 6 px                     | cards, panels, lists, tiles, skeletons                       |
+| `--radius-control` (`rounded-control`) | 10 px                    | small controls: icon button, field; a button in a 4 px shell |
+| `--radius-btn` (`rounded-btn`)         | 14 px                    | buttons, segmented group shells, menu rows                   |
+| `--radius-segment` (`rounded-segment`) | 12 px                    | a segment: the button or pill hugging a shell padded by 2 px |
+| `--radius-pill` (`rounded-pill`)       | 999 px                   | chips, pills, sliders                                        |
+| `--radius-xs` … `--radius-3xl`         | 2, 3, 4, 6, 8, 10, 14 px | the Tailwind scale, tuned to the surface family              |
 
-| Jeton                             | Famille                | Pour                                                                    |
+The numeric scale is only for surfaces: `rounded-lg` is 6 px, like `.card`
+(it is a surface's default value), `rounded-xl` 8 px for windows and
+floating panels, `rounded-xs` 2 px for a preview placed a few pixels from a
+card's edge. Controls do not follow this scale: they take their aliases.
+
+### Two nested roundings are never equal
+
+An element placed inside another takes the parent's radius minus its
+padding, exactly, not rounded to the nearest token: a 14 px shell with 2 px
+of inner padding holds 12 px buttons (`rounded-segment`, written
+`calc(var(--radius-btn) - 2px)` so it follows the shell), one with 4 px of
+padding holds 10 px buttons (`rounded-control`), one with 3 px holds
+`calc(var(--radius-btn) - 3px)`; a 6 px card with 4 px of padding holds a
+2 px preview. Two concentric curves of the same radius are not parallel:
+the inner one looks rounder, and the eye sees it without knowing why; a
+rounding off by 2 px is already enough to see the gap widen at the
+corners. The
+rule applies to what **hugs** the parent's corners: the shell of a
+segmented group and its buttons, a card's header and its hover background,
+the rows of a list placed in a card, a preview in a card.
+
+It does not apply to what does not share the corners: a button (14 px)
+placed in the middle of a card (6 px) keeps its control radius; it is the
+contrast of the two families that makes it read as a button; a pill or a
+circle (999 px) is round everywhere, and two nested circles are always
+concentric.
+
+`src/__tests__/nestedRadius.test.ts` holds the rule for the thin shells
+(`p-0.5`, `p-1` and a radius token): every rounded child it lays out must
+carry the shell's radius minus the padding, pills aside.
+
+## 4. Fonts
+
+Two families carry the whole interface, and they are not adjustable: they
+are the site's identity.
+
+| Token                             | Family                 | For                                                                     |
 | --------------------------------- | ---------------------- | ----------------------------------------------------------------------- |
-| `--font-display` (`font-display`) | Playfair Display       | le titre de page (`h1`, d'office) et le peu qu'on met vraiment en avant |
-| `--font-sans` (`font-sans`)       | Manrope                | tout le reste : textes, boutons, étiquettes, chiffres                   |
-| `--font-hebrew`                   | au choix               | le texte hébreu d'une lecture                                           |
-| `--font-reading`                  | au choix               | le texte latin d'une lecture (traduction, phonétique, didascalies)      |
-| `--font-serif`                    | Lora, Georgia en repli | les tranches des livres de la bibliothèque et la dédicace               |
+| `--font-display` (`font-display`) | Playfair Display       | the page title (`h1`, by default) and the little that is truly featured |
+| `--font-sans` (`font-sans`)       | Manrope                | everything else: text, buttons, labels, numbers                         |
+| `--font-hebrew`                   | user's choice          | the Hebrew text of a reading                                            |
+| `--font-reading`                  | user's choice          | the Latin text of a reading (translation, phonetics, stage directions)  |
+| `--font-serif`                    | Lora, Georgia fallback | the spines of the library books and the dedication                      |
 
-Une seule autre famille a droit de cité, et à un seul endroit : **Stam Sefarad
-CLM** (projet Culmus, GPL avec exception d'embarquement,
-`public/fonts/stam-sefarad-clm.LICENSE.txt`), l'écriture du sofer, ktav
-Sefaradi avec taguim. Elle n'écrit que la retranscription des parchemins
-(`KlafViewer.vue`) : là, le rendu du klaf est ce qu'on vient chercher, et
-c'est la seule raison d'être de la police. Elle ne sert ni au fil d'un texte,
-ni à un titre, ni à une étiquette.
+Two other families are allowed, each where the script is what you come
+looking for, and nowhere else (no title, no label):
 
-Playfair est une police d'apparat : posée partout, elle ne met plus rien en
-avant. Elle est automatique sur les `h1` et se pose à la main (classe
-`font-display`) ailleurs : le nom du site, le titre d'une page qui n'est pas
-un `h1`, une accroche, un grand chiffre. Aux gros corps, on l'accompagne de
+- **Stam Sefarad CLM** (Culmus project, GPL with embedding exception,
+  `public/fonts/stam-sefarad-clm.LICENSE.txt`), the sofer's script, ktav
+  Sefaradi with taguim. It writes the paracha in the form of the Sefer
+  Torah (`TorahScroll.vue`, see "A text also reads in the form of its
+  page"). The parchments of the sidour no longer have a transcription: their
+  photo is enough (see "The parchment opens from the text").
+- **Noto Rashi Hebrew** (OFL, `public/fonts/noto-rashi-hebrew.LICENSE.txt`),
+  the Rachi script. It writes only Rachi and Tossafot on the daf page
+  (`TalmudPage.vue`), where they are printed in this script; the dibbour
+  hamat'hil stays in bold square letters, in `--font-hebrew`.
+  The study panel, for its part, keeps `--font-hebrew`: a commentary is read
+  there in large type, not a page.
+
+Playfair is a ceremonial font: placed everywhere, it no longer highlights
+anything. It is automatic on `h1` and is applied by hand (class
+`font-display`) elsewhere: the site name, the title of a page that is not an
+`h1`, a hook, a large number. At large sizes, it is paired with
 `tracking-tight`.
 
-### Les polices au choix ne valent que pour la lecture
+### Selectable fonts apply only to reading
 
-Changer de police dans les réglages, c'est régler son confort de lecture,
-comme on règle la taille du texte. Cela ne repeint plus l'application : le
-choix latin s'applique à `--font-reading`, employé par les classes du texte
-d'une lecture (`.reading-tl`, `.daily-tl`, `.daf-tl`, les didascalies, le
-`.tl` des pages prérendues), et le choix hébreu à `--font-hebrew`. Aucun des
-deux ne touche `--font-sans` ni `--font-display`.
+Changing the font in settings means adjusting your reading comfort, just as
+you adjust the text size. It no longer repaints the application: the Latin
+choice applies to `--font-reading`, used by the classes of a reading's text
+(`.reading-tl`, `.daily-tl`, `.daf-tl`, the stage directions, the `.tl` of
+prerendered pages), and the Hebrew choice to `--font-hebrew`. Neither one
+touches `--font-sans` or `--font-display`.
 
-Les options latines sont Manrope (celle de la maison, par défaut), Lora et
-Nunito. Seules les polices de l'identité bloquent le premier rendu
-(`index.html`) ; les autres sont injectées à la demande par `useFonts.ts`.
+The Latin options are Manrope (the house font, the default), Lora and
+Nunito. Only the identity fonts block the first render (`index.html`); the
+others are injected on demand by `useFonts.ts`.
 
-## 5. Les tailles de texte
+## 5. Text sizes
 
-Une page se lit d'abord de loin : ce qui compte doit sauter aux yeux avant
-qu'on ait lu quoi que ce soit. La règle est donc celle de la hiérarchie, pas
-celle du confort : le corps d'un texte dit son rang, et deux rangs voisins se
-distinguent d'un coup d'oeil.
+A page is first read from a distance: what matters must jump out before
+anything has been read. The rule is therefore one of hierarchy, not
+comfort: the size of a text states its rank, and two neighboring ranks can
+be told apart at a glance.
 
-| Rang             | Classes                 | Taille     | Pour                                                                                  |
-| ---------------- | ----------------------- | ---------- | ------------------------------------------------------------------------------------- |
-| Accroche         | `text-4xl md:text-6xl`  | 36 / 60 px | le titre d'une page d'entrée (accueil), Playfair                                      |
-| Titre de page    | `text-3xl md:text-4xl`  | 30 / 36 px | le `h1` d'une page ordinaire, Playfair                                                |
-| Porte            | `text-2xl md:text-3xl`  | 24 / 30 px | les trois destinations de l'accueil, Playfair, centrées dès qu'elles sont côte à côte |
-| Chiffre en avant | `text-4xl md:text-5xl`  | 36 / 48 px | une heure, un pourcentage, un compteur ; `tabular-nums`                               |
-| Titre de section | `text-xl md:text-2xl`   | 20 / 24 px | un `h2` qui découpe une page                                                          |
-| Titre de carte   | `text-base` à `text-lg` | 16 / 18 px | l'étiquette d'une carte de tableau de bord                                            |
-| Corps            | `text-base`             | 16 px      | le texte courant                                                                      |
-| Corps secondaire | `text-sm`               | 14 px      | une explication, une ligne de contexte                                                |
-| Méta             | `text-xs`               | 12 px      | une date, une unité, une mention                                                      |
+| Rank            | Classes                  | Size       | For                                                                                     |
+| --------------- | ------------------------ | ---------- | --------------------------------------------------------------------------------------- |
+| Hook            | `text-4xl md:text-6xl`   | 36 / 60 px | the title of an entry page (home), Playfair                                             |
+| Page title      | `text-3xl md:text-4xl`   | 30 / 36 px | the `h1` of an ordinary page, Playfair                                                  |
+| Door            | `text-2xl md:text-3xl`   | 24 / 30 px | the home page's three destinations, Playfair, centered as soon as they are side by side |
+| Number up front | `text-4xl md:text-5xl`   | 36 / 48 px | a time, a percentage, a counter; `tabular-nums`                                         |
+| Section title   | `text-xl md:text-2xl`    | 20 / 24 px | an `h2` that divides a page                                                             |
+| Card title      | `text-base` to `text-lg` | 16 / 18 px | the label of a dashboard card                                                           |
+| Body            | `text-base`              | 16 px      | running text                                                                            |
+| Secondary body  | `text-sm`                | 14 px      | an explanation, a line of context                                                       |
+| Meta            | `text-xs`                | 12 px      | a date, a unit, a mention                                                               |
 
-Trois règles qui vont avec :
+Three rules go with it:
 
-- **Une carte ne porte qu'une chose en grand** : celle qu'on vient y chercher.
-  L'heure sur la carte des horaires, le pourcentage sur celle de la lecture du
-  jour. Tout le reste de la carte la sert et passe donc en dessous.
-- **Le chiffre en avant tombe toujours au même endroit** (à la fin de la
-  ligne) d'une carte à l'autre : le regard le retrouve sans le chercher. Il est
-  centré sur le bloc de texte qui l'accompagne, et ce texte est serré à gauche,
-  ligne sous ligne : un grand vide entre les deux les ferait lire comme deux
-  cartes au lieu d'une.
-- **Rien ne se coupe.** Un texte qui porte du sens (le nom d'un texte, d'un
-  horaire, d'une section) passe à la ligne ; il n'est jamais rogné par des
-  points de suspension, qui font passer une chose pour une autre (« Fin du
-  Chéma… ») ou cachent justement le chiffre qu'on cherchait. Quand une ligne
-  ne tient pas, on raccourcit ce qui est écrit ou on retire une icône, on ne
-  coupe pas. La troncature ne reste que là où la boîte est physiquement figée
-  (le titre du lecteur audio dans sa barre d'une ligne, le nom de la ville sur
-  la ligne du lieu des horaires).
+- **A card carries only one thing in large type**: the one you come there
+  for. The time on the times card, the percentage on the daily reading
+  card. Everything else on the card serves it and therefore goes below.
+- **The number up front always lands in the same place** (at the end of
+  the line) from one card to another: the eye finds it without looking for
+  it. It is centered on the text block that accompanies it, and that text is
+  tight on the left, line under line: a large gap between the two would make
+  them read as two cards instead of one.
+- **Nothing gets cut off.** Text that carries meaning (the name of a text, a
+  time, a section) wraps; it is never clipped with an ellipsis, which makes
+  one thing pass for another (« Fin du Chéma… ») or hides precisely the
+  number you were looking for. When a line does not fit, you shorten what is
+  written or remove an icon; you do not cut. Truncation remains only where
+  the box is physically fixed (the audio player's title in its one-line bar,
+  the city name on the times location line).
 
-## 6. Les fenêtres du système
+## 6. System windows
 
-Aucune fenêtre du système ne s'ouvre par-dessus l'app : ni la roue grise d'un
-`<select>`, ni le calendrier bleu d'un `<input type="date">`, ni `alert()` ou
-`confirm()`. Ces fenêtres-là n'ont ni nos couleurs, ni nos rayons, ni notre
-police, et elles arrivent au milieu d'un formulaire qui, lui, les a.
+No system window opens on top of the app: not the gray wheel of a
+`<select>`, not the blue calendar of an `<input type="date">`, not
+`alert()` or `confirm()`. Those windows have neither our colors, nor our
+radii, nor our font, and they arrive in the middle of a form that does.
 
-À la place :
+Instead:
 
-| Ce que faisait le système | Ce qu'on emploie                                                                 |
-| ------------------------- | -------------------------------------------------------------------------------- |
-| `<select>`                | `AppSelect.vue` : le champ, puis un panneau `shadow-pop`                         |
-| `<input type="date">`     | `AppDateField.vue` : le champ, puis le calendrier de la maison (`DayPicker.vue`) |
-| `confirm()`               | `useConfirm` et `ConfirmDialog.vue`                                              |
-| `alert()`                 | un toast (`useToast`)                                                            |
-| le menu d'une sélection   | `ReadingSelectionMenu.vue` sur un texte (voir plus bas)                          |
+| What the system did   | What we use                                                              |
+| --------------------- | ------------------------------------------------------------------------ |
+| `<select>`            | `AppSelect.vue`: the field, then a `shadow-pop` panel                    |
+| `<input type="date">` | `AppDateField.vue`: the field, then the house calendar (`DayPicker.vue`) |
+| `confirm()`           | `useConfirm` and `ConfirmDialog.vue`                                     |
+| `alert()`             | a toast (`useToast`)                                                     |
+| a selection's menu    | `ReadingSelectionMenu.vue` on a text (see below)                         |
 
-Elles restent de vraies commandes : rôles ARIA, clavier (flèches, Entrée,
-Échap), fermeture au clic à côté et retour Android (`useOverlayStack`).
+They remain real controls: ARIA roles, keyboard (arrows, Enter, Escape),
+closing on outside click and Android back (`useOverlayStack`).
 
-Le calendrier reprend la manière de faire de celui d'Android (Material 3),
-parce qu'elle est éprouvée et que les gens la connaissent déjà : la date
-retenue s'écrit en toutes lettres en tête, le mois affiché est un bouton qui
-ouvre la liste des années (pour aller loin sans user la flèche), et rien n'est
-choisi tant qu'on n'a pas confirmé, de sorte qu'on peut parcourir sans rien
-casser. L'habillage, lui, est le nôtre.
+`AppSelect`'s panel opens below the field when it fits there (the bars
+fixed at the bottom of the screen counted), and above it otherwise, when
+there is more room above: the last row of a settings screen, just above the
+tab bar, showed its first choice only. Only the list scrolls to the line the
+keyboard reaches, never the page. Held by `src/__tests__/appSelect.test.ts`.
 
-Deux fenêtres du système restent, parce qu'elles ne sont pas de l'habillage
-mais un pouvoir que seul le système a : le **choix d'un fichier**
-(`<input type="file">`) et la **feuille de partage** de l'appareil.
+The calendar follows the approach of Android's (Material 3), because it is
+proven and people already know it: the selected date is written out in full
+at the top, the displayed month is a button that opens the list of years
+(to go far without wearing out the arrow), and nothing is chosen until
+confirmed, so you can browse without breaking anything. The look, however,
+is ours.
 
-### Sur un texte, le menu de la sélection est le nôtre
+Two system windows remain, because they are not a matter of look but a
+power only the system has: **file selection** (`<input type="file">`) and
+the device's **share sheet**.
 
-Le menu qui surgit d'une sélection (copier, rechercher, traduire, partager)
-est une fenêtre du système comme les autres, à ceci près qu'on ne peut pas
-l'habiller : sur un téléphone, il s'ouvre par-dessus tout ce qu'on poserait à
-côté. Et devant un texte, ce qu'il propose n'est pas ce qu'on veut proposer :
-la traduction automatique d'un verset et la recherche web d'un mot d'hébreu.
+### On a text, the selection menu is ours
 
-Les passages d'un texte coupent donc la sélection du système (`.reading-pick`)
-et se choisissent d'un appui ; une bulle vient se poser dessus, au-dessus du
-passage comme le ferait le menu qu'elle remplace, avec les gestes qui ont un
-sens là où l'on est : **partager** ce passage (le lien y ramène, et non en
-haut du chapitre), en lire la **phonétique** sans faire basculer toute la
-page, **signaler une erreur** (le formulaire de support s'ouvre avec
-l'endroit, les premiers mots et le lien déjà écrits), et le **marque-page** là
-où le texte en prend.
+The menu that pops up from a selection (copy, search, translate, share) is a
+system window like the others, except that it cannot be styled: on a phone,
+it opens on top of anything you would put next to it. And in front of a
+text, what it offers is not what we want to offer: machine translation of a
+verse and a web search for a Hebrew word.
 
-L'appui long ouvre la bulle, comme l'appui bref. Couper la sélection du
-système coupe aussi le geste qui l'ouvrait : sans cela, appuyer longuement sur
-un verset ne ferait plus rien du tout, et le geste que tout le monde connaît
-pour agir sur du texte serait mort. La bulle se pose au-dessus du passage,
-jamais sous la zone système ni sous le bandeau du site (elle passe alors
-dessous), et sa rangée de commandes suit la taille de lecture, à moitié comme
-le menu de lecture, plafonnée pour que quatre colonnes tiennent sur la largeur
-d'un téléphone.
+A text's passages therefore disable system selection (`.reading-pick`) and
+are chosen with a tap; on a phone, a sheet rises at the bottom of the
+screen (see "On a phone, what accompanies a text rises in a bottom sheet");
+on a wide screen, a bubble comes to rest against the passage, as the menu it
+replaces would. Both carry the gestures that make sense where you are:
+**sharing** this passage (the link leads back to it, and not to the top of
+the chapter), reading its **phonetics** without switching the
+whole page, **reporting an error** (the support form opens with the
+location, the first words and the link already filled in), and the
+**bookmark** where the text takes one.
 
-Le choix se fait au passage, jamais au mot : c'est la seule unité que ces
-commandes savent nommer. Un lien mène à un verset, pas à trois mots, et un
-signalement qui dit « Tehilim 23 · verset 4 » se corrige, là où trois mots
-copiés se cherchent. Partout ailleurs (le reste du site, un texte qu'on
-accompagne sans qu'il ait d'adresse à lui), la sélection ordinaire reste, à la
-couleur du thème.
+A long press opens the sheet, like a short tap. Disabling system selection
+also disables the gesture that opened it: without this, long-pressing a
+verse would no longer do anything at all, and the gesture everyone knows for
+acting on text would be dead. The bubble sits above the passage, never
+under the system area or under the site banner (it then goes below). The
+row of commands follows the reading size, at half rate like the reading
+menu, capped so that four columns fit across the width of a phone.
 
-### Une fenêtre modale tient dans ce qui est visible, clavier compris
+The choice is made per passage, never per word: it is the only unit these
+commands can name. A link leads to a verse, not to three words, and a report
+that says « Tehilim 23 · verset 4 » can be fixed, whereas three copied words
+have to be searched for. Everywhere else (the rest of the site, a text
+accompanied without having an address of its own), the ordinary selection
+remains, in the theme color.
 
-Le voile d'une fenêtre modale (`.modal-overlay`) ne couvre pas la page : il
-couvre ce qui est **visible**. La nuance ne se voit que le jour où un clavier
-logiciel s'ouvre, et ce jour-là elle décide de tout. Un clavier ne rétrécit
-pas la fenêtre, il se pose par-dessus : un cadre centré sur la page entière
-place alors son champ de saisie sous le clavier, et l'on écrit sans voir ce
-qu'on écrit. Le voile prend donc la hauteur du viewport visuel et se pose à
-son sommet (`useModalKeyboard.ts` mesure, le style suit), le champ qui prend
-le clavier est ramené dedans, et une fenêtre à liste se plafonne à cette
-hauteur-là plutôt qu'à une fraction de l'écran.
+### A passage's commentaries open from its sheet, then follow the reading
 
-Le cadre, lui, est centré par des marges automatiques et le voile défile. Un
-cadre centré par `align-items` qui dépasse en hauteur se fait couper **en
-haut**, hors d'atteinte : le bouton « Envoyer » d'un formulaire un peu long
-devenait introuvable sur un petit téléphone. Avec les marges, il est centré
-tant qu'il tient et défile dès qu'il déborde ; c'est vrai du formulaire de
-support, de la modification d'une chaîne et de tout ce qui viendra.
+A gemara has Rachi and Tossafot; a michna, the Bartenura and the Tossefot
+Yom Tov (the two printed in a standard Michna); a verse of the Tanakh,
+paracha, Neviim, Ketouvim or a psalm read alone, has Rachi. Each is attached
+to a specific passage of the text (the gemara is divided into passages on
+the order of a sentence, Sefaria's, invisible while reading: the text still
+reads in one piece; only the chosen passage takes a background). The sheet
+of a passage that has commentaries carries a **second row**, across its
+full width, under the commands: « Commentaires » ("Commentaries"), with what
+there is to read (« Rachi 2 · Tossafot 1 »). A fifth column would not fit on
+a phone, and it is not a command like the others: it opens a study mode. The
+row does not appear on a passage without commentary; it is grayed out, with
+"…", while the commentaries arrive (they only load on the first passage
+touched).
 
-### Une confirmation passe devant la fenêtre qui la demande
+It opens the **study panel** (`CommentaryPanel.vue`). On a phone, a bottom
+sheet at half height (55 %), which you pull by its handle up to 92 % of the
+screen for a long Tossafot. As soon as the screen has room for two columns
+(640 px wide: tablet, unfolded foldable, phone in landscape, computer, see
+`useSideBySide`), a **column on the right**, under the banner and at full
+height: the text on the left, the explanations on the right. The column
+takes the room the text leaves free (`--study-width`: the screen minus 48
+rem of text and 4 rem of margins, between 17 and 32 rem). The text, for its
+part, **moves only if it must**: it keeps its ordinary width (48 rem) as long
+as it fits to the left of the panel, and only shrinks below that; it stays
+centered on the screen as long as it does not touch the panel there (a large
+screen does not move), and otherwise slides to the left just enough to keep
+2 rem of space from it. It slides into place, without jumping, on opening as
+on closing. Unfolding a foldable moves the sheet to the right without
+closing anything. On opening, the passage being studied is brought back into
+view if it was going under the sheet or sliding below the bottom of the
+screen as it narrowed. At the top, the location (« Chapitre 1 · Daf 2a ·
+passage 3 ») and the cross; below, Rachi (the Rachbam in Bava Batra, where
+it takes its place) then Tossafot, at reading size: it is a text being
+studied. Its Hebrew stands one step below the verse of the reader (1.25 rem
+against 1.5, both following the text size), and its translation, when the
+setting is on, sits under each comment like the translation under a verse.
+**The panel is divided like a page of commentaries**: each commentator
+opens with its name at the size of a card title and, next to it, how many
+comments it has on the passage (« Rachi 3 »), with a full-width rule
+(`--color-line-strong`) above it from the second one on; within a
+commentator, a fine rule (`--color-line`) separates one dibbour hamat'hil
+from the next, so that a long Rachi no longer reads as a single block. The
+dibbour hamat'hil, the words of the text being commented, is in bold and in
+the theme color, like the verse numbers: it is what the eye looks for first.
+The panel's label (« Commentaires ») is in lowercase, as every group label.
+The panel **follows the reading**: as long
+as it is open, touching another passage shows that passage's commentaries
+there, without reopening the commands; you study a daf with one gesture per
+passage. In the text, the words quoted by the dibbourim of the studied
+passage are underlined in the theme color (`MarkedText.vue`), without a
+background, low enough to pass under the vowels. The reading menu button
+fades out while the panel is open (it occupies its place); the cross, Escape,
+the back button or the sheet pushed down close it, and give the passages
+back their commands.
 
-La question de `useConfirm` (« Retirer ce nom de la liste ? ») se pose
-souvent depuis une fenêtre déjà ouverte. Sa boîte (`ConfirmDialog`) est
-montée une fois pour toutes dans `App.vue`, donc avant toutes les autres :
-au même rang (60), la fenêtre ouverte ensuite la recouvrait, et la question
-restait invisible sous elle. Elle se pose donc un cran au-dessus (65), sous
-l'accueil du premier lancement (90) et les toasts (100). Le test de bout en
-bout de la chaîne perpétuelle (`e2e/firebase/perpetualChain.spec.ts`, le
-retrait d'un nom) la tient.
+**The column is resized by dragging its left edge** (`useStudyWidth`): a
+14 px strip straddling the edge, the resize arrow on hover, a vertical
+stroke in the middle of its height (a sheet's handle, laid on its side), and
+the whole edge in the theme color while dragging. The text follows without
+delay: it narrows when the column widens, and takes back its ordinary width,
+48 rem at most, when the column tightens (beyond that, the lines would become
+too long to read). The column does not go below 17 rem and always leaves 20
+rem for the text. With the keyboard, the edge is reached by Tab and adjusted
+with the arrows; a double tap restores its original width. The chosen width
+is kept on the device, like the text size.
 
-## 7. Le bandeau de navigation
+### On a phone, what accompanies a text rises in a bottom sheet
 
-Sur le **web**, le bandeau est transparent tant qu'on est en tête de page : il
-laisse voir le beige et ne pèse rien. Dès le premier geste de défilement, il
-prend un fond translucide et flouté, sans quoi le contenu se lirait à travers
-les liens. Sur **mobile**, il est compact : le titre passe au corps courant,
-la baseline disparaît, les marges verticales sont réduites de moitié. Le
-bandeau publie sa hauteur réelle dans `--navbar-height`, dont dépendent les
-barres collantes des pages.
+On a phone, in the app as on the site, what accompanies a text without
+leaving it rises from the bottom of the screen, in a **bottom sheet**
+(`BottomSheet.vue`): a passage's commands (spread across the full width,
+with the « Commentaires » row) and the study panel. That is the form a
+phone gives to these things: the thumb reaches
+them, they never hide the passage you just touched, and they close the way
+they close everywhere else, by pushing them down.
 
-Le bandeau du site compte sept entrées depuis l'arrivée du Sidour (Accueil,
-Sidour, Partage de lectures, Bibliothèque, Chiourim, Horaires, Calendrier) :
-elles ne tiennent sur une ligne, avec le nom du site et la connexion, qu'à
-partir de 1280 px. En dessous, le menu (le bouton à trois traits) prend le
-relais ; à 1024 px, « Partage de lectures » passait déjà sur trois lignes et
-le nom du site se coupait.
+The sheet has a handle (a 2.25 rem stroke, in the text color with
+transparency); the handle and its header carry the gesture, the body
+scrolls. It has detents (the study panel: half height and nearly full
+screen) or takes the height of its content (the commands); a decisive
+downward gesture closes it at once from its first detent (higher up, it
+brings it down one detent: a Tossafot read in full screen can be lowered
+without getting lost), a slow drag settles on the nearest detent. The
+commands sheet, at the height of its content, can be dragged from anywhere,
+buttons included (the gesture only starts beyond a few pixels; a tap stays a
+tap); **pulled upward, it opens the passage's commentaries**, like tapping
+their row, without having to aim at it. It grows under the finger during the
+gesture: you can see it is about to open. It does not
+veil the page: you read and touch the text above. In the app, it sits **on
+the tab bar**, which stays visible: it is the app's menu, and you do not
+lose it while reading a commentary (the sheet goes under the round times
+button, which overflows the bar, and keeps 1.25 rem of margin from it). It
+goes over the
+tab bar and under modal windows (sharing a passage opens on top), top
+corners rounded like a surface (`--radius-xl`), with the surface background
+and the shadow of surfaces that settle on top (`--shadow-pop`). The reading
+menu button fades out while a sheet is open. Beyond 640 px wide, room is no
+longer lacking: the commands become a bubble against the passage again, and
+the study panel a column on the right (`docked`: no handle, no gesture; in
+the app, it stops above the tab bar).
 
-L'app native n'a pas de bandeau : la navigation y passe par la barre du bas
-(`BottomTabBar`) : Accueil, Sidour, le rond des horaires, Étude, Profil. Le
-Sidour réunit ce qu'on dit, l'Étude ce qu'on apprend (la bibliothèque, les
-chiourim, le partage, reliés par les onglets de leurs pages). Comme sur iOS et Android, toucher l'onglet de la page où
-l'on est la remonte en haut (en douceur, sauf si le système demande moins
-d'animations) ; depuis une sous-page, il ramène à la page de l'onglet. Tenu
-par `src/__tests__/bottomTabBar.test.ts`.
+What floats at the bottom of the screen (the auto-scroll pill, toasts, a
+selection's bar) goes **above the open sheet**: the sheet announces its
+height (`bottomSheetSlot`, `useBottomChrome.ts`) and these elements sit on
+it, as they sit on the tab bar. Without this, the pill that stops the
+scrolling would be hidden under the commentaries being read while
+scrolling. A wide screen's column announces nothing: it does not cover the
+bottom of the screen.
 
-### Le haut de l'app n'a pas de bord
+The sheet keeps its place until it has left the screen, not until it starts
+leaving: Vue tells a component it is going away when its leave transition
+begins, and announcing nothing then dropped the pill at once, while the
+sheet was still sliding down. A finger that closed the sheet by touching
+the pill then landed on the verse under it, which chose it again: the sheet
+came back, and the pill went back up. And touching what floats above the
+sheet with its own commands (the auto-scroll pill and the veil of its speed
+panel, `data-keep-passage`) does not release the passage: it is not a tap
+beside it. Held by `src/__tests__/bottomSheet.test.ts` ("la place annoncée
+du volet"), `readingSelection.test.ts` and `autoScrollPill.test.ts`.
 
-Dans l'app, la page monte jusqu'en haut de l'écran, sous l'heure et la
-batterie : rien ne s'arrête à la zone système, et c'est voulu. Un bandeau plein
-y ferait une barre de titre, l'app aurait un plafond.
+### A bottom sheet moves like the system's
 
-Ce qui manquait, c'est la lisibilité : dès qu'on défile, un titre ou une ligne
-de texte passe derrière les icônes du système, et on ne lit plus ni les unes ni
-l'autre. D'où le voile (`StatusBarScrim.vue`) : un flou qui va de nul en bas à
-fort en haut, sur la hauteur de la zone système et un doigt de plus. On devine
-ce qui passe dessous, l'heure reste lisible, et le haut n'a toujours pas de
-bord.
+Both sheets, the reading one (`BottomSheet.vue`) and the modal one of Mon
+parcours (`parcours/BottomSheet.vue`, with a veil), are drawn by the web
+view, not by iOS or Android: a native sheet can only hold native views, not
+the Vue page, and the website needs the same sheet. Flutter does the same:
+its sheets are its own drawing, not the platform's. So ours copy the
+system's behavior instead:
 
-Le flou de fond ne se dégrade pas tout seul : quatre couches de force
-croissante, chacune masquée en bas, s'additionnent. Sur une petite machine
-(`perf-lite`), elles se coupent et il ne reste qu'un voile de la couleur du
-fond, qui suffit.
+- **It slides.** It rises from below the screen when it opens and goes back
+  down when it closes, whatever closes it (the cross, the veil, Escape,
+  Android back, the gesture). The modal sheet's veil darkens and clears with
+  it. The reading sheet is wrapped by its caller in
+  `<Transition name="bottom-sheet">`; the modal one goes through AppModal's
+  `sheet-modal` transition.
+- **It follows the finger.** Pulled down, it moves with the finger, with no
+  easing; the veil clears as it goes. Released past a third of its height
+  (the modal sheet; the reading sheet keeps its own rules, above), or
+  flicked down, it closes and keeps going down from where it was let go;
+  otherwise it comes back up. The modal sheet can be pulled from anywhere
+  on it, unless what is under the finger is scrolled (it scrolls back
+  first), is a field or a slider, or is marked `data-sheet-nodrag`; an
+  upward or sideways gesture stays the page's.
+- **Only what the compositor moves.** The motion is a translation and the
+  veil's color, never a height or a margin: below its lowest height, the
+  reading sheet slides instead of shrinking.
+- **One curve**, the one of the player's full screen
+  (`cubic-bezier(0.32, 0.72, 0, 1)`, `SHEET_EASING` in `sheetMotion.ts`):
+  a quick start, a soft landing, in 0.36 s (reading) and 0.4 s (modal).
+- Opening, the modal sheet gives the keyboard to its content without
+  scrolling to it: brought into view, it would scroll the veil instead of
+  rising.
 
-## 8. Ce qu'on n'emploie pas
+Held by `src/__tests__/bottomSheet.test.ts` (« la feuille de Mon parcours »
+and "pushed below its height, slides down instead of shrinking").
 
-- Les dégradés décoratifs, sous toutes leurs formes. Un dégradé qui sert à
-  **disparaître** n'en est pas un : le voile de la barre système s'efface vers
-  le bas, il ne colore rien.
-- Les bordures pour détacher une carte du fond : c'est le rôle de l'ombre.
-- Les majuscules d'imprimerie et l'interlettrage élargi sur les étiquettes :
-  une étiquette de groupe s'écrit en bas de casse, au corps d'un texte
-  secondaire (« Mon compte », pas « MON COMPTE »).
-- Playfair sur autre chose qu'un titre ou une mise en avant.
-- Une couleur codée en dur là où un jeton existe.
-- Le zoom au double appui du navigateur, sur le site comme dans l'app : le
-  pincement fait ce travail et reste entier. Le double appui, lui, est un geste
-  à nous (il lance le défilement automatique sur un texte) ; là où le navigateur
-  zoomait en même temps, les deux se disputaient la page.
+### A tefila opens on the phone's quiet modes
 
-## 9. Ce qui reste à faire
+A phone that rings in the middle of the 'Amida is the first thing to avoid,
+and the gesture that prevents it is in the system settings, not in the
+Sidour. So in the Android app, when a service opens (Cha'harit, Min'ha,
+Arvit), a panel comes down from the top of the screen and pushes the whole
+app down, as when the screen is split in two (`PrayerQuietPanel.vue`,
+`usePrayerQuiet`).
 
-Cette charte est en cours d'écriture, au fil des décisions.
+- **Under a fifth of the screen.** Three tiles side by side, like the
+  system's quick settings: « Ne pas déranger » ("Do not disturb"),
+  « Silencieux » ("Silent") and « Vibreur » ("Vibrate"), each with its
+  drawing, its name and the phone's **current** state (« Activé » /
+  « Désactivé », and solid in the theme color when on), read from the
+  system and followed while the panel is open. A mode already on shows on,
+  and a touch turns it off as well as on. The title is for screen readers
+  only: the tiles say what they are.
+- **It comes down, then grows.** The panel arrives from above the screen,
+  its lower edge glued to the app's upper edge: one offset moves both (the
+  panel's translation, the room the app leaves it at its top), in the
+  reading sheet's curve and duration (0.36 s). The text shows first,
+  then the panel comes (400 ms later): the motion answers the tap that
+  opened the tefila. Two seconds later, or at the first touch of a tile, it
+  grows by a row of two choices, and the app goes down a little further:
+  « À chaque tefila » ("Every tefila") and « Fermer » ("Close"). The modes
+  are read before the choices come.
+- **« Fermer » says where to find it again.** The whole content gives way,
+  in the same room, to one sentence: these settings are found again in
+  Profil, Préférences, « Avant une tefila » ("Profile, Preferences, Before a
+  tefila"); and two buttons, « Fermer » ("Close", solid, the default) and
+  « Ne plus afficher la prochaine fois » ("Don't show it next time"). Each
+  retracts the panel at once; « Fermer » keeps it for the next tefila.
+  Whoever wants to close it now without giving it up says so in one touch,
+  as clearly as whoever gives it up. The way out of the panel is offered
+  when it is being closed, not alongside the modes, where it competed with
+  them.
+- **The app below stays in use, as on a split screen.** The panel is not a
+  modal window: the tefila below scrolls, its text and buttons answer, its
+  bars stay in their place. The app starts lower by the panel's height (a
+  top padding, not a translation, so that the page keeps its own scrolling
+  and its fixed bars), and scrolls on under the panel, which stays put and
+  draws the app's rounded upper corners at its lower edge, with its shadow
+  on the page. Anchors land below it (`scroll-padding-top`). It sits under
+  the sheets, the tab bar and the status bar veil.
+- **It stays until « Fermer ».** Nothing closes it on its own, nor a touch
+  of the app below, nor Escape: a panel that went away at the first touch
+  of the page, or after a few seconds, was gone before it was read, and
+  did not come back. Android back leaves the tefila, the panel with it. As
+  long as « Fermer » has not been touched in this prayer, the panel comes
+  back with the tefila: reopened, back from another app (the home screen, a
+  call), the app relaunched on it.
+- **It retracts upward.** A choice made: the app comes back up into the
+  room the panel leaves, and the panel goes up with its edge.
+- **What is changed is changed for the prayer.** Once the tefila is left,
+  the phone goes back to how it was: Do Not Disturb turned on is turned off,
+  the ringer goes back to normal. Only what the app changed is undone: what
+  was already on before stays on, and a setting the user changed again from
+  the quick settings is theirs. The way back waits three seconds, so that
+  Min'ha then Arvit is one prayer (no second panel once « Fermer » was
+  touched). An app closed in the
+  middle of a tefila sets the phone back at its next launch.
+- **The choices.** « Fermer » keeps the modes for this prayer.
+  « À chaque tefila » keeps the modes that are on and turns them on by
+  themselves at every tefila, and still sets the phone back at the end.
+  The panel keeps coming then, as a reminder of what is on for this
+  prayer, with the same tiles to change it, and « À chaque tefila » checked
+  (a check mark, `aria-pressed`) while what is on is what is kept: a choice
+  made once that worked out of sight was forgotten, and nobody knew what
+  the phone was doing. With nothing on, it has nothing to keep and is
+  grayed out. « Ne plus afficher la prochaine fois » stops the panel: with
+  the modes offered, nothing comes any more; with the modes turned on by
+  themselves, they still are, announced by a toast only. All of it is
+  undone in Preferences, under « Avant une tefila » ("Before a tefila"),
+  the reading settings, as two settings independent like the panel's
+  choices: which modes (« Les choisir à chaque tefila », "Choose them at
+  each tefila", or « Les mêmes à chaque tefila », "The same at every
+  tefila", once some were kept), and « Afficher le panneau » ("Show the
+  panel"). « À chaque tefila » says which modes, never whether the panel
+  comes back: that is said by « Fermer » or « Ne plus afficher la
+  prochaine fois ». Modes chosen each time without the panel is nothing at
+  all.
+- **Silent and vibrate are one ringer**: turning one on replaces the other,
+  turning it off goes back to the normal ringer. Do Not Disturb is turned on
+  in "priority only", so the user's own exceptions (alarms, favorite
+  contacts) still come through.
+- **The access is asked for by the tap**: Do Not Disturb, and silent which
+  Android counts as one, need the "Do Not Disturb access" granted in the
+  settings. The first tap opens that list, a line says what to do there,
+  and the change is made on its own on return, once the access is granted.
+- **Android only.** iOS gives an app neither the ring/silent switch nor
+  Focus, read or written, and the web even less: rather than tiles that
+  would not know the phone's state, the panel is not offered there.
 
-- Un jeton d'encre distinct de `--color-primary`, si l'on veut des couleurs
-  plus vives sans perdre les liens et les numéros de verset.
-- L'icône de l'app porte encore le bleu d'avant : elle se reprendra plus tard.
-  Les captures des fiches des stores se régénèrent à la prochaine CI.
+Held by `src/__tests__/prayerQuiet.test.ts`.
+
+### A modal window fits within what is visible, keyboard included
+
+The veil of a modal window (`.modal-overlay`) does not cover the page: it
+covers what is **visible**. The difference only shows the day a software
+keyboard opens, and that day it decides everything. A keyboard does not
+shrink the window; it sits on top of it: a frame centered on the whole page
+then places its input field under the keyboard, and you type without seeing
+what you type. The veil therefore takes the height of the visual viewport
+and sits at its top (`useModalKeyboard.ts` measures, the style follows),
+the field that takes the keyboard is brought back inside it, and a window
+with a list is capped at that height rather than at a fraction of the
+screen.
+
+The frame, for its part, is centered by automatic margins and the veil
+scrolls. A frame centered by `align-items` that overflows in height gets cut
+off **at the top**, out of reach: the « Envoyer » ("Send") button of a
+slightly long form became impossible to find on a small phone. With margins,
+it is centered as long as it fits and scrolls as soon as it overflows; this
+holds for the support form, editing a chain and everything to come.
+
+### A confirmation goes in front of the window that requests it
+
+The `useConfirm` question (« Retirer ce nom de la liste ? », "Remove this
+name from the list?") is often asked from a window that is already open. Its
+box (`ConfirmDialog`) is mounted once and for all in `App.vue`, therefore
+before all the others: at the same level (60), the window opened afterward
+covered it, and the question remained invisible under it. It is therefore
+placed one step above (65), under the first-launch welcome (90) and the
+toasts (100). The end-to-end test of the perpetual chain
+(`e2e/firebase/perpetualChain.spec.ts`, removing a name) holds it.
+
+## 7. The navigation banner
+
+On the **web**, the banner is transparent while you are at the top of the
+page: it lets the beige show through and weighs nothing. From the first
+scroll gesture, it takes a translucent, blurred background; otherwise the
+content would show through the links. On **mobile**, it is compact: the
+title goes to body size, the tagline disappears, the vertical margins are
+halved. The banner publishes its real height in `--navbar-height`, on which
+the pages' sticky bars depend.
+
+The site banner has had seven entries since the Sidour arrived (Accueil,
+Sidour, Partage de lectures, Bibliothèque, Chiourim, Horaires, Calendrier):
+they only fit on one line, with the site name and sign-in, from 1280 px.
+Below that, the menu (the three-line button) takes over; at 1024 px,
+« Partage de lectures » ("Reading sharing") already wrapped onto three lines
+and the site name got cut off.
+
+The native app has no banner: navigation goes through the bottom bar
+(`BottomTabBar`): Accueil, Sidour, the times circle, Étude, Profil. The
+Sidour gathers what is said, Study what is learned (the library, the
+chiourim, sharing, linked by their pages' tabs). As on iOS and Android, touching the tab of the page
+you are on scrolls it back to the top (smoothly, unless the system asks for
+fewer animations); from a sub-page, it returns to the tab's page. Held by
+`src/__tests__/bottomTabBar.test.ts`.
+
+### The top of the app has no edge
+
+In the app, the page goes all the way up to the top of the screen, under the
+time and the battery: nothing stops at the system area, and that is
+intentional. A solid banner there would make a title bar; the app would have
+a ceiling.
+
+What was missing was readability: as soon as you scroll, a title or a line
+of text passes behind the system icons, and you can read neither. Hence the
+veil (`StatusBarScrim.vue`): a blur going from none at the bottom to strong
+at the top, over the height of the system area plus a finger's width. You
+can make out what passes beneath, the time stays readable, and the top still
+has no edge.
+
+The backdrop blur does not fade by itself: four layers of increasing
+strength, each masked at the bottom, add up. On a small machine
+(`perf-lite`), they are cut and only a veil in the background color remains,
+which is enough.
+
+## 8. The logo and the share banners
+
+The logo and the banners are the designer's, delivered as PNG; we place them,
+we do not redraw them. They speak the illustrations' language rather than the
+interface's: the warm cream background (`#FFF9F3`, also the site's
+`theme-color`), a soft orange (`#FEA547`) and a sky blue (`#539EE2`), flat.
+
+- **The logo**: the wall, the tower, the dome and the cypresses in orange, an
+  open book in blue, a blue star above. It is the app icon on every system
+  (the variants that follow the device theme are derived from it, see
+  `docs/app-native.md`), the Apple touch icon (the home screen has room for
+  it) and the logo of the structured data (`public/logo.png`).
+- **The star alone** is the brand mark where the whole logo would be a
+  smudge: the site's favicon (the blue star, the one above the logo; at 16
+  and 32 px the wide logo is a few pixels high) and the Android notification
+  small icon (in white, tinted by the system).
+- **The share banners** (`public/og/`, 1200×630): the image a shared link
+  shows on WhatsApp, Facebook or X. One per section and per language: the
+  general one, the reading sharing, the library, the Shabbat times, the
+  holiday calendar. Every page of a section takes its section's banner, in
+  its language; a section not drawn in a language takes the general banner of
+  that language (`src/content/ogBanners.ts`). A new banner goes in
+  `public/og/<section>-<language>.png` and is declared there, with its text as
+  alt text.
+- **The session cards** (`functions/src/ogCardSvg.ts`): the card of a shared
+  chain is a banner with its subtitle and tagline taken out (built from the
+  designer's PSD: `functions/assets/session-card.png`), and, in their place,
+  ours in the same style: the kind of session in Playfair small capitals,
+  the session name in black, the call to join in blue, in Manrope.
+
+## 9. What we do not use
+
+- Decorative gradients, in all their forms. A gradient used to
+  **disappear** is not one: the system bar veil fades out toward the bottom;
+  it colors nothing.
+- Borders to set a card apart from the background: that is the shadow's
+  job.
+- Block capitals and widened letter spacing on labels: a group label is
+  written in lowercase, at the size of secondary text (« Mon compte », not
+  « MON COMPTE »).
+- Playfair on anything other than a title or a highlight.
+- A hard-coded color where a token exists.
+- The browser's double-tap zoom, on the site as in the app: pinching does
+  that job and remains intact. Double tap, for its part, is a gesture of
+  ours (it starts auto-scroll on a text); where the browser zoomed at the
+  same time, the two fought over the page.
+
+## 10. What remains to be done
+
+These guidelines are being written as decisions are made.
+
+- An ink token distinct from `--color-primary`, if we want brighter colors
+  without losing links and verse numbers.
+- The store listing screenshots are regenerated at the next CI run, with
+  the new icon.
+
+## 11. The promotional videos
+
+The short videos for the networks, and the app's "what's new" video
+(`promo/`, how-to in `promo/README.md`), are the same house as the app, seen
+from further away. They take its tokens and what is not used in it, starting
+with gradients: the wipes that sweep the screen from one scene to the next,
+the backgrounds, the confetti of the siyoum are flat colors.
+
+- **What you see is the app.** Each screen is a screenshot of the native app
+  on demo data, each gesture was really played. Nothing is redrawn, except
+  what must grow to be read on a phone held in the hand (a chain's progress
+  card, the daily reading tracker), which then takes the app's layout at the
+  video's scale.
+- **The stone wall** is the background of every scene: courses in flat
+  colors barely lighter or darker than the background, sliding slowly. On a
+  theme color (the opening), the stones hardly show.
+- **The fonts**: Playfair Display for whatever reads as a title (the
+  opening, the captions, « Mais aussi… », the app's name), with one word in
+  italics and in the theme color for the punch line; Manrope for the pills,
+  which are round like the app's controls.
+- **One video, one look**: each video keeps the theme and the mode (light or
+  dark) of its screenshots, and the closing montage mixes the others, to show
+  in passing that the app can be set to one's taste.
+- **The safe zone**: the networks place their buttons at the bottom and on
+  the right. Captions stay at the top (below 210 px), nothing important goes
+  below 1,500 px; the phone, for its part, may leave through the bottom.
+- **The rhythm**: picture and music share a grid of 120 beats per minute. A
+  cut, a line that strikes, a tap fall on a beat, and the music plays the
+  gesture's sound at the same instant.
+
+### Series 2 moves more, and reads as much
+
+The stories (`promo/src/Story.tsx`) push the movement: phones that rush in,
+followed by two paler echoes as motion blur, fans of three phones, a mosaic
+of stones that lands then leaves between two chapters, a split-flap clock,
+counters, scrolling bands. Three rules keep it readable:
+
+- **one sentence per shot, held for the whole shot**: the subtitle
+  (`Subtitle`) arrives word by word then stays, on a surface plate that
+  sets it apart from what moves behind; its punch line fills with a flat
+  of the theme (or holiday) color;
+- **the closing montage goes to two beats per shot**: one second to read
+  « Le calendrier des fêtes », the camera diving on the detail on the
+  second beat;
+- **lining figures**: Playfair's, old-style by default, turn zero into an
+  « o », and « 0 € » read « o € ».
+
+The Hebrew of the videos is written in Frank Ruhl Libre and Heebo, as in
+the app, from right to left.
+
+### Version 4.0: one presentation, in the first series' language
+
+The 4.0 video (`promo/src/v4/`) is a presentation rather than an ad: one
+video of about a hundred seconds, which the app plays after the update in the
+reader's language and which goes to the networks in French, only its ending
+changing (the stores instead of where to watch it again). A first cut in
+series 2's manner was set aside: what the owner liked is series 1, slowed
+down.
+
+- **Series 1's language.** The phone held calmly, turning a little from one
+  moment to the next; two-line captions whose words rise one by one, the
+  second line in italics and in the orange ink; real gestures; what must be
+  read larger comes out of the screen (`PopOut`: the card of the moment, the
+  streak and its light, the Vilna page, a passage's commentaries, the
+  team's answer, the quiet modes, the time of the moment) rather than the
+  phone zooming under the caption; color wipes for the two big cuts.
+- **It opens and ends like the banners.** The opening and the end card
+  speak the language of the designer's logo and share banners (section 8):
+  the cream, the stars in orange and blue scattered around what is said,
+  « בס״ד · פטיט ירושלים » in orange above, the name in capitals, the
+  « 4.0 » of the opening in the banners' blue. For the networks, the
+  general banner's promise follows, its three verbs in blue. The app's
+  screens keep the app's colors.
+- **The logo moves, it is not redrawn.** His PNG is cut into its pieces
+  when the video renders, by color and by place (the star, the flame, the
+  dome, the cypresses, the tower, the wall, the book:
+  `promo/src/v4/LogoMotion.tsx`), and each one moves on its own: the book
+  opens from its spine, the wall rises out of it, the tower and the dome
+  come up from behind the wall and the cypresses grow, the flame lights,
+  the star falls turning and lands with a few sparks; then the star
+  twinkles and the flame flickers. It builds in the middle of the opening
+  on the music's first hit, then rises above the words, and builds again on
+  the end card, before the name.
+- **It follows the app.** When the app changes before the release, the
+  video is filmed again on it: the cut is data and the shots replay
+  themselves (`npm run captures`, then `npm run render`).
+- **What it does not use.** Scrolling bands, phones with echo trails, the
+  stone mosaic, captions on plates, a shaking camera beyond the opening's
+  strikes, a music that stutters: series 2's vocabulary, which did not
+  convince.
+- **Slower.** Five to eight seconds per change (series 1 gave twelve to a
+  single feature, one beat to each of the others), and two beats per shot
+  in the closing montage. The phone never climbs under a caption.
+- **What moved is shown before what is new.** The video opens on the 3.10
+  tab bar above today's, filmed on both apps, with an arrow from each former
+  tab to the one that holds it now and a « Nouveau » tag on the new one; then
+  the 3.10 home page beside today's. The bars come from each language's
+  screenshots, so the arrows follow the mirrored bar in Hebrew, where
+  « before » also stands on the right.
+- **White on the pastel orange, as in the app.** The montage's orange
+  shots and the « 4.0 » pill write white on `#EB9F4F`, in large bold
+  type only (the app's documented exception, section 2); a small label on
+  the orange stays dark. A caption's accent takes the orange ink
+  (`#D46D01`). The former vermilion stays with series 1 and 2, filmed on
+  3.10.
+- **One grid.** The cut is data (`promo/src/v4/plan.ts`): the gestures and
+  the music's sounds fall on the same marked beats, and a section always
+  holds whole bars, or the music would run into the next one.
+- **The reader's language.** French, English and Hebrew, each filmed in its
+  own interface; the Hebrew one has no translation chapter (the translations
+  go into French and English).

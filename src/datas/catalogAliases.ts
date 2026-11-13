@@ -15,6 +15,20 @@
  * rende pas un alias muet.
  */
 
+/** Le nom du rayon de la halakha, que tous ses livres portent. */
+const HALAKHA = ["Halakha", "Halacha", "Halakhah", "Halakhot", "Lois", "הלכה"];
+
+/** Les noms communs aux quatre parties du Choulhan Aroukh. */
+const SHULCHAN_ARUKH = [
+  "Shulchan Arukh",
+  "Shulchan Aruch",
+  "Choulhan Aroukh",
+  "Choulhane Aroukh",
+  "Shoulhan Aroukh",
+  "שולחן ערוך",
+  ...HALAKHA,
+];
+
 /** Les noms communs aux cinq livres de la Torah. */
 const TORAH = ["Torah", "Houmach", "Chumash", "Pentateuque", "תורה", "חומש"];
 
@@ -47,6 +61,40 @@ export const BOOK_ALIASES: Record<string, string[]> = {
     "מוסר",
   ],
   "Pélé Yoets": ["Pele Yoetz", "Pélé Yoets", "Pele Yoets", "Moussar", "Musar", "מוסר"],
+  // Halakha : le nom du rayon, les graphies du Choulhan Aroukh et de chacune
+  // de ses parties, et le Kitsour.
+  "Choulhan Aroukh, Ora'h Hayim": [
+    ...SHULCHAN_ARUKH,
+    "Orah Hayim",
+    "Orach Chaim",
+    "Orach Chayim",
+    "Orah Haim",
+    "אורח חיים",
+  ],
+  "Choulhan Aroukh, Yoré Déa": [
+    ...SHULCHAN_ARUKH,
+    "Yore Dea",
+    "Yoreh Deah",
+    "Yoreh De'ah",
+    "יורה דעה",
+  ],
+  "Choulhan Aroukh, Even Haezer": [...SHULCHAN_ARUKH, "Even HaEzer", "Even Ha'ezer", "אבן העזר"],
+  "Choulhan Aroukh, Hochen Michpat": [
+    ...SHULCHAN_ARUKH,
+    "Hoshen Mishpat",
+    "Choshen Mishpat",
+    "Hochen Mishpat",
+    "חושן משפט",
+  ],
+  "Kitsour Choulhan Aroukh": [
+    "Kitzur",
+    "Kitsour",
+    "Kitzur Shulchan Aruch",
+    "Kitzur Shulchan Arukh",
+    "Kitsour Choulhane Aroukh",
+    "קיצור",
+    ...HALAKHA,
+  ],
 };
 
 /**
@@ -199,6 +247,8 @@ export const TEXT_ALIASES: Record<string, string[]> = {
     "פרקי אבות",
   ],
   Beitzah: ["Yom Tov"],
+  // Edouyot : sa graphie pleine en hébreu, et le nom que lui donne le Talmud.
+  Eduyot: ["עדויות", "Be'hirta", "בחירתא"],
   Oktzin: ["Uktzin", "Oukatsin"],
 
   // Moadim.
@@ -209,7 +259,15 @@ export const TEXT_ALIASES: Record<string, string[]> = {
   "Nerot Hanouka": ["Maoz Tsour", "Allumage des bougies", "Menorah"],
 
   // Brahot : le nom de la bénédiction, ou ce qu'elle accompagne.
-  "Birkat Hamazon": ["Bénédiction après le repas", "Grace after meals", "Bentcher"],
+  "Birkat Hamazon": [
+    "Bénédiction après le repas",
+    "Grace after meals",
+    "Bentcher",
+    "Bencher",
+    "Bensch",
+    "Bentsch",
+    "Bentching",
+  ],
   "Brakha A'harona": ["Mé'ein Chaloch", "Al Hami'hya", "Boré Nefachot", "Bénédiction finale"],
   "Cheva Brahot": ["Mariage", "Wedding"],
   "Birkat Halevana": ["Kiddouch Levana", "Bénédiction de la lune", "Blessing of the Moon"],
@@ -228,6 +286,19 @@ export const TEXT_ALIASES: Record<string, string[]> = {
   Arvit: ["Maariv", "מעריב", "Prière du soir", "Evening prayer"],
   "Chema al Hamita": ["Kriat Chema", "Chéma du coucher", "Bedtime Shema"],
   "Tikoun Hatsot": ["Prière de minuit", "Midnight prayer"],
+  "Tikoun Haklali": [
+    "Tikkun HaKlali",
+    "Tikoun Hakelali",
+    "Tikkoun Haklali",
+    "Remède général",
+    "General remedy",
+    "Dix psaumes",
+    "Ten psalms",
+    "Rabbi Nachman",
+    "Breslev",
+    "Breslov",
+  ],
+  "Nichmat Kol 'Hai": ["Nishmat Kol Chai", "Nishmas", "Yichtaba'h", "Yishtabach", "נשמת"],
 
   // Moussar : la porte qu'on vient le plus chercher, sous ses graphies.
   "Chaar Habita'hon": [

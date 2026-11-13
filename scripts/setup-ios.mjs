@@ -28,7 +28,7 @@
  *   embarqués (sources de native/watchos/, voir docs/app-watch.md)
  * - Icônes / splash générés depuis assets/logo.png
  * - Icône iOS 18 : variantes sombre et teintée déclarées dans le catalogue
- *   (fichiers d'assets/themed/, rasterisés depuis lib/app-icon.mjs)
+ *   (fichiers d'assets/themed/, dérivés du logo : voir lib/app-icon.mjs)
  *
  * Usage : node scripts/setup-ios.mjs
  *
@@ -49,11 +49,13 @@ import { createHash } from "node:crypto";
 import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { APP_LINK_DOMAIN } from "./lib/app-links.mjs";
+import { ENV, ENVIRONMENTS } from "./lib/environments.mjs";
 import { IOS_ICON_FILES, iosAppIconContents } from "./lib/app-icon.mjs";
 import {
   addAppSource,
   addWidgetExtension,
   APP_GROUP,
+  SOURCE_APP_GROUP,
   widgetEntitlements,
   registerViewController,
   widgetInfoPlist,
@@ -79,8 +81,12 @@ if (!existsSync(pbxprojPath)) {
   process.exit(1);
 }
 
-const BUNDLE_ID = "fr.petitejerusalem.app";
-const DISPLAY_NAME = "Petite Jérusalem";
+// Ceux de l'environnement visé (PJ_ENV) : « PJ Staging » a son propre bundle
+// id pour s'installer à côté de la vraie app (docs/staging.md).
+const BUNDLE_ID = ENV.appId;
+const DISPLAY_NAME = ENV.appName;
+/** L'appId de capacitor.config.ts, que `cap add` écrit dans le pbxproj. */
+const CAPACITOR_APP_ID = ENVIRONMENTS.production.appId;
 /** Widgets d'écran d'accueil : l'App ID de la cible d'extension. */
 const WIDGET_BUNDLE_ID = `${BUNDLE_ID}.${WIDGET_TARGET}`;
 /** Apple Watch : l'App ID de l'app de montre (suffixe imposé par Apple). */
@@ -552,13 +558,21 @@ const APP_PLUGIN_SOURCES = [
   "PjWatchPlugin.swift",
   "PjViewController.swift",
 ];
+/**
+ * Recopie une source Swift en y mettant l'App Group de l'environnement : les
+ * sources versionnées portent celui de la production en toutes lettres.
+ */
+function copySwiftSource(from, to) {
+  const source = readFileSync(from, "utf8");
+  writeFileSync(to, source.replaceAll(`"${SOURCE_APP_GROUP}"`, `"${APP_GROUP}"`));
+}
 for (const name of APP_PLUGIN_SOURCES) {
-  copyFileSync(join(nativeIosDir, "App", name), join(appDir, name));
+  copySwiftSource(join(nativeIosDir, "App", name), join(appDir, name));
 }
 
 const widgetDir = join(iosDir, "App", WIDGET_TARGET);
 mkdirSync(widgetDir, { recursive: true });
-copyFileSync(
+copySwiftSource(
   join(nativeIosDir, WIDGET_TARGET, `${WIDGET_TARGET}.swift`),
   join(widgetDir, `${WIDGET_TARGET}.swift`),
 );
@@ -658,7 +672,16 @@ addResource("PrivacyInfo.xcprivacy", "text.plist.xml");
 if (existsSync(gsDest)) addResource("GoogleService-Info.plist", "text.plist.xml");
 
 // Bundle id (cap add le pose depuis appId, on le rend explicite et idempotent).
-pbxproj = pbxproj.replaceAll("com.getcapacitor.App", BUNDLE_ID);
+// L'appId de capacitor.config.ts reste celui de la production en staging :
+// c'est lui que `cap add` écrit, et lui qu'il faut remplacer par celui de
+// l'environnement. Le point-virgule épargne les cibles suffixées (widgets,
+// montre), ajoutées plus bas avec leur propre identifiant.
+pbxproj = pbxproj
+  .replaceAll("com.getcapacitor.App", BUNDLE_ID)
+  .replaceAll(
+    `PRODUCT_BUNDLE_IDENTIFIER = ${CAPACITOR_APP_ID};`,
+    `PRODUCT_BUNDLE_IDENTIFIER = ${BUNDLE_ID};`,
+  );
 
 /** Pose ou remplace un réglage dans un bloc buildSettings. */
 function setSetting(block, key, value) {
@@ -877,7 +900,7 @@ const iconMarker = join(appDir, "Assets.xcassets/.pj-assets-generated");
 if (!existsSync(iconMarker)) {
   try {
     execSync(
-      "npx @capacitor/assets generate --ios --assetPath assets --iconBackgroundColor '#f5eedc' --iconBackgroundColorDark '#f5eedc'",
+      "npx @capacitor/assets generate --ios --assetPath assets --iconBackgroundColor '#fff9f3' --iconBackgroundColorDark '#fff9f3'",
       { cwd: root, stdio: "inherit" },
     );
     writeFileSync(iconMarker, "");
@@ -885,7 +908,7 @@ if (!existsSync(iconMarker)) {
   } catch {
     console.warn(
       "setup-ios: ⚠️ génération des icônes échouée, lancer à la main :\n" +
-        "  npx @capacitor/assets generate --ios --assetPath assets --iconBackgroundColor '#f5eedc' --iconBackgroundColorDark '#f5eedc'",
+        "  npx @capacitor/assets generate --ios --assetPath assets --iconBackgroundColor '#fff9f3' --iconBackgroundColorDark '#fff9f3'",
     );
   }
 }
@@ -916,7 +939,7 @@ if (existsSync(appIconSet)) {
   if (missing.length) {
     console.warn(
       "setup-ios: ⚠️ variantes d'icône absentes d'assets/themed/, l'icône ne suivra pas le thème.\n" +
-        "  Y déposer icon-dark.png et icon-tinted.png, rasterisés depuis lib/app-icon.mjs.",
+        "  Y déposer icon-dark.png et icon-tinted.png, dérivés du logo (voir lib/app-icon.mjs).",
     );
   } else {
     for (const { variant, source } of variants) {

@@ -9,7 +9,7 @@ import AdminEmpty from "../../components/admin/AdminEmpty.vue";
 import AdminSkeleton from "../../components/admin/AdminSkeleton.vue";
 import { adminService } from "../../services/adminService";
 import { formatAgo } from "../../services/adminFormat";
-import { ANNOUNCEMENT_ICONS, type Announcement } from "../../services/announcements";
+import { type Announcement } from "../../services/announcements";
 import { useAdminQueryFilter } from "../../composables/useAdminQueryFilter";
 import { refreshAdminSummary } from "../../composables/useAdminSummary";
 import { useToast } from "../../composables/useToast";
@@ -133,16 +133,6 @@ async function resolve(a: Announcement) {
           :key="a.id"
           class="flex flex-col gap-3 p-3 md:flex-row md:items-center md:p-4"
         >
-          <span
-            class="hidden h-10 w-10 shrink-0 items-center justify-center rounded-control md:flex"
-            :class="
-              a.kind === 'incident' && !a.resolved
-                ? 'bg-red-600/10 text-red-600 dark:text-red-400'
-                : 'bg-primary/10 text-primary'
-            "
-          >
-            <AppIcon :name="ANNOUNCEMENT_ICONS[a.kind]" :size="18" />
-          </span>
           <router-link :to="`/admin/informations/${a.id}`" class="group min-w-0 flex-1">
             <span
               class="block break-words font-semibold text-text-primary group-hover:text-primary"

@@ -35,6 +35,12 @@ describe("plage horaire de l'office en cours", () => {
     expect(window?.tefila).toBe("arvit");
   });
 
+  it("passé 'hatsot de la nuit, Arvit jusqu'à l'aube, puis plus rien avant Cha'harit", () => {
+    // Le 16 juin : 'hatsot vers 1 h 50, aube vers 3 h, misheyakir vers 3 h 50.
+    expect(currentTefilaWindow(DEFAULT_PLACE, paris(0, 30, 16))?.tefila).toBe("arvit"); // 2 h 30
+    expect(currentTefilaWindow(DEFAULT_PLACE, paris(1, 20, 16))).toBeNull(); // 3 h 20
+  });
+
   it("entre la chkia et la sortie des étoiles : aucun office", () => {
     const window = currentTefilaWindow(DEFAULT_PLACE, paris(20, 10)); // 22 h 10
     expect(window).toBeNull();
@@ -87,7 +93,7 @@ describe("Arvit ouverte dans la journée", () => {
     expect(tefilaHebrewDay(DEFAULT_PLACE, "arvit", lundi(19)).getDate()).toBe(25);
   });
 
-  it("avant le lever du soleil, encore la nuit en cours", () => {
+  it("avant l'aube, encore la nuit en cours", () => {
     // Lundi 5 h : la nuit de la sortie de fête n'est pas finie, son Arvit se
     // rattrape encore, avec Ata 'honantanou.
     const hd = tefilaHebrewDay(DEFAULT_PLACE, "arvit", lundi(3));

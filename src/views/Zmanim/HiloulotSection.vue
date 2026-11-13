@@ -3,7 +3,7 @@
  * Les hiloulot du jour, en bas de la page des horaires.
  *
  * Pas de cadre : ce n'est pas une réponse à une question qu'on se pose en
- * ouvrant la page (voir docs/design.md, « Le cadre se mérite »), c'est ce
+ * ouvrant la page (voir docs/design.md, « The frame must be earned »), c'est ce
  * qu'on trouve en arrivant au bout, comme le calendrier imprimé le met au bas
  * de sa colonne. Un titre de groupe, comme ceux des moments de la journée, et
  * des noms.
@@ -19,7 +19,6 @@ import { useI18n } from "vue-i18n";
 import type { HDate } from "@hebcal/core";
 import { hiloulotOn, loadHiloulot, type HiloulotIndex } from "../../services/hiloulot";
 import { analyticsService } from "../../services/analyticsService";
-import AppIcon from "../../components/icons/AppIcon.vue";
 
 const props = defineProps<{ day: HDate }>();
 
@@ -67,7 +66,6 @@ function expand(): void {
 <template>
   <section v-if="names.length > 0" class="mt-5 border-t border-line pt-4">
     <h2 class="flex items-center gap-2 pb-1 text-base font-bold text-text-secondary">
-      <AppIcon name="candle" :size="16" class="text-primary" />
       {{ t("zmanim.hiloulot.title") }}
     </h2>
     <ul class="flex flex-col gap-0.5">

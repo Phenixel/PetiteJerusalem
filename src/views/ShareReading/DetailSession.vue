@@ -19,6 +19,7 @@ import ReportSessionModal from "../../components/ReportSessionModal.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import { seoService } from "../../services/seoService";
 import { SITE_URL } from "../../config/site";
+import { APP_SITE_URL } from "../../config/environment";
 import SessionHeader from "./detailSession/SessionHeader.vue";
 // Cinq captures animées qui ne servent qu'à ceux qui ouvrent la fenêtre : le
 // morceau ne part qu'au clic sur la pastille.
@@ -29,6 +30,8 @@ import TextStudiesList from "./detailSession/TextStudiesList.vue";
 import RandomTehilimCard from "./detailSession/RandomTehilimCard.vue";
 import PerpetualStatsCard from "./detailSession/PerpetualStatsCard.vue";
 import PrayerNamesCard from "./detailSession/PrayerNamesCard.vue";
+import NichmatChain from "./detailSession/NichmatChain.vue";
+import { isNichmat } from "../../services/nichmatChain";
 // La fenêtre d'un nom emporte le calendrier hébraïque (date du décès) : elle
 // ne se charge qu'à la première ouverture.
 const PrayerNameModal = defineAsyncComponent(() => import("../../components/PrayerNameModal.vue"));
@@ -39,10 +42,17 @@ import { isOffline } from "../../services/userPreferencesService";
 import { useToast } from "../../composables/useToast";
 import { liveValue } from "../../composables/liveInput";
 import { analyticsService } from "../../services/analyticsService";
+import { haptic } from "../../services/haptics";
 import { moderationService } from "../../services/moderationService";
 import { useConfirm } from "../../composables/useConfirm";
 import { parseSlotKey, slotKey, useReservationIndex } from "../../composables/useReservationIndex";
 import { useSessionEditing, type SessionEditData } from "../../composables/useSessionEditing";
+import {
+  batchReadings,
+  offersBatchReading,
+  readNowExpiry,
+  readsRightAway,
+} from "../../services/sessionBatchReading";
 
 const route = useRoute();
 const router = useRouter();
@@ -209,6 +219,18 @@ const searchedIds = computed<Set<string> | null>(() => {
   );
 });
 
+/**
+ * The perpetual chain has no reservations, only readings
+ * (services/sessionBatchReading.ts): psalms are picked to be read right
+ * away, without a name, and « Lire maintenant » opens them.
+ */
+const readNow = computed(() => readsRightAway(session.value));
+
+/** The reader's own texts, at the top of the list. */
+const myGroup = computed(() =>
+  readNow.value ? t("detailSession.readNow.myGroup") : t("detailSession.myReservations"),
+);
+
 const myTextIds = computed(() => {
   const ids = new Set<string>();
   const user = currentUser.value;
@@ -239,7 +261,7 @@ const groupedTextStudies = computed(() => {
     if (kept.length > 0) groups[bookName] = kept;
   }
 
-  return myTexts.length > 0 ? { [t("detailSession.myReservations")]: myTexts, ...groups } : groups;
+  return myTexts.length > 0 ? { [myGroup.value]: myTexts, ...groups } : groups;
 });
 
 /** Qui participe, nommément : la liste que la barre d'avancement ouvre. */
@@ -253,11 +275,12 @@ const progressStats = computed(() =>
     : { total: 0, reserved: 0, read: 0, participants: 0, percentage: 0, readPercentage: 0 },
 );
 
-const confirmButtonLabel = computed(() => {
-  return !currentUser.value
-    ? t("detailSession.confirmAsGuest")
-    : t("detailSession.confirmReservation");
-});
+// The bar's second line only says what the button does not: a guest goes on
+// without an account. « Confirmer la réservation » under « Confirmer », or
+// « 2 Téhilim choisis » under « 2 textes sélectionnés », said it twice.
+const confirmButtonLabel = computed(() =>
+  !currentUser.value && !readNow.value ? t("detailSession.confirmAsGuest") : undefined,
+);
 
 // Absent sur les sessions créées avant l'introduction du réglage : l'email
 // des invités y est optionnel.
@@ -351,6 +374,12 @@ const confirmReservations = async () => {
     source: "session_page",
   });
 
+  // Perpetual chain: no name asked, the psalms open right away.
+  if (readNow.value) {
+    await submitReservations();
+    return;
+  }
+
   // Invité qui n'a pas rempli le formulaire en haut de page : plutôt qu'une
   // erreur qui l'oblige à remonter et à recliquer sur Confirmer, on lui demande
   // son nom dans une modale et la réservation part dans la foulée.
@@ -414,20 +443,27 @@ const submitReservations = async () => {
       return;
     }
 
+    const readNowOptions = readNow.value
+      ? {
+          expiresAt: readNowExpiry(),
+          anonymousName: t("detailSession.randomDraw.anonymous"),
+        }
+      : undefined;
     const reservationIds = await sessionService.createBatchReservationsForUser(
       current.id,
       unreservedItems,
       currentUser.value,
       reservationForm.value,
       guestEmailRequired.value,
+      readNowOptions,
     );
 
-    const newReservations = sessionService.createLocalReservations(
-      unreservedItems,
-      reservationIds,
-      currentUser.value,
-      reservationForm.value,
-    );
+    const newReservations = sessionService
+      .createLocalReservations(unreservedItems, reservationIds, currentUser.value, {
+        ...reservationForm.value,
+        name: reservationForm.value.name.trim() || readNowOptions?.anonymousName || "",
+      })
+      .map((r) => (readNowOptions ? { ...r, expiresAt: readNowOptions.expiresAt } : r));
 
     // Les tirages expirés que ces places tenaient encore partent avec : sinon
     // annuler ou marquer « lu » pouvait retomber sur eux plutôt que sur la
@@ -447,12 +483,18 @@ const submitReservations = async () => {
       source: "session_page",
     });
 
-    if (!currentUser.value) {
-      // Les invités voient la modale d'inscription, qui confirme déjà la réservation.
-      showSignupPrompt.value = true;
-    } else {
+    // Perpetual chain: no reservation, only reading. « Lire maintenant »
+    // opens the psalms straight away, without a question.
+    if (readNow.value) {
+      openBatchReading("after_pick");
+      return;
+    }
+    if (currentUser.value) {
       toast.success(t("detailSession.reservationsConfirmed", newReservations.length));
     }
+    // Not awaited: the bar and the guest dialog close without waiting for
+    // the answer.
+    void afterReservation();
   } catch (err) {
     console.error("Erreur lors de la confirmation globale:", err);
     analyticsService.capture("reservation_failed", {
@@ -528,6 +570,7 @@ const toggleReservationCompletion = async (textStudyId: string, section: number)
   const previous = reservation.isCompleted;
   const newCompletionStatus = !previous;
   reservation.isCompleted = newCompletionStatus;
+  haptic(newCompletionStatus ? "done" : "undo");
 
   try {
     await reservationService.markReservationAsCompleted(
@@ -556,6 +599,63 @@ const toggleReservationCompletion = async (textStudyId: string, section: number)
     if (error instanceof ReservationGoneError) removeLocalReservation(reservation.id);
     toast.errorFromException(error, t("detailSession.updateError"));
   }
+};
+
+// --- Reading one's Tehilim at once (services/sessionBatchReading.ts) ---
+
+/** The reader's psalms in this chain, read or not. */
+const myReadings = computed(() => batchReadings(session.value, currentUser.value));
+const unreadCount = computed(
+  () => myReadings.value.filter((reading) => !reading.reservation.isCompleted).length,
+);
+const showBatchReading = computed(() =>
+  offersBatchReading(myReadings.value, readNow.value ? 1 : undefined),
+);
+
+const openBatchReading = (trigger: "button" | "prompt" | "after_pick") => {
+  const current = session.value;
+  if (!current) return;
+  analyticsService.capture("session_batch_reading_opened", {
+    session_id: current.id,
+    texts_count: myReadings.value.length,
+    unread_count: unreadCount.value,
+    trigger,
+    is_guest: currentUser.value == null,
+  });
+  void router.push({ name: "session-reading", params: { slug: current.slug ?? current.id } });
+};
+
+/**
+ * Right after a reservation that leaves several psalms to read: « Les lire
+ * maintenant ? » ("Read them now?"). Resolves to true when the reader goes
+ * to read them.
+ */
+const promptBatchReading = async (): Promise<boolean> => {
+  const count = unreadCount.value;
+  const accepted = await confirm({
+    title: t("detailSession.batchReading.promptTitle", count),
+    message: t("detailSession.batchReading.promptMessage", { count }, count),
+    confirmLabel: t("detailSession.batchReading.promptConfirm"),
+    cancelLabel: t("detailSession.batchReading.promptLater"),
+  });
+  analyticsService.capture("session_batch_reading_prompted", {
+    session_id: session.value?.id,
+    unread_count: count,
+    accepted,
+    is_guest: currentUser.value == null,
+  });
+  if (accepted) openBatchReading("prompt");
+  return accepted;
+};
+
+/**
+ * Several Tehilim taken: offer to read them now, one after the other. A
+ * guest who declines (or has nothing to read at once) sees the signup
+ * dialog, which already confirms the reservation.
+ */
+const afterReservation = async () => {
+  if (showBatchReading.value && (await promptBatchReading())) return;
+  if (!currentUser.value) showSignupPrompt.value = true;
 };
 
 const clearSearch = () => {
@@ -665,6 +765,42 @@ watch(isRoundDone, (done) => {
   });
 });
 
+// --- Nichmat 40 (see docs/nichmat-40-jours.md) ---
+
+const isNichmatChain = computed(() => isNichmat(session.value));
+
+const onNichmatChanged = (reservations: Session["reservations"]) => {
+  if (session.value) session.value.reservations = reservations;
+};
+
+const onNichmatGuestReserved = (email: string) => {
+  reservationForm.value.email = email;
+  showSignupPrompt.value = true;
+};
+
+/**
+ * A chain that waited for its readers has its start once full: its
+ * creator's app records it (sessionService.recordNichmatStart), so that a
+ * place freed later does not move the forty days.
+ */
+watch([session, currentUser], async ([current, user]) => {
+  if (!current || !user || !isNichmat(current)) return;
+  try {
+    const recorded = await sessionService.recordNichmatStart(current, user);
+    if (recorded && session.value?.id === recorded.id) {
+      Object.assign(session.value, {
+        startDay: recorded.startDay,
+        dateLimit: recorded.dateLimit,
+        dateLimitDay: recorded.dateLimitDay,
+      });
+    }
+  } catch (err) {
+    // Not recorded now, recorded at the next visit: the start is still
+    // computed from the places in the meantime.
+    console.warn("Début de Nichmat 40 non enregistré :", err);
+  }
+});
+
 // --- Tirage aléatoire (sessions Tehilim uniquement) ---
 
 const isTehilimSession = computed(() => session.value?.type === EnumTypeTextStudy.Tehilim);
@@ -721,11 +857,11 @@ function openInstructions(): void {
 }
 
 const openShareModal = (afterCreate = false) => {
-  // Domaine canonique plutôt que window.location.href : ce dernier vaut
+  // Le site de l'environnement plutôt que window.location.href : ce dernier vaut
   // localhost (ou capacitor://localhost) en dev et dans l'app native, ce qui
   // produirait un lien de partage inutilisable.
   const s = session.value;
-  shareUrl.value = s ? `${SITE_URL}/share-reading/session/${s.slug || s.id}` : SITE_URL;
+  shareUrl.value = s ? `${APP_SITE_URL}/share-reading/session/${s.slug || s.id}` : APP_SITE_URL;
   shareAfterCreate.value = afterCreate;
   showShareModal.value = true;
 };
@@ -809,14 +945,14 @@ const applySessionSeo = (s: typeof session.value) => {
       url,
       title: s.name,
       description,
-      image: `${SITE_URL}/og-image.jpg`,
+      image: `${SITE_URL}/og/partage-lectures-fr.png`,
       site_name: "Petite Jérusalem",
     },
     twitter: {
       card: "summary_large_image",
       title: s.name,
       description,
-      image: `${SITE_URL}/og-image.jpg`,
+      image: `${SITE_URL}/og/partage-lectures-fr.png`,
     },
   });
 };
@@ -991,7 +1127,6 @@ watch(session, (s) => applySessionSeo(s));
         v-if="session.hidden"
         class="mb-8 flex items-start gap-3 rounded-xl bg-amber-500/10 p-4 text-amber-800 dark:text-amber-200"
       >
-        <AppIcon name="alert-triangle" :size="18" class="mt-0.5 shrink-0" />
         <p class="text-sm font-medium">{{ t("moderation.hiddenOwnerBanner") }}</p>
       </div>
 
@@ -1042,105 +1177,123 @@ watch(session, (s) => applySessionSeo(s));
         </p>
       </div>
 
-      <!-- Tirage aléatoire : recevoir un Tehilim disponible en un clic,
-           avec ou sans compte. Plus rien à tirer, plus de carte : elle ne
-           proposerait qu'un bouton éteint. -->
-      <RandomTehilimCard
-        v-if="isTehilimSession && randomAvailableCount > 0"
-        @draw="drawRandomTehilim"
-      />
-
-      <!-- Barre de progression -->
-      <SessionProgressBar
-        :total="progressStats.total"
-        :reserved="progressStats.reserved"
-        :read="progressStats.read"
-        :participants="participants"
-      />
-
-      <!-- Formulaire de réservation pour invités (composant unifié) -->
-      <div id="guest-form" v-if="!currentUser" class="card p-5 mb-8">
-        <h3 class="font-bold text-lg text-text-primary">
-          {{ t("detailSession.guestTitle") }}
-        </h3>
-        <p class="text-sm text-text-secondary mt-0.5 mb-4">
-          {{
-            guestEmailRequired
-              ? t("detailSession.guestSubtitleWithEmail")
-              : t("detailSession.guestSubtitle")
-          }}
-        </p>
-        <GuestForm
-          v-model:reservationForm="reservationForm"
-          :email-required="guestEmailRequired"
-          @first-input="trackGuestFormFilled"
-        />
-      </div>
-
-      <!-- Barre de recherche + filtre : collants ensemble en haut, pour rester
-           à portée pendant le défilement de la liste des textes. -->
-      <div class="sticky-under-chrome mb-8">
-        <div class="relative max-w-xl mx-auto">
-          <AppIcon
-            name="search"
-            :size="16"
-            class="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary/70 pointer-events-none"
-          />
-          <input
-            type="text"
-            :value="searchTerm"
-            @input="searchTerm = liveValue($event)"
-            :placeholder="t('detailSession.searchPlaceholder')"
-            class="field !pl-11 !pr-10 shadow-card"
-          />
-          <button
-            v-if="searchTerm"
-            @click="clearSearch"
-            class="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary/70 hover:text-text-primary transition-colors"
-            :title="t('detailSession.clearSearch')"
-          >
-            <AppIcon name="x" :size="14" />
-          </button>
-        </div>
-        <div v-if="searchTerm" class="text-center mt-2 text-sm text-text-secondary">
-          {{ t("detailSession.searchForValue", { term: searchTerm }) }}
-        </div>
-
-        <!-- Filtre : masquer les textes entièrement réservés. Fond opaque en
-             pastille : la liste défile juste en dessous. -->
-        <div class="flex justify-center mt-3">
-          <label
-            class="inline-flex items-center gap-2.5 cursor-pointer bg-surface rounded-full pl-3.5 pr-4 py-2 shadow-card"
-          >
-            <span class="relative inline-flex items-center">
-              <input type="checkbox" v-model="showOnlyAvailable" class="sr-only peer" />
-              <span
-                class="w-9 h-5 bg-black/15 rounded-full peer peer-checked:bg-primary transition-colors dark:bg-white/20"
-              ></span>
-              <span
-                class="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform peer-checked:translate-x-4"
-              ></span>
-            </span>
-            <span class="text-sm font-medium text-text-secondary">
-              {{ t("detailSession.availableOnly") }}
-            </span>
-          </label>
-        </div>
-      </div>
-
-      <!-- Liste des textes groupés par livre -->
-      <TextStudiesList
-        :grouped-text-studies="groupedTextStudies"
+      <!-- Nichmat 40: forty places and forty days instead of a list of texts. -->
+      <NichmatChain
+        v-if="isNichmatChain"
         :session="session"
         :current-user="currentUser"
-        :guest-email="reservationForm.email"
-        :selected-items="selectedItems"
-        @item-click="handleItemClick"
-        @toggle-completion="toggleReservationCompletion"
-        @toggle-select-all="handleToggleSelectAll"
-        @text-expanded="trackTextExpanded"
-        @read-clicked="trackReadClicked"
+        :guest-email-required="guestEmailRequired"
+        @changed="onNichmatChanged"
+        @guest-reserved="onNichmatGuestReserved"
       />
+
+      <template v-else>
+        <!-- Tirage aléatoire : recevoir un Tehilim disponible en un clic,
+           avec ou sans compte. Plus rien à tirer, plus de carte : elle ne
+           proposerait qu'un bouton éteint. -->
+        <RandomTehilimCard
+          v-if="isTehilimSession && randomAvailableCount > 0"
+          :read-now="readNow"
+          @draw="drawRandomTehilim"
+        />
+
+        <!-- Barre de progression -->
+        <SessionProgressBar
+          :total="progressStats.total"
+          :reserved="progressStats.reserved"
+          :read="progressStats.read"
+          :participants="participants"
+          :read-now="readNow"
+        />
+
+        <!-- Formulaire de réservation pour invités (composant unifié) -->
+        <div id="guest-form" v-if="!currentUser && !readNow" class="card p-5 mb-8">
+          <h3 class="font-bold text-lg text-text-primary">
+            {{ t("detailSession.guestTitle") }}
+          </h3>
+          <p class="text-sm text-text-secondary mt-0.5 mb-4">
+            {{
+              guestEmailRequired
+                ? t("detailSession.guestSubtitleWithEmail")
+                : t("detailSession.guestSubtitle")
+            }}
+          </p>
+          <GuestForm
+            v-model:reservationForm="reservationForm"
+            :email-required="guestEmailRequired"
+            @first-input="trackGuestFormFilled"
+          />
+        </div>
+
+        <!-- Barre de recherche + filtre : collants ensemble en haut, pour rester
+           à portée pendant le défilement de la liste des textes. -->
+        <div class="sticky-under-chrome mb-8">
+          <div class="relative max-w-xl mx-auto">
+            <AppIcon
+              name="search"
+              :size="16"
+              class="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary/70 pointer-events-none"
+            />
+            <input
+              type="text"
+              :value="searchTerm"
+              @input="searchTerm = liveValue($event)"
+              :placeholder="t('detailSession.searchPlaceholder')"
+              class="field !pl-11 !pr-10 shadow-card"
+            />
+            <button
+              v-if="searchTerm"
+              @click="clearSearch"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary/70 hover:text-text-primary transition-colors"
+              :title="t('detailSession.clearSearch')"
+            >
+              <AppIcon name="x" :size="14" />
+            </button>
+          </div>
+          <div v-if="searchTerm" class="text-center mt-2 text-sm text-text-secondary">
+            {{ t("detailSession.searchForValue", { term: searchTerm }) }}
+          </div>
+
+          <!-- Filtre : masquer les textes entièrement réservés. Fond opaque en
+             pastille : la liste défile juste en dessous. -->
+          <div class="flex justify-center mt-3">
+            <label
+              class="inline-flex items-center gap-2.5 cursor-pointer bg-surface rounded-full pl-3.5 pr-4 py-2 shadow-card"
+            >
+              <span class="relative inline-flex items-center">
+                <input type="checkbox" v-model="showOnlyAvailable" class="sr-only peer" />
+                <span
+                  class="w-9 h-5 bg-black/15 rounded-full peer peer-checked:bg-primary transition-colors dark:bg-white/20"
+                ></span>
+                <span
+                  class="absolute left-0.5 top-0.5 w-4 h-4 bg-white rounded-full shadow-sm transition-transform peer-checked:translate-x-4"
+                ></span>
+              </span>
+              <span class="text-sm font-medium text-text-secondary">
+                {{ t("detailSession.availableOnly") }}
+              </span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Liste des textes groupés par livre -->
+        <TextStudiesList
+          :grouped-text-studies="groupedTextStudies"
+          :session="session"
+          :current-user="currentUser"
+          :guest-email="reservationForm.email"
+          :selected-items="selectedItems"
+          @item-click="handleItemClick"
+          @toggle-completion="toggleReservationCompletion"
+          @toggle-select-all="handleToggleSelectAll"
+          @text-expanded="trackTextExpanded"
+          @read-clicked="trackReadClicked"
+          :read-all="showBatchReading"
+          :read-now="readNow"
+          :my-group="myGroup"
+          @read-all="openBatchReading('button')"
+        />
+      </template>
 
       <!-- CTA : inviter le visiteur à créer sa propre session -->
       <section class="mt-14 mb-2">
@@ -1164,8 +1317,8 @@ watch(session, (s) => applySessionSeo(s));
       :count="selectedItems.size"
       :loading="isSubmittingBatch"
       :label="confirmButtonLabel"
-      :button-text="t('common.confirm')"
-      :button-loading-text="t('detailSession.reserving')"
+      :button-text="readNow ? t('detailSession.readNow.button') : t('common.confirm')"
+      :button-loading-text="readNow ? t('common.loading') : t('detailSession.reserving')"
       @confirm="confirmReservations"
     />
 

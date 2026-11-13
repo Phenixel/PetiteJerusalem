@@ -38,7 +38,7 @@ export function watchNativeCompassAccuracy(
   let handle: PluginListenerHandle | null = null;
   try {
     // Le plugin n'est jamais rendu par une promesse (docs/app-native.md,
-    // « Un plugin ne traverse jamais une promesse ») : seule la poignée de
+    // « A plugin never goes through a promise ») : seule la poignée de
     // l'écoute en sort.
     PjCompass.addListener("accuracy", ({ accuracy }) => {
       if (!stopped) onAccuracy(accuracyFromAndroidStatus(accuracy));

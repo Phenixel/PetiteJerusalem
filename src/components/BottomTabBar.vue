@@ -7,13 +7,27 @@ import type { IconName } from "./icons/registry";
 import { analyticsService } from "../services/analyticsService";
 import { authService } from "../services/authService";
 import { setRevealOrigin } from "../composables/useRevealOrigin";
+import { refreshSupportUnread, useSupportUnread } from "../composables/useSupportUnread";
 import { useHolidayTheme } from "../composables/useHolidayTheme";
 import HolidayFabShape from "./holiday/HolidayFabShape.vue";
 import { useLocalePath } from "../composables/useLocalePath";
 import { isSectionPath } from "../content/seoLocales";
 import { SIDOUR_PATH, STUDY_PATH, isSidourPath, isStudyPath } from "../config/navSections";
+import { HUMP_HEIGHT, HUMP_WIDTH, humpPoints } from "../composables/tabBarHump";
 
 const { t } = useI18n();
+
+/** The bump of the bar over the round button: its fill, and its edge. */
+const hump = (() => {
+  // The flat edge lies on the bar's top border, which the bump continues;
+  // the fill goes on under it, hiding the border where the bump rises.
+  const points = humpPoints(HUMP_HEIGHT + 0.5);
+  const line = points.map(([x, y]) => `${x},${y.toFixed(2)}`).join(" L");
+  return {
+    edge: `M${line}`,
+    fill: `M${line} L${HUMP_WIDTH},${HUMP_HEIGHT + 3} L0,${HUMP_HEIGHT + 3} Z`,
+  };
+})();
 const route = useRoute();
 const router = useRouter();
 
@@ -22,13 +36,31 @@ const router = useRouter();
 // n'irait chercher des réglages sous un onglet « Profil » déconnecté.
 const isLoggedIn = ref(false);
 let unsubscribeAuth: (() => void) | null = null;
+
+// Nous écrire : une réponse de l'équipe pas encore lue se compte sur l'onglet
+// du profil, là où mène la ligne « Nous écrire ». Relu à chaque compte qui
+// arrive et au retour dans l'app (la réponse a pu arriver entre-temps), et
+// seulement si l'appareil a déjà écrit ou qu'un compte est connecté.
+const { unread: supportUnread } = useSupportUnread();
+let checkedFor: string | null | undefined;
+let removeResume: (() => void) | null = null;
 onMounted(() => {
   unsubscribeAuth = authService.onAuthChanged((user) => {
     isLoggedIn.value = user != null;
+    const id = user?.id ?? null;
+    if (id !== checkedFor) {
+      checkedFor = id;
+      void refreshSupportUnread(user != null);
+    }
   });
+  void import("@capacitor/app")
+    .then(({ App }) => App.addListener("resume", () => void refreshSupportUnread(isLoggedIn.value)))
+    .then((handle) => (removeResume = () => void handle.remove()))
+    .catch(() => {});
 });
 onUnmounted(() => {
   unsubscribeAuth?.();
+  removeResume?.();
 });
 
 /**
@@ -80,14 +112,15 @@ const tabs = computed<Tab[]>(() => {
       anim: "bow",
       isActive: isStudyPath,
     },
-    // Les sous-pages du profil (/profile/appearance...) sont des routes à
-    // part : l'onglet reste allumé tant qu'on y est.
+    // The profile's sub-pages (/profile/appearance...) are routes of their
+    // own, and so is the help center it opens: the tab stays lit there.
     {
       to: "/profile",
       icon: isLoggedIn.value ? "user" : "settings",
       labelKey: isLoggedIn.value ? "common.profile" : "profile.guestTitle",
       anim: "hop",
-      isActive: (p) => p === "/profile" || p.startsWith("/profile/"),
+      isActive: (p) =>
+        p === "/profile" || p.startsWith("/profile/") || p === "/aide" || p.startsWith("/aide/"),
     },
   ];
 });
@@ -156,6 +189,19 @@ function toggleZmanim(event: MouseEvent) {
     class="fixed bottom-0 inset-x-0 z-50 bg-surface border-t border-black/5 dark:border-white/10 pb-[var(--safe-bottom)]"
     :aria-label="t('navbar.mainMenu')"
   >
+    <!-- The white of the bar rises over the round button rather than the
+         button sticking out of it; the reading progress line rides over the
+         same bump (tabBarHump). -->
+    <svg
+      class="tab-hump"
+      :width="HUMP_WIDTH"
+      :height="HUMP_HEIGHT + 3"
+      :viewBox="`0 0 ${HUMP_WIDTH} ${HUMP_HEIGHT + 3}`"
+      aria-hidden="true"
+    >
+      <path :d="hump.fill" class="fill-surface" />
+      <path :d="hump.edge" class="tab-hump-edge stroke-black/5 dark:stroke-white/10" />
+    </svg>
     <div class="relative flex items-stretch h-14">
       <template v-for="(tab, index) in tabs" :key="tab.to">
         <!-- Place réservée au bouton rond, à mi-parcours des onglets -->
@@ -175,6 +221,13 @@ function toggleZmanim(event: MouseEvent) {
             @animationend="poppedTab = null"
           >
             <AppIcon :name="tab.icon" :size="21" />
+            <span
+              v-if="tab.to === '/profile' && supportUnread > 0"
+              class="tab-badge"
+              :aria-label="t('support.unreadCount', { n: supportUnread }, supportUnread)"
+            >
+              {{ supportUnread > 9 ? "9+" : supportUnread }}
+            </span>
           </span>
           <span class="text-[11px] font-medium leading-none">{{ t(tab.labelKey) }}</span>
         </RouterLink>
@@ -217,12 +270,48 @@ function toggleZmanim(event: MouseEvent) {
   color: var(--color-primary);
 }
 .tab-icon {
+  position: relative;
   display: inline-flex;
   transform-origin: center;
 }
 
-/* Bouton rond central : posé au milieu de la barre, il déborde légèrement
-   au-dessus pour se détacher des onglets sans masquer la page. */
+/* Une réponse de l'équipe pas encore lue (Nous écrire) : le compte, sur la
+   teinte du thème, à cheval sur le coin de l'icône du profil, détaché d'un
+   liseré de la couleur de la barre. */
+.tab-badge {
+  position: absolute;
+  top: -5px;
+  inset-inline-end: -9px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: 9999px;
+  background: var(--color-brand);
+  color: var(--color-on-brand);
+  box-shadow: 0 0 0 2px var(--color-surface);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 17px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The bump over the round button: centered on it, its foot over the bar's
+   top border. */
+.tab-hump {
+  position: absolute;
+  bottom: calc(100% - 2px);
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+.tab-hump-edge {
+  fill: none;
+  stroke-width: 1px;
+}
+
+/* The round button in the middle of the bar: it rises a little above the
+   tabs to stand apart, the white of the bar's bump around it. */
 .zmanim-fab {
   position: absolute;
   left: 50%;

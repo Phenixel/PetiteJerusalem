@@ -303,11 +303,13 @@ describe("astuces des pages", () => {
 
   // En dernier : la plateforme rejouée ici vaut pour tous les imports qui
   // suivent, elle ne doit pas déteindre sur les tests de l'app native.
-  it("se tait sur le site, sauf à qui la demande par l'adresse", async () => {
+  it("se tait sur le site, sauf Mon parcours et qui la demande par l'adresse", async () => {
     vi.doMock("../composables/useNativeApp", () => ({ isNativeApp: false, appPlatform: "web" }));
     const web = await import("../composables/useFeatureTips");
     expect(web.tipsOffered.value).toBe(false);
     expect(await web.useFeatureTips().shouldShowTip("reading-menu")).toBe(false);
+    // Sauf Mon parcours : ses gestes ne se devinent pas plus sur le site.
+    expect(await web.useFeatureTips().shouldShowTip("parcours-page", [], true)).toBe(true);
 
     vi.resetModules();
     window.history.replaceState({}, "", "/?tips");

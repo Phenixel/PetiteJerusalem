@@ -38,6 +38,13 @@ name: Deploy Android
 #   ANDROID_KEY_PASSWORD      mot de passe de la clé
 #   GOOGLE_SERVICES_JSON      contenu de google-services.json (config Firebase)
 #   PLAY_SERVICE_ACCOUNT_JSON compte de service lié au Play Console
+#
+# Staging : deploy-staging.yml appelle ce même workflow avec
+# `environment: staging` à chaque fusion sur main. L'app part alors sous
+# l'identifiant fr.petitejerusalem.app.staging (« PJ Staging ») sur la piste
+# de test INTERNE, avec la config Firebase de staging
+# (GOOGLE_SERVICES_JSON_STAGING) ; ni fiche, ni release GitHub. Voir
+# docs/staging.md.
 
 on:
   push:
@@ -46,6 +53,22 @@ on:
   # Lancement manuel (test du workflow, re-publication) : reprend le dernier
   # tag vX.Y.Z atteignable depuis la branche choisie.
   workflow_dispatch:
+  # Appel par deploy-staging.yml. Sans appel (tag, lancement manuel), les
+  # entrées sont vides et tout se passe comme en production.
+  workflow_call:
+    inputs:
+      environment:
+        description: "production ou staging"
+        type: string
+        default: production
+      version_name:
+        description: "versionName imposé (staging : celui du prochain correctif)"
+        type: string
+        default: ""
+      build_number:
+        description: "Numéro de build imposé (staging : dérivé du run)"
+        type: string
+        default: ""
 
 jobs:
   android:
@@ -53,6 +76,10 @@ jobs:
     permissions:
       # write : création de la release GitHub (AAB + notes de version) sur tag.
       contents: write
+    env:
+      # Lu par scripts/lib/environments.mjs : applicationId, nom de l'app,
+      # config Firebase du bundle. Vide hors staging, donc la production.
+      PJ_ENV: ${{ inputs.environment == 'staging' && 'staging' || '' }}
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4
@@ -67,7 +94,7 @@ jobs:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
-          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+          GOOGLE_SERVICES_JSON: ${{ inputs.environment == 'staging' && secrets.GOOGLE_SERVICES_JSON_STAGING || secrets.GOOGLE_SERVICES_JSON }}
           PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
         run: |
           missing=()
@@ -104,7 +131,19 @@ jobs:
 
       - name: Déterminer la version (tag vX.Y.Z)
         id: version
+        env:
+          INPUT_VERSION: ${{ inputs.version_name }}
+          INPUT_BUILD: ${{ inputs.build_number }}
         run: |
+          # Staging : version et build viennent de deploy-staging.yml. Le
+          # versionCode de l'app de staging, une app à part sur le Play Store,
+          # n'a qu'à croître d'une fusion à l'autre (pair pour le téléphone,
+          # impair pour la montre).
+          if [ -n "$INPUT_VERSION" ] && [ -n "$INPUT_BUILD" ]; then
+            echo "name=$INPUT_VERSION" >> "$GITHUB_OUTPUT"
+            echo "code=$((INPUT_BUILD * 2))" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
             VERSION="${GITHUB_REF_NAME#v}"
           else
@@ -127,8 +166,16 @@ jobs:
 
       - name: Restaurer google-services.json
         env:
-          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+          GOOGLE_SERVICES_JSON: ${{ inputs.environment == 'staging' && secrets.GOOGLE_SERVICES_JSON_STAGING || secrets.GOOGLE_SERVICES_JSON }}
         run: printf '%s' "$GOOGLE_SERVICES_JSON" > google-services.json
+
+      # L'app de staging porte un bandeau « STAGING » sur son icône, pour ne
+      # jamais la confondre avec la vraie sur l'écran d'accueil. Les icônes
+      # d'assets/staging/ remplacent les autres dans la copie du run, avant
+      # que le script natif ne les décline.
+      - name: Icônes de staging
+        if: ${{ inputs.environment == 'staging' }}
+        run: cp -R assets/staging/. assets/
 
       # Manifest, icônes/splash, barre système, MainActivity, signingConfigs…
       # (le même script qu'en local, cf. l'en-tête de scripts/setup-android.mjs)
@@ -180,7 +227,7 @@ jobs:
       - name: Archiver les AAB
         uses: actions/upload-artifact@v4
         with:
-          name: app-release-${{ steps.version.outputs.name }}
+          name: app-release-${{ steps.version.outputs.name }}${{ inputs.environment == 'staging' && format('-staging-{0}', steps.version.outputs.code) || '' }}
           path: |
             android/app/build/outputs/bundle/release/app-release.aab
             android/wear/build/outputs/bundle/release/wear-release.aab
@@ -244,14 +291,20 @@ jobs:
       # Piste production, statut « completed » : dès la fin de la review
       # Google, la version part chez tout le monde, sans geste dans la Play
       # Console.
+      #
+      # Staging : l'app « PJ Staging », piste de test interne, sans examen,
+      # disponible en quelques minutes pour les testeurs internes. Tant que
+      # cette app n'a jamais été publiée, Google n'accepte que des brouillons :
+      # la variable de repo STAGING_PLAY_STATUS=draft le permet le temps de la
+      # première mise en ligne à la main (docs/staging.md).
       - name: Publier sur le Play Store
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
-          packageName: fr.petitejerusalem.app
+          packageName: ${{ inputs.environment == 'staging' && 'fr.petitejerusalem.app.staging' || 'fr.petitejerusalem.app' }}
           releaseFiles: ${{ steps.aabs.outputs.files }}
-          track: production
-          status: completed
+          track: ${{ inputs.environment == 'staging' && 'internal' || 'production' }}
+          status: ${{ inputs.environment == 'staging' && (vars.STAGING_PLAY_STATUS || 'completed') || 'completed' }}
           whatsNewDirectory: whatsnew
 
       # Release GitHub sur le tag : AAB signé + notes de version, pour
@@ -280,6 +333,8 @@ jobs:
   # fraîcheur des captures est le seul best-effort.
   listing:
     needs: android
+    # L'app de staging n'a pas de fiche à tenir.
+    if: ${{ inputs.environment != 'staging' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read

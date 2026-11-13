@@ -127,7 +127,9 @@ describe("la ligne « Hors ligne »", () => {
     await nextTick();
     expect(textOf(running.host)).toContain("Téléchargement");
     expect(textOf(running.host)).toContain("50%");
-    expect(textOf(running.host)).toContain("1 Mo sur 2 Mo");
+    // The time left, not « 1 Mo sur 2 Mo », which repeated the percentage.
+    expect(textOf(running.host)).toContain("Encore quelques secondes");
+    expect(textOf(running.host)).not.toContain("1 Mo sur 2 Mo");
 
     // Après : tout est là.
     Object.assign(bulk, { active: false });

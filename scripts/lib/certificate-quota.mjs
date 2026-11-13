@@ -148,10 +148,69 @@ export function protectedUploads(versionsResponse, buildsResponse) {
 }
 
 /**
+ * La clé sous laquelle un build de staging figure dans les envois et dans les
+ * marqueurs. Les numéros de build des deux apps vivent sur des échelles
+ * différentes (141 en staging, 3070800 en production) mais rien ne les
+ * empêche de se croiser un jour : préfixer ceux de staging évite qu'un
+ * marqueur de l'une protège, ou libère, le certificat d'un binaire de l'autre.
+ *
+ * @param {string | number} buildNumber
+ * @returns {string}
+ */
+export const stagingBuildKey = (buildNumber) => `staging ${buildNumber}`;
+
+/**
+ * Les envois de « PJ Staging » dont la signature compte encore, à partir de
+ * /v1/builds trié par envoi décroissant : ceux qu'Apple traite encore.
+ *
+ * Un build de staging ne va qu'aux testeurs internes de TestFlight, jamais à
+ * l'examen ; mais Apple vérifie la signature d'origine pendant le traitement
+ * qui suit l'envoi. Le build 141 (3.10.12) a été rejeté là le 16 octobre 2026,
+ * « ITMS-90721: Certificate Revoked », son certificat ayant été révoqué une
+ * seconde après l'envoi. Une fois le traitement fini, plus rien ne regarde
+ * cette signature : le certificat peut partir.
+ *
+ * @param {any} buildsResponse
+ * @returns {Upload[]}
+ */
+export function stagingUploads(buildsResponse) {
+  return (buildsResponse.data ?? [])
+    .filter((build) => build.attributes?.processingState === "PROCESSING" && build.attributes?.uploadedDate)
+    .map((build) => ({
+      label: `build de staging ${build.attributes.version} (PROCESSING)`,
+      buildNumber: stagingBuildKey(build.attributes.version),
+      uploadedAt: Date.parse(build.attributes.uploadedDate),
+    }));
+}
+
+/**
+ * The staging builds Apple has finished processing, under their key
+ * (stagingBuildKey): their signature will never be checked again. This is
+ * what lets the previous run's certificate go when that run was a staging
+ * run, without waiting for one more run to push it out of last place.
+ *
+ * @param {any} buildsResponse /v1/builds of the staging app
+ * @returns {Set<string>}
+ */
+export function settledStagingBuilds(buildsResponse) {
+  return new Set(
+    (buildsResponse.data ?? [])
+      .filter((build) => build.attributes?.processingState && build.attributes.processingState !== "PROCESSING")
+      .map((build) => stagingBuildKey(build.attributes.version)),
+  );
+}
+
+/**
  * Annote chaque certificat de ce qui le retient (`keptFor`) et rend ceux qui
- * peuvent partir, du plus ancien au plus récent. Le plus récent n'est jamais
- * de la partie : c'est celui du run précédent, dont le binaire vient peut-être
- * d'arriver chez Apple.
+ * peuvent partir, du plus ancien au plus récent. Le plus récent n'est
+ * d'ordinaire pas de la partie : c'est celui du run précédent, dont le
+ * binaire vient peut-être d'arriver chez Apple, pas encore listé par l'API.
+ *
+ * One exception: the most recent certificate goes when it signed a staging
+ * build that Apple has finished processing (`settled`). Keeping it wasted a
+ * quota slot, and on October 16, 2026 Apple refused a new certificate while
+ * only two were listed: the one of 3.10.11 on sale, and the one of staging
+ * build 151, processed more than an hour earlier.
  *
  * `signedBuilds` donne, quand on la connaît, la provenance exacte : le profil
  * laissé en place par un run qui a envoyé son binaire porte le numéro de
@@ -163,16 +222,18 @@ export function protectedUploads(versionsResponse, buildsResponse) {
  * @param {Certificate[]} certificates
  * @param {Upload[]} uploads
  * @param {Map<string, string>} [signedBuilds] id de certificat vers numéro de build
+ *   (préfixé par stagingBuildKey pour un build de staging)
+ * @param {Set<string>} [settled] processed staging builds (settledStagingBuilds)
  * @returns {Certificate[]}
  */
-export function revocableCertificates(certificates, uploads, signedBuilds = new Map()) {
+export function revocableCertificates(certificates, uploads, signedBuilds = new Map(), settled = new Set()) {
   certificates.forEach((certificate, index) => {
     const next = certificates[index + 1];
-    if (!next) {
+    const signed = signedBuilds.get(certificate.id);
+    if (!next && !(signed && settled.has(signed))) {
       certificate.keptFor = "certificat du run précédent";
       return;
     }
-    const signed = signedBuilds.get(certificate.id);
     if (signed) {
       const upload = uploads.find((candidate) => candidate.buildNumber === signed);
       certificate.keptFor = upload && `il a signé le build ${signed}, ${upload.label}`;

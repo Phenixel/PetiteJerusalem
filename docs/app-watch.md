@@ -1,296 +1,300 @@
-# Montres connectées (Wear OS / Apple Watch)
+# Smartwatches (Wear OS / Apple Watch)
 
-Une app de montre accompagne l'app de téléphone, sur les deux plateformes.
-Trois écrans, les mêmes des deux côtés :
+A watch app accompanies the phone app, on both platforms. Three screens, the
+same on both sides:
 
-- **Horaires** : la date hébraïque, le lieu, le prochain zman en grand (à
-  l'accent du thème de l'utilisateur), les suivants, la paracha de la semaine
-  et le ta'hanoun. C'est ce que montre le widget d'écran d'accueil, déroulé.
-- **Lecture du jour** : l'avancement du jour (« 2 sur 3 lus aujourd'hui », la
-  barre à l'accent) et les lectures qui le composent, cochées ou non, plus la
-  paracha du chnei mikra, hors décompte. **Consultation seule**, voir plus bas.
-- **Textes** : les 150 Tehilim, ceux du jour en tête. Embarqués dans l'app de
-  montre, donc lisibles sans téléphone à portée.
+- **Times**: the Hebrew date, the location, the next zman in large type (in
+  the accent of the user's theme), the following ones, the paracha of the
+  week and ta'hanoun. It is what the home screen widget shows, expanded.
+- **Daily reading**: the day's progress (« 2 sur 3 lus aujourd'hui », "2 of
+  3 read today", the bar in the accent color) and the readings that make it
+  up, checked or not, plus the chnei mikra paracha, not counted. **Read
+  only**, see below.
+- **Texts**: the 150 Tehilim, the day's ones first. Bundled in the watch
+  app, so readable without the phone nearby.
 
-L'écran d'accueil de la montre porte déjà le prochain horaire, en grand : c'est
-ce pour quoi on lève le poignet, il ne demande pas d'ouvrir un écran de plus.
+The watch's home screen already shows the next time, in large type: it is
+what you raise your wrist for, it does not require opening one more screen.
 
-Sur Wear OS s'y ajoutent deux **complications de cadran**, qui ne demandent même
-pas d'ouvrir l'app : « Prochain horaire » (l'heure, et le nom du zman en titre)
-et « Lecture du jour » (l'avancement, en anneau ou en « 2/3 »). Elles n'ont pas
-encore de pendant watchOS : une complication watchOS est une extension WidgetKit
-de plus dans le projet Xcode, à écrire dans le pbxproj comme les deux cibles
-existantes.
+On Wear OS there are also two **watch face complications**, which do not
+even require opening the app: « Prochain horaire » ("Next time": the time,
+and the zman's name as the title) and « Lecture du jour » ("Daily reading":
+the progress, as a ring or as "2/3"). They do not have a watchOS counterpart
+yet: a watchOS complication is one more WidgetKit extension in the Xcode
+project, to be written into the pbxproj like the two existing targets.
 
-## Architecture : le téléphone calcule, la montre affiche
+## Architecture: the phone computes, the watch displays
 
-C'est celle des widgets d'écran d'accueil, à la lettre, et pour la même raison :
-une app de montre ne peut pas exécuter le code de la webview (hebcal, i18n,
-Firestore). Le téléphone pré-calcule donc **tout** ce qui s'affiche et le pousse
-en JSON.
+It is that of the home screen widgets, to the letter, and for the same
+reason: a watch app cannot run the webview's code (hebcal, i18n, Firestore).
+The phone therefore precomputes **everything** that is displayed and pushes
+it as JSON.
 
 ```
-webview (Vue)                     téléphone natif              montre
-─────────────                     ───────────────              ──────
+webview (Vue)                     native phone                 watch
+─────────────                     ────────────                 ─────
 widgetService.push()
-  ├─ widgetPayloads.ts   ──►  plugin PjWidgets   ──► widgets d'écran d'accueil
+  ├─ widgetPayloads.ts   ──►  plugin PjWidgets   ──► home screen widgets
   └─ watchPayloads.ts    ──►  plugin PjWatch     ──► Data Layer (Wear OS)
                                                  └─► WatchConnectivity (watchOS)
 ```
 
-**Un seul producteur, deux destinataires.** `widgetService` calcule les payloads
-une fois et les propose aux deux ; chacun retient ce qu'il a déjà reçu et ne se
-voit remettre que ce qui a changé (`src/services/payloadSink.ts`). Un widget
-rechargé pour rien coûte du budget WidgetKit ; un octet envoyé pour rien à la
-montre coûte de la batterie sur les deux appareils. La mémoire d'un destinataire
-n'est mise à jour qu'après un envoi réussi : un échec d'un côté (vieux binaire,
-montre injoignable) n'empêche pas l'autre et sera retenté au passage suivant.
+**One producer, two recipients.** `widgetService` computes the payloads once
+and offers them to both; each remembers what it has already received and is
+only handed what has changed (`src/services/payloadSink.ts`). A widget
+reloaded for nothing costs WidgetKit budget; a byte sent to the watch for
+nothing costs battery on both devices. A recipient's memory is only updated
+after a successful send: a failure on one side (old binary, unreachable
+watch) does not block the other and will be retried on the next pass.
 
-Trois clés voyagent jusqu'à la montre :
+Three keys travel to the watch:
 
-| Clé | Contrat | Ce qu'elle porte |
+| Key | Contract | What it carries |
 |---|---|---|
-| `zmanim` | `src/services/widgetPayloads.ts` | une semaine d'horaires et de jours hébraïques, le même payload que le widget Horaires |
-| `daily` | `src/services/widgetPayloads.ts` | la lecture du jour et son échéance, le même payload que le widget Lecture |
-| `watch` | `src/services/watchPayloads.ts` | les libellés des écrans de la montre, et les psaumes du jour |
+| `zmanim` | `src/services/widgetPayloads.ts` | a week of times and Hebrew days, the same payload as the Times widget |
+| `daily` | `src/services/widgetPayloads.ts` | the daily reading and its expiry, the same payload as the Reading widget |
+| `watch` | `src/services/watchPayloads.ts` | the labels of the watch screens, and the day's psalms |
 
-Les deux premiers sont réutilisés **tels quels** : ils sont déjà exactement ce
-qu'un écran de montre demande, déjà localisés et déjà formatés, heures
-comprises. Les recalculer autrement ne ferait que deux contrats à tenir au lieu
-d'un. Le natif ne traduit rien, ne formate rien, ne compare que des epochs ; les
-formateurs de date natifs subiraient le réglage 12 h/24 h et le calendrier de
-l'appareil (hébraïque chez une partie du public), qui fausseraient l'affichage.
+The first two are reused **as is**: they are already exactly what a watch
+screen needs, already localized and already formatted, times included.
+Computing them differently would only mean two contracts to maintain instead
+of one. The native side translates nothing, formats nothing, and only
+compares epochs; native date formatters would be subject to the device's
+12 h/24 h setting and calendar (Hebrew for part of the audience), which
+would skew the display.
 
-Seule exception, des deux côtés : l'état « rien reçu » (montre posée avant le
-premier lancement de l'app sur le téléphone) et les noms des complications dans
-leur sélecteur, portés par des ressources natives.
+The only exception, on both sides: the "nothing received" state (watch set
+up before the app was first launched on the phone) and the names of the
+complications in their picker, carried by native resources.
 
-## Le transport, et pourquoi celui-là
+## The transport, and why this one
 
 | | Wear OS | watchOS |
 |---|---|---|
-| Primitif | Data Layer, `DataClient.putDataItem` | WatchConnectivity, `updateApplicationContext` |
-| Chemin / clés | `/pj/payloads` | les trois clés du contrat |
-| Persistance | l'élément reste, la montre le retrouve à son réveil | le système garde le dernier contexte |
-| Montre absente | le dépôt réussit quand même | l'envoi est simplement sauté |
+| Primitive | Data Layer, `DataClient.putDataItem` | WatchConnectivity, `updateApplicationContext` |
+| Path / keys | `/pj/payloads` | the three keys of the contract |
+| Persistence | the item stays, the watch finds it when it wakes up | the system keeps the last context |
+| Watch absent | the put succeeds anyway | the send is simply skipped |
 
-Les deux ont la propriété qui compte ici : ils ne gardent que le **dernier**
-état, ils ne font pas la queue, et le système le remet à la montre dès qu'elle
-est joignable, éteinte ou hors de portée au moment de l'envoi. Le téléphone n'a
-donc jamais à attendre la montre.
+Both have the property that matters here: they only keep the **latest**
+state, they do not queue, and the system delivers it to the watch as soon
+as it is reachable, if it was off or out of range at the time of sending.
+The phone therefore never has to wait for the watch.
 
-Un élément (ou un contexte) est remplacé d'un bloc, jamais fusionné : chaque
-plugin conserve donc les payloads déjà envoyés pour les redéposer avec celui qui
-change. Les trois tiennent très largement sous les limites (100 ko pour un
-DataItem, de l'ordre de 256 ko pour un contexte) : les horaires, les plus gros,
-pèsent une dizaine de kilo-octets pour leur semaine. Un test le vérifie
+An item (or a context) is replaced as a whole, never merged: each plugin
+therefore keeps the payloads already sent so it can put them again along
+with the one that changes. All three fit well within the limits (100 KB for
+a DataItem, around 256 KB for a context): the times, the largest, weigh
+about ten kilobytes for their week. A test checks this
 (`src/__tests__/watchPayloads.test.ts`).
 
-**Le cas de la toute première fois.** Le téléphone croit avoir déjà donné ce que
-la montre n'a jamais reçu : son destinataire retient un payload identique et ne
-le renvoie pas. Trois choses répondent à ça :
+**The very first time.** The phone believes it has already given what the
+watch has never received: its recipient remembers an identical payload and
+does not resend it. Three things address this:
 
-1. au lancement, la montre relit ce que le système a **déjà** synchronisé pour
-   elle (`getDataItems` côté Wear OS, `receivedApplicationContext` côté
-   watchOS) : disponible tout de suite, sans rien attendre du téléphone ;
-2. elle demande quand même tout au téléphone (`/pj/request`, ou un message
-   `request`) ; le plugin le relaie à la webview (événement `watchRequest`),
-   qui oublie ce qu'elle croyait avoir envoyé et republie. Best-effort : cela ne
-   marche que si l'app du téléphone tourne, elle seule sachant calculer ;
-3. côté iOS, l'appairage d'une montre déclenche `sessionWatchStateDidChange`,
-   qui republie sans qu'elle ait à demander.
+1. at launch, the watch rereads what the system has **already** synced for
+   it (`getDataItems` on Wear OS, `receivedApplicationContext` on watchOS):
+   available right away, without waiting for anything from the phone;
+2. it still asks the phone for everything (`/pj/request`, or a `request`
+   message); the plugin relays it to the webview (`watchRequest` event),
+   which forgets what it thought it had sent and republishes. Best-effort:
+   this only works if the phone app is running, since it alone knows how to
+   compute;
+3. on iOS, pairing a watch triggers `sessionWatchStateDidChange`, which
+   republishes without the watch having to ask.
 
-## Les Tehilim sont embarqués, pas envoyés
+## The Tehilim are bundled, not sent
 
-Les 150 psaumes voyagent dans l'APK Wear et dans le paquet de l'app watchOS, pas
-dans le Data Layer : ils ne changent jamais, ils pèsent trois cents kilo-octets,
-et les faire transiter à chaque changement de langue coûterait de la bande
-passante et de la batterie pour rien. Embarqués, ils se lisent dès la première
-seconde, sans téléphone à portée, et c'est ce qu'on attend d'un livre.
+The 150 psalms travel in the Wear APK and in the watchOS app bundle, not in
+the Data Layer: they never change, they weigh three hundred kilobytes, and
+sending them on every language change would cost bandwidth and battery for
+nothing. Bundled, they can be read from the very first second, without the
+phone nearby, which is what one expects from a book.
 
-Le fichier est produit au setup depuis `public/texts/tehilim.json`, débarrassé
-de la mise en forme de la source Sefaria (balises, entités, marqueurs de
-paracha) par `scripts/lib/watch-tehilim.mjs`. Le natif n'a donc aucune règle de
-texte à tenir. Ce nettoyage doit rester d'accord avec celui que l'app applique à
-l'écran (`cleanText`, `src/services/textService.ts`), sans quoi un verset se
-lirait autrement au poignet que sur le téléphone :
-`src/__tests__/watchTehilim.test.ts` compare les deux sur le corpus entier.
+The file is produced at setup from `public/texts/tehilim.json`, stripped of
+the Sefaria source's formatting (tags, entities, paracha markers) by
+`scripts/lib/watch-tehilim.mjs`. The native side therefore has no text rule
+to maintain. This cleanup must stay in agreement with the one the app
+applies on screen (`cleanText`, `src/services/textService.ts`), otherwise a
+verse would read differently on the wrist than on the phone:
+`src/__tests__/watchTehilim.test.ts` compares the two on the entire corpus.
 
-Les autres corpus (Talmud, Michna, Tanakh, Sidour) restent sur le téléphone :
-ils pèsent une quarantaine de méga-octets et se lisent par pages, ce qu'un
-poignet ne rend pas. Le Sidour, en plus, dépend des occasions du calendrier et
-des horaires du lieu : ce serait un deuxième moteur à porter sur la montre.
+The other corpora (Talmud, Michna, Tanakh, Sidour) stay on the phone: they
+weigh about forty megabytes and are read by pages, which a wrist does not
+render well. The Sidour, moreover, depends on calendar occasions and on the
+location's times: that would be a second engine to port to the watch.
 
-## Pourquoi on ne coche pas depuis la montre
+## Why you cannot check off from the watch
 
-La lecture du jour est en consultation seule, et c'est un choix. Cocher
-demanderait un chemin d'écriture en sens inverse, montre → téléphone →
-Firestore, dont le maillon central est la webview : elle seule sait écrire les
-préférences. Or elle ne tourne que quand l'app du téléphone est ouverte. Une
-coche faite au poignet, téléphone en veille, serait donc avalée en silence, ou
-demanderait une file d'attente et une résolution de conflits avec ce qui a pu
-être coché ailleurs entre-temps. Une coche avalée en silence vaut moins qu'une
-coche qu'on n'a pas proposée.
+The daily reading is read only, and that is a choice. Checking off would
+require a write path in the opposite direction, watch → phone → Firestore,
+whose central link is the webview: it alone knows how to write the
+preferences. Yet it only runs when the phone app is open. A check made on the
+wrist, with the phone asleep, would therefore be silently swallowed, or
+would require a queue and conflict resolution with whatever may have been
+checked elsewhere in the meantime. A silently swallowed check is worth less
+than a check that was never offered.
 
-Le jour où ce sera fait, ce sera un chemin de bout en bout : file d'attente côté
-montre, remise à la webview au premier réveil, et la fusion des progressions qui
-existe déjà (`src/__tests__/mergeDailyProgress.test.ts`).
+When it is done, it will be an end-to-end path: a queue on the watch side,
+handoff to the webview at the first wake-up, and the progress merging that
+already exists (`src/__tests__/mergeDailyProgress.test.ts`).
 
-## L'apparence : noir, sauf l'accent
+## Appearance: black, except the accent
 
-Une montre s'affiche sur fond noir, et pas seulement par habitude : l'écran est
-OLED, un pixel noir ne consomme rien, et l'écran toujours allumé y passe le plus
-clair de sa vie. Le thème du téléphone ne voyage donc pas jusqu'ici. Seul son
-**accent** le fait, sur l'heure mise en avant et sur l'avancement de la lecture,
-exactement comme dans les widgets, et il arrive dans le payload : le natif ne
-connaît aucune couleur de thème.
+A watch displays on a black background, and not only out of habit: the
+screen is OLED, a black pixel consumes nothing, and the always-on display
+spends most of its life there. The phone's theme therefore does not travel
+here. Only its **accent** does, on the highlighted time and on the reading
+progress, exactly as in the widgets, and it arrives in the payload: the
+native side knows no theme color.
 
-## Wear OS : automatique
+## Wear OS: automatic
 
-Le code natif est versionné dans `native/wear/` (module Gradle complet) et dans
-`native/android/` (le plugin `PjWatchPlugin`), et recopié dans `android/`
-(git-ignoré, régénéré par la CI) par `scripts/setup-android.mjs`, qui déclare
-aussi le module dans `settings.gradle`, ajoute `play-services-wearable` aux
-dépendances de l'app, enregistre le plugin dans `MainActivity`, reprend les
-icônes de l'app et écrit les Tehilim dans les assets de la montre.
+The native code is versioned in `native/wear/` (a complete Gradle module)
+and in `native/android/` (the `PjWatchPlugin` plugin), and copied into
+`android/` (git-ignored, regenerated by the CI) by
+`scripts/setup-android.mjs`, which also declares the module in
+`settings.gradle`, adds `play-services-wearable` to the app's dependencies,
+registers the plugin in `MainActivity`, reuses the app's icons and writes
+the Tehilim into the watch's assets.
 
 ```bash
-npx cap add android          # si android/ n'existe pas encore
+npx cap add android          # if android/ does not exist yet
 node scripts/setup-android.mjs
 cd android && ./gradlew :wear:installDebug
 ```
 
-**Distribution.** L'app de montre est un artefact **à part**, avec le même
-`applicationId` que le téléphone : le Play Store livre les deux depuis une seule
-fiche et se sert du `uses-feature android.hardware.type.watch` du manifest pour
-savoir lequel envoyer à quel appareil. L'APK embarqué dans celui du téléphone
-(`wearApp`) ne concerne plus que Wear OS 2, que l'app ne vise pas (plancher
-API 30, Wear OS 3). Les deux `versionCode` doivent différer : la CI donne à la
-montre celui du téléphone + 1 (`.github/workflows/deploy-android.yml`), et les
-deux AAB partent dans la même release, **une fois la fiche Play prête à les
-recevoir** : voir la variable `SHIP_WATCH_APPS` plus bas.
+**Distribution.** The watch app is a **separate** artifact, with the same
+`applicationId` as the phone: the Play Store delivers both from a single
+listing and uses the manifest's `uses-feature android.hardware.type.watch`
+to know which one to send to which device. The APK embedded in the phone's
+(`wearApp`) now only concerns Wear OS 2, which the app does not target
+(minimum API 30, Wear OS 3). The two `versionCode` values must differ: the
+CI gives the watch the phone's plus 1 (`.github/workflows/deploy-android.yml`),
+and both AABs go out in the same release, **once the Play listing is ready
+to receive them**: see the `SHIP_WATCH_APPS` variable below.
 
-C'est `scripts/play-release-files.mjs` qui décide de la liste et l'écrit dans la
-forme exacte que `r0adkll/upload-google-play` attend : **une seule ligne, des
-virgules et rien d'autre**. L'action fait `getInput('releaseFiles').split(',')`
-avant de passer le résultat à fast-glob ; un bloc YAML multiligne devient un
-motif unique portant un retour à la ligne, qui ne correspond à aucun fichier, et
-une espace après la virgule fait le même effet. Le tag v3.9.3 est mort là-dessus,
-huit minutes après son départ, sur « Unable to find any release file matching »,
-les deux AAB étant pourtant signés et prêts.
-`src/__tests__/playReleaseFiles.test.ts` tient la forme et le contenu.
+It is `scripts/play-release-files.mjs` that decides the list and writes it
+in the exact form that `r0adkll/upload-google-play` expects: **a single
+line, commas and nothing else**. The action does
+`getInput('releaseFiles').split(',')` before passing the result to
+fast-glob; a multiline YAML block becomes a single pattern containing a line
+break, which matches no file, and a space after the comma has the same
+effect. The v3.9.3 tag died on this, eight minutes after it started, on
+"Unable to find any release file matching", even though both AABs were
+signed and ready. `src/__tests__/playReleaseFiles.test.ts` covers the form
+and the content.
 
-Tester : installer sur une montre (ou l'émulateur Wear OS d'Android Studio,
-appairé au téléphone), ouvrir l'app du téléphone une fois pour qu'elle pousse
-les payloads, puis vérifier que le prochain zman bascule au passage d'un
-horaire, qu'une coche sur le téléphone se voit au poignet, et qu'un psaume
-s'ouvre téléphone éteint.
+Testing: install on a watch (or Android Studio's Wear OS emulator, paired
+with the phone), open the phone app once so it pushes the payloads, then
+check that the next zman switches when a time passes, that a check on the
+phone shows up on the wrist, and that a psalm opens with the phone off.
 
-## watchOS : automatique aussi
+## watchOS: automatic too
 
-Même histoire que les widgets, et même piège : le projet `ios/` est généré et
-non versionné, une cible créée à la main dans Xcode ne survivrait à aucun `cap
-add ios`, et les builds partiraient sur l'App Store sans app de montre, sans
-rien signaler. `scripts/setup-ios.mjs` écrit donc la cible lui-même, via
-`scripts/lib/xcode-watch.mjs` (transformation de texte pure, testée sans macOS
-dans `src/__tests__/xcodeWatch.test.ts`).
+Same story as the widgets, and same trap: the `ios/` project is generated
+and not versioned, a target created by hand in Xcode would not survive any
+`cap add ios`, and the builds would go to the App Store without a watch app,
+without any warning. `scripts/setup-ios.mjs` therefore writes the target
+itself, via `scripts/lib/xcode-watch.mjs` (a pure text transformation,
+tested without macOS in `src/__tests__/xcodeWatch.test.ts`).
 
-| Fichier de `native/` | Destination | Rôle |
+| File in `native/` | Destination | Role |
 |---|---|---|
-| `ios/App/PjWatchPlugin.swift` | cible App | reçoit les payloads, tient la session WatchConnectivity |
-| `ios/App/PjViewController.swift` | cible App | enregistre les deux plugins (obligatoire depuis Capacitor 5) |
-| `watchos/PjWatch/Payloads.swift` | cible PjWatch | le contrat, son rangement, les couleurs |
-| `watchos/PjWatch/PjWatchApp.swift` | cible PjWatch | le point d'entrée et la session côté montre |
-| `watchos/PjWatch/Screens.swift` | cible PjWatch | les trois écrans, et les Tehilim embarqués |
+| `ios/App/PjWatchPlugin.swift` | App target | receives the payloads, holds the WatchConnectivity session |
+| `ios/App/PjViewController.swift` | App target | registers both plugins (required since Capacitor 5) |
+| `watchos/PjWatch/Payloads.swift` | PjWatch target | the contract, its storage, the colors |
+| `watchos/PjWatch/PjWatchApp.swift` | PjWatch target | the entry point and the watch-side session |
+| `watchos/PjWatch/Screens.swift` | PjWatch target | the three screens, and the bundled Tehilim |
 
-Le script pose aussi l'`Info.plist` de la montre, son catalogue d'icônes et son
-fichier de Tehilim.
+The script also sets up the watch's `Info.plist`, its icon catalog and its
+Tehilim file.
 
-Trois différences avec une extension de widgets, que la cible doit porter :
+Three differences from a widget extension, which the target must carry:
 
-1. c'est une **application** (`com.apple.product-type.application`), pas un
-   appex : elle a son propre SDK (`SDKROOT = watchos`), sa propre famille
-   d'appareils (4) et sa propre cible de déploiement (watchOS 10) ;
-2. elle s'embarque dans `App.app/Watch/`, et non dans `PlugIns/` : la phase de
-   copie vise `$(CONTENTS_FOLDER_PATH)/Watch`, `dstSubfolderSpec = 16`. C'est
-   là, et nulle part ailleurs, qu'iOS va chercher l'app à installer au poignet ;
-3. elle a un **catalogue d'icônes**, sans lequel l'App Store refuse l'archive,
-   et rien avant ne le signale. Une seule image de 1024 points suffit depuis
-   Xcode 14 ; c'est `assets/logo.png`, tel quel.
+1. it is an **application** (`com.apple.product-type.application`), not an
+   appex: it has its own SDK (`SDKROOT = watchos`), its own device family
+   (4) and its own deployment target (watchOS 10);
+2. it is embedded in `App.app/Watch/`, not in `PlugIns/`: the copy phase
+   targets `$(CONTENTS_FOLDER_PATH)/Watch`, `dstSubfolderSpec = 16`. That is
+   where, and nowhere else, iOS looks for the app to install on the wrist;
+3. it has an **icon catalog**, without which the App Store rejects the
+   archive, and nothing earlier flags it. A single 1024-point image has been
+   enough since Xcode 14; it is `assets/logo.png`, as is.
 
-> **`WKApplication`, et pas `WKWatchKitApp`.** L'app d'un seul tenant qu'Apple
-> demande depuis watchOS 9 se déclare avec la première clé ; la seconde décrit
-> l'ancienne paire app + extension. Et sans
-> `WKCompanionAppBundleIdentifier`, l'app de montre ne s'installe pas avec
-> celle du téléphone. Les deux sont posées par `watchInfoPlist`, et
-> `src/__tests__/xcodeWatch.test.ts` le vérifie.
+> **`WKApplication`, not `WKWatchKitApp`.** The single-target app that Apple
+> has required since watchOS 9 is declared with the first key; the second
+> describes the old app + extension pair. And without
+> `WKCompanionAppBundleIdentifier`, the watch app does not install along
+> with the phone's. Both are set by `watchInfoPlist`, and
+> `src/__tests__/xcodeWatch.test.ts` checks it.
 
 ```bash
-npx cap add ios              # si ios/ n'existe pas encore
+npx cap add ios              # if ios/ does not exist yet
 node scripts/setup-ios.mjs
 npm run cap:ios
 ```
 
-**Signature.** L'app de montre a son propre App ID
-(`fr.petitejerusalem.app.watchkitapp`, le suffixe est imposé par Apple), donc
-son propre profil. `scripts/ios-signing.mjs` crée les deux au premier run de la
-CI et expose `IOS_WATCH_PROVISIONING_PROFILE` ; en local, Xcode s'en charge à la
-première signature. Rien à faire à la main dans le portail Apple, contrairement
-à l'App Group des widgets : la montre ne parle qu'au téléphone, par
-WatchConnectivity, qui ne demande aucune capacité.
+**Signing.** The watch app has its own App ID
+(`fr.petitejerusalem.app.watchkitapp`, the suffix is imposed by Apple), and
+therefore its own profile. `scripts/ios-signing.mjs` creates both on the
+first CI run and exposes `IOS_WATCH_PROVISIONING_PROFILE`; locally, Xcode
+takes care of it at the first signing. Nothing to do by hand in the Apple
+portal, unlike the widgets' App Group: the watch only talks to the phone,
+through WatchConnectivity, which requires no capability.
 
-Tester : lancer sur une Apple Watch appairée (ou le simulateur de montre lié au
-simulateur d'iPhone), puis les mêmes vérifications que sur Wear OS.
+Testing: run on a paired Apple Watch (or the watch simulator linked to the
+iPhone simulator), then the same checks as on Wear OS.
 
-## Ce qui reste à faire à la main, une fois
+## What remains to be done by hand, once
 
-Le code est scripté de bout en bout ; les fiches des magasins, non.
+The code is scripted end to end; the store listings are not.
 
-- **Play Console** : une app Wear OS n'est distribuée que si la fiche déclare le
-  facteur de forme « Wear OS » et porte ses propres captures d'écran (écran
-  rond). La fiche du téléphone (`store-assets/metadata/android/`,
-  `scripts/play-listing.mjs`) ne couvre pas cette partie.
-- **App Store Connect** : de même, l'app de montre demande son propre jeu de
-  captures. `scripts/asc-screenshots.mjs` ne produit que celles de l'iPhone et
-  de l'iPad.
+- **Play Console**: a Wear OS app is only distributed if the listing
+  declares the "Wear OS" form factor and has its own screenshots (round
+  screen). The phone's listing (`store-assets/metadata/android/`,
+  `scripts/play-listing.mjs`) does not cover this part.
+- **App Store Connect**: likewise, the watch app requires its own set of
+  screenshots. `scripts/asc-screenshots.mjs` only produces those for iPhone
+  and iPad.
 
-### La variable de repo SHIP_WATCH_APPS
+### The SHIP_WATCH_APPS repo variable
 
-Ces deux fiches ne sont pas un détail cosmétique : **tant qu'elles manquent, les
-deux magasins refusent la release entière**, et pas seulement la partie montre.
+These two listings are not a cosmetic detail: **as long as they are missing,
+both stores reject the entire release**, not just the watch part.
 
-- Google accepte les deux AAB, puis refuse de valider l'édition sur un
-  « Internal error encountered » qui ne dit pas lequel des deux le gêne. Le tag
-  v3.9.4 est mort là, les deux AAB signés, envoyés et acceptés ;
-- Apple accepte le binaire sur TestFlight, puis refuse d'ajouter la version à la
-  soumission : elle vise désormais un appareil dont la fiche n'a aucune capture.
-  Le tag v3.9.4 est mort là aussi, dans le job `submit`.
+- Google accepts both AABs, then refuses to validate the edit with an
+  "Internal error encountered" that does not say which of the two bothers
+  it. The v3.9.4 tag died there, both AABs signed, uploaded and accepted;
+- Apple accepts the binary on TestFlight, then refuses to add the version to
+  the submission: it now targets a device whose listing has no screenshots.
+  The v3.9.4 tag died there too, in the `submit` job.
 
-D'où la variable de repo **`SHIP_WATCH_APPS`**, qui commande les deux magasins à
-la fois. Absente, ou différente de `true` :
+Hence the **`SHIP_WATCH_APPS`** repo variable, which controls both stores at
+once. Absent, or different from `true`:
 
-- côté Play, `scripts/play-release-files.mjs` ne met que l'AAB du téléphone dans
-  la release. Celui de la montre est quand même construit, archivé dans l'onglet
-  Actions et attaché à la release GitHub ;
-- côté App Store, `scripts/setup-ios.mjs` n'écrit pas la cible de montre dans le
-  pbxproj et `scripts/ios-signing.mjs` ne crée ni son App ID ni son profil : le
-  binaire envoyé ne contient pas d'app de montre, donc Apple ne réclame pas ses
-  captures.
+- on the Play side, `scripts/play-release-files.mjs` only puts the phone's
+  AAB in the release. The watch's is still built, archived in the Actions
+  tab and attached to the GitHub release;
+- on the App Store side, `scripts/setup-ios.mjs` does not write the watch
+  target into the pbxproj and `scripts/ios-signing.mjs` creates neither its
+  App ID nor its profile: the uploaded binary contains no watch app, so
+  Apple does not ask for its screenshots.
 
-En local, la montre est toujours construite : rien n'y part à l'examen.
+Locally, the watch is always built: nothing there goes to review.
 
-Une fois les deux fiches prêtes, poser `SHIP_WATCH_APPS=true` dans les variables
-du dépôt (Settings → Secrets and variables → Actions → Variables) et taguer :
-les deux apps de montre partent avec la release suivante, sans autre changement.
+Once both listings are ready, set `SHIP_WATCH_APPS=true` in the repository
+variables (Settings → Secrets and variables → Actions → Variables) and tag:
+both watch apps go out with the next release, with no other change.
 
-## Évolutions
+## Evolution
 
-- Toute nouvelle donnée affichée par la montre passe par un payload, jamais de
-  calcul métier côté natif : `watchPayloads.ts` pour ce qui lui est propre,
-  `widgetPayloads.ts` pour ce qu'elle partage avec les widgets.
-- Champ retiré ou renommé : incrémenter `v` et faire lire les deux versions au
-  natif le temps d'une release (les payloads persistent sur l'appareil).
-- Les tests du contrat vivent dans `src/__tests__/watchPayloads.test.ts`, ceux
-  de la remise dans `src/__tests__/payloadSink.test.ts`.
-- Restent à faire : les complications watchOS, une tuile Wear OS, et le chemin
-  d'écriture des coches décrit plus haut.
+- Any new data displayed by the watch goes through a payload, never any
+  business logic on the native side: `watchPayloads.ts` for what is specific
+  to it, `widgetPayloads.ts` for what it shares with the widgets.
+- Field removed or renamed: increment `v` and have the native side read both
+  versions for one release (payloads persist on the device).
+- The contract tests live in `src/__tests__/watchPayloads.test.ts`, those
+  for the delivery in `src/__tests__/payloadSink.test.ts`.
+- Still to do: the watchOS complications, a Wear OS tile, and the write path
+  for checks described above.

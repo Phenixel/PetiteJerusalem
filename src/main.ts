@@ -190,6 +190,11 @@ if (isNativeApp) {
       import("./services/zmanReminderService").then(({ zmanReminderService }) =>
         zmanReminderService.init(router),
       );
+      // The reminders of Mon parcours: their touch opens the home page. The
+      // plan itself is made by ParcoursReminderScheduler (App.vue).
+      import("./services/parcoursReminderService").then(({ parcoursReminderService }) =>
+        parcoursReminderService.init(router),
+      );
       // Informations de l'équipe : abonnement au canal de la langue, refait à
       // chaque lancement et à chaque changement de langue.
       import("./services/announcementTopics").then(({ syncAnnouncementTopic }) => {
@@ -234,7 +239,10 @@ if (isNativeApp) {
       } catch {
         return; // URL illisible : on reste où on est.
       }
-      if (parsed.hostname !== "petite-jerusalem.fr") return;
+      // Le domaine du site, et celui de l'environnement pour l'app de
+      // staging (ses liens d'app pointent vers son propre site).
+      const hosts = ["petite-jerusalem.fr", new URL(__PJ_ENV__.siteUrl).hostname];
+      if (!hosts.includes(parsed.hostname)) return;
       // Au démarrage à froid, l'événement (retenu par Capacitor) arrive
       // pendant la navigation initiale : attendre le router pour que le
       // deep-link ne soit pas écarté par elle.

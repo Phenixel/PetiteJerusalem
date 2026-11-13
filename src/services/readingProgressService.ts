@@ -318,21 +318,35 @@ class ReadingProgressService {
     return readJson<Record<string, number>>(TOMBSTONES_KEY, {});
   }
 
-  /** Ajoute ou retire le marque-page du verset. Renvoie l'état final. */
+  /**
+   * Ajoute ou retire le marque-page du verset. Renvoie l'état final.
+   *
+   * Un seul marque-page par livre (le texte, dans son espace) : en poser un
+   * nouveau retire ceux que le livre portait déjà, comme on déplace le ruban
+   * d'un livre plutôt que d'en glisser un deuxième. Ceux qu'une version
+   * précédente a laissés à plusieurs restent jusqu'au prochain posé.
+   */
   toggleBookmark(bookmark: Omit<Bookmark, "id" | "at">): boolean {
-    const id = bookmarkId(
-      bookmark.textId,
-      bookmark.section,
-      bookmark.line,
-      bookmark.scope ?? "library",
-    );
+    const scope = bookmark.scope ?? "library";
+    const id = bookmarkId(bookmark.textId, bookmark.section, bookmark.line, scope);
     let all = this.bookmarksAll();
     const exists = all.some((b) => b.id === id);
     if (exists) {
       all = all.filter((b) => b.id !== id);
       writeJson(TOMBSTONES_KEY, pruneTombstones({ ...this.tombstones(), [id]: Date.now() }));
     } else {
-      all = [...all, { ...bookmark, id, at: Date.now() }]
+      const now = Date.now();
+      const sameBook = (b: Bookmark) =>
+        b.textId === bookmark.textId && (b.scope ?? "library") === scope;
+      const replaced = all.filter(sameBook);
+      if (replaced.length) {
+        all = all.filter((b) => !sameBook(b));
+        // Des tombstones, pour que la fusion avec le compte ne les ramène pas.
+        const tombstones = { ...this.tombstones() };
+        for (const b of replaced) tombstones[b.id] = now;
+        writeJson(TOMBSTONES_KEY, pruneTombstones(tombstones));
+      }
+      all = [...all, { ...bookmark, id, at: now }]
         .sort((a, b) => b.at - a.at)
         .slice(0, MAX_BOOKMARKS);
     }

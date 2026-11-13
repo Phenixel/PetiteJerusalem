@@ -31,8 +31,9 @@ const AUDIO_EXTENSIONS = ["mp3", "m4a", "wav", "ogg", "aac"];
 
 // Bucket explicite (même valeur que le client et que la migration) : le
 // bucket "par défaut" résolu par firebase-admin peut différer (ancien suffixe
-// .appspot.com), notamment sous l'émulateur.
-const STORAGE_BUCKET = "petite-jerusalem-dev.firebasestorage.app";
+// .appspot.com), notamment sous l'émulateur. Celui de staging vient de
+// functions/.env.petite-jerusalem-staging (docs/staging.md).
+const STORAGE_BUCKET = process.env.STORAGE_BUCKET || "petite-jerusalem-dev.firebasestorage.app";
 
 function bucket() {
   return getStorage().bucket(STORAGE_BUCKET);

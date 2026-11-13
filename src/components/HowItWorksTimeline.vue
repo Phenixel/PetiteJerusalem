@@ -9,6 +9,9 @@ import AppIcon from "./icons/AppIcon.vue";
 
 const { t } = useI18n();
 
+// Le principe compris, la frise se retire de la page (useShareHowItWorks).
+const emit = defineEmits<{ (e: "understood"): void }>();
+
 const timelineRef = ref<HTMLElement | null>(null);
 const timelineInView = ref(false);
 let timelineObserver: IntersectionObserver | null = null;
@@ -111,6 +114,13 @@ onUnmounted(() => {
         </div>
       </li>
     </ol>
+
+    <div class="mt-8 flex justify-center">
+      <button type="button" class="btn btn-soft" @click="emit('understood')">
+        <AppIcon name="check" :size="16" />
+        {{ t("shareReading.howItWorks.understood") }}
+      </button>
+    </div>
   </section>
 </template>
 

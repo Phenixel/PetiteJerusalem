@@ -117,6 +117,43 @@ test.describe("lecteur", () => {
     await expect(page.getByText(/Daf 2a/).first()).toBeVisible();
   });
 
+  test("la guemara et la Torah s'ouvrent dans la forme de leur page", async ({ page }) => {
+    // La page de Vilna : la guemara au centre, Rachi et Tossafot autour.
+    await gotoApp(page, "/bibliotheque/talmud/berakhot/1");
+    await page.getByRole("button", { name: "Page (Bêta)", exact: true }).first().click();
+    const daf = page.locator(".daf-page").first();
+    await expect(daf).toBeVisible({ timeout: 20_000 });
+    await expect(daf.locator(".daf-lead").first()).toBeVisible({ timeout: 20_000 });
+    // Le choix est gardé : la Torah s'ouvre à son tour dans le Sefer Torah.
+    await gotoApp(page, "/bibliotheque/tanakh/haazinu");
+    await expect(page.locator(".torah-scroll")).toBeVisible({ timeout: 20_000 });
+    // Haazinou en deux moitiés, sur les lignes du rouleau (torah-layout).
+    await expect(page.locator(".scroll-line-halves").first()).toBeVisible();
+    await page.getByRole("button", { name: "Hébreu", exact: true }).first().click();
+    await expect(page.locator(".torah-scroll")).toHaveCount(0);
+  });
+
+  test("un passage de guemara ouvre ses commentaires, qui suivent la lecture", async ({ page }) => {
+    await gotoApp(page, "/bibliotheque/talmud/berakhot/1");
+    const passages = page.locator(".daf-passage");
+    await expect(passages.first()).toBeVisible({ timeout: 20_000 });
+    // Le premier passage : Rachi et Tossafot, annoncés dans la bulle.
+    await passages.nth(0).click();
+    const rangee = page.locator(".bubble-commentary");
+    await expect(rangee).toContainText("Rachi 2 · Tossafot 1", { timeout: 20_000 });
+    await rangee.click();
+    const panneau = page.locator(".commentary-panel");
+    await expect(panneau).toContainText("Daf 2a · passage 1");
+    await expect(panneau).toContainText("Tossafot");
+    // Le panneau ouvert, un autre passage y passe, sans bulle.
+    await passages.nth(2).click();
+    await expect(panneau).toContainText("Daf 2a · passage 3");
+    await expect(page.locator(".reading-bubble")).toHaveCount(0);
+    await expect(page.locator(".lead-mark").first()).toBeVisible();
+    await panneau.getByRole("button", { name: "Fermer" }).click();
+    await expect(panneau).toHaveCount(0);
+  });
+
   test("l'ancienne adresse /lire/:id mène au texte, pas à une page vide", async ({ page }) => {
     // 103 est l'identifiant du Tehilim 1 (src/datas/textStudies.json).
     await gotoApp(page, "/lire/103");
@@ -186,5 +223,38 @@ test.describe("lecteur", () => {
     await expect(page).toHaveURL(/\/shir-hashirim\/3\?verset=999$/);
     await expect(page.locator('[data-line="0"]').first()).toBeVisible();
     await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+  });
+});
+
+test.describe("le volet d'un passage au doigt", () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
+
+  // The commands sheet is pulled from anywhere, not only by its handle. Its
+  // body is a scroll container: without its own `touch-action: none`
+  // (BottomSheet.vue), a finger rising from the commands was taken by the
+  // browser as a pan, which cancelled the gesture.
+  test("tiré vers le haut depuis ses commandes, il ouvre les commentaires", async ({ page }) => {
+    await gotoApp(page, "/bibliotheque/talmud/berakhot/1");
+    const passages = page.locator(".daf-passage");
+    await expect(passages.first()).toBeVisible({ timeout: 20_000 });
+    await passages.nth(0).tap();
+    await expect(page.locator(".bubble-commentary")).toBeVisible({ timeout: 20_000 });
+
+    const box = (await page.locator(".bubble-action").nth(1).boundingBox())!;
+    const x = box.x + box.width / 2;
+    const y = box.y + box.height / 2;
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x, y }] });
+    for (let step = 1; step <= 12; step++) {
+      await cdp.send("Input.dispatchTouchEvent", {
+        type: "touchMove",
+        touchPoints: [{ x, y: y - step * 12 }],
+      });
+      await page.waitForTimeout(16);
+    }
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+    await cdp.detach();
+
+    await expect(page.locator(".commentary-panel")).toContainText("Daf 2a · passage 1");
   });
 });

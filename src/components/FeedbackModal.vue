@@ -1,11 +1,20 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref, watch } from "vue";
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from "vue";
+import { useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import AppModal from "./AppModal.vue";
 import AppIcon from "./icons/AppIcon.vue";
 import { useToast } from "../composables/useToast";
-import { feedbackPrefill, isFeedbackOpen, closeFeedback } from "../composables/useFeedback";
+import {
+  feedbackPrefill,
+  isFeedbackOpen,
+  closeFeedback,
+  stashFeedbackPrefill,
+  supportVersion,
+} from "../composables/useFeedback";
+import { isNativeApp } from "../composables/useNativeApp";
 import { analyticsService } from "../services/analyticsService";
+import { authService, type User } from "../services/authService";
 import {
   feedbackContext,
   sendFeedback,
@@ -15,17 +24,51 @@ import {
 
 /**
  * Le formulaire de support : une idée, un bug, une erreur dans un texte, ou
- * autre chose. Il remplace le formulaire Notion externe et alimente la même
- * base (Cloud Function `submitFeedback`).
+ * autre chose. Chaque message ouvre un fil que l'équipe traite dans le
+ * backoffice (Cloud Function `submitFeedback`) ; la réponse revient dans la
+ * page « Nous écrire » (/contact). Voir docs/feedback.md.
+ *
+ * Dans l'app, pas besoin de compte : l'appareil retrouve ses messages. Sur le
+ * site sans compte, on écrit aussi, mais notre réponse ne pourra s'afficher
+ * nulle part : la fenêtre le dit, propose de se connecter (en gardant ce qui
+ * était amorcé, un passage de texte signalé par exemple) et rappelle qu'un
+ * email ou un téléphone laissé est alors le seul moyen de répondre.
  *
  * La personne dit de quoi il s'agit et donne des détails ; elle laisse un
- * moyen de la recontacter seulement si elle coche la case. Le support, la
- * plateforme et la version partent avec le message, et la fenêtre le dit :
- * on n'envoie rien à son insu.
+ * email ou un téléphone seulement si elle veut aussi la réponse par là. Le
+ * support, la plateforme et la version partent avec le message, et la
+ * fenêtre le dit : on n'envoie rien à son insu.
  */
 
 const { t } = useI18n();
 const toast = useToast();
+const router = useRouter();
+
+const user = ref<User | null>(null);
+const authResolved = ref(authService.isAuthResolved());
+let unsubscribeAuth: (() => void) | null = null;
+onMounted(() => {
+  unsubscribeAuth = authService.onAuthChanged((u) => {
+    user.value = u;
+    authResolved.value = true;
+  });
+});
+onUnmounted(() => unsubscribeAuth?.());
+
+/**
+ * Sur le site sans compte, on peut écrire, mais notre réponse ne pourra pas
+ * s'afficher dans le profil : la fenêtre le dit, propose de se connecter, et
+ * rappelle que seul un email ou un téléphone laissé permet de répondre. Tant
+ * que la session n'est pas connue, rien ne s'affiche (pas d'avertissement qui
+ * clignote pour un compte déjà connecté).
+ */
+const isWebGuest = computed(() => !isNativeApp && authResolved.value && !user.value);
+
+function goToLogin(): void {
+  stashFeedbackPrefill({ kind: kind.value, details: details.value });
+  closeFeedback();
+  void router.push({ path: "/login", query: { redirect: "/contact" } });
+}
 
 const KINDS: FeedbackKind[] = ["idea", "bug", "error", "other"];
 
@@ -100,7 +143,14 @@ async function submit(): Promise<void> {
       contact: canContact.value ? contact.value.trim() : "",
     });
     analyticsService.capture("feedback_sent", { kind: kind.value, contact: canContact.value });
-    toast.success(t("feedback.success"));
+    toast.success(
+      isWebGuest.value
+        ? canContact.value
+          ? t("feedback.successGuest")
+          : t("feedback.successNoReply")
+        : t("feedback.success"),
+    );
+    supportVersion.value++;
     closeFeedback();
   } catch (error) {
     console.error("Erreur lors de l'envoi du message de support:", error);
@@ -129,6 +179,20 @@ async function submit(): Promise<void> {
     <p class="text-sm text-text-secondary mb-5">
       {{ t("feedback.subtitle") }}
     </p>
+
+    <!-- Le site sans compte : on écrit quand même, mais la réponse ne
+         s'affichera pas dans un profil. Se connecter reste possible, et ce
+         qui était amorcé est gardé pour après. -->
+    <div
+      v-if="isWebGuest"
+      class="mb-5 space-y-2.5 rounded-control bg-primary/[0.06] p-3.5 text-sm text-text-primary"
+    >
+      <p>{{ t("feedback.guestNotice") }}</p>
+      <button type="button" class="btn btn-soft btn-sm" @click="goToLogin">
+        <AppIcon name="login" :size="13" />
+        {{ t("feedback.login") }}
+      </button>
+    </div>
 
     <form class="space-y-5" @submit.prevent="submit">
       <fieldset>
@@ -202,7 +266,7 @@ async function submit(): Promise<void> {
               {{ t("feedback.contactToggle") }}
             </span>
             <span class="block text-xs text-text-secondary mt-0.5">
-              {{ t("feedback.contactHint") }}
+              {{ isWebGuest ? t("feedback.contactHintGuest") : t("feedback.contactHint") }}
             </span>
           </span>
         </label>

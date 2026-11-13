@@ -9,10 +9,10 @@ import AppIcon from "../icons/AppIcon.vue";
  * horaires), chacune avec ses captures, étaient celles où l'on passait
  * l'introduction.
  *
- * La lecture du jour, la fonction la moins devinée, a son bouton : il
- * termine l'introduction en y conduisant, sans passer par les gestes (voir
- * OnboardingFlow). Secondaire, pour laisser « Continuer » seul en couleur
- * pleine.
+ * Mon parcours, la fonction la moins devinée, a son bouton : il termine
+ * l'introduction en conduisant au premier objectif, sans passer par les
+ * gestes (voir OnboardingFlow). Secondaire, pour laisser « Continuer » seul
+ * en couleur pleine.
  */
 
 const emit = defineEmits<{ (e: "compose"): void }>();

@@ -11,6 +11,7 @@
 export type LoginReason =
   | "direct"
   | "daily_reading"
+  | "parcours"
   | "share_reading"
   | "profile"
   | "admin"
@@ -29,6 +30,7 @@ export function loginReason(redirect: unknown): LoginReason {
   }
   path = path.split(/[?#]/)[0].replace(LOCALE_PREFIX, "") || "/";
   if (path.startsWith("/bibliotheque/lecture-du-jour")) return "daily_reading";
+  if (path === "/parcours" || path.startsWith("/parcours/")) return "parcours";
   if (path.startsWith("/share-reading") || path.startsWith("/session-management")) {
     return "share_reading";
   }

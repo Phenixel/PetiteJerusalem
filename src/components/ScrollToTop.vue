@@ -1,22 +1,47 @@
 <script setup lang="ts">
 import { computed, ref, onUnmounted, watch } from "vue";
+import { useRoute } from "vue-router";
 import AppIcon from "./icons/AppIcon.vue";
 import { useMiniPlayerVisible } from "../composables/useAudioPlayer";
 import { isNativeApp } from "../composables/useNativeApp";
 import { readingNavActive } from "../composables/useReadingNav";
 import { useScrollFrame } from "../composables/useScrollFrame";
+import { TABLE_BAR_REM } from "../composables/useBottomChrome";
+import { tableBarVisible } from "../composables/useReadingTable";
+import { scrollToTopRequested } from "../composables/useScrollToTop";
 
 const isVisible = ref(false);
+
+/**
+ * The button is the exception, not the rule:
+ * - only on the routes that ask for it with `meta: { scrollToTop: true }`
+ *   (long lists one goes down to pick an item; see SCROLL_TO_TOP in
+ *   routes.ts), or while a page asks for it (requestScrollToTop: the
+ *   library home page, during a search);
+ * - and only once the top is more than `MIN_SCROLL_SCREENS` screens away:
+ *   closer than that, a few flicks of the thumb bring it back, and the
+ *   button would only cover the content.
+ * Held by `src/__tests__/scrollToTop.test.ts`.
+ */
+const MIN_SCROLL_SCREENS = 3;
+const route = useRoute();
+const routeAllows = computed(() => route.meta.scrollToTop === true || scrollToTopRequested.value);
 // Le pointeur survole le bouton : on ne le masque pas sous la main de
 // l'utilisateur qui s'apprête à cliquer.
 const isHovered = ref(false);
 const isMiniPlayerVisible = useMiniPlayerVisible();
 
-// Reste au-dessus du mini-lecteur et, dans l'app, de la bottom bar.
+// Reste au-dessus du mini-lecteur et, dans l'app, de la bottom bar ; la
+// barre de la table d'étude, quand un texte y est posé, s'ajoute dessous.
 const bottomClass = computed(() => {
   if (isNativeApp) return isMiniPlayerVisible.value ? "bottom-44" : "bottom-28";
   return isMiniPlayerVisible.value ? "bottom-36" : "bottom-20";
 });
+// Une marge, et non une translation : celle de la transition d'apparition
+// l'écraserait.
+const tableLift = computed(() =>
+  tableBarVisible.value ? { marginBottom: `${TABLE_BAR_REM}rem` } : undefined,
+);
 
 // Le bouton n'apparaît que pendant le défilement et s'efface après un court
 // temps d'inactivité : au repos (ex. en bas de l'accueil, sur la dédicace
@@ -35,8 +60,9 @@ const armHideTimer = () => {
 // de défilement pour toute l'app, et rien à mesurer ici.
 const scrollFrame = useScrollFrame();
 
-const checkScroll = (scrollY: number) => {
-  if (scrollY > 300) {
+const checkScroll = () => {
+  const { scrollY, viewport } = scrollFrame.value;
+  if (routeAllows.value && scrollY > MIN_SCROLL_SCREENS * viewport) {
     isVisible.value = true;
     armHideTimer();
   } else {
@@ -63,6 +89,8 @@ const scrollToTop = () => {
 };
 
 watch(() => scrollFrame.value.scrollY, checkScroll);
+// A new page starts without the button, whatever the previous one showed.
+watch(() => route.path, checkScroll);
 
 onUnmounted(() => {
   if (hideTimer) clearTimeout(hideTimer);
@@ -86,6 +114,7 @@ onUnmounted(() => {
       @pointerleave="onPointerLeave"
       class="fixed right-6 w-11 h-11 flex items-center justify-center rounded-full bg-surface text-text-primary shadow-pop hover:text-primary transition-colors duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary z-50"
       :class="bottomClass"
+      :style="tableLift"
       :aria-label="$t('textReading.navTop')"
     >
       <AppIcon name="arrow-up" :size="18" />

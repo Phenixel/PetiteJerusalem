@@ -24,7 +24,7 @@ describe("resolveBackNavigation", () => {
   });
 
   it("remonte à la liste des chapitres depuis un chapitre ouvert par un lien", () => {
-    expect(fromSection("/bibliotheque/lecture-du-jour")).toBe("parent");
+    expect(fromSection("/parcours/journee")).toBe("parent");
     expect(fromSection(null)).toBe("parent");
   });
 

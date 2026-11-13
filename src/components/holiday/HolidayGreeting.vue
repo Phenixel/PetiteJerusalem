@@ -16,7 +16,7 @@ const HanoukkiaLive = defineAsyncComponent(() => import("./HanoukkiaLive.vue"));
  * Posé à même le fond, sans carte : ce n'est pas une donnée qu'on vient
  * consulter mais une parure, et une carte de plus au-dessus du tableau de
  * bord se serait disputé le regard avec celles qui répondent à une question
- * (voir docs/design.md, « Le cadre se mérite »). Absent hors des fêtes, et
+ * (voir docs/design.md, « The frame must be earned »). Absent hors des fêtes, et
  * absent quand le réglage « Thèmes des fêtes » est coupé : la parure va avec
  * les couleurs, pas sans.
  */

@@ -2,7 +2,7 @@
 /**
  * Une série dans une rangée, comme un album : sa pochette, son nom, son rav
  * et son nombre de cours. Toute la tuile mène à la série ; pas de cadre
- * autour (voir « Le cadre se mérite ») : la pochette est déjà une surface.
+ * autour (voir « The frame must be earned ») : la pochette est déjà une surface.
  */
 import ChiourCover from "./ChiourCover.vue";
 

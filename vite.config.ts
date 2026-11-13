@@ -6,6 +6,7 @@ import { defineConfig, type Plugin } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
 import tailwindcss from '@tailwindcss/vite'
+import { ENV } from './scripts/lib/environments.mjs'
 
 /**
  * Version applicative figée dans le bundle (super propriété PostHog
@@ -70,6 +71,9 @@ const appVersion = resolveAppVersion()
 export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify(appVersion),
+    // Environnement visé (PJ_ENV, voir scripts/lib/environments.mjs) : la
+    // config Firebase et l'adresse du site en dépendent.
+    __PJ_ENV__: JSON.stringify({ name: ENV.name, firebase: ENV.firebase, siteUrl: ENV.siteUrl }),
   },
   // Port dédié à ce projet pour pouvoir bosser sur plusieurs projets en
   // parallèle sans collision avec le 5173 par défaut de Vite.

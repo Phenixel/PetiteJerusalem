@@ -23,6 +23,9 @@
  *   l'app quand elle est installée (voir docs/app-links.md)
  * - Boussole du Kotel : le plugin PjCompass (étalonnage du magnétomètre),
  *   copié avec les widgets et enregistré dans MainActivity
+ * - Quiet modes when a tefila opens: the PjQuiet plugin (Do Not Disturb,
+ *   silent, vibrate) and its ACCESS_NOTIFICATION_POLICY permission, copied
+ *   with the widgets and registered in MainActivity
  * - Montre Wear OS : le module android/wear/ recopié depuis native/wear/,
  *   déclaré dans settings.gradle, ses icônes reprises de l'app et les Tehilim
  *   embarqués dans ses assets (voir docs/app-watch.md)
@@ -44,6 +47,7 @@ import {
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { buildAndroidIntentFilter, APP_LINK_DOMAIN } from "./lib/app-links.mjs";
+import { ENV } from "./lib/environments.mjs";
 import { buildTehilimAsset, TEHILIM_ASSET } from "./lib/watch-tehilim.mjs";
 import { ANDROID_DENSITIES, ANDROID_MONOCHROME, withMonochromeLayer } from "./lib/app-icon.mjs";
 
@@ -93,6 +97,11 @@ const PERMISSIONS = [
       "Écoute des cours en arrière-plan : @capgo/capacitor-media-session tient la notification\n         de lecture dans un service de premier plan de type mediaPlayback. Son manifest ne\n         déclare que FOREGROUND_SERVICE ; depuis Android 14, démarrer ce service sans cette\n         permission-ci lève une SecurityException et ferme l'app à la première lecture.\n         Voir src/__tests__/mediaSessionAndroid.test.ts",
   },
   {
+    name: "android.permission.ACCESS_NOTIFICATION_POLICY",
+    comment:
+      "Quiet modes offered when a tefila opens (PjQuietPlugin): without this line the app\n         is not even listed under Do Not Disturb access, and Do Not Disturb and silent\n         cannot be set from it. See src/__tests__/prayerQuiet.test.ts",
+  },
+  {
     name: "android.permission.CAMERA",
     comment: "Miroir des téfilines (caméra frontale, rien n'est enregistré)",
   },
@@ -134,7 +143,7 @@ if (!manifest.includes('android:name="android.hardware.camera"')) {
 // Petite icône des notifications push. Sans ces deux meta-data, Firebase
 // affiche les push reçues app fermée avec l'icône du lanceur, qu'Android réduit
 // à sa seule opacité : une pastille pleine, ou l'icône générique du système.
-// ic_stat_pj (silhouette blanche de 24 dp, rasterisée depuis lib/app-icon.mjs)
+// ic_stat_pj (the logo's star in white, 24 dp, see lib/app-icon.mjs)
 // et sa teinte vivent dans native/android/, recopié plus bas avec les widgets.
 // Les notifications locales (rappels d'horaires, push rejouées au premier plan)
 // prennent la même icône par capacitor.config.ts.
@@ -170,7 +179,7 @@ if (existsSync(gsSource) && !existsSync(gsDest)) {
 } else if (!existsSync(gsDest)) {
   console.warn(
     "setup-android: ⚠️ google-services.json introuvable, l'auth native Google et le push ne fonctionneront pas.\n" +
-      "  Console Firebase → projet → app Android fr.petitejerusalem.app → télécharger google-services.json\n" +
+      `  Console Firebase → projet ${ENV.firebase.projectId} → app Android ${ENV.appId} → télécharger google-services.json\n` +
       "  puis le placer à la racine du repo ou dans android/app/.",
   );
 }
@@ -217,6 +226,33 @@ $1$2            signingConfig keystorePropertiesFile.exists() ? signingConfigs.r
   console.log("setup-android: signingConfigs.release + versionName ajoutés à build.gradle");
 }
 
+// 4 bis. Identité de l'app selon l'environnement (PJ_ENV, voir
+//    scripts/lib/environments.mjs). `cap add` écrit l'applicationId et le nom
+//    de capacitor.config.ts, c'est-à-dire ceux de la production : l'app de
+//    staging reçoit ici les siens, pour s'installer à côté de la vraie
+//    (docs/staging.md). Le package Java, lui, ne change pas : les sources de
+//    native/android/ restent dans fr.petitejerusalem.app.
+{
+  const gradle = readFileSync(appBuildGradlePath, "utf8");
+  const withId = gradle.replace(/applicationId "[^"]+"/, `applicationId "${ENV.appId}"`);
+  if (withId !== gradle) {
+    writeFileSync(appBuildGradlePath, withId);
+    console.log(`setup-android: applicationId ${ENV.appId}`);
+  }
+  const stringsPath = join(androidDir, "app/src/main/res/values/strings.xml");
+  if (existsSync(stringsPath)) {
+    const strings = readFileSync(stringsPath, "utf8");
+    const named = strings.replace(
+      /(<string name="(?:app_name|title_activity_main)">)[^<]*(<\/string>)/g,
+      `$1${ENV.appName}$2`,
+    );
+    if (named !== strings) {
+      writeFileSync(stringsPath, named);
+      console.log(`setup-android: nom de l'app « ${ENV.appName} »`);
+    }
+  }
+}
+
 // 5. Modèle de keystore.properties (le vrai fichier reste git-ignoré et doit
 //    être rempli à la main avec les valeurs du keystore réel)
 const keystorePropertiesExample = join(androidDir, "keystore.properties.example");
@@ -235,7 +271,7 @@ if (!existsSync(keystorePropertiesExample)) {
 const generatedMarker = join(androidDir, "app/src/main/res/drawable-port-night-xxxhdpi/splash.png");
 if (!existsSync(generatedMarker)) {
   try {
-    execSync("npx @capacitor/assets generate --android --assetPath assets --iconBackgroundColor '#f5eedc' --iconBackgroundColorDark '#f5eedc'", {
+    execSync("npx @capacitor/assets generate --android --assetPath assets --iconBackgroundColor '#fff9f3' --iconBackgroundColorDark '#fff9f3'", {
       cwd: root,
       stdio: "inherit",
     });
@@ -243,14 +279,14 @@ if (!existsSync(generatedMarker)) {
   } catch {
     console.warn(
       "setup-android: ⚠️ génération des icônes échouée, lancer à la main :\n" +
-        "  npx @capacitor/assets generate --android --assetPath assets --iconBackgroundColor '#f5eedc' --iconBackgroundColorDark '#f5eedc'",
+        "  npx @capacitor/assets generate --android --assetPath assets --iconBackgroundColor '#fff9f3' --iconBackgroundColorDark '#fff9f3'",
     );
   }
 }
 
 // 7. Icône adaptative : @capacitor/assets insère la couche de fond avec un
 //    inset de 16.7 %, ce qui laisse un anneau autour de l'icône sur le
-//    launcher. On remplace le fond par une couleur pleine (le beige du logo),
+//    launcher. On remplace le fond par une couleur pleine (le crème du logo),
 //    seule la couche avant garde son inset.
 //
 //    On pose aussi la couche monochrome, celle des « icônes thématiques »
@@ -260,14 +296,14 @@ if (!existsSync(generatedMarker)) {
 //    Sans elle, Android n'a rien à teindre et laisse l'app en couleurs au
 //    milieu d'un écran d'accueil accordé : c'est le seul moyen, sur Android,
 //    d'avoir une icône qui suive le thème de l'appareil.
-//    Les PNG sont versionnés dans assets/themed/, rasterisés hors du dépôt
-//    depuis la source vectorielle de lib/app-icon.mjs.
+//    Les PNG sont versionnés dans assets/themed/, dérivés hors du dépôt
+//    des PNG de la graphiste (voir lib/app-icon.mjs).
 const launcherBgColor = join(androidDir, "app/src/main/res/values/ic_launcher_background.xml");
 const anydpiDir = join(androidDir, "app/src/main/res/mipmap-anydpi-v26");
 if (existsSync(anydpiDir)) {
   writeFileSync(
     launcherBgColor,
-    `<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <color name="ic_launcher_background">#F5EEDC</color>\n</resources>`,
+    `<?xml version="1.0" encoding="utf-8"?>\n<resources>\n    <color name="ic_launcher_background">#FFF9F3</color>\n</resources>`,
   );
 
   let monochromeCopied = 0;
@@ -284,7 +320,7 @@ if (existsSync(anydpiDir)) {
   } else {
     console.warn(
       "setup-android: ⚠️ assets/themed/ est vide, pas d'icône thématique.\n" +
-        "  Y déposer monochrome-<densité>.png, rasterisés depuis lib/app-icon.mjs.",
+        "  Y déposer monochrome-<densité>.png, dérivés du logo (voir lib/app-icon.mjs).",
     );
   }
 
@@ -416,6 +452,15 @@ public class MainActivity extends BridgeActivity {
       `$1// Précision de la boussole du Kotel (voir docs/app-native.md).$1registerPlugin(PjCompassPlugin.class);$1$2`,
     );
     console.log("setup-android: plugin PjCompass enregistré dans MainActivity");
+  }
+  if (!mainActivity.includes("PjQuietPlugin")) {
+    // The quiet modes offered when a tefila opens
+    // (src/services/prayerQuiet.ts), same rule as above.
+    mainActivity = mainActivity.replace(
+      /(\n\s*)(super\.onCreate\(savedInstanceState\);)/,
+      `$1// Quiet modes when a tefila opens (see docs/app-native.md).$1registerPlugin(PjQuietPlugin.class);$1$2`,
+    );
+    console.log("setup-android: plugin PjQuiet enregistré dans MainActivity");
   }
   if (!mainActivity.includes("setOverScrollMode")) {
     mainActivity = mainActivity.replace(
@@ -573,6 +618,13 @@ if (!appGradle.includes("play-services-wearable")) {
 const wearDir = join(androidDir, "wear");
 cpSync(join(root, "native/wear"), wearDir, { recursive: true });
 console.log("setup-android: module Wear OS copié depuis native/wear/");
+// La montre et le téléphone doivent partager l'applicationId pour se parler
+// (Data Layer) : celle de l'app de staging suit donc la sienne.
+{
+  const wearGradlePath = join(wearDir, "build.gradle");
+  const wearGradle = readFileSync(wearGradlePath, "utf8");
+  writeFileSync(wearGradlePath, wearGradle.replace(/applicationId "[^"]+"/, `applicationId "${ENV.appId}"`));
+}
 
 const settingsGradlePath = join(androidDir, "settings.gradle");
 const settingsGradle = readFileSync(settingsGradlePath, "utf8");

@@ -381,57 +381,41 @@
   "shekalim": [
     {
       "chapter": 1,
-      "startDaf": "2a",
-      "endDaf": "2a",
       "startIdx": 0,
       "endIdx": 0
     },
     {
       "chapter": 2,
-      "startDaf": "2b",
-      "endDaf": "2b",
       "startIdx": 1,
       "endIdx": 1
     },
     {
       "chapter": 3,
-      "startDaf": "3a",
-      "endDaf": "2b",
       "startIdx": 2,
-      "endIdx": 1
+      "endIdx": 2
     },
     {
       "chapter": 4,
-      "startDaf": "3a",
-      "endDaf": "3b",
-      "startIdx": 2,
+      "startIdx": 3,
       "endIdx": 3
     },
     {
       "chapter": 5,
-      "startDaf": "4a",
-      "endDaf": "4a",
       "startIdx": 4,
       "endIdx": 4
     },
     {
       "chapter": 6,
-      "startDaf": "4b",
-      "endDaf": "4b",
       "startIdx": 5,
       "endIdx": 5
     },
     {
       "chapter": 7,
-      "startDaf": "5a",
-      "endDaf": "5a",
       "startIdx": 6,
       "endIdx": 6
     },
     {
       "chapter": 8,
-      "startDaf": "5b",
-      "endDaf": "5b",
       "startIdx": 7,
       "endIdx": 7
     }
@@ -2253,36 +2237,26 @@
   "middot": [
     {
       "chapter": 1,
-      "startDaf": "2a",
-      "endDaf": "2a",
       "startIdx": 0,
       "endIdx": 0
     },
     {
       "chapter": 2,
-      "startDaf": "2b",
-      "endDaf": "2b",
       "startIdx": 1,
       "endIdx": 1
     },
     {
       "chapter": 3,
-      "startDaf": "3a",
-      "endDaf": "3a",
       "startIdx": 2,
       "endIdx": 2
     },
     {
       "chapter": 4,
-      "startDaf": "3b",
-      "endDaf": "3b",
       "startIdx": 3,
       "endIdx": 3
     },
     {
       "chapter": 5,
-      "startDaf": "4a",
-      "endDaf": "4a",
       "startIdx": 4,
       "endIdx": 4
     }
@@ -2290,22 +2264,16 @@
   "kinnim": [
     {
       "chapter": 1,
-      "startDaf": "2a",
-      "endDaf": "2a",
       "startIdx": 0,
       "endIdx": 0
     },
     {
       "chapter": 2,
-      "startDaf": "2b",
-      "endDaf": "2b",
       "startIdx": 1,
       "endIdx": 1
     },
     {
       "chapter": 3,
-      "startDaf": "3a",
-      "endDaf": "3a",
       "startIdx": 2,
       "endIdx": 2
     }

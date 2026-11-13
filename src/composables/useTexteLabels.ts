@@ -17,6 +17,8 @@ export function useTexteLabels() {
         return t("chiourim.texte.introduction");
       case "topic":
         return t("chiourim.texte.topic", { n: chapitre });
+      case "siman":
+        return t("chiourim.texte.siman", { n: chapitre });
       case "aliya":
         return t("chiourim.texte.aliya", { n: chapitre });
       default:

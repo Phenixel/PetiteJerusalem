@@ -14,6 +14,9 @@
 
     "module": "ESNext",
     "moduleResolution": "Bundler",
-    "types": ["node"]
+    "types": ["node"],
+    // vite.config.ts lit scripts/lib/environments.mjs, un module sans
+    // déclaration (voir tsconfig.vitest.json pour la même raison).
+    "allowJs": true
   }
 }

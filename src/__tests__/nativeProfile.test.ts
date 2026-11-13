@@ -4,18 +4,18 @@ import { createI18n } from "vue-i18n";
 import { createMemoryHistory, createRouter } from "vue-router";
 
 /**
- * Le profil de l'app native : une liste de lignes rangées par groupe, chacune
- * menant à une sous-page et disant ce qui y est réglé (docs/design.md, « Le
- * profil de l'app est une liste, pas un menu »).
+ * The native app's profile: a list of rows grouped by kind, each leading to a
+ * sub-page and telling what is set there (docs/design.md, "The app profile is
+ * a list, not a menu").
  *
- * Ce qui doit tenir :
- * - sans compte, la page est celle des réglages : l'invitation au compte en
- *   tête, les réglages d'appareil, l'aide ; rien de ce qui suppose un compte
- *   (raccourcis, sécurité, déconnexion) ;
- * - connecté, le nom en titre, les raccourcis et le groupe du compte ;
- * - chaque ligne de réglage mène à sa sous-page et porte l'état en cours ;
- * - des notifications bloquées par le système le disent au lieu d'un nombre ;
- * - la déconnexion, une ligne parmi d'autres, pose la question avant d'agir.
+ * What must hold:
+ * - without an account, the page is the settings page: the account offer at
+ *   the top, the device settings, help (the help center, « Nous écrire »);
+ *   nothing that needs an account (shortcuts, security, sign-out);
+ * - signed in, the name as title, the shortcuts and the account group;
+ * - each settings row leads to its sub-page and carries the current state;
+ * - notifications blocked by the system say so instead of a number;
+ * - sign-out, a row among others, asks before acting.
  */
 
 type FakeUser = { id: string; name: string; email: string };
@@ -42,6 +42,9 @@ vi.mock("../services/analyticsService", () => ({ analyticsService: { capture: vi
 vi.mock("../services/seoService", () => ({ seoService: { setMeta: vi.fn() } }));
 vi.mock("../services/feedbackService", () => ({
   feedbackContext: async () => ({ support: "app", platform: "android", version: "3.12.0 (120)" }),
+  // Nous écrire : cet appareil n'a jamais écrit, rien à relire.
+  hasSupportHistory: () => false,
+  listSupportThreads: async () => [],
 }));
 vi.mock("../composables/useTheme", async () => {
   const { ref } = await import("vue");
@@ -84,12 +87,6 @@ vi.mock("../composables/useZmanimOpinion", async () => {
   return { useZmanimOpinion: () => ({ opinion: ref("posen") }) };
 });
 vi.mock("../composables/useConsent", () => ({ useConsent: () => ({ reopen: vi.fn() }) }));
-vi.mock("../composables/useOnboarding", () => ({
-  useOnboarding: () => ({ replayOnboarding: vi.fn() }),
-}));
-vi.mock("../composables/useFeatureTips", () => ({
-  useFeatureTips: () => ({ resetFeatureTips: vi.fn() }),
-}));
 vi.mock("../composables/useHolidayTheme", async () => {
   const { ref } = await import("vue");
   return { useHolidayTheme: () => ({ activeHolidayTheme: ref(null) }) };
@@ -147,8 +144,14 @@ describe("profil de l'app native", () => {
     // Rien de ce qui suppose un compte.
     expect(page.row("/profile/security")).toBeNull();
     expect(page.row("/profile/account")).toBeNull();
-    expect(page.row("/bibliotheque/lecture-du-jour")).toBeNull();
+    expect(page.row("/share-reading")).toBeNull();
     expect(page.text()).not.toContain(fr.common.logout);
+    // Mon parcours se tient sans compte, sur le téléphone : sa carte, chargée à la demande.
+    await vi.waitFor(() => expect(page.row("/parcours")).not.toBeNull());
+    // Help: the help center (guides, the "what's new" video, the introduction
+    // and the tips to see again) and « Nous écrire ».
+    expect(page.row("/aide")?.textContent).toContain(fr.help.title);
+    expect(page.row("/contact")).not.toBeNull();
   });
 
   it("connecté, le nom en titre, les raccourcis et le compte", async () => {
@@ -157,7 +160,7 @@ describe("profil de l'app native", () => {
     expect(page.text()).toContain("alice@example.com");
     expect(page.row("/profile/account")).not.toBeNull();
     expect(page.row("/profile/security")).not.toBeNull();
-    expect(page.row("/bibliotheque/lecture-du-jour")).not.toBeNull();
+    await vi.waitFor(() => expect(page.row("/parcours")).not.toBeNull());
     expect(page.row("/share-reading")).not.toBeNull();
     expect(page.text()).toContain(fr.common.logout);
     expect(page.row("/login?mode=signup")).toBeNull();

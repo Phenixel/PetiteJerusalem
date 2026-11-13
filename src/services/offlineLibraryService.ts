@@ -36,7 +36,7 @@ export interface OfflineBook {
   /** Chemin web du fichier, clé unique du livre. */
   path: string;
   name: string;
-  /** Corpus (type) : "Tehilim" | "Mishna" | "Talmud Bavli" | "Tanakh" | "Moussar"… */
+  /** Corpus (type) : "Tehilim" | "Mishna" | "Talmud Bavli" | "Tanakh" | "Moussar" | "Halakha"… */
   corpus: string;
   /** Regroupement d'origine (seder, livre). */
   livre: string;
@@ -100,6 +100,8 @@ const CORPUS_META: { key: string; labelKey: string; approxBytes: number }[] = [
   { key: "Talmud Bavli", labelKey: "study.types.talmud", approxBytes: 29_900_000 },
   { key: "Tanakh", labelKey: "study.types.tanakh", approxBytes: 6_800_000 },
   { key: "Moussar", labelKey: "study.types.moussar", approxBytes: 3_500_000 },
+  // Le texte seul : les commentaires du Choulhan Aroukh se chargent au séif.
+  { key: "Halakha", labelKey: "study.types.halakha", approxBytes: 9_500_000 },
   { key: "Sidour", labelKey: "study.types.sidour", approxBytes: 0 },
   { key: "Moadim", labelKey: "study.types.moadim", approxBytes: 560_000 },
   { key: "Brahot", labelKey: "study.types.brahot", approxBytes: 0 },

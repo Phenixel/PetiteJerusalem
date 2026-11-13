@@ -1,15 +1,15 @@
 import { describe, expect, it, vi } from "vitest";
 
 /**
- * Dans l'app, l'origine de la webview Capacitor est réécrite en `app://ios` /
- * `app://android` avant envoi à PostHog (voir docs/tracking-plan.md).
+ * In the app, the origin of the Capacitor webview is rewritten as `app://ios`
+ * / `app://android` before it is sent to PostHog (see docs/tracking-plan.md).
  *
- * iOS ne sert pas le bundle depuis `https://localhost` comme Android, mais
- * depuis `capacitor://localhost` : la réécriture ne voyait que `http`/`https`
- * et laissait passer ce schéma. Toutes les adresses de l'app iOS partaient en
- * `capacitor://localhost/...` (17 000 événements sur quatorze jours au
- * 14 octobre 2026), et les analyses par page séparaient l'app iOS de l'app
- * Android et du site.
+ * iOS does not serve the bundle from `https://localhost` like Android, but
+ * from `capacitor://localhost`: the rewrite only saw `http`/`https` and let
+ * that scheme through. Every address of the iOS app went out as
+ * `capacitor://localhost/...` (17,000 events over fourteen days as of
+ * October 14, 2026), and per-page analyses split the iOS app from the
+ * Android app and the site.
  */
 
 const { posthog } = vi.hoisted(() => ({
@@ -34,7 +34,7 @@ vi.mock("../composables/useConsent", () => ({
   getConsentChoice: () => "granted",
   onConsentChange: vi.fn(),
 }));
-// L'app iOS : la plateforme est figée au chargement du module.
+// The iOS app: the platform is fixed when the module loads.
 vi.mock("../composables/useNativeApp", () => ({ isNativeApp: true, appPlatform: "ios" }));
 
 type BeforeSend = (event: unknown) => { properties: Record<string, unknown> } | null;
@@ -42,7 +42,7 @@ type BeforeSend = (event: unknown) => { properties: Record<string, unknown> } | 
 async function beforeSendOfTheApp(): Promise<BeforeSend> {
   vi.resetModules();
   posthog.init.mockClear();
-  // Hors production, le suivi ne se charge que par cette porte de sortie.
+  // Outside production, tracking only loads through this escape hatch.
   localStorage.setItem("ph_debug", "1");
   const { analyticsService } = await import("../services/analyticsService");
   analyticsService.init();
@@ -50,8 +50,8 @@ async function beforeSendOfTheApp(): Promise<BeforeSend> {
   return posthog.init.mock.calls[0][1].before_send as BeforeSend;
 }
 
-describe("les adresses de l'app envoyées à PostHog", () => {
-  it("portent app://ios, quel que soit le schéma de la webview", async () => {
+describe("the app's addresses sent to PostHog", () => {
+  it("carry app://ios, whatever the webview's scheme", async () => {
     const beforeSend = await beforeSendOfTheApp();
     const sent = beforeSend({
       event: "$exception",
@@ -68,7 +68,7 @@ describe("les adresses de l'app envoyées à PostHog", () => {
     expect(sent?.properties.$host).toBe("app.ios");
   });
 
-  it("portent app://ios quand la webview sert en https, avec ou sans port", async () => {
+  it("carry app://ios when the webview serves over https, with or without a port", async () => {
     const beforeSend = await beforeSendOfTheApp();
     const sent = beforeSend({
       event: "zmanim_viewed",
@@ -81,7 +81,7 @@ describe("les adresses de l'app envoyées à PostHog", () => {
     expect(sent?.properties.$initial_current_url).toBe("app://ios/");
   });
 
-  it("laissent intacte une adresse qui n'est pas celle de la webview", async () => {
+  it("leave an address that is not the webview's untouched", async () => {
     const beforeSend = await beforeSendOfTheApp();
     const sent = beforeSend({
       event: "share_opened",

@@ -84,7 +84,7 @@ const subtitle = computed(() =>
       >
         {{ title }}
       </span>
-      <span class="mt-1 line-clamp-2 block text-sm leading-relaxed text-text-secondary">
+      <span class="mt-1 line-clamp-2 text-sm leading-relaxed text-text-secondary">
         {{ excerpt }}
       </span>
       <span class="mt-3 flex flex-wrap items-center justify-between gap-2 text-sm">
@@ -105,12 +105,6 @@ const subtitle = computed(() =>
 
     <!-- Déjà lue : une ligne -->
     <span v-else class="flex items-center gap-3">
-      <AppIcon
-        :name="openIncident ? 'alert-triangle' : openPoll ? 'list' : 'bell'"
-        :size="20"
-        class="shrink-0"
-        :class="openIncident ? 'text-amber-600 dark:text-amber-400' : 'text-primary'"
-      />
       <span class="min-w-0">
         <span
           class="block font-medium leading-snug text-text-primary"

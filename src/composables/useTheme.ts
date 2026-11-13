@@ -1,6 +1,8 @@
 import { computed, ref, watchEffect } from "vue";
 import { createAccountPreference } from "./createAccountPreference";
 import { activeHolidayTheme } from "./useHolidayTheme";
+import { isDark } from "./useColorScheme";
+import { isContrastMore } from "./useContrast";
 
 /**
  * Les couleurs d'un thème, qu'il vienne d'un thème choisi ou d'une fête.
@@ -38,26 +40,27 @@ export interface ThemeOption extends ThemeColors {
 }
 
 /**
- * Les couleurs de la palette du logo : l'orange et le bleu, chacun avec sa
- * version claire.
+ * The colors of the logo's palette: orange and blue, each with its light
+ * version.
  *
- * L'orange est clair : le blanc ne s'y lit pas (2:1) et il ne s'écrit pas
- * sur le fond. Il sert donc tel quel de fond plein, avec un brun dessus
- * (`orangeOn`), et le texte orange prend la même teinte, soutenue juste assez
- * pour se lire sur le fond et sur une carte (`orangeInk`). Le bleu du logo
- * (#539EE2) est pris soutenu une fois pour toutes (#328CDC), assez pour
- * porter le blanc et se lire en encre.
+ * The solid orange is a pastel of the logo's family (`orange`, #EB9F4F), and
+ * white is written on it (`orangeOn`). This is a deliberate exception to the
+ * readability rule: white reads there on large text, not at the WCAG AA level
+ * on small labels; the higher contrast mode (useContrast) is there for whoever
+ * needs it. Orange text takes the deeper ink (`orangeInk`), readable on the
+ * background and on a card. The logo's blue (#539EE2) is taken deepened once
+ * and for all (#328CDC), enough to carry white and to read as ink.
  */
 const PALETTE = {
-  orange: "#FEA547",
+  orange: "#EB9F4F",
   orangeSoft: "#FFD09E",
   orangeInk: "#D46D01",
-  orangeOn: "#3B2412",
+  orangeOn: "#FFFFFF",
   blue: "#328CDC",
   blueSoft: "#A9CCEB",
 } as const;
 
-/** L'orange en couleur secondaire, pour les thèmes bleu et vert. */
+/** Orange as the secondary color, for the blue and green themes. */
 const ORANGE_SECONDARY = {
   secondary: PALETTE.orangeInk,
   secondaryBrand: PALETTE.orange,
@@ -65,13 +68,15 @@ const ORANGE_SECONDARY = {
 } as const;
 
 /**
- * Les trois thèmes, dans l'ordre où ils s'affichent. Le premier est celui
- * d'origine, « sunset » : l'orange, le bleu en secondaire. Le bleu et le vert
- * restent au choix, avec l'orange en secondaire.
+ * The three themes, in display order. The first is the original one,
+ * "sunset": orange, with blue as secondary. Blue and green remain available,
+ * with orange as secondary.
  *
- * Essais écartés pour l'orange : le vermillon d'origine (#DE4F17), qui tirait
- * au rouge, et l'orange du logo soutenu pour le blanc (#D96507), qui tirait au
- * brun. Tenu par src/__tests__/themeColors.test.ts.
+ * Rejected attempts for the orange: the original vermilion (#DE4F17), which
+ * leaned red; the logo's orange deepened for white (#D96507), which leaned
+ * brown; brighter oranges between the two (#E65D00); the light logo orange
+ * with brown text (#FEA547), which made the app dull. Held by
+ * src/__tests__/themeColors.test.ts.
  */
 export const THEME_OPTIONS: ThemeOption[] = [
   {
@@ -117,15 +122,87 @@ export function resolveThemeColors(theme: ThemeColors): Required<ThemeColors> {
   };
 }
 
+/** WCAG relative luminance of a #rrggbb color. */
+function luminance(hex: string): number {
+  const channel = (i: number) => {
+    const c = parseInt(hex.slice(i, i + 2), 16) / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  };
+  return 0.2126 * channel(1) + 0.7152 * channel(3) + 0.0722 * channel(5);
+}
+
+/** WCAG contrast ratio between two #rrggbb colors. */
+export function contrastRatio(a: string, b: string): number {
+  const [x, y] = [luminance(a), luminance(b)].sort((p, q) => q - p);
+  return (x + 0.05) / (y + 0.05);
+}
+
+/** A color mixed with another, `amount` being the share of the other. */
+function mixWith(hex: string, other: string, amount: number): string {
+  const channel = (h: string, i: number) => parseInt(h.slice(i, i + 2), 16);
+  return `#${[1, 3, 5]
+    .map((i) => Math.round(channel(hex, i) * (1 - amount) + channel(other, i) * amount))
+    .map((c) => c.toString(16).padStart(2, "0"))
+    .join("")}`.toUpperCase();
+}
+
+/** The WCAG AA level for regular-size text. */
+export const AA_TEXT = 4.5;
+/** The dark text of the higher contrast mode on a light solid fill. */
+const DARK_ON_BRAND = "#3B2412";
+const LIGHT_BACKGROUND = "#FFF9F3";
+/** The dark surface (a card), lighter than the dark background: the harder of the two. */
+const DARK_SURFACE = "#1F2937";
+
+/** Moves a color toward `toward` until it reaches `target` against `against`. */
+function pushUntil(hex: string, toward: string, against: string, target: number): string {
+  let color = hex;
+  for (let amount = 0.04; contrastRatio(color, against) < target && amount <= 1; amount += 0.04) {
+    color = mixWith(hex, toward, amount);
+  }
+  return color;
+}
+
+/**
+ * The colors of the higher contrast mode (see useContrast): every role at the
+ * WCAG AA level. On the solid fill, the more readable of white and the dark
+ * text, and if neither reaches 4.5:1, the fill deepens under white. The inks
+ * deepen on the light background, and lighten on the dark one.
+ */
+export function strengthenThemeColors(
+  colors: Required<ThemeColors>,
+  dark: boolean,
+): Required<ThemeColors> {
+  const onBrand =
+    contrastRatio(colors.brand, "#FFFFFF") >= contrastRatio(colors.brand, DARK_ON_BRAND)
+      ? "#FFFFFF"
+      : DARK_ON_BRAND;
+  const solid =
+    contrastRatio(colors.brand, onBrand) >= AA_TEXT
+      ? { brand: colors.brand, onBrand }
+      : { brand: pushUntil(colors.brand, "#000000", "#FFFFFF", AA_TEXT), onBrand: "#FFFFFF" };
+  const ink = (hex: string) =>
+    dark
+      ? pushUntil(hex, "#FFFFFF", DARK_SURFACE, AA_TEXT)
+      : pushUntil(hex, "#000000", LIGHT_BACKGROUND, AA_TEXT);
+  return {
+    ...colors,
+    ...solid,
+    primary: ink(colors.primary),
+    secondary: ink(colors.secondary),
+  };
+}
+
 const DEFAULT_THEME = THEME_OPTIONS[0];
 
 function themeById(id: string): ThemeOption {
   return THEME_OPTIONS.find((t) => t.id === id) ?? DEFAULT_THEME;
 }
 
-function applyThemeColors(theme: ThemeColors) {
+function applyThemeColors(theme: ThemeColors, contrastMore: boolean, dark: boolean) {
   if (typeof document === "undefined") return;
-  const colors = resolveThemeColors(theme);
+  const resolved = resolveThemeColors(theme);
+  const colors = contrastMore ? strengthenThemeColors(resolved, dark) : resolved;
   const style = document.documentElement.style;
   style.setProperty("--color-primary", colors.primary);
   style.setProperty("--color-secondary", colors.secondary);
@@ -168,10 +245,14 @@ const appliedTheme = computed<ThemeColors>(() => activeHolidayTheme.value ?? cur
 /** Les couleurs d'un thème survolé dans les réglages, le temps du survol. */
 const previewed = ref<ThemeColors | null>(null);
 
-// Les couleurs à l'écran, dans l'ordre : l'aperçu survolé, puis le thème de
-// la fête, puis le thème choisi. En synchrone : le thème du compte, servi par
-// sa copie locale, tient dès le premier rendu (voir createAccountPreference).
-watchEffect(() => applyThemeColors(previewed.value ?? appliedTheme.value), { flush: "sync" });
+// The colors on screen, in order: the hovered preview, then the holiday's
+// theme, then the chosen theme, strengthened in the higher contrast mode.
+// Synchronous: the account's theme, served by its local copy, holds from the
+// first render (see createAccountPreference).
+watchEffect(
+  () => applyThemeColors(previewed.value ?? appliedTheme.value, isContrastMore.value, isDark.value),
+  { flush: "sync" },
+);
 
 export function useTheme() {
   function previewTheme(themeId: string) {

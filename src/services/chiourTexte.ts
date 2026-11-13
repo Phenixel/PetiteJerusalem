@@ -79,22 +79,29 @@ export function texteTitle(entry: TextStudyJsonEntry, locale: string): string {
 /**
  * Ce que désigne le chapitre d'un texte, pour l'écrire sans charger le texte :
  * l'introduction d'une porte, le sujet du Pélé Yoets, la montée d'une
- * paracha, sinon un chapitre. La vue le traduit (chiourim.texte.*).
+ * paracha, le siman d'un livre de halakha, sinon un chapitre. La vue le
+ * traduit (chiourim.texte.*).
  */
-export type ChapitreKind = "introduction" | "topic" | "aliya" | "chapter";
+export type ChapitreKind = "introduction" | "topic" | "aliya" | "siman" | "chapter";
 
 export function chapitreKind(entry: TextStudyJsonEntry, chapitre: number): ChapitreKind {
   if (corpusOf(entry) === "moussar" && chapitre === 0) return "introduction";
   if (isPeleYoets(entry)) return "topic";
+  if (corpusOf(entry) === "halakha") return "siman";
   if (!isMultiSection(entry) && isParasha(entry)) return "aliya";
   return "chapter";
 }
 
-/** Peut-on préciser un chapitre de ce texte ? Pas d'une tefila, ni d'un psaume seul. */
+/**
+ * Peut-on préciser un chapitre de ce texte ? Pas d'une tefila, ni d'un psaume
+ * seul, ni d'une loi de halakha d'un seul siman (Hilkhot Melamdim) : le texte
+ * est ce siman.
+ */
 export function hasChapitres(entry: TextStudyJsonEntry): boolean {
   const corpus = corpusOf(entry);
   if (corpus === "tehilim" || corpus === "sidour" || corpus === "brahot" || corpus === "moadim")
     return false;
+  if (corpus === "halakha" && !isMultiSection(entry)) return false;
   return true;
 }
 

@@ -48,6 +48,8 @@ describe("prune-native-bundle", () => {
     write(root, "llms.txt", "# Petite Jérusalem");
     write(root, "llms-full.txt", "# Petite Jérusalem");
     write(root, "texts/talmud/berakhot.json", "{}");
+    write(root, "texts/traductions/index.json", "{}");
+    write(root, "texts/traductions/en/talmud/berakhot.json", "{}");
     write(root, "texts/tehilim.json", "{}");
     write(root, "texts/tefila/chaharit.json", "{}");
     write(root, "texts/tefila/minha.json", "{}");
@@ -55,6 +57,7 @@ describe("prune-native-bundle", () => {
     write(root, "texts/tefila/havdala.json", "{}");
     write(root, "texts/tefila/slihot.json", "{}");
     write(root, "assets/app.js", "//");
+    write(root, "videos/nouveautes-4.0-fr.mp4", "mp4");
     execFileSync("node", [SCRIPT, root]);
   });
 
@@ -83,8 +86,15 @@ describe("prune-native-bundle", () => {
 
   it("retire les corpus téléchargeables mais garde le reste", () => {
     expect(existsSync(join(root, "texts/talmud"))).toBe(false);
+    // Les traductions se lisent en ligne : le Talmud anglais pèse plus que
+    // tout l'hébreu (docs/traductions.md).
+    expect(existsSync(join(root, "texts/traductions"))).toBe(false);
     expect(existsSync(join(root, "texts/tehilim.json"))).toBe(true);
     expect(existsSync(join(root, "assets/app.js"))).toBe(true);
+  });
+
+  it("leaves the what's new videos to the site, which streams them", () => {
+    expect(existsSync(join(root, "videos"))).toBe(false);
   });
 
   it("garde le Sidour, et lui seul parmi les tefilot", () => {

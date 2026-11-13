@@ -10,13 +10,19 @@
 // seulement de loin en loin (voir useShelfIntro) : au quotidien, on vient
 // ouvrir un livre, pas regarder les livres arriver.
 
-import { reactive, watch } from "vue";
+import { computed, reactive, watch } from "vue";
 import { shouldPlayShelfIntro } from "../composables/useShelfIntro";
 import { prefersLessMotion } from "../composables/useMotion";
+import { bindingOf } from "../config/bindings";
 
 export interface ShelfBook {
   /** Identifiant de corpus (tehilim, michna, talmud, tanakh, moussar, sidour…). */
   corpus: string;
+  /**
+   * What tells two volumes apart when they share a corpus (two treatises of
+   * the Talmud pinned to the home page); the corpus otherwise.
+   */
+  id?: string;
   /** Destination du lien. */
   to: string;
   /** Titre écrit sur la couverture. */
@@ -66,140 +72,188 @@ watch(
   },
 );
 
+/**
+ * Un titre en hébreu ne prend pas d'interlettrage. WebKit (Safari, l'app
+ * iPhone) pose alors chaque lettre d'un texte SVG l'une après l'autre, de
+ * gauche à droite, et l'hébreu se lit à l'envers ; et l'hébreu ne s'espace
+ * pas, de toute façon.
+ */
+const HEBREW = /[\u0590-\u05ff]/;
+
 const emit = defineEmits<{ (e: "open", corpus: string): void }>();
 
-// Reliures : une teinte chaude par volume, toutes de la même famille pour
-// rester sobres (un vrai jeu de volumes, pas un arc-en-ciel).
-const BINDINGS: Record<string, string> = {
-  tehilim: "#96604a",
-  michna: "#7d6a4c",
-  talmud: "#6d5743",
-  tanakh: "#84483f",
-  // Le moussar, cinquième volume de l'étude : un bronze plus doré que la
-  // Michna, pour ne pas se confondre avec ses voisins de planche.
-  moussar: "#86622f",
-};
+const idOf = (book: ShelfBook): string => book.id ?? book.corpus;
 
-function bindingOf(corpus: string): string {
-  return BINDINGS[corpus] ?? "#7d6a4c";
+/**
+ * The title on the cover, on one line while it fits (the library's sections:
+ * « Tehilim », « Halakha »), otherwise over two or three (a text pinned to the
+ * home page: « Chema al Hamita »), smaller when a word alone is too long.
+ */
+const LINE_CHARS = 10;
+const MAX_LINES = 3;
+const TITLE_SIZE = 13.5;
+function coverLines(label: string): { lines: string[]; size: number } {
+  const lines: string[] = [];
+  for (const word of label.split(/\s+/).filter(Boolean)) {
+    const last = lines[lines.length - 1];
+    if (last !== undefined && last.length + 1 + word.length <= LINE_CHARS) {
+      lines[lines.length - 1] = `${last} ${word}`;
+    } else lines.push(word);
+  }
+  const kept =
+    lines.length > MAX_LINES
+      ? [...lines.slice(0, MAX_LINES - 1), lines.slice(MAX_LINES - 1).join(" ")]
+      : lines;
+  const longest = Math.max(1, ...kept.map((line) => line.length));
+  const size = longest > LINE_CHARS ? (TITLE_SIZE * LINE_CHARS) / longest : TITLE_SIZE;
+  return { lines: kept.length ? kept : [label], size };
 }
 
 // Tranché une fois pour toute la page.
 const playIntro = shouldPlayShelfIntro();
+
+/**
+ * Trois livres par rayon, chacun sur sa planche : tous de la même taille,
+ * qu'il y en ait trois ou un seul sur la dernière.
+ */
+const PER_ROW = 3;
+const rows = computed(() => {
+  const out: { book: ShelfBook; index: number }[][] = [];
+  props.books.forEach((book, index) => {
+    if (index % PER_ROW === 0) out.push([]);
+    out[out.length - 1].push({ book, index });
+  });
+  return out;
+});
 </script>
 
 <template>
-  <div class="shelf-wrap" :class="{ 'shelf-intro': playIntro }">
-    <div class="shelf-books" role="list">
-      <RouterLink
-        v-for="(book, index) in books"
-        :key="book.corpus"
-        :to="book.to"
-        class="book"
-        :class="{ 'book-landed': landed.has(book.corpus) }"
-        :style="{ '--i': startIndex + index, '--binding': bindingOf(book.corpus) }"
-        role="listitem"
-        :aria-label="book.ariaLabel ?? book.label"
-        @click="emit('open', book.corpus)"
-      >
-        <span class="book-rise">
-          <span class="book-lift">
-            <svg viewBox="0 0 96 140" fill="none" aria-hidden="true" class="book-svg">
-              <defs>
-                <linearGradient :id="`book-shine-${book.corpus}`" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0" stop-color="#fff" stop-opacity="0.09" />
-                  <stop offset="0.45" stop-color="#fff" stop-opacity="0.02" />
-                  <stop offset="1" stop-color="#000" stop-opacity="0.06" />
-                </linearGradient>
-              </defs>
-              <!-- tranche des pages, ivoire, qui dépasse à droite -->
-              <rect x="84" y="6" width="9" height="128" rx="2" fill="#efe5d0" />
-              <path d="M87 10v120M90 10v120" stroke="#d6c8ab" stroke-width="0.8" />
-              <!-- couverture -->
-              <rect x="3" y="3" width="84" height="134" rx="4" fill="var(--binding)" />
-              <!-- pli de la reliure, côté dos -->
-              <rect x="3" y="3" width="7" height="134" rx="3.5" fill="#000" opacity="0.16" />
-              <path d="M12 5v130" stroke="#fff" opacity="0.1" stroke-width="1" />
-              <!-- lumière douce sur la couverture -->
-              <rect
-                x="3"
-                y="3"
-                width="84"
-                height="134"
-                rx="4"
-                :fill="`url(#book-shine-${book.corpus})`"
-              />
-              <!-- cadre estampé, double filet crème -->
-              <rect
-                class="frame"
-                x="18"
-                y="14"
-                width="62"
-                height="112"
-                rx="1.5"
-                stroke="#ecdfc4"
-                stroke-width="1.4"
-                opacity="0.55"
-              />
-              <rect
-                class="frame frame-inner"
-                x="22.5"
-                y="18.5"
-                width="53"
-                height="103"
-                rx="1"
-                stroke="#ecdfc4"
-                stroke-width="0.7"
-                opacity="0.3"
-              />
-              <!-- titre horizontal, en serif, comme doré à chaud -->
-              <text
-                class="book-title"
-                x="49"
-                y="62"
-                text-anchor="middle"
-                dominant-baseline="central"
-              >
-                {{ book.label }}
-              </text>
-              <!-- fine ornementation sous le titre -->
-              <g class="ornament" stroke="#ecdfc4" opacity="0.5">
-                <path d="M35 80h11M52 80h11" stroke-width="1" />
-                <path d="M49 77.2 51.6 80 49 82.8 46.4 80Z" fill="#ecdfc4" stroke="none" />
-              </g>
-            </svg>
-            <!-- dans l'angle de la couverture : le livre est sur le téléphone -->
-            <Transition name="book-badge">
-              <span
-                v-if="hasBadge(book)"
-                class="book-badge"
-                :class="{ 'book-badge-landed': landed.has(book.corpus) }"
-                aria-hidden="true"
-              >
-                <svg viewBox="0 0 20 20" class="book-badge-svg">
-                  <path v-if="isDone(book)" class="book-check" d="M6 10.4l2.7 2.7L14.2 7.6" />
-                  <template v-else>
-                    <circle class="book-ring-track" cx="10" cy="10" r="5.6" />
-                    <circle
-                      class="book-ring"
-                      cx="10"
-                      cy="10"
-                      r="5.6"
-                      :stroke-dasharray="ringDash(book)"
-                      transform="rotate(-90 10 10)"
-                    />
-                  </template>
-                </svg>
-              </span>
-            </Transition>
-            <!-- ombre portée sur la planche -->
-            <span class="book-shadow" aria-hidden="true"></span>
+  <div class="shelf-wrap" :class="{ 'shelf-intro': playIntro }" role="list">
+    <div v-for="(row, r) in rows" :key="r" class="shelf-row" role="none">
+      <div class="shelf-books" role="none">
+        <RouterLink
+          v-for="{ book, index } in row"
+          :key="idOf(book)"
+          :to="book.to"
+          class="book"
+          :class="{ 'book-landed': landed.has(book.corpus) }"
+          :style="{ '--i': startIndex + index, '--binding': bindingOf(book.corpus) }"
+          role="listitem"
+          :aria-label="book.ariaLabel ?? book.label"
+          @click="emit('open', book.corpus)"
+        >
+          <span class="book-rise">
+            <span class="book-lift">
+              <svg viewBox="0 0 96 140" fill="none" aria-hidden="true" class="book-svg">
+                <defs>
+                  <linearGradient :id="`book-shine-${idOf(book)}`" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0" stop-color="#fff" stop-opacity="0.09" />
+                    <stop offset="0.45" stop-color="#fff" stop-opacity="0.02" />
+                    <stop offset="1" stop-color="#000" stop-opacity="0.06" />
+                  </linearGradient>
+                </defs>
+                <!-- tranche des pages, ivoire, qui dépasse à droite -->
+                <rect x="84" y="6" width="9" height="128" rx="2" fill="#efe5d0" />
+                <path d="M87 10v120M90 10v120" stroke="#d6c8ab" stroke-width="0.8" />
+                <!-- couverture -->
+                <rect x="3" y="3" width="84" height="134" rx="4" fill="var(--binding)" />
+                <!-- pli de la reliure, côté dos -->
+                <rect x="3" y="3" width="7" height="134" rx="3.5" fill="#000" opacity="0.16" />
+                <path d="M12 5v130" stroke="#fff" opacity="0.1" stroke-width="1" />
+                <!-- lumière douce sur la couverture -->
+                <rect
+                  x="3"
+                  y="3"
+                  width="84"
+                  height="134"
+                  rx="4"
+                  :fill="`url(#book-shine-${idOf(book)})`"
+                />
+                <!-- cadre estampé, double filet crème -->
+                <rect
+                  class="frame"
+                  x="18"
+                  y="14"
+                  width="62"
+                  height="112"
+                  rx="1.5"
+                  stroke="#ecdfc4"
+                  stroke-width="1.4"
+                  opacity="0.55"
+                />
+                <rect
+                  class="frame frame-inner"
+                  x="22.5"
+                  y="18.5"
+                  width="53"
+                  height="103"
+                  rx="1"
+                  stroke="#ecdfc4"
+                  stroke-width="0.7"
+                  opacity="0.3"
+                />
+                <!-- titre horizontal, en serif, comme doré à chaud -->
+                <text
+                  class="book-title"
+                  :class="{ 'book-title-spaced': !HEBREW.test(book.label) }"
+                  x="49"
+                  y="62"
+                  text-anchor="middle"
+                  dominant-baseline="central"
+                  :style="{ fontSize: `${coverLines(book.label).size}px` }"
+                >
+                  <tspan
+                    v-for="(line, l) in coverLines(book.label).lines"
+                    :key="l"
+                    x="49"
+                    :dy="
+                      l === 0
+                        ? `${(-(coverLines(book.label).lines.length - 1) * 1.15) / 2}em`
+                        : '1.15em'
+                    "
+                  >
+                    {{ line }}
+                  </tspan>
+                </text>
+                <!-- fine ornementation sous le titre -->
+                <g class="ornament" stroke="#ecdfc4" opacity="0.5">
+                  <path d="M35 80h11M52 80h11" stroke-width="1" />
+                  <path d="M49 77.2 51.6 80 49 82.8 46.4 80Z" fill="#ecdfc4" stroke="none" />
+                </g>
+              </svg>
+              <!-- dans l'angle de la couverture : le livre est sur le téléphone -->
+              <Transition name="book-badge">
+                <span
+                  v-if="hasBadge(book)"
+                  class="book-badge"
+                  :class="{ 'book-badge-landed': landed.has(book.corpus) }"
+                  aria-hidden="true"
+                >
+                  <svg viewBox="0 0 20 20" class="book-badge-svg">
+                    <path v-if="isDone(book)" class="book-check" d="M6 10.4l2.7 2.7L14.2 7.6" />
+                    <template v-else>
+                      <circle class="book-ring-track" cx="10" cy="10" r="5.6" />
+                      <circle
+                        class="book-ring"
+                        cx="10"
+                        cy="10"
+                        r="5.6"
+                        :stroke-dasharray="ringDash(book)"
+                        transform="rotate(-90 10 10)"
+                      />
+                    </template>
+                  </svg>
+                </span>
+              </Transition>
+              <!-- ombre portée sur la planche -->
+              <span class="book-shadow" aria-hidden="true"></span>
+            </span>
           </span>
-        </span>
-      </RouterLink>
+        </RouterLink>
+      </div>
+      <!-- la planche de l'étagère, en bois clair -->
+      <div class="shelf-board" aria-hidden="true"></div>
     </div>
-    <!-- la planche de l'étagère, en bois clair -->
-    <div class="shelf-board" aria-hidden="true"></div>
   </div>
 </template>
 
@@ -209,21 +263,29 @@ const playIntro = shouldPlayShelfIntro();
   margin-inline: auto;
 }
 
+/* Un rayon sous l'autre, chacun avec sa planche. */
+.shelf-row + .shelf-row {
+  margin-top: 1.75rem;
+}
+
 .shelf-books {
+  --shelf-gap: 0.9rem;
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  gap: 0.55rem;
+  gap: var(--shelf-gap);
 }
 
 @media (min-width: 640px) {
   .shelf-books {
-    gap: 1rem;
+    --shelf-gap: 1.5rem;
   }
 }
 
+/* Le tiers du rayon, gouttières comprises, quel que soit le nombre de
+   livres posés dessus : tous ont la même taille. */
 .book {
-  flex: 1 1 0;
+  flex: 0 0 calc((100% - 2 * var(--shelf-gap)) / 3);
   max-width: 8rem;
   min-width: 0;
   display: block;
@@ -272,6 +334,10 @@ const playIntro = shouldPlayShelfIntro();
   font-size: 13.5px;
   font-weight: 600;
   fill: #f3ead6;
+}
+
+/* L'interlettrage, pour un titre en lettres latines seulement (voir HEBREW). */
+.book-title-spaced {
   letter-spacing: 0.04em;
 }
 

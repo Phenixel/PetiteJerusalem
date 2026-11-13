@@ -33,7 +33,7 @@ import PlayerSeek from "./PlayerSeek.vue";
 import PlayerSpeed from "./PlayerSpeed.vue";
 import QueueRow from "./QueueRow.vue";
 import ShareModal from "../ShareModal.vue";
-import { SITE_URL } from "../../config/site";
+import { APP_SITE_URL } from "../../config/environment";
 import { FULL_CLIP, SHEET_EASING, barClip, motionAllowed } from "./sheetMotion";
 
 /** Le plein écran a fini de se réduire en barre : GlobalAudioPlayer peut le démonter. */
@@ -306,7 +306,7 @@ const currentLine = computed(() => {
 
 const showShare = ref(false);
 const shareUrl = computed(() =>
-  track.value?.slug ? `${SITE_URL}/chiourim/${track.value.slug}` : "",
+  track.value?.slug ? `${APP_SITE_URL}/chiourim/${track.value.slug}` : "",
 );
 </script>
 
@@ -451,7 +451,6 @@ const shareUrl = computed(() =>
               class="flex w-full items-center gap-4 text-start"
               @click="openTexte"
             >
-              <AppIcon name="book-open" :size="22" class="shrink-0 opacity-80" />
               <span class="min-w-0 flex-1">
                 <span class="block text-xs uppercase tracking-wider opacity-70">{{
                   t("chiourim.texte.studied")
@@ -548,7 +547,7 @@ const shareUrl = computed(() =>
                 class="w-full border-t border-white/10 px-5 py-3 text-start text-sm font-semibold opacity-80 hover:opacity-100"
                 @click="showWholeQueue = true"
               >
-                {{ t("chiourim.player.wholeQueue", { count: following.length }) }}
+                {{ t("chiourim.player.wholeQueue") }}
               </button>
             </template>
           </section>

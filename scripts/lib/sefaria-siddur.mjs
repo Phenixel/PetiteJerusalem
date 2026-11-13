@@ -34,6 +34,14 @@ export const MACHZOR_ROSH_HASHANA_URL =
 export const MACHZOR_YOM_KIPPUR_URL =
   "https://storage.googleapis.com/sefaria-export/json/Liturgy/High%20Holidays/Machzor%20Yom%20Kippur%20Edot%20HaMizrach/Hebrew/merged.json";
 
+/**
+ * The Tikkun HaKlali, a book of its own in the export (Other Liturgy Works):
+ * the siddur does not carry it. Same tags as the siddur (<b>, <small>, <br>),
+ * read by build-brahot.mjs.
+ */
+export const TIKKUN_HAKLALI_URL =
+  "https://storage.googleapis.com/sefaria-export/json/Liturgy/Other%20Liturgy%20Works/Tikkun%20HaKlali/Hebrew/merged.json";
+
 /** Un livre de l'export, tel qu'il le sert : ses sections et leurs segments. */
 export async function fetchMerged(url) {
   const res = await fetch(url);

@@ -8,7 +8,7 @@
  * sources du domaine public.
  */
 
-import { writeFileSync, readFileSync, mkdirSync } from 'fs';
+import { writeFileSync, readFileSync, mkdirSync, rmSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -17,10 +17,15 @@ const ROOT = resolve(__dirname, '..');
 const OUT = resolve(ROOT, 'public/texts');
 const GCS = 'https://storage.googleapis.com/sefaria-export/json';
 
-// `--only=tanakh` (ou tehilim/mishna/talmud/rashi/moussar) pour ne régénérer
-// qu'un corpus. `tefila` n'est jamais du lot par défaut : ses fichiers sont
-// mis en forme à la main après téléchargement, il faut le demander nommément
-// (voir plus bas).
+// Le script redonne les fichiers livrés à l'identique : un fichier qui change
+// après un passage, c'est que Sefaria a corrigé son texte depuis. Relire le
+// diff avant de le valider, puis relancer `node scripts/texts-manifest.mjs`,
+// sans quoi les appareils garderaient l'ancienne version.
+//
+// `--only=tanakh` (ou tehilim/mishna/talmud/rashi/meforshim/commentaires/
+// moussar/halakha) pour ne régénérer qu'un corpus. `tefila` n'est jamais du lot par
+// défaut : ses fichiers sont mis en forme à la main après téléchargement, il
+// faut le demander nommément (voir plus bas).
 //
 // Le moussar (`--only=moussar`, et du lot par défaut : rien n'y est retouché
 // à la main) écrit un fichier par entrée du catalogue, public/texts/moussar/
@@ -59,7 +64,11 @@ function cleanTextArray(arr) {
   if (Array.isArray(arr)) {
     return arr.map(item => {
       if (typeof item === 'string') return stripHtml(item);
-      if (Array.isArray(item)) return item.map(s => stripHtml(s || ''));
+      // Un niveau de plus pour le Talmud de Jérusalem (chapitre, halakha,
+      // segment) : Shekalim, le seul traité qui en vienne.
+      if (Array.isArray(item)) {
+        return item.map(s => (Array.isArray(s) ? s.map(x => stripHtml(x || '')) : stripHtml(s || '')));
+      }
       return '';
     }).filter(item => item !== '' && !(Array.isArray(item) && item.every(s => !s)));
   }
@@ -88,44 +97,18 @@ async function withRetry(fn, label, retries = 3) {
 
 const textStudies = JSON.parse(readFileSync(`${ROOT}/src/datas/textStudies.json`, 'utf8')).textStudies;
 
-// ---------- Build GCS lookup from books.json ----------
-
-console.log('Loading books index from Sefaria-Export...');
-const booksIndex = await withRetry(
-  () => fetchJson('https://raw.githubusercontent.com/Sefaria/Sefaria-Export/master/books.json'),
-  'books.json'
-);
-
-// Build lookup: title -> { he_url, en_url }
-const lookup = {};
-for (const b of booksIndex.books) {
-  if (!b.json_url || !b.json_url.includes('merged.json')) continue;
-  const title = b.title;
-  if (!lookup[title]) lookup[title] = {};
-  if (b.language === 'Hebrew') lookup[title].he_url = b.json_url;
-  if (b.language === 'English') lookup[title].en_url = b.json_url;
-}
-
-
 // ---------- TEHILIM (150 Psalms) ----------
 
 if (shouldRun('tehilim')) {
 console.log('\n=== Tehilim (Psalms) ===');
 try {
-  const [heData, enData] = await Promise.all([
-    withRetry(() => fetchJson(`${GCS}/Tanakh/Torah/../Writings/Psalms/Hebrew/merged.json`.replace('Torah/../', '')), 'Psalms/He'),
-    withRetry(() => fetchJson(`${GCS}/Tanakh/Writings/Psalms/English/merged.json`), 'Psalms/En'),
-  ]);
+  const heData = await withRetry(() => fetchJson(`${GCS}/Tanakh/Writings/Psalms/Hebrew/merged.json`), 'Psalms/He');
 
   const heText = heData.text; // Array[150][verses]
-  const enText = enData.text;
   const tehilim = {};
   for (let i = 0; i < 150; i++) {
     const psalmNum = i + 1;
-    tehilim[psalmNum] = {
-      he: cleanTextArray(heText[i] || []),
-      en: cleanTextArray(enText[i] || []),
-    };
+    tehilim[psalmNum] = { he: cleanTextArray(heText[i] || []) };
   }
   writeFileSync(`${OUT}/tehilim.json`, JSON.stringify(tehilim), 'utf8');
   console.log('  ✓ tehilim.json');
@@ -156,14 +139,26 @@ const mishnaSederMap = {
   'Zevachim': 'Seder Kodashim', 'Menachot': 'Seder Kodashim', 'Chullin': 'Seder Kodashim',
   'Bekhorot': 'Seder Kodashim', 'Arakhin': 'Seder Kodashim', 'Temurah': 'Seder Kodashim',
   'Keritot': 'Seder Kodashim', 'Meilah': 'Seder Kodashim', 'Tamid': 'Seder Kodashim',
-  'Niddah': 'Seder Tahorot',
+  'Middot': 'Seder Kodashim', 'Kinnim': 'Seder Kodashim',
+  'Keilim': 'Seder Tahorot', 'Oholot': 'Seder Tahorot', 'Negaim': 'Seder Tahorot',
+  'Parah': 'Seder Tahorot', 'Toharot': 'Seder Tahorot', 'Mikvaot': 'Seder Tahorot',
+  'Niddah': 'Seder Tahorot', 'Makhshirin': 'Seder Tahorot', 'Zavim': 'Seder Tahorot',
+  'Tevul Yom': 'Seder Tahorot', 'Yadayim': 'Seder Tahorot', 'Oktzin': 'Seder Tahorot',
+};
+
+// Les traités que l'export nomme autrement que le catalogue : leur dossier.
+const mishnaGcsNames = {
+  'Avot': 'Pirkei Avot',
+  'Taanit': "Mishnah Ta'anit",
+  'Keilim': 'Mishnah Kelim',
+  'Toharot': 'Mishnah Tahorot',
 };
 
 // Talmud seder mapping
 const talmudSederMap = {
   'Berakhot': 'Seder Zeraim',
   'Shabbat': 'Seder Moed', 'Eruvin': 'Seder Moed', 'Pesachim': 'Seder Moed',
-  'Shekalim': 'Seder Moed', 'Yoma': 'Seder Moed', 'Sukkah': 'Seder Moed',
+  'Yoma': 'Seder Moed', 'Sukkah': 'Seder Moed',
   'Beitzah': 'Seder Moed', 'Rosh Hashanah': 'Seder Moed', 'Taanit': 'Seder Moed',
   'Megillah': 'Seder Moed', 'Moed Katan': 'Seder Moed', 'Chagigah': 'Seder Moed',
   'Yevamot': 'Seder Nashim', 'Ketubot': 'Seder Nashim', 'Nedarim': 'Seder Nashim',
@@ -178,10 +173,20 @@ const talmudSederMap = {
   'Niddah': 'Seder Tahorot',
 };
 
+// Les traités du Chass qui n'ont pas de guemara de Babylone se lisent comme
+// les éditions les impriment : le Talmud de Jérusalem pour Shekalim, la
+// Michna seule pour Middot et Kinnim.
+const talmudGcsPaths = {
+  'Shekalim': 'Talmud/Yerushalmi/Seder Moed/Jerusalem Talmud Shekalim',
+  'Middot': 'Mishnah/Seder Kodashim/Mishnah Middot',
+  'Kinnim': 'Mishnah/Seder Kodashim/Mishnah Kinnim',
+};
+
 // Extract tractate name from link for Mishna
 // link: "https://www.sefaria.org/Mishnah_Berakhot" → "Berakhot"
+// (Avot n'a pas le préfixe : "https://www.sefaria.org/Avot" → "Avot")
 function mishnaNameFromLink(link) {
-  return link.replace('https://www.sefaria.org/Mishnah_', '').replace(/_/g, ' ');
+  return link.replace('https://www.sefaria.org/', '').replace(/^Mishnah_/, '').replace(/_/g, ' ');
 }
 
 // Extract tractate name from link for Talmud
@@ -190,7 +195,10 @@ function talmudNameFromLink(link) {
   return link.replace('https://www.sefaria.org/', '').replace(/_/g, ' ');
 }
 
-async function downloadMishnaOrTalmud(type, entries, sederMap, getNameFn, gcsPrefix, gcsNameFn, outDir) {
+// `gcsPathFn` donne le dossier du traité dans l'export, ou rien s'il n'y est
+// pas rangé. Le fichier écrit ne porte que l'hébreu, { title, he } : la
+// traduction anglaise n'est plus lue par le lecteur, ni livrée.
+async function downloadMishnaOrTalmud(type, entries, getNameFn, gcsPathFn, outDir) {
   const seen = new Set();
   const tasks = [];
   for (const entry of entries) {
@@ -207,26 +215,20 @@ async function downloadMishnaOrTalmud(type, entries, sederMap, getNameFn, gcsPre
   for (let i = 0; i < tasks.length; i += BATCH) {
     const batch = tasks.slice(i, i + BATCH);
     await Promise.all(batch.map(async ({ tractate }) => {
-      const gcsName = gcsNameFn(tractate);
-      const seder = sederMap[tractate];
-      if (!seder) {
+      const gcsPath = gcsPathFn(tractate);
+      if (!gcsPath) {
         console.warn(`  ⚠ No seder for ${tractate}, skipping`);
         return;
       }
-      const heUrl = `${GCS}/${gcsPrefix}/${seder}/${gcsName}/Hebrew/merged.json`;
-      const enUrl = `${GCS}/${gcsPrefix}/${seder}/${gcsName}/English/merged.json`;
+      const heUrl = `${GCS}/${gcsPath}/Hebrew/merged.json`;
       const slug = tractate.toLowerCase().replace(/ /g, '-').replace(/'/g, '');
       const outPath = `${outDir}/${slug}.json`;
 
       try {
-        const [heData, enData] = await Promise.all([
-          withRetry(() => fetchJson(heUrl), `${tractate}/He`),
-          withRetry(() => fetchJson(enUrl), `${tractate}/En`).catch(() => ({ text: [] })),
-        ]);
+        const heData = await withRetry(() => fetchJson(heUrl), `${tractate}/He`);
         const result = {
           title: tractate,
           he: cleanTextArray(heData.text),
-          en: cleanTextArray(enData.text),
         };
         writeFileSync(outPath, JSON.stringify(result), 'utf8');
         console.log(`  ✓ ${tractate} → ${slug}.json`);
@@ -242,10 +244,9 @@ async function downloadMishnaOrTalmud(type, entries, sederMap, getNameFn, gcsPre
 if (shouldRun('mishna')) {
   const mishnaEntries = textStudies.filter(t => t.type === 'Mishna');
   await downloadMishnaOrTalmud(
-    'Mishna', mishnaEntries, mishnaSederMap,
+    'Mishna', mishnaEntries,
     mishnaNameFromLink,
-    'Mishnah',
-    t => `Mishnah ${t}`,
+    t => mishnaSederMap[t] && `Mishnah/${mishnaSederMap[t]}/${mishnaGcsNames[t] ?? `Mishnah ${t}`}`,
     `${OUT}/mishna`
   );
 }
@@ -254,12 +255,191 @@ if (shouldRun('mishna')) {
 if (shouldRun('talmud')) {
   const talmudEntries = textStudies.filter(t => t.type === 'Talmud Bavli');
   await downloadMishnaOrTalmud(
-    'Talmud Bavli', talmudEntries, talmudSederMap,
+    'Talmud Bavli', talmudEntries,
     talmudNameFromLink,
-    'Talmud/Bavli',
-    t => t,
+    t => talmudGcsPaths[t] ?? (talmudSederMap[t] && `Talmud/Bavli/${talmudSederMap[t]}/${t}`),
     `${OUT}/talmud`
   );
+}
+
+// ---------- Rachi et Tossafot sur le Talmud (forme de la page) ----------
+//
+// Le lecteur peut montrer un amoud dans la forme de la page de Vilna : la
+// guemara au centre, Rachi du côté de la reliure, Tossafot de l'autre
+// (TalmudPage.vue). Les deux commentaires vivent à part, un fichier par traité
+// (public/texts/talmud-meforshim/<slug>/<n>.json, vingt amoudim par fichier),
+// qui ne se télécharge qu'à l'ouverture de cette forme : la guemara seule
+// reste légère.
+//
+// Les fichiers sont alignés sur celui de la guemara, amoud par amoud et
+// passage par passage : `rashi[a][p]` est la liste des commentaires du passage
+// p de l'amoud a (index 0 = premier amoud du fichier de guemara ; `from` dit
+// l'index du premier amoud de la tranche). C'est ce qui permet au lecteur de
+// montrer les commentaires d'un passage touché (CommentaryPanel.vue), et à la
+// page du daf de les mettre bout à bout. Le fichier de guemara saute les
+// amoudim vides de Sefaria (cleanTextArray) mais garde tous les passages d'un
+// amoud, vides compris ; on refait donc la même marche sur la guemara de
+// Sefaria pour savoir quel amoud source correspond à chaque index.
+// Chaque commentaire garde son dibbour hamat'hil en gras (<b>…</b>), comme
+// Rachi sur la Torah ; le tiret qui le sépare du commentaire dans la source
+// disparaît avec lui, c'est la graisse qui le dit sur la page.
+//
+// Bava Batra : Rachi s'arrête au 29a, le Rachbam prend sa place, comme dans
+// la page imprimée ; `rashbam` liste les amoudim de la tranche (index dans la
+// tranche) où c'est lui qui occupe la place de Rachi. `--only=meforshim` pour ne régénérer que ce corpus.
+
+/**
+ * « מאימתי קורין וכו' », un tiret, puis le commentaire → « <b>מאימתי קורין
+ * וכו'</b> פירוש… » : le dibbour en gras, le tiret retiré.
+ */
+function meforashComment(raw) {
+  const text = String(raw ?? '')
+    .replace(/<br\s*\/?>/g, ' ')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ').replace(/&thinsp;/g, ' ')
+    .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!text) return '';
+  // Le dibbour est court : un tiret au-delà de 140 signes est dans le commentaire.
+  const m = text.match(/^(.{1,140}?)\s*[\u2013\u2014-]\s+(.+)$/s);
+  return m ? `<b>${m[1].trim()}</b> ${m[2].trim()}` : text;
+}
+
+/** Les commentaires d'un amoud source, passage par passage. */
+function amudComments(amud) {
+  if (!Array.isArray(amud)) return [];
+  return amud.map(passage =>
+    (Array.isArray(passage) ? passage.flat(Infinity) : passage ? [passage] : [])
+      .map(meforashComment)
+      .filter(Boolean));
+}
+
+/** Un amoud sans aucun commentaire. */
+const isEmptyAmud = amud => amud.every(passage => passage.length === 0);
+
+const MEFORSHIM_DIR = `${OUT}/talmud-meforshim`;
+/** Les traités où le Rachbam tient la place de Rachi, ou s'imprime à côté de lui. */
+const RASHBAM_TRACTATES = new Set(['Bava Batra', 'Pesachim']);
+/** Amoudim par fichier : à garder d'accord avec textService (MEFORSHIM_CHUNK). */
+const MEFORSHIM_CHUNK = 20;
+
+if (shouldRun('meforshim')) {
+  mkdirSync(MEFORSHIM_DIR, { recursive: true });
+  // `--tractate=Pesachim` : un seul traité, sans toucher aux autres (leurs
+  // lignes relevées, talmud-layout, tiennent à leurs commentaires mot pour mot).
+  const oneTractate = process.argv.find(a => a.startsWith('--tractate='))?.slice('--tractate='.length);
+  const tractates = [...new Set(
+    textStudies.filter(t => t.type === 'Talmud Bavli').map(t => talmudNameFromLink(t.link)),
+  )].filter(t => !oneTractate || t === oneTractate);
+  console.log(`\n=== Rachi et Tossafot (${tractates.length} traités) ===`);
+  const commentary = (name, seder, tractate) =>
+    withRetry(
+      () => fetchJson(`${GCS}/Talmud/Bavli/Rishonim on Talmud/${name}/${seder}/${name} on ${tractate}/Hebrew/merged.json`),
+      `${name} ${tractate}`,
+    ).then(d => d.text ?? []).catch(() => []);
+
+  const commentaryAt = (path) =>
+    withRetry(() => fetchJson(`${GCS}/Talmud/Bavli/Rishonim on Talmud/${path}/Hebrew/merged.json`), path)
+      .then(d => d.text ?? []).catch(() => []);
+  /** Qui est le second commentaire de la colonne de Rachi, quand ce n'est pas le Rachbam. */
+  const SECOND = { Tamid: 'mefaresh' };
+
+  for (let i = 0; i < tractates.length; i += 4) {
+    await Promise.all(tractates.slice(i, i + 4).map(async (tractate) => {
+      const seder = talmudSederMap[tractate];
+      // Middot, Kinnim : des traités sans guemara, donc sans page.
+      if (!seder) return;
+      const slug = tractate.toLowerCase().replace(/ /g, '-').replace(/'/g, '');
+      try {
+        const [gemara, rashi, tosafot, rashbam, ran] = await Promise.all([
+          withRetry(() => fetchJson(`${GCS}/Talmud/Bavli/${seder}/${tractate}/Hebrew/merged.json`), `${tractate}/He`),
+          commentary('Rashi', seder, tractate),
+          commentary('Tosafot', seder, tractate),
+          RASHBAM_TRACTATES.has(tractate) ? commentary('Rashbam', seder, tractate)
+            // Tamid n'a pas de Rachi : le « מפרש » tient sa colonne.
+            : tractate === 'Tamid' ? commentaryAt('Mefaresh on Tamid')
+            : Promise.resolve([]),
+          // Nedarim : le livre met le Ran à la place de Tossafot, et Tossafot en marge.
+          tractate === 'Nedarim' ? commentary('Ran', seder, tractate) : Promise.resolve([]),
+        ]);
+        // Les index source que le fichier de guemara a gardés : le filtre de
+        // cleanTextArray, appliqué amoud par amoud.
+        const kept = [];
+        (gemara.text ?? []).forEach((amud, s) => {
+          const cleaned = typeof amud === 'string' ? stripHtml(amud)
+            : Array.isArray(amud) ? amud.map(x => stripHtml(typeof x === 'string' ? x : '')) : '';
+          if (cleaned === '' || (Array.isArray(cleaned) && cleaned.every(x => !x))) return;
+          kept.push(s);
+        });
+        const local = JSON.parse(readFileSync(`${OUT}/talmud/${slug}.json`, 'utf8'));
+        if ((local.he ?? []).length !== kept.length) {
+          console.error(`  ✗ ${tractate}: ${kept.length} amoudim chez Sefaria, ${(local.he ?? []).length} dans talmud/${slug}.json`);
+          return;
+        }
+        const fromRashbam = new Set();
+        // Là où le livre imprime les deux (Pessa'him, à partir de 99b) : le
+        // Rachbam suit Rachi dans chaque passage, et `rashbamAfter` dit après
+        // combien de commentaires de Rachi il commence.
+        const rashbamAfter = new Map();
+        const inner = kept.map((s, a) => {
+          const own = amudComments(rashi[s]);
+          const other = amudComments(rashbam[s]);
+          if (isEmptyAmud(own)) {
+            if (!isEmptyAmud(other)) fromRashbam.add(a);
+            return other;
+          }
+          if (isEmptyAmud(other)) return own;
+          const count = Math.max(own.length, other.length);
+          rashbamAfter.set(a, Array.from({ length: count }, (_, p) => (own[p] ?? []).length));
+          return Array.from({ length: count }, (_, p) => [...(own[p] ?? []), ...(other[p] ?? [])]);
+        });
+        // Là où le Ran tient la colonne (Nedarim), Tossafot passe en `margin` :
+        // il n'est plus sur la page ligne pour ligne, mais reste au volet.
+        const hasRan = ran.length > 0;
+        const outer = kept.map(s => amudComments((hasRan ? ran : tosafot)[s]));
+        const margin = hasRan ? kept.map(s => amudComments(tosafot[s])) : [];
+        // Un commentaire ne commente pas un passage que la guemara n'a pas.
+        const overflow = kept.findIndex((s, a) =>
+          inner[a].length > local.he[a].length || outer[a].length > local.he[a].length
+          || (margin[a] ?? []).length > local.he[a].length);
+        if (overflow >= 0) {
+          console.error(`  ✗ ${tractate}: amoud ${overflow}, plus de passages commentés que de passages`);
+          return;
+        }
+        if (inner.every(isEmptyAmud) && outer.every(isEmptyAmud)) {
+          console.warn(`  ⚠ ${tractate}: ni Rachi ni Tossafot, pas de fichier`);
+          return;
+        }
+        // Par tranches de MEFORSHIM_CHUNK amoudim : un chapitre n'en charge
+        // qu'une ou deux, quand un traité entier pèse jusqu'à 3 Mo.
+        rmSync(`${MEFORSHIM_DIR}/${slug}`, { recursive: true, force: true });
+        mkdirSync(`${MEFORSHIM_DIR}/${slug}`, { recursive: true });
+        for (let k = 0; k * MEFORSHIM_CHUNK < kept.length; k++) {
+          const from = k * MEFORSHIM_CHUNK;
+          const rashbamHere = [...fromRashbam]
+            .filter(a => a >= from && a < from + MEFORSHIM_CHUNK)
+            .map(a => a - from);
+          const rashbamBoth = [...rashbamAfter]
+            .filter(([a]) => a >= from && a < from + MEFORSHIM_CHUNK)
+            .map(([a, counts]) => [a - from, counts]);
+          writeFileSync(`${MEFORSHIM_DIR}/${slug}/${k}.json`, JSON.stringify({
+            title: tractate,
+            from,
+            rashi: inner.slice(from, from + MEFORSHIM_CHUNK),
+            tosafot: outer.slice(from, from + MEFORSHIM_CHUNK),
+            ...(rashbamHere.length ? { rashbam: rashbamHere } : {}),
+            ...(SECOND[tractate] && (rashbamHere.length || rashbamBoth.length) ? { second: SECOND[tractate] } : {}),
+            ...(hasRan ? { outer: 'ran', margin: margin.slice(from, from + MEFORSHIM_CHUNK) } : {}),
+            ...(rashbamBoth.length ? { rashbamAfter: Object.fromEntries(rashbamBoth) } : {}),
+          }), 'utf8');
+        }
+        console.log(`  ✓ ${tractate} → talmud-meforshim/${slug}/`);
+      } catch (e) {
+        console.error(`  ✗ ${tractate}: ${e.message}`);
+      }
+    }));
+  }
 }
 
 // ---------- Tanakh ----------
@@ -633,6 +813,193 @@ if (shouldRun('rashi')) {
   }
 }
 
+// ---------- Commentaires de la Michna et des Neviim / Ketouvim ----------
+//
+// Les commentaires d'un passage s'ouvrent depuis son volet (CommentaryPanel.vue) :
+// Rachi et Tossafot pour la guemara (plus haut), Rachi pour la Torah (plus
+// haut), et ici :
+//
+// - la Michna : le Bartenura et les Tossefot Yom Tov, un fichier par traité
+//   (public/texts/mishna-meforshim/<slug>.json) ;
+// - les Neviim et les Ketouvim : Rachi, un fichier par entrée du catalogue
+//   (public/texts/rashi/<id>.json), au format de Rachi sur une paracha ; le
+//   fichier du livre de Tehilim (328) sert aussi aux psaumes lus un par un.
+//
+// Chaque fichier suit la grille du fichier de texte LIVRÉ : un groupe par
+// groupe du fichier (chapitre, livre des Douze), dans chaque groupe une case
+// par ligne que le lecteur affiche (une ligne vide n'en a pas), et dans
+// chaque case la liste des commentaires. Le fichier de texte a perdu les
+// chapitres vides de la source (cleanTextArray) : on refait la même marche
+// sur la source pour savoir à quel chapitre de Sefaria répond chaque groupe.
+// Le dibbour hamat'hil garde son gras (<b>…</b>) ; le point qui le suit dans
+// la source rentre dans le gras, comme chez Rachi sur la Torah.
+// `--only=commentaires` pour ne régénérer que ces fichiers.
+
+/** Un commentaire de la source → son texte, le dibbour en gras. */
+function commentText(raw) {
+  return cleanRashiText(String(raw ?? '').replace(/<br\s*\/?>/g, ' ').replace(/\s+/g, ' '))
+    .replace(/^<b>\s*([^<]*?)\s*<\/b>\s*([.:,])/, '<b>$1$2</b>')
+    .replace(/^<b>\s*([^<]*?)\s*<\/b>/, '<b>$1</b>');
+}
+
+/** Les commentaires d'une case de la source (une chaîne, une liste, rien). */
+function cellComments(cell) {
+  return (Array.isArray(cell) ? cell.flat(Infinity) : cell ? [cell] : [])
+    .map(commentText)
+    .filter(Boolean);
+}
+
+/**
+ * Le corps d'un texte de Sefaria : un tableau, ou, quand le texte a aussi une
+ * introduction (les Tossefot Yom Tov sur Péa), le nœud sans nom d'un objet.
+ */
+function textBody(text) {
+  return Array.isArray(text) ? text : (text?.[''] ?? []);
+}
+
+/** Les index des chapitres de la source que cleanTextArray garde. */
+function keptChapters(source) {
+  const kept = [];
+  (source ?? []).forEach((chapter, i) => {
+    const clean = Array.isArray(chapter)
+      ? chapter.map(s => stripHtml(typeof s === 'string' ? s : ''))
+      : typeof chapter === 'string' ? stripHtml(chapter) : '';
+    if (clean === '' || (Array.isArray(clean) && clean.every(s => !s))) return;
+    kept.push(i);
+  });
+  return kept;
+}
+
+/**
+ * Un groupe du fichier de texte et le chapitre de la source qui lui répond →
+ * une case par ligne affichée, avec les commentaires de chaque commentateur.
+ */
+function alignGroup(group, chapterOf) {
+  const cells = [];
+  (Array.isArray(group) ? group : [group]).forEach((line, v) => {
+    if (!verseText(line)) return;
+    cells.push(chapterOf(v));
+  });
+  return cells;
+}
+
+const MISHNA_MEFORSHIM = [
+  ['bartenura', 'Rishonim on Mishnah/Bartenura', 'Bartenura on'],
+  ['tosafotYomTov', 'Acharonim on Mishnah/Tosafot Yom Tov', 'Tosafot Yom Tov on'],
+];
+
+// Les traités que mishnaSederMap ne connaît pas (leurs fichiers de texte
+// datent d'une version antérieure du script), et les noms de Sefaria qui ne
+// sont pas « Mishnah <nom du catalogue> ».
+const MISHNA_SEDER_EXTRA = {
+  'Avot': 'Seder Nezikin', 'Middot': 'Seder Kodashim', 'Kinnim': 'Seder Kodashim',
+  'Keilim': 'Seder Tahorot', 'Oholot': 'Seder Tahorot', 'Negaim': 'Seder Tahorot',
+  'Parah': 'Seder Tahorot', 'Toharot': 'Seder Tahorot', 'Mikvaot': 'Seder Tahorot',
+  'Makhshirin': 'Seder Tahorot', 'Zavim': 'Seder Tahorot', 'Tevul Yom': 'Seder Tahorot',
+  'Yadayim': 'Seder Tahorot', 'Oktzin': 'Seder Tahorot',
+};
+const MISHNA_SEFARIA_NAME = {
+  'Avot': 'Pirkei Avot', 'Keilim': 'Mishnah Kelim', 'Toharot': 'Mishnah Tahorot',
+};
+// Le texte de Taanit s'écrit avec une apostrophe, ses commentaires sans.
+const MISHNA_TEXT_NAME = { 'Taanit': "Mishnah Ta'anit" };
+// Un dossier de Sefaria orthographié autrement que les autres.
+const MISHNA_FOLDER_NAME = {
+  'Tosafot Yom Tov on Mishnah Peah': 'Tosefot Yom Tov on Mishnah Peah',
+};
+
+// Les livres de Rachi, par leur nom Sefaria : Neviim, puis Ketouvim.
+const RASHI_PROPHETS = new Set([
+  'Joshua', 'Judges', 'I Samuel', 'II Samuel', 'I Kings', 'II Kings', 'Isaiah', 'Jeremiah',
+  'Ezekiel', 'Hosea', 'Joel', 'Amos', 'Obadiah', 'Jonah', 'Micah', 'Nahum', 'Habakkuk',
+  'Zephaniah', 'Haggai', 'Zechariah', 'Malachi',
+]);
+
+if (shouldRun('commentaires')) {
+  console.log('\n=== Bartenura et Tossefot Yom Tov sur la Michna ===');
+  mkdirSync(`${OUT}/mishna-meforshim`, { recursive: true });
+  // Le nom du traité, comme textService le lit dans le lien du catalogue.
+  const tractates = [...new Set(textStudies.filter(t => t.type === 'Mishna')
+    .map(t => t.link.replace('https://www.sefaria.org/', '').replace(/^Mishnah_/, '').replace(/_/g, ' ')))];
+  for (let i = 0; i < tractates.length; i += 5) {
+    await Promise.all(tractates.slice(i, i + 5).map(async (tractate) => {
+      const seder = mishnaSederMap[tractate] ?? MISHNA_SEDER_EXTRA[tractate];
+      const sefaria = MISHNA_SEFARIA_NAME[tractate] ?? `Mishnah ${tractate}`;
+      const slug = tractate.toLowerCase().replace(/ /g, '-').replace(/'/g, '');
+      if (!seder) { console.warn(`  ⚠ ${tractate}: pas de seder`); return; }
+      try {
+        const shipped = JSON.parse(readFileSync(`${OUT}/mishna/${slug}.json`, 'utf8'));
+        const source = await withRetry(
+          () => fetchJson(`${GCS}/Mishnah/${seder}/${MISHNA_TEXT_NAME[tractate] ?? sefaria}/Hebrew/merged.json`),
+          `Mishna ${tractate}`,
+        );
+        const kept = keptChapters(source.text);
+        if (kept.length !== (shipped.he ?? []).length) {
+          throw new Error(`${kept.length} chapitres à la source, ${shipped.he?.length} livrés`);
+        }
+        const out = { title: tractate };
+        for (const [key, dir, prefix] of MISHNA_MEFORSHIM) {
+          const folder = MISHNA_FOLDER_NAME[`${prefix} ${sefaria}`] ?? `${prefix} ${sefaria}`;
+          const data = await withRetry(
+            () => fetchJson(`${GCS}/Mishnah/${dir}/${seder}/${folder}/Hebrew/merged.json`),
+            folder,
+          ).catch(() => null);
+          if (!data) { console.warn(`  ⚠ ${folder}: absent`); continue; }
+          out[key] = shipped.he.map((group, g) =>
+            alignGroup(group, m => cellComments(textBody(data.text)[kept[g]]?.[m])));
+        }
+        writeFileSync(`${OUT}/mishna-meforshim/${slug}.json`, JSON.stringify(out), 'utf8');
+        console.log(`  ✓ ${tractate} → mishna-meforshim/${slug}.json`);
+      } catch (e) {
+        console.error(`  ✗ ${tractate}: ${e.message}`);
+      }
+    }));
+  }
+
+  console.log('\n=== Rachi sur les Neviim et les Ketouvim ===');
+  // Le livre de chaque groupe du fichier livré, dans l'ordre des groupes.
+  const booksOf = entry => {
+    const rawRef = entry.link.replace('https://www.sefaria.org/', '');
+    if (rawRef === 'Trei Asar') return TREI_ASAR_BOOKS.map(([b]) => (b === 'Malakhi' ? 'Malachi' : b));
+    if (rawRef === 'Ezra-Nehemiah') return ['Ezra', 'Nehemiah'];
+    const std = refToStdName[rawRef] ?? rawRef;
+    return tanakhGcsMap[std] ? [std] : [];
+  };
+  const textPathOf = book =>
+    `Tanakh/${RASHI_PROPHETS.has(book) ? 'Prophets' : 'Writings'}/${book}`;
+  const rashiPathOf = book =>
+    `Tanakh/Rishonim on Tanakh/Rashi/${RASHI_PROPHETS.has(book) ? 'Prophets' : 'Writings'}/Rashi on ${book}`;
+
+  for (const entry of tanakhEntries.filter(e => booksOf(e).length)) {
+    try {
+      const shipped = JSON.parse(readFileSync(`${OUT}/tanakh/${entry.id}.json`, 'utf8'));
+      // Chaque groupe livré → [livre, chapitre de la source].
+      const places = [];
+      const rashiOf = {};
+      for (const book of booksOf(entry)) {
+        const [text, rashi] = await Promise.all([
+          withRetry(() => fetchJson(`${GCS}/${textPathOf(book)}/Hebrew/merged.json`), book),
+          withRetry(() => fetchJson(`${GCS}/${rashiPathOf(book)}/Hebrew/merged.json`), `Rashi ${book}`),
+        ]);
+        rashiOf[book] = textBody(rashi.text);
+        for (const c of keptChapters(text.text)) places.push([book, c]);
+      }
+      if (places.length !== (shipped.he ?? []).length) {
+        throw new Error(`${places.length} chapitres à la source, ${shipped.he?.length} livrés`);
+      }
+      const he = shipped.he.map((group, g) => {
+        const [book, c] = places[g];
+        return alignGroup(group, v => cellComments(rashiOf[book][c]?.[v]));
+      });
+      const commented = he.flat().filter(cell => cell.length > 0).length;
+      writeFileSync(`${OUT}/rashi/${entry.id}.json`, JSON.stringify({ title: entry.name, he }), 'utf8');
+      console.log(`  ✓ Rachi ${entry.name} (${commented} versets commentés) → rashi/${entry.id}.json`);
+    } catch (e) {
+      console.error(`  ✗ Rachi ${entry.name}: ${e.message}`);
+    }
+  }
+}
+
 // ---------- Moussar : 'Hovot Halévavot et Pélé Yoets ----------
 //
 // Le rayon d'étude du moussar (voir l'en-tête pour le format et la
@@ -761,6 +1128,235 @@ if (shouldRun('moussar')) {
     });
   } catch (e) {
     console.error(`  ✗ Pélé Yoets: ${e.message}`);
+  }
+}
+
+// ---------- Halakha : Choulhan Aroukh et Kitsour Choulhan Aroukh ----------
+//
+// Le rayon d'étude de la halakha. Une entrée du catalogue par groupe de
+// lois : les « hilkhot » du Choulhan Aroukh, telles que Sefaria les découpe
+// (Hilkhot Tsitsit : simanim 8 à 24), et des groupes de même nature pour le
+// Kitsour, qui n'en a pas (Chabbat : simanim 72 à 96). Le catalogue donne le
+// premier siman de chaque entrée (son lien) ; elle va jusqu'à la veille de la
+// suivante du même livre, la dernière jusqu'à la fin du livre.
+//
+// public/texts/halakha/<id>.json : { title, sections: [{ n, title?, he }] },
+// comme le moussar. `n` est le numéro du siman dans le livre (celui des
+// références « Choulhan Aroukh, Ora'h Hayim 8 »), `title` son intitulé en
+// hébreu, `he` ses séifim, un par ligne : la ligne 3 est le séif 3. Le
+// Choulhan Aroukh écrit l'intitulé en tête du premier séif (« דין השכמת
+// הבוקר. ובו ט סעיפים: ») ; il en est retiré, sans le nombre de séifim. Le
+// Kitsour le tient de la table des matières de Sefaria. Un siman vide de la
+// source (Yoré Déa 169) n'a pas de section.
+//
+// public/texts/halakha-meforshim/<id>/<t>.json (Choulhan Aroukh seulement) :
+// les commentaires de chaque séif, par tranches de cinq simanim (la tranche t
+// tient les simanim 5t à 5t + 4 de l'entrée), pour que le volet ne charge que
+// ceux du siman ouvert : l'entrée la plus lourde, Hilkhot Halvaa, en pèse
+// 4,5 Mo. Le format est celui des commentaires de la Michna (voir plus
+// haut) : `simanim` donne les numéros des simanim de la tranche, dans
+// l'ordre, puis chaque commentateur une grille siman × séif × commentaires. Le texte de
+// Sefaria marque dans chaque séif l'endroit où s'accroche chaque commentaire
+// (<i data-commentator="Magen Avraham" data-order="3">, ou data-label="ג"
+// pour la Michna Broura) : c'est ce numéro qui range le commentaire sous son
+// séif. Un commentaire que le texte ne marque pas n'est pas repris.
+// `--only=halakha` pour ne régénérer que ce rayon.
+
+/** Les commentateurs de chaque partie : clé du fichier, nom dans les marques du texte, dossier Sefaria. */
+const HALAKHA_PARTS = {
+  'Shulchan Arukh, Orach Chayim': [
+    ['mishnaBerura', 'Mishnah Berurah', 'Mishnah Berurah/Mishnah Berurah'],
+    ['magenAvraham', 'Magen Avraham', 'Magen Avraham/Magen Avraham'],
+    ['taz', 'Turei Zahav', 'Turei Zahav/Turei Zahav on Shulchan Arukh, Orach Chayim'],
+    ['chaareiTechouva', "Sha'arei Teshuvah", "Sha'arei Teshuvah/Sha'arei Teshuvah on Shulchan Arukh, Orach Chayim"],
+    ['baerHetev', "Ba'er Hetev", "Ba'er Hetev/Ba'er Hetev on Shulchan Arukh, Orach Chayim"],
+  ],
+  "Shulchan Arukh, Yoreh De'ah": [
+    ['chakh', 'Siftei Kohen', "Siftei Kohen/Siftei Kohen on Shulchan Arukh, Yoreh De'ah"],
+    ['taz', 'Turei Zahav', "Turei Zahav/Turei Zahav on Shulchan Arukh, Yoreh De'ah"],
+    ['pithheiTechouva', 'Pithei Teshuva', "Pitchei Teshuvah/Pitchei Teshuva on Shulchan Arukh, Yoreh De'ah"],
+    ['baerHetev', "Ba'er Hetev", "Ba'er Hetev/Ba'er Hetev on Shulchan Arukh, Yoreh De'ah"],
+  ],
+  'Shulchan Arukh, Even HaEzer': [
+    ['helkatMehokek', 'Chelkat Mechokek', 'Chelkat Mechokek/Chelkat Mechokek'],
+    ['beitChmouel', 'Beit Shmuel', 'Beit Shmuel/Beit Shmuel'],
+    ['taz', 'Turei Zahav', 'Turei Zahav/Turei Zahav on Shulchan Arukh, Even HaEzer'],
+    ['pithheiTechouva', 'Pithei Teshuva', 'Pitchei Teshuvah/Pitchei Teshuva on Shulchan Arukh, Even HaEzer'],
+    ['baerHetev', "Ba'er Hetev", "Ba'er Hetev/Ba'er Hetev on Shulchan Arukh, Even HaEzer"],
+  ],
+  'Shulchan Arukh, Choshen Mishpat': [
+    ['sma', "Me'irat Einayim", "Me'irat Einayim/Me'irat Einayim on Shulchan Arukh, Choshen Mishpat"],
+    ['chakh', 'Siftei Kohen', 'Siftei Kohen/Siftei Kohen on Shulchan Arukh, Choshen Mishpat'],
+    ['ketsotHahochen', 'Ketzot HaChoshen', 'Ketzot HaChoshen/Ketzot HaChoshen on Shulchan Arukh, Choshen Mishpat'],
+    ['pithheiTechouva', 'Pithei Teshuva', 'Pitchei Teshuvah/Pitchei Teshuva on Shulchan Arukh, Choshen Mishpat'],
+    ['baerHetev', "Ba'er Hetev", "Ba'er Hetev/Ba'er Hetev on Shulchan Arukh, Choshen Mishpat"],
+  ],
+};
+
+/** Simanim par fichier de commentaires : à garder d'accord avec textService (HALAKHA_MEFORSHIM_CHUNK). */
+const HALAKHA_MEFORSHIM_CHUNK = 5;
+
+const HEBREW_LETTER_VALUES = {
+  א: 1, ב: 2, ג: 3, ד: 4, ה: 5, ו: 6, ז: 7, ח: 8, ט: 9, י: 10, כ: 20, ך: 20, ל: 30, מ: 40,
+  ם: 40, נ: 50, ן: 50, ס: 60, ע: 70, פ: 80, ף: 80, צ: 90, ץ: 90, ק: 100, ר: 200, ש: 300, ת: 400,
+};
+/** « קכג » → 123 : la valeur d'un nombre écrit en lettres hébraïques. */
+const hebrewNumber = s => [...String(s ?? '')].reduce((sum, c) => sum + (HEBREW_LETTER_VALUES[c] ?? 0), 0);
+
+const HALAKHA_MARK = /<i data-commentator="?([^">]+)"([^>]*)><\/i>/g;
+
+/** Les commentaires qu'un séif appelle : [nom du commentateur, numéro]. */
+function seifMarks(seif) {
+  return [...String(seif).matchAll(HALAKHA_MARK)].map(([, name, attrs]) => {
+    const order = attrs.match(/data-order="(\d+)"/);
+    const label = attrs.match(/data-label="([^"]*)"/);
+    return [name, order ? Number(order[1]) : hebrewNumber(label?.[1])];
+  });
+}
+
+/** Le texte d'un séif : sans balises ni marques, un <br> devenant une espace. */
+const seifText = seif => stripHtml(String(seif).replace(/<br\s*\/?>/gi, ' ')).replace(/\s+/g, ' ').trim();
+
+/**
+ * L'intitulé qu'un siman du Choulhan Aroukh porte en gras en tête de son
+ * premier séif, sans le nombre de séifim : « דין השכמת הבוקר. ובו ט
+ * סעיפים: » → « דין השכמת הבוקר ». Rend aussi le séif sans l'intitulé.
+ */
+function simanTitle(first) {
+  const m = String(first).match(/^\s*<b>([\s\S]*?)<\/b>\s*(?:<br\s*\/?>)?/);
+  if (!m) return { title: '', rest: first };
+  const title = seifText(m[1]).replace(/[.,]?\s*ובו\s+[^.]*?סעי(?:פים|ף(?:\s+אחד)?)\s*:?\s*$/, '').trim();
+  // Les marques de l'intitulé appartiennent au premier séif : on les garde.
+  const marks = m[1].match(/<i data-commentator[^>]*><\/i>/g) ?? [];
+  return { title, rest: marks.join('') + String(first).slice(m[0].length) };
+}
+
+/** Un commentaire de la source → son texte, le dibbour hamat'hil en gras. */
+function halakhaComment(raw) {
+  const text = (Array.isArray(raw) ? raw.flat(Infinity).join(' ') : String(raw ?? ''))
+    // Le numéro du séif katan, « (א) », que le volet n'affiche pas.
+    .replace(/^\s*\([א-ת"'׳״]{1,5}\)\s*/, '');
+  return /^\s*<b>/.test(text) ? commentText(text) : meforashComment(text);
+}
+
+if (shouldRun('halakha')) {
+  console.log('\n=== Halakha (Choulhan Aroukh, Kitsour Choulhan Aroukh) ===');
+  mkdirSync(`${OUT}/halakha`, { recursive: true });
+  // Les tranches se réécrivent de zéro : une tranche disparue de la source
+  // ne doit pas rester servie.
+  rmSync(`${OUT}/halakha-meforshim`, { recursive: true, force: true });
+  mkdirSync(`${OUT}/halakha-meforshim`, { recursive: true });
+
+  const entries = textStudies.filter(t => t.type === 'Halakha');
+  /** Le livre de Sefaria et le premier siman d'une entrée, lus dans son lien. */
+  const placeOf = entry => {
+    const m = decodeURIComponent(entry.link).match(/sefaria\.org\/(.+)\.(\d+)$/);
+    if (!m) throw new Error(`${entry.name} : lien illisible (${entry.link})`);
+    return { book: m[1].replace(/_/g, ' '), from: Number(m[2]) };
+  };
+  const books = [...new Set(entries.map(e => placeOf(e).book))];
+
+  for (const book of books) {
+    try {
+      const isKitsour = book === 'Kitzur Shulchan Arukh';
+      const path = isKitsour ? 'Halakhah/Kitzur Shulchan Arukh' : `Halakhah/Shulchan Arukh/${book}`;
+      const source = await withRetry(() => fetchJson(`${GCS}/${path}/Hebrew/merged.json`), book);
+      const simanim = textBody(source.text);
+
+      // Les intitulés du Kitsour : sa table des matières (« [סימן א] דיני השכמת הבקר »).
+      const kitsourTitles = isKitsour
+        ? (await withRetry(
+            () => fetchJson('https://storage.googleapis.com/sefaria-export/schemas/Kitzur_Shulchan_Arukh.json'),
+            'Kitzur schema',
+          )).alts?.Topic?.nodes?.map(node => String(node.heTitle ?? '').replace(/^\s*\[[^\]]*\]\s*/, '').trim()) ?? []
+        : [];
+      if (isKitsour && kitsourTitles.length !== simanim.length) {
+        throw new Error(`${kitsourTitles.length} intitulés pour ${simanim.length} simanim`);
+      }
+
+      // Chaque siman : son intitulé, ses séifim affichés, leurs marques.
+      const parsed = simanim.map((siman, s) => {
+        const seifim = Array.isArray(siman) ? siman.map(String) : [];
+        if (seifim.length === 0) return null;
+        let title = kitsourTitles[s] ?? '';
+        if (!isKitsour) {
+          const head = simanTitle(seifim[0]);
+          title = head.title;
+          seifim[0] = head.rest;
+        }
+        const he = seifim.map(seifText);
+        const empty = he.findIndex(line => !line);
+        if (empty >= 0) throw new Error(`siman ${s + 1} : séif ${empty + 1} vide`);
+        return { n: s + 1, title, he, marks: seifim.map(seifMarks) };
+      });
+
+      // Les commentateurs de la partie, téléchargés une fois pour toutes ses entrées.
+      const meforshim = [];
+      for (const [key, name, dir] of HALAKHA_PARTS[book] ?? []) {
+        const data = await withRetry(
+          () => fetchJson(`${GCS}/Halakhah/Shulchan Arukh/Commentary/${dir}/Hebrew/merged.json`),
+          dir,
+        );
+        meforshim.push({ key, name, text: textBody(data.text), missing: 0, total: 0 });
+      }
+
+      const bookEntries = entries.filter(e => placeOf(e).book === book).sort((a, b) => placeOf(a).from - placeOf(b).from);
+      bookEntries.forEach((entry, i) => {
+        const from = placeOf(entry).from;
+        const to = i + 1 < bookEntries.length ? placeOf(bookEntries[i + 1]).from - 1 : simanim.length;
+        const kept = parsed.slice(from - 1, to).filter(Boolean);
+        // Le catalogue annonce le nombre de sections (liste des simanim) : un
+        // écart veut dire que la source a bougé.
+        if (kept.length !== entry.totalSections) {
+          throw new Error(`${entry.name} : ${kept.length} simanim, le catalogue en annonce ${entry.totalSections}`);
+        }
+        const sections = kept.map(({ n, title, he }) => (title ? { n, title, he } : { n, he }));
+        writeFileSync(`${OUT}/halakha/${entry.id}.json`, JSON.stringify({ title: entry.name, sections }), 'utf8');
+
+        if (meforshim.length === 0) {
+          console.log(`  ✓ ${entry.name} → halakha/${entry.id}.json (${sections.length} simanim)`);
+          return;
+        }
+        const chunks = new Map();
+        for (const siman of kept) {
+          const t = Math.floor(siman.n / HALAKHA_MEFORSHIM_CHUNK);
+          if (!chunks.has(t)) chunks.set(t, { title: entry.name, simanim: [] });
+          chunks.get(t).simanim.push(siman.n);
+        }
+        for (const commentator of meforshim) for (const chunk of chunks.values()) chunk[commentator.key] = [];
+        for (const { n, marks } of kept) {
+          const chunk = chunks.get(Math.floor(n / HALAKHA_MEFORSHIM_CHUNK));
+          for (const commentator of meforshim) {
+            const comments = Array.isArray(commentator.text[n - 1]) ? commentator.text[n - 1] : [];
+            const seen = new Set();
+            chunk[commentator.key].push(marks.map(seifMarksList => seifMarksList
+              .filter(([name]) => name === commentator.name)
+              .flatMap(([, k]) => {
+                // Un commentaire appelé deux fois ne se lit qu'au premier appel.
+                if (seen.has(k)) return [];
+                seen.add(k);
+                commentator.total++;
+                const comment = k > 0 ? halakhaComment(comments[k - 1]) : '';
+                if (!comment) commentator.missing++;
+                return comment ? [comment] : [];
+              })));
+          }
+        }
+        mkdirSync(`${OUT}/halakha-meforshim/${entry.id}`, { recursive: true });
+        for (const [t, chunk] of chunks) {
+          writeFileSync(`${OUT}/halakha-meforshim/${entry.id}/${t}.json`, JSON.stringify(chunk), 'utf8');
+        }
+        console.log(`  ✓ ${entry.name} → halakha/${entry.id}.json, halakha-meforshim/${entry.id}/ (${sections.length} simanim)`);
+      });
+      for (const { name, missing, total } of meforshim) {
+        // Quelques marques sans commentaire, c'est la source ; au-delà d'un
+        // pour cent, c'est l'alignement qui a cassé.
+        if (missing > total / 100) throw new Error(`${name} : ${missing} marques sans commentaire sur ${total}`);
+        if (missing) console.warn(`  ⚠ ${book}, ${name} : ${missing} marques sans commentaire sur ${total}`);
+      }
+    } catch (e) {
+      console.error(`  ✗ ${book}: ${e.message}`);
+    }
   }
 }
 

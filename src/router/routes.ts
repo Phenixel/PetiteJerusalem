@@ -27,6 +27,7 @@ const SessionManagementPage = () => import("../views/SessionManagementPage.vue")
 const ShareHomePage = () => import("../views/ShareReading/ShareHomePage.vue");
 const NewSession = () => import("../views/ShareReading/NewSession.vue");
 const DetailSession = () => import("../views/ShareReading/DetailSession.vue");
+const SessionReadingPage = () => import("../views/ShareReading/SessionReadingPage.vue");
 const ChiourimPage = () => import("../views/Chiourim/ChiourimPage.vue");
 const DetailChiour = () => import("../views/Chiourim/DetailChiour.vue");
 const AuteurChiourimPage = () => import("../views/Chiourim/AuteurChiourimPage.vue");
@@ -34,7 +35,12 @@ const SerieChiourimPage = () => import("../views/Chiourim/SerieChiourimPage.vue"
 const TextReadingPage = () => import("../views/TextReading/TextReadingPage.vue");
 const StudyPage = () => import("../views/StudyPage.vue");
 const SidourPage = () => import("../views/SidourPage.vue");
-const DailyReadingPage = () => import("../views/Library/DailyReadingPage.vue");
+const ParcoursPage = () => import("../views/Parcours/ParcoursPage.vue");
+const MurPage = () => import("../views/Parcours/MurPage.vue");
+const LectureDuJourPage = () => import("../views/Parcours/LectureDuJourPage.vue");
+const NouvelObjectifPage = () => import("../views/Parcours/NouvelObjectifPage.vue");
+const ObjectifPage = () => import("../views/Parcours/ObjectifPage.vue");
+const ProgrammeReglagesPage = () => import("../views/Parcours/ProgrammeReglagesPage.vue");
 const ChneiMikraPage = () => import("../views/Library/ChneiMikraPage.vue");
 const TehilimDayPage = () => import("../views/Library/TehilimDayPage.vue");
 const ContentPage = () => import("../views/ContentPage.vue");
@@ -44,6 +50,11 @@ const TehilimPage = () => import("../views/TehilimPage.vue");
 const SeoGuidePage = () => import("../views/SeoGuidePage.vue");
 const ParashaPage = () => import("../views/Library/ParashaPage.vue");
 const AnnouncementsPage = () => import("../views/Announcements/AnnouncementsPage.vue");
+const SupportPage = () => import("../views/SupportPage.vue");
+const SupportThreadPage = () => import("../views/SupportThreadPage.vue");
+const HelpCenterPage = () => import("../views/Help/HelpCenterPage.vue");
+const HelpGuidePage = () => import("../views/Help/HelpGuidePage.vue");
+const HelpVersionPage = () => import("../views/Help/HelpVersionPage.vue");
 const AnnouncementDetailPage = () => import("../views/Announcements/AnnouncementDetailPage.vue");
 
 import type { NavigationGuardWithThis, RouteLocation, RouteRecordSingleView } from "vue-router";
@@ -63,6 +74,8 @@ const AdminAuteursPage = () => import("../views/Admin/AdminAuteursPage.vue");
 const AdminAuteurDetailPage = () => import("../views/Admin/AdminAuteurDetailPage.vue");
 const AdminSessionsPage = () => import("../views/Admin/AdminSessionsPage.vue");
 const AdminAnnouncementsPage = () => import("../views/Admin/AdminAnnouncementsPage.vue");
+const AdminSupportPage = () => import("../views/Admin/AdminSupportPage.vue");
+const AdminSupportThreadPage = () => import("../views/Admin/AdminSupportThreadPage.vue");
 const AdminAnnouncementEditPage = () => import("../views/Admin/AdminAnnouncementEditPage.vue");
 
 /**
@@ -130,6 +143,16 @@ function localizedRoutes(): RouteRecordSingleView[] {
   );
 }
 
+/**
+ * The pages that offer the back-to-top button (ScrollToTop.vue); every other
+ * page goes without it. Only long lists that one goes down to pick an item:
+ * the texts of a reading session, the texts of a library section, the
+ * chapters of a book, the audio classes, the team's announcements. The
+ * library home page asks for it only while searching (requestScrollToTop).
+ * On a text being read, the reading menu takes its place.
+ */
+const SCROLL_TO_TOP = { scrollToTop: true } as const;
+
 export default [
   {
     path: "/",
@@ -147,7 +170,7 @@ export default [
     name: "profile",
     // Deux pages sous une adresse : le site garde son menu latéral, l'app a
     // sa page de réglages rangée en lignes et en sous-pages (voir
-    // docs/design.md, « Le profil de l'app est une liste, pas un menu »).
+    // docs/design.md, « The app profile is a list, not a menu »).
     component: isNativeApp ? NativeProfileHome : ProfilePage,
     // App native : la page sert aussi de page de réglages, accessible sans
     // compte (langue, thème, polices, à propos), et ces réglages sont locaux :
@@ -194,6 +217,15 @@ export default [
     path: "/share-reading/session/:slug",
     name: "detail-session",
     component: DetailSession,
+    meta: SCROLL_TO_TOP,
+  },
+  // Every Tehilim the reader took in a chain, read one after the other
+  // (services/sessionBatchReading.ts). Without an account too: a guest is
+  // recognized by this device.
+  {
+    path: "/share-reading/session/:slug/lecture",
+    name: "session-reading",
+    component: SessionReadingPage,
   },
   {
     path: "/bibliotheque",
@@ -201,19 +233,61 @@ export default [
     meta: { offlineOk: true },
     component: StudyPage,
   },
-  // Lecture quotidienne : déplacée du profil vers la bibliothèque (elle vit à
-  // côté des textes qu'elle fait lire). Route statique, prioritaire sur
-  // /bibliotheque/:corpus ci-dessous.
-  // Dans l'app native, la lecture du jour se lit sans connexion : les textes
-  // téléchargés viennent de l'appareil et la liste est relue de sa copie
-  // locale (la page passe alors en lecture seule). Sur le web il n'y a rien
-  // de téléchargé : la page a besoin du réseau, comme avant.
+  // La lecture du jour : les textes du jour et les lectures du calendrier de
+  // Mon parcours, à la suite (la carte « Lecture du jour » de la pile y
+  // mène). Les versions installées, les widgets, la montre et le rappel du
+  // soir y mènent aussi. Comme Mon parcours : sans compte dans l'app, avec un
+  // compte sur le site. Route statique, prioritaire sur /bibliotheque/:corpus.
   {
     path: "/bibliotheque/lecture-du-jour",
     name: "daily-reading",
-    component: DailyReadingPage,
-    meta: { requiresAuth: true, offlineOk: isNativeApp, plainBackground: true },
+    meta: { requiresAuth: !isNativeApp, offlineOk: isNativeApp },
+    component: LectureDuJourPage,
   },
+  // Ma journée a été retirée : la pile et le portefeuille de l'accueil
+  // montrent la journée. L'adresse mène à l'accueil, pour les liens gardés.
+  {
+    path: "/parcours/journee",
+    name: "parcours-day",
+    redirect: "/",
+  },
+  // The home page to one's liking is now arranged in place, on the home page
+  // itself: the old address opens it in edit mode, for links kept.
+  {
+    path: "/accueil/modifier",
+    name: "home-edit",
+    redirect: { path: "/", query: { modifier: "1" } },
+  },
+  // Mon parcours : programmes, habitudes, la journée et le mur. Dans l'app,
+  // tout marche sans compte, sur l'appareil, et sans réseau ; sur le site,
+  // un compte est demandé (il n'y a pas d'appareil où garder le suivi).
+  ...[
+    {
+      path: "/parcours",
+      name: "parcours",
+      component: ParcoursPage,
+    },
+    {
+      path: "/parcours/mur",
+      name: "parcours-wall",
+      component: MurPage,
+    },
+    {
+      path: "/parcours/nouveau",
+      name: "parcours-new",
+      component: NouvelObjectifPage,
+    },
+    {
+      path: "/parcours/objectif/:id",
+      name: "parcours-objective",
+      component: ObjectifPage,
+    },
+    {
+      path: "/parcours/objectif/:id/reglages",
+      name: "parcours-objective-settings",
+      component: ProgrammeReglagesPage,
+    },
+  ].map((route) => ({ ...route, meta: { requiresAuth: !isNativeApp, offlineOk: isNativeApp } })),
   // Chnei mikra : la paracha de la semaine avec son Targoum, ouverte à tous.
   // La semaine se choisit en query (`?semaine=2026-08-15`) plutôt qu'en
   // segment, qui se confondrait avec /bibliotheque/:corpus/:slug.
@@ -238,9 +312,9 @@ export default [
   // Détail d'un corpus de la bibliothèque (liste des textes) : la page
   // d'accueil de la bibliothèque ne montre que les grandes sections.
   {
-    path: "/bibliotheque/:corpus(tehilim|michna|talmud|tanakh|moussar)",
+    path: "/bibliotheque/:corpus(tehilim|michna|talmud|tanakh|moussar|halakha)",
     name: "study-corpus",
-    meta: { offlineOk: true },
+    meta: { offlineOk: true, ...SCROLL_TO_TOP },
     component: StudyPage,
   },
   // Le Sidour : les tefilot, les brahot et les textes des fêtes, en une
@@ -308,13 +382,13 @@ export default [
   {
     path: "/bibliotheque/:corpus/:slug",
     name: "etude-reading",
-    meta: { offlineOk: true, plainBackground: true },
+    meta: { offlineOk: true, plainBackground: true, ...SCROLL_TO_TOP },
     component: TextReadingPage,
   },
   {
     path: "/bibliotheque/:corpus/:slug/:section",
     name: "etude-reading-section",
-    meta: { offlineOk: true, plainBackground: true },
+    meta: { offlineOk: true, plainBackground: true, ...SCROLL_TO_TOP },
     component: TextReadingPage,
   },
   // Horaires (zmanim) : tout est calculé sur l'appareil, aucune donnée à
@@ -357,21 +431,25 @@ export default [
     path: "/chiourim",
     name: "chiourim",
     component: ChiourimPage,
+    meta: SCROLL_TO_TOP,
   },
   {
     path: "/chiourim/auteur/:auteur",
     name: "auteur-chiourim",
     component: AuteurChiourimPage,
+    meta: SCROLL_TO_TOP,
   },
   {
     path: "/chiourim/serie/:serieId",
     name: "serie-chiourim",
     component: SerieChiourimPage,
+    meta: SCROLL_TO_TOP,
   },
   {
     path: "/chiourim/:slug",
     name: "detail-chiour",
     component: DetailChiour,
+    meta: SCROLL_TO_TOP,
   },
   // Informations de l'équipe (nouveautés, incidents, questions). Les
   // notifications ouvrent /informations/:id (voir functions/src/announcements.ts).
@@ -379,6 +457,46 @@ export default [
     path: "/informations",
     name: "announcements",
     component: AnnouncementsPage,
+    meta: SCROLL_TO_TOP,
+  },
+  // Nous écrire : les messages envoyés à l'équipe et ses réponses (voir
+  // docs/feedback.md), puis la page de chaque fil. L'app les relit sans
+  // compte, par la clé de l'appareil ; sur le site, seul un compte relie un
+  // message à la personne. La notification d'une réponse mène à la page du
+  // fil (functions/src/support.ts).
+  {
+    path: "/contact",
+    name: "support",
+    component: SupportPage,
+    meta: { requiresAuth: !isNativeApp },
+  },
+  {
+    path: "/contact/:id",
+    name: "support-thread",
+    component: SupportThreadPage,
+    meta: { requiresAuth: !isNativeApp },
+  },
+  // The help center: its guides are in the bundle, it opens offline and
+  // without an account, on the site as in the app (docs/help-center.md).
+  {
+    path: "/aide",
+    name: "help",
+    component: HelpCenterPage,
+    meta: { offlineOk: true },
+  },
+  {
+    path: "/aide/:slug",
+    name: "help-guide",
+    component: HelpGuidePage,
+    meta: { offlineOk: true },
+  },
+  // What a version changed, passage by passage: its video and the questions
+  // each passage raises (content/help/versions.ts).
+  {
+    path: "/aide/nouveautes/:version",
+    name: "help-version",
+    component: HelpVersionPage,
+    meta: { offlineOk: true },
   },
   {
     path: "/informations/:id",
@@ -414,6 +532,9 @@ export default [
       { path: "auteurs/:auteurId", name: "admin-auteur-detail", component: AdminAuteurDetailPage },
       // Modération des sessions signalées (exigence App Store 1.2).
       { path: "sessions", name: "admin-sessions", component: AdminSessionsPage },
+      // Nous écrire : les messages des utilisateurs, et les réponses.
+      { path: "messages", name: "admin-support", component: AdminSupportPage },
+      { path: "messages/:id", name: "admin-support-thread", component: AdminSupportThreadPage },
       // Informations de l'équipe : écrire, publier, notifier.
       { path: "informations", name: "admin-announcements", component: AdminAnnouncementsPage },
       {
@@ -430,14 +551,14 @@ export default [
   {
     path: "/lire/:textId",
     name: "text-reading",
-    meta: { offlineOk: true, plainBackground: true },
+    meta: { offlineOk: true, plainBackground: true, ...SCROLL_TO_TOP },
     beforeEnter: redirectPublicLire,
     component: TextReadingPage,
   },
   {
     path: "/lire/:textId/:section",
     name: "text-reading-section",
-    meta: { offlineOk: true, plainBackground: true },
+    meta: { offlineOk: true, plainBackground: true, ...SCROLL_TO_TOP },
     beforeEnter: redirectPublicLire,
     component: TextReadingPage,
   },

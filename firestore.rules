@@ -107,7 +107,14 @@ service cloud.firestore {
                   && request.resource.data.creatorName.size() <= 100))
         && (!request.resource.data.keys().hasAny(['reservations'])
               || (request.resource.data.reservations is list
-                  && request.resource.data.reservations.size() <= 5000));
+                  && request.resource.data.reservations.size() <= 5000))
+        // Nichmat 40 (docs/nichmat-40-jours.md): the first of the forty days
+        // (YYYY-MM-DD), or a start once the forty places are taken.
+        && (!request.resource.data.keys().hasAny(['startDay'])
+              || (request.resource.data.startDay is string
+                  && request.resource.data.startDay.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')))
+        && (!request.resource.data.keys().hasAny(['startsWhenFull'])
+              || request.resource.data.startsWhenFull is bool);
     }
 
     // Sessions : lecture publique (le partage de lecture est ouvert à tous)
@@ -217,6 +224,17 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
+    // Nous écrire (voir docs/feedback.md) : un fil par message, avec les
+    // réponses de l'équipe. Créé et relu par la personne au travers des Cloud
+    // Functions (submitFeedback, listSupportThreads, replySupportThread), qui
+    // vérifient son compte ou la clé de son appareil et taisent la note de
+    // l'équipe : aucun accès direct hors de l'admin, qui le traite depuis le
+    // backoffice (statut, réponse, note).
+    match /support/{threadId} {
+      allow read, update, delete: if isAdmin();
+      allow create: if false;
+    }
+
     // Compteur de vues d'un chiour : ouvert aux visiteurs non connectés,
     // mais borné au strict incrément (+1 sur le seul champ `views`, chiour
     // publié uniquement). Même esprit que les réservations des sessions.
@@ -319,6 +337,8 @@ service cloud.firestore {
         && (!('theme' in request.resource.data) || (request.resource.data.theme is string && request.resource.data.theme.size() <= 20))
         // Les thèmes des fêtes (voir useHolidayTheme) : un interrupteur.
         && (!('holidayThemes' in request.resource.data) || request.resource.data.holidayThemes is bool)
+        // Higher contrast (see useContrast): system, more or standard.
+        && (!('contrast' in request.resource.data) || (request.resource.data.contrast is string && request.resource.data.contrast.size() <= 20))
         && (!('fontLatin' in request.resource.data) || (request.resource.data.fontLatin is string && request.resource.data.fontLatin.size() <= 20))
         && (!('fontHebrew' in request.resource.data) || (request.resource.data.fontHebrew is string && request.resource.data.fontHebrew.size() <= 20))
         && (!('dailyReadingIds' in request.resource.data) || (request.resource.data.dailyReadingIds is list && request.resource.data.dailyReadingIds.size() <= 200))
@@ -356,6 +376,20 @@ service cloud.firestore {
         // une clé courte, « posen » ou « ovadia ».
         && (!('zmanimOpinion' in request.resource.data) || (request.resource.data.zmanimOpinion is string && request.resource.data.zmanimOpinion.size() <= 20));
       allow delete: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Mon parcours (voir services/parcours/cloud.ts) : les objectifs par
+    // identifiant, et le journal des jours. Privé, comme les préférences. Les
+    // objectifs retirés restent, marqués : la borne est large. Les jours se
+    // comptent à 366 par an ; quatre mille, c'est plus de dix ans de suivi.
+    match /parcours/{userId} {
+      allow read, delete: if isAuthenticated() && request.auth.uid == userId;
+      allow create, update: if isAuthenticated()
+        && request.auth.uid == userId
+        && request.resource.data.keys().hasOnly(['v', 'objectives', 'days'])
+        && (!('v' in request.resource.data) || request.resource.data.v is int)
+        && (!('objectives' in request.resource.data) || (request.resource.data.objectives is map && request.resource.data.objectives.size() <= 400))
+        && (!('days' in request.resource.data) || (request.resource.data.days is map && request.resource.data.days.size() <= 4000));
     }
 
     // Toute autre collection : accès refusé par défaut (pas de règle catch-all).

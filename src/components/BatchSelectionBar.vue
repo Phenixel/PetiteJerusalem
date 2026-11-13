@@ -31,20 +31,14 @@ defineEmits<{
     <div
       class="max-w-2xl mx-auto bg-surface shadow-pop rounded-xl p-4 flex items-center justify-between gap-4"
     >
-      <div class="flex items-center gap-3">
-        <div
-          class="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 text-primary"
-        >
-          <AppIcon name="check-double" :size="18" />
-        </div>
-        <div>
-          <p class="font-bold text-text-primary">
-            {{ t("batchSelection.textsSelected", count) }}
-          </p>
-          <p v-if="label" class="text-xs text-text-secondary">
-            {{ label }}
-          </p>
-        </div>
+      <!-- The count and what the button will do; no icon, the bar is narrow on a phone. -->
+      <div class="min-w-0">
+        <p class="font-bold text-text-primary">
+          {{ t("batchSelection.textsSelected", count) }}
+        </p>
+        <p v-if="label" class="text-xs text-text-secondary">
+          {{ label }}
+        </p>
       </div>
 
       <!-- Une sélection peut ouvrir sur plusieurs actions (réserver, supprimer) :

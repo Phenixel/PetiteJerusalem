@@ -11,7 +11,7 @@ import type { Announcement } from "../services/announcements";
 /**
  * L'état du backoffice en un coup d'œil : ce que le tableau de bord résume
  * et ce que les pastilles du menu comptent (chiourim à relire, signalements
- * ouverts, incident en cours).
+ * ouverts, incident en cours, messages à traiter).
  *
  * Chargé par le layout à l'arrivée et à chaque changement de section, et
  * rechargé par une page après une action qui change un compte (publier un
@@ -26,6 +26,8 @@ interface SummaryData {
   reports: ReportWithId[];
   announcements: Announcement[];
   sessions: { total: number; hidden: number };
+  /** Messages des utilisateurs à traiter (voir docs/feedback.md). */
+  supportToHandle: number;
 }
 
 const data = ref<SummaryData | null>(null);
@@ -54,15 +56,19 @@ export function refreshAdminSummary(force = false): Promise<void> {
   if (!data.value) status.value = "loading";
   inflight = (async () => {
     try {
-      const [chiourim, auteurs, tokens, reports, announcements, sessions] = await Promise.all([
-        adminService.listAllChiourim(),
-        adminService.listAuteurs(),
-        adminService.listAllTokens(),
-        adminService.listReports(),
-        adminService.listAnnouncements(),
-        adminService.countSessions(),
-      ]);
-      data.value = { chiourim, auteurs, tokens, reports, announcements, sessions };
+      const [chiourim, auteurs, tokens, reports, announcements, sessions, supportToHandle] =
+        await Promise.all([
+          adminService.listAllChiourim(),
+          adminService.listAuteurs(),
+          adminService.listAllTokens(),
+          adminService.listReports(),
+          adminService.listAnnouncements(),
+          adminService.countSessions(),
+          // Avant le déploiement des règles de `support`, la lecture est
+          // refusée : le reste du résumé ne doit pas tomber avec elle.
+          adminService.countSupportToHandle().catch(() => 0),
+        ]);
+      data.value = { chiourim, auteurs, tokens, reports, announcements, sessions, supportToHandle };
       loadedAt = Date.now();
       status.value = "ready";
     } catch (error) {
@@ -109,6 +115,7 @@ export function useAdminSummary() {
   const latestAnnouncement = computed(() => announcements.value.find((a) => a.published) ?? null);
 
   const sessions = computed(() => data.value?.sessions ?? { total: 0, hidden: 0 });
+  const supportToHandle = computed(() => data.value?.supportToHandle ?? 0);
 
   return {
     status,
@@ -124,6 +131,7 @@ export function useAdminSummary() {
     announcementDrafts,
     latestAnnouncement,
     sessions,
+    supportToHandle,
     refresh: refreshAdminSummary,
   };
 }

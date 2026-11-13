@@ -3,7 +3,8 @@ import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { psalmsLabel, useTehilimDay } from "../composables/useTehilimDay";
 import { analyticsService } from "../services/analyticsService";
-import AppIcon from "./icons/AppIcon.vue";
+import { bindingOf } from "../config/bindings";
+import CardArt from "./CardArt.vue";
 
 /**
  * Les psaumes du jour, en tête des Tehilim de la bibliothèque, le pendant du
@@ -37,16 +38,20 @@ function track() {
     v-if="cycle.entries.length"
     to="/bibliotheque/tehilim-du-jour"
     @click="track"
-    class="card card-hover group flex items-center gap-3 p-4 animate-[fadeIn_0.4s_ease]"
+    class="card card-hover group relative flex items-center gap-3 p-4 pe-20 animate-[fadeIn_0.4s_ease]"
   >
-    <AppIcon name="book-open" :size="18" class="shrink-0 text-primary" />
-    <span class="min-w-0 flex-1">
+    <!-- Le volume de l'étagère dans le coin, comme le sidour de la carte de
+         l'accueil (voir CardArt) : pas d'icône à gauche qui le redise. -->
+    <CardArt
+      :art="{ kind: 'volume', color: bindingOf('tehilim'), label: 'Tehilim' }"
+      :scale="0.42"
+      surface="plain"
+    />
+    <span class="relative min-w-0 flex-1">
       <span class="block text-xs font-semibold text-primary">
         {{ t("dailyReading.options.tehilimDayReading", { day: cycle.day }) }}
       </span>
-      <span
-        class="block font-medium text-text-primary transition-colors group-hover:text-primary"
-      >
+      <span class="block font-medium text-text-primary transition-colors group-hover:text-primary">
         {{ rangeLabel }}
       </span>
     </span>

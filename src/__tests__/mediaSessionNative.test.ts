@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
  * @capgo/capacitor-media-session (voir services/mediaSession.ts).
  *
  * Le plugin est un `Proxy` Capacitor, `then` compris (docs/app-native.md,
- * « Un plugin ne traverse jamais une promesse ») : le leurre ci-dessous s'y
+ * « A plugin never goes through a promise ») : le leurre ci-dessous s'y
  * comporte pareil, et note chaque appel. Sur Android, c'est l'état de lecture
  * qui ouvre et ferme la notification : « playing » ou « paused » la montre,
  * « none » la retire. Le lecteur fermé doit donc dire « none », et ne plus

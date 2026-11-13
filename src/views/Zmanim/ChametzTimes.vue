@@ -14,8 +14,8 @@
 // un moment de la journée mais un rendez-vous, et il s'annonce dès la veille.
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
+import CardArt from "../../components/CardArt.vue";
 import { formatZmanDay, formatZmanTime, type ChametzDeadlines } from "../../services/zmanimService";
-import AppIcon from "../../components/icons/AppIcon.vue";
 
 const props = defineProps<{
   chametz: ChametzDeadlines;
@@ -54,14 +54,14 @@ const rows = computed(() => {
 </script>
 
 <template>
-  <section class="card p-5">
-    <h2 class="mb-3 font-bold text-text-primary">
-      <AppIcon name="hourglass" :size="17" class="me-2 text-primary" />{{
-        t("zmanim.chametz.title")
-      }}
+  <section class="card relative p-5">
+    <!-- The candle, the feather and the spoon of the search for 'hamets. -->
+    <CardArt :art="{ kind: 'bedika' }" :scale="0.5" surface="plain" />
+    <h2 class="relative mb-3 pe-16 font-bold text-text-primary">
+      {{ t("zmanim.chametz.title") }}
     </h2>
 
-    <ul class="flex flex-col divide-y divide-line">
+    <ul class="relative flex flex-col divide-y divide-line">
       <li v-for="row in rows" :key="row.key" class="flex items-center justify-between gap-4 py-2">
         <span class="min-w-0">
           <span class="block font-medium leading-snug text-text-primary">
@@ -75,7 +75,7 @@ const rows = computed(() => {
       </li>
     </ul>
 
-    <p class="mt-2.5 text-xs text-text-secondary">
+    <p class="relative mt-2.5 text-xs text-text-secondary">
       {{ t(chametz.onShabbat ? "zmanim.chametz.noteShabbat" : "zmanim.chametz.note") }}
     </p>
   </section>

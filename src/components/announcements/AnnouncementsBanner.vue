@@ -12,7 +12,7 @@ import AnnouncementHomeCard from "./AnnouncementHomeCard.vue";
  * version) ; un incident en cours tant qu'il n'est pas réglé, pour tous ou
  * sur cet appareil par la version qui le corrige ; un sondage ouvert tant
  * que l'appareil n'y a pas répondu. Le reste du temps, rien : la liste
- * complète reste à un lien, en bas de l'accueil.
+ * complète est au pied de page du site et dans le profil de l'app.
  */
 const { highlights, load } = useAnnouncements();
 

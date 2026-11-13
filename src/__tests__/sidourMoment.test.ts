@@ -7,19 +7,20 @@ import {
   sidourMoment,
   tefilaAdditions,
 } from "../services/sidourMoment";
-import { DEFAULT_PLACE, type ZmanimPlace } from "../services/zmanimService";
+import { DEFAULT_PLACE, placeDayKey, type ZmanimPlace } from "../services/zmanimService";
 import { orderTools, SIDOUR_TOOLS } from "../content/sidourTools";
 import fr from "../locales/fr";
 import en from "../locales/en";
 import he from "../locales/he";
 
 /**
- * Ce que la page du Sidour met en tête : une carte, l'office dont c'est
- * l'heure (ou celui qui vient), avec ce que le jour y ajoute ; l'allumage de
- * 'Hanouka le soir ; les Sli'hot de 'hatsot au lever du soleil ; la lune les
- * nuits où on la bénit ; la fête entre deux offices ; et une ligne dessous au
- * plus, un soir d'occasion (l'office, la havdala) ; et l'ordre des outils, celui du
- * moment devant. Les heures sont celles de Paris
+ * What the Sidour page puts at the top: one card, only what is said now (the
+ * service whose time it is, with what the day adds to it; the 'Hanouka
+ * lighting in the evening; the Sli'hot from 'hatsot until sunrise; the moon
+ * on the nights it is blessed; the holiday's text between two services; the
+ * bedtime Chema once Arvit is said), nothing when nothing is said now; at
+ * most one line below, on an occasion's evening (the service, havdala); and
+ * the order of the tools, the one of the moment first. Les heures sont celles de Paris
  * (le lieu par défaut), écrites avec leur décalage pour ne pas dépendre du
  * fuseau de la machine de test.
  */
@@ -46,13 +47,10 @@ describe("la carte du moment", () => {
     );
   });
 
-  it("entre 'hatsot et min'ha guedola : Min'ha annoncée, pas une carte vide", () => {
-    const { hero } = sidourMoment(DEFAULT_PLACE, at("2026-10-12T13:50:00+02:00"));
-    expect(hero?.kind).toBe("next-tefila");
-    expect(hero?.tefila).toBe("minha");
-    expect(hero?.start && hero.start.getTime()).toBeGreaterThan(
-      at("2026-10-12T13:50:00+02:00").getTime(),
-    );
+  it("between 'hatsot and min'ha guedola: no card, Min'ha is not said yet", () => {
+    const { hero, extra } = sidourMoment(DEFAULT_PLACE, at("2026-10-12T13:50:00+02:00"));
+    expect(hero).toBeNull();
+    expect(extra).toBeNull();
   });
 
   it("le soir : Arvit seul, le Chema du coucher reste dans la liste", () => {
@@ -72,12 +70,16 @@ describe("la carte du moment", () => {
   });
 
   it("un soir de 'Hanouka : l'allumage passe devant Arvit, qui suit", () => {
-    // Mardi 8 décembre 2026 : le cinquième soir.
+    // Mardi 8 décembre 2026 : le cinquième soir. Before nightfall (17:48),
+    // Arvit is not said yet: no line.
     const moment = sidourMoment(DEFAULT_PLACE, at("2026-12-08T17:40:00+01:00"));
     expect(moment.hero?.kind).toBe("hanouka");
     expect(moment.hero?.night).toBe(5);
-    expect(moment.extra).toMatchObject({ key: "tefila", tefila: "arvit" });
+    expect(moment.extra).toBeNull();
     expect(moment.feast).toBe("hanouka");
+    const night = sidourMoment(DEFAULT_PLACE, at("2026-12-08T18:30:00+01:00"));
+    expect(night.hero?.kind).toBe("hanouka");
+    expect(night.extra).toMatchObject({ key: "tefila", tefila: "arvit" });
   });
 
   it("le vendredi de 'Hanouka : allumer avant le Chabbat", () => {
@@ -93,13 +95,19 @@ describe("la carte du moment", () => {
     expect(hero?.kind).not.toBe("hanouka");
   });
 
-  it("une nuit d'Eloul, après 'hatsot : les Sli'hot, puis Cha'harit", () => {
+  it("une nuit d'Eloul, après 'hatsot : les Sli'hot, without Cha'harit not yet open", () => {
     // Lundi 7 septembre 2026, 25 Eloul 5786, avant l'aube.
     const moment = sidourMoment(DEFAULT_PLACE, at("2026-09-07T05:30:00+02:00"));
     expect(moment.hero?.kind).toBe("slihot");
     expect(moment.hero?.day).toBe("eloul");
-    expect(moment.extra).toMatchObject({ key: "tefila", tefila: "chaharit" });
+    // Arvit se dit encore jusqu'à l'aube : elle est la ligne dessous.
+    expect(moment.extra?.tefila).toBe("arvit");
     expect(moment.feast).toBe("tichri");
+    const said = sidourMoment(DEFAULT_PLACE, at("2026-09-07T05:30:00+02:00"), {
+      office: () => true,
+    });
+    expect(said.hero?.kind).toBe("slihot");
+    expect(said.extra).toBeNull();
   });
 
   it("le soir, en Eloul : Arvit seul, les Sli'hot sont en tête de la liste", () => {
@@ -108,21 +116,49 @@ describe("la carte du moment", () => {
     expect(extra).toBeNull();
   });
 
-  it("les nuits de la bénédiction de la lune, la lune prend la carte, Arvit dessous", () => {
-    // Mardi 20 octobre 2026, 10 'Hechvan : la lune a un peu plus de neuf jours.
+  it("on the nights of the moon, Arvit first, the moon on its line below", () => {
+    // Tuesday 20 October 2026, 10 'Hechvan: the moon is a little over nine days old.
     const moment = sidourMoment(DEFAULT_PLACE, at("2026-10-20T21:00:00+02:00"));
-    expect(moment.hero?.kind).toBe("halevana");
-    expect(moment.hero?.until?.getDate()).toBe(15);
-    expect(moment.hero?.moonAge).toBeGreaterThan(9);
-    expect(moment.hero?.moonAge).toBeLessThan(10);
-    expect(moment.extra).toMatchObject({ key: "tefila", tefila: "arvit" });
+    expect(moment.hero).toMatchObject({ kind: "tefila", tefila: "arvit" });
+    expect(moment.moon).not.toBeNull();
+    expect(moment.moon?.until.getDate()).toBe(15);
+    expect(moment.moon?.moonAge).toBeGreaterThan(9);
+    expect(moment.moon?.moonAge).toBeLessThan(10);
   });
 
-  it("un motsaé Chabbat de la lune : la lune, et la havdala plutôt qu'Arvit", () => {
+  it("the moon is put forward only once it can be said: not by day", () => {
+    // Wednesday 21 October 2026, 10 a.m.: Cha'harit, and no moon yet.
+    const moment = sidourMoment(DEFAULT_PLACE, at("2026-10-21T10:00:00+02:00"));
+    expect(moment.hero?.tefila).toBe("chaharit");
+    expect(moment.moon).toBeNull();
+    // At sunset, before nightfall, not yet either; at nightfall, its line.
+    expect(sidourMoment(DEFAULT_PLACE, at("2026-10-21T18:45:00+02:00")).moon).toBeNull();
+    expect(sidourMoment(DEFAULT_PLACE, at("2026-10-21T20:15:00+02:00")).moon).not.toBeNull();
+  });
+
+  it("havdala made: its line gives way", () => {
+    const made = sidourMoment(DEFAULT_PLACE, at("2026-10-24T21:00:00+02:00"), {
+      havdala: () => true,
+    });
+    expect(made.extra).toBeNull();
+    expect(made.moon).not.toBeNull();
+  });
+
+  it("un motsaé Chabbat de la lune : Arvit, la havdala, et la lune dessous", () => {
     // Samedi 24 octobre 2026, 14 'Hechvan.
     const moment = sidourMoment(DEFAULT_PLACE, at("2026-10-24T21:00:00+02:00"));
-    expect(moment.hero?.kind).toBe("halevana");
+    expect(moment.hero?.tefila).toBe("arvit");
     expect(moment.extra?.key).toBe("havdala");
+    expect(moment.moon).not.toBeNull();
+  });
+
+  it("Arvit until dawn, past 'hatsot too; the moon once it is said", () => {
+    // 20 October 2026, 1:45 a.m. the next night: past 'hatsot, before dawn.
+    const late = at("2026-10-21T01:45:00+02:00");
+    const moment = sidourMoment(DEFAULT_PLACE, late);
+    expect(moment.hero?.tefila).toBe("arvit");
+    expect(moment.moon).not.toBeNull();
+    expect(sidourMoment(DEFAULT_PLACE, late, { office: () => true }).hero?.kind).toBe("halevana");
   });
 
   it("pas de lune avant la nuit : Min'ha, puis Arvit qui vient", () => {
@@ -137,7 +173,7 @@ describe("la carte du moment", () => {
     expect(moment.feast).toBe("souccot");
   });
 
-  it("entre deux offices, la fête prend la carte", () => {
+  it("between two services, the holiday takes the card if its text is said now", () => {
     // Souccot, entre 'hatsot et min'ha guedola : le loulav, jusqu'à la chkia.
     const souccot = sidourMoment(DEFAULT_PLACE, at("2026-09-28T13:50:00+02:00")).hero;
     expect(souccot).toMatchObject({
@@ -146,9 +182,8 @@ describe("la carte du moment", () => {
       text: "moadim/netilat-loulav",
     });
     expect(souccot?.end).toBeInstanceOf(Date);
-    // 'Hanouka, au même moment de la journée : l'allumage du soir, cinquième bougie.
-    const hanouka = sidourMoment(DEFAULT_PLACE, at("2026-12-08T12:50:00+01:00")).hero;
-    expect(hanouka).toMatchObject({ kind: "feast", feast: "hanouka", night: 5 });
+    // 'Hanouka, at the same time of day: tonight's lighting is not said now.
+    expect(sidourMoment(DEFAULT_PLACE, at("2026-12-08T12:50:00+01:00")).hero).toBeNull();
   });
 
   it("jamais plus d'une ligne sous la carte, et seulement sous une occasion", () => {
@@ -166,15 +201,116 @@ describe("la carte du moment", () => {
   });
 });
 
+describe("a service already said gives way", () => {
+  const said = (...tefilot: string[]) => ({
+    office: (window: { tefila: string }) => tefilot.includes(window.tefila),
+  });
+
+  it("Cha'harit said: no card, Min'ha is not said yet", () => {
+    // Monday 12 October 2026, Rosh 'Hodech, 9:40 a.m.
+    const { hero } = sidourMoment(DEFAULT_PLACE, at("2026-10-12T09:40:00+02:00"), said("chaharit"));
+    expect(hero).toBeNull();
+  });
+
+  it("Arvit said on an ordinary evening: the bedtime Chema, not tomorrow's Cha'harit", () => {
+    const { hero, extra } = sidourMoment(
+      DEFAULT_PLACE,
+      at("2026-10-12T22:30:00+02:00"),
+      said("arvit"),
+    );
+    expect(hero).toMatchObject({ kind: "chema", text: "sidour/chema-al-hamita" });
+    expect(hero?.evening && placeDayKey(DEFAULT_PLACE, hero.evening)).toBe("2026-10-12");
+    expect(extra).toBeNull();
+  });
+
+  it("Arvit said on a night of the moon: the moon takes the card, without the Arvit line", () => {
+    const moment = sidourMoment(DEFAULT_PLACE, at("2026-10-20T21:00:00+02:00"), said("arvit"));
+    expect(moment.hero?.kind).toBe("halevana");
+    expect(moment.extra).toBeNull();
+    // Still given: the home deck reads it (the Sidour page shows no line then).
+    expect(moment.moon).not.toBeNull();
+  });
+
+  it("Arvit said at the end of Chabbat: havdala keeps its line", () => {
+    // Saturday 17 October 2026, in the evening: no moon yet that week.
+    const moment = sidourMoment(DEFAULT_PLACE, at("2026-10-17T20:30:00+02:00"), said("arvit"));
+    expect(moment.hero?.kind).toBe("chema");
+    expect(moment.extra?.key).toBe("havdala");
+  });
+
+  it("the moon already blessed: neither card nor line, the rest of the month", () => {
+    const blessed = { office: () => true, moon: () => true };
+    const night = sidourMoment(DEFAULT_PLACE, at("2026-10-20T21:00:00+02:00"), blessed);
+    expect(night.hero?.kind).not.toBe("halevana");
+    expect(night.moon).toBeNull();
+    const day = sidourMoment(DEFAULT_PLACE, at("2026-10-21T10:00:00+02:00"), { moon: () => true });
+    expect(day.moon).toBeNull();
+  });
+});
+
+describe("only what is said now", () => {
+  const eveningDay = (hero: { evening?: Date } | null) =>
+    hero?.evening ? placeDayKey(DEFAULT_PLACE, hero.evening) : null;
+  const all = { office: () => true, moon: () => true, havdala: () => true, chema: () => true };
+
+  it("Arvit and the bedtime Chema said: nothing to say now, no card", () => {
+    const moment = sidourMoment(DEFAULT_PLACE, at("2026-10-12T22:30:00+02:00"), all);
+    expect(moment.hero).toBeNull();
+    expect(moment.extra).toBeNull();
+  });
+
+  it("on a night of the moon: Arvit, the moon, then the bedtime Chema", () => {
+    const night = at("2026-10-20T21:00:00+02:00");
+    expect(sidourMoment(DEFAULT_PLACE, night, { office: () => true }).hero?.kind).toBe("halevana");
+    const blessed = { office: () => true, moon: () => true };
+    expect(sidourMoment(DEFAULT_PLACE, night, blessed).hero?.kind).toBe("chema");
+  });
+
+  it("the bedtime Chema until dawn, for the evening before past midnight", () => {
+    // Monday 12 October 2026, Arvit said; 'hatsot of the night at 1:38.
+    const arvit = { office: () => true };
+    const evening = sidourMoment(DEFAULT_PLACE, at("2026-10-12T23:30:00+02:00"), arvit).hero;
+    expect(evening?.kind).toBe("chema");
+    expect(eveningDay(evening)).toBe("2026-10-12");
+    // Past midnight, Tuesday on the calendar: still Monday evening's.
+    const late = sidourMoment(DEFAULT_PLACE, at("2026-10-13T01:00:00+02:00"), arvit).hero;
+    expect(late?.kind).toBe("chema");
+    expect(eveningDay(late)).toBe("2026-10-12");
+    // Said at 23:30: not offered again at 0:30.
+    const said = sidourMoment(DEFAULT_PLACE, at("2026-10-13T00:30:00+02:00"), {
+      ...arvit,
+      chema: (day) => placeDayKey(DEFAULT_PLACE, day) === "2026-10-12",
+    });
+    expect(said.hero).toBeNull();
+    // Past 'hatsot, before dawn (about 6:37): still Monday evening's.
+    const small = sidourMoment(DEFAULT_PLACE, at("2026-10-13T03:00:00+02:00"), arvit).hero;
+    expect(small?.kind).toBe("chema");
+    expect(eveningDay(small)).toBe("2026-10-12");
+    // Past dawn: gone, until Tuesday's nightfall.
+    expect(sidourMoment(DEFAULT_PLACE, at("2026-10-13T06:45:00+02:00"), arvit).hero).toBeNull();
+    const tuesday = sidourMoment(DEFAULT_PLACE, at("2026-10-13T23:00:00+02:00"), arvit).hero;
+    expect(eveningDay(tuesday)).toBe("2026-10-13");
+  });
+
+  it("between dawn and misheyakir: no card, Cha'harit is not said yet", () => {
+    expect(sidourMoment(DEFAULT_PLACE, at("2026-10-13T06:45:00+02:00")).hero).toBeNull();
+  });
+
+  it("between sunset and nightfall: no card, Arvit is not said yet", () => {
+    expect(sidourMoment(DEFAULT_PLACE, at("2026-10-13T19:30:00+02:00")).hero).toBeNull();
+  });
+});
+
 describe("les bords de la nuit et des fêtes", () => {
   it("la lune s'efface à l'instant où le délai se ferme, même au milieu de la nuit", () => {
     // Nuit du 25 au 26 octobre 2026, la dernière : le délai se ferme vers 2 h 44.
-    expect(sidourMoment(DEFAULT_PLACE, at("2026-10-26T02:30:00+01:00")).hero?.kind).toBe(
+    const arvit = { office: () => true };
+    expect(sidourMoment(DEFAULT_PLACE, at("2026-10-26T02:30:00+01:00"), arvit).hero?.kind).toBe(
       "halevana",
     );
-    expect(sidourMoment(DEFAULT_PLACE, at("2026-10-26T03:04:00+01:00")).hero?.kind).not.toBe(
-      "halevana",
-    );
+    const after = sidourMoment(DEFAULT_PLACE, at("2026-10-26T03:04:00+01:00"), arvit);
+    expect(after.hero?.kind).not.toBe("halevana");
+    expect(after.moon).toBeNull();
   });
 
   it("'Hanouka n'annonce pas un allumage déjà passé, ni un allumage pendant le Chabbat", () => {

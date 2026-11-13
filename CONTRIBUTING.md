@@ -1,87 +1,97 @@
-# Guide de contribution
+# Contributing guide
 
-Merci de l'intérêt que vous portez à **Petite Jérusalem**. Toute aide pour
-améliorer cette plateforme au service de la communauté est la bienvenue.
+Thank you for your interest in **Petite Jérusalem**. Any help improving this
+platform for the community is welcome.
 
-## Comment contribuer ?
+## How to contribute
 
-### Signaler un bug
+### Report a bug
 
-Vous avez trouvé un bug ? Dites-le nous. Deux possibilités :
+Found a bug? Let us know. Two ways:
 
-1. **Issues GitHub** : ouvrez une issue en décrivant ce que vous avez fait, ce
-   que vous attendiez et ce qui s'est réellement passé.
-2. **Formulaire de support** : depuis le site (lien « Nous écrire » du pied
-   de page ou du bas de l'accueil) ou l'app (onglet À propos du profil). Le
-   message arrive avec le support, la plateforme et la version, ce qui aide à
-   reproduire.
+1. **GitHub issues**: open an issue describing what you did, what you
+   expected and what actually happened.
+2. **Support form**: from the website (the « Nous écrire » / "Write to us"
+   link in the footer or at the bottom of the home page) or the app (About
+   tab of the profile). The message arrives with the device, the platform
+   and the version, which helps reproduce it.
 
-### Proposer une amélioration
+### Suggest an improvement
 
-Une idée de fonctionnalité ?
+A feature idea?
 
-- Ouvrez une issue sur GitHub pour en discuter avant de coder.
-- Ou utilisez le formulaire de support du site ou de l'app (« Nous écrire »)
-  pour soumettre vos idées.
+- Open an issue on GitHub to discuss it before coding.
+- Or use the support form of the site or the app ("Write to us") to send
+  your ideas.
 
-### Proposer une pull request (PR)
+### Open a pull request
 
-1. **Forkez** le projet.
-2. Créez une branche pour votre fonctionnalité
-   (`git checkout -b feature/ma-nouvelle-fonctionnalite`).
-3. Faites vos modifications.
-4. Vérifiez que le code est propre et que les tests passent :
+1. **Fork** the project.
+2. Create a branch for your feature
+   (`git checkout -b feat/my-new-feature`).
+3. Make your changes.
+4. Check that the code is clean and the tests pass:
    ```bash
    npm run verify
    ```
-   `verify` enchaîne le type-check, `npm run lint` (ESLint, avec correction
-   automatique) et les tests unitaires Vitest. C'est exactement ce que la CI
-   rejoue sur chaque PR.
-5. Commitez vos changements (`git commit -m 'Ajoute ma nouvelle fonctionnalité'`).
-6. Poussez votre branche (`git push origin feature/ma-nouvelle-fonctionnalite`).
-7. Ouvrez une pull request sur le dépôt principal.
+   `verify` runs the type-check, `npm run lint` (ESLint, with automatic
+   fixes) and the Vitest unit tests. It is exactly what CI runs on every PR.
+5. Commit your changes with a
+   [Conventional Commits](https://www.conventionalcommits.org/) message, in
+   English, with a scope naming the area you touch:
+   ```bash
+   git commit -m "feat(library): add a search filter by book"
+   git commit -m "fix(sharing): keep the reservation after a reload"
+   ```
+   Types and scopes are listed in [CLAUDE.md](CLAUDE.md#commits). The pull
+   request title follows the same format.
+6. Push your branch (`git push origin feat/my-new-feature`).
+7. Open a pull request against the main repository.
 
-## Conventions du dépôt
+## Repository conventions
 
-Elles sont écrites dans [CLAUDE.md](CLAUDE.md) et valent pour tout ce qui
-s'écrit ici : code, commentaires, textes de l'interface, contenus,
-documentation, messages de commit et de pull request.
+They are written in [CLAUDE.md](CLAUDE.md) and apply to everything written
+here: code, comments, interface strings, content, documentation, commit
+messages and pull requests.
 
-- **Jamais de tiret long** : ni cadratin (U+2014), ni demi-cadratin (U+2013),
-  nulle part. Selon le cas, on écrit deux-points, une virgule, des
-  parenthèses, un point-virgule, « du 12 au 14 » pour une plage, ou une vraie
-  liste. Le test `src/__tests__/typography.test.ts` parcourt tous les fichiers
-  versionnés et échoue s'il en reste un.
-- **Français** pour les commentaires et la documentation. Les identifiants
-  suivent le fichier où ils vivent : anglais pour les noms techniques,
-  français pour le domaine liturgique.
-- **Espaces insécables** dans le français de l'interface : U+202F avant `!`,
-  `?` et `;`, U+00A0 avant `:` et à l'intérieur des guillemets « ». Le test
-  `src/__tests__/frenchTypography.test.ts` le vérifie sur `src/locales/fr`.
+- **English** for comments, documentation, commit messages and pull
+  requests. Identifiers follow the file they live in: English for technical
+  names, the transliterated terms of the liturgical domain where the file
+  already uses them. The interface stays trilingual (French, English,
+  Hebrew).
+- **Conventional Commits** for every commit message:
+  `type(scope): summary`.
+- **Never a long dash**: neither em dash (U+2014) nor en dash (U+2013),
+  anywhere. Depending on the case, write a colon, a comma, parentheses, a
+  semicolon, "from 12 to 14" for a range, or a real list. The test
+  `src/__tests__/typography.test.ts` scans every tracked file and fails if
+  one is left.
+- **Non-breaking spaces** in the French of the interface: U+202F before `!`,
+  `?` and `;`, U+00A0 before `:` and inside « » quotes. The test
+  `src/__tests__/frenchTypography.test.ts` checks it on `src/locales/fr`.
 
-## Standards de code
+## Code standards
 
-- **TypeScript** : typage fort, évitez `any` autant que possible.
-- **Vue 3** : Composition API avec `<script setup>`.
-- **Style** : le projet utilise `eslint` et `prettier`. Lancez `npm run lint`
-  et `npm run format` avant de commiter. Attention, `npm run format` ne
-  formate que `src/` (`prettier --write src/`) : les scripts, la
-  configuration et la documentation ne sont pas touchés.
-- **CSS** : classes utilitaires **TailwindCSS** autant que possible.
+- **TypeScript**: strong typing, avoid `any` as much as possible.
+- **Vue 3**: Composition API with `<script setup>`.
+- **Style**: the project uses `eslint` and `prettier`. Run `npm run lint`
+  and `npm run format` before committing. Note that `npm run format` only
+  formats `src/` (`prettier --write src/`): scripts, configuration and
+  documentation are left alone.
+- **CSS**: **TailwindCSS** utility classes as much as possible.
 
-## Tests garde-fous
+## Guard tests
 
-Au-delà des tests fonctionnels, plusieurs tests unitaires tiennent des règles
-du dépôt et font échouer la CI pour des raisons qui ne se voient pas dans le
-diff : un tiret long dans un commentaire, une clé i18n utilisée mais absente
-de `fr`, un import statique qui ramène Firestore dans le bundle initial, un
-widget ajouté sur une seule plateforme, un texte corrigé sans que
-`public/texts/manifest.json` suive… Ils sont listés, avec ce que chacun
-attend, dans [docs/tests.md](docs/tests.md). Lisez cette page avant de
-chercher longtemps pourquoi une PR est rouge.
+Beyond functional tests, several unit tests enforce repository rules and make
+CI fail for reasons that do not show in the diff: a long dash in a comment,
+an i18n key used but missing from `fr`, a static import that pulls Firestore
+into the initial bundle, a widget added on a single platform, a text fixed
+without `public/texts/manifest.json` following... They are listed, with what
+each one expects, in [docs/tests.md](docs/tests.md). Read that page before
+searching for long why a PR is red.
 
 ## Important
 
-Ce projet est destiné à un usage communautaire et **non commercial**. En
-contribuant, vous acceptez que votre code fasse partie du projet sous licence
-**CC BY-NC 4.0**.
+This project is meant for community, **non-commercial** use. By contributing,
+you agree that your code becomes part of the project under the
+**CC BY-NC 4.0** license.

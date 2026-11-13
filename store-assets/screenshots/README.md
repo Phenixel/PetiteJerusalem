@@ -1,70 +1,70 @@
-# Captures d'écran des fiches
+# Store listing screenshots
 
-Un seul jeu de captures pour les deux stores : mêmes écrans, mêmes données de
-démo, même rendu de l'app, produits en une fois par
-`scripts/store-screenshots.mjs` (`npm run store:screenshots`).
+A single set of screenshots for both stores: same screens, same demo data,
+same app rendering, produced in one pass by `scripts/store-screenshots.mjs`
+(`npm run store:screenshots`).
 
-## Où elles servent
+## Where they are used
 
-| Fichiers | Dimensions | Fiche | Envoyés par |
+| Files | Dimensions | Listing | Uploaded by |
 |---|---|---|---|
-| `<locale>/phone-*.jpg` | 1080 × 1920 (360 × 640 CSS @3x) | Play Store, téléphone | `scripts/play-listing.mjs` |
-| `<locale>/iphone-*.jpg` | 1320 × 2868 (440 × 956 CSS @3x) | App Store, iPhone 6,9" (`APP_IPHONE_67`) | `scripts/asc-screenshots.mjs` |
+| `<locale>/phone-*.jpg` | 1080 × 1920 (360 × 640 CSS @3x) | Play Store, phone | `scripts/play-listing.mjs` |
+| `<locale>/iphone-*.jpg` | 1320 × 2868 (440 × 956 CSS @3x) | App Store, iPhone 6.9" (`APP_IPHONE_67`) | `scripts/asc-screenshots.mjs` |
 | `<locale>/ipad-*.jpg` | 2064 × 2752 (1032 × 1376 CSS @2x) | App Store, iPad 13" (`APP_IPAD_PRO_3GEN_129`) | `scripts/asc-screenshots.mjs` |
 
-Trois formats et non un seul, parce que les deux stores n'acceptent pas les
-mêmes proportions : le Play Store refuse une image dont un côté dépasse deux
-fois l'autre (le 6,9" d'Apple est à 2,17), et Apple exige ses dimensions au
-pixel près. Le contenu, lui, est le même partout.
+Three formats rather than one, because the two stores do not accept the
+same aspect ratios: the Play Store rejects an image where one side is more
+than twice the other (Apple's 6.9" is at 2.17), and Apple requires its
+dimensions to the exact pixel. The content, however, is the same
+everywhere.
 
-JPEG sRGB **sans canal alpha** : Apple refuse l'alpha, Google accepte le JPEG.
-Envoyés triés par nom ; le jeu d'une famille remplace entièrement celui du
-store. Une locale sans dossier laisse sa fiche intacte (le dossier porte le
-nom commun aux deux stores, `fr-FR`).
+sRGB JPEG **without an alpha channel**: Apple rejects alpha, Google accepts
+JPEG. Uploaded sorted by name; a family's set entirely replaces the one in
+the store. A locale without a folder leaves its listing untouched (the
+folder uses the name common to both stores, `fr-FR`).
 
-## Écrans
+## Screens
 
-Dans l'ordre des fiches (`SCREENS` dans le script) :
+In listing order (`SCREENS` in the script):
 
-1. accueil connecté (tableau de bord)
-2. horaires du jour (Paris)
-3. session de partage de lecture
-4. lecteur de texte (Tehilim 1)
-5. bibliothèque
-6. lecture quotidienne
-7. détail d'un chiour
-8. calendrier des fêtes
+1. signed-in home (dashboard)
+2. today's times (Paris)
+3. reading-sharing session
+4. text reader (Tehilim 1)
+5. library
+6. daily reading
+7. chiour detail
+8. holiday calendar
 
-Le Play Store en prend huit au plus par format, l'App Store dix : le compte
-y est pour le Play Store, un écran de plus demanderait d'en retirer un.
-Ensemble, ils couvrent ce que promet la description des fiches :
-bibliothèque (et son « Tout télécharger » pour la lecture hors ligne),
-partage de lecture, lecture quotidienne et son rappel, chiourim, horaires
-et calendrier.
+The Play Store takes at most eight per format, the App Store ten: the count
+is set for the Play Store, so one more screen would require removing one.
+Together, they cover what the listing description promises: the library
+(and its « Tout télécharger » ("Download all") for offline reading),
+reading sharing, daily reading and its reminder, chiourim, times and the
+calendar.
 
-## Rendu
+## Rendering
 
-Chrome headless, sur les émulateurs Firebase avec des données de démo fixes
-(compte « Sarah Levy », session Tehilim, chiourim). La page se charge avec
-une plateforme Capacitor « maison » (`window.CapacitorCustomPlatform`) :
-l'app se croit native et montre son interface d'app (barre d'onglets du
-bas, pas d'en-tête ni de pied de page de site), ses plugins retombant sur
-leur implémentation web. Pas de barre système : ni celle d'Android dans la
-fiche App Store, ni l'inverse.
+Headless Chrome, on the Firebase emulators with fixed demo data (account
+« Sarah Levy », a Tehilim session, chiourim). The page loads with a
+"homemade" Capacitor platform (`window.CapacitorCustomPlatform`): the app
+believes it is native and shows its app interface (bottom tab bar, no site
+header or footer), its plugins falling back to their web implementation. No
+system bar: neither Android's in the App Store listing, nor the reverse.
 
-Le compte de démo a les thèmes des fêtes coupés : une fiche générée pendant
-une fête en garderait sinon le décor jusqu'au tag suivant.
+The demo account has holiday themes turned off: otherwise a listing
+generated during a holiday would keep its decoration until the next tag.
 
-## En CI
+## In CI
 
-À chaque tag, `.github/workflows/store-screenshots.yml` génère le jeu une fois
-et le publie en artifact `store-screenshots`. `deploy-android.yml` (job
-`listing`) et `deploy-ios.yml` (job `screenshots`) le récupèrent par l'action
-`.github/actions/fetch-store-screenshots`, qui attend la fin du run s'il
-tourne encore. Si la génération échoue ou traîne plus de 20 minutes, les
-deux fiches partent avec les captures committées ici : la release n'attend
-jamais les captures.
+On each tag, `.github/workflows/store-screenshots.yml` generates the set
+once and publishes it as the `store-screenshots` artifact.
+`deploy-android.yml` (`listing` job) and `deploy-ios.yml` (`screenshots`
+job) fetch it through the `.github/actions/fetch-store-screenshots` action,
+which waits for the run to finish if it is still in progress. If generation
+fails or takes more than 20 minutes, both listings go out with the
+screenshots committed here: the release never waits for the screenshots.
 
-Pour régénérer sans rien publier : lancer « Store screenshots » à la main
-(onglet Actions), puis télécharger l'artifact du run, à committer ici au
-besoin pour rafraîchir le jeu de repli.
+To regenerate without publishing anything: run "Store screenshots" manually
+(Actions tab), then download the run's artifact, and commit it here if
+needed to refresh the fallback set.

@@ -5,10 +5,27 @@ import type { TextStudyJsonEntry } from "../../models/models";
 import {
   loadParashaRashi,
   loadText,
+  loadTranslation,
   MissingTextFileError,
   placeLabel,
+  translationLangs,
+  translationLangsOfPath,
 } from "../../services/textService";
-import type { RashiComment, TextContent, TextSection } from "../../services/textService";
+import type {
+  RashiComment,
+  TextBlock,
+  TextContent,
+  TextSection,
+  TextTranslation,
+  TranslationSource,
+} from "../../services/textService";
+import {
+  pickTranslationLang,
+  translationLangChoice,
+  translationShown,
+} from "../../composables/useTranslation";
+import TranslationText from "../../components/TranslationText.vue";
+import TranslationAiNotice from "../../components/TranslationAiNotice.vue";
 import { isEntryAvailableOffline } from "../../services/offlineLibraryService";
 import { ensureManifestLoaded } from "../../services/offlineTextStore";
 import { useOnline } from "../../composables/useOnline";
@@ -23,11 +40,14 @@ import {
   usePassageLongPress,
 } from "../../composables/useReadingSelection";
 import type { Bookmark } from "../../services/readingProgressService";
-import { hubPath, sectionPath, SITE_URL } from "../../content/etudeTexts";
+import { hubPath, sectionPath } from "../../content/etudeTexts";
+import { APP_SITE_URL } from "../../config/environment";
 import { appendHebrewNumeral } from "../../services/hebrewNumerals";
 import { analyticsService } from "../../services/analyticsService";
 import CollapseTransition from "../../components/CollapseTransition.vue";
 import TalmudDafText from "../../components/TalmudDafText.vue";
+import { takeLegacyChecks } from "../../composables/useChneiMikraChecks";
+import BookmarkRibbon from "../../components/BookmarkRibbon.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
 
 const props = defineProps<{
@@ -41,12 +61,30 @@ const props = defineProps<{
   withRashi?: boolean;
   /** D'où le texte est lu, pour la mesure d'audience (le chnei mikra a deux entrées). */
   source?: string;
+  /**
+   * Chnei mikra, une montée par jour : seules ces montées (blocs de la
+   * paracha, comptés de 0, `to` exclu) s'affichent.
+   */
+  blocks?: { from: number; to: number };
+  /**
+   * Chnei mikra (ChneiMikraPage): the week of the paracha. Each aliyah then
+   * ends with « Marquer comme lue », to check it off once read
+   * (useChneiMikraChecks); the page holds the checks (`checkedAliyot`) and
+   * receives `toggle-aliya`.
+   */
+  aliyaWeek?: string;
+  /** Les montées cochées de ce texte, comptées de 0. */
+  checkedAliyot?: number[];
 }>();
 const emit = defineEmits<{
   "toggle-section": [index: number];
   "sections-loaded": [indexes: number[]];
+  /** Une montée de ce texte (comptée de 0) cochée ou décochée ; `label` : son titre. */
+  "toggle-aliya": [index: number, done: boolean, label: string];
+  /** Les montées cochées sur l'appareil par la version 3.10.11, à reprendre. */
+  "legacy-aliyot": [indexes: number[]];
 }>();
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const { sectionLabel, headingLabel } = useTextLabels();
 // Taille de lecture partagée avec le lecteur de la bibliothèque (A− / A+).
 const readingSize = useReadingSize();
@@ -143,7 +181,7 @@ function isVerseSelected(sectionIndex: number, line: number): boolean {
 function passageUrl(sectionIndex: number, line: number): string {
   const section = storeSection(sectionIndex);
   const path = section !== null ? sectionPath(props.entry, section) : hubPath(props.entry);
-  return `${SITE_URL}${path}?verset=${line}`;
+  return `${APP_SITE_URL}${path}?verset=${line}`;
 }
 
 function pickVerse(event: MouseEvent, sectionIndex: number, line: number, hebrew: string) {
@@ -197,6 +235,42 @@ function goToBookmark(b: Bookmark) {
   });
 }
 
+// --- Chnei mikra: « Marquer comme lue » at the end of each aliyah (see aliyaWeek) ---
+/** The rank of an aliyah in the text (counted from 0), as the week counts it. */
+function aliyaIndex(section: TextSection, block: TextBlock): number {
+  return section.blocks?.indexOf(block) ?? 0;
+}
+function isAliyaChecked(section: TextSection, block: TextBlock): boolean {
+  return props.checkedAliyot?.includes(aliyaIndex(section, block)) ?? false;
+}
+function toggleAliya(section: TextSection, block: TextBlock): void {
+  if (!props.aliyaWeek) return;
+  emit("toggle-aliya", aliyaIndex(section, block), !isAliyaChecked(section, block), block.label);
+}
+// Les coches de la version d'avant, sur l'appareil : reprises une fois, à
+// l'arrivée du texte, qui seul sait où commencent ses montées.
+watch(
+  () => [content.value, props.aliyaWeek] as const,
+  ([loaded, week]) => {
+    const blocks = loaded?.sections.find((section) => section.blocks)?.blocks;
+    if (!week || !blocks) return;
+    const taken = takeLegacyChecks(
+      week,
+      props.entry.id,
+      blocks.map((block) => block.offset),
+    );
+    if (taken.length > 0) emit("legacy-aliyot", taken);
+  },
+  { immediate: true },
+);
+
+/** Les blocs d'une section (chapitres, montées), réduits aux montées demandées. */
+function blocksOf(section: TextSection): TextBlock[] {
+  const blocks = section.blocks ?? [{ label: "", lines: section.he, offset: 0 }];
+  const range = props.blocks;
+  return range ? blocks.filter((_, index) => index >= range.from && index < range.to) : blocks;
+}
+
 function isSectionVisible(sectionIndex: number): boolean {
   return !readSet.value.has(sectionIndex) || peekedSections.value.has(sectionIndex);
 }
@@ -207,10 +281,60 @@ function targumLine(section: TextSection, line: number): string {
   return section.targum?.[line] ?? "";
 }
 
+// --- Traduction : le réglage du lecteur de la bibliothèque (useTranslation)
+// vaut ici aussi. Qui lit le Tanakh avec sa traduction l'attend dans sa
+// lecture du jour ; elle se charge à part, après l'hébreu, et seulement si
+// le réglage est allumé.
+const translation = ref<TextTranslation | null>(null);
+let translationSequence = 0;
+
+watch(
+  [translationShown, () => content.value !== null, locale, translationLangChoice],
+  async () => {
+    const sequence = ++translationSequence;
+    if (!translationShown.value || !content.value) return;
+    const lang = pickTranslationLang(
+      await translationLangs(props.entry),
+      locale.value,
+      translationLangChoice.value,
+    );
+    if (sequence !== translationSequence) return;
+    if (!lang) {
+      translation.value = null;
+      return;
+    }
+    if (translation.value?.lang === lang) return;
+    const loaded = await loadTranslation(props.entry, lang).catch(() => null);
+    if (sequence === translationSequence) translation.value = loaded;
+  },
+  { immediate: true },
+);
+
+/** La traduction d'une ligne de la section, ou rien. */
+function trLine(section: TextSection, line: number): string {
+  if (!translationShown.value) return "";
+  return translation.value?.sections.get(section.index)?.[line] ?? "";
+}
+
+/** Talmud : les lignes traduites de chaque daf de la section, ou null. */
+function trByDaf(section: TextSection): Map<string, string[]> | null {
+  const lines = translationShown.value ? translation.value?.sections.get(section.index) : null;
+  if (!lines?.length) return null;
+  const byDaf = new Map<string, string[]>();
+  let offset = 0;
+  for (const block of section.dafBlocks ?? []) {
+    byDaf.set(block.daf, lines.slice(offset, offset + block.lines.length));
+    offset += block.lines.length;
+  }
+  return byDaf;
+}
+
 // --- Rachi (option du chnei mikra) : fichier séparé de la paracha, chargé
 // seulement quand l'option est active, pour que la paracha seule reste
 // légère. Aligné ligne à ligne sur `he` (voir textService.loadParashaRashi). --
 const rashiLines = ref<RashiComment[][] | null>(null);
+/** Les sources de la traduction de Rachi, pour l'avertissement d'une version IA. */
+const rashiSources = ref<TranslationSource[]>([]);
 const rashiFailed = ref(false);
 let rashiLoading = false;
 
@@ -219,7 +343,17 @@ async function loadRashi() {
   rashiLoading = true;
   rashiFailed.value = false;
   try {
-    rashiLines.value = await loadParashaRashi(props.entry);
+    // Rachi traduit quand la traduction est allumée et qu'il en a une.
+    const lang = translationShown.value
+      ? pickTranslationLang(
+          await translationLangsOfPath(`/texts/rashi/${props.entry.id}.json`),
+          locale.value,
+          translationLangChoice.value,
+        )
+      : null;
+    const rashi = await loadParashaRashi(props.entry, lang);
+    rashiLines.value = rashi.lines;
+    rashiSources.value = rashi.sources;
   } catch {
     // Hors ligne, ou entrée sans fichier Rachi (Na"kh) : la lecture continue
     // sans le commentaire, un mot le dit sur les parachiot.
@@ -236,6 +370,21 @@ watch(
     if (wanted) void loadRashi();
   },
   { immediate: true },
+);
+
+// La traduction allumée ou éteinte, ou une autre langue choisie : Rachi se
+// recharge avec ou sans elle.
+watch([translationShown, translationLangChoice], () => {
+  if (!rashiLines.value) return;
+  rashiLines.value = null;
+  if (props.withRashi && content.value) void loadRashi();
+});
+
+/** Les sources des traductions affichées : celle du texte, et celle de Rachi. */
+const shownTranslationSources = computed<TranslationSource[]>(() =>
+  translationShown.value
+    ? [...(translation.value?.sources ?? []), ...(props.withRashi ? rashiSources.value : [])]
+    : [],
 );
 
 function rashiComments(line: number): RashiComment[] {
@@ -337,7 +486,6 @@ onUnmounted(() => {
     </div>
 
     <p v-else-if="notDownloaded" class="py-2 text-sm text-text-secondary flex items-center gap-1.5">
-      <AppIcon name="download" :size="14" class="text-text-secondary/60" />
       {{ t("dailyReading.offline.notDownloaded") }}
     </p>
 
@@ -345,7 +493,6 @@ onUnmounted(() => {
       v-else-if="missing || error"
       class="py-2 text-sm text-text-secondary flex items-center gap-1.5"
     >
-      <AppIcon name="alert-triangle" :size="14" class="text-amber-500" />
       {{ t("dailyReading.loadError") }}
       <button @click="load" class="ml-2 text-primary hover:underline">
         {{ t("textReading.retry") }}
@@ -356,7 +503,6 @@ onUnmounted(() => {
       <!-- Marque-pages posés dans cette lecture : retour direct au verset -->
       <div v-if="bookmarks.length" class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
         <span class="inline-flex items-center gap-1.5 text-text-secondary">
-          <AppIcon name="bookmark" :size="13" class="text-primary" />
           {{ t("textReading.bookmarks") }}
         </span>
         <button
@@ -369,12 +515,14 @@ onUnmounted(() => {
         </button>
       </div>
 
+      <!-- Une traduction affichée (le texte, ou Rachi) faite par IA : on le dit. -->
+      <TranslationAiNotice :sources="shownTranslationSources" />
+
       <!-- Option Rachi active mais fichier introuvable (hors ligne, par exemple) -->
       <p
         v-if="withRashi && rashiFailed"
         class="text-sm text-text-secondary flex items-center gap-1.5"
       >
-        <AppIcon name="alert-triangle" :size="14" class="text-amber-500" />
         {{ t("chneiMikra.rashiUnavailable") }}
       </p>
 
@@ -421,15 +569,13 @@ onUnmounted(() => {
               v-if="content.type === 'Talmud Bavli'"
               :blocks="section.dafBlocks ?? []"
               variant="daily"
+              :translation-by-daf="trByDaf(section)"
             />
 
             <!-- Verses / mishnayot / psalm lines: each on its own line, flowing on
                  the background, with a marker at each chapter / montée block -->
             <template v-else>
-              <template
-                v-for="block in section.blocks ?? [{ label: '', lines: section.he, offset: 0 }]"
-                :key="block.offset"
-              >
+              <template v-for="block in blocksOf(section)" :key="block.offset">
                 <p
                   v-if="block.label"
                   class="my-4 text-xs font-semibold text-primary/70 dark:text-primary text-center"
@@ -438,6 +584,7 @@ onUnmounted(() => {
                 </p>
                 <p dir="rtl" class="font-hebrew text-text-primary daily-he">
                   <template v-for="(line, index) in block.lines" :key="block.offset + index">
+                    <BookmarkRibbon v-if="isVerseBookmarked(section.index, block.offset + index)" />
                     <span
                       :data-verse="verseKey(section.index, block.offset + index)"
                       @click="pickVerse($event, section.index, block.offset + index, line)"
@@ -451,12 +598,6 @@ onUnmounted(() => {
                           highlightedVerse !== verseKey(section.index, block.offset + index),
                       }"
                     >
-                      <AppIcon
-                        v-if="isVerseBookmarked(section.index, block.offset + index)"
-                        name="bookmark"
-                        :size="11"
-                        class="inline-block align-super text-primary"
-                      />
                       <span
                         v-if="showVerseNumbers || block.label"
                         class="text-xs align-super text-primary/60 select-none"
@@ -476,6 +617,14 @@ onUnmounted(() => {
                     >
                       {{ targumLine(section, block.offset + index) }}
                     </span>
+                    <!-- La traduction du verset, sous lui (réglage Traduction) -->
+                    <span
+                      v-if="trLine(section, block.offset + index)"
+                      dir="ltr"
+                      class="block mt-1 mb-3 text-text-secondary daily-tr"
+                    >
+                      <TranslationText :text="trLine(section, block.offset + index)" />
+                    </span>
                     <!-- Option Rachi : les commentaires du verset, dibbour hamat'hil en avant -->
                     <span
                       v-if="rashiComments(block.offset + index).length"
@@ -491,16 +640,42 @@ onUnmounted(() => {
                           comment.lead
                         }}</span>
                         {{ comment.text }}
+                        <span v-if="comment.tr" dir="ltr" class="block mt-1 mb-2 daily-tr">
+                          <TranslationText :text="comment.tr" />
+                        </span>
                       </span>
                     </span>
                     <br
                       v-if="
                         !targumLine(section, block.offset + index) &&
-                        !rashiComments(block.offset + index).length
+                        !rashiComments(block.offset + index).length &&
+                        !trLine(section, block.offset + index)
                       "
                     />
                   </template>
                 </p>
+                <!-- Chnei mikra: each aliyah is checked off where it ends, like
+                     a psalm of « Mes Téhilim » or a text of the daily reading. -->
+                <button
+                  v-if="block.label && aliyaWeek"
+                  type="button"
+                  class="mark-btn mt-2"
+                  :class="{ 'is-done': isAliyaChecked(section, block) }"
+                  role="checkbox"
+                  :aria-checked="isAliyaChecked(section, block)"
+                  :aria-label="
+                    t('chneiMikra.aliyaCheck', { aliya: headingLabel(block.heading, block.label) })
+                  "
+                  @click="toggleAliya(section, block)"
+                >
+                  <AppIcon v-if="isAliyaChecked(section, block)" name="circle-check" :size="15" />
+                  <span v-else class="mark-ring" />
+                  {{
+                    isAliyaChecked(section, block)
+                      ? t("chneiMikra.aliyaDone")
+                      : t("chneiMikra.aliyaMark")
+                  }}
+                </button>
               </template>
             </template>
           </div>
@@ -517,16 +692,29 @@ onUnmounted(() => {
   content-visibility: auto;
   contain-intrinsic-size: auto 40rem;
 }
-/* Tailles pilotées par le réglage A− / A+ (useReadingSize), comme le lecteur.
-   L'interligne de l'hébreu est volontairement plus serré que leading-loose :
-   assez d'air pour les voyelles et les teamim, sans étirer la lecture. */
+/* Sizes follow the A− / A+ control (useReadingSize), as in the reader.
+   The Hebrew line height is deliberately tighter than leading-loose: enough
+   air for the vowels and the cantillation marks, without stretching the
+   reading. Justified, like the reader: the text fills the width of the
+   screen, the Targum and Rashi under each verse included. */
 .daily-he {
   font-size: calc(1.25rem * var(--reading-scale, 1));
   line-height: 1.7;
+  text-align: justify;
 }
 .daily-tl {
   font-family: var(--font-reading);
   font-size: calc(1rem * var(--reading-scale, 1));
+}
+/* The translation of a verse or of a Rashi comment: the Latin reading font,
+   justified from the left, under the Hebrew it translates. */
+.daily-tr {
+  font-family: var(--font-reading);
+  font-size: calc(0.95rem * var(--reading-scale, 1));
+  line-height: 1.6;
+  text-align: justify;
+  text-align-last: left;
+  hyphens: auto;
 }
 /* Rachi : sous le Targoum, plus petit et en retrait derrière un filet
    (côté droit : le texte est en hébreu). */
@@ -535,5 +723,26 @@ onUnmounted(() => {
   line-height: 1.65;
   padding-inline-start: 0.75rem;
   border-inline-start: 2px solid color-mix(in srgb, var(--color-primary) 35%, transparent);
+}
+/* « Marquer comme lue » at the end of an aliyah: the button of « Mes Téhilim »
+   and of the daily reading. */
+.mark-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+.mark-btn:hover,
+.mark-btn.is-done {
+  color: var(--color-primary);
+}
+.mark-ring {
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-radius: var(--radius-pill);
 }
 </style>

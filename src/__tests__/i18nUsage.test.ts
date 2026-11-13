@@ -106,6 +106,13 @@ describe("i18n usage", () => {
       "admin.chiourim.filters.",
       "admin.chiourim.sort.",
       "admin.sessions.filters.",
+      // Nous écrire : statuts et natures des messages (backoffice et /contact).
+      "admin.support.filters.",
+      "admin.support.kinds.",
+      "admin.support.statuses.",
+      "support.statuses.",
+      "support.kinds.",
+      "support.thread.statusHelp.",
       // Le corpus d'un livre à rattacher à un cours (ChiourTexteField).
       "chiourim.texte.types.",
       // Les informations de l'équipe : leur nature, et les langues de leurs
@@ -124,6 +131,45 @@ describe("i18n usage", () => {
       "home.sidourNow.names.",
       "moderation.reasons.",
       "occasions.kinds.",
+      // Mon parcours : les moments, les unités, les sedarim, les modèles
+      // d'habitude et les options, nommés par leur clé (voir
+      // composables/useParcoursViews et components/parcours).
+      "home.edit.blocks.",
+      "parcours.aliyot.ordinals.",
+      "parcours.anchorKicker.",
+      "parcours.anchorPoints.",
+      "parcours.anchors.",
+      "parcours.catchUp.options.",
+      "parcours.catchUp.results.",
+      "parcours.corpus.",
+      "parcours.create.moments.",
+      "parcours.create.partsTitle.",
+      "parcours.create.rhythmNotes.",
+      "parcours.create.anchorOpens.",
+      "parcours.create.rhythms.",
+      "parcours.cycles.",
+      "parcours.day.during.",
+      "parcours.ends.",
+      "parcours.habits.",
+      "parcours.habitAbout.",
+      "parcours.kicker.",
+      "parcours.lights.captions.",
+      "parcours.lights.names.",
+      "parcours.moments.",
+      "parcours.pace.",
+      "parcours.reminders.notify.titles.",
+      "parcours.rhythms.",
+      "parcours.sedarim.",
+      "parcours.settings.rhythmValue.",
+      "parcours.tefilot.",
+      "parcours.units.",
+      "parcours.volume.all.",
+      "parcours.wall.legendItems.",
+      "parcours.wall.status.",
+      "parcours.weekdays.",
+      // Le tutoriel de Mon parcours (composables/useParcoursTours).
+      "tips.parcours.",
+      "parcours.when.",
       "occasions.notify.",
       "occasions.reminders.",
       "occasions.when.",
@@ -137,6 +183,10 @@ describe("i18n usage", () => {
       "textReading.fold.",
       "textReading.kotel.points.",
       "textReading.kotel.rose.",
+      // Les langues d'une traduction, nommées par leur code (fr, en) : le
+      // choix du menu de lecture et la phrase qui dit laquelle on montre.
+      "textReading.translation.langs.",
+      "textReading.translation.langAdj.",
       "textReading.zman.",
       // Les limites du 'hamets, dont le cadre construit les intitulés selon
       // que le 14 Nissan tombe un Chabbat ou non (voir ChametzTimes.vue).
