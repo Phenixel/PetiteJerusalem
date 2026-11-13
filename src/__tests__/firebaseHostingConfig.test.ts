@@ -38,6 +38,33 @@ describe("the hosting configuration", () => {
     expect(wrong).toEqual([]);
   });
 
+  it("does not answer a missing asset, font or text with the app shell", () => {
+    // The catch-all rewrite used to cover these folders: a chunk gone after a
+    // release, or a text asked before it was published, came back as 200
+    // text/html, with the long cache of its folder (a year for /assets).
+    const shell = hosting.rewrites.filter((r) => r.destination === "/app.html");
+    expect(shell.map((r) => r.source)).toEqual(["!/@(assets|fonts|texts)/**"]);
+    // Each excluded folder is one the build fills and a header block caches.
+    for (const folder of ["assets", "fonts", "texts"]) {
+      expect(hosting.headers.some((h) => h.source === `/${folder}/**`)).toBe(true);
+    }
+  });
+
+  it("sends the security headers on every response", () => {
+    const everywhere = hosting.headers.find((h) => h.source === "**")?.headers ?? [];
+    const value = (key: string) => everywhere.find((h) => h.key === key)?.value ?? "";
+    expect(value("X-Content-Type-Options")).toBe("nosniff");
+    expect(value("Strict-Transport-Security")).toContain("max-age=31536000");
+    // Sign-in by popup (Google, Apple) needs the opener kept for popups.
+    expect(value("Cross-Origin-Opener-Policy")).toBe("same-origin-allow-popups");
+    // The part of a content security policy that needs no inventory of the
+    // scripts: no <base> elsewhere, no plugin, no framing by another site.
+    const csp = value("Content-Security-Policy");
+    for (const directive of ["base-uri 'self'", "object-src 'none'", "frame-ancestors 'self'"]) {
+      expect(csp).toContain(directive);
+    }
+  });
+
   it("states the social preview's cache policy on its rewritten routes", () => {
     const rewritten = hosting.rewrites.filter((r) => r.function === "socialPreview");
     expect(rewritten.length).toBeGreaterThan(0);
