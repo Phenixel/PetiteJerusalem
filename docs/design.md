@@ -3792,7 +3792,17 @@ reasons:
 - **The qamats qatan shows.** The qamats read "o" (U+05C7, כׇּל, חׇכְמָה) is
   drawn by every published font within a few hundredths of an em of the
   qamats: on a phone, nothing tells them apart. Its stem is made 0.1 em
-  longer, the way printed siddurim mark it; no other glyph changes.
+  longer, the way printed siddurim mark it, and it is drawn in the theme
+  ink (`--color-primary`); no other glyph changes. Wrapping the sign in an
+  element to color it is not an option: Safari, hence the iOS app, then
+  detaches it from its letter. The glyph is therefore a color glyph of the
+  font itself (COLR), painted with the first entry of its palette;
+  `useTheme.ts` sets that entry to the theme ink with
+  `@font-palette-values --pj-qatan`, written with the color itself since a
+  descriptor cannot read a CSS variable, and `main.css` puts the palette
+  on the root. Before that rule exists (prerendered page) or where palettes
+  are not supported, the font paints it in the ink of the default theme.
+  The list of families in the palette is held by `qatanColor.test.ts`.
 - **A te'am does not run into the vowel.** None of the three fonts draws
   the teamim, so a cantillated word falls back to another font. Noto Serif
   Hebrew, the fallback until now, set a vowel and a te'am under the same

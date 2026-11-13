@@ -3,6 +3,7 @@ import { createAccountPreference } from "./createAccountPreference";
 import { activeHolidayTheme } from "./useHolidayTheme";
 import { isDark } from "./useColorScheme";
 import { isContrastMore } from "./useContrast";
+import { QATAN_COLOR_FAMILIES } from "./useFonts";
 
 /**
  * Les couleurs d'un thème, qu'il vienne d'un thème choisi ou d'une fête.
@@ -211,6 +212,33 @@ function applyThemeColors(theme: ThemeColors, contrastMore: boolean, dark: boole
   style.setProperty("--color-brand-soft", colors.brandSoft);
   style.setProperty("--color-secondary-brand", colors.secondaryBrand);
   style.setProperty("--color-secondary-soft", colors.secondarySoft);
+  applyQatanColor(colors.primary);
+}
+
+/**
+ * The qamats qatan of the Hebrew reading fonts is a color glyph, painted
+ * with entry 0 of the font palette (scripts/hebrew-fonts.py): it takes the
+ * theme ink here. A descriptor of @font-palette-values cannot read a CSS
+ * variable, hence the rule written with the color itself; main.css puts
+ * the palette on the root. Without this rule (prerendered page, browser
+ * without palettes), the font paints it in the ink of the default theme.
+ */
+const QATAN_STYLE_ID = "pj-qatan-color";
+
+export function qatanPaletteRule(color: string): string {
+  const families = QATAN_COLOR_FAMILIES.map((family) => `"${family}"`).join(", ");
+  return `@font-palette-values --pj-qatan { font-family: ${families}; override-colors: 0 ${color}; }`;
+}
+
+function applyQatanColor(color: string) {
+  let el = document.getElementById(QATAN_STYLE_ID);
+  if (!el) {
+    el = document.createElement("style");
+    el.id = QATAN_STYLE_ID;
+    document.head.appendChild(el);
+  }
+  const rule = qatanPaletteRule(color);
+  if (el.textContent !== rule) el.textContent = rule;
 }
 
 /**

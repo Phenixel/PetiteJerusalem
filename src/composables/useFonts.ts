@@ -67,6 +67,19 @@ export const HEBREW_FONT_OPTIONS: FontOption[] = [
   },
 ];
 
+/**
+ * The families whose qamats qatan is a color glyph (see main.css and
+ * scripts/hebrew-fonts.py): useTheme paints it in the theme ink.
+ */
+export const QATAN_COLOR_FAMILIES = [
+  "Frank Ruhl Libre PJ",
+  "David Libre PJ",
+  "Heebo PJ",
+  "Teamim Frank",
+  "Teamim David",
+  "Teamim Heebo",
+];
+
 const DEFAULT_LATIN = LATIN_FONT_OPTIONS[0];
 const DEFAULT_HEBREW = HEBREW_FONT_OPTIONS[0];
 

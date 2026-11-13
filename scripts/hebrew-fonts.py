@@ -14,6 +14,11 @@ Two problems with the fonts as published, both fixed here:
    מָֽ). Taamey Frank CLM (Culmus project) carries the Biblical Hebrew layout
    logic of SBL Hebrew and leaves room between them: it becomes the fallback.
 
+The qamats qatan is also made a color glyph (COLR v0): a single layer, a
+copy of its outline, painted with entry 0 of the palette. The page sets
+that entry to the theme color with @font-palette-values (useTheme.ts); a
+browser that cannot override it paints it in INK, the default theme ink.
+
 Each source is downloaded, checked against its SHA-256, modified, renamed
 and written as woff2. Run it again only to change a source or STEM_EM:
 
@@ -27,6 +32,7 @@ modified version is called "Taamey Frank PJ" and keeps the exception
 recorded in docs/design.md, "Hebrew reading fonts".
 """
 
+import copy
 import hashlib
 import io
 import os
@@ -34,6 +40,7 @@ import sys
 import urllib.request
 
 from fontTools import subset
+from fontTools.colorLib.builder import buildCOLR, buildCPAL
 from fontTools.ttLib import TTFont
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -41,6 +48,10 @@ OUT = os.path.join(ROOT, "public", "fonts")
 
 # How much longer the stem of the qamats qatan gets, in em.
 STEM_EM = 0.1
+
+# The color of the qamats qatan where the page does not set it: the ink of
+# the default theme ("sunset", --color-primary in main.css).
+INK = (0xD4, 0x6D, 0x01)
 
 GSTATIC = "https://fonts.gstatic.com/s"
 SEFARIA = "https://raw.githubusercontent.com/Sefaria/Sefaria-Project/master/static/fonts/Taamey-Frank"
@@ -105,7 +116,8 @@ HEBREW = (
 
 NOTE = (
     "Modified by Petite Jerusalem: the stem of the qamats qatan (U+05C7) is "
-    f"{STEM_EM} em longer, to tell it from the qamats."
+    f"{STEM_EM} em longer, to tell it from the qamats, and it is a color "
+    "glyph (COLR) painted with the first palette entry."
 )
 
 
@@ -142,6 +154,39 @@ def lengthen_qatan(font: TTFont) -> None:
     glyph.recalcBounds(glyf)
 
 
+def color_qatan(font: TTFont) -> None:
+    """Paints the qamats qatan with palette entry 0 (COLR v0).
+
+    The layer is a copy of the glyph (with its variations in a variable
+    font), not the glyph itself: a base glyph that is its own layer is not
+    drawn the same way everywhere.
+    """
+    name = font.getBestCmap()[0x05C7]
+    ink = f"{name}.ink"
+    # Read every table that counts glyphs before the count changes.
+    for tag in ("glyf", "hmtx", "gvar", "HVAR", "post"):
+        if tag in font:
+            font[tag]
+    order = list(font.getGlyphOrder())
+    glyf = font["glyf"]
+    glyf[ink] = copy.deepcopy(glyf[name])
+    font["hmtx"][ink] = font["hmtx"][name]
+    if "gvar" in font:
+        font["gvar"].variations[ink] = copy.deepcopy(font["gvar"].variations.get(name, []))
+    if "HVAR" in font:
+        hvar = font["HVAR"].table
+        for mapping in (hvar.AdvWidthMap, hvar.LsbMap, hvar.RsbMap):
+            if mapping is not None:
+                mapping.mapping[ink] = mapping.mapping[name]
+        if hvar.AdvWidthMap is None:
+            sys.exit("HVAR without a glyph mapping, not handled")
+    order.append(ink)
+    font.setGlyphOrder(order)
+    glyf.glyphOrder = order
+    font["COLR"] = buildCOLR({name: [(ink, 0)]}, version=0)
+    font["CPAL"] = buildCPAL([[tuple(c / 255 for c in INK) + (1.0,)]])
+
+
 def rename(font: TTFont, family: str) -> None:
     names = font["name"]
     style = names.getDebugName(17) or names.getDebugName(2) or "Regular"
@@ -176,6 +221,7 @@ def main() -> None:
         if to_hebrew:
             subset_hebrew(font)
         lengthen_qatan(font)
+        color_qatan(font)
         rename(font, family)
         font.flavor = "woff2"
         path = os.path.join(OUT, out)

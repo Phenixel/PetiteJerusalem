@@ -4,8 +4,9 @@ taamey-frank-pj-medium.woff2)
 
 Built by scripts/hebrew-fonts.py, which names each source, checks its
 SHA-256 and applies the only change made: the stem of the qamats qatan
-(U+05C7) is 0.1 em longer, to tell it from the qamats. Nothing else is
-redrawn. The family names carry " PJ".
+(U+05C7) is 0.1 em longer, to tell it from the qamats, and it becomes a
+color glyph (COLR) painted with the first entry of the palette. Nothing
+else is redrawn. The family names carry " PJ".
 
 1. Frank Ruhl Libre, David Libre, Heebo (the Hebrew subsets served by
    Google Fonts)
