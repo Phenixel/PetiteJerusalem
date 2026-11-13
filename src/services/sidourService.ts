@@ -5,6 +5,7 @@ import { corpusOf, slugOf, latinName, hubPath } from "../content/etudeTexts";
 import type { WeeklyParasha } from "./dailyCycles";
 import type { Rubric, TextBlock, TextContent } from "./textService";
 import torahWeekdayJson from "../datas/torahWeekday.json";
+import { dawnOf, nightEndOf } from "./nightBounds";
 import {
   computeZmanim,
   hebrewDateFor,
@@ -66,11 +67,12 @@ export function nextTefilaEntry(entry: TextStudyJsonEntry | null): TextStudyJson
  * Arvit est l'office d'une nuit, et pas toujours de celle qui court : ouverte
  * dans la journée, avant la chkia, c'est l'Arvit du soir qui vient que l'on
  * prépare ou que l'on prie tôt, pas celle de la nuit passée. Elle prend donc
- * le jour hébraïque du lendemain dès le lever du soleil : le lundi à 19 h,
- * pas d'Ata 'honantanou pour une sortie de fête qui était la veille, et le
- * compte du 'Omer est celui de ce soir. Avant le lever du soleil, c'est
- * encore la nuit en cours, dont l'Arvit se rattrape jusqu'au matin. Test :
- * src/__tests__/sidourWindow.test.ts, « Arvit ouverte dans la journée ».
+ * le jour hébraïque du lendemain dès l'aube : le lundi à 19 h, pas d'Ata
+ * 'honantanou pour une sortie de fête qui était la veille, et le compte du
+ * 'Omer est celui de ce soir. Avant l'aube, c'est encore la nuit en cours,
+ * dont l'Arvit se dit jusque-là (la règle de la nuit : services/nightBounds).
+ * Test : src/__tests__/sidourWindow.test.ts, « Arvit ouverte dans la
+ * journée ».
  */
 export function tefilaHebrewDay(
   place: ZmanimPlace,
@@ -79,12 +81,12 @@ export function tefilaHebrewDay(
 ): HDate {
   if (tefila === "chaharit" || tefila === "minha") return hebrewDayOf(place, now);
   if (tefila !== "arvit") return hebrewDateFor(place, now, now);
-  const sunrise = computeZmanim(place, now).find((z) => z.key === "sunrise")?.date;
-  // Sans lever du soleil (les nuits blanches du Grand Nord), la bascule à la
-  // chkia, faute de mieux.
-  if (!sunrise) return hebrewDateFor(place, now, now);
+  const dawn = dawnOf(place, now);
+  // Sans aube ni lever du soleil (les nuits blanches du Grand Nord), la
+  // bascule à la chkia, faute de mieux.
+  if (!dawn) return hebrewDateFor(place, now, now);
   const today = hebrewDayOf(place, now);
-  return now.getTime() >= sunrise.getTime() ? today.next() : today;
+  return now.getTime() >= dawn.getTime() ? today.next() : today;
 }
 
 // ---- Lecture de la Torah de la semaine (lundi et jeudi) -------------------
@@ -200,14 +202,14 @@ export interface TefilaWindow {
 /**
  * Bornes de chaque office, en clés d'horaires (voir computeZmanim) :
  * Cha'harit de misheyakir à 'hatsot, Min'ha de min'ha guedola à la chkia,
- * Arvit de la sortie des étoiles à 'hatsot de la nuit (les avis qui
- * l'étendent jusqu'à l'aube sont dans le « i » du lecteur, pas ici : le
- * raccourci de l'accueil annonce le temps propice, pas le rattrapage).
+ * Arvit de la sortie des étoiles à l'aube (`dawn`, voir services/nightBounds) :
+ * tout le temps où l'on peut encore la dire, pour la proposer jusque-là ; la
+ * préférence pour avant 'hatsot de la nuit est dite dans le lecteur.
  */
-const TEFILA_BOUNDS: [TefilaKey, ZmanKey, ZmanKey][] = [
+const TEFILA_BOUNDS: [TefilaKey, ZmanKey, ZmanKey | "dawn"][] = [
   ["chaharit", "misheyakir", "chatzot"],
   ["minha", "minchaGedola", "sunset"],
-  ["arvit", "tzeit", "chatzotNight"],
+  ["arvit", "tzeit", "dawn"],
 ];
 
 /** Les plages des trois offices d'un jour civil (Mon parcours dit « jusqu'à », « à partir de »). */
@@ -216,7 +218,7 @@ export function tefilaWindowsOfDay(place: ZmanimPlace, day: Date): TefilaWindow[
   const windows: TefilaWindow[] = [];
   for (const [tefila, startKey, endKey] of TEFILA_BOUNDS) {
     const start = times.get(startKey);
-    const end = times.get(endKey);
+    const end = endKey === "dawn" ? nightEndOf(place, day) : times.get(endKey);
     if (start && end && start.getTime() < end.getTime()) windows.push({ tefila, start, end });
   }
   return windows;
@@ -224,8 +226,8 @@ export function tefilaWindowsOfDay(place: ZmanimPlace, day: Date): TefilaWindow[
 
 /**
  * L'office dont c'est la plage horaire, ou null entre deux. Après minuit,
- * l'Arvit de la nuit en cours se lit sur les horaires de la veille (son
- * 'hatsot halayla appartient au jour civil précédent).
+ * l'Arvit de la nuit en cours se lit sur les horaires de la veille : elle
+ * s'est ouverte la veille au soir et court jusqu'à l'aube.
  */
 export function currentTefilaWindow(
   place: ZmanimPlace,
@@ -247,7 +249,7 @@ export function currentTefilaWindow(
 /**
  * L'office dont la plage s'ouvre ensuite, quand on est entre deux : de
  * 'hatsot à min'ha guedola, de la chkia à la sortie des étoiles, et de
- * 'hatsot de la nuit à misheyakir. La page du Sidour l'annonce plutôt que de
+ * l'aube à misheyakir. La page du Sidour l'annonce plutôt que de
  * ne rien proposer.
  */
 export function nextTefilaWindow(place: ZmanimPlace, now: Date = new Date()): TefilaWindow | null {

@@ -258,16 +258,25 @@ function bookmark(): void {
 }
 
 /**
- * Un appui hors du passage et hors de la bulle relâche le choix. Les passages
- * sont exclus pour que le second appui les relâche eux-mêmes : sans cela, cet
- * écouteur aurait relâché le choix juste avant que l'appui ne le repose.
+ * A tap outside the passage and outside the bubble releases the choice. The
+ * passages are excluded so that the second tap releases them itself: without
+ * this, this listener would have released the choice just before the tap set
+ * it again.
+ *
+ * What floats above the sheet and carries its own commands (the auto-scroll
+ * pill and its speed panel, `data-keep-passage`) is excluded too: touching
+ * it is not touching beside the passage. It used to close the sheet under
+ * the finger, the pill dropped with it, and the tap fell on the text below.
  */
 function onPointerDown(event: PointerEvent): void {
-  // La fenêtre de partage porte le passage : le relâcher la ferait disparaître
-  // sous les doigts de celui qui vient de l'ouvrir.
+  // The share window carries the passage: releasing it would make it vanish
+  // under the fingers of the person who just opened it.
   if (showShare.value || !readingPassage.value) return;
   const target = event.target;
-  if (target instanceof Element && target.closest(".reading-pick, .reading-bubble, .bottom-sheet"))
+  if (
+    target instanceof Element &&
+    target.closest(".reading-pick, .reading-bubble, .bottom-sheet, [data-keep-passage]")
+  )
     return;
   clearPassage();
 }

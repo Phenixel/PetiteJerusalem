@@ -112,7 +112,6 @@ const updateField = (field: "name" | "email", value: string) => {
     <!-- Incitation discrète à la création de compte : une simple ligne,
          le formulaire invité doit rester le plus léger possible. -->
     <p class="mt-3 text-xs text-text-secondary/80">
-      <AppIcon name="lightbulb" :size="11" class="text-primary" />
       {{ t("signupPrompt.guestHint") }}
       {{ " " }}
       <router-link

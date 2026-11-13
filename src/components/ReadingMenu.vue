@@ -4,7 +4,7 @@ import { useI18n } from "vue-i18n";
 import { APP_SITE_URL } from "../config/environment";
 import { useRoute } from "vue-router";
 import AppIcon from "./icons/AppIcon.vue";
-import { PAGE_FORM_LABELS } from "../composables/usePageForm";
+import { PAGE_FORM_LABELS, pageFormAriaLabel } from "../composables/usePageForm";
 import {
   scrollPeek,
   scrollPointed,
@@ -463,7 +463,6 @@ const menuTip = computed<TourStep[]>(() => {
     return [
       {
         key: "settings",
-        icon: "settings",
         title: t("tips.reading.settingsAlone.title"),
         text: t("tips.reading.settingsAlone.text"),
         target: () => settingsOnlyButton.value,
@@ -474,7 +473,6 @@ const menuTip = computed<TourStep[]>(() => {
   const steps: TourStep[] = [
     {
       key: "menu",
-      icon: "list",
       title: t("tips.reading.menu.title"),
       text: t("tips.reading.menu.text"),
       target: () => menuButton.value,
@@ -484,7 +482,6 @@ const menuTip = computed<TourStep[]>(() => {
   if (props.downloadState !== "none") {
     steps.push({
       key: "download",
-      icon: "download",
       title: t("tips.reading.download.title"),
       text: t("tips.reading.download.text"),
       target: () => downloadButton.value,
@@ -493,7 +490,6 @@ const menuTip = computed<TourStep[]>(() => {
   }
   steps.push({
     key: "settings",
-    icon: "settings",
     title: t("tips.reading.settings.title"),
     text: t("tips.reading.settings.text"),
     target: () => settingsButton.value,
@@ -577,7 +573,7 @@ onUnmounted(() => {
                   >
                     <button
                       @click="emit('update:phonetic', false)"
-                      class="px-2.5 py-1 rounded-control text-sm font-medium transition-colors"
+                      class="px-2.5 py-1 rounded-segment text-sm font-medium transition-colors"
                       :class="
                         !phonetic && !pageFormActive
                           ? 'bg-surface text-primary shadow-sm'
@@ -592,20 +588,25 @@ onUnmounted(() => {
                     <button
                       v-if="pageForm"
                       @click="emit('update:pageFormActive', true)"
-                      class="px-2.5 py-1 rounded-control text-sm font-medium transition-colors"
+                      class="inline-flex items-center gap-1 px-2.5 py-1 rounded-segment text-sm font-medium transition-colors"
                       :class="
                         pageFormActive ? 'bg-surface text-primary shadow-sm' : 'text-text-secondary'
                       "
                       :aria-pressed="pageFormActive"
-                      :aria-label="t(PAGE_FORM_LABELS[pageForm].label)"
-                      :title="t(PAGE_FORM_LABELS[pageForm].label)"
+                      :aria-label="pageFormAriaLabel(pageForm, t)"
+                      :title="pageFormAriaLabel(pageForm, t)"
                     >
                       <AppIcon :name="PAGE_FORM_LABELS[pageForm].icon" :size="14" />
+                      <span
+                        v-if="PAGE_FORM_LABELS[pageForm].beta"
+                        class="rounded-full bg-primary/10 px-1.5 text-[10px] font-semibold leading-4 text-primary"
+                        >{{ t(PAGE_FORM_LABELS[pageForm].beta!) }}</span
+                      >
                     </button>
                     <button
                       v-if="phonetic !== null"
                       @click="emit('update:phonetic', true)"
-                      class="px-2.5 py-1 rounded-control text-sm font-medium transition-colors"
+                      class="px-2.5 py-1 rounded-segment text-sm font-medium transition-colors"
                       :class="
                         phonetic ? 'bg-surface text-primary shadow-sm' : 'text-text-secondary'
                       "
@@ -671,7 +672,14 @@ onUnmounted(() => {
                   @click="goTo(section.anchor)"
                   class="section-item"
                 >
-                  <span class="section-name">{{ section.label }}</span>
+                  <span class="section-name" :class="{ 'is-unit': section.excerpt }">{{
+                    section.label
+                  }}</span>
+                  <!-- A mishna, a se'if: its opening words, which say more
+                       than its number. -->
+                  <span v-if="section.excerpt" class="section-excerpt" dir="rtl">{{
+                    section.excerpt
+                  }}</span>
                   <!-- Le nom hébreu, celui du sidour de papier : c'est souvent lui
                        que l'œil cherche. -->
                   <span v-if="section.hebrew" class="section-he" dir="rtl">{{
@@ -777,7 +785,7 @@ onUnmounted(() => {
                       :key="lang"
                       type="button"
                       @click="setTranslationLang(lang)"
-                      class="px-3 py-1 rounded-control text-sm font-medium transition-colors"
+                      class="px-3 py-1 rounded-segment text-sm font-medium transition-colors"
                       :class="
                         lang === translationLang
                           ? 'bg-surface text-primary shadow-sm'
@@ -1162,6 +1170,27 @@ onUnmounted(() => {
 .section-name {
   flex: 1 1 auto;
   min-width: 0;
+}
+
+/* Next to the opening words of a mishna, the number keeps its width: the
+   words give way and end in an ellipsis. */
+.section-name.is-unit {
+  flex: none;
+}
+
+.section-excerpt {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  font-family: var(--font-hebrew);
+  font-size: 0.95em;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.section-item:hover .section-excerpt {
+  color: inherit;
 }
 
 .section-he {

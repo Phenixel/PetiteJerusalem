@@ -26,7 +26,6 @@ async function copy() {
   <div class="space-y-2 rounded-control bg-primary/[0.06] p-4">
     <p v-if="title" class="font-semibold text-text-primary">{{ title }}</p>
     <p class="flex items-center gap-1.5 text-xs text-text-secondary">
-      <AppIcon name="alert-circle" :size="12" />
       {{ t("admin.auteurs.linkOnce") }}
     </p>
     <div class="flex flex-wrap items-center gap-2">

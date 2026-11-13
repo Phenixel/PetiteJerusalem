@@ -310,14 +310,6 @@ const goToSession = (session: Session) => {
                   : 'text-text-secondary'
               "
             >
-              <AppIcon
-                v-if="
-                  readCount(session).total > 0 &&
-                  readCount(session).done === readCount(session).total
-                "
-                name="circle-check"
-                :size="13"
-              />
               {{
                 readCount(session).total > 0 && readCount(session).done === readCount(session).total
                   ? t("shareReading.allRead")

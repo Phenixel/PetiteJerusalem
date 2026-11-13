@@ -107,6 +107,51 @@ const en: LocaleMessages = {
     accept: "Accept",
     decline: "Decline",
   },
+  // The video of what changed, once after an update (useWhatsNew).
+  whatsNew: {
+    ariaLabel: "What's new in 4.0",
+    close: "Close",
+    soundOn: "Turn the sound on",
+    again: "Watch again",
+    done: "Let's go",
+    skip: "Skip",
+    failed: "The video could not load. Check your connection and try again.",
+    more: "Learn more",
+  },
+  help: {
+    title: "Help center",
+    subtitle: "Guides and videos to get to know the app, one part at a time.",
+    seoDescription:
+      "The Petite Jerusalem guides: the home page, the Siddur, reading, My journey, prayer times and reading chains, explained and shown.",
+    whatsNew: {
+      title: "What's new in {version}",
+      text: "Where the tabs went, what is new: all in one video.",
+      watch: "Watch",
+    },
+    videos: "Videos",
+    watchOnYoutube: "Watch on YouTube",
+    guides: "Guides",
+    replay: "See again",
+    more: "More guides",
+    // The page of a version (/aide/nouveautes/4.0): its video, passage by
+    // passage, and the questions each one raises (content/help/versions.ts).
+    faq: { title: "Frequently asked questions" },
+    versions: "Versions",
+    version: {
+      row: "{version}, passage by passage",
+      whole: "The whole video",
+      kicker: "Passage by passage",
+      passages: "The passages of the video",
+      play: "Watch this passage again",
+      playLabel: "Watch “{title}” again, at {time}",
+      seoDescription:
+        "What's new in Petite Jérusalem {version}, passage by passage: the video, and the answers to the questions it raises.",
+    },
+    contact: {
+      title: "A question left unanswered?",
+      text: "Write to us: the team answers you in the app.",
+    },
+  },
   onboarding: {
     ariaLabel: "Introduction to Petite Jérusalem",
     ariaProgress: "Introduction progress",
@@ -1612,6 +1657,7 @@ const en: LocaleMessages = {
     phonetic: "Phonetic",
     pageForm: {
       daf: "Page",
+      beta: "Beta",
       scroll: "Tikkun",
       pointed: "Vowels",
       dafHint: "The Vilna page: the Gemara in the center, Rashi and Tosafot around it",
@@ -1770,34 +1816,16 @@ const en: LocaleMessages = {
       teshuva: "Addition for the Ten Days of Repentance",
       zimoun: "Zimun",
     },
-    slihotHours: "Selichot times",
-    slihotRange: "From {start} to {end}",
-    slihotHoursInfo: "About these times",
-    slihotWindowExplained:
-      "Selichot are said during the last watch of the night, the ashmoret haboker:",
-    slihotWindowNight:
-      "From chatzot, the middle of the night ({start}): the period when they may first be said.",
-    slihotWindowDawn:
-      "At the end of the night, before sunrise ({end}): the most fitting moment, right before the morning prayer.",
-    slihotWindowDay:
-      "During the day, if the night was not possible: they may still be said until shkia, sunset ({sunset}).",
-    slihotWindowPlace: "Times for {city}.",
     // Sidour: the parchment (klaf) opened from the text itself (see
     // KlafViewer.vue): pitum haketoret as a scribe writes it, psalm 67 in
     // the shape of a menorah.
     klaf: {
       ketoret: { open: "See the parchment", title: "Pitum haketoret on parchment" },
       menora: { open: "See the menorah", title: "Lamnatzeach as a menorah" },
-      views: "Photo or transcription",
-      photo: "Photo",
-      text: "Text",
       photoAlt: "{title}, page {n}",
-      zoomIn: "Tap the photo to enlarge it.",
-      zoomOut: "Tap the photo to fit it to the window again.",
-      transcribed: "Transcription of the parchment, letter by letter, in the scribe's script.",
+      previous: "Previous page",
+      next: "Next page",
     },
-    // Siddur: the time of a moment of prayer, placed right before what is read
-    // (see TefilaZman.vue; keys d1..dN are the lines behind the "i").
     mirror: {
       open: "Mirror",
       title: "Tefillin mirror",
@@ -1869,12 +1897,14 @@ const en: LocaleMessages = {
       middle: "Up and down, in the middle of the dial, are not compass points.",
       live: "The dial follows your device: turn towards the number of the side you are waving.",
     },
+    // Siddur: the time of a moment of prayer, a pill set before what is
+    // read, and the sheet it opens (see TefilaZman.vue; keys d1..dN are the
+    // lines of the rule).
     zman: {
-      info: "About these times",
       place: "Times for {city}.",
       chaharit: {
         title: "Shacharit times",
-        main: "From {misheyakir} to {hatsot}",
+        name: "Shacharit",
         d1: "From misheyakir ({misheyakir}), when blue and white can be told apart, one may put on talit and tefillin and say the Shema.",
         d2: "The most fitting moment for the Amida is sunrise ({netz}), like the vatikin.",
         d3: "The Amida is best said within the first four solar hours, until {tefila}.",
@@ -1882,20 +1912,20 @@ const en: LocaleMessages = {
       },
       shema: {
         title: "Latest time for Shema",
-        main: "Say it before {shema}",
+        name: "Shema",
         d1: "The Shema is said within the first three solar hours of the day.",
         d2: "Magen Avraham, counting from dawn: {shemaMGA}.",
         d3: "Vilna Gaon, counting from sunrise: {shema}. Past that time it is still read, but without its mitzvah in its time.",
       },
       amida: {
         title: "Latest time for the Amida",
-        main: "Say it before {tefila}",
+        name: "Amida",
         d1: "The morning Amida is said within the first four solar hours: {tefilaMGA} per the Magen Avraham, {tefila} per the Vilna Gaon.",
         d2: "Past that time one may still pray until chatzot ({hatsot}), without the reward of a prayer said in its time.",
       },
       minha: {
         title: "Mincha times",
-        main: "From {minhaGuedola} to {chkia}",
+        name: "Mincha",
         d1: "Mincha gedola ({minhaGuedola}): half a solar hour after chatzot, the earliest time for Mincha.",
         d2: "Mincha ketana ({minhaKetana}): the most fitting moment for most opinions.",
         d3: "Plag hamincha ({plag}): after it, some already say Arvit.",
@@ -1903,10 +1933,66 @@ const en: LocaleMessages = {
       },
       arvit: {
         title: "Arvit times",
-        main: "From {tset}",
+        name: "Arvit",
         d1: "The evening Shema is said after nightfall ({tset}).",
         d2: "It is best to pray before midnight ({hatsotLayla}).",
         d3: "If prevented, Arvit may be said all night, until dawn.",
+      },
+      slihot: {
+        title: "Selichot times",
+        name: "Selichot",
+        d1: "Selichot are said during the last watch of the night, the ashmoret haboker:",
+        d2: "From chatzot, the middle of the night ({start}): the period when they may first be said.",
+        d3: "At the end of the night, before sunrise ({end}): the most fitting moment, right before the morning prayer.",
+        d4: "During the day, if the night was not possible: they may still be said until shkia, sunset ({sunset}).",
+      },
+      pill: {
+        before: "{name} from {time}",
+        preferred: "{name}, preferably before {time}",
+        during: "{name} until {time}",
+        after: "{name}: time has passed ({time})",
+      },
+      left: "{duration} left",
+      now: "Now",
+      arc: {
+        sunrise: "Sunrise",
+        sunset: "Shkia",
+      },
+      legend: {
+        window: "The right time",
+        outside: "Outside its time",
+      },
+      marks: {
+        alot: "Dawn (alot hashachar)",
+        misheyakir: "Misheyakir",
+        netz: "Sunrise (netz)",
+        shemaMGA: "End of Shema, Magen Avraham",
+        shema: "End of Shema, Vilna Gaon",
+        tefilaMGA: "End of the Amida, Magen Avraham",
+        tefila: "End of the Amida, Vilna Gaon",
+        hatsot: "Chatzot",
+        minhaGuedola: "Mincha gedola",
+        minhaKetana: "Mincha ketana",
+        plag: "Plag hamincha",
+        chkia: "Shkia, sunset",
+        tset: "Nightfall",
+        hatsotLayla: "Midnight (chatzot)",
+      },
+      short: {
+        alot: "dawn",
+        misheyakir: "misheyakir",
+        netz: "netz",
+        shemaMGA: "MGA",
+        shema: "Shema",
+        tefilaMGA: "MGA",
+        tefila: "Amida",
+        hatsot: "chatzot",
+        minhaGuedola: "gedola",
+        minhaKetana: "ketana",
+        plag: "plag",
+        chkia: "shkia",
+        tset: "stars",
+        hatsotLayla: "chatzot",
       },
     },
     // Siddur: at the end of Mincha, Arvit is one tap away.
@@ -1984,6 +2070,8 @@ const en: LocaleMessages = {
     aliyaDone: "Read",
     aliyaCheck: "{aliya} read",
     progress: "Aliyot read: {done} of {total}",
+    aliyotTitle: "This week's aliyot",
+    aliyotHint: "Check the ones you have read, here or in a book.",
   },
   tehilimDay: {
     title: "Daily Tehilim",
@@ -2079,6 +2167,37 @@ const en: LocaleMessages = {
       tichri: "Yamim Noraim",
       souccot: "Sukkot",
       hanouka: "Hanukkah",
+    },
+  },
+  // The phone's quiet modes, above the app lowered when a tefila opens
+  // (PrayerQuietPanel.vue).
+  prayerQuiet: {
+    title: "Before you pray",
+    modes: {
+      dnd: "Do not disturb",
+      silent: "Silent",
+      vibrate: "Vibrate",
+    },
+    on: "On",
+    off: "Off",
+    hint: {
+      access:
+        'Allow the app under "Do Not Disturb access", then come back: the setting will be made on its own.',
+      unavailable: "This phone does not let the app change it.",
+    },
+    always: "Every tefila",
+    never: "Don't show it next time",
+    farewell: 'You will find these settings in Profile, Preferences, under "Before a tefila".',
+    close: "Close",
+    applied: "Your prayer modes are on until the end of the tefila.",
+    settings: {
+      title: "Before a tefila",
+      hint: "Do not disturb, silent or vibrate: the phone goes back to how it was at the end of the tefila.",
+      offer: "Choose them at each tefila",
+      always: "The same at every tefila ({modes})",
+      show: "Show the panel",
+      showHint:
+        "At the top of the screen when a tefila opens, with the state of each mode. Off, the modes kept for every tefila still turn on.",
     },
   },
   parcours: {

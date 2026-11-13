@@ -59,18 +59,20 @@ const ctx = (d: ParcoursData) => scheduleContext(d, chabbat);
 
 describe("the day of an instant", () => {
   // The device's clock: local times, whatever the machine's time zone.
-  const nightMiddle = new Date(2026, 9, 13, 1, 38);
+  const dawn = new Date(2026, 9, 13, 6, 37);
 
-  it("between midnight and 'hatsot of the night, still the previous evening's day", () => {
-    expect(dayOfInstant(new Date(2026, 9, 12, 23, 30), nightMiddle)).toBe("2026-10-12");
-    expect(dayOfInstant(new Date(2026, 9, 13, 0, 30), nightMiddle)).toBe("2026-10-12");
-    expect(dayOfInstant(new Date(2026, 9, 13, 1, 38), nightMiddle)).toBe("2026-10-13");
-    expect(dayOfInstant(new Date(2026, 9, 13, 9, 0), nightMiddle)).toBe("2026-10-13");
+  it("between midnight and dawn, still the previous evening's day", () => {
+    expect(dayOfInstant(new Date(2026, 9, 12, 23, 30), dawn)).toBe("2026-10-12");
+    expect(dayOfInstant(new Date(2026, 9, 13, 0, 30), dawn)).toBe("2026-10-12");
+    // Past 'hatsot of the night (1:38): still the evening's.
+    expect(dayOfInstant(new Date(2026, 9, 13, 1, 40), dawn)).toBe("2026-10-12");
+    expect(dayOfInstant(new Date(2026, 9, 13, 6, 37), dawn)).toBe("2026-10-13");
+    expect(dayOfInstant(new Date(2026, 9, 13, 9, 0), dawn)).toBe("2026-10-13");
   });
 
-  it("'hatsot before midnight, or unknown: the day changes at midnight", () => {
-    const winter = new Date(2026, 11, 8, 23, 43);
-    expect(dayOfInstant(new Date(2026, 11, 8, 23, 30), winter)).toBe("2026-12-08");
+  it("a dawn out of the device's morning, or unknown: the day changes at midnight", () => {
+    const elsewhere = new Date(2026, 11, 8, 23, 43);
+    expect(dayOfInstant(new Date(2026, 11, 8, 23, 30), elsewhere)).toBe("2026-12-08");
     expect(dayOfInstant(new Date(2026, 11, 9, 0, 10), null)).toBe("2026-12-09");
   });
 });

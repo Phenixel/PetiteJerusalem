@@ -262,6 +262,24 @@ describe("le paquet de l'accueil", () => {
     expect(tonight?.meta).toBe(fr.parcours.hub.beforeSleep);
   });
 
+  it("passé 'hatsot, jusqu'à l'aube : la nuit est encore celle de la veille", async () => {
+    // Jeudi 22 octobre 2026, 1 h 40 à Paris : 'hatsot était à 1 h 36, l'aube
+    // vers 6 h 47. Arvit et le Chema du coucher de mercredi soir se disent encore.
+    vi.setSystemTime(new Date("2026-10-21T23:40:00Z"));
+    const { deck, store } = await mountDeck();
+    expect(store.today.value).toBe("2026-10-21");
+    const arvit = deck.day.value.find((card) => card.view?.task.step === "arvit");
+    expect(arvit?.kicker).toBe(fr.parcours.hub.now);
+    expect(arvit?.meta).toMatch(/^jusqu'à 0?6:4\d$/);
+    const chema = deck.day.value.find((card) => card.view?.objective.id === "chema");
+    expect(chema?.waiting).toBe(false);
+    expect(chema?.meta).toBe(fr.parcours.hub.beforeSleep);
+    // À l'aube, la journée de jeudi commence.
+    vi.setSystemTime(new Date("2026-10-22T05:00:00Z"));
+    const morning = await mountDeck();
+    expect(morning.store.today.value).toBe("2026-10-22");
+  });
+
   it("met la carte du 'Omer dans la pile, le soir, et retient qu'il est compté", async () => {
     // Mercredi 5 mai 2027, 21 h 45 à Paris : la nuit du 'Omer.
     vi.setSystemTime(new Date("2027-05-05T19:45:00Z"));

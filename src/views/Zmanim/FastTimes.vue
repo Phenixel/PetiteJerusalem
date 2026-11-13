@@ -17,17 +17,25 @@ import {
   formatZmanDay,
   formatZmanTime,
   type FastPeriod,
+  type ZmanimPlace,
 } from "../../services/zmanimService";
+import { useZmanDuration } from "../../composables/useZmanCountdown";
+import FastDayBand from "./FastDayBand.vue";
 import { describeEndRule } from "../../services/zmanimRules";
-import AppIcon from "../../components/icons/AppIcon.vue";
 
 const props = defineProps<{
   fast: FastPeriod;
   /** Fuseau du lieu : les heures s'affichent dedans, pas dans celui du navigateur. */
   tzid: string;
+  /** The place, for the sunrise and sunset drawn in the band. */
+  place: ZmanimPlace;
 }>();
 
 const { t, locale } = useI18n();
+const duration = useZmanDuration();
+
+/** How long the fast lasts, « 13 h 27 »; unknown without a start. */
+const length = computed(() => (props.fast.start ? duration(props.fast.end, props.fast.start) : ""));
 
 const clock = (date: Date) => formatZmanTime(date, props.tzid, locale.value);
 const dayOf = (date: Date) => formatZmanDay(date, props.tzid, locale.value);
@@ -67,9 +75,22 @@ const firstbornNote = computed(() =>
 
 <template>
   <section class="card p-5">
-    <h2 class="mb-3 font-bold text-text-primary">
-      <AppIcon name="hourglass" :size="17" class="me-2 text-primary" />{{ fast.name }}
+    <h2 class="mb-3 flex items-baseline justify-between gap-3 font-bold text-text-primary">
+      <span class="min-w-0">{{ fast.name }}</span>
+      <span v-if="length" class="shrink-0 text-sm font-normal tabular-nums text-text-secondary">
+        {{ length }}
+      </span>
     </h2>
+
+    <!-- The fast in its day: the night, the day, and the fast across them. -->
+    <FastDayBand
+      v-if="fast.start"
+      :start="fast.start"
+      :end="fast.end"
+      :place="place"
+      :locale="locale"
+      class="mb-2"
+    />
 
     <ul class="flex flex-col divide-y divide-line">
       <li class="flex items-center justify-between gap-4 py-2">

@@ -28,7 +28,7 @@
  *   embarqués (sources de native/watchos/, voir docs/app-watch.md)
  * - Icônes / splash générés depuis assets/logo.png
  * - Icône iOS 18 : variantes sombre et teintée déclarées dans le catalogue
- *   (fichiers d'assets/themed/, rasterisés depuis lib/app-icon.mjs)
+ *   (fichiers d'assets/themed/, dérivés du logo : voir lib/app-icon.mjs)
  *
  * Usage : node scripts/setup-ios.mjs
  *
@@ -900,7 +900,7 @@ const iconMarker = join(appDir, "Assets.xcassets/.pj-assets-generated");
 if (!existsSync(iconMarker)) {
   try {
     execSync(
-      "npx @capacitor/assets generate --ios --assetPath assets --iconBackgroundColor '#f5eedc' --iconBackgroundColorDark '#f5eedc'",
+      "npx @capacitor/assets generate --ios --assetPath assets --iconBackgroundColor '#fff9f3' --iconBackgroundColorDark '#fff9f3'",
       { cwd: root, stdio: "inherit" },
     );
     writeFileSync(iconMarker, "");
@@ -908,7 +908,7 @@ if (!existsSync(iconMarker)) {
   } catch {
     console.warn(
       "setup-ios: ⚠️ génération des icônes échouée, lancer à la main :\n" +
-        "  npx @capacitor/assets generate --ios --assetPath assets --iconBackgroundColor '#f5eedc' --iconBackgroundColorDark '#f5eedc'",
+        "  npx @capacitor/assets generate --ios --assetPath assets --iconBackgroundColor '#fff9f3' --iconBackgroundColorDark '#fff9f3'",
     );
   }
 }
@@ -939,7 +939,7 @@ if (existsSync(appIconSet)) {
   if (missing.length) {
     console.warn(
       "setup-ios: ⚠️ variantes d'icône absentes d'assets/themed/, l'icône ne suivra pas le thème.\n" +
-        "  Y déposer icon-dark.png et icon-tinted.png, rasterisés depuis lib/app-icon.mjs.",
+        "  Y déposer icon-dark.png et icon-tinted.png, dérivés du logo (voir lib/app-icon.mjs).",
     );
   } else {
     for (const { variant, source } of variants) {

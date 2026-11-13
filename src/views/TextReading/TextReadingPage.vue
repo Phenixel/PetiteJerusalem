@@ -98,7 +98,7 @@ import { encadrementOf } from "../../services/encadrementService";
 import LiturgyText from "./LiturgyText.vue";
 import TefilaDays from "./TefilaDays.vue";
 import ReadingEncadrement from "../../components/ReadingEncadrement.vue";
-import SlihotHours from "./SlihotHours.vue";
+import TefilaZman from "./TefilaZman.vue";
 import ReadingMenu from "../../components/ReadingMenu.vue";
 import FeatureTour, { type TourStep } from "../../components/FeatureTour.vue";
 import MockPinch from "../../components/mock/MockPinch.vue";
@@ -113,7 +113,7 @@ import ReadingNav from "../../components/ReadingNav.vue";
 import TalmudDafText from "../../components/TalmudDafText.vue";
 import TalmudDafPages from "../../components/TalmudDafPages.vue";
 import TorahScroll from "../../components/TorahScroll.vue";
-import { PAGE_FORM_LABELS, usePageForm } from "../../composables/usePageForm";
+import { PAGE_FORM_LABELS, pageFormAriaLabel, usePageForm } from "../../composables/usePageForm";
 import { scrollPointed, setScrollPointed } from "../../composables/useScrollPointing";
 import {
   usePassageCommentaries,
@@ -145,7 +145,7 @@ import { readingProgressService } from "../../services/readingProgressService";
 import type { Bookmark, ReadingPosition } from "../../services/readingProgressService";
 import { isNativeApp } from "../../composables/useNativeApp";
 import { ensureManifestLoaded } from "../../services/offlineTextStore";
-import { scrollToBlockAnchor } from "../../composables/useReadingNav";
+import { lineAnchor, lineLandmarks, scrollToBlockAnchor } from "../../composables/useReadingNav";
 import type { ReadingNavSection } from "../../composables/useReadingNav";
 import { useReadingPinch } from "../../composables/useReadingPinch";
 import { useAutoScroll } from "../../composables/useAutoScroll";
@@ -153,6 +153,7 @@ import { isSansTahanoun } from "../../composables/useSansTahanoun";
 import { nightWithoutTachanun, withoutTachanun } from "../../services/tachanun";
 import { isWalledCityPlace, pastChatzotNight } from "../../services/zmanimService";
 import { useKeepAwake } from "../../composables/useKeepAwake";
+import { enterPrayer, leavePrayer, PRAYER_QUIET_DELAY_MS } from "../../composables/usePrayerQuiet";
 import { analyticsService } from "../../services/analyticsService";
 import { haptic } from "../../services/haptics";
 import { useLocalePath } from "../../composables/useLocalePath";
@@ -218,7 +219,6 @@ const gesturesTip = computed<TourStep[]>(() => {
   if (!isLiturgyText.value) {
     steps.push({
       key: "bookmark",
-      icon: "bookmark",
       title: t("tips.reading.bookmark.title"),
       text: t("tips.reading.bookmark.text"),
       target: () => readingRoot.value?.querySelector<HTMLElement>("[data-line]") ?? null,
@@ -409,7 +409,7 @@ const encadrement = computed(() => {
   const passages = encadrementOf(textEntry.value ?? undefined);
   return passages?.place === "text" ? passages : null;
 });
-// Les Sli'hot, seul texte à afficher sa plage horaire (voir SlihotHours).
+// Les Sli'hot, seul texte à afficher sa plage horaire (voir TefilaZman).
 // Elles vivent dans les Moadim avec les autres textes de fête ; c'est le
 // texte qu'on reconnaît ici, pas son corpus.
 const slihotEntry = entryByCorpusSlug("moadim", "slihot");
@@ -678,6 +678,22 @@ useAutoScroll(() => currentSection.value !== null);
 // L'écran ne s'éteint pas tant qu'un texte est ouvert : un office se dit sans
 // toucher au téléphone, et la veille tomberait au milieu de la 'amida.
 useKeepAwake(() => currentSection.value !== null);
+// A service that opens (Cha'harit, Min'ha, Arvit): the phone's quiet modes
+// come down from the top of the screen (usePrayerQuiet, Android app only),
+// once the text is shown, so that the app pushed down is the tefila. Left,
+// the phone goes back to how it was before.
+watch(
+  () => (isTefila.value && currentSection.value !== null ? textId.value : null),
+  (id, _previous, onCleanup) => {
+    if (!id) return;
+    const timer = window.setTimeout(() => void enterPrayer(), PRAYER_QUIET_DELAY_MS);
+    onCleanup(() => {
+      window.clearTimeout(timer);
+      leavePrayer();
+    });
+  },
+  { immediate: true },
+);
 // Un texte long se cherche par ses divisions : les sections d'un office
 // ('Amida, Chéma, ta'hanoun…), les montées d'une paracha, les dafim d'une
 // guemara. La page les publie au menu de lecture (ReadingMenu), qui remplace
@@ -717,10 +733,36 @@ const navSections = computed<ReadingNavSection[]>(() => {
       label: dafLabel(daf),
     }));
   }
+  if (unitLandmarks.value) {
+    const key = String(textEntry.value?.type) === "Mishna" ? "mishnaN" : "seifN";
+    return lineLandmarks(currentSection.value.he, (n) =>
+      capitalize(t(`textReading.${key}`, { n })),
+    );
+  }
   return verseBlocks.value
     .filter((b) => b.label)
     .map((b) => ({ anchor: anchorOf(b), offset: b.offset, label: blockLabel(b) }));
 });
+
+/**
+ * A chapter of Mishna, a siman of halakha: no heading inside, only numbered
+ * units that one looks for one by one. Each mishna, each se'if is then a
+ * landmark of the reading menu (lineLandmarks), and its line carries the
+ * anchor. A Tanakh chapter keeps none: it is read through, not searched
+ * verse by verse.
+ */
+const unitLandmarks = computed(() => {
+  const type = String(textEntry.value?.type);
+  return (
+    (type === "Mishna" || type === "Halakha") &&
+    showVerseNumbers.value &&
+    verseBlocks.value.length === 1 &&
+    !verseBlocks.value[0].label
+  );
+});
+
+const capitalize = (text: string): string =>
+  text.charAt(0).toLocaleUpperCase(locale.value) + text.slice(1);
 
 /** Le repère d'un bloc pour le menu de lecture (voir TextBlock.anchor). */
 const anchorOf = (block: TextBlock): string => block.anchor ?? String(block.offset);
@@ -1282,7 +1324,10 @@ function tableSnapshot(refresh = false): TableText | null {
     if (verse) {
       line = Number(verse.dataset.line ?? 0);
       offset = verse.getBoundingClientRect().top;
-      excerpt = (verse.querySelector(".reading-he, .reading-tl") ?? verse).textContent ?? "";
+      // The text itself, without the verse number that opens it.
+      const text = (verse.querySelector(".reading-he, .reading-tl") ?? verse).cloneNode(true);
+      if (text instanceof HTMLElement) text.querySelector(".verse-num")?.remove();
+      excerpt = text.textContent ?? "";
     }
     // Une Guemara n'a pas de versets repérés : le daf lu est le dernier dont
     // le titre est passé sous l'en-tête, et sa page commence à son titre.
@@ -2522,7 +2567,6 @@ watch(textId, (_, previousTextId) => {
       <div v-if="showResumeBanner" class="mb-6 p-4 card flex items-center justify-between gap-3">
         <div class="min-w-0">
           <p class="text-sm font-semibold text-text-primary flex items-center gap-2">
-            <AppIcon name="book-open" :size="15" class="text-primary flex-shrink-0" />
             {{ t("textReading.resumeTitle") }}
           </p>
           <p class="text-sm text-text-secondary mt-0.5">{{ resumePlace }}</p>
@@ -2593,8 +2637,8 @@ watch(textId, (_, previousTextId) => {
 
       <!-- Reading a passage -->
       <div v-else-if="currentSection">
-        <!-- Sli'hot : la plage horaire où elles se disent, avant le texte. -->
-        <SlihotHours v-if="isSlihot" />
+        <!-- Sli'hot: the window in which they are said, before the text. -->
+        <TefilaZman v-if="isSlihot" zman="slihot" />
         <!-- Reservation bar (session mode) -->
         <SessionReservationCard
           v-if="showReservationBar"
@@ -2675,7 +2719,7 @@ watch(textId, (_, previousTextId) => {
           >
             <button
               @click="setReadingMode('hebrew')"
-              class="px-2.5 sm:px-3 py-1 rounded-control text-sm font-medium transition-colors"
+              class="px-2.5 sm:px-3 py-1 rounded-segment text-sm font-medium transition-colors"
               :class="
                 readingMode === 'hebrew'
                   ? 'bg-surface text-primary shadow-sm'
@@ -2693,23 +2737,28 @@ watch(textId, (_, previousTextId) => {
             <button
               v-if="pageFormKind"
               @click="setReadingMode('page')"
-              class="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-control text-sm font-medium transition-colors"
+              class="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-segment text-sm font-medium transition-colors"
               :class="
                 readingMode === 'page' ? 'bg-surface text-primary shadow-sm' : 'text-text-secondary'
               "
               :aria-pressed="readingMode === 'page'"
-              :aria-label="t(PAGE_FORM_LABELS[pageFormKind].label)"
+              :aria-label="pageFormAriaLabel(pageFormKind, t)"
               :title="t(PAGE_FORM_LABELS[pageFormKind].hint)"
             >
               <AppIcon :name="PAGE_FORM_LABELS[pageFormKind].icon" :size="14" />
               <span :class="readingMode === 'page' ? '' : 'hidden sm:inline'">{{
                 t(PAGE_FORM_LABELS[pageFormKind].label)
               }}</span>
+              <span
+                v-if="PAGE_FORM_LABELS[pageFormKind].beta"
+                class="rounded-full bg-primary/10 px-1.5 text-[10px] font-semibold leading-4 text-primary"
+                >{{ t(PAGE_FORM_LABELS[pageFormKind].beta!) }}</span
+              >
             </button>
             <button
               v-if="canTransliterate"
               @click="setReadingMode('phonetic')"
-              class="px-2.5 sm:px-3 py-1 rounded-control text-sm font-medium transition-colors"
+              class="px-2.5 sm:px-3 py-1 rounded-segment text-sm font-medium transition-colors"
               :class="
                 readingMode === 'phonetic'
                   ? 'bg-surface text-primary shadow-sm'
@@ -2885,11 +2934,15 @@ watch(textId, (_, previousTextId) => {
               <template v-for="(line, index) in block.lines" :key="block.offset + index">
                 <!-- Le signet, posé en travers avant le verset marqué. -->
                 <BookmarkRibbon v-if="isLineBookmarked(block.offset + index)" />
+                <!-- The verse number opens the verse, inside its first
+                     line, rather than holding a column of its own in the
+                     margin: the text gets the whole width of the screen. -->
                 <div
                   :data-line="block.offset + index"
+                  :data-block-anchor="unitLandmarks ? lineAnchor(block.offset + index) : undefined"
                   @click="pickVerse($event, block.offset + index, line)"
                   @contextmenu="pickVerse($event, block.offset + index, line)"
-                  class="reading-pick flex items-start gap-3 rounded-lg transition-colors duration-500 -mx-2 px-2"
+                  class="reading-pick rounded-lg transition-colors duration-500 -mx-2 px-2"
                   :class="{
                     'bg-primary/10': highlightedLine === block.offset + index,
                     'reading-selected':
@@ -2897,40 +2950,30 @@ watch(textId, (_, previousTextId) => {
                       highlightedLine !== block.offset + index,
                   }"
                 >
-                  <span
-                    v-if="showVerseNumbers"
-                    class="mt-2 flex-shrink-0 w-6 text-right text-xs text-primary font-semibold select-none"
+                  <p
+                    v-if="!showPhonetic"
+                    dir="rtl"
+                    class="font-hebrew text-text-primary reading-he"
                   >
-                    {{ index + 1 }}
-                  </span>
-                  <div class="flex-1 min-w-0">
-                    <p
-                      v-if="!showPhonetic"
-                      dir="rtl"
-                      class="font-hebrew text-text-primary reading-he"
-                    >
-                      <MarkedText
-                        :text="line"
-                        :leads="studyLeads?.line === block.offset + index ? studyLeads.leads : null"
-                      />
-                    </p>
-                    <p
-                      v-else
-                      dir="ltr"
-                      class="leading-relaxed italic text-text-secondary reading-tl"
-                    >
-                      {{ phoneticLines[block.offset + index] }}
-                    </p>
-                    <!-- La traduction du verset, sous lui, dans la police de
-                         lecture latine. -->
-                    <p
-                      v-if="trLines[block.offset + index]"
-                      dir="ltr"
-                      class="mt-2 text-text-secondary reading-tr"
-                    >
-                      <TranslationText :text="trLines[block.offset + index]" />
-                    </p>
-                  </div>
+                    <span v-if="showVerseNumbers" class="verse-num">{{ index + 1 }}</span
+                    ><MarkedText
+                      :text="line"
+                      :leads="studyLeads?.line === block.offset + index ? studyLeads.leads : null"
+                    />
+                  </p>
+                  <p v-else dir="ltr" class="leading-relaxed italic text-text-secondary reading-tl">
+                    <span v-if="showVerseNumbers" class="verse-num">{{ index + 1 }}</span
+                    >{{ phoneticLines[block.offset + index] }}
+                  </p>
+                  <!-- La traduction du verset, sous lui, dans la police de
+                       lecture latine. -->
+                  <p
+                    v-if="trLines[block.offset + index]"
+                    dir="ltr"
+                    class="mt-2 text-text-secondary reading-tr"
+                  >
+                    <TranslationText :text="trLines[block.offset + index]" />
+                  </p>
                 </div>
               </template>
             </div>
@@ -2975,25 +3018,19 @@ watch(textId, (_, previousTextId) => {
           class="mt-12"
         />
 
-        <!-- Sidour : à la fin de Min'ha, un geste suffit pour enchaîner
-             avec Arvit. -->
+        <!-- Sidour: at the end of Min'ha, one gesture moves on to Arvit. A
+             place to go, not a piece of data: no frame, no icon, the name in
+             the theme color and the reason under it. -->
         <RouterLink
           v-if="sidourNextEntry"
           :to="hubPath(sidourNextEntry)"
-          class="mt-12 card card-hover p-4 flex items-center justify-between gap-3 group"
+          class="mt-12 block text-center group"
         >
-          <span class="flex items-center gap-3 min-w-0">
-            <AppIcon name="moon" :size="18" class="text-primary flex-shrink-0" />
-            <span class="min-w-0">
-              <span
-                class="block font-semibold text-text-primary group-hover:text-primary transition-colors"
-              >
-                {{ t("textReading.sidourNext", { name: latinName(sidourNextEntry) }) }}
-              </span>
-              <span class="block text-sm text-text-secondary">
-                {{ t("textReading.sidourNextHint") }}
-              </span>
-            </span>
+          <span class="block font-semibold text-primary group-hover:underline underline-offset-4">
+            {{ t("textReading.sidourNext", { name: latinName(sidourNextEntry) }) }}
+          </span>
+          <span class="mt-0.5 block text-sm text-text-secondary">
+            {{ t("textReading.sidourNextHint") }}
           </span>
         </RouterLink>
 
@@ -3145,17 +3182,22 @@ main {
 }
 
 /* Reader text sizes follow the A− / A+ control (useReadingSize).
-   L'interligne de l'hébreu est volontairement plus serré que leading-loose :
-   assez d'air pour les voyelles et les teamim, sans étirer la lecture. */
+   The Hebrew line height is deliberately tighter than leading-loose: enough
+   air for the vowels and the cantillation marks, without stretching the
+   reading. The text is justified, like a printed book: aligned on both edges, it
+   fills the width of a small phone instead of leaving a ragged margin. */
 .reading-he {
   font-size: calc(1.5rem * var(--reading-scale, 1));
   line-height: 1.7;
+  text-align: justify;
 }
 .reading-tl {
   /* La police latine choisie dans les réglages (useFonts) ne vaut que pour le
      texte des lectures : le reste de l'app garde Manrope. */
   font-family: var(--font-reading);
   font-size: calc(1.125rem * var(--reading-scale, 1));
+  text-align: justify;
+  hyphens: auto;
 }
 /* La traduction sous un verset : la police de lecture latine, un cran sous
    l'hébreu, qui reste le texte qu'on lit. */
@@ -3163,5 +3205,18 @@ main {
   font-family: var(--font-reading);
   font-size: calc(1.0625rem * var(--reading-scale, 1));
   line-height: 1.65;
+  text-align: justify;
+  hyphens: auto;
+}
+/* The verse number, at the start of the verse's first line: small, in the
+   theme color, in the interface font, and left out of a selection. */
+.verse-num {
+  margin-inline-end: 0.4em;
+  font-family: var(--font-sans);
+  font-size: max(0.75rem, 0.55em);
+  font-style: normal;
+  font-weight: 600;
+  color: var(--color-primary);
+  user-select: none;
 }
 </style>

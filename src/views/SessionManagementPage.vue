@@ -1067,7 +1067,6 @@ onMounted(() => {
               v-if="selectedGuestId"
               class="flex items-center gap-2 text-xs text-text-secondary mt-2"
             >
-              <AppIcon name="check" :size="12" class="text-primary shrink-0" />
               {{ t("sessionManagement.guestLinkedTo", { name: guestForm.name }) }}
               <button
                 type="button"

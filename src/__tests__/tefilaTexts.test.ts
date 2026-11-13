@@ -389,6 +389,32 @@ describe("fichiers de tefila", () => {
     expect(verset).toBe(yeshayahou.he[25][8]);
   });
 
+  it("Tikoun haklali: the ten psalms in their order, each one whole", () => {
+    // The ten psalms come from the Tikkun HaKlali book of the export, not
+    // from the site's Tehilim: each must still end on the last verse the
+    // Tehilim serve, and psalm 150 must stop there: the verses said once
+    // the psalms are over, « Mi yiten mitsion », have a block of their own.
+    const blocks = load("sidour", "tikoun-haklali").sections[0].blocks ?? [];
+    const numbers = [16, 32, 41, 42, 59, 77, 90, 105, 137, 150];
+    const psalms = blocks.filter((b) => /^Psaume \d+$/.test(b.label));
+    expect(psalms.map((b) => b.label)).toEqual(numbers.map((n) => `Psaume ${n}`));
+    const tehilim = JSON.parse(readFileSync("public/texts/tehilim.json", "utf8")) as Record<
+      string,
+      { he: string[] }
+    >;
+    // Letters only: the two editions differ in their marks, and the Tehilim
+    // keep the section marks of the masoretic text ({פ}).
+    const letters = (s: string) => s.replace(/\{[פס]\}/g, "").replace(/[^א-ת]/g, "");
+    numbers.forEach((n, i) => {
+      expect(psalms[i].lines).toHaveLength(1);
+      const lastVerse = letters(tehilim[n].he.at(-1)!);
+      expect(letters(psalms[i].lines[0]).endsWith(lastVerse.slice(-20))).toBe(true);
+    });
+    const after = blocks[blocks.indexOf(psalms[9]) + 1];
+    expect(after.label).toBe("Après les dix psaumes");
+    expect(letters(after.lines[0])).toMatch(/^מייתןמציון/);
+  });
+
   it("Atarat nedarim : les deux voix alternent, les rites se suivent", () => {
     // Le texte se dit à deux voix, ceux qui demandent et ceux qui délient :
     // ce sont les didascalies qui disent à qui c'est le tour, et il en faut

@@ -8,7 +8,6 @@
  */
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
-import AppIcon from "../icons/AppIcon.vue";
 import { useNow } from "../../composables/useNow";
 import { useParcours } from "../../composables/useParcours";
 import { useParcoursReminders } from "../../composables/useParcoursReminders";
@@ -73,7 +72,6 @@ const line = computed(() => {
     data-tour="parcours-reminders"
     @click="emit('open')"
   >
-    <AppIcon name="alarm-clock" :size="16" class="me-1.5 inline-block align-[-3px] text-primary" />
     <template v-if="line">
       <span class="text-text-secondary">{{ `${line.label} ` }}</span>
       <template v-for="(entry, i) in line.entries" :key="entry.name">

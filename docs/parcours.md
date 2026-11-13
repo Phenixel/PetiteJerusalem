@@ -51,20 +51,23 @@ shows, at the bottom of the text, the day's task to check off
 | `entries.ts`                               | the texts a task has you read (offline download)                                                |
 | `tracking.ts`                              | audience tracking shared by several screens                                                     |
 | `occasions.ts`                             | the deck's occasion cards marked done (the moon, the 'Omer, 'Hanouka, a service), on the device |
-| `reminders.ts`                             | the reminders of the day: the point of the day of a task, the hour of a point, what rings    |
+| `reminders.ts`                             | the reminders of the day: the point of the day of a task, the hour of a point, what rings       |
 
 `composables/useParcours.ts` brings it all together for the pages: a single
 shared state, started on first use (anyone who never opens the journey
 loads nothing).
 
-**A day** changes at 'hatsot of the night, not at midnight: between
-midnight and 'hatsot (around 1:40 in a Paris summer), the deck, the tasks
-and the streak are still the previous evening's, so Arvit or the bedtime
-Chema said at 0:30 count for that evening and are not owed again before
-the next night. When 'hatsot falls before midnight on the device's clock
-(a winter night in Paris), the day changes at midnight (`dayOfInstant` in
+**A day** changes at dawn (alot hacha'har), not at midnight nor at
+'hatsot: between midnight and dawn (around 6:45 in a Paris autumn), the
+deck, the tasks and the streak are still the previous evening's, so Arvit
+or the bedtime Chema said at 2:00 count for that evening and are not owed
+again before the next night. It is the rule of the night of the whole app
+(`services/nightBounds.ts`), read the same way by the home deck, the
+Sidour page, the services' windows and the reader: what is said at night
+is offered until dawn. Without a dawn (a polar night), sunrise stands in
+for it, and without either the day changes at midnight (`dayOfInstant` in
 `days.ts`, read by `useParcours`; held by `parcoursSchedule.test.ts`, « the
-day of an instant »).
+day of an instant », and `nightBounds.test.ts`).
 
 **A day** (`DayLog`) keeps what is done (`done`), the units read per
 program (`units`), what is set aside (`skipped`) and the time of the last
@@ -249,7 +252,7 @@ day »). In the app only, with or without an account.
 | `parcoursPlan.test.ts`          | the portions, falling behind, the five catch-up modes, getting ahead, resuming after a pause                                                                 |
 | `parcoursAliyot.test.ts`        | chnei mikra: one aliya per day, a forgotten one comes back the next day, Chabbat finishes; aliyot checked one by one make up the card, a card checks its own |
 | `chneiMikraChecks.test.ts`      | the checks of version 3.10.11, taken over once from the device                                                                                               |
-| `parcoursSchedule.test.ts`      | the day changing at 'hatsot of the night; a day's tasks, the wall, the streak (Chabbat and « Pas aujourd'hui » do not break it)                              |
+| `parcoursSchedule.test.ts`      | the day changing at dawn; a day's tasks, the wall, the streak (Chabbat and « Pas aujourd'hui » do not break it)                                              |
 | `parcoursCalendar.test.ts`      | rest days, moments, the order of the deck                                                                                                                    |
 | `parcoursMerge.test.ts`         | merging two copies                                                                                                                                           |
 | `parcoursSync.test.ts`          | without an account, with an account, a shared device                                                                                                         |
@@ -257,7 +260,7 @@ day »). In the app only, with or without an account.
 | `parcoursLegacyDaily.test.ts`   | the former daily reading, taken over and kept up to date                                                                                                     |
 | `parcoursDeck.test.ts`          | the home deck: the order, prayer service times, catching up, the 'Omer card, the service of the hour without the habit                                       |
 | `parcoursEntries.test.ts`       | the texts to download for the day                                                                                                                            |
-| `parcoursReminders.test.ts`     | the reminders of the day: the point of a task, the hour tied to a zman, nothing rings for nothing, the share of pending notifications                         |
+| `parcoursReminders.test.ts`     | the reminders of the day: the point of a task, the hour tied to a zman, nothing rings for nothing, the share of pending notifications                        |
 | `parcoursTracking.test.ts`      | shared tracking, and the daily reading events that continue                                                                                                  |
 | `widgetDailyParcours.test.ts`   | the widgets' daily reading, without an account                                                                                                               |
 | `e2e/firebase/parcours.spec.ts` | a daily text picked, checked off, and tracked by the account (emulators)                                                                                     |

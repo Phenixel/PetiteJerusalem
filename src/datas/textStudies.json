@@ -2737,6 +2737,14 @@
       "type": "Sidour"
     },
     {
+      "id": 687,
+      "name": "תיקון הכללי (Tikoun Haklali)",
+      "livre": "סידור (Sidour)",
+      "link": "https://www.sefaria.org/Tikkun_HaKlali",
+      "totalSections": 1,
+      "type": "Sidour"
+    },
+    {
       "id": 350,
       "name": "הבדלה (Havdala)",
       "livre": "סידור (Sidour)",

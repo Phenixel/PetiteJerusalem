@@ -415,7 +415,8 @@ const cardLine = computed(() => {
 .segmented button {
   flex: 1;
   height: 38px;
-  border-radius: 11px;
+  /* The shell's radius minus its 3 px padding. */
+  border-radius: calc(var(--radius-btn) - 3px);
   font-size: 14px;
   font-weight: 700;
   color: var(--color-text-secondary);

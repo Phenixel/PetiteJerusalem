@@ -12,6 +12,7 @@ import {
   type TefilaWindow,
 } from "../services/sidourService";
 import type { ZmanimPlace } from "../services/zmanimService";
+import { liturgicalDay } from "../services/nightBounds";
 import { useParcours } from "./useParcours";
 
 /**
@@ -21,8 +22,8 @@ import { useParcours } from "./useParcours";
  *
  * A service is done when the « trois tefilot » habit checks it off (the window
  * under way on today's task, as in the home deck; past midnight, until
- * 'hatsot of the night, today is still the evening's day, so Arvit counts
- * for it; another on the day it opens; held by officesDone.test.ts), or,
+ * dawn, today is still the evening's day, so Arvit counts for it; another
+ * on the day it opens; held by officesDone.test.ts), or,
  * without that habit, when it was marked (its card in
  * the deck or on the Sidour page swiped, the ring pulled at the end of its
  * text): the device remembers it with the occasions (the moon, the 'Omer),
@@ -57,7 +58,8 @@ export function useOccasionsDone() {
 
 /**
  * The window a service's text is said in now: the one under way if it is
- * this service (Arvit after midnight included), otherwise today's.
+ * this service (Arvit after midnight included), otherwise that of the day
+ * under way (before dawn, the evening's).
  */
 export function officeWindow(
   place: ZmanimPlace,
@@ -66,7 +68,11 @@ export function officeWindow(
 ): TefilaWindow | null {
   const current = currentTefilaWindow(place, now);
   if (current?.tefila === tefila) return current;
-  return tefilaWindowsOfDay(place, now).find((window) => window.tefila === tefila) ?? null;
+  return (
+    tefilaWindowsOfDay(place, liturgicalDay(place, now)).find(
+      (window) => window.tefila === tefila,
+    ) ?? null
+  );
 }
 
 export function useOfficesDone() {
@@ -93,7 +99,7 @@ export function useOfficesDone() {
   /**
    * The habit's task for this service: the window under way is today's, as
    * in the home deck (Arvit past midnight: the evening's day, which today
-   * still is until 'hatsot); another, the day its window opens.
+   * still is until dawn); another, the day its window opens.
    */
   function habitTask(window: TefilaWindow): { task: Task; day: string } | null {
     const now = Date.now();
@@ -139,7 +145,7 @@ export function useOfficesDone() {
   /**
    * The « Chéma du coucher » habit's task for a night: the one of its
    * evening's day, past midnight too, as the home deck counts it until
-   * 'hatsot (marked at 0:30, it is not the next evening's Chema).
+   * dawn (marked at 2:00, it is not the next evening's Chema).
    */
   function chemaTask(evening: Date): { task: Task; day: string } | null {
     const day = localDayKey(evening);
