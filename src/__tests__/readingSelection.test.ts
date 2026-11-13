@@ -271,6 +271,23 @@ describe("la place des commandes", () => {
       .dispatchEvent(new MouseEvent("pointerdown", { bubbles: true }));
     expect(readingPassage.value).not.toBeNull();
   });
+
+  /**
+   * The auto-scroll pill floats above the sheet. Touching it used to release
+   * the passage: the sheet left, the pill dropped under the finger, and the
+   * tap fell on the verse below, which reopened the sheet.
+   */
+  it("do not release the passage when the auto-scroll pill is touched", async () => {
+    await ouvre(passage());
+    const pill = document.createElement("div");
+    pill.dataset.keepPassage = "";
+    const button = document.createElement("button");
+    pill.appendChild(button);
+    document.body.appendChild(pill);
+    button.dispatchEvent(new MouseEvent("pointerdown", { bubbles: true }));
+    expect(readingPassage.value).not.toBeNull();
+    pill.remove();
+  });
 });
 
 describe("la couleur de la sélection", () => {

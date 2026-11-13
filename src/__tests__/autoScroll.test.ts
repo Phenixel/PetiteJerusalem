@@ -21,6 +21,8 @@ let scrollLeft = 0;
 let pageHeight = 5000;
 let frameCallback: FrameRequestCallback | null = null;
 let now = 1_000_000;
+/** How many times the script set a position: none while the reader holds the page. */
+let writes = 0;
 
 function stubEnvironment() {
   scrollTop = 0;
@@ -34,10 +36,18 @@ function stubEnvironment() {
     configurable: true,
   });
   window.innerHeight = 800;
+  writes = 0;
   window.scrollTo = ((x: number, y: number) => {
+    writes++;
     scrollLeft = x;
     scrollTop = y;
   }) as typeof window.scrollTo;
+  // Like a browser: whole pixels, and never past the ends of the page.
+  window.scrollBy = ((options: ScrollToOptions) => {
+    writes++;
+    const max = Math.max(0, pageHeight - window.innerHeight);
+    scrollTop = Math.min(max, Math.max(0, scrollTop + Math.trunc(options.top ?? 0)));
+  }) as typeof window.scrollBy;
   window.requestAnimationFrame = ((callback: FrameRequestCallback) => {
     frameCallback = callback;
     return 1;
@@ -45,6 +55,15 @@ function stubEnvironment() {
   window.cancelAnimationFrame = (() => {
     frameCallback = null;
   }) as typeof window.cancelAnimationFrame;
+}
+
+/**
+ * The distance travelled matches the pace, to the pixel: a page only moves by
+ * whole pixels, and the fraction left waits for the next frame.
+ */
+function expectTravelled(actual: number, expected: number) {
+  expect(actual).toBeGreaterThan(expected - 1);
+  expect(actual).toBeLessThanOrEqual(expected + 1e-9);
 }
 
 /** Une image d'animation de plus, `ms` après la précédente. */
@@ -68,6 +87,46 @@ function touch(type: "touchstart" | "touchmove" | "touchend", remaining: number)
   const event = new Event(type, { bubbles: true });
   Object.defineProperty(event, "touches", { value: { length: remaining } });
   window.dispatchEvent(event);
+}
+
+/**
+ * A finger on the text, as the browser reports it: where it is, and how many
+ * fingers remain. Dispatched on the text, so that it goes through the
+ * document like a real touch.
+ */
+function finger(
+  type: "touchstart" | "touchmove" | "touchend",
+  target: Element,
+  x: number,
+  y: number,
+) {
+  const event = new Event(type, { bubbles: true });
+  const point = { clientX: x, clientY: y };
+  Object.defineProperty(event, "touches", { value: type === "touchend" ? [] : [point] });
+  Object.defineProperty(event, "changedTouches", { value: [point] });
+  target.dispatchEvent(event);
+}
+
+/** A tap: the finger lands and leaves without moving. */
+function tap(target: Element, x = 100, y = 300, ms = 60) {
+  finger("touchstart", target, x, y);
+  now += ms;
+  finger("touchend", target, x, y);
+}
+
+/** A quick swipe up, the way one scrolls a text: short, but a real move. */
+function swipe(target: Element, x = 100, from = 500, to = 440, ms = 60) {
+  finger("touchstart", target, x, from);
+  now += ms / 2;
+  finger("touchmove", target, x, (from + to) / 2);
+  now += ms / 2;
+  finger("touchmove", target, x, to);
+  finger("touchend", target, x, to);
+}
+
+/** The page reports a scroll, as the browser does on each frame it moves. */
+function pageScrolled() {
+  window.dispatchEvent(new Event("scroll"));
 }
 
 /**
@@ -168,7 +227,7 @@ describe("défilement automatique", () => {
     // celle de l'allure choisie. Elle se compte image par image et non d'un
     // saut de mille millisecondes, qui serait une image perdue (voir plus bas).
     frames(60);
-    expect(scrollTop).toBeCloseTo((perSecond * 60 * 16) / 1000, 5);
+    expectTravelled(scrollTop, (perSecond * 60 * 16) / 1000);
 
     // Fin du texte : le défilement s'arrête là, et la pastille disparaît avec elle.
     // La limite n'est plus lue à chaque image mais quand la page change de
@@ -227,7 +286,72 @@ describe("défilement automatique", () => {
       const resumed = scrollTop;
       expect(resumed).toBeGreaterThan(1260);
       frames(60);
-      expect(scrollTop - resumed).toBeCloseTo((perSecond * 60 * 16) / 1000, 5);
+      expectTravelled(scrollTop - resumed, (perSecond * 60 * 16) / 1000);
+    });
+
+    /**
+     * A fast swipe on iOS coasts for close to three seconds, and the
+     * auto-scroll used to take the page back after two at most: the fight
+     * with the system's scroller started again, only on fast swipes. The
+     * end of the momentum is now read from the scroll events.
+     */
+    it("waits for the end of a long momentum, however long it lasts", async () => {
+      const { host } = await mountReadingPage();
+
+      doubleClick(host.querySelector("p")!);
+      frames(10);
+
+      touch("touchstart", 1);
+      touch("touchmove", 1);
+      scrollTop = 1200;
+      touch("touchend", 0);
+      const before = writes;
+
+      // Three seconds of momentum, slowing down. `scrollY` is only updated
+      // every third frame, as when it lags behind the system's scroller:
+      // two frames in a row then read the same position while the page
+      // moves on.
+      let speed = 3; // px per ms
+      for (let elapsed = 0; elapsed < 3000; elapsed += 16) {
+        if ((elapsed / 16) % 3 === 0) {
+          scrollTop += speed * 48;
+          pageScrolled();
+        }
+        speed *= 0.998 ** 16;
+        frame(16);
+      }
+      expect(writes).toBe(before);
+
+      // The page is at rest: the scrolling resumes from where it stopped.
+      const rest = scrollTop;
+      frames(30);
+      expect(writes).toBeGreaterThan(before);
+      expect(scrollTop).toBeGreaterThan(rest);
+    });
+
+    /**
+     * On iPhone, a script's position is applied without stopping what the
+     * system is doing with the page, and it was computed from a `scrollY`
+     * that lags behind. Setting positions brought the page back each frame,
+     * then iOS pushed it on again. The page is now moved by steps, which
+     * WebKit adds to where the page really is.
+     */
+    it("moves the page by steps, and never pulls it back", async () => {
+      const { host } = await mountReadingPage();
+      const setPosition = vi.spyOn(window, "scrollTo");
+
+      doubleClick(host.querySelector("p")!);
+      frames(30);
+
+      // The system moves the page a few pixels further than we did (the
+      // tail of a momentum, a lagging read): the next steps start from there.
+      for (let i = 0; i < 20; i++) {
+        const moved = scrollTop + 3;
+        scrollTop = moved;
+        frame(16);
+        expect(scrollTop).toBeGreaterThanOrEqual(moved);
+      }
+      expect(setPosition).not.toHaveBeenCalled();
     });
 
     it("s'efface aussi devant la molette", async () => {
@@ -267,7 +391,121 @@ describe("défilement automatique", () => {
       // Une seconde sans image (mise en page longue, app revenue au premier
       // plan) : la page avance de ce qu'une image vaut, pas d'une seconde.
       frame(1000);
-      expect(scrollTop).toBeCloseTo((perSecond * 50) / 1000, 5);
+      expectTravelled(scrollTop, (perSecond * 50) / 1000);
+    });
+  });
+
+  /**
+   * Two quick swipes in a row used to start the auto-scroll: it was enough
+   * for two fingers to be lifted close together. A double tap is now two
+   * real taps on a still page (see onGestureTouchEnd in useAutoScroll).
+   */
+  describe("the double tap, told apart from a fast scroll", () => {
+    it("starts on two real taps, and stops on the next two", async () => {
+      const { isAutoScrolling } = await import("../composables/useAutoScroll");
+      const { host } = await mountReadingPage();
+      const verse = host.querySelector("p")!;
+
+      tap(verse);
+      now += 100;
+      tap(verse, 104, 303);
+      expect(isAutoScrolling.value).toBe(true);
+
+      // The page now moves by itself: that does not prevent stopping it,
+      // even with the late scroll event of our last frame arriving under the
+      // first finger.
+      frames(30);
+      pageScrolled();
+      now += 1000;
+      finger("touchstart", verse, 100, 300);
+      pageScrolled();
+      now += 60;
+      finger("touchend", verse, 100, 300);
+      now += 100;
+      tap(verse);
+      expect(isAutoScrolling.value).toBe(false);
+    });
+
+    it("does not start on two quick swipes", async () => {
+      const { isAutoScrolling } = await import("../composables/useAutoScroll");
+      const { host } = await mountReadingPage();
+      const verse = host.querySelector("p")!;
+
+      swipe(verse);
+      now += 120;
+      swipe(verse);
+      expect(isAutoScrolling.value).toBe(false);
+
+      // Nor through the `dblclick` the browser may send after them.
+      doubleClick(verse);
+      expect(isAutoScrolling.value).toBe(false);
+    });
+
+    it("does not count the touch that stops a coasting page", async () => {
+      const { isAutoScrolling } = await import("../composables/useAutoScroll");
+      const { host } = await mountReadingPage();
+      const verse = host.querySelector("p")!;
+
+      // The page is still coasting from a swipe when the finger lands.
+      pageScrolled();
+      now += 50;
+      tap(verse);
+      now += 100;
+      tap(verse);
+      expect(isAutoScrolling.value).toBe(false);
+
+      // Once the page is still, the same two taps start it.
+      now += 1000;
+      tap(verse);
+      now += 100;
+      tap(verse);
+      expect(isAutoScrolling.value).toBe(true);
+    });
+
+    it("does not join two taps that a scroll separates", async () => {
+      const { isAutoScrolling } = await import("../composables/useAutoScroll");
+      const { host } = await mountReadingPage();
+      const verse = host.querySelector("p")!;
+
+      tap(verse);
+      pageScrolled();
+      now += 100;
+      tap(verse);
+      expect(isAutoScrolling.value).toBe(false);
+    });
+
+    it("does not take a press held too long for a tap", async () => {
+      const { isAutoScrolling } = await import("../composables/useAutoScroll");
+      const { host } = await mountReadingPage();
+      const verse = host.querySelector("p")!;
+
+      tap(verse, 100, 300, 450);
+      now += 100;
+      tap(verse);
+      expect(isAutoScrolling.value).toBe(false);
+    });
+
+    it("lets the dblclick finish a double tap whose first tap opened the passage", async () => {
+      const { isAutoScrolling } = await import("../composables/useAutoScroll");
+      const { useOverlay } = await import("../composables/useOverlayStack");
+      const { effectScope } = await import("vue");
+      const { host } = await mountReadingPage();
+      const verse = host.querySelector("p")!;
+
+      // The first tap chose the verse: its sheet is open when the second
+      // touch is judged, and the touch listeners leave it alone.
+      tap(verse);
+      const sheet = effectScope();
+      sheet.run(() => useOverlay(ref(true), () => {}));
+      now += 100;
+      tap(verse);
+      expect(isAutoScrolling.value).toBe(false);
+
+      // The second click released the verse, then the browser's dblclick.
+      sheet.stop();
+      now += 10;
+      doubleClick(verse);
+      expect(isAutoScrolling.value).toBe(true);
     });
   });
 
@@ -468,7 +706,7 @@ describe("défilement automatique", () => {
       doubleClick(host.querySelector("p")!);
       frame(16);
       frames(60);
-      expect(scrollTop).toBeCloseTo((perSecond * 60 * 16) / 1000, 5);
+      expectTravelled(scrollTop, (perSecond * 60 * 16) / 1000);
     });
 
     it("ne signale qu'un changement d'allure quand le pouce s'arrête", async () => {
