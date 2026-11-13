@@ -74,15 +74,14 @@
 
     <meta name="theme-color" content="#fff9f3" />
 
-    <!-- Les polices de l'identité bloquent le premier rendu, et elles seules :
-         Manrope (toute l'interface), Playfair Display (les titres principaux)
-         et Frank Ruhl Libre (la lecture en hébreu). Le repli des signes de
-         cantillation (teamim) est le sous-ensemble hébreu de Noto Serif Hebrew
-         embarqué dans /fonts (voir main.css), préchargé ici : la famille Google
-         du même nom ne servait plus, ce sous-ensemble passe avant elle dans
-         chaque pile. Les polices au choix pour le texte des lectures (Lora,
-         Nunito, David Libre, Heebo) sont injectées à la demande par
-         useFonts.ts. -->
+    <!-- The identity fonts block the first render, and only they: Manrope
+         (the whole interface), Playfair Display (the main titles) and Frank
+         Ruhl Libre (Hebrew reading). The Hebrew of Frank Ruhl Libre is served
+         from /fonts, with a lengthened qamats qatan (see main.css), and
+         preloaded here; the Google stylesheet keeps its Latin letters. The
+         teamim fallback (Taamey Frank) loads with the first cantillated word.
+         The selectable fonts for the text of a reading (Lora, Nunito, David
+         Libre, Heebo) are injected on demand by useFonts.ts. -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -91,7 +90,7 @@
     />
     <link
       rel="preload"
-      href="/fonts/noto-serif-hebrew-var.woff2"
+      href="/fonts/frank-ruhl-libre-hebrew-var.woff2"
       as="font"
       type="font/woff2"
       crossorigin

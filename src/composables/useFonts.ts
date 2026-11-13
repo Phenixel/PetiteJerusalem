@@ -43,30 +43,27 @@ export const LATIN_FONT_OPTIONS: FontOption[] = [
 /**
  * Hebrew (reading) fonts, applied to --font-hebrew.
  *
- * Aucune des trois ne dessine les teamim : chaque pile intercale donc sa
- * famille « Noto Teamim … », le sous-ensemble hébreu de Noto Serif Hebrew
- * embarqué et ramené par size-adjust à la taille de la police principale
- * (voir main.css), pour que les mots cantilés gardent le même corps que le
- * reste du verset.
+ * Each stack starts with the Hebrew of its font served from /fonts ("… PJ",
+ * where the qamats qatan has a longer stem, see main.css), then its teamim
+ * fallback, Taamey Frank brought to the size of the main font ("Teamim …"),
+ * then the Google family itself, which still writes the Latin letters.
  */
 export const HEBREW_FONT_OPTIONS: FontOption[] = [
   {
     id: "frank",
     label: "Frank Ruhl Libre",
     stack:
-      '"Frank Ruhl Libre", "Noto Teamim Frank", "Noto Serif Hebrew", "David Libre", Georgia, serif',
+      '"Frank Ruhl Libre PJ", "Teamim Frank", "Frank Ruhl Libre", "Noto Serif Hebrew", Georgia, serif',
   },
   {
     id: "david",
     label: "David Libre",
-    stack:
-      '"David Libre", "Noto Teamim David", "Noto Serif Hebrew", "Frank Ruhl Libre", Georgia, serif',
+    stack: '"David Libre PJ", "Teamim David", "David Libre", "Noto Serif Hebrew", Georgia, serif',
   },
   {
     id: "heebo",
     label: "Heebo",
-    stack:
-      '"Heebo", "Noto Teamim Heebo", "Noto Serif Hebrew", "Arial Hebrew", -apple-system, sans-serif',
+    stack: '"Heebo PJ", "Teamim Heebo", "Heebo", "Arial Hebrew", -apple-system, sans-serif',
   },
 ];
 
@@ -74,14 +71,14 @@ const DEFAULT_LATIN = LATIN_FONT_OPTIONS[0];
 const DEFAULT_HEBREW = HEBREW_FONT_OPTIONS[0];
 
 /**
- * Chargement à la demande des familles NON par défaut.
+ * On-demand loading of the NON-default families.
  *
- * index.html n'embarque en bloquant que les polices de l'identité, Manrope +
- * Playfair Display + Frank Ruhl Libre (+ le sous-ensemble Noto Hebrew, repli
- * des teamim) : télécharger toutes les familles pour tous les visiteurs
- * retardait le premier rendu de chaque page. Les alternatives ne concernent
- * que les utilisateurs qui les ont choisies (et l'écran de préférences, qui
- * affiche chaque option dans sa propre police).
+ * index.html blocks the first render only on the identity fonts, Manrope +
+ * Playfair Display + Frank Ruhl Libre (the Hebrew of the reading fonts and
+ * the teamim fallback come from /fonts, see main.css): downloading every
+ * family for every visitor delayed the first render of each page. The
+ * alternatives only concern the users who chose them (and the preferences
+ * screen, which shows each option in its own font).
  */
 const FONT_STYLESHEETS: Record<string, string> = {
   lora: "family=Lora:wght@400;500;600;700",

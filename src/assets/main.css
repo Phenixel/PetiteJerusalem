@@ -9,38 +9,85 @@
    useColorScheme qui pose la classe, système compris. */
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* ---- Repli des teamim -----------------------------------------------------
-   Aucune des polices hébraïques proposées (Frank Ruhl Libre, David Libre,
-   Heebo) ne dessine les teamim : chaque mot cantilé bascule alors entier vers
-   la police de repli, Noto Serif Hebrew. Ses lettres sont plus grandes à corps
-   égal (alef à 0,657 em, contre 0,597 chez Frank, 0,550 chez David, 0,575 chez
-   Heebo) : ces mots ressortaient plus gros que le reste du verset. On sert
-   donc le sous-ensemble hébreu de Noto (embarqué, léger) en trois familles de
-   repli, une par police principale, chacune ramenée à la taille de sa police
-   par size-adjust (rapport des hauteurs de lettres). Les piles hébraïques de
-   useFonts.ts les référencent ; à garder d'accord avec elles. */
+/* ---- Hebrew reading fonts -------------------------------------------------
+   The Hebrew of the three reading fonts (Frank Ruhl Libre, David Libre,
+   Heebo) is served from /fonts, built by scripts/hebrew-fonts.py, and not
+   from Google Fonts: the qamats qatan (U+05C7, read "o", as in כׇּל) has a
+   longer stem there, the way printed siddurim mark it. As published, every
+   font draws it within a few hundredths of an em of the qamats: the reader
+   could not tell them apart. The Google stylesheet still serves the Latin
+   letters of these fonts. See docs/design.md, "Hebrew reading fonts". */
 @font-face {
-  font-family: "Noto Teamim Frank";
-  src: url("/fonts/noto-serif-hebrew-var.woff2") format("woff2");
-  font-weight: 100 900;
+  font-family: "Frank Ruhl Libre PJ";
+  src: url("/fonts/frank-ruhl-libre-hebrew-var.woff2") format("woff2");
+  font-weight: 300 900;
   font-display: swap;
-  size-adjust: 91%;
   unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F;
 }
 @font-face {
-  font-family: "Noto Teamim David";
-  src: url("/fonts/noto-serif-hebrew-var.woff2") format("woff2");
-  font-weight: 100 900;
+  font-family: "David Libre PJ";
+  src: url("/fonts/david-libre-hebrew-400.woff2") format("woff2");
+  font-weight: 400;
   font-display: swap;
-  size-adjust: 84%;
   unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F;
 }
 @font-face {
-  font-family: "Noto Teamim Heebo";
-  src: url("/fonts/noto-serif-hebrew-var.woff2") format("woff2");
+  font-family: "David Libre PJ";
+  src: url("/fonts/david-libre-hebrew-500.woff2") format("woff2");
+  font-weight: 500;
+  font-display: swap;
+  unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F;
+}
+@font-face {
+  font-family: "David Libre PJ";
+  src: url("/fonts/david-libre-hebrew-700.woff2") format("woff2");
+  font-weight: 700;
+  font-display: swap;
+  unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F;
+}
+@font-face {
+  font-family: "Heebo PJ";
+  src: url("/fonts/heebo-hebrew-var.woff2") format("woff2");
   font-weight: 100 900;
   font-display: swap;
-  size-adjust: 88%;
+  unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F;
+}
+
+/* ---- Teamim fallback ------------------------------------------------------
+   None of the three fonts draws the teamim: a cantillated word falls back to
+   Taamey Frank (Culmus project, GPL with an embedding exception, renamed
+   "Taamey Frank PJ" since its qatan is lengthened too; see
+   public/fonts/hebrew-reading-fonts.LICENSE.txt). It carries the Biblical
+   Hebrew layout of SBL Hebrew and leaves room between a vowel and a te'am
+   under the same letter; Noto Serif Hebrew, the fallback before it, set them
+   against each other (רַ֣, מָֽ). One family per main font, each brought to the
+   letter height of its font by size-adjust (alef at 0.555 em, against 0.590
+   in Frank, 0.528 in David, 0.575 in Heebo). Only its Medium: the Bold has
+   empty teamim, and a bold word would lose them; declared at 400 alone, the
+   Medium is thickened by the browser for bold text. The Hebrew stacks of
+   useFonts.ts reference these families; keep the two in step. */
+@font-face {
+  font-family: "Teamim Frank";
+  src: url("/fonts/taamey-frank-pj-medium.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+  size-adjust: 106%;
+  unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F;
+}
+@font-face {
+  font-family: "Teamim David";
+  src: url("/fonts/taamey-frank-pj-medium.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+  size-adjust: 95%;
+  unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F;
+}
+@font-face {
+  font-family: "Teamim Heebo";
+  src: url("/fonts/taamey-frank-pj-medium.woff2") format("woff2");
+  font-weight: 400;
+  font-display: swap;
+  size-adjust: 104%;
   unicode-range: U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F;
 }
 
@@ -141,7 +188,7 @@ body {
   --font-serif: "Lora", "Georgia", serif;
   --font-reading: var(--font-sans);
   --font-hebrew:
-    "Frank Ruhl Libre", "Noto Teamim Frank", "Noto Serif Hebrew", "David Libre", Georgia, serif;
+    "Frank Ruhl Libre PJ", "Teamim Frank", "Frank Ruhl Libre", "Noto Serif Hebrew", Georgia, serif;
 
   /* Rayons. Deux familles, et elles vont en sens contraire : les surfaces
      (cartes, panneaux, fenêtres) sont taillées franc, comme la pierre dont le

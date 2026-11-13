@@ -1,0 +1,68 @@
+Hebrew reading fonts (frank-ruhl-libre-hebrew-var.woff2,
+david-libre-hebrew-400/500/700.woff2, heebo-hebrew-var.woff2,
+taamey-frank-pj-medium.woff2)
+
+Built by scripts/hebrew-fonts.py, which names each source, checks its
+SHA-256 and applies the only change made: the stem of the qamats qatan
+(U+05C7) is 0.1 em longer, to tell it from the qamats. Nothing else is
+redrawn. The family names carry " PJ".
+
+1. Frank Ruhl Libre, David Libre, Heebo (the Hebrew subsets served by
+   Google Fonts)
+
+   Copyright 2015 The Frank Ruhl Libre Project Authors
+   Copyright 2016 The David Libre Project Authors (reserved font names
+   "Hadash", "Gentium" and "SIL", none of which the modified name uses)
+   Copyright 2014 The Heebo Project Authors
+   Each is licensed under the SIL Open Font License, Version 1.1, and so
+   are the modified versions here. The license text is in
+   noto-rashi-hebrew.LICENSE.txt (from "SIL OPEN FONT LICENSE Version 1.1")
+   and at https://openfontlicense.org.
+
+2. Taamey Frank CLM, version 0.110 (Culmus project,
+   https://culmus.sourceforge.io), renamed "Taamey Frank PJ" as its
+   reserved font name requires, and reduced to the Hebrew glyphs of its
+   Medium.
+
+   Taamey Frank font is copyright 2009-2010 by Yoram Gnat
+   (yoram.gnat@gmail.com). Latin glyphs and part of punctuation, taken
+   from Century Schoolbook L font, copyright 1999 by (URW)++ Design &
+   Development. Hebrew OpenType Layout logic copyright (c) 2003 & 2007,
+   Ralph Hancock & John Hudson, under the MIT License (see below).
+
+   This package is distributed under the terms of GNU General Public
+   License version 2 (https://www.gnu.org/licenses/old-licenses/gpl-2.0.txt).
+   The source of the modified version is the original font named in
+   scripts/hebrew-fonts.py together with that script.
+
+   As a special exception, if you create a document which uses this font,
+   and embed this font or unaltered portions of this font into the
+   document, this font does not by itself cause the resulting document to
+   be covered by the GNU General Public License. This exception does not
+   however invalidate any other reasons why the document might be covered
+   by the GNU General Public License. If you modify this font, you may
+   extend this exception to your version of the font, but you are not
+   obligated to do so. If you do not wish to do so, delete this exception
+   statement from your version.
+
+   The modified version extends this exception to itself.
+
+   The OpenType Layout logic for Biblical Hebrew, as jointly developed by
+   Ralph Hancock and John Hudson (it does not apply to any other aspects
+   of the font software):
+
+   Permission is hereby granted, free of charge, to any person obtaining a
+   copy of this software and associated documentation files (the
+   'Software'), to deal in the Software without restriction, including
+   without limitation the rights to use, copy, modify, merge, publish,
+   distribute, sublicense, and/or sell copies of the Software, and to
+   permit persons to whom the Software is furnished to do so, subject to
+   the following conditions: The above copyright notice and this permission
+   notice shall be included in all copies or substantial portions of the
+   Software. THE SOFTWARE IS PROVIDED 'AS IS', WITHOUT WARRANTY OF ANY
+   KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+   IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+   CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+   TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
+   SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
