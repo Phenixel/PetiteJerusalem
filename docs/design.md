@@ -2004,18 +2004,35 @@ to the right; the landmarks are therefore placed from the start of the line
 
 ### The auto-scroll lets go of the page until it is at rest
 
-On iPhone, the page is scrolled by the system, on its own thread. Setting a
-position while the reader's finger moves the page, or while the page still
-coasts after their swipe, makes the two fight over it: the page jerks back
-and forth. So the auto-scroll sets nothing as long as the page is the
-reader's: a finger on it, a burst of wheel or keyboard, and the momentum
-that follows a swipe. The end of that momentum is read from the page's
-`scroll` events: the auto-scroll takes over once none has come for a
-quarter of a second, however long the momentum lasts. It used to give up
-waiting after two seconds, and a fast swipe on iOS coasts for close to
-three: slow scrolling was calm, fast scrolling still fought. Held by
-`src/__tests__/autoScroll.test.ts` ("waits for the end of a long momentum,
-however long it lasts").
+On iPhone, the page is scrolled by the system (the web view's
+UIScrollView), in another process than the script. WebKit's sources show
+what a script's scroll does there: `scrollTo` sends an absolute position,
+computed from a `scrollY` that lags behind the screen, and the web view
+applies it without stopping the finger's drag nor the momentum that follows
+(`_scrollToContentScrollPosition`, `interruptAnimation` off). Each frame,
+the page was brought back to where the script believed it was, then pushed
+on by iOS: the frantic back-and-forth that was reported. Three rules
+follow (`useAutoScroll`, "the reader's hand"):
+
+- **Nothing is set while the page is the reader's**: a finger on it, a
+  burst of wheel or keyboard, and the momentum that follows a swipe.
+- **The end of the momentum is read from the `scroll` events**, not from
+  two frames reading the same `scrollY`: the auto-scroll takes over once
+  none has come for a quarter of a second, however long the momentum lasts.
+  On iOS, `scrollY` is an integer, and a fast swipe coasts for close to
+  three seconds, the last of them at less than a pixel per frame: two
+  frames read the same value while the page still slides. The old code took
+  that for a page at rest (or gave up waiting after two seconds), which is
+  why slow scrolling was calm and fast scrolling still fought.
+- **The page is moved by steps, never to a position** (`scrollBy`, whole
+  pixels, the fraction kept for the next frame). WebKit sends a step as a
+  delta added in the web view to where the page really is: it never pulls
+  the page back, and a jump made elsewhere (an anchor, the reader's own
+  scrolling) is simply where the next step starts.
+
+Held by `src/__tests__/autoScroll.test.ts` ("waits for the end of a long
+momentum, however long it lasts", "moves the page by steps, and never
+pulls it back").
 
 ### What closes a page is read at the end
 

@@ -42,6 +42,12 @@ function stubEnvironment() {
     scrollLeft = x;
     scrollTop = y;
   }) as typeof window.scrollTo;
+  // Like a browser: whole pixels, and never past the ends of the page.
+  window.scrollBy = ((options: ScrollToOptions) => {
+    writes++;
+    const max = Math.max(0, pageHeight - window.innerHeight);
+    scrollTop = Math.min(max, Math.max(0, scrollTop + Math.trunc(options.top ?? 0)));
+  }) as typeof window.scrollBy;
   window.requestAnimationFrame = ((callback: FrameRequestCallback) => {
     frameCallback = callback;
     return 1;
@@ -49,6 +55,15 @@ function stubEnvironment() {
   window.cancelAnimationFrame = (() => {
     frameCallback = null;
   }) as typeof window.cancelAnimationFrame;
+}
+
+/**
+ * The distance travelled matches the pace, to the pixel: a page only moves by
+ * whole pixels, and the fraction left waits for the next frame.
+ */
+function expectTravelled(actual: number, expected: number) {
+  expect(actual).toBeGreaterThan(expected - 1);
+  expect(actual).toBeLessThanOrEqual(expected + 1e-9);
 }
 
 /** Une image d'animation de plus, `ms` après la précédente. */
@@ -212,7 +227,7 @@ describe("défilement automatique", () => {
     // celle de l'allure choisie. Elle se compte image par image et non d'un
     // saut de mille millisecondes, qui serait une image perdue (voir plus bas).
     frames(60);
-    expect(scrollTop).toBeCloseTo((perSecond * 60 * 16) / 1000, 5);
+    expectTravelled(scrollTop, (perSecond * 60 * 16) / 1000);
 
     // Fin du texte : le défilement s'arrête là, et la pastille disparaît avec elle.
     // La limite n'est plus lue à chaque image mais quand la page change de
@@ -271,7 +286,7 @@ describe("défilement automatique", () => {
       const resumed = scrollTop;
       expect(resumed).toBeGreaterThan(1260);
       frames(60);
-      expect(scrollTop - resumed).toBeCloseTo((perSecond * 60 * 16) / 1000, 5);
+      expectTravelled(scrollTop - resumed, (perSecond * 60 * 16) / 1000);
     });
 
     /**
@@ -314,6 +329,31 @@ describe("défilement automatique", () => {
       expect(scrollTop).toBeGreaterThan(rest);
     });
 
+    /**
+     * On iPhone, a script's position is applied without stopping what the
+     * system is doing with the page, and it was computed from a `scrollY`
+     * that lags behind. Setting positions brought the page back each frame,
+     * then iOS pushed it on again. The page is now moved by steps, which
+     * WebKit adds to where the page really is.
+     */
+    it("moves the page by steps, and never pulls it back", async () => {
+      const { host } = await mountReadingPage();
+      const setPosition = vi.spyOn(window, "scrollTo");
+
+      doubleClick(host.querySelector("p")!);
+      frames(30);
+
+      // The system moves the page a few pixels further than we did (the
+      // tail of a momentum, a lagging read): the next steps start from there.
+      for (let i = 0; i < 20; i++) {
+        const moved = scrollTop + 3;
+        scrollTop = moved;
+        frame(16);
+        expect(scrollTop).toBeGreaterThanOrEqual(moved);
+      }
+      expect(setPosition).not.toHaveBeenCalled();
+    });
+
     it("s'efface aussi devant la molette", async () => {
       const { host } = await mountReadingPage();
 
@@ -351,7 +391,7 @@ describe("défilement automatique", () => {
       // Une seconde sans image (mise en page longue, app revenue au premier
       // plan) : la page avance de ce qu'une image vaut, pas d'une seconde.
       frame(1000);
-      expect(scrollTop).toBeCloseTo((perSecond * 50) / 1000, 5);
+      expectTravelled(scrollTop, (perSecond * 50) / 1000);
     });
   });
 
@@ -666,7 +706,7 @@ describe("défilement automatique", () => {
       doubleClick(host.querySelector("p")!);
       frame(16);
       frames(60);
-      expect(scrollTop).toBeCloseTo((perSecond * 60 * 16) / 1000, 5);
+      expectTravelled(scrollTop, (perSecond * 60 * 16) / 1000);
     });
 
     it("ne signale qu'un changement d'allure quand le pouce s'arrête", async () => {

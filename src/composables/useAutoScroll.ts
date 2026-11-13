@@ -61,15 +61,14 @@ interface AutoScrollSpeed {
  * allure de lecture, pas un survol : une ligne y passe en un peu plus d'un
  * tiers de seconde.
  *
- * La plus lente a été relevée de 12 à 16 px/s, et c'est une affaire de
- * fluidité, pas de vitesse. Chromium (donc Android) refuse les positions de
- * défilement fractionnaires : une page ne peut bouger que d'un pixel entier à
- * la fois. À 12 px/s, elle avançait donc d'un pixel toutes les 83 ms, une
- * image sur cinq, et le texte sautait au lieu de glisser. À 16, le pas tombe à
- * 62 ms, une image sur quatre, sans que l'allure cesse d'être celle d'une
- * lecture posée (une ligne de texte passe en un peu plus d'une seconde et
- * demie). C'est aussi pourquoi le premier cran du réglage fin est cette
- * allure-là, et rien de plus lent.
+ * The slowest one was raised from 12 to 16 px/s, for smoothness, not speed.
+ * Browsers refuse fractional scroll positions, Chromium (Android) as well as
+ * WebKit (iOS): a page can only move by a whole pixel at a time. At 12 px/s,
+ * it moved one pixel every 83 ms, one frame in five, and the text jumped
+ * instead of gliding. At 16, the step falls to 62 ms, one frame in four,
+ * while the pace remains that of a calm reading (a line of text goes by in a
+ * little over a second and a half). It is also why the first notch of the
+ * fine setting is this pace, and nothing slower.
  */
 export const AUTO_SCROLL_SPEEDS: AutoScrollSpeed[] = [
   { id: "slow", level: 1, pixelsPerSecond: 16 },
@@ -172,15 +171,16 @@ let enabledRestored = storedEnabled !== null;
 const running = ref(false);
 const level = ref(readStoredLevel());
 
-/** Position visée, en flottant : c'est elle qui est posée telle quelle (voir step). */
-let position = 0;
-/** Dernière position réellement posée : sert à reconnaître un saut venu d'ailleurs. */
+/**
+ * Distance due but not travelled yet, under a pixel: a page only moves by
+ * whole pixels (see step), the rest waits for the next frame.
+ */
+let owed = 0;
+/** Where the page stood after our last step: the reader's scrolls are told apart by it. */
 let appliedPosition = 0;
 let frame = 0;
 let lastFrameAt = 0;
 let startedAt = 0;
-/** La page a bougé sans nous : la prochaine image active repart d'où elle est. */
-let needsSync = false;
 
 const currentPixelsPerSecond = computed(() => autoScrollPixelsPerSecond(level.value));
 const speedId = computed(() => nearestAutoScrollSpeedId(level.value));
@@ -230,33 +230,41 @@ function unwatchPageSize(): void {
  * The reader's hand.
  *
  * On iPhone, it is not the script that scrolls the page but the system's
- * scroller, on its own thread. Setting a position while a finger slides
- * snatches the page from it; it takes it back on the next frame, the script
- * takes it back on its own, and the two fight over it sixty times a second:
- * that is the frantic scrolling that was reported, and it is worse still
- * when you try to scroll while the auto-scroll is running.
+ * scroller (the UIScrollView of the web view), in another process. What
+ * WebKit does with a script's scroll, read in its sources:
+ *  - `scrollTo` sends an absolute position, computed in the page from a
+ *    `scrollY` that lags behind the screen, and the web view applies it with
+ *    `setContentOffset` WITHOUT stopping the finger's drag nor the momentum
+ *    that follows it (WKWebView `_scrollToContentScrollPosition`, called
+ *    with `interruptAnimation` off). Each frame, the page was thus brought
+ *    back to where the script believed it was, then pushed on again by iOS:
+ *    the back-and-forth reported as frantic scrolling;
+ *  - `scrollY` is an integer (`roundedIntPoint` in WebPage), and so is a
+ *    position set by `scrollTo` (`IntPoint` in LocalDOMWindow).
  *
- * The same thread explains a second jolt, the one you see without touching
- * anything: `window.scrollY`, read from the main thread, lags a frame or two
- * behind the real position. The old safeguard resynchronized as soon as the
- * gap reached two pixels, so on a stale value, and pulled the page back on
- * every frame that ran a little long.
+ * Hence three rules.
  *
- * Hence the rule: as long as the page belongs to the reader, we set nothing
- * at all. It is theirs as long as a finger touches it, then until the
- * momentum of their swipe has died out (iOS keeps scrolling the page long
- * after the finger has left), and during a burst of wheel or keyboard.
+ * 1. As long as the page belongs to the reader, we set nothing at all. It
+ *    is theirs as long as a finger touches it, then until the momentum of
+ *    their swipe has died out, and during a burst of wheel or keyboard.
  *
- * The end of the momentum is read from the `scroll` events, not from a
- * position compared from one frame to the next. A fast swipe on iOS coasts
- * for close to three seconds (the system's deceleration loses 0.2 % of its
- * speed per millisecond), and the auto-scroll used to take the page back
- * after two seconds at most: a slow swipe ended in time, a fast one was
- * still coasting, and the fight started again. Comparing two frames was not
- * reliable either: with a stale `scrollY`, two frames in a row can read the
- * same value while the page is still moving. So the page is handed back
- * only once no scroll has been seen for a while (SCROLL_QUIET_MS), however
- * long the momentum lasts.
+ * 2. The end of the momentum is read from the `scroll` events, not from two
+ *    frames that read the same `scrollY`. A fast swipe coasts for close to
+ *    three seconds (the system loses 0.2 % of its speed per millisecond),
+ *    and for the last of them the page moves less than a pixel per frame:
+ *    the integer `scrollY` stays the same from one frame to the next while
+ *    the page still slides. The old code took that for a page at rest (or
+ *    gave up waiting after two seconds), took the page back, and the fight
+ *    started again: only after fast swipes, never slow ones. The page is now
+ *    handed back once no scroll has been seen for a while (SCROLL_QUIET_MS).
+ *
+ * 3. We move the page by a step (`scrollBy`), never to a position. WebKit
+ *    sends a step as a delta (`ScrollRequestType::DeltaUpdate`), added in
+ *    the web view to where the page really is: even sent while the system
+ *    still moves the page, it never pulls it back. And no stale position is
+ *    held against the page: a jump made elsewhere (an anchor, a restored
+ *    position, the reader's own scrolling) is simply where the next step
+ *    starts from.
  */
 
 /** Fingers on the screen. One is enough for the page to no longer be ours. */
@@ -299,8 +307,6 @@ const SCROLL_QUIET_MS = 250;
  * event of our own last frame, or the lag of `scrollY` on iOS.
  */
 const READER_MOVE_PX = 4;
-/** Beyond this, the page was moved by something other than us (anchor, restoration). */
-const EXTERNAL_JUMP_PX = 24;
 /** A frame longer than this is a lost frame: its distance is not counted. */
 const MAX_FRAME_MS = 50;
 
@@ -407,50 +413,50 @@ function unwatchUserScroll(): void {
 
 function step(now: number): void {
   if (!running.value) return;
-  // Programmée d'abord : la sortie anticipée ci-dessous ne doit pas éteindre
-  // la boucle, elle passe son tour. `stopAutoScroll` annule celle-ci.
+  // Scheduled first: the early return below must not end the loop, it skips
+  // its turn. `stopAutoScroll` cancels this one.
   frame = requestAnimationFrame(step);
 
-  // La page est au lecteur (doigt posé, élan de son glissement, molette) : on
-  // ne pose rien. Poser quoi que ce soit ici, c'est la lui arracher des mains
-  // (voir plus haut), et le temps ne se compte pas non plus : ce qu'il a
-  // parcouru n'est pas de la lecture en retard à rattraper.
+  // The page belongs to the reader (finger down, momentum of their swipe,
+  // wheel): we set nothing. Setting anything here is snatching it from
+  // their hands (see above), and the time does not count either: what they
+  // scrolled is not reading late to be caught up.
   if (userHasControl()) {
     lastFrameAt = 0;
-    needsSync = true;
+    owed = 0;
     return;
   }
 
-  // Reprise après un geste, ou saut venu d'ailleurs (lien d'ancre, position
-  // restaurée) : on repart de la page telle qu'elle est, plutôt que de la
-  // ramener. La limite est remesurée du même coup, le saut a pu suivre une
-  // page qui a changé de taille.
-  if (needsSync || Math.abs(window.scrollY - appliedPosition) > EXTERNAL_JUMP_PX) {
-    needsSync = false;
-    position = window.scrollY;
-    remeasure();
-  }
-
-  // Une image perdue (mise en page longue, app revenue au premier plan) ne se
-  // rattrape pas d'un bond : le texte sauterait de plusieurs lignes d'un coup.
+  // A lost frame (long layout, app back in the foreground) is not caught up
+  // in one leap: the text would jump several lines at once.
   const elapsed = lastFrameAt ? Math.min(now - lastFrameAt, MAX_FRAME_MS) : 0;
   lastFrameAt = now;
 
-  position = Math.min(position + (currentPixelsPerSecond.value * elapsed) / 1000, limit);
-  // La position part telle quelle, fraction comprise : WebKit (donc l'app iOS)
-  // défile en sous-multiples de pixel, et le mouvement y est continu. Chromium
-  // arrondit, lui, et c'est pour lui que l'allure lente a été relevée (voir
-  // AUTO_SCROLL_SPEEDS) : rien, du côté du script, ne peut lui faire avancer
-  // une page de moins d'un pixel.
-  //
-  // L'abscisse est celle de la page, pas zéro : en hébreu, et sur une page
-  // zoomée au pincement, la remettre à zéro à chaque image collait la page
-  // contre un bord et se battait avec tout geste horizontal.
-  window.scrollTo(window.scrollX, position);
-  appliedPosition = position;
+  // Whole pixels only: Chromium and WebKit both refuse fractional scroll
+  // positions, and a step of a fraction would be lost. The fraction is kept
+  // for the next frame, so that the pace stays exact; it is also why the
+  // slowest pace was raised (see AUTO_SCROLL_SPEEDS). Vertical only: the
+  // horizontal scroll stays where it is (Hebrew, a page zoomed by pinching).
+  owed += (currentPixelsPerSecond.value * elapsed) / 1000;
+  const pixels = Math.floor(owed);
+  const before = window.scrollY;
+  if (pixels >= 1) {
+    owed -= pixels;
+    window.scrollBy({ top: pixels, behavior: "instant" });
+  }
+  const after = window.scrollY;
+  appliedPosition = after;
 
-  // Fin du texte : le défilement s'arrête de lui-même, il n'y a plus rien à lire.
-  if (position >= limit) stopAutoScroll("bottom");
+  // End of the text: the scrolling stops by itself, there is nothing left
+  // to read. A step that moved nothing measures the page again: it may have
+  // changed size without us seeing it, or end on a fraction of a pixel that
+  // the page cannot reach.
+  if (after >= limit) {
+    stopAutoScroll("bottom");
+  } else if (pixels >= 1 && after === before) {
+    remeasure();
+    if (after >= limit - 1) stopAutoScroll("bottom");
+  }
 }
 
 /** Lance le défilement (le double appui sur le texte, seule porte d'entrée). */
@@ -461,9 +467,8 @@ function startAutoScroll(): void {
   running.value = true;
   watchPageSize();
   watchUserScroll();
-  position = window.scrollY;
-  appliedPosition = position;
-  needsSync = false;
+  owed = 0;
+  appliedPosition = window.scrollY;
   lastFrameAt = 0;
   startedAt = Date.now();
   analyticsService.capture("auto_scroll_started", {
