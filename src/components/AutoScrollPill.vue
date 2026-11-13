@@ -102,15 +102,25 @@ onUnmounted(() => window.removeEventListener("keydown", onKeydown));
 </script>
 
 <template>
-  <!-- Un appui hors du réglage le referme, sans voile sur le texte. -->
-  <div v-if="open" class="fixed inset-0 z-40" aria-hidden="true" @click="open = false"></div>
+  <!-- A tap outside the setting closes it, with no veil over the text. It
+       closes only that: the passage chosen under it stays chosen
+       (data-keep-passage, see ReadingSelectionMenu). -->
+  <div
+    v-if="open"
+    class="fixed inset-0 z-40"
+    aria-hidden="true"
+    data-keep-passage
+    @click="open = false"
+  ></div>
 
   <Transition name="pill">
+    <!-- Touching the pill does not close the passage's sheet it sits on. -->
     <div
       v-if="isAutoScrolling"
       class="fixed left-1/2 z-50 -translate-x-1/2"
       :style="{ bottom }"
       role="status"
+      data-keep-passage
     >
       <!-- Le réglage surgit au-dessus de la pastille, ancré sur elle. -->
       <Transition name="pill-panel">

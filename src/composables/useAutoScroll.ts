@@ -227,63 +227,113 @@ function unwatchPageSize(): void {
 }
 
 /**
- * La main du lecteur.
+ * The reader's hand.
  *
- * Sur iPhone, ce n'est pas le script qui fait défiler la page mais le
- * défileur du système, sur son propre fil. Poser une position pendant qu'un
- * doigt glisse lui arrache la page ; il la reprend à l'image suivante, le
- * script la reprend à la sienne, et les deux se la disputent soixante fois
- * par seconde : c'est le défilement frénétique remonté, et c'est pire encore
- * quand on essaie de faire défiler pendant que la descente est lancée.
+ * On iPhone, it is not the script that scrolls the page but the system's
+ * scroller, on its own thread. Setting a position while a finger slides
+ * snatches the page from it; it takes it back on the next frame, the script
+ * takes it back on its own, and the two fight over it sixty times a second:
+ * that is the frantic scrolling that was reported, and it is worse still
+ * when you try to scroll while the auto-scroll is running.
  *
- * Le même fil explique un deuxième à-coup, celui qu'on voit sans toucher à
- * rien : `window.scrollY`, lu depuis le fil principal, est en retard d'une
- * image ou deux sur la position réelle. L'ancien garde-fou resynchronisait
- * dès deux pixels d'écart, donc sur une valeur périmée, et ramenait la page
- * en arrière à chaque image un peu longue.
+ * The same thread explains a second jolt, the one you see without touching
+ * anything: `window.scrollY`, read from the main thread, lags a frame or two
+ * behind the real position. The old safeguard resynchronized as soon as the
+ * gap reached two pixels, so on a stale value, and pulled the page back on
+ * every frame that ran a little long.
  *
- * D'où la règle : tant que la page est au lecteur, on ne pose rien du tout.
- * Elle lui est tant qu'un doigt la touche, puis le temps que l'élan du
- * glissement retombe (iOS continue de la faire défiler bien après que le
- * doigt soit parti), et pendant une salve de molette ou de clavier.
+ * Hence the rule: as long as the page belongs to the reader, we set nothing
+ * at all. It is theirs as long as a finger touches it, then until the
+ * momentum of their swipe has died out (iOS keeps scrolling the page long
+ * after the finger has left), and during a burst of wheel or keyboard.
+ *
+ * The end of the momentum is read from the `scroll` events, not from a
+ * position compared from one frame to the next. A fast swipe on iOS coasts
+ * for close to three seconds (the system's deceleration loses 0.2 % of its
+ * speed per millisecond), and the auto-scroll used to take the page back
+ * after two seconds at most: a slow swipe ended in time, a fast one was
+ * still coasting, and the fight started again. Comparing two frames was not
+ * reliable either: with a stale `scrollY`, two frames in a row can read the
+ * same value while the page is still moving. So the page is handed back
+ * only once no scroll has been seen for a while (SCROLL_QUIET_MS), however
+ * long the momentum lasts.
  */
 
-/** Doigts posés sur l'écran. Un seul suffit pour que la page ne soit plus à nous. */
+/** Fingers on the screen. One is enough for the page to no longer be ours. */
 let fingers = 0;
-/** On s'abstient au moins jusque-là (horodatage). */
+/** We hold back at least until then (timestamp). */
 let settleUntil = 0;
-/** Puis on attend que la page soit immobile : l'élan d'iOS court encore. */
+/** Then we wait for the page to be still: the iOS momentum is still running. */
 let waitForStill = false;
-/** Sauf à ce que l'attente s'éternise : au-delà, on reprend la main. */
-let stillDeadline = 0;
-/** Position vue à l'image précédente, pour juger de l'immobilité. */
+/** Position seen on the previous frame, to judge whether the page is still. */
 let lastSeenY = 0;
+/**
+ * The last scroll seen while the page belongs to the reader, or the moment
+ * their finger left it (timestamp): the momentum is over once this is old
+ * enough (SCROLL_QUIET_MS).
+ */
+let lastHeldScrollAt = 0;
+/**
+ * The last scroll the reader made (timestamp): while the auto-scroll is
+ * stopped, every scroll; while it runs, a scroll that took the page away
+ * from where we put it. The double tap waits for a still page by it (see
+ * onGestureTouchStart), and our own scrolling must not count there.
+ */
+let lastUserScrollAt = 0;
 
-/** Le temps qu'iOS lance sa décélération : avant, la page peut sembler immobile à tort. */
+/** Time for iOS to start its deceleration: before that, the page may wrongly seem still. */
 const TOUCH_SETTLE_MS = 150;
-/** Molette et clavier défilent par salves, avec leur propre inertie. */
+/** Wheel and keyboard scroll in bursts, with their own inertia. */
 const WHEEL_SETTLE_MS = 300;
-/** En deçà, d'une image à l'autre, la page ne bouge plus. */
+/** Below this, from one frame to the next, the page no longer moves. */
 const STILL_PX = 0.5;
-/** Plafond de l'attente d'un élan : rien ne décélère aussi longtemps. */
-const MOMENTUM_CAP_MS = 2000;
-/** Au-delà, la page a été déplacée par autre chose que nous (ancre, restauration). */
+/**
+ * No scroll for this long: the momentum is over. iOS sends a `scroll` event
+ * on every frame while the page coasts, so a quarter of a second without one
+ * is a page at rest, not a page between two events.
+ */
+const SCROLL_QUIET_MS = 250;
+/**
+ * While the page is held, a scroll that leaves it this far from where we put
+ * it was made by the reader. Closer than that, it may be the late `scroll`
+ * event of our own last frame, or the lag of `scrollY` on iOS.
+ */
+const READER_MOVE_PX = 4;
+/** Beyond this, the page was moved by something other than us (anchor, restoration). */
 const EXTERNAL_JUMP_PX = 24;
-/** Une image plus longue que ça est une image perdue : on ne lui compte pas sa distance. */
+/** A frame longer than this is a lost frame: its distance is not counted. */
 const MAX_FRAME_MS = 50;
 
-/** Un geste de défilement vient d'avoir lieu : la page est au lecteur. */
+/** A scroll gesture just happened: the page belongs to the reader. */
 function noteUserScroll(settleMs: number): void {
   const now = Date.now();
   settleUntil = Math.max(settleUntil, now + settleMs);
   waitForStill = true;
-  stillDeadline = now + MOMENTUM_CAP_MS;
+  lastHeldScrollAt = Math.max(lastHeldScrollAt, now);
   lastSeenY = window.scrollY;
+}
+
+/** Is the page held by the reader (finger, momentum, burst of wheel)? */
+function readerHolds(): boolean {
+  return fingers > 0 || waitForStill || Date.now() < settleUntil;
+}
+
+/** Every scroll of the page; the ones that are not ours are remembered. */
+function onPageScroll(): void {
+  const now = Date.now();
+  if (!running.value) {
+    lastUserScrollAt = now;
+    return;
+  }
+  // Running and not held: the scroll is ours.
+  if (!readerHolds()) return;
+  lastHeldScrollAt = now;
+  if (Math.abs(window.scrollY - appliedPosition) > READER_MOVE_PX) lastUserScrollAt = now;
 }
 
 function onUserTouch(event: TouchEvent): void {
   fingers = event.touches.length;
-  // Le dernier doigt part : l'élan, s'il y en a un, commence maintenant.
+  // The last finger leaves: the momentum, if any, starts now.
   if (fingers === 0) noteUserScroll(TOUCH_SETTLE_MS);
 }
 
@@ -291,7 +341,7 @@ function onUserWheel(): void {
   noteUserScroll(WHEEL_SETTLE_MS);
 }
 
-/** Les touches qui font défiler une page ; les autres ne nous regardent pas. */
+/** The keys that scroll a page; the others are none of our business. */
 const SCROLL_KEYS = new Set([
   "ArrowUp",
   "ArrowDown",
@@ -304,46 +354,53 @@ const SCROLL_KEYS = new Set([
 ]);
 
 function onUserKey(event: KeyboardEvent): void {
-  // Une espace tapée dans un champ, ou qui appuie sur un bouton, ne fait rien
-  // défiler : elle n'a pas à interrompre la descente (voir isInteractive).
+  // A space typed in a field, or pressing a button, scrolls nothing: it has
+  // no reason to interrupt the scrolling (see isInteractive).
   if (SCROLL_KEYS.has(event.key) && !isInteractive(event.target)) {
     noteUserScroll(WHEEL_SETTLE_MS);
   }
 }
 
-/** La page est-elle au lecteur ? */
+/** Does the page belong to the reader? */
 function userHasControl(): boolean {
   if (fingers > 0) return true;
   const now = Date.now();
   if (now < settleUntil) return true;
   if (!waitForStill) return false;
-  // L'élan d'iOS s'éteint de lui-même : on le laisse finir plutôt que de le
-  // couper net, et on reprend dès que la page ne bouge plus.
+  // The iOS momentum dies out by itself: we let it finish rather than cut it
+  // short, and take over once the page has stopped moving. Both signs count:
+  // a recent scroll event, or a position that changed since the last frame.
   const y = window.scrollY;
   const moving = Math.abs(y - lastSeenY) > STILL_PX;
   lastSeenY = y;
-  if (moving && now < stillDeadline) return true;
+  if (moving || now - lastHeldScrollAt < SCROLL_QUIET_MS) return true;
   waitForStill = false;
   return false;
 }
+
+/**
+ * The touch listeners are set at capture: a component that stops a touch
+ * from bubbling must not hide from us a finger that took the page.
+ */
+const WATCH = { passive: true, capture: true } as const;
 
 function watchUserScroll(): void {
   fingers = 0;
   settleUntil = 0;
   waitForStill = false;
-  window.addEventListener("touchstart", onUserTouch, { passive: true });
-  window.addEventListener("touchmove", onUserTouch, { passive: true });
-  window.addEventListener("touchend", onUserTouch, { passive: true });
-  window.addEventListener("touchcancel", onUserTouch, { passive: true });
+  window.addEventListener("touchstart", onUserTouch, WATCH);
+  window.addEventListener("touchmove", onUserTouch, WATCH);
+  window.addEventListener("touchend", onUserTouch, WATCH);
+  window.addEventListener("touchcancel", onUserTouch, WATCH);
   window.addEventListener("wheel", onUserWheel, { passive: true });
   window.addEventListener("keydown", onUserKey, { passive: true });
 }
 
 function unwatchUserScroll(): void {
-  window.removeEventListener("touchstart", onUserTouch);
-  window.removeEventListener("touchmove", onUserTouch);
-  window.removeEventListener("touchend", onUserTouch);
-  window.removeEventListener("touchcancel", onUserTouch);
+  window.removeEventListener("touchstart", onUserTouch, WATCH);
+  window.removeEventListener("touchmove", onUserTouch, WATCH);
+  window.removeEventListener("touchend", onUserTouch, WATCH);
+  window.removeEventListener("touchcancel", onUserTouch, WATCH);
   window.removeEventListener("wheel", onUserWheel);
   window.removeEventListener("keydown", onUserKey);
 }
@@ -542,81 +599,218 @@ function isInteractive(target: EventTarget | null): boolean {
   );
 }
 
-/** Le geste vient d'être pris en compte : les évènements qui suivent sont le même geste. */
+/** The gesture has just been taken into account: the events that follow are the same gesture. */
 const GESTURE_GAP_MS = 400;
-/** Deux appuis rapprochés valent un double appui (les doigts ne visent pas au pixel). */
+/** Two taps close together make a double tap (fingers do not aim to the pixel). */
 const DOUBLE_TAP_MS = 320;
 const DOUBLE_TAP_RADIUS = 40;
-
 /**
- * Le suivi du geste vit dans le module, pas dans la vue : le temps d'une
- * transition de page, deux vues de lecture sont montées ensemble, et un double
- * appui compté par chacune se serait annulé lui-même (lancé, puis arrêté).
- * C'est le même doigt, il ne compte qu'une fois.
+ * What makes a touch a tap rather than the start of a scroll: a finger that
+ * barely moves (a finger is never perfectly still) and is lifted quickly (a
+ * long press opens the passage, see useReadingSelection).
  */
-let lastGestureAt = 0;
-let lastTap = { time: 0, x: 0, y: 0 };
+const TAP_SLOP_PX = 12;
+const TAP_MAX_MS = 300;
+/**
+ * The page must have been still for this long before the first tap: the
+ * touch that stops a coasting page is a brake, not a tap.
+ */
+const STILL_BEFORE_TAP_MS = 300;
+/**
+ * A touch this recent means the `dblclick` comes from the finger: the touch
+ * listeners have already judged it, with their stricter rules.
+ */
+const TOUCH_CLICK_MS = 1000;
+/** The `dblclick` of a double tap follows its second touch by a few milliseconds. */
+const TOUCH_DOUBLE_CLICK_MS = 500;
 
 /**
- * À appeler dans les vues de lecture. `reading` dit quand un texte est
- * réellement ouvert : le geste ne vaut que là, et le défilement s'arrête dès
- * que la vue passe à autre chose (retour à la liste des chapitres, passage en
- * mode « gérer ma liste ») comme quand elle est quittée.
+ * The tracking of the gesture lives in the module, not in the view: during a
+ * page transition, two reading views are mounted together, and a double tap
+ * counted by each would have cancelled itself (started, then stopped). It is
+ * the same finger, it only counts once; the listeners are therefore set once
+ * for the whole app, while at least one reading view wants them.
+ */
+let gestureViews = 0;
+let lastGestureAt = 0;
+let lastTouchEndAt = 0;
+/** When the touch listeners last saw two real taps (timestamp). */
+let lastTouchDoubleAt = 0;
+
+/** The finger on the screen, as long as it may still be a tap. */
+let touchTrack: { start: number; x: number; y: number; moved: boolean; still: boolean } | null =
+  null;
+/** The last tap, waiting for its second one. */
+let lastTap: { start: number; time: number; x: number; y: number } | null = null;
+
+function accept(): void {
+  // The gesture was turned off in the settings: we touch nothing, not even
+  // the selection of the double click.
+  if (!enabled.value) return;
+  const now = Date.now();
+  // A double tap may also reach `dblclick`: without this guard, the second
+  // event would cancel the first one at once.
+  if (now - lastGestureAt < GESTURE_GAP_MS) return;
+  lastGestureAt = now;
+  // The double click selected a word: it would stay highlighted throughout
+  // the scrolling.
+  window.getSelection()?.removeAllRanges();
+  toggleAutoScroll();
+}
+
+/**
+ * The double click. The one that follows a double tap on a phone (most
+ * browsers send it) only counts if the touch listeners saw two real taps
+ * (see onGestureTouchEnd): the browser is more lenient, and two quick swipes
+ * must not get through by this door. It still has its use: the first tap of
+ * a double tap on a verse opens the passage's sheet, and the second one,
+ * judged while the sheet is open, is refused by isInteractive; the
+ * `dblclick` comes after the second click has closed the sheet again. A
+ * mouse's double click, for its part, waits for a page that the wheel no
+ * longer moves.
+ */
+function onDoubleClick(event: MouseEvent): void {
+  if (isInteractive(event.target)) return;
+  const now = Date.now();
+  if (now - lastTouchEndAt < TOUCH_CLICK_MS) {
+    if (now - lastTouchDoubleAt > TOUCH_DOUBLE_CLICK_MS) return;
+  } else if (now - lastUserScrollAt < STILL_BEFORE_TAP_MS + DOUBLE_TAP_MS) {
+    return;
+  }
+  accept();
+}
+
+/**
+ * Touch: the double tap does not reach `dblclick` everywhere (it means zoom
+ * on the mobile web), so we recognize it ourselves.
+ *
+ * It used to be enough for two fingers to be lifted close together, in time
+ * and space. That is also what two quick swipes in a row look like: people
+ * scrolling a little fast started the auto-scroll without wanting to. A
+ * double tap is now two real taps on a still page:
+ *  - each touch is a tap: the finger barely moved and was lifted quickly, so
+ *    a swipe, however short, is never one;
+ *  - the page was still before the first tap and did not move until the
+ *    second: the touch that catches a coasting page is not a tap, and
+ *    neither is the one that follows it too closely.
+ * While the auto-scroll runs, only the reader's own scrolling counts (see
+ * onPageScroll): the page moving by itself does not prevent stopping it.
+ */
+function onGestureTouchStart(event: TouchEvent): void {
+  const touch = event.touches[0];
+  // A second finger: a pinch, not a tap. The first tap does not survive it.
+  if (!touch || event.touches.length !== 1) {
+    touchTrack = null;
+    lastTap = null;
+    return;
+  }
+  const now = Date.now();
+  touchTrack = {
+    start: now,
+    x: touch.clientX,
+    y: touch.clientY,
+    moved: false,
+    still: now - lastUserScrollAt >= STILL_BEFORE_TAP_MS,
+  };
+}
+
+function onGestureTouchMove(event: TouchEvent): void {
+  const touch = event.touches[0];
+  if (!touchTrack || !touch) return;
+  if (Math.hypot(touch.clientX - touchTrack.x, touch.clientY - touchTrack.y) > TAP_SLOP_PX) {
+    touchTrack.moved = true;
+  }
+}
+
+function onGestureTouchEnd(event: TouchEvent): void {
+  const now = Date.now();
+  lastTouchEndAt = now;
+  const track = touchTrack;
+  const touch = event.changedTouches[0];
+  if (event.touches.length > 0) return;
+  touchTrack = null;
+  if (!track || !touch) return;
+  const isTap =
+    !track.moved &&
+    track.still &&
+    now - track.start <= TAP_MAX_MS &&
+    Math.hypot(touch.clientX - track.x, touch.clientY - track.y) <= TAP_SLOP_PX;
+  if (!isTap) {
+    lastTap = null;
+    return;
+  }
+  const first = lastTap;
+  const isDouble =
+    first !== null &&
+    now - first.time < DOUBLE_TAP_MS &&
+    Math.hypot(touch.clientX - first.x, touch.clientY - first.y) < DOUBLE_TAP_RADIUS &&
+    // Nothing scrolled the page between the two taps.
+    lastUserScrollAt < first.start;
+  if (isDouble) {
+    lastTap = null; // A triple tap is not two gestures.
+    lastTouchDoubleAt = now;
+    if (!isInteractive(event.target)) accept();
+  } else {
+    lastTap = { start: track.start, time: now, x: touch.clientX, y: touch.clientY };
+  }
+}
+
+/** A touch taken back by the system (a pinch, a system gesture) was not a tap. */
+function onGestureTouchCancel(): void {
+  touchTrack = null;
+  lastTap = null;
+}
+
+const GESTURE_TOUCH = { passive: true, capture: true } as const;
+
+function retainGesture(): void {
+  if (gestureViews++ > 0) return;
+  touchTrack = null;
+  lastTap = null;
+  document.addEventListener("dblclick", onDoubleClick);
+  document.addEventListener("touchstart", onGestureTouchStart, GESTURE_TOUCH);
+  document.addEventListener("touchmove", onGestureTouchMove, GESTURE_TOUCH);
+  document.addEventListener("touchend", onGestureTouchEnd, GESTURE_TOUCH);
+  document.addEventListener("touchcancel", onGestureTouchCancel, GESTURE_TOUCH);
+  // The page's scrolls: the double tap waits for a still page, and the
+  // auto-scroll for the end of the reader's momentum (see onPageScroll).
+  window.addEventListener("scroll", onPageScroll, { passive: true });
+}
+
+function releaseGesture(): void {
+  if (gestureViews === 0 || --gestureViews > 0) return;
+  touchTrack = null;
+  lastTap = null;
+  document.removeEventListener("dblclick", onDoubleClick);
+  document.removeEventListener("touchstart", onGestureTouchStart, GESTURE_TOUCH);
+  document.removeEventListener("touchmove", onGestureTouchMove, GESTURE_TOUCH);
+  document.removeEventListener("touchend", onGestureTouchEnd, GESTURE_TOUCH);
+  document.removeEventListener("touchcancel", onGestureTouchCancel, GESTURE_TOUCH);
+  window.removeEventListener("scroll", onPageScroll);
+}
+
+/**
+ * To be called in the reading views. `reading` says when a text is really
+ * open: the gesture only applies there, and the scrolling stops as soon as
+ * the view moves on to something else (back to the list of chapters,
+ * switching to "manage my list" mode) as when it is left.
  */
 export function useAutoScroll(reading: MaybeRefOrGetter<boolean> = true): void {
   void restoreAutoScrollFromDevice();
   let listening = false;
 
-  function accept(): void {
-    // Le geste a été coupé dans les réglages : on ne touche à rien, pas même
-    // à la sélection du double clic.
-    if (!enabled.value) return;
-    const now = Date.now();
-    // `dblclick` suit le double appui tactile sur la plupart des navigateurs :
-    // sans ce garde-fou, le second geste annulerait aussitôt le premier.
-    if (now - lastGestureAt < GESTURE_GAP_MS) return;
-    lastGestureAt = now;
-    // Le double clic a sélectionné un mot : il resterait surligné pendant
-    // toute la descente.
-    window.getSelection()?.removeAllRanges();
-    toggleAutoScroll();
-  }
-
-  function onDoubleClick(event: MouseEvent) {
-    if (isInteractive(event.target)) return;
-    accept();
-  }
-
-  // Tactile : le double appui n'arrive pas partout jusqu'à `dblclick` (il vaut
-  // zoom sur le web mobile), on le reconnaît donc nous-mêmes.
-  function onTouchEnd(event: TouchEvent) {
-    const touch = event.changedTouches[0];
-    if (!touch || event.touches.length > 0 || isInteractive(event.target)) return;
-    const now = Date.now();
-    const isDouble =
-      now - lastTap.time < DOUBLE_TAP_MS &&
-      Math.hypot(touch.clientX - lastTap.x, touch.clientY - lastTap.y) < DOUBLE_TAP_RADIUS;
-    lastTap = { time: now, x: touch.clientX, y: touch.clientY };
-    if (isDouble) {
-      lastTap.time = 0; // Un triple appui ne vaut pas deux gestes.
-      accept();
-    }
-  }
-
   function listen(): void {
     if (listening) return;
     listening = true;
-    document.addEventListener("dblclick", onDoubleClick);
-    document.addEventListener("touchend", onTouchEnd, { passive: true });
+    retainGesture();
   }
 
   function unlisten(): void {
     if (!listening) return;
     listening = false;
-    document.removeEventListener("dblclick", onDoubleClick);
-    document.removeEventListener("touchend", onTouchEnd);
-    // Le texte n'est plus à l'écran : ce qui descendait n'a plus de raison de
-    // descendre, et la pastille s'en va avec.
+    releaseGesture();
+    // The text is no longer on screen: what was scrolling has no reason to
+    // keep scrolling, and the pill goes away with it.
     stopAutoScroll("leave");
   }
 

@@ -1345,6 +1345,26 @@ is kept on the device, and twice rather than once (see docs/app-native.md):
 a setting made in order NOT to be surprised anymore must not come back by
 itself at the next launch.
 
+### A double tap is two taps on a still page
+
+The switch is for whoever still gets surprised; most of the surprises came
+from the gesture itself. It used to be enough for two fingers to be lifted
+close together, in time and space, and that is also what two quick swipes
+in a row look like: people scrolling a little fast started the auto-scroll
+without wanting to. A double tap (`useAutoScroll`) is now:
+
+- two real taps: each finger barely moved (12 px at most) and was lifted
+  quickly (300 ms at most), so a swipe, however short, never counts;
+- on a still page: the page did not scroll in the 300 ms before the first
+  tap, nor between the two. The touch that catches a coasting page is a
+  brake, not a tap.
+
+While the auto-scroll runs, only the reader's own scrolling counts, not the
+page moving by itself: a double tap still stops it. The `dblclick` that
+browsers send after a double tap only counts if the touch listeners saw two
+real taps. Held by `src/__tests__/autoScroll.test.ts` ("the double tap,
+told apart from a fast scroll").
+
 ### A permission is requested after a gesture, never in the background
 
 The system permission dialog only appears after a gesture that requires it:
@@ -1981,6 +2001,21 @@ setting. Both ends carry the names of the extreme speeds, because that is
 what they are. In Hebrew, the track flips with the page, and the slowest moves
 to the right; the landmarks are therefore placed from the start of the line
 (`inset-inline-start`), not from the left.
+
+### The auto-scroll lets go of the page until it is at rest
+
+On iPhone, the page is scrolled by the system, on its own thread. Setting a
+position while the reader's finger moves the page, or while the page still
+coasts after their swipe, makes the two fight over it: the page jerks back
+and forth. So the auto-scroll sets nothing as long as the page is the
+reader's: a finger on it, a burst of wheel or keyboard, and the momentum
+that follows a swipe. The end of that momentum is read from the page's
+`scroll` events: the auto-scroll takes over once none has come for a
+quarter of a second, however long the momentum lasts. It used to give up
+waiting after two seconds, and a fast swipe on iOS coasts for close to
+three: slow scrolling was calm, fast scrolling still fought. Held by
+`src/__tests__/autoScroll.test.ts` ("waits for the end of a long momentum,
+however long it lasts").
 
 ### What closes a page is read at the end
 
@@ -4012,6 +4047,17 @@ it, as they sit on the tab bar. Without this, the pill that stops the
 scrolling would be hidden under the commentaries being read while
 scrolling. A wide screen's column announces nothing: it does not cover the
 bottom of the screen.
+
+The sheet keeps its place until it has left the screen, not until it starts
+leaving: Vue tells a component it is going away when its leave transition
+begins, and announcing nothing then dropped the pill at once, while the
+sheet was still sliding down. A finger that closed the sheet by touching
+the pill then landed on the verse under it, which chose it again: the sheet
+came back, and the pill went back up. And touching what floats above the
+sheet with its own commands (the auto-scroll pill and the veil of its speed
+panel, `data-keep-passage`) does not release the passage: it is not a tap
+beside it. Held by `src/__tests__/bottomSheet.test.ts` ("la place annoncée
+du volet"), `readingSelection.test.ts` and `autoScrollPill.test.ts`.
 
 ### A bottom sheet moves like the system's
 
