@@ -2,9 +2,9 @@ import { describe, expect, it } from "vitest";
 import { isIgnoredException } from "../config/ignoredExceptions";
 
 /**
- * The filter for known Error tracking noise. The messages tested here are the
- * ones actually seen in PostHog (WebKit, Chromium and Firebase, not our own
- * wording).
+ * Filtre du bruit connu de l'Error tracking. Les messages testés sont ceux
+ * réellement observés dans PostHog (WebKit, Chromium et Firebase, pas notre
+ * rédaction).
  */
 
 const IDB_LOST =
@@ -13,51 +13,53 @@ const IDB_CLOSING =
   "InvalidStateError: Failed to execute 'transaction' on 'IDBDatabase': The database connection is closing.";
 const IDB_NO_TRANSACTION =
   "UnknownError: Attempt to get a record from database without an in-progress transaction";
-const RESIZE_UNDELIVERED = "ResizeObserver loop completed with undelivered notifications.";
-const RESIZE_LIMIT = "ResizeObserver loop limit exceeded";
 const FIRESTORE_ABORT = "AbortError: signal is aborted without reason";
+const RESIZE_UNDELIVERED = "ResizeObserver loop completed with undelivered notifications.";
 
 describe("isIgnoredException", () => {
-  it("drops the lost IndexedDB connection (WebKit, Firebase Auth polling)", () => {
+  it("écarte la perte de connexion IndexedDB (WebKit, polling Firebase Auth)", () => {
     expect(isIgnoredException([IDB_LOST])).toBe(true);
     expect(isIgnoredException([IDB_CLOSING])).toBe(true);
   });
 
-  it("drops the transaction WebKit killed under a suspended page", () => {
+  it("écarte la transaction que WebKit a tuée sous une page suspendue", () => {
     expect(isIgnoredException([IDB_NO_TRANSACTION])).toBe(true);
+    expect(
+      isIgnoredException([
+        "UnknownError: Attempt to iterate a cursor without an in-progress transaction",
+      ]),
+    ).toBe(true);
   });
 
-  it("drops the ResizeObserver loop notice, in both wordings", () => {
-    expect(isIgnoredException([RESIZE_UNDELIVERED])).toBe(true);
-    expect(isIgnoredException([RESIZE_LIMIT])).toBe(true);
-    // A real error quoting the notice must stay visible.
-    expect(isIgnoredException([`TypeError: ${RESIZE_LIMIT}`])).toBe(false);
-  });
-
-  it("drops the stream Firestore aborts on its own teardown", () => {
+  it("écarte le flux que Firestore interrompt en se démontant", () => {
     expect(isIgnoredException([FIRESTORE_ABORT])).toBe(true);
-    // An abort carrying a reason is not that teardown.
-    expect(isIgnoredException(["AbortError: signal is aborted without reason, twice"])).toBe(false);
+    expect(isIgnoredException([`${FIRESTORE_ABORT}.`])).toBe(true);
+    // Un abandon qui porte autre chose n'est pas ce démontage.
+    expect(isIgnoredException([`${FIRESTORE_ABORT}, twice`])).toBe(false);
   });
 
-  it("drops the opaque « Script error. » of injected cross-origin scripts", () => {
+  it("garde visible la boucle de ResizeObserver, qui se corrige dans l'app", () => {
+    expect(isIgnoredException([RESIZE_UNDELIVERED])).toBe(false);
+  });
+
+  it("écarte la « Script error. » opaque des scripts injectés cross-origin", () => {
     expect(isIgnoredException(["Script error."])).toBe(true);
     expect(isIgnoredException(["Script error"])).toBe(true);
-    // A real error quoting the message must stay visible.
+    // Une vraie erreur qui cite le message doit rester visible.
     expect(isIgnoredException(["Error: loading chunk failed after Script error."])).toBe(false);
   });
 
-  it("lets real errors through", () => {
+  it("laisse passer les vraies erreurs", () => {
     expect(isIgnoredException(["TypeError: undefined is not a function"])).toBe(false);
     expect(isIgnoredException(["Firebase: Error (auth/network-request-failed)."])).toBe(false);
   });
 
-  it("lets through a real error that wraps a known message", () => {
+  it("laisse passer une vraie erreur qui enveloppe un message connu", () => {
     expect(isIgnoredException(["TypeError: undefined is not a function", IDB_LOST])).toBe(false);
-    expect(isIgnoredException([RESIZE_UNDELIVERED, "TypeError: nope"])).toBe(false);
+    expect(isIgnoredException([IDB_NO_TRANSACTION, "TypeError: nope"])).toBe(false);
   });
 
-  it("lets through an event with no message (nothing to decide on)", () => {
+  it("laisse passer un événement sans message (rien pour décider)", () => {
     expect(isIgnoredException([])).toBe(false);
     expect(isIgnoredException([undefined])).toBe(false);
   });
