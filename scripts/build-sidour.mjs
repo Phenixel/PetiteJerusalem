@@ -73,6 +73,15 @@ const KI_TOLID_BANIM = (() => {
 })();
 
 /**
+ * The prayer for livelihood ("Ata hou Hachem haElohim, hazan oumefarnes"),
+ * which some say inside Shema kolenu. The Edot HaMizrach siddur export does
+ * not carry it; the text comes from Sefaria's Siddur Sefard, Torat Emet 357
+ * edition (public domain).
+ */
+const PARNASSA =
+  "אַתָּה הוּא יְהֹוָה הָאֱלֹהִים. הַזָּן וּמְפַרְנֵס וּמְכַלְכֵּל מִקַרְנֵי רְאֵמִים עַד בֵּיצֵי כִנִּים. הַטְרִיפֵנִי לֶחֶם חֻקִּי. וְהַמְצֵא לִי וּלְכָל בְּנֵי בֵיתִי מְזוֹנוֹתַי קוֹדֶם שֶׁאֶצְטָרֵךְ לָהֶם. בְּנַחַת וְלֹא בְצַעַר. בְּהֶתֵּר וְלֹא בְאִסּוּר. בְּכָבוֹד וְלֹא בְּבִזָּיוֹן. לְחַיִּים וּלְשָׁלוֹם. מִשֶּׁפַע בְּרָכָה וְהַצְלָחָה. מִשֶּׁפַע בְּרֵכָה עֶלְיוֹנָה. כְּדֵי שֶׁאוּכַל לַעֲשׂוֹת רְצוֹנֶךָ. וְלַעֲסוֹק בְּתוֹרָתֶךָ. וּלְקַיֵּם מִצְוֹתֶיךָ. וְאַל תַּצְרִיכֵנִי לִידֵי מַתְּנַת בָּשָׂר וָדָם. וִיקֻיַּם בִּי מִקְרָא שֶׁכָּתוּב. פּוֹתֵחַ אֶת יָדֶיךָ וּמַשְׂבִּיעַ לְכָל חַי רָצוֹן:";
+
+/**
  * Les fichiers de textes que l'application sert déjà (public/texts), lus une
  * fois chacun : un livre des Nevi'im sert à plusieurs haftarot.
  */
@@ -964,10 +973,33 @@ function amidaBlocks(src, ix, opts = {}) {
           ],
         }
       : { parts: [{ seg: ix.shemaKolenu }, { seg: ix.kiAta }] };
+  // The prayer for livelihood, which some insert into Shema kolenu between
+  // "tefilot vetahanounim ata" and "oumilefanekha malkenou": at Shacharit
+  // only (`opts.parnassa`). The paragraph is cut there, the prayer set back
+  // between its two halves (feedback of November 5, 2026).
+  const kolenuLines = opts.parnassa
+    ? [
+        { seg: ix.shemaKolenu, until: "ומלפניך מלכנו" },
+        {
+          he: PARNASSA,
+          muted: true,
+          rubric: R(
+            "Certains ajoutent ici la prière pour la subsistance\u00a0:",
+            "Some add here the prayer for livelihood:",
+            "יש מוסיפים כאן תפילה על הפרנסה:",
+          ),
+        },
+        {
+          ...shemaKolenu,
+          parts: [{ seg: ix.shemaKolenu, from: "ומלפניך מלכנו" }, ...shemaKolenu.parts.slice(1)],
+          tight: true,
+        },
+      ]
+    : [shemaKolenu];
   blocks.push({
     src,
     halakha: ix.anenouYahid !== undefined ? [{ ...HALAKHA.anenou, when: "taanit" }] : undefined,
-    lines: [{ seg: ix.tsemah }, shemaKolenu],
+    lines: [{ seg: ix.tsemah }, ...kolenuLines],
   });
 
   blocks.push({ src, lines: [{ seg: ix.retse }] });
@@ -1105,7 +1137,25 @@ function amidaBlocks(src, ix, opts = {}) {
   // « Yihyou lératson ». La veille de Kippour, le vidouy s'ouvre entre les
   // deux (`opts.vidouy`, voir vidouyKippour) : la fin se dit alors en deux
   // blocs, lui au milieu, comme le mahzor l'imprime.
-  const finAmida = [{ seg: ix.elohaiNetsor }, { seg: ix.lemaan }, { seg: ix.yihyu2, tight: true }];
+  const finAmida = [
+    { seg: ix.elohaiNetsor },
+    { seg: ix.lemaan },
+    { seg: ix.yihyu2, tight: true },
+    // Rav's prayer (Berakhot 16b), which the source keeps in a <small> in
+    // the segment of the second "Yihyu leratzon": some say it before Oseh
+    // shalom (feedback of November 5, 2026).
+    {
+      seg: ix.yihyu2,
+      mode: "small",
+      from: "יהי רצון",
+      muted: true,
+      rubric: R(
+        "Certains disent ici la prière de Rav (Berakhot 16b), que le 'Hida rapporte dans son sidour\u00a0:",
+        "Some say here Rav's prayer (Berakhot 16b), which the Chida records in his siddur:",
+        "יש אומרים כאן תפילת רב (ברכות טז ע״ב), שהביא החיד״א בסידורו:",
+      ),
+    },
+  ];
   if (opts.vidouy) {
     blocks.push({ src, lines: [{ seg: ix.yihyu1 }] }, ...opts.vidouy, { src, lines: finAmida });
   } else {
@@ -2087,6 +2137,7 @@ function chaharitRecipe() {
       yehiRatson: 71,
     },
     {
+      parnassa: true,
       kohanim: birkatKohanimBlock("Amida", {
         bracha: 53,
         versets: [55, 56, 57],
@@ -2396,20 +2447,29 @@ function chaharitRecipe() {
           { seg: 5 },
         ],
       },
-      // La prière de 'Hana (Chemouel I 2, 1 à 10), que la source place entre
-      // les téfilines et la 'Akéda : beaucoup la disent avant la prière
-      // (retour du 15 octobre 2026).
+      // Hannah's prayer (I Samuel 2, 1 to 10), which the source places
+      // between the tefillin and the Akeda: many say it before the prayer
+      // (feedback of October 15, 2026).
       {
         src: "Hanna",
         labelText: R("Prière de 'Hana", "Hannah's prayer", "תפילת חנה"),
         lines: [
           {
-            seg: 1,
             rubric: R(
               "Beaucoup ont l'usage de dire, avant la prière :",
               "Many are accustomed to say, before the prayer:",
               "נוהגים לומר קודם התפילה:",
             ),
+            // "Al tisme'hi oyavti li" (Micah 7, 8): the source puts it in a
+            // <small>, behind the instruction "not on Shabbat or Yom Tov",
+            // and the text without <small> lost it. The weekday sidour serves
+            // neither day: it is always said here (feedback of November 5,
+            // 2026).
+            parts: [
+              { seg: 1, until: "כי־לך יהוה הוחלתי" },
+              { seg: 1, mode: "small" },
+              { seg: 1, from: "כי־לך יהוה הוחלתי" },
+            ],
           },
         ],
       },
@@ -2574,6 +2634,18 @@ function chaharitRecipe() {
               "Il est bon de dire ce psaume avec l'image de la menora :",
               "It is good to say this psalm picturing the menorah:",
               "טוב לומר מזמור זה בצורת המנורה:",
+            ),
+          },
+          // "Vehayu melakhim" (Isaiah 49, 23), which many siddurim print
+          // right before Baruch she'amar; the source does not have it
+          // (feedback of November 6, 2026).
+          {
+            he: versets(324, 49, 23, 23),
+            muted: true,
+            rubric: R(
+              "Beaucoup de sidourim ajoutent ce verset avant Baroukh chéamar\u00a0:",
+              "Many siddurim add this verse before Baruch she'amar:",
+              "בסידורים רבים מוסיפים פסוק זה לפני ברוך שאמר:",
             ),
           },
         ],
@@ -3457,14 +3529,19 @@ function chaharitRecipe() {
           },
         ],
       },
+      // Two titles, so that the reading menu lists them: "Tefila leDavid"
+      // could not be found anywhere (feedback of October 28, 2026). On days
+      // without tahanun it is not said, and Beit Yaakov keeps its own.
       {
         src: "Beit Yaakov",
         when: "tahanoun",
         plain: true,
+        labelText: R("Tefila leDavid", "Tefillah leDavid", "תפלה לדוד"),
         lines: [{ seg: 2 }],
       },
       {
         src: "Beit Yaakov",
+        labelText: R("Beit Ya'akov", "Beit Yaakov", "בית יעקב"),
         lines: [{ seg: 3 }, { seg: 4 }],
       },
       ...chirJours,
