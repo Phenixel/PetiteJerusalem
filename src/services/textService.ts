@@ -2,6 +2,7 @@ import type { TextStudyJsonEntry } from "../models/models";
 import { formatNumberWithHebrew } from "./hebrewNumerals";
 import { fetchTextResponse } from "./offlineTextStore";
 import { parashaMark, type ParashaMark } from "./pageForm";
+import { markQamatsQatan } from "./qamatsQatan";
 
 /**
  * Loads the locally-stored texts under `public/texts/`.
@@ -576,10 +577,20 @@ export function cleanText(s: string): string {
     .trim();
 }
 
+/**
+ * A line of Hebrew text as the reader shows it: cleaned, and the qamats of
+ * כָּל written as a qamats qatan where the source did not (qamatsQatan.ts).
+ * Kept out of cleanText, whose result the watch apps must match exactly
+ * (watchTehilim.test.ts).
+ */
+function cleanHebrew(s: string): string {
+  return markQamatsQatan(cleanText(s));
+}
+
 /** Flattens a value (string | nested array) into non-empty, cleaned lines. */
 function normalizeLines(value: unknown): string[] {
   if (typeof value === "string") {
-    const s = cleanText(value);
+    const s = cleanHebrew(value);
     return s ? [s] : [];
   }
   if (Array.isArray(value)) {
@@ -848,7 +859,7 @@ function loadTanakh(
         lines = [];
         (group as unknown[]).forEach((verse, j) => {
           const heLine =
-            typeof verse === "string" ? cleanText(verse) : normalizeLines(verse).join(" ");
+            typeof verse === "string" ? cleanHebrew(verse) : normalizeLines(verse).join(" ");
           if (!heLine) return;
           lines.push(heLine);
           const trVerse = trGroup?.[j];
@@ -1012,14 +1023,14 @@ function parseDays(raw: unknown): TextDay[] {
 /** Un paragraphe du fichier → ses fragments, ou null si rien ne se lit. */
 function parseTefilaLine(raw: string | TefilaFileLine): TextParagraph | null {
   if (typeof raw === "string") {
-    const text = cleanText(raw);
+    const text = cleanHebrew(raw);
     return text ? { runs: [{ kind: "he", text }] } : null;
   }
   const parts = Array.isArray(raw.he) ? raw.he : raw.he ? [raw.he] : [];
   const runs: TextRun[] = [];
   for (const part of parts) {
     if (typeof part === "string") {
-      const text = cleanText(part);
+      const text = cleanHebrew(part);
       if (text) runs.push({ kind: "he", text });
       continue;
     }
@@ -1028,13 +1039,13 @@ function parseTefilaLine(raw: string | TefilaFileLine): TextParagraph | null {
       ...(part.unless ? { unless: part.unless } : {}),
     };
     if (part.b) {
-      const text = cleanText(part.b);
+      const text = cleanHebrew(part.b);
       if (text) runs.push({ kind: "he", text, strong: true, ...when });
     } else if (part.v) {
-      const text = cleanText(part.v);
+      const text = cleanHebrew(part.v);
       if (text) runs.push({ kind: "he", text, accent: true, ...when });
     } else if (part.he) {
-      const text = cleanText(part.he);
+      const text = cleanHebrew(part.he);
       if (text) runs.push({ kind: "he", text, ...when });
     } else if (part.r) {
       runs.push({

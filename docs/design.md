@@ -3781,6 +3781,37 @@ anything. It is automatic on `h1` and is applied by hand (class
 `h1`, a hook, a large number. At large sizes, it is paired with
 `tracking-tight`.
 
+### Hebrew reading fonts
+
+The Hebrew of the three reading fonts (Frank Ruhl Libre, David Libre,
+Heebo) is served from `public/fonts`, not from Google Fonts, which keeps
+their Latin letters. The files are built by `scripts/hebrew-fonts.py`, and
+the license is `public/fonts/hebrew-reading-fonts.LICENSE.txt`. Two
+reasons:
+
+- **The qamats qatan shows.** The qamats read "o" (U+05C7, כׇּל, חׇכְמָה) is
+  drawn by every published font within a few hundredths of an em of the
+  qamats: on a phone, nothing tells them apart. Its stem is made 0.1 em
+  longer, the way printed siddurim mark it; no other glyph changes.
+- **A te'am does not run into the vowel.** None of the three fonts draws
+  the teamim, so a cantillated word falls back to another font. Noto Serif
+  Hebrew, the fallback until now, set a vowel and a te'am under the same
+  letter against each other (רַ֣, מָֽ). The fallback is now Taamey Frank (Culmus
+  project, the Biblical Hebrew layout of SBL Hebrew), which leaves room
+  between them; it is renamed "Taamey Frank PJ", since it is modified too
+  and its name is reserved. Only its Medium is used: its Bold has empty
+  teamim, and the browser thickens the Medium for bold text. One family per
+  main font ("Teamim Frank", "Teamim David", "Teamim Heebo") brings it to the
+  letter height of that font by `size-adjust`.
+
+The texts that write a plain qamats where the qatan is read (the Mishna,
+the Halakha, the Moussar, part of the sidour) get it for the one case that
+has no exception: the word כל, whatever its prefixes (וְכׇל, בְּכׇל, מִכׇּל),
+is written כׇּל on loading (`services/qamatsQatan.ts`, held by
+`qamatsQatan.test.ts`), which also makes the phonetics say "kol". The other
+cases depend on grammar (הָאֳכָלִין keeps its "a" before a hataf qamats), and
+are left as the source writes them.
+
 ### Selectable fonts apply only to reading
 
 Changing the font in settings means adjusting your reading comfort, just as
