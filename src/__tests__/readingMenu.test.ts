@@ -30,6 +30,12 @@ import { autoScrollEnabled, setAutoScrollEnabled } from "../composables/useAutoS
 import { sansTahanoun, setSansTahanoun } from "../composables/useSansTahanoun";
 import { halakhotHidden, setHalakhotHidden } from "../composables/useHalakhot";
 import { closeFeedback, isFeedbackOpen } from "../composables/useFeedback";
+import {
+  incipit,
+  lineAnchor,
+  lineLandmarks,
+  type ReadingNavSection,
+} from "../composables/useReadingNav";
 
 /** Le presse-papiers de jsdom : c'est par lui que l'adresse partagée se voit. */
 const ecrit = vi.fn(() => Promise.resolve());
@@ -45,7 +51,7 @@ const SECTIONS = [
 /** Monte le menu, panneau ouvert. */
 async function ouvre(
   props: {
-    sections?: typeof SECTIONS;
+    sections?: ReadingNavSection[];
     tefila?: boolean;
     halakhot?: boolean;
     chneiMikra?: boolean;
@@ -376,6 +382,47 @@ describe("réglages seuls", () => {
     await settle();
     expect(boutonReglages(host)).not.toBeNull();
     expect(commande(host, fr.textReading.navTop)).toBeUndefined();
+  });
+});
+
+describe("repères d'un chapitre de Michna", () => {
+  beforeEach(() => {
+    document.body.innerHTML = "";
+    localStorage.clear();
+  });
+
+  const CHAPITRE = [
+    "מֵאֵימָתַי קוֹרִין אֶת שְׁמַע בְּעַרְבִין, מִשָּׁעָה שֶׁהַכֹּהֲנִים נִכְנָסִים",
+    "מֵאֵימָתַי קוֹרִין אֶת שְׁמַע בְּשַׁחֲרִית",
+    "בֵּית שַׁמַּאי אוֹמְרִים",
+  ];
+
+  it("garde les premiers mots d'un passage, six au plus", () => {
+    expect(incipit(CHAPITRE[0])).toBe("מֵאֵימָתַי קוֹרִין אֶת שְׁמַע בְּעַרְבִין, מִשָּׁעָה…");
+    expect(incipit(`  ${CHAPITRE[2]} `)).toBe(CHAPITRE[2]);
+  });
+
+  it("fait de chaque michna un repère, sous son numéro et ses premiers mots", () => {
+    const reperes = lineLandmarks(CHAPITRE, (n) => `Michna ${n}`);
+    expect(reperes.map((r) => r.label)).toEqual(["Michna 1", "Michna 2", "Michna 3"]);
+    expect(reperes.map((r) => r.anchor)).toEqual([0, 1, 2].map(lineAnchor));
+    expect(reperes[2].excerpt).toBe(CHAPITRE[2]);
+    // Une seule michna : il n'y a rien à chercher.
+    expect(lineLandmarks(CHAPITRE.slice(0, 1), (n) => `Michna ${n}`)).toEqual([]);
+  });
+
+  it("les liste au sommaire, et rend le bouton du sommaire à côté des réglages", async () => {
+    const { host } = await ouvre({
+      sections: lineLandmarks(CHAPITRE, (n) => `Michna ${n}`),
+    });
+    await settle();
+    expect(boutonReglages(host)).not.toBeNull();
+    const lignes = [...host.querySelectorAll(".section-item")].filter((el) =>
+      el.querySelector(".section-excerpt"),
+    );
+    expect(lignes).toHaveLength(3);
+    expect(lignes[1].querySelector(".section-name")!.textContent!.trim()).toBe("Michna 2");
+    expect(lignes[1].querySelector(".section-excerpt")!.textContent!.trim()).toBe(CHAPITRE[1]);
   });
 });
 

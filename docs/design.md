@@ -1345,6 +1345,26 @@ is kept on the device, and twice rather than once (see docs/app-native.md):
 a setting made in order NOT to be surprised anymore must not come back by
 itself at the next launch.
 
+### A double tap is two taps on a still page
+
+The switch is for whoever still gets surprised; most of the surprises came
+from the gesture itself. It used to be enough for two fingers to be lifted
+close together, in time and space, and that is also what two quick swipes
+in a row look like: people scrolling a little fast started the auto-scroll
+without wanting to. A double tap (`useAutoScroll`) is now:
+
+- two real taps: each finger barely moved (12 px at most) and was lifted
+  quickly (300 ms at most), so a swipe, however short, never counts;
+- on a still page: the page did not scroll in the 300 ms before the first
+  tap, nor between the two. The touch that catches a coasting page is a
+  brake, not a tap.
+
+While the auto-scroll runs, only the reader's own scrolling counts, not the
+page moving by itself: a double tap still stops it. The `dblclick` that
+browsers send after a double tap only counts if the touch listeners saw two
+real taps. Held by `src/__tests__/autoScroll.test.ts` ("the double tap,
+told apart from a fast scroll").
+
 ### A permission is requested after a gesture, never in the background
 
 The system permission dialog only appears after a gesture that requires it:
@@ -1531,6 +1551,18 @@ switches); the circle becomes the cross that closes. Held by
 `src/__tests__/readingMenu.test.ts` (« garde un seul bouton rond, les
 réglages, quand le sommaire n'a rien d'autre que le haut de page »).
 
+A chapter of Mishna and a siman of halakha have no heading inside them, yet
+one looks for a precise mishna or se'if in them: without landmarks they fell
+under the rule above, and whoever wanted the fourth mishna of a chapter had
+to scroll for it. Each mishna, each se'if is therefore a landmark of its
+own (`lineLandmarks`, `useReadingNav.ts`): « Michna 4 » or « Séif 4 », then
+its opening words in Hebrew, cut by an ellipsis, since a mishna is
+remembered by how it opens more than by its number. The two circles come
+back. A Tanakh chapter, the daily Tehilim or the chnei mikra keep a single
+circle: they are read through, not searched verse by verse. Held by
+`src/__tests__/readingMenu.test.ts` (« fait de chaque michna un repère, sous
+son numéro et ses premiers mots »).
+
 These settings are the ones you change **while** reading, not before:
 auto-scroll (the same switch as in Preferences, see "A gesture that
 surprises must be able to be turned off") and, on a service, « sans
@@ -1690,14 +1722,28 @@ the daily reading. Chnei mikra is read over the course of the week, an
 aliyah or two at a time, and one checks it off where one stops reading. The
 aliyah's title above the text stays a plain marker.
 
-At the top of the page, under the paracha's name, a bar says where the week
-stands (« Montées lues : 3 sur 7 », "Aliyot read: 3 of 7", its percentage,
-and the `ProgressBar`), fourteen for a double paracha. No card around it
-and no list of the aliyot: an earlier version put a card « Les montées de
-la semaine » above the text, with the seven aliyot by name to tick, and a
-pill beside each title in the text; two ways of doing one thing, and a
-frame more at the top of a page that is already long. The owner asked for
-the pattern of the Tehilim instead.
+At the top of the page, right under the paracha's name, seven dots say
+where the week stands: one per aliyah, solid in the theme color once read,
+a ring until then (fourteen for a double paracha, a wider gap between its
+two halves). They replace the bar « Montées lues : 3 sur 7 » that sat lower
+down with its percentage: the dots say the same thing in the place one
+looks first, and they also say **which** aliyot are read, not only how
+many. The sentence stays for screen readers. They show the same way when
+the page is opened from Mon parcours (« une montée par jour ») or on its
+own.
+
+The paracha's name is the button that opens the week's aliyot, in a bottom
+sheet (`ChneiMikraAliyotSheet.vue`): a row per aliyah, the ring of
+« Marquer comme lue » filling with its check. It is there for whoever reads
+chnei mikra in a printed book, or has read an aliyah elsewhere, and does not
+want to scroll to the end of an aliyah to check it off. These are the same
+checks as the buttons in the text. An earlier version had put the list
+in a card « Les montées de la semaine » above the text, always open, with a
+pill beside each title in the text: two ways of doing one thing in plain
+sight, and a frame more at the top of a long page. The list now waits
+behind the name, closed until asked for. Held by
+`src/__tests__/chneiMikraPage.test.ts` (« dit sous le nom de la paracha les
+montées lues, et les coche depuis ce nom »).
 
 The checks are stored by week (the Chabbat of the paracha): the following
 week starts from zero, and browsing back to a past paracha finds its own.
@@ -1705,6 +1751,24 @@ They are kept in Mon parcours, carried along by the account and tied to the
 « une montée par jour » ("one aliyah a day") chnei mikra (see
 `docs/parcours.md`). The daily reading, which also shows chnei mikra, does
 not carry them: it already has « Marquer lu » per section.
+
+### The verse number opens the verse, and the text is justified
+
+In a text that numbers its verses (a chapter of Tanakh, of Mishna, a siman
+of halakha), the number is written at the start of the verse, inside its
+first line, small, in the theme color and in Manrope (`.verse-num`), as in
+a printed book. It used to hold a column of its own in the margin, and all
+the height of the verse under it was lost width; in Hebrew, where the text
+starts on the right, the column took even more. It stays out of a selection
+and out of what the table of study sets aside.
+
+Every reading text is **justified**: the Hebrew, the phonetics, the
+translation, the Targum and Rashi of the chnei mikra, the gemara and the
+commentaries of the study panel, like the tefilot already were. Aligned on
+both edges, a verse fills the width of a small phone instead of leaving a
+ragged margin. The last line of a paragraph stays aligned to its start, and
+the Latin text is hyphenated (`hyphens: auto`) so that justified lines do
+not open wide gaps.
 
 ### The translation reads under the verse
 
@@ -1937,6 +2001,38 @@ setting. Both ends carry the names of the extreme speeds, because that is
 what they are. In Hebrew, the track flips with the page, and the slowest moves
 to the right; the landmarks are therefore placed from the start of the line
 (`inset-inline-start`), not from the left.
+
+### The auto-scroll lets go of the page until it is at rest
+
+On iPhone, the page is scrolled by the system (the web view's
+UIScrollView), in another process than the script. WebKit's sources show
+what a script's scroll does there: `scrollTo` sends an absolute position,
+computed from a `scrollY` that lags behind the screen, and the web view
+applies it without stopping the finger's drag nor the momentum that follows
+(`_scrollToContentScrollPosition`, `interruptAnimation` off). Each frame,
+the page was brought back to where the script believed it was, then pushed
+on by iOS: the frantic back-and-forth that was reported. Three rules
+follow (`useAutoScroll`, "the reader's hand"):
+
+- **Nothing is set while the page is the reader's**: a finger on it, a
+  burst of wheel or keyboard, and the momentum that follows a swipe.
+- **The end of the momentum is read from the `scroll` events**, not from
+  two frames reading the same `scrollY`: the auto-scroll takes over once
+  none has come for a quarter of a second, however long the momentum lasts.
+  On iOS, `scrollY` is an integer, and a fast swipe coasts for close to
+  three seconds, the last of them at less than a pixel per frame: two
+  frames read the same value while the page still slides. The old code took
+  that for a page at rest (or gave up waiting after two seconds), which is
+  why slow scrolling was calm and fast scrolling still fought.
+- **The page is moved by steps, never to a position** (`scrollBy`, whole
+  pixels, the fraction kept for the next frame). WebKit sends a step as a
+  delta added in the web view to where the page really is: it never pulls
+  the page back, and a jump made elsewhere (an anchor, the reader's own
+  scrolling) is simply where the next step starts.
+
+Held by `src/__tests__/autoScroll.test.ts` ("waits for the end of a long
+momentum, however long it lasts", "moves the page by steps, and never
+pulls it back").
 
 ### What closes a page is read at the end
 
@@ -3968,6 +4064,17 @@ it, as they sit on the tab bar. Without this, the pill that stops the
 scrolling would be hidden under the commentaries being read while
 scrolling. A wide screen's column announces nothing: it does not cover the
 bottom of the screen.
+
+The sheet keeps its place until it has left the screen, not until it starts
+leaving: Vue tells a component it is going away when its leave transition
+begins, and announcing nothing then dropped the pill at once, while the
+sheet was still sliding down. A finger that closed the sheet by touching
+the pill then landed on the verse under it, which chose it again: the sheet
+came back, and the pill went back up. And touching what floats above the
+sheet with its own commands (the auto-scroll pill and the veil of its speed
+panel, `data-keep-passage`) does not release the passage: it is not a tap
+beside it. Held by `src/__tests__/bottomSheet.test.ts` ("la place annoncée
+du volet"), `readingSelection.test.ts` and `autoScrollPill.test.ts`.
 
 ### A bottom sheet moves like the system's
 

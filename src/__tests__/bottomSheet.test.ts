@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createApp, h, nextTick, type App } from "vue";
+import { Transition, createApp, h, nextTick, ref, type App } from "vue";
 import BottomSheet from "../components/BottomSheet.vue";
+import { openSheetHeight } from "../composables/useBottomChrome";
 import ParcoursSheet from "../components/parcours/BottomSheet.vue";
 
 /**
@@ -138,6 +139,51 @@ describe("le bottom sheet", () => {
     await tire(grip, 650, 647, 120);
     expect(suite).not.toHaveBeenCalled();
     expect(ferme).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * What floats above the sheet (the auto-scroll pill, toasts) stays above it
+ * until it has left the screen. Vue runs `onBeforeUnmount` as soon as the
+ * leave transition starts: withdrawing the height there dropped the pill at
+ * once, under the finger that had just closed the sheet by touching it.
+ */
+describe("la place annoncée du volet", () => {
+  it("reste prise jusqu'à ce que le volet ait quitté l'écran", async () => {
+    const queued: FrameRequestCallback[] = [];
+    vi.spyOn(window, "requestAnimationFrame").mockImplementation((callback) => {
+      queued.push(callback);
+      return queued.length;
+    });
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
+      height: 140,
+    } as DOMRect);
+    const shown = ref(true);
+    const host = document.createElement("div");
+    document.body.appendChild(host);
+    monte = createApp({
+      render: () =>
+        h(Transition, { name: "bottom-sheet" }, () =>
+          shown.value ? h(BottomSheet, { label: "Volet" }, () => "contenu") : null,
+        ),
+    });
+    monte.mount(host);
+    await nextTick();
+    expect(openSheetHeight()).toBe(140);
+
+    // It starts sliding down: still on the page, it still takes its place.
+    shown.value = false;
+    await nextTick();
+    expect(host.querySelector(".bottom-sheet")).not.toBeNull();
+    expect(openSheetHeight()).toBe(140);
+
+    // Frame after frame, until the transition removes it.
+    for (let i = 0; i < 10 && queued.length; i++) {
+      for (const callback of queued.splice(0)) callback(i * 16);
+    }
+    expect(host.querySelector(".bottom-sheet")).toBeNull();
+    expect(openSheetHeight()).toBe(0);
+    vi.restoreAllMocks();
   });
 });
 
