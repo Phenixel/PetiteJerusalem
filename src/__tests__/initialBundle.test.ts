@@ -102,4 +102,19 @@ describe("bundle initial", () => {
       .join("\n");
     expect(report, `modules lourds atteints en statique depuis src/main.ts :\n${report}`).toBe("");
   });
+
+  // The reader is where most visitors land (a psalm, a daf): its route must
+  // not wait for the SDK, which only the chains of /share-reading use there.
+  // The sign-in form needs it only once the person is signed in.
+  it.each([
+    ["the reader", "views/TextReading/TextReadingPage.vue"],
+    ["the sign-in page", "views/loginView.vue"],
+  ])("keeps the Firestore SDK out of %s until it is needed", (_name, view) => {
+    const found = forbiddenPaths(resolve(SRC, view));
+    const report = [...found]
+      .filter(([label]) => label === "Firestore" || label === "src/firebase/firestore")
+      .map(([label, trail]) => `${label} :\n    ${trail.join("\n    -> ")}`)
+      .join("\n");
+    expect(report, `Firestore reached statically from src/${view}:\n${report}`).toBe("");
+  });
 });

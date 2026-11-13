@@ -74,7 +74,7 @@ import { useTextLabels } from "../../composables/useTextLabels";
 import { localeMessagesReady } from "../../i18n";
 import { transliterate, hasNiqqud } from "../../services/hebrewTransliteration";
 import { appendHebrewNumeral } from "../../services/hebrewNumerals";
-import { sessionService } from "../../services/sessionService";
+import type { sessionService as SessionServiceInstance } from "../../services/sessionService";
 import { isPerpetual, isRoundFinished, waitForNextRound } from "../../services/perpetualChain";
 import { ReservationGoneError, SlotTakenError } from "../../services/appError";
 import { isOffline } from "../../services/userPreferencesService";
@@ -1698,6 +1698,15 @@ function refreshProgressState() {
 
 // --- Reservation (session mode) ---
 const session = ref<Session | null>(null);
+
+/**
+ * The service of the reading chains, loaded with the first chain (onMounted):
+ * it brings the whole Firestore SDK with it (about 170 kB gzip), which every
+ * reader of a psalm used to wait for before seeing the text, chain or not.
+ * Every use below sits behind `session.value`, which this service alone
+ * fills. Held by initialBundle.test.ts.
+ */
+let sessionService!: typeof SessionServiceInstance;
 /** Chaîne perpétuelle : les noms pour lesquels on lit (voir PrayerNamesLine). */
 const prayerNames = ref<PrayerName[]>([]);
 const currentUser = ref<User | null>(null);
@@ -2421,6 +2430,7 @@ onMounted(async () => {
     // manque : le lecteur reste utilisable, seule la barre de réservation
     // n'apparaît pas. Sans ce garde-fou, le montage rejetait en silence.
     try {
+      ({ sessionService } = await import("../../services/sessionService"));
       currentUser.value = await sessionService.getCurrentUser();
       session.value = await sessionService.resolveSession(sessionSlug.value);
     } catch (e) {
