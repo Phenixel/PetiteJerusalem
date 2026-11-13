@@ -151,8 +151,10 @@ the week counts as read when the Friday or Chabbat card is
 paracha is read over the week, as before.
 
 **Aliyot can also be checked off one by one**, in any order, on the chnei
-mikra page: « Marquer comme lue » at the end of each aliya in the text, and
-a bar at the top of the page that counts them (seven, fourteen for a double
+mikra page: a check swiped right above and below each aliya in the text
+(`AliyaCheck.vue`, see docs/design.md; none when the page shows the day's
+single aliya, which the pull at its end checks), and a bar at the top of
+the page that counts them (seven, fourteen for a double
 paracha; `useChneiMikraChecks`). No new field: a check is an entry of `done`, on the
 day it is set, under the name `aliya:3` (the 3rd aliya of the week, counted
 from 1). An earlier version ignores it, and keeps it when rewriting the day

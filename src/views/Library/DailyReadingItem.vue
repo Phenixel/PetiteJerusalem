@@ -49,6 +49,7 @@ import TalmudDafText from "../../components/TalmudDafText.vue";
 import { takeLegacyChecks } from "../../composables/useChneiMikraChecks";
 import BookmarkRibbon from "../../components/BookmarkRibbon.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
+import AliyaCheck from "../../components/AliyaCheck.vue";
 import { aliyaAnchor } from "../../services/parcours/aliyot";
 
 const props = defineProps<{
@@ -69,13 +70,19 @@ const props = defineProps<{
   blocks?: { from: number; to: number };
   /**
    * Chnei mikra (ChneiMikraPage): the week of the paracha. Each aliyah then
-   * ends with « Marquer comme lue », to check it off once read
-   * (useChneiMikraChecks); the page holds the checks (`checkedAliyot`) and
-   * receives `toggle-aliya`.
+   * carries its check above and below its text (AliyaCheck, swiped right
+   * once read; useChneiMikraChecks); the page holds the checks
+   * (`checkedAliyot`) and receives `toggle-aliya`.
    */
   aliyaWeek?: string;
   /** Les montées cochées de ce texte, comptées de 0. */
   checkedAliyot?: number[];
+  /**
+   * Chnei mikra opened from Mon parcours for a single aliyah: the pull at the
+   * end of the day's portion (ReaderTaskCard) already checks it, so the
+   * aliyah carries no check of its own (the same thing asked twice).
+   */
+  hideAliyaChecks?: boolean;
   /**
    * Chnei mikra: the rank in the week of this text's first aliyah (7 for the
    * second of a double paracha). Each aliyah title then carries its landmark
@@ -242,7 +249,9 @@ function goToBookmark(b: Bookmark) {
   });
 }
 
-// --- Chnei mikra: « Marquer comme lue » at the end of each aliyah (see aliyaWeek) ---
+// --- Chnei mikra: each aliyah is checked off above and below its text (see aliyaWeek) ---
+/** The aliyot carry their check (AliyaCheck), unless the reading's end marks it all. */
+const aliyaChecks = computed(() => Boolean(props.aliyaWeek) && !props.hideAliyaChecks);
 /** The rank of an aliyah in the text (counted from 0), as the week counts it. */
 function aliyaIndex(section: TextSection, block: TextBlock): number {
   return section.blocks?.indexOf(block) ?? 0;
@@ -250,9 +259,9 @@ function aliyaIndex(section: TextSection, block: TextBlock): number {
 function isAliyaChecked(section: TextSection, block: TextBlock): boolean {
   return props.checkedAliyot?.includes(aliyaIndex(section, block)) ?? false;
 }
-function toggleAliya(section: TextSection, block: TextBlock): void {
-  if (!props.aliyaWeek) return;
-  emit("toggle-aliya", aliyaIndex(section, block), !isAliyaChecked(section, block), block.label);
+function setAliya(section: TextSection, block: TextBlock, done: boolean): void {
+  if (!props.aliyaWeek || done === isAliyaChecked(section, block)) return;
+  emit("toggle-aliya", aliyaIndex(section, block), done, block.label);
 }
 // Les coches de la version d'avant, sur l'appareil : reprises une fois, à
 // l'arrivée du texte, qui seul sait où commencent ses montées.
@@ -583,8 +592,18 @@ onUnmounted(() => {
                  the background, with a marker at each chapter / montée block -->
             <template v-else>
               <template v-for="block in blocksOf(section)" :key="block.offset">
+                <!-- Chnei mikra: the aliyah's check takes the place of its title,
+                     to check it off without scrolling to its end. -->
+                <AliyaCheck
+                  v-if="block.label && aliyaChecks"
+                  class="mt-10 mb-5 first:mt-4"
+                  :done="isAliyaChecked(section, block)"
+                  :name="headingLabel(block.heading, block.label)"
+                  :data-block-anchor="aliyaAnchor((aliyaBase ?? 0) + aliyaIndex(section, block))"
+                  @toggle="(done: boolean) => setAliya(section, block, done)"
+                />
                 <p
-                  v-if="block.label"
+                  v-else-if="block.label"
                   :data-block-anchor="
                     aliyaWeek
                       ? aliyaAnchor((aliyaBase ?? 0) + aliyaIndex(section, block))
@@ -666,28 +685,14 @@ onUnmounted(() => {
                     />
                   </template>
                 </p>
-                <!-- Chnei mikra: each aliyah is checked off where it ends, like
-                     a psalm of « Mes Téhilim » or a text of the daily reading. -->
-                <button
-                  v-if="block.label && aliyaWeek"
-                  type="button"
-                  class="mark-btn mt-2"
-                  :class="{ 'is-done': isAliyaChecked(section, block) }"
-                  role="checkbox"
-                  :aria-checked="isAliyaChecked(section, block)"
-                  :aria-label="
-                    t('chneiMikra.aliyaCheck', { aliya: headingLabel(block.heading, block.label) })
-                  "
-                  @click="toggleAliya(section, block)"
-                >
-                  <AppIcon v-if="isAliyaChecked(section, block)" name="circle-check" :size="15" />
-                  <span v-else class="mark-ring" />
-                  {{
-                    isAliyaChecked(section, block)
-                      ? t("chneiMikra.aliyaDone")
-                      : t("chneiMikra.aliyaMark")
-                  }}
-                </button>
+                <!-- Chnei mikra: and where it ends, for whoever has just read it. -->
+                <AliyaCheck
+                  v-if="block.label && aliyaChecks"
+                  class="mt-4"
+                  :done="isAliyaChecked(section, block)"
+                  :name="headingLabel(block.heading, block.label)"
+                  @toggle="(done: boolean) => setAliya(section, block, done)"
+                />
               </template>
             </template>
           </div>
@@ -735,26 +740,5 @@ onUnmounted(() => {
   line-height: 1.65;
   padding-inline-start: 0.75rem;
   border-inline-start: 2px solid color-mix(in srgb, var(--color-primary) 35%, transparent);
-}
-/* « Marquer comme lue » at the end of an aliyah: the button of « Mes Téhilim »
-   and of the daily reading. */
-.mark-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 40px;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--color-text-secondary);
-}
-.mark-btn:hover,
-.mark-btn.is-done {
-  color: var(--color-primary);
-}
-.mark-ring {
-  width: 14px;
-  height: 14px;
-  border: 2px solid currentColor;
-  border-radius: var(--radius-pill);
 }
 </style>

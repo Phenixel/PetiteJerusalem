@@ -1715,12 +1715,37 @@ tikoun): neither one shows it.
 
 ### Chnei mikra is checked off aliyah by aliyah
 
-On the chnei mikra page, each aliyah ends with « Marquer comme lue » ("Mark
-as read", then « Lue », "Read", with its check in the theme color): the
-same button, at the same place, as a psalm of « Mes Téhilim » or a text of
-the daily reading. Chnei mikra is read over the course of the week, an
-aliyah or two at a time, and one checks it off where one stops reading. The
-aliyah's title above the text stays a plain marker.
+On the chnei mikra page, each aliyah carries its check twice: in place of
+its title above the text, and where it ends (`AliyaCheck.vue`). Chnei mikra
+is read over the course of the week, an aliyah or two at a time: one checks
+it off where one stops reading, and whoever read it elsewhere (at the
+synagogue, on another device) checks it at the top without scrolling down.
+Both show the same state.
+
+The check is a pill track as wide as a button row (up to 24 rem, 60 px
+high), with a 48 px disc on the left carrying a chevron, the aliyah's name
+in the middle and « Glissez à droite une fois lue » ("Swipe right once
+read") under it. It is **swiped right**, as a card of the home stack or of
+the Sidour says it is done: the disc follows the finger, leaving a flat
+band of the theme color behind it (no gradient), the words fade as it
+covers them, and past 110 px it turns to the brand color with its check
+(one "threshold" beat). Let go there, the aliyah is read: the disc rests on
+the right, checked, the band fills the track and the line under the name
+says « Lue » ("Read") in the theme color. Swiped back to the left, it is
+unread again. The swipe goes right in every language, as everywhere in the
+app. A tap does the same (a mouse, a screen reader, Enter or Space): the
+gesture is the invitation, never the only way. It replaces a small
+« Marquer comme lue » link at the end of each aliyah, borrowed from « Mes
+Téhilim », which was easy to miss and sat only at the bottom.
+
+**No check for a single aliyah that ends with the pull.** Opened from Mon
+parcours for one aliyah (`?montees=3&objectif=`), the reading ends with the
+pull of the day's portion (`PullToMark`), which checks that aliyah: a check
+of its own just above it asked the same thing twice. The aliyah then shows
+its plain title and nothing at its end but the pull. With several aliyot
+(the sixth and seventh on Friday, or « Toute la paracha »), each keeps its
+check, to be ticked one by one, and the pull still does them all at once.
+Held by `src/__tests__/aliyaCheck.test.ts`.
 
 At the top of the page, right under the paracha's name, seven dots say
 where the week stands: one per aliyah, solid in the theme color once read,

@@ -25,6 +25,7 @@ import { useChneiMikraOptions } from "../../composables/useChneiMikraOptions";
 import { useEntriesTranslation } from "../../composables/useEntriesTranslation";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import { useChneiMikraChecks } from "../../composables/useChneiMikraChecks";
+import { useParcours } from "../../composables/useParcours";
 import ChneiMikraAliyotSheet from "../../components/ChneiMikraAliyotSheet.vue";
 import ReadingMenu from "../../components/ReadingMenu.vue";
 import ReadingProgressBar from "../../components/ReadingProgressBar.vue";
@@ -204,6 +205,27 @@ function adoptLegacy(entryIndex: number, indexes: number[]): void {
     }
   }
 }
+
+/**
+ * Opened from Mon parcours for a single aliyah, the reading ends with the
+ * pull of the day's portion (ReaderTaskCard), which checks that aliyah: a
+ * check of its own, just above, would ask the same thing twice. With several
+ * aliyot (or « Toute la paracha »), each keeps its check, to be ticked one by
+ * one, and the pull still does them all at once.
+ */
+const store = useParcours();
+const endPull = computed(
+  () =>
+    objectiveId.value !== null &&
+    store.todayTasks.value.some((task) => task.objectiveId === objectiveId.value),
+);
+const shownAliyot = computed(() =>
+  shownEntries.value.reduce(
+    (sum, shown) => sum + (shown.blocks ? shown.blocks.to - shown.blocks.from : ALIYOT_PER_PARASHA),
+    0,
+  ),
+);
+const hideAliyaChecks = computed(() => endPull.value && shownAliyot.value === 1);
 
 function showWhole(): void {
   const query = { ...route.query };
@@ -397,6 +419,7 @@ watch([title, locale, localeMessagesReady], applySeoMeta, { immediate: true });
             :with-rashi="withRashi"
             :aliya-week="parasha.weekKey"
             :checked-aliyot="checkedIn(shown.index)"
+            :hide-aliya-checks="hideAliyaChecks"
             :aliya-base="shown.index * ALIYOT_PER_PARASHA"
             source="library_chnei_mikra"
             @toggle-aliya="
