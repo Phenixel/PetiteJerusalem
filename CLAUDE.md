@@ -135,9 +135,11 @@ manual in `docs/backoffice-cli.md`.
   notification goes to every phone and cannot be taken back.
 - An announcement text follows the typography above (no long dash,
   non-breaking spaces in French); English and Hebrew are optional.
-- Credentials: locally, the machine's ADC (if it has expired, the script
-  says so; it is up to the owner to run
-  `gcloud auth application-default login`, account admin@phenixel.fr). In a
+- Credentials: locally, the gcloud account admin@phenixel.fr, taken
+  without depending on the active account or the ADC (`--compte` picks
+  another one). If Google asks to re-authenticate, the script says so; it is
+  up to the owner to run `gcloud auth login admin@phenixel.fr`. Without that
+  account, the machine's ADC. In a
   cloud session, the environment's `PJ_ADMIN_SERVICE_ACCOUNT` key; if the
   script says firebase-admin is missing, run `npm ci --prefix functions`.
 - Release notes become an announcement on their own when the GitHub release

@@ -49,6 +49,7 @@ import TalmudDafText from "../../components/TalmudDafText.vue";
 import { takeLegacyChecks } from "../../composables/useChneiMikraChecks";
 import BookmarkRibbon from "../../components/BookmarkRibbon.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
+import { aliyaAnchor } from "../../services/parcours/aliyot";
 
 const props = defineProps<{
   entry: TextStudyJsonEntry;
@@ -75,6 +76,12 @@ const props = defineProps<{
   aliyaWeek?: string;
   /** Les montées cochées de ce texte, comptées de 0. */
   checkedAliyot?: number[];
+  /**
+   * Chnei mikra: the rank in the week of this text's first aliyah (7 for the
+   * second of a double paracha). Each aliyah title then carries its landmark
+   * (aliyaAnchor), where the reading menu scrolls to.
+   */
+  aliyaBase?: number;
 }>();
 const emit = defineEmits<{
   "toggle-section": [index: number];
@@ -578,6 +585,11 @@ onUnmounted(() => {
               <template v-for="block in blocksOf(section)" :key="block.offset">
                 <p
                   v-if="block.label"
+                  :data-block-anchor="
+                    aliyaWeek
+                      ? aliyaAnchor((aliyaBase ?? 0) + aliyaIndex(section, block))
+                      : undefined
+                  "
                   class="my-4 text-xs font-semibold text-primary/70 dark:text-primary text-center"
                 >
                   {{ headingLabel(block.heading, block.label) }}

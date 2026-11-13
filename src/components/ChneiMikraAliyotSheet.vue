@@ -12,7 +12,7 @@
  */
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
-import { ALIYOT_PER_PARASHA } from "../services/parcours/aliyot";
+import { ALIYOT_PER_PARASHA, aliyaName } from "../services/parcours/aliyot";
 import AppIcon from "./icons/AppIcon.vue";
 import BottomSheet from "./parcours/BottomSheet.vue";
 
@@ -33,17 +33,12 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 
-/** « 1re montée », « 2e montée »... in the reader's language. */
-function aliyaName(index: number): string {
-  return t("parcours.aliyot.one", { n: t(`parcours.aliyot.ordinals.n${index + 1}`) });
-}
-
 const groups = computed(() =>
   props.names.map((name, entry) => ({
     name,
     aliyot: Array.from({ length: ALIYOT_PER_PARASHA }, (_, index) => ({
       aliya: entry * ALIYOT_PER_PARASHA + index,
-      label: aliyaName(index),
+      label: aliyaName(index, t),
     })),
   })),
 );

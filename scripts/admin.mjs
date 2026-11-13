@@ -13,10 +13,11 @@
  * - --emulateur vise les émulateurs locaux (npm run dev:local) au lieu de la
  *   production.
  *
- * Accès : le SDK admin de Firebase (celui des functions, functions/node_modules),
- * avec les identifiants par défaut de Google (ADC). En local :
- * `gcloud auth application-default login` avec admin@phenixel.fr ; en CI, le
- * compte de service posé par google-github-actions/auth.
+ * Access: the Firebase admin SDK (the one from functions,
+ * functions/node_modules). Locally, the gcloud account admin@phenixel.fr when
+ * it is signed in (or the one given by --compte), without depending on the
+ * machine's ADC; otherwise Google's Application Default Credentials (ADC); in
+ * CI, the service account set up by google-github-actions/auth.
  */
 import { execFileSync } from "node:child_process";
 import { randomBytes, randomUUID } from "node:crypto";
@@ -108,6 +109,8 @@ const OPTIONS = {
   chapitre: { type: "string" },
   // Nous écrire
   clore: { type: "boolean" },
+  // Access
+  compte: { type: "string" },
 };
 
 const { values: opts, positionals } = parseArgs({
@@ -161,8 +164,86 @@ function serviceAccount() {
 // CI l'installe déjà pour déployer (npm ci --prefix functions).
 const requireFromFunctions = createRequire(new URL("../functions/package.json", import.meta.url));
 let admin = null;
+
+/** The owner's account, the one with rights on the project. */
+const ADMIN_ACCOUNT = "admin@phenixel.fr";
+
+function gcloud(argv) {
+  return execFileSync("gcloud", argv, {
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
+  }).trim();
+}
+
+/**
+ * The gcloud account whose token the CLI uses, bypassing the ADC.
+ *
+ * The ADC is a single account for the whole machine: whoever switches
+ * between a work and a personal account changes it along the way, and the
+ * backoffice ended up refused. gcloud keeps every signed-in account side by
+ * side (`gcloud auth list`): take the one from --compte (or PJ_ADMIN_COMPTE),
+ * otherwise admin@phenixel.fr when it is signed in. Neither: null, and the
+ * ADC applies. A service account key and the emulators come first.
+ */
+function gcloudAccount() {
+  if (opts.emulateur || serviceAccount()) return null;
+  const asked = opts.compte ?? process.env.PJ_ADMIN_COMPTE;
+  let accounts;
+  try {
+    accounts = gcloud(["auth", "list", "--format=value(account)"]).split(/\s+/).filter(Boolean);
+  } catch {
+    if (asked) fail("--compte : gcloud introuvable sur ce poste.");
+    return null;
+  }
+  if (asked) {
+    if (!accounts.includes(asked)) {
+      fail(`--compte : ${asked} n'est pas connecté dans gcloud (\`gcloud auth login ${asked}\`).`);
+    }
+    return asked;
+  }
+  return accounts.includes(ADMIN_ACCOUNT) ? ADMIN_ACCOUNT : null;
+}
+
+/**
+ * An OAuth client that asks gcloud for this account's token, and asks again
+ * before it expires (tokens last an hour).
+ */
+function gcloudAuthClient(account) {
+  const { OAuth2Client } = requireFromFunctions("google-auth-library");
+  const client = new OAuth2Client();
+  client.refreshHandler = async () => {
+    let token;
+    try {
+      token = gcloud(["auth", "print-access-token", `--account=${account}`]);
+    } catch {
+      fail(`gcloud ne donne plus de jeton pour ${account} : \`gcloud auth login ${account}\`.`);
+    }
+    return { access_token: token, expiry_date: Date.now() + 50 * 60 * 1000 };
+  };
+  return client;
+}
+
 function firebase() {
   if (admin) return admin;
+  const account = gcloudAccount();
+  if (account) {
+    let Firestore, FieldValue, Timestamp, Storage;
+    try {
+      ({ Firestore, FieldValue, Timestamp } = requireFromFunctions("@google-cloud/firestore"));
+      ({ Storage } = requireFromFunctions("@google-cloud/storage"));
+    } catch {
+      fail("firebase-admin introuvable : lancer d'abord `npm ci --prefix functions`.");
+    }
+    const authClient = gcloudAuthClient(account);
+    admin = {
+      db: new Firestore({ projectId: PROJECT_ID, authClient }),
+      FieldValue,
+      Timestamp,
+      bucket: new Storage({ projectId: PROJECT_ID, authClient }).bucket(STORAGE_BUCKET),
+      account,
+    };
+    return admin;
+  }
   let app, firestore, storage;
   try {
     app = requireFromFunctions("firebase-admin/app");
@@ -1338,6 +1419,7 @@ commands.aide = () => {
 
 Une commande qui écrit n'est qu'un essai sans --confirmer.
 --emulateur vise les émulateurs locaux ; --json pour une sortie lisible par un script.
+--compte <email> : le compte gcloud à employer (par défaut admin@phenixel.fr s'il est connecté).
 
 État
   etat
@@ -1415,7 +1497,7 @@ try {
   // juste accordé (Google met quelques minutes à l'appliquer).
   if (error?.code === 7 || /PERMISSION_DENIED|insufficient permissions/i.test(message)) {
     fail(
-      "accès refusé : le compte utilisé n'a pas les droits (roles/datastore.user, et roles/storage.objectAdmin pour les audios). Un rôle tout juste accordé met quelques minutes à s'appliquer (voir docs/backoffice-cli.md).",
+      `accès refusé : le compte utilisé (${admin?.account ?? "celui de l'ADC"}) n'a pas les droits (roles/datastore.user, et roles/storage.objectAdmin pour les audios). Un rôle tout juste accordé met quelques minutes à s'appliquer ; --compte ${ADMIN_ACCOUNT} choisit le compte gcloud (voir docs/backoffice-cli.md).`,
     );
   }
   // Firestore injoignable : émulateurs éteints, ou réseau filtré (une
