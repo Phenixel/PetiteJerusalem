@@ -149,9 +149,37 @@ function revealActions(): void {
 /** The app goes down by the panel's height, and follows it when it grows. */
 function lower(): void {
   if (!panel.value || closing.value || !entered.value) return;
-  height.value = panel.value.offsetHeight;
-  appDrop.offset = height.value;
-  reserveScroll(height.value);
+  const next = panel.value.offsetHeight;
+  // The room is already the right one: nothing to write (the observer
+  // signals itself once as soon as it observes, with the height of the
+  // panel that has just been measured).
+  if (next === height.value && appDrop.offset === next) return;
+  height.value = next;
+  appDrop.offset = next;
+  reserveScroll(next);
+}
+
+/**
+ * The same, from the panel's own resize callback, on the next frame.
+ *
+ * Lowering the app resizes `<html>` and `<body>`: the room is a padding on
+ * the app's stage (App.vue), so the document grows by it. Both are observed
+ * above us, and higher up in the tree than the panel (useScrollFrame on
+ * `<html>`, useAutoScroll on `<body>`): writing the room from inside a
+ * resize callback leaves the browser notifications it can no longer deliver
+ * in the loop it is in, and it reports a « ResizeObserver loop completed
+ * with undelivered notifications » error. Nothing moves wrong on screen,
+ * but the error is unhandled and lands in the Error tracking (seen on the
+ * Android app v4.0.0, Chrome 155, on a Min'ha). Measured in the callback,
+ * written once the loop is over.
+ */
+let lowerFrame = 0;
+function lowerNextFrame(): void {
+  if (lowerFrame) return;
+  lowerFrame = requestAnimationFrame(() => {
+    lowerFrame = 0;
+    lower();
+  });
 }
 
 onMounted(async () => {
@@ -169,7 +197,7 @@ onMounted(async () => {
   // without a ring around a button nobody has reached with the keyboard.
   panel.value.focus({ preventScroll: true });
   if (typeof ResizeObserver !== "undefined") {
-    resizeObserver = new ResizeObserver(() => lower());
+    resizeObserver = new ResizeObserver(() => lowerNextFrame());
     resizeObserver.observe(panel.value);
   }
   actionsTimer = window.setTimeout(revealActions, ACTIONS_DELAY_MS);
@@ -179,6 +207,7 @@ onBeforeUnmount(() => {
   window.clearTimeout(closeTimer);
   window.clearTimeout(actionsTimer);
   resizeObserver?.disconnect();
+  if (lowerFrame) cancelAnimationFrame(lowerFrame);
   appDrop.offset = 0;
   reserveScroll(0);
 });
