@@ -14,8 +14,8 @@ const { getDocs, fullLoaded } = vi.hoisted(() => ({
   fullLoaded: vi.fn(),
 }));
 
-vi.mock("../composables/useNativeApp", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../composables/useNativeApp")>()),
+vi.mock("../config/platform", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../config/platform")>()),
   isNativeApp: false,
 }));
 vi.mock("../firebase/firestoreLite", () => ({ liteDb: { lite: true } }));

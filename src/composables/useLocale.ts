@@ -46,7 +46,7 @@ export function useLocale() {
     }
     // Locale non embarquée (en/he) : chargée à la volée ; le français sert de
     // repli pendant le court chargement du chunk.
-    applyLocale(newLocale);
+    void applyLocale(newLocale);
     updateDocumentDirection(newLocale);
     // Le sélecteur impose aussi l'espace de langue des liens (useLocalePath),
     // y compris le retour au français : sur une page sans préfixe, aucune

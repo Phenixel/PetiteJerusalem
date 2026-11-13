@@ -214,7 +214,7 @@ onUnmounted(() => {
         <h1 class="mt-4 text-2xl font-bold tracking-tight text-text-primary">
           {{ displayName }}
         </h1>
-        <p v-if="currentUser.email" class="mt-1 text-sm text-text-secondary">
+        <p v-if="currentUser.email" class="mt-1 text-sm text-text-secondary" data-ph-mask>
           {{ currentUser.email }}
         </p>
         <RouterLink to="/profile/account" class="btn btn-soft btn-sm mt-4">

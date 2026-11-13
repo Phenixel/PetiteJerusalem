@@ -157,7 +157,7 @@ const save = async () => {
           <p class="block text-sm font-semibold text-text-secondary mb-1">
             {{ t("common.emailAddress") }}
           </p>
-          <p class="text-text-primary break-all">{{ user.email }}</p>
+          <p class="text-text-primary break-all" data-ph-mask>{{ user.email }}</p>
           <p class="text-xs text-text-secondary mt-1">
             {{ t("profile.emailReadOnly") }}
           </p>

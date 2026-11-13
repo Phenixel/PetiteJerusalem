@@ -16,7 +16,7 @@ import fr from "../locales/fr";
 
 // L'introduction ne s'ouvre que dans l'app native : c'est la plateforme que
 // ces tests jouent, sauf celui qui vérifie justement le silence sur le web.
-vi.mock("../composables/useNativeApp", () => ({ isNativeApp: true, appPlatform: "ios" }));
+vi.mock("../config/platform", () => ({ isNativeApp: true, appPlatform: "ios" }));
 
 // Le compte n'est là que pour savoir où enregistrer les réglages : pas de
 // Firebase à réveiller ici.
@@ -215,7 +215,7 @@ describe("introduction de première ouverture", () => {
   // En dernier : la plateforme rejouée ici vaut pour tous les imports qui
   // suivent, elle ne doit pas déteindre sur les tests de l'app native.
   it("ne s'ouvre jamais sur le web, où la bannière de consentement suffit", async () => {
-    vi.doMock("../composables/useNativeApp", () => ({ isNativeApp: false, appPlatform: "web" }));
+    vi.doMock("../config/platform", () => ({ isNativeApp: false, appPlatform: "web" }));
     const { isOnboardingOpen, useOnboarding } = await import("../composables/useOnboarding");
     expect(isOnboardingOpen.value).toBe(false);
     // « Revoir l'introduction » n'y ouvrirait rien non plus (le lien n'y est pas).
@@ -228,7 +228,7 @@ describe("introduction de première ouverture", () => {
   });
 
   it("s'ouvre partout à qui la demande par l'adresse, site compris", async () => {
-    vi.doMock("../composables/useNativeApp", () => ({ isNativeApp: false, appPlatform: "web" }));
+    vi.doMock("../config/platform", () => ({ isNativeApp: false, appPlatform: "web" }));
     window.history.replaceState({}, "", "/?intro");
     try {
       const { isOnboardingOpen, useOnboarding } = await import("../composables/useOnboarding");

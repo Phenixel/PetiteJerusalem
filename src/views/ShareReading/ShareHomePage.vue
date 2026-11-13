@@ -273,7 +273,7 @@ const clearFilters = () => {
 let hasTrackedHomeView = false;
 
 onMounted(() => {
-  loadSessions();
+  void loadSessions();
   unsubscribeAuth = authService.onAuthChanged((user) => {
     currentUser.value = user;
     if (hasTrackedHomeView) return;
@@ -315,7 +315,7 @@ watch(
 );
 
 const handleSessionClick = (session: Session) => {
-  router.push(`/share-reading/session/${session.slug || session.id}`);
+  void router.push(`/share-reading/session/${session.slug || session.id}`);
 };
 
 // Logged-in users go straight to the form; visitors get the sign-in prompt.
@@ -325,7 +325,7 @@ const handleCreateClick = () => {
     is_authenticated: isAuthenticated.value,
   });
   if (isAuthenticated.value) {
-    router.push("/share-reading/new-session");
+    void router.push("/share-reading/new-session");
   } else {
     showAuthPrompt.value = true;
   }

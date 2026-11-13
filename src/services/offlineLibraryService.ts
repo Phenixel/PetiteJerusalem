@@ -12,7 +12,7 @@ import {
   outdatedDownloads,
   removeFile,
 } from "./offlineTextStore";
-import { isNativeApp } from "../composables/useNativeApp";
+import { isNativeApp } from "../config/platform";
 
 /**
  * Vue « bibliothèque » du stockage hors ligne : regroupe le catalogue

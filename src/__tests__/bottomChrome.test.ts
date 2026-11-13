@@ -7,8 +7,8 @@ import { effectScope } from "vue";
  * dessous, et le suit quand on le tire (useBottomChromeHeight).
  */
 
-vi.mock("../composables/useNativeApp", () => ({ isNativeApp: false, appPlatform: "web" }));
-vi.mock("../composables/useAudioPlayer", async () => {
+vi.mock("../config/platform", () => ({ isNativeApp: false, appPlatform: "web" }));
+vi.mock("../composables/audioPlayerState", async () => {
   const { ref } = await import("vue");
   return { useMiniPlayerVisible: () => ref(false) };
 });

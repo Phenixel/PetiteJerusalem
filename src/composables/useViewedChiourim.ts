@@ -21,7 +21,7 @@ let initialized = false;
 function init() {
   if (initialized) return;
   initialized = true;
-  authService.onAuthChanged(async (user) => {
+  authService.onAuthChanged((user) => {
     userId.value = user?.id ?? null;
     if (!user) {
       viewedSlugs.value = new Set();
@@ -29,15 +29,19 @@ function init() {
       return;
     }
     isLoaded.value = false;
-    try {
-      const prefs = await userPreferencesService.getPreferences(user.id);
-      viewedSlugs.value = new Set(prefs.viewedChiourim ?? []);
-    } catch {
-      // Préférences illisibles (hors ligne…) : le marqueur restera vide.
-    } finally {
-      isLoaded.value = true;
-    }
+    void loadViewed(user.id);
   });
+}
+
+async function loadViewed(uid: string) {
+  try {
+    const prefs = await userPreferencesService.getPreferences(uid);
+    viewedSlugs.value = new Set(prefs.viewedChiourim ?? []);
+  } catch {
+    // Unreadable preferences (offline...): the marker stays empty.
+  } finally {
+    isLoaded.value = true;
+  }
 }
 
 export function useViewedChiourim() {

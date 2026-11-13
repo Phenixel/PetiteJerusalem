@@ -87,32 +87,32 @@ async function apply(change: () => Promise<void>): Promise<void> {
 
 const selectScheme = (option: ColorSchemeOption) => {
   if (option.id === currentSchemeId.value) return;
-  apply(() => setColorScheme(props.userId, option.id));
+  void apply(() => setColorScheme(props.userId, option.id));
 };
 
 const selectTheme = (theme: ThemeOption) => {
   if (theme.id === currentThemeId.value) return;
   previewingId.value = null;
-  apply(() => setTheme(props.userId, theme.id));
+  void apply(() => setTheme(props.userId, theme.id));
 };
 
 const toggleContrast = (enabled: boolean) => {
-  apply(() => setContrastMore(props.userId, enabled));
+  void apply(() => setContrastMore(props.userId, enabled));
 };
 
 const toggleHolidayThemes = (enabled: boolean) => {
   if (enabled === holidayThemesEnabled.value) return;
-  apply(() => setHolidayThemesEnabled(props.userId, enabled));
+  void apply(() => setHolidayThemesEnabled(props.userId, enabled));
 };
 
 const selectLatinFont = (font: FontOption) => {
   if (font.id === currentLatinId.value) return;
-  apply(() => setLatinFont(props.userId, font.id));
+  void apply(() => setLatinFont(props.userId, font.id));
 };
 
 const selectHebrewFont = (font: FontOption) => {
   if (font.id === currentHebrewId.value) return;
-  apply(() => setHebrewFont(props.userId, font.id));
+  void apply(() => setHebrewFont(props.userId, font.id));
 };
 
 // Survol d'un thème : les couleurs s'appliquent le temps du survol, on repose

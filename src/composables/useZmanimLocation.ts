@@ -222,8 +222,16 @@ export function useZmanimLocation() {
    */
   async function locateDevice(): Promise<boolean> {
     status.value = "loading";
+    const before = place.value;
     try {
       const coords = await devicePosition();
+      // The position can take twenty seconds (permission prompt, native
+      // timeout then the browser): a city picked meanwhile is the reader's
+      // choice, the late position must not replace it, nor be saved.
+      if (place.value !== before) {
+        status.value = "idle";
+        return false;
+      }
       const devicePlace: ZmanimPlace = {
         source: "device",
         latitude: coords.latitude,

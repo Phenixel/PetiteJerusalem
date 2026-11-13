@@ -14,9 +14,10 @@ import AnnouncementHomeCard from "./AnnouncementHomeCard.vue";
  * que l'appareil n'y a pas répondu. Le reste du temps, rien : la liste
  * complète est au pied de page du site et dans le profil de l'app.
  */
-const { highlights, load } = useAnnouncements();
+const { highlights, loadHome } = useAnnouncements();
 
-onMounted(() => void load());
+// Only what the home page can show, not the whole list (see getHome).
+onMounted(() => void loadHome());
 
 function opened(h: HomeHighlight): void {
   analyticsService.capture("announcement_opened", {

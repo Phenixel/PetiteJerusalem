@@ -92,7 +92,9 @@ describe("traductions des textes", () => {
         expect(shapeMismatch(he, tr), `${file}`).toBeNull();
       }
     }
-  });
+    // Reads every translated text: more than the default five seconds under
+    // the load of the full suite.
+  }, 30_000);
 
   it("ne reprend que des traductions humaines, sous une licence libre, citées", () => {
     for (const [path, langs] of Object.entries(index)) {

@@ -157,6 +157,27 @@ export const DEFAULT_PLACE: ReminderPlace = {
   tzid: "Europe/Paris",
 };
 
+/** True if the server knows this IANA time zone. */
+function isKnownTimeZone(tzid: string): boolean {
+  try {
+    new Intl.DateTimeFormat("en-CA", { timeZone: tzid });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * The time zone the fixed-time reminder is read in. `pushReminderPlace`
+ * holds a full place when the reminder before chkia is on, and only the
+ * device's `{ tzid }` otherwise (no position leaves the phone for a fixed
+ * time). Older documents hold nothing: Paris, as before.
+ */
+export function readTimeZone(value: unknown): string {
+  const tzid = (value as { tzid?: unknown } | null | undefined)?.tzid;
+  return typeof tzid === "string" && tzid && isKnownTimeZone(tzid) ? tzid : DEFAULT_PLACE.tzid;
+}
+
 /** Un lieu tel qu'il a été écrit dans les préférences, ou Paris s'il est inutilisable. */
 export function readPlace(value: unknown): ReminderPlace {
   if (typeof value !== "object" || value === null) return DEFAULT_PLACE;

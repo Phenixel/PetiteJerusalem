@@ -202,6 +202,9 @@ export const replySupportThread = onCall<unknown, Promise<{ thread: PublicThread
   },
 );
 
+/** Deletes per batch when an account is forgotten (Firestore allows 500). */
+const DELETE_BATCH_SIZE = 400;
+
 /**
  * La suppression d'un compte efface ses fils (authService.deleteAccount) :
  * rien de la personne ne reste derrière elle.
@@ -210,10 +213,15 @@ export const forgetSupportThreads = onCall<unknown, Promise<{ deleted: number }>
   async (request) => {
     const uid = request.auth?.uid;
     if (!uid) throw new HttpsError("unauthenticated", "Connexion requise.");
-    const snap = await getFirestore().collection(COLLECTION).where("uid", "==", uid).get();
-    const batch = getFirestore().batch();
-    snap.docs.forEach((d) => batch.delete(d.ref));
-    await batch.commit();
+    const db = getFirestore();
+    const snap = await db.collection(COLLECTION).where("uid", "==", uid).get();
+    // A batch holds 500 writes at most: past that, the single batch failed
+    // and the account was deleted with its threads left behind.
+    for (let i = 0; i < snap.docs.length; i += DELETE_BATCH_SIZE) {
+      const batch = db.batch();
+      snap.docs.slice(i, i + DELETE_BATCH_SIZE).forEach((d) => batch.delete(d.ref));
+      await batch.commit();
+    }
     return { deleted: snap.size };
   },
 );
@@ -248,7 +256,7 @@ export const onSupportThreadWritten = onDocumentWritten(
     const result = await getMessaging().sendEachForMulticast(message);
     // Les jetons morts du fil s'oublient ; ceux du compte, la fonction des
     // rappels les purge déjà.
-    const dead = message.tokens.filter((token, i) => {
+    const dead = message.tokens.filter((_token, i) => {
       const code = result.responses[i]?.error?.code;
       return (
         code === "messaging/registration-token-not-registered" ||

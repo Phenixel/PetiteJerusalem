@@ -34,8 +34,10 @@ A feature idea?
    ```bash
    npm run verify
    ```
-   `verify` runs the type-check, `npm run lint` (ESLint, with automatic
-   fixes) and the Vitest unit tests. It is exactly what CI runs on every PR.
+   `verify` runs the type-check, `npm run lint:check` (ESLint, without
+   fixing anything), `npm run format:check` (Prettier, on `src/`) and the
+   Vitest unit tests. It is exactly what CI runs on every PR. `npm run lint`
+   and `npm run format` are the same two tools, fixing what they can.
 5. Commit your changes with a
    [Conventional Commits](https://www.conventionalcommits.org/) message, in
    English, with a scope naming the area you touch:
@@ -79,9 +81,12 @@ messages and pull requests.
 - **TypeScript**: strong typing, avoid `any` as much as possible.
 - **Vue 3**: Composition API with `<script setup>`.
 - **Style**: the project uses `eslint` and `prettier`. Run `npm run lint`
-  and `npm run format` before committing. Note that `npm run format` only
-  formats `src/` (`prettier --write src/`): scripts, configuration and
-  documentation are left alone.
+  and `npm run format` before committing: `verify` checks both and fixes
+  nothing. ESLint covers `src/`, the Cloud Functions and the scripts; a
+  promise that is not awaited on purpose is marked `void`. Note that
+  `npm run format` only formats `src/` (`prettier --write src/`): scripts,
+  configuration and documentation are left alone, and so is the generated
+  JSON of `src/datas/`.
 - **CSS**: **TailwindCSS** utility classes as much as possible.
 
 ## Guard tests

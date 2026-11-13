@@ -93,7 +93,7 @@ const loadData = async () => {
 
     currentUser.value = await authService.getCurrentUser();
     if (!currentUser.value) {
-      router.push("/");
+      void router.push("/");
       return;
     }
 
@@ -101,12 +101,12 @@ const loadData = async () => {
     session.value = await sessionService.getSessionById(sessionId);
 
     if (!session.value) {
-      router.push("/share-reading");
+      void router.push("/share-reading");
       return;
     }
 
     if (!sessionService.canManageSession(session.value, currentUser.value)) {
-      router.push("/share-reading");
+      void router.push("/share-reading");
       return;
     }
 
@@ -144,7 +144,7 @@ const loadData = async () => {
     });
   } catch (error) {
     console.error("Erreur lors du chargement des données:", error);
-    router.push("/share-reading");
+    void router.push("/share-reading");
   } finally {
     isLoading.value = false;
   }
@@ -320,7 +320,7 @@ const onGuestNameEnter = () => {
     selectGuest(guestSuggestions.value[activeSuggestion.value]);
     return;
   }
-  createGuestReservation();
+  void createGuestReservation();
 };
 
 const createGuestReservation = async () => {
@@ -647,11 +647,11 @@ const sessionStats = computed(() => {
 });
 
 const goBackToSessions = () => {
-  router.push("/share-reading");
+  void router.push("/share-reading");
 };
 
 onMounted(() => {
-  loadData();
+  void loadData();
 });
 </script>
 

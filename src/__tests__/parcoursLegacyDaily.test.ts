@@ -71,6 +71,18 @@ describe("reprendre la lecture du jour", () => {
       },
     });
   });
+
+  it("tient pour lu un texte les jours où il n'est pas prévu", () => {
+    const data = importLegacy(emptyParcours(), legacy, TODAY, 1);
+    // Berakhot (41), les lundis seulement ; aujourd'hui est un mercredi.
+    const id = legacyTextId(41);
+    data.objectives[id] = { ...data.objectives[id], days: [1] } as (typeof data.objectives)[string];
+    const wednesday = legacyProjection(data, TODAY).dailyReadingProgress;
+    expect(wednesday.completedIds).toEqual([41, 103]);
+    // Le lundi, il est dû, et pas encore lu.
+    const monday = legacyProjection(data, "2026-10-19").dailyReadingProgress;
+    expect(monday.completedIds).toEqual([]);
+  });
 });
 
 describe("ce que l'appareil verse dans le compte", () => {

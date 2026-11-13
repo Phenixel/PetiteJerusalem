@@ -1,6 +1,6 @@
 import type { LocalNotificationsPlugin } from "@capacitor/local-notifications";
 import type { Router } from "vue-router";
-import { isNativeApp } from "../composables/useNativeApp";
+import { isNativeApp } from "../config/platform";
 import { useParcoursReminders } from "../composables/useParcoursReminders";
 import { refreshPermission } from "../composables/useZmanReminders";
 import { analyticsService } from "./analyticsService";
@@ -57,7 +57,7 @@ class ParcoursReminderService {
     this.started = true;
     void import("@capacitor/local-notifications")
       .then(({ LocalNotifications }) => {
-        LocalNotifications.addListener("localNotificationActionPerformed", (event) => {
+        void LocalNotifications.addListener("localNotificationActionPerformed", (event) => {
           const extra = event.notification.extra as { source?: string; slot?: string } | undefined;
           if (extra?.source !== REMINDER_SOURCE) return;
           analyticsService.capture("parcours_reminder_opened", { slot: extra.slot ?? null });

@@ -33,7 +33,6 @@ const readingSize = useReadingSize();
 // c'est le texte qu'ils encadrent qui porte les marque-pages du lecteur.
 const noOccasions = new Set<string>();
 const notBookmarked = () => false;
-
 </script>
 
 <template>

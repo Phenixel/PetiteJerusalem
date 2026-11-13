@@ -222,4 +222,3 @@ describe("prendre de l'avance", () => {
     expect(programPlan(program(), days, chabbat).nextPortion(START)).toBeNull();
   });
 });
-

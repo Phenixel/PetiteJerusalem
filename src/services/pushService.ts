@@ -6,7 +6,7 @@ import { arrayRemove, arrayUnion, doc, setDoc } from "firebase/firestore";
 import type { Router } from "vue-router";
 import { db } from "../firebase/firestore";
 import { auth } from "../firebase/core";
-import { isNativeApp } from "../composables/useNativeApp";
+import { isNativeApp } from "../config/platform";
 import { i18n } from "../i18n";
 import { analyticsService } from "./analyticsService";
 import { syncAnnouncementTopic } from "./announcementTopics";
@@ -32,7 +32,7 @@ import type { ReminderPlace } from "./zmanimService";
 export interface ReminderSettings {
   /** Rappel à heure fixe. */
   daily: boolean;
-  /** Heure du rappel fixe (heure de Paris, minutes par pas de 5). */
+  /** Hour of the fixed reminder, in the device time zone (minutes in 5-minute steps). */
   hour: number;
   minute: number;
   /** Rappel « dernier appel » 20 minutes avant la chkia. */
@@ -43,6 +43,16 @@ export interface ReminderSettings {
    * n'est alors pas envoyée du tout.
    */
   place: ReminderPlace | null;
+}
+
+/** The device's time zone, as the place of a fixed-time reminder; null if unknown. */
+export function deviceTimeZonePlace(): { tzid: string } | null {
+  try {
+    const tzid = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    return tzid ? { tzid } : null;
+  } catch {
+    return null;
+  }
 }
 
 /** Ce que la déconnexion attend, au plus, pour retirer le jeton du compte. */
@@ -101,11 +111,11 @@ class PushService {
   readonly isAvailable = isNativeApp;
 
   /**
-   * Active les rappels : permission système (Android 13+ et iOS affichent le
-   * prompt), token FCM, puis enregistrement dans les préférences utilisateur.
-   * `locale` fige la langue des notifications ; `settings` dit quels rappels
-   * envoyer, l'heure fixe (heure de Paris, minutes par pas de 5, cadence de
-   * la Cloud Function dailyReadingReminder) et/ou le dernier appel d'avant-chkia.
+   * Turns the reminders on: system permission (Android 13+ and iOS show the
+   * prompt), FCM token, then the user preferences. `locale` sets the language
+   * of the notifications; `settings` says which reminders to send: the fixed
+   * time (in the device time zone, minutes in 5-minute steps, the pace of the
+   * Cloud Function dailyReadingReminder) and/or the last call before chkia.
    */
   async enable(userId: string, locale: string, settings: ReminderSettings): Promise<void> {
     const permission = await FirebaseMessaging.requestPermissions();
@@ -125,9 +135,9 @@ class PushService {
         pushReminderHour: settings.hour,
         pushReminderMinute: settings.minute,
         pushSunsetReminderEnabled: settings.sunset,
-        // Rappel d'avant-chkia coupé : le lieu mémorisé est effacé plutôt que
-        // laissé à traîner dans le document.
-        pushReminderPlace: settings.sunset ? settings.place : null,
+        // Without the reminder before chkia, no position is kept: only the
+        // device's time zone, in which the server reads the fixed time.
+        pushReminderPlace: settings.sunset ? settings.place : deviceTimeZonePlace(),
         pushLocale: locale,
       },
       { merge: true },
@@ -364,7 +374,7 @@ class PushService {
     // Rotation du jeton FCM (réinstallation, restauration, renouvellement
     // périodique) : le nouveau jeton remplace l'ancien dans le profil, sinon
     // les rappels s'éteignaient en silence jusqu'à une réactivation à la main.
-    FirebaseMessaging.addListener("tokenReceived", ({ token }) => {
+    void FirebaseMessaging.addListener("tokenReceived", ({ token }) => {
       void this.onTokenRotated(token);
     });
     // Rotation restée en attente (coupure au moment du renouvellement) :
@@ -384,18 +394,18 @@ class PushService {
     });
 
     // Deep-link quand l'utilisateur touche une notification push (`data.url`).
-    FirebaseMessaging.addListener("notificationActionPerformed", (event) => {
+    void FirebaseMessaging.addListener("notificationActionPerformed", (event) => {
       const url = (event.notification.data as { url?: string } | undefined)?.url;
       // Efficacité du rappel quotidien : combien de retours viennent des push.
       analyticsService.capture("push_notification_opened", { url: url ?? null });
       if (url) markReadingEntry("push");
-      if (url) router.push(url);
+      if (url) void router.push(url);
     });
 
     if (Capacitor.getPlatform() !== "android") return;
     // `notificationReceived` n'est émis qu'app au premier plan sur Android :
     // pas de risque de doublon avec l'affichage système en arrière-plan.
-    FirebaseMessaging.addListener("notificationReceived", (event) => {
+    void FirebaseMessaging.addListener("notificationReceived", (event) => {
       const { title, body, data } = event.notification;
       if (!title && !body) return;
       void LocalNotifications.schedule({
@@ -416,13 +426,13 @@ class PushService {
       }).catch((e) => console.error("Affichage de la notification en premier plan échoué:", e));
     });
     // Toucher la notification locale doit deep-linker comme la push d'origine.
-    LocalNotifications.addListener("localNotificationActionPerformed", (event) => {
+    void LocalNotifications.addListener("localNotificationActionPerformed", (event) => {
       const extra = event.notification.extra as { url?: string; source?: string } | undefined;
       if (extra?.source !== PUSH_SOURCE) return;
       const url = extra.url;
       analyticsService.capture("push_notification_opened", { url: url ?? null });
       if (url) markReadingEntry("push");
-      if (url) router.push(url);
+      if (url) void router.push(url);
     });
   }
 }

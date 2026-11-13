@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 // principe connu : « J'ai compris », ou une première session créée ou
 // rejointe. Le choix est gardé sur l'appareil.
 
-vi.mock("../composables/useNativeApp", () => ({ isNativeApp: false, appPlatform: "web" }));
+vi.mock("../config/platform", () => ({ isNativeApp: false, appPlatform: "web" }));
 
 describe("« Comment ça marche » du partage", () => {
   it("paraît tant que le principe n'est pas connu, puis plus jamais", async () => {

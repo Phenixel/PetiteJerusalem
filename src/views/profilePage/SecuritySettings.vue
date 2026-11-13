@@ -162,7 +162,7 @@ const deleteAccount = async () => {
 
     await authService.deleteAccount(needsPasswordReauth.value ? deletePassword.value : undefined);
     deletePassword.value = "";
-    router.push("/");
+    void router.push("/");
   } catch (error) {
     console.error("Erreur lors de la suppression du compte:", error);
     const code = authErrorCode(error);

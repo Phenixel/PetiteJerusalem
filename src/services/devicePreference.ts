@@ -1,4 +1,4 @@
-import { isNativeApp } from "../composables/useNativeApp";
+import { isNativeApp } from "../config/platform";
 
 /**
  * Un réglage gardé sur l'APPAREIL, et non dans le compte : la taille du texte,

@@ -204,6 +204,13 @@ always-false RTL condition in the language picker, a duplicate
 
 > Part of this work is handled in the September 2026 review (continued),
 > see `docs/audit-review-2026-09-suite.md`.
+>
+> Status in October 2026 (`docs/audit-performance-2026-10.md`): the guest
+> booking rule also let a guest add or remove any other field of a session
+> (take it over, hide it), fixed there; item 3 of "Firestore cost" (the
+> `no-cache` header against the social preview) is covered by explicit
+> headers on the rewritten routes; the whole `sessions` collection is now
+> read only by the share page (and the guest migration at sign-in).
 
 By order of value. Each line gives the entry point; each one has its task in
 the project's Notion database.

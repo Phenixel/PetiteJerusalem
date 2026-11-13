@@ -16,7 +16,7 @@ const DAY = 24 * 60 * 60 * 1000;
 const native = { installed: "3.12.0" };
 let published: Announcement[] = [];
 
-vi.mock("../composables/useNativeApp", () => ({ isNativeApp: true, appPlatform: "ios" }));
+vi.mock("../config/platform", () => ({ isNativeApp: true, appPlatform: "ios" }));
 vi.mock("@capacitor/app", () => ({
   App: { getInfo: async () => ({ version: native.installed }) },
 }));

@@ -1,6 +1,6 @@
 import { setTaskDone } from "./actions";
 import { ALIYOT_PER_PARASHA, aliyotWeekDone, readsByAliya } from "./aliyot";
-import { weekOf, weekStart, addDays } from "./days";
+import { weekOf, weekStart, addDays, weekdayOf } from "./days";
 import { ALL_WEEK, isAlive } from "./model";
 import type { CycleObjective, DayKey, ParcoursData, TextObjective } from "./model";
 import type { Task } from "./schedule";
@@ -185,6 +185,10 @@ const activeToday = (data: ParcoursData, id: string, today: DayKey): boolean => 
   );
 };
 
+/** Is a text objective due on this day of the week? Without days (older data): every day. */
+const scheduledOn = (objective: TextObjective, day: DayKey): boolean =>
+  !Array.isArray(objective.days) || objective.days.includes(weekdayOf(day));
+
 /**
  * `aliyotCount` : les montées de la semaine, 7 ou 14 pour une paracha double
  * (calendar.ts, `parashaAliyotCount`), pour la semaine lue montée à montée.
@@ -206,8 +210,13 @@ export function legacyProjection(
     dailyReadingOptions: options,
     dailyReadingProgress: {
       date: today,
+      // A text set to some weekdays only is not due on the others: Mon
+      // parcours shows no task for it, so it could never be ticked, and the
+      // evening reminder, the widgets and the watch counted it as left to
+      // read. It is written as read on those days, which keeps the list of
+      // ids stable for the installed versions that read it.
       completedIds: texts
-        .filter((o) => done.has(o.id))
+        .filter((o) => done.has(o.id) || !scheduledOn(o, today))
         .map((o) => o.textId)
         .sort((a, b) => a - b),
       completedOptions: done.has(LEGACY_TEHILIM_ID) ? ["tehilim-jour"] : [],

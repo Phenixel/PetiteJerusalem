@@ -20,7 +20,7 @@ import { createMemoryHistory, createRouter, type Router } from "vue-router";
 vi.mock("../services/analyticsService", () => ({
   analyticsService: { capture: vi.fn() },
 }));
-vi.mock("../composables/useNativeApp", () => ({ isNativeApp: false, appPlatform: "web" }));
+vi.mock("../config/platform", () => ({ isNativeApp: false, appPlatform: "web" }));
 
 import fr from "../locales/fr";
 import ReadingMenu from "../components/ReadingMenu.vue";

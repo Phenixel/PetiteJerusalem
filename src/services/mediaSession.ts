@@ -21,7 +21,7 @@
  * fait : une pause suivie d'une lecture ne doit pas arriver à l'envers, la
  * notification resterait en pause sur un cours qui joue.
  */
-import { isNativeApp } from "../composables/useNativeApp";
+import { isNativeApp } from "../config/platform";
 
 let nativeQueue: Promise<void> = Promise.resolve();
 

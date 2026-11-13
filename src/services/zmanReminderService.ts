@@ -2,7 +2,7 @@ import { HDate } from "@hebcal/core";
 import type { LocalNotificationsPlugin } from "@capacitor/local-notifications";
 import { watch } from "vue";
 import type { Router } from "vue-router";
-import { isNativeApp } from "../composables/useNativeApp";
+import { isNativeApp } from "../config/platform";
 import { useZmanimLocation } from "../composables/useZmanimLocation";
 import {
   refreshPermission,
@@ -386,7 +386,7 @@ class ZmanReminderService {
     // deux écoutent le même événement, chacun ne traite que les siennes.
     void import("@capacitor/local-notifications")
       .then(({ LocalNotifications }) => {
-        LocalNotifications.addListener("localNotificationActionPerformed", (event) => {
+        void LocalNotifications.addListener("localNotificationActionPerformed", (event) => {
           const extra = event.notification.extra as
             | { source?: string; url?: string; zman?: string | null }
             | undefined;

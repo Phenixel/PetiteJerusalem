@@ -286,7 +286,10 @@ chosen fixed time, and 20 minutes before chkia
 (`pushSunsetReminderEnabled`). The second needs a location, since the Cloud
 Function cannot query a sleeping phone: `pushReminderPlace` receives the
 position rounded to a tenth of a degree (see `coarsePlace`) and the time
-zone, both erased as soon as the reminder is turned off. Chkia is recomputed
+zone, both erased as soon as the reminder is turned off. Without it,
+`pushReminderPlace` holds only the device's time zone (`{ tzid }`, no
+position), in which the server reads the fixed time; documents written
+before October 2026 hold nothing there and keep Paris time. Chkia is recomputed
 server-side in `functions/src/sunsetReminder.ts`: `@hebcal/core`, which
 provides it in the app, is published as ESM only, while `functions/`
 compiles to CommonJS.

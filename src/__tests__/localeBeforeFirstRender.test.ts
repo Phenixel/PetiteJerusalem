@@ -42,7 +42,13 @@ describe("la langue au premier rendu", () => {
 
   it("main.ts ne monte l'app qu'après localeReady hors français, une seconde au plus", () => {
     const main = readFileSync("src/main.ts", "utf8");
-    expect(main).toMatch(/if \(waitsForLocale\) \{[\s\S]*?localeReady[\s\S]*?app\.mount\("#app"\)/);
-    expect(main).toContain("LOCALE_WAIT_MS = 1_000");
+    // The first render waits for the first route, and for the language too
+    // outside French; the race against the timer is what mounts the app.
+    expect(main).toMatch(
+      /Promise\.race\(\[\s*waitsForLocale \? Promise\.all\(\[firstRoute, localeReady\]\) : firstRoute,[\s\S]*?FIRST_RENDER_WAIT_MS[\s\S]*?\]\)\.then\(\(\) => app\.mount\("#app"\)\)/,
+    );
+    expect(main).toContain("FIRST_RENDER_WAIT_MS = 1_000");
+    // Nothing else mounts it.
+    expect(main.match(/app\.mount\(/g)).toHaveLength(1);
   });
 });

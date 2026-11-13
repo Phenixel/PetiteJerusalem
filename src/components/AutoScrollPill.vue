@@ -113,7 +113,7 @@ onUnmounted(() => window.removeEventListener("keydown", onKeydown));
     @click="open = false"
   ></div>
 
-  <Transition name="pill">
+  <Transition name="pill" appear>
     <!-- Touching the pill does not close the passage's sheet it sits on. -->
     <div
       v-if="isAutoScrolling"
