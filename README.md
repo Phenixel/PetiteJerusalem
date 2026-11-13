@@ -160,7 +160,7 @@ team from the app or the site and read the replies in a small messaging page.
    for emulators that are not running, and both sign-in and session creation
    fail.
 
-4. **Check the code** (type-check, lint and Vitest unit tests)
+4. **Check the code** (type-check, lint, formatting and Vitest unit tests)
 
    ```bash
    npm run verify
@@ -224,9 +224,9 @@ All of them are declared in `package.json`.
 | `npm run indexnow` | Submits the sitemap URLs to IndexNow after a deployment (`scripts/indexnow.mjs`). |
 | `npm run admin` | Command line back office (`scripts/admin.mjs`, see [docs/backoffice-cli.md](docs/backoffice-cli.md)). |
 | `npm run type-check` | `vue-tsc --build`. |
-| `npm run lint` | `eslint . --fix`. |
-| `npm run format` | `prettier --write src/`: only formats `src/`. |
-| `npm run verify` | `type-check`, then `lint`, then `vitest run`: what CI runs on every PR. |
+| `npm run lint` | `eslint . --fix`: the app, the Cloud Functions and the scripts. `npm run lint:check` reports without fixing. |
+| `npm run format` | `prettier --write src/`: only formats `src/`. `npm run format:check` reports without writing. |
+| `npm run verify` | `type-check`, then `lint:check`, `format:check` and `vitest run`: what CI runs on every PR. |
 | `npm run test:unit` | Vitest unit tests (watch mode). |
 | `npm run test:e2e` | Playwright end to end suite, with the Firebase emulators when possible (`scripts/e2e.mjs`). |
 | `npm run test:e2e:public` | The same, limited to the `public` project (pages without Firebase). |
