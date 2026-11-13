@@ -5,6 +5,7 @@
     "/texts/tefila/minha.json",
     "/texts/tefila/arvit.json",
     "/texts/tefila/kaddich.json",
+    "/texts/tefila/nichmat-kol-hai.json",
     "/texts/tefila/chema-al-hamita.json",
     "/texts/tefila/tikoun-hatsot.json",
     "/texts/tefila/havdala.json",
@@ -18,6 +19,7 @@
     "/texts/tefila/birkat-hailanot.json",
     "/texts/tefila/hafrashat-halla.json",
     "/texts/tefila/teroumot-oumaasrot.json",
+    "/texts/tefila/tikoun-haklali.json",
     "/texts/tefila/brit-mila.json",
     "/texts/tefila/cheva-brahot.json",
     "/texts/tefila/hachkava.json"

@@ -21,6 +21,8 @@ import { useConfirm } from "../../composables/useConfirm";
 import { SITE_URL } from "../../config/site";
 import type { Session } from "../../models/models";
 
+type NichmatStartMode = "date" | "full";
+
 const router = useRouter();
 const { t } = useI18n();
 const toast = useToast();
@@ -46,7 +48,13 @@ const sessionData = reactive({
   dateLimit: "",
   // Décoché par défaut : les invités peuvent réserver avec leur nom seul.
   guestEmailRequired: false,
+  // Nichmat 40: its forty days begin on a chosen day, or once full.
+  startMode: "date" as NichmatStartMode,
+  startDay: "",
 });
+
+/** Nichmat 40 asks when its forty days begin instead of a deadline. */
+const isNichmatType = computed(() => sessionData.type === EnumTypeTextStudy.Nichmat);
 
 /** Une date limite dans le passé n'a pas de sens : le calendrier s'arrête à aujourd'hui. */
 const todayKey = localDayKey();
@@ -106,6 +114,8 @@ interface NewSessionDraft {
   dateLimit: string;
   guestEmailRequired: boolean;
   selectedBooks: string[];
+  startMode?: NichmatStartMode;
+  startDay?: string;
 }
 /** Livres du brouillon, appliqués quand la liste du type est chargée. */
 let draftBooks: string[] | null = null;
@@ -141,6 +151,10 @@ function restoreDraft(): void {
   if (typeof draft.guestEmailRequired === "boolean") {
     sessionData.guestEmailRequired = draft.guestEmailRequired;
   }
+  if (draft.startMode === "date" || draft.startMode === "full") {
+    sessionData.startMode = draft.startMode;
+  }
+  if (typeof draft.startDay === "string") sessionData.startDay = draft.startDay;
   // Sans type, le brouillon n'a pas de livres : sa liste vide ne doit pas
   // décocher ceux du type choisi ensuite.
   if (typeof draft.type === "string" && draft.type) {
@@ -230,7 +244,13 @@ const requiredFields = computed(() => [
     filled: sessionData.description.trim() !== "",
   },
   { id: "type", label: t("newSession.textType"), filled: sessionData.type !== "" },
-  { id: "dateLimit", label: t("common.dateLimit"), filled: sessionData.dateLimit !== "" },
+  isNichmatType.value
+    ? {
+        id: "startDay",
+        label: t("nichmat.create.startDay"),
+        filled: sessionData.startMode === "full" || sessionData.startDay !== "",
+      }
+    : { id: "dateLimit", label: t("common.dateLimit"), filled: sessionData.dateLimit !== "" },
 ]);
 
 /**
@@ -294,7 +314,7 @@ const createSession = async () => {
 
   // Une date limite ce soir ou demain soir : on demande si c'est bien voulu
   // (voir services/sessionDeadline). Refuser ramène au champ de la date.
-  if (isShortDeadline(sessionData.dateLimit)) {
+  if (!isNichmatType.value && isShortDeadline(sessionData.dateLimit)) {
     const days = deadlineDays(sessionData.dateLimit);
     const confirmed = await confirm({
       title: t("newSession.shortDeadline.title"),
@@ -315,16 +335,27 @@ const createSession = async () => {
   message.value = "";
 
   try {
-    const sessionId = await sessionService.createSessionWithValidation(
-      sessionData.name,
-      sessionData.description,
-      sessionData.type as EnumTypeTextStudy,
-      sessionData.dateLimit,
-      currentUser.value!.id,
-      currentUser.value!.name,
-      selectedBooks.value.length > 0 ? selectedBooks.value : undefined,
-      sessionData.guestEmailRequired,
-    );
+    const nichmatStart =
+      isNichmatType.value && sessionData.startMode === "date" ? sessionData.startDay : null;
+    const sessionId = isNichmatType.value
+      ? await sessionService.createNichmatSession(
+          sessionData.name,
+          sessionData.description,
+          nichmatStart,
+          currentUser.value!.id,
+          currentUser.value!.name,
+          sessionData.guestEmailRequired,
+        )
+      : await sessionService.createSessionWithValidation(
+          sessionData.name,
+          sessionData.description,
+          sessionData.type as EnumTypeTextStudy,
+          sessionData.dateLimit,
+          currentUser.value!.id,
+          currentUser.value!.name,
+          selectedBooks.value.length > 0 ? selectedBooks.value : undefined,
+          sessionData.guestEmailRequired,
+        );
 
     analyticsService.capture("session_created", {
       session_id: sessionId,
@@ -337,7 +368,11 @@ const createSession = async () => {
       guest_email_required: sessionData.guestEmailRequired,
       // Fin de journée locale, comme la date limite enregistrée : lue en
       // minuit UTC, la date reculait d'un jour à l'ouest de Greenwich.
-      deadline_days: deadlineDays(sessionData.dateLimit),
+      deadline_days: isNichmatType.value ? null : deadlineDays(sessionData.dateLimit),
+      // Nichmat 40 only: its forty days begin on a chosen day, or once full.
+      ...(isNichmatType.value && {
+        start_mode: sessionData.startMode === "full" ? "when_full" : "date",
+      }),
     });
 
     // Le toast est monté au niveau de l'app : il survit à la redirection et
@@ -428,11 +463,17 @@ const goBack = () => {
           />
           <!-- Tehilim : la chaîne perpétuelle, en une ligne discrète sous le
                type. Elle ne promet pas de chiffre de lecteurs. -->
+          <!-- Nichmat 40: what it is, in one line under the type. -->
+          <p
+            v-if="isNichmatType"
+            class="mt-2.5 text-xs leading-relaxed text-text-secondary animate-[fadeIn_0.3s_ease]"
+          >
+            {{ t("nichmat.create.hint") }}
+          </p>
           <p
             v-if="showPerpetualHint"
             class="mt-2.5 flex items-start gap-2 text-xs leading-relaxed text-text-secondary animate-[fadeIn_0.3s_ease]"
           >
-            <AppIcon name="rotate" :size="13" class="mt-0.5 shrink-0 text-primary" />
             <span>
               {{ t("perpetual.creation.text") }}
               <RouterLink
@@ -495,12 +536,53 @@ const goBack = () => {
             v-if="selectedBooks.length === 0"
             class="text-xs text-red-600 mt-1.5 flex items-center gap-1 dark:text-red-400"
           >
-            <AppIcon name="alert-triangle" :size="13" />
             {{ t("newSession.selectAtLeastOne") }}
           </p>
         </div>
 
-        <div>
+        <!-- Nichmat 40: when the forty days begin, instead of a deadline. -->
+        <fieldset v-if="isNichmatType" class="flex flex-col gap-3">
+          <legend class="block text-sm font-semibold text-text-secondary mb-2">
+            {{ t("nichmat.create.startLabel") }}
+          </legend>
+          <label class="inline-flex items-start gap-3 cursor-pointer">
+            <input
+              type="radio"
+              value="date"
+              v-model="sessionData.startMode"
+              class="w-5 h-5 mt-0.5 accent-primary cursor-pointer shrink-0"
+            />
+            <span class="text-sm font-semibold text-text-primary">
+              {{ t("nichmat.create.onDate") }}
+            </span>
+          </label>
+          <div v-if="sessionData.startMode === 'date'" class="ms-8">
+            <AppDateField
+              id="startDay"
+              v-model="sessionData.startDay"
+              :min="todayKey"
+              :label="t('nichmat.create.startDay')"
+            />
+          </div>
+          <label class="inline-flex items-start gap-3 cursor-pointer">
+            <input
+              type="radio"
+              value="full"
+              v-model="sessionData.startMode"
+              class="w-5 h-5 mt-0.5 accent-primary cursor-pointer shrink-0"
+            />
+            <span>
+              <span class="block text-sm font-semibold text-text-primary">
+                {{ t("nichmat.create.whenFull") }}
+              </span>
+              <span class="block text-xs text-text-secondary mt-0.5">
+                {{ t("nichmat.create.whenFullHint") }}
+              </span>
+            </span>
+          </label>
+        </fieldset>
+
+        <div v-else>
           <label for="dateLimit" class="block text-sm font-semibold text-text-secondary mb-2">{{
             t("common.dateLimit")
           }}</label>
@@ -549,7 +631,6 @@ const goBack = () => {
       class="mt-6 flex items-center justify-center gap-2 text-center font-medium text-red-600 animate-[fadeIn_0.3s_ease] dark:text-red-400"
       role="alert"
     >
-      <AppIcon name="alert-circle" :size="15" />
       {{ message }}
     </div>
 

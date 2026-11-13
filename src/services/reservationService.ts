@@ -6,6 +6,7 @@ import { isReservationShape } from "./reservationShape";
 import { guestService } from "./guestService";
 import { analyticsService } from "./analyticsService";
 import { moderationService } from "./moderationService";
+import { dayOfRecord, dayRecordTextId, isPlaceRecord } from "./nichmatChain";
 import {
   AccountGuestRenameError,
   GuestEmailRequiredError,
@@ -354,7 +355,16 @@ class ReservationService {
     const idsToRemove = new Set(reservationIds);
 
     await this.updateReservations(sessionId, (reservations, write) => {
-      write(reservations.filter((r) => !idsToRemove.has(r.id)));
+      // A Nichmat 40 place takes its day reads with it: they carry no
+      // identity, and whoever takes the place next would inherit them.
+      const freedPlaces = new Set(
+        reservations.filter((r) => idsToRemove.has(r.id) && isPlaceRecord(r)).map((r) => r.section),
+      );
+      write(
+        reservations.filter(
+          (r) => !idsToRemove.has(r.id) && !(dayOfRecord(r) !== null && freedPlaces.has(r.section)),
+        ),
+      );
     });
 
     firestoreService.invalidateSessionsCache();
@@ -625,6 +635,53 @@ class ReservationService {
       // lecteur se ravisait plus tard (« remettre en non lu » après l'heure).
       if (isCompleted) delete target.expiresAt;
       reservations[reservationIndex] = target;
+      write(reservations);
+    });
+    firestoreService.invalidateSessionsCache();
+  }
+
+  /**
+   * Nichmat 40: ticks (or unticks) the reading of `day` for the place
+   * `place` (see services/nichmatChain.ts). A tick adds an entry, an untick
+   * removes it: the rules accept one entry more or one less. Ticking a day
+   * already ticked, or unticking one that is not, writes nothing.
+   *
+   * @throws ReservationGoneError if the place is no longer taken.
+   */
+  async setNichmatDayRead(
+    sessionId: string,
+    place: number,
+    day: number,
+    read: boolean,
+  ): Promise<void> {
+    const textStudyId = dayRecordTextId(day);
+    await this.updateReservations(sessionId, (reservations, write) => {
+      if (!reservations.some((r) => isPlaceRecord(r) && r.section === place)) {
+        throw new ReservationGoneError();
+      }
+      const index = reservations.findIndex(
+        (r) => r.textStudyId === textStudyId && r.section === place,
+      );
+      if (read) {
+        if (index >= 0 && reservations[index].isCompleted) return;
+        if (index >= 0) {
+          // Unticked by a published version, which only knows « read »:
+          // ticked again, the entry keeps its place.
+          reservations[index] = { ...reservations[index], isCompleted: true };
+        } else {
+          reservations.push({
+            id: crypto.randomUUID(),
+            textStudyId,
+            section: place,
+            isCompleted: true,
+            createdAt: new Date().toISOString(),
+          });
+        }
+        write(reservations);
+        return;
+      }
+      if (index < 0) return;
+      reservations.splice(index, 1);
       write(reservations);
     });
     firestoreService.invalidateSessionsCache();

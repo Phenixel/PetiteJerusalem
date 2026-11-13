@@ -38,9 +38,6 @@ function resume(): void {
 
 <template>
   <section v-if="objective.pausedFrom" class="paused-notice" role="status">
-    <span class="paused-icon" aria-hidden="true">
-      <AppIcon name="pause" class="size-5" />
-    </span>
     <span class="min-w-0 flex-1">
       <span class="block text-[15px] font-bold">{{ t("parcours.paused.title") }}</span>
       <span class="mt-0.5 block text-[13px] leading-snug text-text-secondary">
@@ -62,16 +59,6 @@ function resume(): void {
   padding: 12px 12px 12px 14px;
   border-radius: var(--radius-card);
   background: color-mix(in srgb, var(--color-text-primary) 6%, transparent);
-}
-.paused-icon {
-  display: grid;
-  flex: none;
-  width: 36px;
-  height: 36px;
-  place-items: center;
-  border-radius: var(--radius-pill);
-  background: var(--color-surface);
-  color: var(--color-text-secondary);
 }
 .resume-btn {
   flex: none;

@@ -309,7 +309,7 @@ describe("the menu button", () => {
     const host = await mount(ReadingMenu);
     scrollTo({ top: 1600 });
     await frames();
-    expect(peek(host).classList.contains("fab-peek-shown")).toBe(false);
+    expect(host.querySelector(".fab-peek-shown")).toBeNull();
   });
 
   it("steps aside while the progress bar slides", async () => {

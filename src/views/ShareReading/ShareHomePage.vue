@@ -53,7 +53,6 @@ const shareTip = computed<TourStep[]>(() => {
   return [
     {
       key: "create",
-      icon: "users",
       title: t("tips.share.create.title"),
       text: t("tips.share.create.text"),
       target: () => createButton.value,
@@ -61,7 +60,6 @@ const shareTip = computed<TourStep[]>(() => {
     },
     {
       key: "join",
-      icon: "book-open",
       title: t("tips.share.join.title"),
       text: t("tips.share.join.text"),
       target: firstSession() ? firstSession : undefined,
@@ -396,7 +394,6 @@ const handleCreateClick = () => {
     >
       <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
         <h3 class="text-2xl font-bold text-text-primary flex items-center gap-2.5">
-          <AppIcon name="user" :size="20" class="text-primary" />
           {{ t("shareReading.mySessions") }}
         </h3>
         <div class="flex flex-wrap gap-2">
@@ -459,7 +456,6 @@ const handleCreateClick = () => {
         v-if="isAuthenticated && hasMySessions && sessions.length > 0"
         class="text-2xl font-bold text-text-primary mb-6 flex items-center gap-2.5"
       >
-        <AppIcon name="users" :size="20" class="text-primary" />
         {{ t("shareReading.allSessions") }}
       </h3>
 

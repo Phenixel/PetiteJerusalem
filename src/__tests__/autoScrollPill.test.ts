@@ -42,6 +42,7 @@ function stubEnvironment() {
   });
   window.innerHeight = 800;
   window.scrollTo = (() => {}) as typeof window.scrollTo;
+  window.scrollBy = (() => {}) as typeof window.scrollBy;
   // Les images sont données à la main (voir `settle`) : ce qui se teste ici
   // est la pastille, pas le défilement (voir autoScroll.test.ts). Vue en a
   // besoin tout de même, il pose les classes de transition à l'image suivante
@@ -147,6 +148,18 @@ describe("pastille du défilement automatique", () => {
     await appuie(host.querySelector<HTMLElement>("div.inset-0")!);
     expect(panneau(host)).toBeNull();
     expect(isAutoScrolling.value).toBe(true);
+  });
+
+  /**
+   * The pill sits on the passage's sheet when one is open: touching it, or
+   * the veil that closes its panel, must not release the passage (see
+   * ReadingSelectionMenu, `data-keep-passage`).
+   */
+  it("keeps the chosen passage when touched, it and the veil of its panel", async () => {
+    const host = await lance();
+    await appuie(pastille(host));
+    expect(pastille(host).closest("[data-keep-passage]")).not.toBeNull();
+    expect(host.querySelector("div.inset-0")!.hasAttribute("data-keep-passage")).toBe(true);
   });
 
   it("compte vingt crans, marque les allures nommées et les nomme à ses deux bouts", async () => {

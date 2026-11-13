@@ -22,6 +22,17 @@ function todayKey(offset = 0): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris" }).format(day);
 }
 
+/**
+ * The browser opens at midday in Paris (11:00 or 12:00, depending on the
+ * season), then time flows. From nightfall, the home stack puts the cards of
+ * the night on top (the blessing of the moon, about ten nights a month; a
+ * night of the Omer; a candle of 'Hanouka), and these tests, which touch
+ * the card on top, failed every evening those nights.
+ */
+test.beforeEach(async ({ page }) => {
+  await page.clock.install({ time: new Date(`${todayKey()}T10:00:00Z`) });
+});
+
 test.describe("Mon parcours", () => {
   test("un texte du jour se prend, se coche, et suit le compte", async ({ page }) => {
     const account = await createAccount("parcours");

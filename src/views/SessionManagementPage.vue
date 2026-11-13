@@ -20,6 +20,7 @@ import type { User } from "../services/authService";
 import { seoService, pageTitle } from "../services/seoService";
 import { analyticsService } from "../services/analyticsService";
 import { haptic } from "../services/haptics";
+import { isNichmat } from "../services/nichmatChain";
 
 import BatchSelectionBar from "../components/BatchSelectionBar.vue";
 import EditSessionModal from "../components/EditSessionModal.vue";
@@ -107,6 +108,16 @@ const loadData = async () => {
     if (!sessionService.canManageSession(session.value, currentUser.value)) {
       router.push("/share-reading");
       return;
+    }
+
+    // Nichmat 40: a chain that waited for its readers records its start
+    // before anything here frees a place (see recordNichmatStart).
+    try {
+      session.value =
+        (await sessionService.recordNichmatStart(session.value, currentUser.value)) ??
+        session.value;
+    } catch (error) {
+      console.warn("Début de Nichmat 40 non enregistré :", error);
     }
 
     // Les textes de la chaîne (livres retenus à la création), comme sur la
@@ -883,9 +894,11 @@ onMounted(() => {
                     <div class="flex flex-col min-w-0 flex-1">
                       <span class="font-medium text-text-primary">
                         {{
-                          card.text.totalSections > 1
-                            ? `${t("common.chapter")} ${formatNumberWithHebrew(row.section)}`
-                            : t("sessionManagement.fullText")
+                          isNichmat(session)
+                            ? t("nichmat.placeNumber", { place: row.section })
+                            : card.text.totalSections > 1
+                              ? `${t("common.chapter")} ${formatNumberWithHebrew(row.section)}`
+                              : t("sessionManagement.fullText")
                         }}
                       </span>
                       <span
@@ -1054,7 +1067,6 @@ onMounted(() => {
               v-if="selectedGuestId"
               class="flex items-center gap-2 text-xs text-text-secondary mt-2"
             >
-              <AppIcon name="check" :size="12" class="text-primary shrink-0" />
               {{ t("sessionManagement.guestLinkedTo", { name: guestForm.name }) }}
               <button
                 type="button"

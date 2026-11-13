@@ -185,7 +185,7 @@ Node). Instead:
   every prerendered `.html` page, `sitemap.xml` and its four child sitemaps
   (`sitemap-pages.xml`, `sitemap-bibliotheque.xml`, `sitemap-horaires.xml`,
   `sitemap-calendrier.xml`), `robots.txt`, `llms.txt`, `llms-full.txt`,
-  `og-image.jpg`, the IndexNow key (`7928be0e14242cf92e167550affa3215.txt`),
+  the share banners (`og/`), the IndexNow key (`7928be0e14242cf92e167550affa3215.txt`),
   `texts/manifest.json`, `app-version.json` and the `.well-known/` folder,
   and replaces its `index.html` entry with the bare shell (`app.html`), so
   the app never flashes SEO text on launch. Navigation in the app is fully

@@ -1,29 +1,30 @@
 /**
- * Construit les bénédictions et les rites qui les entourent (public/texts/tefila/*)
- * à partir du Siddur Edot HaMizrach de l'export public Sefaria, comme
- * build-sidour.mjs le fait des trois offices de semaine.
+ * Builds the blessings and the rites around them (public/texts/tefila/*)
+ * from the Siddur Edot HaMizrach of the public Sefaria export, as
+ * build-sidour.mjs does for the three weekday services.
  *
- * Lancer avec : node scripts/build-brahot.mjs
+ * Run with: node scripts/build-brahot.mjs
  *
- * Ce sont les textes qu'on cherche quand on n'est pas à l'office : le Chema du
- * coucher, la havdala, la prière du voyageur, les bénédictions sur ce dont on
- * jouit, l'allumage de Hanouka, le prélèvement de la halla et des maasrot, la
- * bénédiction des arbres, la brit mila, la hachkava, le tikoun hatsot.
+ * These are the texts people look for outside the service: the bedtime
+ * Shema, havdala, the traveler's prayer, the blessings on enjoyments, the
+ * Hanukkah lighting, separating halla and maasrot, the blessing of the
+ * trees, the brit mila, the hachkava, tikoun hatsot, Nichmat kol 'hai, and
+ * the Tikoun haklali, which comes from a book of its own in the same export
+ * (see tikounHaklali below).
  *
- * La recette reste explicite, segment par segment : la source alterne des
- * consignes en hébreu et le texte lui-même, et chaque consigne retenue devient
- * une didascalie dans les trois langues (son hébreu vient de la source, le
- * français et l'anglais sont écrits ici). Le moteur qui les lit vit dans
- * scripts/lib/tefila-recipe.mjs, partagé avec build-moadim.mjs.
+ * The recipe stays explicit, segment by segment: the source alternates
+ * Hebrew instructions and the text itself, and each instruction kept becomes
+ * a stage direction in the three languages (its Hebrew comes from the source,
+ * the French and English are written here). The engine that reads them lives
+ * in scripts/lib/tefila-recipe.mjs, shared with build-moadim.mjs.
  *
- * Licence des textes : l'export Sefaria « merged » combine des sources du
- * domaine public.
+ * Texts license: the Sefaria "merged" export combines public domain sources.
  */
 
 import { readFileSync } from "fs";
 import { resolve, dirname } from "path";
 import { fileURLToPath } from "url";
-import { fetchSiddur } from "./lib/sefaria-siddur.mjs";
+import { fetchMerged, fetchSiddur, TIKKUN_HAKLALI_URL } from "./lib/sefaria-siddur.mjs";
 import { writeRecipes } from "./lib/tefila-recipe.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -406,6 +407,48 @@ const birkotHanehenin = {
       },
       halakhaSeg: 19,
       lines: [{ seg: 20 }],
+    },
+  ],
+};
+
+/**
+ * Nichmat kol 'haï: segments of the Shabbat « Pesukei D'Zimra ». The
+ * weekday Cha'harit does not carry it, and it is also said on its own (as
+ * a thanksgiving, or as a segoula), so it gets a page of its own. It runs up
+ * to Yichtaba'h, which closes it, without the closing blessing of
+ * Yichtaba'h: that blessing ends the Pesukei dezimra, it is not said here.
+ */
+const nichmat = {
+  file: "nichmat-kol-hai",
+  title: "נשמת כל חי (Nichmat Kol 'Hai)",
+  src: (t) => t["Shabbat Shacharit"]["Pesukei D'Zimra"],
+  blocks: [
+    {
+      halakha: {
+        fr: "Nichmat se dit le Chabbat et les jours de fête, à la fin des Pessouké dezimra. En le disant, on pense à recevoir le supplément d'âme du jour.",
+        en: "Nishmat is said on Shabbat and festivals, at the end of Pesukei dezimra. While saying it, one intends to receive the additional soul of the day.",
+      },
+      halakhaSeg: 18,
+      lines: [
+        { seg: 19 },
+        { seg: 20 },
+        { seg: 21 },
+        { seg: 22 },
+        { seg: 23, lead: true },
+        { seg: 24, tight: true },
+        { seg: 25, tight: true },
+        { seg: 26, tight: true },
+        { seg: 27 },
+      ],
+    },
+    {
+      label: "Yichtaba'h",
+      halakha: {
+        fr: "Les louanges de Yichtaba'h se disent posément, comme on énonce les louanges d'un roi, et non d'un seul souffle. Certains les comptent sur leurs doigts.",
+        en: "The praises of Yishtabach are said calmly, as one sets out a king's praises, not in a single breath. Some count them on their fingers.",
+      },
+      halakhaSeg: 28,
+      lines: [{ seg: 29, until: "בָּרוּךְ אַתָּה" }],
     },
   ],
 };
@@ -1070,6 +1113,168 @@ const tikounHatsot = {
   ],
 };
 
+/** The ten psalms of the Tikoun haklali, in the order they are said. */
+const PSAUMES_DU_TIKOUN = [
+  [16, "טז"],
+  [32, "לב"],
+  [41, "מא"],
+  [42, "מב"],
+  [59, "נט"],
+  [77, "עז"],
+  [90, "צ"],
+  [105, "קה"],
+  [137, "קלז"],
+  [150, "קנ"],
+];
+
+/** At Rabbi Na'hman's grave: the source adds a passage there twice. */
+const SUR_SA_TOMBE = {
+  fr: "Sur la tombe de Rabbi Na'hman, on ajoute :",
+  en: "At Rabbi Nachman's grave, add:",
+  he: "ואם יהיה על קברו הקדוש יאמר",
+};
+
+/**
+ * Tikoun haklali: the ten psalms Rabbi Na'hman of Breslev gave as the
+ * general remedy, from the "Tikkun HaKlali" book of the Sefaria export
+ * (Other Liturgy Works), not from the siddur, which does not carry it.
+ *
+ * The source has thirteen segments: the opening (Hareini mekacher, the
+ * first verses of Lekhou neranena, Hareini mezamen), the ten psalms, a short
+ * prayer, and Rabbi Nathan's prayer in one segment of 18,000 characters. Each
+ * segment opens with its title in bold (the psalm number, « תפלה מר' נתן »):
+ * the title goes, the psalms get theirs in the three languages. Rabbi
+ * Nathan's prayer is cut at the source's line breaks, one paragraph per
+ * line: seg 12 is its first paragraph. The verses said after the psalms
+ * (Mi yiten mitsion, Outechouat tsadikim) close the segment of psalm 150,
+ * in small type: they get a block of their own.
+ */
+const tikounHaklali = {
+  file: "tikoun-haklali",
+  title: "תיקון הכללי (Tikoun Haklali)",
+  src: (t) => {
+    const sansTitre = (s) => s.replace(/^<b>[^<]*<\/b><br>/, "");
+    const [, ...priere] = t[12].split("<br>");
+    return [...t.slice(0, 12).map(sansTitre), ...priere];
+  },
+  blocks: [
+    {
+      halakha: {
+        fr: "Rabbi Na'hman de Breslev a désigné ces dix psaumes comme le tikoun général, qui répare l'atteinte à l'alliance. On les dit dans cet ordre, de préférence le jour même d'un accident nocturne, après s'être trempé au mikvé si possible ; on peut aussi les dire chaque jour.",
+        en: "Rabbi Nachman of Breslov designated these ten psalms as the general remedy, which repairs a blemish of the covenant. They are said in this order, preferably on the very day of a nocturnal emission, after immersing in a mikveh if possible; they may also be said every day.",
+        he: "עשרה מזמורים אלו גילה רבי נחמן מברסלב לתיקון הכללי. אומרים אותם כסדרם, ובפרט ביום שאירע מקרה לילה, אחר טבילה במקוה אם אפשר.",
+      },
+      lines: [
+        {
+          seg: 0,
+          until: "לְכוּ נְרַנְּנָה",
+          rubric: {
+            fr: "Avant les dix psaumes, il est bon de dire :",
+            en: "Before the ten psalms, it is good to say:",
+            he: "טוב לומר זאת לפני אמירת העשרה מזמורים",
+          },
+        },
+        { seg: 0, from: "לְכוּ נְרַנְּנָה", until: "הֲרֵינִי מְזַמֵּן" },
+        { seg: 0, from: "הֲרֵינִי מְזַמֵּן" },
+      ],
+    },
+    ...PSAUMES_DU_TIKOUN.map(([numero, hebreu], i) => ({
+      label: `Psaume ${numero}`,
+      labelText: { fr: `Psaume ${numero}`, en: `Psalm ${numero}`, he: `תהלים ${hebreu}` },
+      lines: [numero === 150 ? { seg: i + 1, until: "מִי יִתֵּן" } : { seg: i + 1 }],
+    })),
+    {
+      label: "Après les dix psaumes",
+      labelText: {
+        fr: "Après les dix psaumes",
+        en: "After the ten psalms",
+        he: "אחר אמירת העשרה מזמורים",
+      },
+      lines: [{ seg: 10, from: "מִי יִתֵּן" }],
+    },
+    {
+      label: "Une courte prière",
+      labelText: { fr: "Une courte prière", en: "A short prayer", he: "תפלה קצרה" },
+      lines: [{ seg: 11, from: "רִבּוֹנוֹ שֶׁל עוֹלָם" }],
+    },
+    {
+      // The paragraphs the source opens with words in bold start a new
+      // movement of the prayer; the others carry on the sentence before
+      // them, and are read tight under it.
+      label: "La prière de Rabbi Nathan",
+      labelText: {
+        fr: "La prière de Rabbi Nathan",
+        en: "Rabbi Nathan's prayer",
+        he: "תפלה מר' נתן",
+      },
+      halakha: {
+        fr: "Rabbi Nathan de Breslev, l'élève de Rabbi Na'hman, a composé cette prière pour qu'on la dise après les dix psaumes.",
+        en: "Rabbi Nathan of Breslov, Rabbi Nachman's disciple, composed this prayer to be said after the ten psalms.",
+        he: "תפלה שחיבר רבי נתן מברסלב, תלמיד רבי נחמן, לאומרה אחר העשרה מזמורים",
+      },
+      lines: [
+        { seg: 12 },
+        { seg: 13 },
+        { seg: 14, tight: true },
+        // The parenthesis that names Rabbi Na'hman carries an asterisk,
+        // the mark of a note the source does not give.
+        { seg: 15, strip: ["*"], tight: true },
+        {
+          seg: 16,
+          from: "וּבִפְרָט",
+          until: ")",
+          rubric: {
+            fr: "Si on le dit pour un accident survenu cette nuit, on ajoute :",
+            en: "If one says it for an emission that happened that night, add:",
+            he: "אם אומר חס ושלום בשביל מקרה שנזדמן לו באותו הלילה יאמר",
+          },
+          muted: true,
+        },
+        { seg: 17, tight: true },
+        { seg: 18 },
+        { seg: 19, tight: true },
+        { seg: 20 },
+        { seg: 21 },
+        { seg: 22 },
+        { seg: 23 },
+        { seg: 24 },
+        { seg: 25, tight: true },
+        { seg: 26 },
+        { seg: 27 },
+        { seg: 28, tight: true },
+        { seg: 29 },
+        { seg: 30 },
+        { seg: 31 },
+        { seg: 32 },
+        { seg: 33 },
+        { seg: 34 },
+        {
+          seg: 35,
+          from: "וּבִזְכוּת הַצַּדִּיק הַזֶּה",
+          until: ")",
+          rubric: SUR_SA_TOMBE,
+          muted: true,
+        },
+        { seg: 36 },
+        { seg: 37, tight: true },
+        { seg: 38 },
+        { seg: 39, from: "וּבִפְרָט עַל מָקוֹם", until: ")", rubric: SUR_SA_TOMBE, muted: true },
+        { seg: 39, from: "וְרַחֵם עָלַי", tight: true },
+        { seg: 40 },
+        { seg: 41, tight: true },
+        { seg: 42 },
+        { seg: 43, tight: true },
+        { seg: 44, tight: true },
+        { seg: 45, tight: true },
+        { seg: 46, tight: true },
+        { seg: 47 },
+        { seg: 48, tight: true },
+        { seg: 49, tight: true },
+      ],
+    },
+  ],
+};
+
 const RECIPES = [
   acherYatsar,
   birkatHailanot,
@@ -1081,6 +1286,7 @@ const RECIPES = [
   hafrashatHalla,
   havdala,
   nerotHanouka,
+  nichmat,
   teroumotOumaasrot,
   tefilatHaderekh,
   tikounHatsot,
@@ -1090,4 +1296,7 @@ console.log("Téléchargement du Siddur Edot HaMizrach (export Sefaria)…");
 const text = await fetchSiddur();
 
 writeRecipes(RECIPES, text, OUT);
+
+console.log("Téléchargement du Tikkun HaKlali (export Sefaria)…");
+writeRecipes([tikounHaklali], await fetchMerged(TIKKUN_HAKLALI_URL), OUT);
 console.log("Terminé.");

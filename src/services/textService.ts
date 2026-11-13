@@ -1526,18 +1526,33 @@ export async function loadParashaRashi(
     if (res.status === 404) throw new MissingTextFileError();
     throw new Error(`Rachi non disponible (${res.status})`);
   }
-  // La traduction est un plus : faute d'elle (hors ligne, langue absente),
-  // Rachi se lit en hébreu comme avant.
-  let translation: { text?: unknown; sources?: unknown } | undefined;
-  if (lang) {
-    const trRes = await fetchTextResponse(translationPath(path, lang)).catch(() => null);
-    if (trRes?.ok) translation = (await trRes.json().catch(() => undefined)) as typeof translation;
-  }
+  const translation = lang ? await readCommentaryTranslation(path, lang) : undefined;
   const lines = parseParashaRashi((await res.json()) as { he?: unknown[] }, translation);
-  const sources = Array.isArray(translation?.sources)
-    ? (translation.sources as TranslationSource[])
-    : [];
-  return { lines, sources };
+  return { lines, sources: commentarySources(translation) };
+}
+
+/** A commentary's translation file: its grid (`text`) and its sources. */
+interface CommentaryTranslation {
+  text?: unknown;
+  sources?: unknown;
+}
+
+/**
+ * The translation of a commentary file in a language, or nothing. It is a
+ * bonus: without it (offline, language missing), the commentary is read in
+ * Hebrew as before.
+ */
+async function readCommentaryTranslation(
+  path: string,
+  lang: string,
+): Promise<CommentaryTranslation | undefined> {
+  const res = await fetchTextResponse(translationPath(path, lang)).catch(() => null);
+  if (!res?.ok) return undefined;
+  return (await res.json().catch(() => undefined)) as CommentaryTranslation | undefined;
+}
+
+function commentarySources(translation: CommentaryTranslation | undefined): TranslationSource[] {
+  return Array.isArray(translation?.sources) ? (translation.sources as TranslationSource[]) : [];
 }
 
 /** Le psaume d'une entrée de Tehilim (« …/Psalms.23 » → 23). */
@@ -1561,15 +1576,28 @@ async function readCommentaryFile(path: string): Promise<Record<string, unknown>
  * Rachi sur un livre du Tanakh (public/texts/rashi/<id>.json), en groupes
  * alignés sur ceux du fichier de texte. Un psaume lu seul (corpus Tehilim)
  * prend son chapitre dans le fichier du livre de Tehilim : un seul groupe.
+ *
+ * With `pickLang` (the translation is on), each comment also carries its
+ * translation (`tr`) in the language it picks among those the file has (Rashi
+ * on the Torah; Rashi on the Nach has none), and `sources` says who
+ * translated it.
  */
-export async function loadTanakhRashi(textStudy: TextStudyJsonEntry): Promise<RashiComment[][][]> {
-  if (String(textStudy.type) === "Tehilim") {
-    const data = await readCommentaryFile(`/texts/rashi/${TEHILIM_BOOK_ID}.json`);
-    const groups = parseCommentaryGroups(data.he);
-    return [groups[psalmOf(textStudy) - 1] ?? []];
-  }
-  const data = await readCommentaryFile(`/texts/rashi/${textStudy.id}.json`);
-  return parseCommentaryGroups(data.he);
+export async function loadTanakhRashi(
+  textStudy: TextStudyJsonEntry,
+  pickLang?: ((available: readonly string[]) => string | null) | null,
+): Promise<{ groups: RashiComment[][][]; sources: TranslationSource[] }> {
+  const tehilim = String(textStudy.type) === "Tehilim";
+  const path = `/texts/rashi/${tehilim ? TEHILIM_BOOK_ID : textStudy.id}.json`;
+  const lang = pickLang ? pickLang(await translationLangsOfPath(path)) : null;
+  const [data, translation] = await Promise.all([
+    readCommentaryFile(path),
+    lang ? readCommentaryTranslation(path, lang) : undefined,
+  ]);
+  const groups = parseCommentaryGroups(data.he, translation?.text);
+  return {
+    groups: tehilim ? [groups[psalmOf(textStudy) - 1] ?? []] : groups,
+    sources: commentarySources(translation),
+  };
 }
 
 // ---- Bartenura et Tossefot Yom Tov sur la Michna ----------------------------

@@ -198,7 +198,6 @@ async function downloadSelection(): Promise<void> {
     </div>
 
     <p class="text-sm text-text-secondary flex items-start gap-1.5">
-      <AppIcon name="info" :size="14" class="mt-0.5" />
       {{ t("onboarding.library.changeHint") }}
     </p>
   </div>

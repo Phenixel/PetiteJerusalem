@@ -451,7 +451,6 @@ const shareUrl = computed(() =>
               class="flex w-full items-center gap-4 text-start"
               @click="openTexte"
             >
-              <AppIcon name="book-open" :size="22" class="shrink-0 opacity-80" />
               <span class="min-w-0 flex-1">
                 <span class="block text-xs uppercase tracking-wider opacity-70">{{
                   t("chiourim.texte.studied")

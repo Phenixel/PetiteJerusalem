@@ -135,10 +135,8 @@ describe("ChneiMikraPage", () => {
 
     // Not above the text: in the reading settings, with the other options.
     expect(page.text()).not.toContain("Chaque verset deux fois");
+    // No landmark in the menu: its single round button opens the settings.
     page.host.querySelector<HTMLButtonElement>('button[aria-haspopup="menu"]')!.click();
-    await nextTick();
-    page.host.querySelector<HTMLButtonElement>(".fab-second button")!.click();
-    // The menu view leaves (out-in transition) before the settings come in.
     await nextTick();
     await new Promise((resolve) => requestAnimationFrame(resolve));
     await new Promise((resolve) => requestAnimationFrame(resolve));
@@ -167,6 +165,43 @@ describe("ChneiMikraPage", () => {
       doubleVerses: true,
       withRashi: false,
     });
+  });
+
+  it("dit sous le nom de la paracha les montées lues, et les coche depuis ce nom", async () => {
+    const page = mount(ChneiMikraPage);
+    await page.router.push("/bibliotheque/chnei-mikra");
+    await page.router.isReady();
+    await nextTick();
+
+    // Seven dots, one per aliyah, none lit at the start of the week.
+    const dots = () => [...page.host.querySelectorAll(".aliya-dot")];
+    expect(dots()).toHaveLength(7);
+    expect(dots().filter((d) => d.classList.contains("is-done"))).toHaveLength(0);
+    expect(page.text()).toContain("Montées lues : 0 sur 7");
+
+    // The name opens the week's aliyot (the sheet goes to the body).
+    await page.click(page.host.querySelector(".parasha-name")!);
+    const rows = () => [...document.body.querySelectorAll<HTMLElement>(".aliya-row")];
+    expect(rows()).toHaveLength(7);
+    expect(rows()[2].textContent).toContain("3e montée");
+
+    // Ticking the third aliyah lights the third dot.
+    await page.click(rows()[2]);
+    expect(rows()[2].getAttribute("aria-checked")).toBe("true");
+    expect(dots().map((d) => d.classList.contains("is-done"))).toEqual([
+      false,
+      false,
+      true,
+      false,
+      false,
+      false,
+      false,
+    ]);
+    expect(page.text()).toContain("Montées lues : 1 sur 7");
+
+    // The week's state is shared: unticked for the following tests.
+    await page.click(rows()[2]);
+    expect(dots().filter((d) => d.classList.contains("is-done"))).toHaveLength(0);
   });
 
   it("retombe sur la semaine en cours quand l'URL ne vaut rien", async () => {

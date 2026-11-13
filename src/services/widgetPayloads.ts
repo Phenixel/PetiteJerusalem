@@ -178,7 +178,7 @@ function widgetDay(place: ZmanimPlace, civil: Date, t: Translate, locale: string
  * Intl.ListFormat manque aux typages ES2020 du projet, d'où le cast ; sans
  * lui (vieux moteur), un point médian les sépare.
  */
-function joinNames(names: string[], locale: string): string {
+export function joinNames(names: string[], locale: string): string {
   const ListFormat = (
     Intl as unknown as {
       ListFormat?: new (

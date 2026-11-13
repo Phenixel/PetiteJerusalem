@@ -1,26 +1,23 @@
 /**
  * Per-session Open Graph card generator.
  *
- * Builds a 1200×630 PNG showing the session name (and a "Chaîne de Tehilim" /
- * "Partage d'étude" label) on the brand gradient, so a link shared on WhatsApp,
- * Instagram or Facebook gets a tailored preview instead of the generic image.
+ * Renders the card laid out by `ogCardSvg.ts` (the designer's banner, the
+ * session name written over it) to a 1200×630 PNG, so a link shared on
+ * WhatsApp, Instagram or Facebook gets a tailored preview instead of the
+ * generic image.
  *
- * The card is a hand-built SVG rasterized with @resvg/resvg-js (rustybuzz
- * shapes Hebrew correctly). Fonts are bundled under functions/fonts so the
- * function has no external/runtime download. Everything is pure and synchronous
- * once the fonts are loaded, and any failure is handled by the caller (which
- * falls back to the static og-image.jpg).
+ * Rasterized with @resvg/resvg-js (rustybuzz shapes Hebrew correctly). The
+ * fonts and the background are bundled under functions/fonts and
+ * functions/assets, so the function has no external/runtime download. Any
+ * failure is handled by the caller (which falls back to the static reading
+ * sharing banner, public/og/).
  */
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { Resvg } from "@resvg/resvg-js";
+import { buildCardSvg, FONT_TEXT, WIDTH, type OgCardOptions } from "./ogCardSvg";
 
-const WIDTH = 1200;
-const HEIGHT = 630;
-const MARGIN = 80;
-const CONTENT_WIDTH = WIDTH - MARGIN * 2;
-
-const FONT_LATIN = "Noto Sans";
-const FONT_HEBREW = "Noto Sans Hebrew";
+export type { OgCardOptions } from "./ogCardSvg";
 
 /** Bundled font files (functions/fonts), resolved relative to the compiled lib/.
  *  (Le binding natif de resvg ne prend que des chemins, `fontBuffers` est
@@ -28,111 +25,25 @@ const FONT_HEBREW = "Noto Sans Hebrew";
  *  de 24 h du CDN sur les PNG.) */
 const FONT_DIR = join(__dirname, "..", "fonts");
 const FONT_FILES = [
-  join(FONT_DIR, "NotoSans-Regular.ttf"),
-  join(FONT_DIR, "NotoSans-Bold.ttf"),
+  join(FONT_DIR, "PlayfairDisplay-Regular.ttf"),
+  join(FONT_DIR, "Manrope-Medium.ttf"),
   join(FONT_DIR, "NotoSansHebrew-Bold.ttf"),
 ];
 
-/** Escape text for inclusion in SVG/XML. */
-function esc(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
-const hasHebrew = (text: string): boolean => /[֐-׿]/.test(text);
-
-/**
- * Word-wrap `text` into at most `maxLines` lines that each fit `maxChars`.
- * Character-count based (no font metrics at hand), which is plenty for an OG
- * card; the last line is ellipsized if the text overflows.
- */
-function wrapText(text: string, maxChars: number, maxLines: number): string[] {
-  const words = text.replace(/\s+/g, " ").trim().split(" ");
-  const lines: string[] = [];
-  let current = "";
-
-  for (const word of words) {
-    const candidate = current ? `${current} ${word}` : word;
-    if (candidate.length <= maxChars) {
-      current = candidate;
-      continue;
-    }
-    if (current) lines.push(current);
-    current = word;
-    // Toutes les lignes sont posées : le reste est tronqué plus bas. Sortir
-    // une ligne plus tôt laissait la dernière avec un seul mot avant l'ellipse.
-    if (lines.length === maxLines) break;
-  }
-  if (current && lines.length < maxLines) lines.push(current);
-
-  // If anything is left over, mark the last line as truncated.
-  const consumed = lines.join(" ").split(" ").length;
-  if (consumed < words.length) {
-    let last = lines[lines.length - 1] ?? "";
-    while (last.length > maxChars - 1 && last.includes(" ")) {
-      last = last.slice(0, last.lastIndexOf(" "));
-    }
-    lines[lines.length - 1] = `${last}…`;
-  }
-  return lines.length ? lines : [""];
-}
-
-export type OgCardOptions = {
-  /** Main line(s): the session name. */
-  title: string;
-  /** Small label above the title (e.g. "Chaîne de Tehilim"). */
-  label: string;
-  /** Bottom tagline. */
-  tagline: string;
-};
-
-/** Build the SVG markup for a card. */
-function buildSvg({ title, label, tagline }: OgCardOptions): string {
-  const rtl = hasHebrew(title);
-  const titleSize = 64;
-  const lineHeight = 80;
-  // ~0.54em average advance for Noto Sans Bold.
-  const maxChars = Math.floor(CONTENT_WIDTH / (titleSize * 0.54));
-  const lines = wrapText(title, maxChars, 3);
-
-  const blockHeight = lines.length * lineHeight;
-  const titleStartY = Math.round((HEIGHT - blockHeight) / 2) + titleSize;
-
-  const anchor = rtl ? "end" : "start";
-  const titleX = rtl ? WIDTH - MARGIN : MARGIN;
-  const dir = rtl ? ' direction="rtl"' : "";
-
-  const titleSpans = lines
-    .map(
-      (line, i) =>
-        `<text x="${titleX}" y="${titleStartY + i * lineHeight}" text-anchor="${anchor}"${dir} ` +
-        `font-family="${FONT_LATIN}" font-weight="700" font-size="${titleSize}" fill="#3B2412">${esc(line)}</text>`,
-    )
-    .join("\n  ");
-
-  // A flat background in the solid orange of the "sunset" theme, the text in
-  // brown: the app writes white on this orange, but a share thumbnail is read
-  // small, by people who cannot switch to higher contrast, so it keeps the
-  // dark text. The site uses no gradient anywhere, its share thumbnail
-  // neither (see docs/design.md).
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${WIDTH}" height="${HEIGHT}" viewBox="0 0 ${WIDTH} ${HEIGHT}">
-  <rect width="${WIDTH}" height="${HEIGHT}" fill="#EB9F4F"/>
-  <text x="${MARGIN}" y="110" font-family="${FONT_LATIN}" font-weight="700" font-size="34" fill="#3B2412" opacity="0.95">Petite Jérusalem</text>
-  <text x="${MARGIN}" y="170" font-family="${FONT_LATIN}" font-weight="400" font-size="30" fill="#3B2412" opacity="0.85">${esc(label)}</text>
-  ${titleSpans}
-  <text x="${MARGIN}" y="${HEIGHT - 70}" font-family="${FONT_LATIN}" font-weight="400" font-size="30" fill="#3B2412" opacity="0.85">${esc(tagline)}</text>
-</svg>`;
+/** The banner without its tagline, read once per instance. */
+const BACKGROUND_FILE = join(__dirname, "..", "assets", "session-card.png");
+let background: string | null = null;
+function backgroundDataUrl(): string {
+  background ??= `data:image/png;base64,${readFileSync(BACKGROUND_FILE).toString("base64")}`;
+  return background;
 }
 
 /** Render a session OG card to a PNG buffer. */
 export function renderOgPng(options: OgCardOptions): Buffer {
-  const svg = buildSvg(options);
+  const svg = buildCardSvg(options, backgroundDataUrl());
   const resvg = new Resvg(svg, {
     fitTo: { mode: "width", value: WIDTH },
-    font: { fontFiles: FONT_FILES, loadSystemFonts: false, defaultFontFamily: FONT_LATIN },
+    font: { fontFiles: FONT_FILES, loadSystemFonts: false, defaultFontFamily: FONT_TEXT },
   });
   return resvg.render().asPng();
 }

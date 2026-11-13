@@ -340,7 +340,6 @@ useOverlay(
                   v-if="occasion.reminder !== 'none'"
                   class="mt-0.5 flex items-center gap-1 text-xs text-primary"
                 >
-                  <AppIcon name="bell" :size="11" class="shrink-0" />
                   {{ t(`occasions.reminders.${occasion.reminder}`) }}
                 </span>
               </span>
@@ -357,7 +356,6 @@ useOverlay(
         </ul>
 
         <p v-if="full" class="mt-4 flex items-center gap-1.5 text-sm text-text-secondary">
-          <AppIcon name="alert-triangle" :size="14" class="shrink-0" />
           {{ t("occasions.full") }}
         </p>
 

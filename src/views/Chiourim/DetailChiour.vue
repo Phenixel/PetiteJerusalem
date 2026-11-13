@@ -403,11 +403,6 @@ watch(() => route.params.slug, loadChiour);
         class="card card-hover mt-6 flex items-center gap-4 p-4 md:p-5"
         @click="trackTexteOpened"
       >
-        <span
-          class="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"
-        >
-          <AppIcon name="book-open" :size="22" />
-        </span>
         <span class="min-w-0 flex-1">
           <span class="block text-sm text-text-secondary">{{ t("chiourim.texte.studied") }}</span>
           <span class="block font-semibold leading-snug text-text-primary">{{

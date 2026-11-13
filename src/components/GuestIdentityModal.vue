@@ -17,6 +17,8 @@ interface Props {
   name?: string;
   email?: string;
   loading?: boolean;
+  /** Replaces the line about the sections: Nichmat 40 reserves a place. */
+  message?: string;
 }
 
 interface Emits {
@@ -44,9 +46,11 @@ const nameInput = ref<HTMLInputElement | null>(null);
 const showEmailField = computed(() => props.emailRequired || emailFieldRevealed.value);
 
 const subtitle = computed(() =>
-  props.emailRequired
-    ? t("guestIdentity.subtitleWithEmail", { count: props.count })
-    : t("guestIdentity.subtitle", { count: props.count }),
+  props.message
+    ? props.message
+    : props.emailRequired
+      ? t("guestIdentity.subtitleWithEmail", { count: props.count })
+      : t("guestIdentity.subtitle", { count: props.count }),
 );
 
 // À l'ouverture : reprendre la saisie partielle du formulaire de la page
@@ -173,7 +177,6 @@ const submit = () => {
               v-if="error"
               class="text-sm text-red-600 dark:text-red-400 flex items-center gap-1.5"
             >
-              <AppIcon name="alert-circle" :size="14" />
               {{ error }}
             </p>
 

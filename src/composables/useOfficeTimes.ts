@@ -2,6 +2,7 @@ import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import type { HabitAnchor } from "../services/parcours/model";
 import type { TefilaStep } from "../services/parcours/schedule";
+import { liturgicalDay } from "../services/nightBounds";
 import { currentTefilaWindow, tefilaWindowsOfDay } from "../services/sidourService";
 import { formatZmanTime } from "../services/zmanimService";
 import { useNow } from "./useNow";
@@ -32,7 +33,11 @@ export function useOfficeTimes() {
   const { place } = useZmanimLocation();
 
   const office = computed(() => currentTefilaWindow(place.value, now.value));
-  const windows = computed(() => tefilaWindowsOfDay(place.value, now.value));
+  // Les offices du jour en cours, celui de Mon parcours : avant l'aube, ceux
+  // de la veille (sinon le Chema du coucher, à 1 h, attendait le soir suivant).
+  const windows = computed(() =>
+    tefilaWindowsOfDay(place.value, liturgicalDay(place.value, now.value)),
+  );
 
   /** Une heure, comme les horaires l'écrivent. */
   const time = (date: Date): string => formatZmanTime(date, place.value.tzid, locale.value);

@@ -2,8 +2,8 @@
 /**
  * At the bottom of a reading opened from Mon parcours (`?objectif=`), the end
  * of the day's portion (P2-Lecteur): « Fin de la portion du jour », and the
- * ring pulled upward to mark it done (PullToMark, shared with the end of a
- * service's text): the portion is done, the bookmark has moved on.
+ * page pushed up past its end to mark it done (PullToMark, shared with the
+ * end of a service's text): the portion is done, the bookmark has moved on.
  * « Annuler » undoes it.
  *
  * Elle suit la lecture d'un chapitre à l'autre : l'adresse garde l'objectif.

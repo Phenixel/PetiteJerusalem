@@ -66,7 +66,6 @@ async function download(): Promise<void> {
 <template>
   <div v-if="missing.length > 0" class="card flex flex-wrap items-center justify-between gap-3 p-4">
     <p class="flex min-w-0 items-start gap-2 text-sm leading-relaxed text-text-secondary">
-      <AppIcon name="alert-triangle" :size="16" class="mt-0.5 shrink-0 text-primary" />
       {{ t("parcours.offline.missing", missing.length) }}
     </p>
     <button

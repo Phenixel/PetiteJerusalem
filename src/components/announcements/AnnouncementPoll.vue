@@ -168,7 +168,6 @@ function change(): void {
         </button>
         <template v-else>
           <p class="flex items-center gap-1.5 text-sm font-medium text-primary">
-            <AppIcon name="circle-check" :size="16" />
             {{ t("announcements.poll.thanks") }}
           </p>
           <button type="button" class="btn btn-soft" @click="change">
@@ -185,7 +184,6 @@ function change(): void {
       v-if="failed"
       class="mt-3 flex items-center justify-center gap-1.5 text-sm text-red-600 dark:text-red-400"
     >
-      <AppIcon name="alert-circle" :size="14" />
       {{ failed === "refused" ? t("announcements.poll.refused") : t("announcements.poll.error") }}
     </p>
   </section>

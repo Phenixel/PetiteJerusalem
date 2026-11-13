@@ -345,7 +345,6 @@ onUnmounted(() => {
       v-if="withDescriptions"
       class="mt-5 hidden items-center gap-1.5 text-sm text-text-secondary sm:flex"
     >
-      <AppIcon name="info" :size="14" />
       {{ t("profile.themeHint") }}
     </p>
 

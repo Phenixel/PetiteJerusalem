@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, defineAsyncComponent, watch } from "vue";
+import { computed, defineAsyncComponent, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from "vue-i18n";
 import {
@@ -22,9 +22,10 @@ import { useReadingPinch } from "../../composables/useReadingPinch";
 import { useAutoScroll } from "../../composables/useAutoScroll";
 import { useKeepAwake } from "../../composables/useKeepAwake";
 import { useChneiMikraOptions } from "../../composables/useChneiMikraOptions";
+import { useEntriesTranslation } from "../../composables/useEntriesTranslation";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import { useChneiMikraChecks } from "../../composables/useChneiMikraChecks";
-import ProgressBar from "../../components/ProgressBar.vue";
+import ChneiMikraAliyotSheet from "../../components/ChneiMikraAliyotSheet.vue";
 import ReadingMenu from "../../components/ReadingMenu.vue";
 import ReadingProgressBar from "../../components/ReadingProgressBar.vue";
 import ReadingSizeControl from "../../components/ReadingSizeControl.vue";
@@ -132,8 +133,8 @@ const monteesLabel = computed(() =>
 
 /**
  * The week's checked aliyot (useChneiMikraChecks), kept by Mon parcours: each
- * one is checked at its end in the text, and the bar at the top of the page
- * says where the week stands.
+ * one is checked at its end in the text, or from the week's sheet opened on
+ * the paracha's name, and the dots under that name say where the week stands.
  */
 const aliyaChecks = useChneiMikraChecks();
 const aliyotCount = computed(() => (parasha.value?.entries.length ?? 0) * ALIYOT_PER_PARASHA);
@@ -141,15 +142,27 @@ const checkedAliyot = computed(() =>
   parasha.value ? aliyaChecks.checked(parasha.value.weekKey, aliyotCount.value) : new Set<number>(),
 );
 const aliyotDone = computed(() => checkedAliyot.value.size);
-const aliyotPercent = computed(() =>
-  aliyotCount.value > 0 ? Math.round((aliyotDone.value / aliyotCount.value) * 100) : 0,
+/** The dots under the paracha's name: seven per paracha, lit once read. */
+const aliyaDots = computed(() =>
+  Array.from({ length: aliyotCount.value }, (_, aliya) => ({
+    aliya,
+    done: checkedAliyot.value.has(aliya),
+    // A double paracha: a wider gap between the two weeks' halves.
+    split: aliya > 0 && aliya % ALIYOT_PER_PARASHA === 0,
+  })),
 );
+const aliyotOpen = ref(false);
 /** Les montées cochées d'un des textes de la semaine (le second d'une double part de 7). */
 function checkedIn(entryIndex: number): number[] {
   const base = entryIndex * ALIYOT_PER_PARASHA;
   return [...checkedAliyot.value].filter((a) => a >= base).map((a) => a - base);
 }
-function setAliya(aliya: number, done: boolean, label: string): void {
+function setAliya(
+  aliya: number,
+  done: boolean,
+  label: string,
+  source: "text" | "sheet" = "text",
+): void {
   const week = parasha.value;
   if (!week) return;
   aliyaChecks.setChecked(week.weekKey, aliya, aliyotCount.value, done);
@@ -158,8 +171,17 @@ function setAliya(aliya: number, done: boolean, label: string): void {
     done,
     text_id: entry?.id ?? null,
     aliya: label,
-    source: "text",
+    source,
   });
+}
+/**
+ * From the week's sheet. The aliyah is named as the text names it
+ * (« 1re montée »), whatever the reader's language, so that the measure
+ * adds up with the checks made in the text.
+ */
+function toggleFromSheet(aliya: number, done: boolean): void {
+  const n = (aliya % ALIYOT_PER_PARASHA) + 1;
+  setAliya(aliya, done, `${n === 1 ? "1re" : `${n}e`} montée`, "sheet");
 }
 function toggleFromText(entryIndex: number, index: number, done: boolean, label: string): void {
   setAliya(entryIndex * ALIYOT_PER_PARASHA + index, done, label);
@@ -183,6 +205,9 @@ function showWhole(): void {
 }
 
 const title = computed(() => parashaTitle(parasha.value));
+const entryNames = computed(() =>
+  (parasha.value?.entries ?? []).map((entry) => appendHebrewNumeral(entry.name)),
+);
 
 /** « Chabbat 8 août », le Chabbat où la paracha affichée est lue ; pour
  * Vezot Haberakha, qui n'a pas de Chabbat, le jour de Sim'hat Torah. */
@@ -216,6 +241,9 @@ function goTo(target: WeeklyParasha | null, direction: "previous" | "next" | "cu
     target.weekKey === currentWeek.value?.weekKey ? {} : { [WEEK_PARAM]: target.weekKey };
   void router.push({ query });
 }
+
+/** The translation of the parasha and of Rashi: its setting in the reading menu. */
+const translation = useEntriesTranslation(() => shownEntries.value.map((shown) => shown.entry));
 
 /** Le nom sous lequel la page se partage (voir ReadingMenu). */
 const shareTitle = computed(() => `${t("chneiMikra.title")} · ${title.value}`);
@@ -261,10 +289,29 @@ watch([title, locale, localeMessagesReady], applySeoMeta, { immediate: true });
             <AppIcon name="chevron-left" :size="20" class="rtl:rotate-180" />
           </button>
 
-          <div class="min-w-0 text-center">
-            <p class="truncate text-xl font-bold text-text-primary">{{ title }}</p>
-            <p class="text-sm text-text-secondary">{{ shabbatLabel }}</p>
-          </div>
+          <!-- The paracha's name opens the week's aliyot, to check off those
+               read elsewhere (a printed book) without scrolling to their
+               end; the dots under it say where the week stands. -->
+          <button
+            type="button"
+            class="parasha-name min-w-0 text-center"
+            aria-haspopup="dialog"
+            @click="aliyotOpen = true"
+          >
+            <span class="block truncate text-xl font-bold text-text-primary">{{ title }}</span>
+            <span class="aliya-dots" aria-hidden="true">
+              <span
+                v-for="dot in aliyaDots"
+                :key="dot.aliya"
+                class="aliya-dot"
+                :class="{ 'is-done': dot.done, 'is-split': dot.split }"
+              />
+            </span>
+            <span class="sr-only">
+              {{ t("chneiMikra.progress", { done: aliyotDone, total: aliyotCount }) }}
+            </span>
+            <span class="block text-sm text-text-secondary">{{ shabbatLabel }}</span>
+          </button>
 
           <button
             type="button"
@@ -293,18 +340,6 @@ watch([title, locale, localeMessagesReady], applySeoMeta, { immediate: true });
 
           <!-- Taille du texte (même réglage que le lecteur de la bibliothèque) -->
           <ReadingSizeControl />
-        </div>
-
-        <!-- Where the week stands: the aliyot checked at the end of each one in
-             the text, as on « Mes Téhilim » and the daily reading. -->
-        <div class="mt-4">
-          <div class="mb-2 flex items-center justify-between">
-            <span class="text-sm font-medium">
-              {{ t("chneiMikra.progress", { done: aliyotDone, total: aliyotCount }) }}
-            </span>
-            <span class="text-sm font-semibold text-primary">{{ aliyotPercent }} %</span>
-          </div>
-          <ProgressBar :value="aliyotPercent" :label="t('chneiMikra.title')" />
         </div>
 
         <!-- La paracha change : on remonte des composants neufs plutôt que de
@@ -341,6 +376,15 @@ watch([title, locale, localeMessagesReady], applySeoMeta, { immediate: true });
           />
           <ReaderTaskCard v-if="objectiveId" :objective-id="objectiveId" />
         </div>
+
+        <ChneiMikraAliyotSheet
+          :open="aliyotOpen"
+          :title="title"
+          :names="entryNames"
+          :checked="checkedAliyot"
+          @close="aliyotOpen = false"
+          @toggle="toggleFromSheet"
+        />
       </template>
 
       <p v-else class="mt-10 text-text-secondary">{{ t("chneiMikra.unavailable") }}</p>
@@ -348,7 +392,51 @@ watch([title, locale, localeMessagesReady], applySeoMeta, { immediate: true });
 
     <!-- Comme les autres textes de la bibliothèque : le menu de lecture et la
          progression au bas de l'écran. -->
-    <ReadingMenu :share-title="shareTitle" chnei-mikra />
+    <ReadingMenu
+      :share-title="shareTitle"
+      chnei-mikra
+      :translation-langs="translation.langs.value"
+      :translation-lang="translation.lang.value"
+    />
     <ReadingProgressBar />
   </main>
 </template>
+
+<style scoped>
+/* The paracha's name is a button: no frame, its title taking the theme color
+   on hover, like a door of the home page. */
+.parasha-name {
+  border-radius: var(--radius-control);
+  padding: 2px 8px;
+}
+.parasha-name:hover > span:first-child {
+  color: var(--color-primary);
+}
+/* Seven dots, one per aliyah: solid in the theme color once read, a ring
+   until then. */
+.aliya-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin: 6px 0 4px;
+}
+.aliya-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-pill);
+  box-shadow: inset 0 0 0 1.5px var(--color-line-strong);
+  transition: background-color 0.2s;
+}
+.aliya-dot.is-done {
+  background-color: var(--color-primary);
+  box-shadow: none;
+}
+.aliya-dot.is-split {
+  margin-inline-start: 8px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .aliya-dot {
+    transition: none;
+  }
+}
+</style>

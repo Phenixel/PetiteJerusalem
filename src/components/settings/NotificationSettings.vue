@@ -10,11 +10,14 @@
  * n'existe que dans l'app native, un navigateur n'ayant rien à programmer
  * (voir zmanReminderService).
  *
+ * The reminders of Mon parcours have their row here too: it says how many
+ * ring, and opens the same sheet as the alarm clock of Mon parcours.
+ *
  * Des lignes séparées d'un filet, sans cadre, comme l'onglet Préférences et
  * comme la liste des horaires : un réglage est une ligne qu'on touche, pas une
  * carte qui répond à une question (voir docs/design.md).
  */
-import { computed, onMounted } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import {
   ensureNotificationPermission,
@@ -24,6 +27,8 @@ import {
 } from "../../composables/useZmanReminders";
 import AppIcon from "../icons/AppIcon.vue";
 import ToggleSwitch from "../ToggleSwitch.vue";
+import ReminderSlotsSheet from "../parcours/ReminderSlotsSheet.vue";
+import { useParcoursReminders } from "../../composables/useParcoursReminders";
 import { announcementsPushEnabled, setAnnouncementsPush } from "../../services/announcementTopics";
 
 const { t, locale } = useI18n();
@@ -34,6 +39,10 @@ const { reminders, restEnabled, permission, exactAlarms, clearReminder, setRestE
 const posted = computed(() => [...reminders.value]);
 
 const blocked = computed(() => permission.value === "denied");
+
+const parcoursReminders = useParcoursReminders();
+const parcoursOpen = ref(false);
+const parcoursCount = computed(() => parcoursReminders.activeSlots.value.length);
 
 // La permission se change dans les réglages du téléphone, hors de l'app : on
 // la relit à l'ouverture de l'écran plutôt que de se fier au dernier état vu.
@@ -75,12 +84,35 @@ function delayLabel(minutes: number): string {
       v-if="blocked"
       class="mb-4 flex items-start gap-2 text-sm text-amber-600 dark:text-amber-400"
     >
-      <AppIcon name="alert-triangle" :size="15" class="mt-0.5 shrink-0" />
       {{ t("zmanim.reminder.permissionDenied") }}
     </p>
 
-    <!-- Entrée du Chabbat et des fêtes -->
     <ul class="flex flex-col divide-y divide-line">
+      <!-- Mon parcours: the hours of the day, set in their own sheet. -->
+      <li>
+        <button
+          type="button"
+          class="flex w-full items-center justify-between gap-3 py-3 text-start"
+          @click="parcoursOpen = true"
+        >
+          <span class="min-w-0">
+            <span class="block font-semibold text-text-primary">
+              {{ t("parcours.reminders.settingsOption") }}
+            </span>
+            <span class="block text-sm text-text-secondary leading-relaxed">
+              {{ t("parcours.reminders.settingsHint") }}
+            </span>
+          </span>
+          <span class="shrink-0 text-sm font-bold text-primary">
+            {{
+              parcoursCount > 0
+                ? t("parcours.reminders.settingsCount", { n: parcoursCount }, parcoursCount)
+                : t("parcours.reminders.settingsNone")
+            }}
+          </span>
+        </button>
+      </li>
+      <!-- Entrée du Chabbat et des fêtes -->
       <li>
         <label class="flex cursor-pointer items-center justify-between gap-3 py-3">
           <span class="min-w-0">
@@ -155,5 +187,6 @@ function delayLabel(minutes: number): string {
         {{ t("zmanim.reminder.exactAlarmsCta") }}
       </button>
     </div>
+    <ReminderSlotsSheet :open="parcoursOpen" source="settings" @close="parcoursOpen = false" />
   </section>
 </template>
