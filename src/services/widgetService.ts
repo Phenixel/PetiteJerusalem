@@ -1,6 +1,6 @@
 import { registerPlugin } from "@capacitor/core";
 import { watch } from "vue";
-import { isNativeApp } from "../composables/useNativeApp";
+import { isNativeApp } from "../config/platform";
 import { useTheme } from "../composables/useTheme";
 import { useZmanimLocation } from "../composables/useZmanimLocation";
 import { useZmanimOpinion } from "../composables/useZmanimOpinion";

@@ -25,7 +25,7 @@ import {
   isAuthCancellation,
   isPasswordResetSilent,
 } from "./authErrors";
-import { appPlatform, isNativeApp } from "../composables/useNativeApp";
+import { appPlatform, isNativeApp } from "../config/platform";
 import type { User } from "../models/models";
 import { clearPreferencesCache, userPreferencesService } from "./userPreferencesService";
 import { analyticsService } from "./analyticsService";

@@ -18,7 +18,7 @@ vi.mock("@capacitor/core", async (original) => ({
   ...(await original<typeof import("@capacitor/core")>()),
   registerPlugin: () => ({ setPayloads }),
 }));
-vi.mock("../composables/useNativeApp", () => ({ isNativeApp: true, appPlatform: "android" }));
+vi.mock("../config/platform", () => ({ isNativeApp: true, appPlatform: "android" }));
 vi.mock("../composables/useTheme", () => ({
   useTheme: () => ({ appliedTheme: ref({ primary: "#1d4ed8" }) }),
 }));

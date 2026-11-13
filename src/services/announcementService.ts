@@ -1,6 +1,6 @@
 import type { DocumentData } from "firebase/firestore";
 import type { Firestore } from "firebase/firestore/lite";
-import { isNativeApp } from "../composables/useNativeApp";
+import { isNativeApp } from "../config/platform";
 import { cached } from "./cached";
 import {
   ANNOUNCEMENT_KINDS,

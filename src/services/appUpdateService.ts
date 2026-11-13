@@ -1,6 +1,6 @@
 import { CapacitorHttp } from "@capacitor/core";
 import { ref } from "vue";
-import { appPlatform, isNativeApp } from "../composables/useNativeApp";
+import { appPlatform, isNativeApp } from "../config/platform";
 import { APP_BUNDLE_ID } from "../config/stores";
 import { analyticsService } from "./analyticsService";
 

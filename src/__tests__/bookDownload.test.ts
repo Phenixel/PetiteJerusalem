@@ -25,7 +25,7 @@ const { capture, downloaded, downloadBook, removeBook } = vi.hoisted(() => {
   };
 });
 vi.mock("../services/analyticsService", () => ({ analyticsService: { capture } }));
-vi.mock("../composables/useNativeApp", () => ({ isNativeApp: true, appPlatform: "android" }));
+vi.mock("../config/platform", () => ({ isNativeApp: true, appPlatform: "android" }));
 vi.mock("../services/offlineLibraryService", () => ({
   bookForEntry: (entry: { type: string }) => ({
     path: entry.type === "Tehilim" ? "/texts/tehilim.json" : "/texts/talmud/berakhot.json",

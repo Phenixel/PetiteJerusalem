@@ -1,14 +1,6 @@
-import { Capacitor } from "@capacitor/core";
-
 /**
- * Détection de la plateforme d'exécution (web, ou app native Capacitor).
- *
- * Figée au chargement : la plateforme ne change jamais en cours de vie de
- * l'app. Sert à n'exposer les fonctionnalités natives (téléchargements hors
- * ligne, notifications push, auth native) que dans l'app mobile, en laissant
- * le site web strictement inchangé.
+ * Historical entry point of the platform constants: they live in
+ * `config/platform`, which services import directly so that they do not
+ * depend on `composables/`. Components and views keep importing from here.
  */
-export const isNativeApp = Capacitor.isNativePlatform();
-
-/** "web" | "ios" | "android" */
-export const appPlatform = Capacitor.getPlatform();
+export { appPlatform, isNativeApp } from "../config/platform";

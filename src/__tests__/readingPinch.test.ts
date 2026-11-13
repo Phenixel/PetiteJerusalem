@@ -10,7 +10,7 @@ import { createApp, effectScope, h, ref } from "vue";
 const increase = vi.fn();
 const decrease = vi.fn();
 
-vi.mock("../composables/useNativeApp", () => ({ isNativeApp: true }));
+vi.mock("../config/platform", () => ({ isNativeApp: true }));
 vi.mock("../composables/useReadingSize", () => ({
   useReadingSizeControl: () => ({ increase, decrease }),
 }));

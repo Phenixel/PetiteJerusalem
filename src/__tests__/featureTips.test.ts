@@ -16,7 +16,7 @@ import type { FeatureTipId } from "../composables/useFeatureTips";
 
 // Les astuces ne se montrent que dans l'app native : c'est la plateforme que
 // ces tests jouent, sauf ceux qui vérifient justement le silence du web.
-vi.mock("../composables/useNativeApp", () => ({ isNativeApp: true, appPlatform: "ios" }));
+vi.mock("../config/platform", () => ({ isNativeApp: true, appPlatform: "ios" }));
 vi.mock("../services/analyticsService", () => ({ analyticsService: { capture: vi.fn() } }));
 // Le plugin des préférences natives n'existe pas ici : la relecture rend rien.
 vi.mock("@capacitor/preferences", () => ({
@@ -304,7 +304,7 @@ describe("astuces des pages", () => {
   // En dernier : la plateforme rejouée ici vaut pour tous les imports qui
   // suivent, elle ne doit pas déteindre sur les tests de l'app native.
   it("se tait sur le site, sauf Mon parcours et qui la demande par l'adresse", async () => {
-    vi.doMock("../composables/useNativeApp", () => ({ isNativeApp: false, appPlatform: "web" }));
+    vi.doMock("../config/platform", () => ({ isNativeApp: false, appPlatform: "web" }));
     const web = await import("../composables/useFeatureTips");
     expect(web.tipsOffered.value).toBe(false);
     expect(await web.useFeatureTips().shouldShowTip("reading-menu")).toBe(false);

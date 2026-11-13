@@ -320,14 +320,14 @@ describe("loading the videos", () => {
   beforeEach(() => vi.resetModules());
   afterEach(() => {
     vi.unstubAllGlobals();
-    vi.doUnmock("../composables/useNativeApp");
+    vi.doUnmock("../config/platform");
     vi.resetModules();
   });
 
   const LIST = { videos: [{ youtube: "AbCdEfGhIjK", title: { fr: "Le Sidour" } }] };
 
   it("the app asks its site, and falls back on its own copy offline", async () => {
-    vi.doMock("../composables/useNativeApp", () => ({ isNativeApp: true }));
+    vi.doMock("../config/platform", () => ({ isNativeApp: true }));
     const fetch = vi
       .fn()
       .mockRejectedValueOnce(new Error("offline"))
@@ -341,7 +341,7 @@ describe("loading the videos", () => {
   });
 
   it("the site reads its own file, and nothing at all is an empty list", async () => {
-    vi.doMock("../composables/useNativeApp", () => ({ isNativeApp: false }));
+    vi.doMock("../config/platform", () => ({ isNativeApp: false }));
     const fetch = vi.fn().mockResolvedValue({ ok: false, status: 404 });
     vi.stubGlobal("fetch", fetch);
     const { loadHelpVideos } = await import("../services/helpVideos");

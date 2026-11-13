@@ -19,7 +19,7 @@ import { createMemoryHistory, createRouter } from "vue-router";
 vi.mock("../services/analyticsService", () => ({
   analyticsService: { capture: vi.fn() },
 }));
-vi.mock("../composables/useNativeApp", () => ({ isNativeApp: false, appPlatform: "web" }));
+vi.mock("../config/platform", () => ({ isNativeApp: false, appPlatform: "web" }));
 // Less motion: the line goes straight where it goes, frame for frame, which
 // the springs only reach after a while.
 vi.mock("../composables/useMotion", () => ({

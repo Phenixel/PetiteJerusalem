@@ -6,7 +6,7 @@ import { arrayRemove, arrayUnion, doc, setDoc } from "firebase/firestore";
 import type { Router } from "vue-router";
 import { db } from "../firebase/firestore";
 import { auth } from "../firebase/core";
-import { isNativeApp } from "../composables/useNativeApp";
+import { isNativeApp } from "../config/platform";
 import { i18n } from "../i18n";
 import { analyticsService } from "./analyticsService";
 import { syncAnnouncementTopic } from "./announcementTopics";
@@ -374,7 +374,7 @@ class PushService {
     // Rotation du jeton FCM (réinstallation, restauration, renouvellement
     // périodique) : le nouveau jeton remplace l'ancien dans le profil, sinon
     // les rappels s'éteignaient en silence jusqu'à une réactivation à la main.
-    FirebaseMessaging.addListener("tokenReceived", ({ token }) => {
+    void FirebaseMessaging.addListener("tokenReceived", ({ token }) => {
       void this.onTokenRotated(token);
     });
     // Rotation restée en attente (coupure au moment du renouvellement) :
@@ -394,18 +394,18 @@ class PushService {
     });
 
     // Deep-link quand l'utilisateur touche une notification push (`data.url`).
-    FirebaseMessaging.addListener("notificationActionPerformed", (event) => {
+    void FirebaseMessaging.addListener("notificationActionPerformed", (event) => {
       const url = (event.notification.data as { url?: string } | undefined)?.url;
       // Efficacité du rappel quotidien : combien de retours viennent des push.
       analyticsService.capture("push_notification_opened", { url: url ?? null });
       if (url) markReadingEntry("push");
-      if (url) router.push(url);
+      if (url) void router.push(url);
     });
 
     if (Capacitor.getPlatform() !== "android") return;
     // `notificationReceived` n'est émis qu'app au premier plan sur Android :
     // pas de risque de doublon avec l'affichage système en arrière-plan.
-    FirebaseMessaging.addListener("notificationReceived", (event) => {
+    void FirebaseMessaging.addListener("notificationReceived", (event) => {
       const { title, body, data } = event.notification;
       if (!title && !body) return;
       void LocalNotifications.schedule({
@@ -426,13 +426,13 @@ class PushService {
       }).catch((e) => console.error("Affichage de la notification en premier plan échoué:", e));
     });
     // Toucher la notification locale doit deep-linker comme la push d'origine.
-    LocalNotifications.addListener("localNotificationActionPerformed", (event) => {
+    void LocalNotifications.addListener("localNotificationActionPerformed", (event) => {
       const extra = event.notification.extra as { url?: string; source?: string } | undefined;
       if (extra?.source !== PUSH_SOURCE) return;
       const url = extra.url;
       analyticsService.capture("push_notification_opened", { url: url ?? null });
       if (url) markReadingEntry("push");
-      if (url) router.push(url);
+      if (url) void router.push(url);
     });
   }
 }

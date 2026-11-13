@@ -16,7 +16,7 @@ import { HDate, months } from "@hebcal/core";
 vi.mock("../services/analyticsService", () => ({
   analyticsService: { capture: vi.fn() },
 }));
-vi.mock("../composables/useNativeApp", () => ({ isNativeApp: false, appPlatform: "web" }));
+vi.mock("../config/platform", () => ({ isNativeApp: false, appPlatform: "web" }));
 vi.mock("../services/authService", () => ({
   authService: { onAuthChanged: () => () => {} },
 }));

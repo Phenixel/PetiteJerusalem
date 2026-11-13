@@ -51,7 +51,7 @@ const plugin = vi.hoisted(() => ({
 }));
 const toast = vi.hoisted(() => vi.fn());
 
-vi.mock("../composables/useNativeApp", () => ({
+vi.mock("../config/platform", () => ({
   get isNativeApp() {
     return platform.native;
   },

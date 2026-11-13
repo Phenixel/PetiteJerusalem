@@ -1,6 +1,6 @@
 import type { BeforeSendFn, PostHog, Properties } from "posthog-js";
 import { watch } from "vue";
-import { appPlatform, isNativeApp } from "../composables/useNativeApp";
+import { appPlatform, isNativeApp } from "../config/platform";
 import { isDegradedRendering } from "../composables/useDevicePerf";
 import { getConsentChoice, onConsentChange } from "../composables/useConsent";
 import { resolveUserType } from "../config/analyticsAudience";

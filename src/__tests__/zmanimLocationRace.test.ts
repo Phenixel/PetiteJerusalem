@@ -8,7 +8,7 @@ import type { City } from "../services/zmanimService";
  * saved as the place of every later visit.
  */
 
-vi.mock("../composables/useNativeApp", () => ({ isNativeApp: false, appPlatform: "web" }));
+vi.mock("../config/platform", () => ({ isNativeApp: false, appPlatform: "web" }));
 
 describe("the device position", () => {
   it("does not replace a city picked while it was on its way", async () => {
