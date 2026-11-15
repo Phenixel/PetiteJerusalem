@@ -1724,24 +1724,33 @@ Both show the same state.
 
 The check is a pill track up to 18 rem wide and 44 px high, with a 36 px
 disc on the left carrying a chevron and the aliyah's name in the middle, on
-one line. It is drawn in **flat colors, with no border and no shadow**: the
-track in the tone of the other flat controls (the text color at 6 %, as the
-A- / A+ control), the disc solid in the brand color. A first version, a
-60 px track with a border, a white disc ringed in the theme color with a
-shadow, and « Glissez à droite une fois lue » ("Swipe right once read")
-under the name, was too large and too wordy for a control met fourteen
-times in a paracha, and its borders were not the site's. It is **swiped
-right**, as a card of the home stack or of the Sidour says it is done: the
-disc follows the finger, leaving a flat band of the brand color behind it
-(no gradient), the name fades as it covers it, and past 110 px the disc
-takes its check (one "threshold" beat). Let go there, the aliyah is read:
-the disc rests on the right, checked, the band fills the track and the line
-says « 1re montée · Lue » ("Read" in the theme color). Swiped back to the
-left, it is unread again. The swipe goes right in every language, as
-everywhere in the app. A tap does the same (a mouse, a screen reader, Enter
-or Space): the gesture is the invitation, never the only way. It replaces a
-small « Marquer comme lue » link at the end of each aliyah, borrowed from
-« Mes Téhilim », which was easy to miss and sat only at the bottom.
+one line, with **no border and no shadow**. Unread, it holds **no orange at
+all**: the track is white (the surface of a card), the disc a soft gray (the
+text color at 7 %) with its chevron in the secondary text color. A first
+version, a 60 px track with a border, a white disc ringed in the theme
+color with a shadow, and « Glissez à droite une fois lue » ("Swipe right
+once read") under the name, was too large and too wordy for a control met
+fourteen times in a paracha, and its borders were not the site's.
+
+The orange comes with the gesture, in motion. It is **swiped right**, as a
+card of the home stack or of the Sidour says it is done: as soon as the
+disc moves it turns solid brand color, and a band of the same flat color
+(no gradient) follows it, rounded at its end, the name fading as it covers
+it; past 110 px the disc takes its check (one "threshold" beat). Let go
+there, or tap, the aliyah is read: the band **sweeps across the whole
+track** (0.6 s, a quick start and a long soft landing), the disc slides to
+the right and turns white, then lands with a small bounce while its check
+draws itself in the theme color, and the line says « 1re montée · Lue » in
+the color written on the brand (`on-brand`). The bounce and the drawn check
+play only on the check one has just touched, not on one that opens already
+read, nor on its twin at the other end of the aliyah. Swiped back to the
+left, or tapped, the band withdraws under the disc and fades: unread again.
+With reduced motion, the states change without moving. The swipe goes right
+in every language, as everywhere in the app. A tap does the same (a mouse,
+a screen reader, Enter or Space): the gesture is the invitation, never the
+only way. It replaces a small « Marquer comme lue » link at the end of each
+aliyah, borrowed from « Mes Téhilim », which was easy to miss and sat only
+at the bottom.
 
 **Never both checks of an aliyah on the screen at once.** An aliyah whose
 text is short enough for the check above it and the check below it to fit

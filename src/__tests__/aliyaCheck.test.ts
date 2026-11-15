@@ -87,6 +87,26 @@ describe("AliyaCheck", () => {
     expect(track.textContent?.replace(/\s+/g, " ").trim()).toBe("Rishon · Lue");
   });
 
+  it("plays the fill and the drawn check only on the check just touched", async () => {
+    // Opened already read: it shows its state, without the animation.
+    const read = await mount(true);
+    expect(read.track.classList.contains("is-fresh")).toBe(false);
+    app?.unmount();
+    document.body.innerHTML = "";
+
+    const { track } = await mount(false);
+    await pause();
+    track.click();
+    await nextTick();
+    expect(track.classList.contains("is-done")).toBe(true);
+    expect(track.classList.contains("is-fresh")).toBe(true);
+    // Unchecked, nothing to celebrate.
+    await pause();
+    track.click();
+    await nextTick();
+    expect(track.classList.contains("is-fresh")).toBe(false);
+  });
+
   it("comes back without acting when let go before the threshold", async () => {
     const { track, toggles } = await mount(false);
     await swipe(track, 60);
