@@ -2142,7 +2142,6 @@ const fr = {
     withRashi: "Commentaire de Rachi",
     withRashiHint: "Les commentaires de Rachi sous le Targoum de chaque verset.",
     rashiUnavailable: "Le commentaire de Rachi n'a pas pu être chargé.",
-    aliyaSwipe: "Glissez à droite une fois lue",
     aliyaDone: "Lue",
     aliyaCheck: "{aliya} lue",
     progress: "Montées lues : {done} sur {total}",
