@@ -1722,21 +1722,37 @@ it off where one stops reading, and whoever read it elsewhere (at the
 synagogue, on another device) checks it at the top without scrolling down.
 Both show the same state.
 
-The check is a pill track as wide as a button row (up to 24 rem, 60 px
-high), with a 48 px disc on the left carrying a chevron, the aliyah's name
-in the middle and « Glissez à droite une fois lue » ("Swipe right once
-read") under it. It is **swiped right**, as a card of the home stack or of
-the Sidour says it is done: the disc follows the finger, leaving a flat
-band of the theme color behind it (no gradient), the words fade as it
-covers them, and past 110 px it turns to the brand color with its check
-(one "threshold" beat). Let go there, the aliyah is read: the disc rests on
-the right, checked, the band fills the track and the line under the name
-says « Lue » ("Read") in the theme color. Swiped back to the left, it is
-unread again. The swipe goes right in every language, as everywhere in the
-app. A tap does the same (a mouse, a screen reader, Enter or Space): the
-gesture is the invitation, never the only way. It replaces a small
-« Marquer comme lue » link at the end of each aliyah, borrowed from « Mes
-Téhilim », which was easy to miss and sat only at the bottom.
+The check is a pill track up to 18 rem wide and 44 px high, with a 36 px
+disc on the left carrying a chevron and the aliyah's name in the middle, on
+one line. It is drawn in **flat colors, with no border and no shadow**: the
+track in the tone of the other flat controls (the text color at 6 %, as the
+A- / A+ control), the disc solid in the brand color. A first version, a
+60 px track with a border, a white disc ringed in the theme color with a
+shadow, and « Glissez à droite une fois lue » ("Swipe right once read")
+under the name, was too large and too wordy for a control met fourteen
+times in a paracha, and its borders were not the site's. It is **swiped
+right**, as a card of the home stack or of the Sidour says it is done: the
+disc follows the finger, leaving a flat band of the brand color behind it
+(no gradient), the name fades as it covers it, and past 110 px the disc
+takes its check (one "threshold" beat). Let go there, the aliyah is read:
+the disc rests on the right, checked, the band fills the track and the line
+says « 1re montée · Lue » ("Read" in the theme color). Swiped back to the
+left, it is unread again. The swipe goes right in every language, as
+everywhere in the app. A tap does the same (a mouse, a screen reader, Enter
+or Space): the gesture is the invitation, never the only way. It replaces a
+small « Marquer comme lue » link at the end of each aliyah, borrowed from
+« Mes Téhilim », which was easy to miss and sat only at the bottom.
+
+**Never both checks of an aliyah on the screen at once.** An aliyah whose
+text is short enough for the check above it and the check below it to fit
+together in the window keeps only the one at its end, and its plain title
+above the text (`aliyaChecksShareScreen` in `services/parcours/aliyot.ts`).
+The same control twice in one glance was one too many, and the end one is
+where one checks off what one has just read. The test is made on the text
+alone, which the choice does not change, so the page never flips between
+the two; it runs again when the text resizes (text size, verses written
+twice, Rashi) and when the window does. Held by
+`src/__tests__/aliyaCheck.test.ts`.
 
 **No check for a single aliyah that ends with the pull.** Opened from Mon
 parcours for one aliyah (`?montees=3&objectif=`), the reading ends with the

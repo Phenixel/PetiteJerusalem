@@ -5,12 +5,15 @@ import { createApp, h, nextTick, ref, type App } from "vue";
 import { createI18n } from "vue-i18n";
 import fr from "../locales/fr";
 import AliyaCheck from "../components/AliyaCheck.vue";
+import { ALIYA_CHECK_HEIGHT, aliyaChecksShareScreen } from "../services/parcours/aliyot";
 
 /**
  * The check of an aliyah of chnei mikra (docs/design.md, « Chnei mikra is
  * checked off aliyah by aliyah »): swiped right once read, back to the left
- * to undo it, a tap for whoever does not swipe; and none at all when the
- * day's single aliyah already ends with the pull of Mon parcours.
+ * to undo it, a tap for whoever does not swipe; on one line, the aliyah's
+ * name and « Lue » once read; only the end check on an aliyah short enough
+ * for both to share the screen; and none at all when the day's single aliyah
+ * already ends with the pull of Mon parcours.
  */
 
 let app: App | null = null;
@@ -73,14 +76,15 @@ describe("AliyaCheck", () => {
     const { track, toggles } = await mount(false);
     expect(track.getAttribute("role")).toBe("checkbox");
     expect(track.getAttribute("aria-checked")).toBe("false");
-    expect(track.textContent).toContain("Glissez à droite une fois lue");
+    // One line: the aliyah's name, nothing to read besides it.
+    expect(track.textContent?.trim()).toBe("Rishon");
     // At rest, the knob carries its chevron, not the check it will take.
     expect(track.querySelector(".aliya-check-knob.is-checked")).toBeNull();
 
     await swipe(track, 160);
     expect(toggles).toEqual([true]);
     expect(track.getAttribute("aria-checked")).toBe("true");
-    expect(track.textContent).toContain("Lue");
+    expect(track.textContent?.replace(/\s+/g, " ").trim()).toBe("Rishon · Lue");
   });
 
   it("comes back without acting when let go before the threshold", async () => {
@@ -116,6 +120,16 @@ describe("the chnei mikra page and its aliyah checks", () => {
 
   it("puts the check above and below each aliyah", () => {
     expect(item.match(/<AliyaCheck\b/g)?.length).toBe(2);
+  });
+
+  it("drops the check above an aliyah whose two checks would share the screen", () => {
+    expect(item).toContain('v-if="block.label && aliyaChecks && !isShortAliya(section, block)"');
+    // On an 812 px phone, the checks and their gaps take 120 px.
+    const both = 2 * ALIYA_CHECK_HEIGHT + 32;
+    expect(aliyaChecksShareScreen(812 - both, 812)).toBe(true);
+    expect(aliyaChecksShareScreen(812 - both + 1, 812)).toBe(false);
+    // A text not laid out yet keeps its check above it.
+    expect(aliyaChecksShareScreen(0, 812)).toBe(false);
   });
 
   it("hides them when a single aliyah ends with the pull of the day's portion", () => {

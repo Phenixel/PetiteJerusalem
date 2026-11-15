@@ -2067,7 +2067,6 @@ const en: LocaleMessages = {
     withRashi: "Rashi's commentary",
     withRashiHint: "Rashi's commentary under the Targum of each verse.",
     rashiUnavailable: "Rashi's commentary could not be loaded.",
-    aliyaSwipe: "Swipe right once read",
     aliyaDone: "Read",
     aliyaCheck: "{aliya} read",
     progress: "Aliyot read: {done} of {total}",

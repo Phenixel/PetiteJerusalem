@@ -12,6 +12,10 @@
  *
  * The swipe is the gesture; a tap does the same (a mouse, a screen reader,
  * Enter or Space), so the check is never out of reach.
+ *
+ * It is drawn in flat colors and on one line (the aliyah's name, then « Lue »
+ * once read): a track in the tone of the other flat controls, a disc of the
+ * brand color, no border and no shadow (docs/design.md).
  */
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
@@ -31,8 +35,8 @@ const { t } = useI18n();
 
 /** As the swiped cards and lines (SidourLine, ProgramDaily). */
 const SWIPE_THRESHOLD = 110;
-const KNOB = 48;
-const INSET = 6;
+const KNOB = 36;
+const INSET = 4;
 
 const track = ref<HTMLElement | null>(null);
 /** How far the knob can travel, measured when a gesture starts. */
@@ -94,52 +98,45 @@ const checked = computed(() => (props.done ? !armed.value : armed.value));
   >
     <span class="aliya-check-fill" aria-hidden="true" />
     <span class="aliya-check-text" aria-hidden="true">
-      <span class="aliya-check-name">{{ name }}</span>
-      <span class="aliya-check-sub">
-        {{ done ? t("chneiMikra.aliyaDone") : t("chneiMikra.aliyaSwipe") }}
-      </span>
+      {{ name }}
+      <span v-if="done" class="aliya-check-done">· {{ t("chneiMikra.aliyaDone") }}</span>
     </span>
     <span class="aliya-check-knob" :class="{ 'is-checked': checked }" aria-hidden="true">
       <svg v-if="checked" viewBox="0 0 24 24" class="aliya-check-icon">
         <path d="M5 12.5l4.5 4.5L19 7.5" />
       </svg>
-      <AppIcon v-else name="chevron-right" :size="20" />
+      <AppIcon v-else name="chevron-right" :size="18" />
     </span>
   </button>
 </template>
 
 <style scoped>
-/* A round control (docs/design.md): the track is a pill, the knob a disc.
-   The swipe goes to the right in every language, as everywhere in the app,
-   so the knob is placed with physical sides. */
+/* A round control (docs/design.md): the track is a pill, the knob a disc,
+   both in flat colors, with no border and no shadow. The track takes the
+   tone of the other flat controls (the text size A- / A+), the knob the
+   brand color. The swipe goes to the right in every language, as everywhere
+   in the app, so the knob is placed with physical sides. */
 .aliya-check {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
-  max-width: 24rem;
-  min-height: 60px;
+  max-width: 18rem;
+  height: 44px;
   margin-inline: auto;
-  padding: 8px 64px;
+  padding: 0 48px;
   overflow: hidden;
-  border: 1.5px solid var(--color-line-strong);
   border-radius: var(--radius-pill);
-  background: var(--color-surface);
+  background: color-mix(in srgb, var(--color-text-primary) 6%, transparent);
   touch-action: pan-y;
   user-select: none;
   -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
-  transition:
-    border-color 0.2s ease,
-    background-color 0.2s ease;
 }
 .aliya-check:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
-}
-.aliya-check.is-done {
-  border-color: color-mix(in srgb, var(--color-primary) 45%, transparent);
 }
 
 /* The band the knob leaves behind it: one flat tint, no gradient. */
@@ -147,8 +144,8 @@ const checked = computed(() => (props.done ? !armed.value : armed.value));
   position: absolute;
   inset-block: 0;
   left: 0;
-  width: calc(48px + 12px + var(--offset));
-  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  width: calc(36px + 8px + var(--offset));
+  background: color-mix(in srgb, var(--color-brand) 22%, transparent);
   transition: width 0.25s ease;
 }
 .aliya-check.is-done .aliya-check-fill {
@@ -160,66 +157,46 @@ const checked = computed(() => (props.done ? !armed.value : armed.value));
 
 .aliya-check-text {
   position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
   min-width: 0;
-  text-align: center;
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--color-text-primary);
   opacity: calc(1 - var(--share) * 0.7);
 }
-.aliya-check-name {
-  font-size: 15px;
-  font-weight: 700;
-  line-height: 1.25;
-  color: var(--color-text-primary);
-}
-.aliya-check-sub {
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1.3;
-  color: var(--color-text-secondary);
-}
-.aliya-check.is-done .aliya-check-sub {
+.aliya-check-done {
   color: var(--color-primary);
 }
 
 .aliya-check-knob {
   position: absolute;
   top: 50%;
-  left: 6px;
+  left: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
-  border: 2px solid var(--color-primary);
+  width: 36px;
+  height: 36px;
   border-radius: var(--radius-pill);
-  background: var(--color-surface);
-  color: var(--color-primary);
-  box-shadow: var(--shadow-card-hover);
+  background: var(--color-brand);
+  color: var(--color-on-brand);
   transform: translate(var(--offset), -50%);
   transition:
     left 0.25s ease,
-    transform 0.25s ease,
-    background-color 0.15s ease,
-    color 0.15s ease;
+    transform 0.25s ease;
 }
 .aliya-check.is-done .aliya-check-knob {
-  left: calc(100% - 48px - 6px);
+  left: calc(100% - 36px - 4px);
 }
 .aliya-check.is-dragging .aliya-check-knob {
-  transition:
-    background-color 0.15s ease,
-    color 0.15s ease;
-}
-.aliya-check-knob.is-checked {
-  border-color: var(--color-brand);
-  background: var(--color-brand);
-  color: var(--color-on-brand);
+  transition: none;
 }
 .aliya-check-icon {
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   fill: none;
   stroke: currentColor;
   stroke-width: 2.6;
@@ -228,7 +205,6 @@ const checked = computed(() => (props.done ? !armed.value : armed.value));
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .aliya-check,
   .aliya-check-fill,
   .aliya-check-knob {
     transition: none;

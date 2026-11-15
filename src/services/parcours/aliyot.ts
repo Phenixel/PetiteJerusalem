@@ -64,6 +64,25 @@ export function aliyotFloor(since: DayKey, day: DayKey, count: number): number {
   return since > weekStart(day) ? aliyotOfWeekday(count, weekdayOf(since)).from : 0;
 }
 
+/**
+ * The height of an aliyah's check (AliyaCheck.vue), and the gaps between its
+ * two checks and its text (DailyReadingItem.vue): what the checks add to the
+ * text they surround.
+ */
+export const ALIYA_CHECK_HEIGHT = 44;
+const ALIYA_CHECK_GAPS = 16 + 16;
+
+/**
+ * The two checks of an aliyah can be on the screen at the same time: its text
+ * is short enough for the check above it and the check below it to fit
+ * together in the window. The page then keeps only the one at its end. A
+ * text not laid out yet (no height) is not short.
+ */
+export function aliyaChecksShareScreen(textHeight: number, viewportHeight: number): boolean {
+  if (textHeight <= 0) return false;
+  return textHeight + 2 * ALIYA_CHECK_HEIGHT + ALIYA_CHECK_GAPS <= viewportHeight;
+}
+
 /** Le nom d'une coche dans le journal : « aliya:1 » pour la 1re montée de la semaine. */
 const MARK_PREFIX = "aliya:";
 export const aliyaMark = (aliya: number): string => `${MARK_PREFIX}${aliya + 1}`;
