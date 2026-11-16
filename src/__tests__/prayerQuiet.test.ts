@@ -203,9 +203,12 @@ describe("the native side of the quiet modes", () => {
     expect(pause).toContain("if (screenOn()) leave();");
     expect(pause).toContain("else waitForUnlock();"); // unlocked onto another app is
     expect(body("handleOnResume")).toContain("comeBack();");
-    // Only what is still as the app set it.
-    expect(java).toContain("currentDnd() == dndTo && applyDnd(dndFrom)");
-    expect(java).toContain("ringerTo.equals(currentRinger()) && applyRinger(ringerFrom)");
+    // Only what is still as the app set it, both read before either is
+    // written (turning Do Not Disturb off can move the ringer).
+    const leave = java.slice(java.indexOf("private synchronized void leave()"));
+    expect(leave).toMatch(
+      /currentDnd\(\) == dndTo;\s+boolean ringer = [^;]*ringerTo\.equals\(currentRinger\(\)\);\s+if \(dnd && applyDnd\(dndFrom\)\)/,
+    );
   });
 
   it("is Android only (iOS gives no access to the silent switch or Focus)", () => {

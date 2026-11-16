@@ -240,26 +240,27 @@ public class PjQuietPlugin extends Plugin {
      * The app is left in the middle of a tefila: what it changed goes back
      * to how it was before, as when the tefila is left, and only what is
      * still as the app set it (a setting changed again by the user is
-     * theirs).
+     * theirs). Both are read before either is written: on some Android
+     * versions, turning Do Not Disturb off moves the ringer too, which
+     * would then not be put on again on return.
      */
     private synchronized void leave() {
-        if (dndTo != null && !dndReleased && currentDnd() == dndTo && applyDnd(dndFrom)) {
-            dndReleased = true;
-        }
-        if (ringerTo != null && !ringerReleased && ringerTo.equals(currentRinger()) && applyRinger(ringerFrom)) {
-            ringerReleased = true;
-        }
+        boolean dnd = dndTo != null && !dndReleased && currentDnd() == dndTo;
+        boolean ringer = ringerTo != null && !ringerReleased && ringerTo.equals(currentRinger());
+        if (dnd && applyDnd(dndFrom)) dndReleased = true;
+        if (ringer && applyRinger(ringerFrom)) ringerReleased = true;
     }
 
     /**
      * Back to the tefila: what leaving set back is put on again, unless the
-     * user changed it in the meantime.
+     * user changed it in the meantime (read before anything is written, as
+     * in leave).
      */
     private synchronized void comeBack() {
-        if (dndReleased && dndTo != null && currentDnd() == dndFrom) applyDnd(dndTo);
-        if (ringerReleased && ringerTo != null && ringerFrom.equals(currentRinger())) {
-            applyRinger(ringerTo);
-        }
+        boolean dnd = dndReleased && dndTo != null && currentDnd() == dndFrom;
+        boolean ringer = ringerReleased && ringerTo != null && ringerFrom.equals(currentRinger());
+        if (dnd) applyDnd(dndTo);
+        if (ringer) applyRinger(ringerTo);
         dndReleased = false;
         ringerReleased = false;
     }
