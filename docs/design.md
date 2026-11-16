@@ -4287,8 +4287,19 @@ app down, as when the screen is split in two (`PrayerQuietPanel.vue`,
   was already on before stays on, and a setting the user changed again from
   the quick settings is theirs. The way back waits three seconds, so that
   Min'ha then Arvit is one prayer (no second panel once « Fermer » was
-  touched). An app closed in the
-  middle of a tefila sets the phone back at its next launch.
+  touched).
+- **Leaving the app is leaving the tefila.** The home screen, another app,
+  the recent apps (and the app swiped away from them), a call: the phone
+  goes back to how it was at once, without the three seconds, since the
+  app may never run again; coming back to the tefila puts the same modes
+  on again. Users whose phone stayed in Do Not Disturb for hours after
+  leaving the app in the middle of a tefila reported it. The screen turned
+  off with the power button is not leaving: the text keeps the screen on,
+  so it was turned off on purpose, in the middle of the prayer (the 'amida
+  said with the phone in a pocket); but a phone then unlocked onto another
+  app is. Neither is the trip to the Do Not Disturb access list. An app
+  ended by the system while the screen was off sets the phone back at its
+  next launch.
 - **The choices.** « Fermer » keeps the modes for this prayer.
   « À chaque tefila » keeps the modes that are on and turns them on by
   themselves at every tefila, and still sets the phone back at the end.

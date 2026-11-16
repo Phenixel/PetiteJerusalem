@@ -15,8 +15,10 @@ import fr from "../locales/fr";
  *  - the panel only opens in the Android app, with a plugin that answers;
  *  - what is changed is changed for the prayer: once the tefila is left, the
  *    phone goes back to how it was, except what the user changed again
- *    themselves; Min'ha then Arvit is one prayer; an app closed in the
- *    middle sets the phone back at the next launch;
+ *    themselves; Min'ha then Arvit is one prayer; the app left in the
+ *    middle (home screen, another app, swiped away) sets the phone back at
+ *    once, from the plugin, and puts it on again back on the tefila; an app
+ *    killed in the middle sets the phone back at the next launch;
  *  - the panel stays open until « Fermer », and comes back with the tefila
  *    (reopened, back from another app) as long as it was not touched;
  *  - in the settings, which modes and whether the panel shows are two
@@ -47,6 +49,7 @@ const plugin = vi.hoisted(() => ({
   stop: vi.fn(() => Promise.resolve()),
   setDnd: vi.fn(),
   setRinger: vi.fn(),
+  hold: vi.fn(() => Promise.resolve()),
   openAccessSettings: vi.fn(),
 }));
 const toast = vi.hoisted(() => vi.fn());
@@ -67,6 +70,7 @@ vi.mock("@capacitor/core", () => ({
     stop: plugin.stop,
     setDnd: plugin.setDnd,
     setRinger: plugin.setRinger,
+    hold: plugin.hold,
     openAccessSettings: plugin.openAccessSettings,
     addListener: (_event: string, listener: (state: State) => void) => {
       phone.listener = listener;
@@ -131,6 +135,7 @@ beforeEach(() => {
   resetPrayerQuiet();
   resetOverlayStack();
   plugin.stop.mockClear();
+  plugin.hold.mockReset().mockImplementation(() => Promise.resolve());
   toast.mockClear();
   platform.native = true;
   platform.name = "android";
@@ -183,6 +188,24 @@ describe("the native side of the quiet modes", () => {
     expect(setup).toContain("registerPlugin(PjQuietPlugin.class);");
     expect(java).toContain('@CapacitorPlugin(name = "PjQuiet")');
     expect(bridge).toContain('registerPlugin<PjQuietBridge>("PjQuiet")');
+  });
+
+  it("sets the phone back itself when the app is left, not when the screen is turned off", () => {
+    // Leaving the app gives the page no time (the process may be ended right
+    // after): the plugin undoes what the page held, on the main thread.
+    const body = (name: string) => {
+      const start = java.indexOf(`protected void ${name}()`);
+      return java.slice(start, java.indexOf("\n    }\n", start));
+    };
+    expect(java).toContain("public void hold(PluginCall call)");
+    const pause = body("handleOnPause");
+    expect(pause).toContain("if (toSettings) return;"); // the access list is not leaving
+    expect(pause).toContain("if (screenOn()) leave();");
+    expect(pause).toContain("else waitForUnlock();"); // unlocked onto another app is
+    expect(body("handleOnResume")).toContain("comeBack();");
+    // Only what is still as the app set it.
+    expect(java).toContain("currentDnd() == dndTo && applyDnd(dndFrom)");
+    expect(java).toContain("ringerTo.equals(currentRinger()) && applyRinger(ringerFrom)");
   });
 
   it("is Android only (iOS gives no access to the silent switch or Focus)", () => {
@@ -298,6 +321,51 @@ describe("the phone set for the prayer, and back after it", () => {
     document.dispatchEvent(new Event("visibilitychange"));
     await vi.advanceTimersByTimeAsync(0);
     expect(prayerQuiet.open).toBe(false);
+  });
+
+  it("hands what it changed to the plugin, which sets it back if the app is left", async () => {
+    await enterPrayer();
+    await toggleQuietMode("dnd", true);
+    expect(plugin.hold).toHaveBeenLastCalledWith({ dndFrom: false, dndTo: true });
+    await toggleQuietMode("vibrate", true);
+    expect(plugin.hold).toHaveBeenLastCalledWith({
+      dndFrom: false,
+      dndTo: true,
+      ringerFrom: "normal",
+      ringerTo: "vibrate",
+    });
+    // Turned off again in the panel: nothing left to undo for it.
+    await toggleQuietMode("dnd", false);
+    expect(plugin.hold).toHaveBeenLastCalledWith({ ringerFrom: "normal", ringerTo: "vibrate" });
+    closePrayerQuiet();
+    // Still held during the grace (the app may be left then too), let go after.
+    leavePrayer();
+    await vi.advanceTimersByTimeAsync(1000);
+    expect(plugin.hold).toHaveBeenLastCalledWith({ ringerFrom: "normal", ringerTo: "vibrate" });
+    await vi.advanceTimersByTimeAsync(LEAVE_GRACE_MS);
+    expect(plugin.hold).toHaveBeenLastCalledWith({});
+  });
+
+  it("a tefila reopened on a prayer the app was closed in holds it again", async () => {
+    await enterPrayer();
+    await toggleQuietMode("dnd", true);
+    const saved = localStorage.getItem("pj-prayer-quiet-session");
+    resetPrayerQuiet();
+    plugin.hold.mockClear();
+    localStorage.setItem("pj-prayer-quiet-session", saved!);
+    await enterPrayer();
+    expect(plugin.hold).toHaveBeenCalledWith({ dndFrom: false, dndTo: true });
+  });
+
+  it("a binary without the method keeps the prayer as before", async () => {
+    plugin.hold.mockImplementation(() =>
+      Promise.reject(new Error('"PjQuiet.hold()" is not implemented on android')),
+    );
+    await enterPrayer();
+    await toggleQuietMode("dnd", true);
+    expect(phone.state.dnd).toBe(true);
+    await leaveAndWait();
+    expect(phone.state.dnd).toBe(false);
   });
 
   it("an app closed during the tefila sets the phone back at the next launch", async () => {
