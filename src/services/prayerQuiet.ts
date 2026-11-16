@@ -37,12 +37,26 @@ interface PjQuietBridge {
   stop(): Promise<void>;
   setDnd(options: { on: boolean }): Promise<QuietResult>;
   setRinger(options: { mode: RingerMode }): Promise<QuietResult>;
+  /** What the tefila under way changed, undone natively if the app is left. */
+  hold(options: QuietHold): Promise<void>;
   /** The system list of Do Not Disturb access; false when the phone has none. */
   openAccessSettings(): Promise<{ opened: boolean }>;
   addListener(
     event: "change",
     listener: (state: QuietState) => void,
   ): Promise<PluginListenerHandle> & PluginListenerHandle;
+}
+
+/**
+ * What the tefila under way changed, setting by setting: the value before
+ * the prayer (`from`) and the value the app set (`to`). Flat, as the plugin
+ * reads it; empty once the prayer is over.
+ */
+export interface QuietHold {
+  dndFrom?: boolean;
+  dndTo?: boolean;
+  ringerFrom?: RingerMode;
+  ringerTo?: RingerMode;
 }
 
 const PjQuiet = registerPlugin<PjQuietBridge>("PjQuiet");
@@ -74,6 +88,39 @@ export async function setRinger(mode: RingerMode): Promise<QuietResult> {
 export async function setQuietMode(mode: QuietMode, on: boolean): Promise<QuietResult> {
   if (mode === "dnd") return setDnd(on);
   return setRinger(on ? mode : "normal");
+}
+
+/**
+ * Hands the plugin what the tefila under way changed (null once it is
+ * over). The page only sets the phone back when the tefila is left inside
+ * the app; leaving the app (home screen, another app, swiped away from the
+ * recent apps) gives it no time, and the process may be ended right after:
+ * the plugin sets the phone back itself at that moment, and puts the modes
+ * on again if the app comes back to the tefila. Nothing on a binary older
+ * than the method: the phone is then set back when the tefila is left, or
+ * at the next launch.
+ */
+export function holdQuietChanges(
+  changes: {
+    before: { dnd: boolean; ringer: RingerMode };
+    set: { dnd?: boolean; ringer?: RingerMode };
+  } | null,
+): void {
+  if (!quietModesSupported) return;
+  const options: QuietHold = {};
+  if (changes?.set.dnd !== undefined) {
+    options.dndFrom = changes.before.dnd;
+    options.dndTo = changes.set.dnd;
+  }
+  if (changes?.set.ringer !== undefined) {
+    options.ringerFrom = changes.before.ringer;
+    options.ringerTo = changes.set.ringer;
+  }
+  try {
+    PjQuiet.hold(options).catch(() => {});
+  } catch {
+    // Binary without the plugin.
+  }
 }
 
 /** The phone's state, once; null outside the Android app or without the plugin. */

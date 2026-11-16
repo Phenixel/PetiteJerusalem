@@ -571,7 +571,24 @@ plugin (the panel then stays closed).
 What the app changes is changed for the prayer, and undone when the tefila
 is left. The phone as it was before and what was changed since are kept in
 the two device storages (`pj-prayer-quiet-session`), so that an app killed
-in the middle of a tefila sets the phone back at its next launch. The
+in the middle of a tefila sets the phone back at its next launch.
+
+Leaving the app in the middle of a tefila undoes it too, from the plugin:
+once the activity is paused the page may never run again (the process ended
+by the system, the task swiped away from the recent apps). The page hands
+the plugin what the prayer changed each time it changes (`hold`, flat
+options `dndFrom` / `dndTo`, `ringerFrom` / `ringerTo`, empty once the
+prayer is over), and `handleOnPause` sets back what is still as the app set
+it, synchronously, on the main thread; `handleOnResume` puts it on again.
+Two pauses are not leaving: the trip to the access list opened by
+`openAccessSettings`, and the screen turned off (`PowerManager.isInteractive`
+false; the text holds the screen on, so the power button was pressed on
+purpose). In that case the plugin waits for the phone to be unlocked
+(`ACTION_USER_PRESENT`, or `ACTION_SCREEN_ON` without a keyguard): two
+seconds later, if the app has not come back, it was unlocked onto another
+app, and the phone is set back. A binary older than `hold` ignores it: the
+phone is then set back only when the tefila is left inside the app, or at
+the next launch. The
 panel's choice (offer, apply by itself, nothing), the modes kept for every
 tefila and whether the panel still reminds them (`remind`, written only
 when false, so that an older app reads the same choice) live in
