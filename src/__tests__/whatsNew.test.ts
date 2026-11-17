@@ -1,4 +1,4 @@
-import { existsSync, statSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -195,5 +195,79 @@ describe("the published video", () => {
   it("falls back to French for a language without its video", async () => {
     const { whatsNewVideoUrl } = await import("../composables/useWhatsNew");
     expect(whatsNewVideoUrl("de")).toMatch(/-fr\.mp4$/);
+  });
+
+  /**
+   * iOS plays a video only from a server that answers a byte range with a
+   * 206, and Firebase Hosting answers ranges only for a file its CDN may
+   * cache: left on the `no-cache` of the catch-all, the video never played
+   * in the iOS app (376 launches, 53 readers, from 4.0 on; the Android app,
+   * which streams it whole, played it). The webview also reads it from its
+   * own origin (`capacitor://localhost`), as it does the texts and the
+   * fonts, hence the cross-origin header.
+   */
+  it("is served cacheable and cross-origin, so the app can play it", () => {
+    const hosting = JSON.parse(readFileSync(join(process.cwd(), "firebase.json"), "utf8")).hosting;
+    const rules: { source: string; headers: { key: string; value: string }[] }[] = hosting.headers;
+    const media = "**/*.@(mp4|m4v|webm|mp3|m4a)";
+    const header = (key: string) =>
+      rules.find((rule) => rule.source === media)?.headers.find((one) => one.key === key)?.value;
+    expect(header("Cache-Control"), `firebase.json: ${media} must stay cacheable`).toMatch(
+      /^public,/,
+    );
+    expect(header("Access-Control-Allow-Origin")).toBe("*");
+    // After the catch-all, whose `no-cache` it has to override.
+    expect(rules.findIndex((rule) => rule.source === media)).toBeGreaterThan(
+      rules.findIndex((rule) => rule.source === "**"),
+    );
+  });
+});
+
+describe("when it does not load", () => {
+  it("says what failed: the player's own error, or the wait", async () => {
+    const { analyticsService } = await import("../services/analyticsService");
+    const capture = vi.spyOn(analyticsService, "capture").mockImplementation(() => {});
+    const { useWhatsNew } = await import("../composables/useWhatsNew");
+    useWhatsNew().replayWhatsNew();
+    const shown = await mountVideo("/aide");
+    Object.defineProperty(shown.video, "error", {
+      configurable: true,
+      value: { code: 4, message: "The operation is not supported." },
+    });
+    shown.video.dispatchEvent(new Event("error"));
+    expect(capture).toHaveBeenCalledWith(
+      "whats_new_video_closed",
+      expect.objectContaining({
+        via: "error",
+        error_source: "media",
+        error_code: 4,
+        error_message: "The operation is not supported.",
+      }),
+    );
+    shown.unmount();
+  });
+
+  it("reports the wait that ran out, with no error of its own", async () => {
+    vi.useFakeTimers();
+    try {
+      const { analyticsService } = await import("../services/analyticsService");
+      const capture = vi.spyOn(analyticsService, "capture").mockImplementation(() => {});
+      const { useWhatsNew } = await import("../composables/useWhatsNew");
+      useWhatsNew().replayWhatsNew();
+      const shown = await mountVideo("/aide");
+      vi.advanceTimersByTime(20000);
+      expect(capture).toHaveBeenCalledWith(
+        "whats_new_video_closed",
+        expect.objectContaining({
+          via: "error",
+          error_source: "timeout",
+          error_code: null,
+          error_message: null,
+        }),
+      );
+      shown.unmount();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

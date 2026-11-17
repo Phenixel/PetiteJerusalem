@@ -31,6 +31,8 @@ import {
   useSectionPosition,
 } from "../composables/useReadingNav";
 import { useScrollFrame } from "../composables/useScrollFrame";
+import { selectedPassageKey } from "../composables/useReadingSelection";
+import { sideBySide } from "../composables/useSideBySide";
 import { useOverlay } from "../composables/useOverlayStack";
 import { tipsOffered } from "../composables/useFeatureTips";
 import type { BookState } from "../composables/useBookDownload";
@@ -131,10 +133,11 @@ const props = withDefaults(
     /** L'adresse publique du texte ; à défaut, celle de la page ouverte. */
     shareUrl?: string;
     /**
-     * Un volet occupe le bas de l'écran (le panneau d'étude, les commandes
-     * d'un passage dans l'app) ou sa droite (le panneau sur un écran large),
-     * là où se posent les boutons ronds : ils s'effacent le temps qu'il est
-     * ouvert.
+     * A panel of the page takes the bottom of the screen (the study panel)
+     * or its right side (the panel on a wide screen), where the round
+     * buttons sit: they step aside while it is open. The commands of a
+     * chosen passage need no prop: the menu hides behind them by itself
+     * (passageSheetOpen).
      */
     concealed?: boolean;
     /** Le texte peut se mettre de côté sur la table d'étude (useReadingTable). */
@@ -199,6 +202,17 @@ const bottomRem = computed(() => {
 // scrollHeight à chaque événement de défilement.
 const scrollFrame = useScrollFrame();
 const atBottom = computed(() => scrollFrame.value.atBottom);
+
+/**
+ * On a phone, the commands of a chosen passage (ReadingSelectionMenu) rise in
+ * a bottom sheet, right where the round buttons sit: in the app the menu
+ * button landed on « Marque-page ». The menu steps aside while the sheet is
+ * up, on every page that reads passages (chnei mikra, Tehilim of the day,
+ * daily reading, shared session), not only on the ones that remembered to
+ * pass `concealed`. On a wide screen the commands are a bubble on the
+ * passage itself, which leaves the corner free.
+ */
+const passageSheetOpen = computed(() => !sideBySide.value && selectedPassageKey.value !== null);
 
 /**
  * A text with landmarks names the one being read in its button, as soon as
@@ -542,7 +556,7 @@ onUnmounted(() => {
     leave-to-class="transform translate-y-10 opacity-0"
   >
     <div
-      v-show="(!atBottom || open) && !concealed && !readingScrubbing"
+      v-show="(!atBottom || open) && !concealed && !passageSheetOpen && !readingScrubbing"
       class="fixed right-6 z-50"
       :style="{ '--menu-bottom': `${bottomRem}rem`, bottom: `${bottomRem}rem` }"
     >

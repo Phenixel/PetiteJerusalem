@@ -297,6 +297,18 @@ The video is made with the promotional videos (section 11, `promo/`, the
 `WHATS_NEW_VERSION` and is published under its name, in the three languages
 (`whatsNew.test.ts` checks that the files the code asks for exist).
 
+**The site must serve it cacheable.** iOS plays a video only from a server
+that answers a byte range with a 206, and Firebase Hosting answers ranges
+only for a file its CDN may cache: under the `no-cache` of the catch-all,
+every launch of the iOS app failed to load the 4.0 video from 4.0 on (376
+launches, 53 readers, none of whom saw it, while the Android app, which
+streams the file whole, played it). Media files therefore carry their own
+headers in `firebase.json` (`public, max-age=604800`, plus the cross-origin
+header the webview needs for what it reads from the site, as the texts and
+the fonts do), and `whatsNew.test.ts` holds the rule. When it does not load,
+the way out says what failed (`error_source`, `error_code`: see
+`docs/tracking-plan.md`), so the next failure is readable without a device.
+
 ### The help center shows how, part by part
 
 The app has grown rich enough that much of it stays obscure until someone
@@ -1722,21 +1734,46 @@ it off where one stops reading, and whoever read it elsewhere (at the
 synagogue, on another device) checks it at the top without scrolling down.
 Both show the same state.
 
-The check is a pill track as wide as a button row (up to 24 rem, 60 px
-high), with a 48 px disc on the left carrying a chevron, the aliyah's name
-in the middle and « Glissez à droite une fois lue » ("Swipe right once
-read") under it. It is **swiped right**, as a card of the home stack or of
-the Sidour says it is done: the disc follows the finger, leaving a flat
-band of the theme color behind it (no gradient), the words fade as it
-covers them, and past 110 px it turns to the brand color with its check
-(one "threshold" beat). Let go there, the aliyah is read: the disc rests on
-the right, checked, the band fills the track and the line under the name
-says « Lue » ("Read") in the theme color. Swiped back to the left, it is
-unread again. The swipe goes right in every language, as everywhere in the
-app. A tap does the same (a mouse, a screen reader, Enter or Space): the
-gesture is the invitation, never the only way. It replaces a small
-« Marquer comme lue » link at the end of each aliyah, borrowed from « Mes
-Téhilim », which was easy to miss and sat only at the bottom.
+The check is a pill track up to 18 rem wide and 44 px high, with a 36 px
+disc on the left carrying a chevron and the aliyah's name in the middle, on
+one line, with **no border and no shadow**. Unread, it holds **no orange at
+all**: the track is white (the surface of a card), the disc a soft gray (the
+text color at 7 %) with its chevron in the secondary text color. A first
+version, a 60 px track with a border, a white disc ringed in the theme
+color with a shadow, and « Glissez à droite une fois lue » ("Swipe right
+once read") under the name, was too large and too wordy for a control met
+fourteen times in a paracha, and its borders were not the site's.
+
+The orange comes with the gesture, in motion. It is **swiped right**, as a
+card of the home stack or of the Sidour says it is done: as soon as the
+disc moves it turns solid brand color, and a band of the same flat color
+(no gradient) follows it, rounded at its end, the name fading as it covers
+it; past 110 px the disc takes its check (one "threshold" beat). Let go
+there, or tap, the aliyah is read: the band **sweeps across the whole
+track** (0.6 s, a quick start and a long soft landing), the disc slides to
+the right and turns white, then lands with a small bounce while its check
+draws itself in the theme color, and the line says « 1re montée · Lue » in
+the color written on the brand (`on-brand`). The bounce and the drawn check
+play only on the check one has just touched, not on one that opens already
+read, nor on its twin at the other end of the aliyah. Swiped back to the
+left, or tapped, the band withdraws under the disc and fades: unread again.
+With reduced motion, the states change without moving. The swipe goes right
+in every language, as everywhere in the app. A tap does the same (a mouse,
+a screen reader, Enter or Space): the gesture is the invitation, never the
+only way. It replaces a small « Marquer comme lue » link at the end of each
+aliyah, borrowed from « Mes Téhilim », which was easy to miss and sat only
+at the bottom.
+
+**Never both checks of an aliyah on the screen at once.** An aliyah whose
+text is short enough for the check above it and the check below it to fit
+together in the window keeps only the one at its end, and its plain title
+above the text (`aliyaChecksShareScreen` in `services/parcours/aliyot.ts`).
+The same control twice in one glance was one too many, and the end one is
+where one checks off what one has just read. The test is made on the text
+alone, which the choice does not change, so the page never flips between
+the two; it runs again when the text resizes (text size, verses written
+twice, Rashi) and when the window does. Held by
+`src/__tests__/aliyaCheck.test.ts`.
 
 **No check for a single aliyah that ends with the pull.** Opened from Mon
 parcours for one aliyah (`?montees=3&objectif=`), the reading ends with the
@@ -4262,8 +4299,19 @@ app down, as when the screen is split in two (`PrayerQuietPanel.vue`,
   was already on before stays on, and a setting the user changed again from
   the quick settings is theirs. The way back waits three seconds, so that
   Min'ha then Arvit is one prayer (no second panel once « Fermer » was
-  touched). An app closed in the
-  middle of a tefila sets the phone back at its next launch.
+  touched).
+- **Leaving the app is leaving the tefila.** The home screen, another app,
+  the recent apps (and the app swiped away from them), a call: the phone
+  goes back to how it was at once, without the three seconds, since the
+  app may never run again; coming back to the tefila puts the same modes
+  on again. Users whose phone stayed in Do Not Disturb for hours after
+  leaving the app in the middle of a tefila reported it. The screen turned
+  off with the power button is not leaving: the text keeps the screen on,
+  so it was turned off on purpose, in the middle of the prayer (the 'amida
+  said with the phone in a pocket); but a phone then unlocked onto another
+  app is. Neither is the trip to the Do Not Disturb access list. An app
+  ended by the system while the screen was off sets the phone back at its
+  next launch.
 - **The choices.** « Fermer » keeps the modes for this prayer.
   « À chaque tefila » keeps the modes that are on and turns them on by
   themselves at every tefila, and still sets the phone back at the end.

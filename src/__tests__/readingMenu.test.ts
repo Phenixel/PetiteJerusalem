@@ -30,6 +30,7 @@ import { autoScrollEnabled, setAutoScrollEnabled } from "../composables/useAutoS
 import { sansTahanoun, setSansTahanoun } from "../composables/useSansTahanoun";
 import { halakhotHidden, setHalakhotHidden } from "../composables/useHalakhot";
 import { closeFeedback, isFeedbackOpen } from "../composables/useFeedback";
+import { clearPassage, selectPassage } from "../composables/useReadingSelection";
 import {
   incipit,
   lineAnchor,
@@ -344,6 +345,33 @@ describe("menu de lecture", () => {
     const liens = [...host.querySelectorAll<HTMLAnchorElement>("a.action-item")];
     expect(liens.length).toBeGreaterThan(0);
     for (const lien of liens) expect(lien.href).toMatch(/^https:\/\//);
+  });
+});
+
+describe("passage choisi sur un téléphone", () => {
+  beforeEach(() => {
+    document.body.innerHTML = "";
+    localStorage.clear();
+    clearPassage();
+  });
+
+  // The commands of a chosen passage rise in a bottom sheet at the bottom of
+  // a phone screen, where the round buttons sit: in the app, the menu button
+  // covered « Marque-page » on the chnei mikra page, which did not pass
+  // `concealed`. The menu now hides by itself, on every page.
+  it("s'efface derrière les commandes du passage, sans que la page le demande", async () => {
+    const { host } = await ouvre();
+    const boutons = boutonMenu(host).closest<HTMLElement>(".fixed")!;
+    expect(boutons.style.display).not.toBe("none");
+
+    const el = document.createElement("p");
+    selectPassage({ key: "1#0#4", el, hebrew: "", place: "Béréchit 28 · verset 13", url: "" });
+    await settle();
+    expect(boutons.style.display).toBe("none");
+
+    clearPassage();
+    await settle();
+    expect(boutons.style.display).not.toBe("none");
   });
 });
 

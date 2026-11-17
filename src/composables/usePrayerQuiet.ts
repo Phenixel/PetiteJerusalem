@@ -3,6 +3,7 @@ import { i18n } from "../i18n";
 import { SHEET_EASING } from "../components/chiourim/sheetMotion";
 import { devicePreference } from "../services/devicePreference";
 import {
+  holdQuietChanges,
   isQuietModeOn,
   openQuietAccessSettings,
   quietModesSupported,
@@ -27,10 +28,12 @@ import { useToast } from "./useToast";
  * quiet modes »). The app stays usable below it, as on a split screen.
  *
  * What is changed is changed for the prayer: once the tefila is left, the
- * phone goes back to how it was (`enterPrayer` / `leavePrayer`). The panel
- * also offers to stop offering it, or to apply the same modes to every
- * tefila from then on (`prayerQuietChoice`); it then still comes, as a
- * reminder of what is on, until it is told not to.
+ * phone goes back to how it was (`enterPrayer` / `leavePrayer`); the app
+ * left in the middle of it too, by the plugin itself (`holdQuietChanges`),
+ * which puts the modes on again if the app comes back to the tefila. The
+ * panel also offers to stop offering it, or to apply the same modes to
+ * every tefila from then on (`prayerQuietChoice`); it then still comes, as
+ * a reminder of what is on, until it is told not to.
  *
  * Three pieces of state live here, at the app's level:
  *  - the panel and the phone's state (`prayerQuiet`);
@@ -193,8 +196,13 @@ let stopWatching: (() => void) | null = null;
 let pending: { mode: QuietMode; on: boolean } | null = null;
 const busy = new Set<QuietMode>();
 
+/**
+ * Keeps the prayer under way on the device, and hands what it changed to the
+ * plugin, which sets the phone back if the app is left before the tefila.
+ */
 function remember(): void {
   if (!session) return;
+  holdQuietChanges(session);
   const changed = session.set.dnd !== undefined || session.set.ringer !== undefined;
   if (changed || session.dismissed) sessionStore.write(session);
   else sessionStore.clear();
@@ -241,6 +249,7 @@ export async function enterPrayer(): Promise<void> {
   const leftover = session ?? sessionStore.read() ?? (await sessionStore.restore());
   if (entry !== generation) return;
   session = leftover ?? { before: { dnd: state.dnd, ringer: state.ringer }, set: {} };
+  if (leftover) holdQuietChanges(session);
   const { mode, wish, remind } = choice.value;
   if (mode === "never") return;
   if (mode === "always" && wish && (await applyWish(wish, state, entry, !remind))) {
@@ -350,6 +359,7 @@ async function endPrayer(): Promise<void> {
   const ended = session;
   session = null;
   sessionStore.clear();
+  holdQuietChanges(null);
   if (ended) await setBack(ended);
 }
 

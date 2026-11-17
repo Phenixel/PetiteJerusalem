@@ -50,7 +50,7 @@ import { takeLegacyChecks } from "../../composables/useChneiMikraChecks";
 import BookmarkRibbon from "../../components/BookmarkRibbon.vue";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import AliyaCheck from "../../components/AliyaCheck.vue";
-import { aliyaAnchor } from "../../services/parcours/aliyot";
+import { aliyaAnchor, aliyaChecksShareScreen } from "../../services/parcours/aliyot";
 
 const props = defineProps<{
   entry: TextStudyJsonEntry;
@@ -259,6 +259,56 @@ function aliyaIndex(section: TextSection, block: TextBlock): number {
 }
 function isAliyaChecked(section: TextSection, block: TextBlock): boolean {
   return props.checkedAliyot?.includes(aliyaIndex(section, block)) ?? false;
+}
+/**
+ * An aliyah short enough for its two checks to be on the screen together
+ * keeps only the one at its end, and its plain title above its text: the
+ * same check twice in one glance was one too many (docs/design.md). Measured
+ * on the text alone, which this choice does not change, so the page never
+ * flips between the two; again when the text resizes (text size, verses
+ * written twice, Rashi) and when the window does.
+ */
+const shortAliyot = ref<ReadonlySet<string>>(new Set());
+const aliyaTexts = new Map<string, HTMLElement>();
+let aliyaResize: ResizeObserver | null = null;
+let measureFrame = 0;
+const aliyaKey = (section: TextSection, block: TextBlock): string =>
+  `${section.index}:${block.offset}`;
+function isShortAliya(section: TextSection, block: TextBlock): boolean {
+  return shortAliyot.value.has(aliyaKey(section, block));
+}
+function measureAliyot(): void {
+  measureFrame = 0;
+  const next = new Set<string>();
+  for (const [key, el] of aliyaTexts) {
+    if (aliyaChecksShareScreen(el.offsetHeight, window.innerHeight)) next.add(key);
+  }
+  const before = shortAliyot.value;
+  if (next.size !== before.size || [...next].some((key) => !before.has(key))) {
+    shortAliyot.value = next;
+  }
+}
+function scheduleAliyaMeasure(): void {
+  if (!measureFrame) measureFrame = requestAnimationFrame(measureAliyot);
+}
+/** The ref of an aliyah's text: followed while it is on the page. */
+function aliyaTextRef(section: TextSection, block: TextBlock) {
+  const key = aliyaKey(section, block);
+  return (el: unknown) => {
+    const known = aliyaTexts.get(key);
+    if (known === el) return;
+    if (known) aliyaResize?.unobserve(known);
+    if (el instanceof HTMLElement) {
+      aliyaTexts.set(key, el);
+      if (!aliyaResize && typeof ResizeObserver !== "undefined") {
+        aliyaResize = new ResizeObserver(scheduleAliyaMeasure);
+      }
+      aliyaResize?.observe(el);
+    } else {
+      aliyaTexts.delete(key);
+    }
+    scheduleAliyaMeasure();
+  };
 }
 function setAliya(section: TextSection, block: TextBlock, done: boolean): void {
   if (!props.aliyaWeek || done === isAliyaChecked(section, block)) return;
@@ -469,6 +519,7 @@ let observer: IntersectionObserver | null = null;
 
 onMounted(() => {
   refreshBookmarks();
+  window.addEventListener("resize", scheduleAliyaMeasure);
   if (typeof IntersectionObserver === "undefined" || !root.value) {
     void load();
     return;
@@ -488,6 +539,9 @@ onMounted(() => {
 
 onUnmounted(() => {
   observer?.disconnect();
+  window.removeEventListener("resize", scheduleAliyaMeasure);
+  aliyaResize?.disconnect();
+  cancelAnimationFrame(measureFrame);
   // Un passage de CE texte ne survit pas à son retrait de la page (un chapitre
   // marqué lu se replie) ; celui d'un texte voisin, si.
   if (selectedPassageKey.value?.startsWith(`daily:${props.entry.id}#`)) clearPassage();
@@ -594,10 +648,11 @@ onUnmounted(() => {
             <template v-else>
               <template v-for="block in blocksOf(section)" :key="block.offset">
                 <!-- Chnei mikra: the aliyah's check takes the place of its title,
-                     to check it off without scrolling to its end. -->
+                     to check it off without scrolling to its end; not on an
+                     aliyah so short that its end check is already in sight. -->
                 <AliyaCheck
-                  v-if="block.label && aliyaChecks"
-                  class="mt-10 mb-5 first:mt-4"
+                  v-if="block.label && aliyaChecks && !isShortAliya(section, block)"
+                  class="mt-8 mb-4 first:mt-4"
                   :done="isAliyaChecked(section, block)"
                   :name="headingLabel(block.heading, block.label)"
                   :data-block-anchor="aliyaAnchor((aliyaBase ?? 0) + aliyaIndex(section, block))"
@@ -614,7 +669,11 @@ onUnmounted(() => {
                 >
                   {{ headingLabel(block.heading, block.label) }}
                 </p>
-                <p dir="rtl" class="font-hebrew text-text-primary daily-he">
+                <p
+                  :ref="block.label && aliyaChecks ? aliyaTextRef(section, block) : undefined"
+                  dir="rtl"
+                  class="font-hebrew text-text-primary daily-he"
+                >
                   <template v-for="(line, index) in block.lines" :key="block.offset + index">
                     <BookmarkRibbon v-if="isVerseBookmarked(section.index, block.offset + index)" />
                     <span

@@ -50,6 +50,19 @@ let watched = 0;
 let started = false;
 /** Twenty seconds without anything playable: a network too slow to bother. */
 let giveUp = 0;
+/**
+ * Why it did not load, reported with the way out (`via: error`): what the
+ * player itself said, or the wait that ran out. The video is served by the
+ * site, and the system can refuse it without a word in the webview (iOS
+ * plays a file only from a server that answers byte ranges, see
+ * docs/design.md): without this, the Error tracking only ever said that it
+ * failed, never what failed.
+ */
+let failure: {
+  error_source: "media" | "timeout";
+  error_code: number | null;
+  error_message: string | null;
+} | null = null;
 
 /** At launch, nothing shows until the video can play. */
 const visible = computed(() => source !== "launch" || ready.value);
@@ -136,6 +149,7 @@ function close(via: "close" | "done" | "more" | "back" | "error"): void {
     watched_seconds: Math.round(watched),
     completed: ended.value,
     passage: passage?.id ?? null,
+    ...(failure ?? {}),
   });
   // Not loaded at launch: it will be offered at a later launch.
   closeWhatsNew(!(via === "error" && source === "launch"));
@@ -147,8 +161,19 @@ function learnMore(): void {
   void router.push(versionPage);
 }
 
-function onError(): void {
+/**
+ * It did not load: the player gave up (`media`), or twenty seconds went by
+ * with nothing playable (`timeout`). `cause` is not the `source` above: that
+ * one says where the video was opened from.
+ */
+function onError(cause: "media" | "timeout"): void {
   window.clearTimeout(giveUp);
+  const error = video.value?.error ?? null;
+  failure = {
+    error_source: cause,
+    error_code: error?.code ?? null,
+    error_message: error?.message ? error.message.slice(0, 200) : null,
+  };
   if (source !== "launch") toast.error(t("whatsNew.failed"));
   close("error");
 }
@@ -161,7 +186,7 @@ function onKeydown(event: KeyboardEvent): void {
 
 onMounted(() => {
   giveUp = window.setTimeout(() => {
-    if (!ready.value) onError();
+    if (!ready.value) onError("timeout");
   }, 20000);
   document.documentElement.style.overflow = "hidden";
   document.addEventListener("keydown", onKeydown);
@@ -208,7 +233,7 @@ onBeforeUnmount(() => {
         @playing="onPlaying"
         @timeupdate="onTime"
         @ended="onEnded"
-        @error="onError"
+        @error="onError('media')"
         @click="toggle"
       ></video>
       <div

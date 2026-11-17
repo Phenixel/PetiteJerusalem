@@ -3123,7 +3123,7 @@ watch(textId, (_, previousTextId) => {
         :translation-lang="translationLang"
         :share-title="shareTitle"
         :share-url="shareReadingUrl"
-        :concealed="studyLine !== null || (!sideBySide && selectedPassageKey !== null)"
+        :concealed="studyLine !== null"
         :set-aside="canSetAside"
         @update:phonetic="setReadingMode($event ? 'phonetic' : 'hebrew')"
         @update:page-form-active="setReadingMode($event ? 'page' : 'hebrew')"
