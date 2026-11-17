@@ -297,6 +297,18 @@ The video is made with the promotional videos (section 11, `promo/`, the
 `WHATS_NEW_VERSION` and is published under its name, in the three languages
 (`whatsNew.test.ts` checks that the files the code asks for exist).
 
+**The site must serve it cacheable.** iOS plays a video only from a server
+that answers a byte range with a 206, and Firebase Hosting answers ranges
+only for a file its CDN may cache: under the `no-cache` of the catch-all,
+every launch of the iOS app failed to load the 4.0 video from 4.0 on (376
+launches, 53 readers, none of whom saw it, while the Android app, which
+streams the file whole, played it). Media files therefore carry their own
+headers in `firebase.json` (`public, max-age=604800`, plus the cross-origin
+header the webview needs for what it reads from the site, as the texts and
+the fonts do), and `whatsNew.test.ts` holds the rule. When it does not load,
+the way out says what failed (`error_source`, `error_code`: see
+`docs/tracking-plan.md`), so the next failure is readable without a device.
+
 ### The help center shows how, part by part
 
 The app has grown rich enough that much of it stays obscure until someone
