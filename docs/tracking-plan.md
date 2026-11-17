@@ -191,6 +191,9 @@ The video left the screen.
 | `watched_seconds` | the furthest point reached, in seconds                                                              |
 | `completed`       | true when the video was played to the end                                                           |
 | `passage`         | **new property**: as above                                                                          |
+| `error_source`    | **new property**: with `via: error` only, what gave up: `media` (the player's own error) or `timeout` (twenty seconds with nothing playable) |
+| `error_code`      | **new property**: with `via: error` only, the `MediaError` code of the player (1 aborted, 2 network, 3 decoding, 4 source refused), null on a timeout |
+| `error_message`   | **new property**: with `via: error` only, what the player said, cut at 200 characters, null when it said nothing |
 
 `watched_seconds` of a video played from a passage counts from the start
 of the video, not of the passage: the passage's start is in
