@@ -35,7 +35,7 @@ vi.mock("../composables/useConsent", () => ({
   onConsentChange: vi.fn(),
 }));
 // The iOS app: the platform is fixed when the module loads.
-vi.mock("../composables/useNativeApp", () => ({ isNativeApp: true, appPlatform: "ios" }));
+vi.mock("../config/platform", () => ({ isNativeApp: true, appPlatform: "ios" }));
 
 type BeforeSend = (event: unknown) => { properties: Record<string, unknown> } | null;
 

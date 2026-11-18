@@ -11,7 +11,7 @@ import { createI18n } from "vue-i18n";
 
 const { capture } = vi.hoisted(() => ({ capture: vi.fn() }));
 vi.mock("../services/analyticsService", () => ({ analyticsService: { capture } }));
-vi.mock("../composables/useNativeApp", () => ({ isNativeApp: false, appPlatform: "web" }));
+vi.mock("../config/platform", () => ({ isNativeApp: false, appPlatform: "web" }));
 
 import fr from "../locales/fr";
 import CommentaryPanel from "../components/CommentaryPanel.vue";

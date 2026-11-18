@@ -1,4 +1,4 @@
-import { isNativeApp } from "../composables/useNativeApp";
+import { isNativeApp } from "../config/platform";
 
 /**
  * Les retours au toucher : le téléphone répond quand quelque chose se fait.

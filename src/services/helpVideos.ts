@@ -1,5 +1,5 @@
 import { APP_SITE_URL } from "../config/environment";
-import { isNativeApp } from "../composables/useNativeApp";
+import { isNativeApp } from "../config/platform";
 import type { HelpLocale } from "../content/help/catalog";
 
 /**

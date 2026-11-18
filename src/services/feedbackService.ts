@@ -1,5 +1,5 @@
 import { httpsCallable } from "firebase/functions";
-import { appPlatform, isNativeApp } from "../composables/useNativeApp";
+import { appPlatform, isNativeApp } from "../config/platform";
 import { i18n } from "../i18n";
 import type { SupportThreadView } from "./support";
 

@@ -94,11 +94,14 @@ watch(
     // s'ouvrira sans attente au premier appui.
     else if (!before) void loadSheet().catch(() => undefined);
   },
+  // App.vue mounts the bar once a lesson is loaded: the first track is
+  // already there when this component starts.
+  { immediate: true },
 );
 </script>
 
 <template>
-  <Transition name="slide-up">
+  <Transition name="slide-up" appear>
     <div
       v-if="player.track.value"
       class="fixed inset-x-0 z-40"

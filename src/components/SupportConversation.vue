@@ -59,7 +59,9 @@ const time = (ms: number) =>
 </script>
 
 <template>
-  <ol class="space-y-1.5">
+  <!-- data-ph-mask: private messages, masked in the session replay
+       (analyticsService, maskTextSelector). -->
+  <ol class="space-y-1.5" data-ph-mask>
     <li v-for="(row, index) in rows" :key="index" class="flex flex-col">
       <p v-if="row.day" class="my-3 text-center text-xs font-semibold text-text-secondary">
         {{ row.day }}

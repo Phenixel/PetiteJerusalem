@@ -9,6 +9,7 @@ import {
   deleteDoc,
   query,
   where,
+  serverTimestamp,
   FirestoreError,
   type DocumentData,
   type QueryDocumentSnapshot,
@@ -93,9 +94,13 @@ class FirestoreService {
 
   async createSession(session: Omit<Session, "id" | "createdAt">): Promise<string> {
     try {
+      // The server's time, not the device's: the rules refuse a creation
+      // date more than an hour old (a backdated session took over the links
+      // of an older one that carries the same slug), and a phone whose clock
+      // is wrong must still be able to create a chain.
       const docRef = await addDoc(collection(db, "sessions"), {
         ...session,
-        createdAt: Timestamp.now(),
+        createdAt: serverTimestamp(),
       });
       this.invalidateSessionsCache();
       return docRef.id;

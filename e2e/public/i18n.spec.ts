@@ -29,6 +29,10 @@ test.describe("langues", () => {
     await expect(page.locator("html")).toHaveAttribute("lang", "en");
     await expect(page.locator("header nav").getByRole("link", { name: "Library" })).toBeVisible();
 
+    // The home page reads the team's announcements: a reload that cuts the
+    // request short makes Firestore log an RPC error, which fails the test
+    // for a reason that is not its own (one run out of six).
+    await page.waitForLoadState("networkidle");
     await page.reload();
     await page.locator("#app > *").first().waitFor();
     await expect(page.locator("html")).toHaveAttribute("lang", "en");

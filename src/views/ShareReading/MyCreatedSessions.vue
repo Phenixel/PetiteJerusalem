@@ -39,17 +39,17 @@ const showFinished = ref(false);
 const stats = (session: Session) => sessionService.getSessionReservationStats(session);
 
 const openSessionManagement = (session: Session) => {
-  router.push({ name: "session-management", params: { id: session.id } });
+  void router.push({ name: "session-management", params: { id: session.id } });
 };
 
 // Le titre mène à la session elle-même : c'est la page qu'on partage et celle
 // qu'on veut relire, la gestion ayant déjà son bouton dédié.
 const openSession = (session: Session) => {
-  router.push(`/share-reading/session/${session.slug || session.id}`);
+  void router.push(`/share-reading/session/${session.slug || session.id}`);
 };
 
 const goToNewSession = () => {
-  router.push("/share-reading/new-session");
+  void router.push("/share-reading/new-session");
 };
 </script>
 

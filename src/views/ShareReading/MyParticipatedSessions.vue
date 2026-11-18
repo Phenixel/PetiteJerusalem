@@ -216,7 +216,7 @@ const toggleNichmatToday = async (session: Session, read: boolean) => {
 };
 
 const goToSession = (session: Session) => {
-  router.push({ name: "detail-session", params: { slug: session.slug || session.id } });
+  void router.push({ name: "detail-session", params: { slug: session.slug || session.id } });
 };
 </script>
 

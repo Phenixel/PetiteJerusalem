@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import fr from "../locales/fr";
+import fr from "../locales/frAll";
 
 /**
  * Ponctuation double française : `!` `?` `;` `:` et les guillemets « » veulent

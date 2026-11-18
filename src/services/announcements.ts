@@ -1,6 +1,6 @@
 import { isOutdated } from "./appUpdateService";
 import { APP_SITE_URL } from "../config/environment";
-import { isNativeApp } from "../composables/useNativeApp";
+import { isNativeApp } from "../config/platform";
 import type { IconName } from "../components/icons/registry";
 
 /**

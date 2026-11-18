@@ -114,11 +114,11 @@ async function logout() {
   await authService.logout();
   username.value = null;
   closeMobileMenu();
-  router.push("/");
+  void router.push("/");
 }
 function goToLogin() {
   const currentPath = router.currentRoute.value.path;
-  router.push(`/login?redirect=${encodeURIComponent(currentPath)}`);
+  void router.push(`/login?redirect=${encodeURIComponent(currentPath)}`);
   closeMobileMenu();
 }
 </script>
@@ -130,7 +130,11 @@ function goToLogin() {
     v-if="!isNativeApp"
     ref="header"
     class="sticky top-0 z-50 flex items-center justify-between gap-4 px-4 py-2.5 md:px-6 md:py-4 transition-colors duration-300"
-    :class="isScrolled ? 'bg-bg-beige/85 backdrop-blur-md dark:bg-gray-900/85' : 'bg-transparent'"
+    :class="
+      isScrolled
+        ? 'bg-bg-beige/95 dark:bg-gray-900/95 [@media(pointer:fine)]:bg-bg-beige/85 [@media(pointer:fine)]:backdrop-blur-md dark:[@media(pointer:fine)]:bg-gray-900/85'
+        : 'bg-transparent'
+    "
   >
     <!-- Pas un h1 : chaque page a le sien, le bandeau en doublait le titre
          sur tout le site (deux h1 par page pour les lecteurs d'écran et le

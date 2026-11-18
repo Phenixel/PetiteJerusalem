@@ -8,6 +8,11 @@
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "types": ["node"],
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitOverride": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
     // Les fonctions passées à page.evaluate s'exécutent dans le navigateur.
     "lib": ["ES2023", "DOM"],
     // Les tests réutilisent les helpers d'émulateur des scripts (JS) : sans

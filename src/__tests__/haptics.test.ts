@@ -13,7 +13,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const native = vi.hoisted(() => ({ app: false, calls: [] as string[] }));
 
-vi.mock("../composables/useNativeApp", () => ({
+vi.mock("../config/platform", () => ({
   get isNativeApp() {
     return native.app;
   },

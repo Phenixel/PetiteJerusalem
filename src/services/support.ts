@@ -121,6 +121,25 @@ export function threadSubject(thread: Pick<SupportThreadView, "messages">, max =
   return `${(lastSpace > max / 2 ? cut.slice(0, lastSpace) : cut).replace(/[\s,;:.]+$/, "")}…`;
 }
 
+/**
+ * The page a message was sent from, as a link of this site, or undefined
+ * when it is not one. The field is written by whoever sends the message: a
+ * value such as `/\host/x` reads as a path and opens another site (browsers
+ * take the backslash for a slash). Resolving it against the site's origin and
+ * comparing origins leaves no such reading; the Cloud Function refuses these
+ * values too (asPage in functions/src/support.ts), this guards the threads
+ * already stored.
+ */
+export function appPageHref(page: string, origin: string): string | undefined {
+  if (!page.startsWith("/")) return undefined;
+  try {
+    const url = new URL(page, origin);
+    return url.origin === new URL(origin).origin ? url.href : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 /** Un email si la valeur en a la forme (un contact peut aussi être un téléphone). */
 export function isEmail(value: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);

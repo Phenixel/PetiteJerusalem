@@ -92,7 +92,7 @@ const goToLogin = (mode: "signup" | "google" | "login") => {
   // L'adresse de l'invité pré-remplit le formulaire par l'état de la
   // navigation, et non par l'URL : dans l'URL, elle partait vers PostHog
   // avec chaque événement de la page de connexion.
-  router.push({
+  void router.push({
     path: "/login",
     query,
     ...(props.guestEmail ? { state: { email: props.guestEmail } } : {}),

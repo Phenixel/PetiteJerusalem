@@ -381,7 +381,7 @@ const createSession = async () => {
     // chaîne que personne ne voit reste vide (voir DetailSession).
     clearDraft();
     toast.success(t("newSession.createdSuccess"));
-    router.push({ path: `/share-reading/session/${sessionId}`, query: { partager: "1" } });
+    void router.push({ path: `/share-reading/session/${sessionId}`, query: { partager: "1" } });
   } catch (error) {
     console.error("Erreur lors de la création de la session:", error);
     if (error instanceof ModerationError) {

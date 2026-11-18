@@ -1,5 +1,5 @@
 import { ref } from "vue";
-import { isNativeApp } from "../composables/useNativeApp";
+import { isNativeApp } from "../config/platform";
 
 /**
  * Notifications des informations de l'équipe : l'app s'abonne au canal FCM

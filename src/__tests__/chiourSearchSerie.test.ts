@@ -30,7 +30,13 @@ const chiour = (slug: string, name: string, serieId: string | null): Chiour => (
 });
 
 const series: Serie[] = [
-  { id: "bita", name: "Shaar Habitahon", slug: "shaar-habitahon", auteurId: "gad", description: "" },
+  {
+    id: "bita",
+    name: "Shaar Habitahon",
+    slug: "shaar-habitahon",
+    auteurId: "gad",
+    description: "",
+  },
 ];
 const catalogue = [
   chiour("bita-12", "Chapitre 3 (2/7)", "bita"),

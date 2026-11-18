@@ -11,7 +11,7 @@ import { createMemoryHistory, createRouter } from "vue-router";
  * only on long lists".
  */
 
-vi.mock("../composables/useNativeApp", () => ({ isNativeApp: false, appPlatform: "web" }));
+vi.mock("../config/platform", () => ({ isNativeApp: false, appPlatform: "web" }));
 vi.mock("../services/analyticsService", () => ({
   analyticsService: { capture: vi.fn() },
 }));

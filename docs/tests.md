@@ -13,7 +13,7 @@ npm run test:unit          # vitest, interactive mode
 npx vitest run             # a single pass, what `npm run verify` does
 ```
 
-The 294 files live in `src/__tests__/*.test.ts`. The configuration
+The 310 files live in `src/__tests__/*.test.ts`. The configuration
 (`vitest.config.ts`) uses the `jsdom` environment by default; tests that do
 not need the DOM (those that read the repository or run a script) start
 with `// @vitest-environment node`. The `e2e/`, `android/`, `ios/` and
@@ -51,7 +51,9 @@ documentation included; the French non-breaking-space rule
 | `cardArt.test.ts` | A card that carries its drawn object (`<CardArt`) has no icon in front of its title (`docs/design.md`, "An icon before a title must say something"). |
 | `playIcon.test.ts` | The play triangle (`play-solid`) has its center of gravity in the middle of the icon, and no `AppIcon` that carries it adds a margin or an offset: it would look off-center in its circle (`docs/design.md`, "The play triangle is centered on its weight"). |
 | `seoTitles.test.ts` | The titles of the `seo` block escape the vertical bar (`{'|'}`), which vue-i18n would otherwise read as a plural separator and truncate. |
-| `initialBundle.test.ts` | The graph of static imports from `src/main.ts` contains neither Firestore, nor hebcal, nor PostHog: they load on demand, and a simple import added to a service touched by the root would bring them back into the first load. |
+| `initialBundle.test.ts` | The graph of static imports from `src/main.ts` contains neither Firestore, nor hebcal, nor PostHog, nor what only shows once under way (the audio player, the auto-scroll, the feature tour) or only for the owner (the back office's French messages, `src/locales/frAdmin.ts`): they load on demand, and a simple import added to a service touched by the root would bring them back into the first load. |
+| `firebaseHostingConfig.test.ts` | Every redirect of `firebase.json` has a destination and a status, every header block its headers, and the routes rewritten to `socialPreview` state its cache policy: a header block slipped into `redirects` parses fine and only fails at deploy time. |
+| `talmudChapters.test.ts` | `public/texts/talmud-chapters.json` is what `scripts/generate-talmud-chapters.mjs` reads from the texts (`--check`): each chapter starts after the « הדרן עלך » that closes the one before (Berakhot 2 on 13a). The file used to come from a proportional split, several dafim off in every tractate. |
 | `prerenderSeo.test.ts` | The prerendering (`seoPages.ts`) injects title, description, canonical, Open Graph, JSON-LD and crawlable body as expected, and the sitemaps are built from the same page lists. |
 | `whatsNew.test.ts` | The "what's new" video plays once after an update, never on a fresh install nor on the site, and comes back when it could not load; the files it asks the site for (`public/videos/nouveautes-<version>-<locale>.mp4` and their poster) exist in the three languages and stay light enough to stream (`docs/design.md`, "What's new plays once, after the update"); its way out reads « Passer » when it came at launch, « Fermer » when the help center's card asked for it. |
 | `helpCenter.test.ts` | Every help center guide (`src/content/help/catalog.ts`) reads in French, English and Hebrew (a borrowed text names a key the three locales have), its French follows the house typography, its address is unique, its drawn screenshots exist and its links lead to routes the app has; the list of videos the site serves (`public/help/videos.json`) is valid, and an entry an older app cannot read is left out rather than breaking the page (`docs/help-center.md`). |
@@ -121,8 +123,11 @@ accounts, reading chains and chiourim against the Firebase emulators.
     prerequisites beyond Node and Chromium.
   - `firebase` (`e2e/firebase/`): accounts, reading chains, bookings,
     perpetual chain (its names, the end of a round, and the Firestore rules
-    that guard them),
-    chiourim. These tests need the Auth and Firestore emulators.
+    that guard them, a guest booking that touches nothing but the
+    bookings included),
+    chiourim, and the Firestore security rules block by block
+    (`rules.spec.ts`, without a page). These tests need the Auth and
+    Firestore emulators.
 - The Vite server is started by Playwright itself on port **5474**
   (`E2E_PORT`), next to the dev server's 5473 so it can run alongside a dev
   session without taking its server. It runs in DEV mode, so it is wired to
@@ -139,7 +144,7 @@ accounts, reading chains and chiourim against the Firebase emulators.
   (git-ignored, like `playwright-report/`).
 - `E2E_CHROMIUM`: path to a Chromium already present on the machine (CI
   image, sandbox), instead of the one `npx playwright install` would
-  download.
+  download (in a Claude cloud session: `/opt/pw-browsers/chromium`).
 - In CI: two workers, two retries per test, HTML report in addition to the
   list, and `test.only` forbidden.
 
@@ -220,6 +225,43 @@ The data is written through the emulators' REST API, without an SDK, via
 documents set in the Firestore emulator with the "owner" token that bypasses
 the security rules. The ports are those of `firebase.json` (8470 Firestore,
 8471 Auth).
+
+### The security rules: `e2e/firebase/rules.spec.ts`
+
+`firestore.rules` has its own spec, which opens no page: it asks the
+Firestore emulator over REST, as a client talking to Firestore without the
+app would, and reads the HTTP status (200 when the rules accept, 403 when
+they refuse). One `test.describe` per block of the rules (sessions, names of
+the perpetual chain, reports, support, chiourim, auteurs, series, studio
+tokens, announcements and poll votes, user preferences, parcours, the admin,
+and the default refusal), each test named after the rule it holds, with the
+attempts an attacker would make listed by name.
+
+Its foundation is `e2e/support/rules.ts`:
+
+- `create`, `update` (with its field mask), `remove`, `get`, `list` and
+  `query`, each taking the caller first: `GUEST` (no token), `account()` (a
+  uid), `admin()` (the admin's address, verified) or `unverifiedAdmin()`
+  (the same address on an account nobody verified, which the rules must not
+  take for the admin);
+- `serverTime: [...]` on a write sets fields to the time of the server, as
+  `serverTimestamp()` does in the app;
+- its `test` replaces the JavaScript error net of the foundation, which
+  would open a page for every test: no browser starts.
+
+The starting data is set with `seedDoc`, past the rules. A refusal is always
+compared to 403 exactly, so a malformed request (400) is never read as a
+rule that holds. Two kinds of tests are not guarantees: the one titled
+"known limit" states a weakness the model cannot close yet (a guest
+rewrites a booking that is not theirs, the reservations being an array on
+the session), and a `test.fixme` marks a hole that was found and reported
+but not fixed; it becomes a plain `test` with the rule that closes it.
+
+`storage.rules` has no test: the suite starts the Auth and Firestore
+emulators only.
+
+When a rule changes, its test changes in the same PR; a new `match` block
+comes with its `test.describe`.
 
 ### Writing a new test
 

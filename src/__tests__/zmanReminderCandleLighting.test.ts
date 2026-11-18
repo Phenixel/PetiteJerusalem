@@ -10,7 +10,7 @@ import { nextTick } from "vue";
  * jusqu'au prochain retour au premier plan.
  */
 
-vi.mock("../composables/useNativeApp", () => ({ isNativeApp: true, appPlatform: "android" }));
+vi.mock("../config/platform", () => ({ isNativeApp: true, appPlatform: "android" }));
 vi.mock("@capacitor/app", () => ({ App: { addListener: vi.fn() } }));
 vi.mock("@capacitor/local-notifications", () => ({
   LocalNotifications: {

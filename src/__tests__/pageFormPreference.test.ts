@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
  * rouvre la guemara et la Torah dans la forme où on les a quittées.
  */
 
-vi.mock("../composables/useNativeApp", () => ({ isNativeApp: false, appPlatform: "web" }));
+vi.mock("../config/platform", () => ({ isNativeApp: false, appPlatform: "web" }));
 
 describe("forme de la page, préférence d'appareil", () => {
   beforeEach(() => {

@@ -184,7 +184,7 @@ async function save() {
     });
     toast.success(t("admin.chiourEdit.saved"));
     void refreshAdminSummary(true);
-    router.push(returnTo);
+    void router.push(returnTo);
   } catch (error) {
     console.error("Erreur lors de l'enregistrement du chiour:", error);
     errorMessage.value = t("admin.error");
@@ -206,7 +206,7 @@ async function remove() {
     await adminService.deleteChiour(chiour.value);
     toast.success(t("admin.chiourEdit.deleted"));
     void refreshAdminSummary(true);
-    router.push(returnTo);
+    void router.push(returnTo);
   } catch (error) {
     console.error("Erreur lors de la suppression du chiour:", error);
     toast.error(t("admin.error"));

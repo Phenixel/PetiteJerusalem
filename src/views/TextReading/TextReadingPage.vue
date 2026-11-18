@@ -2,6 +2,7 @@
 import { SIDOUR_PATH, isSidourPath } from "../../config/navSections";
 import {
   ref,
+  shallowRef,
   computed,
   defineAsyncComponent,
   watch,
@@ -73,7 +74,7 @@ import { useTextLabels } from "../../composables/useTextLabels";
 import { localeMessagesReady } from "../../i18n";
 import { transliterate, hasNiqqud } from "../../services/hebrewTransliteration";
 import { appendHebrewNumeral } from "../../services/hebrewNumerals";
-import { sessionService } from "../../services/sessionService";
+import type { sessionService as SessionServiceInstance } from "../../services/sessionService";
 import { isPerpetual, isRoundFinished, waitForNextRound } from "../../services/perpetualChain";
 import { ReservationGoneError, SlotTakenError } from "../../services/appError";
 import { isOffline } from "../../services/userPreferencesService";
@@ -279,7 +280,10 @@ const textEntry = computed(() => allTexts.find((t) => String(t.id) === textId.va
 const loading = ref(false);
 const missingFile = ref(false);
 const error = ref(false);
-const content = ref<TextContent | null>(null);
+// shallowRef: a whole parsed text (up to thousands of lines), always
+// replaced as a whole, never changed in place. A deep ref put a proxy and a
+// tracked dependency on every line read by every render.
+const content = shallowRef<TextContent | null>(null);
 const showPhonetic = ref(false);
 
 // La translittération phonétique est une aide de lecture peu visible : mesurer
@@ -327,17 +331,27 @@ const occasionsDay = computed(() => new HDate(occasionsDayAbs.value));
 // le calendrier ne peut pas savoir, une brit mila ou un marié dans
 // l'assemblée. Le réglage ne vaut que le jour où il est posé ; c'est l'heure
 // du rendu qui en décide, comme des occasions elles-mêmes.
+//
+// The clock reaches the occasions only through these two booleans: a
+// computed whose value does not change does not wake what depends on it.
+// Read directly, each tick of the clock gave a new set of occasions, and the
+// whole office (thousands of nodes, retransliterated in phonetic mode) was
+// rebuilt every thirty seconds while one prays.
+const sansTahanounNow = computed(() => isLiturgyText.value && isSansTahanoun(now.value));
+const pastChatzotNow = computed(
+  () => isLiturgyText.value && pastChatzotNight(zmanimPlace.value, now.value),
+);
 const calendarOccasions = computed(() => {
   const il = zmanimPlace.value.tzid === "Asia/Jerusalem";
   const today = activeOccasions(occasionsDay.value, il, isWalledCityPlace(zmanimPlace.value));
-  const jour = isLiturgyText.value && isSansTahanoun(now.value) ? withoutTachanun(today) : today;
+  const jour = sansTahanounNow.value ? withoutTachanun(today) : today;
   if (!isLiturgyText.value) return jour;
   // Hatsot halayla ne se lit pas sur le calendrier : c'est une heure, elle
   // change au milieu de la nuit sans que le jour hébraïque bouge. Le Chema du
   // coucher s'en sert pour la bénédiction Hamapil, dont le Nom se pense au
   // lieu de se dire une fois hatsot passé, et pour son vidouy, qui ne se dit
   // pas à la sortie de Chabbat avant hatsot.
-  const pastChatzot = pastChatzotNight(zmanimPlace.value, now.value);
+  const pastChatzot = pastChatzotNow.value;
   const nuit = new Set(jour);
   if (pastChatzot) nuit.add("apres-hatsot");
   if (nightWithoutTachanun(occasionsDay.value, il, jour, pastChatzot)) {
@@ -500,7 +514,8 @@ const canTransliterate = computed(
 // l'interface, à défaut celle qui existe. Pas sur une tefila : le sidour se
 // prie en hébreu, et ses textes n'ont pas de traduction alignée.
 const textTranslationLangs = ref<string[]>([]);
-const translation = ref<TextTranslation | null>(null);
+// Same as `content`: replaced as a whole.
+const translation = shallowRef<TextTranslation | null>(null);
 /** Le texte dont `translation` est la traduction. */
 const translationTextId = ref<string | null>(null);
 const translationFailed = ref(false);
@@ -891,8 +906,8 @@ function goToSection(index: number, replace = false) {
           params: { textId: textId.value, section: index },
           query: route.query,
         };
-  if (replace) router.replace(to);
-  else router.push(to);
+  if (replace) void router.replace(to);
+  else void router.push(to);
   scrollTopProgrammatic();
 }
 
@@ -941,7 +956,7 @@ function goUp(target: RouteLocationRaw, preferHistory: boolean) {
     router.back();
     return;
   }
-  router.replace(target);
+  void router.replace(target);
   scrollTopProgrammatic();
 }
 
@@ -957,7 +972,7 @@ function backToSectionList() {
 
 function exitReading() {
   if (sessionSlug.value) {
-    router.push(`/share-reading/session/${sessionSlug.value}`);
+    void router.push(`/share-reading/session/${sessionSlug.value}`);
     return;
   }
   // While reading a chapter, "back" returns to this text's chapter list rather
@@ -1008,7 +1023,7 @@ function goToText(target: TextStudyJsonEntry) {
   const to = isEtudeRoute.value
     ? hubPath(target)
     : { name: "text-reading", params: { textId: String(target.id) }, query: route.query };
-  router.replace(to);
+  void router.replace(to);
   scrollTopProgrammatic();
 }
 
@@ -1107,7 +1122,7 @@ function goToPlace(section: number | null, line: number) {
             params: { textId: textId.value, section },
             query: { ...route.query, verset: String(line) },
           };
-    router.push(to);
+    void router.push(to);
   } else {
     scrollToLine(line);
   }
@@ -1683,6 +1698,15 @@ function refreshProgressState() {
 
 // --- Reservation (session mode) ---
 const session = ref<Session | null>(null);
+
+/**
+ * The service of the reading chains, loaded with the first chain (onMounted):
+ * it brings the whole Firestore SDK with it (about 170 kB gzip), which every
+ * reader of a psalm used to wait for before seeing the text, chain or not.
+ * Every use below sits behind `session.value`, which this service alone
+ * fills. Held by initialBundle.test.ts.
+ */
+let sessionService!: typeof SessionServiceInstance;
 /** Chaîne perpétuelle : les noms pour lesquels on lit (voir PrayerNamesLine). */
 const prayerNames = ref<PrayerName[]>([]);
 const currentUser = ref<User | null>(null);
@@ -2035,7 +2059,7 @@ async function claimDrawnText() {
     // Le texte annoncé a été pris pendant le trajet : on bascule sur celui qui
     // a effectivement été retenu, sauf si le lecteur est déjà reparti.
     if (result.text.id !== from && stillReading(from)) {
-      router.replace({
+      void router.replace({
         name: "text-reading",
         params: { textId: result.text.id },
         query: route.query,
@@ -2240,7 +2264,7 @@ async function drawAnother() {
 
     noteReadingActivity();
     if (stillReading(from)) {
-      router.replace({
+      void router.replace({
         name: "text-reading",
         params: { textId: result.text.id },
         query: route.query,
@@ -2406,6 +2430,7 @@ onMounted(async () => {
     // manque : le lecteur reste utilisable, seule la barre de réservation
     // n'apparaît pas. Sans ce garde-fou, le montage rejetait en silence.
     try {
+      ({ sessionService } = await import("../../services/sessionService"));
       currentUser.value = await sessionService.getCurrentUser();
       session.value = await sessionService.resolveSession(sessionSlug.value);
     } catch (e) {

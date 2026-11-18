@@ -1,6 +1,6 @@
 import type { BeforeSendFn, PostHog, Properties } from "posthog-js";
 import { watch } from "vue";
-import { appPlatform, isNativeApp } from "../composables/useNativeApp";
+import { appPlatform, isNativeApp } from "../config/platform";
 import { isDegradedRendering } from "../composables/useDevicePerf";
 import { getConsentChoice, onConsentChange } from "../composables/useConsent";
 import { resolveUserType } from "../config/analyticsAudience";
@@ -76,7 +76,11 @@ function isTrackedSurface(): boolean {
 }
 
 /** Super propriétés (A2) : contexte de release attaché à chaque événement. */
-const APP_ENV = isProductionSurface() ? "production" : __PJ_ENV__.name === "staging" ? "staging" : "preview";
+const APP_ENV = isProductionSurface()
+  ? "production"
+  : __PJ_ENV__.name === "staging"
+    ? "staging"
+    : "preview";
 const APP_VERSION = __APP_VERSION__;
 
 /**
@@ -104,6 +108,12 @@ function replayCohort(): "web" | "on" | "off" {
 }
 
 const REPLAY_COHORT = replayCohort();
+
+/**
+ * What the session replay masks beyond the inputs: the text of every element
+ * marked `data-ph-mask` in a template, and of what it contains.
+ */
+export const REPLAY_MASK_SELECTOR = "[data-ph-mask], [data-ph-mask] *";
 
 const SUPER_PROPERTIES = {
   env: APP_ENV,
@@ -299,9 +309,14 @@ class AnalyticsService {
         // demander.
         capture_dead_clicks: true,
         // Session replay : les saisies sont masquées par défaut, on ne relâche
-        // pas ce masquage (mots de passe, emails...).
+        // pas ce masquage (mots de passe, emails...). What is displayed and
+        // private is masked too, wherever the template says so with
+        // `data-ph-mask`: the messages written to the team, the account's
+        // email, the whole back office. The selector names the descendants
+        // as well: the recorder tests the element that holds each text.
         session_recording: {
           maskAllInputs: true,
+          maskTextSelector: REPLAY_MASK_SELECTOR,
         },
         // L'enregistrement replay (rrweb) sérialise le DOM en continu : c'est
         // le seul poste du tracking qui coûte du CPU pendant toute la visite.
@@ -394,7 +409,9 @@ class AnalyticsService {
     // config/analyticsAudience.ts). Posée à chaque identification, pas
     // seulement à la création du profil : une liste éditée doit se propager
     // aux comptes déjà connus dès leur prochaine session.
-    this.posthog.setPersonProperties({ user_type: resolveUserType(user.email) });
+    void resolveUserType(user.email).then((user_type) =>
+      this.posthog?.setPersonProperties({ user_type }),
+    );
   }
 
   /**

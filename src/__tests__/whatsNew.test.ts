@@ -14,7 +14,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
  * (« En savoir plus »).
  */
 
-vi.mock("../composables/useNativeApp", () => ({ isNativeApp: true, appPlatform: "ios" }));
+vi.mock("../config/platform", () => ({ isNativeApp: true, appPlatform: "ios" }));
 
 const SEEN_KEY = "pj_whats_new_seen";
 const ONBOARDING_KEY = "pj_onboarding_seen";

@@ -4,7 +4,7 @@ import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import AppIcon from "../icons/AppIcon.vue";
 import { bindingOf } from "../../config/bindings";
-import { useMiniPlayerVisible } from "../../composables/useAudioPlayer";
+import { useMiniPlayerVisible } from "../../composables/audioPlayerState";
 import { useBottomChromeHeight } from "../../composables/useBottomChrome";
 import { isNativeApp } from "../../composables/useNativeApp";
 import { prefersLessMotion } from "../../composables/useMotion";

@@ -28,6 +28,13 @@ const FORBIDDEN = [
   { id: "@hebcal/core", label: "hebcal" },
   { id: "@hebcal/locales", label: "hebcal (locales)" },
   { id: "posthog-js", label: "PostHog" },
+  // The back office's French messages: loaded by the /admin route (i18n.ts).
+  { id: "src/locales/frAdmin.ts", label: "back office messages" },
+  { id: "src/locales/frAll.ts", label: "every French message (tests only)" },
+  // What only shows once under way: loaded on first appearance (App.vue).
+  { id: "src/composables/useAudioPlayer.ts", label: "the audio player" },
+  { id: "src/composables/useAutoScroll.ts", label: "the auto-scroll" },
+  { id: "src/components/FeatureTour.vue", label: "the feature tour" },
 ];
 
 /** Imports statiques d'un fichier : `import … from "x"`, `import "x"`, `export … from "x"`. */
@@ -94,5 +101,20 @@ describe("bundle initial", () => {
       .map(([label, trail]) => `${label} :\n    ${trail.join("\n    -> ")}`)
       .join("\n");
     expect(report, `modules lourds atteints en statique depuis src/main.ts :\n${report}`).toBe("");
+  });
+
+  // The reader is where most visitors land (a psalm, a daf): its route must
+  // not wait for the SDK, which only the chains of /share-reading use there.
+  // The sign-in form needs it only once the person is signed in.
+  it.each([
+    ["the reader", "views/TextReading/TextReadingPage.vue"],
+    ["the sign-in page", "views/loginView.vue"],
+  ])("keeps the Firestore SDK out of %s until it is needed", (_name, view) => {
+    const found = forbiddenPaths(resolve(SRC, view));
+    const report = [...found]
+      .filter(([label]) => label === "Firestore" || label === "src/firebase/firestore")
+      .map(([label, trail]) => `${label} :\n    ${trail.join("\n    -> ")}`)
+      .join("\n");
+    expect(report, `Firestore reached statically from src/${view}:\n${report}`).toBe("");
   });
 });

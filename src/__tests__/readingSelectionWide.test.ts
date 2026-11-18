@@ -32,7 +32,7 @@ vi.hoisted(() => {
 vi.mock("../services/analyticsService", () => ({
   analyticsService: { capture: vi.fn() },
 }));
-vi.mock("../composables/useNativeApp", () => ({ isNativeApp: false, appPlatform: "web" }));
+vi.mock("../config/platform", () => ({ isNativeApp: false, appPlatform: "web" }));
 
 import fr from "../locales/fr";
 import ReadingSelectionMenu from "../components/ReadingSelectionMenu.vue";

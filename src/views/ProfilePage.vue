@@ -102,7 +102,7 @@ onMounted(() => {
     }
     // La page reste réservée aux comptes (même comportement que la garde de
     // route, qui ne se rejoue pas à la déconnexion).
-    if (!user) router.replace("/");
+    if (!user) void router.replace("/");
   });
 
   const url = SITE_URL + "/profile";

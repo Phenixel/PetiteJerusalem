@@ -307,7 +307,7 @@ const loadSessionData = async () => {
 
     // Redirect to clean slug URL if accessed via old ID-based URL
     if (sessionData.slug && sessionData.slug !== slugOrId) {
-      router.replace(`/share-reading/session/${sessionData.slug}`);
+      void router.replace(`/share-reading/session/${sessionData.slug}`);
     }
 
     // Un document sans champ reservations en reçoit un : les réservations
@@ -348,7 +348,7 @@ const handleItemClick = (textStudyId: string, section: number) => {
 
     void confirm({ title: t("detailSession.cancelReservationConfirm"), danger: true }).then(
       (accepted) => {
-        if (accepted) cancelReservation(textStudyId, section);
+        if (accepted) void cancelReservation(textStudyId, section);
       },
     );
     return;
@@ -859,7 +859,7 @@ const drawRandomTehilim = () => {
     return;
   }
 
-  router.push({
+  void router.push({
     name: "text-reading",
     params: { textId: text.id },
     query: { session: current.slug ?? current.id, tirage: "1" },
@@ -926,7 +926,7 @@ const goToManagement = () => {
       text_type: session.value.type,
       source: "session_detail",
     });
-    router.push(`/session-management/${session.value.id}`);
+    void router.push(`/session-management/${session.value.id}`);
   }
 };
 
@@ -943,7 +943,7 @@ const saveSessionChanges = async (sessionData: SessionEditData): Promise<boolean
 
 const goToCreateChain = () => {
   analyticsService.capture("create_chain_cta_clicked", { source: "session_detail" });
-  router.push("/share-reading");
+  void router.push("/share-reading");
 };
 
 const applySessionSeo = (s: typeof session.value) => {

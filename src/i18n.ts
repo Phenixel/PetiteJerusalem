@@ -97,6 +97,25 @@ export async function loadLocaleMessages(locale: SupportedLocale): Promise<void>
   }
 }
 
+let adminMessages: Promise<void> | null = null;
+
+/**
+ * The back office's French messages (src/locales/frAdmin.ts), loaded by the
+ * /admin route before its first page: they are not in the initial bundle.
+ * English and Hebrew carry theirs in their own chunk. A failure (network)
+ * is retried on the next visit of the route.
+ */
+export function loadAdminMessages(): Promise<void> {
+  adminMessages ??= import("./locales/frAdmin")
+    .then(({ default: admin }) => {
+      i18n.global.mergeLocaleMessage("fr", { admin });
+    })
+    .catch(() => {
+      adminMessages = null;
+    });
+  return adminMessages;
+}
+
 const initialLocale = getInitialLocale();
 
 export const i18n = createI18n({

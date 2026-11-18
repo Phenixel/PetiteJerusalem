@@ -65,8 +65,10 @@ describe("les places qu'annonce le catalogue", () => {
       const dafim = JSON.parse(readFileSync(`public/texts/talmud/${slug}.json`, "utf8")).he.length;
       ranges.forEach((range, i) => {
         const debut = i === 0 ? 0 : ranges[i - 1].endIdx + 1;
-        if (range.chapter !== i + 1) fautes.push(`${slug} : chapitre ${range.chapter} au rang ${i + 1}`);
-        if (range.startIdx !== debut) fautes.push(`${slug} ${range.chapter} : commence à ${range.startIdx}, ${debut} attendu`);
+        if (range.chapter !== i + 1)
+          fautes.push(`${slug} : chapitre ${range.chapter} au rang ${i + 1}`);
+        if (range.startIdx !== debut)
+          fautes.push(`${slug} ${range.chapter} : commence à ${range.startIdx}, ${debut} attendu`);
         if (range.endIdx < range.startIdx) fautes.push(`${slug} ${range.chapter} : vide`);
       });
       const fin = ranges.at(-1)?.endIdx;

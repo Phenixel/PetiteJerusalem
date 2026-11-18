@@ -76,7 +76,9 @@ const isActive = (item: NavItem) =>
 </script>
 
 <template>
-  <main class="mx-auto min-h-screen w-full max-w-6xl px-4 py-8 md:px-6 md:py-10">
+  <!-- data-ph-mask: the back office shows other people's messages, emails
+       and names; its text is masked in the session replay. -->
+  <main class="mx-auto min-h-screen w-full max-w-6xl px-4 py-8 md:px-6 md:py-10" data-ph-mask>
     <header class="mb-8">
       <p class="flex items-center gap-2 text-sm font-semibold text-text-secondary">
         <AppIcon name="settings" :size="14" />

@@ -12,6 +12,7 @@
  * jamais deux fois le même tour.
  */
 import { onDocumentUpdated } from "firebase-functions/v2/firestore";
+import { logger } from "firebase-functions/v2";
 import { getFirestore, Timestamp } from "firebase-admin/firestore";
 import { isRoundComplete, nextRound, withHoldExpiry } from "./perpetualRound";
 
@@ -44,7 +45,7 @@ export const onPerpetualSessionUpdated = onDocumentUpdated(
 
       const update = nextRound<Timestamp>(current, Timestamp.now());
       transaction.update(after.ref, { ...update });
-      console.log(
+      logger.info(
         `[perpetual] session ${event.params.sessionId} : tour ${update.cycle - 1} terminé ` +
           `(${update.lastCycleParticipants} lecteurs), le tour ${update.cycle} commence`,
       );

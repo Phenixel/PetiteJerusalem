@@ -298,7 +298,7 @@ jobs:
       # la variable de repo STAGING_PLAY_STATUS=draft le permet le temps de la
       # première mise en ligne à la main (docs/staging.md).
       - name: Publier sur le Play Store
-        uses: r0adkll/upload-google-play@v1
+        uses: r0adkll/upload-google-play@e738b9dd8f2476ea806d921b64aacd24f34515a5 # v1.1.5
         with:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: ${{ inputs.environment == 'staging' && 'fr.petitejerusalem.app.staging' || 'fr.petitejerusalem.app' }}
@@ -315,7 +315,7 @@ jobs:
       # whatsnew-fr-FR (la phrase par défaut).
       - name: Créer la release GitHub
         if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
         with:
           name: v${{ steps.version.outputs.name }}
           # Release déjà rédigée à la main : sans `body`, l'action conserve son

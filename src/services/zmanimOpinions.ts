@@ -385,9 +385,7 @@ function equinoxShare(ctx: OpinionContext, degrees: number, evening: boolean): n
 
   const sunrise = ctx.equinox.sunrise();
   const sunset = ctx.equinox.sunset();
-  const twilight = evening
-    ? ctx.equinox.tzeit(degrees)
-    : ctx.equinox.timeAtAngle(degrees, true);
+  const twilight = evening ? ctx.equinox.tzeit(degrees) : ctx.equinox.timeAtAngle(degrees, true);
   const usable = [sunrise, sunset, twilight].every((date) => !Number.isNaN(date.getTime()));
   const share = usable
     ? (evening ? twilight.getTime() - sunset.getTime() : sunrise.getTime() - twilight.getTime()) /
@@ -439,9 +437,7 @@ function amudeiRestEnd(z: Zmanim, ctx: OpinionContext): Date {
 
 const OVADIA: OpinionZmanim = {
   alotHaShachar: (z, ctx) =>
-    ctx.il
-      ? fromSunrise(z, -OVADIA_ALOT_MINUTES)
-      : fromEquinox(z, ctx, AMUDEI_ALOT_DEGREES, false),
+    ctx.il ? fromSunrise(z, -OVADIA_ALOT_MINUTES) : fromEquinox(z, ctx, AMUDEI_ALOT_DEGREES, false),
   misheyakir: (z, ctx) =>
     ctx.il
       ? fromSunrise(z, -OVADIA_MISHEYAKIR_MINUTES)
@@ -465,9 +461,7 @@ const OVADIA: OpinionZmanim = {
   plagHaMincha: (z, ctx) =>
     new Date(OVADIA.tzeit(z, ctx).getTime() - (OVADIA_PLAG_MINUTES / 60) * dayHour(z)),
   tzeit: (z, ctx) =>
-    ctx.il
-      ? fromSunset(z, OVADIA_TZEIT_MINUTES)
-      : fromEquinox(z, ctx, AMUDEI_TZEIT_DEGREES, true),
+    ctx.il ? fromSunset(z, OVADIA_TZEIT_MINUTES) : fromEquinox(z, ctx, AMUDEI_TZEIT_DEGREES, true),
   rabbenouTam: (z, ctx) => {
     const zmaniyot = fromSunset(z, OVADIA_ALOT_MINUTES);
     if (ctx.il) return zmaniyot;

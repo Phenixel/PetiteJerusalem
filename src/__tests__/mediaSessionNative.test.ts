@@ -14,7 +14,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
  * rien dire ensuite.
  */
 
-vi.mock("../composables/useNativeApp", () => ({ isNativeApp: true, appPlatform: "android" }));
+vi.mock("../config/platform", () => ({ isNativeApp: true, appPlatform: "android" }));
 vi.mock("../composables/useViewedChiourim", () => ({
   useViewedChiourim: () => ({ markViewed: () => undefined }),
 }));

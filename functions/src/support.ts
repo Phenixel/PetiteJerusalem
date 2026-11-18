@@ -136,11 +136,22 @@ function asLocale(value: unknown): SupportLocale {
   return (LOCALES as readonly unknown[]).includes(value) ? (value as SupportLocale) : "fr";
 }
 
-/** Un chemin de l'app, rien d'autre (pas d'adresse d'un autre site). */
-function asPage(value: unknown): string {
+/**
+ * Un chemin de l'app, rien d'autre (pas d'adresse d'un autre site). A
+ * backslash is refused with the double slash: browsers read `/\host` as
+ * `//host`, and the back office turns this field into a link the admin
+ * clicks. Control characters too, which browsers drop before reading the URL
+ * (`/<tab>/host`).
+ */
+export function asPage(value: unknown): string {
   if (typeof value !== "string") return "";
   const page = value.trim().slice(0, PAGE_MAX);
-  return page.startsWith("/") && !page.startsWith("//") ? page : "";
+  if (!page.startsWith("/") || page.startsWith("//")) return "";
+  const unsafe = [...page].some((char) => {
+    const code = char.charCodeAt(0);
+    return char === "\\" || code < 0x20 || code === 0x7f;
+  });
+  return unsafe ? "" : page;
 }
 
 /**

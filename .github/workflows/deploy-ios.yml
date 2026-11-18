@@ -97,6 +97,9 @@ jobs:
     # Store depuis le 28 avril 2026 (SDK iOS 26 minimum).
     runs-on: macos-26
     timeout-minutes: 45
+    permissions:
+      # Read only: the checkout, and the notes of the GitHub release.
+      contents: read
     # Consommées par le job `submit` : la version et le numéro de build sont
     # dérivés du tag une seule fois, ici.
     outputs:
@@ -556,6 +559,8 @@ jobs:
     if: ${{ !cancelled() && needs.ios.result == 'success' && !inputs.debug_signing && inputs.environment != 'staging' && vars.IOS_AUTO_SUBMIT != 'false' }}
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    permissions:
+      contents: read
     steps:
       - name: Checkout Repo
         uses: actions/checkout@v4

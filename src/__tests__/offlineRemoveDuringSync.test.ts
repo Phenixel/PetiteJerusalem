@@ -22,7 +22,7 @@ const { state } = vi.hoisted(() => ({
 const L1 = "/texts/tanakh/bereshit.json";
 const L2 = "/texts/tanakh/chemot.json";
 
-vi.mock("../composables/useNativeApp", () => ({ isNativeApp: false, appPlatform: "web" }));
+vi.mock("../config/platform", () => ({ isNativeApp: false, appPlatform: "web" }));
 vi.mock("../services/offlineTextStore", async (importOriginal) => ({
   ...(await importOriginal<typeof import("../services/offlineTextStore")>()),
   ensureManifestLoaded: () => Promise.resolve(),

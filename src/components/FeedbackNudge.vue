@@ -2,7 +2,7 @@
 import { onBeforeUnmount, onMounted, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
-import { useMiniPlayerVisible } from "../composables/useAudioPlayer";
+import { useMiniPlayerVisible } from "../composables/audioPlayerState";
 import { useBottomChromeHeight } from "../composables/useBottomChrome";
 import { useConsent } from "../composables/useConsent";
 import { openFeedback } from "../composables/useFeedback";

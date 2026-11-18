@@ -110,7 +110,8 @@ describe("api", () => {
                   {
                     code: "ENTITY_ERROR.ATTRIBUTE.REQUIRED",
                     title: "The provided entity is missing a required attribute",
-                    detail: "You must provide a value for the attribute 'whatsNew' with this request",
+                    detail:
+                      "You must provide a value for the attribute 'whatsNew' with this request",
                   },
                 ],
               },

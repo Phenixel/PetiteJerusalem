@@ -15,7 +15,7 @@ const plugin = vi.hoisted(() => ({
   ecoute: null as ((data: { accuracy: number }) => void) | null,
 }));
 
-vi.mock("../composables/useNativeApp", () => ({
+vi.mock("../config/platform", () => ({
   get isNativeApp() {
     return plateforme.native;
   },

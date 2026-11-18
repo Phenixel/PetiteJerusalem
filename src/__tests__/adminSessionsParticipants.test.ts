@@ -4,7 +4,7 @@ import { createI18n } from "vue-i18n";
 import { createMemoryHistory, createRouter } from "vue-router";
 import type { Session, TextStudyReservation } from "../models/models";
 import { EnumTypeTextStudy } from "../models/typeTextStudy";
-import fr from "../locales/fr";
+import fr from "../locales/frAll";
 
 /**
  * Le backoffice donne le même nombre de participants que la page publique

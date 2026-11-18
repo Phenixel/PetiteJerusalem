@@ -17,6 +17,7 @@ import { corpusOf } from "../../../content/etudeTexts";
 import { texteTitle } from "../../../services/chiourTexte";
 import { filterBySearch } from "../../../services/catalogSearch";
 import { useBottomChromeHeight } from "../../../composables/useBottomChrome";
+import { useDebouncedValue } from "../../../composables/useDebouncedValue";
 import CatalogSearchField from "../../CatalogSearchField.vue";
 import AppIcon from "../../icons/AppIcon.vue";
 
@@ -34,8 +35,13 @@ const texts = (textStudiesJson as TextStudiesJson).textStudies.filter((e) =>
 );
 
 const term = ref("");
+// The catalog is searched once typing pauses; an emptied field empties the
+// results at once.
+const searched = useDebouncedValue(term);
 const results = computed(() =>
-  term.value.trim().length < 2 ? [] : filterBySearch(texts, term.value).slice(0, 20),
+  term.value.trim().length < 2 || searched.value.trim().length < 2
+    ? []
+    : filterBySearch(texts, searched.value).slice(0, 20),
 );
 
 /** Ce qu'on a coché, dans l'ordre où on l'a coché. */

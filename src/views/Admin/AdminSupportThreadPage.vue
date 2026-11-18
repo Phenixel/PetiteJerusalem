@@ -15,6 +15,7 @@ import { refreshAdminSummary } from "../../composables/useAdminSummary";
 import { useConfirm } from "../../composables/useConfirm";
 import { useToast } from "../../composables/useToast";
 import {
+  appPageHref,
   mailtoReply,
   replyEmail,
   SUPPORT_KINDS,
@@ -108,7 +109,13 @@ const facts = computed(() => {
         : t("feedback.context.web"),
   });
   if (th.version) rows.push({ label: t("admin.support.facts.version"), value: th.version });
-  if (th.page) rows.push({ label: t("admin.support.facts.page"), value: th.page, href: th.page });
+  if (th.page) {
+    rows.push({
+      label: t("admin.support.facts.page"),
+      value: th.page,
+      href: appPageHref(th.page, window.location.origin),
+    });
+  }
   rows.push({ label: t("admin.support.facts.locale"), value: th.locale });
   rows.push({ label: t("admin.support.facts.createdAt"), value: formatWhen(th.createdAt) });
   return rows;

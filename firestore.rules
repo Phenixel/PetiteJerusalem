@@ -121,6 +121,36 @@ service cloud.firestore {
               || request.resource.data.startsWhenFull is bool);
     }
 
+    // A slug carried by several sessions goes to the oldest one (getSessionBySlug
+    // in src/services/firestoreService.ts, slugOwnerIndex in the functions).
+    // `createdAt` is written by the client: without a bound, a session created
+    // today with the slug of a chain already shared and a date in the year
+    // 2000 took over its links and its social preview. The app now writes the
+    // server time; released apps write the device clock, hence one hour of
+    // tolerance backwards (a clock running ahead gains nothing).
+    function createdAtNotBackdated() {
+      return request.resource.data.createdAt is timestamp
+        && request.resource.data.createdAt > request.time - duration.value(1, 'h');
+    }
+
+    // Once written, the creation date does not move: the owner could otherwise
+    // backdate the session after the fact.
+    function createdAtUntouched() {
+      return request.resource.data.get('createdAt', null) == resource.data.get('createdAt', null);
+    }
+
+    // A slug is set once. The oldest session that carries a slug owns it, so
+    // the owner of an old session could give it the slug of a newer one and
+    // take its links, with no backdating at all. The app never changes a slug
+    // already set (sessionService.updateSession, since 3.5.2); only a legacy
+    // session without one may still receive it.
+    function slugUntouched() {
+      return !resource.data.keys().hasAny(['slug'])
+        || !(resource.data.slug is string)
+        || resource.data.slug.size() == 0
+        || request.resource.data.get('slug', null) == resource.data.slug;
+    }
+
     // Sessions : lecture publique (le partage de lecture est ouvert à tous)
     match /sessions/{sessionId} {
       allow read: if true;
@@ -129,6 +159,7 @@ service cloud.firestore {
       allow create: if isAuthenticated()
         && request.resource.data.personId == request.auth.uid
         && validSessionFields()
+        && createdAtNotBackdated()
         && !request.resource.data.keys().hasAny(['hidden', 'hiddenAt', 'hiddenReason', 'reportsCount'])
         && !request.resource.data.keys().hasAny(perpetualFields());
 
@@ -142,6 +173,8 @@ service cloud.firestore {
             && moderationFieldsUntouched()
             && perpetualFieldsUntouched()
             && validSessionFields()
+            && createdAtUntouched()
+            && slugUntouched()
             && request.resource.data.personId == resource.data.personId)
         || isAdmin()
         || ((isAppendReservationsOnly() || isRemoveOneReservationOnly() || isUpdateReservationOnly()) && sessionNotHidden());
@@ -218,6 +251,9 @@ service cloud.firestore {
         && request.resource.data.details is string
         && request.resource.data.details.size() <= 1000
         && request.resource.data.status == 'open'
+        // The date is a date: with no check on its type, this field took a
+        // string or a map of close to 1 MiB, from anyone, as often as wanted.
+        && request.resource.data.createdAt is timestamp
         && (isAuthenticated()
               ? (request.resource.data.reporterId == request.auth.uid
                   && request.resource.data.reporterGuestId == null)

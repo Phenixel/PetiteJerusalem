@@ -46,12 +46,19 @@ concurrency:
   group: deploy-staging
   cancel-in-progress: false
 
+env:
+  # Pinned: an unpinned install took whatever the CLI published that day.
+  # Bump it here, in one place per workflow.
+  FIREBASE_TOOLS_VERSION: 15.36.0
+
 jobs:
   # Le numéro de version, calculé une fois pour les deux apps. La version
   # affichée est celle du prochain correctif (v3.10.11 publiée : 3.10.12),
   # le numéro de build vient du run et croît à chaque fusion, re-runs compris.
   version:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       name: ${{ steps.version.outputs.name }}
       build: ${{ steps.version.outputs.build }}
@@ -116,13 +123,13 @@ jobs:
         run: npm ci --prefix functions
 
       - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
+        uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed # v2.1.13
         with:
           workload_identity_provider: projects/388713166885/locations/global/workloadIdentityPools/github/providers/github
           service_account: github-staging@petite-jerusalem-staging.iam.gserviceaccount.com
 
       - name: Install Firebase CLI
-        run: npm install -g firebase-tools
+        run: npm install -g "firebase-tools@$FIREBASE_TOOLS_VERSION"
 
       - name: Deploy hosting
         run: firebase deploy --only hosting --project petite-jerusalem-staging --non-interactive

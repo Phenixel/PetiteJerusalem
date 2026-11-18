@@ -29,7 +29,7 @@ const { capture, downloaded, downloadBook, error } = vi.hoisted(() => {
   };
 });
 vi.mock("../services/analyticsService", () => ({ analyticsService: { capture } }));
-vi.mock("../composables/useNativeApp", () => ({ isNativeApp: true, appPlatform: "android" }));
+vi.mock("../config/platform", () => ({ isNativeApp: true, appPlatform: "android" }));
 vi.mock("../composables/useToast", () => ({
   useToast: () => ({ error, success: vi.fn(), info: vi.fn() }),
 }));

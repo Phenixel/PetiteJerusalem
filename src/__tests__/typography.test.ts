@@ -53,5 +53,7 @@ describe("typographie du dépôt", () => {
       });
     }
     expect(offenders, "Voir CLAUDE.md : deux-points, virgule ou point-virgule").toEqual([]);
-  });
+    // Reads every file of the repository: a second alone, more than the
+    // default five under the load of the full suite.
+  }, 30_000);
 });

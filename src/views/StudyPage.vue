@@ -617,7 +617,7 @@ onMounted(() => {
     lastReading.value = readingProgressService.getResumePosition();
   });
   if (isNativeApp) {
-    ensureManifestLoaded();
+    void ensureManifestLoaded();
   }
   applySeoMeta();
 });

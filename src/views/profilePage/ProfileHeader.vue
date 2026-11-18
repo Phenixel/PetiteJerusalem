@@ -41,7 +41,9 @@ const { activeHolidayTheme } = useHolidayTheme();
             </h1>
             <slot name="name" />
           </span>
-          <span v-if="email" class="banner-soft mt-0.5 block truncate text-sm">{{ email }}</span>
+          <span v-if="email" class="banner-soft mt-0.5 block truncate text-sm" data-ph-mask>{{
+            email
+          }}</span>
         </span>
         <HolidayOrnaments
           v-if="activeHolidayTheme"

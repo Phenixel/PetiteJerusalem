@@ -18,7 +18,7 @@ import { describe, expect, it, vi } from "vitest";
  * tests ne rendent pas la main, et le garde-fou le dit franchement.
  */
 
-vi.mock("../composables/useNativeApp", () => ({ isNativeApp: true, appPlatform: "android" }));
+vi.mock("../config/platform", () => ({ isNativeApp: true, appPlatform: "android" }));
 
 /** Ce que le plugin sait vraiment faire ; le reste part en appel natif. */
 const IMPLEMENTED: Record<string, () => Promise<unknown>> = {

@@ -53,20 +53,20 @@ function attributesOf(block: string, name: string): string {
 describe("permissions de stockage Android", () => {
   const permissions = declaredPermissions();
 
-  it.each(["android.permission.READ_EXTERNAL_STORAGE", "android.permission.WRITE_EXTERNAL_STORAGE"])(
-    "%s est déclarée, sinon aucun livre ne se télécharge sous Android 11",
-    (name) => {
-      expect(permissions.map((p) => p.name)).toContain(name);
-    },
-  );
+  it.each([
+    "android.permission.READ_EXTERNAL_STORAGE",
+    "android.permission.WRITE_EXTERNAL_STORAGE",
+  ])("%s est déclarée, sinon aucun livre ne se télécharge sous Android 11", (name) => {
+    expect(permissions.map((p) => p.name)).toContain(name);
+  });
 
-  it.each(["android.permission.READ_EXTERNAL_STORAGE", "android.permission.WRITE_EXTERNAL_STORAGE"])(
-    "%s s'arrête à Android 10 (maxSdkVersion=29)",
-    (name) => {
-      const permission = permissions.find((p) => p.name === name);
-      expect(permission?.attributes).toContain('android:maxSdkVersion="29"');
-    },
-  );
+  it.each([
+    "android.permission.READ_EXTERNAL_STORAGE",
+    "android.permission.WRITE_EXTERNAL_STORAGE",
+  ])("%s s'arrête à Android 10 (maxSdkVersion=29)", (name) => {
+    const permission = permissions.find((p) => p.name === name);
+    expect(permission?.attributes).toContain('android:maxSdkVersion="29"');
+  });
 
   it("écrit les attributs des permissions dans la ligne du manifest", () => {
     const source = readFileSync(join(root, "scripts/setup-android.mjs"), "utf8");

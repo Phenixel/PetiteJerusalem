@@ -16,7 +16,6 @@ import {
 import { ModerationError } from "../services/moderationService";
 import { lastAuthMethod, restoreLastAuthMethod, type AuthMethod } from "../services/lastAuthMethod";
 import { loginReason } from "../services/loginReason";
-import { reservationService } from "../services/reservationService";
 import { guestService } from "../services/guestService";
 import { seoService } from "../services/seoService";
 import { analyticsService } from "../services/analyticsService";
@@ -29,6 +28,24 @@ const { localePath } = useLocalePath();
 
 const router = useRouter();
 const { t, locale } = useI18n();
+
+/**
+ * What the person booked before signing in joins the account, in the
+ * background. The service comes with the whole Firestore SDK: imported here
+ * on demand, so that the sign-in form does not wait for it.
+ */
+function migrateGuestReservations(user: User): void {
+  void import("../services/reservationService")
+    .then(({ reservationService }) =>
+      reservationService.migrateGuestReservations(
+        user.email,
+        user.id,
+        user.name,
+        guestService.getLocalGuestId(),
+      ),
+    )
+    .catch((error) => console.error("Migration des réservations invité échouée:", error));
+}
 
 /**
  * `reset` : « Mot de passe oublié », l'email de réinitialisation de Firebase.
@@ -162,19 +179,10 @@ async function submitForm() {
     }
 
     const currentUser = await authService.getCurrentUser();
-    if (currentUser) {
-      reservationService
-        .migrateGuestReservations(
-          currentUser.email,
-          currentUser.id,
-          currentUser.name,
-          guestService.getLocalGuestId(),
-        )
-        .catch((error) => console.error("Migration des réservations invité échouée:", error));
-    }
+    if (currentUser) migrateGuestReservations(currentUser);
 
     const redirectPath = (router.currentRoute.value.query.redirect as string) || "/";
-    router.push(redirectPath);
+    void router.push(redirectPath);
   } catch (e: unknown) {
     // Pas de captureException ici : les échecs email sont presque toujours des
     // erreurs utilisateur (mauvais mot de passe), pas des bugs. L'événement
@@ -218,11 +226,9 @@ async function socialSignIn(provider: SocialProvider, signIn: () => Promise<User
 
     const user = await signIn();
 
-    reservationService
-      .migrateGuestReservations(user.email, user.id, user.name, guestService.getLocalGuestId())
-      .catch((error) => console.error("Migration des réservations invité échouée:", error));
+    migrateGuestReservations(user);
 
-    router.push(redirectPath);
+    void router.push(redirectPath);
   } catch (e: unknown) {
     // Sélecteur quitté, popup fermée, feuille Apple refusée : un renoncement,
     // pas une panne. Ni Error tracking ni message à l'écran ; un événement
@@ -317,7 +323,7 @@ onMounted(async () => {
   const currentUser = await authService.getCurrentUser();
   if (currentUser) {
     const redirectPath = (router.currentRoute.value.query.redirect as string) || "/profile";
-    router.push(redirectPath);
+    void router.push(redirectPath);
     return;
   }
 

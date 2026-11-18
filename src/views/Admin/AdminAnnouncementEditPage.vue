@@ -306,7 +306,7 @@ async function save(): Promise<void> {
     }
     toast.success(t("admin.announcements.saved"));
     void refreshAdminSummary(true);
-    router.push(returnTo);
+    void router.push(returnTo);
   } catch (error) {
     console.error("Erreur lors de l'enregistrement de l'information:", error);
     errorMessage.value = t("admin.error");
@@ -328,7 +328,7 @@ async function remove(): Promise<void> {
     await adminService.deleteAnnouncement(existing.value.id);
     toast.success(t("admin.announcements.deleted"));
     void refreshAdminSummary(true);
-    router.push(returnTo);
+    void router.push(returnTo);
   } catch (error) {
     console.error("Erreur lors de la suppression de l'information:", error);
     toast.error(t("admin.error"));

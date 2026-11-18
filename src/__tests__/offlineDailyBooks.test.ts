@@ -13,7 +13,7 @@ import type { TextStudiesJson, TextStudyJsonEntry } from "../models/models";
  */
 
 // L'app native : c'est la seule plateforme où les textes vivent sur l'appareil.
-vi.mock("../composables/useNativeApp", () => ({ isNativeApp: true, appPlatform: "ios" }));
+vi.mock("../config/platform", () => ({ isNativeApp: true, appPlatform: "ios" }));
 
 const downloaded = new Set<string>();
 

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  asPage,
   buildReplyNotification,
   FeedbackValidationError,
   isTeamReplyTransition,
@@ -15,6 +16,7 @@ import {
   type SupportMessage,
 } from "../../functions/src/support";
 import {
+  appPageHref,
   mailtoReply,
   parseAdminThread,
   replyEmail,
@@ -329,5 +331,32 @@ describe("le backoffice", () => {
       ],
     };
     expect(threadSubject(long, 30)).toBe("Les horaires de chabbat ne…");
+  });
+});
+
+describe("la page d'où part un message", () => {
+  // The back office turns this field into a link the admin clicks: it must
+  // never lead to another site.
+  const elsewhere = [
+    "//evil.example/x",
+    "/\\evil.example/x",
+    "/\t/evil.example",
+    "https://evil.example",
+  ];
+
+  it("n'est gardée par la fonction que si c'est un chemin de l'app", () => {
+    expect(asPage("/bibliotheque/tehilim/1?verset=3#v3")).toBe(
+      "/bibliotheque/tehilim/1?verset=3#v3",
+    );
+    for (const page of elsewhere) expect(asPage(page)).toBe("");
+    expect(asPage(42)).toBe("");
+  });
+
+  it("ne devient un lien que vers ce site, même pour un fil déjà enregistré", () => {
+    const origin = "https://petite-jerusalem.fr";
+    expect(appPageHref("/horaires?ville=paris", origin)).toBe(
+      "https://petite-jerusalem.fr/horaires?ville=paris",
+    );
+    for (const page of elsewhere) expect(appPageHref(page, origin)).toBeUndefined();
   });
 });
