@@ -271,3 +271,93 @@ describe("when it does not load", () => {
     }
   });
 });
+
+describe("while nothing shows", () => {
+  /**
+   * At launch the screen only appears once the video can play, and that wait
+   * now lasts up to a minute. Until then the app behind must stay as it was:
+   * holding it from the moment the component mounted left the home page
+   * unable to scroll under an invisible overlay, at every launch of the iOS
+   * app from 4.0 on, while the video would not load (see
+   * docs/design.md, "The site must serve it cacheable").
+   */
+  it("leaves the page alone, and holds it once the video is on screen", async () => {
+    localStorage.setItem(ONBOARDING_KEY, "1");
+    const { hasOpenOverlay } = await import("../composables/useOverlayStack");
+    const { isWhatsNewOpen, useWhatsNew } = await import("../composables/useWhatsNew");
+    await vi.waitFor(() => expect(isWhatsNewOpen.value).toBe(true));
+    const { nextTick } = await import("vue");
+    const shown = await mountVideo();
+    expect(document.documentElement.style.overflow).toBe("");
+    expect(hasOpenOverlay()).toBe(false);
+
+    vi.spyOn(shown.video, "play").mockResolvedValue();
+    shown.video.dispatchEvent(new Event("loadeddata"));
+    await nextTick();
+    expect(document.documentElement.style.overflow).toBe("hidden");
+    expect(hasOpenOverlay()).toBe(true);
+
+    shown.unmount();
+    expect(document.documentElement.style.overflow).toBe("");
+    expect(hasOpenOverlay()).toBe(false);
+    useWhatsNew().closeWhatsNew(true);
+  });
+});
+
+describe("the wait for a video that is slow to come", () => {
+  it("says how far the load got when it runs out", async () => {
+    vi.useFakeTimers();
+    try {
+      const { analyticsService } = await import("../services/analyticsService");
+      const capture = vi.spyOn(analyticsService, "capture").mockImplementation(() => {});
+      const { useWhatsNew } = await import("../composables/useWhatsNew");
+      useWhatsNew().replayWhatsNew();
+      const shown = await mountVideo("/aide");
+      vi.advanceTimersByTime(20000);
+      // Nothing came at all: that is not a download too slow to finish, and
+      // it is what the Error tracking could not tell apart before.
+      expect(capture).toHaveBeenCalledWith(
+        "whats_new_video_closed",
+        expect.objectContaining({
+          error_source: "timeout",
+          ready_state: 0,
+          network_state: 0,
+          buffered_seconds: 0,
+          waited_ms: 20000,
+        }),
+      );
+      shown.unmount();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("gives the video another turn as long as bytes keep arriving", async () => {
+    vi.useFakeTimers();
+    try {
+      const { analyticsService } = await import("../services/analyticsService");
+      const capture = vi.spyOn(analyticsService, "capture").mockImplementation(() => {});
+      const { useWhatsNew } = await import("../composables/useWhatsNew");
+      useWhatsNew().replayWhatsNew();
+      const shown = await mountVideo("/aide");
+      // A download that advances is worth waiting for: nothing shows while it
+      // loads and the app stays usable behind it.
+      shown.video.dispatchEvent(new Event("progress"));
+      vi.advanceTimersByTime(20000);
+      expect(capture).not.toHaveBeenCalled();
+      shown.video.dispatchEvent(new Event("progress"));
+      vi.advanceTimersByTime(20000);
+      expect(capture).not.toHaveBeenCalled();
+      // Three turns, a minute in all: it gives up even while bytes come.
+      shown.video.dispatchEvent(new Event("progress"));
+      vi.advanceTimersByTime(20000);
+      expect(capture).toHaveBeenCalledWith(
+        "whats_new_video_closed",
+        expect.objectContaining({ error_source: "timeout", waited_ms: 60000 }),
+      );
+      shown.unmount();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});

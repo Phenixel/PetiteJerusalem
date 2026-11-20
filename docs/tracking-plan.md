@@ -194,6 +194,10 @@ The video left the screen.
 | `error_source`    | **new property**: with `via: error` only, what gave up: `media` (the player's own error) or `timeout` (twenty seconds with nothing playable) |
 | `error_code`      | **new property**: with `via: error` only, the `MediaError` code of the player (1 aborted, 2 network, 3 decoding, 4 source refused), null on a timeout |
 | `error_message`   | **new property**: with `via: error` only, what the player said, cut at 200 characters, null when it said nothing |
+| `ready_state`     | **new property**: with `via: error` only, the player's `readyState` when it gave up (0 nothing, 1 metadata, 2 a frame, 3 or 4 more), null without a player |
+| `network_state`   | **new property**: with `via: error` only, its `networkState` (0 empty, 1 idle, 2 loading, 3 no source), null without a player |
+| `buffered_seconds`| **new property**: with `via: error` only, the seconds of video that had arrived: 0 says the request brought nothing, a figure says it was downloading too slowly |
+| `waited_ms`       | **new property**: with `via: error` only, how long the wait lasted, in milliseconds (20,000 for a request that brought nothing, up to 60,000 for a download that kept advancing) |
 
 `watched_seconds` of a video played from a passage counts from the start
 of the video, not of the passage: the passage's start is in
