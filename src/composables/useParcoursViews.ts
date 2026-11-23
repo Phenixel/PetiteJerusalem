@@ -259,7 +259,7 @@ export function useParcoursViews() {
     return aliyotLabel(aliyot, names, t);
   }
 
-  function route(task: Task, objective: Objective, day: DayKey): RouteLocationRaw | null {
+  function route(task: Task, objective: Objective): RouteLocationRaw | null {
     switch (objective.kind) {
       case "program": {
         const start = task.slot ? placeOf(objective.texts, task.slot.from) : null;
@@ -288,13 +288,10 @@ export function useParcoursViews() {
           if (task.aliyot) query.montees = `${task.aliyot.from + 1}-${task.aliyot.to}`;
           return { path: "/bibliotheque/chnei-mikra", query };
         }
-        if (objective.cycle === "tehilim-month") return "/bibliotheque/tehilim-du-jour";
         if (objective.cycle === "parasha") return "/bibliotheque/chnei-mikra";
-        // Les Tehilim de la semaine : le premier psaume du jour, la tâche au bas.
-        const date = localDayFrom(day) ?? new Date();
-        date.setHours(12);
-        const first = tehilimOfCycle(objective.cycle, date).entries[0];
-        return first ? { path: hubPath(first), query: { objectif: objective.id } } : null;
+        // The Tehilim of the month or of the week: the day's psalms on one
+        // page, each marked read on its own (TehilimDayPage).
+        return { path: "/bibliotheque/tehilim-du-jour", query: { objectif: objective.id } };
       }
       case "text": {
         const entry = texteOf(objective.textId);
@@ -324,11 +321,11 @@ export function useParcoursViews() {
         moment: objective.moment,
         weekly: false,
       };
-      return route(task, objective, day);
+      return route(task, objective);
     }
     const task = store.todayTasks.value.find((one) => one.objectiveId === objective.id);
     if (task && taskProgress(store.data.value, task, day) !== "done") {
-      const target = route(task, objective, day);
+      const target = route(task, objective);
       if (target) return target;
     }
     return aheadRoute(objective, day);
@@ -423,7 +420,7 @@ export function useParcoursViews() {
       title: title(task, objective),
       meta: meta(task, objective, day),
       kicker: kicker(task, objective),
-      route: route(task, objective, day),
+      route: route(task, objective),
       art: objectiveArt(objective, task.step),
       progress: taskProgress(data, task, day),
       skipped: isSkipped(data.days[day], task.id),

@@ -2076,6 +2076,7 @@ const en: LocaleMessages = {
   tehilimDay: {
     title: "Daily Tehilim",
     hint: "The psalms of the monthly cycle, to be read one after the other.",
+    weekHint: "The psalms of the day of the week, to be read one after the other.",
     pageDescription:
       "The Tehilim of the Hebrew day of the month, one below the other, read in one go.",
     dayOfMonth: "Day {day} of the month",
@@ -2770,6 +2771,7 @@ const en: LocaleMessages = {
       habit: "Take up a habit",
       ownWords: "In my own words",
       taken: "Already in your journey",
+      readyMade: "Psalms already divided up",
       partsTitle: {
         michna: "Which part of the Mishna?",
         talmud: "Which part of the Talmud?",

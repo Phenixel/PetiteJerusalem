@@ -24,6 +24,12 @@
  * semaine, la paracha ont chacun leur volume, leur carte et leur page. La
  * lecture quotidienne d'avant les mêlait faute de mieux.
  *
+ * The Tehilim cycles are still offered from here, since this is where one
+ * composes the psalms read every day: « Modifier ma liste » adds the psalms
+ * already divided up (the month's or the week's) a tap away, lists them with
+ * the texts, and the day shows a card that opens them on their own page,
+ * where each psalm is marked (TehilimDayPage).
+ *
  * Ce qui se coche ici est ce que coche la pile de l'accueil : une seule
  * journée.
  */
@@ -44,8 +50,8 @@ import { encadrementBounds } from "../../services/encadrementService";
 import { appendHebrewNumeral } from "../../services/hebrewNumerals";
 import { taskEntries } from "../../services/parcours/entries";
 import { trackDayViewed } from "../../services/parcours/tracking";
-import { createText } from "../../services/parcours/create";
-import type { DayKey, TextObjective } from "../../services/parcours/model";
+import { createCycle, createText } from "../../services/parcours/create";
+import type { CycleId, CycleObjective, DayKey, TextObjective } from "../../services/parcours/model";
 import { liveObjectives, type Task } from "../../services/parcours/schedule";
 import { analyticsService } from "../../services/analyticsService";
 import { haptic } from "../../services/haptics";
@@ -126,6 +132,19 @@ const translation = useEntriesTranslation(() => daily.value.map((reading) => rea
 // corpus, la liste étant rangée dans l'ordre du catalogue, qui les tient groupés.
 const textBounds = computed(() => encadrementBounds(daily.value.map((r) => r.entry)));
 
+/** A Tehilim cycle of Mon parcours (the month's or the week's psalms). */
+const isTehilimCycle = (objective: { kind: string; cycle?: string }): boolean =>
+  objective.kind === "cycle" &&
+  (objective.cycle === "tehilim-month" || objective.cycle === "tehilim-week");
+
+/** The day's Tehilim cycles: a card each, which opens their page. */
+const calendar = computed(() =>
+  store.todayTasks.value.flatMap((task) => {
+    const objective = store.data.value.objectives[task.objectiveId];
+    return objective && isTehilimCycle(objective) ? [views.taskView(task, today.value)] : [];
+  }),
+);
+
 const doneCount = computed(() => daily.value.filter((reading) => reading.done).length);
 const allDone = computed(() => daily.value.length > 0 && doneCount.value === daily.value.length);
 const percent = computed(() =>
@@ -143,6 +162,13 @@ const textObjectives = computed(() =>
     ),
 );
 const takenTexts = computed(() => textObjectives.value.map((objective) => objective.textId));
+/** The Tehilim cycles taken: in the list with the texts, and not offered twice. */
+const cycleObjectives = computed(() =>
+  liveObjectives(store.data.value).filter((objective): objective is CycleObjective =>
+    isTehilimCycle(objective),
+  ),
+);
+const takenCycles = computed(() => cycleObjectives.value.map((objective) => objective.cycle));
 /** « Mes Tehilim journaliers » quand ce ne sont que des psaumes, sinon « Lecture du jour ». */
 const name = computed(() => views.dailyName(takenTexts.value));
 
@@ -151,17 +177,38 @@ const editing = ref(false);
 /** The reminders of the day, opened from the line at the bottom (in the app). */
 const remindersOpen = ref(false);
 watch(
-  () => textObjectives.value.length === 0,
+  () => textObjectives.value.length === 0 && cycleObjectives.value.length === 0,
   (empty) => {
     if (empty) editing.value = true;
   },
   { immediate: true },
 );
 
-function removeText(objective: TextObjective): void {
+function removeObjective(objective: TextObjective | CycleObjective): void {
   store.removeObjective(objective.id);
-  analyticsService.capture("parcours_objective_removed", { kind: "text", source: "daily_page" });
+  analyticsService.capture("parcours_objective_removed", {
+    kind: objective.kind,
+    source: "daily_page",
+  });
 }
+
+/** The psalms already divided up, taken from the list: a cycle of Mon parcours. */
+function addCycle(cycle: CycleId): void {
+  if (takenCycles.value.includes(cycle)) return;
+  store.saveObjective(createCycle(cycle, today.value, Date.now()));
+  analyticsService.capture("parcours_objective_created", {
+    kind: "cycle",
+    cycle,
+    source: "daily_page",
+  });
+  haptic("done");
+}
+
+/** The list: the texts, then the Tehilim cycles. */
+const listed = computed<(TextObjective | CycleObjective)[]>(() => [
+  ...textObjectives.value,
+  ...cycleObjectives.value,
+]);
 
 /** La recherche repart vide une fois ses textes ajoutés. */
 const searchKey = ref(0);
@@ -182,6 +229,8 @@ function addTexts(entries: TextStudyJsonEntry[]): void {
 }
 
 const hasReading = computed(() => daily.value.length > 0);
+/** Something to read today: texts here, or a Tehilim cycle on its page. */
+const hasDay = computed(() => hasReading.value || calendar.value.length > 0);
 // Double appui sur le texte : la page descend toute seule ; l'écran reste allumé.
 useAutoScroll(() => hasReading.value);
 useKeepAwake(() => hasReading.value);
@@ -272,7 +321,7 @@ seoService.setMeta({
     <!-- Composer sa liste, et la taille du texte comme dans le lecteur. -->
     <div class="mt-3 flex min-h-11 flex-wrap items-center justify-between gap-3">
       <button
-        v-if="textObjectives.length"
+        v-if="listed.length"
         type="button"
         class="add-link"
         :aria-expanded="editing"
@@ -287,9 +336,9 @@ seoService.setMeta({
     <!-- Ma liste : les textes du jour, chacun retirable d'un toucher, et la
          recherche pour en ajouter plusieurs d'affilée. -->
     <section v-if="editing" class="mt-4">
-      <ul v-if="textObjectives.length" class="card divide-y divide-line overflow-hidden">
+      <ul v-if="listed.length" class="card divide-y divide-line overflow-hidden">
         <li
-          v-for="objective in textObjectives"
+          v-for="objective in listed"
           :key="objective.id"
           class="flex min-h-14 items-center gap-3 px-4"
         >
@@ -303,24 +352,48 @@ seoService.setMeta({
             type="button"
             class="remove-btn"
             :aria-label="t('parcours.daily.remove', { name: views.objectiveTitle(objective) })"
-            @click="removeText(objective)"
+            @click="removeObjective(objective)"
           >
             <AppIcon name="x" :size="16" />
           </button>
         </li>
       </ul>
       <p class="mt-5 text-[15px] font-bold">{{ t("parcours.daily.addTitle") }}</p>
-      <StepText :key="searchKey" class="mt-2" :taken="takenTexts" @pick="addTexts" />
+      <StepText
+        :key="searchKey"
+        class="mt-2"
+        :taken="takenTexts"
+        :taken-cycles="takenCycles"
+        @pick="addTexts"
+        @cycle="addCycle"
+      />
     </section>
 
+    <!-- The day's Tehilim cycles: each on its own page, where each psalm is marked. -->
+    <ul v-if="calendar.length" class="mt-6 space-y-3">
+      <li v-for="view in calendar" :key="view.key">
+        <RouterLink :to="view.route ?? '/'" class="card calendar-card">
+          <span class="min-w-0 flex-1">
+            <span class="block text-xs font-semibold text-primary">{{ view.title }}</span>
+            <span class="block text-lg font-bold">{{ view.meta }}</span>
+          </span>
+          <span v-if="view.progress === 'done'" class="calendar-done">
+            <AppIcon name="circle-check" :size="15" />
+            {{ t("parcours.daily.readToday") }}
+          </span>
+          <AppIcon v-else name="chevron-right" :size="16" class="rtl:rotate-180" />
+        </RouterLink>
+      </li>
+    </ul>
+
     <!-- Rien aujourd'hui : de quoi composer sa lecture. -->
-    <div v-if="!hasReading" class="flex flex-col items-center py-16 text-center">
+    <div v-if="!hasDay" class="flex flex-col items-center py-16 text-center">
       <AppIcon name="book" :size="32" class="mb-4 text-primary/50" />
       <p class="text-xl font-semibold">{{ t("parcours.daily.emptyTitle") }}</p>
       <p class="mt-2 max-w-sm text-text-secondary">{{ t("parcours.daily.emptyText") }}</p>
     </div>
 
-    <template v-else>
+    <template v-else-if="hasReading">
       <OfflineTextsNotice class="mt-6" :entries="offlineEntries" />
 
       <!-- La journée : où l'on en est. -->
@@ -466,6 +539,23 @@ seoService.setMeta({
 .remove-btn:hover {
   background: color-mix(in srgb, var(--color-text-primary) 8%, transparent);
   color: var(--color-text-primary);
+}
+.calendar-card {
+  display: flex;
+  min-height: 64px;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  color: var(--color-text-primary);
+}
+.calendar-done {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-primary);
+  font-size: 14px;
+  font-weight: 600;
 }
 .mark-btn {
   display: inline-flex;

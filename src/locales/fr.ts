@@ -2153,6 +2153,7 @@ const fr = {
   tehilimDay: {
     title: "Tehilim du jour",
     hint: "Les psaumes du cycle mensuel, à lire les uns à la suite des autres.",
+    weekHint: "Les psaumes du jour de la semaine, à lire les uns à la suite des autres.",
     pageDescription:
       "Les Tehilim du jour du mois hébraïque, les uns sous les autres, à lire d'une traite.",
     dayOfMonth: "{day} du mois",
@@ -2859,6 +2860,7 @@ const fr = {
       habit: "Prendre une habitude",
       ownWords: "Avec mes mots",
       taken: "Déjà dans votre parcours",
+      readyMade: "Les psaumes déjà répartis",
       partsTitle: {
         michna: "Quelle partie de la Michna ?",
         talmud: "Quelle partie du Talmud ?",

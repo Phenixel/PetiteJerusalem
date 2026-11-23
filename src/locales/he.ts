@@ -2024,6 +2024,7 @@ const he: LocaleMessages = {
   tehilimDay: {
     title: "תהילים יומי",
     hint: "מזמורי המחזור החודשי, לקריאה בזה אחר זה.",
+    weekHint: "מזמורי יום השבוע, לקריאה בזה אחר זה.",
     pageDescription: "תהילים של יום החודש העברי, זה אחר זה, לקריאה ברצף.",
     dayOfMonth: "{day} בחודש",
     unavailable: "לא ניתן לקבוע את מזמורי היום.",
@@ -2709,6 +2710,7 @@ const he: LocaleMessages = {
       habit: "לקבל הרגל",
       ownWords: "במילים שלי",
       taken: "כבר במסלול שלכם",
+      readyMade: "תהילים בחלוקה קבועה",
       partsTitle: {
         michna: "איזה חלק מהמשנה?",
         talmud: "איזה חלק מהתלמוד?",

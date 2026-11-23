@@ -434,7 +434,13 @@ const canGoOn = computed(
     <!-- Un texte chaque jour : on le cherche, on le prend. -->
     <section v-if="selection?.kind === 'text'" ref="textSection" class="create-section">
       <h2 class="create-h2">{{ t("parcours.create.dailyText") }}</h2>
-      <StepText class="mt-4" :taken="takenTexts" @pick="createChosenTexts" />
+      <StepText
+        class="mt-4"
+        :taken="takenTexts"
+        :taken-cycles="takenCycles"
+        @pick="createChosenTexts"
+        @cycle="(cycle) => (presetChoice = { kind: 'cycle', cycle })"
+      />
     </section>
 
     <PresetSheet
