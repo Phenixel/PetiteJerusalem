@@ -51,11 +51,13 @@ import {
   createText,
   cycleObjectiveId,
 } from "../../services/parcours/create";
+import { inDailyBook } from "../../services/parcours/dailyBook";
 import {
   CYCLE_CHOICES,
   HABIT_PRESETS,
   isAlive,
   type CycleChoice,
+  type TehilimCycleId,
   type DayKey,
   type HabitAnchor,
   type HabitPreset,
@@ -191,6 +193,10 @@ const livePrograms = (of: ProgramCorpus) =>
 const takenTehilim = computed(() => livePrograms("tehilim").length > 0);
 const takenProgramTexts = computed(() =>
   corpus.value ? livePrograms(corpus.value).flatMap((o) => o.texts) : [],
+);
+/** The daily book already holds something: one adds to it. */
+const hasDailyBook = computed(() =>
+  Object.values(store.data.value.objectives).some((o) => inDailyBook(o) && isAlive(o)),
 );
 const takenTexts = computed(() =>
   Object.values(store.data.value.objectives)
@@ -341,23 +347,34 @@ function createChosenCycle(cycle: CycleChoice): void {
   finish(createCycle(cycle, store.today.value, Date.now()), { cycle });
 }
 
-/** Les textes du jour cochés, pris d'un coup ; Mon parcours glisse jusqu'au premier. */
-function createChosenTexts(entries: TextStudyJsonEntry[]): void {
-  if (entries.length === 0) return;
+/**
+ * What was ticked for the daily book (texts, the Tehilim of the day), taken
+ * at once; Mon parcours slides to the book, where it lands.
+ */
+function createChosenTexts(entries: TextStudyJsonEntry[], cycles: TehilimCycleId[]): void {
+  if (entries.length === 0 && cycles.length === 0) return;
   haptic("done");
   const now = Date.now();
-  const created = entries.map((entry, i) =>
-    createText(Number(entry.id), store.today.value, now + i),
-  );
-  for (const objective of created) {
+  const created: Objective[] = [];
+  cycles.forEach((cycle, i) => {
+    const found = store.data.value.objectives[cycleObjectiveId(cycle)];
+    if (found && isAlive(found)) return;
+    const objective = createCycle(cycle, store.today.value, now + i);
+    store.saveObjective(objective);
+    analyticsService.capture("parcours_objective_created", { kind: "cycle", cycle });
+    created.push(objective);
+  });
+  entries.forEach((entry, i) => {
+    const objective = createText(Number(entry.id), store.today.value, now + cycles.length + i);
     store.saveObjective(objective);
     analyticsService.capture("parcours_objective_created", {
       kind: "text",
       text_id: objective.textId,
-      texts_count: created.length,
+      texts_count: entries.length,
     });
-  }
-  arriveOnParcours(router, created[0].id);
+    created.push(objective);
+  });
+  if (created.length) arriveOnParcours(router, created[0].id);
 }
 
 const canGoOn = computed(
@@ -374,6 +391,7 @@ const canGoOn = computed(
 
     <StepKind
       :selected="selectedKey"
+      :has-daily-book="hasDailyBook"
       :taken-cycles="takenCycles"
       :taken-habits="takenHabits"
       :taken-tehilim="takenTehilim"
@@ -403,9 +421,16 @@ const canGoOn = computed(
       </button>
     </section>
 
-    <!-- D'ici quand : la date, le rythme, le moment. -->
+    <!-- By when: the date, the rhythm, the moment. -->
     <section v-if="corpus && whenOpen && canGoOn" ref="whenSection" class="create-section">
       <h2 class="create-h2">{{ whenTitle }}</h2>
+      <!-- The whole book by a date; the psalms of each day go in the daily book. -->
+      <p v-if="corpus === 'tehilim'" class="mt-3 text-[14px] leading-relaxed text-text-secondary">
+        {{ t("parcours.create.tehilimDailyNote") }}
+        <button type="button" class="tehilim-daily-link" @click="chooseText">
+          {{ t("parcours.create.tehilimDailyLink") }}</button
+        >.
+      </p>
       <StepWhen
         v-model:end="end"
         v-model:rhythm="rhythm"
@@ -431,15 +456,16 @@ const canGoOn = computed(
       />
     </section>
 
-    <!-- Un texte chaque jour : on le cherche, on le prend. -->
+    <!-- The daily book: the Tehilim of the day and the texts, ticked, taken at once. -->
     <section v-if="selection?.kind === 'text'" ref="textSection" class="create-section">
-      <h2 class="create-h2">{{ t("parcours.create.dailyText") }}</h2>
+      <h2 class="create-h2">
+        {{ hasDailyBook ? t("parcours.create.dailyBookAdd") : t("parcours.create.dailyBook") }}
+      </h2>
       <StepText
         class="mt-4"
         :taken="takenTexts"
         :taken-cycles="takenCycles"
         @pick="createChosenTexts"
-        @cycle="(cycle) => (presetChoice = { kind: 'cycle', cycle })"
       />
     </section>
 
@@ -471,6 +497,12 @@ const canGoOn = computed(
 }
 :root.native-app .create-section {
   scroll-margin-top: calc(env(safe-area-inset-top, 0px) + 16px);
+}
+.tehilim-daily-link {
+  font-weight: 700;
+  color: var(--color-primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 .create-h2 {
   font-family: var(--font-display);

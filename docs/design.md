@@ -2896,17 +2896,19 @@ Habits are not books: they have their list, and their week in flat boxes.
   onto several lines, word by word (« Kodachim / Toharot »), three at most;
   a word too long even at the smallest size tightens rather than
   overflowing.
-- **The day's texts make a single volume**, « Lecture du jour » ("Daily
-  reading"): two psalms, ten, a page you love do not make ten books on the
-  shelf. When they are only psalms, it is called « Mes Tehilim journaliers »
+- **What is read every day makes a single volume**, « Lecture du jour »
+  ("Daily reading"): two psalms, ten, a page you love, the Tehilim of the
+  day of the month or of the week do not make ten books on the shelf. When
+  they are only psalms, it is called « Mes Tehilim journaliers »
   ("My daily Tehilim") (« Tehilim » on the cover, « Chaque jour », "Every
   day", below), so that you know at a glance what it holds; the page takes
   the same name, the home page card its short form, « Mes Tehilim », which
   fits next to the volume it carries (`dailyName`). A text from another
-  corpus brings everything back to « Lecture du jour ».
-  Its thickness says how many it holds, its border fills with the texts read
-  today, and it opens their page (see "The daily reading, back again"),
-  where the list is composed.
+  corpus brings everything back to « Lecture du jour ». The Tehilim of the
+  day alone keep their own name (« Tehilim du jour » on the volume,
+  « Tehilim 69 à 71 » on the card). Its thickness says how many texts it
+  holds today, its border fills with the texts read today, and it opens
+  their page (see "The daily book"), where the list is composed.
 
 - **A volume touched on the home page opens the text**, at the place where
   you are (`readRoute`): a program's day portion if it is waiting, otherwise
@@ -3180,11 +3182,18 @@ Only once: nothing replays on reload. Held by
 `e2e/firebase/parcours.spec.ts` (« un volume se choisit sur une seule
 page »).
 
-- **Que voulez-vous accomplir ?** ("What do you want to accomplish?") The
-  volumes standing on their shelf (Michna, Talmud, Tanakh, Tehilim); the
-  cycles as pills (Tehilim every week, every month, Chnei mikra, one text
-  every day); the habits as pills, and « Avec mes mots » ("In my own words")
-  outlined, in ink. The habits offered are done every day without too
+- **Que voulez-vous accomplir ?** ("What do you want to accomplish?") Four
+  ways of choosing a book, each said once. First « Lire chaque jour » ("Read
+  every day"): a single row, its small volume at its start, « Ma lecture du
+  jour » (« Ajouter à ma lecture du jour » once it holds something), for
+  everything read again daily; the Tehilim of the day are offered there and
+  only there, ticked like a text (« Les psaumes déjà répartis »), so that
+  one never wonders which of three places to take them from. Then the
+  volumes standing on their shelf to finish a text by a date (Michna,
+  Talmud, Tanakh, Tehilim); the Tehilim volume, chosen, says that the
+  psalms of each day go in the daily reading, with a link to it. Then the
+  cycles of the calendar as pills (Chnei mikra, the Daf Yomi); the habits as
+  pills, and « Avec mes mots » ("In my own words") outlined, in ink. The habits offered are done every day without too
   precise a moment to keep: the three tefilot, the bedtime Chéma, tsédaka,
   guarding your tongue, a study period (the card opens the library). Tefilin
   and Birkat Hamazon are no longer there (the tefilot and the meal carry
@@ -3237,43 +3246,60 @@ page »).
   catch-up that pushes back the end): « 29 Elul 5787 (1 octobre 2027) ». The
   Hebrew date alone cannot be placed at a glance in the year you are living.
 
-### The daily reading, back again
+### The daily book
 
 The daily reading page from before Mon parcours is back
 (`/bibliotheque/lecture-du-jour`, `LectureDuJourPage.vue`), fed by it,
 without losing anything it knew how to do: you often have several texts on
 the same day (several psalms), and you read them one after the other. It is
-the page of the « Lecture du jour » volume and of the card of the same name.
+the page of the « Lecture du jour » volume and of the card of the same name,
+and it holds everything read every day: the daily texts and the Tehilim of
+the day of the month or of the week (`services/parcours/dailyBook.ts`).
 
-- **The day's texts, nothing else**, in catalog order. The calendar readings
-  (the month's or the week's Tehilim, the paracha) are no longer there: each
-  has its volume, its card and its page. The previous daily reading mixed
-  them, and the paracha had a « Cette semaine » ("This week") tab there, for
-  lack of anywhere else. What is said before and after (the Yehi ratson of
-  the Tehilim) is placed once for everything you read from the same corpus.
+- **One list**, in catalog order. The psalms of the Tehilim of the day come
+  among the psalms taken one by one (Tehilim 18 to 22 of the month, then
+  Tehilim 23 taken alone, then 73 to 89 of the week), not as a card that
+  leads elsewhere: the reader does not have to know that some psalms come
+  from a cycle. A psalm both taken and given by a cycle that day is read
+  once, and marking it marks it for both. What is said before and after
+  (the Yehi ratson of the Tehilim) is placed once for everything you read
+  from the same corpus. The paracha and the Daf Yomi are not there: they
+  are studied, not read again every day, and keep their volume and page.
 - **The list is composed on the page**: « Modifier ma liste » ("Edit my
-  list") shows the day's texts, each removed with one touch (the cross and
-  its name, « Retirer Tehilim 23 », "Remove Tehilim 23"), and the search adds
-  several in a row. It opens by default when the list is empty. Held by
-  `e2e/firebase/parcours.spec.ts` (« plusieurs textes d'affilée, lus à la
-  suite dans la lecture du jour »).
+  list") shows what the book holds, each removed with one touch (the cross
+  and its name, « Retirer Tehilim 23 », "Remove Tehilim 23"); the Tehilim of
+  the day and the search add several in a row. It opens by default when the
+  list is empty. Held by `e2e/firebase/parcours.spec.ts` (« plusieurs
+  textes d'affilée, lus à la suite dans la lecture du jour »).
 - **Each text is checked off** (« Marquer comme lu », "Mark as read") and
   folds; a touched title folds or reopens it. A text's chapters are checked
-  off one by one (« 3/8 »), and the last one checks the text. The day is
-  stated at the top (« 1 sur 4 lus aujourd'hui », "1 of 4 read today", and
-  its bar).
+  off one by one (« 3/8 »), and the last one checks the text; the last psalm
+  of a Tehilim cycle checks the cycle. The day is stated at the top (« 1 sur
+  4 lus aujourd'hui », "1 of 4 read today", and its bar), counted in texts,
+  each psalm of a cycle one of them.
 - The reading menu, the text size (next to « Modifier ma liste »),
   auto-scroll, the screen that stays on, the notice about texts to download
   as before; at the bottom, in the app, the line of the reminders of the day
   (see below), in place of the evening reminder's card.
-- **On the home page, a single card**: the day's texts, one or several, make
-  the « Lecture du jour » card (« 3 textes · Tehilim 1 et 2 autres », "3
-  texts · Tehilim 1 and 2 others"), which opens the page; swiped, it checks
-  them all. The profile counts the day the same way.
-- **Several texts in a row**: at creation as on the page, a touch checks a
-  text, the search can be redone as many times as you like, what you have
-  checked waits above, and « Ajouter 3 textes » ("Add 3 texts"), stuck to the
-  bottom of the screen, takes them all.
+- **On the home page, a single card**: what is read today, one text or
+  several, makes the « Lecture du jour » card (« 18 psaumes · Tehilim 23,
+  Tehilim de la semaine »), which opens the page; swiped, it checks them
+  all. The profile and the lamp count the day the same way. The Tehilim of
+  the day alone keep their own card (« Tehilim 73 à 89 »), which opens the
+  same page.
+- **Several in a row**: at creation as on the page, a touch checks a text
+  or the Tehilim of the day, the search can be redone as many times as you
+  like, what you have checked waits above, and « Ajouter à ma lecture du
+  jour (3) », stuck to the bottom of the screen, takes them all.
+- The library keeps its own « Tehilim du jour » page, the reading of the
+  day of the month, reached from the study page or the home banner. For
+  someone who follows the Tehilim of the day, it ends with « Marquer comme
+  lu » (`TehilimDayMark.vue`), which marks the day's psalms in the daily
+  book: a reader who reached the psalms by another door must not find
+  nothing to mark at the bottom. After sunset the library already reads the
+  next Hebrew day while Mon parcours waits for dawn; the bottom then says
+  so (« elle en est encore à Tehilim 69 à 71 ») and leads to the daily
+  book, rather than marking psalms that were not read.
 
 ### Reminders of the day
 

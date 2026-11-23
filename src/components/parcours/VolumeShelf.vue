@@ -24,11 +24,12 @@
  * Un volume en pause pâlit et porte une pastille « En pause » : on le voit
  * sur l'étagère, pas seulement dans ses réglages.
  *
- * Les textes du jour (un psaume, une page qu'on aime, autant qu'on veut)
- * font un seul volume, « Lecture du jour » (« Mes Tehilim journaliers » quand
- * ce ne sont que des psaumes, voir dailyName), qui ouvre leur page : on les y
- * lit à la suite, on en ajoute, on en retire. Son liseré se remplit des
- * textes lus aujourd'hui.
+ * The daily book (the daily texts, a psalm or a page one loves, as many as
+ * one wants, and the Tehilim of the day of the month or of the week) makes a
+ * single volume, « Lecture du jour » (« Mes Tehilim journaliers » when it
+ * holds only psalms, see dailyName), which opens its page: everything is
+ * read there one after the other, added, removed. Its edge fills with what
+ * is read today.
  *
  * Un volume qu'on vient de créer (`arriving`) tombe sur sa planche, rebondit
  * un peu, et soulève une poussière dorée : il est arrivé.
@@ -38,11 +39,10 @@ import { useI18n } from "vue-i18n";
 import { useRouter, type RouteLocationRaw } from "vue-router";
 import { useLongPress } from "../../composables/useLongPress";
 import { useParcours } from "../../composables/useParcours";
-import { useParcoursViews } from "../../composables/useParcoursViews";
-import { tehilimOfCycle } from "../../services/dailyCycles";
-import { localDayFrom } from "../../services/dateService";
-import type { Objective, ProgramObjective, TextObjective } from "../../services/parcours/model";
-import { isTehilimCycle } from "../../services/parcours/model";
+import { useDailyBook } from "../../composables/useDailyBook";
+import { DAILY_PAGE, useParcoursViews } from "../../composables/useParcoursViews";
+import { inDailyBook, type DailyObjective } from "../../services/parcours/dailyBook";
+import type { Objective, ProgramObjective } from "../../services/parcours/model";
 import { liveObjectives, taskProgress, type Task } from "../../services/parcours/schedule";
 import { placeOf, unitLabel } from "../../services/parcours/texts";
 import AppIcon from "../icons/AppIcon.vue";
@@ -60,13 +60,11 @@ const props = withDefaults(
 /** La poussière dorée du volume qui se pose : six grains, en éventail. */
 const SPECKS = [-68, -40, -14, 14, 40, 68];
 
-/** La page des textes du jour : les lire, en ajouter, en retirer. */
-const DAILY_PAGE = "/bibliotheque/lecture-du-jour";
-
 const { t, locale } = useI18n();
 const router = useRouter();
 const store = useParcours();
 const views = useParcoursViews();
+const book = useDailyBook();
 
 const pagePath = (objective: Objective): string => `/parcours/objectif/${objective.id}`;
 
@@ -133,20 +131,8 @@ function programCaption(objective: ProgramObjective): string {
   return t("parcours.shelf.caption", { percent: Math.floor(progress * 100), state });
 }
 
-/** Les Tehilim du mois ou de la semaine : le dernier psaume lu, sur les 150. */
-function tehilimPosition(objective: Objective, cycle: "tehilim-month" | "tehilim-week"): number {
-  const date = localDayFrom(store.today.value) ?? new Date();
-  date.setHours(12);
-  const psalms = tehilimOfCycle(cycle, date).psalms;
-  const task = taskOf(objective);
-  return task && isDone(task) ? psalms[psalms.length - 1] : psalms[0] - 1;
-}
-
 function caption(objective: Objective): string {
   if (objective.kind === "program") return programCaption(objective);
-  if (objective.kind === "cycle" && isTehilimCycle(objective.cycle) && props.home) {
-    return t("parcours.shelf.of", { n: tehilimPosition(objective, objective.cycle), total: 150 });
-  }
   // The Daf Yomi, on the home shelf: the day's daf.
   if (objective.kind === "cycle" && objective.cycle === "daf-yomi" && props.home) {
     return (
@@ -192,29 +178,30 @@ function objectiveVolume(objective: Objective): ShelfVolume {
   };
 }
 
-/** Les textes du jour, un seul volume : son épaisseur dit combien il en tient. */
-function dailyVolume(texts: TextObjective[]): ShelfVolume {
-  const tasks = texts.map(taskOf).filter((task): task is Task => task !== undefined);
-  const done = tasks.filter(isDone).length;
-  const name = views.dailyName(texts.map((objective) => objective.textId));
+/** The daily book, a single volume: its thickness says how much it holds. */
+function dailyVolume(held: DailyObjective[]): ShelfVolume {
+  const readings = book.readings.value;
+  const read = book.doneCount.value;
+  const name = views.dailyName(held);
   const text =
-    props.home && tasks.length
-      ? t("parcours.shelf.of", { n: done, total: tasks.length })
-      : name.count(texts.length);
+    props.home && readings.length
+      ? t("parcours.shelf.of", { n: read, total: readings.length })
+      : name.count(readings.length || held.length);
+  const size = readings.length || held.length;
   return {
     key: "lecture-du-jour",
     to: DAILY_PAGE,
     page: DAILY_PAGE,
-    color: views.objectiveColor(texts[0]),
+    color: views.objectiveColor(held[0]),
     lines: [name.cover],
     sub: t("parcours.task.everyDay"),
-    format: texts.length >= 7 ? "thick" : texts.length >= 3 ? "regular" : "small",
-    progress: tasks.length ? done / tasks.length : 0,
+    format: size >= 7 ? "thick" : size >= 3 ? "regular" : "small",
+    progress: readings.length ? read / readings.length : 0,
     caption: text,
-    ribbon: done < tasks.length,
+    ribbon: read < readings.length,
     paused: false,
     label: `${name.title}, ${text}`,
-    arriving: texts.some((objective) => objective.id === props.arriving),
+    arriving: held.some((objective) => objective.id === props.arriving),
   };
 }
 
@@ -222,12 +209,12 @@ const volumes = computed<ShelfVolume[]>(() => {
   const read = liveObjectives(store.data.value).filter(
     (o) => o.kind === "program" || o.kind === "cycle" || o.kind === "text",
   );
-  const texts = read.filter((o): o is TextObjective => o.kind === "text");
+  const held = read.filter(inDailyBook);
   const out: ShelfVolume[] = [];
   for (const objective of read) {
-    if (objective.kind !== "text") out.push(objectiveVolume(objective));
-    // Le volume des textes du jour, à la place du premier d'entre eux.
-    else if (objective === texts[0]) out.push(dailyVolume(texts));
+    if (!inDailyBook(objective)) out.push(objectiveVolume(objective));
+    // The daily book's volume, in the place of the first thing it holds.
+    else if (objective === held[0]) out.push(dailyVolume(held));
   }
   return out;
 });

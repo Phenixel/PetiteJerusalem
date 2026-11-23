@@ -22,7 +22,7 @@ following sections), audience tracking in `docs/tracking-plan.md`
 | `/parcours/nouveau`               | new objective, on a single page; once created, it lands on `/parcours`                        |
 | `/parcours/objectif/:id`          | a program (its portion, how far behind it is, its week), or the settings of another objective |
 | `/parcours/objectif/:id/reglages` | the settings of a program                                                                     |
-| `/bibliotheque/lecture-du-jour`   | the daily reading: the day's texts, one after the other; their list is put together there     |
+| `/bibliotheque/lecture-du-jour`   | the daily book: the daily texts and the Tehilim of the day, one list; composed there          |
 
 In the app, everything opens **without an account** and offline. The site
 requires an account: it has no device on which to keep the tracking.
@@ -49,6 +49,7 @@ shows, at the bottom of the text, the day's task to check off
 | `deviceStore.ts`, `cloud.ts`, `account.ts` | the device, the account, what passes from one to the other                                      |
 | `legacyDailyReading.ts`                    | the former daily reading                                                                        |
 | `entries.ts`                               | the texts a task has you read (offline download)                                                |
+| `dailyBook.ts`                             | the daily book: the daily texts and the Tehilim of the day read as one list, psalm by psalm     |
 | `tracking.ts`                              | audience tracking shared by several screens                                                     |
 | `occasions.ts`                             | the deck's occasion cards marked done (the moon, the 'Omer, 'Hanouka, a service), on the device |
 | `reminders.ts`                             | the reminders of the day: the point of the day of a task, the hour of a point, what rings       |
@@ -139,6 +140,19 @@ replacing them (`legacyDailyReading.ts`):
 The **Tehilim of the week** (`cycle-tehilim-week`, from Sunday to Chabbat)
 are new: they have no place in the former daily reading, and the
 projection ignores them.
+
+**The daily book** (`dailyBook.ts`, `useDailyBook`): the daily texts and
+the Tehilim of the day (of the month or of the week) make a single volume,
+a single home card and a single page, where their texts are read as one
+list in catalog order. The cycles stay objectives of their own (the
+projection above needs `daily-tehilim`); only the screens bring them
+together. A psalm taken as a text and given by a cycle the same day is read
+once, and marking it marks both tasks. The psalms of a cycle are ticked one
+by one on the device, for the day (`pj_tehilim_cycle_read`, by objective);
+the last one marks the cycle's task, which is what syncs. A cycle marked
+done from the home card counts all its psalms read; unmarked there, the
+psalms all ticked before count as none, so that the page and the card agree
+(`psalmsRead`). Held by `dailyBook.test.ts`.
 
 The **chnei mikra aliya by aliya** is the paracha (`daily-parasha`) with
 `split: "aliyot"`: one card per day, one aliya from Sunday to Thursday, the

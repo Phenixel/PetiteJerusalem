@@ -18,6 +18,7 @@ import { weekdayOf } from "../services/parcours/days";
 import { dayOrder, deckOrder } from "../services/parcours/moments";
 import { portionMinutes } from "../services/parcours/plan";
 import { habitAnchor } from "../services/parcours/create";
+import { inDailyBook } from "../services/parcours/dailyBook";
 import { TEFILOT_STEPS, liveObjectives, type TefilaStep } from "../services/parcours/schedule";
 import { unitOf } from "../services/parcours/texts";
 import { MOMENT_TEXTS } from "../services/sidourMoment";
@@ -25,7 +26,8 @@ import { useCurrentMoment } from "./useCurrentMoment";
 import { useOfficeTimes } from "./useOfficeTimes";
 import { officeKey, useOccasionsDone } from "./useOfficesDone";
 import { useParcours } from "./useParcours";
-import { useParcoursViews, type TaskView } from "./useParcoursViews";
+import { useDailyBook } from "./useDailyBook";
+import { DAILY_PAGE, useParcoursViews, type TaskView } from "./useParcoursViews";
 import { psalmsLabel } from "./useTehilimDay";
 
 /**
@@ -122,6 +124,7 @@ export function useTodayDeck() {
   const moment = useCurrentMoment();
   const offices = useOfficeTimes();
   const occasionsDone = useOccasionsDone();
+  const book = useDailyBook();
 
   const today = store.today;
   const later = computed(() => (postponed.value.day === today.value ? postponed.value.keys : []));
@@ -321,13 +324,16 @@ export function useTodayDeck() {
   }
 
   /**
-   * Les textes du jour (un psaume, plusieurs, une page qu'on aime) : une
-   * seule carte, « Lecture du jour » (« Mes Tehilim » quand ce ne sont que
-   * des psaumes, voir dailyName), qui ouvre leur page, à la suite. Comme sur
-   * l'étagère, où ils font un seul volume : c'est lui que la carte porte, son
-   * liseré rempli des textes lus aujourd'hui.
+   * The daily book (the daily texts and the Tehilim of the day): a single
+   * card, « Lecture du jour » (« Mes Tehilim » when it holds only psalms,
+   * see dailyName), which opens its page, where everything is read one after
+   * the other. As on the shelf, where it makes a single volume: the card
+   * carries it, its edge filled with what is read today. The Tehilim of the
+   * day alone keep their own card (« Tehilim 69 à 71 »), which opens the
+   * same page.
    */
-  function dailyTextsCard(group: TaskView[]): DeckCard {
+  function dailyBookCard(group: TaskView[]): DeckCard {
+    if (group.length === 1 && group[0].objective.kind === "cycle") return taskCard(group[0]);
     const lead = group.find((view) => view.progress !== "done") ?? group[0];
     const names =
       group.length > 2
@@ -337,23 +343,25 @@ export function useTodayDeck() {
             group.length - 1,
           )
         : group.map((view) => view.title).join(", ");
-    const name = views.dailyName(
-      group.flatMap((view) => (view.objective.kind === "text" ? [view.objective.textId] : [])),
-    );
-    const done = group.filter((view) => view.progress === "done").length;
+    const name = views.dailyName(group.map((view) => view.objective));
+    const readings = book.readings.value;
+    const read = book.doneCount.value;
     return {
       ...taskCard(lead),
       key: `${today.value}:lecture-du-jour`,
       group,
       title: name.card,
-      meta: t("parcours.daily.cardMeta", { count: name.count(group.length), names }),
+      meta: t("parcours.daily.cardMeta", {
+        count: name.count(readings.length || group.length),
+        names,
+      }),
       art: {
         kind: "volume",
         color: views.objectiveColor(group[0].objective),
         label: name.cover,
-        progress: done / group.length,
+        progress: readings.length ? read / readings.length : 0,
       },
-      route: "/bibliotheque/lecture-du-jour",
+      route: DAILY_PAGE,
       done: group.every((view) => view.progress === "done"),
       skipped: group.every((view) => view.skipped),
       waiting: false,
@@ -364,11 +372,11 @@ export function useTodayDeck() {
     const shown = store.todayTasks.value
       .map((task) => views.taskView(task, today.value))
       .filter((view) => view.progress === "done" || onDeckToday(view.objective));
-    const texts = shown.filter((view) => view.objective.kind === "text");
-    if (texts.length === 0) return shown.map(taskCard);
+    const daily = shown.filter((view) => inDailyBook(view.objective));
+    if (daily.length === 0) return shown.map(taskCard);
     return [
-      ...shown.filter((view) => view.objective.kind !== "text").map(taskCard),
-      dailyTextsCard(texts),
+      ...shown.filter((view) => !inDailyBook(view.objective)).map(taskCard),
+      dailyBookCard(daily),
     ];
   });
 

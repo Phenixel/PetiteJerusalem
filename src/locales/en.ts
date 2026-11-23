@@ -257,13 +257,17 @@ const en: LocaleMessages = {
         title: "One more goal",
         text: "A text to finish, a cycle, a habit: everything is chosen here.",
       },
+      daily: {
+        title: "Read every day",
+        text: "The Tehilim of the day, a psalm, a page you love: everything goes in one book, read in a row each day.",
+      },
       books: {
         title: "Finish a text",
         text: "Tap a volume: its part is chosen below, then by when. The page scrolls on its own.",
       },
       cycles: {
         title: "Follow a cycle",
-        text: "Tehilim, shnayim mikra, the Daf Yomi, texts every day: the calendar says what to read.",
+        text: "Shnayim mikra, the Daf Yomi: the calendar says what to read.",
       },
       habits: {
         title: "Take up a habit",
@@ -2143,11 +2147,13 @@ const en: LocaleMessages = {
   tehilimDay: {
     title: "Daily Tehilim",
     hint: "The psalms of the monthly cycle, to be read one after the other.",
-    weekHint: "The psalms of the day of the week, to be read one after the other.",
     pageDescription:
       "The Tehilim of the Hebrew day of the month, one below the other, read in one go.",
     dayOfMonth: "Day {day} of the month",
     unavailable: "Today's psalms could not be determined.",
+    otherDay:
+      "In My journey, the day changes at dawn: it is still at {range}, to mark in your daily reading.",
+    markInBook: "My daily reading",
   },
   tehilimIntentions: {
     notFoundTitle: "Intention not found",
@@ -2838,9 +2844,14 @@ const en: LocaleMessages = {
       finish: "Finish a text",
       finishHint: "A seder, a tractate, a book, or the whole Shas, by the date that suits you.",
       calendar: "Follow a cycle",
-      dailyText: "A text every day",
+      readDaily: "Read every day",
+      dailyBook: "My daily reading",
+      dailyBookAdd: "Add to my daily reading",
+      dailyBookHint: "The Tehilim of the day, a psalm, a page you love: all in one book.",
+      tehilimDailyNote: "Here, the whole book by a date. The psalms of the day are read in",
+      tehilimDailyLink: "my daily reading",
       dailyTextHint: "A psalm, a page you love, read in full.",
-      addTexts: "Add {n} text | Add {n} texts",
+      addToBook: "Add to my daily reading ({n})",
       unpick: "Remove {name}",
       habit: "Take up a habit",
       ownWords: "In my own words",
