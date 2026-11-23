@@ -25,6 +25,7 @@ type Store = ReturnType<typeof import("../composables/useParcours").useParcours>
 
 async function mountWeekCycle(): Promise<{
   tracked: Tracked;
+  monthTracked: Tracked;
   views: Views;
   store: Store;
   id: string;
@@ -33,14 +34,17 @@ async function mountWeekCycle(): Promise<{
   const { emptyParcours } = await import("../services/parcours/model");
   const { createCycle } = await import("../services/parcours/create");
   const week = createCycle("tehilim-week", TODAY, 10);
+  const month = createCycle("tehilim-month", TODAY, 11);
   const data = emptyParcours();
   data.objectives[week.id] = week;
+  data.objectives[month.id] = month;
   writeDeviceState({ data, owner: null, dirty: { objectives: [], days: [] } });
 
   const { useTehilimCycleTask } = await import("../composables/useTehilimCycleTask");
   const { useParcoursViews } = await import("../composables/useParcoursViews");
   const { useParcours } = await import("../composables/useParcours");
   let tracked: Tracked | null = null;
+  let monthTracked: Tracked | null = null;
   let views: Views | null = null;
   let store: Store | null = null;
   const i18n = createI18n({ legacy: false, locale: "fr", messages: { fr } });
@@ -48,6 +52,7 @@ async function mountWeekCycle(): Promise<{
     defineComponent({
       setup() {
         tracked = useTehilimCycleTask(() => week.id);
+        monthTracked = useTehilimCycleTask(() => month.id);
         views = useParcoursViews();
         store = useParcours();
         return () => h("div");
@@ -56,7 +61,13 @@ async function mountWeekCycle(): Promise<{
   )
     .use(i18n)
     .mount(document.createElement("div"));
-  return { tracked: tracked!, views: views!, store: store!, id: week.id };
+  return {
+    tracked: tracked!,
+    monthTracked: monthTracked!,
+    views: views!,
+    store: store!,
+    id: week.id,
+  };
 }
 
 beforeEach(() => {
@@ -110,5 +121,15 @@ describe("a Tehilim cycle on the Tehilim of the day page", () => {
     expect(tracked.taskDone.value).toBe(false);
     expect(tracked.readCount.value).toBe(16);
     expect(tracked.isRead(ids[3])).toBe(false);
+  });
+
+  it("keeps the ticks of the month's and the week's cycles apart", async () => {
+    const { tracked, monthTracked } = await mountWeekCycle();
+    const monthIds = monthTracked.cycle.value!.entries.map((entry) => Number(entry.id));
+    const weekIds = tracked.cycle.value!.entries.map((entry) => Number(entry.id));
+    monthTracked.toggle(monthIds[0]);
+    tracked.toggle(weekIds[0]);
+    expect(monthTracked.readCount.value).toBe(1);
+    expect(tracked.readCount.value).toBe(1);
   });
 });

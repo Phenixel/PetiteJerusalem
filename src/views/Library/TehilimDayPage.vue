@@ -26,15 +26,15 @@ import DailyReadingItem from "./DailyReadingItem.vue";
 import { SITE_URL } from "../../config/site";
 
 /**
- * Les Tehilim du jour : les psaumes du cycle mensuel, les uns sous les autres.
+ * The Tehilim of the day: the psalms of the monthly cycle, one under the other.
  *
- * La bibliothèque les annonçait par une rangée de numéros, chacun menant à sa
- * page : lire les quinze psaumes d'un 5 du mois demandait quinze allers-retours.
- * Ils se lisent d'une traite, comme le chnei mikra, et cette page les donne
- * d'une traite. La bibliothèque, elle, garde son catalogue.
+ * The library announced them with a row of numbers, each leading to its page:
+ * reading the fifteen psalms of the 5th of the month took fifteen round trips.
+ * They are read in one go, like the chnei mikra, and this page gives them in
+ * one go. The library keeps its catalog.
  *
- * Le jour est celui du mois hébraïque, calculé sur l'appareil : la page n'a
- * rien à charger pour savoir quoi montrer.
+ * The day is the day of the Hebrew month, computed on the device: the page has
+ * nothing to load to know what to show.
  *
  * Opened from a Tehilim cycle of Mon parcours (`?objectif=`, the card of the
  * home stack or the volume of the shelf), the page reads that cycle's psalms

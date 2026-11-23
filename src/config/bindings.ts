@@ -28,3 +28,17 @@ const BINDINGS: Record<string, string> = {
 export function bindingOf(corpus: string): string {
   return BINDINGS[corpus] ?? "#7d6a4c";
 }
+
+/**
+ * The bindings of the six orders of the Mishna: a family of warm tones, like
+ * the shelf. The creation of a goal draws them (StepParts), and so does the
+ * site's home page (HomeShowcase): one binding per order, everywhere.
+ */
+export const SEDER_BINDINGS = {
+  zeraim: "#7a5a45",
+  moed: "#7d6a4c",
+  nachim: "#84483f",
+  nezikin: "#6d5743",
+  kodachim: "#86622f",
+  toharot: "#96604a",
+} as const;

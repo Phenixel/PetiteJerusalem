@@ -1,28 +1,26 @@
 <script setup lang="ts">
 /**
- * La lecture du jour (`/bibliotheque/lecture-du-jour`) : les textes qu'on lit
- * chaque jour (un psaume, une page qu'on aime), à la suite, sur une seule
- * page. C'est le volume « Lecture du jour » de l'étagère, et la carte du
- * même nom dans la pile. Elle tient ce que savait faire la lecture
- * quotidienne d'avant Mon parcours :
+ * The daily reading (`/bibliotheque/lecture-du-jour`): the texts read every
+ * day (a psalm, a page one loves), one after the other, on a single page. It
+ * is the « Lecture du jour » volume of the shelf, and the card of the same
+ * name in the stack. It holds what the daily reading of before Mon parcours
+ * could do:
  *
- *  - les textes dans l'ordre du catalogue ;
- *  - ce qui se dit avant et après (le Yehi ratson des Tehilim), une fois pour
- *    tout ce qu'on lit du même corpus (encadrementBounds) ;
- *  - un texte se coche, et se replie ; ses chapitres aussi, un à un, et le
- *    dernier coché coche le texte (les chapitres lus se gardent sur
- *    l'appareil, le temps de la journée) ;
- *  - le menu de lecture, la taille du texte, le défilement tout seul,
- *    l'écran qui reste allumé, les textes à télécharger, les rappels (dans
- *    l'app : la ligne des rappels du jour, qui ouvre « Les heures de ma
- *    journée ») ;
- *  - la liste se compose ici même : « Modifier ma liste » montre les textes
- *    du jour, chacun se retire d'un toucher, et la recherche en ajoute
- *    plusieurs d'affilée.
+ *  - the texts in the order of the catalog;
+ *  - what is said before and after (the Yehi ratson of the Tehilim), once for
+ *    everything read from the same corpus (encadrementBounds);
+ *  - a text is ticked, and folds away; its chapters too, one by one, and the
+ *    last one ticked ticks the text (the chapters read stay on the device for
+ *    the day);
+ *  - the reading menu, the text size, the auto-scroll, the screen kept on,
+ *    the texts to download, the reminders (in the app: the line of the day's
+ *    reminders, which opens « Les heures de ma journée »);
+ *  - the list is composed right here: « Modifier ma liste » shows the day's
+ *    texts, each removed with a tap, and the search adds several in a row.
  *
- * Les lectures du calendrier n'y sont plus : les Tehilim du mois ou de la
- * semaine, la paracha ont chacun leur volume, leur carte et leur page. La
- * lecture quotidienne d'avant les mêlait faute de mieux.
+ * The calendar readings are no longer mixed in: the Tehilim of the month or
+ * of the week and the parasha each have their volume, their card and their
+ * page. The daily reading of before mixed them for lack of anything better.
  *
  * The Tehilim cycles are still offered from here, since this is where one
  * composes the psalms read every day: « Modifier ma liste » adds the psalms
@@ -30,8 +28,7 @@
  * the texts, and the day shows a card that opens them on their own page,
  * where each psalm is marked (TehilimDayPage).
  *
- * Ce qui se coche ici est ce que coche la pile de l'accueil : une seule
- * journée.
+ * What is ticked here is what the home stack ticks: a single day.
  */
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";

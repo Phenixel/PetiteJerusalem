@@ -35,6 +35,7 @@ import {
 } from "../../../services/parcours/texts";
 import CatalogSearchField from "../../CatalogSearchField.vue";
 import ChoicePill from "../pickers/ChoicePill.vue";
+import { SEDER_BINDINGS } from "../../../config/bindings";
 
 const props = withDefaults(
   defineProps<{
@@ -49,15 +50,8 @@ const model = defineModel<ProgramPart[]>({ required: true });
 const { t, locale } = useI18n();
 const views = useParcoursViews();
 
-/** Les reliures des six ordres : une famille de tons chauds, comme l'étagère. */
-const SEDER_COLORS: Record<SederId, string> = {
-  zeraim: "#7a5a45",
-  moed: "#7d6a4c",
-  nachim: "#84483f",
-  nezikin: "#6d5743",
-  kodachim: "#86622f",
-  toharot: "#96604a",
-};
+/** The bindings of the six orders: the same everywhere (config/bindings). */
+const SEDER_COLORS: Record<SederId, string> = SEDER_BINDINGS;
 
 const bySeder = computed(() => props.corpus === "michna" || props.corpus === "talmud");
 const takenSet = computed(() => new Set(props.taken));

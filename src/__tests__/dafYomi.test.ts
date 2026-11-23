@@ -37,7 +37,6 @@ describe("dafYomi", () => {
     }
     expect(found.daf).toBe(26);
     expect(found.readerDaf).toBe(2);
-    expect(dafYomiRoute(found).query?.daf).toBe("2a");
   });
 
   it("writes the daf in Hebrew letters in Hebrew", () => {
@@ -67,6 +66,18 @@ describe("dafYomi", () => {
       found = dafYomiOn(day)!;
     }
     expect(dafYomiRoute(found).query).toBeUndefined();
+  });
+
+  it("opens Kinnim, Tamid and Middot at their chapter list: no daf to land on", () => {
+    for (const slug of ["Kinnim", "Tamid", "Middot"]) {
+      let day = at(2020, 1, 5);
+      let found = dafYomiOn(day)!;
+      while (found.entry.link.split("/").pop() !== slug) {
+        day = new Date(day.getTime() + 86400000);
+        found = dafYomiOn(day)!;
+      }
+      expect(dafYomiRoute(found).query).toBeUndefined();
+    }
   });
 
   it("knows no daf before the eighth cycle", () => {

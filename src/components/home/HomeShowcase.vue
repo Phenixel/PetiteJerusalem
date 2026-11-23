@@ -41,6 +41,7 @@ import ArtVolume from "../art/ArtVolume.vue";
 import ChiourCover from "../chiourim/ChiourCover.vue";
 import StoneWall from "../parcours/StoneWall.vue";
 import StreakLight from "../parcours/StreakLight.vue";
+import { SEDER_BINDINGS } from "../../config/bindings";
 import { localDayKey } from "../../services/dateService";
 import { addDays, dayRange, weekStart } from "../../services/parcours/days";
 import type { LightId } from "../../services/parcours/lights";
@@ -145,14 +146,7 @@ const wall = computed<WallWeek[]>(() => {
 const LIGHTS: LightId[] = ["lamp", "candle", "lantern", "menorah", "lighthouse", "moon"];
 
 // --- Sharing: the six orders of the Michna, to divide between six people. ---
-const SEDARIM = [
-  ["zeraim", "#7a5a45"],
-  ["moed", "#7d6a4c"],
-  ["nachim", "#84483f"],
-  ["nezikin", "#6d5743"],
-  ["kodachim", "#86622f"],
-  ["toharot", "#96604a"],
-] as const;
+const SEDARIM = Object.entries(SEDER_BINDINGS);
 
 // --- The times: the sky of each service. ---
 const SKIES: { moment: SkyMoment; label: () => string }[] = [

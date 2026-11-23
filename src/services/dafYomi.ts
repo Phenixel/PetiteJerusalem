@@ -65,6 +65,14 @@ const SHAS: readonly (readonly [slug: string, last: number])[] = [
   ["Niddah", 73],
 ];
 
+/**
+ * The tractates whose daf has no place to land on in the reader, which opens
+ * their chapter list: Shekalim (the Jerusalem Talmud, read chapter by
+ * chapter), and Kinnim, Tamid and Middot, whose chapters the catalog counts
+ * as one unit each rather than by side, so a daf cannot be found in them.
+ */
+const CHAPTER_LIST_ONLY = new Set(["Shekalim", "Kinnim", "Tamid", "Middot"]);
+
 /** Kinnim, Tamid and Middot are printed after Meilah: the Shas numbers them on from there. */
 const PRINTED_OFFSET: Record<string, number> = { Kinnim: 21, Tamid: 24, Middot: 32 };
 
@@ -125,13 +133,12 @@ export function dafYomiLabel(daf: DafYomi, locale: string): string {
 
 /**
  * Where the daf opens in the library: the chapter that holds its first side,
- * and `?daf=12a` for the reader to go down to it. Shekalim is the Jerusalem
- * Talmud, read chapter by chapter with no daf to land on: its chapter list
- * opens.
+ * and `?daf=12a` for the reader to go down to it. Where the reader has no
+ * daf to land on (CHAPTER_LIST_ONLY), the tractate's chapter list opens.
  */
 export function dafYomiRoute(daf: DafYomi): { path: string; query?: Record<string, string> } {
   const units = UNITS[String(daf.entry.id)];
-  if (units?.unit !== "amud" || slugOf(daf.entry) === "Shekalim") {
+  if (units?.unit !== "amud" || CHAPTER_LIST_ONLY.has(slugOf(daf.entry))) {
     return texteRoute(daf.entry, null);
   }
   const { sizes, first } = units as AmudUnits;

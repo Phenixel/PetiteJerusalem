@@ -1,13 +1,12 @@
 <script setup lang="ts">
 /**
- * Un texte chaque jour : un psaume, une page qu'on aime, relus en entier.
- * C'est la lecture du jour d'avant ; on le cherche dans le catalogue comme
- * dans la bibliothèque.
+ * A text every day: a psalm, a page one loves, read again in full. It is the
+ * daily reading of before; it is searched in the catalog as in the library.
  *
- * On en prend plusieurs d'affilée, comme dans la lecture du jour d'avant
- * (plusieurs psaumes le même jour) : un toucher coche un texte, un autre le
- * décoche, la recherche se refait autant qu'on veut, et ce qu'on a coché
- * attend dessus. « Ajouter 3 textes » les prend tous.
+ * Several are taken in a row, as in the daily reading of before (several
+ * psalms the same day): a tap ticks a text, another unticks it, the search is
+ * redone as often as wanted, and what is ticked waits above it. « Ajouter 3
+ * textes » takes them all.
  *
  * Above the search, the psalms already divided up: the Tehilim of the day of
  * the month, or of the week. They change every day, so they are not texts to

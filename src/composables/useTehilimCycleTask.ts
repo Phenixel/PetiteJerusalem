@@ -19,7 +19,8 @@ import { useParcoursViews } from "./useParcoursViews";
  * marked read on its own, and the last one marks the day's task, as the last
  * chapter of a text does on the daily reading (LectureDuJourPage).
  *
- * The psalms already marked stay on the device for the day: what Mon
+ * The psalms already marked stay on the device for the day, each cycle
+ * its own (the month's and the week's can both be followed): what Mon
  * parcours keeps and syncs is the task, done or not. A task marked done
  * elsewhere (the home stack) shows every psalm read; unmarking one psalm
  * then unmarks the task, and keeps the others read.
@@ -31,11 +32,10 @@ export type TehilimCycleObjective = CycleObjective & { cycle: TehilimCycleId };
 const isLiveTehilimCycle = (objective: Objective | undefined): objective is TehilimCycleObjective =>
   objective?.kind === "cycle" && isTehilimCycle(objective.cycle) && isAlive(objective);
 
-/** The psalms marked read (their catalog ids), for one objective and one day. */
+/** The psalms marked read (their catalog ids) for the day, by objective. */
 interface PsalmsRead {
   day: DayKey;
-  objectiveId: string;
-  read: number[];
+  read: Record<string, number[]>;
 }
 
 /**
@@ -59,10 +59,13 @@ const psalmsStore = devicePreference<PsalmsRead>(
   (raw) => {
     try {
       const value = raw ? (JSON.parse(raw) as PsalmsRead) : null;
+      // A value of the first format (one objective, `read` a list) is dropped:
+      // it only held the ticks of one day.
       return value &&
         typeof value.day === "string" &&
-        typeof value.objectiveId === "string" &&
-        Array.isArray(value.read)
+        value.read &&
+        typeof value.read === "object" &&
+        !Array.isArray(value.read)
         ? value
         : null;
     } catch {
@@ -101,12 +104,11 @@ export function useTehilimCycleTask(objectiveId: () => string | null) {
   );
 
   const stored = ref<PsalmsRead | null>(psalmsStore.read());
-  const read = computed(() => {
-    const value = stored.value;
-    return value && value.day === store.today.value && value.objectiveId === objective.value?.id
-      ? value.read
-      : [];
-  });
+  /** Today's ticks, every Tehilim cycle together: each keeps its own. */
+  const readToday = computed(() =>
+    stored.value && stored.value.day === store.today.value ? stored.value.read : {},
+  );
+  const read = computed(() => (objective.value ? (readToday.value[objective.value.id] ?? []) : []));
 
   /** The psalms of the day by their catalog id: what is marked. */
   const ids = computed(() => (cycle.value?.entries ?? []).map((entry) => Number(entry.id)));
@@ -120,7 +122,10 @@ export function useTehilimCycleTask(objectiveId: () => string | null) {
     const current = task.value;
     if (!objective.value || !current) return false;
     const next = togglePsalm(read.value, psalm, all, taskDone.value);
-    stored.value = { day: store.today.value, objectiveId: objective.value.id, read: next.read };
+    stored.value = {
+      day: store.today.value,
+      read: { ...readToday.value, [objective.value.id]: next.read },
+    };
     psalmsStore.write(stored.value);
     if (next.taskDone !== taskDone.value) {
       store.setDone(current, store.today.value, next.taskDone, "tehilim_day_page");
