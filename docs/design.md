@@ -490,6 +490,60 @@ has installed the app no longer needs convincing, and those lines pushed the
 times and the three doors below the fold. The site, for its part, keeps its
 centered hook.
 
+### The site's home page shows the app with its own objects
+
+A visitor without an account may be discovering the site: the home page
+presents it, for them and for the search engines. A visitor with an account
+sees their dashboard, as in the app, and none of this.
+
+- **The top.** On a computer, the hook (the big title, the paragraph, the
+  account buttons) on the left, and the information of the moment on the
+  right. On a phone, that information comes first, as in the app, and the
+  hook under it; the hook stays first in the page's order for the search
+  engines. The information of the moment opens on **the card of the moment**,
+  the one card in solid color (`HomeMomentCard.vue`), the sidour coming out
+  through its top: the service whose time it is, with the time until which
+  it is said; between two services, the Sidour itself. The times card and the
+  light cards of the night (the moon, the 'Omer) follow it.
+- **The presentation** (`HomeShowcase.vue`), one section per part of the
+  site, each with a kicker, a title in Playfair, one sentence and a link,
+  drawn with the app's own art and **never on a white frame**: the objects
+  stand on the page, on a plank when they are things one sets down.
+  - the Sidour: its objects in a row on their shelf (the sidour, the moon,
+    the 'hanoukkia, the chofar, the loulav, the havdala, the candles, the
+    sheaf of the 'Omer), each named under it;
+  - the library: the six bound volumes on their two shelves (`LibraryShelf`);
+  - Mon parcours: a piece of the stone wall (`StoneWall`, an example, the
+    same for everyone); of the lights of the series, the old lamp alone is
+    drawn, the next ones blurred « À découvrir » (`StreakLight` `locked`), so
+    that what there is to earn stays a surprise;
+  - sharing: the six orders of the Michna, bound, on a plank;
+  - the times: the sky of Cha'harit, Min'ha and Arvit in their round window
+    (`ArtSky`);
+  - the chiourim: three covers of series fanned like a playlist
+    (`ChiourCover`);
+  - the app, with its download buttons, before the memorial.
+
+  A drawing opens its section's page, like its link (it is hidden from
+  screen readers, the link says it). From a medium screen up, the drawing and
+  the text sit side by side,
+  alternating sides; on a phone, the drawing comes above its text. The
+  sections are separated by a rule. The planks are flat (no gradient), in the
+  wood of the library's shelf. The three doors (`HomeDoors`) remain a block
+  of the dashboard.
+
+### The site offers the app, once
+
+On the website, a window offers the app a few seconds after arriving
+(`AppDownloadPrompt.vue`): the sidour drawn, « Petite Jérusalem dans votre
+poche », one sentence, the store buttons of the device (the App Store on an
+iPhone, Google Play on Android, both on a computer) and « Plus tard ».
+
+- It waits for the consent banner to be answered, and never shows in the app.
+- Once: « Plus tard » or the veil sends it away for sixty days; a store
+  opened, for good.
+- Never to a crawler: the page reads the same for the search engines.
+
 ### A list row can become a command
 
 In the app, a times row is no longer just text: touching it sets a

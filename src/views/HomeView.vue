@@ -41,6 +41,10 @@ const OccasionsBanner = defineAsyncComponent(() => import("../components/Occasio
 // Le raccourci du sidour : pendant la plage horaire d'un office, l'accueil
 // mène au texte. Même moteur d'horaires, même chargement à la demande.
 const SidourNowCard = defineAsyncComponent(() => import("../components/SidourNowCard.vue"));
+// The site's showcase, for a visitor without an account: loaded on demand, it
+// pulls the times engine and the library's shelf.
+const HomeMomentCard = defineAsyncComponent(() => import("../components/home/HomeMomentCard.vue"));
+const HomeShowcase = defineAsyncComponent(() => import("../components/home/HomeShowcase.vue"));
 // Les informations de l'équipe : un incident en cours ou une nouveauté pas
 // encore vue. Elles tirent Firestore, d'où le chargement à la demande.
 const AnnouncementsBanner = defineAsyncComponent(
@@ -506,13 +510,15 @@ onUnmounted(() => {
       </p>
     </template>
 
-    <!-- ===== Site, sans compte : invitation à gauche, horaires du jour à
-         droite, à la place qu'occupent les cartes du tableau de bord ===== -->
+    <!-- ===== Site, without an account: on a computer, the hook on the left
+         and the information of the moment on the right; on a phone, that
+         information first, as in the app, and the hook under it. The hook
+         stays first in the page's order for the search engines. ===== -->
     <div
       v-else
-      class="w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-8 items-center mb-10"
+      class="w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 items-center mb-10"
     >
-      <div class="space-y-4 text-center md:text-start">
+      <div class="order-2 space-y-4 text-center md:order-1 md:text-start">
         <h1
           class="text-4xl md:text-6xl font-bold text-text-primary tracking-tight leading-[1.05] enter-rise"
         >
@@ -555,19 +561,22 @@ onUnmounted(() => {
       <!-- Les horaires du jour et, dessous, les raccourcis du moment : la
            colonne de droite porte tout ce qui dépend de l'heure qu'il est,
            l'accroche garde la gauche. -->
-      <div class="flex flex-col gap-4">
+      <div class="order-1 flex flex-col gap-4 md:order-2">
         <AnnouncementsBanner />
+        <!-- The card of the moment, in solid color as in the app: the service
+             whose time it is, or the Sidour between two services. Then what
+             is going on now (the moon, Hanouka, the 'Omer), above the times. -->
+        <HomeMomentCard />
         <HomeOngoing />
         <ZmanimCard class="dash-card" style="--enter-delay: 0.3s" @click="trackCard('zmanim')" />
-        <SidourNowCard />
         <OccasionsBanner />
       </div>
     </div>
 
     <div class="w-full max-w-6xl mx-auto">
-      <!-- Les trois portes du site (HomeDoors). Sur le tableau de bord, elles
-           sont un bloc qu'on range ou qu'on masque, avec les autres. -->
-      <HomeDoors v-if="!dashboard" class="mb-10" @open="trackCard" />
+      <!-- What the app holds, with its own objects (HomeShowcase). On the
+           dashboard, the three doors are a block one arranges or hides. -->
+      <HomeShowcase v-if="!dashboard" class="mb-10" @open="trackCard" />
 
       <div class="text-center max-w-2xl mx-auto enter-rise" style="--enter-delay: 0.4s">
         <p class="font-serif italic text-text-secondary">{{ t("home.memorial.title") }}</p>
