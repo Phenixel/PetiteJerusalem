@@ -94,6 +94,11 @@ const fr = {
     manageCookies: "Gérer les cookies",
     social: "Réseaux sociaux",
   },
+  appPrompt: {
+    title: "Petite Jérusalem dans votre poche",
+    text: "Le Sidour, la bibliothèque, les horaires et votre parcours sur votre téléphone, même sans connexion. Gratuit.",
+    later: "Plus tard",
+  },
   appDownload: {
     title: "Télécharger l'app",
     apple: "App Store",
@@ -264,7 +269,7 @@ const fr = {
       },
       cycles: {
         title: "Suivre un cycle",
-        text: "Les Tehilim, le chnei mikra, des textes chaque jour : le calendrier dit quoi lire.",
+        text: "Les Tehilim, le chnei mikra, le daf yomi, des textes chaque jour : le calendrier dit quoi lire.",
       },
       habits: {
         title: "Prendre une habitude",
@@ -398,6 +403,14 @@ const fr = {
     birkatHalevana: {
       title: "Bénédiction de la lune",
       until: "À dire cette nuit, jusqu\u2019au {date}.",
+      fromNight: "À dire dès la nuit, jusqu\u2019au {date}.",
+    },
+    // « En ce moment », above the times of the day (HomeOngoing.vue).
+    ongoing: {
+      title: "En ce moment",
+      omerKicker: "Compte du 'Omer",
+      done: "Fait",
+      markDone: "C\u2019est fait\u00a0: {name}",
     },
     holiday: {
       tichri: "Chana tova oumetouka",
@@ -412,6 +425,61 @@ const fr = {
     heroTitle: "Étudier et partager la Torah, à plusieurs",
     heroDescription:
       "Répartissez un texte entre plusieurs personnes pour le terminer ensemble : finir le Chass, lire les Tehilim à plusieurs, suivre la progression de votre limoud. Gratuit, en français, en anglais et en hébreu.",
+    // The site's showcase, under the hook, for a visitor without an account
+    // (HomeShowcase, HomeMomentCard).
+    showcase: {
+      momentKicker: "Le Sidour",
+      momentTitle: "Cha'harit, Min'ha, Arvit",
+      momentMeta: "L'office du moment en tête, en hébreu avec la phonétique",
+      sidour: {
+        kicker: "Le Sidour",
+        title: "La prière du moment, en tête",
+        text: "Cha'harit, Min'ha et Arvit s'ouvrent à leur heure, avec ce que le jour ajoute\u00a0: la bénédiction de la lune, les lumières de Hanouka, les Sli'hot, le loulav, la havdala, le compte du 'Omer. En hébreu, avec la phonétique.",
+        link: "Ouvrir le Sidour",
+        objects: {
+          siddur: "Chaque office",
+          moon: "La lune",
+          hanoukia: "Hanouka",
+          shofar: "Les Sli'hot",
+          loulav: "Souccot",
+          havdala: "La havdala",
+          candles: "Chabbat",
+          omer: "Le 'Omer",
+        },
+      },
+      libraryKicker: "La bibliothèque",
+      libraryTitle: "Tous les textes, reliés",
+      libraryText:
+        "Les Tehilim, la Michna, le Talmud, le Tanakh, le Moussar et la Halakha, à lire librement, sur le site comme dans l'app.",
+      libraryLink: "Ouvrir la bibliothèque",
+      parcours: {
+        kicker: "Mon parcours",
+        title: "Un mur qui se bâtit, jour après jour",
+        text: "Un traité à finir, les Tehilim du jour, le daf, une habitude\u00a0: chaque jour tenu pose une pierre, et la série allume des lumières\u00a0: la vieille lampe d'abord, les suivantes à découvrir. Dans l'app sans compte, sur le site avec un compte.",
+        link: "Se fixer un objectif",
+      },
+      share: {
+        kicker: "Partage de lectures",
+        title: "Finir un texte à plusieurs",
+        text: "Créez une session, répartissez le Chass, la Michna, les Tehilim ou un livre entre vos proches, et suivez ensemble la progression jusqu'au siyoum.",
+        link: "Créer une session",
+      },
+      zmanim: {
+        kicker: "Les horaires",
+        title: "Le ciel de chaque office",
+        text: "Les horaires du jour pour votre ville, calculés sur l'appareil, sans connexion\u00a0: l'aube, le Chema, la Amida, Min'ha, le coucher du soleil, Chabbat et les fêtes.",
+        link: "Voir les horaires",
+      },
+      chiourim: {
+        kicker: "Chiourim",
+        title: "Des cours à écouter",
+        text: "Les cours et leçons de Torah de la communauté, à écouter l'un après l'autre, comme une liste de lecture.",
+        link: "Écouter les chiourim",
+      },
+      appTitle: "L'application",
+      appText:
+        "Les mêmes textes, les horaires et votre parcours sur votre téléphone, même sans connexion.",
+    },
     features: {
       shareReading: {
         title: "Partage",
@@ -2153,6 +2221,7 @@ const fr = {
   tehilimDay: {
     title: "Tehilim du jour",
     hint: "Les psaumes du cycle mensuel, à lire les uns à la suite des autres.",
+    weekHint: "Les psaumes du jour de la semaine, à lire les uns à la suite des autres.",
     pageDescription:
       "Les Tehilim du jour du mois hébraïque, les uns sous les autres, à lire d'une traite.",
     dayOfMonth: "{day} du mois",
@@ -2387,6 +2456,13 @@ const fr = {
         sub: "chaque jour",
         hint: "Une montée par jour, la 6e et la 7e le vendredi ; une montée oubliée revient le lendemain",
         pick: "Chnei mikra, une montée par jour",
+      },
+      "daf-yomi": {
+        title: "Daf yomi",
+        cover: "Talmud",
+        sub: "chaque jour",
+        hint: "Un daf du Talmud par jour, le même partout dans le monde : tout le Chass en sept ans et demi",
+        pick: "Le daf yomi, un daf par jour",
       },
     },
     aliyot: {
@@ -2859,6 +2935,7 @@ const fr = {
       habit: "Prendre une habitude",
       ownWords: "Avec mes mots",
       taken: "Déjà dans votre parcours",
+      readyMade: "Les psaumes déjà répartis",
       partsTitle: {
         michna: "Quelle partie de la Michna ?",
         talmud: "Quelle partie du Talmud ?",
@@ -3012,6 +3089,8 @@ const fr = {
       psalm: "Psaume {n}",
       psalms: "Psaumes {from} à {to}",
       parasha: "Paracha {parasha}",
+      dafYomi: "Daf yomi",
+      dafYomiKicker: "Daf yomi du jour",
     },
     // « Hors ligne » et la pastille des livres de l'étagère (voir
     // LibraryOfflineRow, LibraryShelf).

@@ -1098,7 +1098,13 @@ const showResumeBanner = computed(() => {
   // étiez », une brakha ou les Sli'hot se lisent du début, pas en cours.
   if (textEntry.value && isLiturgy(textEntry.value)) return false;
   const p = savedPosition.value;
-  if (!p || resumeDismissed.value || route.query.verset !== undefined || !content.value)
+  if (
+    !p ||
+    resumeDismissed.value ||
+    route.query.verset !== undefined ||
+    route.query.daf !== undefined ||
+    !content.value
+  )
     return false;
   // Rouvert depuis la table d'étude : il reprend déjà où on l'avait laissé.
   if (hasTableRestore(route.path)) return false;
@@ -1161,6 +1167,15 @@ watch([content, sectionParam, () => route.query.verset], ([loaded, , verset]) =>
   if (!loaded || verset === undefined) return;
   const line = Number(verset);
   if (Number.isInteger(line) && line >= 0) scrollToLine(line);
+});
+
+// Arrival with ?daf=12a (the Daf Yomi, see dafYomi.ts): the chapter opens on
+// that daf, as on a verse. A daf the chapter does not hold (the next chapter
+// reached with the same query) leaves the page at its top.
+watch([content, sectionParam, () => route.query.daf], ([loaded, , daf]) => {
+  if (!loaded || typeof daf !== "string" || route.query.verset !== undefined) return;
+  const found = dafOffsets.value.find((one) => one.daf === daf);
+  if (found) scrollToLine(found.offset);
 });
 
 // Arrivée avec ?chapitre=N depuis un cours audio (voir chiourTexte) : sur un

@@ -120,24 +120,33 @@ export function createHabit(draft: HabitDraft, today: DayKey, now: number): Habi
   };
 }
 
-/** L'identifiant d'une lecture du calendrier : celui de la lecture du jour d'avant. */
-/** Les Tehilim de la semaine : un cycle de Mon parcours, sans lecture du jour d'avant. */
+/** The id of a calendar reading: the one of the daily reading of before. */
+/** The Tehilim of the week: a cycle of My journey, with no daily reading of before. */
 export const TEHILIM_WEEK_ID = "cycle-tehilim-week";
+/** The Daf Yomi: one cycle, so one id, as for the Tehilim of the week. */
+export const DAF_YOMI_ID = "cycle-daf-yomi";
 
-export const cycleObjectiveId = (cycle: CycleChoice): string =>
-  cycle === "tehilim-week"
-    ? TEHILIM_WEEK_ID
-    : cycle === "tehilim-month"
-      ? LEGACY_TEHILIM_ID
-      : LEGACY_PARASHA_ID;
+export const cycleObjectiveId = (cycle: CycleChoice): string => {
+  switch (cycle) {
+    case "tehilim-week":
+      return TEHILIM_WEEK_ID;
+    case "daf-yomi":
+      return DAF_YOMI_ID;
+    case "tehilim-month":
+      return LEGACY_TEHILIM_ID;
+    default:
+      return LEGACY_PARASHA_ID;
+  }
+};
 
 export function createCycle(cycle: CycleChoice, today: DayKey, now: number): CycleObjective {
-  if (cycle === "tehilim-week") {
+  if (cycle === "tehilim-week" || cycle === "daf-yomi") {
     return {
-      id: TEHILIM_WEEK_ID,
+      id: cycleObjectiveId(cycle),
       kind: "cycle",
       cycle,
-      moment: "morning",
+      // The daf is studied as a program is: in the evening, by default.
+      moment: cycle === "daf-yomi" ? PROGRAM_DEFAULT_MOMENT : "morning",
       since: today,
       createdAt: now,
       updatedAt: now,

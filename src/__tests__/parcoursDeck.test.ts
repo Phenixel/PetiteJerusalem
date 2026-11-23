@@ -122,25 +122,17 @@ describe("le paquet de l'accueil", () => {
     expect(localStorage.getItem("pj_parcours_occasions")).toContain("tefila:2026-10-14-chaharit");
   });
 
-  it("keeps the moon card past Arvit's time, when the moon holds the Sidour's card", async () => {
-    // Wednesday 21 October 2026, 1:45 a.m. in Paris: Arvit closed at 'hatsot.
-    vi.setSystemTime(new Date("2026-10-20T23:45:00Z"));
-    const { deck } = await mountDeck();
-    expect(deck.day.value.some((card) => card.occasion?.kind === "halevana")).toBe(true);
-  });
-
-  it("on a night of the moon, offers Arvit first, then the moon once Arvit is said", async () => {
+  it("leaves the moon out of the stack: it has its own block above the times", async () => {
     // Tuesday 20 October 2026, 9 p.m. in Paris: Arvit, and the moon is blessed.
     vi.setSystemTime(new Date("2026-10-20T19:00:00Z"));
     const { deck } = await mountDeck(
       [],
       objectives.filter((objective) => objective.id !== "tef"),
     );
-    const [first, second] = deck.pending.value;
-    expect(first.occasion).toMatchObject({ kind: "tefila", tefila: "arvit" });
-    expect(second.occasion?.kind).toBe("halevana");
-    deck.markOccasion(first, true);
-    expect(deck.top.value?.occasion?.kind).toBe("halevana");
+    expect(deck.top.value?.occasion).toMatchObject({ kind: "tefila", tefila: "arvit" });
+    expect(deck.day.value.every((card) => !card.occasion || card.occasion.kind === "tefila")).toBe(
+      true,
+    );
   });
 
   it("passe dessous ce qu'on remet à plus tard, l'office compris", async () => {
@@ -280,18 +272,11 @@ describe("le paquet de l'accueil", () => {
     expect(morning.store.today.value).toBe("2026-10-22");
   });
 
-  it("met la carte du 'Omer dans la pile, le soir, et retient qu'il est compté", async () => {
-    // Mercredi 5 mai 2027, 21 h 45 à Paris : la nuit du 'Omer.
+  it("leaves the 'Omer out of the stack: it has its own block above the times", async () => {
+    // Wednesday 5 May 2027, 9:45 p.m. in Paris: a night of the 'Omer.
     vi.setSystemTime(new Date("2027-05-05T19:45:00Z"));
     const { deck } = await mountDeck();
-    const omer = deck.day.value.find((card) => card.occasion?.kind === "omer");
-    expect(omer?.title).toMatch(/jour du 'Omer$/);
-    expect(omer?.extra).toBe(true);
-    expect(deck.pending.value.some((card) => card.key === omer?.key)).toBe(true);
-    deck.markOccasion(omer!, true);
-    expect(deck.day.value.find((card) => card.key === omer?.key)?.done).toBe(true);
-    expect(deck.pending.value.some((card) => card.key === omer?.key)).toBe(false);
-    expect(localStorage.getItem("pj_parcours_occasions")).toContain(omer!.occasion!.key);
+    expect(deck.day.value.some((card) => card.title.includes("'Omer"))).toBe(false);
   });
 
   it("donne les Tehilim de la semaine au jour de la semaine, et Birkat Hamazon après le repas", async () => {

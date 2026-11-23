@@ -1,27 +1,29 @@
 <script setup lang="ts">
 /**
- * « Aujourd'hui », en tête de l'étude : ce qui se lit ce jour-là, réuni en
- * une carte. Les psaumes du jour coiffaient la page des Tehilim, le chnei
- * mikra celle du Tanakh, la lecture du jour finissait la bibliothèque : il
- * fallait savoir où les chercher. Les deux bandeaux restent sur leurs pages ;
- * ici, une ligne chacun, comme les lignes d'une liste, et Ma journée, où
- * en est le parcours aujourd'hui : elle mène à l'accueil, où la pile du
- * jour la montre.
+ * "Today", at the head of the study: what is read that day, gathered in one
+ * card. The psalms of the day headed the Tehilim page, the chnei mikra the
+ * Tanakh one, the daily reading ended the library: one had to know where to
+ * look for them. The banners stay on their pages (the Daf Yomi heads the
+ * Talmud); here, one line each, like the lines of a list, and My day, where
+ * the journey stands today: it leads to the home page, where the day's
+ * stack shows it.
  *
- * Chargée à la demande (voir StudyPage) : elle tire le calendrier hébraïque.
+ * Loaded on demand (see StudyPage): it pulls in the Hebrew calendar.
  */
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { useParcours } from "../composables/useParcours";
-import { useTehilimDay, useWeeklyParasha } from "../composables/useTehilimDay";
+import { useDafYomi, useTehilimDay, useWeeklyParasha } from "../composables/useTehilimDay";
 import { parashaTitle } from "../services/dailyCycles";
+import { dafYomiLabel, dafYomiRoute } from "../services/dafYomi";
 import { analyticsService } from "../services/analyticsService";
 import { daySummary, liveObjectives } from "../services/parcours/schedule";
 import AppIcon from "./icons/AppIcon.vue";
 
-const { t } = useI18n();
+const { t, locale } = useI18n();
 const { cycle } = useTehilimDay();
 const { parasha } = useWeeklyParasha();
+const daf = useDafYomi();
 const store = useParcours();
 
 const psalms = computed(() => {
@@ -36,6 +38,11 @@ const psalms = computed(() => {
 
 const parashaLabel = computed(() =>
   parasha.value ? t("study.today.parasha", { parasha: parashaTitle(parasha.value) }) : "",
+);
+
+/** Today's daf: where it opens, and how it is named. */
+const dafYomi = computed(() =>
+  daf.value ? { to: dafYomiRoute(daf.value), label: dafYomiLabel(daf.value, locale.value) } : null,
 );
 
 /** Ma journée : où en est le parcours aujourd'hui, ou de quoi le commencer. */
@@ -63,6 +70,13 @@ function trackTehilim() {
     source: "library_today",
     day: cycle.value.day,
     psalms_count: cycle.value.psalms.length,
+  });
+}
+function trackDafYomi() {
+  analyticsService.capture("daf_yomi_opened", {
+    source: "library_today",
+    text_id: daf.value?.entry.id ?? null,
+    daf: daf.value?.daf ?? null,
   });
 }
 function trackChneiMikra() {
@@ -105,6 +119,15 @@ function trackChneiMikra() {
             {{ t("chneiMikra.title") }}
           </span>
           <span class="text-sm text-text-secondary">{{ parashaLabel }}</span>
+        </span>
+      </RouterLink>
+      <RouterLink v-if="dafYomi" :to="dafYomi.to" class="today-row group" @click="trackDafYomi">
+        <AppIcon name="books" :size="21" class="shrink-0 text-secondary" />
+        <span class="flex flex-col gap-0.5 min-w-0">
+          <span class="font-semibold text-text-primary group-hover:text-primary transition-colors">
+            {{ t("study.today.dafYomi") }}
+          </span>
+          <span class="text-sm text-text-secondary">{{ dafYomi.label }}</span>
         </span>
       </RouterLink>
       <!-- Ma journée, avec ou sans compte : le chiffre en avant tombe au bout

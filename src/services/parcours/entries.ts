@@ -1,6 +1,7 @@
 import type { TextStudyJsonEntry } from "../../models/models";
 import { texteOf } from "../chiourTexte";
 import { getWeeklyParasha, tehilimOfCycle } from "../dailyCycles";
+import { dafYomiOn } from "../dafYomi";
 import { localDayFrom } from "../dateService";
 import type { DayKey, Objective } from "./model";
 import type { Task } from "./schedule";
@@ -10,11 +11,11 @@ const known = (entries: (TextStudyJsonEntry | null)[]): TextStudyJsonEntry[] =>
   entries.filter((entry): entry is TextStudyJsonEntry => entry !== null);
 
 /**
- * Les textes qu'une tâche fait lire ce jour-là, en entrées du catalogue :
- * ceux qui doivent être sur l'appareil pour la lire sans connexion. La
- * portion d'un programme, un texte du jour, les psaumes du jour du mois, la
- * paracha de la semaine (au calendrier d'Israël si `il`). Une habitude n'a
- * pas de texte à télécharger : le Sidour vient avec l'app.
+ * The texts a task has one read that day, as catalog entries: the ones that
+ * must be on the device to read it offline. A program's portion, a daily
+ * text, the psalms of the day of the month, the parasha of the week (on the
+ * calendar of Israel if `il`), the tractate of the day's daf. A habit has no
+ * text to download: the Sidour comes with the app.
  */
 export function taskEntries(
   task: Task,
@@ -39,9 +40,13 @@ export function taskEntries(
       return known([texteOf(objective.textId)]);
     case "cycle": {
       const date = localDayFrom(day) ?? new Date();
-      return objective.cycle === "parasha"
-        ? (getWeeklyParasha(date, il)?.entries ?? [])
-        : tehilimOfCycle(objective.cycle, date).entries;
+      if (objective.cycle === "parasha") return getWeeklyParasha(date, il)?.entries ?? [];
+      // The Daf Yomi: the tractate of the day's daf.
+      if (objective.cycle === "daf-yomi") {
+        const daf = dafYomiOn(date);
+        return daf ? [daf.entry] : [];
+      }
+      return tehilimOfCycle(objective.cycle, date).entries;
     }
     default:
       return [];

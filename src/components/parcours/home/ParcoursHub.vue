@@ -5,10 +5,11 @@
  * d'une carte. Sans objectif encore, l'invitation à en prendre un. Dans
  * l'app, avec ou sans compte ; sur le site, pour un compte.
  *
- * It tells the home page whether it has begun: the Sidour shortcut and the
- * banners of the moon and the 'Omer then fall silent, their cards take their
- * place in the stack (the service whose time it is too, with or without the
- * « trois tefilot » habit).
+ * It tells the home page whether it has begun: the Sidour shortcut then
+ * falls silent, the service whose time it is takes its place in the stack
+ * (with or without the « trois tefilot » habit). The moon, the 'Hanouka
+ * lighting and the 'Omer stay out of the stack, above the times of the day
+ * (HomeOngoing.vue).
  *
  * Chargé à la demande (voir HomeView) : il tire le calendrier hébraïque.
  */
@@ -136,21 +137,13 @@ function unfold(source: string): void {
   trackDayViewed(store.data.value, store.context.value, store.today.value);
 }
 
-/**
- * Une carte touchée ouvre sa page : ce que l'accueil fait ouvrir. La lune et
- * le 'Omer gardent l'événement de leur ancien bandeau.
- */
+/** A card touched opens its page: what the home page leads to. */
 function opened(card: DeckCard): void {
   analyticsService.capture("home_card_clicked", {
     card: "parcours_task",
     variant: store.signedIn.value ? "dashboard" : "landing",
     kind: kindOf(card),
   });
-  if (card.occasion?.kind === "halevana") {
-    analyticsService.capture("birkat_halevana_opened", { source: "home" });
-  } else if (card.occasion?.kind === "omer") {
-    analyticsService.capture("omer_opened", { source: "home", day: card.occasion.n });
-  }
 }
 
 // La fiche : retrouvée par sa clé, elle suit ce qu'on y change.

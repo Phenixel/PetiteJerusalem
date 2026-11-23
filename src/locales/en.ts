@@ -92,6 +92,11 @@ const en: LocaleMessages = {
     manageCookies: "Manage cookies",
     social: "Social media",
   },
+  appPrompt: {
+    title: "Petite Jérusalem in your pocket",
+    text: "The Siddur, the library, the times and your journey on your phone, even offline. Free.",
+    later: "Later",
+  },
   appDownload: {
     title: "Get the app",
     apple: "App Store",
@@ -258,7 +263,7 @@ const en: LocaleMessages = {
       },
       cycles: {
         title: "Follow a cycle",
-        text: "Tehilim, shnayim mikra, texts every day: the calendar says what to read.",
+        text: "Tehilim, shnayim mikra, the Daf Yomi, texts every day: the calendar says what to read.",
       },
       habits: {
         title: "Take up a habit",
@@ -392,6 +397,14 @@ const en: LocaleMessages = {
     birkatHalevana: {
       title: "Blessing of the moon",
       until: "To be said tonight, until {date}.",
+      fromNight: "To be said from nightfall, until {date}.",
+    },
+    // "Right now", above the times of the day (HomeOngoing.vue).
+    ongoing: {
+      title: "Right now",
+      omerKicker: "Counting the Omer",
+      done: "Done",
+      markDone: "Mark as done: {name}",
     },
     holiday: {
       tichri: "Shana tova umetuka",
@@ -406,6 +419,60 @@ const en: LocaleMessages = {
     heroTitle: "Your digital spiritual center",
     heroDescription:
       "A modern platform dedicated to study, sharing and spiritual growth of the Jewish community.",
+    // The site's showcase, under the hook, for a visitor without an account
+    // (HomeShowcase, HomeMomentCard).
+    showcase: {
+      momentKicker: "The Siddur",
+      momentTitle: "Shacharit, Mincha, Arvit",
+      momentMeta: "The service of the moment first, in Hebrew with transliteration",
+      sidour: {
+        kicker: "The Siddur",
+        title: "The prayer of the moment, first",
+        text: "Shacharit, Mincha and Arvit open at their time, with what the day adds: the blessing of the moon, the Chanukah lights, Selichot, the lulav, havdalah, the counting of the Omer. In Hebrew, with transliteration.",
+        link: "Open the Siddur",
+        objects: {
+          siddur: "Every service",
+          moon: "The moon",
+          hanoukia: "Chanukah",
+          shofar: "Selichot",
+          loulav: "Sukkot",
+          havdala: "Havdalah",
+          candles: "Shabbat",
+          omer: "The Omer",
+        },
+      },
+      libraryKicker: "The library",
+      libraryTitle: "All the texts, bound",
+      libraryText:
+        "Tehilim, Mishna, Talmud, Tanakh, Mussar and Halakha, free to read, on the site as in the app.",
+      libraryLink: "Open the library",
+      parcours: {
+        kicker: "My journey",
+        title: "A wall built day after day",
+        text: "A tractate to finish, the Tehilim of the day, the daf, a habit: each day kept lays a stone, and the streak lights lights: the old lamp first, the next ones to discover. In the app without an account, on the site with one.",
+        link: "Set a goal",
+      },
+      share: {
+        kicker: "Reading Share",
+        title: "Finish a text together",
+        text: "Create a session, divide the Shas, the Mishna, the Tehilim or a book among your friends and family, and follow the progress together up to the siyum.",
+        link: "Create a session",
+      },
+      zmanim: {
+        kicker: "Times",
+        title: "The sky of each service",
+        text: "The day's times for your city, computed on the device, offline: dawn, the Shema, the Amida, Mincha, sunset, Shabbat and the holidays.",
+        link: "See the times",
+      },
+      chiourim: {
+        kicker: "Shiurim",
+        title: "Classes to listen to",
+        text: "The community's Torah classes and lessons, to listen to one after the other, like a playlist.",
+        link: "Listen to the shiurim",
+      },
+      appTitle: "The app",
+      appText: "The same texts, the times and your journey on your phone, even offline.",
+    },
     features: {
       shareReading: {
         title: "Sharing",
@@ -2076,6 +2143,7 @@ const en: LocaleMessages = {
   tehilimDay: {
     title: "Daily Tehilim",
     hint: "The psalms of the monthly cycle, to be read one after the other.",
+    weekHint: "The psalms of the day of the week, to be read one after the other.",
     pageDescription:
       "The Tehilim of the Hebrew day of the month, one below the other, read in one go.",
     dayOfMonth: "Day {day} of the month",
@@ -2302,6 +2370,13 @@ const en: LocaleMessages = {
         sub: "each day",
         hint: "One aliya a day, the 6th and 7th on Friday; a missed aliya comes back the next day",
         pick: "Shnayim mikra, one aliya a day",
+      },
+      "daf-yomi": {
+        title: "Daf Yomi",
+        cover: "Talmud",
+        sub: "each day",
+        hint: "One daf of the Talmud a day, the same all over the world: the whole Shas in seven and a half years",
+        pick: "Daf Yomi, one daf a day",
       },
     },
     aliyot: {
@@ -2770,6 +2845,7 @@ const en: LocaleMessages = {
       habit: "Take up a habit",
       ownWords: "In my own words",
       taken: "Already in your journey",
+      readyMade: "Psalms already divided up",
       partsTitle: {
         michna: "Which part of the Mishna?",
         talmud: "Which part of the Talmud?",
@@ -2915,6 +2991,8 @@ const en: LocaleMessages = {
       psalm: "Psalm {n}",
       psalms: "Psalms {from} to {to}",
       parasha: "Parashat {parasha}",
+      dafYomi: "Daf Yomi",
+      dafYomiKicker: "Today's Daf Yomi",
     },
     offline: {
       title: "Offline",

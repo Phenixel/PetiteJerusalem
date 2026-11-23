@@ -233,19 +233,37 @@ export interface HabitObjective extends ObjectiveBase {
   anchor?: HabitAnchor;
 }
 
-/** Les lectures que le calendrier donne : le jour du mois, la paracha de la semaine. */
-export type CycleId = "tehilim-month" | "tehilim-week" | "parasha";
+/**
+ * The readings the calendar gives: the psalms of the day of the month or of
+ * the week, the parasha of the week, the daf of the Daf Yomi.
+ *
+ * An older version of the app does not know "daf-yomi": it reads it as the
+ * Tehilim of the month (its title shows as a raw key) until it is updated.
+ */
+export type CycleId = "tehilim-month" | "tehilim-week" | "parasha" | "daf-yomi";
 
-export const CYCLES: readonly CycleId[] = ["tehilim-week", "tehilim-month", "parasha"];
+export const CYCLES: readonly CycleId[] = ["tehilim-week", "tehilim-month", "parasha", "daf-yomi"];
+
+/** The Tehilim of the month or of the week: their psalms change with the day. */
+export type TehilimCycleId = "tehilim-month" | "tehilim-week";
+
+export const isTehilimCycle = (cycle: CycleId): cycle is TehilimCycleId =>
+  cycle === "tehilim-month" || cycle === "tehilim-week";
 
 /**
- * Ce que la création propose : les cycles, et la paracha lue montée par
- * montée (un cycle « parasha » avec `split: "aliyot"`, sous le même
- * identifiant : on suit la paracha d'une façon ou de l'autre, pas des deux).
+ * What the creation offers: the cycles, and the parasha read aliya by aliya
+ * (a "parasha" cycle with `split: "aliyot"`, under the same id: one follows
+ * the parasha one way or the other, not both).
  */
 export type CycleChoice = CycleId | "parasha-aliyot";
 
-export const CYCLE_CHOICES: readonly CycleChoice[] = [...CYCLES, "parasha-aliyot"];
+export const CYCLE_CHOICES: readonly CycleChoice[] = [
+  "tehilim-week",
+  "tehilim-month",
+  "parasha",
+  "parasha-aliyot",
+  "daf-yomi",
+];
 
 /** Suivre une lecture du calendrier. */
 export interface CycleObjective extends ObjectiveBase {

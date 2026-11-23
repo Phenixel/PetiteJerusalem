@@ -88,6 +88,11 @@ const he: LocaleMessages = {
     manageCookies: "ניהול עוגיות",
     social: "רשתות חברתיות",
   },
+  appPrompt: {
+    title: "פטיט ירושלים בכיס שלכם",
+    text: "הסידור, הספרייה, הזמנים והמסלול שלכם בטלפון, גם בלי חיבור. בחינם.",
+    later: "אחר כך",
+  },
   appDownload: {
     title: "הורדת האפליקציה",
     apple: "App Store",
@@ -252,7 +257,7 @@ const he: LocaleMessages = {
       },
       cycles: {
         title: "לעקוב אחרי מחזור",
-        text: "תהילים, שניים מקרא, טקסטים בכל יום: הלוח אומר מה לקרוא.",
+        text: "תהילים, שניים מקרא, דף יומי, טקסטים בכל יום: הלוח אומר מה לקרוא.",
       },
       habits: {
         title: "לקחת הרגל",
@@ -386,6 +391,14 @@ const he: LocaleMessages = {
     birkatHalevana: {
       title: "ברכת הלבנה",
       until: "לאומרה הלילה, עד {date}.",
+      fromNight: "לאומרה מצאת הכוכבים, עד {date}.",
+    },
+    // Above the times of the day (HomeOngoing.vue).
+    ongoing: {
+      title: "עכשיו",
+      omerKicker: "ספירת העומר",
+      done: "בוצע",
+      markDone: "סימון כבוצע: {name}",
     },
     holiday: {
       tichri: "שנה טובה ומתוקה",
@@ -399,6 +412,59 @@ const he: LocaleMessages = {
     },
     heroTitle: "המרכז הרוחני הדיגיטלי שלכם",
     heroDescription: "פלטפורמה מודרנית המוקדשת ללימוד, שיתוף וצמיחה רוחנית של הקהילה היהודית.",
+    // The site's showcase, under the hook, for a visitor without an account
+    // (HomeShowcase, HomeMomentCard).
+    showcase: {
+      momentKicker: "הסידור",
+      momentTitle: "שחרית, מנחה, ערבית",
+      momentMeta: "התפילה של עכשיו בראש, בעברית עם תעתיק",
+      sidour: {
+        kicker: "הסידור",
+        title: "התפילה של עכשיו, בראש",
+        text: "שחרית, מנחה וערבית נפתחות בזמנן, עם מה שהיום מוסיף: ברכת הלבנה, נרות חנוכה, הסליחות, הלולב, ההבדלה, ספירת העומר. בעברית, עם תעתיק.",
+        link: "לפתיחת הסידור",
+        objects: {
+          siddur: "כל תפילה",
+          moon: "הלבנה",
+          hanoukia: "חנוכה",
+          shofar: "סליחות",
+          loulav: "סוכות",
+          havdala: "הבדלה",
+          candles: "שבת",
+          omer: "העומר",
+        },
+      },
+      libraryKicker: "הספרייה",
+      libraryTitle: "כל הטקסטים, כרוכים",
+      libraryText: "תהילים, משנה, תלמוד, תנ״ך, מוסר והלכה, לקריאה חופשית, באתר כמו באפליקציה.",
+      libraryLink: "לפתיחת הספרייה",
+      parcours: {
+        kicker: "המסלול שלי",
+        title: "חומה שנבנית, יום אחר יום",
+        text: "מסכת לסיים, תהילים יומי, הדף, הרגל: כל יום שנשמר מניח אבן, והרצף מדליק אורות: הנר הישן קודם, והבאים יתגלו בהמשך. באפליקציה בלי חשבון, באתר עם חשבון.",
+        link: "להציב יעד",
+      },
+      share: {
+        kicker: "שיתוף קריאות",
+        title: "לסיים טקסט יחד",
+        text: "צרו מפגש, חלקו את הש״ס, המשנה, התהילים או ספר בין הקרובים, ועקבו יחד אחר ההתקדמות עד הסיום.",
+        link: "ליצירת מפגש",
+      },
+      zmanim: {
+        kicker: "זמנים",
+        title: "השמיים של כל תפילה",
+        text: "זמני היום לעיר שלכם, מחושבים במכשיר, גם בלי חיבור: עלות השחר, קריאת שמע, העמידה, מנחה, השקיעה, שבת והחגים.",
+        link: "לזמנים",
+      },
+      chiourim: {
+        kicker: "שיעורים",
+        title: "שיעורים להאזנה",
+        text: "שיעורי התורה של הקהילה, להאזנה בזה אחר זה, כמו רשימת השמעה.",
+        link: "להאזנה לשיעורים",
+      },
+      appTitle: "האפליקציה",
+      appText: "אותם טקסטים, הזמנים והמסלול שלכם בטלפון, גם בלי חיבור.",
+    },
     features: {
       shareReading: {
         title: "שיתוף",
@@ -2024,6 +2090,7 @@ const he: LocaleMessages = {
   tehilimDay: {
     title: "תהילים יומי",
     hint: "מזמורי המחזור החודשי, לקריאה בזה אחר זה.",
+    weekHint: "מזמורי יום השבוע, לקריאה בזה אחר זה.",
     pageDescription: "תהילים של יום החודש העברי, זה אחר זה, לקריאה ברצף.",
     dayOfMonth: "{day} בחודש",
     unavailable: "לא ניתן לקבוע את מזמורי היום.",
@@ -2246,6 +2313,13 @@ const he: LocaleMessages = {
         sub: "בכל יום",
         hint: "עלייה בכל יום, השישית והשביעית ביום שישי; עלייה שנשכחה חוזרת למחרת",
         pick: "שניים מקרא, עלייה ביום",
+      },
+      "daf-yomi": {
+        title: "דף יומי",
+        cover: "תלמוד",
+        sub: "בכל יום",
+        hint: "דף גמרא בכל יום, אותו דף בכל העולם: כל הש״ס בשבע שנים וחצי",
+        pick: "דף יומי, דף בכל יום",
       },
     },
     aliyot: {
@@ -2709,6 +2783,7 @@ const he: LocaleMessages = {
       habit: "לקבל הרגל",
       ownWords: "במילים שלי",
       taken: "כבר במסלול שלכם",
+      readyMade: "תהילים בחלוקה קבועה",
       partsTitle: {
         michna: "איזה חלק מהמשנה?",
         talmud: "איזה חלק מהתלמוד?",
@@ -2854,6 +2929,8 @@ const he: LocaleMessages = {
       psalm: "מזמור {n}",
       psalms: "מזמורים {from} עד {to}",
       parasha: "פרשת {parasha}",
+      dafYomi: "דף יומי",
+      dafYomiKicker: "הדף היומי של היום",
     },
     offline: {
       title: "ללא חיבור",

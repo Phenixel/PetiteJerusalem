@@ -21,6 +21,7 @@ import HomeDoors from "../components/HomeDoors.vue";
 import HomeResume from "../components/HomeResume.vue";
 import { HOME_BLOCKS, useHomeLayout, type HomeBlock } from "../composables/useHomeLayout";
 import { useHomeArrange } from "../composables/useHomeArrange";
+import { useBottomChromeHeight } from "../composables/useBottomChrome";
 import type { PinnedBook } from "../content/pinnedBooks";
 import { haptic } from "../services/haptics";
 import HolidayGreeting from "../components/holiday/HolidayGreeting.vue";
@@ -32,16 +33,19 @@ const ZmanimCard = defineAsyncComponent(() => import("../components/ZmanimCard.v
 // The home tips only show in the app or once a parcours has begun: most
 // visitors of the site never render them, so they do not load them either.
 const FeatureTour = defineAsyncComponent(() => import("../components/FeatureTour.vue"));
-const BirkatHalevanaBanner = defineAsyncComponent(
-  () => import("../components/BirkatHalevanaBanner.vue"),
-);
-const OmerBanner = defineAsyncComponent(() => import("../components/OmerBanner.vue"));
+// What the calendar opens now (the moon, the 'Hanouka lighting, the 'Omer),
+// above the times of the day: same calendar engine, same lazy loading.
+const HomeOngoing = defineAsyncComponent(() => import("../components/HomeOngoing.vue"));
 // Les dates qu'on a inscrites au calendrier, la semaine où elles arrivent.
 // Même moteur de calendrier hébraïque, même chargement à la demande.
 const OccasionsBanner = defineAsyncComponent(() => import("../components/OccasionsBanner.vue"));
 // Le raccourci du sidour : pendant la plage horaire d'un office, l'accueil
 // mène au texte. Même moteur d'horaires, même chargement à la demande.
 const SidourNowCard = defineAsyncComponent(() => import("../components/SidourNowCard.vue"));
+// The site's showcase, for a visitor without an account: loaded on demand, it
+// pulls the times engine and the library's shelf.
+const HomeMomentCard = defineAsyncComponent(() => import("../components/home/HomeMomentCard.vue"));
+const HomeShowcase = defineAsyncComponent(() => import("../components/home/HomeShowcase.vue"));
 // Les informations de l'équipe : un incident en cours ou une nouveauté pas
 // encore vue. Elles tirent Firestore, d'où le chargement à la demande.
 const AnnouncementsBanner = defineAsyncComponent(
@@ -104,6 +108,8 @@ const { dismissed: accountCtaDismissed, dismissHomeAccountCta } = useHomeAccount
  * déjà un compte.
  */
 const homeRoot = ref<HTMLElement | null>(null);
+/** Edit mode: « Terminé » pinned above the bottom bars (tab bar, mini player). */
+const editDoneBottom = useBottomChromeHeight("16px");
 
 /** Le tutoriel de Mon parcours, sur l'accueil : la pile, la journée, la lumière, l'étagère. */
 const parcoursTours = useParcoursTours();
@@ -144,9 +150,8 @@ function dismissAccountCta() {
 const dashboard = computed(() => user.value !== null || isNativeApp);
 
 /**
- * The parcours has begun: the service whose time it is, the moon and the
- * 'Omer are cards of the stack, and their shortcuts on the home page fall
- * silent.
+ * The parcours has begun: the service whose time it is is a card of the
+ * stack, and the Sidour shortcut on the home page falls silent.
  */
 const parcoursBegun = ref(false);
 
@@ -359,7 +364,7 @@ onUnmounted(() => {
         <AnnouncementsBanner class="mt-4" />
       </div>
 
-      <!-- Edit mode: what is going on, and how to leave it. -->
+      <!-- Edit mode: what is going on; « Terminé » waits pinned at the bottom. -->
       <div
         v-if="editing"
         class="edit-bar w-full max-w-6xl mx-auto mt-5 flex items-center justify-between gap-3"
@@ -369,9 +374,6 @@ onUnmounted(() => {
           <br />
           <span class="text-text-secondary">{{ t("home.edit.hint") }}</span>
         </p>
-        <button type="button" class="btn btn-primary edit-done" @click="editing = false">
-          {{ t("home.edit.done") }}
-        </button>
       </div>
 
       <!-- The day's deck, always first; below it, the blocks in the order
@@ -425,7 +427,12 @@ onUnmounted(() => {
           </button>
           <div class="tile-body" :inert="editing || undefined">
             <div v-if="block === 'horaires'" class="flex flex-col gap-3">
-              <!-- Horaires du jour : calculés sur l'appareil, rien à charger. -->
+              <!-- What can be done now (the moon, 'Hanouka, the 'Omer), set
+                 apart above the times and outside the stack, where it hid
+                 under the service of the hour (HomeOngoing). -->
+              <HomeOngoing />
+
+              <!-- The times of the day: computed on the device, nothing to load. -->
               <ZmanimCard
                 class="dash-card"
                 style="--enter-delay: 0.1s"
@@ -434,15 +441,10 @@ onUnmounted(() => {
               />
 
               <!-- Before the parcours begins: the sidour one gesture away
-                 while a service's time lasts, and the blessing of the moon (a
-                 few nights a month, missed for lack of a reminder) with the
-                 'Omer. Once it has begun, these are cards of the stack, with
-                 or without the « trois tefilot » habit. -->
-              <template v-if="!parcoursBegun">
-                <SidourNowCard />
-                <BirkatHalevanaBanner />
-                <OmerBanner />
-              </template>
+                 while a service's time lasts. Once it has begun, the service
+                 is a card of the stack, with or without the « trois tefilot »
+                 habit. -->
+              <SidourNowCard v-if="!parcoursBegun" />
             </div>
 
             <!-- L'étagère du parcours : un volume par objectif qui se lit. -->
@@ -488,17 +490,26 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <p class="mt-[22px] mb-10 text-center">
+      <!-- Edit mode: « Terminé » stays pinned at the bottom of the screen,
+           above the tab bar, wherever one is in the list of blocks; at the
+           foot of the page it was missed. The page keeps room for it, so
+           the last block is not hidden under it. -->
+      <Teleport to="body">
+        <Transition name="edit-done">
+          <div v-if="editing" class="edit-done-bar" :style="{ bottom: editDoneBottom }">
+            <button
+              type="button"
+              class="btn btn-primary edit-done edit-done-pinned"
+              @click="editing = false"
+            >
+              {{ t("home.edit.done") }}
+            </button>
+          </div>
+        </Transition>
+      </Teleport>
+      <p class="mt-[22px] mb-10 text-center" :class="{ 'edit-room': editing }">
         <button
-          v-if="editing"
-          type="button"
-          class="btn btn-primary edit-done"
-          @click="editing = false"
-        >
-          {{ t("home.edit.done") }}
-        </button>
-        <button
-          v-else
+          v-if="!editing"
           type="button"
           class="text-[13px] font-semibold text-text-secondary underline underline-offset-4"
           @click="startEditing"
@@ -508,13 +519,15 @@ onUnmounted(() => {
       </p>
     </template>
 
-    <!-- ===== Site, sans compte : invitation à gauche, horaires du jour à
-         droite, à la place qu'occupent les cartes du tableau de bord ===== -->
+    <!-- ===== Site, without an account: on a computer, the hook on the left
+         and the information of the moment on the right; on a phone, that
+         information first, as in the app, and the hook under it. The hook
+         stays first in the page's order for the search engines. ===== -->
     <div
       v-else
-      class="w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-8 items-center mb-10"
+      class="w-full max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 items-center mb-10"
     >
-      <div class="space-y-4 text-center md:text-start">
+      <div class="order-2 space-y-4 text-center md:order-1 md:text-start">
         <h1
           class="text-4xl md:text-6xl font-bold text-text-primary tracking-tight leading-[1.05] enter-rise"
         >
@@ -557,20 +570,22 @@ onUnmounted(() => {
       <!-- Les horaires du jour et, dessous, les raccourcis du moment : la
            colonne de droite porte tout ce qui dépend de l'heure qu'il est,
            l'accroche garde la gauche. -->
-      <div class="flex flex-col gap-4">
+      <div class="order-1 flex flex-col gap-4 md:order-2">
         <AnnouncementsBanner />
+        <!-- The card of the moment, in solid color as in the app: the service
+             whose time it is, or the Sidour between two services. Then what
+             is going on now (the moon, Hanouka, the 'Omer), above the times. -->
+        <HomeMomentCard />
+        <HomeOngoing />
         <ZmanimCard class="dash-card" style="--enter-delay: 0.3s" @click="trackCard('zmanim')" />
-        <SidourNowCard />
-        <BirkatHalevanaBanner />
-        <OmerBanner />
         <OccasionsBanner />
       </div>
     </div>
 
     <div class="w-full max-w-6xl mx-auto">
-      <!-- Les trois portes du site (HomeDoors). Sur le tableau de bord, elles
-           sont un bloc qu'on range ou qu'on masque, avec les autres. -->
-      <HomeDoors v-if="!dashboard" class="mb-10" @open="trackCard" />
+      <!-- What the app holds, with its own objects (HomeShowcase). On the
+           dashboard, the three doors are a block one arranges or hides. -->
+      <HomeShowcase v-if="!dashboard" class="mb-10" @open="trackCard" />
 
       <div class="text-center max-w-2xl mx-auto enter-rise" style="--enter-delay: 0.4s">
         <p class="font-serif italic text-text-secondary">{{ t("home.memorial.title") }}</p>
@@ -733,6 +748,43 @@ onUnmounted(() => {
   padding: 0 16px;
   font-size: 14px;
   font-weight: 700;
+}
+/* Pinned at the bottom of the screen in edit mode (teleported to <body>). */
+.edit-done-bar {
+  position: fixed;
+  inset-inline: 0;
+  z-index: 40;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+.edit-done-pinned {
+  min-width: 200px;
+  min-height: 48px;
+  font-size: 15px;
+  box-shadow: var(--shadow-pop);
+  pointer-events: auto;
+}
+/* The room the pinned button takes, under the last block. */
+.edit-room {
+  min-height: 72px;
+}
+.edit-done-enter-active,
+.edit-done-leave-active {
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+}
+.edit-done-enter-from,
+.edit-done-leave-to {
+  opacity: 0;
+  transform: translateY(12px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .edit-done-enter-active,
+  .edit-done-leave-active {
+    transition: none;
+  }
 }
 
 /* Staggered entrance: cards, greeting/hero and memorial all rise into place. */

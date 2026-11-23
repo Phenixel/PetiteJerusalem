@@ -62,6 +62,7 @@ import { SITE_URL } from "../config/site";
 // jour, qui coiffent les Tehilim.
 const ChneiMikraBanner = defineAsyncComponent(() => import("../components/ChneiMikraBanner.vue"));
 const TehilimDayBanner = defineAsyncComponent(() => import("../components/TehilimDayBanner.vue"));
+const DafYomiBanner = defineAsyncComponent(() => import("../components/DafYomiBanner.vue"));
 // « Aujourd'hui » (psaumes du jour, chnei mikra, lecture du jour) tire le
 // calendrier hébraïque, lui aussi : chargé à la demande.
 const StudyToday = defineAsyncComponent(() => import("../components/StudyToday.vue"));
@@ -378,6 +379,9 @@ const showChneiMikra = computed(() => browsingBook("tanakh"));
 
 // Les psaumes du jour (cycle mensuel) coiffent les Tehilim, de la même façon.
 const showTehilimDay = computed(() => browsingBook("tehilim"));
+
+// Today's Daf Yomi heads the Talmud.
+const showDafYomi = computed(() => browsingBook("talmud"));
 
 // Le Yehi ratson des Tehilim se dit à l'ouverture du livre, une fois pour les
 // psaumes qu'on va y lire : sa place est ici, pas sur chacun des cent
@@ -748,6 +752,9 @@ onMounted(() => {
     <!-- Tehilim : les psaumes du jour du mois hébraïque, qui se lisent d'une
          traite sur leur page. -->
     <TehilimDayBanner v-if="showTehilimDay" class="max-w-5xl mx-auto mb-10" />
+
+    <!-- Talmud: today's daf, opened in the reader. -->
+    <DafYomiBanner v-if="showDafYomi" class="max-w-5xl mx-auto mb-10" />
 
     <!-- Tehilim : ce qu'on dit avant d'en lire, et ce qu'on dit après. -->
     <BookEncadrement v-if="showBookEncadrement" corpus="tehilim" class="max-w-5xl mx-auto mb-10" />

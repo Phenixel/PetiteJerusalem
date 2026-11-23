@@ -1,18 +1,23 @@
 <script setup lang="ts">
 /**
- * Un texte chaque jour : un psaume, une page qu'on aime, relus en entier.
- * C'est la lecture du jour d'avant ; on le cherche dans le catalogue comme
- * dans la bibliothèque.
+ * A text every day: a psalm, a page one loves, read again in full. It is the
+ * daily reading of before; it is searched in the catalog as in the library.
  *
- * On en prend plusieurs d'affilée, comme dans la lecture du jour d'avant
- * (plusieurs psaumes le même jour) : un toucher coche un texte, un autre le
- * décoche, la recherche se refait autant qu'on veut, et ce qu'on a coché
- * attend dessus. « Ajouter 3 textes » les prend tous.
+ * Several are taken in a row, as in the daily reading of before (several
+ * psalms the same day): a tap ticks a text, another unticks it, the search is
+ * redone as often as wanted, and what is ticked waits above it. « Ajouter 3
+ * textes » takes them all.
+ *
+ * Above the search, the psalms already divided up: the Tehilim of the day of
+ * the month, or of the week. They change every day, so they are not texts to
+ * pick but a cycle of Mon parcours: a tap asks for it (`cycle`), and the page
+ * decides how it is added. One already taken shows as such.
  */
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import textStudiesJson from "../../../datas/textStudies.json";
 import type { TextStudiesJson, TextStudyJsonEntry } from "../../../models/models";
+import type { CycleId } from "../../../services/parcours/model";
 import { corpusOf } from "../../../content/etudeTexts";
 import { texteTitle } from "../../../services/chiourTexte";
 import { filterBySearch } from "../../../services/catalogSearch";
@@ -21,8 +26,16 @@ import { useDebouncedValue } from "../../../composables/useDebouncedValue";
 import CatalogSearchField from "../../CatalogSearchField.vue";
 import AppIcon from "../../icons/AppIcon.vue";
 
-const props = defineProps<{ taken: number[] }>();
-const emit = defineEmits<{ (e: "pick", entries: TextStudyJsonEntry[]): void }>();
+const props = withDefaults(defineProps<{ taken: number[]; takenCycles?: readonly string[] }>(), {
+  takenCycles: () => [],
+});
+const emit = defineEmits<{
+  (e: "pick", entries: TextStudyJsonEntry[]): void;
+  (e: "cycle", cycle: CycleId): void;
+}>();
+
+/** The psalms already divided up, offered above the search. */
+const TEHILIM_CYCLES = ["tehilim-month", "tehilim-week"] as const satisfies readonly CycleId[];
 
 const { t, locale } = useI18n();
 /** Le bouton reste en vue en bas de l'écran, au-dessus des barres du bas. */
@@ -60,7 +73,40 @@ function toggle(entry: TextStudyJsonEntry): void {
 
 <template>
   <div>
-    <CatalogSearchField v-model:term="term" :placeholder="t('parcours.create.searchAny')" />
+    <!-- The psalms already divided up: a cycle, a tap away. -->
+    <p class="text-[13px] font-bold text-text-secondary">{{ t("parcours.create.readyMade") }}</p>
+    <div class="mt-2 grid gap-2 sm:grid-cols-2">
+      <button
+        v-for="cycle in TEHILIM_CYCLES"
+        :key="cycle"
+        type="button"
+        class="ready-made"
+        :disabled="props.takenCycles.includes(cycle)"
+        @click="emit('cycle', cycle)"
+      >
+        <span class="min-w-0 flex-1">
+          <span class="block text-[15px] font-bold">{{ t(`parcours.cycles.${cycle}.title`) }}</span>
+          <span class="block text-[13px] text-text-secondary">
+            {{
+              props.takenCycles.includes(cycle)
+                ? t("parcours.create.taken")
+                : t(`parcours.cycles.${cycle}.hint`)
+            }}
+          </span>
+        </span>
+        <AppIcon
+          :name="props.takenCycles.includes(cycle) ? 'check' : 'plus'"
+          :size="16"
+          class="flex-none text-primary"
+        />
+      </button>
+    </div>
+
+    <CatalogSearchField
+      v-model:term="term"
+      class="mt-5"
+      :placeholder="t('parcours.create.searchAny')"
+    />
 
     <!-- Ce qu'on a coché : il attend ici, d'une recherche à l'autre. -->
     <div v-if="picked.length" class="mt-3 flex flex-wrap gap-2">
@@ -126,6 +172,24 @@ function toggle(entry: TextStudyJsonEntry): void {
   box-shadow: 0 6px 18px rgb(58 46 30 / 0.18);
   font-size: 15px;
   font-weight: 700;
+}
+/* A ready-made division: a row like the search results, the plus at its end. */
+.ready-made {
+  display: flex;
+  min-height: 56px;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: var(--radius-card);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-card);
+  text-align: start;
+}
+.ready-made:hover:not(:disabled) {
+  background: var(--color-surface-soft);
+}
+.ready-made:disabled {
+  opacity: 0.6;
 }
 .picked-chip {
   display: inline-flex;

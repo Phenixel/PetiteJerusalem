@@ -490,6 +490,60 @@ has installed the app no longer needs convincing, and those lines pushed the
 times and the three doors below the fold. The site, for its part, keeps its
 centered hook.
 
+### The site's home page shows the app with its own objects
+
+A visitor without an account may be discovering the site: the home page
+presents it, for them and for the search engines. A visitor with an account
+sees their dashboard, as in the app, and none of this.
+
+- **The top.** On a computer, the hook (the big title, the paragraph, the
+  account buttons) on the left, and the information of the moment on the
+  right. On a phone, that information comes first, as in the app, and the
+  hook under it; the hook stays first in the page's order for the search
+  engines. The information of the moment opens on **the card of the moment**,
+  the one card in solid color (`HomeMomentCard.vue`), the sidour coming out
+  through its top: the service whose time it is, with the time until which
+  it is said; between two services, the Sidour itself. The times card and the
+  light cards of the night (the moon, the 'Omer) follow it.
+- **The presentation** (`HomeShowcase.vue`), one section per part of the
+  site, each with a kicker, a title in Playfair, one sentence and a link,
+  drawn with the app's own art and **never on a white frame**: the objects
+  stand on the page, on a plank when they are things one sets down.
+  - the Sidour: its objects in a row on their shelf (the sidour, the moon,
+    the 'hanoukkia, the chofar, the loulav, the havdala, the candles, the
+    sheaf of the 'Omer), each named under it;
+  - the library: the six bound volumes on their two shelves (`LibraryShelf`);
+  - Mon parcours: a piece of the stone wall (`StoneWall`, an example, the
+    same for everyone); of the lights of the series, the old lamp alone is
+    drawn, the next ones blurred « À découvrir » (`StreakLight` `locked`), so
+    that what there is to earn stays a surprise;
+  - sharing: the six orders of the Michna, bound, on a plank;
+  - the times: the sky of Cha'harit, Min'ha and Arvit in their round window
+    (`ArtSky`);
+  - the chiourim: three covers of series fanned like a playlist
+    (`ChiourCover`);
+  - the app, with its download buttons, before the memorial.
+
+  A drawing opens its section's page, like its link (it is hidden from
+  screen readers, the link says it). From a medium screen up, the drawing and
+  the text sit side by side,
+  alternating sides; on a phone, the drawing comes above its text. The
+  sections are separated by a rule. The planks are flat (no gradient), in the
+  wood of the library's shelf. The three doors (`HomeDoors`) remain a block
+  of the dashboard.
+
+### The site offers the app, once
+
+On the website, a window offers the app a few seconds after arriving
+(`AppDownloadPrompt.vue`): the sidour drawn, « Petite Jérusalem dans votre
+poche », one sentence, the store buttons of the device (the App Store on an
+iPhone, Google Play on Android, both on a computer) and « Plus tard ».
+
+- It waits for the consent banner to be answered, and never shows in the app.
+- Once: « Plus tard » or the veil sends it away for sixty days; a store
+  opened, for good.
+- Never to a crawler: the page reads the same for the search engines.
+
 ### A list row can become a command
 
 In the app, a times row is no longer just text: touching it sets a
@@ -2944,9 +2998,8 @@ time, the time in large type), the untitled shelf.
   do, then two buttons per row (done, open, later, not today) and « Voir le
   programme » ("See the program"). Each gesture has its button there, for
   those who do not swipe, and on the site.
-- **The order**: the 'Hanouka lighting at its time, the service whose time
-  it is (the card says « Maintenant » ("Now") and until when), the moon and
-  the 'Omer, then the present moment, those coming up, those already past,
+- **The order**: the service whose time it is (the card says
+  « Maintenant » ("Now") and until when), then the present moment, those coming up, those already past,
   « Rattraper », and finally what was put off until later. A service says
   until when, or from when if it is upcoming.
 - **Not time yet.** A service whose time has not come (Min'ha in the
@@ -2968,12 +3021,24 @@ time, the time in large type), the untitled shelf.
   for their part, never wait: their moment orders them, and study is done
   when you can. Held by
   `src/__tests__/parcoursDeck.test.ts`.
-- **Occasion cards** (the moon on the nights it is blessed, the counting of
-  the 'Omer in the evening, the 'Hanouka lighting) take their place in the
-  stack, at their time, and open the same way; their banners stay silent as
-  long as the parcours has started. They do not count in the day: once
-  done, the device remembers them (`services/parcours/occasions.ts`), so
-  that a blessed moon does not come back the following night.
+- **What is going on now is not in the stack.** The blessing of the moon,
+  the 'Hanouka lighting and the counting of the 'Omer have their own block,
+  « En ce moment » ("Right now"), above the times of the day
+  (`HomeOngoing.vue`, `services/ongoingOccasions.ts`), parcours or not, in
+  the app and on the site. In the stack, the moon waited under the service
+  of the hour and did not show by day, and its few nights went by unseen.
+  Each occasion is offered for as long as it lasts: by day for the night to
+  come (« Ce soir », "Tonight", « À dire dès la nuit »), at night until
+  dawn (« Cette nuit »); 'Hanouka its eight days, the candle of the night
+  (before Shabbat on a Friday); the 'Omer its forty-nine days, the count of
+  the day. One card each, in the shape of the old banners (the object in
+  its corner, on the plain surface), the whole card opening the text, and a
+  round « Fait » ("Done") button to mark it done (a word: the object
+  already says what the card is, no icon beside it): the device remembers it
+  (`services/parcours/occasions.ts`, shared with the Sidour page) and it
+  leaves the home page until its next time. Nothing the rest of the time.
+  Held by `src/__tests__/ongoingOccasions.test.ts` and
+  `src/__tests__/homeOngoing.test.ts`.
 - **The services are in the stack for everyone.** Without the « trois
   tefilot » habit (or on a day it leaves out), the service whose time it is
   still comes into the stack, as an extra card: « Maintenant », until when,
@@ -2981,9 +3046,8 @@ time, the time in large type), the untitled shelf.
   takes the color, counted or not). It opens the text, is swiped done like an occasion,
   and does not count in the day, on the wall or in the streak: only the
   habit, chosen, counts the services. It replaces the Sidour shortcut of
-  the home page, which stays silent once the parcours has started. On a
-  night of the moon, Arvit comes first and the moon right after: once
-  Arvit is swiped, the moon is on top. What is swiped here is also what the
+  the home page, which stays silent once the parcours has started. What is
+  swiped here is also what the
   Sidour page knows is said, and what is said there (swiped, or at the end
   of the text) leaves the stack (see "The Sidour opens on the moment").
   Held by `src/__tests__/parcoursDeck.test.ts`.
@@ -3268,8 +3332,11 @@ an « Afficher » ("Show") pill in the brand color. A block that has nothing
 to show right now keeps its place as a dashed outline under its name. You
 get there by a long press on a block (with a finger), which also picks that
 block up at once, or through « Modifier l'accueil » ("Edit the home page")
-at the bottom of the page; « Terminé » ("Done"), above the blocks and at the
-bottom, or Escape, leaves it. The old address `/accueil/modifier` opens the
+at the bottom of the page; « Terminé » ("Done"), or Escape, leaves it.
+« Terminé » stays pinned at the bottom of the screen, centered above the tab
+bar, for as long as the mode lasts: placed at the foot of the list of blocks,
+it was missed, one had to scroll the whole page to find it. The page keeps
+room under the last block so that the button never hides it. The old address `/accueil/modifier` opens the
 home page in this mode.
 
 In edit mode a finger holds a block a moment before it lifts (a quick swipe
