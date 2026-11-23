@@ -8,6 +8,8 @@ import ScrollToTop from "./components/ScrollToTop.vue";
 import ToastContainer from "./components/ToastContainer.vue";
 import ConfirmDialog from "./components/ConfirmDialog.vue";
 import ConsentBanner from "./components/ConsentBanner.vue";
+// The window that offers the app, on the website only: loaded on demand.
+const AppDownloadPrompt = defineAsyncComponent(() => import("./components/AppDownloadPrompt.vue"));
 import { TABLE_BAR_REM } from "./composables/useBottomChrome";
 import ReadingTableBar from "./components/readingTable/ReadingTableBar.vue";
 import { tableBarVisible } from "./composables/useReadingTable";
@@ -287,6 +289,7 @@ authService.onAuthChanged((user) => {
       <ToastContainer />
       <ConfirmDialog />
       <ConsentBanner />
+      <AppDownloadPrompt v-if="!isNativeApp" />
       <OnboardingFlow v-if="isOnboardingOpen" />
       <WhatsNewVideo v-if="isWhatsNewOpen && !isOnboardingOpen" />
       <FeedbackModal v-if="feedbackMounted" />
