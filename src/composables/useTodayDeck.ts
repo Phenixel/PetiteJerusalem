@@ -3,7 +3,7 @@ import { useI18n } from "vue-i18n";
 import type { RouteLocationRaw } from "vue-router";
 import type { DeckArtSpec } from "../components/parcours/home/DeckArt.vue";
 import { sidourText } from "../content/sidourGroups";
-import { omerDay, tehilimOfCycle } from "../services/dailyCycles";
+import { tehilimOfCycle } from "../services/dailyCycles";
 import { localDayFrom } from "../services/dateService";
 import {
   isOwnHabit,
@@ -19,15 +19,13 @@ import { portionMinutes } from "../services/parcours/plan";
 import { habitAnchor } from "../services/parcours/create";
 import { TEFILOT_STEPS, liveObjectives, type TefilaStep } from "../services/parcours/schedule";
 import { unitOf } from "../services/parcours/texts";
-import { MOMENT_TEXTS, sidourMoment } from "../services/sidourMoment";
-import { computeZmanim, formatHebrewDate, hebrewDateFor } from "../services/zmanimService";
+import { MOMENT_TEXTS } from "../services/sidourMoment";
 import { useCurrentMoment } from "./useCurrentMoment";
 import { useOfficeTimes } from "./useOfficeTimes";
-import { halevanaKey, officeKey, useOccasionsDone } from "./useOfficesDone";
+import { officeKey, useOccasionsDone } from "./useOfficesDone";
 import { useParcours } from "./useParcours";
 import { useParcoursViews, type TaskView } from "./useParcoursViews";
 import { psalmsLabel } from "./useTehilimDay";
-import { useZmanimLocation } from "./useZmanimLocation";
 
 /**
  * Le paquet de l'accueil : les cartes d'aujourd'hui, dans l'ordre où elles se
@@ -42,13 +40,14 @@ import { useZmanimLocation } from "./useZmanimLocation";
  * aujourd'hui, le quitte et se retrouve dans le portefeuille.
  *
  * Along with the tasks come the extra cards, which do not count in the day:
- * the occasion cards, at their time (the moon on the nights it is blessed,
- * the counting of the 'Omer in the evening, the 'Hanouka lighting), which
- * open the same way; the service whose time it is, when no goal carries it
+ * the service whose time it is, when no goal carries it
  * (without the « trois tefilot » habit, or on a day it leaves out): the
  * services are in the deck for everyone, and only the habit counts them in
  * the day; and, after everything else, « Rattraper » for a program that is
- * behind, « si vous avez un moment ».
+ * behind, « si vous avez un moment ». The occasions of the calendar (the
+ * moon, the 'Hanouka lighting, the 'Omer) are not in the deck: they have
+ * their own block above the times of the day (HomeOngoing.vue), where they
+ * do not hide under the service of the hour.
  *
  * Un office dont l'heure n'est pas encore venue (Min'ha au matin) passe
  * après tout ce qui se fait maintenant, même remis à plus tard ; en tête, il
@@ -57,13 +56,11 @@ import { useZmanimLocation } from "./useZmanimLocation";
  * la nuit venue : voir useOfficeTimes).
  */
 
-/** Une occasion du calendrier, et sa fois (voir services/parcours/occasions.ts). */
+/** The service whose time it is, as an extra card (see services/parcours/occasions.ts). */
 export interface DeckOccasion {
-  kind: "hanouka" | "halevana" | "omer" | "tefila";
-  /** La clé retenue sur l'appareil une fois faite. */
+  kind: "tefila";
+  /** The key the device remembers once it is done. */
   key: string;
-  /** Le soir du 'Omer, la bougie de 'Hanouka. */
-  n?: number;
   /** The service, for the card of the service whose time it is. */
   tefila?: TefilaStep;
 }
@@ -109,14 +106,8 @@ const postponed = ref<{ day: DayKey; keys: string[] }>({ day: "", keys: [] });
 /** Les cartes en plus mises de côté pour aujourd'hui (« Pas aujourd'hui »). */
 const dismissed = ref<{ day: DayKey; keys: string[] }>({ day: "", keys: [] });
 
-/**
- * The rank of an occasion in the stack: the 'Hanouka lighting goes ahead of
- * the evening service, the moon and the 'Omer just after it. The service
- * whose time it is ranks the same with or without the habit.
- */
-const HANOUKA_RANK = -2;
+/** The service whose time it is ranks first, with or without the habit. */
 const NOW_RANK = -1;
-const OCCASION_RANK = -0.5;
 /** Rattraper se range après les tâches, avant ce qu'on a remis à plus tard. */
 const EXTRA_RANK = 50;
 const LATER_RANK = 100;
@@ -124,13 +115,11 @@ const LATER_RANK = 100;
 const WAITING_RANK = 200;
 
 export function useTodayDeck() {
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
   const store = useParcours();
   const views = useParcoursViews();
   const moment = useCurrentMoment();
   const offices = useOfficeTimes();
-  const now = offices.now;
-  const { place } = useZmanimLocation();
   const occasionsDone = useOccasionsDone();
 
   const today = store.today;
@@ -287,16 +276,6 @@ export function useTodayDeck() {
     };
   }
 
-  const sidour = computed(() => sidourMoment(place.value, now.value));
-
-  /** La nuit, de la chkia au lever du soleil : le 'Omer se compte. */
-  const isNight = computed(() => {
-    const zmanim = computeZmanim(place.value, now.value);
-    const sunrise = zmanim.find((z) => z.key === "sunrise")?.date;
-    const sunset = zmanim.find((z) => z.key === "sunset")?.date;
-    return (!!sunset && now.value >= sunset) || (!!sunrise && now.value < sunrise);
-  });
-
   /** The service whose time it is, unless today's tasks already carry it. */
   const freeOffice = computed(() => {
     const office = offices.office.value;
@@ -306,14 +285,7 @@ export function useTodayDeck() {
 
   const occasions = computed<DeckCard[]>(() => {
     const cards: DeckCard[] = [];
-    const hero = sidour.value.hero;
-    const hebrewDay = hebrewDateFor(place.value, now.value, now.value);
-    const year = hebrewDay.getFullYear();
     const textRoute = (key: string) => sidourText(key)?.path ?? null;
-    const textTitle = (key: string) => {
-      const text = sidourText(key);
-      return text ? (locale.value === "he" ? text.hebrew : text.latin) : "";
-    };
 
     const office = freeOffice.value;
     if (office) {
@@ -329,57 +301,6 @@ export function useTodayDeck() {
             art: { kind: "siddur" },
           },
           TEFILOT_STEPS.find((s) => s.step === step)?.moment,
-        ),
-      );
-    }
-    if (hero?.kind === "hanouka" && hero.night) {
-      const n = hero.night;
-      cards.push(
-        occasionCard(
-          { kind: "hanouka", key: `hanouka:${year}-${n}`, n },
-          {
-            kicker: t("sidour.tonight"),
-            title: textTitle(MOMENT_TEXTS.hanouka),
-            meta: n === 1 ? t("sidour.hanouka.nightOne") : t("sidour.hanouka.night", { n }),
-            route: textRoute(MOMENT_TEXTS.hanouka),
-            art: { kind: "object", art: { kind: "hanoukia", night: n, lit: true } },
-          },
-        ),
-      );
-    }
-    // The moon on the nights it is said, Arvit or not: the stack puts Arvit first.
-    const moon = sidour.value.moon;
-    if (moon) {
-      const until = moon.until;
-      cards.push(
-        occasionCard(
-          { kind: "halevana", key: halevanaKey(until) },
-          {
-            kicker: t("sidour.thisNight"),
-            title: t("home.birkatHalevana.title"),
-            meta: t("sidour.halevana.until", { date: formatHebrewDate(until, locale.value) }),
-            route: textRoute(MOMENT_TEXTS.halevana),
-            art: { kind: "object", art: { kind: "moon", age: moon.moonAge } },
-          },
-        ),
-      );
-    }
-    const omer = omerDay(hebrewDay);
-    if (omer !== null && isNight.value) {
-      const left = 49 - omer;
-      cards.push(
-        occasionCard(
-          { kind: "omer", key: `omer:${year}-${omer}`, n: omer },
-          {
-            kicker: t("sidour.tonight"),
-            title:
-              omer === 1 && locale.value === "fr"
-                ? t("home.omer.dayOne")
-                : t("home.omer.day", { n: omer }),
-            meta: left > 0 ? t("home.omer.remaining", { n: left }) : t("home.omer.last"),
-            route: textRoute(MOMENT_TEXTS.arvit),
-            art: { kind: "object", art: { kind: "omer" } },
-          },
         ),
       );
     }
@@ -482,9 +403,7 @@ export function useTodayDeck() {
     if (card.waiting) return WAITING_RANK + dayOrder(card.moment);
     const delayed = later.value.indexOf(card.key);
     if (delayed >= 0) return LATER_RANK + delayed;
-    if (card.occasion?.kind === "hanouka") return HANOUKA_RANK;
     if (card.occasion?.kind === "tefila") return NOW_RANK;
-    if (card.occasion) return OCCASION_RANK;
     if (card.extra) return EXTRA_RANK;
     if (card.view && isNow(card.view)) return NOW_RANK;
     return deckOrder(card.moment, moment.value);

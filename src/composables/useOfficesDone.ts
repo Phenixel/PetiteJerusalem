@@ -2,6 +2,7 @@ import { ref } from "vue";
 import type { HDate } from "@hebcal/core";
 import { analyticsService } from "../services/analyticsService";
 import { localDayKey } from "../services/dateService";
+import { halevanaKey } from "../services/ongoingOccasions";
 import { readOccasionsDone, writeOccasionDone } from "../services/parcours/occasions";
 import { taskProgress, type Task } from "../services/parcours/schedule";
 import type { SidourSaid } from "../services/sidourMoment";
@@ -45,9 +46,8 @@ export const havdalaKey = (evening: Date): string => `havdala:${localDayKey(even
 /** The key of a night's bedtime Chema, by its evening's civil day: `chema:2026-10-18`. */
 export const chemaKey = (evening: Date): string => `chema:${localDayKey(evening)}`;
 
-/** The key of a month's moon, by its last day: `halevana:5787-8`. */
-export const halevanaKey = (until: HDate): string =>
-  `halevana:${until.getFullYear()}-${until.getMonth()}`;
+/** The key of a month's moon, by its last day (services/ongoingOccasions). */
+export { halevanaKey };
 
 export function useOccasionsDone() {
   function mark(key: string, done: boolean): void {

@@ -2944,9 +2944,8 @@ time, the time in large type), the untitled shelf.
   do, then two buttons per row (done, open, later, not today) and « Voir le
   programme » ("See the program"). Each gesture has its button there, for
   those who do not swipe, and on the site.
-- **The order**: the 'Hanouka lighting at its time, the service whose time
-  it is (the card says « Maintenant » ("Now") and until when), the moon and
-  the 'Omer, then the present moment, those coming up, those already past,
+- **The order**: the service whose time it is (the card says
+  « Maintenant » ("Now") and until when), then the present moment, those coming up, those already past,
   « Rattraper », and finally what was put off until later. A service says
   until when, or from when if it is upcoming.
 - **Not time yet.** A service whose time has not come (Min'ha in the
@@ -2968,12 +2967,24 @@ time, the time in large type), the untitled shelf.
   for their part, never wait: their moment orders them, and study is done
   when you can. Held by
   `src/__tests__/parcoursDeck.test.ts`.
-- **Occasion cards** (the moon on the nights it is blessed, the counting of
-  the 'Omer in the evening, the 'Hanouka lighting) take their place in the
-  stack, at their time, and open the same way; their banners stay silent as
-  long as the parcours has started. They do not count in the day: once
-  done, the device remembers them (`services/parcours/occasions.ts`), so
-  that a blessed moon does not come back the following night.
+- **What is going on now is not in the stack.** The blessing of the moon,
+  the 'Hanouka lighting and the counting of the 'Omer have their own block,
+  « En ce moment » ("Right now"), above the times of the day
+  (`HomeOngoing.vue`, `services/ongoingOccasions.ts`), parcours or not, in
+  the app and on the site. In the stack, the moon waited under the service
+  of the hour and did not show by day, and its few nights went by unseen.
+  Each occasion is offered for as long as it lasts: by day for the night to
+  come (« Ce soir », "Tonight", « À dire dès la nuit »), at night until
+  dawn (« Cette nuit »); 'Hanouka its eight days, the candle of the night
+  (before Shabbat on a Friday); the 'Omer its forty-nine days, the count of
+  the day. One card each, in the shape of the old banners (the object in
+  its corner, on the plain surface), the whole card opening the text, and a
+  round « Fait » ("Done") button to mark it done (a word: the object
+  already says what the card is, no icon beside it): the device remembers it
+  (`services/parcours/occasions.ts`, shared with the Sidour page) and it
+  leaves the home page until its next time. Nothing the rest of the time.
+  Held by `src/__tests__/ongoingOccasions.test.ts` and
+  `src/__tests__/homeOngoing.test.ts`.
 - **The services are in the stack for everyone.** Without the « trois
   tefilot » habit (or on a day it leaves out), the service whose time it is
   still comes into the stack, as an extra card: « Maintenant », until when,
@@ -2981,9 +2992,8 @@ time, the time in large type), the untitled shelf.
   takes the color, counted or not). It opens the text, is swiped done like an occasion,
   and does not count in the day, on the wall or in the streak: only the
   habit, chosen, counts the services. It replaces the Sidour shortcut of
-  the home page, which stays silent once the parcours has started. On a
-  night of the moon, Arvit comes first and the moon right after: once
-  Arvit is swiped, the moon is on top. What is swiped here is also what the
+  the home page, which stays silent once the parcours has started. What is
+  swiped here is also what the
   Sidour page knows is said, and what is said there (swiped, or at the end
   of the text) leaves the stack (see "The Sidour opens on the moment").
   Held by `src/__tests__/parcoursDeck.test.ts`.

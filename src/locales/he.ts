@@ -386,6 +386,14 @@ const he: LocaleMessages = {
     birkatHalevana: {
       title: "ברכת הלבנה",
       until: "לאומרה הלילה, עד {date}.",
+      fromNight: "לאומרה מצאת הכוכבים, עד {date}.",
+    },
+    // Above the times of the day (HomeOngoing.vue).
+    ongoing: {
+      title: "עכשיו",
+      omerKicker: "ספירת העומר",
+      done: "בוצע",
+      markDone: "סימון כבוצע: {name}",
     },
     holiday: {
       tichri: "שנה טובה ומתוקה",

@@ -398,6 +398,14 @@ const fr = {
     birkatHalevana: {
       title: "Bénédiction de la lune",
       until: "À dire cette nuit, jusqu\u2019au {date}.",
+      fromNight: "À dire dès la nuit, jusqu\u2019au {date}.",
+    },
+    // « En ce moment », above the times of the day (HomeOngoing.vue).
+    ongoing: {
+      title: "En ce moment",
+      omerKicker: "Compte du 'Omer",
+      done: "Fait",
+      markDone: "C\u2019est fait\u00a0: {name}",
     },
     holiday: {
       tichri: "Chana tova oumetouka",

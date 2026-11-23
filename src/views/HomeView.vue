@@ -32,10 +32,9 @@ const ZmanimCard = defineAsyncComponent(() => import("../components/ZmanimCard.v
 // The home tips only show in the app or once a parcours has begun: most
 // visitors of the site never render them, so they do not load them either.
 const FeatureTour = defineAsyncComponent(() => import("../components/FeatureTour.vue"));
-const BirkatHalevanaBanner = defineAsyncComponent(
-  () => import("../components/BirkatHalevanaBanner.vue"),
-);
-const OmerBanner = defineAsyncComponent(() => import("../components/OmerBanner.vue"));
+// What the calendar opens now (the moon, the 'Hanouka lighting, the 'Omer),
+// above the times of the day: same calendar engine, same lazy loading.
+const HomeOngoing = defineAsyncComponent(() => import("../components/HomeOngoing.vue"));
 // Les dates qu'on a inscrites au calendrier, la semaine où elles arrivent.
 // Même moteur de calendrier hébraïque, même chargement à la demande.
 const OccasionsBanner = defineAsyncComponent(() => import("../components/OccasionsBanner.vue"));
@@ -144,9 +143,8 @@ function dismissAccountCta() {
 const dashboard = computed(() => user.value !== null || isNativeApp);
 
 /**
- * The parcours has begun: the service whose time it is, the moon and the
- * 'Omer are cards of the stack, and their shortcuts on the home page fall
- * silent.
+ * The parcours has begun: the service whose time it is is a card of the
+ * stack, and the Sidour shortcut on the home page falls silent.
  */
 const parcoursBegun = ref(false);
 
@@ -425,7 +423,12 @@ onUnmounted(() => {
           </button>
           <div class="tile-body" :inert="editing || undefined">
             <div v-if="block === 'horaires'" class="flex flex-col gap-3">
-              <!-- Horaires du jour : calculés sur l'appareil, rien à charger. -->
+              <!-- What can be done now (the moon, 'Hanouka, the 'Omer), set
+                 apart above the times and outside the stack, where it hid
+                 under the service of the hour (HomeOngoing). -->
+              <HomeOngoing />
+
+              <!-- The times of the day: computed on the device, nothing to load. -->
               <ZmanimCard
                 class="dash-card"
                 style="--enter-delay: 0.1s"
@@ -434,15 +437,10 @@ onUnmounted(() => {
               />
 
               <!-- Before the parcours begins: the sidour one gesture away
-                 while a service's time lasts, and the blessing of the moon (a
-                 few nights a month, missed for lack of a reminder) with the
-                 'Omer. Once it has begun, these are cards of the stack, with
-                 or without the « trois tefilot » habit. -->
-              <template v-if="!parcoursBegun">
-                <SidourNowCard />
-                <BirkatHalevanaBanner />
-                <OmerBanner />
-              </template>
+                 while a service's time lasts. Once it has begun, the service
+                 is a card of the stack, with or without the « trois tefilot »
+                 habit. -->
+              <SidourNowCard v-if="!parcoursBegun" />
             </div>
 
             <!-- L'étagère du parcours : un volume par objectif qui se lit. -->
@@ -559,10 +557,9 @@ onUnmounted(() => {
            l'accroche garde la gauche. -->
       <div class="flex flex-col gap-4">
         <AnnouncementsBanner />
+        <HomeOngoing />
         <ZmanimCard class="dash-card" style="--enter-delay: 0.3s" @click="trackCard('zmanim')" />
         <SidourNowCard />
-        <BirkatHalevanaBanner />
-        <OmerBanner />
         <OccasionsBanner />
       </div>
     </div>

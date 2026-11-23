@@ -392,6 +392,14 @@ const en: LocaleMessages = {
     birkatHalevana: {
       title: "Blessing of the moon",
       until: "To be said tonight, until {date}.",
+      fromNight: "To be said from nightfall, until {date}.",
+    },
+    // "Right now", above the times of the day (HomeOngoing.vue).
+    ongoing: {
+      title: "Right now",
+      omerKicker: "Counting the Omer",
+      done: "Done",
+      markDone: "Mark as done: {name}",
     },
     holiday: {
       tichri: "Shana tova umetuka",
