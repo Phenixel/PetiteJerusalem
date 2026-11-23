@@ -3292,8 +3292,14 @@ the day of the month or of the week (`services/parcours/dailyBook.ts`).
   like, what you have checked waits above, and « Ajouter à ma lecture du
   jour (3) », stuck to the bottom of the screen, takes them all.
 - The library keeps its own « Tehilim du jour » page, the reading of the
-  day of the month, with nothing to mark: what is marked is marked in the
-  daily book.
+  day of the month, reached from the study page or the home banner. For
+  someone who follows the Tehilim of the day, it ends with « Marquer comme
+  lu » (`TehilimDayMark.vue`), which marks the day's psalms in the daily
+  book: a reader who reached the psalms by another door must not find
+  nothing to mark at the bottom. After sunset the library already reads the
+  next Hebrew day while Mon parcours waits for dawn; the bottom then says
+  so (« elle en est encore à Tehilim 69 à 71 ») and leads to the daily
+  book, rather than marking psalms that were not read.
 
 ### Reminders of the day
 

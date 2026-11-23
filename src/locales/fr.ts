@@ -2229,6 +2229,9 @@ const fr = {
       "Les Tehilim du jour du mois hébraïque, les uns sous les autres, à lire d'une traite.",
     dayOfMonth: "{day} du mois",
     unavailable: "Les psaumes du jour n'ont pas pu être déterminés.",
+    otherDay:
+      "Dans Mon parcours, la journée change à l'aube : elle en est encore à {range}, à marquer dans votre lecture du jour.",
+    markInBook: "Ma lecture du jour",
   },
   // Tehilim par intention : l'intention demandée n'existe pas (encore).
   tehilimIntentions: {

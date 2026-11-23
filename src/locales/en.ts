@@ -2151,6 +2151,9 @@ const en: LocaleMessages = {
       "The Tehilim of the Hebrew day of the month, one below the other, read in one go.",
     dayOfMonth: "Day {day} of the month",
     unavailable: "Today's psalms could not be determined.",
+    otherDay:
+      "In My journey, the day changes at dawn: it is still at {range}, to mark in your daily reading.",
+    markInBook: "My daily reading",
   },
   tehilimIntentions: {
     notFoundTitle: "Intention not found",

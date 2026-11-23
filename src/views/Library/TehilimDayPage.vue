@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, watch } from "vue";
+import { computed, defineAsyncComponent, onMounted, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { localeMessagesReady } from "../../i18n";
 import { appendHebrewNumeral } from "../../services/hebrewNumerals";
@@ -17,6 +17,7 @@ import ReadingProgressBar from "../../components/ReadingProgressBar.vue";
 import ReadingSizeControl from "../../components/ReadingSizeControl.vue";
 import DailyReadingItem from "./DailyReadingItem.vue";
 import { SITE_URL } from "../../config/site";
+import { readDeviceState } from "../../services/parcours/deviceStore";
 
 /**
  * The Tehilim of the day: the psalms of the monthly cycle, one under the other.
@@ -29,9 +30,10 @@ import { SITE_URL } from "../../config/site";
  * The day is the day of the Hebrew month, computed on the device: the page has
  * nothing to load to know what to show.
  *
- * It is the library's reading, with nothing to mark: the Tehilim of the day
- * taken in Mon parcours are read and marked in the daily book
- * (`/bibliotheque/lecture-du-jour`), among the other psalms.
+ * It is the library's reading. For someone who follows the Tehilim of the
+ * day in Mon parcours, « Marquer comme lu » waits at the bottom, where the
+ * reading ends (TehilimDayMark); they are otherwise read and marked psalm by
+ * psalm in the daily book (`/bibliotheque/lecture-du-jour`).
  */
 
 const { t, locale } = useI18n();
@@ -57,6 +59,21 @@ useAutoScroll(() => cycle.value.entries.length > 0);
 useKeepAwake(() => cycle.value.entries.length > 0);
 
 const rangeLabel = computed(() => psalmsLabel(cycle.value.psalms, t));
+
+/**
+ * The mark at the bottom, for who follows the Tehilim of the day: loaded on
+ * demand, and only then (the device says so without loading Mon parcours).
+ */
+const TehilimDayMark = defineAsyncComponent(
+  () => import("../../components/parcours/TehilimDayMark.vue"),
+);
+const followsTehilim = Object.values(readDeviceState().data.objectives).some(
+  (objective) =>
+    objective.kind === "cycle" &&
+    objective.cycle === "tehilim-month" &&
+    objective.deletedAt === undefined,
+);
+const psalmIds = computed(() => cycle.value.entries.map((entry) => Number(entry.id)));
 
 function applySeoMeta() {
   seoService.setMeta({
@@ -123,6 +140,9 @@ onMounted(() => {
 
         <!-- Le dernier psaume dit, ce qui se dit après la lecture. -->
         <BookEncadrement corpus="tehilim" part="after" class="mt-10" />
+
+        <!-- Followed in Mon parcours: the day is marked read where it ends. -->
+        <TehilimDayMark v-if="followsTehilim" :psalms="psalmIds" class="mt-10" />
       </template>
 
       <p v-else class="mt-10 text-text-secondary">{{ t("tehilimDay.unavailable") }}</p>

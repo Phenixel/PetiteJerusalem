@@ -170,3 +170,45 @@ describe("the daily book", () => {
     expect(views.dailyName(book.objectives.value.slice(1)).title).toBe("Tehilim de la semaine");
   });
 });
+
+describe("the mark at the bottom of the library's Tehilim of the day page", () => {
+  async function mountMark(psalms: number[]): Promise<HTMLElement> {
+    const { writeDeviceState } = await import("../services/parcours/deviceStore");
+    const { emptyParcours } = await import("../services/parcours/model");
+    const { createCycle } = await import("../services/parcours/create");
+    const data = emptyParcours();
+    const month = createCycle("tehilim-month", TODAY, 10);
+    data.objectives[month.id] = month;
+    writeDeviceState({ data, owner: null, dirty: { objectives: [], days: [] } });
+    const { default: TehilimDayMark } = await import("../components/parcours/TehilimDayMark.vue");
+    const host = document.createElement("div");
+    document.body.appendChild(host);
+    const i18n = createI18n({ legacy: false, locale: "fr", messages: { fr } });
+    const { createRouter, createMemoryHistory } = await import("vue-router");
+    const router = createRouter({
+      history: createMemoryHistory(),
+      routes: [{ path: "/:any(.*)", component: { render: () => null } }],
+    });
+    createApp(TehilimDayMark, { psalms }).use(i18n).use(router).mount(host);
+    return host;
+  }
+
+  it("marks the day's psalms read, and the Tehilim of the day with them", async () => {
+    const host = await mountMark(idsOf("tehilim-month"));
+    const button = host.querySelector("button")!;
+    expect(button.textContent).toContain(fr.parcours.daily.markRead);
+    button.click();
+    await Promise.resolve();
+    const { useParcours } = await import("../composables/useParcours");
+    const store = useParcours();
+    expect(store.data.value.days[TODAY]?.done).toContain("daily-tehilim");
+    expect(host.querySelector("button")!.textContent).toContain(fr.parcours.daily.readToday);
+  });
+
+  it("leads to the daily book when the page shows other psalms than Mon parcours (after sunset)", async () => {
+    const host = await mountMark([1, 2, 3]);
+    expect(host.querySelector("button")).toBeNull();
+    expect(host.textContent).toContain("Tehilim 18 à 22");
+    expect(host.textContent).toContain(fr.tehilimDay.markInBook);
+  });
+});

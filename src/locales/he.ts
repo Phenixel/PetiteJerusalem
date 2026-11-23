@@ -2097,6 +2097,8 @@ const he: LocaleMessages = {
     pageDescription: "תהילים של יום החודש העברי, זה אחר זה, לקריאה ברצף.",
     dayOfMonth: "{day} בחודש",
     unavailable: "לא ניתן לקבוע את מזמורי היום.",
+    otherDay: "במסלול שלי היום מתחלף עם עלות השחר: הוא עדיין ב{range}, לסימון בקריאה היומית שלך.",
+    markInBook: "הקריאה היומית שלי",
   },
   tehilimIntentions: {
     notFoundTitle: "הכוונה לא נמצאה",
