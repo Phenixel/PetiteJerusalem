@@ -429,7 +429,8 @@ const fr = {
     // (HomeShowcase, HomeMomentCard).
     showcase: {
       momentKicker: "Le Sidour",
-      momentMeta: "Cha'harit, Min'ha, Arvit\u00a0: l'office du moment en tête",
+      momentTitle: "Cha'harit, Min'ha, Arvit",
+      momentMeta: "L'office du moment en tête, en hébreu avec la phonétique",
       sidour: {
         kicker: "Le Sidour",
         title: "La prière du moment, en tête",

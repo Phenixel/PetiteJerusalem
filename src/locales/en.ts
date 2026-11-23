@@ -423,7 +423,8 @@ const en: LocaleMessages = {
     // (HomeShowcase, HomeMomentCard).
     showcase: {
       momentKicker: "The Siddur",
-      momentMeta: "Shacharit, Mincha, Arvit: the service of the moment first",
+      momentTitle: "Shacharit, Mincha, Arvit",
+      momentMeta: "The service of the moment first, in Hebrew with transliteration",
       sidour: {
         kicker: "The Siddur",
         title: "The prayer of the moment, first",

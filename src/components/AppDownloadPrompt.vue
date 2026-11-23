@@ -78,7 +78,14 @@ function download(store: StoreKey): void {
   <AppModal :open="open" labelledby="app-prompt-title" @close="later">
     <div class="app-prompt">
       <span class="app-prompt-art" aria-hidden="true"><ArtSiddur /></span>
-      <h2 id="app-prompt-title" class="font-display text-2xl font-bold leading-tight">
+      <!-- The keyboard arrives on the title: no ring around a button the
+           visitor has not reached yet. -->
+      <h2
+        id="app-prompt-title"
+        class="font-display text-2xl font-bold leading-tight outline-none"
+        tabindex="-1"
+        data-autofocus
+      >
         {{ t("appPrompt.title") }}
       </h2>
       <p class="mt-2 text-[15px] leading-relaxed text-text-secondary">
@@ -102,7 +109,6 @@ function download(store: StoreKey): void {
       <button
         type="button"
         class="mt-3 min-h-10 px-3 text-sm font-semibold text-text-secondary hover:text-primary"
-        data-autofocus
         @click="later"
       >
         {{ t("appPrompt.later") }}

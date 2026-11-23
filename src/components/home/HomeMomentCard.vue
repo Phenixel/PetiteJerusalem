@@ -30,7 +30,9 @@ const card = computed(() => {
   if (window && path) {
     return {
       to: path,
-      kicker: t("sidour.now"),
+      // « Le Sidour », not « En ce moment »: the block of what is going on
+      // now (HomeOngoing) comes right under it with that title.
+      kicker: t("home.showcase.momentKicker"),
       title: t(`home.sidourNow.names.${window.tefila}`),
       meta: t("sidour.until", {
         time: formatZmanTime(window.end, place.value.tzid, locale.value),
@@ -40,7 +42,7 @@ const card = computed(() => {
   return {
     to: "/sidour",
     kicker: t("home.showcase.momentKicker"),
-    title: t("sidour.title"),
+    title: t("home.showcase.momentTitle"),
     meta: t("home.showcase.momentMeta"),
   };
 });

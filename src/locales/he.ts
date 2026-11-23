@@ -416,7 +416,8 @@ const he: LocaleMessages = {
     // (HomeShowcase, HomeMomentCard).
     showcase: {
       momentKicker: "הסידור",
-      momentMeta: "שחרית, מנחה, ערבית: התפילה של עכשיו בראש",
+      momentTitle: "שחרית, מנחה, ערבית",
+      momentMeta: "התפילה של עכשיו בראש, בעברית עם תעתיק",
       sidour: {
         kicker: "הסידור",
         title: "התפילה של עכשיו, בראש",
