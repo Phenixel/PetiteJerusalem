@@ -264,7 +264,7 @@ const fr = {
       },
       cycles: {
         title: "Suivre un cycle",
-        text: "Les Tehilim, le chnei mikra, des textes chaque jour : le calendrier dit quoi lire.",
+        text: "Les Tehilim, le chnei mikra, le daf yomi, des textes chaque jour : le calendrier dit quoi lire.",
       },
       habits: {
         title: "Prendre une habitude",
@@ -2397,6 +2397,13 @@ const fr = {
         hint: "Une montée par jour, la 6e et la 7e le vendredi ; une montée oubliée revient le lendemain",
         pick: "Chnei mikra, une montée par jour",
       },
+      "daf-yomi": {
+        title: "Daf yomi",
+        cover: "Talmud",
+        sub: "chaque jour",
+        hint: "Un daf du Talmud par jour, le même partout dans le monde : tout le Chass en sept ans et demi",
+        pick: "Le daf yomi, un daf par jour",
+      },
     },
     aliyot: {
       one: "{n} montée",
@@ -3022,6 +3029,8 @@ const fr = {
       psalm: "Psaume {n}",
       psalms: "Psaumes {from} à {to}",
       parasha: "Paracha {parasha}",
+      dafYomi: "Daf yomi",
+      dafYomiKicker: "Daf yomi du jour",
     },
     // « Hors ligne » et la pastille des livres de l'étagère (voir
     // LibraryOfflineRow, LibraryShelf).

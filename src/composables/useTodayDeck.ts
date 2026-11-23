@@ -7,6 +7,7 @@ import { tehilimOfCycle } from "../services/dailyCycles";
 import { localDayFrom } from "../services/dateService";
 import {
   isOwnHabit,
+  isTehilimCycle,
   type DayKey,
   type HabitAnchor,
   type MomentId,
@@ -176,7 +177,7 @@ export function useTodayDeck() {
         meta: isOwnHabit(objective.preset) ? t("parcours.hub.personal") : view.meta,
       };
     }
-    if (objective.kind === "cycle" && objective.cycle !== "parasha") {
+    if (objective.kind === "cycle" && isTehilimCycle(objective.cycle)) {
       const date = localDayFrom(view.day) ?? new Date();
       date.setHours(12);
       const psalms = tehilimOfCycle(objective.cycle, date).psalms;

@@ -2,7 +2,14 @@ import { computed, ref } from "vue";
 import { tehilimOfCycle, type TehilimCycle } from "../services/dailyCycles";
 import { localDayFrom } from "../services/dateService";
 import { devicePreference } from "../services/devicePreference";
-import { isAlive, type CycleObjective, type DayKey } from "../services/parcours/model";
+import {
+  isAlive,
+  isTehilimCycle,
+  type CycleObjective,
+  type DayKey,
+  type Objective,
+  type TehilimCycleId,
+} from "../services/parcours/model";
 import { useParcours } from "./useParcours";
 import { useParcoursViews } from "./useParcoursViews";
 
@@ -18,16 +25,11 @@ import { useParcoursViews } from "./useParcoursViews";
  * then unmarks the task, and keeps the others read.
  */
 
-export type TehilimCycleObjective = CycleObjective & { cycle: "tehilim-month" | "tehilim-week" };
+export type TehilimCycleObjective = CycleObjective & { cycle: TehilimCycleId };
 
-const isTehilimCycle = (objective: unknown): objective is TehilimCycleObjective => {
-  const candidate = objective as CycleObjective | undefined;
-  return (
-    candidate?.kind === "cycle" &&
-    (candidate.cycle === "tehilim-month" || candidate.cycle === "tehilim-week") &&
-    isAlive(candidate)
-  );
-};
+/** A live Tehilim cycle of Mon parcours. */
+const isLiveTehilimCycle = (objective: Objective | undefined): objective is TehilimCycleObjective =>
+  objective?.kind === "cycle" && isTehilimCycle(objective.cycle) && isAlive(objective);
 
 /** The psalms marked read (their catalog ids), for one objective and one day. */
 interface PsalmsRead {
@@ -78,7 +80,7 @@ export function useTehilimCycleTask(objectiveId: () => string | null) {
   const objective = computed<TehilimCycleObjective | null>(() => {
     const id = objectiveId();
     const found = id ? store.data.value.objectives[id] : undefined;
-    return isTehilimCycle(found) ? found : null;
+    return isLiveTehilimCycle(found) ? found : null;
   });
 
   /** The psalms of the objective's day: the day of Mon parcours, which turns at dawn. */

@@ -258,7 +258,7 @@ const en: LocaleMessages = {
       },
       cycles: {
         title: "Follow a cycle",
-        text: "Tehilim, shnayim mikra, texts every day: the calendar says what to read.",
+        text: "Tehilim, shnayim mikra, the Daf Yomi, texts every day: the calendar says what to read.",
       },
       habits: {
         title: "Take up a habit",
@@ -2312,6 +2312,13 @@ const en: LocaleMessages = {
         hint: "One aliya a day, the 6th and 7th on Friday; a missed aliya comes back the next day",
         pick: "Shnayim mikra, one aliya a day",
       },
+      "daf-yomi": {
+        title: "Daf Yomi",
+        cover: "Talmud",
+        sub: "each day",
+        hint: "One daf of the Talmud a day, the same all over the world: the whole Shas in seven and a half years",
+        pick: "Daf Yomi, one daf a day",
+      },
     },
     aliyot: {
       one: "{n} aliya",
@@ -2925,6 +2932,8 @@ const en: LocaleMessages = {
       psalm: "Psalm {n}",
       psalms: "Psalms {from} to {to}",
       parasha: "Parashat {parasha}",
+      dafYomi: "Daf Yomi",
+      dafYomiKicker: "Today's Daf Yomi",
     },
     offline: {
       title: "Offline",

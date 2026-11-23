@@ -52,6 +52,8 @@ const router = createRouter({
     // haut ici annulait son défilement quand le chapitre était déjà chargé
     // (un autre chapitre du même texte), et le verset restait hors de l'écran.
     if (to.query.verset !== undefined) return false;
+    // The same for the Daf Yomi (?daf=12a): the reader goes down to its daf.
+    if (to.query.daf !== undefined) return false;
     // Un texte rouvert depuis la table d'étude : le lecteur le replace à
     // l'endroit où on l'avait laissé, une fois rendu (useReadingTable).
     if (hasTableRestore(to.path)) return false;

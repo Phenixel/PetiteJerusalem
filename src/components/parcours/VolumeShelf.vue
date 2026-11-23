@@ -42,6 +42,7 @@ import { useParcoursViews } from "../../composables/useParcoursViews";
 import { tehilimOfCycle } from "../../services/dailyCycles";
 import { localDayFrom } from "../../services/dateService";
 import type { Objective, ProgramObjective, TextObjective } from "../../services/parcours/model";
+import { isTehilimCycle } from "../../services/parcours/model";
 import { liveObjectives, taskProgress, type Task } from "../../services/parcours/schedule";
 import { placeOf, unitLabel } from "../../services/parcours/texts";
 import AppIcon from "../icons/AppIcon.vue";
@@ -143,8 +144,14 @@ function tehilimPosition(objective: Objective, cycle: "tehilim-month" | "tehilim
 
 function caption(objective: Objective): string {
   if (objective.kind === "program") return programCaption(objective);
-  if (objective.kind === "cycle" && objective.cycle !== "parasha" && props.home) {
+  if (objective.kind === "cycle" && isTehilimCycle(objective.cycle) && props.home) {
     return t("parcours.shelf.of", { n: tehilimPosition(objective, objective.cycle), total: 150 });
+  }
+  // The Daf Yomi, on the home shelf: the day's daf.
+  if (objective.kind === "cycle" && objective.cycle === "daf-yomi" && props.home) {
+    return (
+      views.cycleReading(objective.cycle, store.today.value) || views.objectiveTitle(objective)
+    );
   }
   return views.objectiveTitle(objective);
 }

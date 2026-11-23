@@ -7,6 +7,7 @@ import { corpusOf, hubPath } from "../content/etudeTexts";
 import { bindingOf } from "../config/bindings";
 import { texteOf, texteTitle } from "../services/chiourTexte";
 import { getWeeklyParasha, parashaTitle, tehilimOfCycle } from "../services/dailyCycles";
+import { dafYomiLabel, dafYomiOn, dafYomiRoute } from "../services/dafYomi";
 import { localDayFrom } from "../services/dateService";
 import { appendHebrewNumeral } from "../services/hebrewNumerals";
 import { aliyotLabel, readsByAliya, type AliyotRange } from "../services/parcours/aliyot";
@@ -20,6 +21,7 @@ import type {
   Rhythm,
   UnitKind,
 } from "../services/parcours/model";
+import { isTehilimCycle } from "../services/parcours/model";
 import { portionMinutes, studySlots } from "../services/parcours/plan";
 import {
   TEFILOT_STEPS,
@@ -216,6 +218,7 @@ export function useParcoursViews() {
   function objectiveColor(objective: Objective): string {
     if (objective.kind === "program") return bindingOf(objective.corpus);
     if (objective.kind === "cycle") {
+      if (objective.cycle === "daf-yomi") return bindingOf("talmud");
       return bindingOf(objective.cycle === "parasha" ? "tanakh" : "tehilim");
     }
     if (objective.kind === "text") {
@@ -237,11 +240,18 @@ export function useParcoursViews() {
     return { kind: "volume", color: objectiveColor(objective), label: coverLabel(objective) };
   }
 
-  /** Ce que lit un cycle un jour donné : les psaumes du jour du mois, la paracha de la semaine. */
+  /**
+   * What a cycle reads on a given day: the psalms of the day of the month, the
+   * parasha of the week, the daf of the Daf Yomi.
+   */
   function cycleReading(cycle: CycleObjective["cycle"], day: DayKey): string {
     const date = localDayFrom(day) ?? new Date();
     date.setHours(12);
-    if (cycle !== "parasha") return psalmsLabel(tehilimOfCycle(cycle, date).psalms, t);
+    if (isTehilimCycle(cycle)) return psalmsLabel(tehilimOfCycle(cycle, date).psalms, t);
+    if (cycle === "daf-yomi") {
+      const daf = dafYomiOn(date);
+      return daf ? dafYomiLabel(daf, locale.value) : "";
+    }
     return parashaTitle(getWeeklyParasha(date, isIsraelPlace(place.value)));
   }
 
@@ -259,7 +269,7 @@ export function useParcoursViews() {
     return aliyotLabel(aliyot, names, t);
   }
 
-  function route(task: Task, objective: Objective): RouteLocationRaw | null {
+  function route(task: Task, objective: Objective, day: DayKey): RouteLocationRaw | null {
     switch (objective.kind) {
       case "program": {
         const start = task.slot ? placeOf(objective.texts, task.slot.from) : null;
@@ -289,6 +299,15 @@ export function useParcoursViews() {
           return { path: "/bibliotheque/chnei-mikra", query };
         }
         if (objective.cycle === "parasha") return "/bibliotheque/chnei-mikra";
+        // The Daf Yomi: the day's daf in the reader, the task at the bottom.
+        if (objective.cycle === "daf-yomi") {
+          const date = localDayFrom(day) ?? new Date();
+          date.setHours(12);
+          const daf = dafYomiOn(date);
+          if (!daf) return null;
+          const target = dafYomiRoute(daf);
+          return { ...target, query: { ...target.query, objectif: objective.id } };
+        }
         // The Tehilim of the month or of the week: the day's psalms on one
         // page, each marked read on its own (TehilimDayPage).
         return { path: "/bibliotheque/tehilim-du-jour", query: { objectif: objective.id } };
@@ -321,11 +340,11 @@ export function useParcoursViews() {
         moment: objective.moment,
         weekly: false,
       };
-      return route(task, objective);
+      return route(task, objective, day);
     }
     const task = store.todayTasks.value.find((one) => one.objectiveId === objective.id);
     if (task && taskProgress(store.data.value, task, day) !== "done") {
-      const target = route(task, objective);
+      const target = route(task, objective, day);
       if (target) return target;
     }
     return aheadRoute(objective, day);
@@ -420,7 +439,7 @@ export function useParcoursViews() {
       title: title(task, objective),
       meta: meta(task, objective, day),
       kicker: kicker(task, objective),
-      route: route(task, objective),
+      route: route(task, objective, day),
       art: objectiveArt(objective, task.step),
       progress: taskProgress(data, task, day),
       skipped: isSkipped(data.days[day], task.id),
@@ -524,5 +543,6 @@ export function useParcoursViews() {
     dayLabel,
     volumeOf,
     paceLabels,
+    cycleReading,
   };
 }

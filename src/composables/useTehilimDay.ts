@@ -9,6 +9,7 @@ import {
   type TehilimCycle,
   type WeeklyParasha,
 } from "../services/dailyCycles";
+import { dafYomiOn, type DafYomi } from "../services/dafYomi";
 
 /**
  * Le jour hébraïque courant, et ce qui en découle : les psaumes du cycle
@@ -86,6 +87,19 @@ export function useWeeklyParasha(options: DayClockOptions = {}): {
     getWeeklyParasha(hebrewDay.value.greg(), isIsraelPlace(place.value)),
   );
   return { hebrewDay, parasha };
+}
+
+/**
+ * Today's Daf Yomi, following the time like the psalms of the day: the daf of
+ * the civil date of the Hebrew day (after the chkia, the next day's daf).
+ */
+export function useDafYomi(options: DayClockOptions = {}): ComputedRef<DafYomi | null> {
+  const hebrewDay = useHebrewDay(options);
+  return computed(() => {
+    const date = hebrewDay.value.greg();
+    date.setHours(12);
+    return dafYomiOn(date);
+  });
 }
 
 /** La fonction de traduction, telle que vue-i18n la donne. */

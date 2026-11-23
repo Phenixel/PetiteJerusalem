@@ -51,7 +51,14 @@ import { appendHebrewNumeral } from "../../services/hebrewNumerals";
 import { taskEntries } from "../../services/parcours/entries";
 import { trackDayViewed } from "../../services/parcours/tracking";
 import { createCycle, createText } from "../../services/parcours/create";
-import type { CycleId, CycleObjective, DayKey, TextObjective } from "../../services/parcours/model";
+import {
+  isTehilimCycle,
+  type CycleId,
+  type CycleObjective,
+  type DayKey,
+  type Objective,
+  type TextObjective,
+} from "../../services/parcours/model";
 import { liveObjectives, type Task } from "../../services/parcours/schedule";
 import { analyticsService } from "../../services/analyticsService";
 import { haptic } from "../../services/haptics";
@@ -133,15 +140,14 @@ const translation = useEntriesTranslation(() => daily.value.map((reading) => rea
 const textBounds = computed(() => encadrementBounds(daily.value.map((r) => r.entry)));
 
 /** A Tehilim cycle of Mon parcours (the month's or the week's psalms). */
-const isTehilimCycle = (objective: { kind: string; cycle?: string }): boolean =>
-  objective.kind === "cycle" &&
-  (objective.cycle === "tehilim-month" || objective.cycle === "tehilim-week");
+const isTehilimObjective = (objective: Objective): objective is CycleObjective =>
+  objective.kind === "cycle" && isTehilimCycle(objective.cycle);
 
 /** The day's Tehilim cycles: a card each, which opens their page. */
 const calendar = computed(() =>
   store.todayTasks.value.flatMap((task) => {
     const objective = store.data.value.objectives[task.objectiveId];
-    return objective && isTehilimCycle(objective) ? [views.taskView(task, today.value)] : [];
+    return objective && isTehilimObjective(objective) ? [views.taskView(task, today.value)] : [];
   }),
 );
 
@@ -163,11 +169,7 @@ const textObjectives = computed(() =>
 );
 const takenTexts = computed(() => textObjectives.value.map((objective) => objective.textId));
 /** The Tehilim cycles taken: in the list with the texts, and not offered twice. */
-const cycleObjectives = computed(() =>
-  liveObjectives(store.data.value).filter((objective): objective is CycleObjective =>
-    isTehilimCycle(objective),
-  ),
-);
+const cycleObjectives = computed(() => liveObjectives(store.data.value).filter(isTehilimObjective));
 const takenCycles = computed(() => cycleObjectives.value.map((objective) => objective.cycle));
 /** « Mes Tehilim journaliers » quand ce ne sont que des psaumes, sinon « Lecture du jour ». */
 const name = computed(() => views.dailyName(takenTexts.value));
