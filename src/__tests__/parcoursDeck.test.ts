@@ -288,10 +288,14 @@ describe("le paquet de l'accueil", () => {
       11,
     );
     const { deck } = await mountDeck([week, hamazon]);
-    // Mercredi : les psaumes 73 à 89.
-    const tehilim = deck.day.value.find((card) => card.view?.objective.id === week.id);
-    expect(tehilim?.title).toBe("Tehilim 73 à 89");
-    expect(tehilim?.meta).toMatch(/^17\spsaumes$/);
+    // Wednesday: psalms 73 to 89, in the daily book with Tehilim 23 (one
+    // card, which counts the psalms of both).
+    const book = deck.day.value.find((card) =>
+      card.group?.some((view) => view.objective.id === week.id),
+    );
+    expect(book?.title).toBe(fr.parcours.daily.tehilimCard);
+    expect(book?.meta).toMatch(/^18\spsaumes · /);
+    expect(book?.route).toBe("/bibliotheque/lecture-du-jour");
     // À 9 h, le repas de midi n'est pas venu : il attend 'hatsot.
     const meal = deck.day.value.find((card) => card.view?.objective.id === hamazon.id);
     expect(meal?.waiting).toBe(true);
@@ -303,6 +307,13 @@ describe("le paquet de l'accueil", () => {
     expect(after?.waiting).toBe(false);
     expect(after?.kicker).toBe(fr.parcours.anchorKicker.noon);
     expect(after?.meta).toBe(fr.parcours.hub.afterMeal);
+    // Alone, the week's psalms keep their own card, which opens the same page.
+    vi.resetModules();
+    const alone = await mountDeck([week], []);
+    const tehilim = alone.deck.day.value.find((card) => card.view?.objective.id === week.id);
+    expect(tehilim?.title).toBe("Tehilim 73 à 89");
+    expect(tehilim?.meta).toMatch(/^17\spsaumes$/);
+    expect(tehilim?.route).toBe("/bibliotheque/lecture-du-jour");
   });
 
   it("ne montre une carte de la semaine que les jours qu'on lui a donnés", async () => {

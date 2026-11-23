@@ -1,5 +1,6 @@
 import { computed } from "vue";
 import type { LampLevel } from "../components/parcours/ParcoursLamp.vue";
+import { inDailyBook } from "../services/parcours/dailyBook";
 import { lightOf, nextLight } from "../services/parcours/lights";
 import { taskProgress } from "../services/parcours/schedule";
 import { useParcours } from "./useParcours";
@@ -17,18 +18,20 @@ export function useParcoursLamp() {
   const days = computed(() => store.streak.value.current);
 
   /**
-   * La journée : ce qu'aujourd'hui demande, et ce qui en est fait. Comptée
-   * comme la pile de l'accueil : les textes du jour n'y font qu'une carte,
-   * « Lecture du jour ».
+   * The day: what today asks, and what of it is done. Counted as the home
+   * stack is: the daily book (the daily texts and the Tehilim of the day)
+   * makes a single card there.
    */
   const today = computed(() => {
     const tasks = store.todayTasks.value;
     const day = store.today.value;
     const isDone = (task: (typeof tasks)[number]) =>
       taskProgress(store.data.value, task, day) === "done";
-    const texts = tasks.filter((task) => task.kind === "text");
+    const daily = (task: (typeof tasks)[number]) =>
+      inDailyBook(store.data.value.objectives[task.objectiveId]);
+    const texts = tasks.filter(daily);
     const grouped = texts.length > 0;
-    const others = grouped ? tasks.filter((task) => task.kind !== "text") : tasks;
+    const others = grouped ? tasks.filter((task) => !daily(task)) : tasks;
     const done = others.filter(isDone).length + (grouped && texts.every(isDone) ? 1 : 0);
     return { done, total: others.length + (grouped ? 1 : 0) };
   });

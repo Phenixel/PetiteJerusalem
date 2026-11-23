@@ -263,13 +263,17 @@ const fr = {
         title: "Un objectif de plus",
         text: "Un texte à finir, un cycle, une habitude : tout se choisit ici.",
       },
+      daily: {
+        title: "Lire chaque jour",
+        text: "Les Tehilim du jour, un psaume, une page qu'on aime : tout va dans un seul livre, lu à la suite chaque jour.",
+      },
       books: {
         title: "Finir un texte",
         text: "Touchez un volume : sa partie se choisit dessous, puis pour quand. La page descend d'elle-même.",
       },
       cycles: {
         title: "Suivre un cycle",
-        text: "Les Tehilim, le chnei mikra, le daf yomi, des textes chaque jour : le calendrier dit quoi lire.",
+        text: "Le chnei mikra, le daf yomi : le calendrier dit quoi lire.",
       },
       habits: {
         title: "Prendre une habitude",
@@ -2221,7 +2225,6 @@ const fr = {
   tehilimDay: {
     title: "Tehilim du jour",
     hint: "Les psaumes du cycle mensuel, à lire les uns à la suite des autres.",
-    weekHint: "Les psaumes du jour de la semaine, à lire les uns à la suite des autres.",
     pageDescription:
       "Les Tehilim du jour du mois hébraïque, les uns sous les autres, à lire d'une traite.",
     dayOfMonth: "{day} du mois",
@@ -2928,9 +2931,16 @@ const fr = {
       finish: "Finir un texte",
       finishHint: "Un séder, un traité, un livre, ou tout le Chass, d'ici la date qui vous va.",
       calendar: "Suivre un cycle",
-      dailyText: "Un texte chaque jour",
+      readDaily: "Lire chaque jour",
+      dailyBook: "Ma lecture du jour",
+      dailyBookAdd: "Ajouter à ma lecture du jour",
+      dailyBookHint:
+        "Les Tehilim du jour, un psaume, une page qu'on aime : tout dans un seul livre.",
+      tehilimDailyNote:
+        "Ici, tout le livre d'ici une date. Les psaumes du jour, eux, se lisent dans",
+      tehilimDailyLink: "ma lecture du jour",
       dailyTextHint: "Un psaume, une page qu'on aime, relus en entier.",
-      addTexts: "Ajouter {n} texte | Ajouter {n} textes",
+      addToBook: "Ajouter à ma lecture du jour ({n})",
       unpick: "Retirer {name}",
       habit: "Prendre une habitude",
       ownWords: "Avec mes mots",

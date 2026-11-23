@@ -1,23 +1,25 @@
 <script setup lang="ts">
 /**
- * A text every day: a psalm, a page one loves, read again in full. It is the
- * daily reading of before; it is searched in the catalog as in the library.
+ * What goes into the daily book: the Tehilim of the day, a psalm, a page one
+ * loves, read again every day. Everything taken here lands in the same book
+ * (services/parcours/dailyBook.ts), read on one page.
  *
- * Several are taken in a row, as in the daily reading of before (several
- * psalms the same day): a tap ticks a text, another unticks it, the search is
- * redone as often as wanted, and what is ticked waits above it. « Ajouter 3
- * textes » takes them all.
+ * At the top, the psalms already divided up: the Tehilim of the day of the
+ * month, or of the week. They change every day, so they are not texts of the
+ * catalog but cycles of Mon parcours; they are ticked like the texts all the
+ * same. Below, the catalog, searched as in the library.
  *
- * Above the search, the psalms already divided up: the Tehilim of the day of
- * the month, or of the week. They change every day, so they are not texts to
- * pick but a cycle of Mon parcours: a tap asks for it (`cycle`), and the page
- * decides how it is added. One already taken shows as such.
+ * Several are taken in a row: a tap ticks, another unticks, the search is
+ * redone as often as wanted, and what is ticked waits above it.
+ * « Ajouter à ma lecture du jour (3) » takes them all (`pick`, the texts and
+ * the cycles).
+ * What the book already holds shows as such.
  */
 import { computed, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import textStudiesJson from "../../../datas/textStudies.json";
 import type { TextStudiesJson, TextStudyJsonEntry } from "../../../models/models";
-import type { CycleId } from "../../../services/parcours/model";
+import type { TehilimCycleId } from "../../../services/parcours/model";
 import { corpusOf } from "../../../content/etudeTexts";
 import { texteTitle } from "../../../services/chiourTexte";
 import { filterBySearch } from "../../../services/catalogSearch";
@@ -30,18 +32,20 @@ const props = withDefaults(defineProps<{ taken: number[]; takenCycles?: readonly
   takenCycles: () => [],
 });
 const emit = defineEmits<{
-  (e: "pick", entries: TextStudyJsonEntry[]): void;
-  (e: "cycle", cycle: CycleId): void;
+  (e: "pick", entries: TextStudyJsonEntry[], cycles: TehilimCycleId[]): void;
 }>();
 
 /** The psalms already divided up, offered above the search. */
-const TEHILIM_CYCLES = ["tehilim-month", "tehilim-week"] as const satisfies readonly CycleId[];
+const TEHILIM_CYCLES = [
+  "tehilim-month",
+  "tehilim-week",
+] as const satisfies readonly TehilimCycleId[];
 
 const { t, locale } = useI18n();
-/** Le bouton reste en vue en bas de l'écran, au-dessus des barres du bas. */
+/** The button stays in sight at the bottom of the screen, above the bottom bars. */
 const ctaBottom = useBottomChromeHeight("12px");
 
-/** Ce qu'on étudie : la liturgie a sa page, le Sidour. */
+/** What is studied: the liturgy has its own page, the Sidour. */
 const READABLE = new Set(["tehilim", "michna", "talmud", "tanakh", "moussar", "halakha"]);
 const texts = (textStudiesJson as TextStudiesJson).textStudies.filter((e) =>
   READABLE.has(corpusOf(e)),
@@ -57,8 +61,19 @@ const results = computed(() =>
     : filterBySearch(texts, searched.value).slice(0, 20),
 );
 
-/** Ce qu'on a coché, dans l'ordre où on l'a coché. */
+/** What is ticked, in the order it was ticked. */
 const picked = ref<TextStudyJsonEntry[]>([]);
+const pickedCycles = ref<TehilimCycleId[]>([]);
+const pickedCount = computed(() => picked.value.length + pickedCycles.value.length);
+
+const cycleTaken = (cycle: TehilimCycleId): boolean => props.takenCycles.includes(cycle);
+const cyclePicked = (cycle: TehilimCycleId): boolean => pickedCycles.value.includes(cycle);
+function toggleCycle(cycle: TehilimCycleId): void {
+  if (cycleTaken(cycle)) return;
+  pickedCycles.value = cyclePicked(cycle)
+    ? pickedCycles.value.filter((one) => one !== cycle)
+    : [...pickedCycles.value, cycle];
+}
 const isPicked = (entry: TextStudyJsonEntry): boolean =>
   picked.value.some((one) => one.id === entry.id);
 const isTaken = (entry: TextStudyJsonEntry): boolean => props.taken.includes(Number(entry.id));
@@ -73,7 +88,7 @@ function toggle(entry: TextStudyJsonEntry): void {
 
 <template>
   <div>
-    <!-- The psalms already divided up: a cycle, a tap away. -->
+    <!-- The psalms already divided up: ticked like a text. -->
     <p class="text-[13px] font-bold text-text-secondary">{{ t("parcours.create.readyMade") }}</p>
     <div class="mt-2 grid gap-2 sm:grid-cols-2">
       <button
@@ -81,34 +96,31 @@ function toggle(entry: TextStudyJsonEntry): void {
         :key="cycle"
         type="button"
         class="ready-made"
-        :disabled="props.takenCycles.includes(cycle)"
-        @click="emit('cycle', cycle)"
+        :disabled="cycleTaken(cycle)"
+        :aria-pressed="cycleTaken(cycle) ? undefined : cyclePicked(cycle)"
+        @click="toggleCycle(cycle)"
       >
         <span class="min-w-0 flex-1">
           <span class="block text-[15px] font-bold">{{ t(`parcours.cycles.${cycle}.title`) }}</span>
           <span class="block text-[13px] text-text-secondary">
             {{
-              props.takenCycles.includes(cycle)
-                ? t("parcours.create.taken")
-                : t(`parcours.cycles.${cycle}.hint`)
+              cycleTaken(cycle) ? t("parcours.create.taken") : t(`parcours.cycles.${cycle}.hint`)
             }}
           </span>
         </span>
-        <AppIcon
-          :name="props.takenCycles.includes(cycle) ? 'check' : 'plus'"
-          :size="16"
-          class="flex-none text-primary"
-        />
+        <AppIcon v-if="cycleTaken(cycle)" name="check" :size="16" class="flex-none text-primary" />
+        <span v-else class="pick-box" :class="{ 'is-on': cyclePicked(cycle) }">
+          <AppIcon v-if="cyclePicked(cycle)" name="check" :size="14" />
+        </span>
       </button>
     </div>
-
     <CatalogSearchField
       v-model:term="term"
       class="mt-5"
       :placeholder="t('parcours.create.searchAny')"
     />
 
-    <!-- Ce qu'on a coché : il attend ici, d'une recherche à l'autre. -->
+    <!-- What is ticked waits here, from one search to the next. -->
     <div v-if="picked.length" class="mt-3 flex flex-wrap gap-2">
       <button
         v-for="entry in picked"
@@ -150,19 +162,19 @@ function toggle(entry: TextStudyJsonEntry): void {
     <p v-else class="mt-4 text-sm text-text-secondary">{{ t("parcours.create.dailyTextHint") }}</p>
 
     <button
-      v-if="picked.length"
+      v-if="pickedCount"
       type="button"
       class="btn btn-primary create-cta"
       :style="{ bottom: ctaBottom }"
-      @click="emit('pick', picked)"
+      @click="emit('pick', picked, pickedCycles)"
     >
-      {{ t("parcours.create.addTexts", { n: picked.length }, picked.length) }}
+      {{ t("parcours.create.addToBook", { n: pickedCount }) }}
     </button>
   </div>
 </template>
 
 <style scoped>
-/* Collé en bas de l'écran pendant qu'on coche : la liste peut être longue. */
+/* Stuck to the bottom of the screen while ticking: the list can be long. */
 .create-cta {
   position: sticky;
   z-index: 2;

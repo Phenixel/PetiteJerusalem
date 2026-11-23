@@ -47,6 +47,9 @@ import { psalmsLabel } from "./useTehilimDay";
 import { useParcours } from "./useParcours";
 import { useZmanimLocation } from "./useZmanimLocation";
 
+/** The daily book's page: the daily texts and the Tehilim of the day, read one after the other. */
+export const DAILY_PAGE = "/bibliotheque/lecture-du-jour";
+
 /**
  * Ce que Mon parcours dit à l'écran : le nom d'un objectif, ce qu'une tâche
  * demande aujourd'hui, où la toucher mène, l'objet qu'elle porte. Une seule
@@ -179,27 +182,35 @@ export function useParcoursViews() {
   }
 
   /**
-   * Le nom des textes du jour (le volume, la carte, la page) : « Mes Tehilim
-   * journaliers » quand ce ne sont que des psaumes, qu'on sache d'un coup
-   * d'œil ce qu'il y a dedans ; « Lecture du jour » dès qu'un autre texte
-   * s'y mêle (une michna, une page de moussar). `card` est le titre de la
-   * carte de l'accueil, qui doit tenir à côté de son volume (« Mes
-   * Tehilim ») ; `cover`, celui de la couverture ; `count`, « 3 psaumes » ou
-   * « 3 textes ».
+   * The name of the daily book (the volume, the card, the page): « Mes Tehilim
+   * journaliers » when it holds only psalms (psalms taken one by one, the
+   * Tehilim of the day), so that one knows at a glance what is inside;
+   * « Lecture du jour » as soon as another text joins them (a michna, a page
+   * of moussar). The Tehilim of the day alone keep their own name. `card` is
+   * the title of the home card, which must fit beside its volume
+   * (« Mes Tehilim »); `cover`, the one of the cover; `count`, « 3 psaumes »
+   * or « 3 textes ».
    */
-  function dailyName(textIds: number[]): {
+  function dailyName(objectives: readonly Objective[]): {
     title: string;
     card: string;
     cover: string;
     count: (n: number) => string;
   } {
-    const tehilim =
-      textIds.length > 0 &&
-      textIds.every((id) => {
-        const entry = texteOf(id);
+    const psalmsOnly =
+      objectives.length > 0 &&
+      objectives.every((objective) => {
+        if (objective.kind === "cycle") return isTehilimCycle(objective.cycle);
+        if (objective.kind !== "text") return false;
+        const entry = texteOf(objective.textId);
         return entry !== null && corpusOf(entry) === "tehilim";
       });
-    return tehilim
+    const lone = objectives.length === 1 && objectives[0].kind === "cycle" ? objectives[0] : null;
+    if (lone) {
+      const title = objectiveTitle(lone);
+      return { title, card: title, cover: coverLabel(lone), count: (n) => unitsLabel("psalm", n) };
+    }
+    return psalmsOnly
       ? {
           title: t("parcours.daily.tehilimTitle"),
           card: t("parcours.daily.tehilimCard"),
@@ -308,9 +319,9 @@ export function useParcoursViews() {
           const target = dafYomiRoute(daf);
           return { ...target, query: { ...target.query, objectif: objective.id } };
         }
-        // The Tehilim of the month or of the week: the day's psalms on one
-        // page, each marked read on its own (TehilimDayPage).
-        return { path: "/bibliotheque/tehilim-du-jour", query: { objectif: objective.id } };
+        // The Tehilim of the month or of the week: the daily book, where the
+        // day's psalms are read among the daily texts, each marked on its own.
+        return DAILY_PAGE;
       }
       case "text": {
         const entry = texteOf(objective.textId);

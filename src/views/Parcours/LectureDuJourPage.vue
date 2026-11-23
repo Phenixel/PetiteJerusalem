@@ -1,42 +1,34 @@
 <script setup lang="ts">
 /**
- * The daily reading (`/bibliotheque/lecture-du-jour`): the texts read every
- * day (a psalm, a page one loves), one after the other, on a single page. It
- * is the « Lecture du jour » volume of the shelf, and the card of the same
- * name in the stack. It holds what the daily reading of before Mon parcours
- * could do:
+ * The daily book (`/bibliotheque/lecture-du-jour`): everything read again
+ * every day, one after the other, on a single page. It is the « Lecture du
+ * jour » volume of the shelf, and the card of the same name in the stack. It
+ * holds the daily texts (a psalm, a page one loves) and the Tehilim of the
+ * day of the month or of the week (services/parcours/dailyBook.ts):
  *
- *  - the texts in the order of the catalog;
+ *  - one list, in the order of the catalog: the psalms of the Tehilim of the
+ *    day come among the psalms taken one by one, and a psalm given twice is
+ *    read once;
  *  - what is said before and after (the Yehi ratson of the Tehilim), once for
  *    everything read from the same corpus (encadrementBounds);
- *  - a text is ticked, and folds away; its chapters too, one by one, and the
- *    last one ticked ticks the text (the chapters read stay on the device for
- *    the day);
+ *  - each text is marked read, and folds away; its chapters too, one by one,
+ *    and the last one ticked ticks the text (the chapters read stay on the
+ *    device for the day). The last psalm of a Tehilim cycle marks its task;
  *  - the reading menu, the text size, the auto-scroll, the screen kept on,
  *    the texts to download, the reminders (in the app: the line of the day's
  *    reminders, which opens « Les heures de ma journée »);
- *  - the list is composed right here: « Modifier ma liste » shows the day's
- *    texts, each removed with a tap, and the search adds several in a row.
+ *  - the list is composed right here: « Modifier ma liste » shows what the
+ *    book holds, each removed with a tap; the Tehilim of the day and the
+ *    search add several in a row.
  *
- * The calendar readings are no longer mixed in: the Tehilim of the month or
- * of the week and the parasha each have their volume, their card and their
- * page. The daily reading of before mixed them for lack of anything better.
- *
- * The Tehilim cycles are still offered from here, since this is where one
- * composes the psalms read every day: « Modifier ma liste » adds the psalms
- * already divided up (the month's or the week's) a tap away, lists them with
- * the texts, and the day shows a card that opens them on their own page,
- * where each psalm is marked (TehilimDayPage).
- *
- * What is ticked here is what the home stack ticks: a single day.
+ * What is marked here is what the home stack marks: a single day.
  */
 import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import textStudiesJson from "../../datas/textStudies.json";
-import type { TextStudiesJson, TextStudyJsonEntry } from "../../models/models";
+import type { TextStudyJsonEntry } from "../../models/models";
+import { useDailyBook, type DailyReadingState } from "../../composables/useDailyBook";
 import { useParcours } from "../../composables/useParcours";
 import { useParcoursViews } from "../../composables/useParcoursViews";
-import { useZmanimLocation } from "../../composables/useZmanimLocation";
 import { useReadingPinch } from "../../composables/useReadingPinch";
 import { useAutoScroll } from "../../composables/useAutoScroll";
 import { useKeepAwake } from "../../composables/useKeepAwake";
@@ -45,23 +37,14 @@ import { anchorToElement } from "../../composables/scrollAnchor";
 import { devicePreference } from "../../services/devicePreference";
 import { encadrementBounds } from "../../services/encadrementService";
 import { appendHebrewNumeral } from "../../services/hebrewNumerals";
-import { taskEntries } from "../../services/parcours/entries";
 import { trackDayViewed } from "../../services/parcours/tracking";
 import { createCycle, createText } from "../../services/parcours/create";
-import {
-  isTehilimCycle,
-  type CycleId,
-  type CycleObjective,
-  type DayKey,
-  type Objective,
-  type TextObjective,
-} from "../../services/parcours/model";
-import { liveObjectives, type Task } from "../../services/parcours/schedule";
+import type { DailyObjective } from "../../services/parcours/dailyBook";
+import type { DayKey, TehilimCycleId } from "../../services/parcours/model";
 import { analyticsService } from "../../services/analyticsService";
 import { haptic } from "../../services/haptics";
 import { SearchService } from "../../services/searchService";
 import { pageTitle, seoService } from "../../services/seoService";
-import { isIsraelPlace } from "../../services/zmanimService";
 import { SITE_URL } from "../../config/site";
 import AppIcon from "../../components/icons/AppIcon.vue";
 import CollapseTransition from "../../components/CollapseTransition.vue";
@@ -80,110 +63,66 @@ import DailyReadingItem from "../Library/DailyReadingItem.vue";
 const { t } = useI18n();
 const store = useParcours();
 const views = useParcoursViews();
-const { place } = useZmanimLocation();
-// App native : pincer dans la page agrandit le texte lu, pas la page.
+const book = useDailyBook();
+// In the app, pinching the page enlarges the text read, not the page.
 useReadingPinch();
 
-const allTexts = (textStudiesJson as TextStudiesJson).textStudies;
-/** L'ordre du catalogue : Tehilim 1, 4, 8, puis Michna, Talmud, Tanakh. */
-const catalogRank = new Map<number, number>(allTexts.map((entry, i) => [Number(entry.id), i]));
-
 const today = computed(() => store.today.value);
-const il = computed(() => isIsraelPlace(place.value));
 
-/** Un texte du jour, sur la page. */
-interface Reading {
-  key: string;
-  task: Task;
-  /** Au-dessus du nom, en petit : le livre (« Tehilim », « Pirké Avot »). */
+/** A reading of the day, on the page. */
+interface Reading extends DailyReadingState {
+  /** Above the name, small: the book (« Tehilim », « Pirké Avot »). */
   kicker: string;
   title: string;
-  entry: TextStudyJsonEntry;
-  done: boolean;
 }
 
-function readingOf(task: Task): Reading | null {
-  const objective = store.data.value.objectives[task.objectiveId];
-  if (objective?.kind !== "text") return null;
-  const entry = taskEntries(task, objective, today.value, il.value)[0];
-  if (!entry) return null;
-  return {
-    key: task.id,
-    task,
-    kicker: SearchService.formatBookName(entry.livre),
-    title: appendHebrewNumeral(entry.name),
-    entry,
-    done: views.taskView(task, today.value).progress === "done",
-  };
-}
-
-/** Les textes du jour, dans l'ordre du catalogue. */
-const daily = computed(() =>
-  store.todayTasks.value
-    .filter((task) => task.kind === "text")
-    .map(readingOf)
-    .filter((reading): reading is Reading => reading !== null)
-    .sort(
-      (a, b) =>
-        (catalogRank.get(Number(a.entry.id)) ?? Infinity) -
-        (catalogRank.get(Number(b.entry.id)) ?? Infinity),
-    ),
+/** The day's readings, in the order of the catalog. */
+const daily = computed<Reading[]>(() =>
+  book.readings.value.map((reading) => ({
+    ...reading,
+    kicker: SearchService.formatBookName(reading.entry.livre),
+    title: appendHebrewNumeral(reading.entry.name),
+  })),
 );
 /** The texts' translation: its setting in the reading menu. */
 const translation = useEntriesTranslation(() => daily.value.map((reading) => reading.entry));
 
-// Le Yehi ratson et ses pareils : une fois pour tout ce qu'on lit du même
-// corpus, la liste étant rangée dans l'ordre du catalogue, qui les tient groupés.
+// The Yehi ratson and the like: once for everything read from the same
+// corpus, the list being in the order of the catalog, which keeps them together.
 const textBounds = computed(() => encadrementBounds(daily.value.map((r) => r.entry)));
 
-/** A Tehilim cycle of Mon parcours (the month's or the week's psalms). */
-const isTehilimObjective = (objective: Objective): objective is CycleObjective =>
-  objective.kind === "cycle" && isTehilimCycle(objective.cycle);
-
-/** The day's Tehilim cycles: a card each, which opens their page. */
-const calendar = computed(() =>
-  store.todayTasks.value.flatMap((task) => {
-    const objective = store.data.value.objectives[task.objectiveId];
-    return objective && isTehilimObjective(objective) ? [views.taskView(task, today.value)] : [];
-  }),
-);
-
-const doneCount = computed(() => daily.value.filter((reading) => reading.done).length);
+const doneCount = computed(() => book.doneCount.value);
 const allDone = computed(() => daily.value.length > 0 && doneCount.value === daily.value.length);
 const percent = computed(() =>
   daily.value.length === 0 ? 0 : Math.round((doneCount.value / daily.value.length) * 100),
 );
 
-// --- La liste : les textes du jour, à retirer ou à ajouter, sur la page même. ---
+// --- The list: what the book holds, to remove or to add, on the page itself. ---
 
-/** Les textes du jour pris, dans l'ordre du catalogue. */
-const textObjectives = computed(() =>
-  liveObjectives(store.data.value)
-    .filter((objective): objective is TextObjective => objective.kind === "text")
-    .sort(
-      (a, b) => (catalogRank.get(a.textId) ?? Infinity) - (catalogRank.get(b.textId) ?? Infinity),
-    ),
+/** What the book holds: the daily texts in the order of the catalog, then the Tehilim cycles. */
+const listed = computed(() => book.objectives.value);
+const takenTexts = computed(() =>
+  listed.value.flatMap((objective) => (objective.kind === "text" ? [objective.textId] : [])),
 );
-const takenTexts = computed(() => textObjectives.value.map((objective) => objective.textId));
-/** The Tehilim cycles taken: in the list with the texts, and not offered twice. */
-const cycleObjectives = computed(() => liveObjectives(store.data.value).filter(isTehilimObjective));
-const takenCycles = computed(() => cycleObjectives.value.map((objective) => objective.cycle));
-/** « Mes Tehilim journaliers » quand ce ne sont que des psaumes, sinon « Lecture du jour ». */
-const name = computed(() => views.dailyName(takenTexts.value));
+const takenCycles = computed(() =>
+  listed.value.flatMap((objective) => (objective.kind === "cycle" ? [objective.cycle] : [])),
+);
+/** « Mes Tehilim journaliers » when it holds only psalms, otherwise « Lecture du jour ». */
+const name = computed(() => views.dailyName(listed.value));
 
-/** La liste ouverte : d'office quand il n'y a encore rien à lire. */
+/** The list opened: at once when there is nothing to read yet. */
 const editing = ref(false);
 /** The reminders of the day, opened from the line at the bottom (in the app). */
 const remindersOpen = ref(false);
 watch(
-  () => textObjectives.value.length === 0 && cycleObjectives.value.length === 0,
+  () => listed.value.length === 0,
   (empty) => {
     if (empty) editing.value = true;
   },
   { immediate: true },
 );
 
-function removeObjective(objective: TextObjective | CycleObjective): void {
+function removeObjective(objective: DailyObjective): void {
   store.removeObjective(objective.id);
   analyticsService.capture("parcours_objective_removed", {
     kind: objective.kind,
@@ -191,30 +130,22 @@ function removeObjective(objective: TextObjective | CycleObjective): void {
   });
 }
 
-/** The psalms already divided up, taken from the list: a cycle of Mon parcours. */
-function addCycle(cycle: CycleId): void {
-  if (takenCycles.value.includes(cycle)) return;
-  store.saveObjective(createCycle(cycle, today.value, Date.now()));
-  analyticsService.capture("parcours_objective_created", {
-    kind: "cycle",
-    cycle,
-    source: "daily_page",
-  });
-  haptic("done");
-}
-
-/** The list: the texts, then the Tehilim cycles. */
-const listed = computed<(TextObjective | CycleObjective)[]>(() => [
-  ...textObjectives.value,
-  ...cycleObjectives.value,
-]);
-
-/** La recherche repart vide une fois ses textes ajoutés. */
+/** The search starts again empty once its texts are added. */
 const searchKey = ref(0);
-function addTexts(entries: TextStudyJsonEntry[]): void {
+/** What was ticked in the search and the Tehilim of the day, taken at once. */
+function add(entries: TextStudyJsonEntry[], cycles: TehilimCycleId[]): void {
   const now = Date.now();
+  cycles.forEach((cycle, i) => {
+    if (takenCycles.value.includes(cycle)) return;
+    store.saveObjective(createCycle(cycle, today.value, now + i));
+    analyticsService.capture("parcours_objective_created", {
+      kind: "cycle",
+      cycle,
+      source: "daily_page",
+    });
+  });
   entries.forEach((entry, i) => {
-    const objective = createText(Number(entry.id), today.value, now + i);
+    const objective = createText(Number(entry.id), today.value, now + cycles.length + i);
     store.saveObjective(objective);
     analyticsService.capture("parcours_objective_created", {
       kind: "text",
@@ -228,13 +159,11 @@ function addTexts(entries: TextStudyJsonEntry[]): void {
 }
 
 const hasReading = computed(() => daily.value.length > 0);
-/** Something to read today: texts here, or a Tehilim cycle on its page. */
-const hasDay = computed(() => hasReading.value || calendar.value.length > 0);
-// Double appui sur le texte : la page descend toute seule ; l'écran reste allumé.
+// A double tap on the text: the page scrolls by itself; the screen stays on.
 useAutoScroll(() => hasReading.value);
 useKeepAwake(() => hasReading.value);
 
-/** Ce qu'il faut sur l'appareil pour lire tout cela sans connexion. */
+/** What the device needs to read all of it offline. */
 const offlineEntries = computed(() => daily.value.map((reading) => reading.entry));
 
 // --- Replier un texte : un titre touché, ou une lecture cochée. ---
@@ -252,10 +181,10 @@ function setCollapsed(key: string, value: boolean): void {
 }
 const toggleCollapse = (key: string) => setCollapsed(key, !collapsed.value.has(key));
 
-/** Coche ou décoche une lecture : cochée, elle se replie ; décochée, elle se rouvre. */
+/** Marks a reading read or not: read, it folds away; unmarked, it opens again. */
 function toggleDone(reading: Reading): void {
   const done = !reading.done;
-  store.setDone(reading.task, today.value, done, "daily_page");
+  book.setRead(reading, done, "daily_page");
   setCollapsed(reading.key, done);
   if (done) anchorToElement(articles.get(reading.key) ?? null);
 }
@@ -363,36 +292,18 @@ seoService.setMeta({
         class="mt-2"
         :taken="takenTexts"
         :taken-cycles="takenCycles"
-        @pick="addTexts"
-        @cycle="addCycle"
+        @pick="add"
       />
     </section>
 
-    <!-- The day's Tehilim cycles: each on its own page, where each psalm is marked. -->
-    <ul v-if="calendar.length" class="mt-6 space-y-3">
-      <li v-for="view in calendar" :key="view.key">
-        <RouterLink :to="view.route ?? '/'" class="card calendar-card">
-          <span class="min-w-0 flex-1">
-            <span class="block text-xs font-semibold text-primary">{{ view.title }}</span>
-            <span class="block text-lg font-bold">{{ view.meta }}</span>
-          </span>
-          <span v-if="view.progress === 'done'" class="calendar-done">
-            <AppIcon name="circle-check" :size="15" />
-            {{ t("parcours.daily.readToday") }}
-          </span>
-          <AppIcon v-else name="chevron-right" :size="16" class="rtl:rotate-180" />
-        </RouterLink>
-      </li>
-    </ul>
-
-    <!-- Rien aujourd'hui : de quoi composer sa lecture. -->
-    <div v-if="!hasDay" class="flex flex-col items-center py-16 text-center">
+    <!-- Nothing today: what to compose one's reading with. -->
+    <div v-if="!hasReading" class="flex flex-col items-center py-16 text-center">
       <AppIcon name="book" :size="32" class="mb-4 text-primary/50" />
       <p class="text-xl font-semibold">{{ t("parcours.daily.emptyTitle") }}</p>
       <p class="mt-2 max-w-sm text-text-secondary">{{ t("parcours.daily.emptyText") }}</p>
     </div>
 
-    <template v-else-if="hasReading">
+    <template v-else>
       <OfflineTextsNotice class="mt-6" :entries="offlineEntries" />
 
       <!-- La journée : où l'on en est. -->
@@ -538,23 +449,6 @@ seoService.setMeta({
 .remove-btn:hover {
   background: color-mix(in srgb, var(--color-text-primary) 8%, transparent);
   color: var(--color-text-primary);
-}
-.calendar-card {
-  display: flex;
-  min-height: 64px;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 16px;
-  color: var(--color-text-primary);
-}
-.calendar-done {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  gap: 6px;
-  color: var(--color-primary);
-  font-size: 14px;
-  font-weight: 600;
 }
 .mark-btn {
   display: inline-flex;

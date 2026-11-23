@@ -41,14 +41,14 @@ test.describe("Mon parcours", () => {
       "Que voulez-vous accomplir",
     );
 
-    // Un texte chaque jour : le Tehilim 1.
-    await page.getByRole("button", { name: /Un texte chaque jour/ }).click();
+    // Read every day: Tehilim 1, in the daily book.
+    await page.getByRole("button", { name: /Ma lecture du jour/ }).click();
     await page.getByPlaceholder(/Un texte/).fill("Tehilim 1");
     await page
       .getByRole("button", { name: /^Tehilim 1\b/ })
       .first()
       .click();
-    await page.getByRole("button", { name: "Ajouter 1 texte" }).click();
+    await page.getByRole("button", { name: "Ajouter à ma lecture du jour (1)" }).click();
 
     // Pris, il arrive sur Mon parcours, sur l'étagère.
     await expect(page).toHaveURL(/\/parcours$/);
@@ -225,7 +225,7 @@ test.describe("Mon parcours", () => {
   test("plusieurs textes d'affilée, lus à la suite dans la lecture du jour", async ({ page }) => {
     const account = await createAccount("lecture");
     await signIn(page, account, "/parcours/nouveau");
-    await page.getByRole("button", { name: /Un texte chaque jour/ }).click();
+    await page.getByRole("button", { name: /Ma lecture du jour/ }).click();
     const search = page.getByPlaceholder(/Un texte/);
     await search.fill("Tehilim 1");
     await page
@@ -237,7 +237,7 @@ test.describe("Mon parcours", () => {
       .getByRole("button", { name: /^Tehilim 23\b/ })
       .first()
       .click();
-    await page.getByRole("button", { name: "Ajouter 2 textes" }).click();
+    await page.getByRole("button", { name: "Ajouter à ma lecture du jour (2)" }).click();
     await expect(page).toHaveURL(/\/parcours$/);
 
     // L'accueil : une seule carte, « Mes Tehilim » (que des psaumes), qui
@@ -272,7 +272,7 @@ test.describe("Mon parcours", () => {
       .getByRole("button", { name: /^Tehilim 121\b/ })
       .first()
       .click();
-    await page.getByRole("button", { name: "Ajouter 1 texte" }).click();
+    await page.getByRole("button", { name: "Ajouter à ma lecture du jour (1)" }).click();
     await expect(page.getByText("1 sur 2 lus aujourd'hui")).toBeVisible();
   });
 

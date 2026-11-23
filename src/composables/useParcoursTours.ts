@@ -59,8 +59,9 @@ export function useParcoursTours() {
     step("new", "parcours-new", 14),
   ]);
 
-  /** Nouvel objectif : choisir en haut, la suite se déplie dessous. */
+  /** New objective: choose at the top, the rest unfolds below. */
   const create = computed<TourStep[]>(() => [
+    step("daily", "create-daily", 14),
     step("books", "create-books", 14),
     step("cycles", "create-cycles", 14),
     step("habits", "create-habits", 14),
