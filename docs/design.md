@@ -3332,8 +3332,11 @@ an « Afficher » ("Show") pill in the brand color. A block that has nothing
 to show right now keeps its place as a dashed outline under its name. You
 get there by a long press on a block (with a finger), which also picks that
 block up at once, or through « Modifier l'accueil » ("Edit the home page")
-at the bottom of the page; « Terminé » ("Done"), above the blocks and at the
-bottom, or Escape, leaves it. The old address `/accueil/modifier` opens the
+at the bottom of the page; « Terminé » ("Done"), or Escape, leaves it.
+« Terminé » stays pinned at the bottom of the screen, centered above the tab
+bar, for as long as the mode lasts: placed at the foot of the list of blocks,
+it was missed, one had to scroll the whole page to find it. The page keeps
+room under the last block so that the button never hides it. The old address `/accueil/modifier` opens the
 home page in this mode.
 
 In edit mode a finger holds a block a moment before it lifts (a quick swipe

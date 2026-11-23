@@ -21,6 +21,7 @@ import HomeDoors from "../components/HomeDoors.vue";
 import HomeResume from "../components/HomeResume.vue";
 import { HOME_BLOCKS, useHomeLayout, type HomeBlock } from "../composables/useHomeLayout";
 import { useHomeArrange } from "../composables/useHomeArrange";
+import { useBottomChromeHeight } from "../composables/useBottomChrome";
 import type { PinnedBook } from "../content/pinnedBooks";
 import { haptic } from "../services/haptics";
 import HolidayGreeting from "../components/holiday/HolidayGreeting.vue";
@@ -107,6 +108,8 @@ const { dismissed: accountCtaDismissed, dismissHomeAccountCta } = useHomeAccount
  * déjà un compte.
  */
 const homeRoot = ref<HTMLElement | null>(null);
+/** Edit mode: « Terminé » pinned above the bottom bars (tab bar, mini player). */
+const editDoneBottom = useBottomChromeHeight("16px");
 
 /** Le tutoriel de Mon parcours, sur l'accueil : la pile, la journée, la lumière, l'étagère. */
 const parcoursTours = useParcoursTours();
@@ -361,7 +364,7 @@ onUnmounted(() => {
         <AnnouncementsBanner class="mt-4" />
       </div>
 
-      <!-- Edit mode: what is going on, and how to leave it. -->
+      <!-- Edit mode: what is going on; « Terminé » waits pinned at the bottom. -->
       <div
         v-if="editing"
         class="edit-bar w-full max-w-6xl mx-auto mt-5 flex items-center justify-between gap-3"
@@ -371,9 +374,6 @@ onUnmounted(() => {
           <br />
           <span class="text-text-secondary">{{ t("home.edit.hint") }}</span>
         </p>
-        <button type="button" class="btn btn-primary edit-done" @click="editing = false">
-          {{ t("home.edit.done") }}
-        </button>
       </div>
 
       <!-- The day's deck, always first; below it, the blocks in the order
@@ -490,17 +490,26 @@ onUnmounted(() => {
         </div>
       </div>
 
-      <p class="mt-[22px] mb-10 text-center">
+      <!-- Edit mode: « Terminé » stays pinned at the bottom of the screen,
+           above the tab bar, wherever one is in the list of blocks; at the
+           foot of the page it was missed. The page keeps room for it, so
+           the last block is not hidden under it. -->
+      <Teleport to="body">
+        <Transition name="edit-done">
+          <div v-if="editing" class="edit-done-bar" :style="{ bottom: editDoneBottom }">
+            <button
+              type="button"
+              class="btn btn-primary edit-done edit-done-pinned"
+              @click="editing = false"
+            >
+              {{ t("home.edit.done") }}
+            </button>
+          </div>
+        </Transition>
+      </Teleport>
+      <p class="mt-[22px] mb-10 text-center" :class="{ 'edit-room': editing }">
         <button
-          v-if="editing"
-          type="button"
-          class="btn btn-primary edit-done"
-          @click="editing = false"
-        >
-          {{ t("home.edit.done") }}
-        </button>
-        <button
-          v-else
+          v-if="!editing"
           type="button"
           class="text-[13px] font-semibold text-text-secondary underline underline-offset-4"
           @click="startEditing"
@@ -739,6 +748,43 @@ onUnmounted(() => {
   padding: 0 16px;
   font-size: 14px;
   font-weight: 700;
+}
+/* Pinned at the bottom of the screen in edit mode (teleported to <body>). */
+.edit-done-bar {
+  position: fixed;
+  inset-inline: 0;
+  z-index: 40;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+.edit-done-pinned {
+  min-width: 200px;
+  min-height: 48px;
+  font-size: 15px;
+  box-shadow: var(--shadow-pop);
+  pointer-events: auto;
+}
+/* The room the pinned button takes, under the last block. */
+.edit-room {
+  min-height: 72px;
+}
+.edit-done-enter-active,
+.edit-done-leave-active {
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
+}
+.edit-done-enter-from,
+.edit-done-leave-to {
+  opacity: 0;
+  transform: translateY(12px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .edit-done-enter-active,
+  .edit-done-leave-active {
+    transition: none;
+  }
 }
 
 /* Staggered entrance: cards, greeting/hero and memorial all rise into place. */
