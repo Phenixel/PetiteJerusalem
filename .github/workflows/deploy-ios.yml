@@ -93,9 +93,11 @@ jobs:
     concurrency:
       group: apple-signing
       cancel-in-progress: false
-    # macos-26 fournit Xcode 26, exigé à la fois par Capacitor 8 et par l'App
-    # Store depuis le 28 avril 2026 (SDK iOS 26 minimum).
-    runs-on: macos-26
+    # The xcode-27 image (macOS 27, Apple silicon) ships Xcode 27 and the
+    # iOS 27 SDK. App Store Connect requires that SDK for every upload from
+    # April 2027 (warning ITMS-90725 on the builds made with Xcode 26.2), and
+    # the app adopts the UIKit scene life cycle it brings (Capacitor 8.5+).
+    runs-on: xcode-27
     timeout-minutes: 45
     permissions:
       # Read only: the checkout, and the notes of the GitHub release.
@@ -106,12 +108,12 @@ jobs:
       version_name: ${{ steps.version.outputs.name }}
       build_number: ${{ steps.version.outputs.build }}
     env:
-      # Xcode épinglé en 26.2 (17C52) : le 26.6 par défaut de l'image échoue
-      # sur « Authentication failed: bearer token » pendant la signature
-      # automatique, avec des identifiants pourtant valides (la sonde ASC
-      # passe, le PEM est canonique, la clé est dans tous les emplacements
-      # standard). 26.2 est la version validée en local sur le même projet.
-      DEVELOPER_DIR: /Applications/Xcode_26.2.app/Contents/Developer
+      # No DEVELOPER_DIR pin: the image's default Xcode 27 is used. On macos-26
+      # Xcode was pinned to 26.2 because 26.6 failed signing with
+      # "Authentication failed: bearer token" despite valid credentials. If
+      # that error comes back with Xcode 27, pin a known good version here
+      # (DEVELOPER_DIR: /Applications/Xcode_27.x.app/Contents/Developer) and
+      # check it first with a manual run in debug_signing mode.
       # Lu par scripts/lib/environments.mjs : bundle id, nom de l'app, App
       # Group, config Firebase du bundle. Vide hors staging : la production.
       PJ_ENV: ${{ inputs.environment == 'staging' && 'staging' || '' }}
@@ -171,8 +173,8 @@ jobs:
         run: |
           xcodebuild -version
           major="$(xcodebuild -version | head -1 | sed -E 's/Xcode ([0-9]+).*/\1/')"
-          if [ "$major" -lt 26 ]; then
-            echo "::error::Xcode $major détecté, Capacitor 8 et l'App Store exigent Xcode 26+"
+          if [ "$major" -lt 27 ]; then
+            echo "::error::Xcode $major found, App Store Connect requires Xcode 27+ (iOS 27 SDK) from April 2027"
             exit 1
           fi
 

@@ -385,9 +385,12 @@ tag v4.0.0 sent its listing there.
   already used for the same marketing version.
 - Manual launch possible (Actions tab → Deploy iOS → Run workflow): it uses
   the latest tag reachable from the chosen branch.
-- The `macos-26` runner provides Xcode 26, required by Capacitor 8 and by
-  the App Store since April 28, 2026. The workflow fails explicitly if the
-  Xcode version is older.
+- The `xcode-27` runner (macOS 27, Apple silicon) provides Xcode 27 and the
+  iOS 27 SDK, required by App Store Connect for every upload from April 2027.
+  The workflow fails explicitly if the Xcode version is older. Xcode is not
+  pinned: if signing fails again with "Authentication failed: bearer token"
+  (as with Xcode 26.6 on `macos-26`), pin a known good version with
+  `DEVELOPER_DIR` and check it with a manual `debug_signing` run.
 - macOS runners consume GitHub Actions minutes **10× faster** than Linux
   (free on a public repo). A full build takes 10 to 20 min.
 - `xcrun altool --upload-app` is marked deprecated in favor of

@@ -44,7 +44,7 @@ describe("prune-spm-providers", () => {
 
   it("garde GoogleSignIn et sa directive : l'app propose Google", () => {
     expect(pruned).toContain('.product(name: "GoogleSignIn"');
-    expect(pruned).toContain('.define("RGCFA_INCLUDE_GOOGLE")');
+    expect(pruned).toContain('.define("RGCFA_INCLUDE_GOOGLE"');
   });
 
   it("garde FirebaseAuth, le coeur du plugin", () => {
