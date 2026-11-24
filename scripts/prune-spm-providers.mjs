@@ -59,17 +59,40 @@ function mustRemove(pattern, what) {
   content = next;
 }
 
-// Les ancres matchent l'URL ou le nom du produit, jamais la version : une
-// montée de version du SDK Facebook ne doit pas casser l'élagage. La virgule
-// qui précède part avec la ligne, chaque entrée retirée étant la dernière de
-// sa liste (Swift ne tolère pas les virgules terminales avant la 6.1).
+// The anchors match the URL or the product name, never the version: a bump
+// of the Facebook SDK must not break the pruning. The preceding comma goes
+// with the line, each removed entry being the last of its list.
+//
+// Two shapes of Package.swift are handled. Up to 8.3, products and the
+// directive were unconditional. Since 8.6 (swift-tools 6.1) the plugin
+// declares SwiftPM traits ("Google", "Facebook", both on by default) and
+// guards the products and the directive with `.when(traits: ["Facebook"])`.
+// For that shape the "Facebook" trait is also dropped from the defaults and
+// from the trait list, so nothing refers to it any more.
+const WHEN_FACEBOOK = String.raw`(?:,\s*condition:\s*\.when\(traits:\s*\["Facebook"\]\))?`;
+if (/traits:\s*\[/.test(content)) {
+  mustRemove(/,\s*"Facebook"(?=\s*\]\))/, "trait Facebook in the default traits");
+  mustRemove(
+    /,\s*\n\s*\.trait\(\s*name:\s*"Facebook",[^)]*\)/,
+    "trait Facebook declaration",
+  );
+}
 mustRemove(
   /,\s*\n\s*\.package\(url: "https:\/\/github\.com\/facebook\/facebook-ios-sdk\.git"[^)]*\)/,
   "dépendance facebook-ios-sdk",
 );
-mustRemove(/,\s*\n\s*\.product\(name: "FacebookCore"[^)]*\)/, "produit FacebookCore");
-mustRemove(/,\s*\n\s*\.product\(name: "FacebookLogin"[^)]*\)/, "produit FacebookLogin");
-mustRemove(/,\s*\n\s*\.define\("RGCFA_INCLUDE_FACEBOOK"\)/, "directive RGCFA_INCLUDE_FACEBOOK");
+mustRemove(
+  new RegExp(String.raw`,\s*\n\s*\.product\(name: "FacebookCore", package: "facebook-ios-sdk"${WHEN_FACEBOOK}\)`),
+  "produit FacebookCore",
+);
+mustRemove(
+  new RegExp(String.raw`,\s*\n\s*\.product\(name: "FacebookLogin", package: "facebook-ios-sdk"${WHEN_FACEBOOK}\)`),
+  "produit FacebookLogin",
+);
+mustRemove(
+  new RegExp(String.raw`,\s*\n\s*\.define\("RGCFA_INCLUDE_FACEBOOK"(?:,\s*\.when\(traits:\s*\["Facebook"\]\))?\)`),
+  "directive RGCFA_INCLUDE_FACEBOOK",
+);
 
 // Garde-fous : Google reste (l'app s'en sert), et plus rien ne mentionne
 // Facebook, sinon un embarquement passé au travers des ancres ci-dessus.

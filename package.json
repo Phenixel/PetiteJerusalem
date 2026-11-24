@@ -37,16 +37,16 @@
     "store:screenshots": "node scripts/store-screenshots.mjs"
   },
   "dependencies": {
-    "@capacitor-firebase/authentication": "^8.3.0",
-    "@capacitor-firebase/messaging": "^8.3.0",
-    "@capacitor/android": "^8.4.3",
+    "@capacitor-firebase/authentication": "^8.6.0",
+    "@capacitor-firebase/messaging": "^8.6.0",
+    "@capacitor/android": "^8.6.2",
     "@capacitor/app": "^8.1.0",
-    "@capacitor/core": "^8.4.3",
+    "@capacitor/core": "^8.6.2",
     "@capacitor/file-transfer": "^2.0.4",
     "@capacitor/filesystem": "^8.1.2",
     "@capacitor/geolocation": "^8.2.0",
     "@capacitor/haptics": "^8.0.2",
-    "@capacitor/ios": "^8.4.3",
+    "@capacitor/ios": "^8.6.2",
     "@capacitor/local-notifications": "^8.2.1",
     "@capacitor/preferences": "^8.0.1",
     "@capacitor/status-bar": "^8.0.3",
@@ -64,7 +64,7 @@
     "vue-router": "^4.5.1"
   },
   "devDependencies": {
-    "@capacitor/cli": "^8.4.3",
+    "@capacitor/cli": "^8.6.2",
     "@eslint/js": "^9.39.5",
     "@googleapis/androidpublisher": "^36.0.0",
     "@hebcal/leyning": "^10.0.0",

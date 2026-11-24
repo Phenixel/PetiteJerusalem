@@ -14,9 +14,10 @@
  * - PrivacyInfo.xcprivacy : manifeste de confidentialité (obligatoire depuis
  *   mai 2024 ; sans lui, l'upload déclenche les avertissements ITMS-91053)
  * - GoogleService-Info.plist : copié depuis la racine s'il s'y trouve
- * - AppDelegate.swift : hooks APNs (@capacitor-firebase/messaging),
- *   Auth.auth().canHandle(url) (@capacitor-firebase/authentication) et
- *   retour arrière par glissement depuis le bord de l'écran
+ * - AppDelegate.swift: APNs hooks (@capacitor-firebase/messaging)
+ * - SceneDelegate.swift (UIKit scene life cycle, Capacitor 8.5 and later):
+ *   PjViewController as the root controller, Auth.auth().canHandle(url)
+ *   (@capacitor-firebase/authentication) and back swipe from the screen edge
  * - project.pbxproj : bundle id, équipe de signature, entitlements, versions,
  *   familles d'appareils (iPhone + iPad), et enregistrement des deux
  *   ressources ci-dessus
@@ -452,43 +453,46 @@ ${collected("CrashData", ["AppFunctionality"], false)}
 }
 
 // ---------------------------------------------------------------------------
-// 5. AppDelegate.swift, hooks APNs et Firebase Auth
+// 5. AppDelegate.swift and SceneDelegate.swift: APNs, Firebase Auth, back swipe
 // ---------------------------------------------------------------------------
-// Sans les trois méthodes APNs, @capacitor-firebase/messaging n'obtient
-// jamais de token FCM ; sans Auth.auth().canHandle(url), le retour du flux
-// OAuth Google est intercepté par le proxy Capacitor au lieu de Firebase.
+// Since Capacitor 8.5 the template adopts the UIKit scene life cycle, which
+// apps built with the iOS 27 SDK (Xcode 27) must use or they do not launch.
+// With a scene manifest, iOS no longer calls application(_:open:options:) or
+// application(_:continue:restorationHandler:) on the AppDelegate, and the
+// window belongs to the SceneDelegate. So:
+// - the AppDelegate keeps only the three APNs methods: without them
+//   @capacitor-firebase/messaging never gets an FCM token;
+// - the SceneDelegate checks Auth.auth().canHandle(url) before handing a URL
+//   to Capacitor: the return of the Google OAuth flow belongs to Firebase
+//   Auth, not to the Capacitor proxy;
+// - the SceneDelegate creates PjViewController instead of
+//   CAPBridgeViewController (the template builds the window in code, so the
+//   storyboard class alone no longer registers the widget and watch plugins);
+// - the back swipe is set from the SceneDelegate, which owns the window.
 const appDelegatePath = join(appDir, "AppDelegate.swift");
+const sceneDelegatePath = join(appDir, "SceneDelegate.swift");
+if (!existsSync(sceneDelegatePath)) {
+  console.error(
+    "setup-ios: SceneDelegate.swift is missing, this ios/ folder comes from a Capacitor template older than 8.5.\n" +
+      "  Delete ios/ and run `npx cap add ios` again before this script (see docs/app-native.md).",
+  );
+  process.exit(1);
+}
 let appDelegate = readFileSync(appDelegatePath, "utf8");
 if (!appDelegate.includes("capacitorDidRegisterForRemoteNotifications")) {
   appDelegate = mustReplace(
     appDelegate,
-    "import Capacitor\n",
-    "import Capacitor\nimport FirebaseAuth\n",
-    "AppDelegate : import FirebaseAuth",
-  );
-  appDelegate = mustReplace(
-    appDelegate,
     "        // Override point for customization after application launch.\n        return true",
     "        // Override point for customization after application launch.\n" +
-      "        // (FirebaseApp.configure() est appelé par les plugins @capacitor-firebase.)\n" +
+      "        // (FirebaseApp.configure() is called by the @capacitor-firebase plugins.)\n" +
       "        return true",
     "AppDelegate : commentaire didFinishLaunching",
   );
   appDelegate = mustReplace(
     appDelegate,
-    "        return ApplicationDelegateProxy.shared.application(app, open: url, options: options)",
-    "        // Retour du flux OAuth Google : c'est Firebase Auth qui doit le\n" +
-      "        // traiter, pas le proxy Capacitor.\n" +
-      "        if Auth.auth().canHandle(url) {\n" +
-      "            return true\n" +
-      "        }\n" +
-      "        return ApplicationDelegateProxy.shared.application(app, open: url, options: options)",
-    "AppDelegate : Auth.auth().canHandle(url)",
-  );
-  appDelegate = mustReplace(
-    appDelegate,
     /\n\}\s*$/,
     `
+
     // --- APNs (@capacitor-firebase/messaging) --------------------------------
 
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
@@ -508,37 +512,49 @@ if (!appDelegate.includes("capacitorDidRegisterForRemoteNotifications")) {
     "AppDelegate : méthodes APNs",
   );
   writeFileSync(appDelegatePath, appDelegate);
-  console.log("setup-ios: AppDelegate.swift, hooks APNs et Firebase Auth ajoutés");
+  console.log("setup-ios: AppDelegate.swift, APNs hooks added");
 }
 
-// Retour arrière par glissement depuis le bord de l'écran : le geste système
-// que tout iPhone propose, et que les WKWebView désactivent par défaut. Sur
-// Android l'équivalent est le bouton retour, câblé dans src/main.ts, d'où un
-// retour arrière qui marchait là-bas et pas ici. Capacitor n'expose aucune
-// option de configuration pour ce réglage : il faut le poser sur la webview,
-// qui n'existe qu'une fois la vue du contrôleur chargée, d'où l'attente de
-// la notification capacitorViewDidAppear.
-// (Le pendant côté web est dans src/assets/main.css : overscroll-behavior sur
-// l'axe horizontal couperait le geste malgré ce réglage.)
-// Bloc à part, avec sa propre garde : il doit s'appliquer aussi aux projets
-// ios/ déjà passés par une version antérieure de ce script.
-if (!appDelegate.includes("allowsBackForwardNavigationGestures")) {
-  appDelegate = mustReplace(
-    appDelegate,
-    "        // (FirebaseApp.configure() est appelé par les plugins @capacitor-firebase.)\n        return true",
-    "        // (FirebaseApp.configure() est appelé par les plugins @capacitor-firebase.)\n" +
-      "        // Retour arrière par glissement depuis le bord de l'écran : désactivé\n" +
-      "        // par défaut sur WKWebView, et sans réglage Capacitor pour l'activer.\n" +
-      "        // L'observateur vit autant que l'app : rien à désenregistrer.\n" +
+let sceneDelegate = readFileSync(sceneDelegatePath, "utf8");
+if (!sceneDelegate.includes("Auth.auth().canHandle")) {
+  sceneDelegate = mustReplace(
+    sceneDelegate,
+    "import Capacitor\n",
+    "import Capacitor\nimport FirebaseAuth\n",
+    "SceneDelegate: import FirebaseAuth",
+  );
+  sceneDelegate = mustReplace(
+    sceneDelegate,
+    "        window?.rootViewController = CAPBridgeViewController()\n        window?.makeKeyAndVisible()\n",
+    "        // PjViewController registers the app's own plugins (widgets, watch).\n" +
+      "        window?.rootViewController = PjViewController()\n" +
+      "        window?.makeKeyAndVisible()\n" +
+      "        // Back swipe from the screen edge: off by default on WKWebView, and\n" +
+      "        // Capacitor has no setting for it. The web view only exists once the\n" +
+      "        // controller's view is loaded, hence the wait for capacitorViewDidAppear.\n" +
+      "        // The observer lives as long as the app: nothing to unregister.\n" +
       "        _ = NotificationCenter.default.addObserver(forName: .capacitorViewDidAppear, object: nil, queue: .main) { [weak self] _ in\n" +
       "            let controller = self?.window?.rootViewController as? CAPBridgeViewController\n" +
       "            controller?.webView?.allowsBackForwardNavigationGestures = true\n" +
-      "        }\n" +
-      "        return true",
-    "AppDelegate : retour arrière par glissement",
+      "        }\n",
+    "SceneDelegate: PjViewController and back swipe",
   );
-  writeFileSync(appDelegatePath, appDelegate);
-  console.log("setup-ios: AppDelegate.swift, retour arrière par glissement activé");
+  sceneDelegate = mustReplace(
+    sceneDelegate,
+    "        SceneDelegateProxy.shared.scene(scene, openURLContexts: URLContexts)",
+    "        // Return of the Google OAuth flow: Firebase Auth handles it, not the\n" +
+      "        // Capacitor proxy. Any other URL goes on to Capacitor.\n" +
+      "        let others = URLContexts.filter { !Auth.auth().canHandle($0.url) }\n" +
+      "        if others.isEmpty {\n" +
+      "            return\n" +
+      "        }\n" +
+      "        SceneDelegateProxy.shared.scene(scene, openURLContexts: others)",
+    "SceneDelegate: Auth.auth().canHandle(url)",
+  );
+  writeFileSync(sceneDelegatePath, sceneDelegate);
+  console.log(
+    "setup-ios: SceneDelegate.swift, PjViewController, back swipe and Firebase Auth added",
+  );
 }
 
 // ---------------------------------------------------------------------------
