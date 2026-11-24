@@ -271,11 +271,16 @@ tabs went first, then what is new.
   knew the app before it. The device notes the version it played, and its
   card at the top of the help center plays it again (see "The help center
   shows how, part by part"); its last screen says where to find it.
-- **Nothing shows while it loads.** The video is served by the site
-  (`public/videos/`), not bundled: a few megabytes per language, for over
-  a minute and a half of viewing. At launch, the screen only appears once the
-  video can play; offline, nothing shows and nothing is noted, and it plays
-  at a later launch.
+- **Nothing shows while it loads, and the app stays usable.** The video is
+  served by the site (`public/videos/`), not bundled: a few megabytes per
+  language, for over a minute and a half of viewing. At launch, the screen
+  only appears once the video can play; offline, nothing shows and nothing is
+  noted, and it plays at a later launch. While it loads, the page behind
+  keeps its scroll and its back gesture: the overlay only holds the app once
+  it is on screen (`whatsNew.test.ts`, "while nothing shows"). The wait is
+  twenty seconds, then as long again as bytes keep arriving, up to a minute:
+  a download too slow for one turn is worth another, a request that brings
+  nothing is not.
 - **It is written to be read.** Every change is said in a sentence on the
   screen; the music only goes with it. Where the system refuses sound
   without a touch, it plays muted and offers « Activer le son » ("Turn the
@@ -305,9 +310,15 @@ launches, 53 readers, none of whom saw it, while the Android app, which
 streams the file whole, played it). Media files therefore carry their own
 headers in `firebase.json` (`public, max-age=604800`, plus the cross-origin
 header the webview needs for what it reads from the site, as the texts and
-the fonts do), and `whatsNew.test.ts` holds the rule. When it does not load,
-the way out says what failed (`error_source`, `error_code`: see
-`docs/tracking-plan.md`), so the next failure is readable without a device.
+the fonts do), and `whatsNew.test.ts` holds the rule. The iOS app has played
+the video since those headers went live (first starts on 18 November, none in
+the 30 days before), but not at every launch: some launches still wait out
+their minute with nothing playable. When it does not load, the way out
+therefore says what failed and how far the load got (`error_source`,
+`error_code`, `ready_state`, `network_state`, `buffered_seconds`, `waited_ms`:
+see `docs/tracking-plan.md`), so the next failure is readable without a
+device: a request that answered nothing is not a download too slow to
+finish.
 
 ### The help center shows how, part by part
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 import { pushOverlay } from "../composables/useOverlayStack";
@@ -48,8 +48,21 @@ const progress = ref(0);
 /** The furthest point reached, in seconds: how much of it was watched. */
 let watched = 0;
 let started = false;
-/** Twenty seconds without anything playable: a network too slow to bother. */
+/**
+ * Twenty seconds without anything playable, then as long again as bytes keep
+ * arriving, up to a minute in all. A file that is downloading slowly is worth
+ * waiting for: nothing shows while it loads and the app stays usable behind
+ * it. A request that brings nothing is not.
+ */
+const GIVE_UP_MS = 20000;
+/** Three turns of that wait at most. */
+const GIVE_UP_TURNS = 3;
 let giveUp = 0;
+let turnsLeft = GIVE_UP_TURNS;
+/** A `progress` since the last turn: the download is advancing. */
+let sawProgress = false;
+/** When the wait started, to say how long it lasted. */
+let waitStartedAt = 0;
 /**
  * Why it did not load, reported with the way out (`via: error`): what the
  * player itself said, or the wait that ran out. The video is served by the
@@ -57,11 +70,19 @@ let giveUp = 0;
  * plays a file only from a server that answers byte ranges, see
  * docs/design.md): without this, the Error tracking only ever said that it
  * failed, never what failed.
+ *
+ * A wait that runs out says nothing by itself, so it carries how far the load
+ * got: a request that answered nothing at all (`network_state` 2, nothing
+ * buffered, no `progress`) is not a download too slow to finish in a minute.
  */
 let failure: {
   error_source: "media" | "timeout";
   error_code: number | null;
   error_message: string | null;
+  ready_state: number | null;
+  network_state: number | null;
+  buffered_seconds: number | null;
+  waited_ms: number;
 } | null = null;
 
 /** At launch, nothing shows until the video can play. */
@@ -168,35 +189,94 @@ function learnMore(): void {
  */
 function onError(cause: "media" | "timeout"): void {
   window.clearTimeout(giveUp);
-  const error = video.value?.error ?? null;
+  const el = video.value;
+  const error = el?.error ?? null;
   failure = {
     error_source: cause,
     error_code: error?.code ?? null,
     error_message: error?.message ? error.message.slice(0, 200) : null,
+    ready_state: el?.readyState ?? null,
+    network_state: el?.networkState ?? null,
+    buffered_seconds: bufferedSeconds(el),
+    waited_ms: waitStartedAt ? Date.now() - waitStartedAt : 0,
   };
   if (source !== "launch") toast.error(t("whatsNew.failed"));
   close("error");
 }
 
-const removeOverlay = pushOverlay(() => close("back"));
+/** The seconds of video that have arrived, however they are cut up. */
+function bufferedSeconds(el: HTMLVideoElement | null): number | null {
+  const ranges = el?.buffered;
+  if (!ranges) return null;
+  let total = 0;
+  for (let i = 0; i < ranges.length; i += 1) total += ranges.end(i) - ranges.start(i);
+  return Math.round(total * 10) / 10;
+}
+
+/** Bytes are coming in: the next turn of the wait is worth it. */
+function onProgress(): void {
+  sawProgress = true;
+}
+
+/** One turn of the wait; another one as long as the download advances. */
+function waitForTheVideo(): void {
+  giveUp = window.setTimeout(() => {
+    if (ready.value) return;
+    turnsLeft -= 1;
+    if (turnsLeft > 0 && sawProgress) {
+      sawProgress = false;
+      waitForTheVideo();
+      return;
+    }
+    onError("timeout");
+  }, GIVE_UP_MS);
+}
 
 function onKeydown(event: KeyboardEvent): void {
   if (event.key === "Escape") close("back");
 }
 
-onMounted(() => {
-  giveUp = window.setTimeout(() => {
-    if (!ready.value) onError("timeout");
-  }, 20000);
+/**
+ * The app behind is held still only once the video is on screen.
+ *
+ * At launch nothing shows until the video can play, and that wait can last a
+ * minute. Locking the page and taking the back gesture from the moment this
+ * component mounts left the home page unable to scroll, under an overlay
+ * nobody could see, and the back gesture closed that invisible overlay
+ * instead of doing what it does on the home page. On iOS, where the 4.0
+ * video did not load at all, that was every launch (see docs/design.md,
+ * "The site must serve it cacheable").
+ */
+let removeOverlay: (() => void) | null = null;
+function holdTheApp(): void {
+  if (removeOverlay) return;
   document.documentElement.style.overflow = "hidden";
   document.addEventListener("keydown", onKeydown);
+  removeOverlay = pushOverlay(() => close("back"));
+}
+function releaseTheApp(): void {
+  if (!removeOverlay) return;
+  document.documentElement.style.overflow = "";
+  document.removeEventListener("keydown", onKeydown);
+  removeOverlay();
+  removeOverlay = null;
+}
+watch(
+  visible,
+  (shown) => {
+    if (shown) holdTheApp();
+  },
+  { immediate: true },
+);
+
+onMounted(() => {
+  waitStartedAt = Date.now();
+  waitForTheVideo();
 });
 
 onBeforeUnmount(() => {
   window.clearTimeout(giveUp);
-  document.documentElement.style.overflow = "";
-  document.removeEventListener("keydown", onKeydown);
-  removeOverlay();
+  releaseTheApp();
 });
 </script>
 
@@ -230,6 +310,7 @@ onBeforeUnmount(() => {
         preload="auto"
         @loadeddata="onReady"
         @canplay="onReady"
+        @progress="onProgress"
         @playing="onPlaying"
         @timeupdate="onTime"
         @ended="onEnded"
