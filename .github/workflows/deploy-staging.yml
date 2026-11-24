@@ -132,7 +132,15 @@ jobs:
         run: npm install -g "firebase-tools@$FIREBASE_TOOLS_VERSION"
 
       - name: Deploy hosting
-        run: firebase deploy --only hosting --project petite-jerusalem-staging --non-interactive
+        id: hosting
+        run: |
+          firebase deploy --only hosting --project petite-jerusalem-staging --non-interactive 2>&1 \
+            | tee "$RUNNER_TEMP/hosting.log"
+          # A rewrite to a function this run is about to create: see the
+          # "Re-release hosting" step after the functions.
+          if grep -q "Unable to find a valid endpoint for function" "$RUNNER_TEMP/hosting.log"; then
+            echo "rerelease=true" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Deploy Firestore rules, indexes and Storage rules
         run: |
@@ -152,6 +160,18 @@ jobs:
             sleep 30
           done
           exit "$code"
+
+      # Same as in deploy.yml: a rewrite saved before its 2nd gen function
+      # existed cannot reach it until hosting is released again.
+      - name: Re-release hosting for new functions
+        if: steps.hosting.outputs.rerelease == 'true'
+        run: |
+          firebase deploy --only hosting --project petite-jerusalem-staging --non-interactive 2>&1 \
+            | tee "$RUNNER_TEMP/hosting.log"
+          if grep -q "Unable to find a valid endpoint for function" "$RUNNER_TEMP/hosting.log"; then
+            echo "::error::A hosting rewrite still points at a function that does not exist."
+            exit 1
+          fi
 
   android:
     needs: version

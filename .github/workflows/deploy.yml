@@ -73,11 +73,17 @@ jobs:
       # (the previous combined "--only hosting,functions" let a transient 409 on
       # a function abort the deploy before hosting was ever released).
       - name: Deploy hosting
+        id: hosting
         run: |
           set +e
           out=$(firebase deploy --only hosting --project petite-jerusalem-dev --non-interactive 2>&1)
           code=$?
           echo "$out"
+          # A rewrite to a function this run is about to create: see the
+          # "Re-release hosting" step at the end.
+          if echo "$out" | grep -q "Unable to find a valid endpoint for function"; then
+            echo "rerelease=true" >> "$GITHUB_OUTPUT"
+          fi
           # firebase-tools occasionally exits 1 on the final release with
           # "is the current active version" even though the content is live.
           # Swallow ONLY that exact benign case; ANY other error fails the job.
@@ -158,3 +164,26 @@ jobs:
           done
           echo "::error::Functions deploy failed after 3 attempts."
           exit "$code"
+
+      # Hosting saves a rewrite to a function that does not exist yet in a
+      # form that cannot reach a 2nd gen function (firebase-tools warns
+      # "Unable to find a valid endpoint for function", and the path answers
+      # an error until hosting is released again). Hosting goes first so a
+      # functions failure never holds the site back; so when this run created
+      # a function behind a rewrite, the site is released once more, now that
+      # the function exists, and the rewrite points at its Cloud Run service.
+      # The files are already uploaded: only the configuration changes.
+      - name: Re-release hosting for new functions
+        if: steps.hosting.outputs.rerelease == 'true'
+        run: |
+          set +e
+          out=$(firebase deploy --only hosting --project petite-jerusalem-dev --non-interactive 2>&1)
+          code=$?
+          echo "$out"
+          if [ "$code" -ne 0 ] && ! echo "$out" | grep -q "is the current active version"; then
+            exit "$code"
+          fi
+          if echo "$out" | grep -q "Unable to find a valid endpoint for function"; then
+            echo "::error::A hosting rewrite still points at a function that does not exist."
+            exit 1
+          fi

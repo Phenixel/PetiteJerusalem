@@ -141,7 +141,10 @@ Nothing to create: no key, no secret.
 
 1. Deploy, with the next release tag (`deploy.yml`) or by hand:
    `firebase deploy --only functions:mcp,hosting --project petite-jerusalem-dev`.
-   The function must be deployed for the Hosting rewrites to find it.
+   The function must exist when the site is released for the Hosting
+   rewrites to reach it: by hand, deploy the functions first; the workflows
+   release the site again when a rewrite was saved before its function
+   existed (docs/firebase-ci-cd.md).
 2. Optional: in the Firestore console, a TTL policy on the `expireAt` field
    of `mcpAuthRequests`, `mcpCodes` and `mcpTokens`, so expired documents
    are deleted (they are refused anyway).
