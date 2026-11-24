@@ -104,7 +104,10 @@ test.describe("lecteur", () => {
 
   test("un traité du Talmud ouvre sur ses chapitres, puis sur un daf", async ({ page }) => {
     await gotoApp(page, "/bibliotheque/talmud");
-    const first = page.locator('a[href^="/bibliotheque/talmud/"]').first();
+    // Berakhot by name: the Daf Yomi banner, loaded asynchronously above the
+    // list, also links into /bibliotheque/talmud/ (to today's tractate), and
+    // the first such link became that one once the banner won the race.
+    const first = page.locator('a[href^="/bibliotheque/talmud/berakhot"]').first();
     await expect(first).toBeVisible();
     await first.click();
     // Un texte à plusieurs sections s'ouvre sur la liste de ses chapitres.
