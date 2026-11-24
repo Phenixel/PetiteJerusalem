@@ -274,6 +274,11 @@ comes with its `test.describe`.
   `getByPlaceholder("Rechercher un tehilim…")`. Never by Tailwind classes,
   which change at the first style tweak; an `href` or a form `id` remains
   acceptable.
+- A selector must point at one element and stay so when the page grows: a
+  new banner, card or link can match a broad selector written earlier (the
+  Daf Yomi banner on `/bibliotheque/talmud` once made the Talmud test open
+  Arakhin instead of Berakhot). Scope the locator or name the target
+  precisely rather than taking `.first()` of whatever matches.
 - A test creates its own data with `uniqueId()` (accounts, chains) and
   assumes nothing about the emulator's state: the suite tolerates an
   emulator that has already been used, and the tests run in parallel.
