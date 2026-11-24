@@ -16,7 +16,14 @@ import {
   toFeedbackSummary,
   type SupportRow,
 } from "../../functions/src/mcp/feedbackView";
-import { ALL_SCOPES, grantableScopes, narrowScopes, SCOPES } from "../../functions/src/mcp/scopes";
+import {
+  ALL_SCOPES,
+  approvedScopes,
+  narrowScopes,
+  offeredScopes,
+  SCOPES,
+} from "../../functions/src/mcp/scopes";
+import { planTeamReply, ReplyRefused } from "../../functions/src/mcp/teamReply";
 import { isOwner, OWNER_EMAILS } from "../../functions/src/mcp/owner";
 import { escapeHtml, renderConsentPage } from "../../functions/src/mcp/consentPage";
 
@@ -141,16 +148,55 @@ describe("scopes", () => {
     for (const scope of ALL_SCOPES) expect(SCOPES[scope].label.length).toBeGreaterThan(10);
   });
 
-  it("grants the known scopes asked for, or the default set", () => {
-    expect(grantableScopes(undefined)).toEqual(["support:read"]);
-    expect(grantableScopes(["openid", "offline_access"])).toEqual(["support:read"]);
-    expect(grantableScopes(["support:read", "support:read"])).toEqual(["support:read"]);
+  it("offers the known scopes asked for, or all of them", () => {
+    expect(offeredScopes(undefined)).toEqual(ALL_SCOPES);
+    expect(offeredScopes(["openid", "offline_access"])).toEqual(ALL_SCOPES);
+    expect(offeredScopes(["support:read", "support:read"])).toEqual(["support:read"]);
+  });
+
+  it("grants what the owner ticked among what was offered, and never preselects a write", () => {
+    expect(approvedScopes(ALL_SCOPES, ["support:reply", "admin:all"])).toEqual(["support:reply"]);
+    expect(approvedScopes(["support:read"], ["support:read", "support:reply"])).toEqual([
+      "support:read",
+    ]);
+    expect(approvedScopes(ALL_SCOPES, undefined)).toEqual(["support:read"]);
+    expect(SCOPES["support:reply"].preselected).toBe(false);
   });
 
   it("lets a refresh narrow its scopes, never widen them", () => {
     expect(narrowScopes(["support:read"], undefined)).toEqual(["support:read"]);
     expect(narrowScopes(["support:read"], ["support:write"])).toEqual([]);
     expect(narrowScopes([], ["support:read"])).toEqual([]);
+  });
+});
+
+describe("a reply from the team", () => {
+  const reachable = { uid: "u1", messages: [{ from: "user", text: "Bug" }] };
+
+  it("takes the back office's path: the thread is answered, or done when closed", () => {
+    expect(planTeamReply(reachable, "  Fixed, thanks.  ", false)).toEqual({
+      text: "Fixed, thanks.",
+      status: "answered",
+      mayNotify: true,
+    });
+    expect(planTeamReply({ guestKeyHash: "h" }, "Done", true)).toMatchObject({
+      status: "done",
+      mayNotify: false,
+    });
+    expect(planTeamReply({ guestKeyHash: "h", pushTokens: ["t"] }, "Done", true).mayNotify).toBe(
+      true,
+    );
+  });
+
+  it("refuses what would show nowhere, an empty or too long text, and a repeat", () => {
+    expect(() => planTeamReply({ contact: "a@b.c" }, "Hello", false)).toThrow(/by email/);
+    expect(() => planTeamReply(reachable, "   ", false)).toThrow(ReplyRefused);
+    expect(() => planTeamReply(reachable, "x".repeat(2001), false)).toThrow(ReplyRefused);
+    const answered = {
+      ...reachable,
+      messages: [...reachable.messages, { from: "team", text: "Fixed, thanks." }],
+    };
+    expect(() => planTeamReply(answered, "Fixed, thanks. ", false)).toThrow(/already/);
   });
 });
 
@@ -179,13 +225,22 @@ describe("the consent page", () => {
     requestId: "request_id_0123456789",
     clientName: `<script>alert("x")</script>`,
     redirectHost: "claude.ai",
-    scopeLabels: [SCOPES["support:read"].label],
+    scopes: ALL_SCOPES.map((scope) => ({
+      scope,
+      label: SCOPES[scope].label,
+      checked: SCOPES[scope].preselected,
+    })),
   });
 
   it("escapes what the client chose to call itself", () => {
     expect(escapeHtml(`<a href="x">&'`)).toBe("&lt;a href=&quot;x&quot;&gt;&amp;&#39;");
     expect(page).not.toContain(`<script>alert`);
     expect(page).toContain("&lt;script&gt;");
+  });
+
+  it("ticks reading and leaves replying to the owner's own tick", () => {
+    expect(page).toContain('value="support:read" checked');
+    expect(page).toContain('value="support:reply">');
   });
 
   it("names where the access goes and what it allows", () => {
@@ -199,7 +254,7 @@ describe("the consent page", () => {
       requestId: "r",
       clientName: "</script><script>alert(1)</script>",
       redirectHost: "x",
-      scopeLabels: [],
+      scopes: [],
     });
     expect(tricky.match(/<\/script>/g)?.length).toBe(page.match(/<\/script>/g)?.length);
   });

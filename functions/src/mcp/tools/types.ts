@@ -6,10 +6,12 @@
  */
 import type { z } from "zod";
 import type { Scope } from "../scopes";
-import type { SupportSource } from "../supportSource";
+import type { SupportReplies, SupportSource } from "../supportSource";
 
 export interface ToolContext {
   support: SupportSource;
+  /** Only the tools of scope support:reply use it. */
+  replies: SupportReplies;
 }
 
 export interface ToolDefinition<Shape extends z.ZodRawShape = z.ZodRawShape> {
@@ -18,8 +20,10 @@ export interface ToolDefinition<Shape extends z.ZodRawShape = z.ZodRawShape> {
   /** What the assistant reads to decide when to call it. */
   description: string;
   scope: Scope;
-  /** True for a tool that changes nothing (all of them, for now). */
+  /** True for a tool that changes nothing. */
   readOnly: boolean;
+  /** True for a tool whose effect reaches people outside the app's team. */
+  openWorld?: boolean;
   input: Shape;
   run(args: z.infer<z.ZodObject<Shape>>, context: ToolContext): Promise<unknown>;
 }

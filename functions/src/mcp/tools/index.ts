@@ -4,7 +4,8 @@
  * was granted.
  */
 import { getFeedback, listFeedback } from "./feedback";
+import { replyToFeedback } from "./reply";
 import type { ToolDefinition } from "./types";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const TOOLS: ToolDefinition<any>[] = [listFeedback, getFeedback];
+export const TOOLS: ToolDefinition<any>[] = [listFeedback, getFeedback, replyToFeedback];

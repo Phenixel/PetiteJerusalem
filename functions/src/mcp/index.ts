@@ -20,7 +20,7 @@ async function buildApp(): Promise<Express> {
     { createMcpApp, mcpUrls },
     { PjOAuthProvider },
     { firestoreStore },
-    { firestoreSupportSource },
+    { firestoreSupportReplies, firestoreSupportSource },
     { isOwner },
   ] = await Promise.all([
     import("firebase-admin/firestore"),
@@ -56,7 +56,11 @@ async function buildApp(): Promise<Express> {
       },
     },
   });
-  return createMcpApp({ provider, context: { support: firestoreSupportSource(db) }, siteUrl });
+  return createMcpApp({
+    provider,
+    context: { support: firestoreSupportSource(db), replies: firestoreSupportReplies(db) },
+    siteUrl,
+  });
 }
 
 export const mcp = onRequest({ maxInstances: 2, concurrency: 20 }, async (req, res) => {

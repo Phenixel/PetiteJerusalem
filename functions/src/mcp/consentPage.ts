@@ -27,8 +27,8 @@ export interface ConsentPageInput {
   clientName: string;
   /** Where the browser goes back once done, shown so the owner can check it. */
   redirectHost: string;
-  /** What will be granted, in words (scopes.ts). */
-  scopeLabels: string[];
+  /** What the owner may grant, in words (scopes.ts), and what starts ticked. */
+  scopes: { scope: string; label: string; checked: boolean }[];
 }
 
 export function escapeHtml(value: string): string {
@@ -57,7 +57,9 @@ const STYLE = `
   body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 16px; background: var(--bg); color: var(--ink); font: 16px/1.5 Manrope, system-ui, sans-serif; }
   main { width: 100%; max-width: 440px; background: var(--surface); border: 1px solid var(--line); padding: 24px; }
   h1 { font: 400 1.5rem/1.25 "Playfair Display", Georgia, serif; margin: 0 0 12px; }
-  ul { padding-left: 20px; }
+  ul.scopes { list-style: none; padding: 0; display: grid; gap: 10px; }
+  ul.scopes label { display: flex; gap: 10px; align-items: flex-start; cursor: pointer; }
+  ul.scopes input { margin-top: 5px; }
   p.muted, #status { color: var(--muted); font-size: 0.9rem; }
   .actions { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 20px; }
   button { font: inherit; border-radius: 999px; padding: 10px 18px; border: 1px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; }
@@ -67,7 +69,12 @@ const STYLE = `
 `;
 
 export function renderConsentPage(input: ConsentPageInput): string {
-  const scopes = input.scopeLabels.map((label) => `<li>${escapeHtml(label)}</li>`).join("");
+  const scopes = input.scopes
+    .map(
+      ({ scope, label, checked }) =>
+        `<li><label><input type="checkbox" name="scope" value="${escapeHtml(scope)}"${checked ? " checked" : ""}> ${escapeHtml(label)}</label></li>`,
+    )
+    .join("");
   const config = scriptJson({ request: input.requestId, firebase: FIREBASE_JS_VERSION });
   const sdk = `https://www.gstatic.com/firebasejs/${FIREBASE_JS_VERSION}`;
   return `<!doctype html>
@@ -82,8 +89,8 @@ export function renderConsentPage(input: ConsentPageInput): string {
 <body>
 <main>
   <h1>Connecter un assistant</h1>
-  <p><strong>${escapeHtml(input.clientName || "Un assistant")}</strong> demande à accéder à Petite Jérusalem pour :</p>
-  <ul>${scopes}</ul>
+  <p><strong>${escapeHtml(input.clientName || "Un assistant")}</strong> demande à accéder à Petite Jérusalem. Cochez ce que vous lui accordez :</p>
+  <ul class="scopes">${scopes}</ul>
   <p class="muted">Il sera renvoyé vers ${escapeHtml(input.redirectHost)}. Seul le compte propriétaire peut autoriser cet accès.</p>
   <p id="status">Vérification de la connexion…</p>
   <div class="actions">
@@ -114,8 +121,17 @@ export function renderConsentPage(input: ConsentPageInput): string {
     return json;
   }
 
+  const boxes = [...document.querySelectorAll('input[name="scope"]')];
+  const chosen = () => boxes.filter((box) => box.checked).map((box) => box.value);
+  let signedIn = false;
+  function refresh() {
+    allow.disabled = !signedIn || chosen().length === 0;
+  }
+  for (const box of boxes) box.addEventListener("change", refresh);
+
   function busy(on) {
     for (const button of [allow, signin, deny]) button.disabled = on;
+    if (!on) refresh();
   }
 
   deny.addEventListener("click", async () => {
@@ -135,7 +151,8 @@ export function renderConsentPage(input: ConsentPageInput): string {
     provider.setCustomParameters({ prompt: "select_account" });
 
     onAuthStateChanged(auth, (user) => {
-      allow.disabled = !user;
+      signedIn = !!user;
+      refresh();
       signin.hidden = false;
       signin.textContent = user ? "Changer de compte" : "Se connecter avec Google";
       status.textContent = user
@@ -155,7 +172,7 @@ export function renderConsentPage(input: ConsentPageInput): string {
       busy(true);
       try {
         const idToken = await auth.currentUser.getIdToken(true);
-        const { redirect } = await post("/mcp/oauth/approve", { request, idToken });
+        const { redirect } = await post("/mcp/oauth/approve", { request, idToken, scopes: chosen() });
         status.textContent = "Accès accordé, retour à l'assistant…";
         location.assign(redirect);
       } catch (error) {

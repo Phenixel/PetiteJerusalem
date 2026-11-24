@@ -1,11 +1,13 @@
 /**
- * The MCP tools' only door into the user messages: `support/{id}`, read only.
- * The tools never see the Firestore handle, so a tool cannot reach another
- * collection without a new, explicit source like this one (and a new scope,
- * scopes.ts).
+ * The MCP tools' only doors into the user messages, `support/{id}`: reading
+ * (`SupportSource`), and adding a team reply (`SupportReplies`), nothing
+ * else. The tools never see the Firestore handle, so a tool cannot reach
+ * another collection, or write anything else, without a new, explicit door
+ * like these (and a new scope, scopes.ts).
  */
-import type { Firestore } from "firebase-admin/firestore";
+import { FieldValue, Timestamp, type Firestore } from "firebase-admin/firestore";
 import { isThreadId, type SupportRow } from "./feedbackView";
+import { planTeamReply, type TeamReplyPlan } from "./teamReply";
 
 export interface SupportSource {
   /** Threads active since `since` (all of them without), most recent first. */
@@ -14,6 +16,15 @@ export interface SupportSource {
     scanMax: number;
   }): Promise<{ rows: SupportRow[]; truncated: boolean }>;
   get(id: string): Promise<SupportRow | null>;
+}
+
+export interface SupportReplies {
+  /**
+   * Adds the team's reply to one thread, as the back office does. Throws
+   * ReplyRefused when it may not go (teamReply.ts); null when there is no
+   * such thread.
+   */
+  reply(id: string, text: string, close: boolean): Promise<TeamReplyPlan | null>;
 }
 
 const COLLECTION = "support";
@@ -31,6 +42,51 @@ export function firestoreSupportSource(db: Firestore): SupportSource {
       if (!isThreadId(id)) return null;
       const snap = await db.collection(COLLECTION).doc(id).get();
       return snap.exists ? { id: snap.id, data: snap.data() ?? {} } : null;
+    },
+  };
+}
+
+export function firestoreSupportReplies(db: Firestore): SupportReplies {
+  return {
+    async reply(id, text, close) {
+      if (!isThreadId(id)) return null;
+      const ref = db.collection(COLLECTION).doc(id);
+      return db.runTransaction(async (tx) => {
+        const snap = await tx.get(ref);
+        if (!snap.exists) return null;
+        const plan = planTeamReply(snap.data() ?? {}, text, close);
+        // The same fields as replySupportThread (src/services/adminService.ts).
+        tx.update(ref, {
+          messages: FieldValue.arrayUnion({ from: "team", text: plan.text, at: Timestamp.now() }),
+          status: plan.status,
+          lastFrom: "team",
+          unreadByUser: true,
+          updatedAt: FieldValue.serverTimestamp(),
+        });
+        return plan;
+      });
+    },
+  };
+}
+
+/** The same, over a fixed list it changes in place: the tests' door. */
+export function memorySupportReplies(rows: SupportRow[], now = () => new Date()): SupportReplies {
+  return {
+    async reply(id, text, close) {
+      const row = rows.find((candidate) => candidate.id === id);
+      if (!row) return null;
+      const plan = planTeamReply(row.data, text, close);
+      const at = now();
+      const messages = Array.isArray(row.data.messages) ? row.data.messages : [];
+      row.data = {
+        ...row.data,
+        messages: [...messages, { from: "team", text: plan.text, at }],
+        status: plan.status,
+        lastFrom: "team",
+        unreadByUser: true,
+        updatedAt: at,
+      };
+      return plan;
     },
   };
 }

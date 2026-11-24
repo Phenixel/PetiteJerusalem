@@ -36,7 +36,7 @@ import type {
   OAuthTokens,
 } from "@modelcontextprotocol/sdk/shared/auth.js";
 import { renderConsentPage } from "./consentPage";
-import { grantableScopes, narrowScopes, SCOPES, type Scope } from "./scopes";
+import { approvedScopes, narrowScopes, offeredScopes, SCOPES, type Scope } from "./scopes";
 import type { McpStore } from "./store";
 
 export const CODE_TTL_S = 5 * 60;
@@ -165,7 +165,7 @@ export class PjOAuthProvider implements OAuthServerProvider {
       throw new InvalidRequestError("Unsupported redirect_uri.");
     }
     const requestId = randomToken();
-    const scopes = grantableScopes(params.scopes);
+    const scopes = offeredScopes(params.scopes);
     const pending: PendingRequest = {
       clientId: client.client_id,
       clientName: client.client_name ?? "",
@@ -185,7 +185,11 @@ export class PjOAuthProvider implements OAuthServerProvider {
           requestId,
           clientName: pending.clientName,
           redirectHost: new URL(params.redirectUri).host,
-          scopeLabels: scopes.map((scope) => SCOPES[scope].label),
+          scopes: scopes.map((scope) => ({
+            scope,
+            label: SCOPES[scope].label,
+            checked: SCOPES[scope].preselected,
+          })),
         }),
       );
   }
@@ -203,21 +207,29 @@ export class PjOAuthProvider implements OAuthServerProvider {
     return request;
   }
 
-  /** The owner approved on the consent page: returns where to send the browser. */
-  async approve(requestId: unknown, idToken: unknown): Promise<string> {
+  /**
+   * The owner approved on the consent page, ticking what he grants among the
+   * offered scopes: returns where to send the browser.
+   */
+  async approve(requestId: unknown, idToken: unknown, chosen?: unknown): Promise<string> {
     // The account is checked before the request is used, so that signing in
     // with the wrong account first leaves the request open for the right one.
     const owner =
       typeof idToken === "string" && idToken ? await this.owner.verifyOwnerIdToken(idToken) : null;
     if (!owner)
       throw new AccessDeniedError("Seul le compte propriétaire peut autoriser cet accès.");
+    if (Array.isArray(chosen) && chosen.length === 0) {
+      throw new InvalidRequestError("Cochez au moins un accès à accorder.");
+    }
     const request = await this.takeRequest(requestId);
+    const scopes = approvedScopes(request.scopes, chosen);
+    if (!scopes.length) throw new InvalidRequestError("Aucun des accès cochés n'était demandé.");
     const code = randomToken();
     const record: CodeRecord = {
       clientId: request.clientId,
       redirectUri: request.redirectUri,
       codeChallenge: request.codeChallenge,
-      scopes: request.scopes,
+      scopes,
       uid: owner.uid,
       expiresAt: this.now() + CODE_TTL_S * 1000,
     };

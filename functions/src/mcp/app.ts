@@ -144,7 +144,7 @@ export function createMcpApp(options: McpAppOptions): express.Express {
   app.post(
     "/mcp/oauth/approve",
     express.json({ limit: "16kb" }),
-    consent((body) => provider.approve(body.request, body.idToken)),
+    consent((body) => provider.approve(body.request, body.idToken, body.scopes)),
   );
   app.post(
     "/mcp/oauth/deny",

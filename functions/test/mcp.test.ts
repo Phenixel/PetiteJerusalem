@@ -13,7 +13,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createMcpApp } from "../src/mcp/app";
 import { PjOAuthProvider } from "../src/mcp/oauthProvider";
 import { memoryStore } from "../src/mcp/store";
-import { memorySupportSource } from "../src/mcp/supportSource";
+import { memorySupportReplies, memorySupportSource } from "../src/mcp/supportSource";
 import { toolsFor } from "../src/mcp/server";
 
 const SITE = "https://pj.test";
@@ -34,7 +34,7 @@ const provider = new PjOAuthProvider({
 });
 
 const day = (iso: string) => new Date(iso);
-const support = memorySupportSource([
+const rows = [
   {
     id: "threadNew000000000001",
     data: {
@@ -78,13 +78,20 @@ const support = memorySupportSource([
       updatedAt: day("2026-11-02T09:00:00Z"),
     },
   },
-]);
+];
+const support = memorySupportSource(rows);
+const replies = memorySupportReplies(rows, () => day("2026-11-24T20:00:00Z"));
 
 let server: Server;
 let base: string;
 
 beforeAll(async () => {
-  const app = createMcpApp({ provider, context: { support }, siteUrl: SITE, rateLimit: false });
+  const app = createMcpApp({
+    provider,
+    context: { support, replies },
+    siteUrl: SITE,
+    rateLimit: false,
+  });
   server = app.listen(0);
   await new Promise((resolve) => server.once("listening", resolve));
   base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
@@ -143,13 +150,17 @@ async function token(form: Record<string, string>) {
   });
 }
 
-/** Registration, consent by the owner, code exchange: a fresh pair of tokens. */
-async function connect() {
+/**
+ * Registration, consent by the owner, code exchange: a fresh pair of tokens.
+ * `scopes` is what the owner ticks; without it, what the page sends when
+ * nothing is said (the preselected scopes only).
+ */
+async function connect(scopes?: string[]) {
   const client = (await (await register()).json()) as { client_id: string };
   const { verifier, challenge } = pkce();
   const { request } = await openConsent(client.client_id, challenge);
   const { redirect } = (await (
-    await post("/mcp/oauth/approve", { request, idToken: "owner-id-token" })
+    await post("/mcp/oauth/approve", { request, idToken: "owner-id-token", scopes })
   ).json()) as {
     redirect: string;
   };
@@ -452,5 +463,115 @@ describe("the MCP endpoint", () => {
       "list_feedback",
       "get_feedback",
     ]);
+    expect(toolsFor(["support:reply"]).map((tool) => tool.name)).toEqual(["reply_to_feedback"]);
+  });
+});
+
+describe("replying, a scope the owner grants apart", () => {
+  it("is offered on the consent page, unticked", async () => {
+    const client = (await (await register()).json()) as { client_id: string };
+    const { html } = await openConsent(client.client_id, pkce().challenge);
+    expect(html).toMatch(/value="support:read" checked/);
+    expect(html).toMatch(/value="support:reply">/);
+    expect(html).toContain("Répondre en votre nom");
+  });
+
+  it("is not granted unless ticked, and nothing ticked grants nothing", async () => {
+    const readOnly = await connect();
+    expect(readOnly.scope).toBe("support:read");
+    const listed = (await (await rpc(readOnly.access_token, "tools/list")).json()) as {
+      result: { tools: { name: string }[] };
+    };
+    expect(listed.result.tools.map((tool) => tool.name)).not.toContain("reply_to_feedback");
+    const refused = await callTool(readOnly.access_token, "reply_to_feedback", {
+      id: "threadNew000000000001",
+      text: "Hello",
+    });
+    expect(refused.isError).toBe(true);
+
+    const client = (await (await register()).json()) as { client_id: string };
+    const { request } = await openConsent(client.client_id, pkce().challenge);
+    const none = await post("/mcp/oauth/approve", {
+      request,
+      idToken: "owner-id-token",
+      scopes: [],
+    });
+    expect(none.status).toBe(400);
+    // The request is still open: the owner can tick something and approve.
+    const one = await post("/mcp/oauth/approve", {
+      request,
+      idToken: "owner-id-token",
+      scopes: ["support:reply"],
+    });
+    expect(one.status).toBe(200);
+  });
+
+  it("sends one approved text to one thread, as the back office would", async () => {
+    const { access_token, scope } = await connect(["support:read", "support:reply"]);
+    expect(scope).toBe("support:read support:reply");
+    const tool = (
+      (await (await rpc(access_token, "tools/list")).json()) as {
+        result: { tools: { name: string; annotations?: Record<string, boolean> }[] };
+      }
+    ).result.tools.find((candidate) => candidate.name === "reply_to_feedback");
+    expect(tool?.annotations).toMatchObject({
+      readOnlyHint: false,
+      destructiveHint: false,
+      openWorldHint: true,
+    });
+
+    const sent = await callTool(access_token, "reply_to_feedback", {
+      id: "threadNew000000000001",
+      text: "  Fixed in 4.0.2, thank you!  ",
+    });
+    expect(sent.isError).toBeFalsy();
+    expect(JSON.parse(sent.content[0]?.text ?? "{}")).toMatchObject({
+      sent: true,
+      status: "answered",
+    });
+    expect(rows[0]?.data).toMatchObject({
+      status: "answered",
+      lastFrom: "team",
+      unreadByUser: true,
+      updatedAt: day("2026-11-24T20:00:00Z"),
+    });
+    const thread = JSON.parse(
+      (await callTool(access_token, "get_feedback", { id: "threadNew000000000001" })).content[0]
+        ?.text ?? "{}",
+    );
+    expect(thread.messages.at(-1)).toMatchObject({
+      from: "team",
+      text: "Fixed in 4.0.2, thank you!",
+    });
+
+    const twice = await callTool(access_token, "reply_to_feedback", {
+      id: "threadNew000000000001",
+      text: "Fixed in 4.0.2, thank you!",
+    });
+    expect(twice.isError).toBe(true);
+    expect(rows[0]?.data.messages).toHaveLength(2);
+
+    const closed = await callTool(access_token, "reply_to_feedback", {
+      id: "threadNew000000000001",
+      text: "Closing this one.",
+      close: true,
+    });
+    expect(JSON.parse(closed.content[0]?.text ?? "{}")).toMatchObject({ status: "done" });
+  });
+
+  it("refuses a thread the person could not read, or that does not exist", async () => {
+    const { access_token } = await connect(["support:reply"]);
+    const nowhere = await callTool(access_token, "reply_to_feedback", {
+      id: "threadDone00000000002",
+      text: "Hello",
+    });
+    expect(nowhere.isError).toBe(true);
+    expect(nowhere.content[0]?.text).toContain("by email");
+    expect(rows[1]?.data.messages).toHaveLength(2);
+    const missing = await callTool(access_token, "reply_to_feedback", {
+      id: "threadMissing0000000",
+      text: "Hello",
+    });
+    expect(missing.isError).toBe(true);
   });
 });
