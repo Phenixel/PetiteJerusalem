@@ -223,14 +223,36 @@ export function settledStagingBuilds(buildsResponse) {
  * @param {Upload[]} uploads
  * @param {Map<string, string>} [signedBuilds] id de certificat vers numéro de build
  *   (préfixé par stagingBuildKey pour un build de staging)
+ * With a persistent certificate (`persistentId`, the one every run signs
+ * with once IOS_DISTRIBUTION_P12 is set), that certificate is never
+ * revocable, and the "previous run" rule no longer holds for the others: the
+ * previous run signed with the persistent one. A CI certificate created
+ * after it, with no marker, keeps an open-ended window, which only errs on
+ * the side of keeping it.
+ *
+ * @param {Certificate[]} certificates
+ * @param {Upload[]} uploads
+ * @param {Map<string, string>} [signedBuilds] id de certificat vers numéro de build
+ *   (préfixé par stagingBuildKey pour un build de staging)
  * @param {Set<string>} [settled] processed staging builds (settledStagingBuilds)
+ * @param {string} [persistentId] id of the persistent CI certificate, if any
  * @returns {Certificate[]}
  */
-export function revocableCertificates(certificates, uploads, signedBuilds = new Map(), settled = new Set()) {
+export function revocableCertificates(
+  certificates,
+  uploads,
+  signedBuilds = new Map(),
+  settled = new Set(),
+  persistentId = undefined,
+) {
   certificates.forEach((certificate, index) => {
+    if (persistentId && certificate.id === persistentId) {
+      certificate.keptFor = "persistent CI certificate, every run signs with it";
+      return;
+    }
     const next = certificates[index + 1];
     const signed = signedBuilds.get(certificate.id);
-    if (!next && !(signed && settled.has(signed))) {
+    if (!next && !persistentId && !(signed && settled.has(signed))) {
       certificate.keptFor = "certificat du run précédent";
       return;
     }
@@ -240,9 +262,26 @@ export function revocableCertificates(certificates, uploads, signedBuilds = new 
       return;
     }
     const from = certificate.created - ATTRIBUTION_MARGIN_MS;
-    const to = next.created + ATTRIBUTION_MARGIN_MS;
+    const to = next ? next.created + ATTRIBUTION_MARGIN_MS : Infinity;
     const upload = uploads.find((candidate) => candidate.uploadedAt >= from && candidate.uploadedAt < to);
     certificate.keptFor = upload && `provenance inconnue, et sa fenêtre contient ${upload.label}`;
   });
   return certificates.filter((certificate) => !certificate.keptFor);
+}
+
+/**
+ * The /v1/certificates entry whose content is exactly this DER certificate,
+ * or undefined. This is how the persistent certificate stored in the
+ * IOS_DISTRIBUTION_P12 secret is found on the account: comparing the bytes
+ * rather than a serial number or a name, which Apple formats its own way.
+ *
+ * @param {any[]} data /v1/certificates entries
+ * @param {Buffer} der the certificate, DER-encoded
+ * @returns {any | undefined}
+ */
+export function certificateWithContent(data, der) {
+  return data.find((entry) => {
+    const content = entry.attributes?.certificateContent;
+    return typeof content === "string" && Buffer.from(content, "base64").equals(der);
+  });
 }

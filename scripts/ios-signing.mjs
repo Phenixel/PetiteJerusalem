@@ -61,10 +61,28 @@
  *
  * Rien n'est stocké dans le repo : ni .p12, ni profil, ni mot de passe.
  *
+ * PERSISTENT CERTIFICATE (preferred)
+ * A certificate per run means one revocation email from Apple per build,
+ * every time the quota is trimmed, which reads like an attack on the
+ * account. When the IOS_DISTRIBUTION_P12 and IOS_DISTRIBUTION_P12_PASSWORD
+ * secrets hold a distribution certificate and its private key, every run
+ * signs with that one: no certificate is created, it is never revoked, and
+ * the pruning above only clears the certificates left by earlier runs. The
+ * app profile is then deleted at cleanup like the others, since a deleted
+ * profile does not invalidate a signed binary and no marker is needed.
+ * Create the certificate once, on your own machine, with
+ * `--new-persistent-certificate` (see docs/ios-ci-cd.md). It expires after a
+ * year: setup warns 30 days before, and fails once it has expired or been
+ * revoked. Without those secrets, the per-run behavior above is unchanged.
+ *
  * Usage :
  *   ASC_KEY_ID=… ASC_ISSUER_ID=… ASC_PRIVATE_KEY=… IOS_DEVELOPMENT_TEAM=… \
  *     IOS_BUILD_NUMBER=3070800 node scripts/ios-signing.mjs --setup
  *   … node scripts/ios-signing.mjs --cleanup     (idempotent, ne casse jamais le run)
+ *   ASC_KEY_ID=… ASC_ISSUER_ID=… ASC_PRIVATE_KEY=… \
+ *     node scripts/ios-signing.mjs --new-persistent-certificate
+ *                                creates the persistent certificate and writes
+ *                                its .p12 in the current folder
  *
  * --setup écrit dans $GITHUB_ENV (lues ensuite par scripts/setup-ios.mjs et
  * par l'export de l'IPA) :
@@ -73,7 +91,10 @@
  *   IOS_WATCH_PROVISIONING_PROFILE   celui de l'app Apple Watch
  *   IOS_CODE_SIGN_IDENTITY       nom complet de l'identité de signature
  *   IOS_SIGNING_CERTIFICATE_ID   id ASC du certificat (--cleanup ne le révoque
- *                                que si le run n'a rien envoyé, cf. plus haut)
+ *                                que si le run n'a rien envoyé, cf. plus haut) ;
+ *                                never set with a persistent certificate
+ *   IOS_SIGNING_PERSISTENT       "1" when the run signs with the persistent
+ *                                certificate, so that --cleanup keeps no marker
  *   IOS_SIGNING_PROFILE_ID       id ASC du profil de l'app, pour --cleanup (qui
  *                                ne le supprime que si le run n'a rien envoyé)
  *   IOS_WIDGET_SIGNING_PROFILE_ID  id ASC du profil de l'extension, toujours
@@ -90,6 +111,7 @@ import { join } from "node:path";
 import { RETRY_ATTEMPTS, withRetry } from "./lib/asc-retry.mjs";
 import {
   CERTIFICATE_QUOTA,
+  certificateWithContent,
   distributionCertificates,
   protectedUploads,
   revocableCertificates,
@@ -168,8 +190,25 @@ const buildNumber = process.env.IOS_BUILD_NUMBER?.trim();
 const CAPABILITIES = ["PUSH_NOTIFICATIONS", "APPLE_ID_AUTH", "ASSOCIATED_DOMAINS", "APP_GROUPS"];
 const WIDGET_CAPABILITIES = ["APP_GROUPS"];
 
-const mode = process.argv.includes("--cleanup") ? "cleanup" : "setup";
+const mode = process.argv.includes("--cleanup")
+  ? "cleanup"
+  : process.argv.includes("--new-persistent-certificate")
+    ? "new-persistent-certificate"
+    : "setup";
 const isCleanup = mode === "cleanup";
+
+// The persistent certificate and its private key, as a base64 .p12 (see the
+// header). Both secrets or neither: half of them is a setup mistake, and
+// signing with a fresh certificate instead would hide it.
+const persistentP12 = process.env.IOS_DISTRIBUTION_P12?.replace(/\s+/g, "") ?? "";
+const persistentP12Password = process.env.IOS_DISTRIBUTION_P12_PASSWORD ?? "";
+const usesPersistentCertificate = Boolean(persistentP12);
+if (mode === "setup" && Boolean(persistentP12) !== Boolean(persistentP12Password)) {
+  console.error(
+    "ios-signing: IOS_DISTRIBUTION_P12 and IOS_DISTRIBUTION_P12_PASSWORD go together, only one is set",
+  );
+  process.exit(1);
+}
 
 const keyId = process.env.ASC_KEY_ID?.trim();
 const issuerId = process.env.ASC_ISSUER_ID?.trim();
@@ -265,6 +304,98 @@ function exportEnv(name, value) {
 const workDir = process.env.RUNNER_TEMP || tmpdir();
 const keychainPath = join(workDir, "petitejerusalem-signing.keychain-db");
 
+/** Whether this openssl is LibreSSL, whose PKCS#12 output the keychain reads as is. */
+const isLibreSsl = () => /LibreSSL/i.test(run(OPENSSL, ["version"]) ?? "");
+
+// ---------------------------------------------------------------------------
+// Persistent certificate: created once, on the owner's machine, never in CI.
+// ---------------------------------------------------------------------------
+// The private key is generated here and only ever leaves in the .p12 written
+// to the current folder, which the owner stores as a GitHub secret and then
+// deletes. Taking a quota slot is the point, so nothing is pruned here: when
+// Apple refuses, its message names the quota and the owner decides which
+// certificate goes.
+if (mode === "new-persistent-certificate") {
+  const outDir = process.cwd();
+  const p12Out = join(outDir, "petitejerusalem-distribution.p12");
+  if (existsSync(p12Out)) {
+    console.error(`ios-signing: ${p12Out} already exists, move it away first`);
+    process.exit(1);
+  }
+  const secret = randomBytes(24).toString("hex");
+  const key = join(workDir, "persistent-key.pem");
+  const csr = join(workDir, "persistent.csr");
+  const cer = join(workDir, "persistent.cer");
+  const pem = join(workDir, "persistent-cert.pem");
+  try {
+    run(OPENSSL, [
+      "req",
+      "-new",
+      "-newkey",
+      "rsa:2048",
+      "-nodes",
+      "-keyout",
+      key,
+      "-out",
+      csr,
+      "-subj",
+      "/CN=Petite Jerusalem CI persistent/O=Petite Jerusalem/C=FR",
+    ]);
+    let created;
+    try {
+      created = await api("POST", "/v1/certificates", {
+        data: {
+          type: "certificates",
+          attributes: { certificateType: "DISTRIBUTION", csrContent: readFileSync(csr, "utf8") },
+        },
+      });
+    } catch (error) {
+      if (error.status !== 403 && error.status !== 409) throw error;
+      console.error(
+        `ios-signing: Apple refuses a new distribution certificate, ${error.message}\n` +
+          "  The quota of three is full. Revoke on developer.apple.com → Certificates one\n" +
+          "  that no binary in review or on sale depends on, then run this again.",
+      );
+      for (const file of [key, csr]) rmSync(file, { force: true });
+      process.exit(1);
+    }
+    writeFileSync(cer, Buffer.from(created.data.attributes.certificateContent, "base64"));
+    run(OPENSSL, ["x509", "-inform", "DER", "-in", cer, "-out", pem]);
+    // OpenSSL 3 encrypts a PKCS#12 with algorithms some keychains read badly:
+    // the SHA1/3DES ones are what `security import` has always accepted.
+    const compat = isLibreSsl()
+      ? []
+      : ["-certpbe", "PBE-SHA1-3DES", "-keypbe", "PBE-SHA1-3DES", "-macalg", "sha1"];
+    run(OPENSSL, [
+      "pkcs12",
+      "-export",
+      ...compat,
+      "-inkey",
+      key,
+      "-in",
+      pem,
+      "-out",
+      p12Out,
+      "-name",
+      "Petite Jerusalem CI",
+      "-passout",
+      `pass:${secret}`,
+    ]);
+    console.log(
+      `ios-signing: distribution certificate ${created.data.id} created, ` +
+        `expires on ${created.data.attributes.expirationDate}\n` +
+        `  .p12 written to ${p12Out}\n\n` +
+        "  Store it as two repository secrets, then delete the file:\n" +
+        `    base64 -i ${p12Out} | gh secret set IOS_DISTRIBUTION_P12\n` +
+        `    gh secret set IOS_DISTRIBUTION_P12_PASSWORD --body ${secret}\n` +
+        `    rm ${p12Out}`,
+    );
+  } finally {
+    for (const file of [key, csr, cer, pem]) rmSync(file, { force: true });
+  }
+  process.exit(0);
+}
+
 // ---------------------------------------------------------------------------
 // Nettoyage : supprime le profil, le trousseau, et le certificat du run si
 // celui-ci n'a envoyé aucun binaire.
@@ -278,7 +409,10 @@ if (isCleanup) {
   // cf. l'en-tête).
   const uploaded = Boolean(process.env.IOS_BUILD_UPLOADED);
   const profileId = process.env.IOS_SIGNING_PROFILE_ID;
-  if (profileId && uploaded) {
+  // With the persistent certificate, nothing is ever revoked, so the profile
+  // marks nothing worth keeping: it goes like the others.
+  const keepsMarker = uploaded && !process.env.IOS_SIGNING_PERSISTENT;
+  if (profileId && keepsMarker) {
     // Le profil devient le marqueur du binaire envoyé : il dit au prochain run
     // quel certificat a signé quel build. Il sera supprimé, avec le
     // certificat, quand ce build n'attendra plus rien d'Apple.
@@ -439,7 +573,7 @@ if (SHIP_WATCH_APPS) {
  * impossible ne révoque rien du tout : mieux vaut un run rouge qu'une
  * signature invalidée sous un binaire en examen.
  */
-async function pruneCertificates(certificates, signedBuilds) {
+async function pruneCertificates(certificates, signedBuilds, persistentId) {
   let revocable;
   try {
     const apps = await api("GET", `/v1/apps?filter[bundleId]=${PRODUCTION_BUNDLE_ID}`);
@@ -459,7 +593,13 @@ async function pruneCertificates(certificates, signedBuilds) {
         : { data: [] },
     ]);
     const uploads = [...protectedUploads(versions, builds), ...stagingUploads(stagingBuilds)];
-    revocable = revocableCertificates(certificates, uploads, signedBuilds, settledStagingBuilds(stagingBuilds));
+    revocable = revocableCertificates(
+      certificates,
+      uploads,
+      signedBuilds,
+      settledStagingBuilds(stagingBuilds),
+      persistentId,
+    );
   } catch (error) {
     console.warn(`ios-signing: ⚠️ inventaire des binaires impossible, aucun certificat révoqué, ${error.message}`);
     return;
@@ -490,19 +630,22 @@ const cerPath = join(workDir, "signing.cer");
 const pemPath = join(workDir, "signing-cert.pem");
 const p12Path = join(workDir, "signing.p12");
 
-run(OPENSSL, [
-  "req",
-  "-new",
-  "-newkey",
-  "rsa:2048",
-  "-nodes",
-  "-keyout",
-  keyPath,
-  "-out",
-  csrPath,
-  "-subj",
-  "/CN=Petite Jerusalem CI/O=Petite Jerusalem/C=FR",
-]);
+// No key pair to generate when the run signs with the persistent certificate.
+if (!usesPersistentCertificate) {
+  run(OPENSSL, [
+    "req",
+    "-new",
+    "-newkey",
+    "rsa:2048",
+    "-nodes",
+    "-keyout",
+    keyPath,
+    "-out",
+    csrPath,
+    "-subj",
+    "/CN=Petite Jerusalem CI/O=Petite Jerusalem/C=FR",
+  ]);
+}
 
 // Apple plafonne le compte à trois certificats de distribution et celui d'un
 // run lui survit (cf. l'en-tête) : sans ce ménage, un tag finit par échouer
@@ -524,61 +667,110 @@ for (const profile of profiles.data) {
   for (const linked of profile.relationships?.certificates?.data ?? []) signedBuilds.set(linked.id, signed);
 }
 
-const certificates = distributionCertificates(
-  (await api("GET", "/v1/certificates?filter[certificateType]=DISTRIBUTION&limit=200")).data,
-);
-await pruneCertificates(certificates, signedBuilds);
+const certificateEntries = (
+  await api("GET", "/v1/certificates?filter[certificateType]=DISTRIBUTION&limit=200")
+).data;
+const certificates = distributionCertificates(certificateEntries);
 
-let certificate;
-try {
-  certificate = await api("POST", "/v1/certificates", {
-    data: {
-      type: "certificates",
-      attributes: { certificateType: "DISTRIBUTION", csrContent: readFileSync(csrPath, "utf8") },
-    },
-  });
-} catch (error) {
-  if (error.status === 403 || error.status === 409) {
-    const remaining = certificates.filter((c) => !c.revoked);
+let certificateId;
+// The .p12 password: the run's own for a per-run certificate, the one of the
+// secret for the persistent certificate.
+let p12Password = password;
+if (usesPersistentCertificate) {
+  // The certificate of the secret is found on the account by its content: a
+  // revoked or expired one is no longer listed, and signing with it would
+  // only fail later, at upload or at review.
+  writeFileSync(p12Path, Buffer.from(persistentP12, "base64"));
+  p12Password = persistentP12Password;
+  run(OPENSSL, [
+    "pkcs12",
+    "-in",
+    p12Path,
+    "-clcerts",
+    "-nokeys",
+    "-passin",
+    `pass:${p12Password}`,
+    "-out",
+    pemPath,
+  ]);
+  run(OPENSSL, ["x509", "-in", pemPath, "-outform", "DER", "-out", cerPath]);
+  const entry = certificateWithContent(certificateEntries, readFileSync(cerPath));
+  if (!entry) {
     console.error(
-      `ios-signing: Apple refuse de créer un certificat de distribution, ${error.message}\n` +
-        `  ${remaining.length} certificat(s) de distribution occupent le quota (${CERTIFICATE_QUOTA}) :\n` +
-        remaining
-          .map(
-            (c) =>
-              `    ${c.id}  ${c.displayName}  expire le ${c.expiration}` +
-              (c.keptFor ? `  (conservé, ${c.keptFor})` : ""),
-          )
-          .join("\n") +
-        "\n  En révoquer un sur developer.apple.com → Certificates, une fois certain qu'aucun binaire" +
-        "\n  signé avec lui n'est en examen ni en vente, puis relancer.",
+      "ios-signing: the IOS_DISTRIBUTION_P12 certificate is not an active distribution certificate\n" +
+        "  of this account (revoked, expired, or from another team). Create a new one with\n" +
+        "  `node scripts/ios-signing.mjs --new-persistent-certificate`, see docs/ios-ci-cd.md.",
     );
     process.exit(1);
   }
-  throw error;
-}
-const certificateId = certificate.data.id;
-// Écrit AVANT toute autre opération : si la suite échoue, l'étape de nettoyage
-// (if: always()) doit malgré tout pouvoir révoquer ce certificat.
-exportEnv("IOS_SIGNING_CERTIFICATE_ID", certificateId);
-console.log(`ios-signing: certificat de distribution créé (${certificateId})`);
+  certificateId = entry.id;
+  const expiresAt = Date.parse(entry.attributes?.expirationDate ?? "");
+  const daysLeft = Math.floor((expiresAt - Date.now()) / (24 * 60 * 60 * 1000));
+  if (daysLeft < 30) {
+    console.log(
+      `::warning::The persistent distribution certificate expires in ${daysLeft} day(s), ` +
+        "create a new one with --new-persistent-certificate (docs/ios-ci-cd.md)",
+    );
+  }
+  // Never IOS_SIGNING_CERTIFICATE_ID here: --cleanup must not revoke it.
+  exportEnv("IOS_SIGNING_PERSISTENT", "1");
+  console.log(`ios-signing: persistent distribution certificate ${certificateId}, nothing created`);
+  // Only the certificates left by earlier runs can go, once nothing depends on them.
+  await pruneCertificates(certificates, signedBuilds, certificateId);
+} else {
+  await pruneCertificates(certificates, signedBuilds);
 
-writeFileSync(cerPath, Buffer.from(certificate.data.attributes.certificateContent, "base64"));
-run(OPENSSL, ["x509", "-inform", "DER", "-in", cerPath, "-out", pemPath]);
-run(OPENSSL, [
-  "pkcs12",
-  "-export",
-  "-inkey",
-  keyPath,
-  "-in",
-  pemPath,
-  "-out",
-  p12Path,
-  "-name",
-  "Petite Jerusalem CI",
-  "-passout",
-  `pass:${password}`,
-]);
+  let certificate;
+  try {
+    certificate = await api("POST", "/v1/certificates", {
+      data: {
+        type: "certificates",
+        attributes: { certificateType: "DISTRIBUTION", csrContent: readFileSync(csrPath, "utf8") },
+      },
+    });
+  } catch (error) {
+    if (error.status === 403 || error.status === 409) {
+      const remaining = certificates.filter((c) => !c.revoked);
+      console.error(
+        `ios-signing: Apple refuse de créer un certificat de distribution, ${error.message}\n` +
+          `  ${remaining.length} certificat(s) de distribution occupent le quota (${CERTIFICATE_QUOTA}) :\n` +
+          remaining
+            .map(
+              (c) =>
+                `    ${c.id}  ${c.displayName}  expire le ${c.expiration}` +
+                (c.keptFor ? `  (conservé, ${c.keptFor})` : ""),
+            )
+            .join("\n") +
+          "\n  En révoquer un sur developer.apple.com → Certificates, une fois certain qu'aucun binaire" +
+          "\n  signé avec lui n'est en examen ni en vente, puis relancer.",
+      );
+      process.exit(1);
+    }
+    throw error;
+  }
+  certificateId = certificate.data.id;
+  // Écrit AVANT toute autre opération : si la suite échoue, l'étape de nettoyage
+  // (if: always()) doit malgré tout pouvoir révoquer ce certificat.
+  exportEnv("IOS_SIGNING_CERTIFICATE_ID", certificateId);
+  console.log(`ios-signing: certificat de distribution créé (${certificateId})`);
+
+  writeFileSync(cerPath, Buffer.from(certificate.data.attributes.certificateContent, "base64"));
+  run(OPENSSL, ["x509", "-inform", "DER", "-in", cerPath, "-out", pemPath]);
+  run(OPENSSL, [
+    "pkcs12",
+    "-export",
+    "-inkey",
+    keyPath,
+    "-in",
+    pemPath,
+    "-out",
+    p12Path,
+    "-name",
+    "Petite Jerusalem CI",
+    "-passout",
+    `pass:${password}`,
+  ]);
+}
 
 // ---------------------------------------------------------------------------
 // 3. Trousseau temporaire
@@ -595,7 +787,7 @@ const searchList = run("security", ["list-keychains", "-d", "user"])
   .filter(Boolean)
   .filter((path) => path !== keychainPath);
 run("security", ["list-keychains", "-d", "user", "-s", keychainPath, ...searchList]);
-run("security", ["import", p12Path, "-k", keychainPath, "-P", password, "-A"]);
+run("security", ["import", p12Path, "-k", keychainPath, "-P", p12Password, "-A"]);
 // Sans cette liste de partition, codesign déclencherait une invite graphique
 // (impossible sur un runner) au moment d'utiliser la clé privée.
 run("security", ["set-key-partition-list", "-S", "apple-tool:,apple:,codesign:", "-s", "-k", password, keychainPath]);
@@ -665,7 +857,12 @@ for (const stale of profiles.data) {
   }
   const marks = Boolean(markedBuild(name)) && name !== profileName;
   const linked = stale.relationships?.certificates?.data ?? [];
-  if (marks && linked.some((certificate) => liveCertificateIds.has(certificate.id))) continue;
+  // A profile of the persistent certificate marks nothing: that certificate is
+  // never revoked. One left by a run killed before its cleanup goes here.
+  const keepsCertificate = (certificate) =>
+    liveCertificateIds.has(certificate.id) &&
+    !(usesPersistentCertificate && certificate.id === certificateId);
+  if (marks && linked.some(keepsCertificate)) continue;
   await api("DELETE", `/v1/profiles/${stale.id}`).catch(() => {});
   console.log(`ios-signing: ancien profil « ${name} » supprimé`);
 }
