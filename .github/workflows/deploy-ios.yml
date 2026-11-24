@@ -43,6 +43,13 @@ name: Deploy iOS
 #   IOS_DEVELOPMENT_TEAM      Team ID Apple (10 caractères)
 #   GOOGLE_SERVICE_INFO_PLIST contenu de GoogleService-Info.plist (config Firebase iOS)
 #
+# Optional, recommended: a persistent distribution certificate that every run
+# signs with, instead of one new certificate per run (and one revocation
+# email from Apple per build). See "Persistent certificate" in
+# docs/ios-ci-cd.md.
+#   IOS_DISTRIBUTION_P12           the certificate and its private key, .p12 in base64
+#   IOS_DISTRIBUTION_P12_PASSWORD  its password
+#
 # Staging : deploy-staging.yml appelle ce même workflow avec
 # `environment: staging` à chaque fusion sur main. L'app part alors sous le
 # bundle id fr.petitejerusalem.app.staging (« PJ Staging »), avec la config
@@ -262,6 +269,10 @@ jobs:
           # construite : le run laisserait chez Apple un profil que rien ne
           # signe (voir l'étape suivante et docs/app-watch.md).
           SHIP_WATCH_APPS: ${{ vars.SHIP_WATCH_APPS }}
+          # Optional: with them, every run signs with this one certificate and
+          # none is created or revoked (scripts/ios-signing.mjs).
+          IOS_DISTRIBUTION_P12: ${{ secrets.IOS_DISTRIBUTION_P12 }}
+          IOS_DISTRIBUTION_P12_PASSWORD: ${{ secrets.IOS_DISTRIBUTION_P12_PASSWORD }}
         run: node scripts/ios-signing.mjs --setup
 
       # L'app de staging porte un bandeau « STAGING » sur son icône, pour ne

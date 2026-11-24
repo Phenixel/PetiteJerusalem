@@ -238,6 +238,46 @@ for TestFlight and the listing, not for signing the archive. And a key's
 role **cannot be changed after creation**: getting it wrong forces you to
 generate a new one.
 
+### Persistent certificate (recommended)
+
+The per-run certificate has a visible side effect: every build creates a
+certificate, and every later run revokes the ones nothing depends on
+anymore, so Apple sends a "certificate revoked" email for nearly every
+build. From November 17, 2026, each Petite Jerusalem and PJ Staging upload
+came about eight minutes after one of those emails, which reads like
+someone else revoking the account's certificates.
+
+With the two optional secrets `IOS_DISTRIBUTION_P12` and
+`IOS_DISTRIBUTION_P12_PASSWORD`, every run signs with **one** distribution
+certificate instead:
+
+- `--setup` imports it into the temporary keychain, finds it on the account
+  by its content, and creates no certificate. It fails if that certificate
+  was revoked or has expired, and warns 30 days before it expires;
+- it is never revoked, by `--setup` or by `--cleanup`. The app profile then
+  marks nothing and is deleted at cleanup like the others;
+- the certificates left by earlier runs are still pruned by the rules
+  above, until none is left. Expect a last few revocation emails, then
+  none.
+
+Create it once, on your own machine, with the App Store Connect key (the
+quota of three must have a free slot):
+
+```bash
+ASC_KEY_ID=XXXXXXXXXX ASC_ISSUER_ID=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx \
+ASC_PRIVATE_KEY="$(cat ~/Downloads/AuthKey_XXXXXXXXXX.p8)" \
+  node scripts/ios-signing.mjs --new-persistent-certificate
+```
+
+The script writes `petitejerusalem-distribution.p12` in the current folder
+and prints the two `gh secret set` commands to run, then the file is to be
+deleted. An "Apple Distribution" certificate exported from Keychain Access
+as a `.p12` works too. A distribution certificate lasts one year: renew it
+the same way before it expires, update the two secrets, then revoke the old
+one on developer.apple.com once nothing in review depends on it.
+
+Without these secrets, nothing changes: one certificate per run, as above.
+
 ## App Store Connect API key (once, clicks)
 
 1. [App Store Connect](https://appstoreconnect.apple.com) → **Users and
@@ -270,6 +310,9 @@ gh secret set IOS_DEVELOPMENT_TEAM --body "XXXXXXXXXX"
 # 5. Firebase config of the iOS app (repo root, git-ignored)
 gh secret set GOOGLE_SERVICE_INFO_PLIST < GoogleService-Info.plist
 ```
+
+Optional, recommended: `IOS_DISTRIBUTION_P12` and
+`IOS_DISTRIBUTION_P12_PASSWORD`, see "Persistent certificate" above.
 
 ## App Store listing
 

@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
 import {
+  certificateWithContent,
   distributionCertificates,
   protectedUploads,
   revocableCertificates,
@@ -324,5 +325,54 @@ describe("quota de certificats de distribution", () => {
 
     expect(revocable.map((c) => c.id)).toEqual(["R33A4CCD5R", "T7X6S8JPNR"]);
     expect(list.at(-1)?.keptFor).toBe("certificat du run précédent");
+  });
+
+  it("never revokes the persistent certificate, and lets the previous-run rule go", () => {
+    const list = certificates();
+    // The newest certificate, SA7386DCQJ, has no marker and nothing to keep it:
+    // with a persistent certificate, the previous run did not sign with it.
+    const revocable = revocableCertificates(
+      list,
+      protectedUploads({ data: [] }, { data: [] }),
+      new Map(),
+      new Set(),
+      "R33A4CCD5R",
+    );
+
+    expect(revocable.map((c) => c.id)).toEqual(["T7X6S8JPNR", "SA7386DCQJ"]);
+    expect(list[0]?.keptFor).toBe("persistent CI certificate, every run signs with it");
+  });
+
+  it("keeps a newest CI certificate whose open window holds a protected upload", () => {
+    const versions = {
+      data: [version("3.7.8", "IN_REVIEW", "b1", "2026-08-25T10:00:00.000+00:00")],
+      included: [build("b1", "3070800", "2026-08-25T09:00:00.000+00:00")],
+    };
+    const list = certificates();
+    const revocable = revocableCertificates(
+      list,
+      protectedUploads(versions, { data: [] }),
+      new Map(),
+      new Set(),
+      "R33A4CCD5R",
+    );
+
+    expect(revocable.map((c) => c.id)).toEqual(["T7X6S8JPNR"]);
+    expect(list.at(-1)?.keptFor).toContain("3.7.8");
+  });
+
+  it("finds the account certificate whose content is the one of the secret", () => {
+    const der = Buffer.from("certificate bytes");
+    const data = [
+      {
+        id: "A",
+        attributes: { certificateContent: Buffer.from("another one").toString("base64") },
+      },
+      { id: "B", attributes: { certificateContent: der.toString("base64") } },
+      { id: "C", attributes: {} },
+    ];
+
+    expect(certificateWithContent(data, der)?.id).toBe("B");
+    expect(certificateWithContent(data, Buffer.from("missing"))).toBeUndefined();
   });
 });
