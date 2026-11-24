@@ -13,7 +13,18 @@ mobile workflows do not run), in this order:
    deployment whose site is already live;
 3. the Firestore rules **and** indexes;
 4. the Storage rules;
-5. the Cloud Functions.
+5. the Cloud Functions;
+6. only when step 1 had to save a rewrite to a function that did not exist
+   yet: the site once more (see below).
+
+A Hosting rewrite to a function is resolved when the site is released. If
+the function does not exist yet (a new function added with its rewrite,
+like `mcp`), firebase-tools warns « Unable to find a valid endpoint for
+function » and saves the rewrite in a form that cannot reach a 2nd gen
+function: the path answers an error until the site is released again. The
+workflow spots that warning and releases the site a second time after the
+functions, now that they exist. The files are already uploaded, so only the
+configuration changes. `deploy-staging.yml` does the same on staging.
 
 Everything goes through a single service account, whose JSON key is in the
 GitHub secret `FIREBASE_SERVICE_ACCOUNT`:
