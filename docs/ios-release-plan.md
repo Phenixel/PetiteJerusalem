@@ -151,8 +151,8 @@ app).
 
 ## Step 4. First local build
 
-Prerequisites: macOS + **Xcode 26** (required both by Capacitor 8 and by
-the App Store since April 28, 2026). Capacitor 8 builds with Swift Package
+Prerequisites: macOS + **Xcode 27** (App Store Connect requires the iOS 27
+SDK for every upload from April 2027). Capacitor 8 builds with Swift Package
 Manager, but the CLI still checks for CocoaPods before `cap add ios`:
 `sudo gem install cocoapods` once if `pod --version` fails.
 
@@ -167,7 +167,8 @@ npm run cap:ios          # web build + sync + opens Xcode
 `ios/` folder is git-ignored): location usage description,
 `remote-notification`, encryption declaration, Google URL scheme, Sign in
 with Apple + APNs entitlements, `PrivacyInfo.xcprivacy`, APNs hooks in
-`AppDelegate.swift`, icons, shared Xcode scheme, bundle id, team and
+`AppDelegate.swift`, `PjViewController`, Firebase Auth URL handling and back
+swipe in `SceneDelegate.swift`, icons, shared Xcode scheme, bundle id, team and
 versions.
 
 In Xcode: select a connected iPhone → **Run**. To check on the device:

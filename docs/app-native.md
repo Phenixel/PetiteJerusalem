@@ -18,10 +18,21 @@ Two architecture choices follow from it:
 
 - Node 22 (already required by the project)
 - **Android**: Android Studio + an installed Android SDK + JDK 21
-- **iOS**: macOS + **Xcode 26** (required by Capacitor 8 and by the App Store
-  since April 28, 2026). The build goes through Swift Package Manager, but the
+- **iOS**: macOS + **Xcode 27** (App Store Connect requires the iOS 27 SDK
+  for every upload from April 2027; Xcode 26 builds still upload until then,
+  with an ITMS-90725 warning). The build goes through Swift Package Manager, but the
   Capacitor CLI still requires CocoaPods to be installed for `cap add ios`
   (`sudo gem install cocoapods`).
+
+Since Capacitor 8.5 the iOS template uses the UIKit scene life cycle
+(`SceneDelegate.swift` and `UIApplicationSceneManifest` in `Info.plist`),
+which apps built with the iOS 27 SDK must adopt or they do not launch. With
+it, iOS no longer calls the AppDelegate's URL and universal link methods,
+and the window belongs to the scene: `scripts/setup-ios.mjs` therefore puts
+`PjViewController`, the Firebase Auth URL check and the back swipe in the
+`SceneDelegate`. A local `ios/` folder created before Capacitor 8.5 has no
+`SceneDelegate.swift`, and the script stops on it: delete `ios/` and run
+`npx cap add ios` again.
 
 ## Getting started
 
@@ -499,7 +510,7 @@ Each platform has its own gesture, and the app must wire both.
   WebView, on its own history, the one the router feeds. Two settings
   condition it, and nothing happens if either is missing:
   - `allowsBackForwardNavigationGestures` on the WKWebView, which
-    `scripts/setup-ios.mjs` sets in the `AppDelegate` (WKWebView disables it
+    `scripts/setup-ios.mjs` sets in the `SceneDelegate` (WKWebView disables it
     by default, and Capacitor exposes no configuration option);
   - `overscroll-behavior` left free on the horizontal axis
     (`src/assets/main.css`). The rule that neutralizes Android's vertical
