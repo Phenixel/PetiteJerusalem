@@ -145,6 +145,32 @@ replaces it.
 
 The template in `.github/pull_request_template.md` lays these sections out.
 
+## Checks before a change is proposed
+
+Every change, however small, can break an end-to-end test somewhere else:
+a new link, banner or card can match a selector written for another page.
+It has already happened several times (the Daf Yomi banner on
+`/bibliotheque/talmud` made the Talmud test open Arakhin instead of
+Berakhot). So before opening a PR, pushing to one, or merging:
+
+1. Run the unit checks: `npm run verify`.
+2. Run the end-to-end suite: `npm run test:e2e` (the whole suite; it starts
+   the Firebase emulators when the firebase CLI is installed, see
+   `docs/tests.md`). Where the emulators cannot run, run at least
+   `npm run test:e2e:public`, and say in the PR that the `firebase` project
+   was not run locally.
+3. After pushing, wait for the `e2e` and `build-and-test` jobs of the PR
+   before calling it ready. A red `e2e` job is never "unrelated" until its
+   log shows why: read the failing test, find whether the app or the test
+   is wrong, and fix the cause (a selector made unique, not a retry or a
+   skipped test).
+4. Say in the PR's "How it was checked" which of these ran and which did
+   not.
+
+When a test breaks because a selector matched something new, make the
+selector precise (a role and name, a full `href`, a scoped locator) rather
+than taking `.first()` of a broad match.
+
 ## Typography
 
 **Never a long dash.** Neither the em dash (U+2014) nor the en dash (U+2013).
