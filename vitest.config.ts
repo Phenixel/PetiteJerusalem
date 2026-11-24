@@ -14,6 +14,9 @@ export default mergeConfig(
         'android/**',
         'ios/**',
         '.claude/**',
+        // The Cloud Functions' own suite (functions/test/) needs
+        // their dependencies, installed apart: `npm test --prefix functions`.
+        'functions/**',
       ],
       root: fileURLToPath(new URL('./', import.meta.url)),
     },

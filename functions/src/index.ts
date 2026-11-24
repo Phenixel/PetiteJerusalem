@@ -53,6 +53,9 @@ export {
 export { onAnnouncementWritten } from "./announcements";
 // Chaîne perpétuelle de Tehilim : un tour fini, elle repart à zéro.
 export { onPerpetualSessionUpdated } from "./perpetualChain";
+// MCP server: lets an assistant (a Claude connector) read the user messages,
+// with the owner's consent. Served on the site's domain, see docs/mcp.md.
+export { mcp } from "./mcp";
 
 // Le site de l'environnement : la production par défaut, celui de staging
 // sur le projet petite-jerusalem-staging (functions/.env.petite-jerusalem-staging,

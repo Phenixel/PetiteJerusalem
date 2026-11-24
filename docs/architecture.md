@@ -12,11 +12,11 @@ go into each area.
 | --- | --- | --- |
 | The app | `src/` | One Vue 3 application (Composition API, TypeScript, Tailwind 4), served as the site and wrapped by Capacitor as the iOS and Android apps. |
 | The corpus | `public/texts/` | Static JSON: the texts imported from Sefaria, the prayers written here (`tefila/`), translations, page layouts. Fetched on demand, listed with their hashes in `manifest.json`. |
-| The backend | `functions/src/` | Cloud Functions: triggers (moderation, perpetual chain, announcements), a scheduled reminder, callables (support, studio), and the social preview served through Hosting rewrites. |
+| The backend | `functions/src/` | Cloud Functions: triggers (moderation, perpetual chain, announcements), a scheduled reminder, callables (support, studio), the social preview served through Hosting rewrites, and the MCP server that lets an assistant read the user messages (`mcp.md`). |
 | The rules | `firestore.rules`, `storage.rules` | What a client may read and write. The functions run with the admin SDK and are not subject to them. |
 | The tooling | `scripts/` | Build steps (texts manifest, SEO prerender, native bundle pruning), text generators, store publishing, and the command line back office (`admin.mjs`, which writes to production). |
 | Native code | `native/` | Widgets, Wear OS and watchOS apps, added to the Capacitor projects generated in CI. |
-| Tests | `src/__tests__/`, `e2e/` | Vitest (unit and guard tests) and Playwright (public pages, and Firebase flows and rules on the emulators). See `tests.md`. |
+| Tests | `src/__tests__/`, `functions/test/`, `e2e/` | Vitest (unit and guard tests, plus the functions' own suite) and Playwright (public pages, and Firebase flows and rules on the emulators). See `tests.md`. |
 
 ## Inside `src/`
 
@@ -94,7 +94,8 @@ files.
 `functions/` compiles on its own (CommonJS, `rootDir: src`) and cannot import
 `src/`. A rule needed on both sides is therefore either written as a pure
 module in `functions/src/` and tested from `src/__tests__/` (`perpetualRound`,
-`sessionSlug`, `support`, `reportTally`, `announcementPush`, `ogCardSvg`), or
+`sessionSlug`, `support`, `reportTally`, `announcementPush`, `ogCardSvg`,
+the pure parts of `mcp/`), or
 copied, with a test that compares the two copies (`sunsetReminder`). A copy
 without such a test drifts: several are listed in the November review.
 
@@ -103,7 +104,9 @@ without such a test drifts: several are listed in the November review.
 `firebase.json` serves `dist/`: prerendered pages for the public routes
 (`scripts/prerender-seo.mjs`), the bare shell `app.html` for everything else
 (the catch-all rewrite, which leaves `/assets`, `/fonts` and `/texts` alone
-so that a missing file answers 404), and two functions behind rewrites
-(`socialPreview` for shared links, `ogImage` for their cards). HTML is never
+so that a missing file answers 404), and three functions behind rewrites
+(`socialPreview` for shared links, `ogImage` for their cards, `mcp` for
+`/mcp` and the OAuth discovery documents under `/.well-known/`, see
+`mcp.md`). HTML is never
 cached by the browser; hashed assets are immutable.
 `firebaseHostingConfig.test.ts` holds the shape of this file.

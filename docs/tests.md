@@ -13,11 +13,19 @@ npm run test:unit          # vitest, interactive mode
 npx vitest run             # a single pass, what `npm run verify` does
 ```
 
-The 310 files live in `src/__tests__/*.test.ts`. The configuration
+The 316 files live in `src/__tests__/*.test.ts`. The configuration
 (`vitest.config.ts`) uses the `jsdom` environment by default; tests that do
 not need the DOM (those that read the repository or run a script) start
-with `// @vitest-environment node`. The `e2e/`, `android/`, `ios/` and
-`.claude/` folders are excluded.
+with `// @vitest-environment node`. The `e2e/`, `android/`, `ios/`,
+`.claude/` and `functions/` folders are excluded.
+
+The Cloud Functions have a small suite of their own, for what needs their
+dependencies: `functions/test/mcp.test.ts` drives the MCP server over HTTP
+(client registration, consent and its scopes, PKCE, tokens, reading and
+replying; `docs/mcp.md`), with
+memory stand-ins for Firestore and Firebase Auth. It runs with
+`npm test --prefix functions`, after `npm ci --prefix functions`; the CI
+runs it after building the functions.
 
 ### The guard tests
 
@@ -74,6 +82,7 @@ documentation included; the French non-breaking-space rule
 | `ignoredExceptions.test.ts` | The filter for known Error tracking noise (`src/config/ignoredExceptions`) recognizes the messages actually observed in PostHog, and only those. |
 | `analyticsNativeUrls.test.ts` | The app's addresses reach PostHog as `app://ios` / `app://android`, whatever scheme the Capacitor webview serves the bundle from (`https://localhost` on Android, `capacitor://localhost` on iOS): otherwise the iOS app drops out of the per-page analyses (`docs/tracking-plan.md`). |
 | `analyticsAudience.test.ts` | `resolveUserType` classifies the team, the demo account handed to Google and the closed-test testers apart from real users, whatever the email's case. |
+| `mcpServer.test.ts` | The MCP server's owner (`functions/src/mcp/owner.ts`) is the account `isAdmin()` names in `firestore.rules`, what an assistant reads of a message carries nothing that identifies or reaches the person: no contact, account email or name, uid, device key or push token, and the right to reply is never ticked for the owner and is refused where the reply would show nowhere (`docs/mcp.md`). |
 | `adminAccess.test.ts` | `isAdminEmail` only accepts the admin account, and `generateStudioToken` produces a 64-character hexadecimal token that is never repeated. |
 | `zmanimDeviceTimezone.test.ts` | A location's times are the same instants whatever the MACHINE's time zone (`process.env.TZ` changed under the computation's feet): it is the test that enforces the fix applied to `@hebcal/core`, described below. |
 | `zmanimMatrice.test.ts` | The audit matrix replayed: 59 locations, 30 dates, two opinions, under three device time zones. More than one hundred fifty thousand lines, which must all return the SAME instant whatever the machine's time zone. |

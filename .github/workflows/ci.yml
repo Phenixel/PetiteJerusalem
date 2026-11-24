@@ -51,6 +51,11 @@ jobs:
       - name: Build Cloud Functions
         run: npm ci --prefix functions && npm run build --prefix functions
 
+      # Tests that need the functions' own dependencies (the MCP server over
+      # HTTP, see docs/mcp.md). The pure modules are tested by verify above.
+      - name: Test Cloud Functions
+        run: npm test --prefix functions
+
   # Suite de bout en bout (Playwright), en parallèle de build-and-test : elle
   # n'a pas besoin de son build, elle lance son propre serveur Vite
   # (playwright.config.ts) et ses propres émulateurs (scripts/e2e.mjs). Ce

@@ -140,6 +140,12 @@ The same work can be done from the command line: `support:liste`,
 `support:voir`, `support:repondre`, `support:statut` (see
 `docs/backoffice-cli.md`).
 
+An assistant can also read the threads, without the contacts, once the
+owner has connected it: the MCP server described in `docs/mcp.md`
+(`list_feedback`, `get_feedback`). If the owner granted it, it can also
+answer one thread at a time (`reply_to_feedback`), the same way as here:
+the person sees the reply and gets the notification.
+
 ## The path of a message, and of a reply
 
 1. `src/services/feedbackService.ts` completes the message (medium,
