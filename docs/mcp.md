@@ -60,7 +60,16 @@ Only the owner: the account `admin@phenixel.fr` with a verified email, the
 same one `isAdmin()` names in `firestore.rules`
 (`functions/src/mcp/owner.ts`, kept in step by `mcpServer.test.ts`). Anyone
 else who reaches the consent page is refused, and the request stays open
-for the right account.
+for the right account. The page says why (another address, an address
+Firebase Auth does not mark as verified, a sign-in too old), and the
+function logs the refusal.
+
+The approval checks the ID token locally (signature, project, expiry) and
+wants it minted in the last five minutes: the page forces a fresh one, and
+Firebase refuses to mint one for a disabled or signed-out account. No call
+to the Auth API, so no IAM permission is needed for that step. Refreshing a
+token does look the account up (`auth.getUser`); a failure there is logged
+and refuses the refresh.
 
 ## How a client connects
 

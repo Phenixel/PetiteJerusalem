@@ -25,7 +25,9 @@ const provider = new PjOAuthProvider({
   resource: new URL(`${SITE}/mcp`),
   owner: {
     async verifyOwnerIdToken(idToken) {
-      return idToken === "owner-id-token" ? { uid: "owner-uid" } : null;
+      if (idToken === "owner-id-token") return { uid: "owner-uid" };
+      if (idToken === "unverified-owner") return { refused: "Adresse non vérifiée." };
+      return null;
     },
     async isStillOwner(uid) {
       return stillOwner.has(uid);
@@ -269,6 +271,19 @@ describe("consent", () => {
     expect(approved.status).toBe(200);
     const again = await post("/mcp/oauth/approve", { request, idToken: "owner-id-token" });
     expect(again.status).toBe(400);
+  });
+
+  it("shows the owner check's own reason on the consent page", async () => {
+    const client = (await (await register()).json()) as { client_id: string };
+    const { request } = await openConsent(client.client_id, pkce().challenge);
+    const refused = await post("/mcp/oauth/approve", { request, idToken: "unverified-owner" });
+    expect(refused.status).toBe(403);
+    expect(await refused.json()).toMatchObject({
+      error: "access_denied",
+      error_description: "Adresse non vérifiée.",
+    });
+    const approved = await post("/mcp/oauth/approve", { request, idToken: "owner-id-token" });
+    expect(approved.status).toBe(200);
   });
 
   it("sends the client back with access_denied when the owner refuses", async () => {

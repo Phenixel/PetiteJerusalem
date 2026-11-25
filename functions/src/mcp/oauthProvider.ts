@@ -73,8 +73,11 @@ interface TokenRecord {
 
 /** How the provider learns who the owner is (Firebase Auth in production). */
 export interface OwnerCheck {
-  /** The account behind a Firebase ID token, if it is the owner's; null otherwise. */
-  verifyOwnerIdToken(idToken: string): Promise<{ uid: string } | null>;
+  /**
+   * The account behind a Firebase ID token if it is the owner's, or why it
+   * is refused, in words for the consent page (null: refused, no reason).
+   */
+  verifyOwnerIdToken(idToken: string): Promise<{ uid: string } | { refused: string } | null>;
   /** Whether the account is still the owner's (not deleted, not disabled). */
   isStillOwner(uid: string): Promise<boolean>;
 }
@@ -214,10 +217,14 @@ export class PjOAuthProvider implements OAuthServerProvider {
   async approve(requestId: unknown, idToken: unknown, chosen?: unknown): Promise<string> {
     // The account is checked before the request is used, so that signing in
     // with the wrong account first leaves the request open for the right one.
-    const owner =
+    const verdict =
       typeof idToken === "string" && idToken ? await this.owner.verifyOwnerIdToken(idToken) : null;
-    if (!owner)
-      throw new AccessDeniedError("Seul le compte propriétaire peut autoriser cet accès.");
+    if (!verdict || "refused" in verdict) {
+      throw new AccessDeniedError(
+        verdict?.refused ?? "Seul le compte propriétaire peut autoriser cet accès.",
+      );
+    }
+    const owner = verdict;
     if (Array.isArray(chosen) && chosen.length === 0) {
       throw new InvalidRequestError("Cochez au moins un accès à accorder.");
     }
