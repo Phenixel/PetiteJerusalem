@@ -24,7 +24,7 @@ import {
   SCOPES,
 } from "../../functions/src/mcp/scopes";
 import { planTeamReply, ReplyRefused } from "../../functions/src/mcp/teamReply";
-import { isOwner, OWNER_EMAILS } from "../../functions/src/mcp/owner";
+import { isOwner, OWNER_EMAILS, ownerVerdict } from "../../functions/src/mcp/owner";
 import { escapeHtml, renderConsentPage } from "../../functions/src/mcp/consentPage";
 
 const row = (id: string, data: Record<string, unknown>): SupportRow => ({ id, data });
@@ -210,6 +210,24 @@ describe("who may connect an assistant", () => {
     );
     expect(isOwner({ email: "someone@phenixel.fr", email_verified: true })).toBe(false);
     expect(isOwner(null)).toBe(false);
+  });
+
+  it("tells the consent page why an account is refused", () => {
+    const now = 1_800_000_000;
+    const owner = { uid: "u1", email: "Admin@Phenixel.fr", email_verified: true, iat: now - 10 };
+    expect(ownerVerdict(owner, now)).toEqual({ uid: "u1" });
+    expect(ownerVerdict({ ...owner, email: "someone@gmail.com" }, now)).toEqual({
+      refused: expect.stringContaining("Connecté avec someone@gmail.com"),
+    });
+    expect(ownerVerdict({ ...owner, email: undefined }, now)).toEqual({
+      refused: expect.stringContaining("pas d'adresse"),
+    });
+    expect(ownerVerdict({ ...owner, email_verified: false }, now)).toEqual({
+      refused: expect.stringContaining("n'est pas marquée comme vérifiée"),
+    });
+    expect(ownerVerdict({ ...owner, iat: now - 3600 }, now)).toEqual({
+      refused: expect.stringContaining("trop longtemps"),
+    });
   });
 
   it("is the same account the Firestore rules call admin", () => {
