@@ -15,6 +15,7 @@ const IDB_NO_TRANSACTION =
   "UnknownError: Attempt to get a record from database without an in-progress transaction";
 const FIRESTORE_ABORT = "AbortError: signal is aborted without reason";
 const RESIZE_UNDELIVERED = "ResizeObserver loop completed with undelivered notifications.";
+const INJECTED_CLONE = "DataCloneError: The object can not be cloned.";
 
 describe("isIgnoredException", () => {
   it("drops the lost IndexedDB connection (WebKit, Firebase Auth polling)", () => {
@@ -47,6 +48,14 @@ describe("isIgnoredException", () => {
     expect(isIgnoredException(["Script error"])).toBe(true);
     // A real error quoting the message must stay visible.
     expect(isIgnoredException(["Error: loading chunk failed after Script error."])).toBe(false);
+  });
+
+  it("drops the clone error of the scripts Chrome iOS injects into a form", () => {
+    expect(isIgnoredException([INJECTED_CLONE])).toBe(true);
+    expect(isIgnoredException(["DataCloneError: The object can not be cloned"])).toBe(true);
+    // A clone error of ours would name what failed to cross, and must stay
+    // visible.
+    expect(isIgnoredException(["DataCloneError: The draft can not be cloned."])).toBe(false);
   });
 
   it("lets real errors through", () => {
