@@ -44,6 +44,18 @@ const IGNORED_EXCEPTION_PATTERNS: RegExp[] = [
   // is no hold. The exact message, with nothing around it, so a real error
   // quoting it is not dropped.
   /^Script error\.?$/,
+  // Chrome on iOS injects scripts of its own into every page (form autofill,
+  // password manager): on /share-reading/new-session it tags our form with
+  // its `__gCrUniqueID` attribute, and a touch on a field makes it post a
+  // message WebKit refuses to clone. The whole stack is one frame,
+  // `postMessage` in `[native code]`, with no script of ours and no script
+  // URL at all; the app calls `postMessage` nowhere. Seen on Chrome iOS 158
+  // (iOS 18.7.8) on November 27, 2026: two exceptions, fifteen milliseconds
+  // after a tap on the type list and then on the deadline button, and the
+  // person created the session three minutes later, so nothing was lost.
+  // Nothing to fix on our side. The exact message, anchored, so a clone
+  // error of ours would stay visible.
+  /^DataCloneError: The object can not be cloned\.?$/,
   // The ResizeObserver loop ("loop completed with undelivered notifications")
   // is deliberately NOT here: the one on the prayer pages came from the quiet
   // modes panel writing the layout from its own resize callback, and is fixed
